@@ -26,7 +26,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  *
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
- * Clara, CA 95054 USA or visit http://www.sun.com if you need
+ * Clara, CA 95054 USA or visit http://www.sun.com if you need.
  * additional information or have any questions.
  */
 
@@ -56,6 +56,7 @@
 #include <VBox/pdmdev.h>
 #include <VBox/pdmnetifs.h>
 #include <VBox/pdmnetinline.h>
+#include <VBox/param.h>
 #include <VBox/tm.h>
 #include <VBox/vm.h>
 #include "../Builtins.h"
@@ -1071,9 +1072,14 @@ struct E1kState_st
     STAMPROFILE                         StatTransmitSend;
     STAMPROFILE                         StatRxOverflow;
     STAMCOUNTER                         StatRxOverflowWakeup;
+    STAMCOUNTER                         StatTxDescCtxNormal;
+    STAMCOUNTER                         StatTxDescCtxTSE;
     STAMCOUNTER                         StatTxDescLegacy;
     STAMCOUNTER                         StatTxDescData;
     STAMCOUNTER                         StatTxDescTSEData;
+    STAMCOUNTER                         StatTxPathFallback;
+    STAMCOUNTER                         StatTxPathGSO;
+    STAMCOUNTER                         StatTxPathRegular;
     STAMCOUNTER                         StatPHYAccesses;
 
 #endif /* VBOX_WITH_STATISTICS || E1K_REL_STATS */
@@ -2822,27 +2828,56 @@ DECLINLINE(void) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
      */
     /* Check the header ordering and spacing: 1. Ethernet, 2. IP, 3. TCP/UDP. */
     if (RT_UNLIKELY( pCtx->ip.u8CSS < sizeof(RTNETETHERHDR) ))
+    {
+        E1kLog(("e1kSetupGsoCtx: IPCSS=%#x\n", pCtx->ip.u8CSS));
         return;
+    }
     if (RT_UNLIKELY( pCtx->tu.u8CSS     < (size_t)pCtx->ip.u8CSS + (pCtx->dw2.fIP  ? RTNETIPV4_MIN_LEN : RTNETIPV6_MIN_LEN) ))
+    {
+        E1kLog(("e1kSetupGsoCtx: TUCSS=%#x\n", pCtx->tu.u8CSS));
         return;
+    }
     if (RT_UNLIKELY(   pCtx->dw2.fTCP
                      ? pCtx->dw3.u8HDRLEN <  (size_t)pCtx->tu.u8CSS + RTNETTCP_MIN_LEN
                      : pCtx->dw3.u8HDRLEN != (size_t)pCtx->tu.u8CSS + RTNETUDP_MIN_LEN ))
+    {
+        E1kLog(("e1kSetupGsoCtx: HDRLEN=%#x TCP=%d\n", pCtx->dw3.u8HDRLEN, pCtx->dw2.fTCP));
         return;
+    }
 
     /* The end of the TCP/UDP checksum should stop at the end of the packet or at least after the headers. */
     if (RT_UNLIKELY( pCtx->tu.u16CSE > 0 && pCtx->tu.u16CSE <= pCtx->dw3.u8HDRLEN ))
+    {
+        E1kLog(("e1kSetupGsoCtx: TUCSE=%#x HDRLEN=%#x\n", pCtx->tu.u16CSE, pCtx->dw3.u8HDRLEN));
         return;
+    }
 
     /* IPv4 checksum offset. */
     if (RT_UNLIKELY( pCtx->dw2.fIP && pCtx->ip.u8CSO - pCtx->ip.u8CSS != RT_OFFSETOF(RTNETIPV4, ip_sum) ))
+    {
+        E1kLog(("e1kSetupGsoCtx: IPCSO=%#x IPCSS=%#x\n", pCtx->ip.u8CSO, pCtx->ip.u8CSS));
         return;
+    }
 
     /* TCP/UDP checksum offsets. */
     if (RT_UNLIKELY( pCtx->tu.u8CSO - pCtx->tu.u8CSS != ( pCtx->dw2.fTCP
                                                          ? RT_OFFSETOF(RTNETTCP, th_sum)
                                                          : RT_OFFSETOF(RTNETUDP, uh_sum) ) ))
+    {
+        E1kLog(("e1kSetupGsoCtx: TUCSO=%#x TUCSS=%#x TCP=%d\n", pCtx->ip.u8CSO, pCtx->ip.u8CSS, pCtx->dw2.fTCP));
         return;
+    }
+
+    /*
+     * Because of internal networking using a 16-bit size field for GSO context
+     * pluss frame, we have to make sure we don't exceed this.
+     */
+    if (RT_UNLIKELY( pCtx->dw3.u8HDRLEN + pCtx->dw2.u20PAYLEN > VBOX_MAX_GSO_SIZE ))
+    {
+        E1kLog(("e1kSetupGsoCtx: HDRLEN(=%#x) + PAYLEN(=%#x) = %#x, max is %#x\n",
+                pCtx->dw3.u8HDRLEN, pCtx->dw2.u20PAYLEN, pCtx->dw3.u8HDRLEN + pCtx->dw2.u20PAYLEN, VBOX_MAX_GSO_SIZE));
+        return;
+    }
 
     /*
      * We're good for now - we'll do more checks when seeing the data.
@@ -2869,6 +2904,8 @@ DECLINLINE(void) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
     pGso->cbHdrs   = pCtx->dw3.u8HDRLEN;
     pGso->cbMaxSeg = pCtx->dw3.u16MSS;
     Assert(PDMNetGsoIsValid(pGso, sizeof(*pGso), pGso->cbMaxSeg * 5));
+    E1kLog2(("e1kSetupGsoCtx: mss=%#x hdr=%#x hdr1=%#x hdr2=%#x %s\n",
+             pGso->cbMaxSeg, pGso->cbHdrs, pGso->offHdr1, pGso->offHdr2, PDMNetGsoTypeName((PDMNETWORKGSOTYPE)pGso->u8Type) ));
 }
 
 /**
@@ -2876,36 +2913,58 @@ DECLINLINE(void) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
  *
  * @param   pGso                The GSO context.
  * @param   pData               The first data descriptor of the frame.
+ * @param   pCtx                The TSO context descriptor.
  */
-DECLINLINE(bool) e1kCanDoGso(PCPDMNETWORKGSO pGso, E1KTXDAT const *pData)
+DECLINLINE(bool) e1kCanDoGso(PCPDMNETWORKGSO pGso, E1KTXDAT const *pData, E1KTXCTX const *pCtx)
 {
     if (!pData->cmd.fTSE)
+    {
+        E1kLog2(("e1kCanDoGso: !TSE\n"));
         return false;
+    }
     if (pData->cmd.fVLE) /** @todo VLAN tagging. */
+    {
+        E1kLog(("e1kCanDoGso: VLE\n"));
         return false;
+    }
 
     switch ((PDMNETWORKGSOTYPE)pGso->u8Type)
     {
         case PDMNETWORKGSOTYPE_IPV4_TCP:
         case PDMNETWORKGSOTYPE_IPV4_UDP:
             if (!pData->dw3.fIXSM)
+            {
+                E1kLog(("e1kCanDoGso: !IXSM (IPv4)\n"));
                 return false;
+            }
             if (!pData->dw3.fTXSM)
+            {
+                E1kLog(("e1kCanDoGso: !TXSM (IPv4)\n"));
                 return false;
+            }
             /** @todo what more check should we perform here? Ethernet frame type? */
+            E1kLog2(("e1kCanDoGso: OK, IPv4\n"));
             return true;
 
         case PDMNETWORKGSOTYPE_IPV6_TCP:
         case PDMNETWORKGSOTYPE_IPV6_UDP:
-            if (pData->dw3.fIXSM)
+            if (pData->dw3.fIXSM && pCtx->ip.u8CSO)
+            {
+                E1kLog(("e1kCanDoGso: IXSM (IPv6)\n"));
                 return false;
+            }
             if (!pData->dw3.fTXSM)
+            {
+                E1kLog(("e1kCanDoGso: TXSM (IPv6)\n"));
                 return false;
+            }
             /** @todo what more check should we perform here? Ethernet frame type? */
+            E1kLog2(("e1kCanDoGso: OK, IPv4\n"));
             return true;
 
         default:
             Assert(pGso->u8Type == PDMNETWORKGSOTYPE_INVALID);
+            E1kLog2(("e1kCanDoGso: e1kSetupGsoCtx failed\n"));
             return false;
     }
 }
@@ -3004,6 +3063,12 @@ DECLINLINE(int) e1kXmitAllocBuf(E1KSTATE *pState, size_t cbMin, bool fExactSize,
  */
 DECLINLINE(bool) e1kXmitIsGsoBuf(PDMSCATTERGATHER const *pTxSg)
 {
+#if 0
+    if (!pTxSg)
+        E1kLog(("e1kXmitIsGsoBuf: pTxSG is NULL\n"));
+    if (pTxSg && pTxSg->pvUser)
+        E1kLog(("e1kXmitIsGsoBuf: pvUser is NULL\n"));
+#endif
     return pTxSg && pTxSg->pvUser /* GSO indicator */;
 }
 
@@ -3487,9 +3552,13 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
                 pState->u32PayRemain = pDesc->context.dw2.u20PAYLEN;
                 pState->u16HdrRemain = pDesc->context.dw3.u8HDRLEN;
                 e1kSetupGsoCtx(&pState->GsoCtx, &pDesc->context);
+                STAM_COUNTER_INC(&pState->StatTxDescCtxTSE);
             }
             else
+            {
                 pState->contextNormal = pDesc->context;
+                STAM_COUNTER_INC(&pState->StatTxDescCtxNormal);
+            }
             E1kLog2(("%s %s context updated: IP CSS=%02X, IP CSO=%02X, IP CSE=%04X"
                     ", TU CSS=%02X, TU CSO=%02X, TU CSE=%04X\n", INSTANCE(pState),
                      pDesc->context.dw2.fTSE ? "TSE" : "Normal",
@@ -3528,7 +3597,7 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
                 E1kLog2(("%s Saving checksum flags:%s%s; \n", INSTANCE(pState),
                          pState->fIPcsum ? " IP" : "",
                          pState->fTCPcsum ? " TCP/UDP" : ""));
-                if (e1kCanDoGso(&pState->GsoCtx, &pDesc->data))
+                if (e1kCanDoGso(&pState->GsoCtx, &pDesc->data, &pState->contextTSE))
                     e1kXmitAllocBuf(pState, pState->contextTSE.dw2.u20PAYLEN + pState->contextTSE.dw3.u8HDRLEN,
                                     true /*fExactSize*/, true /*fGso*/);
                 else
@@ -3544,6 +3613,7 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
              */
             if (e1kXmitIsGsoBuf(pState->pTxSgR3))
             {
+                STAM_COUNTER_INC(&pState->StatTxPathGSO);
                 bool fRc = e1kAddToFrame(pState, pDesc->data.u64BufAddr, pDesc->data.cmd.u20DTALEN);
                 if (pDesc->data.cmd.fEOP)
                 {
@@ -3568,6 +3638,7 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
             }
             else if (!pDesc->data.cmd.fTSE)
             {
+                STAM_COUNTER_INC(&pState->StatTxPathRegular);
                 bool fRc = e1kAddToFrame(pState, pDesc->data.u64BufAddr, pDesc->data.cmd.u20DTALEN);
                 if (pDesc->data.cmd.fEOP)
                 {
@@ -3592,7 +3663,10 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
                 }
             }
             else
+            {
+                STAM_COUNTER_INC(&pState->StatTxPathFallback);
                 e1kFallbackAddToFrame(pState, pDesc, pDesc->data.cmd.u20DTALEN);
+            }
 
             e1kDescReport(pState, pDesc, addr);
             STAM_PROFILE_ADV_STOP(&pState->StatTransmit, a);
@@ -5740,9 +5814,14 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 #if defined(VBOX_WITH_STATISTICS) || defined(E1K_REL_STATS)
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTransmitSend,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling send transmit in HC",      "/Devices/E1k%d/Transmit/Send", iInstance);
 
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTxDescLegacy,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of TX legacy descriptors",    "/Devices/E1k%d/TxDesc/Legacy", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTxDescCtxNormal,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of normal context descriptors","/Devices/E1k%d/TxDesc/ContexNormal", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTxDescCtxTSE,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of TSE context descriptors",  "/Devices/E1k%d/TxDesc/ContextTSE", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTxDescData,         STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of TX data descriptors",      "/Devices/E1k%d/TxDesc/Data", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTxDescLegacy,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of TX legacy descriptors",    "/Devices/E1k%d/TxDesc/Legacy", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTxDescTSEData,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of TX TSE data descriptors",  "/Devices/E1k%d/TxDesc/TSEData", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTxPathFallback,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Fallback TSE descriptor path",       "/Devices/E1k%d/TxPath/Fallback", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTxPathGSO,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "GSO TSE descriptor path",            "/Devices/E1k%d/TxPath/GSO", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTxPathRegular,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Regular descriptor path",            "/Devices/E1k%d/TxPath/Normal", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatPHYAccesses,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of PHY accesses",             "/Devices/E1k%d/PHYAccesses", iInstance);
 #endif /* VBOX_WITH_STATISTICS || E1K_REL_STATS */
 
