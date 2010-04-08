@@ -2195,7 +2195,7 @@ ifdef VBOX_WITH_RAW_MODE
    TEMPLATE_VBoxRc_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP) $(VBOX_VCC_WERR)
   endif
   TEMPLATE_VBoxRc_CFLAGS             = $(TEMPLATE_VBoxRc_CXXFLAGS)
-  TEMPLATE_VBoxRc_LDFLAGS            = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Lines -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR)
+  TEMPLATE_VBoxRc_LDFLAGS            = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Lines -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR) -Debug
   ifndef VBOX_NOINC_MISC
    include $(KBUILD_PATH)/sdks/W2K3DDKX86.kmk
   endif
@@ -2318,7 +2318,7 @@ TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 -GS- -w
 TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 $(VBOX_VCC_OPT) $(VBOX_VCC_FP)	$(VBOX_VCC_WERR)
  endif
 TEMPLATE_VBoxR0_CFLAGS              = $(TEMPLATE_VBoxR0_CXXFLAGS)
-TEMPLATE_VBoxR0_LDFLAGS             = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR)
+TEMPLATE_VBoxR0_LDFLAGS             = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR) -Debug
 TEMPLATE_VBoxR0_LIBS                = \
 	$(PATH_LIB)/RuntimeR0Stub$(VBOX_SUFF_LIB)
 TEMPLATE_VBoxR0_LIBS.x86            = \
