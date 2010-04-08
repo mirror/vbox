@@ -275,6 +275,16 @@ AssertCompileSize(VMMDevReqMouseStatus, 24+12);
 /** The mask of all capabilities which the guest can legitimately change */
 #define VMMDEV_MOUSE_GUEST_MASK \
       (VMMDEV_MOUSE_NOTIFY_HOST_MASK | VMMDEV_MOUSE_GUEST_USES_VMMDEV)
+/** The mask of host capability changes for which notification events should
+ * be sent */
+#define VMMDEV_MOUSE_NOTIFY_GUEST_MASK \
+      VMMDEV_MOUSE_HOST_CAN_ABSOLUTE
+/** The mask of all capabilities which the host can legitimately change */
+#define VMMDEV_MOUSE_HOST_MASK \
+      (  VMMDEV_MOUSE_NOTIFY_GUEST_MASK \
+       | VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER \
+       | VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR \
+       | VMMDEV_MOUSE_HOST_HAS_ABS_DEV)
 /** @} */
 
 
