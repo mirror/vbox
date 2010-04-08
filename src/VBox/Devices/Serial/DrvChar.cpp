@@ -80,9 +80,8 @@ typedef struct DRVCHAR
     uint8_t                     aSendQueue[CHAR_MAX_SEND_QUEUE];
     uint32_t volatile           iSendQueueHead;
     uint32_t                    iSendQueueTail;
-    uint32_t                    cEntries;
+    uint32_t volatile           cEntries;
 
-    uintptr_t                   AlignmentPadding;
     /** Read/write statistics */
     STAMCOUNTER                 StatBytesRead;
     STAMCOUNTER                 StatBytesWritten;
