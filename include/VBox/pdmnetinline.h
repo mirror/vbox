@@ -439,4 +439,25 @@ DECLINLINE(void) PDMNetGsoPrepForDirectUse(PCPDMNETWORKGSO pGso, void *pvFrame, 
 }
 
 
+/**
+ * Gets the GSO type name string.
+ *
+ * @returns Pointer to read only name string.
+ * @param   enmType             The type.
+ */
+DECLINLINE(const char *) PDMNetGsoTypeName(PDMNETWORKGSOTYPE enmType)
+{
+    switch (enmType)
+    {
+        case PDMNETWORKGSOTYPE_IPV4_TCP:        return "TCPv4";
+        case PDMNETWORKGSOTYPE_IPV6_TCP:        return "TCPv6";
+        case PDMNETWORKGSOTYPE_IPV4_UDP:        return "UDPv4";
+        case PDMNETWORKGSOTYPE_IPV6_UDP:        return "UDPv6";
+        case PDMNETWORKGSOTYPE_IPV4_IPV6_TCP:   return "4to6TCP";
+        case PDMNETWORKGSOTYPE_IPV4_IPV6_UDP:   return "4to6UDP";
+        case PDMNETWORKGSOTYPE_INVALID:         return "invalid";
+        case PDMNETWORKGSOTYPE_END:             return "end";
+    }
+    return "bad-gso-type";
+}
 
