@@ -1516,9 +1516,13 @@ static DECLCALLBACK(int) vnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
         AssertMsgStmt(pState->pDrv, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                       rc = VERR_PDM_MISSING_INTERFACE_BELOW);
     }
-    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+    else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
+             || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
+    {
+        /* This should never happen because this function is not called
+         * if there is no driver to attach! */
         Log(("%s No attached driver!\n", INSTANCE(pState)));
-
+    }
 
     /*
      * Temporary set the link down if it was up so that the guest
@@ -1737,8 +1741,10 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         AssertMsgReturn(pState->pDrv, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                         VERR_PDM_MISSING_INTERFACE_BELOW);
     }
-    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+    else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
+             || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME )
     {
+         /* No error! */
         Log(("%s This adapter is not attached to any network!\n", INSTANCE(pState)));
     }
     else
