@@ -318,7 +318,7 @@ STDMETHODIMP VBoxQImageFrameBuffer::NotifyUpdate (ULONG aX, ULONG aY,
 
 void VBoxQImageFrameBuffer::paintEvent (QPaintEvent *pe)
 {
-    const QRect &r = pe->rect().intersected (mView->viewport()->rect());
+    const QRect &r = pe->rect().intersected (QRect (0, 0, mWdt, mHgt));
 
     /* Some outdated rectangle during processing VBoxResizeEvent */
     if (r.isEmpty())

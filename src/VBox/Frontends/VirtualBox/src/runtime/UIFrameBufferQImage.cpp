@@ -67,7 +67,7 @@ STDMETHODIMP UIFrameBufferQImage::NotifyUpdate(ULONG uX, ULONG uY, ULONG uW, ULO
 
 void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
 {
-    const QRect &r = pEvent->rect().intersected(m_pMachineView->viewport()->rect());
+    const QRect &r = pEvent->rect().intersected(QRect(0, 0, m_width, m_height));
 
     /* Some outdated rectangle during processing UIResizeEvent */
     if (r.isEmpty())
