@@ -325,37 +325,30 @@ static int drvdiskintReadVerify(PDRVDISKINTEGRITY pThis, PCRTSGSEG paSeg, unsign
         {
             RTSGSEG Seg;
             RTSGBUF SgBufCmp;
+            size_t cbOff = 0;
 
             Seg.cbSeg = cbRange;
             Seg.pvSeg = pSeg->pbSeg + offSeg;
 
             RTSgBufInit(&SgBufCmp, &Seg, 1);
-            if (RTSgBufCmp(&SgBuf, &SgBufCmp, cbRange))
+            if (RTSgBufCmpEx(&SgBuf, &SgBufCmp, cbRange, &cbOff, true))
             {
-                unsigned offWrong = 0;
-#if 0
-                for (offWrong = 0; offWrong < cbRange; offWrong++)
-                    if (pbBuf[offWrong] != pSeg->pbSeg[offSeg + offWrong])
-#endif
-                    {
-                        /* Corrupted disk, print I/O log entry of the last write which accessed this range. */
-                        uint32_t cSector = (offSeg + offWrong) / 512;
-                        AssertMsg(cSector < pSeg->cIoLogEntries, ("Internal bug!\n"));
+                /* Corrupted disk, print I/O log entry of the last write which accessed this range. */
+                uint32_t cSector = (offSeg + cbOff) / 512;
+                AssertMsg(cSector < pSeg->cIoLogEntries, ("Internal bug!\n"));
 
-                        RTMsgError("Corrupted disk at offset %llu (%u bytes in the current read buffer)!\n",
-                                   offCurr + offWrong, offWrong);
-                        RTMsgError("Last write to this sector started at offset %llu with %u bytes (%u references to this log entry)\n",
-                                   pSeg->apIoLog[cSector]->off,
-                                   pSeg->apIoLog[cSector]->cbWrite,
-                                   pSeg->apIoLog[cSector]->cRefs);
-                        RTAssertDebugBreak();
-                    }
+                RTMsgError("Corrupted disk at offset %llu (%u bytes in the current read buffer)!\n",
+                           offCurr + cbOff, cbOff);
+                RTMsgError("Last write to this sector started at offset %llu with %u bytes (%u references to this log entry)\n",
+                           pSeg->apIoLog[cSector]->off,
+                           pSeg->apIoLog[cSector]->cbWrite,
+                           pSeg->apIoLog[cSector]->cRefs);
+                RTAssertDebugBreak();
             }
         }
 
         offCurr += cbRange;
         cbLeft  -= cbRange;
-        RTSgBufAdvance(&SgBuf, cbRange);
     }
 
     return rc;
