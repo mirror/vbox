@@ -176,6 +176,75 @@ RTDECL(int) RTSgBufCmp(PCRTSGBUF pSgBuf1, PCRTSGBUF pSgBuf2, size_t cbCmp)
 }
 
 
+RTDECL(int) RTSgBufCmpEx(PRTSGBUF pSgBuf1, PRTSGBUF pSgBuf2, size_t cbCmp,
+                         size_t *pcbOff, bool fAdvance)
+{
+    AssertPtrReturn(pSgBuf1, 0);
+    AssertPtrReturn(pSgBuf2, 0);
+
+    size_t cbLeft = cbCmp;
+    size_t cbOff  = 0;
+    RTSGBUF SgBuf1Tmp;
+    RTSGBUF SgBuf2Tmp;
+    PRTSGBUF pSgBuf1Tmp;
+    PRTSGBUF pSgBuf2Tmp;
+
+    if (!fAdvance)
+    {
+        /* Set up the temporary buffers */
+        RTSgBufClone(&SgBuf1Tmp, pSgBuf1);
+        RTSgBufClone(&SgBuf2Tmp, pSgBuf2);
+        pSgBuf1Tmp = &SgBuf1Tmp;
+        pSgBuf2Tmp = &SgBuf2Tmp;
+    }
+    else
+    {
+        pSgBuf1Tmp = pSgBuf1;
+        pSgBuf2Tmp = pSgBuf2;
+    }
+
+    while (cbLeft)
+    {
+        size_t cbThisCmp = RT_MIN(RT_MIN(pSgBuf1Tmp->cbSegLeft, cbLeft), pSgBuf2Tmp->cbSegLeft);
+        size_t cbTmp = cbThisCmp;
+        uint8_t *pbBuf1;
+        uint8_t *pbBuf2;
+
+        if (!cbCmp)
+            break;
+
+        pbBuf1 = (uint8_t *)sgBufGet(pSgBuf1Tmp, &cbTmp);
+        Assert(cbTmp == cbThisCmp);
+        pbBuf2 = (uint8_t *)sgBufGet(pSgBuf2Tmp, &cbTmp);
+        Assert(cbTmp == cbThisCmp);
+
+        int rc = memcmp(pbBuf1, pbBuf2, cbThisCmp);
+        if (rc)
+        {
+            if (pcbOff)
+            {
+                /* Search for the correct offset */
+                while (   cbThisCmp-- > 0
+                       && (*pbBuf1 == *pbBuf2))
+                {
+                    pbBuf1++;
+                    pbBuf2++;
+                    cbOff++;
+                }
+
+                *pcbOff = cbOff;
+            }
+            return rc;
+        }
+
+        cbLeft -= cbThisCmp;
+        cbOff  += cbThisCmp;
+    }
+
+    return 0;
+}
+
+
 RTDECL(size_t) RTSgBufSet(PRTSGBUF pSgBuf, uint8_t ubFill, size_t cbSet)
 {
     AssertPtrReturn(pSgBuf, 0);

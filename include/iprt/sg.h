@@ -131,6 +131,22 @@ RTDECL(size_t) RTSgBufCopy(PRTSGBUF pSgBufDst, PRTSGBUF pSgBufSrc, size_t cbCopy
 RTDECL(int) RTSgBufCmp(PCRTSGBUF pSgBuf1, PCRTSGBUF pSgBuf2, size_t cbCmp);
 
 /**
+ * Compares the content of two S/G buffers - advanced version.
+ *
+ * @returns Whatever memcmp returns.
+ * @param   pSgBuf1      First S/G buffer.
+ * @param   pSgBuf2      Second S/G buffer.
+ * @param   cbCmp        How many bytes to compare.
+ * @param   pcbOff       Where to store the offset of the first different byte
+ *                       in the buffer starting from the position of the S/G
+ *                       buffer before this call.
+ * @param   fAdvance     Flag whether the internal buffer position should be advanced.
+ *
+ */
+RTDECL(int) RTSgBufCmpEx(PRTSGBUF pSgBuf1, PRTSGBUF pSgBuf2, size_t cbCmp,
+                         size_t *pcbOff, bool fAdvance);
+
+/**
  * Fills an S/G buf with a constant byte.
  *
  * @returns The number of actually filled bytes.
