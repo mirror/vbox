@@ -191,6 +191,22 @@ const char* controllerString(StorageControllerType_T enmType)
 }
 
 /*
+ * Simple class for storing network boot information.
+ */
+struct BootNic {
+    ULONG       mInstance;
+    unsigned    mPciDev;
+    unsigned    mPciFn;
+    ULONG       mBootPrio;
+    bool operator < (const BootNic &rhs) const
+    {
+        int lval = mBootPrio ? mBootPrio : INT_MAX;
+        int rval = rhs.mBootPrio ? rhs.mBootPrio : INT_MAX;
+        return lval < rval; /* Zero compares as highest number (lowest prio). */
+    }
+};
+
+/*
  * VC++ 8 / amd64 has some serious trouble with this function.
  * As a temporary measure, we'll drop global optimizations.
  */
@@ -1449,6 +1465,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     PCFGMNODE pDevVirtioNet = NULL;          /* Virtio network devices */
     rc = CFGMR3InsertNode(pDevices, "virtio-net", &pDevVirtioNet);                  RC_CHECK();
 #endif /* VBOX_WITH_VIRTIO */
+    std::list<BootNic> llNics;
     for (ULONG ulInstance = 0; ulInstance < SchemaDefs::NetworkAdapterCount; ++ulInstance)
     {
         ComPtr<INetworkAdapter> networkAdapter;
@@ -1528,25 +1545,18 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertInteger(pCfg,  "R0Enabled",    false);                 RC_CHECK();
         }
 #endif
-        /*
-         * Transfer boot device information to the BIOS.
+        /* 
+         * Collect information needed for network booting and add it to the list.
          */
-        if (ulInstance == 0)
-        {
-            unsigned    uBootIdx = 0;
+        BootNic     nic;
 
-            if (pNetBootCfg)    /* NetBoot node doesn't exist for EFI! */
-            {
-                PCFGMNODE   pNetBtDevCfg;
-                char        achBootIdx[] = "0";
+        nic.mInstance = ulInstance;
+        nic.mPciDev   = iPciDeviceNo;
+        nic.mPciFn    = 0;
 
-                achBootIdx[0] = '0' + uBootIdx;     /* Boot device order. */
-                rc = CFGMR3InsertNode(pNetBootCfg, achBootIdx, &pNetBtDevCfg);      RC_CHECK();
-                rc = CFGMR3InsertInteger(pNetBtDevCfg, "NIC", ulInstance);          RC_CHECK();
-                rc = CFGMR3InsertInteger(pNetBtDevCfg, "PCIDeviceNo", iPciDeviceNo);RC_CHECK();
-                rc = CFGMR3InsertInteger(pNetBtDevCfg, "PCIFunctionNo", 0);         RC_CHECK();
-            }
-        }
+        hrc = networkAdapter->COMGETTER(BootPriority)(&nic.mBootPrio);              H();
+
+        llNics.push_back(nic);
 
         /*
          * The virtual hardware type. PCNet supports two types.
@@ -1621,6 +1631,35 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          */
         rc = configNetwork(pConsole, pszAdapterName, ulInstance, 0, networkAdapter,
                            pCfg, pLunL0, pInst, false /*fAttachDetach*/);           RC_CHECK();
+    }
+
+    /*
+     * Build network boot information and transfer it to the BIOS.
+     */
+    if (pNetBootCfg && !llNics.empty())  /* NetBoot node doesn't exist for EFI! */
+    {
+        llNics.sort();  /* Sort the list by boot priority. */
+
+        PCFGMNODE   pNetBtDevCfg;
+        char        achBootIdx[] = "0";
+        unsigned    uBootIdx = 0;
+
+        std::list<BootNic>::iterator it;
+
+        for (it = llNics.begin(); it != llNics.end(); ++it)
+        {
+            Assert(iter);
+
+            /* A NIC with priority 0 is only used if it's first in the list. */
+            if (it->mBootPrio == 0 && uBootIdx != 0)
+                break;
+
+            achBootIdx[0] = '0' + uBootIdx++;   /* Boot device order. */
+            rc = CFGMR3InsertNode(pNetBootCfg, achBootIdx, &pNetBtDevCfg);      RC_CHECK();
+            rc = CFGMR3InsertInteger(pNetBtDevCfg, "NIC", it->mInstance);       RC_CHECK();
+            rc = CFGMR3InsertInteger(pNetBtDevCfg, "PCIDeviceNo", it->mPciDev); RC_CHECK();
+            rc = CFGMR3InsertInteger(pNetBtDevCfg, "PCIFunctionNo", it->mPciFn);RC_CHECK();
+        }
     }
 
     /*

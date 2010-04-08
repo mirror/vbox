@@ -1372,6 +1372,7 @@ bool NetworkAdapter::operator==(const NetworkAdapter &n) const
                   && (strTraceFile      == n.strTraceFile)
                   && (mode              == n.mode)
                   && (strName           == n.strName)
+                  && (ulBootPriority    == n.ulBootPriority)
                 )
            );
 }
@@ -1819,6 +1820,7 @@ void MachineConfigFile::readNetworkAdapters(const xml::ElementNode &elmNetwork,
         pelmAdapter->getAttributeValue("speed", nic.ulLineSpeed);
         pelmAdapter->getAttributeValue("trace", nic.fTraceEnabled);
         pelmAdapter->getAttributeValue("tracefile", nic.strTraceFile);
+        pelmAdapter->getAttributeValue("bootPriority", nic.ulBootPriority);
 
         const xml::ElementNode *pelmAdapterChild;
         if ((pelmAdapterChild = pelmAdapter->findChildElement("NAT")))
@@ -3287,6 +3289,10 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         pelmAdapter->setAttribute("MACAddress", nic.strMACAddress);
         pelmAdapter->setAttribute("cable", nic.fCableConnected);
         pelmAdapter->setAttribute("speed", nic.ulLineSpeed);
+        if (nic.ulBootPriority != 0)
+        {
+            pelmAdapter->setAttribute("bootPriority", nic.ulBootPriority);
+        }
         if (nic.fTraceEnabled)
         {
             pelmAdapter->setAttribute("trace", nic.fTraceEnabled);

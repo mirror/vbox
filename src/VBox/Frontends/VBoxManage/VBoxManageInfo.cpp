@@ -855,6 +855,10 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 ULONG ulLineSpeed;
                 nic->COMGETTER(LineSpeed)(&ulLineSpeed);
 
+                /* boot priority of the adapter */
+                ULONG ulBootPriority;
+                nic->COMGETTER(BootPriority)(&ulBootPriority);
+
                 if (details == VMINFO_MACHINEREADABLE)
                 {
                     RTPrintf("macaddress%d=\"%lS\"\n", currentNIC + 1, strMACAddress.raw());
@@ -862,13 +866,14 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                     RTPrintf("nic%d=\"%s\"\n", currentNIC + 1, strAttachment.raw());
                 }
                 else
-                    RTPrintf("NIC %d:           MAC: %lS, Attachment: %s, Cable connected: %s, Trace: %s (file: %lS), Type: %s, Reported speed: %d Mbps\n",
+                    RTPrintf("NIC %d:           MAC: %lS, Attachment: %s, Cable connected: %s, Trace: %s (file: %lS), Type: %s, Reported speed: %d Mbps, Boot priority: %d\n",
                              currentNIC + 1, strMACAddress.raw(), strAttachment.raw(),
                              fConnected ? "on" : "off",
                              fTraceEnabled ? "on" : "off",
                              traceFile.isEmpty() ? Bstr("none").raw() : traceFile.raw(),
                              strNICType.raw(),
-                             ulLineSpeed / 1000);
+                             ulLineSpeed / 1000,
+                             (int)ulBootPriority);
             }
         }
     }
