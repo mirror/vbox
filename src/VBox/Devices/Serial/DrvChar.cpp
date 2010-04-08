@@ -80,6 +80,7 @@ typedef struct DRVCHAR
     uint8_t                     aSendQueue[CHAR_MAX_SEND_QUEUE];
     uint32_t volatile           iSendQueueHead;
     uint32_t                    iSendQueueTail;
+    uint32_t                    cEntries;
 
     uintptr_t                   AlignmentPadding;
     /** Read/write statistics */
@@ -117,15 +118,18 @@ static DECLCALLBACK(int) drvCharWrite(PPDMICHARCONNECTOR pInterface, const void 
 
     LogFlow(("%s: pvBuf=%#p cbWrite=%d\n", __FUNCTION__, pvBuf, cbWrite));
 
-    for (uint32_t i=0;i<cbWrite;i++)
+    for (uint32_t i=0; i<cbWrite; i++)
     {
-        uint32_t idx = pThis->iSendQueueHead;
+        uint32_t iOld = pThis->iSendQueueHead;
+        uint32_t iNew = (iOld + 1) & CHAR_MAX_SEND_QUEUE_MASK;
 
-        pThis->aSendQueue[idx] = pBuffer[i];
-        idx = (idx + 1) & CHAR_MAX_SEND_QUEUE_MASK;
+        pThis->aSendQueue[iOld] = pBuffer[i];
 
         STAM_COUNTER_INC(&pThis->StatBytesWritten);
-        ASMAtomicXchgU32(&pThis->iSendQueueHead, idx);
+        ASMAtomicXchgU32(&pThis->iSendQueueHead, iNew);
+        ASMAtomicIncU32(&pThis->cEntries);
+        if (pThis->cEntries > CHAR_MAX_SEND_QUEUE_MASK / 2)
+            pThis->pDrvCharPort->pfnNotifyBufferFull(pThis->pDrvCharPort, true);
     }
     RTSemEventSignal(pThis->SendSem);
     return VINF_SUCCESS;
@@ -173,11 +177,13 @@ static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD ThreadSelf, void *pvUser)
             size_t cbProcessed = 1;
 
             rc = pThis->pDrvStream->pfnWrite(pThis->pDrvStream, &pThis->aSendQueue[pThis->iSendQueueTail], &cbProcessed);
+            pThis->pDrvCharPort->pfnNotifyBufferFull(pThis->pDrvCharPort, false);
             if (RT_SUCCESS(rc))
             {
                 Assert(cbProcessed);
                 pThis->iSendQueueTail++;
                 pThis->iSendQueueTail &= CHAR_MAX_SEND_QUEUE_MASK;
+                ASMAtomicDecU32(&pThis->cEntries);
             }
             else if (rc == VERR_TIMEOUT)
             {
