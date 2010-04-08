@@ -147,6 +147,47 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
     const unsigned  iPDSrc = 0;
 #  endif /* !PGM_WITH_PAGING */
 
+# if !defined(PGM_WITHOUT_MAPPINGS) && ((PGM_GST_TYPE == PGM_TYPE_32BIT) || (PGM_GST_TYPE == PGM_TYPE_PAE))
+    /*
+     * Check for write conflicts with our hypervisor mapping early on. If the guest happens to access a non-present page,
+     * where our hypervisor is currently mapped, then we'll create a #PF storm in the guest.
+     */
+    if ((uErr & (X86_TRAP_PF_P | X86_TRAP_PF_RW)) == (X86_TRAP_PF_P | X86_TRAP_PF_RW))
+    {
+        pgmLock(pVM);
+#  if PGM_SHW_TYPE == PGM_TYPE_32BIT
+        const unsigned  iPDDst = pvFault >> SHW_PD_SHIFT;
+        PX86PD          pPDDst = pgmShwGet32BitPDPtr(&pVCpu->pgm.s);
+#  else /* PGM_SHW_TYPE == PGM_TYPE_PAE */
+        const unsigned  iPDDst = (pvFault >> SHW_PD_SHIFT) & SHW_PD_MASK;   /* pPDDst index, not used with the pool. */
+
+        PX86PDPAE       pPDDst;
+#   if PGM_GST_TYPE != PGM_TYPE_PAE
+        X86PDPE         PdpeSrc;
+
+        /* Fake PDPT entry; access control handled on the page table level, so allow everything. */
+        PdpeSrc.u  = X86_PDPE_P;   /* rw/us are reserved for PAE pdpte's; accessed bit causes invalid VT-x guest state errors */
+#   endif
+        int rc = pgmShwSyncPaePDPtr(pVCpu, pvFault, &PdpeSrc, &pPDDst);
+        if (rc != VINF_SUCCESS)
+        {
+            pgmUnlock(pVM);
+            AssertRC(rc);
+            return rc;
+        }
+        Assert(pPDDst);
+#  endif
+        if (pPDDst->a[iPDDst].u & PGM_PDFLAGS_MAPPING)
+        {
+            pgmUnlock(pVM);
+            /* Force a CR3 sync to check for conflicts and emulate the instruction. */
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+            return VINF_EM_RAW_EMULATE_INSTR;
+        }
+        pgmUnlock(pVM);
+    }
+# endif
+
     /* First check for a genuine guest page fault. */
 #  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
     STAM_PROFILE_START(&pVCpu->pgm.s.StatRZTrap0eTimeCheckPageFault, e);
