@@ -32,8 +32,8 @@ pam_vbox_DEFS     = LOG_TO_BACKDOOR VBOX_WITH_HGCM
 ifdef VBOX_GCC_fvisibility-hidden
  pam_vbox_CXXFLAGS = -fvisibility=default
 endif
-pam_vbox_SOURCES.linux = pam_vbox.cpp
-pam_vbox_LIBS.linux = \
+pam_vbox_SOURCES = pam_vbox.cpp
+pam_vbox_LIBS = \
 	pam \
 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
 	$(VBOX_LIB_VBGL_R3_SHARED) \
