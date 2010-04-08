@@ -11580,7 +11580,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="INetworkAdapter" extends="$unknown"
-     uuid="65607a27-2b73-4d43-b4cc-0ba2c817fbde"
+     uuid="5bdb9df8-a5e1-4322-a139-b7a4a734c790"
      wsmap="managed"
      >
     <desc>
@@ -11679,6 +11679,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Points to the NAT engine which handles the network address translation
         for this interface. This is active only when the interface actually uses
         NAT (see <link to="#attachToNAT" />).
+      </desc>
+    </attribute>
+
+    <attribute name="bootPriority" type="unsigned long">
+      <desc>
+        Network boot priority of the adapter. Priority 1 is highest. If not set,
+        the priority is considered to be at the lowest possible setting.
       </desc>
     </attribute>
 

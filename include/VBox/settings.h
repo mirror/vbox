@@ -406,7 +406,8 @@ struct NetworkAdapter
           fCableConnected(false),
           ulLineSpeed(0),
           fTraceEnabled(false),
-          mode(NetworkAttachmentType_Null)
+          mode(NetworkAttachmentType_Null),
+          ulBootPriority(0)
     {}
 
     bool operator==(const NetworkAdapter &n) const;
@@ -426,6 +427,7 @@ struct NetworkAdapter
     com::Utf8Str            strName;            // NAT has own attribute
                                                 // with bridged: host interface or empty;
                                                 // otherwise: network name (required)
+    uint32_t                ulBootPriority;
 };
 typedef std::list<NetworkAdapter> NetworkAdaptersList;
 

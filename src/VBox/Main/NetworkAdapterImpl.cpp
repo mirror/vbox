@@ -802,6 +802,51 @@ STDMETHODIMP NetworkAdapter::COMGETTER(NatDriver) (INATEngine **aNatDriver)
     return S_OK;
 }
 
+STDMETHODIMP NetworkAdapter::COMGETTER(BootPriority) (ULONG *aBootPriority)
+{
+    CheckComArgOutPointerValid(aBootPriority);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aBootPriority = mData->mBootPriority;
+
+    return S_OK;
+}
+
+STDMETHODIMP NetworkAdapter::COMSETTER(BootPriority) (ULONG aBootPriority)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (aBootPriority != mData->mBootPriority)
+    {
+        mData.backup();
+        mData->mBootPriority = aBootPriority;
+
+        m_fModified = true;
+        // leave the lock before informing callbacks
+        alock.release();
+
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
+
+        /* No change in CFGM logic => changeAdapter=FALSE. */
+        mParent->onNetworkAdapterChange(this, FALSE);
+    }
+
+    return S_OK;
+}
+
 // INetworkAdapter methods
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1075,6 +1120,8 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
     /* tracing (defaults to false) */
     mData->mTraceEnabled = data.fTraceEnabled;
     mData->mTraceFile = data.strTraceFile;
+    /* boot priority (defaults to 0, i.e. lowest) */
+    mData->mBootPriority = data.ulBootPriority;
 
     switch (data.mode)
     {
@@ -1145,6 +1192,8 @@ HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
     data.fTraceEnabled = !!mData->mTraceEnabled;
 
     data.strTraceFile = mData->mTraceFile;
+
+    data.ulBootPriority = mData->mBootPriority;
 
     data.type = mData->mAdapterType;
 

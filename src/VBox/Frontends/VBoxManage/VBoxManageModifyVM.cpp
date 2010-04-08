@@ -108,6 +108,7 @@ enum
     MODIFYVM_NICTRACE,
     MODIFYVM_NICTYPE,
     MODIFYVM_NICSPEED,
+    MODIFYVM_NICBOOTPRIO,
     MODIFYVM_NIC,
     MODIFYVM_CABLECONNECTED,
     MODIFYVM_BRIDGEADAPTER,
@@ -212,6 +213,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--nictrace",                 MODIFYVM_NICTRACE,                  RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
     { "--nictype",                  MODIFYVM_NICTYPE,                   RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--nicspeed",                 MODIFYVM_NICSPEED,                  RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
+    { "--nicbootprio",              MODIFYVM_NICBOOTPRIO,               RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
     { "--nic",                      MODIFYVM_NIC,                       RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--cableconnected",           MODIFYVM_CABLECONNECTED,            RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
     { "--bridgeadapter",            MODIFYVM_BRIDGEADAPTER,             RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
@@ -1120,6 +1122,29 @@ int handleModifyVM(HandlerArg *a)
                 ASSERT(nic);
 
                 CHECK_ERROR(nic, COMSETTER(LineSpeed)(ValueUnion.u32));
+                break;
+            }
+
+            case MODIFYVM_NICBOOTPRIO:
+            {
+                ComPtr<INetworkAdapter> nic;
+    
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
+                ASSERT(nic);
+
+                /* Somewhat arbitrary limitation - we can pass a list of up to 4 PCI devices
+                 * to the PXE ROM, hence only boot priorities 1-4 are allowed (in addition to
+                 * 0 for the default lowest priority).
+                 */
+                if (ValueUnion.u32 > 4)
+                {
+                    errorArgument("Invalid boot priority '%u' specfied for NIC %u", ValueUnion.u32, GetOptState.uIndex);
+                    rc = E_FAIL;
+                }
+                else
+                {
+                    CHECK_ERROR(nic, COMSETTER(BootPriority)(ValueUnion.u32));
+                }
                 break;
             }
 

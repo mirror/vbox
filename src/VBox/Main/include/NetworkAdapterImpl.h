@@ -63,6 +63,7 @@ public:
         Bstr mHostInterface;
         Bstr mInternalNetwork;
         Bstr mNATNetwork;
+        ULONG mBootPriority;
     };
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (NetworkAdapter)
@@ -112,6 +113,8 @@ public:
     STDMETHOD(COMGETTER(TraceFile)) (BSTR *aTraceFile);
     STDMETHOD(COMSETTER(TraceFile)) (IN_BSTR aTraceFile);
     STDMETHOD(COMGETTER(NatDriver)) (INATEngine **aNatDriver);
+    STDMETHOD(COMGETTER(BootPriority)) (ULONG *aBootPriority);
+    STDMETHOD(COMSETTER(BootPriority)) (ULONG aBootPriority);
 
     // INetworkAdapter methods
     STDMETHOD(AttachToNAT)();
