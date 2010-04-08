@@ -662,7 +662,7 @@ typedef struct INTNETTRUNKFACTORY
 typedef INTNETTRUNKFACTORY *PINTNETTRUNKFACTORY;
 
 /** The UUID for the (current) trunk factory. (case sensitive) */
-#define INTNETTRUNKFACTORY_UUID_STR     "449a2799-7564-464d-b4b2-7a877418fd0c"
+#define INTNETTRUNKFACTORY_UUID_STR     "78ddad1d-6b6a-42da-9053-d9547a2acd9a"
 
 /** @name INTNETTRUNKFACTORY::pfnCreateAndConnect flags.
  * @{ */
