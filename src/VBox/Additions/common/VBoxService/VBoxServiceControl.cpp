@@ -95,8 +95,6 @@ static DECLCALLBACK(int) VBoxServiceControlInit(void)
 
 static int VBoxServiceControlHandleCmdExec(uint32_t u32ClientId, uint32_t uNumParms)
 {
-    VBoxServiceVerbose(3, "VBoxServiceControlHandleCmdExec: Called uNumParms=%ld\n", uNumParms);
-
     VBOXSERVICECTRLPROCDATA execData;
     execData.cbEnv = sizeof(execData.szEnv);
 
@@ -155,6 +153,9 @@ static int VBoxServiceControlHandleCmdExec(uint32_t u32ClientId, uint32_t uNumPa
             {
                 /* Do the actual execution. */
                 rc = VBoxServiceControlExecProcess(&execData, ppaArg, ppaEnv);
+                if (RT_FAILURE(rc))
+                    VBoxServiceVerbose(3, "Control: Could not execute process \"%s\"! Error: %Rrc\n", 
+                                       execData.szCmd, rc);
                 /* Cleanup. */
                 if (execData.uNumEnvVars)
                 {
@@ -192,6 +193,11 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
         uint32_t uMsg;
         uint32_t uNumParms;
         rc = VbglR3GuestCtrlGetHostMsg(g_GuestControlSvcClientID, &uMsg, &uNumParms);
+        if (rc == VERR_TOO_MUCH_DATA)
+        {
+            VBoxServiceVerbose(3, "Control: Message requires %ld parameters, but only 2 supplied.\n", uNumParms);
+            rc = VINF_SUCCESS;
+        }
         if (RT_SUCCESS(rc))
         {
             switch(uMsg)
@@ -201,7 +207,7 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
                     break;
 
                 default:
-                    VBoxServiceVerbose(3, "VBoxServiceControlWorker: Unsupported message from host! Msg=%ld\n", uMsg);
+                    VBoxServiceVerbose(3, "Control: Unsupported message from host! Msg=%ld\n", uMsg);
                     /* Don't terminate here; just wait for the next message. */
                     break;
             }
@@ -220,7 +226,7 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
             break;
         if (rc2 != VERR_TIMEOUT && RT_FAILURE(rc2))
         {
-            VBoxServiceError("VBoxServiceControlWorker: RTSemEventMultiWait failed; rc2=%Rrc\n", rc2);
+            VBoxServiceError("Control: RTSemEventMultiWait failed; rc2=%Rrc\n", rc2);
             rc = rc2;
             break;
         }
