@@ -34,6 +34,7 @@ class VirtualSystemDescription;
 namespace ovf
 {
     struct HardDiskController;
+    struct VirtualSystem;
     class OVFReader;
 }
 
@@ -145,6 +146,14 @@ private:
     HRESULT importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
 
     HRESULT importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &aProgress);
+    struct ImportStack;
+    void importVBoxMachine(const settings::MachineConfigFile &config,
+                           ComPtr<IMachine> &pNewMachine,
+                           ImportStack &stack);
+    void importMachineGeneric(const ovf::VirtualSystem &vsysThis,
+                              ComObjPtr<VirtualSystemDescription> &vsdescThis,
+                              ComPtr<IMachine> &pNewMachine,
+                              ImportStack &stack);
     HRESULT importS3(TaskOVF *pTask);
 
     HRESULT writeImpl(OVFFormat aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);

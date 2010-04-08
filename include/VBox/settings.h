@@ -855,7 +855,7 @@ public:
     void importMachineXML(const xml::ElementNode &elmMachine);
 
     void write(const com::Utf8Str &strFilename);
-    void buildMachineXML(xml::ElementNode &elmMachine);
+    void buildMachineXML(xml::ElementNode &elmMachine, bool fIncludeSnapshots);
 
 private:
     void readNetworkAdapters(const xml::ElementNode &elmHardware, NetworkAdaptersList &ll);

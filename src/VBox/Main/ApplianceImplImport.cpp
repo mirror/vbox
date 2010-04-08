@@ -951,6 +951,38 @@ HRESULT Appliance::importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> 
 }
 
 /**
+ * Used by Appliance::importMachineGeneric() to store
+ * input parameters and rollback information.
+ */
+struct Appliance::ImportStack
+{
+    // input pointers
+    const LocationInfo          &locInfo;           // ptr to location info from Appliance::importFS()
+    const ovf::DiskImagesMap    &mapDisks;          // ptr to disks map in OVF
+    ComObjPtr<Progress>         &pProgress;         // progress object passed into Appliance::importFS()
+
+    // session (not initially created)
+    ComPtr<ISession>            pSession;           // session opened in Appliance::importFS() for machine manipulation
+    bool                        fSessionOpen;       // true if the pSession is currently open and needs closing
+
+    // a list of images that we created/imported; this is initially empty
+    // and will be cleaned up on errors
+    list<MyHardDiskAttachment>  llHardDiskAttachments;      // disks that were attached
+    list< ComPtr<IMedium> >     llHardDisksCreated;         // media that were created
+    list<Bstr>                  llMachinesRegistered;       // machines that were registered; list of string UUIDs
+
+    ImportStack(const LocationInfo &aLocInfo,
+                const ovf::DiskImagesMap &aMapDisks,
+                ComObjPtr<Progress> &aProgress)
+        : locInfo(aLocInfo),
+          mapDisks(aMapDisks),
+          pProgress(aProgress),
+          fSessionOpen(false)
+    {
+    }
+};
+
+/**
  * Actual worker code for importing OVF data into VirtualBox. This is called from Appliance::taskThreadImportOrExport()
  * and therefore runs on the OVF import worker thread. This runs in two contexts:
  *
@@ -962,7 +994,8 @@ HRESULT Appliance::importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> 
  * @param pTask
  * @return
  */
-HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pProgress)
+HRESULT Appliance::importFS(const LocationInfo &locInfo,
+                            ComObjPtr<Progress> &pProgress)
 {
     LogFlowFuncEnter();
     LogFlowFunc(("Appliance %p\n", this));
@@ -975,6 +1008,8 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pP
     if (!isApplianceIdle())
         return E_ACCESSDENIED;
 
+    Assert(!pProgress.isNull());
+
     // Change the appliance state so we can safely leave the lock while doing time-consuming
     // disk imports; also the below method calls do all kinds of locking which conflicts with
     // the appliance object lock
@@ -983,22 +1018,13 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pP
 
     HRESULT rc = S_OK;
 
-    // rollback for errors:
-    // a list of images that we created/imported
-    list<MyHardDiskAttachment> llHardDiskAttachments;
-    list< ComPtr<IMedium> > llHardDisksCreated;
-    list<Bstr> llMachinesRegistered;            // list of string UUIDs
-
-    ComPtr<ISession> session;
-    bool fSessionOpen = false;
-    rc = session.createInprocObject(CLSID_Session);
-    if (FAILED(rc)) return rc;
-
     const ovf::OVFReader &reader = *m->pReader;
     // this is safe to access because this thread only gets started
     // if pReader != NULL
 
-    /* If an manifest file exists, verify the content. Therefore we need all
+    // rollback for errors:
+    ImportStack stack(locInfo, reader.m_mapDisks, pProgress);
+    /* If a manifest file exists, verify the content. Therefore we need all
      * files which are referenced by the OVF & the OVF itself */
     Utf8Str strMfFile = manifestFileName(locInfo.strPath);
     list<Utf8Str> filesList;
@@ -1064,12 +1090,15 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pP
         if (FAILED(rc)) return rc;
     }
 
+    rc = stack.pSession.createInprocObject(CLSID_Session);
+    if (FAILED(rc)) return rc;
+
     list<ovf::VirtualSystem>::const_iterator it;
     list< ComObjPtr<VirtualSystemDescription> >::const_iterator it1;
     /* Iterate through all virtual systems of that appliance */
     size_t i = 0;
     for (it = reader.m_llVirtualSystems.begin(),
-         it1 = m->virtualSystemDescriptions.begin();
+            it1 = m->virtualSystemDescriptions.begin();
          it != reader.m_llVirtualSystems.end();
          ++it, ++it1, ++i)
     {
@@ -1081,639 +1110,19 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pP
         /* Catch possible errors */
         try
         {
-            // there are two ways in which we can create
+            // there are two ways in which we can create a vbox machine from OVF:
+            // -- either this OVF was written by vbox 3.2 or later, in which case there is a <vbox:Machine> element
+            //    in the <VirtualSystem>; then the VirtualSystemDescription::Data has a settings::MachineConfigFile
+            //    with all the machine config pretty-parsed;
+            // -- or this is an OVF from an older vbox or an external source, and then we need to translate the
+            //    VirtualSystemDescriptionEntry and do import work
 
-            /* Guest OS type */
-            std::list<VirtualSystemDescriptionEntry*> vsdeOS;
-            vsdeOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
-            if (vsdeOS.size() < 1)
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Missing guest OS type"));
-            const Utf8Str &strOsTypeVBox = vsdeOS.front()->strVbox;
+            // @todo r=dj make this selection configurable at run-time, and from the GUI as well
 
-            /* Now that we know the base system get our internal defaults based on that. */
-            ComPtr<IGuestOSType> osType;
-            rc = mVirtualBox->GetGuestOSType(Bstr(strOsTypeVBox), osType.asOutParam());
-            if (FAILED(rc)) throw rc;
-
-            /* Create the machine */
-            /* First get the name */
-            std::list<VirtualSystemDescriptionEntry*> vsdeName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
-            if (vsdeName.size() < 1)
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Missing VM name"));
-            const Utf8Str &strNameVBox = vsdeName.front()->strVbox;
-            rc = mVirtualBox->CreateMachine(Bstr(strNameVBox),
-                                            Bstr(strOsTypeVBox),
-                                            NULL,
-                                            NULL,
-                                            FALSE,
-                                            pNewMachine.asOutParam());
-            if (FAILED(rc)) throw rc;
-
-            // and the description
-            std::list<VirtualSystemDescriptionEntry*> vsdeDescription = vsdescThis->findByType(VirtualSystemDescriptionType_Description);
-            if (vsdeDescription.size())
-            {
-                const Utf8Str &strDescription = vsdeDescription.front()->strVbox;
-                rc = pNewMachine->COMSETTER(Description)(Bstr(strDescription));
-                if (FAILED(rc)) throw rc;
-            }
-
-            /* CPU count */
-            std::list<VirtualSystemDescriptionEntry*> vsdeCPU = vsdescThis->findByType(VirtualSystemDescriptionType_CPU);
-            ComAssertMsgThrow(vsdeCPU.size() == 1, ("CPU count missing"), E_FAIL);
-            const Utf8Str &cpuVBox = vsdeCPU.front()->strVbox;
-            ULONG tmpCount = (ULONG)RTStrToUInt64(cpuVBox.c_str());
-            rc = pNewMachine->COMSETTER(CPUCount)(tmpCount);
-            if (FAILED(rc)) throw rc;
-            bool fEnableIOApic = false;
-            /* We need HWVirt & IO-APIC if more than one CPU is requested */
-            if (tmpCount > 1)
-            {
-                rc = pNewMachine->SetHWVirtExProperty(HWVirtExPropertyType_Enabled, TRUE);
-                if (FAILED(rc)) throw rc;
-
-                fEnableIOApic = true;
-            }
-
-            /* RAM */
-            std::list<VirtualSystemDescriptionEntry*> vsdeRAM = vsdescThis->findByType(VirtualSystemDescriptionType_Memory);
-            ComAssertMsgThrow(vsdeRAM.size() == 1, ("RAM size missing"), E_FAIL);
-            const Utf8Str &memoryVBox = vsdeRAM.front()->strVbox;
-            ULONG tt = (ULONG)RTStrToUInt64(memoryVBox.c_str());
-            rc = pNewMachine->COMSETTER(MemorySize)(tt);
-            if (FAILED(rc)) throw rc;
-
-            /* VRAM */
-            /* Get the recommended VRAM for this guest OS type */
-            ULONG vramVBox;
-            rc = osType->COMGETTER(RecommendedVRAM)(&vramVBox);
-            if (FAILED(rc)) throw rc;
-
-            /* Set the VRAM */
-            rc = pNewMachine->COMSETTER(VRAMSize)(vramVBox);
-            if (FAILED(rc)) throw rc;
-
-            /* I/O APIC: so far we have no setting for this. Enable it if we
-              import a Windows VM because if if Windows was installed without IOAPIC,
-              it will not mind finding an one later on, but if Windows was installed
-              _with_ an IOAPIC, it will bluescreen if it's not found */
-            Bstr bstrFamilyId;
-            rc = osType->COMGETTER(FamilyId)(bstrFamilyId.asOutParam());
-            if (FAILED(rc)) throw rc;
-
-            Utf8Str strFamilyId(bstrFamilyId);
-            if (strFamilyId == "Windows")
-                fEnableIOApic = true;
-
-            /* If IP-APIC should be enabled could be have different reasons.
-               See CPU count & the Win test above. Here we enable it if it was
-               previously requested. */
-            if (fEnableIOApic)
-            {
-                ComPtr<IBIOSSettings> pBIOSSettings;
-                rc = pNewMachine->COMGETTER(BIOSSettings)(pBIOSSettings.asOutParam());
-                if (FAILED(rc)) throw rc;
-
-                rc = pBIOSSettings->COMSETTER(IOAPICEnabled)(TRUE);
-                if (FAILED(rc)) throw rc;
-            }
-
-            /* Audio Adapter */
-            std::list<VirtualSystemDescriptionEntry*> vsdeAudioAdapter = vsdescThis->findByType(VirtualSystemDescriptionType_SoundCard);
-            /* @todo: we support one audio adapter only */
-            if (vsdeAudioAdapter.size() > 0)
-            {
-                const Utf8Str& audioAdapterVBox = vsdeAudioAdapter.front()->strVbox;
-                if (audioAdapterVBox.compare("null", Utf8Str::CaseInsensitive) != 0)
-                {
-                    uint32_t audio = RTStrToUInt32(audioAdapterVBox.c_str());
-                    ComPtr<IAudioAdapter> audioAdapter;
-                    rc = pNewMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
-                    if (FAILED(rc)) throw rc;
-                    rc = audioAdapter->COMSETTER(Enabled)(true);
-                    if (FAILED(rc)) throw rc;
-                    rc = audioAdapter->COMSETTER(AudioController)(static_cast<AudioControllerType_T>(audio));
-                    if (FAILED(rc)) throw rc;
-                }
-            }
-
-#ifdef VBOX_WITH_USB
-            /* USB Controller */
-            std::list<VirtualSystemDescriptionEntry*> vsdeUSBController = vsdescThis->findByType(VirtualSystemDescriptionType_USBController);
-            // USB support is enabled if there's at least one such entry; to disable USB support,
-            // the type of the USB item would have been changed to "ignore"
-            bool fUSBEnabled = vsdeUSBController.size() > 0;
-
-            ComPtr<IUSBController> usbController;
-            rc = pNewMachine->COMGETTER(USBController)(usbController.asOutParam());
-            if (FAILED(rc)) throw rc;
-            rc = usbController->COMSETTER(Enabled)(fUSBEnabled);
-            if (FAILED(rc)) throw rc;
-#endif /* VBOX_WITH_USB */
-
-            /* Change the network adapters */
-            std::list<VirtualSystemDescriptionEntry*> vsdeNW = vsdescThis->findByType(VirtualSystemDescriptionType_NetworkAdapter);
-            if (vsdeNW.size() == 0)
-            {
-                /* No network adapters, so we have to disable our default one */
-                ComPtr<INetworkAdapter> nwVBox;
-                rc = pNewMachine->GetNetworkAdapter(0, nwVBox.asOutParam());
-                if (FAILED(rc)) throw rc;
-                rc = nwVBox->COMSETTER(Enabled)(false);
-                if (FAILED(rc)) throw rc;
-            }
+            if (vsdescThis->m->pConfig)
+                importVBoxMachine(*vsdescThis->m->pConfig, pNewMachine, stack);
             else
-            {
-                list<VirtualSystemDescriptionEntry*>::const_iterator nwIt;
-                /* Iterate through all network cards. We support 8 network adapters
-                 * at the maximum. (@todo: warn if there are more!) */
-                size_t a = 0;
-                for (nwIt = vsdeNW.begin();
-                     (nwIt != vsdeNW.end() && a < SchemaDefs::NetworkAdapterCount);
-                     ++nwIt, ++a)
-                {
-                    const VirtualSystemDescriptionEntry* pvsys = *nwIt;
-
-                    const Utf8Str &nwTypeVBox = pvsys->strVbox;
-                    uint32_t tt1 = RTStrToUInt32(nwTypeVBox.c_str());
-                    ComPtr<INetworkAdapter> pNetworkAdapter;
-                    rc = pNewMachine->GetNetworkAdapter((ULONG)a, pNetworkAdapter.asOutParam());
-                    if (FAILED(rc)) throw rc;
-                    /* Enable the network card & set the adapter type */
-                    rc = pNetworkAdapter->COMSETTER(Enabled)(true);
-                    if (FAILED(rc)) throw rc;
-                    rc = pNetworkAdapter->COMSETTER(AdapterType)(static_cast<NetworkAdapterType_T>(tt1));
-                    if (FAILED(rc)) throw rc;
-
-                    // default is NAT; change to "bridged" if extra conf says so
-                    if (!pvsys->strExtraConfig.compare("type=Bridged", Utf8Str::CaseInsensitive))
-                    {
-                        /* Attach to the right interface */
-                        rc = pNetworkAdapter->AttachToBridgedInterface();
-                        if (FAILED(rc)) throw rc;
-                        ComPtr<IHost> host;
-                        rc = mVirtualBox->COMGETTER(Host)(host.asOutParam());
-                        if (FAILED(rc)) throw rc;
-                        com::SafeIfaceArray<IHostNetworkInterface> nwInterfaces;
-                        rc = host->COMGETTER(NetworkInterfaces)(ComSafeArrayAsOutParam(nwInterfaces));
-                        if (FAILED(rc)) throw rc;
-                        /* We search for the first host network interface which
-                         * is usable for bridged networking */
-                        for (size_t j = 0;
-                             j < nwInterfaces.size();
-                             ++j)
-                        {
-                            HostNetworkInterfaceType_T itype;
-                            rc = nwInterfaces[j]->COMGETTER(InterfaceType)(&itype);
-                            if (FAILED(rc)) throw rc;
-                            if (itype == HostNetworkInterfaceType_Bridged)
-                            {
-                                Bstr name;
-                                rc = nwInterfaces[j]->COMGETTER(Name)(name.asOutParam());
-                                if (FAILED(rc)) throw rc;
-                                /* Set the interface name to attach to */
-                                pNetworkAdapter->COMSETTER(HostInterface)(name);
-                                if (FAILED(rc)) throw rc;
-                                break;
-                            }
-                        }
-                    }
-                    /* Next test for host only interfaces */
-                    else if (!pvsys->strExtraConfig.compare("type=HostOnly", Utf8Str::CaseInsensitive))
-                    {
-                        /* Attach to the right interface */
-                        rc = pNetworkAdapter->AttachToHostOnlyInterface();
-                        if (FAILED(rc)) throw rc;
-                        ComPtr<IHost> host;
-                        rc = mVirtualBox->COMGETTER(Host)(host.asOutParam());
-                        if (FAILED(rc)) throw rc;
-                        com::SafeIfaceArray<IHostNetworkInterface> nwInterfaces;
-                        rc = host->COMGETTER(NetworkInterfaces)(ComSafeArrayAsOutParam(nwInterfaces));
-                        if (FAILED(rc)) throw rc;
-                        /* We search for the first host network interface which
-                         * is usable for host only networking */
-                        for (size_t j = 0;
-                             j < nwInterfaces.size();
-                             ++j)
-                        {
-                            HostNetworkInterfaceType_T itype;
-                            rc = nwInterfaces[j]->COMGETTER(InterfaceType)(&itype);
-                            if (FAILED(rc)) throw rc;
-                            if (itype == HostNetworkInterfaceType_HostOnly)
-                            {
-                                Bstr name;
-                                rc = nwInterfaces[j]->COMGETTER(Name)(name.asOutParam());
-                                if (FAILED(rc)) throw rc;
-                                /* Set the interface name to attach to */
-                                pNetworkAdapter->COMSETTER(HostInterface)(name);
-                                if (FAILED(rc)) throw rc;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            /* Hard disk controller IDE */
-            std::list<VirtualSystemDescriptionEntry*> vsdeHDCIDE = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
-            if (vsdeHDCIDE.size() > 1)
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Too many IDE controllers in OVF; import facility only supports one"));
-            if (vsdeHDCIDE.size() == 1)
-            {
-                ComPtr<IStorageController> pController;
-                rc = pNewMachine->AddStorageController(Bstr("IDE Controller"), StorageBus_IDE, pController.asOutParam());
-                if (FAILED(rc)) throw rc;
-
-                const char *pcszIDEType = vsdeHDCIDE.front()->strVbox.c_str();
-                if (!strcmp(pcszIDEType, "PIIX3"))
-                    rc = pController->COMSETTER(ControllerType)(StorageControllerType_PIIX3);
-                else if (!strcmp(pcszIDEType, "PIIX4"))
-                    rc = pController->COMSETTER(ControllerType)(StorageControllerType_PIIX4);
-                else if (!strcmp(pcszIDEType, "ICH6"))
-                    rc = pController->COMSETTER(ControllerType)(StorageControllerType_ICH6);
-                else
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Invalid IDE controller type \"%s\""),
-                                   pcszIDEType);
-                if (FAILED(rc)) throw rc;
-            }
-#ifdef VBOX_WITH_AHCI
-            /* Hard disk controller SATA */
-            std::list<VirtualSystemDescriptionEntry*> vsdeHDCSATA = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSATA);
-            if (vsdeHDCSATA.size() > 1)
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Too many SATA controllers in OVF; import facility only supports one"));
-            if (vsdeHDCSATA.size() > 0)
-            {
-                ComPtr<IStorageController> pController;
-                const Utf8Str &hdcVBox = vsdeHDCSATA.front()->strVbox;
-                if (hdcVBox == "AHCI")
-                {
-                    rc = pNewMachine->AddStorageController(Bstr("SATA Controller"), StorageBus_SATA, pController.asOutParam());
-                    if (FAILED(rc)) throw rc;
-                }
-                else
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Invalid SATA controller type \"%s\""),
-                                   hdcVBox.c_str());
-            }
-#endif /* VBOX_WITH_AHCI */
-
-#ifdef VBOX_WITH_LSILOGIC
-            /* Hard disk controller SCSI */
-            std::list<VirtualSystemDescriptionEntry*> vsdeHDCSCSI = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
-            if (vsdeHDCSCSI.size() > 1)
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Too many SCSI controllers in OVF; import facility only supports one"));
-            if (vsdeHDCSCSI.size() > 0)
-            {
-                ComPtr<IStorageController> pController;
-                StorageControllerType_T controllerType;
-                const Utf8Str &hdcVBox = vsdeHDCSCSI.front()->strVbox;
-                if (hdcVBox == "LsiLogic")
-                    controllerType = StorageControllerType_LsiLogic;
-                else if (hdcVBox == "BusLogic")
-                    controllerType = StorageControllerType_BusLogic;
-                else
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Invalid SCSI controller type \"%s\""),
-                                   hdcVBox.c_str());
-
-                rc = pNewMachine->AddStorageController(Bstr("SCSI Controller"), StorageBus_SCSI, pController.asOutParam());
-                if (FAILED(rc)) throw rc;
-                rc = pController->COMSETTER(ControllerType)(controllerType);
-                if (FAILED(rc)) throw rc;
-            }
-#endif /* VBOX_WITH_LSILOGIC */
-
-            /* Now its time to register the machine before we add any hard disks */
-            rc = mVirtualBox->RegisterMachine(pNewMachine);
-            if (FAILED(rc)) throw rc;
-
-            Bstr bstrNewMachineId;
-            rc = pNewMachine->COMGETTER(Id)(bstrNewMachineId.asOutParam());
-            if (FAILED(rc)) throw rc;
-
-            // store new machine for roll-back in case of errors
-            llMachinesRegistered.push_back(bstrNewMachineId);
-
-            // Add floppies and CD-ROMs to the appropriate controllers.
-            std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsdescThis->findByType(VirtualSystemDescriptionType_Floppy);
-            if (vsdeFloppy.size() > 1)
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Too many floppy controllers in OVF; import facility only supports one"));
-            std::list<VirtualSystemDescriptionEntry*> vsdeCDROM = vsdescThis->findByType(VirtualSystemDescriptionType_CDROM);
-            if (    (vsdeFloppy.size() > 0)
-                 || (vsdeCDROM.size() > 0)
-               )
-            {
-                // If there's an error here we need to close the session, so
-                // we need another try/catch block.
-
-                try
-                {
-                    /* In order to attach things we need to open a session
-                     * for the new machine */
-                    rc = mVirtualBox->OpenSession(session, bstrNewMachineId);
-                    if (FAILED(rc)) throw rc;
-                    fSessionOpen = true;
-
-                    ComPtr<IMachine> sMachine;
-                    rc = session->COMGETTER(Machine)(sMachine.asOutParam());
-                    if (FAILED(rc)) throw rc;
-
-                    // floppy first
-                    if (vsdeFloppy.size() == 1)
-                    {
-                        ComPtr<IStorageController> pController;
-                        rc = sMachine->AddStorageController(Bstr("Floppy Controller"), StorageBus_Floppy, pController.asOutParam());
-                        if (FAILED(rc)) throw rc;
-
-                        Bstr bstrName;
-                        rc = pController->COMGETTER(Name)(bstrName.asOutParam());
-                        if (FAILED(rc)) throw rc;
-
-                        // this is for rollback later
-                        MyHardDiskAttachment mhda;
-                        mhda.bstrUuid = bstrNewMachineId;
-                        mhda.pMachine = pNewMachine;
-                        mhda.controllerType = bstrName;
-                        mhda.lChannel = 0;
-                        mhda.lDevice = 0;
-
-                        Log(("Attaching floppy\n"));
-
-                        rc = sMachine->AttachDevice(mhda.controllerType,
-                                                    mhda.lChannel,
-                                                    mhda.lDevice,
-                                                    DeviceType_Floppy,
-                                                    NULL);
-                        if (FAILED(rc)) throw rc;
-
-                        llHardDiskAttachments.push_back(mhda);
-                    }
-
-
-                    // CD-ROMs next
-                    for (std::list<VirtualSystemDescriptionEntry*>::const_iterator jt = vsdeCDROM.begin();
-                         jt != vsdeCDROM.end();
-                         ++jt)
-                    {
-                        // for now always attach to secondary master on IDE controller;
-                        // there seems to be no useful information in OVF where else to
-                        // attach jt (@todo test with latest versions of OVF software)
-
-                        // find the IDE controller
-                        const ovf::HardDiskController *pController = NULL;
-                        for (ovf::ControllersMap::const_iterator kt = vsysThis.mapControllers.begin();
-                             kt != vsysThis.mapControllers.end();
-                             ++kt)
-                        {
-                            if (kt->second.system == ovf::HardDiskController::IDE)
-                            {
-                                pController = &kt->second;
-                            }
-                        }
-
-                        if (!pController)
-                            throw setError(VBOX_E_FILE_ERROR,
-                                           tr("OVF wants a CD-ROM drive but cannot find IDE controller, which is required in this version of VirtualBox"));
-
-                        // this is for rollback later
-                        MyHardDiskAttachment mhda;
-                        mhda.bstrUuid = bstrNewMachineId;
-                        mhda.pMachine = pNewMachine;
-
-                        convertDiskAttachmentValues(*pController,
-                                                    2,     // interpreted as secondary master
-                                                    mhda.controllerType,        // Bstr
-                                                    mhda.lChannel,
-                                                    mhda.lDevice);
-
-                        Log(("Attaching CD-ROM to channel %d on device %d\n", mhda.lChannel, mhda.lDevice));
-
-                        rc = sMachine->AttachDevice(mhda.controllerType,
-                                                    mhda.lChannel,
-                                                    mhda.lDevice,
-                                                    DeviceType_DVD,
-                                                    NULL);
-                        if (FAILED(rc)) throw rc;
-
-                        llHardDiskAttachments.push_back(mhda);
-                    } // end for (itHD = avsdeHDs.begin();
-
-                    rc = sMachine->SaveSettings();
-                    if (FAILED(rc)) throw rc;
-
-                    // only now that we're done with all disks, close the session
-                    rc = session->Close();
-                    if (FAILED(rc)) throw rc;
-                    fSessionOpen = false;
-                }
-                catch(HRESULT /* aRC */)
-                {
-                    if (fSessionOpen)
-                        session->Close();
-
-                    throw;
-                }
-            }
-
-            /* Create the hard disks & connect them to the appropriate controllers. */
-            std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
-            if (avsdeHDs.size() > 0)
-            {
-                // If there's an error here we need to close the session, so
-                // we need another try/catch block.
-                ComPtr<IMedium> srcHdVBox;
-                bool fSourceHdNeedsClosing = false;
-
-                try
-                {
-                    /* In order to attach hard disks we need to open a session
-                     * for the new machine */
-                    rc = mVirtualBox->OpenSession(session, bstrNewMachineId);
-                    if (FAILED(rc)) throw rc;
-                    fSessionOpen = true;
-
-                    /* The disk image has to be on the same place as the OVF file. So
-                     * strip the filename out of the full file path. */
-                    Utf8Str strSrcDir(locInfo.strPath);
-                    strSrcDir.stripFilename();
-
-                    /* Iterate over all given disk images */
-                    list<VirtualSystemDescriptionEntry*>::const_iterator itHD;
-                    for (itHD = avsdeHDs.begin();
-                         itHD != avsdeHDs.end();
-                         ++itHD)
-                    {
-                        VirtualSystemDescriptionEntry *vsdeHD = *itHD;
-
-                        /* Check if the destination file exists already or the
-                         * destination path is empty. */
-                        if (    vsdeHD->strVbox.isEmpty()
-                             || RTPathExists(vsdeHD->strVbox.c_str())
-                           )
-                            /* This isn't allowed */
-                            throw setError(VBOX_E_FILE_ERROR,
-                                           tr("Destination file '%s' exists",
-                                              vsdeHD->strVbox.c_str()));
-
-                        /* Find the disk from the OVF's disk list */
-                        ovf::DiskImagesMap::const_iterator itDiskImage = reader.m_mapDisks.find(vsdeHD->strRef);
-                        /* vsdeHD->strRef contains the disk identifier (e.g. "vmdisk1"), which should exist
-                           in the virtual system's disks map under that ID and also in the global images map. */
-                        ovf::VirtualDisksMap::const_iterator itVirtualDisk = vsysThis.mapVirtualDisks.find(vsdeHD->strRef);
-
-                        if (    itDiskImage == reader.m_mapDisks.end()
-                             || itVirtualDisk == vsysThis.mapVirtualDisks.end()
-                           )
-                            throw setError(E_FAIL,
-                                           tr("Internal inconsistency looking up disk images."));
-
-                        const ovf::DiskImage &di = itDiskImage->second;
-                        const ovf::VirtualDisk &vd = itVirtualDisk->second;
-
-                        /* Make sure all target directories exists */
-                        rc = VirtualBox::ensureFilePathExists(vsdeHD->strVbox.c_str());
-                        if (FAILED(rc))
-                            throw rc;
-
-                        // subprogress object for hard disk
-                        ComPtr<IProgress> pProgress2;
-
-                        ComPtr<IMedium> dstHdVBox;
-                        /* If strHref is empty we have to create a new file */
-                        if (di.strHref.isEmpty())
-                        {
-                            /* Which format to use? */
-                            Bstr srcFormat = L"VDI";
-                            if (   di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#sparse", Utf8Str::CaseInsensitive)
-                                || di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive))
-                                srcFormat = L"VMDK";
-                            /* Create an empty hard disk */
-                            rc = mVirtualBox->CreateHardDisk(srcFormat, Bstr(vsdeHD->strVbox), dstHdVBox.asOutParam());
-                            if (FAILED(rc)) throw rc;
-
-                            /* Create a dynamic growing disk image with the given capacity */
-                            rc = dstHdVBox->CreateBaseStorage(di.iCapacity / _1M, MediumVariant_Standard, pProgress2.asOutParam());
-                            if (FAILED(rc)) throw rc;
-
-                            /* Advance to the next operation */
-                            if (!pProgress.isNull())
-                                pProgress->SetNextOperation(BstrFmt(tr("Creating virtual disk image '%s'"), vsdeHD->strVbox.c_str()),
-                                                            vsdeHD->ulSizeMB);     // operation's weight, as set up with the IProgress originally
-                        }
-                        else
-                        {
-                            /* Construct the source file path */
-                            Utf8StrFmt strSrcFilePath("%s%c%s", strSrcDir.c_str(), RTPATH_DELIMITER, di.strHref.c_str());
-                            /* Check if the source file exists */
-                            if (!RTPathExists(strSrcFilePath.c_str()))
-                                /* This isn't allowed */
-                                throw setError(VBOX_E_FILE_ERROR,
-                                               tr("Source virtual disk image file '%s' doesn't exist"),
-                                                  strSrcFilePath.c_str());
-
-                            /* Clone the disk image (this is necessary cause the id has
-                             * to be recreated for the case the same hard disk is
-                             * attached already from a previous import) */
-
-                            /* First open the existing disk image */
-                            rc = mVirtualBox->OpenHardDisk(Bstr(strSrcFilePath),
-                                                           AccessMode_ReadOnly,
-                                                           false,
-                                                           NULL,
-                                                           false,
-                                                           NULL,
-                                                           srcHdVBox.asOutParam());
-                            if (FAILED(rc)) throw rc;
-                            fSourceHdNeedsClosing = true;
-
-                            /* We need the format description of the source disk image */
-                            Bstr srcFormat;
-                            rc = srcHdVBox->COMGETTER(Format)(srcFormat.asOutParam());
-                            if (FAILED(rc)) throw rc;
-                            /* Create a new hard disk interface for the destination disk image */
-                            rc = mVirtualBox->CreateHardDisk(srcFormat, Bstr(vsdeHD->strVbox), dstHdVBox.asOutParam());
-                            if (FAILED(rc)) throw rc;
-                            /* Clone the source disk image */
-                            rc = srcHdVBox->CloneTo(dstHdVBox, MediumVariant_Standard, NULL, pProgress2.asOutParam());
-                            if (FAILED(rc)) throw rc;
-
-                            /* Advance to the next operation */
-                            if (!pProgress.isNull())
-                                pProgress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"), strSrcFilePath.c_str()),
-                                                            vsdeHD->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
-                        }
-
-                        // now wait for the background disk operation to complete; this throws HRESULTs on error
-                        waitForAsyncProgress(pProgress, pProgress2);
-
-                        if (fSourceHdNeedsClosing)
-                        {
-                            rc = srcHdVBox->Close();
-                            if (FAILED(rc)) throw rc;
-                            fSourceHdNeedsClosing = false;
-                        }
-
-                        llHardDisksCreated.push_back(dstHdVBox);
-                        /* Now use the new uuid to attach the disk image to our new machine */
-                        ComPtr<IMachine> sMachine;
-                        rc = session->COMGETTER(Machine)(sMachine.asOutParam());
-                        if (FAILED(rc)) throw rc;
-                        Bstr hdId;
-                        rc = dstHdVBox->COMGETTER(Id)(hdId.asOutParam());
-                        if (FAILED(rc)) throw rc;
-
-                        /* For now we assume we have one controller of every type only */
-                        ovf::HardDiskController hdc = (*vsysThis.mapControllers.find(vd.idController)).second;
-
-                        // this is for rollback later
-                        MyHardDiskAttachment mhda;
-                        mhda.bstrUuid = bstrNewMachineId;
-                        mhda.pMachine = pNewMachine;
-
-                        convertDiskAttachmentValues(hdc,
-                                                    vd.ulAddressOnParent,
-                                                    mhda.controllerType,        // Bstr
-                                                    mhda.lChannel,
-                                                    mhda.lDevice);
-
-                        Log(("Attaching disk %s to channel %d on device %d\n", vsdeHD->strVbox.c_str(), mhda.lChannel, mhda.lDevice));
-
-                        rc = sMachine->AttachDevice(mhda.controllerType,
-                                                    mhda.lChannel,
-                                                    mhda.lDevice,
-                                                    DeviceType_HardDisk,
-                                                    hdId);
-                        if (FAILED(rc)) throw rc;
-
-                        llHardDiskAttachments.push_back(mhda);
-
-                        rc = sMachine->SaveSettings();
-                        if (FAILED(rc)) throw rc;
-                    } // end for (itHD = avsdeHDs.begin();
-
-                    // only now that we're done with all disks, close the session
-                    rc = session->Close();
-                    if (FAILED(rc)) throw rc;
-                    fSessionOpen = false;
-                }
-                catch(HRESULT /* aRC */)
-                {
-                    if (fSourceHdNeedsClosing)
-                        srcHdVBox->Close();
-
-                    if (fSessionOpen)
-                        session->Close();
-
-                    throw;
-                }
-            }
+                importMachineGeneric(vsysThis, vsdescThis, pNewMachine, stack);
         }
         catch(HRESULT aRC)
         {
@@ -1734,30 +1143,30 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pP
         HRESULT rc2;
         // detach all hard disks from all machines we created
         list<MyHardDiskAttachment>::iterator itM;
-        for (itM = llHardDiskAttachments.begin();
-             itM != llHardDiskAttachments.end();
+        for (itM = stack.llHardDiskAttachments.begin();
+             itM != stack.llHardDiskAttachments.end();
              ++itM)
         {
             const MyHardDiskAttachment &mhda = *itM;
             Bstr bstrUuid(mhda.bstrUuid);           // make a copy, Windows can't handle const Bstr
-            rc2 = mVirtualBox->OpenSession(session, bstrUuid);
+            rc2 = mVirtualBox->OpenSession(stack.pSession, bstrUuid);
             if (SUCCEEDED(rc2))
             {
                 ComPtr<IMachine> sMachine;
-                rc2 = session->COMGETTER(Machine)(sMachine.asOutParam());
+                rc2 = stack.pSession->COMGETTER(Machine)(sMachine.asOutParam());
                 if (SUCCEEDED(rc2))
                 {
                     rc2 = sMachine->DetachDevice(Bstr(mhda.controllerType), mhda.lChannel, mhda.lDevice);
                     rc2 = sMachine->SaveSettings();
                 }
-                session->Close();
+                stack.pSession->Close();
             }
         }
 
         // now clean up all hard disks we created
         list< ComPtr<IMedium> >::iterator itHD;
-        for (itHD = llHardDisksCreated.begin();
-             itHD != llHardDisksCreated.end();
+        for (itHD = stack.llHardDisksCreated.begin();
+             itHD != stack.llHardDisksCreated.end();
              ++itHD)
         {
             ComPtr<IMedium> pDisk = *itHD;
@@ -1768,8 +1177,8 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pP
 
         // finally, deregister and remove all machines
         list<Bstr>::iterator itID;
-        for (itID = llMachinesRegistered.begin();
-             itID != llMachinesRegistered.end();
+        for (itID = stack.llMachinesRegistered.begin();
+             itID != stack.llMachinesRegistered.end();
              ++itID)
         {
             Bstr bstrGuid = *itID;      // make a copy, Windows can't handle const Bstr
@@ -1788,6 +1197,674 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pP
     LogFlowFuncLeave();
 
     return rc;
+}
+
+/**
+ * Imports one OVF virtual system (described by the given ovf::VirtualSystem and VirtualSystemDescription)
+ * into VirtualBox by creating an IMachine instance, which is returned.
+ *
+ * This throws HRESULT error codes for anything that goes wrong, in which case the caller must clean
+ * up any leftovers from this function. For this, the given ImportStack instance has received information
+ * about what needs cleaning up (to support rollback).
+ *
+ * @param locInfo
+ * @param vsysThis
+ * @param vsdescThis
+ * @param pNewMachine
+ * @param stack
+ */
+void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
+                                     ComObjPtr<VirtualSystemDescription> &vsdescThis,
+                                     ComPtr<IMachine> &pNewMachine,
+                                     ImportStack &stack)
+{
+    /* Guest OS type */
+    std::list<VirtualSystemDescriptionEntry*> vsdeOS;
+    vsdeOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
+    if (vsdeOS.size() < 1)
+        throw setError(VBOX_E_FILE_ERROR,
+                        tr("Missing guest OS type"));
+    const Utf8Str &strOsTypeVBox = vsdeOS.front()->strVbox;
+
+    /* Now that we know the base system get our internal defaults based on that. */
+    ComPtr<IGuestOSType> osType;
+    HRESULT rc = mVirtualBox->GetGuestOSType(Bstr(strOsTypeVBox), osType.asOutParam());
+    if (FAILED(rc)) throw rc;
+
+    /* Create the machine */
+    /* First get the name */
+    std::list<VirtualSystemDescriptionEntry*> vsdeName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
+    if (vsdeName.size() < 1)
+        throw setError(VBOX_E_FILE_ERROR,
+                        tr("Missing VM name"));
+    const Utf8Str &strNameVBox = vsdeName.front()->strVbox;
+    rc = mVirtualBox->CreateMachine(Bstr(strNameVBox),
+                                    Bstr(strOsTypeVBox),
+                                    NULL,
+                                    NULL,
+                                    FALSE,
+                                    pNewMachine.asOutParam());
+    if (FAILED(rc)) throw rc;
+
+    // and the description
+    std::list<VirtualSystemDescriptionEntry*> vsdeDescription = vsdescThis->findByType(VirtualSystemDescriptionType_Description);
+    if (vsdeDescription.size())
+    {
+        const Utf8Str &strDescription = vsdeDescription.front()->strVbox;
+        rc = pNewMachine->COMSETTER(Description)(Bstr(strDescription));
+        if (FAILED(rc)) throw rc;
+    }
+
+    /* CPU count */
+    std::list<VirtualSystemDescriptionEntry*> vsdeCPU = vsdescThis->findByType(VirtualSystemDescriptionType_CPU);
+    ComAssertMsgThrow(vsdeCPU.size() == 1, ("CPU count missing"), E_FAIL);
+    const Utf8Str &cpuVBox = vsdeCPU.front()->strVbox;
+    ULONG tmpCount = (ULONG)RTStrToUInt64(cpuVBox.c_str());
+    rc = pNewMachine->COMSETTER(CPUCount)(tmpCount);
+    if (FAILED(rc)) throw rc;
+    bool fEnableIOApic = false;
+    /* We need HWVirt & IO-APIC if more than one CPU is requested */
+    if (tmpCount > 1)
+    {
+        rc = pNewMachine->SetHWVirtExProperty(HWVirtExPropertyType_Enabled, TRUE);
+        if (FAILED(rc)) throw rc;
+
+        fEnableIOApic = true;
+    }
+
+    /* RAM */
+    std::list<VirtualSystemDescriptionEntry*> vsdeRAM = vsdescThis->findByType(VirtualSystemDescriptionType_Memory);
+    ComAssertMsgThrow(vsdeRAM.size() == 1, ("RAM size missing"), E_FAIL);
+    const Utf8Str &memoryVBox = vsdeRAM.front()->strVbox;
+    ULONG tt = (ULONG)RTStrToUInt64(memoryVBox.c_str());
+    rc = pNewMachine->COMSETTER(MemorySize)(tt);
+    if (FAILED(rc)) throw rc;
+
+    /* VRAM */
+    /* Get the recommended VRAM for this guest OS type */
+    ULONG vramVBox;
+    rc = osType->COMGETTER(RecommendedVRAM)(&vramVBox);
+    if (FAILED(rc)) throw rc;
+
+    /* Set the VRAM */
+    rc = pNewMachine->COMSETTER(VRAMSize)(vramVBox);
+    if (FAILED(rc)) throw rc;
+
+    /* I/O APIC: so far we have no setting for this. Enable it if we
+        import a Windows VM because if if Windows was installed without IOAPIC,
+        it will not mind finding an one later on, but if Windows was installed
+        _with_ an IOAPIC, it will bluescreen if it's not found */
+    Bstr bstrFamilyId;
+    rc = osType->COMGETTER(FamilyId)(bstrFamilyId.asOutParam());
+    if (FAILED(rc)) throw rc;
+
+    Utf8Str strFamilyId(bstrFamilyId);
+    if (strFamilyId == "Windows")
+        fEnableIOApic = true;
+
+    /* If IP-APIC should be enabled could be have different reasons.
+        See CPU count & the Win test above. Here we enable it if it was
+        previously requested. */
+    if (fEnableIOApic)
+    {
+        ComPtr<IBIOSSettings> pBIOSSettings;
+        rc = pNewMachine->COMGETTER(BIOSSettings)(pBIOSSettings.asOutParam());
+        if (FAILED(rc)) throw rc;
+
+        rc = pBIOSSettings->COMSETTER(IOAPICEnabled)(TRUE);
+        if (FAILED(rc)) throw rc;
+    }
+
+    /* Audio Adapter */
+    std::list<VirtualSystemDescriptionEntry*> vsdeAudioAdapter = vsdescThis->findByType(VirtualSystemDescriptionType_SoundCard);
+    /* @todo: we support one audio adapter only */
+    if (vsdeAudioAdapter.size() > 0)
+    {
+        const Utf8Str& audioAdapterVBox = vsdeAudioAdapter.front()->strVbox;
+        if (audioAdapterVBox.compare("null", Utf8Str::CaseInsensitive) != 0)
+        {
+            uint32_t audio = RTStrToUInt32(audioAdapterVBox.c_str());
+            ComPtr<IAudioAdapter> audioAdapter;
+            rc = pNewMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());
+            if (FAILED(rc)) throw rc;
+            rc = audioAdapter->COMSETTER(Enabled)(true);
+            if (FAILED(rc)) throw rc;
+            rc = audioAdapter->COMSETTER(AudioController)(static_cast<AudioControllerType_T>(audio));
+            if (FAILED(rc)) throw rc;
+        }
+    }
+
+#ifdef VBOX_WITH_USB
+    /* USB Controller */
+    std::list<VirtualSystemDescriptionEntry*> vsdeUSBController = vsdescThis->findByType(VirtualSystemDescriptionType_USBController);
+    // USB support is enabled if there's at least one such entry; to disable USB support,
+    // the type of the USB item would have been changed to "ignore"
+    bool fUSBEnabled = vsdeUSBController.size() > 0;
+
+    ComPtr<IUSBController> usbController;
+    rc = pNewMachine->COMGETTER(USBController)(usbController.asOutParam());
+    if (FAILED(rc)) throw rc;
+    rc = usbController->COMSETTER(Enabled)(fUSBEnabled);
+    if (FAILED(rc)) throw rc;
+#endif /* VBOX_WITH_USB */
+
+    /* Change the network adapters */
+    std::list<VirtualSystemDescriptionEntry*> vsdeNW = vsdescThis->findByType(VirtualSystemDescriptionType_NetworkAdapter);
+    if (vsdeNW.size() == 0)
+    {
+        /* No network adapters, so we have to disable our default one */
+        ComPtr<INetworkAdapter> nwVBox;
+        rc = pNewMachine->GetNetworkAdapter(0, nwVBox.asOutParam());
+        if (FAILED(rc)) throw rc;
+        rc = nwVBox->COMSETTER(Enabled)(false);
+        if (FAILED(rc)) throw rc;
+    }
+    else
+    {
+        list<VirtualSystemDescriptionEntry*>::const_iterator nwIt;
+        /* Iterate through all network cards. We support 8 network adapters
+            * at the maximum. (@todo: warn if there are more!) */
+        size_t a = 0;
+        for (nwIt = vsdeNW.begin();
+                (nwIt != vsdeNW.end() && a < SchemaDefs::NetworkAdapterCount);
+                ++nwIt, ++a)
+        {
+            const VirtualSystemDescriptionEntry* pvsys = *nwIt;
+
+            const Utf8Str &nwTypeVBox = pvsys->strVbox;
+            uint32_t tt1 = RTStrToUInt32(nwTypeVBox.c_str());
+            ComPtr<INetworkAdapter> pNetworkAdapter;
+            rc = pNewMachine->GetNetworkAdapter((ULONG)a, pNetworkAdapter.asOutParam());
+            if (FAILED(rc)) throw rc;
+            /* Enable the network card & set the adapter type */
+            rc = pNetworkAdapter->COMSETTER(Enabled)(true);
+            if (FAILED(rc)) throw rc;
+            rc = pNetworkAdapter->COMSETTER(AdapterType)(static_cast<NetworkAdapterType_T>(tt1));
+            if (FAILED(rc)) throw rc;
+
+            // default is NAT; change to "bridged" if extra conf says so
+            if (!pvsys->strExtraConfig.compare("type=Bridged", Utf8Str::CaseInsensitive))
+            {
+                /* Attach to the right interface */
+                rc = pNetworkAdapter->AttachToBridgedInterface();
+                if (FAILED(rc)) throw rc;
+                ComPtr<IHost> host;
+                rc = mVirtualBox->COMGETTER(Host)(host.asOutParam());
+                if (FAILED(rc)) throw rc;
+                com::SafeIfaceArray<IHostNetworkInterface> nwInterfaces;
+                rc = host->COMGETTER(NetworkInterfaces)(ComSafeArrayAsOutParam(nwInterfaces));
+                if (FAILED(rc)) throw rc;
+                /* We search for the first host network interface which
+                    * is usable for bridged networking */
+                for (size_t j = 0;
+                        j < nwInterfaces.size();
+                        ++j)
+                {
+                    HostNetworkInterfaceType_T itype;
+                    rc = nwInterfaces[j]->COMGETTER(InterfaceType)(&itype);
+                    if (FAILED(rc)) throw rc;
+                    if (itype == HostNetworkInterfaceType_Bridged)
+                    {
+                        Bstr name;
+                        rc = nwInterfaces[j]->COMGETTER(Name)(name.asOutParam());
+                        if (FAILED(rc)) throw rc;
+                        /* Set the interface name to attach to */
+                        pNetworkAdapter->COMSETTER(HostInterface)(name);
+                        if (FAILED(rc)) throw rc;
+                        break;
+                    }
+                }
+            }
+            /* Next test for host only interfaces */
+            else if (!pvsys->strExtraConfig.compare("type=HostOnly", Utf8Str::CaseInsensitive))
+            {
+                /* Attach to the right interface */
+                rc = pNetworkAdapter->AttachToHostOnlyInterface();
+                if (FAILED(rc)) throw rc;
+                ComPtr<IHost> host;
+                rc = mVirtualBox->COMGETTER(Host)(host.asOutParam());
+                if (FAILED(rc)) throw rc;
+                com::SafeIfaceArray<IHostNetworkInterface> nwInterfaces;
+                rc = host->COMGETTER(NetworkInterfaces)(ComSafeArrayAsOutParam(nwInterfaces));
+                if (FAILED(rc)) throw rc;
+                /* We search for the first host network interface which
+                    * is usable for host only networking */
+                for (size_t j = 0;
+                        j < nwInterfaces.size();
+                        ++j)
+                {
+                    HostNetworkInterfaceType_T itype;
+                    rc = nwInterfaces[j]->COMGETTER(InterfaceType)(&itype);
+                    if (FAILED(rc)) throw rc;
+                    if (itype == HostNetworkInterfaceType_HostOnly)
+                    {
+                        Bstr name;
+                        rc = nwInterfaces[j]->COMGETTER(Name)(name.asOutParam());
+                        if (FAILED(rc)) throw rc;
+                        /* Set the interface name to attach to */
+                        pNetworkAdapter->COMSETTER(HostInterface)(name);
+                        if (FAILED(rc)) throw rc;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    /* Hard disk controller IDE */
+    std::list<VirtualSystemDescriptionEntry*> vsdeHDCIDE = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
+    if (vsdeHDCIDE.size() > 1)
+        throw setError(VBOX_E_FILE_ERROR,
+                        tr("Too many IDE controllers in OVF; import facility only supports one"));
+    if (vsdeHDCIDE.size() == 1)
+    {
+        ComPtr<IStorageController> pController;
+        rc = pNewMachine->AddStorageController(Bstr("IDE Controller"), StorageBus_IDE, pController.asOutParam());
+        if (FAILED(rc)) throw rc;
+
+        const char *pcszIDEType = vsdeHDCIDE.front()->strVbox.c_str();
+        if (!strcmp(pcszIDEType, "PIIX3"))
+            rc = pController->COMSETTER(ControllerType)(StorageControllerType_PIIX3);
+        else if (!strcmp(pcszIDEType, "PIIX4"))
+            rc = pController->COMSETTER(ControllerType)(StorageControllerType_PIIX4);
+        else if (!strcmp(pcszIDEType, "ICH6"))
+            rc = pController->COMSETTER(ControllerType)(StorageControllerType_ICH6);
+        else
+            throw setError(VBOX_E_FILE_ERROR,
+                            tr("Invalid IDE controller type \"%s\""),
+                            pcszIDEType);
+        if (FAILED(rc)) throw rc;
+    }
+#ifdef VBOX_WITH_AHCI
+    /* Hard disk controller SATA */
+    std::list<VirtualSystemDescriptionEntry*> vsdeHDCSATA = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSATA);
+    if (vsdeHDCSATA.size() > 1)
+        throw setError(VBOX_E_FILE_ERROR,
+                        tr("Too many SATA controllers in OVF; import facility only supports one"));
+    if (vsdeHDCSATA.size() > 0)
+    {
+        ComPtr<IStorageController> pController;
+        const Utf8Str &hdcVBox = vsdeHDCSATA.front()->strVbox;
+        if (hdcVBox == "AHCI")
+        {
+            rc = pNewMachine->AddStorageController(Bstr("SATA Controller"), StorageBus_SATA, pController.asOutParam());
+            if (FAILED(rc)) throw rc;
+        }
+        else
+            throw setError(VBOX_E_FILE_ERROR,
+                            tr("Invalid SATA controller type \"%s\""),
+                            hdcVBox.c_str());
+    }
+#endif /* VBOX_WITH_AHCI */
+
+#ifdef VBOX_WITH_LSILOGIC
+    /* Hard disk controller SCSI */
+    std::list<VirtualSystemDescriptionEntry*> vsdeHDCSCSI = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
+    if (vsdeHDCSCSI.size() > 1)
+        throw setError(VBOX_E_FILE_ERROR,
+                        tr("Too many SCSI controllers in OVF; import facility only supports one"));
+    if (vsdeHDCSCSI.size() > 0)
+    {
+        ComPtr<IStorageController> pController;
+        StorageControllerType_T controllerType;
+        const Utf8Str &hdcVBox = vsdeHDCSCSI.front()->strVbox;
+        if (hdcVBox == "LsiLogic")
+            controllerType = StorageControllerType_LsiLogic;
+        else if (hdcVBox == "BusLogic")
+            controllerType = StorageControllerType_BusLogic;
+        else
+            throw setError(VBOX_E_FILE_ERROR,
+                            tr("Invalid SCSI controller type \"%s\""),
+                            hdcVBox.c_str());
+
+        rc = pNewMachine->AddStorageController(Bstr("SCSI Controller"), StorageBus_SCSI, pController.asOutParam());
+        if (FAILED(rc)) throw rc;
+        rc = pController->COMSETTER(ControllerType)(controllerType);
+        if (FAILED(rc)) throw rc;
+    }
+#endif /* VBOX_WITH_LSILOGIC */
+
+    /* Now its time to register the machine before we add any hard disks */
+    rc = mVirtualBox->RegisterMachine(pNewMachine);
+    if (FAILED(rc)) throw rc;
+
+    Bstr bstrNewMachineId;
+    rc = pNewMachine->COMGETTER(Id)(bstrNewMachineId.asOutParam());
+    if (FAILED(rc)) throw rc;
+
+    // store new machine for roll-back in case of errors
+    stack.llMachinesRegistered.push_back(bstrNewMachineId);
+
+    // Add floppies and CD-ROMs to the appropriate controllers.
+    std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsdescThis->findByType(VirtualSystemDescriptionType_Floppy);
+    if (vsdeFloppy.size() > 1)
+        throw setError(VBOX_E_FILE_ERROR,
+                        tr("Too many floppy controllers in OVF; import facility only supports one"));
+    std::list<VirtualSystemDescriptionEntry*> vsdeCDROM = vsdescThis->findByType(VirtualSystemDescriptionType_CDROM);
+    if (    (vsdeFloppy.size() > 0)
+            || (vsdeCDROM.size() > 0)
+        )
+    {
+        // If there's an error here we need to close the session, so
+        // we need another try/catch block.
+
+        try
+        {
+            /* In order to attach things we need to open a session
+                * for the new machine */
+            rc = mVirtualBox->OpenSession(stack.pSession, bstrNewMachineId);
+            if (FAILED(rc)) throw rc;
+            stack.fSessionOpen = true;
+
+            ComPtr<IMachine> sMachine;
+            rc = stack.pSession->COMGETTER(Machine)(sMachine.asOutParam());
+            if (FAILED(rc)) throw rc;
+
+            // floppy first
+            if (vsdeFloppy.size() == 1)
+            {
+                ComPtr<IStorageController> pController;
+                rc = sMachine->AddStorageController(Bstr("Floppy Controller"), StorageBus_Floppy, pController.asOutParam());
+                if (FAILED(rc)) throw rc;
+
+                Bstr bstrName;
+                rc = pController->COMGETTER(Name)(bstrName.asOutParam());
+                if (FAILED(rc)) throw rc;
+
+                // this is for rollback later
+                MyHardDiskAttachment mhda;
+                mhda.bstrUuid = bstrNewMachineId;
+                mhda.pMachine = pNewMachine;
+                mhda.controllerType = bstrName;
+                mhda.lChannel = 0;
+                mhda.lDevice = 0;
+
+                Log(("Attaching floppy\n"));
+
+                rc = sMachine->AttachDevice(mhda.controllerType,
+                                            mhda.lChannel,
+                                            mhda.lDevice,
+                                            DeviceType_Floppy,
+                                            NULL);
+                if (FAILED(rc)) throw rc;
+
+                stack.llHardDiskAttachments.push_back(mhda);
+            }
+
+
+            // CD-ROMs next
+            for (std::list<VirtualSystemDescriptionEntry*>::const_iterator jt = vsdeCDROM.begin();
+                    jt != vsdeCDROM.end();
+                    ++jt)
+            {
+                // for now always attach to secondary master on IDE controller;
+                // there seems to be no useful information in OVF where else to
+                // attach jt (@todo test with latest versions of OVF software)
+
+                // find the IDE controller
+                const ovf::HardDiskController *pController = NULL;
+                for (ovf::ControllersMap::const_iterator kt = vsysThis.mapControllers.begin();
+                     kt != vsysThis.mapControllers.end();
+                     ++kt)
+                {
+                    if (kt->second.system == ovf::HardDiskController::IDE)
+                    {
+                        pController = &kt->second;
+                    }
+                }
+
+                if (!pController)
+                    throw setError(VBOX_E_FILE_ERROR,
+                                    tr("OVF wants a CD-ROM drive but cannot find IDE controller, which is required in this version of VirtualBox"));
+
+                // this is for rollback later
+                MyHardDiskAttachment mhda;
+                mhda.bstrUuid = bstrNewMachineId;
+                mhda.pMachine = pNewMachine;
+
+                convertDiskAttachmentValues(*pController,
+                                            2,     // interpreted as secondary master
+                                            mhda.controllerType,        // Bstr
+                                            mhda.lChannel,
+                                            mhda.lDevice);
+
+                Log(("Attaching CD-ROM to channel %d on device %d\n", mhda.lChannel, mhda.lDevice));
+
+                rc = sMachine->AttachDevice(mhda.controllerType,
+                                            mhda.lChannel,
+                                            mhda.lDevice,
+                                            DeviceType_DVD,
+                                            NULL);
+                if (FAILED(rc)) throw rc;
+
+                stack.llHardDiskAttachments.push_back(mhda);
+            } // end for (itHD = avsdeHDs.begin();
+
+            rc = sMachine->SaveSettings();
+            if (FAILED(rc)) throw rc;
+
+            // only now that we're done with all disks, close the session
+            rc = stack.pSession->Close();
+            if (FAILED(rc)) throw rc;
+            stack.fSessionOpen = false;
+        }
+        catch(HRESULT /* aRC */)
+        {
+            if (stack.fSessionOpen)
+                stack.pSession->Close();
+
+            throw;
+        }
+    }
+
+    /* Create the hard disks & connect them to the appropriate controllers. */
+    std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
+    if (avsdeHDs.size() > 0)
+    {
+        // If there's an error here we need to close the session, so
+        // we need another try/catch block.
+        ComPtr<IMedium> srcHdVBox;
+        bool fSourceHdNeedsClosing = false;
+
+        try
+        {
+            /* In order to attach hard disks we need to open a session
+             * for the new machine */
+            rc = mVirtualBox->OpenSession(stack.pSession, bstrNewMachineId);
+            if (FAILED(rc)) throw rc;
+            stack.fSessionOpen = true;
+
+            /* The disk image has to be on the same place as the OVF file. So
+             * strip the filename out of the full file path. */
+            Utf8Str strSrcDir(stack.locInfo.strPath);
+            strSrcDir.stripFilename();
+
+            /* Iterate over all given disk images */
+            list<VirtualSystemDescriptionEntry*>::const_iterator itHD;
+            for (itHD = avsdeHDs.begin();
+                 itHD != avsdeHDs.end();
+                 ++itHD)
+            {
+                VirtualSystemDescriptionEntry *vsdeHD = *itHD;
+
+                /* Check if the destination file exists already or the
+                    * destination path is empty. */
+                if (    vsdeHD->strVbox.isEmpty()
+                     || RTPathExists(vsdeHD->strVbox.c_str())
+                   )
+                    /* This isn't allowed */
+                    throw setError(VBOX_E_FILE_ERROR,
+                                    tr("Destination file '%s' exists",
+                                        vsdeHD->strVbox.c_str()));
+
+                /* Find the disk from the OVF's disk list */
+                ovf::DiskImagesMap::const_iterator itDiskImage = stack.mapDisks.find(vsdeHD->strRef);
+                /* vsdeHD->strRef contains the disk identifier (e.g. "vmdisk1"), which should exist
+                   in the virtual system's disks map under that ID and also in the global images map. */
+                ovf::VirtualDisksMap::const_iterator itVirtualDisk = vsysThis.mapVirtualDisks.find(vsdeHD->strRef);
+
+                if (    itDiskImage == stack.mapDisks.end()
+                     || itVirtualDisk == vsysThis.mapVirtualDisks.end()
+                   )
+                    throw setError(E_FAIL,
+                                    tr("Internal inconsistency looking up disk images."));
+
+                const ovf::DiskImage &di = itDiskImage->second;
+                const ovf::VirtualDisk &vd = itVirtualDisk->second;
+
+                /* Make sure all target directories exists */
+                rc = VirtualBox::ensureFilePathExists(vsdeHD->strVbox.c_str());
+                if (FAILED(rc))
+                    throw rc;
+
+                // subprogress object for hard disk
+                ComPtr<IProgress> pProgress2;
+
+                ComPtr<IMedium> dstHdVBox;
+                /* If strHref is empty we have to create a new file */
+                if (di.strHref.isEmpty())
+                {
+                    /* Which format to use? */
+                    Bstr srcFormat = L"VDI";
+                    if (   di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#sparse", Utf8Str::CaseInsensitive)
+                        || di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive))
+                        srcFormat = L"VMDK";
+                    /* Create an empty hard disk */
+                    rc = mVirtualBox->CreateHardDisk(srcFormat, Bstr(vsdeHD->strVbox), dstHdVBox.asOutParam());
+                    if (FAILED(rc)) throw rc;
+
+                    /* Create a dynamic growing disk image with the given capacity */
+                    rc = dstHdVBox->CreateBaseStorage(di.iCapacity / _1M, MediumVariant_Standard, pProgress2.asOutParam());
+                    if (FAILED(rc)) throw rc;
+
+                    /* Advance to the next operation */
+                    stack.pProgress->SetNextOperation(BstrFmt(tr("Creating virtual disk image '%s'"), vsdeHD->strVbox.c_str()),
+                                                      vsdeHD->ulSizeMB);     // operation's weight, as set up with the IProgress originally
+                }
+                else
+                {
+                    /* Construct the source file path */
+                    Utf8StrFmt strSrcFilePath("%s%c%s", strSrcDir.c_str(), RTPATH_DELIMITER, di.strHref.c_str());
+                    /* Check if the source file exists */
+                    if (!RTPathExists(strSrcFilePath.c_str()))
+                        /* This isn't allowed */
+                        throw setError(VBOX_E_FILE_ERROR,
+                                        tr("Source virtual disk image file '%s' doesn't exist"),
+                                            strSrcFilePath.c_str());
+
+                    /* Clone the disk image (this is necessary cause the id has
+                        * to be recreated for the case the same hard disk is
+                        * attached already from a previous import) */
+
+                    /* First open the existing disk image */
+                    rc = mVirtualBox->OpenHardDisk(Bstr(strSrcFilePath),
+                                                    AccessMode_ReadOnly,
+                                                    false,
+                                                    NULL,
+                                                    false,
+                                                    NULL,
+                                                    srcHdVBox.asOutParam());
+                    if (FAILED(rc)) throw rc;
+                    fSourceHdNeedsClosing = true;
+
+                    /* We need the format description of the source disk image */
+                    Bstr srcFormat;
+                    rc = srcHdVBox->COMGETTER(Format)(srcFormat.asOutParam());
+                    if (FAILED(rc)) throw rc;
+                    /* Create a new hard disk interface for the destination disk image */
+                    rc = mVirtualBox->CreateHardDisk(srcFormat, Bstr(vsdeHD->strVbox), dstHdVBox.asOutParam());
+                    if (FAILED(rc)) throw rc;
+                    /* Clone the source disk image */
+                    rc = srcHdVBox->CloneTo(dstHdVBox, MediumVariant_Standard, NULL, pProgress2.asOutParam());
+                    if (FAILED(rc)) throw rc;
+
+                    /* Advance to the next operation */
+                    stack.pProgress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"), strSrcFilePath.c_str()),
+                                                      vsdeHD->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
+                }
+
+                // now wait for the background disk operation to complete; this throws HRESULTs on error
+                waitForAsyncProgress(stack.pProgress, pProgress2);
+
+                if (fSourceHdNeedsClosing)
+                {
+                    rc = srcHdVBox->Close();
+                    if (FAILED(rc)) throw rc;
+                    fSourceHdNeedsClosing = false;
+                }
+
+                stack.llHardDisksCreated.push_back(dstHdVBox);
+                /* Now use the new uuid to attach the disk image to our new machine */
+                ComPtr<IMachine> sMachine;
+                rc = stack.pSession->COMGETTER(Machine)(sMachine.asOutParam());
+                if (FAILED(rc)) throw rc;
+                Bstr hdId;
+                rc = dstHdVBox->COMGETTER(Id)(hdId.asOutParam());
+                if (FAILED(rc)) throw rc;
+
+                /* For now we assume we have one controller of every type only */
+                ovf::HardDiskController hdc = (*vsysThis.mapControllers.find(vd.idController)).second;
+
+                // this is for rollback later
+                MyHardDiskAttachment mhda;
+                mhda.bstrUuid = bstrNewMachineId;
+                mhda.pMachine = pNewMachine;
+
+                convertDiskAttachmentValues(hdc,
+                                            vd.ulAddressOnParent,
+                                            mhda.controllerType,        // Bstr
+                                            mhda.lChannel,
+                                            mhda.lDevice);
+
+                Log(("Attaching disk %s to channel %d on device %d\n", vsdeHD->strVbox.c_str(), mhda.lChannel, mhda.lDevice));
+
+                rc = sMachine->AttachDevice(mhda.controllerType,
+                                            mhda.lChannel,
+                                            mhda.lDevice,
+                                            DeviceType_HardDisk,
+                                            hdId);
+                if (FAILED(rc)) throw rc;
+
+                stack.llHardDiskAttachments.push_back(mhda);
+
+                rc = sMachine->SaveSettings();
+                if (FAILED(rc)) throw rc;
+            } // end for (itHD = avsdeHDs.begin();
+
+            // only now that we're done with all disks, close the session
+            rc = stack.pSession->Close();
+            if (FAILED(rc)) throw rc;
+            stack.fSessionOpen = false;
+        }
+        catch(HRESULT /* aRC */)
+        {
+            if (fSourceHdNeedsClosing)
+                srcHdVBox->Close();
+
+            if (stack.fSessionOpen)
+                stack.pSession->Close();
+
+            throw;
+        }
+    }
+}
+
+/**
+ * Imports one OVF virtual system (described by a vbox:Machine tag represented by the given config
+ * structure) into VirtualBox by creating an IMachine instance, which is returned.
+ *
+ * This throws HRESULT error codes for anything that goes wrong, in which case the caller must clean
+ * up any leftovers from this function. For this, the given ImportStack instance has received information
+ * about what needs cleaning up (to support rollback).
+ *
+ * @param config
+ * @param pNewMachine
+ * @param stack
+ */
+void Appliance::importVBoxMachine(const settings::MachineConfigFile &config,
+                                  ComPtr<IMachine> &pNewMachine,
+                                  ImportStack &stack)
+{
 }
 
 /**
