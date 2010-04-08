@@ -147,7 +147,7 @@ private:
 
     HRESULT importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &aProgress);
     struct ImportStack;
-    void importVBoxMachine(const settings::MachineConfigFile &config,
+    void importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThis,
                            ComPtr<IMachine> &pNewMachine,
                            ImportStack &stack);
     void importMachineGeneric(const ovf::VirtualSystem &vsysThis,

@@ -33,6 +33,7 @@
 #include "VirtualBoxImpl.h"
 #include "GuestOSTypeImpl.h"
 #include "ProgressImpl.h"
+#include "MachineImpl.h"
 
 #include "AutoCaller.h"
 #include "Logging.h"
@@ -1120,11 +1121,11 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
             // @todo r=dj make this selection configurable at run-time, and from the GUI as well
 
             if (vsdescThis->m->pConfig)
-                importVBoxMachine(*vsdescThis->m->pConfig, pNewMachine, stack);
+                importVBoxMachine(vsdescThis, pNewMachine, stack);
             else
                 importMachineGeneric(vsysThis, vsdescThis, pNewMachine, stack);
         }
-        catch(HRESULT aRC)
+        catch (HRESULT aRC)
         {
             rc = aRC;
         }
@@ -1366,8 +1367,8 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             * at the maximum. (@todo: warn if there are more!) */
         size_t a = 0;
         for (nwIt = vsdeNW.begin();
-                (nwIt != vsdeNW.end() && a < SchemaDefs::NetworkAdapterCount);
-                ++nwIt, ++a)
+             (nwIt != vsdeNW.end() && a < SchemaDefs::NetworkAdapterCount);
+             ++nwIt, ++a)
         {
             const VirtualSystemDescriptionEntry* pvsys = *nwIt;
 
@@ -1528,11 +1529,10 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     rc = mVirtualBox->RegisterMachine(pNewMachine);
     if (FAILED(rc)) throw rc;
 
+    // store new machine for roll-back in case of errors
     Bstr bstrNewMachineId;
     rc = pNewMachine->COMGETTER(Id)(bstrNewMachineId.asOutParam());
     if (FAILED(rc)) throw rc;
-
-    // store new machine for roll-back in case of errors
     stack.llMachinesRegistered.push_back(bstrNewMachineId);
 
     // Add floppies and CD-ROMs to the appropriate controllers.
@@ -1861,10 +1861,40 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
  * @param pNewMachine
  * @param stack
  */
-void Appliance::importVBoxMachine(const settings::MachineConfigFile &config,
-                                  ComPtr<IMachine> &pNewMachine,
+void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThis,
+                                  ComPtr<IMachine> &pReturnNewMachine,
                                   ImportStack &stack)
 {
+    Assert(vsdescThis->m->pConfig);
+    const settings::MachineConfigFile &config = *vsdescThis->m->pConfig;
+
+    // use the name that we computed in the OVF fields to avoid duplicates
+    std::list<VirtualSystemDescriptionEntry*> vsdeName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
+    if (vsdeName.size() < 1)
+        throw setError(VBOX_E_FILE_ERROR,
+                        tr("Missing VM name"));
+    const Utf8Str &strNameVBox = vsdeName.front()->strVbox;
+
+    ComObjPtr<Machine> pNewMachine;
+    HRESULT rc = pNewMachine.createObject();
+    if (FAILED(rc)) throw rc;
+    rc = pNewMachine->init(mVirtualBox, strNameVBox, config);
+    if (FAILED(rc)) throw rc;
+
+    IMachine *p;
+    rc = pNewMachine.queryInterfaceTo(&p);
+    if (FAILED(rc)) throw rc;
+
+    pReturnNewMachine = p;
+
+    rc = mVirtualBox->RegisterMachine(pNewMachine);
+    if (FAILED(rc)) throw rc;
+
+    // store new machine for roll-back in case of errors
+    Bstr bstrNewMachineId;
+    rc = pNewMachine->COMGETTER(Id)(bstrNewMachineId.asOutParam());
+    if (FAILED(rc)) throw rc;
+    stack.llMachinesRegistered.push_back(bstrNewMachineId);
 }
 
 /**

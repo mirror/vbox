@@ -295,37 +295,8 @@ HRESULT Machine::init(VirtualBox *aParent,
     HRESULT rc = initImpl(aParent, strConfigFile);
     if (FAILED(rc)) return rc;
 
-    // when we create a new machine, we must be able to create the settings file
-    RTFILE f = NIL_RTFILE;
-    int vrc = RTFileOpen(&f, mData->m_strConfigFileFull.c_str(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-    if (    RT_SUCCESS(vrc)
-         || vrc == VERR_SHARING_VIOLATION
-       )
-    {
-        if (RT_SUCCESS(vrc))
-            RTFileClose(f);
-        if (!aOverride)
-            rc = setError(VBOX_E_FILE_ERROR,
-                          tr("Machine settings file '%s' already exists"),
-                          mData->m_strConfigFileFull.raw());
-        else
-        {
-            /* try to delete the config file, as otherwise the creation
-                * of a new settings file will fail. */
-            int vrc2 = RTFileDelete(mData->m_strConfigFileFull.c_str());
-            if (RT_FAILURE(vrc2))
-                rc = setError(VBOX_E_FILE_ERROR,
-                              tr("Could not delete the existing settings file '%s' (%Rrc)"),
-                              mData->m_strConfigFileFull.raw(), vrc2);
-        }
-    }
-    else if (    vrc != VERR_FILE_NOT_FOUND
-              && vrc != VERR_PATH_NOT_FOUND
-            )
-        rc = setError(VBOX_E_FILE_ERROR,
-                      tr("Invalid machine settings file name '%s' (%Rrc)"),
-                      mData->m_strConfigFileFull.raw(),
-                      vrc);
+    rc = tryCreateMachineConfigFile(aOverride);
+    if (FAILED(rc)) return rc;
 
     if (SUCCEEDED(rc))
     {
@@ -337,8 +308,7 @@ HRESULT Machine::init(VirtualBox *aParent,
 
     if (SUCCEEDED(rc))
     {
-        /* set to true now to cause uninit() to call
-         * uninitDataAndChildObjects() on failure */
+        // set to true now to cause uninit() to call uninitDataAndChildObjects() on failure
         mData->mAccessible = TRUE;
 
         unconst(mData->mUuid) = aId;
@@ -437,15 +407,31 @@ HRESULT Machine::init(VirtualBox *aParent,
 
         if (SUCCEEDED(rc))
         {
-            /* set to true now to cause uninit() to call
-             * uninitDataAndChildObjects() on failure */
+            // set to true now to cause uninit() to call uninitDataAndChildObjects() on failure
             mData->mAccessible = TRUE;
 
-            rc = loadSettings(false /* aRegistered */);
+            try
+            {
+                // load and parse machine XML; this will throw on XML or logic errors
+                mData->pMachineConfigFile = new settings::MachineConfigFile(&mData->m_strConfigFileFull);
 
-            /* commit all changes made during the initialization */
-            if (SUCCEEDED(rc))
+                // use UUID from machine config
+                unconst(mData->mUuid) = mData->pMachineConfigFile->uuid;
+
+                rc = loadMachineDataFromSettings(*mData->pMachineConfigFile);
+                if (FAILED(rc)) throw rc;
+
                 commit();
+            }
+            catch (HRESULT err)
+            {
+                /* we assume that error info is set by the thrower */
+                rc = err;
+            }
+            catch (...)
+            {
+                rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+            }
         }
     }
 
@@ -469,7 +455,83 @@ HRESULT Machine::init(VirtualBox *aParent,
 }
 
 /**
- * Shared code between the various init() implementation.s
+ *  Initializes a new instance from a machine config that is already in memory
+ *  (import OVF import case). Since we are importing, the UUID in the machine
+ *  config is ignored and we always generate a fresh one.
+ *
+ *  @param strName  Name for the new machine; this overrides what is specified in config and is used
+ *                  for the settings file as well.
+ *  @param config   Machine configuration loaded and parsed from XML.
+ *
+ *  @return  Success indicator. if not S_OK, the machine object is invalid
+ */
+HRESULT Machine::init(VirtualBox *aParent,
+                      const Utf8Str &strName,
+                      const settings::MachineConfigFile &config)
+{
+    LogFlowThisFuncEnter();
+
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
+    Utf8Str strConfigFile(aParent->getDefaultMachineFolder());
+    strConfigFile.append(Utf8StrFmt("%c%s%c%s.xml",
+                                    RTPATH_DELIMITER,
+                                    strName.c_str(),
+                                    RTPATH_DELIMITER,
+                                    strName.c_str()));
+
+    HRESULT rc = initImpl(aParent, strConfigFile);
+    if (FAILED(rc)) return rc;
+
+    rc = tryCreateMachineConfigFile(FALSE /* aOverride */);
+    if (FAILED(rc)) return rc;
+
+    rc = initDataAndChildObjects();
+
+    if (SUCCEEDED(rc))
+    {
+        // set to true now to cause uninit() to call uninitDataAndChildObjects() on failure
+        mData->mAccessible = TRUE;
+
+        // create empty machine config for instance data
+        mData->pMachineConfigFile = new settings::MachineConfigFile(NULL);
+
+        // generate fresh UUID, ignore machine config
+        unconst(mData->mUuid).create();
+
+        rc = loadMachineDataFromSettings(config);
+
+        // override VM name as well, it may be different
+        mUserData->mName = strName;
+
+        /* commit all changes made during the initialization */
+        if (SUCCEEDED(rc))
+            commit();
+    }
+
+    /* Confirm a successful initialization when it's the case */
+    if (SUCCEEDED(rc))
+    {
+        if (mData->mAccessible)
+            autoInitSpan.setSucceeded();
+        else
+            autoInitSpan.setLimited();
+    }
+
+    LogFlowThisFunc(("mName='%ls', mRegistered=%RTbool, mAccessible=%RTbool "
+                     "rc=%08X\n",
+                      !!mUserData ? mUserData->mName.raw() : NULL,
+                      mData->mRegistered, mData->mAccessible, rc));
+
+    LogFlowThisFuncLeave();
+
+    return rc;
+}
+
+/**
+ * Shared code between the various init() implementations.
  * @param aParent
  * @return
  */
@@ -507,6 +569,50 @@ HRESULT Machine::initImpl(VirtualBox *aParent,
 }
 
 /**
+ * Tries to create a machine settings file in the path stored in the machine
+ * instance data. Used when a new machine is created to fail gracefully if
+ * the settings file could not be written (e.g. because machine dir is read-only).
+ * @return
+ */
+HRESULT Machine::tryCreateMachineConfigFile(BOOL aOverride)
+{
+    HRESULT rc = S_OK;
+
+    // when we create a new machine, we must be able to create the settings file
+    RTFILE f = NIL_RTFILE;
+    int vrc = RTFileOpen(&f, mData->m_strConfigFileFull.c_str(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    if (    RT_SUCCESS(vrc)
+         || vrc == VERR_SHARING_VIOLATION
+       )
+    {
+        if (RT_SUCCESS(vrc))
+            RTFileClose(f);
+        if (!aOverride)
+            rc = setError(VBOX_E_FILE_ERROR,
+                          tr("Machine settings file '%s' already exists"),
+                          mData->m_strConfigFileFull.raw());
+        else
+        {
+            /* try to delete the config file, as otherwise the creation
+                * of a new settings file will fail. */
+            int vrc2 = RTFileDelete(mData->m_strConfigFileFull.c_str());
+            if (RT_FAILURE(vrc2))
+                rc = setError(VBOX_E_FILE_ERROR,
+                              tr("Could not delete the existing settings file '%s' (%Rrc)"),
+                              mData->m_strConfigFileFull.raw(), vrc2);
+        }
+    }
+    else if (    vrc != VERR_FILE_NOT_FOUND
+              && vrc != VERR_PATH_NOT_FOUND
+            )
+        rc = setError(VBOX_E_FILE_ERROR,
+                      tr("Invalid machine settings file name '%s' (%Rrc)"),
+                      mData->m_strConfigFileFull.raw(),
+                      vrc);
+    return rc;
+}
+
+/**
  *  Initializes the registered machine by loading the settings file.
  *  This method is separated from #init() in order to make it possible to
  *  retry the operation after VirtualBox startup instead of refusing to
@@ -534,7 +640,31 @@ HRESULT Machine::registeredInit()
          * is TRUE). */
         mData->mRegistered = FALSE;
 
-        rc = loadSettings(true /* aRegistered */);
+        try
+        {
+            // load and parse machine XML; this will throw on XML or logic errors
+            mData->pMachineConfigFile = new settings::MachineConfigFile(&mData->m_strConfigFileFull);
+
+            if (mData->mUuid != mData->pMachineConfigFile->uuid)
+                throw setError(E_FAIL,
+                               tr("Machine UUID {%RTuuid} in '%s' doesn't match its UUID {%s} in the registry file '%s'"),
+                               mData->pMachineConfigFile->uuid.raw(),
+                               mData->m_strConfigFileFull.raw(),
+                               mData->mUuid.toString().raw(),
+                               mParent->settingsFilePath().raw());
+
+            rc = loadMachineDataFromSettings(*mData->pMachineConfigFile);
+            if (FAILED(rc)) throw rc;
+        }
+        catch (HRESULT err)
+        {
+            /* we assume that error info is set by the thrower */
+            rc = err;
+        }
+        catch (...)
+        {
+            rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+        }
 
         /* Restore the registered flag (even on failure) */
         mData->mRegistered = TRUE;
@@ -6309,167 +6439,120 @@ HRESULT Machine::findSharedFolder(CBSTR aName,
 }
 
 /**
- *  Loads all the VM settings by walking down the <Machine> node.
+ * Initializes all machine instance data from the given settings structures
+ * from XML. The exception is the machine UUID which needs special handling
+ * depending on the caller's use case, so the caller needs to set that herself.
  *
- *  @param aRegistered  true when the machine is being loaded on VirtualBox
- *                      startup
- *
- *  @note This method is intended to be called only from init(), so it assumes
- *  all machine data fields have appropriate default values when it is called.
- *
- *  @note Doesn't lock any objects.
+ * @param config
+ * @param fAllowStorage
  */
-HRESULT Machine::loadSettings(bool aRegistered)
+HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &config)
 {
-    LogFlowThisFuncEnter();
-    AssertReturn(getClassID() == clsidMachine, E_FAIL);
+    /* name (required) */
+    mUserData->mName = config.strName;
 
-    AutoCaller autoCaller(this);
-    AssertReturn(autoCaller.state() == InInit, E_FAIL);
+    /* nameSync (optional, default is true) */
+    mUserData->mNameSync = config.fNameSync;
 
-    HRESULT rc = S_OK;
+    mUserData->mDescription = config.strDescription;
 
-    try
+    // guest OS type
+    mUserData->mOSTypeId = config.strOsType;
+    /* look up the object by Id to check it is valid */
+    ComPtr<IGuestOSType> guestOSType;
+    HRESULT rc = mParent->GetGuestOSType(mUserData->mOSTypeId,
+                                         guestOSType.asOutParam());
+    if (FAILED(rc)) return rc;
+
+    // stateFile (optional)
+    if (config.strStateFile.isEmpty())
+        mSSData->mStateFilePath.setNull();
+    else
     {
-        Assert(mData->pMachineConfigFile == NULL);
-
-        // load and parse machine XML; this will throw on XML or logic errors
-        mData->pMachineConfigFile = new settings::MachineConfigFile(&mData->m_strConfigFileFull);
-
-        /* If the stored UUID is not empty, it means the registered machine
-         * is being loaded. Compare the loaded UUID with the stored one taken
-         * from the global registry. */
-        if (!mData->mUuid.isEmpty())
-        {
-            if (mData->mUuid != mData->pMachineConfigFile->uuid)
-            {
-                throw setError(E_FAIL,
-                               tr("Machine UUID {%RTuuid} in '%s' doesn't match its UUID {%s} in the registry file '%s'"),
-                               mData->pMachineConfigFile->uuid.raw(),
-                               mData->m_strConfigFileFull.raw(),
-                               mData->mUuid.toString().raw(),
-                               mParent->settingsFilePath().raw());
-            }
-        }
-        else
-            unconst(mData->mUuid) = mData->pMachineConfigFile->uuid;
-
-        /* name (required) */
-        mUserData->mName = mData->pMachineConfigFile->strName;
-
-        /* nameSync (optional, default is true) */
-        mUserData->mNameSync = mData->pMachineConfigFile->fNameSync;
-
-        mUserData->mDescription = mData->pMachineConfigFile->strDescription;
-
-        // guest OS type
-        mUserData->mOSTypeId = mData->pMachineConfigFile->strOsType;
-        /* look up the object by Id to check it is valid */
-        ComPtr<IGuestOSType> guestOSType;
-        rc = mParent->GetGuestOSType(mUserData->mOSTypeId,
-                                     guestOSType.asOutParam());
-        if (FAILED(rc)) throw rc;
-
-        // stateFile (optional)
-        if (mData->pMachineConfigFile->strStateFile.isEmpty())
-            mSSData->mStateFilePath.setNull();
-        else
-        {
-            Utf8Str stateFilePathFull(mData->pMachineConfigFile->strStateFile);
-            int vrc = calculateFullPath(stateFilePathFull, stateFilePathFull);
-            if (RT_FAILURE(vrc))
-                throw setError(E_FAIL,
-                                tr("Invalid saved state file path '%s' (%Rrc)"),
-                                mData->pMachineConfigFile->strStateFile.raw(),
-                                vrc);
-            mSSData->mStateFilePath = stateFilePathFull;
-        }
-
-        /* snapshotFolder (optional) */
-        rc = COMSETTER(SnapshotFolder)(Bstr(mData->pMachineConfigFile->strSnapshotFolder));
-        if (FAILED(rc)) throw rc;
-
-        /* currentStateModified (optional, default is true) */
-        mData->mCurrentStateModified = mData->pMachineConfigFile->fCurrentStateModified;
-
-        mData->mLastStateChange = mData->pMachineConfigFile->timeLastStateChange;
-
-        /* teleportation */
-        mUserData->mTeleporterEnabled  = mData->pMachineConfigFile->fTeleporterEnabled;
-        mUserData->mTeleporterPort     = mData->pMachineConfigFile->uTeleporterPort;
-        mUserData->mTeleporterAddress  = mData->pMachineConfigFile->strTeleporterAddress;
-        mUserData->mTeleporterPassword = mData->pMachineConfigFile->strTeleporterPassword;
-
-        /* RTC */
-        mUserData->mRTCUseUTC = mData->pMachineConfigFile->fRTCUseUTC;
-
-        /*
-         *  note: all mUserData members must be assigned prior this point because
-         *  we need to commit changes in order to let mUserData be shared by all
-         *  snapshot machine instances.
-         */
-        mUserData.commitCopy();
-
-        /* Snapshot node (optional) */
-        size_t cRootSnapshots;
-        if ((cRootSnapshots = mData->pMachineConfigFile->llFirstSnapshot.size()))
-        {
-            // there must be only one root snapshot
-            Assert(cRootSnapshots == 1);
-
-            settings::Snapshot &snap = mData->pMachineConfigFile->llFirstSnapshot.front();
-
-            rc = loadSnapshot(snap,
-                              mData->pMachineConfigFile->uuidCurrentSnapshot,
-                              NULL);        // no parent == first snapshot
-            if (FAILED(rc)) throw rc;
-        }
-
-        /* Hardware node (required) */
-        rc = loadHardware(mData->pMachineConfigFile->hardwareMachine);
-        if (FAILED(rc)) throw rc;
-
-        /* Load storage controllers */
-        rc = loadStorageControllers(mData->pMachineConfigFile->storageMachine, aRegistered);
-        if (FAILED(rc)) throw rc;
-
-        /*
-         *  NOTE: the assignment below must be the last thing to do,
-         *  otherwise it will be not possible to change the settings
-         *  somewehere in the code above because all setters will be
-         *  blocked by checkStateDependency(MutableStateDep).
-         */
-
-        /* set the machine state to Aborted or Saved when appropriate */
-        if (mData->pMachineConfigFile->fAborted)
-        {
-            Assert(!mSSData->mStateFilePath.isEmpty());
-            mSSData->mStateFilePath.setNull();
-
-            /* no need to use setMachineState() during init() */
-            mData->mMachineState = MachineState_Aborted;
-        }
-        else if (!mSSData->mStateFilePath.isEmpty())
-        {
-            /* no need to use setMachineState() during init() */
-            mData->mMachineState = MachineState_Saved;
-        }
-
-        // after loading settings, we are no longer different from the XML on disk
-        mData->flModifications = 0;
-    }
-    catch (HRESULT err)
-    {
-        /* we assume that error info is set by the thrower */
-        rc = err;
-    }
-    catch (...)
-    {
-        rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+        Utf8Str stateFilePathFull(config.strStateFile);
+        int vrc = calculateFullPath(stateFilePathFull, stateFilePathFull);
+        if (RT_FAILURE(vrc))
+            return setError(E_FAIL,
+                            tr("Invalid saved state file path '%s' (%Rrc)"),
+                            config.strStateFile.raw(),
+                            vrc);
+        mSSData->mStateFilePath = stateFilePathFull;
     }
 
-    LogFlowThisFuncLeave();
-    return rc;
+    /* snapshotFolder (optional) */
+    rc = COMSETTER(SnapshotFolder)(Bstr(config.strSnapshotFolder));
+    if (FAILED(rc)) return rc;
+
+    /* currentStateModified (optional, default is true) */
+    mData->mCurrentStateModified = config.fCurrentStateModified;
+
+    mData->mLastStateChange = config.timeLastStateChange;
+
+    /* teleportation */
+    mUserData->mTeleporterEnabled  = config.fTeleporterEnabled;
+    mUserData->mTeleporterPort     = config.uTeleporterPort;
+    mUserData->mTeleporterAddress  = config.strTeleporterAddress;
+    mUserData->mTeleporterPassword = config.strTeleporterPassword;
+
+    /* RTC */
+    mUserData->mRTCUseUTC = config.fRTCUseUTC;
+
+    /*
+     *  note: all mUserData members must be assigned prior this point because
+     *  we need to commit changes in order to let mUserData be shared by all
+     *  snapshot machine instances.
+     */
+    mUserData.commitCopy();
+
+    /* Snapshot node (optional) */
+    size_t cRootSnapshots;
+    if ((cRootSnapshots = config.llFirstSnapshot.size()))
+    {
+        // there must be only one root snapshot
+        Assert(cRootSnapshots == 1);
+
+        const settings::Snapshot &snap = config.llFirstSnapshot.front();
+
+        rc = loadSnapshot(snap,
+                          config.uuidCurrentSnapshot,
+                          NULL);        // no parent == first snapshot
+        if (FAILED(rc)) return rc;
+    }
+
+    /* Hardware node (required) */
+    rc = loadHardware(config.hardwareMachine);
+    if (FAILED(rc)) return rc;
+
+    /* Load storage controllers */
+    rc = loadStorageControllers(config.storageMachine);
+    if (FAILED(rc)) return rc;
+
+    /*
+        *  NOTE: the assignment below must be the last thing to do,
+        *  otherwise it will be not possible to change the settings
+        *  somewehere in the code above because all setters will be
+        *  blocked by checkStateDependency(MutableStateDep).
+        */
+
+    /* set the machine state to Aborted or Saved when appropriate */
+    if (config.fAborted)
+    {
+        Assert(!mSSData->mStateFilePath.isEmpty());
+        mSSData->mStateFilePath.setNull();
+
+        /* no need to use setMachineState() during init() */
+        mData->mMachineState = MachineState_Aborted;
+    }
+    else if (!mSSData->mStateFilePath.isEmpty())
+    {
+        /* no need to use setMachineState() during init() */
+        mData->mMachineState = MachineState_Saved;
+    }
+
+    // after loading settings, we are no longer different from the XML on disk
+    mData->flModifications = 0;
+
+    return S_OK;
 }
 
 /**
@@ -6760,7 +6843,6 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
    *  @param aNode    <StorageControllers> node.
    */
 HRESULT Machine::loadStorageControllers(const settings::Storage &data,
-                                        bool aRegistered,
                                         const Guid *aSnapshotId /* = NULL */)
 {
     AssertReturn(getClassID() == clsidMachine || getClassID() == clsidSnapshotMachine, E_FAIL);
@@ -6810,7 +6892,6 @@ HRESULT Machine::loadStorageControllers(const settings::Storage &data,
         /* Load the attached devices now. */
         rc = loadStorageDevices(pCtl,
                                 ctlData,
-                                aRegistered,
                                 aSnapshotId);
         if (FAILED(rc)) return rc;
     }
@@ -6820,16 +6901,14 @@ HRESULT Machine::loadStorageControllers(const settings::Storage &data,
 
 /**
  * @param aNode        <HardDiskAttachments> node.
- * @param aRegistered  true when the machine is being loaded on VirtualBox
- *                     startup, or when a snapshot is being loaded (which
- *                     currently can happen on startup only)
+ * @param fAllowStorage if false, we produce an error if the config requests media attachments
+ *                      (used with importing unregistered machines which cannot have media attachments)
  * @param aSnapshotId  pointer to the snapshot ID if this is a snapshot machine
  *
  * @note Lock mParent  for reading and hard disks for writing before calling.
  */
 HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                     const settings::StorageController &data,
-                                    bool aRegistered,
                                     const Guid *aSnapshotId /*= NULL*/)
 {
     AssertReturn(   (getClassID() == clsidMachine && aSnapshotId == NULL)
@@ -6837,16 +6916,6 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                  E_FAIL);
 
     HRESULT rc = S_OK;
-
-    if (!aRegistered && data.llAttachedDevices.size() > 0)
-        /* when the machine is being loaded (opened) from a file, it cannot
-         * have hard disks attached (this should not happen normally,
-         * because we don't allow to attach hard disks to an unregistered
-         * VM at all */
-        return setError(E_FAIL,
-                        tr("Unregistered machine '%ls' cannot have storage devices attached (found %d attachments)"),
-                        mUserData->mName.raw(),
-                        data.llAttachedDevices.size());
 
     /* paranoia: detect duplicate attachments */
     for (settings::AttachedDevicesList::const_iterator it = data.llAttachedDevices.begin();
