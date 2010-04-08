@@ -249,6 +249,29 @@ RTDECL(size_t) RTSgBufCopyFromBuf(PRTSGBUF pSgBuf, void *pvBuf, size_t cbCopy)
 }
 
 
+RTDECL(size_t) RTSgBufAdvance(PRTSGBUF pSgBuf, size_t cbAdvance)
+{
+    AssertPtrReturn(pSgBuf, 0);
+
+    size_t cbLeft = cbAdvance;
+
+    while (cbLeft)
+    {
+        size_t cbThisAdvance = cbLeft;
+        void *pv = sgBufGet(pSgBuf, &cbThisAdvance);
+
+        NOREF(pv);
+
+        if (!cbThisAdvance)
+            break;
+
+        cbLeft -= cbThisAdvance;
+    }
+
+    return cbAdvance - cbLeft;
+}
+
+
 RTDECL(size_t) RTSgBufSegArrayCreate(PRTSGBUF pSgBuf, PRTSGSEG paSeg, unsigned *pcSeg, size_t cbData)
 {
     AssertPtrReturn(pSgBuf, 0);

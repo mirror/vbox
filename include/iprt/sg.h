@@ -168,6 +168,15 @@ RTDECL(size_t) RTSgBufCopyToBuf(PRTSGBUF pSgBuf, void *pvBuf, size_t cbCopy);
 RTDECL(size_t) RTSgBufCopyFromBuf(PRTSGBUF pSgBuf, void *pvBuf, size_t cbCopy);
 
 /**
+ * Advances the internal buffer pointer.
+ *
+ * @returns Number of bytes the pointer was moved forward.
+ * @param   pSgBuf      The S/G buffer.
+ * @param   cbAdvance   Number of bytes to move forward.
+ */
+RTDECL(size_t) RTSgBufAdvance(PRTSGBUF pSgBuf, size_t cbAdvance);
+
+/**
  * Constructs a new segment array starting from the current position
  * and describing the given number of bytes.
  *
