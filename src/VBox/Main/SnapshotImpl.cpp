@@ -1674,7 +1674,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
     /* discard all current changes to mUserData (name, OSType etc.) (note that
      * the machine is powered off, so there is no need to inform the direct
      * session) */
-    if (m_flModifications)
+    if (mData->flModifications)
         rollback(false /* aNotify */);
 
     HRESULT rc = S_OK;
@@ -1975,7 +1975,7 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
      */
     if (pSnapshot == mData->mCurrentSnapshot)
     {
-        if (m_flModifications)
+        if (mData->flModifications)
         {
             rc = saveSettings(NULL);
                 // no need to change for whether VirtualBox.xml needs saving since
@@ -2313,7 +2313,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                     // this requests the machine lock in turn when deleting all the children
                     // in the snapshot machine
 
-            rc = saveAllSnapshots(*mData->m_pMachineConfigFile);
+            rc = saveAllSnapshots(*mData->pMachineConfigFile);
             machineLock.release();
             if (FAILED(rc)) throw rc;
 
