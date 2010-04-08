@@ -165,7 +165,7 @@ RTDECL(int) RTSgBufCmp(PCRTSGBUF pSgBuf1, PCRTSGBUF pSgBuf2, size_t cbCmp)
         pvBuf2 = sgBufGet(&SgBuf2, &cbTmp);
         Assert(cbTmp == cbThisCmp);
 
-        int rc = memcmp(pvBuf1, pvBuf1, cbThisCmp);
+        int rc = memcmp(pvBuf1, pvBuf2, cbThisCmp);
         if (rc)
             return rc;
 
