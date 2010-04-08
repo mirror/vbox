@@ -35,6 +35,9 @@ ifndef VBOX_ONLY_TESTSUITE
  ifdef VBOX_WITH_CROGL
    include $(PATH_SUB_CURRENT)/crOpenGL/Makefile.kmk
  endif
+ ifdef VBOX_WITH_PAM
+  include $(PATH_SUB_CURRENT)/pam/Makefile.kmk
+ endif
 endif # !VBOX_ONLY_TESTSUITE
 
 include	$(KBUILD_PATH)/subfooter.kmk
