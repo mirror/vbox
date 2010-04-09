@@ -495,6 +495,38 @@ int main()
         }
     }
 
+
+    /*
+     * RTPathStripExt
+     */
+    RTTestSub(hTest, "RTPathStripExt");
+    struct
+    {
+        const char *pszSrc;
+        const char *pszResult;
+    } s_aStripExt[] =
+    {
+        { "filename.ext",               "filename" },
+        { "filename.ext1.ext2.ext3",    "filename.ext1.ext2" },
+        { "filename..ext",              "filename." },
+        { "filename.ext.",              "filename.ext" }, /** @todo This is a bit weird/wrong, but not half as weird as the way Windows+OS/2 deals with a trailing dots. */
+    };
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aStripExt); i++)
+    {
+        const char *pszInput    = s_aStripExt[i].pszSrc;
+        const char *pszResult   = s_aStripExt[i].pszResult;
+
+        strcpy(szPath, pszInput);
+        RTPathStripExt(szPath);
+        if (strcmp(szPath, pszResult))
+            RTTestIFailed("Unexpected result\n"
+                          "   input: '%s'\n"
+                          "  output: '%s'\n"
+                          "expected: '%s'",
+                          pszInput, szPath, pszResult);
+    }
+
+
     /*
      * Summary.
      */
