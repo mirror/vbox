@@ -219,25 +219,11 @@ typedef struct DRVNATQUEUITEM
 typedef DRVNATQUEUITEM *PDRVNATQUEUITEM;
 
 
-static void drvNATNotifyNATThread(PDRVNAT pThis);
-static DECLCALLBACK(void) drvNATSlowTimer(PPDMDRVINS pDrvIns, PTMTIMER pTimer, void *pvUser);
-static DECLCALLBACK(void) drvNATFast(PPDMDRVINS pDrvIns, PTMTIMER pTimer, void *pvUser);
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static void drvNATNotifyNATThread(PDRVNAT pThis, const char *pszWho);
 
-
-
-static DECLCALLBACK(void) drvNATSlowTimer(PPDMDRVINS pDrvIns, PTMTIMER pTimer, void *pvUser)
-{
-    Assert(pvUser);
-    PDRVNAT pThis = (PDRVNAT)pvUser;
-    drvNATNotifyNATThread(pThis);
-}
-
-static DECLCALLBACK(void) drvNATFastTimer(PPDMDRVINS pDrvIns, PTMTIMER pTimer, void *pvUser)
-{
-    Assert(pvUser);
-    PDRVNAT pThis = (PDRVNAT)pvUser;
-    drvNATNotifyNATThread(pThis);
-}
 
 
 static DECLCALLBACK(int) drvNATRecv(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
@@ -322,7 +308,7 @@ static DECLCALLBACK(void) drvNATUrgRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, in
     if (ASMAtomicDecU32(&pThis->cUrgPkt) == 0)
     {
         drvNATRecvWakeup(pThis->pDrvIns, pThis->pRecvThread);
-        drvNATNotifyNATThread(pThis);
+        drvNATNotifyNATThread(pThis, "drvNATUrgRecvWorker");
     }
 }
 
@@ -334,12 +320,12 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int c
 
     STAM_PROFILE_START(&pThis->StatNATRecvWait, b);
 
-    while(ASMAtomicReadU32(&pThis->cUrgPkt) != 0)
+    while (ASMAtomicReadU32(&pThis->cUrgPkt) != 0)
     {
         rc = RTSemEventWait(pThis->EventRecv, RT_INDEFINITE_WAIT);
         if (   RT_FAILURE(rc)
-            && ( rc == VERR_TIMEOUT
-                 || rc == VERR_INTERRUPTED))
+            && (   rc == VERR_TIMEOUT
+                || rc == VERR_INTERRUPTED))
             goto done_unlocked;
     }
 
@@ -353,8 +339,8 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int c
         AssertRC(rc);
     }
     else if (   RT_FAILURE(rc)
-             && (  rc != VERR_TIMEOUT
-                && rc != VERR_INTERRUPTED))
+             && rc != VERR_TIMEOUT
+             && rc != VERR_INTERRUPTED)
     {
         AssertRC(rc);
     }
@@ -369,7 +355,7 @@ done_unlocked:
 #endif
     ASMAtomicDecU32(&pThis->cPkt);
 
-    drvNATNotifyNATThread(pThis);
+    drvNATNotifyNATThread(pThis, "drvNATRecvWorker");
 
     STAM_PROFILE_STOP(&pThis->StatNATRecvWait, b);
     STAM_PROFILE_STOP(&pThis->StatNATRecv, a);
@@ -524,7 +510,7 @@ static DECLCALLBACK(int) drvNATNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, siz
     pSgBuf->cbAvailable = pSgBuf->aSegs[0].cbSeg;
     pSgBuf->cSegs       = 1;
 
-#if 1 /* poison */
+#if 0 /* poison */
     memset(pSgBuf->aSegs[0].pvSeg, 'F', pSgBuf->aSegs[0].cbSeg);
 #endif
     *ppSgBuf = pSgBuf;
@@ -561,7 +547,7 @@ static DECLCALLBACK(int) drvNATNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
                          (PFNRT)drvNATSendWorker, 2, pThis, pSgBuf);
         if (RT_SUCCESS(rc))
         {
-            drvNATNotifyNATThread(pThis);
+            drvNATNotifyNATThread(pThis, "drvNATNetworkUp_SendBuf");
             return VINF_SUCCESS;
         }
 
@@ -593,11 +579,11 @@ static DECLCALLBACK(int) drvNATNetworkUp_SendDeprecated(PPDMINETWORKUP pInterfac
 /**
  * Get the NAT thread out of poll/WSAWaitForMultipleEvents
  */
-static void drvNATNotifyNATThread(PDRVNAT pThis)
+static void drvNATNotifyNATThread(PDRVNAT pThis, const char *pszWho)
 {
     int rc;
 #ifndef RT_OS_WINDOWS
-    /* kick select() */
+    /* kick poll() */
     rc = RTFileWrite(pThis->PipeWrite, "", 1, NULL);
 #else
     /* kick WSAWaitForMultipleEvents */
@@ -663,7 +649,7 @@ static DECLCALLBACK(void) drvNATNetworkUp_NotifyLinkChanged(PPDMINETWORKUP pInte
                          (PFNRT)drvNATNotifyLinkChangedWorker, 2, pThis, enmLinkState);
     if (RT_LIKELY(rc == VERR_TIMEOUT))
     {
-        drvNATNotifyNATThread(pThis);
+        drvNATNotifyNATThread(pThis, "drvNATNetworkUp_NotifyLinkChanged");
         rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);
         AssertRC(rc);
     }
@@ -770,6 +756,8 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                  *
                  * XXX:Make it reading exactly we need to drain the pipe.
                  */
+                /** @todo use RTPipeCreate + RTPipeRead(,biggerbuffer) here, it's
+                 *        non-blocking. */
                 RTFileRead(pThis->PipeRead, &ch, 1, &cbRead);
             }
         }
@@ -829,7 +817,7 @@ static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
 
-    drvNATNotifyNATThread(pThis);
+    drvNATNotifyNATThread(pThis, "drvNATAsyncIoWakeup");
     return VINF_SUCCESS;
 }
 
@@ -858,17 +846,44 @@ static DECLCALLBACK(int) drvNATAsyncIoGuestWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD
 
 #endif /* VBOX_WITH_SLIRP_MT */
 
+
+/**
+ * The callback for the fast (2 ms) NAT timer.
+ *
+ * @param   pDrvIns             The driver instance.
+ * @param   pTimer              The timer handle.
+ * @param   pvUser              The NAT instance data.
+ */
+static DECLCALLBACK(void) drvNATFastTimer(PPDMDRVINS pDrvIns, PTMTIMER pTimer, void *pvUser)
+{
+    PDRVNAT pThis = (PDRVNAT)pvUser;
+    drvNATNotifyNATThread(pThis, "drvNATFastTimer");
+}
+
 void slirp_arm_fast_timer(void *pvUser)
 {
     PDRVNAT pThis = (PDRVNAT)pvUser;
-    Assert(pThis);
+    AssertPtr(pThis);
     TMTimerSetMillies(pThis->pTmrFast, 2);
+}
+
+/**
+ * The callback for the slow (500 ms) NAT timer.
+ *
+ * @param   pDrvIns             The driver instance.
+ * @param   pTimer              The timer handle.
+ * @param   pvUser              The NAT instance data.
+ */
+static DECLCALLBACK(void) drvNATSlowTimer(PPDMDRVINS pDrvIns, PTMTIMER pTimer, void *pvUser)
+{
+    PDRVNAT pThis = (PDRVNAT)pvUser;
+    drvNATNotifyNATThread(pThis, "drvNATSlowTimer");
 }
 
 void slirp_arm_slow_timer(void *pvUser)
 {
     PDRVNAT pThis = (PDRVNAT)pvUser;
-    Assert(pThis);
+    AssertPtr(pThis);
     TMTimerSetMillies(pThis->pTmrSlow, 500);
 }
 
