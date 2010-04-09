@@ -229,7 +229,8 @@ static int drvdiskintWriteRecord(PDRVDISKINTEGRITY pThis, PCRTSGSEG paSeg, unsig
         if (fSet)
         {
             AssertPtr(pSeg);
-            RTSgBufCopyToBuf(&SgBuf, pSeg->pbSeg + offSeg, cbRange);
+            size_t cbCopied = RTSgBufCopyToBuf(&SgBuf, pSeg->pbSeg + offSeg, cbRange);
+            Assert(cbCopied == cbRange);
 
             /* Update the I/O log pointers */
             Assert(offSeg % 512 == 0);
@@ -346,6 +347,8 @@ static int drvdiskintReadVerify(PDRVDISKINTEGRITY pThis, PCRTSGSEG paSeg, unsign
                 RTAssertDebugBreak();
             }
         }
+        else
+            RTSgBufAdvance(&SgBuf, cbRange);
 
         offCurr += cbRange;
         cbLeft  -= cbRange;
