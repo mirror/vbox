@@ -5249,6 +5249,7 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect (PPDMIDISPLAYPORT pInterface,
              * by Display because VBVA buffer is being flushed.
              * Nothing to do, just return.
              */
+            PDMCritSectLeave(&s->lock);
             return;
         case 8:
             v = VGA_DRAW_LINE8;
@@ -5395,6 +5396,7 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRectEx (PPDMIDISPLAYPORT pInterfac
         default:
         case 0:
             /* Nothing to do, just return. */
+            PDMCritSectLeave(&s->lock);
             return;
         case 8:
             v = VGA_DRAW_LINE8;
