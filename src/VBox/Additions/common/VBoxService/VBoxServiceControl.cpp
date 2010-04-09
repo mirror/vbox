@@ -95,77 +95,48 @@ static DECLCALLBACK(int) VBoxServiceControlInit(void)
 
 static int VBoxServiceControlHandleCmdExec(uint32_t u32ClientId, uint32_t uNumParms)
 {
-    VBOXSERVICECTRLPROCDATA execData;
-    execData.cbEnv = sizeof(execData.szEnv);
+    char szCmd[_1K];
+    uint32_t uFlags;
+    char szArgs[_1K];
+    uint32_t uNumArgs;
+    char szEnv[_64K];
+    uint32_t cbEnv = sizeof(szEnv);
+    uint32_t uNumEnvVars;
+    char szStdIn[_1K];
+    char szStdOut[_1K];
+    char szStdErr[_1K];
+    char szUser[128];
+    char szPassword[128];
+    uint32_t uTimeLimitMS;
 
     int rc = VbglR3GuestCtrlGetHostCmdExec(u32ClientId, uNumParms,
-                                           execData.szCmd, sizeof(execData.szCmd),
-                                           &execData.uFlags,
-                                           execData.szArgs, sizeof(execData.szArgs), &execData.uNumArgs,
-                                           execData.szEnv, &execData.cbEnv, &execData.uNumEnvVars,
-                                           execData.szStdIn, sizeof(execData.szStdIn),
-                                           execData.szStdOut, sizeof(execData.szStdOut),
-                                           execData.szStdErr, sizeof(execData.szStdErr),
-                                           execData.szUser, sizeof(execData.szUser),
-                                           execData.szPassword, sizeof(execData.szPassword),
-                                           &execData.uTimeLimitMS);
+                                           /* Command */
+                                           szCmd,      sizeof(szCmd),
+                                           /* Flags */
+                                           &uFlags,
+                                           /* Arguments */
+                                           szArgs,     sizeof(szArgs), &uNumArgs,
+                                           /* Environment */
+                                           szEnv, &cbEnv, &uNumEnvVars,
+                                           /* Pipes */
+                                           szStdIn,    sizeof(szStdIn),
+                                           szStdOut,   sizeof(szStdOut),
+                                           szStdErr,   sizeof(szStdErr),
+                                           /* Credentials */
+                                           szUser,     sizeof(szUser),
+                                           szPassword, sizeof(szPassword),
+                                           /* Timelimit */
+                                           &uTimeLimitMS);
     if (RT_FAILURE(rc))
     {
         VBoxServiceError("Control: Failed to retrieve execution command! Error: %Rrc\n", rc);
     }
     else
-    {
-        /* Adjust time limit value. */
-        execData.uTimeLimitMS = UINT32_MAX ?
-            RT_INDEFINITE_WAIT : execData.uTimeLimitMS;
-
-        /* Prepare argument list. */
-        char **ppaArg;
-        int iArgs;
-        rc = RTGetOptArgvFromString(&ppaArg, &iArgs, 
-                                    execData.uNumArgs ? execData.szArgs : "", NULL);
-        Assert(execData.uNumArgs == iArgs);
-        if (RT_SUCCESS(rc))
-        {
-            /* Prepare environment list. */
-            char **ppaEnv;
-            if (execData.uNumEnvVars)
-            {
-                ppaEnv = (char**)RTMemAlloc(execData.uNumEnvVars * sizeof(char*));
-                AssertPtr(ppaEnv);
-
-                char *pcCur = execData.szEnv;
-                uint32_t i = 0;
-                uint32_t cbLen = 0;
-                while (cbLen < execData.cbEnv)
-                {
-                    if (RTStrAPrintf(&ppaEnv[i++], "%s", pcCur) < 0)
-                    {
-                        rc = VERR_NO_MEMORY;
-                        break;
-                    }
-                    cbLen += strlen(pcCur) + 1; /* Skip terminating zero. */
-                    pcCur += cbLen;
-                }
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                /* Do the actual execution. */
-                rc = VBoxServiceControlExecProcess(&execData, ppaArg, ppaEnv);
-                if (RT_FAILURE(rc))
-                    VBoxServiceVerbose(3, "Control: Could not execute process \"%s\"! Error: %Rrc\n", 
-                                       execData.szCmd, rc);
-                /* Cleanup. */
-                if (execData.uNumEnvVars)
-                {
-                    for (uint32_t i = 0; i < execData.uNumEnvVars; i++)
-                        RTStrFree(ppaEnv[i]);
-                    RTMemFree(ppaEnv);
-                }
-            }
-            RTGetOptArgvFree(ppaArg);
-        }
+    {     
+        rc = VBoxServiceControlExecProcess(szCmd, uFlags, szArgs, uNumArgs,                                           
+                                           szEnv, cbEnv, uNumEnvVars,
+                                           szStdIn, szStdOut, szStdErr,
+                                           szUser, szPassword, uTimeLimitMS);
     }
     return rc;
 }

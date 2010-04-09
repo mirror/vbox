@@ -125,29 +125,29 @@ typedef DWORD (WINAPI *PFNWTSGETACTIVECONSOLESESSIONID)(void);
 #endif /* RT_OS_WINDOWS */
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-/* Structure for holding process execution data. */
-typedef struct _VBoxServiceControlProcessData
+/* Structure for holding thread relevant data. */
+typedef struct
 {
-    char szCmd[_1K];
-    uint32_t uFlags;
-    char szArgs[_1K];
-    uint32_t uNumArgs;
-    char szEnv[_64K];
-    uint32_t cbEnv;
-    uint32_t uNumEnvVars;
-    char szStdIn[_1K];
-    char szStdOut[_1K];
-    char szStdErr[_1K];
-    char szUser[128];
-    char szPassword[128];
-    uint32_t uTimeLimitMS;
-} VBOXSERVICECTRLPROCDATA;
-/** Pointer to execution data. */
-typedef VBOXSERVICECTRLPROCDATA *PVBOXSERVICECTRLPROCDATA;
+    char     *pszCmd;
+    uint32_t  uFlags;
+    char    **papszArgs;
+    uint32_t  uNumArgs;
+    char    **papszEnv;
+    uint32_t  uNumEnvVars;
+    char     *pszStdIn;
+    char     *pszStdOut;
+    char     *pszStdErr;
+    char     *pszUser;
+    char     *pszPassword;
+    uint32_t  uTimeLimitMS;
+} VBOXSERVICECTRLTHREADDATA;
+/** Pointer to thread data. */
+typedef VBOXSERVICECTRLTHREADDATA *PVBOXSERVICECTRLTHREADDATA;
+
 /**
  * For buffering process input supplied by the client.
  */
-typedef struct _VBoxServiceControlStdInBuf
+typedef struct
 {
     /** The mount of buffered data. */
     size_t  cb;
@@ -209,9 +209,11 @@ extern int  VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
 #endif /* RT_OS_WINDOWS */
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-extern int  VBoxServiceControlExecProcess(PVBOXSERVICECTRLPROCDATA pExecData,
-                                          const char * const      *papszArgs,
-                                          const char * const      *papszEnv);
+extern int VBoxServiceControlExecProcess(const char *pszCmd, uint32_t uFlags, 
+                                         const char *pszArgs, uint32_t uNumArgs,                                           
+                                         const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
+                                         const char *pszStdIn, const char *pszStdOut, const char *pszStdErr,
+                                         const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS);
 #endif
 
 #ifdef VBOXSERVICE_MANAGEMENT
