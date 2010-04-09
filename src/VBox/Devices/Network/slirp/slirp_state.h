@@ -646,11 +646,12 @@ typedef struct NATState
 # define QSOCKET_LOCK_CREATE(queue) do {} while (0)
 # define QSOCKET_LOCK_DESTROY(queue) do {} while (0)
 # define QSOCKET_FOREACH(so, sonext, label)                              \
-    for ((so)  = VBOX_X2(queue_ ## label ## _label).so_next;                 \
-         (so) != &(VBOX_X2(queue_ ## label ## _label));                      \
+    for ((so)  = VBOX_X2(queue_ ## label ## _label).so_next;             \
+         (so) != &(VBOX_X2(queue_ ## label ## _label));                  \
          (so) = (sonext))                                                \
     {                                                                    \
-        (sonext) = (so)->so_next;
+        (sonext) = (so)->so_next;                                        \
+         Log2(("%s:%d Processing so:%R[natsock]\n", __FUNCTION__, __LINE__, (so)));
 # define CONTINUE(label) continue
 # define CONTINUE_NO_UNLOCK(label) continue
 # define LOOP_LABEL(label, so, sonext) /* empty*/
