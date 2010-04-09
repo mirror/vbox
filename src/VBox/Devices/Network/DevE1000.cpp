@@ -1951,10 +1951,15 @@ static int e1kRxChecksumOffload(E1KSTATE* pState, const uint8_t *pFrame, size_t 
 
     E1kLog2(("%s e1kRxChecksumOffload: EtherType=%x\n", INSTANCE(pState), uEtherType));
 
-    //pStatus->fIPE   = false;
-    //pStatus->fTCPE  = false;
     switch (uEtherType)
     {
+        /* @todo
+         * It is not safe to bypass checksum verification for packets coming
+         * from real wire. We currently unable to tell where packets are
+         * coming from so we tell the driver to ignore our checksum flags
+         * and do verification in software.
+         */
+#if 0
         case 0x800: /* IPv4 */
             pStatus->fIXSM  = false;
             pStatus->fIPCS  = true;
@@ -1967,6 +1972,7 @@ static int e1kRxChecksumOffload(E1KSTATE* pState, const uint8_t *pFrame, size_t 
             pStatus->fIPCS  = false;
             pStatus->fTCPCS = true;
             break;
+#endif
         default: /* ARP, VLAN, etc. */
             pStatus->fIXSM = true;
             break;
