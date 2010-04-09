@@ -53,7 +53,6 @@ void slirp_set_ethaddr_and_activate_port_forwarding(PNATState pData, const uint8
 
 /* you must provide the following functions: */
 void slirp_arm_fast_timer(void *pvUser);
-void slirp_arm_slow_timer(void *pvUser);
 int slirp_can_output(void * pvUser);
 void slirp_output(void * pvUser, struct mbuf *m, const uint8_t *pkt, int pkt_len);
 void slirp_urg_output(void *pvUser, struct mbuf *, const uint8_t *pu8Buf, int cb);
