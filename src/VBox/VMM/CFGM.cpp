@@ -257,9 +257,9 @@ VMMR3DECL(PCFGMNODE) CFGMR3GetChildFV(PCFGMNODE pNode, const char *pszPathFormat
     {
         PCFGMNODE pChild;
         int rc = cfgmR3ResolveNode(pNode, pszPath, &pChild);
+        RTStrFree(pszPath);
         if (RT_SUCCESS(rc))
             return pChild;
-        RTStrFree(pszPath);
     }
     return NULL;
 }
