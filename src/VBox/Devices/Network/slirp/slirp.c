@@ -55,12 +55,23 @@
 
 # define DO_POLL_EVENTS(rc, error, so, events, label) do {} while (0)
 
+#if 0/** @todo This doesn't work because linux sets both POLLHUP and POLLERR when the
+socket is closed. @bugref{4811} Please verif the changed test. */
 #  define DO_CHECK_FD_SET(so, events, fdset)                        \
       (   ((so)->so_poll_index != -1)                               \
        && ((so)->so_poll_index <= ndfs)                             \
        && ((so)->s == polls[so->so_poll_index].fd)                  \
        && (polls[(so)->so_poll_index].revents & N_(fdset ## _poll)) \
        && !(polls[(so)->so_poll_index].revents & (POLLERR|POLLNVAL)))
+#else
+#  define DO_CHECK_FD_SET(so, events, fdset)                        \
+      (   ((so)->so_poll_index != -1)                               \
+       && ((so)->so_poll_index <= ndfs)                             \
+       && ((so)->s == polls[so->so_poll_index].fd)                  \
+       && (polls[(so)->so_poll_index].revents & N_(fdset ## _poll)) \
+       && !(polls[(so)->so_poll_index].revents & POLLNVAL))
+#endif
+
   /* specific for Unix API */
 # define DO_UNIX_CHECK_FD_SET(so, events, fdset) DO_CHECK_FD_SET((so), (events), fdset)
   /* specific for Windows Winsock API */
@@ -1129,8 +1140,8 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
         /* out-of-band data */
         if (    CHECK_FD_SET(so, NetworkEvents, xfds)
 #ifdef RT_OS_DARWIN
-            /* Darwin and probably BSD hosts generates POLLPRI|POLLHUB event on receiving TCP.flags.{ACK|URG|FIN} this
-             * combination on other Unixs hosts doesn't enter to this branch 
+            /* Darwin and probably BSD hosts generates POLLPRI|POLLHUP event on receiving TCP.flags.{ACK|URG|FIN} this
+             * combination on other Unixs hosts doesn't enter to this branch
              */
             &&  !CHECK_FD_SET(so, NetworkEvents, closefds)
 #endif
@@ -1180,7 +1191,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
                 {
                     Log2(("%R[natsock] errno %d:%s\n", so, errno, strerror(errno)));
                     break;
-                } 
+                }
             }
             /* mark the socket for termination _after_ it was drained */
             so->so_close = 1;
