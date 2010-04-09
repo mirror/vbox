@@ -367,25 +367,6 @@ typedef struct INTNETTRUNKSWPORT
     uint32_t u32Version;
 
     /**
-     * Selects whether outgoing SGs should have their physical address set.
-     *
-     * By enabling physical addresses in the scatter / gather segments it should
-     * be possible to save some unnecessary address translation and memory locking
-     * in the network stack. (Internal networking knows the physical address for
-     * all the INTNETBUF data and that it's locked memory.) There is a negative
-     * side effects though, frames that crosses page boundraries will require
-     * multiple scather / gather segments.
-     *
-     * @returns The old setting.
-     *
-     * @param   pSwitchPort Pointer to this structure.
-     * @param   fEnable     Whether to enable or disable it.
-     *
-     * @remarks Will grab the network semaphore.
-     */
-    DECLR0CALLBACKMEMBER(bool, pfnSetSGPhys,(PINTNETTRUNKSWPORT pSwitchPort, bool fEnable));
-
-    /**
      * Incoming frame.
      *
      * The frame may be modified when the trunk port on the switch is set to share
@@ -434,6 +415,41 @@ typedef struct INTNETTRUNKSWPORT
      * @remarks Will grab the network semaphore.
      */
     DECLR0CALLBACKMEMBER(void, pfnSGRelease,(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG));
+
+    /**
+     * Selects whether outgoing SGs should have their physical address set.
+     *
+     * By enabling physical addresses in the scatter / gather segments it should
+     * be possible to save some unnecessary address translation and memory locking
+     * in the network stack. (Internal networking knows the physical address for
+     * all the INTNETBUF data and that it's locked memory.) There is a negative
+     * side effects though, frames that crosses page boundraries will require
+     * multiple scather / gather segments.
+     *
+     * @returns The old setting.
+     *
+     * @param   pSwitchPort Pointer to this structure.
+     * @param   fEnable     Whether to enable or disable it.
+     *
+     * @remarks Will grab the network semaphore.
+     */
+    DECLR0CALLBACKMEMBER(bool, pfnSetSGPhys,(PINTNETTRUNKSWPORT pSwitchPort, bool fEnable));
+
+    /**
+     * Reports the GSO capabilities of the host, wire or both.
+     *
+     * This is supposed to be used only when creating, connecting or reconnecting
+     * the trunk.  It is assumed that the GSO capabilities are kind of static the
+     * rest of the time.
+     *
+     * @param   pSwitchPort         Pointer to this structure.
+     * @param   fGsoCapabilities    The GSO capability bit mask.  The bits
+     *                              corresponds to the GSO type with the same value.
+     * @param   fDst                The destination mask (INTNETTRUNKDIR_XXX).
+     *
+     * @remarks Will to take any locks.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnReportGsoCapabilities,(PINTNETTRUNKSWPORT pSwitchPort, uint32_t fGsoCapabilities, uint32_t fDst));
 
     /** Structure version number. (INTNETTRUNKSWPORT_VERSION) */
     uint32_t u32VersionEnd;
@@ -662,7 +678,7 @@ typedef struct INTNETTRUNKFACTORY
 typedef INTNETTRUNKFACTORY *PINTNETTRUNKFACTORY;
 
 /** The UUID for the (current) trunk factory. (case sensitive) */
-#define INTNETTRUNKFACTORY_UUID_STR     "78ddad1d-6b6a-42da-9053-d9547a2acd9a"
+#define INTNETTRUNKFACTORY_UUID_STR     "1d3810bc-0899-42b0-8ae1-346a08bffff7"
 
 /** @name INTNETTRUNKFACTORY::pfnCreateAndConnect flags.
  * @{ */
