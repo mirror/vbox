@@ -123,6 +123,10 @@ typedef struct DRVINTNET
     /** Profiling packet receive runs. */
     STAMPROFILEADV                  StatReceive;
 #endif /* VBOX_WITH_STATISTICS */
+    /** Number of GSO packets sent. */
+    STAMCOUNTER                     StatSentGso;
+    /** Number of GSO packets recevied. */
+    STAMCOUNTER                     StatReceivedGso;
 } DRVINTNET;
 /** Pointer to instance data of the internal networking driver. */
 typedef DRVINTNET *PDRVINTNET;
@@ -292,6 +296,9 @@ static DECLCALLBACK(int) drvR3IntNetUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSC
     AssertPtr(pSgBuf);
     Assert(pSgBuf->fFlags == (PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1));
     Assert(pSgBuf->cbUsed <= pSgBuf->cbAvailable);
+
+    if (pSgBuf->pvUser)
+        STAM_COUNTER_INC(&pThis->StatSentGso);
 
     /*
      * Commit the frame and push it thru the switch.
@@ -506,6 +513,7 @@ static int drvR3IntNetAsyncIoRun(PDRVINTNET pThis)
                          * This is where we do the offloading since we don't
                          * emulate any NICs with large receive offload (LRO).
                          */
+                        STAM_COUNTER_INC(&pThis->StatReceivedGso);
                         PCPDMNETWORKGSO pGso = INTNETHdrGetGsoContext(pHdr, pBuf);
                         if (PDMNetGsoIsValid(pGso, cbFrame, cbFrame - sizeof(PDMNETWORKGSO)))
                         {
@@ -886,6 +894,8 @@ static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatYieldsNok);
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatLost);
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatBadFrames);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReceivedGso);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatSentGso);
 #ifdef VBOX_WITH_STATISTICS
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReceive);
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatTransmit);
@@ -1237,19 +1247,22 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
         AssertRC(rc);
         return rc;
     }
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->Recv.cbStatWritten, STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Number of received bytes.",    "/Net/IntNet%d/Bytes/Received", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->Send.cbStatWritten, STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Number of sent bytes.",        "/Net/IntNet%d/Bytes/Sent", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->Recv.cOverflows,    STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number overflows.",            "/Net/IntNet%d/Overflows/Recv", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->Send.cOverflows,    STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number overflows.",            "/Net/IntNet%d/Overflows/Sent", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->Recv.cStatFrames,   STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of received packets.",  "/Net/IntNet%d/Packets/Received", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->Send.cStatFrames,   STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of sent packets.",      "/Net/IntNet%d/Packets/Sent", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatLost,          STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of lost packets.",      "/Net/IntNet%d/Packets/Lost", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatYieldsNok,     STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of times yielding helped fix an overflow.",      "/Net/IntNet%d/YieldOk", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatYieldsOk,      STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of times yielding didn't help fix an overflow.", "/Net/IntNet%d/YieldNok", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatBadFrames,     STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of bad frames seed by the consumers.",           "/Net/IntNet%d/BadFrames", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->Recv.cbStatWritten, "Bytes/Received",       STAMUNIT_BYTES, "Number of received bytes.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->Send.cbStatWritten, "Bytes/Sent",           STAMUNIT_BYTES, "Number of sent bytes.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->Recv.cOverflows,    "Overflows/Recv",       STAMUNIT_COUNT, "Number overflows.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->Send.cOverflows,    "Overflows/Sent",       STAMUNIT_COUNT, "Number overflows.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->Recv.cStatFrames,   "Packets/Received",     STAMUNIT_COUNT, "Number of received packets.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->Send.cStatFrames,   "Packets/Sent",         STAMUNIT_COUNT, "Number of sent packets.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatReceivedGso,            "Packets/Received-Gso", STAMUNIT_COUNT, "The GSO portion of the received packets.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatSentGso,                "Packets/Sent-Gso",     STAMUNIT_COUNT, "The GSO portion of the sent packets.");
+
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->cStatLost,          "Packets/Lost",         STAMUNIT_COUNT, "Number of lost packets.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->cStatYieldsNok,     "YieldOk",              STAMUNIT_COUNT, "Number of times yielding helped fix an overflow.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->cStatYieldsOk,      "YieldNok",             STAMUNIT_COUNT, "Number of times yielding didn't help fix an overflow.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->cStatBadFrames,     "BadFrames",            STAMUNIT_COUNT, "Number of bad frames seed by the consumers.");
 #ifdef VBOX_WITH_STATISTICS
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReceive,                STAMTYPE_PROFILE,   STAMVISIBILITY_ALWAYS,  STAMUNIT_TICKS_PER_CALL, "Profiling packet receive runs.",  "/Net/IntNet%d/Receive", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatTransmit,               STAMTYPE_PROFILE,   STAMVISIBILITY_ALWAYS,  STAMUNIT_TICKS_PER_CALL, "Profiling packet transmit runs.", "/Net/IntNet%d/Transmit", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegProfileAdv(pDrvIns, &pThis->StatReceive,             "Receive",     STAMUNIT_TICKS_PER_CALL, "Profiling packet receive runs.");
+    PDMDrvHlpSTAMRegProfile(pDrvIns, &pThis->StatTransmit,               "Transmit",    STAMUNIT_TICKS_PER_CALL, "Profiling packet transmit runs.");
 #endif
 
     /*
