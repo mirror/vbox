@@ -46,6 +46,7 @@
 //#define E1K_REL_DEBUG
 //#define E1K_INT_STATS
 //#define E1K_REL_STATS
+//#define E1K_USE_SUPLIB_SEMEVENT
 
 #include <iprt/crc32.h>
 #include <iprt/ctype.h>
@@ -955,7 +956,11 @@ struct E1kState_st
 //    PDMCRITSECT csTx;                                     /**< TX Critical section. */
 #endif
     /** Transmit thread blocker. */
+#ifdef E1K_USE_SUPLIB_SEMEVENT
+    SUPSEMEVENT hTxSem;
+#else
     RTSEMEVENT  hTxSem;
+#endif
     /** Base address of memory-mapped registers. */
     RTGCPHYS    addrMMReg;
     /** MAC address obtained from the configuration. */
@@ -2853,7 +2858,7 @@ DECLINLINE(void) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
     }
 
     /* IPv4 checksum offset. */
-    if (RT_UNLIKELY( pCtx->dw2.fIP && pCtx->ip.u8CSO - pCtx->ip.u8CSS != RT_OFFSETOF(RTNETIPV4, ip_sum) ))
+    if (RT_UNLIKELY( pCtx->dw2.fIP && pCtx->ip.u8CSO - pCtx->ip.u8CSS != RT_UOFFSETOF(RTNETIPV4, ip_sum) ))
     {
         E1kLog(("e1kSetupGsoCtx: IPCSO=%#x IPCSS=%#x\n", pCtx->ip.u8CSO, pCtx->ip.u8CSS));
         return;
@@ -2861,8 +2866,8 @@ DECLINLINE(void) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
 
     /* TCP/UDP checksum offsets. */
     if (RT_UNLIKELY( pCtx->tu.u8CSO - pCtx->tu.u8CSS != ( pCtx->dw2.fTCP
-                                                         ? RT_OFFSETOF(RTNETTCP, th_sum)
-                                                         : RT_OFFSETOF(RTNETUDP, uh_sum) ) ))
+                                                         ? RT_UOFFSETOF(RTNETTCP, th_sum)
+                                                         : RT_UOFFSETOF(RTNETUDP, uh_sum) ) ))
     {
         E1kLog(("e1kSetupGsoCtx: TUCSO=%#x TUCSS=%#x TCP=%d\n", pCtx->ip.u8CSO, pCtx->ip.u8CSS, pCtx->dw2.fTCP));
         return;
@@ -3733,7 +3738,11 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
 static DECLCALLBACK(int) e1kTxThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
     E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
+#ifdef E1K_USE_SUPLIB_SEMEVENT
+    int rc = SUPSemEventSignal(PDMDevHlpGetVM(pDevIns)->pSession, pState->hTxSem);
+#else
     int rc = RTSemEventSignal(pState->hTxSem);
+#endif
     AssertRC(rc);
     return VINF_SUCCESS;
 }
@@ -3752,7 +3761,13 @@ static DECLCALLBACK(int) e1kTxThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        int rc = RTSemEventWait(pState->hTxSem, RT_INDEFINITE_WAIT);
+#ifdef E1K_USE_SUPLIB_SEMEVENT
+        int rc = SUPSemEventWaitNoResume(PDMDevHlpGetVM(pDevIns)->pSession, pState->hTxSem, RT_INDEFINITE_WAIT);
+#else
+        int rc = RTSemEventWaitNoResume(pState->hTxSem, RT_INDEFINITE_WAIT);
+#endif
+        if (rc == VERR_INTERRUPTED)
+            continue;
         AssertRCReturn(rc, rc);
         if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
             break;
@@ -3806,7 +3821,11 @@ static DECLCALLBACK(bool) e1kTxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCO
     NOREF(pItem);
     E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
     E1kLog2(("%s e1kTxQueueConsumer: Waking up TX thread...\n", INSTANCE(pState)));
+#ifdef E1K_USE_SUPLIB_SEMEVENT
+    int rc = SUPSemEventSignal(PDMDevHlpGetVM(pDevIns)->pSession, pState->hTxSem);
+#else
     int rc = RTSemEventSignal(pState->hTxSem);
+#endif
     AssertRC(rc);
     return true;
 }
@@ -3851,7 +3870,10 @@ static int e1kRegWriteTDT(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
         E1kLogRel(("E1000: TDT write: %d descriptors to process\n", e1kGetTxLen(pState)));
         E1kLog(("%s e1kRegWriteTDT: %d descriptors to process, waking up E1000_TX thread\n",
                  INSTANCE(pState), e1kGetTxLen(pState)));
-#ifdef IN_RING3
+#if (defined(IN_RING3) || defined(IN_RING0)) && defined(E1K_USE_SUPLIB_SEMEVENT)
+        rc = SUPSemEventSignal(PDMDevHlpGetVM(pState->CTX_SUFF(pDevIns))->pSession, pState->hTxSem);
+        AssertRC(rc);
+#elif defined(IN_RING3)
         rc = RTSemEventSignal(pState->hTxSem);
         AssertRC(rc);
 #else
@@ -5406,11 +5428,19 @@ static DECLCALLBACK(int) e1kDestruct(PPDMDEVINS pDevIns)
             RTSemEventDestroy(pState->hEventMoreRxDescAvail);
             pState->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
         }
+#ifdef E1K_USE_SUPLIB_SEMEVENT
+        if (pState->hTxSem != NIL_SUPSEMEVENT)
+        {
+            SUPSemEventClose(PDMDevHlpGetVM(pDevIns)->pSession, pState->hTxSem);
+            pState->hTxSem = NIL_SUPSEMEVENT;
+        }
+#else
         if (pState->hTxSem != NIL_RTSEMEVENT)
         {
             RTSemEventDestroy(pState->hTxSem);
             pState->hTxSem = NIL_RTSEMEVENT;
         }
+#endif
 #ifndef E1K_GLOBAL_MUTEX
         PDMR3CritSectDelete(&pState->csRx);
         //PDMR3CritSectDelete(&pState->csTx);
@@ -5537,7 +5567,11 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /* Init handles and log related stuff. */
     RTStrPrintf(pState->szInstance, sizeof(pState->szInstance), "E1000#%d", iInstance);
     E1kLog(("%s Constructing new instance sizeof(E1KRXDESC)=%d\n", INSTANCE(pState), sizeof(E1KRXDESC)));
+#ifdef E1K_USE_SUPLIB_SEMEVENT
+    pState->hTxSem = NIL_SUPSEMEVENT;
+#else
     pState->hTxSem = NIL_RTSEMEVENT;
+#endif
     pState->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
 
     /*
@@ -5770,7 +5804,11 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     else
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach the network LUN"));
 
+#ifdef E1K_USE_SUPLIB_SEMEVENT
+    rc = SUPSemEventCreate(PDMDevHlpGetVM(pDevIns)->pSession, &pState->hTxSem);
+#else
     rc = RTSemEventCreate(&pState->hTxSem);
+#endif
     if (RT_FAILURE(rc))
         return rc;
     rc = RTSemEventCreate(&pState->hEventMoreRxDescAvail);
