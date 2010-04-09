@@ -189,14 +189,15 @@ typedef struct INTNETTRUNKIF
     /** Set if the 'wire' is in promiscuous mode.
      * The state of the 'host' is queried each time. */
     bool                    fPromiscuousWire;
-    /** Set if the trunk can handle GSO frames.  */
-    bool                    fGroksGso;
-    /** Alignment padding. */
-    bool                    afAlignment[ARCH_BITS == 32 ? 3 : 7];
+    /** The GSO capabilities of the host destination.
+     * This is as bit map where each bit represents the GSO type with the same
+     * number. */
+    uint32_t                fGsoCapabilitesHost;
+    /** The GSO capabilities of the wire destination. */
+    uint32_t                fGsoCapabilitesWire;
     /** Header buffer for when we're carving GSO frames. */
     uint8_t                 abGsoHdrs[256];
 } INTNETTRUNKIF;
-AssertCompileMemberAlignment(INTNETTRUNKIF, abGsoHdrs, 8);
 /** Pointer to a trunk interface. */
 typedef INTNETTRUNKIF *PINTNETTRUNKIF;
 
@@ -1622,6 +1623,29 @@ static int intnetR0TrunkIfSendGsoFallback(PINTNETTRUNKIF pThis, PINTNETSG pSG, u
 
 
 /**
+ * Checks if any of the given trunk destinations can handle this kind of GSO SG.
+ *
+ * @returns true if it can, false if it cannot.
+ * @param   pThis               The trunk.
+ * @param   pSG                 The scatter / gather buffer.
+ * @param   fDst                The desitination mask.
+ */
+DECLINLINE(bool) intnetR0TrunkIfCanHandleGsoFrame(PINTNETTRUNKIF pThis, PINTNETSG pSG, uint32_t fDst)
+{
+    uint8_t     u8Type = pSG->GsoCtx.u8Type;
+    AssertReturn(u8Type < 32, false);   /* paranoia */
+    uint32_t    fMask  = RT_BIT_32(u8Type);
+
+    if (fDst == INTNETTRUNKDIR_HOST)
+        return !!(pThis->fGsoCapabilitesHost & fMask);
+    if (fDst == INTNETTRUNKDIR_WIRE)
+        return !!(pThis->fGsoCapabilitesWire & fMask);
+    Assert(fDst == (INTNETTRUNKDIR_WIRE == INTNETTRUNKDIR_HOST));
+    return !!(pThis->fGsoCapabilitesHost & pThis->fGsoCapabilitesWire & fMask);
+}
+
+
+/**
  * Sends a frame down the trunk.
  *
  * The caller must own the network mutex, might be abandond temporarily.
@@ -1737,7 +1761,7 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
                 ||  intnetR0TrunkIfOutLock(pThis))
             {
                 if (   pSG->GsoCtx.u8Type == PDMNETWORKGSOTYPE_INVALID
-                    || pThis->fGroksGso)
+                    || intnetR0TrunkIfCanHandleGsoFrame(pThis, pSG, fDst) )
                     rc = pThis->pIfPort->pfnXmit(pThis->pIfPort, pSG, fDst);
                 else
                     rc = intnetR0TrunkIfSendGsoFallback(pThis, pSG, fDst);
@@ -3285,6 +3309,25 @@ static DECLCALLBACK(bool) intnetR0TrunkIfPortSetSGPhys(PINTNETTRUNKSWPORT pSwitc
 }
 
 
+/** @copydoc INTNETTRUNKSWPORT::pfnReportGsoCapabilities */
+static DECLCALLBACK(void) intnetR0TrunkIfPortReportGsoCapabilities(PINTNETTRUNKSWPORT pSwitchPort,
+                                                                  uint32_t fGsoCapabilities, uint32_t fDst)
+{
+    PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
+
+    for (unsigned iBit = PDMNETWORKGSOTYPE_END; iBit < 32; iBit++)
+        Assert(!(fGsoCapabilities & RT_BIT_32(iBit)));
+    Assert(fDst & ~INTNETTRUNKDIR_VALID_MASK);
+    Assert(fDst);
+
+    if (fDst & INTNETTRUNKDIR_HOST)
+        pThis->fGsoCapabilitesHost = fGsoCapabilities;
+
+    if (fDst & INTNETTRUNKDIR_WIRE)
+        pThis->fGsoCapabilitesWire = fGsoCapabilities;
+}
+
+
 /** @copydoc INTNETTRUNKSWPORT::pfnRecv */
 static DECLCALLBACK(bool) intnetR0TrunkIfPortRecv(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG, uint32_t fSrc)
 {
@@ -3567,12 +3610,13 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
     PINTNETTRUNKIF pTrunkIF = (PINTNETTRUNKIF)RTMemAllocZ(sizeof(*pTrunkIF));
     if (!pTrunkIF)
         return VERR_NO_MEMORY;
-    pTrunkIF->SwitchPort.u32Version     = INTNETTRUNKSWPORT_VERSION;
-    pTrunkIF->SwitchPort.pfnSetSGPhys   = intnetR0TrunkIfPortSetSGPhys;
-    pTrunkIF->SwitchPort.pfnRecv        = intnetR0TrunkIfPortRecv;
-    pTrunkIF->SwitchPort.pfnSGRetain    = intnetR0TrunkIfPortSGRetain;
-    pTrunkIF->SwitchPort.pfnSGRelease   = intnetR0TrunkIfPortSGRelease;
-    pTrunkIF->SwitchPort.u32VersionEnd  = INTNETTRUNKSWPORT_VERSION;
+    pTrunkIF->SwitchPort.u32Version                 = INTNETTRUNKSWPORT_VERSION;
+    pTrunkIF->SwitchPort.pfnRecv                    = intnetR0TrunkIfPortRecv;
+    pTrunkIF->SwitchPort.pfnSGRetain                = intnetR0TrunkIfPortSGRetain;
+    pTrunkIF->SwitchPort.pfnSGRelease               = intnetR0TrunkIfPortSGRelease;
+    pTrunkIF->SwitchPort.pfnSetSGPhys               = intnetR0TrunkIfPortSetSGPhys;
+    pTrunkIF->SwitchPort.pfnReportGsoCapabilities   = intnetR0TrunkIfPortReportGsoCapabilities;
+    pTrunkIF->SwitchPort.u32VersionEnd              = INTNETTRUNKSWPORT_VERSION;
     //pTrunkIF->pIfPort = NULL;
     pTrunkIF->pNetwork = pNetwork;
     pTrunkIF->CachedMac.au8[0] = 0xfe;
