@@ -1255,7 +1255,12 @@ int handleModifyVM(HandlerArg *a)
                 ASSERT(nic);
 
                 CHECK_ERROR(nic, COMGETTER(NatDriver)(driver.asOutParam()));
-                CHECK_ERROR(driver, COMSETTER(Network)(Bstr(ValueUnion.psz)));
+
+                const char *psz = ValueUnion.psz;
+                if (!strcmp("default", psz))
+                    psz = "";
+
+                CHECK_ERROR(driver, COMSETTER(Network)(Bstr(psz)));
                 break;
             }
 
