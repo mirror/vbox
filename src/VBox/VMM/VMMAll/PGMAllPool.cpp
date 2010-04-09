@@ -1149,7 +1149,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 #endif
 
     /*
-     * Incremental page table updates should weight more than random ones.
+     * Incremental page table updates should weigh more than random ones.
      * (Only applies when started from offset 0)
      */
     pVCpu->pgm.s.cPoolAccessHandler++;
