@@ -1953,7 +1953,7 @@ static int e1kRxChecksumOffload(E1KSTATE* pState, const uint8_t *pFrame, size_t 
 
     switch (uEtherType)
     {
-        /* @todo
+        /** @todo
          * It is not safe to bypass checksum verification for packets coming
          * from real wire. We currently unable to tell where packets are
          * coming from so we tell the driver to ignore our checksum flags
@@ -2864,16 +2864,17 @@ DECLINLINE(void) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
     }
 
     /* IPv4 checksum offset. */
-    if (RT_UNLIKELY( pCtx->dw2.fIP && pCtx->ip.u8CSO - pCtx->ip.u8CSS != RT_UOFFSETOF(RTNETIPV4, ip_sum) ))
+    if (RT_UNLIKELY( pCtx->dw2.fIP && (size_t)pCtx->ip.u8CSO - pCtx->ip.u8CSS != RT_UOFFSETOF(RTNETIPV4, ip_sum) ))
     {
         E1kLog(("e1kSetupGsoCtx: IPCSO=%#x IPCSS=%#x\n", pCtx->ip.u8CSO, pCtx->ip.u8CSS));
         return;
     }
 
     /* TCP/UDP checksum offsets. */
-    if (RT_UNLIKELY( pCtx->tu.u8CSO - pCtx->tu.u8CSS != ( pCtx->dw2.fTCP
-                                                         ? RT_UOFFSETOF(RTNETTCP, th_sum)
-                                                         : RT_UOFFSETOF(RTNETUDP, uh_sum) ) ))
+    if (RT_UNLIKELY(   (size_t)pCtx->tu.u8CSO - pCtx->tu.u8CSS
+                    != ( pCtx->dw2.fTCP
+                         ? RT_UOFFSETOF(RTNETTCP, th_sum)
+                         : RT_UOFFSETOF(RTNETUDP, uh_sum) ) ))
     {
         E1kLog(("e1kSetupGsoCtx: TUCSO=%#x TUCSS=%#x TCP=%d\n", pCtx->ip.u8CSO, pCtx->ip.u8CSS, pCtx->dw2.fTCP));
         return;
@@ -4409,7 +4410,7 @@ PDMBOTHCBDECL(int) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser,
                 break;
             case 0x04: /* IODATA */
                 rc = e1kRegRead(pState, pState->uSelectedReg, pu32, cb);
-                /* @todo wrong return code triggers assertions in the debug build; fix please */
+                /** @todo wrong return code triggers assertions in the debug build; fix please */
                 if (rc == VINF_IOM_HC_MMIO_READ)
                     rc = VINF_IOM_HC_IOPORT_READ;
 
@@ -4463,7 +4464,7 @@ PDMBOTHCBDECL(int) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
             case 0x04: /* IODATA */
                 E1kLog2(("%s e1kIOPortOut: IODATA(4), writing to selected register %#010x, value=%#010x\n", szInst, pState->uSelectedReg, u32));
                 rc = e1kRegWrite(pState, pState->uSelectedReg, &u32, cb);
-                /* @todo wrong return code triggers assertions in the debug build; fix please */
+                /** @todo wrong return code triggers assertions in the debug build; fix please */
                 if (rc == VINF_IOM_HC_MMIO_WRITE)
                     rc = VINF_IOM_HC_IOPORT_WRITE;
                 break;
