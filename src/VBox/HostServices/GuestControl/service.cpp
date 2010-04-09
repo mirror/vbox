@@ -452,7 +452,10 @@ int Service::guestGetHostMsg(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBO
              {
                  rc = execBufferAssign(&curCmd.parmBuf, cParms, paParms);
                  if (RT_SUCCESS(rc))
+                 {
+                     execBufferFree(&curCmd.parmBuf);
                      mHostCmds.pop_front();
+                 }
              }
         }
         else
@@ -486,20 +489,25 @@ int Service::hostProcessCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM
 {
     int rc = VINF_SUCCESS;
 
-    HostCmd newCmd;
-    execBufferAllocate(&newCmd.parmBuf, cParms, paParms);
-    mHostCmds.push_back(newCmd);
-
-    /* Limit list size by deleting oldest element. */
-    if (mHostCmds.size() > 256) /** @todo Use a define! */
-        mHostCmds.pop_front();
-
     /* Some lazy guests to wake up? */
     if (!mGuestWaiters.empty())
     {
         GuestCall curCall = mGuestWaiters.front();
         rc = hostNotifyGuest(&curCall, eFunction, cParms, paParms);
         mGuestWaiters.pop_front();
+    }
+    else /* No guests waiting, buffer it */
+    {
+        HostCmd newCmd;
+        rc = execBufferAllocate(&newCmd.parmBuf, cParms, paParms);
+        if (RT_SUCCESS(rc))
+        {
+            mHostCmds.push_back(newCmd);
+        
+            /* Limit list size by deleting oldest element. */
+            if (mHostCmds.size() > 256) /** @todo Use a define! */
+                mHostCmds.pop_front();
+        }
     }
     return rc;
 }

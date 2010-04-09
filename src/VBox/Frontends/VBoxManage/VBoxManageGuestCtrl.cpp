@@ -64,7 +64,7 @@ void usageGuestControl(void)
     RTPrintf("VBoxManage guestcontrol     execute <vmname>|<uuid>\n"
              "                            <path to program> [--arguments \"<arguments>\"] [--environment \"NAME=VALUE NAME=VALUE\"]\n"
              "                            [--flags <flags>] [--username <name> [--password <password>]]\n"
-             "                            [--timeout <msec>]\n"
+             "                            [--timeout <msec>] [--wait stdout[,[stderr]]]\n"
              "\n");
 }
 
@@ -90,6 +90,7 @@ static int handleExecProgram(HandlerArg *a)
     Utf8Str Utf8UserName;
     Utf8Str Utf8Password;
     uint32_t uTimeoutMS = 0;
+    bool waitForOutput = false;
 
     /* Iterate through all possible commands (if available). */
     for (int i = 2; usageOK && i < a->argc; i++)
@@ -175,6 +176,17 @@ static int handleExecProgram(HandlerArg *a)
             else
                 ++i;
         }
+        else if (!strcmp(a->argv[i], "--wait"))
+        {
+            if (i + 1 >= a->argc)
+                usageOK = false;
+            else
+            {
+                /** @todo Check for "stdout" or "stderr"! */
+                waitForOutput = true;
+                ++i;
+            }
+        }
         /** @todo Add fancy piping stuff here. */
         else
         {
@@ -230,6 +242,10 @@ static int handleExecProgram(HandlerArg *a)
                                                     Bstr(Utf8StdIn), Bstr(Utf8StdOut), Bstr(Utf8StdErr),
                                                     Bstr(Utf8UserName), Bstr(Utf8Password), uTimeoutMS,
                                                     &uPID, progress.asOutParam()));
+            if (waitForOutput)
+            {
+
+            }
             /** @todo Show some progress here? */
             a->session->Close();
         } while (0);
