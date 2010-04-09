@@ -107,10 +107,7 @@ public:
     PRTREQQUEUE             m_pUrgSendQueue;
     volatile uint32_t       cUrgPkt;
     volatile uint32_t       cPkt;
-
-    PRTTIMER              pTmrSlow;
-    PRTTIMER              pTmrFast;
-    bool                  fIsRunning;
+    bool                    fIsRunning;
 };
 
 
@@ -125,29 +122,9 @@ static DECLCALLBACK(int) natSndThread(RTTHREAD pThread, void *pvUser);
 static DECLCALLBACK(int) natUrgSndThread(RTTHREAD pThread, void *pvUser);
 static void SendWorker(struct mbuf *m, size_t cb);
 static void IntNetSendWorker(bool urg, const void *pvFrame, size_t cbFrame, struct mbuf *m);
-static void natNotifyNATThread();
 
-void slirp_arm_fast_timer(void *pvUser)
-{
-    RTTimerStart(g_pNAT->pTmrFast, 2);
-}
 
-void slirp_arm_slow_timer(void *pvUser)
-{
-    RTTimerStart(g_pNAT->pTmrSlow, 500);
-}
-
-static DECLCALLBACK(void) natSlowTimer(PRTTIMER ppTimer, void *pvUser, uint64_t iTick)
-{
-    natNotifyNATThread();
-}
-
-static DECLCALLBACK(void) natFastTimer(PRTTIMER ppTimer, void *pvUser, uint64_t iTick)
-{
-    natNotifyNATThread();
-}
-
-static void natNotifyNATThread()
+static void natNotifyNATThread(void)
 {
     int rc;
 #ifndef RT_OS_WINDOWS
@@ -221,8 +198,6 @@ void VBoxNetNAT::init()
     rc = RTThreadCreate(&m_ThrNAT, AsyncIoThread, this, 128 * _1K, RTTHREADTYPE_DEFAULT, 0, "NAT");
     rc = RTThreadCreate(&m_ThrSndNAT, natSndThread, this, 128 * _1K, RTTHREADTYPE_DEFAULT, 0, "SndNAT");
     rc = RTThreadCreate(&m_ThrUrgSndNAT, natUrgSndThread, this, 128 * _1K, RTTHREADTYPE_DEFAULT, 0, "UrgSndNAT");
-    rc = RTTimerCreate(&pTmrSlow, 0 /* one-shot */, natSlowTimer, this);
-    rc = RTTimerCreate(&pTmrFast, 0 /* one-shot */ , natFastTimer, this);
     rc = RTSemEventCreate(&m_EventSend);
     rc = RTSemEventCreate(&m_EventUrgSend);
     AssertReleaseRC(rc);

@@ -835,7 +835,6 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
             if (!TAILQ_EMPTY(&ipq[i]))
             {
                 do_slowtimo = 1;
-                slirp_arm_slow_timer(pData->pvUser);
                 break;
             }
         }
@@ -874,7 +873,6 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
                 && so->so_tcpcb->t_flags & TF_DELACK)
         {
             time_fasttimo = curtime; /* Flag when we want a fasttimo */
-            slirp_arm_fast_timer(pData->pvUser);
         }
 
         /*
@@ -976,7 +974,6 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
             else
             {
                 do_slowtimo = 1; /* Let socket expire */
-                slirp_arm_slow_timer(pData->pvUser);
             }
         }
 

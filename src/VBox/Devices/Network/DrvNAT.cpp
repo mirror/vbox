@@ -195,8 +195,6 @@ typedef struct DRVNAT
     RTCRITSECT              csDevAccess;
     volatile uint32_t       cUrgPkt;
     volatile uint32_t       cPkt;
-    PTMTIMERR3              pTmrSlow;
-    PTMTIMERR3              pTmrFast;
 } DRVNAT;
 AssertCompileMemberAlignment(DRVNAT, StatNATRecvWakeups, 8);
 /** Pointer the NAT driver instance data. */
@@ -831,52 +829,6 @@ static DECLCALLBACK(int) drvNATAsyncIoGuestWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD
 
 #endif /* VBOX_WITH_SLIRP_MT */
 
-
-/**
- * The callback for the fast (2 ms) NAT timer.
- *
- * @param   pDrvIns             The driver instance.
- * @param   pTimer              The timer handle.
- * @param   pvUser              The NAT instance data.
- */
-static DECLCALLBACK(void) drvNATFastTimer(PPDMDRVINS pDrvIns, PTMTIMER pTimer, void *pvUser)
-{
-    PDRVNAT pThis = (PDRVNAT)pvUser;
-    drvNATNotifyNATThread(pThis, "drvNATFastTimer");
-}
-
-void slirp_arm_fast_timer(void *pvUser)
-{
-#if 0
-    PDRVNAT pThis = (PDRVNAT)pvUser;
-    AssertPtr(pThis);
-    TMTimerSetMillies(pThis->pTmrFast, 2);
-#endif
-}
-
-/**
- * The callback for the slow (500 ms) NAT timer.
- *
- * @param   pDrvIns             The driver instance.
- * @param   pTimer              The timer handle.
- * @param   pvUser              The NAT instance data.
- */
-static DECLCALLBACK(void) drvNATSlowTimer(PPDMDRVINS pDrvIns, PTMTIMER pTimer, void *pvUser)
-{
-    PDRVNAT pThis = (PDRVNAT)pvUser;
-    drvNATNotifyNATThread(pThis, "drvNATSlowTimer");
-}
-
-void slirp_arm_slow_timer(void *pvUser)
-{
-#if 0
-    PDRVNAT pThis = (PDRVNAT)pvUser;
-    AssertPtr(pThis);
-
-    TMTimerSetMillies(pThis->pTmrSlow, 500);
-#endif
-}
-
 /**
  * Function called by slirp to check if it's possible to feed incoming data to the network port.
  * @returns 1 if possible.
@@ -1275,10 +1227,6 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
             rc = RTSemEventCreate(&pThis->EventRecv);
             rc = RTSemEventCreate(&pThis->EventUrgRecv);
             rc = RTCritSectInit(&pThis->csDevAccess);
-            rc = PDMDrvHlpTMTimerCreate(pThis->pDrvIns, TMCLOCK_REAL/*enmClock*/, drvNATSlowTimer,
-                    pThis, TMTIMER_FLAGS_NO_CRIT_SECT/*flags*/, "NATSlowTmr", &pThis->pTmrSlow);
-            rc = PDMDrvHlpTMTimerCreate(pThis->pDrvIns, TMCLOCK_REAL/*enmClock*/, drvNATFastTimer,
-                    pThis, TMTIMER_FLAGS_NO_CRIT_SECT/*flags*/, "NATFastTmr", &pThis->pTmrFast);
 
 #ifndef RT_OS_WINDOWS
             /*
