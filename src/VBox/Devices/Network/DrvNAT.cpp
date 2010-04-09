@@ -674,11 +674,9 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     int     nFDs = -1;
     int     ms;
 #ifdef RT_OS_WINDOWS
-    DWORD   event;
-    HANDLE  *phEvents;
+    HANDLE  *phEvents = slirp_get_events(pThis->pNATState);
     unsigned int cBreak = 0;
 #else /* RT_OS_WINDOWS */
-    struct pollfd *polls = NULL;
     unsigned int cPollNegRet = 0;
 #endif /* !RT_OS_WINDOWS */
 
@@ -687,41 +685,30 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
 
-#ifdef RT_OS_WINDOWS
-    phEvents = slirp_get_events(pThis->pNATState);
-#endif /* RT_OS_WINDOWS */
-
     /*
      * Polling loop.
      */
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        nFDs = -1;
         /*
          * To prevent concurent execution of sending/receving threads
          */
 #ifndef RT_OS_WINDOWS
         nFDs = slirp_get_nsock(pThis->pNATState);
-        polls = NULL;
         /* allocation for all sockets + Management pipe */
-        polls = (struct pollfd *)RTMemAlloc((1 + nFDs) * sizeof(struct pollfd) + sizeof(uint32_t));
+        struct pollfd *polls = (struct pollfd *)RTMemAlloc((1 + nFDs) * sizeof(struct pollfd) + sizeof(uint32_t));
         if (polls == NULL)
             return VERR_NO_MEMORY;
 
         /* don't pass the managemant pipe */
         slirp_select_fill(pThis->pNATState, &nFDs, &polls[1]);
-#if 0
-        ms = slirp_get_timeout_ms(pThis->pNATState);
-#else
-        ms = 0;
-#endif
 
         polls[0].fd = pThis->PipeRead;
         /* POLLRDBAND usually doesn't used on Linux but seems used on Solaris */
         polls[0].events = POLLRDNORM|POLLPRI|POLLRDBAND;
         polls[0].revents = 0;
 
-        int cChangedFDs = poll(polls, nFDs + 1, ms ? ms : -1);
+        int cChangedFDs = poll(polls, nFDs + 1, slirp_get_timeout_ms(pThis->pNATState));
         if (cChangedFDs < 0)
         {
             if (errno == EINTR)
@@ -764,24 +751,22 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         /* process _all_ outstanding requests but don't wait */
         RTReqProcess(pThis->pSlirpReqQueue, 0);
         RTMemFree(polls);
+
 #else /* RT_OS_WINDOWS */
+        nFDs = -1;
         slirp_select_fill(pThis->pNATState, &nFDs);
-#if 0
-        ms = slirp_get_timeout_ms(pThis->pNATState);
-#else
-        ms = 0;
-#endif
-        struct timeval tv = { 0, ms*1000 };
-        event = WSAWaitForMultipleEvents(nFDs, phEvents, FALSE, ms ? ms : WSA_INFINITE, FALSE);
-        if (   (event < WSA_WAIT_EVENT_0 || event > WSA_WAIT_EVENT_0 + nFDs - 1)
-            && event != WSA_WAIT_TIMEOUT)
+        DWORD dwEvent = WSAWaitForMultipleEvents(nFDs, phEvents, FALSE,
+                                                 slirp_get_timeout_ms(pThis->pNATState),
+                                                 FALSE);
+        if (   (dwEvent < WSA_WAIT_EVENT_0 || dwEvent > WSA_WAIT_EVENT_0 + nFDs - 1)
+            && dwEvent != WSA_WAIT_TIMEOUT)
         {
             int error = WSAGetLastError();
-            LogRel(("NAT: WSAWaitForMultipleEvents returned %d (error %d)\n", event, error));
+            LogRel(("NAT: WSAWaitForMultipleEvents returned %d (error %d)\n", dwEvent, error));
             RTAssertPanic();
         }
 
-        if (event == WSA_WAIT_TIMEOUT)
+        if (dwEvent == WSA_WAIT_TIMEOUT)
         {
             /* only check for slow/fast timers */
             slirp_select_poll(pThis->pNATState, /* fTimeout=*/true, /*fIcmp=*/false);
@@ -789,7 +774,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         }
         /* poll the sockets in any case */
         Log2(("%s: poll\n", __FUNCTION__));
-        slirp_select_poll(pThis->pNATState, /* fTimeout=*/false, /* fIcmp=*/(event == WSA_WAIT_EVENT_0));
+        slirp_select_poll(pThis->pNATState, /* fTimeout=*/false, /* fIcmp=*/(dwEvent == WSA_WAIT_EVENT_0));
         /* process _all_ outstanding requests but don't wait */
         RTReqProcess(pThis->pSlirpReqQueue, 0);
 # ifdef VBOX_NAT_DELAY_HACK
@@ -862,9 +847,11 @@ static DECLCALLBACK(void) drvNATFastTimer(PPDMDRVINS pDrvIns, PTMTIMER pTimer, v
 
 void slirp_arm_fast_timer(void *pvUser)
 {
+#if 0
     PDRVNAT pThis = (PDRVNAT)pvUser;
     AssertPtr(pThis);
     TMTimerSetMillies(pThis->pTmrFast, 2);
+#endif
 }
 
 /**
@@ -882,9 +869,12 @@ static DECLCALLBACK(void) drvNATSlowTimer(PPDMDRVINS pDrvIns, PTMTIMER pTimer, v
 
 void slirp_arm_slow_timer(void *pvUser)
 {
+#if 0
     PDRVNAT pThis = (PDRVNAT)pvUser;
     AssertPtr(pThis);
+
     TMTimerSetMillies(pThis->pTmrSlow, 500);
+#endif
 }
 
 /**
