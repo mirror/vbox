@@ -781,7 +781,7 @@ HRESULT Snapshot::saveSnapshot(settings::Snapshot &data, bool aAttrsOnly)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (SnapshotMachine)
+DEFINE_EMPTY_CTOR_DTOR(SnapshotMachine)
 
 HRESULT SnapshotMachine::FinalConstruct()
 {
