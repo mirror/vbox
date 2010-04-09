@@ -1224,7 +1224,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     vsdeOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
     if (vsdeOS.size() < 1)
         throw setError(VBOX_E_FILE_ERROR,
-                        tr("Missing guest OS type"));
+                       tr("Missing guest OS type"));
     const Utf8Str &strOsTypeVBox = vsdeOS.front()->strVbox;
 
     /* Now that we know the base system get our internal defaults based on that. */
@@ -1237,7 +1237,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     std::list<VirtualSystemDescriptionEntry*> vsdeName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
     if (vsdeName.size() < 1)
         throw setError(VBOX_E_FILE_ERROR,
-                        tr("Missing VM name"));
+                       tr("Missing VM name"));
     const Utf8Str &strNameVBox = vsdeName.front()->strVbox;
     rc = mVirtualBox->CreateMachine(Bstr(strNameVBox),
                                     Bstr(strOsTypeVBox),
@@ -1291,21 +1291,19 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     rc = pNewMachine->COMSETTER(VRAMSize)(vramVBox);
     if (FAILED(rc)) throw rc;
 
-    /* I/O APIC: so far we have no setting for this. Enable it if we
-        import a Windows VM because if if Windows was installed without IOAPIC,
-        it will not mind finding an one later on, but if Windows was installed
-        _with_ an IOAPIC, it will bluescreen if it's not found */
-    Bstr bstrFamilyId;
-    rc = osType->COMGETTER(FamilyId)(bstrFamilyId.asOutParam());
-    if (FAILED(rc)) throw rc;
+    // I/O APIC: Generic OVF has no setting for this. Enable it if we
+    // import a Windows VM because if if Windows was installed without IOAPIC,
+    // it will not mind finding an one later on, but if Windows was installed
+    // _with_ an IOAPIC, it will bluescreen if it's not found
+    if (!fEnableIOApic)
+    {
+        Bstr bstrFamilyId;
+        rc = osType->COMGETTER(FamilyId)(bstrFamilyId.asOutParam());
+        if (FAILED(rc)) throw rc;
+        if (bstrFamilyId == "Windows")
+            fEnableIOApic = true;
+    }
 
-    Utf8Str strFamilyId(bstrFamilyId);
-    if (strFamilyId == "Windows")
-        fEnableIOApic = true;
-
-    /* If IP-APIC should be enabled could be have different reasons.
-        See CPU count & the Win test above. Here we enable it if it was
-        previously requested. */
     if (fEnableIOApic)
     {
         ComPtr<IBIOSSettings> pBIOSSettings;
@@ -1360,14 +1358,16 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         rc = nwVBox->COMSETTER(Enabled)(false);
         if (FAILED(rc)) throw rc;
     }
+    else if (vsdeNW.size() > SchemaDefs::NetworkAdapterCount)
+        throw setError(VBOX_E_FILE_ERROR,
+                       tr("Too many network adapters: OVF requests %d network adapters, but VirtualBox only supports %d"),
+                       vsdeNW.size(), SchemaDefs::NetworkAdapterCount);
     else
     {
         list<VirtualSystemDescriptionEntry*>::const_iterator nwIt;
-        /* Iterate through all network cards. We support 8 network adapters
-            * at the maximum. (@todo: warn if there are more!) */
         size_t a = 0;
         for (nwIt = vsdeNW.begin();
-             (nwIt != vsdeNW.end() && a < SchemaDefs::NetworkAdapterCount);
+             nwIt != vsdeNW.end();
              ++nwIt, ++a)
         {
             const VirtualSystemDescriptionEntry* pvsys = *nwIt;
@@ -1395,11 +1395,11 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 com::SafeIfaceArray<IHostNetworkInterface> nwInterfaces;
                 rc = host->COMGETTER(NetworkInterfaces)(ComSafeArrayAsOutParam(nwInterfaces));
                 if (FAILED(rc)) throw rc;
-                /* We search for the first host network interface which
-                    * is usable for bridged networking */
+                // We search for the first host network interface which
+                // is usable for bridged networking
                 for (size_t j = 0;
-                        j < nwInterfaces.size();
-                        ++j)
+                     j < nwInterfaces.size();
+                     ++j)
                 {
                     HostNetworkInterfaceType_T itype;
                     rc = nwInterfaces[j]->COMGETTER(InterfaceType)(&itype);
@@ -1428,11 +1428,11 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 com::SafeIfaceArray<IHostNetworkInterface> nwInterfaces;
                 rc = host->COMGETTER(NetworkInterfaces)(ComSafeArrayAsOutParam(nwInterfaces));
                 if (FAILED(rc)) throw rc;
-                /* We search for the first host network interface which
-                    * is usable for host only networking */
+                // We search for the first host network interface which
+                // is usable for host only networking
                 for (size_t j = 0;
-                        j < nwInterfaces.size();
-                        ++j)
+                     j < nwInterfaces.size();
+                     ++j)
                 {
                     HostNetworkInterfaceType_T itype;
                     rc = nwInterfaces[j]->COMGETTER(InterfaceType)(&itype);
@@ -1456,7 +1456,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     std::list<VirtualSystemDescriptionEntry*> vsdeHDCIDE = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
     if (vsdeHDCIDE.size() > 1)
         throw setError(VBOX_E_FILE_ERROR,
-                        tr("Too many IDE controllers in OVF; import facility only supports one"));
+                       tr("Too many IDE controllers in OVF; import facility only supports one"));
     if (vsdeHDCIDE.size() == 1)
     {
         ComPtr<IStorageController> pController;
@@ -1481,7 +1481,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     std::list<VirtualSystemDescriptionEntry*> vsdeHDCSATA = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSATA);
     if (vsdeHDCSATA.size() > 1)
         throw setError(VBOX_E_FILE_ERROR,
-                        tr("Too many SATA controllers in OVF; import facility only supports one"));
+                       tr("Too many SATA controllers in OVF; import facility only supports one"));
     if (vsdeHDCSATA.size() > 0)
     {
         ComPtr<IStorageController> pController;
@@ -1493,8 +1493,8 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         }
         else
             throw setError(VBOX_E_FILE_ERROR,
-                            tr("Invalid SATA controller type \"%s\""),
-                            hdcVBox.c_str());
+                           tr("Invalid SATA controller type \"%s\""),
+                           hdcVBox.c_str());
     }
 #endif /* VBOX_WITH_AHCI */
 
@@ -1503,7 +1503,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     std::list<VirtualSystemDescriptionEntry*> vsdeHDCSCSI = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
     if (vsdeHDCSCSI.size() > 1)
         throw setError(VBOX_E_FILE_ERROR,
-                        tr("Too many SCSI controllers in OVF; import facility only supports one"));
+                       tr("Too many SCSI controllers in OVF; import facility only supports one"));
     if (vsdeHDCSCSI.size() > 0)
     {
         ComPtr<IStorageController> pController;
@@ -1515,8 +1515,8 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             controllerType = StorageControllerType_BusLogic;
         else
             throw setError(VBOX_E_FILE_ERROR,
-                            tr("Invalid SCSI controller type \"%s\""),
-                            hdcVBox.c_str());
+                           tr("Invalid SCSI controller type \"%s\""),
+                           hdcVBox.c_str());
 
         rc = pNewMachine->AddStorageController(Bstr("SCSI Controller"), StorageBus_SCSI, pController.asOutParam());
         if (FAILED(rc)) throw rc;
@@ -1539,11 +1539,11 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsdescThis->findByType(VirtualSystemDescriptionType_Floppy);
     if (vsdeFloppy.size() > 1)
         throw setError(VBOX_E_FILE_ERROR,
-                        tr("Too many floppy controllers in OVF; import facility only supports one"));
+                       tr("Too many floppy controllers in OVF; import facility only supports one"));
     std::list<VirtualSystemDescriptionEntry*> vsdeCDROM = vsdescThis->findByType(VirtualSystemDescriptionType_CDROM);
     if (    (vsdeFloppy.size() > 0)
-            || (vsdeCDROM.size() > 0)
-        )
+         || (vsdeCDROM.size() > 0)
+       )
     {
         // If there's an error here we need to close the session, so
         // we need another try/catch block.
@@ -1551,7 +1551,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         try
         {
             /* In order to attach things we need to open a session
-                * for the new machine */
+             * for the new machine */
             rc = mVirtualBox->OpenSession(stack.pSession, bstrNewMachineId);
             if (FAILED(rc)) throw rc;
             stack.fSessionOpen = true;
@@ -1591,11 +1591,10 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 stack.llHardDiskAttachments.push_back(mhda);
             }
 
-
             // CD-ROMs next
             for (std::list<VirtualSystemDescriptionEntry*>::const_iterator jt = vsdeCDROM.begin();
-                    jt != vsdeCDROM.end();
-                    ++jt)
+                 jt != vsdeCDROM.end();
+                 ++jt)
             {
                 // for now always attach to secondary master on IDE controller;
                 // there seems to be no useful information in OVF where else to
@@ -1694,20 +1693,20 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                    )
                     /* This isn't allowed */
                     throw setError(VBOX_E_FILE_ERROR,
-                                    tr("Destination file '%s' exists",
-                                        vsdeHD->strVbox.c_str()));
+                                   tr("Destination file '%s' exists"),
+                                   vsdeHD->strVbox.c_str());
 
                 /* Find the disk from the OVF's disk list */
                 ovf::DiskImagesMap::const_iterator itDiskImage = stack.mapDisks.find(vsdeHD->strRef);
-                /* vsdeHD->strRef contains the disk identifier (e.g. "vmdisk1"), which should exist
-                   in the virtual system's disks map under that ID and also in the global images map. */
+                // vsdeHD->strRef contains the disk identifier (e.g. "vmdisk1"), which should exist
+                // in the virtual system's disks map under that ID and also in the global images map
                 ovf::VirtualDisksMap::const_iterator itVirtualDisk = vsysThis.mapVirtualDisks.find(vsdeHD->strRef);
 
                 if (    itDiskImage == stack.mapDisks.end()
                      || itVirtualDisk == vsysThis.mapVirtualDisks.end()
                    )
                     throw setError(E_FAIL,
-                                    tr("Internal inconsistency looking up disk images."));
+                                   tr("Internal inconsistency looking up disk images."));
 
                 const ovf::DiskImage &di = itDiskImage->second;
                 const ovf::VirtualDisk &vd = itVirtualDisk->second;
@@ -1752,11 +1751,11 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                         tr("Source virtual disk image file '%s' doesn't exist"),
                                             strSrcFilePath.c_str());
 
-                    /* Clone the disk image (this is necessary cause the id has
-                        * to be recreated for the case the same hard disk is
-                        * attached already from a previous import) */
+                    // Clone the disk image (this is necessary cause the id has
+                    // to be recreated for the case the same hard disk is
+                    // attached already from a previous import)
 
-                    /* First open the existing disk image */
+                    // First open the existing disk image
                     rc = mVirtualBox->OpenHardDisk(Bstr(strSrcFilePath),
                                                     AccessMode_ReadOnly,
                                                     false,
@@ -1878,15 +1877,21 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
     ComObjPtr<Machine> pNewMachine;
     HRESULT rc = pNewMachine.createObject();
     if (FAILED(rc)) throw rc;
-    rc = pNewMachine->init(mVirtualBox, strNameVBox, config);
+
+    // this magic constructor fills the new machine object with the MachineConfig
+    // instance that we created from the vbox:Machine
+    rc = pNewMachine->init(mVirtualBox,
+                           strNameVBox,         // name from just above (can be suffixed to avoid duplicates)
+                           config);             // the whole machine config
     if (FAILED(rc)) throw rc;
 
+    // return the new machine as an IMachine
     IMachine *p;
     rc = pNewMachine.queryInterfaceTo(&p);
     if (FAILED(rc)) throw rc;
-
     pReturnNewMachine = p;
 
+    // and register it
     rc = mVirtualBox->RegisterMachine(pNewMachine);
     if (FAILED(rc)) throw rc;
 
