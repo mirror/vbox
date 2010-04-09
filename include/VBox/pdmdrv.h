@@ -1379,6 +1379,49 @@ DECLINLINE(void) PDMDrvHlpSTAMRegisterF(PPDMDRVINS pDrvIns, void *pvSample, STAM
 }
 
 /**
+ * Convenience wrapper that registers counter which is always visible.
+ *
+ * @param   pDrvIns             The driver instance.
+ * @param   pCounter            Pointer to the counter variable.
+ * @param   pszName             The name of the sample.  This is prefixed with
+ *                              "/Drivers/<drivername>-<instance no>/".
+ */
+DECLINLINE(void) PDMDrvHlpSTAMRegCounter(PPDMDRVINS pDrvIns, PSTAMCOUNTER pCounter, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
+{
+    pDrvIns->pHlpR3->pfnSTAMRegisterF(pDrvIns, pCounter, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, enmUnit, pszDesc,
+                                      "/Drivers/%s-%u/%s", pDrvIns->pReg->szName, pDrvIns->iInstance, pszName);
+}
+
+/**
+ * Convenience wrapper that registers profiling sample which is always visible.
+ *
+ * @param   pDrvIns             The driver instance.
+ * @param   pProfile            Pointer to the profiling variable.
+ * @param   pszName             The name of the sample.  This is prefixed with
+ *                              "/Drivers/<drivername>-<instance no>/".
+ */
+DECLINLINE(void) PDMDrvHlpSTAMRegProfile(PPDMDRVINS pDrvIns, PSTAMPROFILE pProfile, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
+{
+    pDrvIns->pHlpR3->pfnSTAMRegisterF(pDrvIns, pProfile, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, enmUnit, pszDesc,
+                                      "/Drivers/%s-%u/%s", pDrvIns->pReg->szName, pDrvIns->iInstance, pszName);
+}
+
+/**
+ * Convenience wrapper that registers an advanced profiling sample which is
+ * always visible.
+ *
+ * @param   pDrvIns             The driver instance.
+ * @param   pProfile            Pointer to the profiling variable.
+ * @param   pszName             The name of the sample.  This is prefixed with
+ *                              "/Drivers/<drivername>-<instance no>/".
+ */
+DECLINLINE(void) PDMDrvHlpSTAMRegProfileAdv(PPDMDRVINS pDrvIns, PSTAMPROFILEADV pProfile, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
+{
+    pDrvIns->pHlpR3->pfnSTAMRegisterF(pDrvIns, pProfile, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, enmUnit, pszDesc,
+                                      "/Drivers/%s-%u/%s", pDrvIns->pReg->szName, pDrvIns->iInstance, pszName);
+}
+
+/**
  * @copydoc PDMDRVHLP::pfnSTAMDeregister
  */
 DECLINLINE(int) PDMDrvHlpSTAMDeregister(PPDMDRVINS pDrvIns, void *pvSample)
