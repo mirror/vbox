@@ -1850,7 +1850,7 @@ unsigned int slirp_get_timeout_ms(PNATState pData)
         if (do_slowtimo)
             return 500; /* see PR_SLOWHZ */
     }
-    return 0;
+    return 3600*1000;   /* one hour */
 }
 
 #ifndef RT_OS_WINDOWS

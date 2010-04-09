@@ -50,6 +50,7 @@
 #include <VBox/sup.h>
 #include <VBox/intnet.h>
 #include <VBox/intnetinline.h>
+#include <VBox/pdmnetinline.h>
 #include <VBox/vmm.h>
 #include <VBox/version.h>
 
@@ -302,12 +303,13 @@ void VBoxNetNAT::run()
                         continue;
                     }
 
+                    uint8_t abHdrScratch[256];
                     uint32_t const cSegs = PDMNetGsoCalcSegmentCount(pGso, cbFrame - sizeof(*pGso));
                     for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
                     {
                         uint32_t cbSegFrame;
                         void  *pvSegFrame = PDMNetGsoCarveSegmentQD(pGso, (uint8_t *)(pGso + 1), cbFrame, abHdrScratch,
-                                                                    &cbSegFrame);
+                                                                    iSeg, cSegs, &cbSegFrame);
                         m = slirp_ext_m_get(g_pNAT->m_pNATState, cbFrame, &pvSlirpFrame, &cbIgnored);
                         if (!m)
                         {
@@ -317,7 +319,7 @@ void VBoxNetNAT::run()
                         memcpy(pvSlirpFrame, pvSegFrame, cbFrame);
 
                         rc = RTReqCallEx(m_pReqQueue, NULL /*ppReq*/, 0 /*cMillies*/, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
-                                         (PFNRT)SendWorker, 2, m, cbSubFrame);
+                                         (PFNRT)SendWorker, 2, m, cbSegFrame);
                         AssertReleaseRC(rc);
                     }
                     INTNETRingSkipFrame(&m_pIfBuf->Recv);
@@ -462,51 +464,39 @@ static DECLCALLBACK(int) AsyncIoThread(RTTHREAD pThread, void *pvUser)
 {
     VBoxNetNAT *pThis = (VBoxNetNAT *)pvUser;
     int     nFDs = -1;
-    unsigned int ms;
 #ifdef RT_OS_WINDOWS
-    DWORD   event;
-    HANDLE  *phEvents;
-    unsigned int cBreak = 0;
+    HANDLE *pahEvents = slirp_get_events(pThis->m_pNATState);
 #else /* RT_OS_WINDOWS */
-    struct pollfd *polls = NULL;
     unsigned int cPollNegRet = 0;
 #endif /* !RT_OS_WINDOWS */
 
     LogFlow(("drvNATAsyncIoThread: pThis=%p\n", pThis));
-
-
-#ifdef RT_OS_WINDOWS
-    phEvents = slirp_get_events(pThis->m_pNATState);
-#endif /* RT_OS_WINDOWS */
 
     /*
      * Polling loop.
      */
     for(;;)
     {
-        nFDs = -1;
-
         /*
          * To prevent concurent execution of sending/receving threads
          */
 #ifndef RT_OS_WINDOWS
         nFDs = slirp_get_nsock(pThis->m_pNATState);
-        polls = NULL;
         /* allocation for all sockets + Management pipe */
-        polls = (struct pollfd *)RTMemAlloc((1 + nFDs) * sizeof(struct pollfd) + sizeof(uint32_t));
+        struct pollfd *polls = (struct pollfd *)RTMemAlloc((1 + nFDs) * sizeof(struct pollfd) + sizeof(uint32_t));
         if (polls == NULL)
             return VERR_NO_MEMORY;
 
         /* don't pass the managemant pipe */
         slirp_select_fill(pThis->m_pNATState, &nFDs, &polls[1]);
-        ms = slirp_get_timeout_ms(pThis->m_pNATState);
+        unsigned int cMsTimeout = slirp_get_timeout_ms(pThis->m_pNATState);
 
         polls[0].fd = pThis->m_PipeRead;
         /* POLLRDBAND usually doesn't used on Linux but seems used on Solaris */
         polls[0].events = POLLRDNORM|POLLPRI|POLLRDBAND;
         polls[0].revents = 0;
 
-        int cChangedFDs = poll(polls, nFDs + 1, -1);
+        int cChangedFDs = poll(polls, nFDs + 1, cMsTimeout);
         if (cChangedFDs < 0)
         {
             if (errno == EINTR)
@@ -547,18 +537,22 @@ static DECLCALLBACK(int) AsyncIoThread(RTTHREAD pThread, void *pvUser)
         /* process _all_ outstanding requests but don't wait */
         RTReqProcess(pThis->m_pReqQueue, 0);
         RTMemFree(polls);
+
 #else /* RT_OS_WINDOWS */
+        nFDs = -1;
         slirp_select_fill(pThis->m_pNATState, &nFDs);
-        event = WSAWaitForMultipleEvents(nFDs, phEvents, FALSE, WSA_INFINITE, FALSE);
-        if (   (event < WSA_WAIT_EVENT_0 || event > WSA_WAIT_EVENT_0 + nFDs - 1)
-            && event != WSA_WAIT_TIMEOUT)
+        DWORD dwEvent = WSAWaitForMultipleEvents(nFDs, pahEvents, FALSE,
+                                                 slirp_get_timeout_ms(pThis->m_pNATState),
+                                                 FALSE);
+        if (   (dwEvent < WSA_WAIT_EVENT_0 || dwEvent > WSA_WAIT_EVENT_0 + nFDs - 1)
+            && dwEvent != WSA_WAIT_TIMEOUT)
         {
             int error = WSAGetLastError();
-            LogRel(("NAT: WSAWaitForMultipleEvents returned %d (error %d)\n", event, error));
+            LogRel(("NAT: WSAWaitForMultipleEvents returned %d (error %d)\n", dwEvent, error));
             RTAssertReleasePanic();
         }
 
-        if (event == WSA_WAIT_TIMEOUT)
+        if (dwEvent == WSA_WAIT_TIMEOUT)
         {
             /* only check for slow/fast timers */
             slirp_select_poll(pThis->m_pNATState, /* fTimeout=*/true, /*fIcmp=*/false);
@@ -566,7 +560,7 @@ static DECLCALLBACK(int) AsyncIoThread(RTTHREAD pThread, void *pvUser)
         }
 
         /* poll the sockets in any case */
-        slirp_select_poll(pThis->m_pNATState, /* fTimeout=*/false, /* fIcmp=*/(event == WSA_WAIT_EVENT_0));
+        slirp_select_poll(pThis->m_pNATState, /* fTimeout=*/false, /* fIcmp=*/(dwEvent == WSA_WAIT_EVENT_0));
         /* process _all_ outstanding requests but don't wait */
         RTReqProcess(pThis->m_pReqQueue, 0);
 #endif /* RT_OS_WINDOWS */
