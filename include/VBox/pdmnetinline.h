@@ -3,8 +3,7 @@
  * PDM - Networking Helpers, Inlined Code. (DEV,++)
  *
  * This is all inlined because it's too tedious to create 2-3 libraries to
- * contain it all (same bad excuse as for intnetinline.h).  C++ only because of
- * mixed code and variables.
+ * contain it all (same bad excuse as for intnetinline.h).
  */
 
 /*
@@ -47,10 +46,12 @@
  */
 DECLINLINE(bool) PDMNetGsoIsValid(PCPDMNETWORKGSO pGso, size_t cbGsoMax, size_t cbFrame)
 {
+    PDMNETWORKGSOTYPE enmType;
+
     if (RT_UNLIKELY(cbGsoMax < sizeof(*pGso)))
         return false;
 
-    PDMNETWORKGSOTYPE const enmType = (PDMNETWORKGSOTYPE)pGso->u8Type;
+    enmType = (PDMNETWORKGSOTYPE)pGso->u8Type;
     if (RT_UNLIKELY( enmType <= PDMNETWORKGSOTYPE_INVALID || enmType >= PDMNETWORKGSOTYPE_END ))
         return false;
 
@@ -126,8 +127,9 @@ DECLINLINE(bool) PDMNetGsoIsValid(PCPDMNETWORKGSO pGso, size_t cbGsoMax, size_t 
  */
 DECLINLINE(uint32_t) PDMNetGsoCalcSegmentCount(PCPDMNETWORKGSO pGso, size_t cbFrame)
 {
+    size_t cbPayload;
     Assert(PDMNetGsoIsValid(pGso, sizeof(*pGso), cbFrame));
-    size_t cbPayload = cbFrame - pGso->cbHdrs;
+    cbPayload = cbFrame - pGso->cbHdrs;
     return (uint32_t)((cbPayload + pGso->cbMaxSeg - 1) / pGso->cbMaxSeg);
 }
 
@@ -265,13 +267,6 @@ DECLINLINE(void *) PDMNetGsoCarveSegmentQD(PCPDMNETWORKGSO pGso, uint8_t *pbFram
                                            uint32_t iSeg, uint32_t cSegs, uint32_t *pcbSegFrame)
 {
     /*
-     * Check assumptions.
-     */
-    Assert(iSeg < cSegs);
-    Assert(cSegs == PDMNetGsoCalcSegmentCount(pGso, cbFrame));
-    Assert(PDMNetGsoIsValid(pGso, sizeof(*pGso), cbFrame));
-
-    /*
      * Figure out where the payload is and where the header starts before we
      * do the protocol specific carving.
      */
@@ -281,6 +276,13 @@ DECLINLINE(void *) PDMNetGsoCarveSegmentQD(PCPDMNETWORKGSO pGso, uint8_t *pbFram
                                  ? pGso->cbMaxSeg
                                  : (uint32_t)(cbFrame - iSeg * pGso->cbMaxSeg - pGso->cbHdrs);
     uint32_t const  cbSegFrame   = cbSegPayload + pGso->cbHdrs;
+
+    /*
+     * Check assumptions (doing it after declaring the variables because of C).
+     */
+    Assert(iSeg < cSegs);
+    Assert(cSegs == PDMNetGsoCalcSegmentCount(pGso, cbFrame));
+    Assert(PDMNetGsoIsValid(pGso, sizeof(*pGso), cbFrame));
 
     /*
      * Copy the header and do the protocol specific massaging of it.
@@ -331,7 +333,7 @@ DECLINLINE(void *) PDMNetGsoCarveSegmentQD(PCPDMNETWORKGSO pGso, uint8_t *pbFram
             break;
     }
 
-    *pcbSegFrame = cbSegPayload + pGso->cbHdrs;
+    *pcbSegFrame = cbSegFrame;
     return pbSegHdrs;
 }
 
@@ -363,13 +365,6 @@ DECLINLINE(uint32_t) PDMNetGsoCarveSegment(PCPDMNETWORKGSO pGso, const uint8_t *
                                            uint32_t iSeg, uint32_t cSegs, uint8_t *pbSegHdrs, uint32_t *pcbSegPayload)
 {
     /*
-     * Check assumptions.
-     */
-    Assert(iSeg < cSegs);
-    Assert(cSegs == PDMNetGsoCalcSegmentCount(pGso, cbFrame));
-    Assert(PDMNetGsoIsValid(pGso, sizeof(*pGso), cbFrame));
-
-    /*
      * Figure out where the payload is and where the header starts before we
      * do the protocol specific carving.
      */
@@ -377,6 +372,13 @@ DECLINLINE(uint32_t) PDMNetGsoCarveSegment(PCPDMNETWORKGSO pGso, const uint8_t *
     uint32_t const        cbSegPayload = iSeg + 1 != cSegs
                                        ? pGso->cbMaxSeg
                                        : (uint32_t)(cbFrame - iSeg * pGso->cbMaxSeg - pGso->cbHdrs);
+
+    /*
+     * Check assumptions (doing it after declaring the variables because of C).
+     */
+    Assert(iSeg < cSegs);
+    Assert(cSegs == PDMNetGsoCalcSegmentCount(pGso, cbFrame));
+    Assert(PDMNetGsoIsValid(pGso, sizeof(*pGso), cbFrame));
 
     /*
      * Copy the header and do the protocol specific massaging of it.

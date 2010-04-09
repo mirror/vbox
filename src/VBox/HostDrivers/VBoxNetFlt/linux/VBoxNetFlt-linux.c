@@ -34,6 +34,8 @@
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <VBox/intnetinline.h>
+#include <VBox/pdmnetinline.h>
+#include <VBox/param.h>
 #include <iprt/alloca.h>
 #include <iprt/assert.h>
 #include <iprt/spinlock.h>
@@ -41,6 +43,7 @@
 #include <iprt/initterm.h>
 #include <iprt/process.h>
 #include <iprt/mem.h>
+#include <iprt/net.h>
 #include <iprt/log.h>
 #include <iprt/mp.h>
 #include <iprt/mem.h>
@@ -348,8 +351,11 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
  * @param   cSegs               The number of segments allocated for the SG.
  *                              This should match the number in the mbuf exactly!
  * @param   fSrc                The source of the frame.
+ * @param   pGso                Pointer to the GSO context if it's a GSO
+ *                              internal network frame.  NULL if regular frame.
  */
-DECLINLINE(void) vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *pBuf, PINTNETSG pSG, unsigned cSegs, uint32_t fSrc)
+DECLINLINE(void) vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *pBuf, PINTNETSG pSG,
+                                          unsigned cSegs, uint32_t fSrc, PCPDMNETWORKGSO pGsoCtx)
 {
     int i;
     NOREF(pThis);
@@ -365,7 +371,10 @@ DECLINLINE(void) vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *
         skb_push(pBuf, ETH_HLEN);
     }
 
-    INTNETSgInitTempSegs(pSG, pBuf->len, cSegs, 0 /*cSegsUsed*/);
+    if (!pGsoCtx)
+        INTNETSgInitTempSegs(pSG, pBuf->len, cSegs, 0 /*cSegsUsed*/);
+    else
+        INTNETSgInitTempSegsGso(pSG, pBuf->len, cSegs, 0 /*cSegsUsed*/, pGsoCtx);
 
 #ifdef VBOXNETFLT_SG_SUPPORT
     pSG->aSegs[0].cb = skb_headlen(pBuf);
@@ -531,9 +540,9 @@ DECLINLINE(unsigned) vboxNetFltLinuxCalcSGSegments(struct sk_buff *pBuf)
 
 /**
  * Destroy the intnet scatter / gather buffer created by
- * vboxNetFltLinuxSkBufToSG and free the associated socket buffer.
+ * vboxNetFltLinuxSkBufToSG.
  */
-static void  vboxNetFltLinuxFreeSkBuff(struct sk_buff *pBuf, PINTNETSG pSG)
+static void vboxNetFltLinuxDestroySG(PINTNETSG pSG)
 {
 #ifdef VBOXNETFLT_SG_SUPPORT
     int i;
@@ -544,12 +553,11 @@ static void  vboxNetFltLinuxFreeSkBuff(struct sk_buff *pBuf, PINTNETSG pSG)
         kunmap(pSG->aSegs[i+1].pv);
     }
 #endif
-
-    dev_kfree_skb(pBuf);
+    NOREF(pSG);
 }
 
 #ifndef LOG_ENABLED
-# define vboxNetFltDumpPacket(a, b, c, d) do {} while (0)
+# define VBOXNETFLT_DUMP_PACKET(a, b, c, d) do {} while (0)
 #else
 static void vboxNetFltDumpPacket(PINTNETSG pSG, bool fEgress, const char *pszWhere, int iIncrement)
 {
@@ -574,7 +582,244 @@ static void vboxNetFltDumpPacket(PINTNETSG pSG, bool fEgress, const char *pszWhe
          pSG->cbTotal, iPacketNo));
     Log3(("%.*Rhxd\n", pSG->aSegs[0].cb, pSG->aSegs[0].pv));
 }
-#endif
+#endif /* LOG_ENABLED */
+
+#ifdef VBOXNETFLT_WITH_GSO
+
+/**
+ * Worker for vboxNetFltLinuxForwardToIntNet that checks if we can forwards a
+ * GSO socket buffer without having to segment it.
+ *
+ * @returns true on success, false if needs segmenting.
+ * @param   pThis               The net filter instance.
+ * @param   pSkb                The GSO socket buffer.
+ * @param   fSrc                The source.
+ * @param   pGsoCtx             Where to return the GSO context on success.
+ */
+static bool vboxNetFltLinuxCanForwardAsGso(PVBOXNETFLTINS pThis, struct sk_buff *pSkb, uint32_t fSrc,
+                                           PPDMNETWORKGSO pGsoCtx)
+{
+    PDMNETWORKGSOTYPE   enmGsoType;
+    uint16_t            uEtherType;
+    unsigned int        cbTransport;
+    unsigned int        offTransport;
+    unsigned int        cbTransportHdr;
+    unsigned            uProtocol;
+    union
+    {
+        RTNETIPV4           IPv4;
+        RTNETIPV6           IPv6;
+        RTNETTCP            Tcp;
+        uint8_t             ab[40];
+        uint16_t            au16[40/2];
+        uint32_t            au32[40/4];
+    }                   Buf;
+
+    /*
+     * Check the GSO properties of the socket buffer and make sure it fits.
+     */
+    /** @todo Figure out how to handle SKB_GSO_TCP_ECN! */
+    if (RT_UNLIKELY( skb_shinfo(pSkb)->gso_type & ~(SKB_GSO_UDP | SKB_GSO_DODGY | SKB_GSO_TCPV6 | SKB_GSO_TCPV4) ))
+    {
+        Log5(("vboxNetFltLinuxCanForwardAsGso: gso_type=%#x\n", skb_shinfo(pSkb)->gso_type));
+        return false;
+    }
+    if (RT_UNLIKELY(   skb_shinfo(pSkb)->gso_size < 1
+                    || pSkb->len > VBOX_MAX_GSO_SIZE ))
+    {
+        Log5(("vboxNetFltLinuxCanForwardAsGso: gso_size=%#x skb_len=%#x (max=%#x)\n", skb_shinfo(pSkb)->gso_size, pSkb->len, VBOX_MAX_GSO_SIZE));
+        return false;
+    }
+    if (RT_UNLIKELY(fSrc & INTNETTRUNKDIR_WIRE))
+    {
+        Log5(("vboxNetFltLinuxCanForwardAsGso: fSrc=wire\n"));
+        return false;
+    }
+
+    /*
+     * skb_gso_segment does the following. Do we need to do it as well?
+     */
+    skb_reset_mac_header(pSkb);
+    pSkb->mac_len = pSkb->network_header - pSkb->mac_header;
+
+    /*
+     * Switch on the ethertype.
+     */
+    uEtherType = pSkb->protocol;
+    if (   uEtherType    == RT_H2N_U16_C(RTNET_ETHERTYPE_VLAN)
+        && pSkb->mac_len == sizeof(RTNETETHERHDR) + sizeof(uint32_t))
+    {
+        uint16_t const *puEtherType = skb_header_pointer(pSkb, sizeof(RTNETETHERHDR) + sizeof(uint16_t), sizeof(uint16_t), &Buf);
+        if (puEtherType)
+            uEtherType = *puEtherType;
+    }
+    switch (uEtherType)
+    {
+        case RT_H2N_U16_C(RTNET_ETHERTYPE_IPV4):
+        {
+            unsigned int cbHdr;
+            PCRTNETIPV4  pIPv4 = (PCRTNETIPV4)skb_header_pointer(pSkb, pSkb->mac_len, sizeof(Buf.IPv4), &Buf);
+            if (RT_UNLIKELY(!pIPv4))
+            {
+                Log5(("vboxNetFltLinuxCanForwardAsGso: failed to access IPv4 hdr\n"));
+                return false;
+            }
+
+            cbHdr       = pIPv4->ip_hl * 4;
+            cbTransport = RT_N2H_U16(pIPv4->ip_len);
+            if (RT_UNLIKELY(   cbHdr < RTNETIPV4_MIN_LEN
+                            || cbHdr > cbTransport ))
+            {
+                Log5(("vboxNetFltLinuxCanForwardAsGso: invalid IPv4 lengths: ip_hl=%u ip_len=%u\n", pIPv4->ip_hl, RT_N2H_U16(pIPv4->ip_len)));
+                return false;
+            }
+            cbTransport -= cbHdr;
+            offTransport = pSkb->mac_len + cbHdr;
+            uProtocol    = pIPv4->ip_p;
+            if (uProtocol == RTNETIPV4_PROT_TCP)
+                enmGsoType = PDMNETWORKGSOTYPE_IPV4_TCP;
+            else if (uProtocol == RTNETIPV4_PROT_UDP)
+                enmGsoType = PDMNETWORKGSOTYPE_IPV4_UDP;
+            else /** @todo IPv6: 4to6 tunneling */
+                enmGsoType = PDMNETWORKGSOTYPE_INVALID;
+            break;
+        }
+
+        case RT_H2N_U16_C(RTNET_ETHERTYPE_IPV6):
+        {
+            PCRTNETIPV6 pIPv6 = (PCRTNETIPV6)skb_header_pointer(pSkb, pSkb->mac_len, sizeof(Buf.IPv6), &Buf);
+            if (RT_UNLIKELY(!pIPv6))
+            {
+                Log5(("vboxNetFltLinuxCanForwardAsGso: failed to access IPv6 hdr\n"));
+                return false;
+            }
+
+            cbTransport  = RT_N2H_U16(pIPv6->ip6_plen);
+            offTransport = pSkb->mac_len + sizeof(RTNETIPV6);
+            uProtocol    = pIPv6->ip6_nxt;
+            /** @todo IPv6: Dig our way out of the other headers. */
+            if (uProtocol == RTNETIPV4_PROT_TCP)
+                enmGsoType = PDMNETWORKGSOTYPE_IPV6_TCP;
+            else if (uProtocol == RTNETIPV4_PROT_UDP)
+                enmGsoType = PDMNETWORKGSOTYPE_IPV4_UDP;
+            else
+                enmGsoType = PDMNETWORKGSOTYPE_INVALID;
+            break;
+        }
+
+        default:
+            Log5(("vboxNetFltLinuxCanForwardAsGso: uEtherType=%#x\n", RT_H2N_U16(uEtherType)));
+            return false;
+    }
+
+    if (enmGsoType == PDMNETWORKGSOTYPE_INVALID)
+    {
+        Log5(("vboxNetFltLinuxCanForwardAsGso: Unsupported protocol %d\n", uProtocol));
+        return false;
+    }
+
+    if (RT_UNLIKELY(   offTransport + cbTransport <= offTransport
+                    || offTransport + cbTransport > pSkb->len
+                    || cbTransport < (uProtocol == RTNETIPV4_PROT_TCP ? RTNETTCP_MIN_LEN : RTNETUDP_MIN_LEN)) )
+    {
+        Log5(("vboxNetFltLinuxCanForwardAsGso: Bad transport length; off=%#x + cb=%#x => %#x; skb_len=%#x (%s)\n",
+              offTransport, cbTransport, offTransport + cbTransport, pSkb->len, PDMNetGsoTypeName(enmGsoType) ));
+        return false;
+    }
+
+    /*
+     * Check the TCP/UDP bits.
+     */
+    if (uProtocol == RTNETIPV4_PROT_TCP)
+    {
+        PCRTNETTCP pTcp = (PCRTNETTCP)skb_header_pointer(pSkb, offTransport, sizeof(Buf.Tcp), &Buf);
+        if (RT_UNLIKELY(!pTcp))
+        {
+            Log5(("vboxNetFltLinuxCanForwardAsGso: failed to access TCP hdr\n"));
+            return false;
+        }
+
+        cbTransportHdr = pTcp->th_off * 4;
+        if (RT_UNLIKELY(   cbTransportHdr < RTNETTCP_MIN_LEN
+                        || cbTransportHdr > cbTransport
+                        || offTransport + cbTransportHdr >= UINT8_MAX
+                        || offTransport + cbTransportHdr >= pSkb->len ))
+        {
+            Log5(("vboxNetFltLinuxCanForwardAsGso: No space for TCP header; off=%#x cb=%#x skb_len=%#x\n", offTransport, cbTransportHdr, pSkb->len));
+            return false;
+        }
+
+    }
+    else
+    {
+        Assert(uProtocol == RTNETIPV4_PROT_UDP);
+        cbTransportHdr = sizeof(RTNETUDP);
+        if (RT_UNLIKELY(   offTransport + cbTransportHdr >= UINT8_MAX
+                        || offTransport + cbTransportHdr >= pSkb->len ))
+        {
+            Log5(("vboxNetFltLinuxCanForwardAsGso: No space for UDP header; off=%#x skb_len=%#x\n", offTransport, pSkb->len));
+            return false;
+        }
+    }
+
+    /*
+     * We're good, init the GSO context.
+     */
+    pGsoCtx->u8Type       = enmGsoType;
+    pGsoCtx->cbHdrs       = offTransport + cbTransportHdr;
+    pGsoCtx->cbMaxSeg     = skb_shinfo(pSkb)->gso_size;
+    pGsoCtx->offHdr1      = pSkb->mac_len;
+    pGsoCtx->offHdr2      = offTransport;
+    pGsoCtx->au8Unused[0] = 0;
+    pGsoCtx->au8Unused[1] = 0;
+
+    return true;
+}
+
+/**
+ * Forward the socket buffer as a GSO internal network frame.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The net filter instance.
+ * @param   pSkb                The GSO socket buffer.
+ * @param   fSrc                The source.
+ * @param   pGsoCtx             Where to return the GSO context on success.
+ */
+static int vboxNetFltLinuxForwardAsGso(PVBOXNETFLTINS pThis, struct sk_buff *pSkb, uint32_t fSrc, PCPDMNETWORKGSO pGsoCtx)
+{
+    int         rc;
+    unsigned    cSegs = vboxNetFltLinuxCalcSGSegments(pSkb);
+    if (RT_LIKELY(cSegs <= MAX_SKB_FRAGS + 1))
+    {
+        PINTNETSG pSG = (PINTNETSG)alloca(RT_OFFSETOF(INTNETSG, aSegs[cSegs]));
+        if (RT_LIKELY(pSG))
+        {
+            vboxNetFltLinuxSkBufToSG(pThis, pSkb, pSG, cSegs, fSrc, pGsoCtx);
+
+            vboxNetFltDumpPacket(pSG, false, (fSrc & INTNETTRUNKDIR_HOST) ? "host" : "wire", 1);
+            pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, pSG, fSrc);
+
+            vboxNetFltLinuxDestroySG(pSG);
+            rc = VINF_SUCCESS;
+        }
+        else
+        {
+            Log(("VBoxNetFlt: Dropping the sk_buff (failure case).\n"));
+            rc = VERR_NO_MEMORY;
+        }
+    }
+    else
+    {
+        Log(("VBoxNetFlt: Bad sk_buff? cSegs=%#x.\n", cSegs));
+        rc = VERR_INTERNAL_ERROR_3;
+    }
+
+    Log4(("VBoxNetFlt: Dropping the sk_buff.\n"));
+    dev_kfree_skb(pSkb);
+    return rc;
+}
+
+#endif /* VBOXNETFLT_WITH_GSO */
 
 /**
  * Worker for vboxNetFltLinuxForwardToIntNet.
@@ -586,24 +831,36 @@ static void vboxNetFltDumpPacket(PINTNETSG pSG, bool fEgress, const char *pszWhe
  */
 static int vboxNetFltLinuxForwardSegment(PVBOXNETFLTINS pThis, struct sk_buff *pBuf, uint32_t fSrc)
 {
-    unsigned cSegs = vboxNetFltLinuxCalcSGSegments(pBuf);
-    if (cSegs < MAX_SKB_FRAGS + 1)
+    int         rc;
+    unsigned    cSegs = vboxNetFltLinuxCalcSGSegments(pBuf);
+    if (cSegs <= MAX_SKB_FRAGS + 1)
     {
         PINTNETSG pSG = (PINTNETSG)alloca(RT_OFFSETOF(INTNETSG, aSegs[cSegs]));
-        if (!pSG)
+        if (RT_LIKELY(pSG))
+        {
+            vboxNetFltLinuxSkBufToSG(pThis, pBuf, pSG, cSegs, fSrc, NULL /*pGsoCtx*/);
+
+            vboxNetFltDumpPacket(pSG, false, (fSrc & INTNETTRUNKDIR_HOST) ? "host" : "wire", 1);
+            pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, pSG, fSrc);
+
+            vboxNetFltLinuxDestroySG(pSG);
+            rc = VINF_SUCCESS;
+        }
+        else
         {
             Log(("VBoxNetFlt: Failed to allocate SG buffer.\n"));
-            return VERR_NO_MEMORY;
+            rc = VERR_NO_MEMORY;
         }
-        vboxNetFltLinuxSkBufToSG(pThis, pBuf, pSG, cSegs, fSrc);
-
-        vboxNetFltDumpPacket(pSG, false, (fSrc & INTNETTRUNKDIR_HOST) ? "host" : "wire", 1);
-        pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, pSG, fSrc);
-        Log4(("VBoxNetFlt: Dropping the sk_buff.\n"));
-        vboxNetFltLinuxFreeSkBuff(pBuf, pSG);
+    }
+    else
+    {
+        Log(("VBoxNetFlt: Bad sk_buff? cSegs=%#x.\n", cSegs));
+        rc = VERR_INTERNAL_ERROR_3;
     }
 
-    return VINF_SUCCESS;
+    Log4(("VBoxNetFlt: Dropping the sk_buff.\n"));
+    dev_kfree_skb(pBuf);
+    return rc;
 }
 
 static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff *pBuf)
@@ -613,16 +870,13 @@ static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff 
 #ifdef VBOXNETFLT_WITH_GSO
     if (skb_is_gso(pBuf))
     {
+        PDMNETWORKGSO GsoCtx;
         Log3(("vboxNetFltLinuxForwardToIntNet: skb len=%u data_len=%u truesize=%u next=%p nr_frags=%u gso_size=%u gso_seqs=%u gso_type=%x frag_list=%p pkt_type=%x ip_summed=%d\n",
               pBuf->len, pBuf->data_len, pBuf->truesize, pBuf->next, skb_shinfo(pBuf)->nr_frags, skb_shinfo(pBuf)->gso_size, skb_shinfo(pBuf)->gso_segs, skb_shinfo(pBuf)->gso_type, skb_shinfo(pBuf)->frag_list, pBuf->pkt_type, pBuf->ip_summed));
-# if 0 /** @todo receive -> GSO SGs. */
-        if ()
-        {
-            Log3(("vboxNetFltLinuxForwardToIntNet: GSO SG\n"));
-            vboxNetFltLinuxForwardGso(pThis, pBuf, fSrc);
-        }
+        if (   (skb_shinfo(pBuf)->gso_type & (SKB_GSO_UDP | SKB_GSO_TCPV6 | SKB_GSO_TCPV4))
+            && vboxNetFltLinuxCanForwardAsGso(pThis, pBuf, fSrc, &GsoCtx) )
+            vboxNetFltLinuxForwardAsGso(pThis, pBuf, fSrc, &GsoCtx);
         else
-# endif
         {
             /* Need to segment the packet */
             struct sk_buff *pNext;
@@ -633,6 +887,7 @@ static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff 
                 LogRel(("VBoxNetFlt: Failed to segment a packet (%d).\n", PTR_ERR(pSegment)));
                 return;
             }
+
             for (; pSegment; pSegment = pNext)
             {
                 Log3(("vboxNetFltLinuxForwardToIntNet: segment len=%u data_len=%u truesize=%u next=%p nr_frags=%u gso_size=%u gso_seqs=%u gso_type=%x frag_list=%p pkt_type=%x\n",
