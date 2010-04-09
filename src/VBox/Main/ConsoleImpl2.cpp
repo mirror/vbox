@@ -47,8 +47,6 @@
 #endif
 #include <iprt/file.h>
 
-#include <limits.h>
-
 #include <VBox/vmapi.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
@@ -192,18 +190,19 @@ const char* controllerString(StorageControllerType_T enmType)
     }
 }
 
-/*
+/**
  * Simple class for storing network boot information.
  */
-struct BootNic {
+struct BootNic
+{
     ULONG       mInstance;
     unsigned    mPciDev;
     unsigned    mPciFn;
     ULONG       mBootPrio;
     bool operator < (const BootNic &rhs) const
     {
-        int lval = mBootPrio ? mBootPrio : INT_MAX;
-        int rval = rhs.mBootPrio ? rhs.mBootPrio : INT_MAX;
+        ULONG lval = mBootPrio     - 1; /* 0 will wrap around and get the lowest priority. */
+        ULONG rval = rhs.mBootPrio - 1;
         return lval < rval; /* Zero compares as highest number (lowest prio). */
     }
 };
@@ -1467,7 +1466,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     PCFGMNODE pDevVirtioNet = NULL;          /* Virtio network devices */
     rc = CFGMR3InsertNode(pDevices, "virtio-net", &pDevVirtioNet);                  RC_CHECK();
 #endif /* VBOX_WITH_VIRTIO */
-    std::list<BootNic> llNics;
+    std::list<BootNic> llBootNics;
     for (ULONG ulInstance = 0; ulInstance < SchemaDefs::NetworkAdapterCount; ++ulInstance)
     {
         ComPtr<INetworkAdapter> networkAdapter;
@@ -1547,7 +1546,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertInteger(pCfg,  "R0Enabled",    false);                 RC_CHECK();
         }
 #endif
-        /* 
+        /*
          * Collect information needed for network booting and add it to the list.
          */
         BootNic     nic;
@@ -1558,7 +1557,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         hrc = networkAdapter->COMGETTER(BootPriority)(&nic.mBootPrio);              H();
 
-        llNics.push_back(nic);
+        llBootNics.push_back(nic);
 
         /*
          * The virtual hardware type. PCNet supports two types.
@@ -1638,22 +1637,20 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     /*
      * Build network boot information and transfer it to the BIOS.
      */
-    if (pNetBootCfg && !llNics.empty())  /* NetBoot node doesn't exist for EFI! */
+    if (pNetBootCfg && !llBootNics.empty())  /* NetBoot node doesn't exist for EFI! */
     {
-        llNics.sort();  /* Sort the list by boot priority. */
+        llBootNics.sort();  /* Sort the list by boot priority. */
 
-        PCFGMNODE   pNetBtDevCfg;
         char        achBootIdx[] = "0";
         unsigned    uBootIdx = 0;
 
-        std::list<BootNic>::iterator it;
-
-        for (it = llNics.begin(); it != llNics.end(); ++it)
+        for (std::list<BootNic>::iterator it = llBootNics.begin(); it != llBootNics.end(); ++it)
         {
             /* A NIC with priority 0 is only used if it's first in the list. */
             if (it->mBootPrio == 0 && uBootIdx != 0)
                 break;
 
+            PCFGMNODE pNetBtDevCfg;
             achBootIdx[0] = '0' + uBootIdx++;   /* Boot device order. */
             rc = CFGMR3InsertNode(pNetBootCfg, achBootIdx, &pNetBtDevCfg);      RC_CHECK();
             rc = CFGMR3InsertInteger(pNetBtDevCfg, "NIC", it->mInstance);       RC_CHECK();
