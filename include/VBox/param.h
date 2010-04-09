@@ -159,6 +159,8 @@
 /** @defgroup grp_vbox_param_misc  Misc
  * @{ */
 
+/** The maximum size of a generic segment offload (GSO) frame.  This limit is
+ *  imposed by the 16-bit frame size in internal networking header. */
 #define VBOX_MAX_GSO_SIZE           0xfff0
 
 /** @} */
