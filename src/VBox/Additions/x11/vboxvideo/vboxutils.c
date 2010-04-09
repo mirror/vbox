@@ -1008,7 +1008,6 @@ vboxHostLikesVideoMode(ScrnInfoPtr pScrn, uint32_t cx, uint32_t cy, uint32_t cBi
     return VbglR3HostLikesVideoMode(cx, cy, cBits);
 }
 
-#ifdef VBOX_GUESTR3XORGMOD
 /**
  * Check if any seamless mode is enabled.
  * Seamless is only relevant for the newer Xorg modules.
@@ -1029,7 +1028,6 @@ vboxGuestIsSeamless(ScrnInfoPtr pScrn)
         return FALSE;
     return (mode != VMMDev_Seamless_Disabled);
 }
-#endif
 
 /**
  * Save video mode parameters to the registry.
