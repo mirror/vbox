@@ -317,22 +317,23 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
                 if (FAILED(rc)) throw rc;
                 strLocation = bstrLocation;
 
-                Bstr bstrName;
-                rc = pMedium->COMGETTER(Name)(bstrName.asOutParam());
-                if (FAILED(rc)) throw rc;
-
-                strTargetVmdkName = bstrName;
-                strTargetVmdkName.stripExt();
-                strTargetVmdkName.append(".vmdk");
-
-                // we need the size of the image so we can give it to addEntry();
-                // later, on export, the progress weight will be based on this.
-                // pMedium can be a differencing image though; in that case, we
-                // need to use the size of the base instead.
+                // find the source's base medium for two things:
+                // 1) we'll use its name to determine the name of the target disk, which is readable,
+                //    as opposed to the UUID filename of a differencing image, if pMedium is one
+                // 2) we need the size of the base image so we can give it to addEntry(), and later
+                //    on export, the progress will be based on that (and not the diff image)
                 ComPtr<IMedium> pBaseMedium;
                 rc = pMedium->COMGETTER(Base)(pBaseMedium.asOutParam());
                         // returns pMedium if there are no diff images
                 if (FAILED(rc)) throw rc;
+
+                Bstr bstrBaseName;
+                rc = pBaseMedium->COMGETTER(Name)(bstrBaseName.asOutParam());
+                if (FAILED(rc)) throw rc;
+
+                strTargetVmdkName = bstrBaseName;
+                strTargetVmdkName.stripExt();
+                strTargetVmdkName.append(".vmdk");
 
                 // force reading state, or else size will be returned as 0
                 MediumState_T ms;
@@ -1406,14 +1407,6 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
                                tr("Source virtual disk image file '%s' doesn't exist"),
                                strSrcFilePath.c_str());
 
-            // output filename
-            const Utf8Str &strTargetFileNameOnly = pDiskEntry->strOvf;
-            // target path needs to be composed from where the output OVF is
-            Utf8Str strTargetFilePath(locInfo.strPath);
-            strTargetFilePath.stripFilename();
-            strTargetFilePath.append("/");
-            strTargetFilePath.append(strTargetFileNameOnly);
-
             // clone the disk:
             ComPtr<IMedium> pSourceDisk;
             ComPtr<IMedium> pTargetDisk;
@@ -1427,6 +1420,14 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
             rc = pSourceDisk->COMGETTER(Id)(uuidSource.asOutParam());
             if (FAILED(rc)) throw rc;
             Guid guidSource(uuidSource);
+
+            // output filename
+            const Utf8Str &strTargetFileNameOnly = pDiskEntry->strOvf;
+            // target path needs to be composed from where the output OVF is
+            Utf8Str strTargetFilePath(locInfo.strPath);
+            strTargetFilePath.stripFilename();
+            strTargetFilePath.append("/");
+            strTargetFilePath.append(strTargetFileNameOnly);
 
             // We are always exporting to VMDK stream optimized for now
             Bstr bstrSrcFormat = L"VMDK";
@@ -1446,7 +1447,7 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
 
                 // advance to the next operation
                 if (!pProgress.isNull())
-                    pProgress->SetNextOperation(BstrFmt(tr("Exporting virtual disk image '%s'"), strSrcFilePath.c_str()),
+                    pProgress->SetNextOperation(BstrFmt(tr("Exporting to disk image '%s'"), strTargetFilePath.c_str()),
                                                 pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
 
                 // now wait for the background disk operation to complete; this throws HRESULTs on error
