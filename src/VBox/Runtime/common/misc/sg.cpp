@@ -120,12 +120,12 @@ RTDECL(size_t) RTSgBufCopy(PRTSGBUF pSgBufDst, PRTSGBUF pSgBufSrc, size_t cbCopy
         void *pvBufDst;
         void *pvBufSrc;
 
-        if (!cbCopy)
+        if (!cbThisCopy)
             break;
 
         pvBufDst = sgBufGet(pSgBufDst, &cbTmp);
         Assert(cbTmp == cbThisCopy);
-        pvBufSrc = sgBufGet(pSgBufDst, &cbTmp);
+        pvBufSrc = sgBufGet(pSgBufSrc, &cbTmp);
         Assert(cbTmp == cbThisCopy);
 
         memcpy(pvBufDst, pvBufSrc, cbThisCopy);
