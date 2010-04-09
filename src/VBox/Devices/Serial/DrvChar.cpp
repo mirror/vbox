@@ -23,7 +23,6 @@
  */
 
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -113,22 +112,22 @@ static DECLCALLBACK(void *) drvCharQueryInterface(PPDMIBASE pInterface, const ch
 static DECLCALLBACK(int) drvCharWrite(PPDMICHARCONNECTOR pInterface, const void *pvBuf, size_t cbWrite)
 {
     PDRVCHAR pThis = PDMICHAR_2_DRVCHAR(pInterface);
-    const char *pBuffer = (const char *)pvBuf;
+    const char *pbBuffer = (const char *)pvBuf;
 
     LogFlow(("%s: pvBuf=%#p cbWrite=%d\n", __FUNCTION__, pvBuf, cbWrite));
 
-    for (uint32_t i=0; i<cbWrite; i++)
+    for (uint32_t i = 0; i < cbWrite; i++)
     {
         uint32_t iOld = pThis->iSendQueueHead;
         uint32_t iNew = (iOld + 1) & CHAR_MAX_SEND_QUEUE_MASK;
 
-        pThis->aSendQueue[iOld] = pBuffer[i];
+        pThis->aSendQueue[iOld] = pbBuffer[i];
 
         STAM_COUNTER_INC(&pThis->StatBytesWritten);
         ASMAtomicXchgU32(&pThis->iSendQueueHead, iNew);
         ASMAtomicIncU32(&pThis->cEntries);
         if (pThis->cEntries > CHAR_MAX_SEND_QUEUE_MASK / 2)
-            pThis->pDrvCharPort->pfnNotifyBufferFull(pThis->pDrvCharPort, true);
+            pThis->pDrvCharPort->pfnNotifyBufferFull(pThis->pDrvCharPort, true /*fFull*/);
     }
     RTSemEventSignal(pThis->SendSem);
     return VINF_SUCCESS;
@@ -176,7 +175,7 @@ static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD ThreadSelf, void *pvUser)
             size_t cbProcessed = 1;
 
             rc = pThis->pDrvStream->pfnWrite(pThis->pDrvStream, &pThis->aSendQueue[pThis->iSendQueueTail], &cbProcessed);
-            pThis->pDrvCharPort->pfnNotifyBufferFull(pThis->pDrvCharPort, false);
+            pThis->pDrvCharPort->pfnNotifyBufferFull(pThis->pDrvCharPort, false /*fFull*/);
             if (RT_SUCCESS(rc))
             {
                 Assert(cbProcessed);
@@ -212,13 +211,12 @@ static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD ThreadSelf, void *pvUser)
  */
 static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
 {
-    PDRVCHAR pThis = (PDRVCHAR)pvUser;
-    char aBuffer[256], *pBuffer;
-    size_t cbRemaining, cbProcessed;
-    int rc;
+    PDRVCHAR    pThis = (PDRVCHAR)pvUser;
+    char        abBuffer[256];
+    char       *pbRemaining = abBuffer;
+    size_t      cbRemaining = 0;
+    int         rc;
 
-    cbRemaining = 0;
-    pBuffer = aBuffer;
     while (!pThis->fShutdown)
     {
         if (!cbRemaining)
@@ -226,8 +224,9 @@ static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
             /* Get block of data from stream driver. */
             if (pThis->pDrvStream)
             {
-                cbRemaining = sizeof(aBuffer);
-                rc = pThis->pDrvStream->pfnRead(pThis->pDrvStream, aBuffer, &cbRemaining);
+                pbRemaining = abBuffer;
+                cbRemaining = sizeof(abBuffer);
+                rc = pThis->pDrvStream->pfnRead(pThis->pDrvStream, abBuffer, &cbRemaining);
                 if (RT_FAILURE(rc))
                 {
                     LogFlow(("Read failed with %Rrc\n", rc));
@@ -235,21 +234,17 @@ static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
                 }
             }
             else
-            {
-                cbRemaining = 0;
                 RTThreadSleep(100);
-            }
-            pBuffer = aBuffer;
         }
         else
         {
             /* Send data to guest. */
-            cbProcessed = cbRemaining;
-            rc = pThis->pDrvCharPort->pfnNotifyRead(pThis->pDrvCharPort, pBuffer, &cbProcessed);
+            size_t cbProcessed = cbRemaining;
+            rc = pThis->pDrvCharPort->pfnNotifyRead(pThis->pDrvCharPort, pbRemaining, &cbProcessed);
             if (RT_SUCCESS(rc))
             {
                 Assert(cbProcessed);
-                pBuffer += cbProcessed;
+                pbRemaining += cbProcessed;
                 cbRemaining -= cbProcessed;
                 STAM_COUNTER_ADD(&pThis->StatBytesRead, cbProcessed);
             }
