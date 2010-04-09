@@ -2599,6 +2599,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             {
                 rc = CFGMR3InsertStringW(pCfg, "Network", str);         RC_CHECK();
             }
+            else
+            {
+                ULONG uSlot;
+                hrc = aNetworkAdapter->COMGETTER(Slot)(&uSlot);         H();
+                rc = CFGMR3InsertStringF(pCfg, "Network", "10.0.%d.0/24", uSlot+2); RC_CHECK();
+            }
             STR_FREE();
             hrc = natDriver->COMGETTER(HostIP)(&str);                   H();
             if (str)
