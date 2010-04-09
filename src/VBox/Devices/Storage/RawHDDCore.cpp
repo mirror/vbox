@@ -1199,14 +1199,21 @@ static int rawSetParentFilename(void *pvBackendData, const char *pszParentFilena
 
 static bool rawIsAsyncIOSupported(void *pvBackendData)
 {
-    return false;
+    return true;
 }
 
 static int rawAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
                         PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
-    int rc = VERR_NOT_IMPLEMENTED;
-    LogFlowFunc(("returns %Rrc\n", rc));
+    int rc = VINF_SUCCESS;
+    PRAWIMAGE pImage = (PRAWIMAGE)pvBackendData;
+
+    rc = pImage->pInterfaceIOCallbacks->pfnReadUserAsync(pImage->pInterfaceIO->pvUser,
+                                                         pImage->pStorage,
+                                                         uOffset, pIoCtx, cbRead);
+    if (RT_SUCCESS(rc))
+        *pcbActuallyRead = cbRead;
+
     return rc;
 }
 
@@ -1215,8 +1222,20 @@ static int rawAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
                          size_t *pcbWriteProcess, size_t *pcbPreRead,
                          size_t *pcbPostRead, unsigned fWrite)
 {
-    int rc = VERR_NOT_IMPLEMENTED;
-    LogFlowFunc(("returns %Rrc\n", rc));
+    int rc = VINF_SUCCESS;
+    PRAWIMAGE pImage = (PRAWIMAGE)pvBackendData;
+
+    rc = pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
+                                                         pImage->pStorage,
+                                                         uOffset, pIoCtx, cbWrite);
+
+    if (RT_SUCCESS(rc))
+    {
+        *pcbWriteProcess = cbWrite;
+        *pcbPostRead = 0;
+        *pcbPreRead  = 0;
+    }
+
     return rc;
 }
 
@@ -1234,7 +1253,7 @@ VBOXHDDBACKEND g_RawBackend =
     /* cbSize */
     sizeof(VBOXHDDBACKEND),
     /* uBackendCaps */
-    VD_CAP_CREATE_FIXED | VD_CAP_FILE,
+    VD_CAP_CREATE_FIXED | VD_CAP_FILE | VD_CAP_ASYNC,
     /* papszFileExtensions */
     s_apszRawFileExtensions,
     /* paConfigInfo */

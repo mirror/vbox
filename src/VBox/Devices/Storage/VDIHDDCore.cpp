@@ -712,9 +712,6 @@ static int vdiOpenImage(PVDIIMAGEDESC pImage, unsigned uOpenFlags)
 {
     int rc;
 
-    if (uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO)
-        return VERR_NOT_SUPPORTED;
-
     pImage->uOpenFlags = uOpenFlags;
 
     pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ERROR);
@@ -1631,7 +1628,7 @@ static int vdiSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
 
     /* Image must be opened and the new flags must be valid. Just readonly and
      * info flags are supported. */
-    if (!pImage || (uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO)))
+    if (!pImage || (uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO)))
     {
         rc = VERR_INVALID_PARAMETER;
         goto out;
@@ -2048,11 +2045,7 @@ static int vdiSetParentFilename(void *pBackendData, const char *pszParentFilenam
 
 static bool vdiIsAsyncIOSupported(void *pBackendData)
 {
-#if 0
     return true;
-#else
-    return false;
-#endif
 }
 
 static int vdiAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbToRead,
@@ -2483,11 +2476,7 @@ VBOXHDDBACKEND g_VDIBackend =
     sizeof(VBOXHDDBACKEND),
     /* uBackendCaps */
       VD_CAP_UUID | VD_CAP_CREATE_FIXED | VD_CAP_CREATE_DYNAMIC
-    | VD_CAP_DIFF | VD_CAP_FILE
-#if 0
-    | VD_CAP_ASYNC
-#endif
-    ,
+    | VD_CAP_DIFF | VD_CAP_FILE | VD_CAP_ASYNC,
     /* papszFileExtensions */
     s_apszVdiFileExtensions,
     /* paConfigInfo */
