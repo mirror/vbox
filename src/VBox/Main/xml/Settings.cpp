@@ -3853,12 +3853,14 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             )
        )
         m->sv = SettingsVersion_v1_10;
-    // VirtualBox 3.2 adds NAT Main
+
+    // VirtualBox 3.2 adds NAT and boot priority to the NIC config in Main.
     if (m->sv < SettingsVersion_v1_10)
     {
         NetworkAdaptersList::const_iterator netit;
         for (netit = hardwareMachine.llNetworkAdapters.begin();
              netit != hardwareMachine.llNetworkAdapters.end(); ++netit)
+        {
             if (    netit->fEnabled
                  && netit->mode == NetworkAttachmentType_NAT
                  && (   netit->nat.u32Mtu != 0
@@ -3878,6 +3880,13 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                 m->sv = SettingsVersion_v1_10;
                 break;
             }
+            if (    netit->fEnabled
+                 && netit->ulBootPriority != 0)
+            {
+                m->sv = SettingsVersion_v1_10;
+                break;
+            }
+        }
     }
     // Check for non default I/O settings and bump the settings version.
     if (m->sv < SettingsVersion_v1_10)
