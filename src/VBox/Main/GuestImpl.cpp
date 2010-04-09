@@ -25,6 +25,7 @@
 
 #include "Global.h"
 #include "ConsoleImpl.h"
+#include "ProgressImpl.h"
 #include "VMMDev.h"
 
 #include "AutoCaller.h"
@@ -447,10 +448,9 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
     using namespace guestControl;
 
     CheckComArgStrNotEmptyOrNull(aCommand);
-    CheckComArgOutPointerValid(aProgress);
     CheckComArgOutPointerValid(aPID);
-    /* Flags are not supported at the moment. */
-    if (aFlags != 0)
+    CheckComArgOutPointerValid(aProgress);
+    if (aFlags != 0) /* Flags are not supported at the moment. */
         return E_INVALIDARG;
 
     HRESULT rc = S_OK;
@@ -460,14 +460,24 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
         AutoCaller autoCaller(this);
         if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-        /* Just be on the safe side when calling another process. */
-        alock.leave();
+        /*
+         * Create progress object.
+         */
+#if 0
+        ComObjPtr <Progress> progress;
+        progress.createObject();
+        HRESULT rc = progress->init(/** @todo How to get the machine here? */
+                                    static_cast<IGuest*>(this),
+                                    BstrFmt(tr("Executing process")),
+                                    FALSE);
+        if (FAILED(rc)) return rc;
+#endif
 
-        HRESULT rc = E_UNEXPECTED;
-        using namespace guestControl;
-
+        /*
+         * Prepare process execution.
+         */
         int vrc = VINF_SUCCESS;
         Utf8Str Utf8Command(aCommand);
 
@@ -546,7 +556,12 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                 RTStrFree(pszArgs);
             }
             if (RT_SUCCESS(vrc))
+            {
+#if 0
+                progress.queryInterfaceTo(aProgress);
+#endif
                 rc = S_OK;
+            }
             else
                 rc = setError(E_UNEXPECTED,
                               tr("The service call failed with the error %Rrc"),
