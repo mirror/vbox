@@ -93,8 +93,6 @@ class ATL_NO_VTABLE Machine :
 
 public:
 
-//     enum InitMode { Init_New, Init_Import, Init_Registered };
-
     enum StateDependency
     {
         AnyStateDep = 0, MutableStateDep, MutableOrSavedStateDep

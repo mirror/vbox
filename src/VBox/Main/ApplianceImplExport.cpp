@@ -634,8 +634,12 @@ HRESULT Appliance::writeImpl(OVFFormat aFormat, const LocationInfo &aLocInfo, Co
 }
 
 /**
+ * Called from Appliance::writeFS() for each virtual system (machine) that needs XML written out.
  *
- * @param vsdescThis
+ * @param elmToAddVirtualSystemsTo XML element to append elements to.
+ * @param vsdescThis The IVirtualSystemDescription instance for which to write XML.
+ * @param enFormat OVF format (0.9 or 1.0).
+ * @param stack Structure for temporary private data shared with caller.
  */
 void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSystemsTo,
                                             ComObjPtr<VirtualSystemDescription> &vsdescThis,
@@ -1419,7 +1423,12 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
             rc = mVirtualBox->FindHardDisk(bstrSrcFilePath, pSourceDisk.asOutParam());
             if (FAILED(rc)) throw rc;
 
-            /* We are always exporting to vmdfk stream optimized for now */
+            Bstr uuidSource;
+            rc = pSourceDisk->COMGETTER(Id)(uuidSource.asOutParam());
+            if (FAILED(rc)) throw rc;
+            Guid guidSource(uuidSource);
+
+            // We are always exporting to VMDK stream optimized for now
             Bstr bstrSrcFormat = L"VMDK";
 
             // create a new hard disk interface for the destination disk image
@@ -1482,6 +1491,7 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
             pelmDisk->setAttribute("ovf:diskId", strDiskID);
             pelmDisk->setAttribute("ovf:fileRef", strFileRef);
             pelmDisk->setAttribute("ovf:format", "http://www.vmware.com/specifications/vmdk.html#sparse");      // must be sparse or ovftool chokes
+            pelmDisk->setAttribute("vbox:uuid", Utf8StrFmt("%RTuuid", guidSource.raw()).c_str());
         }
 
         // now go write the XML
