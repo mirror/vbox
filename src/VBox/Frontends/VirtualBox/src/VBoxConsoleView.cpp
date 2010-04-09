@@ -2283,11 +2283,18 @@ bool VBoxConsoleView::x11Event (XEvent *event)
     {
         /* We have to handle XFocusOut right here as this event is not passed
          * to VBoxConsoleView::event(). Handling this event is important for
-         * releasing the keyboard before the screen saver gets active. */
+         * releasing the keyboard before the screen saver gets active.
+         *
+         * See public ticket #3894: Apparently this makes problems with newer
+         * versions of Qt and this hack is probably not necessary anymore.
+         * So disable it for Qt >= 4.5.0. */
         case XFocusOut:
         case XFocusIn:
             if (isRunning())
-                focusEvent (event->type == XFocusIn);
+            {
+                if (VBoxGlobal::qtRTVersion() < ((4 << 16) | (5 << 8) | 0))
+                    focusEvent (event->type == XFocusIn);
+            }
             return false;
         case XKeyPress:
         case XKeyRelease:
