@@ -83,11 +83,6 @@
 # endif
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
-/** Indicates that the linux kernel may send us GSO frames. */
-# define VBOXNETFLT_WITH_GSO  1
-#endif
-
 #ifndef NET_IP_ALIGN
 # define NET_IP_ALIGN 2
 #endif
@@ -96,6 +91,22 @@
 /** Create scatter / gather segments for fragments. When not used, we will
  *  linearize the socket buffer before creating the internal networking SG. */
 # define VBOXNETFLT_SG_SUPPORT 1
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
+/** Indicates that the linux kernel may send us GSO frames. */
+# define VBOXNETFLT_WITH_GSO  1
+
+/** This enables or disables the transmitting of GSO frame from the internal
+ *  network and to the host.  */
+# define VBOXNETFLT_WITH_GSO_XMIT_HOST    1
+
+# if 0 /** @todo This is currently disable because it causes performance loss of 5-10%.  */
+/** This enables or disables the transmitting of GSO frame from the internal
+ *  network and to the wire. */
+#  define VBOXNETFLT_WITH_GSO_XMIT_WIRE   1
+# endif
+
 #endif
 
 
@@ -291,11 +302,13 @@ DECLINLINE(bool) vboxNetFltLinuxSkBufIsOur(struct sk_buff *pBuf)
  * @returns Pointer to the sk_buff.
  * @param   pThis           The instance.
  * @param   pSG             The (scatter/)gather list.
+ * @param   fDstWire        Set if the destination is the wire.
  */
 static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETSG pSG, bool fDstWire)
 {
     struct sk_buff *pPkt;
     struct net_device *pDev;
+    unsigned fGsoType = 0;
 
     if (pSG->cbTotal == 0)
     {
@@ -303,35 +316,152 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
         return NULL;
     }
 
+    /** @todo We should use fragments mapping the SG buffers with large packets.
+     *        256 bytes seems to be the a threshold used a lot for this.  It
+     *        requires some nasty work on the intnet side though...  */
     /*
      * Allocate a packet and copy over the data.
      */
     pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
-    pPkt = dev_alloc_skb(pSG->cbTotal + NET_IP_ALIGN);
-    if (RT_UNLIKELY(!pPkt))
+#if 0 /* trying to figure out why submitting GSOs is so darn slow. */
+    if (   pSG->GsoCtx.u8Type != PDMNETWORKGSOTYPE_INVALID
+        && pSG->cbTotal > 4096
+        && fDstWire
+        && pDev
+        && (pDev->features & NETIF_F_SG)
+        )
     {
-        Log(("vboxNetFltLinuxSkBufFromSG: Failed to allocate sk_buff(%u).\n", pSG->cbTotal));
-        pSG->pvUserData = NULL;
-        return NULL;
+        uint32_t off    = 0;
+        uint32_t cbLeft = pSG->cbTotal;
+        uint32_t iFrag  = 0;
+
+        pPkt = dev_alloc_skb(pSG->GsoCtx.cbHdrs + NET_IP_ALIGN + 64);
+        if (RT_UNLIKELY(!pPkt))
+        {
+            Log(("vboxNetFltLinuxSkBufFromSG: Failed to allocate sk_buff(%u).\n", pSG->cbTotal));
+            pSG->pvUserData = NULL;
+            return NULL;
+        }
+        pPkt->dev       = pDev;
+        pPkt->ip_summed = CHECKSUM_NONE;
+
+        /* Align IP header on 16-byte boundary: 2 + 14 (ethernet hdr size). */
+        skb_reserve(pPkt, NET_IP_ALIGN);
+
+        /* Copy the headers. */
+        skb_put(pPkt, pSG->GsoCtx.cbHdrs);
+        INTNETSgReadEx(pSG, off, pSG->GsoCtx.cbHdrs, pPkt->data);
+        off    += pSG->GsoCtx.cbHdrs;
+        cbLeft -= off;
+
+        /* Copy the payload into fragments. */
+        while (cbLeft)
+        {
+            void           *pvPage;
+            uint32_t        cbUsed = RT_MIN(cbLeft, PAGE_SIZE);
+            struct page    *pPage  = alloc_page(GFP_ATOMIC);
+            if (!pPage)
+            {
+                dev_kfree_skb(pPkt);
+                return NULL;
+            }
+
+            skb_fill_page_desc(pPkt, iFrag, pPage, 0, cbUsed);
+
+            pvPage = kmap(pPage);
+            INTNETSgReadEx(pSG, off, cbUsed, pvPage);
+            kunmap(pPage);
+
+            /* advance */
+            iFrag          += 1;
+            pPkt->len      += cbUsed;
+            pPkt->data_len += cbUsed;
+            pPkt->truesize += cbUsed;
+            off            += cbUsed;
+            cbLeft         -= cbUsed;
+        }
+    }
+    else
+#endif
+    {
+        pPkt = dev_alloc_skb(pSG->cbTotal + NET_IP_ALIGN);
+        if (RT_UNLIKELY(!pPkt))
+        {
+            Log(("vboxNetFltLinuxSkBufFromSG: Failed to allocate sk_buff(%u).\n", pSG->cbTotal));
+            pSG->pvUserData = NULL;
+            return NULL;
+        }
+        pPkt->dev       = pDev;
+        pPkt->ip_summed = CHECKSUM_NONE;
+
+        /* Align IP header on 16-byte boundary: 2 + 14 (ethernet hdr size). */
+        skb_reserve(pPkt, NET_IP_ALIGN);
+
+        /* Copy the segments. */
+        skb_put(pPkt, pSG->cbTotal);
+        INTNETSgRead(pSG, pPkt->data);
     }
 
-    pPkt->dev = pDev;
+#if defined(VBOXNETFLT_WITH_GSO_XMIT_WIRE) || defined(VBOXNETFLT_WITH_GSO_XMIT_HOST)
+    /*
+     * Setup GSO if used by this packet.
+     */
+    switch ((PDMNETWORKGSOTYPE)pSG->GsoCtx.u8Type)
+    {
+        default:
+            AssertMsgFailed(("%u (%s)\n", pSG->GsoCtx.u8Type, PDMNetGsoTypeName((PDMNETWORKGSOTYPE)pSG->GsoCtx.u8Type) ));
+            /* fall thru */
+        case PDMNETWORKGSOTYPE_INVALID:
+            fGsoType = 0;
+            break;
+        case PDMNETWORKGSOTYPE_IPV4_TCP:
+            fGsoType = SKB_GSO_TCPV4;
+            break;
+        case PDMNETWORKGSOTYPE_IPV4_UDP:
+            fGsoType = SKB_GSO_UDP;
+            break;
+        case PDMNETWORKGSOTYPE_IPV6_TCP:
+            fGsoType = SKB_GSO_TCPV6;
+            break;
+    }
+    if (fGsoType)
+    {
+        struct skb_shared_info *pShInfo = skb_shinfo(pPkt);
 
-    /* Align IP header on 16-byte boundary: 2 + 14 (ethernet hdr size). */
-    skb_reserve(pPkt, NET_IP_ALIGN);
+        if (!fDstWire)
+            fGsoType |= SKB_GSO_DODGY;
+        pShInfo->gso_type = fGsoType;
+        pShInfo->gso_size = pSG->GsoCtx.cbMaxSeg;
+        pShInfo->gso_segs = PDMNetGsoCalcSegmentCount(&pSG->GsoCtx, pSG->cbTotal);
 
-    /* Copy the segments. */
-    skb_put(pPkt, pSG->cbTotal);
-    INTNETSgRead(pSG, pPkt->data);
+        /** @todo figure out the checksum bit... We're checksumming way too much here
+         *        I hope.  */
+        if (fDstWire)
+        {
+            /** @todo check skb_partial_csum_set status code.  */
+            if (fGsoType & (SKB_GSO_TCPV4 | SKB_GSO_TCPV6))
+                skb_partial_csum_set(pPkt, pSG->GsoCtx.offHdr2, RT_OFFSETOF(RTNETTCP, th_sum));
+            else
+                skb_partial_csum_set(pPkt, pSG->GsoCtx.offHdr2, RT_OFFSETOF(RTNETUDP, uh_sum));
+        }
+        else
+        {
+            pPkt->ip_summed = CHECKSUM_UNNECESSARY;
+            PDMNetGsoPrepForDirectUse(&pSG->GsoCtx, pPkt->data, pSG->cbTotal, false /*fPayloadChecksum*/);
+        }
+    }
+#endif /* VBOXNETFLT_WITH_GSO_XMIT_WIRE || VBOXNETFLT_WITH_GSO_XMIT_HOST */
 
-    /* Set protocol and packet_type fields. */
+    /*
+     * Finish up the socket buffer.
+     */
     pPkt->protocol = eth_type_trans(pPkt, pDev);
-    pPkt->ip_summed = CHECKSUM_NONE;
     if (fDstWire)
     {
         VBOX_SKB_RESET_NETWORK_HDR(pPkt);
+
         /* Restore ethernet header back. */
-        skb_push(pPkt, ETH_HLEN);
+        skb_push(pPkt, ETH_HLEN); /** @todo VLAN: +4 if VLAN? */
         VBOX_SKB_RESET_MAC_HDR(pPkt);
     }
     VBOXNETFLT_SKB_TAG(pPkt) = VBOXNETFLT_CB_TAG(pPkt);
@@ -556,9 +686,10 @@ static void vboxNetFltLinuxDestroySG(PINTNETSG pSG)
     NOREF(pSG);
 }
 
-#ifndef LOG_ENABLED
-# define VBOXNETFLT_DUMP_PACKET(a, b, c, d) do {} while (0)
-#else
+#ifdef LOG_ENABLED
+/**
+ * Logging helper.
+ */
 static void vboxNetFltDumpPacket(PINTNETSG pSG, bool fEgress, const char *pszWhere, int iIncrement)
 {
     uint8_t *pInt, *pExt;
@@ -582,7 +713,9 @@ static void vboxNetFltDumpPacket(PINTNETSG pSG, bool fEgress, const char *pszWhe
          pSG->cbTotal, iPacketNo));
     Log3(("%.*Rhxd\n", pSG->aSegs[0].cb, pSG->aSegs[0].pv));
 }
-#endif /* LOG_ENABLED */
+#else
+# define vboxNetFltDumpPacket(a, b, c, d) do {} while (0)
+#endif
 
 #ifdef VBOXNETFLT_WITH_GSO
 
@@ -974,7 +1107,51 @@ static void vboxNetFltLinuxXmitTask(void *pWork)
 }
 
 /**
- * Internal worker for vboxNetFltOsInitInstance and vboxNetFltOsMaybeRediscovered.
+ * Reports the GSO capabilites of the hardware NIC.
+ *
+ * @param   pThis               The net filter instance.  The caller hold a
+ *                              reference to this.
+ */
+static void vboxNetFltLinuxReportNicGsoCapabilities(PVBOXNETFLTINS pThis)
+{
+#ifdef VBOXNETFLT_WITH_GSO_XMIT_WIRE
+    struct net_device  *pDev;
+    PINTNETTRUNKSWPORT  pSwitchPort;
+    unsigned int        fFeatures;
+    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
+
+    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+
+    pSwitchPort = pThis->pSwitchPort; /* this doesn't need to be here, but it doesn't harm. */
+    pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
+    if (pDev)
+        fFeatures = pDev->features;
+    else
+        fFeatures = 0;
+
+    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+
+    if (pThis->pSwitchPort)
+    {
+        /* Set/update the GSO capabilities of the NIC. */
+        uint32_t fGsoCapabilites = 0;
+        if (fFeatures & NETIF_F_TSO)
+            fGsoCapabilites |= RT_BIT_32(PDMNETWORKGSOTYPE_IPV4_TCP);
+        if (fFeatures & NETIF_F_TSO6)
+            fGsoCapabilites |= RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_TCP);
+# if 0 /** @todo GSO: Test UDP offloading (UFO) on linux. */
+        if (fFeatures & NETIF_F_UFO)
+            fGsoCapabilites |= RT_BIT_32(PDMNETWORKGSOTYPE_IPV4_UDP);
+        if (fFeatures & NETIF_F_UFO)
+            fGsoCapabilites |= RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_UDP);
+# endif
+        pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, fGsoCapabilites, INTNETTRUNKDIR_WIRE);
+    }
+#endif /* VBOXNETFLT_WITH_GSO_XMIT_WIRE */
+}
+
+/**
+ * Internal worker for vboxNetFltLinuxNotifierCallback.
  *
  * @returns VBox status code.
  * @param   pThis           The instance.
@@ -983,34 +1160,36 @@ static void vboxNetFltLinuxXmitTask(void *pWork)
  */
 static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_device *pDev)
 {
-    struct packet_type *pt;
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-
     LogFlow(("vboxNetFltLinuxAttachToInterface: pThis=%p (%s)\n", pThis, pThis->szName));
 
-    if (!pDev)
-    {
-        Log(("VBoxNetFlt: failed to find device '%s'\n", pThis->szName));
-        return VERR_INTNET_FLT_IF_NOT_FOUND;
-    }
-
+    /*
+     * Retain and store the device.
+     */
     dev_hold(pDev);
+
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
     ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pDev, pDev);
     RTSpinlockRelease(pThis->hSpinlock, &Tmp);
 
     Log(("vboxNetFltLinuxAttachToInterface: Device %p(%s) retained. ref=%d\n", pDev, pDev->name, atomic_read(&pDev->refcnt)));
     Log(("vboxNetFltLinuxAttachToInterface: Got pDev=%p pThis=%p pThis->u.s.pDev=%p\n", pDev, pThis, ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev)));
-    /*
-     * Get the mac address while we still have a valid ifnet reference.
-     */
+
+    /* Get the mac address while we still have a valid net_device reference. */
     memcpy(&pThis->u.s.Mac, pDev->dev_addr, sizeof(pThis->u.s.Mac));
 
-    pt = &pThis->u.s.PacketType;
-    pt->type = __constant_htons(ETH_P_ALL);
-    pt->dev  = pDev;
-    pt->func = vboxNetFltLinuxPacketHandler;
-    dev_add_pack(pt);
+    /*
+     * Install a packet filter for this device with a protocol wildcard (ETH_P_ALL).
+     */
+    pThis->u.s.PacketType.type = __constant_htons(ETH_P_ALL);
+    pThis->u.s.PacketType.dev  = pDev;
+    pThis->u.s.PacketType.func = vboxNetFltLinuxPacketHandler;
+    dev_add_pack(&pThis->u.s.PacketType);
+
+    /*
+     * Set indicators that require the spinlock. Be abit paranoid about racing
+     * the device notification handle.
+     */
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
     pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
     if (pDev)
@@ -1022,8 +1201,13 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
     RTSpinlockRelease(pThis->hSpinlock, &Tmp);
     Log(("vboxNetFltLinuxAttachToInterface: this=%p: Packet handler installed.\n", pThis));
 
-    /* Release the interface on failure. */
-    if (pDev)
+    /*
+     * If the above succeeded report GSO capabilites,  if not undo and
+     * release the device.
+     */
+    if (!pDev)
+        vboxNetFltLinuxReportNicGsoCapabilities(pThis);
+    else
     {
         RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
         ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pDev, NULL);
@@ -1087,17 +1271,11 @@ static int vboxNetFltLinuxDeviceGoingDown(PVBOXNETFLTINS pThis, struct net_devic
     return NOTIFY_OK;
 }
 
-static int vboxNetFltLinuxNotifierCallback(struct notifier_block *self, unsigned long ulEventType, void *ptr)
-
+#ifdef LOG_ENABLED
+/** Stringify the NETDEV_XXX constants. */
+static const char *vboxNetFltLinuxGetNetDevEventName(unsigned long ulEventType)
 {
-    int rc = NOTIFY_OK;
-#ifdef DEBUG
-    char *pszEvent = "<unknown>";
-#endif
-    struct net_device *pDev = (struct net_device *)ptr;
-    PVBOXNETFLTINS pThis = VBOX_FLT_NB_TO_INST(self);
-
-#ifdef DEBUG
+    const char *pszEvent = "NETDRV_<unknown>";
     switch (ulEventType)
     {
         case NETDEV_REGISTER: pszEvent = "NETDEV_REGISTER"; break;
@@ -1110,33 +1288,64 @@ static int vboxNetFltLinuxNotifierCallback(struct notifier_block *self, unsigned
         case NETDEV_CHANGEMTU: pszEvent = "NETDEV_CHANGEMTU"; break;
         case NETDEV_CHANGEADDR: pszEvent = "NETDEV_CHANGEADDR"; break;
         case NETDEV_GOING_DOWN: pszEvent = "NETDEV_GOING_DOWN"; break;
+# ifdef NETDEV_FEAT_CHANGE
+        case NETDEV_FEAT_CHANGE: pszEvent = "NETDEV_FEAT_CHANGE"; break;
+# endif
     }
+    return pszEvent;
+}
+#endif /* LOG_ENABLED */
+
+/**
+ * Callback for listening to netdevice events.
+ *
+ * This works the rediscovery, clean up on unregistration, promiscuity on
+ * up/down, and GSO feature changes from ethtool.
+ *
+ * @returns NOTIFY_OK
+ * @param   self                Pointer to our notifier registration block.
+ * @param   ulEventType         The event.
+ * @param   ptr                 Event specific, but it is usually the device it
+ *                              relates to.
+ */
+static int vboxNetFltLinuxNotifierCallback(struct notifier_block *self, unsigned long ulEventType, void *ptr)
+
+{
+    PVBOXNETFLTINS      pThis = VBOX_FLT_NB_TO_INST(self);
+    struct net_device  *pDev  = (struct net_device *)ptr;
+    int                 rc    = NOTIFY_OK;
+
     Log(("VBoxNetFlt: got event %s(0x%lx) on %s, pDev=%p pThis=%p pThis->u.s.pDev=%p\n",
-         pszEvent, ulEventType, pDev->name, pDev, pThis, ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev)));
-#endif
-    if (ulEventType == NETDEV_REGISTER && !strcmp(pDev->name, pThis->szName))
+         vboxNetFltLinuxGetNetDevEventName(ulEventType), ulEventType, pDev->name, pDev, pThis, ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev)));
+    if (    ulEventType == NETDEV_REGISTER
+        && !strcmp(pDev->name, pThis->szName))
     {
         vboxNetFltLinuxAttachToInterface(pThis, pDev);
     }
     else
     {
         pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
-        if (pDev != ptr)
-            return NOTIFY_OK;
-        rc = NOTIFY_OK;
-        switch (ulEventType)
+        if (pDev == ptr)
         {
-            case NETDEV_UNREGISTER:
-                rc = vboxNetFltLinuxUnregisterDevice(pThis, pDev);
-                break;
-            case NETDEV_UP:
-                rc = vboxNetFltLinuxDeviceIsUp(pThis, pDev);
-                break;
-            case NETDEV_GOING_DOWN:
-                rc = vboxNetFltLinuxDeviceGoingDown(pThis, pDev);
-                break;
-            case NETDEV_CHANGENAME:
-                break;
+            switch (ulEventType)
+            {
+                case NETDEV_UNREGISTER:
+                    rc = vboxNetFltLinuxUnregisterDevice(pThis, pDev);
+                    break;
+                case NETDEV_UP:
+                    rc = vboxNetFltLinuxDeviceIsUp(pThis, pDev);
+                    break;
+                case NETDEV_GOING_DOWN:
+                    rc = vboxNetFltLinuxDeviceGoingDown(pThis, pDev);
+                    break;
+                case NETDEV_CHANGENAME:
+                    break;
+#ifdef NETDEV_FEAT_CHANGE
+                case NETDEV_FEAT_CHANGE:
+                    vboxNetFltLinuxReportNicGsoCapabilities(pThis);
+                    break;
+#endif
+            }
         }
     }
 
@@ -1299,7 +1508,23 @@ int vboxNetFltOsDisconnectIt(PVBOXNETFLTINS pThis)
 
 int  vboxNetFltOsConnectIt(PVBOXNETFLTINS pThis)
 {
-    /* Nothing to do here. */
+    /*
+     * Report the GSO capabilities of the host and device (if connected).
+     */
+#if defined(VBOXNETFLT_WITH_GSO_XMIT_HOST)
+    pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort,
+                                                 0
+                                                 | RT_BIT_32(PDMNETWORKGSOTYPE_IPV4_TCP)
+                                                 | RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_TCP)
+# if 0 /** @todo GSO: Test UDP offloading (UFO) on linux. */
+                                                 | RT_BIT_32(PDMNETWORKGSOTYPE_IPV4_UDP)
+                                                 | RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_UDP)
+# endif
+                                                 , INTNETTRUNKDIR_HOST);
+
+#endif
+    vboxNetFltLinuxReportNicGsoCapabilities(pThis);
+
     return VINF_SUCCESS;
 }
 

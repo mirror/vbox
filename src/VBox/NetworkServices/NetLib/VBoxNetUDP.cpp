@@ -126,7 +126,7 @@ void *VBoxNetUDPMatch(PINTNETBUF pBuf, unsigned uDstPort, PCRTMAC pDstMac, uint3
      * are set correctly (they are usually set to 0).
      */
     if (pGso)
-        PDMNetGsoPrepForDirectUse(pGso, (void *)pvFrame, cbFrame, false /*fHeaderChecskum*/, false /*fPayloadChecksum*/);
+        PDMNetGsoPrepForDirectUse(pGso, (void *)pvFrame, cbFrame, false /*fPayloadChecksum*/);
 
     /*
      * IP validation and matching.
