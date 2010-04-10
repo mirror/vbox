@@ -450,7 +450,8 @@ DECLINLINE(void) PDMNetGsoPrepForDirectUse(PCPDMNETWORKGSO pGso, void *pvFrame, 
      */
     uint8_t * const pbHdrs    = (uint8_t *)pvFrame;
     uint8_t * const pbPayload = pbHdrs  + pGso->cbHdrs;
-    size_t    const cbPayload = cbFrame - pGso->cbHdrs;
+    uint32_t  const cbFrame32 = (uint32_t)cbFrame;
+    uint32_t  const cbPayload = cbFrame32 - pGso->cbHdrs;
 
     /*
      * Check assumptions (doing it after declaring the variables because of C).
@@ -463,11 +464,11 @@ DECLINLINE(void) PDMNetGsoPrepForDirectUse(PCPDMNETWORKGSO pGso, void *pvFrame, 
     switch ((PDMNETWORKGSOTYPE)pGso->u8Type)
     {
         case PDMNETWORKGSOTYPE_IPV4_TCP:
-            pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv4Hdr(pbHdrs, pGso->offHdr1, cbFrame - pGso->cbHdrs, 0, pGso->cbHdrs),
+            pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv4Hdr(pbHdrs, pGso->offHdr1, cbFrame32 - pGso->cbHdrs, 0, pGso->cbHdrs),
                                   pbHdrs, pGso->offHdr2, pbPayload, cbPayload, 0, pGso->cbHdrs, true, fPayloadChecksum);
             break;
         case PDMNETWORKGSOTYPE_IPV4_UDP:
-            pdmNetGsoUpdateUdpHdr(pdmNetGsoUpdateIPv4Hdr(pbHdrs, pGso->offHdr1, cbFrame - pGso->cbHdrs, 0, pGso->cbHdrs),
+            pdmNetGsoUpdateUdpHdr(pdmNetGsoUpdateIPv4Hdr(pbHdrs, pGso->offHdr1, cbFrame32 - pGso->cbHdrs, 0, pGso->cbHdrs),
                                   pbHdrs, pGso->offHdr2, pbPayload, cbPayload, pGso->cbHdrs, fPayloadChecksum);
             break;
         case PDMNETWORKGSOTYPE_IPV6_TCP:
