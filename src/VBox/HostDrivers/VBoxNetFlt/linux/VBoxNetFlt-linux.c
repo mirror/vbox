@@ -220,6 +220,162 @@ static void __exit VBoxNetFltLinuxUnload(void)
     Log(("VBoxNetFltLinuxUnload - done\n"));
 }
 
+/**
+ * Experiment where we filter trafic from the host to the internal network
+ * before it reaches the NIC driver.
+ *
+ * The current code uses a very ugly hack and only works on kernels using the
+ * net_device_ops (2.6.30 or something).  It has been shown to give us a
+ * performance boost of 60-100% though.  So, we have to find some less hacky way
+ * of getting this job done eventually.
+ *
+ * #define VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT
+ */
+#ifdef VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT
+
+/**
+ * The overridden net_device_ops of the device we're attached to.
+ *
+ * Requires Linux 2.6.30 or something.
+ *
+ * This is a very dirty hack that was create to explore how much we can improve
+ * the host to guest transfers by not CC'ing the NIC.
+ */
+typedef struct VBoxNetDeviceOpsOverride
+{
+    /** Our overridden ops. */
+    struct net_device_ops           Ops;
+    /** Pointer to the original ops. */
+    struct net_device_ops const    *pOrgOps;
+    /** Magic word. */
+    uint32_t                        u32Magic;
+    /** The number of filtered packages. */
+    uint64_t                        cFiltered;
+    /** The total number of packets */
+    uint64_t                        cTotal;
+} VBOXNETDEVICEOPSOVERRIDE, *PVBOXNETDEVICEOPSOVERRIDE;
+/** VBOXNETDEVICEOPSOVERRIDE::u32Magic value. */
+#define VBOXNETDEVICEOPSOVERRIDE_MAGIC  UINT32_C(0x00c0ffee)
+
+/**
+ * ndo_start_xmit wrapper that drops packets that shouldn't go to the wire
+ * because they belong on the internal network.
+ *
+ * @returns NETDEV_TX_XXX.
+ * @param   pSkb                The socket buffer to transmit.
+ * @param   pDev                The net device.
+ */
+static int vboxNetFltLinuxStartXmitFilter(struct sk_buff *pSkb, struct net_device *pDev)
+{
+    PVBOXNETDEVICEOPSOVERRIDE   pOverride = (PVBOXNETDEVICEOPSOVERRIDE)pDev->netdev_ops;
+    RTNETETHERHDR               EtherHdrBuf;
+    PCRTNETETHERHDR             pEtherHdr;
+
+    /*
+     * Validate the override structure.
+     *
+     * Note! We're racing vboxNetFltLinuxUnhookDev here.  If this was supposed
+     *       to be production quality code, we would have to be much more
+     *       careful here and avoid the race.
+     */
+    if (   !VALID_PTR(pOverride)
+        || pOverride->u32Magic != VBOXNETDEVICEOPSOVERRIDE_MAGIC
+        || !VALID_PTR(pOverride->pOrgOps))
+    {
+        printk("vboxNetFltLinuxStartXmitFilter: bad override %p\n", pOverride);
+        dev_kfree_skb(pSkb);
+        return NETDEV_TX_OK;
+    }
+    pOverride->cTotal++;
+
+    /*
+     * Do the filtering base on the defaul OUI of our virtual NICs
+     *
+     * Note! In a real solution, we would ask the switch whether the
+     *       destination MAC is 100% to be on the internal network and then
+     *       drop it.
+     */
+    pEtherHdr = (PCRTNETETHERHDR)skb_header_pointer(pSkb, 0, sizeof(EtherHdrBuf), &EtherHdrBuf);
+    if (    pEtherHdr
+        &&  pEtherHdr->DstMac.au8[0] == 0x08
+        &&  pEtherHdr->DstMac.au8[1] == 0x00
+        &&  pEtherHdr->DstMac.au8[2] == 0x27
+       )
+    {
+        dev_kfree_skb(pSkb);
+        pOverride->cFiltered++;
+        return NETDEV_TX_OK;
+    }
+
+    return pOverride->pOrgOps->ndo_start_xmit(pSkb, pDev);
+}
+
+/**
+ * Hooks the device ndo_start_xmit operation of the device.
+ *
+ * @param   pThis               The net filter instance.
+ * @param   pDev                The net device.
+ */
+static void vboxNetFltLinuxHookDev(PVBOXNETFLTINS pThis, struct net_device *pDev)
+{
+    PVBOXNETDEVICEOPSOVERRIDE   pOverride;
+    RTSPINLOCKTMP               Tmp = RTSPINLOCKTMP_INITIALIZER;
+
+    pOverride = RTMemAlloc(sizeof(*pOverride));
+    if (!pOverride)
+        return;
+    pOverride->pOrgOps              = pDev->netdev_ops;
+    pOverride->Ops                  = *pDev->netdev_ops;
+    pOverride->Ops.ndo_start_xmit   = vboxNetFltLinuxStartXmitFilter;
+    pOverride->u32Magic             = VBOXNETDEVICEOPSOVERRIDE_MAGIC;
+
+    RTSpinlockAcquire(pThis->hSpinlock, &Tmp); /* (this isn't necessary, but so what) */
+    ASMAtomicXchgPtr((void * volatile *)&pDev->netdev_ops, pOverride);
+    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+}
+
+/**
+ * Undos what vboxNetFltLinuxHookDev did.
+ *
+ * @param   pThis               The net filter instance.
+ * @param   pDev                The net device.  Can be NULL, in which case
+ *                              we'll try retrieve it from @a pThis.
+ */
+static void vboxNetFltLinuxUnhookDev(PVBOXNETFLTINS pThis, struct net_device *pDev)
+{
+    PVBOXNETDEVICEOPSOVERRIDE   pOverride;
+    RTSPINLOCKTMP               Tmp = RTSPINLOCKTMP_INITIALIZER;
+
+    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    if (!pDev)
+        pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
+    if (VALID_PTR(pDev))
+    {
+        pOverride = (PVBOXNETDEVICEOPSOVERRIDE)pDev->netdev_ops;
+        if (    VALID_PTR(pOverride)
+            &&  pOverride->u32Magic == VBOXNETDEVICEOPSOVERRIDE_MAGIC
+            &&  VALID_PTR(pOverride->pOrgOps)
+           )
+        {
+            ASMAtomicXchgPtr((void * volatile *)&pDev->netdev_ops, pOverride->pOrgOps);
+            ASMAtomicWriteU32(&pOverride->u32Magic, 0);
+        }
+        else
+            pOverride = NULL;
+    }
+    else
+        pOverride = NULL;
+    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+
+    if (pOverride)
+    {
+        printk("vboxnetflt: dropped %llu out of %llu packets\n", pOverride->cFiltered, pOverride->cTotal);
+        RTMemFree(pOverride);
+    }
+}
+
+#endif /* VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT */
+
 
 /**
  * Reads and retains the host interface handle.
@@ -1124,6 +1280,10 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
     pThis->u.s.PacketType.func = vboxNetFltLinuxPacketHandler;
     dev_add_pack(&pThis->u.s.PacketType);
 
+#ifdef VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT
+    vboxNetFltLinuxHookDev(pThis, pDev);
+#endif
+
     /*
      * Set indicators that require the spinlock. Be abit paranoid about racing
      * the device notification handle.
@@ -1147,6 +1307,9 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
         vboxNetFltLinuxReportNicGsoCapabilities(pThis);
     else
     {
+#ifdef VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT
+        vboxNetFltLinuxUnhookDev(pThis, pDev);
+#endif
         RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
         ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pDev, NULL);
         RTSpinlockRelease(pThis->hSpinlock, &Tmp);
@@ -1164,6 +1327,11 @@ static int vboxNetFltLinuxUnregisterDevice(PVBOXNETFLTINS pThis, struct net_devi
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
 
     Assert(!pThis->fDisconnectedFromHost);
+
+#ifdef VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT
+    vboxNetFltLinuxUnhookDev(pThis, pDev);
+#endif
+
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
     ASMAtomicWriteBool(&pThis->u.s.fRegistered, false);
     ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, true);
@@ -1469,14 +1637,24 @@ int  vboxNetFltOsConnectIt(PVBOXNETFLTINS pThis)
 
 void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
 {
-    struct net_device *pDev;
-    bool fRegistered;
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    struct net_device  *pDev;
+    bool                fRegistered;
+    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
+
+#ifdef VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT
+    vboxNetFltLinuxUnhookDev(pThis, NULL);
+#endif
+
+    /** @todo This code may race vboxNetFltLinuxUnregisterDevice (very very
+     *        unlikely, but none the less).  Since it doesn't actually update the
+     *        state (just reads it), it is likely to panic in some interesting
+     *        ways. */
 
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
     pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
     fRegistered = ASMAtomicUoReadBool(&pThis->u.s.fRegistered);
     RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+
     if (fRegistered)
     {
         dev_remove_pack(&pThis->u.s.PacketType);
