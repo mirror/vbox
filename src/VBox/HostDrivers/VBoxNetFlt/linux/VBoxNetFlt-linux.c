@@ -323,84 +323,22 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
      * Allocate a packet and copy over the data.
      */
     pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
-#if 0 /* trying to figure out why submitting GSOs is so darn slow. */
-    if (   pSG->GsoCtx.u8Type != PDMNETWORKGSOTYPE_INVALID
-        && pSG->cbTotal > 4096
-        && fDstWire
-        && pDev
-        && (pDev->features & NETIF_F_SG)
-        )
+    pPkt = dev_alloc_skb(pSG->cbTotal + NET_IP_ALIGN);
+    if (RT_UNLIKELY(!pPkt))
     {
-        uint32_t off    = 0;
-        uint32_t cbLeft = pSG->cbTotal;
-        uint32_t iFrag  = 0;
-
-        pPkt = dev_alloc_skb(pSG->GsoCtx.cbHdrs + NET_IP_ALIGN + 64);
-        if (RT_UNLIKELY(!pPkt))
-        {
-            Log(("vboxNetFltLinuxSkBufFromSG: Failed to allocate sk_buff(%u).\n", pSG->cbTotal));
-            pSG->pvUserData = NULL;
-            return NULL;
-        }
-        pPkt->dev       = pDev;
-        pPkt->ip_summed = CHECKSUM_NONE;
-
-        /* Align IP header on 16-byte boundary: 2 + 14 (ethernet hdr size). */
-        skb_reserve(pPkt, NET_IP_ALIGN);
-
-        /* Copy the headers. */
-        skb_put(pPkt, pSG->GsoCtx.cbHdrs);
-        INTNETSgReadEx(pSG, off, pSG->GsoCtx.cbHdrs, pPkt->data);
-        off    += pSG->GsoCtx.cbHdrs;
-        cbLeft -= off;
-
-        /* Copy the payload into fragments. */
-        while (cbLeft)
-        {
-            void           *pvPage;
-            uint32_t        cbUsed = RT_MIN(cbLeft, PAGE_SIZE);
-            struct page    *pPage  = alloc_page(GFP_ATOMIC);
-            if (!pPage)
-            {
-                dev_kfree_skb(pPkt);
-                return NULL;
-            }
-
-            skb_fill_page_desc(pPkt, iFrag, pPage, 0, cbUsed);
-
-            pvPage = kmap(pPage);
-            INTNETSgReadEx(pSG, off, cbUsed, pvPage);
-            kunmap(pPage);
-
-            /* advance */
-            iFrag          += 1;
-            pPkt->len      += cbUsed;
-            pPkt->data_len += cbUsed;
-            pPkt->truesize += cbUsed;
-            off            += cbUsed;
-            cbLeft         -= cbUsed;
-        }
+        Log(("vboxNetFltLinuxSkBufFromSG: Failed to allocate sk_buff(%u).\n", pSG->cbTotal));
+        pSG->pvUserData = NULL;
+        return NULL;
     }
-    else
-#endif
-    {
-        pPkt = dev_alloc_skb(pSG->cbTotal + NET_IP_ALIGN);
-        if (RT_UNLIKELY(!pPkt))
-        {
-            Log(("vboxNetFltLinuxSkBufFromSG: Failed to allocate sk_buff(%u).\n", pSG->cbTotal));
-            pSG->pvUserData = NULL;
-            return NULL;
-        }
-        pPkt->dev       = pDev;
-        pPkt->ip_summed = CHECKSUM_NONE;
+    pPkt->dev       = pDev;
+    pPkt->ip_summed = CHECKSUM_NONE;
 
-        /* Align IP header on 16-byte boundary: 2 + 14 (ethernet hdr size). */
-        skb_reserve(pPkt, NET_IP_ALIGN);
+    /* Align IP header on 16-byte boundary: 2 + 14 (ethernet hdr size). */
+    skb_reserve(pPkt, NET_IP_ALIGN);
 
-        /* Copy the segments. */
-        skb_put(pPkt, pSG->cbTotal);
-        INTNETSgRead(pSG, pPkt->data);
-    }
+    /* Copy the segments. */
+    skb_put(pPkt, pSG->cbTotal);
+    INTNETSgRead(pSG, pPkt->data);
 
 #if defined(VBOXNETFLT_WITH_GSO_XMIT_WIRE) || defined(VBOXNETFLT_WITH_GSO_XMIT_HOST)
     /*
