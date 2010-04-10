@@ -69,7 +69,7 @@ OBJS   = \
 	VBoxNetFlt.o \
 	SUPR0IdcClient.o \
 	SUPR0IdcClientComponent.o \
-	SUPR0IdcClient-linux.o \
+	SUPR0IdcClient-linux.o
 
 ifeq ($(BUILD_TARGET_ARCH),x86)
 OBJS += math/gcc/divdi3.o \

@@ -1640,7 +1640,7 @@ DECLINLINE(bool) intnetR0TrunkIfCanHandleGsoFrame(PINTNETTRUNKIF pThis, PINTNETS
         return !!(pThis->fGsoCapabilitesHost & fMask);
     if (fDst == INTNETTRUNKDIR_WIRE)
         return !!(pThis->fGsoCapabilitesWire & fMask);
-    Assert(fDst == (INTNETTRUNKDIR_WIRE == INTNETTRUNKDIR_HOST));
+    Assert(fDst == (INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST));
     return !!(pThis->fGsoCapabilitesHost & pThis->fGsoCapabilitesWire & fMask);
 }
 
@@ -3317,7 +3317,7 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortReportGsoCapabilities(PINTNETTRUNKS
 
     for (unsigned iBit = PDMNETWORKGSOTYPE_END; iBit < 32; iBit++)
         Assert(!(fGsoCapabilities & RT_BIT_32(iBit)));
-    Assert(fDst & ~INTNETTRUNKDIR_VALID_MASK);
+    Assert(!(fDst & ~INTNETTRUNKDIR_VALID_MASK));
     Assert(fDst);
 
     if (fDst & INTNETTRUNKDIR_HOST)
