@@ -30,12 +30,14 @@
 /* VBox forward declarations */
 class Progress;
 class VirtualSystemDescription;
+struct VirtualSystemDescriptionEntry;
 
 namespace ovf
 {
     struct HardDiskController;
     struct VirtualSystem;
     class OVFReader;
+    struct DiskImage;
 }
 
 namespace xml
@@ -119,10 +121,11 @@ private:
     void waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis, ComPtr<IProgress> &pProgressAsync);
     void addWarning(const char* aWarning, ...);
 
-    void disksWeight(uint32_t &ulTotalMB, uint32_t &cDisks) const;
-    HRESULT setUpProgressFS(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription);
-    HRESULT setUpProgressImportS3(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription);
-    HRESULT setUpProgressWriteS3(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription);
+    void disksWeight();
+    enum SetUpProgressMode { Regular, ImportS3, WriteS3 };
+    HRESULT setUpProgress(ComObjPtr<Progress> &pProgress,
+                          const Bstr &bstrDescription,
+                          SetUpProgressMode mode);
 
     struct LocationInfo;
     void parseURI(Utf8Str strUri, LocationInfo &locInfo) const;
@@ -144,16 +147,25 @@ private:
                                      int32_t &lDevice);
 
     HRESULT importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
+    HRESULT manifestVerify(const LocationInfo &locInfo, const ovf::OVFReader &reader);
 
     HRESULT importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &aProgress);
+
     struct ImportStack;
-    void importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThis,
-                           ComPtr<IMachine> &pNewMachine,
-                           ImportStack &stack);
+    void importOneDiskImage(const ovf::DiskImage &di,
+                            uint32_t ulSizeMB,
+                            const Utf8Str &strTargetPath,
+                            ComPtr<IMedium> &pTargetHD,
+                            ImportStack &stack);
     void importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                               ComObjPtr<VirtualSystemDescription> &vsdescThis,
                               ComPtr<IMachine> &pNewMachine,
                               ImportStack &stack);
+    void importVBoxMachine(const ovf::VirtualSystem &vsysThis,
+                           ComObjPtr<VirtualSystemDescription> &vsdescThis,
+                           ComPtr<IMachine> &pNewMachine,
+                           ImportStack &stack);
+
     HRESULT importS3(TaskOVF *pTask);
 
     HRESULT writeImpl(OVFFormat aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);

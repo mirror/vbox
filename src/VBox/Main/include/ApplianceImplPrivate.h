@@ -79,6 +79,8 @@ struct Appliance::Data
     std::list<Utf8Str>   llWarnings;
 
     ULONG           ulWeightPerOperation;
+    ULONG           ulTotalDisksMB;
+    ULONG           cDisks;
     Utf8Str         strOVFSHA1Digest;
 };
 
