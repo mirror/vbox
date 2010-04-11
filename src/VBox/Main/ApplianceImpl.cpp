@@ -563,6 +563,25 @@ HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
 }
 
 /**
+ * Little shortcut to SystemProperties::DefaultHardDiskFolder.
+ * @param str
+ * @return
+ */
+HRESULT Appliance::getDefaultHardDiskFolder(Utf8Str &str) const
+{
+    /* We need the default path for storing disk images */
+    ComPtr<ISystemProperties> systemProps;
+    HRESULT rc = mVirtualBox->COMGETTER(SystemProperties)(systemProps.asOutParam());
+    if (FAILED(rc)) return rc;
+    Bstr bstrDefaultHardDiskFolder;
+    rc = systemProps->COMGETTER(DefaultHardDiskFolder)(bstrDefaultHardDiskFolder.asOutParam());
+    if (FAILED(rc)) return rc;
+    str = bstrDefaultHardDiskFolder;
+
+    return S_OK;
+}
+
+/**
  * Called from the import and export background threads to synchronize the second
  * background disk thread's progress object with the current progress object so
  * that the user interface sees progress correctly and that cancel signals are

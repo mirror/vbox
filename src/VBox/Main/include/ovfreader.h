@@ -151,6 +151,7 @@ enum CIMOSType_T
 
 struct DiskImage
 {
+    // fields from /DiskSection/Disk
     iprt::MiniString strDiskId;     // value from DiskSection/Disk/@diskId
     int64_t iCapacity;              // value from DiskSection/Disk/@capacity;
                                     // (maximum size for dynamic images, I guess; we always translate this to bytes)
@@ -159,6 +160,8 @@ struct DiskImage
                                     // space, but cannot be larger than iCapacity; -1 if not set)
     iprt::MiniString strFormat;              // value from DiskSection/Disk/@format
                 // typically http://www.vmware.com/specifications/vmdk.html#sparse
+    iprt::MiniString uuidVbox;      // optional; if the file was exported by VirtualBox >= 3.2,
+                                    // then this has the UUID with which the disk was registered
 
     // fields from /References/File; the spec says the file reference from disk can be empty,
     // so in that case, strFilename will be empty, then a new disk should be created
@@ -166,6 +169,9 @@ struct DiskImage
     int64_t iSize;                  // value from /References/File/@size (optional according to spec; then we set -1 here)
     int64_t iChunkSize;             // value from /References/File/@chunkSize (optional, unsupported)
     iprt::MiniString strCompression; // value from /References/File/@compression (optional, can be "gzip" according to spec)
+
+    // additional field which has a descriptive size in megabytes derived from the above; this can be used for progress reports
+    uint32_t ulSuggestedSizeMB;
 };
 
 enum ResourceType_T
@@ -382,11 +388,6 @@ class OVFReader
 public:
     OVFReader(const iprt::MiniString &path);
 
-    void LoopThruSections(const xml::ElementNode *pReferencesElem, const xml::ElementNode *pCurElem);
-    void HandleDiskSection(const xml::ElementNode *pReferencesElem, const xml::ElementNode *pSectionElem);
-    void HandleNetworkSection(const xml::ElementNode *pSectionElem);
-    void HandleVirtualSystemContent(const xml::ElementNode *pContentElem);
-
     // Data fields
     iprt::MiniString            m_strPath;            // file name given to constructor
     DiskImagesMap               m_mapDisks;           // map of DiskImage structs, sorted by DiskImage.strDiskId
@@ -394,6 +395,11 @@ public:
 
 private:
     xml::Document               m_doc;
+
+    void LoopThruSections(const xml::ElementNode *pReferencesElem, const xml::ElementNode *pCurElem);
+    void HandleDiskSection(const xml::ElementNode *pReferencesElem, const xml::ElementNode *pSectionElem);
+    void HandleNetworkSection(const xml::ElementNode *pSectionElem);
+    void HandleVirtualSystemContent(const xml::ElementNode *pContentElem);
 };
 
 ////////////////////////////////////////////////////////////////////////////////

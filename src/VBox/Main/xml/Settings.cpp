@@ -121,8 +121,7 @@ using namespace settings;
 struct ConfigFileBase::Data
 {
     Data()
-        : pParser(NULL),
-          pDoc(NULL),
+        : pDoc(NULL),
           pelmRoot(NULL),
           sv(SettingsVersion_Null),
           svRead(SettingsVersion_Null)
@@ -136,7 +135,6 @@ struct ConfigFileBase::Data
     iprt::MiniString        strFilename;
     bool                    fFileExists;
 
-    xml::XmlFileParser      *pParser;
     xml::Document           *pDoc;
     xml::ElementNode        *pelmRoot;
 
@@ -162,12 +160,6 @@ struct ConfigFileBase::Data
             delete pDoc;
             pDoc = NULL;
             pelmRoot = NULL;
-        }
-
-        if (pParser)
-        {
-            delete pParser;
-            pParser = NULL;
         }
     }
 };
@@ -227,10 +219,10 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
         // reading existing settings file:
         m->strFilename = *pstrFilename;
 
-        m->pParser = new xml::XmlFileParser;
+        xml::XmlFileParser parser;
         m->pDoc = new xml::Document;
-        m->pParser->read(*pstrFilename,
-                        *m->pDoc);
+        parser.read(*pstrFilename,
+                    *m->pDoc);
 
         m->fFileExists = true;
 
@@ -3941,3 +3933,4 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
         throw;
     }
 }
+

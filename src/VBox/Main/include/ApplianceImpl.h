@@ -118,6 +118,7 @@ private:
 
     HRESULT searchUniqueVMName(Utf8Str& aName) const;
     HRESULT searchUniqueDiskImageFilePath(Utf8Str& aName) const;
+    HRESULT getDefaultHardDiskFolder(Utf8Str &str) const;
     void waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis, ComPtr<IProgress> &pProgressAsync);
     void addWarning(const char* aWarning, ...);
 
@@ -153,7 +154,6 @@ private:
 
     struct ImportStack;
     void importOneDiskImage(const ovf::DiskImage &di,
-                            uint32_t ulSizeMB,
                             const Utf8Str &strTargetPath,
                             ComPtr<IMedium> &pTargetHD,
                             ImportStack &stack);
@@ -161,8 +161,7 @@ private:
                               ComObjPtr<VirtualSystemDescription> &vsdescThis,
                               ComPtr<IMachine> &pNewMachine,
                               ImportStack &stack);
-    void importVBoxMachine(const ovf::VirtualSystem &vsysThis,
-                           ComObjPtr<VirtualSystemDescription> &vsdescThis,
+    void importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThis,
                            ComPtr<IMachine> &pNewMachine,
                            ImportStack &stack);
 
@@ -191,7 +190,7 @@ struct VirtualSystemDescriptionEntry
     Utf8Str strVbox;                        // configuration value (type-dependent)
     Utf8Str strExtraConfig;                 // extra configuration key=value strings (type-dependent)
 
-    uint32_t ulSizeMB;                      // hard disk images only: size of the uncompressed image in MB
+    uint32_t ulSizeMB;                      // hard disk images only: a copy of ovf::DiskImage::ulSuggestedSizeMB
 };
 
 class ATL_NO_VTABLE VirtualSystemDescription :
