@@ -229,7 +229,7 @@ static void __exit VBoxNetFltLinuxUnload(void)
  * before it reaches the NIC driver.
  *
  * The current code uses a very ugly hack and only works on kernels using the
- * net_device_ops (2.6.28).  It has been shown to give us a
+ * net_device_ops (>= 2.6.29).  It has been shown to give us a
  * performance boost of 60-100% though.  So, we have to find some less hacky way
  * of getting this job done eventually.
  *
@@ -240,7 +240,7 @@ static void __exit VBoxNetFltLinuxUnload(void)
 /**
  * The overridden net_device_ops of the device we're attached to.
  *
- * Requires Linux 2.6.28 or later.
+ * Requires Linux 2.6.29 or later.
  *
  * This is a very dirty hack that was create to explore how much we can improve
  * the host to guest transfers by not CC'ing the NIC.
