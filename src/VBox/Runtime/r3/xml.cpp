@@ -419,13 +419,6 @@ xmlParserInput* GlobalLock::callDefaultLoader(const char *aURI,
 
 struct Node::Data
 {
-    xmlNode     *plibNode;          // != NULL if this is an element or content node
-    xmlAttr     *plibAttr;          // != NULL if this is an attribute node
-
-    Node        *pParent;           // NULL only for the root element
-    const char  *pcszName;          // element or attribute name, points either into plibNode or plibAttr;
-                                    // NULL if this is a content node
-
     struct compare_const_char
     {
         bool operator()(const char* s1, const char* s2) const
@@ -443,13 +436,18 @@ struct Node::Data
     InternalNodesList children;
 };
 
-Node::Node(EnumType type)
-    : mType(type),
+Node::Node(EnumType type,
+           Node *pParent,
+           xmlNode *plibNode,
+           xmlAttr *plibAttr)
+    : m_Type(type),
+      m_pParent(pParent),
+      m_plibNode(plibNode),
+      m_plibAttr(plibAttr),
+      m_pcszNamespace(NULL),
+      m_pcszName(NULL),
       m(new Data)
 {
-    m->plibNode = NULL;
-    m->plibAttr = NULL;
-    m->pParent = NULL;
 }
 
 Node::~Node()
@@ -460,14 +458,11 @@ Node::~Node()
 void Node::buildChildren()       // private
 {
     // go thru this element's attributes
-    xmlAttr *plibAttr = m->plibNode->properties;
+    xmlAttr *plibAttr = m_plibNode->properties;
     while (plibAttr)
     {
         const char *pcszAttribName = (const char*)plibAttr->name;
-        boost::shared_ptr<AttributeNode> pNew(new AttributeNode);
-        pNew->m->plibAttr = plibAttr;
-        pNew->m->pcszName = (const char*)plibAttr->name;
-        pNew->m->pParent = this;
+        boost::shared_ptr<AttributeNode> pNew(new AttributeNode(this, plibAttr));
         // store
         m->attribs[pcszAttribName] = pNew;
 
@@ -475,20 +470,17 @@ void Node::buildChildren()       // private
     }
 
     // go thru this element's child elements
-    xmlNodePtr plibNode = m->plibNode->children;
+    xmlNodePtr plibNode = m_plibNode->children;
     while (plibNode)
     {
         boost::shared_ptr<Node> pNew;
 
         if (plibNode->type == XML_ELEMENT_NODE)
-            pNew = boost::shared_ptr<Node>(new ElementNode);
+            pNew = boost::shared_ptr<Node>(new ElementNode(this, plibNode));
         else if (plibNode->type == XML_TEXT_NODE)
-            pNew = boost::shared_ptr<Node>(new ContentNode);
+            pNew = boost::shared_ptr<Node>(new ContentNode(this, plibNode));
         if (pNew)
         {
-            pNew->m->plibNode = plibNode;
-            pNew->m->pcszName = (const char*)plibNode->name;
-            pNew->m->pParent = this;
             // store
             m->children.push_back(pNew);
 
@@ -502,7 +494,7 @@ void Node::buildChildren()       // private
 
 const char* Node::getName() const
 {
-    return m->pcszName;
+    return m_pcszName;
 }
 
 /**
@@ -513,26 +505,23 @@ const char* Node::getName() const
  */
 bool Node::nameEquals(const char *pcszNamespace, const char *pcsz) const
 {
-    if (m->pcszName == pcsz)
+    if (m_pcszName == pcsz)
         return true;
-    if (m->pcszName == NULL)
+    if (m_pcszName == NULL)
         return false;
     if (pcsz == NULL)
         return false;
-    if (strcmp(m->pcszName, pcsz))
+    if (strcmp(m_pcszName, pcsz))
         return false;
 
     // name matches: then check namespaces as well
     if (!pcszNamespace)
         return true;
     // caller wants namespace:
-    if (    !m->plibNode->ns
-         || !m->plibNode->ns->prefix
-         || !*m->plibNode->ns->prefix
-       )
+    if (!m_pcszNamespace)
         // but node has no namespace:
         return false;
-    return !strcmp((const char*)m->plibNode->ns->prefix, pcszNamespace);
+    return !strcmp(m_pcszNamespace, pcszNamespace);
 }
 
 /**
@@ -543,17 +532,17 @@ bool Node::nameEquals(const char *pcszNamespace, const char *pcsz) const
  */
 const char* Node::getValue() const
 {
-    if (    (m->plibAttr)
-         && (m->plibAttr->children)
+    if (    (m_plibAttr)
+         && (m_plibAttr->children)
        )
         // libxml hides attribute values in another node created as a
         // single child of the attribute node, and it's in the content field
-        return (const char*)m->plibAttr->children->content;
+        return (const char*)m_plibAttr->children->content;
 
-    if (    (m->plibNode)
-         && (m->plibNode->children)
+    if (    (m_plibNode)
+         && (m_plibNode->children)
        )
-        return (const char*)m->plibNode->children->content;
+        return (const char*)m_plibNode->children->content;
 
     return NULL;
 }
@@ -633,15 +622,24 @@ bool Node::copyValue(uint64_t &i) const
  */
 int Node::getLineNumber() const
 {
-    if (m->plibAttr)
-        return m->pParent->m->plibNode->line;
+    if (m_plibAttr)
+        return m_pParent->m_plibNode->line;
 
-    return m->plibNode->line;
+    return m_plibNode->line;
 }
 
-ElementNode::ElementNode()
-    : Node(IsElement)
+ElementNode::ElementNode(Node *pParent, xmlNode *plibNode)
+    : Node(IsElement,
+           pParent,
+           plibNode,
+           NULL)
 {
+    m_pcszName = (const char*)plibNode->name;
+
+    if (    plibNode->ns
+         && plibNode->ns->prefix
+       )
+        m_pcszNamespace = (const char*)m_plibNode->ns->prefix;
 }
 
 /**
@@ -920,7 +918,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, bool &f) const
 ElementNode* ElementNode::createChild(const char *pcszElementName)
 {
     // we must be an element, not an attribute
-    if (!m->plibNode)
+    if (!m_plibNode)
         throw ENodeIsNotElement(RT_SRC_POS);
 
     // libxml side: create new node
@@ -928,14 +926,11 @@ ElementNode* ElementNode::createChild(const char *pcszElementName)
     if (!(plibNode = xmlNewNode(NULL,        // namespace
                                 (const xmlChar*)pcszElementName)))
         throw std::bad_alloc();
-    xmlAddChild(m->plibNode, plibNode);
+    xmlAddChild(m_plibNode, plibNode);
 
     // now wrap this in C++
-    ElementNode *p = new ElementNode;
+    ElementNode *p = new ElementNode(this, plibNode);
     boost::shared_ptr<ElementNode> pNew(p);
-    pNew->m->plibNode = plibNode;
-    pNew->m->pcszName = (const char*)plibNode->name;
-
     m->children.push_back(pNew);
 
     return p;
@@ -955,14 +950,11 @@ ContentNode* ElementNode::addContent(const char *pcszContent)
     xmlNode *plibNode;
     if (!(plibNode = xmlNewText((const xmlChar*)pcszContent)))
         throw std::bad_alloc();
-    xmlAddChild(m->plibNode, plibNode);
+    xmlAddChild(m_plibNode, plibNode);
 
     // now wrap this in C++
-    ContentNode *p = new ContentNode;
+    ContentNode *p = new ContentNode(this, plibNode);
     boost::shared_ptr<ContentNode> pNew(p);
-    pNew->m->plibNode = plibNode;
-    pNew->m->pcszName = NULL;
-
     m->children.push_back(pNew);
 
     return p;
@@ -987,14 +979,11 @@ AttributeNode* ElementNode::setAttribute(const char *pcszName, const char *pcszV
     if (it == m->attribs.end())
     {
         // libxml side: xmlNewProp creates an attribute
-        xmlAttr *plibAttr = xmlNewProp(m->plibNode, (xmlChar*)pcszName, (xmlChar*)pcszValue);
+        xmlAttr *plibAttr = xmlNewProp(m_plibNode, (xmlChar*)pcszName, (xmlChar*)pcszValue);
         const char *pcszAttribName = (const char*)plibAttr->name;
 
         // C++ side: create an attribute node around it
-        boost::shared_ptr<AttributeNode> pNew(new AttributeNode);
-        pNew->m->plibAttr = plibAttr;
-        pNew->m->pcszName = (const char*)plibAttr->name;
-        pNew->m->pParent = this;
+        boost::shared_ptr<AttributeNode> pNew(new AttributeNode(this, plibAttr));
         // store
         m->attribs[pcszAttribName] = pNew;
     }
@@ -1058,13 +1047,20 @@ AttributeNode* ElementNode::setAttribute(const char *pcszName, bool f)
     return setAttribute(pcszName, (f) ? "true" : "false");
 }
 
-AttributeNode::AttributeNode()
-    : Node(IsAttribute)
+AttributeNode::AttributeNode(Node *pParent, xmlAttr *plibAttr)
+    : Node(IsAttribute,
+           pParent,
+           NULL,
+           plibAttr)
 {
+    m_pcszName = (const char*)plibAttr->name;
 }
 
-ContentNode::ContentNode()
-    : Node(IsContent)
+ContentNode::ContentNode(Node *pParent, xmlNode *plibNode)
+    : Node(IsContent,
+           pParent,
+           plibNode,
+           NULL)
 {
 }
 
@@ -1194,9 +1190,7 @@ Document::~Document()
  */
 void Document::refreshInternals() // private
 {
-    m->pRootElement = new ElementNode();
-    m->pRootElement->m->plibNode = xmlDocGetRootElement(m->plibDocument);
-    m->pRootElement->m->pcszName = (const char*)m->pRootElement->m->plibNode->name;
+    m->pRootElement = new ElementNode(NULL, xmlDocGetRootElement(m->plibDocument));
 
     m->pRootElement->buildChildren();
 }
@@ -1239,9 +1233,7 @@ ElementNode* Document::createRootElement(const char *pcszRootElementName)
     xmlDocSetRootElement(m->plibDocument, plibRootNode);
 
     // now wrap this in C++
-    m->pRootElement = new ElementNode();
-    m->pRootElement->m->plibNode = plibRootNode;
-    m->pRootElement->m->pcszName = (const char*)plibRootNode->name;
+    m->pRootElement = new ElementNode(NULL, plibRootNode);
 
     return m->pRootElement;
 }

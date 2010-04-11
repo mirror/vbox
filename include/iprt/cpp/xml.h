@@ -47,6 +47,9 @@ typedef xmlParserCtxt *xmlParserCtxtPtr;
 typedef struct _xmlError xmlError;
 typedef xmlError *xmlErrorPtr;
 
+typedef struct _xmlAttr xmlAttr;
+typedef struct _xmlNode xmlNode;
+
 namespace xml
 {
 
@@ -453,15 +456,25 @@ public:
 
     int isElement()
     {
-        return mType == IsElement;
+        return m_Type == IsElement;
     }
 
 protected:
     typedef enum {IsElement, IsAttribute, IsContent} EnumType;
-    EnumType mType;
+
+    EnumType    m_Type;
+    Node        *m_pParent;
+    xmlNode     *m_plibNode;            // != NULL if this is an element or content node
+    xmlAttr     *m_plibAttr;            // != NULL if this is an attribute node
+    const char  *m_pcszNamespace;
+    const char  *m_pcszName;            // element or attribute name, points either into plibNode or plibAttr;
+                                        // NULL if this is a content node
 
     // hide the default constructor so people use only our factory methods
-    Node(EnumType type);
+    Node(EnumType type,
+         Node *pParent,
+         xmlNode *plibNode,
+         xmlAttr *plibAttr);
     Node(const Node &x);      // no copying
 
     void buildChildren();
@@ -516,7 +529,7 @@ public:
 
 protected:
     // hide the default constructor so people use only our factory methods
-    ElementNode();
+    ElementNode(Node *pParent, xmlNode *plibNode);
     ElementNode(const ElementNode &x);      // no copying
 
     friend class Node;
@@ -530,7 +543,7 @@ public:
 
 protected:
     // hide the default constructor so people use only our factory methods
-    ContentNode();
+    ContentNode(Node *pParent, xmlNode *plibNode);
     ContentNode(const ContentNode &x);      // no copying
 
     friend class Node;
@@ -543,7 +556,7 @@ public:
 
 protected:
     // hide the default constructor so people use only our factory methods
-    AttributeNode();
+    AttributeNode(Node *pParent, xmlAttr *plibAttr);
     AttributeNode(const AttributeNode &x);      // no copying
 
     friend class Node;
