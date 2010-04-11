@@ -95,17 +95,21 @@
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 /** Indicates that the linux kernel may send us GSO frames. */
-# define VBOXNETFLT_WITH_GSO  1
+# define VBOXNETFLT_WITH_GSO                1
 
 /** This enables or disables the transmitting of GSO frame from the internal
  *  network and to the host.  */
-# define VBOXNETFLT_WITH_GSO_XMIT_HOST    1
+# define VBOXNETFLT_WITH_GSO_XMIT_HOST      1
 
 # if 0 /** @todo This is currently disable because it causes performance loss of 5-10%.  */
 /** This enables or disables the transmitting of GSO frame from the internal
  *  network and to the wire. */
-#  define VBOXNETFLT_WITH_GSO_XMIT_WIRE   1
+#  define VBOXNETFLT_WITH_GSO_XMIT_WIRE     1
 # endif
+
+/** This enables or disables the forwarding/flooding of GSO frame from the host
+ *  to the internal network.  */
+# define VBOXNETFLT_WITH_GSO_RECV           1
 
 #endif
 
@@ -225,7 +229,7 @@ static void __exit VBoxNetFltLinuxUnload(void)
  * before it reaches the NIC driver.
  *
  * The current code uses a very ugly hack and only works on kernels using the
- * net_device_ops (2.6.30 or something).  It has been shown to give us a
+ * net_device_ops (2.6.28).  It has been shown to give us a
  * performance boost of 60-100% though.  So, we have to find some less hacky way
  * of getting this job done eventually.
  *
@@ -236,7 +240,7 @@ static void __exit VBoxNetFltLinuxUnload(void)
 /**
  * The overridden net_device_ops of the device we're attached to.
  *
- * Requires Linux 2.6.30 or something.
+ * Requires Linux 2.6.28 or later.
  *
  * This is a very dirty hack that was create to explore how much we can improve
  * the host to guest transfers by not CC'ing the NIC.
@@ -811,7 +815,7 @@ static void vboxNetFltDumpPacket(PINTNETSG pSG, bool fEgress, const char *pszWhe
 # define vboxNetFltDumpPacket(a, b, c, d) do {} while (0)
 #endif
 
-#ifdef VBOXNETFLT_WITH_GSO
+#ifdef VBOXNETFLT_WITH_GSO_RECV
 
 /**
  * Worker for vboxNetFltLinuxForwardToIntNet that checks if we can forwards a
@@ -1046,7 +1050,7 @@ static int vboxNetFltLinuxForwardAsGso(PVBOXNETFLTINS pThis, struct sk_buff *pSk
     return rc;
 }
 
-#endif /* VBOXNETFLT_WITH_GSO */
+#endif /* VBOXNETFLT_WITH_GSO_RECV */
 
 /**
  * Worker for vboxNetFltLinuxForwardToIntNet.
@@ -1100,10 +1104,12 @@ static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff 
         PDMNETWORKGSO GsoCtx;
         Log3(("vboxNetFltLinuxForwardToIntNet: skb len=%u data_len=%u truesize=%u next=%p nr_frags=%u gso_size=%u gso_seqs=%u gso_type=%x frag_list=%p pkt_type=%x ip_summed=%d\n",
               pBuf->len, pBuf->data_len, pBuf->truesize, pBuf->next, skb_shinfo(pBuf)->nr_frags, skb_shinfo(pBuf)->gso_size, skb_shinfo(pBuf)->gso_segs, skb_shinfo(pBuf)->gso_type, skb_shinfo(pBuf)->frag_list, pBuf->pkt_type, pBuf->ip_summed));
+# ifdef VBOXNETFLT_WITH_GSO_RECV
         if (   (skb_shinfo(pBuf)->gso_type & (SKB_GSO_UDP | SKB_GSO_TCPV6 | SKB_GSO_TCPV4))
             && vboxNetFltLinuxCanForwardAsGso(pThis, pBuf, fSrc, &GsoCtx) )
             vboxNetFltLinuxForwardAsGso(pThis, pBuf, fSrc, &GsoCtx);
         else
+# endif
         {
             /* Need to segment the packet */
             struct sk_buff *pNext;
