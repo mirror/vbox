@@ -444,7 +444,8 @@ Node::Node(EnumType type,
       m_pParent(pParent),
       m_plibNode(plibNode),
       m_plibAttr(plibAttr),
-      m_pcszNamespace(NULL),
+      m_pcszNamespacePrefix(NULL),
+      m_pcszNamespaceHref(NULL),
       m_pcszName(NULL),
       m(new Data)
 {
@@ -455,16 +456,16 @@ Node::~Node()
     delete m;
 }
 
-void Node::buildChildren()       // private
+void Node::buildChildren(const ElementNode &elmRoot)       // private
 {
     // go thru this element's attributes
     xmlAttr *plibAttr = m_plibNode->properties;
     while (plibAttr)
     {
-        const char *pcszAttribName = (const char*)plibAttr->name;
-        boost::shared_ptr<AttributeNode> pNew(new AttributeNode(this, plibAttr));
+        const char *pcszKey;
+        boost::shared_ptr<AttributeNode> pNew(new AttributeNode(elmRoot, this, plibAttr, &pcszKey));
         // store
-        m->attribs[pcszAttribName] = pNew;
+        m->attribs[pcszKey] = pNew;
 
         plibAttr = plibAttr->next;
     }
@@ -476,7 +477,7 @@ void Node::buildChildren()       // private
         boost::shared_ptr<Node> pNew;
 
         if (plibNode->type == XML_ELEMENT_NODE)
-            pNew = boost::shared_ptr<Node>(new ElementNode(this, plibNode));
+            pNew = boost::shared_ptr<Node>(new ElementNode(&elmRoot, this, plibNode));
         else if (plibNode->type == XML_TEXT_NODE)
             pNew = boost::shared_ptr<Node>(new ContentNode(this, plibNode));
         if (pNew)
@@ -485,7 +486,7 @@ void Node::buildChildren()       // private
             m->children.push_back(pNew);
 
             // recurse for this child element to get its own children
-            pNew->buildChildren();
+            pNew->buildChildren(elmRoot);
         }
 
         plibNode = plibNode->next;
@@ -518,10 +519,10 @@ bool Node::nameEquals(const char *pcszNamespace, const char *pcsz) const
     if (!pcszNamespace)
         return true;
     // caller wants namespace:
-    if (!m_pcszNamespace)
+    if (!m_pcszNamespacePrefix)
         // but node has no namespace:
         return false;
-    return !strcmp(m_pcszNamespace, pcszNamespace);
+    return !strcmp(m_pcszNamespacePrefix, pcszNamespace);
 }
 
 /**
@@ -628,18 +629,25 @@ int Node::getLineNumber() const
     return m_plibNode->line;
 }
 
-ElementNode::ElementNode(Node *pParent, xmlNode *plibNode)
+ElementNode::ElementNode(const ElementNode *pelmRoot,
+                         Node *pParent,
+                         xmlNode *plibNode)
     : Node(IsElement,
            pParent,
            plibNode,
            NULL)
 {
+    if (!(m_pelmRoot = pelmRoot))
+        // NULL passed, then this is the root element
+        m_pelmRoot = this;
+
     m_pcszName = (const char*)plibNode->name;
 
-    if (    plibNode->ns
-         && plibNode->ns->prefix
-       )
-        m_pcszNamespace = (const char*)m_plibNode->ns->prefix;
+    if (plibNode->ns)
+    {
+        m_pcszNamespacePrefix = (const char*)m_plibNode->ns->prefix;
+        m_pcszNamespaceHref = (const char*)m_plibNode->ns->href;
+    }
 }
 
 /**
@@ -734,6 +742,22 @@ const ElementNode* ElementNode::findChildElementFromId(const char *pcszId) const
 }
 
 /**
+ * Looks up the given attribute node in this element's attribute map.
+ *
+ * With respect to namespaces, the internal attributes map stores namespace
+ * prefixes with attribute names only if the attribute uses a non-default
+ * namespace. As a result, the following rules apply:
+ *
+ *  -- To find attributes from a non-default namespace, pcszMatch must not
+ *     be prefixed with a namespace.
+ *
+ *  -- To find attributes from the default namespace (or if the document does
+ *     not use namespaces), pcszMatch must be prefixed with the namespace
+ *     prefix and a colon.
+ *
+ * For example, if the document uses the "vbox:" namespace by default, you
+ * must omit "vbox:" from pcszMatch to find such attributes, whether they
+ * are specifed in the xml or not.
  *
  * @param pcszMatch
  * @return
@@ -753,7 +777,7 @@ const AttributeNode* ElementNode::findAttribute(const char *pcszMatch) const
  * Convenience method which attempts to find the attribute with the given
  * name and returns its value as a string.
  *
- * @param pcszMatch name of attribute to find.
+ * @param pcszMatch name of attribute to find (see findAttribute() for namespace remarks)
  * @param ppcsz out: attribute value
  * @return TRUE if attribute was found and str was thus updated.
  */
@@ -773,7 +797,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, const char *&ppcsz) c
  * Convenience method which attempts to find the attribute with the given
  * name and returns its value as a string.
  *
- * @param pcszMatch name of attribute to find.
+ * @param pcszMatch name of attribute to find (see findAttribute() for namespace remarks)
  * @param str out: attribute value; overwritten only if attribute was found
  * @return TRUE if attribute was found and str was thus updated.
  */
@@ -795,7 +819,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, iprt::MiniString &str
  * RTStrToInt32Ex internally and will only output the integer if that
  * function returns no error.
  *
- * @param pcszMatch name of attribute to find.
+ * @param pcszMatch name of attribute to find (see findAttribute() for namespace remarks)
  * @param i out: attribute value; overwritten only if attribute was found
  * @return TRUE if attribute was found and str was thus updated.
  */
@@ -816,7 +840,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, int32_t &i) const
  * RTStrToUInt32Ex internally and will only output the integer if that
  * function returns no error.
  *
- * @param pcszMatch name of attribute to find.
+ * @param pcszMatch name of attribute to find (see findAttribute() for namespace remarks)
  * @param i out: attribute value; overwritten only if attribute was found
  * @return TRUE if attribute was found and str was thus updated.
  */
@@ -837,7 +861,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, uint32_t &i) const
  * RTStrToInt64Ex internally and will only output the integer if that
  * function returns no error.
  *
- * @param pcszMatch name of attribute to find.
+ * @param pcszMatch name of attribute to find (see findAttribute() for namespace remarks)
  * @param i out: attribute value
  * @return TRUE if attribute was found and str was thus updated.
  */
@@ -858,7 +882,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, int64_t &i) const
  * RTStrToUInt64Ex internally and will only output the integer if that
  * function returns no error.
  *
- * @param pcszMatch name of attribute to find.
+ * @param pcszMatch name of attribute to find (see findAttribute() for namespace remarks)
  * @param i out: attribute value; overwritten only if attribute was found
  * @return TRUE if attribute was found and str was thus updated.
  */
@@ -878,7 +902,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, uint64_t &i) const
  * name and returns its value as a boolean. This accepts "true", "false",
  * "yes", "no", "1" or "0" as valid values.
  *
- * @param pcszMatch name of attribute to find.
+ * @param pcszMatch name of attribute to find (see findAttribute() for namespace remarks)
  * @param f out: attribute value; overwritten only if attribute was found
  * @return TRUE if attribute was found and str was thus updated.
  */
@@ -929,7 +953,7 @@ ElementNode* ElementNode::createChild(const char *pcszElementName)
     xmlAddChild(m_plibNode, plibNode);
 
     // now wrap this in C++
-    ElementNode *p = new ElementNode(this, plibNode);
+    ElementNode *p = new ElementNode(m_pelmRoot, this, plibNode);
     boost::shared_ptr<ElementNode> pNew(p);
     m->children.push_back(pNew);
 
@@ -980,12 +1004,12 @@ AttributeNode* ElementNode::setAttribute(const char *pcszName, const char *pcszV
     {
         // libxml side: xmlNewProp creates an attribute
         xmlAttr *plibAttr = xmlNewProp(m_plibNode, (xmlChar*)pcszName, (xmlChar*)pcszValue);
-        const char *pcszAttribName = (const char*)plibAttr->name;
 
         // C++ side: create an attribute node around it
-        boost::shared_ptr<AttributeNode> pNew(new AttributeNode(this, plibAttr));
+        const char *pcszKey;
+        boost::shared_ptr<AttributeNode> pNew(new AttributeNode(*m_pelmRoot, this, plibAttr, &pcszKey));
         // store
-        m->attribs[pcszAttribName] = pNew;
+        m->attribs[pcszKey] = pNew;
     }
     else
     {
@@ -1047,13 +1071,48 @@ AttributeNode* ElementNode::setAttribute(const char *pcszName, bool f)
     return setAttribute(pcszName, (f) ? "true" : "false");
 }
 
-AttributeNode::AttributeNode(Node *pParent, xmlAttr *plibAttr)
+/**
+ * Private constructur for a new attribute node. This one is special:
+ * in ppcszKey, it returns a pointer to a string buffer that should be
+ * used to index the attribute correctly with namespaces.
+ *
+ * @param pParent
+ * @param elmRoot
+ * @param plibAttr
+ * @param ppcszKey
+ */
+AttributeNode::AttributeNode(const ElementNode &elmRoot,
+                             Node *pParent,
+                             xmlAttr *plibAttr,
+                             const char **ppcszKey)
     : Node(IsAttribute,
            pParent,
            NULL,
            plibAttr)
 {
     m_pcszName = (const char*)plibAttr->name;
+
+    *ppcszKey = m_pcszName;
+
+    if (    plibAttr->ns
+         && plibAttr->ns->prefix
+       )
+    {
+        m_pcszNamespacePrefix = (const char*)plibAttr->ns->prefix;
+        m_pcszNamespaceHref = (const char*)plibAttr->ns->href;
+
+        if (    !elmRoot.m_pcszNamespaceHref
+             || (strcmp(m_pcszNamespaceHref, elmRoot.m_pcszNamespaceHref))
+           )
+        {
+            // not default namespace:
+            m_strKey = m_pcszNamespacePrefix;
+            m_strKey.append(':');
+            m_strKey.append(m_pcszName);
+
+            *ppcszKey = m_strKey.c_str();
+        }
+    }
 }
 
 ContentNode::ContentNode(Node *pParent, xmlNode *plibNode)
@@ -1190,9 +1249,9 @@ Document::~Document()
  */
 void Document::refreshInternals() // private
 {
-    m->pRootElement = new ElementNode(NULL, xmlDocGetRootElement(m->plibDocument));
+    m->pRootElement = new ElementNode(NULL, NULL, xmlDocGetRootElement(m->plibDocument));
 
-    m->pRootElement->buildChildren();
+    m->pRootElement->buildChildren(*m->pRootElement);
 }
 
 /**
@@ -1233,7 +1292,7 @@ ElementNode* Document::createRootElement(const char *pcszRootElementName)
     xmlDocSetRootElement(m->plibDocument, plibRootNode);
 
     // now wrap this in C++
-    m->pRootElement = new ElementNode(NULL, plibRootNode);
+    m->pRootElement = new ElementNode(NULL, NULL, plibRootNode);
 
     return m->pRootElement;
 }

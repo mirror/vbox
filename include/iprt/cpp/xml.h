@@ -466,7 +466,8 @@ protected:
     Node        *m_pParent;
     xmlNode     *m_plibNode;            // != NULL if this is an element or content node
     xmlAttr     *m_plibAttr;            // != NULL if this is an attribute node
-    const char  *m_pcszNamespace;
+    const char  *m_pcszNamespacePrefix; // not always set
+    const char  *m_pcszNamespaceHref;   // full http:// spec
     const char  *m_pcszName;            // element or attribute name, points either into plibNode or plibAttr;
                                         // NULL if this is a content node
 
@@ -477,11 +478,13 @@ protected:
          xmlAttr *plibAttr);
     Node(const Node &x);      // no copying
 
-    void buildChildren();
+    void buildChildren(const ElementNode &elmRoot);
 
     /* Obscure class data */
     struct Data;
     Data *m;
+
+    friend class AttributeNode;
 };
 
 class RT_DECL_CLASS ElementNode : public Node
@@ -529,8 +532,10 @@ public:
 
 protected:
     // hide the default constructor so people use only our factory methods
-    ElementNode(Node *pParent, xmlNode *plibNode);
+    ElementNode(const ElementNode *pelmRoot, Node *pParent, xmlNode *plibNode);
     ElementNode(const ElementNode &x);      // no copying
+
+    const ElementNode *m_pelmRoot;
 
     friend class Node;
     friend class Document;
@@ -556,8 +561,13 @@ public:
 
 protected:
     // hide the default constructor so people use only our factory methods
-    AttributeNode(Node *pParent, xmlAttr *plibAttr);
+    AttributeNode(const ElementNode &elmRoot,
+                  Node *pParent,
+                  xmlAttr *plibAttr,
+                  const char **ppcszKey);
     AttributeNode(const AttributeNode &x);      // no copying
+
+    iprt::MiniString    m_strKey;
 
     friend class Node;
     friend class ElementNode;
