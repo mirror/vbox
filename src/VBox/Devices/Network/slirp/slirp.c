@@ -839,6 +839,10 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
             }
         }
     }
+    /* always add the ICMP socket */
+#ifndef RT_OS_WINDOWS
+    pData->icmp_socket.so_poll_index = -1;
+#endif
     ICMP_ENGAGE_EVENT(&pData->icmp_socket, readfds);
 
     STAM_COUNTER_RESET(&pData->StatTCP);

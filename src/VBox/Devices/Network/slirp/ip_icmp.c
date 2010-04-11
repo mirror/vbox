@@ -426,7 +426,6 @@ freeit:
                     {
                         time_fasttimo = curtime; /* Flag when we want a fasttimo */
                     }
-
                 }
                 else
                 {
