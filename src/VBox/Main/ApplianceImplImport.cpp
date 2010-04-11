@@ -124,12 +124,8 @@ STDMETHODIMP Appliance::Interpret()
     /* Clear any previous virtual system descriptions */
     m->virtualSystemDescriptions.clear();
 
-    /* We need the default path for storing disk images */
-    ComPtr<ISystemProperties> systemProps;
-    rc = mVirtualBox->COMGETTER(SystemProperties)(systemProps.asOutParam());
-    if (FAILED(rc)) return rc;
-    Bstr bstrDefaultHardDiskLocation;
-    rc = systemProps->COMGETTER(DefaultHardDiskFolder)(bstrDefaultHardDiskLocation.asOutParam());
+    Utf8Str strDefaultHardDiskFolder;
+    rc = getDefaultHardDiskFolder(strDefaultHardDiskFolder);
     if (FAILED(rc)) return rc;
 
     if (!m->pReader)
@@ -504,15 +500,16 @@ STDMETHODIMP Appliance::Interpret()
                     //  - figure out if there is a url specifier for vhd already
                     //  - we need a url specifier for the vdi format
                     if (   di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#sparse", Utf8Str::CaseInsensitive)
-                        || di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive))
+                        || di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
+                       )
                     {
                         /* If the href is empty use the VM name as filename */
                         Utf8Str strFilename = di.strHref;
                         if (!strFilename.length())
                             strFilename = Utf8StrFmt("%s.vmdk", nameVBox.c_str());
                         /* Construct a unique target path */
-                        Utf8StrFmt strPath("%ls%c%s",
-                                           bstrDefaultHardDiskLocation.raw(),
+                        Utf8StrFmt strPath("%s%c%s",
+                                           strDefaultHardDiskFolder.raw(),
                                            RTPATH_DELIMITER,
                                            strFilename.c_str());
                         searchUniqueDiskImageFilePath(strPath);
@@ -530,20 +527,11 @@ STDMETHODIMP Appliance::Interpret()
                         Utf8StrFmt strExtraConfig("controller=%RI16;channel=%RI16",
                                                   pController->ulIndex,
                                                   hd.ulAddressOnParent);
-                        ULONG ulSize = 0;
-                        if (di.iCapacity != -1)
-                            ulSize = (ULONG)(di.iCapacity / _1M);
-                        else if (di.iPopulatedSize != -1)
-                            ulSize = (ULONG)(di.iPopulatedSize / _1M);
-                        else if (di.iSize != -1)
-                            ulSize = (ULONG)(di.iSize / _1M);
-                        if (ulSize == 0)
-                            ulSize = 10000;         // assume 10 GB, this is for the progress bar only anyway
                         pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
                                            hd.strDiskId,
                                            di.strHref,
                                            strPath,
-                                           ulSize,
+                                           di.ulSuggestedSizeMB,
                                            strExtraConfig);
                     }
                     else
@@ -1152,7 +1140,7 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
             // @todo r=dj make this selection configurable at run-time, and from the GUI as well
 
             if (vsdescThis->m->pConfig)
-                importVBoxMachine(vsysThis, vsdescThis, pNewMachine, stack);
+                importVBoxMachine(vsdescThis, pNewMachine, stack);
             else
                 importMachineGeneric(vsysThis, vsdescThis, pNewMachine, stack);
 
@@ -1229,15 +1217,28 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
 }
 
 /**
+ * Imports one disk image. This is common code shared between
+ *  --  importMachineGeneric() for the OVF case; in that case the information comes from
+ *      the OVF virtual systems;
+ *  --  importVBoxMachine(); in that case, the information comes from the <vbox:Machine>
+ *      tag.
  *
- * @param vsysThis OVF virtual system containing the VirtualDisksMap. We don't pass that directly
- *                 because it's a typedef which requires the whole ovfreader.h to be included otherwise.
- * @param vsdeHD
- * @param dstHdVBox
+ * Both ways of describing machines use the OVF disk references section, so in both cases
+ * the caller needs to pass in the ovf::DiskImage structure from ovfreader.cpp.
+ *
+ * As a result, in both cases, if di.strHref is empty, we create a new disk as per the OVF
+ * spec, even though this cannot really happen in the vbox:Machine case since such data
+ * would never have been exported.
+ *
+ * This advances stack.pProgress by one operation with the disk's weight.
+ *
+ * @param di ovfreader.cpp structure describing the disk image from the OVF that is to be imported
+ * @param ulSizeMB Size of the disk image (for progress reporting)
+ * @param strTargetPath Where to create the target image.
+ * @param pTargetHD out: The newly created target disk. This also gets pushed on stack.llHardDisksCreated for cleanup.
  * @param stack
  */
 void Appliance::importOneDiskImage(const ovf::DiskImage &di,
-                                   uint32_t ulSizeMB,
                                    const Utf8Str &strTargetPath,
                                    ComPtr<IMedium> &pTargetHD,
                                    ImportStack &stack)
@@ -1285,7 +1286,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
 
             // advance to the next operation
             stack.pProgress->SetNextOperation(BstrFmt(tr("Creating virtual disk image '%s'"), strTargetPath.c_str()),
-                                              ulSizeMB);     // operation's weight, as set up with the IProgress originally
+                                              di.ulSuggestedSizeMB);     // operation's weight, as set up with the IProgress originally
         }
         else
         {
@@ -1325,7 +1326,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
 
             /* Advance to the next operation */
             stack.pProgress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"), strSrcFilePath.c_str()),
-                                              ulSizeMB);     // operation's weight, as set up with the IProgress originally);
+                                              di.ulSuggestedSizeMB);     // operation's weight, as set up with the IProgress originally);
         }
 
         // now wait for the background disk operation to complete; this throws HRESULTs on error
@@ -1844,7 +1845,6 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
                 ComPtr<IMedium> pTargetHD;
                 importOneDiskImage(di,
-                                   vsdeHD->ulSizeMB,
                                    vsdeHD->strVbox,
                                    pTargetHD,
                                    stack);
@@ -1909,17 +1909,100 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
  * up any leftovers from this function. For this, the given ImportStack instance has received information
  * about what needs cleaning up (to support rollback).
  *
+ * The machine config stored in the settings::MachineConfigFile structure contains the UUIDs of
+ * the disk attachments used by the machine when it was exported. We also add vbox:uuid attributes
+ * to the OVF disks sections so we can look them up. While importing these UUIDs into a second host
+ * will most probably work, reimporting them into the same host will cause conflicts, so we always
+ * generate new ones on import. This involves the following:
+ *
+ *  1)  Scan the machine config for disk attachments.
+ *
+ *  2)  For each disk attachment found, look up the OVF disk image from the disk references section
+ *      and import the disk into VirtualBox, which creates a new UUID for it. In the machine config,
+ *      replace the old UUID with the new one.
+ *
+ *  3)  Create the VirtualBox machine with the modfified machine config.
+ *
  * @param config
  * @param pNewMachine
  * @param stack
  */
-void Appliance::importVBoxMachine(const ovf::VirtualSystem &vsysThis,
-                                  ComObjPtr<VirtualSystemDescription> &vsdescThis,
+void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThis,
                                   ComPtr<IMachine> &pReturnNewMachine,
                                   ImportStack &stack)
 {
     Assert(vsdescThis->m->pConfig);
-    const settings::MachineConfigFile &config = *vsdescThis->m->pConfig;
+
+    // make a deep copy of the machine settings here because we will tinker
+    // with it by replacing disk UUIDs
+    settings::MachineConfigFile config = *vsdescThis->m->pConfig;
+
+    Utf8Str strDefaultHardDiskFolder;
+    HRESULT rc = getDefaultHardDiskFolder(strDefaultHardDiskFolder);
+    if (FAILED(rc)) throw rc;
+
+    // step 1): scan the machine config for UUIDs
+    for (settings::StorageControllersList::iterator sit = config.storageMachine.llStorageControllers.begin();
+         sit != config.storageMachine.llStorageControllers.end();
+         ++sit)
+    {
+        settings::StorageController &sc = *sit;
+
+        for (settings::AttachedDevicesList::iterator dit = sc.llAttachedDevices.begin();
+             dit != sc.llAttachedDevices.end();
+             ++dit)
+        {
+            settings::AttachedDevice &d = *dit;
+
+            if (d.uuid.isEmpty())
+                // empty DVD and floppy media
+                continue;
+
+            // convert the Guid to string
+            Utf8Str strUuid = d.uuid.toString();
+
+            // there must be an image in the OVF disk structs with the same UUID
+            bool fFound = false;
+            for (ovf::DiskImagesMap::const_iterator oit = stack.mapDisks.begin();
+                 oit != stack.mapDisks.end();
+                 ++oit)
+            {
+                const ovf::DiskImage &di = oit->second;
+
+                if (di.uuidVbox == strUuid)
+                {
+                    Utf8Str strTargetPath(strDefaultHardDiskFolder);
+                    strTargetPath.append(RTPATH_DELIMITER);
+                    strTargetPath.append(di.strHref);
+                    searchUniqueDiskImageFilePath(strTargetPath);
+
+                    // step 2): import disks and map the old and new UUIDs
+                    ComPtr<IMedium> pTargetHD;
+                    importOneDiskImage(di,
+                                       strTargetPath,
+                                       pTargetHD,
+                                       stack);
+
+                    Bstr hdId;
+                    rc = pTargetHD->COMGETTER(Id)(hdId.asOutParam());
+                    if (FAILED(rc)) throw rc;
+
+                    // replace the old UUID in the machine config with the new one
+                    d.uuid = hdId;
+                    fFound = true;
+                    break;
+                }
+            }
+
+            // no disk with such a UUID found:
+            if (!fFound)
+                throw setError(E_FAIL,
+                               tr("<vbox:Machine> element in OVF contains a medium attachment for the disk image %s but the OVF describes no such image"),
+                               strUuid.raw());
+        } // for (settings::AttachedDevicesList::const_iterator dit = sc.llAttachedDevices.begin();
+    } // for (settings::StorageControllersList::const_iterator sit = config.storageMachine.llStorageControllers.begin();
+
+    // step 3): create the machine and have it import the config
 
     // use the name that we computed in the OVF fields to avoid duplicates
     std::list<VirtualSystemDescriptionEntry*> vsdeName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
@@ -1929,7 +2012,7 @@ void Appliance::importVBoxMachine(const ovf::VirtualSystem &vsysThis,
     const Utf8Str &strNameVBox = vsdeName.front()->strVbox;
 
     ComObjPtr<Machine> pNewMachine;
-    HRESULT rc = pNewMachine.createObject();
+    rc = pNewMachine.createObject();
     if (FAILED(rc)) throw rc;
 
     // this magic constructor fills the new machine object with the MachineConfig

@@ -182,6 +182,9 @@ void OVFReader::HandleDiskSection(const xml::ElementNode *pReferencesElem,
                 // optional
                 d.iPopulatedSize = -1;
 
+            // optional vbox:uuid attribute (if OVF was exported by VirtualBox != 3.2)
+            pelmDisk->getAttributeValue("vbox:uuid", d.uuidVbox);
+
             const char *pcszFileRef;
             if (pelmDisk->getAttributeValue("fileRef", pcszFileRef)) // optional
             {
@@ -226,6 +229,17 @@ void OVFReader::HandleDiskSection(const xml::ElementNode *pReferencesElem,
                                 m_strPath.c_str(),
                                 pcszBad,
                                 pelmDisk->getLineNumber());
+
+        // suggest a size in megabytes to help callers with progress reports
+        d.ulSuggestedSizeMB = 0;
+        if (d.iCapacity != -1)
+            d.ulSuggestedSizeMB = d.iCapacity / _1M;
+        else if (d.iPopulatedSize != -1)
+            d.ulSuggestedSizeMB = d.iPopulatedSize / _1M;
+        else if (d.iSize != -1)
+            d.ulSuggestedSizeMB = d.iSize / _1M;
+        if (d.ulSuggestedSizeMB == 0)
+            d.ulSuggestedSizeMB = 10000;         // assume 10 GB, this is for the progress bar only anyway
 
         m_mapDisks[d.strDiskId] = d;
     }
