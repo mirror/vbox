@@ -158,6 +158,8 @@ typedef struct PDMACEPFILEMGR
     unsigned                               cEndpoints;
     /** Number of requests active currently. */
     unsigned                               cRequestsActive;
+    /** Number of maximum requests active. */
+    uint32_t                               cRequestsActiveMax;
     /** Pointer to an array of free async I/O request handles. */
     RTFILEAIOREQ                          *pahReqsFree;
     /** Next free position for a free request handle. */

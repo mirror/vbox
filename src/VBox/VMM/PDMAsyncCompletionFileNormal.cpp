@@ -42,10 +42,15 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                                                 PPDMACEPFILEMGR pAioMgr,
                                                 PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint);
 
+static PPDMACTASKFILE pdmacFileAioMgrNormalRangeLockFree(PPDMACEPFILEMGR pAioMgr,
+                                                         PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
+                                                         PPDMACFILERANGELOCK pRangeLock);
 
 int pdmacFileAioMgrNormalInit(PPDMACEPFILEMGR pAioMgr)
 {
     int rc = VINF_SUCCESS;
+
+    pAioMgr->cRequestsActiveMax = PDMACEPFILEMGR_REQS_MAX;
 
     rc = RTFileAioCtxCreate(&pAioMgr->hAioCtx, RTFILEAIO_UNLIMITED_REQS);
     if (rc == VERR_OUT_OF_RANGE)
@@ -56,7 +61,7 @@ int pdmacFileAioMgrNormalInit(PPDMACEPFILEMGR pAioMgr)
         /* Initialize request handle array. */
         pAioMgr->iFreeEntryNext = 0;
         pAioMgr->iFreeReqNext   = 0;
-        pAioMgr->cReqEntries    = PDMACEPFILEMGR_REQS_MAX + 1;
+        pAioMgr->cReqEntries    = pAioMgr->cRequestsActiveMax + 1;
         pAioMgr->pahReqsFree    = (RTFILEAIOREQ *)RTMemAllocZ(pAioMgr->cReqEntries * sizeof(RTFILEAIOREQ));
 
         if (pAioMgr->pahReqsFree)
@@ -420,16 +425,30 @@ static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
                               ("Request returned unexpected return code: rc=%Rrc\n", rcReq));
 
                     PPDMACTASKFILE pTask = (PPDMACTASKFILE)RTFileAioReqGetUser(pahReqs[i]);
+                    PPDMACTASKFILE pTasksWaiting;
 
                     /* Put the entry on the free array */
                     pAioMgr->pahReqsFree[pAioMgr->iFreeEntryNext] = pahReqs[i];
                     pAioMgr->iFreeEntryNext = (pAioMgr->iFreeEntryNext + 1) % pAioMgr->cReqEntries;
 
+                    if (pTask->fBounceBuffer)
+                        RTMemFree(pTask->pvBounceBuffer);
+
+                    pTask->fPrefetch = false;
+
+                    /* Free the lock and process pending tasks if neccessary */
+                    pTasksWaiting = pdmacFileAioMgrNormalRangeLockFree(pAioMgr, pEndpoint, pTask->pRangeLock);
+
                     pdmacFileAioMgrEpAddTask(pEndpoint, pTask);
+                    pdmacFileAioMgrEpAddTaskList(pEndpoint, pTasksWaiting);
+
                     pAioMgr->cRequestsActive--;
                     pEndpoint->AioMgr.cRequestsActive--;
                 }
+
+                pAioMgr->cRequestsActiveMax = pAioMgr->cRequestsActive;
             }
+            
             LogFlow(("Removed requests. I/O manager has a total of %d active requests now\n", pAioMgr->cRequestsActive));
             LogFlow(("Endpoint has a total of %d active requests now\n", pEndpoint->AioMgr.cRequestsActive));
         }
@@ -548,9 +567,9 @@ static int pdmacFileAioMgrNormalRangeLock(PPDMACEPFILEMGR pAioMgr,
     return VINF_SUCCESS;
 }
 
-static int pdmacFileAioMgrNormalRangeLockFree(PPDMACEPFILEMGR pAioMgr,
-                                              PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
-                                              PPDMACFILERANGELOCK pRangeLock)
+static PPDMACTASKFILE pdmacFileAioMgrNormalRangeLockFree(PPDMACEPFILEMGR pAioMgr,
+                                                         PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
+                                                         PPDMACFILERANGELOCK pRangeLock)
 {
     PPDMACTASKFILE pTasksWaitingHead;
 
@@ -563,7 +582,7 @@ static int pdmacFileAioMgrNormalRangeLockFree(PPDMACEPFILEMGR pAioMgr,
     pRangeLock->pWaitingTasksTail = NULL;
     RTMemCacheFree(pAioMgr->hMemCacheRangeLocks, pRangeLock);
 
-    return pdmacFileAioMgrNormalProcessTaskList(pTasksWaitingHead, pAioMgr, pEndpoint);
+    return pTasksWaitingHead;
 }
 
 static int pdmacFileAioMgrNormalTaskPrepareBuffered(PPDMACEPFILEMGR pAioMgr,
@@ -782,7 +801,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
 {
     RTFILEAIOREQ  apReqs[20];
     unsigned      cRequests = 0;
-    unsigned      cMaxRequests = PDMACEPFILEMGR_REQS_MAX - pAioMgr->cRequestsActive;
+    unsigned      cMaxRequests = pAioMgr->cRequestsActiveMax - pAioMgr->cRequestsActive;
     int           rc = VINF_SUCCESS;
 
     AssertMsg(pEndpoint->enmState == PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE,
@@ -791,7 +810,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
     /* Go through the list and queue the requests until we get a flush request */
     while (   pTaskHead
            && !pEndpoint->pFlushReq
-           && (cMaxRequests > 0)
+           && (pAioMgr->cRequestsActive + cRequests < pAioMgr->cRequestsActiveMax)
            && RT_SUCCESS(rc))
     {
         PPDMACTASKFILE pCurr = pTaskHead;
@@ -844,7 +863,6 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                 {
                     apReqs[cRequests] = hReq;
                     pEndpoint->AioMgr.cReqsProcessed++;
-                    cMaxRequests--;
                     cRequests++;
                     if (cRequests == RT_ELEMENTS(apReqs))
                     {
@@ -873,9 +891,9 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
         /* Add the rest of the tasks to the pending list */
         pdmacFileAioMgrEpAddTaskList(pEndpoint, pTaskHead);
 
-        if (RT_UNLIKELY(  !cMaxRequests
-                       && !pEndpoint->pFlushReq
-                       && !pAioMgr->fBwLimitReached))
+        if (RT_UNLIKELY(   pAioMgr->cRequestsActiveMax == pAioMgr->cRequestsActive
+                        && !pEndpoint->pFlushReq
+                        && !pAioMgr->fBwLimitReached))
         {
             /*
              * The I/O manager has no room left for more requests
@@ -1101,6 +1119,7 @@ static void pdmacFileAioMgrNormalReqComplete(PPDMACEPFILEMGR pAioMgr, RTFILEAIOR
     size_t cbTransfered  = 0;
     int rcReq            = RTFileAioReqGetRC(hReq, &cbTransfered);
     PPDMACTASKFILE pTask = (PPDMACTASKFILE)RTFileAioReqGetUser(hReq);
+    PPDMACTASKFILE pTasksWaiting;
 
     pEndpoint = pTask->pEndpoint;
 
@@ -1117,7 +1136,9 @@ static void pdmacFileAioMgrNormalReqComplete(PPDMACEPFILEMGR pAioMgr, RTFILEAIOR
         pAioMgr->iFreeEntryNext = (pAioMgr->iFreeEntryNext + 1) % pAioMgr->cReqEntries;
 
         /* Free the lock and process pending tasks if neccessary */
-        pdmacFileAioMgrNormalRangeLockFree(pAioMgr, pEndpoint, pTask->pRangeLock);
+        pTasksWaiting = pdmacFileAioMgrNormalRangeLockFree(pAioMgr, pEndpoint, pTask->pRangeLock);
+        rc = pdmacFileAioMgrNormalProcessTaskList(pTasksWaiting, pAioMgr, pEndpoint);
+        AssertRC(rc);
 
         pAioMgr->cRequestsActive--;
         pEndpoint->AioMgr.cRequestsActive--;
@@ -1215,7 +1236,9 @@ static void pdmacFileAioMgrNormalReqComplete(PPDMACEPFILEMGR pAioMgr, RTFILEAIOR
             pEndpoint->AioMgr.cReqsProcessed++;
 
             /* Free the lock and process pending tasks if neccessary */
-            pdmacFileAioMgrNormalRangeLockFree(pAioMgr, pEndpoint, pTask->pRangeLock);
+            pTasksWaiting = pdmacFileAioMgrNormalRangeLockFree(pAioMgr, pEndpoint, pTask->pRangeLock);
+            rc = pdmacFileAioMgrNormalProcessTaskList(pTasksWaiting, pAioMgr, pEndpoint);
+            AssertRC(rc);
 
             /* Call completion callback */
             pTask->pfnCompleted(pTask, pTask->pvUser, rcReq);
