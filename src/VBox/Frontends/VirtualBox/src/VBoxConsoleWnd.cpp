@@ -2620,8 +2620,12 @@ void VBoxConsoleWnd::updateMachineState (KMachineState aState)
         QString fname = logFolder + "/VBox.png";
 
         CDisplay dsp = console.GetDisplay();
-        QImage shot = QImage (dsp.GetWidth(), dsp.GetHeight(), QImage::Format_RGB32);
-        dsp.TakeScreenShot (shot.bits(), shot.width(), shot.height());
+        ULONG width = 0;
+        ULONG height = 0;
+        ULONG bpp = 0;
+        dsp.GetScreenResolution(0, width, height, bpp);
+        QImage shot = QImage (width, height, QImage::Format_RGB32);
+        dsp.TakeScreenShot (0, shot.bits(), shot.width(), shot.height());
         shot.save (QFile::encodeName (fname), "PNG");
 
         if (vboxProblem().remindAboutGuruMeditation (console, QDir::toNativeSeparators (logFolder)))
@@ -3305,7 +3309,10 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         ULONG64 availBits = mSession.GetMachine().GetVRAMSize() /* vram */
                           * _1M /* mb to bytes */
                           * 8; /* to bits */
-        ULONG guestBpp = mConsole->console().GetDisplay().GetBitsPerPixel();
+        ULONG width = 0;
+        ULONG height = 0;
+        ULONG guestBpp = 0;
+        mConsole->console().GetDisplay().GetScreenResolution(0, width, height, guestBpp);
         ULONG64 usedBits = (screen.width() /* display width */
                          * screen.height() /* display height */
                          * guestBpp

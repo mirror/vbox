@@ -204,15 +204,14 @@ STDMETHODIMP Display::ResizeCompleted()
     return S_OK;
 }
 
-STDMETHODIMP Display::COMGETTER(Width)(ULONG *pWidth)
+STDMETHODIMP Display::GetScreenResolution(ULONG aScreenId, ULONG *aWidth, ULONG *aHeight, ULONG *aBitsPerPixel)
 {
-    *pWidth = getWidth();
-    return S_OK;
-}
-
-STDMETHODIMP Display::COMGETTER(Height)(ULONG *pHeight)
-{
-    *pHeight = getHeight();
+    if (aWidth)
+        *aWidth = getWidth();
+    if (aHeight)
+        *aHeight = getHeight();
+    if (aBitsPerPixel)
+        *aBitsPerPixel = getBitsPerPixel();
     return S_OK;
 }
 

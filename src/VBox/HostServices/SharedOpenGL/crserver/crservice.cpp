@@ -216,7 +216,7 @@ static DECLCALLBACK(void) svcPresentFBO(void *data, int32_t screenId, int32_t x,
         }
     }
 
-    CHECK_ERROR(pDisplay, DrawToScreen(data, 0, 0, 100, 100));
+    CHECK_ERROR(pDisplay, DrawToScreen(screenId, data, 0, 0, 100, 100));
 
     RTMemTmpFree(data);
 #endif
@@ -224,7 +224,7 @@ static DECLCALLBACK(void) svcPresentFBO(void *data, int32_t screenId, int32_t x,
     ComPtr<IDisplay> pDisplay;
 
     CHECK_ERROR(g_pConsole, COMGETTER(Display)(pDisplay.asOutParam()));
-    CHECK_ERROR(pDisplay, DrawToScreen((BYTE*)data, x, y, w, h));
+    CHECK_ERROR(pDisplay, DrawToScreen(screenId, (BYTE*)data, x, y, w, h));
 }
 
 static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])

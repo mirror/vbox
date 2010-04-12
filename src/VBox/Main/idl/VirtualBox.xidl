@@ -11313,7 +11313,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IDisplay" extends="$unknown"
-     uuid="e2a38ebc-d854-4a3e-bc2e-fdf5ac4a0000"
+     uuid="1fa79e39-0cc9-4ab3-9df3-ed3e96b42496"
      wsmap="managed"
      >
     <desc>
@@ -11327,20 +11327,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       IFramebuffer interface. Examples of the output target are a window on
       the host computer or an RDP session's display on a remote computer.
     </desc>
-    <attribute name="width" type="unsigned long" readonly="yes">
-      <desc>Current display width.</desc>
-    </attribute>
-
-    <attribute name="height" type="unsigned long" readonly="yes">
-      <desc>Current display height.</desc>
-    </attribute>
-
-    <attribute name="bitsPerPixel" type="unsigned long" readonly="yes">
-      <desc>
-        Current guest display color depth. Note that this may differ
-        from <link to="IFramebuffer::bitsPerPixel"/>.
-      </desc>
-    </attribute>
+    <method name="getScreenResolution">
+      <desc>Queries display width, height and color depth for given screen.</desc>
+      <param name="screenId" type="unsigned long" dir="in"/>
+      <param name="width" type="unsigned long" dir="out"/>
+      <param name="height" type="unsigned long" dir="out"/>
+      <param name="bitsPerPixel" type="unsigned long" dir="out"/>
+    </method>
 
     <method name="setFramebuffer">
       <desc>
@@ -11421,12 +11414,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
 
       </desc>
+      <param name="screenId" type="unsigned long" dir="in"/>
       <param name="address" type="octet" mod="ptr" dir="in"/>
       <param name="width" type="unsigned long" dir="in"/>
       <param name="height" type="unsigned long" dir="in"/>
     </method>
 
-    <method name="takeScreenShotSlow">
+    <method name="takeScreenShotToArray">
       <desc>
         Takes a guest screen shot of the requested size and returns it as
         an array of bytes in uncompressed 32-bit RGBA format.
@@ -11443,6 +11437,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           Could not take a screenshot.
         </result>
       </desc>
+      <param name="screenId" type="unsigned long" dir="in"/>
       <param name="width" type="unsigned long" dir="in">
         <desc>
           Desired image width.
@@ -11473,6 +11468,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
 
       </desc>
+      <param name="screenId" type="unsigned long" dir="in"/>
       <param name="address" type="octet" mod="ptr" dir="in"/>
       <param name="x" type="unsigned long" dir="in"/>
       <param name="y" type="unsigned long" dir="in"/>
@@ -11502,17 +11498,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       </desc>
       <param name="screenId" type="unsigned long" dir="in"/>
-    </method>
-
-    <method name="updateCompleted">
-      <desc>
-        Signals that a framebuffer has completed the update operation.
-
-        <result name="VBOX_E_NOT_SUPPORTED">
-          Operation only valid for external frame buffers.
-        </result>
-
-      </desc>
     </method>
 
     <method name="completeVHWACommand">
