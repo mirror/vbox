@@ -116,7 +116,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlGetHostMsg(uint32_t u32ClientId, uint32_t *puMsg,
     Msg.hdr.result = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = GUEST_GET_HOST_MSG; /* Tell the host we want our next command. */
-    Msg.hdr.cParms = 2;
+    Msg.hdr.cParms = 2;                       /* Just peek for the next message! */
 
     VbglHGCMParmUInt32Set(&Msg.msg, 0);
     VbglHGCMParmUInt32Set(&Msg.num_parms, 0);
@@ -144,8 +144,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlGetHostMsg(uint32_t u32ClientId, uint32_t *puMsg,
  * @param   u32ClientId     The client id returned by VbglR3GuestCtrlConnect().
  * @param   ppvData
  * @param   uNumParms
+ ** @todo Docs!
  */
-VBGLR3DECL(int) VbglR3GuestCtrlGetHostCmdExec(uint32_t u32ClientId, uint32_t uNumParms,
+VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmd(uint32_t u32ClientId, uint32_t uNumParms,
                                               char    *pszCmd,      uint32_t cbCmd,
                                               uint32_t *puFlags,
                                               char *pszArgs,        uint32_t cbArgs,  uint32_t *puNumArgs,
@@ -211,5 +212,43 @@ VBGLR3DECL(int) VbglR3GuestCtrlGetHostCmdExec(uint32_t u32ClientId, uint32_t uNu
         }
     }
     return rc;
+}
+
+
+
+
+/**
+ * Reports the process status (along with some other stuff) to the host.
+ *
+ * @returns VBox status code.
+ ** @todo Docs!
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlExecReportStatus(uint32_t  u32ClientId, 
+                                                uint32_t  u32PID,
+                                                uint32_t  u32Status,
+                                                uint32_t  u32Flags,
+                                                void     *pvData,
+                                                uint32_t  cbData)
+{
+    VBoxGuestCtrlHGCMMsgExecStatus Msg;
+
+    Msg.hdr.result = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = u32ClientId;
+    Msg.hdr.u32Function = GUEST_EXEC_SEND_STATUS;
+    Msg.hdr.cParms = 4;
+
+    VbglHGCMParmUInt32Set(&Msg.pid, 0);
+    VbglHGCMParmUInt32Set(&Msg.status, 0);
+    VbglHGCMParmUInt32Set(&Msg.flags, 0);
+    VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+            rc = rc2;
+    }
+    return rc; 
 }
 

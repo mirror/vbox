@@ -511,11 +511,15 @@ PVBOXSERVICECTRLTHREADDATA VBoxServiceControlExecAllocateThreadData(const char *
 
     pData->pszCmd = RTStrDup(pszCmd);
     pData->uFlags = uFlags;
+    pData->uNumEnvVars = 0;
+    pData->uNumArgs = 0; /* Initialize in case of RTGetOptArgvFromString() is failing ... */
 
     /* Prepare argument list. */
     int rc = RTGetOptArgvFromString(&pData->papszArgs, (int*)&pData->uNumArgs, 
-                                    pszArgs ? pszArgs : "", NULL);
+                                    (uNumArgs > 0) ? pszArgs : "", NULL);
+    /* Did we get the same result? */
     Assert(uNumArgs == pData->uNumArgs);
+
     if (RT_SUCCESS(rc))
     {
         /* Prepare environment list. */
@@ -589,11 +593,21 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREADDATA
     RTThreadUserSignal(RTThreadSelf());
     VBoxServiceVerbose(3, "Control: Thread of process \"%s\" started.", pData->pszCmd);
 
+    uint32_t u32ClientID;
+    int rc = VbglR3GuestCtrlConnect(&u32ClientID);
+    if (RT_SUCCESS(rc))
+        VBoxServiceVerbose(3, "Control: Thread client ID: %#x\n", u32ClientID);
+    else
+    {
+        VBoxServiceError("Control: Thread failed to connect to the guest control service! Error: %Rrc\n", rc);
+        return rc;
+    }
+
     /*
      * Create the environment.
      */
     RTENV hEnv;
-    int rc = RTEnvClone(&hEnv, RTENV_DEFAULT);
+    rc = RTEnvClone(&hEnv, RTENV_DEFAULT);
     if (RT_SUCCESS(rc))
     {
         size_t i;
@@ -650,6 +664,8 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREADDATA
                                 if (RT_SUCCESS(rc))
                                 {
                                     VBoxServiceVerbose(3, "Control: Process \"%s\" started.\n", pData->pszCmd);
+                                    rc = VbglR3GuestCtrlExecReportStatus(u32ClientID, 123, PROC_STATUS_STARTED, 
+                                                                         0 /* u32Flags */, NULL, 0);
                                     /** @todo Dump a bit more info here. */
 
                                     /*
@@ -692,6 +708,7 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREADDATA
         RTEnvDestroy(hEnv);
     }
 
+    VbglR3GuestCtrlDisconnect(u32ClientID);
     VBoxServiceVerbose(3, "Control: Thread of process \"%s\" ended with rc=%Rrc.\n", pData->pszCmd, rc);
 
     /*

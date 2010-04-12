@@ -449,6 +449,7 @@ DECLCALLBACK(int) Guest::doGuestCtrlNotification(void *pvExtension,
      * changes to the object state.
      */
     PHOSTCALLBACKDATA pCBData = reinterpret_cast<PHOSTCALLBACKDATA>(pvParms);
+    AssertPtr(pCBData);
     AssertReturn(sizeof(HOSTCALLBACKDATA) == cbParms, VERR_INVALID_PARAMETER);
     AssertReturn(HOSTCALLBACKMAGIC == pCBData->u32Magic, VERR_INVALID_PARAMETER);
     LogFlowFunc(("pvExtension = %p, u32Function = %d, pvParms = %p, cbParms = %d\n",
@@ -456,9 +457,14 @@ DECLCALLBACK(int) Guest::doGuestCtrlNotification(void *pvExtension,
 
     int rc = VINF_SUCCESS;
     Guest *pGuest = static_cast <Guest *>(pvExtension);
+    AssertPtr(pGuest);
 
     switch (u32Function)
     {        
+        case GUEST_EXEC_SEND_STATUS:
+            LogFlowFunc(("GUEST_EXEC_SEND_STATUS\n"));
+            break;
+
         default:
             rc = VERR_NOT_SUPPORTED;
             break;
@@ -613,6 +619,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                                 break; /* timed out */
                             cMsWait = RT_MIN(1000, aTimeoutMS - (uint32_t)cMsElapsed);
                         }
+                        RTThreadSleep(100);
                     } while (!mSignalled);
 #if 0
                     progress.queryInterfaceTo(aProgress);
