@@ -51,13 +51,13 @@
 
 typedef const char *c_caddr_t;
 
-static void panic (char *fmt, ...)
+DECLNORETURN(static void) panic (char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
     vbox_slirp_printV(fmt, args);
     va_end(args);
-    AssertReleaseFailed();
+    AssertFatalFailed();
 }
 /* for non-gnu compilers */
 # define __func__ __FUNCTION__
