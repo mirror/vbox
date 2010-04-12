@@ -8343,7 +8343,7 @@
     </attribute>
 
     <attribute name="recommendedUsbTablet" type="boolean" readonly="yes">
-      <desc>Returns @c true if using USB Tablet recommended (only relevant if using USB HIDs).</desc>
+      <desc>Returns @c true if using a USB Tablet is recommended.</desc>
     </attribute>
 
     <attribute name="recommendedRtcUseUtc" type="boolean" readonly="yes">
