@@ -557,7 +557,8 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                 break;
 
             default:
-                rc = VERR_NOT_IMPLEMENTED;
+                rc = VERR_NOT_SUPPORTED;
+                break;
         }
         /*
          * If current call is not deferred, call the completion function.
