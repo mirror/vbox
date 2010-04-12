@@ -134,37 +134,6 @@ static DECLCALLBACK(int) drvNetSnifferUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
 
 
 /**
- * @interface_method_impl{PDMINETWORKUP,pfnSendDeprecated}
- */
-static DECLCALLBACK(int) drvNetSnifferUp_SendDeprecated(PPDMINETWORKUP pInterface, const void *pvBuf, size_t cb)
-{
-    PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkUp);
-
-    /* output to sniffer */
-    RTCritSectEnter(&pThis->Lock);
-    PcapFileFrame(pThis->File, pThis->StartNanoTS, pvBuf, cb, cb);
-    RTCritSectLeave(&pThis->Lock);
-
-    /* pass down */
-    if (RT_LIKELY(pThis->pIBelowNet))
-    {
-        int rc = pThis->pIBelowNet->pfnSendDeprecated(pThis->pIBelowNet, pvBuf, cb);
-#if 0
-        RTCritSectEnter(&pThis->Lock);
-        u64TS = RTTimeProgramNanoTS();
-        Hdr.ts_sec = (uint32_t)(u64TS / 1000000000);
-        Hdr.ts_usec = (uint32_t)((u64TS / 1000) % 1000000);
-        Hdr.incl_len = 0;
-        RTFileWrite(pThis->File, &Hdr, sizeof(Hdr), NULL);
-        RTCritSectLeave(&pThis->Lock);
-#endif
-        return rc;
-    }
-    return VINF_SUCCESS;
-}
-
-
-/**
  * @interface_method_impl{PDMINETWORKUP,pfnSetPromiscuousMode}
  */
 static DECLCALLBACK(void) drvNetSnifferUp_SetPromiscuousMode(PPDMINETWORKUP pInterface, bool fPromiscuous)
@@ -405,7 +374,6 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pThis->INetworkUp.pfnAllocBuf                   = drvNetSnifferUp_AllocBuf;
     pThis->INetworkUp.pfnFreeBuf                    = drvNetSnifferUp_FreeBuf;
     pThis->INetworkUp.pfnSendBuf                    = drvNetSnifferUp_SendBuf;
-    pThis->INetworkUp.pfnSendDeprecated             = drvNetSnifferUp_SendDeprecated;
     pThis->INetworkUp.pfnSetPromiscuousMode         = drvNetSnifferUp_SetPromiscuousMode;
     pThis->INetworkUp.pfnNotifyLinkChanged          = drvNetSnifferUp_NotifyLinkChanged;
     /* INetworkDown */

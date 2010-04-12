@@ -264,6 +264,7 @@ static DECLCALLBACK(int) drvR3IntNetUp_AllocBuf(PPDMINETWORKUP pInterface, size_
     return rc;
 }
 
+
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnFreeBuf}
  */
@@ -283,6 +284,7 @@ static DECLCALLBACK(int) drvR3IntNetUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSC
     RTMemCacheFree(pThis->hSgCache, pSgBuf);
     return VINF_SUCCESS;
 }
+
 
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnSendBuf}
@@ -316,56 +318,6 @@ static DECLCALLBACK(int) drvR3IntNetUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSC
 
     STAM_PROFILE_STOP(&pThis->StatTransmit, a);
     return VINF_SUCCESS;
-}
-
-/**
- * @interface_method_impl{PDMINETWORKUP,pfnSendDeprecated}
- */
-static DECLCALLBACK(int) drvR3IntNetUp_SendDeprecated(PPDMINETWORKUP pInterface, const void *pvBuf, size_t cb)
-{
-    PDRVINTNET pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, INetworkUpR3);
-    STAM_PROFILE_START(&pThis->StatTransmit, a);
-
-#ifdef LOG_ENABLED
-    uint64_t u64Now = RTTimeProgramNanoTS();
-    LogFlow(("drvR3IntNetSend: %-4d bytes at %llu ns  deltas: r=%llu t=%llu\n",
-             cb, u64Now, u64Now - pThis->u64LastReceiveTS, u64Now - pThis->u64LastTransferTS));
-    pThis->u64LastTransferTS = u64Now;
-    Log2(("drvR3IntNetSend: pvBuf=%p cb=%#x\n"
-          "%.*Rhxd\n",
-          pvBuf, cb, cb, pvBuf));
-#endif
-
-    /*
-     * Add the frame to the send buffer and push it onto the network.
-     */
-    int rc = INTNETRingWriteFrame(&pThis->pBufR3->Send, pvBuf, (uint32_t)cb);
-    if (    rc == VERR_BUFFER_OVERFLOW
-        &&  pThis->pBufR3->cbSend < cb)
-    {
-        INTNETIFSENDREQ SendReq;
-        SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-        SendReq.Hdr.cbReq = sizeof(SendReq);
-        SendReq.pSession = NIL_RTR0PTR;
-        SendReq.hIf = pThis->hIf;
-        PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
-
-        rc = INTNETRingWriteFrame(&pThis->pBufR3->Send, pvBuf, (uint32_t)cb);
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        INTNETIFSENDREQ SendReq;
-        SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-        SendReq.Hdr.cbReq = sizeof(SendReq);
-        SendReq.pSession = NIL_RTR0PTR;
-        SendReq.hIf = pThis->hIf;
-        rc = PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
-    }
-
-    STAM_PROFILE_STOP(&pThis->StatTransmit, a);
-    AssertRC(rc);
-    return rc;
 }
 
 
@@ -428,8 +380,6 @@ static int drvR3IntNetAsyncIoWaitForSpace(PDRVINTNET pThis)
     LogFlow(("drvR3IntNetAsyncIoWaitForSpace: returns %Rrc\n", rc));
     return rc;
 }
-
-
 
 
 /**
@@ -740,6 +690,43 @@ static DECLCALLBACK(void) drvR3IntNetPowerOff(PPDMDRVINS pDrvIns)
 
 
 /**
+ * drvR3IntNetResume helper.
+ */
+static int drvR3IntNetResumeSend(PDRVINTNET pThis, const void *pvBuf, size_t cb)
+{
+    /*
+     * Add the frame to the send buffer and push it onto the network.
+     */
+    int rc = INTNETRingWriteFrame(&pThis->pBufR3->Send, pvBuf, (uint32_t)cb);
+    if (    rc == VERR_BUFFER_OVERFLOW
+        &&  pThis->pBufR3->cbSend < cb)
+    {
+        INTNETIFSENDREQ SendReq;
+        SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        SendReq.Hdr.cbReq = sizeof(SendReq);
+        SendReq.pSession = NIL_RTR0PTR;
+        SendReq.hIf = pThis->hIf;
+        PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
+
+        rc = INTNETRingWriteFrame(&pThis->pBufR3->Send, pvBuf, (uint32_t)cb);
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        INTNETIFSENDREQ SendReq;
+        SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        SendReq.Hdr.cbReq = sizeof(SendReq);
+        SendReq.pSession = NIL_RTR0PTR;
+        SendReq.hIf = pThis->hIf;
+        rc = PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
+    }
+
+    AssertRC(rc);
+    return rc;
+}
+
+
+/**
  * Resume notification.
  *
  * @param   pDrvIns     The driver instance.
@@ -777,7 +764,7 @@ static DECLCALLBACK(void) drvR3IntNetResume(PPDMDRVINS pDrvIns)
         Frame.Hdr.EtherType      = RT_H2BE_U16(0x801e);
         int rc = pThis->pIAboveConfigR3->pfnGetMac(pThis->pIAboveConfigR3, &Frame.Hdr.SrcMac);
         if (RT_SUCCESS(rc))
-            rc = drvR3IntNetUp_SendDeprecated(&pThis->INetworkUpR3, &Frame, sizeof(Frame));
+            rc = drvR3IntNetResumeSend(pThis, &Frame, sizeof(Frame));
         if (RT_FAILURE(rc))
             LogRel(("IntNet#%u: Sending dummy frame failed: %Rrc\n", pDrvIns->iInstance, rc));
     }
@@ -932,7 +919,6 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pThis->INetworkUpR3.pfnAllocBuf                 = drvR3IntNetUp_AllocBuf;
     pThis->INetworkUpR3.pfnFreeBuf                  = drvR3IntNetUp_FreeBuf;
     pThis->INetworkUpR3.pfnSendBuf                  = drvR3IntNetUp_SendBuf;
-    pThis->INetworkUpR3.pfnSendDeprecated           = drvR3IntNetUp_SendDeprecated;
     pThis->INetworkUpR3.pfnSetPromiscuousMode       = drvR3IntNetUp_SetPromiscuousMode;
     pThis->INetworkUpR3.pfnNotifyLinkChanged        = drvR3IntNetUp_NotifyLinkChanged;
 

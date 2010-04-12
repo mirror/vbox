@@ -886,7 +886,18 @@ static DECLCALLBACK(void) vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE 
                 vnetPacketDump(pState, pState->pTxBuf, uOffset, "--> Outgoing");
 
                 STAM_PROFILE_START(&pState->StatTransmitSend, a);
-                int rc = pState->pDrv->pfnSendDeprecated(pState->pDrv, pState->pTxBuf, uOffset);
+
+                /** @todo Optimize away the extra copying! (lazy bird) */
+                PPDMSCATTERGATHER pSgBuf;
+                int rc = pState->pDrv->pfnAllocBuf(pState->pDrv, uOffset, NULL /*pGso*/, &pSgBuf);
+                if (RT_SUCCESS(rc))
+                {
+                    Assert(pSgBuf->cSegs == 1);
+                    memcpy(pSgBuf->aSegs[0].pvSeg, pState->pTxBuf, uOffset);
+                    pSgBuf->cbUsed = uOffset;
+                    rc = pState->pDrv->pfnSendBuf(pState->pDrv, pSgBuf, false);
+                }
+
                 STAM_PROFILE_STOP(&pState->StatTransmitSend, a);
                 STAM_REL_COUNTER_ADD(&pState->StatTransmitBytes, uOffset);
             }
