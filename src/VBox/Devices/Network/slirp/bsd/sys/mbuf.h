@@ -1137,9 +1137,9 @@ m_tag_unlink(struct mbuf *m, struct m_tag *t)
 #define	MTAG_ABI_COMPAT		0		/* compatibility ABI */
 
 static __inline struct m_tag *
-m_tag_get(int type, int length, int wait)
+m_tag_get(int type, int length, int fWait)
 {
-	return (m_tag_alloc(MTAG_ABI_COMPAT, type, length, wait));
+	return (m_tag_alloc(MTAG_ABI_COMPAT, type, length, fWait));
 }
 
 static __inline struct m_tag *
