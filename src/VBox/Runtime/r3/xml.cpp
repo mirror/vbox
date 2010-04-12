@@ -493,6 +493,11 @@ void Node::buildChildren(const ElementNode &elmRoot)       // private
     }
 }
 
+/**
+ * Returns the name of the node, which is either the element name or
+ * the attribute name. For other node types it probably returns NULL.
+ * @return
+ */
 const char* Node::getName() const
 {
     return m_pcszName;
@@ -663,23 +668,20 @@ int ElementNode::getChildElements(ElementNodesList &children,
     const
 {
     int i = 0;
-    Data::InternalNodesList::const_iterator
-        it,
-        last = m->children.end();
-    for (it = m->children.begin();
-         it != last;
+    for (Data::InternalNodesList::iterator it = m->children.begin();
+         it != m->children.end();
          ++it)
     {
         // export this child node if ...
-        if (    (!pcszMatch)    // the caller wants all nodes or
-             || (!strcmp(pcszMatch, (**it).getName())) // the element name matches
-           )
-        {
-            Node *pNode = (*it).get();
-            if (pNode->isElement())
-                children.push_back(static_cast<ElementNode*>(pNode));
-            ++i;
-        }
+        Node *p = it->get();
+        if (p->isElement())
+            if (    (!pcszMatch)    // the caller wants all nodes or
+                 || (!strcmp(pcszMatch, p->getName())) // the element name matches
+               )
+            {
+                children.push_back(static_cast<ElementNode*>(p));
+                ++i;
+            }
     }
     return i;
 }

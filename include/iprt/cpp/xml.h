@@ -454,7 +454,7 @@ public:
 
     int getLineNumber() const;
 
-    int isElement()
+    int isElement() const
     {
         return m_Type == IsElement;
     }
