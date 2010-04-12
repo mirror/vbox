@@ -321,9 +321,9 @@ ok:
 
 static struct mbuf *
 #ifndef VBOX
-m_dup1(struct mbuf *m, int off, int len, int wait)
+m_dup1(struct mbuf *m, int off, int len, int fWait)
 #else
-m_dup1(PNATState pData, struct mbuf *m, int off, int len, int wait)
+m_dup1(PNATState pData, struct mbuf *m, int off, int len, int fWait)
 #endif
 {
 	struct mbuf *n;
@@ -338,34 +338,34 @@ m_dup1(PNATState pData, struct mbuf *m, int off, int len, int wait)
 	if (len >= MINCLSIZE) {
 		if (copyhdr == 1)
 #ifndef VBOX
-			n = m_getcl(wait, m->m_type, M_PKTHDR);
+			n = m_getcl(fWait, m->m_type, M_PKTHDR);
 #else
-			n = m_getcl(pData, wait, m->m_type, M_PKTHDR);
+			n = m_getcl(pData, fWait, m->m_type, M_PKTHDR);
 #endif
 		else
 #ifndef VBOX
-			n = m_getcl(wait, m->m_type, 0);
+			n = m_getcl(fWait, m->m_type, 0);
 #else
-			n = m_getcl(pData, wait, m->m_type, 0);
+			n = m_getcl(pData, fWait, m->m_type, 0);
 #endif
 	} else {
 		if (copyhdr == 1)
 #ifndef VBOX
-			n = m_gethdr(wait, m->m_type);
+			n = m_gethdr(fWait, m->m_type);
 #else
-			n = m_gethdr(pData, wait, m->m_type);
+			n = m_gethdr(pData, fWait, m->m_type);
 #endif
 		else
 #ifndef VBOX
-			n = m_get(wait, m->m_type);
+			n = m_get(fWait, m->m_type);
 #else
-			n = m_get(pData, wait, m->m_type);
+			n = m_get(pData, fWait, m->m_type);
 #endif
 	}
 	if (!n)
 		return NULL; /* ENOBUFS */
 
-	if (copyhdr && !m_dup_pkthdr(n, m, wait)) {
+	if (copyhdr && !m_dup_pkthdr(n, m, fWait)) {
 #ifndef VBOX
 		m_free(n);
 #else
@@ -395,15 +395,15 @@ m_tag_free_default(struct m_tag *t)
 
 /* Get a packet tag structure along with specified data following. */
 struct m_tag *
-m_tag_alloc(u_int32_t cookie, int type, int len, int wait)
+m_tag_alloc(u_int32_t cookie, int type, int len, int fWait)
 {
 	struct m_tag *t;
 
-	MBUF_CHECKSLEEP(wait);
+	MBUF_CHECKSLEEP(fWait);
 	if (len < 0)
 		return NULL;
 #ifndef VBOX
-	t = malloc(len + sizeof(struct m_tag), M_PACKET_TAGS, wait);
+	t = malloc(len + sizeof(struct m_tag), M_PACKET_TAGS, fWait);
 #else
 	t = RTMemAllocZ(len + sizeof(struct m_tag));
 #endif
