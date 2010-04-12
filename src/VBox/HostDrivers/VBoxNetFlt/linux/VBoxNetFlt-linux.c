@@ -249,10 +249,12 @@ typedef struct VBoxNetDeviceOpsOverride
 {
     /** Our overridden ops. */
     struct net_device_ops           Ops;
-    /** Pointer to the original ops. */
-    struct net_device_ops const    *pOrgOps;
     /** Magic word. */
     uint32_t                        u32Magic;
+    /** Pointer to the original ops. */
+    struct net_device_ops const    *pOrgOps;
+    /** Pointer to the net filter instance. */
+    PVBOXNETFLTINS                  pVBoxNetFlt;
     /** The number of filtered packages. */
     uint64_t                        cFiltered;
     /** The total number of packets */
@@ -272,8 +274,10 @@ typedef struct VBoxNetDeviceOpsOverride
 static int vboxNetFltLinuxStartXmitFilter(struct sk_buff *pSkb, struct net_device *pDev)
 {
     PVBOXNETDEVICEOPSOVERRIDE   pOverride = (PVBOXNETDEVICEOPSOVERRIDE)pDev->netdev_ops;
-    RTNETETHERHDR               EtherHdrBuf;
+    uint8_t                     abHdrBuf[sizeof(RTNETETHERHDR) + sizeof(uint32_t) + RTNETIPV4_MIN_LEN];
     PCRTNETETHERHDR             pEtherHdr;
+    PINTNETTRUNKSWPORT          pSwitchPort;
+
 
     /*
      * Validate the override structure.
@@ -299,16 +303,25 @@ static int vboxNetFltLinuxStartXmitFilter(struct sk_buff *pSkb, struct net_devic
      *       destination MAC is 100% to be on the internal network and then
      *       drop it.
      */
-    pEtherHdr = (PCRTNETETHERHDR)skb_header_pointer(pSkb, 0, sizeof(EtherHdrBuf), &EtherHdrBuf);
-    if (    pEtherHdr
-        &&  pEtherHdr->DstMac.au8[0] == 0x08
-        &&  pEtherHdr->DstMac.au8[1] == 0x00
-        &&  pEtherHdr->DstMac.au8[2] == 0x27
+    pEtherHdr = (PCRTNETETHERHDR)skb_header_pointer(pSkb, 0, sizeof(abHdrBuf), &abHdrBuf[0]);
+    if (   pEtherHdr
+        && VALID_PTR(pOverride->pVBoxNetFlt)
+        && (pSwitchPort = pOverride->pVBoxNetFlt->pSwitchPort) != NULL
+        && VALID_PTR(pSwitchPort)
        )
     {
-        dev_kfree_skb(pSkb);
-        pOverride->cFiltered++;
-        return NETDEV_TX_OK;
+        INTNETSWDECISION    enmDecision;
+        uint32_t            cbHdrs = skb_headlen(pSkb);
+        cbHdrs = RT_MAX(cbHdrs, sizeof(abHdrBuf));
+
+        /** @todo consider reference counting, etc. */
+        enmDecision = pSwitchPort->pfnPreRecv(pSwitchPort, pEtherHdr, cbHdrs, INTNETTRUNKDIR_HOST);
+        if (enmDecision == INTNETSWDECISION_INTNET)
+        {
+            dev_kfree_skb(pSkb);
+            pOverride->cFiltered++;
+            return NETDEV_TX_OK;
+        }
     }
 
     return pOverride->pOrgOps->ndo_start_xmit(pSkb, pDev);
@@ -332,6 +345,9 @@ static void vboxNetFltLinuxHookDev(PVBOXNETFLTINS pThis, struct net_device *pDev
     pOverride->Ops                  = *pDev->netdev_ops;
     pOverride->Ops.ndo_start_xmit   = vboxNetFltLinuxStartXmitFilter;
     pOverride->u32Magic             = VBOXNETDEVICEOPSOVERRIDE_MAGIC;
+    pOverride->cTotal               = 0;
+    pOverride->cFiltered            = 0;
+    pOverride->pVBoxNetFlt          = pThis;
 
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp); /* (this isn't necessary, but so what) */
     ASMAtomicXchgPtr((void * volatile *)&pDev->netdev_ops, pOverride);

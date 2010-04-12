@@ -352,6 +352,23 @@ typedef INTNETSG const *PCINTNETSG;
 #define INTNETTRUNKDIR_VALID_MASK       UINT32_C(3)
 /** @} */
 
+/**
+ * Switch decisions returned by INTNETTRUNKSWPORT::pfnPreRecv.
+ */
+typedef enum INTNETSWDECISION
+{
+    /** The usual invalid zero value. */
+    INTNETSWDECISION_INVALID = 0,
+    /** Everywhere. */
+    INTNETSWDECISION_BROADCAST,
+    /** Only to the internal network. */
+    INTNETSWDECISION_INTNET,
+    /** Only for the trunk (host/wire). */
+    INTNETSWDECISION_TRUNK,
+    /** The usual 32-bit type expansion. */
+    INTNETSWDECISION_32BIT_HACK = 0x7fffffff
+} INTNETSWDECISION;
+
 
 /** Pointer to the switch side of a trunk port. */
 typedef struct INTNETTRUNKSWPORT *PINTNETTRUNKSWPORT;
@@ -367,6 +384,31 @@ typedef struct INTNETTRUNKSWPORT
     uint32_t u32Version;
 
     /**
+     * Examine the packet and figure out where it is going.
+     *
+     * This method is for making packet switching decisions in contexts where
+     * pfnRecv cannot be called or is no longer applicable.  This method can be
+     * called from any context.
+     *
+     * @returns INTNETSWDECISION_BROADCAST, INTNETSWDECISION_INTNET or
+     *          INTNETSWDECISION_TRUNK.  The source is excluded from broadcast &
+     *          trunk, of course.
+     *
+     * @param   pSwitchPort Pointer to this structure.
+     * @param   pvHdrs      Pointer to the packet headers.
+     * @param   cbHdrs      Size of the packet headers.  This must be at least 6
+     *                      bytes (the destination MAC address), but should if
+     *                      possibly also include any VLAN tag and network layer
+     *                      header (wireless mac address sharing).
+     * @param   fSrc        Where this frame comes from.  Only one bit should be
+     *                      set!
+     *
+     * @remarks Will only grab the switch table spinlock (interrupt safe).
+     */
+    DECLR0CALLBACKMEMBER(INTNETSWDECISION, pfnPreRecv,(PINTNETTRUNKSWPORT pSwitchPort,
+                                                       void const *pvHdrs, size_t cbHdrs, uint32_t fSrc));
+
+    /**
      * Incoming frame.
      *
      * The frame may be modified when the trunk port on the switch is set to share
@@ -375,7 +417,7 @@ typedef struct INTNETTRUNKSWPORT
      * need editing as well when operating in this mode.
      *
      * @returns true if we've handled it and it should be dropped.
-     *          false if it should hit the wire.
+     *          false if it should hit the wire/host.
      *
      * @param   pSwitchPort Pointer to this structure.
      * @param   pSG         The (scatter /) gather structure for the frame.
@@ -678,7 +720,7 @@ typedef struct INTNETTRUNKFACTORY
 typedef INTNETTRUNKFACTORY *PINTNETTRUNKFACTORY;
 
 /** The UUID for the (current) trunk factory. (case sensitive) */
-#define INTNETTRUNKFACTORY_UUID_STR     "1d3810bc-0899-42b0-8ae1-346a08bffff7"
+#define INTNETTRUNKFACTORY_UUID_STR     "b010afb2-cb4c-44b7-9da9-1e113cfcd47c"
 
 /** @name INTNETTRUNKFACTORY::pfnCreateAndConnect flags.
  * @{ */
