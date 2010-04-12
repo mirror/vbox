@@ -26,11 +26,13 @@
 #include <VBox/log.h>
 #include <VBox/pdmdrv.h>
 #include <VBox/pdmnetifs.h>
+#include <VBox/pdmnetinline.h>
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/file.h>
+#include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
@@ -163,29 +165,118 @@ static int              SolarisTAPAttach(PDRVTAP pThis);
 
 
 /**
- * @interface_method_impl{PDMINETWORKUP,pfnSendDeprecated}
+ * @interface_method_impl{PDMINETWORKUP,pfnAllocBuf}
  */
-static DECLCALLBACK(int) drvTAPSendDeprecated(PPDMINETWORKUP pInterface, const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) drvTAPNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin,
+                                                  PCPDMNETWORKGSO pGso, PPPDMSCATTERGATHER ppSgBuf)
+{
+    PDRVTAP pThis = PDMINETWORKUP_2_DRVTAP(pInterface);
+
+    /*
+     * Allocate a scatter / gather buffer descriptor that is immediately
+     * followed by the buffer space of its single segment.  The GSO context
+     * comes after that again.
+     */
+    PPDMSCATTERGATHER pSgBuf = (PPDMSCATTERGATHER)RTMemAlloc(  RT_ALIGN_Z(sizeof(*pSgBuf), 16)
+                                                             + RT_ALIGN_Z(cbMin, 16)
+                                                             + (pGso ? RT_ALIGN_Z(sizeof(*pGso), 16) : 0));
+    if (!pSgBuf)
+        return VERR_NO_MEMORY;
+
+    /*
+     * Initialize the S/G buffer and return.
+     */
+    pSgBuf->fFlags         = PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1;
+    pSgBuf->cbUsed         = 0;
+    pSgBuf->cbAvailable    = RT_ALIGN_Z(cbMin, 16);
+    pSgBuf->pvAllocator    = NULL;
+    if (!pGso)
+        pSgBuf->pvUser     = NULL;
+    else
+    {
+        pSgBuf->pvUser     = (uint8_t *)(pSgBuf + 1) + pSgBuf->cbAvailable;
+        *(PPDMNETWORKGSO)pSgBuf->pvUser = *pGso;
+    }
+    pSgBuf->cSegs          = 1;
+    pSgBuf->aSegs[0].cbSeg = pSgBuf->cbAvailable;
+    pSgBuf->aSegs[0].pvSeg = pSgBuf + 1;
+
+#if 0 /* poison */
+    memset(pSgBuf->aSegs[0].pvSeg, 'F', pSgBuf->aSegs[0].cbSeg);
+#endif
+    *ppSgBuf = pSgBuf;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMINETWORKUP,pfnFreeBuf}
+ */
+static DECLCALLBACK(int) drvTAPNetworkUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf)
+{
+    PDRVTAP pThis = PDMINETWORKUP_2_DRVTAP(pInterface);
+    if (pSgBuf)
+    {
+        Assert((pSgBuf->fFlags & PDMSCATTERGATHER_FLAGS_MAGIC_MASK) == PDMSCATTERGATHER_FLAGS_MAGIC);
+        pSgBuf->fFlags = 0;
+        RTMemFree(pSgBuf);
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMINETWORKUP,pfnSendBuf}
+ */
+static DECLCALLBACK(int) drvTAPNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread)
 {
     PDRVTAP pThis = PDMINETWORKUP_2_DRVTAP(pInterface);
     STAM_COUNTER_INC(&pThis->StatPktSent);
-    STAM_COUNTER_ADD(&pThis->StatPktSentBytes, cb);
+    STAM_COUNTER_ADD(&pThis->StatPktSentBytes, pSgBuf->cbUsed);
     STAM_PROFILE_START(&pThis->StatTransmit, a);
 
-#ifdef LOG_ENABLED
-    uint64_t u64Now = RTTimeProgramNanoTS();
-    LogFlow(("drvTAPSend: %-4d bytes at %llu ns  deltas: r=%llu t=%llu\n",
-             cb, u64Now, u64Now - pThis->u64LastReceiveTS, u64Now - pThis->u64LastTransferTS));
-    pThis->u64LastTransferTS = u64Now;
-#endif
-    Log2(("drvTAPSend: pvBuf=%p cb=%#x\n"
-          "%.*Rhxd\n",
-          pvBuf, cb, cb, pvBuf));
+    AssertPtr(pSgBuf);
+    Assert((pSgBuf->fFlags & PDMSCATTERGATHER_FLAGS_MAGIC_MASK) == PDMSCATTERGATHER_FLAGS_MAGIC);
 
-    int rc = RTFileWrite(pThis->FileDevice, pvBuf, cb, NULL);
+    int rc;
+    if (!pSgBuf->pvUser)
+    {
+#ifdef LOG_ENABLED
+        uint64_t u64Now = RTTimeProgramNanoTS();
+        LogFlow(("drvTAPSend: %-4d bytes at %llu ns  deltas: r=%llu t=%llu\n",
+                 pSgBuf->cbUsed, u64Now, u64Now - pThis->u64LastReceiveTS, u64Now - pThis->u64LastTransferTS));
+        pThis->u64LastTransferTS = u64Now;
+#endif
+        Log2(("drvTAPSend: pSgBuf->aSegs[0].pvSeg=%p pSgBuf->cbUsed=%#x\n"
+              "%.*Rhxd\n",
+              pSgBuf->aSegs[0].pvSeg, pSgBuf->cbUsed, pSgBuf->cbUsed, pSgBuf->aSegs[0].pvSeg));
+
+        rc = RTFileWrite(pThis->FileDevice, pSgBuf->aSegs[0].pvSeg, pSgBuf->cbUsed, NULL);
+    }
+    else
+    {
+        uint8_t         abHdrScratch[256];
+        uint8_t const  *pbFrame = (uint8_t const *)pSgBuf->aSegs[0].pvSeg;
+        PCPDMNETWORKGSO pGso    = (PCPDMNETWORKGSO)pSgBuf->pvUser;
+        uint32_t const  cSegs   = PDMNetGsoCalcSegmentCount(pGso, pSgBuf->cbUsed);  Assert(cSegs > 1);
+        for (size_t iSeg = 0; iSeg < cSegs; iSeg++)
+        {
+            uint32_t cbSegFrame;
+            void *pvSegFrame = PDMNetGsoCarveSegmentQD(pGso, (uint8_t *)pbFrame, pSgBuf->cbUsed, abHdrScratch,
+                                                       iSeg, cSegs, &cbSegFrame);
+            rc = RTFileWrite(pThis->FileDevice, pvSegFrame, cbSegFrame, NULL);
+            if (RT_FAILURE(rc))
+                break;
+        }
+    }
+
+    pSgBuf->fFlags = 0;
+    RTMemFree(pSgBuf);
 
     STAM_PROFILE_STOP(&pThis->StatTransmit, a);
     AssertRC(rc);
+    if (RT_FAILURE(rc))
+        rc = rc == VERR_NO_MEMORY ? VERR_NET_NO_BUFFER_SPACE : VERR_NET_DOWN;
     return rc;
 }
 
@@ -193,9 +284,9 @@ static DECLCALLBACK(int) drvTAPSendDeprecated(PPDMINETWORKUP pInterface, const v
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnSetPromiscuousMode}
  */
-static DECLCALLBACK(void) drvTAPSetPromiscuousMode(PPDMINETWORKUP pInterface, bool fPromiscuous)
+static DECLCALLBACK(void) drvTAPNetworkUp_SetPromiscuousMode(PPDMINETWORKUP pInterface, bool fPromiscuous)
 {
-    LogFlow(("drvTAPSetPromiscuousMode: fPromiscuous=%d\n", fPromiscuous));
+    LogFlow(("drvTAPNetworkUp_SetPromiscuousMode: fPromiscuous=%d\n", fPromiscuous));
     /* nothing to do */
 }
 
@@ -207,9 +298,9 @@ static DECLCALLBACK(void) drvTAPSetPromiscuousMode(PPDMINETWORKUP pInterface, bo
  * @param   enmLinkState    The new link state.
  * @thread  EMT
  */
-static DECLCALLBACK(void) drvTAPNotifyLinkChanged(PPDMINETWORKUP pInterface, PDMNETWORKLINKSTATE enmLinkState)
+static DECLCALLBACK(void) drvTAPNetworkUp_NotifyLinkChanged(PPDMINETWORKUP pInterface, PDMNETWORKLINKSTATE enmLinkState)
 {
-    LogFlow(("drvNATNotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
+    LogFlow(("drvTAPNetworkUp_NotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
     /** @todo take action on link down and up. Stop the polling and such like. */
 }
 
@@ -891,10 +982,11 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvTAPQueryInterface;
     /* INetwork */
-/** @todo implement the new INetworkUp interfaces. */
-    pThis->INetworkUp.pfnSendDeprecated         = drvTAPSendDeprecated;
-    pThis->INetworkUp.pfnSetPromiscuousMode     = drvTAPSetPromiscuousMode;
-    pThis->INetworkUp.pfnNotifyLinkChanged      = drvTAPNotifyLinkChanged;
+    pThis->INetworkUp.pfnSendBuf                = drvTAPNetworkUp_SendBuf;
+    pThis->INetworkUp.pfnAllocBuf               = drvTAPNetworkUp_AllocBuf;
+    pThis->INetworkUp.pfnFreeBuf                = drvTAPNetworkUp_FreeBuf;
+    pThis->INetworkUp.pfnSetPromiscuousMode     = drvTAPNetworkUp_SetPromiscuousMode;
+    pThis->INetworkUp.pfnNotifyLinkChanged      = drvTAPNetworkUp_NotifyLinkChanged;
 
     /*
      * Validate the config.

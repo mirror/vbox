@@ -269,22 +269,9 @@ typedef struct PDMINETWORKUP
 
     /** @todo Add a callback that informs the driver chain about MAC address changes if we ever implement that.  */
 
-    /**
-     * Send data to the network.
-     *
-     * @returns VBox status code.
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pvBuf           Data to send.
-     * @param   cb              Number of bytes to send.
-     * @thread  EMT ??
-     * @deprecated
-     */
-    DECLR3CALLBACKMEMBER(int, pfnSendDeprecated,(PPDMINETWORKUP pInterface, const void *pvBuf, size_t cb));
-
-
 } PDMINETWORKUP;
 /** PDMINETWORKUP interface ID. */
-#define PDMINETWORKUP_IID                       "0e603bc1-3016-41b4-b521-15c038cda16a"
+#define PDMINETWORKUP_IID                       "3415a37c-4415-43e8-be18-26d9fd2c26a8"
 
 
 /** Pointer to a network config port interface */

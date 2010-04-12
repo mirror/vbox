@@ -558,23 +558,6 @@ static DECLCALLBACK(int) drvNATNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
 }
 
 /**
- * @interface_method_impl{PDMINETWORKUP,pfnSendDeprecated}
- */
-static DECLCALLBACK(int) drvNATNetworkUp_SendDeprecated(PPDMINETWORKUP pInterface, const void *pvBuf, size_t cb)
-{
-    PPDMSCATTERGATHER pSgBuf;
-    int rc = drvNATNetworkUp_AllocBuf(pInterface, cb, NULL /*pGso*/, &pSgBuf);
-    if (RT_SUCCESS(rc))
-    {
-        memcpy(pSgBuf->aSegs[0].pvSeg, pvBuf, cb);
-        pSgBuf->cbUsed = cb;
-        rc = drvNATNetworkUp_SendBuf(pInterface, pSgBuf, false);
-    }
-    LogFlow(("drvNATNetworkUp_SendDeprecated: (rc=%Rrc)\n", rc));
-    return VINF_SUCCESS;
-}
-
-/**
  * Get the NAT thread out of poll/WSAWaitForMultipleEvents
  */
 static void drvNATNotifyNATThread(PDRVNAT pThis, const char *pszWho)
@@ -1086,7 +1069,6 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->INetworkUp.pfnAllocBuf           = drvNATNetworkUp_AllocBuf;
     pThis->INetworkUp.pfnFreeBuf            = drvNATNetworkUp_FreeBuf;
     pThis->INetworkUp.pfnSendBuf            = drvNATNetworkUp_SendBuf;
-    pThis->INetworkUp.pfnSendDeprecated     = drvNATNetworkUp_SendDeprecated;
     pThis->INetworkUp.pfnSetPromiscuousMode = drvNATNetworkUp_SetPromiscuousMode;
     pThis->INetworkUp.pfnNotifyLinkChanged  = drvNATNetworkUp_NotifyLinkChanged;
 

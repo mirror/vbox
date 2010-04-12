@@ -219,9 +219,6 @@ static DECLCALLBACK(err_t) devINIPOutput(struct netif *netif, struct pbuf *p,
 static DECLCALLBACK(err_t) devINIPOutputRaw(struct netif *netif,
                                             struct pbuf *p)
 {
-    uint8_t aFrame[DEVINIP_MAX_FRAME], *pbBuf;
-    size_t cbBuf;
-    struct pbuf *q;
     int rc = VINF_SUCCESS;
 
     LogFlow(("%s: netif=%p p=%p\n", __FUNCTION__, netif, p));
@@ -229,38 +226,46 @@ static DECLCALLBACK(err_t) devINIPOutputRaw(struct netif *netif,
     Assert(g_pDevINIPData->pDrv);
 
     /* Silently ignore packets being sent while lwIP isn't set up. */
-    if (!g_pDevINIPData)
-        goto out;
-
+    if (g_pDevINIPData)
+    {
+        PPDMSCATTERGATHER pSgBuf;
+        rc = g_pDevINIPData->pDrv->pfnAllocBuf(g_pDevINIPData->pDrv, DEVINIP_MAX_FRAME, NULL /*pGso*/, &pSgBuf);
+        if (RT_SUCCESS(rc))
+        {
 #if ETH_PAD_SIZE
-    lwip_pbuf_header(p, -ETH_PAD_SIZE);      /* drop the padding word */
+            lwip_pbuf_header(p, -ETH_PAD_SIZE);      /* drop the padding word */
 #endif
 
-    pbBuf = &aFrame[0];
-    cbBuf = 0;
-    for (q = p; q != NULL; q = q->next)
-    {
-        if (cbBuf + q->len <= DEVINIP_MAX_FRAME)
-        {
-            memcpy(pbBuf, q->payload, q->len);
-            pbBuf += q->len;
-            cbBuf += q->len;
-        }
-        else
-        {
-            LogRel(("INIP: exceeded frame size\n"));
-            break;
+            uint8_t *pbBuf = pSgBuf ? (uint8_t *)pSgBuf->aSegs[0].pvSeg : NULL;
+            size_t   cbBuf = 0;
+            for (struct pbuf *q = p; q != NULL; q = q->next)
+            {
+                if (cbBuf + q->len <= DEVINIP_MAX_FRAME)
+                {
+                    if (RT_LIKELY(pbBuf))
+                    {
+                        memcpy(pbBuf, q->payload, q->len);
+                        pbBuf += q->len;
+                    }
+                    cbBuf += q->len;
+                }
+                else
+                {
+                    LogRel(("INIP: exceeded frame size\n"));
+                    break;
+                }
+            }
+            if (cbBuf)
+                rc = g_pDevINIPData->pDrv->pfnSendBuf(g_pDevINIPData->pDrv, pSgBuf, false);
+            else
+                rc = g_pDevINIPData->pDrv->pfnFreeBuf(g_pDevINIPData->pDrv, pSgBuf);
+
+#if ETH_PAD_SIZE
+            lwip_pbuf_header(p, ETH_PAD_SIZE);       /* reclaim the padding word */
+#endif
         }
     }
-    if (cbBuf)
-        rc = g_pDevINIPData->pDrv->pfnSendDeprecated(g_pDevINIPData->pDrv,
-                                                     &aFrame[0], cbBuf);
 
-#if ETH_PAD_SIZE
-    lwip_pbuf_header(p, ETH_PAD_SIZE);       /* reclaim the padding word */
-#endif
-
-out:
     err_t lrc = ERR_OK;
     if (RT_FAILURE(rc))
         lrc = ERR_IF;
