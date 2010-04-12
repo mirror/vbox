@@ -51,9 +51,6 @@ __FBSDID("$FreeBSD: src/sys/amd64/amd64/in_cksum.c,v 1.5.20.1 2009/04/15 03:14:2
 #else
 # include "in_cksum.h"
 # include "slirp.h"
-# ifndef u_int64_t
-typedef uint64_t u_int64_t;
-# endif
 #endif
 
 /*
