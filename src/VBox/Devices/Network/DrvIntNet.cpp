@@ -134,8 +134,6 @@ typedef DRVINTNET *PDRVINTNET;
 
 #ifdef IN_RING3
 
-/* -=-=-=-=- PDMINETWORKUP -=-=-=-=- */
-
 
 /**
  * Updates the MAC address on the kernel side.
@@ -191,6 +189,7 @@ static int drvR3IntNetSetActive(PDRVINTNET pThis, bool fActive)
     return rc;
 }
 
+/* -=-=-=-=- PDMINETWORKUP -=-=-=-=- */
 
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnAllocBuf}

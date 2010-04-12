@@ -3328,6 +3328,26 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortReportGsoCapabilities(PINTNETTRUNKS
 }
 
 
+/** @copydoc INTNETTRUNKSWPORT::pfnPreRecv */
+static DECLCALLBACK(INTNETSWDECISION) intnetR0TrunkIfPortPreRecv(PINTNETTRUNKSWPORT pSwitchPort,
+                                                                 void const *pvSrc, size_t cbSrc, uint32_t fSrc)
+{
+    PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
+    PINTNETNETWORK pNetwork = pThis->pNetwork;
+
+    /* assert some sanity */
+    AssertPtrReturn(pNetwork, INTNETSWDECISION_TRUNK);
+    AssertReturn(pNetwork->FastMutex != NIL_RTSEMFASTMUTEX, INTNETSWDECISION_TRUNK);
+    AssertPtr(pvSrc);
+    AssertPtr(cbSrc >= 6);
+    Assert(fSrc);
+
+    /** @todo implement the switch table. */
+
+    return INTNETSWDECISION_BROADCAST;
+}
+
+
 /** @copydoc INTNETTRUNKSWPORT::pfnRecv */
 static DECLCALLBACK(bool) intnetR0TrunkIfPortRecv(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG, uint32_t fSrc)
 {
@@ -3611,6 +3631,7 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
     if (!pTrunkIF)
         return VERR_NO_MEMORY;
     pTrunkIF->SwitchPort.u32Version                 = INTNETTRUNKSWPORT_VERSION;
+    pTrunkIF->SwitchPort.pfnPreRecv                 = intnetR0TrunkIfPortPreRecv;
     pTrunkIF->SwitchPort.pfnRecv                    = intnetR0TrunkIfPortRecv;
     pTrunkIF->SwitchPort.pfnSGRetain                = intnetR0TrunkIfPortSGRetain;
     pTrunkIF->SwitchPort.pfnSGRelease               = intnetR0TrunkIfPortSGRelease;
