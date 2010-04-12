@@ -241,9 +241,10 @@ private:
     static DECLCALLBACK(int) reqThreadFn(RTTHREAD ThreadSelf, void *pvUser);
     int clientConnect(uint32_t u32ClientID, void *pvClient);
     int clientDisconnect(uint32_t u32ClientID, void *pvClient);
-    int guestGetHostMsg(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int hostNotifyGuest(GuestCall *pCall, uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int hostProcessCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int processHostMsg(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int notifyGuest(GuestCall *pCall, uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int notifyHost(VBOXHGCMCALLHANDLE callHandle, uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int processCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     void call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
               void *pvClient, uint32_t eFunction, uint32_t cParms,
               VBOXHGCMSVCPARM paParms[]);
@@ -404,17 +405,17 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
  * Either fills in parameters from a pending host command into our guest context or
  * defer the guest call until we have something from the host.
  */
-int Service::guestGetHostMsg(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::processHostMsg(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
 
     if (cParms < 2)
     {
-        LogFlowFunc(("Parameter buffer is too small!\n"));
+        LogFlowFunc(("Guest parameter buffer is too small!\n"));
         rc = VERR_INVALID_PARAMETER;
     }
     else
-    {
+    {   
         /*
          * If host command list is empty (nothing to do right now) just
          * defer the call until we got something to do (makes the client
@@ -472,12 +473,12 @@ int Service::guestGetHostMsg(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBO
  * Sends a command notification to the first waiting (deferred) client/guest in line in
  * order to wake up and do some work.
  */
-int Service::hostNotifyGuest(GuestCall *pCall, uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::notifyGuest(GuestCall *pCall, uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     AssertPtr(pCall);
     int rc = VINF_SUCCESS;
 
-    int rc2 = guestGetHostMsg(pCall->mHandle, pCall->mNumParms, pCall->mParms);
+    int rc2 = processHostMsg(pCall->mHandle, pCall->mNumParms, pCall->mParms);
     if (RT_SUCCESS(rc2))
         rc2 = pCall->mRc;
     AssertPtr(mpHelpers);
@@ -485,15 +486,29 @@ int Service::hostNotifyGuest(GuestCall *pCall, uint32_t eFunction, uint32_t cPar
     return rc;
 }
 
-int Service::hostProcessCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::notifyHost(VBOXHGCMCALLHANDLE callHandle, uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+{
+    LogFlowFunc (("eFunction=%ld, cParms=%ld, paParms=%p\n", 
+                  eFunction, cParms, paParms));
+    HOSTCALLBACKDATA HostCallbackData;
+    HostCallbackData.u32Magic = HOSTCALLBACKMAGIC;
+
+    int rc = mpfnHostCallback (mpvHostData, 0 /*u32Function*/,
+                           (void *)(&HostCallbackData),
+                           sizeof(HostCallbackData));
+    LogFlowFunc (("returning %Rrc\n", rc));
+    return rc;
+}
+
+int Service::processCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
 
-    /* Some lazy guests to wake up? */
+    /* Some lazy guests to wake up which can process this command right now? */
     if (!mGuestWaiters.empty())
     {
         GuestCall curCall = mGuestWaiters.front();
-        rc = hostNotifyGuest(&curCall, eFunction, cParms, paParms);
+        rc = notifyGuest(&curCall, eFunction, cParms, paParms);
         mGuestWaiters.pop_front();
     }
     else /* No guests waiting, buffer it */
@@ -538,7 +553,7 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
             /* The guest asks the host for the next messsage to process. */
             case GUEST_GET_HOST_MSG:
                 LogFlowFunc(("GUEST_GET_HOST_MSG\n"));
-                rc = guestGetHostMsg(callHandle, cParms, paParms);
+                rc = processHostMsg(callHandle, cParms, paParms);
                 break;
 
             /* The guest notifies the host that some output at stdout is available. */
@@ -554,6 +569,7 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
             /* The guest notifies the host of the current client status. */
             case GUEST_EXEC_SEND_STATUS:
                 LogFlowFunc(("SEND_STATUS\n"));
+                rc = notifyHost(callHandle, eFunction, cParms, paParms);
                 break;
 
             default:
@@ -595,7 +611,7 @@ int Service::hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPar
             /* The host wants to execute something. */
             case HOST_EXEC_CMD:
                 LogFlowFunc(("HOST_EXEC_CMD\n"));
-                rc = hostProcessCmd(eFunction, cParms, paParms);
+                rc = processCmd(eFunction, cParms, paParms);
                 break;
 
             /* The host wants to send something to the guest's stdin pipe. */
