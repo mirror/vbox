@@ -583,9 +583,9 @@ m_prepend(PNATState pData, struct mbuf *m, int len, int how)
  */
 struct mbuf *
 #ifndef VBOX
-m_copym(struct mbuf *m, int off0, int len, int wait)
+m_copym(struct mbuf *m, int off0, int len, int fWait)
 #else
-m_copym(PNATState pData, struct mbuf *m, int off0, int len, int wait)
+m_copym(PNATState pData, struct mbuf *m, int off0, int len, int fWait)
 #endif
 {
 	struct mbuf *n, **np;
@@ -595,7 +595,7 @@ m_copym(PNATState pData, struct mbuf *m, int off0, int len, int wait)
 
 	KASSERT(off >= 0, ("m_copym, negative off %d", off));
 	KASSERT(len >= 0, ("m_copym, negative len %d", len));
-	MBUF_CHECKSLEEP(wait);
+	MBUF_CHECKSLEEP(fWait);
 	if (off == 0 && m->m_flags & M_PKTHDR)
 		copyhdr = 1;
 	while (off > 0) {
@@ -614,14 +614,14 @@ m_copym(PNATState pData, struct mbuf *m, int off0, int len, int wait)
 			break;
 		}
 		if (copyhdr)
-			MGETHDR(n, wait, m->m_type);
+			MGETHDR(n, fWait, m->m_type);
 		else
-			MGET(n, wait, m->m_type);
+			MGET(n, fWait, m->m_type);
 		*np = n;
 		if (n == NULL)
 			goto nospace;
 		if (copyhdr) {
-			if (!m_dup_pkthdr(n, m, wait))
+			if (!m_dup_pkthdr(n, m, fWait))
 				goto nospace;
 			if (len == M_COPYALL)
 				n->m_pkthdr.len -= off0;
@@ -1284,22 +1284,22 @@ m_copyup(PNATState pData, struct mbuf *n, int len, int dstoff)
  */
 struct mbuf *
 #ifndef VBOX
-m_split(struct mbuf *m0, int len0, int wait)
+m_split(struct mbuf *m0, int len0, int fWait)
 #else
-m_split(PNATState pData, struct mbuf *m0, int len0, int wait)
+m_split(PNATState pData, struct mbuf *m0, int len0, int fWait)
 #endif
 {
 	struct mbuf *m, *n;
 	u_int len = len0, remain;
 
-	MBUF_CHECKSLEEP(wait);
+	MBUF_CHECKSLEEP(fWait);
 	for (m = m0; m && len > m->m_len; m = m->m_next)
 		len -= m->m_len;
 	if (m == NULL)
 		return (NULL);
 	remain = m->m_len - len;
 	if (m0->m_flags & M_PKTHDR) {
-		MGETHDR(n, wait, m0->m_type);
+		MGETHDR(n, fWait, m0->m_type);
 		if (n == NULL)
 			return (NULL);
 		n->m_pkthdr.rcvif = m0->m_pkthdr.rcvif;
@@ -1311,9 +1311,9 @@ m_split(PNATState pData, struct mbuf *m0, int len0, int wait)
 			/* m can't be the lead packet */
 			MH_ALIGN(n, 0);
 #ifndef VBOX
-			n->m_next = m_split(m, len, wait);
+			n->m_next = m_split(m, len, fWait);
 #else
-			n->m_next = m_split(pData, m, len, wait);
+			n->m_next = m_split(pData, m, len, fWait);
 #endif
 			if (n->m_next == NULL) {
 #ifndef VBOX
@@ -1333,7 +1333,7 @@ m_split(PNATState pData, struct mbuf *m0, int len0, int wait)
 		m->m_next = NULL;
 		return (n);
 	} else {
-		MGET(n, wait, m->m_type);
+		MGET(n, fWait, m->m_type);
 		if (n == NULL)
 			return (NULL);
 		M_ALIGN(n, remain);
