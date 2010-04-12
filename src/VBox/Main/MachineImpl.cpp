@@ -3753,6 +3753,12 @@ STDMETHODIMP Machine::DeleteSettings()
         return setError(VBOX_E_INVALID_VM_STATE,
                         tr("Cannot delete settings of a registered machine"));
 
+    ULONG uLogHistoryCount = 3;
+    ComPtr<ISystemProperties> systemProperties;
+    mParent->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+    if (!systemProperties.isNull())
+        systemProperties->COMGETTER(LogHistoryCount)(&uLogHistoryCount);
+
     /* delete the settings only when the file actually exists */
     if (mData->pMachineConfigFile->fileExists())
     {
@@ -3775,15 +3781,19 @@ STDMETHODIMP Machine::DeleteSettings()
              * (this must be in sync with the rotation logic in
              * Console::powerUpThread()). Also, delete the VBox.png[.N]
              * files that may have been created by the GUI. */
-            Utf8Str log = Utf8StrFmt("%s/VBox.log", logFolder.raw());
+            Utf8Str log = Utf8StrFmt("%s%cVBox.log",
+                                     logFolder.raw(), RTPATH_DELIMITER);
             RTFileDelete(log.c_str());
-            log = Utf8StrFmt("%s/VBox.png", logFolder.raw());
+            log = Utf8StrFmt("%s%cVBox.png",
+                             logFolder.raw(), RTPATH_DELIMITER);
             RTFileDelete(log.c_str());
-            for (int i = 3; i >= 0; i--)
+            for (int i = uLogHistoryCount; i > 0; i--)
             {
-                log = Utf8StrFmt("%s/VBox.log.%d", logFolder.raw(), i);
+                log = Utf8StrFmt("%s%cVBox.log.%d",
+                                 logFolder.raw(), RTPATH_DELIMITER, i);
                 RTFileDelete(log.c_str());
-                log = Utf8StrFmt("%s/VBox.png.%d", logFolder.raw(), i);
+                log = Utf8StrFmt("%s%cVBox.png.%d",
+                                 logFolder.raw(), RTPATH_DELIMITER, i);
                 RTFileDelete(log.c_str());
             }
 
@@ -4723,7 +4733,7 @@ STDMETHODIMP Machine::ReadSavedThumbnailToArray(BOOL aBGR, ULONG *aWidth, ULONG 
 
     CheckComArgNotNull(aWidth);
     CheckComArgNotNull(aHeight);
-    CheckComArgExpr(aData, !ComSafeArrayOutIsNull(aData));
+    CheckComArgOutSafeArrayPointerValid(aData);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -4816,7 +4826,7 @@ STDMETHODIMP Machine::ReadSavedScreenshotPNGToArray(ULONG *aWidth, ULONG *aHeigh
 
     CheckComArgNotNull(aWidth);
     CheckComArgNotNull(aHeight);
-    CheckComArgExpr(aData, !ComSafeArrayOutIsNull(aData));
+    CheckComArgOutSafeArrayPointerValid(aData);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -4952,15 +4962,59 @@ STDMETHODIMP Machine::GetCPUStatus(ULONG aCpu, BOOL *aCpuAttached)
     return S_OK;
 }
 
-STDMETHODIMP Machine::ReadLog(ULONG /*aIdx*/, ULONG64 /*aOffset*/, ULONG64 /*aSize*/, ComSafeArrayOut(BYTE, aData))
+STDMETHODIMP Machine::ReadLog(ULONG aIdx, ULONG64 aOffset, ULONG64 aSize, ComSafeArrayOut(BYTE, aData))
 {
-    CheckComArgExpr(aData, !ComSafeArrayOutIsNull(aData));
+    LogFlowThisFunc(("\n"));
+    CheckComArgOutSafeArrayPointerValid(aData);
 
-#ifdef VBOX_WITH_XPCOM
-    NOREF(aDataSize);
-#endif
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+    Utf8Str logFolder;
+    getLogFolder(logFolder);
+    Assert(logFolder.length());
+    ULONG uLogHistoryCount = 3;
+    ComPtr<ISystemProperties> systemProperties;
+    mParent->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+    if (!systemProperties.isNull())
+        systemProperties->COMGETTER(LogHistoryCount)(&uLogHistoryCount);
+    Utf8Str log;
+    if (aIdx == 0)
+        log = Utf8StrFmt("%s%cVBox.log",
+                         logFolder.raw(), RTPATH_DELIMITER);
+    else
+        log = Utf8StrFmt("%s%cVBox.log.%d",
+                         logFolder.raw(), RTPATH_DELIMITER, aIdx);
+
+    size_t cbData = (size_t)RT_MIN(aSize, 2048);
+    com::SafeArray<BYTE> logData(cbData);
+
+    RTFILE LogFile;
+    int vrc = RTFileOpen(&LogFile, log.raw(),
+                         RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+    if (RT_SUCCESS(vrc))
+    {
+        vrc = RTFileReadAt(LogFile, aOffset, logData.raw(), cbData, &cbData);
+        if (RT_SUCCESS(vrc))
+            logData.resize(cbData);
+        else
+            rc = setError(VBOX_E_IPRT_ERROR,
+                          tr("Could not read log file '%s' (%Rrc)"),
+                          log.raw(), vrc);
+    }
+    else
+        rc = setError(VBOX_E_IPRT_ERROR,
+                      tr("Could not open log file '%s' (%Rrc)"),
+                      log.raw(), vrc);
+
+    if (FAILED(rc))
+        logData.resize(0);
+    logData.detachTo(ComSafeArrayOutArg(aData));
+
+    return rc;
 }
 
 
