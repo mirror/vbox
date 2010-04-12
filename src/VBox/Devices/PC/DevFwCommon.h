@@ -36,5 +36,6 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
 
 /* Plant MPS table */
 void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, uint16_t cCpus);
+void FwCommonPlantMpsFloatPtr(PPDMDEVINS pDevIns);
 
 #endif

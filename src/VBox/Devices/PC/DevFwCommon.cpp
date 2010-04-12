@@ -709,7 +709,9 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
 AssertCompile(VBOX_DMI_TABLE_ENTR == 5);
 
 /**
- * Construct the MPS table. Only applicable if IOAPIC is active!
+ * Construct the MPS table for implanting as a ROM page.
+ *
+ * Only applicable if IOAPIC is active!
  *
  * See ``MultiProcessor Specificatiton Version 1.4 (May 1997)'':
  *   ``1.3 Scope
@@ -849,7 +851,17 @@ void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, 
     AssertMsg(pCfgTab->u16Length < cbMax,
               ("VBOX_MPS_TABLE_SIZE=%d, maximum allowed size is %d",
               pCfgTab->u16Length, cbMax));
+}
 
+/**
+ * Construct the MPS table pointer at VM construction and reset.
+ *
+ * Only applicable if IOAPIC is active!
+ *
+ * @param   pDevIns    The device instance data.
+ */
+void FwCommonPlantMpsFloatPtr(PPDMDEVINS pDevIns)
+{
     MPSFLOATPTR floatPtr;
     floatPtr.au8Signature[0]       = '_';
     floatPtr.au8Signature[1]       = 'M';
@@ -865,5 +877,6 @@ void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, 
     floatPtr.au8Feature[3]         = 0;
     floatPtr.au8Feature[4]         = 0;
     floatPtr.u8Checksum            = fwCommonChecksum((uint8_t*)&floatPtr, 16);
-    PDMDevHlpPhysWrite (pDevIns, 0x9fff0, &floatPtr, 16);
+    PDMDevHlpPhysWrite(pDevIns, 0x9fff0, &floatPtr, 16);
 }
+
