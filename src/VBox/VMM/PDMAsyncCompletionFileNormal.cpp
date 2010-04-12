@@ -440,7 +440,8 @@ static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
                     pTasksWaiting = pdmacFileAioMgrNormalRangeLockFree(pAioMgr, pEndpoint, pTask->pRangeLock);
 
                     pdmacFileAioMgrEpAddTask(pEndpoint, pTask);
-                    pdmacFileAioMgrEpAddTaskList(pEndpoint, pTasksWaiting);
+                    if (pTasksWaiting)
+                        pdmacFileAioMgrEpAddTaskList(pEndpoint, pTasksWaiting);
 
                     pAioMgr->cRequestsActive--;
                     pEndpoint->AioMgr.cRequestsActive--;
