@@ -557,7 +557,7 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
             else
                 pPkt->csum_offset = RT_OFFSETOF(RTNETUDP, uh_sum);
 # else
-            pPkt->h.raw = skb->data + pSG->GsoCtx.offHdr2;
+            pPkt->h.raw = pPkt->data + pSG->GsoCtx.offHdr2;
             if (fGsoType & (SKB_GSO_TCPV4 | SKB_GSO_TCPV6))
                 pPkt->csum = RT_OFFSETOF(RTNETTCP, th_sum);
             else
@@ -894,7 +894,7 @@ static bool vboxNetFltLinuxCanForwardAsGso(PVBOXNETFLTINS pThis, struct sk_buff 
      * skb_gso_segment does the following. Do we need to do it as well?
      */
     skb_reset_mac_header(pSkb);
-    pSkb->mac_len = pSkb->network_header - pSkb->mac_header;
+    pSkb->mac_len = pSkb->network_header - pSkb->mac_header; /** @todo fix this compile erorr too! */
 
     /*
      * Switch on the ethertype.
