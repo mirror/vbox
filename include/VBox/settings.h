@@ -103,6 +103,7 @@ protected:
     void readUSBDeviceFilters(const xml::ElementNode &elmDeviceFilters,
                               USBDeviceFiltersList &ll);
 
+    void setVersionAttribute(xml::ElementNode &elm);
     void createStubDocument();
 
     void writeExtraData(xml::ElementNode &elmParent, const ExtraDataItemsMap &me);
@@ -861,7 +862,13 @@ public:
     void importMachineXML(const xml::ElementNode &elmMachine);
 
     void write(const com::Utf8Str &strFilename);
-    void buildMachineXML(xml::ElementNode &elmMachine, bool fIncludeSnapshots);
+
+    enum
+    {
+        BuildMachineXML_IncludeSnapshots = 0x01,
+        BuildMachineXML_WriteVboxVersionAttribute = 0x02
+    };
+    void buildMachineXML(xml::ElementNode &elmMachine, uint32_t fl);
 
 private:
     void readNetworkAdapters(const xml::ElementNode &elmHardware, NetworkAdaptersList &ll);
