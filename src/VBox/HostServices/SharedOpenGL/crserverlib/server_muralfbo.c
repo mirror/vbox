@@ -257,10 +257,25 @@ void crServerDeleteMuralFBO(CRMuralInfo *mural)
     }
 }
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
+static GLboolean crServerIntersectScreen(CRMuralInfo *mural, int sId, CRrecti *rect)
+{
+    rect->x1 = MAX(mural->gX, cr_server.screen[sId].x);
+    rect->x2 = MIN(mural->gX+(int)mural->fboWidth, cr_server.screen[sId].x+(int)cr_server.screen[sId].w);
+    rect->y1 = MAX(mural->gY, cr_server.screen[sId].y);
+    rect->y2 = MIN(mural->gY+(int)mural->fboHeight, cr_server.screen[sId].y+(int)cr_server.screen[sId].h);
+
+    return (rect->x2>rect->x1) && (rect->y2>rect->y1);
+}
+
 void crServerPresentFBO(CRMuralInfo *mural)
 {
-    char *pixels;
+    char *pixels, *tmppixels, *pSrc, *pDst;
     GLuint uid;
+    int i, j, rowsize, rowstride, height;
+    CRrecti rect;
     CRContext *ctx = crStateGetCurrent();
 
     CRASSERT(cr_server.pfnPresentFBO);
@@ -273,13 +288,41 @@ void crServerPresentFBO(CRMuralInfo *mural)
     }
 
     cr_server.head_spu->dispatch_table.BindTexture(GL_TEXTURE_2D, mural->idColorTex);
-    cr_server.head_spu->dispatch_table.GetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    cr_server.head_spu->dispatch_table.GetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_BYTE, pixels);
     uid = ctx->texture.unit[ctx->texture.curTextureUnit].currentTexture2D->name;
     cr_server.head_spu->dispatch_table.BindTexture(GL_TEXTURE_2D, uid);
 
-    /*@todo render parts on the different screens*/
-    cr_server.pfnPresentFBO(pixels, mural->screenId, 0, 0, mural->fboWidth, mural->fboHeight);
+    for (i=0; i<cr_server.screenCount; ++i)
+    {
+        if (crServerIntersectScreen(mural, i, &rect))
+        {
+            rowsize = 4*RT_ALIGN_Z(rect.x2-rect.x1, 4);
+            tmppixels = crAlloc(rowsize*(rect.y2-rect.y1));
+            if (!tmppixels)
+            {
+                crWarning("Out of memory in crServerPresentFBO");
+                crFree(pixels);
+                return;
+            }
+            rowstride = 4*mural->fboWidth;
+            height = rect.y2-rect.y1;
 
+            pSrc = pixels + 4*(rect.x1-mural->gX) + rowstride*(rect.y2-mural->gY-1);
+            pDst = tmppixels;
+
+            for (j=0; j<height; ++j)
+            {
+                crMemcpy(pDst, pSrc, rowsize);
+
+                pSrc -= rowstride;
+                pDst += rowsize;
+            }
+
+            cr_server.pfnPresentFBO(tmppixels, i, rect.x1, rect.y1, rect.x2-rect.x1, height);
+
+            crFree(tmppixels);
+        }
+    }
     crFree(pixels);
 }
 
