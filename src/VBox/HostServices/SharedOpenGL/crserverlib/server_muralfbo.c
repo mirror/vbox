@@ -320,7 +320,7 @@ void crServerPresentFBO(CRMuralInfo *mural)
                 pDst += rowsize;
             }
 
-            cr_server.pfnPresentFBO(tmppixels, i, rect.x1, rect.y1, rect.x2-rect.x1, height);
+            cr_server.pfnPresentFBO(tmppixels, i, rect.x1-cr_server.screen[i].x, rect.y1-cr_server.screen[i].y, rect.x2-rect.x1, height);
 
             crFree(tmppixels);
         }
