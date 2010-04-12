@@ -106,14 +106,14 @@ static int handleExecProgram(HandlerArg *a)
                 char **papszArg;
                 int cArgs;
 
-                rc = RTGetOptArgvFromString(&papszArg, &cArgs, a->argv[i + 1], NULL);
-                if (RT_SUCCESS(rc))
+                int vrc = RTGetOptArgvFromString(&papszArg, &cArgs, a->argv[i + 1], NULL);
+                if (RT_SUCCESS(vrc))
                 {
-                    for (int a = 0; a < cArgs; a++)                       
+                    for (int a = 0; a < cArgs; a++)
                         args.push_back(Bstr(papszArg[a]));
 
                     RTGetOptArgvFree(papszArg);
-                }                
+                }
                 ++i;
             }
         }
@@ -127,8 +127,8 @@ static int handleExecProgram(HandlerArg *a)
                 char **papszArg;
                 int cArgs;
 
-                rc = RTGetOptArgvFromString(&papszArg, &cArgs, a->argv[i + 1], NULL);
-                if (RT_SUCCESS(rc))
+                int vrc = RTGetOptArgvFromString(&papszArg, &cArgs, a->argv[i + 1], NULL);
+                if (RT_SUCCESS(vrc))
                 {
                     for (int a = 0; a < cArgs; a++)
                         env.push_back(Bstr(papszArg[a]));
@@ -237,8 +237,8 @@ static int handleExecProgram(HandlerArg *a)
 
             ComPtr<IProgress> progress;
             ULONG uPID = 0;
-            CHECK_ERROR_BREAK(guest, ExecuteProcess(Bstr(Utf8Cmd), uFlags, 
-                                                    ComSafeArrayAsInParam(args), ComSafeArrayAsInParam(env), 
+            CHECK_ERROR_BREAK(guest, ExecuteProcess(Bstr(Utf8Cmd), uFlags,
+                                                    ComSafeArrayAsInParam(args), ComSafeArrayAsInParam(env),
                                                     Bstr(Utf8StdIn), Bstr(Utf8StdOut), Bstr(Utf8StdErr),
                                                     Bstr(Utf8UserName), Bstr(Utf8Password), uTimeoutMS,
                                                     &uPID, progress.asOutParam()));
