@@ -66,8 +66,15 @@ private:
     CMachine mMachine;
     QIWidgetValidator *mValidator;
 
+    /* System minimum lower limit of VRAM (MB). */
     int m_minVRAM;
+    /* System maximum limit of VRAM (MB). */
     int m_maxVRAM;
+    /* Upper limit of VRAM in MB for this dialog. This value is lower than
+     * m_maxVRAM to save careless users from setting useless big values. */
+    int m_maxVRAMVisible;
+    /* Initial VRAM value when the dialog is opened. */
+    int m_initialVRAM;
 };
 
 #endif // __VBoxVMSettingsDisplay_h__
