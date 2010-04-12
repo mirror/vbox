@@ -1286,7 +1286,6 @@ static int vdWriteHelperAsync(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImagePa
                 && ASMAtomicCmpXchgBool(&pIoCtxWrite->fComplete, true, false))
             {
                 LogFlow(("Child write request completed\n"));
-                RTMemTmpFree(pTmp);
                 ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbThisWrite);
                 vdIoCtxFree(pDisk, pIoCtxWrite);
             }
