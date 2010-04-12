@@ -42,7 +42,7 @@
 
 /** The maximum number of pages that can be allocated and mapped
  * by various MM, PGM and SUP APIs. */
-#define VBOX_MAX_ALLOC_PAGE_COUNT   (128U * _1M / PAGE_SIZE)
+#define VBOX_MAX_ALLOC_PAGE_COUNT   (256U * _1M / PAGE_SIZE)
 
 
 /** @defgroup   grp_vbox_param_mm  Memory Monitor Parameters

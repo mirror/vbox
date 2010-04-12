@@ -321,7 +321,9 @@ void VBoxVMSettingsDisplay::checkMultiMonitorReqs()
     /* The memory requirements have changed too. */
     quint64 needMBytes = VBoxGlobal::requiredVideoMemory (&mMachine, cVal) / _1M;
     /* Limit the maximum memory to save careless users from setting useless big values */
-    m_maxVRAMVisible = 128 + (cVal - 1) * 32;
+    m_maxVRAMVisible = cVal * 32;
+    if (m_maxVRAMVisible < 128)
+        m_maxVRAMVisible = 128;
     if (m_maxVRAMVisible < m_initialVRAM)
         m_maxVRAMVisible = m_initialVRAM;
     mSlMemory->setWarningHint (1, needMBytes);
