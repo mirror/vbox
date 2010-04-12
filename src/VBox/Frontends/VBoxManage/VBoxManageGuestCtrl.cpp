@@ -89,7 +89,7 @@ static int handleExecProgram(HandlerArg *a)
     Utf8Str Utf8StdErr;
     Utf8Str Utf8UserName;
     Utf8Str Utf8Password;
-    uint32_t uTimeoutMS = 0;
+    uint32_t uTimeoutMS = RT_INDEFINITE_WAIT;
     bool waitForOutput = false;
 
     /* Iterate through all possible commands (if available). */
