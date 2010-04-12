@@ -768,8 +768,7 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
     LogFlow(("pcbiosReset:\n"));
 
     if (pThis->u8IOAPIC)
-        FwCommonPlantMpsTable(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE,
-                              _4K - VBOX_DMI_TABLE_SIZE, pThis->cCpus);
+        FwCommonPlantMpsFloatPtr(pDevIns);
 
     /*
      * Re-shadow the LAN ROM image and make it RAM/RAM.

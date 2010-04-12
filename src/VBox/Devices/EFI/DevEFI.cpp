@@ -473,24 +473,8 @@ static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
     pThis->iPanicMsg = 0;
     pThis->szPanicMsg[0] = '\0';
 
-    /* Plant DMI and MPS tables */
-    rc = FwCommonPlantDMITable(pDevIns,
-                               pThis->au8DMIPage,
-                               VBOX_DMI_TABLE_SIZE,
-                               &pThis->aUuid,
-                               pDevIns->pCfg,
-                               /*fPutSmbiosHeaders=*/true);
-    Assert(RT_SUCCESS(rc));
-
     if (pThis->u8IOAPIC)
-        FwCommonPlantMpsTable(pDevIns,
-                              pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE,
-                              _4K - VBOX_DMI_TABLE_SIZE,
-                              pThis->cCpus);
-    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage,
-                              PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "DMI tables");
-
-    Assert(RT_SUCCESS(rc));
+        FwCommonPlantMpsFloatPtr(pDevIns);
 
     /*
      * Re-shadow the Firmware Volume and make it RAM/RAM.
@@ -1149,6 +1133,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /* Multiplier is read from MSR_IA32_PERF_STATUS, and now is hardcoded as 4 */
     pThis->u64FsbFrequency = pThis->u64TscFrequency / 4;
     pThis->u64CpuFrequency = pThis->u64TscFrequency;
+
     /*
      * GOP graphics
      */
@@ -1158,6 +1143,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     {
         pThis->u32GopMode = 2; /* 1024x768 */
     }
+
     /*
      * Uga graphics
      */
@@ -1201,6 +1187,25 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return rc;
 
+    /*
+     * Plant DMI and MPS tables
+     */
+    rc = FwCommonPlantDMITable(pDevIns,
+                               pThis->au8DMIPage,
+                               VBOX_DMI_TABLE_SIZE,
+                               &pThis->aUuid,
+                               pDevIns->pCfg,
+                               true /*fPutSmbiosHeaders*/);
+    AssertRCReturn(rc, rc);
+    if (pThis->u8IOAPIC)
+        FwCommonPlantMpsTable(pDevIns,
+                              pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE,
+                              _4K - VBOX_DMI_TABLE_SIZE,
+                              pThis->cCpus);
+    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage,
+                              PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "DMI tables");
+
+    AssertRCReturn(rc, rc);
 
     /*
      * Call reset to set things up.
