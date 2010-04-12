@@ -4991,7 +4991,7 @@ STDMETHODIMP Machine::ReadLog(ULONG aIdx, ULONG64 aOffset, ULONG64 aSize, ComSaf
 
     /* do not unnecessarily hold the lock while doing something which does
      * not need the lock and potentially takes a long time. */
-    alock.leave();
+    alock.release();
 
     size_t cbData = (size_t)RT_MIN(aSize, 2048);
     com::SafeArray<BYTE> logData(cbData);
