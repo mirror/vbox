@@ -698,7 +698,6 @@ int guestExecHandleCmdExecute(VBOXHGCMSVCFNTABLE *pTable, PVBOXHGCMSVCPARM paPar
 
             /* argv */
             char *pcData;
-            uint32_t cbLen;
             paParms[4].getBuffer((void**)&pcData, &cbLen);
             AssertPtr(pcData);
 
@@ -715,12 +714,10 @@ int guestExecHandleCmdExecute(VBOXHGCMSVCFNTABLE *pTable, PVBOXHGCMSVCPARM paPar
                 paParms[5].getUInt32(&uEnvc);
 
                 /* envv */
-                char *pcData;
-                uint32_t cbLen;
                 paParms[6].getBuffer((void**)&pcData, &cbLen);
                 AssertPtr(pcData);
 
-                char **ppaEnv;
+                char **ppaEnv = NULL;
                 if (uEnvc)
                 {
                     ppaEnv = (char**)RTMemAlloc(uEnvc * sizeof(char*));
@@ -823,7 +820,7 @@ int guestExecSendStdOut(VBOXHGCMSVCFNTABLE *pTable,
 
     pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, command,
                     3, paParms);
-    int rc;
+    int rc = VINF_SUCCESS;
     if (RT_FAILURE(callHandle.rc))
     {
         RTPrintf("guestSendStdOut failed with callHandle.rc=%Rrc\n", callHandle.rc);

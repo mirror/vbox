@@ -29,7 +29,7 @@ namespace guestControl {
 /** @todo write docs! */
 int gctrlPrepareExecArgv(char *pszArgs, void **ppvList, uint32_t *pcbList, uint32_t *pcArgs);
 /** @todo write docs! */
-int gctrlAddToExecEnvv(char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);
+int gctrlAddToExecEnvv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);
 /** @todo write docs! */
 #if 0
 int gctrlAllocateExecBlock(PVBOXGUESTCTRLEXECBLOCK *ppBlock,
