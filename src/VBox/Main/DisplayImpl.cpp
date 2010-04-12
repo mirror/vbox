@@ -1979,82 +1979,52 @@ int Display::videoAccelRefreshProcess(void)
 #endif /* VBOX_WITH_OLD_VBVA_LOCK */
 
 
-// IDisplay properties
-/////////////////////////////////////////////////////////////////////////////
-
-/**
- * Returns the current display width in pixel
- *
- * @returns COM status code
- * @param width Address of result variable.
- */
-STDMETHODIMP Display::COMGETTER(Width) (ULONG *width)
-{
-    CheckComArgNotNull(width);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    CHECK_CONSOLE_DRV (mpDrv);
-
-    *width = mpDrv->IConnector.cx;
-
-    return S_OK;
-}
-
-/**
- * Returns the current display height in pixel
- *
- * @returns COM status code
- * @param height Address of result variable.
- */
-STDMETHODIMP Display::COMGETTER(Height) (ULONG *height)
-{
-    CheckComArgNotNull(height);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    CHECK_CONSOLE_DRV (mpDrv);
-
-    *height = mpDrv->IConnector.cy;
-
-    return S_OK;
-}
-
-/**
- * Returns the current display color depth in bits
- *
- * @returns COM status code
- * @param bitsPerPixel Address of result variable.
- */
-STDMETHODIMP Display::COMGETTER(BitsPerPixel) (ULONG *bitsPerPixel)
-{
-    if (!bitsPerPixel)
-        return E_INVALIDARG;
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    CHECK_CONSOLE_DRV (mpDrv);
-
-    uint32_t cBits = 0;
-    int rc = mpDrv->pUpPort->pfnQueryColorDepth(mpDrv->pUpPort, &cBits);
-    AssertRC(rc);
-    *bitsPerPixel = cBits;
-
-    return S_OK;
-}
-
-
 // IDisplay methods
 /////////////////////////////////////////////////////////////////////////////
+STDMETHODIMP Display::GetScreenResolution (ULONG aScreenId,
+    ULONG *aWidth, ULONG *aHeight, ULONG *aBitsPerPixel)
+{
+    LogFlowFunc (("aScreenId = %d\n", aScreenId));
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    uint32_t u32Width = 0;
+    uint32_t u32Height = 0;
+    uint32_t u32BitsPerPixel = 0;
+
+    if (aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+    {
+        CHECK_CONSOLE_DRV (mpDrv);
+
+        u32Width = mpDrv->IConnector.cx;
+        u32Height = mpDrv->IConnector.cy;
+        int rc = mpDrv->pUpPort->pfnQueryColorDepth(mpDrv->pUpPort, &u32BitsPerPixel);
+        AssertRC(rc);
+    }
+    else if (aScreenId < mcMonitors)
+    {
+        DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
+        u32Width = pFBInfo->w;
+        u32Height = pFBInfo->h;
+        u32BitsPerPixel = pFBInfo->u16BitsPerPixel;
+    }
+    else
+    {
+        return E_INVALIDARG;
+    }
+
+    if (aWidth)
+        *aWidth = u32Width;
+    if (aHeight)
+        *aHeight = u32Height;
+    if (aBitsPerPixel)
+        *aBitsPerPixel = u32BitsPerPixel;
+
+    return S_OK;
+}
 
 STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId,
     IFramebuffer *aFramebuffer)
@@ -2277,7 +2247,7 @@ static int displayTakeScreenshot(PVM pVM, struct DRVMAINDISPLAY *pDrv, BYTE *add
     return vrc;
 }
 
-STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
+STDMETHODIMP Display::TakeScreenShot (ULONG aScreenId, BYTE *address, ULONG width, ULONG height)
 {
     /// @todo (r=dmik) this function may take too long to complete if the VM
     //  is doing something like saving state right now. Which, in case if it
@@ -2332,7 +2302,7 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
     return rc;
 }
 
-STDMETHODIMP Display::TakeScreenShotSlow (ULONG width, ULONG height,
+STDMETHODIMP Display::TakeScreenShotToArray (ULONG aScreenId, ULONG width, ULONG height,
                                           ComSafeArrayOut(BYTE, aScreenData))
 {
     LogFlowFuncEnter();
@@ -2419,7 +2389,7 @@ int Display::DrawToScreenEMT(Display *pDisplay, BYTE *address, ULONG x, ULONG y,
 }
 #endif /* VBOX_WITH_OLD_VBVA_LOCK */
 
-STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
+STDMETHODIMP Display::DrawToScreen (ULONG aScreenId, BYTE *address, ULONG x, ULONG y,
                                     ULONG width, ULONG height)
 {
     /// @todo (r=dmik) this function may take too long to complete if the VM
@@ -2569,35 +2539,6 @@ STDMETHODIMP Display::ResizeCompleted(ULONG aScreenId)
     bool f = ASMAtomicCmpXchgU32 (&maFramebuffers[aScreenId].u32ResizeStatus,
         ResizeStatus_UpdateDisplayData, ResizeStatus_InProgress);
     AssertRelease(f);NOREF(f);
-
-    return S_OK;
-}
-
-/**
- * Notification that the framebuffer has completed the
- * asynchronous update processing
- *
- * @returns COM status code
- */
-STDMETHODIMP Display::UpdateCompleted()
-{
-    LogFlowFunc (("\n"));
-
-    /// @todo (dmik) can we AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); here?
-    //  do it when we switch this class to VirtualBoxBase_NEXT.
-    //  Tthis will require general code review and may add some details.
-    //  In particular, we may want to check whether EMT is really waiting for
-    //  this notification, etc. It might be also good to obey the caller to make
-    //  sure this method is not called from more than one thread at a time
-    //  (and therefore don't use Display lock at all here to save some
-    //  milliseconds).
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* this is only valid for external framebuffers */
-    if (maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer == NULL)
-        return setError(VBOX_E_NOT_SUPPORTED,
-                        tr("Resize completed notification is valid only for external framebuffers"));
 
     return S_OK;
 }

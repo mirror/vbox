@@ -408,7 +408,7 @@ HRESULT Mouse::convertDisplayWidth(LONG x, uint32_t *pcX)
     ComAssertRet(pDisplay, E_FAIL);
 
     ULONG displayWidth;
-    HRESULT rc = pDisplay->COMGETTER(Width)(&displayWidth);
+    HRESULT rc = pDisplay->GetScreenResolution (0, &displayWidth, NULL, NULL);
     if (FAILED(rc)) return rc;
 
     *pcX = displayWidth ? ((x - 1) * 0xFFFF) / displayWidth: 0;
@@ -428,7 +428,7 @@ HRESULT Mouse::convertDisplayHeight(LONG y, uint32_t *pcY)
     ComAssertRet(pDisplay, E_FAIL);
 
     ULONG displayHeight;
-    HRESULT rc = pDisplay->COMGETTER(Height)(&displayHeight);
+    HRESULT rc = pDisplay->GetScreenResolution (0, NULL, &displayHeight, NULL);
     if (FAILED(rc)) return rc;
 
     *pcY = displayHeight ? ((y - 1) * 0xFFFF) / displayHeight: 0;

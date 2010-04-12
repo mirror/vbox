@@ -3352,7 +3352,7 @@ void VBoxConsoleView::onStateChange (KMachineState state)
                  */
                 QImage shot = QImage (mFrameBuf->width(), mFrameBuf->height(), QImage::Format_RGB32);
                 CDisplay dsp = mConsole.GetDisplay();
-                dsp.TakeScreenShot (shot.bits(), shot.width(), shot.height());
+                dsp.TakeScreenShot (0, shot.bits(), shot.width(), shot.height());
                 /*
                  *  TakeScreenShot() may fail if, e.g. the Paused notification
                  *  was delivered after the machine execution was resumed. It's

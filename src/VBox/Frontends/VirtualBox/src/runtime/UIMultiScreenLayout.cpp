@@ -202,7 +202,10 @@ void UIMultiScreenLayout::sltScreenLayoutChanged(QAction *pAction)
 
 quint64 UIMultiScreenLayout::memoryRequirements(const QMap<int, int> *pScreenLayout) const
 {
-    int guestBpp = m_pMachineLogic->uisession()->session().GetConsole().GetDisplay().GetBitsPerPixel();
+    ULONG width = 0;
+    ULONG height = 0;
+    ULONG guestBpp = 0;
+    m_pMachineLogic->uisession()->session().GetConsole().GetDisplay().GetScreenResolution(0, width, height, guestBpp);
     quint64 usedBits = 0;
     for (int i = 0; i < m_cGuestScreens; ++ i)
     {

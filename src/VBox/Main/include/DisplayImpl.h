@@ -245,21 +245,16 @@ public:
         return S_OK;
     }
 
-    // IDisplay properties
-    STDMETHOD(COMGETTER(Width)) (ULONG *width);
-    STDMETHOD(COMGETTER(Height)) (ULONG *height);
-    STDMETHOD(COMGETTER(BitsPerPixel)) (ULONG *bitsPerPixel);
-
     // IDisplay methods
+    STDMETHOD(GetScreenResolution)(ULONG aScreenId, ULONG *aWidth, ULONG *aHeight, ULONG *aBitsPerPixel);
     STDMETHOD(SetFramebuffer)(ULONG aScreenId, IFramebuffer *aFramebuffer);
     STDMETHOD(GetFramebuffer)(ULONG aScreenId, IFramebuffer **aFramebuffer, LONG *aXOrigin, LONG *aYOrigin);
     STDMETHOD(SetVideoModeHint)(ULONG width, ULONG height, ULONG bitsPerPixel, ULONG display);
-    STDMETHOD(TakeScreenShot)(BYTE *address, ULONG width, ULONG height);
-    STDMETHOD(TakeScreenShotSlow)(ULONG width, ULONG height, ComSafeArrayOut(BYTE, aScreenData));
-    STDMETHOD(DrawToScreen)(BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height);
+    STDMETHOD(TakeScreenShot)(ULONG aScreenId, BYTE *address, ULONG width, ULONG height);
+    STDMETHOD(TakeScreenShotToArray)(ULONG aScreenId, ULONG width, ULONG height, ComSafeArrayOut(BYTE, aScreenData));
+    STDMETHOD(DrawToScreen)(ULONG aScreenId, BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height);
     STDMETHOD(InvalidateAndUpdate)();
     STDMETHOD(ResizeCompleted)(ULONG aScreenId);
-    STDMETHOD(UpdateCompleted)();
     STDMETHOD(SetSeamlessMode)(BOOL enabled);
 
     STDMETHOD(CompleteVHWACommand)(BYTE *pCommand);

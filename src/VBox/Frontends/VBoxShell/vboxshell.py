@@ -359,7 +359,7 @@ def takeScreenshot(ctx,console,args):
     else:
         h = console.display.height
     print "Saving screenshot (%d x %d) in %s..." %(w,h,f)
-    data = display.takeScreenShotSlow(w,h)
+    data = display.takeScreenShotToArray(w,h)
     size = (w,h)
     mode = "RGBA"
     im = Image.frombuffer(mode, size, data, "raw", mode, 0, 1)

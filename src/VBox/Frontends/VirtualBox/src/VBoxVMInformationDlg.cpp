@@ -554,10 +554,13 @@ void VBoxVMInformationDlg::refreshStatistics()
     /* Runtime Information */
     {
         CConsole console = mSession.GetConsole();
-        ULONG bpp = console.GetDisplay().GetBitsPerPixel();
+        ULONG width = 0;
+        ULONG height = 0;
+        ULONG bpp = 0;
+        console.GetDisplay().GetScreenResolution(0, width, height, bpp);
         QString resolution = QString ("%1x%2")
-            .arg (console.GetDisplay().GetWidth())
-            .arg (console.GetDisplay().GetHeight());
+            .arg (width)
+            .arg (height);
         if (bpp)
             resolution += QString ("x%1").arg (bpp);
         QString virtualization = console.GetDebugger().GetHWVirtExEnabled() ?

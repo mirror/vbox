@@ -57,8 +57,7 @@ public:
     STDMETHODIMP SetFramebuffer(unsigned iScreenID, Framebuffer *Framebuffer);
     STDMETHODIMP InvalidateAndUpdate();
     STDMETHODIMP ResizeCompleted();
-    STDMETHODIMP COMGETTER(Width)(ULONG *pWidth);
-    STDMETHODIMP COMGETTER(Height)(ULONG *pHeight);
+    STDMETHODIMP GetScreenResolution(ULONG aScreenId, ULONG *aWidth, ULONG *aHeight, ULONG *aBitsPerPixel);
 
     void resetFramebuffer();
 
