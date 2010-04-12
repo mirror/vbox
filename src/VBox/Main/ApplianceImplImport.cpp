@@ -1933,15 +1933,13 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
 {
     Assert(vsdescThis->m->pConfig);
 
-    // make a deep copy of the machine settings here because we will tinker
-    // with it by replacing disk UUIDs
-    settings::MachineConfigFile config = *vsdescThis->m->pConfig;
+    settings::MachineConfigFile &config = *vsdescThis->m->pConfig;
 
     Utf8Str strDefaultHardDiskFolder;
     HRESULT rc = getDefaultHardDiskFolder(strDefaultHardDiskFolder);
     if (FAILED(rc)) throw rc;
 
-    // step 1): scan the machine config for UUIDs
+    // step 1): scan the machine config for attachments
     for (settings::StorageControllersList::iterator sit = config.storageMachine.llStorageControllers.begin();
          sit != config.storageMachine.llStorageControllers.end();
          ++sit)
@@ -1976,19 +1974,21 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
                     strTargetPath.append(di.strHref);
                     searchUniqueDiskImageFilePath(strTargetPath);
 
-                    // step 2): import disks and map the old and new UUIDs
+                    // step 2): for each attachment, import the disk...
                     ComPtr<IMedium> pTargetHD;
                     importOneDiskImage(di,
                                        strTargetPath,
                                        pTargetHD,
                                        stack);
 
+                    // ... and replace the old UUID in the machine config with the one of
+                    // the imported disk that was just created
                     Bstr hdId;
                     rc = pTargetHD->COMGETTER(Id)(hdId.asOutParam());
                     if (FAILED(rc)) throw rc;
 
-                    // replace the old UUID in the machine config with the new one
                     d.uuid = hdId;
+
                     fFound = true;
                     break;
                 }
