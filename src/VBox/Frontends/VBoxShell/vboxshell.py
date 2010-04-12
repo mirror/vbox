@@ -125,8 +125,8 @@ class VBoxMonitor:
     def onSnapshotTaken(self, mach, id):
         print "onSnapshotTaken: %s %s" %(mach, id)
 
-    def onSnapshotDiscarded(self, mach, id):
-        print "onSnapshotDiscarded: %s %s" %(mach, id)
+    def onSnapshotDeleted(self, mach, id):
+        print "onSnapshotDeleted: %s %s" %(mach, id)
 
     def onSnapshotChange(self, mach, id):
         print "onSnapshotChange: %s %s" %(mach, id)
@@ -1050,20 +1050,18 @@ def showLogCmd(ctx, args):
     if mach == None:
         return 0
 
-    log = "VBox.log"
+    log = 0;
     if (len(args) > 2):
-       log  += "."+args[2]
-    fileName = os.path.join(mach.logFolder, log)
+       log  = args[2];
 
-    try:
-        lf = open(fileName, 'r')
-    except IOError,e:
-        print "cannot open: ",e
-        return 0
-
-    for line in lf:
-        print line,
-    lf.close()
+    uOffset = 0;
+    while True:
+        data = mach.readLog(log, uOffset, 1024*1024)
+        if (len(data) == 0):
+            break
+        # print adds either NL or space to chunks not ending with a NL
+        sys.stdout.write(data)
+        uOffset += len(data)
 
     return 0
 
