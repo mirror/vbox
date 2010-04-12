@@ -283,6 +283,7 @@ int main()
     CHECK_MEMBER_ALIGNMENT(EHCI, StatCanceledIsocUrbs, 8);
 # endif
 #endif
+    CHECK_MEMBER_ALIGNMENT(E1KSTATE, StatReceiveBytes, 8);
 #ifdef VBOX_WITH_STATISTICS
     CHECK_MEMBER_ALIGNMENT(IOAPICState, StatMMIOReadGC, 8);
     CHECK_MEMBER_ALIGNMENT(IOAPICState, StatMMIOReadGC, 8);
