@@ -92,7 +92,6 @@ SYSCTL_INT(_kern_ipc, OID_AUTO, m_defragrandomfailures, CTLFLAG_RW,
 # include <iprt/asm.h>
 # include "slirp.h"
 # define atomic_fetchadd_int(var, val) (ASMAtomicAddU32((var), (val)))
-# define __DEVOLATILE(type, var)       ((type)ASMAtomicReadU32((var)))
 # define atomic_add_int(var, val)      (ASMAtomicAddU32((var), (val)))
 #endif /* VBOX */
 
@@ -292,9 +291,16 @@ mb_free_ext(PNATState pData, struct mbuf *m)
 		case EXT_NET_DRV:
 		case EXT_MOD_TYPE:
 		case EXT_DISPOSABLE:
+#ifndef VBOX
+            /* This code is dead in VBOX port of BSD mbufs (probably will be used for EXT_SBUFS some day) 
+             * @todo once bsd sbufs will be on trunk think about this code.
+             */
 			*(m->m_ext.ref_cnt) = 0;
 			uma_zfree(zone_ext_refcnt, __DEVOLATILE(u_int *,
 				m->m_ext.ref_cnt));
+#else
+            AssertMsgFailed(("unimplemented"));
+#endif
 			/* FALLTHROUGH */
 		case EXT_EXTREF:
 			KASSERT(m->m_ext.ext_free != NULL,
