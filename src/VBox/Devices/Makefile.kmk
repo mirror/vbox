@@ -354,6 +354,9 @@ ifdef VBOXVDMA
 	Graphics/HGSMI/SHGSMIHost.cpp \
     Graphics/DevVGA_VDMA.cpp
 endif
+ifdef VBOXWDDM_WITH_VBVA
+ DevicesR3_DEFS        += VBOXWDDM_WITH_VBVA
+endif
 
 ifdef VBOX_WITH_VIDEOHWACCEL
  DevicesR3_DEFS        += VBOX_WITH_VIDEOHWACCEL
@@ -592,6 +595,9 @@ ifdef VBOX_WITH_RAW_MODE
  ifdef VBOXVDMA
   VBoxDDGC_DEFS        += VBOXVDMA
  endif
+ ifdef VBOXWDDM_WITH_VBVA
+  VBoxDDGC_DEFS         += VBOXWDDM_WITH_VBVA
+ endif
 
  ifdef VBOX_WITH_VUSB
   VBoxDDGC_DEFS        += VBOX_WITH_VUSB
@@ -613,6 +619,9 @@ ifdef VBOX_WITH_RAW_MODE
  endif
  ifdef VBOXVDMA
   VBoxDDGC_DEFS        += VBOXVDMA
+ endif
+ ifdef VBOXWDDM_WITH_VBVA
+  VBoxDDGC_DEFS         += VBOXWDDM_WITH_VBVA
  endif
 
  ifdef VBOX_WITH_VIDEOHWACCEL
@@ -699,7 +708,9 @@ endif
 ifdef VBOXVDMA
  VBoxDDR0_DEFS         += VBOXVDMA
 endif
-
+ifdef VBOXWDDM_WITH_VBVA
+ VBoxDDR0_DEFS         += VBOXWDDM_WITH_VBVA
+endif
 
 ifdef VBOX_WITH_VUSB
  VBoxDDR0_DEFS         += VBOX_WITH_VUSB
@@ -742,6 +753,9 @@ ifdef VBOX_WITH_VIDEOHWACCEL
 endif
 ifdef VBOXVDMA
  VBoxDDR0_DEFS         += VBOXVDMA
+endif
+ifdef VBOXWDDM_WITH_VBVA
+ VBoxDDR0_DEFS        += VBOXWDDM_WITH_VBVA
 endif
 
 

@@ -348,7 +348,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
     ULONG vramSize = DeviceExtension->pPrimary->u.primary.ulMaxFrameBufferSize;
 #else
     ULONG vramSize = vboxWddmVramCpuVisibleSegmentSize(DeviceExtension);
-#ifndef VBOXWDDM_WITH_FAKE_SEGMENT
+#ifndef VBOXWDDM_RENDER_FROM_SHADOW
     /* at least two surfaces will be needed: primary & shadow */
     vramSize /= 2;
 #endif
@@ -924,7 +924,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         /* handle the startup case */
         if (DeviceExtension->CurrentMode == 0)
 #else
-        if (!DeviceExtension->cSources || !DeviceExtension->aSources[0].pAllocation)
+        if (!DeviceExtension->cSources || !DeviceExtension->aSources[0].pPrimaryAllocation)
 #endif
         {
             /* Use the stored custom resolution values only if nothing was read from host.
@@ -964,14 +964,14 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 bpp  = DeviceExtension->CurrentModeBPP;
         }
 #else
-        if (DeviceExtension->cSources && DeviceExtension->aSources[0].pAllocation)
+        if (DeviceExtension->cSources && DeviceExtension->aSources[0].pPrimaryAllocation)
         {
             if (!xres)
-                xres = DeviceExtension->aSources[0].pAllocation->u.SurfInfo.width;
+                xres = DeviceExtension->aSources[0].pPrimaryAllocation->u.SurfInfo.width;
             if (!yres)
-                yres = DeviceExtension->aSources[0].pAllocation->u.SurfInfo.height;
+                yres = DeviceExtension->aSources[0].pPrimaryAllocation->u.SurfInfo.height;
             if (!bpp)
-                bpp  = DeviceExtension->aSources[0].pAllocation->u.SurfInfo.bpp;
+                bpp  = DeviceExtension->aSources[0].pPrimaryAllocation->u.SurfInfo.bpp;
         }
 #endif
 
@@ -1019,7 +1019,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
 #ifndef VBOXWDDM
                 if (DeviceExtension->CurrentMode != 0)
 #else
-                if (DeviceExtension->cSources && DeviceExtension->aSources[0].pAllocation)
+                if (DeviceExtension->cSources && DeviceExtension->aSources[0].pPrimaryAllocation)
 #endif
 #ifndef VBOX_WITH_MULTIMONITOR_FIX
                 {
@@ -1125,7 +1125,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
 #ifndef VBOXWDDM
                 if (DeviceExtension->CurrentMode == 0)
 #else
-                if (!DeviceExtension->cSources || !DeviceExtension->aSources[0].pAllocation)
+                if (!DeviceExtension->cSources || !DeviceExtension->aSources[0].pPrimaryAllocation)
 #endif
                 {
                     dprintf(("VBoxVideo: making a copy of the custom mode as #%d\n", gNumVideoModes + 1));
@@ -1406,6 +1406,7 @@ int VBoxMapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv, ULONG 
             MmNonCached, /* IN MEMORY_CACHING_TYPE CacheType */
             &VideoRamBase /*OUT PVOID *VirtualAddress*/
             );
+    Assert(ntStatus == STATUS_SUCCESS);
     Status = ntStatus == STATUS_SUCCESS ? NO_ERROR : ERROR_INVALID_PARAMETER; /*<- this is what VideoPortMapMemory returns according to the docs */
 #endif
 

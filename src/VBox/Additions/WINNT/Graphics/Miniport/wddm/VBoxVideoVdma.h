@@ -20,20 +20,38 @@
 #include <VBox/VBoxVideo.h>
 #include "../VBoxVideo.h"
 
+#if 0
+typedef DECLCALLBACK(int) FNVBOXVDMASUBMIT(struct _DEVICE_EXTENSION* pDevExt, struct VBOXVDMAINFO * pInfo, HGSMIOFFSET offDr, PVOID pvContext);
+typedef FNVBOXVDMASUBMIT *PFNVBOXVDMASUBMIT;
+
+typedef struct VBOXVDMASUBMIT
+{
+    PFNVBOXVDMASUBMIT pfnSubmit;
+    PVOID pvContext;
+} VBOXVDMASUBMIT, *PVBOXVDMASUBMIT;
+#endif
+
 /* DMA commands are currently submitted over HGSMI */
 typedef struct VBOXVDMAINFO
 {
     HGSMIHEAP CmdHeap;
     UINT      uLastCompletedPagingBufferCmdFenceId;
     BOOL      fEnabled;
+#if 0
+    VBOXVDMASUBMIT Submitter;
+#endif
 } VBOXVDMAINFO, *PVBOXVDMAINFO;
 
-int vboxVdmaCreate (struct _DEVICE_EXTENSION* pDevExt, VBOXVDMAINFO *pInfo, ULONG offBuffer, ULONG cbBuffer);
+int vboxVdmaCreate (struct _DEVICE_EXTENSION* pDevExt, VBOXVDMAINFO *pInfo, ULONG offBuffer, ULONG cbBuffer
+#if 0
+        , PFNVBOXVDMASUBMIT pfnSubmit, PVOID pvContext
+#endif
+        );
 int vboxVdmaDisable (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo);
 int vboxVdmaEnable (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo);
 int vboxVdmaFlush (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo);
 int vboxVdmaDestroy (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo);
-void vboxVdmaCBufDrSubmit (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr);
+int vboxVdmaCBufDrSubmit (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr);
 struct VBOXVDMACBUF_DR* vboxVdmaCBufDrCreate (PVBOXVDMAINFO pInfo, uint32_t cbTrailingData);
 void vboxVdmaCBufDrFree (PVBOXVDMAINFO pInfo, struct VBOXVDMACBUF_DR* pDr);
 
