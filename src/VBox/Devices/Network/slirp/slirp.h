@@ -76,10 +76,6 @@ typedef int socklen_t;
 #endif /* !RT_OS_WINDOWS */
 
 #if defined(RT_OS_WINDOWS) || defined (RT_OS_SOLARIS) 
-/* Missed BSD types for Windows and Solaris */
-typedef uint8_t u_int8_t;
-typedef uint16_t u_int16_t;
-typedef uint32_t u_int32_t;
 typedef uint64_t u_int64_t;
 typedef char *caddr_t;
 #endif
