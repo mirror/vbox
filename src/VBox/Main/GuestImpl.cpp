@@ -512,7 +512,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
          * Register the host notification callback
          */
         HGCMSVCEXTHANDLE hExt;
-        int vrc = HGCMHostRegisterServiceExtension(&hExt, "VBoxGuestCtrlSvc",
+        int vrc = HGCMHostRegisterServiceExtension(&hExt, "VBoxGuestControlSvc",
                                                    &Guest::doGuestCtrlNotification,
                                                    this);
         if (RT_SUCCESS(vrc))
