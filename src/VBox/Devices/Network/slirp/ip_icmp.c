@@ -422,10 +422,6 @@ freeit:
                                     errno, strerror(errno)));
                         icmp_error(pData, m, ICMP_UNREACH, ICMP_UNREACH_NET, 0, strerror(errno));
                     }
-                    else if (!time_fasttimo)
-                    {
-                        time_fasttimo = curtime; /* Flag when we want a fasttimo */
-                    }
                 }
                 else
                 {
