@@ -542,9 +542,7 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
     {
         struct skb_shared_info *pShInfo = skb_shinfo(pPkt);
 
-        if (!fDstWire)
-            fGsoType |= SKB_GSO_DODGY;
-        pShInfo->gso_type = fGsoType;
+        pShInfo->gso_type = fGsoType | SKB_GSO_DODGY;
         pShInfo->gso_size = pSG->GsoCtx.cbMaxSeg;
         pShInfo->gso_segs = PDMNetGsoCalcSegmentCount(&pSG->GsoCtx, pSG->cbTotal);
 
@@ -552,15 +550,24 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
         {
             Assert(skb_headlen(pPkt) >= pSG->GsoCtx.cbHdrs);
             pPkt->ip_summed  = CHECKSUM_PARTIAL;
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
             pPkt->csum_start = skb_headroom(pPkt) + pSG->GsoCtx.offHdr2;
             if (fGsoType & (SKB_GSO_TCPV4 | SKB_GSO_TCPV6))
                 pPkt->csum_offset = RT_OFFSETOF(RTNETTCP, th_sum);
             else
                 pPkt->csum_offset = RT_OFFSETOF(RTNETUDP, uh_sum);
+# else
+            pPkt->h.raw = skb->data + pSG->GsoCtx.offHdr2;
+            if (fGsoType & (SKB_GSO_TCPV4 | SKB_GSO_TCPV6))
+                pPkt->csum = RT_OFFSETOF(RTNETTCP, th_sum);
+            else
+                pPkt->csum = RT_OFFSETOF(RTNETUDP, uh_sum);
+# endif
         }
         else
         {
             pPkt->ip_summed = CHECKSUM_UNNECESSARY;
+            pPkt->csum      = 0;
             PDMNetGsoPrepForDirectUse(&pSG->GsoCtx, pPkt->data, pSG->cbTotal, false /*fPayloadChecksum*/);
         }
     }
