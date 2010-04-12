@@ -234,9 +234,9 @@ public:
         return VINF_SUCCESS;
     }
 private:
-    int execBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    void execBufferFree(PVBOXGUESTCTRPARAMBUFFER pBuf);
-    int execBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int paramBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    void paramBufferFree(PVBOXGUESTCTRPARAMBUFFER pBuf);
+    int paramBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int prepareExecute(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     static DECLCALLBACK(int) reqThreadFn(RTTHREAD ThreadSelf, void *pvUser);
     int clientConnect(uint32_t u32ClientID, void *pvClient);
@@ -267,7 +267,7 @@ DECLCALLBACK(int) Service::reqThreadFn(RTTHREAD ThreadSelf, void *pvUser)
 
 /** @todo Write some nice doc headers! */
 /* Stores a HGCM request in an internal buffer (pEx). Needs to be freed later using execBufferFree(). */
-int Service::execBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::paramBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     AssertPtr(pBuf);
     int rc = VINF_SUCCESS;
@@ -329,7 +329,7 @@ int Service::execBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, 
 }
 
 /* Frees a buffered HGCM request. */
-void Service::execBufferFree(PVBOXGUESTCTRPARAMBUFFER pBuf)
+void Service::paramBufferFree(PVBOXGUESTCTRPARAMBUFFER pBuf)
 {
     AssertPtr(pBuf);
     for (uint32_t i = 0; i < pBuf->uParmCount; i++)
@@ -350,7 +350,7 @@ void Service::execBufferFree(PVBOXGUESTCTRPARAMBUFFER pBuf)
 }
 
 /* Assigns data from a buffered HGCM request to the current HGCM request. */
-int Service::execBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::paramBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     AssertPtr(pBuf);
     int rc = VINF_SUCCESS;
@@ -450,10 +450,10 @@ int Service::guestGetHostMsg(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBO
              }
              else
              {
-                 rc = execBufferAssign(&curCmd.parmBuf, cParms, paParms);
+                 rc = paramBufferAssign(&curCmd.parmBuf, cParms, paParms);
                  if (RT_SUCCESS(rc))
                  {
-                     execBufferFree(&curCmd.parmBuf);
+                     paramBufferFree(&curCmd.parmBuf);
                      mHostCmds.pop_front();
                  }
              }
@@ -499,7 +499,7 @@ int Service::hostProcessCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM
     else /* No guests waiting, buffer it */
     {
         HostCmd newCmd;
-        rc = execBufferAllocate(&newCmd.parmBuf, cParms, paParms);
+        rc = paramBufferAllocate(&newCmd.parmBuf, cParms, paParms);
         if (RT_SUCCESS(rc))
         {
             mHostCmds.push_back(newCmd);
