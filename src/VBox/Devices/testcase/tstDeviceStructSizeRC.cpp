@@ -1339,6 +1339,7 @@ int main()
     GEN_CHECK_OFF(E1KSTATE, u32SavedCsum);
     GEN_CHECK_OFF(E1KSTATE, eeprom);
     GEN_CHECK_OFF(E1KSTATE, phy);
+    GEN_CHECK_OFF(E1KSTATE, StatReceiveBytes);
 #endif /* VBOX_WITH_E1000 */
 
 #ifdef VBOX_WITH_VIRTIO

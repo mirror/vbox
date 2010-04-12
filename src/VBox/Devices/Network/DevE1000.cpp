@@ -1050,8 +1050,10 @@ struct E1kState_st
     /** EMT: Physical interface emulation. */
     PHY         phy;
 
+#if 0
     /** Alignment padding. */
     uint8_t                             Alignment[HC_ARCH_BITS == 64 ? 8 : 4];
+#endif
 
     STAMCOUNTER                         StatReceiveBytes;
     STAMCOUNTER                         StatTransmitBytes;
