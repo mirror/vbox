@@ -110,7 +110,7 @@ int gctrlPrepareExecArgv(char *pszArgs, void **ppvList, uint32_t *pcbList, uint3
  * @todo
  *
  */
-int gctrlAddToExecEnvv(char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv)
+int gctrlAddToExecEnvv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv)
 {
     int rc = VINF_SUCCESS;
     uint32_t cbLen = strlen(pszEnv);
