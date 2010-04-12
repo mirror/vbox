@@ -807,6 +807,8 @@ ifdef VBOX_WITH_DRV_DISK_INTEGRITY
 Drivers_DEFS           += VBOX_WITH_DRV_DISK_INTEGRITY
 endif
 
+VBOX_WITH_SLIRP_BSD_MBUF=1
+
 Drivers_INCS      := \
 	$(PATH_SUB_CURRENT) \
 	Network/slirp
