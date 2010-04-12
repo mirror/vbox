@@ -552,28 +552,30 @@ typedef struct PDMIDISPLAYPORT
     DECLR3CALLBACKMEMBER(void, pfnSetRenderVRAM,(PPDMIDISPLAYPORT pInterface, bool fRender));
 
     /**
-     * Render a rectangle from guest VRAM to Framebuffer, multi-display variant.
+     * Render a bitmap rectangle from source to target buffer.
      *
      * @param   pInterface          Pointer to this interface.
-     * @param   x                   The upper left corner x coordinate of the rectangle to be updated.
-     * @param   y                   The upper left corner y coordinate of the rectangle to be updated.
-     * @param   cx                  The width of the rectangle to be updated.
-     * @param   cy                  The height of the rectangle to be updated.
-     * @param   pbSrcVRAM           Pointer to VRAM.
-     * @param   cxSrc               The width of the source display.
-     * @param   cySrc               The height of the source display.
-     * @param   cbSrcLine           The line length of the source display.
+     * @param   cx                  The width of the rectangle to be copied.
+     * @param   cy                  The height of the rectangle to be copied.
+     * @param   pbSrc               Source frame buffer 0,0.
+     * @param   xSrc                The upper left corner x coordinate of the source rectangle.
+     * @param   ySrc                The upper left corner y coordinate of the source rectangle.
+     * @param   cxSrc               The width of the source frame buffer.
+     * @param   cySrc               The height of the source frame buffer.
+     * @param   cbSrcLine           The line length of the source frame buffer.
      * @param   cSrcBitsPerPixel    The pixel depth of the source.
-     * @param   pbDstBuffer         Destination buffer (framebuffer).
+     * @param   pbDst               Destination frame buffer 0,0.
+     * @param   xDst                The upper left corner x coordinate of the destination rectangle.
+     * @param   yDst                The upper left corner y coordinate of the destination rectangle.
      * @param   cxDst               The width of the destination frame buffer.
      * @param   cyDst               The height of the destination frame buffer.
      * @param   cbDstLine           The line length of the destination frame buffer.
      * @param   cDstBitsPerPixel    The pixel depth of the destination.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(void, pfnUpdateDisplayRectEx,(PPDMIDISPLAYPORT pInterface, int32_t x, int32_t y, uint32_t cx, uint32_t cy,
-        const uint8_t *pbSrcVRAM, uint32_t cxSrc, uint32_t cySrc, uint32_t cbSrcLine, uint32_t cSrcBitsPerPixel,
-        uint8_t     *pbDstBuffer, uint32_t cxDst, uint32_t cyDst, uint32_t cbDstLine, uint32_t cDstBitsPerPixel));
+    DECLR3CALLBACKMEMBER(int, pfnCopyRect,(PPDMIDISPLAYPORT pInterface, uint32_t cx, uint32_t cy,
+        const uint8_t *pbSrc, int32_t xSrc, int32_t ySrc, uint32_t cxSrc, uint32_t cySrc, uint32_t cbSrcLine, uint32_t cSrcBitsPerPixel,
+        uint8_t       *pbDst, int32_t xDst, int32_t yDst, uint32_t cxDst, uint32_t cyDst, uint32_t cbDstLine, uint32_t cDstBitsPerPixel));
 
 } PDMIDISPLAYPORT;
 /** PDMIDISPLAYPORT interface ID. */
