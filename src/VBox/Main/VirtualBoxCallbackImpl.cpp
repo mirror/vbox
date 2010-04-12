@@ -137,12 +137,12 @@ STDMETHODIMP CallbackWrapper::OnSnapshotTaken(IN_BSTR aMachineId, IN_BSTR aSnaps
     return mVBoxCallback->OnSnapshotTaken(aMachineId, aSnapshotId);
 }
 
-STDMETHODIMP CallbackWrapper::OnSnapshotDiscarded(IN_BSTR aMachineId, IN_BSTR aSnapshotId)
+STDMETHODIMP CallbackWrapper::OnSnapshotDeleted(IN_BSTR aMachineId, IN_BSTR aSnapshotId)
 {
     if (mVBoxCallback.isNull())
         return S_OK;
 
-    return mVBoxCallback->OnSnapshotDiscarded(aMachineId, aSnapshotId);
+    return mVBoxCallback->OnSnapshotDeleted(aMachineId, aSnapshotId);
 }
 
 STDMETHODIMP CallbackWrapper::OnSnapshotChange(IN_BSTR aMachineId, IN_BSTR aSnapshotId)

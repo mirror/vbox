@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,10 +36,10 @@
 
 using namespace com;
 
-#if defined (VBOXSDL_WITH_X11)
+#if defined(VBOXSDL_WITH_X11)
 # include <X11/Xlib.h>
 # include <X11/cursorfont.h>      /* for XC_left_ptr */
-# if !defined (VBOX_WITHOUT_XCURSOR)
+# if !defined(VBOX_WITHOUT_XCURSOR)
 #  include <X11/Xcursor/Xcursor.h>
 # endif
 # include <unistd.h>
@@ -102,10 +102,10 @@ using namespace com;
 /** Pointer shape change event data strucure */
 struct PointerShapeChangeData
 {
-    PointerShapeChangeData (BOOL aVisible, BOOL aAlpha, ULONG aXHot, ULONG aYHot,
-                            ULONG aWidth, ULONG aHeight, const uint8_t *aShape)
-        : visible (aVisible), alpha (aAlpha), xHot (aXHot), yHot (aYHot),
-          width (aWidth), height (aHeight), shape (NULL)
+    PointerShapeChangeData(BOOL aVisible, BOOL aAlpha, ULONG aXHot, ULONG aYHot,
+                           ULONG aWidth, ULONG aHeight, const uint8_t *aShape)
+        : visible(aVisible), alpha(aAlpha), xHot(aXHot), yHot(aYHot),
+          width(aWidth), height(aHeight), shape(NULL)
     {
         // make a copy of the shape
         if (aShape)
@@ -113,7 +113,7 @@ struct PointerShapeChangeData
             uint32_t shapeSize = ((((aWidth + 7) / 8) * aHeight + 3) & ~3) + aWidth * 4 * aHeight;
             shape = new uint8_t [shapeSize];
             if (shape)
-                memcpy ((void *) shape, (void *) aShape, shapeSize);
+                memcpy((void *)shape, (void *)aShape, shapeSize);
         }
     }
 
@@ -165,16 +165,9 @@ static VBoxSDLFB * getFbFromWinId(SDL_WindowID id);
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-#if defined (DEBUG_dmik)
-// my mini kbd doesn't have RCTRL...
-static int gHostKeyMod  = KMOD_RSHIFT;
-static int gHostKeySym1 = SDLK_RSHIFT;
-static int gHostKeySym2 = SDLK_UNKNOWN;
-#else
 static int gHostKeyMod  = KMOD_RCTRL;
 static int gHostKeySym1 = SDLK_RCTRL;
 static int gHostKeySym2 = SDLK_UNKNOWN;
-#endif
 static const char *gHostKeyDisabledCombinations = "";
 static const char *gpszPidFile;
 static BOOL gfGrabbed = FALSE;
@@ -251,7 +244,7 @@ class VBoxSDLCallback :
 public:
     VBoxSDLCallback()
     {
-#if defined (RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS)
         refcnt = 0;
 #endif
     }
@@ -330,9 +323,9 @@ public:
     STDMETHOD(OnMediumRegistered)(IN_BSTR mediaId, DeviceType_T mediaType,
                                   BOOL registered)
     {
-        NOREF (mediaId);
-        NOREF (mediaType);
-        NOREF (registered);
+        NOREF(mediaId);
+        NOREF(mediaType);
+        NOREF(registered);
         return S_OK;
     }
 
@@ -346,17 +339,17 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnSnapshotTaken) (IN_BSTR aMachineId, IN_BSTR aSnapshotId)
+    STDMETHOD(OnSnapshotTaken)(IN_BSTR aMachineId, IN_BSTR aSnapshotId)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnSnapshotDiscarded) (IN_BSTR aMachineId, IN_BSTR aSnapshotId)
+    STDMETHOD(OnSnapshotDeleted)(IN_BSTR aMachineId, IN_BSTR aSnapshotId)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnSnapshotChange) (IN_BSTR aMachineId, IN_BSTR aSnapshotId)
+    STDMETHOD(OnSnapshotChange)(IN_BSTR aMachineId, IN_BSTR aSnapshotId)
     {
         return S_OK;
     }
@@ -382,7 +375,7 @@ class VBoxSDLConsoleCallback :
 public:
     VBoxSDLConsoleCallback() : m_fIgnorePowerOffEvents(false)
     {
-#if defined (RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS)
         refcnt = 0;
 #endif
     }
@@ -408,13 +401,13 @@ public:
 
     NS_DECL_ISUPPORTS
 
-    STDMETHOD(OnMousePointerShapeChange) (BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
-                                          ULONG width, ULONG height, BYTE *shape)
+    STDMETHOD(OnMousePointerShapeChange)(BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
+                                         ULONG width, ULONG height, BYTE *shape)
     {
         PointerShapeChangeData *data;
-        data = new PointerShapeChangeData (visible, alpha, xHot, yHot, width, height,
-                                           shape);
-        Assert (data);
+        data = new PointerShapeChangeData(visible, alpha, xHot, yHot, width, height,
+                                          shape);
+        Assert(data);
         if (!data)
             return E_FAIL;
 
@@ -423,7 +416,7 @@ public:
         event.user.type  = SDL_USER_EVENT_POINTER_CHANGE;
         event.user.data1 = data;
 
-        int rc = PushSDLEventForSure (&event);
+        int rc = PushSDLEventForSure(&event);
         if (rc)
             delete data;
 
@@ -442,7 +435,7 @@ public:
         event.type      = SDL_USEREVENT;
         event.user.type = SDL_USER_EVENT_GUEST_CAP_CHANGED;
 
-        PushSDLEventForSure (&event);
+        PushSDLEventForSure(&event);
         return S_OK;
     }
 
@@ -497,17 +490,17 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnNetworkAdapterChange) (INetworkAdapter *aNetworkAdapter)
+    STDMETHOD(OnNetworkAdapterChange)(INetworkAdapter *aNetworkAdapter)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnSerialPortChange) (ISerialPort *aSerialPort)
+    STDMETHOD(OnSerialPortChange)(ISerialPort *aSerialPort)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnParallelPortChange) (IParallelPort *aParallelPort)
+    STDMETHOD(OnParallelPortChange)(IParallelPort *aParallelPort)
     {
         return S_OK;
     }
@@ -527,18 +520,18 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnUSBDeviceStateChange) (IUSBDevice *aDevice, BOOL aAttached,
-                                      IVirtualBoxErrorInfo *aError)
+    STDMETHOD(OnUSBDeviceStateChange)(IUSBDevice *aDevice, BOOL aAttached,
+                                     IVirtualBoxErrorInfo *aError)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnSharedFolderChange) (Scope_T aScope)
+    STDMETHOD(OnSharedFolderChange)(Scope_T aScope)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnStorageControllerChange) ()
+    STDMETHOD(OnStorageControllerChange)()
     {
         return S_OK;
     }
@@ -585,17 +578,17 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnShowWindow) (ULONG64 *winId)
+    STDMETHOD(OnShowWindow)(ULONG64 *winId)
     {
 #ifndef RT_OS_DARWIN
         SDL_SysWMinfo info;
         SDL_VERSION(&info.version);
         if (SDL_GetWMInfo(&info))
         {
-#if defined (VBOXSDL_WITH_X11)
-            *winId = (ULONG64) info.info.x11.wmwindow;
-#elif defined (RT_OS_WINDOWS)
-            *winId = (ULONG64) info.window;
+#if defined(VBOXSDL_WITH_X11)
+            *winId = (ULONG64)info.info.x11.wmwindow;
+#elif defined(RT_OS_WINDOWS)
+            *winId = (ULONG64)info.window;
 #else
             AssertFailed();
             return E_FAIL;
@@ -1527,12 +1520,12 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             {
                 ComPtr<IStorageController> storageCtl;
                 com::SafeIfaceArray<IStorageController> aStorageControllers;
-                CHECK_ERROR (gMachine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(aStorageControllers)));
+                CHECK_ERROR(gMachine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(aStorageControllers)));
                 for (size_t i = 0; i < aStorageControllers.size(); ++ i)
                 {
                     StorageBus_T storageBus = StorageBus_Null;
 
-                    CHECK_ERROR (aStorageControllers[i], COMGETTER(Bus)(&storageBus));
+                    CHECK_ERROR(aStorageControllers[i], COMGETTER(Bus)(&storageBus));
                     if (storageBus == StorageBus_IDE)
                     {
                         storageCtl = aStorageControllers[i];
@@ -1542,13 +1535,13 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
                 if (storageCtl)
                 {
-                    CHECK_ERROR (storageCtl, COMGETTER(Name)(storageCtlName.asOutParam()));
+                    CHECK_ERROR(storageCtl, COMGETTER(Name)(storageCtlName.asOutParam()));
                     gMachine->DetachDevice(storageCtlName, 0, 0);
                 }
                 else
                 {
                     storageCtlName = "IDE Controller";
-                    CHECK_ERROR (gMachine, AddStorageController(storageCtlName,
+                    CHECK_ERROR(gMachine, AddStorageController(storageCtlName,
                                                                 StorageBus_IDE,
                                                                 storageCtl.asOutParam()));
                 }
@@ -1609,12 +1602,12 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             ComPtr<IStorageController> storageCtl;
             com::SafeIfaceArray<IStorageController> aStorageControllers;
-            CHECK_ERROR (gMachine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(aStorageControllers)));
+            CHECK_ERROR(gMachine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(aStorageControllers)));
             for (size_t i = 0; i < aStorageControllers.size(); ++ i)
             {
                 StorageBus_T storageBus = StorageBus_Null;
 
-                CHECK_ERROR (aStorageControllers[i], COMGETTER(Bus)(&storageBus));
+                CHECK_ERROR(aStorageControllers[i], COMGETTER(Bus)(&storageBus));
                 if (storageBus == StorageBus_Floppy)
                 {
                     storageCtl = aStorageControllers[i];
@@ -1626,24 +1619,24 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             {
                 ComPtr<IMediumAttachment> floppyAttachment;
 
-                CHECK_ERROR (storageCtl, COMGETTER(Name)(storageCtlName.asOutParam()));
+                CHECK_ERROR(storageCtl, COMGETTER(Name)(storageCtlName.asOutParam()));
                 rc = gMachine->GetMediumAttachment(storageCtlName, 0, 0, floppyAttachment.asOutParam());
                 if (FAILED(rc))
-                    CHECK_ERROR (gMachine, AttachDevice(storageCtlName, 0, 0,
-                                                        DeviceType_Floppy, NULL));
+                    CHECK_ERROR(gMachine, AttachDevice(storageCtlName, 0, 0,
+                                                       DeviceType_Floppy, NULL));
             }
             else
             {
                 storageCtlName = "Floppy Controller";
-                CHECK_ERROR (gMachine, AddStorageController(storageCtlName,
-                                                            StorageBus_Floppy,
-                                                            storageCtl.asOutParam()));
-                CHECK_ERROR (gMachine, AttachDevice(storageCtlName, 0, 0,
-                                                    DeviceType_Floppy, NULL));
+                CHECK_ERROR(gMachine, AddStorageController(storageCtlName,
+                                                           StorageBus_Floppy,
+                                                           storageCtl.asOutParam()));
+                CHECK_ERROR(gMachine, AttachDevice(storageCtlName, 0, 0,
+                                                   DeviceType_Floppy, NULL));
             }
         }
 
-        CHECK_ERROR (gMachine, MountMedium(storageCtlName, 0, 0, id, FALSE /* aForce */));
+        CHECK_ERROR(gMachine, MountMedium(storageCtlName, 0, 0, id, FALSE /* aForce */));
     }
     while (0);
     if (FAILED(rc))
@@ -1694,12 +1687,12 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             ComPtr<IStorageController> storageCtl;
             com::SafeIfaceArray<IStorageController> aStorageControllers;
-            CHECK_ERROR (gMachine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(aStorageControllers)));
+            CHECK_ERROR(gMachine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(aStorageControllers)));
             for (size_t i = 0; i < aStorageControllers.size(); ++ i)
             {
                 StorageBus_T storageBus = StorageBus_Null;
 
-                CHECK_ERROR (aStorageControllers[i], COMGETTER(Bus)(&storageBus));
+                CHECK_ERROR(aStorageControllers[i], COMGETTER(Bus)(&storageBus));
                 if (storageBus == StorageBus_IDE)
                 {
                     storageCtl = aStorageControllers[i];
@@ -1711,19 +1704,19 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             {
                 ComPtr<IMediumAttachment> dvdAttachment;
 
-                CHECK_ERROR (storageCtl, COMGETTER(Name)(storageCtlName.asOutParam()));
+                CHECK_ERROR(storageCtl, COMGETTER(Name)(storageCtlName.asOutParam()));
                 gMachine->DetachDevice(storageCtlName, 1, 0);
-                CHECK_ERROR (gMachine, AttachDevice(storageCtlName, 1, 0,
+                CHECK_ERROR(gMachine, AttachDevice(storageCtlName, 1, 0,
                                                     DeviceType_DVD, NULL));
             }
             else
             {
                 storageCtlName = "IDE Controller";
-                CHECK_ERROR (gMachine, AddStorageController(storageCtlName,
-                                                            StorageBus_IDE,
-                                                            storageCtl.asOutParam()));
-                CHECK_ERROR (gMachine, AttachDevice(storageCtlName, 1, 0,
-                                                    DeviceType_DVD, NULL));
+                CHECK_ERROR(gMachine, AddStorageController(storageCtlName,
+                                                           StorageBus_IDE,
+                                                           storageCtl.asOutParam()));
+                CHECK_ERROR(gMachine, AttachDevice(storageCtlName, 1, 0,
+                                                   DeviceType_DVD, NULL));
             }
         }
 
@@ -2067,9 +2060,9 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 #ifdef VBOXSDL_WITH_X11
     struct sigaction sa;
     sa.sa_sigaction = signal_handler_SIGUSR1;
-    sigemptyset (&sa.sa_mask);
+    sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART | SA_SIGINFO;
-    sigaction (SIGUSR1, &sa, NULL);
+    sigaction(SIGUSR1, &sa, NULL);
 #endif /* VBOXSDL_WITH_X11 */
 
     /*
@@ -2707,7 +2700,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
              */
             case SDL_USER_EVENT_POINTER_CHANGE:
             {
-                PointerShapeChangeData *data = (PointerShapeChangeData *) event.user.data1;
+                PointerShapeChangeData *data = (PointerShapeChangeData *)event.user.data1;
                 SetPointerShape (data);
                 delete data;
                 break;
@@ -2771,7 +2764,7 @@ leave:
         CHECK_ERROR_BREAK(progress, WaitForCompletion(-1));
         BOOL completed;
         CHECK_ERROR_BREAK(progress, COMGETTER(Completed)(&completed));
-        ASSERT (completed);
+        ASSERT(completed);
         LONG hrc;
         CHECK_ERROR_BREAK(progress, COMGETTER(ResultCode)(&hrc));
         if (FAILED(hrc))
@@ -2830,11 +2823,11 @@ leave:
         SDL_FreeCursor(gpCustomCursor);
         if (pCustomTempWMCursor)
         {
-# if defined (RT_OS_WINDOWS)
-            ::DestroyCursor(*(HCURSOR *) pCustomTempWMCursor);
-# elif defined (VBOXSDL_WITH_X11) && !defined (VBOX_WITHOUT_XCURSOR)
+# if defined(RT_OS_WINDOWS)
+            ::DestroyCursor(*(HCURSOR *)pCustomTempWMCursor);
+# elif defined(VBOXSDL_WITH_X11) && !defined(VBOX_WITHOUT_XCURSOR)
             if (gfXCursorEnabled)
-                XFreeCursor(gSdlInfo.info.x11.display, *(Cursor *) pCustomTempWMCursor);
+                XFreeCursor(gSdlInfo.info.x11.display, *(Cursor *)pCustomTempWMCursor);
 # endif /* VBOXSDL_WITH_X11 && !VBOX_WITHOUT_XCURSOR */
             free(pCustomTempWMCursor);
         }
@@ -4019,7 +4012,7 @@ static void SendMouseEvent(VBoxSDLFB *fb, int dz, int down, int button)
                 gpOffCursor       = SDL_GetCursor();    /* Cursor image */
                 gfOffCursorActive = SDL_ShowCursor(-1); /* enabled / disabled */
                 SDL_SetCursor(gpDefaultCursor);
-                SDL_ShowCursor (SDL_ENABLE);
+                SDL_ShowCursor(SDL_ENABLE);
             }
         }
         else
@@ -4395,25 +4388,25 @@ static void vbox_show_shape (unsigned short w, unsigned short h,
     pitch = (w + 7) / 8;
     size_mask = (pitch * h + 3) & ~3;
 
-    color = (const uint32_t *) (image + size_mask);
+    color = (const uint32_t *)(image + size_mask);
 
-    printf ("show_shape %dx%d pitch %d size mask %d\n",
-            w, h, pitch, size_mask);
+    printf("show_shape %dx%d pitch %d size mask %d\n",
+           w, h, pitch, size_mask);
     for (y = 0; y < h; ++y, mask += pitch, color += w)
     {
         for (x = 0; x < w; ++x) {
             if (mask[x / 8] & (1 << (7 - (x % 8))))
-                printf (" ");
+                printf(" ");
             else
             {
                 uint32_t c = color[x];
                 if (c == bg)
-                    printf ("Y");
+                    printf("Y");
                 else
-                    printf ("X");
+                    printf("X");
             }
         }
-        printf ("\n");
+        printf("\n");
     }
 }
 #endif
@@ -4422,7 +4415,7 @@ static void vbox_show_shape (unsigned short w, unsigned short h,
  *  Sets the pointer shape according to parameters.
  *  Must be called only from the main SDL thread.
  */
-static void SetPointerShape (const PointerShapeChangeData *data)
+static void SetPointerShape(const PointerShapeChangeData *data)
 {
     /*
      * don't allow to change the pointer shape if we are outside the valid
@@ -4460,17 +4453,17 @@ static void SetPointerShape (const PointerShapeChangeData *data)
         printf("};\n");
 #endif
 
-#if defined (RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS)
 
         BITMAPV5HEADER bi;
         HBITMAP hBitmap;
         void *lpBits;
         HCURSOR hAlphaCursor = NULL;
 
-        ::ZeroMemory (&bi, sizeof (BITMAPV5HEADER));
-        bi.bV5Size = sizeof (BITMAPV5HEADER);
+        ::ZeroMemory(&bi, sizeof(BITMAPV5HEADER));
+        bi.bV5Size = sizeof(BITMAPV5HEADER);
         bi.bV5Width = data->width;
-        bi.bV5Height = - (LONG) data->height;
+        bi.bV5Height = -(LONG)data->height;
         bi.bV5Planes = 1;
         bi.bV5BitCount = 32;
         bi.bV5Compression = BI_BITFIELDS;
@@ -4483,19 +4476,19 @@ static void SetPointerShape (const PointerShapeChangeData *data)
         else
             bi.bV5AlphaMask = 0;
 
-        HDC hdc = ::GetDC (NULL);
+        HDC hdc = ::GetDC(NULL);
 
         // create the DIB section with an alpha channel
-        hBitmap = ::CreateDIBSection (hdc, (BITMAPINFO *) &bi, DIB_RGB_COLORS,
-                                      (void **) &lpBits, NULL, (DWORD) 0);
+        hBitmap = ::CreateDIBSection(hdc, (BITMAPINFO *)&bi, DIB_RGB_COLORS,
+                                     (void **)&lpBits, NULL, (DWORD)0);
 
-        ::ReleaseDC (NULL, hdc);
+        ::ReleaseDC(NULL, hdc);
 
         HBITMAP hMonoBitmap = NULL;
         if (data->alpha)
         {
             // create an empty mask bitmap
-            hMonoBitmap = ::CreateBitmap (data->width, data->height, 1, 1, NULL);
+            hMonoBitmap = ::CreateBitmap(data->width, data->height, 1, 1, NULL);
         }
         else
         {
@@ -4510,7 +4503,7 @@ static void SetPointerShape (const PointerShapeChangeData *data)
                 /* Original AND mask is not word aligned. */
 
                 /* Allocate memory for aligned AND mask. */
-                pu8AndMaskWordAligned = (uint8_t *)RTMemTmpAllocZ ((cbAndMaskScan + 1) * data->height);
+                pu8AndMaskWordAligned = (uint8_t *)RTMemTmpAllocZ((cbAndMaskScan + 1) * data->height);
 
                 Assert(pu8AndMaskWordAligned);
 
@@ -4532,7 +4525,7 @@ static void SetPointerShape (const PointerShapeChangeData *data)
                     unsigned i;
                     for (i = 0; i < data->height; i++)
                     {
-                        memcpy (dst, src, cbAndMaskScan);
+                        memcpy(dst, src, cbAndMaskScan);
 
                         dst[cbAndMaskScan - 1] &= u8LastBytesPaddingMask;
 
@@ -4543,24 +4536,24 @@ static void SetPointerShape (const PointerShapeChangeData *data)
             }
 
             // create the AND mask bitmap
-            hMonoBitmap = ::CreateBitmap (data->width, data->height, 1, 1,
-                                          pu8AndMaskWordAligned? pu8AndMaskWordAligned: srcAndMaskPtr);
+            hMonoBitmap = ::CreateBitmap(data->width, data->height, 1, 1,
+                                         pu8AndMaskWordAligned? pu8AndMaskWordAligned: srcAndMaskPtr);
 
             if (pu8AndMaskWordAligned)
             {
-                RTMemTmpFree (pu8AndMaskWordAligned);
+                RTMemTmpFree(pu8AndMaskWordAligned);
             }
         }
 
-        Assert (hBitmap);
-        Assert (hMonoBitmap);
+        Assert(hBitmap);
+        Assert(hMonoBitmap);
         if (hBitmap && hMonoBitmap)
         {
-            DWORD *dstShapePtr = (DWORD *) lpBits;
+            DWORD *dstShapePtr = (DWORD *)lpBits;
 
             for (uint32_t y = 0; y < data->height; y ++)
             {
-                memcpy (dstShapePtr, srcShapePtr, srcShapePtrScan);
+                memcpy(dstShapePtr, srcShapePtr, srcShapePtrScan);
                 srcShapePtr += srcShapePtrScan;
                 dstShapePtr += data->width;
             }
@@ -4572,8 +4565,8 @@ static void SetPointerShape (const PointerShapeChangeData *data)
             ii.hbmMask = hMonoBitmap;
             ii.hbmColor = hBitmap;
 
-            hAlphaCursor = ::CreateIconIndirect (&ii);
-            Assert (hAlphaCursor);
+            hAlphaCursor = ::CreateIconIndirect(&ii);
+            Assert(hAlphaCursor);
             if (hAlphaCursor)
             {
                 // here we do a dirty trick by substituting a Window Manager's
@@ -4582,17 +4575,17 @@ static void SetPointerShape (const PointerShapeChangeData *data)
                 WMcursor *pCustomTempWMCursor = gpCustomCursor->wm_cursor;
 
                 // see SDL12/src/video/wincommon/SDL_sysmouse.c
-                void *wm_cursor = malloc (sizeof (HCURSOR) + sizeof (uint8_t *) * 2);
-                *(HCURSOR *) wm_cursor = hAlphaCursor;
+                void *wm_cursor = malloc(sizeof(HCURSOR) + sizeof(uint8_t *) * 2);
+                *(HCURSOR *)wm_cursor = hAlphaCursor;
 
-                gpCustomCursor->wm_cursor = (WMcursor *) wm_cursor;
-                SDL_SetCursor (gpCustomCursor);
-                SDL_ShowCursor (SDL_ENABLE);
+                gpCustomCursor->wm_cursor = (WMcursor *)wm_cursor;
+                SDL_SetCursor(gpCustomCursor);
+                SDL_ShowCursor(SDL_ENABLE);
 
                 if (pCustomTempWMCursor)
                 {
-                    ::DestroyCursor (* (HCURSOR *) pCustomTempWMCursor);
-                    free (pCustomTempWMCursor);
+                    ::DestroyCursor(*(HCURSOR *)pCustomTempWMCursor);
+                    free(pCustomTempWMCursor);
                 }
 
                 ok = true;
@@ -4600,16 +4593,16 @@ static void SetPointerShape (const PointerShapeChangeData *data)
         }
 
         if (hMonoBitmap)
-            ::DeleteObject (hMonoBitmap);
+            ::DeleteObject(hMonoBitmap);
         if (hBitmap)
-            ::DeleteObject (hBitmap);
+            ::DeleteObject(hBitmap);
 
-#elif defined (VBOXSDL_WITH_X11) && !defined (VBOX_WITHOUT_XCURSOR)
+#elif defined(VBOXSDL_WITH_X11) && !defined(VBOX_WITHOUT_XCURSOR)
 
         if (gfXCursorEnabled)
         {
-            XcursorImage *img = XcursorImageCreate (data->width, data->height);
-            Assert (img);
+            XcursorImage *img = XcursorImageCreate(data->width, data->height);
+            Assert(img);
             if (img)
             {
                 img->xhot = data->xHot;
@@ -4619,7 +4612,7 @@ static void SetPointerShape (const PointerShapeChangeData *data)
 
                 for (uint32_t y = 0; y < data->height; y ++)
                 {
-                    memcpy (dstShapePtr, srcShapePtr, srcShapePtrScan);
+                    memcpy(dstShapePtr, srcShapePtr, srcShapePtrScan);
 
                     if (!data->alpha)
                     {
@@ -4653,8 +4646,8 @@ static void SetPointerShape (const PointerShapeChangeData *data)
                 }
 
 #ifndef VBOX_WITH_SDL13
-                Cursor cur = XcursorImageLoadCursor (gSdlInfo.info.x11.display, img);
-                Assert (cur);
+                Cursor cur = XcursorImageLoadCursor(gSdlInfo.info.x11.display, img);
+                Assert(cur);
                 if (cur)
                 {
                     // here we do a dirty trick by substituting a Window Manager's
@@ -4663,41 +4656,41 @@ static void SetPointerShape (const PointerShapeChangeData *data)
                     WMcursor *pCustomTempWMCursor = gpCustomCursor->wm_cursor;
 
                     // see SDL12/src/video/x11/SDL_x11mouse.c
-                    void *wm_cursor = malloc (sizeof (Cursor));
-                    *(Cursor *) wm_cursor = cur;
+                    void *wm_cursor = malloc(sizeof(Cursor));
+                    *(Cursor *)wm_cursor = cur;
 
-                    gpCustomCursor->wm_cursor = (WMcursor *) wm_cursor;
-                    SDL_SetCursor (gpCustomCursor);
-                    SDL_ShowCursor (SDL_ENABLE);
+                    gpCustomCursor->wm_cursor = (WMcursor *)wm_cursor;
+                    SDL_SetCursor(gpCustomCursor);
+                    SDL_ShowCursor(SDL_ENABLE);
 
                     if (pCustomTempWMCursor)
                     {
-                        XFreeCursor (gSdlInfo.info.x11.display, *(Cursor *) pCustomTempWMCursor);
-                        free (pCustomTempWMCursor);
+                        XFreeCursor(gSdlInfo.info.x11.display, *(Cursor *)pCustomTempWMCursor);
+                        free(pCustomTempWMCursor);
                     }
 
                     ok = true;
                 }
 #endif
             }
-            XcursorImageDestroy (img);
+            XcursorImageDestroy(img);
         }
 
 #endif /* VBOXSDL_WITH_X11 && !VBOX_WITHOUT_XCURSOR */
 
         if (!ok)
         {
-            SDL_SetCursor (gpDefaultCursor);
-            SDL_ShowCursor (SDL_ENABLE);
+            SDL_SetCursor(gpDefaultCursor);
+            SDL_ShowCursor(SDL_ENABLE);
         }
     }
     else
     {
         if (data->visible)
-            SDL_ShowCursor (SDL_ENABLE);
+            SDL_ShowCursor(SDL_ENABLE);
         else if (gfAbsoluteMouseGuest)
             /* Don't disable the cursor if the guest additions are not active (anymore) */
-            SDL_ShowCursor (SDL_DISABLE);
+            SDL_ShowCursor(SDL_DISABLE);
     }
 }
 
@@ -4710,7 +4703,7 @@ static void HandleGuestCapsChanged(void)
     {
         // Cursor could be overwritten by the guest tools
         SDL_SetCursor(gpDefaultCursor);
-        SDL_ShowCursor (SDL_ENABLE);
+        SDL_ShowCursor(SDL_ENABLE);
         gpOffCursor = NULL;
     }
     if (gMouse && UseAbsoluteMouse())
@@ -4996,7 +4989,7 @@ static int WaitSDLEvent(SDL_Event *event)
 {
     for (;;)
     {
-        int rc = SDL_PollEvent (event);
+        int rc = SDL_PollEvent(event);
         if (rc == 1)
         {
 #ifdef USE_XPCOM_QUEUE_THREAD

@@ -567,8 +567,8 @@
       </pre>
 
       The next two diagrams demonstrate the process of taking a snapshot of a
-      powered off virtual machine and performing one of the "discard..."
-      operations, respectively.
+      powered off virtual machine, restoring the state to that as of a snapshot
+      or deleting a snapshot, respectively.
 
       <pre>
     +----------------------------------(same state as before the call)------+
@@ -1248,7 +1248,7 @@
 
   <interface
      name="IVirtualBoxCallback" extends="$unknown"
-     uuid="9a65adf2-3ee6-406b-bca2-2b1fa05f0d0b"
+     uuid="7f6a65b6-ad5d-4a67-8872-0b11cb7ea95c"
      wsmap="suppress"
      >
 
@@ -1416,9 +1416,9 @@
       </param>
     </method>
 
-    <method name="onSnapshotDiscarded">
+    <method name="onSnapshotDeleted">
       <desc>
-        Snapshot of the given machine has been discarded.
+        Snapshot of the given machine has been deleted.
 
         <note>
           This notification is delivered <b>after</b> the snapshot
@@ -1433,8 +1433,8 @@
       </param>
       <param name="snapshotId" type="uuid" mod="string" dir="in">
         <desc>
-          ID of the discarded snapshot. @c null means the current machine
-          state has been discarded (restored from the current snapshot).
+          ID of the deleted snapshot. @c null means the current machine
+          state has been deleted (restored from the current snapshot).
         </desc>
       </param>
     </method>
@@ -3972,7 +3972,7 @@
         <desc>The console object that initiated this call.</desc>
       </param>
       <param name="id" type="uuid" mod="string" dir="in">
-        <desc>UUID of the snapshot to discard.</desc>
+        <desc>UUID of the snapshot to delete.</desc>
       </param>
       <param name="machineState" type="MachineState" dir="out">
         <desc>New machine state after this operation is started.</desc>
@@ -4594,8 +4594,8 @@
         happens:
         <ul>
           <li>settings of the machine are changed</li>
-          <li>the saved state is discarded</li>
-          <li>the current snapshot is discarded</li>
+          <li>the saved state is deleted</li>
+          <li>the current snapshot is deleted</li>
           <li>an attempt to execute the machine is made</li>
         </ul>
 
@@ -7133,7 +7133,7 @@
         the snapshot will be deleted. The contents of all differencing media of
         this snapshot will be merged with the contents of their dependent child
         media to keep the medium chain valid (in other words, all changes
-        represented by media being discarded will be propagated to their child
+        represented by media being deleted will be propagated to their child
         medium). After that, this snapshot's differencing medium will be
         deleted. The parent of this snapshot will become a new parent for all
         its child snapshots.
@@ -7141,7 +7141,7 @@
         If the deleted snapshot is the current one, its parent snapshot will
         become a new current snapshot. The current machine state is not directly
         affected in this case, except that currently attached differencing
-        media based on media of the discarded snapshot will be also merged as
+        media based on media of the deleted snapshot will be also merged as
         described above.
 
         If the deleted snapshot is the first or current snapshot, then the
@@ -7152,11 +7152,11 @@
         Deleting a snapshot has the following preconditions:
 
         <ul>
-          <li>Child media of all normal media of the discarded snapshot
+          <li>Child media of all normal media of the deleted snapshot
             must be accessible (see <link to="IMedium::state"/>) for this
             operation to succeed.  In particular, this means that all virtual
             machines, whose media are directly or indirectly based on the
-            media of discarded snapshot, must be powered off.</li>
+            media of deleted snapshot, must be powered off.</li>
 
           <li>You cannot delete the snapshot if a medium attached to it has
           more than once child medium (differencing images) because otherwise
@@ -7173,7 +7173,7 @@
         <note>
           Merging medium contents can be very time and disk space
           consuming, if these media are big in size and have many
-          children. However, if the snapshot being discarded is the last
+          children. However, if the snapshot being deleted is the last
           (head) snapshot on the branch, the operation will be rather
           quick.
         </note>
@@ -7182,7 +7182,7 @@
         </result>
       </desc>
       <param name="id" type="uuid" mod="string" dir="in">
-        <desc>UUID of the snapshot to discard.</desc>
+        <desc>UUID of the snapshot to delete.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
@@ -7212,7 +7212,7 @@
         <note>
           If the machine state is <link to="MachineState_Saved">Saved</link>
           prior to this operation, the saved state file will be implicitly
-          discarded (as if <link to="IConsole::forgetSavedState"/> were
+          deleted (as if <link to="IConsole::forgetSavedState"/> were
           called).
         </note>
 
@@ -8871,7 +8871,7 @@
       <link to="IMachine::currentSnapshot"/>. Presently, this is always set
       to the last snapshot in the chain. In a future version of VirtualBox,
       it will be possible to reset a machine's current state to that of an
-      earlier snapshot without discarding the current state so that it will be
+      earlier snapshot without deleting the current state so that it will be
       possible to create alternative snapshot paths in a snapshot tree.
 
       In the current implementation, multiple snapshot branches within one

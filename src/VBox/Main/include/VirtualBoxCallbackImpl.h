@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 Sun Microsystems, Inc.
+ * Copyright (C) 2009-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -55,7 +55,7 @@ public:
 
     // public initializers/uninitializers only for internal purposes
     HRESULT init();
-    void uninit (bool aFinalRelease);
+    void uninit(bool aFinalRelease);
 
     // ILocalOwner methods
     STDMETHOD(SetLocalObject)(IUnknown *aLocalObject);
@@ -66,13 +66,13 @@ public:
     STDMETHOD(OnExtraDataCanChange)(IN_BSTR machineId, IN_BSTR key, IN_BSTR value,
                                     BSTR *error, BOOL *changeAllowed);
     STDMETHOD(OnExtraDataChange)(IN_BSTR machineId, IN_BSTR key, IN_BSTR value);
-    STDMETHOD(OnMediumRegistered) (IN_BSTR mediaId, DeviceType_T mediaType,
-                                   BOOL registered);
+    STDMETHOD(OnMediumRegistered)(IN_BSTR mediaId, DeviceType_T mediaType,
+                                  BOOL registered);
     STDMETHOD(OnMachineRegistered)(IN_BSTR machineId, BOOL registered);
     STDMETHOD(OnSessionStateChange)(IN_BSTR machineId, SessionState_T state);
-    STDMETHOD(OnSnapshotTaken) (IN_BSTR aMachineId, IN_BSTR aSnapshotId);
-    STDMETHOD(OnSnapshotDiscarded) (IN_BSTR aMachineId, IN_BSTR aSnapshotId);
-    STDMETHOD(OnSnapshotChange) (IN_BSTR aMachineId, IN_BSTR aSnapshotId);
+    STDMETHOD(OnSnapshotTaken)(IN_BSTR aMachineId, IN_BSTR aSnapshotId);
+    STDMETHOD(OnSnapshotDeleted)(IN_BSTR aMachineId, IN_BSTR aSnapshotId);
+    STDMETHOD(OnSnapshotChange)(IN_BSTR aMachineId, IN_BSTR aSnapshotId);
     STDMETHOD(OnGuestPropertyChange)(IN_BSTR machineId, IN_BSTR key, IN_BSTR value, IN_BSTR flags);
 
     // IConsoleCallback
@@ -82,21 +82,21 @@ public:
     STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock);
     STDMETHOD(OnStateChange)(MachineState_T machineState);
     STDMETHOD(OnAdditionsStateChange)();
-    STDMETHOD(OnNetworkAdapterChange) (INetworkAdapter *aNetworkAdapter);
-    STDMETHOD(OnSerialPortChange) (ISerialPort *aSerialPort);
-    STDMETHOD(OnParallelPortChange) (IParallelPort *aParallelPort);
+    STDMETHOD(OnNetworkAdapterChange)(INetworkAdapter *aNetworkAdapter);
+    STDMETHOD(OnSerialPortChange)(ISerialPort *aSerialPort);
+    STDMETHOD(OnParallelPortChange)(IParallelPort *aParallelPort);
     STDMETHOD(OnVRDPServerChange)();
     STDMETHOD(OnRemoteDisplayInfoChange)();
     STDMETHOD(OnUSBControllerChange)();
-    STDMETHOD(OnUSBDeviceStateChange) (IUSBDevice *aDevice, BOOL aAttached,
+    STDMETHOD(OnUSBDeviceStateChange)(IUSBDevice *aDevice, BOOL aAttached,
                                        IVirtualBoxErrorInfo *aError);
-    STDMETHOD(OnSharedFolderChange) (Scope_T aScope);
-    STDMETHOD(OnStorageControllerChange) ();
+    STDMETHOD(OnSharedFolderChange)(Scope_T aScope);
+    STDMETHOD(OnStorageControllerChange)();
     STDMETHOD(OnMediumChange)(IMediumAttachment *iMediumAttachment);
     STDMETHOD(OnCPUChange)(ULONG aCPU, BOOL aRemove);
     STDMETHOD(OnRuntimeError)(BOOL fFatal, IN_BSTR id, IN_BSTR message);
     STDMETHOD(OnCanShowWindow)(BOOL *canShow);
-    STDMETHOD(OnShowWindow) (ULONG64 *winId);
+    STDMETHOD(OnShowWindow)(ULONG64 *winId);
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"CallbackWrapper"; }

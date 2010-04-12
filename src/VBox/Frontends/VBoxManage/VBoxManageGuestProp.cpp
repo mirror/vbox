@@ -143,8 +143,8 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnSnapshotDiscarded)(IN_BSTR aMachineId,
-                                   IN_BSTR aSnapshotId)
+    STDMETHOD(OnSnapshotDeleted)(IN_BSTR aMachineId,
+                                 IN_BSTR aSnapshotId)
     {
         return S_OK;
     }

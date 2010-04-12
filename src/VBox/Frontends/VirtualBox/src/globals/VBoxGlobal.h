@@ -102,7 +102,7 @@ class VBoxSnapshotEvent : public QEvent
 {
 public:
 
-    enum What { Taken, Discarded, Changed };
+    enum What { Taken, Deleted, Changed };
 
     VBoxSnapshotEvent (const QString &aMachineId, const QString &aSnapshotId,
                        What aWhat)

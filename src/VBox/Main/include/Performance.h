@@ -355,8 +355,8 @@ namespace pm
         SubMetric *mTotal;
         SubMetric *mUsed;
         SubMetric *mAvailable;
-        SubMetric *mAllocVMM; 
-        SubMetric *mFreeVMM; 
+        SubMetric *mAllocVMM;
+        SubMetric *mFreeVMM;
         SubMetric *mBalloonVMM;
     };
 
