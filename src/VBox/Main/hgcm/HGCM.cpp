@@ -1900,7 +1900,8 @@ int HGCMHostLoad (const char *pszServiceLibrary,
  *
  * @param pHandle            Returned handle for the registered extension.
  * @param pszServiceName     The name of the service.
- * @param pfnExtension       The extension callback.
+ * @param pfnExtension       The extension entry point (callback).
+ * @param pvExtension        The extension pointer.
  * @return VBox rc.
  */
 int HGCMHostRegisterServiceExtension (HGCMSVCEXTHANDLE *pHandle,
