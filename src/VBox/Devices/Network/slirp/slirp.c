@@ -55,22 +55,19 @@
 
 # define DO_POLL_EVENTS(rc, error, so, events, label) do {} while (0)
 
-#if 0/** @todo This doesn't work because linux sets both POLLHUP and POLLERR when the
-socket is closed. @bugref{4811} Please verif the changed test. */
+/*
+ * DO_CHECK_FD_SET is used in dumping events on socket, including POLLNVAL. 
+ * gcc warns about attempts to log POLLNVAL so construction in a last to lines 
+ * used to catch POLLNVAL while logging and return false in case of error while 
+ * normal usage.
+ */
 #  define DO_CHECK_FD_SET(so, events, fdset)                        \
       (   ((so)->so_poll_index != -1)                               \
        && ((so)->so_poll_index <= ndfs)                             \
        && ((so)->s == polls[so->so_poll_index].fd)                  \
        && (polls[(so)->so_poll_index].revents & N_(fdset ## _poll)) \
-       && !(polls[(so)->so_poll_index].revents & (POLLERR|POLLNVAL)))
-#else
-#  define DO_CHECK_FD_SET(so, events, fdset)                        \
-      (   ((so)->so_poll_index != -1)                               \
-       && ((so)->so_poll_index <= ndfs)                             \
-       && ((so)->s == polls[so->so_poll_index].fd)                  \
-       && (polls[(so)->so_poll_index].revents & N_(fdset ## _poll)) \
-       && !(polls[(so)->so_poll_index].revents & POLLNVAL))
-#endif
+       && (   N_(fdset ## _poll) == POLLNVAL                        \
+           || !(polls[(so)->so_poll_index].revents & POLLNVAL)))
 
   /* specific for Unix API */
 # define DO_UNIX_CHECK_FD_SET(so, events, fdset) DO_CHECK_FD_SET((so), (events), fdset)
