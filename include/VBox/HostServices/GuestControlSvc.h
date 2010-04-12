@@ -67,6 +67,16 @@ enum
 };
 
 /**
+ * Process status when executed in the guest.
+ */
+enum eProcessStatus
+{
+    PROC_STATUS_STARTED = 1,
+
+    PROC_STATUS_TERMINATED = 2
+};
+
+/**
  * The service functions which are callable by host.
  */
 enum eHostFn
@@ -177,6 +187,20 @@ typedef struct _VBoxGuestCtrlHGCMMsgExecCmd
     HGCMFunctionParameter timeout;
 
 } VBoxGuestCtrlHGCMMsgExecCmd;
+
+typedef struct _VBoxGuestCtrlHGCMMsgExecStatus
+{
+    VBoxGuestHGCMCallInfo hdr;
+
+    HGCMFunctionParameter pid;
+
+    HGCMFunctionParameter status;
+
+    HGCMFunctionParameter flags;
+
+    HGCMFunctionParameter data;
+
+} VBoxGuestCtrlHGCMMsgExecStatus;
 #pragma pack ()
 
 /* Structure for buffering execution requests in the host service. */

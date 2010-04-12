@@ -513,7 +513,7 @@ VBGLR3DECL(int)     VbglR3HostVersionLastCheckedStore(uint32_t u32ClientId, cons
 VBGLR3DECL(int)     VbglR3GuestCtrlConnect(uint32_t *pu32ClientId);
 VBGLR3DECL(int)     VbglR3GuestCtrlDisconnect(uint32_t u32ClientId);
 VBGLR3DECL(int)     VbglR3GuestCtrlGetHostMsg(uint32_t u32ClientId, uint32_t *puMsg, uint32_t *puNumParms);
-VBGLR3DECL(int)     VbglR3GuestCtrlGetHostCmdExec(uint32_t u32ClientId, uint32_t uNumParms,
+VBGLR3DECL(int)     VbglR3GuestCtrlExecGetHostCmd(uint32_t u32ClientId, uint32_t uNumParms,
                                                   char    *pszCmd,      uint32_t cbCmd,
                                                   uint32_t *puFlags,
                                                   char *pszArgs,        uint32_t cbArgs,  uint32_t *puNumArgs,
@@ -524,6 +524,12 @@ VBGLR3DECL(int)     VbglR3GuestCtrlGetHostCmdExec(uint32_t u32ClientId, uint32_t
                                                   char *pszUser,        uint32_t cbUser,
                                                   char *pszPassword,    uint32_t cbPassword,
                                                   uint32_t *puTimeLimit);
+VBGLR3DECL(int)     VbglR3GuestCtrlExecReportStatus(uint32_t  u32ClientId, 
+                                                    uint32_t  u32PID,
+                                                    uint32_t  u32Status,
+                                                    uint32_t  u32Flags,
+                                                    void     *pvData,
+                                                    uint32_t  cbData);
 /** @}  */
 # endif /* VBOX_WITH_GUEST_CONTROL defined */
 
