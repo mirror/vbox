@@ -258,9 +258,9 @@ static void	mb_zfini_pack(PNATState, void *, int);
 static void	mb_reclaim(void *);
 #ifndef VBOX
 static void	mbuf_init(void *);
-#endif
 static void    *mbuf_jumbo_alloc(uma_zone_t, int, u_int8_t *, int);
 static void	mbuf_jumbo_free(void *, int, u_int8_t);
+#endif
 
 #ifndef VBOX
 static MALLOC_DEFINE(M_JUMBOFRAME, "jumboframes", "mbuf jumbo frame buffers");
@@ -420,6 +420,7 @@ mbuf_init(void *dummy)
 	mbstat.sf_allocwait = mbstat.sf_allocfail = 0;
 }
 
+#ifndef VBOX
 /*
  * UMA backend page allocator for the jumbo frame zones.
  *
@@ -427,17 +428,13 @@ mbuf_init(void *dummy)
  * pages.
  */
 static void *
-mbuf_jumbo_alloc(uma_zone_t zone, int bytes, u_int8_t *flags, int wait)
+mbuf_jumbo_alloc(uma_zone_t zone, int bytes, u_int8_t *flags, int fWait)
 {
 
-#ifndef VBOX
 	/* Inform UMA that this allocator uses kernel_map/object. */
 	*flags = UMA_SLAB_KERNEL;
-	return (contigmalloc(bytes, M_JUMBOFRAME, wait, (vm_paddr_t)0,
+	return (contigmalloc(bytes, M_JUMBOFRAME, fWait, (vm_paddr_t)0,
 	    ~(vm_paddr_t)0, 1, 0));
-#else
-        return RTMemAlloc(bytes);
-#endif
 }
 
 /*
@@ -447,12 +444,9 @@ static void
 mbuf_jumbo_free(void *mem, int size, u_int8_t flags)
 {
 
-#ifndef VBOX
 	contigfree(mem, size, M_JUMBOFRAME);
-#else
-        RTMemFree(mem);
-#endif
 }
+#endif
 
 /*
  * Constructor for Mbuf master zone.
