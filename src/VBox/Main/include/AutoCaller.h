@@ -140,6 +140,12 @@ public:
         {
             if (mObj && SUCCEEDED(mRC))
                 release();
+            else if (!mObj)
+            {
+                /* Fix up the success state when nothing is attached. Otherwise
+                 * there are a couple of assertion which would trigger. */
+                mRC = E_FAIL;
+            }
             mObj = aObj;
             add();
         }

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -112,7 +112,7 @@ public:
     /**
      * Returns @c true if the given machine state is a transient state. This is
      * a recommended way to detect if the VM is performing some potentially
-     * lengthy operation (such as starting, stopping, saving, discarding
+     * lengthy operation (such as starting, stopping, saving, deleting
      * snapshot, etc.). Note some (but not all) transitional states are also
      * online states (see #IsOnline()).
      */

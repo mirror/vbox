@@ -1024,7 +1024,7 @@ HRESULT Console::loadDataFromSavedState()
 
     if (RT_FAILURE(vrc))
         rc = setError(VBOX_E_FILE_ERROR,
-            tr("The saved state file '%ls' is invalid (%Rrc). Discard the saved state and try again"),
+            tr("The saved state file '%ls' is invalid (%Rrc). Delete the saved state and try again"),
             savedStateFile.raw(), vrc);
 
     mSavedStateDataLoaded = true;
@@ -2296,7 +2296,7 @@ STDMETHODIMP Console::ForgetSavedState(BOOL aRemove)
 
     if (mMachineState != MachineState_Saved)
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot discard the machine state as the machine is not in the saved state (machine state: %s)"),
+            tr("Cannot delete the machine state as the machine is not in the saved state (machine state: %s)"),
             Global::stringifyMachineState(mMachineState));
 
     HRESULT rc = S_OK;
@@ -2842,7 +2842,7 @@ STDMETHODIMP Console::DeleteSnapshot(IN_BSTR aId, IProgress **aProgress)
 
     if (Global::IsOnlineOrTransient(mMachineState))
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot discard a snapshot of the running machine (machine state: %s)"),
+            tr("Cannot delete a snapshot of the running machine (machine state: %s)"),
             Global::stringifyMachineState(mMachineState));
 
     MachineState_T machineState = MachineState_Null;
@@ -2862,7 +2862,7 @@ STDMETHODIMP Console::RestoreSnapshot(ISnapshot *aSnapshot, IProgress **aProgres
 
     if (Global::IsOnlineOrTransient(mMachineState))
         return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Cannot discard the current state of the running machine (machine state: %s)"),
+                        tr("Cannot delete the current state of the running machine (machine state: %s)"),
                         Global::stringifyMachineState(mMachineState));
 
     MachineState_T machineState = MachineState_Null;
@@ -5001,7 +5001,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         int vrc = SSMR3ValidateFile(Utf8Str(savedStateFile).c_str(), false /* fChecksumIt */);
         if (RT_FAILURE(vrc))
             return setError(VBOX_E_FILE_ERROR,
-                            tr("VM cannot start because the saved state file '%ls' is invalid (%Rrc). Discard the saved state prior to starting the VM"),
+                            tr("VM cannot start because the saved state file '%ls' is invalid (%Rrc). Delete the saved state prior to starting the VM"),
                             savedStateFile.raw(), vrc);
     }
 
