@@ -115,6 +115,10 @@ protected:
     struct Data;
     Data *m;
 
+private:
+    // prohibit copying (Data contains pointers to XML which cannot be copied)
+    ConfigFileBase(const ConfigFileBase&);
+
     friend class ConfigFileError;
 };
 
