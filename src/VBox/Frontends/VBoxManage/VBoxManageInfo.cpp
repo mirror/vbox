@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1845,12 +1845,15 @@ static const RTGETOPTDEF g_aShowVMInfoOptions[] =
     { "-details",           'D', RTGETOPT_REQ_NOTHING },    // deprecated
     { "--machinereadable",  'M', RTGETOPT_REQ_NOTHING },
     { "-machinereadable",   'M', RTGETOPT_REQ_NOTHING },    // deprecated
+    { "--log",              'l', RTGETOPT_REQ_UINT32 },
 };
 
 int handleShowVMInfo(HandlerArg *a)
 {
     HRESULT rc;
     const char *VMNameOrUuid = NULL;
+    bool fLog = false;
+    uint32_t uLogIdx;
     bool fDetails = false;
     bool fMachinereadable = false;
 
@@ -1870,6 +1873,11 @@ int handleShowVMInfo(HandlerArg *a)
 
             case 'M':   // --machinereadable
                 fMachinereadable = true;
+                break;
+
+            case 'l':   // --log
+                fLog = true;
+                uLogIdx = ValueUnion.u32;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -1916,32 +1924,71 @@ int handleShowVMInfo(HandlerArg *a)
     if (FAILED (rc))
         return 1;
 
-    /* 2nd option can be -details or -argdump */
-    VMINFO_DETAILS details = VMINFO_NONE;
-    if (fMachinereadable)
-        details = VMINFO_MACHINEREADABLE;
+    /* Printing the log is exclusive. */
+    if (fLog && (fMachinereadable || fDetails))
+        return errorSyntax(USAGE_SHOWVMINFO, "Option --log is exclusive");
+
+    if (fLog)
+    {
+        ULONG64 uOffset = 0;
+        Bstr uuid;
+        SafeArray<BYTE> aLogData;
+        ULONG cbLogData;
+        while (true)
+        {
+            CHECK_ERROR_BREAK(machine, ReadLog(uLogIdx, uOffset, _1M,
+                                               ComSafeArrayAsOutParam(aLogData)));
+            cbLogData = aLogData.size();
+            if (cbLogData == 0)
+                break;
+            /* aLogData has a platform dependent line ending, standardize on
+             * Unix style, as RTStrmWrite does the LF -> CR/LF replacement on
+             * Windows. Otherwise we end up with CR/CR/LF on Windows. */
+            ULONG cbLogDataPrint = cbLogData;
+            for (BYTE *s = aLogData.raw(), *d = s;
+                 s - aLogData.raw() < (ssize_t)cbLogData;
+                 s++, d++)
+            {
+                if (*s == '\r')
+                {
+                    /* skip over CR, adjust destination */
+                    d--;
+                    cbLogDataPrint--;
+                }
+                else if (s != d)
+                    *d = *s;
+            }
+            RTStrmWrite(g_pStdOut, aLogData.raw(), cbLogDataPrint);
+            uOffset += cbLogData;
+        }
+    }
     else
-    if (fDetails)
-        details = VMINFO_FULL;
-    else
-    if (fDetails)
-        details = VMINFO_STANDARD;
+    {
+        /* 2nd option can be -details or -argdump */
+        VMINFO_DETAILS details = VMINFO_NONE;
+        if (fMachinereadable)
+            details = VMINFO_MACHINEREADABLE;
+        else if (fDetails)
+            details = VMINFO_FULL;
+        else
+            details = VMINFO_STANDARD;
 
-    ComPtr <IConsole> console;
+        ComPtr <IConsole> console;
 
-    /* open an existing session for the VM */
-    rc = a->virtualBox->OpenExistingSession (a->session, uuid);
-    if (SUCCEEDED(rc))
-        /* get the session machine */
-        rc = a->session->COMGETTER(Machine)(machine.asOutParam());
-    if (SUCCEEDED(rc))
-        /* get the session console */
-        rc = a->session->COMGETTER(Console)(console.asOutParam());
+        /* open an existing session for the VM */
+        rc = a->virtualBox->OpenExistingSession (a->session, uuid);
+        if (SUCCEEDED(rc))
+            /* get the session machine */
+            rc = a->session->COMGETTER(Machine)(machine.asOutParam());
+        if (SUCCEEDED(rc))
+            /* get the session console */
+            rc = a->session->COMGETTER(Console)(console.asOutParam());
 
-    rc = showVMInfo(a->virtualBox, machine, details, console);
+        rc = showVMInfo(a->virtualBox, machine, details, console);
 
-    if (console)
-        a->session->Close();
+        if (console)
+            a->session->Close();
+    }
 
     return SUCCEEDED (rc) ? 0 : 1;
 }
