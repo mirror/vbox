@@ -2548,7 +2548,7 @@ SUPR0DECL(int) SUPR0PageAllocEx(PSUPDRVSESSION pSession, uint32_t cPages, uint32
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
     if (cPages < 1 || cPages > VBOX_MAX_ALLOC_PAGE_COUNT)
     {
-        Log(("SUPR0PageAlloc: Illegal request cb=%u; must be greater than 0 and smaller than 128MB.\n", cPages));
+        Log(("SUPR0PageAlloc: Illegal request cb=%u; must be greater than 0 and smaller than %uMB (VBOX_MAX_ALLOC_PAGE_COUNT pages).\n", cPages, VBOX_MAX_ALLOC_PAGE_COUNT * (_1M / _4K)));
         return VERR_PAGE_COUNT_OUT_OF_RANGE;
     }
 

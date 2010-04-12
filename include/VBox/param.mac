@@ -1,6 +1,6 @@
 %ifndef ___VBox_param_h
 %define ___VBox_param_h
-%define VBOX_MAX_ALLOC_PAGE_COUNT   (128U * _1M / PAGE_SIZE)
+%define VBOX_MAX_ALLOC_PAGE_COUNT   (256U * _1M / PAGE_SIZE)
 %define MM_HYPER_AREA_ADDRESS       UINT32_C(0xa0000000)
 %define MM_HYPER_AREA_MAX_SIZE      (40U * _1M)
 %define MM_HYPER_DYNAMIC_SIZE       (16U * PAGE_SIZE)

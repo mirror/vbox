@@ -46,8 +46,8 @@
 #ifdef VBOX
 /** The default amount of VRAM. */
 # define VGA_VRAM_DEFAULT    (_4M)
-/** The maximum amount of VRAM. */
-# define VGA_VRAM_MAX        (128 * _1M)
+/** The maximum amount of VRAM. Limited by VBOX_MAX_ALLOC_PAGE_COUNT. */
+# define VGA_VRAM_MAX        (256 * _1M)
 /** The minimum amount of VRAM. */
 # define VGA_VRAM_MIN        (_1M)
 #endif
