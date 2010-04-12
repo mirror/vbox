@@ -6025,7 +6025,9 @@
       <param name="data" type="octet" dir="return" safearray="yes">
         <desc>
           Data read from the log file. A data size of 0 means end of file
-          if the requested chunk size was not 0.
+          if the requested chunk size was not 0. This is the unprocessed
+          file data, i.e. the line ending style depends on the platform of
+          the system the server is running on.
         </desc>
       </param>
     </method>
