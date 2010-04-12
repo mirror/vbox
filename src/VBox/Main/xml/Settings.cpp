@@ -525,6 +525,13 @@ void ConfigFileBase::readUSBDeviceFilters(const xml::ElementNode &elmDeviceFilte
     }
 }
 
+/**
+ * Adds a "version" attribute to the given XML element with the
+ * VirtualBox settings version (e.g. "1.10-linux"). Used by
+ * the XML format for the root element and by the OVF export
+ * for the vbox:Machine element.
+ * @param elm
+ */
 void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
 {
     const char *pcszVersion = NULL;
