@@ -31,7 +31,18 @@
 #ifdef VBOXVDMA_WITH_VBVA
 static int vboxWddmVdmaSubmitVbva(struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo, HGSMIOFFSET offDr)
 {
-    return vboxVbvaReportCmdOffset(pDevExt, &pDevExt->u.primary.Vbva, offDr);
+    int rc;
+    if (vboxVbvaBufferBeginUpdate (pDevExt, &pDevExt->u.primary.Vbva))
+    {
+        rc = vboxVbvaReportCmdOffset(pDevExt, &pDevExt->u.primary.Vbva, offDr);
+        vboxVbvaBufferEndUpdate (pDevExt, &pDevExt->u.primary.Vbva);
+    }
+    else
+    {
+        AssertBreakpoint();
+        rc = VERR_INVALID_STATE;
+    }
+    return rc;
 }
 #define vboxWddmVdmaSubmit vboxWddmVdmaSubmitVbva
 #else
