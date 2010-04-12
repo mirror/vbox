@@ -55,11 +55,12 @@ VBoxVMSettingsDisplay::VBoxVMSettingsDisplay()
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
     m_minVRAM = sys.GetMinGuestVRAM();
     m_maxVRAM = sys.GetMaxGuestVRAM();
+    m_maxVRAMVisible = m_maxVRAM;
     const uint MinMonitors = 1;
     const uint MaxMonitors = sys.GetMaxGuestMonitors();
 
     /* Setup validators */
-    mLeMemory->setValidator (new QIntValidator (m_minVRAM, m_maxVRAM, this));
+    mLeMemory->setValidator (new QIntValidator (m_minVRAM, m_maxVRAMVisible, this));
     mLeMonitors->setValidator (new QIntValidator (MinMonitors, MaxMonitors, this));
     mLeVRDPPort->setValidator (new QRegExpValidator (QRegExp ("(([0-9]{1,5}(\\-[0-9]{1,5}){0,1}),)*([0-9]{1,5}(\\-[0-9]{1,5}){0,1})"), this));
     mLeVRDPTimeout->setValidator (new QIntValidator (this));
@@ -71,7 +72,7 @@ VBoxVMSettingsDisplay::VBoxVMSettingsDisplay()
     connect (mLeMonitors, SIGNAL (textChanged (const QString&)), this, SLOT (textChangedMonitors (const QString&)));
 
     /* Setup initial values */
-    mSlMemory->setPageStep (calcPageStep (m_maxVRAM));
+    mSlMemory->setPageStep (calcPageStep (m_maxVRAMVisible));
     mSlMemory->setSingleStep (mSlMemory->pageStep() / 4);
     mSlMemory->setTickInterval (mSlMemory->pageStep());
     mSlMonitors->setPageStep (1);
@@ -79,12 +80,12 @@ VBoxVMSettingsDisplay::VBoxVMSettingsDisplay()
     mSlMonitors->setTickInterval (1);
     /* Setup the scale so that ticks are at page step boundaries */
     mSlMemory->setMinimum ((m_minVRAM / mSlMemory->pageStep()) * mSlMemory->pageStep());
-    mSlMemory->setMaximum (m_maxVRAM);
+    mSlMemory->setMaximum (m_maxVRAMVisible);
     mSlMemory->setSnappingEnabled (true);
     quint64 needMBytes = VBoxGlobal::requiredVideoMemory (&mMachine) / _1M;
     mSlMemory->setErrorHint (0, 1);
     mSlMemory->setWarningHint (1, needMBytes);
-    mSlMemory->setOptimalHint (needMBytes, m_maxVRAM);
+    mSlMemory->setOptimalHint (needMBytes, m_maxVRAMVisible);
     mSlMonitors->setMinimum (MinMonitors);
     mSlMonitors->setMaximum (MaxMonitors);
     mSlMonitors->setSnappingEnabled (true);
@@ -122,8 +123,14 @@ void VBoxVMSettingsDisplay::getFrom (const CMachine &aMachine)
 {
     mMachine = aMachine;
 
+    int currentSize = mMachine.GetVRAMSize();
+    m_initialVRAM = RT_MIN(currentSize, m_maxVRAM);
+
+    /* must come _before_ setting the initial memory value */
+    checkMultiMonitorReqs();
+
     /* Memory Size */
-    mSlMemory->setValue (mMachine.GetVRAMSize());
+    mSlMemory->setValue (currentSize);
 
     /* Monitors Count */
     mSlMonitors->setValue (mMachine.GetMonitorCount());
@@ -154,8 +161,6 @@ void VBoxVMSettingsDisplay::getFrom (const CMachine &aMachine)
         vboxProblem().cannotLoadMachineSettings (mMachine, false /* strict */);
         mTwDisplay->setTabEnabled (1, false);
     }
-
-    checkMultiMonitorReqs();
 }
 
 void VBoxVMSettingsDisplay::putBackTo()
@@ -261,8 +266,8 @@ void VBoxVMSettingsDisplay::retranslateUi()
     Ui::VBoxVMSettingsDisplay::retranslateUi (this);
 
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
-    mLbMemoryMin->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (sys.GetMinGuestVRAM()));
-    mLbMemoryMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (sys.GetMaxGuestVRAM()));
+    mLbMemoryMin->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (m_minVRAM));
+    mLbMemoryMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (m_maxVRAMVisible));
     mLbMonitorsMin->setText (tr ("<qt>%1</qt>").arg (1));
     mLbMonitorsMax->setText (tr ("<qt>%1</qt>").arg (sys.GetMaxGuestMonitors()));
 
@@ -315,7 +320,16 @@ void VBoxVMSettingsDisplay::checkMultiMonitorReqs()
 
     /* The memory requirements have changed too. */
     quint64 needMBytes = VBoxGlobal::requiredVideoMemory (&mMachine, cVal) / _1M;
+    /* Limit the maximum memory to save careless users from setting useless big values */
+    m_maxVRAMVisible = 128 + (cVal - 1) * 32;
+    if (m_maxVRAMVisible < m_initialVRAM)
+        m_maxVRAMVisible = m_initialVRAM;
     mSlMemory->setWarningHint (1, needMBytes);
-    mSlMemory->setOptimalHint (needMBytes, m_maxVRAM);
+    mSlMemory->setPageStep (calcPageStep (m_maxVRAMVisible));
+    mSlMemory->setMaximum (m_maxVRAMVisible);
+    mSlMemory->setOptimalHint (needMBytes, m_maxVRAMVisible);
+    mLeMemory->setValidator (new QIntValidator (m_minVRAM, m_maxVRAMVisible, this));
+    mLbMemoryMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (m_maxVRAMVisible));
+    /* ... or just call retranslateUi()? */
 }
 
