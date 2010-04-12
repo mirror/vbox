@@ -148,7 +148,7 @@ struct uma_zone
 
 
 static void *slirp_uma_alloc(uma_zone_t zone,
-    int size, uint8_t *pflags, int wait)
+    int size, uint8_t *pflags, int fWait)
 {
     struct item *it;
     uint8_t *sub_area;
