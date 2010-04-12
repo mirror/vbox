@@ -28,22 +28,62 @@
  * transport for DMA commands submission
  */
 
+#ifdef VBOXVDMA_WITH_VBVA
+static int vboxWddmVdmaSubmitVbva(struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo, HGSMIOFFSET offDr)
+{
+    return vboxVbvaReportCmdOffset(pDevExt, &pDevExt->u.primary.Vbva, offDr);
+}
+#define vboxWddmVdmaSubmit vboxWddmVdmaSubmitVbva
+#else
+static int vboxWddmVdmaSubmitHgsmi(struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo, HGSMIOFFSET offDr)
+{
+    VBoxHGSMIGuestWrite(pDevExt, offDr);
+    return VINF_SUCCESS;
+}
+#define vboxWddmVdmaSubmit vboxWddmVdmaSubmitHgsmi
+#endif
 
 static int vboxVdmaInformHost (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, VBOXVDMA_CTL_TYPE enmCtl)
 {
     int rc = VINF_SUCCESS;
 
-    PVBOXVDMA_CTL pCmd = (PVBOXVDMA_CTL)VBoxSHGSMICommandAlloc (&pDevExt->u.primary.hgsmiAdapterHeap, sizeof (VBOXVDMA_CTL), HGSMI_CH_VBVA, VBVA_VDMA_CTL);
+    PVBOXVDMA_CTL pCmd = (PVBOXVDMA_CTL)VBoxSHGSMICommandAlloc(&pDevExt->u.primary.hgsmiAdapterHeap, sizeof (VBOXVDMA_CTL), HGSMI_CH_VBVA, VBVA_VDMA_CTL);
     if (pCmd)
     {
         pCmd->enmCtl = enmCtl;
         pCmd->u32Offset = pInfo->CmdHeap.area.offBase;
         pCmd->i32Result = VERR_NOT_SUPPORTED;
 
-        VBoxSHGSMICommandSubmitSynch (&pDevExt->u.primary.hgsmiAdapterHeap, pCmd);
-
-        rc = pCmd->i32Result;
-        AssertRC(rc);
+        const VBOXSHGSMIHEADER* pHdr = VBoxSHGSMICommandPrepSynch(&pDevExt->u.primary.hgsmiAdapterHeap, pCmd);
+        Assert(pHdr);
+        if (pHdr)
+        {
+            do
+            {
+                HGSMIOFFSET offCmd = VBoxSHGSMICommandOffset(&pDevExt->u.primary.hgsmiAdapterHeap, pHdr);
+                Assert(offCmd != HGSMIOFFSET_VOID);
+                if (offCmd != HGSMIOFFSET_VOID)
+                {
+                    rc = vboxWddmVdmaSubmit(pDevExt, pInfo, offCmd);
+                    AssertRC(rc);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = VBoxSHGSMICommandDoneSynch(&pDevExt->u.primary.hgsmiAdapterHeap, pHdr);
+                        AssertRC(rc);
+                        if (RT_SUCCESS(rc))
+                        {
+                            rc = pCmd->i32Result;
+                            AssertRC(rc);
+                        }
+                        break;
+                    }
+                }
+                else
+                    rc = VERR_INVALID_PARAMETER;
+                /* fail to submit, cancel it */
+                VBoxSHGSMICommandCancelSynch(&pDevExt->u.primary.hgsmiAdapterHeap, pHdr);
+            } while (0);
+        }
 
         VBoxSHGSMICommandFree (&pDevExt->u.primary.hgsmiAdapterHeap, pCmd);
     }
@@ -247,7 +287,35 @@ static DECLCALLBACK(void) vboxVdmaCBufDrCompletionIrq(struct _HGSMIHEAP * pHeap,
     *ppvCompletion = pvContext;
 }
 
-void vboxVdmaCBufDrSubmit (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr)
+int vboxVdmaCBufDrSubmit(PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr)
 {
-    VBoxSHGSMICommandSubmitAsynchIrq (&pInfo->CmdHeap, pDr, vboxVdmaCBufDrCompletionIrq, pDevExt, VBOXSHGSMI_FLAG_GH_ASYNCH_FORCE);
+    const VBOXSHGSMIHEADER* pHdr = VBoxSHGSMICommandPrepAsynchIrq (&pInfo->CmdHeap, pDr, vboxVdmaCBufDrCompletionIrq, pDevExt, VBOXSHGSMI_FLAG_GH_ASYNCH_FORCE);
+    Assert(pHdr);
+    int rc = VERR_GENERAL_FAILURE;
+    if (pHdr)
+    {
+        do
+        {
+            HGSMIOFFSET offCmd = VBoxSHGSMICommandOffset(&pInfo->CmdHeap, pHdr);
+            Assert(offCmd != HGSMIOFFSET_VOID);
+            if (offCmd != HGSMIOFFSET_VOID)
+            {
+                rc = vboxWddmVdmaSubmit(pDevExt, pInfo, offCmd);
+                AssertRC(rc);
+                if (RT_SUCCESS(rc))
+                {
+                    VBoxSHGSMICommandDoneAsynch(&pInfo->CmdHeap, pHdr);
+                    AssertRC(rc);
+                    break;
+                }
+            }
+            else
+                rc = VERR_INVALID_PARAMETER;
+            /* fail to submit, cancel it */
+            VBoxSHGSMICommandCancelAsynch(&pInfo->CmdHeap, pHdr);
+        } while (0);
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+    return rc;
 }

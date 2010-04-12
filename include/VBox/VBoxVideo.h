@@ -103,8 +103,8 @@
 #else
 #define VBVA_ADAPTER_INFORMATION_SIZE  (16*_1K)
 #define VBVA_DISPLAY_INFORMATION_SIZE  (64*_1K)
-#define VBVA_MIN_BUFFER_SIZE           (64*_1K)
 #endif
+#define VBVA_MIN_BUFFER_SIZE           (64*_1K)
 #endif /* VBOX_WITH_HGSMI */
 
 
@@ -940,14 +940,26 @@ typedef struct VBVAINFOSCREEN
 #define VBVA_F_NONE    0x00000000
 #define VBVA_F_ENABLE  0x00000001
 #define VBVA_F_DISABLE 0x00000002
+#ifdef VBOXWDDM_WITH_VBVA
+/* extended VBVA to be used with WDDM */
+#define VBVA_F_EXTENDED 0x00000004
+#endif
 
 typedef struct _VBVAENABLE
 {
     uint32_t u32Flags;
     uint32_t u32Offset;
     int32_t  i32Result;
-
 } VBVAENABLE;
+
+#ifdef VBOXWDDM_WITH_VBVA
+typedef struct _VBVAENABLE_EX
+{
+    VBVAENABLE Base;
+    uint32_t u32ScreenId;
+} VBVAENABLE_EX;
+#endif
+
 
 typedef struct _VBVAMOUSEPOINTERSHAPE
 {
@@ -1043,7 +1055,7 @@ typedef struct VBOXSHGSMIHEADER
 /* guest expects this command to be completed synchronously */
 #define VBOXSHGSMI_FLAG_GH_SYNCH                0x00000040
 
-DECLINLINE(uint8_t *) VBoxSHGSMIBufferData (const PVBOXSHGSMIHEADER pHeader)
+DECLINLINE(uint8_t *) VBoxSHGSMIBufferData (const VBOXSHGSMIHEADER* pHeader)
 {
     return (uint8_t *)pHeader + sizeof (VBOXSHGSMIHEADER);
 }
@@ -1232,5 +1244,16 @@ typedef struct VBOXVDMACMD_DMA_BPB_FILL
 
 # pragma pack()
 #endif /* #ifdef VBOXVDMA */
+
+#ifdef VBOXVDMA_WITH_VBVA
+# pragma pack(1)
+
+typedef struct VBOXVDMAVBVACMD
+{
+    HGSMIOFFSET offCmd;
+} VBOXVDMAVBVACMD;
+
+#pragma pack()
+#endif
 
 #endif

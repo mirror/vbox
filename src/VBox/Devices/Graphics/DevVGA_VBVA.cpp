@@ -1510,7 +1510,25 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
                 break;
             }
 
-            unsigned uScreenId = vbvaViewFromOffset (pIns, pCtx, pvBuffer);
+            VBVAENABLE *pEnable = (VBVAENABLE *)pvBuffer;
+            unsigned uScreenId;
+#ifdef VBOXWDDM_WITH_VBVA
+            if (pEnable->u32Flags & VBVA_F_EXTENDED)
+            {
+                if (cbBuffer < sizeof (VBVAENABLE_EX))
+                {
+                    rc = VERR_INVALID_PARAMETER;
+                    break;
+                }
+
+                VBVAENABLE_EX *pEnableEx = (VBVAENABLE_EX *)pvBuffer;
+                uScreenId = pEnableEx->u32ScreenId;
+            }
+            else
+#endif
+            {
+                uScreenId = vbvaViewFromOffset (pIns, pCtx, pvBuffer);
+            }
 
             if (uScreenId == ~0U)
             {
@@ -1518,7 +1536,6 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
                 break;
             }
 
-            VBVAENABLE *pEnable = (VBVAENABLE *)pvBuffer;
             LogFlowFunc(("VBVA_ENABLE[%d]: u32Flags 0x%x u32Offset 0x%x\n",
                          uScreenId, pEnable->u32Flags, pEnable->u32Offset));
 

@@ -116,10 +116,14 @@ typedef PEVENT VBOXVCMNEVENT, *PVBOXVCMNEVENT;
 typedef struct _DEVICE_EXTENSION * VBOXCMNREG;
 #else
 #include <VBox/VBoxVideo.h>
+#include "wddm/VBoxVideoWddm.h"
 #include "wddm/VBoxVideoShgsmi.h"
 #include "wddm/VBoxVideoVdma.h"
 #include "wddm/VBoxVideoVidPn.h"
-#include "wddm/VBoxVideoWddm.h"
+#ifdef VBOXWDDM_WITH_VBVA
+# include "wddm/VBoxVideoVbva.h"
+#endif
+
 
 typedef KSPIN_LOCK VBOXVCMNSPIN_LOCK, *PVBOXVCMNSPIN_LOCK;
 typedef KIRQL VBOXVCMNIRQL, *PVBOXVCMNIRQL;
@@ -147,7 +151,13 @@ typedef struct VBOXWDDM_POINTER_INFO
 
 typedef struct VBOXWDDM_SOURCE
 {
-    struct VBOXWDDM_ALLOCATION * pAllocation;
+    struct VBOXWDDM_ALLOCATION * pPrimaryAllocation;
+#ifdef VBOXWDDM_RENDER_FROM_SHADOW
+    struct VBOXWDDM_ALLOCATION * pShadowAllocation;
+    VBOXVIDEOOFFSET offVram;
+    VBOXWDDM_SURFACE_DESC SurfInfo;
+    VBOXVBVAINFO Vbva;
+#endif
     VBOXWDDM_POINTER_INFO PointerInfo;
 } VBOXWDDM_SOURCE, *PVBOXWDDM_SOURCE;
 
@@ -198,6 +208,9 @@ typedef struct _DEVICE_EXTENSION
                                                 */
 #ifdef VBOXWDDM
            VBOXVDMAINFO Vdma;
+# ifdef VBOXVDMA_WITH_VBVA
+           VBOXVBVAINFO Vbva;
+# endif
 #endif
 
 #ifdef VBOX_WITH_HGSMI
@@ -608,11 +621,21 @@ UINT vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format);
 
 DECLINLINE(ULONG) vboxWddmVramCpuVisibleSize(PDEVICE_EXTENSION pDevExt)
 {
+#ifdef VBOXWDDM_RENDER_FROM_SHADOW
+    /* all memory layout info should be initialized */
+    Assert(pDevExt->aSources[0].Vbva.offVBVA);
+    /* page aligned */
+    Assert(!(pDevExt->aSources[0].Vbva.offVBVA & 0xfff));
+
+    return (ULONG)(pDevExt->aSources[0].Vbva.offVBVA & ~0xfffULL);
+#else
     /* all memory layout info should be initialized */
     Assert(pDevExt->u.primary.Vdma.CmdHeap.area.offBase);
     /* page aligned */
     Assert(!(pDevExt->u.primary.Vdma.CmdHeap.area.offBase & 0xfff));
+
     return pDevExt->u.primary.Vdma.CmdHeap.area.offBase & ~0xfffUL;
+#endif
 }
 
 DECLINLINE(ULONG) vboxWddmVramCpuVisibleSegmentSize(PDEVICE_EXTENSION pDevExt)
@@ -620,21 +643,69 @@ DECLINLINE(ULONG) vboxWddmVramCpuVisibleSegmentSize(PDEVICE_EXTENSION pDevExt)
     return vboxWddmVramCpuVisibleSize(pDevExt);
 }
 
-#ifdef VBOXWDDM_WITH_FAKE_SEGMENT
+#ifdef VBOXWDDM_RENDER_FROM_SHADOW
 DECLINLINE(ULONG) vboxWddmVramCpuInvisibleSegmentSize(PDEVICE_EXTENSION pDevExt)
 {
     return vboxWddmVramCpuVisibleSegmentSize(pDevExt);
+}
+
+DECLINLINE(bool) vboxWddmCmpSurfDescs(VBOXWDDM_SURFACE_DESC *pDesc1, VBOXWDDM_SURFACE_DESC *pDesc2)
+{
+    if (pDesc1->width != pDesc2->width)
+        return false;
+    if (pDesc1->height != pDesc2->height)
+        return false;
+    if (pDesc1->format != pDesc2->format)
+        return false;
+    if (pDesc1->bpp != pDesc2->bpp)
+        return false;
+    if (pDesc1->pitch != pDesc2->pitch)
+        return false;
+    return true;
+}
+
+DECLINLINE(void) vboxWddmAssignShadow(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource, PVBOXWDDM_ALLOCATION pAllocation, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
+{
+    if (pSource->pShadowAllocation == pAllocation)
+        return;
+
+    if (pSource->pShadowAllocation)
+    {
+        PVBOXWDDM_ALLOCATION pOldAlloc = pSource->pShadowAllocation;
+        PVBOXWDDM_ALLOCATION_SHADOWSURFACE pOldShadowInfo = VBOXWDDM_ALLOCATION_BODY(pOldAlloc, VBOXWDDM_ALLOCATION_SHADOWSURFACE);
+        /* clear the visibility info fo the current primary */
+        pOldShadowInfo->bVisible = FALSE;
+        pOldShadowInfo->bAssigned = FALSE;
+        Assert(pOldShadowInfo->VidPnSourceId == srcId);
+        /* release the shadow surface */
+        pOldShadowInfo->VidPnSourceId = D3DDDI_ID_UNINITIALIZED;
+    }
+
+    if (pAllocation)
+    {
+        PVBOXWDDM_ALLOCATION_SHADOWSURFACE pShadowInfo = VBOXWDDM_ALLOCATION_BODY(pAllocation, VBOXWDDM_ALLOCATION_SHADOWSURFACE);
+        pShadowInfo->bVisible = FALSE;
+        /* this check ensures the shadow is not used for other source simultaneously */
+        Assert(pShadowInfo->VidPnSourceId == D3DDDI_ID_UNINITIALIZED);
+        pShadowInfo->VidPnSourceId = srcId;
+        pShadowInfo->bAssigned = TRUE;
+        if (!vboxWddmCmpSurfDescs(&pSource->SurfInfo, &pAllocation->u.SurfInfo))
+            pSource->offVram = VBOXVIDEOOFFSET_VOID; /* force guest->host notification */
+        pSource->SurfInfo = pAllocation->u.SurfInfo;
+    }
+
+    pSource->pShadowAllocation = pAllocation;
 }
 #endif
 
 DECLINLINE(VOID) vboxWddmAssignPrimary(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource, PVBOXWDDM_ALLOCATION pAllocation, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
 {
-    if (pSource->pAllocation == pAllocation)
+    if (pSource->pPrimaryAllocation == pAllocation)
         return;
 
-    if (pSource->pAllocation)
+    if (pSource->pPrimaryAllocation)
     {
-        PVBOXWDDM_ALLOCATION pOldAlloc = pSource->pAllocation;
+        PVBOXWDDM_ALLOCATION pOldAlloc = pSource->pPrimaryAllocation;
         PVBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE pOldPrimaryInfo = VBOXWDDM_ALLOCATION_BODY(pOldAlloc, VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE);
         /* clear the visibility info fo the current primary */
         pOldPrimaryInfo->bVisible = FALSE;
@@ -651,7 +722,7 @@ DECLINLINE(VOID) vboxWddmAssignPrimary(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOUR
         pPrimaryInfo->bAssigned = TRUE;
     }
 
-    pSource->pAllocation = pAllocation;
+    pSource->pPrimaryAllocation = pAllocation;
 }
 
 #endif
