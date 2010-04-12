@@ -5,7 +5,8 @@
 
 /*
  * Copyright (C) 2006-2007 Sun Microsystems, Inc.
- * Copyright (C) 2009 Ivo Smits <Ivo@UFO-Net.nl>
+ *
+ * Contributed by Ivo Smits <Ivo@UFO-Net.nl>
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;

@@ -2,13 +2,13 @@
 /** @file
  * VBoxHeadless - VNC server implementation for VirtualBox.
  *
- * Based on LibVNCServer (http://sourceforge.net/projects/libvncserver/) and
- * the VirtualBox FFMPEG framebuffer.
+ * Uses LibVNCServer (http://sourceforge.net/projects/libvncserver/)
  */
 
 /*
  * Copyright (C) 2006-2007 Sun Microsystems, Inc.
- * Copyright (C) 2010 Ivo Smits <Ivo@UFO-Net.nl>
+ *
+ * Contributed by Ivo Smits <Ivo@UFO-Net.nl>
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
