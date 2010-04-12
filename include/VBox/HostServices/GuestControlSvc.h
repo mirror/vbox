@@ -50,6 +50,23 @@ namespace guestControl {
 ******************************************************************************/
 
 /**
+ * Data structure to pass to the service extension callback.  We use this to
+ * notify the host of changes to properties.
+ */
+typedef struct _HOSTCALLBACKDATA
+{
+    /** Magic number to identify the structure */
+    uint32_t u32Magic;
+    
+} HOSTCALLBACKDATA, *PHOSTCALLBACKDATA;
+
+enum
+{
+    /** Magic number for sanity checking the HOSTCALLBACKDATA structure */
+    HOSTCALLBACKMAGIC = 0x26011982
+};
+
+/**
  * The service functions which are callable by host.
  */
 enum eHostFn

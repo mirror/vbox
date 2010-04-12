@@ -106,11 +106,10 @@ public:
 private:
 
 # ifdef VBOX_WITH_GUEST_CONTROL
-    int prepareExecuteArgs(const char *pszArgs, void **ppvList,
-                           uint32_t *pcbList, uint32_t *pcArgs);
-
-    int prepareExecuteEnv(const char *pszEnv, void **ppvList,
-                          uint32_t *pcbList, uint32_t *pcEnv);
+    int prepareExecuteArgs(const char *pszArgs, void **ppvList, uint32_t *pcbList, uint32_t *pcArgs);
+    int prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);
+    /** Static callback for handling guest notifications. */
+    static DECLCALLBACK(int) doGuestCtrlNotification(void *pvExtension, uint32_t u32Function, void *pvParms, uint32_t cbParms);
 # endif
 
     struct Data
@@ -131,6 +130,7 @@ private:
 
     Console *mParent;
     Data mData;
+    bool mSignalled;
 };
 
 #endif // ____H_GUESTIMPL
