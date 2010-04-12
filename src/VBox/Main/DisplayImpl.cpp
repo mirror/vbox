@@ -2379,11 +2379,49 @@ STDMETHODIMP Display::TakeScreenShotToArray (ULONG aScreenId, ULONG width, ULONG
 }
 
 #ifdef VBOX_WITH_OLD_VBVA_LOCK
-int Display::DrawToScreenEMT(Display *pDisplay, BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height)
+int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height)
 {
     int rc;
     pDisplay->vbvaLock();
-    rc = pDisplay->mpDrv->pUpPort->pfnDisplayBlt(pDisplay->mpDrv->pUpPort, address, x, y, width, height);
+    if (aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+    {
+        rc = pDisplay->mpDrv->pUpPort->pfnDisplayBlt(pDisplay->mpDrv->pUpPort, address, x, y, width, height);
+    }
+    else if (aScreenId < pDisplay->mcMonitors)
+    {
+        DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[aScreenId];
+
+        const uint8_t *pu8Src       = address;
+        int32_t xSrc                = 0;
+        int32_t ySrc                = 0;
+        uint32_t u32SrcWidth        = width;
+        uint32_t u32SrcHeight       = height;
+        uint32_t u32SrcLineSize     = width * 4;
+        uint32_t u32SrcBitsPerPixel = 32;
+
+        uint8_t *pu8Dst             = pFBInfo->pu8FramebufferVRAM;
+        int32_t xDst                = x;
+        int32_t yDst                = y;
+        uint32_t u32DstWidth        = pFBInfo->w;
+        uint32_t u32DstHeight       = pFBInfo->h;
+        uint32_t u32DstLineSize     = pFBInfo->u32LineSize;
+        uint32_t u32DstBitsPerPixel = pFBInfo->u16BitsPerPixel;
+
+        rc = pDisplay->mpDrv->pUpPort->pfnCopyRect(pDisplay->mpDrv->pUpPort,
+                                                   width, height,
+                                                   pu8Src,
+                                                   xSrc, ySrc,
+                                                   u32SrcWidth, u32SrcHeight,
+                                                   u32SrcLineSize, u32SrcBitsPerPixel,
+                                                   pu8Dst,
+                                                   xDst, yDst,
+                                                   u32DstWidth, u32DstHeight,
+                                                   u32DstLineSize, u32DstBitsPerPixel);
+    }
+    else
+    {
+        rc = VERR_INVALID_PARAMETER;
+    }
     pDisplay->vbvaUnlock();
     return rc;
 }
@@ -2421,8 +2459,8 @@ STDMETHODIMP Display::DrawToScreen (ULONG aScreenId, BYTE *address, ULONG x, ULO
      * dirty conversion work.
      */
 #ifdef VBOX_WITH_OLD_VBVA_LOCK
-    int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)Display::DrawToScreenEMT, 6,
-                                 this, address, x, y, width, height);
+    int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)Display::drawToScreenEMT, 7,
+                                 this, aScreenId, address, x, y, width, height);
 #else
     int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)mpDrv->pUpPort->pfnDisplayBlt, 6,
                                  mpDrv->pUpPort, address, x, y, width, height);
@@ -3285,12 +3323,35 @@ DECLCALLBACK(void) Display::displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInte
                 HRESULT hrc = pFBInfo->pFramebuffer->COMGETTER(Address) (&address);
                 if (SUCCEEDED(hrc) && address != NULL)
                 {
-                    pDrv->pUpPort->pfnUpdateDisplayRectEx (pDrv->pUpPort,
-                                                           pCmd->x - pFBInfo->xOrigin, pCmd->y - pFBInfo->yOrigin, pCmd->w, pCmd->h,
-                                                           pFBInfo->pu8FramebufferVRAM, pFBInfo->w, pFBInfo->h,
-                                                           pFBInfo->u32LineSize, pFBInfo->u16BitsPerPixel,
-                                                           address, pFBInfo->w, pFBInfo->h,
-                                                           pFBInfo->w * 4, 32);
+                    uint32_t width              = pCmd->w;
+                    uint32_t height             = pCmd->h;
+
+                    const uint8_t *pu8Src       = pFBInfo->pu8FramebufferVRAM;
+                    int32_t xSrc                = pCmd->x - pFBInfo->xOrigin;
+                    int32_t ySrc                = pCmd->y - pFBInfo->yOrigin;
+                    uint32_t u32SrcWidth        = pFBInfo->w;
+                    uint32_t u32SrcHeight       = pFBInfo->h;
+                    uint32_t u32SrcLineSize     = pFBInfo->u32LineSize;
+                    uint32_t u32SrcBitsPerPixel = pFBInfo->u16BitsPerPixel;
+
+                    uint8_t *pu8Dst             = address;
+                    int32_t xDst                = xSrc;
+                    int32_t yDst                = ySrc;
+                    uint32_t u32DstWidth        = u32SrcWidth;
+                    uint32_t u32DstHeight       = u32SrcHeight;
+                    uint32_t u32DstLineSize     = u32DstWidth * 4;
+                    uint32_t u32DstBitsPerPixel = 32;
+
+                    pDrv->pUpPort->pfnCopyRect(pDrv->pUpPort,
+                                               width, height,
+                                               pu8Src,
+                                               xSrc, ySrc,
+                                               u32SrcWidth, u32SrcHeight,
+                                               u32SrcLineSize, u32SrcBitsPerPixel,
+                                               pu8Dst,
+                                               xDst, yDst,
+                                               u32DstWidth, u32DstHeight,
+                                               u32DstLineSize, u32DstBitsPerPixel);
                 }
             }
             pThis->handleDisplayUpdate (pCmd->x + pFBInfo->xOrigin,

@@ -353,7 +353,7 @@ public:
 
 private:
     static void InvalidateAndUpdateEMT(Display *pDisplay);
-    static int DrawToScreenEMT(Display *pDisplay, BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height);
+    static int drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height);
 
     int videoAccelRefreshProcess(void);
 
