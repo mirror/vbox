@@ -1348,7 +1348,7 @@ VBOXGLXTAG(glXCreatePixmap)(Display *dpy, GLXFBConfig config, Pixmap pixmap, con
     pVis = VBOXGLXTAG(glXGetVisualFromFBConfig)(dpy, config);
     if (!pVis)
     {
-        crWarning("Unknown config 0x%x in glXCreatePixmap", (unsigned int) config);
+        crWarning("Unknown config %p in glXCreatePixmap", config);
         return 0;
     }
 
@@ -1501,7 +1501,7 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetFBConfigAttrib)(Display *dpy, GLXFBConfig confi
     pVisual =  VBOXGLXTAG(glXGetVisualFromFBConfig)(dpy, config);
     if (!pVisual)
     {
-        crWarning("glXGetFBConfigAttrib for 0x%x, failed to get XVisualInfo", (int)config);
+        crWarning("glXGetFBConfigAttrib for %p, failed to get XVisualInfo", config);
         return GLX_BAD_ATTRIBUTE;
     }
     //crDebug("glXGetFBConfigAttrib 0x%x for 0x%x, visualid=0x%x, depth=%i", attribute, (int)config, (int)pVisual->visualid, pVisual->depth);
@@ -1651,7 +1651,7 @@ DECLEXPORT(GLXFBConfig *) VBOXGLXTAG(glXGetFBConfigs)(Display *dpy, int screen, 
     crDebug("glXGetFBConfigs returned %i configs", *nelements);
     for (i=0; i<*nelements; ++i)
     {
-        crDebug("glXGetFBConfigs[%i]=0x%x", i, (unsigned int) pGLXFBConfigs[i]);
+        crDebug("glXGetFBConfigs[%i]=%p", i, pGLXFBConfigs[i]);
     }
     return pGLXFBConfigs;
 }
@@ -1713,12 +1713,12 @@ DECLEXPORT(XVisualInfo *) VBOXGLXTAG(glXGetVisualFromFBConfig)(Display *dpy, GLX
         temp.visualid = (VisualID)config;
         pret = XGetVisualInfo(dpy, VisualIDMask, &temp, &nret);
         
-        if (nret!=1) crWarning("XGetVisualInfo returned %i visuals for %x", nret, (unsigned int) config);
+        if (nret!=1) crWarning("XGetVisualInfo returned %i visuals for %p", nret, config);
         //crDebug("glXGetVisualFromFBConfig(cfg/visid==0x%x): depth=%i", (int) config, pret->depth);
         return pret;
     }
 
-    crDebug("glXGetVisualFromFBConfig unknown fbconfig 0x%x", (int) config);
+    crDebug("glXGetVisualFromFBConfig unknown fbconfig %p", config);
     return NULL;
 }
 
