@@ -67,6 +67,10 @@ typedef int socklen_t;
 # define ENETUNREACH WSAENETUNREACH
 # define ECONNREFUSED WSAECONNREFUSED
 
+typedef uint8_t u_int8_t;
+typedef uint16_t u_int16_t;
+typedef uint32_t u_int32_t;
+
 #else /* !RT_OS_WINDOWS */
 
 # define ioctlsocket ioctl
