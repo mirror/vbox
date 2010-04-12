@@ -274,7 +274,7 @@ void crServerPresentFBO(CRMuralInfo *mural)
 {
     char *pixels, *tmppixels, *pSrc, *pDst;
     GLuint uid;
-    int i, j, rowsize, rowstride, height;
+    int i, j, realrowsize, rowsize, rowstride, height;
     CRrecti rect;
     CRContext *ctx = crStateGetCurrent();
 
@@ -297,7 +297,9 @@ void crServerPresentFBO(CRMuralInfo *mural)
         if (crServerIntersectScreen(mural, i, &rect))
         {
             rowsize = 4*RT_ALIGN_Z(rect.x2-rect.x1, 4);
+            realrowsize = 4*(rect.x2-rect.x1);
             tmppixels = crAlloc(rowsize*(rect.y2-rect.y1));
+            
             if (!tmppixels)
             {
                 crWarning("Out of memory in crServerPresentFBO");
@@ -312,7 +314,7 @@ void crServerPresentFBO(CRMuralInfo *mural)
 
             for (j=0; j<height; ++j)
             {
-                crMemcpy(pDst, pSrc, rowsize);
+                crMemcpy(pDst, pSrc, realrowsize);
 
                 pSrc -= rowstride;
                 pDst += rowsize;
