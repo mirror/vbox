@@ -525,6 +525,38 @@ void ConfigFileBase::readUSBDeviceFilters(const xml::ElementNode &elmDeviceFilte
     }
 }
 
+void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
+{
+    const char *pcszVersion = NULL;
+    switch (m->sv)
+    {
+        case SettingsVersion_v1_8:
+            pcszVersion = "1.8";
+        break;
+
+        case SettingsVersion_v1_9:
+            pcszVersion = "1.9";
+        break;
+
+        case SettingsVersion_v1_10:
+        case SettingsVersion_Future:                // can be set if this code runs on XML files that were created by a future version of VBox;
+                                                    // in that case, downgrade to current version when writing since we can't write future versions...
+            pcszVersion = "1.10";
+            m->sv = SettingsVersion_v1_10;
+        break;
+
+        default:
+            // silently upgrade if this is less than 1.7 because that's the oldest we can write
+            pcszVersion = "1.7";
+            m->sv = SettingsVersion_v1_7;
+        break;
+    }
+
+    elm.setAttribute("version", Utf8StrFmt("%s-%s",
+                                           pcszVersion,
+                                           VBOX_XML_PLATFORM));       // e.g. "linux"
+}
+
 /**
  * Creates a new stub xml::Document in the m->pDoc member with the
  * root "VirtualBox" element set up. This is used by both
@@ -548,38 +580,12 @@ void ConfigFileBase::createStubDocument()
     m->pelmRoot = m->pDoc->createRootElement("VirtualBox");
     m->pelmRoot->setAttribute("xmlns", VBOX_XML_NAMESPACE);
 
-    const char *pcszVersion = NULL;
-    switch (m->sv)
-    {
-        case SettingsVersion_v1_8:
-            pcszVersion = "1.8";
-            break;
+    // add settings version attribute to root element
+    setVersionAttribute(*m->pelmRoot);
 
-        case SettingsVersion_v1_9:
-            pcszVersion = "1.9";
-            break;
-
-        case SettingsVersion_v1_10:
-        case SettingsVersion_Future:                // can be set if this code runs on XML files that were created by a future version of VBox;
-                                                    // in that case, downgrade to current version when writing since we can't write future versions...
-            pcszVersion = "1.10";
-            m->sv = SettingsVersion_v1_10;
-            break;
-
-        default:
-            // silently upgrade if this is less than 1.7 because that's the oldest we can write
-            pcszVersion = "1.7";
-            m->sv = SettingsVersion_v1_7;
-            break;
-    }
-
-    m->pelmRoot->setAttribute("version", Utf8StrFmt("%s-%s",
-                                                    pcszVersion,
-                                                    VBOX_XML_PLATFORM));       // e.g. "linux"
-
-    // since this gets called before the XML document is actually written out
-    // do this, this is where we must check whether we're upgrading the settings
-    // version and need to make a backup, so the user can go back to an earlier
+    // since this gets called before the XML document is actually written out,
+    // this is where we must check whether we're upgrading the settings version
+    // and need to make a backup, so the user can go back to an earlier
     // VirtualBox version and recover his old settings files.
     if (    (m->svRead != SettingsVersion_Null)     // old file exists?
          && (m->svRead < m->sv)                     // we're upgrading?
@@ -3700,12 +3706,27 @@ void MachineConfigFile::buildSnapshotXML(xml::ElementNode &elmParent,
  *
  *  --  Appliance::buildXMLForOneVirtualSystem()
  *
+ * In fl, the following flag bits are recognized:
+ *
+ *  --  BuildMachineXML_IncludeSnapshots: If set, descend into the snapshots tree
+ *      of the machine and write out <Snapshot> and possibly more snapshots under
+ *      that, if snapshots are present. Otherwise all snapshots are suppressed.
+ *
+ *  --  BuildMachineXML_WriteVboxVersionAttribute: If set, add a settingsVersion
+ *      attribute to the machine tag with the vbox settings version. This is for
+ *      the OVF export case in which we don't have the settings version set in
+ *      the root element.
+ *
  * @param elmMachine XML <Machine> element to add attributes and elements to.
- * @param fWriteSnapshots If false, we omit snapshots entirely (we don't recurse then).
+ * @param fl Flags.
  */
 void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
-                                        bool fIncludeSnapshots)
+                                        uint32_t fl)
 {
+    if (fl & BuildMachineXML_WriteVboxVersionAttribute)
+        // add settings version attribute to machine element
+        setVersionAttribute(elmMachine);
+
     elmMachine.setAttribute("uuid", makeString(uuid));
     elmMachine.setAttribute("name", strName);
     if (!fNameSync)
@@ -3715,7 +3736,8 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
     elmMachine.setAttribute("OSType", strOsType);
     if (strStateFile.length())
         elmMachine.setAttribute("stateFile", strStateFile);
-    if (fIncludeSnapshots && !uuidCurrentSnapshot.isEmpty())
+    if (    (fl & BuildMachineXML_IncludeSnapshots)
+         && !uuidCurrentSnapshot.isEmpty())
         elmMachine.setAttribute("currentSnapshot", makeString(uuidCurrentSnapshot));
     if (strSnapshotFolder.length())
         elmMachine.setAttribute("snapshotFolder", strSnapshotFolder);
@@ -3741,7 +3763,8 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
 
     writeExtraData(elmMachine, mapExtraDataItems);
 
-    if (fIncludeSnapshots && llFirstSnapshot.size())
+    if (    (fl & BuildMachineXML_IncludeSnapshots)
+         && llFirstSnapshot.size())
         buildSnapshotXML(elmMachine, llFirstSnapshot.front());
 
     buildHardwareXML(elmMachine, hardwareMachine, storageMachine);
@@ -3918,7 +3941,8 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
 
         xml::ElementNode *pelmMachine = m->pelmRoot->createChild("Machine");
         buildMachineXML(*pelmMachine,
-                        true /* fIncludeSnapshots */);
+                        MachineConfigFile::BuildMachineXML_IncludeSnapshots);
+                            // but not BuildMachineXML_WriteVboxVersionAttribute
 
         // now go write the XML
         xml::XmlFileWriter writer(*m->pDoc);

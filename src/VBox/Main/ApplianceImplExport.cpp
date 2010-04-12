@@ -1229,7 +1229,8 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
         AutoWriteLock machineLock(vsdescThis->m->pMachine COMMA_LOCKVAL_SRC_POS);
         vsdescThis->m->pMachine->copyMachineDataToSettings(*pConfig);
         pConfig->buildMachineXML(*pelmVBoxMachine,
-                                 false /* fIncludeSnapshots */);
+                                 settings::MachineConfigFile::BuildMachineXML_WriteVboxVersionAttribute);
+                                        // but not BuildMachineXML_IncludeSnapshots
         delete pConfig;
     }
     catch (...)
