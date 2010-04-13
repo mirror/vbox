@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,11 +18,10 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
-#ifndef __PDMAsyncCompletionInternal_h
-#define __PDMAsyncCompletionInternal_h
 
-#include "PDMInternal.h"
-#include <iprt/cdefs.h>
+#ifndef ___PDMAsyncCompletionInternal_h
+#define ___PDMAsyncCompletionInternal_h
+
 #include <iprt/critsect.h>
 #include <iprt/memcache.h>
 #include <iprt/sg.h>
@@ -30,21 +29,10 @@
 #include <VBox/cfgm.h>
 #include <VBox/stam.h>
 #include <VBox/pdmasynccompletion.h>
+#include "PDMInternal.h"
 
 RT_C_DECLS_BEGIN
 
-/**
- * Supported endpoint classes.
- */
-typedef enum PDMASYNCCOMPLETIONEPCLASSTYPE
-{
-    /** File class. */
-    PDMASYNCCOMPLETIONEPCLASSTYPE_FILE = 0,
-    /** Number of supported classes. */
-    PDMASYNCCOMPLETIONEPCLASSTYPE_MAX,
-    /** 32bit hack. */
-    PDMASYNCCOMPLETIONEPCLASSTYPE_32BIT_HACK = 0x7fffffff
-} PDMASYNCCOMPLETIONEPCLASSTYPE;
 
 /**
  * PDM Async completion endpoint operations.
@@ -273,4 +261,5 @@ RT_C_DECLS_END
 
 extern const PDMASYNCCOMPLETIONEPCLASSOPS g_PDMAsyncCompletionEndpointClassFile;
 
-#endif /* __PDMAsyncCompletionInternal_h */
+#endif /* !___PDMAsyncCompletionInternal_h */
+
