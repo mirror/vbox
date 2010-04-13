@@ -165,12 +165,14 @@ static int pdmR3ThreadInit(PVM pVM, PPPDMTHREAD ppThread, size_t cbStack, RTTHRE
                     /*
                      * Insert it into the thread list.
                      */
+                    RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
                     pThread->Internal.s.pNext = NULL;
                     if (pUVM->pdm.s.pThreadsTail)
                         pUVM->pdm.s.pThreadsTail->Internal.s.pNext = pThread;
                     else
                         pUVM->pdm.s.pThreads = pThread;
                     pUVM->pdm.s.pThreadsTail = pThread;
+                    RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
 
                     rc = RTThreadUserReset(Thread);
                     AssertRC(rc);
@@ -431,6 +433,7 @@ VMMR3DECL(int) PDMR3ThreadDestroy(PPDMTHREAD pThread, int *pRcThread)
         pThread->Thread = NIL_RTTHREAD;
 
         /* unlink */
+        RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
         if (pUVM->pdm.s.pThreads == pThread)
         {
             pUVM->pdm.s.pThreads = pThread->Internal.s.pNext;
@@ -449,6 +452,7 @@ VMMR3DECL(int) PDMR3ThreadDestroy(PPDMTHREAD pThread, int *pRcThread)
                 pUVM->pdm.s.pThreadsTail = pPrev;
         }
         pThread->Internal.s.pNext = NULL;
+        RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
 
         /* free the resources */
         RTSemEventMultiDestroy(pThread->Internal.s.BlockEvent);
@@ -482,6 +486,8 @@ int pdmR3ThreadDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
     PUVM    pUVM = pVM->pUVM;
 
     AssertPtr(pDevIns);
+
+    RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
     PPDMTHREAD pThread = pUVM->pdm.s.pThreads;
     while (pThread)
     {
@@ -495,7 +501,7 @@ int pdmR3ThreadDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
         }
         pThread = pNext;
     }
-
+    RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
     return rc;
 }
 
@@ -515,6 +521,8 @@ int pdmR3ThreadDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns)
     PUVM    pUVM = pVM->pUVM;
 
     AssertPtr(pUsbIns);
+
+    RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
     PPDMTHREAD pThread = pUVM->pdm.s.pThreads;
     while (pThread)
     {
@@ -528,7 +536,7 @@ int pdmR3ThreadDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns)
         }
         pThread = pNext;
     }
-
+    RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
     return rc;
 }
 
@@ -548,6 +556,8 @@ int pdmR3ThreadDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
     PUVM    pUVM = pVM->pUVM;
 
     AssertPtr(pDrvIns);
+
+    RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
     PPDMTHREAD pThread = pUVM->pdm.s.pThreads;
     while (pThread)
     {
@@ -561,7 +571,7 @@ int pdmR3ThreadDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
         }
         pThread = pNext;
     }
-
+    RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
     return rc;
 }
 
@@ -573,8 +583,9 @@ int pdmR3ThreadDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
  */
 void pdmR3ThreadDestroyAll(PVM pVM)
 {
-    PUVM        pUVM    = pVM->pUVM;
-    PPDMTHREAD  pThread = pUVM->pdm.s.pThreads;
+    PUVM pUVM = pVM->pUVM;
+    RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
+    PPDMTHREAD pThread = pUVM->pdm.s.pThreads;
     while (pThread)
     {
         PPDMTHREAD pNext = pThread->Internal.s.pNext;
@@ -583,6 +594,7 @@ void pdmR3ThreadDestroyAll(PVM pVM)
         pThread = pNext;
     }
     Assert(!pUVM->pdm.s.pThreads && !pUVM->pdm.s.pThreadsTail);
+    RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
 }
 
 
@@ -958,7 +970,9 @@ VMMR3DECL(int) PDMR3ThreadSuspend(PPDMTHREAD pThread)
  */
 int pdmR3ThreadSuspendAll(PVM pVM)
 {
-    for (PPDMTHREAD pThread = pVM->pUVM->pdm.s.pThreads; pThread; pThread = pThread->Internal.s.pNext)
+    PUVM pUVM = pVM->pUVM;
+    RTCritSectEnter(&pUVM->pdm.s.ListCritSect); /* This may cause deadlocks later... */
+    for (PPDMTHREAD pThread = pUVM->pdm.s.pThreads; pThread; pThread = pThread->Internal.s.pNext)
         switch (pThread->enmState)
         {
             case PDMTHREADSTATE_RUNNING:
@@ -976,6 +990,7 @@ int pdmR3ThreadSuspendAll(PVM pVM)
                 AssertMsgFailed(("pThread=%p enmState=%d\n", pThread, pThread->enmState));
                 break;
         }
+    RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
     return VINF_SUCCESS;
 }
 
@@ -1047,7 +1062,9 @@ VMMR3DECL(int) PDMR3ThreadResume(PPDMTHREAD pThread)
  */
 int pdmR3ThreadResumeAll(PVM pVM)
 {
-    for (PPDMTHREAD pThread = pVM->pUVM->pdm.s.pThreads; pThread; pThread = pThread->Internal.s.pNext)
+    PUVM pUVM = pVM->pUVM;
+    RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
+    for (PPDMTHREAD pThread = pUVM->pdm.s.pThreads; pThread; pThread = pThread->Internal.s.pNext)
         switch (pThread->enmState)
         {
             case PDMTHREADSTATE_SUSPENDED:
@@ -1061,6 +1078,7 @@ int pdmR3ThreadResumeAll(PVM pVM)
                 AssertMsgFailed(("pThread=%p enmState=%d\n", pThread, pThread->enmState));
                 break;
         }
+    RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
     return VINF_SUCCESS;
 }
 

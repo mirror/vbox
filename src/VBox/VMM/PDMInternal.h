@@ -1025,17 +1025,16 @@ typedef struct PDMUSERPERVM
     /** Linked list of force action driven PDM queues. */
     R3PTRTYPE(struct PDMQUEUE *)    pQueuesForced;
 
-    /** Head of the PDM Thread list. (singly linked) */
-    R3PTRTYPE(PPDMTHREAD)           pThreads;
-    /** Tail of the PDM Thread list. (singly linked) */
-    R3PTRTYPE(PPDMTHREAD)           pThreadsTail;
-
     /** Lock protecting the lists below it. */
     RTCRITSECT                      ListCritSect;
     /** Pointer to list of loaded modules. */
     PPDMMOD                         pModules;
     /** List of initialized critical sections. (LIFO) */
     R3PTRTYPE(PPDMCRITSECTINT)      pCritSects;
+    /** Head of the PDM Thread list. (singly linked) */
+    R3PTRTYPE(PPDMTHREAD)           pThreads;
+    /** Tail of the PDM Thread list. (singly linked) */
+    R3PTRTYPE(PPDMTHREAD)           pThreadsTail;
 
     /** @name   PDM Async Completion
      * @{ */
