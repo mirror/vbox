@@ -44,7 +44,7 @@
  * If defined the electric fence put up for ALL allocations by RTMemAlloc(),
  * RTMemAllocZ(), RTMemRealloc(), RTMemTmpAlloc() and RTMemTmpAllocZ().
  */
-#if 0// defined(DEBUG_bird)
+#if defined(DEBUG_bird)
 # define RTALLOC_USE_EFENCE
 #endif
 
@@ -56,12 +56,11 @@
 /** @def RTALLOC_EFENCE_ALIGNMENT
  * The allocation alignment, power of two of course.
  *
- * Normally, 1 would be the perfect choice here, except that there is code, like
- * the atomic operations in iprt/asm.h, that makes assumptions about naturally
- * aligned data members.  If the code you're working against doesn't have strict
- * alignment requirements, changing this to 1 is highly desirable.
+ * Use this for working around misaligned sizes, usually stemming from
+ * allocating a string or something after the main structure.  When you
+ * encounter this, please fix the allocation to RTMemAllocVar or RTMemAllocZVar.
  */
-#if 1
+#if 0
 # define RTALLOC_EFENCE_ALIGNMENT       (ARCH_BITS / 8)
 #else
 # define RTALLOC_EFENCE_ALIGNMENT       1
@@ -185,9 +184,9 @@ typedef struct RTMEMBLOCK
 *   Internal Functions                                                         *
 ******************************************************************************/
 RT_C_DECLS_BEGIN
-void *  rtMemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cb, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction);
-void *  rtMemRealloc(const char *pszOp, RTMEMTYPE enmType, void *pvOld, size_t cbNew, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction);
-void    rtMemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction);
+RTDECL(void *)  rtMemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cb, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction);
+RTDECL(void *)  rtMemRealloc(const char *pszOp, RTMEMTYPE enmType, void *pvOld, size_t cbNew, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction);
+RTDECL(void)    rtMemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction);
 RT_C_DECLS_END
 
 #endif

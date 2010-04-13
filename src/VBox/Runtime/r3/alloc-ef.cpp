@@ -33,6 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "alloc-ef.h"
+#include <iprt/mem.h>
 #include <iprt/log.h>
 #include <iprt/asm.h>
 #include <iprt/thread.h>
@@ -271,7 +272,7 @@ static inline PRTMEMBLOCK rtmemBlockDelayRemove(void)
 /**
  * Internal allocator.
  */
-void *rtMemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cb, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction)
+RTDECL(void *) rtMemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cb, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction)
 {
     /*
      * Sanity.
@@ -371,7 +372,7 @@ void *rtMemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cb, void *pvCaller
 /**
  * Internal free.
  */
-void rtMemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction)
+RTDECL(void) rtMemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction)
 {
     /*
      * Simple case.
@@ -497,10 +498,11 @@ void rtMemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvCaller, u
 #endif /* !RTALLOC_EFENCE_TRACE */
 }
 
+
 /**
  * Internal realloc.
  */
-void *rtMemRealloc(const char *pszOp, RTMEMTYPE enmType, void *pvOld, size_t cbNew, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction)
+RTDECL(void *) rtMemRealloc(const char *pszOp, RTMEMTYPE enmType, void *pvOld, size_t cbNew, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction)
 {
     /*
      * Allocate new and copy.
@@ -604,6 +606,42 @@ RTDECL(void *)  RTMemEfAlloc(size_t cb) RT_NO_THROW
 RTDECL(void *)  RTMemEfAllocZ(size_t cb) RT_NO_THROW
 {
     return rtMemAlloc("AllocZ", RTMEMTYPE_RTMEMALLOCZ, cb, ((void **)&cb)[-1], 0, NULL, NULL);
+}
+
+
+/**
+ * Same as RTMemAllocVar() except that it's fenced.
+ *
+ * @returns Pointer to the allocated memory. Free with RTMemEfFree().
+ * @returns NULL on failure.
+ * @param   cbUnaligned Size in bytes of the memory block to allocate.
+ */
+RTDECL(void *)  RTMemEfAllocVar(size_t cbUnaligned) RT_NO_THROW
+{
+    size_t cbAligned;
+    if (cbUnaligned >= 16)
+        cbAligned = RT_ALIGN_Z(cbUnaligned, 16);
+    else
+        cbAligned = RT_ALIGN_Z(cbUnaligned, sizeof(void *));
+    return rtMemAlloc("Alloc", RTMEMTYPE_RTMEMALLOC, cbAligned, ((void **)&cbUnaligned)[-1], 0, NULL, NULL);
+}
+
+
+/**
+ * Same as RTMemAllocZVar() except that it's fenced.
+ *
+ * @returns Pointer to the allocated memory.
+ * @returns NULL on failure.
+ * @param   cbUnaligned Size in bytes of the memory block to allocate.
+ */
+RTDECL(void *)  RTMemEfAllocZVar(size_t cbUnaligned) RT_NO_THROW
+{
+    size_t cbAligned;
+    if (cbUnaligned >= 16)
+        cbAligned = RT_ALIGN_Z(cbUnaligned, 16);
+    else
+        cbAligned = RT_ALIGN_Z(cbUnaligned, sizeof(void *));
+    return rtMemAlloc("AllocZ", RTMEMTYPE_RTMEMALLOCZ, cbAligned, ((void **)&cbUnaligned)[-1], 0, NULL, NULL);
 }
 
 

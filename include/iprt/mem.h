@@ -113,6 +113,24 @@ RTDECL(void *)  RTMemAlloc(size_t cb) RT_NO_THROW;
 RTDECL(void *)  RTMemAllocZ(size_t cb) RT_NO_THROW;
 
 /**
+ * Wrapper around RTMemAlloc for automatically aligning variable sized
+ * allocations so that the various electric fence heaps works correctly.
+ *
+ * @returns See RTMemAlloc.
+ * @param   cbUnaligned         The unaligned size.
+ */
+RTDECL(void *) RTMemAllocVar(size_t cbUnaligned);
+
+/**
+ * Wrapper around RTMemAllocZ for automatically aligning variable sized
+ * allocations so that the various electric fence heaps works correctly.
+ *
+ * @returns See RTMemAllocZ.
+ * @param   cbUnaligned         The unaligned size.
+ */
+RTDECL(void *) RTMemAllocZVar(size_t cbUnaligned);
+
+/**
  * Duplicates a chunk of memory into a new heap block.
  *
  * @returns New heap block with the duplicate data.
@@ -375,6 +393,24 @@ RTDECL(void *)  RTMemEfAlloc(size_t cb) RT_NO_THROW;
 RTDECL(void *)  RTMemEfAllocZ(size_t cb) RT_NO_THROW;
 
 /**
+ * Same as RTMemAllocVar() except that it's fenced.
+ *
+ * @returns Pointer to the allocated memory. Free with RTMemEfFree().
+ * @returns NULL on failure.
+ * @param   cbUnaligned Size in bytes of the memory block to allocate.
+ */
+RTDECL(void *)  RTMemEfAllocVar(size_t cbUnaligned) RT_NO_THROW;
+
+/**
+ * Same as RTMemAllocZVar() except that it's fenced.
+ *
+ * @returns Pointer to the allocated memory.
+ * @returns NULL on failure.
+ * @param   cbUnaligned Size in bytes of the memory block to allocate.
+ */
+RTDECL(void *)  RTMemEfAllocZVar(size_t cbUnaligned) RT_NO_THROW;
+
+/**
  * Same as RTMemRealloc() except that it's fenced.
  *
  * @returns Pointer to the allocated memory.
@@ -421,6 +457,8 @@ RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_
 # define RTMemTmpFree   RTMemEfTmpFree
 # define RTMemAlloc     RTMemEfAlloc
 # define RTMemAllocZ    RTMemEfAllocZ
+# define RTMemAllocVar  RTMemEfAllocVar
+# define RTMemAllocZVar RTMemEfAllocZVar
 # define RTMemRealloc   RTMemEfRealloc
 # define RTMemFree      RTMemEfFree
 # define RTMemDup       RTMemEfDup

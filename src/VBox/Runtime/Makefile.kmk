@@ -185,6 +185,7 @@ RuntimeR3_TEMPLATE      = VBoxR3Static
 RuntimeR3_SDKS          = VBOX_LIBXML2 VBOX_BOOST
 RuntimeR3_SDKS.win      = WINPSDK W2K3DDK
 RuntimeR3_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX RT_NO_GIP
+#RuntimeR3_DEFS         += RTMEM_WRAP_TO_EF_APIS
 ifdef IPRT_WITH_KSTUFF
  RuntimeR3_DEFS        += LDR_WITH_KLDR
 endif
@@ -1739,7 +1740,7 @@ endif # VBOX_WITH_RAW_MODE
 #
 # Static library for new & delete for the electric fence.
 #
-RuntimeEFCPP_TEMPLATE   = $(RuntimeR3_TEMPLATE)
+RuntimeEFCPP_TEMPLATE   = $(VBoxRT_TEMPLATE)
 RuntimeEFCPP_SDKS       = $(RuntimeR3_SDKS)
 RuntimeEFCPP_SDKS.$(KBUILD_TARGET) = $(RuntimeR3_SDKS.$(KBUILD_TARGET))
 RuntimeEFCPP_DEFS       = $(RuntimeR3_DEFS)
