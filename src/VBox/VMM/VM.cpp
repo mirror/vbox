@@ -708,6 +708,12 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
         }
 
         /*
+         * Do automatic cleanups while the VM structure is still alive and all
+         * references to it are still working.
+         */
+        PDMR3CritSectTerm(pVM);
+
+        /*
          * Drop all references to VM and the VMCPU structures, then
          * tell GVMM to destroy the VM.
          */

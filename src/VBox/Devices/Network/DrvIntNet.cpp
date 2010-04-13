@@ -1,3 +1,4 @@
+#define VBOX_WITH_R0_AND_RC_DRIVERS
 /* $Id$ */
 /** @file
  * DrvIntNet - Internal network transport driver.
@@ -111,6 +112,9 @@ typedef struct DRVINTNET
     /** Base interface for ring-0. */
     PDMIBASERC                      IBaseRC;
 
+    /** The transmit lock. */
+    PDMCRITSECT                     XmitLock;
+
 #ifdef LOG_ENABLED
     /** The nano ts of the last transfer. */
     uint64_t                        u64LastTransferTS;
@@ -189,7 +193,22 @@ static int drvR3IntNetSetActive(PDRVINTNET pThis, bool fActive)
     return rc;
 }
 
+
+
 /* -=-=-=-=- PDMINETWORKUP -=-=-=-=- */
+
+/**
+ * @interface_method_impl{PDMINETWORKUP,pfnBeginXmit}
+ */
+static DECLCALLBACK(int) drvR3IntNetUp_BeginXmit(PPDMINETWORKUP pInterface)
+{
+    PDRVINTNET pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, INetworkUpR3);
+    int rc = PDMCritSectTryEnter(&pThis->XmitLock);
+    if (RT_UNLIKELY(rc == VERR_SEM_BUSY))
+        rc = VERR_TRY_AGAIN;
+    return rc;
+}
+
 
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnAllocBuf}
@@ -200,6 +219,7 @@ static DECLCALLBACK(int) drvR3IntNetUp_AllocBuf(PPDMINETWORKUP pInterface, size_
     PDRVINTNET  pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, INetworkUpR3);
     int         rc    = VINF_SUCCESS;
     Assert(cbMin < UINT32_MAX / 2);
+//    Assert(PDMCritSectIsOwner(&pThis->XmitLock));
 
     /*
      * Allocate a S/G buffer.
@@ -276,6 +296,7 @@ static DECLCALLBACK(int) drvR3IntNetUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSC
     Assert(pSgBuf->cbUsed <= pSgBuf->cbAvailable);
     Assert(   pHdr->u16Type == INTNETHDR_TYPE_FRAME
            || pHdr->u16Type == INTNETHDR_TYPE_GSO);
+//    Assert(PDMCritSectIsOwner(&pThis->XmitLock));
 
     /** @todo LATER: try unalloc the frame. */
     pHdr->u16Type = INTNETHDR_TYPE_PADDING;
@@ -297,6 +318,7 @@ static DECLCALLBACK(int) drvR3IntNetUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSC
     AssertPtr(pSgBuf);
     Assert(pSgBuf->fFlags == (PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1));
     Assert(pSgBuf->cbUsed <= pSgBuf->cbAvailable);
+//    Assert(PDMCritSectIsOwner(&pThis->XmitLock));
 
     if (pSgBuf->pvUser)
         STAM_COUNTER_INC(&pThis->StatSentGso);
@@ -318,6 +340,16 @@ static DECLCALLBACK(int) drvR3IntNetUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSC
 
     STAM_PROFILE_STOP(&pThis->StatTransmit, a);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMINETWORKUP,pfnEndXmit}
+ */
+static DECLCALLBACK(void) drvR3IntNetUp_EndXmit(PPDMINETWORKUP pInterface)
+{
+    PDRVINTNET pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, INetworkUpR3);
+    PDMCritSectLeave(&pThis->XmitLock);
 }
 
 
@@ -761,7 +793,7 @@ static DECLCALLBACK(void) drvR3IntNetResume(PPDMDRVINS pDrvIns)
         Frame.Hdr.DstMac.au16[0] = 0xffff;
         Frame.Hdr.DstMac.au16[1] = 0xffff;
         Frame.Hdr.DstMac.au16[2] = 0xffff;
-        Frame.Hdr.EtherType      = RT_H2BE_U16(0x801e);
+        Frame.Hdr.EtherType      = RT_H2BE_U16_C(0x801e);
         int rc = pThis->pIAboveConfigR3->pfnGetMac(pThis->pIAboveConfigR3, &Frame.Hdr.SrcMac);
         if (RT_SUCCESS(rc))
             rc = drvR3IntNetResumeSend(pThis, &Frame, sizeof(Frame));
@@ -804,6 +836,15 @@ static DECLCALLBACK(void) drvR3IntNetPowerOn(PPDMDRVINS pDrvIns)
         drvR3IntNetUpdateMacAddress(pThis);
         drvR3IntNetSetActive(pThis, true /* fActive */);
     }
+}
+
+
+/**
+ * @interface_method_impl{PDMDRVREG,pfnRelocate}
+ */
+static DECLCALLBACK(void) drvR3IntNetRelocate(PPDMDRVINS pDrvIns, RTGCINTPTR offDelta)
+{
+    /* nothing to do here yet */
 }
 
 
@@ -857,13 +898,16 @@ static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
     }
 
     /*
-     * Destroy the semaphore and S/G cache.
+     * Destroy the semaphore, S/G cache and xmit lock.
      */
     if (hEvtSuspended != NIL_RTSEMEVENT)
         RTSemEventDestroy(hEvtSuspended);
 
     RTMemCacheDestroy(pThis->hSgCache);
     pThis->hSgCache = NIL_RTMEMCACHE;
+
+    if (PDMCritSectIsInitialized(&pThis->XmitLock))
+        PDMR3CritSectDelete(&pThis->XmitLock);
 
     if (pThis->pBufR3)
     {
@@ -916,9 +960,11 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pThis->IBaseR0.pfnQueryInterface                = drvR3IntNetIBaseR0_QueryInterface;
     pThis->IBaseRC.pfnQueryInterface                = drvR3IntNetIBaseRC_QueryInterface;
     /* INetworkUp */
+    pThis->INetworkUpR3.pfnBeginXmit                = drvR3IntNetUp_BeginXmit;
     pThis->INetworkUpR3.pfnAllocBuf                 = drvR3IntNetUp_AllocBuf;
     pThis->INetworkUpR3.pfnFreeBuf                  = drvR3IntNetUp_FreeBuf;
     pThis->INetworkUpR3.pfnSendBuf                  = drvR3IntNetUp_SendBuf;
+    pThis->INetworkUpR3.pfnEndXmit                  = drvR3IntNetUp_EndXmit;
     pThis->INetworkUpR3.pfnSetPromiscuousMode       = drvR3IntNetUp_SetPromiscuousMode;
     pThis->INetworkUpR3.pfnNotifyLinkChanged        = drvR3IntNetUp_NotifyLinkChanged;
 
@@ -1185,7 +1231,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
 #endif /* DARWIN */
 
     /*
-     * Create the event semaphore and S/G cache.
+     * Create the event semaphore, S/G cache and xmit critsect.
      */
     rc = RTSemEventCreate(&pThis->hEvtSuspended);
     if (RT_FAILURE(rc))
@@ -1193,6 +1239,10 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     rc = RTMemCacheCreate(&pThis->hSgCache, sizeof(PDMSCATTERGATHER), 0, UINT32_MAX, NULL, NULL, pThis, 0);
     if (RT_FAILURE(rc))
         return rc;
+    rc = PDMDrvHlpCritSectInit(pDrvIns, &pThis->XmitLock, RT_SRC_POS, "IntNetXmit");
+    if (RT_FAILURE(rc))
+        return rc;
+
 
     /*
      * Create the interface.
@@ -1275,9 +1325,9 @@ const PDMDRVREG g_DrvIntNet =
     /* szName */
     "IntNet",
     /* szRCMod */
-    "VBoxDD",
+    "VBoxDDRC",
     /* szR0Mod */
-    "VBoxDD",
+    "VBoxDDR0",
     /* pszDescription */
     "Internal Networking Transport Driver",
     /* fFlags */
@@ -1297,7 +1347,7 @@ const PDMDRVREG g_DrvIntNet =
     /* pfnDestruct */
     drvR3IntNetDestruct,
     /* pfnRelocate */
-    NULL,
+    drvR3IntNetRelocate,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */

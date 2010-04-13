@@ -939,8 +939,6 @@ typedef struct PDM
     R3PTRTYPE(PPDMUSBINS)           pUsbInstances;
     /** List of registered drivers. (FIFO) */
     R3PTRTYPE(PPDMDRV)              pDrvs;
-    /** List of initialized critical sections. (LIFO) */
-    R3PTRTYPE(PPDMCRITSECTINT)      pCritSects;
     /** PCI Buses. */
     PDMPCIBUS                       aPciBuses[PDM_PCI_BUSSES_MAX];
     /** The register PIC device. */
@@ -964,6 +962,9 @@ typedef struct PDM
     RCPTRTYPE(PPDMQUEUE)            pDevHlpQueueRC;
     RTRCPTR                         uPadding1; /**< Alignment padding. */
 
+/** @name Move to PDMUSERPERVM
+ * @{
+ */
     /** Linked list of timer driven PDM queues. */
     R3PTRTYPE(struct PDMQUEUE *)    pQueuesTimer;
     /** Linked list of force action driven PDM queues. */
@@ -982,8 +983,10 @@ typedef struct PDM
     R3PTRTYPE(PPDMTHREAD)           pThreads;
     /** Tail of the PDM Thread list. (singly linked) */
     R3PTRTYPE(PPDMTHREAD)           pThreadsTail;
+/** @}  */
 
     /** @name   PDM Async Completion
+     * @todo Move to PDMUSERPERVM
      * @{ */
     /** Pointer to the array of supported endpoint classes. */
     R3PTRTYPE(PPDMASYNCCOMPLETIONEPCLASS *)  papAsyncCompletionEndpointClass;
@@ -1011,11 +1014,6 @@ typedef struct PDM
      * This is used to protect everything that deals with interrupts, i.e.
      * the PIC, APIC, IOAPIC and PCI devices pluss some PDM functions. */
     PDMCRITSECT                     CritSect;
-    /** The PDM miscellancous lock.
-     * This is used to protect things like critsect init/delete that formerly was
-     * serialized by there only being one EMT.
-     */
-    RTCRITSECT                      MiscCritSect;
 
     /** Number of times a critical section leave requesed needed to be queued for ring-3 execution. */
     STAMCOUNTER                     StatQueuedCritSectLeaves;
@@ -1032,9 +1030,15 @@ typedef PDM *PPDM;
  */
 typedef struct PDMUSERPERVM
 {
+    /** @todo move more stuff over here. */
+
+    /** Lock protecting the lists below it. */
+    RTCRITSECT                      ListCritSect;
     /** Pointer to list of loaded modules. */
     PPDMMOD                         pModules;
-    /** @todo move more stuff over here. */
+    /** List of initialized critical sections. (LIFO) */
+    R3PTRTYPE(PPDMCRITSECTINT)      pCritSects;
+
 } PDMUSERPERVM;
 /** Pointer to the PDM data kept in the UVM. */
 typedef PDMUSERPERVM *PPDMUSERPERVM;
@@ -1094,11 +1098,12 @@ extern const PDMHPETHLPR3   g_pdmR3DevHpetHlp;
 *   Internal Functions                                                         *
 *******************************************************************************/
 #ifdef IN_RING3
-int         pdmR3CritSectInit(PVM pVM);
-int         pdmR3CritSectTerm(PVM pVM);
+int         pdmR3CritSectInitStats(PVM pVM);
 void        pdmR3CritSectRelocate(PVM pVM);
 int         pdmR3CritSectInitDevice(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL, const char *pszNameFmt, va_list va);
 int         pdmR3CritSectDeleteDevice(PVM pVM, PPDMDEVINS pDevIns);
+int         pdmR3CritSectInitDriver(PVM pVM, PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL, const char *pszNameFmt, ...);
+int         pdmR3CritSectDeleteDriver(PVM pVM, PPDMDRVINS pDrvIns);
 
 int         pdmR3DevInit(PVM pVM);
 PPDMDEV     pdmR3DevLookup(PVM pVM, const char *pszName);

@@ -343,8 +343,8 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
         rc = RTSemEventCreate(&pStorageBackend->EventSem);
         if (RT_SUCCESS(rc))
         {
-            rc = PDMDrvHlpPDMAsyncCompletionTemplateCreate(pThis->pDrvIns, &pStorageBackend->pTemplate,
-                                                           drvvdAsyncTaskCompleted, pStorageBackend, "AsyncTaskCompleted");
+            rc = PDMDrvHlpAsyncCompletionTemplateCreate(pThis->pDrvIns, &pStorageBackend->pTemplate,
+                                                        drvvdAsyncTaskCompleted, pStorageBackend, "AsyncTaskCompleted");
             if (RT_SUCCESS(rc))
             {
                 rc = PDMR3AsyncCompletionEpCreateForFile(&pStorageBackend->pEndpoint, pszLocation,

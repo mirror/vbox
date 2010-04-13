@@ -867,8 +867,8 @@ typedef struct PDMDRVHLPR3
      * @param   ppQueue             Where to store the queue handle on success.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPDMQueueCreate,(PPDMDRVINS pDrvIns, uint32_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
-                                                 PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue));
+    DECLR3CALLBACKMEMBER(int, pfnQueueCreate,(PPDMDRVINS pDrvIns, uint32_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
+                                              PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue));
 
     /**
      * Query the virtual timer frequency.
@@ -1072,8 +1072,8 @@ typedef struct PDMDRVHLPR3
      * @param   enmType     See RTThreadCreate.
      * @param   pszName     See RTThreadCreate.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPDMThreadCreate,(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
-                                                  PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName));
+    DECLR3CALLBACKMEMBER(int, pfnThreadCreate,(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
+                                               PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName));
 
     /**
      * Creates a async completion template for a driver instance.
@@ -1087,9 +1087,9 @@ typedef struct PDMDRVHLPR3
      * @param   pvTemplateUser  Template user argument.
      * @param   pszDesc         Description.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPDMAsyncCompletionTemplateCreate,(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
-                                                                   PFNPDMASYNCCOMPLETEDRV pfnCompleted, void *pvTemplateUser,
-                                                                   const char *pszDesc));
+    DECLR3CALLBACKMEMBER(int, pfnAsyncCompletionTemplateCreate,(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
+                                                                PFNPDMASYNCCOMPLETEDRV pfnCompleted, void *pvTemplateUser,
+                                                                const char *pszDesc));
 
 
     /**
@@ -1109,8 +1109,8 @@ typedef struct PDMDRVHLPR3
      *                          see PDMR3LdrGetInterfaceSymbols.
      * @thread  EMT
      */
-    DECLR3CALLBACKMEMBER(int, pfnPDMLdrGetRCInterfaceSymbols,(PPDMDRVINS pDrvIns, void *pvInterface, size_t cbInterface,
-                                                              const char *pszSymPrefix, const char *pszSymList));
+    DECLR3CALLBACKMEMBER(int, pfnLdrGetRCInterfaceSymbols,(PPDMDRVINS pDrvIns, void *pvInterface, size_t cbInterface,
+                                                           const char *pszSymPrefix, const char *pszSymList));
 
     /**
      * Resolves the symbol for a ring-0 context interface.
@@ -1129,8 +1129,26 @@ typedef struct PDMDRVHLPR3
      *                          see PDMR3LdrGetInterfaceSymbols.
      * @thread  EMT
      */
-    DECLR3CALLBACKMEMBER(int, pfnPDMLdrGetR0InterfaceSymbols,(PPDMDRVINS pDrvIns, void *pvInterface, size_t cbInterface,
-                                                              const char *pszSymPrefix, const char *pszSymList));
+    DECLR3CALLBACKMEMBER(int, pfnLdrGetR0InterfaceSymbols,(PPDMDRVINS pDrvIns, void *pvInterface, size_t cbInterface,
+                                                           const char *pszSymPrefix, const char *pszSymList));
+    /**
+     * Initializes a PDM critical section.
+     *
+     * The PDM critical sections are derived from the IPRT critical sections, but
+     * works in both RC and R0 as well as R3.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   pCritSect           Pointer to the critical section.
+     * @param   RT_SRC_POS_DECL     Use RT_SRC_POS.
+     * @param   pszName             The base name of the critical section.  Will be
+     *                              mangeled with the instance number.  For
+     *                              statistics and lock validation.
+     * @param   va                  Arguments for the format string.
+     * @thread  EMT
+     */
+    DECLR3CALLBACKMEMBER(int, pfnCritSectInit,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect,
+                                               RT_SRC_POS_DECL, const char *pszName));
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;
@@ -1277,12 +1295,12 @@ DECLINLINE(bool) PDMDrvHlpVMTeleportedAndNotFullyResumedYet(PPDMDRVINS pDrvIns)
 }
 
 /**
- * @copydoc PDMDRVHLP::pfnPDMQueueCreate
+ * @copydoc PDMDRVHLP::pfnQueueCreate
  */
-DECLINLINE(int) PDMDrvHlpPDMQueueCreate(PPDMDRVINS pDrvIns, uint32_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
+DECLINLINE(int) PDMDrvHlpQueueCreate(PPDMDRVINS pDrvIns, uint32_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
                                         PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue)
 {
-    return pDrvIns->pHlpR3->pfnPDMQueueCreate(pDrvIns, cbItem, cItems, cMilliesInterval, pfnCallback, pszName, ppQueue);
+    return pDrvIns->pHlpR3->pfnQueueCreate(pDrvIns, cbItem, cItems, cMilliesInterval, pfnCallback, pszName, ppQueue);
 }
 
 /**
@@ -1462,24 +1480,32 @@ DECLINLINE(void) PDMDrvHlpAsyncNotificationCompleted(PPDMDRVINS pDrvIns)
 }
 
 /**
- * @copydoc PDMDRVHLP::pfnPDMThreadCreate
+ * @copydoc PDMDRVHLP::pfnThreadCreate
  */
-DECLINLINE(int) PDMDrvHlpPDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
+DECLINLINE(int) PDMDrvHlpThreadCreate(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
                                          PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
 {
-    return pDrvIns->pHlpR3->pfnPDMThreadCreate(pDrvIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
+    return pDrvIns->pHlpR3->pfnThreadCreate(pDrvIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
 }
 
 # ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
 /**
- * @copydoc PDMDRVHLP::pfnPDMAsyncCompletionTemplateCreate
+ * @copydoc PDMDRVHLP::pfnAsyncCompletionTemplateCreate
  */
-DECLINLINE(int) PDMDrvHlpPDMAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
-                                                          PFNPDMASYNCCOMPLETEDRV pfnCompleted, void *pvTemplateUser, const char *pszDesc)
+DECLINLINE(int) PDMDrvHlpAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
+                                                       PFNPDMASYNCCOMPLETEDRV pfnCompleted, void *pvTemplateUser, const char *pszDesc)
 {
-    return pDrvIns->pHlpR3->pfnPDMAsyncCompletionTemplateCreate(pDrvIns, ppTemplate, pfnCompleted, pvTemplateUser, pszDesc);
+    return pDrvIns->pHlpR3->pfnAsyncCompletionTemplateCreate(pDrvIns, ppTemplate, pfnCompleted, pvTemplateUser, pszDesc);
 }
 # endif
+
+/**
+ * @copydoc PDMDRVHLP::pfnCritSectInit
+ */
+DECLINLINE(int) PDMDrvHlpCritSectInit(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL, const char *pszName)
+{
+    return pDrvIns->pHlpR3->pfnCritSectInit(pDrvIns, pCritSect, RT_SRC_POS_ARGS, pszName);
+}
 
 
 /** Pointer to callbacks provided to the VBoxDriverRegister() call. */

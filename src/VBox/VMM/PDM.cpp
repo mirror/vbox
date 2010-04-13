@@ -306,8 +306,9 @@ VMMR3DECL(int) PDMR3InitUVM(PUVM pUVM)
 {
     AssertCompile(sizeof(pUVM->pdm.s) <= sizeof(pUVM->pdm.padding));
     AssertRelease(sizeof(pUVM->pdm.s) <= sizeof(pUVM->pdm.padding));
-    pUVM->pdm.s.pModules = NULL;
-    return VINF_SUCCESS;
+    pUVM->pdm.s.pModules   = NULL;
+    pUVM->pdm.s.pCritSects = NULL;
+    return RTCritSectInit(&pUVM->pdm.s.ListCritSect);
 }
 
 
@@ -336,9 +337,7 @@ VMMR3DECL(int) PDMR3Init(PVM pVM)
     /*
      * Initialize sub compontents.
      */
-    int rc = RTCritSectInit(&pVM->pdm.s.MiscCritSect);
-    if (RT_SUCCESS(rc))
-        rc = pdmR3CritSectInit(pVM);
+    int rc = pdmR3CritSectInitStats(pVM);
     if (RT_SUCCESS(rc))
         rc = PDMR3CritSectInit(pVM, &pVM->pdm.s.CritSect, RT_SRC_POS, "PDM");
     if (RT_SUCCESS(rc))
@@ -648,6 +647,9 @@ VMMR3DECL(void) PDMR3TermUVM(PUVM pUVM)
      * the first time, which is why we do it.
      */
     pdmR3LdrTermU(pUVM);
+
+    Assert(pUVM->pdm.s.pCritSects == NULL);
+    RTCritSectDelete(&pUVM->pdm.s.ListCritSect);
 }
 
 

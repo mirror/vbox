@@ -273,7 +273,6 @@ int main()
     GEN_CHECK_OFF(PDM, pUsbDevs);
     GEN_CHECK_OFF(PDM, pUsbInstances);
     GEN_CHECK_OFF(PDM, pDrvs);
-    GEN_CHECK_OFF(PDM, pCritSects);
     GEN_CHECK_OFF(PDM, aPciBuses);
     GEN_CHECK_OFF(PDM, aPciBuses[0].iBus);
     GEN_CHECK_OFF(PDM, aPciBuses[0].pDevInsR3);

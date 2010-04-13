@@ -76,9 +76,28 @@ typedef struct DRVNETSNIFFER
     uint64_t                StartNanoTS;
     /** Pointer to the driver instance. */
     PPDMDRVINS              pDrvIns;
+    /** For when we're the leaf driver. */
+    RTCRITSECT              XmitLock;
 
 } DRVNETSNIFFER, *PDRVNETSNIFFER;
 
+
+
+/**
+ * @interface_method_impl{PDMINETWORKUP,pfnBeginXmit}
+ */
+static DECLCALLBACK(int) drvNetSnifferUp_BeginXmit(PPDMINETWORKUP pInterface)
+{
+    PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkUp);
+    if (RT_UNLIKELY(!pThis->pIBelowNet))
+    {
+        int rc = RTCritSectTryEnter(&pThis->XmitLock);
+        if (RT_UNLIKELY(rc == VERR_SEM_BUSY))
+            rc = VERR_TRY_AGAIN;
+        return rc;
+    }
+    return pThis->pIBelowNet->pfnBeginXmit(pThis->pIBelowNet);
+}
 
 
 /**
@@ -134,6 +153,20 @@ static DECLCALLBACK(int) drvNetSnifferUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
 
 
 /**
+ * @interface_method_impl{PDMINETWORKUP,pfnEndXmit}
+ */
+static DECLCALLBACK(void) drvNetSnifferUp_EndXmit(PPDMINETWORKUP pInterface)
+{
+    LogFlow(("drvNetSnifferUp_EndXmit:\n"));
+    PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkUp);
+    if (RT_LIKELY(pThis->pIBelowNet))
+        pThis->pIBelowNet->pfnEndXmit(pThis->pIBelowNet);
+    else
+        RTCritSectLeave(&pThis->XmitLock);
+}
+
+
+/**
  * @interface_method_impl{PDMINETWORKUP,pfnSetPromiscuousMode}
  */
 static DECLCALLBACK(void) drvNetSnifferUp_SetPromiscuousMode(PPDMINETWORKUP pInterface, bool fPromiscuous)
@@ -158,7 +191,7 @@ static DECLCALLBACK(void) drvNetSnifferUp_NotifyLinkChanged(PPDMINETWORKUP pInte
 
 
 /**
- * @copydoc PDMINETWORKDOWN::pfnWaitReceiveAvail
+ * @interface_method_impl{PDMINETWORKDOWN,pfnWaitReceiveAvail}
  */
 static DECLCALLBACK(int) drvNetSnifferDown_WaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
 {
@@ -168,7 +201,7 @@ static DECLCALLBACK(int) drvNetSnifferDown_WaitReceiveAvail(PPDMINETWORKDOWN pIn
 
 
 /**
- * @copydoc PDMINETWORKDOWN::pfnReceive
+ * @interface_method_impl{PDMINETWORKDOWN,pfnReceive}
  */
 static DECLCALLBACK(int) drvNetSnifferDown_Receive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
 {
@@ -195,12 +228,12 @@ static DECLCALLBACK(int) drvNetSnifferDown_Receive(PPDMINETWORKDOWN pInterface, 
 
 
 /**
- * @copydoc PDMINETWORKDOWN::pfnNotifyBufAvailable
+ * @interface_method_impl{PDMINETWORKDOWN,pfnDoTransmitWork}
  */
-static DECLCALLBACK(void) drvNetSnifferDown_NotifyBufAvailable(PPDMINETWORKDOWN pInterface)
+static DECLCALLBACK(void) drvNetSnifferDown_DoTransmitWork(PPDMINETWORKDOWN pInterface)
 {
     PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkDown);
-    pThis->pIAboveNet->pfnNotifyBufAvailable(pThis->pIAboveNet);
+    pThis->pIAboveNet->pfnDoTransmitWork(pThis->pIAboveNet);
 }
 
 
@@ -262,33 +295,27 @@ static DECLCALLBACK(void *) drvNetSnifferQueryInterface(PPDMIBASE pInterface, co
 
 
 /**
- * Detach a driver instance.
- *
- * @param   pDrvIns     The driver instance.
- * @param   fFlags      Flags, combination of the PDM_TACH_FLAGS_* \#defines.
+ * @interface_method_impl{PDMDRVREG,pfnDetach}
  */
 static DECLCALLBACK(void) drvNetSnifferDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
     PDRVNETSNIFFER pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSNIFFER);
 
     LogFlow(("drvNetSnifferDetach: pDrvIns: %p, fFlags: %u\n", pDrvIns, fFlags));
-
+    RTCritSectEnter(&pThis->XmitLock);
     pThis->pIBelowNet = NULL;
+    RTCritSectLeave(&pThis->XmitLock);
 }
 
 
 /**
- * Attach a driver instance.
- *
- * @returns VBox status code.
- * @param   pDrvIns     The driver instance.
- * @param   fFlags      Flags, combination of the PDM_TACH_FLAGS_* \#defines.
+ * @interface_method_impl{PDMDRVREG,pfnAttach}
  */
 static DECLCALLBACK(int) drvNetSnifferAttach(PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
     PDRVNETSNIFFER pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSNIFFER);
-
-    LogFlow(("drvNetSnifferAttach: pDrvIns: %p, fFlags: %u\n", pDrvIns, fFlags));
+    LogFlow(("drvNetSnifferAttach/#%#x: fFlags=%#x\n", pDrvIns->iInstance, fFlags));
+    RTCritSectEnter(&pThis->XmitLock);
 
     /*
      * Query the network connector interface.
@@ -297,33 +324,31 @@ static DECLCALLBACK(int) drvNetSnifferAttach(PPDMDRVINS pDrvIns, uint32_t fFlags
     int rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pBaseDown);
     if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
         || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
+    {
         pThis->pIBelowNet = NULL;
+        rc = VINF_SUCCESS;
+    }
     else if (RT_SUCCESS(rc))
     {
         pThis->pIBelowNet = PDMIBASE_QUERY_INTERFACE(pBaseDown, PDMINETWORKUP);
-        if (!pThis->pIBelowNet)
+        if (pThis->pIBelowNet)
+            rc = VINF_SUCCESS;
+        else
         {
             AssertMsgFailed(("Configuration error: the driver below didn't export the network connector interface!\n"));
-            return VERR_PDM_MISSING_INTERFACE_BELOW;
+            rc = VERR_PDM_MISSING_INTERFACE_BELOW;
         }
     }
     else
-    {
         AssertMsgFailed(("Failed to attach to driver below! rc=%Rrc\n", rc));
-        return rc;
-    }
 
+    RTCritSectLeave(&pThis->XmitLock);
     return VINF_SUCCESS;
 }
 
 
 /**
- * Destruct a driver instance.
- *
- * Most VM resources are freed by the VM. This callback is provided so that any non-VM
- * resources can be freed correctly.
- *
- * @param   pDrvIns     The driver instance data.
+ * @interface_method_impl{PDMDRVREG,pfnDestruct}
  */
 static DECLCALLBACK(void) drvNetSnifferDestruct(PPDMDRVINS pDrvIns)
 {
@@ -332,6 +357,9 @@ static DECLCALLBACK(void) drvNetSnifferDestruct(PPDMDRVINS pDrvIns)
 
     if (RTCritSectIsInitialized(&pThis->Lock))
         RTCritSectDelete(&pThis->Lock);
+
+    if (RTCritSectIsInitialized(&pThis->XmitLock))
+        RTCritSectDelete(&pThis->XmitLock);
 
     if (pThis->File != NIL_RTFILE)
     {
@@ -342,24 +370,14 @@ static DECLCALLBACK(void) drvNetSnifferDestruct(PPDMDRVINS pDrvIns)
 
 
 /**
- * Construct a NAT network transport driver instance.
- *
- * @copydoc FNPDMDRVCONSTRUCT
+ * @interface_method_impl{Construct a NAT network transport driver instance,
+ *                       PDMDRVREG,pfnDestruct}
  */
 static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     PDRVNETSNIFFER pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSNIFFER);
     LogFlow(("drvNetSnifferConstruct:\n"));
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
-
-    /*
-     * Validate the config.
-     */
-    if (!CFGMR3AreValuesValid(pCfg, "File\0"))
-        return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
-
-    if (CFGMR3GetFirstChild(pCfg))
-        LogRel(("NetSniffer: Found child config entries -- are you trying to redirect ports?\n"));
 
     /*
      * Init the static parts.
@@ -371,24 +389,43 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface                = drvNetSnifferQueryInterface;
     /* INetworkUp */
+    pThis->INetworkUp.pfnBeginXmit                  = drvNetSnifferUp_BeginXmit;
     pThis->INetworkUp.pfnAllocBuf                   = drvNetSnifferUp_AllocBuf;
     pThis->INetworkUp.pfnFreeBuf                    = drvNetSnifferUp_FreeBuf;
     pThis->INetworkUp.pfnSendBuf                    = drvNetSnifferUp_SendBuf;
+    pThis->INetworkUp.pfnEndXmit                    = drvNetSnifferUp_EndXmit;
     pThis->INetworkUp.pfnSetPromiscuousMode         = drvNetSnifferUp_SetPromiscuousMode;
     pThis->INetworkUp.pfnNotifyLinkChanged          = drvNetSnifferUp_NotifyLinkChanged;
     /* INetworkDown */
     pThis->INetworkDown.pfnWaitReceiveAvail         = drvNetSnifferDown_WaitReceiveAvail;
     pThis->INetworkDown.pfnReceive                  = drvNetSnifferDown_Receive;
-    pThis->INetworkDown.pfnNotifyBufAvailable       = drvNetSnifferDown_NotifyBufAvailable;
+    pThis->INetworkDown.pfnDoTransmitWork           = drvNetSnifferDown_DoTransmitWork;
     /* INetworkConfig */
     pThis->INetworkConfig.pfnGetMac                 = drvNetSnifferDownCfg_GetMac;
     pThis->INetworkConfig.pfnGetLinkState           = drvNetSnifferDownCfg_GetLinkState;
     pThis->INetworkConfig.pfnSetLinkState           = drvNetSnifferDownCfg_SetLinkState;
 
     /*
+     * Create the locks.
+     */
+    int rc = RTCritSectInit(&pThis->Lock);
+    AssertRCReturn(rc, rc);
+    rc = RTCritSectInit(&pThis->XmitLock);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Validate the config.
+     */
+    if (!CFGMR3AreValuesValid(pCfg, "File\0"))
+        return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
+
+    if (CFGMR3GetFirstChild(pCfg))
+        LogRel(("NetSniffer: Found child config entries -- are you trying to redirect ports?\n"));
+
+    /*
      * Get the filename.
      */
-    int rc = CFGMR3QueryString(pCfg, "File", pThis->szFilename, sizeof(pThis->szFilename));
+    rc = CFGMR3QueryString(pCfg, "File", pThis->szFilename, sizeof(pThis->szFilename));
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         if (pDrvIns->iInstance > 0)
@@ -445,13 +482,6 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
         AssertMsgFailed(("Failed to attach to driver below! rc=%Rrc\n", rc));
         return rc;
     }
-
-    /*
-     * Create the lock.
-     */
-    rc = RTCritSectInit(&pThis->Lock);
-    if (RT_FAILURE(rc))
-        return rc;
 
     /*
      * Open output file / pipe.
