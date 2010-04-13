@@ -146,8 +146,8 @@ GLboolean crServerSupportRedirMuralFBO(void)
 {
     const GLubyte* pExt = cr_server.head_spu->dispatch_table.GetString(GL_REAL_EXTENSIONS);
 
-    return NULL!=crStrstr(pExt, "GL_ARB_framebuffer_object")
-           && NULL!=crStrstr(pExt, "GL_ARB_texture_non_power_of_two");
+    return    NULL!=crStrstr((const char*)pExt, "GL_ARB_framebuffer_object")
+           && NULL!=crStrstr((const char*)pExt, "GL_ARB_texture_non_power_of_two");
 }
 
 void crServerRedirMuralFBO(CRMuralInfo *mural, GLboolean redir)
