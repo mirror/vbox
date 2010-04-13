@@ -526,17 +526,13 @@ void UIMachineWindowNormal::loadWindowSettings()
             m_normalGeometry = QRect(x, y, w, h);
             setGeometry(m_normalGeometry);
 
-            /* Normalize view to the optimal size */
-            if (machineView())
-                machineView()->normalizeGeometry(true /* adjust position? */);
-
             /* Maximize if needed: */
             if (max)
                 setWindowState(windowState() | Qt::WindowMaximized);
         }
         else
         {
-            /* Normalize to the optimal size */
+            /* Normalize view early to the optimal size: */
             if (machineView())
                 machineView()->normalizeGeometry(true /* adjust position? */);
 
@@ -545,6 +541,10 @@ void UIMachineWindowNormal::loadWindowSettings()
             m_normalGeometry.moveCenter(ar.center());
             setGeometry(m_normalGeometry);
         }
+
+        /* Normalize view to the optimal size: */
+        if (machineView())
+            QTimer::singleShot(0, machineView(), SLOT(sltNormalizeGeometry()));
     }
 
     /* Load availability settings: */

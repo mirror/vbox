@@ -171,6 +171,9 @@ protected slots:
     /* Session callback handlers: */
     virtual void sltMouseCapturedStatusChanged();
 
+    /* Various helper slots: */
+    virtual void sltNormalizeGeometry() { normalizeGeometry(true); }
+
 private:
 
     /* Cross-platforms event processors: */
