@@ -47,30 +47,53 @@ namespace guestControl {
 ******************************************************************************/
 
 /**
+ * Process status when executed in the guest.
+ */
+enum eProcessStatus
+{
+    /** Process is in an undefined state. */
+    PROC_STS_UNDEFINED = 0,
+    /** Process has been started. */
+    PROC_STS_STARTED = 1,
+    /** Process terminated normally. */
+    PROC_STS_TEN = 2,
+    /** Process terminated via signal. */
+    PROC_STS_TES = 3,
+    /** Process terminated abnormally. */
+    PROC_STS_TEA = 4,
+    /** Process timed out and was killed. */
+    PROC_STS_TOK = 5,
+    /** Process timed out and was not killed successfully. */
+    PROC_STS_TOA = 6,
+    /** @todo */
+    PROC_STS_DWN = 7
+};
+
+/**
  * Data structure to pass to the service extension callback.  We use this to
  * notify the host of changes to properties.
  */
-typedef struct _HOSTCALLBACKDATA
+typedef struct _VBoxGuestCtrlExecCallbackData
 {
-    /** Magic number to identify the structure */
+    /** Magic number to identify the structure. */
     uint32_t u32Magic;
+    /** The process ID (PID). */
+    uint32_t pid;
+    /* The process status. */
+    uint32_t status;    
+    /** Optional flags (not used atm). */
+    uint32_t flags;
+    /** Optional data buffer (not used atm). */
+    void *pvData;
+    /** Size of optional data buffer (not used atm). */
+    uint32_t cbData;
     
-} HOSTCALLBACKDATA, *PHOSTCALLBACKDATA;
+} HOSTEXECCALLBACKDATA, *PHOSTEXECCALLBACKDATA;
 
 enum
 {
     /** Magic number for sanity checking the HOSTCALLBACKDATA structure */
     HOSTCALLBACKMAGIC = 0x26011982
-};
-
-/**
- * Process status when executed in the guest.
- */
-enum eProcessStatus
-{
-    PROC_STATUS_STARTED = 1,
-
-    PROC_STATUS_TERMINATED = 2
 };
 
 /**
@@ -188,13 +211,13 @@ typedef struct _VBoxGuestCtrlHGCMMsgExecCmd
 typedef struct _VBoxGuestCtrlHGCMMsgExecStatus
 {
     VBoxGuestHGCMCallInfo hdr;
-
+    /** The process ID (PID). */
     HGCMFunctionParameter pid;
-
+    /** The process status. */
     HGCMFunctionParameter status;
-
+    /** Optional flags (based on status). */
     HGCMFunctionParameter flags;
-
+    /** Optional data buffer (not used atm). */
     HGCMFunctionParameter data;
 
 } VBoxGuestCtrlHGCMMsgExecStatus;

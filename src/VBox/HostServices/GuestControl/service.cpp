@@ -488,15 +488,27 @@ int Service::notifyGuest(GuestCall *pCall, uint32_t eFunction, uint32_t cParms, 
 
 int Service::notifyHost(VBOXHGCMCALLHANDLE callHandle, uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    LogFlowFunc (("eFunction=%ld, cParms=%ld, paParms=%p\n", 
-                  eFunction, cParms, paParms));
-    HOSTCALLBACKDATA HostCallbackData;
-    HostCallbackData.u32Magic = HOSTCALLBACKMAGIC;
+    LogFlowFunc(("eFunction=%ld, cParms=%ld, paParms=%p\n", 
+                 eFunction, cParms, paParms));
 
-    int rc = mpfnHostCallback (mpvHostData, 0 /*u32Function*/,
-                           (void *)(&HostCallbackData),
-                           sizeof(HostCallbackData));
-    LogFlowFunc (("returning %Rrc\n", rc));
+    int rc;
+    if (   eFunction == GUEST_EXEC_SEND_STATUS
+        && cParms    == 4)
+    {
+        HOSTEXECCALLBACKDATA data;
+        data.u32Magic = HOSTCALLBACKMAGIC;
+        paParms[0].getUInt32(&data.pid);
+        paParms[1].getUInt32(&data.status);
+        paParms[2].getUInt32(&data.flags);
+        paParms[4].getPointer(&data.pvData, &data.cbData);
+
+        rc = mpfnHostCallback (mpvHostData, 0 /*u32Function*/,
+                               (void *)(&data),
+                               sizeof(data));
+    }   
+    else
+        rc = VERR_NOT_SUPPORTED;
+    LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
 

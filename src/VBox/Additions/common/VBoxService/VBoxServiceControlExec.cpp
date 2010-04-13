@@ -234,7 +234,7 @@ static int VBoxServiceControlExecProcHandleTransportEvent(RTPOLLSET hPollSet, ui
 }
 
 
-static int VBoxServiceControlExecProcLoop(RTPROCESS hProcess, RTMSINTERVAL cMillies, RTPOLLSET hPollSet,
+static int VBoxServiceControlExecProcLoop(uint32_t uClientID, RTPROCESS hProcess, RTMSINTERVAL cMillies, RTPOLLSET hPollSet,
                                           RTPIPE hStdInW, RTPIPE hStdOutR, RTPIPE hStdErrR)
 {
     int                         rc;
@@ -259,7 +259,9 @@ static int VBoxServiceControlExecProcLoop(RTPROCESS hProcess, RTMSINTERVAL cMill
      * Before entering the loop, tell the host that we've started the guest
      * and that it's now OK to send input to the process.
      */
-    rc = VINF_SUCCESS;
+    rc = VbglR3GuestCtrlExecReportStatus(uClientID, hProcess, 
+                                         PROC_STS_STARTED, 0 /* u32Flags */, 
+                                         NULL /* pvData */, 0 /* cbData */);
 
     /*
      * Process input, output, the test pipe and client requests.
@@ -400,49 +402,54 @@ static int VBoxServiceControlExecProcLoop(RTPROCESS hProcess, RTMSINTERVAL cMill
      */
     if (RT_SUCCESS(rc))
     {
+        uint32_t uStatus = PROC_STS_UNDEFINED;
+        uint32_t uFlags = 0;
+
         if (     fProcessTimedOut  && !fProcessAlive && MsProcessKilled != UINT64_MAX)
         {
-
+            uStatus = PROC_STS_TOK;
         }
         else if (fProcessTimedOut  &&  fProcessAlive && MsProcessKilled != UINT64_MAX)
         {
-
+            uStatus = PROC_STS_TOA;
         }
         /*else if (g_fTerminate && (fProcessAlive || MsProcessKilled != UINT64_MAX))
         {
-
+            uStatus = PROC_STS_DWN;
         }*/
         else if (fProcessAlive)
         {
-
+            VBoxServiceError("Control: Process is alive when it should not!\n");
         }
         else if (MsProcessKilled != UINT64_MAX)
         {
-
-        }
-        else if (   ProcessStatus.enmReason == RTPROCEXITREASON_NORMAL
-                 && ProcessStatus.iStatus   == 0)
-        {
-
+            VBoxServiceError("Control: Process has been killed when it should not!\n");
         }
         else if (ProcessStatus.enmReason == RTPROCEXITREASON_NORMAL)
         {
-
+            uStatus = PROC_STS_TEN;
+            uFlags = ProcessStatus.iStatus;
         }
         else if (ProcessStatus.enmReason == RTPROCEXITREASON_SIGNAL)
         {
-
+            uStatus = PROC_STS_TES;
+            uFlags = ProcessStatus.iStatus;
         }
         else if (ProcessStatus.enmReason == RTPROCEXITREASON_ABEND)
         {
-
+            uStatus = PROC_STS_TEA;
+            uFlags = ProcessStatus.iStatus;
         }
         else
         {
-
+            VBoxServiceError("Control: Process has reached an undefined status!\n");
         }
+       
+        VBoxServiceVerbose(3, "Control: Process ended: Status=%u, Flags=%u\n", uStatus, uFlags);
+        rc = VbglR3GuestCtrlExecReportStatus(uClientID, hProcess, 
+                                             uStatus, uFlags,
+                                             NULL /* pvData */, 0 /* cbData */);
     }
-
     RTMemFree(StdInBuf.pch);
     return rc;
 }
@@ -664,8 +671,6 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREADDATA
                                 if (RT_SUCCESS(rc))
                                 {
                                     VBoxServiceVerbose(3, "Control: Process \"%s\" started.\n", pData->pszCmd);
-                                    rc = VbglR3GuestCtrlExecReportStatus(u32ClientID, 123, PROC_STATUS_STARTED, 
-                                                                         0 /* u32Flags */, NULL, 0);
                                     /** @todo Dump a bit more info here. */
 
                                     /*
@@ -678,8 +683,12 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREADDATA
                                     rc2 = RTHandleClose(phStdErr);  AssertRC(rc2);
                                     phStdErr   = NULL;
 
-                                    rc = VBoxServiceControlExecProcLoop(hProcess, pData->uTimeLimitMS, hPollSet,
+                                    /* Enter the process loop. */
+                                    rc = VBoxServiceControlExecProcLoop(u32ClientID,
+                                                                        hProcess, pData->uTimeLimitMS, hPollSet,
                                                                         hStdInW, hStdOutR, hStdErrR);
+                                    VBoxServiceVerbose(3, "Control: Process loop ended with rc=%Rrc\n", rc);
+
                                     /*
                                      * The handles that are no longer in the set have
                                      * been closed by the above call in order to prevent
@@ -712,7 +721,7 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREADDATA
     VBoxServiceVerbose(3, "Control: Thread of process \"%s\" ended with rc=%Rrc.\n", pData->pszCmd, rc);
 
     /*
-     * Since we (hopefully) are the one ones that hold the thread data,
+     * Since we (hopefully) are the only ones that hold the thread data,
      * destroy them now.
      */
     VBoxServiceControlExecFreeThreadData(pData);

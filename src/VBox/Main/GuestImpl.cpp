@@ -436,11 +436,19 @@ int Guest::prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbLi
     return rc;
 }
 
-// static
-DECLCALLBACK(int) Guest::doGuestCtrlNotification(void *pvExtension,
-                                                 uint32_t u32Function,
-                                                 void *pvParms,
-                                                 uint32_t cbParms)
+/**
+ * Static callback function for receiving updates on processes started on
+ * the guest side.
+ *
+ * @returns VBox status code.
+ *
+ * @todo
+ *
+ */
+DECLCALLBACK(int) Guest::doGuestCtrlExecNotification(void *pvExtension,
+                                                     uint32_t u32Function,
+                                                     void *pvParms,
+                                                     uint32_t cbParms)
 {
     using namespace guestControl;
 
@@ -448,27 +456,21 @@ DECLCALLBACK(int) Guest::doGuestCtrlNotification(void *pvExtension,
      * No locking, as this is purely a notification which does not make any
      * changes to the object state.
      */
-    PHOSTCALLBACKDATA pCBData = reinterpret_cast<PHOSTCALLBACKDATA>(pvParms);
+    PHOSTEXECCALLBACKDATA pCBData = reinterpret_cast<PHOSTEXECCALLBACKDATA>(pvParms);
     AssertPtr(pCBData);
-    AssertReturn(sizeof(HOSTCALLBACKDATA) == cbParms, VERR_INVALID_PARAMETER);
+    AssertReturn(sizeof(HOSTEXECCALLBACKDATA) == cbParms, VERR_INVALID_PARAMETER);
     AssertReturn(HOSTCALLBACKMAGIC == pCBData->u32Magic, VERR_INVALID_PARAMETER);
     LogFlowFunc(("pvExtension = %p, u32Function = %d, pvParms = %p, cbParms = %d\n",
                  pvExtension, u32Function, pvParms, cbParms));
+    ComObjPtr<Guest> pGuest = reinterpret_cast<Guest *>(pvExtension);
 
     int rc = VINF_SUCCESS;
-    Guest *pGuest = static_cast <Guest *>(pvExtension);
-    AssertPtr(pGuest);
-
-    switch (u32Function)
-    {        
-        case GUEST_EXEC_SEND_STATUS:
-            LogFlowFunc(("GUEST_EXEC_SEND_STATUS\n"));
-            break;
-
-        default:
-            rc = VERR_NOT_SUPPORTED;
-            break;
+    if (u32Function == GUEST_EXEC_SEND_STATUS)
+    {
+        
     }
+    else
+        rc = VERR_NOT_SUPPORTED;
 
     ASMAtomicWriteBool(&pGuest->mSignalled, true);
     return rc;
@@ -519,7 +521,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
          */
         HGCMSVCEXTHANDLE hExt;
         int vrc = HGCMHostRegisterServiceExtension(&hExt, "VBoxGuestControlSvc",
-                                                   &Guest::doGuestCtrlNotification,
+                                                   &Guest::doGuestCtrlExecNotification,
                                                    this);
         if (RT_SUCCESS(vrc))
         {
@@ -593,10 +595,9 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                         VMMDev *vmmDev = mParent->getVMMDev();
                         if (vmmDev)
                         {
-                            LogFlow(("Guest::ExecuteProgram: numParms=%d\n", i));
+                            LogFlowFunc(("hgcmHostCall numParms=%d\n", i));
                             vrc = vmmDev->hgcmHostCall("VBoxGuestControlSvc", HOST_EXEC_CMD,
                                                        i, paParms);
-                            /** @todo Get the PID. */
                         }
                         RTMemFree(pvEnv);
                     }
@@ -604,7 +605,13 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                 }
                 if (RT_SUCCESS(vrc))
                 {
-                    /* Wait for the HGCM low level callback */
+                    LogFlowFunc(("Waiting for HGCM callback (timeout=%ldms) ...\n", aTimeoutMS));
+
+                    /* 
+                     * Wait for the HGCM low level callback until the process
+                     * has been started (or something went wrong). This is necessary to 
+                     * get the PID.
+                     */
                     mSignalled = false;
                     uint64_t u64Started = RTTimeMilliTS();
                     do
@@ -621,6 +628,12 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                         }
                         RTThreadSleep(100);
                     } while (!mSignalled);
+
+                    /* Did we get some status? */
+                    if (mSignalled)
+                    {
+
+                    }
 #if 0
                     progress.queryInterfaceTo(aProgress);
 #endif
