@@ -579,7 +579,7 @@ typedef struct PDMIDISPLAYPORT
 
 } PDMIDISPLAYPORT;
 /** PDMIDISPLAYPORT interface ID. */
-#define PDMIDISPLAYPORT_IID                     "14433cdc-f7cc-4385-b280-287d447f026e"
+#define PDMIDISPLAYPORT_IID                     "22d3d93d-3407-487a-8308-85367eae00bb"
 
 
 typedef struct _VBOXVHWACMD *PVBOXVHWACMD; /**< @todo r=bird: _VBOXVHWACMD -> VBOXVHWACMD; avoid using 1 or 2 leading underscores. Also, a line what it is to make doxygen happy. */
