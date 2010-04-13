@@ -339,12 +339,8 @@ int main()
     GEN_CHECK_OFF(PDM, pDevHlpQueueRC);
     GEN_CHECK_OFF(PDMCPU, cQueuedCritSectLeaves);
     GEN_CHECK_OFF(PDMCPU, apQueuedCritSectsLeaves);
-    GEN_CHECK_OFF(PDM, pQueuesTimer);
-    GEN_CHECK_OFF(PDM, pQueuesForced);
     GEN_CHECK_OFF(PDM, pQueueFlushR0);
     GEN_CHECK_OFF(PDM, pQueueFlushRC);
-    GEN_CHECK_OFF(PDM, pThreads);
-    GEN_CHECK_OFF(PDM, pThreadsTail);
     GEN_CHECK_OFF(PDM, CritSect);
     GEN_CHECK_OFF(PDM, StatQueuedCritSectLeaves);
 
