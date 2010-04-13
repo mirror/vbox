@@ -322,20 +322,20 @@ RTDECL(void *) rtMemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cb, void 
          * Calc the start of the fence and the user block
          * and then change the page protection of the fence.
          */
-        #ifdef RTALLOC_EFENCE_IN_FRONT
+#ifdef RTALLOC_EFENCE_IN_FRONT
         void *pvEFence = pvBlock;
         void *pv = (char *)pvEFence + RTALLOC_EFENCE_SIZE;
 # ifdef RTALLOC_EFENCE_NOMAN_FILLER
         memset((char *)pv + cb, RTALLOC_EFENCE_NOMAN_FILLER, cbBlock - RTALLOC_EFENCE_SIZE - cb);
 # endif
-        #else
+#else
         void *pvEFence = (char *)pvBlock + (cbBlock - RTALLOC_EFENCE_SIZE);
         void *pv = (char *)pvEFence - cbAligned;
 # ifdef RTALLOC_EFENCE_NOMAN_FILLER
         memset(pvBlock, RTALLOC_EFENCE_NOMAN_FILLER, cbBlock - RTALLOC_EFENCE_SIZE - cbAligned);
         memset((char *)pv + cb, RTALLOC_EFENCE_NOMAN_FILLER, cbAligned - cb);
 # endif
-        #endif
+#endif
 
 #ifdef RTALLOC_EFENCE_FENCE_FILLER
         memset(pvEFence, RTALLOC_EFENCE_FENCE_FILLER, RTALLOC_EFENCE_SIZE);
@@ -343,9 +343,9 @@ RTDECL(void *) rtMemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cb, void 
         int rc = RTMemProtect(pvEFence, RTALLOC_EFENCE_SIZE, RTMEM_PROT_NONE);
         if (!rc)
         {
-            #ifdef RTALLOC_EFENCE_TRACE
+#ifdef RTALLOC_EFENCE_TRACE
             rtmemBlockInsert(pBlock, pv);
-            #endif
+#endif
             if (enmType == RTMEMTYPE_RTMEMALLOCZ)
                 memset(pv, 0, cb);
 #ifdef RTALLOC_EFENCE_FILLER
@@ -397,15 +397,15 @@ RTDECL(void) rtMemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvC
         if (gfRTMemFreeLog)
             RTLogPrintf("RTMem %s: pv=%p pvCaller=%p cb=%#x\n", pszOp, pv, pvCaller, pBlock->cb);
 
-#ifdef RTALLOC_EFENCE_NOMAN_FILLER
+# ifdef RTALLOC_EFENCE_NOMAN_FILLER
         /*
          * Check whether the no man's land is untouched.
          */
-# ifdef RTALLOC_EFENCE_IN_FRONT
+#  ifdef RTALLOC_EFENCE_IN_FRONT
         void *pvWrong = ASMMemIsAll8((char *)pv + pBlock->cb,
                                      RT_ALIGN_Z(pBlock->cb, PAGE_SIZE) - pBlock->cb,
                                      RTALLOC_EFENCE_NOMAN_FILLER);
-# else
+#  else
         /* Alignment must match allocation alignment in rtMemAlloc(). */
         size_t cbAligned = RT_ALIGN_Z(pBlock->cb, RTALLOC_EFENCE_ALIGNMENT);
         void  *pvWrong   = ASMMemIsAll8((char *)pv + pBlock->cb,
@@ -416,19 +416,19 @@ RTDECL(void) rtMemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvC
         pvWrong = ASMMemIsAll8((void *)((uintptr_t)pv & ~PAGE_OFFSET_MASK),
                                RT_ALIGN_Z(cbAligned, PAGE_SIZE) - cbAligned,
                                RTALLOC_EFENCE_NOMAN_FILLER);
-# endif
+#  endif
         if (pvWrong)
             RTAssertDoPanic();
-#endif
+# endif
 
-    #ifdef RTALLOC_EFENCE_FREE_FILL
+# ifdef RTALLOC_EFENCE_FREE_FILL
         /*
          * Fill the user part of the block.
          */
         memset(pv, RTALLOC_EFENCE_FREE_FILL, pBlock->cb);
-    #endif
+# endif
 
-    #if defined(RTALLOC_EFENCE_FREE_DELAYED) && RTALLOC_EFENCE_FREE_DELAYED > 0
+# if defined(RTALLOC_EFENCE_FREE_DELAYED) && RTALLOC_EFENCE_FREE_DELAYED > 0
         /*
          * We're doing delayed freeing.
          * That means we'll expand the E-fence to cover the entire block.
@@ -443,11 +443,11 @@ RTDECL(void) rtMemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvC
             while ((pBlock = rtmemBlockDelayRemove()) != NULL)
             {
                 pv = pBlock->Core.Key;
-                #ifdef RTALLOC_EFENCE_IN_FRONT
+#  ifdef RTALLOC_EFENCE_IN_FRONT
                 void *pvBlock = (char *)pv - RTALLOC_EFENCE_SIZE;
-                #else
+#  else
                 void *pvBlock = (void *)((uintptr_t)pv & ~PAGE_OFFSET_MASK);
-                #endif
+#  endif
                 size_t cbBlock = RT_ALIGN_Z(pBlock->cb, PAGE_SIZE) + RTALLOC_EFENCE_SIZE;
                 rc = RTMemProtect(pvBlock, cbBlock, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
                 if (RT_SUCCESS(rc))
@@ -460,18 +460,18 @@ RTDECL(void) rtMemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvC
         else
             rtmemComplain(pszOp, "Failed to expand the efence of pv=%p cb=%d, rc=%d.\n", pv, pBlock, rc);
 
-    #else /* !RTALLOC_EFENCE_FREE_DELAYED */
+# else /* !RTALLOC_EFENCE_FREE_DELAYED */
 
         /*
          * Turn of the E-fence and free it.
          */
-        #ifdef RTALLOC_EFENCE_IN_FRONT
+#  ifdef RTALLOC_EFENCE_IN_FRONT
         void *pvBlock = (char *)pv - RTALLOC_EFENCE_SIZE;
         void *pvEFence = pvBlock;
-        #else
+#  else
         void *pvBlock = (void *)((uintptr_t)pv & ~PAGE_OFFSET_MASK);
         void *pvEFence = (char *)pv + pBlock->cb;
-        #endif
+#  endif
         int rc = RTMemProtect(pvEFence, RTALLOC_EFENCE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
         if (RT_SUCCESS(rc))
             RTMemPageFree(pvBlock);
@@ -479,7 +479,7 @@ RTDECL(void) rtMemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvC
             rtmemComplain(pszOp, "RTMemProtect(%p, %#x, RTMEM_PROT_READ | RTMEM_PROT_WRITE) -> %d\n", pvEFence, RTALLOC_EFENCE_SIZE, rc);
         rtmemBlockFree(pBlock);
 
-    #endif /* !RTALLOC_EFENCE_FREE_DELAYED */
+# endif /* !RTALLOC_EFENCE_FREE_DELAYED */
     }
     else
         rtmemComplain(pszOp, "pv=%p not found! Incorrect free!\n", pv);
