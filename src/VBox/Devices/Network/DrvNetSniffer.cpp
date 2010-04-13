@@ -228,12 +228,12 @@ static DECLCALLBACK(int) drvNetSnifferDown_Receive(PPDMINETWORKDOWN pInterface, 
 
 
 /**
- * @interface_method_impl{PDMINETWORKDOWN,pfnDoTransmitWork}
+ * @interface_method_impl{PDMINETWORKDOWN,pfnXmitPending}
  */
-static DECLCALLBACK(void) drvNetSnifferDown_DoTransmitWork(PPDMINETWORKDOWN pInterface)
+static DECLCALLBACK(void) drvNetSnifferDown_XmitPending(PPDMINETWORKDOWN pInterface)
 {
     PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkDown);
-    pThis->pIAboveNet->pfnDoTransmitWork(pThis->pIAboveNet);
+    pThis->pIAboveNet->pfnXmitPending(pThis->pIAboveNet);
 }
 
 
@@ -399,7 +399,7 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /* INetworkDown */
     pThis->INetworkDown.pfnWaitReceiveAvail         = drvNetSnifferDown_WaitReceiveAvail;
     pThis->INetworkDown.pfnReceive                  = drvNetSnifferDown_Receive;
-    pThis->INetworkDown.pfnDoTransmitWork           = drvNetSnifferDown_DoTransmitWork;
+    pThis->INetworkDown.pfnXmitPending              = drvNetSnifferDown_XmitPending;
     /* INetworkConfig */
     pThis->INetworkConfig.pfnGetMac                 = drvNetSnifferDownCfg_GetMac;
     pThis->INetworkConfig.pfnGetLinkState           = drvNetSnifferDownCfg_GetLinkState;

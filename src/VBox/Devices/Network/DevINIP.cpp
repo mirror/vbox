@@ -384,9 +384,9 @@ out:
 }
 
 /**
- * @interface_method_impl{PDMINETWORKDOWN,pfnDoTransmitWork}
+ * @interface_method_impl{PDMINETWORKDOWN,pfnXmitPending}
  */
-static DECLCALLBACK(void) devINIPNetworkDown_DoTransmitWork(PPDMINETWORKDOWN pInterface)
+static DECLCALLBACK(void) devINIPNetworkDown_XmitPending(PPDMINETWORKDOWN pInterface)
 {
     NOREF(pInterface);
 }
@@ -493,7 +493,7 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
     /* INetworkDown */
     pThis->INetworkDown.pfnWaitReceiveAvail = devINIPNetworkDown_WaitInputAvail;
     pThis->INetworkDown.pfnReceive          = devINIPNetworkDown_Input;
-    pThis->INetworkDown.pfnDoTransmitWork   = devINIPNetworkDown_DoTransmitWork;
+    pThis->INetworkDown.pfnXmitPending      = devINIPNetworkDown_XmitPending;
 
     /*
      * Get the configuration settings.
