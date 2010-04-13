@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -114,6 +114,16 @@ void InitAutoLockSystem()
     AutoWriteLock lock1(critsect1 COMMA_LOCKVAL_SRC_POS);
     AutoWriteLock lock2(critsect2 COMMA_LOCKVAL_SRC_POS);*/
 #endif
+}
+
+bool AutoLockHoldsLocksInClass(VBoxLockingClass lockClass)
+{
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
+    return RTLockValidatorHoldsLocksInClass(NIL_RTTHREAD,
+                                            g_mapLockValidationClasses[lockClass]);
+#else /* !VBOX_WITH_MAIN_LOCK_VALIDATION */
+    return false;
+#endif /* !VBOX_WITH_MAIN_LOCK_VALIDATION */
 }
 
 ////////////////////////////////////////////////////////////////////////////////
