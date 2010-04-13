@@ -1917,6 +1917,9 @@ int handleShowVMInfo(HandlerArg *a)
         ULONG cbLogData;
         while (true)
         {
+            /* Reset the array */
+            aLogData.setNull();
+            /* Fetch a chunk of the log file */
             CHECK_ERROR_BREAK(machine, ReadLog(uLogIdx, uOffset, _1M,
                                                ComSafeArrayAsOutParam(aLogData)));
             cbLogData = aLogData.size();
