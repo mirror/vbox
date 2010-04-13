@@ -64,7 +64,7 @@ ifdef VBOX_WITH_GUEST_CONTROL
 endif
 ifdef VBOX_WITH_PAGE_SHARING
  VBoxService_SOURCES    += \
-	VBoxServicePageSharing.cpp \
+	VBoxServicePageSharing.cpp
 endif
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxService_SOURCES.win  = \
