@@ -216,7 +216,7 @@ DECLCALLBACK(int) iface_QueryVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) VMMDev::VideoModeSupported(PPDMIVMMDEVCONNECTOR pInterface, uint32_t width, uint32_t height,
+DECLCALLBACK(int) VMMDev::VideoModeSupported(PPDMIVMMDEVCONNECTOR pInterface, uint32_t display, uint32_t width, uint32_t height,
                                              uint32_t bpp, bool *fSupported)
 {
     PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);

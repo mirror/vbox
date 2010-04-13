@@ -2139,13 +2139,14 @@ typedef struct PDMIVMMDEVCONNECTOR
      *
      * @returns VBox status code
      * @param   pInterface      Pointer to this interface.
+     * @param   display         The guest monitor, 0 for primary.
      * @param   cy              Video mode horizontal resolution in pixels.
      * @param   cx              Video mode vertical resolution in pixels.
      * @param   cBits           Video mode bits per pixel.
      * @param   pfSupported     Where to put the indicator for whether this mode is supported. (output)
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVideoModeSupported,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t cx, uint32_t cy, uint32_t cBits, bool *pfSupported));
+    DECLR3CALLBACKMEMBER(int, pfnVideoModeSupported,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t display, uint32_t cx, uint32_t cy, uint32_t cBits, bool *pfSupported));
 
     /**
      * Queries by how many pixels the height should be reduced when calculating video modes
@@ -2221,7 +2222,7 @@ typedef struct PDMIVMMDEVCONNECTOR
 
 } PDMIVMMDEVCONNECTOR;
 /** PDMIVMMDEVCONNECTOR interface ID. */
-#define PDMIVMMDEVCONNECTOR_IID                 "5c35e324-2b02-49b7-a613-119fbf3320a9"
+#define PDMIVMMDEVCONNECTOR_IID                 "1c300d1b-5938-42bb-8acb-46ecfe483db7"
 
 
 /** Pointer to a network connector interface */

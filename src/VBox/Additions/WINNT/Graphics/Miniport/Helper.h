@@ -35,7 +35,7 @@ typedef enum
 extern "C"
 {
 BOOLEAN vboxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp, uint32_t *pDisplayId);
-BOOLEAN vboxLikesVideoMode(uint32_t width, uint32_t height, uint32_t bpp);
+BOOLEAN vboxLikesVideoMode(uint32_t display, uint32_t width, uint32_t height, uint32_t bpp);
 ULONG vboxGetHeightReduction();
 BOOLEAN vboxQueryPointerPos(uint16_t *pointerXPos, uint16_t *pointerYPos);
 BOOLEAN vboxQueryHostWantsAbsolute();

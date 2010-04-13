@@ -114,13 +114,13 @@ BOOLEAN vboxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp, u
     return bRC;
 }
 
-BOOLEAN vboxLikesVideoMode(uint32_t width, uint32_t height, uint32_t bpp)
+BOOLEAN vboxLikesVideoMode(uint32_t display, uint32_t width, uint32_t height, uint32_t bpp)
 {
     BOOLEAN bRC = FALSE;
 
-    VMMDevVideoModeSupportedRequest *req = NULL;
+    VMMDevVideoModeSupportedRequest2 *req2 = NULL;
 
-    int rc = VbglGRAlloc((VMMDevRequestHeader**)&req, sizeof(VMMDevVideoModeSupportedRequest), VMMDevReq_VideoModeSupported);
+    int rc = VbglGRAlloc((VMMDevRequestHeader**)&req2, sizeof(VMMDevVideoModeSupportedRequest2), VMMDevReq_VideoModeSupported2);
     if (RT_FAILURE(rc))
     {
         dprintf(("VBoxVideo::vboxLikesVideoMode: ERROR allocating request, rc = %Rrc\n", rc));
@@ -131,20 +131,42 @@ BOOLEAN vboxLikesVideoMode(uint32_t width, uint32_t height, uint32_t bpp)
     }
     else
     {
-        req->width  = width;
-        req->height = height;
-        req->bpp    = bpp;
-        rc = VbglGRPerform(&req->header);
-        if (RT_SUCCESS(rc))
+        req2->display = display;
+        req2->width  = width;
+        req2->height = height;
+        req2->bpp    = bpp;
+        rc = VbglGRPerform(&req2->header);
+        if (RT_SUCCESS(rc) && RT_SUCCESS(req2->header.rc))
         {
-            bRC = req->fSupported;
+            bRC = req2->fSupported;
         }
         else
         {
-            dprintf(("VBoxVideo::vboxLikesVideoMode: ERROR querying video mode supported status from VMMDev."
-                     "rc = %Rrc\n", rc));
+            /* Retry using old inteface. */
+            AssertCompile(sizeof(VMMDevVideoModeSupportedRequest2) >= sizeof(VMMDevVideoModeSupportedRequest));
+            VMMDevVideoModeSupportedRequest *req = (VMMDevVideoModeSupportedRequest *)req2;
+            req->header.size        = sizeof(VMMDevVideoModeSupportedRequest);
+            req->header.version     = VMMDEV_REQUEST_HEADER_VERSION;
+            req->header.requestType = VMMDevReq_VideoModeSupported;
+            req->header.rc          = VERR_GENERAL_FAILURE;
+            req->header.reserved1   = 0;
+            req->header.reserved2   = 0;
+            req->width  = width;
+            req->height = height;
+            req->bpp    = bpp;
+
+            rc = VbglGRPerform(&req->header);
+            if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
+            {
+                bRC = req->fSupported;
+            }
+            else
+            {
+                dprintf(("VBoxVideo::vboxLikesVideoMode: ERROR querying video mode supported status from VMMDev."
+                         "rc = %Rrc\n", rc));
+            }
         }
-        VbglGRFree(&req->header);
+        VbglGRFree(&req2->header);
     }
 
     dprintf(("VBoxVideo::vboxLikesVideoMode: width: %d, height: %d, bpp: %d -> %s\n", width, height, bpp, (bRC == 1) ? "OK" : "FALSE"));

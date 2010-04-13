@@ -318,18 +318,32 @@ DECLCALLBACK(void) iface_VideoAccelFlush(PPDMIVMMDEVCONNECTOR pInterface)
     }
 }
 
-DECLCALLBACK(int) vmmdevVideoModeSupported(PPDMIVMMDEVCONNECTOR pInterface, uint32_t width, uint32_t height,
+DECLCALLBACK(int) vmmdevVideoModeSupported(PPDMIVMMDEVCONNECTOR pInterface, uint32_t display, uint32_t width, uint32_t height,
                                            uint32_t bpp, bool *fSupported)
 {
     PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
 
     if (!fSupported)
         return VERR_INVALID_PARAMETER;
-    IFramebuffer *framebuffer = pDrv->pVMMDev->getParent()->getDisplay()->getFramebuffer();
-    if (framebuffer)
+#ifdef DEBUG_sunlover
+    Log(("vmmdevVideoModeSupported: [%d]: %dx%dx%d\n", display, width, height, bpp));
+#endif
+    IFramebuffer *framebuffer = NULL;
+    LONG xOrigin = 0;
+    LONG yOrigin = 0;
+    HRESULT hrc = pDrv->pVMMDev->getParent()->getDisplay()->GetFramebuffer(display, &framebuffer, &xOrigin, &yOrigin);
+    if (SUCCEEDED(hrc) && framebuffer)
+    {
         framebuffer->VideoModeSupported(width, height, bpp, (BOOL*)fSupported);
+        framebuffer->Release();
+    }
     else
+    {
+#ifdef DEBUG_sunlover
+        Log(("vmmdevVideoModeSupported: hrc %x, framebuffer %p!!!\n", hrc, framebuffer));
+#endif
         *fSupported = true;
+    }
     return VINF_SUCCESS;
 }
 
