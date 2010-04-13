@@ -2252,6 +2252,7 @@ int Display::displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_
             *pcbData = 0;
             *pu32Width = 0;
             *pu32Height = 0;
+            rc = VINF_SUCCESS;
         }
     }
     else
@@ -2499,26 +2500,26 @@ int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, 
                  */
                 if (pFBInfo->fDefaultFormat)
                 {
-                    BYTE *address = NULL;
+                    address = NULL;
                     HRESULT hrc = pFBInfo->pFramebuffer->COMGETTER(Address) (&address);
                     if (SUCCEEDED(hrc) && address != NULL)
                     {
-                        const uint8_t *pu8Src       = pFBInfo->pu8FramebufferVRAM;
-                        int32_t xSrc                = x;
-                        int32_t ySrc                = y;
-                        uint32_t u32SrcWidth        = pFBInfo->w;
-                        uint32_t u32SrcHeight       = pFBInfo->h;
-                        uint32_t u32SrcLineSize     = pFBInfo->u32LineSize;
-                        uint32_t u32SrcBitsPerPixel = pFBInfo->u16BitsPerPixel;
+                        pu8Src       = pFBInfo->pu8FramebufferVRAM;
+                        xSrc                = x;
+                        ySrc                = y;
+                        u32SrcWidth        = pFBInfo->w;
+                        u32SrcHeight       = pFBInfo->h;
+                        u32SrcLineSize     = pFBInfo->u32LineSize;
+                        u32SrcBitsPerPixel = pFBInfo->u16BitsPerPixel;
 
                         /* Default format is 32 bpp. */
-                        uint8_t *pu8Dst             = address;
-                        int32_t xDst                = xSrc;
-                        int32_t yDst                = ySrc;
-                        uint32_t u32DstWidth        = u32SrcWidth;
-                        uint32_t u32DstHeight       = u32SrcHeight;
-                        uint32_t u32DstLineSize     = u32DstWidth * 4;
-                        uint32_t u32DstBitsPerPixel = 32;
+                        pu8Dst             = address;
+                        xDst                = xSrc;
+                        yDst                = ySrc;
+                        u32DstWidth        = u32SrcWidth;
+                        u32DstHeight       = u32SrcHeight;
+                        u32DstLineSize     = u32DstWidth * 4;
+                        u32DstBitsPerPixel = 32;
 
                         pDisplay->mpDrv->pUpPort->pfnCopyRect(pDisplay->mpDrv->pUpPort,
                                                               width, height,
