@@ -1020,9 +1020,11 @@ typedef struct PDMUSERPERVM
 {
     /** @todo move more stuff over here. */
 
-    /** Linked list of timer driven PDM queues. */
+    /** Linked list of timer driven PDM queues.
+     * Currently serialized by PDM::CritSect.  */
     R3PTRTYPE(struct PDMQUEUE *)    pQueuesTimer;
-    /** Linked list of force action driven PDM queues. */
+    /** Linked list of force action driven PDM queues.
+     * Currently serialized by PDM::CritSect. */
     R3PTRTYPE(struct PDMQUEUE *)    pQueuesForced;
 
     /** Lock protecting the lists below it. */
