@@ -2387,11 +2387,13 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         case PGMPOOLKIND_PAE_PDPT_PHYS:
         case PGMPOOLKIND_32BIT_PD_PHYS:
             /* Nothing to monitor here. */
+            Assert(!pPage->fMonitored);
             return VINF_SUCCESS;
 
         default:
             AssertFatalMsgFailed(("This can't happen! enmKind=%d\n", pPage->enmKind));
     }
+    Assert(pPage->fMonitored);
 
     /*
      * Remove the page from the monitored list or uninstall it if last.
