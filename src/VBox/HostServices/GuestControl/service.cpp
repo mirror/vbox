@@ -415,7 +415,7 @@ int Service::processHostMsg(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOX
         rc = VERR_INVALID_PARAMETER;
     }
     else
-    {   
+    {
         /*
          * If host command list is empty (nothing to do right now) just
          * defer the call until we got something to do (makes the client
@@ -488,9 +488,9 @@ int Service::notifyGuest(GuestCall *pCall, uint32_t eFunction, uint32_t cParms, 
 
 int Service::notifyHost(VBOXHGCMCALLHANDLE callHandle, uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    LogFlowFunc(("eFunction=%ld, cParms=%ld, paParms=%p\n", 
+    LogFlowFunc(("eFunction=%ld, cParms=%ld, paParms=%p\n",
                  eFunction, cParms, paParms));
-
+    ASMBreakpoint();
     int rc;
     if (   eFunction == GUEST_EXEC_SEND_STATUS
         && cParms    == 4)
@@ -502,10 +502,9 @@ int Service::notifyHost(VBOXHGCMCALLHANDLE callHandle, uint32_t eFunction, uint3
         paParms[2].getUInt32(&data.flags);
         paParms[4].getPointer(&data.pvData, &data.cbData);
 
-        rc = mpfnHostCallback (mpvHostData, 0 /*u32Function*/,
-                               (void *)(&data),
-                               sizeof(data));
-    }   
+        rc = mpfnHostCallback(mpvHostData, eFunction,
+                              (void *)(&data), sizeof(data));
+    }
     else
         rc = VERR_NOT_SUPPORTED;
     LogFlowFunc(("returning %Rrc\n", rc));
@@ -521,7 +520,7 @@ int Service::processCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paP
     if (RT_SUCCESS(rc))
     {
         mHostCmds.push_back(newCmd);
-    
+
         /* Limit list size by deleting oldest element. */
         if (mHostCmds.size() > 256) /** @todo Use a define! */
             mHostCmds.pop_front();
