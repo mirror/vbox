@@ -19,6 +19,9 @@ void
 sbfree(struct sbuf *sb)
 {
     RTMemFree(sb->sb_data);
+    /** @todo bird: I'm seeing double frees here sometimes.  This NULL'ing is just a
+       workaround for that, it doesn't actually fix anything.  */
+    sb->sb_data = NULL;
 }
 
 void
