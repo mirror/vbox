@@ -3735,6 +3735,69 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
     }
 }
 
+
+/**
+ * Transmit pending descriptors.
+ *
+ * @returns VBox status code.  VERR_TRY_AGAIN is returned if we're busy.
+ *
+ * @param   pState              The E1000 state.
+ */
+static int e1kXmitPending(E1KSTATE *pState)
+{
+    PPDMINETWORKUP  pDrv = pState->pDrv;
+    int             rc;
+
+    /*
+     * Grab the xmit lock of the driver as well as the E1K device state.
+     */
+    if (pDrv)
+    {
+        rc = pDrv->pfnBeginXmit(pDrv, true /*fOnWorkerThread*/);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+    rc = e1kMutexAcquire(pState, VERR_TRY_AGAIN, RT_SRC_POS);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Process all pending descriptors.
+         * Note! Do not process descriptors in locked state
+         */
+        while (TDH != TDT && !pState->fLocked)
+        {
+            E1KTXDESC desc;
+            E1kLog3(("%s About to process new TX descriptor at %08x%08x, TDLEN=%08x, TDH=%08x, TDT=%08x\n",
+                     INSTANCE(pState), TDBAH, TDBAL + TDH * sizeof(desc), TDLEN, TDH, TDT));
+
+            e1kLoadDesc(pState, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc));
+            e1kXmitDesc(pState, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc));
+            if (++TDH * sizeof(desc) >= TDLEN)
+                TDH = 0;
+
+            if (e1kGetTxLen(pState) <= GET_BITS(TXDCTL, LWTHRESH)*8)
+            {
+                E1kLog2(("%s Low on transmit descriptors, raise ICR.TXD_LOW, len=%x thresh=%x\n",
+                         INSTANCE(pState), e1kGetTxLen(pState), GET_BITS(TXDCTL, LWTHRESH)*8));
+                e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_TXD_LOW);
+            }
+
+            STAM_PROFILE_ADV_STOP(&pState->StatTransmit, a);
+        }
+
+        /// @todo: uncomment: pState->uStatIntTXQE++;
+        /// @todo: uncomment: e1kRaiseInterrupt(pState, ICR_TXQE);
+
+        /*
+         * Release the locks.
+         */
+        e1kMutexRelease(pState);
+    }
+    if (pDrv)
+        pDrv->pfnEndXmit(pDrv);
+    return rc;
+}
+
 #ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
 
 /**
@@ -3783,32 +3846,8 @@ static DECLCALLBACK(int) e1kTxThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
         if (pThread->enmState == PDMTHREADSTATE_RUNNING)
         {
-            E1KTXDESC desc;
-            rc = e1kMutexAcquire(pState, VERR_SEM_BUSY, RT_SRC_POS);
-            AssertRCReturn(rc, rc);
-            /* Do not process descriptors in locked state */
-            while (TDH != TDT && !pState->fLocked)
-            {
-                E1kLog3(("%s About to process new TX descriptor at %08x%08x, TDLEN=%08x, TDH=%08x, TDT=%08x\n",
-                         INSTANCE(pState), TDBAH, TDBAL + TDH * sizeof(desc), TDLEN, TDH, TDT));
-                //if (!e1kCsEnter(pState, RT_SRC_POS))
-                //    return VERR_PERMISSION_DENIED;
-                e1kLoadDesc(pState, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc));
-                e1kXmitDesc(pState, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc));
-                if (++TDH * sizeof(desc) >= TDLEN)
-                    TDH = 0;
-                if (e1kGetTxLen(pState) <= GET_BITS(TXDCTL, LWTHRESH)*8)
-                {
-                    E1kLog2(("%s Low on transmit descriptors, raise ICR.TXD_LOW, len=%x thresh=%x\n",
-                             INSTANCE(pState), e1kGetTxLen(pState), GET_BITS(TXDCTL, LWTHRESH)*8));
-                    e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_TXD_LOW);
-                }
-                STAM_PROFILE_ADV_STOP(&pState->StatTransmit, a);
-                //e1kCsLeave(pState);
-            }
-            /// @todo: uncomment: pState->uStatIntTXQE++;
-            /// @todo: uncomment: e1kRaiseInterrupt(pState, ICR_TXQE);
-            e1kMutexRelease(pState);
+            rc = e1kXmitPending(pState);
+            AssertMsgReturn(RT_SUCCESS(rc) || rc == VERR_TRY_AGAIN, ("%Rrc\n", rc), rc);
         }
     }
     return VINF_SUCCESS;

@@ -457,7 +457,7 @@ static void drvNATSendWorker(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnBeginXmit}
  */
-static DECLCALLBACK(int) drvNATNetworkUp_BeginXmit(PPDMINETWORKUP pInterface)
+static DECLCALLBACK(int) drvNATNetworkUp_BeginXmit(PPDMINETWORKUP pInterface, bool fOnWorkerThread)
 {
     PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkUp);
     int rc = RTCritSectTryEnter(&pThis->XmitLock);
@@ -476,7 +476,7 @@ static DECLCALLBACK(int) drvNATNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, siz
                                                   PCPDMNETWORKGSO pGso, PPPDMSCATTERGATHER ppSgBuf)
 {
     PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkUp);
-//    Assert(RTCritSectIsOwner(&pThis->XmitLock);
+    Assert(RTCritSectIsOwner(&pThis->XmitLock));
 
     /*
      * Drop the incoming frame if the NAT thread isn't running.
@@ -542,7 +542,7 @@ static DECLCALLBACK(int) drvNATNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, siz
 static DECLCALLBACK(int) drvNATNetworkUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf)
 {
     PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkUp);
-//    Assert(RTCritSectIsOwner(&pThis->XmitLock);
+    Assert(RTCritSectIsOwner(&pThis->XmitLock));
     drvNATFreeSgBuf(pThis, pSgBuf);
     return VINF_SUCCESS;
 }
@@ -554,7 +554,7 @@ static DECLCALLBACK(int) drvNATNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
 {
     PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkUp);
     Assert((pSgBuf->fFlags & PDMSCATTERGATHER_FLAGS_OWNER_MASK) == PDMSCATTERGATHER_FLAGS_OWNER_1);
-//    Assert(RTCritSectIsOwner(&pThis->XmitLock);
+    Assert(RTCritSectIsOwner(&pThis->XmitLock));
 
     int rc;
     if (pThis->pSlirpThread->enmState == PDMTHREADSTATE_RUNNING)

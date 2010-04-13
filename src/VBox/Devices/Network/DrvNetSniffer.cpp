@@ -86,7 +86,7 @@ typedef struct DRVNETSNIFFER
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnBeginXmit}
  */
-static DECLCALLBACK(int) drvNetSnifferUp_BeginXmit(PPDMINETWORKUP pInterface)
+static DECLCALLBACK(int) drvNetSnifferUp_BeginXmit(PPDMINETWORKUP pInterface, bool fOnWorkerThread)
 {
     PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkUp);
     if (RT_UNLIKELY(!pThis->pIBelowNet))
@@ -96,7 +96,7 @@ static DECLCALLBACK(int) drvNetSnifferUp_BeginXmit(PPDMINETWORKUP pInterface)
             rc = VERR_TRY_AGAIN;
         return rc;
     }
-    return pThis->pIBelowNet->pfnBeginXmit(pThis->pIBelowNet);
+    return pThis->pIBelowNet->pfnBeginXmit(pThis->pIBelowNet, fOnWorkerThread);
 }
 
 

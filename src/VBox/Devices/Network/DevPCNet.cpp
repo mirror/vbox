@@ -2059,15 +2059,36 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
     PCNetState *pThis = PDMINS_2_DATA(pDevIns, PCNetState *);
     NOREF(pItem);
 
-    /* Clear counter .*/
 #ifndef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
-    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-    AssertReleaseRC(rc);
+    /*
+     * Process as much as we can.
+     */
+    int             rc   = VINF_SUCCESS;
+    PPDMINETWORKUP  pDrv = pThis->pDrvR3;
+    if (pDrv)
+    {
+        rc = pDrv->pfnBeginXmit(pDrv, false /*fOnWorkerThread*/);
+        AssertMsg(rc == VINF_SUCCESS || rc == VERR_TRY_AGAIN, ("%Rrc\n", rc));
+    }
+    if (RT_SUCCESS(rc))
+    {
+        rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+        if (RT_SUCCESS(rc))
+        {
+            int rc2 = pcnetAsyncTransmit(pThis, false /*fOnWorkerThread*/);
+            AssertReleaseRC(rc2);
 
-    pcnetAsyncTransmit(pThis, false /*fOnWorkerThread*/);
-
-    PDMCritSectLeave(&pThis->CritSect);
+            PDMCritSectLeave(&pThis->CritSect);
+        }
+        else
+            AssertReleaseRC(rc);
+        if (pDrv)
+            pDrv->pfnEndXmit(pDrv);
+    }
 #else
+    /*
+     * Wake up the TX thread.
+     */
     int rc = RTSemEventSignal(pThis->hSendEventSem);
     AssertRC(rc);
 #endif
@@ -2690,18 +2711,30 @@ static DECLCALLBACK(int) pcnetAsyncSendThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
 
         /*
          * Perform async send. Mind that we might be requested to
-         * suspended while waiting for the critical section.
+         * suspended while waiting for the critical sections.
          */
-        rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-        AssertReleaseRCReturn(rc, rc);
-
-        if (pThread->enmState == PDMTHREADSTATE_RUNNING)
+        PPDMINETWORKUP pDrv = pThis->pDrvR3;
+        if (pDrv)
         {
-            rc = pcnetAsyncTransmit(pThis, true /*fOnWorkerThread*/);
-            AssertReleaseRC(rc);
+            rc = pDrv->pfnBeginXmit(pDrv, true /*fOnWorkerThread*/);
+            if (rc == VERR_TRY_AGAIN)
+                continue;
+            AssertReleaseRCReturn(rc, rc);
         }
+        rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+        if (RT_SUCCESS(rc))
+        {
+            if (pThread->enmState == PDMTHREADSTATE_RUNNING)
+            {
+                int rc2 = pcnetAsyncTransmit(pThis, true /*fOnWorkerThread*/);
+                AssertReleaseRC(rc2);
+            }
 
-        PDMCritSectLeave(&pThis->CritSect);
+            PDMCritSectLeave(&pThis->CritSect);
+        }
+        if (pDrv)
+            pDrv->pfnEndXmit(pDrv);
+        AssertReleaseRCReturn(rc, rc);
     }
 
     /* The thread is being suspended or terminated. */
