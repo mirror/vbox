@@ -600,15 +600,13 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREADDATA
      * spawning services.
      */
     RTThreadUserSignal(RTThreadSelf());
-    VBoxServiceVerbose(3, "Control: Thread of process \"%s\" started.", pData->pszCmd);
+    VBoxServiceVerbose(3, "Control: Thread of process \"%s\" started.\n", pData->pszCmd);
 
     uint32_t u32ClientID;
     int rc = VbglR3GuestCtrlConnect(&u32ClientID);
-    if (RT_SUCCESS(rc))
-        VBoxServiceVerbose(3, "Control: Thread client ID: %#x\n", u32ClientID);
-    else
+    if (RT_FAILURE(rc))
     {
-        VBoxServiceError("Control: Thread failed to connect to the guest control service! Error: %Rrc\n", rc);
+        VBoxServiceError("Control: Thread failed to connect to the guest control service, aborted! Error: %Rrc\n", rc);
         return rc;
     }
 
@@ -709,7 +707,8 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREADDATA
                                                                               PROC_STS_ERROR, rc,
                                                                               NULL /* pvData */, 0 /* cbData */);
                                     if (RT_FAILURE(rc2))
-                                        VBoxServiceError("Control: Could not report process start error! Error: %Rrc\n", rc2);
+                                        VBoxServiceError("Control: Could not report process start error! Error: %Rrc (process error %Rrc)\n", 
+                                                         rc2, rc);
                                 }
                             }
                         }
@@ -727,7 +726,7 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREADDATA
     }
 
     VbglR3GuestCtrlDisconnect(u32ClientID);
-    VBoxServiceVerbose(3, "Control: Thread of process \"%s\" ended with rc=%Rrc.\n", pData->pszCmd, rc);
+    VBoxServiceVerbose(3, "Control: Thread of process \"%s\" ended with rc=%Rrc\n", pData->pszCmd, rc);
 
     /*
      * Since we (hopefully) are the only ones that hold the thread data,
@@ -764,7 +763,7 @@ int VBoxServiceControlExecProcess(const char *pszCmd, uint32_t uFlags,
                                 RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "Exec");
         if (RT_FAILURE(rc))
         {
-            VBoxServiceError("Control: RTThreadCreate failed, rc=%Rrc\n, threadData=%p", 
+            VBoxServiceError("Control: RTThreadCreate failed, rc=%Rrc\n, threadData=%p\n", 
                              rc, pThreadData);
             /* Only destroy thread data on failure; otherwise it's destroyed in the thread handler. */
             VBoxServiceControlExecFreeThreadData(pThreadData);
