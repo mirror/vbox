@@ -2099,6 +2099,9 @@ STDMETHODIMP Display::GetFramebuffer (ULONG aScreenId,
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    if (aScreenId != 0 && aScreenId >= mcMonitors)
+        return E_INVALIDARG;
+
     /* @todo this should be actually done on EMT. */
     DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
 

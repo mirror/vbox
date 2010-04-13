@@ -482,7 +482,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         }
 
         /* does the host like that mode? */
-        if (!vboxLikesVideoMode(resolutionMatrix[matrixIndex].xRes, resolutionMatrix[matrixIndex].yRes - yOffset, 8))
+        if (!vboxLikesVideoMode(DeviceExtension->iDevice, resolutionMatrix[matrixIndex].xRes, resolutionMatrix[matrixIndex].yRes - yOffset, 8))
         {
             ++matrixIndex;
             continue;
@@ -544,7 +544,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         }
 
         /* does the host like that mode? */
-        if (!vboxLikesVideoMode(resolutionMatrix[matrixIndex].xRes, resolutionMatrix[matrixIndex].yRes - yOffset, 16))
+        if (!vboxLikesVideoMode(DeviceExtension->iDevice, resolutionMatrix[matrixIndex].xRes, resolutionMatrix[matrixIndex].yRes - yOffset, 16))
         {
             ++matrixIndex;
             continue;
@@ -604,7 +604,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         }
 
         /* does the host like that mode? */
-        if (!vboxLikesVideoMode(resolutionMatrix[matrixIndex].xRes, resolutionMatrix[matrixIndex].yRes - yOffset, 24))
+        if (!vboxLikesVideoMode(DeviceExtension->iDevice, resolutionMatrix[matrixIndex].xRes, resolutionMatrix[matrixIndex].yRes - yOffset, 24))
         {
             ++matrixIndex;
             continue;
@@ -664,7 +664,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         }
 
         /* does the host like that mode? */
-        if (!vboxLikesVideoMode(resolutionMatrix[matrixIndex].xRes, resolutionMatrix[matrixIndex].yRes - yOffset, 32))
+        if (!vboxLikesVideoMode(DeviceExtension->iDevice, resolutionMatrix[matrixIndex].xRes, resolutionMatrix[matrixIndex].yRes - yOffset, 32))
         {
             ++matrixIndex;
             continue;
@@ -748,7 +748,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             break;
 
         /* third test: does the host like the video mode? */
-        if (!vboxLikesVideoMode(xres, yres, bpp))
+        if (!vboxLikesVideoMode(DeviceExtension->iDevice, xres, yres, bpp))
             break;
 
         dprintf(("VBoxVideo: adding mode from registry: xres = %d, yres = %d, bpp = %d\n", xres, yres, bpp));
@@ -980,7 +980,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             bpp = 32;
 
         /* does the host like that mode? */
-        if (vboxLikesVideoMode(xres, yres, bpp))
+        if (vboxLikesVideoMode(DeviceExtension->iDevice, xres, yres, bpp))
         {
             /* we must have a valid video mode by now and it must fit within the VRAM */
             if (   (   xres

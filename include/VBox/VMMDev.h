@@ -146,6 +146,7 @@ typedef enum
     VMMDevReq_GetDisplayChangeRequest2   = 54,
     VMMDevReq_ReportGuestCapabilities    = 55,
     VMMDevReq_SetGuestCapabilities       = 56,
+    VMMDevReq_VideoModeSupported2        = 57,
 #ifdef VBOX_WITH_HGCM
     VMMDevReq_HGCMConnect                = 60,
     VMMDevReq_HGCMDisconnect             = 61,
@@ -897,6 +898,27 @@ typedef struct
 } VMMDevVideoModeSupportedRequest;
 AssertCompileSize(VMMDevVideoModeSupportedRequest, 24+16);
 
+/**
+ * Video mode supported request structure for a specific display.
+ *
+ * Used by VMMDevReq_VideoModeSupported2.
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader header;
+    /** IN: The guest display number. */
+    uint32_t display;
+    /** IN: Horizontal pixel resolution. */
+    uint32_t width;
+    /** IN: Vertical pixel resolution. */
+    uint32_t height;
+    /** IN: Bits per pixel. */
+    uint32_t bpp;
+    /** OUT: Support indicator. */
+    bool fSupported;
+} VMMDevVideoModeSupportedRequest2;
+AssertCompileSize(VMMDevVideoModeSupportedRequest2, 24+20);
 
 /**
  * Video modes height reduction request structure.
