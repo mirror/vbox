@@ -205,8 +205,8 @@ quint64 UIMultiScreenLayout::memoryRequirements(const QMap<int, int> *pScreenLay
     ULONG width = 0;
     ULONG height = 0;
     ULONG guestBpp = 0;
-    m_pMachineLogic->uisession()->session().GetConsole().GetDisplay().GetScreenResolution(0, width, height, guestBpp);
     quint64 usedBits = 0;
+    CDisplay display = m_pMachineLogic->uisession()->session().GetConsole().GetDisplay();
     for (int i = 0; i < m_cGuestScreens; ++ i)
     {
         QRect screen;
@@ -214,6 +214,7 @@ quint64 UIMultiScreenLayout::memoryRequirements(const QMap<int, int> *pScreenLay
             screen = QApplication::desktop()->availableGeometry(pScreenLayout->value(i, 0));
         else
             screen = QApplication::desktop()->screenGeometry(pScreenLayout->value(i, 0));
+        display.GetScreenResolution(i, width, height, guestBpp);
         usedBits += screen.width() * /* display width */
                     screen.height() * /* display height */
                     guestBpp + /* guest bits per pixel */
