@@ -2391,6 +2391,7 @@ int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, 
     {
         DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[aScreenId];
 
+        /* Copy the bitmap to the guest VRAM. */
         const uint8_t *pu8Src       = address;
         int32_t xSrc                = 0;
         int32_t ySrc                = 0;
@@ -2419,7 +2420,49 @@ int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, 
                                                    u32DstLineSize, u32DstBitsPerPixel);
         if (RT_SUCCESS(rc))
         {
-            pDisplay->handleDisplayUpdate(x + pFBInfo->xOrigin, y + pFBInfo->yOrigin, width, height);
+            if (!pFBInfo->pFramebuffer.isNull())
+            {
+                /* Update the changed screen area. When framebuffer uses VRAM directly, just notify
+                 * it to update. And for default format, render the guest VRAM to framebuffer.
+                 */
+                if (pFBInfo->fDefaultFormat)
+                {
+                    BYTE *address = NULL;
+                    HRESULT hrc = pFBInfo->pFramebuffer->COMGETTER(Address) (&address);
+                    if (SUCCEEDED(hrc) && address != NULL)
+                    {
+                        const uint8_t *pu8Src       = pFBInfo->pu8FramebufferVRAM;
+                        int32_t xSrc                = x;
+                        int32_t ySrc                = y;
+                        uint32_t u32SrcWidth        = pFBInfo->w;
+                        uint32_t u32SrcHeight       = pFBInfo->h;
+                        uint32_t u32SrcLineSize     = pFBInfo->u32LineSize;
+                        uint32_t u32SrcBitsPerPixel = pFBInfo->u16BitsPerPixel;
+
+                        /* Default format is 32 bpp. */
+                        uint8_t *pu8Dst             = address;
+                        int32_t xDst                = xSrc;
+                        int32_t yDst                = ySrc;
+                        uint32_t u32DstWidth        = u32SrcWidth;
+                        uint32_t u32DstHeight       = u32SrcHeight;
+                        uint32_t u32DstLineSize     = u32DstWidth * 4;
+                        uint32_t u32DstBitsPerPixel = 32;
+
+                        pDisplay->mpDrv->pUpPort->pfnCopyRect(pDisplay->mpDrv->pUpPort,
+                                                              width, height,
+                                                              pu8Src,
+                                                              xSrc, ySrc,
+                                                              u32SrcWidth, u32SrcHeight,
+                                                              u32SrcLineSize, u32SrcBitsPerPixel,
+                                                              pu8Dst,
+                                                              xDst, yDst,
+                                                              u32DstWidth, u32DstHeight,
+                                                              u32DstLineSize, u32DstBitsPerPixel);
+                    }
+                }
+
+                pDisplay->handleDisplayUpdate(x + pFBInfo->xOrigin, y + pFBInfo->yOrigin, width, height);
+            }
         }
     }
     else
@@ -2499,7 +2542,65 @@ STDMETHODIMP Display::DrawToScreen (ULONG aScreenId, BYTE *address, ULONG x, ULO
 void Display::InvalidateAndUpdateEMT(Display *pDisplay)
 {
     pDisplay->vbvaLock();
-    pDisplay->mpDrv->pUpPort->pfnUpdateDisplayAll(pDisplay->mpDrv->pUpPort);
+    unsigned uScreenId;
+    for (uScreenId = 0; uScreenId < pDisplay->mcMonitors; uScreenId++)
+    {
+        if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+        {
+            pDisplay->mpDrv->pUpPort->pfnUpdateDisplayAll(pDisplay->mpDrv->pUpPort);
+        }
+        else
+        {
+            DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
+
+            if (!pFBInfo->pFramebuffer.isNull())
+            {
+                /* Render complete VRAM screen to the framebuffer.
+                 * When framebuffer uses VRAM directly, just notify it to update.
+                 */
+                if (pFBInfo->fDefaultFormat)
+                {
+                    BYTE *address = NULL;
+                    HRESULT hrc = pFBInfo->pFramebuffer->COMGETTER(Address) (&address);
+                    if (SUCCEEDED(hrc) && address != NULL)
+                    {
+                        uint32_t width              = pFBInfo->w;
+                        uint32_t height             = pFBInfo->h;
+
+                        const uint8_t *pu8Src       = pFBInfo->pu8FramebufferVRAM;
+                        int32_t xSrc                = 0;
+                        int32_t ySrc                = 0;
+                        uint32_t u32SrcWidth        = pFBInfo->w;
+                        uint32_t u32SrcHeight       = pFBInfo->h;
+                        uint32_t u32SrcLineSize     = pFBInfo->u32LineSize;
+                        uint32_t u32SrcBitsPerPixel = pFBInfo->u16BitsPerPixel;
+
+                        /* Default format is 32 bpp. */
+                        uint8_t *pu8Dst             = address;
+                        int32_t xDst                = xSrc;
+                        int32_t yDst                = ySrc;
+                        uint32_t u32DstWidth        = u32SrcWidth;
+                        uint32_t u32DstHeight       = u32SrcHeight;
+                        uint32_t u32DstLineSize     = u32DstWidth * 4;
+                        uint32_t u32DstBitsPerPixel = 32;
+
+                        pDisplay->mpDrv->pUpPort->pfnCopyRect(pDisplay->mpDrv->pUpPort,
+                                                              width, height,
+                                                              pu8Src,
+                                                              xSrc, ySrc,
+                                                              u32SrcWidth, u32SrcHeight,
+                                                              u32SrcLineSize, u32SrcBitsPerPixel,
+                                                              pu8Dst,
+                                                              xDst, yDst,
+                                                              u32DstWidth, u32DstHeight,
+                                                              u32DstLineSize, u32DstBitsPerPixel);
+                    }
+                }
+
+                pDisplay->handleDisplayUpdate (pFBInfo->xOrigin, pFBInfo->yOrigin, pFBInfo->w, pFBInfo->h);
+            }
+        }
+    }
     pDisplay->vbvaUnlock();
 }
 #endif /* VBOX_WITH_OLD_VBVA_LOCK */
