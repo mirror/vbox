@@ -490,7 +490,6 @@ int Service::notifyHost(VBOXHGCMCALLHANDLE callHandle, uint32_t eFunction, uint3
 {
     LogFlowFunc(("eFunction=%ld, cParms=%ld, paParms=%p\n",
                  eFunction, cParms, paParms));
-    ASMBreakpoint();
     int rc = VINF_SUCCESS;
     if (   eFunction == GUEST_EXEC_SEND_STATUS
         && cParms    == 4)
@@ -503,10 +502,8 @@ int Service::notifyHost(VBOXHGCMCALLHANDLE callHandle, uint32_t eFunction, uint3
         paParms[4].getPointer(&data.pvData, &data.cbData);
 
         if (mpfnHostCallback)
-        {
             rc = mpfnHostCallback(mpvHostData, eFunction,
                                   (void *)(&data), sizeof(data));
-        }
     }
     else
         rc = VERR_NOT_SUPPORTED;
@@ -555,9 +552,6 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
     int rc = VINF_SUCCESS;
     LogFlowFunc(("u32ClientID = %d, fn = %d, cParms = %d, pparms = %d\n",
                  u32ClientID, eFunction, cParms, paParms));
-
-    ASMBreakpoint();
-
     try
     {
         switch (eFunction)
@@ -611,9 +605,6 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
 int Service::hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
-
-    ASMBreakpoint();
-
     LogFlowFunc(("fn = %d, cParms = %d, pparms = %d\n",
                  eFunction, cParms, paParms));
     try

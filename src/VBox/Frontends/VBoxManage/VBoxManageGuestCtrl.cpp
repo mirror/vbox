@@ -91,6 +91,7 @@ static int handleExecProgram(HandlerArg *a)
     Utf8Str Utf8Password;
     uint32_t uTimeoutMS = RT_INDEFINITE_WAIT;
     bool waitForOutput = false;
+    bool verbose = false;
 
     /* Iterate through all possible commands (if available). */
     for (int i = 2; usageOK && i < a->argc; i++)
@@ -187,6 +188,10 @@ static int handleExecProgram(HandlerArg *a)
                 ++i;
             }
         }
+        else if (!strcmp(a->argv[i], "--verbose"))
+        {
+            verbose = true;
+        }
         /** @todo Add fancy piping stuff here. */
         else
         {
@@ -237,14 +242,18 @@ static int handleExecProgram(HandlerArg *a)
 
             ComPtr<IProgress> progress;
             ULONG uPID = 0;
+
+            if (verbose) RTPrintf("Waiting for guest to start process ...\n");
             CHECK_ERROR_BREAK(guest, ExecuteProcess(Bstr(Utf8Cmd), uFlags,
                                                     ComSafeArrayAsInParam(args), ComSafeArrayAsInParam(env),
                                                     Bstr(Utf8StdIn), Bstr(Utf8StdOut), Bstr(Utf8StdErr),
                                                     Bstr(Utf8UserName), Bstr(Utf8Password), uTimeoutMS,
                                                     &uPID, progress.asOutParam()));
+            if (verbose) RTPrintf("Process \"%s\" (PID: %u) started.\n", Utf8Cmd.raw(), uPID);
             if (waitForOutput)
             {
-
+                if (verbose) RTPrintf("Waiting for output ...\n");
+                /** @todo */
             }
             /** @todo Show some progress here? */
             a->session->Close();
