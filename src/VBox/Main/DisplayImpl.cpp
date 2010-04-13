@@ -2417,6 +2417,10 @@ int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, 
                                                    xDst, yDst,
                                                    u32DstWidth, u32DstHeight,
                                                    u32DstLineSize, u32DstBitsPerPixel);
+        if (RT_SUCCESS(rc))
+        {
+            pDisplay->handleDisplayUpdate(x + pFBInfo->xOrigin, y + pFBInfo->yOrigin, width, height);
+        }
     }
     else
     {

@@ -11470,8 +11470,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="screenId" type="unsigned long" dir="in"/>
       <param name="address" type="octet" mod="ptr" dir="in"/>
-      <param name="x" type="unsigned long" dir="in"/>
-      <param name="y" type="unsigned long" dir="in"/>
+      <param name="x" type="unsigned long" dir="in">
+        <desc>Relative to the screen top left corner.</desc>
+      </param>
+      <param name="y" type="unsigned long" dir="in">
+        <desc>Relative to the screen top left corner.</desc>
+      </param>
       <param name="width" type="unsigned long" dir="in"/>
       <param name="height" type="unsigned long" dir="in"/>
     </method>
