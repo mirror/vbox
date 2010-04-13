@@ -144,8 +144,8 @@ static void listHardDisks(const ComPtr<IVirtualBox> aVirtualBox,
                     j == 0 ? "Usage:       " : "             ",
                     name.raw(), machineIds[j]);
             com::SafeArray<BSTR> snapshotIds;
-            hdd->COMGETTER(SnapshotIds)(machineIds[j],
-                                        ComSafeArrayAsOutParam(snapshotIds));
+            hdd->GetSnapshotIds(machineIds[j],
+                                ComSafeArrayAsOutParam(snapshotIds));
             for (size_t k = 0; k < snapshotIds.size(); ++k)
             {
                 ComPtr<ISnapshot> snapshot;
