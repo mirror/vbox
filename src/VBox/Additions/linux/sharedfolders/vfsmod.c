@@ -239,6 +239,7 @@ sf_read_super_aux (struct super_block *sb, void *data, int flags)
                 goto fail1;
         }
 
+        sf_i->handle = SHFL_HANDLE_NIL;
         sf_i->path = kmalloc (sizeof (SHFLSTRING) + 1, GFP_KERNEL);
         if (!sf_i->path) {
                 err = -ENOMEM;
