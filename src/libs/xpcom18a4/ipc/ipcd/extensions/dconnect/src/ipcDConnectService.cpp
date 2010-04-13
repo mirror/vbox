@@ -2639,7 +2639,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
     for (i=0; i<paramCount && NS_SUCCEEDED(rv); ++i)
     {
       const nsXPTParamInfo &paramInfo = aInfo->GetParam(i);
-      if (aParams[i].val.p && (paramInfo.IsOut() || paramInfo.IsRetval()))
+      if ((paramInfo.IsOut() || paramInfo.IsRetval()) && aParams[i].val.p)
       {
         const nsXPTType &type = paramInfo.GetType();
         if (type.IsInterfacePointer())
