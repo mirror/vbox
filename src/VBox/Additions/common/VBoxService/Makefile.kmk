@@ -44,6 +44,9 @@ ifdef VBOX_WITH_GUEST_CONTROL
   VBoxService_DEFS       += VBOX_WITH_GUEST_CONTROL VBOXSERVICE_CONTROL
 endif
 endif
+ifdef VBOX_WITH_PAGE_SHARING
+  VBoxService_DEFS       += VBOX_WITH_PAGE_SHARING
+endif
 if1of ($(KBUILD_TARGET), linux)
  VBoxService_DEFS        += VBOXSERVICE_CPUHOTPLUG
 endif
@@ -58,6 +61,10 @@ ifdef VBOX_WITH_GUEST_CONTROL
  VBoxService_SOURCES    += \
 	VBoxServiceControl.cpp \
 	VBoxServiceControlExec.cpp
+endif
+ifdef VBOX_WITH_PAGE_SHARING
+ VBoxService_SOURCES    += \
+	VBoxServicePageSharing.cpp \
 endif
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxService_SOURCES.win  = \
