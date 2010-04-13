@@ -109,7 +109,7 @@ private:
     int prepareExecuteArgs(const char *pszArgs, void **ppvList, uint32_t *pcbList, uint32_t *pcArgs);
     int prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);
     /** Static callback for handling guest notifications. */
-    static DECLCALLBACK(int) doGuestCtrlNotification(void *pvExtension, uint32_t u32Function, void *pvParms, uint32_t cbParms);
+    static DECLCALLBACK(int) doGuestCtrlExecNotification(void *pvExtension, uint32_t u32Function, void *pvParms, uint32_t cbParms);
 # endif
 
     struct Data

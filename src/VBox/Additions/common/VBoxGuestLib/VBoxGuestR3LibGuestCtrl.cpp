@@ -223,12 +223,12 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmd(uint32_t u32ClientId, uint32_t uNu
  * @returns VBox status code.
  ** @todo Docs!
  */
-VBGLR3DECL(int) VbglR3GuestCtrlExecReportStatus(uint32_t  u32ClientId, 
-                                                uint32_t  u32PID,
-                                                uint32_t  u32Status,
-                                                uint32_t  u32Flags,
-                                                void     *pvData,
-                                                uint32_t  cbData)
+VBGLR3DECL(int) VbglR3GuestCtrlExecReportStatus(uint32_t     u32ClientId, 
+                                                uint32_t     u32PID,
+                                                uint32_t     u32Status,
+                                                uint32_t     u32Flags,
+                                                void        *pvData,
+                                                uint32_t     cbData)
 {
     VBoxGuestCtrlHGCMMsgExecStatus Msg;
 
@@ -237,9 +237,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecReportStatus(uint32_t  u32ClientId,
     Msg.hdr.u32Function = GUEST_EXEC_SEND_STATUS;
     Msg.hdr.cParms = 4;
 
-    VbglHGCMParmUInt32Set(&Msg.pid, 0);
-    VbglHGCMParmUInt32Set(&Msg.status, 0);
-    VbglHGCMParmUInt32Set(&Msg.flags, 0);
+    VbglHGCMParmUInt32Set(&Msg.pid, u32PID);
+    VbglHGCMParmUInt32Set(&Msg.status, u32Status);
+    VbglHGCMParmUInt32Set(&Msg.flags, u32Flags);
     VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
