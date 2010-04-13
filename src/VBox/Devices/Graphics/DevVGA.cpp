@@ -5394,7 +5394,7 @@ static DECLCALLBACK(int) vgaPortCopyRect (PPDMIDISPLAYPORT pInterface,
     if (   xDst < 0
         || yDst < 0
         || xDst + wCorrected > u32DstWidth
-        || yDst + hCorrected > u32SrcHeight)
+        || yDst + hCorrected > u32DstHeight)
     {
         return VERR_INVALID_PARAMETER;
     }
