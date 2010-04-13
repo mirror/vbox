@@ -1434,14 +1434,14 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Create the receive, send and monitor threads pluss the related send semaphore.
      */
-    rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pRecvThread, pThis, drvHostSerialRecvThread, drvHostSerialWakeupRecvThread, 0, RTTHREADTYPE_IO, "SerRecv");
+    rc = PDMDrvHlpThreadCreate(pDrvIns, &pThis->pRecvThread, pThis, drvHostSerialRecvThread, drvHostSerialWakeupRecvThread, 0, RTTHREADTYPE_IO, "SerRecv");
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d cannot create receive thread"), pDrvIns->iInstance);
 
     rc = RTSemEventCreate(&pThis->SendSem);
     AssertRC(rc);
 
-    rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pSendThread, pThis, drvHostSerialSendThread, drvHostSerialWakeupSendThread, 0, RTTHREADTYPE_IO, "SerSend");
+    rc = PDMDrvHlpThreadCreate(pDrvIns, &pThis->pSendThread, pThis, drvHostSerialSendThread, drvHostSerialWakeupSendThread, 0, RTTHREADTYPE_IO, "SerSend");
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d cannot create send thread"), pDrvIns->iInstance);
 
@@ -1450,7 +1450,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 # ifndef RT_OS_LINUX
     ioctl(pThis->DeviceFile, TIOCMGET, &pThis->fStatusLines);
 # endif
-    rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pMonitorThread, pThis, drvHostSerialMonitorThread, drvHostSerialWakeupMonitorThread, 0, RTTHREADTYPE_IO, "SerMon");
+    rc = PDMDrvHlpThreadCreate(pDrvIns, &pThis->pMonitorThread, pThis, drvHostSerialMonitorThread, drvHostSerialWakeupMonitorThread, 0, RTTHREADTYPE_IO, "SerMon");
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d cannot create monitor thread"), pDrvIns->iInstance);
 #endif

@@ -304,7 +304,7 @@ static DECLCALLBACK(err_t) devINIPInterface(struct netif *netif)
  * @param   pInterface  PDM network port interface pointer.
  * @param   cMillies    Number of milliseconds to wait. 0 means return immediately.
  */
-static DECLCALLBACK(int) devINIPWaitInputAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
+static DECLCALLBACK(int) devINIPNetworkDown_WaitInputAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
 {
     LogFlow(("%s: pInterface=%p\n", __FUNCTION__, pInterface));
     LogFlow(("%s: return VINF_SUCCESS\n", __FUNCTION__));
@@ -319,8 +319,8 @@ static DECLCALLBACK(int) devINIPWaitInputAvail(PPDMINETWORKDOWN pInterface, RTMS
  * @param   pvBuf       Pointer to frame data.
  * @param   cb          Frame size.
  */
-static DECLCALLBACK(int) devINIPInput(PPDMINETWORKDOWN pInterface,
-                                      const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) devINIPNetworkDown_Input(PPDMINETWORKDOWN pInterface,
+                                                  const void *pvBuf, size_t cb)
 {
     const uint8_t *pbBuf = (const uint8_t *)pvBuf;
     size_t len = cb;
@@ -382,6 +382,15 @@ out:
     LogFlow(("%s: return %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
+
+/**
+ * @interface_method_impl{PDMINETWORKDOWN,pfnDoTransmitWork}
+ */
+static DECLCALLBACK(void) devINIPNetworkDown_DoTransmitWork(PPDMINETWORKDOWN pInterface)
+{
+    NOREF(pInterface);
+}
+
 
 /**
  * Signals the end of lwIP TCPIP initialization.
@@ -482,8 +491,9 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
     /* IBase */
     pThis->IBase.pfnQueryInterface          = devINIPQueryInterface;
     /* INetworkDown */
-    pThis->INetworkDown.pfnWaitReceiveAvail = devINIPWaitInputAvail;
-    pThis->INetworkDown.pfnReceive          = devINIPInput;
+    pThis->INetworkDown.pfnWaitReceiveAvail = devINIPNetworkDown_WaitInputAvail;
+    pThis->INetworkDown.pfnReceive          = devINIPNetworkDown_Input;
+    pThis->INetworkDown.pfnDoTransmitWork   = devINIPNetworkDown_DoTransmitWork;
 
     /*
      * Get the configuration settings.

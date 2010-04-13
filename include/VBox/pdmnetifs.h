@@ -141,20 +141,22 @@ typedef struct PDMINETWORKDOWN
     DECLR3CALLBACKMEMBER(int, pfnReceive,(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb));
 
     /**
-     * Called when there is a buffered of the required size available.
+     * Do transmit work on the XMIT thread.
      *
-     * When a PDMINETWORKUP::pfnAllocBuf call fails with VERR_TRY_AGAIN, the
-     * driver will notify the device/driver up stream when a large enough buffer
-     * becomes available via this method.
+     * When a PDMINETWORKUP::pfnBeginTransmit or PDMINETWORKUP::pfnAllocBuf call
+     * fails with VERR_TRY_AGAIN, the leaf drivers XMIT thread will offer to process
+     * the upstream device/driver when the the VERR_TRY_AGAIN condition has been
+     * removed.  In some cases the VERR_TRY_AGAIN condition is simply being in an
+     * inconvenient context and the XMIT thread will start working ASAP.
      *
      * @param   pInterface      Pointer to this interface.
      * @thread  Non-EMT.
      */
-    DECLR3CALLBACKMEMBER(void, pfnNotifyBufAvailable,(PPDMINETWORKDOWN pInterface));
+    DECLR3CALLBACKMEMBER(void, pfnDoTransmitWork,(PPDMINETWORKDOWN pInterface));
 
 } PDMINETWORKDOWN;
 /** PDMINETWORKDOWN inteface ID. */
-#define PDMINETWORKDOWN_IID                     "eb66670b-7998-4470-8e72-886e30f6a9c3"
+#define PDMINETWORKDOWN_IID                     "52b8cdbb-a087-493b-baa7-81ec3b803e06"
 
 
 /**
@@ -182,6 +184,26 @@ typedef struct PDMINETWORKUP *PPDMINETWORKUP;
 typedef struct PDMINETWORKUP
 {
     /**
+     * Begins a transmit session.
+     *
+     * The leaf driver guarantees that there are no concurrent sessions.
+     *
+     * @retval  VINF_SUCCESS on success.  Must always call
+     *          PDMINETWORKUP::pfnEndXmit.
+     * @retval  VERR_TRY_AGAIN if there is already an open transmit session or some
+     *          important resource was unavailable (like buffer space).  If it's a
+     *          resources issue, the driver will signal its XMIT thread and have it
+     *          work the device thru the PDMINETWORKDOWN::pfnNotifyBufAvailable
+     *          callback method.
+     *
+     * @param   pInterface      Pointer to the interface structure containing the
+     *                          called function pointer.
+     *
+     * @thread  Any, but normally EMT or the XMIT thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnBeginXmit,(PPDMINETWORKUP pInterface));
+
+    /**
      * Get a send buffer for passing to pfnSendBuf.
      *
      * @retval  VINF_SUCCESS on success.
@@ -205,7 +227,7 @@ typedef struct PDMINETWORKUP
      * @param   ppSgBuf         Where to return the buffer.  The buffer will be
      *                          owned by the caller, designation owner number 1.
      *
-     * @thread  Any, but normally EMT.
+     * @thread  Any, but normally EMT or the XMIT thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnAllocBuf,(PPDMINETWORKUP pInterface, size_t cbMin, PCPDMNETWORKGSO pGso,
                                            PPPDMSCATTERGATHER ppSgBuf));
@@ -220,7 +242,7 @@ typedef struct PDMINETWORKUP
      *                          PDMINETWORKDOWN::pfnNotifyBufAvailable.  The buffer
      *                          ownership shall be 1.
      *
-     * @thread  Any.
+     * @thread  Any, but normally EMT or the XMIT thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnFreeBuf,(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf));
 
@@ -242,9 +264,21 @@ typedef struct PDMINETWORKUP
      * @param   fOnWorkerThread Set if we're being called on a work thread.  Clear
      *                          if an EMT.
      *
-     * @thread  Any.
+     * @thread  Any, but normally EMT or the XMIT thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnSendBuf,(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread));
+
+    /**
+     * Ends a transmit session.
+     *
+     * Pairs with successful PDMINETWORKUP::pfnBeginXmit calls.
+     *
+     * @param   pInterface      Pointer to the interface structure containing the
+     *                          called function pointer.
+     *
+     * @thread  Any, but normally EMT or the XMIT thread.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnEndXmit,(PPDMINETWORKUP pInterface));
 
     /**
      * Set promiscuous mode.
@@ -271,7 +305,7 @@ typedef struct PDMINETWORKUP
 
 } PDMINETWORKUP;
 /** PDMINETWORKUP interface ID. */
-#define PDMINETWORKUP_IID                       "3415a37c-4415-43e8-be18-26d9fd2c26a8"
+#define PDMINETWORKUP_IID                       "67e7e7a8-2594-4649-a1e3-7cee680c6083"
 
 
 /** Pointer to a network config port interface */

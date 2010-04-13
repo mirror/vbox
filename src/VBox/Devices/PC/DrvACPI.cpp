@@ -981,8 +981,8 @@ static DECLCALLBACK(int) drvACPIConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     /*
      * Start the poller thread.
      */
-    rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pPollerThread, pThis, drvACPIPoller,
-                                  drvACPIPollerWakeup, 0, RTTHREADTYPE_INFREQUENT_POLLER, "ACPI Poller");
+    rc = PDMDrvHlpThreadCreate(pDrvIns, &pThis->pPollerThread, pThis, drvACPIPoller,
+                               drvACPIPollerWakeup, 0, RTTHREADTYPE_INFREQUENT_POLLER, "ACPI Poller");
     if (RT_FAILURE(rc))
         return rc;
 

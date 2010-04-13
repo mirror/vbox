@@ -483,8 +483,8 @@ static DECLCALLBACK(int) drvscsihostConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
                                    N_("DrvSCSIHost#%d: Failed to open device '%s'"), pDrvIns->iInstance, pThis->pszDevicePath);
 
     /* Create I/O thread. */
-    rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pAsyncIOThread, pThis, drvscsihostAsyncIOLoop,
-                                  drvscsihostAsyncIOLoopWakeup, 0, RTTHREADTYPE_IO, "SCSI async IO");
+    rc = PDMDrvHlpThreadCreate(pDrvIns, &pThis->pAsyncIOThread, pThis, drvscsihostAsyncIOLoop,
+                               drvscsihostAsyncIOLoopWakeup, 0, RTTHREADTYPE_IO, "SCSI async IO");
     AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create async I/O thread rc=%Rrc\n"), rc);
 
     return VINF_SUCCESS;

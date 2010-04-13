@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -653,6 +653,10 @@ void pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags)
         rc = pdmR3ThreadDestroyDriver(pVM, pCur);
         AssertRC(rc);
 
+        /* PDM critsects. */
+        rc = pdmR3CritSectDeleteDriver(pVM, pCur);
+        AssertRC(rc);
+
         /* Finally, the driver it self. */
         bool fHyperHeap = pCur->Internal.s.fHyperHeap;
         ASMMemFill32(pCur, RT_OFFSETOF(PDMDRVINS, achInstanceData[pCur->pReg->cbInstance]), 0xdeadd0d0);
@@ -924,9 +928,9 @@ static DECLCALLBACK(bool) pdmR3DrvHlp_VMTeleportedAndNotFullyResumedYet(PPDMDRVI
 }
 
 
-/** @interface_method_impl{PDMDRVHLP,pfnPDMQueueCreate} */
-static DECLCALLBACK(int) pdmR3DrvHlp_PDMQueueCreate(PPDMDRVINS pDrvIns, uint32_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
-                                                    PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue)
+/** @interface_method_impl{PDMDRVHLP,pfnQueueCreate} */
+static DECLCALLBACK(int) pdmR3DrvHlp_QueueCreate(PPDMDRVINS pDrvIns, uint32_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
+                                                 PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
     LogFlow(("pdmR3DrvHlp_PDMQueueCreate: caller='%s'/%d: cbItem=%d cItems=%d cMilliesInterval=%d pfnCallback=%p pszName=%p:{%s} ppQueue=%p\n",
@@ -1163,48 +1167,48 @@ static DECLCALLBACK(void) pdmR3DrvHlp_AsyncNotificationCompleted(PPDMDRVINS pDrv
 }
 
 
-/** @interface_method_impl{PDMDRVHLP,pfnPDMThreadCreate} */
-static DECLCALLBACK(int) pdmR3DrvHlp_PDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
-                                                     PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
+/** @interface_method_impl{PDMDRVHLP,pfnThreadCreate} */
+static DECLCALLBACK(int) pdmR3DrvHlp_ThreadCreate(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
+                                                  PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
     VM_ASSERT_EMT(pDrvIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DrvHlp_PDMThreadCreate: caller='%s'/%d: ppThread=%p pvUser=%p pfnThread=%p pfnWakeup=%p cbStack=%#zx enmType=%d pszName=%p:{%s}\n",
+    LogFlow(("pdmR3DrvHlp_ThreadCreate: caller='%s'/%d: ppThread=%p pvUser=%p pfnThread=%p pfnWakeup=%p cbStack=%#zx enmType=%d pszName=%p:{%s}\n",
              pDrvIns->pReg->szName, pDrvIns->iInstance, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName, pszName));
 
     int rc = pdmR3ThreadCreateDriver(pDrvIns->Internal.s.pVMR3, pDrvIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
 
-    LogFlow(("pdmR3DrvHlp_PDMThreadCreate: caller='%s'/%d: returns %Rrc *ppThread=%RTthrd\n", pDrvIns->pReg->szName, pDrvIns->iInstance,
+    LogFlow(("pdmR3DrvHlp_ThreadCreate: caller='%s'/%d: returns %Rrc *ppThread=%RTthrd\n", pDrvIns->pReg->szName, pDrvIns->iInstance,
             rc, *ppThread));
     return rc;
 }
 
 
-/** @interface_method_impl{PDMDRVHLP,pfnPDMAsyncCompletionTemplateCreate} */
-static DECLCALLBACK(int) pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
-                                                                      PFNPDMASYNCCOMPLETEDRV pfnCompleted, void *pvTemplateUser,
-                                                                      const char *pszDesc)
+/** @interface_method_impl{PDMDRVHLP,pfnAsyncCompletionTemplateCreate} */
+static DECLCALLBACK(int) pdmR3DrvHlp_AsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
+                                                                   PFNPDMASYNCCOMPLETEDRV pfnCompleted, void *pvTemplateUser,
+                                                                   const char *pszDesc)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
     VM_ASSERT_EMT(pDrvIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate: caller='%s'/%d: ppTemplate=%p pfnCompleted=%p pszDesc=%p:{%s}\n",
+    LogFlow(("pdmR3DrvHlp_AsyncCompletionTemplateCreate: caller='%s'/%d: ppTemplate=%p pfnCompleted=%p pszDesc=%p:{%s}\n",
              pDrvIns->pReg->szName, pDrvIns->iInstance, ppTemplate, pfnCompleted, pszDesc, pszDesc));
 
     int rc = PDMR3AsyncCompletionTemplateCreateDriver(pDrvIns->Internal.s.pVMR3, pDrvIns, ppTemplate, pfnCompleted, pvTemplateUser, pszDesc);
 
-    LogFlow(("pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate: caller='%s'/%d: returns %Rrc *ppThread=%p\n", pDrvIns->pReg->szName,
+    LogFlow(("pdmR3DrvHlp_AsyncCompletionTemplateCreate: caller='%s'/%d: returns %Rrc *ppThread=%p\n", pDrvIns->pReg->szName,
              pDrvIns->iInstance, rc, *ppTemplate));
     return rc;
 }
 
 
-/** @interface_method_impl{PDMDRVHLP,pfnPDMLdrGetRCInterfaceSymbols} */
-static DECLCALLBACK(int) pdmR3DrvHlp_PDMLdrGetRCInterfaceSymbols(PPDMDRVINS pDrvIns, void *pvInterface, size_t cbInterface,
-                                                                 const char *pszSymPrefix, const char *pszSymList)
+/** @interface_method_impl{PDMDRVHLP,pfnLdrGetRCInterfaceSymbols} */
+static DECLCALLBACK(int) pdmR3DrvHlp_LdrGetRCInterfaceSymbols(PPDMDRVINS pDrvIns, void *pvInterface, size_t cbInterface,
+                                                              const char *pszSymPrefix, const char *pszSymList)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
     VM_ASSERT_EMT(pDrvIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DrvHlp_PDMLdrGetRCInterfaceSymbols: caller='%s'/%d: pvInterface=%p cbInterface=%zu pszSymPrefix=%p:{%s} pszSymList=%p:{%s}\n",
+    LogFlow(("pdmR3DrvHlp_LdrGetRCInterfaceSymbols: caller='%s'/%d: pvInterface=%p cbInterface=%zu pszSymPrefix=%p:{%s} pszSymList=%p:{%s}\n",
              pDrvIns->pReg->szName, pDrvIns->iInstance, pvInterface, cbInterface, pszSymPrefix, pszSymPrefix, pszSymList, pszSymList));
 
     int rc;
@@ -1228,19 +1232,19 @@ static DECLCALLBACK(int) pdmR3DrvHlp_PDMLdrGetRCInterfaceSymbols(PPDMDRVINS pDrv
         rc = VERR_INVALID_NAME;
     }
 
-    LogFlow(("pdmR3DrvHlp_PDMLdrGetRCInterfaceSymbols: caller='%s'/%d: returns %Rrc\n", pDrvIns->pReg->szName,
+    LogFlow(("pdmR3DrvHlp_LdrGetRCInterfaceSymbols: caller='%s'/%d: returns %Rrc\n", pDrvIns->pReg->szName,
              pDrvIns->iInstance, rc));
     return rc;
 }
 
 
-/** @interface_method_impl{PDMDRVHLP,pfnPDMLdrGetR0InterfaceSymbols} */
-static DECLCALLBACK(int) pdmR3DrvHlp_PDMLdrGetR0InterfaceSymbols(PPDMDRVINS pDrvIns, void *pvInterface, size_t cbInterface,
-                                                                 const char *pszSymPrefix, const char *pszSymList)
+/** @interface_method_impl{PDMDRVHLP,pfnLdrGetR0InterfaceSymbols} */
+static DECLCALLBACK(int) pdmR3DrvHlp_LdrGetR0InterfaceSymbols(PPDMDRVINS pDrvIns, void *pvInterface, size_t cbInterface,
+                                                              const char *pszSymPrefix, const char *pszSymList)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
     VM_ASSERT_EMT(pDrvIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DrvHlp_PDMLdrGetR0InterfaceSymbols: caller='%s'/%d: pvInterface=%p cbInterface=%zu pszSymPrefix=%p:{%s} pszSymList=%p:{%s}\n",
+    LogFlow(("pdmR3DrvHlp_LdrGetR0InterfaceSymbols: caller='%s'/%d: pvInterface=%p cbInterface=%zu pszSymPrefix=%p:{%s} pszSymList=%p:{%s}\n",
              pDrvIns->pReg->szName, pDrvIns->iInstance, pvInterface, cbInterface, pszSymPrefix, pszSymPrefix, pszSymList, pszSymList));
 
     int rc;
@@ -1264,7 +1268,25 @@ static DECLCALLBACK(int) pdmR3DrvHlp_PDMLdrGetR0InterfaceSymbols(PPDMDRVINS pDrv
         rc = VERR_INVALID_NAME;
     }
 
-    LogFlow(("pdmR3DrvHlp_PDMLdrGetR0InterfaceSymbols: caller='%s'/%d: returns %Rrc\n", pDrvIns->pReg->szName,
+    LogFlow(("pdmR3DrvHlp_LdrGetR0InterfaceSymbols: caller='%s'/%d: returns %Rrc\n", pDrvIns->pReg->szName,
+             pDrvIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDRVHLP,pfnCritSectInit} */
+static DECLCALLBACK(int) pdmR3DrvHlp_CritSectInit(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect,
+                                                  RT_SRC_POS_DECL, const char *pszName)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    PVM pVM = pDrvIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pVM);
+    LogFlow(("pdmR3DrvHlp_CritSectInit: caller='%s'/%d: pCritSect=%p pszName=%s\n",
+             pDrvIns->pReg->szName, pDrvIns->iInstance, pCritSect, pszName));
+
+    int rc = pdmR3CritSectInitDriver(pVM, pDrvIns, pCritSect, RT_SRC_POS_ARGS, "%s_%u", pszName, pDrvIns->iInstance);
+
+    LogFlow(("pdmR3DrvHlp_CritSectInit: caller='%s'/%d: returns %Rrc\n", pDrvIns->pReg->szName,
              pDrvIns->iInstance, rc));
     return rc;
 }
@@ -1288,7 +1310,7 @@ const PDMDRVHLPR3 g_pdmR3DrvHlp =
     pdmR3DrvHlp_VMSetRuntimeErrorV,
     pdmR3DrvHlp_VMState,
     pdmR3DrvHlp_VMTeleportedAndNotFullyResumedYet,
-    pdmR3DrvHlp_PDMQueueCreate,
+    pdmR3DrvHlp_QueueCreate,
     pdmR3DrvHlp_TMGetVirtualFreq,
     pdmR3DrvHlp_TMGetVirtualTime,
     pdmR3DrvHlp_TMTimerCreate,
@@ -1302,10 +1324,11 @@ const PDMDRVHLPR3 g_pdmR3DrvHlp =
     pdmR3DrvHlp_USBRegisterHub,
     pdmR3DrvHlp_SetAsyncNotification,
     pdmR3DrvHlp_AsyncNotificationCompleted,
-    pdmR3DrvHlp_PDMThreadCreate,
-    pdmR3DrvHlp_PDMAsyncCompletionTemplateCreate,
-    pdmR3DrvHlp_PDMLdrGetRCInterfaceSymbols,
-    pdmR3DrvHlp_PDMLdrGetR0InterfaceSymbols,
+    pdmR3DrvHlp_ThreadCreate,
+    pdmR3DrvHlp_AsyncCompletionTemplateCreate,
+    pdmR3DrvHlp_LdrGetRCInterfaceSymbols,
+    pdmR3DrvHlp_LdrGetR0InterfaceSymbols,
+    pdmR3DrvHlp_CritSectInit,
     PDM_DRVHLPR3_VERSION /* u32TheEnd */
 };
 
