@@ -1,4 +1,3 @@
-#define VBOX_WITH_R0_AND_RC_DRIVERS
 /* $Id$ */
 /** @file
  * DrvIntNet - Internal network transport driver.
