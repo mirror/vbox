@@ -56,7 +56,7 @@
 /* General customization:
  */
 
-#define DRIVER_AUTHOR       "Sun Microsystems Inc."
+#define DRIVER_AUTHOR       "Oracle Corporation"
 
 #define DRIVER_NAME     "vboxvideo"
 #define DRIVER_DESC     "VirtualBox Graphics Card"
