@@ -190,6 +190,9 @@ extern VBOXSERVICE g_CpuHotPlug;
 extern VBOXSERVICE g_MemBalloon;
 extern VBOXSERVICE g_VMStatistics;
 #endif
+#ifdef VBOX_WITH_PAGE_SHARING
+extern VBOXSERVICE g_PageSharing;
+#endif
 
 #ifdef RT_OS_WINDOWS
 extern DWORD g_rcWinService;
