@@ -92,6 +92,19 @@ typedef struct PDMRTC *PPDMRTC;
 typedef struct PDMUSBHUB *PPDMUSBHUB;
 
 /**
+ * Supported asynchronous completion endpoint classes.
+ */
+typedef enum PDMASYNCCOMPLETIONEPCLASSTYPE
+{
+    /** File class. */
+    PDMASYNCCOMPLETIONEPCLASSTYPE_FILE = 0,
+    /** Number of supported classes. */
+    PDMASYNCCOMPLETIONEPCLASSTYPE_MAX,
+    /** 32bit hack. */
+    PDMASYNCCOMPLETIONEPCLASSTYPE_32BIT_HACK = 0x7fffffff
+} PDMASYNCCOMPLETIONEPCLASSTYPE;
+
+/**
  * Private device instance data.
  */
 typedef struct PDMDEVINSINT
@@ -999,6 +1012,7 @@ AssertCompileMemberAlignment(PDM, StatQueuedCritSectLeaves, 8);
 typedef PDM *PPDM;
 
 
+
 /**
  * PDM data kept in the UVM.
  */
@@ -1016,20 +1030,20 @@ typedef struct PDMUSERPERVM
     /** Tail of the PDM Thread list. (singly linked) */
     R3PTRTYPE(PPDMTHREAD)           pThreadsTail;
 
-    /** @name   PDM Async Completion
-     * @{ */
-    /** Pointer to the array of supported endpoint classes. */
-    R3PTRTYPE(PPDMASYNCCOMPLETIONEPCLASS *)  papAsyncCompletionEndpointClass;
-    /** Head of the templates. (singly linked) */
-    R3PTRTYPE(PPDMASYNCCOMPLETIONTEMPLATE) pAsyncCompletionTemplates;
-    /** @} */
-
     /** Lock protecting the lists below it. */
     RTCRITSECT                      ListCritSect;
     /** Pointer to list of loaded modules. */
     PPDMMOD                         pModules;
     /** List of initialized critical sections. (LIFO) */
     R3PTRTYPE(PPDMCRITSECTINT)      pCritSects;
+
+    /** @name   PDM Async Completion
+     * @{ */
+    /** Pointer to the array of supported endpoint classes. */
+    PPDMASYNCCOMPLETIONEPCLASS      apAsyncCompletionEndpointClass[PDMASYNCCOMPLETIONEPCLASSTYPE_MAX];
+    /** Head of the templates. Singly linked, protected by ListCritSect. */
+    R3PTRTYPE(PPDMASYNCCOMPLETIONTEMPLATE) pAsyncCompletionTemplates;
+    /** @} */
 
 } PDMUSERPERVM;
 /** Pointer to the PDM data kept in the UVM. */
