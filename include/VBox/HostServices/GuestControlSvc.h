@@ -66,7 +66,9 @@ enum eProcessStatus
     /** Process timed out and was not killed successfully. */
     PROC_STS_TOA = 6,
     /** @todo */
-    PROC_STS_DWN = 7
+    PROC_STS_DWN = 7,
+    /** Something went wrong (error code in flags). */
+    PROC_STS_ERROR = 8
 };
 
 /**
@@ -87,6 +89,8 @@ typedef struct _VBoxGuestCtrlExecCallbackData
     void *pvData;
     /** Size of optional data buffer (not used atm). */
     uint32_t cbData;
+    /** Atomic flags whether callback was called. */
+    bool called;
     
 } HOSTEXECCALLBACKDATA, *PHOSTEXECCALLBACKDATA;
 

@@ -462,17 +462,21 @@ DECLCALLBACK(int) Guest::doGuestCtrlExecNotification(void *pvExtension,
     AssertReturn(HOSTCALLBACKMAGIC == pCBData->u32Magic, VERR_INVALID_PARAMETER);
     LogFlowFunc(("pvExtension = %p, u32Function = %d, pvParms = %p, cbParms = %d\n",
                  pvExtension, u32Function, pvParms, cbParms));
-    ComObjPtr<Guest> pGuest = reinterpret_cast<Guest *>(pvExtension);
+    PHOSTEXECCALLBACKDATA pExt = reinterpret_cast<HOSTEXECCALLBACKDATA *>(pvExtension);
 
     int rc = VINF_SUCCESS;
     if (u32Function == GUEST_EXEC_SEND_STATUS)
     {
-        
+        LogFlowFunc(("GUEST_EXEC_SEND_STATUS\n"));
+        pExt->pid = pCBData->pid;
+        pExt->status = pCBData->status;
+        pExt->flags = pCBData->flags;
+        /** @todo Copy void* buffer! */
     }
     else
         rc = VERR_NOT_SUPPORTED;
 
-    ASMAtomicWriteBool(&pGuest->mSignalled, true);
+    ASMAtomicWriteBool(&pExt->called, true);
     return rc;
 }
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -520,9 +524,11 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
          * Register the host notification callback
          */
         HGCMSVCEXTHANDLE hExt;
+        HOSTEXECCALLBACKDATA callbackData;
+        callbackData.called = false;
         int vrc = HGCMHostRegisterServiceExtension(&hExt, "VBoxGuestControlSvc",
                                                    &Guest::doGuestCtrlExecNotification,
-                                                   this);
+                                                   &callbackData);
         if (RT_SUCCESS(vrc))
         {
             /*
@@ -612,7 +618,6 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                      * has been started (or something went wrong). This is necessary to 
                      * get the PID.
                      */
-                    mSignalled = false;
                     uint64_t u64Started = RTTimeMilliTS();
                     do
                     {
@@ -627,22 +632,51 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                             cMsWait = RT_MIN(1000, aTimeoutMS - (uint32_t)cMsElapsed);
                         }
                         RTThreadSleep(100);
-                    } while (!mSignalled);
+                    } while (!callbackData.called);
 
                     /* Did we get some status? */
-                    if (mSignalled)
+                    if (callbackData.called)
                     {
+                        switch (callbackData.status)
+                        {
+                            case PROC_STS_STARTED:
+                                *aPID = callbackData.pid;
+                                break;
 
+                            case PROC_STS_ERROR:
+                                vrc = callbackData.flags; /* flags member contains IPRT error code. */
+                                break;
+
+                            default:
+                                vrc = VERR_INVALID_PARAMETER;
+                                break;
+                        }
+                    }
+
+                    if (RT_FAILURE(vrc))
+                    {
+                        if (vrc == VERR_FILE_NOT_FOUND) /* This is the most likely error. */
+                        {
+                            rc = setError(VBOX_E_IPRT_ERROR, 
+                                          tr("The file \"%s\" was not found on guest"), Utf8Command.raw());
+                        }
+                        else
+                        {
+                            rc = setError(E_UNEXPECTED,
+                                          tr("The service call failed with the error %Rrc"), vrc);
+                        }
                     }
 #if 0
                     progress.queryInterfaceTo(aProgress);
 #endif
                 }
                 else
+                {
+                    /* HGCM call went wrong. */
                     rc = setError(E_UNEXPECTED,
-                                  tr("The service call failed with the error %Rrc"),
-                                  vrc);
-    
+                                  tr("The service call failed with the error %Rrc"), vrc);
+                }
+
                 for (unsigned i = 0; i < uNumArgs; i++)
                     RTMemFree(papszArgv[i]);
                 RTMemFree(papszArgv);

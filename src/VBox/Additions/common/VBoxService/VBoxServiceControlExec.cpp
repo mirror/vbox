@@ -703,6 +703,14 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREADDATA
                                     if (RT_FAILURE(RTPollSetQueryHandle(hPollSet, 2 /* stderr */, NULL)))
                                         hStdErrR = NIL_RTPIPE;
                                 }
+                                else /* Something went wrong; report error! */
+                                {
+                                    int rc2 = VbglR3GuestCtrlExecReportStatus(u32ClientID, 0 /* PID */, 
+                                                                              PROC_STS_ERROR, rc,
+                                                                              NULL /* pvData */, 0 /* cbData */);
+                                    if (RT_FAILURE(rc2))
+                                        VBoxServiceError("Control: Could not report process start error! Error: %Rrc\n", rc2);
+                                }
                             }
                         }
                         RTPipeClose(hStdErrR);
@@ -758,6 +766,7 @@ int VBoxServiceControlExecProcess(const char *pszCmd, uint32_t uFlags,
         {
             VBoxServiceError("Control: RTThreadCreate failed, rc=%Rrc\n, threadData=%p", 
                              rc, pThreadData);
+            /* Only destroy thread data on failure; otherwise it's destroyed in the thread handler. */
             VBoxServiceControlExecFreeThreadData(pThreadData);
         }
     }
