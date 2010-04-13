@@ -38,6 +38,50 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
+#ifdef RTMEM_WRAP_TO_EF_APIS
+# undef RTMemAllocVar
+# undef RTMemAllocZVar
+# undef RTMemDup
+# undef RTMemDupEx
+#endif
+
+
+
+/**
+ * Wrapper around RTMemAlloc for automatically aligning variable sized
+ * allocations so that the various electric fence heaps works correctly.
+ *
+ * @returns See RTMemAlloc.
+ * @param   cbUnaligned         The unaligned size.
+ */
+RTDECL(void *) RTMemAllocVar(size_t cbUnaligned)
+{
+    size_t cbAligned;
+    if (cbUnaligned >= 16)
+        cbAligned = RT_ALIGN_Z(cbUnaligned, 16);
+    else
+        cbAligned = RT_ALIGN_Z(cbUnaligned, sizeof(void *));
+    return RTMemAlloc(cbAligned);
+}
+
+
+/**
+ * Wrapper around RTMemAllocZ for automatically aligning variable sized
+ * allocations so that the various electric fence heaps works correctly.
+ *
+ * @returns See RTMemAllocZ.
+ * @param   cbUnaligned         The unaligned size.
+ */
+RTDECL(void *) RTMemAllocZVar(size_t cbUnaligned)
+{
+    size_t cbAligned;
+    if (cbUnaligned >= 16)
+        cbAligned = RT_ALIGN_Z(cbUnaligned, 16);
+    else
+        cbAligned = RT_ALIGN_Z(cbUnaligned, sizeof(void *));
+    return RTMemAllocZ(cbAligned);
+}
+
 
 /**
  * Duplicates a chunk of memory into a new heap block.

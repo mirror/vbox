@@ -275,7 +275,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
      * Allocate a logger instance.
      */
     cb = RT_OFFSETOF(RTLOGGER, afGroups[cGroups + 1]) + RTPATH_MAX;
-    pLogger = (PRTLOGGER)RTMemAllocZ(cb);
+    pLogger = (PRTLOGGER)RTMemAllocZVar(cb);
     if (pLogger)
     {
 #if defined(RT_ARCH_X86) && (!defined(LOG_USE_C99) || !defined(RT_WITHOUT_EXEC_ALLOC))
