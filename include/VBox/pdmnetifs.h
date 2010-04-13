@@ -198,10 +198,12 @@ typedef struct PDMINETWORKUP
      *
      * @param   pInterface      Pointer to the interface structure containing the
      *                          called function pointer.
+     * @param   fOnWorkerThread Set if we're being called on a work thread.  Clear
+     *                          if an EMT.
      *
      * @thread  Any, but normally EMT or the XMIT thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnBeginXmit,(PPDMINETWORKUP pInterface));
+    DECLR3CALLBACKMEMBER(int, pfnBeginXmit,(PPDMINETWORKUP pInterface, bool fOnWorkerThread));
 
     /**
      * Get a send buffer for passing to pfnSendBuf.

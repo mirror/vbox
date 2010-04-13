@@ -123,6 +123,10 @@ typedef struct DRVTAP
     /** Reader thread. */
     PPDMTHREAD              pThread;
 
+    /** @todo The transmit thread. */
+    /** Transmit lock used by drvTAPNetworkUp_BeginXmit. */
+    RTCRITSECT              XmitLock;
+
 #ifdef VBOX_WITH_STATISTICS
     /** Number of sent packets. */
     STAMCOUNTER             StatPktSent;
@@ -164,6 +168,23 @@ static int              SolarisTAPAttach(PDRVTAP pThis);
 #endif
 
 
+
+/**
+ * @interface_method_impl{PDMINETWORKUP,pfnBeginXmit}
+ */
+static DECLCALLBACK(int) drvTAPNetworkUp_BeginXmit(PPDMINETWORKUP pInterface, bool fOnWorkerThread)
+{
+    PDRVTAP pThis = PDMINETWORKUP_2_DRVTAP(pInterface);
+    int rc = RTCritSectTryEnter(&pThis->XmitLock);
+    if (RT_FAILURE(rc))
+    {
+        /** @todo XMIT thread */
+        rc = VERR_TRY_AGAIN;
+    }
+    return rc;
+}
+
+
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnAllocBuf}
  */
@@ -171,6 +192,7 @@ static DECLCALLBACK(int) drvTAPNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, siz
                                                   PCPDMNETWORKGSO pGso, PPPDMSCATTERGATHER ppSgBuf)
 {
     PDRVTAP pThis = PDMINETWORKUP_2_DRVTAP(pInterface);
+    Assert(RTCritSectIsOwner(&pThis->XmitLock));
 
     /*
      * Allocate a scatter / gather buffer descriptor that is immediately
@@ -215,6 +237,7 @@ static DECLCALLBACK(int) drvTAPNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, siz
 static DECLCALLBACK(int) drvTAPNetworkUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf)
 {
     PDRVTAP pThis = PDMINETWORKUP_2_DRVTAP(pInterface);
+    Assert(RTCritSectIsOwner(&pThis->XmitLock));
     if (pSgBuf)
     {
         Assert((pSgBuf->fFlags & PDMSCATTERGATHER_FLAGS_MAGIC_MASK) == PDMSCATTERGATHER_FLAGS_MAGIC);
@@ -237,6 +260,7 @@ static DECLCALLBACK(int) drvTAPNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
 
     AssertPtr(pSgBuf);
     Assert((pSgBuf->fFlags & PDMSCATTERGATHER_FLAGS_MAGIC_MASK) == PDMSCATTERGATHER_FLAGS_MAGIC);
+    Assert(RTCritSectIsOwner(&pThis->XmitLock));
 
     int rc;
     if (!pSgBuf->pvUser)
@@ -278,6 +302,16 @@ static DECLCALLBACK(int) drvTAPNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
     if (RT_FAILURE(rc))
         rc = rc == VERR_NO_MEMORY ? VERR_NET_NO_BUFFER_SPACE : VERR_NET_DOWN;
     return rc;
+}
+
+
+/**
+ * @interface_method_impl{PDMINETWORKUP,pfnEndXmit}
+ */
+static DECLCALLBACK(void) drvTAPNetworkUp_EndXmit(PPDMINETWORKUP pInterface)
+{
+    PDRVTAP pThis = PDMINETWORKUP_2_DRVTAP(pInterface);
+    RTCritSectLeave(&pThis->XmitLock);
 }
 
 
@@ -938,6 +972,12 @@ static DECLCALLBACK(void) drvTAPDestruct(PPDMDRVINS pDrvIns)
     MMR3HeapFree(pThis->pszSetupApplication);
     MMR3HeapFree(pThis->pszTerminateApplication);
 
+    /*
+     * Kill the xmit lock.
+     */
+    if (RTCritSectIsInitialized(&pThis->XmitLock))
+        RTCritSectDelete(&pThis->XmitLock);
+
 #ifdef VBOX_WITH_STATISTICS
     /*
      * Deregister statistics.
@@ -982,9 +1022,11 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvTAPQueryInterface;
     /* INetwork */
-    pThis->INetworkUp.pfnSendBuf                = drvTAPNetworkUp_SendBuf;
+    pThis->INetworkUp.pfnBeginXmit              = drvTAPNetworkUp_BeginXmit;
     pThis->INetworkUp.pfnAllocBuf               = drvTAPNetworkUp_AllocBuf;
     pThis->INetworkUp.pfnFreeBuf                = drvTAPNetworkUp_FreeBuf;
+    pThis->INetworkUp.pfnSendBuf                = drvTAPNetworkUp_SendBuf;
+    pThis->INetworkUp.pfnEndXmit                = drvTAPNetworkUp_EndXmit;
     pThis->INetworkUp.pfnSetPromiscuousMode     = drvTAPNetworkUp_SetPromiscuousMode;
     pThis->INetworkUp.pfnNotifyLinkChanged      = drvTAPNetworkUp_NotifyLinkChanged;
 
@@ -1052,6 +1094,12 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
             return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
                                        N_("Error running TAP setup application. rc=%d"), rc);
     }
+
+    /*
+     * Create the transmit lock.
+     */
+    rc = RTCritSectInit(&pThis->XmitLock);
+    AssertRCReturn(rc, rc);
 
     /*
      * Do the setup.

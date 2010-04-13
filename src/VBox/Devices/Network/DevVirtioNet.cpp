@@ -833,7 +833,7 @@ static DECLCALLBACK(void) vnetQueueReceive(void *pvState, PVQUEUE pQueue)
     vnetWakeupReceive(pState->VPCI.CTX_SUFF(pDevIns));
 }
 
-static DECLCALLBACK(void) vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue)
+static DECLCALLBACK(void) vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue, bool fOnWorkerThread)
 {
     /*
      * Only one thread is allowed to transmit at a time, others should skip
@@ -848,6 +848,18 @@ static DECLCALLBACK(void) vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE 
         Log(("%s Ignoring transmit requests from non-existent driver (status=0x%x).\n",
              INSTANCE(pState), pState->VPCI.uStatus));
         return;
+    }
+
+    PPDMINETWORKUP pDrv = pState->pDrv;
+    if (pDrv)
+    {
+        int rc = pDrv->pfnBeginXmit(pDrv, fOnWorkerThread);
+        Assert(rc == VINF_SUCCESS || rc == VERR_TRY_AGAIN);
+        if (rc == VERR_TRY_AGAIN)
+        {
+            ASMAtomicWriteU32(&pState->uIsTransmitting, 0);
+            return;
+        }
     }
 
     Log3(("%s vnetTransmitPendingPackets: About to trasmit %d pending packets\n", INSTANCE(pState),
@@ -908,6 +920,8 @@ static DECLCALLBACK(void) vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE 
     }
     vpciSetWriteLed(&pState->VPCI, false);
 
+    if (pDrv)
+        pDrv->pfnEndXmit(pDrv);
     ASMAtomicWriteU32(&pState->uIsTransmitting, 0);
 }
 
@@ -921,7 +935,7 @@ static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
         int rc = TMTimerStop(pState->CTX_SUFF(pTxTimer));
         Log3(("%s vnetQueueTransmit: Got kicked with notification disabled, "
               "re-enable notification and flush TX queue\n", INSTANCE(pState)));
-        vnetTransmitPendingPackets(pState, pQueue);
+        vnetTransmitPendingPackets(pState, pQueue, false /*fOnWorkerThread*/);
         if (RT_FAILURE(vnetCsEnter(pState, VERR_SEM_BUSY)))
             LogRel(("vnetQueueTransmit: Failed to enter critical section!/n"));
         else
@@ -969,7 +983,7 @@ static DECLCALLBACK(void) vnetTxTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
             u32MicroDiff, pState->u32AvgDiff, pState->u32MinDiff, pState->u32MaxDiff));
 
 //    Log3(("%s vnetTxTimer: Expired\n", INSTANCE(pState)));
-    vnetTransmitPendingPackets(pState, pState->pTxQueue);
+    vnetTransmitPendingPackets(pState, pState->pTxQueue, false /*fOnWorkerThread*/);
     if (RT_FAILURE(vnetCsEnter(pState, VERR_SEM_BUSY)))
     {
         LogRel(("vnetTxTimer: Failed to enter critical section!/n"));
@@ -984,7 +998,7 @@ static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
 {
     VNETSTATE *pState = (VNETSTATE*)pvState;
 
-    vnetTransmitPendingPackets(pState, pQueue);
+    vnetTransmitPendingPackets(pState, pQueue, false /*fOnWorkerThread*/);
 }
 #endif /* !VNET_TX_DELAY */
 
