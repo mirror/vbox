@@ -439,7 +439,7 @@ Display::displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser)
 
         /* SSM code is executed on EMT(0), therefore no need to use VMR3ReqCallWait. */
 #ifdef VBOX_WITH_OLD_VBVA_LOCK
-        int rc = Display::displayTakeScreenshotEMT(that, &pu8Data, &cbData, &cx, &cy);
+        int rc = Display::displayTakeScreenshotEMT(that, VBOX_VIDEO_PRIMARY_SCREEN, &pu8Data, &cbData, &cx, &cy);
 #else
         int rc = that->mpDrv->pUpPort->pfnTakeScreenshot (that->mpDrv->pUpPort, &pu8Data, &cbData, &cx, &cy);
 #endif /* !VBOX_WITH_OLD_VBVA_LOCK */
@@ -2181,18 +2181,90 @@ STDMETHODIMP Display::SetSeamlessMode (BOOL enabled)
 }
 
 #ifdef VBOX_WITH_OLD_VBVA_LOCK
-int Display::displayTakeScreenshotEMT(Display *pDisplay, uint8_t **ppu8Data, size_t *pcbData, uint32_t *pu32Width, uint32_t *pu32Height)
+int Display::displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_t **ppu8Data, size_t *pcbData, uint32_t *pu32Width, uint32_t *pu32Height)
 {
-   int rc;
-   pDisplay->vbvaLock();
-   rc = pDisplay->mpDrv->pUpPort->pfnTakeScreenshot(pDisplay->mpDrv->pUpPort, ppu8Data, pcbData, pu32Width, pu32Height);
-   pDisplay->vbvaUnlock();
-   return rc;
+    int rc;
+    pDisplay->vbvaLock();
+    if (aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+    {
+        rc = pDisplay->mpDrv->pUpPort->pfnTakeScreenshot(pDisplay->mpDrv->pUpPort, ppu8Data, pcbData, pu32Width, pu32Height);
+    }
+    else if (aScreenId < pDisplay->mcMonitors)
+    {
+        DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[aScreenId];
+
+        uint32_t width = pFBInfo->w;
+        uint32_t height = pFBInfo->h;
+
+        /* Allocate 32 bit per pixel bitmap. */
+        size_t cbRequired = width * 4 * height;
+
+        if (cbRequired)
+        {
+            uint8_t *pu8Data = (uint8_t *)RTMemAlloc(cbRequired);
+
+            if (pu8Data == NULL)
+            {
+                rc = VERR_NO_MEMORY;
+            }
+            else
+            {
+                /* Copy guest VRAM to the allocated 32bpp buffer. */
+                const uint8_t *pu8Src       = pFBInfo->pu8FramebufferVRAM;
+                int32_t xSrc                = 0;
+                int32_t ySrc                = 0;
+                uint32_t u32SrcWidth        = width;
+                uint32_t u32SrcHeight       = height;
+                uint32_t u32SrcLineSize     = pFBInfo->u32LineSize;
+                uint32_t u32SrcBitsPerPixel = pFBInfo->u16BitsPerPixel;
+
+                uint8_t *pu8Dst             = pu8Data;
+                int32_t xDst                = 0;
+                int32_t yDst                = 0;
+                uint32_t u32DstWidth        = u32SrcWidth;
+                uint32_t u32DstHeight       = u32SrcHeight;
+                uint32_t u32DstLineSize     = u32DstWidth * 4;
+                uint32_t u32DstBitsPerPixel = 32;
+
+                rc = pDisplay->mpDrv->pUpPort->pfnCopyRect(pDisplay->mpDrv->pUpPort,
+                                                      width, height,
+                                                      pu8Src,
+                                                      xSrc, ySrc,
+                                                      u32SrcWidth, u32SrcHeight,
+                                                      u32SrcLineSize, u32SrcBitsPerPixel,
+                                                      pu8Dst,
+                                                      xDst, yDst,
+                                                      u32DstWidth, u32DstHeight,
+                                                      u32DstLineSize, u32DstBitsPerPixel);
+                if (RT_SUCCESS(rc))
+                {
+                    *ppu8Data = pu8Data;
+                    *pcbData = cbRequired;
+                    *pu32Width = width;
+                    *pu32Height = height;
+                }
+            }
+        }
+        else
+        {
+            /* No image. */
+            *ppu8Data = NULL;
+            *pcbData = 0;
+            *pu32Width = 0;
+            *pu32Height = 0;
+        }
+    }
+    else
+    {
+        rc = VERR_INVALID_PARAMETER;
+    }
+    pDisplay->vbvaUnlock();
+    return rc;
 }
 #endif /* VBOX_WITH_OLD_VBVA_LOCK */
 
 #ifdef VBOX_WITH_OLD_VBVA_LOCK
-static int displayTakeScreenshot(PVM pVM, Display *pDisplay, struct DRVMAINDISPLAY *pDrv, BYTE *address, ULONG width, ULONG height)
+static int displayTakeScreenshot(PVM pVM, Display *pDisplay, struct DRVMAINDISPLAY *pDrv, ULONG aScreenId, BYTE *address, ULONG width, ULONG height)
 #else
 static int displayTakeScreenshot(PVM pVM, struct DRVMAINDISPLAY *pDrv, BYTE *address, ULONG width, ULONG height)
 #endif /* !VBOX_WITH_OLD_VBVA_LOCK */
@@ -2203,8 +2275,8 @@ static int displayTakeScreenshot(PVM pVM, struct DRVMAINDISPLAY *pDrv, BYTE *add
     uint32_t cy = 0;
 
 #ifdef VBOX_WITH_OLD_VBVA_LOCK
-    int vrc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)Display::displayTakeScreenshotEMT, 5,
-                              pDisplay, &pu8Data, &cbData, &cx, &cy);
+    int vrc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)Display::displayTakeScreenshotEMT, 6,
+                              pDisplay, aScreenId, &pu8Data, &cbData, &cx, &cy);
 #else
     /* @todo pfnTakeScreenshot is probably callable from any thread, because it uses the VGA device lock. */
     int vrc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)pDrv->pUpPort->pfnTakeScreenshot, 5,
@@ -2285,7 +2357,7 @@ STDMETHODIMP Display::TakeScreenShot (ULONG aScreenId, BYTE *address, ULONG widt
     alock.leave();
 
 #ifdef VBOX_WITH_OLD_VBVA_LOCK
-    int vrc = displayTakeScreenshot(pVM, this, mpDrv, address, width, height);
+    int vrc = displayTakeScreenshot(pVM, this, mpDrv, aScreenId, address, width, height);
 #else
     int vrc = displayTakeScreenshot(pVM, mpDrv, address, width, height);
 #endif /* !VBOX_WITH_OLD_VBVA_LOCK */
@@ -2303,7 +2375,7 @@ STDMETHODIMP Display::TakeScreenShot (ULONG aScreenId, BYTE *address, ULONG widt
 }
 
 STDMETHODIMP Display::TakeScreenShotToArray (ULONG aScreenId, ULONG width, ULONG height,
-                                          ComSafeArrayOut(BYTE, aScreenData))
+                                             ComSafeArrayOut(BYTE, aScreenData))
 {
     LogFlowFuncEnter();
     LogFlowFunc (("width=%d, height=%d\n",
@@ -2341,7 +2413,7 @@ STDMETHODIMP Display::TakeScreenShotToArray (ULONG aScreenId, ULONG width, ULONG
         return E_OUTOFMEMORY;
 
 #ifdef VBOX_WITH_OLD_VBVA_LOCK
-    int vrc = displayTakeScreenshot(pVM, this, mpDrv, pu8Data, width, height);
+    int vrc = displayTakeScreenshot(pVM, this, mpDrv, aScreenId, pu8Data, width, height);
 #else
     int vrc = displayTakeScreenshot(pVM, mpDrv, pu8Data, width, height);
 #endif /* !VBOX_WITH_OLD_VBVA_LOCK */
