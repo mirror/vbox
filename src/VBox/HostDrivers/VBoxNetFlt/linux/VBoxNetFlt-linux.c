@@ -132,7 +132,7 @@ static VBOXNETFLTGLOBALS g_VBoxNetFltGlobals;
 module_init(VBoxNetFltLinuxInit);
 module_exit(VBoxNetFltLinuxUnload);
 
-MODULE_AUTHOR("Sun Microsystems, Inc.");
+MODULE_AUTHOR("Oracle Corporation");
 MODULE_DESCRIPTION("VirtualBox Network Filter Driver");
 MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION

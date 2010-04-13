@@ -71,7 +71,7 @@ static int VBoxNetAdpLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsign
 module_init(VBoxNetAdpLinuxInit);
 module_exit(VBoxNetAdpLinuxUnload);
 
-MODULE_AUTHOR("Sun Microsystems, Inc.");
+MODULE_AUTHOR("Oracle Corporation");
 MODULE_DESCRIPTION("VirtualBox Network Adapter Driver");
 MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
