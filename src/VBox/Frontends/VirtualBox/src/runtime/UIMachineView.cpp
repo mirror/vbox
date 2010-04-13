@@ -1221,46 +1221,21 @@ void UIMachineView::sltMachineStateChanged()
             if (mode() != VBoxDefs::TimerMode &&  m_pFrameBuffer &&
                 (state != KMachineState_TeleportingPausedVM || m_previousState != KMachineState_Teleporting))
             {
-                if (screenId() == 0)
+                /* Take a screen snapshot. Note that TakeScreenShot() always needs a 32bpp image: */
+                QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
+                /* If TakeScreenShot fails or returns no image, just show a black image. */
+                shot.fill(0);
+                CDisplay dsp = session().GetConsole().GetDisplay();
+                dsp.TakeScreenShot(screenId(), shot.bits(), shot.width(), shot.height());
+                /* TakeScreenShot() may fail if, e.g. the Paused notification was delivered
+                 * after the machine execution was resumed. It's not fatal: */
+                if (dsp.isOk())
                 {
-                    /* Take a screen snapshot. Note that TakeScreenShot() always needs a 32bpp image: */
-                    QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
-                    CDisplay dsp = session().GetConsole().GetDisplay();
-                    dsp.TakeScreenShot(screenId(), shot.bits(), shot.width(), shot.height());
-                    /* TakeScreenShot() may fail if, e.g. the Paused notification was delivered
-                     * after the machine execution was resumed. It's not fatal: */
-                    if (dsp.isOk())
-                    {
-                        dimImage(shot);
-                        m_pauseShot = QPixmap::fromImage(shot);
-                        /* Fully repaint to pick up m_pauseShot: */
-                        viewport()->repaint();
-                    }
-                }else
-                {
-                    /* For secondary monitors we support 32 bit formats only for now. */
-                    if (   m_pFrameBuffer
-                        && m_pFrameBuffer->address()
-                        && m_pFrameBuffer->pixelFormat() == FramebufferPixelFormat_FOURCC_RGB
-                        && m_pFrameBuffer->bitsPerPixel() == 32)
-                    {
-                        /* Make a *real* depth copy out of the current framebuffer content. */
-                        QImage shot = QImage(m_pFrameBuffer->address(), m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32).copy();
-                        dimImage(shot);
-                        m_pauseShot = QPixmap::fromImage(shot);
-                        /* Fully repaint to pick up m_pauseShot: */
-                        viewport()->repaint();
-                    }
-                    else
-                    {
-                        /* If there is no framebuffer or a unsupported format, just create a black image to show. */
-                        QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
-                        shot.fill(0);
-                        m_pauseShot = QPixmap::fromImage(shot);
-                        /* Fully repaint to pick up m_pauseShot: */
-                        viewport()->repaint();
-                    }
+                    dimImage(shot);
                 }
+                m_pauseShot = QPixmap::fromImage(shot);
+                /* Fully repaint to pick up m_pauseShot: */
+                viewport()->repaint();
             }
             break;
         }
