@@ -1393,7 +1393,7 @@ ifeq ($(KBUILD_TYPE),kprofile)
 endif
 
 ## Enable C++ electric fence heap. (Warning: will easily run out of virtual memory / kernel stuff on Linux/Windows.)
-#LIB_RUNTIME += $(LIB_RUNTIME_EF) $(LIB_RUNTIME)
+#LIB_RUNTIME := $(LIB_RUNTIME_EF) $(LIB_RUNTIME)
 
 # Overridable libraries (unix).
 LIB_PTHREAD      ?= pthread
