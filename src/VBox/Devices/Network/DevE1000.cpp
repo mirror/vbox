@@ -15,7 +15,7 @@
  */
 
 /*
- * Copyright (C) 2007 Sun Microsystems, Inc.
+ * Copyright (C) 2007-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -107,7 +107,6 @@
 //#undef DEBUG
 
 #define INSTANCE(pState) pState->szInstance
-#define IFACE_TO_STATE(pIface, ifaceName) ((E1KSTATE *)((char*)pIface - RT_OFFSETOF(E1KSTATE, ifaceName)))
 #define STATE_TO_DEVINS(pState)           (((E1KSTATE *)pState)->CTX_SUFF(pDevIns))
 #define E1K_RELOCATE(p, o) *(RTHCUINTPTR *)&p += o
 
@@ -2597,7 +2596,7 @@ static int e1kRegWritePBA(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
  * Write handler for Receive Descriptor Tail register.
  *
  * @remarks Write into RDT forces switch to HC and signal to
- *          e1kWaitReceiveAvail().
+ *          e1kNetworkDown_WaitReceiveAvail().
  *
  * @returns VBox status code.
  *
@@ -3120,10 +3119,11 @@ DECLINLINE(void) e1kWriteBackDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS a
  * @remarks We skip the FCS since we're not responsible for sending anything to
  *          a real ethernet wire.
  *
- * @param   pState      The device state structure.
+ * @param   pState              The device state structure.
+ * @param   fOnWorkerThread     Whether we're on a worker thread or an EMT.
  * @thread  E1000_TX
  */
-static void e1kTransmitFrame(E1KSTATE* pState)
+static void e1kTransmitFrame(E1KSTATE* pState, bool fOnWorkerThread)
 {
     PPDMSCATTERGATHER   pSg     = pState->pTxSgR3;
     uint32_t const      cbFrame = pSg ? (size_t)pSg->cbUsed : 0;
@@ -3180,7 +3180,7 @@ static void e1kTransmitFrame(E1KSTATE* pState)
             //e1kCsLeave(pState);
             e1kMutexRelease(pState);
             STAM_PROFILE_START(&pState->StatTransmitSend, a);
-            rc = pDrv->pfnSendBuf(pDrv, pSg, true /*fOnWorkerThread*/);
+            rc = pDrv->pfnSendBuf(pDrv, pSg, fOnWorkerThread);
             STAM_PROFILE_STOP(&pState->StatTransmitSend, a);
             e1kMutexAcquire(pState, VERR_SEM_BUSY, RT_SRC_POS);
             //e1kCsEnter(pState, RT_SRC_POS);
@@ -3249,14 +3249,14 @@ static void e1kInsertChecksum(E1KSTATE* pState, uint8_t *pPkt, uint16_t u16PktLe
  *          and legacy descriptors since it is identical to
  *          legacy.u64BufAddr.
  *
- * @param   pState      The device state structure.
- * @param   pDesc       Pointer to the descriptor to transmit.
- * @param   u16Len      Length of buffer to the end of segment.
- * @param   fSend       Force packet sending.
- * @param   pSgBuf      The current scatter gather buffer.
+ * @param   pState          The device state structure.
+ * @param   pDesc           Pointer to the descriptor to transmit.
+ * @param   u16Len          Length of buffer to the end of segment.
+ * @param   fSend           Force packet sending.
+ * @param   fOnWorkerThread Whether we're on a worker thread or an EMT.
  * @thread  E1000_TX
  */
-static void e1kFallbackAddSegment(E1KSTATE* pState, RTGCPHYS PhysAddr, uint16_t u16Len, bool fSend)
+static void e1kFallbackAddSegment(E1KSTATE* pState, RTGCPHYS PhysAddr, uint16_t u16Len, bool fSend, bool fOnWorkerThread)
 {
     /* TCP header being transmitted */
     struct E1kTcpHeader *pTcpHdr = (struct E1kTcpHeader *)
@@ -3352,7 +3352,7 @@ static void e1kFallbackAddSegment(E1KSTATE* pState, RTGCPHYS PhysAddr, uint16_t 
             pState->pTxSgR3->cbUsed         = pState->u16TxPktLen;
             pState->pTxSgR3->aSegs[0].cbSeg = pState->u16TxPktLen;
         }
-        e1kTransmitFrame(pState);
+        e1kTransmitFrame(pState, fOnWorkerThread);
 
         /* Update Sequence Number */
         pTcpHdr->seqno = htonl(ntohl(pTcpHdr->seqno) + pState->u16TxPktLen
@@ -3371,12 +3371,13 @@ static void e1kFallbackAddSegment(E1KSTATE* pState, RTGCPHYS PhysAddr, uint16_t 
  *
  * @returns true if the frame should be transmitted, false if not.
  *
- * @param   pState      The device state structure.
- * @param   pDesc       Pointer to the descriptor to transmit.
- * @param   cbFragment  Length of descriptor's buffer.
+ * @param   pState          The device state structure.
+ * @param   pDesc           Pointer to the descriptor to transmit.
+ * @param   cbFragment      Length of descriptor's buffer.
+ * @param   fOnWorkerThread Whether we're on a worker thread or an EMT.
  * @thread  E1000_TX
  */
-static bool e1kFallbackAddToFrame(E1KSTATE* pState, E1KTXDESC* pDesc, uint32_t cbFragment)
+static bool e1kFallbackAddToFrame(E1KSTATE* pState, E1KTXDESC* pDesc, uint32_t cbFragment, bool fOnWorkerThread)
 {
     PPDMSCATTERGATHER pTxSg = pState->pTxSgR3;
     Assert(e1kGetDescType(pDesc) == E1K_DTYP_DATA);
@@ -3398,11 +3399,11 @@ static bool e1kFallbackAddToFrame(E1KSTATE* pState, E1KTXDESC* pDesc, uint32_t c
         {
             /* This descriptor fits completely into current segment */
             cb = cbFragment;
-            e1kFallbackAddSegment(pState, pDesc->data.u64BufAddr, cb, pDesc->data.cmd.fEOP /*fSend*/);
+            e1kFallbackAddSegment(pState, pDesc->data.u64BufAddr, cb, pDesc->data.cmd.fEOP /*fSend*/, fOnWorkerThread);
         }
         else
         {
-            e1kFallbackAddSegment(pState, pDesc->data.u64BufAddr, cb, true /*fSend*/);
+            e1kFallbackAddSegment(pState, pDesc->data.u64BufAddr, cb, true /*fSend*/, fOnWorkerThread);
             /*
              * Rewind the packet tail pointer to the beginning of payload,
              * so we continue writing right beyond the header.
@@ -3544,12 +3545,13 @@ static void e1kDescReport(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
  * - data     the same as legacy but providing new offloading capabilities.
  * - context  sets up the context for following data descriptors.
  *
- * @param   pState      The device state structure.
- * @param   pDesc       Pointer to descriptor union.
- * @param   addr        Physical address of descriptor in guest memory.
+ * @param   pState          The device state structure.
+ * @param   pDesc           Pointer to descriptor union.
+ * @param   addr            Physical address of descriptor in guest memory.
+ * @param   fOnWorkerThread Whether we're on a worker thread or an EMT.
  * @thread  E1000_TX
  */
-static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
+static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr, bool fOnWorkerThread)
 {
     e1kPrintTDesc(pState, pDesc, "vvv");
 
@@ -3635,7 +3637,7 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
                         && pState->pTxSgR3
                         && pState->pTxSgR3->cbUsed == (size_t)pState->contextTSE.dw3.u8HDRLEN + pState->contextTSE.dw2.u20PAYLEN)
                     {
-                        e1kTransmitFrame(pState);
+                        e1kTransmitFrame(pState, fOnWorkerThread);
                         E1K_INC_CNT32(TSCTC);
                     }
                     else
@@ -3669,7 +3671,7 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
                                               pState->contextNormal.tu.u8CSO,
                                               pState->contextNormal.tu.u8CSS,
                                               pState->contextNormal.tu.u16CSE);
-                        e1kTransmitFrame(pState);
+                        e1kTransmitFrame(pState, fOnWorkerThread);
                     }
                     else
                         e1kXmitFreeBuf(pState);
@@ -3679,7 +3681,7 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
             else
             {
                 STAM_COUNTER_INC(&pState->StatTxPathFallback);
-                e1kFallbackAddToFrame(pState, pDesc, pDesc->data.cmd.u20DTALEN);
+                e1kFallbackAddToFrame(pState, pDesc, pDesc->data.cmd.u20DTALEN, fOnWorkerThread);
             }
 
             e1kDescReport(pState, pDesc, addr);
@@ -3713,7 +3715,7 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
                 if (pDesc->legacy.cmd.fEOP)
                 {
                     /** @todo Offload processing goes here. */
-                    e1kTransmitFrame(pState);
+                    e1kTransmitFrame(pState, fOnWorkerThread);
                     pState->u16TxPktLen = 0;
                 }
             }
@@ -3742,15 +3744,16 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
  * @returns VBox status code.  VERR_TRY_AGAIN is returned if we're busy.
  *
  * @param   pState              The E1000 state.
+ * @param   fOnWorkerThread     Whether we're on a worker thread or on an EMT.
  */
-static int e1kXmitPending(E1KSTATE *pState)
+static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
 {
-    PPDMINETWORKUP  pDrv = pState->pDrv;
-    int             rc;
+    int rc;
 
     /*
      * Grab the xmit lock of the driver as well as the E1K device state.
      */
+    PPDMINETWORKUP pDrv = pState->pDrv;
     if (pDrv)
     {
         rc = pDrv->pfnBeginXmit(pDrv, true /*fOnWorkerThread*/);
@@ -3771,7 +3774,7 @@ static int e1kXmitPending(E1KSTATE *pState)
                      INSTANCE(pState), TDBAH, TDBAL + TDH * sizeof(desc), TDLEN, TDH, TDT));
 
             e1kLoadDesc(pState, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc));
-            e1kXmitDesc(pState, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc));
+            e1kXmitDesc(pState, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc), fOnWorkerThread);
             if (++TDH * sizeof(desc) >= TDLEN)
                 TDH = 0;
 
@@ -3796,6 +3799,15 @@ static int e1kXmitPending(E1KSTATE *pState)
     if (pDrv)
         pDrv->pfnEndXmit(pDrv);
     return rc;
+}
+
+/**
+ * @interface_method_impl{PDMINETWORKDOWN,pfnXmitPending}
+ */
+static DECLCALLBACK(void) e1kNetworkDown_XmitPending(PPDMINETWORKDOWN pInterface)
+{
+    E1KSTATE *pState = RT_FROM_MEMBER(pInterface, E1KSTATE, INetworkDown);
+    e1kXmitPending(pState, true /*fOnWorkerThread*/);
 }
 
 #ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
@@ -3846,7 +3858,7 @@ static DECLCALLBACK(int) e1kTxThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
         if (pThread->enmState == PDMTHREADSTATE_RUNNING)
         {
-            rc = e1kXmitPending(pState);
+            rc = e1kXmitPending(pState, true /*fOnWorkerThread*/);
             AssertMsgReturn(RT_SUCCESS(rc) || rc == VERR_TRY_AGAIN, ("%Rrc\n", rc), rc);
         }
     }
@@ -4664,9 +4676,12 @@ static int e1kCanReceive(E1KSTATE *pState)
     return cb > 0 ? VINF_SUCCESS : VERR_NET_NO_BUFFER_SPACE;
 }
 
-static DECLCALLBACK(int) e1kWaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
+/**
+ * @interface_method_impl{PDMINETWORKDOWN,pfnWaitReceiveAvail}
+ */
+static DECLCALLBACK(int) e1kNetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
 {
-    E1KSTATE *pState = IFACE_TO_STATE(pInterface, INetworkDown);
+    E1KSTATE *pState = RT_FROM_MEMBER(pInterface, E1KSTATE, INetworkDown);
     int rc = e1kCanReceive(pState);
 
     if (RT_SUCCESS(rc))
@@ -4687,9 +4702,9 @@ static DECLCALLBACK(int) e1kWaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSIN
             rc = VINF_SUCCESS;
             break;
         }
-        E1kLogRel(("E1000 e1kWaitReceiveAvail: waiting cMillies=%u...\n",
+        E1kLogRel(("E1000 e1kNetworkDown_WaitReceiveAvail: waiting cMillies=%u...\n",
                 cMillies));
-        E1kLog(("%s e1kWaitReceiveAvail: waiting cMillies=%u...\n",
+        E1kLog(("%s e1kNetworkDown_WaitReceiveAvail: waiting cMillies=%u...\n",
                 INSTANCE(pState), cMillies));
         RTSemEventWait(pState->hEventMoreRxDescAvail, cMillies);
     }
@@ -4862,17 +4877,11 @@ static bool e1kAddressFilter(E1KSTATE *pState, const void *pvBuf, size_t cb, E1K
 }
 
 /**
- * Receive data from the network.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @param   pvBuf           The available data.
- * @param   cb              Number of bytes available in the buffer.
- * @thread  ???
+ * @interface_method_impl{PDMINETWORKDOWN,pfnReceive}
  */
-static DECLCALLBACK(int) e1kReceive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) e1kNetworkDown_Receive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
 {
-    E1KSTATE *pState = IFACE_TO_STATE(pInterface, INetworkDown);
+    E1KSTATE *pState = RT_FROM_MEMBER(pInterface, E1KSTATE, INetworkDown);
     int       rc = VINF_SUCCESS;
 
     /*
@@ -4937,7 +4946,7 @@ static DECLCALLBACK(int) e1kReceive(PPDMINETWORKDOWN pInterface, const void *pvB
  */
 static DECLCALLBACK(int) e1kQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
 {
-    E1KSTATE *pState = IFACE_TO_STATE(pInterface, ILeds);
+    E1KSTATE *pState = RT_FROM_MEMBER(pInterface, E1KSTATE, ILeds);
     int       rc     = VERR_PDM_LUN_NOT_FOUND;
 
     if (iLUN == 0)
@@ -4958,7 +4967,7 @@ static DECLCALLBACK(int) e1kQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iL
  */
 static DECLCALLBACK(int) e1kGetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
 {
-    E1KSTATE *pState = IFACE_TO_STATE(pInterface, INetworkConfig);
+    E1KSTATE *pState = RT_FROM_MEMBER(pInterface, E1KSTATE, INetworkConfig);
     pState->eeprom.getMac(pMac);
     return VINF_SUCCESS;
 }
@@ -4973,7 +4982,7 @@ static DECLCALLBACK(int) e1kGetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
  */
 static DECLCALLBACK(PDMNETWORKLINKSTATE) e1kGetLinkState(PPDMINETWORKCONFIG pInterface)
 {
-    E1KSTATE *pState = IFACE_TO_STATE(pInterface, INetworkConfig);
+    E1KSTATE *pState = RT_FROM_MEMBER(pInterface, E1KSTATE, INetworkConfig);
     if (STATUS & STATUS_LU)
         return PDMNETWORKLINKSTATE_UP;
     return PDMNETWORKLINKSTATE_DOWN;
@@ -4990,7 +4999,7 @@ static DECLCALLBACK(PDMNETWORKLINKSTATE) e1kGetLinkState(PPDMINETWORKCONFIG pInt
  */
 static DECLCALLBACK(int) e1kSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWORKLINKSTATE enmState)
 {
-    E1KSTATE *pState = IFACE_TO_STATE(pInterface, INetworkConfig);
+    E1KSTATE *pState = RT_FROM_MEMBER(pInterface, E1KSTATE, INetworkConfig);
     bool fOldUp = !!(STATUS & STATUS_LU);
     bool fNewUp = enmState == PDMNETWORKLINKSTATE_UP;
 
@@ -5025,7 +5034,7 @@ static DECLCALLBACK(int) e1kSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWO
  */
 static DECLCALLBACK(void *) e1kQueryInterface(struct PDMIBASE *pInterface, const char *pszIID)
 {
-    E1KSTATE *pThis = IFACE_TO_STATE(pInterface, IBase);
+    E1KSTATE *pThis = RT_FROM_MEMBER(pInterface, E1KSTATE, IBase);
     Assert(&pThis->IBase == pInterface);
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
@@ -5697,9 +5706,13 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 
     /* Interfaces */
     pState->IBase.pfnQueryInterface          = e1kQueryInterface;
-    pState->INetworkDown.pfnWaitReceiveAvail = e1kWaitReceiveAvail;
-    pState->INetworkDown.pfnReceive          = e1kReceive;
+
+    pState->INetworkDown.pfnWaitReceiveAvail = e1kNetworkDown_WaitReceiveAvail;
+    pState->INetworkDown.pfnReceive          = e1kNetworkDown_Receive;
+    pState->INetworkDown.pfnXmitPending      = e1kNetworkDown_XmitPending;
+
     pState->ILeds.pfnQueryStatusLed          = e1kQueryStatusLed;
+
     pState->INetworkConfig.pfnGetMac         = e1kGetMac;
     pState->INetworkConfig.pfnGetLinkState   = e1kGetLinkState;
     pState->INetworkConfig.pfnSetLinkState   = e1kSetLinkState;

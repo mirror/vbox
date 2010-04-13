@@ -10,7 +10,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2061,30 +2061,9 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
 
 #ifndef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
     /*
-     * Process as much as we can.
+     * Transmit as much as we can.
      */
-    int             rc   = VINF_SUCCESS;
-    PPDMINETWORKUP  pDrv = pThis->pDrvR3;
-    if (pDrv)
-    {
-        rc = pDrv->pfnBeginXmit(pDrv, false /*fOnWorkerThread*/);
-        AssertMsg(rc == VINF_SUCCESS || rc == VERR_TRY_AGAIN, ("%Rrc\n", rc));
-    }
-    if (RT_SUCCESS(rc))
-    {
-        rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-        if (RT_SUCCESS(rc))
-        {
-            int rc2 = pcnetAsyncTransmit(pThis, false /*fOnWorkerThread*/);
-            AssertReleaseRC(rc2);
-
-            PDMCritSectLeave(&pThis->CritSect);
-        }
-        else
-            AssertReleaseRC(rc);
-        if (pDrv)
-            pDrv->pfnEndXmit(pDrv);
-    }
+    pcnetXmitPending(pThis, true /*fOnWorkerThread*/);
 #else
     /*
      * Wake up the TX thread.
@@ -2668,6 +2647,52 @@ static int pcnetAsyncTransmit(PCNetState *pThis, bool fOnWorkerThread)
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Transmit pending descriptors.
+ *
+ * @returns VBox status code.  VERR_TRY_AGAIN is returned if we're busy.
+ *
+ * @param   pThis               The PCNet instance data.
+ * @param   fOnWorkerThread     Whether we're on a worker thread or on an EMT.
+ */
+static int pcnetXmitPending(PCNetState *pThis, bool fOnWorkerThread)
+{
+    int rc = VINF_SUCCESS;
+
+    /*
+     * Grab the xmit lock of the driver as well as the E1K device state.
+     */
+    PPDMINETWORKUP pDrv = pThis->pDrvR3;
+    if (pDrv)
+    {
+        rc = pDrv->pfnBeginXmit(pDrv, false /*fOnWorkerThread*/);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+    rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    if (RT_SUCCESS(rc))
+    {
+        /** @todo check if we're supposed to suspend now. */
+        /*
+         * Do the transmitting.
+         */
+        int rc2 = pcnetAsyncTransmit(pThis, false /*fOnWorkerThread*/);
+        AssertReleaseRC(rc2);
+
+        /*
+         * Release the locks.
+         */
+        PDMCritSectLeave(&pThis->CritSect);
+    }
+    else
+        AssertLogRelRC(rc);
+    if (pDrv)
+        pDrv->pfnEndXmit(pDrv);
+
+    return rc;
+}
+
 #ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
 
 /**
@@ -2710,32 +2735,11 @@ static DECLCALLBACK(int) pcnetAsyncSendThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
             break;
 
         /*
-         * Perform async send. Mind that we might be requested to
-         * suspended while waiting for the critical sections.
+         * Perform async send.
          */
-        PPDMINETWORKUP pDrv = pThis->pDrvR3;
-        if (pDrv)
-        {
-            rc = pDrv->pfnBeginXmit(pDrv, true /*fOnWorkerThread*/);
-            if (rc == VERR_TRY_AGAIN)
-                continue;
-            AssertReleaseRCReturn(rc, rc);
-        }
-        rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-        if (RT_SUCCESS(rc))
-        {
-            if (pThread->enmState == PDMTHREADSTATE_RUNNING)
-            {
-                int rc2 = pcnetAsyncTransmit(pThis, true /*fOnWorkerThread*/);
-                AssertReleaseRC(rc2);
-            }
-
-            PDMCritSectLeave(&pThis->CritSect);
-        }
-        if (pDrv)
-            pDrv->pfnEndXmit(pDrv);
-        AssertReleaseRCReturn(rc, rc);
-    }
+        rc = pcnetXmitPending(pThis, true /*fOnWorkerThread*/);
+        AssertMsg(rc == VINF_SUCCESS || rc == VERR_TRY_AGAIN, ("%Rrc\n", rc));
+   }
 
     /* The thread is being suspended or terminated. */
     return VINF_SUCCESS;
@@ -4634,8 +4638,6 @@ static DECLCALLBACK(void *) pcnetQueryInterface(struct PDMIBASE *pInterface, con
     return NULL;
 }
 
-/** Converts a pointer to PCNetState::INetworkDown to a PCNetState pointer. */
-#define INETWORKPORT_2_DATA(pInterface)  ( (PCNetState *)((uintptr_t)pInterface - RT_OFFSETOF(PCNetState, INetworkDown)) )
 
 
 /**
@@ -4673,11 +4675,11 @@ static int pcnetCanReceive(PCNetState *pThis)
 
 
 /**
- *
+ * @interface_method_impl{PDMINETWORKDOWN,pfnWaitReceiveAvail}
  */
-static DECLCALLBACK(int) pcnetWaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
+static DECLCALLBACK(int) pcnetNetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
 {
-    PCNetState *pThis = INETWORKPORT_2_DATA(pInterface);
+    PCNetState *pThis = RT_FROM_MEMBER(pInterface, PCNetState, INetworkDown);
 
     int rc = pcnetCanReceive(pThis);
     if (RT_SUCCESS(rc))
@@ -4698,7 +4700,7 @@ static DECLCALLBACK(int) pcnetWaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMS
             rc = VINF_SUCCESS;
             break;
         }
-        LogFlow(("pcnetWaitReceiveAvail: waiting cMillies=%u...\n", cMillies));
+        LogFlow(("pcnetNetworkDown_WaitReceiveAvail: waiting cMillies=%u...\n", cMillies));
         /* Start the poll timer once which will remain active as long fMaybeOutOfSpace
          * is true -- even if (transmit) polling is disabled (CSR_DPOLL). */
         rc2 = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
@@ -4715,17 +4717,11 @@ static DECLCALLBACK(int) pcnetWaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMS
 
 
 /**
- * Receive data from the network.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @param   pvBuf           The available data.
- * @param   cb              Number of bytes available in the buffer.
- * @thread  EMT
+ * @interface_method_impl{PDMINETWORKDOWN,pfnReceive}
  */
-static DECLCALLBACK(int) pcnetReceive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) pcnetNetworkDown_Receive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
 {
-    PCNetState *pThis = INETWORKPORT_2_DATA(pInterface);
+    PCNetState *pThis = RT_FROM_MEMBER(pInterface, PCNetState, INetworkDown);
     int         rc;
 
     STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
@@ -4770,8 +4766,16 @@ static DECLCALLBACK(int) pcnetReceive(PPDMINETWORKDOWN pInterface, const void *p
     return VINF_SUCCESS;
 }
 
-/** Converts a pointer to PCNetState::INetworkConfig to a PCNetState pointer. */
-#define INETWORKCONFIG_2_DATA(pInterface)  ( (PCNetState *)((uintptr_t)pInterface - RT_OFFSETOF(PCNetState, INetworkConfig)) )
+
+/**
+ * @interface_method_impl{PDMINETWORKDOWN,pfnXmitPending}
+ */
+static DECLCALLBACK(void) pcnetNetworkDown_XmitPending(PPDMINETWORKDOWN pInterface)
+{
+    PCNetState *pThis = RT_FROM_MEMBER(pInterface, PCNetState, INetworkDown);
+    pcnetXmitPending(pThis, true /*fOnWorkerThread*/);
+}
+
 
 
 /**
@@ -4784,7 +4788,7 @@ static DECLCALLBACK(int) pcnetReceive(PPDMINETWORKDOWN pInterface, const void *p
  */
 static DECLCALLBACK(int) pcnetGetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
 {
-    PCNetState *pThis = INETWORKCONFIG_2_DATA(pInterface);
+    PCNetState *pThis = RT_FROM_MEMBER(pInterface, PCNetState, INetworkConfig);
     memcpy(pMac, pThis->aPROM, sizeof(*pMac));
     return VINF_SUCCESS;
 }
@@ -4799,7 +4803,7 @@ static DECLCALLBACK(int) pcnetGetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
  */
 static DECLCALLBACK(PDMNETWORKLINKSTATE) pcnetGetLinkState(PPDMINETWORKCONFIG pInterface)
 {
-    PCNetState *pThis = INETWORKCONFIG_2_DATA(pInterface);
+    PCNetState *pThis = RT_FROM_MEMBER(pInterface, PCNetState, INetworkConfig);
     if (pThis->fLinkUp && !pThis->fLinkTempDown)
         return PDMNETWORKLINKSTATE_UP;
     if (!pThis->fLinkUp)
@@ -4821,7 +4825,7 @@ static DECLCALLBACK(PDMNETWORKLINKSTATE) pcnetGetLinkState(PPDMINETWORKCONFIG pI
  */
 static DECLCALLBACK(int) pcnetSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWORKLINKSTATE enmState)
 {
-    PCNetState *pThis = INETWORKCONFIG_2_DATA(pInterface);
+    PCNetState *pThis = RT_FROM_MEMBER(pInterface, PCNetState, INetworkConfig);
     bool fLinkUp;
     if (    enmState != PDMNETWORKLINKSTATE_DOWN
         &&  enmState != PDMNETWORKLINKSTATE_UP)
@@ -5150,8 +5154,9 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /* IBase */
     pThis->IBase.pfnQueryInterface          = pcnetQueryInterface;
     /* INeworkPort */
-    pThis->INetworkDown.pfnWaitReceiveAvail = pcnetWaitReceiveAvail;
-    pThis->INetworkDown.pfnReceive          = pcnetReceive;
+    pThis->INetworkDown.pfnWaitReceiveAvail = pcnetNetworkDown_WaitReceiveAvail;
+    pThis->INetworkDown.pfnReceive          = pcnetNetworkDown_Receive;
+    pThis->INetworkDown.pfnXmitPending      = pcnetNetworkDown_XmitPending;
     /* INetworkConfig */
     pThis->INetworkConfig.pfnGetMac         = pcnetGetMac;
     pThis->INetworkConfig.pfnGetLinkState   = pcnetGetLinkState;

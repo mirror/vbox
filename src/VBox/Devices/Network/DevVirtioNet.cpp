@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009 Sun Microsystems, Inc.
+ * Copyright (C) 2009-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,8 +37,6 @@
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 #define INSTANCE(pState) pState->VPCI.szInstance
-#define IFACE_TO_STATE(pIface, ifaceName) \
-        ((VNETSTATE *)((char*)pIface - RT_OFFSETOF(VNETSTATE, ifaceName)))
 #define STATUS pState->config.uStatus
 
 #ifdef IN_RING3
@@ -542,10 +540,13 @@ static int vnetCanReceive(VNETSTATE *pState)
     return rc;
 }
 
-static DECLCALLBACK(int) vnetWaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
+/**
+ * @interface_method_impl{PDMINETWORKDOWN,pfnWaitReceiveAvail}
+ */
+static DECLCALLBACK(int) vnetNetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
 {
-    VNETSTATE *pState = IFACE_TO_STATE(pInterface, INetworkDown);
-    LogFlow(("%s vnetWaitReceiveAvail(cMillies=%u)\n", INSTANCE(pState), cMillies));
+    VNETSTATE *pState = RT_FROM_MEMBER(pInterface, VNETSTATE, INetworkDown);
+    LogFlow(("%s vnetNetworkDown_WaitReceiveAvail(cMillies=%u)\n", INSTANCE(pState), cMillies));
     int rc = vnetCanReceive(pState);
 
     if (RT_SUCCESS(rc))
@@ -567,14 +568,14 @@ static DECLCALLBACK(int) vnetWaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSI
             rc = VINF_SUCCESS;
             break;
         }
-        Log(("%s vnetWaitReceiveAvail: waiting cMillies=%u...\n",
+        Log(("%s vnetNetworkDown_WaitReceiveAvail: waiting cMillies=%u...\n",
                 INSTANCE(pState), cMillies));
         RTSemEventWait(pState->hEventMoreRxDescAvail, cMillies);
     }
     STAM_PROFILE_STOP(&pState->StatRxOverflow, a);
     ASMAtomicXchgBool(&pState->fMaybeOutOfSpace, false);
 
-    LogFlow(("%s vnetWaitReceiveAvail -> %d\n", INSTANCE(pState), rc));
+    LogFlow(("%s vnetNetworkDown_WaitReceiveAvail -> %d\n", INSTANCE(pState), rc));
     return rc;
 }
 
@@ -584,7 +585,7 @@ static DECLCALLBACK(int) vnetWaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSI
  */
 static DECLCALLBACK(void *) vnetQueryInterface(struct PDMIBASE *pInterface, const char *pszIID)
 {
-    VNETSTATE *pThis = IFACE_TO_STATE(pInterface, VPCI.IBase);
+    VNETSTATE *pThis = RT_FROM_MEMBER(pInterface, VNETSTATE, VPCI.IBase);
     Assert(&pThis->VPCI.IBase == pInterface);
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKDOWN, &pThis->INetworkDown);
@@ -721,19 +722,13 @@ static int vnetHandleRxPacket(PVNETSTATE pState, const void *pvBuf, size_t cb)
 }
 
 /**
- * Receive data from the network.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @param   pvBuf           The available data.
- * @param   cb              Number of bytes available in the buffer.
- * @thread  RX
+ * @interface_method_impl{PDMINETWORKDOWN,pfnReceive}
  */
-static DECLCALLBACK(int) vnetReceive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) vnetNetworkDown_Receive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
 {
-    VNETSTATE *pState = IFACE_TO_STATE(pInterface, INetworkDown);
+    VNETSTATE *pState = RT_FROM_MEMBER(pInterface, VNETSTATE, INetworkDown);
 
-    Log2(("%s vnetReceive: pvBuf=%p cb=%u\n", INSTANCE(pState), pvBuf, cb));
+    Log2(("%s vnetNetworkDown_Receive: pvBuf=%p cb=%u\n", INSTANCE(pState), pvBuf, cb));
     int rc = vnetCanReceive(pState);
     if (RT_FAILURE(rc))
         return rc;
@@ -772,7 +767,7 @@ static DECLCALLBACK(int) vnetReceive(PPDMINETWORKDOWN pInterface, const void *pv
  */
 static DECLCALLBACK(int) vnetGetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
 {
-    VNETSTATE *pState = IFACE_TO_STATE(pInterface, INetworkConfig);
+    VNETSTATE *pState = RT_FROM_MEMBER(pInterface, VNETSTATE, INetworkConfig);
     memcpy(pMac, pState->config.mac.au8, sizeof(RTMAC));
     return VINF_SUCCESS;
 }
@@ -786,7 +781,7 @@ static DECLCALLBACK(int) vnetGetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
  */
 static DECLCALLBACK(PDMNETWORKLINKSTATE) vnetGetLinkState(PPDMINETWORKCONFIG pInterface)
 {
-    VNETSTATE *pState = IFACE_TO_STATE(pInterface, INetworkConfig);
+    VNETSTATE *pState = RT_FROM_MEMBER(pInterface, VNETSTATE, INetworkConfig);
     if (STATUS & VNET_S_LINK_UP)
         return PDMNETWORKLINKSTATE_UP;
     return PDMNETWORKLINKSTATE_DOWN;
@@ -802,7 +797,7 @@ static DECLCALLBACK(PDMNETWORKLINKSTATE) vnetGetLinkState(PPDMINETWORKCONFIG pIn
  */
 static DECLCALLBACK(int) vnetSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWORKLINKSTATE enmState)
 {
-    VNETSTATE *pState = IFACE_TO_STATE(pInterface, INetworkConfig);
+    VNETSTATE *pState = RT_FROM_MEMBER(pInterface, VNETSTATE, INetworkConfig);
     bool fOldUp = !!(STATUS & VNET_S_LINK_UP);
     bool fNewUp = enmState == PDMNETWORKLINKSTATE_UP;
 
@@ -833,7 +828,7 @@ static DECLCALLBACK(void) vnetQueueReceive(void *pvState, PVQUEUE pQueue)
     vnetWakeupReceive(pState->VPCI.CTX_SUFF(pDevIns));
 }
 
-static DECLCALLBACK(void) vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue, bool fOnWorkerThread)
+static void vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue, bool fOnWorkerThread)
 {
     /*
      * Only one thread is allowed to transmit at a time, others should skip
@@ -925,7 +920,17 @@ static DECLCALLBACK(void) vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE 
     ASMAtomicWriteU32(&pState->uIsTransmitting, 0);
 }
 
+/**
+ * @interface_method_impl{PDMINETWORKDOWN,pfnXmitPending}
+ */
+static DECLCALLBACK(void) vnetNetworkDown_XmitPending(PPDMINETWORKDOWN pInterface)
+{
+    VNETSTATE *pThis = RT_FROM_MEMBER(pInterface, VNETSTATE, INetworkDown);
+    vnetTransmitPendingPackets(pThis, pThis->pTxQueue, false /*fOnWorkerThread*/);
+}
+
 #ifdef VNET_TX_DELAY
+
 static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
 {
     VNETSTATE *pState = (VNETSTATE*)pvState;
@@ -994,12 +999,14 @@ static DECLCALLBACK(void) vnetTxTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
 }
 
 #else /* !VNET_TX_DELAY */
+
 static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
 {
     VNETSTATE *pState = (VNETSTATE*)pvState;
 
     vnetTransmitPendingPackets(pState, pQueue, false /*fOnWorkerThread*/);
 }
+
 #endif /* !VNET_TX_DELAY */
 
 static uint8_t vnetControlRx(PVNETSTATE pState, PVNETCTLHDR pCtlHdr, PVQUEUEELEM pElem)
@@ -1306,7 +1313,8 @@ static DECLCALLBACK(int) vnetLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
-/* Takes down the link temporarily if it's current status is up.
+/**
+ * Takes down the link temporarily if it's current status is up.
  *
  * This is used during restore and when replumbing the network link.
  *
@@ -1692,8 +1700,10 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pState->u32PktNo     = 1;
 
     /* Interfaces */
-    pState->INetworkDown.pfnWaitReceiveAvail = vnetWaitReceiveAvail;
-    pState->INetworkDown.pfnReceive          = vnetReceive;
+    pState->INetworkDown.pfnWaitReceiveAvail = vnetNetworkDown_WaitReceiveAvail;
+    pState->INetworkDown.pfnReceive          = vnetNetworkDown_Receive;
+    pState->INetworkDown.pfnXmitPending      = vnetNetworkDown_XmitPending;
+
     pState->INetworkConfig.pfnGetMac         = vnetGetMac;
     pState->INetworkConfig.pfnGetLinkState   = vnetGetLinkState;
     pState->INetworkConfig.pfnSetLinkState   = vnetSetLinkState;
