@@ -71,7 +71,7 @@ static void listHardDisks(const ComPtr<IVirtualBox> aVirtualBox,
                           const char *pszParentUUIDStr)
 {
     HRESULT rc;
-    for (size_t i = 0; i < aMedia.size(); ++ i)
+    for (size_t i = 0; i < aMedia.size(); ++i)
     {
         ComPtr<IMedium> hdd = aMedia[i];
         Bstr uuid;
@@ -133,16 +133,31 @@ static void listHardDisks(const ComPtr<IVirtualBox> aVirtualBox,
 
         com::SafeArray<BSTR> machineIds;
         hdd->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(machineIds));
-        for (size_t j = 0; j < machineIds.size(); ++ j)
+        for (size_t j = 0; j < machineIds.size(); ++j)
         {
             ComPtr<IMachine> machine;
             CHECK_ERROR(aVirtualBox, GetMachine(machineIds[j], machine.asOutParam()));
             ASSERT(machine);
             Bstr name;
             machine->COMGETTER(Name)(name.asOutParam());
-            RTPrintf("%s%lS (UUID: %lS)\n",
+            RTPrintf("%s%lS (UUID: %lS)",
                     j == 0 ? "Usage:       " : "             ",
                     name.raw(), machineIds[j]);
+            com::SafeArray<BSTR> snapshotIds;
+            hdd->COMGETTER(SnapshotIds)(machineIds[j],
+                                        ComSafeArrayAsOutParam(snapshotIds));
+            for (size_t k = 0; k < snapshotIds.size(); ++k)
+            {
+                ComPtr<ISnapshot> snapshot;
+                machine->GetSnapshot(snapshotIds[k], snapshot.asOutParam());
+                if (snapshot)
+                {
+                    Bstr snapshotName;
+                    snapshot->COMGETTER(Name)(snapshotName.asOutParam());
+                    RTPrintf(" [%lS (UUID: %lS)]", snapshotName.raw(), snapshotIds[k]);
+                }
+            }
+            RTPrintf("\n");
         }
         RTPrintf("\n");
 
@@ -295,7 +310,7 @@ int handleList(HandlerArg *a)
                 /*
                  * Iterate through the collection
                  */
-                for (size_t i = 0; i < machines.size(); ++ i)
+                for (size_t i = 0; i < machines.size(); ++i)
                 {
                     if (machines[i])
                         rc = showVMInfo(a->virtualBox,
@@ -318,7 +333,7 @@ int handleList(HandlerArg *a)
                 /*
                  * Iterate through the collection
                  */
-                for (size_t i = 0; i < machines.size(); ++ i)
+                for (size_t i = 0; i < machines.size(); ++i)
                 {
                     if (machines[i])
                     {
@@ -353,7 +368,7 @@ int handleList(HandlerArg *a)
                 /*
                  * Iterate through the collection.
                  */
-                for (size_t i = 0; i < coll.size(); ++ i)
+                for (size_t i = 0; i < coll.size(); ++i)
                 {
                     ComPtr<IGuestOSType> guestOS;
                     guestOS = coll[i];
@@ -376,7 +391,7 @@ int handleList(HandlerArg *a)
             CHECK_ERROR(host, COMGETTER(DVDDrives)(ComSafeArrayAsOutParam(coll)));
             if (SUCCEEDED(rc))
             {
-                for (size_t i = 0; i < coll.size(); ++ i)
+                for (size_t i = 0; i < coll.size(); ++i)
                 {
                     ComPtr<IMedium> dvdDrive = coll[i];
                     Bstr uuid;
@@ -572,7 +587,7 @@ int handleList(HandlerArg *a)
                         COMGETTER(MediumFormats)(ComSafeArrayAsOutParam(mediumFormats)));
 
             RTPrintf("Supported hard disk backends:\n\n");
-            for (size_t i = 0; i < mediumFormats.size(); ++ i)
+            for (size_t i = 0; i < mediumFormats.size(); ++i)
             {
                 /* General information */
                 Bstr id;
@@ -593,7 +608,7 @@ int handleList(HandlerArg *a)
                 com::SafeArray <BSTR> fileExtensions;
                 CHECK_ERROR(mediumFormats[i],
                             COMGETTER(FileExtensions)(ComSafeArrayAsOutParam(fileExtensions)));
-                for (size_t j = 0; j < fileExtensions.size(); ++ j)
+                for (size_t j = 0; j < fileExtensions.size(); ++j)
                 {
                     RTPrintf("%ls", Bstr(fileExtensions[j]).raw());
                     if (j != fileExtensions.size()-1)
@@ -617,7 +632,7 @@ int handleList(HandlerArg *a)
                 RTPrintf(" properties=(");
                 if (propertyNames.size() > 0)
                 {
-                    for (size_t j = 0; j < propertyNames.size(); ++ j)
+                    for (size_t j = 0; j < propertyNames.size(); ++j)
                     {
                         RTPrintf("\n  name='%ls' desc='%ls' type=",
                                 Bstr(propertyNames[j]).raw(), Bstr(propertyDescriptions[j]).raw());
@@ -650,7 +665,7 @@ int handleList(HandlerArg *a)
         {
             com::SafeIfaceArray<IMedium> dvds;
             CHECK_ERROR(a->virtualBox, COMGETTER(DVDImages)(ComSafeArrayAsOutParam(dvds)));
-            for (size_t i = 0; i < dvds.size(); ++ i)
+            for (size_t i = 0; i < dvds.size(); ++i)
             {
                 ComPtr<IMedium> dvdImage = dvds[i];
                 Bstr uuid;
@@ -665,7 +680,7 @@ int handleList(HandlerArg *a)
 
                 com::SafeArray<BSTR> machineIds;
                 dvdImage->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(machineIds));
-                for (size_t j = 0; j < machineIds.size(); ++ j)
+                for (size_t j = 0; j < machineIds.size(); ++j)
                 {
                     ComPtr<IMachine> machine;
                     CHECK_ERROR(a->virtualBox, GetMachine(machineIds[j], machine.asOutParam()));
@@ -686,7 +701,7 @@ int handleList(HandlerArg *a)
         {
             com::SafeIfaceArray<IMedium> floppies;
             CHECK_ERROR(a->virtualBox, COMGETTER(FloppyImages)(ComSafeArrayAsOutParam(floppies)));
-            for (size_t i = 0; i < floppies.size(); ++ i)
+            for (size_t i = 0; i < floppies.size(); ++i)
             {
                 ComPtr<IMedium> floppyImage = floppies[i];
                 Bstr uuid;
@@ -701,7 +716,7 @@ int handleList(HandlerArg *a)
 
                 com::SafeArray<BSTR> machineIds;
                 floppyImage->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(machineIds));
-                for (size_t j = 0; j < machineIds.size(); ++ j)
+                for (size_t j = 0; j < machineIds.size(); ++j)
                 {
                     ComPtr<IMachine> machine;
                     CHECK_ERROR(a->virtualBox, GetMachine(machineIds[j], machine.asOutParam()));
@@ -936,7 +951,7 @@ int handleList(HandlerArg *a)
         {
             com::SafeIfaceArray<IDHCPServer> svrs;
             CHECK_ERROR(a->virtualBox, COMGETTER(DHCPServers)(ComSafeArrayAsOutParam(svrs)));
-            for (size_t i = 0; i < svrs.size(); ++ i)
+            for (size_t i = 0; i < svrs.size(); ++i)
             {
                 ComPtr<IDHCPServer> svr = svrs[i];
                 Bstr netName;
@@ -982,7 +997,7 @@ int handleList(HandlerArg *a)
             ASSERT(nic);
             CHECK_ERROR(nic, COMGETTER(NatDriver)(driver.asOutParam()));
             CHECK_ERROR(driver, COMGETTER(Redirects)(ComSafeArrayAsOutParam(rules)));
-            for (size_t i = 0; i < rules.size(); ++ i)
+            for (size_t i = 0; i < rules.size(); ++i)
             {
                 uint16_t port = 0;
                 BSTR r = rules[i];
