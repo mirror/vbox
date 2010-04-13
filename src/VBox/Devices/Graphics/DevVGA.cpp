@@ -5117,7 +5117,7 @@ static DECLCALLBACK(int) vgaPortDisplayBlt(PPDMIDISPLAYPORT pInterface, const vo
             /*
              * The blitting loop.
              */
-            size_t      cbLineSrc   = RT_ALIGN_Z(cx, 4) * 4;
+            size_t      cbLineSrc   = cx * 4; /* 32 bits per pixel. */
             uint8_t    *pu8Src      = (uint8_t *)pvData;
             size_t      cbLineDst   = pThis->pDrv->cbScanline;
             uint8_t    *pu8Dst      = pThis->pDrv->pu8Data + y * cbLineDst + x * cbPixelDst;
