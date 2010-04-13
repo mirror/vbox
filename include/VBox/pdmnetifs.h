@@ -141,7 +141,7 @@ typedef struct PDMINETWORKDOWN
     DECLR3CALLBACKMEMBER(int, pfnReceive,(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb));
 
     /**
-     * Do transmit work on the XMIT thread.
+     * Do pending transmit work on the leaf driver's XMIT thread.
      *
      * When a PDMINETWORKUP::pfnBeginTransmit or PDMINETWORKUP::pfnAllocBuf call
      * fails with VERR_TRY_AGAIN, the leaf drivers XMIT thread will offer to process
@@ -152,7 +152,7 @@ typedef struct PDMINETWORKDOWN
      * @param   pInterface      Pointer to this interface.
      * @thread  Non-EMT.
      */
-    DECLR3CALLBACKMEMBER(void, pfnDoTransmitWork,(PPDMINETWORKDOWN pInterface));
+    DECLR3CALLBACKMEMBER(void, pfnXmitPending,(PPDMINETWORKDOWN pInterface));
 
 } PDMINETWORKDOWN;
 /** PDMINETWORKDOWN inteface ID. */
