@@ -1273,7 +1273,9 @@ void UIMachineView::sltMachineStateChanged()
         }
         case KMachineState_Running:
         {
-            if (m_previousState == KMachineState_Paused || m_previousState == KMachineState_TeleportingPausedVM)
+            if (   m_previousState == KMachineState_Paused
+                || m_previousState == KMachineState_TeleportingPausedVM
+                || m_previousState == KMachineState_Restoring)
             {
                 if (mode() != VBoxDefs::TimerMode && m_pFrameBuffer)
                 {
@@ -1283,11 +1285,6 @@ void UIMachineView::sltMachineStateChanged()
                      * the viewport through IFramebuffer::NotifyUpdate): */
                     CDisplay dsp = session().GetConsole().GetDisplay();
                     dsp.InvalidateAndUpdate();
-                    /* There seems to be a bug in InvalidateAndUpdate. That is,
-                     * only the primary screen get updated. Manually force a
-                     * repaint on this screen. */
-                    if (screenId() > 0)
-                        viewport()->repaint();
                 }
             }
             /* Reuse the focus event handler to capture input: */
