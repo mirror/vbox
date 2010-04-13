@@ -349,7 +349,7 @@ private:
     void vbvaUnlock(void);
 
 public:
-    static int displayTakeScreenshotEMT(Display *pDisplay, uint8_t **ppu8Data, size_t *pcbData, uint32_t *pu32Width, uint32_t *pu32Height);
+    static int displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_t **ppu8Data, size_t *pcbData, uint32_t *pu32Width, uint32_t *pu32Height);
 
 private:
     static void InvalidateAndUpdateEMT(Display *pDisplay);
