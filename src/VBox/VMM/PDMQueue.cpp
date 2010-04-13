@@ -29,6 +29,7 @@
 #include <VBox/mm.h>
 #include <VBox/rem.h>
 #include <VBox/vm.h>
+#include <VBox/uvm.h>
 #include <VBox/err.h>
 
 #include <VBox/log.h>
@@ -62,6 +63,8 @@ static DECLCALLBACK(void)   pdmR3QueueTimer(PVM pVM, PTMTIMER pTimer, void *pvUs
 static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval, bool fRZEnabled,
                             const char *pszName, PPDMQUEUE *ppQueue)
 {
+    PUVM pUVM = pVM->pUVM;
+
     /*
      * Validate input.
      */
@@ -147,8 +150,8 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
          * Insert into the queue list for timer driven queues.
          */
         pdmLock(pVM);
-        pQueue->pNext = pVM->pdm.s.pQueuesTimer;
-        pVM->pdm.s.pQueuesTimer = pQueue;
+        pQueue->pNext = pUVM->pdm.s.pQueuesTimer;
+        pUVM->pdm.s.pQueuesTimer = pQueue;
         pdmUnlock(pVM);
     }
     else
@@ -164,11 +167,11 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
          *   problem any longer. The priority might be a nice feature for later though.
          */
         pdmLock(pVM);
-        if (!pVM->pdm.s.pQueuesForced)
-            pVM->pdm.s.pQueuesForced = pQueue;
+        if (!pUVM->pdm.s.pQueuesForced)
+            pUVM->pdm.s.pQueuesForced = pQueue;
         else
         {
-            PPDMQUEUE pPrev = pVM->pdm.s.pQueuesForced;
+            PPDMQUEUE pPrev = pUVM->pdm.s.pQueuesForced;
             while (pPrev->pNext)
                 pPrev = pPrev->pNext;
             pPrev->pNext = pQueue;
@@ -410,7 +413,8 @@ VMMR3DECL(int) PDMR3QueueDestroy(PPDMQUEUE pQueue)
     if (!pQueue)
         return VERR_INVALID_PARAMETER;
     Assert(pQueue && pQueue->pVMR3);
-    PVM pVM = pQueue->pVMR3;
+    PVM     pVM  = pQueue->pVMR3;
+    PUVM    pUVM = pVM->pUVM;
 
     pdmLock(pVM);
 
@@ -419,9 +423,9 @@ VMMR3DECL(int) PDMR3QueueDestroy(PPDMQUEUE pQueue)
      */
     if (pQueue->pTimer)
     {
-        if (pVM->pdm.s.pQueuesTimer != pQueue)
+        if (pUVM->pdm.s.pQueuesTimer != pQueue)
         {
-            PPDMQUEUE pCur = pVM->pdm.s.pQueuesTimer;
+            PPDMQUEUE pCur = pUVM->pdm.s.pQueuesTimer;
             while (pCur)
             {
                 if (pCur->pNext == pQueue)
@@ -434,13 +438,13 @@ VMMR3DECL(int) PDMR3QueueDestroy(PPDMQUEUE pQueue)
             AssertMsg(pCur, ("Didn't find the queue!\n"));
         }
         else
-            pVM->pdm.s.pQueuesTimer = pQueue->pNext;
+            pUVM->pdm.s.pQueuesTimer = pQueue->pNext;
     }
     else
     {
-        if (pVM->pdm.s.pQueuesForced != pQueue)
+        if (pUVM->pdm.s.pQueuesForced != pQueue)
         {
-            PPDMQUEUE pCur = pVM->pdm.s.pQueuesForced;
+            PPDMQUEUE pCur = pUVM->pdm.s.pQueuesForced;
             while (pCur)
             {
                 if (pCur->pNext == pQueue)
@@ -453,7 +457,7 @@ VMMR3DECL(int) PDMR3QueueDestroy(PPDMQUEUE pQueue)
             AssertMsg(pCur, ("Didn't find the queue!\n"));
         }
         else
-            pVM->pdm.s.pQueuesForced = pQueue->pNext;
+            pUVM->pdm.s.pQueuesForced = pQueue->pNext;
     }
     pQueue->pNext = NULL;
     pQueue->pVMR3 = NULL;
@@ -512,13 +516,14 @@ VMMR3DECL(int) PDMR3QueueDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
     if (!pDevIns)
         return VERR_INVALID_PARAMETER;
 
+    PUVM pUVM = pVM->pUVM;
     pdmLock(pVM);
 
     /*
      * Unlink it.
      */
-    PPDMQUEUE pQueueNext = pVM->pdm.s.pQueuesTimer;
-    PPDMQUEUE pQueue = pVM->pdm.s.pQueuesForced;
+    PPDMQUEUE pQueueNext = pUVM->pdm.s.pQueuesTimer;
+    PPDMQUEUE pQueue     = pUVM->pdm.s.pQueuesForced;
     do
     {
         while (pQueue)
@@ -563,13 +568,14 @@ VMMR3DECL(int) PDMR3QueueDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
     if (!pDrvIns)
         return VERR_INVALID_PARAMETER;
 
+    PUVM pUVM = pVM->pUVM;
     pdmLock(pVM);
 
     /*
      * Unlink it.
      */
-    PPDMQUEUE pQueueNext = pVM->pdm.s.pQueuesTimer;
-    PPDMQUEUE pQueue = pVM->pdm.s.pQueuesForced;
+    PPDMQUEUE pQueueNext = pUVM->pdm.s.pQueuesTimer;
+    PPDMQUEUE pQueue     = pUVM->pdm.s.pQueuesForced;
     do
     {
         while (pQueue)
@@ -607,8 +613,9 @@ void pdmR3QueueRelocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Process the queues.
      */
-    PPDMQUEUE pQueueNext = pVM->pdm.s.pQueuesTimer;
-    PPDMQUEUE pQueue = pVM->pdm.s.pQueuesForced;
+    PUVM      pUVM       = pVM->pUVM;
+    PPDMQUEUE pQueueNext = pUVM->pdm.s.pQueuesTimer;
+    PPDMQUEUE pQueue     = pUVM->pdm.s.pQueuesForced;
     do
     {
         while (pQueue)
@@ -676,7 +683,7 @@ VMMR3DECL(void) PDMR3QueueFlushAll(PVM pVM)
         do
         {
             VM_FF_CLEAR(pVM, VM_FF_PDM_QUEUES);
-            for (PPDMQUEUE pCur = pVM->pdm.s.pQueuesForced; pCur; pCur = pCur->pNext)
+            for (PPDMQUEUE pCur = pVM->pUVM->pdm.s.pQueuesForced; pCur; pCur = pCur->pNext)
                 if (    pCur->pPendingR3
                     ||  pCur->pPendingR0
                     ||  pCur->pPendingRC)
@@ -892,7 +899,7 @@ VMMR3DECL(void) PDMR3QueueFlushWorker(PVM pVM, PPDMQUEUE pQueue)
          * Recalc the FF (for the queues using force action).
          */
         VM_FF_CLEAR(pVM, VM_FF_PDM_QUEUES);
-        for (pQueue = pVM->pdm.s.pQueuesForced; pQueue; pQueue = pQueue->pNext)
+        for (pQueue = pVM->pUVM->pdm.s.pQueuesForced; pQueue; pQueue = pQueue->pNext)
             if (    pQueue->pPendingRC
                 ||  pQueue->pPendingR0
                 ||  pQueue->pPendingR3)

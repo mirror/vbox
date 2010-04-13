@@ -960,52 +960,26 @@ typedef struct PDM
     R0PTRTYPE(PPDMQUEUE)            pDevHlpQueueR0;
     /** Queue in which devhlp tasks are queued for R3 execution - RC Ptr. */
     RCPTRTYPE(PPDMQUEUE)            pDevHlpQueueRC;
-    RTRCPTR                         uPadding1; /**< Alignment padding. */
-
-/** @name Move to PDMUSERPERVM
- * @{
- */
-    /** Linked list of timer driven PDM queues. */
-    R3PTRTYPE(struct PDMQUEUE *)    pQueuesTimer;
-    /** Linked list of force action driven PDM queues. */
-    R3PTRTYPE(struct PDMQUEUE *)    pQueuesForced;
-    /** Pointer to the queue which should be manually flushed - R0 Ptr.
-     * Only touched by EMT. */
-    R0PTRTYPE(struct PDMQUEUE *)    pQueueFlushR0;
     /** Pointer to the queue which should be manually flushed - RC Ptr.
      * Only touched by EMT. */
     RCPTRTYPE(struct PDMQUEUE *)    pQueueFlushRC;
+    /** Pointer to the queue which should be manually flushed - R0 Ptr.
+     * Only touched by EMT. */
+    R0PTRTYPE(struct PDMQUEUE *)    pQueueFlushR0;
     /** Bitmask controlling the queue flushing.
      * See PDM_QUEUE_FLUSH_FLAG_ACTIVE and PDM_QUEUE_FLUSH_FLAG_PENDING. */
     uint32_t volatile               fQueueFlushing;
-
-    /** Head of the PDM Thread list. (singly linked) */
-    R3PTRTYPE(PPDMTHREAD)           pThreads;
-    /** Tail of the PDM Thread list. (singly linked) */
-    R3PTRTYPE(PPDMTHREAD)           pThreadsTail;
-/** @}  */
-
-    /** @name   PDM Async Completion
-     * @todo Move to PDMUSERPERVM
-     * @{ */
-    /** Pointer to the array of supported endpoint classes. */
-    R3PTRTYPE(PPDMASYNCCOMPLETIONEPCLASS *)  papAsyncCompletionEndpointClass;
-    /** Head of the templates. (singly linked) */
-    R3PTRTYPE(PPDMASYNCCOMPLETIONTEMPLATE) pAsyncCompletionTemplates;
-    /** @} */
+    /** Alignment padding. */
+    uint32_t                        u32Padding2;
 
     /** @name   VMM device heap
      * @{ */
     /** Pointer to the heap base (MMIO2 ring-3 mapping). NULL if not registered. */
     RTR3PTR                         pvVMMDevHeap;
-#if HC_ARCH_BITS == 32
-    /** Alignment padding. */
-    uint32_t                        u32Padding2;
-#endif
     /** The heap size. */
-    RTUINT                          cbVMMDevHeap;
+    uint32_t                        cbVMMDevHeap;
     /** Free space. */
-    RTUINT                          cbVMMDevHeapLeft;
+    uint32_t                        cbVMMDevHeapLeft;
     /** The current mapping. NIL_RTGCPHYS if not mapped or registered. */
     RTGCPHYS                        GCPhysVMMDevHeap;
     /** @} */
@@ -1031,6 +1005,24 @@ typedef PDM *PPDM;
 typedef struct PDMUSERPERVM
 {
     /** @todo move more stuff over here. */
+
+    /** Linked list of timer driven PDM queues. */
+    R3PTRTYPE(struct PDMQUEUE *)    pQueuesTimer;
+    /** Linked list of force action driven PDM queues. */
+    R3PTRTYPE(struct PDMQUEUE *)    pQueuesForced;
+
+    /** Head of the PDM Thread list. (singly linked) */
+    R3PTRTYPE(PPDMTHREAD)           pThreads;
+    /** Tail of the PDM Thread list. (singly linked) */
+    R3PTRTYPE(PPDMTHREAD)           pThreadsTail;
+
+    /** @name   PDM Async Completion
+     * @{ */
+    /** Pointer to the array of supported endpoint classes. */
+    R3PTRTYPE(PPDMASYNCCOMPLETIONEPCLASS *)  papAsyncCompletionEndpointClass;
+    /** Head of the templates. (singly linked) */
+    R3PTRTYPE(PPDMASYNCCOMPLETIONTEMPLATE) pAsyncCompletionTemplates;
+    /** @} */
 
     /** Lock protecting the lists below it. */
     RTCRITSECT                      ListCritSect;

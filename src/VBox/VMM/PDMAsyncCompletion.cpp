@@ -29,6 +29,7 @@
 #include <VBox/mm.h>
 #include <VBox/rem.h>
 #include <VBox/vm.h>
+#include <VBox/uvm.h>
 #include <VBox/err.h>
 
 #include <VBox/log.h>
@@ -126,7 +127,7 @@ static void pdmR3AsyncCompletionPutTask(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, P
  */
 static int pdmR3AsyncCompletionTemplateCreate(PVM pVM, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate, PDMASYNCCOMPLETIONTEMPLATETYPE enmType)
 {
-    int rc = VINF_SUCCESS;
+    PUVM pUVM = pVM->pUVM;
 
     if (ppTemplate == NULL)
     {
@@ -135,7 +136,7 @@ static int pdmR3AsyncCompletionTemplateCreate(PVM pVM, PPPDMASYNCCOMPLETIONTEMPL
     }
 
     PPDMASYNCCOMPLETIONTEMPLATE pTemplate;
-    rc = MMR3HeapAllocZEx(pVM, MM_TAG_PDM_ASYNC_COMPLETION, sizeof(PDMASYNCCOMPLETIONTEMPLATE), (void **)&pTemplate);
+    int rc = MMR3HeapAllocZEx(pVM, MM_TAG_PDM_ASYNC_COMPLETION, sizeof(PDMASYNCCOMPLETIONTEMPLATE), (void **)&pTemplate);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -149,10 +150,10 @@ static int pdmR3AsyncCompletionTemplateCreate(PVM pVM, PPPDMASYNCCOMPLETIONTEMPL
     /*
      * Add template to the global VM template list.
      */
-    pTemplate->pNext = pVM->pdm.s.pAsyncCompletionTemplates;
-    if (pVM->pdm.s.pAsyncCompletionTemplates)
-        pVM->pdm.s.pAsyncCompletionTemplates->pPrev = pTemplate;
-    pVM->pdm.s.pAsyncCompletionTemplates = pTemplate;
+    pTemplate->pNext = pUVM->pdm.s.pAsyncCompletionTemplates;
+    if (pUVM->pdm.s.pAsyncCompletionTemplates)
+        pUVM->pdm.s.pAsyncCompletionTemplates->pPrev = pTemplate;
+    pUVM->pdm.s.pAsyncCompletionTemplates = pTemplate;
 
     *ppTemplate = pTemplate;
     return VINF_SUCCESS;
@@ -395,14 +396,14 @@ VMMR3DECL(int) PDMR3AsyncCompletionTemplateDestroy(PPDMASYNCCOMPLETIONTEMPLATE p
     /*
      * Unlink the template from the list.
      */
-    PVM pVM = pTemplate->pVM;
+    PUVM pUVM = pTemplate->pVM->pUVM;
     PPDMASYNCCOMPLETIONTEMPLATE pPrev = pTemplate->pPrev;
     PPDMASYNCCOMPLETIONTEMPLATE pNext = pTemplate->pNext;
 
     if (pPrev)
         pPrev->pNext = pNext;
     else
-        pVM->pdm.s.pAsyncCompletionTemplates = pNext;
+        pUVM->pdm.s.pAsyncCompletionTemplates = pNext;
 
     if (pNext)
         pNext->pPrev = pPrev;
@@ -439,7 +440,7 @@ VMMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyDevice(PVM pVM, PPDMDEVINS pDe
     /*
      * Unlink it.
      */
-    PPDMASYNCCOMPLETIONTEMPLATE pTemplate = pVM->pdm.s.pAsyncCompletionTemplates;
+    PPDMASYNCCOMPLETIONTEMPLATE pTemplate = pVM->pUVM->pdm.s.pAsyncCompletionTemplates;
     while (pTemplate)
     {
         if (    pTemplate->enmType == PDMASYNCCOMPLETIONTEMPLATETYPE_DEV
@@ -482,7 +483,7 @@ VMMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyDriver(PVM pVM, PPDMDRVINS pDr
     /*
      * Unlink it.
      */
-    PPDMASYNCCOMPLETIONTEMPLATE pTemplate = pVM->pdm.s.pAsyncCompletionTemplates;
+    PPDMASYNCCOMPLETIONTEMPLATE pTemplate = pVM->pUVM->pdm.s.pAsyncCompletionTemplates;
     while (pTemplate)
     {
         if (    pTemplate->enmType == PDMASYNCCOMPLETIONTEMPLATETYPE_DRV
@@ -525,7 +526,7 @@ VMMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyUsb(PVM pVM, PPDMUSBINS pUsbIn
     /*
      * Unlink it.
      */
-    PPDMASYNCCOMPLETIONTEMPLATE pTemplate = pVM->pdm.s.pAsyncCompletionTemplates;
+    PPDMASYNCCOMPLETIONTEMPLATE pTemplate = pVM->pUVM->pdm.s.pAsyncCompletionTemplates;
     while (pTemplate)
     {
         if (    pTemplate->enmType == PDMASYNCCOMPLETIONTEMPLATETYPE_USB
@@ -628,10 +629,11 @@ int pdmR3AsyncCompletionEpClassInit(PVM pVM, PCPDMASYNCCOMPLETIONEPCLASSOPS pEpC
                 rc = pEpClassOps->pfnInitialize(pEndpointClass, pCfgNodeClass);
                 if (RT_SUCCESS(rc))
                 {
-                    AssertMsg(!pVM->pdm.s.papAsyncCompletionEndpointClass[pEpClassOps->enmClassType],
-                                  ("Endpoint class was already initialized\n"));
+                    PUVM pUVM = pVM->pUVM;
+                    AssertMsg(!pUVM->pdm.s.papAsyncCompletionEndpointClass[pEpClassOps->enmClassType],
+                              ("Endpoint class was already initialized\n"));
 
-                    pVM->pdm.s.papAsyncCompletionEndpointClass[pEpClassOps->enmClassType] = pEndpointClass;
+                    pUVM->pdm.s.papAsyncCompletionEndpointClass[pEpClassOps->enmClassType] = pEndpointClass;
                     LogFlowFunc((": Initialized endpoint class \"%s\" rc=%Rrc\n", pEpClassOps->pcszName, rc));
                     return VINF_SUCCESS;
                 }
@@ -671,7 +673,7 @@ static void pdmR3AsyncCompletionEpClassTerminate(PPDMASYNCCOMPLETIONEPCLASS pEnd
     RTCritSectDelete(&pEndpointClass->CritSect);
 
     /* Free the memory of the class finally and clear the entry in the class array. */
-    pVM->pdm.s.papAsyncCompletionEndpointClass[pEndpointClass->pEndpointOps->enmClassType] = NULL;
+    pVM->pUVM->pdm.s.papAsyncCompletionEndpointClass[pEndpointClass->pEndpointOps->enmClassType] = NULL;
     MMR3HeapFree(pEndpointClass);
 }
 
@@ -683,7 +685,8 @@ static void pdmR3AsyncCompletionEpClassTerminate(PPDMASYNCCOMPLETIONEPCLASS pEnd
  */
 int pdmR3AsyncCompletionInit(PVM pVM)
 {
-    int rc = VINF_SUCCESS;
+    int  rc   = VINF_SUCCESS;
+    PUVM pUVM = pVM->pUVM;
 
     LogFlowFunc((": pVM=%p\n", pVM));
 
@@ -694,7 +697,7 @@ int pdmR3AsyncCompletionInit(PVM pVM)
         /* Allocate array for global class data. */
         rc = MMR3HeapAllocZEx(pVM, MM_TAG_PDM_ASYNC_COMPLETION,
                               sizeof(PPDMASYNCCOMPLETIONEPCLASS) * PDMASYNCCOMPLETIONEPCLASSTYPE_MAX,
-                              (void **)&pVM->pdm.s.papAsyncCompletionEndpointClass);
+                              (void **)&pUVM->pdm.s.papAsyncCompletionEndpointClass);
         if (RT_FAILURE(rc))
             break;
 
@@ -722,11 +725,12 @@ int pdmR3AsyncCompletionInit(PVM pVM)
 int pdmR3AsyncCompletionTerm(PVM pVM)
 {
     LogFlowFunc((": pVM=%p\n", pVM));
+    PUVM pUVM = pVM->pUVM;
 
-    if (pVM->pdm.s.papAsyncCompletionEndpointClass)
+    if (pUVM->pdm.s.papAsyncCompletionEndpointClass)
     {
-        pdmR3AsyncCompletionEpClassTerminate(pVM->pdm.s.papAsyncCompletionEndpointClass[PDMASYNCCOMPLETIONEPCLASSTYPE_FILE]);
-        MMR3HeapFree(pVM->pdm.s.papAsyncCompletionEndpointClass);
+        pdmR3AsyncCompletionEpClassTerminate(pUVM->pdm.s.papAsyncCompletionEndpointClass[PDMASYNCCOMPLETIONEPCLASSTYPE_FILE]);
+        MMR3HeapFree(pUVM->pdm.s.papAsyncCompletionEndpointClass);
     }
     return VINF_SUCCESS;
 }
@@ -873,8 +877,9 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpCreateForFile(PPPDMASYNCCOMPLETIONENDPOINT 
     AssertReturn(((~(PDMACEP_FILE_FLAGS_READ_ONLY | PDMACEP_FILE_FLAGS_CACHING) & fFlags) == 0),
                  VERR_INVALID_PARAMETER);
 
-    PVM pVM = pTemplate->pVM;
-    PPDMASYNCCOMPLETIONEPCLASS  pEndpointClass = pVM->pdm.s.papAsyncCompletionEndpointClass[PDMASYNCCOMPLETIONEPCLASSTYPE_FILE];
+    PVM  pVM  = pTemplate->pVM;
+    PUVM pUVM = pVM->pUVM;
+    PPDMASYNCCOMPLETIONEPCLASS  pEndpointClass = pUVM->pdm.s.papAsyncCompletionEndpointClass[PDMASYNCCOMPLETIONEPCLASSTYPE_FILE];
     PPDMASYNCCOMPLETIONENDPOINT pEndpoint = NULL;
 
     AssertMsg(pEndpointClass, ("File endpoint class was not initialized\n"));
