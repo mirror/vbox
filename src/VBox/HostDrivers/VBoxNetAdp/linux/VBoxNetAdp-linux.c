@@ -111,7 +111,6 @@ typedef VBOXNETADPPRIV *PVBOXNETADPPRIV;
 static int vboxNetAdpLinuxOpen(struct net_device *pNetDev)
 {
     netif_start_queue(pNetDev);
-    printk("vboxNetAdpOpen returns 0\n");
     return 0;
 }
 
