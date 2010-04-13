@@ -1159,6 +1159,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
         &&  pVCpu->pgm.s.cPoolAccessHandler == (pPage->cLastAccessHandlerCount + 1))
     {
         Log(("Possible page reuse cMods=%d -> %d (locked=%d type=%s)\n", pPage->cModifications, pPage->cModifications * 2, pgmPoolIsPageLocked(&pVM->pgm.s, pPage), pgmPoolPoolKindToStr(pPage->enmKind)));
+        Assert(pPage->cModifications < 32000);
         pPage->cModifications           = pPage->cModifications * 2;
         pPage->pvLastAccessHandlerFault = pvFault;
         pPage->cLastAccessHandlerCount  = pVCpu->pgm.s.cPoolAccessHandler;
@@ -1196,6 +1197,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
              * full page table changes early on. This will reduce the amount of unnecessary traps we'll take.
              */
             if (   rc == VINF_SUCCESS
+                && !pPage->cLocked                      /* only applies to unlocked pages as we can't free locked ones (e.g. cr3 root). */
                 && pDis->pCurInstr->opcode == OP_MOV
                 && (pvFault & PAGE_OFFSET_MASK) == 0)
             {
@@ -4832,6 +4834,7 @@ int pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
     pPage->cModifications = 0;
     pPage->iModifiedNext = NIL_PGMPOOL_IDX;
     pPage->iModifiedPrev = NIL_PGMPOOL_IDX;
+    pPage->cLocked  = 0;
     pPage->cPresent = 0;
     pPage->iFirstPresent = NIL_PGMPOOL_PRESENT_INDEX;
     pPage->pvLastAccessHandlerFault = 0;
