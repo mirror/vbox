@@ -833,6 +833,31 @@ RTDECL(void *) RTLockValidatorQueryBlocking(RTTHREAD hThread);
  */
 RTDECL(bool) RTLockValidatorIsBlockedThreadInValidator(RTTHREAD hThread);
 
+/**
+ * Checks if the calling thread is holding a lock in the specified class.
+ *
+ * @returns true if it holds a lock in the specific class, false if it
+ *          doesn't.
+ *
+ * @param   hCurrentThread      The current thread.  Pass NIL_RTTHREAD if you're
+ *                              lazy.
+ * @param   hClass              The class.
+ */
+RTDECL(bool) RTLockValidatorHoldsLocksInClass(RTTHREAD hCurrentThread, RTLOCKVALCLASS hClass);
+
+/**
+ * Checks if the calling thread is holding a lock in the specified sub-class.
+ *
+ * @returns true if it holds a lock in the specific sub-class, false if it
+ *          doesn't.
+ *
+ * @param   hCurrentThread      The current thread.  Pass NIL_RTTHREAD if you're
+ *                              lazy.
+ * @param   hClass              The class.
+ * @param   uSubClass           The new sub-class value.
+ */
+RTDECL(bool) RTLockValidatorHoldsLocksInSubClass(RTTHREAD hCurrentThread, RTLOCKVALCLASS hClass, uint32_t uSubClass);
+
 
 
 /**
