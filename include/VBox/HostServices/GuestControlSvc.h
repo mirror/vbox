@@ -26,9 +26,6 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
- *
- * Sun Microsystems, Inc. confidential
- * All rights reserved
  */
 
 #ifndef ___VBox_HostService_GuestControlService_h
