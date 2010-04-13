@@ -70,13 +70,10 @@ void usageGuestControl(void)
 
 static int handleExecProgram(HandlerArg *a)
 {
-    HRESULT rc = S_OK;
-
     /*
      * Check the syntax.  We can deduce the correct syntax from the number of
      * arguments.
      */
-    bool usageOK = true;
     if (a->argc < 2) /* At least the command we want to execute in the guest should be present :-). */
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
@@ -94,6 +91,7 @@ static int handleExecProgram(HandlerArg *a)
     bool verbose = false;
 
     /* Iterate through all possible commands (if available). */
+    bool usageOK = true;
     for (int i = 2; usageOK && i < a->argc; i++)
     {
         if (   !strcmp(a->argv[i], "--arguments")
@@ -214,12 +212,13 @@ static int handleExecProgram(HandlerArg *a)
     /* lookup VM. */
     ComPtr<IMachine> machine;
     /* assume it's an UUID */
-    rc = a->virtualBox->GetMachine(Bstr(a->argv[0]), machine.asOutParam());
+    HRESULT rc = a->virtualBox->GetMachine(Bstr(a->argv[0]), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
         /* must be a name */
         CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]), machine.asOutParam()));
     }
+
     if (machine)
     {
         do
@@ -278,7 +277,8 @@ int handleGuestControl(HandlerArg *a)
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
     /* switch (cmd) */
-    if (strcmp(a->argv[0], "exec") == 0)
+    if (   strcmp(a->argv[0], "exec") == 0
+        || strcmp(a->argv[0], "execute") == 0)
         return handleExecProgram(&arg);
 
     /* default: */
