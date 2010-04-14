@@ -188,7 +188,7 @@ RTDECL(void *) RTMemPageAllocZ(size_t cb) RT_NO_THROW
     int rc = posix_memalign(&pv, PAGE_SIZE, RT_ALIGN_Z(cb, PAGE_SIZE));
     if (!rc)
     {
-        bzero(pv, RT_ALIGN_Z(cb, PAGE_SIZE));
+        RT_BZERO(pv, RT_ALIGN_Z(cb, PAGE_SIZE));
         return pv;
     }
     return NULL;
