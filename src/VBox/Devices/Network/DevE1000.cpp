@@ -3752,7 +3752,7 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
     PPDMINETWORKUP pDrv = pState->CTX_SUFF(pDrv);
     if (pDrv)
     {
-        rc = pDrv->pfnBeginXmit(pDrv, true /*fOnWorkerThread*/);
+        rc = pDrv->pfnBeginXmit(pDrv, fOnWorkerThread);
         if (RT_FAILURE(rc))
             return rc;
     }

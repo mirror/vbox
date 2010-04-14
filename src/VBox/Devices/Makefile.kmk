@@ -567,9 +567,7 @@ ifdef VBOX_WITH_RAW_MODE
  	Storage/DevATA.cpp \
  	Network/DevPCNet.cpp \
  	Serial/DevSerial.cpp \
- 	Parallel/DevParallel.cpp \
-	\
-	Network/DrvIntNet.cpp
+ 	Parallel/DevParallel.cpp
 
  ifdef VBOX_DYNAMIC_NET_ATTACH
   VBoxDDGC_DEFS        += VBOX_DYNAMIC_NET_ATTACH

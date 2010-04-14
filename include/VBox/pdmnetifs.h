@@ -352,6 +352,8 @@ typedef struct PDMINETWORKUPRC
 
 /** PDMINETWORKUP interface ID. */
 #define PDMINETWORKUP_IID                       "67e7e7a8-2594-4649-a1e3-7cee680c6083"
+/** PDMINETWORKUP interface method names. */
+#define PDMINETWORKUP_SYM_LIST                  "BeginXmit;AllocBuf;FreeBuf;SendBuf;EndXmit;SetPromiscuousMode"
 
 
 /** Pointer to a network config port interface */
