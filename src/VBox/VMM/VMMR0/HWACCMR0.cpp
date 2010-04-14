@@ -1153,6 +1153,15 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
 
     rc = HWACCMR0Globals.pfnLeaveSession(pVM, pVCpu, pCtx);
 
+    /* We don't pass on invlpg information to the recompiler for nested paging guests, so we must make sure the recompiler flushes its TLB 
+     * the next time it executes code.
+     */
+    if (    pVM->hwaccm.s.fNestedPaging
+        &&  CPUMIsGuestInPagedProtectedModeEx(pCtx))
+    {
+        CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_GLOBAL_TLB_FLUSH);
+    }
+
     /* keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
 #ifdef RT_STRICT
     if (RT_UNLIKELY(    pVCpu->hwaccm.s.idEnteredCpu != idCpu
