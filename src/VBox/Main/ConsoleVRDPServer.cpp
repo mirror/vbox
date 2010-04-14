@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1178,7 +1178,7 @@ ConsoleVRDPServer::~ConsoleVRDPServer ()
 
 int ConsoleVRDPServer::Launch (void)
 {
-    LogFlowMember(("ConsoleVRDPServer::Launch\n"));
+    LogFlowThisFunc(("\n"));
 #ifdef VBOX_WITH_VRDP
     int rc = VINF_SUCCESS;
     IVRDPServer *vrdpserver = mConsole->getVRDPServer ();
