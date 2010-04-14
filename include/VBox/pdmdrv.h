@@ -1307,7 +1307,7 @@ DECLINLINE(bool) PDMDrvHlpVMTeleportedAndNotFullyResumedYet(PPDMDRVINS pDrvIns)
 /**
  * @copydoc PDMDRVHLP::pfnGetSupDrvSession
  */
-DECLINLINE(bool) PDMDrvHlpGetSupDrvSession(PPDMDRVINS pDrvIns)
+DECLINLINE(PSUPDRVSESSION) PDMDrvHlpGetSupDrvSession(PPDMDRVINS pDrvIns)
 {
     return pDrvIns->pHlpR3->pfnGetSupDrvSession(pDrvIns);
 }
