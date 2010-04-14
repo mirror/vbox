@@ -109,6 +109,13 @@ void Guest::uninit()
 {
     LogFlowThisFunc(("\n"));
 
+#ifdef VBOX_WITH_GUEST_CONTROL
+    /* Clean up callback data. */
+    CallbackListIter it;
+    for (it = mCallbackList.begin(); it != mCallbackList.end(); it++)
+        removeCtrlCallbackContext(it);
+#endif
+
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
@@ -486,30 +493,43 @@ int Guest::notifyCtrlExec(uint32_t              u32Function,
 {
     int rc = VINF_SUCCESS;
 
-  /*  bool bFound = false;
-    for (int i=0; i<mList.size(); i++)
+    AssertPtr(pData);
+    CallbackListIter it = getCtrlCallbackContext(pData->hdr.u32ContextID);
+    if (it != mCallbackList.end())
     {
-    }
-    if(pData->hdr.u32ContextID == it->hdr.u32ContextID)
-    {
-    }*/
-    /*pExt->pid = pCBData->pid;
-    pExt->status = pCBData->status;
-    pExt->flags = pCBData->flags;*/
-    /** @todo Copy void* buffer! */
+        PHOSTEXECCALLBACKDATA pCBData = (HOSTEXECCALLBACKDATA*)it->pvData;
+        AssertPtr(pCBData);
 
+        pCBData->u32PID = pData->u32PID;
+        pCBData->u32Status = pData->u32Status;
+        pCBData->u32Flags = pData->u32Flags;
+        /* @todo Copy void* buffer contents! */
+
+        ASMAtomicWriteBool(&it->bCalled, true);
+    }
     return rc;
 }
 
-void Guest::freeCtrlCallbackContextData(CallbackContext *pContext)
+Guest::CallbackListIter Guest::getCtrlCallbackContext(uint32_t u32ContextID)
 {
-    AssertPtr(pContext);
-    if (pContext->cbData)
+    CallbackListIter it;
+    for (it = mCallbackList.begin(); it != mCallbackList.end(); it++)
     {
-        RTMemFree(pContext->pvData);
-        pContext->cbData = 0;
-        pContext->pvData = NULL;
+        if (it->mContextID == u32ContextID)
+            return (it);
     }
+    return it;
+}
+
+void Guest::removeCtrlCallbackContext(Guest::CallbackListIter it)
+{
+    if (it->cbData)
+    {
+        RTMemFree(it->pvData);
+        it->cbData = 0;
+        it->pvData = NULL;
+    }
+    mCallbackList.erase(it);
 }
 
 uint32_t Guest::addCtrlCallbackContext(void *pvData, uint32_t cbData)
@@ -519,15 +539,14 @@ uint32_t Guest::addCtrlCallbackContext(void *pvData, uint32_t cbData)
 
     CallbackContext context;
     context.mContextID = uNewContext;
+    context.bCalled = false;
     context.pvData = pvData;
     context.cbData = cbData;
 
     mCallbackList.push_back(context);
-    if (mCallbackList.size() > 256)
-    {
-        freeCtrlCallbackContextData(&mCallbackList.front());
-        mCallbackList.pop_front();
-    }
+    if (mCallbackList.size() > 256) /* Don't let the container size get too big! */
+        removeCtrlCallbackContext(mCallbackList.begin());
+
     return uNewContext;
 }
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -591,6 +610,8 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
 
         if (RT_SUCCESS(vrc))
         {
+            uint32_t uContextID = 0;
+
             char *pszArgs = NULL;
             if (uNumArgs > 0)
                 vrc = RTGetOptArgvToString(&pszArgs, papszArgv, 0);         
@@ -622,7 +643,8 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                 
                     PHOSTEXECCALLBACKDATA pData = (HOSTEXECCALLBACKDATA*)RTMemAlloc(sizeof(HOSTEXECCALLBACKDATA));
                     AssertPtr(pData);
-                    uint32_t uContextID = addCtrlCallbackContext(pData, sizeof(HOSTEXECCALLBACKDATA));
+                    uContextID = addCtrlCallbackContext(pData, sizeof(HOSTEXECCALLBACKDATA));
+                    Assert(uContextID > 0);
 
                     VBOXHGCMSVCPARM paParms[15];
                     int i = 0;
@@ -663,7 +685,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                  * has been started (or something went wrong). This is necessary to 
                  * get the PID.
                  */
-#if 0
+                CallbackListIter it = getCtrlCallbackContext(uContextID);
                 uint64_t u64Started = RTTimeMilliTS();
                 do
                 {
@@ -678,19 +700,22 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                         cMsWait = RT_MIN(1000, aTimeoutMS - (uint32_t)cMsElapsed);
                     }
                     RTThreadSleep(100);
-                } while (!callbackData.called);
+                } while (it != mCallbackList.end() && !it->bCalled);
 
                 /* Did we get some status? */
-                if (callbackData.called)
+                PHOSTEXECCALLBACKDATA pData = (HOSTEXECCALLBACKDATA*)it->pvData;
+                Assert(it->cbData, sizeof(HOSTEXECCALLBACKDATA));
+                AssertPtr(pData);
+                if (it->bCalled)
                 {
-                    switch (callbackData.status)
+                    switch (pData->u32Status)
                     {
                         case PROC_STS_STARTED:
-                            *aPID = callbackData.pid;
+                            *aPID = pData->u32PID;
                             break;
 
                         case PROC_STS_ERROR:
-                            vrc = callbackData.flags; /* flags member contains IPRT error code. */
+                            vrc = pData->u32Flags; /* u32Flags member contains IPRT error code. */
                             break;
 
                         default:
@@ -698,6 +723,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                             break;
                     }
                 }
+                removeCtrlCallbackContext(it);
 
                 if (RT_FAILURE(vrc))
                 {
@@ -712,7 +738,6 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                                       tr("The service call failed with the error %Rrc"), vrc);
                     }
                 }
-#endif
 #if 0
                 progress.queryInterfaceTo(aProgress);
 #endif

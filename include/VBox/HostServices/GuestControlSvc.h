@@ -77,8 +77,6 @@ typedef struct _VBoxGuestCtrlCallbackHeader
     uint32_t u32Magic;
     /** Context ID to identify callback data. */
     uint32_t u32ContextID;
-    /** Atomic flag whether callback was called. */
-    bool bCalled;
 } HOSTCCALLBACKHEADER, *PHOSTCCALLBACKHEADER;
 
 /**

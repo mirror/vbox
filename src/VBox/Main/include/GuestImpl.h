@@ -117,19 +117,24 @@ public:
 private:
 
 # ifdef VBOX_WITH_GUEST_CONTROL
-
     struct CallbackContext
     {
-        uint32_t  mContextID;
-        void     *pvData;
-        uint32_t  cbData;
+        uint32_t        mContextID;
+        void           *pvData;
+        uint32_t        cbData;
+        /** Atomic flag whether callback was called. */
+        volatile bool   bCalled;
     };
+    typedef std::list< CallbackContext > CallbackList;
+    typedef std::list< CallbackContext >::iterator CallbackListIter;
+    typedef std::list< CallbackContext >::const_iterator CallbackListIterConst;
 
     int prepareExecuteArgs(const char *pszArgs, void **ppvList, uint32_t *pcbList, uint32_t *pcArgs);
     int prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);
     /** Handler for guest execution control notifications. */
     int notifyCtrlExec(uint32_t u32Function, PHOSTEXECCALLBACKDATA pData);
-    void freeCtrlCallbackContextData(CallbackContext *pContext);
+    CallbackListIter getCtrlCallbackContext(uint32_t u32ContextID);
+    void removeCtrlCallbackContext(CallbackListIter it);
     uint32_t addCtrlCallbackContext(void *pvData, uint32_t cbData);
 # endif
 
@@ -157,7 +162,6 @@ private:
     HGCMSVCEXTHANDLE  mhExtCtrl;
         
     volatile uint32_t mNextContextID;
-    typedef std::list< CallbackContext > CallbackList;
     CallbackList mCallbackList;
 # endif
 };
