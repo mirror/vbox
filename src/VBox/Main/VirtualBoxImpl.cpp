@@ -194,6 +194,15 @@ struct VirtualBox::Data
           pAsyncEventQ(NULL)
     {}
 
+    ~Data()
+    {
+        if (pMainConfigFile)
+        {
+            delete pMainConfigFile;
+            pMainConfigFile = NULL;
+        }
+    };
+
     // const data members not requiring locking
     const Utf8Str                       strHomeDir;
 
