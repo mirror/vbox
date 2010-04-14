@@ -1833,7 +1833,7 @@ void MachineConfigFile::readNetworkAdapters(const xml::ElementNode &elmNetwork,
         /* We should have only active mode descriptor and disabled modes set */
         if (llNetworkModes.size() > 2)
         {
-            throw ConfigFileError(this, pelmAdapter, N_("Invalid number of modes '%d' attached to Adapter attribute"), llNetworkModes.size());
+            throw ConfigFileError(this, pelmAdapter, N_("Invalid number of modes ('%d') attached to Adapter attribute"), llNetworkModes.size());
         }
         for (it = llNetworkModes.begin(); it != llNetworkModes.end(); ++it)
         {
@@ -1844,7 +1844,8 @@ void MachineConfigFile::readNetworkAdapters(const xml::ElementNode &elmNetwork,
                 xml::ElementNodesList::iterator itDisabled;
                 pelmNode->getChildElements(llDisabledNetworkModes);
                 /* run over disabled list and load settings */
-                for(itDisabled = llDisabledNetworkModes.begin(); itDisabled != llDisabledNetworkModes.end(); ++itDisabled)
+                for (itDisabled = llDisabledNetworkModes.begin();
+                     itDisabled != llDisabledNetworkModes.end(); ++itDisabled)
                 {
                     const xml::ElementNode *pelmDisabledNode = *itDisabled;
                     readAttachedNetworkMode(*pelmDisabledNode, false, nic);
@@ -1864,10 +1865,9 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
     if (elmMode.nameEquals("NAT"))
     {
         if (fEnabled)
-        {
             nic.mode = NetworkAttachmentType_NAT;
-        } 
-        nic.fHasDisabledNAT = (nic.mode != NetworkAttachmentType_NAT) && !fEnabled;
+
+        nic.fHasDisabledNAT = (nic.mode != NetworkAttachmentType_NAT && !fEnabled);
         elmMode.getAttributeValue("network", nic.nat.strNetwork);    // optional network name
         elmMode.getAttributeValue("hostip", nic.nat.strBindIP);
         elmMode.getAttributeValue("mtu", nic.nat.u32Mtu);
@@ -1891,7 +1891,7 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
         }
         xml::ElementNodesList plstNatPF;
         elmMode.getChildElements(plstNatPF, "Forwarding");
-        for(xml::ElementNodesList::iterator pf = plstNatPF.begin(); pf != plstNatPF.end(); ++pf)
+        for (xml::ElementNodesList::iterator pf = plstNatPF.begin(); pf != plstNatPF.end(); ++pf)
         {
             NATRule rule;
             uint32_t port = 0;
@@ -1906,9 +1906,9 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
             nic.nat.llRules.push_back(rule);
         }
     }
-    else if (    fEnabled
-              && (   (elmMode.nameEquals("HostInterface"))
-                  || (elmMode.nameEquals("BridgedInterface")))
+    else if (   fEnabled
+             && (   (elmMode.nameEquals("HostInterface"))
+                 || (elmMode.nameEquals("BridgedInterface")))
             )
     {
         nic.mode = NetworkAttachmentType_Bridged;
@@ -1921,8 +1921,8 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
         if (!elmMode.getAttributeValue("name", nic.strName))    // required network name
             throw ConfigFileError(this, &elmMode, N_("Required InternalNetwork/@name element is missing"));
     }
-    else if (    fEnabled
-              && elmMode.nameEquals("HostOnlyInterface"))
+    else if (   fEnabled
+             && elmMode.nameEquals("HostOnlyInterface"))
     {
         nic.mode = NetworkAttachmentType_HostOnly;
         if (!elmMode.getAttributeValue("name", nic.strName))    // required network name
@@ -3545,7 +3545,15 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         pelmGuestProps->setAttribute("notificationPatterns", hw.strNotificationPatterns);
 }
 
-void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode, xml::ElementNode &elmParent, const NetworkAdapter &nic)
+/**
+ * Fill a <Network> node. Only relevant for XML version >= v1_10.
+ * @param mode
+ * @param elmParent
+ * @param nice
+ */
+void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode,
+                                        xml::ElementNode &elmParent,
+                                        const NetworkAdapter &nic)
 {
     switch (mode)
     {
@@ -3583,7 +3591,7 @@ void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode, xml::Eleme
                 if (nic.nat.strTftpNextServer.length())
                     pelmTFTP->setAttribute("next-server", nic.nat.strTftpNextServer);
             }
-            for(NATRuleList::const_iterator rule = nic.nat.llRules.begin();
+            for (NATRuleList::const_iterator rule = nic.nat.llRules.begin();
                     rule != nic.nat.llRules.end(); ++rule)
             {
                 xml::ElementNode *pelmPF;

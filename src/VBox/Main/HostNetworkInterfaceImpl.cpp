@@ -91,7 +91,7 @@ HRESULT HostNetworkInterface::updateConfig ()
 {
     NETIFINFO info;
     int rc = NetIfGetConfig(this, &info);
-    if(RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
     {
         m.realIPAddress = m.IPAddress = info.IPAddress.u;
         m.realNetworkMask = m.networkMask = info.IPNetMask.u;
@@ -235,7 +235,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(IPAddress) (BSTR *aIPAddress)
     tmp.s_addr = m.IPAddress;
 #endif
     char *addr = inet_ntoa(tmp);
-    if(addr)
+    if (addr)
     {
         Bstr(addr).detachTo(aIPAddress);
         return S_OK;
@@ -270,7 +270,7 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(NetworkMask) (BSTR *aNetworkMask)
     tmp.s_addr = m.networkMask;
 #endif
     char *addr = inet_ntoa(tmp);
-    if(addr)
+    if (addr)
     {
         Bstr(addr).detachTo(aNetworkMask);
         return S_OK;
@@ -442,13 +442,13 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (IN_BSTR aIPAddress, IN_
 
     ULONG ip, mask;
     ip = inet_addr(Utf8Str(aIPAddress).raw());
-    if(ip != INADDR_NONE)
+    if (ip != INADDR_NONE)
     {
         if (Bstr(aNetMask).isEmpty())
             mask = 0xFFFFFF;
         else
             mask = inet_addr(Utf8Str(aNetMask).raw());
-        if(mask != INADDR_NONE)
+        if (mask != INADDR_NONE)
         {
             if (m.realIPAddress == ip && m.realNetworkMask == mask)
                 return S_OK;
