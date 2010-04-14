@@ -42,6 +42,7 @@ void cocoaGLCtxDestroy(NativeGLCtxRef pCtx);
 
 /* View management */
 void cocoaViewCreate(NativeViewRef *ppView, NativeViewRef pParentView, GLbitfield fVisParams);
+void cocoaViewReparent(NativeViewRef pView, NativeViewRef pParentView);
 void cocoaViewDestroy(NativeViewRef pView);
 void cocoaViewDisplay(NativeViewRef pView);
 void cocoaViewShow(NativeViewRef pView, GLboolean fShowIt);

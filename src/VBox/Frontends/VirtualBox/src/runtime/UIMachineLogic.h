@@ -79,6 +79,7 @@ public:
 
 #ifdef Q_WS_MAC
     void updateDockIcon();
+    void updateDockIconSize(int screenId, int width, int height);
 #endif /* Q_WS_MAC */
 
 signals:
@@ -119,8 +120,9 @@ protected:
 
     /* Cleanup helpers: */
     //virtual void cleanupRequiredFeatures() {}
+    virtual void cleanupMachineWindows();
 #ifdef Q_WS_MAC
-    //virtual void cleanupDock() {}
+    virtual void cleanupDock();
 #endif /* Q_WS_MAC */
     //virtual void cleanupActionGroups() {}
     //virtual void cleanupActionConnections() {}

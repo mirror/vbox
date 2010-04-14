@@ -95,6 +95,16 @@ GLboolean renderspu_SystemVBoxCreateWindow(VisualInfo *pVisInfo, GLboolean fShow
     return GL_TRUE;
 }
 
+void renderspu_SystemReparentWindow(WindowInfo *pWinInfo)
+{
+#ifdef __LP64__
+    NativeViewRef pParentWin = (NativeViewRef)render_spu_parent_window_id;
+#else /* __LP64__ */
+    NativeViewRef pParentWin = (NativeViewRef)(uint32_t)render_spu_parent_window_id;
+#endif /* __LP64__ */
+    cocoaViewReparent(pWinInfo->window, pParentWin);
+}
+
 void renderspu_SystemDestroyWindow(WindowInfo *pWinInfo)
 {
     CRASSERT(pWinInfo);

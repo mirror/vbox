@@ -132,6 +132,9 @@ void UIMachineLogicNormal::prepareMachineWindows()
     if (isMachineWindowsCreated())
         return;
 
+    /* Base class cleanup: */
+    UIMachineLogic::cleanupMachineWindows();
+
 #ifdef Q_WS_MAC // TODO: Is that really need here?
     /* We have to make sure that we are getting the front most process.
      * This is necessary for Qt versions > 4.3.3: */

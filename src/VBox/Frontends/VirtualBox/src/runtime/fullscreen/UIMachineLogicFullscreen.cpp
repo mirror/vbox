@@ -210,6 +210,9 @@ void UIMachineLogicFullscreen::cleanupMachineWindows()
     if (!isMachineWindowsCreated())
         return;
 
+    /* Base class cleanup: */
+    UIMachineLogic::cleanupMachineWindows();
+
     /* Cleanup normal machine window: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         UIMachineWindow::destroy(pMachineWindow);

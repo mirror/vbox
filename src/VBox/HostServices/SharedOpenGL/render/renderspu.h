@@ -310,13 +310,10 @@ extern void renderspu_GCWindow(void);
 extern int renderspuCreateFunctions( SPUNamedFunctionTable table[] );
 
 extern GLint RENDER_APIENTRY renderspuWindowCreate( const char *dpyName, GLint visBits );
+extern void RENDER_APIENTRY renderspu_SystemReparentWindow(WindowInfo *window);
 extern GLint RENDER_APIENTRY renderspuCreateContext( const char *dpyname, GLint visBits, GLint shareCtx );
 extern void RENDER_APIENTRY renderspuMakeCurrent(GLint crWindow, GLint nativeWindow, GLint ctx);
 extern void RENDER_APIENTRY renderspuSwapBuffers( GLint window, GLint flags );
-
-#if defined(WINDOWS) || defined(GLX)
-extern void renderspu_SystemReparentWindow(WindowInfo *window);
-#endif
 
 #ifdef __cplusplus
 extern "C" {
