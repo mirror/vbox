@@ -704,7 +704,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
 
                 /* Did we get some status? */
                 PHOSTEXECCALLBACKDATA pData = (HOSTEXECCALLBACKDATA*)it->pvData;
-                Assert(it->cbData, sizeof(HOSTEXECCALLBACKDATA));
+                Assert(it->cbData == sizeof(HOSTEXECCALLBACKDATA));
                 AssertPtr(pData);
                 if (it->bCalled)
                 {
