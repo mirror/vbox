@@ -138,9 +138,12 @@ VBoxGuestR3LibShared_INST    := $(INST_ADDITIONS_LIB)
 # the X server runtime instead of IPRT, for use with old servers where the
 # C library is not available.
 #
+## @todo We're quite probably using the wrong template here.
 VBoxGuestR3LibXFree86_TEMPLATE = VBOXGUESTR3LIB
 VBoxGuestR3LibXFree86_DEFS     = \
-	VBOX_WITH_HGCM VBOX_VBGLR3_XFREE86 \
+	VBOX_WITH_HGCM \
+	VBOX_VBGLR3_XFREE86 \
+	RTMEM_NO_WRAP_TO_EF_APIS \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,)
 VBoxGuestR3LibXFree86_SOURCES  = \
 	VBoxGuestR3Lib.cpp \
@@ -151,7 +154,6 @@ VBoxGuestR3LibXFree86_SOURCES  = \
 	VBoxGuestR3LibSeamless.cpp \
 	VBoxGuestR3LibVideo.cpp \
 	VBoxGuestR3LibRuntimeXF86.cpp
-VBoxGuestR3LibRuntimeXF86.cpp_CXXFLAGS = -Wno-shadow
 VBoxGuestR3LibXFree86_INCS     = \
         $(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/common/ \
         $(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/os-support \
@@ -159,6 +161,7 @@ VBoxGuestR3LibXFree86_INCS     = \
         $(VBOX_PATH_X11_XFREE_4_3)/include \
         $(VBOX_PATH_X11_XFREE_4_3)/exports/include/X11
 
+VBoxGuestR3LibRuntimeXF86.cpp_CXXFLAGS = -Wno-shadow
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
