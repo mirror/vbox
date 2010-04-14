@@ -2206,7 +2206,7 @@ static void pcnetXmitRead1stSlow(PCNetState *pThis, RTGCPHYS32 GCPhysFrame, unsi
     for (uint32_t iSeg = 0; ; iSeg++)
     {
         Assert(iSeg < pSgBuf->cSegs);
-        size_t cbRead = RT_MIN(cbFrame, pSgBuf->aSegs[iSeg].cbSeg);
+        uint32_t cbRead = (uint32_t)RT_MIN(cbFrame, pSgBuf->aSegs[iSeg].cbSeg);
         PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhysFrame, pSgBuf->aSegs[iSeg].pvSeg, cbRead);
         cbFrame -= cbRead;
         if (!cbFrame)
@@ -2242,8 +2242,8 @@ static void pcnetXmitReadMoreSlow(PCNetState *pThis, RTGCPHYS32 GCPhysFrame, uns
     /* Deal with the first segment if we at an offset into it. */
     if (off != offSeg)
     {
-        size_t offIntoSeg = off - offSeg;
-        size_t cbRead     = RT_MIN(pSgBuf->aSegs[iSeg].cbSeg - offIntoSeg, cbFrame);
+        size_t   offIntoSeg = off - offSeg;
+        uint32_t cbRead     = (uint32_t)RT_MIN(pSgBuf->aSegs[iSeg].cbSeg - offIntoSeg, cbFrame);
         PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhysFrame,
                           (uint8_t *)pSgBuf->aSegs[iSeg].pvSeg + offIntoSeg, cbRead);
         cbFrame -= cbRead;
