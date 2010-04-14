@@ -412,8 +412,10 @@ int main()
     GEN_CHECK_OFF(PCNetState, Led);
     GEN_CHECK_OFF(PCNetState, ILeds);
     GEN_CHECK_OFF(PCNetState, pLedsConnector);
+#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
     GEN_CHECK_OFF(PCNetState, hSendEventSem);
     GEN_CHECK_OFF(PCNetState, pSendThread);
+#endif
     GEN_CHECK_OFF(PCNetState, CritSect);
 #ifdef PCNET_NO_POLLING
     GEN_CHECK_OFF(PCNetState, TDRAPhysOld);
@@ -431,6 +433,7 @@ int main()
     GEN_CHECK_OFF(PCNetState, fR0Enabled);
     GEN_CHECK_OFF(PCNetState, fAm79C973);
     GEN_CHECK_OFF(PCNetState, u32LinkSpeed);
+    GEN_CHECK_OFF(PCNetState, StatReceiveBytes);
 #ifdef VBOX_WITH_STATISTICS
     GEN_CHECK_OFF(PCNetState, StatMMIOReadGC);
     GEN_CHECK_OFF(PCNetState, StatMIIReads);
@@ -1270,7 +1273,9 @@ int main()
     GEN_CHECK_OFF(E1KSTATE, INetworkConfig);
     GEN_CHECK_OFF(E1KSTATE, ILeds);
     GEN_CHECK_OFF(E1KSTATE, pDrvBase);
-    GEN_CHECK_OFF(E1KSTATE, pDrv);
+    GEN_CHECK_OFF(E1KSTATE, pDrvR3);
+    GEN_CHECK_OFF(E1KSTATE, pDrvR0);
+    GEN_CHECK_OFF(E1KSTATE, pDrvRC);
     GEN_CHECK_OFF(E1KSTATE, pLedsConnector);
     GEN_CHECK_OFF(E1KSTATE, pDevInsR3);
     GEN_CHECK_OFF(E1KSTATE, pDevInsR0);
@@ -1299,12 +1304,14 @@ int main()
     GEN_CHECK_OFF(E1KSTATE, pLUTimerR3);
     GEN_CHECK_OFF(E1KSTATE, pLUTimerR0);
     GEN_CHECK_OFF(E1KSTATE, pLUTimerRC);
-    GEN_CHECK_OFF(E1KSTATE, pTxThread);
     GEN_CHECK_OFF(E1KSTATE, cs);
 #ifndef E1K_GLOBAL_MUTEX
     GEN_CHECK_OFF(E1KSTATE, csRx);
 #endif
+#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
     GEN_CHECK_OFF(E1KSTATE, hTxSem);
+    GEN_CHECK_OFF(E1KSTATE, pTxThread);
+#endif
     GEN_CHECK_OFF(E1KSTATE, addrMMReg);
     GEN_CHECK_OFF(E1KSTATE, macConfigured);
     GEN_CHECK_OFF(E1KSTATE, addrIOPort);
