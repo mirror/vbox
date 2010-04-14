@@ -159,6 +159,18 @@ static DECLCALLBACK(bool) pdmRCDevHlp_A20IsEnabled(PPDMDEVINS pDevIns)
 }
 
 
+/** @interface_method_impl{PDMDEVHLPRC,pfnVMState} */
+static DECLCALLBACK(VMSTATE) pdmRCDevHlp_VMState(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+
+    VMSTATE enmVMState = pDevIns->Internal.s.pVMRC->enmVMState;
+
+    LogFlow(("pdmRCDevHlp_VMState: caller=%p/%d: returns %d\n", pDevIns, pDevIns->iInstance, enmVMState));
+    return enmVMState;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPRC,pfnVMSetError} */
 static DECLCALLBACK(int) pdmRCDevHlp_VMSetError(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
 {
@@ -240,6 +252,7 @@ extern DECLEXPORT(const PDMDEVHLPRC) g_pdmRCDevHlp =
     pdmRCDevHlp_PhysRead,
     pdmRCDevHlp_PhysWrite,
     pdmRCDevHlp_A20IsEnabled,
+    pdmRCDevHlp_VMState,
     pdmRCDevHlp_VMSetError,
     pdmRCDevHlp_VMSetErrorV,
     pdmRCDevHlp_VMSetRuntimeError,
