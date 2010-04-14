@@ -1199,23 +1199,32 @@ while(0);
 {
     NSView *contentView = [[[NSApplication sharedApplication] dockTile] contentView];
     NSView *screenContent = nil;
-    if ([contentView respondsToSelector:@selector(screenContent)])
+    /* First try the new variant which checks if this window is within the
+       screen which is previewed in the dock. */
+    if ([contentView respondsToSelector:@selector(screenContentWithParentView:)])
+         screenContent = [contentView performSelector:@selector(screenContentWithParentView:) withObject:(id)m_pParentView];
+    /* If it fails, fall back to the old variant (VBox...) */
+    else if ([contentView respondsToSelector:@selector(screenContent)])
          screenContent = [contentView performSelector:@selector(screenContent)];
     return screenContent;
 }
 
 - (void)reshapeDockTile
 {
-    NSRect dockFrame = [[self dockTileScreen] frame];
-    NSRect parentFrame = [m_pParentView frame];
+    NSView *pView = [self dockTileScreen];
+    if (pView != nil)
+    {
+        NSRect dockFrame = [pView frame];
+        NSRect parentFrame = [m_pParentView frame];
 
-    m_FBOThumbScaleX = (float)dockFrame.size.width / parentFrame.size.width;
-    m_FBOThumbScaleY = (float)dockFrame.size.height / parentFrame.size.height;
-    NSRect newFrame = NSMakeRect ((int)(m_Pos.x * m_FBOThumbScaleX), (int)(dockFrame.size.height - (m_Pos.y + m_Size.height - m_RootShift.y) * m_FBOThumbScaleY), (int)(m_Size.width * m_FBOThumbScaleX), (int)(m_Size.height * m_FBOThumbScaleY));
+        m_FBOThumbScaleX = (float)dockFrame.size.width / parentFrame.size.width;
+        m_FBOThumbScaleY = (float)dockFrame.size.height / parentFrame.size.height;
+        NSRect newFrame = NSMakeRect ((int)(m_Pos.x * m_FBOThumbScaleX), (int)(dockFrame.size.height - (m_Pos.y + m_Size.height - m_RootShift.y) * m_FBOThumbScaleY), (int)(m_Size.width * m_FBOThumbScaleX), (int)(m_Size.height * m_FBOThumbScaleY));
 //    NSRect newFrame = NSMakeRect ((int)roundf(m_Pos.x * m_FBOThumbScaleX), (int)roundf(dockFrame.size.height - (m_Pos.y + m_Size.height) * m_FBOThumbScaleY), (int)roundf(m_Size.width * m_FBOThumbScaleX), (int)roundf(m_Size.height * m_FBOThumbScaleY));
 //      NSRect newFrame = NSMakeRect ((m_Pos.x * m_FBOThumbScaleX), (dockFrame.size.height - (m_Pos.y + m_Size.height) * m_FBOThumbScaleY), (m_Size.width * m_FBOThumbScaleX), (m_Size.height * m_FBOThumbScaleY));
 //    printf ("%f %f %f %f - %f %f\n", newFrame.origin.x, newFrame.origin.y, newFrame.size.width, newFrame.size.height, m_Size.height, m_FBOThumbScaleY);
-    [m_DockTileView setFrame: newFrame];
+        [m_DockTileView setFrame: newFrame];
+    }
 }
 
 @end
@@ -1351,6 +1360,7 @@ void cocoaViewReparent(NativeViewRef pView, NativeViewRef pParentView)
         [pOView setParentView: pParentView];
         /* Add the overlay window as a child to the new parent window */
         [[pParentView window] addChildWindow:[pOView overlayWin] ordered:NSWindowAbove];
+        [pOView createFBO];
     }
 
     [pPool release];
