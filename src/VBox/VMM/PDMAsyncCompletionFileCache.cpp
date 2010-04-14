@@ -367,7 +367,7 @@ static void pdmacFileCacheDestroyList(PPDMACFILELRULIST pList)
         AssertMsg(!(pEntry->fFlags & (PDMACFILECACHE_ENTRY_IO_IN_PROGRESS | PDMACFILECACHE_ENTRY_IS_DIRTY)),
                   ("Entry is dirty and/or still in progress fFlags=%#x\n", pEntry->fFlags));
 
-        RTMemPageFree(pEntry->pbData);
+        RTMemPageFree(pEntry->pbData, pEntry->cbData);
         RTMemFree(pEntry);
     }
 }
@@ -438,7 +438,7 @@ static size_t pdmacFileCacheEvictPagesFrom(PPDMACFILECACHEGLOBAL pCache, size_t 
                     *ppbBuffer = pCurr->pbData;
                 }
                 else if (pCurr->pbData)
-                    RTMemPageFree(pCurr->pbData);
+                    RTMemPageFree(pCurr->pbData, pEntry->cbData);
 
                 pCurr->pbData = NULL;
                 cbEvicted += pCurr->cbData;
@@ -1171,7 +1171,7 @@ static int pdmacFileEpCacheEntryDestroy(PAVLRFOFFNODECORE pNode, void *pvUser)
     if (fUpdateCache)
         pdmacFileCacheSub(pCache, pEntry->cbData);
 
-    RTMemPageFree(pEntry->pbData);
+    RTMemPageFree(pEntry->pbData, pEntry->cbData);
     RTMemFree(pEntry);
 
     return VINF_SUCCESS;

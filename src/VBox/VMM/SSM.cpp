@@ -1674,7 +1674,7 @@ static void ssmR3StrmDestroyBufList(PSSMSTRMBUF pHead)
         PSSMSTRMBUF pCur = pHead;
         pHead = pCur->pNext;
         pCur->pNext = NULL;
-        RTMemPageFree(pCur);
+        RTMemPageFree(pCur, sizeof(*pCur));
     }
 }
 
@@ -1687,7 +1687,7 @@ static void ssmR3StrmDestroyBufList(PSSMSTRMBUF pHead)
  */
 static void ssmR3StrmDelete(PSSMSTRM pStrm)
 {
-    RTMemPageFree(pStrm->pCur);
+    RTMemPageFree(pStrm->pCur, sizeof(*pStrm->pCur));
     pStrm->pCur = NULL;
     ssmR3StrmDestroyBufList(pStrm->pHead);
     pStrm->pHead = NULL;

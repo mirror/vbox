@@ -422,21 +422,22 @@ static void VBoxServiceClipboardOS2RenderFormat(USHORT usFmt)
          * This might require two iterations because of buffer guessing.
          */
         uint32_t cb = _4K;
-        int rc = VERR_NO_MEMORY;
-        void *pv = RTMemPageAllocZ(cb);
+        uint32_t cbAllocated = cb;
+        int      rc = VERR_NO_MEMORY;
+        void    *pv = RTMemPageAllocZ(cbAllocated);
         if (pv)
         {
             VBoxServiceVerbose(4, "clipboard: reading host data (%#x)\n", fFormat);
             rc = VbglR3ClipboardReadData(g_u32ClientId, fFormat, pv, cb, &cb);
             if (rc == VINF_BUFFER_OVERFLOW)
             {
-                RTMemPageFree(pv);
-                cb = RT_ALIGN_32(cb, PAGE_SIZE);
-                pv = RTMemPageAllocZ(cb);
+                RTMemPageFree(pv, cbAllocated);
+                cbAllocated = cb = RT_ALIGN_32(cb, PAGE_SIZE);
+                pv = RTMemPageAllocZ(cbAllocated);
                 rc = VbglR3ClipboardReadData(g_u32ClientId, fFormat, pv, cb, &cb);
             }
             if (RT_FAILURE(rc))
-                RTMemPageFree(pv);
+                RTMemPageFree(pv, cbAllocated);
         }
         if (RT_SUCCESS(rc))
         {
@@ -457,7 +458,7 @@ static void VBoxServiceClipboardOS2RenderFormat(USHORT usFmt)
                     DosFreeMem(pvPM);
                 }
             }
-            RTMemPageFree(pv);
+            RTMemPageFree(pv, cbAllocated);
         }
         else
             VBoxServiceError("VBoxServiceClipboardOS2RenderFormat: Failed to query / allocate data. rc=%Rrc cb=%#RX32\n", rc, cb);

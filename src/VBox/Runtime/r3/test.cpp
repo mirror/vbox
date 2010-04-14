@@ -528,7 +528,7 @@ RTR3DECL(int) RTTestGuardedAlloc(RTTEST hTest, size_t cb, uint32_t cbAlign, bool
                 RTMemProtect(pMem->aGuards[0].pv, pMem->aGuards[0].cb, RTMEM_PROT_WRITE | RTMEM_PROT_READ);
             }
 
-            RTMemPageFree(pMem->pvAlloc);
+            RTMemPageFree(pMem->pvAlloc, pMem->cbAlloc);
         }
         RTMemFree(pMem);
     }
@@ -586,7 +586,7 @@ static void rtTestGuardedFreeOne(PRTTESTGUARDEDMEM pMem)
     int rc;
     rc = RTMemProtect(pMem->aGuards[0].pv, pMem->aGuards[0].cb, RTMEM_PROT_WRITE | RTMEM_PROT_READ); AssertRC(rc);
     rc = RTMemProtect(pMem->aGuards[1].pv, pMem->aGuards[1].cb, RTMEM_PROT_WRITE | RTMEM_PROT_READ); AssertRC(rc);
-    RTMemPageFree(pMem->pvAlloc);
+    RTMemPageFree(pMem->pvAlloc, pMem->cbAlloc);
     RTMemFree(pMem);
 }
 

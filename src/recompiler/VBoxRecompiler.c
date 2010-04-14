@@ -512,7 +512,7 @@ static int remR3InitPhysRamSizeAndDirtyMap(PVM pVM, bool fGuarded)
         rc = RTMemProtect(phys_ram_dirty + cbBitmapAligned, cbBitmapFull - cbBitmapAligned, RTMEM_PROT_NONE);
         if (RT_FAILURE(rc))
         {
-            RTMemPageFree(phys_ram_dirty);
+            RTMemPageFree(phys_ram_dirty, cbBitmapFull);
             AssertLogRelRCReturn(rc, rc);
         }
 

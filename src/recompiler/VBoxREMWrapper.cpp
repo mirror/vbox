@@ -1090,6 +1090,11 @@ static const REMPARMDESC g_aArgsRTMemProtect[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(unsigned),           NULL }
 };
+static const REMPARMDESC g_aArgsRTMemFree[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL }
+};
 static const REMPARMDESC g_aArgsRTStrPrintf[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(char *),             NULL },
@@ -1326,7 +1331,7 @@ static REMFNDESC g_aRTImports[] =
     { "RTMemExecFree",                          (void *)(uintptr_t)&RTMemExecFree,                  &g_aArgsPTR[0],                             RT_ELEMENTS(g_aArgsPTR),                               REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "RTMemFree",                              (void *)(uintptr_t)&RTMemFree,                      &g_aArgsPTR[0],                             RT_ELEMENTS(g_aArgsPTR),                               REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "RTMemPageAlloc",                         (void *)(uintptr_t)&RTMemPageAlloc,                 &g_aArgsSIZE_T[0],                          RT_ELEMENTS(g_aArgsSIZE_T),                            REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
-    { "RTMemPageFree",                          (void *)(uintptr_t)&RTMemPageFree,                  &g_aArgsPTR[0],                             RT_ELEMENTS(g_aArgsPTR),                               REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
+    { "RTMemPageFree",                          (void *)(uintptr_t)&RTMemPageFree,                  &g_aArgsRTMemProtect[0],                    RT_ELEMENTS(g_aArgsRTMemProtect),                      REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "RTMemProtect",                           (void *)(uintptr_t)&RTMemProtect,                   &g_aArgsRTMemProtect[0],                    RT_ELEMENTS(g_aArgsRTMemProtect),                      REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "RTStrPrintf",                            (void *)(uintptr_t)&RTStrPrintf,                    &g_aArgsRTStrPrintf[0],                     RT_ELEMENTS(g_aArgsRTStrPrintf),                       REMFNDESC_FLAGS_RET_INT | REMFNDESC_FLAGS_ELLIPSIS, sizeof(size_t), NULL },
     { "RTStrPrintfV",                           (void *)(uintptr_t)&RTStrPrintfV,                   &g_aArgsRTStrPrintfV[0],                    RT_ELEMENTS(g_aArgsRTStrPrintfV),                      REMFNDESC_FLAGS_RET_INT | REMFNDESC_FLAGS_VALIST, sizeof(size_t), NULL },

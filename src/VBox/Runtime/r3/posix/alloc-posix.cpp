@@ -43,14 +43,23 @@
 #include <errno.h>
 #include <sys/mman.h>
 
-#if !defined(RT_USE_MMAP) && (defined(RT_OS_LINUX))
-# define RT_USE_MMAP
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+#if !defined(RT_USE_MMAP_EXEC) && (defined(RT_OS_LINUX))
+# define RT_USE_MMAP_EXEC
 #endif
+
+#if !defined(RT_USE_MMAP_PAGE) && 0 /** @todo mmap is too slow for full scale EF setup. */
+# define RT_USE_MMAP_PAGE
+#endif
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-#ifdef RT_USE_MMAP
+#ifdef RT_USE_MMAP_EXEC
 /**
  * RTMemExecAlloc() header used when using mmap for allocating the memory.
  */
@@ -66,9 +75,9 @@ typedef struct RTMEMEXECHDR
 } RTMEMEXECHDR, *PRTMEMEXECHDR;
 
 /** Magic for RTMEMEXECHDR. */
-#define RTMEMEXECHDR_MAGIC (~(size_t)0xfeedbabe)
+# define RTMEMEXECHDR_MAGIC (~(size_t)0xfeedbabe)
 
-#endif  /* RT_USE_MMAP */
+#endif  /* RT_USE_MMAP_EXEC */
 
 
 
@@ -83,15 +92,15 @@ RTDECL(void *) RTMemExecAlloc(size_t cb) RT_NO_THROW
 {
     AssertMsg(cb, ("Allocating ZERO bytes is really not a good idea! Good luck with the next assertion!\n"));
 
-#ifdef RT_USE_MMAP
+#ifdef RT_USE_MMAP_EXEC
     /*
      * Use mmap to get low memory.
      */
     size_t cbAlloc = RT_ALIGN_Z(cb + sizeof(RTMEMEXECHDR), PAGE_SIZE);
     void *pv = mmap(NULL, cbAlloc, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS
-#if defined(RT_ARCH_AMD64) && defined(MAP_32BIT)
+# if defined(RT_ARCH_AMD64) && defined(MAP_32BIT)
                     | MAP_32BIT
-#endif
+# endif
                     , -1, 0);
     AssertMsgReturn(pv != MAP_FAILED, ("errno=%d cb=%#zx\n", errno, cb), NULL);
     PRTMEMEXECHDR pHdr = (PRTMEMEXECHDR)pv;
@@ -141,7 +150,7 @@ RTDECL(void)    RTMemExecFree(void *pv) RT_NO_THROW
 {
     if (pv)
     {
-#ifdef RT_USE_MMAP
+#ifdef RT_USE_MMAP_EXEC
         PRTMEMEXECHDR pHdr = (PRTMEMEXECHDR)pv - 1;
         AssertMsgReturnVoid(RT_ALIGN_P(pHdr, PAGE_SIZE) == pHdr, ("pHdr=%p pv=%p\n", pHdr, pv));
         AssertMsgReturnVoid(pHdr->uMagic == RTMEMEXECHDR_MAGIC, ("pHdr=%p(uMagic=%#zx) pv=%p\n", pHdr, pHdr->uMagic, pv));
@@ -163,14 +172,22 @@ RTDECL(void)    RTMemExecFree(void *pv) RT_NO_THROW
  */
 RTDECL(void *) RTMemPageAlloc(size_t cb) RT_NO_THROW
 {
-#if 0 /** @todo huh? we're using posix_memalign in the next function... */
+#ifdef RT_USE_MMAP_PAGE
+    size_t  cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
+    void   *pv = mmap(NULL, cbAligned, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    AssertMsgReturn(pv != MAP_FAILED, ("errno=%d cb=%#zx\n", errno, cb), NULL);
+    return pv;
+
+#else
+# if 0 /** @todo huh? we're using posix_memalign in the next function... */
     void *pv;
     int rc = posix_memalign(&pv, PAGE_SIZE, RT_ALIGN_Z(cb, PAGE_SIZE));
     if (!rc)
         return pv;
     return NULL;
-#else
+# else
     return memalign(PAGE_SIZE, cb);
+# endif
 #endif
 }
 
@@ -184,6 +201,13 @@ RTDECL(void *) RTMemPageAlloc(size_t cb) RT_NO_THROW
  */
 RTDECL(void *) RTMemPageAllocZ(size_t cb) RT_NO_THROW
 {
+#ifdef RT_USE_MMAP_PAGE
+    size_t  cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
+    void   *pv = mmap(NULL, cbAligned, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    AssertMsgReturn(pv != MAP_FAILED, ("errno=%d cb=%#zx\n", errno, cb), NULL);
+    return pv;
+
+#else
     void *pv;
     int rc = posix_memalign(&pv, PAGE_SIZE, RT_ALIGN_Z(cb, PAGE_SIZE));
     if (!rc)
@@ -192,6 +216,7 @@ RTDECL(void *) RTMemPageAllocZ(size_t cb) RT_NO_THROW
         return pv;
     }
     return NULL;
+#endif
 }
 
 
@@ -201,10 +226,20 @@ RTDECL(void *) RTMemPageAllocZ(size_t cb) RT_NO_THROW
  * @param   pv      Pointer to the block as it was returned by the allocation function.
  *                  NULL will be ignored.
  */
-RTDECL(void) RTMemPageFree(void *pv) RT_NO_THROW
+RTDECL(void) RTMemPageFree(void *pv, size_t cb) RT_NO_THROW
 {
     if (pv)
+    {
+        Assert(!((uintptr_t)pv & PAGE_OFFSET_MASK));
+
+#ifdef RT_USE_MMAP_PAGE
+        size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
+        int rc = munmap(pv, cbAligned);
+        AssertMsg(!rc, ("munmap(%p, %#zx) -> %d errno=%d\n", pv, cbAligned, rc, errno)); NOREF(rc);
+#else
         free(pv);
+#endif
+    }
 }
 
 

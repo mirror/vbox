@@ -644,13 +644,13 @@ typedef struct PDMACTASKFILE
     RTFOFF                               Off;
     /** Data segment. */
     RTSGSEG                              DataSeg;
-    /** Flag whether this segment uses a bounce buffer
-     * because the provided buffer doesn't meet host requirements. */
-    bool                                 fBounceBuffer;
+    /** When non-zero the segment uses a bounce buffer because the provided buffer
+     * doesn't meet host requirements. */
+    size_t                               cbBounceBuffer;
     /** Pointer to the used bounce buffer if any. */
     void                                *pvBounceBuffer;
     /** Start offset in the bounce buffer to copy from. */
-    uint32_t                             uBounceBufOffset;
+    uint32_t                             offBounceBuffer;
     /** Flag whether this is a prefetch request. */
     bool                                 fPrefetch;
     /** Completion function to call on completion. */
