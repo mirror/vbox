@@ -852,6 +852,46 @@ int getDriveInfoFromSysfs(DriveInfoList *pList, bool isDVD, bool *pfSuccess)
     return rc;
 }
 
+/**
+ * Helper function to query the sysfs subsystem for information about USB
+ * devices attached to the system.
+ * @returns iprt status code
+ * @param   pList      where to add information about the drives detected
+ * @param   pfSuccess  Did we find anything?
+ *
+ * @returns IPRT status code
+ */
+static int getUSBDeviceInfoFromSysfs(USBDeviceInfoList *pList,
+                                     bool *pfSuccess)
+{
+    AssertPtrReturn(pList, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfSuccess, VERR_INVALID_POINTER); /* Valid or Null */
+    LogFlowFunc (("pList=%p, pfSuccess=%p\n",
+                  pList, pfSuccess));
+    size_t cDevices = pList->size();
+    matchUSBDevice devHandler(pList);
+    int rc = getDeviceInfoFromSysfs("/sys/bus/usb/devices", &devHandler);
+    do {
+        if (RT_FAILURE(rc))
+            break;
+        for (USBDeviceInfoList::iterator pInfo = pList->begin();
+             pInfo != pList->end(); ++pInfo)
+        {
+            matchUSBInterface ifaceHandler(&*pInfo);
+            rc = getDeviceInfoFromSysfs("/sys/bus/usb/devices", &ifaceHandler);
+            if (RT_FAILURE(rc))
+                break;
+        }
+    } while(0);
+    if (RT_FAILURE(rc))
+        /* Clean up again */
+        while (pList->size() > cDevices)
+            pList->pop_back();
+    if (pfSuccess)
+        *pfSuccess = RT_SUCCESS(rc);
+    LogFlow (("rc=%Rrc\n", rc));
+    return rc;
+}
 
 /** Structure for holding information about a drive we have found */
 struct deviceNodeInfo
@@ -1979,48 +2019,6 @@ private:
         return true;
     }
 };
-
-/**
- * Helper function to query the sysfs subsystem for information about USB
- * devices attached to the system.
- * @returns iprt status code
- * @param   pList      where to add information about the drives detected
- * @param   pfSuccess  Did we find anything?
- *
- * @returns IPRT status code
- */
-static int getUSBDeviceInfoFromSysfs(USBDeviceInfoList *pList,
-                                     bool *pfSuccess)
-{
-    AssertPtrReturn(pList, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pfSuccess, VERR_INVALID_POINTER); /* Valid or Null */
-    LogFlowFunc (("pList=%p, pfSuccess=%p\n",
-                  pList, pfSuccess));
-    size_t cDevices = pList->size();
-    matchUSBDevice devHandler(pList);
-    int rc = getDeviceInfoFromSysfs("/sys/bus/usb/devices", &devHandler);
-    do {
-        if (RT_FAILURE(rc))
-            break;
-        for (USBDeviceInfoList::iterator pInfo = pList->begin();
-             pInfo != pList->end(); ++pInfo)
-        {
-            matchUSBInterface ifaceHandler(&*pInfo);
-            rc = getDeviceInfoFromSysfs("/sys/bus/usb/devices", &ifaceHandler);
-            if (RT_FAILURE(rc))
-                break;
-        }
-    } while(0);
-    if (RT_FAILURE(rc))
-        /* Clean up again */
-        while (pList->size() > cDevices)
-            pList->pop_back();
-    if (pfSuccess)
-        *pfSuccess = RT_SUCCESS(rc);
-    LogFlow (("rc=%Rrc\n", rc));
-    return rc;
-}
-
 
 /**
  * Helper function to query the hal subsystem for information about USB devices
