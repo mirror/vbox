@@ -28,7 +28,9 @@
 
 #define VBOXWDDM_C_VDMA_BUFFER_SIZE   (64*_1K)
 
-#define VBOXWDDM_RENDER_FROM_SHADOW
+#ifdef VBOXWDDM_WITH_VBVA
+# define VBOXWDDM_RENDER_FROM_SHADOW
+#endif
 
 #define VBOXWDDM_ROUNDBOUND(_v, _b) (((_v) + ((_b) - 1)) & ~((_b) - 1))
 
@@ -151,6 +153,7 @@ typedef struct VBOXWDDM_CONTEXT
 typedef struct VBOXWDDM_DMA_PRIVATE_DATA
 {
     PVBOXWDDM_CONTEXT pContext;
+    VBOXVDMACMD_TYPE enmCmd;
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
     RECT rect;
     VBOXVIDEOOFFSET offShadow;
