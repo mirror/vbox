@@ -99,6 +99,7 @@ OBJS   = \
 	r0drv/linux/time-r0drv-linux.o \
 	r0drv/linux/timer-r0drv-linux.o \
 	r0drv/generic/semspinmutex-r0drv-generic.o \
+	common/alloc/alloc.o \
 	common/checksum/ipv4.o \
 	common/checksum/ipv6.o \
 	common/err/RTErrConvertFromErrno.o \
@@ -140,7 +141,7 @@ OBJS += math/gcc/divdi3.o \
 	math/gcc/umoddi3.o
 endif
 ifeq ($(BUILD_TARGET_ARCH),amd64)
-OBJS += alloc/heapsimple.o
+OBJS += common/alloc/heapsimple.o
 endif
 
 ifneq ($(MAKECMDGOALS),clean)

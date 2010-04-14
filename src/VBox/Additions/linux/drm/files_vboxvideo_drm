@@ -20,6 +20,8 @@
 FILES_VBOXVIDEO_DRM_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Additions/linux/drm/vboxvideo_drm.c=>vboxvideo_drm.c \
     ${PATH_ROOT}/src/VBox/Additions/linux/drm/vboxvideo_drm.h=>vboxvideo_drm.h \
+    ${PATH_OUT}/version-generated.h=>version-generated.h \
+    ${PATH_OUT}/product-generated.h=>product-generated.h \
     ${PATH_ROOT}/src/VBox/Additions/linux/drm/Makefile.module=>Makefile \
 "
 

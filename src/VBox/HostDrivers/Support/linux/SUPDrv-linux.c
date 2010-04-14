@@ -37,6 +37,7 @@
 #include "../SUPDrvInternal.h"
 #include "the-linux-kernel.h"
 #include "version-generated.h"
+#include "product-generated.h"
 
 #include <iprt/assert.h>
 #include <iprt/spinlock.h>
@@ -1102,8 +1103,8 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 module_init(VBoxDrvLinuxInit);
 module_exit(VBoxDrvLinuxUnload);
 
-MODULE_AUTHOR("Oracle Corporation");
-MODULE_DESCRIPTION("VirtualBox Support Driver");
+MODULE_AUTHOR(VBOX_VENDOR);
+MODULE_DESCRIPTION(VBOX_PRODUCT " Support Driver");
 MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
 MODULE_VERSION(VBOX_VERSION_STRING " (" RT_XSTR(SUPDRV_IOC_VERSION) ")");
