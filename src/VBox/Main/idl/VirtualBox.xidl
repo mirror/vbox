@@ -11540,9 +11540,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="Bridged"               value="2"/>
     <const name="Internal"              value="3"/>
     <const name="HostOnly"              value="4"/>
-               <!-- ENABLE VDE -->
-    <const name="VDE"                   value="5"/>
-               <!-- /ENABLE VDE -->
   </enum>
 
   <enum
@@ -11645,14 +11642,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-               <!-- ENABLE VDE -->
-    <attribute name="VDENetwork" type="wstring">
-      <desc>
-        Name of the VDE switch the VM is attached to.
-      </desc>
-    </attribute>
-               <!-- /ENABLE VDE -->
-
     <attribute name="cableConnected" type="boolean">
       <desc>
         Flag whether the adapter reports the cable as connected or not.
@@ -11718,14 +11707,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Attach the network adapter to the host-only network.
       </desc>
     </method>
-
-               <!-- ENABLE VDE -->
-    <method name="attachToVDE">
-      <desc>
-        Attach the network adapter to a VDE network.
-      </desc>
-    </method>
-               <!-- /ENABLE VDE -->
 
     <method name="detach">
       <desc>
