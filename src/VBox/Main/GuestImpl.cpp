@@ -93,8 +93,10 @@ HRESULT Guest::init (Console *aParent)
     for (unsigned i = 0 ; i < GUESTSTATTYPE_MAX; i++)
         mCurrentGuestStat[i] = 0;
 
+#ifdef VBOX_WITH_GUEST_CONTROL
     /* Init the context ID counter at 1000. */
     mNextContextID = 1000;
+#endif
 
     return S_OK;
 }
