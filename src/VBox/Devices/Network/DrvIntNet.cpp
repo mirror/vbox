@@ -121,7 +121,7 @@ typedef struct DRVINTNET
      * as late as possible. */
     bool                            fActivateEarlyDeactivateLate;
     /** Padding. */
-    bool                            afReserved[2+4];
+    bool                            afReserved[HC_ARCH_BITS == 64 ? 2+4 : 2];
     /** The network name. */
     char                            szNetwork[INTNET_MAX_NETWORK_NAME];
 
