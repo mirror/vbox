@@ -952,17 +952,6 @@ struct E1kState_st
     PDMCRITSECT csRx;                                     /**< RX Critical section. */
 //    PDMCRITSECT csTx;                                     /**< TX Critical section. */
 #endif
-#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
-    /** Transmit thread blocker. */
-# ifdef E1K_USE_SUPLIB_SEMEVENT
-    SUPSEMEVENT hTxSem;
-# else
-    RTSEMEVENT  hTxSem;
-# endif
-#endif
-#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
-    PPDMTHREAD  pTxThread;                                    /**< Transmit thread. */
-#endif
     /** Base address of memory-mapped registers. */
     RTGCPHYS    addrMMReg;
     /** MAC address obtained from the configuration. */
@@ -3819,63 +3808,6 @@ static DECLCALLBACK(void) e1kNetworkDown_XmitPending(PPDMINETWORKDOWN pInterface
     e1kXmitPending(pState, true /*fOnWorkerThread*/);
 }
 
-#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
-
-/**
- * Wake up callback for transmission thread.
- *
- * @returns VBox status code. Returning failure will naturally terminate the thread.
- * @param   pDevIns     The pcnet device instance.
- * @param   pThread     The thread.
- */
-static DECLCALLBACK(int) e1kTxThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
-{
-    E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
-#ifdef E1K_USE_SUPLIB_SEMEVENT
-    int rc = SUPSemEventSignal(PDMDevHlpGetVM(pDevIns)->pSession, pState->hTxSem);
-#else
-    int rc = RTSemEventSignal(pState->hTxSem);
-#endif
-    AssertRC(rc);
-    return VINF_SUCCESS;
-}
-
-/**
- * I/O thread for packet transmission.
- *
- * @returns VBox status code. Returning failure will naturally terminate the thread.
- * @param   pDevIns     Pointer to device instance structure.
- * @param   pThread     The thread.
- * @thread  E1000_TX
- */
-static DECLCALLBACK(int) e1kTxThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
-{
-    E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
-
-    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
-    {
-#ifdef E1K_USE_SUPLIB_SEMEVENT
-        int rc = SUPSemEventWaitNoResume(PDMDevHlpGetVM(pDevIns)->pSession, pState->hTxSem, RT_INDEFINITE_WAIT);
-#else
-        int rc = RTSemEventWaitNoResume(pState->hTxSem, RT_INDEFINITE_WAIT);
-#endif
-        if (rc == VERR_INTERRUPTED)
-            continue;
-        AssertRCReturn(rc, rc);
-        if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
-            break;
-
-        if (pThread->enmState == PDMTHREADSTATE_RUNNING)
-        {
-            rc = e1kXmitPending(pState, true /*fOnWorkerThread*/);
-            AssertMsgReturn(RT_SUCCESS(rc) || rc == VERR_TRY_AGAIN, ("%Rrc\n", rc), rc);
-        }
-    }
-    return VINF_SUCCESS;
-}
-
-#endif /* VBOX_WITH_TX_THREAD_IN_NET_DEVICES */
-
 /**
  * Callback for consuming from transmit queue. It gets called in R3 whenever
  * we enqueue something in R0/GC.
@@ -3891,17 +3823,8 @@ static DECLCALLBACK(bool) e1kTxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCO
     E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
     E1kLog2(("%s e1kTxQueueConsumer: Waking up TX thread...\n", INSTANCE(pState)));
 
-#ifndef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
     int rc = e1kXmitPending(pState, false /*fOnWorkerThread*/);
     AssertMsg(RT_SUCCESS(rc) || rc == VERR_TRY_AGAIN, ("%Rrc\n", rc));
-#else
-# ifdef E1K_USE_SUPLIB_SEMEVENT
-    int rc = SUPSemEventSignal(PDMDevHlpGetVM(pDevIns)->pSession, pState->hTxSem);
-# else
-    int rc = RTSemEventSignal(pState->hTxSem);
-# endif
-    AssertRC(rc);
-#endif
 
     return true;
 }
@@ -3945,7 +3868,6 @@ static int e1kRegWriteTDT(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
         E1kLogRel(("E1000: TDT write: %d descriptors to process\n", e1kGetTxLen(pState)));
         E1kLog(("%s e1kRegWriteTDT: %d descriptors to process, waking up E1000_TX thread\n",
                  INSTANCE(pState), e1kGetTxLen(pState)));
-#ifndef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
         e1kCsTxLeave(pState);
 
         /* Transmit pending packets if possible, defere it if we cannot do it
@@ -3965,20 +3887,6 @@ static int e1kRegWriteTDT(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
                 rc = VINF_SUCCESS;
             AssertRC(rc);
         }
-#else
-# if (defined(IN_RING3) || defined(IN_RING0)) && defined(E1K_USE_SUPLIB_SEMEVENT)
-        rc = SUPSemEventSignal(PDMDevHlpGetVM(pState->CTX_SUFF(pDevIns))->pSession, pState->hTxSem);
-        AssertRC(rc);
-# elif defined(IN_RING3)
-        rc = RTSemEventSignal(pState->hTxSem);
-        AssertRC(rc);
-# else
-        PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pState->CTX_SUFF(pTxQueue));
-        if (RT_UNLIKELY(pItem))
-            PDMQueueInsert(pState->CTX_SUFF(pTxQueue), pItem);
-# endif /* !IN_RING3 */
-#endif
-
     }
     else
         e1kCsTxLeave(pState);
@@ -5533,21 +5441,6 @@ static DECLCALLBACK(int) e1kDestruct(PPDMDEVINS pDevIns)
             RTSemEventDestroy(pState->hEventMoreRxDescAvail);
             pState->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
         }
-#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
-# ifdef E1K_USE_SUPLIB_SEMEVENT
-        if (pState->hTxSem != NIL_SUPSEMEVENT)
-        {
-            SUPSemEventClose(PDMDevHlpGetVM(pDevIns)->pSession, pState->hTxSem);
-            pState->hTxSem = NIL_SUPSEMEVENT;
-        }
-# else
-        if (pState->hTxSem != NIL_RTSEMEVENT)
-        {
-            RTSemEventDestroy(pState->hTxSem);
-            pState->hTxSem = NIL_RTSEMEVENT;
-        }
-# endif
-#endif
 #ifndef E1K_GLOBAL_MUTEX
         PDMR3CritSectDelete(&pState->csRx);
         //PDMR3CritSectDelete(&pState->csTx);
@@ -5674,13 +5567,6 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /* Init handles and log related stuff. */
     RTStrPrintf(pState->szInstance, sizeof(pState->szInstance), "E1000#%d", iInstance);
     E1kLog(("%s Constructing new instance sizeof(E1KRXDESC)=%d\n", INSTANCE(pState), sizeof(E1KRXDESC)));
-#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
-# ifdef E1K_USE_SUPLIB_SEMEVENT
-    pState->hTxSem = NIL_SUPSEMEVENT;
-# else
-    pState->hTxSem = NIL_RTSEMEVENT;
-# endif
-#endif
     pState->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
 
     /*
@@ -5920,26 +5806,11 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     else
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach the network LUN"));
 
-#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
-# ifdef E1K_USE_SUPLIB_SEMEVENT
-    rc = SUPSemEventCreate(PDMDevHlpGetVM(pDevIns)->pSession, &pState->hTxSem);
-# else
-    rc = RTSemEventCreate(&pState->hTxSem);
-# endif
-    if (RT_FAILURE(rc))
-        return rc;
-#endif
     rc = RTSemEventCreate(&pState->hEventMoreRxDescAvail);
     if (RT_FAILURE(rc))
         return rc;
 
     e1kHardReset(pState);
-
-#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
-    rc = PDMDevHlpThreadCreate(pDevIns, &pState->pTxThread, pState, e1kTxThread, e1kTxThreadWakeUp, 0, RTTHREADTYPE_IO, "E1000_TX");
-    if (RT_FAILURE(rc))
-        return rc;
-#endif
 
 #if defined(VBOX_WITH_STATISTICS) || defined(E1K_REL_STATS)
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatMMIOReadGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in GC",         "/Devices/E1k%d/MMIO/ReadGC", iInstance);
