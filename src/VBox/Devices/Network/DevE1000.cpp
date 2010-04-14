@@ -1991,6 +1991,7 @@ static int e1kRxChecksumOffload(E1KSTATE* pState, const uint8_t *pFrame, size_t 
  */
 static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1KRXDST status)
 {
+#if defined(IN_RING3) /** @todo Remove this extra copying, it's gonna make us run out of kernel / hypervisor stack! */
     uint8_t   rxPacket[E1K_MAX_RX_PKT_SIZE];
     uint8_t  *ptr = rxPacket;
 
@@ -2110,6 +2111,9 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
     e1kCsRxLeave(pState);
 
     return VINF_SUCCESS;
+#else
+    return VERR_INTERNAL_ERROR_2;
+#endif
 }
 
 
