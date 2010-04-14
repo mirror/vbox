@@ -1303,27 +1303,27 @@ static PPDMMOD pdmR3LdrFindModule(PUVM pUVM, const char *pszModule, PDMMODTYPE e
  *                              - R0PTR:whatever,
  *                              - GCPHYS:whatever,
  *                              - HCPHYS:whatever.
- * @param   fRing0OrRC      Set if it's a ring-0 context interface, clear if
+ * @param   fRing0          Set if it's a ring-0 context interface, clear if
  *                          it's raw-mode context interface.
  */
 VMMR3DECL(int) PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size_t cbInterface,
                                            const char *pszModule, const char *pszSymPrefix,
-                                           const char *pszSymList, bool fRing0OrRC)
+                                           const char *pszSymList, bool fRing0)
 {
     /*
      * Find the module.
      */
     int     rc      = VINF_SUCCESS;
     PPDMMOD pModule = pdmR3LdrFindModule(pVM->pUVM,
-                                         pszModule ? pszModule : fRing0OrRC ? "VMMR0.r0" : "VMMGC.gc",
-                                         fRing0OrRC ? PDMMOD_TYPE_R0 : PDMMOD_TYPE_RC,
+                                         pszModule ? pszModule : fRing0 ? "VMMR0.r0" : "VMMGC.gc",
+                                         fRing0 ? PDMMOD_TYPE_R0 : PDMMOD_TYPE_RC,
                                          true /*fLazy*/);
     if (pModule)
     {
         /* Prep the symbol name. */
         char            szSymbol[256];
         size_t const    cchSymPrefix = strlen(pszSymPrefix);
-        AssertReturn(cchSymPrefix + 5 >= sizeof(szSymbol), VERR_SYMBOL_NOT_FOUND);
+        AssertReturn(cchSymPrefix + 5 < sizeof(szSymbol), VERR_SYMBOL_NOT_FOUND);
         memcpy(szSymbol, pszSymPrefix, cchSymPrefix);
 
         /*
@@ -1393,25 +1393,29 @@ VMMR3DECL(int) PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size_t cb
                  * advance the interface cursor.
                  */
                 AssertReturn(cchSymPrefix + cchSym < sizeof(szSymbol), VERR_SYMBOL_NOT_FOUND);
-                memcmp(&szSymbol[cchSymPrefix], pszCur, cchSym);
+                memcpy(&szSymbol[cchSymPrefix], pszCur, cchSym);
                 szSymbol[cchSymPrefix + cchSym] = '\0';
 
-                RTUINTPTR Value;
-                rc = RTLdrGetSymbolEx(pModule->hLdrMod, pModule->pvBits, pModule->ImageBase, szSymbol, &Value);
-                AssertMsgRCBreak(rc, ("Couldn't find symbol '%s' in module '%s'\n", szSymbol, pModule->szName));
-
-                if (fRing0OrRC)
+                if (fRing0)
                 {
+                    void *pvValue;
+                    rc = SUPR3GetSymbolR0((void *)(RTR0PTR)pModule->ImageBase, szSymbol, &pvValue);
+                    AssertMsgRCBreak(rc, ("Couldn't find symbol '%s' in module '%s'\n", szSymbol, pModule->szName));
+
                     PRTR0PTR pValue = (PRTR0PTR)((uintptr_t)pvInterface + offInterface);
                     AssertMsgBreakStmt(offInterface + sizeof(*pValue) <= cbInterface,
                                        ("off=%#x cb=%#x sym=%s\n", offInterface, cbInterface, szSymbol),
                                        rc = VERR_BUFFER_OVERFLOW);
-                    *pValue = (RTR0PTR)Value;
-                    Assert(*pValue == Value);
+                    *pValue = (RTR0PTR)pvValue;
+                    Assert((void *)*pValue == pvValue);
                     offInterface += sizeof(*pValue);
                 }
                 else
                 {
+                    RTUINTPTR Value;
+                    rc = RTLdrGetSymbolEx(pModule->hLdrMod, pModule->pvBits, pModule->ImageBase, szSymbol, &Value);
+                    AssertMsgRCBreak(rc, ("Couldn't find symbol '%s' in module '%s'\n", szSymbol, pModule->szName));
+
                     PRTRCPTR pValue = (PRTRCPTR)((uintptr_t)pvInterface + offInterface);
                     AssertMsgBreakStmt(offInterface + sizeof(*pValue) <= cbInterface,
                                        ("off=%#x cb=%#x sym=%s\n", offInterface, cbInterface, szSymbol),
