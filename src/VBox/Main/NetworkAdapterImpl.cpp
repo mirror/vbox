@@ -1160,6 +1160,8 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
             if (FAILED(rc)) return rc;
         break;
     }
+    if (data.fHasDisabledNAT)
+        mNATEngine->loadSettings(data.nat);
 
     // after loading settings, we are no longer different from the XML on disk
     m_fModified = false;
@@ -1204,6 +1206,7 @@ HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
         break;
 
         case NetworkAttachmentType_NAT:
+            data.fHasDisabledNAT = 0;
             mNATEngine->commit();
             mNATEngine->saveSettings(data.nat);
         break;
@@ -1219,6 +1222,13 @@ HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
         case NetworkAttachmentType_HostOnly:
             data.strName = mData->mHostInterface;
         break;
+    }
+
+    if (data.mode != NetworkAttachmentType_NAT)
+    {
+        data.fHasDisabledNAT = 1; /* ??? */
+        mNATEngine->commit();
+        mNATEngine->saveSettings(data.nat);
     }
 
     // after saving settings, we are no longer different from the XML on disk
