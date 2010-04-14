@@ -595,6 +595,10 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
         int vrc = VINF_SUCCESS;
         Utf8Str Utf8Command(aCommand);
 
+        /* Adjust timeout */
+        if (aTimeoutMS == 0)
+            aTimeoutMS = UINT32_MAX;
+
         /* Prepare arguments. */       
         com::SafeArray<IN_BSTR> args(ComSafeArrayInArg(aArguments));
         uint32_t uNumArgs = args.size();
@@ -723,6 +727,8 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                             break;
                     }
                 }
+                else /* If callback not called within time ... well, that's a timeout! */
+                    vrc = VERR_TIMEOUT;
                 removeCtrlCallbackContext(it);
 
                 if (RT_FAILURE(vrc))
@@ -731,6 +737,11 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                     {
                         rc = setError(VBOX_E_IPRT_ERROR, 
                                       tr("The file \"%s\" was not found on guest"), Utf8Command.raw());
+                    }
+                    else if (vrc == VERR_TIMEOUT)
+                    {
+                        rc = setError(VBOX_E_IPRT_ERROR, 
+                                      tr("The guest guest did not respond within time (%ums)"), aTimeoutMS);
                     }
                     else
                     {
