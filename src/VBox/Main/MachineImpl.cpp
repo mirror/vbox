@@ -124,6 +124,11 @@ Machine::Data::~Data()
         RTSemEventMultiDestroy(mMachineStateDepsSem);
         mMachineStateDepsSem = NIL_RTSEMEVENTMULTI;
     }
+    if (pMachineConfigFile)
+    {
+        delete pMachineConfigFile;
+        pMachineConfigFile = NULL;
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
