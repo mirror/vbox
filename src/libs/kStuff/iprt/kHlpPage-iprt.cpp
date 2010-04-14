@@ -59,7 +59,7 @@ KHLP_DECL(int) kHlpPageAlloc(void **ppv, KSIZE cb, KPROT enmProt, KBOOL fFixed)
         if (RT_SUCCESS(rc))
             *ppv = pv;
         else
-            RTMemPageFree(pv);
+            RTMemPageFree(pv, cb);
     }
     return rc;
 }
