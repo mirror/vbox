@@ -741,7 +741,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                     else if (vrc == VERR_TIMEOUT)
                     {
                         rc = setError(VBOX_E_IPRT_ERROR, 
-                                      tr("The guest guest did not respond within time (%ums)"), aTimeoutMS);
+                                      tr("The guest did not respond within time (%ums)"), aTimeoutMS);
                     }
                     else
                     {
