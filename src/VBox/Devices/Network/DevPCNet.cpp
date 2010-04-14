@@ -241,13 +241,6 @@ struct PCNetState_st
     /** Partner of ILeds. */
     R3PTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
 
-#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
-    /** Async send thread */
-    RTSEMEVENT                          hSendEventSem;
-    /** The Async send thread. */
-    PPDMTHREAD                          pSendThread;
-#endif
-
     /** Access critical section. */
     PDMCRITSECT                         CritSect;
     /** Event semaphore for blocking on receive. */
@@ -2066,18 +2059,11 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
     PCNetState *pThis = PDMINS_2_DATA(pDevIns, PCNetState *);
     NOREF(pItem);
 
-#ifndef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
     /*
      * Transmit as much as we can.
      */
     pcnetXmitPending(pThis, true /*fOnWorkerThread*/);
-#else
-    /*
-     * Wake up the TX thread.
-     */
-    int rc = RTSemEventSignal(pThis->hSendEventSem);
-    AssertRC(rc);
-#endif
+
     return true;
 }
 
@@ -2371,12 +2357,11 @@ static void pcnetTransmit(PCNetState *pThis)
      */
     pThis->aCSR[0] &= ~0x0008;
 
-#ifndef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
     /*
      * Transmit pending packets if possible, defere it if we cannot do it
      * in the current context.
      */
-# if defined(IN_RING0) || defined(IN_RC)
+#if defined(IN_RING0) || defined(IN_RC)
     if (!pThis->CTX_SUFF(pDrv))
     {
         PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pXmitQueue));
@@ -2384,26 +2369,13 @@ static void pcnetTransmit(PCNetState *pThis)
             PDMQueueInsert(pThis->CTX_SUFF(pXmitQueue), pItem);
     }
     else
-# endif
+#endif
     {
         int rc = pcnetXmitPending(pThis, false /*fOnWorkerThread*/);
         if (rc == VERR_TRY_AGAIN)
             rc = VINF_SUCCESS;
         AssertRC(rc);
     }
-#else  /* VBOX_WITH_TX_THREAD_IN_NET_DEVICES */
-    /*
-     * If we're in Ring-3 we should flush the queue now, in GC/R0 we'll queue a flush job.
-     */
-# ifdef IN_RING3
-    int rc = RTSemEventSignal(pThis->hSendEventSem);
-    AssertRC(rc);
-# else
-    PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pXmitQueue));
-    if (RT_UNLIKELY(pItem))
-        PDMQueueInsert(pThis->CTX_SUFF(pXmitQueue), pItem);
-# endif
-#endif /* VBOX_WITH_TX_THREAD_IN_NET_DEVICES */
 }
 
 
@@ -2710,75 +2682,6 @@ static int pcnetXmitPending(PCNetState *pThis, bool fOnWorkerThread)
     return rc;
 }
 
-#ifdef IN_RING3
-#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
-
-/**
- * Async I/O thread for delayed sending of packets.
- *
- * @returns VBox status code. Returning failure will naturally terminate the thread.
- * @param   pDevIns     The pcnet device instance.
- * @param   pThread     The thread.
- */
-static DECLCALLBACK(int) pcnetAsyncSendThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
-{
-    PCNetState *pThis = PDMINS_2_DATA(pDevIns, PCNetState *);
-
-    /*
-     * We can enter this function in two states, initializing or resuming.
-     *
-     * The idea about the initializing bit is that we can do per-thread
-     * initialization while the creator thread can still pick up errors.
-     * At present, there is nothing to init, or at least nothing that
-     * need initing in the thread.
-     */
-    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
-        return VINF_SUCCESS;
-
-    /*
-     * Stay in the run-loop until we're supposed to leave the
-     * running state. If something really bad happens, we'll
-     * quit the loop while in the running state and return
-     * an error status to PDM and let it terminate the thread.
-     */
-    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
-    {
-        /*
-         * Block until we've got something to send or is supposed
-         * to leave the running state.
-         */
-        int rc = RTSemEventWait(pThis->hSendEventSem, RT_INDEFINITE_WAIT);
-        AssertRCReturn(rc, rc);
-        if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
-            break;
-
-        /*
-         * Perform async send.
-         */
-        rc = pcnetXmitPending(pThis, true /*fOnWorkerThread*/);
-        AssertMsg(rc == VINF_SUCCESS || rc == VERR_TRY_AGAIN, ("%Rrc\n", rc));
-   }
-
-    /* The thread is being suspended or terminated. */
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Unblock the send thread so it can respond to a state change.
- *
- * @returns VBox status code.
- * @param   pDevIns     The pcnet device instance.
- * @param   pThread     The send thread.
- */
-static DECLCALLBACK(int) pcnetAsyncSendThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
-{
-    PCNetState *pThis = PDMINS_2_DATA(pDevIns, PCNetState *);
-    return RTSemEventSignal(pThis->hSendEventSem);
-}
-
-# endif /* VBOX_WITH_TX_THREAD_IN_NET_DEVICES*/
-#endif /* IN_RING3 */
 
 /**
  * Poll for changes in RX and TX descriptor rings.
@@ -5080,15 +4983,6 @@ static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
 
     if (PDMCritSectIsInitialized(&pThis->CritSect))
     {
-#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
-        /*
-         * At this point the send thread is suspended and will not enter
-         * this module again. So, no coordination is needed here and PDM
-         * will take care of terminating and cleaning up the thread.
-         */
-        RTSemEventDestroy(pThis->hSendEventSem);
-        pThis->hSendEventSem = NIL_RTSEMEVENT;
-#endif
         RTSemEventSignal(pThis->hEventOutOfRxSpace);
         RTSemEventDestroy(pThis->hEventOutOfRxSpace);
         pThis->hEventOutOfRxSpace = NIL_RTSEMEVENT;
@@ -5120,9 +5014,6 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Init what's required to make the destructor safe.
      */
     pThis->hEventOutOfRxSpace = NIL_RTSEMEVENT;
-#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
-    pThis->hSendEventSem = NIL_RTSEMEVENT;
-#endif
 
     /*
      * Validate configuration.
@@ -5392,16 +5283,6 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Reset the device state. (Do after attaching.)
      */
     pcnetHardReset(pThis);
-
-#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
-    /* Create send queue for the async send thread. */
-    rc = RTSemEventCreate(&pThis->hSendEventSem);
-    AssertRC(rc);
-
-    /* Create asynchronous thread */
-    rc = PDMDevHlpThreadCreate(pDevIns, &pThis->pSendThread, pThis, pcnetAsyncSendThread, pcnetAsyncSendThreadWakeUp, 0, RTTHREADTYPE_IO, "PCNET_TX");
-    AssertRCReturn(rc, rc);
-#endif
 
 #ifdef VBOX_WITH_STATISTICS
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMMIOReadGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in GC",         "/Devices/PCNet%d/MMIO/ReadGC", iInstance);
