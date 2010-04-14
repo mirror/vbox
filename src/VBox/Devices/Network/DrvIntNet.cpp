@@ -111,7 +111,7 @@ typedef struct DRVINTNET
     /** Interface handle. */
     INTNETIFHANDLE                  hIf;
     /** The receive thread state. */
-    RECVSTATE volatile             enmRecvState;
+    RECVSTATE volatile              enmRecvState;
     /** The receive thread. */
     RTTHREAD                        hRecvThread;
     /** The event semaphore that the receive thread waits on.  */
@@ -134,10 +134,8 @@ typedef struct DRVINTNET
     /** Set if data transmission should start immediately and deactivate
      * as late as possible. */
     bool                            fActivateEarlyDeactivateLate;
-#if HC_ARCH_BITS == 64
     /** Padding. */
-    bool                            afReserved[HC_ARCH_BITS == 64 ? 4 : 0];
-#endif
+    bool                            afReserved[HC_ARCH_BITS == 64 ? 4 : 4];
     /** The network name. */
     char                            szNetwork[INTNET_MAX_NETWORK_NAME];
 
