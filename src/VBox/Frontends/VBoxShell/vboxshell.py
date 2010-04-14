@@ -350,16 +350,22 @@ def takeScreenshot(ctx,console,args):
         f = args[0]
     else:
         f = "/tmp/screenshot.png"
+    if len(args) > 3:
+        screen = args[3]
+    else:
+        screen = 0
+    (fb,xorig,yorig) = display.getFramebuffer(screen)
     if len(args) > 1:
         w = args[1]
     else:
-        w = console.display.width
+        w = fb.width
     if len(args) > 2:
         h = args[2]
     else:
-        h = console.display.height
-    print "Saving screenshot (%d x %d) in %s..." %(w,h,f)
-    data = display.takeScreenShotToArray(w,h)
+        h = fb.height
+
+    print "Saving screenshot (%d x %d) screen %d in %s..." %(w,h,screen,f)
+    data = display.takeScreenShotToArray(screen, w,h)
     size = (w,h)
     mode = "RGBA"
     im = Image.frombuffer(mode, size, data, "raw", mode, 0, 1)
@@ -719,8 +725,8 @@ def guestCmd(ctx, args):
     return 0
 
 def screenshotCmd(ctx, args):
-    if (len(args) < 3):
-        print "usage: screenshot name file <width> <height>"
+    if (len(args) < 2):
+        print "usage: screenshot vm <file> <width> <height> <monitor>"
         return 0
     mach = argsToMach(ctx,args)
     if mach == None:
