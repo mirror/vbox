@@ -549,18 +549,6 @@ public:
     }
 
     /**
-     * Intended to pass instances as out (|char **|) parameters to methods. Takes
-     * the ownership of the returned data.
-     *
-     * @remarks    See ministring::jolt().
-     */
-    char **asOutParam()
-    {
-        cleanup();
-        return &m_psz;
-    }
-
-    /**
      *  Static immutable null object. May be used for comparison purposes.
      */
     static const Utf8Str Null;
