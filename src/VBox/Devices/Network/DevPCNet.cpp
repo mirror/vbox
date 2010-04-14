@@ -49,7 +49,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#define VBOX_WITH_TX_THREAD_IN_NET_DEVICES 1 //debug, bird, remove
+
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -119,11 +119,65 @@ typedef struct PCNetState_st PCNetState;
 struct PCNetState_st
 {
     PCIDEVICE                           PciDev;
+
+    /** Pointer to the device instance - R3. */
+    PPDMDEVINSR3                        pDevInsR3;
+    /** Transmit signaller - R3. */
+    R3PTRTYPE(PPDMQUEUE)                pXmitQueueR3;
+    /** Receive signaller - R3. */
+    R3PTRTYPE(PPDMQUEUE)                pCanRxQueueR3;
+    /** Pointer to the connector of the attached network driver - R3. */
+    PPDMINETWORKUPR3                    pDrvR3;
+    /** Pointer to the attached network driver. */
+    R3PTRTYPE(PPDMIBASE)                pDrvBase;
+    /** LUN\#0 + status LUN: The base interface. */
+    PDMIBASE                            IBase;
+    /** LUN\#0: The network port interface. */
+    PDMINETWORKDOWN                     INetworkDown;
+    /** LUN\#0: The network config port interface. */
+    PDMINETWORKCONFIG                   INetworkConfig;
+    /** The shared memory used for the private interface - R3. */
+    R3PTRTYPE(PPCNETGUESTSHAREDMEMORY)  pSharedMMIOR3;
+    /** Software Interrupt timer - R3. */
+    PTMTIMERR3                          pTimerSoftIntR3;
 #ifndef PCNET_NO_POLLING
     /** Poll timer - R3. */
     PTMTIMERR3                          pTimerPollR3;
+#endif
+    /** Restore timer.
+     *  This is used to disconnect and reconnect the link after a restore. */
+    PTMTIMERR3                          pTimerRestore;
+
+    /** Pointer to the device instance - R0. */
+    PPDMDEVINSR0                        pDevInsR0;
+    /** Receive signaller - R0. */
+    R0PTRTYPE(PPDMQUEUE)                pCanRxQueueR0;
+    /** Transmit signaller - R0. */
+    R0PTRTYPE(PPDMQUEUE)                pXmitQueueR0;
+    /** Pointer to the connector of the attached network driver - R0. */
+    PPDMINETWORKUPR0                    pDrvR0;
+    /** The shared memory used for the private interface - R0. */
+    R0PTRTYPE(PPCNETGUESTSHAREDMEMORY)  pSharedMMIOR0;
+    /** Software Interrupt timer - R0. */
+    PTMTIMERR0                          pTimerSoftIntR0;
+#ifndef PCNET_NO_POLLING
     /** Poll timer - R0. */
     PTMTIMERR0                          pTimerPollR0;
+#endif
+
+    /** Pointer to the device instance - RC. */
+    PPDMDEVINSRC                        pDevInsRC;
+    /** Receive signaller - RC. */
+    RCPTRTYPE(PPDMQUEUE)                pCanRxQueueRC;
+    /** Transmit signaller - RC. */
+    RCPTRTYPE(PPDMQUEUE)                pXmitQueueRC;
+    /** Pointer to the connector of the attached network driver - RC. */
+    PPDMINETWORKUPRC                    pDrvRC;
+    /** The shared memory used for the private interface - RC. */
+    RCPTRTYPE(PPCNETGUESTSHAREDMEMORY)  pSharedMMIORC;
+    /** Software Interrupt timer - RC. */
+    PTMTIMERRC                          pTimerSoftIntRC;
+#ifndef PCNET_NO_POLLING
     /** Poll timer - RC. */
     PTMTIMERRC                          pTimerPollRC;
 #endif
@@ -131,13 +185,6 @@ struct PCNetState_st
 #if HC_ARCH_BITS == 64
     uint32_t                            Alignment1;
 #endif
-
-    /** Software Interrupt timer - R3. */
-    PTMTIMERR3                          pTimerSoftIntR3;
-    /** Software Interrupt timer - R0. */
-    PTMTIMERR0                          pTimerSoftIntR0;
-    /** Software Interrupt timer - RC. */
-    PTMTIMERRC                          pTimerSoftIntRC;
 
     /** Register Address Pointer */
     uint32_t                            u32RAP;
@@ -154,7 +201,7 @@ struct PCNetState_st
     uint16_t                            aBCR[BCR_MAX_RAP];
     uint16_t                            aMII[MII_MAX_REG];
     uint16_t                            u16CSR0LastSeenByGuest;
-    uint16_t                            Alignment2[HC_ARCH_BITS == 32 ? 2 : 4];
+    uint16_t                            Alignment2[HC_ARCH_BITS == 32 ? 2 : 2];
     /** Last time we polled the queues */
     uint64_t                            u64LastPoll;
 
@@ -171,38 +218,6 @@ struct PCNetState_st
     /** Bits 16..23 in 16-bit mode */
     RTGCPHYS32                          GCUpperPhys;
 
-    /** Transmit signaller - RC. */
-    RCPTRTYPE(PPDMQUEUE)                pXmitQueueRC;
-    /** Transmit signaller - R3. */
-    R3PTRTYPE(PPDMQUEUE)                pXmitQueueR3;
-    /** Transmit signaller - R0. */
-    R0PTRTYPE(PPDMQUEUE)                pXmitQueueR0;
-
-    /** Receive signaller - R3. */
-    R3PTRTYPE(PPDMQUEUE)                pCanRxQueueR3;
-    /** Receive signaller - R0. */
-    R0PTRTYPE(PPDMQUEUE)                pCanRxQueueR0;
-    /** Receive signaller - RC. */
-    RCPTRTYPE(PPDMQUEUE)                pCanRxQueueRC;
-    /** Pointer to the device instance - RC. */
-    PPDMDEVINSRC                        pDevInsRC;
-    /** Pointer to the device instance - R3. */
-    PPDMDEVINSR3                        pDevInsR3;
-    /** Pointer to the device instance - R0. */
-    PPDMDEVINSR0                        pDevInsR0;
-    /** Restore timer.
-     *  This is used to disconnect and reconnect the link after a restore. */
-    PTMTIMERR3                          pTimerRestore;
-    /** Pointer to the connector of the attached network driver. */
-    R3PTRTYPE(PPDMINETWORKUP)           pDrvR3;
-    /** Pointer to the attached network driver. */
-    R3PTRTYPE(PPDMIBASE)                pDrvBase;
-    /** LUN\#0 + status LUN: The base interface. */
-    PDMIBASE                            IBase;
-    /** LUN\#0: The network port interface. */
-    PDMINETWORKDOWN                     INetworkDown;
-    /** LUN\#0: The network config port interface. */
-    PDMINETWORKCONFIG                   INetworkConfig;
     /** Base address of the MMIO region. */
     RTGCPHYS32                          MMIOBase;
     /** Base port of the I/O space region. */
@@ -217,7 +232,7 @@ struct PCNetState_st
     /** The configured MAC address. */
     RTMAC                               MacConfigured;
     /** Alignment padding. */
-    uint8_t                             Alignment4[HC_ARCH_BITS == 64 ? 6 : 6];
+    uint8_t                             Alignment4[HC_ARCH_BITS == 64 ? 2 : 2];
 
     /** The LED. */
     PDMLED                              Led;
@@ -241,7 +256,7 @@ struct PCNetState_st
     bool volatile                       fMaybeOutOfSpace;
     /** True if we signal the guest that RX packets are missing. */
     bool                                fSignalRxMiss;
-    uint8_t                             Alignment5[HC_ARCH_BITS == 64 ? 6 : 2];
+    uint8_t                             Alignment5[HC_ARCH_BITS == 64 ? 2 : 6];
 
 #ifdef PCNET_NO_POLLING
     RTGCPHYS32                          TDRAPhysOld;
@@ -253,13 +268,6 @@ struct PCNetState_st
     DECLRCCALLBACKMEMBER(int, pfnEMInterpretInstructionRC, (PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize));
     DECLR0CALLBACKMEMBER(int, pfnEMInterpretInstructionR0, (PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize));
 #endif
-
-    /** The shared memory used for the private interface - R3. */
-    R3PTRTYPE(PPCNETGUESTSHAREDMEMORY)  pSharedMMIOR3;
-    /** The shared memory used for the private interface - R0. */
-    R0PTRTYPE(PPCNETGUESTSHAREDMEMORY)  pSharedMMIOR0;
-    /** The shared memory used for the private interface - RC. */
-    RCPTRTYPE(PPCNETGUESTSHAREDMEMORY)  pSharedMMIORC;
 
     /** Error counter for bad receive descriptors. */
     uint32_t                            uCntBadRMD;
@@ -321,7 +329,7 @@ struct PCNetState_st
 # endif
 #endif /* VBOX_WITH_STATISTICS */
 };
-AssertCompileMemberAlignment(PCNetState, StatReceiveBytes, 8);
+//AssertCompileMemberAlignment(PCNetState, StatReceiveBytes, 8);
 
 #define PCNETSTATE_2_DEVINS(pPCNet)            ((pPCNet)->CTX_SUFF(pDevIns))
 #define PCIDEV_2_PCNETSTATE(pPciDev)           ((PCNetState *)(pPciDev))
@@ -606,6 +614,9 @@ AssertCompileSize(RMD, 16);
         (R)->rmd2.zeros))
 
 static void pcnetPollTimerStart(PCNetState *pThis);
+static int  pcnetXmitPending(PCNetState *pThis, bool fOnWorkerThread);
+
+
 
 /**
  * Checks if the link is up.
@@ -803,7 +814,6 @@ DECLINLINE(int) pcnetRmdLoad(PCNetState *pThis, RMD *rmd, RTGCPHYS32 addr, bool 
     return !!rmd->rmd1.own;
 }
 
-#ifdef IN_RING3
 
 /**
  * Store receive message descriptor and hand it over to the host (the VM guest).
@@ -854,6 +864,7 @@ DECLINLINE(void) pcnetRmdStorePassHost(PCNetState *pThis, RMD *rmd, RTGCPHYS32 a
     }
 }
 
+#ifdef IN_RING3
 /**
  * Read+Write a TX/RX descriptor to prevent PDMDevHlpPhysWrite() allocating
  * pages later when we shouldn't schedule to EMT. Temporarily hack.
@@ -874,7 +885,6 @@ static void pcnetDescTouch(PCNetState *pThis, RTGCPHYS32 addr)
         PDMDevHlpPhysWrite(pDevIns, addr, aBuf, cbDesc);
     }
 }
-
 #endif /* IN_RING3 */
 
 /** Checks if it's a bad (as in invalid) RMD.*/
@@ -916,7 +926,6 @@ struct ether_header /** @todo Use RTNETETHERHDR */
 
 
 #ifdef IN_RING3
-
 /**
  * Initialize the shared memory for the private guest interface.
  *
@@ -960,6 +969,7 @@ static void pcnetInitSharedMemory(PCNetState *pThis)
     /* Update the header with the final size. */
     pThis->pSharedMMIOR3->cbUsed = off;
 }
+#endif /* IN_RING3 */
 
 #define MULTICAST_FILTER_LEN 8
 
@@ -1120,7 +1130,6 @@ static int ladr_match(PCNetState *pThis, const uint8_t *buf, size_t size)
     return 0;
 }
 
-#endif /* IN_RING3 */
 
 /**
  * Get the receive descriptor ring address with a given index.
@@ -1825,8 +1834,6 @@ static int pcnetTdtePoll(PCNetState *pThis, TMD *tmd)
 }
 
 
-#ifdef IN_RING3
-
 /**
  * Write data into guest receive buffers.
  */
@@ -2106,7 +2113,7 @@ DECLINLINE(int) pcnetXmitAllocBuf(PCNetState *pThis, size_t cbMin, bool fLoopbac
     }
     else
     {
-        PPDMINETWORKUP pDrv = pThis->pDrvR3;
+        PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
         if (RT_LIKELY(pDrv))
         {
             rc = pDrv->pfnAllocBuf(pDrv, cbMin, NULL /*pGso*/, ppSgBuf);
@@ -2139,7 +2146,7 @@ DECLINLINE(void) pcnetXmitFreeBuf(PCNetState *pThis, bool fLoopback, PPDMSCATTER
             pSgBuf->pvAllocator = NULL;
         else
         {
-            PPDMINETWORKUP pDrv = pThis->pDrvR3;
+            PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
             if (RT_LIKELY(pDrv))
                 pDrv->pfnFreeBuf(pDrv, pSgBuf);
         }
@@ -2184,7 +2191,7 @@ DECLINLINE(int) pcnetXmitSendBuf(PCNetState *pThis, bool fLoopback, PPDMSCATTERG
         if (pSgBuf->cbUsed > 70) /* unqualified guess */
             pThis->Led.Asserted.s.fWriting = pThis->Led.Actual.s.fWriting = 1;
 
-        PPDMINETWORKUP pDrv = pThis->pDrvR3;
+        PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
         if (RT_LIKELY(pDrv))
         {
             rc = pDrv->pfnSendBuf(pDrv, pSgBuf, fOnWorkerThread);
@@ -2342,18 +2349,6 @@ static void pcnetXmitFailTMDGeneric(PCNetState *pThis, TMD *pTmd)
 
 
 /**
- * Flushes queued frames.
- */
-DECLINLINE(void) pcnetXmitFlushFrames(PCNetState *pThis)
-{
-    pcnetXmitQueueConsumer(pThis->CTX_SUFF(pDevIns), NULL);
-}
-
-#endif /* IN_RING3 */
-
-
-
-/**
  * Try to transmit frames
  */
 static void pcnetTransmit(PCNetState *pThis)
@@ -2376,19 +2371,41 @@ static void pcnetTransmit(PCNetState *pThis)
      */
     pThis->aCSR[0] &= ~0x0008;
 
+#ifndef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
+    /*
+     * Transmit pending packets if possible, defere it if we cannot do it
+     * in the current context.
+     */
+# if defined(IN_RING0) || defined(IN_RC)
+    if (!pThis->CTX_SUFF(pDrv))
+    {
+        PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pXmitQueue));
+        if (RT_UNLIKELY(pItem))
+            PDMQueueInsert(pThis->CTX_SUFF(pXmitQueue), pItem);
+    }
+    else
+# endif
+    {
+        int rc = pcnetXmitPending(pThis, false /*fOnWorkerThread*/);
+        if (rc == VERR_TRY_AGAIN)
+            rc = VINF_SUCCESS;
+        AssertRC(rc);
+    }
+#else  /* VBOX_WITH_TX_THREAD_IN_NET_DEVICES */
     /*
      * If we're in Ring-3 we should flush the queue now, in GC/R0 we'll queue a flush job.
      */
-#ifdef IN_RING3
-    pcnetXmitFlushFrames(pThis);
-#else
+# ifdef IN_RING3
+    int rc = RTSemEventSignal(pThis->hSendEventSem);
+    AssertRC(rc);
+# else
     PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pXmitQueue));
     if (RT_UNLIKELY(pItem))
         PDMQueueInsert(pThis->CTX_SUFF(pXmitQueue), pItem);
-#endif
+# endif
+#endif /* VBOX_WITH_TX_THREAD_IN_NET_DEVICES */
 }
 
-#ifdef IN_RING3
 
 /**
  * Actually try transmit frames.
@@ -2663,7 +2680,7 @@ static int pcnetXmitPending(PCNetState *pThis, bool fOnWorkerThread)
     /*
      * Grab the xmit lock of the driver as well as the E1K device state.
      */
-    PPDMINETWORKUP pDrv = pThis->pDrvR3;
+    PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
     if (pDrv)
     {
         rc = pDrv->pfnBeginXmit(pDrv, false /*fOnWorkerThread*/);
@@ -2693,6 +2710,7 @@ static int pcnetXmitPending(PCNetState *pThis, bool fOnWorkerThread)
     return rc;
 }
 
+#ifdef IN_RING3
 #ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
 
 /**
@@ -4922,6 +4940,8 @@ static DECLCALLBACK(void) pcnetDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
      */
     pThis->pDrvBase = NULL;
     pThis->pDrvR3 = NULL;
+    pThis->pDrvR0 = NULL;
+    pThis->pDrvRC = NULL;
 
     PDMCritSectLeave(&pThis->CritSect);
 }
@@ -4967,6 +4987,8 @@ static DECLCALLBACK(int) pcnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
         pThis->pDrvR3 = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
         AssertMsgStmt(pThis->pDrvR3, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                       rc = VERR_PDM_MISSING_INTERFACE_BELOW);
+        pThis->pDrvR0 = PDMIBASER0_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASER0), PDMINETWORKUP);
+        pThis->pDrvRC = PDMIBASERC_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASERC), PDMINETWORKUP);
     }
     else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
              || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
@@ -5058,6 +5080,7 @@ static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
 
     if (PDMCritSectIsInitialized(&pThis->CritSect))
     {
+#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
         /*
          * At this point the send thread is suspended and will not enter
          * this module again. So, no coordination is needed here and PDM
@@ -5065,6 +5088,7 @@ static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
          */
         RTSemEventDestroy(pThis->hSendEventSem);
         pThis->hSendEventSem = NIL_RTSEMEVENT;
+#endif
         RTSemEventSignal(pThis->hEventOutOfRxSpace);
         RTSemEventDestroy(pThis->hEventOutOfRxSpace);
         pThis->hEventOutOfRxSpace = NIL_RTSEMEVENT;
@@ -5096,7 +5120,9 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Init what's required to make the destructor safe.
      */
     pThis->hEventOutOfRxSpace = NIL_RTSEMEVENT;
+#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
     pThis->hSendEventSem = NIL_RTSEMEVENT;
+#endif
 
     /*
      * Validate configuration.
@@ -5350,6 +5376,8 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         pThis->pDrvR3 = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
         AssertMsgReturn(pThis->pDrvR3, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                         VERR_PDM_MISSING_INTERFACE_BELOW);
+        pThis->pDrvR0 = PDMIBASER0_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASER0), PDMINETWORKUP);
+        pThis->pDrvRC = PDMIBASERC_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASERC), PDMINETWORKUP);
     }
     else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
              || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)

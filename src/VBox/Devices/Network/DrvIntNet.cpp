@@ -84,13 +84,32 @@ typedef struct DRVINTNET
     PPDMDRVINSR3                    pDrvInsR3;
     /** Pointer to the communication buffer. */
     R3PTRTYPE(PINTNETBUF)           pBufR3;
+    /** Ring-3 base interface for the ring-0 context. */
+    PDMIBASER0                      IBaseR0;
+    /** Ring-3 base interface for the raw-mode context. */
+    PDMIBASERC                      IBaseRC;
+    RTR3PTR                         R3PtrAlignment;
+
+    /** The network interface for the ring-0 context. */
+    PDMINETWORKUPR0                 INetworkUpR0;
+    /** Pointer to the driver instance. */
+    PPDMDRVINSR0                    pDrvInsR0;
+    RTR0PTR                         R0PtrAlignment;
+
+    /** The network interface for the raw-mode context. */
+    PDMINETWORKUPRC                 INetworkUpRC;
+    /** Pointer to the driver instance. */
+    PPDMDRVINSRC                    pDrvInsRC;
+    RTRCPTR                         RCPtrAlignment;
+
+    /** The transmit lock. */
+    PDMCRITSECT                     XmitLock;
     /** Interface handle. */
     INTNETIFHANDLE                  hIf;
-
     /** The thread state. */
     ASYNCSTATE volatile             enmState;
     /** Reader thread. */
-    RTTHREAD                        Thread;
+    RTTHREAD                        hRxThread;
     /** Event semaphore the Thread waits on while the VM is suspended. */
     RTSEMEVENT                      hEvtSuspended;
     /** Scatter/gather descriptor cache. */
@@ -102,35 +121,29 @@ typedef struct DRVINTNET
      * as late as possible. */
     bool                            fActivateEarlyDeactivateLate;
     /** Padding. */
-    bool                            afReserved[2];
+    bool                            afReserved[2+4];
     /** The network name. */
     char                            szNetwork[INTNET_MAX_NETWORK_NAME];
 
-    /** Base interface for ring-0. */
-    PDMIBASER0                      IBaseR0;
-    /** Base interface for ring-0. */
-    PDMIBASERC                      IBaseRC;
-
-    /** The transmit lock. */
-    PDMCRITSECT                     XmitLock;
-
-#ifdef LOG_ENABLED
-    /** The nano ts of the last transfer. */
-    uint64_t                        u64LastTransferTS;
-    /** The nano ts of the last receive. */
-    uint64_t                        u64LastReceiveTS;
-#endif
+    /** Number of GSO packets sent. */
+    STAMCOUNTER                     StatSentGso;
+    /** Number of GSO packets recevied. */
+    STAMCOUNTER                     StatReceivedGso;
 #ifdef VBOX_WITH_STATISTICS
     /** Profiling packet transmit runs. */
     STAMPROFILE                     StatTransmit;
     /** Profiling packet receive runs. */
     STAMPROFILEADV                  StatReceive;
 #endif /* VBOX_WITH_STATISTICS */
-    /** Number of GSO packets sent. */
-    STAMCOUNTER                     StatSentGso;
-    /** Number of GSO packets recevied. */
-    STAMCOUNTER                     StatReceivedGso;
+#ifdef LOG_ENABLED
+    /** The nano ts of the last transfer. */
+    uint64_t                        u64LastTransferTS;
+    /** The nano ts of the last receive. */
+    uint64_t                        u64LastReceiveTS;
+#endif
 } DRVINTNET;
+AssertCompileMemberAlignment(DRVINTNET, XmitLock, 8);
+AssertCompileMemberAlignment(DRVINTNET, StatSentGso, 8);
 /** Pointer to instance data of the internal networking driver. */
 typedef DRVINTNET *PDRVINTNET;
 
@@ -667,7 +680,9 @@ static DECLCALLBACK(RTRCPTR) drvR3IntNetIBaseRC_QueryInterface(PPDMIBASERC pInte
 {
     PDRVINTNET pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, IBaseRC);
 
-    PDMIBASERC_RETURN_INTERFACE(pThis->pDrvInsR3, pszIID, PDMIBASERC, &pThis->IBaseRC);
+#ifdef VBOX_WITH_R0_AND_RC_DRIVERS
+    PDMIBASERC_RETURN_INTERFACE(pThis->pDrvInsR3, pszIID, PDMINETWORKUP, &pThis->INetworkUpRC);
+#endif
     return NIL_RTRCPTR;
 }
 
@@ -679,8 +694,9 @@ static DECLCALLBACK(RTRCPTR) drvR3IntNetIBaseRC_QueryInterface(PPDMIBASERC pInte
 static DECLCALLBACK(RTR0PTR) drvR3IntNetIBaseR0_QueryInterface(PPDMIBASER0 pInterface, const char *pszIID)
 {
     PDRVINTNET pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, IBaseR0);
-
-    PDMIBASER0_RETURN_INTERFACE(pThis->pDrvInsR3, pszIID, PDMIBASER0, &pThis->IBaseR0);
+#ifdef VBOX_WITH_R0_AND_RC_DRIVERS
+    PDMIBASER0_RETURN_INTERFACE(pThis->pDrvInsR3, pszIID, PDMINETWORKUP, &pThis->INetworkUpR0);
+#endif
     return NIL_RTR0PTR;
 }
 
@@ -887,13 +903,13 @@ static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
     /*
      * Wait for the thread to terminate.
      */
-    if (pThis->Thread != NIL_RTTHREAD)
+    if (pThis->hRxThread != NIL_RTTHREAD)
     {
         if (hEvtSuspended != NIL_RTSEMEVENT)
             RTSemEventSignal(hEvtSuspended);
-        int rc = RTThreadWait(pThis->Thread, 5000, NULL);
+        int rc = RTThreadWait(pThis->hRxThread, 5000, NULL);
         AssertRC(rc);
-        pThis->Thread = NIL_RTTHREAD;
+        pThis->hRxThread = NIL_RTTHREAD;
     }
 
     /*
@@ -949,7 +965,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      */
     pThis->pDrvInsR3                                = pDrvIns;
     pThis->hIf                                      = INTNET_HANDLE_INVALID;
-    pThis->Thread                                   = NIL_RTTHREAD;
+    pThis->hRxThread                                = NIL_RTTHREAD;
     pThis->hEvtSuspended                            = NIL_RTSEMEVENT;
     pThis->hSgCache                                 = NIL_RTMEMCACHE;
     pThis->enmState                                 = ASYNCSTATE_SUSPENDED;
@@ -1275,7 +1291,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * Create the async I/O thread.
      * Note! Using a PDM thread here doesn't fit with the IsService=true operation.
      */
-    rc = RTThreadCreate(&pThis->Thread, drvR3IntNetAsyncIoThread, pThis, _128K, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "INTNET");
+    rc = RTThreadCreate(&pThis->hRxThread, drvR3IntNetAsyncIoThread, pThis, _128K, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "INTNET");
     if (RT_FAILURE(rc))
     {
         AssertRC(rc);

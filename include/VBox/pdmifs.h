@@ -117,7 +117,7 @@ typedef struct PDMIBASE
     do { \
         if (RTUuidCompare2Strs((pszIID), InterfaceType##_IID) == 0) \
         { \
-            InterfaceType *pReturnInterfaceTypeCheck = (pInterface); \
+            P##InterfaceType pReturnInterfaceTypeCheck = (pInterface); \
             return pReturnInterfaceTypeCheck; \
         } \
     } while (0)
@@ -158,15 +158,16 @@ typedef PDMIBASERC *PPDMIBASERC;
  *
  * @returns PDMIBASERC::pfnQueryInterface return value.
  *
- * @param   pIBaseRC        Pointer to the base ring-0 interface.
- * @param   InterfaceType   The interface type name.  The interface ID is
- *                          derived from this by appending _IID.
+ * @param   pIBaseRC        Pointer to the base raw-mode context interface.  Can
+ *                          be NULL.
+ * @param   InterfaceType   The interface type base name, no trailing RC.  The
+ *                          interface ID is derived from this by appending _IID.
  *
  * @remarks Unlike PDMIBASE_QUERY_INTERFACE, this macro is not able to do any
  *          implicit type checking for you.
  */
 #define PDMIBASERC_QUERY_INTERFACE(pIBaseRC, InterfaceType)  \
-    ( (InterfaceType *)(pIBaseRC)->pfnQueryInterface(pIBaseRC, InterfaceType##_IID ) )
+    ( (P##InterfaceType##RC)((pIBaseRC) ? (pIBaseRC)->pfnQueryInterface(pIBaseRC, InterfaceType##_IID) : NIL_RTRCPTR) )
 
 /**
  * Helper macro for implementing PDMIBASERC::pfnQueryInterface.
@@ -176,17 +177,18 @@ typedef PDMIBASERC *PPDMIBASERC;
  *
  * @param   pIns            Pointer to the instance data.
  * @param   pszIID          The ID of the interface that is being queried.
- * @param   InterfaceType   The interface type name.  The interface ID is
- *                          derived from this by appending _IID.
+ * @param   InterfaceType   The interface type base name, no trailing RC.  The
+ *                          interface ID is derived from this by appending _IID.
  * @param   pInterface      The interface address expression.  This must resolve
  *                          to some address within the instance data.
+ * @remarks Don't use with PDMIBASE.
  */
 #define PDMIBASERC_RETURN_INTERFACE(pIns, pszIID, InterfaceType, pInterface)  \
     do { \
         Assert((uintptr_t)pInterface - PDMINS_2_DATA(pIns, uintptr_t) < _4M); \
         if (RTUuidCompare2Strs((pszIID), InterfaceType##_IID) == 0) \
         { \
-            InterfaceType *pReturnInterfaceTypeCheck = (pInterface); \
+            InterfaceType##RC *pReturnInterfaceTypeCheck = (pInterface); \
             return (uintptr_t)pReturnInterfaceTypeCheck \
                  - PDMINS_2_DATA(pIns, uintptr_t) \
                  + PDMINS_2_DATA_RCPTR(pIns); \
@@ -228,15 +230,15 @@ typedef PDMIBASER0 *PPDMIBASER0;
  *
  * @returns PDMIBASER0::pfnQueryInterface return value.
  *
- * @param   pIBaseR0        Pointer to the base ring-0 interface.
- * @param   InterfaceType   The interface type name.  The interface ID is
- *                          derived from this by appending _IID.
+ * @param   pIBaseR0        Pointer to the base ring-0 interface.  Can be NULL.
+ * @param   InterfaceType   The interface type base name, no trailing R0.  The
+ *                          interface ID is derived from this by appending _IID.
  *
  * @remarks Unlike PDMIBASE_QUERY_INTERFACE, this macro is not able to do any
  *          implicit type checking for you.
  */
 #define PDMIBASER0_QUERY_INTERFACE(pIBaseR0, InterfaceType)  \
-    ( (InterfaceType *)(pIBaseR0)->pfnQueryInterface(pIBaseR0, InterfaceType##_IID ) )
+    ( (P##InterfaceType##R0)((pIBaseR0) ? (pIBaseR0)->pfnQueryInterface(pIBaseR0, InterfaceType##_IID) : NIL_RTR0PTR) )
 
 /**
  * Helper macro for implementing PDMIBASER0::pfnQueryInterface.
@@ -246,17 +248,18 @@ typedef PDMIBASER0 *PPDMIBASER0;
  *
  * @param   pIns            Pointer to the instance data.
  * @param   pszIID          The ID of the interface that is being queried.
- * @param   InterfaceType   The interface type name.  The interface ID is
- *                          derived from this by appending _IID.
+ * @param   InterfaceType   The interface type base name, no trailing R0.  The
+ *                          interface ID is derived from this by appending _IID.
  * @param   pInterface      The interface address expression.  This must resolve
  *                          to some address within the instance data.
+ * @remarks Don't use with PDMIBASE.
  */
 #define PDMIBASER0_RETURN_INTERFACE(pIns, pszIID, InterfaceType, pInterface)  \
     do { \
         Assert((uintptr_t)pInterface - PDMINS_2_DATA(pIns, uintptr_t) < _4M); \
         if (RTUuidCompare2Strs((pszIID), InterfaceType##_IID) == 0) \
         { \
-            InterfaceType *pReturnInterfaceTypeCheck = (pInterface); \
+            InterfaceType##R0 *pReturnInterfaceTypeCheck = (pInterface); \
             return (uintptr_t)pReturnInterfaceTypeCheck \
                  - PDMINS_2_DATA(pIns, uintptr_t) \
                  + PDMINS_2_DATA_R0PTR(pIns); \
@@ -1506,7 +1509,7 @@ typedef struct PDMICHARPORT
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnNotifyStatusLinesChanged,(PPDMICHARPORT pInterface, uint32_t fNewStatusLines));
-    
+
     /**
      * Notify the device when the driver buffer is full.
      *

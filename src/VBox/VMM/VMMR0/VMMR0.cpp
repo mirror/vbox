@@ -43,6 +43,7 @@
 #include <VBox/log.h>
 
 #include <iprt/assert.h>
+#include <iprt/crc32.h>
 #include <iprt/mp.h>
 #include <iprt/stdarg.h>
 #include <iprt/string.h>
@@ -69,6 +70,11 @@ RT_C_DECLS_END
 *******************************************************************************/
 /** Pointer to the internal networking service instance. */
 PINTNET g_pIntNet = 0;
+
+PFNRT g_VMMGCDeps[] =
+{
+    (PFNRT)RTCrc32
+};
 
 
 /**

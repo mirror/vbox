@@ -176,7 +176,14 @@ typedef enum PDMNETWORKLINKSTATE
 
 
 /** Pointer to a network connector interface */
-typedef struct PDMINETWORKUP *PPDMINETWORKUP;
+typedef R3PTRTYPE(struct PDMINETWORKUP *) PPDMINETWORKUPR3;
+/** Pointer to a network connector interface, ring-0 context. */
+typedef R0PTRTYPE(struct PDMINETWORKUPR0 *) PPDMINETWORKUPR0;
+/** Pointer to a network connector interface, raw-mode context. */
+typedef RCPTRTYPE(struct PDMINETWORKUPRC *) PPDMINETWORKUPRC;
+/** Pointer to a current context network connector interface. */
+typedef CTX_SUFF(PPDMINETWORKUP) PPDMINETWORKUP;
+
 /**
  * Network connector interface (up).
  * Pair with PDMINETWORKDOWN.
@@ -306,6 +313,43 @@ typedef struct PDMINETWORKUP
     /** @todo Add a callback that informs the driver chain about MAC address changes if we ever implement that.  */
 
 } PDMINETWORKUP;
+
+/** Ring-0 edition of PDMINETWORKUP. */
+typedef struct PDMINETWORKUPR0
+{
+    /** @copydoc PDMINETWORKUP::pfnBeginXmit */
+    DECLR0CALLBACKMEMBER(int,  pfnBeginXmit,(PPDMINETWORKUPR0 pInterface, bool fOnWorkerThread));
+    /** @copydoc PDMINETWORKUP::pfnAllocBuf */
+    DECLR0CALLBACKMEMBER(int,  pfnAllocBuf,(PPDMINETWORKUPR0 pInterface, size_t cbMin, PCPDMNETWORKGSO pGso,
+                                            PPPDMSCATTERGATHER ppSgBuf));
+    /** @copydoc PDMINETWORKUP::pfnFreeBuf */
+    DECLR0CALLBACKMEMBER(int,  pfnFreeBuf,(PPDMINETWORKUPR0 pInterface, PPDMSCATTERGATHER pSgBuf));
+    /** @copydoc PDMINETWORKUP::pfnSendBuf */
+    DECLR0CALLBACKMEMBER(int,  pfnSendBuf,(PPDMINETWORKUPR0 pInterface, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread));
+    /** @copydoc PDMINETWORKUP::pfnEndBuf */
+    DECLR0CALLBACKMEMBER(void, pfnEndXmit,(PPDMINETWORKUPR0 pInterface));
+    /** @copydoc PDMINETWORKUP::pfnSetPromiscuousMode */
+    DECLR0CALLBACKMEMBER(void, pfnSetPromiscuousMode,(PPDMINETWORKUPR0 pInterface, bool fPromiscuous));
+} PDMINETWORKUPR0;
+
+/** Raw-mode context edition of PDMINETWORKUP. */
+typedef struct PDMINETWORKUPRC
+{
+    /** @copydoc PDMINETWORKUP::pfnBeginXmit */
+    DECLRCCALLBACKMEMBER(int,  pfnBeginXmit,(PPDMINETWORKUPRC pInterface, bool fOnWorkerThread));
+    /** @copydoc PDMINETWORKUP::pfnAllocBuf */
+    DECLRCCALLBACKMEMBER(int,  pfnAllocBuf,(PPDMINETWORKUPRC pInterface, size_t cbMin, PCPDMNETWORKGSO pGso,
+                                            PPPDMSCATTERGATHER ppSgBuf));
+    /** @copydoc PDMINETWORKUP::pfnFreeBuf */
+    DECLRCCALLBACKMEMBER(int,  pfnFreeBuf,(PPDMINETWORKUPRC pInterface, PPDMSCATTERGATHER pSgBuf));
+    /** @copydoc PDMINETWORKUP::pfnSendBuf */
+    DECLRCCALLBACKMEMBER(int,  pfnSendBuf,(PPDMINETWORKUPRC pInterface, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread));
+    /** @copydoc PDMINETWORKUP::pfnEndBuf */
+    DECLRCCALLBACKMEMBER(void, pfnEndXmit,(PPDMINETWORKUPRC pInterface));
+    /** @copydoc PDMINETWORKUP::pfnSetPromiscuousMode */
+    DECLRCCALLBACKMEMBER(void, pfnSetPromiscuousMode,(PPDMINETWORKUPRC pInterface, bool fPromiscuous));
+} PDMINETWORKUPRC;
+
 /** PDMINETWORKUP interface ID. */
 #define PDMINETWORKUP_IID                       "67e7e7a8-2594-4649-a1e3-7cee680c6083"
 
