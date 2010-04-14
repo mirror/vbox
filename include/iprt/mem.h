@@ -227,8 +227,10 @@ RTDECL(void *) RTMemPageAllocZ(size_t cb) RT_NO_THROW;
  *
  * @param   pv      Pointer to the block as it was returned by the allocation function.
  *                  NULL will be ignored.
+ * @param   cb      The allocation size.  Will be rounded up to page size.
+ *                  Ignored if @a pv is NULL.
  */
-RTDECL(void) RTMemPageFree(void *pv) RT_NO_THROW;
+RTDECL(void) RTMemPageFree(void *pv, size_t cb) RT_NO_THROW;
 
 /** Page level protection flags for RTMemProtect().
  * @{
