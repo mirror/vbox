@@ -4657,6 +4657,7 @@ bool VBoxGlobal::openURL (const QString &aURL)
  */
 void VBoxGlobal::showRegistrationDialog (bool aForce)
 {
+    NOREF(aForce);
 #ifdef VBOX_WITH_REGISTRATION
     if (!aForce && !UIRegistrationWzd::hasToBeShown())
         return;
