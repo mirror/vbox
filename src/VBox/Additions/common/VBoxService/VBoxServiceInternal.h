@@ -128,6 +128,9 @@ typedef DWORD (WINAPI *PFNWTSGETACTIVECONSOLESESSIONID)(void);
 /* Structure for holding thread relevant data. */
 typedef struct
 {
+    uint32_t  uClientID;
+    uint32_t  uContextID;
+    uint32_t  uPID;
     char     *pszCmd;
     uint32_t  uFlags;
     char    **papszArgs;
@@ -212,7 +215,7 @@ extern int  VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
 #endif /* RT_OS_WINDOWS */
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-extern int VBoxServiceControlExecProcess(const char *pszCmd, uint32_t uFlags, 
+extern int VBoxServiceControlExecProcess(uint32_t uContext, const char *pszCmd, uint32_t uFlags, 
                                          const char *pszArgs, uint32_t uNumArgs,                                           
                                          const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
                                          const char *pszStdIn, const char *pszStdOut, const char *pszStdErr,

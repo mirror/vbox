@@ -25,6 +25,12 @@
 #include "VirtualBoxBase.h"
 #include <VBox/ostypes.h>
 
+#ifdef VBOX_WITH_GUEST_CONTROL
+# include <VBox/HostServices/GuestControlSvc.h>
+# include <hgcm/HGCM.h>
+using namespace guestControl;
+#endif
+
 typedef enum
 {
     GUESTSTATTYPE_CPUUSER     = 0,
@@ -103,13 +109,28 @@ public:
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Guest"; }
 
+# ifdef VBOX_WITH_GUEST_CONTROL
+    /** Static callback for handling guest notifications. */
+    static DECLCALLBACK(int) doGuestCtrlNotification(void *pvExtension, uint32_t u32Function, void *pvParms, uint32_t cbParms);
+# endif
+
 private:
 
 # ifdef VBOX_WITH_GUEST_CONTROL
+
+    struct CallbackContext
+    {
+        uint32_t  mContextID;
+        void     *pvData;
+        uint32_t  cbData;
+    };
+
     int prepareExecuteArgs(const char *pszArgs, void **ppvList, uint32_t *pcbList, uint32_t *pcArgs);
     int prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);
-    /** Static callback for handling guest notifications. */
-    static DECLCALLBACK(int) doGuestCtrlExecNotification(void *pvExtension, uint32_t u32Function, void *pvParms, uint32_t cbParms);
+    /** Handler for guest execution control notifications. */
+    int notifyCtrlExec(uint32_t u32Function, PHOSTEXECCALLBACKDATA pData);
+    void freeCtrlCallbackContextData(CallbackContext *pContext);
+    uint32_t addCtrlCallbackContext(void *pvData, uint32_t cbData);
 # endif
 
     struct Data
@@ -130,7 +151,15 @@ private:
 
     Console *mParent;
     Data mData;
-    bool mSignalled;
+
+# ifdef VBOX_WITH_GUEST_CONTROL
+    /** General extension callback for guest control. */
+    HGCMSVCEXTHANDLE  mhExtCtrl;
+        
+    volatile uint32_t mNextContextID;
+    typedef std::list< CallbackContext > CallbackList;
+    CallbackList mCallbackList;
+# endif
 };
 
 #endif // ____H_GUESTIMPL

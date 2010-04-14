@@ -95,6 +95,7 @@ static DECLCALLBACK(int) VBoxServiceControlInit(void)
 
 static int VBoxServiceControlHandleCmdExec(uint32_t u32ClientId, uint32_t uNumParms)
 {
+    uint32_t uContextID;
     char szCmd[_1K];
     uint32_t uFlags;
     char szArgs[_1K];
@@ -109,7 +110,12 @@ static int VBoxServiceControlHandleCmdExec(uint32_t u32ClientId, uint32_t uNumPa
     char szPassword[128];
     uint32_t uTimeLimitMS;
 
-    int rc = VbglR3GuestCtrlExecGetHostCmd(u32ClientId, uNumParms,
+    if (uNumParms != 14)
+        return VERR_INVALID_PARAMETER;
+
+    int rc = VbglR3GuestCtrlExecGetHostCmd(u32ClientId,
+                                           uNumParms,
+                                           &uContextID,
                                            /* Command */
                                            szCmd,      sizeof(szCmd),
                                            /* Flags */
@@ -133,7 +139,7 @@ static int VBoxServiceControlHandleCmdExec(uint32_t u32ClientId, uint32_t uNumPa
     }
     else
     {     
-        rc = VBoxServiceControlExecProcess(szCmd, uFlags, szArgs, uNumArgs,                                           
+        rc = VBoxServiceControlExecProcess(uContextID, szCmd, uFlags, szArgs, uNumArgs,                                           
                                            szEnv, cbEnv, uNumEnvVars,
                                            szStdIn, szStdOut, szStdErr,
                                            szUser, szPassword, uTimeLimitMS);

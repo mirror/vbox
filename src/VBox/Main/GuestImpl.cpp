@@ -33,9 +33,7 @@
 
 #include <VBox/VMMDev.h>
 #ifdef VBOX_WITH_GUEST_CONTROL
-# include <VBox/HostServices/GuestControlSvc.h>
 # include <VBox/com/array.h>
-# include <hgcm/HGCM.h>
 #endif
 #include <iprt/cpp/utils.h>
 #include <iprt/getopt.h>
@@ -94,6 +92,9 @@ HRESULT Guest::init (Console *aParent)
     /* Clear statistics. */
     for (unsigned i = 0 ; i < GUESTSTATTYPE_MAX; i++)
         mCurrentGuestStat[i] = 0;
+
+    /* Init the context ID counter at 1000. */
+    mNextContextID = 1000;
 
     return S_OK;
 }
@@ -437,18 +438,18 @@ int Guest::prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbLi
 }
 
 /**
- * Static callback function for receiving updates on processes started on
- * the guest side.
+ * Static callback function for receiving updates on guest control commands
+ * from the guest. Acts as a dispatcher for the actual class instance.
  *
  * @returns VBox status code.
  *
  * @todo
  *
  */
-DECLCALLBACK(int) Guest::doGuestCtrlExecNotification(void *pvExtension,
-                                                     uint32_t u32Function,
-                                                     void *pvParms,
-                                                     uint32_t cbParms)
+DECLCALLBACK(int) Guest::doGuestCtrlNotification(void    *pvExtension,
+                                                 uint32_t u32Function,
+                                                 void    *pvParms,
+                                                 uint32_t cbParms)
 {
     using namespace guestControl;
 
@@ -456,28 +457,76 @@ DECLCALLBACK(int) Guest::doGuestCtrlExecNotification(void *pvExtension,
      * No locking, as this is purely a notification which does not make any
      * changes to the object state.
      */
-    PHOSTEXECCALLBACKDATA pCBData = reinterpret_cast<PHOSTEXECCALLBACKDATA>(pvParms);
-    AssertPtr(pCBData);
-    AssertReturn(sizeof(HOSTEXECCALLBACKDATA) == cbParms, VERR_INVALID_PARAMETER);
-    AssertReturn(HOSTCALLBACKMAGIC == pCBData->u32Magic, VERR_INVALID_PARAMETER);
     LogFlowFunc(("pvExtension = %p, u32Function = %d, pvParms = %p, cbParms = %d\n",
                  pvExtension, u32Function, pvParms, cbParms));
-    PHOSTEXECCALLBACKDATA pExt = reinterpret_cast<HOSTEXECCALLBACKDATA *>(pvExtension);
+    ComObjPtr<Guest> pGuest = reinterpret_cast<Guest *>(pvExtension);
 
     int rc = VINF_SUCCESS;
     if (u32Function == GUEST_EXEC_SEND_STATUS)
     {
         LogFlowFunc(("GUEST_EXEC_SEND_STATUS\n"));
-        pExt->pid = pCBData->pid;
-        pExt->status = pCBData->status;
-        pExt->flags = pCBData->flags;
-        /** @todo Copy void* buffer! */
+
+        PHOSTEXECCALLBACKDATA pCBData = reinterpret_cast<PHOSTEXECCALLBACKDATA>(pvParms);
+        AssertPtr(pCBData);
+        AssertReturn(sizeof(HOSTEXECCALLBACKDATA) == cbParms, VERR_INVALID_PARAMETER);
+        AssertReturn(HOSTEXECCALLBACKDATAMAGIC == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+
+        rc = pGuest->notifyCtrlExec(u32Function, pCBData);
     }
     else
         rc = VERR_NOT_SUPPORTED;
-
-    ASMAtomicWriteBool(&pExt->called, true);
     return rc;
+}
+
+/* Notifier function for control execution stuff. */
+int Guest::notifyCtrlExec(uint32_t              u32Function,
+                          PHOSTEXECCALLBACKDATA pData)
+{
+    int rc = VINF_SUCCESS;
+
+  /*  bool bFound = false;
+    for (int i=0; i<mList.size(); i++)
+    {
+    }
+    if(pData->hdr.u32ContextID == it->hdr.u32ContextID)
+    {
+    }*/
+    /*pExt->pid = pCBData->pid;
+    pExt->status = pCBData->status;
+    pExt->flags = pCBData->flags;*/
+    /** @todo Copy void* buffer! */
+
+    return rc;
+}
+
+void Guest::freeCtrlCallbackContextData(CallbackContext *pContext)
+{
+    AssertPtr(pContext);
+    if (pContext->cbData)
+    {
+        RTMemFree(pContext->pvData);
+        pContext->cbData = 0;
+        pContext->pvData = NULL;
+    }
+}
+
+uint32_t Guest::addCtrlCallbackContext(void *pvData, uint32_t cbData)
+{
+    uint32_t uNewContext = ASMAtomicIncU32(&mNextContextID);
+    /** @todo Add value clamping! */
+
+    CallbackContext context;
+    context.mContextID = uNewContext;
+    context.pvData = pvData;
+    context.cbData = cbData;
+
+    mCallbackList.push_back(context);
+    if (mCallbackList.size() > 256)
+    {
+        freeCtrlCallbackContextData(&mCallbackList.front());
+        mCallbackList.pop_front();
+    }
+    return uNewContext;
 }
 #endif /* VBOX_WITH_GUEST_CONTROL */
 
@@ -519,170 +568,163 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                                     FALSE);
         if (FAILED(rc)) return rc;
 #endif
-
         /*
-         * Register the host notification callback
+         * Prepare process execution.
          */
-        HGCMSVCEXTHANDLE hExt;
-        HOSTEXECCALLBACKDATA callbackData;
-        callbackData.called = false;
-        int vrc = HGCMHostRegisterServiceExtension(&hExt, "VBoxGuestControlSvc",
-                                                   &Guest::doGuestCtrlExecNotification,
-                                                   &callbackData);
+        int vrc = VINF_SUCCESS;
+        Utf8Str Utf8Command(aCommand);
+
+        /* Prepare arguments. */       
+        com::SafeArray<IN_BSTR> args(ComSafeArrayInArg(aArguments));
+        uint32_t uNumArgs = args.size();
+        char **papszArgv = NULL;
+        if(uNumArgs > 0)
+        {
+            papszArgv = (char**)RTMemAlloc(sizeof(char*) * (uNumArgs + 1));
+            AssertPtr(papszArgv);
+            for (unsigned i = 0; RT_SUCCESS(vrc) && i < uNumArgs; i++)
+                vrc = RTStrAPrintf(&papszArgv[i], "%s", Utf8Str(args[i]).raw());
+            papszArgv[uNumArgs] = NULL;
+        }
+
         if (RT_SUCCESS(vrc))
         {
-            /*
-             * Prepare process execution.
-             */
-            Utf8Str Utf8Command(aCommand);
-    
-            /* Prepare arguments. */       
-            com::SafeArray<IN_BSTR> args(ComSafeArrayInArg(aArguments));
-            uint32_t uNumArgs = args.size();
-            char **papszArgv = NULL;
-            if(uNumArgs > 0)
-            {
-                papszArgv = (char**)RTMemAlloc(sizeof(char*) * (uNumArgs + 1));
-                AssertPtr(papszArgv);
-                for (unsigned i = 0; RT_SUCCESS(vrc) && i < uNumArgs; i++)
-                    vrc = RTStrAPrintf(&papszArgv[i], "%s", Utf8Str(args[i]).raw());
-                papszArgv[uNumArgs] = NULL;
-            }
-    
+            char *pszArgs = NULL;
+            if (uNumArgs > 0)
+                vrc = RTGetOptArgvToString(&pszArgs, papszArgv, 0);         
             if (RT_SUCCESS(vrc))
             {
-                char *pszArgs = NULL;
-                if (uNumArgs > 0)
-                    vrc = RTGetOptArgvToString(&pszArgs, papszArgv, 0);         
+                uint32_t cbArgs = pszArgs ? strlen(pszArgs) + 1 : 0; /* Include terminating zero. */
+
+                /* Prepare environment. */
+                com::SafeArray<IN_BSTR> env(ComSafeArrayInArg(aEnvironment));
+    
+                void *pvEnv = NULL;
+                uint32_t uNumEnv = 0;
+                uint32_t cbEnv = 0;
+    
+                for (unsigned i = 0; i < env.size(); i++)
+                {
+                    vrc = prepareExecuteEnv(Utf8Str(env[i]).raw(), &pvEnv, &cbEnv, &uNumEnv);
+                    if (RT_FAILURE(vrc))
+                        break;
+                }
+    
                 if (RT_SUCCESS(vrc))
                 {
-                    uint32_t cbArgs = pszArgs ? strlen(pszArgs) + 1 : 0; /* Include terminating zero. */
+                    Utf8Str Utf8StdIn(aStdIn);
+                    Utf8Str Utf8StdOut(aStdOut);
+                    Utf8Str Utf8StdErr(aStdErr);
+                    Utf8Str Utf8UserName(aUserName);
+                    Utf8Str Utf8Password(aPassword);
+                
+                    PHOSTEXECCALLBACKDATA pData = (HOSTEXECCALLBACKDATA*)RTMemAlloc(sizeof(HOSTEXECCALLBACKDATA));
+                    AssertPtr(pData);
+                    uint32_t uContextID = addCtrlCallbackContext(pData, sizeof(HOSTEXECCALLBACKDATA));
+
+                    VBOXHGCMSVCPARM paParms[15];
+                    int i = 0;
+                    paParms[i++].setUInt32(uContextID);
+                    paParms[i++].setPointer((void*)Utf8Command.raw(), (uint32_t)strlen(Utf8Command.raw()) + 1);
+                    paParms[i++].setUInt32(aFlags);
+                    paParms[i++].setUInt32(uNumArgs);
+                    paParms[i++].setPointer((void*)pszArgs, cbArgs);
+                    paParms[i++].setUInt32(uNumEnv);
+                    paParms[i++].setUInt32(cbEnv);
+                    paParms[i++].setPointer((void*)pvEnv, cbEnv);
+                    paParms[i++].setPointer((void*)Utf8StdIn.raw(), (uint32_t)strlen(Utf8StdIn.raw()) + 1);
+                    paParms[i++].setPointer((void*)Utf8StdOut.raw(), (uint32_t)strlen(Utf8StdOut.raw()) + 1);
+                    paParms[i++].setPointer((void*)Utf8StdErr.raw(), (uint32_t)strlen(Utf8StdErr.raw()) + 1);
+                    paParms[i++].setPointer((void*)Utf8UserName.raw(), (uint32_t)strlen(Utf8UserName.raw()) + 1);
+                    paParms[i++].setPointer((void*)Utf8Password.raw(), (uint32_t)strlen(Utf8Password.raw()) + 1);
+                    paParms[i++].setUInt32(aTimeoutMS);
     
-                    /* Prepare environment. */
-                    com::SafeArray<IN_BSTR> env(ComSafeArrayInArg(aEnvironment));
-        
-                    void *pvEnv = NULL;
-                    uint32_t uNumEnv = 0;
-                    uint32_t cbEnv = 0;
-        
-                    for (unsigned i = 0; i < env.size(); i++)
+                    /* Forward the information to the VMM device. */
+                    AssertPtr(mParent);
+                    VMMDev *vmmDev = mParent->getVMMDev();
+                    if (vmmDev)
                     {
-                        vrc = prepareExecuteEnv(Utf8Str(env[i]).raw(), &pvEnv, &cbEnv, &uNumEnv);
-                        if (RT_FAILURE(vrc))
+                        LogFlowFunc(("hgcmHostCall numParms=%d\n", i));
+                        vrc = vmmDev->hgcmHostCall("VBoxGuestControlSvc", HOST_EXEC_CMD,
+                                                   i, paParms);
+                    }
+                    RTMemFree(pvEnv);
+                }
+                RTStrFree(pszArgs);
+            }
+            if (RT_SUCCESS(vrc))
+            {
+                LogFlowFunc(("Waiting for HGCM callback (timeout=%ldms) ...\n", aTimeoutMS));
+
+                /* 
+                 * Wait for the HGCM low level callback until the process
+                 * has been started (or something went wrong). This is necessary to 
+                 * get the PID.
+                 */
+#if 0
+                uint64_t u64Started = RTTimeMilliTS();
+                do
+                {
+                    unsigned cMsWait;
+                    if (aTimeoutMS == RT_INDEFINITE_WAIT)
+                        cMsWait = 1000;
+                    else
+                    {
+                        uint64_t cMsElapsed = RTTimeMilliTS() - u64Started;
+                        if (cMsElapsed >= aTimeoutMS)
+                            break; /* timed out */
+                        cMsWait = RT_MIN(1000, aTimeoutMS - (uint32_t)cMsElapsed);
+                    }
+                    RTThreadSleep(100);
+                } while (!callbackData.called);
+
+                /* Did we get some status? */
+                if (callbackData.called)
+                {
+                    switch (callbackData.status)
+                    {
+                        case PROC_STS_STARTED:
+                            *aPID = callbackData.pid;
+                            break;
+
+                        case PROC_STS_ERROR:
+                            vrc = callbackData.flags; /* flags member contains IPRT error code. */
+                            break;
+
+                        default:
+                            vrc = VERR_INVALID_PARAMETER;
                             break;
                     }
-        
-                    if (RT_SUCCESS(vrc))
-                    {
-                        Utf8Str Utf8StdIn(aStdIn);
-                        Utf8Str Utf8StdOut(aStdOut);
-                        Utf8Str Utf8StdErr(aStdErr);
-                        Utf8Str Utf8UserName(aUserName);
-                        Utf8Str Utf8Password(aPassword);
-                    
-                        VBOXHGCMSVCPARM paParms[14];
-                        int i = 0;
-                        paParms[i++].setPointer((void*)Utf8Command.raw(), (uint32_t)strlen(Utf8Command.raw()) + 1);
-                        paParms[i++].setUInt32(aFlags);
-                        paParms[i++].setUInt32(uNumArgs);
-                        paParms[i++].setPointer((void*)pszArgs, cbArgs);
-                        paParms[i++].setUInt32(uNumEnv);
-                        paParms[i++].setUInt32(cbEnv);
-                        paParms[i++].setPointer((void*)pvEnv, cbEnv);
-                        paParms[i++].setPointer((void*)Utf8StdIn.raw(), (uint32_t)strlen(Utf8StdIn.raw()) + 1);
-                        paParms[i++].setPointer((void*)Utf8StdOut.raw(), (uint32_t)strlen(Utf8StdOut.raw()) + 1);
-                        paParms[i++].setPointer((void*)Utf8StdErr.raw(), (uint32_t)strlen(Utf8StdErr.raw()) + 1);
-                        paParms[i++].setPointer((void*)Utf8UserName.raw(), (uint32_t)strlen(Utf8UserName.raw()) + 1);
-                        paParms[i++].setPointer((void*)Utf8Password.raw(), (uint32_t)strlen(Utf8Password.raw()) + 1);
-                        paParms[i++].setUInt32(aTimeoutMS);
-        
-                        /* Forward the information to the VMM device. */
-                        AssertPtr(mParent);
-                        VMMDev *vmmDev = mParent->getVMMDev();
-                        if (vmmDev)
-                        {
-                            LogFlowFunc(("hgcmHostCall numParms=%d\n", i));
-                            vrc = vmmDev->hgcmHostCall("VBoxGuestControlSvc", HOST_EXEC_CMD,
-                                                       i, paParms);
-                        }
-                        RTMemFree(pvEnv);
-                    }
-                    RTStrFree(pszArgs);
                 }
-                if (RT_SUCCESS(vrc))
+
+                if (RT_FAILURE(vrc))
                 {
-                    LogFlowFunc(("Waiting for HGCM callback (timeout=%ldms) ...\n", aTimeoutMS));
-
-                    /* 
-                     * Wait for the HGCM low level callback until the process
-                     * has been started (or something went wrong). This is necessary to 
-                     * get the PID.
-                     */
-                    uint64_t u64Started = RTTimeMilliTS();
-                    do
+                    if (vrc == VERR_FILE_NOT_FOUND) /* This is the most likely error. */
                     {
-                        unsigned cMsWait;
-                        if (aTimeoutMS == RT_INDEFINITE_WAIT)
-                            cMsWait = 1000;
-                        else
-                        {
-                            uint64_t cMsElapsed = RTTimeMilliTS() - u64Started;
-                            if (cMsElapsed >= aTimeoutMS)
-                                break; /* timed out */
-                            cMsWait = RT_MIN(1000, aTimeoutMS - (uint32_t)cMsElapsed);
-                        }
-                        RTThreadSleep(100);
-                    } while (!callbackData.called);
-
-                    /* Did we get some status? */
-                    if (callbackData.called)
-                    {
-                        switch (callbackData.status)
-                        {
-                            case PROC_STS_STARTED:
-                                *aPID = callbackData.pid;
-                                break;
-
-                            case PROC_STS_ERROR:
-                                vrc = callbackData.flags; /* flags member contains IPRT error code. */
-                                break;
-
-                            default:
-                                vrc = VERR_INVALID_PARAMETER;
-                                break;
-                        }
+                        rc = setError(VBOX_E_IPRT_ERROR, 
+                                      tr("The file \"%s\" was not found on guest"), Utf8Command.raw());
                     }
-
-                    if (RT_FAILURE(vrc))
+                    else
                     {
-                        if (vrc == VERR_FILE_NOT_FOUND) /* This is the most likely error. */
-                        {
-                            rc = setError(VBOX_E_IPRT_ERROR, 
-                                          tr("The file \"%s\" was not found on guest"), Utf8Command.raw());
-                        }
-                        else
-                        {
-                            rc = setError(E_UNEXPECTED,
-                                          tr("The service call failed with the error %Rrc"), vrc);
-                        }
+                        rc = setError(E_UNEXPECTED,
+                                      tr("The service call failed with the error %Rrc"), vrc);
                     }
-#if 0
-                    progress.queryInterfaceTo(aProgress);
+                }
 #endif
-                }
-                else
-                {
-                    /* HGCM call went wrong. */
-                    rc = setError(E_UNEXPECTED,
-                                  tr("The service call failed with the error %Rrc"), vrc);
-                }
-
-                for (unsigned i = 0; i < uNumArgs; i++)
-                    RTMemFree(papszArgv[i]);
-                RTMemFree(papszArgv);
+#if 0
+                progress.queryInterfaceTo(aProgress);
+#endif
             }
-            /* Unregister HGCM extension */
-            HGCMHostUnregisterServiceExtension(hExt);
+            else
+            {
+                /* HGCM call went wrong. */
+                rc = setError(E_UNEXPECTED,
+                              tr("The service call failed with error %Rrc"), vrc);
+            }
+
+            for (unsigned i = 0; i < uNumArgs; i++)
+                RTMemFree(papszArgv[i]);
+            RTMemFree(papszArgv);
         }
     }
     catch (std::bad_alloc &)
