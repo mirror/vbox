@@ -42,6 +42,18 @@
 #include <iprt/thread.h>
 #include "r0drv/alloc-r0drv.h"
 
+#undef RTMemTmpAlloc
+#undef RTMemTmpAllocZ
+#undef RTMemTmpFree
+#undef RTMemAlloc
+#undef RTMemAllocZ
+#undef RTMemAllocVar
+#undef RTMemAllocZVar
+#undef RTMemRealloc
+#undef RTMemFree
+#undef RTMemDup
+#undef RTMemDupEx
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -130,7 +142,7 @@ RTDECL(void *)  RTMemAlloc(size_t cb) RT_NO_THROW
     PRTMEMHDR pHdr;
     RT_ASSERT_INTS_ON();
 
-    pHdr = rtMemAlloc(cb + RTR0MEM_FENCE_EXTRA, 0);
+    pHdr = rtR0MemAlloc(cb + RTR0MEM_FENCE_EXTRA, 0);
     if (pHdr)
     {
 #ifdef RTR0MEM_STRICT
@@ -160,7 +172,7 @@ RTDECL(void *)  RTMemAllocZ(size_t cb) RT_NO_THROW
     PRTMEMHDR pHdr;
     RT_ASSERT_INTS_ON();
 
-    pHdr = rtMemAlloc(cb + RTR0MEM_FENCE_EXTRA, RTMEMHDR_FLAG_ZEROED);
+    pHdr = rtR0MemAlloc(cb + RTR0MEM_FENCE_EXTRA, RTMEMHDR_FLAG_ZEROED);
     if (pHdr)
     {
 #ifdef RTR0MEM_STRICT
@@ -174,6 +186,44 @@ RTDECL(void *)  RTMemAllocZ(size_t cb) RT_NO_THROW
     return NULL;
 }
 RT_EXPORT_SYMBOL(RTMemAllocZ);
+
+
+/**
+ * Wrapper around RTMemAlloc for automatically aligning variable sized
+ * allocations so that the various electric fence heaps works correctly.
+ *
+ * @returns See RTMemAlloc.
+ * @param   cbUnaligned         The unaligned size.
+ */
+RTDECL(void *) RTMemAllocVar(size_t cbUnaligned)
+{
+    size_t cbAligned;
+    if (cbUnaligned >= 16)
+        cbAligned = RT_ALIGN_Z(cbUnaligned, 16);
+    else
+        cbAligned = RT_ALIGN_Z(cbUnaligned, sizeof(void *));
+    return RTMemAlloc(cbAligned);
+}
+RT_EXPORT_SYMBOL(RTMemAllocVar);
+
+
+/**
+ * Wrapper around RTMemAllocZ for automatically aligning variable sized
+ * allocations so that the various electric fence heaps works correctly.
+ *
+ * @returns See RTMemAllocZ.
+ * @param   cbUnaligned         The unaligned size.
+ */
+RTDECL(void *) RTMemAllocZVar(size_t cbUnaligned)
+{
+    size_t cbAligned;
+    if (cbUnaligned >= 16)
+        cbAligned = RT_ALIGN_Z(cbUnaligned, 16);
+    else
+        cbAligned = RT_ALIGN_Z(cbUnaligned, sizeof(void *));
+    return RTMemAllocZ(cbAligned);
+}
+RT_EXPORT_SYMBOL(RTMemAllocZVar);
 
 
 /**
@@ -200,7 +250,7 @@ RTDECL(void *) RTMemRealloc(void *pvOld, size_t cbNew) RT_NO_THROW
             PRTMEMHDR pHdrNew;
             if (pHdrOld->cb >= cbNew && pHdrOld->cb - cbNew <= 128)
                 return pvOld;
-            pHdrNew = rtMemAlloc(cbNew + RTR0MEM_FENCE_EXTRA, 0);
+            pHdrNew = rtR0MemAlloc(cbNew + RTR0MEM_FENCE_EXTRA, 0);
             if (pHdrNew)
             {
                 size_t cbCopy = RT_MIN(pHdrOld->cb, pHdrNew->cb);
@@ -216,7 +266,7 @@ RTDECL(void *) RTMemRealloc(void *pvOld, size_t cbNew) RT_NO_THROW
                                   RTR0MEM_FENCE_EXTRA, (uint8_t *)(pHdrOld + 1) + pHdrOld->cb,
                                   RTR0MEM_FENCE_EXTRA, &g_abFence[0]));
 #endif
-                rtMemFree(pHdrOld);
+                rtR0MemFree(pHdrOld);
                 return pHdrNew + 1;
             }
         }
@@ -254,7 +304,7 @@ RTDECL(void) RTMemFree(void *pv) RT_NO_THROW
                           RTR0MEM_FENCE_EXTRA, (uint8_t *)(pHdr + 1) + pHdr->cb,
                           RTR0MEM_FENCE_EXTRA, &g_abFence[0]));
 #endif
-        rtMemFree(pHdr);
+        rtR0MemFree(pHdr);
     }
     else
         AssertMsgFailed(("pHdr->u32Magic=%RX32 pv=%p\n", pHdr->u32Magic, pv));
@@ -278,7 +328,7 @@ RTDECL(void *)    RTMemExecAlloc(size_t cb) RT_NO_THROW
     RT_ASSERT_PREEMPTIBLE();
 #endif
 
-    pHdr = rtMemAlloc(cb + RTR0MEM_FENCE_EXTRA, RTMEMHDR_FLAG_EXEC);
+    pHdr = rtR0MemAlloc(cb + RTR0MEM_FENCE_EXTRA, RTMEMHDR_FLAG_EXEC);
     if (pHdr)
     {
 #ifdef RTR0MEM_STRICT
@@ -316,7 +366,7 @@ RTDECL(void)      RTMemExecFree(void *pv) RT_NO_THROW
                           RTR0MEM_FENCE_EXTRA, (uint8_t *)(pHdr + 1) + pHdr->cb,
                           RTR0MEM_FENCE_EXTRA, &g_abFence[0]));
 #endif
-        rtMemFree(pHdr);
+        rtR0MemFree(pHdr);
     }
     else
         AssertMsgFailed(("pHdr->u32Magic=%RX32 pv=%p\n", pHdr->u32Magic, pv));

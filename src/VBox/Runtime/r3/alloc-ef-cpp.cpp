@@ -33,9 +33,9 @@
 *******************************************************************************/
 #include "alloc-ef.h"
 
-
 #if defined(RTALLOC_EFENCE_CPP) || defined(RTMEM_WRAP_TO_EF_APIS) /* rest of the file */
 
+#include <iprt/asm.h>
 #include <new>
 
 
@@ -61,7 +61,7 @@
 
 void *RT_EF_CDECL operator new(RT_EF_SIZE_T cb) throw(std::bad_alloc)
 {
-    void *pv = rtMemAlloc("new", RTMEMTYPE_NEW, cb, ((void **)&cb)[-1], 0, NULL, NULL);
+    void *pv = rtR3MemAlloc("new", RTMEMTYPE_NEW, cb, cb, ASMReturnAddress(), NULL, 0, NULL);
     if (!pv)
         throw std::bad_alloc();
     return pv;
@@ -70,20 +70,20 @@ void *RT_EF_CDECL operator new(RT_EF_SIZE_T cb) throw(std::bad_alloc)
 
 void *RT_EF_CDECL operator new(RT_EF_SIZE_T cb, const std::nothrow_t &) throw()
 {
-    void *pv = rtMemAlloc("new nothrow", RTMEMTYPE_NEW, cb, ((void **)&cb)[-1], 0, NULL, NULL);
+    void *pv = rtR3MemAlloc("new nothrow", RTMEMTYPE_NEW, cb, cb, ASMReturnAddress(), NULL, 0, NULL);
     return pv;
 }
 
 
 void RT_EF_CDECL operator delete(void *pv) throw()
 {
-    rtMemFree("delete", RTMEMTYPE_DELETE, pv, ((void **)&pv)[-1], 0, NULL, NULL);
+    rtR3MemFree("delete", RTMEMTYPE_DELETE, pv, ASMReturnAddress(), NULL, 0, NULL);
 }
 
 
 void RT_EF_CDECL operator delete(void * pv, const std::nothrow_t &) throw()
 {
-    rtMemFree("delete nothrow", RTMEMTYPE_DELETE, pv, ((void **)&pv)[-1], 0, NULL, NULL);
+    rtR3MemFree("delete nothrow", RTMEMTYPE_DELETE, pv, ASMReturnAddress(), NULL, 0, NULL);
 }
 
 
@@ -97,7 +97,7 @@ void RT_EF_CDECL operator delete(void * pv, const std::nothrow_t &) throw()
 
 void *RT_EF_CDECL operator new[](RT_EF_SIZE_T cb) throw(std::bad_alloc)
 {
-    void *pv = rtMemAlloc("new[]", RTMEMTYPE_NEW_ARRAY, cb, ((void **)&cb)[-1], 0, NULL, NULL);
+    void *pv = rtR3MemAlloc("new[]", RTMEMTYPE_NEW_ARRAY, cb, cb, ASMReturnAddress(), NULL, 0, NULL);
     if (!pv)
         throw std::bad_alloc();
     return pv;
@@ -106,20 +106,20 @@ void *RT_EF_CDECL operator new[](RT_EF_SIZE_T cb) throw(std::bad_alloc)
 
 void * RT_EF_CDECL operator new[](RT_EF_SIZE_T cb, const std::nothrow_t &) throw()
 {
-    void *pv = rtMemAlloc("new[] nothrow", RTMEMTYPE_NEW_ARRAY, cb, ((void **)&cb)[-1], 0, NULL, NULL);
+    void *pv = rtR3MemAlloc("new[] nothrow", RTMEMTYPE_NEW_ARRAY, cb, cb, ASMReturnAddress(), NULL, 0, NULL);
     return pv;
 }
 
 
 void RT_EF_CDECL operator delete[](void * pv) throw()
 {
-    rtMemFree("delete[]", RTMEMTYPE_DELETE_ARRAY, pv, ((void **)&pv)[-1], 0, NULL, NULL);
+    rtR3MemFree("delete[]", RTMEMTYPE_DELETE_ARRAY, pv, ASMReturnAddress(), NULL, 0, NULL);
 }
 
 
 void RT_EF_CDECL operator delete[](void *pv, const std::nothrow_t &) throw()
 {
-    rtMemFree("delete[] nothrow", RTMEMTYPE_DELETE_ARRAY, pv, ((void **)&pv)[-1], 0, NULL, NULL);
+    rtR3MemFree("delete[] nothrow", RTMEMTYPE_DELETE_ARRAY, pv, ASMReturnAddress(), NULL, 0, NULL);
 }
 
 #endif /* RTALLOC_EFENCE_CPP || RTMEM_WRAP_TO_EF_APIS */

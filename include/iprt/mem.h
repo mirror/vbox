@@ -356,7 +356,7 @@ RTR0DECL(bool) RTR0MemAreKrnlAndUsrDifferent(void);
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)  RTMemEfTmpAlloc(size_t cb) RT_NO_THROW;
+RTDECL(void *)  RTMemEfTmpAlloc(size_t cb, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
  * Same as RTMemTmpAllocZ() except that it's fenced.
@@ -365,14 +365,14 @@ RTDECL(void *)  RTMemEfTmpAlloc(size_t cb) RT_NO_THROW;
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)  RTMemEfTmpAllocZ(size_t cb) RT_NO_THROW;
+RTDECL(void *)  RTMemEfTmpAllocZ(size_t cb, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
  * Same as RTMemTmpFree() except that it's for fenced memory.
  *
  * @param   pv      Pointer to memory block.
  */
-RTDECL(void)    RTMemEfTmpFree(void *pv) RT_NO_THROW;
+RTDECL(void)    RTMemEfTmpFree(void *pv, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
  * Same as RTMemAlloc() except that it's fenced.
@@ -381,7 +381,7 @@ RTDECL(void)    RTMemEfTmpFree(void *pv) RT_NO_THROW;
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)  RTMemEfAlloc(size_t cb) RT_NO_THROW;
+RTDECL(void *)  RTMemEfAlloc(size_t cb, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
  * Same as RTMemAllocZ() except that it's fenced.
@@ -390,7 +390,7 @@ RTDECL(void *)  RTMemEfAlloc(size_t cb) RT_NO_THROW;
  * @returns NULL on failure.
  * @param   cb      Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)  RTMemEfAllocZ(size_t cb) RT_NO_THROW;
+RTDECL(void *)  RTMemEfAllocZ(size_t cb, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
  * Same as RTMemAllocVar() except that it's fenced.
@@ -399,7 +399,7 @@ RTDECL(void *)  RTMemEfAllocZ(size_t cb) RT_NO_THROW;
  * @returns NULL on failure.
  * @param   cbUnaligned Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)  RTMemEfAllocVar(size_t cbUnaligned) RT_NO_THROW;
+RTDECL(void *)  RTMemEfAllocVar(size_t cbUnaligned, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
  * Same as RTMemAllocZVar() except that it's fenced.
@@ -408,7 +408,7 @@ RTDECL(void *)  RTMemEfAllocVar(size_t cbUnaligned) RT_NO_THROW;
  * @returns NULL on failure.
  * @param   cbUnaligned Size in bytes of the memory block to allocate.
  */
-RTDECL(void *)  RTMemEfAllocZVar(size_t cbUnaligned) RT_NO_THROW;
+RTDECL(void *)  RTMemEfAllocZVar(size_t cbUnaligned, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
  * Same as RTMemRealloc() except that it's fenced.
@@ -418,14 +418,14 @@ RTDECL(void *)  RTMemEfAllocZVar(size_t cbUnaligned) RT_NO_THROW;
  * @param   pvOld   The memory block to reallocate.
  * @param   cbNew   The new block size (in bytes).
  */
-RTDECL(void *)  RTMemEfRealloc(void *pvOld, size_t cbNew) RT_NO_THROW;
+RTDECL(void *)  RTMemEfRealloc(void *pvOld, size_t cbNew, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
  * Free memory allocated by any of the RTMemEf* allocators.
  *
  * @param   pv      Pointer to memory block.
  */
-RTDECL(void)    RTMemEfFree(void *pv) RT_NO_THROW;
+RTDECL(void)    RTMemEfFree(void *pv, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
  * Same as RTMemDup() except that it's fenced.
@@ -435,7 +435,7 @@ RTDECL(void)    RTMemEfFree(void *pv) RT_NO_THROW;
  * @param   pvSrc   The memory to duplicate.
  * @param   cb      The amount of memory to duplicate.
  */
-RTDECL(void *) RTMemEfDup(const void *pvSrc, size_t cb) RT_NO_THROW;
+RTDECL(void *) RTMemEfDup(const void *pvSrc, size_t cb, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /**
  * Same as RTMemEfDupEx except that it's fenced.
@@ -446,27 +446,93 @@ RTDECL(void *) RTMemEfDup(const void *pvSrc, size_t cb) RT_NO_THROW;
  * @param   cbSrc   The amount of memory to duplicate.
  * @param   cbExtra The amount of extra memory to allocate and zero.
  */
-RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_NO_THROW;
+RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, RT_SRC_POS_DECL) RT_NO_THROW;
 
 /** @def RTMEM_WRAP_TO_EF_APIS
  * Define RTMEM_WRAP_TO_EF_APIS to wrap RTMem APIs to RTMemEf APIs.
  */
-#ifdef RTMEM_WRAP_TO_EF_APIS
-# define RTMemTmpAlloc  RTMemEfTmpAlloc
-# define RTMemTmpAllocZ RTMemEfTmpAllocZ
-# define RTMemTmpFree   RTMemEfTmpFree
-# define RTMemAlloc     RTMemEfAlloc
-# define RTMemAllocZ    RTMemEfAllocZ
-# define RTMemAllocVar  RTMemEfAllocVar
-# define RTMemAllocZVar RTMemEfAllocZVar
-# define RTMemRealloc   RTMemEfRealloc
-# define RTMemFree      RTMemEfFree
-# define RTMemDup       RTMemEfDup
-# define RTMemDupEx     RTMemEfDupEx
+#if defined(RTMEM_WRAP_TO_EF_APIS) && defined(IN_RING3)
+# define RTMemTmpAlloc(cb)                  RTMemEfTmpAlloc((cb), RT_SRC_POS)
+# define RTMemTmpAllocZ(cb)                 RTMemEfTmpAllocZ((cb), RT_SRC_POS)
+# define RTMemTmpFree(pv)                   RTMemEfTmpFree((pv), RT_SRC_POS)
+# define RTMemAlloc(cb)                     RTMemEfAlloc((cb), RT_SRC_POS)
+# define RTMemAllocZ(cb)                    RTMemEfAllocZ((cb), RT_SRC_POS)
+# define RTMemAllocVar(cbUnaligned)         RTMemEfAllocVar((cbUnaligned), RT_SRC_POS)
+# define RTMemAllocZVar(cbUnaligned)        RTMemEfAllocZVar((cbUnaligned), RT_SRC_POS)
+# define RTMemRealloc(pvOld, cbNew)         RTMemEfRealloc((pvOld), (cbNew), RT_SRC_POS)
+# define RTMemFree(pv)                      RTMemEfFree((pv), RT_SRC_POS)
+# define RTMemDup(pvSrc, cb)                RTMemEfDup((pvSrc), (cb), RT_SRC_POS)
+# define RTMemDupEx(pvSrc, cbSrc, cbExtra)  RTMemEfDupEx((pvSrc), (cbSrc), (cbExtra), RT_SRC_POS)
 #endif
 #ifdef DOXYGEN_RUNNING
 # define RTMEM_WRAP_TO_EF_APIS
 #endif
+
+/**
+ * Fenced drop-in replacement for RTMemTmpAlloc.
+ * @copydoc RTMemTmpAlloc
+ */
+RTDECL(void *)  RTMemEfTmpAllocNP(size_t cb) RT_NO_THROW;
+
+/**
+ * Fenced drop-in replacement for RTMemTmpAllocZ.
+ * @copydoc RTMemTmpAllocZ
+ */
+RTDECL(void *)  RTMemEfTmpAllocZNP(size_t cb) RT_NO_THROW;
+
+/**
+ * Fenced drop-in replacement for RTMemTmpFree.
+ * @copydoc RTMemTmpFree
+ */
+RTDECL(void)    RTMemEfTmpFreeNP(void *pv) RT_NO_THROW;
+
+/**
+ * Fenced drop-in replacement for RTMemAlloc.
+ * @copydoc RTMemAlloc
+ */
+RTDECL(void *)  RTMemEfAllocNP(size_t cb) RT_NO_THROW;
+
+/**
+ * Fenced drop-in replacement for RTMemAllocZ.
+ * @copydoc RTMemAllocZ
+ */
+RTDECL(void *)  RTMemEfAllocZNP(size_t cb) RT_NO_THROW;
+
+/**
+ * Fenced drop-in replacement for RTMemAllocVar
+ * @copydoc RTMemAllocVar
+ */
+RTDECL(void *)  RTMemEfAllocVarNP(size_t cbUnaligned) RT_NO_THROW;
+
+/**
+ * Fenced drop-in replacement for RTMemAllocZVar.
+ * @copydoc RTMemAllocZVar
+ */
+RTDECL(void *)  RTMemEfAllocZVarNP(size_t cbUnaligned) RT_NO_THROW;
+
+/**
+ * Fenced drop-in replacement for RTMemRealloc.
+ * @copydoc RTMemRealloc
+ */
+RTDECL(void *)  RTMemEfReallocNP(void *pvOld, size_t cbNew) RT_NO_THROW;
+
+/**
+ * Fenced drop-in replacement for RTMemFree.
+ * @copydoc RTMemFree
+ */
+RTDECL(void)    RTMemEfFreeNP(void *pv) RT_NO_THROW;
+
+/**
+ * Fenced drop-in replacement for RTMemDupEx.
+ * @copydoc RTMemDupEx
+ */
+RTDECL(void *) RTMemEfDupNP(const void *pvSrc, size_t cb) RT_NO_THROW;
+
+/**
+ * Fenced drop-in replacement for RTMemDupEx.
+ * @copydoc RTMemDupEx
+ */
+RTDECL(void *) RTMemEfDupExNP(const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_NO_THROW;
 
 /** @} */
 
@@ -537,7 +603,7 @@ inline void RTMemTmpAutoDestructor(T *aMem) RT_NO_THROW
 template <class T>
 inline void RTMemEfAutoFree(T *aMem) RT_NO_THROW
 {
-    RTMemEfFree(aMem);
+    RTMemEfFreeNP(aMem);
 }
 
 
