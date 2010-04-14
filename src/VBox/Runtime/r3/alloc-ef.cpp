@@ -362,7 +362,7 @@ RTDECL(void *) rtR3MemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cbUnali
             return pv;
         }
         rtmemComplain(pszOp, "RTMemProtect failed, pvEFence=%p size %d, rc=%d\n", pvEFence, RTALLOC_EFENCE_SIZE, rc);
-        RTMemPageFree(pvBlock);
+        RTMemPageFree(pvBlock, cbBlock);
     }
     else
         rtmemComplain(pszOp, "Failed to allocated %lu (%lu) bytes.\n", (unsigned long)cbBlock, (unsigned long)cbUnaligned);
@@ -455,7 +455,7 @@ RTDECL(void) rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *p
                 size_t cbBlock = RT_ALIGN_Z(pBlock->cbAligned, PAGE_SIZE) + RTALLOC_EFENCE_SIZE;
                 rc = RTMemProtect(pvBlock, cbBlock, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
                 if (RT_SUCCESS(rc))
-                    RTMemPageFree(pvBlock);
+                    RTMemPageFree(pvBlock, RT_ALIGN_Z(pBlock->cbAligned, PAGE_SIZE) + RTALLOC_EFENCE_SIZE);
                 else
                     rtmemComplain(pszOp, "RTMemProtect(%p, %#x, RTMEM_PROT_READ | RTMEM_PROT_WRITE) -> %d\n", pvBlock, cbBlock, rc);
                 rtmemBlockFree(pBlock);
@@ -478,7 +478,7 @@ RTDECL(void) rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *p
 #  endif
         int rc = RTMemProtect(pvEFence, RTALLOC_EFENCE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
         if (RT_SUCCESS(rc))
-            RTMemPageFree(pvBlock);
+            RTMemPageFree(pvBlock, RT_ALIGN_Z(pBlock->cbAligned, PAGE_SIZE) + RTALLOC_EFENCE_SIZE);
         else
             rtmemComplain(pszOp, "RTMemProtect(%p, %#x, RTMEM_PROT_READ | RTMEM_PROT_WRITE) -> %d\n", pvEFence, RTALLOC_EFENCE_SIZE, rc);
         rtmemBlockFree(pBlock);

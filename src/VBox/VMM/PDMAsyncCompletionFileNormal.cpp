@@ -431,7 +431,7 @@ static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
                     pAioMgr->pahReqsFree[pAioMgr->iFreeEntryNext] = pahReqs[i];
                     pAioMgr->iFreeEntryNext = (pAioMgr->iFreeEntryNext + 1) % pAioMgr->cReqEntries;
 
-                    if (pTask->fBounceBuffer)
+                    if (pTask->cbBounceBuffer)
                         RTMemFree(pTask->pvBounceBuffer);
 
                     pTask->fPrefetch = false;
@@ -449,7 +449,7 @@ static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
 
                 pAioMgr->cRequestsActiveMax = pAioMgr->cRequestsActive;
             }
-            
+
             LogFlow(("Removed requests. I/O manager has a total of %d active requests now\n", pAioMgr->cRequestsActive));
             LogFlow(("Endpoint has a total of %d active requests now\n", pEndpoint->AioMgr.cRequestsActive));
         }
@@ -601,7 +601,7 @@ static int pdmacFileAioMgrNormalTaskPrepareBuffered(PPDMACEPFILEMGR pAioMgr,
                 pTask->Off, pTask->DataSeg.cbSeg, pEndpoint->cbFile));
 
     pTask->fPrefetch = false;
-    pTask->fBounceBuffer = false;
+    pTask->cbBounceBuffer = 0;
 
     /*
      * Before we start to setup the request we have to check whether there is a task
@@ -720,11 +720,11 @@ static int pdmacFileAioMgrNormalTaskPrepareNonBuffered(PPDMACEPFILEMGR pAioMgr,
                      pTask, cbToTransfer, pTask->DataSeg.cbSeg, offStart, pTask->Off));
 
             /* Create bounce buffer. */
-            pTask->fBounceBuffer = true;
+            pTask->cbBounceBuffer = cbToTransfer;
 
             AssertMsg(pTask->Off >= offStart, ("Overflow in calculation Off=%llu offStart=%llu\n",
                       pTask->Off, offStart));
-            pTask->uBounceBufOffset = pTask->Off - offStart;
+            pTask->offBounceBuffer = pTask->Off - offStart;
 
             /** @todo: I think we need something like a RTMemAllocAligned method here.
              * Current assumption is that the maximum alignment is 4096byte
@@ -754,7 +754,7 @@ static int pdmacFileAioMgrNormalTaskPrepareNonBuffered(PPDMACEPFILEMGR pAioMgr,
                 rc = VERR_NO_MEMORY;
         }
         else
-            pTask->fBounceBuffer = false;
+            pTask->cbBounceBuffer = 0;
 
         if (RT_SUCCESS(rc))
         {
@@ -785,8 +785,8 @@ static int pdmacFileAioMgrNormalTaskPrepareNonBuffered(PPDMACEPFILEMGR pAioMgr,
             else
             {
                 /* Cleanup */
-                if (pTask->fBounceBuffer)
-                    RTMemPageFree(pTask->pvBounceBuffer);
+                if (pTask->cbBounceBuffer)
+                    RTMemPageFree(pTask->pvBounceBuffer, pTask->cbBounceBuffer);
             }
         }
     }
@@ -1145,8 +1145,8 @@ static void pdmacFileAioMgrNormalReqComplete(PPDMACEPFILEMGR pAioMgr, RTFILEAIOR
         pEndpoint->AioMgr.cRequestsActive--;
         pEndpoint->AioMgr.cReqsProcessed++;
 
-        if (pTask->fBounceBuffer)
-            RTMemFree(pTask->pvBounceBuffer);
+        if (pTask->cbBounceBuffer)
+            RTMemPageFree(pTask->pvBounceBuffer, pTask->cbBounceBuffer);
 
         /* Queue the request on the pending list. */
         pTask->pNext = pEndpoint->AioMgr.pReqsPendingHead;
@@ -1186,15 +1186,15 @@ static void pdmacFileAioMgrNormalReqComplete(PPDMACEPFILEMGR pAioMgr, RTFILEAIOR
     {
         AssertMsg(   RT_FAILURE(rcReq)
                   || (   (cbTransfered == pTask->DataSeg.cbSeg)
-                      || (pTask->fBounceBuffer && (cbTransfered >= pTask->DataSeg.cbSeg))),
+                      || (pTask->cbBounceBuffer && cbTransfered >= pTask->DataSeg.cbSeg)),
                   ("Task didn't completed successfully (rc=%Rrc) or was incomplete (cbTransfered=%u)\n", rcReq, cbTransfered));
 
         if (pTask->fPrefetch)
         {
             Assert(pTask->enmTransferType == PDMACTASKFILETRANSFER_WRITE);
-            Assert(pTask->fBounceBuffer);
+            Assert(pTask->cbBounceBuffer);
 
-            memcpy(((uint8_t *)pTask->pvBounceBuffer) + pTask->uBounceBufOffset,
+            memcpy(((uint8_t *)pTask->pvBounceBuffer) + pTask->offBounceBuffer,
                     pTask->DataSeg.pvSeg,
                     pTask->DataSeg.cbSeg);
 
@@ -1218,14 +1218,14 @@ static void pdmacFileAioMgrNormalReqComplete(PPDMACEPFILEMGR pAioMgr, RTFILEAIOR
         }
         else
         {
-            if (RT_SUCCESS(rc) && pTask->fBounceBuffer)
+            if (RT_SUCCESS(rc) && pTask->cbBounceBuffer)
             {
                 if (pTask->enmTransferType == PDMACTASKFILETRANSFER_READ)
                     memcpy(pTask->DataSeg.pvSeg,
-                            ((uint8_t *)pTask->pvBounceBuffer) + pTask->uBounceBufOffset,
-                            pTask->DataSeg.cbSeg);
+                           ((uint8_t *)pTask->pvBounceBuffer) + pTask->offBounceBuffer,
+                           pTask->DataSeg.cbSeg);
 
-                RTMemPageFree(pTask->pvBounceBuffer);
+                RTMemPageFree(pTask->pvBounceBuffer, pTask->cbBounceBuffer);
             }
 
             /* Put the entry on the free array */

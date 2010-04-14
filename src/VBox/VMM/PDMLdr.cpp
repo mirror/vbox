@@ -651,12 +651,13 @@ static int pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName)
 
     RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
     RTMemFree(pModule);
-    RTMemTmpFree(pszFile);
     LogRel(("pdmR3LoadR0U: pszName=\"%s\" rc=%Rrc\n", pszName, rc));
 
     /* Don't consider VERR_PDM_MODULE_NAME_CLASH and VERR_NO_MEMORY above as these are very unlikely. */
     if (RT_FAILURE(rc) && pUVM->pVM) /** @todo VMR3SetErrorU. */
-        return VMSetError(pUVM->pVM, rc, RT_SRC_POS, N_("Cannot load R0 module %s"), pszFilename);
+        rc = VMSetError(pUVM->pVM, rc, RT_SRC_POS, N_("Cannot load R0 module %s"), pszFilename);
+
+    RTMemTmpFree(pszFile); /* might be reference thru pszFilename in the above VMSetError call. */
     return rc;
 }
 

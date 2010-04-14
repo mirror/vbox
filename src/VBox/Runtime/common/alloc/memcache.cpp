@@ -251,7 +251,7 @@ RTDECL(int) RTMemCacheDestroy(RTMEMCACHE hMemCache)
                     pThis->pfnDtor(hMemCache, pPage->pbObjects + iObj * pThis->cbObject, pThis->pvUser);
         }
 
-        RTMemPageFree(pPage);
+        RTMemPageFree(pPage, PAGE_SIZE);
     }
 
     RTMemFree(pThis);

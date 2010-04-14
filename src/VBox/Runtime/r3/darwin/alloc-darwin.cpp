@@ -125,7 +125,7 @@ RTDECL(void *) RTMemPageAllocZ(size_t cb) RT_NO_THROW
  * @param   pv      Pointer to the block as it was returned by the allocation function.
  *                  NULL will be ignored.
  */
-RTDECL(void) RTMemPageFree(void *pv) RT_NO_THROW
+RTDECL(void) RTMemPageFree(void *pv, size_t cb) RT_NO_THROW
 {
     if (pv)
         free(pv);

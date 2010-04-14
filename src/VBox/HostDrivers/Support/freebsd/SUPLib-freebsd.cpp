@@ -185,10 +185,10 @@ int suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPages)
 }
 
 
-int suplibOsPageFree(PSUPLIBDATA pThis, void *pvPages, size_t /* cPages */)
+int suplibOsPageFree(PSUPLIBDATA pThis, void *pvPages, size_t cPages)
 {
     NOREF(pThis);
-    RTMemPageFree(pvPages);
+    RTMemPageFree(pvPages, cPages * PAGE_SIZE);
     return VINF_SUCCESS;
 }
 

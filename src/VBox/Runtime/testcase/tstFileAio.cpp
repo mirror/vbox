@@ -171,7 +171,7 @@ void tstFileAioTestReadWriteBasic(RTFILE File, bool fWrite, void *pvTestBuf, siz
 
                         /* Free buffers. */
                         for (unsigned i = 0; i < cMaxReqsInFlight; i++)
-                            RTMemPageFree(papvBuf[i]);
+                            RTMemPageFree(papvBuf[i], cbTestBuf);
 
                         /* Free requests. */
                         for (unsigned i = 0; i < cMaxReqsInFlight; i++)
