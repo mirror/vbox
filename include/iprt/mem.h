@@ -451,7 +451,7 @@ RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, RT_
 /** @def RTMEM_WRAP_TO_EF_APIS
  * Define RTMEM_WRAP_TO_EF_APIS to wrap RTMem APIs to RTMemEf APIs.
  */
-#if defined(RTMEM_WRAP_TO_EF_APIS) && defined(IN_RING3)
+#if defined(RTMEM_WRAP_TO_EF_APIS) && defined(IN_RING3) && !defined(RTMEM_NO_WRAP_TO_EF_APIS)
 # define RTMemTmpAlloc(cb)                  RTMemEfTmpAlloc((cb), RT_SRC_POS)
 # define RTMemTmpAllocZ(cb)                 RTMemEfTmpAllocZ((cb), RT_SRC_POS)
 # define RTMemTmpFree(pv)                   RTMemEfTmpFree((pv), RT_SRC_POS)
