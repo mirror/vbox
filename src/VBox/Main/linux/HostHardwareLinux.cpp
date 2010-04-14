@@ -852,46 +852,6 @@ int getDriveInfoFromSysfs(DriveInfoList *pList, bool isDVD, bool *pfSuccess)
     return rc;
 }
 
-/**
- * Helper function to query the sysfs subsystem for information about USB
- * devices attached to the system.
- * @returns iprt status code
- * @param   pList      where to add information about the drives detected
- * @param   pfSuccess  Did we find anything?
- *
- * @returns IPRT status code
- */
-static int getUSBDeviceInfoFromSysfs(USBDeviceInfoList *pList,
-                                     bool *pfSuccess)
-{
-    AssertPtrReturn(pList, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pfSuccess, VERR_INVALID_POINTER); /* Valid or Null */
-    LogFlowFunc (("pList=%p, pfSuccess=%p\n",
-                  pList, pfSuccess));
-    size_t cDevices = pList->size();
-    matchUSBDevice devHandler(pList);
-    int rc = getDeviceInfoFromSysfs("/sys/bus/usb/devices", &devHandler);
-    do {
-        if (RT_FAILURE(rc))
-            break;
-        for (USBDeviceInfoList::iterator pInfo = pList->begin();
-             pInfo != pList->end(); ++pInfo)
-        {
-            matchUSBInterface ifaceHandler(&*pInfo);
-            rc = getDeviceInfoFromSysfs("/sys/bus/usb/devices", &ifaceHandler);
-            if (RT_FAILURE(rc))
-                break;
-        }
-    } while(0);
-    if (RT_FAILURE(rc))
-        /* Clean up again */
-        while (pList->size() > cDevices)
-            pList->pop_back();
-    if (pfSuccess)
-        *pfSuccess = RT_SUCCESS(rc);
-    LogFlow (("rc=%Rrc\n", rc));
-    return rc;
-}
 
 /** Structure for holding information about a drive we have found */
 struct deviceNodeInfo
@@ -1193,6 +1153,218 @@ void VBoxMainHotplugWaiter::Interrupt()
     LogFlowFunc(("\n"));
     mContext->mInterrupt = true;
 #endif  /* defined RT_OS_LINUX && defined VBOX_WITH_DBUS */
+}
+
+
+class sysfsPathHandler
+{
+    /** Called on each element of the sysfs directory.  Can e.g. store
+     * interesting entries in a list. */
+    virtual bool handle(const char *pcszNode) = 0;
+public:
+    bool doHandle(const char *pcszNode)
+    {
+        AssertPtr(pcszNode);
+        Assert(pcszNode[0] == '/');
+        Assert(RTPathExists(pcszNode));
+        return handle(pcszNode);
+    }
+};
+
+/**
+ * Helper function to walk a sysfs directory for extracting information about
+ * devices.
+ * @returns iprt status code
+ * @param   pcszPath   Sysfs directory to walk.  Must exist.
+ * @param   pHandler   Handler object which will be invoked on each directory
+ *                     entry
+ *
+ * @returns IPRT status code
+ */
+/* static */
+int getDeviceInfoFromSysfs(const char *pcszPath, sysfsPathHandler *pHandler)
+{
+    AssertPtrReturn(pcszPath, VERR_INVALID_POINTER);
+    AssertPtrReturn(pHandler, VERR_INVALID_POINTER);
+    LogFlowFunc (("pcszPath=%s, pHandler=%p\n", pcszPath, pHandler));
+    PRTDIR pDir = NULL;
+    int rc;
+
+    rc = RTDirOpen(&pDir, pcszPath);
+    AssertRCReturn(rc, rc);
+    while (RT_SUCCESS(rc))
+    {
+        RTDIRENTRY entry;
+        char szPath[RTPATH_MAX], szAbsPath[RTPATH_MAX];
+
+        rc = RTDirRead(pDir, &entry, NULL);
+        Assert(rc != VERR_BUFFER_OVERFLOW);  /* Should never happen... */
+            /* We break on "no more files" as well as on "real" errors */
+        if (RT_FAILURE(rc))
+            break;
+        if (entry.szName[0] == '.')
+            continue;
+        if (RTStrPrintf(szPath, sizeof(szPath), "%s/%s", pcszPath,
+                        entry.szName) >= sizeof(szPath))
+            rc = VERR_BUFFER_OVERFLOW;
+        if (RT_FAILURE(rc))
+            break;
+        rc = RTPathReal(szPath, szAbsPath, sizeof(szAbsPath));
+        AssertRCBreak(rc);  /* sysfs should guarantee that this exists */
+        if (!pHandler->doHandle(szAbsPath))
+            break;
+    }
+    RTDirClose(pDir);
+    if (rc == VERR_NO_MORE_FILES)
+        rc = VINF_SUCCESS;
+    LogFlow (("rc=%Rrc\n", rc));
+    return rc;
+}
+
+
+/**
+ * Tell whether a file in /sys/bus/usb/devices is a device rather than an
+ * interface.  To be used with getDeviceInfoFromSysfs().
+ */
+class matchUSBDevice : public sysfsPathHandler
+{
+    USBDeviceInfoList *mList;
+public:
+    matchUSBDevice(USBDeviceInfoList *pList) : mList(pList) {}
+private:
+    virtual bool handle(const char *pcszNode)
+    {
+        const char *pcszFile = strrchr(pcszNode, '/');
+        if (strchr(pcszFile, ':'))
+            return true;
+        dev_t devnum = RTLinuxSysFsReadDevNumFile("%s/dev", pcszNode);
+        AssertReturn (devnum, true);
+        char szDevPath[RTPATH_MAX];
+        ssize_t cchDevPath;
+        cchDevPath = RTLinuxFindDevicePath(devnum, RTFS_TYPE_DEV_CHAR,
+                                           szDevPath, sizeof(szDevPath),
+                                           "/dev/bus/usb/%.3d/%.3d",
+                                           RTLinuxSysFsReadIntFile(10, "%s/busnum", pcszNode),
+                                           RTLinuxSysFsReadIntFile(10, "%s/devnum", pcszNode));
+        if (cchDevPath < 0)
+            return true;
+        try
+        {
+            mList->push_back(USBDeviceInfo(szDevPath, pcszNode));
+        }
+        catch(std::bad_alloc &e)
+        {
+            return false;
+        }
+        return true;
+    }
+};
+
+/**
+ * Tell whether a file in /sys/bus/usb/devices is an interface rather than a
+ * device.  To be used with getDeviceInfoFromSysfs().
+ */
+class matchUSBInterface : public sysfsPathHandler
+{
+    USBDeviceInfo *mInfo;
+public:
+    /** This constructor is currently used to unit test the class logic in
+     * debug builds.  Since no access is made to anything outside the class,
+     * this shouldn't cause any slowdown worth mentioning. */
+    matchUSBInterface(USBDeviceInfo *pInfo) : mInfo(pInfo)
+    {
+        Assert(isAnInterfaceOf("/sys/devices/pci0000:00/0000:00:1a.0/usb3/3-0:1.0",
+               "/sys/devices/pci0000:00/0000:00:1a.0/usb3"));
+        Assert(!isAnInterfaceOf("/sys/devices/pci0000:00/0000:00:1a.0/usb3/3-1",
+               "/sys/devices/pci0000:00/0000:00:1a.0/usb3"));
+        Assert(!isAnInterfaceOf("/sys/devices/pci0000:00/0000:00:1a.0/usb3/3-0:1.0/driver",
+               "/sys/devices/pci0000:00/0000:00:1a.0/usb3"));
+    }
+private:
+    /** The logic for testing whether a sysfs address corresponds to an
+     * interface of a device.  Both must be referenced by their canonical
+     * sysfs paths.  This is not tested, as the test requires file-system
+     * interaction. */
+    bool isAnInterfaceOf(const char *pcszIface, const char *pcszDev)
+    {
+        size_t cchDev = strlen(pcszDev);
+
+        AssertPtr(pcszIface);
+        AssertPtr(pcszDev);
+        Assert(pcszIface[0] == '/');
+        Assert(pcszDev[0] == '/');
+        Assert(pcszDev[cchDev - 1] != '/');
+        /* If this passes, pcszIface is at least cchDev long */
+        if (strncmp(pcszIface, pcszDev, cchDev))
+            return false;
+        /* If this passes, pcszIface is longer than cchDev */
+        if (pcszIface[cchDev] != '/')
+            return false;
+        /* In sysfs an interface is an immediate subdirectory of the device */
+        if (strchr(pcszIface + cchDev + 1, '/'))
+            return false;
+        /* And it always has a colon in its name */
+        if (!strchr(pcszIface + cchDev + 1, ':'))
+            return false;
+        /* And hopefully we have now elimitated everything else */
+        return true;
+    }
+
+    virtual bool handle(const char *pcszNode)
+    {
+        if (!isAnInterfaceOf(pcszNode, mInfo->mSysfsPath.c_str()))
+            return true;
+        try
+        {
+            mInfo->mInterfaces.push_back(pcszNode);
+        }
+        catch(std::bad_alloc &e)
+        {
+            return false;
+        }
+        return true;
+    }
+};
+
+/**
+ * Helper function to query the sysfs subsystem for information about USB
+ * devices attached to the system.
+ * @returns iprt status code
+ * @param   pList      where to add information about the drives detected
+ * @param   pfSuccess  Did we find anything?
+ *
+ * @returns IPRT status code
+ */
+static int getUSBDeviceInfoFromSysfs(USBDeviceInfoList *pList,
+                                     bool *pfSuccess)
+{
+    AssertPtrReturn(pList, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfSuccess, VERR_INVALID_POINTER); /* Valid or Null */
+    LogFlowFunc (("pList=%p, pfSuccess=%p\n",
+                  pList, pfSuccess));
+    size_t cDevices = pList->size();
+    matchUSBDevice devHandler(pList);
+    int rc = getDeviceInfoFromSysfs("/sys/bus/usb/devices", &devHandler);
+    do {
+        if (RT_FAILURE(rc))
+            break;
+        for (USBDeviceInfoList::iterator pInfo = pList->begin();
+             pInfo != pList->end(); ++pInfo)
+        {
+            matchUSBInterface ifaceHandler(&*pInfo);
+            rc = getDeviceInfoFromSysfs("/sys/bus/usb/devices", &ifaceHandler);
+            if (RT_FAILURE(rc))
+                break;
+        }
+    } while(0);
+    if (RT_FAILURE(rc))
+        /* Clean up again */
+        while (pList->size() > cDevices)
+            pList->pop_back();
+    if (pfSuccess)
+        *pfSuccess = RT_SUCCESS(rc);
+    LogFlow (("rc=%Rrc\n", rc));
+    return rc;
 }
 
 
@@ -1850,175 +2022,6 @@ int getOldUSBDeviceInfoFromHal(USBDeviceInfoList *pList, bool *pfSuccess)
     return rc;
 }
 
-class sysfsPathHandler
-{
-    /** Called on each element of the sysfs directory.  Can e.g. store
-     * interesting entries in a list. */
-    virtual bool handle(const char *pcszNode) = 0;
-public:
-    bool doHandle(const char *pcszNode)
-    {
-        AssertPtr(pcszNode);
-        Assert(pcszNode[0] == '/');
-        Assert(RTPathExists(pcszNode));
-        return handle(pcszNode);
-    }
-};
-
-/**
- * Helper function to walk a sysfs directory for extracting information about
- * devices.
- * @returns iprt status code
- * @param   pcszPath   Sysfs directory to walk.  Must exist.
- * @param   pHandler   Handler object which will be invoked on each directory
- *                     entry
- *
- * @returns IPRT status code
- */
-/* static */
-int getDeviceInfoFromSysfs(const char *pcszPath, sysfsPathHandler *pHandler)
-{
-    AssertPtrReturn(pcszPath, VERR_INVALID_POINTER);
-    AssertPtrReturn(pHandler, VERR_INVALID_POINTER);
-    LogFlowFunc (("pcszPath=%s, pHandler=%p\n", pcszPath, pHandler));
-    PRTDIR pDir = NULL;
-    int rc;
-
-    rc = RTDirOpen(&pDir, pcszPath);
-    AssertRCReturn(rc, rc);
-    while (RT_SUCCESS(rc))
-    {
-        RTDIRENTRY entry;
-        char szPath[RTPATH_MAX], szAbsPath[RTPATH_MAX];
-
-        rc = RTDirRead(pDir, &entry, NULL);
-        Assert(rc != VERR_BUFFER_OVERFLOW);  /* Should never happen... */
-            /* We break on "no more files" as well as on "real" errors */
-        if (RT_FAILURE(rc))
-            break;
-        if (entry.szName[0] == '.')
-            continue;
-        if (RTStrPrintf(szPath, sizeof(szPath), "%s/%s", pcszPath,
-                        entry.szName) >= sizeof(szPath))
-            rc = VERR_BUFFER_OVERFLOW;
-        if (RT_FAILURE(rc))
-            break;
-        rc = RTPathReal(szPath, szAbsPath, sizeof(szAbsPath));
-        AssertRCBreak(rc);  /* sysfs should guarantee that this exists */
-        if (!pHandler->doHandle(szAbsPath))
-            break;
-    }
-    RTDirClose(pDir);
-    if (rc == VERR_NO_MORE_FILES)
-        rc = VINF_SUCCESS;
-    LogFlow (("rc=%Rrc\n", rc));
-    return rc;
-}
-
-
-/**
- * Tell whether a file in /sys/bus/usb/devices is a device rather than an
- * interface.  To be used with getDeviceInfoFromSysfs().
- */
-class matchUSBDevice : public sysfsPathHandler
-{
-    USBDeviceInfoList *mList;
-public:
-    matchUSBDevice(USBDeviceInfoList *pList) : mList(pList) {}
-private:
-    virtual bool handle(const char *pcszNode)
-    {
-        const char *pcszFile = strrchr(pcszNode, '/');
-        if (strchr(pcszFile, ':'))
-            return true;
-        dev_t devnum = RTLinuxSysFsReadDevNumFile("%s/dev", pcszNode);
-        AssertReturn (devnum, true);
-        char szDevPath[RTPATH_MAX];
-        ssize_t cchDevPath;
-        cchDevPath = RTLinuxFindDevicePath(devnum, RTFS_TYPE_DEV_CHAR,
-                                           szDevPath, sizeof(szDevPath),
-                                           "/dev/bus/usb/%.3d/%.3d",
-                                           RTLinuxSysFsReadIntFile(10, "%s/busnum", pcszNode),
-                                           RTLinuxSysFsReadIntFile(10, "%s/devnum", pcszNode));
-        if (cchDevPath < 0)
-            return true;
-        try
-        {
-            mList->push_back(USBDeviceInfo(szDevPath, pcszNode));
-        }
-        catch(std::bad_alloc &e)
-        {
-            return false;
-        }
-        return true;
-    }
-};
-
-/**
- * Tell whether a file in /sys/bus/usb/devices is an interface rather than a
- * device.  To be used with getDeviceInfoFromSysfs().
- */
-class matchUSBInterface : public sysfsPathHandler
-{
-    USBDeviceInfo *mInfo;
-public:
-    /** This constructor is currently used to unit test the class logic in
-     * debug builds.  Since no access is made to anything outside the class,
-     * this shouldn't cause any slowdown worth mentioning. */
-    matchUSBInterface(USBDeviceInfo *pInfo) : mInfo(pInfo)
-    {
-        Assert(isAnInterfaceOf("/sys/devices/pci0000:00/0000:00:1a.0/usb3/3-0:1.0",
-               "/sys/devices/pci0000:00/0000:00:1a.0/usb3"));
-        Assert(!isAnInterfaceOf("/sys/devices/pci0000:00/0000:00:1a.0/usb3/3-1",
-               "/sys/devices/pci0000:00/0000:00:1a.0/usb3"));
-        Assert(!isAnInterfaceOf("/sys/devices/pci0000:00/0000:00:1a.0/usb3/3-0:1.0/driver",
-               "/sys/devices/pci0000:00/0000:00:1a.0/usb3"));
-    }
-private:
-    /** The logic for testing whether a sysfs address corresponds to an
-     * interface of a device.  Both must be referenced by their canonical
-     * sysfs paths.  This is not tested, as the test requires file-system
-     * interaction. */
-    bool isAnInterfaceOf(const char *pcszIface, const char *pcszDev)
-    {
-        size_t cchDev = strlen(pcszDev);
-
-        AssertPtr(pcszIface);
-        AssertPtr(pcszDev);
-        Assert(pcszIface[0] == '/');
-        Assert(pcszDev[0] == '/');
-        Assert(pcszDev[cchDev - 1] != '/');
-        /* If this passes, pcszIface is at least cchDev long */
-        if (strncmp(pcszIface, pcszDev, cchDev))
-            return false;
-        /* If this passes, pcszIface is longer than cchDev */
-        if (pcszIface[cchDev] != '/')
-            return false;
-        /* In sysfs an interface is an immediate subdirectory of the device */
-        if (strchr(pcszIface + cchDev + 1, '/'))
-            return false;
-        /* And it always has a colon in its name */
-        if (!strchr(pcszIface + cchDev + 1, ':'))
-            return false;
-        /* And hopefully we have now elimitated everything else */
-        return true;
-    }
-
-    virtual bool handle(const char *pcszNode)
-    {
-        if (!isAnInterfaceOf(pcszNode, mInfo->mSysfsPath.c_str()))
-            return true;
-        try
-        {
-            mInfo->mInterfaces.push_back(pcszNode);
-        }
-        catch(std::bad_alloc &e)
-        {
-            return false;
-        }
-        return true;
-    }
-};
 
 /**
  * Helper function to query the hal subsystem for information about USB devices
