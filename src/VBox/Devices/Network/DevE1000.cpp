@@ -3201,6 +3201,7 @@ static void e1kTransmitFrame(E1KSTATE* pState, bool fOnWorkerThread)
         if (GET_BITS(RCTL, LBM) == RCTL_LBM_TCVR)
         {
             E1KRXDST status;
+            RT_ZERO(status);
             status.fPIF = true;
             e1kHandleRxPacket(pState, pSg->aSegs[0].pvSeg, cbFrame, status);
             rc = VINF_SUCCESS;
@@ -4957,7 +4958,7 @@ static DECLCALLBACK(int) e1kNetworkDown_Receive(PPDMINETWORKDOWN pInterface, con
         }
         STAM_PROFILE_ADV_START(&pState->StatReceiveFilter, a);
         E1KRXDST status;
-        memset(&status, 0, sizeof(status));
+        RT_ZERO(status);
         bool fPassed = e1kAddressFilter(pState, pvBuf, cb, &status);
         STAM_PROFILE_ADV_STOP(&pState->StatReceiveFilter, a);
         if (fPassed)
