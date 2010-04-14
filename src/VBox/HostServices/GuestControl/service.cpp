@@ -243,7 +243,7 @@ private:
     int clientDisconnect(uint32_t u32ClientID, void *pvClient);
     int processHostMsg(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int notifyGuest(GuestCall *pCall, uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int notifyHost(VBOXHGCMCALLHANDLE callHandle, uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int notifyHost(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int processCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     void call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
               void *pvClient, uint32_t eFunction, uint32_t cParms,
@@ -486,19 +486,21 @@ int Service::notifyGuest(GuestCall *pCall, uint32_t eFunction, uint32_t cParms, 
     return rc;
 }
 
-int Service::notifyHost(VBOXHGCMCALLHANDLE callHandle, uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::notifyHost(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     LogFlowFunc(("eFunction=%ld, cParms=%ld, paParms=%p\n",
                  eFunction, cParms, paParms));
     int rc = VINF_SUCCESS;
     if (   eFunction == GUEST_EXEC_SEND_STATUS
-        && cParms    == 4)
+        && cParms    == 5)
     {
         HOSTEXECCALLBACKDATA data;
-        data.u32Magic = HOSTCALLBACKMAGIC;
-        paParms[0].getUInt32(&data.pid);
-        paParms[1].getUInt32(&data.status);
-        paParms[2].getUInt32(&data.flags);
+        data.hdr.u32Magic = HOSTEXECCALLBACKDATAMAGIC;
+        paParms[0].getUInt32(&data.hdr.u32ContextID);
+
+        paParms[1].getUInt32(&data.u32PID);
+        paParms[2].getUInt32(&data.u32Status);
+        paParms[3].getUInt32(&data.u32Flags);
         paParms[4].getPointer(&data.pvData, &data.cbData);
 
         if (mpfnHostCallback)
@@ -575,7 +577,7 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
             /* The guest notifies the host of the current client status. */
             case GUEST_EXEC_SEND_STATUS:
                 LogFlowFunc(("SEND_STATUS\n"));
-                rc = notifyHost(callHandle, eFunction, cParms, paParms);
+                rc = notifyHost(eFunction, cParms, paParms);
                 break;
 
             default:

@@ -29,6 +29,9 @@
 *******************************************************************************/
 #include "ConsoleImpl.h"
 #include "DisplayImpl.h"
+#ifdef VBOX_WITH_GUEST_CONTROL
+# include "GuestImpl.h"
+#endif
 #include "VMMDev.h"
 
 // generated header
@@ -3728,9 +3731,18 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
         rc = VINF_SUCCESS;
     }
     else
-        Log(("VBoxGuestControlSvc loaded\n"));
+    {
+        HGCMSVCEXTHANDLE hDummy;
+        rc = HGCMHostRegisterServiceExtension(&hDummy, "VBoxGuestControlSvc",
+                                              &Guest::doGuestCtrlNotification,
+                                              pConsole->getGuest());
+        if (RT_FAILURE(rc))
+            Log(("Cannot register VBoxGuestControlSvc extension!\n"));
+        else
+            Log(("VBoxGuestControlSvc loaded\n"));
+    }
 
-    return VINF_SUCCESS;
+    return rc;
 #else /* !VBOX_WITH_GUEST_CONTROL */
     return VERR_NOT_SUPPORTED;
 #endif /* !VBOX_WITH_GUEST_CONTROL */

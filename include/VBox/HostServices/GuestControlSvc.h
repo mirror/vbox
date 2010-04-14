@@ -71,33 +71,41 @@ enum eProcessStatus
     PROC_STS_ERROR = 8
 };
 
+typedef struct _VBoxGuestCtrlCallbackHeader
+{
+    /** Magic number to identify the structure. */
+    uint32_t u32Magic;
+    /** Context ID to identify callback data. */
+    uint32_t u32ContextID;
+    /** Atomic flag whether callback was called. */
+    bool bCalled;
+} HOSTCCALLBACKHEADER, *PHOSTCCALLBACKHEADER;
+
 /**
  * Data structure to pass to the service extension callback.  We use this to
  * notify the host of changes to properties.
  */
 typedef struct _VBoxGuestCtrlExecCallbackData
 {
-    /** Magic number to identify the structure. */
-    uint32_t u32Magic;
+    /** Callback data header. */
+    HOSTCCALLBACKHEADER hdr;
     /** The process ID (PID). */
-    uint32_t pid;
+    uint32_t u32PID;
     /* The process status. */
-    uint32_t status;    
+    uint32_t u32Status;    
     /** Optional flags (not used atm). */
-    uint32_t flags;
+    uint32_t u32Flags;
     /** Optional data buffer (not used atm). */
     void *pvData;
     /** Size of optional data buffer (not used atm). */
     uint32_t cbData;
-    /** Atomic flags whether callback was called. */
-    bool called;
     
 } HOSTEXECCALLBACKDATA, *PHOSTEXECCALLBACKDATA;
 
 enum
 {
-    /** Magic number for sanity checking the HOSTCALLBACKDATA structure */
-    HOSTCALLBACKMAGIC = 0x26011982
+    /** Magic number for sanity checking the HOSTEXECCALLBACKDATA structure */
+    HOSTEXECCALLBACKDATAMAGIC = 0x26011982
 };
 
 /**
@@ -184,6 +192,8 @@ typedef struct _VBoxGuestCtrlHGCMMsgExecCmd
 {
     VBoxGuestHGCMCallInfo hdr;
 
+    HGCMFunctionParameter context;
+
     HGCMFunctionParameter cmd;
 
     HGCMFunctionParameter flags;
@@ -215,6 +225,8 @@ typedef struct _VBoxGuestCtrlHGCMMsgExecCmd
 typedef struct _VBoxGuestCtrlHGCMMsgExecStatus
 {
     VBoxGuestHGCMCallInfo hdr;
+    /** Context ID. */
+    HGCMFunctionParameter context;
     /** The process ID (PID). */
     HGCMFunctionParameter pid;
     /** The process status. */

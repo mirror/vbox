@@ -146,18 +146,20 @@ VBGLR3DECL(int) VbglR3GuestCtrlGetHostMsg(uint32_t u32ClientId, uint32_t *puMsg,
  * @param   uNumParms
  ** @todo Docs!
  */
-VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmd(uint32_t u32ClientId, uint32_t uNumParms,
-                                              char    *pszCmd,      uint32_t cbCmd,
+VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmd(uint32_t  u32ClientId,    uint32_t  uNumParms,
+                                              uint32_t *puContext,
+                                              char     *pszCmd,         uint32_t  cbCmd,
                                               uint32_t *puFlags,
-                                              char *pszArgs,        uint32_t cbArgs,  uint32_t *puNumArgs,
-                                              char *pszEnv,         uint32_t *pcbEnv, uint32_t *puNumEnvVars,
-                                              char *pszStdIn,       uint32_t cbStdIn,
-                                              char *pszStdOut,      uint32_t cbStdOut,
-                                              char *pszStdErr,      uint32_t cbStdErr,
-                                              char *pszUser,        uint32_t cbUser,
-                                              char *pszPassword,    uint32_t cbPassword,
+                                              char     *pszArgs,        uint32_t  cbArgs,   uint32_t *puNumArgs,
+                                              char     *pszEnv,         uint32_t *pcbEnv,   uint32_t *puNumEnvVars,
+                                              char     *pszStdIn,       uint32_t  cbStdIn,
+                                              char     *pszStdOut,      uint32_t  cbStdOut,
+                                              char     *pszStdErr,      uint32_t  cbStdErr,
+                                              char     *pszUser,        uint32_t  cbUser,
+                                              char     *pszPassword,    uint32_t  cbPassword,
                                               uint32_t *puTimeLimit)
 {
+    AssertPtr(puContext);
     AssertPtr(pszCmd);
     AssertPtr(puFlags);
     AssertPtr(pszArgs);
@@ -180,6 +182,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmd(uint32_t u32ClientId, uint32_t uNu
     Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
     Msg.hdr.cParms = uNumParms;
 
+    VbglHGCMParmUInt32Set(&Msg.context, 0); /** @todo Put this some header struct! */
     VbglHGCMParmPtrSet(&Msg.cmd, pszCmd, cbCmd);
     VbglHGCMParmUInt32Set(&Msg.flags, 0);
     VbglHGCMParmUInt32Set(&Msg.num_args, 0);
@@ -204,6 +207,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmd(uint32_t u32ClientId, uint32_t uNu
         }
         else
         {
+            Msg.context.GetUInt32(puContext);
             Msg.flags.GetUInt32(puFlags);
             Msg.num_args.GetUInt32(puNumArgs);
             Msg.num_env.GetUInt32(puNumEnvVars);
@@ -224,6 +228,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmd(uint32_t u32ClientId, uint32_t uNu
  ** @todo Docs!
  */
 VBGLR3DECL(int) VbglR3GuestCtrlExecReportStatus(uint32_t     u32ClientId, 
+                                                uint32_t     u32Context,
                                                 uint32_t     u32PID,
                                                 uint32_t     u32Status,
                                                 uint32_t     u32Flags,
@@ -235,8 +240,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecReportStatus(uint32_t     u32ClientId,
     Msg.hdr.result = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = GUEST_EXEC_SEND_STATUS;
-    Msg.hdr.cParms = 4;
+    Msg.hdr.cParms = 5;
 
+    VbglHGCMParmUInt32Set(&Msg.context, u32Context);
     VbglHGCMParmUInt32Set(&Msg.pid, u32PID);
     VbglHGCMParmUInt32Set(&Msg.status, u32Status);
     VbglHGCMParmUInt32Set(&Msg.flags, u32Flags);
