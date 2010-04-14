@@ -853,6 +853,16 @@ typedef struct PDMDRVHLPR3
     DECLR3CALLBACKMEMBER(bool, pfnVMTeleportedAndNotFullyResumedYet,(PPDMDRVINS pDrvIns));
 
     /**
+     * Gets the support driver session.
+     *
+     * This is intended for working using the semaphore API.
+     *
+     * @returns Support driver session handle.
+     * @param   pDrvIns         The driver instance.
+     */
+    DECLR3CALLBACKMEMBER(PSUPDRVSESSION, pfnGetSupDrvSession,(PPDMDRVINS pDrvIns));
+
+    /**
      * Create a queue.
      *
      * @returns VBox status code.
@@ -1295,6 +1305,14 @@ DECLINLINE(bool) PDMDrvHlpVMTeleportedAndNotFullyResumedYet(PPDMDRVINS pDrvIns)
 }
 
 /**
+ * @copydoc PDMDRVHLP::pfnGetSupDrvSession
+ */
+DECLINLINE(bool) PDMDrvHlpGetSupDrvSession(PPDMDRVINS pDrvIns)
+{
+    return pDrvIns->pHlpR3->pfnGetSupDrvSession(pDrvIns);
+}
+
+/**
  * @copydoc PDMDRVHLP::pfnQueueCreate
  */
 DECLINLINE(int) PDMDrvHlpQueueCreate(PPDMDRVINS pDrvIns, uint32_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
@@ -1483,7 +1501,7 @@ DECLINLINE(void) PDMDrvHlpAsyncNotificationCompleted(PPDMDRVINS pDrvIns)
  * @copydoc PDMDRVHLP::pfnThreadCreate
  */
 DECLINLINE(int) PDMDrvHlpThreadCreate(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
-                                         PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
+                                      PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
 {
     return pDrvIns->pHlpR3->pfnThreadCreate(pDrvIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
 }
