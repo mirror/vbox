@@ -43,6 +43,7 @@ class CVirtualBoxErrorInfo;
 class UISession;
 class UIActionsPool;
 class UIMachineWindow;
+class UIMachineView;
 class UIDockIconPreview;
 class VBoxChangeDockIconUpdateEvent;
 
@@ -69,9 +70,9 @@ public:
     CSession& session();
     UIActionsPool* actionsPool() const { return m_pActionsPool; }
     UIVisualStateType visualStateType() const { return m_visualStateType; }
-    QList<UIMachineWindow*>& machineWindows() { return m_machineWindowsList; }
-    UIMachineWindow* mainMachineWindow();
-    UIMachineWindow* defaultMachineWindow();
+    const QList<UIMachineWindow*>& machineWindows() const { return m_machineWindowsList; }
+    UIMachineWindow* mainMachineWindow() const;
+    UIMachineWindow* defaultMachineWindow() const;
 
     /* Maintenance getters/setters: */
     bool isPreventAutoClose() const { return m_fIsPreventAutoClose; }
@@ -80,6 +81,7 @@ public:
 #ifdef Q_WS_MAC
     void updateDockIcon();
     void updateDockIconSize(int screenId, int width, int height);
+    UIMachineView* dockPreviewView() const;
 #endif /* Q_WS_MAC */
 
 signals:

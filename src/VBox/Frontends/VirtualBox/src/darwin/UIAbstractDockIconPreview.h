@@ -30,8 +30,8 @@
 /* VBox includes */
 #include "VBoxUtils-darwin.h"
 
-class UISession;
 class UIFrameBuffer;
+class UISession;
 
 class QPixmap;
 
@@ -56,6 +56,8 @@ public:
     void initPreviewImages();
     inline CGImageRef stateImage() const;
     void drawOverlayIcons(CGContextRef context);
+
+    void* currentPreviewWindowId() const;
 
     /* Flipping is necessary cause the drawing context in Carbon is flipped by 180 degree */
     inline CGRect flipRect(CGRect rect) const { return ::darwinFlipCGRect(rect, m_dockIconRect); }

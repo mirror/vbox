@@ -21,8 +21,10 @@
 
 /* VBox includes */
 #include "UIAbstractDockIconPreview.h"
-#include "UISession.h"
 #include "UIFrameBuffer.h"
+#include "UIMachineLogic.h"
+#include "UIMachineView.h"
+#include "UISession.h"
 
 UIAbstractDockIconPreview::UIAbstractDockIconPreview(UISession * /* pSession */, const QPixmap& /* overlayImage */)
 {
@@ -66,6 +68,16 @@ UIAbstractDockIconPreviewHelper::UIAbstractDockIconPreviewHelper(UISession *pSes
     Assert(m_stateSaving);
     m_stateRestoring = ::darwinToCGImageRef("state_restoring_16px.png");
     Assert(m_stateRestoring);
+}
+
+void* UIAbstractDockIconPreviewHelper::currentPreviewWindowId() const
+{
+    /* Get the MachineView which is currently previewed and return the win id
+       of the viewport. */
+    UIMachineView* pView = m_pSession->machineLogic()->dockPreviewView();
+    if (pView)
+        return (void*)pView->viewport()->winId();
+    return 0;
 }
 
 UIAbstractDockIconPreviewHelper::~UIAbstractDockIconPreviewHelper()

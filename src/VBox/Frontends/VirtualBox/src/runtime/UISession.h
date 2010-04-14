@@ -40,6 +40,7 @@ class UIActionsPool;
 class UIConsoleCallback;
 class UIFrameBuffer;
 class UIMachine;
+class UIMachineLogic;
 class UIMachineMenuBar;
 
 /* CConsole callback event types: */
@@ -85,6 +86,7 @@ public:
     KMachineState machineState() const { return m_machineState; }
     UIActionsPool* actionsPool() const;
     QWidget* mainMachineWindow() const;
+    UIMachineLogic* machineLogic() const;
     QMenu* newMenu(UIMainMenuType fOptions = UIMainMenuType_All);
     QMenuBar* newMenuBar(UIMainMenuType fOptions = UIMainMenuType_All);
     QCursor cursor() const { return m_cursor; }

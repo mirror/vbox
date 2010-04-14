@@ -754,6 +754,11 @@ QWidget* UISession::mainMachineWindow() const
     return uimachine()->machineLogic()->mainMachineWindow()->machineWindow();
 }
 
+UIMachineLogic* UISession::machineLogic() const
+{
+    return uimachine()->machineLogic();
+}
+
 QMenu* UISession::newMenu(UIMainMenuType fOptions /* = UIMainMenuType_ALL */)
 {
     /* Create new menu: */
