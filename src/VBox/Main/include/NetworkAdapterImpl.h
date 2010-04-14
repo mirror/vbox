@@ -49,9 +49,6 @@ public:
                  mCableConnected(TRUE), mLineSpeed(0), mTraceEnabled(FALSE),
                  mHostInterface("") /* cannot be null */,
                  mNATNetwork("") /* cannot be null */
-                                                                /* ENABLE VDE */
-                 , mVDENetwork("") /* can be null */
-                                                                /* /ENABLE VDE */
         {}
 
         NetworkAdapterType_T mAdapterType;
@@ -66,8 +63,6 @@ public:
         Bstr mHostInterface;
         Bstr mInternalNetwork;
         Bstr mNATNetwork;
-        /* ENABLE VDE */
-        Bstr mVDENetwork;
         ULONG mBootPriority;
     };
 
@@ -109,10 +104,6 @@ public:
     STDMETHOD(COMSETTER(InternalNetwork)) (IN_BSTR aInternalNetwork);
     STDMETHOD(COMGETTER(NATNetwork)) (BSTR *aNATNetwork);
     STDMETHOD(COMSETTER(NATNetwork)) (IN_BSTR aNATNetwork);
-               /* ENABLE VDE */
-    STDMETHOD(COMGETTER(VDENetwork)) (BSTR *aVDENetwork);
-    STDMETHOD(COMSETTER(VDENetwork)) (IN_BSTR aVDENetwork);
-               /* /ENABLE VDE */
     STDMETHOD(COMGETTER(CableConnected)) (BOOL *aConnected);
     STDMETHOD(COMSETTER(CableConnected)) (BOOL aConnected);
     STDMETHOD(COMGETTER(TraceEnabled)) (BOOL *aEnabled);
@@ -130,9 +121,6 @@ public:
     STDMETHOD(AttachToBridgedInterface)();
     STDMETHOD(AttachToInternalNetwork)();
     STDMETHOD(AttachToHostOnlyInterface)();
-               /* ENABLE VDE */
-    STDMETHOD(AttachToVDE)();
-               /* /ENABLE VDE */
     STDMETHOD(Detach)();
 
     // public methods only for internal purposes

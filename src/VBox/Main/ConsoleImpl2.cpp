@@ -3415,29 +3415,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             break;
         }
 
-                               /* ENABLE VDE */
-        case NetworkAttachmentType_VDE:
-        {
-            hrc = aNetworkAdapter->COMGETTER(VDENetwork)(&str);    H();
-#if 0
-                                               if (str) {
-                                                       Utf8Str strUtf8 = str;
-                                                       LogRel(("VDE Network %s\n",(char *)strUtf8.raw()));
-                                               }
-#endif
-                                               rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0); RC_CHECK();
-                                               rc = CFGMR3InsertString(pLunL0, "Driver", "VDE");    RC_CHECK();
-                                               rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);         RC_CHECK();
-            if (str && *str) {
-                rc = CFGMR3InsertStringW(pCfg, "Network", str);         RC_CHECK();
-                                                               networkName = str;
-                                               }
-                                               rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_WhateverNone); RC_CHECK();
-                                               STR_FREE();
-            break;
-                               }
-                               /* /ENABLE VDE */
-
         default:
             AssertMsgFailed(("should not get here!\n"));
             break;
@@ -3455,7 +3432,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         case NetworkAttachmentType_Internal:
         case NetworkAttachmentType_HostOnly:
         case NetworkAttachmentType_NAT:
-        case NetworkAttachmentType_VDE:
         {
             if (SUCCEEDED(hrc) && SUCCEEDED(rc))
             {
