@@ -1940,38 +1940,40 @@ DECLINLINE(bool) e1kIsMulticast(const void *pvBuf)
  */
 static int e1kRxChecksumOffload(E1KSTATE* pState, const uint8_t *pFrame, size_t cb, E1KRXDST *pStatus)
 {
+    /** @todo
+     * It is not safe to bypass checksum verification for packets coming
+     * from real wire. We currently unable to tell where packets are
+     * coming from so we tell the driver to ignore our checksum flags
+     * and do verification in software.
+     */
+#if 0
     uint16_t uEtherType = ntohs(*(uint16_t*)(pFrame + 12));
-    PRTNETIPV4 pIpHdr4;
 
     E1kLog2(("%s e1kRxChecksumOffload: EtherType=%x\n", INSTANCE(pState), uEtherType));
 
     switch (uEtherType)
     {
-        /** @todo
-         * It is not safe to bypass checksum verification for packets coming
-         * from real wire. We currently unable to tell where packets are
-         * coming from so we tell the driver to ignore our checksum flags
-         * and do verification in software.
-         */
-#if 0
         case 0x800: /* IPv4 */
+        {
             pStatus->fIXSM  = false;
             pStatus->fIPCS  = true;
-            pIpHdr4 = (PRTNETIPV4)(pFrame + 14);
+            PRTNETIPV4 pIpHdr4 = (PRTNETIPV4)(pFrame + 14);
             /* TCP/UDP checksum offloading works with TCP and UDP only */
             pStatus->fTCPCS = pIpHdr4->ip_p == 6 || pIpHdr4->ip_p == 17;
             break;
+        }
         case 0x86DD: /* IPv6 */
             pStatus->fIXSM = false;
             pStatus->fIPCS  = false;
             pStatus->fTCPCS = true;
             break;
-#endif
         default: /* ARP, VLAN, etc. */
             pStatus->fIXSM = true;
             break;
     }
-
+#else
+    pStatus->fIXSM = true;
+#endif
     return VINF_SUCCESS;
 }
 
@@ -3121,7 +3123,7 @@ DECLINLINE(void) e1kWriteBackDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS a
 static void e1kTransmitFrame(E1KSTATE* pState, bool fOnWorkerThread)
 {
     PPDMSCATTERGATHER   pSg     = pState->CTX_SUFF(pTxSg);
-    uint32_t const      cbFrame = pSg ? (size_t)pSg->cbUsed : 0;
+    uint32_t const      cbFrame = pSg ? (uint32_t)pSg->cbUsed : 0;
     Assert(!pSg || pSg->cSegs == 1);
 
 /*    E1kLog2(("%s <<< Outgoing packet. Dump follows: >>>\n"
