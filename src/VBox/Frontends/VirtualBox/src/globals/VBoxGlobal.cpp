@@ -2154,6 +2154,11 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
                 else if (type == KNetworkAttachmentType_HostOnly)
                     attType = attType.arg (tr ("Host-only adapter, '%1'",
                         "details report (network)").arg (adapter.GetHostInterface()));
+                                                               /* ENABLE VDE */
+                else if (type == KNetworkAttachmentType_VDE)
+                    attType = attType.arg (tr ("VDE network, '%1'",
+                        "details report (network)").arg (adapter.GetVDENetwork()));
+                                                               /* /ENABLE VDE */
                 else
                     attType = attType.arg (vboxGlobal().toString (type));
 
@@ -3112,6 +3117,10 @@ void VBoxGlobal::retranslateUi()
         tr ("Internal Network", "NetworkAttachmentType");
     mNetworkAttachmentTypes [KNetworkAttachmentType_HostOnly] =
         tr ("Host-only Adapter", "NetworkAttachmentType");
+               /* ENABLE VDE */
+    mNetworkAttachmentTypes [KNetworkAttachmentType_VDE] =
+        tr ("VDE Adapter", "NetworkAttachmentType");
+               /* /ENABLE VDE */
 
     mClipboardTypes [KClipboardMode_Disabled] =
         tr ("Disabled", "ClipboardType");

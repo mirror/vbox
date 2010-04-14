@@ -104,6 +104,12 @@ void VBoxVMSettingsNetwork::getFromAdapter (const CNetworkAdapter &aAdapter)
             mHoiName = mAdapter.GetHostInterface();
             if (mHoiName.isEmpty()) mHoiName = QString::null;
             break;
+                                               /* ENABLE VDE */
+        case KNetworkAttachmentType_VDE:
+            mVDEName = mAdapter.GetVDENetwork();
+            if (mVDEName.isEmpty()) mVDEName = QString::null;
+            break;
+                                               /* /ENABLE VDE */
         default:
             break;
     }
@@ -144,6 +150,12 @@ void VBoxVMSettingsNetwork::putBackToAdapter()
             mAdapter.SetHostInterface (alternativeName());
             mAdapter.AttachToHostOnlyInterface();
             break;
+                                               /* ENABLE VDE */
+                               case KNetworkAttachmentType_VDE:
+                                               mAdapter.SetVDENetwork (alternativeName());
+                                               mAdapter.AttachToVDE();
+                                               break;
+                                               /* /ENABLE VDE */
         default:
             break;
     }
@@ -256,6 +268,11 @@ QString VBoxVMSettingsNetwork::alternativeName (int aType) const
         case KNetworkAttachmentType_HostOnly:
             result = mHoiName;
             break;
+                                               /* ENABLE VDE*/
+        case KNetworkAttachmentType_VDE:
+            result = mVDEName;
+            break;
+                                               /* /ENABLE VDE*/
         default:
             break;
     }
@@ -332,6 +349,13 @@ void VBoxVMSettingsNetwork::updateAttachmentAlternative()
             mCbAdapterName->insertItems (0, mParent->hoiList());
             mCbAdapterName->setEditable (false);
             break;
+                                               /* ENABLE VDE */
+        case KNetworkAttachmentType_VDE:
+                                               mCbAdapterName->insertItem(0, alternativeName());
+            mCbAdapterName->setEditable (true);
+            mCbAdapterName->setCompleter (0);
+            break;
+                                               /* /ENABLE VDE */
         default:
             break;
     }
@@ -431,6 +455,20 @@ void VBoxVMSettingsNetwork::updateAlternativeName()
                 mHoiName = newName;
             break;
         }
+                               /* ENABLE VDE */
+        case KNetworkAttachmentType_VDE:
+        {
+            QString newName ((mCbAdapterName->itemData (mCbAdapterName->currentIndex()).toString() ==
+                              QString (emptyItemCode) &&
+                              mCbAdapterName->currentText() ==
+                              mCbAdapterName->itemText (mCbAdapterName->currentIndex())) ||
+                              mCbAdapterName->currentText().isEmpty() ?
+                              QString::null : mCbAdapterName->currentText());
+            if (mVDEName != newName)
+                mVDEName = newName;
+            break;
+        }
+                               /* /ENABLE VDE */
         default:
             break;
     }
@@ -547,6 +585,14 @@ void VBoxVMSettingsNetwork::populateComboboxes()
         KNetworkAttachmentType_HostOnly);
     mCbAttachmentType->setItemData (4,
         mCbAttachmentType->itemText (4), Qt::ToolTipRole);
+               /* ENABLE VDE */
+    mCbAttachmentType->insertItem (5,
+        vboxGlobal().toString (KNetworkAttachmentType_VDE));
+    mCbAttachmentType->setItemData (5,
+        KNetworkAttachmentType_VDE);
+    mCbAttachmentType->setItemData (5,
+        mCbAttachmentType->itemText (5), Qt::ToolTipRole);
+               /* /ENABLE VDE */
 
     /* Set the old value */
     mCbAttachmentType->setCurrentIndex (currentAttachment);

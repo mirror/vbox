@@ -609,6 +609,52 @@ STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork) (IN_BSTR aNATNetwork)
     return S_OK;
 }
 
+/* ENABLE VDE */
+STDMETHODIMP NetworkAdapter::COMGETTER(VDENetwork) (BSTR *aVDENetwork)
+{
+    CheckComArgOutPointerValid(aVDENetwork);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    mData->mVDENetwork.cloneTo(aVDENetwork);
+
+    return S_OK;
+}
+
+STDMETHODIMP NetworkAdapter::COMSETTER(VDENetwork) (IN_BSTR aVDENetwork)
+{
+    Bstr bstrEmpty("");
+    if (!aVDENetwork)
+        aVDENetwork = bstrEmpty;
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep (mParent);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (mData->mVDENetwork != aVDENetwork)
+    {
+        mData.backup();
+        mData->mVDENetwork = aVDENetwork;
+
+        /* leave the lock before informing callbacks */
+        alock.release();
+
+        mParent->onNetworkAdapterChange (this, FALSE);
+    }
+
+    return S_OK;
+}
+
+/* /ENABLE VDE */
+
 STDMETHODIMP NetworkAdapter::COMGETTER(CableConnected) (BOOL *aConnected)
 {
     CheckComArgOutPointerValid(aConnected);
@@ -1047,6 +1093,51 @@ STDMETHODIMP NetworkAdapter::AttachToHostOnlyInterface()
     return S_OK;
 }
 
+/* ENABLE VDE */
+STDMETHODIMP NetworkAdapter::AttachToVDE()
+{
+       AutoCaller autoCaller(this);
+       if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+       /* the machine needs to be mutable */
+       AutoMutableStateDependency adep (mParent);
+       if (FAILED(adep.rc())) return adep.rc();
+
+       AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+       /* don't do anything if we're already host interface attached */
+       if (mData->mAttachmentType != NetworkAttachmentType_VDE)
+       {
+               mData.backup();
+
+               /* first detach the current attachment */
+               // Commented this for now as it reset the parameter mData->mHostInterface
+               // which is essential while changing the Attachment dynamically.
+               //detach();
+
+               mData->mAttachmentType = NetworkAttachmentType_VDE;
+
+               /* leave the lock before informing callbacks */
+               alock.release();
+
+               HRESULT rc = mParent->onNetworkAdapterChange (this, TRUE);
+               if (FAILED (rc))
+               {
+                       /* If changing the attachment failed then we can't assume
+                        * that the previous attachment will attach correctly
+                        * and thus return error along with dettaching all
+                        * attachments.
+                        */
+                       Detach();
+                       return rc;
+               }
+       }
+
+       return S_OK;
+}
+
+/* /ENABLE VDE */
+
 STDMETHODIMP NetworkAdapter::Detach()
 {
     AutoCaller autoCaller(this);
@@ -1155,6 +1246,15 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
             if (FAILED(rc)) return rc;
         break;
 
+                               /* ENABLE VDE */
+        case NetworkAttachmentType_VDE:
+                                   mData->mVDENetwork = data.strName;
+                                   rc = AttachToVDE();
+                                   if (FAILED(rc)) return rc;
+                               break;
+                               /* ENABLE VDE */
+
+
         case NetworkAttachmentType_Null:
             rc = Detach();
             if (FAILED(rc)) return rc;
@@ -1218,6 +1318,10 @@ HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
 
         case NetworkAttachmentType_HostOnly:
             data.strName = mData->mHostInterface;
+        break;
+
+        case NetworkAttachmentType_VDE:
+            data.strName = mData->mVDENetwork;
         break;
     }
 

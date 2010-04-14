@@ -110,7 +110,7 @@
          </sizepolicy>
         </property>
         <property name="whatsThis" >
-         <string>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</string>
+         <string>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; or the switch for &lt;b&gt;VDE&lt;/b&gt; attachments.</string>
         </property>
        </widget>
       </item>

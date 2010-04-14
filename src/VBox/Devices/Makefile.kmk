@@ -1003,6 +1003,7 @@ endif # l4
 
 Drivers_SOURCES.linux = \
 	Network/DrvTAP.cpp \
+	Network/DrvVDE.cpp \
 	Audio/ossaudio.c \
 	Parallel/DrvHostParallel.cpp \
 	Serial/DrvHostSerial.cpp
