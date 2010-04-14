@@ -16,6 +16,8 @@
 import sys,os
 import traceback
 
+# To set Python bitness on OSX use 'export VERSIONER_PYTHON_PREFER_32_BIT=yes'
+
 VboxBinDir = os.environ.get("VBOX_PROGRAM_PATH", None)
 VboxSdkDir = os.environ.get("VBOX_SDK_PATH", None)
 
@@ -24,7 +26,8 @@ if VboxBinDir is None:
     VboxBinDir = "%VBOX_INSTALL_PATH%"
 
 if VboxSdkDir is None:
-    VboxSdkDir = os.path.join(VboxBinDir,"sdk")
+    # Will be set by the installer
+    VboxSdkDir = "%VBOX_SDK_PATH%"
 
 os.environ["VBOX_PROGRAM_PATH"] = VboxBinDir
 os.environ["VBOX_SDK_PATH"] = VboxSdkDir
