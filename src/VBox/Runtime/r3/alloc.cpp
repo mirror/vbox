@@ -179,9 +179,9 @@ RTDECL(void *) RTMemAllocVar(size_t cbUnaligned)
     else
         cbAligned = RT_ALIGN_Z(cbUnaligned, sizeof(void *));
 #ifdef RTALLOC_USE_EFENCE
-    void *pv = RTMemAlloc(cbAligned);
-#else
     void *pv = rtR3MemAlloc("AllocVar", RTMEMTYPE_RTMEMALLOC, cbUnaligned, cbAligned, ASMReturnAddress(), NULL, 0, NULL);
+#else
+    void *pv = RTMemAlloc(cbAligned);
 #endif
     return pv;
 }
@@ -202,9 +202,9 @@ RTDECL(void *) RTMemAllocZVar(size_t cbUnaligned)
     else
         cbAligned = RT_ALIGN_Z(cbUnaligned, sizeof(void *));
 #ifdef RTALLOC_USE_EFENCE
-    void *pv = RTMemAllocZ(cbAligned);
-#else
     void *pv = rtR3MemAlloc("AllocZVar", RTMEMTYPE_RTMEMALLOCZ, cbUnaligned, cbAligned, ASMReturnAddress(), NULL, 0, NULL);
+#else
+    void *pv = RTMemAllocZ(cbAligned);
 #endif
     return pv;
 }
