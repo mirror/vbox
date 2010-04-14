@@ -87,18 +87,18 @@ void ErrorInfo::init (bool aKeepObj /* = false */)
         }
     }
 
-#else // !defined (VBOX_WITH_XPCOM)
+#else // defined (VBOX_WITH_XPCOM)
 
-    nsCOMPtr <nsIExceptionService> es;
-    es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
+    nsCOMPtr<nsIExceptionService> es;
+    es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
     if (NS_SUCCEEDED(rc))
     {
-        nsCOMPtr <nsIExceptionManager> em;
-        rc = es->GetCurrentExceptionManager (getter_AddRefs (em));
+        nsCOMPtr<nsIExceptionManager> em;
+        rc = es->GetCurrentExceptionManager(getter_AddRefs (em));
         if (NS_SUCCEEDED(rc))
         {
             ComPtr<nsIException> ex;
-            rc = em->GetCurrentException (ex.asOutParam());
+            rc = em->GetCurrentException(ex.asOutParam());
             if (NS_SUCCEEDED(rc) && ex)
             {
                 if (aKeepObj)
@@ -113,15 +113,17 @@ void ErrorInfo::init (bool aKeepObj /* = false */)
                 {
                     bool gotSomething = false;
 
-                    rc = ex->GetResult (&mResultCode);
+                    rc = ex->GetResult(&mResultCode);
                     gotSomething |= NS_SUCCEEDED(rc);
 
-                    Utf8Str message;
-                    rc = ex->GetMessage(message.asOutParam());
-                    message.jolt();
+                    char *pszMsg;
+                    rc = ex->GetMessage(&pszMsg);
                     gotSomething |= NS_SUCCEEDED(rc);
                     if (NS_SUCCEEDED(rc))
-                        mText = message;
+                    {
+                        mText = Bstr(pszMsg);
+                        nsMemory::Free(mText);
+                    }
 
                     if (gotSomething)
                         mIsBasicAvailable = true;
@@ -139,7 +141,7 @@ void ErrorInfo::init (bool aKeepObj /* = false */)
 
     AssertComRC (rc);
 
-#endif // !defined (VBOX_WITH_XPCOM)
+#endif // defined (VBOX_WITH_XPCOM)
 }
 
 void ErrorInfo::init (IUnknown *aI, const GUID &aIID, bool aKeepObj /* = false */)
