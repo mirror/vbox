@@ -23,6 +23,7 @@
 #include "ConsoleImpl.h"
 #include "ConsoleVRDPServer.h"
 #include "VMMDev.h"
+#include <iprt/stream.h>
 
 #include "AutoCaller.h"
 #include "Logging.h"
@@ -2287,7 +2288,7 @@ static int displayTakeScreenshot(PVM pVM, struct DRVMAINDISPLAY *pDrv, BYTE *add
                               pDrv->pUpPort, &pu8Data, &cbData, &cx, &cy);
 #endif /* !VBOX_WITH_OLD_VBVA_LOCK */
 
-    if (RT_SUCCESS(vrc))
+    if (RT_SUCCESS(vrc) && pu8Data)
     {
         if (cx == width && cy == height)
         {
