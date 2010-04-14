@@ -1256,7 +1256,9 @@ void UIMachineLogic::sltPrepareUSBMenu()
 {
     /* Get the sender() menu: */
     QMenu *pMenu = qobject_cast<QMenu*>(sender());
+#ifdef RT_STRICT
     QMenu *pUSBDevicesMenu = actionsPool()->action(UIActionIndex_Menu_USBDevices)->menu();
+#endif
     AssertMsg(pMenu == pUSBDevicesMenu, ("This slot should only be called on hovering USB menu!\n"));
     pMenu->clear();
 

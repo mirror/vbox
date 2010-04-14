@@ -577,7 +577,7 @@ stubGetWindowGeometry( const WindowInfo *window, int *x, int *y,
         || !XTranslateCoordinates(window->dpy, window->drawable, root,
                                   0, 0, x, y, &child)) 
     {
-        crWarning("Failed to get windows geometry for %x, try xwininfo", (int) window);
+        crWarning("Failed to get windows geometry for %p, try xwininfo", window);
         *x = *y = 0;
         *w = *h = 0;
     }
