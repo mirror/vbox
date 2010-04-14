@@ -16,10 +16,10 @@
 import os,sys
 from distutils.core import setup
 
-def patchWith(file,install):
+def patchWith(file,install,sdk):
     newFile=file+".new"
-    install=install.replace("\\", "\\\\") 
-    try: 
+    install=install.replace("\\", "\\\\")
+    try:
         os.remove(newFile)
     except:
         pass
@@ -27,10 +27,11 @@ def patchWith(file,install):
     newF = open(newFile, 'w')
     for line in oldF:
         line=line.replace("%VBOX_INSTALL_PATH%",install)
+        line=line.replace("%VBOX_SDK_PATH%",sdk)
         newF.write(line)
     newF.close()
     oldF.close()
-    try: 
+    try:
         os.remove(file)
     except:
         pass
@@ -45,12 +46,16 @@ def main(argv):
     if vboxVersion is None:
         # Should we use VBox version for binding module versioning?
         vboxVersion = "1.0"
-        #raise Exception("No VBOX_VERSION defined, exiting")
-    patchWith(os.path.join(os.path.dirname(sys.argv[0]), 'vboxapi', '__init__.py'), vboxDest)
+    import platform
+    if platform.system() == 'Darwin':
+        vboxSdkDest = os.path.join(vboxDest, "..", "..", "..", "sdk")
+    else:
+        vboxSdkDest = os.path.join(vboxDest, "sdk")
+    patchWith(os.path.join(os.path.dirname(sys.argv[0]), 'vboxapi', '__init__.py'), vboxDest, vboxSdkDest)
     setup(name='vboxapi',
       version=vboxVersion,
       description='Python interface to VirtualBox',
-      author='Sun Microsystems',
+      author='Oracle Corp.',
       author_email='vbox-dev@virtualbox.org',
       url='http://www.virtualbox.org',
       packages=['vboxapi']
