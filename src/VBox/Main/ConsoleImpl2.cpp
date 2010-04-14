@@ -2672,7 +2672,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             SafeArray<BSTR> pfs;
             hrc = natDriver->COMGETTER(Redirects)(ComSafeArrayAsOutParam(pfs)); H();
             PCFGMNODE pPF = NULL;          /* /Devices/Dev/.../Config/PF#0/ */
-            for(unsigned int i = 0; i < pfs.size(); ++i)
+            for (unsigned int i = 0; i < pfs.size(); ++i)
             {
                 uint16_t port = 0;
                 BSTR r = pfs[i];

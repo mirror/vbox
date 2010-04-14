@@ -441,7 +441,7 @@ static int vboxNetWinAddComponent(std::list< ComObjPtr<HostNetworkInterface> > *
 
     hr = pncc->GetDisplayName( &lpszName );
     Assert(hr == S_OK);
-    if(hr == S_OK)
+    if (hr == S_OK)
     {
         Bstr name((CBSTR)lpszName);
 
@@ -630,7 +630,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces)(ComSafeArrayOut(IHostNetworkInte
                        &pNc,
                        &lpszApp );
     Assert(hr == S_OK);
-    if(hr == S_OK)
+    if (hr == S_OK)
     {
 #    ifdef VBOX_NETFLT_ONDEMAND_BIND
         /* for the protocol-based approach for now we just get all miniports the MS_TCPIP protocol binds to */
@@ -639,7 +639,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces)(ComSafeArrayOut(IHostNetworkInte
         /* for the filter-based approach we get all miniports our filter (sun_VBoxNetFlt)is bound to */
         hr = pNc->FindComponent(L"sun_VBoxNetFlt", &pTcpIpNcc);
 #     ifndef VBOX_WITH_HARDENING
-        if(hr != S_OK)
+        if (hr != S_OK)
         {
             /* TODO: try to install the netflt from here */
         }
@@ -647,7 +647,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces)(ComSafeArrayOut(IHostNetworkInte
 
 #    endif
 
-        if(hr == S_OK)
+        if (hr == S_OK)
         {
             hr = VBoxNetCfgWinGetBindingPathEnum(pTcpIpNcc, EBP_BELOW, &pEnumBp);
             Assert(hr == S_OK);
@@ -658,7 +658,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces)(ComSafeArrayOut(IHostNetworkInte
                 while( hr == S_OK )
                 {
                     /* S_OK == enabled, S_FALSE == disabled */
-                    if(pBp->IsEnabled() == S_OK)
+                    if (pBp->IsEnabled() == S_OK)
                     {
                         hr = VBoxNetCfgWinGetBindingInterfaceEnum(pBp, &pEnumBi);
                         Assert(hr == S_OK);
@@ -670,14 +670,14 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces)(ComSafeArrayOut(IHostNetworkInte
                             {
                                 hr = pBi->GetLowerComponent( &pMpNcc );
                                 Assert(hr == S_OK);
-                                if(hr == S_OK)
+                                if (hr == S_OK)
                                 {
                                     ULONG uComponentStatus;
                                     hr = pMpNcc->GetDeviceStatus(&uComponentStatus);
                                     Assert(hr == S_OK);
-                                    if(hr == S_OK)
+                                    if (hr == S_OK)
                                     {
-                                        if(uComponentStatus == 0)
+                                        if (uComponentStatus == 0)
                                         {
                                             vboxNetWinAddComponent(&list, pMpNcc);
                                         }
@@ -1410,7 +1410,7 @@ STDMETHODIMP Host::FindHostNetworkInterfacesOfType(HostNetworkInterfaceType_T ty
 {
     std::list <ComObjPtr<HostNetworkInterface> > allList;
     int rc = NetIfList(allList);
-    if(RT_FAILURE(rc))
+    if (RT_FAILURE(rc))
         return E_FAIL;
 
     std::list <ComObjPtr<HostNetworkInterface> > resultList;
@@ -1420,10 +1420,10 @@ STDMETHODIMP Host::FindHostNetworkInterfacesOfType(HostNetworkInterfaceType_T ty
     {
         HostNetworkInterfaceType_T t;
         HRESULT hr = (*it)->COMGETTER(InterfaceType)(&t);
-        if(FAILED(hr))
+        if (FAILED(hr))
             return hr;
 
-        if(t == type)
+        if (t == type)
         {
             (*it)->setVirtualBox(m->pParent);
             resultList.push_back (*it);

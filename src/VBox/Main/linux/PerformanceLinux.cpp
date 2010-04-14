@@ -74,7 +74,7 @@ int CollectorLinux::preCollect(const CollectorHints& hints, uint64_t /* iTick */
     hints.getProcesses(processes);
 
     std::vector<RTPROCESS>::iterator it;
-    for(it = processes.begin(); it != processes.end(); it++)
+    for (it = processes.begin(); it != processes.end(); it++)
     {
         VMProcessStats vmStats;
         int rc = getRawProcessStats(*it, &vmStats.cpuUser, &vmStats.cpuKernel, &vmStats.pagesUsed);
