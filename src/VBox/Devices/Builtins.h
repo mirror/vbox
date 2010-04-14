@@ -106,6 +106,9 @@ extern const PDMDRVREG g_DrvISCSITransportTcp;
 #if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
 extern const PDMDRVREG g_DrvHostInterface;
 #endif
+#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
+extern const PDMDRVREG g_DrvVDE;
+#endif
 extern const PDMDRVREG g_DrvIntNet;
 extern const PDMDRVREG g_DrvNAT;
 extern const PDMDRVREG g_DrvNetSniffer;

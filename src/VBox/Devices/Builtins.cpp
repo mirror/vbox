@@ -237,6 +237,13 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     if (RT_FAILURE(rc))
         return rc;
 #endif
+               /* ENABLE VDE */
+#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvVDE);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
+               /* /ENABLE VDE */
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvIntNet);
     if (RT_FAILURE(rc))
         return rc;

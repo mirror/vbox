@@ -76,6 +76,9 @@ private:
     QString mBrgName;
     QString mIntName;
     QString mHoiName;
+               /* ENABLE VDE */
+    QString mVDEName;
+               /* /ENABLE VDE */
 
     bool mPolished;
     bool mDisableStaticControls;
@@ -92,6 +95,7 @@ public:
     QStringList brgList (bool aRefresh = false);
     QStringList intList (bool aRefresh = false);
     QStringList hoiList (bool aRefresh = false);
+    QStringList vdeList (bool aRefresh = false);
 
 protected:
 
