@@ -331,7 +331,7 @@ RTDECL(void *) rtR3MemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cbUnali
         void *pvEFence = pvBlock;
         void *pv       = (char *)pvEFence + RTALLOC_EFENCE_SIZE;
 # ifdef RTALLOC_EFENCE_NOMAN_FILLER
-        memset((char *)pv + cb, RTALLOC_EFENCE_NOMAN_FILLER, cbBlock - RTALLOC_EFENCE_SIZE - cbUnaligned);
+        memset((char *)pv + cbUnaligned, RTALLOC_EFENCE_NOMAN_FILLER, cbBlock - RTALLOC_EFENCE_SIZE - cbUnaligned);
 # endif
 #else
         void *pvEFence = (char *)pvBlock + (cbBlock - RTALLOC_EFENCE_SIZE);
@@ -407,8 +407,8 @@ RTDECL(void) rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *p
          * Check whether the no man's land is untouched.
          */
 #  ifdef RTALLOC_EFENCE_IN_FRONT
-        void *pvWrong = ASMMemIsAll8((char *)pv + pBlock->cb,
-                                     RT_ALIGN_Z(pBlock->cb, PAGE_SIZE) - pBlock->cb,
+        void *pvWrong = ASMMemIsAll8((char *)pv + pBlock->cbUnaligned,
+                                     RT_ALIGN_Z(pBlock->cbAligned, PAGE_SIZE) - pBlock->cbUnaligned,
                                      RTALLOC_EFENCE_NOMAN_FILLER);
 #  else
         /* Alignment must match allocation alignment in rtMemAlloc(). */
