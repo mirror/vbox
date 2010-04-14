@@ -433,6 +433,7 @@ struct NetworkAdapter
                                                 // with bridged: host interface or empty;
                                                 // otherwise: network name (required)
     uint32_t                ulBootPriority;
+    bool                    fHasDisabledNAT;
 };
 typedef std::list<NetworkAdapter> NetworkAdaptersList;
 
@@ -872,6 +873,7 @@ public:
 
 private:
     void readNetworkAdapters(const xml::ElementNode &elmHardware, NetworkAdaptersList &ll);
+    void readAttachedNetworkMode(const xml::ElementNode &pelmMode, bool fEnabled, NetworkAdapter &nic);
     void readCpuIdTree(const xml::ElementNode &elmCpuid, CpuIdLeafsList &ll);
     void readCpuTree(const xml::ElementNode &elmCpu, CpuList &ll);
     void readSerialPorts(const xml::ElementNode &elmUART, SerialPortsList &ll);
@@ -887,6 +889,7 @@ private:
     void readMachine(const xml::ElementNode &elmMachine);
 
     void buildHardwareXML(xml::ElementNode &elmParent, const Hardware &hw, const Storage &strg);
+    void buildNetworkXML(NetworkAttachmentType_T mode, xml::ElementNode &elmParent, const NetworkAdapter &nic);
     void buildStorageControllersXML(xml::ElementNode &elmParent, const Storage &st);
     void buildSnapshotXML(xml::ElementNode &elmParent, const Snapshot &snap);
 
