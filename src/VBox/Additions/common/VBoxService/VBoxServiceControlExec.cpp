@@ -264,6 +264,8 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREADDATA pData,
      * and that it's now OK to send input to the process.
      */
     AssertPtr(pData);
+    VBoxServiceVerbose(3, "Control: Process started: PID=%u, CID=%u\n", 
+                       pData->uPID, pData->uContextID);
     rc = VbglR3GuestCtrlExecReportStatus(pData->uClientID, pData->uContextID,
                                          pData->uPID, PROC_STS_STARTED, 0 /* u32Flags */, 
                                          NULL /* pvData */, 0 /* cbData */);
@@ -450,8 +452,8 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREADDATA pData,
             VBoxServiceError("Control: Process has reached an undefined status!\n");
         }
        
-        VBoxServiceVerbose(3, "Control: Process ended: PID=%u, Status=%u, Flags=%u\n", 
-                           pData->uPID, uStatus, uFlags);
+        VBoxServiceVerbose(3, "Control: Process ended: PID=%u, CID=%u, Status=%u, Flags=%u\n", 
+                           pData->uPID, pData->uContextID, uStatus, uFlags);
         rc = VbglR3GuestCtrlExecReportStatus(pData->uClientID, pData->uContextID,
                                              pData->uPID, uStatus, uFlags,
                                              NULL /* pvData */, 0 /* cbData */);
@@ -527,6 +529,7 @@ PVBOXSERVICECTRLTHREADDATA VBoxServiceControlExecAllocateThreadData(uint32_t u32
 
     /* ClientID will be assigned when thread is started! */
     pData->uContextID = u32ContextID;
+    pData->uPID = 0; /* Don't have a PID yet. */
     pData->pszCmd = RTStrDup(pszCmd);
     pData->uFlags = uFlags;
     pData->uNumEnvVars = 0;
@@ -678,9 +681,6 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREADDATA
                                                     &hProcess);
                                 if (RT_SUCCESS(rc))
                                 {
-                                    VBoxServiceVerbose(3, "Control: Process \"%s\" started.\n", pData->pszCmd);
-                                    /** @todo Dump a bit more info here. */
-
                                     /*
                                      * Close the child ends of any pipes and redirected files.
                                      */
@@ -734,7 +734,8 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREADDATA
     }
 
     VbglR3GuestCtrlDisconnect(pData->uClientID);
-    VBoxServiceVerbose(3, "Control: Thread of process \"%s\" ended with rc=%Rrc\n", pData->pszCmd, rc);
+    VBoxServiceVerbose(3, "Control: Thread of process \"%s\" (PID: %u) ended with rc=%Rrc\n", 
+                       pData->pszCmd, pData->uPID, rc);
 
     /*
      * Since we (hopefully) are the only ones that hold the thread data,
