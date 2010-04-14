@@ -44,7 +44,7 @@
  * If defined the electric fence put up for ALL allocations by RTMemAlloc(),
  * RTMemAllocZ(), RTMemRealloc(), RTMemTmpAlloc() and RTMemTmpAllocZ().
  */
-#if defined(DEBUG_bird)
+#if 0
 # define RTALLOC_USE_EFENCE
 #endif
 
@@ -165,8 +165,10 @@ typedef struct RTMEMBLOCK
     AVLPVNODECORE   Core;
     /** Allocation type. */
     RTMEMTYPE       enmType;
-    /** The size of the block. */
-    size_t          cb;
+    /** The unaligned size of the block. */
+    size_t          cbUnaligned;
+    /** The aligned size of the block. */
+    size_t          cbAligned;
     /** The return address of the allocator function. */
     void           *pvCaller;
     /** Line number of the alloc call. */
@@ -184,9 +186,10 @@ typedef struct RTMEMBLOCK
 *   Internal Functions                                                         *
 ******************************************************************************/
 RT_C_DECLS_BEGIN
-RTDECL(void *)  rtMemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cb, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction);
-RTDECL(void *)  rtMemRealloc(const char *pszOp, RTMEMTYPE enmType, void *pvOld, size_t cbNew, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction);
-RTDECL(void)    rtMemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvCaller, unsigned iLine, const char *pszFile, const char *pszFunction);
+RTDECL(void *)  rtR3MemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cbUnaligned, size_t cbAligned,
+                             void *pvCaller, RT_SRC_POS_DECL);
+RTDECL(void *)  rtR3MemRealloc(const char *pszOp, RTMEMTYPE enmType, void *pvOld, size_t cbNew, void *pvCaller, RT_SRC_POS_DECL);
+RTDECL(void)    rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvCaller, RT_SRC_POS_DECL);
 RT_C_DECLS_END
 
 #endif

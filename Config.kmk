@@ -1389,11 +1389,13 @@ endif #!VBOX_ONLY_SDK
 
 # The kprofile build automagically links with kProfile.
 ifeq ($(KBUILD_TYPE),kprofile)
- LIB_RUNTIME    += $(LIB_KPROFILE)
+ LIB_RUNTIME += $(LIB_KPROFILE)
 endif
 
-## Enable C++ electric fence heap. (Warning: will easily run out of virtual memory / kernel stuff on Linux/Windows.)
-#LIB_RUNTIME := $(LIB_RUNTIME_EF) $(LIB_RUNTIME)
+# Enable C++ electric fence heap. (Warning: will easily run out of virtual memory / kernel stuff on Linux/Windows.)
+ifdef VBOX_WITH_CPP_EF
+ LIB_RUNTIME <= $(LIB_RUNTIME_EF)
+endif
 
 # Overridable libraries (unix).
 LIB_PTHREAD      ?= pthread

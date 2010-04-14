@@ -64,8 +64,8 @@ typedef struct RTMEMHDR
 /** @} */
 
 
-PRTMEMHDR   rtMemAlloc(size_t cb, uint32_t fFlags);
-void        rtMemFree(PRTMEMHDR pHdr);
+PRTMEMHDR   rtR0MemAlloc(size_t cb, uint32_t fFlags);
+void        rtR0MemFree(PRTMEMHDR pHdr);
 
 RT_C_DECLS_END
 #endif

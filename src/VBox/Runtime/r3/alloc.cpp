@@ -43,11 +43,24 @@
 *******************************************************************************/
 #include "alloc-ef.h"
 #include <iprt/alloc.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
 
 #include <stdlib.h>
+
+#undef RTMemTmpAlloc
+#undef RTMemTmpAllocZ
+#undef RTMemTmpFree
+#undef RTMemAlloc
+#undef RTMemAllocZ
+#undef RTMemAllocVar
+#undef RTMemAllocZVar
+#undef RTMemRealloc
+#undef RTMemFree
+#undef RTMemDup
+#undef RTMemDupEx
 
 
 /**
@@ -104,7 +117,7 @@ RTDECL(void)    RTMemTmpFree(void *pv) RT_NO_THROW
 RTDECL(void *)  RTMemAlloc(size_t cb) RT_NO_THROW
 {
 #ifdef RTALLOC_USE_EFENCE
-    void *pv = rtMemAlloc("Alloc", RTMEMTYPE_RTMEMALLOC, cb, ((void **)&cb)[-1], 0, NULL, NULL);
+    void *pv = rtR3MemAlloc("Alloc", RTMEMTYPE_RTMEMALLOC, cb, cb, ASMReturnAddress(), NULL, 0, NULL);
 
 #else /* !RTALLOC_USE_EFENCE */
 
@@ -134,7 +147,7 @@ RTDECL(void *)  RTMemAlloc(size_t cb) RT_NO_THROW
 RTDECL(void *)  RTMemAllocZ(size_t cb) RT_NO_THROW
 {
 #ifdef RTALLOC_USE_EFENCE
-    void *pv = rtMemAlloc("AllocZ", RTMEMTYPE_RTMEMALLOCZ, cb, ((void **)&cb)[-1], 0, NULL, NULL);
+    void *pv = rtR3MemAlloc("AllocZ", RTMEMTYPE_RTMEMALLOCZ, cb, cb, ASMReturnAddress(), NULL, 0, NULL);
 
 #else /* !RTALLOC_USE_EFENCE */
 
@@ -152,6 +165,52 @@ RTDECL(void *)  RTMemAllocZ(size_t cb) RT_NO_THROW
 
 
 /**
+ * Wrapper around RTMemAlloc for automatically aligning variable sized
+ * allocations so that the various electric fence heaps works correctly.
+ *
+ * @returns See RTMemAlloc.
+ * @param   cbUnaligned         The unaligned size.
+ */
+RTDECL(void *) RTMemAllocVar(size_t cbUnaligned)
+{
+    size_t cbAligned;
+    if (cbUnaligned >= 16)
+        cbAligned = RT_ALIGN_Z(cbUnaligned, 16);
+    else
+        cbAligned = RT_ALIGN_Z(cbUnaligned, sizeof(void *));
+#ifdef RTALLOC_USE_EFENCE
+    void *pv = RTMemAlloc(cbAligned);
+#else
+    void *pv = rtR3MemAlloc("AllocVar", RTMEMTYPE_RTMEMALLOC, cbUnaligned, cbAligned, ASMReturnAddress(), NULL, 0, NULL);
+#endif
+    return pv;
+}
+
+
+/**
+ * Wrapper around RTMemAllocZ for automatically aligning variable sized
+ * allocations so that the various electric fence heaps works correctly.
+ *
+ * @returns See RTMemAllocZ.
+ * @param   cbUnaligned         The unaligned size.
+ */
+RTDECL(void *) RTMemAllocZVar(size_t cbUnaligned)
+{
+    size_t cbAligned;
+    if (cbUnaligned >= 16)
+        cbAligned = RT_ALIGN_Z(cbUnaligned, 16);
+    else
+        cbAligned = RT_ALIGN_Z(cbUnaligned, sizeof(void *));
+#ifdef RTALLOC_USE_EFENCE
+    void *pv = RTMemAllocZ(cbAligned);
+#else
+    void *pv = rtR3MemAlloc("AllocZVar", RTMEMTYPE_RTMEMALLOCZ, cbUnaligned, cbAligned, ASMReturnAddress(), NULL, 0, NULL);
+#endif
+    return pv;
+}
+
+
+/**
  * Reallocates memory.
  *
  * @returns Pointer to the allocated memory.
@@ -162,7 +221,7 @@ RTDECL(void *)  RTMemAllocZ(size_t cb) RT_NO_THROW
 RTDECL(void *)  RTMemRealloc(void *pvOld, size_t cbNew) RT_NO_THROW
 {
 #ifdef RTALLOC_USE_EFENCE
-    void *pv = rtMemRealloc("Realloc", RTMEMTYPE_RTMEMREALLOC, pvOld, cbNew, ((void **)&pvOld)[-1], 0, NULL, NULL);
+    void *pv = rtR3MemRealloc("Realloc", RTMEMTYPE_RTMEMREALLOC, pvOld, cbNew, ASMReturnAddress(), NULL, 0, NULL);
 
 #else /* !RTALLOC_USE_EFENCE */
 
@@ -186,7 +245,7 @@ RTDECL(void)    RTMemFree(void *pv) RT_NO_THROW
 {
     if (pv)
 #ifdef RTALLOC_USE_EFENCE
-        rtMemFree("Free", RTMEMTYPE_RTMEMFREE, pv, ((void **)&pv)[-1], 0, NULL, NULL);
+        rtR3MemFree("Free", RTMEMTYPE_RTMEMFREE, pv, ASMReturnAddress(), NULL, 0, NULL);
 #else
         free(pv);
 #endif

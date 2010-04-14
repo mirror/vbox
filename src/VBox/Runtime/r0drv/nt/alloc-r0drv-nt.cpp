@@ -42,7 +42,7 @@
 /**
  * OS specific allocation function.
  */
-PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
+PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
 {
     PRTMEMHDR pHdr = (PRTMEMHDR)ExAllocatePoolWithTag(NonPagedPool, cb + sizeof(*pHdr), IPRT_NT_POOL_TAG);
     if (pHdr)
@@ -59,7 +59,7 @@ PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
 /**
  * OS specific free function.
  */
-void rtMemFree(PRTMEMHDR pHdr)
+void rtR0MemFree(PRTMEMHDR pHdr)
 {
     pHdr->u32Magic += 1;
     ExFreePool(pHdr);

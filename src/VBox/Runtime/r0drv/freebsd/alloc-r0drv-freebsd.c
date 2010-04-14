@@ -49,7 +49,7 @@ MALLOC_DEFINE(M_IPRTHEAP, "iprtheap", "IPRT - heap");
 MALLOC_DEFINE(M_IPRTCONT, "iprtcont", "IPRT - contiguous");
 
 
-PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
+PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
 {
     size_t cbAllocated = cb;
     PRTMEMHDR pHdr = NULL;
@@ -140,7 +140,7 @@ PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
 }
 
 
-void rtMemFree(PRTMEMHDR pHdr)
+void rtR0MemFree(PRTMEMHDR pHdr)
 {
     pHdr->u32Magic += 1;
 
