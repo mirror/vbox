@@ -39,7 +39,11 @@
  * Macro for declaring a callback which is static in HC and exported in GC.
  */
 #if defined(IN_RC) || defined(IN_RING0)
-# define PDMBOTHCBDECL(type)    DECLEXPORT(type)
+# ifdef __cplusplus
+#  define PDMBOTHCBDECL(type)   extern "C" DECLEXPORT(type)
+# else
+#  define PDMBOTHCBDECL(type)   DECLEXPORT(type)
+# endif
 #else
 # define PDMBOTHCBDECL(type)    static type
 #endif
