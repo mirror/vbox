@@ -58,6 +58,7 @@
 #endif
 #include <linux/version.h>
 #include <linux/module.h>
+#include "version-generated.h"
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
 
@@ -129,4 +130,7 @@ MODULE_DESCRIPTION(DRIVER_DESC);
 
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
 
+#ifdef MODULE_VERSION
+MODULE_VERSION(VBOX_VERSION_STRING);
+#endif
 MODULE_LICENSE("GPL and additional rights");

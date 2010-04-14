@@ -33,6 +33,7 @@
 #include <linux/miscdevice.h>
 #include <linux/poll.h>
 #include "version-generated.h"
+#include "product-generated.h"
 
 #include <iprt/assert.h>
 #include <iprt/asm.h>
@@ -898,8 +899,8 @@ module_param_call(dbg_log_dest,   vboxguestLinuxParamLogDstSet,   vboxguestLinux
 module_init(vboxguestLinuxModInit);
 module_exit(vboxguestLinuxModExit);
 
-MODULE_AUTHOR("Oracle Corporation");
-MODULE_DESCRIPTION("VirtualBox Guest Additions for Linux Module");
+MODULE_AUTHOR(VBOX_VENDOR);
+MODULE_DESCRIPTION(VBOX_PRODUCT " Guest Additions for Linux Module");
 MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
 MODULE_VERSION(VBOX_VERSION_STRING);

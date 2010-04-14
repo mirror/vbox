@@ -46,8 +46,8 @@
 
 // #define wchar_t linux_wchar_t
 
-MODULE_DESCRIPTION ("Host file system access VFS for VirtualBox");
-MODULE_AUTHOR ("Oracle Corporation");
+MODULE_DESCRIPTION (VBOX_PRODUCT " VFS Module for Host File System Access");
+MODULE_AUTHOR (VBOX_VENDOR);
 MODULE_LICENSE ("GPL");
 #ifdef MODULE_VERSION
 MODULE_VERSION(VBOX_VERSION_STRING " (interface " RT_XSTR(VMMDEV_VERSION) ")");

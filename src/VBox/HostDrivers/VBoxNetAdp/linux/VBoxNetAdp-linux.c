@@ -24,6 +24,7 @@
 *******************************************************************************/
 #include "the-linux-kernel.h"
 #include "version-generated.h"
+#include "product-generated.h"
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/miscdevice.h>
@@ -71,8 +72,8 @@ static int VBoxNetAdpLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsign
 module_init(VBoxNetAdpLinuxInit);
 module_exit(VBoxNetAdpLinuxUnload);
 
-MODULE_AUTHOR("Oracle Corporation");
-MODULE_DESCRIPTION("VirtualBox Network Adapter Driver");
+MODULE_AUTHOR(VBOX_VENDOR);
+MODULE_DESCRIPTION(VBOX_PRODUCT " Network Adapter Driver");
 MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
 MODULE_VERSION(VBOX_VERSION_STRING " (" RT_XSTR(INTNETTRUNKIFPORT_VERSION) ")");

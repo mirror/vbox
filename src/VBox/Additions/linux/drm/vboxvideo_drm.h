@@ -56,11 +56,13 @@
 /* General customization:
  */
 
-#define DRIVER_AUTHOR       "Oracle Corporation"
+#include "product-generated.h"
 
-#define DRIVER_NAME     "vboxvideo"
-#define DRIVER_DESC     "VirtualBox Graphics Card"
-#define DRIVER_DATE     "20090303"
+#define DRIVER_AUTHOR       VBOX_VENDOR
+
+#define DRIVER_NAME         "vboxvideo"
+#define DRIVER_DESC         VBOX_PRODUCT " Graphics Card"
+#define DRIVER_DATE         "20090303"
 
 #define DRIVER_MAJOR        1
 #define DRIVER_MINOR        0
@@ -71,4 +73,3 @@
     {0, 0, 0}
 
 #endif
-

@@ -24,6 +24,7 @@
 *******************************************************************************/
 #include "the-linux-kernel.h"
 #include "version-generated.h"
+#include "product-generated.h"
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/rtnetlink.h>
@@ -132,8 +133,8 @@ static VBOXNETFLTGLOBALS g_VBoxNetFltGlobals;
 module_init(VBoxNetFltLinuxInit);
 module_exit(VBoxNetFltLinuxUnload);
 
-MODULE_AUTHOR("Oracle Corporation");
-MODULE_DESCRIPTION("VirtualBox Network Filter Driver");
+MODULE_AUTHOR(VBOX_VENDOR);
+MODULE_DESCRIPTION(VBOX_PRODUCT " Network Filter Driver");
 MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
 MODULE_VERSION(VBOX_VERSION_STRING " (" RT_XSTR(INTNETTRUNKIFPORT_VERSION) ")");
