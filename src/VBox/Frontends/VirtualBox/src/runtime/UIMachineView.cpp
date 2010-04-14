@@ -615,8 +615,12 @@ void UIMachineView::prepareFrameBuffer()
 #endif
         {
             m_pFrameBuffer->AddRef();
-            display.SetFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
         }
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        /* always perform SetFramebuffer to ensure 3D gets notified */
+#endif
+        display.SetFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
     }
 }
 
