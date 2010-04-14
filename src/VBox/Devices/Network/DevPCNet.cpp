@@ -2258,7 +2258,7 @@ static void pcnetXmitReadMoreSlow(PCNetState *pThis, RTGCPHYS32 GCPhysFrame, uns
     {
         Assert(iSeg < pSgBuf->cSegs);
 
-        size_t cbRead = RT_MIN(pSgBuf->aSegs[iSeg].cbSeg, cbFrame);
+        uint32_t cbRead = (uint32_t)RT_MIN(pSgBuf->aSegs[iSeg].cbSeg, cbFrame);
         PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhysFrame, pSgBuf->aSegs[iSeg].pvSeg, cbRead);
         cbFrame -= cbRead;
         if (!cbFrame)
