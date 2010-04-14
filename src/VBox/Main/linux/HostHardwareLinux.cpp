@@ -1864,7 +1864,7 @@ int getDeviceInfoFromSysfs(const char *pcszPath, sysfsPathHandler *pHandler)
         if (RT_FAILURE(rc))
             break;
         rc = RTPathReal(szPath, szAbsPath, sizeof(szAbsPath));
-        AssertRCBreak(rc));  /* sysfs should guarantee that this exists */
+        AssertRCBreak(rc);  /* sysfs should guarantee that this exists */
         if (!pHandler->doHandle(szAbsPath))
             break;
     }
