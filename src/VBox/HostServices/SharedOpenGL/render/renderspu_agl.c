@@ -427,6 +427,11 @@ renderspu_SystemCreateWindow(VisualInfo *visual, GLboolean showIt,
     return GL_TRUE;
 }
 
+void renderspu_SystemReparentWindow(WindowInfo *)
+{
+    /* stub only */
+}
+
 void
 renderspu_SystemDestroyWindow(WindowInfo *window)
 {

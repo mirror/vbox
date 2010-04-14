@@ -346,7 +346,7 @@ static void renderspuCheckCurrentCtxWindowCB(unsigned long key, void *data1, voi
     if (pCtx->currentWindow==pWindow)
     {
         renderspuMakeCurrent(0, 0, pCtx->id);
-    }    
+    }
 }
 
 static void
@@ -371,7 +371,7 @@ RENDER_APIENTRY renderspuWindowDestroy( GLint win )
             GET_CONTEXT(pNewCtx);
             if (pNewCtx!=pOldCtx)
             {
-                renderspuMakeCurrent(pOldCtx&&pOldCtx->currentWindow ? pOldCtx->currentWindow->id:0, 0, 
+                renderspuMakeCurrent(pOldCtx&&pOldCtx->currentWindow ? pOldCtx->currentWindow->id:0, 0,
                                      pOldCtx ? pOldCtx->id:0);
             }
         }
@@ -1053,9 +1053,7 @@ DECLEXPORT(void) renderspuReparentWindow(GLint window)
         return;
     }
 
-#if defined(WINDOWS) || defined(GLX)
     renderspu_SystemReparentWindow(pWindow);
-#endif
 }
 
 #if defined(DARWIN)

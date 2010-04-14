@@ -303,20 +303,10 @@ void VBoxVMSettingsDisplay::textChangedMonitors (const QString &aText)
 void VBoxVMSettingsDisplay::checkMultiMonitorReqs()
 {
     int cVal = mSlMonitors->value();
-    if (cVal > 1)
-    {
-#ifdef Q_WS_MAC
-        mCb3D->setChecked(false);
-#endif
-    }
 #ifdef VBOX_WITH_VIDEOHWACCEL
     mCb2DVideo->setEnabled(VBoxGlobal::isAcceleration2DVideoAvailable());
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-#ifdef Q_WS_MAC
-    mCb3D->setEnabled(cVal == 1 && vboxGlobal().virtualBox().GetHost().GetAcceleration3DAvailable());
-#else
     mCb3D->setEnabled(vboxGlobal().virtualBox().GetHost().GetAcceleration3DAvailable());
-#endif
 
     /* The memory requirements have changed too. */
     quint64 needMBytes = VBoxGlobal::requiredVideoMemory (&mMachine, cVal) / _1M;

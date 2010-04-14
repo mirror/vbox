@@ -314,6 +314,17 @@ void UIMachineLogic::updateDockIcon()
                 CGImageRelease(image);
             }
 }
+
+void UIMachineLogic::updateDockIconSize(int screenId, int width, int height)
+{
+    if (!isMachineWindowsCreated())
+        return;
+
+    if (   m_fIsDockIconEnabled
+        && m_pDockIconPreview
+        && m_DockIconPreviewMonitor == screenId)
+        m_pDockIconPreview->setOriginalSize(width, height);
+}
 #endif /* Q_WS_MAC */
 
 UIMachineLogic::UIMachineLogic(QObject *pParent,
@@ -343,11 +354,6 @@ UIMachineLogic::~UIMachineLogic()
     /* Close debugger: */
     //dbgDestroy();
 #endif
-
-#ifdef Q_WS_MAC
-    if (m_pDockIconPreview)
-        delete m_pDockIconPreview;
-#endif /* Q_WS_MAC */
 }
 
 CSession& UIMachineLogic::session()
@@ -606,6 +612,25 @@ void UIMachineLogic::prepareRequiredFeatures()
 # endif
 #endif
 }
+
+void UIMachineLogic::cleanupMachineWindows()
+{
+#ifdef Q_WS_MAC
+    /* We need to clean up the dock stuff before the machine windows. */
+    cleanupDock();
+#endif /* Q_WS_MAC */
+}
+
+#ifdef Q_WS_MAC
+void UIMachineLogic::cleanupDock()
+{
+    if (m_pDockIconPreview)
+    {
+        delete m_pDockIconPreview;
+        m_pDockIconPreview = 0;
+    }
+}
+#endif /* Q_WS_MAC */
 
 void UIMachineLogic::sltMachineStateChanged()
 {

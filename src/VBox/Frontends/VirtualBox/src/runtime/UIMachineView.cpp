@@ -827,8 +827,7 @@ bool UIMachineView::event(QEvent *pEvent)
 #endif /* Q_WS_X11 */
 
 #ifdef Q_WS_MAC
-            // TODO_NEW_CORE
-//            mDockIconPreview->setOriginalSize(pResizeEvent->width(), pResizeEvent->height());
+            machineLogic()->updateDockIconSize(screenId(), pResizeEvent->width(), pResizeEvent->height());
 #endif /* Q_WS_MAC */
 
             /* Update mouse cursor shape: */

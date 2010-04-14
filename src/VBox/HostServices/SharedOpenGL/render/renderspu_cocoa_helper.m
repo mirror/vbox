@@ -137,6 +137,7 @@ while(0);
 {
 @private
     NSView          *m_pParentView;
+    NSWindow        *m_pOverlayWin;
 
     NSOpenGLContext *m_pGLCtx;
     NSOpenGLContext *m_pSharedGLCtx;
@@ -171,6 +172,11 @@ while(0);
 - (id)initWithFrame:(NSRect)frame thread:(RTTHREAD)aThread parentView:(NSView*)pParentView;
 - (void)setGLCtx:(NSOpenGLContext*)pCtx;
 - (NSOpenGLContext*)glCtx;
+
+- (void)setParentView: (NSView*)view;
+- (NSView*)parentView;
+- (void)setOverlayWin: (NSWindow*)win;
+- (NSWindow*)overlayWin;
 
 - (void)setPos:(NSPoint)pos;
 - (NSPoint)pos;
@@ -298,19 +304,23 @@ while(0);
     [self lock];
     [self cleanup];
 
-    /* Create a buffer for our thumbnail image. Its in the size of this view. */
-    m_ThumbBitmap = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL
-        pixelsWide:frame.size.width
-        pixelsHigh:frame.size.height
-        bitsPerSample:8
-        samplesPerPixel:4
-        hasAlpha:YES
-        isPlanar:NO
-        colorSpaceName:NSDeviceRGBColorSpace
-        bytesPerRow:frame.size.width * 4
-        bitsPerPixel:8 * 4];
-    m_ThumbImage = [[NSImage alloc] initWithSize:[m_ThumbBitmap size]];
-    [m_ThumbImage addRepresentation:m_ThumbBitmap];
+    if (   frame.size.width > 0
+        && frame.size.height > 0)
+    {
+        /* Create a buffer for our thumbnail image. Its in the size of this view. */
+        m_ThumbBitmap = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL
+            pixelsWide:frame.size.width
+            pixelsHigh:frame.size.height
+            bitsPerSample:8
+            samplesPerPixel:4
+            hasAlpha:YES
+            isPlanar:NO
+            colorSpaceName:NSDeviceRGBColorSpace
+            bytesPerRow:frame.size.width * 4
+            bitsPerPixel:8 * 4];
+        m_ThumbImage = [[NSImage alloc] initWithSize:[m_ThumbBitmap size]];
+        [m_ThumbImage addRepresentation:m_ThumbBitmap];
+    }
     [self unlock];
 }
 
@@ -446,6 +456,8 @@ while(0);
         m_pParentView = pParentView;
         m_pOverlayView = pOverlayView;
         m_Thread = [NSThread currentThread];
+
+        [m_pOverlayView setOverlayWin: self];
 
         m_pOverlayHelperView = [[OverlayHelperView alloc] initWithOverlayWindow:self];
         /* Add the helper view as a child of the parent view to get notifications */
@@ -603,6 +615,26 @@ while(0);
 - (NSOpenGLContext*)glCtx
 {
     return m_pGLCtx;
+}
+
+- (NSView*)parentView
+{
+    return m_pParentView;
+}
+
+- (void)setParentView: (NSView*)view
+{
+    m_pParentView = view;
+}
+
+- (void)setOverlayWin: (NSWindow*)win
+{
+    m_pOverlayWin = win;
+}
+
+- (NSWindow*)overlayWin
+{
+    return m_pOverlayWin;
 }
 
 - (void)setPos:(NSPoint)pos
@@ -1025,7 +1057,7 @@ while(0);
             if (m_FBOThumbTexId > 0 &&
                 [m_DockTileView thumbBitmap] != nil)
             {
-                /* Only update after atleast 200 ms, cause glReadPixels is
+                /* Only update after at least 200 ms, cause glReadPixels is
                  * heavy performance wise. */
                 uint64_t uiNewTime = RTTimeMilliTS();
                 if (uiNewTime - m_uiDockUpdateTime > 200)
@@ -1300,6 +1332,25 @@ void cocoaViewCreate(NativeViewRef *ppView, NativeViewRef pParentView, GLbitfiel
         [[OverlayWindow alloc] initWithParentView:pParentView overlayView:pView];
         /* Return the freshly created overlay view */
         *ppView = pView;
+    }
+
+    [pPool release];
+}
+
+void cocoaViewReparent(NativeViewRef pView, NativeViewRef pParentView)
+{
+    NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
+
+    OverlayView* pOView = (OverlayView*)pView;
+
+    if (pOView)
+    {
+        /* Make sure the window is removed from any previous parent window. */
+        [[[pOView overlayWin] parentWindow] removeChildWindow:[pOView overlayWin]];
+        /* Set the new parent view */
+        [pOView setParentView: pParentView];
+        /* Add the overlay window as a child to the new parent window */
+        [[pParentView window] addChildWindow:[pOView overlayWin] ordered:NSWindowAbove];
     }
 
     [pPool release];
