@@ -763,7 +763,9 @@ ifdef VBOX_WITH_HPET
 endif
 
 if1of ($(VBOX_LDR_FMT), pe lx)
-VBoxDDR0_LIBS           = $(PATH_LIB)/VMMR0Imp$(VBOX_SUFF_LIB)
+VBoxDDR0_LIBS           = \
+	$(PATH_LIB)/VMMR0Imp$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/SUP0$(VBOX_SUFF_LIB)
 endif
 
 
