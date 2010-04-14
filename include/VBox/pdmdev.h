@@ -3195,6 +3195,15 @@ typedef struct PDMDEVHLPRC
     DECLRCCALLBACKMEMBER(bool, pfnA20IsEnabled,(PPDMDEVINS pDevIns));
 
     /**
+     * Gets the VM state.
+     *
+     * @returns VM state.
+     * @param   pDevIns             The device instance.
+     * @thread  Any thread (just keep in mind that it's volatile info).
+     */
+    DECLRCCALLBACKMEMBER(VMSTATE, pfnVMState, (PPDMDEVINS pDevIns));
+
+    /**
      * Set the VM error message
      *
      * @returns rc.
@@ -3339,6 +3348,15 @@ typedef struct PDMDEVHLPR0
      * @thread  The emulation thread.
      */
     DECLR0CALLBACKMEMBER(bool, pfnA20IsEnabled,(PPDMDEVINS pDevIns));
+
+    /**
+     * Gets the VM state.
+     *
+     * @returns VM state.
+     * @param   pDevIns             The device instance.
+     * @thread  Any thread (just keep in mind that it's volatile info).
+     */
+    DECLR0CALLBACKMEMBER(VMSTATE, pfnVMState, (PPDMDEVINS pDevIns));
 
     /**
      * Set the VM error message
@@ -3911,15 +3929,17 @@ DECLINLINE(void) PDMDevHlpMMHeapFree(PPDMDEVINS pDevIns, void *pv)
 {
     pDevIns->pHlpR3->pfnMMHeapFree(pDevIns, pv);
 }
+#endif /* IN_RING3 */
 
 /**
  * @copydoc PDMDEVHLPR3::pfnVMState
  */
 DECLINLINE(VMSTATE) PDMDevHlpVMState(PPDMDEVINS pDevIns)
 {
-    return pDevIns->pHlpR3->pfnVMState(pDevIns);
+    return pDevIns->CTX_SUFF(pHlp)->pfnVMState(pDevIns);
 }
 
+#ifdef IN_RING3
 /**
  * @copydoc PDMDEVHLPR3::pfnVMTeleportedAndNotFullyResumedYet
  */
@@ -3927,7 +3947,6 @@ DECLINLINE(bool) PDMDevHlpVMTeleportedAndNotFullyResumedYet(PPDMDEVINS pDevIns)
 {
     return pDevIns->pHlpR3->pfnVMTeleportedAndNotFullyResumedYet(pDevIns);
 }
-
 #endif /* IN_RING3 */
 
 /**
