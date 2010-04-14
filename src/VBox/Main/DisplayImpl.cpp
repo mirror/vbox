@@ -23,7 +23,6 @@
 #include "ConsoleImpl.h"
 #include "ConsoleVRDPServer.h"
 #include "VMMDev.h"
-#include <iprt/stream.h>
 
 #include "AutoCaller.h"
 #include "Logging.h"
