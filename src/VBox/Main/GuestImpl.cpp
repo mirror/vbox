@@ -738,6 +738,11 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                         rc = setError(VBOX_E_IPRT_ERROR, 
                                       tr("The file \"%s\" was not found on guest"), Utf8Command.raw());
                     }
+                    else if (vrc == VERR_BAD_EXE_FORMAT)
+                    {
+                        rc = setError(VBOX_E_IPRT_ERROR, 
+                                      tr("The file \"%s\" is not an executable format on guest"), Utf8Command.raw());
+                    }
                     else if (vrc == VERR_TIMEOUT)
                     {
                         rc = setError(VBOX_E_IPRT_ERROR, 
