@@ -37,7 +37,7 @@ def checkPair(p, v,dllpre,dllsuff, bitness_magic):
             lib64 = lib
     else:
         lib64 = None
-    return [os.path.join(p, "include", "python"+v), 
+    return [os.path.join(p, "include", "python"+v),
             lib,
             lib64]
 
@@ -50,6 +50,9 @@ def print_vars(vers, known, sep, bitness_magic):
 
 
 def main(argv):
+    global prefixes
+    global versions
+
     dllpre = "lib"
     dllsuff = ".so"
     bitness_magic = 0
@@ -60,9 +63,18 @@ def main(argv):
         target = sys.platform
 
     if len(argv) > 2:
-        arch = argv[2]   
+        arch = argv[2]
     else:
         arch = "unknown"
+
+    if len(argv) > 3:
+        multi = int(argv[3])
+    else:
+        multi = 1
+
+    if multi == 0:
+        prefixes = ["/usr"]
+        versions = [str(sys.version_info[0])+'.'+str(sys.version_info[1])]
 
     if target == 'darwin':
         prefixes.insert(0, '/Developer/SDKs/MacOSX10.4u.sdk/usr')
@@ -88,7 +100,7 @@ def main(argv):
     # we want default to be the lowest versioned Python
     keys.sort()
     d = None
-    # We need separator other than newline, to sneak through $(shell)  
+    # We need separator other than newline, to sneak through $(shell)
     sep = "|"
     for k in keys:
         if d is None:
@@ -96,7 +108,7 @@ def main(argv):
         vers = k.replace('.', '')
         print_vars(vers, known[k], sep, bitness_magic)
     if d is not None:
-        print_vars("DEF", known[d], sep, bitness_magic) 
+        print_vars("DEF", known[d], sep, bitness_magic)
 
 if __name__ == '__main__':
     main(sys.argv)
