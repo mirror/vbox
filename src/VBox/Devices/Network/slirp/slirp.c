@@ -617,6 +617,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 #ifndef NO_FW_PUNCH
         flags |= PKT_ALIAS_PUNCH_FW;
 #endif
+        flags |= PKT_ALIAS_PROXY_ONLY; /* do transparent proxying */
         flags |= PKT_ALIAS_LOG; /* set logging */
         flags = LibAliasSetMode(pData->proxy_alias, flags, ~0);
         proxy_addr.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
@@ -1748,6 +1749,7 @@ static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
         lib = LibAliasInit(pData, NULL);
         flags = LibAliasSetMode(lib, 0, 0);
         flags |= PKT_ALIAS_LOG; /* set logging */
+        flags |= PKT_ALIAS_PROXY_ONLY; /* do transparent proxying */
         flags |= PKT_ALIAS_REVERSE; /* set logging */
         flags = LibAliasSetMode(lib, flags, ~0);
 
