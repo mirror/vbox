@@ -1052,9 +1052,9 @@ int VBoxMainUSBDeviceInfo::UpdateDevices ()
     return rc;
 }
 
-struct VBoxMainHotplugWaiter::Context
-{
 #if defined RT_OS_LINUX && defined VBOX_WITH_DBUS
+class hotplugDBusImpl : public VBoxMainHotplugWaiterImpl
+{
     /** The connection to DBus */
     RTMemAutoPtr <DBusConnection, VBoxHalShutdownPrivate> mConnection;
     /** Semaphore which is set when a device is hotplugged and reset when
@@ -1062,99 +1062,130 @@ struct VBoxMainHotplugWaiter::Context
     volatile bool mTriggered;
     /** A flag to say that we wish to interrupt the current wait. */
     volatile bool mInterrupt;
+
+public:
+    /** Test whether this implementation can be used on the current system */
+    static bool HalAvailable(void)
+    {
+        RTMemAutoPtr<DBusConnection, VBoxHalShutdown> dbusConnection;
+
+        /* Try to open a test connection to hal */
+        if (RT_SUCCESS(RTDBusLoadLib()) && RT_SUCCESS(halInit (&dbusConnection)))
+            return !!dbusConnection;
+        return false;
+    }
+
     /** Constructor */
-    Context() : mTriggered(false), mInterrupt(false) {}
-#endif  /* defined RT_OS_LINUX && defined VBOX_WITH_DBUS */
+    hotplugDBusImpl (void);
+    virtual ~hotplugDBusImpl (void);
+    /** @copydoc VBoxMainHotplugWaiter::Wait */
+    virtual int Wait (RTMSINTERVAL cMillies);
+    /** @copydoc VBoxMainHotplugWaiter::Interrupt */
+    virtual void Interrupt (void);
 };
 
 /* This constructor sets up a private connection to the DBus daemon, connects
  * to the hal service and installs a filter which sets the mTriggered flag in
  * the Context structure when a device (not necessarily USB) is added or
  * removed. */
-VBoxMainHotplugWaiter::VBoxMainHotplugWaiter ()
+hotplugDBusImpl::hotplugDBusImpl (void) : mTriggered(false), mInterrupt(false)
 {
-#if defined RT_OS_LINUX && defined VBOX_WITH_DBUS
     int rc = VINF_SUCCESS;
 
-    mContext = new Context;
     if (RT_SUCCESS(RTDBusLoadLib()))
     {
-        for (unsigned i = 0; RT_SUCCESS(rc) && i < 5 && !mContext->mConnection; ++i)
+        for (unsigned i = 0; RT_SUCCESS(rc) && i < 5 && !mConnection; ++i)
         {
-            rc = halInitPrivate (&mContext->mConnection);
+            rc = halInitPrivate (&mConnection);
         }
-        if (!mContext->mConnection)
+        if (!mConnection)
             rc = VERR_NOT_SUPPORTED;
         DBusMessage *pMessage;
         while (   RT_SUCCESS(rc)
-               && (pMessage = dbus_connection_pop_message (mContext->mConnection.get())) != NULL)
+               && (pMessage = dbus_connection_pop_message (mConnection.get())) != NULL)
             dbus_message_unref (pMessage); /* empty the message queue. */
         if (   RT_SUCCESS(rc)
-            && !dbus_connection_add_filter (mContext->mConnection.get(),
+            && !dbus_connection_add_filter (mConnection.get(),
                                             dbusFilterFunction,
-                                            (void *) &mContext->mTriggered, NULL))
+                                            (void *) &mTriggered, NULL))
             rc = VERR_NO_MEMORY;
         if (RT_FAILURE(rc))
-            mContext->mConnection.reset();
+            mConnection.reset();
     }
-#endif /* defined RT_OS_LINUX && defined VBOX_WITH_DBUS */
 }
 
 /* Destructor */
-VBoxMainHotplugWaiter::~VBoxMainHotplugWaiter ()
+hotplugDBusImpl::~hotplugDBusImpl ()
 {
-#if defined RT_OS_LINUX && defined VBOX_WITH_DBUS
-    if (!!mContext->mConnection)
-        dbus_connection_remove_filter (mContext->mConnection.get(), dbusFilterFunction,
-                                       (void *) &mContext->mTriggered);
-    delete mContext;
-#endif /* defined RT_OS_LINUX && defined VBOX_WITH_DBUS */
+    if (!!mConnection)
+        dbus_connection_remove_filter (mConnection.get(), dbusFilterFunction,
+                                       (void *) &mTriggered);
 }
 
 /* Currently this is implemented using a timed out wait on our private DBus
  * connection.  Because the connection is private we don't have to worry about
  * blocking other users. */
-int VBoxMainHotplugWaiter::Wait(RTMSINTERVAL cMillies)
+int hotplugDBusImpl::Wait(RTMSINTERVAL cMillies)
 {
     int rc = VINF_SUCCESS;
-#if defined RT_OS_LINUX && defined VBOX_WITH_DBUS
-    if (!mContext->mConnection)
+    if (!mConnection)
         rc = VERR_NOT_SUPPORTED;
     bool connected = true;
-    mContext->mTriggered = false;
-    mContext->mInterrupt = false;
+    mTriggered = false;
+    mInterrupt = false;
     unsigned cRealMillies;
     if (cMillies != RT_INDEFINITE_WAIT)
         cRealMillies = cMillies;
     else
         cRealMillies = DBUS_POLL_TIMEOUT;
-    while (   RT_SUCCESS(rc) && connected && !mContext->mTriggered
-           && !mContext->mInterrupt)
+    while (   RT_SUCCESS(rc) && connected && !mTriggered
+           && !mInterrupt)
     {
-        connected = dbus_connection_read_write_dispatch (mContext->mConnection.get(),
+        connected = dbus_connection_read_write_dispatch (mConnection.get(),
                                                          cRealMillies);
-        if (mContext->mInterrupt)
+        if (mInterrupt)
             LogFlowFunc(("wait loop interrupted\n"));
         if (cMillies != RT_INDEFINITE_WAIT)
-            mContext->mInterrupt = true;
+            mInterrupt = true;
     }
     if (!connected)
         rc = VERR_TRY_AGAIN;
-#else  /* !(defined RT_OS_LINUX && defined VBOX_WITH_DBUS) */
-    rc = VERR_NOT_IMPLEMENTED;
-#endif  /* !(defined RT_OS_LINUX && defined VBOX_WITH_DBUS) */
     return rc;
 }
 
 /* Set a flag to tell the Wait not to resume next time it times out. */
-void VBoxMainHotplugWaiter::Interrupt()
+void hotplugDBusImpl::Interrupt()
+{
+    LogFlowFunc(("\n"));
+    mInterrupt = true;
+}
+#endif  /* !(defined RT_OS_LINUX && defined VBOX_WITH_DBUS) */
+
+class hotplugNullImpl : public VBoxMainHotplugWaiterImpl
+{
+public:
+    hotplugNullImpl (void) {}
+    virtual ~hotplugNullImpl (void) {}
+    /** @copydoc VBoxMainHotplugWaiter::Wait */
+    virtual int Wait (RTMSINTERVAL)
+    {
+        return VERR_NOT_SUPPORTED;
+    }
+    /** @copydoc VBoxMainHotplugWaiter::Interrupt */
+    virtual void Interrupt (void) {}
+};
+
+VBoxMainHotplugWaiter::VBoxMainHotplugWaiter(void)
 {
 #if defined RT_OS_LINUX && defined VBOX_WITH_DBUS
-    LogFlowFunc(("\n"));
-    mContext->mInterrupt = true;
-#endif  /* defined RT_OS_LINUX && defined VBOX_WITH_DBUS */
+    if (hotplugDBusImpl::HalAvailable())
+    {
+        mImpl = new hotplugDBusImpl;
+        return;
+    }
+#endif  /* !(defined RT_OS_LINUX && defined VBOX_WITH_DBUS) */
+    mImpl = new hotplugNullImpl;
 }
-
 
 class sysfsPathHandler
 {
