@@ -819,7 +819,11 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, BSTR *aBuffer)
 #else  /* VBOX_WITH_GUEST_CONTROL */
     using namespace guestControl;
 
-    CheckComArgOutPointerValid(aBuffer);
+    NOREF(aPID);
+    NOREF(aFlags);
+    NOREF(aBuffer);
+
+    return S_OK;
 #endif
 }
 
