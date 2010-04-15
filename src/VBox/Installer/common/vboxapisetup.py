@@ -49,6 +49,8 @@ def main(argv):
     import platform
     if platform.system() == 'Darwin':
         vboxSdkDest = os.path.join(vboxDest, "..", "..", "..", "sdk")
+        if not os.path.isdir(vboxSdkDest):
+            vboxSdkDest = os.path.join(vboxDest, "sdk")
     else:
         vboxSdkDest = os.path.join(vboxDest, "sdk")
     patchWith(os.path.join(os.path.dirname(sys.argv[0]), 'vboxapi', '__init__.py'), vboxDest, vboxSdkDest)
