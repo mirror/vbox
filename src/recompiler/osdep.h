@@ -32,7 +32,7 @@
 #define qemu_strdup(psz)        RTStrDup(psz)
 
 #define qemu_vmalloc(cb)        RTMemPageAlloc(cb)
-#define qemu_vfree(pv)          RTMemPageFree(pv, ???)
+#define qemu_vfree(pv)          RTMemPageFree(pv, missing_size_parameter)
 
 #ifndef NULL
 # define NULL 0
