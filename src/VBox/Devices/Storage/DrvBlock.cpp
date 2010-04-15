@@ -340,6 +340,11 @@ static DECLCALLBACK(int) drvblockAsyncFlushStart(PPDMIBLOCKASYNC pInterface, voi
         return VERR_PDM_MEDIA_NOT_MOUNTED;
     }
 
+#ifdef VBOX_IGNORE_FLUSH
+    if (pThis->fIgnoreFlush)
+        return VINF_VD_ASYNC_IO_FINISHED;
+#endif /* VBOX_IGNORE_FLUSH */
+
     int rc = pThis->pDrvMediaAsync->pfnStartFlush(pThis->pDrvMediaAsync, pvUser);
 
     return rc;
