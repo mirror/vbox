@@ -70,15 +70,17 @@ _vbebios_copyright:
 .byte        0x00
 
 _vbebios_vendor_name:
-.ascii       "Sun Microsystems, Inc."
+.ascii       VBOX_VENDOR
 .byte        0x00
 
 _vbebios_product_name:
-.ascii       "VirtualBox VBE Adapter"
+.ascii       VBOX_PRODUCT
+.ascii       " VBE Adapter"
 .byte        0x00
 
 _vbebios_product_revision:
-.ascii       "Sun VirtualBox Version "
+.ascii       VBOX_PRODUCT
+.ascii       " Version "
 .ascii       VBOX_VERSION_STRING
 .byte        0x00
 
