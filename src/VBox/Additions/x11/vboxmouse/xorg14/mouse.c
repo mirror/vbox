@@ -111,6 +111,7 @@
 #ifdef VBOX
 #include "VBoxUtils.h"
 #include "version-generated.h"
+#include "product-generated.h"
 /* Xorg 7.1 does not include xf86_ansic.h anymore. Don't reinclude this
  * file as it renamed ANSI C functions to xf86*. */
 extern int  abs(int);
@@ -3873,7 +3874,7 @@ static XF86ModuleVersionInfo xf86MouseVersionRec =
 {
 #ifdef VBOX
     "vboxmouse",
-    "Sun Microsystems, Inc.",
+    VBOX_VENDOR,
 #else
     "mouse",
     MODULEVENDORSTRING,

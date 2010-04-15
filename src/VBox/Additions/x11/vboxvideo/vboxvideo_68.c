@@ -55,6 +55,7 @@
 
 #include "vboxvideo_68.h"
 #include "version-generated.h"
+#include "product-generated.h"
 
 /* All drivers initialising the SW cursor need this */
 #include "mipointer.h"
@@ -193,7 +194,7 @@ static MODULESETUPPROTO(vboxSetup);
 static XF86ModuleVersionInfo vboxVersionRec =
 {
     VBOX_DRIVER_NAME,
-    "Sun Microsystems, Inc.",
+    VBOX_VENDOR,
     MODINFOSTRING1,
     MODINFOSTRING2,
     XF86_VERSION_CURRENT,
