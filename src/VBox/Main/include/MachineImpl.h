@@ -517,6 +517,7 @@ public:
     STDMETHOD(HotPlugCPU(ULONG aCpu));
     STDMETHOD(HotUnplugCPU(ULONG aCpu));
     STDMETHOD(GetCPUStatus(ULONG aCpu, BOOL *aCpuAttached));
+    STDMETHOD(QueryLogFilename(ULONG aIdx, BSTR *aName));
     STDMETHOD(ReadLog(ULONG aIdx, ULONG64 aOffset, ULONG64 aSize, ComSafeArrayOut(BYTE, aData)));
 
     // public methods only for internal purposes
@@ -627,6 +628,7 @@ public:
     void calculateRelativePath(const Utf8Str &strPath, Utf8Str &aResult);
 
     void getLogFolder(Utf8Str &aLogFolder);
+    Utf8Str queryLogFilename(ULONG idx);
 
     HRESULT openSession(IInternalSessionControl *aControl);
     HRESULT openRemoteSession(IInternalSessionControl *aControl,
@@ -785,7 +787,7 @@ protected:
     void commitMedia(bool aOnline = false);
     void rollbackMedia();
 
-    bool isInOwnDir(Utf8Str *aSettingsDir = NULL);
+    bool isInOwnDir(Utf8Str *aSettingsDir = NULL) const;
 
     void rollback(bool aNotify);
     void commit();

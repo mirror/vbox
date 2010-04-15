@@ -4143,7 +4143,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="21f56f5d-d0fc-49e5-9ea7-91639278f424"
+     uuid="fe51e0c8-7e48-4847-95f0-fc8532f3b480"
      wsmap="managed"
      >
     <desc>
@@ -5998,6 +5998,23 @@
       <param name="attached" type="boolean" dir="return">
         <desc>
           Status of the CPU.
+        </desc>
+      </param>
+    </method>
+
+    <method name="queryLogFilename">
+      <desc>
+        Queries for the VM log file name of an given index. Returns an empty
+        string if a log file with that index doesn't exists.
+      </desc>
+      <param name="idx" type="unsigned long" dir="in">
+        <desc>
+          Which log file name to query. 0=current log file.
+        </desc>
+      </param>
+      <param name="filename" type="wstring" dir="return">
+        <desc>
+          On return the full path to the log file or an empty string on error.
         </desc>
       </param>
     </method>
