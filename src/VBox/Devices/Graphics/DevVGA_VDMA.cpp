@@ -86,6 +86,7 @@ typedef struct VBOXVDMAHOST
     RTTHREAD hWorkerThread;
     PHGSMIINSTANCE pHgsmi;
     PVGASTATE pVGAState;
+    bool bEnabled;
     VBOXVDMAPIPE_CMD_POOL CmdPool;
 } VBOXVDMAHOST, *PVBOXVDMAHOST;
 
@@ -779,9 +780,11 @@ void vboxVDMAControl(struct VBOXVDMAHOST *pVdma, PVBOXVDMA_CTL pCmd)
     switch (pCmd->enmCtl)
     {
         case VBOXVDMA_CTL_TYPE_ENABLE:
+            pVdma->bEnabled = true;
             pCmd->i32Result = VINF_SUCCESS;
             break;
         case VBOXVDMA_CTL_TYPE_DISABLE:
+            pVdma->bEnabled = false;
             pCmd->i32Result = VINF_SUCCESS;
             break;
         case VBOXVDMA_CTL_TYPE_FLUSH:
@@ -852,3 +855,7 @@ void vboxVDMACommand(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pCmd)
     AssertRC(tmpRc);
 }
 
+bool vboxVDMAIsEnabled(PVBOXVDMAHOST pVdma)
+{
+    return pVdma->bEnabled;
+}

@@ -2125,8 +2125,23 @@ static int vga_resize_graphic(VGAState *s, int cx, int cy, int v)
 {
     const unsigned cBits = s->get_bpp(s);
 
-    /* Take into account the programmed start address (in DWORDs) of the visible screen. */
-    int rc = s->pDrv->pfnResize(s->pDrv, cBits, s->CTX_SUFF(vram_ptr) + s->start_addr * 4, s->line_offset, cx, cy);
+    int rc;
+#ifdef VBOXVDMA
+    /* do not do pfnResize in case VBVA is on since all mode changes are poerofmed over VBVA
+     * we are checking for VDMA state here to ensure this code works only for WDDM driver,
+     * although we should avoid calling pfnResize for XPDM as well, since pfnResize is actually an extra resize
+     * event and generally only pfnVBVAxxx calls should be used with HGSMI + VBVA
+     *
+     * The reason for doing this for WDDM driver only now is to avoid regressions of the current code */
+    PVBOXVDMAHOST pVdma = s->pVdma;
+    if (pVdma && vboxVDMAIsEnabled(pVdma))
+        rc = VINF_SUCCESS;
+    else
+#endif
+    {
+        /* Take into account the programmed start address (in DWORDs) of the visible screen. */
+        rc = s->pDrv->pfnResize(s->pDrv, cBits, s->CTX_SUFF(vram_ptr) + s->start_addr * 4, s->line_offset, cx, cy);
+    }
 
     /* last stuff */
     s->last_bpp = cBits;
