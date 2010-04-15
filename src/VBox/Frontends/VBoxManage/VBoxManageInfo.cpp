@@ -738,6 +738,8 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 Bstr strMACAddress;
                 nic->COMGETTER(MACAddress)(strMACAddress.asOutParam());
                 Utf8Str strAttachment;
+                Utf8Str strNatSettings = "";
+                Utf8Str strNatForwardings = "";
                 NetworkAttachmentType_T attachment;
                 nic->COMGETTER(AttachmentType)(&attachment);
                 switch (attachment)
@@ -751,16 +753,98 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                     case NetworkAttachmentType_NAT:
                     {
                         Bstr strNetwork;
-                        nic->COMGETTER(NATNetwork)(strNetwork.asOutParam());
+                        ComPtr<INATEngine> driver;
+                        nic->COMGETTER(NatDriver)(driver.asOutParam());
+                        driver->COMGETTER(Network)(strNetwork.asOutParam());
+                        com::SafeArray<BSTR> forwardings;
+                        driver->COMGETTER(Redirects)(ComSafeArrayAsOutParam(forwardings));
+                        strNatForwardings = "";
+                        for (size_t i = 0; i < forwardings.size(); ++i)
+                        {
+                            bool fSkip = false;
+                            uint16_t port = 0;
+                            BSTR r = forwardings[i];
+                            Utf8Str utf = Utf8Str(r);
+                            Utf8Str strName;
+                            Utf8Str strProto;
+                            Utf8Str strHostPort;
+                            Utf8Str strHostIP;
+                            Utf8Str strGuestPort;
+                            Utf8Str strGuestIP;
+                            size_t pos, ppos;
+                            pos = ppos = 0;
+                            #define ITERATE_TO_NEXT_TERM(res, str, pos, ppos)   \
+                            do {                                                \
+                                pos = str.find(",", ppos);                      \
+                                if (pos == Utf8Str::npos)                       \
+                                {                                               \
+                                    Log(( #res " extracting from %s is failed\n", str.raw())); \
+                                    fSkip = true;                               \
+                                }                                               \
+                                res = str.substr(ppos, pos - ppos);             \
+                                Log2((#res " %s pos:%d, ppos:%d\n", res.raw(), pos, ppos)); \
+                                ppos = pos + 1;                                 \
+                            } while (0)
+                            ITERATE_TO_NEXT_TERM(strName, utf, pos, ppos);
+                            if (fSkip) continue;
+                            ITERATE_TO_NEXT_TERM(strProto, utf, pos, ppos);
+                            if (fSkip) continue;
+                            ITERATE_TO_NEXT_TERM(strHostIP, utf, pos, ppos);
+                            if (fSkip) continue;
+                            ITERATE_TO_NEXT_TERM(strHostPort, utf, pos, ppos);
+                            if (fSkip) continue;
+                            ITERATE_TO_NEXT_TERM(strGuestIP, utf, pos, ppos);
+                            if (fSkip) continue;
+                            strGuestPort = utf.substr(ppos, utf.length() - ppos);
+                            #undef ITERATE_TO_NEXT_TERM
+                            switch (strProto.toUInt32())
+                            {
+                                case NATProtocol_TCP:
+                                    strProto = "tcp";
+                                    break;
+                                case NATProtocol_UDP:
+                                    strProto = "udp";
+                                    break;
+                                default:
+                                    strProto = "unk";
+                                    break;
+                            }
+                            if (details == VMINFO_MACHINEREADABLE)
+                            {
+                                strNatForwardings = Utf8StrFmt("%sForwarding(%d)=\"%s,%s,%s,%s,%s,%s\"\n", 
+                                    strNatForwardings.raw(), i, strName.raw(), strProto.raw(),
+                                    strHostIP.isEmpty() ? "": strHostIP.raw(), strHostPort.raw(),
+                                    strGuestIP.isEmpty() ? "": strGuestIP.raw(), strGuestPort.raw());
+                            }
+                            else
+                            {
+                                strNatForwardings = Utf8StrFmt("%sNIC %d Rule(%d):   name = %s, protocol = %s,"
+                                    " host ip = %s, host port = %s, guest ip = %s, guest port = %s\n", 
+                                    strNatForwardings.raw(), currentNIC + 1, i, strName.raw(), strProto.raw(),
+                                    strHostIP.isEmpty() ? "": strHostIP.raw(), strHostPort.raw(),
+                                    strGuestIP.isEmpty() ? "": strGuestIP.raw(), strGuestPort.raw());
+                            }
+                        }
+                        ULONG mtu = 0;
+                        ULONG sockSnd = 0;
+                        ULONG sockRcv = 0;
+                        ULONG tcpSnd = 0;
+                        ULONG tcpRcv = 0;
+                        driver->GetNetworkSettings(&mtu, &sockSnd, &sockRcv, &tcpSnd, &tcpRcv);
+                        
                         if (details == VMINFO_MACHINEREADABLE)
                         {
-                            RTPrintf("natnet%d=\"%lS\"\n", currentNIC + 1, strNetwork.raw());
+                            RTPrintf("natnet%d=\"%lS\"\n", currentNIC + 1, strNetwork.length() ? strNetwork.raw(): Bstr("nat").raw());
                             strAttachment = "nat";
+                            strNatSettings = Utf8StrFmt("mtu=\"%d\"\nsockSnd=\"%d\"\nsockRcv=\"%d\"\ntcpWndSnd=\"%d\"\ntcpWndRcv=\"%d\"\n",
+                                mtu, sockSnd ? sockSnd : 64, sockRcv ? sockRcv : 64 , tcpSnd ? tcpSnd : 64, tcpRcv ? tcpRcv : 64);
                         }
-                        else if (!strNetwork.isEmpty())
-                            strAttachment = Utf8StrFmt("NAT (%lS)", strNetwork.raw());
                         else
+                        {
                             strAttachment = "NAT";
+                            strNatSettings = Utf8StrFmt("NIC %d Settings:  MTU: %d, Socket( send: %d, receive: %d), TCP Window( send:%d, receive: %d)\n",
+                                currentNIC + 1, mtu, sockSnd ? sockSnd : 64, sockRcv ? sockRcv : 64 , tcpSnd ? tcpSnd : 64, tcpRcv ? tcpRcv : 64);
+                        }
                         break;
                     }
                     case NetworkAttachmentType_Bridged:
@@ -874,6 +958,10 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                              strNICType.raw(),
                              ulLineSpeed / 1000,
                              (int)ulBootPriority);
+                if (strNatSettings.length())
+                    RTPrintf(strNatSettings.raw());
+                if (strNatForwardings.length())
+                    RTPrintf(strNatForwardings.raw());
             }
         }
     }

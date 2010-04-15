@@ -119,7 +119,6 @@ void printUsage(USAGECATEGORY u64Cmd)
 #endif
                  "                            hostcpuids|hddbackends|hdds|dvds|floppies|\n"
                  "                            usbhost|usbfilters|systemproperties\n"
-                 "                            natrules<1-N> <name>\n"
                  "\n");
     }
 
