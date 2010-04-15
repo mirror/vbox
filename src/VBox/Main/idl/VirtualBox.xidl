@@ -8371,7 +8371,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="8cf03bf9-7478-42de-add8-10b2af75a06d"
+     uuid="105f4e9a-b8d5-49e5-9397-032e78155bee"
      wsmap="managed"
      >
     <desc>
@@ -8514,8 +8514,8 @@
       <desc>
         Executes an existing program inside the guest VM.
 
-        <result name="E_NOTIMPL">
-          Not implemented yet.
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not execute process.
         </result>
 
       </desc>
@@ -8586,6 +8586,27 @@
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
+    </method>
+
+    <method name="getProcessOutput">
+      <desc>
+        Retrieves output of a formerly started process.
+
+		<result name="VBOX_E_IPRT_ERROR">
+          Could not retrieve output.
+        </result>
+
+      </desc>
+      <param name="buffer" type="wstring" dir="out">
+        <desc>
+          Buffer for retrieving the actual output.
+        </desc>
+      </param>      
+      <param name="flags" type="unsigned long" dir="in">
+        <desc>
+		  Flags describing which output to retrieve.
+        </desc>
+      </param>      
     </method>
 
   </interface>

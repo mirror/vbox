@@ -505,6 +505,21 @@ int Guest::notifyCtrlExec(uint32_t              u32Function,
         pCBData->u32Flags = pData->u32Flags;
         /* @todo Copy void* buffer contents! */
 
+        /* Do progress handling. */
+        switch (pData->u32Status)
+        {
+            case PROC_STS_TEN: /* Terminated normally. */
+            case PROC_STS_TEA: /* Terminated abnormally. */
+            case PROC_STS_TES: /* Terminated through signal. */
+
+                if (!it->pProgress.isNull())
+                    it->pProgress->notifyComplete(S_OK);
+                break;
+
+            default:
+                break;
+        }
+
         ASMAtomicWriteBool(&it->bCalled, true);
     }
     return rc;
@@ -528,11 +543,18 @@ void Guest::removeCtrlCallbackContext(Guest::CallbackListIter it)
         RTMemFree(it->pvData);
         it->cbData = 0;
         it->pvData = NULL;
+
+        /* Notify outstanding waits for progress ... */
+        if (!it->pProgress.isNull())
+        {
+            it->pProgress->notifyComplete(S_OK);
+            it->pProgress = NULL;
+        }
     }
     mCallbackList.erase(it);
 }
 
-uint32_t Guest::addCtrlCallbackContext(void *pvData, uint32_t cbData)
+uint32_t Guest::addCtrlCallbackContext(void *pvData, uint32_t cbData, Progress* pProgress)
 {
     uint32_t uNewContext = ASMAtomicIncU32(&mNextContextID);
     /** @todo Add value clamping! */
@@ -542,6 +564,7 @@ uint32_t Guest::addCtrlCallbackContext(void *pvData, uint32_t cbData)
     context.bCalled = false;
     context.pvData = pvData;
     context.cbData = cbData;
+    context.pProgress = pProgress;
 
     mCallbackList.push_back(context);
     if (mCallbackList.size() > 256) /* Don't let the container size get too big! */
@@ -580,15 +603,17 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
         /*
          * Create progress object.
          */
-#if 0
         ComObjPtr <Progress> progress;
-        progress.createObject();
-        HRESULT rc = progress->init(/** @todo How to get the machine here? */
-                                    static_cast<IGuest*>(this),
-                                    BstrFmt(tr("Executing process")),
-                                    FALSE);
+        HRESULT rc = progress.createObject();
+        if (SUCCEEDED(rc))
+        {
+            rc = progress->init(static_cast<IGuest*>(this),
+                                //static_cast<IConsole *>(this),
+                                BstrFmt(tr("Executing process")),
+                                FALSE);
+        }
         if (FAILED(rc)) return rc;
-#endif
+
         /*
          * Prepare process execution.
          */
@@ -646,7 +671,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                 {               
                     PHOSTEXECCALLBACKDATA pData = (HOSTEXECCALLBACKDATA*)RTMemAlloc(sizeof(HOSTEXECCALLBACKDATA));
                     AssertPtr(pData);
-                    uContextID = addCtrlCallbackContext(pData, sizeof(HOSTEXECCALLBACKDATA));
+                    uContextID = addCtrlCallbackContext(pData, sizeof(HOSTEXECCALLBACKDATA), progress);
                     Assert(uContextID > 0);
 
                     VBOXHGCMSVCPARM paParms[15];
@@ -728,8 +753,11 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                 }
                 else /* If callback not called within time ... well, that's a timeout! */
                     vrc = VERR_TIMEOUT;
-                removeCtrlCallbackContext(it);
-
+                
+                /*
+                 * Do *not* remove the callback yet - we might wait with the IProgress object on something
+                 * else (like end of process) ... 
+                 */
                 if (RT_FAILURE(vrc))
                 {
                     if (vrc == VERR_FILE_NOT_FOUND) /* This is the most likely error. */
@@ -758,9 +786,11 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                                       tr("The service call failed with error %Rrc"), vrc);
                     }
                 }
-#if 0
-                progress.queryInterfaceTo(aProgress);
-#endif
+                else
+                {
+                    /* Return the progress to the caller. */
+                    progress.queryInterfaceTo(aProgress);
+                }
             }
             else
             {
@@ -780,6 +810,17 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
     }
     return rc;
 #endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+STDMETHODIMP Guest::GetProcessOutput(BSTR *aBuffer, ULONG aFlags)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else  /* VBOX_WITH_GUEST_CONTROL */
+    using namespace guestControl;
+
+    CheckComArgOutPointerValid(aBuffer);
+#endif
 }
 
 // public methods only for internal purposes

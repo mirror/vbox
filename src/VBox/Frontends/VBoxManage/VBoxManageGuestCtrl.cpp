@@ -63,8 +63,8 @@ void usageGuestControl(void)
 {
     RTPrintf("VBoxManage guestcontrol     execute <vmname>|<uuid>\n"
              "                            <path to program> [--arguments \"<arguments>\"] [--environment \"NAME=VALUE NAME=VALUE\"]\n"
-             "                            [--flags <flags>] [--username <name> [--password <password>]]\n"
-             "                            [--timeout <msec>] [--verbose] [--wait stdout[,[stderr]]]\n"
+             "                            [--flags <flags>] [--timeout <msec>] [--username <name> [--password <password>]\n"
+             "                            [--verbose] [--wait-for exit]\n"
              "\n");
 }
 
@@ -86,8 +86,10 @@ static int handleExecProgram(HandlerArg *a)
     Utf8Str Utf8StdErr;
     Utf8Str Utf8UserName;
     Utf8Str Utf8Password;
-    uint32_t uTimeoutMS = RT_INDEFINITE_WAIT;
-    bool waitForOutput = false;
+    uint32_t uTimeoutMS = 0;
+    bool waitForExit = false;
+    bool waitForStdOut = false;
+    bool waitForStdErr = false;
     bool verbose = false;
 
     /* Iterate through all possible commands (if available). */
@@ -175,14 +177,20 @@ static int handleExecProgram(HandlerArg *a)
             else
                 ++i;
         }
-        else if (!strcmp(a->argv[i], "--wait"))
+        else if (!strcmp(a->argv[i], "--wait-for"))
         {
             if (i + 1 >= a->argc)
                 usageOK = false;
             else
             {
-                /** @todo Check for "stdout" or "stderr"! */
-                waitForOutput = true;
+                if (!strcmp(a->argv[i + 1], "exit"))
+                    waitForExit = true;
+                else if (!strcmp(a->argv[i + 1], "stdout"))
+                    waitForStdOut = true;
+                else if (!strcmp(a->argv[i + 1], "stderr"))
+                    waitForStdErr = true;
+                else
+                    usageOK = false;
                 ++i;
             }
         }
@@ -242,19 +250,71 @@ static int handleExecProgram(HandlerArg *a)
             ComPtr<IProgress> progress;
             ULONG uPID = 0;
 
-            if (verbose) RTPrintf("Waiting for guest to start process ...\n");
+            if (verbose) 
+            {
+                if (uTimeoutMS == 0)
+                    RTPrintf("Waiting for guest to start process ...\n");
+                else
+                    RTPrintf("Waiting for guest to start process (within %ums)\n", uTimeoutMS);
+            }
+
+            /* Get current time stamp to later calculate rest of timeout left. */
+            uint32_t uStartMS = RTTimeMilliTS();
+
+            /* Execute the process. */
             CHECK_ERROR_BREAK(guest, ExecuteProcess(Bstr(Utf8Cmd), uFlags,
                                                     ComSafeArrayAsInParam(args), ComSafeArrayAsInParam(env),
                                                     Bstr(Utf8StdIn), Bstr(Utf8StdOut), Bstr(Utf8StdErr),
                                                     Bstr(Utf8UserName), Bstr(Utf8Password), uTimeoutMS,
                                                     &uPID, progress.asOutParam()));
             if (verbose) RTPrintf("Process '%s' (PID: %u) started.\n", Utf8Cmd.raw(), uPID);
-            if (waitForOutput)
+            if (waitForExit)
             {
-                if (verbose) RTPrintf("Waiting for output ...\n");
-                /** @todo */
+                /* Calculate timeout value left after process has been started.  */
+                if (uTimeoutMS)
+                    uTimeoutMS = uTimeoutMS - (RTTimeMilliTS() - uStartMS);
+                if (verbose)
+                {
+                    if (uTimeoutMS == 0)
+                        RTPrintf("Waiting for process to exit ...\n");
+                    else
+                        RTPrintf("Waiting for process to exit (%ums left) ...\n", uTimeoutMS);
+                }
+
+                /* Wait for process to exit ... */
+                ASSERT(progress);
+                rc = progress->WaitForCompletion(uTimeoutMS == 0 ? -1 /* Wait forever */ : uTimeoutMS);
+                if (FAILED(rc))
+                {
+                    if (uTimeoutMS)
+                        RTStrmPrintf(g_pStdErr, "Process '%s' (PID: %u) did not end within %ums! Wait aborted.\n",
+                                     Utf8Cmd.raw(), uPID, uTimeoutMS);
+                    break;
+                }
+                else
+                {
+                    BOOL completed;
+                    CHECK_ERROR_RET(progress, COMGETTER(Completed)(&completed), rc);
+                    ASSERT(completed);
+
+                    LONG iRc;
+                    CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
+
+                    if (verbose) 
+                        RTPrintf("Process completed.\n");
+
+                    /* Print output if wanted. */
+                    if (   waitForStdOut
+                        || waitForStdErr)
+                    {
+                        Bstr strOutput;
+                        CHECK_ERROR_BREAK(guest, GetProcessOutput(strOutput.asOutParam(), 0 /* @todo */));
+                        if (verbose) 
+                            RTPrintf("Output is:\n");
+                        //RTPrintf(strOutput.raw());
+                    }
+                }
             }
-            /** @todo Show some progress here? */
             a->session->Close();
         } while (0);
     }

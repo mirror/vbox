@@ -46,6 +46,9 @@ typedef enum
 } GUESTSTATTYPE;
 
 class Console;
+#ifdef VBOX_WITH_GUEST_CONTROL
+class Progress;
+#endif
 
 class ATL_NO_VTABLE Guest :
     public VirtualBoxSupportErrorInfoImpl<Guest, IGuest>,
@@ -93,6 +96,7 @@ public:
                               IN_BSTR aStdIn, IN_BSTR aStdOut, IN_BSTR aStdErr,
                               IN_BSTR aUserName, IN_BSTR aPassword,
                               ULONG aTimeoutMS, ULONG* aPID, IProgress **aProgress);
+    STDMETHOD(GetProcessOutput)(BSTR *aBuffer, ULONG aFlags);
     STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemCache,
                                      ULONG *aPageTotal, ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal);
@@ -124,6 +128,7 @@ private:
         uint32_t        cbData;
         /** Atomic flag whether callback was called. */
         volatile bool   bCalled;
+        ComObjPtr<Progress>      pProgress;
     };
     typedef std::list< CallbackContext > CallbackList;
     typedef std::list< CallbackContext >::iterator CallbackListIter;
@@ -135,7 +140,7 @@ private:
     int notifyCtrlExec(uint32_t u32Function, PHOSTEXECCALLBACKDATA pData);
     CallbackListIter getCtrlCallbackContext(uint32_t u32ContextID);
     void removeCtrlCallbackContext(CallbackListIter it);
-    uint32_t addCtrlCallbackContext(void *pvData, uint32_t cbData);
+    uint32_t addCtrlCallbackContext(void *pvData, uint32_t cbData, Progress* pProgress);
 # endif
 
     struct Data
