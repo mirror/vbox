@@ -85,6 +85,8 @@ RT_C_DECLS_END
 #define VBE_DISPI_INDEX_ENABLE          0x4
 #define VBE_DISPI_INDEX_VIRT_WIDTH      0x6
 #define VBE_DISPI_INDEX_VIRT_HEIGHT     0x7
+#define VBE_DISPI_INDEX_X_OFFSET        0x8
+#define VBE_DISPI_INDEX_Y_OFFSET        0x9
 #define VBE_DISPI_INDEX_VBOX_VIDEO      0xa
 
 #define VBE_DISPI_ID2                   0xB0C2
@@ -735,7 +737,11 @@ void vboxHGSMIBufferFree (PDEVICE_EXTENSION PrimaryExtension, void *pvBuffer);
 int vboxHGSMIBufferSubmit (PDEVICE_EXTENSION PrimaryExtension, void *pvBuffer);
 
 BOOLEAN FASTCALL VBoxVideoSetCurrentModePerform(PDEVICE_EXTENSION DeviceExtension,
-        USHORT width, USHORT height, USHORT bpp);
+        USHORT width, USHORT height, USHORT bpp
+#ifdef VBOXWDDM
+        , ULONG offDisplay
+#endif
+        );
 
 BOOLEAN FASTCALL VBoxVideoSetCurrentMode(
    PDEVICE_EXTENSION DeviceExtension,

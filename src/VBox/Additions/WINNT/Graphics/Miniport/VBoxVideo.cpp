@@ -2927,7 +2927,11 @@ BOOLEAN FASTCALL VBoxVideoSetGraphicsCap(BOOLEAN isEnabled)
 
 
 BOOLEAN FASTCALL VBoxVideoSetCurrentModePerform(PDEVICE_EXTENSION DeviceExtension,
-        USHORT width, USHORT height, USHORT bpp)
+        USHORT width, USHORT height, USHORT bpp
+#ifdef VBOXWDDM
+        , ULONG offDisplay
+#endif
+        )
 {
     /* set the mode characteristics */
     VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
@@ -2939,6 +2943,18 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentModePerform(PDEVICE_EXTENSION DeviceExtensio
     /* enable the mode */
     VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
     VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
+#ifdef VBOXWDDM
+    /* encode linear offDisplay to xOffset & yOffset to ensure offset fits USHORT */
+    ULONG cbLine = VBOXWDDM_ROUNDBOUND(((width * bpp) + 7) / 8, 4);
+    ULONG xOffset = offDisplay % cbLine;
+    ULONG yOffset = offDisplay / cbLine;
+    Assert(xOffset <= 0xffff);
+    Assert(yOffset <= 0xffff);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_X_OFFSET);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)xOffset);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_Y_OFFSET);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)yOffset);
+#endif
     /** @todo read from the port to see if the mode switch was successful */
 
     /* Tell the host that we now support graphics in the additions.

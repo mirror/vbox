@@ -154,7 +154,8 @@ NTSTATUS vboxWddmGhDisplaySetMode (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATI
         return STATUS_SUCCESS;
 
     if (VBoxVideoSetCurrentModePerform(pDevExt, pAllocation->u.SurfInfo.width,
-            pAllocation->u.SurfInfo.height, pAllocation->u.SurfInfo.bpp))
+            pAllocation->u.SurfInfo.height, pAllocation->u.SurfInfo.bpp,
+            (ULONG)pAllocation->offVram))
         return STATUS_SUCCESS;
 
     AssertBreakpoint();
