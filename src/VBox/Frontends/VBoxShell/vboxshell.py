@@ -702,7 +702,7 @@ def execInGuest(ctx,console,args):
     passwd = ""
     tmo = 0
     print "executing %s with %s" %(args[0], args[1:])
-    (pid, progress) = console.guest.executeProcess(args[0], 0, args[1:], [], "", "", "", user, passwd, tmo)
+    (progress, pid) = console.guest.executeProcess(args[0], 0, args[1:], [], "", "", "", user, passwd, tmo)
     print "executed with pid %d" %(pid)
 
 def gexecCmd(ctx,args):
