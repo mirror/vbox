@@ -235,6 +235,12 @@ static bool vdiFileOpened(PVDIIMAGEDESC pImage)
 #endif
 }
 
+static int vdiFileFlushAsync(PVDIIMAGEDESC pImage, PVDIOCTX pIoCtx)
+{
+    return pImage->pInterfaceIOCallbacks->pfnFlushAsync(pImage->pInterfaceIO->pvUser,
+                                                        pImage->pStorage, pIoCtx);
+}
+
 
 /**
  * internal: return power of 2 or 0 if num error.
@@ -946,6 +952,22 @@ static void vdiFlushImage(PVDIIMAGEDESC pImage)
         AssertMsgRC(rc, ("vdiUpdateHeader() failed, filename=\"%s\", rc=%Rrc\n",
                          pImage->pszFilename, rc));
         vdiFileFlushSync(pImage);
+    }
+}
+
+/**
+ * Internal: Flush the image file to disk - async version.
+ */
+static void vdiFlushImageAsync(PVDIIMAGEDESC pImage, PVDIOCTX pIoCtx)
+{
+    if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+    {
+        /* Save header. */
+        int rc = vdiUpdateHeaderAsync(pImage, pIoCtx);
+        AssertMsgRC(rc, ("vdiUpdateHeaderAsync() failed, filename=\"%s\", rc=%Rrc\n",
+                         pImage->pszFilename, rc));
+        rc = vdiFileFlushAsync(pImage, pIoCtx);
+        AssertMsgRC(rc, ("Flushing data to disk failed rc=%Rrc\n", rc));
     }
 }
 
@@ -2228,7 +2250,13 @@ out:
 
 static int vdiAsyncFlush(void *pvBackendData, PVDIOCTX pIoCtx)
 {
-    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlowFunc(("pBackendData=%#p\n", pvBackendData));
+    PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pvBackendData;
+    int rc = VINF_SUCCESS;
+
+    Assert(pImage);
+
+    vdiFlushImageAsync(pImage, pIoCtx);
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }

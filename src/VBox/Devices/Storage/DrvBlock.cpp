@@ -325,6 +325,26 @@ static DECLCALLBACK(int) drvblockAsyncWriteStart(PPDMIBLOCKASYNC pInterface, uin
     return rc;
 }
 
+
+/** @copydoc PDMIBLOCKASYNC::pfnStartFLush */
+static DECLCALLBACK(int) drvblockAsyncFlushStart(PPDMIBLOCKASYNC pInterface, void *pvUser)
+{
+    PDRVBLOCK pThis = PDMIBLOCKASYNC_2_DRVBLOCK(pInterface);
+
+    /*
+     * Check the state.
+     */
+    if (!pThis->pDrvMediaAsync)
+    {
+        AssertMsgFailed(("Invalid state! Not mounted!\n"));
+        return VERR_PDM_MEDIA_NOT_MOUNTED;
+    }
+
+    int rc = pThis->pDrvMediaAsync->pfnStartFlush(pThis->pDrvMediaAsync, pvUser);
+
+    return rc;
+}
+
 /* -=-=-=-=- IMediaAsyncPort -=-=-=-=- */
 
 /** Makes a PDRVBLOCKASYNC out of a PPDMIMEDIAASYNCPORT. */
@@ -773,6 +793,7 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     /* IBlockAsync. */
     pThis->IBlockAsync.pfnStartRead         = drvblockAsyncReadStart;
     pThis->IBlockAsync.pfnStartWrite        = drvblockAsyncWriteStart;
+    pThis->IBlockAsync.pfnStartFlush        = drvblockAsyncFlushStart;
 
     /* IMediaAsyncPort. */
     pThis->IMediaAsyncPort.pfnTransferCompleteNotify  = drvblockAsyncTransferCompleteNotify;

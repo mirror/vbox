@@ -1872,7 +1872,33 @@ static int vdIOWriteMetaAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
 static int vdIOFlushAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
                           PVDIOCTX pIoCtx)
 {
-    return VERR_NOT_IMPLEMENTED;
+    PVBOXHDD pDisk = (PVBOXHDD)pvUser;
+    int rc = VINF_SUCCESS;
+    PVDIOTASK pIoTask;
+    void *pvTask = NULL;
+
+    pIoTask = vdIoTaskMetaAlloc(pDisk, pIoCtx, VDIOCTXTXDIR_FLUSH,
+                                NULL, NULL);
+    if (!pIoTask)
+        return VERR_NO_MEMORY;
+
+    ASMAtomicIncU32(&pIoCtx->cMetaTransfersPending);
+
+    int rc2 = pDisk->pInterfaceAsyncIOCallbacks->pfnFlushAsync(pDisk->pInterfaceAsyncIO->pvUser,
+                                                               pIoStorage->u.pStorage,
+                                                               pIoTask,
+                                                               &pvTask);
+    if (rc2 == VINF_SUCCESS)
+    {
+        ASMAtomicDecU32(&pIoCtx->cMetaTransfersPending);
+        vdIoTaskFree(pDisk, pIoTask);
+    }
+    else if (rc2 == VERR_VD_ASYNC_IO_IN_PROGRESS)
+        rc = VINF_SUCCESS;
+    else if (RT_FAILURE(rc2))
+        rc = rc2;
+
+    return rc;
 }
 
 static size_t vdIOIoCtxCopyTo(void *pvUser, PVDIOCTX pIoCtx,
@@ -5704,7 +5730,72 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
+}
 
+
+VBOXDDU_DECL(int) VDAsyncFlush(PVBOXHDD pDisk, PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
+                               void *pvUser1, void *pvUser2)
+{
+    int rc;
+    int rc2;
+    bool fLockWrite = false;
+    PVDIOCTX pIoCtx = NULL;
+
+    LogFlowFunc(("pDisk=%#p\n", pDisk));
+
+    do
+    {
+        /* sanity check */
+        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
+        AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+
+        pIoCtx = vdIoCtxRootAlloc(pDisk, VDIOCTXTXDIR_FLUSH, 0,
+                                  0, NULL, 0,
+                                  pfnComplete, pvUser1, pvUser2,
+                                  NULL);
+        if (!pIoCtx)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        PVDIMAGE pImage = pDisk->pLast;
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
+
+        vdResetModifiedFlag(pDisk);
+        rc = pImage->Backend->pfnAsyncFlush(pImage->pvBackendData, pIoCtx);
+    } while (0);
+
+    if (RT_UNLIKELY(fLockWrite) && RT_FAILURE(rc))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        if (   !pIoCtx->cbTransferLeft
+            && !pIoCtx->cMetaTransfersPending
+            && ASMAtomicCmpXchgBool(&pIoCtx->fComplete, true, false))
+        {
+            vdIoCtxFree(pDisk, pIoCtx);
+            rc = VINF_VD_ASYNC_IO_FINISHED;
+        }
+        else
+        {
+            LogFlow(("cbTransferLeft=%u cMetaTransfersPending=%u fComplete=%RTbool\n",
+                     pIoCtx->cbTransferLeft, pIoCtx->cMetaTransfersPending,
+                     pIoCtx->fComplete));
+            rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+        }
+    }
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
 }
 
 #if 0

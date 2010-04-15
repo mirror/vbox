@@ -1413,9 +1413,19 @@ typedef struct PDMIBLOCKASYNC
      */
     DECLR3CALLBACKMEMBER(int, pfnStartWrite,(PPDMIBLOCKASYNC pInterface, uint64_t off, PCRTSGSEG pSeg, unsigned cSeg, size_t cbWrite, void *pvUser));
 
+    /**
+     * Flush everything to disk.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pvUser          User argument which is returned in completion callback.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnStartFlush,(PPDMIBLOCKASYNC pInterface, void *pvUser));
+
 } PDMIBLOCKASYNC;
 /** PDMIBLOCKASYNC interface ID. */
-#define PDMIBLOCKASYNC_IID                      "142cd775-3be6-4c9f-9e3d-68969c3d4779"
+#define PDMIBLOCKASYNC_IID                      "78302d0d-4978-498c-be3c-8989cb5ff5c8"
 
 
 /** Pointer to a asynchronous notification interface. */
@@ -1476,9 +1486,19 @@ typedef struct PDMIMEDIAASYNC
      */
     DECLR3CALLBACKMEMBER(int, pfnStartWrite,(PPDMIMEDIAASYNC pInterface, uint64_t off, PCRTSGSEG pSeg, unsigned cSeg, size_t cbWrite, void *pvUser));
 
+    /**
+     * Flush everything to disk.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pvUser          User argument which is returned in completion callback.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnStartFlush,(PPDMIMEDIAASYNC pInterface, void *pvUser));
+
 } PDMIMEDIAASYNC;
 /** PDMIMEDIAASYNC interface ID. */
-#define PDMIMEDIAASYNC_IID                      "d7bc3c90-e686-4d9c-a7bc-6c6742e452ec"
+#define PDMIMEDIAASYNC_IID                      "3553227d-714d-4d28-b993-59f4e671588e"
 
 
 /** Pointer to a char port interface. */
