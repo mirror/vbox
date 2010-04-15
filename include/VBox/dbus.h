@@ -35,8 +35,6 @@
 #include <iprt/types.h>
 #include <iprt/stdarg.h>
 
-#define VBOX_DBUS_1_3_LIB "libdbus-1.so.3"
-
 /** Types and defines from the dbus header files which we need.  These are
  * taken more or less verbatim from the DBus public interface header files. */
 struct DBusError
@@ -108,21 +106,11 @@ typedef DBusHandlerResult (*DBusHandleMessageFunction) (DBusConnection *,
 typedef void (*DBusFreeFunction) (void *);
 
 /* Declarations of the functions that we need from libdbus-1 */
-#define VBOX_PROXY_STUB(function, rettype, signature, shortsig) \
-    RTR3DECL(rettype) ( function ) signature ;
+#define VBOX_DBUS_GENERATE_HEADER
 
 #include <VBox/dbus-calls.h>
 
-#undef VBOX_PROXY_STUB
-
-/**
- * Try to dynamically load the DBus library.  This function should be called
- * before attempting to use any of the DBus functions.  It is safe to call this
- * function multiple times.
- *
- * @returns iprt status code
- */
-RTR3DECL(int) RTDBusLoadLib(void);
+#undef VBOX_DBUS_GENERATE_HEADER
 
 #endif /* ___VBox_DBus_h not defined */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
