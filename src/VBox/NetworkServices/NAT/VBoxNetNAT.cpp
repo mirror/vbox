@@ -224,7 +224,7 @@ void VBoxNetNAT::run()
         WaitReq.pSession = m_pSession;
         WaitReq.hIf = m_hIf;
         WaitReq.cMillies = 2000; /* 2 secs - the sleep is for some reason uninterruptible... */  /** @todo fix interruptability in SrvIntNet! */
-#if 0
+#if 1
         RTReqProcess(m_pSendQueue, 0);
         RTReqProcess(m_pUrgSendQueue, 0);
 #endif
