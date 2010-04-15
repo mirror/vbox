@@ -5504,12 +5504,8 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
         strcpy(cmd, VirtualBox_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
-# ifdef RT_OS_WINDOWS /** @todo drop this once the RTProcCreate bug has been fixed */
-        const char * args[] = {szPath, "--startvm", idStr.c_str(), "--no-startvm-errormsgbox", 0 };
-# else
         Utf8Str strName = mUserData->mName;
         const char * args[] = {szPath, "--comment", strName.c_str(), "--startvm", idStr.c_str(), "--no-startvm-errormsgbox", 0 };
-# endif
         vrc = RTProcCreate(szPath, args, env, 0, &pid);
     }
 #else /* !VBOX_WITH_QTGUI */
@@ -5527,12 +5523,8 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
         strcpy(cmd, VBoxSDL_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
-# ifdef RT_OS_WINDOWS
-        const char * args[] = {szPath, "--startvm", idStr.c_str(), 0 };
-# else
         Utf8Str strName = mUserData->mName;
         const char * args[] = {szPath, "--comment", strName.c_str(), "--startvm", idStr.c_str(), 0 };
-# endif
         vrc = RTProcCreate(szPath, args, env, 0, &pid);
     }
 #else /* !VBOX_WITH_VBOXSDL */
@@ -5556,12 +5548,8 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
 
         Utf8Str idStr = mData->mUuid.toString();
         /* Leave space for 2 args, as "headless" needs --vrdp off on non-OSE. */
-# ifdef RT_OS_WINDOWS
-        const char * args[] = {szPath, "--startvm", idStr.c_str(), 0, 0, 0 };
-# else
         Utf8Str strName = mUserData->mName;
         const char * args[] = {szPath, "--comment", strName.c_str(), "--startvm", idStr.c_str(), 0, 0, 0 };
-# endif
 #ifdef VBOX_WITH_VRDP
         if (strType == "headless")
         {
