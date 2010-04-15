@@ -1016,11 +1016,20 @@ static DECLCALLBACK(int) drvvdStartWrite(PPDMIMEDIAASYNC pInterface, uint64_t uO
                                          PCRTSGSEG paSeg, unsigned cSeg,
                                          size_t cbWrite, void *pvUser)
 {
-     LogFlow(("%s: uOffset=%#llx paSeg=%#p cSeg=%u cbWrite=%d\n pvUser=%#p", __FUNCTION__,
+     LogFlow(("%s: uOffset=%#llx paSeg=%#p cSeg=%u cbWrite=%d pvUser=%#p\n", __FUNCTION__,
              uOffset, paSeg, cSeg, cbWrite, pvUser));
     PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
     int rc = VDAsyncWrite(pThis->pDisk, uOffset, cbWrite, paSeg, cSeg,
                           drvvdAsyncReqComplete, pThis, pvUser);
+    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
+    return rc;
+}
+
+static DECLCALLBACK(int) drvvdStartFlush(PPDMIMEDIAASYNC pInterface, void *pvUser)
+{
+     LogFlow(("%s: pvUser=%#p\n", __FUNCTION__, pvUser));
+    PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
+    int rc = VDAsyncFlush(pThis->pDisk, drvvdAsyncReqComplete, pThis, pvUser);
     LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
@@ -1239,6 +1248,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     /* IMediaAsync */
     pThis->IMediaAsync.pfnStartRead       = drvvdStartRead;
     pThis->IMediaAsync.pfnStartWrite      = drvvdStartWrite;
+    pThis->IMediaAsync.pfnStartFlush      = drvvdStartFlush;
 
     /* Initialize supported VD interfaces. */
     pThis->pVDIfsDisk = NULL;
