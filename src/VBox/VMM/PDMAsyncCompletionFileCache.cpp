@@ -438,7 +438,7 @@ static size_t pdmacFileCacheEvictPagesFrom(PPDMACFILECACHEGLOBAL pCache, size_t 
                     *ppbBuffer = pCurr->pbData;
                 }
                 else if (pCurr->pbData)
-                    RTMemPageFree(pCurr->pbData, pEntry->cbData);
+                    RTMemPageFree(pCurr->pbData, pCurr->cbData);
 
                 pCurr->pbData = NULL;
                 cbEvicted += pCurr->cbData;
