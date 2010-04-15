@@ -72,7 +72,6 @@ private slots:
 private:
 
     void showEvent (QShowEvent *aEvent);
-    void loadLogFile (const QString &aName);
     QTextEdit* createLogPage (const QString &aPage);
 
     static LogViewersMap  mSelfArray;
@@ -81,8 +80,8 @@ private:
     bool                  mFirstRun;
     CMachine              mMachine;
     QTabWidget           *mLogList;
-    QStringList           mLogFilesList;
     VBoxLogSearchPanel   *mSearchPanel;
+    QList< QPair<QString, QTextEdit*> > mLogFiles;
 
     QPushButton *mBtnHelp;
     QPushButton *mBtnFind;
