@@ -8436,48 +8436,48 @@
       <desc>Guest system memory balloon size in megabytes (transient property).</desc>
     </attribute>
 
-    <attribute name="statisticsUpdateInterval" type="unsigned long"> 
-      <desc>Interval to update guest statistics in seconds.</desc> 
-    </attribute> 
+    <attribute name="statisticsUpdateInterval" type="unsigned long">
+      <desc>Interval to update guest statistics in seconds.</desc>
+    </attribute>
 
-    <method name="internalGetStatistics"> 
+    <method name="internalGetStatistics">
       <desc>
          Internal method; do not use as it might change at any time
-      </desc> 
-      <param name="cpuUser" type="unsigned long" dir="out"> 
-         <desc>Percentage of processor time spent in user mode as seen by the guest</desc> 
-      </param> 
-      <param name="cpuKernel" type="unsigned long" dir="out"> 
-         <desc>Percentage of processor time spent in kernel mode as seen by the guest</desc> 
-      </param> 
-      <param name="cpuIdle" type="unsigned long" dir="out"> 
-         <desc>Percentage of processor time spent idling as seen by the guest</desc> 
-      </param> 
-      <param name="memTotal" type="unsigned long" dir="out"> 
-         <desc>Total amount of physical guest RAM</desc> 
-      </param> 
-      <param name="memFree" type="unsigned long" dir="out"> 
-         <desc>Free amount of physical guest RAM</desc> 
-      </param> 
-      <param name="memBalloon" type="unsigned long" dir="out"> 
-         <desc>Amount of ballooned physical guest RAM</desc> 
-      </param> 
-      <param name="memCache" type="unsigned long" dir="out"> 
-         <desc>Total amount of guest (disk) cache memory</desc> 
-      </param> 
-      <param name="pagedTotal" type="unsigned long" dir="out"> 
-         <desc>Total amount of space in the page file</desc> 
-      </param> 
-      <param name="memAllocTotal" type="unsigned long" dir="out"> 
-         <desc>Total amount of memory allocated by the hypervisor</desc> 
-      </param> 
-      <param name="memFreeTotal" type="unsigned long" dir="out"> 
-         <desc>Total amount of free memory available in the hypervisor</desc> 
-      </param> 
-      <param name="memBalloonTotal" type="unsigned long" dir="out"> 
-         <desc>Total amount of memory ballooned by the hypervisor</desc> 
-      </param> 
-    </method> 
+      </desc>
+      <param name="cpuUser" type="unsigned long" dir="out">
+         <desc>Percentage of processor time spent in user mode as seen by the guest</desc>
+      </param>
+      <param name="cpuKernel" type="unsigned long" dir="out">
+         <desc>Percentage of processor time spent in kernel mode as seen by the guest</desc>
+      </param>
+      <param name="cpuIdle" type="unsigned long" dir="out">
+         <desc>Percentage of processor time spent idling as seen by the guest</desc>
+      </param>
+      <param name="memTotal" type="unsigned long" dir="out">
+         <desc>Total amount of physical guest RAM</desc>
+      </param>
+      <param name="memFree" type="unsigned long" dir="out">
+         <desc>Free amount of physical guest RAM</desc>
+      </param>
+      <param name="memBalloon" type="unsigned long" dir="out">
+         <desc>Amount of ballooned physical guest RAM</desc>
+      </param>
+      <param name="memCache" type="unsigned long" dir="out">
+         <desc>Total amount of guest (disk) cache memory</desc>
+      </param>
+      <param name="pagedTotal" type="unsigned long" dir="out">
+         <desc>Total amount of space in the page file</desc>
+      </param>
+      <param name="memAllocTotal" type="unsigned long" dir="out">
+         <desc>Total amount of memory allocated by the hypervisor</desc>
+      </param>
+      <param name="memFreeTotal" type="unsigned long" dir="out">
+         <desc>Total amount of free memory available in the hypervisor</desc>
+      </param>
+      <param name="memBalloonTotal" type="unsigned long" dir="out">
+         <desc>Total amount of memory ballooned by the hypervisor</desc>
+      </param>
+    </method>
 
     <method name="setCredentials">
       <desc>
@@ -8538,7 +8538,7 @@
       </param>
       <param name="environment" type="wstring" safearray="yes" dir="in">
         <desc>
-          Environment variables that can be set while the command is being 
+          Environment variables that can be set while the command is being
           executed, in form of "NAME=VALUE"; one pair per entry. To unset a
           variable just set its name ("NAME") without a value.
         </desc>
@@ -8574,15 +8574,15 @@
       </param>
       <param name="timeoutMS" type="unsigned long" dir="in">
         <desc>
-          The maximum timeout value (in msec) to wait for finished program 
+          The maximum timeout value (in msec) to wait for finished program
           execution. Pass 0 for an infinite timeout.
         </desc>
       </param>
       <param name="pid" type="unsigned long" dir="out">
         <desc>
           The PID (process ID) of the started command for later reference.
-        </desc> 
-      </param> 
+        </desc>
+      </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
@@ -8592,7 +8592,7 @@
       <desc>
         Retrieves output of a formerly started process.
 
-		<result name="VBOX_E_IPRT_ERROR">
+        <result name="VBOX_E_IPRT_ERROR">
           Could not retrieve output.
         </result>
 
@@ -8604,14 +8604,14 @@
       </param>
       <param name="flags" type="unsigned long" dir="in">
         <desc>
-		  Flags describing which output to retrieve.
+          Flags describing which output to retrieve.
         </desc>
-      </param>      
+      </param>
       <param name="buffer" type="wstring" dir="out">
         <desc>
           Buffer for retrieving the actual output.
         </desc>
-      </param>      
+      </param>
     </method>
 
   </interface>
