@@ -376,6 +376,10 @@ DECLCALLBACK(int) vmmdevSetVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32
 
     if (!cRect)
         return VERR_INVALID_PARAMETER;
+#ifdef MMSEAMLESS
+    /* Forward to Display, which calls corresponding framebuffers. */
+    pDrv->pVMMDev->getParent()->getDisplay()->handleSetVisibleRegion(cRect, pRect);
+#else
     IFramebuffer *framebuffer = pDrv->pVMMDev->getParent()->getDisplay()->getFramebuffer();
     if (framebuffer)
     {
@@ -402,6 +406,7 @@ DECLCALLBACK(int) vmmdevSetVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32
         }
 #endif
     }
+#endif
 
     return VINF_SUCCESS;
 }
@@ -410,6 +415,10 @@ DECLCALLBACK(int) vmmdevQueryVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint
 {
     PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
 
+#ifdef MMSEAMLESS
+    /* Forward to Display, which calls corresponding framebuffers. */
+    pDrv->pVMMDev->getParent()->getDisplay()->handleQueryVisibleRegion(pcRect, pRect);
+#else
     IFramebuffer *framebuffer = pDrv->pVMMDev->getParent()->getDisplay()->getFramebuffer();
     if (framebuffer)
     {
@@ -418,6 +427,7 @@ DECLCALLBACK(int) vmmdevQueryVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint
 
         *pcRect = cRect;
     }
+#endif
 
     return VINF_SUCCESS;
 }

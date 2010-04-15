@@ -1096,6 +1096,119 @@ void Display::handleDisplayUpdate (int x, int y, int w, int h)
     }
 }
 
+#ifdef MMSEAMLESS
+static bool displayIntersectRect(RTRECT *prectResult,
+                                 const RTRECT *prect1,
+                                 const RTRECT *prect2)
+{
+    /* Initialize result to an empty record. */
+    memset (prectResult, 0, sizeof (RTRECT));
+
+    int xLeftResult = RT_MAX(prect1->xLeft, prect2->xLeft);
+    int xRightResult = RT_MIN(prect1->xRight, prect2->xRight);
+
+    if (xLeftResult < xRightResult)
+    {
+        /* There is intersection by X. */
+
+        int yTopResult = RT_MAX(prect1->yTop, prect2->yTop);
+        int yBottomResult = RT_MIN(prect1->yBottom, prect2->yBottom);
+
+        if (yTopResult < yBottomResult)
+        {
+            /* There is intersection by Y. */
+
+            prectResult->xLeft   = xLeftResult;
+            prectResult->yTop    = yTopResult;
+            prectResult->xRight  = xRightResult;
+            prectResult->yBottom = yBottomResult;
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+int Display::handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
+{
+    RTRECT *pVisibleRegion = (RTRECT *)RTMemTmpAlloc(cRect * sizeof (RTRECT));
+    if (!pVisibleRegion)
+    {
+        return VERR_NO_TMP_MEMORY;
+    }
+
+    unsigned uScreenId;
+    for (uScreenId = 0; uScreenId < mcMonitors; uScreenId++)
+    {
+        DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
+
+        if (!pFBInfo->pFramebuffer.isNull())
+        {
+            /* Prepare a new array of rectangles which intersect with the framebuffer.
+             */
+            RTRECT rectFramebuffer;
+            rectFramebuffer.xLeft   = pFBInfo->xOrigin;
+            rectFramebuffer.yTop    = pFBInfo->yOrigin;
+            rectFramebuffer.xRight  = pFBInfo->xOrigin + pFBInfo->w;
+            rectFramebuffer.yBottom = pFBInfo->yOrigin + pFBInfo->h;
+
+            uint32_t cRectVisibleRegion = 0;
+
+            uint32_t i;
+            for (i = 0; i < cRect; i++)
+            {
+                if (displayIntersectRect(&pVisibleRegion[cRectVisibleRegion], &pRect[i], &rectFramebuffer))
+                {
+                    pVisibleRegion[cRectVisibleRegion].xLeft -= pFBInfo->xOrigin;
+                    pVisibleRegion[cRectVisibleRegion].yTop -= pFBInfo->yOrigin;
+                    pVisibleRegion[cRectVisibleRegion].xRight -= pFBInfo->xOrigin;
+                    pVisibleRegion[cRectVisibleRegion].yBottom -= pFBInfo->yOrigin;
+
+                    cRectVisibleRegion++;
+                }
+            }
+
+            if (cRectVisibleRegion > 0)
+            {
+                pFBInfo->pFramebuffer->SetVisibleRegion((BYTE *)pVisibleRegion, cRectVisibleRegion);
+            }
+        }
+    }
+
+#if defined(RT_OS_DARWIN) && defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
+    // @todo fix for multimonitor
+    BOOL is3denabled = FALSE;
+
+    mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+
+    VMMDev *vmmDev = mParent->getVMMDev();
+    if (is3denabled && vmmDev)
+    {
+        VBOXHGCMSVCPARM parms[2];
+
+        parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
+        parms[0].u.pointer.addr = pRect;
+        parms[0].u.pointer.size = 0;  /* We don't actually care. */
+        parms[1].type = VBOX_HGCM_SVC_PARM_32BIT;
+        parms[1].u.uint32 = cRect;
+
+        vmmDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_VISIBLE_REGION, 2, &parms[0]);
+    }
+#endif
+
+    RTMemTmpFree(pVisibleRegion);
+
+    return VINF_SUCCESS;
+}
+
+int Display::handleQueryVisibleRegion(uint32_t *pcRect, PRTRECT pRect)
+{
+    // @todo Currently not used by the guest and is not implemented in framebuffers. Remove?
+    return VERR_NOT_SUPPORTED;
+}
+#endif
+
 typedef struct _VBVADIRTYREGION
 {
     /* Copies of object's pointers used by vbvaRgn functions. */
