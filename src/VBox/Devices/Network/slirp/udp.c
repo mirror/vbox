@@ -161,7 +161,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         goto done;
     }
 
-    if (   pData->use_host_resolver
+    if (   pData->fUseHostResolver
         && uh->uh_dport == RT_H2N_U16_C(53)
         && CTL_CHECK(RT_N2H_U32(ip->ip_dst.s_addr), CTL_DNS))
     {
@@ -255,7 +255,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     /*
      * DNS proxy
      */
-    if (   pData->use_dns_proxy
+    if (   pData->fUseDnsProxy
         && (ip->ip_dst.s_addr == RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_DNS))
         && (uh->uh_dport == RT_H2N_U16_C(53)))
     {
