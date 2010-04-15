@@ -54,6 +54,7 @@
 #include "xorg-server.h"
 #include "vboxvideo.h"
 #include "version-generated.h"
+#include "product-generated.h"
 #include <xf86.h>
 
 /* All drivers initialising the SW cursor need this */
@@ -481,7 +482,7 @@ static MODULESETUPPROTO(vboxSetup);
 static XF86ModuleVersionInfo vboxVersionRec =
 {
     VBOX_DRIVER_NAME,
-    "Sun Microsystems, Inc.",
+    VBOX_VENDOR,
     MODINFOSTRING1,
     MODINFOSTRING2,
     XORG_VERSION_CURRENT,

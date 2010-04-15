@@ -65,6 +65,7 @@
 #ifdef VBOX
 #include "VBoxUtils.h"
 #include "version-generated.h"
+#include "product-generated.h"
 #endif
 
 static const OptionInfoRec *MouseAvailableOptions(void *unused);
@@ -2418,7 +2419,7 @@ static XF86ModuleVersionInfo xf86MouseVersionRec =
 {
 #ifdef VBOX
     "vboxmouse",
-    "Sun Microsystems, Inc.",
+    VBOX_VENDOR,
 #else
     "mouse",
     MODULEVENDORSTRING,

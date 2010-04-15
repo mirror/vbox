@@ -103,6 +103,7 @@
 #ifdef VBOX
 #include "VBoxUtils.h"
 #include "version-generated.h"
+#include "product-generated.h"
 #endif
 
 enum {
@@ -3838,7 +3839,7 @@ static XF86ModuleVersionInfo xf86MouseVersionRec =
 {
 #ifdef VBOX
     "vboxmouse",
-    "Sun Microsystems, Inc.",
+    VBOX_VENDOR,
 #else
     "mouse",
     MODULEVENDORSTRING,

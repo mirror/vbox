@@ -59,6 +59,8 @@
 #include <errno.h>
 #include <fcntl.h>
 
+#include "product-generated.h"
+
 static void
 VBoxReadInput(InputInfoPtr pInfo)
 {
@@ -300,7 +302,7 @@ VBoxPlug(pointer module,
 static XF86ModuleVersionInfo VBoxVersionRec =
 {
     "vboxmouse",
-    "Sun Microsystems Inc.",
+    VBOX_VENDOR,
     MODINFOSTRING1,
     MODINFOSTRING2,
     0, /* Missing from SDK: XORG_VERSION_CURRENT, */
