@@ -469,6 +469,9 @@ int      VBVAInit       (PVGASTATE pVGAState);
 void     VBVADestroy    (PVGASTATE pVGAState);
 int      VBVAUpdateDisplay (PVGASTATE pVGAState);
 void     VBVAReset (PVGASTATE pVGAState);
+
+bool VBVAIsEnabled(PVGASTATE pVGAState);
+
 /* @return host-guest flags that were set on reset
  * this allows the caller to make further cleaning when needed,
  * e.g. reset the IRQ */
@@ -493,6 +496,7 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, struct VBOXVDMAHOST **ppVdma, uint32_
 int vboxVDMADestruct(PVBOXVDMAHOST pVdma);
 void vboxVDMAControl(PVBOXVDMAHOST pVdma, PVBOXVDMA_CTL pCmd);
 void vboxVDMACommand(PVBOXVDMAHOST pVdma, PVBOXVDMACBUF_DR pCmd);
+bool vboxVDMAIsEnabled(PVBOXVDMAHOST pVdma);
 # endif /* VBOXVDMA */
 
 #endif /* VBOX_WITH_HGSMI */

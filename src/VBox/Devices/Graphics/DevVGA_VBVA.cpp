@@ -526,6 +526,25 @@ static int vbvaDisable (unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pC
     return VINF_SUCCESS;
 }
 
+bool VBVAIsEnabled(PVGASTATE pVGAState)
+{
+    PHGSMIINSTANCE pHGSMI = pVGAState->pHGSMI;
+    if (pHGSMI)
+    {
+        VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext(pHGSMI);
+        if (pCtx)
+        {
+            if (pCtx->cViews)
+            {
+                VBVAVIEW * pView = &pCtx->aViews[0];
+                if (pView->pVBVA)
+                    return true;
+            }
+        }
+    }
+    return false;
+}
+
 #ifdef DEBUG_sunlover
 void dumpMouseShapeInfo(const VBVAMOUSESHAPEINFO *pMouseShapeInfo)
 {
