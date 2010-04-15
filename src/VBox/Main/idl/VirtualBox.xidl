@@ -8607,7 +8607,7 @@
           Flags describing which output to retrieve.
         </desc>
       </param>
-      <param name="buffer" type="wstring" dir="out">
+      <param name="buffer" type="wstring" dir="return">
         <desc>
           Buffer for retrieving the actual output.
         </desc>
