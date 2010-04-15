@@ -42,7 +42,6 @@
 #endif /* Q_WS_MAC */
 
 #include "QIFileDialog.h"
-//#include "QIHttp.h"
 
 #include "UISession.h"
 #include "UIActionsPool.h"
@@ -659,18 +658,25 @@ void UIMachineLogic::sltMachineStateChanged()
             /* Get console: */
             CConsole console = session().GetConsole();
 
-            /* Take the screenshot for debugging purposes and save it.
-             * TODO: create png's from all configured monitors if possible. */
+            /* Take the screenshot for debugging purposes and save it. */
             QString strLogFolder = console.GetMachine().GetLogFolder();
-            QString strFileName = strLogFolder + "/VBox.png";
             CDisplay display = console.GetDisplay();
-            ULONG width = 0;
-            ULONG height = 0;
-            ULONG bpp = 0;
-            display.GetScreenResolution(0, width, height, bpp);
-            QImage shot = QImage(width, height, QImage::Format_RGB32);
-            display.TakeScreenShot(0, shot.bits(), shot.width(), shot.height());
-            shot.save(QFile::encodeName(strFileName), "PNG");
+            int cGuestScreens = uisession()->session().GetMachine().GetMonitorCount();
+            for (int i=0; i < cGuestScreens; ++i)
+            {
+                QString strFileName;
+                if (i == 0)
+                    strFileName = strLogFolder + "/VBox.png";
+                else
+                    strFileName = QString("%1/VBox.%2.png").arg(strLogFolder).arg(i);
+                ULONG width = 0;
+                ULONG height = 0;
+                ULONG bpp = 0;
+                display.GetScreenResolution(i, width, height, bpp);
+                QImage shot = QImage(width, height, QImage::Format_RGB32);
+                display.TakeScreenShot(i, shot.bits(), shot.width(), shot.height());
+                shot.save(QFile::encodeName(strFileName), "PNG");
+            }
 
             /* Warn the user about GURU: */
             if (vboxProblem().remindAboutGuruMeditation(console, QDir::toNativeSeparators(strLogFolder)))
