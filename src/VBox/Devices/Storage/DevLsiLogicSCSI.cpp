@@ -1431,7 +1431,7 @@ static int lsilogicScatterGatherListAllocate(PLSILOGICTASKSTATE pTaskState, uint
     if (pTaskState->cbBufferUnaligned < cbUnaligned)
     {
         if (pTaskState->pvBufferUnaligned)
-            RTMemFree(pTaskState->pvBufferUnaligned);
+            RTMemPageFree(pTaskState->pvBufferUnaligned, pTaskState->cbBufferUnaligned);
 
         Log(("%s: Allocating buffer for unaligned segments cbUnaligned=%u\n", __FUNCTION__, cbUnaligned));
 
@@ -1486,7 +1486,7 @@ static void lsilogicScatterGatherListDestroy(PLSILOGICSCSI pLsiLogic, PLSILOGICT
         RTMemFree(pTaskState->pSGListHead);
         RTMemFree(pTaskState->paSGEntries);
         if (pTaskState->pvBufferUnaligned)
-            RTMemFree(pTaskState->pvBufferUnaligned);
+            RTMemPageFree(pTaskState->pvBufferUnaligned, pTaskState->cbBufferUnaligned);
         pTaskState->cSGListSize = 0;
         pTaskState->cSGInfoSize = 0;
         pTaskState->cSGInfoEntries = 0;
