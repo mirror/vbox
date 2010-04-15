@@ -136,6 +136,10 @@ public:
     {
         return maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer;
     }
+#ifdef MMSEAMLESS
+    int handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect);
+    int handleQueryVisibleRegion(uint32_t *pcRect, PRTRECT pRect);
+#endif
 
     int VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory);
     void VideoAccelFlush (void);
