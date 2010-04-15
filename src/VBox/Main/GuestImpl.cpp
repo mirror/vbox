@@ -612,6 +612,11 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
             papszArgv[uNumArgs] = NULL;
         }
 
+        Utf8Str Utf8StdIn(aStdIn);
+        Utf8Str Utf8StdOut(aStdOut);
+        Utf8Str Utf8StdErr(aStdErr);
+        Utf8Str Utf8UserName(aUserName);
+        Utf8Str Utf8Password(aPassword);
         if (RT_SUCCESS(vrc))
         {
             uint32_t uContextID = 0;
@@ -636,15 +641,9 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                     if (RT_FAILURE(vrc))
                         break;
                 }
-    
+
                 if (RT_SUCCESS(vrc))
-                {
-                    Utf8Str Utf8StdIn(aStdIn);
-                    Utf8Str Utf8StdOut(aStdOut);
-                    Utf8Str Utf8StdErr(aStdErr);
-                    Utf8Str Utf8UserName(aUserName);
-                    Utf8Str Utf8Password(aPassword);
-                
+                {               
                     PHOSTEXECCALLBACKDATA pData = (HOSTEXECCALLBACKDATA*)RTMemAlloc(sizeof(HOSTEXECCALLBACKDATA));
                     AssertPtr(pData);
                     uContextID = addCtrlCallbackContext(pData, sizeof(HOSTEXECCALLBACKDATA));
@@ -736,12 +735,17 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                     if (vrc == VERR_FILE_NOT_FOUND) /* This is the most likely error. */
                     {
                         rc = setError(VBOX_E_IPRT_ERROR, 
-                                      tr("The file \"%s\" was not found on guest"), Utf8Command.raw());
+                                      tr("The file '%s' was not found on guest"), Utf8Command.raw());
                     }
                     else if (vrc == VERR_BAD_EXE_FORMAT)
                     {
                         rc = setError(VBOX_E_IPRT_ERROR, 
-                                      tr("The file \"%s\" is not an executable format on guest"), Utf8Command.raw());
+                                      tr("The file '%s' is not an executable format on guest"), Utf8Command.raw());
+                    }
+                    else if (vrc == VERR_LOGON_FAILURE)
+                    {
+                        rc = setError(VBOX_E_IPRT_ERROR, 
+                                      tr("The specified user '%s' was not able to logon on guest"), Utf8UserName.raw());
                     }
                     else if (vrc == VERR_TIMEOUT)
                     {
@@ -751,7 +755,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                     else
                     {
                         rc = setError(E_UNEXPECTED,
-                                      tr("The service call failed with the error %Rrc"), vrc);
+                                      tr("The service call failed with error %Rrc"), vrc);
                     }
                 }
 #if 0
