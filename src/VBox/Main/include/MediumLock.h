@@ -26,8 +26,16 @@
 
 /* interface definitions */
 #include "VBox/com/VirtualBox.h"
+#include "VirtualBoxBase.h"
+#include "AutoCaller.h"
 
 #include <iprt/types.h>
+
+#include <list>
+#include <map>
+
+class Medium;
+class MediumAttachment;
 
 /**
  * Single entry for medium lock lists. Has a medium object reference,
@@ -53,21 +61,54 @@ public:
      * @param aMedium       Reference to medium object
      * @param aLockWrite    @c true means a write lock should be taken
      */
-    MediumLock(ComObjPtr<Medium> aMedium, bool aLockWrite);
+    MediumLock(const ComObjPtr<Medium> &aMedium, bool aLockWrite);
+
+    /**
+     * Copy constructor. Needed because we contain an AutoCaller
+     * instance which is deliberately not copyable. The copy is not
+     * marked as locked, so be careful.
+     *
+     * @param aMediumLock   Reference to source object.
+     */
+    MediumLock(const MediumLock &aMediumLock);
+
+    /**
+     * Update a medium lock description
+     *
+     * @note May be only used in unlocked state.
+     *
+     * @return COM status code
+     * @param aLockWrite    @c true means a write lock should be taken
+     */
+    HRESULT UpdateLock(bool aLockWrite);
+
+    /**
+     * Get medium object reference.
+     */
+    const ComObjPtr<Medium> &GetMedium() const;
 
     /**
      * Acquire a medium lock.
+     *
+     * @return COM status code
      */
-    int Lock();
+    HRESULT Lock();
 
     /**
      * Release a medium lock.
+     *
+     * @return COM status code
      */
-    int Unlock();
+    HRESULT Unlock();
 
 private:
     ComObjPtr<Medium> mMedium;
+    AutoCaller mMediumCaller;
     bool mLockWrite;
+    bool mIsLocked;
+    /** Flag whether the medium was skipped when taking the locks.
+     * Only existing and accessible media objects need to be locked. */
+    bool mLockSkipped;
 };
 
 
@@ -78,6 +119,9 @@ private:
 class MediumLockList
 {
 public:
+
+    /* Base list data type. */
+    typedef std::list<MediumLock> Base;
 
     /**
      * Default medium lock list constructor.
@@ -90,62 +134,92 @@ public:
     ~MediumLockList();
 
     /**
+     * Checks if medium lock declaration list is empty.
+     *
+     * @return true if list is empty.
+     */
+    bool IsEmpty();
+
+    /**
      * Add a new medium lock declaration to the end of the list.
      *
      * @note May be only used in unlocked state.
      *
-     * @return VBox status code.
+     * @return COM status code
      * @param aMedium       Reference to medium object
      * @param aLockWrite    @c true means a write lock should be taken
      */
-    int Append(ComObjPtr<Medium> aMedium, bool aLockWrite);
+    HRESULT Append(const ComObjPtr<Medium> &aMedium, bool aLockWrite);
 
     /**
      * Add a new medium lock declaration to the beginning of the list.
      *
      * @note May be only used in unlocked state.
      *
-     * @return VBox status code.
+     * @return COM status code
      * @param aMedium       Reference to medium object
      * @param aLockWrite    @c true means a write lock should be taken
      */
-    int Prepend(ComObjPtr<Medium> aMedium, bool aLockWrite);
+    HRESULT Prepend(const ComObjPtr<Medium> &aMedium, bool aLockWrite);
 
     /**
      * Update a medium lock declaration.
      *
      * @note May be only used in unlocked state.
      *
-     * @return VBox status code.
+     * @return COM status code
      * @param aMedium       Reference to medium object
      * @param aLockWrite    @c true means a write lock should be taken
      */
-    int Update(ComObjPtr<Medium> aMedium, bool aLockWrite);
+    HRESULT Update(const ComObjPtr<Medium> &aMedium, bool aLockWrite);
 
     /**
-     * Remove a medium lock declaration.
+     * Remove a medium lock declaration and return an updated iterator.
      *
-     * @note May be only used in unlocked state.
+     * @note May be used in locked state.
      *
-     * @return VBox status code.
-     * @param aMedium       Reference to medium object
+     * @return COM status code
+     * @param aIt           Iterator for the element to remove
      */
-    int Remove(ComObjPtr<Medium> aMedium);
+    HRESULT RemoveByIterator(Base::iterator &aIt);
+
+    /**
+     * Clear all medium lock declaration.
+     *
+     * @note Implicitly unlocks all locks.
+     *
+     * @return COM status code
+     */
+    HRESULT Clear();
+
+    /**
+     * Get iterator begin() for base list.
+     */
+    Base::iterator GetBegin();
+
+    /**
+     * Get iterator end() for base list.
+     */
+    Base::iterator GetEnd();
 
     /**
      * Acquire all medium locks "atomically", i.e. all or nothing.
+     *
+     * @return COM status code
      */
-    int Lock();
+    HRESULT Lock();
 
     /**
      * Release all medium locks.
+     *
+     * @return COM status code
      */
-    int Unlock();
+    HRESULT Unlock();
 
 private:
-    std::list<MediumLock> mMediumLocks;
+    Base mMediumLocks;
     bool mIsLocked;
-}
+};
 
 /**
  * Medium lock list map. Meant for storing a collection of lock lists.
@@ -162,13 +236,88 @@ public:
     MediumLockListMap();
 
     /**
-     * Default medium lock list destructor.
+     * Default medium lock list map destructor.
      */
     ~MediumLockListMap();
 
+    /**
+     * Checks if medium lock list map is empty.
+     *
+     * @return true if list is empty.
+     */
+    bool IsEmpty();
+
+    /**
+     * Insert a new medium lock list into the map.
+     *
+     * @note May be only used in unlocked state.
+     *
+     * @return COM status code
+     * @param aMediumAttachment Reference to medium attachment object, the key.
+     * @param aMediumLockList   Reference to medium lock list object
+     */
+    HRESULT Insert(const ComObjPtr<MediumAttachment> &aMediumAttachment, MediumLockList *aMediumLockList);
+
+    /**
+     * Replace the medium lock list key by a different one.
+     *
+     * @note May be used in locked state.
+     *
+     * @return COM status code
+     * @param aMediumAttachmentOld  Reference to medium attachment object.
+     * @param aMediumAttachmentNew  Reference to medium attachment object.
+     */
+    HRESULT ReplaceKey(const ComObjPtr<MediumAttachment> &aMediumAttachmentOld, const ComObjPtr<MediumAttachment> &aMediumAttachmentNew);
+
+    /**
+     * Remove a medium lock list from the map. The list will get deleted.
+     *
+     * @note May be only used in unlocked state.
+     *
+     * @return COM status code
+     * @param aMediumAttachment Reference to medium attachment object, the key.
+     */
+    HRESULT Remove(const ComObjPtr<MediumAttachment> &aMediumAttachment);
+
+    /**
+     * Clear all medium lock declarations in this map.
+     *
+     * @note Implicitly unlocks all locks.
+     *
+     * @return COM status code
+     */
+    HRESULT Clear();
+
+    /**
+     * Get the medium lock list identified by the given key.
+     *
+     * @note May be used in locked state.
+     *
+     * @return COM status code
+     * @param aMediumAttachment     Key for medium attachment object.
+     * @param aMediumLockList       Out: medium attachment object reference.
+     */
+    HRESULT Get(const ComObjPtr<MediumAttachment> &aMediumAttachment, MediumLockList * &aMediumLockList);
+
+    /**
+     * Acquire all medium locks "atomically", i.e. all or nothing.
+     *
+     * @return COM status code
+     */
+    HRESULT Lock();
+
+    /**
+     * Release all medium locks.
+     *
+     * @return COM status code
+     */
+    HRESULT Unlock();
+
 private:
-    std::map<ComObjPtr<Medium>, MediumLockList *> mMediumLocks;
-}
+    typedef std::map<ComObjPtr<MediumAttachment>, MediumLockList *> Base;
+    Base mMediumLocks;
+    bool mIsLocked;
+};
 
 #endif /* !____H_MEDIUMLOCK */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
