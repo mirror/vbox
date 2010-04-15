@@ -4967,6 +4967,22 @@ STDMETHODIMP Machine::GetCPUStatus(ULONG aCpu, BOOL *aCpuAttached)
     return S_OK;
 }
 
+STDMETHODIMP Machine::QueryLogFilename(ULONG aIdx, BSTR *aName)
+{
+    CheckComArgOutPointerValid(aName);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    Utf8Str log = queryLogFilename(aIdx);
+    if (RTFileExists(log.c_str()))
+        log.cloneTo(aName);
+
+    return S_OK;
+}
+
 STDMETHODIMP Machine::ReadLog(ULONG aIdx, ULONG64 aOffset, ULONG64 aSize, ComSafeArrayOut(BYTE, aData))
 {
     LogFlowThisFunc(("\n"));
@@ -4978,21 +4994,7 @@ STDMETHODIMP Machine::ReadLog(ULONG aIdx, ULONG64 aOffset, ULONG64 aSize, ComSaf
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
-    Utf8Str logFolder;
-    getLogFolder(logFolder);
-    Assert(logFolder.length());
-    ULONG uLogHistoryCount = 3;
-    ComPtr<ISystemProperties> systemProperties;
-    mParent->COMGETTER(SystemProperties)(systemProperties.asOutParam());
-    if (!systemProperties.isNull())
-        systemProperties->COMGETTER(LogHistoryCount)(&uLogHistoryCount);
-    Utf8Str log;
-    if (aIdx == 0)
-        log = Utf8StrFmt("%s%cVBox.log",
-                         logFolder.raw(), RTPATH_DELIMITER);
-    else
-        log = Utf8StrFmt("%s%cVBox.log.%d",
-                         logFolder.raw(), RTPATH_DELIMITER, aIdx);
+    Utf8Str log = queryLogFilename(aIdx);
 
     /* do not unnecessarily hold the lock while doing something which does
      * not need the lock and potentially takes a long time. */
@@ -5149,6 +5151,24 @@ void Machine::getLogFolder(Utf8Str &aLogFolder)
         aLogFolder = Utf8StrFmt ("%ls%cLogs", mUserData->mSnapshotFolderFull.raw(),
                                  RTPATH_DELIMITER);
     }
+}
+
+/**
+ *  Returns the full path to the machine's log file for an given index.
+ */
+Utf8Str Machine::queryLogFilename(ULONG idx)
+{
+    Utf8Str logFolder;
+    getLogFolder(logFolder);
+    Assert(logFolder.length());
+    Utf8Str log;
+    if (idx == 0)
+        log = Utf8StrFmt("%s%cVBox.log",
+                         logFolder.raw(), RTPATH_DELIMITER);
+    else
+        log = Utf8StrFmt("%s%cVBox.log.%d",
+                         logFolder.raw(), RTPATH_DELIMITER, idx);
+    return log;
 }
 
 /**
@@ -8754,7 +8774,7 @@ void Machine::rollbackMedia()
  *  @note Doesn't lock anything.
  *  @note Not thread safe (must be called from this object's lock).
  */
-bool Machine::isInOwnDir(Utf8Str *aSettingsDir /* = NULL */)
+bool Machine::isInOwnDir(Utf8Str *aSettingsDir /* = NULL */) const
 {
     Utf8Str settingsDir = mData->m_strConfigFileFull;
     settingsDir.stripFilename();
