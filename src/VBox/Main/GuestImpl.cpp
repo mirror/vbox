@@ -812,7 +812,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP Guest::GetProcessOutput(BSTR *aBuffer, ULONG aFlags)
+STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, BSTR *aBuffer)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();

@@ -96,7 +96,7 @@ public:
                               IN_BSTR aStdIn, IN_BSTR aStdOut, IN_BSTR aStdErr,
                               IN_BSTR aUserName, IN_BSTR aPassword,
                               ULONG aTimeoutMS, ULONG* aPID, IProgress **aProgress);
-    STDMETHOD(GetProcessOutput)(BSTR *aBuffer, ULONG aFlags);
+    STDMETHOD(GetProcessOutput)(ULONG aPID, ULONG aFlags, BSTR *aBuffer);
     STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemCache,
                                      ULONG *aPageTotal, ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal);
@@ -123,12 +123,13 @@ private:
 # ifdef VBOX_WITH_GUEST_CONTROL
     struct CallbackContext
     {
-        uint32_t        mContextID;
-        void           *pvData;
-        uint32_t        cbData;
+        uint32_t            mContextID;
+        void               *pvData;
+        uint32_t            cbData;
         /** Atomic flag whether callback was called. */
-        volatile bool   bCalled;
-        ComObjPtr<Progress>      pProgress;
+        volatile bool       bCalled;
+        /** Pointer to user-supplied IProgress. */
+        ComObjPtr<Progress> pProgress;
     };
     typedef std::list< CallbackContext > CallbackList;
     typedef std::list< CallbackContext >::iterator CallbackListIter;

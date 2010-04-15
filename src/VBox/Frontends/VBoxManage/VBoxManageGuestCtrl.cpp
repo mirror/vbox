@@ -308,7 +308,7 @@ static int handleExecProgram(HandlerArg *a)
                         || waitForStdErr)
                     {
                         Bstr strOutput;
-                        CHECK_ERROR_BREAK(guest, GetProcessOutput(strOutput.asOutParam(), 0 /* @todo */));
+                        CHECK_ERROR_BREAK(guest, GetProcessOutput(uPID, 0 /* @todo */, strOutput.asOutParam()));
                         if (verbose) 
                             RTPrintf("Output is:\n");
                         //RTPrintf(strOutput.raw());

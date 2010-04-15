@@ -8371,7 +8371,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="105f4e9a-b8d5-49e5-9397-032e78155bee"
+     uuid="c7c26d4a-0177-455e-999e-ee26e74ee803"
      wsmap="managed"
      >
     <desc>
@@ -8597,14 +8597,19 @@
         </result>
 
       </desc>
-      <param name="buffer" type="wstring" dir="out">
+      <param name="pid" type="unsigned long" dir="in">
         <desc>
           Buffer for retrieving the actual output.
         </desc>
-      </param>      
+      </param>
       <param name="flags" type="unsigned long" dir="in">
         <desc>
 		  Flags describing which output to retrieve.
+        </desc>
+      </param>      
+      <param name="buffer" type="wstring" dir="out">
+        <desc>
+          Buffer for retrieving the actual output.
         </desc>
       </param>      
     </method>
