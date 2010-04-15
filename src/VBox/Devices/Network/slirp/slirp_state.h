@@ -280,7 +280,7 @@ typedef struct NATState
 # endif
     uma_zone_t zone_ext_refcnt;
 #endif
-    int use_host_resolver;
+    bool fUseHostResolver;
     /* from dnsproxy/dnsproxy.h*/
     unsigned int authoritative_port;
     unsigned int authoritative_timeout;
@@ -310,7 +310,7 @@ typedef struct NATState
 #define HASH(id) (id & ((1 << HASHSIZE) - 1))
     struct request *request_hash[1 << HASHSIZE];
     /* this field control behaviour of DHCP server */
-    bool use_dns_proxy;
+    bool fUseDnsProxy;
 
     LIST_HEAD(RT_NOTHING, libalias) instancehead;
     struct libalias *proxy_alias;
