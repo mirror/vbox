@@ -300,6 +300,12 @@ def asState(var):
     else:
         return 'off'
 
+def asFlag(var):
+    if var:
+        return 'yes'
+    else:
+        return 'no'
+
 def perfStats(ctx,mach):
     if not ctx['perf']:
         return
@@ -433,6 +439,18 @@ def unplugCpu(ctx,machine,session,args):
     print "Removing CPU %d..." %(cpu)
     machine.hotUnplugCPU(cpu)
 
+def ginfo(ctx,console, args):
+    guest = console.guest
+    if guest.additionsActive:
+        vers = int(guest.additionsVersion)
+        print "Additions active, version %d.%d"  %(vers >> 16, vers & 0xffff)
+        print "Support seamless: %s"          %(asFlag(guest.supportsSeamless))
+        print "Support graphics: %s"          %(asFlag(guest.supportsGraphics))
+        print "Baloon size: %d"               %(guest.memoryBalloonSize)
+        print "Statistic update interval: %d" %(guest.statisticsUpdateInterval)
+    else:
+        print "No additions"
+
 def cmdExistingVm(ctx,mach,cmd,args):
     mgr=ctx['mgr']
     vb=ctx['vb']
@@ -460,6 +478,7 @@ def cmdExistingVm(ctx,mach,cmd,args):
          'powerbutton':     lambda: console.powerButton(),
          'stats':           lambda: perfStats(ctx, mach),
          'guest':           lambda: guestExec(ctx, mach, console, args),
+         'ginfo':           lambda: ginfo(ctx, console, args),
          'guestlambda':     lambda: args[0](ctx, mach, console, args[1:]),
          'monitorGuest':    lambda: monitorGuest(ctx, mach, console, args),
          'save':            lambda: progressBar(ctx,console.saveState()),
@@ -663,6 +682,39 @@ def createCmd(ctx, args):
         print 'Unknown OS type:',oskind
         return 0
     createVm(ctx, name, oskind, base)
+    return 0
+
+def ginfoCmd(ctx,args):
+    if (len(args) < 2):
+        print "usage: ginfo [vmname|uuid]"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    cmdExistingVm(ctx, mach, 'ginfo', '')
+    return 0
+
+def execInGuest(ctx,console,args):
+    if len(args) < 1:
+        print "exec in guest needs at least program name"
+        return
+    user = ""
+    passwd = ""
+    tmo = 0
+    print "executing %s with %s" %(args[0], args[1:])
+    (pid, progress) = console.guest.executeProcess(args[0], 0, args[1:], [], "", "", "", user, passwd, tmo)
+    print "executed with pid %d" %(pid)
+
+def gexecCmd(ctx,args):
+    if (len(args) < 2):
+        print "usage: gexec [vmname|uuid] command args"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    gargs = args[2:]
+    gargs.insert(0, lambda ctx,mach,console,args: execInGuest(ctx,console,args))
+    cmdExistingVm(ctx, mach, 'guestlambda', gargs)
     return 0
 
 def removeCmd(ctx, args):
@@ -1396,8 +1448,8 @@ def typeGuestCmd(ctx, args):
     else:
         delay = 0.1
 
-    args = [lambda ctx,mach,console,args: typeInGuest(console, text, delay)]
-    cmdExistingVm(ctx, mach, 'guestlambda', args)
+    gargs = [lambda ctx,mach,console,args: typeInGuest(console, text, delay)]
+    cmdExistingVm(ctx, mach, 'guestlambda', gargs)
 
     return 0
 
@@ -1423,6 +1475,8 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'powerbutton':['Effectively press power button', powerbuttonCmd, 0],
             'list':['Shows known virtual machines', listCmd, 0],
             'info':['Shows info on machine', infoCmd, 0],
+            'ginfo':['Shows info on guest', ginfoCmd, 0],
+            'gexec':['Executes program in the guest', gexecCmd, 0],
             'alias':['Control aliases', aliasCmd, 0],
             'verbose':['Toggle verbosity', verboseCmd, 0],
             'setvar':['Set VMs variable: setvar Fedora BIOSSettings.ACPIEnabled True', setvarCmd, 0],
