@@ -248,7 +248,7 @@ static int handleExecProgram(HandlerArg *a)
                                                     Bstr(Utf8StdIn), Bstr(Utf8StdOut), Bstr(Utf8StdErr),
                                                     Bstr(Utf8UserName), Bstr(Utf8Password), uTimeoutMS,
                                                     &uPID, progress.asOutParam()));
-            if (verbose) RTPrintf("Process \"%s\" (PID: %u) started.\n", Utf8Cmd.raw(), uPID);
+            if (verbose) RTPrintf("Process '%s' (PID: %u) started.\n", Utf8Cmd.raw(), uPID);
             if (waitForOutput)
             {
                 if (verbose) RTPrintf("Waiting for output ...\n");
