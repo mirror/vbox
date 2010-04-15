@@ -175,6 +175,14 @@ VBOX_PRODUCT = Oracle VM VirtualBox
 # 	src/VBox/Frontends/VirtualBox/src/globals/VBoxGlobal.cpp
 # 	src/VBox/Frontends/VirtualBox/src/settings/global/VBoxGLSettingsLanguage.cpp
 # 	src/VBox/Frontends/VirtualBox/nls/*.ts
+#   src/VBox/Additions/common/VBoxGuest/VBoxGuest-linux.c
+#   src/VBox/Additions/linux/drm/vboxvideo_drm.h
+#   src/VBox/Additions/linux/installer/test.c
+#   src/VBox/Additions/linux/installer/test_drm.c
+#   src/VBox/Additions/linux/sharedfolders/vfsmod.c
+#   src/VBox/HostDrivers/Support/linux/SUPDrv-linux.c
+#   src/VBox/HostDrivers/VBoxNetAdp/linux/VBoxNetAdp-linux.c
+#   src/VBox/HostDrivers/VBoxNetFlt/linux/VBoxNetFlt-linux.c
 
 # Maybe we want set this manually.
 VBOX_C_YEAR = $(date-utc %Y)
@@ -454,7 +462,7 @@ VBOX_WITH_VBOXBFE = 1
 #VBOX_WITH_VBOXFB = 1
 # Enables the Python<->XPCOM and Python<->COM bindings.
 VBOX_WITH_PYTHON ?= 1
-# Build against multiple Python versions present in the system 
+# Build against multiple Python versions present in the system
 VBOX_WITH_MULTIVERSION_PYTHON ?= 1
 # Enable the kchmviewer.
 VBOX_WITH_KCHMVIEWER = 1
