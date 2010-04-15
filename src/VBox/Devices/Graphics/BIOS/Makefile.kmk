@@ -80,10 +80,10 @@ $$(PATH_VgaBiosBin)/vbetables.h: $(MAKEFILE_CURRENT) $$(TARGET_vbetables-gen) | 
 # WARNING! DEBUG is undefined here to keep the image size stable between debug and release builds.
 $$(PATH_VgaBiosBin)/_vgabios_.c: $(addprefix $(PATH_SUB_CURRENT)/,vgabios.c vgabios.h vbe.h vgatables.h vgafonts.h vbe.c clext.c) $$(PATH_VgaBiosBin)/vbetables.h $(VBOX_VERSION_STAMP)
 	$(call MSG_TOOL,cpp,VgaBiosBin,$<,$@)
-	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -E -P -UDEBUG \
+	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -E -P \
 		-DVBOX -DVBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\" \
 		-DVBOX_VENDOR='"$(VBOX_VENDOR)"' -DVBOX_PRODUCT='"$(VBOX_PRODUCT)"' \
-		-DVBE -DVGABIOS_DATE="''" $(addprefix -D,$(DEFS) $(DEFS.$(KBUILD_TYPE))) \
+		-DVBE -DVGABIOS_DATE="''" $(addprefix -D,$(DEFS) $(DEFS.$(KBUILD_TYPE))) -UDEBUG \
 		-o $@ $<
 
 # 3. compile
