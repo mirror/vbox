@@ -4077,11 +4077,11 @@ static int ahciScatterGatherListAllocate(PAHCIPORTTASKSTATE pAhciPortTaskState, 
     if (pAhciPortTaskState->cbBufferUnaligned < cbUnaligned)
     {
         if (pAhciPortTaskState->pvBufferUnaligned)
-            RTMemFree(pAhciPortTaskState->pvBufferUnaligned);
+            RTMemPageFree(pAhciPortTaskState->pvBufferUnaligned, pAhciPortTaskState->cbBufferUnaligned);
 
         Log(("%s: Allocating buffer for unaligned segments cbUnaligned=%u\n", __FUNCTION__, cbUnaligned));
 
-        pAhciPortTaskState->pvBufferUnaligned = RTMemAllocZ(cbUnaligned);
+        pAhciPortTaskState->pvBufferUnaligned = RTMemPageAlloc(cbUnaligned);
         if (!pAhciPortTaskState->pvBufferUnaligned)
             return VERR_NO_MEMORY;
 
@@ -4172,7 +4172,7 @@ static int ahciScatterGatherListCreateSafe(PAHCIPort pAhciPort, PAHCIPORTTASKSTA
     pAhciPortTaskState->paSGEntries = (PAHCIPORTTASKSTATESGENTRY)RTMemAllocZ(1 * sizeof(AHCIPORTTASKSTATESGENTRY));
     if (!pAhciPortTaskState->paSGEntries)
     {
-        RTMemFree(pAhciPortTaskState->pvBufferUnaligned);
+        RTMemPageFree(pAhciPortTaskState->pvBufferUnaligned, pAhciPortTaskState->cbBufferUnaligned);
         RTMemFree(pAhciPortTaskState->pSGListHead);
         return VERR_NO_MEMORY;
     }
