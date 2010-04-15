@@ -335,13 +335,16 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     Log2(("NAT: main\n"));
     g_pNAT = new VBoxNetNAT();
     Log2(("NAT: parsing command line\n"));
-    g_pNAT->parseArgs(argc - 1, argv + 1);
-    Log2(("NAT: initialization\n"));
-    g_pNAT->init();
-    Log2(("NAT: try go online\n"));
-    g_pNAT->tryGoOnline();
-    Log2(("NAT: main loop\n"));
-    g_pNAT->run();
+    int rc = g_pNAT->parseArgs(argc - 1, argv + 1);
+    if (!rc)
+    {
+        Log2(("NAT: initialization\n"));
+        g_pNAT->init();
+        Log2(("NAT: try go online\n"));
+        g_pNAT->tryGoOnline();
+        Log2(("NAT: main loop\n"));
+        g_pNAT->run();
+    }
     delete g_pNAT;
     return 0;
 }

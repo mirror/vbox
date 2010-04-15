@@ -46,6 +46,7 @@
 #include <VBox/sup.h>
 #include <VBox/intnet.h>
 #include <VBox/vmm.h>
+#include <VBox/version.h>
 
 #include <vector>
 #include <string>
@@ -174,12 +175,12 @@ int VBoxNetBaseService::parseArgs(int argc, char **argv)
 
             case 'V':
                 RTPrintf("%sr%u\n", RTBldCfgVersion(), RTBldCfgRevision());
-                return 0;
+                return 1;
 
             case 'h':
                 RTPrintf("VBoxNetDHCP Version %s\n"
-                         "(C) 2009 Sun Microsystems, Inc.\n"
-                         "All rights reserved\n"
+                         "(C) 2009-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
+                         "All rights reserved.\n"
                          "\n"
                          "Usage: VBoxNetDHCP <options>\n"
                          "\n"
@@ -190,13 +191,10 @@ int VBoxNetBaseService::parseArgs(int argc, char **argv)
                 usage(); /* to print Service Specific usage */
                 return 1;
 
-            case VERR_GETOPT_UNKNOWN_OPTION:
-            case VINF_GETOPT_NOT_OPTION:
-                RTPrintf("Unknown option '%s'. Use --help for more information.\n", Val.psz);
-                return 1;
-
             default:
-                break;
+                rc = RTGetOptPrintError(rc, &Val);
+                RTPrintf("Use --help for more information.\n");
+                return rc;
         }
     }
 
