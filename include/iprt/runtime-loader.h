@@ -63,14 +63,9 @@
 /** @todo this is far too complicated.  A script for generating the files would
  * probably be preferable. */
 
-#include <iprt/asm.h>
-#include <iprt/assert.h>
-#include <iprt/cdefs.h>
-#include <iprt/err.h>
 #include <iprt/ldr.h>
 #include <iprt/log.h>
-#include <iprt/thread.h>
-#include <iprt/types.h>
+#include <iprt/once.h>
 
 #ifdef RT_RUNTIME_LOADER_GENERATE_BODY_STUBS
 /** The following are the symbols which we need from the library. */
@@ -98,15 +93,19 @@ RT_RUNTIME_LOADER_INSERT_SYMBOLS
 };
 # undef RT_PROXY_STUB
 
-enum RT_RTLDR_LOAD_STATE
+/* The function which does the actual work for RT_RUNTIME_LOADER_FUNCTION,
+ * serialised for thread safety. */
+static int rtldrLoadOnce(void *, void *)
 {
-    UNLOADED = 0,
-    LOADING,
-    DONE
-};
+    RTLDRMOD hLib;
 
-static uint32_t rtldrState = UNLOADED;
-static uint32_t rtldrRC = VERR_WRONG_ORDER;
+    LogFlowFunc(("\n"));
+    int rc = RTLdrLoad(RT_RUNTIME_LOADER_LIB_NAME, &hLib);
+    for (unsigned i = 0; RT_SUCCESS(rc) && SharedFuncs[i].name != NULL; ++i)
+        rc = RTLdrGetSymbol(hLib, SharedFuncs[i].name, (void**)SharedFuncs[i].fn);
+    LogFlowFunc(("rc = %Rrc\n", rc));
+    return rc;
+}
 
 /** Load the shared library RT_RUNTIME_LOADER_LIB_NAME and resolve the symbols
  * pointed to by RT_RUNTIME_LOADER_INSERT_SYMBOLS.  May safely be called from
@@ -114,29 +113,14 @@ static uint32_t rtldrRC = VERR_WRONG_ORDER;
  * failed to load. */
 RTR3DECL(int) RT_RUNTIME_LOADER_FUNCTION(void)
 {
-    int rc;
+    static RTONCE sOnce = RTONCE_INITIALIZER;
 
     LogFlowFunc(("\n"));
-    if (ASMAtomicCmpXchgU32(&rtldrState, LOADING, UNLOADED))
-    {
-        RTLDRMOD hLib;
-
-        rc = RTLdrLoad(RT_RUNTIME_LOADER_LIB_NAME, &hLib);
-        for (unsigned i = 0; RT_SUCCESS(rc) && SharedFuncs[i].name != NULL; ++i)
-            rc = RTLdrGetSymbol(hLib, SharedFuncs[i].name, (void**)SharedFuncs[i].fn);
-        rtldrRC = rc;
-        rtldrState = DONE;
-    }
-    else
-    {
-        while(rtldrState == LOADING)
-            RTThreadYield();
-        rc = rtldrRC;
-    }
-    Assert(rtldrState == DONE);
+    int rc = RTOnce (&sOnce, rtldrLoadOnce, NULL, NULL);
     LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
 }
+
 #elif defined(RT_RUNTIME_LOADER_GENERATE_HEADER)
 # ifdef RT_RUNTIME_LOADER_GENERATE_DECLS
 /* Declarations of the functions that we need from
