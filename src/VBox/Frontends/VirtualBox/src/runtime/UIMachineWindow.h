@@ -89,6 +89,9 @@ protected:
 
     /* Update routines: */
     virtual void updateAppearanceOf(int iElement);
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    virtual void updateDbgWindows();
+#endif /* VBOX_WITH_DEBUGGER_GUI */
 
     /* Protected slots: */
     virtual void sltMachineStateChanged();

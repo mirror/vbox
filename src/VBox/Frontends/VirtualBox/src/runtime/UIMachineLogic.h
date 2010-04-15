@@ -206,10 +206,10 @@ private:
     bool dbgCreated();
     void dbgDestroy();
     void dbgAdjustRelativePos();
-    /* The handle to the debugger gui: */
-    PDBGGUI m_dbgGui;
+    /* The handle to the debugger GUI: */
+    PDBGGUI m_pDbgGui;
     /* The virtual method table for the debugger GUI: */
-    PCDBGGUIVT m_dbgGuiVT;
+    PCDBGGUIVT m_pDbgGuiVT;
 #endif
 
 #ifdef Q_WS_MAC
