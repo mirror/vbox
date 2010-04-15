@@ -1915,7 +1915,7 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
         elmMode.getAttributeValue("name", nic.strName);    // optional host interface name
     }
     else if (   fEnabled
-             && elmMode.findChildElement("InternalNetwork"))
+             && elmMode.nameEquals("InternalNetwork"))
     {
         nic.mode = NetworkAttachmentType_Internal;
         if (!elmMode.getAttributeValue("name", nic.strName))    // required network name
