@@ -346,6 +346,10 @@ UIMachineLogic::UIMachineLogic(QObject *pParent,
     , m_pRunningOrPausedActions(0)
     , m_fIsWindowsCreated(false)
     , m_fIsPreventAutoClose(false)
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    , m_pDbgGui(0)
+    , m_pDbgGuiVT(0)
+#endif /* VBOX_WITH_DEBUGGER_GUI */
 #ifdef Q_WS_MAC
     , m_fIsDockIconEnabled(true)
     , m_pDockIconPreview(0)
@@ -357,10 +361,10 @@ UIMachineLogic::UIMachineLogic(QObject *pParent,
 
 UIMachineLogic::~UIMachineLogic()
 {
-#ifdef VBOX_WITH_DEBUGGER_GUI // TODO: Should we close debugger now?
+#ifdef VBOX_WITH_DEBUGGER_GUI
     /* Close debugger: */
-    //dbgDestroy();
-#endif
+    dbgDestroy();
+#endif /* VBOX_WITH_DEBUGGER_GUI */
 }
 
 CSession& UIMachineLogic::session()
@@ -1458,13 +1462,13 @@ void UIMachineLogic::sltPrepareDebugMenu()
 void UIMachineLogic::sltShowDebugStatistics()
 {
     if (dbgCreated())
-        m_dbgGuiVT->pfnShowStatistics(m_dbgGui);
+        m_pDbgGuiVT->pfnShowStatistics(m_pDbgGui);
 }
 
 void UIMachineLogic::sltShowDebugCommandLine()
 {
     if (dbgCreated())
-        m_dbgGuiVT->pfnShowCommandLine(m_dbgGui);
+        m_pDbgGuiVT->pfnShowCommandLine(m_pDbgGui);
 }
 
 void UIMachineLogic::sltLoggingToggled(bool fState)
@@ -1548,7 +1552,7 @@ int UIMachineLogic::searchMaxSnapshotIndex(const CMachine &machine,
 #ifdef VBOX_WITH_DEBUGGER_GUI
 bool UIMachineLogic::dbgCreated()
 {
-    if (m_dbgGui)
+    if (m_pDbgGui)
         return true;
 
     RTLDRMOD hLdrMod = vboxGlobal().getDebuggerModule();
@@ -1560,20 +1564,20 @@ bool UIMachineLogic::dbgCreated()
     if (RT_SUCCESS(rc))
     {
         ISession *pISession = session().raw();
-        rc = pfnGuiCreate(pISession, &m_dbgGui, &m_dbgGuiVT);
+        rc = pfnGuiCreate(pISession, &m_pDbgGui, &m_pDbgGuiVT);
         if (RT_SUCCESS(rc))
         {
-            if (DBGGUIVT_ARE_VERSIONS_COMPATIBLE(m_dbgGuiVT->u32Version, DBGGUIVT_VERSION) ||
-                m_dbgGuiVT->u32EndVersion == m_dbgGuiVT->u32Version)
+            if (DBGGUIVT_ARE_VERSIONS_COMPATIBLE(m_pDbgGuiVT->u32Version, DBGGUIVT_VERSION) ||
+                m_pDbgGuiVT->u32EndVersion == m_pDbgGuiVT->u32Version)
             {
-                m_dbgGuiVT->pfnSetParent(m_dbgGui, (QWidget*)defaultMachineWindow());
-                m_dbgGuiVT->pfnSetMenu(m_dbgGui, (QMenu*)actionsPool()->action(UIActionIndex_Menu_Debug));
+                m_pDbgGuiVT->pfnSetParent(m_pDbgGui, defaultMachineWindow()->machineWindow());
+                m_pDbgGuiVT->pfnSetMenu(m_pDbgGui, actionsPool()->action(UIActionIndex_Menu_Debug));
                 dbgAdjustRelativePos();
                 return true;
             }
 
             LogRel(("DBGGuiCreate failed, incompatible versions (loaded %#x/%#x, expected %#x)\n",
-                    m_dbgGuiVT->u32Version, m_dbgGuiVT->u32EndVersion, DBGGUIVT_VERSION));
+                    m_pDbgGuiVT->u32Version, m_pDbgGuiVT->u32EndVersion, DBGGUIVT_VERSION));
         }
         else
             LogRel(("DBGGuiCreate failed, rc=%Rrc\n", rc));
@@ -1581,27 +1585,27 @@ bool UIMachineLogic::dbgCreated()
     else
         LogRel(("RTLdrGetSymbol(,\"DBGGuiCreate\",) -> %Rrc\n", rc));
 
-    m_dbgGui = 0;
-    m_dbgGuiVT = 0;
+    m_pDbgGui = 0;
+    m_pDbgGuiVT = 0;
     return false;
 }
 
 void UIMachineLogic::dbgDestroy()
 {
-    if (m_dbgGui)
+    if (m_pDbgGui)
     {
-        m_dbgGuiVT->pfnDestroy(m_dbgGui);
-        m_dbgGui = 0;
-        m_dbgGuiVT = 0;
+        m_pDbgGuiVT->pfnDestroy(m_pDbgGui);
+        m_pDbgGui = 0;
+        m_pDbgGuiVT = 0;
     }
 }
 
 void UIMachineLogic::dbgAdjustRelativePos()
 {
-    if (m_dbgGui)
+    if (m_pDbgGui)
     {
         QRect rct = defaultMachineWindow()->machineWindow()->frameGeometry();
-        m_dbgGuiVT->pfnAdjustRelativePos(m_dbgGui, rct.x(), rct.y(), rct.width(), rct.height());
+        m_pDbgGuiVT->pfnAdjustRelativePos(m_pDbgGui, rct.x(), rct.y(), rct.width(), rct.height());
     }
 }
 #endif

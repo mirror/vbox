@@ -280,8 +280,8 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
             {
                 m_normalGeometry.setSize(pResizeEvent->size());
 #ifdef VBOX_WITH_DEBUGGER_GUI
-                // TODO: Update debugger window size!
-                //dbgAdjustRelativePos();
+                /* Update debugger window position */
+                updateDbgWindows();
 #endif
             }
             break;
@@ -292,8 +292,8 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
             {
                 m_normalGeometry.moveTo(geometry().x(), geometry().y());
 #ifdef VBOX_WITH_DEBUGGER_GUI
-                // TODO: Update debugger window position!
-                //dbgAdjustRelativePos();
+                /* Update debugger window position */
+                updateDbgWindows();
 #endif
             }
             break;

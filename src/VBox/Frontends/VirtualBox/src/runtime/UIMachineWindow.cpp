@@ -440,6 +440,15 @@ void UIMachineWindow::updateAppearanceOf(int iElement)
     }
 }
 
+#ifdef VBOX_WITH_DEBUGGER_GUI
+void UIMachineWindow::updateDbgWindows()
+{
+    /* The debugger windows are bind to the main VM window. */
+    if (m_uScreenId == 0)
+        machineLogic()->dbgAdjustRelativePos();
+}
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+
 void UIMachineWindow::sltMachineStateChanged()
 {
     updateAppearanceOf(UIVisualElement_WindowCaption);
