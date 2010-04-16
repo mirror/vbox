@@ -1918,7 +1918,6 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
 
 LRESULT CALLBACK UIMachineView::lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
-    Assert(gView);
     if (gView && nCode == HC_ACTION && gView->winLowKeyboardEvent(wParam, *(KBDLLHOOKSTRUCT *)lParam))
         return 1;
 
