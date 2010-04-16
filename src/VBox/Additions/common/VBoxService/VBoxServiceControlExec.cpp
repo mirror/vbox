@@ -527,16 +527,15 @@ static int VBoxServiceControlExecSetupPipe(int fd, PRTHANDLE ph, PRTHANDLE *pph,
 }
 
 /** Allocates and gives back a thread data struct which then can be used by the worker thread. */
-PVBOXSERVICECTRLTHREAD VBoxServiceControlExecAllocateThreadData(uint32_t u32ContextID, 
-                                                                const char *pszCmd, uint32_t uFlags, 
-                                                                const char *pszArgs, uint32_t uNumArgs,                                           
-                                                                const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
-                                                                const char *pszStdIn, const char *pszStdOut, const char *pszStdErr,
-                                                                const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS)
+int VBoxServiceControlExecAllocateThreadData(PVBOXSERVICECTRLTHREAD pThread,
+                                             uint32_t u32ContextID, 
+                                             const char *pszCmd, uint32_t uFlags, 
+                                             const char *pszArgs, uint32_t uNumArgs,                                           
+                                             const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
+                                             const char *pszStdIn, const char *pszStdOut, const char *pszStdErr,
+                                             const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS)
 {
-    PVBOXSERVICECTRLTHREAD pThread = (PVBOXSERVICECTRLTHREAD)RTMemAlloc(sizeof(VBOXSERVICECTRLTHREAD));
-    if (pThread == NULL)
-        return NULL;
+    AssertPtr(pThread);
 
     pThread->fShutdown = false;
     pThread->fStarted = false;
@@ -592,11 +591,11 @@ PVBOXSERVICECTRLTHREAD VBoxServiceControlExecAllocateThreadData(uint32_t u32Cont
     pThread->uTimeLimitMS = (   (uTimeLimitMS == UINT32_MAX) 
                              || (uTimeLimitMS == 0)) ?
                              RT_INDEFINITE_WAIT : uTimeLimitMS;
-    return pThread;
+    return rc;
 }
 
 /** Frees an allocated thread data structure along with all its allocated parameters. */
-void VBoxServiceControlExecDestroyThread(PVBOXSERVICECTRLTHREAD pThread)
+void VBoxServiceControlExecDestroyThreadData(PVBOXSERVICECTRLTHREAD pThread)
 {
     AssertPtr(pThread);
     RTStrFree(pThread->pszCmd);
@@ -612,8 +611,6 @@ void VBoxServiceControlExecDestroyThread(PVBOXSERVICECTRLTHREAD pThread)
     RTStrFree(pThread->pszStdErr);
     RTStrFree(pThread->pszUser);
     RTStrFree(pThread->pszPassword);
-
-    RTMemFree(pThread);
 }
 
 DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
@@ -770,44 +767,50 @@ int VBoxServiceControlExecProcess(uint32_t uContextID, const char *pszCmd, uint3
                                   const char *pszStdIn, const char *pszStdOut, const char *pszStdErr,
                                   const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS)
 {
-    PVBOXSERVICECTRLTHREAD pThread = 
-        VBoxServiceControlExecAllocateThreadData(uContextID, 
-                                                 pszCmd, uFlags, 
-                                                 pszArgs, uNumArgs,
-                                                 pszEnv, cbEnv, uNumEnvVars, 
-                                                 pszStdIn, pszStdOut, pszStdErr, 
-                                                 pszUser, pszPassword,
-                                                 uTimeLimitMS);
-    int rc = VINF_SUCCESS;
+    PVBOXSERVICECTRLTHREAD pThread = (PVBOXSERVICECTRLTHREAD)RTMemAlloc(sizeof(VBOXSERVICECTRLTHREAD));
+
+    int rc;
     if (pThread)
     {
-        rc = RTThreadCreate(&pThread->Thread, VBoxServiceControlExecThread, 
-                            (void *)(PVBOXSERVICECTRLTHREAD*)pThread, 0,
-                            RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "Exec");
-        if (RT_FAILURE(rc))
+        rc = VBoxServiceControlExecAllocateThreadData(pThread,
+                                                      uContextID, 
+                                                      pszCmd, uFlags, 
+                                                      pszArgs, uNumArgs,
+                                                      pszEnv, cbEnv, uNumEnvVars, 
+                                                      pszStdIn, pszStdOut, pszStdErr, 
+                                                      pszUser, pszPassword,
+                                                      uTimeLimitMS);
+        if (RT_SUCCESS(rc))
         {
-            VBoxServiceError("Control: RTThreadCreate failed, rc=%Rrc\n, pThread=%p\n", 
-                             rc, pThread);
-        }
-        else
-        {
-            /* Wait for the thread to initialize. */
-            RTThreadUserWait(pThread->Thread, 60 * 1000);
-            if (pThread->fShutdown)
+            rc = RTThreadCreate(&pThread->Thread, VBoxServiceControlExecThread, 
+                                (void *)(PVBOXSERVICECTRLTHREAD*)pThread, 0,
+                                RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "Exec");
+            if (RT_FAILURE(rc))
             {
-                VBoxServiceError("Control: Thread for process \"%s\" failed to start!\n", pszCmd);
-                rc = VERR_GENERAL_FAILURE;
+                VBoxServiceError("Control: RTThreadCreate failed, rc=%Rrc\n, pThread=%p\n", 
+                                 rc, pThread);
             }
             else
             {
-                g_GuestControlExecThreads.push_back(pThread);
+                /* Wait for the thread to initialize. */
+                RTThreadUserWait(pThread->Thread, 60 * 1000);
+                if (pThread->fShutdown)
+                {
+                    VBoxServiceError("Control: Thread for process \"%s\" failed to start!\n", pszCmd);
+                    rc = VERR_GENERAL_FAILURE;
+                }
+                else
+                {
+                    g_GuestControlExecThreads.push_back(pThread);
+                }
             }
-        }
-
-        if (RT_FAILURE(rc))
-        {
-            /* Only destroy thread data on failure; otherwise it's destroyed in the thread handler. */
-            VBoxServiceControlExecDestroyThread(pThread);
+    
+            if (RT_FAILURE(rc))
+            {
+                /* Only destroy thread data on failure; otherwise it's destroyed in the thread handler. */
+                VBoxServiceControlExecDestroyThreadData(pThread);
+                RTMemFree(pThread);
+            }
         }
     }
     else
