@@ -1044,7 +1044,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
     uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
     rc = FwCommonPlantDMITable(pDevIns, pThis->au8DMIPage,
-                               VBOX_DMI_TABLE_SIZE, &uuid, pCfg, /*fPutSmbiosHeaders=*/false);
+                               VBOX_DMI_TABLE_SIZE, &uuid, pCfg);
     if (RT_FAILURE(rc))
         return rc;
     if (pThis->u8IOAPIC)

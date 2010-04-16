@@ -316,6 +316,7 @@ static uint8_t fwCommonChecksum(const uint8_t * const au8Data, uint32_t u32Lengt
     return -u8Sum;
 }
 
+#if 0 /* unused */
 static bool fwCommonChecksumOk(const uint8_t * const au8Data, uint32_t u32Length)
 {
     uint8_t u8Sum = 0;
@@ -323,9 +324,10 @@ static bool fwCommonChecksumOk(const uint8_t * const au8Data, uint32_t u32Length
         u8Sum += au8Data[i];
     return (u8Sum == 0);
 }
+#endif
 
-/*
- * Macmini2,1 - matches Mac Mini
+/**
+ * Try fetch the DMI strings from the system.
  */
 static void fwCommonUseHostDMIStrings(void)
 {
@@ -358,10 +360,8 @@ static void fwCommonUseHostDMIStrings(void)
  * @param   pUuid               Pointer to the UUID to use if the DmiUuid
  *                              configuration string isn't present.
  * @param   pCfg                The handle to our config node.
- * @param   fPutSmbiosHeaders   Plant SMBIOS headers if true.
  */
-int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, PCRTUUID pUuid,
-                          PCFGMNODE pCfg, bool fPutSmbiosHeaders)
+int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, PCRTUUID pUuid, PCFGMNODE pCfg)
 {
 #define CHECKSIZE(cbWant) \
     { \
@@ -667,44 +667,49 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
 #undef READCFGSTR
 #undef READCFGINT
 #undef CHECKSIZE
-
-    if (fPutSmbiosHeaders)
-    {
-        struct {
-            struct SMBIOSHDR     smbios;
-            struct DMIMAINHDR    dmi;
-        } aBiosHeaders
-        =
-        {
-            // The SMBIOS header
-            {
-                { 0x5f, 0x53, 0x4d, 0x5f},         // "_SM_" signature
-                0x00,                              // checksum
-                0x1f,                              // EPS length, defined by standard
-                VBOX_SMBIOS_MAJOR_VER,             // SMBIOS major version
-                VBOX_SMBIOS_MINOR_VER,             // SMBIOS minor version
-                VBOX_SMBIOS_MAXSS,                 // Maximum structure size
-                0x00,                              // Entry point revision
-                { 0x00, 0x00, 0x00, 0x00, 0x00 }   // padding
-            },
-            // The DMI header
-            {
-                { 0x5f, 0x44, 0x4d, 0x49, 0x5f },  // "_DMI_" signature
-                0x00,                              // checksum
-                VBOX_DMI_TABLE_SIZE,               // DMI tables length
-                VBOX_DMI_TABLE_BASE,               // DMI tables base
-                VBOX_DMI_TABLE_ENTR,               // DMI tables entries
-                VBOX_DMI_TABLE_VER,                // DMI version
-            }
-        };
-
-        aBiosHeaders.smbios.u8Checksum = fwCommonChecksum((uint8_t*)&aBiosHeaders.smbios, sizeof(aBiosHeaders.smbios));
-        aBiosHeaders.dmi.u8Checksum = fwCommonChecksum((uint8_t*)&aBiosHeaders.dmi, sizeof(aBiosHeaders.dmi));
-
-        PDMDevHlpPhysWrite (pDevIns, 0xfe300, &aBiosHeaders, sizeof(aBiosHeaders));
-    }
-
     return VINF_SUCCESS;
+}
+
+/**
+ * Construct the SMBIOS and DMI headers table pointer at VM construction and
+ * reset.
+ *
+ * @param   pDevIns    The device instance data.
+ */
+void FwCommonPlantSmbiosAndDmiHdrs(PPDMDEVINS pDevIns)
+{
+    struct
+    {
+        struct SMBIOSHDR     smbios;
+        struct DMIMAINHDR    dmi;
+    } aBiosHeaders =
+    {
+        // The SMBIOS header
+        {
+            { 0x5f, 0x53, 0x4d, 0x5f},         // "_SM_" signature
+            0x00,                              // checksum
+            0x1f,                              // EPS length, defined by standard
+            VBOX_SMBIOS_MAJOR_VER,             // SMBIOS major version
+            VBOX_SMBIOS_MINOR_VER,             // SMBIOS minor version
+            VBOX_SMBIOS_MAXSS,                 // Maximum structure size
+            0x00,                              // Entry point revision
+            { 0x00, 0x00, 0x00, 0x00, 0x00 }   // padding
+        },
+        // The DMI header
+        {
+            { 0x5f, 0x44, 0x4d, 0x49, 0x5f },  // "_DMI_" signature
+            0x00,                              // checksum
+            VBOX_DMI_TABLE_SIZE,               // DMI tables length
+            VBOX_DMI_TABLE_BASE,               // DMI tables base
+            VBOX_DMI_TABLE_ENTR,               // DMI tables entries
+            VBOX_DMI_TABLE_VER,                // DMI version
+        }
+    };
+
+    aBiosHeaders.smbios.u8Checksum = fwCommonChecksum((uint8_t*)&aBiosHeaders.smbios, sizeof(aBiosHeaders.smbios));
+    aBiosHeaders.dmi.u8Checksum    = fwCommonChecksum((uint8_t*)&aBiosHeaders.dmi,    sizeof(aBiosHeaders.dmi));
+
+    PDMDevHlpPhysWrite(pDevIns, 0xfe300, &aBiosHeaders, sizeof(aBiosHeaders));
 }
 AssertCompile(VBOX_DMI_TABLE_ENTR == 5);
 
