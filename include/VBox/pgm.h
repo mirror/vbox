@@ -36,7 +36,7 @@
 #include <VBox/vmapi.h>
 #include <VBox/x86.h>
 #include <VBox/hwacc_vmx.h>
-#include <VBox/vmmdev.h> /* for VMMDEVSHAREDREGIONDESC */
+#include <VBox/VMMDev.h> /* for VMMDEVSHAREDREGIONDESC */
 
 RT_C_DECLS_BEGIN
 
