@@ -511,6 +511,9 @@ int Guest::notifyCtrlExec(uint32_t              u32Function,
             case PROC_STS_TEN: /* Terminated normally. */
             case PROC_STS_TEA: /* Terminated abnormally. */
             case PROC_STS_TES: /* Terminated through signal. */
+            case PROC_STS_TOK:
+            case PROC_STS_TOA:
+            case PROC_STS_DWN:
 
                 if (!it->pProgress.isNull())
                     it->pProgress->notifyComplete(S_OK);

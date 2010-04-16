@@ -27,6 +27,9 @@
 # include <Windows.h>
 # include <process.h> /* Needed for file version information. */
 #endif
+#ifdef VBOX_WITH_GUEST_CONTROL
+# include <list>
+#endif
 
 /**
  * A service descriptor.
@@ -128,6 +131,15 @@ typedef DWORD (WINAPI *PFNWTSGETACTIVECONSOLESESSIONID)(void);
 /* Structure for holding thread relevant data. */
 typedef struct
 {
+    /** The worker thread. */
+    RTTHREAD                   Thread;
+    /** Shutdown indicator. */
+    bool volatile              fShutdown;
+    /** Indicator set by the service thread exiting. */
+    bool volatile              fStopped;
+    /** Whether the service was started or not. */
+    bool                       fStarted;
+    /** @todo */
     uint32_t  uClientID;
     uint32_t  uContextID;
     uint32_t  uPID;
@@ -143,9 +155,9 @@ typedef struct
     char     *pszUser;
     char     *pszPassword;
     uint32_t  uTimeLimitMS;
-} VBOXSERVICECTRLTHREADDATA;
+} VBOXSERVICECTRLTHREAD;
 /** Pointer to thread data. */
-typedef VBOXSERVICECTRLTHREADDATA *PVBOXSERVICECTRLTHREADDATA;
+typedef VBOXSERVICECTRLTHREAD *PVBOXSERVICECTRLTHREAD;
 
 /**
  * For buffering process input supplied by the client.
@@ -215,11 +227,18 @@ extern int  VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
 #endif /* RT_OS_WINDOWS */
 
 #ifdef VBOX_WITH_GUEST_CONTROL
+using namespace std;
+
+typedef std::list< PVBOXSERVICECTRLTHREAD > GuestCtrlExecThreads;
+typedef std::list< PVBOXSERVICECTRLTHREAD >::iterator GuestCtrlExecListIter;
+typedef std::list< PVBOXSERVICECTRLTHREAD >::const_iterator GuestCtrlExecListIterConst;
+
 extern int VBoxServiceControlExecProcess(uint32_t uContext, const char *pszCmd, uint32_t uFlags, 
                                          const char *pszArgs, uint32_t uNumArgs,                                           
                                          const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
                                          const char *pszStdIn, const char *pszStdOut, const char *pszStdErr,
                                          const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS);
+extern void VBoxServiceControlExecDestroyThread(PVBOXSERVICECTRLTHREAD pThread);
 #endif
 
 #ifdef VBOXSERVICE_MANAGEMENT

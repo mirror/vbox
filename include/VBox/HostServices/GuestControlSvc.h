@@ -65,7 +65,7 @@ enum eProcessStatus
     PROC_STS_TOK = 5,
     /** Process timed out and was not killed successfully. */
     PROC_STS_TOA = 6,
-    /** @todo */
+    /** Service is stopping, process was killed. */
     PROC_STS_DWN = 7,
     /** Something went wrong (error code in flags). */
     PROC_STS_ERROR = 8
@@ -174,7 +174,7 @@ enum eGetHostMsgFn
 #pragma pack (1)
 typedef struct _VBoxGuestCtrlHGCMMsgType
 {
-    VBoxGuestHGCMCallInfo hdr;
+    VBoxGuestHGCMCallInfoTimed hdr;
 
     /**
      * The returned command the host wants to

@@ -24,6 +24,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/getopt.h>
 #include <iprt/mem.h>
@@ -42,9 +43,12 @@ using namespace guestControl;
 /** The control interval (millseconds). */
 uint32_t g_ControlInterval = 0;
 /** The semaphore we're blocking on. */
-static RTSEMEVENTMULTI  g_hControlEvent = NIL_RTSEMEVENTMULTI;
+static RTSEMEVENTMULTI      g_hControlEvent = NIL_RTSEMEVENTMULTI;
 /** The guest property service client ID. */
-static uint32_t         g_GuestControlSvcClientID = 0;
+static uint32_t             g_GuestControlSvcClientID = 0;
+/** List of spawned processes */
+GuestCtrlExecThreads        g_GuestControlExecThreads;
+
 
 /** @copydoc VBOXSERVICE::pfnPreInit */
 static DECLCALLBACK(int) VBoxServiceControlPreInit(void)
@@ -169,11 +173,17 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
     {
         uint32_t uMsg;
         uint32_t uNumParms;
-        rc = VbglR3GuestCtrlGetHostMsg(g_GuestControlSvcClientID, &uMsg, &uNumParms);
+        VBoxServiceVerbose(3, "Control: Waiting for host msg ...\n");
+        rc = VbglR3GuestCtrlGetHostMsg(g_GuestControlSvcClientID, &uMsg, &uNumParms, 1000 /* 1s timeout */);
         if (rc == VERR_TOO_MUCH_DATA)
         {
-            VBoxServiceVerbose(3, "Control: Message requires %ld parameters, but only 2 supplied.\n", uNumParms);
+            VBoxServiceVerbose(3, "Control: Message requires %ld parameters, but only 2 supplied -- retrying request ...\n", uNumParms);
             rc = VINF_SUCCESS;
+        }
+        else if (rc == VERR_TIMEOUT)
+        {
+            VBoxServiceVerbose(3, "Control: Wait timed out, waiting for next round ...\n");
+            RTThreadSleep(100);
         }
         if (RT_SUCCESS(rc))
         {
@@ -227,7 +237,28 @@ static DECLCALLBACK(void) VBoxServiceControlStop(void)
 /** @copydoc VBOXSERVICE::pfnTerm */
 static DECLCALLBACK(void) VBoxServiceControlTerm(void)
 {
-    /* Nothing here yet. */
+    /* Shutdown spawned processes threads. */
+    for (GuestCtrlExecListIter it = g_GuestControlExecThreads.begin();
+         it != g_GuestControlExecThreads.end(); it++)
+    {
+        PVBOXSERVICECTRLTHREAD pThread = (*it);
+        AssertPtr(pThread);
+        ASMAtomicXchgBool(&pThread->fShutdown, true);
+    }
+    
+    for (GuestCtrlExecListIter it = g_GuestControlExecThreads.begin();
+         it != g_GuestControlExecThreads.end(); it++)
+    {
+        PVBOXSERVICECTRLTHREAD pThread = (*it);
+        if (pThread->Thread != NIL_RTTHREAD)
+        {
+            int rc2 = RTThreadWait(pThread->Thread, 30 * 1000 /* Wait 30 second */, NULL);
+            if (RT_FAILURE(rc2))
+                VBoxServiceError("Control: Thread (PID: %u) failed to stop; rc2=%Rrc\n", pThread->uPID, rc2);
+        }
+        VBoxServiceControlExecDestroyThread(pThread);
+    }
+
     VbglR3GuestCtrlDisconnect(g_GuestControlSvcClientID);
     g_GuestControlSvcClientID = 0;
 
