@@ -90,6 +90,7 @@ WITH_DBUS=1
 WITH_KMODS=1
 WITH_OPENGL=1
 WITH_HARDENING=1
+WITH_VDE=
 BUILD_LIBXML2=
 BUILD_LIBXSLT=
 BUILD_LIBCURL=
@@ -2065,6 +2066,7 @@ EOF
 [ $WITH_KMODS   -eq 1 ] && echo "  --disable-kmods          don't build Linux kernel modules (host and guest)"
 [ $WITH_OPENGL  -eq 1 ] && echo "  --disable-opengl         disable OpenGL support"
 [ $WITH_GSOAP   -eq 0 ] && echo "  --enable-webservice      enable the webservice stuff"
+[ "$OS" = "linux" -o "$OS" = "freebsd" ] && echo "  --enable-vde             enable VDE networking"
 cat << EOF
   --disable-hardening      don't be strict about /dev/vboxdrv access
   --build-libxml2          build libxml2 from sources
@@ -2228,6 +2230,9 @@ for option in $*; do
       ;;
     --enable-hardening)
       WITH_HARDENING=2
+      ;;
+    --enable-vde)
+      WITH_VDE=1
       ;;
     --build-debug|-d)
       BUILD_TYPE=debug
@@ -2465,6 +2470,13 @@ if [ $OSE -ge 1 ]; then
     check_gsoap
   else
     cnf_append "VBOX_WITH_WEBSERVICES" ""
+  fi
+fi
+
+# VDE
+if [ "$OS" = "linux" -o "$OS" = "freebsd" ]; then
+  if [ $WITH_VDE -eq 1 ]; then
+    cnf_append "VBOX_WITH_VDE" "1"
   fi
 fi
 
