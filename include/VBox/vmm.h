@@ -299,7 +299,7 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_GMM_FREE_PAGES,
     /** Call GMMR0FreeLargePage(). */
     VMMR0_DO_GMM_FREE_LARGE_PAGE,
-    /** Call GMMR0QueryVMMMemoryStatsReq */
+    /** Call GMMR0QueryVMMMemoryStatsReq(). */
     VMMR0_DO_GMM_QUERY_VMM_MEM_STATS,
     /** Call GMMR0BalloonedPages(). */
     VMMR0_DO_GMM_BALLOONED_PAGES,
@@ -318,6 +318,9 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_GCFGM_SET_VALUE,
     /** Query a GVMM or GMM configuration value. */
     VMMR0_DO_GCFGM_QUERY_VALUE,
+
+    /** Call PDMR0DriverCallReqHandler. */
+    VMMR0_DO_PDM_DRIVER_CALL_REQ_HANDLER,
 
     /** The start of the R0 service operations. */
     VMMR0_DO_SRV_START,
