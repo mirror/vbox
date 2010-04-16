@@ -1235,6 +1235,8 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
     int data_len = 0;
     int nbytes = 0;
     u_char code = ~0;
+    int out_len;
+    int size;
 
     len = pData->pfIcmpParseReplies(pData->pvIcmpBuffer, pData->szIcmpBuffer);
     if (len < 0)
@@ -1266,8 +1268,23 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
 # ifndef VBOX_WITH_SLIRP_BSD_MBUF
                 m = m_get(pData);
 # else
-                m = m_gethdr(pData, M_NOWAIT, MT_HEADER);
+                out_len = ETH_HLEN + sizeof(struct ip) +  8;
+                size;
+                size = MCLBYTES;
+                if (out_len < MSIZE)
+                    size = MCLBYTES;
+                else if (out_len < MCLBYTES)
+                    size = MCLBYTES;
+                else if (out_len < MJUM9BYTES)
+                    size = MJUM9BYTES;
+                else if (out_len < MJUM16BYTES)
+                    size = MJUM16BYTES;
+                else
+                    AssertMsgFailed(("Unsupported size"));
+
+                m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
 # endif
+                m->m_len = 0;
                 m->m_data += if_maxlinkhdr;
                 ip = mtod(m, struct ip *);
                 ip->ip_src.s_addr = icr[i].Address;
@@ -1289,7 +1306,11 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 nbytes = (data_len + icr[i].DataSize > m->m_size? m->m_size - data_len: icr[i].DataSize);
                 memcpy(icp->icmp_data, icr[i].Data, nbytes);
 # else
-                AssertMsgFailed(("ICMP"));
+                hlen = (ip->ip_hl << 2);
+                m->m_pkthdr.header = mtod(m, void *);
+                m->m_len = data_len;
+
+                m_copyback(pData, m, hlen + 8, icr[i].DataSize, icr[i].Data);
 # endif
 
                 data_len += icr[i].DataSize;
@@ -1323,7 +1344,9 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 nbytes =(hlen + ICMP_MINLEN + data_len > m->m_size? m->m_size - (hlen + ICMP_MINLEN): data_len);
                 memcpy(icp->icmp_data, ip_broken,  nbytes);
 #else
-                AssertMsgFailed(("ICMP"));
+                m->m_len = data_len;
+                m->m_pkthdr.header = mtod(m, void *);
+                m_copyback(pData, m, ip->ip_hl >> 2, icr[i].DataSize, icr[i].Data);
 #endif
                 icmp_reflect(pData, m);
                 break;
