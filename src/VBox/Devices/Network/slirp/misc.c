@@ -216,6 +216,8 @@ static void slirp_uma_free(void *item, int size, uint8_t flags)
     it = &((struct item *)item)[-1];
     Assert(it->magic == ITEM_MAGIC);
     zone = it->zone;
+    /* check bourder magic */
+    Assert((*(uint32_t *)(((uint8_t *)&it[1]) + zone->size) == 0xabadbabe));
     RTCritSectEnter(&zone->csZone);
     Assert(zone->magic == ZONE_MAGIC);
     LIST_REMOVE(it, list);
@@ -277,12 +279,13 @@ void uma_zone_set_max(uma_zone_t zone, int max)
     int i = 0;
     struct item *it;
     zone->max_items = max;
-    zone->area = RTMemAllocZ(max * (sizeof(struct item) + zone->size));
+    zone->area = RTMemAllocZ(max * (sizeof(struct item) + zone->size + sizeof(uint32_t)));
     for (; i < max; ++i)
     {
-        it = (struct item *)(((uint8_t *)zone->area) + i*(sizeof(struct item) + zone->size));
+        it = (struct item *)(((uint8_t *)zone->area) + i*(sizeof(struct item) + zone->size + sizeof(uint32_t)));
         it->magic = ITEM_MAGIC;
         it->zone = zone;
+        *(uint32_t *)(((uint8_t *)&it[1]) + zone->size) = 0xabadbabe;
         LIST_INSERT_HEAD(&zone->free_items, it, list);
     }
     
