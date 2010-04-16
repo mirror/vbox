@@ -205,28 +205,11 @@ AssertCompileMemberAlignment(DRVNAT, StatNATRecvWakeups, 8);
 /** Pointer the NAT driver instance data. */
 typedef DRVNAT *PDRVNAT;
 
-/**
- * NAT queue item.
- */
-typedef struct DRVNATQUEUITEM
-{
-    /** The core part owned by the queue manager. */
-    PDMQUEUEITEMCORE    Core;
-    /** The buffer for output to guest. */
-    const uint8_t       *pu8Buf;
-    /* size of buffer */
-    size_t              cb;
-    void                *mbuf;
-} DRVNATQUEUITEM;
-/** Pointer to a NAT queue item. */
-typedef DRVNATQUEUITEM *PDRVNATQUEUITEM;
-
 
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
 static void drvNATNotifyNATThread(PDRVNAT pThis, const char *pszWho);
-
 
 
 static DECLCALLBACK(int) drvNATRecv(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
@@ -294,9 +277,8 @@ static DECLCALLBACK(void) drvNATUrgRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, in
         rc = pThis->pIAboveNet->pfnReceive(pThis->pIAboveNet, pu8Buf, cb);
         AssertRC(rc);
     }
-    else if (   RT_FAILURE(rc)
-             && (  rc == VERR_TIMEOUT
-                && rc == VERR_INTERRUPTED))
+    else if (   rc != VERR_TIMEOUT
+             && rc != VERR_INTERRUPTED)
     {
         AssertRC(rc);
     }
@@ -341,8 +323,7 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int c
         rc = pThis->pIAboveNet->pfnReceive(pThis->pIAboveNet, pu8Buf, cb);
         AssertRC(rc);
     }
-    else if (   RT_FAILURE(rc)
-             && rc != VERR_TIMEOUT
+    else if (   rc != VERR_TIMEOUT
              && rc != VERR_INTERRUPTED)
     {
         AssertRC(rc);
@@ -967,8 +948,9 @@ static DECLCALLBACK(void) drvNATPowerOn(PPDMDRVINS pDrvIns)
  */
 static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCfg, RTIPV4ADDR Network)
 {
-     RTMAC Mac;
-     memset(&Mac, 0, sizeof(RTMAC)); /*can't get MAC here */
+    RTMAC Mac;
+    RT_ZERO(Mac); /* can't get MAC here */
+
     /*
      * Enumerate redirections.
      */
@@ -1239,7 +1221,6 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
                 LogRel(("NAT: Can't create request queue\n"));
                 return rc;
             }
-
 
             rc = RTReqCreateQueue(&pThis->pRecvReqQueue);
             if (RT_FAILURE(rc))
