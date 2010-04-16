@@ -209,7 +209,7 @@ soread(PNATState pData, struct socket *so)
          * www.youtube.com I see this very often. Closing the socket too early
          * would be dangerous.
          */
-        int status, ignored;
+        int status;
         unsigned long pending = 0;
         status = ioctlsocket(so->s, FIONREAD, &pending);
         if (status < 0)
@@ -1049,7 +1049,9 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     struct icmp_msg *icm;
     uint8_t proto;
     int type = 0;
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     int m_room;
+#endif
 
     ip = (struct ip *)buff;
     /* Fix ip->ip_len to  contain the total packet length including the header
