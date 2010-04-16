@@ -273,6 +273,7 @@ static int serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
         if (s->lcr & UART_LCR_DLAB) {
             s->divider = (s->divider & 0xff00) | val;
             serial_update_parameters(s);
+#if 0 /* disabled because this causes regressions */
         } else if (s->lsr & UART_LSR_THRE) {
             s->thr_ipending = 0;
             ch = val;
@@ -286,6 +287,24 @@ static int serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
             serial_update_irq(s);
         } else
             Log(("serial: THR not EMPTY!\n"));
+#else
+        } else {
+            s->thr_ipending = 0;
+            s->lsr &= ~UART_LSR_THRE;
+            serial_update_irq(s);
+            ch = val;
+            if (RT_LIKELY(s->pDrvChar))
+            {
+                Log(("serial_ioport_write: write 0x%X\n", ch));
+                int rc = s->pDrvChar->pfnWrite(s->pDrvChar, &ch, 1);
+                AssertRC(rc);
+            }
+            s->thr_ipending = 1;
+            s->lsr |= UART_LSR_THRE;
+            s->lsr |= UART_LSR_TEMT;
+            serial_update_irq(s);
+        }
+#endif
         break;
     case 1:
         if (s->lcr & UART_LCR_DLAB) {
