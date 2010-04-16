@@ -183,7 +183,6 @@ typedef struct NATState
     uint8_t client_ethaddr[6];
 #endif
     const uint8_t *slirp_ethaddr;
-    struct ex_list *exec_list;
     char slirp_hostname[33];
     bool fPassDomain;
     struct in_addr bindIP;
@@ -406,7 +405,6 @@ typedef struct NATState
 #define dns_addr pData->dns_addr
 #define loopback_addr pData->loopback_addr
 #define client_ethaddr pData->client_ethaddr
-#define exec_list pData->exec_list
 #define slirp_hostname pData->slirp_hostname
 
 #define tcb pData->tcb

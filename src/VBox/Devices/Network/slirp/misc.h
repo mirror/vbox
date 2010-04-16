@@ -8,17 +8,6 @@
 #ifndef _MISC_H_
 #define _MISC_H_
 
-struct ex_list
-{
-    int ex_pty;          /* Do we want a pty? */
-    int ex_addr;         /* The last byte of the address */
-    int ex_fport;        /* Port to telnet to */
-    char *ex_exec;       /* Command line of what to exec */
-    struct ex_list *ex_next;
-};
-
-extern struct ex_list *exec_list;
-
 #define EMU_NONE      0x0
 
 /* TCP emulations */
@@ -64,7 +53,6 @@ void redir_x (u_int32_t, int, int, int);
 void getouraddr (PNATState);
 void slirp_insque  (PNATState, void *, void *);
 void slirp_remque  (PNATState, void *);
-int add_exec (struct ex_list **, int, char *, int, int);
 int slirp_openpty (int *, int *);
 int fork_exec (PNATState, struct socket *, char *, int);
 void snooze_hup (int);
