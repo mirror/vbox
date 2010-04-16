@@ -33,6 +33,7 @@
 #include <VBox/types.h>
 #include <VBox/gvmm.h>
 #include <VBox/sup.h>
+#include <VBox/VMMDev.h> /* for VMMDEVSHAREDREGIONDESC */
 
 RT_C_DECLS_BEGIN
 
@@ -296,6 +297,9 @@ GMMR0DECL(int)  GMMR0FreeLargePage(PVM pVM, VMCPUID idCpu, uint32_t idPage);
 GMMR0DECL(int)  GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages);
 GMMR0DECL(int)  GMMR0MapUnmapChunk(PVM pVM, VMCPUID idCpu, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
 GMMR0DECL(int)  GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3);
+GMMR0DECL(int)  GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule, unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions);
+GMMR0DECL(int)  GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule);
+GMMR0DECL(int)  GMMR0CheckSharedModules(PVM pVM, VMCPUID idCpu);
 
 
 
@@ -454,6 +458,57 @@ typedef GMMFREELARGEPAGEREQ *PGMMFREELARGEPAGEREQ;
 
 GMMR0DECL(int) GMMR0FreeLargePageReq(PVM pVM, VMCPUID idCpu, PGMMFREELARGEPAGEREQ pReq);
 
+/**
+ * Request buffer for GMMR0RegisterSharedModuleReq / VMMR0_DO_GMM_REGISTER_SHARED_MODULE.
+ * @see GMMR0RegisterSharedModule.
+ */
+typedef struct GMMREGISTERSHAREDMODULEREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR              Hdr;
+    /** Shared module size. */
+    uint32_t                    cbModule;
+    /** Number of included region descriptors */
+    uint32_t                    cRegions;
+    /** Base address of the shared module. */
+    RTGCPTR64                   GCBaseAddr;
+    /** Module name */
+    char                        szName[128];
+    /** Module version */
+    char                        szVersion[16];
+    /** Shared region descriptor(s). */
+    VMMDEVSHAREDREGIONDESC      aRegions[1];
+} GMMREGISTERSHAREDMODULEREQ;
+/** Pointer to a GMMR0RegisterSharedModuleReq / VMMR0_DO_GMM_REGISTER_SHARED_MODULE request buffer. */
+typedef GMMREGISTERSHAREDMODULEREQ *PGMMREGISTERSHAREDMODULEREQ;
+
+GMMR0DECL(int) GMMR0RegisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMREGISTERSHAREDMODULEREQ pReq);
+
+
+/**
+ * Request buffer for GMMR0UnregisterSharedModuleReq / VMMR0_DO_GMM_UNREGISTER_SHARED_MODULE.
+ * @see GMMR0UnregisterSharedModule.
+ */
+typedef struct GMMUNREGISTERSHAREDMODULEREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR              Hdr;
+    /** Shared module size. */
+    uint32_t                    cbModule;
+    /** Align at 8 byte boundary. */
+    uint32_t                    u32Alignment;
+    /** Base address of the shared module. */
+    RTGCPTR64                   GCBaseAddr;
+    /** Module name */
+    char                        szName[128];
+    /** Module version */
+    char                        szVersion[16];
+} GMMUNREGISTERSHAREDMODULEREQ;
+/** Pointer to a GMMR0UnregisterSharedModuleReq / VMMR0_DO_GMM_UNREGISTER_SHARED_MODULE request buffer. */
+typedef GMMUNREGISTERSHAREDMODULEREQ *PGMMUNREGISTERSHAREDMODULEREQ;
+
+GMMR0DECL(int) GMMR0UnregisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMUNREGISTERSHAREDMODULEREQ pReq);
+
 
 #ifdef IN_RING3
 /** @defgroup grp_gmm_r3    The Global Memory Manager Ring-3 API Wrappers
@@ -477,6 +532,10 @@ GMMR3DECL(int)  GMMR3MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChun
 GMMR3DECL(int)  GMMR3SeedChunk(PVM pVM, RTR3PTR pvR3);
 GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages);
 GMMR3DECL(int)  GMMR3QueryVMMMemoryStats(PVM pVM, uint64_t *pcTotalAllocPages, uint64_t *pcTotalFreePages, uint64_t *pcTotalBalloonPages);
+GMMR3DECL(int)  GMMR3RegisterSharedModule(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule, 
+                                          unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions);
+GMMR3DECL(int)  GMMR3UnregisterSharedModule(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule);
+GMMR3DECL(int)  GMMR3CheckSharedModules(PVM pVM);
 /** @} */
 #endif /* IN_RING3 */
 

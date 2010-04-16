@@ -34,6 +34,7 @@
 #include <iprt/assert.h>
 #include <VBox/log.h>
 #include <iprt/mem.h>
+#include <iprt/string.h>
 
 
 /**
@@ -353,3 +354,68 @@ GMMR3DECL(int)  GMMR3SeedChunk(PVM pVM, RTR3PTR pvR3)
     return VMMR3CallR0(pVM, VMMR0_DO_GMM_SEED_CHUNK, (uintptr_t)pvR3, NULL);
 }
 
+
+/**
+ * @see GMMR0RegisterSharedModule
+ */
+GMMR3DECL(int) GMMR3RegisterSharedModule(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule, 
+                                         unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions)
+{
+    PGMMREGISTERSHAREDMODULEREQ pReq;
+    int rc;
+
+    /* Sanity check. */
+    AssertReturn(cRegions < VMMDEVSHAREDREGIONDESC_MAX, VERR_INVALID_PARAMETER);
+
+    pReq = (PGMMREGISTERSHAREDMODULEREQ)RTMemAllocZ(RT_OFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[cRegions]));
+    AssertReturn(pReq, VERR_NO_MEMORY);
+
+    pReq->Hdr.u32Magic  = SUPVMMR0REQHDR_MAGIC;
+    pReq->Hdr.cbReq     = sizeof(*pReq);
+    pReq->GCBaseAddr    = GCBaseAddr;
+    pReq->cbModule      = cbModule;
+    pReq->cRegions      = cRegions;
+    for (unsigned i = 0; i < cRegions; i++)
+        pReq->aRegions[i] = pRegions[i];
+
+    if (    RTStrCopy(pReq->szName, sizeof(pReq->szName), pszModuleName) != VINF_SUCCESS
+        ||  RTStrCopy(pReq->szVersion, sizeof(pReq->szVersion), pszVersion) != VINF_SUCCESS)
+    {
+        rc = VERR_BUFFER_OVERFLOW;
+        goto end;
+    }
+
+    rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_REGISTER_SHARED_MODULE, 0, &pReq->Hdr);
+end:
+    RTMemFree(pReq);
+    return rc;
+}
+
+/**
+ * @see GMMR0RegisterSharedModule
+ */
+GMMR3DECL(int) GMMR3UnregisterSharedModule(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule)
+{
+    GMMUNREGISTERSHAREDMODULEREQ Req;
+    Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    Req.Hdr.cbReq = sizeof(Req);
+    
+    Req.GCBaseAddr    = GCBaseAddr;
+    Req.cbModule      = cbModule;
+
+    if (    RTStrCopy(Req.szName, sizeof(Req.szName), pszModuleName) != VINF_SUCCESS
+        ||  RTStrCopy(Req.szVersion, sizeof(Req.szVersion), pszVersion) != VINF_SUCCESS)
+    {
+        return VERR_BUFFER_OVERFLOW;
+    }
+
+    return VMMR3CallR0(pVM, VMMR0_DO_GMM_UNREGISTER_SHARED_MODULE, 0, &Req.Hdr);
+}
+
+/**
+ * @see GMMR0CheckSharedModules
+ */
+GMMR3DECL(int) GMMR3CheckSharedModules(PVM pVM)
+{
+    return VMMR3CallR0(pVM, VMMR0_DO_GMM_CHECK_SHARED_MODULES, 0, NULL);
+}
