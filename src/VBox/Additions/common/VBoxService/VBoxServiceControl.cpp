@@ -47,7 +47,7 @@ static RTSEMEVENTMULTI      g_hControlEvent = NIL_RTSEMEVENTMULTI;
 /** The guest property service client ID. */
 static uint32_t             g_GuestControlSvcClientID = 0;
 /** List of spawned processes */
-GuestCtrlExecThreads        g_GuestControlExecThreads;
+RTLISTNODE                  g_GuestControlExecThreads;
 
 
 /** @copydoc VBOXSERVICE::pfnPreInit */
@@ -93,6 +93,8 @@ static DECLCALLBACK(int) VBoxServiceControlInit(void)
         g_hControlEvent = NIL_RTSEMEVENTMULTI;
     }
 
+    /* Init thread list. */
+    RTListInit(&g_GuestControlExecThreads);
     return rc;
 }
 
@@ -238,29 +240,42 @@ static DECLCALLBACK(void) VBoxServiceControlStop(void)
 static DECLCALLBACK(void) VBoxServiceControlTerm(void)
 {
     /* Shutdown spawned processes threads. */
-    for (GuestCtrlExecListIter it = g_GuestControlExecThreads.begin();
-         it != g_GuestControlExecThreads.end(); it++)
+    PVBOXSERVICECTRLTHREAD pNode = RTListNodeGetFirst(&g_GuestControlExecThreads, VBOXSERVICECTRLTHREAD, Node);
+    while (pNode)
     {
-        ASMAtomicXchgBool(&(*it)->fShutdown, true);
+        ASMAtomicXchgBool(&pNode->fShutdown, true);
+        if (RTListNodeIsLast(&g_GuestControlExecThreads, &pNode->Node))
+            break;
+        pNode = RTListNodeGetNext(&pNode->Node, VBOXSERVICECTRLTHREAD, Node);
     }
-    
-    for (GuestCtrlExecListIter it = g_GuestControlExecThreads.begin();
-         it != g_GuestControlExecThreads.end(); it++)
+
+    pNode = RTListNodeGetFirst(&g_GuestControlExecThreads, VBOXSERVICECTRLTHREAD, Node);
+    while (pNode)
     {
-        if ((*it)->Thread != NIL_RTTHREAD)
+        if (pNode->Thread != NIL_RTTHREAD)
         {
-            int rc2 = RTThreadWait((*it)->Thread, 30 * 1000 /* Wait 30 second */, NULL);
+            int rc2 = RTThreadWait(pNode->Thread, 30 * 1000 /* Wait 30 seconds max. */, NULL);
             if (RT_FAILURE(rc2))
-                VBoxServiceError("Control: Thread (PID: %u) failed to stop; rc2=%Rrc\n", (*it)->uPID, rc2);
+                VBoxServiceError("Control: Thread (PID: %u) failed to stop; rc2=%Rrc\n", pNode->uPID, rc2);
         }
-        VBoxServiceControlExecDestroyThreadData((*it));
+        VBoxServiceControlExecDestroyThreadData(pNode);
+        if (RTListNodeIsLast(&g_GuestControlExecThreads, &pNode->Node))
+            break;
+        pNode = RTListNodeGetNext(&pNode->Node, VBOXSERVICECTRLTHREAD, Node);
     }
 
-    for (GuestCtrlExecListIter it = g_GuestControlExecThreads.begin();
-         it != g_GuestControlExecThreads.end(); it++)
-            RTMemFree((*it));
+    pNode = RTListNodeGetFirst(&g_GuestControlExecThreads, VBOXSERVICECTRLTHREAD, Node);
+    while (pNode)
+    {
+        RTListNodeRemove(&pNode->Node);
+        RTMemFree(pNode);
+        if (RTListNodeIsLast(&g_GuestControlExecThreads, &pNode->Node))
+              break;
+        
+        PVBOXSERVICECTRLTHREAD pNext = RTListNodeGetNext(&pNode->Node, VBOXSERVICECTRLTHREAD, Node);        
+        pNode = pNext;
+    }
 
-    g_GuestControlExecThreads.clear();
     VbglR3GuestCtrlDisconnect(g_GuestControlSvcClientID);
     g_GuestControlSvcClientID = 0;
 
