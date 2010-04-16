@@ -241,24 +241,26 @@ static DECLCALLBACK(void) VBoxServiceControlTerm(void)
     for (GuestCtrlExecListIter it = g_GuestControlExecThreads.begin();
          it != g_GuestControlExecThreads.end(); it++)
     {
-        PVBOXSERVICECTRLTHREAD pThread = (*it);
-        AssertPtr(pThread);
-        ASMAtomicXchgBool(&pThread->fShutdown, true);
+        ASMAtomicXchgBool(&(*it)->fShutdown, true);
     }
     
     for (GuestCtrlExecListIter it = g_GuestControlExecThreads.begin();
          it != g_GuestControlExecThreads.end(); it++)
     {
-        PVBOXSERVICECTRLTHREAD pThread = (*it);
-        if (pThread->Thread != NIL_RTTHREAD)
+        if ((*it)->Thread != NIL_RTTHREAD)
         {
-            int rc2 = RTThreadWait(pThread->Thread, 30 * 1000 /* Wait 30 second */, NULL);
+            int rc2 = RTThreadWait((*it)->Thread, 30 * 1000 /* Wait 30 second */, NULL);
             if (RT_FAILURE(rc2))
-                VBoxServiceError("Control: Thread (PID: %u) failed to stop; rc2=%Rrc\n", pThread->uPID, rc2);
+                VBoxServiceError("Control: Thread (PID: %u) failed to stop; rc2=%Rrc\n", (*it)->uPID, rc2);
         }
-        VBoxServiceControlExecDestroyThread(pThread);
+        VBoxServiceControlExecDestroyThreadData((*it));
     }
 
+    for (GuestCtrlExecListIter it = g_GuestControlExecThreads.begin();
+         it != g_GuestControlExecThreads.end(); it++)
+            RTMemFree((*it));
+
+    g_GuestControlExecThreads.clear();
     VbglR3GuestCtrlDisconnect(g_GuestControlSvcClientID);
     g_GuestControlSvcClientID = 0;
 
