@@ -173,6 +173,11 @@ typedef enum
     VMMDevReq_LogString                  = 200,
     VMMDevReq_GetCpuHotPlugRequest       = 210,
     VMMDevReq_SetCpuHotPlugStatus        = 211,
+#ifdef VBOX_WITH_PAGE_SHARING
+    VMMDevReq_RegisterSharedModule       = 212,
+    VMMDevReq_UnregisterSharedModule     = 213,
+    VMMDevReq_CheckSharedModules         = 214,
+#endif
     VMMDevReq_SizeHack                   = 0x7fffffff
 } VMMDevRequestType;
 
@@ -1061,6 +1066,72 @@ typedef struct
 } VMMDevGetCpuHotPlugRequest;
 AssertCompileSize(VMMDevGetCpuHotPlugRequest, 24+4+4+4);
 
+
+/**
+ * Shared region description
+ */
+typedef struct 
+{
+    RTGCPTR             GCRegionAddr;
+    uint32_t            cbRegion;
+    uint32_t            u32Alignment;
+} VMMDevSharedModuleRegion;
+AssertCompileSize(VMMDevSharedModuleRegion, 16);
+
+/**
+ * Shared module registration
+ */
+typedef struct 
+{
+    /** Header. */
+    VMMDevRequestHeader         header;
+    /** Shared module size. */
+    uint32_t                    cbModule;
+    /** Number of included region descriptors */
+    uint32_t                    cRegions;
+    /** Base address of the shared module. */
+    RTGCPTR                     GCBaseAddr;
+    /** Module name */
+    char                        szName[128];
+    /** Module version */
+    char                        szVersion[16];
+    /** Shared region descriptor(s). */
+    VMMDevSharedModuleRegion    aRegions[1];
+} VMMDevSharedModuleRegistrationRequest;
+AssertCompileSize(VMMDevSharedModuleRegistrationRequest, 24+4+4+8+128+16+16);
+
+
+/**
+ * Shared module unregistration
+ */
+typedef struct 
+{
+    /** Header. */
+    VMMDevRequestHeader         header;
+    /** Shared module size. */
+    uint32_t                    cbModule;
+    /** Align at 8 byte boundary. */
+    uint32_t                    u32Alignment;
+    /** Base address of the shared module. */
+    RTGCPTR                     GCBaseAddr;
+    /** Module name */
+    char                        szName[128];
+    /** Module version */
+    char                        szVersion[16];
+} VMMDevSharedModuleUnregistrationRequest;
+AssertCompileSize(VMMDevSharedModuleUnregistrationRequest, 24+4+4+8+128+16);
+
+
+/**
+ * Shared module periodic check
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader         header;
+} VMMDevSharedModuleCheckRequest;
+AssertCompileSize(VMMDevSharedModuleCheckRequest, 24);
+
 #pragma pack()
 
 
@@ -1561,6 +1632,15 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevGetCpuHotPlugRequest);
         case VMMDevReq_SetCpuHotPlugStatus:
             return sizeof(VMMDevCpuHotPlugStatusRequest);
+#ifdef VBOX_WITH_PAGE_SHARING
+        case VMMDevReq_RegisterSharedModule:
+            return sizeof(VMMDevSharedModuleRegistrationRequest);
+        case VMMDevReq_UnregisterSharedModule:
+            return sizeof(VMMDevSharedModuleUnregistrationRequest);
+        case VMMDevReq_CheckSharedModules:
+            return sizeof(VMMDevSharedModuleCheckRequest);
+#endif
+
         default:
             return 0;
     }

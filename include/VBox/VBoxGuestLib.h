@@ -549,6 +549,13 @@ VBGLR3DECL(int)     VbglR3CpuHotPlugTerm(void);
 VBGLR3DECL(int)     VbglR3CpuHotPlugWaitForEvent(VMMDevCpuEventType *penmEventType, uint32_t *pidCpuCore, uint32_t *pidCpuPackage);
 /** @} */
 
+/** @name Page sharing
+ * @{ */
+VBGLR3DECL(int)     VbglR3RegisterSharedModule(char *pszModuleName, char *pszVersion, RTGCPTR  GCBaseAddr, uint32_t cbModule, unsigned cRegions, VMMDevSharedModuleRegion *pRegions);
+VBGLR3DECL(int)     VbglR3UnregisterSharedModule(char *pszModuleName, char *pszVersion, RTGCPTR  GCBaseAddr, uint32_t cbModule);
+VBGLR3DECL(int)     VbglR3CheckSharedModules();
+/** @} */
+
 #endif /* IN_RING3 */
 /** @} */
 
