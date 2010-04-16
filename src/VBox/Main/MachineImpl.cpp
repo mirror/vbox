@@ -36,11 +36,13 @@
 #   include <sys/sem.h>
 #endif
 
+#include "Logging.h"
 #include "VirtualBoxImpl.h"
 #include "MachineImpl.h"
 #include "ProgressImpl.h"
 #include "MediumAttachmentImpl.h"
 #include "MediumImpl.h"
+#include "MediumLock.h"
 #include "USBControllerImpl.h"
 #include "HostImpl.h"
 #include "SharedFolderImpl.h"
@@ -54,7 +56,6 @@
 #endif
 
 #include "AutoCaller.h"
-#include "Logging.h"
 #include "Performance.h"
 
 #include <iprt/asm.h>
@@ -2075,7 +2076,7 @@ STDMETHODIMP Machine::COMGETTER(USBController)(IUSBController **aUSBController)
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
-    MultiResult rc (S_OK);
+    MultiResult rc(S_OK);
 
 # ifdef VBOX_WITH_USB
     rc = mParent->host()->checkUSBProxyService();
@@ -3140,9 +3141,15 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                         &fNeedsSaveSettings);
         if (FAILED(rc)) return rc;
 
-        /* make sure the hard disk is not modified before createDiffStorage() */
-        rc = medium->LockRead(NULL);
+        /* Apply the normal locking logic to the entire chain. */
+        MediumLockList *pMediumLockList(new MediumLockList());
+        rc = diff->createMediumLockList(true, medium, *pMediumLockList);
         if (FAILED(rc)) return rc;
+        rc = pMediumLockList->Lock();
+        if (FAILED(rc))
+            return setError(rc,
+                            tr("Could not lock medium when creating diff '%s'"),
+                            diff->getLocationFull().c_str());
 
         /* will leave the lock before the potentially lengthy operation, so
          * protect with the special state */
@@ -3152,14 +3159,17 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         mediumLock.leave();
         alock.leave();
 
-        rc = medium->createDiffStorageAndWait(diff, MediumVariant_Standard, &fNeedsSaveSettings);
+        rc = medium->createDiffStorage(diff, MediumVariant_Standard,
+                                       pMediumLockList, NULL /* aProgress */,
+                                       true /* aWait */, &fNeedsSaveSettings);
 
         alock.enter();
         mediumLock.enter();
 
         setMachineState(oldState);
 
-        medium->UnlockRead(NULL);
+        /* Unlock the media and free the associated memory. */
+        delete pMediumLockList;
 
         if (FAILED(rc)) return rc;
 
@@ -3256,7 +3266,8 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
 
         alock.leave();
 
-        rc = oldmedium->deleteStorageAndWait(NULL /*aProgress*/, &fNeedsSaveSettings);
+        rc = oldmedium->deleteStorage(NULL /*aProgress*/, true /*aWait*/,
+                                      &fNeedsSaveSettings);
 
         alock.enter();
 
@@ -4596,28 +4607,28 @@ static int readSavedDisplayScreenshot(Utf8Str *pStateFilePath, uint32_t u32Type,
     uint32_t u32Height = 0;
 
     PSSMHANDLE pSSM;
-    int rc = SSMR3Open(pStateFilePath->raw(), 0 /*fFlags*/, &pSSM);
-    if (RT_SUCCESS(rc))
+    int vrc = SSMR3Open(pStateFilePath->raw(), 0 /*fFlags*/, &pSSM);
+    if (RT_SUCCESS(vrc))
     {
         uint32_t uVersion;
-        rc = SSMR3Seek(pSSM, "DisplayScreenshot", 1100 /*iInstance*/, &uVersion);
-        if (RT_SUCCESS(rc))
+        vrc = SSMR3Seek(pSSM, "DisplayScreenshot", 1100 /*iInstance*/, &uVersion);
+        if (RT_SUCCESS(vrc))
         {
             if (uVersion == sSSMDisplayScreenshotVer)
             {
                 uint32_t cBlocks;
-                rc = SSMR3GetU32(pSSM, &cBlocks);
-                AssertRCReturn(rc, rc);
+                vrc = SSMR3GetU32(pSSM, &cBlocks);
+                AssertRCReturn(vrc, vrc);
 
                 for (uint32_t i = 0; i < cBlocks; i++)
                 {
                     uint32_t cbBlock;
-                    rc = SSMR3GetU32(pSSM, &cbBlock);
-                    AssertRCBreak(rc);
+                    vrc = SSMR3GetU32(pSSM, &cbBlock);
+                    AssertRCBreak(vrc);
 
                     uint32_t typeOfBlock;
-                    rc = SSMR3GetU32(pSSM, &typeOfBlock);
-                    AssertRCBreak(rc);
+                    vrc = SSMR3GetU32(pSSM, &typeOfBlock);
+                    AssertRCBreak(vrc);
 
                     LogFlowFunc(("[%d] type %d, size %d bytes\n", i, typeOfBlock, cbBlock));
 
@@ -4629,21 +4640,21 @@ static int readSavedDisplayScreenshot(Utf8Str *pStateFilePath, uint32_t u32Type,
                             pu8Data = (uint8_t *)RTMemAlloc(cbData);
                             if (pu8Data == NULL)
                             {
-                                rc = VERR_NO_MEMORY;
+                                vrc = VERR_NO_MEMORY;
                                 break;
                             }
 
-                            rc = SSMR3GetU32(pSSM, &u32Width);
-                            AssertRCBreak(rc);
-                            rc = SSMR3GetU32(pSSM, &u32Height);
-                            AssertRCBreak(rc);
-                            rc = SSMR3GetMem(pSSM, pu8Data, cbData);
-                            AssertRCBreak(rc);
+                            vrc = SSMR3GetU32(pSSM, &u32Width);
+                            AssertRCBreak(vrc);
+                            vrc = SSMR3GetU32(pSSM, &u32Height);
+                            AssertRCBreak(vrc);
+                            vrc = SSMR3GetMem(pSSM, pu8Data, cbData);
+                            AssertRCBreak(vrc);
                         }
                         else
                         {
                             /* No saved state data. */
-                            rc = VERR_NOT_SUPPORTED;
+                            vrc = VERR_NOT_SUPPORTED;
                         }
 
                         break;
@@ -4655,31 +4666,31 @@ static int readSavedDisplayScreenshot(Utf8Str *pStateFilePath, uint32_t u32Type,
                          */
                         if (cbBlock > 2 * sizeof (uint32_t))
                         {
-                            rc = SSMR3Skip(pSSM, cbBlock);
-                            AssertRCBreak(rc);
+                            vrc = SSMR3Skip(pSSM, cbBlock);
+                            AssertRCBreak(vrc);
                         }
                     }
                 }
             }
             else
             {
-                rc = VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+                vrc = VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
             }
         }
 
         SSMR3Close(pSSM);
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         if (u32Type == 0 && cbData % 4 != 0)
         {
             /* Bitmap is 32bpp, so data is invalid. */
-            rc = VERR_SSM_UNEXPECTED_DATA;
+            vrc = VERR_SSM_UNEXPECTED_DATA;
         }
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         *ppu8Data = pu8Data;
         *pcbData = cbData;
@@ -4688,8 +4699,8 @@ static int readSavedDisplayScreenshot(Utf8Str *pStateFilePath, uint32_t u32Type,
         LogFlowFunc(("cbData %d, u32Width %d, u32Height %d\n", cbData, u32Width, u32Height));
     }
 
-    LogFlowFunc(("rc %Rrc\n", rc));
-    return rc;
+    LogFlowFunc(("vrc %Rrc\n", vrc));
+    return vrc;
 }
 
 static void freeSavedDisplayScreenshot(uint8_t *pu8Data)
@@ -6333,7 +6344,7 @@ void Machine::uninitDataAndChildObjects()
      * Machine hard disks). This is necessary for a clean re-initialization of
      * the VM after successfully re-checking the accessibility state. Note
      * that in case of normal Machine or SnapshotMachine uninitialization (as
-     * a result of unregistering or discarding the snapshot), outdated hard
+     * a result of unregistering or deleting the snapshot), outdated hard
      * disk attachments will already be uninitialized and deleted, so this
      * code will not affect them. */
     VBoxClsID clsid = getClassID();
@@ -8135,7 +8146,7 @@ HRESULT Machine::saveStateSettings(int aFlags)
  * Creates differencing hard disks for all normal hard disks attached to this
  * machine and a new set of attachments to refer to created disks.
  *
- * Used when taking a snapshot or when discarding the current state.
+ * Used when taking a snapshot or when deleting the current state.
  *
  * This method assumes that mMediaData contains the original hard disk attachments
  * it needs to create diffs for. On success, these attachments will be replaced
@@ -8188,7 +8199,12 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
 
     HRESULT rc = S_OK;
 
-    MediaList lockedMedia;
+    MediumLockListMap lockedMediaOffline;
+    MediumLockListMap *lockedMediaMap;
+    if (aOnline)
+        lockedMediaMap = &mData->mSession.mLockedMedia;
+    else
+        lockedMediaMap = &lockedMediaOffline;
 
     try
     {
@@ -8203,12 +8219,32 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
                 MediumAttachment* pAtt = *it;
                 if (pAtt->getType() == DeviceType_HardDisk)
                 {
-                    Medium* pHD = pAtt->getMedium();
-                    Assert(pHD);
-                    rc = pHD->LockRead(NULL);
-                    if (FAILED(rc)) throw rc;
-                    lockedMedia.push_back(pHD);
+                    Medium* pMedium = pAtt->getMedium();
+                    Assert(pMedium);
+
+                    MediumLockList *pMediumLockList(new MediumLockList());
+                    rc = pMedium->createMediumLockList(false, NULL,
+                                                       *pMediumLockList);
+                    if (FAILED(rc))
+                    {
+                        delete pMediumLockList;
+                        throw rc;
+                    }
+                    rc = lockedMediaMap->Insert(pAtt, pMediumLockList);
+                    if (FAILED(rc))
+                    {
+                        throw setError(rc,
+                                       tr("Collecting locking information for all attached media failed"));
+                    }
                 }
+            }
+
+            /* Now lock all media. If this fails, nothing is locked. */
+            rc = lockedMediaMap->Lock();
+            if (FAILED(rc))
+            {
+                throw setError(rc,
+                               tr("Locking of attached media failed"));
             }
         }
 
@@ -8228,11 +8264,11 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
             MediumAttachment* pAtt = *it;
 
             DeviceType_T devType = pAtt->getType();
-            Medium* medium = pAtt->getMedium();
+            Medium* pMedium = pAtt->getMedium();
 
             if (   devType != DeviceType_HardDisk
-                || medium == NULL
-                || medium->getType() != MediumType_Normal)
+                || pMedium == NULL
+                || pMedium->getType() != MediumType_Normal)
             {
                 /* copy the attachment as is */
 
@@ -8241,12 +8277,12 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
                  * device types need to show up in the progress as well. */
                 if (devType == DeviceType_HardDisk)
                 {
-                    if (medium == NULL)
+                    if (pMedium == NULL)
                         aProgress->SetNextOperation(Bstr(tr("Skipping attachment without medium")),
                                                     aWeight);        // weight
                     else
                         aProgress->SetNextOperation(BstrFmt(tr("Skipping medium '%s'"),
-                                                            medium->getBase()->getName().raw()),
+                                                            pMedium->getBase()->getName().raw()),
                                                     aWeight);        // weight
                 }
 
@@ -8256,44 +8292,53 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
 
             /* need a diff */
             aProgress->SetNextOperation(BstrFmt(tr("Creating differencing hard disk for '%s'"),
-                                                medium->getBase()->getName().raw()),
+                                                pMedium->getBase()->getName().raw()),
                                         aWeight);        // weight
 
             ComObjPtr<Medium> diff;
             diff.createObject();
             rc = diff->init(mParent,
-                            medium->preferredDiffFormat().raw(),
+                            pMedium->preferredDiffFormat().raw(),
                             BstrFmt("%ls"RTPATH_SLASH_STR,
                                     mUserData->mSnapshotFolderFull.raw()).raw(),
                             pfNeedsSaveSettings);
             if (FAILED(rc)) throw rc;
 
-            /* leave the lock before the potentially lengthy operation */
-            alock.leave();
-
-            rc = medium->createDiffStorageAndWait(diff,
-                                                  MediumVariant_Standard,
-                                                  pfNeedsSaveSettings);
-
             /** @todo r=bird: How is the locking and diff image cleaned up if we fail before
              *        the push_back?  Looks like we're going to leave medium with the
              *        wrong kind of lock (general issue with if we fail anywhere at all)
              *        and an orphaned VDI in the snapshots folder. */
-            // at this point, the old image is still locked for writing, but instead
-            // we need the new diff image locked for writing and lock the previously
-            // current one for reading only
+
+            /* update the appropriate lock list */
+            rc = lockedMediaMap->Unlock();
+            AssertComRCThrowRC(rc);
+            MediumLockList *pMediumLockList;
+            rc = lockedMediaMap->Get(pAtt, pMediumLockList);
+            AssertComRCThrowRC(rc);
             if (aOnline)
             {
-                diff->LockWrite(NULL);
-                mData->mSession.mLockedMedia.push_back(Data::Session::LockedMedia::value_type(ComPtr<IMedium>(diff), true));
-                medium->UnlockWrite(NULL);
-                medium->LockRead(NULL);
-                mData->mSession.mLockedMedia.push_back(Data::Session::LockedMedia::value_type(ComPtr<IMedium>(medium), false));
+                rc = pMediumLockList->Update(pMedium, false);
+                AssertComRCThrowRC(rc);
             }
+            rc = lockedMediaMap->Lock();
+            AssertComRCThrowRC(rc);
 
+            /* leave the lock before the potentially lengthy operation */
+            alock.leave();
+            rc = pMedium->createDiffStorage(diff, MediumVariant_Standard,
+                                            pMediumLockList,
+                                            NULL /* aProgress */,
+                                            true /* aWait */,
+                                            pfNeedsSaveSettings);
+            alock.enter();
             if (FAILED(rc)) throw rc;
 
-            alock.enter();
+            rc = lockedMediaMap->Unlock();
+            AssertComRCThrowRC(rc);
+            rc = pMediumLockList->Append(diff, true);
+            AssertComRCThrowRC(rc);
+            rc = lockedMediaMap->Lock();
+            AssertComRCThrowRC(rc);
 
             rc = diff->attachTo(mData->mUuid);
             AssertComRCThrowRC(rc);
@@ -8310,6 +8355,8 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
                                   true /* aImplicit */);
             if (FAILED(rc)) throw rc;
 
+            rc = lockedMediaMap->ReplaceKey(pAtt, attachment);
+            AssertComRCThrowRC(rc);
             mMediaData->mAttachments.push_back(attachment);
         }
     }
@@ -8320,13 +8367,8 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
     {
         ErrorInfoKeeper eik;
 
-        for (MediaList::const_iterator it = lockedMedia.begin();
-             it != lockedMedia.end();
-             ++it)
-        {
-            HRESULT rc2 = (*it)->UnlockRead(NULL);
-            AssertComRC(rc2);
-        }
+        rc = lockedMediaMap->Clear();
+        AssertComRC(rc);
     }
 
     if (FAILED(rc))
@@ -8426,15 +8468,8 @@ HRESULT Machine::deleteImplicitDiffs(bool *pfNeedsSaveSettings)
             LogFlowThisFunc(("Deleting '%s'\n", (*it)->getLogName()));
             ComObjPtr<Medium> hd = (*it)->getMedium();
 
-            rc = hd->deleteStorageAndWait(NULL /*aProgress*/, pfNeedsSaveSettings);
-#if 1 /* HACK ALERT: Just make it kind of work */ /** @todo Fix this hack properly. The LockWrite / UnlockWrite / LockRead changes aren't undone! */
-            if (rc == VBOX_E_INVALID_OBJECT_STATE)
-            {
-                LogFlowFunc(("Applying unlock hack on '%s'! FIXME!\n", (*it)->getLogName()));
-                hd->UnlockWrite(NULL);
-                rc = hd->deleteStorageAndWait(NULL /*aProgress*/, pfNeedsSaveSettings);
-            }
-#endif
+            rc = hd->deleteStorage(NULL /*aProgress*/, true /*aWait*/,
+                                   pfNeedsSaveSettings);
             AssertMsg(SUCCEEDED(rc), ("rc=%Rhrc it=%s hd=%s\n", rc, (*it)->getLogName(), hd->getLocationFull().c_str() ));
             mrc = rc;
         }
@@ -8562,6 +8597,7 @@ void Machine::commitMedia(bool aOnline /*= false*/)
         return;
 
     MediaData::AttachmentList &oldAtts = mMediaData.backedUpData()->mAttachments;
+    bool fMediaNeedsLocking = false;
 
     /* enumerate new attachments */
     for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
@@ -8580,7 +8616,7 @@ void Machine::commitMedia(bool aOnline /*= false*/)
                             fImplicit));
 
         /** @todo convert all this Machine-based voodoo to MediumAttachment
-        * based commit logic. */
+         * based commit logic. */
         if (fImplicit)
         {
             /* convert implicit attachment to normal */
@@ -8591,31 +8627,27 @@ void Machine::commitMedia(bool aOnline /*= false*/)
                     && pAttach->getType() == DeviceType_HardDisk
                 )
             {
-                rc = pMedium->LockWrite(NULL);
-                AssertComRC(rc);
-
-                mData->mSession.mLockedMedia.push_back(
-                    Data::Session::LockedMedia::value_type(
-                        ComPtr<IMedium>(pMedium), true));
-
-                /* also, relock the old hard disk which is a base for the
-                * new diff for reading if the VM is online */
-
                 ComObjPtr<Medium> parent = pMedium->getParent();
-                /* make the relock atomic */
                 AutoWriteLock parentLock(parent COMMA_LOCKVAL_SRC_POS);
-                rc = parent->UnlockWrite(NULL);
-                AssertComRC(rc);
-                rc = parent->LockRead(NULL);
-                AssertComRC(rc);
 
-                /* XXX actually we should replace the old entry in that
-                * vector (write lock => read lock) but this would take
-                * some effort. So lets just ignore the error code in
-                * SessionMachine::unlockMedia(). */
-                mData->mSession.mLockedMedia.push_back(
-                    Data::Session::LockedMedia::value_type (
-                        ComPtr<IMedium>(parent), false));
+                /* update the appropriate lock list */
+                MediumLockList *pMediumLockList;
+                rc = mData->mSession.mLockedMedia.Get(pAttach, pMediumLockList);
+                AssertComRC(rc);
+                if (pMediumLockList)
+                {
+                    /* unlock if there's a need to change the locking */
+                    if (!fMediaNeedsLocking)
+                    {
+                        rc = mData->mSession.mLockedMedia.Unlock();
+                        AssertComRC(rc);
+                        fMediaNeedsLocking = true;
+                    }
+                    rc = pMediumLockList->Update(parent, false);
+                    AssertComRC(rc);
+                    rc = pMediumLockList->Append(pMedium, true);
+                    AssertComRC(rc);
+                }
             }
 
             continue;
@@ -8642,16 +8674,16 @@ void Machine::commitMedia(bool aOnline /*= false*/)
     }
 
     /* enumerate remaining old attachments and de-associate from the
-        * current machine state */
+     * current machine state */
     for (MediaData::AttachmentList::const_iterator it = oldAtts.begin();
-            it != oldAtts.end();
-            ++it)
+         it != oldAtts.end();
+         ++it)
     {
         MediumAttachment *pAttach = *it;
         Medium* pMedium = pAttach->getMedium();
 
         /* Detach only hard disks, since DVD/floppy media is detached
-            * instantly in MountMedium. */
+         * instantly in MountMedium. */
         if (pAttach->getType() == DeviceType_HardDisk && pMedium)
         {
             LogFlowThisFunc(("detaching medium '%s' from machine\n", pMedium->getName().raw()));
@@ -8660,16 +8692,27 @@ void Machine::commitMedia(bool aOnline /*= false*/)
             rc = pMedium->detachFrom(mData->mUuid);
             AssertComRC(rc);
 
-            if (    aOnline
-                    && pAttach->getType() == DeviceType_HardDisk)
+            if (aOnline)
             {
-                /* unlock since not used anymore */
-                MediumState_T state;
-                rc = pMedium->UnlockWrite(&state);
-                /* the disk may be alredy relocked for reading above */
-                Assert(SUCCEEDED(rc) || state == MediumState_LockedRead);
+                /* unlock since medium is not used anymore */
+                MediumLockList *pMediumLockList;
+                rc = mData->mSession.mLockedMedia.Get(pAttach, pMediumLockList);
+                AssertComRC(rc);
+                if (pMediumLockList)
+                {
+                    rc = mData->mSession.mLockedMedia.Remove(pAttach);
+                    AssertComRC(rc);
+                }
             }
         }
+    }
+
+    /* take media locks again so that the locking state is consistent */
+    if (fMediaNeedsLocking)
+    {
+        Assert(aOnline);
+        rc = mData->mSession.mLockedMedia.Lock();
+        AssertComRC(rc);
     }
 
     /* commit the hard disk changes */
@@ -10773,114 +10816,59 @@ HRESULT SessionMachine::lockMedia()
     AssertReturn(   mData->mMachineState == MachineState_Starting
                  || mData->mMachineState == MachineState_Restoring
                  || mData->mMachineState == MachineState_TeleportingIn, E_FAIL);
+    /* bail out if trying to lock things with already set up locking */
+    AssertReturn(mData->mSession.mLockedMedia.IsEmpty(), E_FAIL);
 
-    try
+    MultiResult mrc(S_OK);
+
+    /* Collect locking information for all medium objects attached to the VM. */
+    for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
+         it != mMediaData->mAttachments.end();
+         ++it)
     {
-        HRESULT rc = S_OK;
+        MediumAttachment* pAtt = *it;
+        DeviceType_T devType = pAtt->getType();
+        Medium *pMedium = pAtt->getMedium();
 
-        ErrorInfoKeeper eik(true /* aIsNull */);
-        MultiResult mrc(S_OK);
-
-        /* Lock all medium objects attached to the VM.
-         * Get status for inaccessible media as well. */
-        for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
-             it != mMediaData->mAttachments.end();
-             ++it)
+        MediumLockList *pMediumLockList(new MediumLockList());
+        // There can be attachments without a medium (floppy/dvd), and thus
+        // it's impossible to create a medium lock list. It still makes sense
+        // to have the empty medium lock list in the map in case a medium is
+        // attached later.
+        if (pMedium != NULL)
         {
-            DeviceType_T devType = (*it)->getType();
-            ComObjPtr<Medium> medium = (*it)->getMedium();
-
-            bool first = true;
-
-            /** @todo split out the media locking, and put it into
-             * MediumImpl.cpp, as it needs this functionality too. */
-            while (!medium.isNull())
+            mrc = pMedium->createMediumLockList(devType != DeviceType_DVD,
+                                                NULL, *pMediumLockList);
+            if (FAILED(mrc))
             {
-                MediumState_T mediumState = medium->getState();
-
-                /* accessibility check must be first, otherwise locking
-                 * interferes with getting the medium state. */
-                if (mediumState == MediumState_Inaccessible)
-                {
-                    rc = medium->RefreshState(&mediumState);
-                    if (FAILED(rc)) throw rc;
-
-                    if (mediumState == MediumState_Inaccessible)
-                    {
-                        Bstr error;
-                        rc = medium->COMGETTER(LastAccessError)(error.asOutParam());
-                        if (FAILED(rc)) throw rc;
-
-                        Bstr loc;
-                        rc = medium->COMGETTER(Location)(loc.asOutParam());
-                        if (FAILED(rc)) throw rc;
-
-                        /* collect multiple errors */
-                        eik.restore();
-
-                        /* be in sync with MediumBase::setStateError() */
-                        Assert(!error.isEmpty());
-                        mrc = setError(E_FAIL,
-                                       tr("Medium '%ls' is not accessible. %ls"),
-                                       loc.raw(),
-                                       error.raw());
-
-                        eik.fetch();
-                    }
-                }
-
-                if (first)
-                {
-                    if (devType != DeviceType_DVD)
-                    {
-                        /* HardDisk and Floppy medium must be locked for writing */
-                        rc = medium->LockWrite(NULL);
-                        if (FAILED(rc)) throw rc;
-                    }
-                    else
-                    {
-                        /* DVD medium must be locked for reading */
-                        rc = medium->LockRead(NULL);
-                        if (FAILED(rc)) throw rc;
-                    }
-
-                    mData->mSession.mLockedMedia.push_back(
-                        Data::Session::LockedMedia::value_type(
-                            ComPtr<IMedium>(medium), true));
-
-                    first = false;
-                }
-                else
-                {
-                    rc = medium->LockRead(NULL);
-                    if (FAILED(rc)) throw rc;
-
-                    mData->mSession.mLockedMedia.push_back(
-                        Data::Session::LockedMedia::value_type(
-                            ComPtr<IMedium>(medium), false));
-                }
-
-
-                /* no locks or callers here since there should be no way to
-                 * change the hard disk parent at this point (as it is still
-                 * attached to the machine) */
-                medium = medium->getParent();
+                delete pMediumLockList;
+                mData->mSession.mLockedMedia.Clear();
+                break;
             }
         }
 
-        /* @todo r=dj is this correct? first restoring the eik and then throwing? */
-        eik.restore();
-        HRESULT rc2 = (HRESULT)mrc;
-        if (FAILED(rc2)) throw rc2;
-    }
-    catch (HRESULT aRC)
-    {
-        /* Unlock all locked media on failure */
-        unlockMedia();
-        return aRC;
+        HRESULT rc = mData->mSession.mLockedMedia.Insert(pAtt, pMediumLockList);
+        if (FAILED(rc))
+        {
+            mData->mSession.mLockedMedia.Clear();
+            mrc = setError(rc,
+                           tr("Collecting locking information for all attached media failed"));
+            break;
+        }
     }
 
-    return S_OK;
+    if (SUCCEEDED(mrc))
+    {
+        /* Now lock all media. If this fails, nothing is locked. */
+        HRESULT rc = mData->mSession.mLockedMedia.Lock();
+        if (FAILED(rc))
+        {
+            mrc = setError(rc,
+                           tr("Locking of attached media failed"));
+        }
+    }
+
+    return mrc;
 }
 
 /**
@@ -10897,25 +10885,8 @@ void SessionMachine::unlockMedia()
      * preserve it */
     ErrorInfoKeeper eik;
 
-    HRESULT rc = S_OK;
-
-    for (Data::Session::LockedMedia::const_iterator
-         it = mData->mSession.mLockedMedia.begin();
-         it != mData->mSession.mLockedMedia.end(); ++it)
-    {
-        MediumState_T state;
-        if (it->second)
-            rc = it->first->UnlockWrite(&state);
-        else
-            rc = it->first->UnlockRead(&state);
-
-        /* The second can happen if an object was re-locked in
-         * Machine::fixupMedia(). The last can happen when e.g a DVD/Floppy
-         * image was unmounted at runtime. */
-        Assert(SUCCEEDED(rc) || state == MediumState_LockedRead || state == MediumState_Created);
-    }
-
-    mData->mSession.mLockedMedia.clear();
+    HRESULT rc = mData->mSession.mLockedMedia.Clear();
+    AssertComRC(rc);
 }
 
 /**
@@ -11020,7 +10991,7 @@ HRESULT SessionMachine::setMachineState(MachineState_T aMachineState)
             )
     {
         /*
-         *  delete the saved state after Console::DiscardSavedState() is called
+         *  delete the saved state after Console::ForgetSavedState() is called
          *  or if the VM process (owning a direct VM session) crashed while the
          *  VM was Saved
          */
@@ -11154,7 +11125,7 @@ HRESULT SessionMachine::updateMachineStateOnClient()
 
         /* directControl may be already set to NULL here in #OnSessionEnd()
          * called too early by the direct session process while there is still
-         * some operation (like discarding the snapshot) in progress. The client
+         * some operation (like deleting the snapshot) in progress. The client
          * process in this case is waiting inside Session::close() for the
          * "end session" process object to complete, while #uninit() called by
          * #checkForDeath() on the Watcher thread is waiting for the pending

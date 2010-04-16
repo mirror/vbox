@@ -2,7 +2,7 @@
 
 /** @file
  *
- * VirtualBox COM class declaration
+ * VirtualBox COM class implementation
  */
 
 /*
@@ -28,6 +28,7 @@
 #include "SnapshotImpl.h"
 #include "VRDPServerImpl.h"
 #include "MediumAttachmentImpl.h"
+#include "MediumLock.h"
 #include "NetworkAdapterImpl.h"
 #include "AudioAdapterImpl.h"
 #include "SerialPortImpl.h"
@@ -147,13 +148,8 @@ public:
             /** Session machine object */
             ComObjPtr<SessionMachine> mMachine;
 
-            /**
-             * Successfully locked media list. The 2nd value in the pair is true
-             * if the medium is locked for writing and false if locked for
-             * reading.
-             */
-            typedef std::list<std::pair<ComPtr<IMedium>, bool > > LockedMedia;
-            LockedMedia mLockedMedia;
+            /** Medium object lock collection. */
+            MediumLockListMap mLockedMedia;
         };
 
         Data();
@@ -315,7 +311,7 @@ public:
      *
      *  The usage policy is the same as for HWData, but a separate structure
      *  is necessary because hard disk data requires different procedures when
-     *  taking or discarding snapshots, etc.
+     *  taking or deleting snapshots, etc.
      *
      *  The data variable is |mMediaData|.
      */
@@ -995,6 +991,23 @@ private:
 
     void deleteSnapshotHandler(DeleteSnapshotTask &aTask);
     void restoreSnapshotHandler(RestoreSnapshotTask &aTask);
+
+    HRESULT prepareDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD,
+                                        const Guid &machineId,
+                                        const Guid &snapshotId,
+                                        ComObjPtr<Medium> &aSource,
+                                        ComObjPtr<Medium> &aTarget,
+                                        bool &fMergeForward,
+                                        ComObjPtr<Medium> &pParentForTarget,
+                                        MediaList &aChildrenToReparent,
+                                        MediumLockList * &aMediumLockList);
+    void cancelDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD,
+                                    const ComObjPtr<Medium> &aSource,
+                                    const ComObjPtr<Medium> &aTarget,
+                                    const MediaList &aChildrenToReparent,
+                                    MediumLockList *aMediumLockList,
+                                    const ComObjPtr<MediumAttachment> &aReplaceHda,
+                                    const Guid &aSnapshotId);
 
     HRESULT lockMedia();
     void unlockMedia();

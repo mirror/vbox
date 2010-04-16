@@ -1,10 +1,12 @@
+/* $Id$ */
+
 /** @file
  *
  * VirtualBox COM class implementation
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -69,7 +71,7 @@ public:
                  Snapshot *aParent);
     void uninit();
 
-    void beginDiscard();
+    void beginSnapshotDelete();
 
     void deparent();
 
