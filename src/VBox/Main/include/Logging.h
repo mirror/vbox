@@ -1,10 +1,12 @@
+/* $Id$ */
+
 /** @file
  *
  * VirtualBox COM: logging macros and function definitions
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -52,10 +54,6 @@
 
 #include <VBox/log.h>
 #include <iprt/assert.h>
-
-/** @deprecated Please use LogFlowThisFunc instead! */
-#define LogFlowMember(m)     \
-    do { LogFlow (("{%p} ", this)); LogFlow (m); } while (0)
 
 /** @def MyLogIt
  * Copy of LogIt that works even when logging is completely disabled (e.g. in

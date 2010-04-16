@@ -1,4 +1,5 @@
 /* $Id$ */
+
 /** @file
  *
  * VirtualBox COM class implementation
@@ -24,6 +25,7 @@
 #define ____H_MEDIUMIMPL
 
 #include "VirtualBoxBase.h"
+#include "MediumLock.h"
 
 class Progress;
 
@@ -44,9 +46,6 @@ class ATL_NO_VTABLE Medium :
     VBOX_SCRIPTABLE_IMPL(IMedium)
 {
 public:
-    class MergeChain;
-    class ImageChain;
-
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(Medium)
 
     DECLARE_NOT_AGGREGATABLE(Medium)
@@ -143,7 +142,7 @@ public:
     STDMETHOD(CreateDiffStorage)(IMedium *aTarget,
                                  MediumVariant_T aVariant,
                                  IProgress **aProgress);
-    STDMETHOD(MergeTo)(IN_BSTR aTargetId, IProgress **aProgress);
+    STDMETHOD(MergeTo)(IMedium *aTarget, IProgress **aProgress);
     STDMETHOD(CloneTo)(IMedium *aTarget, MediumVariant_T aVariant,
                         IMedium *aParent, IProgress **aProgress);
     STDMETHOD(Compact)(IProgress **aProgress);
@@ -154,11 +153,15 @@ public:
     const ComObjPtr<Medium>& getParent() const;
     const MediaList& getChildren() const;
 
+    // unsafe methods for internal purposes only (ensure there is
+    // a caller and a read lock before calling them!)
     const Guid& getId() const;
     MediumState_T getState() const;
     const Utf8Str& getLocation() const;
     const Utf8Str& getLocationFull() const;
     uint64_t getSize() const;
+    MediumType_T getType() const;
+    Utf8Str getName();
 
     HRESULT attachTo(const Guid &aMachineId,
                      const Guid &aSnapshotId = Guid::Empty);
@@ -183,72 +186,39 @@ public:
 
     HRESULT compareLocationTo(const char *aLocation, int &aResult);
 
-    /**
-     * Shortcut to #deleteStorage() that doesn't wait for operation completion
-     * and implies the progress object will be used for waiting.
-     */
-    HRESULT deleteStorageNoWait(ComObjPtr<Progress> &aProgress)
-    { return deleteStorage(&aProgress, false /* aWait */, NULL /* pfNeedsSaveSettings */); }
+    HRESULT createMediumLockList(bool fMediumWritable, Medium *pToBeParent, MediumLockList &mediumLockList);
 
-    /**
-     * Shortcut to #deleteStorage() that wait for operation completion by
-     * blocking the current thread.
-     */
-    HRESULT deleteStorageAndWait(ComObjPtr<Progress> *aProgress, bool *pfNeedsSaveSettings)
-    { return deleteStorage(aProgress, true /* aWait */, pfNeedsSaveSettings); }
+    HRESULT createDiffStorage(ComObjPtr<Medium> &aTarget,
+                              MediumVariant_T aVariant,
+                              MediumLockList *pMediumLockList,
+                              ComObjPtr<Progress> *aProgress,
+                              bool aWait,
+                              bool *pfNeedsSaveSettings);
 
-    /**
-     * Shortcut to #createDiffStorage() that doesn't wait for operation
-     * completion and implies the progress object will be used for waiting.
-     */
-    HRESULT createDiffStorageNoWait(ComObjPtr<Medium> &aTarget,
-                                    MediumVariant_T aVariant,
-                                    ComObjPtr<Progress> &aProgress)
-    { return createDiffStorage(aTarget, aVariant, &aProgress, false /* aWait */, NULL /* pfNeedsSaveSettings*/ ); }
+    HRESULT deleteStorage(ComObjPtr<Progress> *aProgress, bool aWait, bool *pfNeedsSaveSettings);
+    HRESULT markForDeletion();
+    HRESULT unmarkForDeletion();
 
-    /**
-     * Shortcut to #createDiffStorage() that wait for operation completion by
-     * blocking the current thread.
-     */
-    HRESULT createDiffStorageAndWait(ComObjPtr<Medium> &aTarget,
-                                     MediumVariant_T aVariant,
-                                     bool *pfNeedsSaveSettings)
-    { return createDiffStorage(aTarget, aVariant, NULL /*aProgress*/, true /* aWait */, pfNeedsSaveSettings); }
-
-    HRESULT prepareMergeTo(Medium *aTarget, MergeChain * &aChain,
-                            bool aIgnoreAttachments = false);
-
-    /**
-     * Shortcut to #mergeTo() that doesn't wait for operation completion and
-     * implies the progress object will be used for waiting.
-     */
-    HRESULT mergeToNoWait(MergeChain *aChain,
-                          ComObjPtr<Progress> &aProgress)
-    { return mergeTo(aChain, &aProgress, false /* aWait */, NULL /*pfNeedsSaveSettings*/); }
-
-    /**
-     * Shortcut to #mergeTo() that wait for operation completion by
-     * blocking the current thread.
-     */
-    HRESULT mergeToAndWait(MergeChain *aChain,
-                           ComObjPtr<Progress> *aProgress,
-                           bool *pfNeedsSaveSettings)
-    { return mergeTo(aChain, aProgress, true /* aWait */, pfNeedsSaveSettings); }
-
-    void cancelMergeTo(MergeChain *aChain);
-
-    Utf8Str getName();
-
-    HRESULT prepareDiscard(MergeChain * &aChain);
-    HRESULT discard(ComObjPtr<Progress> &aProgress, ULONG ulWeight, MergeChain *aChain, bool *pfNeedsSaveSettings);
-    void cancelDiscard(MergeChain *aChain);
+    HRESULT prepareMergeTo(const ComObjPtr<Medium> &pTarget,
+                           const Guid *aMachineId,
+                           const Guid *aSnapshotId,
+                           bool &fMergeForward,
+                           ComObjPtr<Medium> &pParentForTarget,
+                           MediaList &aChildrenToReparent,
+                           MediumLockList * &aMediumLockList);
+    HRESULT mergeTo(const ComObjPtr<Medium> &pTarget,
+                    bool &fMergeForward,
+                    ComObjPtr<Medium> pParentForTarget,
+                    const MediaList &aChildrenToReparent,
+                    MediumLockList *aMediumLockList,
+                    ComObjPtr<Progress> *aProgress,
+                    bool aWait,
+                    bool *pfNeedsSaveSettings);
+    void cancelMergeTo(const MediaList &aChildrenToReparent,
+                       MediumLockList *aMediumLockList);
 
     /** Returns a preferred format for a differencing hard disk. */
     Bstr preferredDiffFormat();
-
-    // unsafe inline public methods for internal purposes only (ensure there is
-    // a caller and a read lock before calling them!)
-    MediumType_T getType() const;
 
     /** For com::SupportErrorInfoImpl. */
     static const char *ComponentName() { return "Medium"; }
@@ -271,19 +241,6 @@ private:
     HRESULT unregisterWithVirtualBox(bool *pfNeedsSaveSettings);
 
     HRESULT setStateError();
-
-    HRESULT deleteStorage(ComObjPtr<Progress> *aProgress, bool aWait, bool *pfNeedsSaveSettings);
-
-    HRESULT createDiffStorage(ComObjPtr<Medium> &aTarget,
-                              MediumVariant_T aVariant,
-                              ComObjPtr<Progress> *aProgress,
-                              bool aWait,
-                              bool *pfNeedsSaveSettings);
-
-    HRESULT mergeTo(MergeChain *aChain,
-                    ComObjPtr<Progress> *aProgress,
-                    bool aWait,
-                    bool *pfNeedsSaveSettings);
 
     HRESULT setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat = Utf8Str());
     HRESULT setFormat(CBSTR aFormat);
@@ -320,13 +277,13 @@ private:
     HRESULT startThread(Medium::Task *pTask);
     HRESULT runNow(Medium::Task *pTask, bool *pfNeedsSaveSettings);
 
-    HRESULT taskThreadCreateBase(Medium::CreateBaseTask &task);
-    HRESULT taskThreadCreateDiff(Medium::CreateDiffTask &task);
-    HRESULT taskThreadMerge(Medium::MergeTask &task);
-    HRESULT taskThreadClone(Medium::CloneTask &task);
-    HRESULT taskThreadDelete(Medium::DeleteTask &task);
-    HRESULT taskThreadReset(Medium::ResetTask &task);
-    HRESULT taskThreadCompact(Medium::CompactTask &task);
+    HRESULT taskCreateBaseHandler(Medium::CreateBaseTask &task);
+    HRESULT taskCreateDiffHandler(Medium::CreateDiffTask &task);
+    HRESULT taskMergeHandler(Medium::MergeTask &task);
+    HRESULT taskCloneHandler(Medium::CloneTask &task);
+    HRESULT taskDeleteHandler(Medium::DeleteTask &task);
+    HRESULT taskResetHandler(Medium::ResetTask &task);
+    HRESULT taskCompactHandler(Medium::CompactTask &task);
 
     struct Data;            // opaque data struct, defined in MediumImpl.cpp
     Data *m;

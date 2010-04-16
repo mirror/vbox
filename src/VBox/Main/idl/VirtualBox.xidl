@@ -9158,7 +9158,7 @@
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="aa8167ba-df72-4738-b740-9b84377ba9f1"
+    uuid="d709160c-303f-4ead-b7ef-53ffa26aa861"
     wsmap="managed"
   >
     <desc>
@@ -10350,8 +10350,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           duration of this operation.
         </note>
       </desc>
-      <param name="targetId" type="uuid" mod="string" dir="in">
-        <desc>UUID of the target ancestor or descendant medium.</desc>
+      <param name="target" type="IMedium" dir="in">
+        <desc>Target medium.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>

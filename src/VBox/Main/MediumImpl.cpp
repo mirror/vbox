@@ -189,10 +189,10 @@ class Medium::Task
 {
 public:
     Task(Medium *aMedium, Progress *aProgress)
-        : mMedium(aMedium),
-          mMediumCaller(aMedium),
+        : mVDOperationIfaces(NULL),
           m_pfNeedsSaveSettings(NULL),
-          mVDOperationIfaces(NULL),
+          mMedium(aMedium),
+          mMediumCaller(aMedium),
           mThread(NIL_RTTHREAD),
           mProgress(aProgress)
     {
@@ -228,15 +228,17 @@ public:
 
     bool isAsync() { return mThread != NIL_RTTHREAD; }
 
-    const ComObjPtr<Medium> mMedium;
-    AutoCaller mMediumCaller;
+    PVDINTERFACE mVDOperationIfaces;
 
     // Whether the caller needs to call VirtualBox::saveSettings() after
     // the task function returns. Only used in synchronous (wait) mode;
     // otherwise the task will save the settings itself.
     bool *m_pfNeedsSaveSettings;
 
-    PVDINTERFACE mVDOperationIfaces;
+    const ComObjPtr<Medium> mMedium;
+    AutoCaller mMediumCaller;
+
+    friend HRESULT Medium::runNow(Medium::Task*, bool*);
 
 protected:
     HRESULT mRC;
@@ -278,17 +280,29 @@ public:
     CreateDiffTask(Medium *aMedium,
                    Progress *aProgress,
                    Medium *aTarget,
-                   MediumVariant_T aVariant)
+                   MediumVariant_T aVariant,
+                   MediumLockList *aMediumLockList,
+                   bool fKeepMediumLockList = false)
         : Medium::Task(aMedium, aProgress),
+          mpMediumLockList(aMediumLockList),
           mTarget(aTarget),
           mVariant(aVariant),
-          mTargetCaller(aTarget)
+          mTargetCaller(aTarget),
+          mfKeepMediumLockList(fKeepMediumLockList)
     {
         AssertReturnVoidStmt(aTarget != NULL, mRC = E_FAIL);
         mRC = mTargetCaller.rc();
         if (FAILED(mRC))
             return;
     }
+
+    ~CreateDiffTask()
+    {
+        if (!mfKeepMediumLockList && mpMediumLockList)
+            delete mpMediumLockList;
+    }
+
+    MediumLockList *mpMediumLockList;
 
     const ComObjPtr<Medium> mTarget;
     MediumVariant_T mVariant;
@@ -297,6 +311,7 @@ private:
     virtual HRESULT handler();
 
     AutoCaller mTargetCaller;
+    bool mfKeepMediumLockList;
 };
 
 class Medium::CloneTask : public Medium::Task
@@ -305,18 +320,22 @@ public:
     CloneTask(Medium *aMedium,
               Progress *aProgress,
               Medium *aTarget,
+              MediumVariant_T aVariant,
               Medium *aParent,
-              ImageChain *aSourceChain,
-              ImageChain *aParentChain,
-              MediumVariant_T aVariant)
+              MediumLockList *aSourceMediumLockList,
+              MediumLockList *aTargetMediumLockList,
+              bool fKeepSourceMediumLockList = false,
+              bool fKeepTargetMediumLockList = false)
         : Medium::Task(aMedium, aProgress),
           mTarget(aTarget),
           mParent(aParent),
-          mSourceChain(aSourceChain),
-          mParentChain(aParentChain),
+          mpSourceMediumLockList(aSourceMediumLockList),
+          mpTargetMediumLockList(aTargetMediumLockList),
           mVariant(aVariant),
           mTargetCaller(aTarget),
-          mParentCaller(aParent)
+          mParentCaller(aParent),
+          mfKeepSourceMediumLockList(fKeepSourceMediumLockList),
+          mfKeepTargetMediumLockList(fKeepTargetMediumLockList)
     {
         AssertReturnVoidStmt(aTarget != NULL, mRC = E_FAIL);
         mRC = mTargetCaller.rc();
@@ -326,14 +345,22 @@ public:
         mRC = mParentCaller.rc();
         if (FAILED(mRC))
             return;
-        AssertReturnVoidStmt(aSourceChain != NULL, mRC = E_FAIL);
-        AssertReturnVoidStmt(aParentChain != NULL, mRC = E_FAIL);
+        AssertReturnVoidStmt(aSourceMediumLockList != NULL, mRC = E_FAIL);
+        AssertReturnVoidStmt(aTargetMediumLockList != NULL, mRC = E_FAIL);
+    }
+
+    ~CloneTask()
+    {
+        if (!mfKeepSourceMediumLockList && mpSourceMediumLockList)
+            delete mpSourceMediumLockList;
+        if (!mfKeepTargetMediumLockList && mpTargetMediumLockList)
+            delete mpTargetMediumLockList;
     }
 
     const ComObjPtr<Medium> mTarget;
     const ComObjPtr<Medium> mParent;
-    std::auto_ptr<ImageChain> mSourceChain;
-    std::auto_ptr<ImageChain> mParentChain;
+    MediumLockList *mpSourceMediumLockList;
+    MediumLockList *mpTargetMediumLockList;
     MediumVariant_T mVariant;
 
 private:
@@ -341,6 +368,8 @@ private:
 
     AutoCaller mTargetCaller;
     AutoCaller mParentCaller;
+    bool mfKeepSourceMediumLockList;
+    bool mfKeepTargetMediumLockList;
 };
 
 class Medium::CompactTask : public Medium::Task
@@ -348,59 +377,154 @@ class Medium::CompactTask : public Medium::Task
 public:
     CompactTask(Medium *aMedium,
                 Progress *aProgress,
-                ImageChain *aImageChain)
+                MediumLockList *aMediumLockList,
+                bool fKeepMediumLockList = false)
         : Medium::Task(aMedium, aProgress),
-          mImageChain(aImageChain)
+          mpMediumLockList(aMediumLockList),
+          mfKeepMediumLockList(fKeepMediumLockList)
     {
-        AssertReturnVoidStmt(aImageChain != NULL, mRC = E_FAIL);
+        AssertReturnVoidStmt(aMediumLockList != NULL, mRC = E_FAIL);
     }
 
-    std::auto_ptr<ImageChain> mImageChain;
+    ~CompactTask()
+    {
+        if (!mfKeepMediumLockList && mpMediumLockList)
+            delete mpMediumLockList;
+    }
+
+    MediumLockList *mpMediumLockList;
 
 private:
     virtual HRESULT handler();
+
+    bool mfKeepMediumLockList;
 };
 
 class Medium::ResetTask : public Medium::Task
 {
 public:
     ResetTask(Medium *aMedium,
-              Progress *aProgress)
-        : Medium::Task(aMedium, aProgress)
+              Progress *aProgress,
+              MediumLockList *aMediumLockList,
+              bool fKeepMediumLockList = false)
+        : Medium::Task(aMedium, aProgress),
+          mpMediumLockList(aMediumLockList),
+          mfKeepMediumLockList(fKeepMediumLockList)
     {}
+
+    ~ResetTask()
+    {
+        if (!mfKeepMediumLockList && mpMediumLockList)
+            delete mpMediumLockList;
+    }
+
+    MediumLockList *mpMediumLockList;
 
 private:
     virtual HRESULT handler();
+
+    bool mfKeepMediumLockList;
 };
 
 class Medium::DeleteTask : public Medium::Task
 {
 public:
     DeleteTask(Medium *aMedium,
-               Progress *aProgress)
-        : Medium::Task(aMedium, aProgress)
+               Progress *aProgress,
+               MediumLockList *aMediumLockList,
+               bool fKeepMediumLockList = false)
+        : Medium::Task(aMedium, aProgress),
+          mpMediumLockList(aMediumLockList),
+          mfKeepMediumLockList(fKeepMediumLockList)
     {}
+
+    ~DeleteTask()
+    {
+        if (!mfKeepMediumLockList && mpMediumLockList)
+            delete mpMediumLockList;
+    }
+
+    MediumLockList *mpMediumLockList;
 
 private:
     virtual HRESULT handler();
+
+    bool mfKeepMediumLockList;
 };
 
 class Medium::MergeTask : public Medium::Task
 {
 public:
     MergeTask(Medium *aMedium,
+              Medium *aTarget,
+              bool fMergeForward,
+              Medium *aParentForTarget,
+              const MediaList &aChildrenToReparent,
               Progress *aProgress,
-              MergeChain *aMergeChain)
+              MediumLockList *aMediumLockList,
+              bool fKeepMediumLockList = false)
         : Medium::Task(aMedium, aProgress),
-          mMergeChain(aMergeChain)
+          mTarget(aTarget),
+          mfMergeForward(fMergeForward),
+          mParentForTarget(aParentForTarget),
+          mChildrenToReparent(aChildrenToReparent),
+          mpMediumLockList(aMediumLockList),
+          mTargetCaller(aTarget),
+          mParentForTargetCaller(aParentForTarget),
+          mfChildrenCaller(false),
+          mfKeepMediumLockList(fKeepMediumLockList)
     {
-        AssertReturnVoidStmt(aMergeChain != NULL, mRC = E_FAIL);
+        AssertReturnVoidStmt(aMediumLockList != NULL, mRC = E_FAIL);
+        for (MediaList::const_iterator it = mChildrenToReparent.begin();
+             it != mChildrenToReparent.end();
+             ++it)
+        {
+            HRESULT rc2 = (*it)->addCaller();
+            if (FAILED(rc2))
+            {
+                mRC = E_FAIL;
+                for (MediaList::const_iterator it2 = mChildrenToReparent.begin();
+                     it2 != it;
+                     --it2)
+                {
+                    (*it2)->releaseCaller();
+                }
+                return;
+            }
+        }
+        mfChildrenCaller = true;
     }
 
-    std::auto_ptr<MergeChain> mMergeChain;
+    ~MergeTask()
+    {
+        if (!mfKeepMediumLockList && mpMediumLockList)
+            delete mpMediumLockList;
+        if (mfChildrenCaller)
+        {
+            for (MediaList::const_iterator it = mChildrenToReparent.begin();
+                 it != mChildrenToReparent.end();
+                 ++it)
+            {
+                (*it)->releaseCaller();
+            }
+        }
+    }
+
+    const ComObjPtr<Medium> mTarget;
+    bool mfMergeForward;
+    /* When mChildrenToReparent is empty then mParentForTarget is non-null.
+     * In other words: they are used in different cases. */
+    const ComObjPtr<Medium> mParentForTarget;
+    MediaList mChildrenToReparent;
+    MediumLockList *mpMediumLockList;
 
 private:
     virtual HRESULT handler();
+
+    AutoCaller mTargetCaller;
+    AutoCaller mParentForTargetCaller;
+    bool mfChildrenCaller;
+    bool mfKeepMediumLockList;
 };
 
 /**
@@ -468,7 +592,7 @@ DECLCALLBACK(int) Medium::Task::vdProgressCall(void *pvUser, unsigned uPercent)
  */
 HRESULT Medium::CreateBaseTask::handler()
 {
-    return mMedium->taskThreadCreateBase(*this);
+    return mMedium->taskCreateBaseHandler(*this);
 }
 
 /**
@@ -476,7 +600,7 @@ HRESULT Medium::CreateBaseTask::handler()
  */
 HRESULT Medium::CreateDiffTask::handler()
 {
-    return mMedium->taskThreadCreateDiff(*this);
+    return mMedium->taskCreateDiffHandler(*this);
 }
 
 /**
@@ -484,7 +608,7 @@ HRESULT Medium::CreateDiffTask::handler()
  */
 HRESULT Medium::CloneTask::handler()
 {
-    return mMedium->taskThreadClone(*this);
+    return mMedium->taskCloneHandler(*this);
 }
 
 /**
@@ -492,7 +616,7 @@ HRESULT Medium::CloneTask::handler()
  */
 HRESULT Medium::CompactTask::handler()
 {
-    return mMedium->taskThreadCompact(*this);
+    return mMedium->taskCompactHandler(*this);
 }
 
 /**
@@ -500,7 +624,7 @@ HRESULT Medium::CompactTask::handler()
  */
 HRESULT Medium::ResetTask::handler()
 {
-    return mMedium->taskThreadReset(*this);
+    return mMedium->taskResetHandler(*this);
 }
 
 /**
@@ -508,7 +632,7 @@ HRESULT Medium::ResetTask::handler()
  */
 HRESULT Medium::DeleteTask::handler()
 {
-    return mMedium->taskThreadDelete(*this);
+    return mMedium->taskDeleteHandler(*this);
 }
 
 /**
@@ -516,507 +640,8 @@ HRESULT Medium::DeleteTask::handler()
  */
 HRESULT Medium::MergeTask::handler()
 {
-    return mMedium->taskThreadMerge(*this);
+    return mMedium->taskMergeHandler(*this);
 }
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// Merge chain class
-//
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Helper class for merge operations.
- *
- * @note It is assumed that when modifying methods of this class are called,
- *       the medium tree lock is held in read mode.
- */
-class Medium::MergeChain : public MediaList,
-                           public com::SupportErrorInfoBase
-{
-public:
-
-    MergeChain(bool aForward, bool aIgnoreAttachments)
-        : mForward(aForward)
-        , mIgnoreAttachments(aIgnoreAttachments) {}
-
-    ~MergeChain()
-    {
-        for (iterator it = mChildren.begin(); it != mChildren.end(); ++ it)
-        {
-            HRESULT rc = (*it)->UnlockWrite(NULL);
-            AssertComRC(rc);
-
-            (*it)->releaseCaller();
-        }
-
-        for (iterator it = begin(); it != end(); ++ it)
-        {
-            AutoWriteLock alock(*it COMMA_LOCKVAL_SRC_POS);
-            Assert((*it)->m->state == MediumState_LockedWrite ||
-                   (*it)->m->state == MediumState_LockedRead ||
-                   (*it)->m->state == MediumState_Deleting);
-            if ((*it)->m->state == MediumState_LockedWrite)
-                (*it)->UnlockWrite(NULL);
-            else if ((*it)->m->state == MediumState_LockedRead)
-                (*it)->UnlockRead(NULL);
-            else
-                (*it)->m->state = MediumState_Created;
-
-            (*it)->releaseCaller();
-        }
-
-        if (!mParent.isNull())
-            mParent->releaseCaller();
-    }
-
-    HRESULT addSource(Medium *aMedium)
-    {
-        HRESULT rc = aMedium->addCaller();
-        if (FAILED(rc)) return rc;
-
-        AutoWriteLock alock(aMedium COMMA_LOCKVAL_SRC_POS);
-
-        if (mForward)
-        {
-            rc = checkChildrenAndAttachmentsAndImmutable(aMedium);
-            if (FAILED(rc))
-            {
-                aMedium->releaseCaller();
-                return rc;
-            }
-        }
-
-        /* We have to fetch the state with the COM method, cause it's possible
-           that the medium isn't fully initialized yet. */
-        MediumState_T m;
-        rc = aMedium->RefreshState(&m);
-        if (FAILED(rc)) return rc;
-        /* go to Deleting */
-        switch (m)
-        {
-            case MediumState_Created:
-                aMedium->m->state = MediumState_Deleting;
-                break;
-            default:
-                aMedium->releaseCaller();
-                return aMedium->setStateError();
-        }
-
-        push_front(aMedium);
-
-        if (mForward)
-        {
-            /* we will need parent to reparent target */
-            if (!aMedium->m->pParent.isNull())
-            {
-                rc = aMedium->m->pParent->addCaller();
-                if (FAILED(rc)) return rc;
-
-                mParent = aMedium->m->pParent;
-            }
-
-            /* Include all images from base to source. */
-            ComObjPtr<Medium> pParent = aMedium->m->pParent;
-            while (!pParent.isNull())
-            {
-                rc = pParent->addCaller();
-                if (FAILED(rc)) return rc;
-
-                rc = pParent->LockRead(NULL);
-                if (FAILED(rc)) return rc;
-
-                push_front(pParent);
-                pParent = pParent->m->pParent;
-            }
-        }
-        else
-        {
-            /* we will need to reparent children */
-            for (MediaList::const_iterator it = aMedium->getChildren().begin();
-                 it != aMedium->getChildren().end();
-                 ++it)
-            {
-                ComObjPtr<Medium> pMedium = *it;
-                rc = pMedium->addCaller();
-                if (FAILED(rc)) return rc;
-
-                rc = pMedium->LockWrite(NULL);
-                if (FAILED(rc))
-                {
-                    pMedium->releaseCaller();
-                    return rc;
-                }
-
-                mChildren.push_back(pMedium);
-            }
-        }
-
-        mSource = aMedium;
-
-        return S_OK;
-    }
-
-    HRESULT addTarget(Medium *aMedium)
-    {
-        HRESULT rc = aMedium->addCaller();
-        if (FAILED(rc)) return rc;
-
-        AutoWriteLock alock(aMedium COMMA_LOCKVAL_SRC_POS);
-
-        if (!mForward)
-        {
-            rc = checkChildrenAndImmutable(aMedium);
-            if (FAILED(rc))
-            {
-                aMedium->releaseCaller();
-                return rc;
-            }
-        }
-
-        /* go to LockedWrite */
-        rc = aMedium->LockWrite(NULL);
-        if (FAILED(rc))
-        {
-            aMedium->releaseCaller();
-            return rc;
-        }
-
-        push_front(aMedium);
-
-        mTarget = aMedium;
-
-        return S_OK;
-    }
-
-    HRESULT addIntermediate(Medium *aMedium)
-    {
-        HRESULT rc = aMedium->addCaller();
-        if (FAILED(rc)) return rc;
-
-        AutoWriteLock alock(aMedium COMMA_LOCKVAL_SRC_POS);
-
-        rc = checkChildrenAndAttachments(aMedium);
-        if (FAILED(rc))
-        {
-            aMedium->releaseCaller();
-            return rc;
-        }
-
-        /* go to Deleting */
-        switch (aMedium->m->state)
-        {
-            case MediumState_Created:
-                aMedium->m->state = MediumState_Deleting;
-                break;
-            default:
-                aMedium->releaseCaller();
-                return aMedium->setStateError();
-        }
-
-        push_front(aMedium);
-
-        return S_OK;
-    }
-
-    int targetIdx()
-    {
-        Assert(!mTarget.isNull());
-        int idx = 0;
-
-        for (MediaList::const_iterator it = begin(); it != end(); ++it)
-        {
-            ComObjPtr<Medium> pMedium = *it;
-
-            /* Do we have the target? */
-            if (pMedium == mTarget)
-                break;
-
-            idx++;
-        }
-
-        return idx;
-    }
-
-    int sourceIdx()
-    {
-        Assert(!mSource.isNull());
-        int idx = 0;
-
-        for (MediaList::const_iterator it = begin(); it != end(); ++it)
-        {
-            ComObjPtr<Medium> pMedium = *it;
-
-            /* Do we have the source? */
-            if (pMedium == mSource)
-                break;
-
-            idx++;
-        }
-
-        return idx;
-    }
-
-    bool isForward() const { return mForward; }
-    Medium *parent() const { return mParent; }
-    const MediaList& children() const { return mChildren; }
-
-    Medium *source() const
-    { AssertReturn(size() > 0, NULL); return mSource; }
-
-    Medium *target() const
-    { AssertReturn(size() > 0, NULL); return mTarget; }
-
-protected:
-
-    // SupportErrorInfoBase interface
-    const GUID &mainInterfaceID() const { return COM_IIDOF(IMedium); }
-    const char *componentName() const { return Medium::ComponentName(); }
-
-private:
-
-    HRESULT check(Medium *aMedium, bool aChildren, bool aAttachments,
-                  bool aImmutable)
-    {
-        if (aChildren)
-        {
-            /* not going to multi-merge as it's too expensive */
-            if (aMedium->getChildren().size() > 1)
-            {
-                return setError(E_FAIL,
-                                tr("Medium '%s' involved in the merge operation has more than one child medium (%d)"),
-                                aMedium->m->strLocationFull.raw(),
-                                aMedium->getChildren().size());
-            }
-        }
-
-        if (aAttachments && !mIgnoreAttachments)
-        {
-            if (aMedium->m->backRefs.size() != 0)
-                return setError(E_FAIL,
-                                tr("Medium '%s' is attached to %d virtual machines"),
-                                aMedium->m->strLocationFull.raw(),
-                                aMedium->m->backRefs.size());
-        }
-
-        if (aImmutable)
-        {
-            if (aMedium->m->type == MediumType_Immutable)
-                return setError(E_FAIL,
-                                tr("Medium '%s' is immutable"),
-                                aMedium->m->strLocationFull.raw());
-        }
-
-        return S_OK;
-    }
-
-    HRESULT checkChildren(Medium *aMedium)
-    { return check(aMedium, true, false, false); }
-
-    HRESULT checkChildrenAndImmutable(Medium *aMedium)
-    { return check(aMedium, true, false, true); }
-
-    HRESULT checkChildrenAndAttachments(Medium *aMedium)
-    { return check(aMedium, true, true, false); }
-
-    HRESULT checkChildrenAndAttachmentsAndImmutable(Medium *aMedium)
-    { return check(aMedium, true, true, true); }
-
-    /** true if forward merge, false if backward */
-    bool mForward : 1;
-    /** true to not perform attachment checks */
-    bool mIgnoreAttachments : 1;
-
-    /** Parent of the source when forward merge (if any) */
-    ComObjPtr <Medium> mParent;
-    /** Children of the source when backward merge (if any) */
-    MediaList mChildren;
-    /** Source image */
-    ComObjPtr <Medium> mSource;
-    /** Target image */
-    ComObjPtr <Medium> mTarget;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// ImageChain class
-//
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Helper class for image operations involving the entire parent chain.
- *
- * @note It is assumed that when modifying methods of this class are called,
- *       the medium tree lock is held in read mode.
- */
-class Medium::ImageChain : public MediaList,
-                           public com::SupportErrorInfoBase
-{
-public:
-
-    ImageChain() {}
-
-    ~ImageChain()
-    {
-        /* empty? */
-        if (begin() != end())
-        {
-            MediaList::const_iterator last = end();
-            last--;
-            for (MediaList::const_iterator it = begin(); it != end(); ++ it)
-            {
-                AutoWriteLock alock(*it COMMA_LOCKVAL_SRC_POS);
-                if (it == last)
-                {
-                    Assert(   (*it)->m->state == MediumState_LockedRead
-                           || (*it)->m->state == MediumState_LockedWrite);
-                    if ((*it)->m->state == MediumState_LockedRead)
-                        (*it)->UnlockRead(NULL);
-                    else if ((*it)->m->state == MediumState_LockedWrite)
-                        (*it)->UnlockWrite(NULL);
-                }
-                else
-                {
-                    Assert((*it)->m->state == MediumState_LockedRead);
-                    if ((*it)->m->state == MediumState_LockedRead)
-                        (*it)->UnlockRead(NULL);
-                }
-
-                (*it)->releaseCaller();
-            }
-        }
-    }
-
-    HRESULT addImage(Medium *aMedium)
-    {
-        HRESULT rc = aMedium->addCaller();
-        if (FAILED(rc)) return rc;
-
-        push_front(aMedium);
-
-        return S_OK;
-    }
-
-    HRESULT lockImagesRead()
-    {
-        /* Lock all disks in the chain in {parent, child} order,
-         * and make sure they are accessible. */
-        /// @todo code duplication with SessionMachine::lockMedia, see below
-        ErrorInfoKeeper eik(true /* aIsNull */);
-        MultiResult mrc(S_OK);
-        for (MediaList::const_iterator it = begin(); it != end(); ++ it)
-        {
-            HRESULT rc = S_OK;
-            MediumState_T mediumState = (*it)->getState();
-
-            /* accessibility check must be first, otherwise locking
-             * interferes with getting the medium state. */
-            if (mediumState == MediumState_Inaccessible)
-            {
-                rc = (*it)->RefreshState(&mediumState);
-                if (FAILED(rc)) return rc;
-
-                if (mediumState == MediumState_Inaccessible)
-                {
-                    Bstr error;
-                    rc = (*it)->COMGETTER(LastAccessError)(error.asOutParam());
-                    if (FAILED(rc)) return rc;
-
-                    Bstr loc;
-                    rc = (*it)->COMGETTER(Location)(loc.asOutParam());
-                    if (FAILED(rc)) return rc;
-
-                    /* collect multiple errors */
-                    eik.restore();
-
-                    /* be in sync with Medium::setStateError() */
-                    Assert(!error.isEmpty());
-                    mrc = setError(E_FAIL,
-                                   tr("Medium '%ls' is not accessible. %ls"),
-                                   loc.raw(), error.raw());
-
-                    eik.fetch();
-                }
-            }
-
-            rc = (*it)->LockRead(&mediumState);
-            if (FAILED(rc)) return rc;
-        }
-
-        eik.restore();
-        HRESULT rc2 = (HRESULT)mrc;
-        if (FAILED(rc2)) return rc2;
-
-        return S_OK;
-    }
-
-    HRESULT lockImagesReadAndLastWrite()
-    {
-        /* Lock all disks in the chain in {parent, child} order,
-         * and make sure they are accessible. */
-        /// @todo code duplication with SessionMachine::lockMedia, see below
-        ErrorInfoKeeper eik(true /* aIsNull */);
-        MultiResult mrc(S_OK);
-        MediaList::const_iterator last = end();
-        last--;
-        for (MediaList::const_iterator it = begin(); it != end(); ++ it)
-        {
-            HRESULT rc = S_OK;
-            MediumState_T mediumState = (*it)->getState();
-
-            /* accessibility check must be first, otherwise locking
-             * interferes with getting the medium state. */
-            if (mediumState == MediumState_Inaccessible)
-            {
-                rc = (*it)->RefreshState(&mediumState);
-                if (FAILED(rc)) return rc;
-
-                if (mediumState == MediumState_Inaccessible)
-                {
-                    Bstr error;
-                    rc = (*it)->COMGETTER(LastAccessError)(error.asOutParam());
-                    if (FAILED(rc)) return rc;
-
-                    Bstr loc;
-                    rc = (*it)->COMGETTER(Location)(loc.asOutParam());
-                    if (FAILED(rc)) return rc;
-
-                    /* collect multiple errors */
-                    eik.restore();
-
-                    /* be in sync with Medium::setStateError() */
-                    Assert(!error.isEmpty());
-                    mrc = setError(E_FAIL,
-                                   tr("Medium '%ls' is not accessible. %ls"),
-                                   loc.raw(), error.raw());
-
-                    eik.fetch();
-                }
-            }
-
-            if (it == last)
-                rc = (*it)->LockWrite(&mediumState);
-            else
-                rc = (*it)->LockRead(&mediumState);
-        }
-
-        eik.restore();
-        HRESULT rc2 = (HRESULT)mrc;
-        if (FAILED(rc2)) return rc2;
-
-        return S_OK;
-    }
-
-protected:
-
-    // SupportErrorInfoBase interface
-    const GUID &mainInterfaceID() const { return COM_IIDOF(IMedium); }
-    const char *componentName() const { return Medium::ComponentName(); }
-
-private:
-
-};
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1344,7 +969,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
      * compatibility; we can also clean them up from the XML upon next
      * XML format version change if we wish) */
     for (settings::PropertiesMap::const_iterator it = data.properties.begin();
-         it != data.properties.end(); ++ it)
+         it != data.properties.end(); ++it)
     {
         const Utf8Str &name = it->first;
         const Utf8Str &value = it->second;
@@ -1495,7 +1120,7 @@ void Medium::uninit()
     {
         /* we are being uninitialized after've been deleted by merge.
          * Reparenting has already been done so don't touch it here (we are
-         * now orphans and remoeDependentChild() will assert) */
+         * now orphans and removeDependentChild() will assert) */
         Assert(m->pParent.isNull());
     }
     else
@@ -1956,7 +1581,7 @@ STDMETHODIMP Medium::COMGETTER(MachineIds)(ComSafeArrayOut(BSTR,aMachineIds))
 
         size_t i = 0;
         for (BackRefList::const_iterator it = m->backRefs.begin();
-             it != m->backRefs.end(); ++ it, ++ i)
+             it != m->backRefs.end(); ++it, ++i)
         {
              it->machineId.toUtf16().detachTo(&machineIds[i]);
         }
@@ -2012,7 +1637,7 @@ STDMETHODIMP Medium::GetSnapshotIds(IN_BSTR aMachineId,
 
     Guid id(aMachineId);
     for (BackRefList::const_iterator it = m->backRefs.begin();
-         it != m->backRefs.end(); ++ it)
+         it != m->backRefs.end(); ++it)
     {
         if (it->machineId == id)
         {
@@ -2134,7 +1759,7 @@ STDMETHODIMP Medium::UnlockRead(MediumState_T *aState)
         {
             LogFlowThisFunc(("Failing - state=%d\n", m->state));
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                          tr ("Medium '%s' is not locked for reading"),
+                          tr("Medium '%s' is not locked for reading"),
                           m->strLocationFull.raw());
             break;
         }
@@ -2219,7 +1844,7 @@ STDMETHODIMP Medium::UnlockWrite(MediumState_T *aState)
         {
             LogFlowThisFunc(("Failing - state=%d locationFull=%s\n", m->state, getLocationFull().c_str()));
             rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                          tr ("Medium '%s' is not locked for writing"),
+                          tr("Medium '%s' is not locked for writing"),
                           m->strLocationFull.raw());
             break;
         }
@@ -2432,58 +2057,60 @@ STDMETHODIMP Medium::CreateBaseStorage(ULONG64 aLogicalSize,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT rc = S_OK;
+    ComObjPtr <Progress> pProgress;
+    Medium::Task *pTask = NULL;
 
-    aVariant = (MediumVariant_T)((unsigned)aVariant & (unsigned)~MediumVariant_Diff);
-    if (    !(aVariant & MediumVariant_Fixed)
-        &&  !(m->formatObj->capabilities() & MediumFormatCapabilities_CreateDynamic))
-        return setError(VBOX_E_NOT_SUPPORTED,
-                        tr("Hard disk format '%s' does not support dynamic storage creation"),
-                        m->strFormat.raw());
-    if (    (aVariant & MediumVariant_Fixed)
-        &&  !(m->formatObj->capabilities() & MediumFormatCapabilities_CreateDynamic))
-        return setError(VBOX_E_NOT_SUPPORTED,
-                        tr("Hard disk format '%s' does not support fixed storage creation"),
-                        m->strFormat.raw());
-
-    switch (m->state)
+    try
     {
-        case MediumState_NotCreated:
-            break;
-        default:
-            return setStateError();
-    }
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    ComObjPtr <Progress> progress;
-    progress.createObject();
-    HRESULT rc = progress->init(m->pVirtualBox,
-                                static_cast<IMedium*>(this),
-                                (aVariant & MediumVariant_Fixed)
-                                        ? BstrFmt(tr("Creating fixed hard disk storage unit '%s'"), m->strLocationFull.raw())
-                                        : BstrFmt(tr("Creating dynamic hard disk storage unit '%s'"), m->strLocationFull.raw()),
-                                TRUE /* aCancelable */);
-    if (FAILED(rc)) return rc;
+        aVariant = (MediumVariant_T)((unsigned)aVariant & (unsigned)~MediumVariant_Diff);
+        if (    !(aVariant & MediumVariant_Fixed)
+            &&  !(m->formatObj->capabilities() & MediumFormatCapabilities_CreateDynamic))
+            throw setError(VBOX_E_NOT_SUPPORTED,
+                           tr("Hard disk format '%s' does not support dynamic storage creation"),
+                           m->strFormat.raw());
+        if (    (aVariant & MediumVariant_Fixed)
+            &&  !(m->formatObj->capabilities() & MediumFormatCapabilities_CreateDynamic))
+            throw setError(VBOX_E_NOT_SUPPORTED,
+                           tr("Hard disk format '%s' does not support fixed storage creation"),
+                           m->strFormat.raw());
 
-    /* setup task object to carry out the operation asynchronously */
-    Medium::Task *pTask(new Medium::CreateBaseTask(this, progress,
-                                                   aLogicalSize, aVariant));
-    rc = pTask->rc();
-    if (FAILED(rc))
-    {
+        if (m->state != MediumState_NotCreated)
+            throw setStateError();
+
+        pProgress.createObject();
+        rc = pProgress->init(m->pVirtualBox,
+                             static_cast<IMedium*>(this),
+                             (aVariant & MediumVariant_Fixed)
+                               ? BstrFmt(tr("Creating fixed hard disk storage unit '%s'"), m->strLocationFull.raw())
+                               : BstrFmt(tr("Creating dynamic hard disk storage unit '%s'"), m->strLocationFull.raw()),
+                             TRUE /* aCancelable */);
+        if (FAILED(rc)) throw rc;
+
+        /* setup task object to carry out the operation asynchronously */
+        pTask = new Medium::CreateBaseTask(this, pProgress, aLogicalSize,
+                                           aVariant);
+        rc = pTask->rc();
         AssertComRC(rc);
-        delete pTask;
-        return rc;
+        if (FAILED(rc)) throw rc;
+
+        m->state = MediumState_Creating;
     }
+    catch (HRESULT aRC) { rc = aRC; }
 
-    rc = startThread(pTask);
-    if (FAILED(rc)) return rc;
+    if (SUCCEEDED(rc))
+    {
+        rc = startThread(pTask);
 
-    /* go to Creating state on success */
-    m->state = MediumState_Creating;
+        if (SUCCEEDED(rc))
+            pProgress.queryInterfaceTo(aProgress);
+    }
+    else if (pTask != NULL)
+        delete pTask;
 
-    progress.queryInterfaceTo(aProgress);
-
-    return S_OK;
+    return rc;
 }
 
 STDMETHODIMP Medium::DeleteStorage(IProgress **aProgress)
@@ -2493,11 +2120,12 @@ STDMETHODIMP Medium::DeleteStorage(IProgress **aProgress)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ComObjPtr <Progress> progress;
+    ComObjPtr <Progress> pProgress;
 
-    HRESULT rc = deleteStorageNoWait(progress);
+    HRESULT rc = deleteStorage(&pProgress, false /* aWait */,
+                               NULL /* pfNeedsSaveSettings */);
     if (SUCCEEDED(rc))
-        progress.queryInterfaceTo(aProgress);
+        pProgress.queryInterfaceTo(aProgress);
 
     return rc;
 }
@@ -2521,32 +2149,60 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
                         tr("Hard disk '%s' is Writethrough"),
                         m->strLocationFull.raw());
 
-    /* We want to be locked for reading as long as our diff child is being
-     * created */
-    HRESULT rc = LockRead(NULL);
-    if (FAILED(rc)) return rc;
-
-    ComObjPtr <Progress> progress;
-
-    rc = createDiffStorageNoWait(diff, aVariant, progress);
+    /* Apply the normal locking logic to the entire chain. */
+    MediumLockList *pMediumLockList(new MediumLockList());
+    HRESULT rc = createMediumLockList(true, this, *pMediumLockList);
     if (FAILED(rc))
     {
-        HRESULT rc2 = UnlockRead(NULL);
-        AssertComRC(rc2);
-        /* Note: on success, the task will unlock this */
+        delete pMediumLockList;
+        return rc;
     }
+
+    ComObjPtr <Progress> pProgress;
+
+    rc = createDiffStorage(diff, aVariant, pMediumLockList, &pProgress,
+                           false /* aWait */, NULL /* pfNeedsSaveSettings*/);
+    if (FAILED(rc))
+        delete pMediumLockList;
     else
-        progress.queryInterfaceTo(aProgress);
+        pProgress.queryInterfaceTo(aProgress);
 
     return rc;
 }
 
-STDMETHODIMP Medium::MergeTo(IN_BSTR /* aTargetId */, IProgress ** /* aProgress */)
+STDMETHODIMP Medium::MergeTo(IMedium *aTarget, IProgress **aProgress)
 {
+    CheckComArgNotNull(aTarget);
+    CheckComArgOutPointerValid(aProgress);
+    ComAssertRet(aTarget != this, E_INVALIDARG);
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    ComObjPtr<Medium> pTarget = static_cast<Medium*>(aTarget);
+
+    bool fMergeForward = false;
+    ComObjPtr<Medium> pParentForTarget;
+    MediaList childrenToReparent;
+    MediumLockList *pMediumLockList = NULL;
+
+    HRESULT rc = S_OK;
+
+    rc = prepareMergeTo(pTarget, NULL, NULL, fMergeForward, pParentForTarget,
+                        childrenToReparent, pMediumLockList);
+    if (FAILED(rc)) return rc;
+
+    ComObjPtr <Progress> pProgress;
+
+    rc = mergeTo(pTarget, fMergeForward, pParentForTarget, childrenToReparent,
+                 pMediumLockList, &pProgress, false /* aWait */,
+                 NULL /* pfNeedsSaveSettings */);
+    if (FAILED(rc))
+        cancelMergeTo(childrenToReparent, pMediumLockList);
+    else
+        pProgress.queryInterfaceTo(aProgress);
+
+    return rc;
 }
 
 STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
@@ -2556,108 +2212,105 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
 {
     CheckComArgNotNull(aTarget);
     CheckComArgOutPointerValid(aProgress);
+    ComAssertRet(aTarget != this, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ComObjPtr<Medium> target = static_cast<Medium*>(aTarget);
-    ComObjPtr<Medium> parent;
+    ComObjPtr<Medium> pTarget = static_cast<Medium*>(aTarget);
+    ComObjPtr<Medium> pParent;
     if (aParent)
-        parent = static_cast<Medium*>(aParent);
+        pParent = static_cast<Medium*>(aParent);
 
-    ComObjPtr<Progress> progress;
     HRESULT rc = S_OK;
+    ComObjPtr<Progress> pProgress;
+    Medium::Task *pTask = NULL;
 
     try
     {
         // locking: we need the tree lock first because we access parent pointers
         AutoReadLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
         // and we need to write-lock the images involved
-        AutoMultiWriteLock3 alock(this, target, parent COMMA_LOCKVAL_SRC_POS);
+        AutoMultiWriteLock3 alock(this, pTarget, pParent COMMA_LOCKVAL_SRC_POS);
 
-        if (    target->m->state != MediumState_NotCreated
-            &&  target->m->state != MediumState_Created)
-            throw target->setStateError();
+        if (    pTarget->m->state != MediumState_NotCreated
+            &&  pTarget->m->state != MediumState_Created)
+            throw pTarget->setStateError();
 
-        /** @todo separate out creating/locking an image chain from
-         * SessionMachine::lockMedia and use it from here too.
-         * logically this belongs into Medium functionality. */
-
-        /* Build the source chain and lock images in the proper order. */
-        std::auto_ptr<ImageChain> sourceChain(new ImageChain());
-
-        for (Medium *hd = this;
-             hd;
-             hd = hd->m->pParent)
-        {
-            rc = sourceChain->addImage(hd);
-            if (FAILED(rc)) throw rc;
-        }
-        rc = sourceChain->lockImagesRead();
-        if (FAILED(rc)) throw rc;
-
-        /* Build the parent chain and lock images in the proper order. */
-        std::auto_ptr<ImageChain> parentChain(new ImageChain());
-
-        for (Medium *hd = parent;
-             hd;
-             hd = hd->m->pParent)
-        {
-            rc = parentChain->addImage(hd);
-            if (FAILED(rc)) throw rc;
-        }
-        if (target->m->state == MediumState_Created)
-        {
-            /* If we're cloning to an existing image the parent chain also
-             * contains the target image, and it gets locked for writing. */
-            rc = parentChain->addImage(target);
-            if (FAILED(rc)) throw rc;
-            rc = parentChain->lockImagesReadAndLastWrite();
-            if (FAILED(rc)) throw rc;
-        }
-        else
-        {
-            rc = parentChain->lockImagesRead();
-            if (FAILED(rc)) throw rc;
-        }
-
-        progress.createObject();
-        rc = progress->init(m->pVirtualBox,
-                            static_cast <IMedium *>(this),
-                            BstrFmt(tr("Creating clone hard disk '%s'"), target->m->strLocationFull.raw()),
-                            TRUE /* aCancelable */);
-        if (FAILED(rc)) throw rc;
-
-        /* setup task object to carry out the operation asynchronously */
-        Medium::Task *pTask(new Medium::CloneTask(this, progress, target,
-                                                  parent,
-                                                  sourceChain.release(),
-                                                  parentChain.release(),
-                                                  aVariant));
-        rc = pTask->rc();
+        /* Build the source lock list. */
+        MediumLockList *pSourceMediumLockList(new MediumLockList());
+        rc = createMediumLockList(false, NULL,
+                                  *pSourceMediumLockList);
         if (FAILED(rc))
         {
-            AssertComRC(rc);
-            delete pTask;
+            delete pSourceMediumLockList;
             throw rc;
         }
 
-        rc = startThread(pTask);
+        /* Build the target lock list (including the to-be parent chain). */
+        MediumLockList *pTargetMediumLockList(new MediumLockList());
+        rc = pTarget->createMediumLockList(true, pParent,
+                                           *pTargetMediumLockList);
+        if (FAILED(rc))
+        {
+            delete pSourceMediumLockList;
+            delete pTargetMediumLockList;
+            throw rc;
+        }
+
+        rc = pSourceMediumLockList->Lock();
+        if (FAILED(rc))
+        {
+            delete pSourceMediumLockList;
+            delete pTargetMediumLockList;
+            throw setError(rc,
+                           tr("Failed to lock source media '%ls'"),
+                           getLocationFull().raw());
+        }
+        rc = pTargetMediumLockList->Lock();
+        if (FAILED(rc))
+        {
+            delete pSourceMediumLockList;
+            delete pTargetMediumLockList;
+            throw setError(rc,
+                           tr("Failed to lock target media '%ls'"),
+                           pTarget->getLocationFull().raw());
+        }
+
+        pProgress.createObject();
+        rc = pProgress->init(m->pVirtualBox,
+                             static_cast <IMedium *>(this),
+                             BstrFmt(tr("Creating clone hard disk '%s'"), pTarget->m->strLocationFull.raw()),
+                             TRUE /* aCancelable */);
+        if (FAILED(rc))
+        {
+            delete pSourceMediumLockList;
+            delete pTargetMediumLockList;
+            throw rc;
+        }
+
+        /* setup task object to carry out the operation asynchronously */
+        pTask = new Medium::CloneTask(this, pProgress, pTarget, aVariant,
+                                      pParent, pSourceMediumLockList,
+                                      pTargetMediumLockList);
+        rc = pTask->rc();
+        AssertComRC(rc);
         if (FAILED(rc)) throw rc;
 
-        if (target->m->state == MediumState_NotCreated)
-        {
-            /* go to Creating state before leaving the lock */
-            target->m->state = MediumState_Creating;
-        }
+        if (pTarget->m->state == MediumState_NotCreated)
+            pTarget->m->state = MediumState_Creating;
     }
-    catch (HRESULT aRC)
-    {
-        rc = aRC;
-    }
+    catch (HRESULT aRC) { rc = aRC; }
 
     if (SUCCEEDED(rc))
-        progress.queryInterfaceTo(aProgress);
+    {
+        rc = startThread(pTask);
+
+        if (SUCCEEDED(rc))
+            pProgress.queryInterfaceTo(aProgress);
+    }
+    else if (pTask != NULL)
+        delete pTask;
 
     return rc;
 }
@@ -2669,61 +2322,65 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    ComObjPtr <Progress> progress;
-
     HRESULT rc = S_OK;
+    ComObjPtr <Progress> pProgress;
+    Medium::Task *pTask = NULL;
 
     try
     {
-        /** @todo separate out creating/locking an image chain from
-         * SessionMachine::lockMedia and use it from here too.
-         * logically this belongs into Medium functionality. */
+        /* We need to lock both the current object, and the tree lock (would
+         * cause a lock order violation otherwise) for createMediumLockList. */
+        AutoMultiWriteLock2 multilock(&m->pVirtualBox->getMediaTreeLockHandle(),
+                                      this->lockHandle()
+                                      COMMA_LOCKVAL_SRC_POS);
 
-        /* Build the image chain and lock images in the proper order. */
-        std::auto_ptr<ImageChain> imgChain(new ImageChain());
-
-        /* we walk the image tree */
-        AutoReadLock srcTreeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-        for (Medium *hd = this;
-             hd;
-             hd = hd->m->pParent)
-        {
-            rc = imgChain->addImage(hd);
-            if (FAILED(rc)) throw rc;
-        }
-        rc = imgChain->lockImagesReadAndLastWrite();
-        if (FAILED(rc)) throw rc;
-
-        progress.createObject();
-        rc = progress->init(m->pVirtualBox,
-                            static_cast <IMedium *>(this),
-                            BstrFmt(tr("Compacting hard disk '%s'"), m->strLocationFull.raw()),
-                            TRUE /* aCancelable */);
-        if (FAILED(rc)) throw rc;
-
-        /* setup task object to carry out the operation asynchronously */
-        Medium::Task *pTask(new Medium::CompactTask(this, progress,
-                                                    imgChain.release()));
-        rc = pTask->rc();
+        /* Build the medium lock list. */
+        MediumLockList *pMediumLockList(new MediumLockList());
+        rc = createMediumLockList(true, NULL,
+                                  *pMediumLockList);
         if (FAILED(rc))
         {
-            AssertComRC(rc);
-            delete pTask;
+            delete pMediumLockList;
             throw rc;
         }
 
-        rc = startThread(pTask);
+        rc = pMediumLockList->Lock();
+        if (FAILED(rc))
+        {
+            delete pMediumLockList;
+            throw setError(rc,
+                           tr("Failed to lock media when compacting '%ls'"),
+                           getLocationFull().raw());
+        }
+
+        pProgress.createObject();
+        rc = pProgress->init(m->pVirtualBox,
+                             static_cast <IMedium *>(this),
+                             BstrFmt(tr("Compacting hard disk '%s'"), m->strLocationFull.raw()),
+                             TRUE /* aCancelable */);
+        if (FAILED(rc))
+        {
+            delete pMediumLockList;
+            throw rc;
+        }
+
+        /* setup task object to carry out the operation asynchronously */
+        pTask = new Medium::CompactTask(this, pProgress, pMediumLockList);
+        rc = pTask->rc();
+        AssertComRC(rc);
         if (FAILED(rc)) throw rc;
     }
-    catch (HRESULT aRC)
-    {
-        rc = aRC;
-    }
+    catch (HRESULT aRC) { rc = aRC; }
 
     if (SUCCEEDED(rc))
-        progress.queryInterfaceTo(aProgress);
+    {
+        rc = startThread(pTask);
+
+        if (SUCCEEDED(rc))
+            pProgress.queryInterfaceTo(aProgress);
+    }
+    else if (pTask != NULL)
+        delete pTask;
 
     return rc;
 }
@@ -2747,61 +2404,79 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* canClose() needs the tree lock */
-    AutoMultiWriteLock2 multilock(&m->pVirtualBox->getMediaTreeLockHandle(),
-                                  this->lockHandle()
-                                  COMMA_LOCKVAL_SRC_POS);
-
-    LogFlowThisFunc(("ENTER for medium %s\n", m->strLocationFull.c_str()));
-
-    if (m->pParent.isNull())
-        return setError(VBOX_E_NOT_SUPPORTED,
-                        tr ("Hard disk '%s' is not differencing"),
-                        m->strLocationFull.raw());
-
-    HRESULT rc = canClose();
-    if (FAILED(rc)) return rc;
-
-    rc = LockWrite(NULL);
-    if (FAILED(rc)) return rc;
-
-    ComObjPtr <Progress> progress;
+    HRESULT rc = S_OK;
+    ComObjPtr <Progress> pProgress;
+    Medium::Task *pTask = NULL;
 
     try
     {
-        progress.createObject();
-        rc = progress->init(m->pVirtualBox,
-                            static_cast<IMedium*>(this),
-                            BstrFmt(tr("Resetting differencing hard disk '%s'"), m->strLocationFull.raw()),
-                            FALSE /* aCancelable */);
+        /* canClose() needs the tree lock */
+        AutoMultiWriteLock2 multilock(&m->pVirtualBox->getMediaTreeLockHandle(),
+                                      this->lockHandle()
+                                      COMMA_LOCKVAL_SRC_POS);
+
+        LogFlowThisFunc(("ENTER for medium %s\n", m->strLocationFull.c_str()));
+
+        if (m->pParent.isNull())
+            throw setError(VBOX_E_NOT_SUPPORTED,
+                           tr("Hard disk '%s' is not differencing"),
+                           m->strLocationFull.raw());
+
+        rc = canClose();
         if (FAILED(rc)) throw rc;
 
-        /* setup task object to carry out the operation asynchronously */
-        Medium::Task *pTask(new Medium::ResetTask(this, progress));
-        rc = pTask->rc();
+        /* Build the medium lock list. */
+        MediumLockList *pMediumLockList(new MediumLockList());
+        rc = createMediumLockList(true, NULL,
+                                  *pMediumLockList);
         if (FAILED(rc))
         {
-            AssertComRC(rc);
-            delete pTask;
+            delete pMediumLockList;
             throw rc;
         }
 
-        rc = startThread(pTask);
+        rc = pMediumLockList->Lock();
+        if (FAILED(rc))
+        {
+            delete pMediumLockList;
+            throw setError(rc,
+                           tr("Failed to lock media when resetting '%ls'"),
+                           getLocationFull().raw());
+        }
+
+        pProgress.createObject();
+        rc = pProgress->init(m->pVirtualBox,
+                             static_cast<IMedium*>(this),
+                             BstrFmt(tr("Resetting differencing hard disk '%s'"), m->strLocationFull.raw()),
+                             FALSE /* aCancelable */);
+        if (FAILED(rc)) throw rc;
+
+        /* setup task object to carry out the operation asynchronously */
+        pTask = new Medium::ResetTask(this, pProgress, pMediumLockList);
+        rc = pTask->rc();
+        AssertComRC(rc);
         if (FAILED(rc)) throw rc;
     }
-    catch (HRESULT aRC)
-    {
-        rc = aRC;
-    }
+    catch (HRESULT aRC) { rc = aRC; }
 
-    if (FAILED(rc))
+    if (SUCCEEDED(rc))
     {
-        HRESULT rc2 = UnlockWrite(NULL);
-        AssertComRC(rc2);
-        /* Note: on success, the task will unlock this */
+        rc = startThread(pTask);
+
+        if (SUCCEEDED(rc))
+            pProgress.queryInterfaceTo(aProgress);
     }
     else
-        progress.queryInterfaceTo(aProgress);
+    {
+        /* Note: on success, the task will unlock this */
+        {
+            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+            HRESULT rc2 = UnlockWrite(NULL);
+            AssertComRC(rc2);
+        }
+        if (pTask != NULL)
+            delete pTask;
+    }
 
     LogFlowThisFunc(("LEAVE, rc=%Rhrc\n", rc));
 
@@ -3125,17 +2800,17 @@ void Medium::updatePaths(const char *aOldPath, const char *aNewPath)
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     /* we access children() */
     AutoReadLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     updatePath(aOldPath, aNewPath);
 
     /* update paths of all children */
     for (MediaList::const_iterator it = getChildren().begin();
          it != getChildren().end();
-         ++ it)
+         ++it)
     {
         (*it)->updatePaths(aOldPath, aNewPath);
     }
@@ -3213,7 +2888,7 @@ bool Medium::isReadOnly()
                 return true;
 
             for (BackRefList::const_iterator it = m->backRefs.begin();
-                 it != m->backRefs.end(); ++ it)
+                 it != m->backRefs.end(); ++it)
                 if (it->llSnapshotIds.size() != 0)
                     return true;
 
@@ -3351,259 +3026,84 @@ HRESULT Medium::compareLocationTo(const char *aLocation, int &aResult)
 }
 
 /**
- * Checks that this hard disk may be discarded and performs necessary state
- * changes. Must not be called for writethrough disks because there is nothing
- * to discard then.
+ * Constructs a medium lock list for this medium. The lock is not taken.
  *
- * This method is to be called prior to calling the #discard() to perform
- * necessary consistency checks and place involved hard disks to appropriate
- * states. If #discard() is not called or fails, the state modifications
- * performed by this method must be undone by #cancelDiscard().
+ * @note Locks the medium tree for reading.
  *
- * See #discard() for more info about discarding hard disks.
- *
- * @param aChain        Where to store the created merge chain (may return NULL
- *                      if no real merge is necessary).
- *
- * @note Caller must hold media tree lock for writing. This locks this object
- *       and every medium object on the merge chain for writing.
+ * @param fMediumWritable   Whether to associate a write lock with this medium.
+ * @param pToBeParent       Medium which will become the parent of this medium.
+ * @param mediumLockList    Where to store the resulting list.
  */
-HRESULT Medium::prepareDiscard(MergeChain * &aChain)
+HRESULT Medium::createMediumLockList(bool fMediumWritable,
+                                     Medium *pToBeParent,
+                                     MediumLockList &mediumLockList)
 {
-    AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
-
-    aChain = NULL;
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    Assert(m->pVirtualBox->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
-
-    // Medium must not be writethrough at this point
-    AssertReturn(   m->type == MediumType_Normal
-                 || m->type == MediumType_Immutable, E_FAIL);
-
-    if (getChildren().size() == 0)
-    {
-        /* special treatment of the last hard disk in the chain: */
-
-        if (m->pParent.isNull())
-        {
-            /* lock only, to prevent any usage; discard() will unlock */
-            return LockWrite(NULL);
-        }
-
-        /* the differencing hard disk w/o children will be deleted, protect it
-         * from attaching to other VMs (this is why Deleting) */
-
-        switch (m->state)
-        {
-            case MediumState_Created:
-                m->state = MediumState_Deleting;
-                break;
-            default:
-                return setStateError();
-        }
-
-        /* aChain is intentionally NULL here */
-
-        return S_OK;
-    }
-
-    /* not going multi-merge as it's too expensive */
-    if (getChildren().size() > 1)
-        return setError(E_FAIL,
-                        tr ("Hard disk '%s' has more than one child hard disk (%d)"),
-                        m->strLocationFull.raw(), getChildren().size());
-
-    /* this is a read-only hard disk with children; it must be associated with
-     * exactly one snapshot (when the snapshot is being taken, none of the
-     * current VM's hard disks may be attached to other VMs). Note that by the
-     * time when discard() is called, there must be no any attachments at all
-     * (the code calling prepareDiscard() should detach). */
-    AssertReturn(m->backRefs.size() == 1, E_FAIL);
-    AssertReturn(!m->backRefs.front().fInCurState, E_FAIL);
-    AssertReturn(m->backRefs.front().llSnapshotIds.size() == 1, E_FAIL);
-
-    ComObjPtr<Medium> child = getChildren().front();
-
-    /* we keep this locked, so lock the affected child to make sure the lock
-     * order is correct when calling prepareMergeTo() */
-    AutoWriteLock childLock(child COMMA_LOCKVAL_SRC_POS);
-
-    /* delegate the rest to the profi */
-    if (m->pParent.isNull())
-    {
-        /* base hard disk, backward merge */
-        Assert(child->m->backRefs.size() == 1);
-        if (child->m->backRefs.front().machineId != m->backRefs.front().machineId)
-        {
-            /* backward merge is too tricky, we'll just detach on discard, so
-             * lock only, to prevent any usage; discard() will only unlock
-             * (since we return NULL in aChain) */
-            return LockWrite(NULL);
-        }
-
-        return child->prepareMergeTo(this, aChain, true /* aIgnoreAttachments */);
-    }
-    else
-    {
-        /* forward merge */
-        return prepareMergeTo(child, aChain, true /* aIgnoreAttachments */);
-    }
-}
-
-/**
- * Discards this hard disk.
- *
- * Discarding the hard disk is merging its contents to its differencing child
- * hard disk (forward merge) or contents of its child hard disk to itself
- * (backward merge) if this hard disk is a base hard disk. If this hard disk is
- * a differencing hard disk w/o children, then it will be simply deleted.
- * Calling this method on a base hard disk w/o children will do nothing and
- * silently succeed. If this hard disk has more than one child, the method will
- * currently return an error (since merging in this case would be too expensive
- * and result in data duplication).
- *
- * When the backward merge takes place (i.e. this hard disk is a target) then,
- * on success, this hard disk will automatically replace the differencing child
- * hard disk used as a source (which will then be deleted) in the attachment
- * this child hard disk is associated with. This will happen only if both hard
- * disks belong to the same machine because otherwise such a replace would be
- * too tricky and could be not expected by the other machine. Same relates to a
- * case when the child hard disk is not associated with any machine at all. When
- * the backward merge is not applied, the method behaves as if the base hard
- * disk were not attached at all -- i.e. simply detaches it from the machine but
- * leaves the hard disk chain intact.
- *
- * This method is basically a wrapper around #mergeTo() that selects the correct
- * merge direction and performs additional actions as described above and.
- *
- * Note that this method will not return until the merge operation is complete
- * (which may be quite time consuming depending on the size of the merged hard
- * disks).
- *
- * Note that #prepareDiscard() must be called before calling this method. If
- * this method returns a failure, the caller must call #cancelDiscard(). On
- * success, #cancelDiscard() must not be called (this method will perform all
- * necessary steps such as resetting states of all involved hard disks and
- * deleting @a aChain).
- *
- * @param aChain        Merge chain created by #prepareDiscard() (may be NULL if
- *                      no real merge takes place).
- *
- * @note Locks the hard disks from the chain for writing. Locks the machine
- *       object when the backward merge takes place. Locks medium tree for
- *       reading or writing.
- */
-HRESULT Medium::discard(ComObjPtr<Progress> &aProgress,
-                        ULONG ulWeight,
-                        MergeChain *aChain,
-                        bool *pfNeedsSaveSettings)
-{
-    AssertReturn(!aProgress.isNull(), E_FAIL);
-
-    ComObjPtr <Medium> hdFrom;
-
     HRESULT rc = S_OK;
 
+    /* we access parent medium objects */
+    AutoReadLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+    /* paranoid sanity checking if the medium has a to-be parent medium */
+    if (pToBeParent)
     {
-        AutoCaller autoCaller(this);
-        AssertComRCReturnRC(autoCaller.rc());
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        ComAssertRet(getParent().isNull(), E_FAIL);
+        ComAssertRet(getChildren().size() == 0, E_FAIL);
+    }
 
-        aProgress->SetNextOperation(BstrFmt(tr("Merging differencing image '%s'"), getName().raw()),
-                                    ulWeight);        // weight
+    ErrorInfoKeeper eik;
+    MultiResult mrc(S_OK);
 
-        if (aChain == NULL)
+    ComObjPtr<Medium> pMedium = this;
+    while (!pMedium.isNull())
+    {
+        // need write lock for RefreshState if medium is inaccessible
+        AutoWriteLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+
+        /* Accessibility check must be first, otherwise locking interferes
+         * with getting the medium state. Lock lists are not created for
+         * fun, and thus getting the image status is no luxury. */
+        MediumState_T mediumState = pMedium->getState();
+        if (mediumState == MediumState_Inaccessible)
         {
-            /* we access mParent & children() */
-            AutoMultiWriteLock2 mLock(&m->pVirtualBox->getMediaTreeLockHandle(), this->lockHandle() COMMA_LOCKVAL_SRC_POS);
+            rc = pMedium->RefreshState(&mediumState);
+            if (FAILED(rc)) return rc;
 
-            Assert(getChildren().size() == 0);
-
-            /* special treatment of the last hard disk in the chain: */
-
-            if (m->pParent.isNull())
+            if (mediumState == MediumState_Inaccessible)
             {
-                rc = UnlockWrite(NULL);
-                AssertComRC(rc);
-                return rc;
+                Bstr error;
+                rc = pMedium->COMGETTER(LastAccessError)(error.asOutParam());
+                if (FAILED(rc)) return rc;
+
+                Bstr loc;
+                rc = pMedium->COMGETTER(Location)(loc.asOutParam());
+                if (FAILED(rc)) return rc;
+
+                /* collect multiple errors */
+                eik.restore();
+
+                /* be in sync with MediumBase::setStateError() */
+                Assert(!error.isEmpty());
+                mrc = setError(E_FAIL,
+                               tr("Medium '%ls' is not accessible. %ls"),
+                               loc.raw(),
+                               error.raw());
+
+                eik.fetch();
             }
-
-            /* delete the differencing hard disk w/o children */
-
-            Assert(m->state == MediumState_Deleting);
-
-            /* go back to Created since deleteStorage() expects this state */
-            m->state = MediumState_Created;
-
-            hdFrom = this;
-
-            rc = deleteStorageAndWait(&aProgress, pfNeedsSaveSettings);
         }
+
+        if (pMedium == this)
+            mediumLockList.Prepend(pMedium, fMediumWritable);
         else
-        {
-            hdFrom = aChain->source();
+            mediumLockList.Prepend(pMedium, false);
 
-            rc = hdFrom->mergeToAndWait(aChain, &aProgress, pfNeedsSaveSettings);
-        }
+        pMedium = pMedium->getParent();
+        if (pMedium.isNull() && pToBeParent)
+            pMedium = pToBeParent;
     }
 
-    if (SUCCEEDED(rc))
-    {
-        /* mergeToAndWait() cannot uninitialize the initiator because of
-         * possible AutoCallers on the current thread, deleteStorageAndWait()
-         * doesn't do it either; do it ourselves */
-        hdFrom->uninit();
-    }
-
-    return rc;
-}
-
-/**
- * Undoes what #prepareDiscard() did. Must be called if #discard() is not called
- * or fails. Frees memory occupied by @a aChain.
- *
- * @param aChain        Merge chain created by #prepareDiscard() (may be NULL if
- *                      no real merge takes place).
- *
- * @note Locks the hard disks from the chain for writing. Locks medium tree for
- *       reading.
- */
-void Medium::cancelDiscard(MergeChain *aChain)
-{
-    AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
-
-    if (aChain == NULL)
-    {
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-        /* we access mParent & children() */
-        AutoReadLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-
-        Assert(getChildren().size() == 0);
-
-        /* special treatment of the last hard disk in the chain: */
-
-        if (m->pParent.isNull())
-        {
-            HRESULT rc = UnlockWrite(NULL);
-            AssertComRC(rc);
-            return;
-        }
-
-        /* the differencing hard disk w/o children will be deleted, protect it
-         * from attaching to other VMs (this is why Deleting) */
-
-        Assert(m->state == MediumState_Deleting);
-        m->state = MediumState_Created;
-
-        return;
-    }
-
-    /* delegate the rest to the profi */
-    cancelMergeTo(aChain);
+    return mrc;
 }
 
 /**
@@ -3914,7 +3414,7 @@ HRESULT Medium::queryInfo()
 
     /* leave the lock before a lengthy operation */
     vrc = RTSemEventMultiReset(m->queryInfoSem);
-    ComAssertRCThrow(vrc, E_FAIL);
+    AssertRCReturn(vrc, E_FAIL);
     m->queryInfoRunning = true;
     alock.leave();
 
@@ -3934,7 +3434,8 @@ HRESULT Medium::queryInfo()
         try
         {
             /** @todo This kind of opening of images is assuming that diff
-             * images can be opened as base images. Should be fixed ASAP. */
+             * images can be opened as base images. Should be documented if
+             * it must work for all medium format backends. */
             vrc = VDOpen(hdd,
                          format.c_str(),
                          location.c_str(),
@@ -4032,10 +3533,10 @@ HRESULT Medium::queryInfo()
                      * fail if this method reporst MediumState_Inaccessible) */
 
                     Guid id = parentId;
-                    ComObjPtr<Medium> parent;
+                    ComObjPtr<Medium> pParent;
                     rc = m->pVirtualBox->findHardDisk(&id, NULL,
                                                    false /* aSetError */,
-                                                   &parent);
+                                                   &pParent);
                     if (FAILED(rc))
                     {
                         lastAccessError = Utf8StrFmt(
@@ -4049,7 +3550,7 @@ HRESULT Medium::queryInfo()
                     AutoWriteLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
                     Assert(m->pParent.isNull());
-                    m->pParent = parent;
+                    m->pParent = pParent;
                     m->pParent->m->llChildren.push_back(this);
                 }
                 else
@@ -4252,144 +3753,197 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
 {
     AssertReturn(aProgress != NULL || aWait == true, E_FAIL);
 
-    /* we're accessing the media tree, and canClose() needs the tree lock too */
-    AutoMultiWriteLock2 multilock(&m->pVirtualBox->getMediaTreeLockHandle(),
-                                  this->lockHandle()
-                                  COMMA_LOCKVAL_SRC_POS);
-    LogFlowThisFunc(("aWait=%RTbool locationFull=%s\n", aWait, getLocationFull().c_str() ));
+    HRESULT rc = S_OK;
+    ComObjPtr<Progress> pProgress;
+    Medium::Task *pTask = NULL;
 
-    if (    !(m->formatObj->capabilities() & (   MediumFormatCapabilities_CreateDynamic
-                                               | MediumFormatCapabilities_CreateFixed)))
-        return setError(VBOX_E_NOT_SUPPORTED,
-                        tr("Hard disk format '%s' does not support storage deletion"),
-                        m->strFormat.raw());
+    try
+    {
+        /* we're accessing the media tree, and canClose() needs it too */
+        AutoMultiWriteLock2 multilock(&m->pVirtualBox->getMediaTreeLockHandle(),
+                                      this->lockHandle()
+                                      COMMA_LOCKVAL_SRC_POS);
+        LogFlowThisFunc(("aWait=%RTbool locationFull=%s\n", aWait, getLocationFull().c_str() ));
 
-    /* Note that we are fine with Inaccessible state too: a) for symmetry with
-     * create calls and b) because it doesn't really harm to try, if it is
-     * really inaccessible, the delete operation will fail anyway. Accepting
-     * Inaccessible state is especially important because all registered hard
-     * disks are initially Inaccessible upon VBoxSVC startup until
-     * COMGETTER(State) is called. */
+        if (    !(m->formatObj->capabilities() & (   MediumFormatCapabilities_CreateDynamic
+                                                   | MediumFormatCapabilities_CreateFixed)))
+            throw setError(VBOX_E_NOT_SUPPORTED,
+                           tr("Hard disk format '%s' does not support storage deletion"),
+                           m->strFormat.raw());
 
+        /* Note that we are fine with Inaccessible state too: a) for symmetry
+         * with create calls and b) because it doesn't really harm to try, if
+         * it is really inaccessible, the delete operation will fail anyway.
+         * Accepting Inaccessible state is especially important because all
+         * registered hard disks are initially Inaccessible upon VBoxSVC
+         * startup until COMGETTER(RefreshState) is called. Accept Deleting
+         * state because some callers need to put the image in this state early
+         * to prevent races. */
+        switch (m->state)
+        {
+            case MediumState_Created:
+            case MediumState_Deleting:
+            case MediumState_Inaccessible:
+                break;
+            default:
+                throw setStateError();
+        }
+
+        if (m->backRefs.size() != 0)
+        {
+            Utf8Str strMachines;
+            for (BackRefList::const_iterator it = m->backRefs.begin();
+                it != m->backRefs.end();
+                ++it)
+            {
+                const BackRef &b = *it;
+                if (strMachines.length())
+                    strMachines.append(", ");
+                strMachines.append(b.machineId.toString().c_str());
+            }
+#ifdef DEBUG
+            dumpBackRefs();
+#endif
+            throw setError(VBOX_E_OBJECT_IN_USE,
+                           tr("Cannot delete storage: hard disk '%s' is still attached to the following %d virtual machine(s): %s"),
+                           m->strLocationFull.c_str(),
+                           m->backRefs.size(),
+                           strMachines.c_str());
+        }
+
+        rc = canClose();
+        if (FAILED(rc)) throw rc;
+
+        /* go to Deleting state, so that the medium is not actually locked */
+        rc = markForDeletion();
+        if (FAILED(rc)) throw rc;
+
+        /* Build the medium lock list. */
+        MediumLockList *pMediumLockList(new MediumLockList());
+        rc = createMediumLockList(true, NULL,
+                                  *pMediumLockList);
+        if (FAILED(rc))
+        {
+            delete pMediumLockList;
+            throw rc;
+        }
+
+        rc = pMediumLockList->Lock();
+        if (FAILED(rc))
+        {
+            delete pMediumLockList;
+            throw setError(rc,
+                           tr("Failed to lock media when deleting '%ls'"),
+                           getLocationFull().raw());
+        }
+
+        /* try to remove from the list of known hard disks before performing
+         * actual deletion (we favor the consistency of the media registry in
+         * the first place which would have been broken if
+         * unregisterWithVirtualBox() failed after we successfully deleted the
+         * storage) */
+        rc = unregisterWithVirtualBox(pfNeedsSaveSettings);
+        if (FAILED(rc)) throw rc;
+
+        if (aProgress != NULL)
+        {
+            /* use the existing progress object... */
+            pProgress = *aProgress;
+
+            /* ...but create a new one if it is null */
+            if (pProgress.isNull())
+            {
+                pProgress.createObject();
+                rc = pProgress->init(m->pVirtualBox,
+                                     static_cast<IMedium*>(this),
+                                     BstrFmt(tr("Deleting hard disk storage unit '%s'"), m->strLocationFull.raw()),
+                                     FALSE /* aCancelable */);
+                if (FAILED(rc)) throw rc;
+            }
+        }
+
+        /* setup task object to carry out the operation sync/async */
+        pTask = new Medium::DeleteTask(this, pProgress, pMediumLockList);
+        rc = pTask->rc();
+        AssertComRC(rc);
+        if (FAILED(rc)) throw rc;
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    if (SUCCEEDED(rc))
+    {
+        if (aWait)
+            rc = runNow(pTask, NULL /* pfNeedsSaveSettings*/);
+        else
+            rc = startThread(pTask);
+
+        if (SUCCEEDED(rc) && aProgress != NULL)
+            *aProgress = pProgress;
+
+    }
+    else
+    {
+        if (pTask)
+            delete pTask;
+
+        /* Undo deleting state if necessary. */
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        unmarkForDeletion();
+    }
+
+    return rc;
+}
+
+/**
+ * Mark a medium for deletion.
+ *
+ * @note Caller must hold the write lock on this medium!
+ */
+HRESULT Medium::markForDeletion()
+{
+    ComAssertRet(this->lockHandle()->isWriteLockOnCurrentThread(), E_FAIL);
     switch (m->state)
     {
         case MediumState_Created:
         case MediumState_Inaccessible:
-            break;
+            m->preLockState = m->state;
+            m->state = MediumState_Deleting;
+            return S_OK;
         default:
             return setStateError();
     }
+}
 
-    if (m->backRefs.size() != 0)
+/**
+ * Removes the "mark for deletion".
+ *
+ * @note Caller must hold the write lock on this medium!
+ */
+HRESULT Medium::unmarkForDeletion()
+{
+    ComAssertRet(this->lockHandle()->isWriteLockOnCurrentThread(), E_FAIL);
+    switch (m->state)
     {
-        Utf8Str strMachines;
-        for (BackRefList::const_iterator it = m->backRefs.begin();
-            it != m->backRefs.end();
-            ++it)
-        {
-            const BackRef &b = *it;
-            if (strMachines.length())
-                strMachines.append(", ");
-            strMachines.append(b.machineId.toString().c_str());
-        }
-#ifdef DEBUG
-        dumpBackRefs();
-#endif
-        return setError(VBOX_E_OBJECT_IN_USE,
-                        tr("Cannot delete storage: hard disk '%s' is still attached to the following %d virtual machine(s): %s"),
-                        m->strLocationFull.c_str(),
-                        m->backRefs.size(),
-                        strMachines.c_str());
+        case MediumState_Deleting:
+            m->state = m->preLockState;
+            return S_OK;
+        default:
+            return setStateError();
     }
-
-    HRESULT rc = canClose();
-    if (FAILED(rc)) return rc;
-
-    /* go to Deleting state before leaving the lock */
-    m->state = MediumState_Deleting;
-
-    /* try to remove from the list of known hard disks before performing actual
-     * deletion (we favor the consistency of the media registry in the first
-     * place which would have been broken if unregisterWithVirtualBox() failed
-     * after we successfully deleted the storage) */
-    rc = unregisterWithVirtualBox(pfNeedsSaveSettings);
-
-    /* restore the state because we may fail below; we will set it later again*/
-    m->state = MediumState_Created;
-
-    if (FAILED(rc)) return rc;
-
-    ComObjPtr<Progress> progress;
-
-    if (aProgress != NULL)
-    {
-        /* use the existing progress object... */
-        progress = *aProgress;
-
-        /* ...but create a new one if it is null */
-        if (progress.isNull())
-        {
-            progress.createObject();
-            rc = progress->init(m->pVirtualBox,
-                                static_cast<IMedium*>(this),
-                                BstrFmt(tr("Deleting hard disk storage unit '%s'"), m->strLocationFull.raw()),
-                                FALSE /* aCancelable */);
-            if (FAILED(rc)) return rc;
-        }
-    }
-
-    /* setup task object to carry out the operation asynchronously */
-    Medium::Task *pTask(new Medium::DeleteTask(this, progress));
-    rc = pTask->rc();
-    if (FAILED(rc))
-    {
-        AssertComRC(rc);
-        delete pTask;
-        return rc;
-    }
-
-    if (aWait)
-    {
-        /* go to Deleting state before starting the task */
-        m->state = MediumState_Deleting;
-
-        rc = runNow(pTask, NULL /* pfNeedsSaveSettings*/ );        // there is no save settings to do in taskThreadDelete()
-        if (FAILED(rc)) return rc;
-    }
-    else
-    {
-        rc = startThread(pTask);
-        if (FAILED(rc)) return rc;
-
-        /* go to Deleting state before leaving the lock */
-        m->state = MediumState_Deleting;
-    }
-
-    if (aProgress != NULL)
-        *aProgress = progress;
-
-    return rc;
 }
 
 /**
  * Creates a new differencing storage unit using the given target hard disk's
  * format and the location. Note that @c aTarget must be NotCreated.
  *
- * As opposed to the CreateDiffStorage() method, this method doesn't try to lock
- * this hard disk for reading assuming that the caller has already done so. This
- * is used when taking an online snapshot (where all original hard disks are
- * locked for writing and must remain such). Note however that if @a aWait is
- * @c false and this method returns a success then the thread started by
- * this method will unlock the hard disk (unless it is in
- * MediumState_LockedWrite state) so make sure the hard disk is either in
- * MediumState_LockedWrite or call #LockRead() before calling this method! If @a
- * aWait is @c true then this method neither locks nor unlocks the hard disk, so
- * make sure you do it yourself as needed.
+ * The @a aMediumLockList parameter contains the associated medium lock list,
+ * which must be in locked state. If @a aWait is @c true then the caller is
+ * responsible for unlocking.
  *
- * If @a aProgress is not NULL but the object it points to is @c null then a new
- * progress object will be created and assigned to @a *aProgress on success,
- * otherwise the existing progress object is used. If @a aProgress is NULL, then no
- * progress object is created/used at all.
+ * If @a aProgress is not NULL but the object it points to is @c null then a
+ * new progress object will be created and assigned to @a *aProgress on
+ * success, otherwise the existing progress object is used. If @a aProgress is
+ * NULL, then no progress object is created/used at all.
  *
  * When @a aWait is @c false, this method will create a thread to perform the
  * create operation asynchronously and will return immediately. Otherwise, it
@@ -4397,26 +3951,33 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
  * caller until the operation is completed. Note that @a aProgress cannot be
  * NULL when @a aWait is @c false (this method will assert in this case).
  *
- * @param aTarget       Target hard disk.
- * @param aVariant      Precise image variant to create.
- * @param aProgress     Where to find/store a Progress object to track operation
- *                      completion.
- * @param aWait         @c true if this method should block instead of creating
- *                      an asynchronous thread.
- * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
- *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
- *                This only works in "wait" mode; otherwise saveSettings gets called automatically by the thread that was created,
- *                and this parameter is ignored.
+ * @param aTarget           Target hard disk.
+ * @param aVariant          Precise image variant to create.
+ * @param aMediumLockList   List of media which should be locked.
+ * @param aProgress         Where to find/store a Progress object to track
+ *                          operation completion.
+ * @param aWait             @c true if this method should block instead of
+ *                          creating an asynchronous thread.
+ * @param pfNeedsSaveSettings Optional pointer to a bool that must have been
+ *                          initialized to false and that will be set to true
+ *                          by this function if the caller should invoke
+ *                          VirtualBox::saveSettings() because the global
+ *                          settings have changed. This only works in "wait"
+ *                          mode; otherwise saveSettings is called
+ *                          automatically by the thread that was created,
+ *                          and this parameter is ignored.
  *
  * @note Locks this object and @a aTarget for writing.
  */
 HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
                                   MediumVariant_T aVariant,
+                                  MediumLockList *aMediumLockList,
                                   ComObjPtr<Progress> *aProgress,
                                   bool aWait,
                                   bool *pfNeedsSaveSettings)
 {
     AssertReturn(!aTarget.isNull(), E_FAIL);
+    AssertReturn(aMediumLockList, E_FAIL);
     AssertReturn(aProgress != NULL || aWait == true, E_FAIL);
 
     AutoCaller autoCaller(this);
@@ -4425,102 +3986,90 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
     AutoCaller targetCaller(aTarget);
     if (FAILED(targetCaller.rc())) return targetCaller.rc();
 
-    AutoMultiWriteLock2 alock(this, aTarget COMMA_LOCKVAL_SRC_POS);
-
-    AssertReturn(m->type != MediumType_Writethrough, E_FAIL);
-
-    /* Note: MediumState_LockedWrite is ok when taking an online snapshot */
-    AssertReturn(    m->state == MediumState_LockedRead
-                  || m->state == MediumState_LockedWrite, E_FAIL);
-
-    if (aTarget->m->state != MediumState_NotCreated)
-        return aTarget->setStateError();
-
     HRESULT rc = S_OK;
+    ComObjPtr<Progress> pProgress;
+    Medium::Task *pTask = NULL;
 
-    /* check that the hard disk is not attached to any VM in the current state*/
-    for (BackRefList::const_iterator it = m->backRefs.begin();
-         it != m->backRefs.end();
-         ++it)
+    try
     {
-        if (it->fInCurState)
+        AutoMultiWriteLock2 alock(this, aTarget COMMA_LOCKVAL_SRC_POS);
+
+        ComAssertThrow(m->type != MediumType_Writethrough, E_FAIL);
+        ComAssertThrow(m->state == MediumState_LockedRead, E_FAIL);
+
+        if (aTarget->m->state != MediumState_NotCreated)
+            throw aTarget->setStateError();
+
+        /* Check that the hard disk is not attached to the current state of
+         * any VM referring to it. */
+        for (BackRefList::const_iterator it = m->backRefs.begin();
+             it != m->backRefs.end();
+             ++it)
         {
-            /* Note: when a VM snapshot is being taken, all normal hard disks
-             * attached to the VM in the current state will be, as an exception,
-             * also associated with the snapshot which is about to create  (see
-             * SnapshotMachine::init()) before deassociating them from the
-             * current state (which takes place only on success in
-             * Machine::fixupHardDisks()), so that the size of snapshotIds
-             * will be 1 in this case. The given condition is used to filter out
-             * this legal situatinon and do not report an error. */
+            if (it->fInCurState)
+            {
+                /* Note: when a VM snapshot is being taken, all normal hard
+                 * disks attached to the VM in the current state will be, as an
+                 * exception, also associated with the snapshot which is about
+                 * to create (see SnapshotMachine::init()) before deassociating
+                 * them from the current state (which takes place only on
+                 * success in Machine::fixupHardDisks()), so that the size of
+                 * snapshotIds will be 1 in this case. The extra condition is
+                 * used to filter out this legal situation. */
+                if (it->llSnapshotIds.size() == 0)
+                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                                   tr("Hard disk '%s' is attached to a virtual machine with UUID {%RTuuid}. No differencing hard disks based on it may be created until it is detached"),
+                                   m->strLocationFull.raw(), it->machineId.raw());
 
-            if (it->llSnapshotIds.size() == 0)
-                return setError(VBOX_E_INVALID_OBJECT_STATE,
-                                tr("Hard disk '%s' is attached to a virtual machine with UUID {%RTuuid}. No differencing hard disks based on it may be created until it is detached"),
-                                m->strLocationFull.raw(), it->machineId.raw());
-
-            Assert(it->llSnapshotIds.size() == 1);
+                Assert(it->llSnapshotIds.size() == 1);
+            }
         }
-    }
 
-    ComObjPtr<Progress> progress;
-
-    if (aProgress != NULL)
-    {
-        /* use the existing progress object... */
-        progress = *aProgress;
-
-        /* ...but create a new one if it is null */
-        if (progress.isNull())
+        if (aProgress != NULL)
         {
-            progress.createObject();
-            rc = progress->init(m->pVirtualBox,
-                                static_cast<IMedium*>(this),
-                                BstrFmt(tr("Creating differencing hard disk storage unit '%s'"), aTarget->m->strLocationFull.raw()),
-                                TRUE /* aCancelable */);
-            if (FAILED(rc)) return rc;
-        }
-    }
+            /* use the existing progress object... */
+            pProgress = *aProgress;
 
-    /* setup task object to carry out the operation asynchronously */
-    Medium::Task *pTask(new Medium::CreateDiffTask(this, progress, aTarget,
-                                                   aVariant));
-    rc = pTask->rc();
-    if (FAILED(rc))
-    {
+            /* ...but create a new one if it is null */
+            if (pProgress.isNull())
+            {
+                pProgress.createObject();
+                rc = pProgress->init(m->pVirtualBox,
+                                     static_cast<IMedium*>(this),
+                                     BstrFmt(tr("Creating differencing hard disk storage unit '%s'"), aTarget->m->strLocationFull.raw()),
+                                     TRUE /* aCancelable */);
+                if (FAILED(rc)) throw rc;
+            }
+        }
+
+        /* setup task object to carry out the operation sync/async */
+        pTask = new Medium::CreateDiffTask(this, pProgress, aTarget, aVariant,
+                                           aMediumLockList,
+                                           aWait /* fKeepMediumLockList */);
+        rc = pTask->rc();
         AssertComRC(rc);
+        if (FAILED(rc)) throw rc;
+
+        /* register a task (it will deregister itself when done) */
+        ++m->numCreateDiffTasks;
+        Assert(m->numCreateDiffTasks != 0); /* overflow? */
+
+        aTarget->m->state = MediumState_Creating;
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    if (SUCCEEDED(rc))
+    {
+        if (aWait)
+            rc = runNow(pTask, pfNeedsSaveSettings);
+        else
+            rc = startThread(pTask);
+
+        if (SUCCEEDED(rc) && aProgress != NULL)
+            *aProgress = pProgress;
+    }
+    else if (pTask != NULL)
         delete pTask;
-        return rc;
-    }
-
-    /* register a task (it will deregister itself when done) */
-    ++m->numCreateDiffTasks;
-    Assert(m->numCreateDiffTasks != 0); /* overflow? */
-
-    if (aWait)
-    {
-        // go to Creating state before starting the task
-        aTarget->m->state = MediumState_Creating;
-
-        // release the locks because the task function will acquire other locks;
-        // this is safe because both this and the target are not protected by
-        // their states; we have asserted above that *this* is locked read or write!
-        alock.release();
-
-        rc = runNow(pTask, pfNeedsSaveSettings);
-        if (FAILED(rc)) return rc;
-    }
-    else
-    {
-        rc = startThread(pTask);
-        if (FAILED(rc)) return rc;
-
-        /* go to Creating state before leaving the lock */
-        aTarget->m->state = MediumState_Creating;
-    }
-
-    if (aProgress != NULL)
-        *aProgress = progress;
 
     return rc;
 }
@@ -4534,97 +4083,252 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
  * states. If #mergeTo() is not called or fails, the state modifications
  * performed by this method must be undone by #cancelMergeTo().
  *
- * Note that when @a aIgnoreAttachments is @c true then it's the caller's
- * responsibility to detach the source and all intermediate hard disks before
- * calling #mergeTo() (which will fail otherwise).
- *
  * See #mergeTo() for more information about merging.
  *
- * @param aTarget       Target hard disk.
- * @param aChain        Where to store the created merge chain.
- * @param aIgnoreAttachments    Don't check if the source or any intermediate
- *                              hard disk is attached to any VM.
+ * @param pTarget       Target hard disk.
+ * @param aMachineId    Allowed machine attachment. NULL means do not check.
+ * @param aSnapshotId   Allowed snapshot attachment. NULL or empty UUID means
+ *                      do not check.
+ * @param fMergeForward Resulting merge direction (out).
+ * @param pParentForTarget New parent for target medium after merge (out).
+ * @param aChildrenToReparent List of children of the source which will have
+ *                      to be reparented to the target after merge (out).
+ * @param aMediumLockList Medium locking information (out).
  *
  * @note Locks medium tree for reading. Locks this object, aTarget and all
  *       intermediate hard disks for writing.
  */
-HRESULT Medium::prepareMergeTo(Medium *aTarget,
-                               MergeChain * &aChain,
-                               bool aIgnoreAttachments /*= false*/)
+HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
+                               const Guid *aMachineId,
+                               const Guid *aSnapshotId,
+                               bool &fMergeForward,
+                               ComObjPtr<Medium> &pParentForTarget,
+                               MediaList &aChildrenToReparent,
+                               MediumLockList * &aMediumLockList)
 {
-    AssertReturn(aTarget != NULL, E_FAIL);
+    AssertReturn(pTarget != NULL, E_FAIL);
+    AssertReturn(pTarget != this, E_FAIL);
 
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoCaller targetCaller(aTarget);
+    AutoCaller targetCaller(pTarget);
     AssertComRCReturnRC(targetCaller.rc());
 
-    aChain = NULL;
-
-    /* we walk the tree */
-    AutoReadLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-
     HRESULT rc = S_OK;
+    fMergeForward = false;
+    pParentForTarget.setNull();
+    aChildrenToReparent.clear();
+    Assert(aMediumLockList == NULL);
+    aMediumLockList = NULL;
 
-    /* detect the merge direction */
-    bool forward;
+    try
     {
-        Medium *parent = m->pParent;
-        while (parent != NULL && parent != aTarget)
-            parent = parent->m->pParent;
-        if (parent == aTarget)
-            forward = false;
+        // locking: we need the tree lock first because we access parent pointers
+        AutoReadLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+        /* more sanity checking and figuring out the merge direction */
+        ComObjPtr<Medium> pMedium = getParent();
+        while (!pMedium.isNull() && pMedium != pTarget)
+            pMedium = pMedium->getParent();
+        if (pMedium == pTarget)
+            fMergeForward = false;
         else
         {
-            parent = aTarget->m->pParent;
-            while (parent != NULL && parent != this)
-                parent = parent->m->pParent;
-            if (parent == this)
-                forward = true;
+            pMedium = pTarget->getParent();
+            while (!pMedium.isNull() && pMedium != this)
+                pMedium = pMedium->getParent();
+            if (pMedium == this)
+                fMergeForward = true;
             else
             {
                 Utf8Str tgtLoc;
                 {
-                    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-                    tgtLoc = aTarget->getLocationFull();
+                    AutoReadLock alock(pTarget COMMA_LOCKVAL_SRC_POS);
+                    tgtLoc = pTarget->getLocationFull();
                 }
 
                 AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-                return setError(E_FAIL,
-                                tr("Hard disks '%s' and '%s' are unrelated"),
-                                m->strLocationFull.raw(), tgtLoc.raw());
+                throw setError(E_FAIL,
+                               tr("Hard disks '%s' and '%s' are unrelated"),
+                               m->strLocationFull.raw(), tgtLoc.raw());
             }
         }
-    }
 
-    /* build the chain (will do necessary checks and state changes) */
-    std::auto_ptr<MergeChain> chain(new MergeChain(forward,
-                                                   aIgnoreAttachments));
-    {
-        Medium *last = forward ? aTarget : this;
-        Medium *first = forward ? this : aTarget;
-
-        for (;;)
+        /* Build the lock list. */
+        aMediumLockList = new MediumLockList();
+        if (fMergeForward)
+            rc = pTarget->createMediumLockList(true, NULL, *aMediumLockList);
+        else
+            rc = createMediumLockList(false, NULL, *aMediumLockList);
+        if (FAILED(rc))
         {
-            if (last == aTarget)
-                rc = chain->addTarget(last);
-            else if (last == this)
-                rc = chain->addSource(last);
-            else
-                rc = chain->addIntermediate(last);
-            if (FAILED(rc)) return rc;
+            delete aMediumLockList;
+            aMediumLockList = NULL;
+            throw rc;
+        }
 
-            if (last == first)
+        /* sanity checking */
+        {
+            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+            if (m->state != MediumState_Created)
+                throw setStateError();
+        }
+        {
+            AutoReadLock alock(pTarget COMMA_LOCKVAL_SRC_POS);
+            if (pTarget->m->state != MediumState_Created)
+                throw pTarget->setStateError();
+        }
+
+        /* check medium attachment and other sanity conditions */
+        if (fMergeForward)
+        {
+            AutoReadLock(this COMMA_LOCKVAL_SRC_POS);
+            if (getChildren().size() > 1)
+            {
+                throw setError(E_FAIL,
+                               tr("Medium '%s' involved in the merge operation has more than one child medium (%d)"),
+                               m->strLocationFull.raw(), getChildren().size());
+            }
+            /* One backreference is only allowed if the machine ID is not empty
+             * and it matches the machine the image is attached to (including
+             * the snapshot ID if not empty). */
+            if (   m->backRefs.size() != 0
+                && (   !aMachineId
+                    || m->backRefs.size() != 1
+                    || aMachineId->isEmpty()
+                    || *getFirstMachineBackrefId() != *aMachineId
+                    || (   (!aSnapshotId || !aSnapshotId->isEmpty())
+                        && *getFirstMachineBackrefSnapshotId() != *aSnapshotId)))
+                throw setError(E_FAIL,
+                               tr("Medium '%s' is attached to %d virtual machines"),
+                               m->strLocationFull.raw(), m->backRefs.size());
+            if (m->type == MediumType_Immutable)
+                throw setError(E_FAIL,
+                               tr("Medium '%s' is immutable"),
+                               m->strLocationFull.raw());
+        }
+        else
+        {
+            AutoReadLock alock(pTarget COMMA_LOCKVAL_SRC_POS);
+            if (pTarget->getChildren().size() > 1)
+            {
+                throw setError(E_FAIL,
+                               tr("Medium '%s' involved in the merge operation has more than one child medium (%d)"),
+                               pTarget->m->strLocationFull.raw(),
+                               pTarget->getChildren().size());
+            }
+            if (pTarget->m->type == MediumType_Immutable)
+                throw setError(E_FAIL,
+                               tr("Medium '%s' is immutable"),
+                               pTarget->m->strLocationFull.raw());
+        }
+        ComObjPtr<Medium> pLast(fMergeForward ? (Medium *)pTarget : this);
+        ComObjPtr<Medium> pLastIntermediate = pLast->getParent();
+        for (pLast = pLastIntermediate;
+             !pLast.isNull() && pLast != pTarget && pLast != this;
+             pLast = pLast->getParent())
+        {
+            AutoReadLock alock(pLast COMMA_LOCKVAL_SRC_POS);
+            if (pLast->getChildren().size() > 1)
+            {
+                throw setError(E_FAIL,
+                               tr("Medium '%s' involved in the merge operation has more than one child medium (%d)"),
+                               pLast->m->strLocationFull.raw(),
+                               pLast->getChildren().size());
+            }
+            if (pLast->m->backRefs.size() != 0)
+                throw setError(E_FAIL,
+                               tr("Medium '%s' is attached to %d virtual machines"),
+                               pLast->m->strLocationFull.raw(),
+                               pLast->m->backRefs.size());
+
+        }
+
+        /* Update medium states appropriately */
+        switch (m->state)
+        {
+            case MediumState_Created:
+                m->state = MediumState_Deleting;
                 break;
+            default:
+                throw setStateError();
+        }
+        if (fMergeForward)
+        {
+            /* we will need parent to reparent target */
+            pParentForTarget = m->pParent;
+        }
+        else
+        {
+            /* we will need to reparent children of the source */
+            for (MediaList::const_iterator it = getChildren().begin();
+                 it != getChildren().end();
+                 ++it)
+            {
+                pMedium = *it;
+                rc = pMedium->LockWrite(NULL);
+                if (FAILED(rc)) throw rc;
 
-            last = last->m->pParent;
+                aChildrenToReparent.push_back(pMedium);
+            }
+        }
+        for (pLast = pLastIntermediate;
+             !pLast.isNull() && pLast != pTarget && pLast != this;
+             pLast = pLast->getParent())
+        {
+            AutoWriteLock alock(pLast COMMA_LOCKVAL_SRC_POS);
+            switch (pLast->m->state)
+            {
+                case MediumState_Created:
+                    pLast->m->state = MediumState_Deleting;
+                    break;
+                default:
+                    throw pLast->setStateError();
+            }
+        }
+
+        /* Tweak the lock list in the backward merge case, as the target
+         * isn't marked to be locked for writing yet. */
+        if (!fMergeForward)
+        {
+            MediumLockList::Base::iterator lockListBegin =
+                aMediumLockList->GetBegin();
+            MediumLockList::Base::iterator lockListEnd =
+                aMediumLockList->GetEnd();
+            lockListEnd--;
+            for (MediumLockList::Base::iterator it = lockListBegin;
+                 it != lockListEnd;
+                 ++it)
+            {
+                MediumLock &mediumLock = *it;
+                if (mediumLock.GetMedium() == pTarget)
+                {
+                    HRESULT rc2 = mediumLock.UpdateLock(true);
+                    AssertComRC(rc2);
+                    break;
+                }
+            }
+        }
+
+        rc = aMediumLockList->Lock();
+        if (FAILED(rc))
+        {
+            AutoReadLock alock(pTarget COMMA_LOCKVAL_SRC_POS);
+            throw setError(rc,
+                           tr("Failed to lock media when merging to '%ls'"),
+                           pTarget->getLocationFull().raw());
         }
     }
+    catch (HRESULT aRC) { rc = aRC; }
 
-    aChain = chain.release();
+    if (FAILED(rc))
+    {
+        delete aMediumLockList;
+        aMediumLockList = NULL;
+    }
 
-    return S_OK;
+    return rc;
 }
 
 /**
@@ -4645,7 +4349,7 @@ HRESULT Medium::prepareMergeTo(Medium *aTarget,
  *             TARGET <- Intermediate <- SOURCE <- [Extra]
  *             LockWr    Del             Del       LockWr
  *
- * Each scheme shows the involved hard disks on the hard disk chain where
+ * Each diagram shows the involved hard disks on the hard disk chain where
  * SOURCE and TARGET belong. Under each hard disk there is a state value which
  * the hard disk must have at a time of the mergeTo() call.
  *
@@ -4664,22 +4368,23 @@ HRESULT Medium::prepareMergeTo(Medium *aTarget,
  * calling thread and will not return to the caller until the operation is
  * completed. When this method succeeds, all intermediate hard disk objects in
  * the chain will be uninitialized, the state of the target hard disk (and all
- * involved extra hard disks) will be restored and @a aChain will be deleted.
- * Note that this (source) hard disk is not uninitialized because of possible
- * AutoCaller instances held by the caller of this method on the current thread.
- * It's therefore the responsibility of the caller to call Medium::uninit()
- * after releasing all callers in this case!
+ * involved extra hard disks) will be restored. @a aMediumLockList will not be
+ * deleted, whether the operation is successful or not. The caller has to do
+ * this if appropriate. Note that this (source) hard disk is not uninitialized
+ * because of possible AutoCaller instances held by the caller of this method
+ * on the current thread. It's therefore the responsibility of the caller to
+ * call Medium::uninit() after releasing all callers.
  *
- * If @a aWait is @c false then this method will crea,te a thread to perform the
- * create operation asynchronously and will return immediately. If the operation
+ * If @a aWait is @c false then this method will create a thread to perform the
+ * operation asynchronously and will return immediately. If the operation
  * succeeds, the thread will uninitialize the source hard disk object and all
  * intermediate hard disk objects in the chain, reset the state of the target
- * hard disk (and all involved extra hard disks) and delete @a aChain. If the
- * operation fails, the thread will only reset the states of all involved hard
- * disks and delete @a aChain.
+ * hard disk (and all involved extra hard disks) and delete @a aMediumLockList.
+ * If the operation fails, the thread will only reset the states of all
+ * involved hard disks and delete @a aMediumLockList.
  *
  * When this method fails (regardless of the @a aWait mode), it is a caller's
- * responsiblity to undo state changes and delete @a aChain using
+ * responsiblity to undo state changes and delete @a aMediumLockList using
  * #cancelMergeTo().
  *
  * If @a aProgress is not NULL but the object it points to is @c null then a new
@@ -4688,7 +4393,12 @@ HRESULT Medium::prepareMergeTo(Medium *aTarget,
  * progress object is created/used at all. Note that @a aProgress cannot be
  * NULL when @a aWait is @c false (this method will assert in this case).
  *
- * @param aChain        Merge chain created by #prepareMergeTo().
+ * @param pTarget       Target hard disk.
+ * @param fMergeForward Merge direction.
+ * @param pParentForTarget New parent for target medium after merge.
+ * @param aChildrenToReparent List of children of the source which will have
+ *                      to be reparented to the target after merge.
+ * @param aMediumLockList Medium locking information.
  * @param aProgress     Where to find/store a Progress object to track operation
  *                      completion.
  * @param aWait         @c true if this method should block instead of creating
@@ -4698,94 +4408,118 @@ HRESULT Medium::prepareMergeTo(Medium *aTarget,
  *                This only works in "wait" mode; otherwise saveSettings gets called automatically by the thread that was created,
  *                and this parameter is ignored.
  *
- * @note Locks the branch lock for writing. Locks the hard disks from the chain
+ * @note Locks the tree lock for writing. Locks the hard disks from the chain
  *       for writing.
  */
-HRESULT Medium::mergeTo(MergeChain *aChain,
+HRESULT Medium::mergeTo(const ComObjPtr<Medium> &pTarget,
+                        bool &fMergeForward,
+                        ComObjPtr<Medium> pParentForTarget,
+                        const MediaList &aChildrenToReparent,
+                        MediumLockList *aMediumLockList,
                         ComObjPtr <Progress> *aProgress,
                         bool aWait,
                         bool *pfNeedsSaveSettings)
 {
-    AssertReturn(aChain != NULL, E_FAIL);
+    AssertReturn(pTarget != NULL, E_FAIL);
+    AssertReturn(pTarget != this, E_FAIL);
+    AssertReturn(aMediumLockList != NULL, E_FAIL);
     AssertReturn(aProgress != NULL || aWait == true, E_FAIL);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT rc = S_OK;
+    ComObjPtr <Progress> pProgress;
+    Medium::Task *pTask = NULL;
 
-    ComObjPtr <Progress> progress;
-
-    if (aProgress != NULL)
+    try
     {
-        /* use the existing progress object... */
-        progress = *aProgress;
-
-        /* ...but create a new one if it is null */
-        if (progress.isNull())
+        if (aProgress != NULL)
         {
-            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+            /* use the existing progress object... */
+            pProgress = *aProgress;
 
-            progress.createObject();
-            rc = progress->init(m->pVirtualBox,
-                                static_cast<IMedium*>(this),
-                                BstrFmt(tr("Merging hard disk '%s' to '%s'"),
-                                        getName().raw(),
-                                        aChain->target()->getName().raw()),
-                                TRUE /* aCancelable */);
-            if (FAILED(rc)) return rc;
+            /* ...but create a new one if it is null */
+            if (pProgress.isNull())
+            {
+                Utf8Str tgtName;
+                {
+                    AutoReadLock alock(pTarget COMMA_LOCKVAL_SRC_POS);
+                    tgtName = pTarget->getName();
+                }
+
+                AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+                pProgress.createObject();
+                rc = pProgress->init(m->pVirtualBox,
+                                     static_cast<IMedium*>(this),
+                                     BstrFmt(tr("Merging hard disk '%s' to '%s'"),
+                                             getName().raw(),
+                                             tgtName.raw()),
+                                     TRUE /* aCancelable */);
+                if (FAILED(rc)) throw rc;
+            }
         }
-    }
 
-    /* setup task object to carry out the operation asynchronously */
-    Medium::Task *pTask(new Medium::MergeTask(this, progress, aChain));
-    rc = pTask->rc();
-    if (FAILED(rc))
-    {
+        /* setup task object to carry out the operation sync/async */
+        pTask = new Medium::MergeTask(this, pTarget, fMergeForward,
+                                      pParentForTarget, aChildrenToReparent,
+                                      pProgress, aMediumLockList,
+                                      aWait /* fKeepMediumLockList */);
+        rc = pTask->rc();
         AssertComRC(rc);
+        if (FAILED(rc)) throw rc;
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    if (SUCCEEDED(rc))
+    {
+        if (aWait)
+            rc = runNow(pTask, pfNeedsSaveSettings);
+        else
+            rc = startThread(pTask);
+
+        if (SUCCEEDED(rc) && aProgress != NULL)
+            *aProgress = pProgress;
+    }
+    else if (pTask != NULL)
         delete pTask;
-        return rc;
-    }
-
-    /* Note: task owns aChain (will delete it when not needed) in all cases
-     * except when @a aWait is @c true and runNow() fails -- in this case
-     * aChain will be left away because cancelMergeTo() will be applied by the
-     * caller on it as it is required in the documentation above */
-
-    if (aWait)
-    {
-        rc = runNow(pTask, pfNeedsSaveSettings);
-        if (FAILED(rc)) return rc;
-    }
-    else
-    {
-        rc = startThread(pTask);
-        if (FAILED(rc)) return rc;
-    }
-
-    if (aProgress != NULL)
-        *aProgress = progress;
 
     return rc;
 }
 
 /**
- * Undoes what #prepareMergeTo() did. Must be called if #mergeTo() is not called
- * or fails. Frees memory occupied by @a aChain.
+ * Undoes what #prepareMergeTo() did. Must be called if #mergeTo() is not
+ * called or fails. Frees memory occupied by @a aMediumLockList and unlocks
+ * the medium objects in @a aChildrenToReparent.
  *
- * @param aChain        Merge chain created by #prepareMergeTo().
+ * @param aChildrenToReparent List of children of the source which will have
+ *                      to be reparented to the target after merge.
+ * @param aMediumLockList Medium locking information.
  *
  * @note Locks the hard disks from the chain for writing.
  */
-void Medium::cancelMergeTo(MergeChain *aChain)
+void Medium::cancelMergeTo(const MediaList &aChildrenToReparent,
+                           MediumLockList *aMediumLockList)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    AssertReturnVoid(aChain != NULL);
+    AssertReturnVoid(aMediumLockList != NULL);
 
-    /* the destructor will do the thing */
-    delete aChain;
+    /* the destructor will do the work */
+    delete aMediumLockList;
+
+    /* unlock the children which had to be reparented */
+    for (MediaList::const_iterator it = aChildrenToReparent.begin();
+         it != aChildrenToReparent.end();
+         ++it)
+    {
+        const ComObjPtr<Medium> &pMedium = *it;
+
+        AutoWriteLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+        pMedium->UnlockWrite(NULL);
+    }
 }
 
 /**
@@ -4807,7 +4541,8 @@ HRESULT Medium::setFormat(CBSTR aFormat)
             = m->pVirtualBox->systemProperties()->mediumFormat(aFormat);
         if (m->formatObj.isNull())
             return setError(E_INVALIDARG,
-                            tr("Invalid hard disk storage format '%ls'"), aFormat);
+                            tr("Invalid hard disk storage format '%ls'"),
+                            aFormat);
 
         /* reference the format permanently to prevent its unexpected
          * uninitialization */
@@ -4823,7 +4558,7 @@ HRESULT Medium::setFormat(CBSTR aFormat)
         for (MediumFormat::PropertyList::const_iterator it =
                 m->formatObj->properties().begin();
              it != m->formatObj->properties().end();
-             ++ it)
+             ++it)
         {
             m->properties.insert(std::make_pair(it->name, Bstr::Null));
         }
@@ -5046,6 +4781,14 @@ DECLCALLBACK(int) Medium::vdConfigQuery(void *pvUser, const char *pszName,
  */
 HRESULT Medium::startThread(Medium::Task *pTask)
 {
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
+    /* Extreme paranoia: The calling thread should not hold the medium
+     * tree lock or any medium lock. Since there is no separate lock class
+     * for medium objects be even more strict: no other object locks. */
+    Assert(!AutoLockHoldsLocksInClass(LOCKCLASS_LISTOFMEDIA));
+    Assert(!AutoLockHoldsLocksInClass(getLockingClass()));
+#endif
+
     /// @todo use a more descriptive task name
     int vrc = RTThreadCreate(NULL, Medium::Task::fntMediumTask, pTask,
                              0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
@@ -5080,6 +4823,14 @@ HRESULT Medium::startThread(Medium::Task *pTask)
 HRESULT Medium::runNow(Medium::Task *pTask,
                        bool *pfNeedsSaveSettings)
 {
+#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
+    /* Extreme paranoia: The calling thread should not hold the medium
+     * tree lock or any medium lock. Since there is no separate lock class
+     * for medium objects be even more strict: no other object locks. */
+    Assert(!AutoLockHoldsLocksInClass(LOCKCLASS_LISTOFMEDIA));
+    Assert(!AutoLockHoldsLocksInClass(getLockingClass()));
+#endif
+
     pTask->m_pfNeedsSaveSettings = pfNeedsSaveSettings;
 
     /* NIL_RTTHREAD indicates synchronous call. */
@@ -5096,7 +4847,7 @@ HRESULT Medium::runNow(Medium::Task *pTask,
  * @param task
  * @return
  */
-HRESULT Medium::taskThreadCreateBase(Medium::CreateBaseTask &task)
+HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
 {
     HRESULT rc = S_OK;
 
@@ -5106,8 +4857,6 @@ HRESULT Medium::taskThreadCreateBase(Medium::CreateBaseTask &task)
 
     try
     {
-        /* The lock is also used as a signal from the task initiator (which
-        * releases it only after RTThreadCreate()) that we can start the job */
         AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
 
         /* The object may request a specific UUID (through a special form of
@@ -5121,16 +4870,18 @@ HRESULT Medium::taskThreadCreateBase(Medium::CreateBaseTask &task)
             unconst(m->id) = id;
         }
 
+        Utf8Str format(m->strFormat);
+        Utf8Str location(m->strLocationFull);
+        uint64_t capabilities = m->formatObj->capabilities();
+        ComAssertThrow(capabilities & (  VD_CAP_CREATE_FIXED
+                                       | VD_CAP_CREATE_DYNAMIC), E_FAIL);
+        Assert(m->state == MediumState_Creating);
+
         PVBOXHDD hdd;
         int vrc = VDCreate(m->vdDiskIfaces, &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
-        Utf8Str format(m->strFormat);
-        Utf8Str location(m->strLocationFull);
-        /* uint64_t capabilities = */ m->formatObj->capabilities();
-
         /* unlock before the potentially lengthy operation */
-        Assert(m->state == MediumState_Creating);
         thisLock.leave();
 
         try
@@ -5213,7 +4964,7 @@ HRESULT Medium::taskThreadCreateBase(Medium::CreateBaseTask &task)
  * Implementation code for the "create diff" task.
  *
  * This task always gets started from Medium::createDiffStorage() and can run
- * synchronously or asynchrously depending on the "wait" parameter passed to
+ * synchronously or asynchronously depending on the "wait" parameter passed to
  * that function. If we run synchronously, the caller expects the bool
  * *pfNeedsSaveSettings to be set before returning; otherwise (in asynchronous
  * mode), we save the settings ourselves.
@@ -5221,7 +4972,7 @@ HRESULT Medium::taskThreadCreateBase(Medium::CreateBaseTask &task)
  * @param task
  * @return
  */
-HRESULT Medium::taskThreadCreateDiff(Medium::CreateDiffTask &task)
+HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
 {
     HRESULT rc = S_OK;
 
@@ -5234,13 +4985,11 @@ HRESULT Medium::taskThreadCreateDiff(Medium::CreateDiffTask &task)
 
     try
     {
-        /* Lock both in {parent,child} order. The lock is also used as a
-        * signal from the task initiator (which releases it only after
-        * RTThreadCreate()) that we can start the job*/
+        /* Lock both in {parent,child} order. */
         AutoMultiWriteLock2 mediaLock(this, pTarget COMMA_LOCKVAL_SRC_POS);
 
         /* The object may request a specific UUID (through a special form of
-        * the setLocation() argument). Otherwise we have to generate it */
+         * the setLocation() argument). Otherwise we have to generate it */
         Guid targetId = pTarget->m->id;
         fGenerateUuid = targetId.isEmpty();
         if (fGenerateUuid)
@@ -5250,39 +4999,56 @@ HRESULT Medium::taskThreadCreateDiff(Medium::CreateDiffTask &task)
             unconst(pTarget->m->id) = targetId;
         }
 
+        Guid id = m->id;
+
+        Utf8Str targetFormat(pTarget->m->strFormat);
+        Utf8Str targetLocation(pTarget->m->strLocationFull);
+        uint64_t capabilities = m->formatObj->capabilities();
+        ComAssertThrow(capabilities & VD_CAP_CREATE_DYNAMIC, E_FAIL);
+
+        Assert(pTarget->m->state == MediumState_Creating);
+        Assert(m->state == MediumState_LockedRead);
+
         PVBOXHDD hdd;
         int vrc = VDCreate(m->vdDiskIfaces, &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
-        Guid id = m->id;
-        Utf8Str format(m->strFormat);
-        Utf8Str location(m->strLocationFull);
-
-        Utf8Str targetFormat(pTarget->m->strFormat);
-        Utf8Str targetLocation(pTarget->m->strLocationFull);
-
-        Assert(pTarget->m->state == MediumState_Creating);
-
-        /* Note: MediumState_LockedWrite is ok when taking an online
-         * snapshot */
-        Assert(    m->state == MediumState_LockedRead
-                || m->state == MediumState_LockedWrite);
-
         /* the two media are now protected by their non-default states;
-           unlock the media before the potentially lengthy operation */
+         * unlock the media before the potentially lengthy operation */
         mediaLock.leave();
 
         try
         {
-            vrc = VDOpen(hdd,
-                         format.c_str(),
-                         location.c_str(),
-                         VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
-                         m->vdDiskIfaces);
-            if (RT_FAILURE(vrc))
-                throw setError(E_FAIL,
-                                tr("Could not open the hard disk storage unit '%s'%s"),
-                                location.raw(), vdError(vrc).raw());
+            /* Open all hard disk images in the target chain but the last. */
+            MediumLockList::Base::const_iterator targetListBegin =
+                task.mpMediumLockList->GetBegin();
+            MediumLockList::Base::const_iterator targetListEnd =
+                task.mpMediumLockList->GetEnd();
+            targetListEnd--;
+            for (MediumLockList::Base::const_iterator it = targetListBegin;
+                 it != targetListEnd;
+                 ++it)
+            {
+                const MediumLock &mediumLock = *it;
+                const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
+
+                AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+
+                /* sanity check */
+                Assert(pMedium->m->state == MediumState_LockedRead);
+
+                /* Open all images in appropriate mode. */
+                vrc = VDOpen(hdd,
+                             pMedium->m->strFormat.c_str(),
+                             pMedium->m->strLocationFull.c_str(),
+                             VD_OPEN_FLAGS_READONLY,
+                             pMedium->m->vdDiskIfaces);
+                if (RT_FAILURE(vrc))
+                    throw setError(E_FAIL,
+                                   tr("Could not open the hard disk storage unit '%s'%s"),
+                                   pMedium->m->strLocationFull.raw(),
+                                   vdError(vrc).raw());
+            }
 
             /* ensure the target directory exists */
             rc = VirtualBox::ensureFilePathExists(targetLocation);
@@ -5325,9 +5091,7 @@ HRESULT Medium::taskThreadCreateDiff(Medium::CreateDiffTask &task)
         /** @todo r=klaus neither target nor base() are locked,
             * potential race! */
         /* diffs for immutable hard disks are auto-reset by default */
-        pTarget->m->autoReset =   getBase()->m->type == MediumType_Immutable
-                               ? TRUE
-                               : FALSE;
+        pTarget->m->autoReset = (getBase()->m->type == MediumType_Immutable);
 
         /* register with mVirtualBox as the last step and move to
          * Created state only on success (leaving an orphan file is
@@ -5362,14 +5126,6 @@ HRESULT Medium::taskThreadCreateDiff(Medium::CreateDiffTask &task)
 
     if (task.isAsync())
     {
-        /* unlock ourselves when done (unless in MediumState_LockedWrite
-         * state because of taking the online snapshot*/
-        if (m->state != MediumState_LockedWrite)
-        {
-            HRESULT rc2 = UnlockRead(NULL);
-            AssertComRC(rc2);
-        }
-
         if (fNeedsSaveSettings)
         {
             mediaLock.leave();
@@ -5404,20 +5160,11 @@ HRESULT Medium::taskThreadCreateDiff(Medium::CreateDiffTask &task)
  * @param task
  * @return
  */
-HRESULT Medium::taskThreadMerge(Medium::MergeTask &task)
+HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
 {
     HRESULT rc = S_OK;
 
-    /* The lock is also used as a signal from the task initiator (which
-     * releases it only after RTThreadCreate()) that we can start the
-     * job. We don't actually need the lock for anything else since the
-     * object is protected by MediumState_Deleting and we don't modify
-     * its sensitive fields below */
-    {
-        AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
-    }
-
-    MergeChain *chain = task.mMergeChain.get();
+    const ComObjPtr<Medium> &pTarget = task.mTarget;
 
     try
     {
@@ -5427,16 +5174,28 @@ HRESULT Medium::taskThreadMerge(Medium::MergeTask &task)
 
         try
         {
-            /* Open all hard disks in the chain (they are in the
-             * {parent,child} order in there. Note that we don't lock
-             * objects in this chain since they must be in states
-             * (Deleting and LockedWrite) that prevent from changing
-             * their format and location fields from outside. */
-
-            for (MergeChain::const_iterator it = chain->begin();
-                 it != chain->end();
+            unsigned uTargetIdx = VD_LAST_IMAGE;
+            unsigned uSourceIdx = VD_LAST_IMAGE;
+            /* Open all hard disks in the chain. */
+            MediumLockList::Base::iterator lockListBegin =
+                task.mpMediumLockList->GetBegin();
+            MediumLockList::Base::iterator lockListEnd =
+                task.mpMediumLockList->GetEnd();
+            unsigned i = 0;
+            for (MediumLockList::Base::iterator it = lockListBegin;
+                 it != lockListEnd;
                  ++it)
             {
+                MediumLock &mediumLock = *it;
+                const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
+
+                if (pMedium == this)
+                    uSourceIdx = i;
+                else if (pMedium == pTarget)
+                    uTargetIdx = i;
+
+                AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+
                 /*
                  * complex sanity (sane complexity)
                  *
@@ -5444,54 +5203,61 @@ HRESULT Medium::taskThreadMerge(Medium::MergeTask &task)
                  * or LockedRead (parent image) state if it is not the target.
                  * If it is the target it must be in the LockedWrite state.
                  */
-                Assert(   (   *it != chain->target()
-                           && (   (*it)->m->state == MediumState_Deleting
-                               || (*it)->m->state == MediumState_LockedRead))
-                       || (   *it == chain->target()
-                           && (*it)->m->state == MediumState_LockedWrite));
+                Assert(   (   pMedium != pTarget
+                           && (   pMedium->m->state == MediumState_Deleting
+                               || pMedium->m->state == MediumState_LockedRead))
+                       || (   pMedium == pTarget
+                           && pMedium->m->state == MediumState_LockedWrite));
 
                 /*
                  * Image must be the target, in the LockedRead state
                  * or Deleting state where it is not allowed to be attached
                  * to a virtual machine.
                  */
-                Assert(   *it == chain->target()
-                       || (*it)->m->state == MediumState_LockedRead
-                       || (   (*it)->m->backRefs.size() == 0
-                           && (*it)->m->state == MediumState_Deleting)
-                      );
+                Assert(   pMedium == pTarget
+                       || pMedium->m->state == MediumState_LockedRead
+                       || (   pMedium->m->backRefs.size() == 0
+                           && pMedium->m->state == MediumState_Deleting));
+                /* The source medium must be in Deleting state. */
+                Assert(  pMedium != this
+                       || pMedium->m->state == MediumState_Deleting);
 
                 unsigned uOpenFlags = 0;
 
-                if (   (*it)->m->state == MediumState_LockedRead
-                    || (*it)->m->state == MediumState_Deleting)
+                if (   pMedium->m->state == MediumState_LockedRead
+                    || pMedium->m->state == MediumState_Deleting)
                     uOpenFlags = VD_OPEN_FLAGS_READONLY;
 
                 /* Open the image */
                 vrc = VDOpen(hdd,
-                             (*it)->m->strFormat.c_str(),
-                             (*it)->m->strLocationFull.c_str(),
+                             pMedium->m->strFormat.c_str(),
+                             pMedium->m->strLocationFull.c_str(),
                              uOpenFlags,
-                             (*it)->m->vdDiskIfaces);
+                             pMedium->m->vdDiskIfaces);
                 if (RT_FAILURE(vrc))
                     throw vrc;
+
+                i++;
             }
 
-            vrc = VDMerge(hdd, chain->sourceIdx(), chain->targetIdx(),
+            ComAssertThrow(   uSourceIdx != VD_LAST_IMAGE
+                           && uTargetIdx != VD_LAST_IMAGE, E_FAIL);
+
+            vrc = VDMerge(hdd, uSourceIdx, uTargetIdx,
                           task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
                 throw vrc;
 
             /* update parent UUIDs */
-            if (!chain->isForward())
+            if (!task.mfMergeForward)
             {
                 /* we need to update UUIDs of all source's children
                  * which cannot be part of the container at once so
                  * add each one in there individually */
-                if (chain->children().size() > 0)
+                if (task.mChildrenToReparent.size() > 0)
                 {
-                    for (MediaList::const_iterator it = chain->children().begin();
-                         it != chain->children().end();
+                    for (MediaList::const_iterator it = task.mChildrenToReparent.begin();
+                         it != task.mChildrenToReparent.end();
                          ++it)
                     {
                         /* VD_OPEN_FLAGS_INFO since UUID is wrong yet */
@@ -5504,7 +5270,7 @@ HRESULT Medium::taskThreadMerge(Medium::MergeTask &task)
                             throw vrc;
 
                         vrc = VDSetParentUuid(hdd, 1,
-                                              chain->target()->m->id);
+                                              pTarget->m->id);
                         if (RT_FAILURE(vrc))
                             throw vrc;
 
@@ -5520,8 +5286,7 @@ HRESULT Medium::taskThreadMerge(Medium::MergeTask &task)
         {
             throw setError(E_FAIL,
                             tr("Could not merge the hard disk '%s' to '%s'%s"),
-                            chain->source()->m->strLocationFull.raw(),
-                            chain->target()->m->strLocationFull.raw(),
+                            m->strLocationFull.raw(), m->strLocationFull.raw(),
                             vdError(aVRC).raw());
         }
 
@@ -5534,14 +5299,11 @@ HRESULT Medium::taskThreadMerge(Medium::MergeTask &task)
     if (SUCCEEDED(rc))
     {
         /* all hard disks but the target were successfully deleted by
-         * VDMerge; reparent the last one and uninitialize deleted */
+         * VDMerge; reparent the last one and uninitialize deleted media. */
 
         AutoWriteLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-        Medium *pSource = chain->source();
-        Medium *pTarget = chain->target();
-
-        if (chain->isForward())
+        if (task.mfMergeForward)
         {
             /* first, unregister the target since it may become a base
              * hard disk which needs re-registration */
@@ -5551,11 +5313,11 @@ HRESULT Medium::taskThreadMerge(Medium::MergeTask &task)
             /* then, reparent it and disconnect the deleted branch at
              * both ends (chain->parent() is source's parent) */
             pTarget->deparent();
-            pTarget->m->pParent = chain->parent();
+            pTarget->m->pParent = task.mParentForTarget;
             if (pTarget->m->pParent)
             {
                 pTarget->m->pParent->m->llChildren.push_back(pTarget);
-                pSource->deparent();
+                deparent();
             }
 
             /* then, register again */
@@ -5570,43 +5332,51 @@ HRESULT Medium::taskThreadMerge(Medium::MergeTask &task)
             /* disconnect the deleted branch at the elder end */
             targetChild->deparent();
 
-            const MediaList &children = chain->children();
-
             /* reparent source's chidren and disconnect the deleted
              * branch at the younger end m*/
-            if (children.size() > 0)
+            if (task.mChildrenToReparent.size() > 0)
             {
                 /* obey {parent,child} lock order */
-                AutoWriteLock sourceLock(pSource COMMA_LOCKVAL_SRC_POS);
+                AutoWriteLock sourceLock(this COMMA_LOCKVAL_SRC_POS);
 
-                for (MediaList::const_iterator it = children.begin();
-                     it != children.end();
-                     ++it)
+                for (MediaList::iterator it = task.mChildrenToReparent.begin();
+                     it != task.mChildrenToReparent.end();
+                     it++)
                 {
-                    AutoWriteLock childLock(*it COMMA_LOCKVAL_SRC_POS);
+                    Medium *pMedium = *it;
+                    AutoWriteLock childLock(pMedium COMMA_LOCKVAL_SRC_POS);
 
-                    Medium *p = *it;
-                    p->deparent();  // removes p from source
-                    pTarget->m->llChildren.push_back(p);
-                    p->m->pParent = pTarget;
+                    pMedium->deparent();  // removes pMedium from source
+                    pTarget->m->llChildren.push_back(pMedium);
+                    pMedium->m->pParent = pTarget;
                 }
             }
         }
 
-        /* unregister and uninitialize all hard disks in the chain but the target */
-        for (MergeChain::iterator it = chain->begin();
-             it != chain->end();
-            )
+        /* unregister and uninitialize all hard disks removed by the merge */
+        MediumLockList::Base::iterator lockListBegin =
+            task.mpMediumLockList->GetBegin();
+        MediumLockList::Base::iterator lockListEnd =
+            task.mpMediumLockList->GetEnd();
+        for (MediumLockList::Base::iterator it = lockListBegin;
+             it != lockListEnd;
+             )
         {
+            MediumLock &mediumLock = *it;
+            /* Create a real copy of the medium pointer, as the medium
+             * lock deletion below would invalidate the referenced object. */
+            const ComObjPtr<Medium> pMedium = mediumLock.GetMedium();
+
             /* The target and all images not merged (readonly) are skipped */
-            if (   *it == chain->target()
-                || (*it)->m->state == MediumState_LockedRead)
+            if (   pMedium == pTarget
+                || pMedium->m->state == MediumState_LockedRead)
             {
                 ++it;
                 continue;
             }
 
-            rc2 = (*it)->m->pVirtualBox->unregisterHardDisk(*it, NULL /*pfNeedsSaveSettings*/);
+            rc2 = pMedium->m->pVirtualBox->unregisterHardDisk(pMedium,
+                                                              NULL /*pfNeedsSaveSettings*/);
             AssertComRC(rc2);
 
             /* now, uninitialize the deleted hard disk (note that
@@ -5621,18 +5391,21 @@ HRESULT Medium::taskThreadMerge(Medium::MergeTask &task)
              * caller may still hold an AutoCaller instance for it
              * and therefore we cannot uninit() it (it's therefore
              * the caller's responsibility) */
-            if (*it == this)
+            if (pMedium == this)
+            {
+                Assert(getChildren().size() == 0);
+                Assert(m->backRefs.size() == 0);
                 task.mMediumCaller.release();
+            }
 
-            /* release the caller added by MergeChain before uninit() */
-            (*it)->releaseCaller();
+            /* Delete the medium lock list entry, which also releases the
+             * caller added by MergeChain before uninit() and updates the
+             * iterator to point to the right place. */
+            rc2 = task.mpMediumLockList->RemoveByIterator(it);
+            AssertComRC(rc2);
 
-            if (task.isAsync() || *it != this)
-                (*it)->uninit();
-
-            /* delete (to prevent uninitialization in MergeChain
-             * dtor) and advance to the next item */
-            it = chain->erase(it);
+            if (task.isAsync() || pMedium != this)
+                pMedium->uninit();
         }
     }
 
@@ -5659,9 +5432,11 @@ HRESULT Medium::taskThreadMerge(Medium::MergeTask &task)
          * in which case it's the responsibility of the caller as stated
          * in the mergeTo() docs. The latter also implies that we
          * don't own the merge chain, so release it in this case. */
-
-        if (!task.isAsync())
-            task.mMergeChain.release();
+        if (task.isAsync())
+        {
+            Assert(task.mChildrenToReparent.size() == 0);
+            cancelMergeTo(task.mChildrenToReparent, task.mpMediumLockList);
+        }
     }
 
     return rc;
@@ -5676,7 +5451,7 @@ HRESULT Medium::taskThreadMerge(Medium::MergeTask &task)
  * @param task
  * @return
  */
-HRESULT Medium::taskThreadClone(Medium::CloneTask &task)
+HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
 {
     HRESULT rc = S_OK;
 
@@ -5697,9 +5472,6 @@ HRESULT Medium::taskThreadClone(Medium::CloneTask &task)
 
         fCreatingTarget = pTarget->m->state == MediumState_Creating;
 
-        ImageChain *sourceChain = task.mSourceChain.get();
-        ImageChain *parentChain = task.mParentChain.get();
-
         /* The object may request a specific UUID (through a special form of
          * the setLocation() argument). Otherwise we have to generate it */
         Guid targetId = pTarget->m->id;
@@ -5718,23 +5490,31 @@ HRESULT Medium::taskThreadClone(Medium::CloneTask &task)
         try
         {
             /* Open all hard disk images in the source chain. */
-            for (MediaList::const_iterator it = sourceChain->begin();
-                 it != sourceChain->end();
+            MediumLockList::Base::const_iterator sourceListBegin =
+                task.mpSourceMediumLockList->GetBegin();
+            MediumLockList::Base::const_iterator sourceListEnd =
+                task.mpSourceMediumLockList->GetEnd();
+            for (MediumLockList::Base::const_iterator it = sourceListBegin;
+                 it != sourceListEnd;
                  ++it)
             {
+                const MediumLock &mediumLock = *it;
+                const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
+                AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+
                 /* sanity check */
-                Assert((*it)->m->state == MediumState_LockedRead);
+                Assert(pMedium->m->state == MediumState_LockedRead);
 
                 /** Open all images in read-only mode. */
                 vrc = VDOpen(hdd,
-                             (*it)->m->strFormat.c_str(),
-                             (*it)->m->strLocationFull.c_str(),
+                             pMedium->m->strFormat.c_str(),
+                             pMedium->m->strLocationFull.c_str(),
                              VD_OPEN_FLAGS_READONLY,
-                             (*it)->m->vdDiskIfaces);
+                             pMedium->m->vdDiskIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(E_FAIL,
                                     tr("Could not open the hard disk storage unit '%s'%s"),
-                                    (*it)->m->strLocationFull.raw(),
+                                    pMedium->m->strLocationFull.raw(),
                                     vdError(vrc).raw());
             }
 
@@ -5759,27 +5539,39 @@ HRESULT Medium::taskThreadClone(Medium::CloneTask &task)
 
             try
             {
-                /* Open all hard disk images in the parent chain. */
-                for (MediaList::const_iterator it = parentChain->begin();
-                     it != parentChain->end();
+                /* Open all hard disk images in the target chain. */
+                MediumLockList::Base::const_iterator targetListBegin =
+                    task.mpTargetMediumLockList->GetBegin();
+                MediumLockList::Base::const_iterator targetListEnd =
+                    task.mpTargetMediumLockList->GetEnd();
+                for (MediumLockList::Base::const_iterator it = targetListBegin;
+                     it != targetListEnd;
                      ++it)
                 {
-                    /** @todo r=klaus (*it) is not locked, lots of
-                        * race opportunities below */
+                    const MediumLock &mediumLock = *it;
+                    const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
+
+                    /* If the target medium is not created yet there's no
+                     * reason to open it. */
+                    if (pMedium == pTarget && fCreatingTarget)
+                        continue;
+
+                    AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+
                     /* sanity check */
-                    Assert(    (*it)->m->state == MediumState_LockedRead
-                            || (*it)->m->state == MediumState_LockedWrite);
+                    Assert(    pMedium->m->state == MediumState_LockedRead
+                            || pMedium->m->state == MediumState_LockedWrite);
 
                     /* Open all images in appropriate mode. */
                     vrc = VDOpen(targetHdd,
-                                 (*it)->m->strFormat.c_str(),
-                                 (*it)->m->strLocationFull.c_str(),
-                                 ((*it)->m->state == MediumState_LockedWrite) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
-                                 (*it)->m->vdDiskIfaces);
+                                 pMedium->m->strFormat.c_str(),
+                                 pMedium->m->strLocationFull.c_str(),
+                                 (pMedium->m->state == MediumState_LockedWrite) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
+                                 pMedium->m->vdDiskIfaces);
                     if (RT_FAILURE(vrc))
                         throw setError(E_FAIL,
                                        tr("Could not open the hard disk storage unit '%s'%s"),
-                                       (*it)->m->strLocationFull.raw(),
+                                       pMedium->m->strLocationFull.raw(),
                                        vdError(vrc).raw());
                 }
 
@@ -5879,7 +5671,7 @@ HRESULT Medium::taskThreadClone(Medium::CloneTask &task)
     /* Make sure the source chain is released early. It could happen
      * that we get a deadlock in Appliance::Import when Medium::Close
      * is called & the source chain is released at the same time. */
-    task.mSourceChain.reset();
+    task.mpSourceMediumLockList->Clear();
 
     return rc;
 }
@@ -5894,7 +5686,7 @@ HRESULT Medium::taskThreadClone(Medium::CloneTask &task)
  * @param task
  * @return
  */
-HRESULT Medium::taskThreadDelete(Medium::DeleteTask &task)
+HRESULT Medium::taskDeleteHandler(Medium::DeleteTask &task)
 {
     NOREF(task);
     HRESULT rc = S_OK;
@@ -5960,7 +5752,7 @@ HRESULT Medium::taskThreadDelete(Medium::DeleteTask &task)
  * @param task
  * @return
  */
-HRESULT Medium::taskThreadReset(Medium::ResetTask &task)
+HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
 {
     HRESULT rc = S_OK;
 
@@ -6070,7 +5862,7 @@ HRESULT Medium::taskThreadReset(Medium::ResetTask &task)
  * @param task
  * @return
  */
-HRESULT Medium::taskThreadCompact(Medium::CompactTask &task)
+HRESULT Medium::taskCompactHandler(Medium::CompactTask &task)
 {
     HRESULT rc = S_OK;
 
@@ -6078,8 +5870,6 @@ HRESULT Medium::taskThreadCompact(Medium::CompactTask &task)
      * signal from the task initiator (which releases it only after
      * RTThreadCreate()) that we can start the job. */
     AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
-
-    ImageChain *imgChain = task.mImageChain.get();
 
     try
     {
@@ -6090,28 +5880,37 @@ HRESULT Medium::taskThreadCompact(Medium::CompactTask &task)
         try
         {
             /* Open all hard disk images in the chain. */
-            MediaList::const_iterator last = imgChain->end();
-            last--;
-            for (MediaList::const_iterator it = imgChain->begin();
-                 it != imgChain->end();
+            MediumLockList::Base::const_iterator mediumListBegin =
+                task.mpMediumLockList->GetBegin();
+            MediumLockList::Base::const_iterator mediumListEnd =
+                task.mpMediumLockList->GetEnd();
+            MediumLockList::Base::const_iterator mediumListLast =
+                mediumListEnd;
+            mediumListLast--;
+            for (MediumLockList::Base::const_iterator it = mediumListBegin;
+                 it != mediumListEnd;
                  ++it)
             {
+                const MediumLock &mediumLock = *it;
+                const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
+                AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+
                 /* sanity check */
-                if (it == last)
-                    Assert((*it)->m->state == MediumState_LockedWrite);
+                if (it == mediumListLast)
+                    Assert(pMedium->m->state == MediumState_LockedWrite);
                 else
-                    Assert((*it)->m->state == MediumState_LockedRead);
+                    Assert(pMedium->m->state == MediumState_LockedRead);
 
                 /** Open all images but last in read-only mode. */
                 vrc = VDOpen(hdd,
-                             (*it)->m->strFormat.c_str(),
-                             (*it)->m->strLocationFull.c_str(),
-                             (it == last) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
-                             (*it)->m->vdDiskIfaces);
+                             pMedium->m->strFormat.c_str(),
+                             pMedium->m->strLocationFull.c_str(),
+                             (it == mediumListLast) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
+                             pMedium->m->vdDiskIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(E_FAIL,
                                    tr("Could not open the hard disk storage unit '%s'%s"),
-                                   (*it)->m->strLocationFull.raw(),
+                                   pMedium->m->strLocationFull.raw(),
                                    vdError(vrc).raw());
             }
 
