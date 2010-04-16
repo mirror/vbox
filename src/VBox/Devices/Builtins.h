@@ -110,6 +110,7 @@ extern const PDMDRVREG g_DrvHostInterface;
 extern const PDMDRVREG g_DrvVDE;
 #endif
 extern const PDMDRVREG g_DrvIntNet;
+extern const PDMDRVREG g_DrvDedicatedNic;
 extern const PDMDRVREG g_DrvNAT;
 extern const PDMDRVREG g_DrvNetSniffer;
 extern const PDMDRVREG g_DrvAUDIO;

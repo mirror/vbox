@@ -686,7 +686,8 @@ VBoxDDR0_SOURCES        = \
 	Serial/DevSerial.cpp \
 	Parallel/DevParallel.cpp \
 	\
-	Network/DrvIntNet.cpp
+	Network/DrvIntNet.cpp \
+	Network/DrvDedicatedNic.cpp
 
 ifdef VBOX_DYNAMIC_NET_ATTACH
  VBoxDDR0_DEFS += VBOX_DYNAMIC_NET_ATTACH
@@ -840,6 +841,7 @@ Drivers_SOURCES    = \
 	Input/DrvKeyboardQueue.cpp \
 	Input/DrvMouseQueue.cpp \
 	Network/DrvIntNet.cpp \
+	Network/DrvDedicatedNic.cpp \
 	PC/DrvACPI.cpp \
 	PC/DrvAcpiCpu.cpp \
 	Serial/DrvChar.cpp \
