@@ -544,6 +544,13 @@ def helpCmd(ctx, args):
             helpSingleCmd(cmd, c[0], c[2])
     return 0
 
+def asEnumElem(ctx,enum,elem):
+    all = ctx['ifaces'].all_values(enum)
+    for e in all.keys():
+        if str(elem) == str(all[e]):
+            return e
+    return "<unknown>"
+
 def listCmd(ctx, args):
     for m in getMachines(ctx, True):
         if m.teleporterEnabled:
@@ -552,13 +559,6 @@ def listCmd(ctx, args):
             tele = "    "
         print "%sMachine '%s' [%s], state=%s" %(tele,m.name,m.id,asEnumElem(ctx,"SessionState", m.sessionState))
     return 0
-
-def asEnumElem(ctx,enum,elem):
-    all = ctx['ifaces'].all_values(enum)
-    for e in all.keys():
-        if elem == all[e]:
-            return e
-    return "<unknown>"
 
 def infoCmd(ctx,args):
     if (len(args) < 2):
