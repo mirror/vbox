@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -48,6 +48,9 @@ public:
                  mAttachmentType(NetworkAttachmentType_Null),
                  mCableConnected(TRUE), mLineSpeed(0), mTraceEnabled(FALSE),
                  mHostInterface("") /* cannot be null */,
+#ifdef VBOX_WITH_VDE
+                 mVDENetwork("") /* can be null */,
+#endif
                  mNATNetwork("") /* cannot be null */
         {}
 
@@ -62,6 +65,9 @@ public:
         Bstr mTraceFile;
         Bstr mHostInterface;
         Bstr mInternalNetwork;
+#ifdef VBOX_WITH_VDE
+        Bstr mVDENetwork;
+#endif
         Bstr mNATNetwork;
         ULONG mBootPriority;
     };
@@ -104,6 +110,8 @@ public:
     STDMETHOD(COMSETTER(InternalNetwork)) (IN_BSTR aInternalNetwork);
     STDMETHOD(COMGETTER(NATNetwork)) (BSTR *aNATNetwork);
     STDMETHOD(COMSETTER(NATNetwork)) (IN_BSTR aNATNetwork);
+    STDMETHOD(COMGETTER(VDENetwork)) (BSTR *aVDENetwork);
+    STDMETHOD(COMSETTER(VDENetwork)) (IN_BSTR aVDENetwork);
     STDMETHOD(COMGETTER(CableConnected)) (BOOL *aConnected);
     STDMETHOD(COMSETTER(CableConnected)) (BOOL aConnected);
     STDMETHOD(COMGETTER(TraceEnabled)) (BOOL *aEnabled);
@@ -121,6 +129,7 @@ public:
     STDMETHOD(AttachToBridgedInterface)();
     STDMETHOD(AttachToInternalNetwork)();
     STDMETHOD(AttachToHostOnlyInterface)();
+    STDMETHOD(AttachToVDE)();
     STDMETHOD(Detach)();
 
     // public methods only for internal purposes

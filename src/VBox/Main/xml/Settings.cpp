@@ -1928,6 +1928,14 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
         if (!elmMode.getAttributeValue("name", nic.strName))    // required network name
             throw ConfigFileError(this, &elmMode, N_("Required HostOnlyInterface/@name element is missing"));
     }
+#if defined(VBOX_WITH_VDE)
+    else if (   fEnabled
+             && elmMode.nameEquals("VDE"))
+    {
+        nic.mode = NetworkAttachmentType_VDE;
+        elmMode.getAttributeValue("network", nic.strName);    // optional network name
+    }
+#endif
 }
 
 /**
@@ -3374,6 +3382,14 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                 case NetworkAttachmentType_HostOnly:
                     pelmAdapter->createChild("HostOnlyInterface")->setAttribute("name", nic.strName);
                 break;
+
+#if defined(VBOX_WITH_VDE)
+                case NetworkAttachmentType_VDE:
+                    pelmNAT = pelmAdapter->createChild("VDE");
+                    if (nic.strName.length())
+                        pelmNAT->setAttribute("network", nic.strName);
+                break;
+#endif
 
                 default: /*case NetworkAttachmentType_Null:*/
                 break;

@@ -3415,6 +3415,23 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             break;
         }
 
+#if defined(VBOX_WITH_VDE)
+        case NetworkAttachmentType_VDE:
+        {
+            hrc = aNetworkAdapter->COMGETTER(VDENetwork)(&str);    H();
+            rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);        RC_CHECK();
+            rc = CFGMR3InsertString(pLunL0, "Driver", "VDE");      RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);        RC_CHECK();
+            if (str && *str)
+            {
+                rc = CFGMR3InsertStringW(pCfg, "Network", str);    RC_CHECK();
+                networkName = str;
+            }
+            STR_FREE();
+            break;
+        }
+#endif
+
         default:
             AssertMsgFailed(("should not get here!\n"));
             break;
@@ -3432,6 +3449,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         case NetworkAttachmentType_Internal:
         case NetworkAttachmentType_HostOnly:
         case NetworkAttachmentType_NAT:
+#if defined(VBOX_WITH_VDE)
+        case NetworkAttachmentType_VDE:
+#endif
         {
             if (SUCCEEDED(hrc) && SUCCEEDED(rc))
             {
