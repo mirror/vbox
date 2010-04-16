@@ -3313,3 +3313,92 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
     return rc;
 }
 
+
+/**
+ * Registers a new shared module for the VM
+ *
+ * @returns VBox status code.
+ * @param   pVM                 VM handle
+ * @param   idCpu               VCPU id
+ * @param   pszModuleName       Module name
+ * @param   pszVersion          Module version
+ * @param   GCBaseAddr          Module base address
+ * @param   cbModule            Module size
+ * @param   cRegions            Number of shared region descriptors
+ * @param   pRegions            Shared region(s)
+ */
+GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule, 
+                                         unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * VMMR0 request wrapper for GMMR0RegisterSharedModule.
+ *
+ * @returns see GMMR0RegisterSharedModule.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   idCpu           VCPU id
+ * @param   pReq            The request packet.
+ */
+GMMR0DECL(int)  GMMR0RegisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMREGISTERSHAREDMODULEREQ pReq)
+{
+    /*
+     * Validate input and pass it on.
+     */
+    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq >= sizeof(*pReq) && pReq->Hdr.cbReq == RT_OFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[pReq->cRegions]), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
+
+    return GMMR0RegisterSharedModule(pVM, idCpu, pReq->szName, pReq->szVersion, pReq->GCBaseAddr, pReq->cbModule, pReq->cRegions, pReq->aRegions);
+}
+
+/**
+ * Unregisters a shared module for the VM
+ *
+ * @returns VBox status code.
+ * @param   pVM                 VM handle
+ * @param   idCpu               VCPU id
+ * @param   pszModuleName       Module name
+ * @param   pszVersion          Module version
+ * @param   GCBaseAddr          Module base address
+ * @param   cbModule            Module size
+ */
+GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/**
+ * VMMR0 request wrapper for GMMR0UnregisterSharedModule.
+ *
+ * @returns see GMMR0UnregisterSharedModule.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   idCpu           VCPU id
+ * @param   pReq            The request packet.
+ */
+GMMR0DECL(int)  GMMR0UnregisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMUNREGISTERSHAREDMODULEREQ pReq)
+{
+    /*
+     * Validate input and pass it on.
+     */
+    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
+
+    return GMMR0UnregisterSharedModule(pVM, idCpu, pReq->szName, pReq->szVersion, pReq->GCBaseAddr, pReq->cbModule);
+}
+
+
+/**
+ * Checks regsitered modules for shared pages
+ *
+ * @returns VBox status code.
+ * @param   pVM                 VM handle
+ * @param   idCpu               VCPU id
+ */
+GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, VMCPUID idCpu)
+{
+    return VERR_NOT_IMPLEMENTED;
+}

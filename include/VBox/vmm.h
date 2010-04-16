@@ -307,6 +307,12 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_GMM_MAP_UNMAP_CHUNK,
     /** Call GMMR0SeedChunk(). */
     VMMR0_DO_GMM_SEED_CHUNK,
+    /** Call GMMR0RegisterSharedModule. */
+    VMMR0_DO_GMM_REGISTER_SHARED_MODULE,
+    /** Call GMMR0UnregisterSharedModule. */
+    VMMR0_DO_GMM_UNREGISTER_SHARED_MODULE,
+    /** Call GMMR0CheckSharedModules. */
+    VMMR0_DO_GMM_CHECK_SHARED_MODULES,
 
     /** Set a GVMM or GMM configuration value. */
     VMMR0_DO_GCFGM_SET_VALUE,
