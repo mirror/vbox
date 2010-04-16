@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -76,6 +76,9 @@ private:
     QString mBrgName;
     QString mIntName;
     QString mHoiName;
+#ifdef VBOX_WITH_VDE
+    QString mVDEName;
+#endif
 
     bool mPolished;
     bool mDisableStaticControls;
@@ -92,6 +95,9 @@ public:
     QStringList brgList (bool aRefresh = false);
     QStringList intList (bool aRefresh = false);
     QStringList hoiList (bool aRefresh = false);
+#ifdef VBOX_WITH_VDE
+    QStringList vdeList (bool aRefresh = false);
+#endif
 
 protected:
 

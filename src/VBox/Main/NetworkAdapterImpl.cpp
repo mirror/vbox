@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -609,6 +609,59 @@ STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork) (IN_BSTR aNATNetwork)
     return S_OK;
 }
 
+STDMETHODIMP NetworkAdapter::COMGETTER(VDENetwork) (BSTR *aVDENetwork)
+{
+#if defined(VBOX_WITH_VDE)
+    CheckComArgOutPointerValid(aVDENetwork);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    mData->mVDENetwork.cloneTo(aVDENetwork);
+
+    return S_OK;
+#else
+    NOREF(aVDENetwork);
+    return E_NOTIMPL;
+#endif
+}
+
+STDMETHODIMP NetworkAdapter::COMSETTER(VDENetwork) (IN_BSTR aVDENetwork)
+{
+#if defined(VBOX_WITH_VDE)
+    Bstr bstrEmpty("");
+    if (!aVDENetwork)
+        aVDENetwork = bstrEmpty;
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep (mParent);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (mData->mVDENetwork != aVDENetwork)
+    {
+        mData.backup();
+        mData->mVDENetwork = aVDENetwork;
+
+        /* leave the lock before informing callbacks */
+        alock.release();
+
+        mParent->onNetworkAdapterChange (this, FALSE);
+    }
+
+    return S_OK;
+#else
+    NOREF(aVDENetwork);
+    return E_NOTIMPL;
+#endif
+}
+
 STDMETHODIMP NetworkAdapter::COMGETTER(CableConnected) (BOOL *aConnected)
 {
     CheckComArgOutPointerValid(aConnected);
@@ -1047,6 +1100,52 @@ STDMETHODIMP NetworkAdapter::AttachToHostOnlyInterface()
     return S_OK;
 }
 
+STDMETHODIMP NetworkAdapter::AttachToVDE()
+{
+#if defined(VBOX_WITH_VDE)
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep (mParent);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* don't do anything if we're already host interface attached */
+    if (mData->mAttachmentType != NetworkAttachmentType_VDE)
+    {
+        mData.backup();
+
+        /* first detach the current attachment */
+        // Commented this for now as it reset the parameter mData->mHostInterface
+        // which is essential while changing the Attachment dynamically.
+        //detach();
+
+        mData->mAttachmentType = NetworkAttachmentType_VDE;
+
+        /* leave the lock before informing callbacks */
+        alock.release();
+
+        HRESULT rc = mParent->onNetworkAdapterChange (this, TRUE);
+        if (FAILED (rc))
+        {
+            /* If changing the attachment failed then we can't assume
+             * that the previous attachment will attach correctly
+             * and thus return error along with dettaching all
+             * attachments.
+             */
+            Detach();
+            return rc;
+        }
+    }
+
+    return S_OK;
+#else /* !VBOX_WITH_VDE */
+    return E_NOTIMPL;
+#endif
+}
+
 STDMETHODIMP NetworkAdapter::Detach()
 {
     AutoCaller autoCaller(this);
@@ -1155,6 +1254,14 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
             if (FAILED(rc)) return rc;
         break;
 
+#if defined(VBOX_WITH_VDE)
+        case NetworkAttachmentType_VDE:
+            mData->mVDENetwork = data.strName;
+            rc = AttachToVDE();
+            if (FAILED(rc)) return rc;
+        break;
+#endif
+
         case NetworkAttachmentType_Null:
             rc = Detach();
             if (FAILED(rc)) return rc;
@@ -1222,6 +1329,12 @@ HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
         case NetworkAttachmentType_HostOnly:
             data.strName = mData->mHostInterface;
         break;
+
+#if defined(VBOX_WITH_VDE)
+        case NetworkAttachmentType_VDE:
+            data.strName = mData->mVDENetwork;
+        break;
+#endif
     }
 
     if (data.mode != NetworkAttachmentType_NAT)
