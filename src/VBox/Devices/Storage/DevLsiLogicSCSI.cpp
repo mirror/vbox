@@ -3393,8 +3393,6 @@ static DECLCALLBACK(bool) lsilogicNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQU
         rc = RTMemCacheAllocEx(pLsiLogic->hTaskCache, (void **)&pTaskState);
         AssertRC(rc);
 
-        memset(pTaskState, 0, sizeof(LSILOGICTASKSTATE));
-
         pTaskState->GCPhysMessageFrameAddr = GCPhysMessageFrameAddr;
 
         /* Read the message header from the guest first. */
