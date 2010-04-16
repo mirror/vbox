@@ -27,6 +27,7 @@ EXPORTS
     PDMCritSectEnterDebug
     PDMCritSectIsOwner
     PDMCritSectLeave
+    PDMCritSectTryEnter
     PDMQueueAlloc
     PDMQueueFlush
     PDMQueueInsert
