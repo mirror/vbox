@@ -49,6 +49,8 @@
 
 using namespace guestControl;
 
+extern GuestCtrlExecThreads g_GuestControlExecThreads;
+
 /**
  * Handle an error event on standard input.
  *
@@ -234,7 +236,7 @@ static int VBoxServiceControlExecProcHandleTransportEvent(RTPOLLSET hPollSet, ui
 }
 
 
-static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREADDATA pData,
+static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
                                           RTPROCESS hProcess, RTMSINTERVAL cMillies, RTPOLLSET hPollSet,
                                           RTPIPE hStdInW, RTPIPE hStdOutR, RTPIPE hStdErrR)
 {
@@ -257,23 +259,24 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREADDATA pData,
     RTMSINTERVAL        cMsPollCur                  = 0;
 
     /* Assign PID to thread data. */
-    pData->uPID = hProcess;
+    pThread->uPID = hProcess;
 
     /*
      * Before entering the loop, tell the host that we've started the guest
      * and that it's now OK to send input to the process.
      */
-    AssertPtr(pData);
+    AssertPtr(pThread);
     VBoxServiceVerbose(3, "Control: Process started: PID=%u, CID=%u\n", 
-                       pData->uPID, pData->uContextID);
-    rc = VbglR3GuestCtrlExecReportStatus(pData->uClientID, pData->uContextID,
-                                         pData->uPID, PROC_STS_STARTED, 0 /* u32Flags */, 
+                       pThread->uPID, pThread->uContextID);
+    rc = VbglR3GuestCtrlExecReportStatus(pThread->uClientID, pThread->uContextID,
+                                         pThread->uPID, PROC_STS_STARTED, 0 /* u32Flags */, 
                                          NULL /* pvData */, 0 /* cbData */);
 
     /*
      * Process input, output, the test pipe and client requests.
      */
-    while (RT_SUCCESS(rc))
+    while (   RT_SUCCESS(rc)
+           && RT_UNLIKELY(!pThread->fShutdown))
     {
         /*
          * Wait/Process all pending events.
@@ -281,6 +284,8 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREADDATA pData,
         uint32_t idPollHnd;
         uint32_t fPollEvt;
         rc2 = RTPollNoResume(hPollSet, cMsPollCur, &fPollEvt, &idPollHnd);
+        if (pThread->fShutdown)
+            continue;
 
         cMsPollCur = 0;                 /* no rest until we've checked everything. */
 
@@ -375,6 +380,12 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREADDATA pData,
 
         /* Reset the polling interval since we've done all pending work. */
         cMsPollCur = cMilliesLeft >= cMsPollBase ? cMsPollBase : cMilliesLeft;
+
+        /*
+         * Need to exit?
+         */    
+        if (pThread->fShutdown)
+            break;
     }
 
     /*
@@ -420,10 +431,10 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREADDATA pData,
         {
             uStatus = PROC_STS_TOA;
         }
-        /*else if (g_fTerminate && (fProcessAlive || MsProcessKilled != UINT64_MAX))
+        else if (pThread->fShutdown && (fProcessAlive || MsProcessKilled != UINT64_MAX))
         {
-            uStatus = PROC_STS_DWN;
-        }*/
+            uStatus = PROC_STS_DWN; /* Service is stopping, process was killed. */
+        }
         else if (fProcessAlive)
         {
             VBoxServiceError("Control: Process is alive when it should not!\n");
@@ -453,9 +464,9 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREADDATA pData,
         }
        
         VBoxServiceVerbose(3, "Control: Process ended: PID=%u, CID=%u, Status=%u, Flags=%u\n", 
-                           pData->uPID, pData->uContextID, uStatus, uFlags);
-        rc = VbglR3GuestCtrlExecReportStatus(pData->uClientID, pData->uContextID,
-                                             pData->uPID, uStatus, uFlags,
+                           pThread->uPID, pThread->uContextID, uStatus, uFlags);
+        rc = VbglR3GuestCtrlExecReportStatus(pThread->uClientID, pThread->uContextID,
+                                             pThread->uPID, uStatus, uFlags,
                                              NULL /* pvData */, 0 /* cbData */);
     }
     RTMemFree(StdInBuf.pch);
@@ -516,46 +527,50 @@ static int VBoxServiceControlExecSetupPipe(int fd, PRTHANDLE ph, PRTHANDLE *pph,
 }
 
 /** Allocates and gives back a thread data struct which then can be used by the worker thread. */
-PVBOXSERVICECTRLTHREADDATA VBoxServiceControlExecAllocateThreadData(uint32_t u32ContextID, 
-                                                                    const char *pszCmd, uint32_t uFlags, 
-                                                                    const char *pszArgs, uint32_t uNumArgs,                                           
-                                                                    const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
-                                                                    const char *pszStdIn, const char *pszStdOut, const char *pszStdErr,
-                                                                    const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS)
+PVBOXSERVICECTRLTHREAD VBoxServiceControlExecAllocateThreadData(uint32_t u32ContextID, 
+                                                                const char *pszCmd, uint32_t uFlags, 
+                                                                const char *pszArgs, uint32_t uNumArgs,                                           
+                                                                const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
+                                                                const char *pszStdIn, const char *pszStdOut, const char *pszStdErr,
+                                                                const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS)
 {
-    PVBOXSERVICECTRLTHREADDATA pData = (PVBOXSERVICECTRLTHREADDATA)RTMemAlloc(sizeof(VBOXSERVICECTRLTHREADDATA));
-    if (pData == NULL)
+    PVBOXSERVICECTRLTHREAD pThread = (PVBOXSERVICECTRLTHREAD)RTMemAlloc(sizeof(VBOXSERVICECTRLTHREAD));
+    if (pThread == NULL)
         return NULL;
 
+    pThread->fShutdown = false;
+    pThread->fStarted = false;
+    pThread->fStopped = false;
+
     /* ClientID will be assigned when thread is started! */
-    pData->uContextID = u32ContextID;
-    pData->uPID = 0; /* Don't have a PID yet. */
-    pData->pszCmd = RTStrDup(pszCmd);
-    pData->uFlags = uFlags;
-    pData->uNumEnvVars = 0;
-    pData->uNumArgs = 0; /* Initialize in case of RTGetOptArgvFromString() is failing ... */
+    pThread->uContextID = u32ContextID;
+    pThread->uPID = 0; /* Don't have a PID yet. */
+    pThread->pszCmd = RTStrDup(pszCmd);
+    pThread->uFlags = uFlags;
+    pThread->uNumEnvVars = 0;
+    pThread->uNumArgs = 0; /* Initialize in case of RTGetOptArgvFromString() is failing ... */
 
     /* Prepare argument list. */
-    int rc = RTGetOptArgvFromString(&pData->papszArgs, (int*)&pData->uNumArgs, 
+    int rc = RTGetOptArgvFromString(&pThread->papszArgs, (int*)&pThread->uNumArgs, 
                                     (uNumArgs > 0) ? pszArgs : "", NULL);
     /* Did we get the same result? */
-    Assert(uNumArgs == pData->uNumArgs);
+    Assert(uNumArgs == pThread->uNumArgs);
 
     if (RT_SUCCESS(rc))
     {
         /* Prepare environment list. */
         if (uNumEnvVars)
         {
-            pData->papszEnv = (char**)RTMemAlloc(uNumEnvVars * sizeof(char*));
-            AssertPtr(pData->papszEnv);
-            pData->uNumEnvVars = uNumEnvVars;
+            pThread->papszEnv = (char**)RTMemAlloc(uNumEnvVars * sizeof(char*));
+            AssertPtr(pThread->papszEnv);
+            pThread->uNumEnvVars = uNumEnvVars;
 
             const char *pcCur = pszEnv;
             uint32_t i = 0;
             uint32_t cbLen = 0;
             while (cbLen < cbEnv)
             {
-                if (RTStrAPrintf(& pData->papszEnv[i++], "%s", pcCur) < 0)
+                if (RTStrAPrintf(& pThread->papszEnv[i++], "%s", pcCur) < 0)
                 {
                     rc = VERR_NO_MEMORY;
                     break;
@@ -565,56 +580,58 @@ PVBOXSERVICECTRLTHREADDATA VBoxServiceControlExecAllocateThreadData(uint32_t u32
             }
         }
 
-        pData->pszStdIn = RTStrDup(pszStdIn);
-        pData->pszStdOut = RTStrDup(pszStdOut);
-        pData->pszStdErr = RTStrDup(pszStdErr);
-        pData->pszUser = RTStrDup(pszUser);
-        pData->pszPassword = RTStrDup(pszPassword);
-        pData->uTimeLimitMS = uTimeLimitMS;
+        pThread->pszStdIn = RTStrDup(pszStdIn);
+        pThread->pszStdOut = RTStrDup(pszStdOut);
+        pThread->pszStdErr = RTStrDup(pszStdErr);
+        pThread->pszUser = RTStrDup(pszUser);
+        pThread->pszPassword = RTStrDup(pszPassword);
+        pThread->uTimeLimitMS = uTimeLimitMS;
     }
 
     /* Adjust time limit value. */
-    pData->uTimeLimitMS = (   (uTimeLimitMS == UINT32_MAX) 
-                           || (uTimeLimitMS == 0)) ?
-                           RT_INDEFINITE_WAIT : uTimeLimitMS;
-    return pData;
+    pThread->uTimeLimitMS = (   (uTimeLimitMS == UINT32_MAX) 
+                             || (uTimeLimitMS == 0)) ?
+                             RT_INDEFINITE_WAIT : uTimeLimitMS;
+    return pThread;
 }
 
 /** Frees an allocated thread data structure along with all its allocated parameters. */
-void VBoxServiceControlExecFreeThreadData(PVBOXSERVICECTRLTHREADDATA pData)
+void VBoxServiceControlExecDestroyThread(PVBOXSERVICECTRLTHREAD pThread)
 {
-    AssertPtr(pData);
-    RTStrFree(pData->pszCmd);
-    if (pData->uNumEnvVars)
+    AssertPtr(pThread);
+    RTStrFree(pThread->pszCmd);
+    if (pThread->uNumEnvVars)
     {
-        for (uint32_t i = 0; i < pData->uNumEnvVars; i++)
-            RTStrFree(pData->papszEnv[i]);
-        RTMemFree(pData->papszEnv);
+        for (uint32_t i = 0; i < pThread->uNumEnvVars; i++)
+            RTStrFree(pThread->papszEnv[i]);
+        RTMemFree(pThread->papszEnv);
     }
-    RTGetOptArgvFree(pData->papszArgs);
-    RTStrFree(pData->pszStdIn);
-    RTStrFree(pData->pszStdOut);
-    RTStrFree(pData->pszStdErr);
-    RTStrFree(pData->pszUser);
-    RTStrFree(pData->pszPassword);
+    RTGetOptArgvFree(pThread->papszArgs);
+    RTStrFree(pThread->pszStdIn);
+    RTStrFree(pThread->pszStdOut);
+    RTStrFree(pThread->pszStdErr);
+    RTStrFree(pThread->pszUser);
+    RTStrFree(pThread->pszPassword);
 
-    RTMemFree(pData);
+    RTMemFree(pThread);
 }
 
-DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREADDATA pData)
+DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
 {
-    AssertPtr(pData);
-    AssertPtr(pData->papszArgs);
-    AssertPtr(pData->papszEnv);
+    AssertPtr(pThread);
+
+    AssertPtr(pThread);
+    AssertPtr(pThread->papszArgs);
+    AssertPtr(pThread->papszEnv);
 
     /*
      * Tell the control thread that it can continue
      * spawning services.
      */
     RTThreadUserSignal(RTThreadSelf());
-    VBoxServiceVerbose(3, "Control: Thread of process \"%s\" started\n", pData->pszCmd);
+    VBoxServiceVerbose(3, "Control: Thread of process \"%s\" started\n", pThread->pszCmd);
 
-    int rc = VbglR3GuestCtrlConnect(&pData->uClientID);
+    int rc = VbglR3GuestCtrlConnect(&pThread->uClientID);
     if (RT_FAILURE(rc))
     {
         VBoxServiceError("Control: Thread failed to connect to the guest control service, aborted! Error: %Rrc\n", rc);
@@ -629,9 +646,9 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREADDATA
     if (RT_SUCCESS(rc))
     {
         size_t i;
-        for (i = 0; i < pData->uNumEnvVars; i++)
+        for (i = 0; i < pThread->uNumEnvVars; i++)
         {
-            rc = RTEnvPutEx(hEnv, pData->papszEnv[i]);
+            rc = RTEnvPutEx(hEnv, pThread->papszEnv[i]);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -675,10 +692,10 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREADDATA
                             if (RT_SUCCESS(rc))
                             {
                                 RTPROCESS hProcess;
-                                rc = RTProcCreateEx(pData->pszCmd, pData->papszArgs, hEnv, pData->uFlags,
+                                rc = RTProcCreateEx(pThread->pszCmd, pThread->papszArgs, hEnv, pThread->uFlags,
                                                     phStdIn, phStdOut, phStdErr,
-                                                    strlen(pData->pszUser) ? pData->pszUser : NULL, 
-                                                    strlen(pData->pszUser) && strlen(pData->pszPassword) ? pData->pszPassword : NULL, 
+                                                    strlen(pThread->pszUser) ? pThread->pszUser : NULL, 
+                                                    strlen(pThread->pszUser) && strlen(pThread->pszPassword) ? pThread->pszPassword : NULL, 
                                                     &hProcess);
                                 if (RT_SUCCESS(rc))
                                 {
@@ -693,8 +710,8 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREADDATA
                                     phStdErr   = NULL;
 
                                     /* Enter the process loop. */
-                                    rc = VBoxServiceControlExecProcLoop(pData,
-                                                                        hProcess, pData->uTimeLimitMS, hPollSet,
+                                    rc = VBoxServiceControlExecProcLoop(pThread,
+                                                                        hProcess, pThread->uTimeLimitMS, hPollSet,
                                                                         hStdInW, hStdOutR, hStdErrR);
 
                                     /*
@@ -712,7 +729,7 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREADDATA
                                 }
                                 else /* Something went wrong; report error! */
                                 {
-                                    int rc2 = VbglR3GuestCtrlExecReportStatus(pData->uClientID, pData->uContextID, pData->uPID, 
+                                    int rc2 = VbglR3GuestCtrlExecReportStatus(pThread->uClientID, pThread->uContextID, pThread->uPID, 
                                                                               PROC_STS_ERROR, rc,
                                                                               NULL /* pvData */, 0 /* cbData */);
                                     if (RT_FAILURE(rc2))
@@ -734,22 +751,17 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREADDATA
         RTEnvDestroy(hEnv);
     }
 
-    VbglR3GuestCtrlDisconnect(pData->uClientID);
+    VbglR3GuestCtrlDisconnect(pThread->uClientID);
     VBoxServiceVerbose(3, "Control: Thread of process \"%s\" (PID: %u) ended with rc=%Rrc\n", 
-                       pData->pszCmd, pData->uPID, rc);
-
-    /*
-     * Since we (hopefully) are the only ones that hold the thread data,
-     * destroy them now.
-     */
-    VBoxServiceControlExecFreeThreadData(pData);
+                       pThread->pszCmd, pThread->uPID, rc);
     return rc;
 }
 
 static DECLCALLBACK(int) VBoxServiceControlExecThread(RTTHREAD ThreadSelf, void *pvUser)
 {
-    PVBOXSERVICECTRLTHREADDATA pData = (PVBOXSERVICECTRLTHREADDATA)pvUser;
-    return VBoxServiceControlExecProcessWorker(pData);
+    PVBOXSERVICECTRLTHREAD pThread = (VBOXSERVICECTRLTHREAD*)pvUser;
+    AssertPtr(pThread);
+    return VBoxServiceControlExecProcessWorker(pThread);
 }
 
 int VBoxServiceControlExecProcess(uint32_t uContextID, const char *pszCmd, uint32_t uFlags, 
@@ -758,7 +770,7 @@ int VBoxServiceControlExecProcess(uint32_t uContextID, const char *pszCmd, uint3
                                   const char *pszStdIn, const char *pszStdOut, const char *pszStdErr,
                                   const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS)
 {
-    PVBOXSERVICECTRLTHREADDATA pThreadData = 
+    PVBOXSERVICECTRLTHREAD pThread = 
         VBoxServiceControlExecAllocateThreadData(uContextID, 
                                                  pszCmd, uFlags, 
                                                  pszArgs, uNumArgs,
@@ -767,17 +779,35 @@ int VBoxServiceControlExecProcess(uint32_t uContextID, const char *pszCmd, uint3
                                                  pszUser, pszPassword,
                                                  uTimeLimitMS);
     int rc = VINF_SUCCESS;
-    if (pThreadData)
-    {   
-        rc = RTThreadCreate(NULL, VBoxServiceControlExecThread, 
-                                (void *)(PVBOXSERVICECTRLTHREADDATA)pThreadData, 0,
-                                RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "Exec");
+    if (pThread)
+    {
+        rc = RTThreadCreate(&pThread->Thread, VBoxServiceControlExecThread, 
+                            (void *)(PVBOXSERVICECTRLTHREAD*)pThread, 0,
+                            RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "Exec");
         if (RT_FAILURE(rc))
         {
-            VBoxServiceError("Control: RTThreadCreate failed, rc=%Rrc\n, threadData=%p\n", 
-                             rc, pThreadData);
+            VBoxServiceError("Control: RTThreadCreate failed, rc=%Rrc\n, pThread=%p\n", 
+                             rc, pThread);
+        }
+        else
+        {
+            /* Wait for the thread to initialize. */
+            RTThreadUserWait(pThread->Thread, 60 * 1000);
+            if (pThread->fShutdown)
+            {
+                VBoxServiceError("Control: Thread for process \"%s\" failed to start!\n", pszCmd);
+                rc = VERR_GENERAL_FAILURE;
+            }
+            else
+            {
+                g_GuestControlExecThreads.push_back(pThread);
+            }
+        }
+
+        if (RT_FAILURE(rc))
+        {
             /* Only destroy thread data on failure; otherwise it's destroyed in the thread handler. */
-            VBoxServiceControlExecFreeThreadData(pThreadData);
+            VBoxServiceControlExecDestroyThread(pThread);
         }
     }
     else
