@@ -114,6 +114,7 @@ VMMR3_SOURCES   = \
 	PGMPhys.cpp \
 	PGMPool.cpp \
 	PGMSavedState.cpp \
+	PGMSharedPage.cpp \
 	SELM.cpp \
 	SSM.cpp \
 	STAM.cpp \

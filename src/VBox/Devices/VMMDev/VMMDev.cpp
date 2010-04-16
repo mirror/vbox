@@ -1762,6 +1762,58 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             break;
         }
 
+#ifdef VBOX_WITH_PAGE_SHARING
+        case VMMDevReq_RegisterSharedModule:
+        {
+            VMMDevSharedModuleRegistrationRequest *pReqModule = (VMMDevSharedModuleRegistrationRequest *)pRequestHeader;
+
+            if (    pRequestHeader->size < sizeof(VMMDevSharedModuleRegistrationRequest)
+                ||  pRequestHeader->size != RT_OFFSETOF(VMMDevSharedModuleRegistrationRequest, aRegions[pReqModule->cRegions]))
+            {
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                pRequestHeader->rc = PGMR3SharedModuleRegister(pVM, pReqModule->GCBaseAddr, pReqModule->cbModule, 
+                                                               pReqModule->szName, pReqModule->szVersion, 
+                                                               pReqModule->cRegions, pReqModule->aRegions);
+            }
+            break;
+        }
+
+        case VMMDevReq_UnregisterSharedModule:
+        {
+            VMMDevSharedModuleUnregistrationRequest *pReqModule = (VMMDevSharedModuleUnregistrationRequest *)pRequestHeader;
+
+            if (pRequestHeader->size != sizeof(VMMDevSharedModuleUnregistrationRequest)
+            {
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                pRequestHeader->rc = PGMR3SharedModuleUnregister(pVM, pReqModule->GCBaseAddr, pReqModule->cbModule, 
+                                                                 pReqModule->szName, pReqModule->szVersion);
+            }
+            break;
+        }
+
+        case VMMDevReq_CheckSharedModules:
+        {
+            VMMDevSharedModuleCheckRequest *pReqModule = (VMMDevSharedModuleCheckRequest *)pRequestHeader;
+
+            if (pRequestHeader->size != sizeof(VMMDevSharedModuleCheckRequest)
+            {
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                pRequestHeader->rc = PGMR3SharedModuleCheck(pVM);
+            }
+            break;
+        }
+
+#endif
+
 #ifdef DEBUG
         case VMMDevReq_LogString:
         {

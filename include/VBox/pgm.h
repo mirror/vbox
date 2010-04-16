@@ -36,6 +36,7 @@
 #include <VBox/vmapi.h>
 #include <VBox/x86.h>
 #include <VBox/hwacc_vmx.h>
+#include <VBox/vmmdev.h> /* for VMMDEVSHAREDREGIONDESC */
 
 RT_C_DECLS_BEGIN
 
@@ -563,6 +564,15 @@ VMMR3DECL(int)      PGMR3DbgReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, si
 VMMR3DECL(int)      PGMR3DbgWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, void const *pvSrc, size_t cb, uint32_t fFlags, size_t *pcbWritten);
 VMMR3DECL(int)      PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, RTGCPHYS GCPhysAlign, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCPHYS pGCPhysHit);
 VMMR3DECL(int)      PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RTGCPTR cbRange, RTGCPTR GCPtrAlign, const uint8_t *pabNeedle, size_t cbNeedle, PRTGCUINTPTR pGCPhysHit);
+
+
+/** @name Page sharing
+ * @{ */
+VMMR3DECL(int)     PGMR3SharedModuleRegister(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule, unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions);
+VMMR3DECL(int)     PGMR3SharedModuleUnregister(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule);
+VMMR3DECL(int)     PGMR3SharedModuleCheck(PVM pVM);
+/** @} */
+
 /** @} */
 #endif /* IN_RING3 */
 

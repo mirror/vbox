@@ -192,6 +192,9 @@ endif
 ifdef VBOX_WITH_DRV_DISK_INTEGRITY
  VBoxDD_DEFS           += VBOX_WITH_DRV_DISK_INTEGRITY
 endif
+ifdef VBOX_WITH_PAGE_SHARING
+  VBoxDD_DEFS          += VBOX_WITH_PAGE_SHARING
+endif
 ifdef VBOX_WITH_VDE
  VBoxDD_DEFS           += VBOX_WITH_VDE
 endif
