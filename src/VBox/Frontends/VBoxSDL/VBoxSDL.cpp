@@ -2363,6 +2363,12 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                             enmHKeyState = event.type == SDL_KEYUP ? HKEYSTATE_NORMAL
                                                                  : HKEYSTATE_NOT_IT;
                             ProcessKey(&EvHKeyDown1.key);
+                            /* ugly hack: Some guests (e.g. mstsc.exe on Windows XP)
+                             * expect a small delay between two key events. 5ms work
+                             * reliable here so use 10ms to be on the safe side. A
+                             * better but more complicated fix would be to introduce
+                             * a new state and don't wait here. */
+                            RTThreadSleep(10);
                             ProcessKey(&event.key);
                             break;
                         }
@@ -2404,8 +2410,14 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                         /* not host key */
                         enmHKeyState = HKEYSTATE_NOT_IT;
                         ProcessKey(&EvHKeyDown1.key);
+                        /* see the comment for the 2-key case above */
+                        RTThreadSleep(10);
                         if (gHostKeySym2 != SDLK_UNKNOWN)
+                        {
                             ProcessKey(&EvHKeyDown2.key);
+                            /* see the comment for the 2-key case above */
+                            RTThreadSleep(10);
+                        }
                         ProcessKey(&event.key);
                         break;
                     }
