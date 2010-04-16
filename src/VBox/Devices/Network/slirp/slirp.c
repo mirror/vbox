@@ -1388,7 +1388,6 @@ static void arp_input(PNATState pData, struct mbuf *m)
     struct arphdr *ah;
     struct arphdr *rah;
     int ar_op;
-    struct ex_list *ex_ptr;
     uint32_t htip;
     uint32_t tip;
     struct mbuf *mr;
@@ -1433,13 +1432,6 @@ static void arp_input(PNATState pData, struct mbuf *m)
                     || CTL_CHECK(htip, CTL_ALIAS)
                     || CTL_CHECK(htip, CTL_TFTP))
                     goto arp_ok;
-                for (ex_ptr = exec_list; ex_ptr; ex_ptr = ex_ptr->ex_next)
-                {
-                    if ((htip & ~pData->netmask) == ex_ptr->ex_addr)
-                    {
-                        goto arp_ok;
-                    }
-                }
                 m_free(pData, m);
                 m_free(pData, mr);
                 return;
@@ -1800,13 +1792,6 @@ int slirp_redir(PNATState pData, int is_udp, struct in_addr host_addr, int host_
     LIST_INSERT_HEAD(&pData->port_forward_rule_head, rule, list);
     pData->cRedirectionsStored++;
     return 0;
-}
-
-int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_byte,
-                   int guest_port)
-{
-    return add_exec(&exec_list, do_pty, (char *)args,
-                    addr_low_byte, RT_H2N_U16(guest_port));
 }
 
 void slirp_set_ethaddr_and_activate_port_forwarding(PNATState pData, const uint8_t *ethaddr, uint32_t GuestIP)
