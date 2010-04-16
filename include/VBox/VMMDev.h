@@ -1072,7 +1072,7 @@ AssertCompileSize(VMMDevGetCpuHotPlugRequest, 24+4+4+4);
  */
 typedef struct 
 {
-    RTGCPTR             GCRegionAddr;
+    RTGCPTR64           GCRegionAddr;
     uint32_t            cbRegion;
     uint32_t            u32Alignment;
 } VMMDevSharedModuleRegion;
@@ -1090,7 +1090,7 @@ typedef struct
     /** Number of included region descriptors */
     uint32_t                    cRegions;
     /** Base address of the shared module. */
-    RTGCPTR                     GCBaseAddr;
+    RTGCPTR64                   GCBaseAddr;
     /** Module name */
     char                        szName[128];
     /** Module version */
@@ -1113,7 +1113,7 @@ typedef struct
     /** Align at 8 byte boundary. */
     uint32_t                    u32Alignment;
     /** Base address of the shared module. */
-    RTGCPTR                     GCBaseAddr;
+    RTGCPTR64                   GCBaseAddr;
     /** Module name */
     char                        szName[128];
     /** Module version */
