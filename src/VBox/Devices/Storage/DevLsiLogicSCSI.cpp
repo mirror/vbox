@@ -577,6 +577,35 @@ static void lsilogicFinishContextReply(PLSILOGICSCSI pLsiLogic, uint32_t u32Mess
 
     PDMCritSectLeave(&pLsiLogic->ReplyPostQueueCritSect);
 }
+
+static void lsilogicTaskStateClear(PLSILOGICTASKSTATE pTaskState)
+{
+    RTMemFree(pTaskState->pSGListHead);
+    RTMemFree(pTaskState->paSGEntries);
+    if (pTaskState->pvBufferUnaligned)
+        RTMemPageFree(pTaskState->pvBufferUnaligned, pTaskState->cbBufferUnaligned);
+    pTaskState->cSGListSize = 0;
+    pTaskState->cSGInfoSize = 0;
+    pTaskState->cSGInfoEntries = 0;
+    pTaskState->cSGListTooBig  = 0;
+    pTaskState->pSGListHead = NULL;
+    pTaskState->paSGEntries = NULL;
+    pTaskState->pvBufferUnaligned = NULL;
+    pTaskState->cbBufferUnaligned = 0;
+}
+
+static int lsilogicTaskStateCtor(RTMEMCACHE hMemCache, void *pvObj, void *pvUser)
+{
+    memset(pvObj, 0, sizeof(LSILOGICTASKSTATE));
+    return VINF_SUCCESS;
+}
+
+static void lsilogicTaskStateDtor(RTMEMCACHE hMemCache, void *pvObj, void *pvUser)
+{
+    PLSILOGICTASKSTATE pTaskState = (PLSILOGICTASKSTATE)pvObj;
+    lsilogicTaskStateClear(pTaskState);
+}
+
 #endif /* IN_RING3 */
 
 /**
@@ -1482,20 +1511,7 @@ static void lsilogicScatterGatherListDestroy(PLSILOGICSCSI pLsiLogic, PLSILOGICT
 
     /* Free allocated memory if the list was too big too many times. */
     if (pTaskState->cSGListTooBig >= LSILOGIC_NR_OF_ALLOWED_BIGGER_LISTS)
-    {
-        RTMemFree(pTaskState->pSGListHead);
-        RTMemFree(pTaskState->paSGEntries);
-        if (pTaskState->pvBufferUnaligned)
-            RTMemPageFree(pTaskState->pvBufferUnaligned, pTaskState->cbBufferUnaligned);
-        pTaskState->cSGListSize = 0;
-        pTaskState->cSGInfoSize = 0;
-        pTaskState->cSGInfoEntries = 0;
-        pTaskState->cSGListTooBig  = 0;
-        pTaskState->pSGListHead = NULL;
-        pTaskState->paSGEntries = NULL;
-        pTaskState->pvBufferUnaligned = NULL;
-        pTaskState->cbBufferUnaligned = 0;
-    }
+        lsilogicTaskStateClear(pTaskState);
 }
 
 #ifdef DEBUG
@@ -4554,7 +4570,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
      * Allocate task cache.
      */
     rc = RTMemCacheCreate(&pThis->hTaskCache, sizeof(LSILOGICTASKSTATE), 0, UINT32_MAX,
-                          NULL, NULL, NULL, 0);
+                          lsilogicTaskStateCtor, lsilogicTaskStateDtor, NULL, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Cannot create task cache"));
