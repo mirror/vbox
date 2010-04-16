@@ -525,6 +525,7 @@ static DECLCALLBACK(int) serialNotifyStatusLinesChanged(PPDMICHARPORT pInterface
 
 static DECLCALLBACK(int) serialNotifyBufferFull(PPDMICHARPORT pInterface, bool fFull)
 {
+#if 0
     SerialState *pThis = PDMICHARPORT_2_SERIALSTATE(pInterface);
     PDMCritSectEnter(&pThis->CritSect, VERR_PERMISSION_DENIED);
     if (fFull)
@@ -539,6 +540,7 @@ static DECLCALLBACK(int) serialNotifyBufferFull(PPDMICHARPORT pInterface, bool f
     }
     serial_update_irq(pThis);
     PDMCritSectLeave(&pThis->CritSect);
+#endif
     return VINF_SUCCESS;
 }
 
