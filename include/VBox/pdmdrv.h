@@ -402,7 +402,24 @@ typedef struct PDMDRVINS
 #define PDM_DRVINS_VERSION                      PDM_VERSION_MAKE(0xf0fe, 1, 0)
 
 /** Converts a pointer to the PDMDRVINS::IBase to a pointer to PDMDRVINS. */
-#define PDMIBASE_2_PDMDRV(pInterface) ( (PPDMDRVINS)((char *)(pInterface) - RT_OFFSETOF(PDMDRVINS, IBase)) )
+#define PDMIBASE_2_PDMDRV(pInterface)   ( (PPDMDRVINS)((char *)(pInterface) - RT_OFFSETOF(PDMDRVINS, IBase)) )
+
+/** @def PDMDRVINS_2_RCPTR
+ * Converts a PDM Driver instance pointer a RC PDM Driver instance pointer.
+ */
+#define PDMDRVINS_2_RCPTR(pDrvIns)      ( (RCPTRTYPE(PPDMDRVINS))((RTGCUINTPTR)(pDrvIns)->pvInstanceDataRC - RT_OFFSETOF(PDMDRVINS, achInstanceData)) )
+
+/** @def PDMDRVINS_2_R3PTR
+ * Converts a PDM Driver instance pointer a R3 PDM Driver instance pointer.
+ */
+#define PDMDRVINS_2_R3PTR(pDrvIns)      ( (R3PTRTYPE(PPDMDRVINS))((RTHCUINTPTR)(pDrvIns)->pvInstanceDataR3 - RT_OFFSETOF(PDMDRVINS, achInstanceData)) )
+
+/** @def PDMDRVINS_2_R0PTR
+ * Converts a PDM Driver instance pointer a R0 PDM Driver instance pointer.
+ */
+#define PDMDRVINS_2_R0PTR(pDrvIns)      ( (R0PTRTYPE(PPDMDRVINS))((RTR0UINTPTR)(pDrvIns)->pvInstanceDataR0 - RT_OFFSETOF(PDMDRVINS, achInstanceData)) )
+
+
 
 /**
  * Checks the structure versions of the drive instance and driver helpers,
@@ -1159,6 +1176,28 @@ typedef struct PDMDRVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnCritSectInit,(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect,
                                                RT_SRC_POS_DECL, const char *pszName));
+
+    /**
+     * Call the ring-0 request handler routine of the driver.
+     *
+     * For this to work, the driver must be ring-0 enabled and export a request
+     * handler function.  The name of the function must be the driver name in the
+     * PDMDRVREG struct prefixed with 'drvR0' and suffixed with 'ReqHandler'.  It
+     * shall take the exact same arguments as this function and be declared using
+     * PDMBOTHCBDECL.  See FNPDMDRVREQHANDLERR0.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_SYMBOL_NOT_FOUND if the driver doesn't export the required
+     *          handler function.
+     * @retval  VERR_ACCESS_DENIED if the driver isn't ring-0 capable.
+     *
+     * @param   pDevIns             The device instance.
+     * @param   uOperation          The operation to perform.
+     * @param   u64Arg              64-bit integer argument.
+     * @thread  Any
+     */
+    DECLR3CALLBACKMEMBER(int, pfnCallR0,(PPDMDRVINS pDrvIns, uint32_t uOperation, uint64_t u64Arg));
+
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;
@@ -1523,6 +1562,14 @@ DECLINLINE(int) PDMDrvHlpAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDM
 DECLINLINE(int) PDMDrvHlpCritSectInit(PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL, const char *pszName)
 {
     return pDrvIns->pHlpR3->pfnCritSectInit(pDrvIns, pCritSect, RT_SRC_POS_ARGS, pszName);
+}
+
+/**
+ * @copydoc PDMDRVHLP::pfnCallR0
+ */
+DECLINLINE(int) PDMDrvHlpCallR0(PPDMDRVINS pDrvIns, uint32_t uOperation, uint64_t u64Arg)
+{
+    return pDrvIns->pHlpR3->pfnCallR0(pDrvIns, uOperation, u64Arg);
 }
 
 

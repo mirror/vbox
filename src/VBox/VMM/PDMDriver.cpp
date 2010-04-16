@@ -1304,6 +1304,55 @@ static DECLCALLBACK(int) pdmR3DrvHlp_CritSectInit(PPDMDRVINS pDrvIns, PPDMCRITSE
 }
 
 
+/** @interface_method_impl{PDMDRVHLP,pfnCallR0} */
+static DECLCALLBACK(int) pdmR3DrvHlp_CallR0(PPDMDRVINS pDrvIns, uint32_t uOperation, uint64_t u64Arg)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    PVM pVM = pDrvIns->Internal.s.pVMR3;
+    LogFlow(("pdmR3DrvHlp_CallR0: caller='%s'/%d: uOperation=%#x u64Arg=%#RX64\n",
+             pDrvIns->pReg->szName, pDrvIns->iInstance, uOperation, u64Arg));
+
+    /*
+     * Lazy resolve the ring-0 entry point.
+     */
+    int rc = VINF_SUCCESS;
+    PFNPDMDRVREQHANDLERR0 pfnReqHandlerR0 = pDrvIns->Internal.s.pfnReqHandlerR0;
+    if (RT_UNLIKELY(pfnReqHandlerR0 == NIL_RTR0PTR))
+    {
+        if (pDrvIns->pReg->fFlags & PDM_DRVREG_FLAGS_R0)
+        {
+            char szSymbol[          sizeof("drvR0") + sizeof(pDrvIns->pReg->szName) + sizeof("ReqHandler")];
+            strcat(strcat(strcpy(szSymbol, "drvR0"),         pDrvIns->pReg->szName),         "ReqHandler");
+            rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDrvIns->pReg->szR0Mod, szSymbol, &pfnReqHandlerR0);
+            if (RT_SUCCESS(rc))
+                pDrvIns->Internal.s.pfnReqHandlerR0 = pfnReqHandlerR0;
+            else
+                pfnReqHandlerR0 = NIL_RTR0PTR;
+        }
+        else
+            rc = VERR_ACCESS_DENIED;
+    }
+    if (RT_LIKELY(pfnReqHandlerR0 != NIL_RTR0PTR))
+    {
+        /*
+         * Make the ring-0 call.
+         */
+        PDMDRIVERCALLREQHANDLERREQ Req;
+        Req.Hdr.u32Magic    = SUPVMMR0REQHDR_MAGIC;
+        Req.Hdr.cbReq       = sizeof(Req);
+        Req.pDrvInsR0       = PDMDRVINS_2_R0PTR(pDrvIns);
+        Req.uOperation      = uOperation;
+        Req.u32Alignment    = 0;
+        Req.u64Arg          = u64Arg;
+        rc = SUPR3CallVMMR0Ex(pVM->pVMR0, NIL_VMCPUID, VMMR0_DO_PDM_DRIVER_CALL_REQ_HANDLER, 0, &Req.Hdr);
+    }
+
+    LogFlow(("pdmR3DrvHlp_CallR0: caller='%s'/%d: returns %Rrc\n", pDrvIns->pReg->szName,
+             pDrvIns->iInstance, rc));
+    return rc;
+}
+
+
 /**
  * The driver helper structure.
  */
@@ -1342,6 +1391,7 @@ const PDMDRVHLPR3 g_pdmR3DrvHlp =
     pdmR3DrvHlp_LdrGetRCInterfaceSymbols,
     pdmR3DrvHlp_LdrGetR0InterfaceSymbols,
     pdmR3DrvHlp_CritSectInit,
+    pdmR3DrvHlp_CallR0,
     PDM_DRVHLPR3_VERSION /* u32TheEnd */
 };
 

@@ -35,6 +35,7 @@
 #define ___VBox_pdmapi_h
 
 #include <VBox/types.h>
+#include <VBox/sup.h>
 
 RT_C_DECLS_BEGIN
 
@@ -56,7 +57,7 @@ VMMDECL(int)    PDMApicReadMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t 
 VMMDECL(int)    PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys);
 VMMDECL(bool)   PDMVMMDevHeapIsEnabled(PVM pVM);
 
-#ifdef IN_RING3
+
 /** @defgroup grp_pdm_r3    The PDM Host Context Ring-3 API
  * @ingroup grp_pdm
  * @{
@@ -128,16 +129,46 @@ VMMR3DECL(int)  PDMR3UnregisterVMMDevHeap(PVM pVM, RTGCPHYS GCPhys);
 
 VMMR3DECL(void) PDMR3ReleaseOwnedLocks(PVM pVM);
 /** @} */
-#endif
 
 
-#ifdef IN_RC
-/** @defgroup grp_pdm_gc    The PDM Guest Context API
+
+/** @defgroup grp_pdm_rc    The PDM Raw-Mode Context API
  * @ingroup grp_pdm
  * @{
  */
 /** @} */
-#endif
+
+
+
+/** @defgroup grp_pdm_r0    The PDM Ring-0 Context API
+ * @ingroup grp_pdm
+ * @{
+ */
+
+/**
+ * Request buffer for PDMR0DriverCallReqHandler / VMMR0_DO_PDM_DRIVER_CALL_REQ_HANDLER.
+ * @see PDMR0DriverCallReqHandler.
+ */
+typedef struct PDMDRIVERCALLREQHANDLERREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR      Hdr;
+    /** The driver instance. */
+    PPDMDRVINSR0        pDrvInsR0;
+    /** The operation. */
+    uint32_t            uOperation;
+    /** Explicit alignment padding. */
+    uint32_t            u32Alignment;
+    /** Optional 64-bit integer argument. */
+    uint64_t            u64Arg;
+} PDMDRIVERCALLREQHANDLERREQ;
+/** Pointer to a PDMR0DriverCallReqHandler / VMMR0_DO_PDM_DRIVER_CALL_REQ_HANDLER
+ * request buffer. */
+typedef PDMDRIVERCALLREQHANDLERREQ *PPDMDRIVERCALLREQHANDLERREQ;
+
+VMMR0_INT_DECL(int) PDMR0DriverCallReqHandler(PVM pVM, PPDMDRIVERCALLREQHANDLERREQ pReq);
+
+/** @} */
 
 RT_C_DECLS_END
 

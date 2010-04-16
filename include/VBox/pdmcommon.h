@@ -135,6 +135,18 @@ typedef DECLCALLBACK(bool) FNPDMDRVASYNCNOTIFY(PPDMDRVINS pDrvIns);
 /** Pointer to a FNPDMDRVASYNCNOTIFY. */
 typedef FNPDMDRVASYNCNOTIFY *PFNPDMDRVASYNCNOTIFY;
 
+/**
+ * The ring-0 driver request handle.
+ *
+ * @returns VBox status code. PDMDrvHlpCallR0 will return this.
+ * @param   pDrvIns     The driver instance (the ring-0 mapping).
+ * @param   uOperation  The operation.
+ * @param   u64Arg      Optional integer argument for the operation.
+ */
+typedef DECLCALLBACK(int) FNPDMDRVREQHANDLERR0(PPDMDRVINS pDrvIns, uint32_t uOperation, uint64_t u64Arg);
+/** Ring-0 pointer to a FNPDMDRVREQHANDLERR0. */
+typedef R0PTRTYPE(FNPDMDRVREQHANDLERR0 *) PFNPDMDRVREQHANDLERR0;
+
 /** @} */
 
 #endif

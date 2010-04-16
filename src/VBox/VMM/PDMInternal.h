@@ -245,6 +245,8 @@ typedef struct PDMDRVINSINT
     R3PTRTYPE(PFNPDMDRVASYNCNOTIFY) pfnAsyncNotify;
     /** Configuration handle to the instance node. */
     R3PTRTYPE(PCFGMNODE)            pCfgHandle;
+    /** Pointer to the ring-0 request handler function. */
+    PFNPDMDRVREQHANDLERR0           pfnReqHandlerR0;
 } PDMDRVINSINT;
 
 
