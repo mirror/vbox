@@ -1075,8 +1075,10 @@ typedef struct
     RTGCPTR64           GCRegionAddr;
     uint32_t            cbRegion;
     uint32_t            u32Alignment;
-} VMMDevSharedModuleRegion;
-AssertCompileSize(VMMDevSharedModuleRegion, 16);
+} VMMDEVSHAREDREGIONDESC;
+AssertCompileSize(VMMDEVSHAREDREGIONDESC, 16);
+
+#define VMMDEVSHAREDREGIONDESC_MAX          32
 
 /**
  * Shared module registration
@@ -1096,7 +1098,7 @@ typedef struct
     /** Module version */
     char                        szVersion[16];
     /** Shared region descriptor(s). */
-    VMMDevSharedModuleRegion    aRegions[1];
+    VMMDEVSHAREDREGIONDESC      aRegions[1];
 } VMMDevSharedModuleRegistrationRequest;
 AssertCompileSize(VMMDevSharedModuleRegistrationRequest, 24+4+4+8+128+16+16);
 
