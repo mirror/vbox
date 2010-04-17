@@ -368,8 +368,8 @@ tcp_sockclosed(PNATState pData, struct tcpcb *tp)
      * easting a lot of CPU. To avoid this we don't sent on sockets marked as closed
      * (see slirp.c for details about setting so_close member).
      */
-    if (   tp 
-        && tp->t_socket 
+    if (   tp
+        && tp->t_socket
         && !tp->t_socket->so_close)
         tcp_output(pData, tp);
 }

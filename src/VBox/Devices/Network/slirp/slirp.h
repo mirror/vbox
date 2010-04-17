@@ -79,7 +79,7 @@ typedef uint32_t u_int32_t;
 
 #endif /* !RT_OS_WINDOWS */
 
-#if defined(RT_OS_WINDOWS) || defined (RT_OS_SOLARIS) 
+#if defined(RT_OS_WINDOWS) || defined (RT_OS_SOLARIS)
 typedef uint64_t u_int64_t;
 typedef char *caddr_t;
 #endif

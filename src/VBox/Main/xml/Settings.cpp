@@ -3394,7 +3394,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                 default: /*case NetworkAttachmentType_Null:*/
                 break;
             }
-        } 
+        }
         else
         {
             /* m->sv >= SettingsVersion_v1_10 */
@@ -3576,7 +3576,7 @@ void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode,
         case NetworkAttachmentType_NAT:
             xml::ElementNode *pelmNAT;
             pelmNAT = elmParent.createChild("NAT");
-            
+
             if (nic.nat.strBindIP.length())
                 pelmNAT->setAttribute("hostip", nic.nat.strBindIP);
             if (nic.nat.u32Mtu)
@@ -3625,19 +3625,19 @@ void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode,
                     pelmPF->setAttribute("guestport", (*rule).u16GuestPort);
             }
         break;
-    
+
         case NetworkAttachmentType_Bridged:
             elmParent.createChild("BridgedInterface")->setAttribute("name", nic.strName);
         break;
-    
+
         case NetworkAttachmentType_Internal:
             elmParent.createChild("InternalNetwork")->setAttribute("name", nic.strName);
         break;
-    
+
         case NetworkAttachmentType_HostOnly:
             elmParent.createChild("HostOnlyInterface")->setAttribute("name", nic.strName);
         break;
-    
+
         default: /*case NetworkAttachmentType_Null:*/
         break;
     }

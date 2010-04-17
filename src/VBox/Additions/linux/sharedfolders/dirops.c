@@ -464,7 +464,7 @@ sf_create_aux (struct inode *parent, struct dentry *dentry, int mode, int fDirec
                 goto fail1;
         }
 
-        /* 
+        /*
          * Don't close this handle right now. We assume that the same file is
          * opened with sf_reg_open() and later closed with sf_reg_close(). Save
          * the handle in between. Does not apply to directories. True?

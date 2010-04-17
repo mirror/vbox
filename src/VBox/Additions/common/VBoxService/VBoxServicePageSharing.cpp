@@ -45,7 +45,7 @@
 static RTSEMEVENTMULTI  g_PageSharingEvent = NIL_RTSEMEVENTMULTI;
 
 #if defined(RT_OS_WINDOWS) && !defined(TARGET_NT4)
-#include <tlhelp32.h> 
+#include <tlhelp32.h>
 #include <psapi.h>
 
 typedef struct
@@ -161,7 +161,7 @@ void VBoxServicePageSharingRegisterModule(HANDLE hProcess, PKNOWN_MODULE pModule
                     break; /* ignore */
                 }
             }
-                
+
             pBaseAddress = (BYTE *)MemInfo[i].BaseAddress + MemInfo[i].RegionSize;
             if (dwModuleSize > MemInfo[i].RegionSize)
                 dwModuleSize -= MemInfo[i].RegionSize;
@@ -174,7 +174,7 @@ void VBoxServicePageSharingRegisterModule(HANDLE hProcess, PKNOWN_MODULE pModule
     }
     while (dwModuleSize);
 
-    int rc = VbglR3RegisterSharedModule(pModule->Info.szModule, pModule->szFileVersion, (RTGCPTR64)pModule->Info.modBaseAddr, 
+    int rc = VbglR3RegisterSharedModule(pModule->Info.szModule, pModule->szFileVersion, (RTGCPTR64)pModule->Info.modBaseAddr,
                                         pModule->Info.modBaseSize, idxRegion, aRegions);
     AssertRC(rc);
 
@@ -237,11 +237,11 @@ void VBoxServicePageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppN
             Assert(ret); NOREF(ret);
         }
 
-        printf( "\n\n     MODULE NAME:     %s",           ModuleInfo.szModule ); 
-        printf( "\n     executable     = %s",             ModuleInfo.szExePath ); 
-        printf( "\n     process ID     = 0x%08X",         ModuleInfo.th32ProcessID ); 
-        printf( "\n     base address   = 0x%08X", (DWORD) ModuleInfo.modBaseAddr ); 
-        printf( "\n     base size      = %d",             ModuleInfo.modBaseSize ); 
+        printf( "\n\n     MODULE NAME:     %s",           ModuleInfo.szModule );
+        printf( "\n     executable     = %s",             ModuleInfo.szExePath );
+        printf( "\n     process ID     = 0x%08X",         ModuleInfo.th32ProcessID );
+        printf( "\n     base address   = 0x%08X", (DWORD) ModuleInfo.modBaseAddr );
+        printf( "\n     base size      = %d",             ModuleInfo.modBaseSize );
     }
     while (Module32Next(hSnapshot, &ModuleInfo));
 
@@ -269,7 +269,7 @@ void VBoxServicePageSharingInspectGuest()
     ProcessInfo.dwSize = sizeof(ProcessInfo);
     Process32First(hSnapshot, &ProcessInfo);
 
-    do 
+    do
     {
         VBoxServicePageSharingInspectModules(ProcessInfo.th32ProcessID, &pNewTree);
     }
@@ -360,7 +360,7 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
      */
     for (;;)
     {
-        
+
         VBoxServicePageSharingInspectGuest();
 
         /*

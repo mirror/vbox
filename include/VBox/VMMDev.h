@@ -1070,7 +1070,7 @@ AssertCompileSize(VMMDevGetCpuHotPlugRequest, 24+4+4+4);
 /**
  * Shared region description
  */
-typedef struct 
+typedef struct
 {
     RTGCPTR64           GCRegionAddr;
     uint32_t            cbRegion;
@@ -1083,7 +1083,7 @@ AssertCompileSize(VMMDEVSHAREDREGIONDESC, 16);
 /**
  * Shared module registration
  */
-typedef struct 
+typedef struct
 {
     /** Header. */
     VMMDevRequestHeader         header;
@@ -1106,7 +1106,7 @@ AssertCompileSize(VMMDevSharedModuleRegistrationRequest, 24+4+4+8+128+16+16);
 /**
  * Shared module unregistration
  */
-typedef struct 
+typedef struct
 {
     /** Header. */
     VMMDevRequestHeader         header;

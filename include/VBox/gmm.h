@@ -532,7 +532,7 @@ GMMR3DECL(int)  GMMR3MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChun
 GMMR3DECL(int)  GMMR3SeedChunk(PVM pVM, RTR3PTR pvR3);
 GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages);
 GMMR3DECL(int)  GMMR3QueryVMMMemoryStats(PVM pVM, uint64_t *pcTotalAllocPages, uint64_t *pcTotalFreePages, uint64_t *pcTotalBalloonPages);
-GMMR3DECL(int)  GMMR3RegisterSharedModule(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule, 
+GMMR3DECL(int)  GMMR3RegisterSharedModule(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule,
                                           unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions);
 GMMR3DECL(int)  GMMR3UnregisterSharedModule(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule);
 GMMR3DECL(int)  GMMR3CheckSharedModules(PVM pVM);

@@ -250,7 +250,7 @@ static int handleExecProgram(HandlerArg *a)
             ComPtr<IProgress> progress;
             ULONG uPID = 0;
 
-            if (verbose) 
+            if (verbose)
             {
                 if (uTimeoutMS == 0)
                     RTPrintf("Waiting for guest to start process ...\n");
@@ -300,7 +300,7 @@ static int handleExecProgram(HandlerArg *a)
                     LONG iRc;
                     CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
 
-                    if (verbose) 
+                    if (verbose)
                         RTPrintf("Process completed.\n");
 
                     /* Print output if wanted. */
@@ -309,7 +309,7 @@ static int handleExecProgram(HandlerArg *a)
                     {
                         Bstr strOutput;
                         CHECK_ERROR_BREAK(guest, GetProcessOutput(uPID, 0 /* @todo */, strOutput.asOutParam()));
-                        if (verbose) 
+                        if (verbose)
                             RTPrintf("Output is:\n");
                         //RTPrintf(strOutput.raw());
                     }

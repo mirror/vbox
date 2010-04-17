@@ -166,7 +166,7 @@ private:
 # ifdef VBOX_WITH_GUEST_CONTROL
     /** General extension callback for guest control. */
     HGCMSVCEXTHANDLE  mhExtCtrl;
-        
+
     volatile uint32_t mNextContextID;
     CallbackList mCallbackList;
 # endif

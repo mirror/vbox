@@ -47,7 +47,7 @@
  * @param   cRegions            Number of shared region descriptors
  * @param   pRegions            Shared region(s)
  */
-VBGLR3DECL(int) VbglR3RegisterSharedModule(char *pszModuleName, char *pszVersion, 
+VBGLR3DECL(int) VbglR3RegisterSharedModule(char *pszModuleName, char *pszVersion,
                                            RTGCPTR64  GCBaseAddr, uint32_t cbModule,
                                            unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions)
 {
@@ -79,7 +79,7 @@ VBGLR3DECL(int) VbglR3RegisterSharedModule(char *pszModuleName, char *pszVersion
 end:
     RTMemFree(pReq);
     return rc;
-    
+
 }
 
 /**

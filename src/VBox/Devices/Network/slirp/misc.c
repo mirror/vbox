@@ -154,7 +154,7 @@ free_list_check:
         return NULL;
     }
 
-    /* we're on sub-zone we need get chunk of master zone and split 
+    /* we're on sub-zone we need get chunk of master zone and split
      * it for sub-zone conforming chunks.
      */
     sub_area = slirp_uma_alloc(zone->master_zone, zone->master_zone->size, NULL, 0);
@@ -167,7 +167,7 @@ free_list_check:
     }
     zone->max_items ++;
     it = &((struct item *)sub_area)[-1];
-    /* it's chunk descriptor of master zone we should remove it 
+    /* it's chunk descriptor of master zone we should remove it
      *  from the master list first
      */
     Assert((it->zone && it->zone->magic == ZONE_MAGIC));
@@ -266,7 +266,7 @@ void uma_zone_set_max(uma_zone_t zone, int max)
         *(uint32_t *)(((uint8_t *)&it[1]) + zone->size) = 0xabadbabe;
         LIST_INSERT_HEAD(&zone->free_items, it, list);
     }
-    
+
 }
 
 void uma_zone_set_allocf(uma_zone_t zone, uma_alloc_t pfAlloc)

@@ -4843,8 +4843,8 @@ static DECLCALLBACK(void) pcnetDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
      */
     pThis->pDrvBase = NULL;
     pThis->pDrvR3 = NULL;
-    pThis->pDrvR0 = (PPDMINETWORKUPR0)NULL;
-    pThis->pDrvRC = (PPDMINETWORKUPRC)NULL;
+    pThis->pDrvR0 = NIL_RTR0PTR;
+    pThis->pDrvRC = NIL_RTRCPTR;
 
     PDMCritSectLeave(&pThis->CritSect);
 }

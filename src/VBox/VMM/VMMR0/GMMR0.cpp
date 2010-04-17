@@ -3013,9 +3013,9 @@ GMMR0DECL(int) GMMR0QueryVMMMemoryStatsReq(PVM pVM, PGMMMEMSTATSREQ pReq)
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
-    pReq->cAllocPages     = pGMM->cAllocatedPages; 
-    pReq->cFreePages      = (pGMM->cChunks << (GMM_CHUNK_SHIFT- PAGE_SHIFT)) - pGMM->cAllocatedPages; 
-    pReq->cBalloonedPages = pGMM->cBalloonedPages; 
+    pReq->cAllocPages     = pGMM->cAllocatedPages;
+    pReq->cFreePages      = (pGMM->cChunks << (GMM_CHUNK_SHIFT- PAGE_SHIFT)) - pGMM->cAllocatedPages;
+    pReq->cBalloonedPages = pGMM->cBalloonedPages;
     GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
 
     return VINF_SUCCESS;
@@ -3327,7 +3327,7 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
  * @param   cRegions            Number of shared region descriptors
  * @param   pRegions            Shared region(s)
  */
-GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule, 
+GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule,
                                          unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions)
 {
     return VERR_NOT_IMPLEMENTED;
@@ -3349,7 +3349,7 @@ GMMR0DECL(int)  GMMR0RegisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMREGISTE
      */
     AssertPtrReturn(pVM, VERR_INVALID_POINTER);
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
-    AssertMsgReturn(pReq->Hdr.cbReq >= sizeof(*pReq) && pReq->Hdr.cbReq == (unsigned)RT_OFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[pReq->cRegions]), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pReq->Hdr.cbReq >= sizeof(*pReq) && pReq->Hdr.cbReq == RT_UOFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[pReq->cRegions]), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
     return GMMR0RegisterSharedModule(pVM, idCpu, pReq->szName, pReq->szVersion, pReq->GCBaseAddr, pReq->cbModule, pReq->cRegions, pReq->aRegions);
 }

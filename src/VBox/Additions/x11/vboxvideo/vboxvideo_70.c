@@ -443,11 +443,11 @@ VBOXProbe(DriverPtr drv, int flags)
 /**
  * This function hooks into the chain that is called when framebuffer access
  * is allowed or disallowed by a call to EnableDisableFBAccess in the server.
- * In other words, it observes when the server wishes access to the 
+ * In other words, it observes when the server wishes access to the
  * framebuffer to be enabled and when it should be disabled.  We need to know
  * this because we disable access ourselves during mode switches (presumably
  * the server should do this but it doesn't) and want to know whether to
- * restore it or not afterwards. 
+ * restore it or not afterwards.
  */
 static void
 vboxEnableDisableFBAccess(int scrnIndex, Bool enable)
@@ -834,7 +834,7 @@ VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
         VBOXUnmapVidMem(pScrn);
     }
     pScrn->vtSema = FALSE;
-    
+
     /* Destroy the VGA hardware record */
     vgaHWFreeHWRec(pScrn);
 
