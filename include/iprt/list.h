@@ -140,6 +140,23 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
 #define RTListNodeIsFirst(pList, pNode) ((pNode)->pPrev == (pList))
 
 /**
+ * Checks if a type converted node is actually the dummy element (@a pList).
+ *
+ * @retval  @c true if the node is the dummy element in the list.
+ * @retval  @c false otherwise.
+ *
+ * @param   pList               The list.
+ * @param   pNodeStruct         The node structure to check.  Typically
+ *                              something obtained from RTListNodeGetNext() or
+ *                              RTListNodeGetPrev().  This is NOT a PRTLISTNODE
+ *                              but something that contains a RTLISTNODE member!
+ * @param   Type                Structure the list node is a member of.
+ * @param   Member              The list node member.
+ */
+#define RTListNodeIsDummy(pList, pNode, Type, Member) \
+         ( (pNode) != RT_FROM_MEMBER((pList), Type, Member) )
+
+/**
  * Checks if a list is empty.
  *
  * @retval  @c true if the list is empty.
@@ -198,6 +215,20 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
  */
 #define RTListNodeGetLast(pList, Type, Member) \
     (!RTListIsEmpty(pList) ? RTListNodeGetPrev(pList, Type, Member) : NULL)
+
+/**
+ * Enumerate the list in head to tail order.
+ *
+ * @param   pList               List to enumerate.
+ * @param   pIterator           The iterator variable name.
+ * @param   Type                Structure the list node is a member of.
+ * @param   Member              The list node member name.
+ */
+#define RTListForEach(pList, pIterator, Type, Member) \
+    for (pIterator = RTListNodeGetNext(pList, Type, Member); \
+         !RTListNodeIsDummy(pList, pIterator, Type, Member); \
+         pIterator = RT_FROM_MEMBER((pIterator)->Member.pNext, Type, Member) )
+
 
 /**
  * Move the given list to a new list header.
