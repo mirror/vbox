@@ -53,7 +53,7 @@ typedef struct LISTELEM
 
 
 static void tstRTListOrder(RTTEST hTest, PRTLISTNODE pList, unsigned cElements,
-                           unsigned idxStart, unsigned idxEnd, unsigned idxStep)
+                           unsigned idxFirst, unsigned idxLast, unsigned idxStep)
 {
     RTTEST_CHECK(hTest, RTListIsEmpty(pList) == false);
     RTTEST_CHECK(hTest, RTListNodeGetFirst(pList, LISTELEM, Node) != NULL);
@@ -65,27 +65,46 @@ static void tstRTListOrder(RTTEST hTest, PRTLISTNODE pList, unsigned cElements,
 
     /* Check that the order is right. */
     PLISTELEM pNode = RTListNodeGetFirst(pList, LISTELEM, Node);
-    for (unsigned i = idxStart; i < idxEnd; i += idxStep)
+    for (unsigned i = idxFirst; i < idxLast; i += idxStep)
     {
         RTTEST_CHECK(hTest, pNode->idx == i);
         pNode = RTListNodeGetNext(&pNode->Node, LISTELEM, Node);
     }
 
-    RTTEST_CHECK(hTest, pNode->idx == idxEnd);
+    RTTEST_CHECK(hTest, pNode->idx == idxLast);
     RTTEST_CHECK(hTest, RTListNodeGetLast(pList, LISTELEM, Node) == pNode);
     RTTEST_CHECK(hTest, RTListNodeIsLast(pList, &pNode->Node) == true);
 
     /* Check reverse order */
     pNode = RTListNodeGetLast(pList, LISTELEM, Node);
-    for (unsigned i = idxEnd; i > idxStart; i -= idxStep)
+    for (unsigned i = idxLast; i > idxFirst; i -= idxStep)
     {
         RTTEST_CHECK(hTest, pNode->idx == i);
         pNode = RTListNodeGetPrev(&pNode->Node, LISTELEM, Node);
     }
 
-    RTTEST_CHECK(hTest, pNode->idx == idxStart);
+    RTTEST_CHECK(hTest, pNode->idx == idxFirst);
     RTTEST_CHECK(hTest, RTListNodeGetFirst(pList, LISTELEM, Node) == pNode);
     RTTEST_CHECK(hTest, RTListNodeIsFirst(pList, &pNode->Node) == true);
+
+    /* The list enumeration. */
+    unsigned idx = idxFirst;
+    RTListForEach(pList, pNode, LISTELEM, Node)
+    {
+        RTTEST_CHECK_RETV(hTest, idx == pNode->idx);
+        idx += idxStep;
+    }
+    RTTEST_CHECK_MSG_RETV(hTest, idx == idxLast + idxStep || (idx == idxFirst && idxFirst == idxLast),
+                          (hTest, "idx=%u idxFirst=%u idxLast=%u idxStep=%u\n", idx, idxFirst, idxLast, idxStep));
+
+    idx = idxLast;
+    RTListForEachReverse(pList, pNode, LISTELEM, Node)
+    {
+        RTTEST_CHECK_RETV(hTest, idx == pNode->idx);
+        idx -= idxStep;
+    }
+    RTTEST_CHECK_MSG_RETV(hTest, idx == idxFirst - idxStep || (idx == idxLast && idxFirst == idxLast),
+                          (hTest, "idx=%u idxFirst=%u idxLast idxStep=%u\n", idx, idxFirst, idxLast, idxStep));
 }
 
 static void tstRTListCreate(RTTEST hTest, unsigned cElements)

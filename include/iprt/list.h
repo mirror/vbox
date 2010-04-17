@@ -154,7 +154,7 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
  * @param   Member              The list node member.
  */
 #define RTListNodeIsDummy(pList, pNode, Type, Member) \
-         ( (pNode) != RT_FROM_MEMBER((pList), Type, Member) )
+         ( (pNode) == RT_FROM_MEMBER((pList), Type, Member) )
 
 /**
  * Checks if a list is empty.
@@ -228,6 +228,20 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
     for (pIterator = RTListNodeGetNext(pList, Type, Member); \
          !RTListNodeIsDummy(pList, pIterator, Type, Member); \
          pIterator = RT_FROM_MEMBER((pIterator)->Member.pNext, Type, Member) )
+
+
+/**
+ * Enumerate the list in reverse order (tail to head).
+ *
+ * @param   pList               List to enumerate.
+ * @param   pIterator           The iterator variable name.
+ * @param   Type                Structure the list node is a member of.
+ * @param   Member              The list node member name.
+ */
+#define RTListForEachReverse(pList, pIterator, Type, Member) \
+    for (pIterator = RTListNodeGetLast(pList, Type, Member); \
+         !RTListNodeIsDummy(pList, pIterator, Type, Member); \
+         pIterator = RT_FROM_MEMBER((pIterator)->Member.pPrev, Type, Member) )
 
 
 /**
