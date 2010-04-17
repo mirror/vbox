@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -35,10 +35,12 @@
 #include "the-linux-kernel.h"
 #include "internal/iprt.h"
 #include <iprt/semaphore.h>
-#include <iprt/alloc.h>
+
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/mem.h>
 #include <iprt/err.h>
+#include <iprt/list.h>
 
 #include "internal/magics.h"
 
@@ -46,181 +48,354 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+typedef struct RTSEMMUTEXLNXWAITER
+{
+    /** The list entry. */
+    RTLISTNODE                  ListEntry;
+    /** The waiting task. */
+    struct task_struct         *pTask;
+    /** Why did we wake up? */
+    enum
+    {
+        /** Wakeup to take the semaphore. */
+        RTSEMMUTEXLNXWAITER_WAKEUP,
+        /** Mutex is being destroyed. */
+        RTSEMMUTEXLNXWAITER_DESTROYED,
+        /** Some other reason. */
+        RTSEMMUTEXLNXWAITER_OTHER
+    } volatile                  enmReason;
+} RTSEMMUTEXLNXWAITER, *PRTSEMMUTEXLNXWAITER;
+
 /**
- * Linux mutex semaphore.
+ * Wrapper for the linux semaphore structure.
  */
 typedef struct RTSEMMUTEXINTERNAL
 {
     /** Magic value (RTSEMMUTEX_MAGIC). */
-    uint32_t volatile   u32Magic;
-    /** Number of recursive locks - 0 if not owned by anyone, > 0 if owned. */
-    uint32_t volatile   cRecursion;
-    /** The wait queue. */
-    wait_queue_head_t   Head;
-    /** The current owner. */
-    void * volatile     pOwner;
+    uint32_t                    u32Magic;
+    /** The number of recursions. */
+    uint32_t                    cRecursions;
+    /** The list of waiting threads. */
+    RTLISTNODE                  WaiterList;
+    /** The current owner, NULL if none. */
+    struct task_struct         *pOwnerTask;
+    /** The number of references to this piece of memory.  This is used to
+     *  prevent it from being kicked from underneath us while waiting. */
+    uint32_t volatile           cRefs;
+    /** The spinlock protecting the members and falling asleep. */
+    spinlock_t                  Spinlock;
 } RTSEMMUTEXINTERNAL, *PRTSEMMUTEXINTERNAL;
 
 
-
-RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX phMutexSem)
+RTDECL(int) RTSemMutexCreate(PRTSEMMUTEX phMtx)
 {
-    return RTSemMutexCreateEx(phMutexSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, NULL);
-}
-
-
-RTDECL(int)  RTSemMutexCreateEx(PRTSEMMUTEX phMutexSem, uint32_t fFlags,
-                                RTLOCKVALCLASS hClass, uint32_t uSubClass, const char *pszNameFmt, ...)
-{
+    /*
+     * Allocate.
+     */
     PRTSEMMUTEXINTERNAL pThis;
-
-    AssertReturn(!(fFlags & ~RTSEMMUTEX_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
-
     pThis = (PRTSEMMUTEXINTERNAL)RTMemAlloc(sizeof(*pThis));
-    if (pThis)
-    {
-        pThis->u32Magic   = RTSEMMUTEX_MAGIC;
-        pThis->cRecursion = 0;
-        pThis->pOwner     = NULL;
-        init_waitqueue_head(&pThis->Head);
+    if (!pThis)
+        return VERR_NO_MEMORY;
 
-        *phMutexSem = pThis;
-AssertReleaseMsgFailed(("This mutex implementation is buggy, fix it!\n"));
-        return VINF_SUCCESS;
-    }
-    return VERR_NO_MEMORY;
+    /*
+     * Initialize.
+     */
+    pThis->u32Magic     = RTSEMMUTEX_MAGIC;
+    pThis->cRecursions  = 0;
+    pThis->pOwnerTask   = NULL;
+    pThis->cRefs        = 1;
+    RTListInit(&pThis->WaiterList);
+    spin_lock_init(&pThis->Spinlock);
+
+    *phMtx = pThis;
+    return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTSemMutexCreate);
 
 
-RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX hMutexSem)
+RTDECL(int) RTSemMutexDestroy(RTSEMMUTEX hMtx)
 {
+    PRTSEMMUTEXINTERNAL     pThis = hMtx;
+    PRTSEMMUTEXLNXWAITER    pCur;
+    unsigned long           fSavedIrq;
+
     /*
-     * Validate input.
+     * Validate.
      */
-    PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)hMutexSem;
     if (pThis == NIL_RTSEMMUTEX)
         return VINF_SUCCESS;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, ("u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
 
     /*
-     * Invalidate it and signal the object just in case.
+     * Kill it, kick waiters and release it.
      */
     AssertReturn(ASMAtomicCmpXchgU32(&pThis->u32Magic, RTSEMMUTEX_MAGIC_DEAD, RTSEMMUTEX_MAGIC), VERR_INVALID_HANDLE);
-    ASMAtomicWriteU32(&pThis->cRecursion, 0);
-    Assert(!waitqueue_active(&pThis->Head));
-    wake_up_all(&pThis->Head);
 
-    RTMemFree(pThis);
+    spin_lock_irqsave(&pThis->Spinlock, fSavedIrq);
+    RTListForEach(&pThis->WaiterList, pCur, RTSEMMUTEXLNXWAITER, ListEntry)
+    {
+        pCur->enmReason = RTSEMMUTEXLNXWAITER_DESTROYED;
+        wake_up_process(pCur->pTask);
+    }
+
+    if (ASMAtomicDecU32(&pThis->cRefs) != 0)
+        spin_unlock_irqrestore(&pThis->Spinlock, fSavedIrq);
+    else
+    {
+        spin_unlock_irqrestore(&pThis->Spinlock, fSavedIrq);
+        RTMemFree(pThis);
+    }
+
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTSemMutexDestroy);
 
 
-#undef RTSemMutexRequest
-RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
+/**
+ * Worker for rtSemMutexLinuxRequest that handles the case where we go to sleep.
+ *
+ * @returns VINF_SUCCESS, VERR_INTERRUPTED, VERR_TIMEOUT or VERR_SEM_DESTROYED.
+ *          Returns without owning the spinlock.
+ * @param   pThis           The mutex instance.
+ * @param   cMillies        The timeout.
+ * @param   fInterruptible  The wait type.
+ * @param   fSavedIrq       The saved IRQ flags.
+ */
+static int rtSemMutexLinuxRequestSleep(PRTSEMMUTEXINTERNAL pThis, RTMSINTERVAL cMillies,
+                                       bool fInterruptible, unsigned long fSavedIrq)
 {
-    int                 rc    = VINF_SUCCESS;
-    PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)hMutexSem;
+    struct task_struct *pSelf    = current;
+    int                 rc       = VERR_TIMEOUT;
+    long                lTimeout = cMillies == RT_INDEFINITE_WAIT ? MAX_SCHEDULE_TIMEOUT : msecs_to_jiffies(cMillies);
+    RTSEMMUTEXLNXWAITER Waiter;
+
+    IPRT_DEBUG_SEMS_STATE(pThis, 'm');
 
     /*
-     * Validate input.
+     * Grab a reference to the mutex and add ourselves to the waiter list.
      */
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
+    ASMAtomicIncU32(&pThis->cRefs);
+
+    Waiter.pTask     = pSelf;
+    Waiter.enmReason = RTSEMMUTEXLNXWAITER_OTHER;
+    RTListAppend(&pThis->WaiterList, &Waiter.ListEntry);
 
     /*
-     * Check for recursive request.
+     * Do the waiting.
      */
-    if (pThis->pOwner == current)
+    for (;;)
     {
-        Assert(pThis->cRecursion < 1000);
-        ASMAtomicIncU32(&pThis->cRecursion);
-        return VINF_SUCCESS;
+        /* Check signal and timeout conditions. */
+        if (    fInterruptible
+            &&  signal_pending(pSelf))
+        {
+            rc = VERR_INTERRUPTED;
+            break;
+        }
+
+        if (!lTimeout)
+            break;
+
+        /* Go to sleep. */
+        set_task_state(pSelf, fInterruptible ? TASK_INTERRUPTIBLE : TASK_UNINTERRUPTIBLE);
+        spin_unlock_irq(&pThis->Spinlock);
+
+        lTimeout = schedule_timeout(lTimeout);
+
+        spin_lock_irq(&pThis->Spinlock);
+        set_current_state(TASK_RUNNING);
+
+        /* Did someone wake us up? */
+        if (Waiter.enmReason == RTSEMMUTEXLNXWAITER_WAKEUP)
+        {
+            Assert(pThis->cRecursions == 0);
+            pThis->cRecursions = 1;
+            pThis->pOwnerTask  = NULL;
+            rc = VINF_SUCCESS;
+            break;
+        }
+
+        /* Is the mutex being destroyed? */
+        if (RT_UNLIKELY(   Waiter.enmReason == RTSEMMUTEXLNXWAITER_DESTROYED
+                        || pThis->u32Magic != RTSEMMUTEX_MAGIC))
+        {
+            rc = VERR_SEM_DESTROYED;
+            break;
+        }
     }
 
     /*
-     * Try aquire it.
+     * Unlink ourself from the waiter list, dereference the mutex and exit the
+     * lock.  We might have to free the mutex if it was the destroyed.
      */
-    if (ASMAtomicCmpXchgU32(&pThis->cRecursion, 1, 0))
-        ASMAtomicWritePtr(&pThis->pOwner, current);
+    RTListNodeRemove(&Waiter.ListEntry);
+    IPRT_DEBUG_SEMS_STATE_RC(pThis, 'M', rc);
+
+    if (RT_LIKELY(ASMAtomicDecU32(&pThis->cRefs) != 0))
+        spin_unlock_irqrestore(&pThis->Spinlock, fSavedIrq);
     else
     {
-        /*
-         * Ok wait for it.
-         */
-        DEFINE_WAIT(Wait);
-        long    lTimeout = cMillies == RT_INDEFINITE_WAIT ? MAX_SCHEDULE_TIMEOUT : msecs_to_jiffies(cMillies);
-        for (;;)
-        {
-            /* make everything thru schedule() atomic scheduling wise. */
-            prepare_to_wait(&pThis->Head, &Wait, TASK_INTERRUPTIBLE);
-
-            /* check the condition. */
-            if (ASMAtomicCmpXchgU32(&pThis->cRecursion, 1, 0))
-            {
-                ASMAtomicWritePtr(&pThis->pOwner, current);
-                break;
-            }
-
-            /* check for pending signals. */
-            if (signal_pending(current))
-            {
-                rc = VERR_INTERRUPTED; /** @todo VERR_INTERRUPTED isn't correct anylonger. please fix r0drv stuff! */
-                break;
-            }
-
-            /* wait */
-            lTimeout = schedule_timeout(lTimeout);
-
-            after_wait(&Wait);
-
-            /* Check if someone destroyed the semaphore while we was waiting. */
-            if (pThis->u32Magic != RTSEMMUTEX_MAGIC)
-            {
-                rc = VERR_SEM_DESTROYED;
-                break;
-            }
-
-            /* check for timeout. */
-            if (!lTimeout)
-            {
-                rc = VERR_TIMEOUT;
-                break;
-            }
-        }
-        finish_wait(&pThis->Head, &Wait);
+        Assert(RT_FAILURE_NP(rc));
+        spin_unlock_irqrestore(&pThis->Spinlock, fSavedIrq);
+        RTMemFree(pThis);
     }
     return rc;
+}
+
+
+/**
+ * Internal worker.
+ */
+DECLINLINE(int) rtSemMutexLinuxRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, bool fInterruptible)
+{
+    PRTSEMMUTEXINTERNAL pThis = hMutexSem;
+    struct task_struct *pSelf = current;
+    unsigned long       fSavedIrq;
+    int                 rc;
+
+    /*
+     * Validate.
+     */
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, ("u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
+    Assert(pThis->cRefs >= 1);
+
+    /*
+     * Lock it and check if it's a recursion.
+     */
+    spin_lock_irqsave(&pThis->Spinlock, fSavedIrq);
+    if (pThis->pOwnerTask == pSelf)
+    {
+        pThis->cRecursions++;
+        Assert(pThis->cRecursions > 1);
+        Assert(pThis->cRecursions < 256);
+        rc = VINF_SUCCESS;
+    }
+    /*
+     * Not a recursion, maybe it's not owned by anyone then?
+     */
+    else if (pThis->pOwnerTask == NULL)
+    {
+        Assert(pThis->cRecursions == 0);
+        pThis->cRecursions = 1;
+        pThis->pOwnerTask  = pSelf;
+        rc = VINF_SUCCESS;
+    }
+    /*
+     * Was it a polling call?
+     */
+    else if (cMillies == 0)
+        rc = VERR_TIMEOUT;
+    /*
+     * No, so go to sleep.
+     */
+    else
+        return rtSemMutexLinuxRequestSleep(pThis, cMillies, fInterruptible, fSavedIrq);
+
+    IPRT_DEBUG_SEMS_STATE_RC(pThis, 'M', rc);
+    spin_unlock_irqrestore(&pThis->Spinlock, fSavedIrq);
+    return rc;
+}
+
+
+#undef RTSemMutexRequest
+RTDECL(int) RTSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
+{
+    return rtSemMutexLinuxRequest(hMutexSem, cMillies, false /*fInterruptible*/);
 }
 RT_EXPORT_SYMBOL(RTSemMutexRequest);
 
 
-RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX hMutexSem)
+RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
+    return RTSemMutexRequest(hMutexSem, cMillies);
+}
+RT_EXPORT_SYMBOL(RTSemMutexRequestDebug);
+
+
+#undef RTSemMutexRequestNoResume
+RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
+{
+    return rtSemMutexLinuxRequest(hMutexSem, cMillies, true /*fInterruptible*/);
+}
+RT_EXPORT_SYMBOL(RTSemMutexRequest);
+
+
+RTDECL(int) RTSemMutexRequestNoResumeDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    return RTSemMutexRequestNoResume(hMutexSem, cMillies);
+}
+RT_EXPORT_SYMBOL(RTSemMutexRequestNoResumeDebug);
+
+
+RTDECL(int) RTSemMutexRelease(RTSEMMUTEX hMtx)
+{
+    PRTSEMMUTEXINTERNAL pThis = hMtx;
+    struct task_struct *pSelf = current;
+    unsigned long       fSavedIrq;
+    int                 rc;
+
     /*
-     * Validate input.
+     * Validate.
      */
-    PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)hMutexSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
-
-    AssertReturn(pThis->pOwner == current, VERR_NOT_OWNER);
+    AssertMsgReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, ("u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
+    Assert(pThis->cRefs >= 1);
 
     /*
-     * Release the mutex.
+     * Take the lock and release one recursion.
      */
-    if (pThis->cRecursion == 1)
+    spin_lock_irqsave(&pThis->Spinlock, fSavedIrq);
+    if (pThis->pOwnerTask == pSelf)
     {
-        ASMAtomicWritePtr(&pThis->pOwner, NULL);
-        ASMAtomicWriteU32(&pThis->cRecursion, 0);
-        wake_up(&pThis->Head);
+        Assert(pThis->cRecursions > 0);
+        if (--pThis->cRecursions == 0)
+        {
+            pThis->pOwnerTask = NULL;
+
+            /* anyone to wake up? */
+            if (!RTListIsEmpty(&pThis->WaiterList))
+            {
+                PRTSEMMUTEXLNXWAITER pWaiter = RTListNodeGetFirst(&pThis->WaiterList, RTSEMMUTEXLNXWAITER, ListEntry);
+                pWaiter->enmReason = RTSEMMUTEXLNXWAITER_WAKEUP;
+                wake_up_process(pWaiter->pTask);
+            }
+            IPRT_DEBUG_SEMS_STATE(pThis, 'u');
+        }
     }
     else
-        ASMAtomicDecU32(&pThis->cRecursion);
+        rc = VERR_NOT_OWNER;
+    spin_unlock_irqrestore(&pThis->Spinlock, fSavedIrq);
 
-    return VINF_SUCCESS;
+    AssertRC(rc);
+    return rc;
 }
 RT_EXPORT_SYMBOL(RTSemMutexRelease);
+
+
+RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem)
+{
+    PRTSEMMUTEXINTERNAL pThis = hMutexSem;
+    unsigned long       fSavedIrq;
+    bool                fOwned;
+
+    /*
+     * Validate.
+     */
+    AssertPtrReturn(pThis, false);
+    AssertMsgReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, ("u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), false);
+    Assert(pThis->cRefs >= 1);
+
+    /*
+     * Take the lock and release one recursion.
+     */
+    spin_lock_irqsave(&pThis->Spinlock, fSavedIrq);
+    fOwned = pThis->pOwnerTask != NULL;
+    spin_unlock_irqrestore(&pThis->Spinlock, fSavedIrq);
+
+    return fOwned;
+
+}
+RT_EXPORT_SYMBOL(RTSemMutexIsOwned);
 
