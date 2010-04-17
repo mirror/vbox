@@ -1128,7 +1128,7 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_NICBOOTPRIO:
             {
                 ComPtr<INetworkAdapter> nic;
-    
+
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 

@@ -230,7 +230,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmd(uint32_t  u32ClientId,    uint32_t
  * @returns VBox status code.
  ** @todo Docs!
  */
-VBGLR3DECL(int) VbglR3GuestCtrlExecReportStatus(uint32_t     u32ClientId, 
+VBGLR3DECL(int) VbglR3GuestCtrlExecReportStatus(uint32_t     u32ClientId,
                                                 uint32_t     u32Context,
                                                 uint32_t     u32PID,
                                                 uint32_t     u32Status,
@@ -258,6 +258,6 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecReportStatus(uint32_t     u32ClientId,
         if (RT_FAILURE(rc2))
             rc = rc2;
     }
-    return rc; 
+    return rc;
 }
 

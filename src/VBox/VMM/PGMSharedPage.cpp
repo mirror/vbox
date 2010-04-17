@@ -48,7 +48,7 @@
  * @param   cRegions            Number of shared region descriptors
  * @param   pRegions            Shared region(s)
  */
-VMMR3DECL(int) PGMR3SharedModuleRegister(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule, 
+VMMR3DECL(int) PGMR3SharedModuleRegister(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule,
                                          unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions)
 {
     return GMMR3RegisterSharedModule(pVM, pszModuleName, pszVersion, GCBaseAddr, cbModule, cRegions, pRegions);

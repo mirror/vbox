@@ -292,7 +292,7 @@ mb_free_ext(PNATState pData, struct mbuf *m)
 		case EXT_MOD_TYPE:
 		case EXT_DISPOSABLE:
 #ifndef VBOX
-            /* This code is dead in VBOX port of BSD mbufs (probably will be used for EXT_SBUFS some day) 
+            /* This code is dead in VBOX port of BSD mbufs (probably will be used for EXT_SBUFS some day)
              * @todo once bsd sbufs will be on trunk think about this code.
              */
 			*(m->m_ext.ref_cnt) = 0;

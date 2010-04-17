@@ -265,8 +265,8 @@ STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval)(ULONG aUpdateInterval)
 }
 
 STDMETHODIMP Guest::InternalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
-                                          ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, 
-                                          ULONG *aMemCache, ULONG *aPageTotal, 
+                                          ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon,
+                                          ULONG *aMemCache, ULONG *aPageTotal,
                                           ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal)
 {
     CheckComArgOutPointerValid(aCpuUser);
@@ -627,7 +627,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
         if (aTimeoutMS == 0)
             aTimeoutMS = UINT32_MAX;
 
-        /* Prepare arguments. */       
+        /* Prepare arguments. */
         com::SafeArray<IN_BSTR> args(ComSafeArrayInArg(aArguments));
         uint32_t uNumArgs = args.size();
         char **papszArgv = NULL;
@@ -651,18 +651,18 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
 
             char *pszArgs = NULL;
             if (uNumArgs > 0)
-                vrc = RTGetOptArgvToString(&pszArgs, papszArgv, 0);         
+                vrc = RTGetOptArgvToString(&pszArgs, papszArgv, 0);
             if (RT_SUCCESS(vrc))
             {
                 uint32_t cbArgs = pszArgs ? strlen(pszArgs) + 1 : 0; /* Include terminating zero. */
 
                 /* Prepare environment. */
                 com::SafeArray<IN_BSTR> env(ComSafeArrayInArg(aEnvironment));
-    
+
                 void *pvEnv = NULL;
                 uint32_t uNumEnv = 0;
                 uint32_t cbEnv = 0;
-    
+
                 for (unsigned i = 0; i < env.size(); i++)
                 {
                     vrc = prepareExecuteEnv(Utf8Str(env[i]).raw(), &pvEnv, &cbEnv, &uNumEnv);
@@ -671,7 +671,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                 }
 
                 if (RT_SUCCESS(vrc))
-                {               
+                {
                     PHOSTEXECCALLBACKDATA pData = (HOSTEXECCALLBACKDATA*)RTMemAlloc(sizeof(HOSTEXECCALLBACKDATA));
                     AssertPtr(pData);
                     uContextID = addCtrlCallbackContext(pData, sizeof(HOSTEXECCALLBACKDATA), progress);
@@ -693,7 +693,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                     paParms[i++].setPointer((void*)Utf8UserName.raw(), (uint32_t)strlen(Utf8UserName.raw()) + 1);
                     paParms[i++].setPointer((void*)Utf8Password.raw(), (uint32_t)strlen(Utf8Password.raw()) + 1);
                     paParms[i++].setUInt32(aTimeoutMS);
-    
+
                     /* Forward the information to the VMM device. */
                     AssertPtr(mParent);
                     VMMDev *vmmDev = mParent->getVMMDev();
@@ -711,9 +711,9 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
             {
                 LogFlowFunc(("Waiting for HGCM callback (timeout=%ldms) ...\n", aTimeoutMS));
 
-                /* 
+                /*
                  * Wait for the HGCM low level callback until the process
-                 * has been started (or something went wrong). This is necessary to 
+                 * has been started (or something went wrong). This is necessary to
                  * get the PID.
                  */
                 CallbackListIter it = getCtrlCallbackContext(uContextID);
@@ -756,31 +756,31 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                 }
                 else /* If callback not called within time ... well, that's a timeout! */
                     vrc = VERR_TIMEOUT;
-                
+
                 /*
                  * Do *not* remove the callback yet - we might wait with the IProgress object on something
-                 * else (like end of process) ... 
+                 * else (like end of process) ...
                  */
                 if (RT_FAILURE(vrc))
                 {
                     if (vrc == VERR_FILE_NOT_FOUND) /* This is the most likely error. */
                     {
-                        rc = setError(VBOX_E_IPRT_ERROR, 
+                        rc = setError(VBOX_E_IPRT_ERROR,
                                       tr("The file '%s' was not found on guest"), Utf8Command.raw());
                     }
                     else if (vrc == VERR_BAD_EXE_FORMAT)
                     {
-                        rc = setError(VBOX_E_IPRT_ERROR, 
+                        rc = setError(VBOX_E_IPRT_ERROR,
                                       tr("The file '%s' is not an executable format on guest"), Utf8Command.raw());
                     }
                     else if (vrc == VERR_LOGON_FAILURE)
                     {
-                        rc = setError(VBOX_E_IPRT_ERROR, 
+                        rc = setError(VBOX_E_IPRT_ERROR,
                                       tr("The specified user '%s' was not able to logon on guest"), Utf8UserName.raw());
                     }
                     else if (vrc == VERR_TIMEOUT)
                     {
-                        rc = setError(VBOX_E_IPRT_ERROR, 
+                        rc = setError(VBOX_E_IPRT_ERROR,
                                       tr("The guest did not respond within time (%ums)"), aTimeoutMS);
                     }
                     else

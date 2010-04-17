@@ -56,9 +56,9 @@
 # define DO_POLL_EVENTS(rc, error, so, events, label) do {} while (0)
 
 /*
- * DO_CHECK_FD_SET is used in dumping events on socket, including POLLNVAL. 
- * gcc warns about attempts to log POLLNVAL so construction in a last to lines 
- * used to catch POLLNVAL while logging and return false in case of error while 
+ * DO_CHECK_FD_SET is used in dumping events on socket, including POLLNVAL.
+ * gcc warns about attempts to log POLLNVAL so construction in a last to lines
+ * used to catch POLLNVAL while logging and return false in case of error while
  * normal usage.
  */
 #  define DO_CHECK_FD_SET(so, events, fdset)                        \

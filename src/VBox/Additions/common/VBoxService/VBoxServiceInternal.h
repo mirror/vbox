@@ -230,8 +230,8 @@ extern int  VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
 #endif /* RT_OS_WINDOWS */
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-extern int VBoxServiceControlExecProcess(uint32_t uContext, const char *pszCmd, uint32_t uFlags, 
-                                         const char *pszArgs, uint32_t uNumArgs,                                           
+extern int VBoxServiceControlExecProcess(uint32_t uContext, const char *pszCmd, uint32_t uFlags,
+                                         const char *pszArgs, uint32_t uNumArgs,
                                          const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
                                          const char *pszStdIn, const char *pszStdOut, const char *pszStdErr,
                                          const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS);

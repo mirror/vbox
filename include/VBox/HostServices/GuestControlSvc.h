@@ -90,14 +90,14 @@ typedef struct _VBoxGuestCtrlExecCallbackData
     /** The process ID (PID). */
     uint32_t u32PID;
     /* The process status. */
-    uint32_t u32Status;    
+    uint32_t u32Status;
     /** Optional flags (not used atm). */
     uint32_t u32Flags;
     /** Optional data buffer (not used atm). */
     void *pvData;
     /** Size of optional data buffer (not used atm). */
     uint32_t cbData;
-    
+
 } HOSTEXECCALLBACKDATA, *PHOSTEXECCALLBACKDATA;
 
 enum

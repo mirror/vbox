@@ -733,4 +733,3 @@ RTDECL(void *) RTMemEfDupExNP(const void *pvSrc, size_t cbSrc, size_t cbExtra) R
     return pvDst;
 }
 
-
