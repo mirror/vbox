@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -358,7 +358,7 @@ typedef struct INTNETNETWORK
      *        it. Requires fixing the mutex code on linux...  Or maybe add
      *        another mutex for creation / destruction serilization. */
 #endif
-    RTSEMFASTMUTEX          FastMutex;
+    RTSEMFASTMUTEX          FastMutex2;
 #ifdef WITH_NEW_STUFF
     /** Wait for an interface to stop being busy so it can be removed or have its
      * destination table replaced.  We have to wait upon this while owning the
@@ -2019,7 +2019,7 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
     if (    fTrunkLocked
         ||  intnetR0TrunkIfRetain(pThis))
     {
-        rc = RTSemFastMutexRelease(pNetwork->FastMutex);
+        rc = RTSemFastMutexRelease(pNetwork->FastMutex2);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
@@ -2041,7 +2041,7 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
                 rc = VERR_SEM_DESTROYED;
             }
 
-            int rc2 = RTSemFastMutexRequest(pNetwork->FastMutex);
+            int rc2 = RTSemFastMutexRequest(pNetwork->FastMutex2);
             AssertRC(rc2);
         }
 
@@ -2635,7 +2635,7 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
      * not worth caring about right now.
      */
     PINTNETNETWORK pNetwork = pIf->pNetwork;
-    int rc = RTSemFastMutexRequest(pNetwork->FastMutex);
+    int rc = RTSemFastMutexRequest(pNetwork->FastMutex2);
     if (RT_FAILURE(rc))
     {
         intnetR0IfRelease(pIf, pSession);
@@ -2644,7 +2644,7 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
     PINTNETTRUNKIF pTrunkIf = intnetR0TrunkIfRetain(pNetwork->pTrunkIF);
     if (pTrunkIf)
     {
-        RTSemFastMutexRelease(pIf->pNetwork->FastMutex);
+        RTSemFastMutexRelease(pIf->pNetwork->FastMutex2);
 
         if (!intnetR0TrunkIfOutLock(pTrunkIf))
         {
@@ -2653,7 +2653,7 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
             return VERR_SEM_DESTROYED;
         }
 
-        rc = RTSemFastMutexRequest(pNetwork->FastMutex);
+        rc = RTSemFastMutexRequest(pNetwork->FastMutex2);
         if (RT_FAILURE(rc))
         {
             intnetR0TrunkIfOutUnlock(pTrunkIf);
@@ -2710,7 +2710,7 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
     /*
      * Release the semaphore(s) and release references.
      */
-    rc = RTSemFastMutexRelease(pNetwork->FastMutex);
+    rc = RTSemFastMutexRelease(pNetwork->FastMutex2);
     if (pTrunkIf)
     {
         intnetR0TrunkIfOutUnlock(pTrunkIf);
@@ -2766,11 +2766,11 @@ INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
      * ASSUMES that we created the ring-3 mapping when selecting or
      * allocating the buffer.
      */
-    int rc = RTSemFastMutexRequest(pIf->pNetwork->FastMutex);
+    int rc = RTSemFastMutexRequest(pIf->pNetwork->FastMutex2);
     if (RT_SUCCESS(rc))
     {
         *ppRing3Buf = pIf->pIntBufR3;
-        rc = RTSemFastMutexRelease(pIf->pNetwork->FastMutex);
+        rc = RTSemFastMutexRelease(pIf->pNetwork->FastMutex2);
     }
 
     intnetR0IfRelease(pIf, pSession);
@@ -2822,12 +2822,12 @@ INTNETR0DECL(int) INTNETR0IfGetRing0Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
      * Grab the lock and get the data.
      * ASSUMES that the handle isn't closed while we're here.
      */
-    int rc = RTSemFastMutexRequest(pIf->pNetwork->FastMutex);
+    int rc = RTSemFastMutexRequest(pIf->pNetwork->FastMutex2);
     if (RT_SUCCESS(rc))
     {
         *ppRing0Buf = pIf->pIntBuf;
 
-        rc = RTSemFastMutexRelease(pIf->pNetwork->FastMutex);
+        rc = RTSemFastMutexRelease(pIf->pNetwork->FastMutex2);
     }
     intnetR0IfRelease(pIf, pSession);
     LogFlow(("INTNETR0IfGetRing0Buffer: returns %Rrc *ppRing0Buf=%p\n", rc, *ppRing0Buf));
@@ -2906,7 +2906,7 @@ INTNETR0DECL(int) INTNETR0IfSetPromiscuousMode(PINTNET pIntNet, INTNETIFHANDLE h
     PINTNETNETWORK pNetwork = pIf->pNetwork;
     if (pNetwork)
     {
-        rc = RTSemFastMutexRequest(pNetwork->FastMutex);
+        rc = RTSemFastMutexRequest(pNetwork->FastMutex2);
         if (RT_SUCCESS(rc))
         {
             if (pIf->fPromiscuous != fPromiscuous)
@@ -2916,7 +2916,7 @@ INTNETR0DECL(int) INTNETR0IfSetPromiscuousMode(PINTNET pIntNet, INTNETIFHANDLE h
                 ASMAtomicUoWriteBool(&pIf->fPromiscuous, fPromiscuous);
             }
 
-            rc = RTSemFastMutexRelease(pNetwork->FastMutex);
+            rc = RTSemFastMutexRelease(pNetwork->FastMutex2);
         }
     }
     else
@@ -2975,7 +2975,7 @@ INTNETR0DECL(int) INTNETR0IfSetMacAddress(PINTNET pIntNet, INTNETIFHANDLE hIf, P
     PINTNETNETWORK pNetwork = pIf->pNetwork;
     if (pNetwork)
     {
-        rc = RTSemFastMutexRequest(pNetwork->FastMutex);
+        rc = RTSemFastMutexRequest(pNetwork->FastMutex2);
         if (RT_SUCCESS(rc))
         {
             if (memcmp(&pIf->Mac, pMac, sizeof(pIf->Mac)))
@@ -2986,7 +2986,7 @@ INTNETR0DECL(int) INTNETR0IfSetMacAddress(PINTNET pIntNet, INTNETIFHANDLE hIf, P
                 pIf->fMacSet = true;
             }
 
-            rc = RTSemFastMutexRelease(pNetwork->FastMutex);
+            rc = RTSemFastMutexRelease(pNetwork->FastMutex2);
         }
     }
     else
@@ -3039,7 +3039,7 @@ static int intnetR0NetworkSetIfActive(PINTNETNETWORK pNetwork, PINTNETIF pIf, bo
     if (pTrunkIf && !intnetR0TrunkIfOutLock(pTrunkIf))
         return VERR_SEM_DESTROYED;
 
-    int rc = RTSemFastMutexRequest(pNetwork->FastMutex); AssertRC(rc);
+    int rc = RTSemFastMutexRequest(pNetwork->FastMutex2); AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
         bool fNetworkLocked = true;
@@ -3063,7 +3063,7 @@ static int intnetR0NetworkSetIfActive(PINTNETNETWORK pNetwork, PINTNETIF pIf, bo
                  * We'll have to change the trunk status, so, leave
                  * the network semaphore so we don't create any deadlocks.
                  */
-                int rc2 = RTSemFastMutexRelease(pNetwork->FastMutex); AssertRC(rc2);
+                int rc2 = RTSemFastMutexRelease(pNetwork->FastMutex2); AssertRC(rc2);
                 fNetworkLocked = false;
 
                 if (pTrunkIf->pIfPort)
@@ -3072,7 +3072,7 @@ static int intnetR0NetworkSetIfActive(PINTNETNETWORK pNetwork, PINTNETIF pIf, bo
         }
 
         if (fNetworkLocked)
-            RTSemFastMutexRelease(pNetwork->FastMutex);
+            RTSemFastMutexRelease(pNetwork->FastMutex2);
     }
     if (pTrunkIf)
         intnetR0TrunkIfOutUnlock(pTrunkIf);
@@ -3417,10 +3417,10 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
     if (pIf->pIntBufDefault)
     {
         SUPR0MemFree(pIf->pSession, (RTHCUINTPTR)pIf->pIntBufDefault);
-        pIf->pIntBufDefault = NULL;
-        pIf->pIntBufDefaultR3 = 0;
-        pIf->pIntBuf = NULL;
-        pIf->pIntBufR3 = 0;
+        pIf->pIntBufDefault     = NULL;
+        pIf->pIntBufDefaultR3   = 0;
+        pIf->pIntBuf            = NULL;
+        pIf->pIntBufR3          = 0;
     }
 
     /*
@@ -3520,12 +3520,12 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
             /*
              * Link the interface to the network.
              */
-            rc = RTSemFastMutexRequest(pNetwork->FastMutex);
+            rc = RTSemFastMutexRequest(pNetwork->FastMutex2);
             if (RT_SUCCESS(rc))
             {
                 pIf->pNext = pNetwork->pIFs;
                 pNetwork->pIFs = pIf;
-                RTSemFastMutexRelease(pNetwork->FastMutex);
+                RTSemFastMutexRelease(pNetwork->FastMutex2);
 
                 /*
                  * Register the interface with the session.
@@ -3547,8 +3547,8 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
                     return rc;
                 }
 
-                RTSemFastMutexDestroy(pNetwork->FastMutex);
-                pNetwork->FastMutex = NIL_RTSEMFASTMUTEX;
+                RTSemFastMutexDestroy(pNetwork->FastMutex2);
+                pNetwork->FastMutex2 = NIL_RTSEMFASTMUTEX;
             }
 
             SUPR0MemFree(pIf->pSession, (RTHCUINTPTR)pIf->pIntBufDefault);
@@ -3603,7 +3603,7 @@ static DECLCALLBACK(INTNETSWDECISION) intnetR0TrunkIfPortPreRecv(PINTNETTRUNKSWP
 
     /* assert some sanity */
     AssertPtrReturn(pNetwork, INTNETSWDECISION_TRUNK);
-    AssertReturn(pNetwork->FastMutex != NIL_RTSEMFASTMUTEX, INTNETSWDECISION_TRUNK);
+    AssertReturn(pNetwork->FastMutex2 != NIL_RTSEMFASTMUTEX, INTNETSWDECISION_TRUNK);
     AssertPtr(pvSrc);
     AssertPtr(cbSrc >= 6);
     Assert(fSrc);
@@ -3622,14 +3622,14 @@ static DECLCALLBACK(bool) intnetR0TrunkIfPortRecv(PINTNETTRUNKSWPORT pSwitchPort
 
     /* assert some sanity */
     AssertPtrReturn(pNetwork, false);
-    AssertReturn(pNetwork->FastMutex != NIL_RTSEMFASTMUTEX, false);
+    AssertReturn(pNetwork->FastMutex2 != NIL_RTSEMFASTMUTEX, false);
     AssertPtr(pSG);
     Assert(fSrc);
 
     /*
      * Lock the network and send the frame to it.
      */
-    int rc = RTSemFastMutexRequest(pNetwork->FastMutex);
+    int rc = RTSemFastMutexRequest(pNetwork->FastMutex2);
     AssertRCReturn(rc, false);
 
     bool fRc;
@@ -3638,7 +3638,7 @@ static DECLCALLBACK(bool) intnetR0TrunkIfPortRecv(PINTNETTRUNKSWPORT pSwitchPort
     else
         fRc = false; /* don't drop it */
 
-    rc = RTSemFastMutexRelease(pNetwork->FastMutex);
+    rc = RTSemFastMutexRelease(pNetwork->FastMutex2);
     AssertRC(rc);
 
     return fRc;
@@ -3653,7 +3653,7 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortSGRetain(PINTNETTRUNKSWPORT pSwitch
 
     /* assert some sanity */
     AssertPtrReturnVoid(pNetwork);
-    AssertReturnVoid(pNetwork->FastMutex != NIL_RTSEMFASTMUTEX);
+    AssertReturnVoid(pNetwork->FastMutex2 != NIL_RTSEMFASTMUTEX);
     AssertPtr(pSG);
     Assert(pSG->cUsers > 0 && pSG->cUsers < 256);
 
@@ -3670,7 +3670,7 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortSGRelease(PINTNETTRUNKSWPORT pSwitc
 
     /* assert some sanity */
     AssertPtrReturnVoid(pNetwork);
-    AssertReturnVoid(pNetwork->FastMutex != NIL_RTSEMFASTMUTEX);
+    AssertReturnVoid(pNetwork->FastMutex2 != NIL_RTSEMFASTMUTEX);
     AssertPtr(pSG);
     Assert(pSG->cUsers > 0);
 
@@ -4017,7 +4017,7 @@ static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, vo
      * we have to handle the case where the network is destroyed before the interfaces. We'll
      * deal with this by simply orphaning the interfaces.
      */
-    RTSemFastMutexRequest(pNetwork->FastMutex);
+    RTSemFastMutexRequest(pNetwork->FastMutex2);
 
     PINTNETIF pCur = pNetwork->pIFs;
     while (pCur)
@@ -4032,7 +4032,7 @@ static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, vo
     PINTNETTRUNKIF pTrunkIF = pNetwork->pTrunkIF;
     pNetwork->pTrunkIF = NULL;
 
-    RTSemFastMutexRelease(pNetwork->FastMutex);
+    RTSemFastMutexRelease(pNetwork->FastMutex2);
 
     /*
      * If there is a trunk, delete it.
@@ -4044,8 +4044,8 @@ static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, vo
     /*
      * Free resources.
      */
-    RTSemFastMutexDestroy(pNetwork->FastMutex);
-    pNetwork->FastMutex = NIL_RTSEMFASTMUTEX;
+    RTSemFastMutexDestroy(pNetwork->FastMutex2);
+    pNetwork->FastMutex2 = NIL_RTSEMFASTMUTEX;
     RTMemFree(pNetwork);
 
     /* release the create/destroy sem. (can be done before trunk destruction.) */
@@ -4186,7 +4186,7 @@ static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const
     PINTNETNETWORK pNew = (PINTNETNETWORK)RTMemAllocZ(cb);
     if (!pNew)
         return VERR_NO_MEMORY;
-    int rc = RTSemFastMutexCreate(&pNew->FastMutex);
+    int rc = RTSemFastMutexCreate(&pNew->FastMutex2);
     if (RT_SUCCESS(rc))
     {
         //pNew->pIFs = NULL;
@@ -4248,8 +4248,8 @@ static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const
         }
         rc = VERR_NO_MEMORY;
 
-        RTSemFastMutexDestroy(pNew->FastMutex);
-        pNew->FastMutex = NIL_RTSEMFASTMUTEX;
+        RTSemFastMutexDestroy(pNew->FastMutex2);
+        pNew->FastMutex2 = NIL_RTSEMFASTMUTEX;
     }
     RTMemFree(pNew);
     LogFlow(("intnetR0CreateNetwork: returns %Rrc\n", rc));
