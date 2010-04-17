@@ -49,10 +49,91 @@
  * Enabled DHCP snooping when in shared-mac-on-the-wire mode. */
 #define INTNET_WITH_DHCP_SNOOPING
 
+#if 0
+/** Enables the new code - temporarily while doing the rewrite. */
+# define WITH_NEW_STUFF
+#endif
+
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+#ifdef WITH_NEW_STUFF
+/**
+ * MAC address lookup table entry.
+ */
+typedef struct INTNETMACTABENTRY
+{
+    /** The MAC address of this entry. */
+    RTMAC                   MacAddr;
+    /** Is it promiscuous.  */
+    bool                    fPromiscuous;
+    /** Is it active.
+     * We ignore the entry if this is clear and may end up sending packets addressed
+     * to this interface onto the trunk.  The reasoning for this is that this could
+     * be the interface of a VM that just has been teleported to a different host. */
+    bool                    fActive;
+    /** Pointer to the network interface. */
+    struct INTNETIF        *pIf;
+} INTNETMACTABENTRY;
+/** Pointer to a MAC address lookup table entry. */
+typedef INTNETMACTABENTRY *PINTNETMACTABENTRY;
+/** Pointer to a const MAC address lookup table entry. */
+typedef INTNETMACTABENTRY const *PCINTNETMACTABENTRY;
+
+/**
+ * MAC address lookup table.
+ */
+typedef struct INTNETMACTAB
+{
+    /** The spinlock protecting the table, interrupt safe. */
+    RTSPINLOCK              hSpinlock;
+    /** The current number of entries. */
+    uint32_t                cEntries;
+    /** The number of entries we've allocated space for. */
+    uint32_t                cEntriesAllocated;
+    /** Table entries. */
+    PCINTNETMACTABENTRY     paEntries;
+
+    /** The host MAC address. */
+    RTMAC                   HostMac;
+    /** The host promiscous setting. */
+    bool                    fHostPromiscuous;
+    /** Whether the host is active. */
+    bool                    fHostActive;
+
+    /** Whether the wire is promiscuous. */
+    bool                    fWirePromiscuous;
+    /** Whether the wire is active. */
+    bool                    fWireActive;
+
+    /** Pointer to the the trunk interface. */
+    struct INTNETTRUNKIF   *pTrunk;
+} INTNETMACTAB;
+/** Pointer to a MAC address .  */
+typedef INTNETMACTAB *PINTNETMACTAB;
+
+/**
+ * Destination table.
+ */
+typedef struct INTNETDSTTAB
+{
+    /** The trunk destinations. */
+    uint32_t                fTrunkDst;
+    /** Pointer to the trunk interface (referenced) if fTrunkDst is non-zero. */
+    struct INTNETTRUNKIF   *pTrunk;
+    /** The number of destination interfaces. */
+    uint32_t                cIfs;
+    /** The interfaces (referenced).  Variable sized array. */
+    struct INTNETIF        *apIfs[1];
+} INTNETDSTTAB;
+/** Pointer to a destination table. */
+typedef INTNETDSTTAB *PINTNETDSTTAB;
+#endif /* WITH_NEW_STUFF */
+
+
+/** Network layer address type. */
 typedef enum INTNETADDRTYPE
 {
     /** The invalid 0 entry. */
@@ -78,9 +159,9 @@ typedef INTNETADDRTYPE *PINTNETADDRTYPE;
 typedef struct INTNETADDR
 {
     /** The address type. */
-    INTNETADDRTYPE enmType;
+    INTNETADDRTYPE          enmType;
     /** The address. */
-    RTNETADDRU Addr;
+    RTNETADDRU              Addr;
 } INTNETADDR;
 /** Pointer to an address. */
 typedef INTNETADDR *PINTNETADDR;
@@ -94,15 +175,15 @@ typedef INTNETADDR const *PCINTNETADDR;
 typedef struct INTNETADDRCACHE
 {
     /** Pointer to the table of addresses. */
-    uint8_t *pbEntries;
+    uint8_t                *pbEntries;
     /** The number of valid address entries. */
-    uint8_t cEntries;
+    uint8_t                 cEntries;
     /** The number of allocated address entries. */
-    uint8_t cEntriesAlloc;
+    uint8_t                 cEntriesAlloc;
     /** The address size. */
-    uint8_t cbAddress;
+    uint8_t                 cbAddress;
     /** The size of an entry. */
-    uint8_t cbEntry;
+    uint8_t                 cbEntry;
 } INTNETADDRCACHE;
 /** Pointer to an address cache. */
 typedef INTNETADDRCACHE *PINTNETADDRCACHE;
@@ -120,7 +201,8 @@ typedef struct INTNETIF
     /** Pointer to the next interface.
      * This is protected by the INTNET::FastMutex. */
     struct INTNETIF        *pNext;
-    /** The current MAC address for the interface. */
+    /** The current MAC address for the interface. (reported or learned)
+     * Updated while owning the switch table spinlock.  */
     RTMAC                   Mac;
     /** Set if the INTNET::Mac member is valid. */
     bool                    fMacSet;
@@ -132,9 +214,9 @@ typedef struct INTNETIF
     /** Whether someone is currently in the destructor. */
     bool volatile           fDestroying;
     /** Number of yields done to try make the interface read pending data.
-     * We will stop yeilding when this reaches a threshold assuming that the VM is paused or
-     * that it simply isn't worth all the delay. It is cleared when a successful send has been done.
-     */
+     * We will stop yielding when this reaches a threshold assuming that the VM is
+     * paused or that it simply isn't worth all the delay. It is cleared when a
+     * successful send has been done. */
     uint32_t                cYields;
     /** Pointer to the current exchange buffer (ring-0). */
     PINTNETBUF              pIntBuf;
@@ -161,6 +243,20 @@ typedef struct INTNETIF
     void                   *pvObj;
     /** The network layer address cache. (Indexed by type, 0 entry isn't used.) */
     INTNETADDRCACHE         aAddrCache[kIntNetAddrType_End];
+#ifdef WITH_NEW_STUFF
+    /** Spinlock protecting the input (producer) side of the receive ring. */
+    RTSPINLOCK              hRecvInSpinlock;
+    /** Busy count for tracking destination table references and active sends.
+     * Incremented while owning the switch table spinlock. */
+    uint32_t volatile       cBusy;
+    /** Set if a someone is waiting on INTNETNETWORK::hEvtBusyIf for cBusy to
+     * reach zero. */
+    bool volatile           fBusyZeroWakeup;
+    /** The preallocated destination table.
+     * This is NULL when it's in use as a precaution against unserialized
+     * transmitting.  This is grown when new interfaces are added to the network. */
+    PINTNETDSTTAB volatile  pDstTab;
+#endif /* WITH_NEW_STUFF */
 } INTNETIF;
 /** Pointer to an internal network interface. */
 typedef INTNETIF *PINTNETIF;
@@ -175,28 +271,64 @@ typedef struct INTNETTRUNKIF
     INTNETTRUNKSWPORT       SwitchPort;
     /** The port interface we get from the component. */
     PINTNETTRUNKIFPORT      pIfPort;
+#ifdef WITH_NEW_STUFF
+    /** @todo This won't quite cut the mustard any longer.  That said, GSO
+     *        segmentation needs to be serialized because of the header buffer. */
+    RTSEMFASTMUTEX          FastMutex;
+#else
     /** The trunk mutex that serializes all calls <b>to</b> the component. */
     RTSEMFASTMUTEX          FastMutex;
+#endif
     /** Pointer to the network we're connect to.
      * This may be NULL if we're orphaned? */
     struct INTNETNETWORK   *pNetwork;
+#ifdef WITH_NEW_STUFF
+    /** The current MAC address for the interface. (reported)
+     * Updated while owning the switch table spinlock.
+     * @todo rename to Mac  */
+    RTMAC                   CachedMac;
+#else
     /** The cached MAC address of the interface the trunk is attached to.
      * This is for the situations where we cannot take the out-bound
      * semaphore (the recv case) but need to make frame edits (ARP). */
     RTMAC                   CachedMac;
-    /** Whether to supply physical addresses with the outbound SGs. */
+#endif
+#ifndef WITH_NEW_STUFF
+    /** Whether to supply physical addresses with the outbound SGs. (reported) */
     bool volatile           fPhysSG;
     /** Set if the 'wire' is in promiscuous mode.
      * The state of the 'host' is queried each time. */
-    bool                    fPromiscuousWire;
-    /** The GSO capabilities of the host destination.
+    bool                    fWirePromiscuous;
+#else  /* WITH_NEW_STUFF */
+    /** Set if the 'wire' is in promiscuous mode. (config) */
+    bool                    fWirePromiscuous;
+    /** Set if the 'host' is in promiscuous mode. (reported) */
+    bool volatile           fHostPromiscuous;
+    /** Can pfnXmit cope with disabled preemption for the 'wire'. (reported) */
+    bool                    fWireNoPreempt;
+    /** Can pfnXmit cope with disabled preemption for the 'host'. (reported) */
+    bool                    fHostNoPreempt;
+    /** Whether to supply physical addresses with the outbound SGs. (reported) */
+    bool                    fPhysSG;
+    /** Set if a someone is waiting on INTNETNETWORK::hEvtBusyIf for cBusy to
+     * reach zero. */
+    bool volatile           fBusyZeroWakeup;
+    /** Busy count for tracking destination table references and active sends.
+     * Incremented while owning the switch table spinlock. */
+    uint32_t volatile       cBusy;
+#endif /* WITH_NEW_STUFF */
+    /** The GSO capabilities of the wire destination. (reported) */
+    uint32_t                fWireGsoCapabilites;
+    /** The GSO capabilities of the host destination. (reported)
      * This is as bit map where each bit represents the GSO type with the same
      * number. */
-    uint32_t                fGsoCapabilitesHost;
-    /** The GSO capabilities of the wire destination. */
-    uint32_t                fGsoCapabilitesWire;
+    uint32_t                fHostGsoCapabilites;
     /** Header buffer for when we're carving GSO frames. */
     uint8_t                 abGsoHdrs[256];
+#ifdef WITH_NEW_STUFF
+    /** @todo what exactly to do about the destination tables here? how many do
+     *        we need / want? One? One per CPU? */
+#endif
 } INTNETTRUNKIF;
 /** Pointer to a trunk interface. */
 typedef INTNETTRUNKIF *PINTNETTRUNKIF;
@@ -221,7 +353,18 @@ typedef struct INTNETNETWORK
     PINTNETTRUNKIF          pTrunkIF;
     /** The network mutex.
      * It protects everything dealing with this network. */
+#ifdef WITH_NEW_STUFF
+    /** @todo Make this a mutex so we can block on the event semaphore while holding
+     *        it. Requires fixing the mutex code on linux...  Or maybe add
+     *        another mutex for creation / destruction serilization. */
+#endif
     RTSEMFASTMUTEX          FastMutex;
+#ifdef WITH_NEW_STUFF
+    /** Wait for an interface to stop being busy so it can be removed or have its
+     * destination table replaced.  We have to wait upon this while owning the
+     * network mutex. */
+    RTSEMEVENT              hEvtBusyIf;
+#endif
     /** Pointer to the instance data. */
     struct INTNET          *pIntNet;
     /** The SUPR0 object id. */
@@ -459,6 +602,129 @@ DECLINLINE(bool) intnetR0SgReadPart(PCINTNETSG pSG, uint32_t off, uint32_t cb, v
     }
     return intnetR0SgReadPartSlow(pSG, off, cb, pvBuf);
 }
+
+
+#ifdef WITH_NEW_STUFF
+
+/**
+ * Compares two MAC addresses.
+ *
+ * @returns true if equal, false if not.
+ * @param   pDstAddr1           Address 1.
+ * @param   pDstAddr2           Address 2.
+ */
+DECL_FORCE_INLINE(bool) intnetR0AreMacAddrsEqual(PCRTMAC pDstAddr1, PCRTMAC pDstAddr2)
+{
+    return pDstAddr1->au16[2] == pDstAddr2->au16[2]
+        && pDstAddr1->au16[1] == pDstAddr2->au16[1]
+        && pDstAddr1->au16[0] == pDstAddr2->au16[0];
+}
+
+
+/**
+ * Switch a MAC address and return a destination table.
+ *
+ * @returns Destination table or NULL if *ppDstTab is NULL.
+ * @param   pTab                The MAC address table to work on.
+ * @param   pDstAddr            The destination address of the packet.
+ * @param   ppDstTab            Where to get the destination table from.
+ * @param   pcBusy              The busy counter to increment if *ppDstTab isn't
+ *                              NULL.
+ */
+static PINTNETDSTTAB intnetR0MacTabSwitch(PINTNETMACTAB pTab, PCRTMAC pDstAddr,
+                                          PINTNETDSTTAB volatile *ppDstTab, uint32_t volatile *pcBusy)
+{
+    /*
+     * Grab the spinlock first, then get the destination table and increment
+     * the busy counter (to indicate that we're using the dst tab and it cannot
+     * be freed yet).
+     */
+    RTSPINLOCKTMP   Tmp     = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquire(pTab->hSpinlock, &Tmp);
+    PINTNETDSTTAB   pDstTab = (PINTNETDSTTAB)ASMAtomicXchgPtr((void * volatile *)ppDstTab, NULL);
+    if (pDstTab)
+    {
+        ASMAtomicIncU32(pcBusy);
+
+        /*
+         * Do the switching.
+         */
+        pDstTab->fTrunkDst = 0;
+        pDstTab->pTrunk    = 0;
+        pDstTab->cIfs      = 0;
+
+        uint32_t i = pTab->cEntries;
+        if (pDstAddr->au8[0] & 1) /* multicast or broadcast address */
+        {
+            /* Broadcast/multicast - add all active interfaces. */
+            while (i-- > 0)
+            {
+                if (pTab->paEntries[i].fActive)
+                {
+                    PINTNETIF pIf = pTab->paEntries[i].pIf;
+                    pDstTab->apIfs[i] = pIf;
+                    ASMAtomicIncU32(&pIf->cBusy);
+                    pDstTab->cIfs++;
+                }
+            }
+
+            if (pTab->fHostActive)
+                pDstTab->fTrunkDst |= INTNETTRUNKDIR_HOST;
+            if (pTab->fWireActive)
+                pDstTab->fTrunkDst |= INTNETTRUNKDIR_WIRE;
+        }
+        else
+        {
+            /* Find exactly matching or promiscuous interfaces. */
+            uint32_t cExactHits = 0;
+            while (i-- > 0)
+            {
+                if (pTab->paEntries[i].fActive)
+                {
+                    bool fExact = intnetR0AreMacAddrsEqual(&pTab->paEntries[i].MacAddr, pDstAddr);
+                    if (fExact || pTab->paEntries[i].fPromiscuous)
+                    {
+                        cExactHits += fExact;
+
+                        PINTNETIF pIf = pTab->paEntries[i].pIf;
+                        pDstTab->apIfs[i] = pIf;
+                        ASMAtomicIncU32(&pIf->cBusy);
+                        pDstTab->cIfs++;
+                    }
+                }
+            }
+
+            /* Does it match the host, or is the host promiscuous? */
+            if (pTab->fHostActive)
+            {
+                bool fExact = intnetR0AreMacAddrsEqual(&pTab->HostMac, pDstAddr);
+                if (pTab->fHostPromiscuous)
+                {
+                    cExactHits += fExact;
+                    pDstTab->fTrunkDst |= INTNETTRUNKDIR_HOST;
+                }
+            }
+
+            /* Hit the wire if there are no exact matches or if it's in promiscuous mode. */
+            if (pTab->fWireActive && (!cExactHits || pTab->fWirePromiscuous))
+                pDstTab->fTrunkDst |= INTNETTRUNKDIR_WIRE;
+        }
+
+        /* Grab the trunk if we're sending to it. */
+        if (pDstTab->fTrunkDst)
+        {
+            PINTNETTRUNKIF pTrunkIf = pTab->pTrunk;
+            pDstTab->pTrunk = pTrunkIf;
+            ASMAtomicIncU32(&pTrunkIf->cBusy);
+        }
+    }
+
+    RTSpinlockRelease(pTab->hSpinlock, &Tmp);
+    return pDstTab;
+}
+
+
+#endif /* WITH_NEW_STUFF */
 
 
 /**
@@ -1637,11 +1903,11 @@ DECLINLINE(bool) intnetR0TrunkIfCanHandleGsoFrame(PINTNETTRUNKIF pThis, PINTNETS
     uint32_t    fMask  = RT_BIT_32(u8Type);
 
     if (fDst == INTNETTRUNKDIR_HOST)
-        return !!(pThis->fGsoCapabilitesHost & fMask);
+        return !!(pThis->fHostGsoCapabilites & fMask);
     if (fDst == INTNETTRUNKDIR_WIRE)
-        return !!(pThis->fGsoCapabilitesWire & fMask);
+        return !!(pThis->fWireGsoCapabilites & fMask);
     Assert(fDst == (INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST));
-    return !!(pThis->fGsoCapabilitesHost & pThis->fGsoCapabilitesWire & fMask);
+    return !!(pThis->fHostGsoCapabilites & pThis->fWireGsoCapabilites & fMask);
 }
 
 
@@ -2226,7 +2492,7 @@ static bool intnetR0NetworkSendUnicast(PINTNETNETWORK pNetwork, PINTNETIF pIfSen
         Assert(!fSrc);
 
         /* promiscuous checks first as they are cheaper than pfnIsHostMac. */
-        if (    pTrunkIf->fPromiscuousWire
+        if (    pTrunkIf->fWirePromiscuous
             &&  !(pNetwork->fFlags & (INTNET_OPEN_FLAGS_IGNORE_PROMISC | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC | INTNET_OPEN_FLAGS_IGNORE_PROMISC_TRUNK_WIRE | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC_TRUNK_WIRE)) )
             fDst |= INTNETTRUNKDIR_WIRE;
         if (    !(pNetwork->fFlags & (INTNET_OPEN_FLAGS_IGNORE_PROMISC | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC | INTNET_OPEN_FLAGS_IGNORE_PROMISC_TRUNK_HOST | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC_TRUNK_HOST))
@@ -3321,10 +3587,10 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortReportGsoCapabilities(PINTNETTRUNKS
     Assert(fDst);
 
     if (fDst & INTNETTRUNKDIR_HOST)
-        pThis->fGsoCapabilitesHost = fGsoCapabilities;
+        pThis->fHostGsoCapabilites = fGsoCapabilities;
 
     if (fDst & INTNETTRUNKDIR_WIRE)
-        pThis->fGsoCapabilitesWire = fGsoCapabilities;
+        pThis->fWireGsoCapabilites = fGsoCapabilities;
 }
 
 
@@ -3647,7 +3913,7 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
     pTrunkIF->CachedMac.au8[4] = 0xff;
     pTrunkIF->CachedMac.au8[5] = 0xff;
     //pTrunkIF->fPhysSG = false;
-    //pTrunkIF->fPromiscuousWire = false;
+    //pTrunkIF->fWirePromiscuous = false;
     //pTrunkIF->fGroksGso = false;  /** @todo query GSO support after connecting. */
     int rc = RTSemFastMutexCreate(&pTrunkIF->FastMutex);
     if (RT_SUCCESS(rc))
