@@ -2887,7 +2887,6 @@ static int scmSvnQueryProperty(PSCMRWSTATE pState, const char *pszName, char **p
                     || pchLine[0] != 'V'
                     || pchLine[1] != ' '
                     || !scmSvnReadNumber(&pchLine[2], cchLine - 2, &cchValue)
-                    || cchValue == 0
                     || cchValue > _1M)
                 {
                     RTMsgError("%s:%u: Unexpected data '%.*s'\n", szPath, ScmStreamTellLine(&Stream), cchLine, pchLine);
