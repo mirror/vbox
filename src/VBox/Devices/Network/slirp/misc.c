@@ -126,64 +126,64 @@ struct uma_zone
 
 
 static void *slirp_uma_alloc(uma_zone_t zone,
-    int size, uint8_t *pflags, int fWait)
+                             int size, uint8_t *pflags, int fWait)
 {
     struct item *it;
     uint8_t *sub_area;
-    int cChunk;
-    int i;
+    void *ret = NULL;
+
     RTCritSectEnter(&zone->csZone);
-free_list_check:
-    if (!LIST_EMPTY(&zone->free_items))
+    for (;;)
     {
-        zone->cur_items++;
-        it = LIST_FIRST(&zone->free_items);
+        if (!LIST_EMPTY(&zone->free_items))
+        {
+            zone->cur_items++;
+            it = LIST_FIRST(&zone->free_items);
+            LIST_REMOVE(it, list);
+            LIST_INSERT_HEAD(&zone->used_items, it, list);
+            if (zone->pfInit)
+                zone->pfInit(zone->pData, (void *)&it[1], zone->size, M_DONTWAIT);
+            ret = (void *)&it[1];
+            break;
+        }
+
+        if (!zone->master_zone)
+        {
+            /* We're on master zone and we cant allocate more */
+            Log2(("NAT: no room on %s zone\n", zone->name));
+            break;
+        }
+
+        /* we're on sub-zone we need get chunk of master zone and split
+         * it for sub-zone conforming chunks.
+         */
+        sub_area = slirp_uma_alloc(zone->master_zone, zone->master_zone->size, NULL, 0);
+        if (!sub_area)
+        {
+            /* No room on master */
+            Log2(("NAT: no room on %s zone for %s zone\n", zone->master_zone->name, zone->name));
+            break;
+        }
+        zone->max_items++;
+        it = &((struct item *)sub_area)[-1];
+        /* it's chunk descriptor of master zone we should remove it
+         *  from the master list first
+         */
+        Assert((it->zone && it->zone->magic == ZONE_MAGIC));
+        RTCritSectEnter(&it->zone->csZone);
+        /* @todo should we alter count of master counters? */
         LIST_REMOVE(it, list);
-        LIST_INSERT_HEAD(&zone->used_items, it, list);
-        if (zone->pfInit)
-            zone->pfInit(zone->pData, (void *)&it[1], zone->size, M_DONTWAIT);
-        RTCritSectLeave(&zone->csZone);
-        return (void *)&it[1];
+        RTCritSectLeave(&it->zone->csZone);
+        /* @todo '+ zone->size' should be depend on flag */
+        memset(it, 0, sizeof(struct item));
+        it->zone = zone;
+        it->magic = ITEM_MAGIC;
+        LIST_INSERT_HEAD(&zone->free_items, it, list);
+        if (zone->cur_items >= zone->max_items)
+            LogRel(("NAT: zone(%s) has reached it maximum\n", zone->name));
     }
-
-    if (zone->master_zone == NULL)
-    {
-        /* We're on master zone and we cant allocate more */
-        Log2(("NAT: no room on %s zone\n", zone->name));
-        RTCritSectLeave(&zone->csZone);
-        return NULL;
-    }
-
-    /* we're on sub-zone we need get chunk of master zone and split
-     * it for sub-zone conforming chunks.
-     */
-    sub_area = slirp_uma_alloc(zone->master_zone, zone->master_zone->size, NULL, 0);
-    if (sub_area == NULL)
-    {
-        /*No room on master*/
-        Log2(("NAT: no room on %s zone for %s zone\n", zone->master_zone->name, zone->name));
-        RTCritSectLeave(&zone->csZone);
-        return NULL;
-    }
-    zone->max_items ++;
-    it = &((struct item *)sub_area)[-1];
-    /* it's chunk descriptor of master zone we should remove it
-     *  from the master list first
-     */
-    Assert((it->zone && it->zone->magic == ZONE_MAGIC));
-    RTCritSectEnter(&it->zone->csZone);
-    /*@todo should we alter count of master counters ?*/
-    LIST_REMOVE(it, list);
-    RTCritSectLeave(&it->zone->csZone);
-    /*@todo '+ zone->size' should be depend on flag */
-    memset(it, 0, sizeof(struct item));
-    it->zone = zone;
-    it->magic = ITEM_MAGIC;
-    LIST_INSERT_HEAD(&zone->free_items, it, list);
-    if (zone->cur_items >= zone->max_items)
-        LogRel(("NAT: zone(%s) has reached it maximum\n", zone->name));
-    goto free_list_check;
-
+    RTCritSectLeave(&zone->csZone);
+    return ret;
 }
 
 static void slirp_uma_free(void *item, int size, uint8_t flags)
@@ -372,7 +372,7 @@ struct mbuf *slirp_ext_m_get(PNATState pData, size_t cbMin, void **ppvBuf, size_
         AssertMsgFailed(("Unsupported size"));
 
     m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
-    m->m_len = size ;
+    m->m_len = size;
     *ppvBuf = mtod(m, void *);
     *pcbBuf = size;
     return m;
@@ -385,7 +385,6 @@ void slirp_ext_m_free(PNATState pData, struct mbuf *m)
 
 static void zone_destroy(uma_zone_t zone)
 {
-    struct item *it;
     RTCritSectEnter(&zone->csZone);
     LogRel(("NAT: zone(nm:%s, used:%d)\n", zone->name, zone->cur_items));
     if (zone->master_zone)
