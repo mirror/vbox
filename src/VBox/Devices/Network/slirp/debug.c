@@ -191,7 +191,7 @@ void
 sockstats(PNATState pData)
 {
     char buff[256];
-    int n;
+    size_t n;
     struct socket *so, *so_next;
 
     lprint(" \n");

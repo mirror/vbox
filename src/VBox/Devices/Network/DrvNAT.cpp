@@ -666,7 +666,6 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     int     nFDs = -1;
-    int     ms;
 #ifdef RT_OS_WINDOWS
     HANDLE  *phEvents = slirp_get_events(pThis->pNATState);
     unsigned int cBreak = 0;
