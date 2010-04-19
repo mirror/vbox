@@ -32,21 +32,10 @@
 #define _MISC_H_
 
 
-extern int x_port, x_server, x_display;
-
-int show_x (char *, struct socket *);
-void redir_x (u_int32_t, int, int, int);
 void getouraddr (PNATState);
 void slirp_insque  (PNATState, void *, void *);
 void slirp_remque  (PNATState, void *);
-int slirp_openpty (int *, int *);
-int fork_exec (PNATState, struct socket *, char *, int);
-void snooze_hup (int);
-void snooze (void);
-void relay (int);
-void add_emu (char *);
 void fd_nonblock (int);
-void fd_block (int);
 
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
 /* UVM interface */
