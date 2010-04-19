@@ -122,11 +122,13 @@ void UIMachineLogicFullscreen::initialize()
     /* Prepare console connections: */
     prepareSessionConnections();
 
+    /* Prepare action groups:
+     * Note: This has to be done before prepareActionConnections
+     * cause here actions/menus are recreated. */
+    prepareActionGroups();
+
     /* Prepare action connections: */
     prepareActionConnections();
-
-    /* Prepare action groups: */
-    prepareActionGroups();
 
     /* Prepare machine window: */
     prepareMachineWindows();
