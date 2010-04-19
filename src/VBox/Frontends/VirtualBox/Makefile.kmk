@@ -257,6 +257,7 @@ VirtualBox_LIBS = $(LIB_DDU)
 # This library is required for multi-monitor support
 VirtualBox_LIBS.linux += Xinerama
 VirtualBox_LIBS.solaris += Xinerama
+VirtualBox_LIBS.freebsd += Xinerama
 
 ifdef VBOX_WITH_VIDEOHWACCEL
 # Necessary for save state support
