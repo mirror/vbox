@@ -210,12 +210,13 @@ static SUPFUNC g_aFunctions[] =
     { "RTR0MemUserIsValidAddr",                 (void *)RTR0MemUserIsValidAddr },
     { "RTR0MemKernelIsValidAddr",               (void *)RTR0MemKernelIsValidAddr },
     { "RTR0MemAreKrnlAndUsrDifferent",          (void *)RTR0MemAreKrnlAndUsrDifferent },
-/* These don't work yet on linux - use fast mutexes!
     { "RTSemMutexCreate",                       (void *)RTSemMutexCreate },
     { "RTSemMutexRequest",                      (void *)RTSemMutexRequest },
+    { "RTSemMutexRequestDebug",                 (void *)RTSemMutexRequestDebug },
+    { "RTSemMutexRequestNoResume",              (void *)RTSemMutexRequestNoResume },
+    { "RTSemMutexRequestNoResumeDebug",         (void *)RTSemMutexRequestNoResumeDebug },
     { "RTSemMutexRelease",                      (void *)RTSemMutexRelease },
     { "RTSemMutexDestroy",                      (void *)RTSemMutexDestroy },
-*/
     { "RTProcSelf",                             (void *)RTProcSelf },
     { "RTR0ProcHandleSelf",                     (void *)RTR0ProcHandleSelf },
     { "RTSemFastMutexCreate",                   (void *)RTSemFastMutexCreate },
