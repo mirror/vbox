@@ -127,7 +127,7 @@ extern bool is3DAccelerationSupported();
 
 #include <VBox/usb.h>
 #include <VBox/x86.h>
-#include <VBox/hwaccm.h>
+#include <VBox/hwaccm_svm.h>
 #include <VBox/err.h>
 #include <VBox/settings.h>
 #include <VBox/sup.h>
