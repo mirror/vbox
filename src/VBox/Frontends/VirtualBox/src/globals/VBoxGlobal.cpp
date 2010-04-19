@@ -3253,7 +3253,7 @@ QString VBoxGlobal::languageId()
 /* static */
 void VBoxGlobal::loadLanguage (const QString &aLangId)
 {
-    QString langId = aLangId.isNull() ?
+    QString langId = aLangId.isEmpty() ?
         VBoxGlobal::systemLanguageId() : aLangId;
     QString languageFileName;
     QString selectedLangId = gVBoxBuiltInLangName;
