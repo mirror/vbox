@@ -685,7 +685,7 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     return;
 
 end_error_free_m:
-    m_free(pData, m);
+    m_freem(pData, m);
 end_error:
     LogRel(("NAT: error occurred while sending ICMP error message \n"));
 }

@@ -224,7 +224,7 @@ ip_input(PNATState pData, struct mbuf *m)
             break;
         default:
             ipstat.ips_noproto++;
-            m_free(pData, m);
+            m_freem(pData, m);
     }
     STAM_PROFILE_STOP(&pData->StatIP_input, a);
     return;

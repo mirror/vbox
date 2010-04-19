@@ -679,7 +679,7 @@ out:
         }
 #endif
         if (m != NULL)
-            m_free(pData, m);
+            m_freem(pData, m);
         return (error);
     }
     tcpstat.tcps_sndtotal++;

@@ -259,7 +259,7 @@ static int tftp_send_data(PNATState pData,
     nobytes = tftp_read_data(pData, spt, block_nr - 1, tp->x.tp_data.tp_buf, 512);
     if (nobytes < 0)
     {
-        m_free(pData, m);
+        m_freem(pData, m);
         /* send "file not found" error back */
         tftp_send_error(pData, spt, 1, "File not found", tp);
         return -1;

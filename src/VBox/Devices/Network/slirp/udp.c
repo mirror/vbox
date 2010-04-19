@@ -292,7 +292,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     }
 
     if (so->so_m)
-        m_free(pData, so->so_m);   /* used for ICMP if error on sorecvfrom */
+        m_freem(pData, so->so_m);   /* used for ICMP if error on sorecvfrom */
 
     /* restore the orig mbuf packet */
     m->m_len += iphlen;
