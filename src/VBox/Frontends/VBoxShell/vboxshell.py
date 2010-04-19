@@ -357,16 +357,16 @@ def takeScreenshot(ctx,console,args):
     else:
         f = "/tmp/screenshot.png"
     if len(args) > 3:
-        screen = args[3]
+        screen = int(args[3])
     else:
         screen = 0
     (fb,xorig,yorig) = display.getFramebuffer(screen)
     if len(args) > 1:
-        w = args[1]
+        w = int(args[1])
     else:
         w = fb.width
     if len(args) > 2:
-        h = args[2]
+        h = int(args[2])
     else:
         h = fb.height
 
@@ -1459,6 +1459,12 @@ def optId(verbose,id):
    else:
       return ""
 
+def asSize(val,inBytes):
+   if inBytes:
+      return int(val)/(1024*1024)
+   else:
+      return int(val)
+
 def listMediumsCmd(ctx,args):
    if len(args) > 1:
       verbose = int(args[1])
@@ -1469,21 +1475,21 @@ def listMediumsCmd(ctx,args):
    for hdd in hdds:
        if hdd.state != ctx['global'].constants.MediumState_Created:
            hdd.refreshState()
-       print "   %s (%s)%s %dM [logical %dM]" %(hdd.location, hdd.format, optId(verbose,hdd.id),int(hdd.size/(1024*1024)),hdd.logicalSize)
+       print "   %s (%s)%s %dM [logical %dM]" %(hdd.location, hdd.format, optId(verbose,hdd.id),asSize(hdd.size, True), asSize(hdd.logicalSize, False))
 
    dvds = ctx['global'].getArray(ctx['vb'], 'DVDImages')
    print "CD/DVD disks:"
    for dvd in dvds:
        if dvd.state != ctx['global'].constants.MediumState_Created:
            dvd.refreshState()
-       print "   %s (%s)%s %dM" %(dvd.location, dvd.format,optId(verbose,hdd.id),hdd.size/(1024*1024))
+       print "   %s (%s)%s %dM" %(dvd.location, dvd.format,optId(verbose,hdd.id),asSize(hdd.size, True))
 
    floppys = ctx['global'].getArray(ctx['vb'], 'floppyImages')
    print "Floopy disks:"
    for floppy in floppys:
        if floppy.state != ctx['global'].constants.MediumState_Created:
            floppy.refreshState()
-       print "   %s (%s)%s %dM" %(floppy.location, floppy.format,optId(verbose,hdd.id), hdd.size)
+       print "   %s (%s)%s %dM" %(floppy.location, floppy.format,optId(verbose,hdd.id), asSize(hdd.size, True))
 
    return 0
 
