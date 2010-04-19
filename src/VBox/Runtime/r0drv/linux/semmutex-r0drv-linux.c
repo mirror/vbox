@@ -275,7 +275,8 @@ DECLINLINE(int) rtSemMutexLinuxRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMilli
     /*
      * Not a recursion, maybe it's not owned by anyone then?
      */
-    else if (pThis->pOwnerTask == NULL)
+    else if (   pThis->pOwnerTask == NULL
+             && RTListIsEmpty(&pThis->WaiterList))
     {
         Assert(pThis->cRecursions == 0);
         pThis->cRecursions = 1;
