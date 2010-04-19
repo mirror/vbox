@@ -265,15 +265,7 @@ present:
         if (so->so_state & SS_FCANTSENDMORE)
             m_freem(pData, q->tqe_m);
         else
-        {
-            if (so->so_emu)
-            {
-                if (tcp_emu(pData, so, q->tqe_m))
-                    sbappend(pData, so, q->tqe_m);
-            }
-            else
-                sbappend(pData, so, q->tqe_m);
-        }
+            sbappend(pData, so, q->tqe_m);
         RTMemFree(q);
         tp->t_segqlen--;
         tcp_reass_qsize--;
@@ -704,13 +696,7 @@ findso:
             /*
              * Add data to socket buffer.
              */
-            if (so->so_emu)
-            {
-                if (tcp_emu(pData, so, m))
-                    sbappend(pData, so, m);
-            }
-            else
-                sbappend(pData, so, m);
+            sbappend(pData, so, m);
 
             /*
              * XXX This is called when data arrives.  Later, check
@@ -1556,15 +1542,7 @@ dodata:
             if (so->so_state & SS_FCANTRCVMORE)
                 m_freem(pData, m);
             else
-            {
-                if (so->so_emu)
-                {
-                    if (tcp_emu(pData, so, m))
-                        sbappend(pData, so, m);
-                }
-                else
-                    sbappend(pData, so, m);
-            }
+                sbappend(pData, so, m);
         }
         else
         {
