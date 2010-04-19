@@ -226,7 +226,8 @@ typedef struct INTNETIF
     PINTNETBUF              pIntBufDefault;
     /** Pointer to ring-3 mapping of the default exchange buffer. */
     R3PTRTYPE(PINTNETBUF)   pIntBufDefaultR3;
-    /** Event semaphore which a receiver thread will sleep on while waiting for data to arrive. */
+    /** Event semaphore which a receiver thread will sleep on while waiting
+     * for data to arrive. */
     RTSEMEVENT volatile     Event;
     /** Number of threads sleeping on the Event semaphore. */
     uint32_t                cSleepers;
@@ -347,7 +348,7 @@ typedef struct INTNETNETWORK
     struct INTNETNETWORK   *pNext;
     /** List of interfaces connected to the network.
      * This is protected by the INTNET::FastMutex. */
-    PINTNETIF               pIFs;
+    PINTNETIF               pIfs;
     /** Pointer to the trunk interface.
      * Can be NULL if there is no trunk connection. */
     PINTNETTRUNKIF          pTrunkIF;
@@ -398,9 +399,9 @@ typedef INTNETNETWORK *PINTNETNETWORK;
  */
 typedef struct INTNET
 {
-    /** Mutex protecting the network creation, opening and destruction.
-     * (This means all operations affecting the pNetworks list.) */
-    RTSEMFASTMUTEX          FastMutex;
+    /** Mutex protecting the creation, opening and destruction of both networks and
+     * interfaces.  (This means all operations affecting the pNetworks list.) */
+    RTSEMMUTEX              hMtxCreateOpenDestroy;
     /** List of networks. Protected by INTNET::Spinlock. */
     PINTNETNETWORK volatile pNetworks;
     /** Handle table for the interfaces. */
@@ -1067,7 +1068,7 @@ DECLINLINE(void) intnetR0IfAddrCacheDelete(PINTNETIF pIf, PINTNETADDRCACHE pCach
 DECLINLINE(void) intnetR0NetworkAddrCacheDelete(PINTNETNETWORK pNetwork, PCRTNETADDRU pAddr, INTNETADDRTYPE const enmType,
                                                 uint8_t const cbAddr, const char *pszMsg)
 {
-    for (PINTNETIF pIf = pNetwork->pIFs; pIf; pIf = pIf->pNext)
+    for (PINTNETIF pIf = pNetwork->pIfs; pIf; pIf = pIf->pNext)
     {
         int i = intnetR0IfAddrCacheLookup(&pIf->aAddrCache[enmType], pAddr, cbAddr);
         if (RT_UNLIKELY(i >= 0))
@@ -1091,7 +1092,7 @@ DECLINLINE(void) intnetR0NetworkAddrCacheDelete(PINTNETNETWORK pNetwork, PCRTNET
 DECLINLINE(void) intnetR0NetworkAddrCacheDeleteMinusIf(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, PCRTNETADDRU pAddr,
                                                        INTNETADDRTYPE const enmType, uint8_t const cbAddr, const char *pszMsg)
 {
-    for (PINTNETIF pIf = pNetwork->pIFs; pIf; pIf = pIf->pNext)
+    for (PINTNETIF pIf = pNetwork->pIfs; pIf; pIf = pIf->pNext)
         if (pIf != pIfSender)
         {
             int i = intnetR0IfAddrCacheLookup(&pIf->aAddrCache[enmType], pAddr, cbAddr);
@@ -1113,7 +1114,7 @@ DECLINLINE(void) intnetR0NetworkAddrCacheDeleteMinusIf(PINTNETNETWORK pNetwork, 
  */
 DECLINLINE(PINTNETIF) intnetR0NetworkAddrCacheLookupIf(PINTNETNETWORK pNetwork, PCRTNETADDRU pAddr, INTNETADDRTYPE const enmType, uint8_t const cbAddr)
 {
-    for (PINTNETIF pIf = pNetwork->pIFs; pIf; pIf = pIf->pNext)
+    for (PINTNETIF pIf = pNetwork->pIfs; pIf; pIf = pIf->pNext)
     {
         int i = intnetR0IfAddrCacheLookup(&pIf->aAddrCache[enmType], pAddr, cbAddr);
         if (i >= 0)
@@ -1324,7 +1325,7 @@ static void intnetR0NetworkSnoopDhcp(PINTNETNETWORK pNetwork, PCRTNETIPV4 pIpHdr
          */
         case RTNET_DHCP_MT_ACK:
             if (intnetR0IPv4AddrIsGood(pDhcp->bp_yiaddr))
-                for (PINTNETIF pCur = pNetwork->pIFs; pCur; pCur = pCur->pNext)
+                for (PINTNETIF pCur = pNetwork->pIfs; pCur; pCur = pCur->pNext)
                     if (    pCur->fMacSet
                         &&  !memcmp(&pCur->Mac, &pDhcp->bp_chaddr, sizeof(RTMAC)))
                     {
@@ -1342,7 +1343,7 @@ static void intnetR0NetworkSnoopDhcp(PINTNETNETWORK pNetwork, PCRTNETIPV4 pIpHdr
          */
         case RTNET_DHCP_MT_RELEASE:
         {
-            for (PINTNETIF pCur = pNetwork->pIFs; pCur; pCur = pCur->pNext)
+            for (PINTNETIF pCur = pNetwork->pIfs; pCur; pCur = pCur->pNext)
                 if (    pCur->fMacSet
                     &&  !memcmp(&pCur->Mac, &pDhcp->bp_chaddr, sizeof(RTMAC)))
                 {
@@ -2269,7 +2270,7 @@ static bool intnetR0NetworkSendBroadcast(PINTNETNETWORK pNetwork, PINTNETIF pIfS
      *
      * Write the packet to all the interfaces and signal them.
      */
-    for (PINTNETIF pIf = pNetwork->pIFs; pIf; pIf = pIf->pNext)
+    for (PINTNETIF pIf = pNetwork->pIfs; pIf; pIf = pIf->pNext)
         if (pIf != pIfSender)
             intnetR0IfSend(pIf, pIfSender, pSG, NULL);
 
@@ -2402,7 +2403,7 @@ static bool intnetR0NetworkSendUnicastWithSharedMac(PINTNETNETWORK pNetwork, PIN
             Log6(("intnetshareduni: unknown ethertype=%#x\n", RT_BE2H_U16(pEthHdr->EtherType)));
             if (!(pNetwork->fFlags & (INTNET_OPEN_FLAGS_IGNORE_PROMISC | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC)))
             {
-                for (PINTNETIF pIf = pNetwork->pIFs; pIf; pIf = pIf->pNext)
+                for (PINTNETIF pIf = pNetwork->pIfs; pIf; pIf = pIf->pNext)
                     if (pIf->fPromiscuous)
                     {
                         Log2(("Dst=%.6Rhxs => %.6Rhxs\n", &pEthHdr->DstMac, &pIf->Mac));
@@ -2417,7 +2418,7 @@ static bool intnetR0NetworkSendUnicastWithSharedMac(PINTNETNETWORK pNetwork, PIN
      * Send it to interfaces with matching network addresses.
      */
     bool fExactIntNetRecipient = false;
-    for (PINTNETIF pIf = pNetwork->pIFs; pIf; pIf = pIf->pNext)
+    for (PINTNETIF pIf = pNetwork->pIfs; pIf; pIf = pIf->pNext)
     {
         bool fIt = intnetR0IfAddrCacheLookup(&pIf->aAddrCache[enmAddrType], &Addr, cbAddr) >= 0;
         if (    fIt
@@ -2463,7 +2464,7 @@ static bool intnetR0NetworkSendUnicast(PINTNETNETWORK pNetwork, PINTNETIF pIfSen
      * Only send to the interfaces with matching a MAC address.
      */
     bool fExactIntNetRecipient = false;
-    for (PINTNETIF pIf = pNetwork->pIFs; pIf; pIf = pIf->pNext)
+    for (PINTNETIF pIf = pNetwork->pIfs; pIf; pIf = pIf->pNext)
     {
         bool fIt = false;
         if (    (   !pIf->fMacSet
@@ -3311,16 +3312,17 @@ INTNETR0DECL(int) INTNETR0IfCloseReq(PINTNET pIntNet, PSUPDRVSESSION pSession, P
  */
 static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *pvUser2)
 {
-    PINTNETIF pIf = (PINTNETIF)pvUser1;
+    PINTNETIF pIf     = (PINTNETIF)pvUser1;
     PINTNET   pIntNet = (PINTNET)pvUser2;
     Log(("intnetR0IfDestruct: pvObj=%p pIf=%p pIntNet=%p hIf=%RX32\n", pvObj, pIf, pIntNet, pIf->hIf));
 
-    RTSemFastMutexRequest(pIntNet->FastMutex);
-
     /*
-     * Mark the interface as being destroyed so the waiter
-     * can behave appropriately (theoretical case).
+     * We grab the INTNET create/open/destroy semaphore to make sure nobody is
+     * adding or removing interface while we're in here.  For paranoid reasons
+     * we also mark the interface as destroyed here so any waiting threads can
+     * take the appropriate actions (theoretical case).
      */
+    RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
     ASMAtomicWriteBool(&pIf->fDestroying, true);
 
     /*
@@ -3343,11 +3345,12 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
     {
         intnetR0IfSetActive(pIf, false);
 
-        if (pNetwork->pIFs == pIf)
-            pNetwork->pIFs = pIf->pNext;
+        /* unlink */
+        if (pNetwork->pIfs == pIf)
+            pNetwork->pIfs = pIf->pNext;
         else
         {
-            PINTNETIF pPrev = pNetwork->pIFs;
+            PINTNETIF pPrev = pNetwork->pIfs;
             while (pPrev)
             {
                 if (pPrev->pNext == pIf)
@@ -3361,16 +3364,12 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
         }
         pIf->pNext = NULL;
 
-        /*
-         * Release our reference to the network.
-         */
-        RTSemFastMutexRelease(pIntNet->FastMutex);
-
+        /* Release our reference to the network. */
         SUPR0ObjRelease(pNetwork->pvObj, pIf->pSession);
         pIf->pNetwork = NULL;
     }
-    else
-        RTSemFastMutexRelease(pIntNet->FastMutex);
+
+    RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
 
     /*
      * Wakeup anyone waiting on this interface.
@@ -3434,10 +3433,9 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
 /**
  * Creates a new network interface.
  *
- * The call must have opened the network for the new interface
- * and is responsible for closing it on failure. On success
- * it must leave the network opened so the interface destructor
- * can close it.
+ * The call must have opened the network for the new interface and is
+ * responsible for closing it on failure.  On success it must leave the network
+ * opened so the interface destructor can close it.
  *
  * @returns VBox status code.
  * @param   pNetwork    The network.
@@ -3446,7 +3444,8 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
  * @param   cbRecv      The size of the receive buffer.
  * @param   phIf        Where to store the interface handle.
  */
-static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSession, unsigned cbSend, unsigned cbRecv, bool *pfCloseNetwork, PINTNETIFHANDLE phIf)
+static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSession, unsigned cbSend, unsigned cbRecv,
+                                   PINTNETIFHANDLE phIf)
 {
     LogFlow(("intnetR0NetworkCreateIf: pNetwork=%p pSession=%p cbSend=%u cbRecv=%u phIf=%p\n",
              pNetwork, pSession, cbSend, cbRecv, phIf));
@@ -3456,8 +3455,6 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
      */
     AssertPtr(pNetwork);
     AssertPtr(phIf);
-    AssertPtr(pfCloseNetwork);
-    *pfCloseNetwork = false;
 
     /*
      * Allocate and initialize the interface structure.
@@ -3513,7 +3510,7 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
         {
             ASMMemZero32(pIf->pIntBufDefault, cbBuf); /** @todo I thought I specified these buggers as clearing the memory... */
 
-            pIf->pIntBuf = pIf->pIntBufDefault;
+            pIf->pIntBuf   = pIf->pIntBufDefault;
             pIf->pIntBufR3 = pIf->pIntBufDefaultR3;
             INTNETBufInit(pIf->pIntBuf, cbBuf, cbRecv, cbSend);
 
@@ -3523,28 +3520,35 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
             rc = RTSemFastMutexRequest(pNetwork->FastMutex2);
             if (RT_SUCCESS(rc))
             {
-                pIf->pNext = pNetwork->pIFs;
-                pNetwork->pIFs = pIf;
+                pIf->pNext = pNetwork->pIfs;
+                pNetwork->pIfs = pIf;
                 RTSemFastMutexRelease(pNetwork->FastMutex2);
 
                 /*
-                 * Register the interface with the session.
+                 * Register the interface with the session, adding another
+                 * reference to the network to ease the cleanup duties of the caller.
                  */
-                pIf->pvObj = SUPR0ObjRegister(pSession, SUPDRVOBJTYPE_INTERNAL_NETWORK_INTERFACE, intnetR0IfDestruct, pIf, pNetwork->pIntNet);
-                if (pIf->pvObj)
+                rc = SUPR0ObjAddRef(pNetwork->pvObj, pSession);
+                if (RT_SUCCESS(rc))
                 {
-                    rc = RTHandleTableAllocWithCtx(pNetwork->pIntNet->hHtIfs, pIf, pSession, (uint32_t *)&pIf->hIf);
-                    if (RT_SUCCESS(rc))
+                    pIf->pvObj = SUPR0ObjRegister(pSession, SUPDRVOBJTYPE_INTERNAL_NETWORK_INTERFACE, intnetR0IfDestruct, pIf, pNetwork->pIntNet);
+                    if (pIf->pvObj)
                     {
-                        *phIf = pIf->hIf;
-                        Log(("intnetR0NetworkCreateIf: returns VINF_SUCCESS *phIf=%RX32 cbSend=%u cbRecv=%u cbBuf=%u\n",
-                             *phIf, pIf->pIntBufDefault->cbSend, pIf->pIntBufDefault->cbRecv, pIf->pIntBufDefault->cbBuf));
-                        return VINF_SUCCESS;
+                        rc = RTHandleTableAllocWithCtx(pNetwork->pIntNet->hHtIfs, pIf, pSession, (uint32_t *)&pIf->hIf);
+                        if (RT_SUCCESS(rc))
+                        {
+                            *phIf = pIf->hIf;
+                            Log(("intnetR0NetworkCreateIf: returns VINF_SUCCESS *phIf=%RX32 cbSend=%u cbRecv=%u cbBuf=%u\n",
+                                 *phIf, pIf->pIntBufDefault->cbSend, pIf->pIntBufDefault->cbRecv, pIf->pIntBufDefault->cbBuf));
+                            return VINF_SUCCESS;
+                        }
+
+                        SUPR0ObjRelease(pIf->pvObj, pSession);
+                        LogFlow(("intnetR0NetworkCreateIf: returns %Rrc\n", rc));
+                        return rc;
                     }
 
-                    SUPR0ObjRelease(pIf->pvObj, pSession);
-                    LogFlow(("intnetR0NetworkCreateIf: returns %Rrc\n", rc));
-                    return rc;
+                    SUPR0ObjRelease(pNetwork->pvObj, pSession);
                 }
 
                 RTSemFastMutexDestroy(pNetwork->FastMutex2);
@@ -3561,7 +3565,6 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
     }
     RTMemFree(pIf);
     LogFlow(("intnetR0NetworkCreateIf: returns %Rrc\n", rc));
-    *pfCloseNetwork = true;
     return rc;
 }
 
@@ -3839,11 +3842,11 @@ static void intnetR0TrunkIfDestroy(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork
     /*
      * Free up the resources.
      */
-    RTSEMFASTMUTEX FastMutex = pThis->FastMutex;
-    pThis->FastMutex = NIL_RTSEMFASTMUTEX;
+    RTSEMFASTMUTEX hFastMutex = pThis->FastMutex;
+    pThis->FastMutex = NIL_RTSEMMUTEX;
     pThis->pNetwork = NULL;
-    RTSemFastMutexRelease(FastMutex);
-    RTSemFastMutexDestroy(FastMutex);
+    RTSemFastMutexRelease(hFastMutex);
+    RTSemFastMutexDestroy(hFastMutex);
     RTMemFree(pThis);
 }
 
@@ -3952,24 +3955,6 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
 
 
 /**
- * Close a network which was opened/created using intnetR0OpenNetwork()/intnetR0CreateNetwork().
- *
- * @param   pNetwork    The network to close.
- * @param   pSession    The session handle.
- */
-static int intnetR0NetworkClose(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSession)
-{
-    LogFlow(("intnetR0NetworkClose: pNetwork=%p pSession=%p\n", pNetwork, pSession));
-    AssertPtrReturn(pSession, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pNetwork, VERR_INVALID_PARAMETER);
-
-    int rc = SUPR0ObjRelease(pNetwork->pvObj, pSession);
-    LogFlow(("intnetR0NetworkClose: return %Rrc\n", rc));
-    return rc;
-}
-
-
-/**
  * Object destructor callback.
  * This is called for reference counted objectes when the count reaches 0.
  *
@@ -3985,7 +3970,7 @@ static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, vo
     Assert(pNetwork->pIntNet == pIntNet);
 
     /* take the create/destroy sem. */
-    RTSemFastMutexRequest(pIntNet->FastMutex);
+    RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
 
     /*
      * Deactivate the trunk connection first (if any).
@@ -4013,13 +3998,14 @@ static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, vo
     pNetwork->pvObj = NULL;
 
     /*
-     * Because of the undefined order of the per session object dereferencing when closing a session,
-     * we have to handle the case where the network is destroyed before the interfaces. We'll
-     * deal with this by simply orphaning the interfaces.
+     * Because of the undefined order of the per session object dereferencing
+     * when closing a session, we have to handle the case where the network is
+     * destroyed before the interfaces.
+     * We deal with this simply by orphaning the interfaces.
      */
     RTSemFastMutexRequest(pNetwork->FastMutex2);
 
-    PINTNETIF pCur = pNetwork->pIFs;
+    PINTNETIF pCur = pNetwork->pIfs;
     while (pCur)
     {
         PINTNETIF pNext = pCur->pNext;
@@ -4049,12 +4035,14 @@ static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, vo
     RTMemFree(pNetwork);
 
     /* release the create/destroy sem. (can be done before trunk destruction.) */
-    RTSemFastMutexRelease(pIntNet->FastMutex);
+    RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
 }
 
 
 /**
  * Opens an existing network.
+ *
+ * The call must own the INTNET::hMtxCreateOpenDestroy.
  *
  * @returns VBox status code.
  * @param   pIntNet         The instance data.
@@ -4136,6 +4124,7 @@ static int intnetR0OpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
             LogFlow(("intnetR0OpenNetwork: returns %Rrc *ppNetwork=%p\n", rc, *ppNetwork));
             return rc;
         }
+
         pCur = pCur->pNext;
     }
 
@@ -4147,7 +4136,7 @@ static int intnetR0OpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
 /**
  * Creates a new network.
  *
- * The call must own the INTNET::FastMutex and has already attempted
+ * The call must own the INTNET::hMtxCreateOpenDestroy and has already attempted
  * opening the network and found it to be non-existing.
  *
  * @returns VBox status code.
@@ -4158,8 +4147,9 @@ static int intnetR0OpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
  * @param   enmTrunkType    The trunk type.
  * @param   pszTrunk        The trunk name. Its meaning is specfic to the type.
  * @param   fFlags          Flags, see INTNET_OPEN_FLAGS_*.
- * @param   ppNetwork       Where to store the network. In the case of failure whatever is returned
- *                          here should be dereferenced outside the INTNET::FastMutex.
+ * @param   ppNetwork       Where to store the network. In the case of failure
+ *                          whatever is returned here should be dereferenced
+ *                          outside the INTNET::hMtxCreateOpenDestroy.
  */
 static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork, INTNETTRUNKTYPE enmTrunkType,
                                  const char *pszTrunk, uint32_t fFlags, PINTNETNETWORK *ppNetwork)
@@ -4189,21 +4179,21 @@ static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const
     int rc = RTSemFastMutexCreate(&pNew->FastMutex2);
     if (RT_SUCCESS(rc))
     {
-        //pNew->pIFs = NULL;
-        pNew->pIntNet = pIntNet;
-        //pNew->cActiveIFs = 0;
-        pNew->fFlags = fFlags;
-        size_t cchName = strlen(pszNetwork);
-        pNew->cchName = (uint8_t)cchName;
+        //pNew->pIfs        = NULL;
+        pNew->pIntNet       = pIntNet;
+        //pNew->cActiveIFs  = 0;
+        pNew->fFlags        = fFlags;
+        size_t cchName      = strlen(pszNetwork);
+        pNew->cchName       = (uint8_t)cchName;
         Assert(cchName && cchName < sizeof(pNew->szName));  /* caller's responsibility. */
         memcpy(pNew->szName, pszNetwork, cchName);          /* '\0' by alloc. */
-        pNew->enmTrunkType = enmTrunkType;
+        pNew->enmTrunkType  = enmTrunkType;
         Assert(strlen(pszTrunk) < sizeof(pNew->szTrunk));   /* caller's responsibility. */
         strcpy(pNew->szTrunk, pszTrunk);
         if (fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
-            pNew->pbTmp = RT_ALIGN_PT(pNew + 1, 64, uint8_t *);
+            pNew->pbTmp     = RT_ALIGN_PT(pNew + 1, 64, uint8_t *);
         //else
-        //    pNew->pbTmp = NULL;
+        //    pNew->pbTmp   = NULL;
 
         /*
          * Register the object in the current session and link it into the network list.
@@ -4215,9 +4205,10 @@ static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const
             pIntNet->pNetworks = pNew;
 
             /*
-             * Check if the current session is actually allowed to create and open
-             * the network. It is possible to implement network name based policies
-             * and these must be checked now. SUPR0ObjRegister does no such checks.
+             * Check if the current session is actually allowed to create and
+             * open the network.  It is possible to implement network name
+             * based policies and these must be checked now.  SUPR0ObjRegister
+             * does no such checks.
              */
             rc = SUPR0ObjVerifyAccess(pNew->pvObj, pSession, pNew->szName);
             if (RT_SUCCESS(rc))
@@ -4234,15 +4225,7 @@ static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const
                 }
             }
 
-            /*
-             * We unlink it here so it cannot be opened when the caller leaves
-             * INTNET::FastMutex before dereferencing it.
-             */
-            Assert(pIntNet->pNetworks == pNew);
-            pIntNet->pNetworks = pNew->pNext;
-            pNew->pNext = NULL;
-
-            *ppNetwork = pNew;
+            SUPR0ObjRelease(pNew->pvObj, pSession);
             LogFlow(("intnetR0CreateNetwork: returns %Rrc\n", rc));
             return rc;
         }
@@ -4323,45 +4306,36 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
     AssertPtrReturn(phIf, VERR_INVALID_PARAMETER);
 
     /*
-     * Acquire the mutex to serialize open/create.
+     * Acquire the mutex to serialize open/create/close.
      */
-    int rc = RTSemFastMutexRequest(pIntNet->FastMutex);
+    int rc = RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
     if (RT_FAILURE(rc))
         return rc;
 
     /*
      * Try open / create the network and create an interface on it for the
      * caller to use.
-     *
-     * Note! Because of the destructors grabbing INTNET::FastMutex and us being
-     * required to own this semaphore for the entire network opening / creation
-     * and interface creation sequence, intnetR0CreateNetwork will have to
-     * defer the network cleanup to us on failure.
      */
     PINTNETNETWORK pNetwork = NULL;
     rc = intnetR0OpenNetwork(pIntNet, pSession, pszNetwork, enmTrunkType, pszTrunk, fFlags, &pNetwork);
-    if (RT_SUCCESS(rc) || rc == VERR_NOT_FOUND)
+    if (RT_SUCCESS(rc))
     {
-        bool fCloseNetwork = true;
-        bool fNewNet = rc == VERR_NOT_FOUND;
-        if (fNewNet)
-            rc = intnetR0CreateNetwork(pIntNet, pSession, pszNetwork, enmTrunkType, pszTrunk, fFlags, &pNetwork);
+        rc = intnetR0NetworkCreateIf(pNetwork, pSession, cbSend, cbRecv, phIf);
         if (RT_SUCCESS(rc))
-            rc = intnetR0NetworkCreateIf(pNetwork, pSession, cbSend, cbRecv, &fCloseNetwork, phIf);
-
-        RTSemFastMutexRelease(pIntNet->FastMutex);
-
-        if (RT_FAILURE(rc))
-        {
-            if(pNetwork && fCloseNetwork)
-                intnetR0NetworkClose(pNetwork, pSession);
-        }
-        else if(!fNewNet)
             rc = VINF_ALREADY_INITIALIZED;
+        SUPR0ObjRelease(pNetwork->pvObj, pSession);
     }
-    else
-        RTSemFastMutexRelease(pIntNet->FastMutex);
+    else if (rc == VERR_NOT_FOUND)
+    {
+        rc = intnetR0CreateNetwork(pIntNet, pSession, pszNetwork, enmTrunkType, pszTrunk, fFlags, &pNetwork);
+        if (RT_SUCCESS(rc))
+        {
+            rc = intnetR0NetworkCreateIf(pNetwork, pSession, cbSend, cbRecv, phIf);
+            SUPR0ObjRelease(pNetwork->pvObj, pSession);
+        }
+    }
 
+    RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
     LogFlow(("INTNETR0Open: return %Rrc *phIf=%RX32\n", rc, *phIf));
     return rc;
 }
@@ -4404,10 +4378,10 @@ INTNETR0DECL(void) INTNETR0Destroy(PINTNET pIntNet)
      * There is not supposed to be any networks hanging around at this time.
      */
     Assert(pIntNet->pNetworks == NULL);
-    if (pIntNet->FastMutex != NIL_RTSEMFASTMUTEX)
+    if (pIntNet->hMtxCreateOpenDestroy != NIL_RTSEMMUTEX)
     {
-        RTSemFastMutexDestroy(pIntNet->FastMutex);
-        pIntNet->FastMutex = NIL_RTSEMFASTMUTEX;
+        RTSemMutexDestroy(pIntNet->hMtxCreateOpenDestroy);
+        pIntNet->hMtxCreateOpenDestroy = NIL_RTSEMMUTEX;
     }
     if (pIntNet->hHtIfs != NIL_RTHANDLETABLE)
     {
@@ -4435,7 +4409,7 @@ INTNETR0DECL(int) INTNETR0Create(PINTNET *ppIntNet)
     {
         //pIntNet->pNetworks = NULL;
 
-        rc = RTSemFastMutexCreate(&pIntNet->FastMutex);
+        rc = RTSemMutexCreate(&pIntNet->hMtxCreateOpenDestroy);
         if (RT_SUCCESS(rc))
         {
             rc = RTHandleTableCreateEx(&pIntNet->hHtIfs, RTHANDLETABLE_FLAGS_LOCKED | RTHANDLETABLE_FLAGS_CONTEXT,
@@ -4447,7 +4421,7 @@ INTNETR0DECL(int) INTNETR0Create(PINTNET *ppIntNet)
                 return VINF_SUCCESS;
             }
 
-            RTSemFastMutexDestroy(pIntNet->FastMutex);
+            RTSemMutexDestroy(pIntNet->hMtxCreateOpenDestroy);
         }
         RTMemFree(pIntNet);
     }
