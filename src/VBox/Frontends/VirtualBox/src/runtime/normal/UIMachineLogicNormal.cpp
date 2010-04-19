@@ -57,11 +57,13 @@ void UIMachineLogicNormal::initialize()
     /* Prepare session connections: */
     prepareSessionConnections();
 
+    /* Prepare action groups:
+     * Note: This has to be done before prepareActionConnections
+     * cause here actions/menus are recreated. */
+    prepareActionGroups();
+
     /* Prepare action connections: */
     prepareActionConnections();
-
-    /* Prepare action groups: */
-    prepareActionGroups();
 
     /* Prepare normal machine window: */
     prepareMachineWindows();
