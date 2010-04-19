@@ -653,30 +653,3 @@ tcp_tos(struct socket *so)
 {
     return 0;
 }
-
-/*
- * Emulate programs that try and connect to us. This includes ftp (the data
- * connection is initiated by the server) and IRC (DCC CHAT and DCC SEND)
- * for now
- *
- * NOTE: It's possible to crash SLiRP by sending it unstandard strings to
- * emulate... if this is a problem, more checks are needed here.
- *
- * XXX Assumes the whole command cames in one packet
- *
- * XXX Some ftp clients will have their TOS set to LOWDELAY and so Nagel will
- * kick in.  Because of this, we'll get the first letter, followed by the
- * rest, so we simply scan for ORT instead of PORT... DCC doesn't have this
- * problem because there's other stuff in the packet before the DCC command.
- *
- * Return 1 if the mbuf m is still valid and should be sbappend()ed
- *
- * NOTE: if you return 0 you MUST m_free() the mbuf!
- */
-int
-tcp_emu(PNATState pData, struct socket *so, struct mbuf *m)
-{
-    /*XXX: libalias should care about it */
-    so->so_emu = 0;
-    return 1;
-}
