@@ -298,7 +298,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         if (!pVM->hwaccm.s.fNestedPaging)
             pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(3) | RT_BIT(4);
         else
-            pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(4) | RT_BIT(8);
+            pVMCB->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(4);
 
         /* Intercept all DRx reads and writes by default. Changed later on. */
         pVMCB->ctrl.u16InterceptRdDRx = 0xFFFF;
@@ -740,7 +740,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (!pVM->hwaccm.s.fNestedPaging)
         {
             val |= X86_CR0_PG;          /* Paging is always enabled; even when the guest is running in real mode or PE without paging. */
-            val |= X86_CR0_WP;          /* Must set this as we rely on protect various pages and supervisor writes must be caught. */
+            val |= X86_CR0_WP;          /* Must set this as we rely on protecting various pages and supervisor writes must be caught. */
         }
         pVMCB->guest.u64CR0 = val;
     }
