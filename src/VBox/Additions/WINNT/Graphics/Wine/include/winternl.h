@@ -1133,8 +1133,81 @@ typedef struct _SYSTEM_CPU_INFORMATION {
 
 /* System Information Class 0x02 */
 
+/* Documented in "Windows NT/2000 Native API Reference" by Gary Nebbett. */
 typedef struct _SYSTEM_PERFORMANCE_INFORMATION {
-    BYTE Reserved1[312];
+    LARGE_INTEGER IdleTime;
+    LARGE_INTEGER ReadTransferCount;
+    LARGE_INTEGER WriteTransferCount;
+    LARGE_INTEGER OtherTransferCount;
+    ULONG ReadOperationCount;
+    ULONG WriteOperationCount;
+    ULONG OtherOperationCount;
+    ULONG AvailablePages;
+    ULONG TotalCommittedPages;
+    ULONG TotalCommitLimit;
+    ULONG PeakCommitment;
+    ULONG PageFaults;
+    ULONG WriteCopyFaults;
+    ULONG TransitionFaults;
+    ULONG Reserved1;
+    ULONG DemandZeroFaults;
+    ULONG PagesRead;
+    ULONG PageReadIos;
+    ULONG Reserved2[2];
+    ULONG PagefilePagesWritten;
+    ULONG PagefilePageWriteIos;
+    ULONG MappedFilePagesWritten;
+    ULONG MappedFilePageWriteIos;
+    ULONG PagedPoolUsage;
+    ULONG NonPagedPoolUsage;
+    ULONG PagedPoolAllocs;
+    ULONG PagedPoolFrees;
+    ULONG NonPagedPoolAllocs;
+    ULONG NonPagedPoolFrees;
+    ULONG TotalFreeSystemPtes;
+    ULONG SystemCodePage;
+    ULONG TotalSystemDriverPages;
+    ULONG TotalSystemCodePages;
+    ULONG SmallNonPagedLookasideListAllocateHits;
+    ULONG SmallPagedLookasideListAllocateHits;
+    ULONG Reserved3;
+    ULONG MmSystemCachePage;
+    ULONG PagedPoolPage;
+    ULONG SystemDriverPage;
+    ULONG FastReadNoWait;
+    ULONG FastReadWait;
+    ULONG FastReadResourceMiss;
+    ULONG FastReadNotPossible;
+    ULONG FastMdlReadNoWait;
+    ULONG FastMdlReadWait;
+    ULONG FastMdlReadResourceMiss;
+    ULONG FastMdlReadNotPossible;
+    ULONG MapDataNoWait;
+    ULONG MapDataWait;
+    ULONG MapDataNoWaitMiss;
+    ULONG MapDataWaitMiss;
+    ULONG PinMappedDataCount;
+    ULONG PinReadNoWait;
+    ULONG PinReadWait;
+    ULONG PinReadNoWaitMiss;
+    ULONG PinReadWaitMiss;
+    ULONG CopyReadNoWait;
+    ULONG CopyReadWait;
+    ULONG CopyReadNoWaitMiss;
+    ULONG CopyReadWaitMiss;
+    ULONG MdlReadNoWait;
+    ULONG MdlReadWait;
+    ULONG MdlReadNoWaitMiss;
+    ULONG MdlReadWaitMiss;
+    ULONG ReadAheadIos;
+    ULONG LazyWriteIos;
+    ULONG LazyWritePages;
+    ULONG DataFlushes;
+    ULONG DataPages;
+    ULONG ContextSwitches;
+    ULONG FirstLevelTbFills;
+    ULONG SecondLevelTbFills;
+    ULONG SystemCalls;
 } SYSTEM_PERFORMANCE_INFORMATION, *PSYSTEM_PERFORMANCE_INFORMATION;
 
 /* System Information Class 0x03 */
@@ -1574,9 +1647,37 @@ typedef void (NTAPI *RTL_WAITORTIMERCALLBACKFUNC)(PVOID,BOOLEAN); /* FIXME: not 
 #define SE_MAX_WELL_KNOWN_PRIVILEGE      SE_CREATE_GLOBAL_PRIVILEGE
 
 /* NtGlobalFlag bits */
+#define FLG_STOP_ON_EXCEPTION            0x00000001
+#define FLG_SHOW_LDR_SNAPS               0x00000002
+#define FLG_DEBUG_INITIAL_COMMAND        0x00000004
+#define FLG_STOP_ON_HUNG_GUI             0x00000008
 #define FLG_HEAP_ENABLE_TAIL_CHECK       0x00000010
 #define FLG_HEAP_ENABLE_FREE_CHECK       0x00000020
+#define FLG_HEAP_VALIDATE_PARAMETERS     0x00000040
+#define FLG_HEAP_VALIDATE_ALL            0x00000080
+#define FLG_APPLICATION_VERIFIER         0x00000100
+#define FLG_POOL_ENABLE_TAGGING          0x00000400
+#define FLG_HEAP_ENABLE_TAGGING          0x00000800
+#define FLG_USER_STACK_TRACE_DB          0x00001000
+#define FLG_KERNEL_STACK_TRACE_DB        0x00002000
+#define FLG_MAINTAIN_OBJECT_TYPELIST     0x00004000
+#define FLG_HEAP_ENABLE_TAG_BY_DLL       0x00008000
+#define FLG_DISABLE_STACK_EXTENSION      0x00010000
+#define FLG_ENABLE_CSRDEBUG              0x00020000
+#define FLG_ENABLE_KDEBUG_SYMBOL_LOAD    0x00040000
+#define FLG_DISABLE_PAGE_KERNEL_STACKS   0x00080000
+#define FLG_ENABLE_SYSTEM_CRIT_BREAKS    0x00100000
 #define FLG_HEAP_DISABLE_COALESCING      0x00200000
+#define FLG_ENABLE_CLOSE_EXCEPTIONS      0x00400000
+#define FLG_ENABLE_EXCEPTION_LOGGING     0x00800000
+#define FLG_ENABLE_HANDLE_TYPE_TAGGING   0x01000000
+#define FLG_HEAP_PAGE_ALLOCS             0x02000000
+#define FLG_DEBUG_INITIAL_COMMAND_EX     0x04000000
+#define FLG_DISABLE_DBGPRINT             0x08000000
+#define FLG_CRITSEC_EVENT_CREATION       0x10000000
+#define FLG_LDR_TOP_DOWN                 0x20000000
+#define FLG_ENABLE_HANDLE_EXCEPTIONS     0x40000000
+#define FLG_DISABLE_PROTDLLS             0x80000000
 
 /* Rtl*Registry* functions structs and defines */
 #define RTL_REGISTRY_ABSOLUTE             0
@@ -1882,6 +1983,7 @@ NTSYSAPI void      WINAPI LdrInitializeThunk(void*,ULONG_PTR,ULONG_PTR,ULONG_PTR
 NTSYSAPI NTSTATUS  WINAPI LdrLoadDll(LPCWSTR, DWORD, const UNICODE_STRING*, HMODULE*);
 NTSYSAPI NTSTATUS  WINAPI LdrLockLoaderLock(ULONG,ULONG*,ULONG*);
 IMAGE_BASE_RELOCATION * WINAPI LdrProcessRelocationBlock(void*,UINT,USHORT*,INT_PTR);
+NTSYSAPI NTSTATUS  WINAPI LdrQueryImageFileExecutionOptions(const UNICODE_STRING*,LPCWSTR,ULONG,void*,ULONG,ULONG*);
 NTSYSAPI NTSTATUS  WINAPI LdrQueryProcessModuleInformation(SYSTEM_MODULE_INFORMATION*, ULONG, ULONG*);
 NTSYSAPI void      WINAPI LdrShutdownProcess(void);
 NTSYSAPI void      WINAPI LdrShutdownThread(void);
@@ -1911,7 +2013,7 @@ NTSYSAPI NTSTATUS  WINAPI NtCompleteConnectPort(HANDLE);
 NTSYSAPI NTSTATUS  WINAPI NtConnectPort(PHANDLE,PUNICODE_STRING,PSECURITY_QUALITY_OF_SERVICE,PLPC_SECTION_WRITE,PLPC_SECTION_READ,PULONG,PVOID,PULONG);
 NTSYSAPI NTSTATUS  WINAPI NtContinue(PCONTEXT,BOOLEAN);
 NTSYSAPI NTSTATUS  WINAPI NtCreateDirectoryObject(PHANDLE,ACCESS_MASK,POBJECT_ATTRIBUTES);
-NTSYSAPI NTSTATUS  WINAPI NtCreateEvent(PHANDLE,ACCESS_MASK,const OBJECT_ATTRIBUTES *,BOOLEAN,BOOLEAN);
+NTSYSAPI NTSTATUS  WINAPI NtCreateEvent(PHANDLE,ACCESS_MASK,const OBJECT_ATTRIBUTES *,EVENT_TYPE,BOOLEAN);
 NTSYSAPI NTSTATUS  WINAPI NtCreateEventPair(PHANDLE,ACCESS_MASK,POBJECT_ATTRIBUTES);
 NTSYSAPI NTSTATUS  WINAPI NtCreateFile(PHANDLE,ACCESS_MASK,POBJECT_ATTRIBUTES,PIO_STATUS_BLOCK,PLARGE_INTEGER,ULONG,ULONG,ULONG,ULONG,PVOID,ULONG);
 NTSYSAPI NTSTATUS  WINAPI NtCreateIoCompletion(PHANDLE,ACCESS_MASK,POBJECT_ATTRIBUTES,ULONG);
@@ -2253,6 +2355,7 @@ NTSYSAPI ULONG     WINAPI RtlGetNtGlobalFlags(void);
 NTSYSAPI BOOLEAN   WINAPI RtlGetNtProductType(LPDWORD);
 NTSYSAPI NTSTATUS  WINAPI RtlGetOwnerSecurityDescriptor(PSECURITY_DESCRIPTOR,PSID *,PBOOLEAN);
 NTSYSAPI ULONG     WINAPI RtlGetProcessHeaps(ULONG,HANDLE*);
+NTSYSAPI DWORD     WINAPI RtlGetThreadErrorMode(void);
 NTSYSAPI NTSTATUS  WINAPI RtlGetSaclSecurityDescriptor(PSECURITY_DESCRIPTOR,PBOOLEAN,PACL *,PBOOLEAN);
 NTSYSAPI NTSTATUS  WINAPI RtlGetVersion(RTL_OSVERSIONINFOEXW*);
 NTSYSAPI NTSTATUS  WINAPI RtlGUIDFromString(PUNICODE_STRING,GUID*);
@@ -2344,6 +2447,7 @@ NTSYSAPI NTSTATUS  WINAPI RtlSetIoCompletionCallback(HANDLE,PRTL_OVERLAPPED_COMP
 NTSYSAPI void      WINAPI RtlSetLastWin32Error(DWORD);
 NTSYSAPI void      WINAPI RtlSetLastWin32ErrorAndNtStatusFromNtStatus(NTSTATUS);
 NTSYSAPI NTSTATUS  WINAPI RtlSetSaclSecurityDescriptor(PSECURITY_DESCRIPTOR,BOOLEAN,PACL,BOOLEAN);
+NTSYSAPI NTSTATUS  WINAPI RtlSetThreadErrorMode(DWORD,LPDWORD);
 NTSYSAPI NTSTATUS  WINAPI RtlSetTimeZoneInformation(const RTL_TIME_ZONE_INFORMATION*);
 NTSYSAPI SIZE_T    WINAPI RtlSizeHeap(HANDLE,ULONG,const void*);
 NTSYSAPI NTSTATUS  WINAPI RtlStringFromGUID(REFGUID,PUNICODE_STRING);

@@ -24,6 +24,7 @@
  * that LGPLv2 or any later version may be used, or where a choice of which version
  * of the LGPL is applied is otherwise unspecified.
  */
+
 #ifndef WINE_IPHLPAPI_H__
 #define WINE_IPHLPAPI_H__
 

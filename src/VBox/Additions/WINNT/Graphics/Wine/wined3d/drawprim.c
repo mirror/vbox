@@ -113,7 +113,6 @@ static void drawStridedSlow(IWineD3DDevice *iface, const struct wined3d_context 
     }
 
     /* Start drawing in GL */
-    VTRACE(("glBegin(%x)\n", glPrimType));
     glBegin(glPrimType);
 
     if (si->use_map & (1 << WINED3D_FFP_POSITION))
@@ -237,13 +236,10 @@ static void drawStridedSlow(IWineD3DDevice *iface, const struct wined3d_context 
         if (idxData != NULL) {
 
             /* Indexed so work out the number of strides to skip */
-            if (idxSize == 2) {
-                VTRACE(("Idx for vertex %u = %u\n", vx_index, pIdxBufS[startIdx+vx_index]));
+            if (idxSize == 2)
                 SkipnStrides = pIdxBufS[startIdx + vx_index] + This->stateBlock->loadBaseVertexIndex;
-            } else {
-                VTRACE(("Idx for vertex %u = %u\n", vx_index, pIdxBufL[startIdx+vx_index]));
+            else
                 SkipnStrides = pIdxBufL[startIdx + vx_index] + This->stateBlock->loadBaseVertexIndex;
-            }
         }
 
         tmp_tex_mask = tex_mask;
@@ -345,7 +341,7 @@ static inline void send_attribute(IWineD3DDeviceImpl *This, WINED3DFORMAT format
             GL_EXTCALL(glVertexAttrib4ubvARB(index, ptr));
             break;
         case WINED3DFMT_B8G8R8A8_UNORM:
-            if (gl_info->supported[EXT_VERTEX_ARRAY_BGRA])
+            if (gl_info->supported[ARB_VERTEX_ARRAY_BGRA])
             {
                 const DWORD *src = ptr;
                 DWORD c = *src & 0xff00ff00;
@@ -462,20 +458,16 @@ static void drawStridedSlowVs(IWineD3DDevice *iface, const struct wined3d_stream
     }
 
     /* Start drawing in GL */
-    VTRACE(("glBegin(%x)\n", glPrimitiveType));
     glBegin(glPrimitiveType);
 
     for (vx_index = 0; vx_index < numberOfVertices; ++vx_index) {
         if (idxData != NULL) {
 
             /* Indexed so work out the number of strides to skip */
-            if (idxSize == 2) {
-                VTRACE(("Idx for vertex %d = %d\n", vx_index, pIdxBufS[startIdx+vx_index]));
+            if (idxSize == 2)
                 SkipnStrides = pIdxBufS[startIdx + vx_index] + stateblock->loadBaseVertexIndex;
-            } else {
-                VTRACE(("Idx for vertex %d = %d\n", vx_index, pIdxBufL[startIdx+vx_index]));
+            else
                 SkipnStrides = pIdxBufL[startIdx + vx_index] + stateblock->loadBaseVertexIndex;
-            }
         }
 
         for (i = MAX_ATTRIBS - 1; i >= 0; i--)
@@ -615,6 +607,12 @@ void drawPrimitive(IWineD3DDevice *iface, UINT index_count, UINT StartIdx, UINT 
     This->isInDraw = TRUE;
 
     context = context_acquire(This, This->render_targets[0], CTXUSAGE_DRAWPRIM);
+    if (!context->valid)
+    {
+        context_release(context);
+        WARN("Invalid context, skipping draw.\n");
+        return;
+    }
 
     if (This->stencilBufferTarget) {
         /* Note that this depends on the context_acquire() call above to set
@@ -701,6 +699,14 @@ void drawPrimitive(IWineD3DDevice *iface, UINT index_count, UINT StartIdx, UINT 
 
     /* Finished updating the screen, restore lock */
     LEAVE_GL();
+
+    for(i = 0; i < This->num_buffer_queries; i++)
+    {
+        wined3d_event_query_issue(This->buffer_queries[i], This);
+    }
+
+    if (wined3d_settings.strict_draw_ordering) wglFlush(); /* Flush to ensure ordering across contexts. */
+
     context_release(context);
 
     TRACE("Done all gl drawing\n");

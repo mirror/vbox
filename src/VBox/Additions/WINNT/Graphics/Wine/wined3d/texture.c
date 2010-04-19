@@ -443,7 +443,7 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
         IUnknown *parent, const struct wined3d_parent_ops *parent_ops)
 {
     const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
-    const struct GlPixelFormatDesc *format_desc = getFormatDescEntry(format, gl_info);
+    const struct wined3d_format_desc *format_desc = getFormatDescEntry(format, gl_info);
     UINT pow2_width, pow2_height;
     UINT tmp_w, tmp_h;
     unsigned int i;
@@ -579,7 +579,7 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
         /* Use the callback to create the texture surface. */
         hr = IWineD3DDeviceParent_CreateSurface(device->device_parent, parent, tmp_w, tmp_h, format_desc->format,
                 usage, pool, i, WINED3DCUBEMAP_FACE_POSITIVE_X, &texture->surfaces[i]);
-        if (FAILED(hr) || ((IWineD3DSurfaceImpl *)texture->surfaces[i])->Flags & SFLAG_OVERSIZE)
+        if (FAILED(hr))
         {
             FIXME("Failed to create surface %p, hr %#x\n", texture, hr);
             texture->surfaces[i] = NULL;

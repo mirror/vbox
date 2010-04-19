@@ -94,6 +94,34 @@ DWORD WINAPI SHCopyKeyW(HKEY,LPCWSTR,HKEY,DWORD);
 
 HKEY WINAPI  SHRegDuplicateHKey(HKEY);
 
+/* SHRegGetValue flags */
+typedef INT SRRF;
+
+#define SRRF_RT_REG_NONE 0x1
+#define SRRF_RT_REG_SZ 0x2
+#define SRRF_RT_REG_EXPAND_SZ 0x4
+#define SRRF_RT_REG_BINARY 0x8
+#define SRRF_RT_REG_DWORD 0x10
+#define SRRF_RT_REG_MULTI_SZ 0x20
+#define SRRF_RT_REG_QWORD 0x40
+
+#define SRRF_RT_DWORD (SRRF_RT_REG_BINARY|SRRF_RT_REG_DWORD)
+#define SRRF_RT_QWORD (SRRF_RT_REG_BINARY|SRRF_RT_REG_QWORD)
+#define SRRF_RT_ANY 0xffff
+
+#define SRRF_RM_ANY 0
+#define SRRF_RM_NORMAL 0x10000
+#define SRRF_RM_SAFE 0x20000
+#define SRRF_RM_SAFENETWORK 0x40000
+
+#define SRRF_NOEXPAND 0x10000000
+#define SRRF_ZEROONFAILURE 0x20000000
+#define SRRF_NOVIRT 0x40000000
+
+LSTATUS WINAPI SHRegGetValueA(HKEY,LPCSTR,LPCSTR,SRRF,LPDWORD,LPVOID,LPDWORD);
+LSTATUS WINAPI SHRegGetValueW(HKEY,LPCWSTR,LPCWSTR,SRRF,LPDWORD,LPVOID,LPDWORD);
+#define SHRegGetValue WINELIB_NAME_AW(SHRegGetValue)
+
 /* Undocumented registry functions */
 
 DWORD WINAPI SHDeleteOrphanKeyA(HKEY,LPCSTR);
@@ -1054,6 +1082,26 @@ BOOL WINAPI IsOS(DWORD);
 /* SHSetTimerQueueTimer definitions */
 #define TPS_EXECUTEIO    0x00000001
 #define TPS_LONGEXECTIME 0x00000008
+
+/* SHFormatDateTimeA/SHFormatDateTimeW flags */
+#define FDTF_SHORTTIME          0x00000001
+#define FDTF_SHORTDATE          0x00000002
+#define FDTF_DEFAULT            (FDTF_SHORTDATE | FDTF_SHORTTIME)
+#define FDTF_LONGDATE           0x00000004
+#define FDTF_LONGTIME           0x00000008
+#define FDTF_RELATIVE           0x00000010
+#define FDTF_LTRDATE            0x00000100
+#define FDTF_RTLDATE            0x00000200
+#define FDTF_NOAUTOREADINGORDER 0x00000400
+
+
+typedef struct
+{
+    const IID *piid;
+    int        dwOffset;
+} QITAB, *LPQITAB;
+
+HRESULT WINAPI QISearch(void* base, const QITAB *pqit, REFIID riid, void **ppv);
 
 #include <poppack.h> 
 

@@ -40,6 +40,7 @@ extern "C" {
 #endif
 
 BOOL WINAPI CreateEnvironmentBlock(LPVOID*,HANDLE,BOOL);
+BOOL WINAPI DestroyEnvironmentBlock(LPVOID);
 BOOL WINAPI ExpandEnvironmentStringsForUserA(HANDLE,LPCSTR,LPSTR,DWORD);
 BOOL WINAPI ExpandEnvironmentStringsForUserW(HANDLE,LPCWSTR,LPWSTR,DWORD);
 #define     ExpandEnvironmentStringsForUser WINELIB_NAME_AW(ExpandEnvironmentStringsForUser)
@@ -49,6 +50,9 @@ BOOL WINAPI GetUserProfileDirectoryW(HANDLE,LPWSTR,LPDWORD);
 BOOL WINAPI GetProfilesDirectoryA(LPSTR,LPDWORD);
 BOOL WINAPI GetProfilesDirectoryW(LPWSTR,LPDWORD);
 #define     GetProfilesDirectory WINELIB_NAME_AW(GetProfilesDirectory)
+BOOL WINAPI GetAllUsersProfileDirectoryA(LPSTR,LPDWORD);
+BOOL WINAPI GetAllUsersProfileDirectoryW(LPWSTR,LPDWORD);
+#define     GetAllUsersProfileDirectory WINELIB_NAME_AW(GetAllUsersProfileDirectory)
 BOOL WINAPI GetProfileType(DWORD*);
 BOOL WINAPI LoadUserProfileA(HANDLE,LPPROFILEINFOA);
 BOOL WINAPI LoadUserProfileW(HANDLE,LPPROFILEINFOW);
