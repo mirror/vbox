@@ -491,6 +491,7 @@ DECLCALLBACK(int) Guest::doGuestCtrlNotification(void    *pvExtension,
 int Guest::notifyCtrlExec(uint32_t              u32Function,
                           PHOSTEXECCALLBACKDATA pData)
 {
+    LogFlowFuncEnter();
     int rc = VINF_SUCCESS;
 
     AssertPtr(pData);
@@ -506,25 +507,52 @@ int Guest::notifyCtrlExec(uint32_t              u32Function,
         /* @todo Copy void* buffer contents! */
 
         /* Do progress handling. */
+        Utf8Str errMsg;
+        HRESULT rc2 = S_OK;
         switch (pData->u32Status)
         {
-            case PROC_STS_TEN: /* Terminated normally. */
-            case PROC_STS_TEA: /* Terminated abnormally. */
-            case PROC_STS_TES: /* Terminated through signal. */
-            case PROC_STS_TOK:
-            case PROC_STS_TOA:
-            case PROC_STS_DWN:
+            case PROC_STS_STARTED:
+                break;
 
-                if (!it->pProgress.isNull())
-                    it->pProgress->notifyComplete(S_OK);
+            case PROC_STS_TEN: /* Terminated normally. */
+                it->pProgress->notifyComplete(S_OK);
+                break;
+
+            case PROC_STS_TEA: /* Terminated abnormally. */
+                errMsg = Utf8StrFmt(Guest::tr("Process terminated abnormally with status '%u'"),
+                                    pCBData->u32Flags);
+                break;
+
+            case PROC_STS_TES: /* Terminated through signal. */
+                errMsg = Utf8StrFmt(Guest::tr("Process terminated via signal with status '%u'"),
+                                    pCBData->u32Flags);
+                break;
+
+            case PROC_STS_TOK:
+                errMsg = Utf8StrFmt(Guest::tr("Process timed out and was killed"));
+                break;
+
+            case PROC_STS_TOA:
+                errMsg = Utf8StrFmt(Guest::tr("Process timed out and could not be killed"));
+                break;
+
+            case PROC_STS_DWN:
+                errMsg = Utf8StrFmt(Guest::tr("Process exited because system is shutting down"));
                 break;
 
             default:
                 break;
         }
 
+        if (   !it->pProgress.isNull()
+            && errMsg.length())
+        {
+            it->pProgress->notifyComplete(E_FAIL /** @todo Find a better rc! */, COM_IIDOF(IGuest),
+                                          (CBSTR)Guest::getComponentName(), errMsg.c_str());
+        }
         ASMAtomicWriteBool(&it->bCalled, true);
     }
+    LogFlowFuncLeave();
     return rc;
 }
 
@@ -541,6 +569,7 @@ Guest::CallbackListIter Guest::getCtrlCallbackContext(uint32_t u32ContextID)
 
 void Guest::removeCtrlCallbackContext(Guest::CallbackListIter it)
 {
+    LogFlowFuncEnter();
     if (it->cbData)
     {
         RTMemFree(it->pvData);
@@ -555,10 +584,16 @@ void Guest::removeCtrlCallbackContext(Guest::CallbackListIter it)
         }
     }
     mCallbackList.erase(it);
+    LogFlowFuncLeave();
 }
 
+/* Adds a callback with a user provided data block and an optional progress object
+ * to the callback list. A callback is identified by a unique context ID which is used
+ * to identify a callback from the guest side. */
 uint32_t Guest::addCtrlCallbackContext(void *pvData, uint32_t cbData, Progress* pProgress)
 {
+    LogFlowFuncEnter();
+
     uint32_t uNewContext = ASMAtomicIncU32(&mNextContextID);
     /** @todo Add value clamping! */
 
@@ -573,6 +608,7 @@ uint32_t Guest::addCtrlCallbackContext(void *pvData, uint32_t cbData, Progress* 
     if (mCallbackList.size() > 256) /* Don't let the container size get too big! */
         removeCtrlCallbackContext(mCallbackList.begin());
 
+    LogFlowFuncLeave();
     return uNewContext;
 }
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -607,7 +643,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
          * Create progress object.
          */
         ComObjPtr <Progress> progress;
-        HRESULT rc = progress.createObject();
+        rc = progress.createObject();
         if (SUCCEEDED(rc))
         {
             rc = progress->init(static_cast<IGuest*>(this),
