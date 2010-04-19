@@ -5,6 +5,7 @@
  * Modified for Wine use by Jon Griffiths and Francois Gouget.
  * This file is in the public domain.
  */
+
 /*
  * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
  * other than GPL or LGPL is available it will apply instead, Sun elects to use only

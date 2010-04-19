@@ -14,20 +14,26 @@ PUBLIC_IDL_H_SRCS = \
 	activscp.idl \
 	amstream.idl \
 	amvideo.idl \
+	audioclient.idl \
+	audiopolicy.idl \
 	austream.idl \
 	bits.idl \
 	bits1_5.idl \
 	comcat.idl \
+	commoncontrols.idl \
 	control.idl \
+	ctfutb.idl \
 	ctxtcall.idl \
 	d3d10.idl \
 	ddstream.idl \
+	devicetopology.idl \
 	dimm.idl \
 	dispex.idl \
 	docobj.idl \
 	downloadmgr.idl \
 	dxgi.idl \
 	dxgitype.idl \
+	endpointvolume.idl \
 	exdisp.idl \
 	fusion.idl \
 	hlink.idl \
@@ -68,6 +74,7 @@ PUBLIC_IDL_H_SRCS = \
 	richole.idl \
 	sensevts.idl \
 	servprov.idl \
+	shdeprecated.idl \
 	shldisp.idl \
 	shobjidl.idl \
 	shtypes.idl \
@@ -85,7 +92,8 @@ PUBLIC_IDL_H_SRCS = \
 	wtypes.idl \
 	wuapi.idl \
 	xmldom.idl \
-	xmldso.idl
+	xmldso.idl \
+	xmllite.idl
 
 IDL_TLB_SRCS = \
 	stdole2.idl
@@ -94,24 +102,34 @@ SRCDIR_INCLUDES = \
 	$(IDL_TLB_SRCS) \
 	$(PUBLIC_IDL_H_SRCS) \
 	accctrl.h \
+	access.idl \
 	aclapi.h \
 	aclui.h \
 	adshlp.h \
 	advpub.h \
+	af_irda.h \
+	amaudio.h \
 	appmgmt.h \
+	asynot.idl \
+	asysta.idl \
 	audevcod.h \
+	audiosessiontypes.h \
 	aviriff.h \
+	avrt.h \
 	axcore.idl \
 	axextend.idl \
 	basetsd.h \
 	basetyps.h \
 	bcrypt.h \
+	binres.idl \
 	bitsmsg.h \
 	cderr.h \
 	cfgmgr32.h \
 	cguid.h \
 	cierror.h \
 	clusapi.h \
+	cmdbas.idl \
+	cmdtxt.idl \
 	commctrl.h \
 	commctrl.rh \
 	commdlg.h \
@@ -143,10 +161,12 @@ SRCDIR_INCLUDES = \
 	d3dvec.inl \
 	d3dx9.h \
 	d3dx9core.h \
+	d3dx9effect.h \
 	d3dx9math.h \
 	d3dx9math.inl \
 	d3dx9mesh.h \
 	d3dx9shader.h \
+	d3dx9shape.h \
 	d3dx9tex.h \
 	dbghelp.h \
 	dbinit.idl \
@@ -177,6 +197,8 @@ SRCDIR_INCLUDES = \
 	ddrawi.h \
 	devenum.idl \
 	devguid.h \
+	devpkey.h \
+	devpropdef.h \
 	digitalv.h \
 	dinput.h \
 	dispdib.h \
@@ -361,13 +383,17 @@ SRCDIR_INCLUDES = \
 	ole2ver.h \
 	oleauto.h \
 	olectl.h \
+	oledberr.h \
 	oledlg.h \
+	opnrst.idl \
 	pdh.h \
 	pdhmsg.h \
 	pktdef.h \
 	poppack.h \
 	powrprof.h \
 	profinfo.h \
+	propkey.h \
+	propkeydef.h \
 	propvarutil.h \
 	prsht.h \
 	psapi.h \
@@ -529,5 +555,3 @@ uninstall::
 	  *)        $(RM) $(DESTDIR)$(includedir)/windows/$$f ;; \
 	esac; done
 	-rmdir $(INSTALLDIRS)
-
-@DEPENDENCIES@  # everything below this line is overwritten by make depend

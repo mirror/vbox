@@ -25,7 +25,6 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
-
 #ifndef _WINNETWK_H_
 #define _WINNETWK_H_
 

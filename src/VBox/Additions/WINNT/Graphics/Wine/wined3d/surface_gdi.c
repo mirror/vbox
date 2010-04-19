@@ -249,7 +249,8 @@ IWineGDISurfaceImpl_Flip(IWineD3DSurface *iface,
         return WINEDDERR_NOTFLIPPABLE;
     }
 
-    hr = IWineD3DSwapChain_Present((IWineD3DSwapChain *) swapchain, NULL, NULL, 0, NULL, 0);
+    hr = IWineD3DSwapChain_Present((IWineD3DSwapChain *)swapchain,
+            NULL, NULL, swapchain->win_handle, NULL, 0);
     IWineD3DSwapChain_Release((IWineD3DSwapChain *) swapchain);
     return hr;
 }
@@ -305,9 +306,9 @@ const char* filename)
     FILE* f = NULL;
     UINT y = 0, x = 0;
     IWineD3DSurfaceImpl *This = (IWineD3DSurfaceImpl *)iface;
+    const struct wined3d_format_desc *format_desc = This->resource.format_desc;
     static char *output = NULL;
     static UINT size = 0;
-    const struct GlPixelFormatDesc *format_desc = This->resource.format_desc;
 
     if (This->pow2Width > size) {
         output = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, This->pow2Width * 3);

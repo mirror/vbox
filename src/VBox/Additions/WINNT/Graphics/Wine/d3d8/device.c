@@ -180,18 +180,19 @@ static DWORD d3d8_allocate_handle(struct d3d8_handle_table *t, void *object, enu
 
     if (t->free_entries)
     {
+        DWORD index = t->free_entries - t->entries;
         /* Use a free handle */
         entry = t->free_entries;
         if (entry->type != D3D8_HANDLE_FREE)
         {
-            ERR("Handle %u(%p) is in the free list, but has type %#x.\n", (entry - t->entries), entry, entry->type);
+            ERR("Handle %u(%p) is in the free list, but has type %#x.\n", index, entry, entry->type);
             return D3D8_INVALID_HANDLE;
         }
         t->free_entries = entry->object;
         entry->object = object;
         entry->type = type;
 
-        return entry - t->entries;
+        return index;
     }
 
     if (!(t->entry_count < t->table_size))
@@ -333,6 +334,7 @@ static ULONG WINAPI IDirect3DDevice8Impl_Release(LPDIRECT3DDEVICE8 iface) {
         HeapFree(GetProcessHeap(), 0, This->decls);
 
         IWineD3DDevice_Uninit3D(This->WineD3DDevice, D3D8CB_DestroySwapChain);
+        IWineD3DDevice_ReleaseFocusWindow(This->WineD3DDevice);
         IWineD3DDevice_Release(This->WineD3DDevice);
         HeapFree(GetProcessHeap(), 0, This->handle_table.entries);
         HeapFree(GetProcessHeap(), 0, This);
@@ -2800,6 +2802,19 @@ HRESULT device_init(IDirect3DDevice8Impl *device, IWineD3D *wined3d, UINT adapte
         return hr;
     }
 
+    if (!parameters->Windowed)
+    {
+        if (!focus_window) focus_window = parameters->hDeviceWindow;
+        if (FAILED(hr = IWineD3DDevice_AcquireFocusWindow(device->WineD3DDevice, focus_window)))
+        {
+            ERR("Failed to acquire focus window, hr %#x.\n", hr);
+            IWineD3DDevice_Release(device->WineD3DDevice);
+            wined3d_mutex_unlock();
+            HeapFree(GetProcessHeap(), 0, device->handle_table.entries);
+            return hr;
+        }
+    }
+
     if (flags & D3DCREATE_MULTITHREADED) IWineD3DDevice_SetMultithreaded(device->WineD3DDevice);
 
     wined3d_parameters.BackBufferWidth = parameters->BackBufferWidth;
@@ -2822,6 +2837,7 @@ HRESULT device_init(IDirect3DDevice8Impl *device, IWineD3D *wined3d, UINT adapte
     if (FAILED(hr))
     {
         WARN("Failed to initialize 3D, hr %#x.\n", hr);
+        IWineD3DDevice_ReleaseFocusWindow(device->WineD3DDevice);
         IWineD3DDevice_Release(device->WineD3DDevice);
         wined3d_mutex_unlock();
         HeapFree(GetProcessHeap(), 0, device->handle_table.entries);
@@ -2864,6 +2880,7 @@ HRESULT device_init(IDirect3DDevice8Impl *device, IWineD3D *wined3d, UINT adapte
 err:
     wined3d_mutex_lock();
     IWineD3DDevice_Uninit3D(device->WineD3DDevice, D3D8CB_DestroySwapChain);
+    IWineD3DDevice_ReleaseFocusWindow(device->WineD3DDevice);
     IWineD3DDevice_Release(device->WineD3DDevice);
     wined3d_mutex_unlock();
     HeapFree(GetProcessHeap(), 0, device->handle_table.entries);

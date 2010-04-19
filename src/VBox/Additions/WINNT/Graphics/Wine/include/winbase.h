@@ -1771,6 +1771,7 @@ WINBASEAPI DWORD       WINAPI GetTickCount(void);
 WINBASEAPI ULONGLONG   WINAPI GetTickCount64(void);
 WINBASEAPI DWORD       WINAPI GetTimeZoneInformation(LPTIME_ZONE_INFORMATION);
 WINBASEAPI BOOL        WINAPI GetThreadContext(HANDLE,CONTEXT *);
+WINBASEAPI DWORD       WINAPI GetThreadErrorMode(void);
 WINBASEAPI INT         WINAPI GetThreadPriority(HANDLE);
 WINBASEAPI BOOL        WINAPI GetThreadPriorityBoost(HANDLE,PBOOL);
 WINBASEAPI BOOL        WINAPI GetThreadSelectorEntry(HANDLE,DWORD,LPLDT_ENTRY);
@@ -2105,6 +2106,7 @@ WINBASEAPI DWORD       WINAPI SetTapeParameters(HANDLE,DWORD,LPVOID);
 WINBASEAPI DWORD       WINAPI SetTapePosition(HANDLE,DWORD,DWORD,DWORD,DWORD,BOOL);
 WINBASEAPI DWORD_PTR   WINAPI SetThreadAffinityMask(HANDLE,DWORD_PTR);
 WINBASEAPI BOOL        WINAPI SetThreadContext(HANDLE,const CONTEXT *);
+WINBASEAPI BOOL        WINAPI SetThreadErrorMode(DWORD,LPDWORD);
 WINBASEAPI DWORD       WINAPI SetThreadExecutionState(EXECUTION_STATE);
 WINBASEAPI DWORD       WINAPI SetThreadIdealProcessor(HANDLE,DWORD);
 WINBASEAPI BOOL        WINAPI SetThreadPriority(HANDLE,INT);
@@ -2383,6 +2385,8 @@ static inline PVOID WINAPI InterlockedExchangePointer( PVOID volatile *dest, PVO
     return (PVOID)InterlockedExchange( (LONG volatile*)dest, (LONG)val );
 }
 
+WINBASEAPI LONGLONG WINAPI InterlockedCompareExchange64(LONGLONG volatile*,LONGLONG,LONGLONG);
+
 #else  /* __i386__ */
 
 static inline LONG WINAPI InterlockedCompareExchange( LONG volatile *dest, LONG xchg, LONG compare )
@@ -2408,6 +2412,19 @@ static inline PVOID WINAPI InterlockedCompareExchangePointer( PVOID volatile *de
 #else
     extern void *interlocked_cmpxchg_ptr( void **dest, void *xchg, void *compare );
     return interlocked_cmpxchg_ptr( (void **)dest, xchg, compare );
+#endif
+}
+
+static inline LONGLONG WINAPI InterlockedCompareExchange64( LONGLONG volatile *dest, LONGLONG xchg, LONGLONG compare )
+{
+#if defined(__x86_64__) && defined(__GNUC__)
+    LONGLONG ret;
+    __asm__ __volatile__( "lock; cmpxchgq %2,(%1)"
+                          : "=a" (ret) : "r" (dest), "r" (xchg), "0" (compare) : "memory" );
+    return ret;
+#else
+    extern __int64 interlocked_cmpxchg64( __int64 *dest, __int64 xchg, __int64 compare );
+    return interlocked_cmpxchg64( (__int64 *)dest, xchg, compare );
 #endif
 }
 

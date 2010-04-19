@@ -136,7 +136,6 @@ wined3d_INCS         := $(PATH_SUB_CURRENT)/include
 wined3d_SOURCES      := \
     wined3d/arb_program_shader.c \
     wined3d/ati_fragment_shader.c \
-    wined3d/baseshader.c \
 	wined3d/basetexture.c \
 	wined3d/buffer.c \
     wined3d/clipper.c \

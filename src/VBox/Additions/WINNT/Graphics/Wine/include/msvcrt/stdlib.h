@@ -228,6 +228,12 @@ __msvcrt_ulong __cdecl wcstoul(const wchar_t*,wchar_t**,int);
 int           __cdecl wctomb(char*,wchar_t);
 #endif /* _WSTDLIB_DEFINED */
 
+typedef void (__cdecl *_invalid_parameter_handler)(const wchar_t*, const wchar_t*, const wchar_t*, unsigned, uintptr_t);
+_invalid_parameter_handler __cdecl _set_invalid_parameter_handler(_invalid_parameter_handler);
+_invalid_parameter_handler __cdecl _get_invalid_parameter_handler(void);
+void __cdecl _invalid_parameter(const wchar_t *expr, const wchar_t *func, const wchar_t *file,
+                                unsigned int line, uintptr_t arg);
+
 #ifdef __cplusplus
 }
 #endif
