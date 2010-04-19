@@ -2498,7 +2498,7 @@ STDMETHODIMP Display::TakeScreenShotToArray (ULONG aScreenId, ULONG width, ULONG
     LogFlowFunc (("width=%d, height=%d\n",
                   width, height));
 
-    CheckComArgSafeArrayNotNull(aScreenData);
+    CheckComArgOutSafeArrayPointerValid(aScreenData);
     CheckComArgExpr(width, width != 0);
     CheckComArgExpr(height, height != 0);
 
