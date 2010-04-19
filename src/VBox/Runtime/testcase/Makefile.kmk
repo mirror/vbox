@@ -90,6 +90,7 @@ PROGRAMS += \
 	tstPrfRT \
 	tstRand \
 	tstRTFsQueries \
+	tstRTR0SemMutexDriver \
 	tstR0ThreadPreemptionDriver \
 	tstSemEvent \
 	tstSemMutex \
@@ -148,6 +149,7 @@ ifn1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
  SYSMODS += \
  	tstLdrObjR0 \
  	tstRTR0MemUserKernel \
+ 	tstRTR0SemMutex \
  	tstR0ThreadPreemption
  ifdef VBOX_WITH_RAW_MODE
   SYSMODS += tstLdrObj
@@ -393,7 +395,21 @@ if1of ($(VBOX_LDR_FMT), pe lx)
  tstR0ThreadPreemption_LIBS += $(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
 endif
 
+tstR0ThreadPreemptionDriver_TEMPLATE = VBOXR3TSTEXE
 tstR0ThreadPreemptionDriver_SOURCES = tstR0ThreadPreemptionDriver.cpp
+
+tstRTR0SemMutex_TEMPLATE = VBoxR0
+tstRTR0SemMutex_INST = $(INST_TESTCASE)
+tstRTR0SemMutex_DEFS = IN_RT_R0
+tstRTR0SemMutex_SYSSUFF = .r0
+tstRTR0SemMutex_SOURCES = tstRTR0SemMutex.cpp
+tstRTR0SemMutex_LIBS = $(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
+if1of ($(VBOX_LDR_FMT), pe lx)
+ tstRTR0SemMutex_LIBS += $(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+endif
+
+tstRTR0SemMutexDriver_TEMPLATE = VBOXR3TSTEXE
+tstRTR0SemMutexDriver_SOURCES = tstRTR0SemMutexDriver.cpp
 
 tstRTFsQueries_SOURCES = tstRTFsQueries.cpp
 

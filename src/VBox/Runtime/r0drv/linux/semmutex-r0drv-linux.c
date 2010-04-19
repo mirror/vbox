@@ -319,7 +319,7 @@ RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillie
 {
     return rtSemMutexLinuxRequest(hMutexSem, cMillies, true /*fInterruptible*/);
 }
-RT_EXPORT_SYMBOL(RTSemMutexRequest);
+RT_EXPORT_SYMBOL(RTSemMutexRequestNoResume);
 
 
 RTDECL(int) RTSemMutexRequestNoResumeDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
@@ -363,6 +363,7 @@ RTDECL(int) RTSemMutexRelease(RTSEMMUTEX hMtx)
             }
             IPRT_DEBUG_SEMS_STATE(pThis, 'u');
         }
+        rc = VINF_SUCCESS;
     }
     else
         rc = VERR_NOT_OWNER;
