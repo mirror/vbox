@@ -1467,17 +1467,23 @@ def listMediumsCmd(ctx,args):
    hdds = ctx['global'].getArray(ctx['vb'], 'hardDisks')
    print "Hard disks:"
    for hdd in hdds:
-      print "   %s (%s)%s %dM" %(hdd.location, hdd.format, optId(verbose,hdd.id),hdd.logicalSize)
+       if hdd.state != ctx['global'].constants.MediumState_Created:
+           hdd.refreshState()
+       print "   %s (%s)%s %dM [logical %dM]" %(hdd.location, hdd.format, optId(verbose,hdd.id),int(hdd.size/(1024*1024)),hdd.logicalSize)
 
    dvds = ctx['global'].getArray(ctx['vb'], 'DVDImages')
    print "CD/DVD disks:"
    for dvd in dvds:
-      print "   %s (%s)%s %dM" %(dvd.location, dvd.format,optId(verbose,hdd.id),hdd.logicalSize)
-   
+       if dvd.state != ctx['global'].constants.MediumState_Created:
+           dvd.refreshState()
+       print "   %s (%s)%s %dM" %(dvd.location, dvd.format,optId(verbose,hdd.id),hdd.size/(1024*1024))
+
    floppys = ctx['global'].getArray(ctx['vb'], 'floppyImages')
    print "Floopy disks:"
    for floppy in floppys:
-      print "   %s (%s)%s %dM" %(floppy.location, floppy.format,optId(verbose,hdd.id), hdd.logicalSize)
+       if floppy.state != ctx['global'].constants.MediumState_Created:
+           floppy.refreshState()
+       print "   %s (%s)%s %dM" %(floppy.location, floppy.format,optId(verbose,hdd.id), hdd.size)
 
    return 0
 
@@ -1500,7 +1506,7 @@ def createHddCmd(ctx,args):
    if not hdd.id:
       print "cannot create disk (file %s exist?)" %(loc)
       return 0
-   
+
    print "created HDD at %s as %s" %(hdd.location, hdd.id)
 
    return 0
@@ -1524,7 +1530,7 @@ def attachHddCmd(ctx,args):
    if (len(args) < 4):
       print "usage: attachHdd vm hdd controller port:slot"
       return 0
-   
+
    mach = ctx['machById'](args[1])
    if mach is None:
         return 0
@@ -1623,7 +1629,7 @@ def removeHddCmd(ctx,args):
    except:
       print "no HDD with path %s registered" %(loc)
       return 0
-      
+
    progress = hdd.deleteStorage()
    ctx['progressBar'](progress)
 
