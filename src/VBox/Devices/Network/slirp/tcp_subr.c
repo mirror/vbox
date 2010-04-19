@@ -288,8 +288,12 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
     if (so == tcp_last_so)
         tcp_last_so = &tcb;
     closesocket(so->s);
-    sbfree(&so->so_rcv);
-    sbfree(&so->so_snd);
+    /* (vvl) opening listening socket we do not reserve sbufs for it */
+    if ((so->so_state & SS_FACCEPTCONN) == 0)
+    {
+        sbfree(&so->so_rcv);
+        sbfree(&so->so_snd);
+    }
     sofree(pData, so);
     SOCKET_UNLOCK(so);
     tcpstat.tcps_closed++;

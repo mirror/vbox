@@ -18,6 +18,11 @@
 void
 sbfree(struct sbuf *sb)
 {
+    /*
+     * vvl: This assert to catch double frees. tcp_close filter out 
+     * listening sockets which pass NULLs here.   
+     */
+    Assert((sb->sb_data));
     RTMemFree(sb->sb_data);
     /** @todo bird: I'm seeing double frees here sometimes.  This NULL'ing is just a
        workaround for that, it doesn't actually fix anything.  */
