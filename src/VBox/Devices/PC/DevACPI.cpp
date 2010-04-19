@@ -162,7 +162,8 @@ enum
     SYSTEM_INFO_INDEX_CPU_LOCK_CHECK    = 12, /**< For which CPU the lock status should be checked */
     SYSTEM_INFO_INDEX_CPU_EVENT_TYPE    = 13, /**< Type of the CPU hot-plug event */
     SYSTEM_INFO_INDEX_CPU_EVENT         = 14, /**< The CPU id the event is for */
-    SYSTEM_INFO_INDEX_END               = 15,
+    SYSTEM_INFO_INDEX_NIC_ADDRESS       = 15, /**< NIC PCI address, or 0 */
+    SYSTEM_INFO_INDEX_END               = 16,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -255,8 +256,8 @@ typedef struct ACPIState
     uint32_t            u32CpuEvent;
     /** Flag whether CPU hot plugging is enabled */
     bool                fCpuHotPlug;
-    /** Aligning IBase. */
-    bool                afAlignment[4];
+    /** Primary NIC PCI address */
+    uint32_t             u32NicPciAddress;
 
     /** ACPI port base interface. */
     PDMIBASE            IBase;
@@ -1503,6 +1504,10 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                                        : 0;
                     break;
 
+                case SYSTEM_INFO_INDEX_NIC_ADDRESS:
+                    *pu32 = s->u32NicPciAddress;
+                    break;
+
                 /* This is only for compatability with older saved states that
                    may include ACPI code that read these values.  Legacy is
                    a wonderful thing, isn't it? :-) */
@@ -2347,6 +2352,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "FdcEnabled\0"
                               "ShowRtc\0"
                               "ShowCpu\0"
+                              "NicPciAddress\0"
                               "CpuHotPlug\0"
                               "AmlFilePath\0"
                               ))
@@ -2394,6 +2400,12 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"ShowCpu\""));
+
+    /* query primary NIC PCI address */
+    rc = CFGMR3QueryU32Def(pCfg, "NicPciAddress", &s->u32NicPciAddress, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"NicPciAddress\""));
 
     /* query whether we are allow CPU hot plugging */
     rc = CFGMR3QueryBoolDef(pCfg, "CpuHotPlug", &s->fCpuHotPlug, false);
