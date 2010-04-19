@@ -125,6 +125,14 @@ extern bool is3DAccelerationSupported();
 #include "netif.h"
 #endif
 
+/* XXX Solaris: definitions in /usr/include/sys/regset.h clash with hwacc_svm.h */
+#undef DS
+#undef ES
+#undef CS
+#undef SS
+#undef FS
+#undef GS
+
 #include <VBox/usb.h>
 #include <VBox/x86.h>
 #include <VBox/hwacc_svm.h>
