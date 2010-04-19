@@ -96,7 +96,7 @@ public:
                               IN_BSTR aStdIn, IN_BSTR aStdOut, IN_BSTR aStdErr,
                               IN_BSTR aUserName, IN_BSTR aPassword,
                               ULONG aTimeoutMS, ULONG* aPID, IProgress **aProgress);
-    STDMETHOD(GetProcessOutput)(ULONG aPID, ULONG aFlags, BSTR *aBuffer);
+    STDMETHOD(GetProcessOutput)(ULONG aPID, ULONG aFlags, ULONG64 aSize, ComSafeArrayOut(BYTE, aData));
     STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemCache,
                                      ULONG *aPageTotal, ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal);

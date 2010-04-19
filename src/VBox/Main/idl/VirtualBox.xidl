@@ -8371,7 +8371,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="c7c26d4a-0177-455e-999e-ee26e74ee803"
+     uuid="419cb190-a2f1-4beb-af8d-fadc75c6ecf7"
      wsmap="managed"
      >
     <desc>
@@ -8607,9 +8607,17 @@
           Flags describing which output to retrieve.
         </desc>
       </param>
-      <param name="buffer" type="wstring" dir="return">
+      <param name="size" type="unsigned long long" dir="in">
         <desc>
-          Buffer for retrieving the actual output.
+          Size in bytes to read in the buffer.
+        </desc>
+      </param>
+      <param name="data" type="octet" dir="return" safearray="yes">
+        <desc>
+          Buffer for retrieving the actual output. A data size of 0 means end of file
+          if the requested size was not 0. This is the unprocessed
+          output data, i.e. the line ending style depends on the platform of
+          the system the server is running on.
         </desc>
       </param>
     </method>

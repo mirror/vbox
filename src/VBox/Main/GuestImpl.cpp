@@ -815,7 +815,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, BSTR *aBuffer)
+STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG64 aSize, ComSafeArrayOut(BYTE, aData))
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -824,9 +824,19 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, BSTR *aBuffer)
 
     NOREF(aPID);
     NOREF(aFlags);
-    NOREF(aBuffer);
+    NOREF(aSize);
+    NOREF(aData);
 
-    return S_OK;
+    HRESULT rc = S_OK;
+
+    size_t cbData = (size_t)RT_MIN(aSize, _1K);
+    com::SafeArray<BYTE> outputData(cbData);
+
+    if (FAILED(rc))
+        outputData.resize(0);
+    outputData.detachTo(ComSafeArrayOutArg(aData));
+
+    return rc;
 #endif
 }
 

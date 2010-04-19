@@ -307,11 +307,35 @@ static int handleExecProgram(HandlerArg *a)
                     if (   waitForStdOut
                         || waitForStdErr)
                     {
-                        Bstr strOutput;
-                        CHECK_ERROR_BREAK(guest, GetProcessOutput(uPID, 0 /* @todo */, strOutput.asOutParam()));
-                        if (verbose)
-                            RTPrintf("Output is:\n");
-                        //RTPrintf(strOutput.raw());
+                        if (verbose) RTPrintf("Retrieving output data ...\n");
+                        while (true)
+                        {
+                            SafeArray<BYTE> aOutputData;
+                            ULONG cbOutputData;
+                            CHECK_ERROR_BREAK(guest, GetProcessOutput(uPID, 0 /* aFlags */, _512K, ComSafeArrayAsOutParam(aOutputData)));
+                            cbOutputData = aOutputData.size();
+                            if (cbOutputData == 0)
+                                break;
+
+                            /* aOutputData has a platform dependent line ending, standardize on
+                             * Unix style, as RTStrmWrite does the LF -> CR/LF replacement on
+                             * Windows. Otherwise we end up with CR/CR/LF on Windows. */
+                            ULONG cbOutputDataPrint = cbOutputData;
+                            for (BYTE *s = aOutputData.raw(), *d = s;
+                                 s - aOutputData.raw() < (ssize_t)cbOutputData;
+                                 s++, d++)
+                            {
+                                if (*s == '\r')
+                                {
+                                    /* skip over CR, adjust destination */
+                                    d--;
+                                    cbOutputDataPrint--;
+                                }
+                                else if (s != d)
+                                    *d = *s;
+                            }
+                            RTStrmWrite(g_pStdOut, aOutputData.raw(), cbOutputDataPrint);
+                        }
                     }
                 }
             }
