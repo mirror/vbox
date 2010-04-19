@@ -362,6 +362,8 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
             uint64_t cMsElapsed = u64Now - MsStart;
             if (cMsElapsed >= cMillies)
             {
+                VBoxServiceVerbose(3, "Control: Process timed out (%ums elapsed > %ums timeout), killing ...", cMsElapsed, cMillies);
+
                 fProcessTimedOut = true;
                 if (    MsProcessKilled == UINT64_MAX
                     ||  u64Now - MsProcessKilled > 1000)
