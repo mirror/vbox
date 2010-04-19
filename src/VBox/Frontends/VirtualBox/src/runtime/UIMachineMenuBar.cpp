@@ -31,6 +31,27 @@
 /* Global includes */
 #include <QMenuBar>
 
+/* Helper QMenu reimplementation which allows
+ * to highlight first menu item for popped up menu: */
+class UIMenu : public QMenu
+{
+    Q_OBJECT;
+
+public:
+
+    UIMenu() : QMenu(0) {}
+
+private slots:
+
+    void sltSelectFirstAction()
+    {
+#ifdef Q_WS_WIN
+        activateWindow();
+#endif
+        QMenu::focusNextChild();
+    }
+};
+
 UIMachineMenuBar::UIMachineMenuBar()
     /* On the Mac we add some items only the first time, cause otherwise they
      * will be merged more than once to the application menu by Qt. */
@@ -41,7 +62,7 @@ UIMachineMenuBar::UIMachineMenuBar()
 QMenu* UIMachineMenuBar::createMenu(UIActionsPool *pActionsPool, UIMainMenuType fOptions /* = UIMainMenuType_All */)
 {
     /* Create empty menu: */
-    QMenu *pMenu = new QMenu;
+    QMenu *pMenu = new UIMenu;
 
     /* Fill menu with prepared items: */
     foreach (QMenu *pSubMenu, prepareSubMenus(pActionsPool, fOptions))
@@ -239,4 +260,6 @@ void UIMachineMenuBar::prepareMenuHelp(QMenu *pMenu, UIActionsPool *pActionsPool
         m_fIsFirstTime = false;
     }
 }
+
+#include "UIMachineMenuBar.moc"
 

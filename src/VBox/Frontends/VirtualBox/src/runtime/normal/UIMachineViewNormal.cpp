@@ -174,6 +174,12 @@ bool UIMachineViewNormal::event(QEvent *pEvent)
                             /* Activate 'active' menu-bar action: */
                             pMenuBar->activeAction()->activate(QAction::Trigger);
 
+#ifdef Q_WS_WIN
+                            /* Windows host needs separate 'focus set'
+                             * to let menubar operate while popped up: */
+                            pMenuBar->setFocus();
+#endif /* ifdef Q_WS_WIN */
+
                             /* Accept this event: */
                             pEvent->accept();
                             return true;
@@ -196,6 +202,9 @@ bool UIMachineViewNormal::eventFilter(QObject *pWatched, QEvent *pEvent)
     /* Who are we watching? */
     QMainWindow *pMainDialog = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
                                qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow()) : 0;
+#ifdef Q_WS_WIN
+    QMenuBar *pMenuBar = pMainDialog ? pMainDialog->menuBar() : 0;
+#endif /* ifdef Q_WS_WIN */
 
     if (pWatched != 0 && pWatched == pMainDialog)
     {
@@ -226,6 +235,26 @@ bool UIMachineViewNormal::eventFilter(QObject *pWatched, QEvent *pEvent)
                 break;
         }
     }
+
+#ifdef Q_WS_WIN
+    else if (pWatched != 0 && pWatched == pMenuBar)
+    {
+        /* Due to windows host uses separate 'focus set' to let menubar to
+         * operate while popped up (see UIMachineViewNormal::event() for details),
+         * it also requires backward processing: */
+        switch (pEvent->type())
+        {
+            /* If menubar gets the focus while not popped up => give it back: */
+            case QEvent::FocusIn:
+            {
+                if (!QApplication::activePopupWidget())
+                    setFocus();
+            }
+            default:
+                break;
+        }
+    }
+#endif /* ifdef Q_WS_WIN */
 
     return UIMachineView::eventFilter(pWatched, pEvent);
 }

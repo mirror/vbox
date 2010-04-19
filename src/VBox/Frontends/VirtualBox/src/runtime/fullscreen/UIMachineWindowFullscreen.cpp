@@ -23,6 +23,7 @@
 
 /* Global includes */
 #include <QDesktopWidget>
+#include <QTimer>
 #ifdef Q_WS_MAC
 # include <QMenuBar>
 #endif /* Q_WS_MAC */
@@ -129,7 +130,10 @@ void UIMachineWindowFullscreen::sltPopupMainMenu()
 {
     /* Popup main menu if present: */
     if (m_pMainMenu && !m_pMainMenu->isEmpty())
+    {
         m_pMainMenu->popup(machineWindow()->geometry().center());
+        QTimer::singleShot(0, m_pMainMenu, SLOT(sltSelectFirstAction()));
+    }
 }
 
 void UIMachineWindowFullscreen::sltTryClose()
