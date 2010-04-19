@@ -476,7 +476,7 @@ VBOX_WITH_GUEST_PROPS = 1
 # Enable this to prevent the guest from writing guest properties.
 VBOX_WITH_GUEST_PROPS_RDONLY_GUEST =
 # Enable the guest control service.
-if1of ($(KBUILD_TARGET), linux solaris win)
+if1of ($(KBUILD_TARGET), linux solaris win darwin)
  VBOX_WITH_GUEST_CONTROL = 1
 endif
 # Enable crOpenGL service
