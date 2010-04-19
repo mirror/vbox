@@ -34,10 +34,18 @@
 #include <iprt/semaphore.h>
 
 #include <iprt/err.h>
-#include <iprt/time.h>
-#include <iprt/string.h>
 #include <VBox/sup.h>
+#include <iprt/string.h>
+#include <iprt/time.h>
+#include <iprt/thread.h>
 #include "tstRTR0SemMutex.h"
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** The mutex used in test #2. */
+static RTSEMMUTEX g_hMtxTest2 = NIL_RTSEMMUTEX;
 
 
 
@@ -52,8 +60,6 @@
 DECLEXPORT(int) TSTRTR0SemMutexSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOperation,
                                              uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr)
 {
-    if (u64Arg)
-        return VERR_INVALID_PARAMETER;
     if (!VALID_PTR(pReqHdr))
         return VERR_INVALID_PARAMETER;
     char   *pszErr = (char *)(pReqHdr + 1);
@@ -73,12 +79,22 @@ DECLEXPORT(int) TSTRTR0SemMutexSrvReqHandler(PSUPDRVSESSION pSession, uint32_t u
             break; \
         }
 
+    /*
+     * Set up test timeout (when applicable).
+     */
+    if (u64Arg > 120)
+    {
+        SET_ERROR1("Timeout is too large (max 120): %lld",  u64Arg);
+        return VINF_SUCCESS;
+    }
+    uint64_t const  StartTS = RTTimeSystemMilliTS();
+    uint32_t const  cMsMax  = (uint32_t)u64Arg * 1000;
 
     /*
      * The big switch.
      */
-    RTSEMMUTEX  hMtx;
-    int         rc;
+    RTSEMMUTEX      hMtx;
+    int             rc;
     switch (uOperation)
     {
         case TSTRTR0SEMMUTEX_SANITY_OK:
@@ -176,6 +192,84 @@ DECLEXPORT(int) TSTRTR0SemMutexSrvReqHandler(PSUPDRVSESSION pSession, uint32_t u
             rc = RTSemMutexDestroy(hMtx);
             CHECK_RC_BREAK(rc, VINF_SUCCESS, "RTSemMutexDestroy");
             break;
+
+        case TSTRTR0SEMMUTEX_TEST2_SETUP:
+        case TSTRTR0SEMMUTEX_TEST3_SETUP:
+        case TSTRTR0SEMMUTEX_TEST4_SETUP:
+            rc = RTSemMutexCreate(&g_hMtxTest2);
+            CHECK_RC_BREAK(rc, VINF_SUCCESS, "RTSemMutexCreate");
+            break;
+
+        case TSTRTR0SEMMUTEX_TEST2_DO:
+            for (unsigned i = 0; i < 200; i++)
+            {
+                if (i & 1)
+                {
+                    rc = RTSemMutexRequestNoResume(g_hMtxTest2, RT_INDEFINITE_WAIT);
+                    CHECK_RC_BREAK(rc, VINF_SUCCESS, "RTSemMutexRequestNoResume(,indef_wait)");
+                }
+                else
+                {
+                    rc = RTSemMutexRequestNoResume(g_hMtxTest2, 30000);
+                    CHECK_RC_BREAK(rc, VINF_SUCCESS, "RTSemMutexRequestNoResume(,30000)");
+                }
+                RTThreadSleep(1);
+                rc = RTSemMutexRelease(g_hMtxTest2);
+                CHECK_RC_BREAK(rc, VINF_SUCCESS, "RTSemMutexRelease");
+
+                if ((i % 16) == 15 && RTTimeSystemMilliTS() - StartTS >= cMsMax)
+                    break;
+            }
+            break;
+
+
+        case TSTRTR0SEMMUTEX_TEST3_DO:
+            for (unsigned i = 0; i < 1000000; i++)
+            {
+                if (i & 1)
+                {
+                    rc = RTSemMutexRequestNoResume(g_hMtxTest2, RT_INDEFINITE_WAIT);
+                    CHECK_RC_BREAK(rc, VINF_SUCCESS, "RTSemMutexRequestNoResume(,indef_wait)");
+                }
+                else
+                {
+                    rc = RTSemMutexRequestNoResume(g_hMtxTest2, 30000);
+                    CHECK_RC_BREAK(rc, VINF_SUCCESS, "RTSemMutexRequestNoResume(,30000)");
+                }
+                rc = RTSemMutexRelease(g_hMtxTest2);
+                CHECK_RC_BREAK(rc, VINF_SUCCESS, "RTSemMutexRelease");
+
+                if ((i % 256) == 255 && RTTimeSystemMilliTS() - StartTS >= cMsMax)
+                    break;
+            }
+            break;
+
+        case TSTRTR0SEMMUTEX_TEST4_DO:
+            for (unsigned i = 0; i < 1024; i++)
+            {
+                rc = RTSemMutexRequestNoResume(g_hMtxTest2, (i % 32));
+                if (rc != VERR_TIMEOUT)
+                {
+                    CHECK_RC_BREAK(rc, VINF_SUCCESS, "RTSemMutexRequestNoResume");
+                    RTThreadSleep(1000);
+
+                    rc = RTSemMutexRelease(g_hMtxTest2);
+                    CHECK_RC_BREAK(rc, VINF_SUCCESS, "RTSemMutexRelease");
+                }
+
+                if (RTTimeSystemMilliTS() - StartTS >= cMsMax)
+                    break;
+            }
+            break;
+
+        case TSTRTR0SEMMUTEX_TEST2_CLEANUP:
+        case TSTRTR0SEMMUTEX_TEST3_CLEANUP:
+        case TSTRTR0SEMMUTEX_TEST4_CLEANUP:
+            rc = RTSemMutexDestroy(g_hMtxTest2);
+            CHECK_RC_BREAK(rc, VINF_SUCCESS, "RTSemMutexCreate");
+            g_hMtxTest2 = NIL_RTSEMMUTEX;
+            break;
+
 
         default:
             SET_ERROR1("Unknown test #%d", uOperation);

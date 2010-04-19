@@ -45,6 +45,125 @@
 # include "tstRTR0SemMutex.h"
 #endif
 
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+typedef struct TSTRTR0SEMMUTEXREQ
+{
+    SUPR0SERVICEREQHDR  Hdr;
+    char                szMsg[256];
+} TSTRTR0SEMMUTEXREQ;
+typedef TSTRTR0SEMMUTEXREQ *PTSTRTR0SEMMUTEXREQ;
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static RTTEST g_hTest;
+
+
+/**
+ * Thread function employed by tstDoThreadedTest.
+ *
+ * @returns IPRT status code.
+ * @param   hThreadSelf         The thread.
+ * @param   pvUser              The operation to perform.
+ */
+static DECLCALLBACK(int) tstThreadFn(RTTHREAD hThreadSelf, void *pvUser)
+{
+    uint32_t            u32   = (uint32_t)(uintptr_t)pvUser;
+    TSTRTR0SEMMUTEX     enmDo = (TSTRTR0SEMMUTEX)RT_LOWORD(u32);
+    uint32_t            cSecs = RT_HIWORD(u32);
+    TSTRTR0SEMMUTEXREQ Req;
+    RT_ZERO(Req);
+    Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
+    Req.Hdr.cbReq = sizeof(Req);
+    Req.szMsg[0] = '\0';
+    RTTEST_CHECK_RC_RET(g_hTest, SUPR3CallR0Service("tstRTR0SemMutex", sizeof("tstRTR0SemMutex") - 1,
+                                                    enmDo, cSecs, &Req.Hdr),
+                        VINF_SUCCESS,
+                        rcCheck);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Performs a threaded test.
+ *
+ * @returns true on succes, false on failure.
+ * @param   enmSetup            The setup operation number.
+ * @param   enmDo               The do-it operation number.
+ * @param   enmCleanup          The cleanup operation number.
+ * @param   cThreads            The number of threads.
+ * @param   pReq                The request structure.
+ * @param   pszTest             The test name.
+ */
+static bool tstDoThreadedTest(TSTRTR0SEMMUTEX enmSetup, TSTRTR0SEMMUTEX enmDo, TSTRTR0SEMMUTEX enmCleanup,
+                              unsigned cThreads, unsigned cSecs, PTSTRTR0SEMMUTEXREQ pReq, const char *pszTest)
+{
+    RTTestSubF(g_hTest, "%s - %u threads", pszTest, cThreads);
+    RTTHREAD ahThreads[32];
+    RTTESTI_CHECK_RET(cThreads <= RT_ELEMENTS(ahThreads), false);
+
+    /*
+     * Setup.
+     */
+    pReq->Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
+    pReq->Hdr.cbReq = sizeof(*pReq);
+    pReq->szMsg[0] = '\0';
+    RTTESTI_CHECK_RC_RET(SUPR3CallR0Service("tstRTR0SemMutex", sizeof("tstRTR0SemMutex") - 1, enmSetup, 0, &pReq->Hdr),
+                         VINF_SUCCESS, false);
+    if (pReq->szMsg[0] == '!')
+        return RTTestIFailedRc(false, "%s", &pReq->szMsg[1]);
+    if (pReq->szMsg[0])
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", pReq->szMsg);
+
+    /*
+     * Test execution.
+     */
+    for (unsigned i = 0; i < RT_ELEMENTS(ahThreads); i++)
+        ahThreads[i] = NIL_RTTHREAD;
+
+    int rc = VINF_SUCCESS;
+    for (unsigned i = 0; i < cThreads && RT_SUCCESS(rc); i++)
+        rc = RTThreadCreateF(&ahThreads[i], tstThreadFn, (void *)(uintptr_t)RT_MAKE_U32(enmDo, cSecs), 0, RTTHREADTYPE_DEFAULT,
+                             RTTHREADFLAGS_WAITABLE, "test-%u", i);
+
+    for (unsigned i = 0; i < cThreads; i++)
+        if (ahThreads[i] != NIL_RTTHREAD)
+        {
+            int rcThread = VINF_SUCCESS;
+            int rc2 = RTThreadWait(ahThreads[i], 3600*1000, &rcThread);
+            if (RT_SUCCESS(rc2))
+            {
+                ahThreads[i] = NIL_RTTHREAD;
+                if (RT_FAILURE(rcThread) && RT_SUCCESS(rc2))
+                    rc = rcThread;
+            }
+            else if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
+
+    /*
+     * Cleanup.
+     */
+    pReq->Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
+    pReq->Hdr.cbReq = sizeof(*pReq);
+    pReq->szMsg[0] = '\0';
+    RTTESTI_CHECK_RC_RET(rc = SUPR3CallR0Service("tstRTR0SemMutex", sizeof("tstRTR0SemMutex") - 1, enmCleanup, 0, &pReq->Hdr),
+                         VINF_SUCCESS, false);
+    if (pReq->szMsg[0] == '!')
+        return RTTestIFailedRc(false, "%s", &pReq->szMsg[1]);
+    if (pReq->szMsg[0])
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", pReq->szMsg);
+
+    if (RT_FAILURE(rc))
+        for (unsigned i = 0; i < cThreads; i++)
+            if (ahThreads[i] != NIL_RTTHREAD)
+                RTThreadWait(ahThreads[i], 1000, NULL);
+
+    return RT_SUCCESS(rc);
+}
+
 
 int main(int argc, char **argv)
 {
@@ -56,7 +175,7 @@ int main(int argc, char **argv)
      * Init.
      */
     RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstR0SemMutex", &hTest);
+    int rc = RTTestInitAndCreate("tstRTR0SemMutex", &hTest);
     if (rc)
         return rc;
     RTTestBanner(hTest);
@@ -72,7 +191,7 @@ int main(int argc, char **argv)
     char szPath[RTPATH_MAX];
     rc = RTPathExecDir(szPath, sizeof(szPath));
     if (RT_SUCCESS(rc))
-        rc = RTPathAppend(szPath, sizeof(szPath), "tstR0SemMutex.r0");
+        rc = RTPathAppend(szPath, sizeof(szPath), "tstRTR0SemMutex.r0");
     if (RT_FAILURE(rc))
     {
         RTTestFailed(hTest, "Failed constructing .r0 filename (rc=%Rrc)", rc);
@@ -80,7 +199,7 @@ int main(int argc, char **argv)
     }
 
     void *pvImageBase;
-    rc = SUPR3LoadServiceModule(szPath, "tstR0SemMutex",
+    rc = SUPR3LoadServiceModule(szPath, "tstRTR0SemMutex",
                                 "TSTRTR0SemMutexSrvReqHandler",
                                 &pvImageBase);
     if (RT_FAILURE(rc))
@@ -90,11 +209,7 @@ int main(int argc, char **argv)
     }
 
     /* test request */
-    struct
-    {
-        SUPR0SERVICEREQHDR  Hdr;
-        char                szMsg[256];
-    } Req;
+    TSTRTR0SEMMUTEXREQ Req;
 
     /*
      * Sanity checks.
@@ -103,7 +218,7 @@ int main(int argc, char **argv)
     Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
     Req.Hdr.cbReq = sizeof(Req);
     Req.szMsg[0] = '\0';
-    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstR0SemMutex", sizeof("tstR0SemMutex") - 1,
+    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstRTR0SemMutex", sizeof("tstRTR0SemMutex") - 1,
                                              TSTRTR0SEMMUTEX_SANITY_OK, 0, &Req.Hdr), VINF_SUCCESS);
     if (RT_FAILURE(rc))
         return RTTestSummaryAndDestroy(hTest);
@@ -114,7 +229,7 @@ int main(int argc, char **argv)
     Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
     Req.Hdr.cbReq = sizeof(Req);
     Req.szMsg[0] = '\0';
-    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstR0SemMutex", sizeof("tstR0SemMutex") - 1,
+    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstRTR0SemMutex", sizeof("tstRTR0SemMutex") - 1,
                                              TSTRTR0SEMMUTEX_SANITY_FAILURE, 0, &Req.Hdr), VINF_SUCCESS);
     if (RT_FAILURE(rc))
         return RTTestSummaryAndDestroy(hTest);
@@ -129,7 +244,7 @@ int main(int argc, char **argv)
     Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
     Req.Hdr.cbReq = sizeof(Req);
     Req.szMsg[0] = '\0';
-    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstR0SemMutex", sizeof("tstR0SemMutex") - 1,
+    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstRTR0SemMutex", sizeof("tstRTR0SemMutex") - 1,
                                              TSTRTR0SEMMUTEX_BASIC, 0, &Req.Hdr), VINF_SUCCESS);
     if (RT_FAILURE(rc))
         return RTTestSummaryAndDestroy(hTest);
@@ -142,8 +257,25 @@ int main(int argc, char **argv)
         RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", Req.szMsg);
 
     /*
-     * More to come
+     * Tests with multiple threads for bugs in the contention part of the code.
+     *     Test #2: Try to hold the semaphore for 1 ms.
+     *     Test #3: Grab and release immediately.
+     *     Test #4: Timeout checks. Try grab it for 0-32 ms and hold it for 1 s.
      */
+    tstDoThreadedTest(TSTRTR0SEMMUTEX_TEST2_SETUP, TSTRTR0SEMMUTEX_TEST2_DO, TSTRTR0SEMMUTEX_TEST2_CLEANUP, 1, 1, &Req, "test #2");
+    tstDoThreadedTest(TSTRTR0SEMMUTEX_TEST2_SETUP, TSTRTR0SEMMUTEX_TEST2_DO, TSTRTR0SEMMUTEX_TEST2_CLEANUP, 2, 3, &Req, "test #2");
+    tstDoThreadedTest(TSTRTR0SEMMUTEX_TEST2_SETUP, TSTRTR0SEMMUTEX_TEST2_DO, TSTRTR0SEMMUTEX_TEST2_CLEANUP, 3, 3, &Req, "test #2");
+    tstDoThreadedTest(TSTRTR0SEMMUTEX_TEST2_SETUP, TSTRTR0SEMMUTEX_TEST2_DO, TSTRTR0SEMMUTEX_TEST2_CLEANUP, 9, 3, &Req, "test #2");
+
+    tstDoThreadedTest(TSTRTR0SEMMUTEX_TEST3_SETUP, TSTRTR0SEMMUTEX_TEST3_DO, TSTRTR0SEMMUTEX_TEST3_CLEANUP, 1, 1, &Req, "test #3");
+    tstDoThreadedTest(TSTRTR0SEMMUTEX_TEST3_SETUP, TSTRTR0SEMMUTEX_TEST3_DO, TSTRTR0SEMMUTEX_TEST3_CLEANUP, 2, 3, &Req, "test #3");
+    tstDoThreadedTest(TSTRTR0SEMMUTEX_TEST3_SETUP, TSTRTR0SEMMUTEX_TEST3_DO, TSTRTR0SEMMUTEX_TEST3_CLEANUP, 3, 3, &Req, "test #3");
+    tstDoThreadedTest(TSTRTR0SEMMUTEX_TEST3_SETUP, TSTRTR0SEMMUTEX_TEST3_DO, TSTRTR0SEMMUTEX_TEST3_CLEANUP, 9, 3, &Req, "test #3");
+
+    tstDoThreadedTest(TSTRTR0SEMMUTEX_TEST4_SETUP, TSTRTR0SEMMUTEX_TEST4_DO, TSTRTR0SEMMUTEX_TEST4_CLEANUP, 1, 1, &Req, "test #4");
+    tstDoThreadedTest(TSTRTR0SEMMUTEX_TEST4_SETUP, TSTRTR0SEMMUTEX_TEST4_DO, TSTRTR0SEMMUTEX_TEST4_CLEANUP, 2, 3, &Req, "test #4");
+    tstDoThreadedTest(TSTRTR0SEMMUTEX_TEST4_SETUP, TSTRTR0SEMMUTEX_TEST4_DO, TSTRTR0SEMMUTEX_TEST4_CLEANUP, 3, 3, &Req, "test #4");
+    tstDoThreadedTest(TSTRTR0SEMMUTEX_TEST4_SETUP, TSTRTR0SEMMUTEX_TEST4_DO, TSTRTR0SEMMUTEX_TEST4_CLEANUP, 9, 3, &Req, "test #4");
 
     /*
      * Done.
