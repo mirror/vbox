@@ -211,7 +211,7 @@ static int rtSemMutexLinuxRequestSleep(PRTSEMMUTEXINTERNAL pThis, RTMSINTERVAL c
         {
             Assert(pThis->cRecursions == 0);
             pThis->cRecursions = 1;
-            pThis->pOwnerTask  = NULL;
+            pThis->pOwnerTask  = pSelf;
             rc = VINF_SUCCESS;
             break;
         }
