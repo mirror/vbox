@@ -287,8 +287,8 @@ static int handleExecProgram(HandlerArg *a)
                 if (FAILED(rc))
                 {
                     if (uTimeoutMS)
-                        RTStrmPrintf(g_pStdErr, "Process '%s' (PID: %u) did not end within %ums! Wait aborted.\n",
-                                     Utf8Cmd.raw(), uPID, uTimeoutMS);
+                        RTPrintf("Process '%s' (PID: %u) did not end within %ums! Wait aborted.\n",
+                                 Utf8Cmd.raw(), uPID, uTimeoutMS);
                     break;
                 }
                 else
@@ -304,7 +304,9 @@ static int handleExecProgram(HandlerArg *a)
                         ComPtr<IVirtualBoxErrorInfo> execError;
                         rc = progress->COMGETTER(ErrorInfo)(execError.asOutParam());
                         com::ErrorInfo info (execError);
+                        RTPrintf("Process error details:\n");
                         GluePrintErrorInfo(info);
+                        RTPrintf("\n");
                     }
                     else
                     {   
