@@ -221,7 +221,7 @@ SOLARIS_STRIP_BINS = \
 	$(if $(VBOX_WITH_SHARED_FOLDERS),VBoxSharedFolders.so,) \
 	$(if $(VBOX_WITH_SHARED_CLIPBOARD),VBoxSharedClipboard.so,) \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestPropSvc.so,) \
-	$(if $(VBOX_WITH_GUEST_CONTROL),VBoxGuestControlvc.so,) \
+	$(if $(VBOX_WITH_GUEST_CONTROL),VBoxGuestControlSvc.so,) \
 	$(if $(VBOX_WITH_QTGUI),\
 	  VBoxKeyboard.so \
 	  $(if $(VBOX_WITH_QT4_SUN),\
