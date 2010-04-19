@@ -782,7 +782,7 @@ findso:
                     tp->t_socket->so_m = NULL;
                 }
                 tp = tcp_close(pData, tp);
-                m_free(pData, m);
+                m_freem(pData, m);
             }
             else
             {
@@ -1548,7 +1548,7 @@ dodata:
     }
     else
     {
-        m_free(pData, m);
+        m_freem(pData, m);
         tiflags &= ~TH_FIN;
     }
 
@@ -1663,7 +1663,7 @@ drop:
     /*
      * Drop space held by incoming segment and return.
      */
-    m_free(pData, m);
+    m_freem(pData, m);
 
 #ifdef VBOX_WITH_SLIRP_MT
     if (RTCritSectIsOwned(&so->so_mutex))

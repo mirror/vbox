@@ -686,7 +686,7 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
     }
     Assert(m);
     /*silently ignore*/
-    m_free(pData, m);
+    m_freem(pData, m);
     return;
 
 reply:

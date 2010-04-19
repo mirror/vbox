@@ -1432,8 +1432,8 @@ static void arp_input(PNATState pData, struct mbuf *m)
                     || CTL_CHECK(htip, CTL_ALIAS)
                     || CTL_CHECK(htip, CTL_TFTP))
                     goto arp_ok;
-                m_free(pData, m);
-                m_free(pData, mr);
+                m_freem(pData, m);
+                m_freem(pData, mr);
                 return;
 
          arp_ok:
@@ -1457,7 +1457,7 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 memcpy(rah->ar_tha, ah->ar_sha, ETH_ALEN);
                 memcpy(rah->ar_tip, ah->ar_sip, 4);
                 if_encap(pData, ETH_P_ARP, mr, ETH_ENCAP_URG);
-                m_free(pData, m);
+                m_freem(pData, m);
             }
             /* Gratuitous ARP */
             if (  *(uint32_t *)ah->ar_sip == *(uint32_t *)ah->ar_tip
@@ -1469,8 +1469,8 @@ static void arp_input(PNATState pData, struct mbuf *m)
                  */
                 if (slirp_arp_cache_update(pData, *(uint32_t *)ah->ar_tip, &eh->h_dest[0]) == 0)
                 {
-                    m_free(pData, mr);
-                    m_free(pData, m);
+                    m_freem(pData, mr);
+                    m_freem(pData, m);
                     break;
                 }
                 slirp_arp_cache_add(pData, *(uint32_t *)ah->ar_tip, &eh->h_dest[0]);
@@ -1480,11 +1480,11 @@ static void arp_input(PNATState pData, struct mbuf *m)
         case ARPOP_REPLY:
             if (slirp_arp_cache_update(pData, *(uint32_t *)ah->ar_sip, &ah->ar_sha[0]) == 0)
             {
-                m_free(pData, m);
+                m_freem(pData, m);
                 break;
             }
             slirp_arp_cache_add(pData, *(uint32_t *)ah->ar_sip, ah->ar_sha);
-            m_free(pData, m);
+            m_freem(pData, m);
             break;
 
         default:
@@ -1509,7 +1509,7 @@ void slirp_input(PNATState pData, struct mbuf *m, size_t cbBuf)
     if (cbBuf < ETH_HLEN)
     {
         LogRel(("NAT: packet having size %d has been ignored\n", m->m_len));
-        m_free(pData, m);
+        m_freem(pData, m);
         return;
     }
     eh = mtod(m, struct ethhdr *);
@@ -1545,7 +1545,7 @@ void slirp_input(PNATState pData, struct mbuf *m, size_t cbBuf)
             break;
 
         case ETH_P_IPV6:
-            m_free(pData, m);
+            m_freem(pData, m);
             if (!fWarnedIpv6)
             {
                 LogRel(("NAT: IPv6 not supported\n"));
@@ -1555,7 +1555,7 @@ void slirp_input(PNATState pData, struct mbuf *m, size_t cbBuf)
 
         default:
             Log(("NAT: Unsupported protocol %x\n", proto));
-            m_free(pData, m);
+            m_freem(pData, m);
             break;
     }
 
@@ -1596,7 +1596,7 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
         if (memcmp(eh->h_dest, zerro_ethaddr, ETH_ALEN) == 0)
         {
             /* don't do anything */
-            m_free(pData, m);
+            m_freem(pData, m);
             goto done;
         }
     }
@@ -1608,7 +1608,7 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
     if (buf == NULL)
     {
         LogRel(("NAT: Can't alloc memory for outgoing buffer\n"));
-        m_free(pData, m);
+        m_freem(pData, m);
         goto done;
     }
 #endif
@@ -1844,7 +1844,7 @@ void slirp_post_sent(PNATState pData, void *pvArg)
     struct socket *so = 0;
     struct tcpcb *tp = 0;
     struct mbuf *m = (struct mbuf *)pvArg;
-    m_free(pData, m);
+    m_freem(pData, m);
 }
 #ifdef VBOX_WITH_SLIRP_MT
 void slirp_process_queue(PNATState pData)

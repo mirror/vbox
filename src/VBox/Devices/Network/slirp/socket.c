@@ -87,7 +87,7 @@ sofree(PNATState pData, struct socket *so)
 
     /* check if mbuf haven't been already freed  */
     if (so->so_m != NULL)
-        m_free(pData, so->so_m);
+        m_freem(pData, so->so_m);
 #ifndef VBOX_WITH_SLIRP_MT
     if (so->so_next && so->so_prev)
     {
@@ -600,7 +600,7 @@ sorecvfrom(PNATState pData, struct socket *so)
                || errno == EINPROGRESS
                || errno == ENOTCONN))
         {
-            m_free(pData, m);
+            m_freem(pData, m);
             return;
         }
 
@@ -611,7 +611,7 @@ sorecvfrom(PNATState pData, struct socket *so)
         {
             LogRel(("NAT: can't fetch amount of bytes on socket %R[natsock], so message will be truncated.\n", so));
             signalled = 1;
-            m_free(pData, m);
+            m_freem(pData, m);
             return;
         }
 
@@ -677,7 +677,7 @@ sorecvfrom(PNATState pData, struct socket *so)
             else if (errno == ENETUNREACH)
                 code = ICMP_UNREACH_NET;
 
-            m_free(pData, m);
+            m_freem(pData, m);
             if (   errno == EAGAIN
                 || errno == EWOULDBLOCK
                 || errno == EINPROGRESS
