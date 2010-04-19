@@ -259,7 +259,7 @@ static bool hpetBitJustSet(uint64_t u64OldValue,
                            uint64_t u64NewValue,
                            uint64_t u64Mask)
 {
-    return (!(u64OldValue & u64Mask) && (u64NewValue & u64Mask));
+    return (!(u64OldValue & u64Mask) && !!(u64NewValue & u64Mask));
 }
 
 static bool hpetBitJustCleared(uint64_t u64OldValue,
