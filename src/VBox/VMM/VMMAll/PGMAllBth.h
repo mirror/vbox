@@ -183,7 +183,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
     GSTPDE PdeSrc = pPDSrc->a[iPDSrc];
 #  else
     GSTPDE PdeSrc;
-    PdeSrc.au32[0]      = 0; /* faked so we don't have to #ifdef everything */
+    PdeSrc.u            = 0; /* faked so we don't have to #ifdef everything */
     PdeSrc.n.u1Present  = 1;
     PdeSrc.n.u1Write    = 1;
     PdeSrc.n.u1Accessed = 1;
@@ -3103,7 +3103,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
 # endif /* HC_ARCH_BITS == 64 */
 
     GSTPDE PdeSrc;
-    PdeSrc.au32[0]      = 0; /* faked so we don't have to #ifdef everything */
+    PdeSrc.u            = 0; /* faked so we don't have to #ifdef everything */
     PdeSrc.n.u1Present  = 1;
     PdeSrc.n.u1Write    = 1;
     PdeSrc.n.u1Accessed = 1;
@@ -3194,7 +3194,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     const unsigned  iPDSrc = 0;
     GSTPDE          PdeSrc;
 
-    PdeSrc.au32[0]      = 0; /* faked so we don't have to #ifdef everything */
+    PdeSrc.u            = 0; /* faked so we don't have to #ifdef everything */
     PdeSrc.n.u1Present  = 1;
     PdeSrc.n.u1Write    = 1;
     PdeSrc.n.u1Accessed = 1;
@@ -3434,7 +3434,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigne
 # else
     {
         GSTPDE PdeSrc;
-        PdeSrc.au32[0]      = 0; /* faked so we don't have to #ifdef everything */
+        PdeSrc.u            = 0; /* faked so we don't have to #ifdef everything */
         PdeSrc.n.u1Present  = 1;
         PdeSrc.n.u1Write    = 1;
         PdeSrc.n.u1Accessed = 1;
