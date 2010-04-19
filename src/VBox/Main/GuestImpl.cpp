@@ -595,7 +595,8 @@ uint32_t Guest::addCtrlCallbackContext(void *pvData, uint32_t cbData, Progress* 
     LogFlowFuncEnter();
 
     uint32_t uNewContext = ASMAtomicIncU32(&mNextContextID);
-    /** @todo Add value clamping! */
+    if (uNewContext == UINT32_MAX)
+        ASMAtomicUoWriteU32(&mNextContextID, 1000);
 
     CallbackContext context;
     context.mContextID = uNewContext;
@@ -647,7 +648,6 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
         if (SUCCEEDED(rc))
         {
             rc = progress->init(static_cast<IGuest*>(this),
-                                //static_cast<IConsole *>(this),
                                 BstrFmt(tr("Executing process")),
                                 FALSE);
         }
