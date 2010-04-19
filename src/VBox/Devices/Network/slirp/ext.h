@@ -1,6 +1,6 @@
 /** $Id$ */
 /** @file
- * some externals helpers
+ * NAT - some externals helpers
  */
 
 /*
