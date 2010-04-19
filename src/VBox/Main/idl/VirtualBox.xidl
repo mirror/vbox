@@ -14163,7 +14163,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
     <attribute name="dnsProxy" type="boolean">
       <desc>Whether the DHCP server (and the DNS traffic by NAT) should pass the address
-        of the DNS proxy and process traffic using DNS servers registerd on the host.</desc>
+        of the DNS proxy and process traffic using DNS servers registered on the host.</desc>
     </attribute>
     <attribute name="dnsUseHostResolver" type="boolean">
       <desc>Whether the DHCP server (and the DNS traffic by NAT) should pass the address
