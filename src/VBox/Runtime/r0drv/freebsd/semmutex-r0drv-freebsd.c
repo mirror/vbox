@@ -70,7 +70,7 @@ RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX phMutexSem)
     if (pThis)
     {
         pThis->u32Magic = RTSEMMUTEX_MAGIC;
-        sx_init_flags(&pThis->SxLock, "IPRT Mutex Semaphore", SX_LOCK_RECURSED);
+        sx_init_flags(&pThis->SxLock, "IPRT Mutex Semaphore", SX_RECURSE);
 
         *phMutexSem = pThis;
         return VINF_SUCCESS;
