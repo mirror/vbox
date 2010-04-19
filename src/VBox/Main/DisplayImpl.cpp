@@ -2562,6 +2562,8 @@ STDMETHODIMP Display::TakeScreenShotToArray (ULONG aScreenId, ULONG width, ULONG
         rc = setError(VBOX_E_IPRT_ERROR,
                       tr("Could not take a screenshot (%Rrc)"), vrc);
 
+    RTMemFree(pu8Data);
+
     LogFlowFunc (("rc=%08X\n", rc));
     LogFlowFuncLeave();
     return rc;
