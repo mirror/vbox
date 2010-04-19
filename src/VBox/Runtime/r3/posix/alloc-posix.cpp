@@ -39,7 +39,9 @@
 #include <iprt/string.h>
 
 #include <stdlib.h>
-#include <malloc.h>
+#ifndef RT_OS_FREEBSD /* Deprecated on FreeBSD */
+# include <malloc.h>
+#endif
 #include <errno.h>
 #include <sys/mman.h>
 
@@ -179,13 +181,13 @@ RTDECL(void *) RTMemPageAlloc(size_t cb) RT_NO_THROW
     return pv;
 
 #else
-# if 0 /** @todo huh? we're using posix_memalign in the next function... */
+# if defined(RT_OS_FREEBSD) /** @todo huh? we're using posix_memalign in the next function... */
     void *pv;
     int rc = posix_memalign(&pv, PAGE_SIZE, RT_ALIGN_Z(cb, PAGE_SIZE));
     if (!rc)
         return pv;
     return NULL;
-# else
+# else /* !RT_OS_FREEBSD */
     return memalign(PAGE_SIZE, cb);
 # endif
 #endif
