@@ -74,7 +74,6 @@ struct socket
     struct in_addr  so_hladdr;    /* local host addr */
 
     u_int8_t        so_iptos;    /* Type of service */
-    u_int8_t        so_emu;      /* Is the socket emulated? */
 
     u_char          so_type;     /* Type of socket, UDP or TCP */
     int             so_state;    /* internal state flags SS_*, below */

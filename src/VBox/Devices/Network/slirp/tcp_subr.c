@@ -586,7 +586,6 @@ tcp_connect(PNATState pData, struct socket *inso)
     }
     so->s = s;
 
-    so->so_iptos = tcp_tos(so);
     tp = sototcpcb(so);
 
     tcp_template(tp);
@@ -622,34 +621,5 @@ tcp_attach(PNATState pData, struct socket *so)
     insque(pData, so, &tcb);
     NSOCK_INC();
     QSOCKET_UNLOCK(tcb);
-    return 0;
-}
-
-/*
- * Set the socket's type of service field
- */
-static const struct tos_t tcptos[] =
-{
-    {0, 20, IPTOS_THROUGHPUT, 0},                       /* ftp data */
-    {21, 21, IPTOS_LOWDELAY,  EMU_FTP},                 /* ftp control */
-    {0, 23, IPTOS_LOWDELAY, 0},                         /* telnet */
-    {0, 80, IPTOS_THROUGHPUT, 0},                       /* WWW */
-    {0, 513, IPTOS_LOWDELAY, EMU_RLOGIN|EMU_NOCONNECT}, /* rlogin */
-    {0, 514, IPTOS_LOWDELAY, EMU_RSH|EMU_NOCONNECT},    /* shell */
-    {0, 544, IPTOS_LOWDELAY, EMU_KSH},                  /* kshell */
-    {0, 543, IPTOS_LOWDELAY, 0},                        /* klogin */
-    {0, 6667, IPTOS_THROUGHPUT, EMU_IRC},               /* IRC */
-    {0, 6668, IPTOS_THROUGHPUT, EMU_IRC},               /* IRC undernet */
-    {0, 7070, IPTOS_LOWDELAY, EMU_REALAUDIO },          /* RealAudio control */
-    {0, 113, IPTOS_LOWDELAY, EMU_IDENT },               /* identd protocol */
-    {0, 0, 0, 0}
-};
-
-/*
- * Return TOS according to the above table
- */
-u_int8_t
-tcp_tos(struct socket *so)
-{
     return 0;
 }

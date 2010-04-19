@@ -267,8 +267,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         so->so_laddr = ip->ip_src;
         so->so_lport = uh->uh_sport;
 
-        if ((so->so_iptos = udp_tos(so)) == 0)
-            so->so_iptos = ip->ip_tos;
+        so->so_iptos = ip->ip_tos;
 
         /*
          * XXXXX Here, check if it's in udpexec_list,
@@ -293,12 +292,6 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     iphlen += sizeof(struct udphdr);
     m->m_len -= iphlen;
     m->m_data += iphlen;
-
-    /*
-     * Now we sendto() the packet.
-     */
-    if (so->so_emu)
-        udp_emu(pData, so, m);
 
     ttl = ip->ip_ttl = save_ip.ip_ttl;
     ret = setsockopt(so->s, IPPROTO_IP, IP_TTL, (const char*)&ttl, sizeof(ttl));
@@ -488,47 +481,6 @@ udp_detach(PNATState pData, struct socket *so)
         sofree(pData, so);
         SOCKET_UNLOCK(so);
     }
-}
-
-static const struct tos_t udptos[] =
-{
-    {   0,    53, IPTOS_LOWDELAY, 0           }, /* DNS */
-    { 517,   517, IPTOS_LOWDELAY, EMU_TALK    }, /* talk */
-    { 518,   518, IPTOS_LOWDELAY, EMU_NTALK   }, /* ntalk */
-    {   0,  7648, IPTOS_LOWDELAY, EMU_CUSEEME }, /* Cu-Seeme */
-    {   0,     0, 0,              0           }
-};
-
-u_int8_t
-udp_tos(struct socket *so)
-{
-    int i = 0;
-
-    while(udptos[i].tos)
-    {
-        if (   (udptos[i].fport && RT_N2H_U16(so->so_fport) == udptos[i].fport)
-            || (udptos[i].lport && RT_N2H_U16(so->so_lport) == udptos[i].lport))
-        {
-            so->so_emu = udptos[i].emu;
-            return udptos[i].tos;
-        }
-        i++;
-    }
-
-    return 0;
-}
-
-#ifdef EMULATE_TALK
-#include "talkd.h"
-#endif
-
-/*
- * Here, talk/ytalk/ntalk requests must be emulated
- */
-void
-udp_emu(PNATState pData, struct socket *so, struct mbuf *m)
-{
-    so->so_emu = 0;
 }
 
 struct socket *

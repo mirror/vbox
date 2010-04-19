@@ -529,8 +529,7 @@ findso:
         so->so_faddr = ti->ti_dst;
         so->so_fport = ti->ti_dport;
 
-        if ((so->so_iptos = tcp_tos(so)) == 0)
-            so->so_iptos = ((struct ip *)ti)->ip_tos;
+        so->so_iptos = ((struct ip *)ti)->ip_tos;
 
         tp = sototcpcb(so);
         tp->t_state = TCPS_LISTEN;
@@ -765,13 +764,6 @@ findso:
              * This has way too many gotos...
              * But a bit of spaghetti code never hurt anybody :)
              */
-
-            if (so->so_emu & EMU_NOCONNECT)
-            {
-                so->so_emu &= ~EMU_NOCONNECT;
-                goto cont_input;
-            }
-
             if (   (tcp_fconnect(pData, so) == -1)
                 && errno != EINPROGRESS
                 && errno != EWOULDBLOCK)
@@ -1593,10 +1585,7 @@ dodata:
              */
             case TCPS_SYN_RECEIVED:
             case TCPS_ESTABLISHED:
-                if(so->so_emu == EMU_CTL)        /* no shutdown on socket */
-                    tp->t_state = TCPS_LAST_ACK;
-                else
-                    tp->t_state = TCPS_CLOSE_WAIT;
+                tp->t_state = TCPS_CLOSE_WAIT;
                 break;
 
             /*
