@@ -107,7 +107,11 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
      */
     len = RT_N2H_U16((u_int16_t)uh->uh_ulen);
     Assert((ip->ip_len == len));
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     Assert((ip->ip_len + iphlen == m->m_len));
+#else
+    Assert((ip->ip_len + iphlen == m_length(m, NULL)));
+#endif
 
     if (ip->ip_len != len)
     {
