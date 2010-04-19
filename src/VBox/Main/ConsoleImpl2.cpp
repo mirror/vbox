@@ -2249,7 +2249,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         if (fExtProfile)
         {
             BootNic aNic = llBootNics.front();
-            uint32 u32NicPciAddr = (aNic.mPciDev << 16) | aNic.mPciFn;
+            uint32_t u32NicPciAddr = (aNic.mPciDev << 16) | aNic.mPciFn;
             rc = CFGMR3InsertInteger(pCfg,  "NicPciAddress",    u32NicPciAddr);     RC_CHECK();
         }
         rc = CFGMR3InsertInteger(pCfg,  "ShowCpu", fShowCpu);                       RC_CHECK();
