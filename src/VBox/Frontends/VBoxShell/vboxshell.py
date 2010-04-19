@@ -280,7 +280,6 @@ def startVm(ctx,mach,type):
             print e
             if g_verbose:
                 traceback.print_exc()
-            pass
          # if session not opened, close doesn't make sense
         session.close()
     else:
@@ -430,14 +429,18 @@ def guestStats(ctx,console,args):
             pass
 
 def plugCpu(ctx,machine,session,args):
-    cpu = int(args)
+    cpu = int(args[0])
     print "Adding CPU %d..." %(cpu)
     machine.hotPlugCPU(cpu)
 
 def unplugCpu(ctx,machine,session,args):
-    cpu = int(args)
+    cpu = int(args[0])
     print "Removing CPU %d..." %(cpu)
     machine.hotUnplugCPU(cpu)
+
+def mountIso(ctx,machine,session,args):
+    machine.mountMedium(args[0], args[1], args[2], args[3], args[4])
+    machine.saveSettings()
 
 def ginfo(ctx,console, args):
     guest = console.guest
@@ -487,6 +490,7 @@ def cmdExistingVm(ctx,mach,cmd,args):
          'gueststats':      lambda: guestStats(ctx, console, args),
          'plugcpu':         lambda: plugCpu(ctx, session.machine, session, args),
          'unplugcpu':       lambda: unplugCpu(ctx, session.machine, session, args),
+         'mountiso':        lambda: mountIso(ctx, session.machine, session, args)
          }
     try:
         ops[cmd]()
@@ -1691,7 +1695,7 @@ def removeIsoCmd(ctx,args):
    return 0
 
 def attachIsoCmd(ctx,args):
-   if (len(args) < 4):
+   if (len(args) < 5):
       print "usage: attachIso vm iso controller port:slot"
       return 0
 
@@ -1729,12 +1733,53 @@ def detachIsoCmd(ctx,args):
    vb = ctx['vb']
    loc = args[2]
    try:
-      hdd = vb.findDVDImage(loc)
+      dvd = vb.findDVDImage(loc)
    except:
       print "no DVD with path %s registered" %(loc)
       return 0
 
    detachMedium(ctx,mach.id,dvd)
+   return 0
+
+
+def mountIsoCmd(ctx,args):
+   if (len(args) < 5):
+      print "usage: mountIso vm iso controller port:slot"
+      return 0
+
+   mach = ctx['machById'](args[1])
+   if mach is None:
+        return 0
+   vb = ctx['vb']
+   loc = args[2]
+   try:
+      dvd = vb.findDVDImage(loc)
+   except:
+      print "no DVD with path %s registered" %(loc)
+      return 0
+
+   ctr = args[3]
+   (port,slot) = args[4].split(":")
+
+   cmdExistingVm(ctx, mach, 'mountiso', [ctr, port, slot, dvd.id, True])
+
+   return 0
+
+def unmountIsoCmd(ctx,args):
+   if (len(args) < 4):
+      print "usage: unmountIso vm controller port:slot"
+      return 0
+
+   mach = ctx['machById'](args[1])
+   if mach is None:
+        return 0
+   vb = ctx['vb']
+
+   ctr = args[2]
+   (port,slot) = args[3].split(":")
+
+   cmdExistingVm(ctx, mach, 'mountiso', [ctr, port, slot, "", True])
+
    return 0
 
 aliases = {'s':'start',
@@ -1797,6 +1842,8 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'removeIso': ['Permanently remove CD/DVD image: removeIso /os.iso', removeIsoCmd, 0],
             'attachIso': ['Attach CD/DVD to the VM: attachIso win /os.iso "IDE Controller" 0:1', attachIsoCmd, 0],
             'detachIso': ['Detach CD/DVD from the VM: detachIso win /os.iso', detachIsoCmd, 0],
+            'mountIso': ['Mount CD/DVD to the running VM: mountIso win /os.iso "IDE Controller" 0:1', mountIsoCmd, 0],
+            'unmountIso': ['Unmount CD/DVD from running VM: unmountIso win "IDE Controller" 0:1', unmountIsoCmd, 0],
             'listMediums': ['List mediums known to this VBox instance', listMediumsCmd, 0]
             }
 
