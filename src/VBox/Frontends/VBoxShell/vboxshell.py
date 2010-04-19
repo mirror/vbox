@@ -613,14 +613,14 @@ def infoCmd(ctx,args):
         print
         print "  Controllers:"
     for controller in controllers:
-        print "    %s %s bus: %d" % (controller.name, asEnumElem(ctx,"StorageControllerType", controller.controllerType), controller.bus)
+        print "    '%s' %s bus: %d" % (controller.name, asEnumElem(ctx,"StorageControllerType", controller.controllerType), controller.bus)
 
     attaches = ctx['global'].getArray(mach, 'mediumAttachments')
     if attaches:
         print
         print "  Mediums:"
     for a in attaches:
-        print "   Controller: %s port: %d device: %d type: %s (%s):" % (a.controller, a.port, a.device, asEnumElem(ctx,"DeviceType", a.type), a.type)
+        print "   Controller: '%s' port/device: %d:%d type: %s (%s):" % (a.controller, a.port, a.device, asEnumElem(ctx,"DeviceType", a.type), a.type)
         m = a.medium
         if a.type == ctx['global'].constants.DeviceType_HardDisk:
             print "   HDD:"
@@ -1453,6 +1453,277 @@ def typeGuestCmd(ctx, args):
 
     return 0
 
+def optId(verbose,id):
+   if verbose:
+      return ": "+id
+   else:
+      return ""
+
+def listMediumsCmd(ctx,args):
+   if len(args) > 1:
+      verbose = int(args[1])
+   else:
+      verbose = False
+   hdds = ctx['global'].getArray(ctx['vb'], 'hardDisks')
+   print "Hard disks:"
+   for hdd in hdds:
+      print "   %s (%s)%s %dM" %(hdd.location, hdd.format, optId(verbose,hdd.id),hdd.logicalSize)
+
+   dvds = ctx['global'].getArray(ctx['vb'], 'DVDImages')
+   print "CD/DVD disks:"
+   for dvd in dvds:
+      print "   %s (%s)%s %dM" %(dvd.location, dvd.format,optId(verbose,hdd.id),hdd.logicalSize)
+   
+   floppys = ctx['global'].getArray(ctx['vb'], 'floppyImages')
+   print "Floopy disks:"
+   for floppy in floppys:
+      print "   %s (%s)%s %dM" %(floppy.location, floppy.format,optId(verbose,hdd.id), hdd.logicalSize)
+
+   return 0
+
+def createHddCmd(ctx,args):
+   if (len(args) < 3):
+      print "usage: createHdd sizeM location type"
+      return 0
+
+   size = int(args[1])
+   loc = args[2]
+   if len(args) > 3:
+      format = args[3]
+   else:
+      format = "vdi"
+
+   hdd = ctx['vb'].createHardDisk(format, loc)
+   progress = hdd.createBaseStorage(size, ctx['global'].constants.MediumVariant_Standard)
+   ctx['progressBar'](progress)
+
+   if not hdd.id:
+      print "cannot create disk (file %s exist?)" %(loc)
+      return 0
+   
+   print "created HDD at %s as %s" %(hdd.location, hdd.id)
+
+   return 0
+
+def registerHddCmd(ctx,args):
+   if (len(args) < 2):
+      print "usage: registerHdd location"
+      return 0
+
+   vb = ctx['vb']
+   loc = args[1]
+   setImageId = False
+   imageId = ""
+   setParentId = False
+   parentId = ""
+   hdd = vb.openHardDisk(loc, ctx['global'].constants.AccessMode_ReadWrite, setImageId, imageId, setParentId, parentId)
+   print "registered HDD as %s" %(hdd.id)
+   return 0
+
+def attachHddCmd(ctx,args):
+   if (len(args) < 4):
+      print "usage: attachHdd vm hdd controller port:slot"
+      return 0
+   
+   mach = ctx['machById'](args[1])
+   if mach is None:
+        return 0
+   vb = ctx['vb']
+   loc = args[2]
+   try:
+      hdd = vb.findHardDisk(loc)
+   except:
+      print "no HDD with path %s registered" %(loc)
+      return 0
+   ctr = args[3]
+   (port,slot) = args[4].split(":")
+
+   session = ctx['global'].openMachineSession(mach.id)
+   mach = session.machine
+   try:
+      mach.attachDevice(ctr, port, slot, ctx['global'].constants.DeviceType_HardDisk, hdd.id)
+   except Exception, e:
+      print 'failed: ',e
+   mach.saveSettings()
+   session.close()
+   return 0
+
+def detachMedium(ctx,mid,medium):
+   session = ctx['global'].openMachineSession(mid)
+   mach = session.machine
+   try:
+      atts = ctx['global'].getArray(mach, 'mediumAttachments')
+      hid = medium.id
+      for a in atts:
+         if a.medium and a.medium.id == hid:
+            mach.detachDevice(a.controller, a.port, a.device)
+   except Exception, e:
+      session.close()
+      raise e
+   mach.saveSettings()
+   session.close()
+
+def detachHddCmd(ctx,args):
+   if (len(args) < 3):
+      print "usage: detachHdd vm hdd"
+      return 0
+
+   mach = ctx['machById'](args[1])
+   if mach is None:
+        return 0
+   vb = ctx['vb']
+   loc = args[2]
+   try:
+      hdd = vb.findHardDisk(loc)
+   except:
+      print "no HDD with path %s registered" %(loc)
+      return 0
+
+   detachMedium(ctx,mach.id,hdd)
+   return 0
+
+def unregisterHddCmd(ctx,args):
+   if (len(args) < 2):
+      print "usage: unregisterHdd path <vmunreg>"
+      return 0
+
+   vb = ctx['vb']
+   loc = args[1]
+   if (len(args) > 2):
+      vmunreg = int(args[2])
+   else:
+      vmunreg = 0
+   try:
+      hdd = vb.findHardDisk(loc)
+   except:
+      print "no HDD with path %s registered" %(loc)
+      return 0
+
+   if vmunreg != 0:
+      machs = ctx['global'].getArray(hdd, 'machineIds')
+      try:
+         for m in machs:
+            print "Trying to detach from %s" %(m)
+            detachMedium(ctx,m,hdd)
+      except Exception, e:
+         print 'failed: ',e
+         return 0
+   hdd.close()
+   return 0
+
+def removeHddCmd(ctx,args):
+   if (len(args) != 2):
+      print "usage: removeHdd path"
+      return 0
+
+   vb = ctx['vb']
+   loc = args[1]
+   try:
+      hdd = vb.findHardDisk(loc)
+   except:
+      print "no HDD with path %s registered" %(loc)
+      return 0
+      
+   progress = hdd.deleteStorage()
+   ctx['progressBar'](progress)
+
+   return 0
+
+def registerIsoCmd(ctx,args):
+   if (len(args) < 2):
+      print "usage: registerIso location"
+      return 0
+   vb = ctx['vb']
+   loc = args[1]
+   id = ""
+   iso = vb.openDVDImage(loc, id)
+   print "registered ISO as %s" %(iso.id)
+   return 0
+
+
+def unregisterIsoCmd(ctx,args):
+   if (len(args) != 2):
+      print "usage: unregisterIso path"
+      return 0
+
+   vb = ctx['vb']
+   loc = args[1]
+   try:
+      dvd = vb.findDVDImage(loc)
+   except:
+      print "no DVD with path %s registered" %(loc)
+      return 0
+
+   progress = dvd.close()
+   print "Unregistered ISO at %s" %(dvd.location)
+
+   return 0
+
+def removeIsoCmd(ctx,args):
+   if (len(args) != 2):
+      print "usage: removeIso path"
+      return 0
+
+   vb = ctx['vb']
+   loc = args[1]
+   try:
+      dvd = vb.findDVDImage(loc)
+   except:
+      print "no DVD with path %s registered" %(loc)
+      return 0
+
+   progress = dvd.deleteStorage()
+   ctx['progressBar'](progress)
+   print "Removed ISO at %s" %(dvd.location)
+
+   return 0
+
+def attachIsoCmd(ctx,args):
+   if (len(args) < 4):
+      print "usage: attachIso vm iso controller port:slot"
+      return 0
+
+   mach = ctx['machById'](args[1])
+   if mach is None:
+        return 0
+   vb = ctx['vb']
+   loc = args[2]
+   try:
+      dvd = vb.findDVDImage(loc)
+   except:
+      print "no DVD with path %s registered" %(loc)
+      return 0
+   ctr = args[3]
+   (port,slot) = args[4].split(":")
+
+   session = ctx['global'].openMachineSession(mach.id)
+   mach = session.machine
+   try:
+      mach.attachDevice(ctr, port, slot, ctx['global'].constants.DeviceType_DVD, dvd.id)
+   except Exception, e:
+      print 'failed: ',e
+   mach.saveSettings()
+   session.close()
+   return 0
+
+def detachIsoCmd(ctx,args):
+   if (len(args) < 3):
+      print "usage: detachIso vm iso"
+      return 0
+
+   mach = ctx['machById'](args[1])
+   if mach is None:
+        return 0
+   vb = ctx['vb']
+   loc = args[2]
+   try:
+      hdd = vb.findDVDImage(loc)
+   except:
+      print "no DVD with path %s registered" %(loc)
+      return 0
+
+   detachMedium(ctx,mach.id,dvd)
+   return 0
 
 aliases = {'s':'start',
            'i':'info',
@@ -1503,6 +1774,18 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'gueststats':['Print available guest stats (only Windows guests with additions so far): gueststats Win32', gueststatsCmd, 0],
             'plugcpu':['Add a CPU to a running VM: plugcpu Win 1', plugcpuCmd, 0],
             'unplugcpu':['Remove a CPU from a running VM (additions required, Windows cannot unplug): unplugcpu Linux 1', unplugcpuCmd, 0],
+            'createHdd': ['Create virtual HDD:  createHdd 1000 /disk.vdi ', createHddCmd, 0],
+            'removeHdd': ['Permanently remove virtual HDD: removeHdd /disk.vdi', removeHddCmd, 0],
+            'registerHdd': ['Register HDD image with VirtualBox instance: registerHdd /disk.vdi', registerHddCmd, 0],
+            'unregisterHdd': ['Unregister HDD image with VirtualBox instance: unregisterHdd /disk.vdi', unregisterHddCmd, 0],
+            'attachHdd': ['Attach HDD to the VM: attachHdd win /disk.vdi "IDE Controller" 0:1', attachHddCmd, 0],
+            'detachHdd': ['Detach HDD from the VM: detachHdd win /disk.vdi', detachHddCmd, 0],
+            'registerIso': ['Register CD/DVD image with VirtualBox instance: registerIso /os.iso', registerIsoCmd, 0],
+            'unregisterIso': ['Unregister CD/DVD image with VirtualBox instance: unregisterIso /os.iso', unregisterIsoCmd, 0],
+            'removeIso': ['Permanently remove CD/DVD image: removeIso /os.iso', removeIsoCmd, 0],
+            'attachIso': ['Attach CD/DVD to the VM: attachIso win /os.iso "IDE Controller" 0:1', attachIsoCmd, 0],
+            'detachIso': ['Detach CD/DVD from the VM: detachIso win /os.iso', detachIsoCmd, 0],
+            'listMediums': ['List mediums known to this VBox instance', listMediumsCmd, 0]
             }
 
 def runCommandArgs(ctx, args):
