@@ -96,6 +96,7 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX hMutexSem)
 }
 
 
+#undef RTSemMutexRequest
 RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
 {
     PRTSEMMUTEXINTERNAL pThis = hMutexSem;
@@ -140,6 +141,13 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
 }
 
 
+RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    return RTSemMutexRequest(hMutexSem, cMillies);
+}
+
+
+#undef RTSemMutexRequestNoResume
 RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
 {
     PRTSEMMUTEXINTERNAL pThis = hMutexSem;
@@ -184,6 +192,12 @@ RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMilli
     }
 
     return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTSemMutexRequestNoResumeDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    return RTSemMutexRequestNoResume(hMutexSem, cMillies);
 }
 
 
