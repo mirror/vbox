@@ -93,10 +93,13 @@ EXPORTS
     RTR0MemKernelIsValidAddr
     RTR0MemAreKrnlAndUsrDifferent
     RTProcSelf
-    ; broken - RTSemMutexCreate
-    ; broken - RTSemMutexRequest
-    ; broken - RTSemMutexRelease
-    ; broken - RTSemMutexDestroy
+    RTSemMutexCreate
+    RTSemMutexRequest
+    RTSemMutexRequestDebug
+    RTSemMutexRequestNoResume
+    RTSemMutexRequestNoResumeDebug
+    RTSemMutexRelease
+    RTSemMutexDestroy
     RTSemEventCreate
     RTSemEventSignal
     RTSemEventWait
