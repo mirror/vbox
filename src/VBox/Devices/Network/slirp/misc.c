@@ -383,6 +383,12 @@ struct mbuf *slirp_ext_m_get(PNATState pData, size_t cbMin, void **ppvBuf, size_
         AssertMsgFailed(("Unsupported size"));
 
     m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
+    if (m == NULL)
+    {
+        *ppvBuf = NULL;
+        *pcbBuf = 0;
+        return NULL;
+    }
     m->m_len = size;
     *ppvBuf = mtod(m, void *);
     *pcbBuf = size;
