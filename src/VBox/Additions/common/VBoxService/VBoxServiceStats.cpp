@@ -566,7 +566,7 @@ static void VBoxServiceVMStatsReport(void)
 
                 rc = VbglR3StatReport(&req);
                 if (RT_SUCCESS(rc))
-                    VBoxServiceVerbose(3, "VBoxStatsReportStatistics: new statistics (CPU %u) reported successfully!\n", cCpus);
+                    VBoxServiceVerbose(3, "VBoxStatsReportStatistics: new statistics (CPU %u) reported successfully!\n", cCPUs);
                 else
                     VBoxServiceVerbose(3, "VBoxStatsReportStatistics: stats report failed with rc=%Rrc\n", rc);
                 cCPUs++;
