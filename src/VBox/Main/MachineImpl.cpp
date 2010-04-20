@@ -1440,6 +1440,12 @@ STDMETHODIMP Machine::COMGETTER(MemoryBalloonSize)(ULONG *memoryBalloonSize)
     return S_OK;
 }
 
+/**
+ * Set the memory balloon size.
+ *
+ * This method is also called from IGuest::COMSETTER(MemoryBalloonSize) so
+ * we have to make sure that we never call IGuest from here.
+ */
 STDMETHODIMP Machine::COMSETTER(MemoryBalloonSize)(ULONG memoryBalloonSize)
 {
     /* check limits */
