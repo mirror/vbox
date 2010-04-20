@@ -29,11 +29,11 @@
 #endif
 
 #ifdef VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
-#   include <errno.h>
-#   include <sys/types.h>
-#   include <sys/stat.h>
-#   include <sys/ipc.h>
-#   include <sys/sem.h>
+# include <errno.h>
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <sys/ipc.h>
+# include <sys/sem.h>
 #endif
 
 #include "Logging.h"
@@ -84,9 +84,9 @@
 #include <typeinfo>
 
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-#define HOSTSUFF_EXE ".exe"
+# define HOSTSUFF_EXE ".exe"
 #else /* !RT_OS_WINDOWS */
-#define HOSTSUFF_EXE ""
+# define HOSTSUFF_EXE ""
 #endif /* !RT_OS_WINDOWS */
 
 // defines / prototypes
@@ -1453,34 +1453,9 @@ STDMETHODIMP Machine::COMSETTER(MemoryBalloonSize)(ULONG memoryBalloonSize)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = checkStateDependency(MutableStateDep);
-    if (FAILED(rc)) return rc;
-
     setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mMemoryBalloonSize = memoryBalloonSize;
-
-    /* Propagate the balloon change to the guest if there's an open session. */
-    if (mData->mSession.mState != SessionState_Open)
-    {
-        ComPtr<IInternalSessionControl> directControl;
-
-        int ret = getDirectControl(&directControl);
-        if (ret == S_OK)
-        {
-            ComPtr<IConsole> mConsole = NULL;
-            ComPtr<IGuest>   mGuest = NULL;
-
-            /* get the associated console; this is a remote call (!) */
-            ret = directControl->GetRemoteConsole(mConsole.asOutParam());
-            if (ret == S_OK)
-            {
-                ret = mConsole->COMGETTER(Guest)(mGuest.asOutParam());
-                if (ret == S_OK)
-                    mGuest->COMSETTER(MemoryBalloonSize)(memoryBalloonSize);
-            }
-        }
-    }
 
     return S_OK;
 }
