@@ -76,6 +76,7 @@ DECLEXPORT(int) TSTRTR0SemMutexSrvReqHandler(PSUPDRVSESSION pSession, uint32_t u
         if ((rc) != (rcExpect)) \
         { \
             RTStrPrintf(pszErr, cchErr, "!%s -> %Rrc, expected %Rrc. line %u", szOp, rc, rcExpect, __LINE__); \
+            SUPR0Printf("%s -> %d, expected %d. line %u", szOp, rc, rcExpect, __LINE__); \
             break; \
         }
 
