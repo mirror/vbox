@@ -261,6 +261,18 @@ void crServerDeleteMuralFBO(CRMuralInfo *mural)
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
+static GLboolean crServerIntersectRect(CRrecti *a, CRrecti *b, CRrecti *rect)
+{
+    CRASSERT(a && b && rect);
+
+    rect->x1 = MAX(a->x1, b->x1);
+    rect->x2 = MIN(a->x2, b->x2);
+    rect->y1 = MAX(a->y1, b->y1);
+    rect->y2 = MIN(a->y2, b->y2);
+
+    return (rect->x2>rect->x1) && (rect->y2>rect->y1);
+}
+
 static GLboolean crServerIntersectScreen(CRMuralInfo *mural, int sId, CRrecti *rect)
 {
     rect->x1 = MAX(mural->gX, cr_server.screen[sId].x);
@@ -271,15 +283,46 @@ static GLboolean crServerIntersectScreen(CRMuralInfo *mural, int sId, CRrecti *r
     return (rect->x2>rect->x1) && (rect->y2>rect->y1);
 }
 
+static void crServerCopySubImage(char *pDst, char* pSrc, CRrecti *pRect, int srcWidth, int srcHeight)
+{
+    int i;
+    int dstrowsize = 4*(pRect->x2-pRect->x1);
+    int srcrowsize = 4*srcWidth;
+    int height = pRect->y2-pRect->y1;
+
+    pSrc += 4*pRect->x1 + srcrowsize*(srcHeight-1-pRect->y1);
+
+    for (i=0; i<height; ++i)
+    {
+        crMemcpy(pDst, pSrc, dstrowsize);
+
+        pSrc -= srcrowsize;
+        pDst += dstrowsize;
+    }
+}
+
+static void crServerTransformRect(CRrecti *pDst, CRrecti *pSrc, int dx, int dy)
+{
+    pDst->x1 = pSrc->x1+dx;
+    pDst->x2 = pSrc->x2+dx;
+    pDst->y1 = pSrc->y1+dy;
+    pDst->y2 = pSrc->y2+dy;
+}
+
 void crServerPresentFBO(CRMuralInfo *mural)
 {
-    char *pixels, *tmppixels, *pSrc, *pDst;
+    char *pixels, *tmppixels;
     GLuint uid;
-    int i, j, rowsize, rowstride, height;
-    CRrecti rect;
+    int i, j;
+    CRrecti rect, rectwr, sectr;
     CRContext *ctx = crStateGetCurrent();
 
     CRASSERT(cr_server.pfnPresentFBO);
+
+    if (!mural->bVisible)
+    {
+        return;
+    }
 
     pixels = crAlloc(4*mural->fboWidth*mural->fboHeight);
     if (!pixels)
@@ -297,30 +340,36 @@ void crServerPresentFBO(CRMuralInfo *mural)
     {
         if (crServerIntersectScreen(mural, i, &rect))
         {
-            rowsize = 4*(rect.x2-rect.x1);
-            tmppixels = crAlloc(rowsize*(rect.y2-rect.y1));
-            
+            tmppixels = crAlloc(4*(rect.x2-rect.x1)*(rect.y2-rect.y1));
             if (!tmppixels)
             {
                 crWarning("Out of memory in crServerPresentFBO");
                 crFree(pixels);
                 return;
             }
-            rowstride = 4*mural->fboWidth;
-            height = rect.y2-rect.y1;
 
-            pSrc = pixels + 4*(rect.x1-mural->gX) + rowstride*(rect.y2-mural->gY-1);
-            pDst = tmppixels;
+            /* rect in window relative coords */
+            crServerTransformRect(&rectwr, &rect, -mural->gX, -mural->gY);
 
-            for (j=0; j<height; ++j)
+            if (!mural->pVisibleRects)
             {
-                crMemcpy(pDst, pSrc, rowsize);
-
-                pSrc -= rowstride;
-                pDst += rowsize;
+                crServerCopySubImage(tmppixels, pixels, &rectwr, mural->fboWidth, mural->fboHeight);
+                cr_server.pfnPresentFBO(tmppixels, i, rect.x1-cr_server.screen[i].x, rect.y1-cr_server.screen[i].y, rect.x2-rect.x1, rect.y2-rect.y1);
             }
-
-            cr_server.pfnPresentFBO(tmppixels, i, rect.x1-cr_server.screen[i].x, rect.y1-cr_server.screen[i].y, rect.x2-rect.x1, height);
+            else
+            {
+                for (j=0; j<mural->cVisibleRects; ++j)
+                {
+                    if (crServerIntersectRect(&rectwr, (CRrecti*) &mural->pVisibleRects[4*j], &sectr))
+                    {
+                        crServerCopySubImage(tmppixels, pixels, &sectr, mural->fboWidth, mural->fboHeight);
+                        cr_server.pfnPresentFBO(tmppixels, i,
+                                                sectr.x1+mural->gX-cr_server.screen[i].x,
+                                                sectr.y1+mural->gY-cr_server.screen[i].y,
+                                                sectr.x2-sectr.x1, sectr.y2-sectr.y1);
+                    }
+                }
+            }
 
             crFree(tmppixels);
         }

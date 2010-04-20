@@ -83,6 +83,9 @@ crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preload
         mural->bVisible = GL_FALSE;
         mural->bUseFBO = GL_FALSE;
 
+        mural->cVisibleRects = 0;
+        mural->pVisibleRects = NULL;
+
         /* generate ID for this new window/mural (special-case for file conns) */
         if (cr_server.curClient && cr_server.curClient->conn->type == CR_FILE)
             windowID = spuWindow;
@@ -181,6 +184,11 @@ crServerDispatchWindowDestroy( GLint window )
     }
 
     crHashtableDelete(cr_server.pWindowCreateInfoTable, window, crServerCreateInfoDeleteCB);
+
+    if (mural->pVisibleRects)
+    {
+        crFree(mural->pVisibleRects);
+    }
     crHashtableDelete(cr_server.muralTable, window, crFree);
 }
 
@@ -236,6 +244,24 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, GLint *pRects )
 #endif
          return;
     }
+
+    if (mural->pVisibleRects)
+    {
+        crFree(mural->pVisibleRects);
+        mural->pVisibleRects = NULL;
+    }
+
+    mural->cVisibleRects = cRects;
+    if (cRects)
+    {
+        mural->pVisibleRects = (GLint*) crAlloc(4*sizeof(GLint)*cRects);
+        if (!mural->pVisibleRects)
+        {
+            crError("Out of memory in crServerDispatchWindowVisibleRegion");
+        }
+        crMemcpy(mural->pVisibleRects, pRects, 4*sizeof(GLint)*cRects);
+    }
+
     cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRects, pRects);
 }
 

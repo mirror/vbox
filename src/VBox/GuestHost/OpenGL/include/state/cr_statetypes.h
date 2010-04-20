@@ -36,7 +36,7 @@ typedef struct {
 } CRrectf;
 
 typedef struct {
-	GLint x1, x2, y1, y2;
+	GLint x1, y1, x2, y2;
 } CRrecti;
 
 #define VECTOR(type, name) typedef struct { type x,y,z,w; } name
