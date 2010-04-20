@@ -1482,7 +1482,10 @@ RuntimeR0Drv_SOURCES.darwin = \
 	r0drv/darwin/process-r0drv-darwin.cpp \
 	r0drv/darwin/RTLogWriteDebugger-r0drv-darwin.cpp \
 	r0drv/darwin/RTLogWriteStdOut-r0drv-darwin.cpp \
-	r0drv/darwin/semaphore-r0drv-darwin.cpp \
+	r0drv/darwin/semevent-r0drv-darwin.cpp \
+	r0drv/darwin/semeventmulti-r0drv-darwin.cpp \
+	r0drv/darwin/semfastmutex-r0drv-darwin.cpp \
+	r0drv/darwin/semmutex-r0drv-darwin.cpp \
 	r0drv/darwin/spinlock-r0drv-darwin.cpp \
 	r0drv/darwin/thread-r0drv-darwin.cpp \
 	r0drv/darwin/thread2-r0drv-darwin.cpp \
