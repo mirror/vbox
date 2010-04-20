@@ -36,11 +36,10 @@
 #include "internal/iprt.h"
 #include <iprt/semaphore.h>
 
-#include <iprt/alloc.h>
-#include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/assert.h>
 #include <iprt/err.h>
-#include <iprt/mp.h>
+#include <iprt/mem.h>
 #include <iprt/thread.h>
 
 #include "internal/magics.h"
@@ -49,7 +48,6 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-#if 0 /** @todo */
 /**
  * Darwin mutex semaphore.
  */
@@ -57,34 +55,63 @@ typedef struct RTSEMMUTEXINTERNAL
 {
     /** Magic value (RTSEMMUTEX_MAGIC). */
     uint32_t volatile   u32Magic;
-    /** The mutex. */
-    lck_mtx_t          *pMtx;
+    /** The number of waiting threads. */
+    uint32_t            cWaiters;
+    /** The number of references. */
+    uint32_t volatile   cRefs;
+    /** The number of recursions. */
+    uint32_t            cRecursions;
+    /** The handle of the owner thread. */
+    RTNATIVETHREAD      hNativeOwner;
+    /** The spinlock protecting us. */
+    lck_spin_t         *pSpinlock;
 } RTSEMMUTEXINTERNAL, *PRTSEMMUTEXINTERNAL;
 
-#endif
 
 
-
-
-#if 0 /* need proper timeout lock function! */
-RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX phFastMtx)
+RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX phMutexSem)
 {
+    return RTSemMutexCreateEx(phMutexSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE, NULL);
+}
+
+
+RTDECL(int) RTSemMutexCreateEx(PRTSEMMUTEX phMutexSem, uint32_t fFlags,
+                               RTLOCKVALCLASS hClass, uint32_t uSubClass, const char *pszNameFmt, ...)
+{
+    AssertReturn(!(fFlags & ~RTSEMMUTEX_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
     RT_ASSERT_PREEMPTIBLE();
+
     AssertCompile(sizeof(RTSEMMUTEXINTERNAL) > sizeof(void *));
     PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)RTMemAlloc(sizeof(*pThis));
     if (pThis)
     {
-        pThis->u32Magic = RTSEMMUTEX_MAGIC;
+        pThis->u32Magic     = RTSEMMUTEX_MAGIC;
+        pThis->cWaiters     = 0;
+        pThis->cRefs        = 1;
+        pThis->cRecursions  = 0;
+        pThis->hNativeOwner = NIL_RTNATIVETHREAD;
         Assert(g_pDarwinLockGroup);
-        pThis->pMtx = lck_mtx_alloc_init(g_pDarwinLockGroup, LCK_ATTR_NULL);
-        if (pThis->pMtx)
+        pThis->pSpinlock = lck_spin_alloc_init(g_pDarwinLockGroup, LCK_ATTR_NULL);
+        if (pThis->pSpinlock)
         {
-            *phFastMtx = pThis;
+            *phMutexSem = pThis;
             return VINF_SUCCESS;
         }
+
         RTMemFree(pThis);
     }
     return VERR_NO_MEMORY;
+}
+
+
+/**
+ * Called when the refcount reaches zero.
+ */
+static void rtSemMutexDarwinFree(PRTSEMMUTEXINTERNAL pThis)
+{
+    lck_spin_unlock(pThis->pSpinlock);
+    lck_spin_destroy(pThis->pSpinlock, g_pDarwinLockGroup);
+    RTMemFree(pThis);
 }
 
 
@@ -97,70 +124,206 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX hMutexSem)
     if (!pThis)
         return VERR_INVALID_PARAMETER;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertMsg(pThis->u32Magic == RTSEMMUTEX_MAGIC, ("u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, ("u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
     RT_ASSERT_INTS_ON();
 
     /*
-     * Invalidate it and signal the object just in case.
+     * Kill it, wake up all waiting threads and release the reference.
      */
-    ASMAtomicIncU32(&pThis->u32Magic);
+    AssertReturn(ASMAtomicCmpXchgU32(&pThis->u32Magic, ~RTSEMMUTEX_MAGIC, RTSEMMUTEX_MAGIC), VERR_INVALID_HANDLE);
+    lck_spin_lock(pThis->pSpinlock);
 
-    Assert(g_pDarwinLockGroup);
-    lck_mtx_free(pThis->pMtx, g_pDarwinLockGroup);
-    pThis->pMtx = NULL;
+    if (pThis->cWaiters > 0)
+        thread_wakeup_prim((event_t)pThis, FALSE /* one_thread */, THREAD_RESTART);
 
-    RTMemFree(pThis);
+    if (ASMAtomicDecU32(&pThis->cRefs) == 0)
+        rtSemMutexDarwinFree(pThis);
+    else
+        lck_spin_unlock(pThis->pSpinlock);
+
     return VINF_SUCCESS;
 }
 
 
-RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
+/**
+ * Internal worker for the sleep scenario.
+ *
+ * Called owning the spinlock, returns without it.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The mutex instance.
+ * @param   cMillies            The timeout.
+ * @param   fInterruptible      Whether it's interruptible
+ *                              (RTSemMutexRequestNoResume) or not
+ *                              (RTSemMutexRequest).
+ * @param   hNativeSelf         The thread handle of the caller.
+ */
+static int rtR0SemMutexDarwinRequestSleep(PRTSEMMUTEXINTERNAL pThis, RTMSINTERVAL cMillies,
+                                          wait_interrupt_t fInterruptible, RTNATIVETHREAD hNativeSelf)
+{
+    /*
+     * Grab a reference and indicate that we're waiting.
+     */
+    pThis->cWaiters++;
+    ASMAtomicIncU32(&pThis->cRefs);
+
+    /*
+     * Go to sleep, use the address of the mutex instance as sleep/blocking/event id.
+     */
+    wait_result_t rcWait;
+    if (cMillies == RT_INDEFINITE_WAIT)
+        rcWait = lck_spin_sleep(pThis->pSpinlock, LCK_SLEEP_DEFAULT, (event_t)pThis, fInterruptible);
+    else
+    {
+        uint64_t u64AbsTime;
+        nanoseconds_to_absolutetime(cMillies * UINT64_C(1000000), &u64AbsTime);
+        u64AbsTime += mach_absolute_time();
+
+        rcWait = lck_spin_sleep_deadline(pThis->pSpinlock, LCK_SLEEP_DEFAULT,
+                                         (event_t)pThis, fInterruptible, u64AbsTime);
+    }
+    /*
+     * Translate the rc.
+     */
+    int rc;
+    switch (rcWait)
+    {
+        case THREAD_AWAKENED:
+            if (RT_LIKELY(pThis->u32Magic == RTSEMMUTEX_MAGIC))
+            {
+                if (RT_LIKELY(   pThis->cRecursions  == 0
+                              && pThis->hNativeOwner == NIL_RTNATIVETHREAD))
+                {
+                    pThis->cRecursions  = 1;
+                    pThis->hNativeOwner = hNativeSelf;
+                    rc = VINF_SUCCESS;
+                }
+                else
+                {
+                    Assert(pThis->cRecursions  == 0);
+                    Assert(pThis->hNativeOwner == NIL_RTNATIVETHREAD);
+                    rc = VERR_INTERNAL_ERROR_3;
+                }
+            }
+            else
+                rc = VERR_SEM_DESTROYED;
+            break;
+
+        case THREAD_TIMED_OUT:
+            Assert(cMillies != RT_INDEFINITE_WAIT);
+            rc = VERR_TIMEOUT;
+            break;
+
+        case THREAD_INTERRUPTED:
+            Assert(fInterruptible);
+            rc = VERR_INTERRUPTED;
+            break;
+
+        case THREAD_RESTART:
+            Assert(pThis->u32Magic == ~RTSEMMUTEX_MAGIC);
+            rc = VERR_SEM_DESTROYED;
+            break;
+
+        default:
+            AssertMsgFailed(("rcWait=%d\n", rcWait));
+            rc = VERR_GENERAL_FAILURE;
+            break;
+    }
+
+    /*
+     * Dereference it and quit the lock.
+     */
+    Assert(pThis->cWaiters > 0);
+    pThis->cWaiters--;
+
+    Assert(pThis->cRefs > 0);
+    if (RT_UNLIKELY(ASMAtomicDecU32(&pThis->cRefs) == 0))
+        rtSemMutexDarwinFree(pThis);
+    else
+        lck_spin_unlock(pThis->pSpinlock);
+    return rc;
+}
+
+
+/**
+ * Internal worker for RTSemMutexRequest and RTSemMutexRequestNoResume
+ *
+ * @returns IPRT status code.
+ * @param   hMutexSem           The mutex handle.
+ * @param   cMillies            The timeout.
+ * @param   fInterruptible      Whether it's interruptible
+ *                              (RTSemMutexRequestNoResume) or not
+ *                              (RTSemMutexRequest).
+ */
+DECLINLINE(int) rtR0SemMutexDarwinRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, wait_interrupt_t fInterruptible)
 {
     /*
      * Validate input.
      */
     PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)hMutexSem;
-    if (!pThis)
-        return VERR_INVALID_PARAMETER;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertMsg(pThis->u32Magic == RTSEMMUTEX_MAGIC, ("u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
-    if (cMillies)
-        RT_ASSERT_PREEMPTIBLE();
+    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
+    RT_ASSERT_PREEMPTIBLE();
 
     /*
-     * Get the mutex.
+     * Grab the lock and check out the state.
      */
-    wait_result_t rc = lck_mtx_lock_deadlink
-#if 1
-#else
-    NTSTATUS rcNt;
-    if (cMillies == RT_INDEFINITE_WAIT)
-        rcNt = KeWaitForSingleObject(&pThis->Mutex, Executive, KernelMode, TRUE, NULL);
+    RTNATIVETHREAD  hNativeSelf = RTThreadNativeSelf();
+    int             rc          = VINF_SUCCESS;
+    lck_spin_lock(pThis->pSpinlock);
+
+    /* Recursive call? */
+    if (pThis->hNativeOwner == hNativeSelf)
+    {
+        Assert(pThis->cRecursions > 0);
+        Assert(pThis->cRecursions < 256);
+        pThis->cRecursions++;
+    }
+
+    /* Is it free and nobody ahead of us in the queue? */
+    else if (   pThis->hNativeOwner == NIL_RTNATIVETHREAD
+             && pThis->cWaiters     == 0)
+    {
+        pThis->hNativeOwner = hNativeSelf;
+        pThis->cRecursions  = 1;
+    }
+
+    /* Polling call? */
+    else if (cMillies == 0)
+        rc = VERR_TIMEOUT;
+
+    /* Yawn, time for a nap... */
     else
-    {
-        LARGE_INTEGER Timeout;
-        Timeout.QuadPart = -(int64_t)cMillies * 10000;
-        rcNt = KeWaitForSingleObject(&pThis->Mutex, Executive, KernelMode, TRUE, &Timeout);
-    }
-    switch (rcNt)
-    {
-        case STATUS_SUCCESS:
-            if (pThis->u32Magic == RTSEMMUTEX_MAGIC)
-                return VINF_SUCCESS;
-            return VERR_SEM_DESTROYED;
-        case STATUS_ALERTED:
-            return VERR_INTERRUPTED; /** @todo VERR_INTERRUPTED isn't correct anylonger. please fix r0drv stuff! */
-        case STATUS_USER_APC:
-            return VERR_INTERRUPTED; /** @todo VERR_INTERRUPTED isn't correct anylonger. please fix r0drv stuff! */
-        case STATUS_TIMEOUT:
-            return VERR_TIMEOUT;
-        default:
-            AssertMsgFailed(("pThis->u32Magic=%RX32 pThis=%p: wait returned %lx!\n",
-                             pThis->u32Magic, pThis, (long)rcNt));
-            return VERR_INTERNAL_ERROR;
-    }
-#endif
-    return VINF_SUCCESS;
+        return rtR0SemMutexDarwinRequestSleep(pThis, cMillies, fInterruptible, hNativeSelf);
+
+    lck_spin_unlock(pThis->pSpinlock);
+    return rc;
+}
+
+
+#undef RTSemMutexRequest
+RTDECL(int) RTSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
+{
+    return rtR0SemMutexDarwinRequest(hMutexSem, cMillies, THREAD_UNINT);
+}
+
+
+RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    return RTSemMutexRequest(hMutexSem, cMillies);
+}
+
+
+#undef RTSemMutexRequestNoResume
+RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
+{
+    return rtR0SemMutexDarwinRequest(hMutexSem, cMillies, THREAD_ABORTSAFE);
+}
+
+
+RTDECL(int) RTSemMutexRequestNoResumeDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    return RTSemMutexRequestNoResume(hMutexSem, cMillies);
 }
 
 
@@ -171,19 +334,55 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX hMutexSem)
      */
     PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)hMutexSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertMsg(pThis->u32Magic == RTSEMMUTEX_MAGIC, ("u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, VERR_INVALID_HANDLE);
     RT_ASSERT_PREEMPTIBLE();
 
     /*
-     * Release the mutex.
+     * Take the lock and do the job.
      */
-#ifdef RT_USE_FAST_MUTEX
-    ExReleaseFastMutex(&pThis->Mutex);
-#else
-    KeReleaseMutex(&pThis->Mutex, FALSE);
-#endif
+    RTNATIVETHREAD  hNativeSelf = RTThreadNativeSelf();
+    int             rc          = VINF_SUCCESS;
+    lck_spin_lock(pThis->pSpinlock);
+
+    if (pThis->hNativeOwner == hNativeSelf)
+    {
+        Assert(pThis->cRecursions > 0);
+        if (--pThis->cRecursions == 0)
+        {
+            pThis->hNativeOwner = NIL_RTNATIVETHREAD;
+            if (pThis->cWaiters > 0)
+            {
+                int rc2=thread_wakeup_prim((event_t)pThis, TRUE /* one_thread */, THREAD_AWAKENED);
+            }
+
+        }
+    }
+    else
+        rc = VERR_NOT_OWNER;
+
+    lck_spin_unlock(pThis->pSpinlock);
+
+    AssertRC(rc);
     return VINF_SUCCESS;
 }
 
-#endif /* later */
+
+RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem)
+{
+    /*
+     * Validate.
+     */
+    RTSEMMUTEXINTERNAL *pThis = hMutexSem;
+    AssertPtrReturn(pThis, false);
+    AssertReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, false);
+
+    /*
+     * Take the lock and do the check.
+     */
+    lck_spin_lock(pThis->pSpinlock);
+    bool fRc = pThis->hNativeOwner != NIL_RTNATIVETHREAD;
+    lck_spin_unlock(pThis->pSpinlock);
+
+    return fRc;
+}
 
