@@ -2246,7 +2246,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pCfg,  "HpetEnabled", fHpetEnabled);               RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "SmcEnabled", fSmcEnabled);                 RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "ShowRtc",    fExtProfile);                 RC_CHECK();
-        if (fExtProfile)
+        if (fExtProfile && !llBootNics.empty())
         {
             BootNic aNic = llBootNics.front();
             uint32_t u32NicPciAddr = (aNic.mPciDev << 16) | aNic.mPciFn;
