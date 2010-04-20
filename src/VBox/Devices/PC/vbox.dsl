@@ -758,39 +758,46 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     {
                        Return (CRS)
                     }
-                 }
+                 }                 
              }
-            
+
             // NIC
             Device (GIGE)
-            {                
+            {
+                /**
+                 * Generic NIC, accoring to
+                 * http://download.microsoft.com/download/1/6/1/161ba512-40e2-4cc9-843a-923143f3456c/devids.txt
+                 * Needed by some Windows guests.
+                 */
+                Name (_HID, EisaId ("PNP8390"))
+
                 Method(_ADR, 0, NotSerialized)
                 {
-                    Return (NICA)
+                     Return (NICA)
                 }
+                /* Name (_PRW, Package (0x02)
+                   {
+                       0x09,
+                       0x04
+                    }) */
 
-                Name (_PRW, Package (0x02)
-                            {
-                               0x09,
-                               0x04
-                            })
-
-                Method (EWOL, 1, NotSerialized)
-                {
+                 /* Wake up on LAN? */
+                 Method (EWOL, 1, NotSerialized)
+                 {
                     Return (0x00)
-                }
+                 }
 
-                Method (_STA, 0, NotSerialized)
-                {
+                 Method (_STA, 0, NotSerialized)
+                 {
                     if (LEqual (NICA, Zero)) {
-                       Return (0x00)
+                        Return (0x00)
                     }
                     else {
                         Return (0x0F)
                     }
-                }
+                 }
             }
-           
+
             // Control method battery
             Device (BAT0)
             {
