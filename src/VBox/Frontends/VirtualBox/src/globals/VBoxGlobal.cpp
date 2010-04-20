@@ -2008,18 +2008,28 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         int rows = 2;
 
         /* Video tab */
+        QString item = QString(sSectionItemTpl2)
+                       .arg(tr ("Video Memory", "details report"),
+                             tr ("<nobr>%1 MB</nobr>", "details report"))
+                       .arg(aMachine.GetVRAMSize());
+        ++rows;
+
+        int cGuestScreens = aMachine.GetMonitorCount();
+        if (cGuestScreens > 1)
+        {
+            item += QString(sSectionItemTpl2)
+                    .arg(tr("Screens", "details report"))
+                    .arg(cGuestScreens);
+            ++rows;
+        }
+
         QString acc3d = aMachine.GetAccelerate3DEnabled()
             ? tr ("Enabled", "details report (3D Acceleration)")
             : tr ("Disabled", "details report (3D Acceleration)");
 
-        QString item = QString (sSectionItemTpl2)
-                       .arg (tr ("Video Memory", "details report"),
-                             tr ("<nobr>%1 MB</nobr>", "details report"))
-                       .arg (aMachine.GetVRAMSize())
-                     + QString (sSectionItemTpl2)
-                       .arg (tr ("3D Acceleration", "details report"), acc3d);
-
-        rows += 2;
+        item += QString(sSectionItemTpl2)
+                .arg(tr("3D Acceleration", "details report"), acc3d);
+        ++rows;
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
         QString acc2dVideo = aMachine.GetAccelerate2DVideoEnabled()
