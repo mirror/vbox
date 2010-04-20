@@ -58,12 +58,10 @@ typedef struct RTSEMMUTEXINTERNAL
     uint32_t                    u32Magic;
     /** The number of recursions. */
     uint32_t                    cRecursions;
-    /** Whether we are being woken up by a release. */
-    uint8_t volatile            fSignaled;
-    /** The number of waiting threads. */
+    /** The number of threads waiting for the mutex. */
     uint32_t volatile           cWaiters;
-    /** The number of threads in the process of waking up. */
-    uint32_t volatile           cWaking;
+    /** The number of threads referencing us. */
+    uint32_t volatile           cRefs;
     /** The owner thread, NIL_RTNATIVETHREAD if none. */
     RTNATIVETHREAD              hOwnerThread;
     /** The mutex object for synchronization. */
@@ -87,10 +85,9 @@ RTDECL(int) RTSemMutexCreate(PRTSEMMUTEX phMtx)
      */
     pThis->u32Magic     = RTSEMMUTEX_MAGIC;
     pThis->cRecursions  = 0;
-    pThis->fSignaled    = false;
     pThis->cWaiters     = 0;
-    pThis->cWaking      = 0;
-    pThis->hOwnerThread   = NIL_RTNATIVETHREAD;
+    pThis->cRefs        = 1;
+    pThis->hOwnerThread = NIL_RTNATIVETHREAD;
     mutex_init(&pThis->Mtx, "IPRT Mutex", MUTEX_DRIVER, (void *)ipltospl(DISP_LEVEL));
     cv_init(&pThis->Cnd, "IPRT CVM", CV_DRIVER, NULL);
     *phMtx = pThis;
@@ -112,6 +109,8 @@ RTDECL(int) RTSemMutexDestroy(RTSEMMUTEX hMtx)
 
     mutex_enter(&pThis->Mtx);
 
+    ASMAtomicDecU32(&pThis->cRefs);
+
     /*
      * Invalidate the magic to indicate the mutex is being destroyed.
      */
@@ -121,18 +120,10 @@ RTDECL(int) RTSemMutexDestroy(RTSEMMUTEX hMtx)
         /*
          * Wake up all waiters, last waiter thread cleans up.
          */
-        ASMAtomicXchgU32(&pThis->cWaking, pThis->cWaking + pThis->cWaiters);
         cv_broadcast(&pThis->Cnd);
         mutex_exit(&pThis->Mtx);
     }
-    else if (pThis->cWaking)
-    {
-        /*
-         * We're not the last waiting thread to be woken up. Just relinquish & bail.
-         */
-        mutex_exit(&pThis->Mtx);
-    }
-    else
+    else if (pThis->cRefs == 0)
     {
         /*
          * We're the last waiter, destroy.
@@ -141,6 +132,13 @@ RTDECL(int) RTSemMutexDestroy(RTSEMMUTEX hMtx)
         cv_destroy(&pThis->Cnd);
         mutex_destroy(&pThis->Mtx);
         RTMemFree(pThis);
+    }
+    else
+    {
+        /*
+         * We're not the last waiting thread to be woken up. Just relinquish & bail.
+         */
+        mutex_exit(&pThis->Mtx);
     }
 
     return VINF_SUCCESS;
@@ -165,9 +163,10 @@ static int rtSemMutexSolarisRequestSleep(PRTSEMMUTEXINTERNAL pThis, RTMSINTERVAL
     Assert(cMillies > 0);
 
     /*
-     * Now we wait (sleep; although might spin and then sleep).
+     * Now we wait (sleep; although might spin and then sleep) & reference the mutex.
      */
     ASMAtomicIncU32(&pThis->cWaiters);
+    ASMAtomicIncU32(&pThis->cRefs);
 
     if (cMillies != RT_INDEFINITE_WAIT)
     {
@@ -190,18 +189,18 @@ static int rtSemMutexSolarisRequestSleep(PRTSEMMUTEXINTERNAL pThis, RTMSINTERVAL
         }
     }
 
+    ASMAtomicDecU32(&pThis->cWaiters);
     if (rc > 0)
     {
         if (pThis->u32Magic == RTSEMMUTEX_MAGIC)
         {
-            if (pThis->fSignaled)
+            if (pThis->hOwnerThread == NIL_RTNATIVETHREAD)
             {
                 /*
                  * Woken up by a release from another thread.
                  */
-                ASMAtomicDecU32(&pThis->cWaking);
-                ASMAtomicXchgU8(&pThis->fSignaled, false);
-                pThis->cRecursions++;
+                Assert(pThis->cRecursions == 0);
+                pThis->cRecursions = 1;
                 pThis->hOwnerThread = RTThreadNativeSelf();
                 rc = VINF_SUCCESS;
             }
@@ -211,7 +210,6 @@ static int rtSemMutexSolarisRequestSleep(PRTSEMMUTEXINTERNAL pThis, RTMSINTERVAL
                  * Interrupted by some signal.
                  */
                 rc= VERR_INTERRUPTED;
-                ASMAtomicDecU32(&pThis->cWaiters);
             }
         }
         else
@@ -221,7 +219,7 @@ static int rtSemMutexSolarisRequestSleep(PRTSEMMUTEXINTERNAL pThis, RTMSINTERVAL
              * We will cleanup if we're the last waiter.
              */
             rc = VERR_SEM_DESTROYED;
-            if (!ASMAtomicDecU32(&pThis->cWaking))
+            if (!ASMAtomicDecU32(&pThis->cRefs))
             {
                 mutex_exit(&pThis->Mtx);
                 cv_destroy(&pThis->Cnd);
@@ -237,7 +235,6 @@ static int rtSemMutexSolarisRequestSleep(PRTSEMMUTEXINTERNAL pThis, RTMSINTERVAL
          * Timed out.
          */
         rc = VERR_TIMEOUT;
-        ASMAtomicDecU32(&pThis->cWaiters);
     }
     else
     {
@@ -245,7 +242,6 @@ static int rtSemMutexSolarisRequestSleep(PRTSEMMUTEXINTERNAL pThis, RTMSINTERVAL
          * Condition may not have been met, returned due to pending signal.
          */
         rc = VERR_INTERRUPTED;
-        ASMAtomicDecU32(&pThis->cWaiters);
     }
 
     return rc;
@@ -265,6 +261,7 @@ DECLINLINE(int) rtSemMutexSolarisRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMil
      */
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertMsgReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, ("u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
+    Assert(pThis->cRefs >= 1);
 
     /*
      * Lock it and check if it's a recursion.
@@ -279,11 +276,10 @@ DECLINLINE(int) rtSemMutexSolarisRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMil
     }
     /*
      * Not a recursion, make sure we don't sneak in when another thread
-     * is being woken up (fSignaled).
+     * is being woken up.
      */
     else if (   pThis->hOwnerThread == NIL_RTNATIVETHREAD
-             && pThis->cWaiters == 0
-             && pThis->fSignaled == false)
+             && pThis->cWaiters == 0)
     {
         pThis->cRecursions  = 1;
         pThis->hOwnerThread = RTThreadNativeSelf();
@@ -357,12 +353,7 @@ RTDECL(int) RTSemMutexRelease(RTSEMMUTEX hMtx)
              * If there are any waiters, signal them.
              */
             if (pThis->cWaiters > 0)
-            {
-                ASMAtomicXchgU8(&pThis->fSignaled, true);
-                ASMAtomicDecU32(&pThis->cWaiters);
-                ASMAtomicIncU32(&pThis->cWaking);
                 cv_signal(&pThis->Cnd);
-            }
         }
         rc = VINF_SUCCESS;
     }
