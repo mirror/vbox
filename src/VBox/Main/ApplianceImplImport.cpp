@@ -837,9 +837,11 @@ HRESULT Appliance::readS3(TaskOVF *pTask)
  * Helper that converts VirtualSystem attachment values into VirtualBox attachment values.
  * Throws HRESULT values on errors!
  *
- * @param hdc
- * @param vd
- * @param mhda
+ * @param hdc in: the HardDiskController structure to attach to.
+ * @param ulAddressOnParent in: the AddressOnParent parameter from OVF.
+ * @param controllerType out: the name of the hard disk controller to attach to (e.g. "IDE Controller").
+ * @param lChannel out: the channel (controller port) of the controller to attach to.
+ * @param lDevice out: the device number to attach to.
  */
 void Appliance::convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
                                             uint32_t ulAddressOnParent,
@@ -858,21 +860,41 @@ void Appliance::convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
             controllerType = Bstr("IDE Controller");
             switch (ulAddressOnParent)
             {
-                case 0:     // interpret this as primary master
-                    lChannel = (long)0;
-                    lDevice = (long)0;
+                case 0: // master
+                    if (hdc.ulAddress == 1)
+                    {
+                        // IDE controller has address 1: then it was exported from VMware and is the secondary controller
+                        lChannel = (long)1;
+                        lDevice = (long)0;
+                    }
+                    else // interpret this as primary master
+                    {
+                        lChannel = (long)0;
+                        lDevice = (long)0;
+                    }
                 break;
 
-                case 1:     // interpret this as primary slave
-                    lChannel = (long)0;
-                    lDevice = (long)1;
+                case 1: // slave
+                    if (hdc.ulAddress == 1)
+                    {
+                        // IDE controller has address 1: then it was exported from VMware and is the secondary controller
+                        lChannel = (long)1;
+                        lDevice = (long)1;
+                    }
+                    else // interpret this as primary slave
+                    {
+                        lChannel = (long)0;
+                        lDevice = (long)1;
+                    }
                 break;
 
+                // used by older VBox exports
                 case 2:     // interpret this as secondary master
                     lChannel = (long)1;
                     lDevice = (long)0;
                 break;
 
+                // used by older VBox exports
                 case 3:     // interpret this as secondary slave
                     lChannel = (long)1;
                     lDevice = (long)1;
@@ -1602,13 +1624,17 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         }
     }
 
-    /* Hard disk controller IDE */
+    // IDE Hard disk controller
     std::list<VirtualSystemDescriptionEntry*> vsdeHDCIDE = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
-    if (vsdeHDCIDE.size() > 1)
+    // In OVF (at least VMware's version of it), an IDE controller has two ports, so VirtualBox's single IDE controller
+    // with two channels and two ports each counts as two OVF IDE controllers -- so we accept one or two such IDE controllers
+    uint32_t cIDEControllers = vsdeHDCIDE.size();
+    if (cIDEControllers > 2)
         throw setError(VBOX_E_FILE_ERROR,
-                       tr("Too many IDE controllers in OVF; import facility only supports one"));
-    if (vsdeHDCIDE.size() == 1)
+                       tr("Too many IDE controllers in OVF; import facility only supports two"));
+    if (vsdeHDCIDE.size() > 0)
     {
+        // one or two IDE controllers present in OVF: add one VirtualBox controller
         ComPtr<IStorageController> pController;
         rc = pNewMachine->AddStorageController(Bstr("IDE Controller"), StorageBus_IDE, pController.asOutParam());
         if (FAILED(rc)) throw rc;
@@ -1700,8 +1726,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
         try
         {
-            /* In order to attach things we need to open a session
-             * for the new machine */
+            // to attach things we need to open a session for the new machine
             rc = mVirtualBox->OpenSession(stack.pSession, bstrNewMachineId);
             if (FAILED(rc)) throw rc;
             stack.fSessionOpen = true;
@@ -1748,7 +1773,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             {
                 // for now always attach to secondary master on IDE controller;
                 // there seems to be no useful information in OVF where else to
-                // attach jt (@todo test with latest versions of OVF software)
+                // attach it (@todo test with latest versions of OVF software)
 
                 // find the IDE controller
                 const ovf::HardDiskController *pController = NULL;
@@ -1807,7 +1832,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         }
     }
 
-    /* Create the hard disks & connect them to the appropriate controllers. */
+    // create the hard disks & connect them to the appropriate controllers
     std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
     if (avsdeHDs.size() > 0)
     {
@@ -1815,8 +1840,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         // we need another try/catch block.
         try
         {
-            /* In order to attach hard disks we need to open a session
-             * for the new machine */
+            // to attach things we need to open a session for the new machine
             rc = mVirtualBox->OpenSession(stack.pSession, bstrNewMachineId);
             if (FAILED(rc)) throw rc;
             stack.fSessionOpen = true;
@@ -1838,18 +1862,19 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                      || (itDiskImage == stack.mapDisks.end())
                    )
                     throw setError(E_FAIL,
-                                   tr("Internal inconsistency looking up disk images."));
+                                   tr("Internal inconsistency looking up disk image '%s'"),
+                                   vsdeHD->strRef.c_str());
 
-                const ovf::DiskImage &di = itDiskImage->second;
-                const ovf::VirtualDisk &vd = itVirtualDisk->second;
+                const ovf::DiskImage &ovfDiskImage = itDiskImage->second;
+                const ovf::VirtualDisk &ovfVdisk = itVirtualDisk->second;
 
                 ComPtr<IMedium> pTargetHD;
-                importOneDiskImage(di,
+                importOneDiskImage(ovfDiskImage,
                                    vsdeHD->strVbox,
                                    pTargetHD,
                                    stack);
 
-                /* Now use the new uuid to attach the disk image to our new machine */
+                // now use the new uuid to attach the disk image to our new machine
                 ComPtr<IMachine> sMachine;
                 rc = stack.pSession->COMGETTER(Machine)(sMachine.asOutParam());
                 if (FAILED(rc)) throw rc;
@@ -1857,8 +1882,8 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 rc = pTargetHD->COMGETTER(Id)(hdId.asOutParam());
                 if (FAILED(rc)) throw rc;
 
-                /* For now we assume we have one controller of every type only */
-                ovf::HardDiskController hdc = (*vsysThis.mapControllers.find(vd.idController)).second;
+                // find the hard disk controller to which we should attach
+                ovf::HardDiskController hdc = (*vsysThis.mapControllers.find(ovfVdisk.idController)).second;
 
                 // this is for rollback later
                 MyHardDiskAttachment mhda;
@@ -1866,18 +1891,18 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 mhda.pMachine = pNewMachine;
 
                 convertDiskAttachmentValues(hdc,
-                                            vd.ulAddressOnParent,
+                                            ovfVdisk.ulAddressOnParent,
                                             mhda.controllerType,        // Bstr
                                             mhda.lChannel,
                                             mhda.lDevice);
 
                 Log(("Attaching disk %s to channel %d on device %d\n", vsdeHD->strVbox.c_str(), mhda.lChannel, mhda.lDevice));
 
-                rc = sMachine->AttachDevice(mhda.controllerType,
-                                            mhda.lChannel,
-                                            mhda.lDevice,
-                                            DeviceType_HardDisk,
-                                            hdId);
+                rc = sMachine->AttachDevice(mhda.controllerType,    // wstring name
+                                            mhda.lChannel,          // long controllerPort
+                                            mhda.lDevice,           // long device
+                                            DeviceType_HardDisk,    // DeviceType_T type
+                                            hdId);                  // uuid id
                 if (FAILED(rc)) throw rc;
 
                 stack.llHardDiskAttachments.push_back(mhda);

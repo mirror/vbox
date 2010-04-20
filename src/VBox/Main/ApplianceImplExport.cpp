@@ -164,7 +164,10 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
                            strMemory,
                            strMemory);
 
-        int32_t lIDEControllerIndex = 0;
+        // the one VirtualBox IDE controller has two channels with two ports each, which is
+        // considered two IDE controllers with two ports each by OVF, so export it as two
+        int32_t lIDEControllerPrimaryIndex = 0;
+        int32_t lIDEControllerSecondaryIndex = 0;
         int32_t lSATAControllerIndex = 0;
         int32_t lSCSIControllerIndex = 0;
 
@@ -216,9 +219,14 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
 
             if (strVbox.length())
             {
-                lIDEControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
+                lIDEControllerPrimaryIndex = (int32_t)pNewDesc->m->llDescriptions.size();
                 pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
-                                   Utf8StrFmt("%d", lIDEControllerIndex),
+                                   Utf8StrFmt("%d", lIDEControllerPrimaryIndex),
+                                   strVbox,
+                                   strVbox);
+                lIDEControllerSecondaryIndex = lIDEControllerPrimaryIndex + 1;
+                pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
+                                   Utf8StrFmt("%d", lIDEControllerSecondaryIndex),
                                    strVbox,
                                    strVbox);
             }
@@ -353,20 +361,32 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
                 case StorageBus_IDE:
                     // this is the exact reverse to what we're doing in Appliance::taskThreadImportMachines,
                     // and it must be updated when that is changed!
+                    // Before 3.2 we exported one IDE controller with channel 0-3, but we now maintain
+                    // compatibility with what VMware does and export two IDE controllers with two channels each
 
                     if (lChannel == 0 && lDevice == 0)      // primary master
+                    {
+                        lControllerVsys = lIDEControllerPrimaryIndex;
                         lChannelVsys = 0;
+                    }
                     else if (lChannel == 0 && lDevice == 1) // primary slave
+                    {
+                        lControllerVsys = lIDEControllerPrimaryIndex;
                         lChannelVsys = 1;
+                    }
                     else if (lChannel == 1 && lDevice == 0) // secondary master; by default this is the CD-ROM but as of VirtualBox 3.1 that can change
-                        lChannelVsys = 2;
+                    {
+                        lControllerVsys = lIDEControllerSecondaryIndex;
+                        lChannelVsys = 0;
+                    }
                     else if (lChannel == 1 && lDevice == 1) // secondary slave
-                        lChannelVsys = 3;
+                    {
+                        lControllerVsys = lIDEControllerSecondaryIndex;
+                        lChannelVsys = 1;
+                    }
                     else
                         throw setError(VBOX_E_NOT_SUPPORTED,
                                     tr("Cannot handle medium attachment: channel is %d, device is %d"), lChannel, lDevice);
-
-                    lControllerVsys = lIDEControllerIndex;
                 break;
 
                 case StorageBus_SATA:
@@ -824,8 +844,10 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
     // IDE controllers, and we can't know their instance IDs without
     // assigning them first
 
-    uint32_t idIDEController = 0;
-    int32_t lIDEControllerIndex = 0;
+    uint32_t idIDEPrimaryController = 0;
+    int32_t lIDEPrimaryControllerIndex = 0;
+    uint32_t idIDESecondaryController = 0;
+    int32_t lIDESecondaryControllerIndex = 0;
     uint32_t idSATAController = 0;
     int32_t lSATAControllerIndex = 0;
     uint32_t idSCSIController = 0;
@@ -918,17 +940,29 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                     if (uLoop == 1)
                     {
                         strDescription = "IDE Controller";
-                        strCaption = "ideController0";
                         type = ovf::ResourceType_IDEController; // 5
                         strResourceSubType = desc.strVbox;
-                        // it seems that OVFTool always writes these two, and since we can only
-                        // have one IDE controller, we'll use this as well
-                        lAddress = 1;
-                        lBusNumber = 1;
 
-                        // remember this ID
-                        idIDEController = ulInstanceID;
-                        lIDEControllerIndex = lIndexThis;
+                        if (desc.strRef != "1")
+                        {
+                            // first IDE controller:
+                            strCaption = "ideController0";
+                            lAddress = 0;
+                            lBusNumber = 0;
+                            // remember this ID
+                            idIDEPrimaryController = ulInstanceID;
+                            lIDEPrimaryControllerIndex = lIndexThis;
+                        }
+                        else
+                        {
+                            // second IDE controller:
+                            strCaption = "ideController1";
+                            lAddress = 1;
+                            lBusNumber = 1;
+                            // remember this ID
+                            idIDESecondaryController = ulInstanceID;
+                            lIDESecondaryControllerIndex = lIndexThis;
+                        }
                     }
                 break;
 
@@ -1032,8 +1066,10 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                         {
                             int32_t lControllerIndex = -1;
                             RTStrToInt32Ex(desc.strExtraConfig.c_str() + pos1 + 11, NULL, 0, &lControllerIndex);
-                            if (lControllerIndex == lIDEControllerIndex)
-                                ulParent = idIDEController;
+                            if (lControllerIndex == lIDEPrimaryControllerIndex)
+                                ulParent = idIDEPrimaryController;
+                            else if (lControllerIndex == lIDESecondaryControllerIndex)
+                                ulParent = idIDESecondaryController;
                             else if (lControllerIndex == lSCSIControllerIndex)
                                 ulParent = idSCSIController;
                             else if (lControllerIndex == lSATAControllerIndex)
@@ -1043,8 +1079,8 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                             RTStrToInt32Ex(desc.strExtraConfig.c_str() + pos2 + 8, NULL, 0, &lAddressOnParent);
 
                         if (    !ulParent
-                                || lAddressOnParent == -1
-                            )
+                             || lAddressOnParent == -1
+                           )
                             throw setError(VBOX_E_NOT_SUPPORTED,
                                             tr("Missing or bad extra config string in hard disk image: \"%s\""), desc.strExtraConfig.c_str());
 
@@ -1067,15 +1103,15 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                     if (uLoop == 2)
                     {
                         // we can't have a CD without an IDE controller
-                        if (!idIDEController)
+                        if (!idIDESecondaryController)
                             throw setError(VBOX_E_NOT_SUPPORTED,
-                                            tr("Can't have CD-ROM without IDE controller"));
+                                            tr("Can't have CD-ROM without secondary IDE controller"));
 
                         strDescription = "CD-ROM Drive";
                         strCaption = "cdrom1";          // this is what OVFTool writes
                         type = ovf::ResourceType_CDDrive; // 15
                         lAutomaticAllocation = 1;
-                        ulParent = idIDEController;
+                        ulParent = idIDESecondaryController;
                         lAddressOnParent = 0;           // this is what OVFTool writes
                     }
                 break;

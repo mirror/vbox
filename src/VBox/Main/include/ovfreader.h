@@ -255,18 +255,21 @@ typedef std::map<uint32_t, VirtualHardwareItem> HardwareItemsMap;
 
 struct HardDiskController
 {
-    uint32_t            idController;           // instance ID (Item/InstanceId); this gets referenced from HardDisk
+    uint32_t                idController;       // instance ID (Item/InstanceId); this gets referenced from VirtualDisk
+
     enum ControllerSystemType { IDE, SATA, SCSI };
-    ControllerSystemType system;                 // one of IDE, SATA, SCSI
-    iprt::MiniString    strControllerType;      // controller subtype (Item/ResourceSubType); e.g. "LsiLogic"; can be empty (esp. for IDE)
-    iprt::MiniString    strAddress;             // for IDE
-    uint32_t            ulBusNumber;            // for IDE
+    ControllerSystemType    system;             // one of IDE, SATA, SCSI
+
+    iprt::MiniString        strControllerType;  // controller subtype (Item/ResourceSubType); e.g. "LsiLogic"; can be empty (esp. for IDE)
+
+    uint32_t                ulAddress;          // controller index; this is determined heuristically by the OVF reader and will
+                                                // be 0 for the first controller of this type (e.g. IDE primary ctler), 1 for the
+                                                // next (e.g. IDE secondary ctler)
 
     HardDiskController()
         : idController(0),
-          ulBusNumber(0)
-    {
-    }
+          ulAddress(0)
+    { }
 };
 
 typedef std::map<uint32_t, HardDiskController> ControllersMap;
@@ -274,6 +277,7 @@ typedef std::map<uint32_t, HardDiskController> ControllersMap;
 struct VirtualDisk
 {
     uint32_t            idController;           // SCSI (or IDE) controller this disk is connected to;
+                                                // this must match HardDiskController.idController and
                                                 // points into VirtualSystem.mapControllers
     uint32_t            ulAddressOnParent;      // parsed strAddressOnParent of hardware item; will be 0 or 1 for IDE
                                                 // and possibly higher for disks attached to SCSI controllers (untested)

@@ -423,7 +423,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                         i.strMappingBehavior = pelmItemChild->getValue();
                     else if (!strcmp(pcszItemChildName, "PoolID"))
                         i.strPoolID = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "BusNumber"))
+                    else if (!strcmp(pcszItemChildName, "BusNumber"))       // seen in some old OVF, but it's not listed in the OVF specs
                         pelmItemChild->copyValue(i.ulBusNumber);
                     else
                         throw OVFLogicError(N_("Error reading \"%s\": unknown element \"%s\" under Item element, line %d"),
@@ -493,8 +493,21 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                         hdc.system = HardDiskController::IDE;
                         hdc.idController = i.ulInstanceID;
                         hdc.strControllerType = i.strResourceSubType;
-                        hdc.strAddress = i.strAddress;
-                        hdc.ulBusNumber = i.ulBusNumber;
+
+                        // if there is a numeric address tag for the IDE controller, use that;
+                        // VMware uses "0" and "1" to keep the two OVF IDE controllers apart;
+                        // otherwise use the "bus number" field which was specified in some old
+                        // OVF files (but not the standard)
+                        if (i.strAddress == "0")
+                            hdc.ulAddress = 0;
+                        else if (i.strAddress == "1")
+                            hdc.ulAddress = 1;
+                        else if (i.strAddress == "2")     // just to be sure, this doesn't seem to be used by VMware
+                            hdc.ulAddress = 2;
+                        else if (i.strAddress == "3")
+                            hdc.ulAddress = 3;
+                        else
+                            hdc.ulAddress = i.ulBusNumber;
 
                         vsys.mapControllers[i.ulInstanceID] = hdc;
                     }
