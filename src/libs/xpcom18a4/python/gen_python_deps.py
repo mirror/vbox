@@ -77,10 +77,8 @@ def main(argv):
         versions = [str(sys.version_info[0])+'.'+str(sys.version_info[1])]
 
     if target == 'darwin':
+        ## @todo Pick up the locations from VBOX_PATH_MACOSX_SDK_10_*.
         prefixes = ['/Developer/SDKs/MacOSX10.4u.sdk/usr', '/Developer/SDKs/MacOSX10.5.sdk/usr', '/Developer/SDKs/MacOSX10.6.sdk/usr']
-        # Python 2.3 on Darwin buildbox is bad
-        # /Developer/SDKs/MacOSX10.4u.sdk/usr/include/python2.3/pyport.h:554:2: error: #error "LONG_BIT definition appears wrong for platform (bad gcc/glibc config?).
-        versions.remove("2.3")
         dllsuff = '.dylib'
 
     if target == 'solaris' and arch == 'amd64':
