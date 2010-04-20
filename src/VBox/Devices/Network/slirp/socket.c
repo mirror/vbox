@@ -683,6 +683,8 @@ sorecvfrom(PNATState pData, struct socket *so)
             AssertMsgFailed(("Unsupported size"));
 
         m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
+        if (m == NULL)
+            return;
         m->m_data += ETH_HLEN;
         m->m_pkthdr.header = mtod(m, void *);
         m->m_data += sizeof(struct udpiphdr);
@@ -1308,6 +1310,8 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                     AssertMsgFailed(("Unsupported size"));
 
                 m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
+                if (m == NULL)
+                    return;
 # endif
                 m->m_len = 0;
                 m->m_data += if_maxlinkhdr;
