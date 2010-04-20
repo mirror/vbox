@@ -782,7 +782,11 @@ int handleControlVM(HandlerArg *a)
                 rc = E_FAIL;
                 break;
             }
-            CHECK_ERROR(machine, COMSETTER(MemoryBalloonSize)(uVal));
+            /* guest is running; update IGuest */
+            ComPtr <IGuest> guest;
+            rc = console->COMGETTER(Guest)(guest.asOutParam());
+            if (SUCCEEDED(rc))
+                CHECK_ERROR(guest, COMSETTER(MemoryBalloonSize)(uVal));
         }
         else if (!strcmp(a->argv[1], "teleport"))
         {
