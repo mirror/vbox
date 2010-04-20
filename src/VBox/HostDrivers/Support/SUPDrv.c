@@ -210,7 +210,6 @@ static SUPFUNC g_aFunctions[] =
     { "RTR0MemUserIsValidAddr",                 (void *)RTR0MemUserIsValidAddr },
     { "RTR0MemKernelIsValidAddr",               (void *)RTR0MemKernelIsValidAddr },
     { "RTR0MemAreKrnlAndUsrDifferent",          (void *)RTR0MemAreKrnlAndUsrDifferent },
-#ifndef RT_OS_SOLARIS
     { "RTSemMutexCreate",                       (void *)RTSemMutexCreate },
     { "RTSemMutexRequest",                      (void *)RTSemMutexRequest },
     { "RTSemMutexRequestDebug",                 (void *)RTSemMutexRequestDebug },
@@ -218,7 +217,6 @@ static SUPFUNC g_aFunctions[] =
     { "RTSemMutexRequestNoResumeDebug",         (void *)RTSemMutexRequestNoResumeDebug },
     { "RTSemMutexRelease",                      (void *)RTSemMutexRelease },
     { "RTSemMutexDestroy",                      (void *)RTSemMutexDestroy },
-#endif
     { "RTProcSelf",                             (void *)RTProcSelf },
     { "RTR0ProcHandleSelf",                     (void *)RTR0ProcHandleSelf },
     { "RTSemFastMutexCreate",                   (void *)RTSemFastMutexCreate },
