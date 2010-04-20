@@ -86,6 +86,15 @@ RTDECL(uint32_t) RTSocketRelease(RTSOCKET hSocket);
 RTDECL(int) RTSocketClose(RTSOCKET hSocket);
 
 /**
+ * Creates an IPRT socket handle from a native one.
+ *
+ * @returns IPRT status code.
+ * @param   phSocket        Where to store the IPRT socket handle.
+ * @param   uNative         The native handle.
+ */
+RTDECL(int) RTSocketFromNative(PRTSOCKET phSocket, RTHCINTPTR uNative);
+
+/**
  * Gets the native socket handle.
  *
  * @returns The native socket handle or RTHCUINTPTR_MAX if not invalid.
