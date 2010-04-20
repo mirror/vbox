@@ -117,7 +117,7 @@ VBoxPython2_5_INCS       = $(VBOX_PYTHON25_INC)
 VBoxPython2_5_LIBS       = $(VBOX_PYTHON25_LIB)
 endif
 
-if defined(VBOX_PYTHON26_INC) && "$(KBUILD_TARGET)" != "darwin"
+if defined(VBOX_PYTHON26_INC)
 #
 # Python 2.6 version
 #
