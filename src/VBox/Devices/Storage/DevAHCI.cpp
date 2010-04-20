@@ -4155,7 +4155,7 @@ static int ahciScatterGatherListCreateSafe(PAHCIPort pAhciPort, PAHCIPORTTASKSTA
 
     if (pAhciPortTaskState->pvBufferUnaligned)
     {
-        RTMemFree(pAhciPortTaskState->pvBufferUnaligned);
+        RTMemPageFree(pAhciPortTaskState->pvBufferUnaligned);
         pAhciPortTaskState->pvBufferUnaligned = NULL;
     }
     if (pAhciPortTaskState->pSGListHead)
@@ -4182,7 +4182,7 @@ static int ahciScatterGatherListCreateSafe(PAHCIPort pAhciPort, PAHCIPORTTASKSTA
     pAhciPortTaskState->pSGListHead = (PRTSGSEG)RTMemAllocZ(1 * sizeof(RTSGSEG));
     if (!pAhciPortTaskState->pSGListHead)
     {
-        RTMemFree(pAhciPortTaskState->pvBufferUnaligned);
+        RTMemPageFree(pAhciPortTaskState->pvBufferUnaligned);
         return VERR_NO_MEMORY;
     }
 
@@ -4206,7 +4206,7 @@ static int ahciScatterGatherListCreateSafe(PAHCIPort pAhciPort, PAHCIPORTTASKSTA
             if (!pAhciPortTaskState->pSGListHead[0].pvSeg)
             {
                 RTMemFree(pAhciPortTaskState->paSGEntries);
-                RTMemFree(pAhciPortTaskState->pvBufferUnaligned);
+                RTMemPageFree(pAhciPortTaskState->pvBufferUnaligned);
                 RTMemFree(pAhciPortTaskState->pSGListHead);
                 return VERR_NO_MEMORY;
             }
@@ -4699,7 +4699,7 @@ static int ahciScatterGatherListDestroy(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE 
         RTMemFree(pAhciPortTaskState->pSGListHead);
         RTMemFree(pAhciPortTaskState->paSGEntries);
         if (pAhciPortTaskState->pvBufferUnaligned)
-            RTMemFree(pAhciPortTaskState->pvBufferUnaligned);
+            RTMemPageFree(pAhciPortTaskState->pvBufferUnaligned);
         pAhciPortTaskState->cSGListSize = 0;
         pAhciPortTaskState->cSGListTooBig = 0;
         pAhciPortTaskState->pSGListHead = NULL;
@@ -5712,7 +5712,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
     if (pAhciPortTaskState->paSGEntries)
         RTMemFree(pAhciPortTaskState->paSGEntries);
     if (pAhciPortTaskState->pvBufferUnaligned)
-        RTMemFree(pAhciPortTaskState->pvBufferUnaligned);
+        RTMemPageFree(pAhciPortTaskState->pvBufferUnaligned);
     RTMemFree(pAhciPortTaskState);
 
     ahciLog(("%s: Port %d async IO thread exiting rc=%Rrc\n", __FUNCTION__, pAhciPort->iLUN, rc));
