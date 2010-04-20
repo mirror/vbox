@@ -54,6 +54,8 @@ RT_C_DECLS_BEGIN
  * The alignment of the memory blocks returned by RTMemAlloc(), RTMemAllocZ(),
  * RTMemRealloc(), RTMemTmpAlloc() and RTMemTmpAllocZ() for allocations greater
  * than RTMEM_ALIGNMENT.
+ *
+ * @note This alignment is not forced if the electric fence is active!
  */
 #define RTMEM_ALIGNMENT    8
 
