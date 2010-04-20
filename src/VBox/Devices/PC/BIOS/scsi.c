@@ -187,6 +187,7 @@ int scsi_read_sectors(device_id, count, lba, segment, offset)
     if (device_id > BX_MAX_SCSI_DEVICES)
         BX_PANIC("scsi_read_sectors: device_id out of range %d\n", device_id);
 
+    ebda_seg = read_word(0x0040, 0x000E);
     // Reset count of transferred data
     write_word(ebda_seg, &EbdaData->ata.trsfsectors,0);
     write_dword(ebda_seg, &EbdaData->ata.trsfbytes,0L);
@@ -203,7 +204,6 @@ int scsi_read_sectors(device_id, count, lba, segment, offset)
     write_byte(get_SS(), aCDB + 8, (uint8_t)(count));
     write_byte(get_SS(), aCDB + 9, 0);
 
-    ebda_seg = read_word(0x0040, 0x000E);
     io_base = read_word(ebda_seg, &EbdaData->scsi.devices[device_id].io_base);
     target_id = read_byte(ebda_seg, &EbdaData->scsi.devices[device_id].target_id);
 
@@ -241,6 +241,7 @@ int scsi_write_sectors(device_id, count, lba, segment, offset)
     if (device_id > BX_MAX_SCSI_DEVICES)
         BX_PANIC("scsi_write_sectors: device_id out of range %d\n", device_id);
 
+    ebda_seg = read_word(0x0040, 0x000E);
     // Reset count of transferred data
     write_word(ebda_seg, &EbdaData->ata.trsfsectors,0);
     write_dword(ebda_seg, &EbdaData->ata.trsfbytes,0L);
@@ -257,7 +258,6 @@ int scsi_write_sectors(device_id, count, lba, segment, offset)
     write_byte(get_SS(), aCDB + 8, (uint8_t)(count));
     write_byte(get_SS(), aCDB + 9, 0);
 
-    ebda_seg = read_word(0x0040, 0x000E);
     io_base = read_word(ebda_seg, &EbdaData->scsi.devices[device_id].io_base);
     target_id = read_byte(ebda_seg, &EbdaData->scsi.devices[device_id].target_id);
 
