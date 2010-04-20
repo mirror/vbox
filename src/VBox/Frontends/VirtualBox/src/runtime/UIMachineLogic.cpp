@@ -606,7 +606,10 @@ void UIMachineLogic::prepareDock()
     if (f)
         pDockEnablePreviewMonitor->setChecked(true);
     else
+    {
         pDockDisablePreview->setChecked(true);
+        m_pDockPreviewSelectMonitorGroup->setEnabled(false);
+    }
 
     /* Default to true if it is an empty value */
     setDockIconPreviewEnabled(f);
@@ -1521,6 +1524,9 @@ void UIMachineLogic::sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent
             CMachine machine = session().GetMachine();
             m_DockIconPreviewMonitor = qMin(machine.GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateMonitor).toInt(), (int)machine.GetMonitorCount() - 1);
         }
+        /* Resize the dock icon in the case the preview monitor has changed. */
+        QSize size = machineWindows().at(m_DockIconPreviewMonitor)->machineView()->size();
+        updateDockIconSize(m_DockIconPreviewMonitor, size.width(), size.height());
         updateDockOverlay();
     }
 }

@@ -326,6 +326,7 @@ void UICocoaDockIconPreview::setOriginalSize(int width, int height)
 
 - (void)resizeMonitor:(NSSize)size;
 {
+    [self restoreMonitor];
     [mMonitor resize:size];
 }
 @end
