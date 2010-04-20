@@ -61,6 +61,9 @@ typedef struct {
     GLboolean bVisible;      /*guest window is visible*/
     GLboolean bUseFBO;       /*redirect to FBO instead of real host window*/
 
+    GLint  cVisibleRects;    /*count of visible rects*/
+    GLint *pVisibleRects;    /*visible rects left, top, right, bottom*/
+
     GLuint idFBO, idColorTex, idDepthStencilRB;
     GLuint fboWidth, fboHeight;
 } CRMuralInfo;

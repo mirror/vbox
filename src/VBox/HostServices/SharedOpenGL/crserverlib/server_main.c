@@ -551,6 +551,11 @@ static void crVBoxServerSaveMuralCB(unsigned long key, void *data1, void *data2)
 
     rc = SSMR3PutMem(pSSM, pMI, sizeof(*pMI));
     CRASSERT(rc == VINF_SUCCESS);
+
+    if (pMI->pVisibleRects)
+    {
+        rc = SSMR3PutMem(pSSM, pMI->pVisibleRects, 4*sizeof(GLint)*pMI->cVisibleRects);
+    }
 }
 
 /* @todo add hashtable walker with result info and intermediate abort */
@@ -851,9 +856,27 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
         rc = SSMR3GetMem(pSSM, &muralInfo, sizeof(muralInfo));
         AssertRCReturn(rc, rc);
 
+        if (muralInfo.pVisibleRects)
+        {
+            muralInfo.pVisibleRects = crAlloc(4*sizeof(GLint)*muralInfo.cVisibleRects);
+            if (!muralInfo.pVisibleRects)
+            {
+                return VERR_NO_MEMORY;
+            }
+
+            rc = SSMR3GetMem(pSSM, muralInfo.pVisibleRects, 4*sizeof(GLint)*muralInfo.cVisibleRects);
+            AssertRCReturn(rc, rc);
+        }
+
         /* Restore windows geometry info */
         crServerDispatchWindowSize(key, muralInfo.width, muralInfo.height);
         crServerDispatchWindowPosition(key, muralInfo.gX, muralInfo.gY);
+        crServerDispatchWindowVisibleRegion(key, muralInfo.cVisibleRects, muralInfo.pVisibleRects);
+
+        if (muralInfo.pVisibleRects)
+        {
+            crFree(muralInfo.pVisibleRects);
+        }
     }
 
     /* Load starting free context and window IDs */
@@ -1069,6 +1092,8 @@ DECLEXPORT(int32_t) crVBoxServerUnmapScreen(int sIndex)
 
 DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint32_t w, uint32_t h, uint64_t winID)
 {
+    crDebug("crVBoxServerMapScreen(%i) [%i,%i:%u,%u]", sIndex, x, y, w, h);
+
     if (sIndex<0 || sIndex>=cr_server.screenCount)
         return VERR_INVALID_PARAMETER;
 

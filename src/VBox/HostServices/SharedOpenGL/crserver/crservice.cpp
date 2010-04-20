@@ -68,7 +68,7 @@ static PVM g_pVM = NULL;
 #endif
 
 static const char* gszVBoxOGLSSMMagic = "***OpenGL state data***";
-#define SHCROGL_SSM_VERSION 17
+#define SHCROGL_SSM_VERSION 18
 
 static DECLCALLBACK(int) svcUnload (void *)
 {
