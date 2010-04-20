@@ -231,7 +231,7 @@ RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem)
 #ifdef RT_USE_FAST_MUTEX
     return pThis->Mutex && pThis->Mutex->Owner != NULL;
 #else
-    return KeReadStateMutex(pThis->Mutex) == 1);
+    return KeReadStateMutex(&pThis->Mutex) == 1;
 #endif
 }
 
