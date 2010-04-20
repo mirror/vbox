@@ -1462,6 +1462,8 @@ static void arp_input(PNATState pData, struct mbuf *m)
             rah = mtod(mr, struct arphdr *);
 #else
             mr = m_getcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR);
+            if (mr == NULL)
+                return;
             reh = mtod(mr, struct ethhdr *);
             mr->m_data += ETH_HLEN;
             rah = mtod(mr, struct arphdr *);

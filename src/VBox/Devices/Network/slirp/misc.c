@@ -139,19 +139,28 @@ static void *slirp_uma_alloc(uma_zone_t zone,
     struct item *it;
     uint8_t *sub_area;
     void *ret = NULL;
+    int rc;
 
     RTCritSectEnter(&zone->csZone);
     for (;;)
     {
         if (!LIST_EMPTY(&zone->free_items))
         {
-            zone->cur_items++;
             it = LIST_FIRST(&zone->free_items);
-            LIST_REMOVE(it, list);
-            LIST_INSERT_HEAD(&zone->used_items, it, list);
+            rc = 0;
             if (zone->pfInit)
-                zone->pfInit(zone->pData, (void *)&it[1], zone->size, M_DONTWAIT);
-            ret = (void *)&it[1];
+                rc = zone->pfInit(zone->pData, (void *)&it[1], zone->size, M_DONTWAIT);
+            if (rc == 0)
+            {
+                zone->cur_items++;
+                LIST_REMOVE(it, list);
+                LIST_INSERT_HEAD(&zone->used_items, it, list);
+                ret = (void *)&it[1];
+            }
+            else
+            {
+                ret = NULL;
+            }
             break;
         }
 
