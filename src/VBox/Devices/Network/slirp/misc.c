@@ -397,7 +397,7 @@ struct mbuf *slirp_ext_m_get(PNATState pData, size_t cbMin, void **ppvBuf, size_
 
 void slirp_ext_m_free(PNATState pData, struct mbuf *m)
 {
-    m_free(pData, m);
+    m_freem(pData, m);
 }
 
 static void zone_destroy(uma_zone_t zone)
