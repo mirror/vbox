@@ -77,8 +77,7 @@ def main(argv):
         versions = [str(sys.version_info[0])+'.'+str(sys.version_info[1])]
 
     if target == 'darwin':
-        prefixes.insert(0, '/Developer/SDKs/MacOSX10.4u.sdk/usr')
-        prefixes.insert(0, '/Developer/SDKs/MacOSX10.5.sdk/usr')
+        prefixes = ['/Developer/SDKs/MacOSX10.4u.sdk/usr', '/Developer/SDKs/MacOSX10.5.sdk/usr']
         # Python 2.3 on Darwin buildbox is bad
         # /Developer/SDKs/MacOSX10.4u.sdk/usr/include/python2.3/pyport.h:554:2: error: #error "LONG_BIT definition appears wrong for platform (bad gcc/glibc config?).
         versions.remove("2.3")
