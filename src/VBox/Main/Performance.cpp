@@ -181,7 +181,7 @@ int CollectorGuestHAL::preCollect(const CollectorHints& /* hints */, uint64_t iT
     return S_OK;
 }
 
-#endif /* VBOX_COLLECTOR_TEST_CASE */
+#endif /* !VBOX_COLLECTOR_TEST_CASE */
 
 bool BaseMetric::collectorBeat(uint64_t nowAt)
 {
