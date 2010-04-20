@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2009 Sun Microsystems, Inc.
+# Copyright (C) 2009-2010 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -23,27 +23,36 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_WITH_MULTIVERSION_PYTHON
-VBOX_MULTIPYTHON = 1
+ VBOX_MULTIPYTHON = 1
 else
-VBOX_MULTIPYTHON = 0
+ VBOX_MULTIPYTHON = 0
 endif
 
-# list of supported Python versions
-$(eval $(patsubst %|,%$(NL),$(shell $(VBOX_BLD_PYTHON) $(PATH_SUB_CURRENT)/gen_python_deps.py $(KBUILD_TARGET) $(KBUILD_TARGET_ARCH) $(VBOX_MULTIPYTHON))))
+#
+# List of supported Python versions, defining a number of
+# VBOX_PYTHON[25|26|27|28|DEF]_[INC|LIB] variables which get picked up below.
+#
+#$(eval $(patsubst %|,%$(NL),$(shell $(VBOX_BLD_PYTHON) $(PATH_SUB_CURRENT)/gen_python_deps.py $(KBUILD_TARGET) $(KBUILD_TARGET_ARCH) $(VBOX_MULTIPYTHON))))
+$(eval $(subst |,$(NL),$(shell $(VBOX_BLD_PYTHON) $(PATH_SUB_CURRENT)/gen_python_deps.py $(KBUILD_TARGET) $(KBUILD_TARGET_ARCH) $(VBOX_MULTIPYTHON))))
 
-# Python Client Module - the C++/XPCOM bits.
+ifndef VBOX_ONLY_SDK
+
+#
+# Base Python Client Module - the C++/XPCOM bits (not actually built).
+#
 VBoxPythonBase_TEMPLATE = XPCOM
+VBoxPythonBase_CXXFLAGS = -Wno-write-strings
+VBoxPythonBase_DLLSUFF.darwin = .so
 VBoxPythonBase_DEFS     = \
 	_IMPL_NS_COM \
 	_IMPL_NS_BASE \
 	EXPORT_XPTI_API \
         EXPORT_XPT_API \
 	VBOX_PYXPCOM \
-	VBOX_WITH_XPCOM
+	VBOX_WITH_XPCOM \
+	VBOX_PYXPCOM_VERSIONED
 VBoxPythonBase_INCS     = \
 	src
-VBoxPythonBase_CXXFLAGS = -Wno-write-strings
-
 VBoxPythonBase_SOURCES  = \
 	src/module/_xpcom.cpp \
 	src/dllmain.cpp \
@@ -67,124 +76,102 @@ VBoxPythonBase_SOURCES  = \
 	src/Pyxpt_info.cpp \
 	src/TypeObject.cpp \
 	src/VariantUtils.cpp
-
-VBoxPythonBase_LIBS = \
+VBoxPythonBase_LIBS     = \
 	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
 	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
 
-ifeq ($(KBUILD_TARGET),darwin)
- ## @todo kBuild - this ain't working: VBoxPython_DLLSUFF.darwin = .so
- VBoxPythonBase_DLLSUFF = .so
-endif
 
+if defined(VBOX_PYTHON23_INC) \
+  && ("$(KBUILD_TARGET)" != "darwin" || ("$(KBUILD_TARGET_ARCH)" == "x86" && defined(VBOX_WITH_MAC_OS_X_10_4_SUPPORT) ))
+#
 # Python 2.3 version
-VBoxPython23_EXTENDS    = VBoxPythonBase
-VBoxPython23_EXTENDS_BY = appending
-VBoxPython23_NAME       = VBoxPython2_3
-VBoxPython23_TEMPLATE   = XPCOM
-
-VBoxPython23_DEFS       = VBOX_PYXPCOM_VERSIONED
-VBoxPython23_INCS       = $(VBOX_PYTHON23_INC)
-VBoxPython23_LIBS       = $(VBOX_PYTHON23_LIB)
-
-ifdef VBOX_PYTHON23_INC
-  KNOWN_GLUE += VBoxPython23
+#
+DLLS += VBoxPython2_3
+VBoxPython2_3_EXTENDS    = VBoxPythonBase
+VBoxPython2_3_EXTENDS_BY = appending
+VBoxPython2_3_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin",OSX104,)
+VBoxPython2_3_INCS       = $(VBOX_PYTHON23_INC)
+VBoxPython2_3_LIBS       = $(VBOX_PYTHON23_LIB)
 endif
 
+if defined(VBOX_PYTHON24_INC) && "$(KBUILD_TARGET)" != "darwin"
+#
 # Python 2.4 version
-VBoxPython24_EXTENDS    = VBoxPythonBase
-VBoxPython24_EXTENDS_BY = appending
-VBoxPython24_NAME       = VBoxPython2_4
-VBoxPython24_TEMPLATE   = XPCOM
-
-VBoxPython24_DEFS       = VBOX_PYXPCOM_VERSIONED
-VBoxPython24_INCS       = $(VBOX_PYTHON24_INC)
-VBoxPython24_LIBS       = $(VBOX_PYTHON24_LIB)
-
-ifdef VBOX_PYTHON24_INC
- KNOWN_GLUE += VBoxPython24
+#
+DLLS += VBoxPython2_4
+VBoxPython2_4_EXTENDS    = VBoxPythonBase
+VBoxPython2_4_EXTENDS_BY = appending
+VBoxPython2_4_INCS       = $(VBOX_PYTHON24_INC)
+VBoxPython2_4_LIBS       = $(VBOX_PYTHON24_LIB)
 endif
 
+if defined(VBOX_PYTHON25_INC) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" != "darwin.amd64"
+#
 # Python 2.5 version
-VBoxPython25_EXTENDS    = VBoxPythonBase
-VBoxPython25_EXTENDS_BY = appending
-VBoxPython25_NAME       = VBoxPython2_5
-if "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "darwin.x86"
- VBoxPython25_TEMPLATE   = XPCOMOSX105
-else
- VBoxPython25_TEMPLATE   = XPCOM
+#
+DLLS += VBoxPython2_5
+VBoxPython2_5_EXTENDS    = VBoxPythonBase
+VBoxPython2_5_EXTENDS_BY = appending
+VBoxPython2_5_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin",OSX105,)
+VBoxPython2_5_INCS       = $(VBOX_PYTHON25_INC)
+VBoxPython2_5_LIBS       = $(VBOX_PYTHON25_LIB)
 endif
 
-VBoxPython25_DEFS       = VBOX_PYXPCOM_VERSIONED
-VBoxPython25_INCS       = $(VBOX_PYTHON25_INC)
-VBoxPython25_LIBS       = $(VBOX_PYTHON25_LIB)
-
-ifdef VBOX_PYTHON25_INC
- KNOWN_GLUE += VBoxPython25
-endif
-
+if defined(VBOX_PYTHON26_INC) && "$(KBUILD_TARGET)" != "darwin"
+#
 # Python 2.6 version
-VBoxPython26_EXTENDS    = VBoxPythonBase
-VBoxPython26_EXTENDS_BY = appending
-VBoxPython26_NAME       = VBoxPython2_6
-if "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "darwin.x86"
- VBoxPython26_TEMPLATE   = XPCOMOSX105
-else
- VBoxPython26_TEMPLATE   = XPCOM
+#
+DLLS += VBoxPython2_6
+VBoxPython2_6_EXTENDS    = VBoxPythonBase
+VBoxPython2_6_EXTENDS_BY = appending
+VBoxPython2_6_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin",OSX106,)
+VBoxPython2_6_INCS       = $(VBOX_PYTHON26_INC)
+VBoxPython2_6_LIBS       = $(VBOX_PYTHON26_LIB)
 endif
 
-VBoxPython26_DEFS       = VBOX_PYXPCOM_VERSIONED
-VBoxPython26_INCS       = $(VBOX_PYTHON26_INC)
-VBoxPython26_LIBS       = $(VBOX_PYTHON26_LIB)
-
-ifdef VBOX_PYTHON26_INC
- KNOWN_GLUE += VBoxPython26
-endif
-
+if defined(VBOX_PYTHON27_INC) && "$(KBUILD_TARGET)" != "darwin"
+#
 # Python 2.7 version
-VBoxPython27_EXTENDS    = VBoxPythonBase
-VBoxPython27_EXTENDS_BY = appending
-VBoxPython27_NAME       = VBoxPython2_7
-VBoxPython27_TEMPLATE   = XPCOM
-
-VBoxPython27_DEFS       = VBOX_PYXPCOM_VERSIONED
-VBoxPython27_INCS       = $(VBOX_PYTHON27_INC)
-VBoxPython27_LIBS       = $(VBOX_PYTHON27_LIB)
-
-ifdef VBOX_PYTHON27_INC
- KNOWN_GLUE += VBoxPython27
+#
+DLLS += VBoxPython2_7
+VBoxPython2_7_EXTENDS    = VBoxPythonBase
+VBoxPython2_7_EXTENDS_BY = appending
+VBoxPython2_7_INCS       = $(VBOX_PYTHON27_INC)
+VBoxPython2_7_LIBS       = $(VBOX_PYTHON27_LIB)
 endif
 
+if defined(VBOX_PYTHON28_INC) && "$(KBUILD_TARGET)" != "darwin"
+#
 # Python 2.8 version
-VBoxPython28_EXTENDS    = VBoxPythonBase
-VBoxPython28_EXTENDS_BY = appending
-VBoxPython28_NAME       = VBoxPython2_8
-VBoxPython28_TEMPLATE   = XPCOM
-
-VBoxPython28_DEFS       = VBOX_PYXPCOM_VERSIONED
-VBoxPython28_INCS       = $(VBOX_PYTHON28_INC)
-VBoxPython28_LIBS       = $(VBOX_PYTHON28_LIB)
-
-ifdef VBOX_PYTHON28_INC
- KNOWN_GLUE += VBoxPython28
+#
+DLLS += VBoxPython2_8
+VBoxPython2_8_EXTENDS    = VBoxPythonBase
+VBoxPython2_8_EXTENDS_BY = appending
+VBoxPython2_8_INCS       = $(VBOX_PYTHON28_INC)
+VBoxPython2_8_LIBS       = $(VBOX_PYTHON28_LIB)
 endif
 
+if defined(VBOX_PYTHONDEF_INC) && "$(KBUILD_TARGET)" != "darwin"
+#
 # Python without versioning
+#
+DLLS += VBoxPython
 VBoxPython_EXTENDS      = VBoxPythonBase
-VBoxPython_EXTENDS_BY   = appending
-VBoxPython_TEMPLATE     = XPCOM
-
-VBoxPython_INCS       =  $(VBOX_PYTHONDEF_INC)
+VBoxPython_DEFS         = $(filter-out VBOX_PYXPCOM_VERSIONED,$(VBoxPythonBase_DEFS))
+VBoxPython_INCS         = $(VBoxPythonBase_INCS) $(VBOX_PYTHONDEF_INC)
 if "$(KBUILD_TARGET)" == "linux"
-  VBoxPython_LIBS       =
+ VBoxPython_LIBS        = $(VBoxPythonBase_LIBS)
 else
-  VBoxPython_LIBS       = $(VBOX_PYTHONDEF_LIB)
+ VBoxPython_LIBS        = $(VBoxPythonBase_LIBS) $(VBOX_PYTHONDEF_LIB)
+endif
 endif
 
-ifdef VBOX_PYTHONDEF_INC
- KNOWN_GLUE += VBoxPython
-endif
+endif # VBOX_ONLY_SDK
 
+#
+# Install the python modules.
+#
+INSTALLS += VBoxPython-inst-py-xpcom
 VBoxPython-inst-py-xpcom_INST = $(INST_SDK)bindings/xpcom/python/xpcom/
 VBoxPython-inst-py-xpcom_SOURCES = \
 	vboxxpcom.py \
@@ -204,10 +191,5 @@ VBoxPython-inst-py-xpcom_SOURCES = \
 	server/policy.py=>server/policy.py
 
 
-ifndef VBOX_ONLY_SDK
- DLLS += $(KNOWN_GLUE)
-endif
-
-INSTALLS += VBoxPython-inst-py-xpcom
-
 include $(KBUILD_PATH)/subfooter.kmk
+
