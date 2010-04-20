@@ -207,6 +207,7 @@ static void slirp_uma_free(void *item, int size, uint8_t flags)
 {
     struct item *it;
     uma_zone_t zone;
+    uma_zone_t master_zone;
     Assert(item);
     it = &((struct item *)item)[-1];
     Assert(it->magic == ITEM_MAGIC);
@@ -216,6 +217,14 @@ static void slirp_uma_free(void *item, int size, uint8_t flags)
     RTCritSectEnter(&zone->csZone);
     Assert(zone->magic == ZONE_MAGIC);
     LIST_REMOVE(it, list);
+    if (zone->pfFini)
+    {
+        zone->pfFini(zone->pData, item, zone->size);
+    }
+    if (zone->pfDtor)
+    {
+        zone->pfDtor(zone->pData, item, zone->size, NULL);
+    }
     LIST_INSERT_HEAD(&zone->free_items, it, list);
     zone->cur_items--;
     RTCritSectLeave(&zone->csZone);
@@ -244,10 +253,6 @@ uma_zone_t uma_zsecond_create(char *name, ctor_t ctor,
     dtor_t dtor, zinit_t init, zfini_t fini, uma_zone_t master)
 {
     uma_zone_t zone;
-#if 0
-    if (master->pfAlloc != NULL)
-        zone = (uma_zone_t)master->pfAlloc(master, sizeof(struct uma_zone), NULL, 0);
-#endif
     Assert(master);
     zone = RTMemAllocZ(sizeof(struct uma_zone));
     if (zone == NULL)
@@ -334,34 +339,47 @@ void uma_zfree_arg(uma_zone_t zone, void *mem, void *flags)
 {
     struct item *it;
     Assert(zone->magic == ZONE_MAGIC);
-    if (zone->pfFree == NULL)
-        return;
-
+    Assert((zone->pfFree));
     Assert((mem));
+
     RTCritSectEnter(&zone->csZone);
     it = &((struct item *)mem)[-1];
-    if (it->magic != ITEM_MAGIC)
-    {
-        Log(("NAT:UMA: %p seems to be allocated on heap ... freeing\n", mem));
-        RTMemFree(mem);
-        RTCritSectLeave(&zone->csZone);
-        return;
-    }
+    Assert((it->magic == ITEM_MAGIC));
     Assert((zone->magic == ZONE_MAGIC && zone == it->zone));
 
-    if (zone->pfDtor)
-        zone->pfDtor(zone->pData, mem, zone->size, flags);
     zone->pfFree(mem,  0, 0);
     RTCritSectLeave(&zone->csZone);
 }
 
 int uma_zone_exhausted_nolock(uma_zone_t zone)
 {
-    return 0;
+    int fExhausted;
+    RTCritSectEnter(&zone->csZone);
+    fExhausted = (zone->cur_items == zone->max_items); 
+    RTCritSectLeave(&zone->csZone);
+    return fExhausted;
 }
 
 void zone_drain(uma_zone_t zone)
 {
+    struct item *it;
+    uma_zone_t master_zone;
+    /* vvl: Huh? What to do with zone which hasn't got backstore ? */
+    Assert((zone->master_zone));
+    master_zone = zone->master_zone;
+    while(!LIST_EMPTY(&zone->free_items))
+    {
+        it = LIST_FIRST(&zone->free_items);
+        RTCritSectEnter(&zone->csZone);
+        LIST_REMOVE(it, list);
+        zone->max_items--;
+        RTCritSectLeave(&zone->csZone);
+        it->zone = master_zone;
+        RTCritSectEnter(&master_zone->csZone);
+        LIST_INSERT_HEAD(&master_zone->free_items, it, list);
+        master_zone->cur_items--;
+        RTCritSectLeave(&master_zone->csZone);
+    }
 }
 
 void slirp_null_arg_free(void *mem, void *arg)
