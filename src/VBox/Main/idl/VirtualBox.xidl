@@ -3493,24 +3493,24 @@
       items with the same indices correspond and jointly represent an import instruction for VirtualBox.
 
       The list below identifies the value sets that are possible depending on the
-      <link to="VirtualSystemDescriptionType" /> enum value in the array item in aTypes[]. In each case,
-      the array item with the same index in aOvfValues[] will contain the original value as contained
-      in the OVF file (just for informational purposes), and the corresponding item in aVBoxValues[]
+      <link to="VirtualSystemDescriptionType" /> enum value in the array item in @a aTypes[]. In each case,
+      the array item with the same index in @a aOvfValues[] will contain the original value as contained
+      in the OVF file (just for informational purposes), and the corresponding item in @a aVBoxValues[]
       will contain a suggested value to be used for VirtualBox. Depending on the description type,
-      the aExtraConfigValues[] array item may also be used.
+      the @a aExtraConfigValues[] array item may also be used.
 
       <ul>
       <li>
         "OS": the guest operating system type. There must be exactly one such array item on import. The
-        corresponding item in aVBoxValues[] contains the suggested guest operating system for VirtualBox.
+        corresponding item in @a  aVBoxValues[] contains the suggested guest operating system for VirtualBox.
         This will be one of the values listed in <link to="IVirtualBox::guestOSTypes" />. The corresponding
-        item in aOvfValues[] will contain a numerical value that described the operating system in the OVF.
+        item in @a aOvfValues[] will contain a numerical value that described the operating system in the OVF.
       </li>
       <li>
         "Name": the name to give to the new virtual machine. There can be at most one such array item;
         if none is present on import, then an automatic name will be created from the operating system
-        type. The correponding item im aOvfValues[] will contain the suggested virtual machine name
-        from the OVF file, and aVBoxValues[] will contain a suggestion for a unique VirtualBox
+        type. The correponding item im @a aOvfValues[] will contain the suggested virtual machine name
+        from the OVF file, and @a aVBoxValues[] will contain a suggestion for a unique VirtualBox
         <link to="IMachine" /> name that does not exist yet.
       </li>
       <li>
@@ -3532,52 +3532,57 @@
         type.
       </li>
       <li>
-        "HarddiskControllerIDE": an IDE hard disk controller. There can be at most one such item. This
-        has no value in aOvfValues[] or aVBoxValues[].
-        The matching item in the aRefs[] array will contain an integer that items of the "Harddisk"
+        "HardDiskControllerIDE": an IDE hard disk controller. There can be at most two such items.
+        This has no value in @a aOvfValues[] or @a aVBoxValues[].
+        The matching item in the @a aRefs[] array will contain an integer that items of the "Harddisk"
         type can use to specify which hard disk controller a virtual disk should be connected to.
+        Note that in OVF, an IDE controller has two channels, corresponding to "master" and "slave"
+        in traditional terminology, whereas the IDE storage controller that VirtualBox supports in
+        its virtual machines supports four channels (primary master, primary slave, secondary master,
+        secondary slave) and thus maps to two IDE controllers in the OVF sense.
       </li>
       <li>
-        "HarddiskControllerSATA": an SATA hard disk controller. There can be at most one such item. This
-        has no value in aOvfValues[] or aVBoxValues[].
-        The matching item in the aRefs[] array will be used as with IDE controllers (see above).
+        "HardDiskControllerSATA": an SATA hard disk controller. There can be at most one such item. This
+        has no value in @a aOvfValues[] or @a aVBoxValues[].
+        The matching item in the @a aRefs[] array will be used as with IDE controllers (see above).
       </li>
       <li>
-        "HarddiskControllerSCSI": a SCSI hard disk controller. There can be at most one such item.
-        The items in aOvfValues[] and aVBoxValues[] will either be "LsiLogic" or "BusLogic".
-        The matching item in the aRefs[] array will be used as with IDE controllers (see above).
+        "HardDiskControllerSCSI": a SCSI hard disk controller. There can be at most one such item.
+        The items in @a aOvfValues[] and @a aVBoxValues[] will either be "LsiLogic" or "BusLogic".
+        The matching item in the @a aRefs[] array will be used as with IDE controllers (see above).
       </li>
       <li>
         "HardDiskImage": a virtual hard disk, most probably as a reference to an image file. There can be an
         arbitrary number of these items, one for each virtual disk image that accompanies the OVF.
 
-        The array item in aOvfValues[] will contain the file specification from the OVF file (without
+        The array item in @a aOvfValues[] will contain the file specification from the OVF file (without
         a path since the image file should be in the same location as the OVF file itself), whereas the
-        item in aVBoxValues[] will contain a qualified path specification to where VirtualBox uses the
+        item in @a aVBoxValues[] will contain a qualified path specification to where VirtualBox uses the
         hard disk image. This means that on import the image will be copied and converted from the
         "ovf" location to the "vbox" location; on export, this will be handled the other way round.
         On import, the target image will also be registered with VirtualBox.
 
-        The matching item in the aExtraConfigValues[] array must contain a string of the following
+        The matching item in the @a aExtraConfigValues[] array must contain a string of the following
         format: "controller=&lt;index&gt;;channel=&lt;c&gt;"
         In this string, &lt;index&gt; must be an integer specifying the hard disk controller to connect
         the image to. That number must be the index of an array item with one of the hard disk controller
-        types (HarddiskControllerSCSI, HarddiskControllerSATA, HarddiskControllerIDE).
+        types (HardDiskControllerSCSI, HardDiskControllerSATA, HardDiskControllerIDE).
         In addition, &lt;c&gt; must specify the channel to use on that controller. For IDE controllers,
-        this can range from 0-3 (which VirtualBox will interpret as primary master, primary slave, secondary master and
-        secondary slave. For SATA and SCSI controllers, the channel can range from 0-29.
+        this can be 0 or 1 for master or slave, respectively. For compatibility with VirtualBox versions
+        before 3.2, the values 2 and 3 (for secondary master and secondary slave) are also supported, but
+        no longer exported. For SATA and SCSI controllers, the channel can range from 0-29.
       </li>
       <li>
-         "CDROM": a virtual CD-ROM drive. The matching item in aExtraConfigValue[] contains the same
+         "CDROM": a virtual CD-ROM drive. The matching item in @a aExtraConfigValue[] contains the same
          attachment information as with "HardDiskImage" items.
       </li>
       <li>
-        "CDROM": a virtual floppy drive. The matching item in aExtraConfigValue[] contains the same
+        "CDROM": a virtual floppy drive. The matching item in @a aExtraConfigValue[] contains the same
         attachment information as with "HardDiskImage" items.
       </li>
       <li>
-        "NetworkAdapter": a network adapter. The array item in aVBoxValues[] will specify the hardware
-        for the network adapter, whereas the array item in aExtraConfigValues[] will have a string
+        "NetworkAdapter": a network adapter. The array item in @a aVBoxValues[] will specify the hardware
+        for the network adapter, whereas the array item in @a aExtraConfigValues[] will have a string
         of the "type=&lt;X&gt;" format, where &lt;X&gt; must be either "NAT" or "Bridged".
       </li>
       <li>
