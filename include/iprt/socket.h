@@ -88,6 +88,9 @@ RTDECL(int) RTSocketClose(RTSOCKET hSocket);
 /**
  * Creates an IPRT socket handle from a native one.
  *
+ * Do NOT use the native handle after passing it to this function, IPRT owns it
+ * and might even have closed upon a successful return.
+ *
  * @returns IPRT status code.
  * @param   phSocket        Where to store the IPRT socket handle.
  * @param   uNative         The native handle.
