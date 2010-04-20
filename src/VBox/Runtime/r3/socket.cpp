@@ -265,6 +265,17 @@ int rtSocketCreateForNative(RTSOCKETINT **ppSocket, RTSOCKETNATIVE hNative)
 }
 
 
+RTDECL(int) RTSocketFromNative(PRTSOCKET phSocket, RTHCINTPTR uNative)
+{
+    AssertReturn(uNative != NIL_RTSOCKETNATIVE, VERR_INVALID_PARAMETER);
+#ifndef RT_OS_WINDOWS
+    AssertReturn(uNative >= 0, VERR_INVALID_PARAMETER);
+#endif
+    AssertPtrReturn(phSocket, VERR_INVALID_POINTER);
+    return rtSocketCreateForNative(phSocket, uNative);
+}
+
+
 /**
  * Wrapper around socket().
  *
