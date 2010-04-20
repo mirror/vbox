@@ -343,6 +343,8 @@ static void VBoxServiceVMStatsReport(void)
         req.guestStats.u32PageFileSize   = u64PagedTotal / _4K;
         RTStrmClose(pStrm);
     }
+    else
+        VBoxServiceVerbose(3, "VBoxStatsReportStatistics: memory info not available!\n");
 
     req.guestStats.u32PageSize = getpagesize();
     req.guestStats.u32PhysMemBalloon = VBoxServiceBalloonQueryPages(_4K);
@@ -360,6 +362,7 @@ static void VBoxServiceVMStatsReport(void)
     /** @todo req.guestStats.u32MemKernelPaged, make any sense?  = u32MemKernelTotal? */
     /** @todo req.guestStats.u32MemKernelNonPaged, make any sense? = 0? */
 
+    bool fCpuInfoAvail = false;
     rc = RTStrmOpen("/proc/stat", "r", &pStrm);
     if (RT_SUCCESS(rc))
     {
@@ -413,17 +416,29 @@ static void VBoxServiceVMStatsReport(void)
                     req.guestStats.u32CpuLoad_User   = (uint32_t)((u64DeltaUser
                                                                  + u64DeltaNice) * 100 / u64DeltaAll);
                     req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE \
-                                               | VBOX_GUEST_STAT_CPU_LOAD_KERNEL \
-                                               | VBOX_GUEST_STAT_CPU_LOAD_USER;
+                                               |  VBOX_GUEST_STAT_CPU_LOAD_KERNEL \
+                                               |  VBOX_GUEST_STAT_CPU_LOAD_USER;
+                    fCpuInfoAvail = true;
                     rc = VbglR3StatReport(&req);
                     if (RT_SUCCESS(rc))
                         VBoxServiceVerbose(3, "VBoxStatsReportStatistics: new statistics reported successfully!\n");
                     else
                         VBoxServiceVerbose(3, "VBoxStatsReportStatistics: stats report failed with rc=%Rrc\n", rc);
                 }
+                else
+                    VBoxServiceVerbose(3, "VBoxStatsReportStatistics: skipping information for CPU%u\n", u32CpuId);
             }
         }
         RTStrmClose(pStrm);
+    }
+    if (!fCpuInfoAvail)
+    {
+        VBoxServiceVerbose(3, "VBoxStatsReportStatistics: CPU info not available!\n");
+        rc = VbglR3StatReport(&req);
+        if (RT_SUCCESS(rc))
+            VBoxServiceVerbose(3, "VBoxStatsReportStatistics: new statistics reported successfully!\n");
+        else
+            VBoxServiceVerbose(3, "VBoxStatsReportStatistics: stats report failed with rc=%Rrc\n", rc);
     }
 
 #elif defined(RT_OS_SOLARIS)
@@ -541,10 +556,11 @@ static void VBoxServiceVMStatsReport(void)
                 req.guestStats.u32CpuId = cCPUs;
                 req.guestStats.u32CpuLoad_Idle   = (uint32_t)(u64DeltaIdle   * 100 / u64DeltaAll);
                 req.guestStats.u32CpuLoad_Kernel = (uint32_t)(u64DeltaSystem * 100 / u64DeltaAll);
+                req.guestStats.u32CpuLoad_User   = (uint32_t)(u64DeltaUser   * 100 / u64DeltaAll);
 
                 req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE \
-                                           | VBOX_GUEST_STAT_CPU_LOAD_KERNEL \
-                                           | VBOX_GUEST_STAT_CPU_LOAD_USER;
+                                           |  VBOX_GUEST_STAT_CPU_LOAD_KERNEL \
+                                           |  VBOX_GUEST_STAT_CPU_LOAD_USER;
 
                 cCPUs++;
             }
