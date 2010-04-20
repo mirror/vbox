@@ -2151,7 +2151,7 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
 
     /* Apply the normal locking logic to the entire chain. */
     MediumLockList *pMediumLockList(new MediumLockList());
-    HRESULT rc = createMediumLockList(true, this, *pMediumLockList);
+    HRESULT rc = diff->createMediumLockList(true, this, *pMediumLockList);
     if (FAILED(rc))
     {
         delete pMediumLockList;
@@ -3100,7 +3100,10 @@ HRESULT Medium::createMediumLockList(bool fMediumWritable,
 
         pMedium = pMedium->getParent();
         if (pMedium.isNull() && pToBeParent)
+        {
             pMedium = pToBeParent;
+            pToBeParent = NULL;
+        }
     }
 
     return mrc;
@@ -4161,14 +4164,10 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
             rc = pTarget->createMediumLockList(true, NULL, *aMediumLockList);
         else
             rc = createMediumLockList(false, NULL, *aMediumLockList);
-        if (FAILED(rc))
-        {
-            delete aMediumLockList;
-            aMediumLockList = NULL;
-            throw rc;
-        }
+        if (FAILED(rc)) throw rc;
 
-        /* sanity checking */
+        /* sanity checking, must be after lock list creation as it depends on
+         * valid medium states. The medium objects must be accessible. */
         {
             AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
             if (m->state != MediumState_Created)
@@ -4246,14 +4245,14 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
         }
 
         /* Update medium states appropriately */
-        switch (m->state)
+        if (m->state == MediumState_Created)
         {
-            case MediumState_Created:
-                m->state = MediumState_Deleting;
-                break;
-            default:
-                throw setStateError();
+            rc = markForDeletion();
+            if (FAILED(rc)) throw rc;
         }
+        else
+            throw setStateError();
+
         if (fMergeForward)
         {
             /* we will need parent to reparent target */
@@ -4278,14 +4277,13 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
              pLast = pLast->getParent())
         {
             AutoWriteLock alock(pLast COMMA_LOCKVAL_SRC_POS);
-            switch (pLast->m->state)
+            if (pLast->m->state == MediumState_Created)
             {
-                case MediumState_Created:
-                    pLast->m->state = MediumState_Deleting;
-                    break;
-                default:
-                    throw pLast->setStateError();
+                rc = pLast->markForDeletion();
+                if (FAILED(rc)) throw rc;
             }
+            else
+                throw pLast->setStateError();
         }
 
         /* Tweak the lock list in the backward merge case, as the target
@@ -4506,6 +4504,27 @@ void Medium::cancelMergeTo(const MediaList &aChildrenToReparent,
     AssertComRCReturnVoid(autoCaller.rc());
 
     AssertReturnVoid(aMediumLockList != NULL);
+
+    /* Revert media marked for deletion to previous state. */
+    HRESULT rc;
+    MediumLockList::Base::const_iterator mediumListBegin =
+        aMediumLockList->GetBegin();
+    MediumLockList::Base::const_iterator mediumListEnd =
+        aMediumLockList->GetEnd();
+    for (MediumLockList::Base::const_iterator it = mediumListBegin;
+         it != mediumListEnd;
+         ++it)
+    {
+        const MediumLock &mediumLock = *it;
+        const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
+        AutoWriteLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+
+        if (pMedium->m->state == MediumState_Deleting)
+        {
+            rc = pMedium->unmarkForDeletion();
+            AssertComRC(rc);
+        }
+    }
 
     /* the destructor will do the work */
     delete aMediumLockList;
@@ -5024,7 +5043,6 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
                 task.mpMediumLockList->GetBegin();
             MediumLockList::Base::const_iterator targetListEnd =
                 task.mpMediumLockList->GetEnd();
-            targetListEnd--;
             for (MediumLockList::Base::const_iterator it = targetListBegin;
                  it != targetListEnd;
                  ++it)
@@ -5033,6 +5051,10 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
                 const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
 
                 AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+
+                /* Skip over the target diff image */
+                if (pMedium->m->state == MediumState_Creating)
+                    continue;
 
                 /* sanity check */
                 Assert(pMedium->m->state == MediumState_LockedRead);
