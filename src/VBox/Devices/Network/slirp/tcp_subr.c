@@ -311,8 +311,9 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
     if (so == tcp_last_so)
         tcp_last_so = &tcb;
     closesocket(so->s);
-    /* (vvl) opening listening socket we do not reserve sbufs for it */
-    if ((so->so_state & SS_FACCEPTCONN) == 0)
+    /* Avoid double free if the socket is listening and therefore doesn't have
+     * any sbufs reserved. */
+    if (!(so->so_state & SS_FACCEPTCONN))
     {
         sbfree(&so->so_rcv);
         sbfree(&so->so_snd);
