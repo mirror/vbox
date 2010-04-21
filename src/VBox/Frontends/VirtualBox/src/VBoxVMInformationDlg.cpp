@@ -573,7 +573,14 @@ void VBoxVMInformationDlg::refreshStatistics()
         QString addRevision = m.GetGuestPropertyValue("/VirtualBox/GuestAdd/Revision");
         QString addVersionStr;
         if (!addVersion.isEmpty() && !addRevision.isEmpty())
-            addVersionStr = addVersion + " r" + m.GetGuestPropertyValue("/VirtualBox/GuestAdd/Revision");
+        {
+            QString addInfo = console.GetGuest().GetAdditionsVersion();
+            addVersionStr = (addInfo.isEmpty() ? "(" : "")
+                          + addVersion
+                          + " r"
+                          + m.GetGuestPropertyValue("/VirtualBox/GuestAdd/Revision")
+                          + (addInfo.isEmpty() ? ")" : "");
+        }
         else
             addVersionStr = tr ("Not Detected", "guest additions");
         QString osType = console.GetGuest().GetOSTypeId();
