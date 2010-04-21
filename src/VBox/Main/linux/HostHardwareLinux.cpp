@@ -29,10 +29,12 @@
 
 #include <HostHardwareLinux.h>
 
+#include <VBox/err.h>
 #include <VBox/log.h>
-# ifdef VBOX_WITH_DBUS
-#  include <VBox/dbus.h>
-# endif
+
+#ifdef VBOX_WITH_DBUS
+# include <VBox/dbus.h>
+#endif
 
 #include <iprt/dir.h>
 #include <iprt/env.h>
@@ -46,28 +48,20 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>  /* for RTThreadSleep() */
 
-#ifdef RT_OS_LINUX
-# include <sys/types.h>
-# include <sys/stat.h>
-# include <unistd.h>
-# include <fcntl.h>
-/* bird: This is a hack to work around conflicts between these linux kernel headers
- *       and the GLIBC tcpip headers. They have different declarations of the 4
- *       standard byte order functions. */
-// # define _LINUX_BYTEORDER_GENERIC_H
-# define _LINUX_BYTEORDER_SWABB_H
-# include <linux/cdrom.h>
-# include <linux/fd.h>
-# include <linux/major.h>
-# include <errno.h>
-# include <scsi/scsi.h>
+#include <linux/cdrom.h>
+#include <linux/fd.h>
+#include <linux/major.h>
+#include <scsi/scsi.h>
 
-# include <iprt/linux/sysfs.h>
-#endif /* RT_OS_LINUX */
+#include <iprt/linux/sysfs.h>
 
-#include <fam.h>
+#ifdef VBOX_USB_WITH_SYSFS
+# include <fam.h>
+#endif
 
 #include <vector>
+
+#include <errno.h>
 
 /******************************************************************************
 *   Global Variables                                                          *
@@ -98,8 +92,9 @@ static int getDriveInfoFromDev(DriveInfoList *pList, bool isDVD,
                                bool *pfSuccess);
 static int getDriveInfoFromSysfs(DriveInfoList *pList, bool isDVD,
                                  bool *pfSuccess);
+#ifdef VBOX_USB_WITH_SYSFS
 static int getUSBDeviceInfoFromSysfs(USBDeviceInfoList *pList, bool *pfSuccess);
-#ifdef VBOX_WITH_DBUS
+# ifdef VBOX_WITH_DBUS
 /* These must be extern to be usable in the RTMemAutoPtr template */
 extern void VBoxHalShutdown (DBusConnection *pConnection);
 extern void VBoxHalShutdownPrivate (DBusConnection *pConnection);
@@ -135,7 +130,8 @@ static int getUSBInterfacesFromHal(std::vector <iprt::MiniString> *pList,
                                    const char *pcszUdi, bool *pfSuccess);
 static DBusHandlerResult dbusFilterFunction (DBusConnection *pConnection,
                                              DBusMessage *pMessage, void *pvUser);
-#endif  /* VBOX_WITH_DBUS */
+# endif  /* VBOX_WITH_DBUS */
+#endif /* VBOX_USB_WITH_SYSFS */
 
 
 /** Find the length of a string, ignoring trailing non-ascii or control
@@ -1030,10 +1026,10 @@ int VBoxMainUSBDeviceInfo::UpdateDevices ()
     bool success = false;  /* Have we succeeded in finding anything yet? */
     try
     {
-        bool halSuccess = false;
         mDeviceList.clear();
-#if defined(RT_OS_LINUX)
-#ifdef VBOX_WITH_DBUS
+#ifdef VBOX_USB_WITH_SYSFS
+# ifdef VBOX_WITH_DBUS
+        bool halSuccess = false;
         if (   RT_SUCCESS(rc)
             && RT_SUCCESS(RTDBusLoadLib())
             && (!success || testing()))
@@ -1044,11 +1040,13 @@ int VBoxMainUSBDeviceInfo::UpdateDevices ()
             rc = getOldUSBDeviceInfoFromHal(&mDeviceList, &halSuccess);
         if (!success)
             success = halSuccess;
-#endif /* VBOX_WITH_DBUS defined */
+# endif /* VBOX_WITH_DBUS */
         if (   RT_SUCCESS(rc)
             && (!success || testing()))
-            rc = getUSBDeviceInfoFromSysfs(&mDeviceList, &halSuccess);
-#endif /* RT_OS_LINUX */
+            rc = getUSBDeviceInfoFromSysfs(&mDeviceList, &success);
+#else /* !VBOX_USB_WITH_SYSFS */
+        NOREF(success);
+#endif /* !VBOX_USB_WITH_SYSFS */
     }
     catch(std::bad_alloc &e)
     {
@@ -1058,7 +1056,7 @@ int VBoxMainUSBDeviceInfo::UpdateDevices ()
     return rc;
 }
 
-#if defined RT_OS_LINUX && defined VBOX_WITH_DBUS
+#if defined VBOX_USB_WITH_SYSFS && defined VBOX_WITH_DBUS
 class hotplugDBusImpl : public VBoxMainHotplugWaiterImpl
 {
     /** The connection to DBus */
@@ -1165,7 +1163,7 @@ void hotplugDBusImpl::Interrupt()
     LogFlowFunc(("\n"));
     mInterrupt = true;
 }
-#endif  /* !(defined RT_OS_LINUX && defined VBOX_WITH_DBUS) */
+#endif  /* VBOX_USB_WITH_SYSFS && VBOX_WITH_DBUS */
 
 class hotplugNullImpl : public VBoxMainHotplugWaiterImpl
 {
@@ -1182,76 +1180,6 @@ public:
 };
 
 #ifdef VBOX_USB_WITH_SYSFS
-
-/** @todo move these elsewhere, but wait for words of wisdom from the iprt
- * maintainer first :)
- * The ideas behind the macros are on the one hand to increase code readability
- * by reducing the space taken by the error handling (exceptions using pure C
- * if you like, where a do {} while(0) block replaces the try {} catch() and a
- * variable at a higher scope remembers the success or failure); and on the
- * other to reduce duplication in error handling code, hopefully thereby
- * raising the chances that error paths will actually work.
- */
-
-/**
- * Store an iprt status code (expected to be a function call with the status
- * code as its return value) in a variable and execute a break statement if
- * the status is unsuccessful.
- * @param  rc    where to store the value
- * @param  expr  the expression returning the status.  @a expr will only be
- *               evaluated once by the macro call
- */
-#define SETRCBREAK(rc, expr) \
-    if (RT_FAILURE(((rc) = (expr)))) \
-        break; \
-    else do {} while (0)
-
-/**
- * Store an iprt status code (expected to be a function call with the status
- * code as its return value) in a variable and execute a return statement if
- * the status is unsuccessful.
- * @param  rc    where to store the value
- * @param  expr  the expression returning the status.  @a expr will only be
- *               evaluated once by the macro call
- */
-#define SETRCRETURN(rc, expr) \
-    do \
-    { \
-        (rc) = (expr); \
-        if (RT_FAILURE(rc)) \
-            return (rc); \
-    } while (0)
-
-static void testSetRCBreak(void)
-{
-    int rc = VINF_SUCCESS;
-    do {
-        SETRCBREAK(rc, VERR_WRONG_ORDER);
-        rc = VINF_SUCCESS;
-    } while(0);
-    Assert(rc == VERR_WRONG_ORDER);
-    rc = VERR_GENERAL_FAILURE;
-    do {
-        SETRCBREAK(rc, VINF_BUFFER_OVERFLOW);
-        Assert(rc == VINF_BUFFER_OVERFLOW);
-        rc = VERR_WRONG_ORDER;
-    } while(0);
-    Assert(rc == VERR_WRONG_ORDER);
-}
-
-static int testSetRCReturnWorker(int rc)
-{
-    int rc2 = VERR_WRONG_ORDER;
-    SETRCRETURN(rc2, rc);
-    Assert(rc == rc2);
-    return VINF_SUCCESS;
-}
-
-static void testSetRCReturn(void)
-{
-    Assert(testSetRCReturnWorker(VERR_GENERAL_FAILURE) == VERR_GENERAL_FAILURE);
-    AssertRCSuccess(testSetRCReturnWorker(VINF_BUFFER_OVERFLOW));
-}
 
 #define SYSFS_USB_DEVICE_PATH "/dev/bus/usb"
 #define SYSFS_WAKEUP_STRING "Wake up!"
@@ -1293,7 +1221,7 @@ class hotplugSysfsFAMImpl : public VBoxMainHotplugWaiterImpl
     int openFAM(void)
     {
         if (FAMOpen(&mFAMConnection) < 0)
-            return VERR_UNRESOLVED_ERROR;  /* VERR_FAM_OPEN_FAILED */
+            return VERR_FAM_OPEN_FAILED;
         mfFAMInitialised = true;
         return VINF_SUCCESS;
     }
@@ -1304,7 +1232,7 @@ class hotplugSysfsFAMImpl : public VBoxMainHotplugWaiterImpl
         AssertReturn(mfFAMInitialised, VERR_WRONG_ORDER);
         FAMRequest dummyReq;
         if (FAMMonitorDirectory(&mFAMConnection, pszName, &dummyReq, NULL) < 0)
-            return VERR_UNRESOLVED_ERROR;  /* VERR_FAM_MONITOR_FILE_FAILED */
+            return VERR_FAM_MONITOR_DIRECTORY_FAILED;
         return VINF_SUCCESS;
     }
 
@@ -1314,7 +1242,7 @@ class hotplugSysfsFAMImpl : public VBoxMainHotplugWaiterImpl
     {
         int oldFD = FAMCONNECTION_GETFD(&mFAMConnection);
         FAMCONNECTION_GETFD(&mFAMConnection) = -1;
-        Assert(monitorDirectoryFAM(NULL) == VERR_UNRESOLVED_ERROR);
+        Assert(monitorDirectoryFAM(NULL) == VERR_FAM_MONITOR_DIRECTORY_FAILED);
         FAMCONNECTION_GETFD(&mFAMConnection) = oldFD;
     }
 
@@ -1327,6 +1255,9 @@ class hotplugSysfsFAMImpl : public VBoxMainHotplugWaiterImpl
             FAMClose(&mFAMConnection);
         mfFAMInitialised = false;
     }
+
+    /** Read the wakeup string from the wakeup pipe */
+    int drainWakeupPipe(void);
 public:
     hotplugSysfsFAMImpl(void);
     virtual ~hotplugSysfsFAMImpl(void)
@@ -1360,22 +1291,37 @@ hotplugSysfsFAMImpl::hotplugSysfsFAMImpl(void) :
      * well as we can.  On an uninitialised object this method is a sematic
      * no-op. */
     term();
-    /** Unit test our macros above */
-    testSetRCBreak();
-    testSetRCReturn();
+    /* For now this probing method should only be used if nothing else is
+     * available */
+    if (!testing())
+    {
+#ifndef VBOX_USB_WITH_SYSFS_BY_DEFAULT
+        Assert(!RTFileExists("/proc/bus/usb/devices"));
+#endif
+#ifdef VBOX_WITH_DBUS
+        Assert(!hotplugDBusImpl::HalAvailable());
+#endif
+    }
 #endif
     int rc;
     do {
-        SETRCBREAK(rc, RTPipeCreate(&mhWakeupPipeR, &mhWakeupPipeW, 0));
-        SETRCBREAK(rc, openFAM());
-        SETRCBREAK(rc, RTSocketFromNative
-                           (&mhFAMFD, FAMCONNECTION_GETFD(&mFAMConnection)));
-        SETRCBREAK(rc, monitorDirectoryFAM(SYSFS_USB_DEVICE_PATH));
-        SETRCBREAK(rc, RTPollSetCreate(&mhPollSet));
-        SETRCBREAK(rc, RTPollSetAddSocket
-                           (mhPollSet, mhFAMFD, RTPOLL_EVT_READ, FAMFD_ID));
-        SETRCBREAK(rc, RTPollSetAddPipe
-                           (mhPollSet, mhWakeupPipeR, RTPOLL_EVT_READ, RPIPE_ID));
+        if (RT_FAILURE(rc = RTPipeCreate(&mhWakeupPipeR, &mhWakeupPipeW, 0)))
+            break;
+        if (RT_FAILURE(rc = openFAM()))
+            break;
+        if (RT_FAILURE(rc = RTSocketFromNative
+                                (&mhFAMFD, FAMCONNECTION_GETFD(&mFAMConnection))))
+            break;
+        if (RT_FAILURE(rc = monitorDirectoryFAM(SYSFS_USB_DEVICE_PATH)))
+            break;
+        if (RT_FAILURE(rc = RTPollSetCreate(&mhPollSet)))
+            break;
+        if (RT_FAILURE(rc = RTPollSetAddSocket
+                                (mhPollSet, mhFAMFD, RTPOLL_EVT_READ, FAMFD_ID)))
+            break;
+        if (RT_FAILURE(rc = RTPollSetAddPipe
+                                (mhPollSet, mhWakeupPipeR, RTPOLL_EVT_READ, RPIPE_ID)))
+            break;
 #ifdef DEBUG
         /** Other tests */
         testmonitorDirectoryFAM();
@@ -1398,6 +1344,23 @@ void hotplugSysfsFAMImpl::term(void)
     mhPollSet = NIL_RTPOLLSET;
 }
 
+/** Does a FAM event code mean that the available devices have (probably)
+ * changed? */
+static int sysfsGetStatusForFAMCode(enum FAMCodes enmCode)
+{
+    if (enmCode == FAMExists || enmCode == FAMEndExist)
+        return VERR_TRY_AGAIN;
+    return VINF_SUCCESS;
+}
+
+int hotplugSysfsFAMImpl::drainWakeupPipe(void)
+{
+    char szBuf[sizeof(SYSFS_WAKEUP_STRING)];
+    int rc = RTPipeRead(mhWakeupPipeR, szBuf, sizeof(szBuf), NULL);
+    AssertRC(rc);
+    return VINF_SUCCESS;
+}
+
 int hotplugSysfsFAMImpl::Wait(RTMSINTERVAL aMillies)
 {
     uint32_t id;
@@ -1407,28 +1370,15 @@ int hotplugSysfsFAMImpl::Wait(RTMSINTERVAL aMillies)
     if (RT_FAILURE(mStatus))
         return VERR_NOT_SUPPORTED;
     /* timeout returns */
-    SETRCRETURN(rc, RTPoll(mhPollSet, aMillies, NULL, &id));
+    if (RT_FAILURE(rc = RTPoll(mhPollSet, aMillies, NULL, &id)))
+        return rc;
     if (id == RPIPE_ID)
-    {
-        /* drain the pipe */
-        char szBuf[sizeof(SYSFS_WAKEUP_STRING)];
-        rc = RTPipeRead(mhWakeupPipeR, szBuf, sizeof(szBuf), NULL);
-        AssertRC(rc);
-        return VINF_SUCCESS;
-    }
+        return drainWakeupPipe();
     AssertReturn(id == FAMFD_ID, VERR_NOT_SUPPORTED);
     /* Samba re-opens the connection to FAM if this happens. */
     AssertReturn(FAMNextEvent(&mFAMConnection, &ev) == 1,
                  VERR_NOT_SUPPORTED);
-    switch(ev.code)
-    {
-        case FAMExists:
-        case FAMEndExist:
-            return VERR_TRY_AGAIN;
-        default:
-            break;
-    }
-    return VINF_SUCCESS;
+    return sysfsGetStatusForFAMCode(ev.code);
 }
 
 void hotplugSysfsFAMImpl::Interrupt(void)
@@ -1444,23 +1394,24 @@ void hotplugSysfsFAMImpl::Interrupt(void)
 
 VBoxMainHotplugWaiter::VBoxMainHotplugWaiter(void)
 {
-#if defined RT_OS_LINUX && defined VBOX_WITH_DBUS
+#ifdef VBOX_USB_WITH_SYSFS
+# ifdef VBOX_WITH_DBUS
     if (hotplugDBusImpl::HalAvailable())
     {
         mImpl = new hotplugDBusImpl;
         return;
     }
-#endif  /* !(defined RT_OS_LINUX && defined VBOX_WITH_DBUS) */
-#if defined VBOX_USB_WITH_SYSFS
+# endif  /* VBOX_WITH_DBUS */
     if (hotplugSysfsFAMImpl::SysfsAvailable())
     {
         mImpl = new hotplugSysfsFAMImpl;
         return;
     }
-#endif  /* !(defined RT_OS_LINUX && defined VBOX_WITH_DBUS) */
+#endif  /* VBOX_USB_WITH_SYSFS */
     mImpl = new hotplugNullImpl;
 }
 
+#ifdef VBOX_USB_WITH_SYSFS
 class sysfsPathHandler
 {
     /** Called on each element of the sysfs directory.  Can e.g. store
@@ -1671,9 +1622,9 @@ static int getUSBDeviceInfoFromSysfs(USBDeviceInfoList *pList,
     LogFlow (("rc=%Rrc\n", rc));
     return rc;
 }
+#endif /* VBOX_USB_WITH_SYSFS */
 
-
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_DBUS)
+#if defined VBOX_USB_WITH_SYSFS && defined VBOX_WITH_DBUS
 /** Wrapper class around DBusError for automatic cleanup */
 class autoDBusError
 {
@@ -2442,5 +2393,5 @@ DBusHandlerResult dbusFilterFunction(DBusConnection * /* pConnection */,
     }
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
-#endif  /* RT_OS_LINUX && VBOX_WITH_DBUS */
+#endif  /* VBOX_USB_WITH_SYSFS && VBOX_WITH_DBUS */
 

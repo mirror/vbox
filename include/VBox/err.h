@@ -1532,6 +1532,17 @@
 #define VERR_VSCSI_LUN_BUSY                         (-4904)
 /** @} */
 
+/** @name VBox FAM error codes
+ * @{
+ */
+/** FAM failed to open a connection */
+#define VERR_FAM_OPEN_FAILED                        (-5000)
+/** FAM failed to add a file to the list to be monitored */
+#define VERR_FAM_MONITOR_FILE_FAILED                (-5001)
+/** FAM failed to add a directory to the list to be monitored */
+#define VERR_FAM_MONITOR_DIRECTORY_FAILED                (-5001)
+/** @} */
+
 /* SED-END */
 
 /** @} */
