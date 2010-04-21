@@ -209,7 +209,7 @@ static int rtSemMutexSolarisRequestSleep(PRTSEMMUTEXINTERNAL pThis, RTMSINTERVAL
                 /*
                  * Interrupted by some signal.
                  */
-                rc= VERR_INTERRUPTED;
+                rc = VERR_INTERRUPTED;
             }
         }
         else
@@ -275,8 +275,7 @@ DECLINLINE(int) rtSemMutexSolarisRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMil
         rc = VINF_SUCCESS;
     }
     /*
-     * Not a recursion, make sure we don't sneak in when another thread
-     * is being woken up.
+     * Not a recursion, claim the unowned mutex if we're there are no waiters.
      */
     else if (   pThis->hOwnerThread == NIL_RTNATIVETHREAD
              && pThis->cWaiters == 0)
@@ -350,7 +349,7 @@ RTDECL(int) RTSemMutexRelease(RTSEMMUTEX hMtx)
             pThis->hOwnerThread = NIL_RTNATIVETHREAD;
 
             /*
-             * If there are any waiters, signal them.
+             * If there are any waiters, signal one of them.
              */
             if (pThis->cWaiters > 0)
                 cv_signal(&pThis->Cnd);
