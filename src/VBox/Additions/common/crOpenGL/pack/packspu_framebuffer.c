@@ -74,6 +74,13 @@ packspu_FramebufferRenderbufferEXT(GLenum target, GLenum attachment, GLenum rend
     crPackFramebufferRenderbufferEXT(target, attachment, renderbuffertarget, renderbuffer);
 }
 
+void PACKSPU_APIENTRY
+packspu_BindRenderbufferEXT(GLenum target, GLuint renderbuffer)
+{
+    crStateBindRenderbufferEXT(target, renderbuffer);
+    crPackBindRenderbufferEXT(target, renderbuffer);
+}
+
 GLenum PACKSPU_APIENTRY
 packspu_CheckFramebufferStatusEXT(GLenum target)
 {
