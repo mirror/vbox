@@ -590,7 +590,7 @@ int Guest::notifyCtrlExecOut(uint32_t                 u32Function,
         pCBData->u32PID = pData->u32PID;
         pCBData->u32HandleId = pData->u32HandleId;
         pCBData->u32Flags = pData->u32Flags;
-        
+
         /* Allocate data buffer and copy it */
         if (pData->cbData && pData->pvData)
         {
@@ -730,11 +730,12 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
             aTimeoutMS = UINT32_MAX;
 
         /* Prepare arguments. */
-        com::SafeArray<IN_BSTR> args(ComSafeArrayInArg(aArguments));
-        uint32_t uNumArgs = args.size();
         char **papszArgv = NULL;
-        if(uNumArgs > 0)
+        uint32_t uNumArgs = 0;
+        if(aArguments > 0)
         {
+            com::SafeArray<IN_BSTR> args(ComSafeArrayInArg(aArguments));
+            uNumArgs = args.size();
             papszArgv = (char**)RTMemAlloc(sizeof(char*) * (uNumArgs + 1));
             AssertPtr(papszArgv);
             for (unsigned i = 0; RT_SUCCESS(vrc) && i < uNumArgs; i++)
@@ -759,17 +760,19 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                 uint32_t cbArgs = pszArgs ? strlen(pszArgs) + 1 : 0; /* Include terminating zero. */
 
                 /* Prepare environment. */
-                com::SafeArray<IN_BSTR> env(ComSafeArrayInArg(aEnvironment));
-
                 void *pvEnv = NULL;
                 uint32_t uNumEnv = 0;
                 uint32_t cbEnv = 0;
-
-                for (unsigned i = 0; i < env.size(); i++)
+                if (aEnvironment > 0)
                 {
-                    vrc = prepareExecuteEnv(Utf8Str(env[i]).raw(), &pvEnv, &cbEnv, &uNumEnv);
-                    if (RT_FAILURE(vrc))
-                        break;
+                    com::SafeArray<IN_BSTR> env(ComSafeArrayInArg(aEnvironment));
+
+                    for (unsigned i = 0; i < env.size(); i++)
+                    {
+                        vrc = prepareExecuteEnv(Utf8Str(env[i]).raw(), &pvEnv, &cbEnv, &uNumEnv);
+                        if (RT_FAILURE(vrc))
+                            break;
+                    }
                 }
 
                 if (RT_SUCCESS(vrc))
@@ -992,7 +995,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
             if (pData->cbData > cbData)
                 outputData.resize(pData->cbData);
 
-            /* Fill output in supplied out buffer. */  
+            /* Fill output in supplied out buffer. */
             memcpy(outputData.raw(), pData->pvData, pData->cbData);
             outputData.resize(pData->cbData); /* Shrink to fit actual buffer size. */
         }
