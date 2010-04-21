@@ -90,7 +90,7 @@ WITH_DBUS=1
 WITH_KMODS=1
 WITH_OPENGL=1
 WITH_HARDENING=1
-WITH_VDE=
+WITH_VDE=0
 BUILD_LIBXML2=
 BUILD_LIBXSLT=
 BUILD_LIBCURL=
@@ -1039,6 +1039,28 @@ extern "C" int main(void)
 EOF
   if test_compile "-lpam" pam pam; then
     test_execute
+  fi
+}
+
+
+#
+# Check for fam, needed by Main/HostHardwareLinux
+#
+check_fam()
+{
+  test_header fam
+  cat > $ODIR.tmp_src.cc << EOF
+#include <fam.h>
+extern "C" int main(void)
+{
+  FAMConnection conn;
+  FAMOpen(&conn);
+  FAMClose(&conn);
+  return 1;
+}
+EOF
+  if test_compile "-lfam" fam fam; then
+    echo "found."
   fi
 }
 
@@ -2417,6 +2439,7 @@ check_curl
 [ "$OS" != "darwin"  ] && check_z
 [ "$OS" != "darwin" -a "$OS" != "freebsd" ] && check_png
 [ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
+[ $OSE -eq 0 -a "$OS" = "linux" ] && check_fam
 [ $WITH_SDL -eq 1 ]    && check_sdl
 [ $WITH_SDL_TTF -eq 1 -a $OSE -eq 0 ] && check_sdl_ttf
 [ $WITH_X11    -eq 1 ] && check_x
