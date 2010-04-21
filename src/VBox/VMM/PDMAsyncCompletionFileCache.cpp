@@ -757,11 +757,10 @@ static bool pdmacFileCacheAddDirtyEntry(PPDMACFILEENDPOINTCACHE pEndpointCache, 
  * if everything was transfered.
  *
  * @returns Next task segment handle.
- * @param   pEndpointCache    The endpoint cache.
  * @param   pTaskSeg          Task segment to complete.
  * @param   rc                Status code to set.
  */
-static PPDMACFILETASKSEG pdmacFileCacheTaskComplete(PPDMACFILEENDPOINTCACHE pEndpointCache, PPDMACFILETASKSEG pTaskSeg, int rc)
+static PPDMACFILETASKSEG pdmacFileCacheTaskComplete(PPDMACFILETASKSEG pTaskSeg, int rc)
 {
     PPDMACFILETASKSEG pNext = pTaskSeg->pNext;
     PPDMASYNCCOMPLETIONTASKFILE pTaskFile = pTaskSeg->pTask;
@@ -804,7 +803,8 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser, int 
 
     /* Process waiting segment list. The data in entry might have changed inbetween. */
     bool fDirty = false;
-    PPDMACFILETASKSEG pCurr = pEntry->pWaitingHead;
+    PPDMACFILETASKSEG pComplete = pEntry->pWaitingHead;
+    PPDMACFILETASKSEG pCurr     = pComplete;
 
     AssertMsg((pCurr && pEntry->pWaitingTail) || (!pCurr && !pEntry->pWaitingTail),
                 ("The list tail was not updated correctly\n"));
@@ -855,7 +855,7 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser, int 
                 memcpy(pEntry->pbData + pCurr->uBufOffset, pCurr->pvBuf, pCurr->cbTransfer);
                 fDirty = true;
 
-                pCurr = pdmacFileCacheTaskComplete(pEndpointCache, pCurr, VINF_SUCCESS);
+                pCurr = pCurr->pNext;
             }
         }
     }
@@ -875,7 +875,7 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser, int 
             else
                 memcpy(pCurr->pvBuf, pEntry->pbData + pCurr->uBufOffset, pCurr->cbTransfer);
 
-            pCurr = pdmacFileCacheTaskComplete(pEndpointCache, pCurr, rc);
+            pCurr = pCurr->pNext;
         }
     }
 
@@ -898,6 +898,10 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser, int 
 
     if (fCommit)
         pdmacFileCacheCommitDirtyEntries(pCache);
+
+    /* Complete waiters now. */
+    while (pComplete)
+        pComplete = pdmacFileCacheTaskComplete(pComplete, rc);
 }
 
 /**
