@@ -180,6 +180,11 @@ static void VBoxServiceVMInfoWriteFixedProperties(void)
         RTStrFree(pszAddVer);
         RTStrFree(pszAddRev);
     }
+    else /* If not found delete stale entries. */
+    {
+		rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Version", NULL);
+		rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Revision", NULL);
+	}
 
 #ifdef RT_OS_WINDOWS
     /*
@@ -192,8 +197,14 @@ static void VBoxServiceVMInfoWriteFixedProperties(void)
         rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/InstallDir", "%s", pszInstDir);
         RTStrFree(pszInstDir);
     }
+    else /* If not found delete stale entry. */
+    {
+		rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/InstallDir", NULL);
+	}		
     VBoxServiceWinGetComponentVersions(g_VMInfoGuestPropSvcClientID);
 #endif
+
+	/* return rc; */
 }
 
 
