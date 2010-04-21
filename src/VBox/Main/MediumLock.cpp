@@ -60,6 +60,11 @@ const ComObjPtr<Medium> &MediumLock::GetMedium() const
     return mMedium;
 }
 
+bool MediumLock::GetLockRequest() const
+{
+    return mLockWrite;
+}
+
 HRESULT MediumLock::Lock()
 {
     if (mIsLocked)
