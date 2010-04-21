@@ -222,6 +222,44 @@ typedef struct DMIOEMSTRINGS
 } *PDMIOEMSTRINGS;
 AssertCompileSize(DMIOEMSTRINGS, 0x7);
 
+/** Physical memory array (Type 16) */
+typedef struct DMIRAMARRAY
+{
+    DMIHDR          header;
+    uint8_t         u8Location;
+    uint8_t         u8Use;
+    uint8_t         u8MemErrorCorrection;
+    uint32_t        u32MaxCapacity;
+    uint16_t        u16MemErrorHandle;
+    uint16_t        u16NumberOfMemDevices;
+} *PDMIRAMARRAY;
+AssertCompileSize(DMIRAMARRAY, 15);
+
+/** DMI Memory Device (Type 17) */
+typedef struct DMIMEMORYDEV
+{
+    DMIHDR          header;
+    uint16_t        u16PhysMemArrayHandle;
+    uint16_t        u16MemErrHandle;
+    uint16_t        u16TotalWidth;
+    uint16_t        u16DataWidth;
+    uint16_t        u16Size;
+    uint8_t         u8FormFactor;
+    uint8_t         u8DeviceSet;
+    uint8_t         u8DeviceLocator;
+    uint8_t         u8BankLocator;
+    uint8_t         u8MemoryType;
+    uint16_t        u16TypeDetail;
+    uint16_t        u16Speed;
+    uint8_t         u8Manufacturer;
+    uint8_t         u8SerialNumber;
+    uint8_t         u8AssetTag;
+    uint8_t         u8PartNumber;
+    /* v2.6+ */
+    uint8_t         u8Attributes;
+} *PDMIMEMORYDEV;
+AssertCompileSize(DMIMEMORYDEV, 28);
+
 /** MPS floating pointer structure */
 typedef struct MPSFLOATPTR
 {
@@ -435,6 +473,10 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         } \
     }
 
+#define START_STRUCT(tbl)                                       \
+        pszStr                       = (char *)(tbl + 1);       \
+        iStrNr                       = 1;    
+
 #define TERM_STRUCT \
     { \
         *pszStr++                    = '\0'; /* terminate set of text strings */ \
@@ -626,6 +668,64 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         pChassis->u8ContElems        = 0; /* no contained elements */
         pChassis->u8ContElemRecLen   = 0; /* no contained elements */
 # endif
+        TERM_STRUCT;
+
+
+        /***************************************
+         * DMI Physical Memory Array (Type 16) *
+         ***************************************/
+        uint64_t u64RamSize;
+        rc = CFGMR3QueryU64(pCfg, "RamSize", &u64RamSize);
+        if (RT_FAILURE (rc))
+            return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"RamSize\""));
+
+        PDMIRAMARRAY pMemArray = (PDMIRAMARRAY)pszStr;
+        CHECKSIZE(sizeof(*pMemArray));
+
+        START_STRUCT(pMemArray);
+        pMemArray->header.u8Type    = 16; /* Physical Memory Array */
+        pMemArray->header.u8Length  = sizeof(*pMemArray);
+        pMemArray->header.u16Handle = 0x0005;
+        pMemArray->u8Location = 0x03; /* Motherboard */
+        pMemArray->u8Use = 0x03; /* System memory */
+        pMemArray->u8MemErrorCorrection = 0x01; /* Other */        
+        uint32_t u32RamSizeK = (uint32_t)(u64RamSize / _1K);
+        pMemArray->u32MaxCapacity = u32RamSizeK; /* RAM size in K */
+        pMemArray->u16MemErrorHandle = 0xfffe; /* No error info structure */
+        pMemArray->u16NumberOfMemDevices = 1;
+        TERM_STRUCT;
+
+        /***************************************
+         * DMI Memory Device (Type 17)         *
+         ***************************************/
+        PDMIMEMORYDEV pMemDev = (PDMIMEMORYDEV)pszStr;
+        CHECKSIZE(sizeof(*pMemDev));
+
+        START_STRUCT(pMemDev);
+        pMemDev->header.u8Type    = 17; /* Memory Device */
+        pMemDev->header.u8Length  = sizeof(*pMemDev);
+        pMemDev->header.u16Handle = 0x0006;
+        pMemDev->u16PhysMemArrayHandle = 0x0005; /* handle of array we belong to */
+        pMemDev->u16MemErrHandle = 0xfffe; /* system doesn't provide this information */
+        pMemDev->u16TotalWidth = 0xffff; /* Unknown */
+        pMemDev->u16DataWidth = 0xffff;  /* Unknown */
+        int16_t u16RamSizeM = (uint16_t)(u64RamSize / _1M);
+        if (u16RamSizeM == 0)
+            u16RamSizeM = 0x400; /* 1G */
+        pMemDev->u16Size = u16RamSizeM; /* RAM size */
+        pMemDev->u8FormFactor = 0x09; /* DIMM */
+        pMemDev->u8DeviceSet = 0x00; /* Not part of a device set */
+        READCFGSTRDEF(pMemDev->u8DeviceLocator, " ", "DIMM 0");
+        READCFGSTRDEF(pMemDev->u8BankLocator, " ", "Bank 0");
+        pMemDev->u8MemoryType = 0x03; /* DRAM */
+        pMemDev->u16TypeDetail = 0; /* Nothing special */
+        pMemDev->u16Speed = 1600; /* Unknown, shall be speed in MHz */
+        READCFGSTR(pMemDev->u8Manufacturer, DmiSystemVendor);
+        READCFGSTRDEF(pMemDev->u8SerialNumber, " ", "00000000");
+        READCFGSTRDEF(pMemDev->u8AssetTag, " ", "00000000");
+        READCFGSTRDEF(pMemDev->u8PartNumber, " ", "00000000");
+        pMemDev->u8Attributes = 0; /* Unknown */
         TERM_STRUCT;
 
         /*****************************
@@ -884,4 +984,3 @@ void FwCommonPlantMpsFloatPtr(PPDMDEVINS pDevIns)
     floatPtr.u8Checksum            = fwCommonChecksum((uint8_t*)&floatPtr, 16);
     PDMDevHlpPhysWrite(pDevIns, 0x9fff0, &floatPtr, 16);
 }
-
