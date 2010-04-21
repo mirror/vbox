@@ -1346,7 +1346,7 @@ void hotplugSysfsFAMImpl::term(void)
 
 /** Does a FAM event code mean that the available devices have (probably)
  * changed? */
-static int sysfsGetStatusForFAMCode(enum FAMCodes enmCode)
+static int sysfsGetStatusForFAMCode(FAMCodes enmCode)
 {
     if (enmCode == FAMExists || enmCode == FAMEndExist)
         return VERR_TRY_AGAIN;
