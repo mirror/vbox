@@ -270,7 +270,9 @@ VBOX_WITH_DOCS = 1
 # Include documentation in the package
 VBOX_WITH_DOCS_PACKING = 1
 # Include CHM when building docs (unset in LocalConfig.kmk to suppress CHM)
-VBOX_WITH_DOCS_CHM = 1
+ifneq ($(KBUILD_TARGET),linux)
+ VBOX_WITH_DOCS_CHM = 1
+endif
 # Don't bother with documentation, overrides VBOX_WITH_DOCS.
 # This is not used by makefiles, only Config.kmk, see below.
 #VBOX_WITHOUT_DOCS = 1
@@ -374,11 +376,9 @@ endif
 ifdef VBOX_WITH_USB
  VBOX_WITH_VUSB = 1
 endif
-# Enable the hal/sysfs USB code on Linux.  This depends on VBOX_WITH_DBUS.
-ifdef VBOX_WITH_DBUS
- ifeq ($(KBUILD_TARGET),linux)
-  VBOX_USB_WITH_SYSFS=1
- endif
+# Enable the hal/sysfs USB code on Linux.
+ifeq ($(KBUILD_TARGET),linux)
+ VBOX_USB_WITH_SYSFS=1
 endif
 # Use the new VBI module on Solaris.
 #VBOX_WITH_SOLARIS_VBI = 1
@@ -457,7 +457,7 @@ VBOX_WITH_PYTHON ?= 1
 # Build against multiple Python versions present in the system
 VBOX_WITH_MULTIVERSION_PYTHON ?= 1
 # Enable the kchmviewer.
-VBOX_WITH_KCHMVIEWER = 1
+VBOX_WITH_KCHMVIEWER =
 # Build the testsuite.
 VBOX_WITH_TESTSUITE = 1
 # Build the testcases.
@@ -794,6 +794,7 @@ ifdef VBOX_OSE
  endif
  VBOX_WITH_LPC=
  VBOX_WITH_SMC=
+ VBOX_USB_WITH_SYSFS=
  # branding
  VBOX_BRAND_BIOS_LOGO          := $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/ose_logo.bmp
  VBOX_BRAND_GUI_ABOUT_PNG      := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/OSE/about.png
