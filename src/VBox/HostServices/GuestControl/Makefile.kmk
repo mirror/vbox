@@ -23,7 +23,7 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefile(s).
-include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+# include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
 #
 # The guest control service DLL.

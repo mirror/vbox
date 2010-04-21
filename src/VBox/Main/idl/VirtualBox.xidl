@@ -8376,7 +8376,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="419cb190-a2f1-4beb-af8d-fadc75c6ecf7"
+     uuid="4b8f90ce-e8ef-4f07-af1b-b0b85bc07e37"
      wsmap="managed"
      >
     <desc>
@@ -8612,6 +8612,12 @@
           Flags describing which output to retrieve.
         </desc>
       </param>
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>
+          The maximum timeout value (in msec) to wait for output
+          data. Pass 0 for an infinite timeout.
+        </desc>
+      </param>     
       <param name="size" type="unsigned long long" dir="in">
         <desc>
           Size in bytes to read in the buffer.

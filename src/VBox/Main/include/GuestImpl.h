@@ -96,7 +96,7 @@ public:
                               IN_BSTR aStdIn, IN_BSTR aStdOut, IN_BSTR aStdErr,
                               IN_BSTR aUserName, IN_BSTR aPassword,
                               ULONG aTimeoutMS, ULONG* aPID, IProgress **aProgress);
-    STDMETHOD(GetProcessOutput)(ULONG aPID, ULONG aFlags, ULONG64 aSize, ComSafeArrayOut(BYTE, aData));
+    STDMETHOD(GetProcessOutput)(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, ULONG64 aSize, ComSafeArrayOut(BYTE, aData));
     STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemCache,
                                      ULONG *aPageTotal, ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal);
@@ -139,7 +139,9 @@ private:
     int prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);
     /** Handler for guest execution control notifications. */
     int notifyCtrlExec(uint32_t u32Function, PHOSTEXECCALLBACKDATA pData);
-    CallbackListIter getCtrlCallbackContext(uint32_t u32ContextID);
+    int notifyCtrlExecOut(uint32_t u32Function, PHOSTEXECOUTCALLBACKDATA pData);
+    CallbackListIter getCtrlCallbackContextByID(uint32_t u32ContextID);
+    CallbackListIter getCtrlCallbackContextByPID(uint32_t u32PID);
     void removeCtrlCallbackContext(CallbackListIter it);
     uint32_t addCtrlCallbackContext(void *pvData, uint32_t cbData, Progress* pProgress);
 # endif

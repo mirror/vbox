@@ -234,7 +234,7 @@ public:
         return VINF_SUCCESS;
     }
 private:
-    int paramBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int paramBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     void paramBufferFree(PVBOXGUESTCTRPARAMBUFFER pBuf);
     int paramBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int prepareExecute(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
@@ -268,7 +268,7 @@ DECLCALLBACK(int) Service::reqThreadFn(RTTHREAD ThreadSelf, void *pvUser)
 
 /** @todo Write some nice doc headers! */
 /* Stores a HGCM request in an internal buffer (pEx). Needs to be freed later using execBufferFree(). */
-int Service::paramBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::paramBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     AssertPtr(pBuf);
     int rc = VINF_SUCCESS;
@@ -280,6 +280,7 @@ int Service::paramBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms,
      */
     if (RT_SUCCESS(rc))
     {
+        pBuf->uMsg = uMsg;
         pBuf->uParmCount = cParms;
         pBuf->pParms = (VBOXHGCMSVCPARM*)RTMemAlloc(sizeof(VBOXHGCMSVCPARM) * pBuf->uParmCount);
         if (NULL == pBuf->pParms)
@@ -435,11 +436,7 @@ int Service::processHostMsg(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOX
              /* Sufficient parameter space? */
              if (uParmCount > cParms)
              {
-                uint32_t uCmd = 0;
-                if (uParmCount)
-                    curCmd.parmBuf.pParms[0].getUInt32(&uCmd);
-
-                 paParms[0].setUInt32(/*uCmd*/ 1); /* Message ID */
+                 paParms[0].setUInt32(curCmd.parmBuf.uMsg); /* Message ID */
                  paParms[1].setUInt32(uParmCount); /* Required parameters for message */
 
                  /*
@@ -507,6 +504,22 @@ int Service::notifyHost(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paP
             rc = mpfnHostCallback(mpvHostData, eFunction,
                                   (void *)(&data), sizeof(data));
     }
+    else if (   eFunction == GUEST_EXEC_SEND_OUTPUT
+             && cParms    == 5)
+    {
+        HOSTEXECOUTCALLBACKDATA data;
+        data.hdr.u32Magic = HOSTEXECOUTCALLBACKDATAMAGIC;
+        paParms[0].getUInt32(&data.hdr.u32ContextID);
+
+        paParms[1].getUInt32(&data.u32PID);
+        paParms[2].getUInt32(&data.u32HandleId);
+        paParms[3].getUInt32(&data.u32Flags);
+        paParms[4].getPointer(&data.pvData, &data.cbData);
+
+        if (mpfnHostCallback)
+            rc = mpfnHostCallback(mpvHostData, eFunction,
+                                  (void *)(&data), sizeof(data));
+    }
     else
         rc = VERR_NOT_SUPPORTED;
     LogFlowFunc(("returning %Rrc\n", rc));
@@ -518,7 +531,7 @@ int Service::processCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paP
     int rc = VINF_SUCCESS;
 
     HostCmd newCmd;
-    rc = paramBufferAllocate(&newCmd.parmBuf, cParms, paParms);
+    rc = paramBufferAllocate(&newCmd.parmBuf, eFunction, cParms, paParms);
     if (RT_SUCCESS(rc))
     {
         mHostCmds.push_back(newCmd);
@@ -564,14 +577,10 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                 rc = processHostMsg(callHandle, cParms, paParms);
                 break;
 
-            /* The guest notifies the host that some output at stdout is available. */
-            case GUEST_EXEC_SEND_STDOUT:
-                LogFlowFunc(("GUEST_EXEC_SEND_STDOUT\n"));
-                break;
-
-            /* The guest notifies the host that some output at stderr is available. */
-            case GUEST_EXEC_SEND_STDERR:
-                LogFlowFunc(("GUEST_EXEC_SEND_STDERR\n"));
+            /* The guest notifies the host that some output at stdout/stderr is available. */
+            case GUEST_EXEC_SEND_OUTPUT:
+                LogFlowFunc(("GUEST_EXEC_SEND_OUTPUT\n"));
+                rc = notifyHost(eFunction, cParms, paParms);
                 break;
 
             /* The guest notifies the host of the current client status. */
@@ -620,12 +629,13 @@ int Service::hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPar
                 break;
 
             /* The host wants to send something to the guest's stdin pipe. */
-            case HOST_EXEC_SEND_STDIN:
-                LogFlowFunc(("HOST_EXEC_SEND_STDIN\n"));
+            case HOST_EXEC_SET_INPUT:
+                LogFlowFunc(("HOST_EXEC_SET_INPUT\n"));
                 break;
 
-            case HOST_EXEC_GET_STATUS:
-                LogFlowFunc(("HOST_EXEC_GET_STATUS\n"));
+            case HOST_EXEC_GET_OUTPUT:
+                LogFlowFunc(("HOST_EXEC_GET_OUTPUT\n"));
+                rc = processCmd(eFunction, cParms, paParms);
                 break;
 
             default:
