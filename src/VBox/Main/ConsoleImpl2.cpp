@@ -1025,27 +1025,28 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         /*
          * EFI subtree.
          */
-        rc = CFGMR3InsertNode(pDevices, "efi", &pDev);                              RC_CHECK();
-        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
-        rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */   RC_CHECK();
-        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "RamSize",          cbRam);                 RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "RamHoleSize",      cbRamHole);             RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "NumCPUs",          cCpus);                 RC_CHECK();
-        rc = CFGMR3InsertString(pCfg,   "EfiRom",           efiRomFile.raw());      RC_CHECK();
-        rc = CFGMR3InsertString(pCfg,   "BootArgs",         Utf8Str(bootArgs).raw()); RC_CHECK();
+        rc = CFGMR3InsertNode(pDevices, "efi", &pDev);                                   RC_CHECK();
+        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                    RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */        RC_CHECK();
+        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                                RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "RamSize",          cbRam);                      RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "RamHoleSize",      cbRamHole);                  RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "NumCPUs",          cCpus);                      RC_CHECK();
+        rc = CFGMR3InsertString(pCfg,   "EfiRom",           efiRomFile.raw());           RC_CHECK();
+        rc = CFGMR3InsertString(pCfg,   "BootArgs",         Utf8Str(bootArgs).raw());    RC_CHECK();
         rc = CFGMR3InsertString(pCfg,   "DeviceProps",      Utf8Str(deviceProps).raw()); RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "IOAPIC",           fIOAPIC);           RC_CHECK();
-        rc = CFGMR3InsertBytes(pCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid)); RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "64BitEntry", f64BitEntry); /* boolean */   RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "GopMode", u32GopMode);    RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "UgaHorizontalResolution", u32UgaHorisontal); RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "UgaVerticalResolution", u32UgaVertical);   RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "IOAPIC",           fIOAPIC);                    RC_CHECK();
+        rc = CFGMR3InsertBytes(pCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));     RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "64BitEntry", f64BitEntry); /* boolean */        RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "GopMode", u32GopMode);                          RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "UgaHorizontalResolution", u32UgaHorisontal);    RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "UgaVerticalResolution", u32UgaVertical);        RC_CHECK();
 
         /* For OS X guests we'll force passing host's DMI info to the guest */
         if (fExtProfile)
         {
-            rc = CFGMR3InsertInteger(pCfg,  "DmiUseHostInfo", 1);  RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg,  "DmiUseHostInfo", 1);                        RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg,  "DmiExposeAdditionalTables", 1);             RC_CHECK();
         }
     }
 
