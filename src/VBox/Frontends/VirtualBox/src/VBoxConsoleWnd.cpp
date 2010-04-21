@@ -225,6 +225,7 @@ VBoxConsoleWnd::VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, Qt::Wi
 #endif
     /* LED Update Timer */
     , mIdleTimer (new QTimer (this))
+    , mNetworkTimer (new QTimer (this))
     /* LEDs */
     , mHDLed (0)
     , mCDLed (0)
@@ -945,6 +946,8 @@ bool VBoxConsoleWnd::openView (const CSession &aSession)
     /* start an idle timer that will update device lighths */
     connect (mIdleTimer, SIGNAL (timeout()), SLOT (updateDeviceLights()));
     mIdleTimer->start (50);
+    connect (mNetworkTimer, SIGNAL (timeout()), SLOT (updateNetworkIPs()));
+    mNetworkTimer->start (5000);
 
     connect (mConsole, SIGNAL (mouseStateChanged (int)), this, SLOT (updateMouseState (int)));
     connect (mConsole, SIGNAL (keyboardStateChanged (int)), mHostkeyLed, SLOT (setState (int)));
@@ -1481,6 +1484,9 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *aEvent)
         /* Stop LED update timer: */
         mIdleTimer->stop();
         mIdleTimer->disconnect (SIGNAL (timeout()), this, SLOT (updateDeviceLights()));
+        /* Stop Network timer: */
+        mNetworkTimer->stop();
+        mNetworkTimer->disconnect (SIGNAL (timeout()), this, SLOT (updateNetworkIPs()));
 
         /* Hide console window: */
         hide();
@@ -2530,6 +2536,11 @@ void VBoxConsoleWnd::updateDeviceLights()
     }
 }
 
+void VBoxConsoleWnd::updateNetworkIPs()
+{
+    updateAppearanceOf(NetworkStuff);
+}
+
 void VBoxConsoleWnd::updateMachineState (KMachineState aState)
 {
     bool guruMeditation = false;
@@ -3117,13 +3128,23 @@ void VBoxConsoleWnd::updateAppearanceOf (int aElement)
         for (ulong slot = 0; slot < maxCount; ++ slot)
         {
             CNetworkAdapter adapter = machine.GetNetworkAdapter (slot);
+            QString ip;
+            ULONG64 timestamp;
+            RTTIMESPEC time;
             if (adapter.GetEnabled())
-                info += tr ("<br><nobr><b>Adapter %1 (%2)</b>: cable %3</nobr>", "Network adapters tooltip")
+            {
+                uint64_t u64Now = RTTimeSpecGetNano(RTTimeNow(&time));
+                QString flags;
+                machine.GetGuestProperty(QString("/VirtualBox/GuestInfo/Net/%1/V4/IP").arg(slot),
+                                        ip, timestamp, flags);
+                info += tr ("<br><nobr><b>Adapter %1 (%2)</b>: %3 cable %4</nobr>", "Network adapters tooltip")
                     .arg (slot + 1)
                     .arg (vboxGlobal().toString (adapter.GetAttachmentType()))
+                    .arg (ip.isEmpty() || (u64Now - timestamp > UINT64_C(20000000000)) ? "" : "IP=" + ip + " - ")
                     .arg (adapter.GetCableConnected() ?
                           tr ("connected", "Network adapters tooltip") :
                           tr ("disconnected", "Network adapters tooltip"));
+            }
         }
 
         if (info.isNull())

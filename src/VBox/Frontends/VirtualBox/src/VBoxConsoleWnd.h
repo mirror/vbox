@@ -165,6 +165,7 @@ private slots:
     void showIndicatorContextMenu (QIStateIndicator *aInd, QContextMenuEvent *aEvent);
 
     void updateDeviceLights();
+    void updateNetworkIPs();
     void updateMachineState (KMachineState aState);
     void updateMouseState (int aState);
     void updateAdditionsState (const QString &aVersion, bool aActive,
@@ -321,6 +322,7 @@ private:
 
     /* Timer to update LEDs */
     QTimer *mIdleTimer;
+    QTimer *mNetworkTimer;
 
     /* LEDs */
     QIStateIndicator *mHDLed;
