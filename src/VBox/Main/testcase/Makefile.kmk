@@ -133,7 +133,9 @@ tstHostHardwareLinux_DEFS      = \
 	$(if $(VBOX_WITH_LINUX_COMPILER_H),VBOX_WITH_LINUX_COMPILER_H,) \
 	$(if $(VBOX_WITH_DBUS),VBOX_WITH_DBUS,) \
 	$(if $(VBOX_USB_WITH_SYSFS),VBOX_USB_WITH_SYSFS,)
-tstHostHardwareLinux_LIBS     += $(PATH_OUT)/lib/USBLib.a
+tstHostHardwareLinux_LIBS     += \
+	$(PATH_OUT)/lib/USBLib.a \
+	$(if $(VBOX_USB_WITH_SYSFS),fam,)
 
 
 # generate rules.
