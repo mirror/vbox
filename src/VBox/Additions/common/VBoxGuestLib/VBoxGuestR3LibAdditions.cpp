@@ -86,17 +86,33 @@ static int vbglR3GetAdditionsWinStoragePath(PHKEY phKey)
      */
     LONG r;
 
-    /* Check the new path first. */
-    r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, phKey);
+    /* Check the built in vendor path first. */
+    char szPath[255];
+    RTStrPrintf(szPath, sizeof(szPath), "SOFTWARE\\%s\\VirtualBox Guest Additions", VBOX_VENDOR_SHORT);
+    r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, szPath, 0, KEY_READ, phKey);
 # ifdef RT_ARCH_AMD64
     if (r != ERROR_SUCCESS)
     {
-        /* Check Wow6432Node (for new entries). */
-        r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Wow6432Node\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, phKey);
+        /* Check Wow6432Node. */
+        RTStrPrintf(szPath, sizeof(szPath), "SOFTWARE\\Wow6432Node\\%s\\VirtualBox Guest Additions", VBOX_VENDOR_SHORT);
+        r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, szPath, 0, KEY_READ, phKey);
     }
 # endif
 
-    /* Still no luck? Then try the old xVM paths ... */
+    /* Check the "Sun" path first. */
+    if (r != ERROR_SUCCESS)
+    {
+        r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, phKey);
+# ifdef RT_ARCH_AMD64
+        if (r != ERROR_SUCCESS)
+        {
+            /* Check Wow6432Node (for new entries). */
+            r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Wow6432Node\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, phKey);
+        }
+# endif
+    }
+
+    /* Still no luck? Then try the old "Sun xVM" paths ... */
     if (r != ERROR_SUCCESS)
     {
         r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\xVM VirtualBox Guest Additions", 0, KEY_READ, phKey);
