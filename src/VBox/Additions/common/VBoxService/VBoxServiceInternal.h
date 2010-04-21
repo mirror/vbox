@@ -137,7 +137,7 @@ enum VBOXSERVICECTRLTHREADDATATYPE
 
 typedef struct
 {
-    BYTE     *pbData;
+    uint8_t  *pbData;
     uint32_t  cbSize;
     uint32_t  cbOffset;
     uint32_t  cbRead;
@@ -269,9 +269,9 @@ extern int VBoxServiceControlExecProcess(uint32_t uContext, const char *pszCmd, 
                                          const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS);
 extern void VBoxServiceControlExecDestroyThreadData(PVBOXSERVICECTRLTHREADDATAEXEC pThread);
 extern int VBoxServiceControlExecReadPipeBufferContent(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
-                                                       BYTE *pbBuffer, uint32_t cbBuffer, uint32_t *pcbToRead);
+                                                       uint8_t *pbBuffer, uint32_t cbBuffer, uint32_t *pcbToRead);
 extern int VBoxServiceControlExecWritePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
-                                                 BYTE *pbData, uint32_t cbData);
+                                                 uint8_t *pbData, uint32_t cbData);
 #endif
 
 #ifdef VBOXSERVICE_MANAGEMENT
