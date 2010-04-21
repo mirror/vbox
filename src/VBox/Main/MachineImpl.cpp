@@ -1467,6 +1467,7 @@ STDMETHODIMP Machine::COMSETTER(MemoryBalloonSize)(ULONG memoryBalloonSize)
 
     return S_OK;
 #else
+    NOREF(memoryBalloonSize);
     return setError(E_NOTIMPL, tr("Memory ballooning is only supported on 64-bit hosts"));
 #endif
 }
