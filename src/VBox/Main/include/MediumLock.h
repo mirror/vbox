@@ -88,6 +88,11 @@ public:
     const ComObjPtr<Medium> &GetMedium() const;
 
     /**
+     * Get medium object lock request type.
+     */
+    bool GetLockRequest() const;
+
+    /**
      * Acquire a medium lock.
      *
      * @return COM status code
