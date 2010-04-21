@@ -40,8 +40,11 @@
 #include <iprt/mem.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
-#include <iprt/thread.h>  /* for RTThreadSleep() */
+#include <iprt/pipe.h>
+#include <iprt/poll.h>
+#include <iprt/socket.h>
 #include <iprt/string.h>
+#include <iprt/thread.h>  /* for RTThreadSleep() */
 
 #ifdef RT_OS_LINUX
 # include <sys/types.h>
@@ -61,6 +64,9 @@
 
 # include <iprt/linux/sysfs.h>
 #endif /* RT_OS_LINUX */
+
+#include <fam.h>
+
 #include <vector>
 
 /******************************************************************************
@@ -1175,12 +1181,280 @@ public:
     virtual void Interrupt (void) {}
 };
 
+#ifdef VBOX_USB_WITH_SYSFS
+
+/** @todo move these elsewhere, but wait for words of wisdom from the iprt
+ * maintainer first :)
+ * The ideas behind the macros are on the one hand to increase code readability
+ * by reducing the space taken by the error handling (exceptions using pure C
+ * if you like, where a do {} while(0) block replaces the try {} catch() and a
+ * variable at a higher scope remembers the success or failure); and on the
+ * other to reduce duplication in error handling code, hopefully thereby
+ * raising the chances that error paths will actually work.
+ */
+
+/**
+ * Store an iprt status code (expected to be a function call with the status
+ * code as its return value) in a variable and execute a break statement if
+ * the status is unsuccessful.
+ * @param  rc    where to store the value
+ * @param  expr  the expression returning the status.  @a expr will only be
+ *               evaluated once by the macro call
+ */
+#define SETRCBREAK(rc, expr) \
+    if (RT_FAILURE(((rc) = (expr)))) \
+        break; \
+    else do {} while (0)
+
+/**
+ * Store an iprt status code (expected to be a function call with the status
+ * code as its return value) in a variable and execute a return statement if
+ * the status is unsuccessful.
+ * @param  rc    where to store the value
+ * @param  expr  the expression returning the status.  @a expr will only be
+ *               evaluated once by the macro call
+ */
+#define SETRCRETURN(rc, expr) \
+    do \
+    { \
+        (rc) = (expr); \
+        if (RT_FAILURE(rc)) \
+            return (rc); \
+    } while (0)
+
+static void testSetRCBreak(void)
+{
+    int rc = VINF_SUCCESS;
+    do {
+        SETRCBREAK(rc, VERR_WRONG_ORDER);
+        rc = VINF_SUCCESS;
+    } while(0);
+    Assert(rc == VERR_WRONG_ORDER);
+    rc = VERR_GENERAL_FAILURE;
+    do {
+        SETRCBREAK(rc, VINF_BUFFER_OVERFLOW);
+        Assert(rc == VINF_BUFFER_OVERFLOW);
+        rc = VERR_WRONG_ORDER;
+    } while(0);
+    Assert(rc == VERR_WRONG_ORDER);
+}
+
+static int testSetRCReturnWorker(int rc)
+{
+    int rc2 = VERR_WRONG_ORDER;
+    SETRCRETURN(rc2, rc);
+    Assert(rc == rc2);
+    return VINF_SUCCESS;
+}
+
+static void testSetRCReturn(void)
+{
+    Assert(testSetRCReturnWorker(VERR_GENERAL_FAILURE) == VERR_GENERAL_FAILURE);
+    AssertRCSuccess(testSetRCReturnWorker(VINF_BUFFER_OVERFLOW));
+}
+
+#define SYSFS_USB_DEVICE_PATH "/dev/bus/usb"
+#define SYSFS_WAKEUP_STRING "Wake up!"
+
+class hotplugSysfsFAMImpl : public VBoxMainHotplugWaiterImpl
+{
+    /** Pipe used to interrupt wait(), the read end. */
+    RTPIPE mhWakeupPipeR;
+    /** Pipe used to interrupt wait(), the write end. */
+    RTPIPE mhWakeupPipeW;
+    /** Our connection to FAM for polling for changes on sysfs. */
+    FAMConnection mFAMConnection;
+    /** Has our connection been initialised? */
+    bool mfFAMInitialised;
+    /** The iprt native handle of the FAM fd socket. */
+    RTSOCKET mhFAMFD;
+    /** Poll set containing the FAM socket and the termination pipe */
+    RTPOLLSET mhPollSet;
+    /** iprt result code from object initialisation.  Should be AssertReturn-ed
+     * on at the start of all methods.  I went this way because I didn't want
+     * to deal with exceptions. */
+    int mStatus;
+    /** ID values associates with the wakeup pipe and the FAM socket for polling
+     */
+    enum
+    {
+        RPIPE_ID = 1,
+        FAMFD_ID
+    };
+
+    /** Clean up any resources in use, gracefully skipping over any which have
+     * not yet been allocated or already cleaned up.  Intended to be called
+     * from the destructor or after a failed initialisation. */
+    void term(void);
+
+    /** Open our connection to FAM and convert the status to iprt.
+     * @todo  really convert the status
+     */
+    int openFAM(void)
+    {
+        if (FAMOpen(&mFAMConnection) < 0)
+            return VERR_UNRESOLVED_ERROR;  /* VERR_FAM_OPEN_FAILED */
+        mfFAMInitialised = true;
+        return VINF_SUCCESS;
+    }
+
+    /** Monitor a file through the FAM connection. */
+    int monitorDirectoryFAM(const char *pszName)
+    {
+        AssertReturn(mfFAMInitialised, VERR_WRONG_ORDER);
+        FAMRequest dummyReq;
+        if (FAMMonitorDirectory(&mFAMConnection, pszName, &dummyReq, NULL) < 0)
+            return VERR_UNRESOLVED_ERROR;  /* VERR_FAM_MONITOR_FILE_FAILED */
+        return VINF_SUCCESS;
+    }
+
+    /** Quick failure test of the monitor function - we temporarily invalidate
+     * the connection FD to trigger an error path. */
+    void testmonitorDirectoryFAM(void)
+    {
+        int oldFD = FAMCONNECTION_GETFD(&mFAMConnection);
+        FAMCONNECTION_GETFD(&mFAMConnection) = -1;
+        Assert(monitorDirectoryFAM(NULL) == VERR_UNRESOLVED_ERROR);
+        FAMCONNECTION_GETFD(&mFAMConnection) = oldFD;
+    }
+
+    /** Close our connection to FAM.  We ignore errors as there is no
+     * documentation as to what they mean, and the only error which might
+     * interest us (EINTR) should be (but isn't) handled inside the library. */
+    void closeFAM(void)
+    {
+        if (mfFAMInitialised)
+            FAMClose(&mFAMConnection);
+        mfFAMInitialised = false;
+    }
+public:
+    hotplugSysfsFAMImpl(void);
+    virtual ~hotplugSysfsFAMImpl(void)
+    {
+        term();
+#ifdef DEBUG
+        /** The first call to term should mark all resources as freed, so this
+         * should be a semantic no-op. */
+        term();
+#endif
+    }
+    /** Is sysfs available on this system?  If so we expect that this
+     * implementation will be usable. */
+    static bool SysfsAvailable(void)
+    {
+        return RTDirExists(SYSFS_USB_DEVICE_PATH);
+    }
+    /** @copydoc VBoxMainHotplugWaiter::Wait */
+    virtual int Wait(RTMSINTERVAL);
+    /** @copydoc VBoxMainHotplugWaiter::Interrupt */
+    virtual void Interrupt(void);
+};
+
+hotplugSysfsFAMImpl::hotplugSysfsFAMImpl(void) :
+    mhWakeupPipeR(NIL_RTPIPE), mhWakeupPipeW(NIL_RTPIPE),
+    mfFAMInitialised(false), mhFAMFD(NIL_RTSOCKET), mhPollSet(NIL_RTPOLLSET),
+    mStatus(VERR_WRONG_ORDER)
+{
+#ifdef DEBUG
+    /* Excercise the code path (term() on a not-fully-initialised object) as
+     * well as we can.  On an uninitialised object this method is a sematic
+     * no-op. */
+    term();
+    /** Unit test our macros above */
+    testSetRCBreak();
+    testSetRCReturn();
+#endif
+    int rc;
+    do {
+        SETRCBREAK(rc, RTPipeCreate(&mhWakeupPipeR, &mhWakeupPipeW, 0));
+        SETRCBREAK(rc, openFAM());
+        SETRCBREAK(rc, RTSocketFromNative
+                           (&mhFAMFD, FAMCONNECTION_GETFD(&mFAMConnection)));
+        SETRCBREAK(rc, monitorDirectoryFAM(SYSFS_USB_DEVICE_PATH));
+        SETRCBREAK(rc, RTPollSetCreate(&mhPollSet));
+        SETRCBREAK(rc, RTPollSetAddSocket
+                           (mhPollSet, mhFAMFD, RTPOLL_EVT_READ, FAMFD_ID));
+        SETRCBREAK(rc, RTPollSetAddPipe
+                           (mhPollSet, mhWakeupPipeR, RTPOLL_EVT_READ, RPIPE_ID));
+#ifdef DEBUG
+        /** Other tests */
+        testmonitorDirectoryFAM();
+#endif
+    } while(0);
+    mStatus = rc;
+    if (RT_FAILURE(rc))
+        term();
+}
+
+void hotplugSysfsFAMImpl::term(void)
+{
+    RTPipeClose(mhWakeupPipeR);
+    mhWakeupPipeR = NIL_RTPIPE;
+    RTPipeClose(mhWakeupPipeW);
+    mhWakeupPipeW = NIL_RTPIPE;
+    closeFAM();
+    mhFAMFD = NIL_RTSOCKET;
+    RTPollSetDestroy(mhPollSet);
+    mhPollSet = NIL_RTPOLLSET;
+}
+
+int hotplugSysfsFAMImpl::Wait(RTMSINTERVAL aMillies)
+{
+    uint32_t id;
+    int rc;
+    FAMEvent ev;
+
+    if (RT_FAILURE(mStatus))
+        return VERR_NOT_SUPPORTED;
+    /* timeout returns */
+    SETRCRETURN(rc, RTPoll(mhPollSet, aMillies, NULL, &id));
+    if (id == RPIPE_ID)
+    {
+        /* drain the pipe */
+        char szBuf[sizeof(SYSFS_WAKEUP_STRING)];
+        rc = RTPipeRead(mhWakeupPipeR, szBuf, sizeof(szBuf), NULL);
+        AssertRC(rc);
+        return VINF_SUCCESS;
+    }
+    AssertReturn(id == FAMFD_ID, VERR_NOT_SUPPORTED);
+    /* Samba re-opens the connection to FAM if this happens. */
+    AssertReturn(FAMNextEvent(&mFAMConnection, &ev) == 1,
+                 VERR_NOT_SUPPORTED);
+    switch(ev.code)
+    {
+        case FAMExists:
+        case FAMEndExist:
+            return VERR_TRY_AGAIN;
+        default:
+            break;
+    }
+    return VINF_SUCCESS;
+}
+
+void hotplugSysfsFAMImpl::Interrupt(void)
+{
+    size_t cbDummy;
+    int rc = RTPipeWrite(mhWakeupPipeW, SYSFS_WAKEUP_STRING,
+                         sizeof(SYSFS_WAKEUP_STRING), &cbDummy);
+    if (RT_SUCCESS(rc))
+        RTPipeFlush(mhWakeupPipeW);
+}
+
+#endif  /* VBOX_USB_WTH_SYSFS */
+
 VBoxMainHotplugWaiter::VBoxMainHotplugWaiter(void)
 {
 #if defined RT_OS_LINUX && defined VBOX_WITH_DBUS
     if (hotplugDBusImpl::HalAvailable())
     {
         mImpl = new hotplugDBusImpl;
+        return;
+    }
+#endif  /* !(defined RT_OS_LINUX && defined VBOX_WITH_DBUS) */
+#if defined VBOX_USB_WITH_SYSFS
+    if (hotplugSysfsFAMImpl::SysfsAvailable())
+    {
+        mImpl = new hotplugSysfsFAMImpl;
         return;
     }
 #endif  /* !(defined RT_OS_LINUX && defined VBOX_WITH_DBUS) */
