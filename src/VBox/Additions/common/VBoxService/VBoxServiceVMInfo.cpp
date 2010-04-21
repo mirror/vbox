@@ -174,16 +174,16 @@ static void VBoxServiceVMInfoWriteFixedProperties(void)
     rc = VbglR3GetAdditionsVersion(&pszAddVer, &pszAddRev);
     if (RT_SUCCESS(rc))
     {
-        /* Write information to host. */
-        rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Version",  "%s", pszAddVer);
-        rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Revision", "%s", pszAddRev);
+        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Version",  "%s", pszAddVer);
+        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Revision", "%s", pszAddRev);
         RTStrFree(pszAddVer);
         RTStrFree(pszAddRev);
     }
-    else /* If not found delete stale entries. */
+    else
     {
-        rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Version", NULL);
-        rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Revision", NULL);
+        /* information could not be retrieved, clear stale entries */
+        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Version", "");
+        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Revision", "");
     }
 
 #ifdef RT_OS_WINDOWS
@@ -194,17 +194,15 @@ static void VBoxServiceVMInfoWriteFixedProperties(void)
     rc = VbglR3GetAdditionsInstallationPath(&pszInstDir);
     if (RT_SUCCESS(rc))
     {
-        rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/InstallDir", "%s", pszInstDir);
+        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/InstallDir", "%s", pszInstDir);
         RTStrFree(pszInstDir);
     }
-    else /* If not found delete stale entry. */
-    {
-        rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/InstallDir", NULL);
-    }
+    else
+        /* information could not be retrieved, clear stale entry */
+        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/InstallDir", "");
+
     VBoxServiceWinGetComponentVersions(g_VMInfoGuestPropSvcClientID);
 #endif
-
-    /* return rc; */
 }
 
 
@@ -223,7 +221,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
     /* Required for network information (must be called per thread). */
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData))
-         VBoxServiceError("WSAStartup failed! Error: %Rrc\n", RTErrConvertFromWin32(WSAGetLastError()));
+        VBoxServiceError("WSAStartup failed! Error: %Rrc\n", RTErrConvertFromWin32(WSAGetLastError()));
 #endif /* RT_OS_WINDOWS */
 
     /*
