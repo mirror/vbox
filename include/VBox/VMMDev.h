@@ -612,6 +612,41 @@ AssertCompileSize(VMMDevReportGuestInfo, 24+8);
 
 
 /**
+ * Guest information structure, version 2.
+ *
+ * Used by VMMDevReportGuestInfo2 and PDMIVMMDEVCONNECTOR::pfnUpdateGuestVersion2.
+ */
+typedef struct VBoxGuestInfo2
+{
+    /** Major version. */
+    uint16_t additionsMajor;
+    /** Minor version. */
+    uint16_t additionsMinor;
+    /** Build number. */
+    uint32_t additionsBuild;
+    /** SVN revision. */
+    uint32_t additionsRevision;
+    /** Feature mask, currently unused. */
+    uint32_t additionsFeatures;
+} VBoxGuestInfo2;
+
+
+/**
+ * Guest information report, version 2.
+ *
+ * Used by VMMDevReq_ReportGuestInfo2.
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader header;
+    /** Guest information. */
+    VBoxGuestInfo2 guestInfo;
+} VMMDevReportGuestInfo2;
+AssertCompileSize(VMMDevReportGuestInfo2, 24+16);
+
+
+/**
  * Guest statistics structure.
  *
  * Used by VMMDevReportGuestStats and PDMIVMMDEVCONNECTOR::pfnReportStatistics.
