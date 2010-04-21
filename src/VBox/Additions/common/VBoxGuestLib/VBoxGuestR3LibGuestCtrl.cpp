@@ -145,7 +145,6 @@ VBGLR3DECL(int) VbglR3GuestCtrlGetHostMsg(uint32_t u32ClientId, uint32_t *puMsg,
  *
  * @returns VBox status code.
  * @param   u32ClientId     The client id returned by VbglR3GuestCtrlConnect().
- * @param   ppvData
  * @param   uNumParms
  ** @todo Docs!
  */
@@ -222,6 +221,53 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmd(uint32_t  u32ClientId,    uint32_t
 }
 
 
+/**
+ * Allocates and gets host data, based on the message id.
+ *
+ * This will block until data becomes available.
+ *
+ * @returns VBox status code.
+ * @param   u32ClientId     The client id returned by VbglR3GuestCtrlConnect().
+ * @param   uNumParms
+ ** @todo Docs!
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdOutput(uint32_t  u32ClientId,    uint32_t  uNumParms,
+                                                    uint32_t *puContext,      uint32_t *puPID,
+                                                    uint32_t *puHandle,       uint32_t *puFlags)
+{
+    AssertPtr(puContext);
+    AssertPtr(puPID);
+
+    VBoxGuestCtrlHGCMMsgExecOut Msg;
+
+    Msg.hdr.result = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = u32ClientId;
+    Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
+    Msg.hdr.cParms = uNumParms;
+
+    VbglHGCMParmUInt32Set(&Msg.context, 0); /** @todo Put this some header struct! */
+    VbglHGCMParmUInt32Set(&Msg.pid, 0);
+    VbglHGCMParmUInt32Set(&Msg.handle, 0);    
+    VbglHGCMParmUInt32Set(&Msg.flags, 0);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+        {
+            rc = rc2;
+        }
+        else
+        {
+            Msg.context.GetUInt32(puContext);
+            Msg.pid.GetUInt32(puPID);
+            Msg.handle.GetUInt32(puHandle);
+            Msg.flags.GetUInt32(puFlags);            
+        }
+    }
+    return rc;
+}
 
 
 /**
@@ -248,6 +294,44 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecReportStatus(uint32_t     u32ClientId,
     VbglHGCMParmUInt32Set(&Msg.context, u32Context);
     VbglHGCMParmUInt32Set(&Msg.pid, u32PID);
     VbglHGCMParmUInt32Set(&Msg.status, u32Status);
+    VbglHGCMParmUInt32Set(&Msg.flags, u32Flags);
+    VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+            rc = rc2;
+    }
+    return rc;
+}
+
+
+/**
+ * Sends output (from stdout/stderr) from a running process.
+ *
+ * @returns VBox status code.
+ ** @todo Docs!
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlExecSendOut(uint32_t     u32ClientId,
+                                           uint32_t     u32Context,
+                                           uint32_t     u32PID,
+                                           uint32_t     u32Handle,
+                                           uint32_t     u32Flags,
+                                           void        *pvData,
+                                           uint32_t     cbData)
+{
+    VBoxGuestCtrlHGCMMsgExecOut Msg;
+
+    Msg.hdr.result = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = u32ClientId;
+    Msg.hdr.u32Function = GUEST_EXEC_SEND_OUTPUT;
+    Msg.hdr.cParms = 5;
+
+    VbglHGCMParmUInt32Set(&Msg.context, u32Context);
+    VbglHGCMParmUInt32Set(&Msg.pid, u32PID);
+    VbglHGCMParmUInt32Set(&Msg.handle, u32Handle);
     VbglHGCMParmUInt32Set(&Msg.flags, u32Flags);
     VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
 

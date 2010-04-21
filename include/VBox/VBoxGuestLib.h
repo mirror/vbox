@@ -525,6 +525,9 @@ VBGLR3DECL(int)     VbglR3GuestCtrlExecGetHostCmd(uint32_t  u32ClientId,    uint
                                                   char     *pszUser,        uint32_t  cbUser,
                                                   char     *pszPassword,    uint32_t  cbPassword,
                                                   uint32_t *puTimeLimit);
+VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdOutput(uint32_t  u32ClientId,    uint32_t  uNumParms,
+                                                    uint32_t *puContext,      uint32_t *puPID,
+                                                    uint32_t *puHandle,       uint32_t *puFlags);
 VBGLR3DECL(int)     VbglR3GuestCtrlExecReportStatus(uint32_t  u32ClientId,
                                                     uint32_t  u32Context,
                                                     uint32_t  u32PID,
@@ -532,6 +535,13 @@ VBGLR3DECL(int)     VbglR3GuestCtrlExecReportStatus(uint32_t  u32ClientId,
                                                     uint32_t  u32Flags,
                                                     void     *pvData,
                                                     uint32_t  cbData);
+VBGLR3DECL(int)     VbglR3GuestCtrlExecSendOut(uint32_t     u32ClientId,
+                                               uint32_t     u32Context,
+                                               uint32_t     u32PID,
+                                               uint32_t     u32Handle,
+                                               uint32_t     u32Flags,
+                                               void        *pvData,
+                                               uint32_t     cbData);
 /** @}  */
 # endif /* VBOX_WITH_GUEST_CONTROL defined */
 

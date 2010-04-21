@@ -62,7 +62,7 @@ using namespace com;
 void usageGuestControl(void)
 {
     RTPrintf("VBoxManage guestcontrol     execute <vmname>|<uuid>\n"
-             "                            <path to program> [--arguments \"<arguments>\"] [--environment \"NAME=VALUE NAME=VALUE\"]\n"
+             "                            <path to program> [--arguments \"<arguments>\"] [--environment \"<NAME=VALUE NAME=VALUE>\"]\n"
              "                            [--flags <flags>] [--timeout <msec>] [--username <name> [--password <password>]]\n"
              "                            [--verbose] [--wait-for exit]\n"
              "\n");
@@ -186,9 +186,15 @@ static int handleExecProgram(HandlerArg *a)
                 if (!strcmp(a->argv[i + 1], "exit"))
                     waitForExit = true;
                 else if (!strcmp(a->argv[i + 1], "stdout"))
+                {
+                    waitForExit = true;
                     waitForStdOut = true;
+                }
                 else if (!strcmp(a->argv[i + 1], "stderr"))
+                {
+                    waitForExit = true;
                     waitForStdErr = true;
+                }
                 else
                     usageOK = false;
                 ++i;
@@ -323,7 +329,8 @@ static int handleExecProgram(HandlerArg *a)
                         {
                             SafeArray<BYTE> aOutputData;
                             ULONG cbOutputData;
-                            CHECK_ERROR_BREAK(guest, GetProcessOutput(uPID, 0 /* aFlags */, _512K, ComSafeArrayAsOutParam(aOutputData)));
+                            CHECK_ERROR_BREAK(guest, GetProcessOutput(uPID, 0 /* aFlags */, 
+                                                                      uTimeoutMS, _64K, ComSafeArrayAsOutParam(aOutputData)));
                             cbOutputData = aOutputData.size();
                             if (cbOutputData == 0)
                                 break;

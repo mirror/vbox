@@ -484,6 +484,17 @@ DECLCALLBACK(int) Guest::doGuestCtrlNotification(void    *pvExtension,
 
         rc = pGuest->notifyCtrlExec(u32Function, pCBData);
     }
+    else if (u32Function == GUEST_EXEC_SEND_OUTPUT)
+    {
+        LogFlowFunc(("GUEST_EXEC_SEND_OUTPUT\n"));
+
+        PHOSTEXECOUTCALLBACKDATA pCBData = reinterpret_cast<PHOSTEXECOUTCALLBACKDATA>(pvParms);
+        AssertPtr(pCBData);
+        AssertReturn(sizeof(HOSTEXECOUTCALLBACKDATA) == cbParms, VERR_INVALID_PARAMETER);
+        AssertReturn(HOSTEXECOUTCALLBACKDATAMAGIC == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+
+        rc = pGuest->notifyCtrlExecOut(u32Function, pCBData);
+    }
     else
         rc = VERR_NOT_SUPPORTED;
     return rc;
@@ -497,9 +508,10 @@ int Guest::notifyCtrlExec(uint32_t              u32Function,
     int rc = VINF_SUCCESS;
 
     AssertPtr(pData);
-    CallbackListIter it = getCtrlCallbackContext(pData->hdr.u32ContextID);
+    CallbackListIter it = getCtrlCallbackContextByID(pData->hdr.u32ContextID);
     if (it != mCallbackList.end())
     {
+        Assert(!it->bCalled);
         PHOSTEXECCALLBACKDATA pCBData = (HOSTEXECCALLBACKDATA*)it->pvData;
         AssertPtr(pCBData);
 
@@ -554,16 +566,68 @@ int Guest::notifyCtrlExec(uint32_t              u32Function,
         }
         ASMAtomicWriteBool(&it->bCalled, true);
     }
+    else
+        LogFlowFunc(("Unexpected callback (magic=%u, context ID=%u) arrived\n", pData->hdr.u32Magic, pData->hdr.u32ContextID));
     LogFlowFuncLeave();
     return rc;
 }
 
-Guest::CallbackListIter Guest::getCtrlCallbackContext(uint32_t u32ContextID)
+/* Notifier function for control execution stuff. */
+int Guest::notifyCtrlExecOut(uint32_t                 u32Function,
+                             PHOSTEXECOUTCALLBACKDATA pData)
 {
+    LogFlowFuncEnter();
+    int rc = VINF_SUCCESS;
+
+    AssertPtr(pData);
+    CallbackListIter it = getCtrlCallbackContextByID(pData->hdr.u32ContextID);
+    if (it != mCallbackList.end())
+    {
+        Assert(!it->bCalled);
+        PHOSTEXECOUTCALLBACKDATA pCBData = (HOSTEXECOUTCALLBACKDATA*)it->pvData;
+        AssertPtr(pCBData);
+
+        pCBData->u32PID = pData->u32PID;
+        pCBData->u32HandleId = pData->u32HandleId;
+        pCBData->u32Flags = pData->u32Flags;
+        
+        /* Allocate data buffer and copy it */
+        if (pData->cbData && pData->pvData)
+        {
+            pCBData->pvData = RTMemAlloc(pData->cbData);
+            AssertPtr(pCBData->pvData);
+            memcpy(pCBData->pvData, pData->pvData, pData->cbData);
+            pCBData->cbData = pData->cbData;
+        }
+
+        ASMAtomicWriteBool(&it->bCalled, true);
+    }
+    else
+        LogFlowFunc(("Unexpected callback (magic=%u, context ID=%u) arrived\n", pData->hdr.u32Magic, pData->hdr.u32ContextID));
+    LogFlowFuncLeave();
+    return rc;
+}
+
+Guest::CallbackListIter Guest::getCtrlCallbackContextByID(uint32_t u32ContextID)
+{
+    /** @todo Maybe use a map instead of list for fast context lookup. */
     CallbackListIter it;
     for (it = mCallbackList.begin(); it != mCallbackList.end(); it++)
     {
         if (it->mContextID == u32ContextID)
+            return (it);
+    }
+    return it;
+}
+
+Guest::CallbackListIter Guest::getCtrlCallbackContextByPID(uint32_t u32PID)
+{
+    /** @todo Maybe use a map instead of list for fast context lookup. */
+    CallbackListIter it;
+    for (it = mCallbackList.begin(); it != mCallbackList.end(); it++)
+    {
+        PHOSTEXECCALLBACKDATA pCBData = (HOSTEXECCALLBACKDATA*)it->pvData;
+        if (pCBData && pCBData->u32PID == u32PID)
             return (it);
     }
     return it;
@@ -754,7 +818,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                  * has been started (or something went wrong). This is necessary to
                  * get the PID.
                  */
-                CallbackListIter it = getCtrlCallbackContext(uContextID);
+                CallbackListIter it = getCtrlCallbackContextByID(uContextID);
                 uint64_t u64Started = RTTimeMilliTS();
                 do
                 {
@@ -853,27 +917,92 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG64 aSize, ComSafeArrayOut(BYTE, aData))
+STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, ULONG64 aSize, ComSafeArrayOut(BYTE, aData))
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else  /* VBOX_WITH_GUEST_CONTROL */
     using namespace guestControl;
 
-    NOREF(aPID);
-    NOREF(aFlags);
-    NOREF(aSize);
-    NOREF(aData);
-
     HRESULT rc = S_OK;
 
-    size_t cbData = (size_t)RT_MIN(aSize, _1K);
+    /* Search for existing PID. */
+    PHOSTEXECOUTCALLBACKDATA pData = (HOSTEXECOUTCALLBACKDATA*)RTMemAlloc(sizeof(HOSTEXECOUTCALLBACKDATA));
+    AssertPtr(pData);
+    uint32_t uContextID = addCtrlCallbackContext(pData, sizeof(HOSTEXECOUTCALLBACKDATA), NULL /* pProgress */);
+    Assert(uContextID > 0);
+
+    size_t cbData = (size_t)RT_MIN(aSize, _64K);
     com::SafeArray<BYTE> outputData(cbData);
 
-    if (FAILED(rc))
-        outputData.resize(0);
-    outputData.detachTo(ComSafeArrayOutArg(aData));
+    VBOXHGCMSVCPARM paParms[5];
+    int i = 0;
+    paParms[i++].setUInt32(uContextID);
+    paParms[i++].setUInt32(aPID);
+    paParms[i++].setUInt32(aFlags); /** @todo Should represent stdout and/or stderr. */
+    //paParms[i++].setPointer(outputData.raw(), aSize);
 
+    int vrc = VINF_SUCCESS;
+
+    /* Forward the information to the VMM device. */
+    AssertPtr(mParent);
+    VMMDev *vmmDev = mParent->getVMMDev();
+    if (vmmDev)
+    {
+        LogFlowFunc(("hgcmHostCall numParms=%d\n", i));
+        vrc = vmmDev->hgcmHostCall("VBoxGuestControlSvc", HOST_EXEC_GET_OUTPUT,
+                                   i, paParms);
+    }
+
+    if (RT_SUCCESS(vrc))
+    {
+        LogFlowFunc(("Waiting for HGCM callback (timeout=%ldms) ...\n", aTimeoutMS));
+
+        /*
+         * Wait for the HGCM low level callback until the process
+         * has been started (or something went wrong). This is necessary to
+         * get the PID.
+         */
+        CallbackListIter it = getCtrlCallbackContextByID(uContextID);
+        uint64_t u64Started = RTTimeMilliTS();
+        do
+        {
+            unsigned cMsWait;
+            if (aTimeoutMS == RT_INDEFINITE_WAIT)
+                cMsWait = 1000;
+            else
+            {
+                uint64_t cMsElapsed = RTTimeMilliTS() - u64Started;
+                if (cMsElapsed >= aTimeoutMS)
+                    break; /* timed out */
+                cMsWait = RT_MIN(1000, aTimeoutMS - (uint32_t)cMsElapsed);
+            }
+            RTThreadSleep(100);
+        } while (it != mCallbackList.end() && !it->bCalled);
+
+        /* Did we get some output? */
+        PHOSTEXECOUTCALLBACKDATA pData = (HOSTEXECOUTCALLBACKDATA*)it->pvData;
+        Assert(it->cbData == sizeof(HOSTEXECOUTCALLBACKDATA));
+        AssertPtr(pData);
+
+        if (   it->bCalled
+            && pData->cbData)
+        {
+            /* Do we need to resize the array? */
+            if (pData->cbData > cbData)
+                outputData.resize(pData->cbData);
+
+            /* Fill output in supplied out buffer. */  
+            memcpy(outputData.raw(), pData->pvData, pData->cbData);
+            outputData.resize(pData->cbData); /* Shrink to fit actual buffer size. */
+        }
+        else
+            vrc = VERR_NO_DATA; /* This is not an error we want to report to COM. */
+
+        if (RT_FAILURE(vrc) || FAILED(rc))
+            outputData.resize(0);
+        outputData.detachTo(ComSafeArrayOutArg(aData));
+    }
     return rc;
 #endif
 }

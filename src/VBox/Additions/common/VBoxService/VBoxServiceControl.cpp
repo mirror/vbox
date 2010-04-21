@@ -99,7 +99,7 @@ static DECLCALLBACK(int) VBoxServiceControlInit(void)
 }
 
 
-static int VBoxServiceControlHandleCmdExec(uint32_t u32ClientId, uint32_t uNumParms)
+static int VBoxServiceControlHandleCmdStartProcess(uint32_t u32ClientId, uint32_t uNumParms)
 {
     uint32_t uContextID;
     char szCmd[_1K];
@@ -141,7 +141,7 @@ static int VBoxServiceControlHandleCmdExec(uint32_t u32ClientId, uint32_t uNumPa
                                            &uTimeLimitMS);
     if (RT_FAILURE(rc))
     {
-        VBoxServiceError("Control: Failed to retrieve execution command! Error: %Rrc\n", rc);
+        VBoxServiceError("Control: Failed to retrieve exec start command! Error: %Rrc\n", rc);
     }
     else
     {
@@ -149,6 +149,67 @@ static int VBoxServiceControlHandleCmdExec(uint32_t u32ClientId, uint32_t uNumPa
                                            szEnv, cbEnv, uNumEnvVars,
                                            szStdIn, szStdOut, szStdErr,
                                            szUser, szPassword, uTimeLimitMS);
+    }
+    return rc;
+}
+
+
+static int VBoxServiceControlHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNumParms)
+{
+    uint32_t uContextID;
+    uint32_t uPID;
+    uint32_t uHandleID;
+    uint32_t uFlags;
+
+    int rc = VbglR3GuestCtrlExecGetHostCmdOutput(u32ClientId, uNumParms,
+                                                 &uContextID, &uPID, &uHandleID, &uFlags);
+    if (RT_FAILURE(rc))
+    {
+        VBoxServiceError("Control: Failed to retrieve exec output command! Error: %Rrc\n", rc);
+    }
+    else
+    {
+        /* Let's have a look if we have a running process with PID = uPID ... */
+        PVBOXSERVICECTRLTHREAD pNode;
+        bool bFound = false;
+        RTListForEach(&g_GuestControlExecThreads, pNode, VBOXSERVICECTRLTHREAD, Node)
+        {
+            if (   pNode->fStarted 
+                && pNode->enmType == VBoxServiceCtrlThreadDataExec)
+            {
+                PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData;
+                if (pData && pData->uPID == uPID)
+                {
+                    bFound = true;
+                    break;
+                }
+            }
+        }
+
+        if (bFound)
+        {
+            PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData;
+            AssertPtr(pData);
+
+            uint32_t cbRead = _4K; /* Try reading 4k. */
+            BYTE *pBuf = (BYTE*)RTMemAlloc(cbRead);
+            if (pBuf)
+            {
+                rc = VBoxServiceControlExecReadPipeBufferContent(&pData->stdOut, pBuf, cbRead, &cbRead);
+                if (RT_SUCCESS(rc))
+                {    
+                    AssertPtr(pBuf);
+                    /* cbRead now contains actual size. */
+                    rc = VbglR3GuestCtrlExecSendOut(u32ClientId, uContextID, uPID, 0 /* handle ID */, 0 /* flags */,
+                                                    pBuf, cbRead);
+                }
+                RTMemFree(pBuf);
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+        else
+            rc = VERR_NOT_FOUND; /* PID not found! */
     }
     return rc;
 }
@@ -175,7 +236,7 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
     {
         uint32_t uMsg;
         uint32_t uNumParms;
-        VBoxServiceVerbose(3, "Control: Waiting for host msg ...\n");
+        VBoxServiceVerbose(4, "Control: Waiting for host msg ...\n");
         rc = VbglR3GuestCtrlGetHostMsg(g_GuestControlSvcClientID, &uMsg, &uNumParms, 1000 /* 1s timeout */);
         if (rc == VERR_TOO_MUCH_DATA)
         {
@@ -189,17 +250,25 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
         }
         if (RT_SUCCESS(rc))
         {
+            VBoxServiceVerbose(3, "Control: Msg=%u (%u parms) retrieved\n", uMsg, uNumParms);
             switch(uMsg)
             {
-                case GETHOSTMSG_EXEC_CMD:
-                    rc = VBoxServiceControlHandleCmdExec(g_GuestControlSvcClientID, uNumParms);
+                case GETHOSTMSG_EXEC_START_PROCESS:
+                    rc = VBoxServiceControlHandleCmdStartProcess(g_GuestControlSvcClientID, uNumParms);
+                    break;
+
+                case GETHOSTMSG_EXEC_GET_OUTPUT:
+                    rc = VBoxServiceControlHandleCmdGetOutput(g_GuestControlSvcClientID, uNumParms);
                     break;
 
                 default:
-                    VBoxServiceVerbose(3, "Control: Unsupported message from host! Msg=%ld\n", uMsg);
+                    VBoxServiceVerbose(3, "Control: Unsupported message from host! Msg=%u\n", uMsg);
                     /* Don't terminate here; just wait for the next message. */
                     break;
             }
+
+            if (RT_FAILURE(rc))
+                VBoxServiceVerbose(3, "Control: Message was processed with rc=%Rrc\n", rc);
         }
 
         /*
@@ -251,9 +320,19 @@ static DECLCALLBACK(void) VBoxServiceControlTerm(void)
         {
             int rc2 = RTThreadWait(pNode->Thread, 30 * 1000 /* Wait 30 seconds max. */, NULL);
             if (RT_FAILURE(rc2))
-                VBoxServiceError("Control: Thread (PID: %u) failed to stop; rc2=%Rrc\n", pNode->uPID, rc2);
+                VBoxServiceError("Control: Thread failed to stop; rc2=%Rrc\n", rc2);
         }
-        VBoxServiceControlExecDestroyThreadData(pNode);
+
+        /* Destroy thread specific data. */
+        switch (pNode->enmType)
+        {
+            case VBoxServiceCtrlThreadDataExec:
+                VBoxServiceControlExecDestroyThreadData((PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData);
+                break;
+
+            default:
+                break;
+        }
     }
 
     /* Finally destroy thread list. */

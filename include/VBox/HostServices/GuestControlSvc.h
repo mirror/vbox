@@ -97,13 +97,30 @@ typedef struct _VBoxGuestCtrlExecCallbackData
     void *pvData;
     /** Size of optional data buffer (not used atm). */
     uint32_t cbData;
-
 } HOSTEXECCALLBACKDATA, *PHOSTEXECCALLBACKDATA;
+
+typedef struct _VBoxGuestCtrlExecOutCallbackData
+{
+    /** Callback data header. */
+    HOSTCCALLBACKHEADER hdr;
+    /** The process ID (PID). */
+    uint32_t u32PID;
+    /* The handle ID (stdout/stderr). */
+    uint32_t u32HandleId;
+    /** Optional flags (not used atm). */
+    uint32_t u32Flags;
+    /** Optional data buffer. */
+    void *pvData;
+    /** Size of optional data buffer. */
+    uint32_t cbData;
+} HOSTEXECOUTCALLBACKDATA, *PHOSTEXECOUTCALLBACKDATA;
 
 enum
 {
-    /** Magic number for sanity checking the HOSTEXECCALLBACKDATA structure */
-    HOSTEXECCALLBACKDATAMAGIC = 0x26011982
+    /** Magic number for sanity checking the HOSTEXECCALLBACKDATA structure. */
+    HOSTEXECCALLBACKDATAMAGIC = 0x26011982,
+    /** Magic number for sanity checking the HOSTEXECOUTCALLBACKDATA structure. */
+    HOSTEXECOUTCALLBACKDATAMAGIC = 0x11061949
 };
 
 /**
@@ -119,12 +136,12 @@ enum eHostFn
     /**
      * Sends input data for stdin to a running process executed by HOST_EXEC_CMD.
      */
-    HOST_EXEC_SEND_STDIN = 2,
+    HOST_EXEC_SET_INPUT = 2,
     /**
      * Gets the current status of a running process, e.g.
      * new data on stdout/stderr, process terminated etc.
      */
-    HOST_EXEC_GET_STATUS = 3
+    HOST_EXEC_GET_OUTPUT = 3
 };
 
 /**
@@ -140,15 +157,11 @@ enum eGuestFn
     /**
      * TODO
      */
-    GUEST_EXEC_SEND_STDOUT = 3,
+    GUEST_EXEC_SEND_OUTPUT = 2,
     /**
      * TODO
      */
-    GUEST_EXEC_SEND_STDERR = 4,
-    /**
-     * TODO
-     */
-    GUEST_EXEC_SEND_STATUS = 5
+    GUEST_EXEC_SEND_STATUS = 3
 };
 
 /**
@@ -161,11 +174,16 @@ enum eGetHostMsgFn
      * The host wants to execute something in the guest. This can be a command line
      * or starting a program.
      */
-    GETHOSTMSG_EXEC_CMD = 1,
+    GETHOSTMSG_EXEC_START_PROCESS = 1,
     /**
      * Sends input data for stdin to a running process executed by HOST_EXEC_CMD.
      */
-    GETHOSTMSG_EXEC_STDIN = 2
+    GETHOSTMSG_EXEC_SEND_INPUT = 2,
+    /**
+     * Host requests the so far collected stdout/stderr output
+     * from a running process executed by HOST_EXEC_CMD.
+     */
+    GETHOSTMSG_EXEC_GET_OUTPUT = 3
 };
 
 /*
@@ -220,6 +238,22 @@ typedef struct _VBoxGuestCtrlHGCMMsgExecCmd
 
 } VBoxGuestCtrlHGCMMsgExecCmd;
 
+typedef struct _VBoxGuestCtrlHGCMMsgExecOut
+{
+    VBoxGuestHGCMCallInfo hdr;
+    /** Context ID. */
+    HGCMFunctionParameter context;
+    /** The process ID (PID). */
+    HGCMFunctionParameter pid;
+    /** The pipe handle ID. */
+    HGCMFunctionParameter handle;
+    /** Optional flags. */
+    HGCMFunctionParameter flags;
+    /** Data buffer. */
+    HGCMFunctionParameter data;
+
+} VBoxGuestCtrlHGCMMsgExecOut;
+
 typedef struct _VBoxGuestCtrlHGCMMsgExecStatus
 {
     VBoxGuestHGCMCallInfo hdr;
@@ -240,6 +274,7 @@ typedef struct _VBoxGuestCtrlHGCMMsgExecStatus
 /* Structure for buffering execution requests in the host service. */
 typedef struct _VBoxGuestCtrlParamBuffer
 {
+    uint32_t uMsg;
     uint32_t uParmCount;
     VBOXHGCMSVCPARM *pParms;
 } VBOXGUESTCTRPARAMBUFFER, *PVBOXGUESTCTRPARAMBUFFER;

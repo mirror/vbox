@@ -129,22 +129,25 @@ typedef DWORD (WINAPI *PFNWTSGETACTIVECONSOLESESSIONID)(void);
 #endif /* RT_OS_WINDOWS */
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-/* Structure for holding thread relevant data. */
+enum VBOXSERVICECTRLTHREADDATATYPE
+{
+    VBoxServiceCtrlThreadDataUnknown = 0,
+    VBoxServiceCtrlThreadDataExec = 1
+};
+
 typedef struct
 {
-    /** Node. */
-    RTLISTNODE                 Node;
-    /** The worker thread. */
-    RTTHREAD                   Thread;
-    /** Shutdown indicator. */
-    bool volatile              fShutdown;
-    /** Indicator set by the service thread exiting. */
-    bool volatile              fStopped;
-    /** Whether the service was started or not. */
-    bool                       fStarted;
-    /** @todo */
-    uint32_t  uClientID;
-    uint32_t  uContextID;
+    BYTE     *pbData;
+    uint32_t  cbSize;
+    uint32_t  cbOffset;
+    uint32_t  cbRead;
+} VBOXSERVICECTRLEXECPIPEBUF;
+/** Pointer to thread data. */
+typedef VBOXSERVICECTRLEXECPIPEBUF *PVBOXSERVICECTRLEXECPIPEBUF;
+
+/* Structure for holding guest exection relevant data. */
+typedef struct
+{
     uint32_t  uPID;
     char     *pszCmd;
     uint32_t  uFlags;
@@ -158,6 +161,35 @@ typedef struct
     char     *pszUser;
     char     *pszPassword;
     uint32_t  uTimeLimitMS;
+
+    VBOXSERVICECTRLEXECPIPEBUF stdOut;
+    VBOXSERVICECTRLEXECPIPEBUF stdErr;
+
+} VBOXSERVICECTRLTHREADDATAEXEC;
+/** Pointer to thread data. */
+typedef VBOXSERVICECTRLTHREADDATAEXEC *PVBOXSERVICECTRLTHREADDATAEXEC;
+
+/* Structure for holding thread relevant data. */
+typedef struct
+{
+    /** Node. */
+    RTLISTNODE                      Node;
+    /** The worker thread. */
+    RTTHREAD                        Thread;
+    /** Shutdown indicator. */
+    bool volatile                   fShutdown;
+    /** Indicator set by the service thread exiting. */
+    bool volatile                   fStopped;
+    /** Whether the service was started or not. */
+    bool                            fStarted;
+    /** Client ID. */
+    uint32_t                        uClientID;
+    /** Context ID. */
+    uint32_t                        uContextID;
+    /** Type of thread.  See VBOXSERVICECTRLTHREADDATATYPE for more info. */
+    VBOXSERVICECTRLTHREADDATATYPE   enmType;
+    /** Pointer to actual thread data, depending on enmType. */
+    void                           *pvData;
 } VBOXSERVICECTRLTHREAD;
 /** Pointer to thread data. */
 typedef VBOXSERVICECTRLTHREAD *PVBOXSERVICECTRLTHREAD;
@@ -235,7 +267,11 @@ extern int VBoxServiceControlExecProcess(uint32_t uContext, const char *pszCmd, 
                                          const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
                                          const char *pszStdIn, const char *pszStdOut, const char *pszStdErr,
                                          const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS);
-extern void VBoxServiceControlExecDestroyThreadData(PVBOXSERVICECTRLTHREAD pThread);
+extern void VBoxServiceControlExecDestroyThreadData(PVBOXSERVICECTRLTHREADDATAEXEC pThread);
+extern int VBoxServiceControlExecReadPipeBufferContent(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
+                                                       BYTE *pbBuffer, uint32_t cbBuffer, uint32_t *pcbToRead);
+extern int VBoxServiceControlExecWritePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
+                                                 BYTE *pbData, uint32_t cbData);
 #endif
 
 #ifdef VBOXSERVICE_MANAGEMENT
