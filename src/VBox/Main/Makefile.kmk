@@ -276,6 +276,10 @@ endif
 ifdef VBOX_WITH_USB
  VBoxSVC_LIBS.solaris += \
 	devinfo
+ ifdef VBOX_USB_WITH_SYSFS
+  VBoxSVC_LIBS.linux += \
+	fam
+ endif
 endif
 
 VBoxSVC_INTERMEDIATES = \
