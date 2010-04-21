@@ -569,14 +569,27 @@ void VBoxVMInformationDlg::refreshStatistics()
         QString nested = console.GetDebugger().GetHWVirtExNestedPagingEnabled() ?
             VBoxGlobal::tr ("Enabled", "details report (Nested Paging)") :
             VBoxGlobal::tr ("Disabled", "details report (Nested Paging)");
-        QString addInfo = console.GetGuest().GetAdditionsVersion();
-        uint addVersion = addInfo.toUInt();
-        QString addVerisonStr = !addInfo.isNull() ?
-            tr ("Version %1.%2", "guest additions")
-                .arg (RT_HIWORD (addVersion)).arg (RT_LOWORD (addVersion)) :
-            tr ("Not Detected", "guest additions");
+        QString addVersion = m.GetGuestPropertyValue("/VirtualBox/GuestAdd/Version");
+        QString addVersionStr;
+        if (!addVersion.isEmpty())
+        {
+            addVersionStr = addVersion;
+            QStringList addVersionList = addVersion.split(".");
+            if (addVersionList.size() >= 2)
+            {
+                uint addVersionBuild = addVersionList[2].toUInt();
+                /* show the revision for development releases */
+                if ((addVersionBuild % 2) != 0)
+                {
+                    QString addRevision = m.GetGuestPropertyValue("/VirtualBox/GuestAdd/Revision");
+                    addVersionStr += " r" + addRevision;
+                }
+            }
+        }
+        else
+            addVersionStr = tr ("Not Detected", "guest additions");
         QString osType = console.GetGuest().GetOSTypeId();
-        if (osType.isNull())
+        if (osType.isEmpty())
             osType = tr ("Not Detected", "guest os type");
         else
             osType = vboxGlobal().vmGuestOSTypeDescription (osType);
@@ -587,7 +600,7 @@ void VBoxVMInformationDlg::refreshStatistics()
 
         /* Searching for longest string */
         QStringList valuesList;
-        valuesList << resolution << virtualization << nested << addVerisonStr << osType << vrdpInfo;
+        valuesList << resolution << virtualization << nested << addVersionStr << osType << vrdpInfo;
         int maxLength = 0;
         foreach (const QString &value, valuesList)
             maxLength = maxLength < fontMetrics().width (value) ?
@@ -597,7 +610,7 @@ void VBoxVMInformationDlg::refreshStatistics()
         result += formatValue (tr ("Screen Resolution"), resolution, maxLength);
         result += formatValue (VBoxGlobal::tr ("VT-x/AMD-V", "details report"), virtualization, maxLength);
         result += formatValue (VBoxGlobal::tr ("Nested Paging", "details report"), nested, maxLength);
-        result += formatValue (tr ("Guest Additions"), addVerisonStr, maxLength);
+        result += formatValue (tr ("Guest Additions"), addVersionStr, maxLength);
         result += formatValue (tr ("Guest OS Type"), osType, maxLength);
         result += formatValue (VBoxGlobal::tr ("Remote Display Server Port", "details report (VRDP Server)"), vrdpInfo, maxLength);
         result += paragraph;
