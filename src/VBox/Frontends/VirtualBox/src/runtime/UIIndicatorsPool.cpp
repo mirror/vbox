@@ -21,6 +21,10 @@
  * additional information or have any questions.
  */
 
+/* Global includes */
+#include <iprt/time.h>
+#include <QTimer>
+
 /* Local includes */
 #include "UIIndicatorsPool.h"
 #include "VBoxGlobal.h"
@@ -232,11 +236,15 @@ public:
     UIIndicatorNetworkAdapters(CSession &session)
       : QIWithRetranslateUI<QIStateIndicator>()
       , m_session(session)
+      , m_pUpdateTimer(new QTimer(this))
     {
         setStateIcon(KDeviceActivity_Idle, QPixmap(":/nw_16px.png"));
         setStateIcon(KDeviceActivity_Reading, QPixmap(":/nw_read_16px.png"));
         setStateIcon(KDeviceActivity_Writing, QPixmap(":/nw_write_16px.png"));
         setStateIcon(KDeviceActivity_Null, QPixmap(":/nw_disabled_16px.png"));
+
+        connect(m_pUpdateTimer, SIGNAL(timeout()), SLOT(sltUpdateNetworkIPs()));
+        m_pUpdateTimer->start(5000);
 
         retranslateUi();
     }
@@ -248,7 +256,7 @@ public:
 
     void updateAppearance()
     {
-        const CMachine &machine = m_session.GetMachine();
+        CMachine machine = m_session.GetMachine();
 
         ulong uMaxCount = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
         ulong uCount = 0;
@@ -265,12 +273,22 @@ public:
         {
             CNetworkAdapter adapter = machine.GetNetworkAdapter(uSlot);
             if (adapter.GetEnabled())
-                strFullData += QApplication::translate("VBoxConsoleWnd", "<br><nobr><b>Adapter %1 (%2)</b>: cable %3</nobr>", "Network adapters tooltip")
+            {
+                QString strIP;
+                ULONG64 timestamp;
+                RTTIMESPEC time;
+                uint64_t u64Now = RTTimeSpecGetNano(RTTimeNow(&time));
+                QString strFlags;
+                machine.GetGuestProperty(QString("/VirtualBox/GuestInfo/Net/%1/V4/IP").arg(uSlot),
+                                         strIP, timestamp, strFlags);
+                strFullData += QApplication::translate("VBoxConsoleWnd", "<br><nobr><b>Adapter %1 (%2)</b>: %3 cable %4</nobr>", "Network adapters tooltip")
                     .arg(uSlot + 1)
                     .arg(vboxGlobal().toString(adapter.GetAttachmentType()))
+                    .arg(strIP.isEmpty() || (u64Now - timestamp > UINT64_C(20000000000)) ? "" : "IP=" + strIP + " - ")
                     .arg(adapter.GetCableConnected() ?
                           QApplication::translate("VBoxConsoleWnd", "connected", "Network adapters tooltip") :
                           QApplication::translate("VBoxConsoleWnd", "disconnected", "Network adapters tooltip"));
+            }
         }
 
         if (strFullData.isNull())
@@ -278,11 +296,18 @@ public:
 
         setToolTip(strToolTip.arg(strFullData));
     }
+protected slots:
+
+    void sltUpdateNetworkIPs()
+    {
+        updateAppearance();
+    }
 
 protected:
     /* For compatibility reason we do it here, later this should be moved to
      * QIStateIndicator. */
     CSession &m_session;
+    QTimer *m_pUpdateTimer;
 };
 
 class UIIndicatorUSBDevices : public QIWithRetranslateUI<QIStateIndicator>
