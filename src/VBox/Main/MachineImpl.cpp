@@ -1448,6 +1448,8 @@ STDMETHODIMP Machine::COMGETTER(MemoryBalloonSize)(ULONG *memoryBalloonSize)
  */
 STDMETHODIMP Machine::COMSETTER(MemoryBalloonSize)(ULONG memoryBalloonSize)
 {
+    /* This must match GMMR0Init; currently we only support memory ballooning on all 64-bit hosts except Mac OS X */
+#if HC_ARCH_BITS == 64 && (defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD))
     /* check limits */
     if (memoryBalloonSize >= VMMDEV_MAX_MEMORY_BALLOON(mHWData->mMemorySize))
         return setError(E_INVALIDARG,
@@ -1464,6 +1466,9 @@ STDMETHODIMP Machine::COMSETTER(MemoryBalloonSize)(ULONG memoryBalloonSize)
     mHWData->mMemoryBalloonSize = memoryBalloonSize;
 
     return S_OK;
+#else
+    return setError(E_NOTIMPL, tr("Memory ballooning is only supported on 64-bit hosts"));
+#endif
 }
 
 STDMETHODIMP Machine::COMGETTER(Accelerate3DEnabled)(BOOL *enabled)
