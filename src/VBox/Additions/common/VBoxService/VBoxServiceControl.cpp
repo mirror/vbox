@@ -192,7 +192,7 @@ static int VBoxServiceControlHandleCmdGetOutput(uint32_t u32ClientId, uint32_t u
             AssertPtr(pData);
 
             uint32_t cbRead = _4K; /* Try reading 4k. */
-            BYTE *pBuf = (BYTE*)RTMemAlloc(cbRead);
+            uint8_t *pBuf = (uint8_t*)RTMemAlloc(cbRead);
             if (pBuf)
             {
                 rc = VBoxServiceControlExecReadPipeBufferContent(&pData->stdOut, pBuf, cbRead, &cbRead);

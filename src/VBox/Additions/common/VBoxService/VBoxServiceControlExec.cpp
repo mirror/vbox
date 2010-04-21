@@ -165,7 +165,7 @@ static int VBoxServiceControlExecProcHandleOutputEvent(PVBOXSERVICECTRLTHREAD pT
      */
     int rc = VINF_SUCCESS;
     size_t  cbRead;
-    BYTE    abBuf[_64K];
+    uint8_t abBuf[_64K];
 
     AssertPtr(pThread);
     PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pThread->pvData;
@@ -529,7 +529,7 @@ static int VBoxServiceControlExecSetupPipe(int fd, PRTHANDLE ph, PRTHANDLE *pph,
 }
 
 int VBoxServiceControlExecReadPipeBufferContent(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
-                                                BYTE *pbBuffer, uint32_t cbBuffer, uint32_t *pcbToRead)
+                                                uint8_t *pbBuffer, uint32_t cbBuffer, uint32_t *pcbToRead)
 {
     AssertPtr(pcbToRead);
 
@@ -553,17 +553,17 @@ int VBoxServiceControlExecReadPipeBufferContent(PVBOXSERVICECTRLEXECPIPEBUF pBuf
 }
 
 int VBoxServiceControlExecWritePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
-                                          BYTE *pbData, uint32_t cbData)
+                                          uint8_t *pbData, uint32_t cbData)
 {
     AssertPtr(pBuf);
 
 // LOCKING
 
     /** @todo Use RTMemCache or RTMemObj here? */
-    BYTE *pNewBuf;
+    uint8_t *pNewBuf;
     while (pBuf->cbSize - pBuf->cbOffset < cbData)
     {
-        pNewBuf = (BYTE*)RTMemRealloc(pBuf->pbData, pBuf->cbSize + _4K);
+        pNewBuf = (uint8_t*)RTMemRealloc(pBuf->pbData, pBuf->cbSize + _4K);
         if (pNewBuf == NULL)
             break;
         pBuf->cbSize += _4K;
