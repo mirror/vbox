@@ -58,6 +58,10 @@ if defined(VBOX_WITH_VRDP) && !defined(VBOX_ONLY_SDK) \
  include $(PATH_SUB_CURRENT)/openssl-0.9.8k/Makefile.kmk
 endif
 
+# libjpeg for VRDP video acceleration
+ifdef VBOX_WITH_VRDP_VIDEO_CHANNEL
+ include $(PATH_SUB_CURRENT)/jpeg-8a/Makefile.kmk
+endif
 
 # Main related things - XML and XSLT, XPCOM.
 if defined(VBOX_WITH_MAIN)
