@@ -261,7 +261,7 @@ sbappendsb(PNATState pData, struct sbuf *sb, struct mbuf *m)
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
             memcpy(sb->sb_data, m->m_data+n, nn);
 #else
-            m_copydata(m, n, nn, sb->sb_wptr);
+            m_copydata(m, n, nn, sb->sb_data);
 #endif
             n += nn;
         }
