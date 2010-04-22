@@ -397,6 +397,11 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         char szPropPath [FILENAME_MAX];
         int iCurIface = 0;
 
+        /*
+         * This property is a beacon which is _always_ written, even if the network configuration
+         * does not change. If this property is missing, the host assumes that all other GuestInfo
+         * properties are no longer valid.
+         */
         VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/Net/Count", "%d",
                               nNumInterfaces > 1 ? nNumInterfaces-1 : 0);
 
