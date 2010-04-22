@@ -3140,7 +3140,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int aElement)
                 info += tr ("<br><nobr><b>Adapter %1 (%2)</b>: %3 cable %4</nobr>", "Network adapters tooltip")
                     .arg (slot + 1)
                     .arg (vboxGlobal().toString (adapter.GetAttachmentType()))
-                    .arg (ip.isEmpty() || (u64Now - timestamp > UINT64_C(20000000000)) ? "" : "IP=" + ip + " - ")
+                    .arg (ip.isEmpty() || (u64Now - timestamp > UINT64_C(20000000000)) ? "" : "IP " + ip + ", ")
                     .arg (adapter.GetCableConnected() ?
                           tr ("connected", "Network adapters tooltip") :
                           tr ("disconnected", "Network adapters tooltip"));
