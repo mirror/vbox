@@ -49,7 +49,7 @@ void doHotplugEvent(VBoxMainHotplugWaiter *waiter, RTMSINTERVAL cMillies)
             continue;
         }
         if (rc == VERR_TIMEOUT)
-            continue;
+            break;
         if (RT_FAILURE(rc))
         {
             RTPrintf("Failed!\n");
