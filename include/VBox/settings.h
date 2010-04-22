@@ -412,7 +412,8 @@ struct NetworkAdapter
           ulLineSpeed(0),
           fTraceEnabled(false),
           mode(NetworkAttachmentType_Null),
-          ulBootPriority(0)
+          ulBootPriority(0),
+          fHasDisabledNAT(false)
     {}
 
     bool operator==(const NetworkAdapter &n) const;
