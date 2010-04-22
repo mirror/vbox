@@ -111,7 +111,7 @@ void UIDownloaderUserManual::acknowledgeFinished(bool fError)
 {
     /* If current source was wrong but other is present
      * we will try other source else we should finish: */
-    if (fError && !m_sourcesList.isEmpty())
+    if (m_pHttp->errorCode() != QIHttp::Aborted && m_pHttp->errorCode() != QIHttp::NoError && !m_sourcesList.isEmpty())
         startDownload();
     else
         UIDownloader::acknowledgeFinished(fError);
