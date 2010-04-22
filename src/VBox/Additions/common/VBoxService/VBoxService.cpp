@@ -648,7 +648,8 @@ int main(int argc, char **argv)
          */
         rc = VBoxServiceStartServices(iMain);
 #ifndef RT_OS_WINDOWS
-        VBoxServiceWaitSignal();
+        if (RT_SUCCESS(rc))
+            VBoxServiceWaitSignal();
 #endif
         VBoxServiceStopServices();
 #ifdef RT_OS_WINDOWS
