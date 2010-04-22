@@ -1304,15 +1304,15 @@ int handleModifyVM(HandlerArg *a)
                 char *strTcpRcv;
                 char *strRaw = RTStrDup(ValueUnion.psz);
                 char *ch = strRaw;
-                strMtu = ch;
+                strMtu = RTStrStrip(ch);
                 ITERATE_TO_NEXT_TERM(ch);
-                strSockSnd = ch;
+                strSockSnd = RTStrStrip(ch);
                 ITERATE_TO_NEXT_TERM(ch);
-                strSockRcv = ch;
+                strSockRcv = RTStrStrip(ch);
                 ITERATE_TO_NEXT_TERM(ch);
-                strTcpSnd = ch;
+                strTcpSnd = RTStrStrip(ch);
                 ITERATE_TO_NEXT_TERM(ch);
-                strTcpRcv = ch;
+                strTcpRcv = RTStrStrip(ch);
 
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
@@ -1344,17 +1344,17 @@ int handleModifyVM(HandlerArg *a)
                     char *strGuestPort;
                     char *strRaw = RTStrDup(ValueUnion.psz);
                     char *ch = strRaw;
-                    strName = ch;
+                    strName = RTStrStrip(ch);
                     ITERATE_TO_NEXT_TERM(ch);
-                    strProto = ch;
+                    strProto = RTStrStrip(ch);
                     ITERATE_TO_NEXT_TERM(ch);
-                    strHostIp = ch;
+                    strHostIp = RTStrStrip(ch);
                     ITERATE_TO_NEXT_TERM(ch);
-                    strHostPort = ch;
+                    strHostPort = RTStrStrip(ch);
                     ITERATE_TO_NEXT_TERM(ch);
-                    strGuestIp = ch;
+                    strGuestIp = RTStrStrip(ch);
                     ITERATE_TO_NEXT_TERM(ch);
-                    strGuestPort = ch;
+                    strGuestPort = RTStrStrip(ch);
                     NATProtocol_T proto;
                     if (RTStrICmp(strProto, "udp") == 0)
                         proto = NATProtocol_UDP;
