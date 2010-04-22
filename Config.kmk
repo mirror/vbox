@@ -270,7 +270,7 @@ VBOX_WITH_DOCS = 1
 # Include documentation in the package
 VBOX_WITH_DOCS_PACKING = 1
 # Include CHM when building docs (unset in LocalConfig.kmk to suppress CHM)
-if defined(VBOX_ONLY_DOCS) || "$(KBUILD_TARGET)" != "linux"
+ifn1of ($(KBUILD_TARGET), linux)
  VBOX_WITH_DOCS_CHM = 1
 endif
 # Don't bother with documentation, overrides VBOX_WITH_DOCS.
@@ -762,6 +762,13 @@ endif
 #
 ifdef VBOX_WITHOUT_LINUX_COMPILER_H
  $(warning VBOX_WITHOUT_LINUX_COMPILER_H was renamed to VBOX_WITH_LINUX_COMPILER_H, the meaning is inverted.)
+endif
+
+#
+# For the docs build box.
+#
+ifdef VBOX_ONLY_DOCS
+ VBOX_WITH_DOCS_CHM = 1
 endif
 
 #
