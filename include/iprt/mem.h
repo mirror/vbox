@@ -646,7 +646,14 @@ inline T * RTMemAutoNil(void) RT_NO_THROW
  *                      to support reallocating memory if that's a problem.
  *                      This will default to RTMemRealloc.
  */
-template <class T, void Destruct(T *) = RTMemAutoDestructor<T>, void *Allocator(void *, size_t) = RTMemRealloc >
+template <class T,
+          void Destruct(T *) = RTMemAutoDestructor<T>,
+# ifdef RTMEM_WRAP_TO_EF_APIS
+          void *Allocator(void *, size_t) = RTMemEfReallocNP
+# else
+          void *Allocator(void *, size_t) = RTMemRealloc
+# endif
+          >
 class RTMemAutoPtr
     : public RTAutoRes<T *, Destruct, RTMemAutoNil<T> >
 {
