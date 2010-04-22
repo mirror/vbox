@@ -566,12 +566,16 @@ STDMETHODIMP SystemProperties::COMSETTER(DefaultMachineFolder)(IN_BSTR aDefaultM
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
-
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = setDefaultMachineFolder(aDefaultMachineFolder);
+    alock.release();
+
     if (SUCCEEDED(rc))
+    {
+        // VirtualBox::saveSettings() needs vbox write lock
+        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
         rc = mParent->saveSettings();
+    }
 
     return rc;
 }
@@ -595,12 +599,16 @@ STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFolder)(IN_BSTR aDefault
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
-
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = setDefaultHardDiskFolder(aDefaultHardDiskFolder);
+    alock.release();
+
     if (SUCCEEDED(rc))
+    {
+        // VirtualBox::saveSettings() needs vbox write lock
+        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
         rc = mParent->saveSettings();
+    }
 
     return rc;
 }
@@ -639,12 +647,16 @@ STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFormat)(IN_BSTR aDefault
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
-
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = setDefaultHardDiskFormat(aDefaultHardDiskFormat);
+    alock.release();
+
     if (SUCCEEDED(rc))
+    {
+        // VirtualBox::saveSettings() needs vbox write lock
+        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
         rc = mParent->saveSettings();
+    }
 
     return rc;
 }
@@ -716,12 +728,16 @@ STDMETHODIMP SystemProperties::COMSETTER(RemoteDisplayAuthLibrary)(IN_BSTR aRemo
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
-
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = setRemoteDisplayAuthLibrary(aRemoteDisplayAuthLibrary);
+    alock.release();
+
     if (SUCCEEDED(rc))
+    {
+        // VirtualBox::saveSettings() needs vbox write lock
+        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
         rc = mParent->saveSettings();
+    }
 
     return rc;
 }
@@ -745,12 +761,16 @@ STDMETHODIMP SystemProperties::COMSETTER(WebServiceAuthLibrary)(IN_BSTR aWebServ
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
-
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = setWebServiceAuthLibrary(aWebServiceAuthLibrary);
+    alock.release();
+
     if (SUCCEEDED(rc))
+    {
+        // VirtualBox::saveSettings() needs vbox write lock
+        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
         rc = mParent->saveSettings();
+    }
 
     return rc;
 }
@@ -774,11 +794,12 @@ STDMETHODIMP SystemProperties::COMSETTER(LogHistoryCount)(ULONG count)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
-
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     mLogHistoryCount = count;
+    alock.release();
 
+    // VirtualBox::saveSettings() needs vbox write lock
+    AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = mParent->saveSettings();
 
     return rc;
