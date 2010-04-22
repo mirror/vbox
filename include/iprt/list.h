@@ -239,7 +239,7 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
  * @param   Member              The list node member name.
  */
 #define RTListForEachReverse(pList, pIterator, Type, Member) \
-    for (pIterator = RTListNodeGetLast(pList, Type, Member); \
+    for (pIterator = RTListNodeGetPrev(pList, Type, Member); \
          !RTListNodeIsDummy(pList, pIterator, Type, Member); \
          pIterator = RT_FROM_MEMBER((pIterator)->Member.pPrev, Type, Member) )
 
