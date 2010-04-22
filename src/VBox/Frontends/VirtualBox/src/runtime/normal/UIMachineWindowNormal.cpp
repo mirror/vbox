@@ -107,6 +107,7 @@ UIMachineWindowNormal::~UIMachineWindowNormal()
 void UIMachineWindowNormal::sltMachineStateChanged()
 {
     UIMachineWindow::sltMachineStateChanged();
+    updateAppearanceOf(UIVisualElement_VirtualizationStuff);
 }
 
 void UIMachineWindowNormal::sltMediumChange(const CMediumAttachment &attachment)
