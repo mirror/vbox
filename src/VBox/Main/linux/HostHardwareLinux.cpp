@@ -1356,7 +1356,9 @@ static int sysfsGetStatusForFAMCode(FAMCodes enmCode)
 int hotplugSysfsFAMImpl::drainWakeupPipe(void)
 {
     char szBuf[sizeof(SYSFS_WAKEUP_STRING)];
-    int rc = RTPipeRead(mhWakeupPipeR, szBuf, sizeof(szBuf), NULL);
+    size_t cbDummy;
+
+    int rc = RTPipeRead(mhWakeupPipeR, szBuf, sizeof(szBuf), &cbDummy);
     AssertRC(rc);
     return VINF_SUCCESS;
 }
