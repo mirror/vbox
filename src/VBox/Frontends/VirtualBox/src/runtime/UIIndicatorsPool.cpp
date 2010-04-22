@@ -342,6 +342,7 @@ public:
         QString strFullData;
 
         CUSBController usbctl = machine.GetUSBController();
+        setState(!usbctl.isNull() && usbctl.GetEnabled() && usbctl.GetProxyAvailable() ? KDeviceActivity_Idle : KDeviceActivity_Null);
         if (!usbctl.isNull() && usbctl.GetEnabled())
         {
             const CConsole &console = m_session.GetConsole();
@@ -433,6 +434,7 @@ public:
         if (sfs.count() == 0)
             strFullData = QApplication::translate("VBoxConsoleWnd", "<br><nobr><b>No shared folders</b></nobr>", "Shared folders tooltip");
 
+        setState(!sfs.isEmpty() ? KDeviceActivity_Idle : KDeviceActivity_Null);
         setToolTip(strToolTip.arg(strFullData));
     }
 
@@ -471,7 +473,7 @@ public:
             /* update menu&status icon state */
             bool fVRDPEnabled = vrdpsrv.GetEnabled();
 
-            setState(fVRDPEnabled ? 1 : 0);
+            setState(fVRDPEnabled ? KDeviceActivity_Idle : KDeviceActivity_Null);
 
             QString tip = QApplication::translate("VBoxConsoleWnd", "Indicates whether the Remote Display (VRDP Server) "
                              "is enabled (<img src=:/vrdp_16px.png/>) or not "
