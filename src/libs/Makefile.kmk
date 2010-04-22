@@ -59,7 +59,7 @@ if defined(VBOX_WITH_VRDP) && !defined(VBOX_ONLY_SDK) \
 endif
 
 # libjpeg for VRDP video acceleration
-ifdef VBOX_WITH_VRDP_VIDEO_CHANNEL
+if defined(VBOX_WITH_VRDP) && defined(VBOX_WITH_VRDP_VIDEO_CHANNEL)
  include $(PATH_SUB_CURRENT)/jpeg-8a/Makefile.kmk
 endif
 
