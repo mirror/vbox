@@ -1337,16 +1337,6 @@ typedef struct VDBACKENDINFO
     DECLR3CALLBACKMEMBER(int, pfnComposeName, (PVDINTERFACE pConfig, char **pszName));
 } VDBACKENDINFO, *PVDBACKENDINFO;
 
-/**
- * Completion callback for metadata reads or writes.
- *
- * @return  nothing.
- * @param   pvBackendData   The opaque backend data.
- * @param   pvMetaUser      Opaque user data passed during a metadata read/write request.
- */
-typedef DECLCALLBACK(void) FNVDMETACOMPLETED(void *pvBackendData, void *pvMetaUser);
-/** Pointer to FNVDCOMPLETED() */
-typedef FNVDMETACOMPLETED *PFNVDMETACOMPLETED;
 
 /** Forward declaration. Only visible in the VBoxHDD module. */
 /** I/O context */
@@ -1355,6 +1345,18 @@ typedef struct VDIOCTX *PVDIOCTX;
 typedef struct VDIOSTORAGE *PVDIOSTORAGE;
 /** Pointer to a storage backend handle. */
 typedef PVDIOSTORAGE *PPVDIOSTORAGE;
+
+/**
+ * Completion callback for metadata reads or writes.
+ *
+ * @return  nothing.
+ * @param   pvBackendData   The opaque backend data.
+ * @param   pIoCtx          I/O context associated with this request.
+ * @param   pvMetaUser      Opaque user data passed during a metadata read/write request.
+ */
+typedef DECLCALLBACK(void) FNVDMETACOMPLETED(void *pvBackendData, PVDIOCTX pIoCtx, void *pvMetaUser);
+/** Pointer to FNVDCOMPLETED() */
+typedef FNVDMETACOMPLETED *PFNVDMETACOMPLETED;
 
 /**
  * Support interface for I/O

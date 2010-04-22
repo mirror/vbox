@@ -540,7 +540,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
 
 #ifdef VBOX_WITH_NEW_IO_CODE
     /* Try to get I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_IO);
+    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IO);
     AssertPtr(pImage->pInterfaceIO);
     pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
     AssertPtr(pImage->pInterfaceIOCallbacks);
@@ -726,7 +726,7 @@ static int vdiOpenImage(PVDIIMAGEDESC pImage, unsigned uOpenFlags)
 
 #ifdef VBOX_WITH_NEW_IO_CODE
     /* Try to get I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_IO);
+    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IO);
     AssertPtr(pImage->pInterfaceIO);
     pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
     AssertPtr(pImage->pInterfaceIOCallbacks);
@@ -1070,6 +1070,7 @@ static int vdiOpen(const char *pszFilename, unsigned uOpenFlags,
 #endif
     pImage->paBlocks = NULL;
     pImage->pVDIfsDisk = pVDIfsDisk;
+    pImage->pVDIfsImage = pVDIfsImage;
 
     rc = vdiOpenImage(pImage, uOpenFlags);
     if (RT_SUCCESS(rc))
@@ -1148,6 +1149,7 @@ static int vdiCreate(const char *pszFilename, uint64_t cbSize,
 #endif
     pImage->paBlocks = NULL;
     pImage->pVDIfsDisk = pVDIfsDisk;
+    pImage->pVDIfsImage = pVDIfsImage;
 
     rc = vdiCreateImage(pImage, cbSize, uImageFlags, pszComment,
                         pPCHSGeometry, pLCHSGeometry, pUuid,

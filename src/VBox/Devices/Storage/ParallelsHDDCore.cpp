@@ -64,7 +64,9 @@ typedef struct ParallelsHeader
 typedef struct PARALLELSIMAGE
 {
     /** Pointer to the per-disk VD interface list. */
-    PVDINTERFACE         pVDIfsDisk;
+    PVDINTERFACE        pVDIfsDisk;
+    /** Pointer to the per-image VD interface list. */
+    PVDINTERFACE        pVDIfsImage;
     /** Error interface. */
     PVDINTERFACE        pInterfaceError;
     /** Error interface callbacks. */
@@ -283,7 +285,7 @@ static int parallelsOpenImage(PPARALLELSIMAGE pImage, unsigned uOpenFlags)
 
 #ifdef VBOX_WITH_NEW_IO_CODE
     /* Try to get async I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_IO);
+    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IO);
     AssertPtr(pImage->pInterfaceIO);
     pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
     AssertPtr(pImage->pInterfaceIOCallbacks);
@@ -498,6 +500,7 @@ static int parallelsOpen(const char *pszFilename, unsigned uOpenFlags,
     pImage->fAllocationBitmapChanged = false;
     pImage->pszFilename = pszFilename;
     pImage->pVDIfsDisk = pVDIfsDisk;
+    pImage->pVDIfsImage = pVDIfsImage;
 
     rc = parallelsOpenImage(pImage, uOpenFlags);
     if (RT_SUCCESS(rc))
