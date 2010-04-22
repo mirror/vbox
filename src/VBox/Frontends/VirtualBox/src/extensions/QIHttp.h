@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -118,16 +118,31 @@ public:
         return QHttp::request (aHeader);
     }
 
+    /* This method is doing effictevely the same as abort()
+     * but in its turn trying to do all after other things been done. */
+    void abortAll()
+    {
+        QTimer::singleShot(0, this, SLOT(abort()));
+    }
+
 signals:
 
     void allIsDone (bool aError);
 
 private slots:
 
+    /* We should hide this method from direct call as its very
+     * dangerous to call it while other requests are being processed.
+     * Use abortAll() to get the same result. */
+    void abort()
+    {
+        QHttp::abort();
+    }
+
     void timeouted()
     {
         mErrorCode = TimeoutError;
-        abort();
+        abortAll();
     }
 
     void processResponseHeader (const QHttpResponseHeader &aResponse)
@@ -137,13 +152,13 @@ private slots:
         {
             case 301:
                 mErrorCode = MovedPermanentlyError;
-                return abort();
+                return abortAll();
             case 302:
                 mErrorCode = MovedTemporarilyError;
-                return abort();
+                return abortAll();
             case 404:
                 mErrorCode = PageNotFoundError;
-                return abort();
+                return abortAll();
             default:
                 mErrorCode = (AdvancedError) QHttp::error();
         }

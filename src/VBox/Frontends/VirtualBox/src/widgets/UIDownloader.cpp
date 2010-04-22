@@ -166,23 +166,20 @@ void UIDownloader::acknowledgeStart()
 void UIDownloader::acknowledgeProcess(const QHttpResponseHeader & /* response */)
 {
     /* Abort connection as we already got all we need */
-    m_pHttp->abort();
+    m_pHttp->abortAll();
 }
 
 /* This function is used to ask the user about if he really want
  * to download file of proposed size if no error present or
  * abort download progress if error is present */
-void UIDownloader::acknowledgeFinished(bool fError)
+void UIDownloader::acknowledgeFinished(bool /* fError */)
 {
-    NOREF(fError);
-
-    AssertMsg(fError, ("Error must be 'true' due to aborting.\n"));
-
     m_pHttp->disconnect(this);
 
     switch (m_pHttp->errorCode())
     {
-        case QIHttp::Aborted:
+        case QIHttp::NoError: /* full packet comes before aborting */
+        case QIHttp::Aborted: /* part of packet comes before aborting */
         {
             /* Ask the user if he wish to download it */
             if (confirmDownload())
