@@ -2893,13 +2893,12 @@ STDMETHODIMP Display::CompleteVHWACommand(BYTE *pCommand)
 /**
  *  Helper to update the display information from the framebuffer.
  *
- *  @param aCheckParams true to compare the parameters of the current framebuffer
- *                      and the new one and issue handleDisplayResize()
- *                      if they differ.
  *  @thread EMT
  */
-void Display::updateDisplayData (bool aCheckParams /* = false */)
+void Display::updateDisplayData(void)
 {
+    LogFlowFunc (("\n"));
+
     /* the driver might not have been constructed yet */
     if (!mpDrv)
         return;
@@ -2940,27 +2939,6 @@ void Display::updateDisplayData (bool aCheckParams /* = false */)
         rc = pFramebuffer->COMGETTER(Height) (&height);
         AssertComRC (rc);
 
-        /*
-         *  Check current parameters with new ones and issue handleDisplayResize()
-         *  to let the new frame buffer adjust itself properly. Note that it will
-         *  result into a recursive updateDisplayData() call but with
-         *  aCheckOld = false.
-         */
-        if (aCheckParams &&
-            (mLastAddress != address ||
-             mLastBytesPerLine != bytesPerLine ||
-             mLastBitsPerPixel != bitsPerPixel ||
-             mLastWidth != (int) width ||
-             mLastHeight != (int) height))
-        {
-            handleDisplayResize (VBOX_VIDEO_PRIMARY_SCREEN, mLastBitsPerPixel,
-                                 mLastAddress,
-                                 mLastBytesPerLine,
-                                 mLastWidth,
-                                 mLastHeight);
-            return;
-        }
-
         mpDrv->IConnector.pu8Data = (uint8_t *) address;
         mpDrv->IConnector.cbScanline = bytesPerLine;
         mpDrv->IConnector.cBits = bitsPerPixel;
@@ -2976,6 +2954,7 @@ void Display::updateDisplayData (bool aCheckParams /* = false */)
         mpDrv->IConnector.cx = 0;
         mpDrv->IConnector.cy = 0;
     }
+    LogFlowFunc (("leave\n"));
 }
 
 /**
@@ -3004,8 +2983,35 @@ DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
 
     that->mParent->consoleVRDPServer()->SendResize ();
 
-    that->updateDisplayData (true /* aCheckParams */);
+    /* The driver might not have been constructed yet */
+    if (that->mpDrv)
+    {
+        /* Setup the new framebuffer, the resize will lead to an updateDisplayData call. */
+        DISPLAYFBINFO *pFBInfo = &that->maFramebuffers[uScreenId];
 
+        if (pFBInfo->fVBVAEnabled && pFBInfo->pu8FramebufferVRAM)
+        {
+            /* This display in VBVA mode. Resize it to the last guest resolution,
+             * if it has been reported.
+             */
+            that->handleDisplayResize(uScreenId, pFBInfo->u16BitsPerPixel,
+                                      pFBInfo->pu8FramebufferVRAM,
+                                      pFBInfo->u32LineSize,
+                                      pFBInfo->w,
+                                      pFBInfo->h);
+        }
+        else if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+        {
+            /* VGA device mode, only for the primary screen. */
+            that->handleDisplayResize(VBOX_VIDEO_PRIMARY_SCREEN, that->mLastBitsPerPixel,
+                                      that->mLastAddress,
+                                      that->mLastBytesPerLine,
+                                      that->mLastWidth,
+                                      that->mLastHeight);
+        }
+    }
+
+    LogFlowFunc (("leave\n"));
     return VINF_SUCCESS;
 }
 
@@ -3556,11 +3562,27 @@ DECLCALLBACK(void) Display::displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterface,
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
 
-    pThis->maFramebuffers[uScreenId].fVBVAEnabled = false;
+    DISPLAYFBINFO *pFBInfo = &pThis->maFramebuffers[uScreenId];
 
-    vbvaSetMemoryFlagsHGSMI(uScreenId, 0, false, &pThis->maFramebuffers[uScreenId]);
+    pFBInfo->fVBVAEnabled = false;
 
-    pThis->maFramebuffers[uScreenId].pVBVAHostFlags = NULL;
+    vbvaSetMemoryFlagsHGSMI(uScreenId, 0, false, pFBInfo);
+
+    pFBInfo->pVBVAHostFlags = NULL;
+
+    pFBInfo->u32Offset = 0; /* Not used in HGSMI. */
+    pFBInfo->u32MaxFramebufferSize = 0; /* Not used in HGSMI. */
+    pFBInfo->u32InformationSize = 0; /* Not used in HGSMI. */
+
+    pFBInfo->xOrigin = 0;
+    pFBInfo->yOrigin = 0;
+
+    pFBInfo->w = 0;
+    pFBInfo->h = 0;
+
+    pFBInfo->u16BitsPerPixel = 0;
+    pFBInfo->pu8FramebufferVRAM = NULL;
+    pFBInfo->u32LineSize = 0;
 }
 
 DECLCALLBACK(void) Display::displayVBVAUpdateBegin(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId)
