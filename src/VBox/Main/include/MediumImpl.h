@@ -198,10 +198,13 @@ public:
     HRESULT deleteStorage(ComObjPtr<Progress> *aProgress, bool aWait, bool *pfNeedsSaveSettings);
     HRESULT markForDeletion();
     HRESULT unmarkForDeletion();
+    HRESULT markLockedForDeletion();
+    HRESULT unmarkLockedForDeletion();
 
     HRESULT prepareMergeTo(const ComObjPtr<Medium> &pTarget,
                            const Guid *aMachineId,
                            const Guid *aSnapshotId,
+                           bool fLockMedia,
                            bool &fMergeForward,
                            ComObjPtr<Medium> &pParentForTarget,
                            MediaList &aChildrenToReparent,

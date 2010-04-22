@@ -2779,9 +2779,9 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     // request the host lock first, since might be calling Host methods for getting host drives;
     // next, protect the media tree all the while we're in here, as well as our member variables
-    AutoMultiWriteLock3 alock(mParent->host()->lockHandle(),
-                              this->lockHandle(),
-                              &mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    AutoMultiWriteLock2 alock(mParent->host()->lockHandle(),
+                              this->lockHandle() COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock treeLock(&mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
@@ -3050,6 +3050,11 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                 }
             }
 
+            /* must give up the medium lock and medium tree lock as below we
+             * go over snapshots, which needs a lock with higher lock order. */
+            mediumLock.release();
+            treeLock.release();
+
             /* then, search through snapshots for the best diff in the given
              * hard disk's chain to base the new diff on */
 
@@ -3109,6 +3114,10 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                 snap = snap->getParent();
             }
 
+            /* re-lock medium tree and the medium, as we need it below */
+            treeLock.acquire();
+            mediumLock.acquire();
+
             /* found a suitable diff, use it as a base */
             if (!base.isNull())
             {
@@ -3144,6 +3153,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         setMachineState(MachineState_SettingUp);
 
         mediumLock.leave();
+        treeLock.leave();
         alock.leave();
 
         rc = medium->createDiffStorage(diff, MediumVariant_Standard,
@@ -3151,6 +3161,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                                        true /* aWait */, &fNeedsSaveSettings);
 
         alock.enter();
+        treeLock.enter();
         mediumLock.enter();
 
         setMachineState(oldState);
@@ -3190,6 +3201,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     if (fNeedsSaveSettings)
     {
         mediumLock.release();
+        treeLock.leave();
         alock.release();
 
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
@@ -5668,8 +5680,8 @@ HRESULT Machine::openExistingSession(IInternalSessionControl *aControl)
     LogFlowThisFunc(("GetRemoteConsole() returned %08X\n", rc));
     if (FAILED (rc))
         /* The failure may occur w/o any error info (from RPC), so provide one */
-        return setError (VBOX_E_VM_ERROR,
-            tr ("Failed to get a console object from the direct session (%Rrc)"), rc);
+        return setError(VBOX_E_VM_ERROR,
+            tr("Failed to get a console object from the direct session (%Rrc)"), rc);
 
     ComAssertRet(!pConsole.isNull(), E_FAIL);
 
@@ -8297,8 +8309,6 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
              *        and an orphaned VDI in the snapshots folder. */
 
             /* update the appropriate lock list */
-            rc = lockedMediaMap->Unlock();
-            AssertComRCThrowRC(rc);
             MediumLockList *pMediumLockList;
             rc = lockedMediaMap->Get(pAtt, pMediumLockList);
             AssertComRCThrowRC(rc);
@@ -8307,8 +8317,6 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
                 rc = pMediumLockList->Update(pMedium, false);
                 AssertComRCThrowRC(rc);
             }
-            rc = lockedMediaMap->Lock();
-            AssertComRCThrowRC(rc);
 
             /* leave the lock before the potentially lengthy operation */
             alock.leave();

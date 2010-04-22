@@ -113,6 +113,7 @@ public:
     const ComObjPtr<Snapshot>& getParent() const;
 
     const Utf8Str& stateFilePath() const;
+    HRESULT deleteStateFile();
 
     ULONG getChildrenCount();
     ULONG getAllChildrenCount();

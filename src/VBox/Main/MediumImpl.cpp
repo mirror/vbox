@@ -2087,14 +2087,16 @@ STDMETHODIMP Medium::CreateBaseStorage(ULONG64 aLogicalSize,
                                ? BstrFmt(tr("Creating fixed hard disk storage unit '%s'"), m->strLocationFull.raw())
                                : BstrFmt(tr("Creating dynamic hard disk storage unit '%s'"), m->strLocationFull.raw()),
                              TRUE /* aCancelable */);
-        if (FAILED(rc)) throw rc;
+        if (FAILED(rc))
+            throw rc;
 
         /* setup task object to carry out the operation asynchronously */
         pTask = new Medium::CreateBaseTask(this, pProgress, aLogicalSize,
                                            aVariant);
         rc = pTask->rc();
         AssertComRC(rc);
-        if (FAILED(rc)) throw rc;
+        if (FAILED(rc))
+            throw rc;
 
         m->state = MediumState_Creating;
     }
@@ -2188,8 +2190,8 @@ STDMETHODIMP Medium::MergeTo(IMedium *aTarget, IProgress **aProgress)
 
     HRESULT rc = S_OK;
 
-    rc = prepareMergeTo(pTarget, NULL, NULL, fMergeForward, pParentForTarget,
-                        childrenToReparent, pMediumLockList);
+    rc = prepareMergeTo(pTarget, NULL, NULL, true, fMergeForward,
+                        pParentForTarget, childrenToReparent, pMediumLockList);
     if (FAILED(rc)) return rc;
 
     ComObjPtr <Progress> pProgress;
@@ -2295,7 +2297,8 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
                                       pTargetMediumLockList);
         rc = pTask->rc();
         AssertComRC(rc);
-        if (FAILED(rc)) throw rc;
+        if (FAILED(rc))
+            throw rc;
 
         if (pTarget->m->state == MediumState_NotCreated)
             pTarget->m->state = MediumState_Creating;
@@ -2368,7 +2371,8 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
         pTask = new Medium::CompactTask(this, pProgress, pMediumLockList);
         rc = pTask->rc();
         AssertComRC(rc);
-        if (FAILED(rc)) throw rc;
+        if (FAILED(rc))
+            throw rc;
     }
     catch (HRESULT aRC) { rc = aRC; }
 
@@ -2423,7 +2427,8 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
                            m->strLocationFull.raw());
 
         rc = canClose();
-        if (FAILED(rc)) throw rc;
+        if (FAILED(rc))
+            throw rc;
 
         /* Build the medium lock list. */
         MediumLockList *pMediumLockList(new MediumLockList());
@@ -2449,13 +2454,15 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
                              static_cast<IMedium*>(this),
                              BstrFmt(tr("Resetting differencing hard disk '%s'"), m->strLocationFull.raw()),
                              FALSE /* aCancelable */);
-        if (FAILED(rc)) throw rc;
+        if (FAILED(rc))
+            throw rc;
 
         /* setup task object to carry out the operation asynchronously */
         pTask = new Medium::ResetTask(this, pProgress, pMediumLockList);
         rc = pTask->rc();
         AssertComRC(rc);
-        if (FAILED(rc)) throw rc;
+        if (FAILED(rc))
+            throw rc;
     }
     catch (HRESULT aRC) { rc = aRC; }
 
@@ -3815,11 +3822,13 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
         }
 
         rc = canClose();
-        if (FAILED(rc)) throw rc;
+        if (FAILED(rc))
+            throw rc;
 
         /* go to Deleting state, so that the medium is not actually locked */
         rc = markForDeletion();
-        if (FAILED(rc)) throw rc;
+        if (FAILED(rc))
+            throw rc;
 
         /* Build the medium lock list. */
         MediumLockList *pMediumLockList(new MediumLockList());
@@ -3846,7 +3855,8 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
          * unregisterWithVirtualBox() failed after we successfully deleted the
          * storage) */
         rc = unregisterWithVirtualBox(pfNeedsSaveSettings);
-        if (FAILED(rc)) throw rc;
+        if (FAILED(rc))
+            throw rc;
 
         if (aProgress != NULL)
         {
@@ -3861,7 +3871,8 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
                                      static_cast<IMedium*>(this),
                                      BstrFmt(tr("Deleting hard disk storage unit '%s'"), m->strLocationFull.raw()),
                                      FALSE /* aCancelable */);
-                if (FAILED(rc)) throw rc;
+                if (FAILED(rc))
+                    throw rc;
             }
         }
 
@@ -3869,7 +3880,8 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
         pTask = new Medium::DeleteTask(this, pProgress, pMediumLockList);
         rc = pTask->rc();
         AssertComRC(rc);
-        if (FAILED(rc)) throw rc;
+        if (FAILED(rc))
+            throw rc;
     }
     catch (HRESULT aRC) { rc = aRC; }
 
@@ -3933,6 +3945,44 @@ HRESULT Medium::unmarkForDeletion()
         default:
             return setStateError();
     }
+}
+
+/**
+ * Mark a medium for deletion which is in locked state.
+ *
+ * @note Caller must hold the write lock on this medium!
+ */
+HRESULT Medium::markLockedForDeletion()
+{
+    ComAssertRet(this->lockHandle()->isWriteLockOnCurrentThread(), E_FAIL);
+    if (   (   m->state == MediumState_LockedRead
+            || m->state == MediumState_LockedWrite)
+        && m->preLockState == MediumState_Created)
+    {
+        m->preLockState = MediumState_Deleting;
+        return S_OK;
+    }
+    else
+        return setStateError();
+}
+
+/**
+ * Removes the "mark for deletion" for a medium in locked state.
+ *
+ * @note Caller must hold the write lock on this medium!
+ */
+HRESULT Medium::unmarkLockedForDeletion()
+{
+    ComAssertRet(this->lockHandle()->isWriteLockOnCurrentThread(), E_FAIL);
+    if (   (   m->state == MediumState_LockedRead
+            || m->state == MediumState_LockedWrite)
+        && m->preLockState == MediumState_Deleting)
+    {
+        m->preLockState = MediumState_Created;
+        return S_OK;
+    }
+    else
+        return setStateError();
 }
 
 /**
@@ -4041,7 +4091,8 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
                                      static_cast<IMedium*>(this),
                                      BstrFmt(tr("Creating differencing hard disk storage unit '%s'"), aTarget->m->strLocationFull.raw()),
                                      TRUE /* aCancelable */);
-                if (FAILED(rc)) throw rc;
+                if (FAILED(rc))
+                    throw rc;
             }
         }
 
@@ -4051,7 +4102,8 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
                                            aWait /* fKeepMediumLockList */);
         rc = pTask->rc();
         AssertComRC(rc);
-        if (FAILED(rc)) throw rc;
+        if (FAILED(rc))
+             throw rc;
 
         /* register a task (it will deregister itself when done) */
         ++m->numCreateDiffTasks;
@@ -4092,6 +4144,9 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
  * @param aMachineId    Allowed machine attachment. NULL means do not check.
  * @param aSnapshotId   Allowed snapshot attachment. NULL or empty UUID means
  *                      do not check.
+ * @param fLockMedia    Flag whether to lock the medium lock list or not.
+ *                      If set to false and the medium lock list locking fails
+ *                      later you must call #cancelMergeTo().
  * @param fMergeForward Resulting merge direction (out).
  * @param pParentForTarget New parent for target medium after merge (out).
  * @param aChildrenToReparent List of children of the source which will have
@@ -4104,6 +4159,7 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
 HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
                                const Guid *aMachineId,
                                const Guid *aSnapshotId,
+                               bool fLockMedia,
                                bool &fMergeForward,
                                ComObjPtr<Medium> &pParentForTarget,
                                MediaList &aChildrenToReparent,
@@ -4164,19 +4220,26 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
             rc = pTarget->createMediumLockList(true, NULL, *aMediumLockList);
         else
             rc = createMediumLockList(false, NULL, *aMediumLockList);
-        if (FAILED(rc)) throw rc;
+        if (FAILED(rc))
+            throw rc;
 
-        /* sanity checking, must be after lock list creation as it depends on
-         * valid medium states. The medium objects must be accessible. */
+        /* Sanity checking, must be after lock list creation as it depends on
+         * valid medium states. The medium objects must be accessible. Only
+         * do this if immediate locking is requested, otherwise it fails when
+         * we construct a medium lock list for an already running VM. Snapshot
+         * deletion uses this to simplify its life. */
+        if (fLockMedia)
         {
-            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-            if (m->state != MediumState_Created)
-                throw setStateError();
-        }
-        {
-            AutoReadLock alock(pTarget COMMA_LOCKVAL_SRC_POS);
-            if (pTarget->m->state != MediumState_Created)
-                throw pTarget->setStateError();
+            {
+                AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+                if (m->state != MediumState_Created)
+                    throw setStateError();
+            }
+            {
+                AutoReadLock alock(pTarget COMMA_LOCKVAL_SRC_POS);
+                if (pTarget->m->state != MediumState_Created)
+                    throw pTarget->setStateError();
+            }
         }
 
         /* check medium attachment and other sanity conditions */
@@ -4248,10 +4311,20 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
         if (m->state == MediumState_Created)
         {
             rc = markForDeletion();
-            if (FAILED(rc)) throw rc;
+            if (FAILED(rc))
+                throw rc;
         }
         else
-            throw setStateError();
+        {
+            if (fLockMedia)
+                throw setStateError();
+            else if (   (   m->state == MediumState_LockedWrite
+                         || m->state == MediumState_LockedRead)
+                     && (m->preLockState == MediumState_Created))
+                markLockedForDeletion();
+            else
+                throw setStateError();
+        }
 
         if (fMergeForward)
         {
@@ -4267,7 +4340,8 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
             {
                 pMedium = *it;
                 rc = pMedium->LockWrite(NULL);
-                if (FAILED(rc)) throw rc;
+                if (FAILED(rc))
+                    throw rc;
 
                 aChildrenToReparent.push_back(pMedium);
             }
@@ -4280,7 +4354,8 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
             if (pLast->m->state == MediumState_Created)
             {
                 rc = pLast->markForDeletion();
-                if (FAILED(rc)) throw rc;
+                if (FAILED(rc))
+                    throw rc;
             }
             else
                 throw pLast->setStateError();
@@ -4309,13 +4384,16 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
             }
         }
 
-        rc = aMediumLockList->Lock();
-        if (FAILED(rc))
+        if (fLockMedia)
         {
-            AutoReadLock alock(pTarget COMMA_LOCKVAL_SRC_POS);
-            throw setError(rc,
-                           tr("Failed to lock media when merging to '%ls'"),
-                           pTarget->getLocationFull().raw());
+            rc = aMediumLockList->Lock();
+            if (FAILED(rc))
+            {
+                AutoReadLock alock(pTarget COMMA_LOCKVAL_SRC_POS);
+                throw setError(rc,
+                               tr("Failed to lock media when merging to '%ls'"),
+                               pTarget->getLocationFull().raw());
+            }
         }
     }
     catch (HRESULT aRC) { rc = aRC; }
@@ -4455,7 +4533,8 @@ HRESULT Medium::mergeTo(const ComObjPtr<Medium> &pTarget,
                                              getName().raw(),
                                              tgtName.raw()),
                                      TRUE /* aCancelable */);
-                if (FAILED(rc)) throw rc;
+                if (FAILED(rc))
+                    throw rc;
             }
         }
 
@@ -4466,7 +4545,8 @@ HRESULT Medium::mergeTo(const ComObjPtr<Medium> &pTarget,
                                       aWait /* fKeepMediumLockList */);
         rc = pTask->rc();
         AssertComRC(rc);
-        if (FAILED(rc)) throw rc;
+        if (FAILED(rc))
+            throw rc;
     }
     catch (HRESULT aRC) { rc = aRC; }
 
@@ -4907,7 +4987,8 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
         {
             /* ensure the directory exists */
             rc = VirtualBox::ensureFilePathExists(location);
-            if (FAILED(rc)) throw rc;
+            if (FAILED(rc))
+                throw rc;
 
             PDMMEDIAGEOMETRY geo = { 0, 0, 0 }; /* auto-detect */
 
@@ -5074,7 +5155,8 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
 
             /* ensure the target directory exists */
             rc = VirtualBox::ensureFilePathExists(targetLocation);
-            if (FAILED(rc)) throw rc;
+            if (FAILED(rc))
+                throw rc;
 
             vrc = VDCreateDiff(hdd,
                                targetFormat.c_str(),
@@ -5553,7 +5635,8 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
 
             /* ensure the target directory exists */
             rc = VirtualBox::ensureFilePathExists(targetLocation);
-            if (FAILED(rc)) throw rc;
+            if (FAILED(rc))
+                throw rc;
 
             PVBOXHDD targetHdd;
             vrc = VDCreate(m->vdDiskIfaces, &targetHdd);
