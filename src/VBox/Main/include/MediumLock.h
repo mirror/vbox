@@ -170,7 +170,7 @@ public:
     /**
      * Update a medium lock declaration.
      *
-     * @note May be only used in unlocked state.
+     * @note May be used in locked state.
      *
      * @return COM status code
      * @param aMedium       Reference to medium object
