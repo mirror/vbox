@@ -270,7 +270,7 @@ public:
 
 private:
 
-    void updateDisplayData (bool aCheckParams = false);
+    void updateDisplayData(void);
 
     static DECLCALLBACK(int)   changeFramebuffer(Display *that, IFramebuffer *aFB, unsigned uScreenId);
 
