@@ -111,6 +111,9 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem)
     RT_ASSERT_INTS_ON();
 
     mutex_enter(&pThis->Mtx);
+
+    ASMAtomicDecU32(&pThis->cRefs);
+
     ASMAtomicIncU32(&pThis->u32Magic); /* make the handle invalid */
     if (pThis->cWaiters > 0)
     {
@@ -207,6 +210,8 @@ static int rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fInt
 
     mutex_enter(&pThis->Mtx);
 
+    ASMAtomicIncU32(&pThis->cRefs);
+
     if (pThis->fPendingSignal)
     {
         /*
@@ -255,14 +260,6 @@ static int rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fInt
                  * We're being destroyed.
                  */
                 rc = VERR_SEM_DESTROYED;
-                if (!ASMAtomicDecU32(&pThis->cRefs))
-                {
-                    mutex_exit(&pThis->Mtx);
-                    cv_destroy(&pThis->Cnd);
-                    mutex_destroy(&pThis->Mtx);
-                    RTMemFree(pThis);
-                    return rc;
-                }
                 ASMAtomicDecU32(&pThis->cWaiters);
             }
             else
@@ -299,6 +296,16 @@ static int rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fInt
             rc = VERR_INTERRUPTED;
             ASMAtomicDecU32(&pThis->cWaiters);
         }
+    }
+
+    if (!ASMAtomicDecU32(&pThis->cRefs))
+    {
+        Assert(RT_FAILURE_NP(rc));
+        mutex_exit(&pThis->Mtx);
+        cv_destroy(&pThis->Cnd);
+        mutex_destroy(&pThis->Mtx);
+        RTMemFree(pThis);
+        return rc;
     }
 
     mutex_exit(&pThis->Mtx);
