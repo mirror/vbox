@@ -673,8 +673,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     /*
      * Enable 3 following devices: HPET, SMC, LPC on MacOS X guests
      */
-    BOOL fExtProfile = fOsXGuest;
-
     /*
      * High Precision Event Timer (HPET)
      */
@@ -683,7 +681,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     /* Other guests may wish to use HPET too, but MacOS X not functional without it */
     hrc = pMachine->COMGETTER(HpetEnabled)(&fHpetEnabled);                          H();
     /* so always enable HPET in extended profile */
-    fHpetEnabled |= fExtProfile;
+    fHpetEnabled |= fOsXGuest;
 #else
     fHpetEnabled = false;
 #endif
@@ -699,7 +697,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      */
     BOOL fSmcEnabled;
 #ifdef VBOX_WITH_SMC
-    fSmcEnabled = fExtProfile;
+    fSmcEnabled = fOsXGuest;
 #else
     fSmcEnabled = false;
 #endif
@@ -720,7 +718,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     BOOL fLpcEnabled;
     /** @todo: implement appropriate getter */
 #ifdef VBOX_WITH_LPC
-    fLpcEnabled = fExtProfile;
+    fLpcEnabled = fOsXGuest;
 #else
     fLpcEnabled = false;
 #endif
@@ -1043,10 +1041,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pCfg,  "UgaVerticalResolution", u32UgaVertical);        RC_CHECK();
 
         /* For OS X guests we'll force passing host's DMI info to the guest */
-        if (fExtProfile)
+        if (fOsXGuest)
         {
             rc = CFGMR3InsertInteger(pCfg,  "DmiUseHostInfo", 1);                        RC_CHECK();
-            rc = CFGMR3InsertInteger(pCfg,  "DmiExposeAdditionalTables", 1);             RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg,  "DmiExposeMemoryTable", 1);                  RC_CHECK();
         }
     }
 
@@ -2224,7 +2222,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     if (fACPI)
     {
         BOOL fCpuHotPlug = false;
-        BOOL fShowCpu = fExtProfile;
+        BOOL fShowCpu = fOsXGuest;
         /* Always show the CPU leafs when we have multiple VCPUs or when the IO-APIC is enabled.
          * The Windows SMP kernel needs a CPU leaf or else its idle loop will burn cpu cycles; the
          * intelppm driver refuses to register an idle state handler.
@@ -2246,8 +2244,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pCfg,  "FdcEnabled", fFdcEnabled);                 RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "HpetEnabled", fHpetEnabled);               RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "SmcEnabled", fSmcEnabled);                 RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "ShowRtc",    fExtProfile);                 RC_CHECK();
-        if (fExtProfile && !llBootNics.empty())
+        rc = CFGMR3InsertInteger(pCfg,  "ShowRtc",    fOsXGuest);                   RC_CHECK();
+        if (fOsXGuest && !llBootNics.empty())
         {
             BootNic aNic = llBootNics.front();
             uint32_t u32NicPciAddr = (aNic.mPciDev << 16) | aNic.mPciFn;

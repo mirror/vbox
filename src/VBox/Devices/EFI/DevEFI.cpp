@@ -1011,7 +1011,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "DmiOEMVBoxRev\0"
 #endif
                               "DmiUseHostInfo\0"
-                              "DmiExposeAdditionalTables\0"
+                              "DmiExposeMemoryTable\0"
                               "64BitEntry\0"
                               "BootArgs\0"
                               "DeviceProps\0"

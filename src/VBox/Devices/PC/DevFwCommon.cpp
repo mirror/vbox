@@ -510,11 +510,11 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
     if (fDmiUseHostInfo)
         fwCommonUseHostDMIStrings();
 
-    uint8_t fDmiExposeAdditionalTables;
-    rc = CFGMR3QueryU8Def(pCfg, "DmiExposeAdditionalTables", &fDmiExposeAdditionalTables, 0);
+    uint8_t fDmiExposeMemoryTable;
+    rc = CFGMR3QueryU8Def(pCfg, "DmiExposeMemoryTable", &fDmiExposeMemoryTable, 0);
     if (RT_FAILURE (rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"DmiExposeAdditionalTables\""));
+                                N_("Configuration error: Failed to read \"DmiExposeMemoryTable\""));
 
     for  (;; fForceDefault = true, fHideErrors = false)
     {
@@ -676,7 +676,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
 # endif
         TERM_STRUCT;
 
-        if (fDmiExposeAdditionalTables)
+        if (fDmiExposeMemoryTable)
         {
             /***************************************
              * DMI Physical Memory Array (Type 16) *
