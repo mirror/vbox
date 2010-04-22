@@ -29,7 +29,11 @@
 # include <unistd.h>
 #endif
 #include <errno.h>
+#ifndef RT_OS_WINDOWS
+# include <signal.h>
+#endif
 
+#include "product-generated.h"
 #include <iprt/asm.h>
 #include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
@@ -132,10 +136,11 @@ static int VBoxServiceUsage(void)
     {
         RTPrintf("    --enable-%-10s Enables the %s service. (default)\n", g_aServices[j].pDesc->pszName, g_aServices[j].pDesc->pszName);
         RTPrintf("    --disable-%-9s Disables the %s service.\n", g_aServices[j].pDesc->pszName, g_aServices[j].pDesc->pszName);
-        RTPrintf("%s", g_aServices[j].pDesc->pszOptions);
+        if (g_aServices[j].pDesc->pszOptions)
+            RTPrintf("%s", g_aServices[j].pDesc->pszOptions);
     }
     RTPrintf("\n"
-             " Copyright (C) 2009 Sun Microsystems, Inc.\n");
+             " Copyright (C) 2009-" VBOX_C_YEAR " " VBOX_VENDOR "\n");
 
     return 1;
 }
@@ -386,6 +391,19 @@ int VBoxServiceStopServices(void)
     return rc;
 }
 
+/**
+ * Signal handler for properly shutting down the services on Posix platforms.
+ */
+static void VBoxServiceSignalHandler(int /* sig */)
+{
+    VBoxServiceVerbose(2, "VBoxServiceSignalHandler hit\n");
+    /* Flag the main service that we want to terminate */
+    g_fShutdown = 1;
+    unsigned iMain = VBoxServiceGetStartedServices();
+    /* Get the main thread out of the waiting loop */
+    g_aServices[iMain].pDesc->pfnStop();
+}
+
 
 int main(int argc, char **argv)
 {
@@ -602,6 +620,17 @@ int main(int argc, char **argv)
         /*
          * Start the service, enter the main threads run loop and stop them again when it returns.
          */
+#ifndef RT_OS_WINDOWS
+        struct sigaction sa;
+        sa.sa_handler = VBoxServiceSignalHandler;
+        sigemptyset(&sa.sa_mask);
+        sa.sa_flags = 0;
+        sigaction(SIGHUP, &sa, NULL);
+        sigaction(SIGINT, &sa, NULL);
+        sigaction(SIGQUIT, &sa, NULL);
+        sigaction(SIGABRT, &sa, NULL);
+        sigaction(SIGTERM, &sa, NULL);
+#endif
         rc = VBoxServiceStartServices(iMain);
         VBoxServiceStopServices();
 #ifdef RT_OS_WINDOWS
