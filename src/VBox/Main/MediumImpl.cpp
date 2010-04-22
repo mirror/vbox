@@ -4488,8 +4488,8 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
  *       for writing.
  */
 HRESULT Medium::mergeTo(const ComObjPtr<Medium> &pTarget,
-                        bool &fMergeForward,
-                        ComObjPtr<Medium> pParentForTarget,
+                        bool fMergeForward,
+                        const ComObjPtr<Medium> &pParentForTarget,
                         const MediaList &aChildrenToReparent,
                         MediumLockList *aMediumLockList,
                         ComObjPtr <Progress> *aProgress,
