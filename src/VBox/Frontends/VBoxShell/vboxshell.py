@@ -33,7 +33,7 @@ import shlex
 import time
 import re
 
-HISTORY_FILENAME=".vboxshell_history"
+HISTORY_FILENAME=os.path.join(os.environ["HOME"], ".vboxshell_history")
 
 # Simple implementation of IConsoleCallback, one can use it as skeleton
 # for custom implementations
