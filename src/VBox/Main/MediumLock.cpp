@@ -177,8 +177,6 @@ HRESULT MediumLockList::Prepend(const ComObjPtr<Medium> &aMedium, bool aLockWrit
 
 HRESULT MediumLockList::Update(const ComObjPtr<Medium> &aMedium, bool aLockWrite)
 {
-    if (mIsLocked)
-        return VBOX_E_INVALID_OBJECT_STATE;
     for (MediumLockList::Base::iterator it = mMediumLocks.begin();
          it != mMediumLocks.end();
          it++)
