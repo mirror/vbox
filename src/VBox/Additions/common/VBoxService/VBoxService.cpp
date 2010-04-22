@@ -258,6 +258,16 @@ int VBoxServiceArgUInt32(int argc, char **argv, const char *psz, int *pi, uint32
 static DECLCALLBACK(int) VBoxServiceThread(RTTHREAD ThreadSelf, void *pvUser)
 {
     const unsigned i = (uintptr_t)pvUser;
+
+#ifndef RT_OS_WINDOWS
+    /* 
+     * Block all signals for this thread. Only the main thread will handle signals.
+     */
+    sigset_t signalMask;
+    sigfillset(&signalMask);
+    pthread_sigmask(SIG_BLOCK, &signalMask, NULL);
+#endif
+
     int rc = g_aServices[i].pDesc->pfnWorker(&g_aServices[i].fShutdown);
     ASMAtomicXchgBool(&g_aServices[i].fShutdown, true);
     RTThreadUserSignal(ThreadSelf);
@@ -335,7 +345,8 @@ int VBoxServiceStartServices(unsigned iMain)
             rc = VERR_GENERAL_FAILURE;
         }
     }
-    if (RT_SUCCESS(rc))
+    if (   RT_SUCCESS(rc)
+        && iMain != ~0U)
     {
         /* The final service runs in the main thread. */
         VBoxServiceVerbose(1, "Starting '%s' in the main thread\n", g_aServices[iMain].pDesc->pszName);
@@ -392,17 +403,22 @@ int VBoxServiceStopServices(void)
 }
 
 #ifndef RT_OS_WINDOWS
-/**
- * Signal handler for properly shutting down the services on Posix platforms.
+/*
+ * Block all important signals, then explicitly wait until one of these signal arrives.
  */
-static void VBoxServiceSignalHandler(int /* sig */)
+static void VBoxServiceWaitSignal(void)
 {
-    VBoxServiceVerbose(2, "VBoxServiceSignalHandler hit\n");
-    /* Flag the main service that we want to terminate */
-    g_fShutdown = 1;
-    unsigned iMain = VBoxServiceGetStartedServices();
-    /* Get the main thread out of the waiting loop */
-    g_aServices[iMain].pDesc->pfnStop();
+    sigset_t signalMask;
+    int iSignal;
+    sigemptyset(&signalMask);
+    sigaddset(&signalMask, SIGHUP);
+    sigaddset(&signalMask, SIGINT);
+    sigaddset(&signalMask, SIGQUIT);
+    sigaddset(&signalMask, SIGABRT);
+    sigaddset(&signalMask, SIGTERM);
+    pthread_sigmask(SIG_BLOCK, &signalMask, NULL);
+    sigwait(&signalMask, &iSignal);
+    VBoxServiceVerbose(3, "VBoxServiceWaitSignal: Received signal %d\n", iSignal);
 }
 #endif
 
@@ -578,6 +594,13 @@ int main(int argc, char **argv)
     if (iMain == ~0U)
         return VBoxServiceSyntax("At least one service must be enabled.\n");
 
+#ifndef RT_OS_WINDOWS
+    /* 
+     * POSIX: No main service thread.
+     */
+    iMain = ~0U;
+#endif
+
     VBoxServiceVerbose(0, "%s r%s started. Verbose level = %d\n",
         RTBldCfgVersion(), RTBldCfgRevisionStr(), g_cVerbosity);
 
@@ -617,23 +640,16 @@ int main(int argc, char **argv)
     {
         /* Run the app just like a console one if not daemonized. */
 #endif
-        /** @todo Make the main thread responsive to signal so it can shutdown/restart the threads on non-SIGKILL signals. */
-
         /*
-         * Start the service, enter the main threads run loop and stop them again when it returns.
+         * Windows: Start the services, enter the main threads' run loop and stop them
+         * again when it returns.
+         *
+         * POSIX: Start all services and return immediately.
          */
-#ifndef RT_OS_WINDOWS
-        struct sigaction sa;
-        sa.sa_handler = VBoxServiceSignalHandler;
-        sigemptyset(&sa.sa_mask);
-        sa.sa_flags = 0;
-        sigaction(SIGHUP, &sa, NULL);
-        sigaction(SIGINT, &sa, NULL);
-        sigaction(SIGQUIT, &sa, NULL);
-        sigaction(SIGABRT, &sa, NULL);
-        sigaction(SIGTERM, &sa, NULL);
-#endif
         rc = VBoxServiceStartServices(iMain);
+#ifndef RT_OS_WINDOWS
+        VBoxServiceWaitSignal();
+#endif
         VBoxServiceStopServices();
 #ifdef RT_OS_WINDOWS
     }
