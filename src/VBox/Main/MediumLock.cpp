@@ -49,8 +49,27 @@ MediumLock::MediumLock(const ComObjPtr<Medium> &aMedium, bool aLockWrite)
 
 HRESULT MediumLock::UpdateLock(bool aLockWrite)
 {
+    if (aLockWrite == mLockWrite)
+        return S_OK;
     if (mIsLocked)
-        return VBOX_E_INVALID_OBJECT_STATE;
+    {
+        HRESULT rc = Unlock();
+        if (FAILED(rc))
+        {
+            Lock();
+            return rc;
+        }
+        mLockWrite = aLockWrite;
+        rc = Lock();
+        if (FAILED(rc))
+        {
+            mLockWrite = !mLockWrite;
+            Lock();
+            return rc;
+        }
+        return S_OK;
+    }
+
     mLockWrite = aLockWrite;
     return S_OK;
 }

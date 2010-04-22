@@ -73,9 +73,9 @@ public:
     MediumLock(const MediumLock &aMediumLock);
 
     /**
-     * Update a medium lock description
+     * Update a medium lock description.
      *
-     * @note May be only used in unlocked state.
+     * @note May be used in locked state.
      *
      * @return COM status code
      * @param aLockWrite    @c true means a write lock should be taken
@@ -189,7 +189,7 @@ public:
     HRESULT RemoveByIterator(Base::iterator &aIt);
 
     /**
-     * Clear all medium lock declaration.
+     * Clear all medium lock declarations.
      *
      * @note Implicitly unlocks all locks.
      *
