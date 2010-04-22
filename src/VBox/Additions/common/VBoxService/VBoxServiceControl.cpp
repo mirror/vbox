@@ -278,10 +278,16 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
          * allows us to implement service wakeup later.
          */
         if (*pfShutdown)
+        {
+            rc = 0;
             break;
+        }
         int rc2 = RTSemEventMultiWait(g_hControlEvent, g_ControlInterval);
         if (*pfShutdown)
+        {
+            rc = 0;
             break;
+        }
         if (rc2 != VERR_TIMEOUT && RT_FAILURE(rc2))
         {
             VBoxServiceError("Control: RTSemEventMultiWait failed; rc2=%Rrc\n", rc2);
@@ -374,8 +380,8 @@ VBOXSERVICE g_Control =
    "[--control-interval <ms>]"
     ,
     /* pszOptions. */
-    "    --control-interval   Specifies the interval at which to check for\n"
-    "                         new ocntrol commands. The default is 1000 ms.\n"
+    "    --control-interval  Specifies the interval at which to check for\n"
+    "                        new ocntrol commands. The default is 1000 ms.\n"
     ,
     /* methods */
     VBoxServiceControlPreInit,
