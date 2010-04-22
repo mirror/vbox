@@ -616,6 +616,8 @@ def infoCmd(ctx,args):
     print "  HPET [hpetEnabled]: %s" %(asState(mach.hpetEnabled))
     if mach.audioAdapter.enabled:
         print "  Audio [via audioAdapter]: chip %s; host driver %s" %(asEnumElem(ctx,"AudioControllerType", mach.audioAdapter.audioController), asEnumElem(ctx,"AudioDriverType",  mach.audioAdapter.audioDriver))
+    if mach.USBController.enabled:
+        print "  USB [via USBController]: high speed %s" %(asState(mach.USBController.enabledEhci))
     print "  CPU hotplugging [CPUHotPlugEnabled]: %s" %(asState(mach.CPUHotPlugEnabled))
 
     print "  Keyboard [keyboardHidType]: %s (%s)" %(asEnumElem(ctx,"KeyboardHidType", mach.keyboardHidType), mach.keyboardHidType)
@@ -1000,7 +1002,7 @@ def getUSBStateString(state):
 def hostCmd(ctx, args):
    host = ctx['vb'].host
    cnt = host.processorCount
-   print "Processor count:",cnt
+   print "Processors available/online: %d/%d " %(cnt,host.processorOnlineCount)
    for i in range(0,cnt):
       print "Processor #%d speed: %dMHz %s" %(i,host.getProcessorSpeed(i), host.getProcessorDescription(i))
 
@@ -1017,6 +1019,10 @@ def hostCmd(ctx, args):
 
    print "DVD drives:"
    for dd in ctx['global'].getArray(host, 'DVDDrives'):
+       print "  %s - %s" %(dd.name, dd.description)
+
+   print "Floppy drives:"
+   for dd in ctx['global'].getArray(host, 'floppyDrives'):
        print "  %s - %s" %(dd.name, dd.description)
 
    print "USB devices:"
@@ -1240,7 +1246,7 @@ def exportVMCmd(ctx, args):
     if len(args) < 3:
         print "usage: exportVm <machine> <path> <format> <license>"
         return 0
-    mach = ctx['machById'](args[1])
+    mach = argsToMach(ctx,args)
     if mach is None:
         return 0
     path = args[2]
@@ -1436,7 +1442,7 @@ def typeGuestCmd(ctx, args):
     if len(args) < 3:
         print "usage: typeGuest <machine> <text> <charDelay>"
         return 0
-    mach = ctx['machById'](args[1])
+    mach =  argsToMach(ctx,args)
     if mach is None:
         return 0
 
@@ -1540,7 +1546,7 @@ def attachHddCmd(ctx,args):
       print "usage: attachHdd vm hdd controller port:slot"
       return 0
 
-   mach = ctx['machById'](args[1])
+   mach = argsToMach(ctx,args)
    if mach is None:
         return 0
    vb = ctx['vb']
@@ -1571,7 +1577,7 @@ def detachHddCmd(ctx,args):
       print "usage: detachHdd vm hdd"
       return 0
 
-   mach = ctx['machById'](args[1])
+   mach = argsToMach(ctx,args)
    if mach is None:
         return 0
    vb = ctx['vb']
@@ -1685,7 +1691,7 @@ def attachIsoCmd(ctx,args):
       print "usage: attachIso vm iso controller port:slot"
       return 0
 
-   mach = ctx['machById'](args[1])
+   mach = argsToMach(ctx,args)
    if mach is None:
         return 0
    vb = ctx['vb']
@@ -1705,7 +1711,7 @@ def detachIsoCmd(ctx,args):
       print "usage: detachIso vm iso"
       return 0
 
-   mach = ctx['machById'](args[1])
+   mach =  argsToMach(ctx,args)
    if mach is None:
         return 0
    vb = ctx['vb']
@@ -1724,7 +1730,7 @@ def mountIsoCmd(ctx,args):
       print "usage: mountIso vm iso controller port:slot"
       return 0
 
-   mach = ctx['machById'](args[1])
+   mach = argsToMach(ctx,args)
    if mach is None:
         return 0
    vb = ctx['vb']
@@ -1747,7 +1753,7 @@ def unmountIsoCmd(ctx,args):
       print "usage: unmountIso vm controller port:slot"
       return 0
 
-   mach = ctx['machById'](args[1])
+   mach = argsToMach(ctx,args)
    if mach is None:
         return 0
    vb = ctx['vb']
@@ -1778,7 +1784,7 @@ def attachCtrCmd(ctx,args):
    else:
        type = None
 
-   mach = ctx['machById'](args[1])
+   mach = argsToMach(ctx,args)
    if mach is None:
         return 0
    bus = enumFromString(ctx,'StorageBus', args[3])
@@ -1794,7 +1800,7 @@ def detachCtrCmd(ctx,args):
       print "usage: detachCtr vm name"
       return 0
 
-   mach = ctx['machById'](args[1])
+   mach = argsToMach(ctx,args)
    if mach is None:
         return 0
    ctr = args[2]
@@ -1840,7 +1846,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'runScript':['Run VBox script: runScript script.vbox', runScriptCmd, 0],
             'sleep':['Sleep for specified number of seconds: sleep 3.14159', sleepCmd, 0],
             'shell':['Execute external shell command: shell "ls /etc/rc*"', shellCmd, 0],
-            'exportVm':['Export VM in OVF format: export Win /tmp/win.ovf', exportVMCmd, 0],
+            'exportVm':['Export VM in OVF format: exportVm Win /tmp/win.ovf', exportVMCmd, 0],
             'screenshot':['Take VM screenshot to a file: screenshot Win /tmp/win.png 1024 768', screenshotCmd, 0],
             'teleport':['Teleport VM to another box (see openportal): teleport Win anotherhost:8000 <passwd> <maxDowntime>', teleportCmd, 0],
             'typeGuest':['Type arbitrary text in guest: typeGuest Linux "^lls\\n&UP;&BKSP;ess /etc/hosts\\nq^c" 0.7', typeGuestCmd, 0],
