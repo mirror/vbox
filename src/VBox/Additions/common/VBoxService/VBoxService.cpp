@@ -391,6 +391,7 @@ int VBoxServiceStopServices(void)
     return rc;
 }
 
+#ifndef RT_OS_WINDOWS
 /**
  * Signal handler for properly shutting down the services on Posix platforms.
  */
@@ -403,6 +404,7 @@ static void VBoxServiceSignalHandler(int /* sig */)
     /* Get the main thread out of the waiting loop */
     g_aServices[iMain].pDesc->pfnStop();
 }
+#endif
 
 
 int main(int argc, char **argv)
