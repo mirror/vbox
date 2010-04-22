@@ -1351,7 +1351,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                       N_("DrvVD: Configuration error: Both \"ReadOnly\" and \"TempReadOnly\" are set"));
                 break;
             }
-            rc = CFGMR3QueryBoolDef(pCurNode, "UseNewIo", &fUseNewIo, true);
+            rc = CFGMR3QueryBoolDef(pCurNode, "UseNewIo", &fUseNewIo, false);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
