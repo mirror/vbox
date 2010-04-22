@@ -4854,7 +4854,8 @@ static int ahciScatterGatherListCopyFromBuffer(PAHCIPORTTASKSTATE pAhciPortTaskS
 static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskState)
 {
     /* Free system resources occupied by the scatter gather list. */
-    ahciScatterGatherListDestroy(pAhciPort, pAhciPortTaskState);
+    if (pAhciPortTaskState->enmTxDir != AHCITXDIR_FLUSH)
+        ahciScatterGatherListDestroy(pAhciPort, pAhciPortTaskState);
 
     pAhciPortTaskState->cmdHdr.u32PRDBC = pAhciPortTaskState->cbTransfer;
 
@@ -5289,6 +5290,8 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
 
         if (enmTxDir != AHCITXDIR_NONE)
         {
+            pAhciPortTaskState->enmTxDir = enmTxDir;
+
             if (pAhciPortTaskState->fQueued)
             {
                 ahciLog(("%s: Before increment uActTasksActive=%u\n", __FUNCTION__, pAhciPort->uActTasksActive));

@@ -57,6 +57,8 @@ typedef struct RAWIMAGE
 
     /** Pointer to the per-disk VD interface list. */
     PVDINTERFACE      pVDIfsDisk;
+    /** Pointer to the per-image VD interface list. */
+    PVDINTERFACE      pVDIfsImage;
 
     /** Error callback. */
     PVDINTERFACE      pInterfaceError;
@@ -268,7 +270,7 @@ static int rawOpenImage(PRAWIMAGE pImage, unsigned uOpenFlags)
 
 #ifdef VBOX_WITH_NEW_IO_CODE
     /* Try to get I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_IO);
+    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IO);
     AssertPtr(pImage->pInterfaceIO);
     pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
     AssertPtr(pImage->pInterfaceIOCallbacks);
@@ -334,7 +336,7 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
 
 #ifdef VBOX_WITH_NEW_IO_CODE
     /* Try to get async I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_IO);
+    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IO);
     AssertPtr(pImage->pInterfaceIO);
     pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
     AssertPtr(pImage->pInterfaceIOCallbacks);
@@ -510,6 +512,7 @@ static int rawOpen(const char *pszFilename, unsigned uOpenFlags,
     pImage->pStorage = NULL;
 #endif
     pImage->pVDIfsDisk = pVDIfsDisk;
+    pImage->pVDIfsImage = pVDIfsImage;
 
     rc = rawOpenImage(pImage, uOpenFlags);
     if (RT_SUCCESS(rc))
@@ -579,6 +582,7 @@ static int rawCreate(const char *pszFilename, uint64_t cbSize,
     pImage->pStorage = NULL;
 #endif
     pImage->pVDIfsDisk = pVDIfsDisk;
+    pImage->pVDIfsImage = pVDIfsImage;
 
     rc = rawCreateImage(pImage, cbSize, uImageFlags, pszComment,
                         pPCHSGeometry, pLCHSGeometry,

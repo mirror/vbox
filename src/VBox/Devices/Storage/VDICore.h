@@ -585,6 +585,8 @@ typedef struct VDIIMAGEDESC
     PDMMEDIAGEOMETRY        PCHSGeometry;
     /** Pointer to the per-disk VD interface list. */
     PVDINTERFACE            pVDIfsDisk;
+    /** Pointer to the per-image VD interface list. */
+    PVDINTERFACE            pVDIfsImage;
     /** Error interface. */
     PVDINTERFACE            pInterfaceError;
     /** Error interface callback table. */

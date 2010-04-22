@@ -422,6 +422,8 @@ typedef struct VMDKIMAGE
 
     /** Pointer to the per-disk VD interface list. */
     PVDINTERFACE    pVDIfsDisk;
+    /** Pointer to the per-image VD interface list. */
+    PVDINTERFACE    pVDIfsImage;
 
     /** Error interface. */
     PVDINTERFACE    pInterfaceError;
@@ -785,13 +787,22 @@ DECLINLINE(int) vmdkFileFlush(PVMDKFILE pVmdkFile)
 #ifndef VBOX_WITH_NEW_IO_CODE
     if (pVmdkFile->fAsyncIO)
         return pImage->pInterfaceIOCallbacks->pfnFlushSync(pImage->pInterfaceIO->pvUser,
-                                                                pVmdkFile->pStorage);
+                                                           pVmdkFile->pStorage);
     else
         return RTFileFlush(pVmdkFile->File);
 #else
     return pImage->pInterfaceIOCallbacks->pfnFlushSync(pImage->pInterfaceIO->pvUser,
-                                                            pVmdkFile->pStorage);
+                                                       pVmdkFile->pStorage);
 #endif
+}
+
+
+DECLINLINE(int) vmdkFileFlushAsync(PVMDKFILE pVmdkFile, PVDIOCTX pIoCtx)
+{
+    PVMDKIMAGE pImage = pVmdkFile->pImage;
+
+    return pImage->pInterfaceIOCallbacks->pfnFlushAsync(pImage->pInterfaceIO->pvUser,
+                                                        pVmdkFile->pStorage, pIoCtx);
 }
 
 
@@ -2535,6 +2546,109 @@ static int vmdkWriteDescriptor(PVMDKIMAGE pImage)
 }
 
 /**
+ * Internal: write/update the descriptor part of the image - async version.
+ */
+static int vmdkWriteDescriptorAsync(PVMDKIMAGE pImage, PVDIOCTX pIoCtx)
+{
+    int rc = VINF_SUCCESS;
+    uint64_t cbLimit;
+    uint64_t uOffset;
+    PVMDKFILE pDescFile;
+
+    if (pImage->pDescData)
+    {
+        /* Separate descriptor file. */
+        uOffset = 0;
+        cbLimit = 0;
+        pDescFile = pImage->pFile;
+    }
+    else
+    {
+        /* Embedded descriptor file. */
+        uOffset = VMDK_SECTOR2BYTE(pImage->pExtents[0].uDescriptorSector);
+        cbLimit = VMDK_SECTOR2BYTE(pImage->pExtents[0].cDescriptorSectors);
+        pDescFile = pImage->pExtents[0].pFile;
+    }
+    /* Bail out if there is no file to write to. */
+    if (pDescFile == NULL)
+        return VERR_INVALID_PARAMETER;
+
+    /*
+     * Allocate temporary descriptor buffer.
+     * In case there is no limit allocate a default
+     * and increase if required.
+     */
+    size_t cbDescriptor = cbLimit ? cbLimit : 4 * _1K;
+    char *pszDescriptor = (char *)RTMemAllocZ(cbDescriptor);
+    unsigned offDescriptor = 0;
+
+    if (!pszDescriptor)
+        return VERR_NO_MEMORY;
+
+    for (unsigned i = 0; i < pImage->Descriptor.cLines; i++)
+    {
+        const char *psz = pImage->Descriptor.aLines[i];
+        size_t cb = strlen(psz);
+
+        /*
+         * Increase the descriptor if there is no limit and
+         * there is not enough room left for this line.
+         */
+        if (offDescriptor + cb + 1 > cbDescriptor)
+        {
+            if (cbLimit)
+            {
+                rc = vmdkError(pImage, VERR_BUFFER_OVERFLOW, RT_SRC_POS, N_("VMDK: descriptor too long in '%s'"), pImage->pszFilename);
+                break;
+            }
+            else
+            {
+                char *pszDescriptorNew = NULL;
+                LogFlow(("Increasing descriptor cache\n"));
+
+                pszDescriptorNew = (char *)RTMemRealloc(pszDescriptor, cbDescriptor + cb + 4 * _1K);
+                if (!pszDescriptorNew)
+                {
+                    rc = VERR_NO_MEMORY;
+                    break;
+                }
+                pszDescriptorNew = pszDescriptor;
+                cbDescriptor += cb + 4 * _1K;
+            }
+        }
+
+        if (cb > 0)
+        {
+            memcpy(pszDescriptor + offDescriptor, psz, cb);
+            offDescriptor += cb;
+        }
+
+        memcpy(pszDescriptor + offDescriptor, "\n", 1);
+        offDescriptor++;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = vmdkFileWriteAt(pDescFile, uOffset, pszDescriptor, cbLimit ? cbLimit : offDescriptor, NULL);
+        if (RT_FAILURE(rc))
+            rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error writing descriptor in '%s'"), pImage->pszFilename);
+    }
+
+    if (RT_SUCCESS(rc) && !cbLimit)
+    {
+        rc = vmdkFileSetSize(pDescFile, offDescriptor);
+        if (RT_FAILURE(rc))
+            rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error truncating descriptor in '%s'"), pImage->pszFilename);
+    }
+
+    if (RT_SUCCESS(rc))
+        pImage->Descriptor.fDirty = false;
+
+    RTMemFree(pszDescriptor);
+    return rc;
+}
+
+/**
  * Internal: validate the consistency check values in a binary header.
  */
 static int vmdkValidateHeader(PVMDKIMAGE pImage, PVMDKEXTENT pExtent, const SparseExtentHeader *pHeader)
@@ -2973,7 +3087,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
     /* Try to get async I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_IO);
+    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IO);
     if (pImage->pInterfaceIO)
         pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
 
@@ -3842,7 +3956,7 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
     /* Try to get async I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_IO);
+    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IO);
     if (pImage->pInterfaceIO)
         pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
 
@@ -4116,6 +4230,75 @@ static int vmdkFlushImage(PVMDKIMAGE pImage)
                     && !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
                     && !(pExtent->pszBasename[0] == RTPATH_SLASH))
                     rc = vmdkFileFlush(pExtent->pFile);
+                break;
+            case VMDKETYPE_ZERO:
+                /* No need to do anything for this extent. */
+                break;
+            default:
+                AssertMsgFailed(("unknown extent type %d\n", pExtent->enmType));
+                break;
+        }
+    }
+
+out:
+    return rc;
+}
+
+/**
+ * Internal. Flush image data (and metadata) to disk - async version.
+ */
+static int vmdkFlushImageAsync(PVMDKIMAGE pImage, PVDIOCTX pIoCtx)
+{
+    PVMDKEXTENT pExtent;
+    int rc = VINF_SUCCESS;
+
+    /* Update descriptor if changed. */
+    if (pImage->Descriptor.fDirty)
+    {
+        rc = vmdkWriteDescriptor(pImage);
+        if (RT_FAILURE(rc))
+            goto out;
+    }
+
+    for (unsigned i = 0; i < pImage->cExtents; i++)
+    {
+        pExtent = &pImage->pExtents[i];
+        if (pExtent->pFile != NULL && pExtent->fMetaDirty)
+        {
+            switch (pExtent->enmType)
+            {
+                case VMDKETYPE_HOSTED_SPARSE:
+                    AssertMsgFailed(("Async I/O not supported for sparse images\n"));
+                    break;
+#ifdef VBOX_WITH_VMDK_ESX
+                case VMDKETYPE_ESX_SPARSE:
+                    /** @todo update the header. */
+                    break;
+#endif /* VBOX_WITH_VMDK_ESX */
+                case VMDKETYPE_VMFS:
+                case VMDKETYPE_FLAT:
+                    /* Nothing to do. */
+                    break;
+                case VMDKETYPE_ZERO:
+                default:
+                    AssertMsgFailed(("extent with type %d marked as dirty\n",
+                                     pExtent->enmType));
+                    break;
+            }
+        }
+        switch (pExtent->enmType)
+        {
+            case VMDKETYPE_HOSTED_SPARSE:
+#ifdef VBOX_WITH_VMDK_ESX
+            case VMDKETYPE_ESX_SPARSE:
+#endif /* VBOX_WITH_VMDK_ESX */
+            case VMDKETYPE_VMFS:
+            case VMDKETYPE_FLAT:
+                /** @todo implement proper path absolute check. */
+                if (   pExtent->pFile != NULL
+                    && !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+                    && !(pExtent->pszBasename[0] == RTPATH_SLASH))
+                    rc = vmdkFileFlushAsync(pExtent->pFile, pIoCtx);
                 break;
             case VMDKETYPE_ZERO:
                 /* No need to do anything for this extent. */
@@ -4521,6 +4704,7 @@ static int vmdkCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk)
     pImage->pGTCache = NULL;
     pImage->pDescData = NULL;
     pImage->pVDIfsDisk = pVDIfsDisk;
+    pImage->pVDIfsImage = pVDIfsDisk;
     /** @todo speed up this test open (VD_OPEN_FLAGS_INFO) by skipping as
      * much as possible in vmdkOpenImage. */
     rc = vmdkOpenImage(pImage, VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_READONLY);
@@ -4571,6 +4755,7 @@ static int vmdkOpen(const char *pszFilename, unsigned uOpenFlags,
     pImage->pGTCache = NULL;
     pImage->pDescData = NULL;
     pImage->pVDIfsDisk = pVDIfsDisk;
+    pImage->pVDIfsImage = pVDIfsImage;
 
     rc = vmdkOpenImage(pImage, uOpenFlags);
     if (RT_SUCCESS(rc))
