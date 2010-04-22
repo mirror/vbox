@@ -608,7 +608,8 @@ void UIMachineLogic::prepareDock()
     else
     {
         pDockDisablePreview->setChecked(true);
-        m_pDockPreviewSelectMonitorGroup->setEnabled(false);
+        if(m_pDockPreviewSelectMonitorGroup)
+            m_pDockPreviewSelectMonitorGroup->setEnabled(false);
     }
 
     /* Default to true if it is an empty value */
