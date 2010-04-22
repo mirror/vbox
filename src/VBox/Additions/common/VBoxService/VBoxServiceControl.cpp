@@ -174,7 +174,7 @@ static int VBoxServiceControlHandleCmdGetOutput(uint32_t u32ClientId, uint32_t u
         bool bFound = false;
         RTListForEach(&g_GuestControlExecThreads, pNode, VBOXSERVICECTRLTHREAD, Node)
         {
-            if (   pNode->fStarted 
+            if (   pNode->fStarted
                 && pNode->enmType == VBoxServiceCtrlThreadDataExec)
             {
                 PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData;
@@ -197,7 +197,7 @@ static int VBoxServiceControlHandleCmdGetOutput(uint32_t u32ClientId, uint32_t u
             {
                 rc = VBoxServiceControlExecReadPipeBufferContent(&pData->stdOut, pBuf, cbRead, &cbRead);
                 if (RT_SUCCESS(rc))
-                {    
+                {
                     AssertPtr(pBuf);
                     /* cbRead now contains actual size. */
                     rc = VbglR3GuestCtrlExecSendOut(u32ClientId, uContextID, uPID, 0 /* handle ID */, 0 /* flags */,
@@ -381,7 +381,7 @@ VBOXSERVICE g_Control =
     ,
     /* pszOptions. */
     "    --control-interval  Specifies the interval at which to check for\n"
-    "                        new ocntrol commands. The default is 1000 ms.\n"
+    "                        new control commands. The default is 1000 ms.\n"
     ,
     /* methods */
     VBoxServiceControlPreInit,
