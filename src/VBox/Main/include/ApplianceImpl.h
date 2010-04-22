@@ -259,8 +259,8 @@ public:
 
     void addEntry(VirtualSystemDescriptionType_T aType,
                   const Utf8Str &strRef,
-                  const Utf8Str &aOrigValue,
-                  const Utf8Str &aAutoValue,
+                  const Utf8Str &aOvfValue,
+                  const Utf8Str &aVboxValue,
                   uint32_t ulSizeMB = 0,
                   const Utf8Str &strExtraConfig = "");
 

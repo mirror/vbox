@@ -221,9 +221,9 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
             {
                 lIDEControllerPrimaryIndex = (int32_t)pNewDesc->m->llDescriptions.size();
                 pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
-                                   Utf8StrFmt("%d", lIDEControllerPrimaryIndex),
-                                   strVbox,
-                                   strVbox);
+                                   Utf8StrFmt("%d", lIDEControllerPrimaryIndex),        // strRef
+                                   strVbox,     // aOvfValue
+                                   strVbox);    // aVboxValue
                 lIDEControllerSecondaryIndex = lIDEControllerPrimaryIndex + 1;
                 pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
                                    Utf8StrFmt("%d", lIDEControllerSecondaryIndex),
@@ -663,6 +663,8 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                                             OVFFormat enFormat,
                                             XMLStack &stack)
 {
+    LogFlowFunc(("ENTER appliance %p\n", this));
+
     xml::ElementNode *pelmVirtualSystem;
     if (enFormat == OVF_0_9)
     {
@@ -865,6 +867,19 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
         {
             const VirtualSystemDescriptionEntry &desc = *itD;
 
+            LogFlowFunc(("Loop %u: handling description entry ulIndex=%u, type=%s, strRef=%s, strOvf=%s, strVbox=%s, strExtraConfig=%s\n",
+                         uLoop,
+                         desc.ulIndex,
+                         (  desc.type == VirtualSystemDescriptionType_HardDiskControllerIDE ? "HardDiskControllerIDE"
+                          : desc.type == VirtualSystemDescriptionType_HardDiskControllerSATA ? "HardDiskControllerSATA"
+                          : desc.type == VirtualSystemDescriptionType_HardDiskControllerSCSI ? "HardDiskControllerSCSI"
+                          : desc.type == VirtualSystemDescriptionType_HardDiskImage ? "HardDiskImage"
+                          : Utf8StrFmt("%d", desc.type).c_str()),
+                         desc.strRef.c_str(),
+                         desc.strOvf.c_str(),
+                         desc.strVbox.c_str(),
+                         desc.strExtraConfig.c_str()));
+
             ovf::ResourceType_T type = (ovf::ResourceType_T)0;      // if this becomes != 0 then we do stuff
             Utf8Str strResourceSubType;
 
@@ -943,7 +958,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                         type = ovf::ResourceType_IDEController; // 5
                         strResourceSubType = desc.strVbox;
 
-                        if (desc.strRef != "1")
+                        if (!lIDEPrimaryControllerIndex)
                         {
                             // first IDE controller:
                             strCaption = "ideController0";
@@ -1062,9 +1077,9 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                         // controller=<index>;channel=<c>
                         size_t pos1 = desc.strExtraConfig.find("controller=");
                         size_t pos2 = desc.strExtraConfig.find("channel=");
+                        int32_t lControllerIndex = -1;
                         if (pos1 != Utf8Str::npos)
                         {
-                            int32_t lControllerIndex = -1;
                             RTStrToInt32Ex(desc.strExtraConfig.c_str() + pos1 + 11, NULL, 0, &lControllerIndex);
                             if (lControllerIndex == lIDEPrimaryControllerIndex)
                                 ulParent = idIDEPrimaryController;
@@ -1077,6 +1092,9 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                         }
                         if (pos2 != Utf8Str::npos)
                             RTStrToInt32Ex(desc.strExtraConfig.c_str() + pos2 + 8, NULL, 0, &lAddressOnParent);
+
+                        LogFlowFunc(("HardDiskImage details: pos1=%d, pos2=%d, lControllerIndex=%d, lIDEPrimaryControllerIndex=%d, lIDESecondaryControllerIndex=%d, ulParent=%d, lAddressOnParent=%d\n",
+                                     pos1, pos2, lControllerIndex, lIDEPrimaryControllerIndex, lIDESecondaryControllerIndex, ulParent, lAddressOnParent));
 
                         if (    !ulParent
                              || lAddressOnParent == -1
@@ -1292,8 +1310,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
  */
 HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat, ComObjPtr<Progress> &pProgress)
 {
-    LogFlowFuncEnter();
-    LogFlowFunc(("Appliance %p\n", this));
+    LogFlowFunc(("ENTER appliance %p\n", this));
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();

@@ -1243,8 +1243,8 @@ STDMETHODIMP VirtualSystemDescription::AddDescription(VirtualSystemDescriptionTy
  */
 void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType,
                                         const Utf8Str &strRef,
-                                        const Utf8Str &aOrigValue,
-                                        const Utf8Str &aAutoValue,
+                                        const Utf8Str &aOvfValue,
+                                        const Utf8Str &aVboxValue,
                                         uint32_t ulSizeMB,
                                         const Utf8Str &strExtraConfig /*= ""*/)
 {
@@ -1252,8 +1252,8 @@ void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType,
     vsde.ulIndex = (uint32_t)m->llDescriptions.size();      // each entry gets an index so the client side can reference them
     vsde.type = aType;
     vsde.strRef = strRef;
-    vsde.strOvf = aOrigValue;
-    vsde.strVbox = aAutoValue;
+    vsde.strOvf = aOvfValue;
+    vsde.strVbox = aVboxValue;
     vsde.strExtraConfig = strExtraConfig;
     vsde.ulSizeMB = ulSizeMB;
 

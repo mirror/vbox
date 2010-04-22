@@ -3533,7 +3533,9 @@
       </li>
       <li>
         "HardDiskControllerIDE": an IDE hard disk controller. There can be at most two such items.
-        This has no value in @a aOvfValues[] or @a aVBoxValues[].
+        An optional value in @a aOvfValues[] and @a aVBoxValues[] can be "PIIX3" or "PIIX4" to specify
+        the type of IDE controller; this corresponds to the ResourceSubType element which VirtualBox
+        writes into the OVF.
         The matching item in the @a aRefs[] array will contain an integer that items of the "Harddisk"
         type can use to specify which hard disk controller a virtual disk should be connected to.
         Note that in OVF, an IDE controller has two channels, corresponding to "master" and "slave"
@@ -8617,7 +8619,7 @@
           The maximum timeout value (in msec) to wait for output
           data. Pass 0 for an infinite timeout.
         </desc>
-      </param>     
+      </param>
       <param name="size" type="unsigned long long" dir="in">
         <desc>
           Size in bytes to read in the buffer.

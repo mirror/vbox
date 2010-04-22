@@ -394,35 +394,29 @@ STDMETHODIMP Appliance::Interpret()
                 switch (hdc.system)
                 {
                     case ovf::HardDiskController::IDE:
+                        /* Check for the constrains */
+                        if (cIDEused < 4)
                         {
-                            /* Check for the constrains */
-                            /* @todo: I'm very confused! Are these bits *one* controller or
-                               is every port/bus declared as an extra controller. */
-                            if (cIDEused < 4)
-                            {
-                                // @todo: figure out the IDE types
-                                /* Use PIIX4 as default */
-                                Utf8Str strType = "PIIX4";
-                                if (!hdc.strControllerType.compare("PIIX3", Utf8Str::CaseInsensitive))
-                                    strType = "PIIX3";
-                                else if (!hdc.strControllerType.compare("ICH6", Utf8Str::CaseInsensitive))
-                                    strType = "ICH6";
-                                pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
-                                                   strControllerID,
-                                                   hdc.strControllerType,
-                                                   strType);
-                            }
-                            else
-                            {
-                                /* Warn only once */
-                                if (cIDEused == 1)
-                                    addWarning(tr("The virtual \"%s\" system requests support for more than one IDE controller, but VirtualBox has support for only one."),
-                                               vsysThis.strName.c_str());
-
-                            }
-                            ++cIDEused;
-                            break;
+                            // @todo: figure out the IDE types
+                            /* Use PIIX4 as default */
+                            Utf8Str strType = "PIIX4";
+                            if (!hdc.strControllerType.compare("PIIX3", Utf8Str::CaseInsensitive))
+                                strType = "PIIX3";
+                            else if (!hdc.strControllerType.compare("ICH6", Utf8Str::CaseInsensitive))
+                                strType = "ICH6";
+                            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerIDE,
+                                               strControllerID,         // strRef
+                                               hdc.strControllerType,   // aOvfValue
+                                               strType);                // aVboxValue
                         }
+                        else
+                            /* Warn only once */
+                            if (cIDEused == 2)
+                                addWarning(tr("The virtual \"%s\" system requests support for more than two IDE controller channels, but VirtualBox supports only two."),
+                                            vsysThis.strName.c_str());
+
+                        ++cIDEused;
+                    break;
 
                     case ovf::HardDiskController::SATA:
                         {
