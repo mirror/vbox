@@ -377,6 +377,25 @@ RT_C_DECLS_END
     AssertCompile(RT_OFFSETOF(type, member1) == RT_OFFSETOF(type, member2))
 #endif
 
+/** @def AssertCompileAdjacentMembers
+ * Asserts that two structure members are adjacent.
+ * @param   type    The type.
+ * @param   member1 The first member.
+ * @param   member2 The second member.
+ */
+#if defined(__GNUC__) && defined(__cplusplus)
+# if __GNUC__ >= 4
+#  define AssertCompileAdjacentMembers(type, member1, member2) \
+    AssertCompile(__builtin_offsetof(type, member1) + RT_SIZEOFMEMB(type, member1) == __builtin_offsetof(type, member2))
+# else
+#  define AssertCompileAdjacentMembers(type, member1, member2) \
+    AssertCompile(RT_OFFSETOF(type, member1) + RT_SIZEOFMEMB(type, member1) == RT_OFFSETOF(type, member2))
+# endif
+#else
+# define AssertCompileAdjacentMembers(type, member1, member2) \
+    AssertCompile(RT_OFFSETOF(type, member1) + RT_SIZEOFMEMB(type, member1) == RT_OFFSETOF(type, member2))
+#endif
+
 /** @} */
 
 
