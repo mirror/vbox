@@ -31,6 +31,9 @@ import os,sys
 import traceback
 import shlex
 import time
+import re
+
+HISTORY_FILENAME=".vboxshell_history"
 
 # Simple implementation of IConsoleCallback, one can use it as skeleton
 # for custom implementations
@@ -178,7 +181,7 @@ if g_hasreadline:
             for m in getMachines(self.ctx):
                 # although it has autoconversion, we need to cast
                 # explicitly for subscripts to work
-                word = str(m.name)
+                word = re.sub("(?<!\\\\) ", "\\ ", str(m.name))
                 if word[:n] == text:
                     matches.append(word)
                 word = str(m.id)
@@ -192,7 +195,6 @@ if g_hasreadline:
 
         return matches
 
-
 def autoCompletion(commands, ctx):
   import platform
   if  not g_hasreadline:
@@ -203,6 +205,8 @@ def autoCompletion(commands, ctx):
       comps[k] = None
   completer = CompleterNG(comps, ctx)
   readline.set_completer(completer.complete)
+  delims = readline.get_completer_delims()
+  readline.set_completer_delims(re.sub("[\\.]", "", delims)) # remove some of the delimiters
   # OSX need it
   if platform.system() == 'Darwin':
       readline.parse_and_bind ("bind ^I rl_complete")
@@ -1960,6 +1964,9 @@ def interpret(ctx):
 
     autoCompletion(commands, ctx)
 
+    if g_hasreadline and os.path.exists(HISTORY_FILENAME):
+        readline.read_history_file(HISTORY_FILENAME)
+
     # to allow to print actual host information, we collect info for
     # last 150 secs maximum, (sample every 10 secs and keep up to 15 samples)
     if ctx['perf']:
@@ -1989,6 +1996,8 @@ def interpret(ctx):
            ctx['perf'].disable(['*'], [vbox.host])
     except:
         pass
+    if g_hasreadline:
+        readline.write_history_file(HISTORY_FILENAME)
 
 def runCommandCb(ctx, cmd, args):
     args.insert(0, cmd)
