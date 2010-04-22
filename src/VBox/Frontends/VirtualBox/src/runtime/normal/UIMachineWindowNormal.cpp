@@ -544,8 +544,13 @@ void UIMachineWindowNormal::loadWindowSettings()
         }
 
         /* Normalize view to the optimal size: */
+#ifdef Q_WS_MAC
+        if (machineView())
+            machineView()->normalizeGeometry(true);
+#else /* Q_WS_MAC */
         if (machineView())
             QTimer::singleShot(0, machineView(), SLOT(sltNormalizeGeometry()));
+#endif /* Q_WS_MAC */
     }
 
     /* Load availability settings: */
