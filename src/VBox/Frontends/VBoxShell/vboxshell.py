@@ -232,7 +232,7 @@ def reportError(ctx,session,rc):
 def createVm(ctx,name,kind,base):
     mgr = ctx['mgr']
     vb = ctx['vb']
-    mach = vb.createMachine(name, kind, base, "")
+    mach = vb.createMachine(name, kind, base, "", False)
     mach.saveSettings()
     print "created machine with UUID",mach.id
     vb.registerMachine(mach)
@@ -244,15 +244,7 @@ def removeVm(ctx,mach):
     vb = ctx['vb']
     id = mach.id
     print "removing machine ",mach.name,"with UUID",id
-    session = ctx['global'].openMachineSession(id)
-    try:
-       mach = session.machine
-       for d in ctx['global'].getArray(mach, 'mediumAttachments'):
-          mach.detachDevice(d.controller, d.port, d.device)
-    except:
-       traceback.print_exc()
-    mach.saveSettings()
-    ctx['global'].closeMachineSession(session)
+    cmdClosedVm(ctx, mach, detachVmDevice, ["ALL"])
     mach = vb.unregisterMachine(id)
     if mach:
          mach.deleteSettings()
@@ -501,6 +493,20 @@ def cmdExistingVm(ctx,mach,cmd,args):
 
     session.close()
 
+
+def cmdClosedVm(ctx,mach,cmd,args=[],save=True):
+    session = ctx['global'].openMachineSession(mach.id)
+    mach = session.machine
+    try:
+         cmd(ctx, mach, args)
+    except Exception, e:
+        print 'failed: ',e
+        if g_verbose:
+            traceback.print_exc()
+    if save:
+         mach.saveSettings()
+    session.close()
+
 def machById(ctx,id):
     mach = None
     for m in getMachines(ctx):
@@ -555,6 +561,10 @@ def asEnumElem(ctx,enum,elem):
             return e
     return "<unknown>"
 
+def enumFromString(ctx,enum,str):
+    all = ctx['ifaces'].all_values(enum)
+    return all.get(str, None)
+
 def listCmd(ctx, args):
     for m in getMachines(ctx, True):
         if m.teleporterEnabled:
@@ -574,6 +584,7 @@ def infoCmd(ctx,args):
     os = ctx['vb'].getGuestOSType(mach.OSTypeId)
     print " One can use setvar <mach> <var> <value> to change variable, using name in []."
     print "  Name [name]: %s" %(mach.name)
+    print "  Description [description]: %s" %(mach.description)
     print "  ID [n/a]: %s" %(mach.id)
     print "  OS Type [via OSTypeId]: %s" %(os.description)
     print "  Firmware [firmwareType]: %s (%s)" %(asEnumElem(ctx,"FirmwareType", mach.firmwareType),mach.firmwareType)
@@ -617,7 +628,7 @@ def infoCmd(ctx,args):
         print
         print "  Controllers:"
     for controller in controllers:
-        print "    '%s' %s bus: %d" % (controller.name, asEnumElem(ctx,"StorageControllerType", controller.controllerType), controller.bus)
+        print "    '%s': bus %s type %s" % (controller.name, asEnumElem(ctx,"StorageBus", controller.bus), asEnumElem(ctx,"StorageControllerType", controller.controllerType))
 
     attaches = ctx['global'].getArray(mach, 'mediumAttachments')
     if attaches:
@@ -670,9 +681,9 @@ def startCmd(ctx, args):
     startVm(ctx, mach, type)
     return 0
 
-def createCmd(ctx, args):
+def createVmCmd(ctx, args):
     if (len(args) < 3 or len(args) > 4):
-        print "usage: create name ostype <basefolder>"
+        print "usage: createvm name ostype <basefolder>"
         return 0
     name = args[1]
     oskind = args[2]
@@ -721,7 +732,7 @@ def gexecCmd(ctx,args):
     cmdExistingVm(ctx, mach, 'guestlambda', gargs)
     return 0
 
-def removeCmd(ctx, args):
+def removeVmCmd(ctx, args):
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
@@ -800,6 +811,15 @@ def teleportCmd(ctx, args):
     cmdExistingVm(ctx, mach, 'teleport', args[2:])
     return 0
 
+def portalsettings(ctx,mach,args):
+    enabled = args[0]
+    mach.teleporterEnabled = enabled
+    if enabled:
+        port = args[1]
+        passwd = args[2]
+        mach.teleporterPort = port
+        mach.teleporterPassword = passwd
+
 def openportalCmd(ctx, args):
     if (len(args) < 3):
         print "usage: openportal name port <password>"
@@ -813,13 +833,7 @@ def openportalCmd(ctx, args):
     else:
         passwd = ""
     if not mach.teleporterEnabled or mach.teleporterPort != port or passwd:
-        session = ctx['global'].openMachineSession(mach.id)
-        mach1 = session.machine
-        mach1.teleporterEnabled = True
-        mach1.teleporterPort = port
-        mach1.teleporterPassword = passwd
-        mach1.saveSettings()
-        session.close()
+        cmdClosedVm(ctx, mach, portalsettings, [True, port, passwd])
     startVm(ctx, mach, "gui")
     return 0
 
@@ -831,11 +845,7 @@ def closeportalCmd(ctx, args):
     if mach == None:
         return 0
     if mach.teleporterEnabled:
-        session = ctx['global'].openMachineSession(mach.id)
-        mach1 = session.machine
-        mach1.teleporterEnabled = False
-        mach1.saveSettings()
-        session.close()
+        cmdClosedVm(ctx, mach, portalsettings, [False])
     return 0
 
 def gueststatsCmd(ctx, args):
@@ -848,6 +858,16 @@ def gueststatsCmd(ctx, args):
     cmdExistingVm(ctx, mach, 'gueststats', args[2:])
     return 0
 
+def plugcpu(ctx,mach,args):
+    plug = args[0]
+    cpu = args[1]
+    if plug:
+        print "Adding CPU %d..." %(cpu)
+        mach.hotPlugCPU(cpu)
+    else:
+        print "Removing CPU %d..." %(cpu)
+        mach.hotUnplugCPU(cpu)
+
 def plugcpuCmd(ctx, args):
     if (len(args) < 2):
         print "usage: plugcpu name cpuid"
@@ -857,17 +877,7 @@ def plugcpuCmd(ctx, args):
         return 0
     if str(mach.sessionState) != str(ctx['ifaces'].SessionState_Open):
         if mach.CPUHotPlugEnabled:
-            session = ctx['global'].openMachineSession(mach.id)
-            try:
-                mach1 = session.machine
-                cpu = int(args[2])
-                print "Adding CPU %d..." %(cpu)
-                mach1.hotPlugCPU(cpu)
-                mach1.saveSettings()
-            except:
-                session.close()
-                raise
-            session.close()
+            cmdClosedVm(ctx, mach, plugcpu, [True, int(args[2])])
     else:
         cmdExistingVm(ctx, mach, 'plugcpu', args[2])
     return 0
@@ -881,20 +891,15 @@ def unplugcpuCmd(ctx, args):
         return 0
     if str(mach.sessionState) != str(ctx['ifaces'].SessionState_Open):
         if mach.CPUHotPlugEnabled:
-            session = ctx['global'].openMachineSession(mach.id)
-            try:
-                mach1 = session.machine
-                cpu = int(args[2])
-                print "Removing CPU %d..." %(cpu)
-                mach1.hotUnplugCPU(cpu)
-                mach1.saveSettings()
-            except:
-                session.close()
-                raise
-            session.close()
+            cmdClosedVm(ctx, mach, plugcpu, [False, int(args[2])])
     else:
         cmdExistingVm(ctx, mach, 'unplugcpu', args[2])
     return 0
+
+def setvar(ctx,mach,args):
+    expr = 'mach.'+args[0]+' = '+args[1]
+    print "Executing",expr
+    exec expr
 
 def setvarCmd(ctx, args):
     if (len(args) < 4):
@@ -903,20 +908,14 @@ def setvarCmd(ctx, args):
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
-    session = ctx['global'].openMachineSession(mach.id)
-    mach = session.machine
-    expr = 'mach.'+args[2]+' = '+args[3]
-    print "Executing",expr
-    try:
-        exec expr
-    except Exception, e:
-        print 'failed: ',e
-        if g_verbose:
-            traceback.print_exc()
-    mach.saveSettings()
-    session.close()
+    cmdClosedVm(ctx, mach, setvar, args[2:])
     return 0
 
+def setvmextra(ctx,mach,args):
+    key = args[0]
+    value = args[1]
+    print "%s: setting %s to %s" %(mach.name, key, value)
+    mach.setExtraData(key, value)
 
 def setExtraDataCmd(ctx, args):
     if (len(args) < 3):
@@ -934,11 +933,7 @@ def setExtraDataCmd(ctx, args):
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
-    session = ctx['global'].openMachineSession(mach.id)
-    mach = session.machine
-    mach.setExtraData(key, value)
-    mach.saveSettings()
-    session.close()
+    cmdClosedVm(ctx, mach, setvmextra, [key, value])
     return 0
 
 def printExtraKey(obj, key, value):
@@ -965,7 +960,7 @@ def getExtraDataCmd(ctx, args):
     else:
         keys = [ key ]
     for k in keys:
-        printExtraKey(args[1], k, ctx['vb'].getExtraData(k))
+        printExtraKey(args[1], k, obj.getExtraData(k))
 
     return 0
 
@@ -1536,6 +1531,10 @@ def registerHddCmd(ctx,args):
    print "registered HDD as %s" %(hdd.id)
    return 0
 
+def controldevice(ctx,mach,args):
+    [ctr,port,slot,type,id] = args
+    mach.attachDevice(ctr, port, slot,type,id)
+
 def attachHddCmd(ctx,args):
    if (len(args) < 4):
       print "usage: attachHdd vm hdd controller port:slot"
@@ -1553,31 +1552,19 @@ def attachHddCmd(ctx,args):
       return 0
    ctr = args[3]
    (port,slot) = args[4].split(":")
-
-   session = ctx['global'].openMachineSession(mach.id)
-   mach = session.machine
-   try:
-      mach.attachDevice(ctr, port, slot, ctx['global'].constants.DeviceType_HardDisk, hdd.id)
-   except Exception, e:
-      print 'failed: ',e
-   mach.saveSettings()
-   session.close()
+   cmdClosedVm(ctx, mach, lambda ctx,mach,args: mach.attachDevice(ctr, port, slot, ctx['global'].constants.DeviceType_HardDisk,hdd.id))
    return 0
 
+def detachVmDevice(ctx,mach,args):
+    atts = ctx['global'].getArray(mach, 'mediumAttachments')
+    hid = args[0]
+    for a in atts:
+        if a.medium:
+            if hid == "ALL" or a.medium.id == hid:
+                mach.detachDevice(a.controller, a.port, a.device)
+
 def detachMedium(ctx,mid,medium):
-   session = ctx['global'].openMachineSession(mid)
-   mach = session.machine
-   try:
-      atts = ctx['global'].getArray(mach, 'mediumAttachments')
-      hid = medium.id
-      for a in atts:
-         if a.medium and a.medium.id == hid:
-            mach.detachDevice(a.controller, a.port, a.device)
-   except Exception, e:
-      session.close()
-      raise e
-   mach.saveSettings()
-   session.close()
+    cmdClosedVm(ctx, mach, detachVmDevice, [medium.id])
 
 def detachHddCmd(ctx,args):
    if (len(args) < 3):
@@ -1656,7 +1643,6 @@ def registerIsoCmd(ctx,args):
    print "registered ISO as %s" %(iso.id)
    return 0
 
-
 def unregisterIsoCmd(ctx,args):
    if (len(args) != 2):
       print "usage: unregisterIso path"
@@ -1711,15 +1697,7 @@ def attachIsoCmd(ctx,args):
       return 0
    ctr = args[3]
    (port,slot) = args[4].split(":")
-
-   session = ctx['global'].openMachineSession(mach.id)
-   mach = session.machine
-   try:
-      mach.attachDevice(ctr, port, slot, ctx['global'].constants.DeviceType_DVD, dvd.id)
-   except Exception, e:
-      print 'failed: ',e
-   mach.saveSettings()
-   session.close()
+   cmdClosedVm(ctx, mach, lambda ctx,mach,args: mach.attachDevice(ctr, port, slot, ctx['global'].constants.DeviceType_DVD,dvd.id))
    return 0
 
 def detachIsoCmd(ctx,args):
@@ -1740,7 +1718,6 @@ def detachIsoCmd(ctx,args):
 
    detachMedium(ctx,mach.id,dvd)
    return 0
-
 
 def mountIsoCmd(ctx,args):
    if (len(args) < 5):
@@ -1782,6 +1759,49 @@ def unmountIsoCmd(ctx,args):
 
    return 0
 
+def attachCtr(ctx,mach,args):
+    [name, bus, type] = args
+    ctr = mach.addStorageController(name, bus)
+    if type != None:
+        ctr.controllerType = type
+
+def attachCtrCmd(ctx,args):
+   if (len(args) < 4):
+      print "usage: attachCtr vm cname bus <type>"
+      return 0
+
+   if len(args) > 4:
+       type = enumFromString(ctx,'StorageControllerType', args[4])
+       if type == None:
+           print "Controller type %s unknown" %(args[4])
+           return 0
+   else:
+       type = None
+
+   mach = ctx['machById'](args[1])
+   if mach is None:
+        return 0
+   bus = enumFromString(ctx,'StorageBus', args[3])
+   if bus is None:
+       print "Bus type %s unknown" %(args[3])
+       return 0
+   name = args[2]
+   cmdClosedVm(ctx, mach, attachCtr, [name, bus, type])
+   return 0
+
+def detachCtrCmd(ctx,args):
+   if (len(args) < 3):
+      print "usage: detachCtr vm name"
+      return 0
+
+   mach = ctx['machById'](args[1])
+   if mach is None:
+        return 0
+   ctr = args[2]
+   cmdClosedVm(ctx, mach, lambda ctx,mach,args: mach.removeStorageController(ctr))
+   return 0
+
+
 aliases = {'s':'start',
            'i':'info',
            'l':'list',
@@ -1793,8 +1813,8 @@ aliases = {'s':'start',
 
 commands = {'help':['Prints help information', helpCmd, 0],
             'start':['Start virtual machine by name or uuid: start Linux', startCmd, 0],
-            'create':['Create virtual machine', createCmd, 0],
-            'remove':['Remove virtual machine', removeCmd, 0],
+            'createVm':['Create virtual machine: createVm macvm MacOS', createVmCmd, 0],
+            'removeVm':['Remove virtual machine', removeVmCmd, 0],
             'pause':['Pause virtual machine', pauseCmd, 0],
             'resume':['Resume virtual machine', resumeCmd, 0],
             'save':['Save execution state of virtual machine', saveCmd, 0],
@@ -1844,6 +1864,8 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'detachIso': ['Detach CD/DVD from the VM: detachIso win /os.iso', detachIsoCmd, 0],
             'mountIso': ['Mount CD/DVD to the running VM: mountIso win /os.iso "IDE Controller" 0:1', mountIsoCmd, 0],
             'unmountIso': ['Unmount CD/DVD from running VM: unmountIso win "IDE Controller" 0:1', unmountIsoCmd, 0],
+            'attachCtr': ['Attach storage controller to the VM: attachCtr win Ctr0 IDE ICH6', attachCtrCmd, 0],
+            'detachCtr': ['Detach HDD from the VM: detachCtr win Ctr0', detachCtrCmd, 0],
             'listMediums': ['List mediums known to this VBox instance', listMediumsCmd, 0]
             }
 
