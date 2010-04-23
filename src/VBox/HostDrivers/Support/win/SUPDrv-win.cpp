@@ -686,7 +686,7 @@ int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
         else
         {
             Log(("rcNt=%#x '%ls'\n", rcNt, pwcsFilename));
-            SUPR0Printf("VBoxDrv: rcNt=%#x '%ws'\n", rcNt, pwcsFilename);
+            SUPR0Printf("VBoxDrv: rcNt=%x '%ws'\n", rcNt, pwcsFilename);
             switch (rcNt)
             {
                 case /* 0xc0000003 */ STATUS_INVALID_INFO_CLASS:
@@ -711,6 +711,9 @@ int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
                     break;
                 case    0xC0000428 /* STATUS_INVALID_IMAGE_HASH */ :
                     rc = VERR_LDR_IMAGE_HASH;
+                    break;
+                case    0xC000010E /* STATUS_ALREADY_LOADED */ :
+                    rc = VERR_ALREADY_LOADED;
                     break;
                 default:
                     rc = VERR_LDR_GENERAL_FAILURE;
