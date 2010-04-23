@@ -356,53 +356,6 @@ STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
 
 #ifdef VBOX_WITH_GUEST_CONTROL
 /**
- * Creates the argument list as an array used for executing a program.
- *
- * @returns VBox status code.
- *
- * @todo
- *
- * @todo Respect spaces when quoting for arguments, e.g. "c:\\program files\\".
- * @todo Handle empty ("") argguments.
- */
-int Guest::prepareExecuteArgs(const char *pszArgs, void **ppvList, uint32_t *pcbList, uint32_t *pcArgs)
-{
-    char **ppaArg;
-    int iArgs;
-    int rc = RTGetOptArgvFromString(&ppaArg, &iArgs, pszArgs, NULL);
-    if (RT_SUCCESS(rc))
-    {
-        char *pszTemp = NULL;
-        *pcbList = 0;
-        for (int i=0; i<iArgs; i++)
-        {
-            if (i > 0) /* Insert space as delimiter. */
-                rc = RTStrAAppendN(&pszTemp, " ", 1);
-
-            if (RT_FAILURE(rc))
-                break;
-            else
-            {
-                rc = RTStrAAppendN(&pszTemp, ppaArg[i], strlen(ppaArg[i]));
-                if (RT_FAILURE(rc))
-                    break;
-            }
-        }
-        RTGetOptArgvFree(ppaArg);
-        if (RT_SUCCESS(rc))
-        {
-            *ppvList = pszTemp;
-            *pcArgs = iArgs;
-            if (pszTemp)
-                *pcbList = strlen(pszTemp) + 1; /* Include zero termination. */
-        }
-        else
-            RTStrFree(pszTemp);
-    }
-    return rc;
-}
-
-/**
  * Appends environment variables to the environment block. Each var=value pair is separated
  * by NULL (\0) sequence. The whole block will be stored in one blob and disassembled on the
  * guest side later to fit into the HGCM param structure.

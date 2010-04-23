@@ -135,7 +135,6 @@ private:
     typedef std::list< CallbackContext >::iterator CallbackListIter;
     typedef std::list< CallbackContext >::const_iterator CallbackListIterConst;
 
-    int prepareExecuteArgs(const char *pszArgs, void **ppvList, uint32_t *pcbList, uint32_t *pcArgs);
     int prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);
     /** Handler for guest execution control notifications. */
     int notifyCtrlExec(uint32_t u32Function, PHOSTEXECCALLBACKDATA pData);
