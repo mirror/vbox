@@ -110,6 +110,8 @@ void Guest::uninit()
     LogFlowThisFunc(("\n"));
 
 #ifdef VBOX_WITH_GUEST_CONTROL
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     /* Clean up callback data. */
     CallbackListIter it;
     for (it = mCallbackList.begin(); it != mCallbackList.end(); it++)
@@ -507,6 +509,8 @@ int Guest::notifyCtrlExec(uint32_t              u32Function,
     LogFlowFuncEnter();
     int rc = VINF_SUCCESS;
 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     AssertPtr(pData);
     CallbackListIter it = getCtrlCallbackContextByID(pData->hdr.u32ContextID);
     if (it != mCallbackList.end())
@@ -579,6 +583,8 @@ int Guest::notifyCtrlExecOut(uint32_t                 u32Function,
     LogFlowFuncEnter();
     int rc = VINF_SUCCESS;
 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     AssertPtr(pData);
     CallbackListIter it = getCtrlCallbackContextByID(pData->hdr.u32ContextID);
     if (it != mCallbackList.end())
@@ -599,7 +605,6 @@ int Guest::notifyCtrlExecOut(uint32_t                 u32Function,
             memcpy(pCBData->pvData, pData->pvData, pData->cbData);
             pCBData->cbData = pData->cbData;
         }
-
         ASMAtomicWriteBool(&it->bCalled, true);
     }
     else
@@ -610,6 +615,8 @@ int Guest::notifyCtrlExecOut(uint32_t                 u32Function,
 
 Guest::CallbackListIter Guest::getCtrlCallbackContextByID(uint32_t u32ContextID)
 {
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     /** @todo Maybe use a map instead of list for fast context lookup. */
     CallbackListIter it;
     for (it = mCallbackList.begin(); it != mCallbackList.end(); it++)
@@ -622,6 +629,8 @@ Guest::CallbackListIter Guest::getCtrlCallbackContextByID(uint32_t u32ContextID)
 
 Guest::CallbackListIter Guest::getCtrlCallbackContextByPID(uint32_t u32PID)
 {
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     /** @todo Maybe use a map instead of list for fast context lookup. */
     CallbackListIter it;
     for (it = mCallbackList.begin(); it != mCallbackList.end(); it++)
@@ -636,6 +645,7 @@ Guest::CallbackListIter Guest::getCtrlCallbackContextByPID(uint32_t u32PID)
 void Guest::removeCtrlCallbackContext(Guest::CallbackListIter it)
 {
     LogFlowFuncEnter();
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     if (it->cbData)
     {
         RTMemFree(it->pvData);
@@ -649,17 +659,16 @@ void Guest::removeCtrlCallbackContext(Guest::CallbackListIter it)
             it->pProgress = NULL;
         }
     }
-    mCallbackList.erase(it);
     LogFlowFuncLeave();
 }
 
 /* Adds a callback with a user provided data block and an optional progress object
  * to the callback list. A callback is identified by a unique context ID which is used
  * to identify a callback from the guest side. */
-uint32_t Guest::addCtrlCallbackContext(void *pvData, uint32_t cbData, Progress* pProgress)
+uint32_t Guest::addCtrlCallbackContext(void *pvData, uint32_t cbData, Progress *pProgress)
 {
     LogFlowFuncEnter();
-
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     uint32_t uNewContext = ASMAtomicIncU32(&mNextContextID);
     if (uNewContext == UINT32_MAX)
         ASMAtomicUoWriteU32(&mNextContextID, 1000);
@@ -673,7 +682,11 @@ uint32_t Guest::addCtrlCallbackContext(void *pvData, uint32_t cbData, Progress* 
 
     mCallbackList.push_back(context);
     if (mCallbackList.size() > 256) /* Don't let the container size get too big! */
-        removeCtrlCallbackContext(mCallbackList.begin());
+    {
+        Guest::CallbackListIter it = mCallbackList.begin();
+        removeCtrlCallbackContext(it);
+        mCallbackList.erase(it);
+    }
 
     LogFlowFuncLeave();
     return uNewContext;
@@ -704,8 +717,6 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
         AutoCaller autoCaller(this);
         if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
         /*
          * Create progress object.
          */
@@ -732,7 +743,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
         /* Prepare arguments. */
         char **papszArgv = NULL;
         uint32_t uNumArgs = 0;
-        if(aArguments > 0)
+        if (aArguments > 0)
         {
             com::SafeArray<IN_BSTR> args(ComSafeArrayInArg(aArguments));
             uNumArgs = args.size();
@@ -799,6 +810,9 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                     paParms[i++].setPointer((void*)Utf8Password.raw(), (uint32_t)strlen(Utf8Password.raw()) + 1);
                     paParms[i++].setUInt32(aTimeoutMS);
 
+                    /* Make sure mParent is valid, so set a read lock in this scope. */
+                    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
                     /* Forward the information to the VMM device. */
                     AssertPtr(mParent);
                     VMMDev *vmmDev = mParent->getVMMDev();
@@ -808,6 +822,8 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                         vrc = vmmDev->hgcmHostCall("VBoxGuestControlSvc", HOST_EXEC_CMD,
                                                    i, paParms);
                     }
+                    else
+                        vrc = VERR_INVALID_VM_HANDLE;
                     RTMemFree(pvEnv);
                 }
                 RTStrFree(pszArgs);
@@ -822,21 +838,26 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                  * get the PID.
                  */
                 CallbackListIter it = getCtrlCallbackContextByID(uContextID);
-                uint64_t u64Started = RTTimeMilliTS();
-                do
+                if (it != mCallbackList.end())
                 {
-                    unsigned cMsWait;
-                    if (aTimeoutMS == RT_INDEFINITE_WAIT)
-                        cMsWait = 1000;
-                    else
+                    uint64_t u64Started = RTTimeMilliTS();
+                    do
                     {
-                        uint64_t cMsElapsed = RTTimeMilliTS() - u64Started;
-                        if (cMsElapsed >= aTimeoutMS)
-                            break; /* timed out */
-                        cMsWait = RT_MIN(1000, aTimeoutMS - (uint32_t)cMsElapsed);
-                    }
-                    RTThreadSleep(100);
-                } while (it != mCallbackList.end() && !it->bCalled);
+                        unsigned cMsWait;
+                        if (aTimeoutMS == RT_INDEFINITE_WAIT)
+                            cMsWait = 1000;
+                        else
+                        {
+                            uint64_t cMsElapsed = RTTimeMilliTS() - u64Started;
+                            if (cMsElapsed >= aTimeoutMS)
+                                break; /* Timed out. */
+                            cMsWait = RT_MIN(1000, aTimeoutMS - (uint32_t)cMsElapsed);
+                        }
+                        RTThreadSleep(100);
+                    } while (!it->bCalled);
+                }
+
+                AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
                 /* Did we get some status? */
                 PHOSTEXECCALLBACKDATA pData = (HOSTEXECCALLBACKDATA*)it->pvData;
@@ -861,6 +882,8 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                 }
                 else /* If callback not called within time ... well, that's a timeout! */
                     vrc = VERR_TIMEOUT;
+
+                alock.release();
 
                 /*
                  * Do *not* remove the callback yet - we might wait with the IProgress object on something
@@ -902,9 +925,21 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
             }
             else
             {
-                /* HGCM call went wrong. */
-                rc = setError(E_UNEXPECTED,
-                              tr("The service call failed with error %Rrc"), vrc);
+                if (vrc == VERR_INVALID_VM_HANDLE)
+                {
+                    rc = setError(VBOX_E_VM_ERROR,
+                                  tr("VMM device is not available (is the VM running?)"));
+                }
+                else if (vrc == VERR_TIMEOUT)
+                {
+                    rc = setError(VBOX_E_VM_ERROR,
+                                  tr("The guest execution service is not ready"));
+                }
+                else /* HGCM call went wrong. */
+                {
+                    rc = setError(E_UNEXPECTED,
+                                  tr("The service call failed with error %Rrc"), vrc);
+                }
             }
 
             for (unsigned i = 0; i < uNumArgs; i++)
