@@ -1509,6 +1509,33 @@ static void e1kWakeupReceive(PPDMDEVINS pDevIns)
         RTSemEventSignal(pState->hEventMoreRxDescAvail);
     }
 }
+
+/**
+ * Hardware reset. Revert all registers to initial values.
+ *
+ * @param   pState      The device state structure.
+ */
+PDMBOTHCBDECL(void) e1kHardReset(E1KSTATE *pState)
+{
+    E1kLog(("%s Hard reset triggered\n", INSTANCE(pState)));
+    memset(pState->auRegs,        0, sizeof(pState->auRegs));
+    memset(pState->aRecAddr.au32, 0, sizeof(pState->aRecAddr.au32));
+#ifdef E1K_INIT_RA0
+    memcpy(pState->aRecAddr.au32, pState->macConfigured.au8,
+           sizeof(pState->macConfigured.au8));
+    pState->aRecAddr.array[0].ctl |= RA_CTL_AV;
+#endif /* E1K_INIT_RA0 */
+    STATUS = 0x0081;    /* SPEED=10b (1000 Mb/s), FD=1b (Full Duplex) */
+    EECD   = 0x0100;    /* EE_PRES=1b (EEPROM present) */
+    CTRL   = 0x0a09;    /* FRCSPD=1b SPEED=10b LRST=1b FD=1b */
+    TSPMT  = 0x01000400;/* TSMT=0400h TSPBP=0100h */
+    Assert(GET_BITS(RCTL, BSIZE) == 0);
+    pState->u16RxBSize = 2048;
+
+    /* Reset promiscous mode */
+    if (pState->pDrvR3)
+        pState->pDrvR3->pfnSetPromiscuousMode(pState->pDrvR3, false);
+}
 #endif
 
 /**
@@ -1692,29 +1719,6 @@ static void e1kPrintTDesc(E1KSTATE* pState, E1KTXDESC* pDesc, const char* cszDir
                     INSTANCE(pState), cszDir, cszDir));
             break;
     }
-}
-
-/**
- * Hardware reset. Revert all registers to initial values.
- *
- * @param   pState      The device state structure.
- */
-PDMBOTHCBDECL(void) e1kHardReset(E1KSTATE *pState)
-{
-    E1kLog(("%s Hard reset triggered\n", INSTANCE(pState)));
-    memset(pState->auRegs,        0, sizeof(pState->auRegs));
-    memset(pState->aRecAddr.au32, 0, sizeof(pState->aRecAddr.au32));
-#ifdef E1K_INIT_RA0
-    memcpy(pState->aRecAddr.au32, pState->macConfigured.au8,
-           sizeof(pState->macConfigured.au8));
-    pState->aRecAddr.array[0].ctl |= RA_CTL_AV;
-#endif /* E1K_INIT_RA0 */
-    STATUS = 0x0081;    /* SPEED=10b (1000 Mb/s), FD=1b (Full Duplex) */
-    EECD   = 0x0100;    /* EE_PRES=1b (EEPROM present) */
-    CTRL   = 0x0a09;    /* FRCSPD=1b SPEED=10b LRST=1b FD=1b */
-    TSPMT  = 0x01000400;/* TSMT=0400h TSPBP=0100h */
-    Assert(GET_BITS(RCTL, BSIZE) == 0);
-    pState->u16RxBSize = 2048;
 }
 
 /**
@@ -2172,7 +2176,11 @@ static int e1kRegWriteCTRL(E1KSTATE* pState, uint32_t offset, uint32_t index, ui
 
     if (value & CTRL_RESET)
     { /* RST */
+#ifndef IN_RING3
+        return VINF_IOM_HC_IOPORT_WRITE;
+#else
         e1kHardReset(pState);
+#endif
     }
     else
     {
@@ -2560,12 +2568,28 @@ static int e1kRegWriteIMC(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
  */
 static int e1kRegWriteRCTL(E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t value)
 {
+    /* Update promiscous mode */
+    bool fBecomePromiscous = !!(value & (RCTL_UPE | RCTL_MPE));
+    if (fBecomePromiscous != !!( RCTL & (RCTL_UPE | RCTL_MPE)))
+    {
+        /* Promiscuity has changed, pass the knowledge on. */
+#ifndef IN_RING3
+        return VINF_IOM_HC_IOPORT_WRITE;
+#else
+        if (pState->pDrvR3)
+            pState->pDrvR3->pfnSetPromiscuousMode(pState->pDrvR3, fBecomePromiscous);
+#endif
+    }
+    /* Adjust receive buffer size */
+    if (GET_BITS(RCTL, BSIZE) != GET_BITS_V(value, RCTL, BSIZE))
+    {
+        pState->u16RxBSize = 2048 >> GET_BITS(RCTL, BSIZE);
+        if (RCTL & RCTL_BSEX)
+            pState->u16RxBSize *= 16;
+        E1kLog2(("%s e1kRegWriteRCTL: Setting receive buffer size to %d\n",
+                 INSTANCE(pState), pState->u16RxBSize));
+    }
     e1kRegWriteDefault(pState, offset, index, value);
-    pState->u16RxBSize = 2048 >> GET_BITS(RCTL, BSIZE);
-    if (RCTL & RCTL_BSEX)
-        pState->u16RxBSize *= 16;
-    E1kLog2(("%s e1kRegWriteRCTL: Setting receive buffer size to %d\n",
-            INSTANCE(pState), pState->u16RxBSize));
 
     return VINF_SUCCESS;
 }
@@ -5234,6 +5258,12 @@ static DECLCALLBACK(int) e1kLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     int rc = e1kMutexAcquire(pState, VERR_SEM_BUSY, RT_SRC_POS);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
         return rc;
+
+    /* Update promiscous mode */
+    if (pState->pDrvR3)
+        pState->pDrvR3->pfnSetPromiscuousMode(pState->pDrvR3,
+                                             !!(RCTL & (RCTL_UPE | RCTL_MPE)));
+
     /*
     * Force the link down here, since PDMNETWORKLINKSTATE_DOWN_RESUME is never
     * passed to us. We go through all this stuff if the link was up and we
