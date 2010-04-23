@@ -369,15 +369,15 @@ def takeScreenshot(ctx,console,args):
         screen = int(args[3])
     else:
         screen = 0
-    (fb,xorig,yorig) = display.getFramebuffer(screen)
+    (fbw, fbh, fbbpp) = display.getScreenResolution(screen)
     if len(args) > 1:
         w = int(args[1])
     else:
-        w = fb.width
+        w = fbw
     if len(args) > 2:
         h = int(args[2])
     else:
-        h = fb.height
+        h = fbh
 
     print "Saving screenshot (%d x %d) screen %d in %s..." %(w,h,screen,f)
     data = display.takeScreenShotToArray(screen, w,h)
