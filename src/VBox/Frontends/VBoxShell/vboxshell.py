@@ -1243,6 +1243,7 @@ def shellCmd(ctx, args):
         print "usage: shell <commands>"
         return 0
     cmd = ' '.join(args[1:])
+
     try:
         os.system(cmd)
     except KeyboardInterrupt:
@@ -1569,7 +1570,6 @@ def listUsbCmd(ctx,args):
        printHostUsbDev(ctx,ud)
 
    return 0
-
 
 def findDevOfType(ctx,mach,type):
     atts = ctx['global'].getArray(mach, 'mediumAttachments')
@@ -1932,6 +1932,22 @@ def detachUsbCmd(ctx,args):
    cmdExistingVm(ctx, mach, 'guestlambda', [usbctr,False,dev])
    return 0
 
+
+def guiCmd(ctx,args):
+   if (len(args) > 1):
+      print "usage: gui"
+      return 0
+
+   binDir = ctx['global'].getBinDir()
+
+   vbox = os.path.join(binDir, 'VirtualBox')
+   try:
+        os.system(vbox)
+   except KeyboardInterrupt:
+        # to allow interruption
+        pass
+   return 0
+
 aliases = {'s':'start',
            'i':'info',
            'l':'list',
@@ -1999,7 +2015,8 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'attachUsb': ['Attach USB device to the VM (use listUsb to show available devices): attachUsb win uuid', attachUsbCmd, 0],
             'detachUsb': ['Detach USB device from the VM: detachUsb win uui', detachUsbCmd, 0],
             'listMediums': ['List mediums known to this VBox instance', listMediumsCmd, 0],
-            'listUsb': ['List known USB devices', listUsbCmd, 0]
+            'listUsb': ['List known USB devices', listUsbCmd, 0],
+            'gui': ['Start GUI frontend', guiCmd, 0]
             }
 
 def runCommandArgs(ctx, args):
@@ -2073,7 +2090,7 @@ def interpret(ctx):
     if ctx['remote']:
         commands['connect'] = ["Connect to remote VBox instance", connectCmd, 0]
         commands['disconnect'] = ["Disconnect from remote VBox instance", disconnectCmd, 0]
-    
+
     vbox = ctx['vb']
 
     if vbox is not None:
@@ -2085,9 +2102,9 @@ def interpret(ctx):
     home = getHomeFolder(ctx)
     checkUserExtensions(ctx, commands, home)
 
-    hist_file=os.path.join(home, ".vboxshell_history")
+    hist_file=os.path.join(home, ".vboxshellhistory")
     autoCompletion(commands, ctx)
-    
+
     if g_hasreadline and os.path.exists(hist_file):
         readline.read_history_file(hist_file)
 

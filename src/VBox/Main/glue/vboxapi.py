@@ -534,3 +534,11 @@ class VirtualBoxManager:
 
     def getPerfCollector(self, vbox):
         return PerfCollector(self, vbox)
+
+    def getBinDir(self):
+        global VboxBinDir
+        return VboxBinDir
+
+    def getSdkDir(self):
+        global VboxSdkDir
+        return VboxSdkDir
