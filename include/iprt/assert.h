@@ -345,7 +345,7 @@ RT_C_DECLS_END
  * @param   member  The member.
  * @param   off     The expected offset.
  */
-#if defined(__GNUC__) && defined(__cplusplus)
+#if defined(__GNUC__) && (defined(__cplusplus) || (__GNUC__ * 100 + __GNUC_MINOR__ >= 405))
 # if __GNUC__ >= 4
 #  define AssertCompileMemberOffset(type, member, off) \
     AssertCompile(__builtin_offsetof(type, member) == (off))
