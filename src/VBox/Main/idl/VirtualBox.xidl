@@ -4150,7 +4150,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="fe51e0c8-7e48-4847-95f0-fc8532f3b480"
+     uuid="b8a9324a-1042-4c78-aff6-9d1c2bfd8cd0"
      wsmap="managed"
      >
     <desc>
@@ -5334,7 +5334,7 @@
       </param>
     </method>
 
-    <method name="setCPUIDLeaf" const="yes">
+    <method name="setCPUIDLeaf">
       <desc>
         Sets the virtual CPU cpuid information for the specified leaf. Note that these values
         are not passed unmodified. VirtualBox clears features that it doesn't support.
@@ -5380,7 +5380,7 @@
       </param>
     </method>
 
-    <method name="removeCPUIDLeaf" const="yes">
+    <method name="removeCPUIDLeaf">
       <desc>
         Removes the virtual CPU cpuid leaf for the specified index
 
@@ -5396,7 +5396,7 @@
       </param>
     </method>
 
-    <method name="removeAllCPUIDLeaves" const="yes">
+    <method name="removeAllCPUIDLeaves">
       <desc>
         Removes all the virtual CPU cpuid leaves
       </desc>
