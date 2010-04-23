@@ -513,9 +513,10 @@ int Guest::notifyCtrlExec(uint32_t              u32Function,
 
     AssertPtr(pData);
     CallbackListIter it = getCtrlCallbackContextByID(pData->hdr.u32ContextID);
+
+    /* Callback can be called several times. */
     if (it != mCallbackList.end())
     {
-        Assert(!it->bCalled);
         PHOSTEXECCALLBACKDATA pCBData = (HOSTEXECCALLBACKDATA*)it->pvData;
         AssertPtr(pCBData);
 
