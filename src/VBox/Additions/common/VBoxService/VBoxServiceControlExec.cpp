@@ -625,8 +625,8 @@ int VBoxServiceControlExecAllocateThreadData(PVBOXSERVICECTRLTHREAD pThread,
         RTStrFree(pszArgsTemp);
     }
 
-    /* Did we get the same result? Also count in the added argv[0] above! */
-    Assert((uNumArgs + 1) == pData->uNumArgs);
+    /* Did we get at least as much arguments as told? */
+    Assert(pData->uNumArgs >= uNumArgs);
 
     if (RT_SUCCESS(rc))
     {
