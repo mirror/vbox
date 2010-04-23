@@ -3936,5 +3936,3 @@ void VBoxSFDialog::showEvent (QShowEvent *aEvent)
     QDialog::showEvent (aEvent);
 }
 
-#include "VBoxConsoleWnd.moc"
-
