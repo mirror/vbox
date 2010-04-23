@@ -65,11 +65,11 @@ public:
         QString strFullData;
         bool bAttachmentsPresent = false;
 
-        CStorageControllerVector controllers = machine.GetStorageControllers();
+        const CStorageControllerVector &controllers = machine.GetStorageControllers();
         foreach (const CStorageController &controller, controllers)
         {
             QString strAttData;
-            CMediumAttachmentVector attachments = machine.GetMediumAttachmentsOfController(controller.GetName());
+            const CMediumAttachmentVector &attachments = machine.GetMediumAttachmentsOfController(controller.GetName());
             foreach (const CMediumAttachment &attachment, attachments)
             {
                 if (attachment.GetType() != KDeviceType_HardDisk)
@@ -129,11 +129,11 @@ public:
         QString strFullData;
         bool bAttachmentsPresent = false;
 
-        CStorageControllerVector controllers = machine.GetStorageControllers();
+        const CStorageControllerVector &controllers = machine.GetStorageControllers();
         foreach (const CStorageController &controller, controllers)
         {
             QString strAttData;
-            CMediumAttachmentVector attachments = machine.GetMediumAttachmentsOfController(controller.GetName());
+            const CMediumAttachmentVector &attachments = machine.GetMediumAttachmentsOfController(controller.GetName());
             foreach (const CMediumAttachment &attachment, attachments)
             {
                 if (attachment.GetType() != KDeviceType_DVD)
@@ -194,11 +194,11 @@ public:
         QString data;
         bool attachmentsPresent = false;
 
-        CStorageControllerVector controllers = machine.GetStorageControllers();
+        const CStorageControllerVector &controllers = machine.GetStorageControllers();
         foreach (const CStorageController &controller, controllers)
         {
             QString attData;
-            CMediumAttachmentVector attachments = machine.GetMediumAttachmentsOfController (controller.GetName());
+            const CMediumAttachmentVector &attachments = machine.GetMediumAttachmentsOfController (controller.GetName());
             foreach (const CMediumAttachment &attachment, attachments)
             {
                 if (attachment.GetType() != KDeviceType_Floppy)
@@ -256,7 +256,7 @@ public:
 
     void updateAppearance()
     {
-        CMachine machine = m_session.GetMachine();
+        const CMachine &machine = m_session.GetMachine();
 
         ulong uMaxCount = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
         ulong uCount = 0;
@@ -271,7 +271,7 @@ public:
 
         for (ulong uSlot = 0, uEnabled = 0; uSlot < uMaxCount; ++ uSlot)
         {
-            CNetworkAdapter adapter = machine.GetNetworkAdapter(uSlot);
+            const CNetworkAdapter &adapter = machine.GetNetworkAdapter(uSlot);
             if (adapter.GetEnabled())
             {
                 QString strFlags;
@@ -345,13 +345,13 @@ public:
                                 "the attached USB devices:</nobr>%1</p>", "USB device tooltip");
         QString strFullData;
 
-        CUSBController usbctl = machine.GetUSBController();
+        const CUSBController &usbctl = machine.GetUSBController();
         setState(!usbctl.isNull() && usbctl.GetEnabled() && usbctl.GetProxyAvailable() ? KDeviceActivity_Idle : KDeviceActivity_Null);
         if (!usbctl.isNull() && usbctl.GetEnabled())
         {
             const CConsole &console = m_session.GetConsole();
 
-            CUSBDeviceVector devsvec = console.GetUSBDevices();
+            const CUSBDeviceVector &devsvec = console.GetUSBDevices();
             for (int i = 0; i < devsvec.size(); ++ i)
             {
                 CUSBDevice usb = devsvec[i];
@@ -407,20 +407,20 @@ public:
         QMap<QString, QString> sfs;
 
         /* Permanent folders */
-        CSharedFolderVector psfvec = machine.GetSharedFolders();
+        const CSharedFolderVector &psfvec = machine.GetSharedFolders();
 
         for (int i = 0; i < psfvec.size(); ++ i)
         {
-            CSharedFolder sf = psfvec[i];
+            const CSharedFolder &sf = psfvec[i];
             sfs.insert(sf.GetName(), sf.GetHostPath());
         }
 
         /* Transient folders */
-        CSharedFolderVector tsfvec = console.GetSharedFolders();
+        const CSharedFolderVector &tsfvec = console.GetSharedFolders();
 
         for (int i = 0; i < tsfvec.size(); ++ i)
         {
-            CSharedFolder sf = tsfvec[i];
+            const CSharedFolder &sf = tsfvec[i];
             sfs.insert(sf.GetName(), sf.GetHostPath());
         }
 
@@ -471,7 +471,7 @@ public:
 
     void updateAppearance()
     {
-        CVRDPServer vrdpsrv = m_session.GetMachine().GetVRDPServer();
+        const CVRDPServer &vrdpsrv = m_session.GetMachine().GetVRDPServer();
         if (!vrdpsrv.isNull())
         {
             /* update menu&status icon state */
