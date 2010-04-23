@@ -543,12 +543,15 @@ void UIMachineWindowNormal::loadWindowSettings()
             setGeometry(m_normalGeometry);
         }
 
-        /* Normalize view to the optimal size: */
-#ifdef Q_WS_MAC
+        /* Normalize view to the optimal size:
+           Note: Cause of the async behavior of some Linux WM's we have to
+           delay this a little bit. On Mac OS X this is not necessary and
+           create even wrong resize events. So there we set the geometry
+           immediately. */
         if (machineView())
+#ifdef Q_WS_MAC
             machineView()->normalizeGeometry(true);
 #else /* Q_WS_MAC */
-        if (machineView())
             QTimer::singleShot(0, machineView(), SLOT(sltNormalizeGeometry()));
 #endif /* Q_WS_MAC */
     }
