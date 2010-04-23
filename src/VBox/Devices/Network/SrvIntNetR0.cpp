@@ -1126,8 +1126,8 @@ DECLINLINE(void) intnetR0NetworkAddrCacheDeleteMinusIf(PINTNETNETWORK pNetwork, 
 
 
 /**
- * Lookup an address on the network, returning the (first) interface
- * having it in its address cache.
+ * Lookup an address on the network, returning the (first) interface having it
+ * in its address cache.
  *
  * @returns Pointer to the interface on success, NULL if not found.  The caller
  *          must release the interface by calling intnetR0BusyDecIf.
@@ -4224,6 +4224,57 @@ static DECLCALLBACK(bool) intnetR0TrunkIfPortSetSGPhys(PINTNETTRUNKSWPORT pSwitc
 }
 
 
+/** @copydoc INTNETTRUNKSWPORT::pfnReportMacAddress */
+static DECLCALLBACK(void) intnetR0TrunkIfPortReportMacAddress(PINTNETTRUNKSWPORT pSwitchPort, PCRTMAC pMacAddr)
+{
+    PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
+
+    /*
+     * Get the network instance and grab the address spinlock before making
+     * any changes.
+     */
+    intnetR0BusyIncTrunk(pThis);
+    PINTNETNETWORK pNetwork = pThis->pNetwork;
+    if (pNetwork)
+    {
+        RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+        RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+        pNetwork->MacTab.HostMac = *pMacAddr;
+        pThis->MacAddr           = *pMacAddr;
+
+        RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
+    }
+    else
+        pThis->MacAddr = *pMacAddr;
+    intnetR0BusyDecTrunk(pThis);
+}
+
+
+/** @copydoc INTNETTRUNKSWPORT::pfnReportPromiscuousMode */
+static DECLCALLBACK(void) intnetR0TrunkIfPortReportPromiscuousMode(PINTNETTRUNKSWPORT pSwitchPort, bool fPromiscuous)
+{
+    PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
+
+    /*
+     * Get the network instance and grab the address spinlock before making
+     * any changes.
+     */
+    intnetR0BusyIncTrunk(pThis);
+    PINTNETNETWORK pNetwork = pThis->pNetwork;
+    if (pNetwork)
+    {
+        RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+        RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+        pNetwork->MacTab.fHostPromiscuous = fPromiscuous;
+
+        RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
+    }
+    intnetR0BusyDecTrunk(pThis);
+}
+
+
 /** @copydoc INTNETTRUNKSWPORT::pfnReportGsoCapabilities */
 static DECLCALLBACK(void) intnetR0TrunkIfPortReportGsoCapabilities(PINTNETTRUNKSWPORT pSwitchPort,
                                                                   uint32_t fGsoCapabilities, uint32_t fDst)
@@ -4665,6 +4716,8 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
         pTrunk->SwitchPort.pfnSGRetain                = intnetR0TrunkIfPortSGRetain;
         pTrunk->SwitchPort.pfnSGRelease               = intnetR0TrunkIfPortSGRelease;
         pTrunk->SwitchPort.pfnSetSGPhys               = intnetR0TrunkIfPortSetSGPhys;
+        pTrunk->SwitchPort.pfnReportMacAddress        = intnetR0TrunkIfPortReportMacAddress;
+        pTrunk->SwitchPort.pfnReportPromiscuousMode   = intnetR0TrunkIfPortReportPromiscuousMode;
         pTrunk->SwitchPort.pfnReportGsoCapabilities   = intnetR0TrunkIfPortReportGsoCapabilities;
         pTrunk->SwitchPort.u32VersionEnd              = INTNETTRUNKSWPORT_VERSION;
         pTrunk->FastMutex3                = NIL_RTSEMFASTMUTEX;
@@ -4696,6 +4749,19 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
             rc = RTSpinlockCreate(&pTrunk->hDstTabSpinlock);
         if (RT_SUCCESS(rc))
         {
+            /*
+             * There are a couple of bits in MacTab as well pertaining to the
+             * trunk.  We have to set this before it's reported.
+             *
+             * Note! We don't need to lock the MacTab here - creation time.
+             */
+            pNetwork->MacTab.pTrunk           = pTrunk;
+            pNetwork->MacTab.HostMac          = pTrunk->MacAddr;
+            pNetwork->MacTab.fHostPromiscuous = false;
+            pNetwork->MacTab.fHostActive      = true;
+            pNetwork->MacTab.fWirePromiscuous = false; /** @todo !!(fFlags & INTNET_OPEN_FLAGS_PROMISC_TRUNK_WIRE); */
+            pNetwork->MacTab.fWireActive      = true;
+
 #ifdef IN_RING0 /* (testcase is ring-3) */
             /*
              * Query the factory we want, then use it create and connect the trunk.
@@ -4704,35 +4770,17 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
             rc = SUPR0ComponentQueryFactory(pSession, pszName, INTNETTRUNKFACTORY_UUID_STR, (void **)&pTrunkFactory);
             if (RT_SUCCESS(rc))
             {
-                rc = pTrunkFactory->pfnCreateAndConnect(pTrunkFactory, pNetwork->szTrunk, &pTrunk->SwitchPort,
+                rc = pTrunkFactory->pfnCreateAndConnect(pTrunkFactory,
+                                                        pNetwork->szTrunk,
+                                                        &pTrunk->SwitchPort,
                                                         pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE
-                                                        ? INTNETTRUNKFACTORY_FLAG_NO_PROMISC : 0,
+                                                        ? INTNETTRUNKFACTORY_FLAG_NO_PROMISC
+                                                        : 0,
                                                         &pTrunk->pIfPort);
                 pTrunkFactory->pfnRelease(pTrunkFactory);
                 if (RT_SUCCESS(rc))
                 {
                     Assert(pTrunk->pIfPort);
-                    pNetwork->MacTab.pTrunk = pTrunk;
-
-                    /*
-                     * Query the host info.
-                     *
-                     * Note! We don't need to lock the MacTab here since the
-                     *       network is being created.
-                     */
-                    /** @todo this should be reported by VBoxNet* instead of queried by us! */
-                    intnetR0TrunkIfOutLock(pTrunk);
-
-                    pTrunk->pIfPort->pfnGetMacAddress(pTrunk->pIfPort, &pTrunk->MacAddr);
-                    pNetwork->MacTab.HostMac          = pTrunk->MacAddr;
-
-                    pNetwork->MacTab.fHostPromiscuous = pTrunk->pIfPort->pfnIsPromiscuous(pTrunk->pIfPort);
-                    pNetwork->MacTab.fHostActive      = true;
-
-                    pNetwork->MacTab.fWirePromiscuous = false; /** @todo !!(fFlags & INTNET_OPEN_FLAGS_PROMISC_TRUNK_WIRE); */
-                    pNetwork->MacTab.fWireActive      = true;
-
-                    intnetR0TrunkIfOutUnlock(pTrunk);
 
                     Log(("intnetR0NetworkCreateTrunkIf: VINF_SUCCESS - pszName=%s szTrunk=%s%s Network=%s\n",
                          pszName, pNetwork->szTrunk, pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE ? " shared-mac" : "", pNetwork->szName));
@@ -4742,6 +4790,10 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
 #else  /* IN_RING3 */
             rc = VERR_NOT_SUPPORTED;
 #endif /* IN_RING3 */
+
+            pNetwork->MacTab.pTrunk      = NULL;
+            pNetwork->MacTab.fHostActive = false;
+            pNetwork->MacTab.fWireActive = false;
         }
 
         /* bail out and clean up. */

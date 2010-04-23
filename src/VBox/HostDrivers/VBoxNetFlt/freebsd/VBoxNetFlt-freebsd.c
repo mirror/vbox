@@ -524,6 +524,13 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
     return VINF_SUCCESS;
 }
 
+static bool vboxNetFltFreeBsdIsPromiscuous(PVBOXNETFLTINS pThis)
+{
+    /** @todo This isn't taking into account that we put the interface in
+     *        promiscuous mode.  */
+    return (pThis->u.s.flags & IFF_PROMISC) ? true : false;
+}
+
 int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
 {
     char nam[NG_NODESIZ];
@@ -543,8 +550,9 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
     ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.ifp, ifp);
     pThis->u.s.node = node;
-    bcopy(IF_LLADDR(ifp), &pThis->u.s.Mac, ETHER_ADDR_LEN);
+    bcopy(IF_LLADDR(ifp), &pThis->u.s.MacAddr, ETHER_ADDR_LEN);
     ASMAtomicUoWriteBool(&pThis->fDisconnectedFromHost, false);
+
     /* Initialize deferred input queue */
     bzero(&pThis->u.s.inq, sizeof(struct ifqueue));
     mtx_init(&pThis->u.s.inq.ifq_mtx, "vboxnetflt inq", NULL, MTX_SPIN);
@@ -558,9 +566,18 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     RTSpinlockRelease(pThis->hSpinlock, &Tmp);
 
     NG_NODE_SET_PRIVATE(node, pThis);
+
     /* Attempt to name it vboxnetflt_<ifname> */
     snprintf(nam, NG_NODESIZ, "vboxnetflt_%s", pThis->szName);
     ng_name_node(node, nam);
+
+    /* Report MAC address, promiscuous mode and GSO capabilities. */
+    /** @todo keep these reports up to date, either by polling for changes or
+     *        intercept some control flow if possible. */
+    Assert(pThis->pSwitchPort);
+    pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
+    pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, vboxNetFltFreeBsdIsPromiscuous(pThis));
+    pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0, INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
 
     return VINF_SUCCESS;
 }
@@ -701,23 +718,6 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
         strlcpy(rm->ourhook, "output", NG_HOOKSIZ);
         NG_SEND_MSG_PATH(error, node, msg, path, 0);
     }
-}
-
-bool vboxNetFltPortOsIsPromiscuous(PVBOXNETFLTINS pThis)
-{
-    return (pThis->u.s.flags & IFF_PROMISC) ? true : false;
-}
-
-void vboxNetFltPortOsGetMacAddress(PVBOXNETFLTINS pThis, PRTMAC pMac)
-{
-    *pMac = pThis->u.s.Mac;
-}
-
-bool vboxNetFltPortOsIsHostMac(PVBOXNETFLTINS pThis, PCRTMAC pMac)
-{
-    return pThis->u.s.Mac.au16[0] == pMac->au16[0]
-        && pThis->u.s.Mac.au16[1] == pMac->au16[1]
-        && pThis->u.s.Mac.au16[2] == pMac->au16[2];
 }
 
 int vboxNetFltOsDisconnectIt(PVBOXNETFLTINS pThis)

@@ -483,6 +483,33 @@ typedef struct INTNETTRUNKSWPORT
     DECLR0CALLBACKMEMBER(bool, pfnSetSGPhys,(PINTNETTRUNKSWPORT pSwitchPort, bool fEnable));
 
     /**
+     * Reports the MAC address of the trunk.
+     *
+     * This is supposed to be called when creating, connection or reconnecting the
+     * trunk and when the MAC address is changed by the system admin.
+     *
+     * @param   pSwitchPort         Pointer to this structure.
+     * @param   pMacAddr            The MAC address.
+     *
+     * @remarks May take a spinlock or two.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnReportMacAddress,(PINTNETTRUNKSWPORT pSwitchPort, PCRTMAC pMacAddr));
+
+    /**
+     * Reports the promicuousness of the interface.
+     *
+     * This is supposed to be called when creating, connection or reconnecting the
+     * trunk and when the mode is changed by the system admin.
+     *
+     * @param   pSwitchPort         Pointer to this structure.
+     * @param   fPromiscuous        True if the host operates the interface in
+     *                              promiscuous mode, false if not.
+     *
+     * @remarks May take a spinlock or two.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnReportPromiscuousMode,(PINTNETTRUNKSWPORT pSwitchPort, bool fPromiscuous));
+
+    /**
      * Reports the GSO capabilities of the host, wire or both.
      *
      * This is supposed to be used only when creating, connecting or reconnecting
@@ -494,7 +521,7 @@ typedef struct INTNETTRUNKSWPORT
      *                              corresponds to the GSO type with the same value.
      * @param   fDst                The destination mask (INTNETTRUNKDIR_XXX).
      *
-     * @remarks Will to take any locks.
+     * @remarks May take a spinlock or two.
      */
     DECLR0CALLBACKMEMBER(void, pfnReportGsoCapabilities,(PINTNETTRUNKSWPORT pSwitchPort, uint32_t fGsoCapabilities, uint32_t fDst));
 
@@ -612,25 +639,6 @@ typedef struct INTNETTRUNKIFPORT
     DECLR0CALLBACKMEMBER(void, pfnGetMacAddress,(PINTNETTRUNKIFPORT pIfPort, PRTMAC pMac));
 
     /**
-     * Tests if the mac address belongs to any of the host NICs
-     * and should take the host route.
-     *
-     * @returns true / false.
-     *
-     * @param   pIfPort     Pointer to this structure.
-     * @param   pMac        Pointer to the mac address.
-     *
-     * @remarks Called while owning the network and the out-bound trunk port semaphores.
-     *
-     * @remarks TAP and NAT will compare with their own MAC address and let all their
-     *          traffic take the host direction.
-     *
-     * @remarks This didn't quiet work out the way it should... perhaps obsolete this
-     *          with pfnGetHostMac?
-     */
-    DECLR0CALLBACKMEMBER(bool, pfnIsHostMac,(PINTNETTRUNKIFPORT pIfPort, PCRTMAC pMac));
-
-    /**
      * Tests whether the host is operating the interface is promiscuous mode.
      *
      * The default behavior of the internal networking 'switch' is to 'autodetect'
@@ -725,7 +733,7 @@ typedef struct INTNETTRUNKFACTORY
 typedef INTNETTRUNKFACTORY *PINTNETTRUNKFACTORY;
 
 /** The UUID for the (current) trunk factory. (case sensitive) */
-#define INTNETTRUNKFACTORY_UUID_STR     "daeaf07b-9974-48be-843e-b9afd763c2ff"
+#define INTNETTRUNKFACTORY_UUID_STR     "7eb192c8-6ee3-4d0a-96fb-f51ce7381354"
 
 /** @name INTNETTRUNKFACTORY::pfnCreateAndConnect flags.
  * @{ */

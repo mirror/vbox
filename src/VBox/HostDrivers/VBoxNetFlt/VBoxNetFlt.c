@@ -414,73 +414,6 @@ static DECLCALLBACK(int) vboxNetFltPortXmit(PINTNETTRUNKIFPORT pIfPort, PINTNETS
 
 
 /**
- * @copydoc INTNETTRUNKIFPORT::pfnIsPromiscuous
- */
-static DECLCALLBACK(bool) vboxNetFltPortIsPromiscuous(PINTNETTRUNKIFPORT pIfPort)
-{
-    PVBOXNETFLTINS pThis = IFPORT_2_VBOXNETFLTINS(pIfPort);
-
-    /*
-     * Input validation.
-     */
-    AssertPtr(pThis);
-    Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
-    Assert(vboxNetFltGetState(pThis) == kVBoxNetFltInsState_Connected);
-    /* No fActive check here. */
-
-    /*
-     * Ask the OS specific code.
-     */
-    return vboxNetFltPortOsIsPromiscuous(pThis);
-}
-
-
-/**
- * @copydoc INTNETTRUNKIFPORT::pfnGetMacAddress
- */
-static DECLCALLBACK(void) vboxNetFltPortGetMacAddress(PINTNETTRUNKIFPORT pIfPort, PRTMAC pMac)
-{
-    PVBOXNETFLTINS pThis = IFPORT_2_VBOXNETFLTINS(pIfPort);
-
-    /*
-     * Input validation.
-     */
-    AssertPtr(pThis);
-    Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
-    Assert(vboxNetFltGetState(pThis) == kVBoxNetFltInsState_Connected);
-    /* No fActive check here. */
-
-    /*
-     * Forward the question to the OS specific code.
-     */
-    vboxNetFltPortOsGetMacAddress(pThis, pMac);
-}
-
-
-/**
- * @copydoc INTNETTRUNKIFPORT::pfnIsHostMac
- */
-static DECLCALLBACK(bool) vboxNetFltPortIsHostMac(PINTNETTRUNKIFPORT pIfPort, PCRTMAC pMac)
-{
-    PVBOXNETFLTINS pThis = IFPORT_2_VBOXNETFLTINS(pIfPort);
-
-    /*
-     * Input validation.
-     */
-    AssertPtr(pThis);
-    Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
-    Assert(vboxNetFltGetState(pThis) == kVBoxNetFltInsState_Connected);
-/** @todo Assert(pThis->fActive); - disabled because we may call this
- *        without holding the out-bound lock and race the clearing. */
-
-    /*
-     * Ask the OS specific code.
-     */
-    return vboxNetFltPortOsIsHostMac(pThis, pMac);
-}
-
-
-/**
  * @copydoc INTNETTRUNKIFPORT::pfnWaitForIdle
  */
 static DECLCALLBACK(int) vboxNetFltPortWaitForIdle(PINTNETTRUNKIFPORT pIfPort, uint32_t cMillies)
@@ -552,7 +485,7 @@ static DECLCALLBACK(bool) vboxNetFltPortSetActive(PINTNETTRUNKIFPORT pIfPort, bo
 static DECLCALLBACK(void) vboxNetFltPortDisconnectAndRelease(PINTNETTRUNKIFPORT pIfPort)
 {
     PVBOXNETFLTINS pThis = IFPORT_2_VBOXNETFLTINS(pIfPort);
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    RTSPINLOCKTMP  Tmp   = RTSPINLOCKTMP_INITIALIZER;
 
     /*
      * Serious paranoia.
@@ -845,12 +778,9 @@ static int vboxNetFltNewInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszNam
     pNew->MyPort.pfnDisconnectAndRelease= vboxNetFltPortDisconnectAndRelease;
     pNew->MyPort.pfnSetActive           = vboxNetFltPortSetActive;
     pNew->MyPort.pfnWaitForIdle         = vboxNetFltPortWaitForIdle;
-    pNew->MyPort.pfnGetMacAddress       = vboxNetFltPortGetMacAddress;
-    pNew->MyPort.pfnIsHostMac           = vboxNetFltPortIsHostMac;
-    pNew->MyPort.pfnIsPromiscuous       = vboxNetFltPortIsPromiscuous;
     pNew->MyPort.pfnXmit                = vboxNetFltPortXmit;
     pNew->MyPort.u32VersionEnd          = INTNETTRUNKIFPORT_VERSION;
-    pNew->pSwitchPort                   = NULL;
+    pNew->pSwitchPort                   = pSwitchPort;
     pNew->pGlobals                      = pGlobals;
     pNew->hSpinlock                     = NIL_RTSPINLOCK;
     pNew->enmState                      = kVBoxNetFltInsState_Initializing;

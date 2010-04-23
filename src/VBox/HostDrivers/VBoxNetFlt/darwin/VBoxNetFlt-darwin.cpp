@@ -617,6 +617,31 @@ DECLINLINE(void) vboxNetFltDarwinMBufToSG(PVBOXNETFLTINS pThis, mbuf_t pMBuf, vo
 
 
 /**
+ * Helper for determining whether the host wants the interface to be
+ * promiscuous.
+ */
+static bool vboxNetFltDarwinIsPromiscuous(PVBOXNETFLTINS pThis)
+{
+    bool fRc = false;
+    ifnet_t pIfNet = vboxNetFltDarwinRetainIfNet(pThis);
+    if (pIfNet)
+    {
+        /* gather the data */
+        uint16_t fIf = ifnet_flags(pIfNet);
+        unsigned cPromisc = VBOX_GET_PCOUNT(pIfNet);
+        bool fSetPromiscuous = ASMAtomicUoReadBool(&pThis->u.s.fSetPromiscuous);
+        vboxNetFltDarwinReleaseIfNet(pThis, pIfNet);
+
+        /* calc the return. */
+        fRc = (fIf & IFF_PROMISC)
+           && cPromisc > fSetPromiscuous;
+    }
+    return fRc;
+}
+
+
+
+/**
  *
  * @see iff_detached_func in the darwin kpi.
  */
@@ -750,6 +775,8 @@ static void vboxNetFltDarwinIffEvent(void *pvThis, ifnet_t pIfNet, protocol_fami
             }
             else if (pEvMsg->event_code == KEV_DL_LINK_OFF)
                 Log(("vboxNetFltDarwinIffEvent: %s goes down (%d)\n", pThis->szName, VBOX_GET_PCOUNT(pIfNet)));
+/** @todo KEV_DL_LINK_ADDRESS_CHANGED  -> pfnReportMacAddress */
+/** @todo KEV_DL_SIFFLAGS              -> pfnReportPromiscuousMode */
         }
         else
             Log(("vboxNetFltDarwinIffEvent: pThis->u.s.pIfNet=%p pIfNet=%p (%d)\n", pThis->u.s.pIfNet, pIfNet, VALID_PTR(pIfNet) ? VBOX_GET_PCOUNT(pIfNet) : -1));
@@ -902,7 +929,7 @@ static int vboxNetFltDarwinAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
     /*
      * Get the mac address while we still have a valid ifnet reference.
      */
-    err = ifnet_lladdr_copy_bytes(pIfNet, &pThis->u.s.Mac, sizeof(pThis->u.s.Mac));
+    err = ifnet_lladdr_copy_bytes(pIfNet, &pThis->u.s.MacAddr, sizeof(pThis->u.s.MacAddr));
     if (!err)
     {
         /*
@@ -930,6 +957,15 @@ static int vboxNetFltDarwinAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
             pIfNet = NULL; /* don't dereference it */
         }
         RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+
+        /* Report capabilities. */
+        if (!pIfNet)
+        {
+            Assert(pThis->pSwitchPort);
+            pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
+            pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, vboxNetFltDarwinIsPromiscuous(pThis));
+            pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0,  INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
+        }
     }
 
     /* Release the interface on failure. */
@@ -938,7 +974,7 @@ static int vboxNetFltDarwinAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
 
     int rc = RTErrConvertFromErrno(err);
     if (RT_SUCCESS(rc))
-        LogRel(("VBoxFltDrv: attached to '%s' / %.*Rhxs\n", pThis->szName, sizeof(pThis->u.s.Mac), &pThis->u.s.Mac));
+        LogRel(("VBoxFltDrv: attached to '%s' / %.*Rhxs\n", pThis->szName, sizeof(pThis->u.s.MacAddr), &pThis->u.s.MacAddr));
     else
         LogRel(("VBoxFltDrv: failed to attach to ifnet '%s' (err=%d)\n", pThis->szName, err));
     return rc;
@@ -1001,41 +1037,6 @@ int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
     }
 
     return rc;
-}
-
-
-bool vboxNetFltPortOsIsPromiscuous(PVBOXNETFLTINS pThis)
-{
-    bool fRc = false;
-    ifnet_t pIfNet = vboxNetFltDarwinRetainIfNet(pThis);
-    if (pIfNet)
-    {
-        /* gather the data */
-        uint16_t fIf = ifnet_flags(pIfNet);
-        unsigned cPromisc = VBOX_GET_PCOUNT(pIfNet);
-        bool fSetPromiscuous = ASMAtomicUoReadBool(&pThis->u.s.fSetPromiscuous);
-        vboxNetFltDarwinReleaseIfNet(pThis, pIfNet);
-
-        /* calc the return. */
-        fRc = (fIf & IFF_PROMISC)
-           && cPromisc > fSetPromiscuous;
-    }
-    return fRc;
-}
-
-
-void vboxNetFltPortOsGetMacAddress(PVBOXNETFLTINS pThis, PRTMAC pMac)
-{
-    *pMac = pThis->u.s.Mac;
-}
-
-
-bool vboxNetFltPortOsIsHostMac(PVBOXNETFLTINS pThis, PCRTMAC pMac)
-{
-    /* ASSUMES that the MAC address never changes. */
-    return pThis->u.s.Mac.au16[0] == pMac->au16[0]
-        && pThis->u.s.Mac.au16[1] == pMac->au16[1]
-        && pThis->u.s.Mac.au16[2] == pMac->au16[2];
 }
 
 
@@ -1191,7 +1192,7 @@ int  vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
     pThis->u.s.pIfFilter = NULL;
     pThis->u.s.fSetPromiscuous = false;
     pThis->u.s.fNeedSetPromiscuous = false;
-    //pThis->u.s.Mac = {0};
+    //pThis->u.s.MacAddr = {0};
 
     return VINF_SUCCESS;
 }

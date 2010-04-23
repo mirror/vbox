@@ -440,27 +440,6 @@ static DECLCALLBACK(int) vboxNetAdpPortXmit(PINTNETTRUNKIFPORT pIfPort, PINTNETS
 
 
 /**
- * @copydoc INTNETTRUNKIFPORT::pfnIsPromiscuous
- */
-static DECLCALLBACK(bool) vboxNetAdpPortIsPromiscuous(PINTNETTRUNKIFPORT pIfPort)
-{
-    PVBOXNETADP pThis = IFPORT_2_VBOXNETADP(pIfPort);
-
-    /*
-     * Input validation.
-     */
-    AssertPtr(pThis);
-    Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
-    Assert(vboxNetAdpGetStateWithLock(pThis) == kVBoxNetAdpState_Active);
-
-    /*
-     * Ask the OS specific code.
-     */
-    return vboxNetAdpPortOsIsPromiscuous(pThis);
-}
-
-
-/**
  * @copydoc INTNETTRUNKIFPORT::pfnGetMacAddress
  */
 static DECLCALLBACK(void) vboxNetAdpPortGetMacAddress(PINTNETTRUNKIFPORT pIfPort, PRTMAC pMac)
@@ -478,27 +457,6 @@ static DECLCALLBACK(void) vboxNetAdpPortGetMacAddress(PINTNETTRUNKIFPORT pIfPort
      * Forward the question to the OS specific code.
      */
     vboxNetAdpPortOsGetMacAddress(pThis, pMac);
-}
-
-
-/**
- * @copydoc INTNETTRUNKIFPORT::pfnIsHostMac
- */
-static DECLCALLBACK(bool) vboxNetAdpPortIsHostMac(PINTNETTRUNKIFPORT pIfPort, PCRTMAC pMac)
-{
-    PVBOXNETADP pThis = IFPORT_2_VBOXNETADP(pIfPort);
-
-    /*
-     * Input validation.
-     */
-    AssertPtr(pThis);
-    Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
-    Assert(vboxNetAdpGetStateWithLock(pThis) == kVBoxNetAdpState_Active);
-
-    /*
-     * Ask the OS specific code.
-     */
-    return vboxNetAdpPortOsIsHostMac(pThis, pMac);
 }
 
 
@@ -890,8 +848,6 @@ static int vboxNetAdpSlotCreate(PVBOXNETADPGLOBALS pGlobals, unsigned uUnit, PVB
     pNew->MyPort.pfnSetActive           = vboxNetAdpPortSetActive;
     pNew->MyPort.pfnWaitForIdle         = vboxNetAdpPortWaitForIdle;
     pNew->MyPort.pfnGetMacAddress       = vboxNetAdpPortGetMacAddress;
-    pNew->MyPort.pfnIsHostMac           = vboxNetAdpPortIsHostMac;
-    pNew->MyPort.pfnIsPromiscuous       = vboxNetAdpPortIsPromiscuous;
     pNew->MyPort.pfnXmit                = vboxNetAdpPortXmit;
     pNew->MyPort.u32VersionEnd          = INTNETTRUNKIFPORT_VERSION;
     pNew->pSwitchPort                   = NULL;
