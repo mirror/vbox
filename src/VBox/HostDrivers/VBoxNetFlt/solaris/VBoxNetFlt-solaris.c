@@ -1385,7 +1385,7 @@ static void vboxNetFltSolarisCachePhysAddr(PVBOXNETFLTINS pThis, mblk_t *pMsg)
         bcopy(pMsg->b_rptr + pPhysAddrAck->dl_addr_offset, &pThis->u.s.MacAddr, sizeof(pThis->u.s.MacAddr));
 
         LogFlow((DEVICE_NAME ":vboxNetFltSolarisCachePhysAddr: DL_PHYS_ADDR_ACK: Mac=%.*Rhxs\n",
-                 sizeof(pThis->u.s.MacAddr), &pThis->u.s.Mac));
+                 sizeof(pThis->u.s.MacAddr), &pThis->u.s.MacAddr));
 
         vboxNetFltRetain(pThis, true /*fBusy*/);
         Assert(pThis->pSwitchPort);
