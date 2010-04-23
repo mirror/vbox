@@ -624,8 +624,6 @@ int VBoxServiceControlExecAllocateThreadData(PVBOXSERVICECTRLTHREAD pThread,
                                     pszArgsTemp, NULL);
         RTStrFree(pszArgsTemp);
     }
-    else
-        rc = VERR_NO_MEMORY;
 
     /* Did we get the same result? Also count in the added argv[0] above! */
     Assert((uNumArgs + 1) == pData->uNumArgs);
