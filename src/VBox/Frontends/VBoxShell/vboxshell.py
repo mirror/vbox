@@ -33,8 +33,6 @@ import shlex
 import time
 import re
 
-HISTORY_FILENAME=os.path.join(os.environ["HOME"], ".vboxshell_history")
-
 # Simple implementation of IConsoleCallback, one can use it as skeleton
 # for custom implementations
 class GuestMonitor:
@@ -2065,7 +2063,7 @@ def interpret(ctx):
     if ctx['remote']:
         commands['connect'] = ["Connect to remote VBox instance", connectCmd, 0]
         commands['disconnect'] = ["Disconnect from remote VBox instance", disconnectCmd, 0]
-
+    
     vbox = ctx['vb']
 
     if vbox is not None:
@@ -2077,10 +2075,11 @@ def interpret(ctx):
     home = getHomeFolder(ctx)
     checkUserExtensions(ctx, commands, home)
 
+    hist_file=os.path.join(home, ".vboxshell_history")
     autoCompletion(commands, ctx)
-
-    if g_hasreadline and os.path.exists(HISTORY_FILENAME):
-        readline.read_history_file(HISTORY_FILENAME)
+    
+    if g_hasreadline and os.path.exists(hist_file):
+        readline.read_history_file(hist_file)
 
     # to allow to print actual host information, we collect info for
     # last 150 secs maximum, (sample every 10 secs and keep up to 15 samples)
@@ -2112,7 +2111,7 @@ def interpret(ctx):
     except:
         pass
     if g_hasreadline:
-        readline.write_history_file(HISTORY_FILENAME)
+        readline.write_history_file(hist_file)
 
 def runCommandCb(ctx, cmd, args):
     args.insert(0, cmd)
