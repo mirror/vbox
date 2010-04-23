@@ -224,8 +224,14 @@ def progressBar(ctx,p,wait=1000):
             sys.stdout.flush()
             p.waitForCompletion(wait)
             ctx['global'].waitForEvents(0)
+        return 0
     except KeyboardInterrupt:
         print "Interrupted."
+        if p.cancelable:
+            print "Canceling task..."
+            p.cancel()
+        return 1
+        
 
 
 def reportError(ctx,session,rc):
@@ -438,6 +444,21 @@ def mountIso(ctx,machine,session,args):
     machine.mountMedium(args[0], args[1], args[2], args[3], args[4])
     machine.saveSettings()
 
+def cond(c,v1,v2):
+    if c:
+        return v1
+    else:
+        return v2
+
+def printHostUsbDev(ctx,ud):
+    print "  %s: %s (vendorId=%d productId=%d serial=%s) %s" %(ud.id, ud.product, ud.vendorId, ud.productId, ud.serialNumber,getUSBStateString(ud.state))
+
+def printUsbDev(ctx,ud):
+    print "  %s: %s (vendorId=%d productId=%d serial=%s)" %(ud.id, ud.product, ud.vendorId, ud.productId, ud.serialNumber)
+
+def printSf(ctx,sf):
+    print "name=%s host=%s %s %s" %(sf.name, sf.hostPath, cond(sf.accessible, "accessible", "not accessible"), cond(sf.writable, "writable", "read-only"))
+
 def ginfo(ctx,console, args):
     guest = console.guest
     if guest.additionsActive:
@@ -449,6 +470,18 @@ def ginfo(ctx,console, args):
         print "Statistic update interval: %d" %(guest.statisticsUpdateInterval)
     else:
         print "No additions"
+    usbs = ctx['global'].getArray(console, 'USBDevices')
+    print "Attached USB:"
+    for ud in usbs:
+         printUsbDev(ctx,ud)
+    rusbs = ctx['global'].getArray(console, 'remoteUSBDevices')
+    print "Remote USB:"
+    for ud in rusbs:
+        printHostUsbDev(ctx,ud)
+    print "Transient shared folders:"
+    sfs =  rusbs = ctx['global'].getArray(console, 'sharedFolders')
+    for sf in sfs:
+        printSf(ctx,sf)
 
 def cmdExistingVm(ctx,mach,cmd,args):
     mgr=ctx['mgr']
@@ -486,7 +519,7 @@ def cmdExistingVm(ctx,mach,cmd,args):
          'gueststats':      lambda: guestStats(ctx, console, args),
          'plugcpu':         lambda: plugCpu(ctx, session.machine, session, args),
          'unplugcpu':       lambda: unplugCpu(ctx, session.machine, session, args),
-         'mountiso':        lambda: mountIso(ctx, session.machine, session, args)
+         'mountiso':        lambda: mountIso(ctx, session.machine, session, args),
          }
     try:
         ops[cmd]()
@@ -1031,7 +1064,7 @@ def hostCmd(ctx, args):
 
    print "USB devices:"
    for ud in ctx['global'].getArray(host, 'USBDevices'):
-       print "  %s (vendorId=%d productId=%d serial=%s) %s" %(ud.product, ud.vendorId, ud.productId, ud.serialNumber, getUSBStateString(ud.state))
+       printUsbHostDev(ctx,ud)
 
    if ctx['perf']:
      for metric in ctx['perf'].query(["*"], [host]):
@@ -1268,7 +1301,8 @@ def exportVMCmd(ctx, args):
     desc.addDescription(ctx['global'].constants.VirtualSystemDescriptionType_License, license, "")
     p = app.write(format, path)
     progressBar(ctx, p)
-    print "Exported to %s in format %s" %(path, format)
+    if (p.completed and int(p.resultCode) == 0):
+        print "Exported to %s in format %s" %(path, format)
     return 0
 
 # PC XT scancodes
@@ -1499,6 +1533,17 @@ def listMediumsCmd(ctx,args):
        if floppy.state != ctx['global'].constants.MediumState_Created:
            floppy.refreshState()
        print "   %s (%s)%s %dM" %(floppy.location, floppy.format,optId(verbose,hdd.id), asSize(hdd.size, True))
+
+   return 0
+
+def listUsbCmd(ctx,args):
+   if (len(args) > 1):
+      print "usage: listUsb"
+      return 0
+
+   host = ctx['vb'].host
+   for ud in ctx['global'].getArray(host, 'USBDevices'):
+       printHostUsbDev(ctx,ud)
 
    return 0
 
@@ -1811,6 +1856,35 @@ def detachCtrCmd(ctx,args):
    cmdClosedVm(ctx, mach, lambda ctx,mach,args: mach.removeStorageController(ctr))
    return 0
 
+def usbctr(ctx,mach,console,args):
+    if (args[0]):
+        console.attachUSBDevice(args[1])
+    else:
+        console.detachUSBDevice(args[1])
+
+def attachUsbCmd(ctx,args):
+   if (len(args) < 3):
+      print "usage: attachUsb vm deviceuid"
+      return 0
+
+   mach = argsToMach(ctx,args)
+   if mach is None:
+        return 0
+   dev = args[2]
+   cmdExistingVm(ctx, mach, 'guestlambda', [usbctr,True,dev])
+   return 0
+
+def detachUsbCmd(ctx,args):
+   if (len(args) < 3):
+      print "usage: detachUsb vm deviceuid"
+      return 0
+
+   mach = argsToMach(ctx,args)
+   if mach is None:
+        return 0
+   dev = args[2]
+   cmdExistingVm(ctx, mach, 'guestlambda', [usbctr,False,dev])
+   return 0
 
 aliases = {'s':'start',
            'i':'info',
@@ -1876,7 +1950,10 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'unmountIso': ['Unmount CD/DVD from running VM: unmountIso win "IDE Controller" 0:1', unmountIsoCmd, 0],
             'attachCtr': ['Attach storage controller to the VM: attachCtr win Ctr0 IDE ICH6', attachCtrCmd, 0],
             'detachCtr': ['Detach HDD from the VM: detachCtr win Ctr0', detachCtrCmd, 0],
-            'listMediums': ['List mediums known to this VBox instance', listMediumsCmd, 0]
+            'attachUsb': ['Attach USB device to the VM (use listUsb to show available devices): attachUsb win uuid', attachUsbCmd, 0],
+            'detachUsb': ['Detach USB device from the VM: detachUsb win uui', detachUsbCmd, 0],
+            'listMediums': ['List mediums known to this VBox instance', listMediumsCmd, 0],
+            'listUsb': ['List known USB devices', listUsbCmd, 0]
             }
 
 def runCommandArgs(ctx, args):
