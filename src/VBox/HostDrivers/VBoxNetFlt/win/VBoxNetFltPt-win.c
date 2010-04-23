@@ -995,7 +995,7 @@ static bool vboxNetFltWinPtTransferDataCompleteActive(IN PADAPT pAdapt,
                 NdisQueryPacket(pPacket, NULL, NULL, &pBuffer, NULL);
                 NdisQueryBufferSafe(pBuffer, &pVA, &cbLength, NormalPagePriority);
 
-                fFlags = MACS_EQUAL(((PRTNETETHERHDR)pVA)->SrcMac, pNetFltIf->u.s.Mac) ?
+                fFlags = MACS_EQUAL(((PRTNETETHERHDR)pVA)->SrcMac, pNetFltIf->u.s.MacAddr) ?
                                                 PACKET_MINE | PACKET_SRC_HOST : PACKET_MINE;
                 SET_FLAGS_TO_INFO(pInfo, fFlags);
 
@@ -1380,7 +1380,7 @@ vboxNetFltWinPtReceiveActive(
                 /* enqueue SG */
 #ifdef VBOX_NETFLT_ONDEMAND_BIND
                 {
-                    uint32_t fFlags = MACS_EQUAL(((PRTNETETHERHDR)pRcvData)->SrcMac, pNetFlt->u.s.Mac) ?
+                    uint32_t fFlags = MACS_EQUAL(((PRTNETETHERHDR)pRcvData)->SrcMac, pNetFlt->u.s.MacAddr) ?
                             PACKET_SG | PACKET_MINE | PACKET_SRC_HOST : PACKET_SG | PACKET_MINE;
                     Status = vboxNetFltWinQuEnqueuePacket(pNetFlt, pSG, fFlags);
                 }
@@ -1571,7 +1571,7 @@ vboxNetFltWinPtReceive(
 //                    break;
                 }
 
-                fFlags = MACS_EQUAL(((PRTNETETHERHDR)pHeaderBuffer)->SrcMac, pNetFltIf->u.s.Mac) ?
+                fFlags = MACS_EQUAL(((PRTNETETHERHDR)pHeaderBuffer)->SrcMac, pNetFltIf->u.s.MacAddr) ?
                         PACKET_COPY | PACKET_SRC_HOST : PACKET_COPY;
                 Status = vboxNetFltWinQuEnqueuePacket(pNetFltIf, pPacket, fFlags);
                 if(Status == NDIS_STATUS_SUCCESS)
@@ -1911,7 +1911,7 @@ vboxNetFltWinPtReceivePacket(
                 break;
             }
 
-            fFlags = MACS_EQUAL(((PRTNETETHERHDR)pVA)->SrcMac, pNetFltIf->u.s.Mac) ? PACKET_SRC_HOST : 0;
+            fFlags = MACS_EQUAL(((PRTNETETHERHDR)pVA)->SrcMac, pNetFltIf->u.s.MacAddr) ? PACKET_SRC_HOST : 0;
 
             Status = vboxNetFltWinQuEnqueuePacket(pNetFltIf, pPacket, bResources ? fFlags | PACKET_COPY : fFlags);
             if(Status == NDIS_STATUS_SUCCESS)
