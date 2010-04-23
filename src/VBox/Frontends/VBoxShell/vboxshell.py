@@ -224,20 +224,16 @@ def progressBar(ctx,p,wait=1000):
             sys.stdout.flush()
             p.waitForCompletion(wait)
             ctx['global'].waitForEvents(0)
-        return 0
+        return 1
     except KeyboardInterrupt:
         print "Interrupted."
         if p.cancelable:
             print "Canceling task..."
             p.cancel()
-        return 1
-        
+        return 0
 
-
-def reportError(ctx,session,rc):
-    if not ctx['remote']:
-            print session.QueryErrorObject(rc)
-
+def reportError(ctx,progress):
+    print progress.errorInfo
 
 def createVm(ctx,name,kind,base):
     mgr = ctx['mgr']
@@ -268,11 +264,7 @@ def startVm(ctx,mach,type):
     session = mgr.getSessionObject(vb)
     uuid = mach.id
     progress = vb.openRemoteSession(session, uuid, type, "")
-    progressBar(ctx, progress, 100)
-    completed = progress.completed
-    rc = int(progress.resultCode)
-    print "Completed:", completed, "rc:",hex(rc&0xffffffff)
-    if rc == 0:
+    if progressBar(ctx, progress, 100) and int(progress.resultCode) == 0:
         # we ignore exceptions to allow starting VM even if
         # perf collector cannot be started
         if perf:
@@ -285,7 +277,7 @@ def startVm(ctx,mach,type):
          # if session not opened, close doesn't make sense
         session.close()
     else:
-       reportError(ctx,session,rc)
+       reportError(ctx,progress)
 
 def getMachines(ctx, invalidate = False):
     if ctx['vb'] is not None:
@@ -397,13 +389,10 @@ def teleport(ctx,session,console,args):
     port = int(port)
     print "Teleporting to %s:%d..." %(host,port)
     progress = console.teleport(host, port, passwd, maxDowntime)
-    progressBar(ctx, progress, 100)
-    completed = progress.completed
-    rc = int(progress.resultCode)
-    if rc == 0:
+    if progressBar(ctx, progress, 100) and int(progress.resultCode) == 0:
         print "Success!"
     else:
-        reportError(ctx,session,rc)
+        reportError(ctx,progress)
 
 
 def guestStats(ctx,console,args):
@@ -757,7 +746,10 @@ def execInGuest(ctx,console,args):
     tmo = 0
     print "executing %s with %s" %(args[0], args[1:])
     (progress, pid) = console.guest.executeProcess(args[0], 0, args[1:], [], "", "", "", user, passwd, tmo)
-    print "executed with pid %d" %(pid)
+    if progressBar(ctx,progress, 10):
+        print "executed with pid %d" %(pid)
+    else:
+        reportError(ctx, progress)
 
 def gexecCmd(ctx,args):
     if (len(args) < 2):
@@ -1300,9 +1292,10 @@ def exportVMCmd(ctx, args):
     desc = mach.export(app)
     desc.addDescription(ctx['global'].constants.VirtualSystemDescriptionType_License, license, "")
     p = app.write(format, path)
-    progressBar(ctx, p)
-    if (p.completed and int(p.resultCode) == 0):
+    if (progressBar(ctx, p) and int(p.resultCode) == 0):
         print "Exported to %s in format %s" %(path, format)
+    else:
+        reportError(ctx,p)
     return 0
 
 # PC XT scancodes
@@ -1561,13 +1554,12 @@ def createHddCmd(ctx,args):
 
    hdd = ctx['vb'].createHardDisk(format, loc)
    progress = hdd.createBaseStorage(size, ctx['global'].constants.MediumVariant_Standard)
-   ctx['progressBar'](progress)
-
-   if not hdd.id:
+   if progressBar(ctx,progress) and hdd.id:
+       print "created HDD at %s as %s" %(hdd.location, hdd.id)
+   else:
       print "cannot create disk (file %s exist?)" %(loc)
+      reportError(ctx,progress)
       return 0
-
-   print "created HDD at %s as %s" %(hdd.location, hdd.id)
 
    return 0
 
@@ -1683,7 +1675,7 @@ def removeHddCmd(ctx,args):
       return 0
 
    progress = hdd.deleteStorage()
-   ctx['progressBar'](progress)
+   progressBar(ctx,progress)
 
    return 0
 
@@ -1730,9 +1722,10 @@ def removeIsoCmd(ctx,args):
       return 0
 
    progress = dvd.deleteStorage()
-   ctx['progressBar'](progress)
-   print "Removed ISO at %s" %(dvd.location)
-
+   if progressBar(ctx,progress):
+       print "Removed ISO at %s" %(dvd.location)
+   else:
+       reportError(ctx,progress)
    return 0
 
 def attachIsoCmd(ctx,args):
