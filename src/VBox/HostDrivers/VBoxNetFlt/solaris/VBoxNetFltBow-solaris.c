@@ -593,6 +593,17 @@ static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg)
 
 
 /**
+ * Helper.
+ */
+DECLINLINE(bool) vboxNetFltPortSolarisIsHostMac(PVBOXNETFLTINS pThis, PCRTMAC pMac)
+{
+    return pThis->u.s.MacAddr.au16[0] == pMac->au16[0]
+        && pThis->u.s.MacAddr.au16[1] == pMac->au16[1]
+        && pThis->u.s.MacAddr.au16[2] == pMac->au16[2];
+}
+
+
+/**
  * Receive (rx) entry point.
  *
  * @param   pvData          Private data.
@@ -623,7 +634,7 @@ LOCAL void vboxNetFltSolarisRecv(void *pvData, mac_resource_handle_t hResource, 
     uint32_t fSrc = INTNETTRUNKDIR_WIRE;
     PRTNETETHERHDR pEthHdr = (PRTNETETHERHDR)pMsg->b_rptr;
     if (   MBLKL(pMsg) >= sizeof(RTNETETHERHDR)
-        && vboxNetFltPortOsIsHostMac(pThis, &pEthHdr->SrcMac))
+        && vboxNetFltPortSolarisIsHostMac(pThis, &pEthHdr->SrcMac))
         fSrc = INTNETTRUNKDIR_HOST;
 
     /*
@@ -797,10 +808,10 @@ LOCAL int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
                      * Obtain the MAC address of the interface.
                      */
                     AssertCompile(sizeof(RTMAC) == ETHERADDRL);
-                    mac_unicast_primary_get(pThis->u.s.hInterface, (uint8_t *)&pThis->u.s.Mac.au8);
+                    mac_unicast_primary_get(pThis->u.s.hInterface, (uint8_t *)&pThis->u.s.MacAddr.au8);
 
                     LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface MAC address of %s is %.*Rhxs\n", pThis->szName,
-                                    sizeof(pThis->u.s.Mac), &pThis->u.s.Mac));
+                             sizeof(pThis->u.s.MacAddr), &pThis->u.s.MacAddr));
 
                     /** @todo Obtain the MTU size using mac_sdu_get() */
                     /** @todo Obtain capabilities (hardware checksum etc.) using mac_capab_get() */
@@ -829,12 +840,21 @@ LOCAL int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
                                             &pThis->u.s.hUnicast, 0 /* VLAN id */, &MacDiag);
                         if (!rc)
                         {
+                            /*
+                             * Report MAC address, promiscuous mode and capabilities.
+                             */
+                            Assert(pThis->pSwitchPort);
+                            pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
+                            pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, false); /** @todo Promisc */
+                            pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0, INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
+
+
                             LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface successfully attached over '%s'\n", pThis->szName));
                             return VINF_SUCCESS;
                         }
-                        else
-                            LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface failed to set client MAC address over link '%s' rc=%d\n",
-                                    pThis->szName, rc));
+
+                        LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface failed to set client MAC address over link '%s' rc=%d\n",
+                                pThis->szName, rc));
 
                         mac_client_close(pThis->u.s.hClient, 0 /* fFlags */);
                         pThis->u.s.hClient = NULL;
@@ -927,28 +947,6 @@ LOCAL int vboxNetFltSolarisDetachFromInterface(PVBOXNETFLTINS pThis)
 
 
 /* -=-=-=-=-=- Common Hooks -=-=-=-=-=- */
-bool vboxNetFltPortOsIsPromiscuous(PVBOXNETFLTINS pThis)
-{
-    LogFlow((DEVICE_NAME ":vboxNetFltPortOsIsPromiscuous pThis=%p\n", pThis));
-    return false;
-}
-
-
-void vboxNetFltPortOsGetMacAddress(PVBOXNETFLTINS pThis, PRTMAC pMac)
-{
-    LogFlow((DEVICE_NAME ":vboxNetFltPortOsGetMacAddress pThis=%p\n", pThis));
-    *pMac = pThis->u.s.Mac;
-    return;
-}
-
-
-bool vboxNetFltPortOsIsHostMac(PVBOXNETFLTINS pThis, PCRTMAC pMac)
-{
-    /** @todo What happens when the MAC address of the underlying NIC changes?? */
-    return pThis->u.s.Mac.au16[0] == pMac->au16[0]
-        && pThis->u.s.Mac.au16[1] == pMac->au16[1]
-        && pThis->u.s.Mac.au16[2] == pMac->au16[2];
-}
 
 
 void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
@@ -1022,7 +1020,7 @@ int vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
     pThis->u.s.hClient = NULL;
     pThis->u.s.hUnicast = NULL;
     pThis->u.s.hPromiscuous = NULL;
-    bzero(&pThis->u.s.Mac, sizeof(pThis->u.s.Mac));
+    bzero(&pThis->u.s.MacAddr, sizeof(pThis->u.s.MacAddr));
     return VINF_SUCCESS;
 }
 

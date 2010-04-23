@@ -1055,9 +1055,9 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                                         break;
                                     }
 
-                                    bcopy(pMsg->b_rptr + cOffset, &pThis->u.s.Mac, sizeof(pThis->u.s.Mac));
+                                    bcopy(pMsg->b_rptr + cOffset, &pThis->u.s.MacAddr, sizeof(pThis->u.s.MacAddr));
                                     LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: DL_NOTE_PHYS_ADDR. New Mac=%.*Rhxs\n",
-                                        sizeof(pThis->u.s.Mac), &pThis->u.s.Mac));
+                                             sizeof(pThis->u.s.MacAddr), &pThis->u.s.MacAddr));
                                     break;
                                 }
 
@@ -1380,12 +1380,18 @@ static void vboxNetFltSolarisCachePhysAddr(PVBOXNETFLTINS pThis, mblk_t *pMsg)
 
     AssertCompile(sizeof(RTMAC) == ETHERADDRL);
     dl_phys_addr_ack_t *pPhysAddrAck = (dl_phys_addr_ack_t *)pMsg->b_rptr;
-    if (pPhysAddrAck->dl_addr_length == sizeof(pThis->u.s.Mac))
+    if (pPhysAddrAck->dl_addr_length == sizeof(pThis->u.s.MacAddr))
     {
-        bcopy(pMsg->b_rptr + pPhysAddrAck->dl_addr_offset, &pThis->u.s.Mac, sizeof(pThis->u.s.Mac));
+        bcopy(pMsg->b_rptr + pPhysAddrAck->dl_addr_offset, &pThis->u.s.MacAddr, sizeof(pThis->u.s.MacAddr));
 
-        LogFlow((DEVICE_NAME ":vboxNetFltSolarisCachePhysAddr: DL_PHYS_ADDR_ACK: Mac=%.*Rhxs\n", sizeof(pThis->u.s.Mac),
-                    &pThis->u.s.Mac));
+        LogFlow((DEVICE_NAME ":vboxNetFltSolarisCachePhysAddr: DL_PHYS_ADDR_ACK: Mac=%.*Rhxs\n",
+                 sizeof(pThis->u.s.MacAddr), &pThis->u.s.Mac));
+
+        vboxNetFltRetain(pThis, true /*fBusy*/);
+        Assert(pThis->pSwitchPort);
+        if (pThis->pSwitchPort)
+            pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
+        vboxNetFltRelease(pThis, true /*fBusy*/);
     }
     else
     {
@@ -2606,9 +2612,19 @@ static int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis)
 #endif
 
             /*
+             * Report promiscuousness and capabilities.
+             */
+            Assert(pThis->pSwitchPort);
+            /** @todo There is no easy way of obtaining the global host side promiscuous
+             * counter. Currently we just return false.  */
+            pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, false);
+            pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0,  INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
+
+            /*
              * Ipv4 is successful, and maybe Ipv6, we're ready for transfers.
              */
             ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, false);
+
             return VINF_SUCCESS;
         }
 
@@ -2843,7 +2859,7 @@ static int vboxNetFltSolarisUnitDataToRaw(PVBOXNETFLTINS pThis, mblk_t *pMsg, mb
             dl_unitdata_req_t *pDlpiMsg = (dl_unitdata_req_t *)pMsg->b_rptr;
 
             bcopy(pMsg->b_rptr + pDlpiMsg->dl_dest_addr_offset, &EthHdr.DstMac, sizeof(EthHdr.DstMac));
-            bcopy(&pThis->u.s.Mac, &EthHdr.SrcMac, sizeof(EthHdr.SrcMac));
+            bcopy(&pThis->u.s.MacAddr, &EthHdr.SrcMac, sizeof(EthHdr.SrcMac));
 
             vboxnetflt_dladdr_t *pDLSapAddr = (vboxnetflt_dladdr_t *)(pMsg->b_rptr + pDlpiMsg->dl_dest_addr_offset);
             EthHdr.EtherType = RT_H2BE_U16(pDLSapAddr->SAP);
@@ -3126,6 +3142,21 @@ static bool vboxNetFltSolarisIsOurMBlk(PVBOXNETFLTINS pThis, vboxnetflt_promisc_
 
 
 /**
+ * Helper.
+ */
+DECLINLINE(bool) vboxNetFltPortSolarisIsHostMac(PVBOXNETFLTINS pThis, PCRTMAC pMac)
+{
+    /*
+     * MAC address change acknowledgements are intercepted on the read side
+     * hence theoritically we are always update to date with any changes.
+     */
+    return pThis->u.s.MacAddr.au16[0] == pMac->au16[0]
+        && pThis->u.s.MacAddr.au16[1] == pMac->au16[1]
+        && pThis->u.s.MacAddr.au16[2] == pMac->au16[2];
+}
+
+
+/**
  * Worker for routing messages from the wire or from the host.
  *
  * @returns VBox status code.
@@ -3187,7 +3218,7 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
      */
     uint32_t fSrc = INTNETTRUNKDIR_WIRE;
     PRTNETETHERHDR pEthHdr = (PRTNETETHERHDR)pMsg->b_rptr;
-    if (vboxNetFltPortOsIsHostMac(pThis, &pEthHdr->SrcMac))
+    if (vboxNetFltPortSolarisIsHostMac(pThis, &pEthHdr->SrcMac))
         fSrc = INTNETTRUNKDIR_HOST;
 
     /*
@@ -3430,33 +3461,7 @@ static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg)
 
 
 /* -=-=-=-=-=- Common Hooks -=-=-=-=-=- */
-bool vboxNetFltPortOsIsPromiscuous(PVBOXNETFLTINS pThis)
-{
-    /*
-     * There is no easy way of obtaining the global host side promiscuous counter.
-     * Currently we just return false.
-     */
-    return false;
-}
 
-
-void vboxNetFltPortOsGetMacAddress(PVBOXNETFLTINS pThis, PRTMAC pMac)
-{
-    LogFlowFunc((DEVICE_NAME ":vboxNetFltPortOsGetMacAddress pThis=%p\n", pThis));
-    *pMac = pThis->u.s.Mac;
-}
-
-
-bool vboxNetFltPortOsIsHostMac(PVBOXNETFLTINS pThis, PCRTMAC pMac)
-{
-    /*
-     * MAC address change acknowledgements are intercepted on the read side
-     * hence theoritically we are always update to date with any changes.
-     */
-    return pThis->u.s.Mac.au16[0] == pMac->au16[0]
-        && pThis->u.s.Mac.au16[1] == pMac->au16[1]
-        && pThis->u.s.Mac.au16[2] == pMac->au16[2];
-}
 
 
 void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
@@ -3575,7 +3580,7 @@ int vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
 #ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
     pThis->u.s.hPollMtx = NIL_RTSEMFASTMUTEX;
 #endif
-    bzero(&pThis->u.s.Mac, sizeof(pThis->u.s.Mac));
+    bzero(&pThis->u.s.MacAddr, sizeof(pThis->u.s.MacAddr));
     return VINF_SUCCESS;
 }
 

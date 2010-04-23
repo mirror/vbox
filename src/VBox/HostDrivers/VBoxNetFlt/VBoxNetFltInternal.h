@@ -130,6 +130,7 @@ typedef struct VBOXNETFLTINS
     /** The event that is signaled when we go idle and that pfnWaitForIdle blocks on. */
     RTSEMEVENT hEventIdle;
 
+    /** @todo move MacAddr out of this structure!  */
     union
     {
 #ifdef VBOXNETFLT_OS_SPECFIC
@@ -152,7 +153,7 @@ typedef struct VBOXNETFLTINS
              * This is for dealing with the ENETDOWN case. */
             bool volatile fSetPromiscuous;
             /** The MAC address of the interface. */
-            RTMAC Mac;
+            RTMAC MacAddr;
             /** @} */
 # elif defined(RT_OS_LINUX)
             /** @name Linux instance data
@@ -165,7 +166,7 @@ typedef struct VBOXNETFLTINS
             /** Whether device exists and physically attached. */
             bool volatile fRegistered;
             /** The MAC address of the interface. */
-            RTMAC Mac;
+            RTMAC MacAddr;
             struct notifier_block Notifier;
             struct packet_type    PacketType;
             struct sk_buff_head   XmitQueue;
@@ -190,7 +191,7 @@ typedef struct VBOXNETFLTINS
             /** The promiscuous handle */
             mac_promisc_handle_t hPromiscuous;
             /** The MAC address of the interface */
-            RTMAC Mac;
+            RTMAC MacAddr;
 #  else
             /** Pointer to the bound IPv4 stream. */
             void volatile *pvIp4Stream;
@@ -205,7 +206,7 @@ typedef struct VBOXNETFLTINS
             /** Layered device handle to the interface. */
             ldi_handle_t hIface;
             /** The MAC address of the interface. */
-            RTMAC Mac;
+            RTMAC MacAddr;
             /** Mutex protection used for loopback. */
             RTSEMFASTMUTEX hFastMtx;
             /** Mutex protection used for dynamic IPv6 attaches. */
@@ -234,7 +235,7 @@ typedef struct VBOXNETFLTINS
             /** Output task */
             struct task tskout;
             /** The MAC address of the interface. */
-            RTMAC Mac;
+            RTMAC MacAddr;
             /** @} */
 # elif defined(RT_OS_WINDOWS)
             /** @name Windows instance data.
@@ -248,7 +249,7 @@ typedef struct VBOXNETFLTINS
             /** Packet worker thread info */
             PACKET_QUEUE_WORKER PacketQueueWorker;
             /** The MAC address of the interface. Caching MAC for performance reasons. */
-            RTMAC Mac;
+            RTMAC MacAddr;
             /** mutex used to synchronize ADAPT init/deinit */
             RTSEMMUTEX hAdaptMutex;
             /** @}  */
@@ -360,49 +361,6 @@ DECLHIDDEN(bool) vboxNetFltOsMaybeRediscovered(PVBOXNETFLTINS pThis);
 DECLHIDDEN(int) vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst);
 
 /**
- * Checks if the interface is in promiscuous mode from the host perspective.
- *
- * If it is, then the internal networking switch will send frames
- * heading for the wire to the host as well.
- *
- * @see INTNETTRUNKIFPORT::pfnIsPromiscuous for more details.
- *
- * @returns true / false accordingly.
- * @param   pThis           The instance.
- *
- * @remarks Owns the network lock and the out-bound trunk port semaphores.
- */
-DECLHIDDEN(bool) vboxNetFltPortOsIsPromiscuous(PVBOXNETFLTINS pThis);
-
-/**
- * Get the MAC address of the interface we're attached to.
- *
- * Used by the internal networking switch for implementing the
- * shared-MAC-on-the-wire mode.
- *
- * @param   pThis           The instance.
- * @param   pMac            Where to store the MAC address.
- *                          If you don't know, set all the bits except the first (the multicast one).
- *
- * @remarks Owns the network lock and the out-bound trunk port semaphores.
- */
-DECLHIDDEN(void) vboxNetFltPortOsGetMacAddress(PVBOXNETFLTINS pThis, PRTMAC pMac);
-
-/**
- * Checks if the specified MAC address is for any of the host interfaces.
- *
- * Used by the internal networking switch to decide the destination(s)
- * of a frame.
- *
- * @returns true / false accordingly.
- * @param   pThis           The instance.
- * @param   pMac            The MAC address.
- *
- * @remarks Owns the network lock and the out-bound trunk port semaphores.
- */
-DECLHIDDEN(bool) vboxNetFltPortOsIsHostMac(PVBOXNETFLTINS pThis, PCRTMAC pMac);
-
-/**
  * This is called when activating or suspending the instance.
  *
  * Use this method to enable and disable promiscuous mode on
@@ -449,6 +407,9 @@ DECLHIDDEN(void) vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis);
 /**
  * This is called to attach to the actual host interface
  * after linking the instance into the list.
+ *
+ * The MAC address as well promiscuousness and GSO capabilities should be
+ * reported by this function.
  *
  * @return  IPRT status code.
  * @param   pThis           The new instance.

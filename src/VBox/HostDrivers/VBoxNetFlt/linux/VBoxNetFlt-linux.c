@@ -1280,6 +1280,24 @@ static void vboxNetFltLinuxReportNicGsoCapabilities(PVBOXNETFLTINS pThis)
 }
 
 /**
+ * Helper that determins whether the host (ignoreing us) is operating the
+ * interface in promiscuous mode or not.
+ */
+static bool vboxNetFltLinuxPromiscuous(PVBOXNETFLTINS pThis)
+{
+    bool                fRc  = false;
+    struct net_device * pDev = vboxNetFltLinuxRetainNetDev(pThis);
+    if (pDev)
+    {
+        fRc = !!(pDev->promiscuity - (ASMAtomicUoReadBool(&pThis->u.s.fPromiscuousSet) & 1));
+        LogFlow(("vboxNetFltPortOsIsPromiscuous: returns %d, pDev->promiscuity=%d, fPromiscuousSet=%d\n",
+                 fRc, pDev->promiscuity, pThis->u.s.fPromiscuousSet));
+        vboxNetFltLinuxReleaseNetDev(pThis, pDev);
+    }
+    return fRc;
+}
+
+/**
  * Internal worker for vboxNetFltLinuxNotifierCallback.
  *
  * @returns VBox status code.
@@ -1305,7 +1323,7 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
     Log(("vboxNetFltLinuxAttachToInterface: Got pDev=%p pThis=%p pThis->u.s.pDev=%p\n", pDev, pThis, ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev)));
 
     /* Get the mac address while we still have a valid net_device reference. */
-    memcpy(&pThis->u.s.Mac, pDev->dev_addr, sizeof(pThis->u.s.Mac));
+    memcpy(&pThis->u.s.MacAddr, pDev->dev_addr, sizeof(pThis->u.s.MacAddr));
 
     /*
      * Install a packet filter for this device with a protocol wildcard (ETH_P_ALL).
@@ -1339,7 +1357,12 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
      * release the device.
      */
     if (!pDev)
+    {
+        Assert(pThis->pSwitchPort);
         vboxNetFltLinuxReportNicGsoCapabilities(pThis);
+        pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
+        pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, vboxNetFltLinuxPromiscuous(pThis));
+    }
     else
     {
 #ifdef VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT
@@ -1352,7 +1375,7 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
         Log(("vboxNetFltLinuxAttachToInterface: Device %p(%s) released. ref=%d\n", pDev, pDev->name, atomic_read(&pDev->refcnt)));
     }
 
-    LogRel(("VBoxNetFlt: attached to '%s' / %.*Rhxs\n", pThis->szName, sizeof(pThis->u.s.Mac), &pThis->u.s.Mac));
+    LogRel(("VBoxNetFlt: attached to '%s' / %.*Rhxs\n", pThis->szName, sizeof(pThis->u.s.MacAddr), &pThis->u.s.MacAddr));
     return VINF_SUCCESS;
 }
 
@@ -1551,36 +1574,6 @@ int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
     }
 
     return rc;
-}
-
-
-bool vboxNetFltPortOsIsPromiscuous(PVBOXNETFLTINS pThis)
-{
-    bool fRc = false;
-    struct net_device * pDev = vboxNetFltLinuxRetainNetDev(pThis);
-    if (pDev)
-    {
-        fRc = !!(pDev->promiscuity - (ASMAtomicUoReadBool(&pThis->u.s.fPromiscuousSet) & 1));
-        LogFlow(("vboxNetFltPortOsIsPromiscuous: returns %d, pDev->promiscuity=%d, fPromiscuousSet=%d\n",
-                 fRc, pDev->promiscuity, pThis->u.s.fPromiscuousSet));
-        vboxNetFltLinuxReleaseNetDev(pThis, pDev);
-    }
-    return fRc;
-}
-
-
-void vboxNetFltPortOsGetMacAddress(PVBOXNETFLTINS pThis, PRTMAC pMac)
-{
-    *pMac = pThis->u.s.Mac;
-}
-
-
-bool vboxNetFltPortOsIsHostMac(PVBOXNETFLTINS pThis, PCRTMAC pMac)
-{
-    /* ASSUMES that the MAC address never changes. */
-    return pThis->u.s.Mac.au16[0] == pMac->au16[0]
-        && pThis->u.s.Mac.au16[1] == pMac->au16[1]
-        && pThis->u.s.Mac.au16[2] == pMac->au16[2];
 }
 
 

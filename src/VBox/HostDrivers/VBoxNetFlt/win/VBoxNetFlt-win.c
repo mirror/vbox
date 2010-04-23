@@ -1489,6 +1489,9 @@ DECLHIDDEN(bool) vboxNetFltWinIsPromiscuous(PADAPT pAdapt)
 
 DECLHIDDEN(NDIS_STATUS) vboxNetFltWinSetPromiscuous(PADAPT pAdapt, bool bYes)
 {
+/** @todo Need to report changes to the switch via:
+ *  pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, fPromisc);
+ */
     Assert(VBOXNETFLT_PROMISCUOUS_SUPPORTED(pAdapt));
     if(VBOXNETFLT_PROMISCUOUS_SUPPORTED(pAdapt))
     {
@@ -3151,6 +3154,35 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinDetachFromInterface(PADAPT pAdapt, bool bOn
     return Status;
 }
 
+
+/**
+ * Checks if the host (not us) has put the adapter in promiscuous mode.
+ *
+ * @returns true if promiscuous, false if not.
+ * @param   pThis               The instance.
+ */
+static bool vboxNetFltWinIsPromiscuous2(PVBOXNETFLTINS pThis)
+{
+#ifndef VBOXNETADP
+    PADAPT pAdapt = PVBOXNETFLTINS_2_PADAPT(pThis);
+    if(VBOXNETFLT_PROMISCUOUS_SUPPORTED(pAdapt))
+    {
+        bool bPromiscuous;
+        if(!vboxNetFltWinReferenceAdapt(pAdapt))
+            return false;
+
+        bPromiscuous = (pAdapt->fUpperProtocolSetFilter & NDIS_PACKET_TYPE_PROMISCUOUS) == NDIS_PACKET_TYPE_PROMISCUOUS;
+            /*vboxNetFltWinIsPromiscuous(pAdapt);*/
+
+        vboxNetFltWinDereferenceAdapt(pAdapt);
+        return bPromiscuous;
+    }
+    return false;
+#else
+    return true;
+#endif
+}
+
 /**
  * Worker for vboxNetFltWinAttachToInterface.
  *
@@ -3240,6 +3272,16 @@ static void vboxNetFltWinAttachToInterfaceWorker(PATTACH_INFO pAttachInfo)
 
                             vboxNetFltRelease(pThis, false);
 
+                            /* 5. Report MAC address, promiscuousness and GSO capabilities. */
+                            /** @todo Keep these up to date, esp. the promiscuous mode bit. */
+                            if (pThis->pSwitchPort)
+                            {
+                                pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
+                                pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort,
+                                                                             vboxNetFltWinIsPromiscuous2(pThis));
+                                pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0,
+                                                                             INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
+                            }
                             return;
                         }
                         AssertBreakpoint();
@@ -3283,7 +3325,7 @@ static void vboxNetFltWinAttachToInterfaceWorker(PATTACH_INFO pAttachInfo)
                 break;
             }
 
-            Status = vboxNetFltWinGetMacAddress(pAdapt, &pThis->u.s.Mac);
+            Status = vboxNetFltWinGetMacAddress(pAdapt, &pThis->u.s.MacAddr);
             if (Status != NDIS_STATUS_SUCCESS)
             {
                 vboxNetFltWinPtFiniUnbind(pAdapt);
@@ -3462,41 +3504,6 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
     return rc;
 }
 
-bool vboxNetFltPortOsIsPromiscuous(PVBOXNETFLTINS pThis)
-{
-#ifndef VBOXNETADP
-    PADAPT pAdapt = PVBOXNETFLTINS_2_PADAPT(pThis);
-    if(VBOXNETFLT_PROMISCUOUS_SUPPORTED(pAdapt))
-    {
-        bool bPromiscuous;
-        if(!vboxNetFltWinReferenceAdapt(pAdapt))
-            return false;
-
-        bPromiscuous = (pAdapt->fUpperProtocolSetFilter & NDIS_PACKET_TYPE_PROMISCUOUS) == NDIS_PACKET_TYPE_PROMISCUOUS;
-            /*vboxNetFltWinIsPromiscuous(pAdapt);*/
-
-        vboxNetFltWinDereferenceAdapt(pAdapt);
-        return bPromiscuous;
-    }
-    return false;
-#else
-    return true;
-#endif
-}
-
-void vboxNetFltPortOsGetMacAddress(PVBOXNETFLTINS pThis, PRTMAC pMac)
-{
-    *pMac = pThis->u.s.Mac;
-}
-
-bool vboxNetFltPortOsIsHostMac(PVBOXNETFLTINS pThis, PCRTMAC pMac)
-{
-    /* ASSUMES that the MAC address never changes. */
-    return pThis->u.s.Mac.au16[0] == pMac->au16[0]
-        && pThis->u.s.Mac.au16[1] == pMac->au16[1]
-        && pThis->u.s.Mac.au16[2] == pMac->au16[2];
-}
-
 void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
 {
 #ifndef VBOXNETADP
@@ -3632,7 +3639,7 @@ static void vboxNetFltWinConnectItWorker(PWORKER_INFO pInfo)
     if(vboxNetFltWinReferenceAdapt(pAdapt))
     {
 #ifndef VBOXNETADP
-        Status = vboxNetFltWinGetMacAddress(pAdapt, &pInstance->u.s.Mac);
+        Status = vboxNetFltWinGetMacAddress(pAdapt, &pInstance->u.s.MacAddr);
         if (Status == NDIS_STATUS_SUCCESS)
 #endif
         {
