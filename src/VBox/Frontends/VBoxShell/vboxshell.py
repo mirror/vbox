@@ -233,7 +233,9 @@ def progressBar(ctx,p,wait=1000):
         return 0
 
 def reportError(ctx,progress):
-    print progress.errorInfo
+    ei = progress.errorInfo
+    if ei:
+        print "Error in %s: %s" %(ei.component, ei.text)
 
 def createVm(ctx,name,kind,base):
     mgr = ctx['mgr']
@@ -744,10 +746,17 @@ def execInGuest(ctx,console,args):
     user = ""
     passwd = ""
     tmo = 0
-    print "executing %s with %s" %(args[0], args[1:])
-    (progress, pid) = console.guest.executeProcess(args[0], 0, args[1:], [], "", "", "", user, passwd, tmo)
-    if progressBar(ctx,progress, 10):
-        print "executed with pid %d" %(pid)
+    guest = console.guest
+    print "executing %s with args %s" %(args[0], args[1:])
+    (progress, pid) = guest.executeProcess(args[0], 0, args[1:], [], "", "", "", user, passwd, tmo)
+    print "executed with pid %d" %(pid)
+    if pid != 0:
+        while not progress.completed:
+            data = guest.getProcessOutput(pid, 0, 1, 4096)
+            if data and len(data) > 0:
+                sys.stdout.write(data)
+            progress.waitForCompletion(100)
+            ctx['global'].waitForEvents(0)
     else:
         reportError(ctx, progress)
 
@@ -762,6 +771,19 @@ def gexecCmd(ctx,args):
     gargs.insert(0, lambda ctx,mach,console,args: execInGuest(ctx,console,args))
     cmdExistingVm(ctx, mach, 'guestlambda', gargs)
     return 0
+
+def gcatCmd(ctx,args):
+    if (len(args) < 2):
+        print "usage: gcat [vmname|uuid] local_file | guestProgram, such as gcat linux /home/nike/.bashrc | sh -c 'cat >'"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    gargs = args[2:]
+    gargs.insert(0, lambda ctx,mach,console,args: execInGuest(ctx,console,args))
+    cmdExistingVm(ctx, mach, 'guestlambda', gargs)
+    return 0
+
 
 def removeVmCmd(ctx, args):
     mach = argsToMach(ctx,args)
@@ -1540,6 +1562,14 @@ def listUsbCmd(ctx,args):
 
    return 0
 
+
+def findDevOfType(ctx,mach,type):
+    atts = ctx['global'].getArray(mach, 'mediumAttachments')
+    for a in atts:
+        if a.type == type:
+            return [a.controller, a.port, a.device]
+    return [None, 0, 0]
+
 def createHddCmd(ctx,args):
    if (len(args) < 3):
       print "usage: createHdd sizeM location type"
@@ -1583,7 +1613,7 @@ def controldevice(ctx,mach,args):
     mach.attachDevice(ctr, port, slot,type,id)
 
 def attachHddCmd(ctx,args):
-   if (len(args) < 4):
+   if (len(args) < 3):
       print "usage: attachHdd vm hdd controller port:slot"
       return 0
 
@@ -1597,8 +1627,12 @@ def attachHddCmd(ctx,args):
    except:
       print "no HDD with path %s registered" %(loc)
       return 0
-   ctr = args[3]
-   (port,slot) = args[4].split(":")
+   if len(args) > 3:
+       ctr = args[3]
+       (port,slot) = args[4].split(":")
+   else:
+       [ctr, port, slot] = findDevOfType(ctx, mach, ctx['global'].constants.DeviceType_HardDisk)
+
    cmdClosedVm(ctx, mach, lambda ctx,mach,args: mach.attachDevice(ctr, port, slot, ctx['global'].constants.DeviceType_HardDisk,hdd.id))
    return 0
 
@@ -1729,7 +1763,7 @@ def removeIsoCmd(ctx,args):
    return 0
 
 def attachIsoCmd(ctx,args):
-   if (len(args) < 5):
+   if (len(args) < 3):
       print "usage: attachIso vm iso controller port:slot"
       return 0
 
@@ -1743,8 +1777,11 @@ def attachIsoCmd(ctx,args):
    except:
       print "no DVD with path %s registered" %(loc)
       return 0
-   ctr = args[3]
-   (port,slot) = args[4].split(":")
+   if len(args) > 3:
+       ctr = args[3]
+       (port,slot) = args[4].split(":")
+   else:
+       [ctr, port, slot] = findDevOfType(ctx, mach, ctx['global'].constants.DeviceType_DVD)
    cmdClosedVm(ctx, mach, lambda ctx,mach,args: mach.attachDevice(ctr, port, slot, ctx['global'].constants.DeviceType_DVD,dvd.id))
    return 0
 
@@ -1768,7 +1805,7 @@ def detachIsoCmd(ctx,args):
    return 0
 
 def mountIsoCmd(ctx,args):
-   if (len(args) < 5):
+   if (len(args) < 3):
       print "usage: mountIso vm iso controller port:slot"
       return 0
 
@@ -1783,15 +1820,19 @@ def mountIsoCmd(ctx,args):
       print "no DVD with path %s registered" %(loc)
       return 0
 
-   ctr = args[3]
-   (port,slot) = args[4].split(":")
+   if len(args) > 3:
+       ctr = args[3]
+       (port,slot) = args[4].split(":")
+   else:
+       # autodetect controller and location, just find first controller with media == DVD
+       [ctr, port, slot] = findDevOfType(ctx, mach, ctx['global'].constants.DeviceType_DVD)
 
    cmdExistingVm(ctx, mach, 'mountiso', [ctr, port, slot, dvd.id, True])
 
    return 0
 
 def unmountIsoCmd(ctx,args):
-   if (len(args) < 4):
+   if (len(args) < 2):
       print "usage: unmountIso vm controller port:slot"
       return 0
 
@@ -1800,8 +1841,12 @@ def unmountIsoCmd(ctx,args):
         return 0
    vb = ctx['vb']
 
-   ctr = args[2]
-   (port,slot) = args[3].split(":")
+   if len(args) > 2:
+       ctr = args[2]
+       (port,slot) = args[3].split(":")
+   else:
+       # autodetect controller and location, just find first controller with media == DVD
+       [ctr, port, slot] = findDevOfType(ctx, mach, ctx['global'].constants.DeviceType_DVD)
 
    cmdExistingVm(ctx, mach, 'mountiso', [ctr, port, slot, "", True])
 
