@@ -1377,7 +1377,7 @@ static INTNETSWDECISION intnetR0NetworkSwitchLevel3(PINTNETNETWORK pNetwork, PCR
         if (pTab->paEntries[iIfMac].fActive)
         {
             PINTNETIF pIf    = pTab->paEntries[iIfMac].pIf;         AssertPtr(pIf); Assert(pIf->pNetwork == pNetwork);
-            bool      fExact = intnetR0IfAddrCacheLookup(&pIf->aAddrCache[enmL3AddrType], pL3Addr, cbL3Addr);
+            bool      fExact = intnetR0IfAddrCacheLookup(&pIf->aAddrCache[enmL3AddrType], pL3Addr, cbL3Addr) >= 0;
             if (fExact || pTab->paEntries[iIfMac].fPromiscuous)
             {
                 cExactHits += fExact;
