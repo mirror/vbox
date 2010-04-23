@@ -429,7 +429,7 @@ DECLINLINE(int) intnetRingAllocateFrameInternal(PINTNETRINGBUF pRingBuf, uint32_
                 offNew = pRingBuf->offStart;
             if (RT_UNLIKELY(!ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
                 return VERR_WRONG_ORDER; /* race */
-            Log2(("INTNETRingAllocateFrame: offWriteInt: %#x -> %#x (1) (offRead=%#x)\n", offWriteInt, offNew, offRead));
+            Log2(("intnetRingAllocateFrameInternal: offWriteInt: %#x -> %#x (1) (R=%#x T=%#x S=%#x)\n", offWriteInt, offNew, offRead, u16Type, cbFrame));
 
             PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
             pHdr->u16Type  = u16Type;
@@ -450,7 +450,7 @@ DECLINLINE(int) intnetRingAllocateFrameInternal(PINTNETRINGBUF pRingBuf, uint32_
             uint32_t offNew = pRingBuf->offStart + cb;
             if (RT_UNLIKELY(!ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
                 return VERR_WRONG_ORDER; /* race */
-            Log2(("INTNETRingAllocateFrame: offWriteInt: %#x -> %#x (2) (offRead=%#x)\n", offWriteInt, offNew, offRead));
+            Log2(("intnetRingAllocateFrameInternal: offWriteInt: %#x -> %#x (2) (R=%#x T=%#x S=%#x)\n", offWriteInt, offNew, offRead, u16Type, cbFrame));
 
             PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
             pHdr->u16Type  = u16Type;
@@ -470,7 +470,7 @@ DECLINLINE(int) intnetRingAllocateFrameInternal(PINTNETRINGBUF pRingBuf, uint32_
         uint32_t offNew = offWriteInt + cb + sizeof(INTNETHDR);
         if (RT_UNLIKELY(!ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
             return VERR_WRONG_ORDER; /* race */
-        Log2(("INTNETRingAllocateFrame: offWriteInt: %#x -> %#x (3) (offRead=%#x)\n", offWriteInt, offNew, offRead));
+        Log2(("intnetRingAllocateFrameInternal: offWriteInt: %#x -> %#x (3) (R=%#x T=%#x S=%#x)\n", offWriteInt, offNew, offRead, u16Type, cbFrame));
 
         PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
         pHdr->u16Type  = u16Type;
@@ -562,7 +562,7 @@ DECLINLINE(void) INTNETRingCommitFrame(PINTNETRINGBUF pRingBuf, PINTNETHDR pHdr)
         Assert(offWriteCom == pRingBuf->offEnd);
         offWriteCom = pRingBuf->offStart;
     }
-    Log2(("INTNETRingCommitFrame:   offWriteCom: %#x -> %#x (offRead=%#x)\n", pRingBuf->offWriteCom, offWriteCom, pRingBuf->offReadX));
+    Log2(("INTNETRingCommitFrame:   offWriteCom: %#x -> %#x (R=%#x T=%#x S=%#x)\n", pRingBuf->offWriteCom, offWriteCom, pRingBuf->offReadX, pHdr->u16Type, cbFrame));
     ASMAtomicWriteU32(&pRingBuf->offWriteCom, offWriteCom);
     STAM_REL_COUNTER_ADD(&pRingBuf->cbStatWritten, cbFrame);
     STAM_REL_COUNTER_INC(&pRingBuf->cStatFrames);
@@ -620,7 +620,7 @@ DECLINLINE(void) INTNETRingCommitFrameEx(PINTNETRINGBUF pRingBuf, PINTNETHDR pHd
         pHdr->cbFrame = (uint16_t)cbUsed;
     }
 
-    Log2(("INTNETRingCommitFrame:   offWriteCom: %#x -> %#x (offRead=%#x)\n", pRingBuf->offWriteCom, offWriteCom, pRingBuf->offReadX));
+    Log2(("INTNETRingCommitFrameEx:   offWriteCom: %#x -> %#x (R=%#x T=%#x S=%#x P=%#x)\n", pRingBuf->offWriteCom, offWriteCom, pRingBuf->offReadX, pHdr->u16Type, pHdr->cbFrame, cbAlignedFrame - cbAlignedUsed));
     ASMAtomicWriteU32(&pRingBuf->offWriteCom, offWriteCom);
     STAM_REL_COUNTER_ADD(&pRingBuf->cbStatWritten, cbUsed);
     STAM_REL_COUNTER_INC(&pRingBuf->cStatFrames);
