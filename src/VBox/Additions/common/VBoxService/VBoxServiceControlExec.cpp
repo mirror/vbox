@@ -615,18 +615,11 @@ int VBoxServiceControlExecAllocateThreadData(PVBOXSERVICECTRLTHREAD pThread,
     pData->uNumEnvVars = 0;
     pData->uNumArgs = 0; /* Initialize in case of RTGetOptArgvFromString() is failing ... */
 
-    /* Prepare argument list. Always add actual command line as first argument (argv[0]). */
-    char *pszArgsTemp = NULL;
-    int rc = RTStrAPrintf(&pszArgsTemp, "%s %s", pszCmd, (uNumArgs > 0) ? pszArgs : "");
-    if (RT_SUCCESS(rc) && pszArgsTemp)
-    {
-        rc = RTGetOptArgvFromString(&pData->papszArgs, (int*)&pData->uNumArgs,
-                                    pszArgsTemp, NULL);
-        RTStrFree(pszArgsTemp);
-    }
-
-    /* Did we get at least as much arguments as told? */
-    Assert(pData->uNumArgs >= uNumArgs);
+    /* Prepare argument list. */
+    int rc = RTGetOptArgvFromString(&pData->papszArgs, (int*)&pData->uNumArgs,
+                                    (uNumArgs > 0) ? pszArgs : "", NULL);
+    /* Did we get the same result? */
+    Assert(uNumArgs == pData->uNumArgs);
 
     if (RT_SUCCESS(rc))
     {

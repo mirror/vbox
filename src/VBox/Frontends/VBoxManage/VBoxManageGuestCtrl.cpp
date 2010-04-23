@@ -93,6 +93,9 @@ static int handleExecProgram(HandlerArg *a)
     bool verbose = false;
     bool have_timeout = false;
 
+    /* Always use the actual command line as argv[0]. */
+    args.push_back(Bstr(Utf8Cmd));
+
     /* Iterate through all possible commands (if available). */
     bool usageOK = true;
     for (int i = 2; usageOK && i < a->argc; i++)
