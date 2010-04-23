@@ -237,8 +237,11 @@ int pgmR3PoolInit(PVM pVM)
     {
         paPhysExts[i].iNext = i + 1;
         paPhysExts[i].aidx[0] = NIL_PGMPOOL_IDX;
+        paPhysExts[i].apte[0] = NIL_PGMPOOL_PHYSEXT_IDX_PTE;
         paPhysExts[i].aidx[1] = NIL_PGMPOOL_IDX;
+        paPhysExts[i].apte[1] = NIL_PGMPOOL_PHYSEXT_IDX_PTE;
         paPhysExts[i].aidx[2] = NIL_PGMPOOL_IDX;
+        paPhysExts[i].apte[2] = NIL_PGMPOOL_PHYSEXT_IDX_PTE;
     }
     paPhysExts[cMaxPhysExts - 1].iNext = NIL_PGMPOOL_PHYSEXT_INDEX;
     for (unsigned i = 0; i < RT_ELEMENTS(pPool->aiHash); i++)
@@ -750,8 +753,11 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
     {
         paPhysExts[i].iNext = i + 1;
         paPhysExts[i].aidx[0] = NIL_PGMPOOL_IDX;
+        paPhysExts[i].apte[0] = NIL_PGMPOOL_PHYSEXT_IDX_PTE;
         paPhysExts[i].aidx[1] = NIL_PGMPOOL_IDX;
+        paPhysExts[i].apte[1] = NIL_PGMPOOL_PHYSEXT_IDX_PTE;
         paPhysExts[i].aidx[2] = NIL_PGMPOOL_IDX;
+        paPhysExts[i].apte[2] = NIL_PGMPOOL_PHYSEXT_IDX_PTE;
     }
     paPhysExts[cMaxPhysExts - 1].iNext = NIL_PGMPOOL_PHYSEXT_INDEX;
 

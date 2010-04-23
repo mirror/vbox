@@ -634,10 +634,12 @@ typedef struct PGMPAGE
     RTUINT16U   u16MiscY;
     /** The page state.
      * Only 3 bits are really needed for this. */
-    uint8_t     uStateY;
+    uint16_t    uStateY   : 3;
     /** The page type (PGMPAGETYPE).
      * Only 3 bits are really needed for this. */
-    uint8_t     uTypeY;
+    uint16_t    uTypeY    : 3;
+    /** PTE index for usage tracking (page pool). */
+    uint16_t    uPteIdx   : 10;
     /** Usage tracking (page pool). */
     uint16_t    u16TrackingY;
     /** The number of read locks on this page. */
@@ -663,6 +665,7 @@ typedef PPGMPAGE *PPPGMPAGE;
         (pPage)->HCPhysAndPageID     = 0; \
         (pPage)->uStateY             = 0; \
         (pPage)->uTypeY              = 0; \
+        (pPage)->uPteIdx             = 0; \
         (pPage)->u16MiscY.u          = 0; \
         (pPage)->u16TrackingY        = 0; \
         (pPage)->cReadLocksY         = 0; \
@@ -680,6 +683,7 @@ typedef PPGMPAGE *PPPGMPAGE;
         (pPage)->HCPhysAndPageID     = (SetHCPhysTmp << (28-12)) | ((_idPage) & UINT32_C(0x0fffffff)); \
         (pPage)->uStateY             = (_uState); \
         (pPage)->uTypeY              = (_uType); \
+        (pPage)->uPteIdx             = 0; \
         (pPage)->u16MiscY.u          = 0; \
         (pPage)->u16TrackingY        = 0; \
         (pPage)->cReadLocksY         = 0; \
@@ -798,6 +802,20 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   _enmType    The new page type (PGMPAGETYPE).
  */
 #define PGM_PAGE_SET_TYPE(pPage, _enmType)  do { (pPage)->uTypeY = (_enmType); } while (0)
+
+/**
+ * Gets the page table index
+ * @returns The page table index.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_GET_PTE_INDEX(pPage)            (pPage)->uPteIdx
+
+/**
+ * Sets the page table index
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ * @param   iPte        New page table index.
+ */
+#define PGM_PAGE_SET_PTE_INDEX(pPage, _iPte)  do { (pPage)->uPteIdx = (_iPte); } while (0)
 
 /**
  * Checks if the page is marked for MMIO.
@@ -1697,18 +1715,25 @@ typedef const PGMPOOLUSER *PCPGMPOOLUSER;
 
 /** The NIL index for the phys ext chain. */
 #define NIL_PGMPOOL_PHYSEXT_INDEX       ((uint16_t)0xffff)
+/** The NIL pte index for a phys ext chain slot. */
+#define NIL_PGMPOOL_PHYSEXT_IDX_PTE     ((uint16_t)0xffff)
 
 /**
  * Node in the chain of physical cross reference extents.
  * @todo Calling this an 'extent' is not quite right, find a better name.
+ * @todo find out the optimal size of the aidx array
  */
 #pragma pack(1)
 typedef struct PGMPOOLPHYSEXT
 {
     /** The index to the next item in the chain. NIL_PGMPOOL_PHYSEXT_INDEX is no next. */
     uint16_t            iNext;
+    /** Alignment. */
+    uint16_t            u16Align;
     /** The user page index. */
     uint16_t            aidx[3];
+    /** The page table index or NIL_PGMPOOL_PHYSEXT_IDX_PTE if unknown. */
+    uint16_t            apte[3];
 } PGMPOOLPHYSEXT, *PPGMPOOLPHYSEXT;
 typedef const PGMPOOLPHYSEXT *PCPGMPOOLPHYSEXT;
 #pragma pack()
@@ -3407,7 +3432,7 @@ DECLINLINE(int) pgmPoolTrackFlushGCPhys(PVM pVM, RTGCPHYS GCPhysPage, PPGMPAGE p
     return pgmPoolTrackUpdateGCPhys(pVM, GCPhysPage, pPhysPage, true /* flush PTEs */, pfFlushTLBs);
 }
 
-uint16_t        pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT);
+uint16_t        pgmPoolTrackPhysExtAddref(PVM pVM, PPGMPAGE pPhysPage, uint16_t u16, uint16_t iShwPT, uint16_t iPte);
 void            pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPGMPAGE pPhysPage);
 void            pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GCPhysFault, CTXTYPE(RTGCPTR, RTHCPTR, RTGCPTR) pvAddress, unsigned cbWrite);
 int             pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
