@@ -53,6 +53,7 @@
     <xsl:when test="$type='unsigned short'">UnsignedShort</xsl:when>
     <xsl:when test="$type='unsigned long long'">UnsignedLong</xsl:when>
     <xsl:when test="$type='result'">UnsignedInt</xsl:when>
+    <xsl:when test="$type='octet'">Octet</xsl:when>
     <xsl:when test="$type='$unknown'">IUnknown</xsl:when>
     <xsl:when test="$type='$dispatched'">IUnknown</xsl:when>
     <xsl:otherwise><xsl:value-of select="$type" /></xsl:otherwise>
@@ -548,7 +549,7 @@ class Boolean:
        self.isarray = isarray
 
   def __str__(self):
-       if self.handle: 
+       if self.handle:
          return "true"
        else:
          return "false"
@@ -569,13 +570,13 @@ class Boolean:
 
   def __int__(self):
       if self.handle:
-        return 1 
+        return 1
       else:
         return 0
 
   def __long__(self):
       if self.handle:
-        return 1 
+        return 1
       else:
         return 0
 
@@ -605,20 +606,11 @@ class Boolean:
           return Boolean(self.mgr, self.handle[index])
       raise TypeError, "iteration over non-sequence"
 
-class UnsignedInt:
+class Number:
   def __init__(self, mgr, handle, isarray = False):
        self.handle = handle
        self.mgr = mgr
        self.isarray = isarray
-
-  def __str__(self):
-       return str(self.handle)
-
-  def __int__(self):
-       return int(self.handle)
-
-  def __long__(self):
-       return long(self.handle)
 
   def __next(self):
       if self.isarray:
@@ -634,6 +626,45 @@ class UnsignedInt:
       if self.isarray:
           return self.handle.__len__()
       raise TypeError, "iteration over non-sequence"
+
+  def __str__(self):
+       return str(self.handle)
+
+  def __int__(self):
+       return int(self.handle)
+
+  def __long__(self):
+       return long(self.handle)
+
+  def __float__(self):
+       return float(self.handle)
+
+import struct
+
+class Octet(Number):
+  def __init__(self, mgr, handle, isarray = False):
+       self.handle = handle
+       self.mgr = mgr
+       self.isarray = isarray
+
+  def __getitem__(self, index):
+      if self.isarray:
+          return Octet(self.mgr, self.handle[index])
+      raise TypeError, "iteration over non-sequence"
+
+  def __str__(self):
+       if self.isarray:
+           # array of octets is binary data
+           list = map (None, self.handle)
+           return struct.pack("%dB" % (len(list)), *list)
+       else:
+           return str(self.handle)
+
+class UnsignedInt(Number):
+  def __init__(self, mgr, handle, isarray = False):
+       self.handle = handle
+       self.mgr = mgr
+       self.isarray = isarray
 
   def __getitem__(self, index):
       if self.isarray:
@@ -641,245 +672,77 @@ class UnsignedInt:
       raise TypeError, "iteration over non-sequence"
 
 
-class Int:
+class Int(Number):
   def __init__(self, mgr, handle, isarray = False):
        self.handle = handle
        self.mgr = mgr
        self.isarray = isarray
-
-  def __next(self):
-      if self.isarray:
-          return self.handle.__next()
-      raise TypeError, "iteration over non-sequence"
-
-  def __size(self):
-      if self.isarray:
-          return self.handle.__size()
-      raise TypeError, "iteration over non-sequence"
-
-  def __len__(self):
-      if self.isarray:
-          return self.handle.__len__()
-      raise TypeError, "iteration over non-sequence"
 
   def __getitem__(self, index):
       if self.isarray:
           return Int(self.mgr, self.handle[index])
       raise TypeError, "iteration over non-sequence"
 
-  def __str__(self):
-       return str(self.handle)
-
-  def __int__(self):
-       return int(self.handle)
-
-  def __long__(self):
-       return long(self.handle)
-
-class UnsignedShort:
+class UnsignedShort(Number):
   def __init__(self, mgr, handle, isarray = False):
        self.handle = handle
        self.mgr = mgr
        self.isarray = isarray
-
-  def __str__(self):
-       return str(self.handle)
-
-  def __int__(self):
-       return int(self.handle)
-
-  def __long__(self):
-       return long(self.handle)
-
-  def __next(self):
-      if self.isarray:
-          return self.handle.__next()
-      raise TypeError, "iteration over non-sequence"
-
-  def __size(self):
-      if self.isarray:
-          return self.handle.__size()
-      raise TypeError, "iteration over non-sequence"
-
-  def __len__(self):
-      if self.isarray:
-          return self.handle.__len__()
-      raise TypeError, "iteration over non-sequence"
 
   def __getitem__(self, index):
       if self.isarray:
           return UnsignedShort(self.mgr, self.handle[index])
       raise TypeError, "iteration over non-sequence"
 
-class Short:
+class Short(Number):
   def __init__(self, mgr, handle, isarray = False):
        self.handle = handle
        self.mgr = mgr
        self.isarray = isarray
-
-  def __str__(self):
-       return str(self.handle)
-
-  def __int__(self):
-       return int(self.handle)
-
-  def __long__(self):
-       return long(self.handle)
-
-  def __next(self):
-      if self.isarray:
-          return self.handle.__next()
-      raise TypeError, "iteration over non-sequence"
-
-  def __size(self):
-      if self.isarray:
-          return self.handle.__size()
-      raise TypeError, "iteration over non-sequence"
-
-  def __len__(self):
-      if self.isarray:
-          return self.handle.__len__()
-      raise TypeError, "iteration over non-sequence"
 
   def __getitem__(self, index):
       if self.isarray:
           return Short(self.mgr, self.handle[index])
       raise TypeError, "iteration over non-sequence"
 
-class UnsignedLong:
+class UnsignedLong(Number):
   def __init__(self, mgr, handle, isarray = False):
        self.handle = handle
        self.mgr = mgr
        self.isarray = isarray
-
-  def __str__(self):
-       return str(self.handle)
-
-  def __int__(self):
-       return int(self.handle)
-
-  def __long__(self):
-       return long(self.handle)
-
-  def __next(self):
-      if self.isarray:
-          return self.handle.__next()
-      raise TypeError, "iteration over non-sequence"
-
-  def __size(self):
-      if self.isarray:
-          return self.handle.__size()
-      raise TypeError, "iteration over non-sequence"
-
-  def __len__(self):
-      if self.isarray:
-          return self.handle.__len__()
-      raise TypeError, "iteration over non-sequence"
 
   def __getitem__(self, index):
       if self.isarray:
           return UnsignedLong(self.mgr, self.handle[index])
       raise TypeError, "iteration over non-sequence"
 
-class Long:
+class Long(Number):
   def __init__(self, mgr, handle, isarray = False):
        self.handle = handle
        self.mgr = mgr
        self.isarray = isarray
-
-  def __str__(self):
-       return str(self.handle)
-
-  def __int__(self):
-       return int(self.handle)
-
-  def __long__(self):
-       return int(self.handle)
-
-  def __next(self):
-      if self.isarray:
-          return self.handle.__next()
-      raise TypeError, "iteration over non-sequence"
-
-  def __size(self):
-      if self.isarray:
-          return self.handle.__size()
-      raise TypeError, "iteration over non-sequence"
-
-  def __len__(self):
-      if self.isarray:
-          return self.handle.__len__()
-      raise TypeError, "iteration over non-sequence"
 
   def __getitem__(self, index):
       if self.isarray:
           return Long(self.mgr, self.handle[index])
       raise TypeError, "iteration over non-sequence"
 
-class Double:
+class Double(Number):
   def __init__(self, mgr, handle, isarray = False):
        self.handle = handle
        self.mgr = mgr
        self.isarray = isarray
-
-  def __str__(self):
-       return str(self.handle)
-
-  def __int__(self):
-       return int(self.handle)
-
-  def __float__(self):
-       return float(self.handle)
-
-  def __next(self):
-      if self.isarray:
-          return self.handle.__next()
-      raise TypeError, "iteration over non-sequence"
-
-  def __size(self):
-      if self.isarray:
-          return self.handle.__size()
-      raise TypeError, "iteration over non-sequence"
-
-  def __len__(self):
-      if self.isarray:
-          return self.handle.__len__()
-      raise TypeError, "iteration over non-sequence"
 
   def __getitem__(self, index):
       if self.isarray:
           return Double(self.mgr, self.handle[index])
       raise TypeError, "iteration over non-sequence"
 
-class Float:
+class Float(Number):
   def __init__(self, mgr, handle, isarray = False):
        self.handle = handle
        self.mgr = mgr
        self.isarray = isarray
-
-  def __str__(self):
-       return str(self.handle)
-
-  def __int__(self):
-       return int(self.handle)
-
-  def __float__(self):
-       return float(self.handle)
-
-  def __next(self):
-      if self.isarray:
-          return self.handle.__next()
-      raise TypeError, "iteration over non-sequence"
-
-  def __size(self):
-      if self.isarray:
-          return self.handle.__size()
-      raise TypeError, "iteration over non-sequence"
-
-  def __len__(self):
-      if self.isarray:
-          return self.handle.__len__()
-      raise TypeError, "iteration over non-sequence"
 
   def __getitem__(self, index):
       if self.isarray:
@@ -894,7 +757,7 @@ class IUnknown:
 
   def __nonzero__(self):
       if self.handle != "":
-           return True 
+           return True
       else:
            return False
 
