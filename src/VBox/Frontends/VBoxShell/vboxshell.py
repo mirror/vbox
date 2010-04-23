@@ -383,7 +383,7 @@ def takeScreenshot(ctx,console,args):
     data = display.takeScreenShotToArray(screen, w,h)
     size = (w,h)
     mode = "RGBA"
-    im = Image.frombuffer(mode, size, data, "raw", mode, 0, 1)
+    im = Image.frombuffer(mode, size, str(data), "raw", mode, 0, 1)
     im.save(f, "PNG")
 
 
