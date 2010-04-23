@@ -1022,6 +1022,8 @@ static int vdiCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk)
 #endif
     pImage->paBlocks = NULL;
     pImage->pVDIfsDisk = pVDIfsDisk;
+    /* For the async I/O interface which is normally retrieved from the image interface list. */
+    pImage->pVDIfsImage = pVDIfsDisk;
 
     rc = vdiOpenImage(pImage, VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_READONLY);
     vdiFreeImage(pImage, false);
