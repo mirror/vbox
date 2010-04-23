@@ -30,16 +30,18 @@
 #include <VBox/sup.h>
 #include <VBox/pdm.h>
 #include <VBox/log.h>
+
 #include <iprt/asm.h>
-#include <iprt/alloc.h>
+#include <iprt/assert.h>
+#include <iprt/handletable.h>
+#include <iprt/mp.h>
+#include <iprt/mem.h>
+#include <iprt/net.h>
 #include <iprt/semaphore.h>
 #include <iprt/spinlock.h>
-#include <iprt/thread.h>
-#include <iprt/assert.h>
 #include <iprt/string.h>
+#include <iprt/thread.h>
 #include <iprt/time.h>
-#include <iprt/handletable.h>
-#include <iprt/net.h>
 
 
 /*******************************************************************************
@@ -49,17 +51,23 @@
  * Enabled DHCP snooping when in shared-mac-on-the-wire mode. */
 #define INTNET_WITH_DHCP_SNOOPING
 
+/** The maximum number of interface in a network. */
+#define INTNET_MAX_IFS              (1023 + 1 + 16)
+
+/** The number of entries to grow the destination tables with. */
 #if 0
-/** Enables the new code - temporarily while doing the rewrite. */
-# define WITH_NEW_STUFF
+# define INTNET_GROW_DSTTAB_SIZE    16
+#else
+# define INTNET_GROW_DSTTAB_SIZE    1
 #endif
 
+/** The wakeup bit in the INTNETIF::cBusy and INTNETRUNKIF::cBusy counters. */
+#define INTNET_BUSY_WAKEUP_MASK     RT_BIT_32(30)
 
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-#ifdef WITH_NEW_STUFF
 /**
  * MAC address lookup table entry.
  */
@@ -79,31 +87,30 @@ typedef struct INTNETMACTABENTRY
 } INTNETMACTABENTRY;
 /** Pointer to a MAC address lookup table entry. */
 typedef INTNETMACTABENTRY *PINTNETMACTABENTRY;
-/** Pointer to a const MAC address lookup table entry. */
-typedef INTNETMACTABENTRY const *PCINTNETMACTABENTRY;
 
 /**
  * MAC address lookup table.
+ *
+ * @todo Having this in a separate structure didn't work out as well as it
+ *       should.  Consider merging it into INTNETNETWORK.
  */
 typedef struct INTNETMACTAB
 {
-    /** The spinlock protecting the table, interrupt safe. */
-    RTSPINLOCK              hSpinlock;
     /** The current number of entries. */
     uint32_t                cEntries;
     /** The number of entries we've allocated space for. */
     uint32_t                cEntriesAllocated;
     /** Table entries. */
-    PCINTNETMACTABENTRY     paEntries;
+    PINTNETMACTABENTRY      paEntries;
 
-    /** The host MAC address. */
+    /** The host MAC address (reported). */
     RTMAC                   HostMac;
-    /** The host promiscous setting. */
+    /** The host promisucous setting (reported). */
     bool                    fHostPromiscuous;
     /** Whether the host is active. */
     bool                    fHostActive;
 
-    /** Whether the wire is promiscuous. */
+    /** Whether the wire is promiscuous (config). */
     bool                    fWirePromiscuous;
     /** Whether the wire is active. */
     bool                    fWireActive;
@@ -126,11 +133,19 @@ typedef struct INTNETDSTTAB
     /** The number of destination interfaces. */
     uint32_t                cIfs;
     /** The interfaces (referenced).  Variable sized array. */
-    struct INTNETIF        *apIfs[1];
+    struct
+    {
+        /** The destination interface. */
+        struct INTNETIF    *pIf;
+        /** Whether to replace the destination MAC address.
+         * This is used when sharing MAC address with the host on the wire(less).  */
+        bool                fReplaceDstMac;
+    }                       aIfs[1];
 } INTNETDSTTAB;
 /** Pointer to a destination table. */
 typedef INTNETDSTTAB *PINTNETDSTTAB;
-#endif /* WITH_NEW_STUFF */
+/** Pointer to a const destination table. */
+typedef INTNETDSTTAB const *PCINTNETDSTTAB;
 
 
 /** Network layer address type. */
@@ -198,18 +213,16 @@ typedef INTNETADDRCACHE const *PCINTNETADDRCACHE;
  */
 typedef struct INTNETIF
 {
-    /** Pointer to the next interface.
-     * This is protected by the INTNET::FastMutex. */
-    struct INTNETIF        *pNext;
-    /** The current MAC address for the interface. (reported or learned)
-     * Updated while owning the switch table spinlock.  */
-    RTMAC                   Mac;
-    /** Set if the INTNET::Mac member is valid. */
+    /** The MAC address.
+     * This is shadowed by INTNETMACTABENTRY::MacAddr. */
+    RTMAC                   MacAddr;
+    /** Set if the INTNET::MacAddr member has been explicitly set. */
     bool                    fMacSet;
     /** Set if the interface is in promiscuous mode.
-     * In promiscuous mode the interface will receive all packages except the one it's sending. */
+     * This is shadowed by INTNETMACTABENTRY::fPromiscuous. */
     bool                    fPromiscuous;
-    /** Whether the interface is active or not. */
+    /** Whether the interface is active or not.
+     * This is shadowed by INTNETMACTABENTRY::fActive. */
     bool                    fActive;
     /** Whether someone is currently in the destructor. */
     bool volatile           fDestroying;
@@ -226,38 +239,35 @@ typedef struct INTNETIF
     PINTNETBUF              pIntBufDefault;
     /** Pointer to ring-3 mapping of the default exchange buffer. */
     R3PTRTYPE(PINTNETBUF)   pIntBufDefaultR3;
-    /** Event semaphore which a receiver thread will sleep on while waiting
-     * for data to arrive. */
-    RTSEMEVENT volatile     Event;
-    /** Number of threads sleeping on the Event semaphore. */
+    /** Event semaphore which a receiver/consumer thread will sleep on while
+     * waiting for data to arrive. */
+    RTSEMEVENT volatile     hRecvEvent;
+    /** Number of threads sleeping on the event semaphore. */
     uint32_t                cSleepers;
     /** The interface handle.
      * When this is INTNET_HANDLE_INVALID a sleeper which is waking up
      * should return with the appropriate error condition. */
     INTNETIFHANDLE volatile hIf;
     /** Pointer to the network this interface is connected to.
-     * This is protected by the INTNET::FastMutex. */
+     * This is protected by the INTNET::hMtxCreateOpenDestroy. */
     struct INTNETNETWORK   *pNetwork;
     /** The session this interface is associated with. */
     PSUPDRVSESSION          pSession;
     /** The SUPR0 object id. */
     void                   *pvObj;
-    /** The network layer address cache. (Indexed by type, 0 entry isn't used.) */
+    /** The network layer address cache. (Indexed by type, 0 entry isn't used.)
+     * This is protected by the address spinlock of the network. */
     INTNETADDRCACHE         aAddrCache[kIntNetAddrType_End];
-#ifdef WITH_NEW_STUFF
     /** Spinlock protecting the input (producer) side of the receive ring. */
     RTSPINLOCK              hRecvInSpinlock;
     /** Busy count for tracking destination table references and active sends.
-     * Incremented while owning the switch table spinlock. */
+     * Usually incremented while owning the switch table spinlock.  The 30th bit
+     * is used to indicate wakeup. */
     uint32_t volatile       cBusy;
-    /** Set if a someone is waiting on INTNETNETWORK::hEvtBusyIf for cBusy to
-     * reach zero. */
-    bool volatile           fBusyZeroWakeup;
     /** The preallocated destination table.
      * This is NULL when it's in use as a precaution against unserialized
      * transmitting.  This is grown when new interfaces are added to the network. */
     PINTNETDSTTAB volatile  pDstTab;
-#endif /* WITH_NEW_STUFF */
 } INTNETIF;
 /** Pointer to an internal network interface. */
 typedef INTNETIF *PINTNETIF;
@@ -272,52 +282,26 @@ typedef struct INTNETTRUNKIF
     INTNETTRUNKSWPORT       SwitchPort;
     /** The port interface we get from the component. */
     PINTNETTRUNKIFPORT      pIfPort;
-#ifdef WITH_NEW_STUFF
+    /** The trunk mutex that serializes all calls <b>to</b> the component. */
     /** @todo This won't quite cut the mustard any longer.  That said, GSO
      *        segmentation needs to be serialized because of the header buffer. */
-    RTSEMFASTMUTEX          FastMutex;
-#else
-    /** The trunk mutex that serializes all calls <b>to</b> the component. */
-    RTSEMFASTMUTEX          FastMutex;
-#endif
+    RTSEMFASTMUTEX          FastMutex3;
     /** Pointer to the network we're connect to.
      * This may be NULL if we're orphaned? */
     struct INTNETNETWORK   *pNetwork;
-#ifdef WITH_NEW_STUFF
     /** The current MAC address for the interface. (reported)
-     * Updated while owning the switch table spinlock.
-     * @todo rename to Mac  */
-    RTMAC                   CachedMac;
-#else
-    /** The cached MAC address of the interface the trunk is attached to.
-     * This is for the situations where we cannot take the out-bound
-     * semaphore (the recv case) but need to make frame edits (ARP). */
-    RTMAC                   CachedMac;
-#endif
-#ifndef WITH_NEW_STUFF
-    /** Whether to supply physical addresses with the outbound SGs. (reported) */
-    bool volatile           fPhysSG;
-    /** Set if the 'wire' is in promiscuous mode.
-     * The state of the 'host' is queried each time. */
-    bool                    fWirePromiscuous;
-#else  /* WITH_NEW_STUFF */
-    /** Set if the 'wire' is in promiscuous mode. (config) */
-    bool                    fWirePromiscuous;
-    /** Set if the 'host' is in promiscuous mode. (reported) */
-    bool volatile           fHostPromiscuous;
+     * Updated while owning the switch table spinlock.  */
+    RTMAC                   MacAddr;
     /** Can pfnXmit cope with disabled preemption for the 'wire'. (reported) */
     bool                    fWireNoPreempt;
     /** Can pfnXmit cope with disabled preemption for the 'host'. (reported) */
     bool                    fHostNoPreempt;
     /** Whether to supply physical addresses with the outbound SGs. (reported) */
     bool                    fPhysSG;
-    /** Set if a someone is waiting on INTNETNETWORK::hEvtBusyIf for cBusy to
-     * reach zero. */
-    bool volatile           fBusyZeroWakeup;
     /** Busy count for tracking destination table references and active sends.
-     * Incremented while owning the switch table spinlock. */
+     * Usually incremented while owning the switch table spinlock.  The 30th bit
+     * is used to indicate wakeup. */
     uint32_t volatile       cBusy;
-#endif /* WITH_NEW_STUFF */
     /** The GSO capabilities of the wire destination. (reported) */
     uint32_t                fWireGsoCapabilites;
     /** The GSO capabilities of the host destination. (reported)
@@ -326,10 +310,19 @@ typedef struct INTNETTRUNKIF
     uint32_t                fHostGsoCapabilites;
     /** Header buffer for when we're carving GSO frames. */
     uint8_t                 abGsoHdrs[256];
-#ifdef WITH_NEW_STUFF
-    /** @todo what exactly to do about the destination tables here? how many do
-     *        we need / want? One? One per CPU? */
-#endif
+    /** The destination table spinlock, interrupt safe.
+     * Protects apTaskDstTabs and apIntDstTabs. */
+    RTSPINLOCK              hDstTabSpinlock;
+    /** The number of entries in apIntDstTabs. */
+    uint32_t                cIntDstTabs;
+    /** The task time destination tables.
+     * @remarks intnetR0NetworkEnsureTabSpace and others ASSUMES this immediately
+     *          preceeds apIntDstTabs so that these two tables can be used as one
+     *          contiguous one. */
+    PINTNETDSTTAB           apTaskDstTabs[2];
+    /** The interrupt / disabled-preemption time destination tables.
+     * This is a variable sized array.  */
+    PINTNETDSTTAB           apIntDstTabs[1];
 } INTNETTRUNKIF;
 /** Pointer to a trunk interface. */
 typedef INTNETTRUNKIF *PINTNETTRUNKIF;
@@ -344,28 +337,20 @@ typedef INTNETTRUNKIF *PINTNETTRUNKIF;
 typedef struct INTNETNETWORK
 {
     /** The Next network in the chain.
-     * This is protected by the INTNET::FastMutex. */
+     * This is protected by the INTNET::hMtxCreateOpenDestroy. */
     struct INTNETNETWORK   *pNext;
-    /** List of interfaces connected to the network.
-     * This is protected by the INTNET::FastMutex. */
-    PINTNETIF               pIfs;
-    /** Pointer to the trunk interface.
-     * Can be NULL if there is no trunk connection. */
-    PINTNETTRUNKIF          pTrunkIF;
-    /** The network mutex.
-     * It protects everything dealing with this network. */
-#ifdef WITH_NEW_STUFF
-    /** @todo Make this a mutex so we can block on the event semaphore while holding
-     *        it. Requires fixing the mutex code on linux...  Or maybe add
-     *        another mutex for creation / destruction serilization. */
-#endif
-    RTSEMFASTMUTEX          FastMutex2;
-#ifdef WITH_NEW_STUFF
+
+    /** The spinlock protecting MacTab and INTNETTRUNKIF::aAddrCache.
+     *  Interrupt safe. */
+    RTSPINLOCK              hAddrSpinlock;
+    /** MAC address table.
+     * This doubles as interface collection. */
+    INTNETMACTAB            MacTab;
+
     /** Wait for an interface to stop being busy so it can be removed or have its
      * destination table replaced.  We have to wait upon this while owning the
-     * network mutex. */
+     * network mutex.  Will only ever have one waiter because of the big mutex. */
     RTSEMEVENT              hEvtBusyIf;
-#endif
     /** Pointer to the instance data. */
     struct INTNET          *pIntNet;
     /** The SUPR0 object id. */
@@ -605,127 +590,117 @@ DECLINLINE(bool) intnetR0SgReadPart(PCINTNETSG pSG, uint32_t off, uint32_t cb, v
 }
 
 
-#ifdef WITH_NEW_STUFF
-
 /**
- * Compares two MAC addresses.
+ * Wait for a busy counter to reach zero.
  *
- * @returns true if equal, false if not.
- * @param   pDstAddr1           Address 1.
- * @param   pDstAddr2           Address 2.
+ * @param   pNetwork            The network.
+ * @param   pcBusy              The busy counter.
  */
-DECL_FORCE_INLINE(bool) intnetR0AreMacAddrsEqual(PCRTMAC pDstAddr1, PCRTMAC pDstAddr2)
+static void intnetR0BusyWait(PINTNETNETWORK pNetwork, uint32_t volatile *pcBusy)
 {
-    return pDstAddr1->au16[2] == pDstAddr2->au16[2]
-        && pDstAddr1->au16[1] == pDstAddr2->au16[1]
-        && pDstAddr1->au16[0] == pDstAddr2->au16[0];
-}
+    if (ASMAtomicReadU32(pcBusy) == 0)
+        return;
 
-
-/**
- * Switch a MAC address and return a destination table.
- *
- * @returns Destination table or NULL if *ppDstTab is NULL.
- * @param   pTab                The MAC address table to work on.
- * @param   pDstAddr            The destination address of the packet.
- * @param   ppDstTab            Where to get the destination table from.
- * @param   pcBusy              The busy counter to increment if *ppDstTab isn't
- *                              NULL.
- */
-static PINTNETDSTTAB intnetR0MacTabSwitch(PINTNETMACTAB pTab, PCRTMAC pDstAddr,
-                                          PINTNETDSTTAB volatile *ppDstTab, uint32_t volatile *pcBusy)
-{
     /*
-     * Grab the spinlock first, then get the destination table and increment
-     * the busy counter (to indicate that we're using the dst tab and it cannot
-     * be freed yet).
+     * We have to be a bit cautious here so we don't destroy the network or the
+     * semaphore before intnetR0BusyDec has signalled us.
      */
-    RTSPINLOCKTMP   Tmp     = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquire(pTab->hSpinlock, &Tmp);
-    PINTNETDSTTAB   pDstTab = (PINTNETDSTTAB)ASMAtomicXchgPtr((void * volatile *)ppDstTab, NULL);
-    if (pDstTab)
+
+    /* Reset the semaphore and flip the wakeup bit. */
+    RTSemEventWait(pNetwork->hEvtBusyIf, 0); /* clear it */
+    uint32_t cCurBusy = ASMAtomicReadU32(pcBusy);
+    do
     {
-        ASMAtomicIncU32(pcBusy);
+        if (cCurBusy == 0)
+            return;
+        AssertMsg(!(cCurBusy & INTNET_BUSY_WAKEUP_MASK), ("%#x\n", cCurBusy));
+        AssertMsg((cCurBusy & ~INTNET_BUSY_WAKEUP_MASK) < INTNET_MAX_IFS * 3, ("%#x\n", cCurBusy));
+    } while (!ASMAtomicCmpXchgExU32(pcBusy, cCurBusy | INTNET_BUSY_WAKEUP_MASK, cCurBusy, &cCurBusy));
 
-        /*
-         * Do the switching.
-         */
-        pDstTab->fTrunkDst = 0;
-        pDstTab->pTrunk    = 0;
-        pDstTab->cIfs      = 0;
-
-        uint32_t i = pTab->cEntries;
-        if (pDstAddr->au8[0] & 1) /* multicast or broadcast address */
-        {
-            /* Broadcast/multicast - add all active interfaces. */
-            while (i-- > 0)
-            {
-                if (pTab->paEntries[i].fActive)
-                {
-                    PINTNETIF pIf = pTab->paEntries[i].pIf;
-                    pDstTab->apIfs[i] = pIf;
-                    ASMAtomicIncU32(&pIf->cBusy);
-                    pDstTab->cIfs++;
-                }
-            }
-
-            if (pTab->fHostActive)
-                pDstTab->fTrunkDst |= INTNETTRUNKDIR_HOST;
-            if (pTab->fWireActive)
-                pDstTab->fTrunkDst |= INTNETTRUNKDIR_WIRE;
-        }
-        else
-        {
-            /* Find exactly matching or promiscuous interfaces. */
-            uint32_t cExactHits = 0;
-            while (i-- > 0)
-            {
-                if (pTab->paEntries[i].fActive)
-                {
-                    bool fExact = intnetR0AreMacAddrsEqual(&pTab->paEntries[i].MacAddr, pDstAddr);
-                    if (fExact || pTab->paEntries[i].fPromiscuous)
-                    {
-                        cExactHits += fExact;
-
-                        PINTNETIF pIf = pTab->paEntries[i].pIf;
-                        pDstTab->apIfs[i] = pIf;
-                        ASMAtomicIncU32(&pIf->cBusy);
-                        pDstTab->cIfs++;
-                    }
-                }
-            }
-
-            /* Does it match the host, or is the host promiscuous? */
-            if (pTab->fHostActive)
-            {
-                bool fExact = intnetR0AreMacAddrsEqual(&pTab->HostMac, pDstAddr);
-                if (pTab->fHostPromiscuous)
-                {
-                    cExactHits += fExact;
-                    pDstTab->fTrunkDst |= INTNETTRUNKDIR_HOST;
-                }
-            }
-
-            /* Hit the wire if there are no exact matches or if it's in promiscuous mode. */
-            if (pTab->fWireActive && (!cExactHits || pTab->fWirePromiscuous))
-                pDstTab->fTrunkDst |= INTNETTRUNKDIR_WIRE;
-        }
-
-        /* Grab the trunk if we're sending to it. */
-        if (pDstTab->fTrunkDst)
-        {
-            PINTNETTRUNKIF pTrunkIf = pTab->pTrunk;
-            pDstTab->pTrunk = pTrunkIf;
-            ASMAtomicIncU32(&pTrunkIf->cBusy);
-        }
-    }
-
-    RTSpinlockRelease(pTab->hSpinlock, &Tmp);
-    return pDstTab;
+    /* Wait for the count to reach zero. */
+    do
+    {
+        int rc2 = RTSemEventWait(pNetwork->hEvtBusyIf, 30000); NOREF(rc2);
+        //AssertMsg(RT_SUCCESS(rc2),  ("rc=%Rrc *pcBusy=%#x (%#x)\n", rc2, ASMAtomicReadU32(pcBusy), cCurBusy ));
+        cCurBusy = ASMAtomicReadU32(pcBusy);
+        AssertMsg((cCurBusy & INTNET_BUSY_WAKEUP_MASK), ("%#x\n", cCurBusy));
+        AssertMsg((cCurBusy & ~INTNET_BUSY_WAKEUP_MASK) < INTNET_MAX_IFS * 3, ("%#x\n", cCurBusy));
+    } while (   cCurBusy != INTNET_BUSY_WAKEUP_MASK
+             || ASMAtomicCmpXchgU32(pcBusy, 0, INTNET_BUSY_WAKEUP_MASK));
 }
 
 
-#endif /* WITH_NEW_STUFF */
+/**
+ * Decrements the busy counter and maybe wakes up any threads waiting for it to
+ * reach zero.
+ *
+ * @param   pNetwork            The network.
+ * @param   pcBusy              The busy counter.
+ */
+DECLINLINE(void) intnetR0BusyDec(PINTNETNETWORK pNetwork, uint32_t volatile *pcBusy)
+{
+    uint32_t cNewBusy = ASMAtomicDecU32(pcBusy);
+    if (RT_UNLIKELY(   cNewBusy == INTNET_BUSY_WAKEUP_MASK
+                    && pNetwork))
+        RTSemEventSignal(pNetwork->hEvtBusyIf);
+    AssertMsg((cNewBusy & ~INTNET_BUSY_WAKEUP_MASK) < INTNET_MAX_IFS * 3, ("%#x\n", cNewBusy));
+}
+
+
+/**
+ * Increments the busy count of the specified interface.
+ *
+ * The caller must own the MAC address table spinlock.
+ *
+ * @param   pIf                 The interface.
+ */
+DECLINLINE(void) intnetR0BusyDecIf(PINTNETIF pIf)
+{
+    intnetR0BusyDec(pIf->pNetwork, &pIf->cBusy);
+}
+
+
+/**
+ * Increments the busy count of the specified interface.
+ *
+ * The caller must own the MAC address table spinlock or an explicity reference.
+ *
+ * @param   pTrunk              The trunk.
+ */
+DECLINLINE(void) intnetR0BusyDecTrunk(PINTNETTRUNKIF pTrunk)
+{
+    intnetR0BusyDec(pTrunk->pNetwork, &pTrunk->cBusy);
+}
+
+
+/**
+ * Increments the busy count of the specified interface.
+ *
+ * The caller must own the MAC address table spinlock or an explicity reference.
+ *
+ * @param   pIf                 The interface.
+ */
+DECLINLINE(void) intnetR0BusyIncIf(PINTNETIF pIf)
+{
+    uint32_t cNewBusy = ASMAtomicIncU32(&pIf->cBusy);
+    AssertMsg((cNewBusy & ~INTNET_BUSY_WAKEUP_MASK) < INTNET_MAX_IFS * 3, ("%#x\n", cNewBusy));
+    NOREF(cNewBusy);
+}
+
+
+/**
+ * Increments the busy count of the specified interface.
+ *
+ * The caller must own the MAC address table spinlock or an explicity reference.
+ *
+ * @param   pTrunk              The trunk.
+ */
+DECLINLINE(void) intnetR0BusyIncTrunk(PINTNETTRUNKIF pTrunk)
+{
+    uint32_t cNewBusy = ASMAtomicIncU32(&pTrunk->cBusy);
+    AssertMsg((cNewBusy & ~INTNET_BUSY_WAKEUP_MASK) < INTNET_MAX_IFS * 3, ("%#x\n", cNewBusy));
+    NOREF(cNewBusy);
+}
 
 
 /**
@@ -783,7 +758,37 @@ static DECLCALLBACK(int) intnetR0IfRetainHandle(RTHANDLETABLE hHandleTable, void
 
 
 
+/**
+ * Checks if the interface has a usable MAC address or not.
+ *
+ * @returns true if MacAddr is usable, false if not.
+ * @param   pIf                 The interface.
+ */
+DECL_FORCE_INLINE(bool) intnetR0IfHasMacAddr(PINTNETIF pIf)
+{
+    return pIf->fMacSet || !(pIf->MacAddr.au8[0] & 1);
+}
 
+
+/**
+ * Locates the MAC address table entry for the given interface.
+ *
+ * The caller holds the MAC address table spinlock, obviously.
+ *
+ * @returns Pointer to the entry on if found, NULL if not.
+ * @param   pNetwork        The network.
+ * @param   pIf             The interface.
+ */
+DECLINLINE(PINTNETMACTABENTRY) intnetR0NetworkFindMacAddrEntry(PINTNETNETWORK pNetwork, PINTNETIF pIf)
+{
+    uint32_t iIf = pNetwork->MacTab.cEntries;
+    while (iIf-- > 0)
+    {
+        if (pNetwork->MacTab.paEntries[iIf].pIf == pIf)
+            return &pNetwork->MacTab.paEntries[iIf];
+    }
+    return NULL;
+}
 
 
 /**
@@ -1020,11 +1025,11 @@ static void intnetR0IfAddrCacheDeleteIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
     {
         case kIntNetAddrType_IPv4:
             Log(("intnetR0IfAddrCacheDeleteIt: hIf=%#x MAC=%.6Rhxs IPv4 added #%d %d.%d.%d.%d %s\n",
-                 pIf->hIf, &pIf->Mac, iEntry, pAddr->au8[0], pAddr->au8[1], pAddr->au8[2], pAddr->au8[3], pszMsg));
+                 pIf->hIf, &pIf->MacAddr, iEntry, pAddr->au8[0], pAddr->au8[1], pAddr->au8[2], pAddr->au8[3], pszMsg));
             break;
         default:
             Log(("intnetR0IfAddrCacheDeleteIt: hIf=%RX32 MAC=%.6Rhxs type=%d #%d %.*Rhxs %s\n",
-                 pIf->hIf, &pIf->Mac, enmAddrType, iEntry, pCache->cbAddress, pAddr, pszMsg));
+                 pIf->hIf, &pIf->MacAddr, enmAddrType, iEntry, pCache->cbAddress, pAddr, pszMsg));
             break;
     }
 #endif
@@ -1039,6 +1044,8 @@ static void intnetR0IfAddrCacheDeleteIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
 
 /**
  * Deletes an address from the cache, assuming it isn't actually in the cache.
+ *
+ * May or may not own the spinlock when calling this.
  *
  * @param   pIf             The interface (for logging).
  * @param   pCache          The cache.
@@ -1068,12 +1075,19 @@ DECLINLINE(void) intnetR0IfAddrCacheDelete(PINTNETIF pIf, PINTNETADDRCACHE pCach
 DECLINLINE(void) intnetR0NetworkAddrCacheDelete(PINTNETNETWORK pNetwork, PCRTNETADDRU pAddr, INTNETADDRTYPE const enmType,
                                                 uint8_t const cbAddr, const char *pszMsg)
 {
-    for (PINTNETIF pIf = pNetwork->pIfs; pIf; pIf = pIf->pNext)
+    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+    uint32_t iIf = pNetwork->MacTab.cEntries;
+    while (iIf--)
     {
+        PINTNETIF pIf = pNetwork->MacTab.paEntries[iIf].pIf;
         int i = intnetR0IfAddrCacheLookup(&pIf->aAddrCache[enmType], pAddr, cbAddr);
         if (RT_UNLIKELY(i >= 0))
             intnetR0IfAddrCacheDeleteIt(pIf, &pIf->aAddrCache[enmType], i, pszMsg);
     }
+
+    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
 }
 
 
@@ -1092,13 +1106,22 @@ DECLINLINE(void) intnetR0NetworkAddrCacheDelete(PINTNETNETWORK pNetwork, PCRTNET
 DECLINLINE(void) intnetR0NetworkAddrCacheDeleteMinusIf(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, PCRTNETADDRU pAddr,
                                                        INTNETADDRTYPE const enmType, uint8_t const cbAddr, const char *pszMsg)
 {
-    for (PINTNETIF pIf = pNetwork->pIfs; pIf; pIf = pIf->pNext)
+    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+    uint32_t iIf = pNetwork->MacTab.cEntries;
+    while (iIf--)
+    {
+        PINTNETIF pIf = pNetwork->MacTab.paEntries[iIf].pIf;
         if (pIf != pIfSender)
         {
             int i = intnetR0IfAddrCacheLookup(&pIf->aAddrCache[enmType], pAddr, cbAddr);
             if (RT_UNLIKELY(i >= 0))
                 intnetR0IfAddrCacheDeleteIt(pIf, &pIf->aAddrCache[enmType], i, pszMsg);
         }
+    }
+
+    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
 }
 
 
@@ -1106,7 +1129,8 @@ DECLINLINE(void) intnetR0NetworkAddrCacheDeleteMinusIf(PINTNETNETWORK pNetwork, 
  * Lookup an address on the network, returning the (first) interface
  * having it in its address cache.
  *
- * @returns Pointer to the interface on success, NULL if not found.
+ * @returns Pointer to the interface on success, NULL if not found.  The caller
+ *          must release the interface by calling intnetR0BusyDecIf.
  * @param   pNetwork        The network.
  * @param   pAddr           The address to lookup.
  * @param   enmType         The address type.
@@ -1114,19 +1138,32 @@ DECLINLINE(void) intnetR0NetworkAddrCacheDeleteMinusIf(PINTNETNETWORK pNetwork, 
  */
 DECLINLINE(PINTNETIF) intnetR0NetworkAddrCacheLookupIf(PINTNETNETWORK pNetwork, PCRTNETADDRU pAddr, INTNETADDRTYPE const enmType, uint8_t const cbAddr)
 {
-    for (PINTNETIF pIf = pNetwork->pIfs; pIf; pIf = pIf->pNext)
+    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+    uint32_t iIf = pNetwork->MacTab.cEntries;
+    while (iIf--)
     {
+        PINTNETIF pIf = pNetwork->MacTab.paEntries[iIf].pIf;
         int i = intnetR0IfAddrCacheLookup(&pIf->aAddrCache[enmType], pAddr, cbAddr);
         if (i >= 0)
+        {
+            intnetR0BusyIncIf(pIf);
+            RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
             return pIf;
+        }
     }
+
+    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
     return NULL;
 }
 
 
 /**
- * Adds an address to the cache, the caller is responsible for making sure it'
- * s not already in the cache.
+ * Adds an address to the cache, the caller is responsible for making sure it's
+ * not already in the cache.
+ *
+ * The caller must not
  *
  * @param   pIf         The interface (for logging).
  * @param   pCache      The address cache.
@@ -1135,36 +1172,38 @@ DECLINLINE(PINTNETIF) intnetR0NetworkAddrCacheLookupIf(PINTNETNETWORK pNetwork, 
  */
 static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCRTNETADDRU pAddr, const char *pszMsg)
 {
+    PINTNETNETWORK  pNetwork = pIf->pNetwork;
+    AssertReturnVoid(pNetwork);
+    RTSPINLOCKTMP   Tmp      = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
     if (!pCache->cEntriesAlloc)
     {
-        /* Allocate the first array */
-        pCache->pbEntries = (uint8_t *)RTMemAllocZ(pCache->cbEntry * 16);
-        if (!pCache->pbEntries)
+        /* Allocate the table - 64 entries. */
+        RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
+        uint8_t *pbEntries = (uint8_t *)RTMemAllocZ(pCache->cbEntry * 64);
+        if (!pbEntries)
             return;
-        pCache->cEntriesAlloc = 16;
+        RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
+        if (!pCache->cEntriesAlloc)
+        {
+            pCache->pbEntries     = pbEntries;
+            pCache->cEntriesAlloc = 64;
+        }
+        else
+        {
+            RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
+            RTMemFree(pbEntries);
+            RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
+        }
     }
-    else if (pCache->cEntries >= pCache->cEntriesAlloc)
+    else
     {
-        bool fReplace = true;
-        if (pCache->cEntriesAlloc < 64)
-        {
-            uint8_t cEntriesAlloc = pCache->cEntriesAlloc + 16;
-            void *pvNew = RTMemRealloc(pCache->pbEntries, pCache->cbEntry * cEntriesAlloc);
-            if (pvNew)
-            {
-                pCache->pbEntries = (uint8_t *)pvNew;
-                pCache->cEntriesAlloc = cEntriesAlloc;
-                fReplace = false;
-            }
-        }
-        if (fReplace)
-        {
-            /* simple FIFO, might consider usage/ageing here... */
-            Log(("intnetR0IfAddrCacheAddIt: type=%d replacing %.*Rhxs\n",
-                 (int)(uintptr_t)(pCache - &pIf->aAddrCache[0]), pCache->cbAddress, pCache->pbEntries));
-            memmove(pCache->pbEntries, pCache->pbEntries + pCache->cbEntry, pCache->cbEntry * (pCache->cEntries - 1));
-            pCache->cEntries--;
-        }
+        /* simple FIFO, might consider usage/ageing here... */
+        Log(("intnetR0IfAddrCacheAddIt: type=%d replacing %.*Rhxs\n",
+             (int)(uintptr_t)(pCache - &pIf->aAddrCache[0]), pCache->cbAddress, pCache->pbEntries));
+        memmove(pCache->pbEntries, pCache->pbEntries + pCache->cbEntry, pCache->cbEntry * (pCache->cEntries - 1));
+        pCache->cEntries--;
     }
 
     /*
@@ -1179,16 +1218,18 @@ static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCR
     {
         case kIntNetAddrType_IPv4:
             Log(("intnetR0IfAddrCacheAddIt: hIf=%#x MAC=%.6Rhxs IPv4 added #%d %d.%d.%d.%d %s\n",
-                 pIf->hIf, &pIf->Mac, pCache->cEntries, pAddr->au8[0], pAddr->au8[1], pAddr->au8[2], pAddr->au8[3], pszMsg));
+                 pIf->hIf, &pIf->MacAddr, pCache->cEntries, pAddr->au8[0], pAddr->au8[1], pAddr->au8[2], pAddr->au8[3], pszMsg));
             break;
         default:
             Log(("intnetR0IfAddrCacheAddIt: hIf=%#x MAC=%.6Rhxs type=%d added #%d %.*Rhxs %s\n",
-                 pIf->hIf, &pIf->Mac, enmAddrType, pCache->cEntries, pCache->cbAddress, pAddr, pszMsg));
+                 pIf->hIf, &pIf->MacAddr, enmAddrType, pCache->cEntries, pCache->cbAddress, pAddr, pszMsg));
             break;
     }
 #endif
     pCache->cEntries++;
     Assert(pCache->cEntries <= pCache->cEntriesAlloc);
+
+    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
 }
 
 
@@ -1227,13 +1268,16 @@ static void intnetR0IfAddrCacheAddSlow(PINTNETIF pIf, PINTNETADDRCACHE pCache, P
 /**
  * Adds an address to the cache if it's not already there.
  *
+ * Must not own any spinlocks when calling this function.
+ *
  * @param   pIf         The interface (for logging).
  * @param   pCache      The address cache.
  * @param   pAddr       The address.
  * @param   cbAddr      The size of the address (optimization).
  * @param   pszMsg      Log message.
  */
-DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCRTNETADDRU pAddr, uint8_t const cbAddr, const char *pszMsg)
+DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCRTNETADDRU pAddr,
+                                        uint8_t const cbAddr, const char *pszMsg)
 {
     Assert(pCache->cbAddress == cbAddr);
 
@@ -1248,6 +1292,530 @@ DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
         return;
     intnetR0IfAddrCacheAddSlow(pIf, pCache, pAddr, cbAddr, pszMsg);
 }
+
+
+/**
+ * Is it a multicast or broadcast MAC address?
+ *
+ * @returns true if multicast, false if not.
+ * @param   pMacAddr            The address to inspect.
+ */
+DECL_FORCE_INLINE(bool) intnetR0IsMacAddrMulticast(PCRTMAC pMacAddr)
+{
+    return !!(pMacAddr->au8[0] & 0x01);
+}
+
+
+/**
+ * Is it a dummy MAC address?
+ *
+ * We use dummy MAC addresses for interfaces which we don't know the MAC
+ * address of because they haven't sent anything (learning) or explicitly set
+ * it.
+ *
+ * @returns true if dummy, false if not.
+ * @param   pMacAddr            The address to inspect.
+ */
+DECL_FORCE_INLINE(bool) intnetR0IsMacAddrDummy(PCRTMAC pMacAddr)
+{
+    /* The dummy address are broadcast addresses, don't bother check it all. */
+    return pMacAddr->au16[0] == 0xffff;
+}
+
+
+/**
+ * Compares two MAC addresses.
+ *
+ * @returns true if equal, false if not.
+ * @param   pDstAddr1           Address 1.
+ * @param   pDstAddr2           Address 2.
+ */
+DECL_FORCE_INLINE(bool) intnetR0AreMacAddrsEqual(PCRTMAC pDstAddr1, PCRTMAC pDstAddr2)
+{
+    return pDstAddr1->au16[2] == pDstAddr2->au16[2]
+        && pDstAddr1->au16[1] == pDstAddr2->au16[1]
+        && pDstAddr1->au16[0] == pDstAddr2->au16[0];
+}
+
+
+/**
+ * Switch a unicast frame based on the network layer address (OSI level 3) and
+ * return a destination table.
+ *
+ * @returns INTNETSWDECISION_DROP, INTNETSWDECISION_TRUNK,
+ *          INTNETSWDECISION_INTNET or INTNETSWDECISION_BROADCAST (misnomer).
+ * @param   pNetwork            The network to switch on.
+ * @param   pDstMacAddr         The destination MAC address.
+ * @param   enmL3AddrType       The level-3 destination address type.
+ * @param   pL3Addr             The level-3 destination address.
+ * @param   cbL3Addr            The size of the level-3 destination address.
+ * @param   fSrc                The frame source (INTNETTRUNKDIR_WIRE).
+ * @param   pDstTab             The destination output table.
+ */
+static INTNETSWDECISION intnetR0NetworkSwitchLevel3(PINTNETNETWORK pNetwork, PCRTMAC pDstMacAddr,
+                                                    INTNETADDRTYPE enmL3AddrType, PCRTNETADDRU pL3Addr, uint8_t cbL3Addr,
+                                                    uint32_t fSrc, PINTNETDSTTAB pDstTab)
+{
+    Assert(fSrc == INTNETTRUNKDIR_WIRE);
+
+    /*
+     * Grab the spinlock first and do the switching.
+     */
+    PINTNETMACTAB   pTab    = &pNetwork->MacTab;
+    RTSPINLOCKTMP   Tmp     = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquire(pNetwork->hAddrSpinlock, &Tmp);
+
+    pDstTab->fTrunkDst  = 0;
+    pDstTab->pTrunk     = 0;
+    pDstTab->cIfs       = 0;
+
+    /* Find exactly matching or promiscuous interfaces. */
+    uint32_t cExactHits = 0;
+    uint32_t iIfMac     = pTab->cEntries;
+    while (iIfMac-- > 0)
+    {
+        if (pTab->paEntries[iIfMac].fActive)
+        {
+            PINTNETIF pIf    = pTab->paEntries[iIfMac].pIf;         AssertPtr(pIf); Assert(pIf->pNetwork == pNetwork);
+            bool      fExact = intnetR0IfAddrCacheLookup(&pIf->aAddrCache[enmL3AddrType], pL3Addr, cbL3Addr);
+            if (fExact || pTab->paEntries[iIfMac].fPromiscuous)
+            {
+                cExactHits += fExact;
+
+                uint32_t iIfDst = pDstTab->cIfs++;
+                pDstTab->aIfs[iIfDst].pIf            = pIf;
+                pDstTab->aIfs[iIfDst].fReplaceDstMac = fExact;
+                intnetR0BusyIncIf(pIf);
+            }
+        }
+    }
+
+    /* Does it match the host, or is the host promiscuous? */
+    if (pTab->fHostActive)
+    {
+        bool fExact = intnetR0AreMacAddrsEqual(&pTab->HostMac, pDstMacAddr);
+        if (   fExact
+            || intnetR0IsMacAddrDummy(&pTab->HostMac)
+            || pTab->fHostPromiscuous)
+        {
+            cExactHits += fExact;
+            pDstTab->fTrunkDst |= INTNETTRUNKDIR_HOST;
+        }
+    }
+
+    /* Hit the wire if there are no exact matches or if it's in promiscuous mode. */
+    if (pTab->fWireActive && (!cExactHits || pTab->fWirePromiscuous))
+        pDstTab->fTrunkDst |= INTNETTRUNKDIR_WIRE;
+    pDstTab->fTrunkDst &= ~fSrc;
+    if (pDstTab->fTrunkDst)
+    {
+        PINTNETTRUNKIF pTrunk = pTab->pTrunk;
+        pDstTab->pTrunk = pTrunk;
+        intnetR0BusyIncTrunk(pTrunk);
+    }
+
+    RTSpinlockRelease(pNetwork->hAddrSpinlock, &Tmp);
+    return pDstTab->cIfs
+         ? (!pDstTab->fTrunkDst ? INTNETSWDECISION_INTNET : INTNETSWDECISION_BROADCAST)
+         : (!pDstTab->fTrunkDst ? INTNETSWDECISION_DROP   : INTNETSWDECISION_TRUNK);
+}
+
+
+/**
+ * Switch a unicast MAC address and return a destination table.
+ *
+ * @returns INTNETSWDECISION_DROP, INTNETSWDECISION_TRUNK,
+ *          INTNETSWDECISION_INTNET or INTNETSWDECISION_BROADCAST (misnomer).
+ * @param   pNetwork            The network to switch on.
+ * @param   fSrc                The frame source.
+ * @param   pIfSender           The sender interface, NULL if trunk.  Used to
+ *                              prevent sending an echo to the sender.
+ * @param   pDstAddr            The destination address of the frame.
+ * @param   pDstTab             The destination output table.
+ */
+static INTNETSWDECISION intnetR0NetworkSwitchUnicast(PINTNETNETWORK pNetwork, uint32_t fSrc, PINTNETIF pIfSender,
+                                                     PCRTMAC pDstAddr, PINTNETDSTTAB pDstTab)
+{
+    AssertPtr(pDstTab);
+    Assert(!intnetR0IsMacAddrMulticast(pDstAddr));
+
+    /*
+     * Grab the spinlock first and do the switching.
+     */
+    PINTNETMACTAB   pTab    = &pNetwork->MacTab;
+    RTSPINLOCKTMP   Tmp     = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquire(pNetwork->hAddrSpinlock, &Tmp);
+
+    pDstTab->fTrunkDst  = 0;
+    pDstTab->pTrunk     = 0;
+    pDstTab->cIfs       = 0;
+
+    /* Find exactly matching or promiscuous interfaces. */
+    uint32_t cExactHits = 0;
+    uint32_t iIfMac     = pTab->cEntries;
+    while (iIfMac-- > 0)
+    {
+        if (pTab->paEntries[iIfMac].fActive)
+        {
+            bool fExact = intnetR0AreMacAddrsEqual(&pTab->paEntries[iIfMac].MacAddr, pDstAddr);
+            if (   fExact
+                || intnetR0IsMacAddrDummy(&pTab->paEntries[iIfMac].MacAddr)
+                || pTab->paEntries[iIfMac].fPromiscuous)
+            {
+                cExactHits += fExact;
+
+                PINTNETIF pIf = pTab->paEntries[iIfMac].pIf;        AssertPtr(pIf); Assert(pIf->pNetwork == pNetwork);
+                if (RT_LIKELY(pIf != pIfSender)) /* paranoia */
+                {
+                    uint32_t iIfDst = pDstTab->cIfs++;
+                    pDstTab->aIfs[iIfDst].pIf            = pIf;
+                    pDstTab->aIfs[iIfDst].fReplaceDstMac = false;
+                    intnetR0BusyIncIf(pIf);
+                }
+            }
+        }
+    }
+
+    /* Does it match the host, or is the host promiscuous? */
+    if (   fSrc != INTNETTRUNKDIR_HOST
+        && pTab->fHostActive)
+    {
+        bool fExact = intnetR0AreMacAddrsEqual(&pTab->HostMac, pDstAddr);
+        if (   fExact
+            || intnetR0IsMacAddrDummy(&pTab->HostMac)
+            || pTab->fHostPromiscuous)
+        {
+            cExactHits += fExact;
+            pDstTab->fTrunkDst |= INTNETTRUNKDIR_HOST;
+        }
+    }
+
+    /* Hit the wire if there are no exact matches or if it's in promiscuous mode. */
+    if (   fSrc != INTNETTRUNKDIR_WIRE
+        && pTab->fWireActive
+        && (!cExactHits || pTab->fWirePromiscuous)
+       )
+        pDstTab->fTrunkDst |= INTNETTRUNKDIR_WIRE;
+
+    /* Grab the trunk if we're sending to it. */
+    if (pDstTab->fTrunkDst)
+    {
+        PINTNETTRUNKIF pTrunk = pTab->pTrunk;
+        pDstTab->pTrunk = pTrunk;
+        intnetR0BusyIncTrunk(pTrunk);
+    }
+
+    RTSpinlockRelease(pNetwork->hAddrSpinlock, &Tmp);
+    return pDstTab->cIfs
+         ? (!pDstTab->fTrunkDst ? INTNETSWDECISION_INTNET : INTNETSWDECISION_BROADCAST)
+         : (!pDstTab->fTrunkDst ? INTNETSWDECISION_DROP   : INTNETSWDECISION_TRUNK);
+}
+
+
+/**
+ * Create a destination table for a broadcast frame.
+ *
+ * @returns INTNETSWDECISION_BROADCAST.
+ * @param   pNetwork            The network to switch on.
+ * @param   fSrc                The frame source.
+ * @param   pIfSender           The sender interface, NULL if trunk.  Used to
+ *                              prevent sending an echo to the sender.
+ * @param   pDstTab             The destination output table.
+ */
+static INTNETSWDECISION intnetR0NetworkSwitchBroadcast(PINTNETNETWORK pNetwork, uint32_t fSrc, PINTNETIF pIfSender,
+                                                       PINTNETDSTTAB pDstTab)
+{
+    AssertPtr(pDstTab);
+
+    /*
+     * Grab the spinlock first and record all active interfaces.
+     */
+    PINTNETMACTAB   pTab    = &pNetwork->MacTab;
+    RTSPINLOCKTMP   Tmp     = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquire(pNetwork->hAddrSpinlock, &Tmp);
+
+    pDstTab->fTrunkDst  = 0;
+    pDstTab->pTrunk     = 0;
+    pDstTab->cIfs       = 0;
+
+    /* Regular interfaces. */
+    uint32_t iIfMac = pTab->cEntries;
+    while (iIfMac-- > 0)
+    {
+        if (pTab->paEntries[iIfMac].fActive)
+        {
+            PINTNETIF pIf = pTab->paEntries[iIfMac].pIf;            AssertPtr(pIf); Assert(pIf->pNetwork == pNetwork);
+            if (pIf != pIfSender)
+            {
+                uint32_t iIfDst = pDstTab->cIfs++;
+                pDstTab->aIfs[iIfDst].pIf            = pIf;
+                pDstTab->aIfs[iIfDst].fReplaceDstMac = false;
+                intnetR0BusyIncIf(pIf);
+            }
+        }
+    }
+
+    /* The trunk interface. */
+    if (pTab->fHostActive)
+        pDstTab->fTrunkDst |= INTNETTRUNKDIR_HOST;
+    if (pTab->fWireActive)
+        pDstTab->fTrunkDst |= INTNETTRUNKDIR_WIRE;
+    pDstTab->fTrunkDst &= ~fSrc;
+    if (pDstTab->fTrunkDst)
+    {
+        PINTNETTRUNKIF pTrunk = pTab->pTrunk;
+        pDstTab->pTrunk = pTrunk;
+        intnetR0BusyIncTrunk(pTrunk);
+    }
+
+    RTSpinlockRelease(pNetwork->hAddrSpinlock, &Tmp);
+    return INTNETSWDECISION_BROADCAST;
+}
+
+
+/**
+ * Create a destination table with the trunk and any promiscuous interfaces.
+ *
+ * This is only used in a fallback case of the level-3 switching, so we can
+ * assume the wire as source and skip the sender interface filtering.
+ *
+ * @returns INTNETSWDECISION_DROP, INTNETSWDECISION_TRUNK,
+ *          INTNETSWDECISION_INTNET or INTNETSWDECISION_BROADCAST (misnomer).
+ * @param   pNetwork            The network to switch on.
+ * @param   fSrc                The frame source.
+ * @param   pDstTab             The destination output table.
+ */
+static INTNETSWDECISION intnetR0NetworkSwitchTrunkAndPromisc(PINTNETNETWORK pNetwork, uint32_t fSrc, PINTNETDSTTAB pDstTab)
+{
+    Assert(fSrc == INTNETTRUNKDIR_WIRE);
+
+    /*
+     * Grab the spinlock first and do the switching.
+     */
+    PINTNETMACTAB   pTab    = &pNetwork->MacTab;
+    RTSPINLOCKTMP   Tmp     = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquire(pNetwork->hAddrSpinlock, &Tmp);
+
+    pDstTab->fTrunkDst  = 0;
+    pDstTab->pTrunk     = 0;
+    pDstTab->cIfs       = 0;
+
+    /* Find promiscuous interfaces. */
+    uint32_t iIfMac = pTab->cEntries;
+    while (iIfMac-- > 0)
+    {
+        if (   pTab->paEntries[iIfMac].fActive
+            && pTab->paEntries[iIfMac].fPromiscuous)
+        {
+            PINTNETIF pIf    = pTab->paEntries[iIfMac].pIf;         AssertPtr(pIf); Assert(pIf->pNetwork == pNetwork);
+            uint32_t  iIfDst = pDstTab->cIfs++;
+            pDstTab->aIfs[iIfDst].pIf            = pIf;
+            pDstTab->aIfs[iIfDst].fReplaceDstMac = false;
+            intnetR0BusyIncIf(pIf);
+        }
+    }
+
+    /* The trunk interface. */
+    if (pTab->fHostActive)
+        pDstTab->fTrunkDst |= INTNETTRUNKDIR_HOST;
+    if (pTab->fWireActive)
+        pDstTab->fTrunkDst |= INTNETTRUNKDIR_WIRE;
+    pDstTab->fTrunkDst &= ~fSrc;
+    if (pDstTab->fTrunkDst)
+    {
+        PINTNETTRUNKIF pTrunk = pTab->pTrunk;
+        pDstTab->pTrunk = pTrunk;
+        intnetR0BusyIncTrunk(pTrunk);
+    }
+
+    RTSpinlockRelease(pNetwork->hAddrSpinlock, &Tmp);
+    return !pDstTab->cIfs
+        ? (!pDstTab->fTrunkDst ? INTNETSWDECISION_DROP   : INTNETSWDECISION_TRUNK)
+        : (!pDstTab->fTrunkDst ? INTNETSWDECISION_INTNET : INTNETSWDECISION_BROADCAST);
+}
+
+
+/**
+ * Create a destination table for a trunk frame.
+ *
+ * @returns INTNETSWDECISION_BROADCAST.
+ * @param   pNetwork            The network to switch on.
+ * @param   fSrc                The frame source.
+ * @param   pDstTab             The destination output table.
+ */
+static INTNETSWDECISION intnetR0NetworkSwitchTrunk(PINTNETNETWORK pNetwork, uint32_t fSrc, PINTNETDSTTAB pDstTab)
+{
+    AssertPtr(pDstTab);
+
+    /*
+     * Grab the spinlock first and record all active interfaces.
+     */
+    PINTNETMACTAB   pTab= &pNetwork->MacTab;
+    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquire(pNetwork->hAddrSpinlock, &Tmp);
+
+    pDstTab->fTrunkDst  = 0;
+    pDstTab->pTrunk     = 0;
+    pDstTab->cIfs       = 0;
+
+    /* The trunk interface. */
+    if (pTab->fHostActive)
+        pDstTab->fTrunkDst |= INTNETTRUNKDIR_HOST;
+    if (pTab->fWireActive)
+        pDstTab->fTrunkDst |= INTNETTRUNKDIR_WIRE;
+    pDstTab->fTrunkDst &= ~fSrc;
+    if (pDstTab->fTrunkDst)
+    {
+        PINTNETTRUNKIF pTrunk = pTab->pTrunk;
+        pDstTab->pTrunk = pTrunk;
+        intnetR0BusyIncTrunk(pTrunk);
+    }
+
+    RTSpinlockRelease(pNetwork->hAddrSpinlock, &Tmp);
+    return pDstTab->fTrunkDst ? INTNETSWDECISION_TRUNK : INTNETSWDECISION_DROP;
+}
+
+
+/**
+ * Wrapper around RTMemAlloc for allocating a destination table.
+ *
+ * @returns VINF_SUCCESS or VERR_NO_MEMORY.
+ * @param   cEntries            The size given as an entry count.
+ * @param   ppDstTab            Where to store the pointer (always).
+ */
+DECLINLINE(int) intnetR0AllocDstTab(uint32_t cEntries, PINTNETDSTTAB *ppDstTab)
+{
+    PINTNETDSTTAB pDstTab;
+    *ppDstTab = pDstTab = (PINTNETDSTTAB)RTMemAlloc(RT_OFFSETOF(INTNETDSTTAB, aIfs[cEntries]));
+    if (RT_UNLIKELY(!pDstTab))
+        return VERR_NO_MEMORY;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Ensures that there is space for another interface in the MAC address lookup
+ * table as well as all the destination tables.
+ *
+ * The caller must own the create/open/destroy mutex.
+ *
+ * @returns VINF_SUCCESS, VERR_NO_MEMORY or VERR_OUT_OF_RANGE.
+ * @param   pNetwork        The network to operate on.
+ */
+static int intnetR0NetworkEnsureTabSpace(PINTNETNETWORK pNetwork)
+{
+    /*
+     * The cEntries and cEntriesAllocated members are only updated while
+     * owning the big mutex, so we only need the spinlock when doing the
+     * actual table replacing.
+     */
+    PINTNETMACTAB pTab = &pNetwork->MacTab;
+    int rc = VINF_SUCCESS;
+    AssertReturn(pTab->cEntries <= pTab->cEntriesAllocated, VERR_INTERNAL_ERROR_2);
+    if (pTab->cEntries + 1 > pTab->cEntriesAllocated)
+    {
+        uint32_t const cAllocated = pTab->cEntriesAllocated + INTNET_GROW_DSTTAB_SIZE;
+        if (cAllocated <= INTNET_MAX_IFS)
+        {
+            RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+
+            /*
+             * Resize the destination tables first, this can be kind of tedious.
+             */
+            for (uint32_t i = 0; i < pTab->cEntries; i++)
+            {
+                PINTNETIF       pIf = pTab->paEntries[i].pIf; AssertPtr(pIf);
+                PINTNETDSTTAB   pNew;
+                rc = intnetR0AllocDstTab(cAllocated, &pNew);
+                if (RT_FAILURE(rc))
+                    break;
+
+                for (;;)
+                {
+                    PINTNETDSTTAB pOld = pIf->pDstTab;
+                    if (   pOld
+                        && ASMAtomicCmpXchgPtr((void * volatile *)&pIf->pDstTab, pNew, pOld))
+                    {
+                        RTMemFree(pOld);
+                        break;
+                    }
+                    intnetR0BusyWait(pNetwork, &pIf->cBusy);
+                }
+            }
+
+            /*
+             * The trunk.
+             */
+            if (    RT_SUCCESS(rc)
+                &&  pNetwork->MacTab.pTrunk)
+            {
+                AssertCompileAdjacentMembers(INTNETTRUNKIF, apTaskDstTabs, apIntDstTabs);
+                PINTNETTRUNKIF          pTrunk      = pNetwork->MacTab.pTrunk;
+                PINTNETDSTTAB * const   ppEndDstTab = &pTrunk->apIntDstTabs[pTrunk->cIntDstTabs];
+                for (PINTNETDSTTAB     *ppDstTab    = &pTrunk->apTaskDstTabs[0];
+                     ppDstTab != ppEndDstTab && RT_SUCCESS(rc);
+                     ppDstTab++)
+                {
+                    PINTNETDSTTAB pNew;
+                    rc = intnetR0AllocDstTab(cAllocated, &pNew);
+                    if (RT_FAILURE(rc))
+                        break;
+
+                    for (;;)
+                    {
+                        RTSpinlockAcquireNoInts(pTrunk->hDstTabSpinlock, &Tmp);
+                        void *pvOld = *ppDstTab;
+                        if (pvOld)
+                            *ppDstTab = pNew;
+                        RTSpinlockReleaseNoInts(pTrunk->hDstTabSpinlock, &Tmp);
+                        if (pvOld)
+                        {
+                            RTMemFree(pvOld);
+                            break;
+                        }
+                        intnetR0BusyWait(pNetwork, &pTrunk->cBusy);
+                    }
+                }
+            }
+
+            /*
+             * The MAC Address table itself.
+             */
+            if (RT_SUCCESS(rc))
+            {
+                PINTNETMACTABENTRY paNew = (PINTNETMACTABENTRY)RTMemAlloc(sizeof(INTNETMACTABENTRY) * cAllocated);
+                if (paNew)
+                {
+                    RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+                    PINTNETMACTABENTRY  paOld = pTab->paEntries;
+                    uint32_t            i     = pTab->cEntries;
+                    while (i-- > 0)
+                    {
+                        paNew[i] = paOld[i];
+
+                        paOld[i].fActive = false;
+                        paOld[i].pIf     = NULL;
+                    }
+
+                    pTab->paEntries         = paNew;
+                    pTab->cEntriesAllocated = cAllocated;
+
+                    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+                    RTMemFree(paOld);
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+            }
+        }
+        else
+            rc = VERR_OUT_OF_RANGE;
+    }
+    return rc;
+}
+
+
 
 
 #ifdef INTNET_WITH_DHCP_SNOOPING
@@ -1325,17 +1893,38 @@ static void intnetR0NetworkSnoopDhcp(PINTNETNETWORK pNetwork, PCRTNETIPV4 pIpHdr
          */
         case RTNET_DHCP_MT_ACK:
             if (intnetR0IPv4AddrIsGood(pDhcp->bp_yiaddr))
-                for (PINTNETIF pCur = pNetwork->pIfs; pCur; pCur = pCur->pNext)
-                    if (    pCur->fMacSet
-                        &&  !memcmp(&pCur->Mac, &pDhcp->bp_chaddr, sizeof(RTMAC)))
+            {
+                PINTNETIF       pMatchingIf = NULL;
+                RTSPINLOCKTMP   Tmp         = RTSPINLOCKTMP_INITIALIZER;
+                RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+                uint32_t iIf = pNetwork->MacTab.cEntries;
+                while (iIf-- > 0)
+                {
+                    PINTNETIF pCur = pNetwork->MacTab.paEntries[iIf].pIf;
+                    if (    intnetR0IfHasMacAddr(pCur)
+                        &&  !memcmp(&pCur->MacAddr, &pDhcp->bp_chaddr, sizeof(RTMAC)))
                     {
                         intnetR0IfAddrCacheDelete(pCur, &pCur->aAddrCache[kIntNetAddrType_IPv4],
                                                   (PCRTNETADDRU)&pDhcp->bp_ciaddr, sizeof(RTNETADDRIPV4), "DHCP_MT_ACK");
-                        intnetR0IfAddrCacheAdd(pCur, &pCur->aAddrCache[kIntNetAddrType_IPv4],
-                                               (PCRTNETADDRU)&pDhcp->bp_yiaddr, sizeof(RTNETADDRIPV4), "DHCP_MT_ACK");
-                        break;
+                        if (!pMatchingIf)
+                        {
+                            pMatchingIf = pCur;
+                            intnetR0BusyIncIf(pMatchingIf);
+                        }
                     }
-            break;
+                }
+
+                RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+                if (pMatchingIf)
+                {
+                    intnetR0IfAddrCacheAdd(pMatchingIf, &pMatchingIf->aAddrCache[kIntNetAddrType_IPv4],
+                                           (PCRTNETADDRU)&pDhcp->bp_yiaddr, sizeof(RTNETADDRIPV4), "DHCP_MT_ACK");
+                    intnetR0BusyDecIf(pMatchingIf);
+                }
+            }
+            return;
 
 
         /*
@@ -1343,15 +1932,24 @@ static void intnetR0NetworkSnoopDhcp(PINTNETNETWORK pNetwork, PCRTNETIPV4 pIpHdr
          */
         case RTNET_DHCP_MT_RELEASE:
         {
-            for (PINTNETIF pCur = pNetwork->pIfs; pCur; pCur = pCur->pNext)
-                if (    pCur->fMacSet
-                    &&  !memcmp(&pCur->Mac, &pDhcp->bp_chaddr, sizeof(RTMAC)))
+            RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+            RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+            uint32_t iIf = pNetwork->MacTab.cEntries;
+            while (iIf-- > 0)
+            {
+                PINTNETIF pCur = pNetwork->MacTab.paEntries[iIf].pIf;
+                if (    intnetR0IfHasMacAddr(pCur)
+                    &&  !memcmp(&pCur->MacAddr, &pDhcp->bp_chaddr, sizeof(RTMAC)))
                 {
                     intnetR0IfAddrCacheDelete(pCur, &pCur->aAddrCache[kIntNetAddrType_IPv4],
                                               (PCRTNETADDRU)&pDhcp->bp_ciaddr, sizeof(RTNETADDRIPV4), "DHCP_MT_RELEASE");
                     intnetR0IfAddrCacheDelete(pCur, &pCur->aAddrCache[kIntNetAddrType_IPv4],
                                               (PCRTNETADDRU)&pDhcp->bp_yiaddr, sizeof(RTNETADDRIPV4), "DHCP_MT_RELEASE");
                 }
+            }
+
+            RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
             break;
         }
     }
@@ -1407,8 +2005,8 @@ static void intnetR0TrunkIfSnoopDhcp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
 
 
 /**
- * Snoops up source addresses from ARP requests and purge these
- * from the address caches.
+ * Snoops up source addresses from ARP requests and purge these from the address
+ * caches.
  *
  * The purpose of this purging is to get rid of stale addresses.
  *
@@ -1457,7 +2055,7 @@ static void intnetR0TrunkIfSnoopArp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
     /*
      * Delete the source address if it's OK.
      */
-    if (    !(pArpIPv4->ar_sha.au8[0] & 1)
+    if (    !intnetR0IsMacAddrMulticast(&pArpIPv4->ar_sha)
         &&  (   pArpIPv4->ar_sha.au16[0]
              || pArpIPv4->ar_sha.au16[1]
              || pArpIPv4->ar_sha.au16[2])
@@ -1677,7 +2275,7 @@ static void intnetR0IfSnoopArpAddr(PINTNETIF pIf, PCRTNETARPIPV4 pArpIPv4, uint3
     *pfSgFlags |= INTNETSG_FLAGS_ARP_IPV4;
 
     if (    ar_oper == RTNET_ARPOP_REPLY
-        &&  !(pArpIPv4->ar_tha.au8[0] & 1)
+        &&  !intnetR0IsMacAddrMulticast(&pArpIPv4->ar_tha)
         &&  (   pArpIPv4->ar_tha.au16[0]
              || pArpIPv4->ar_tha.au16[1]
              || pArpIPv4->ar_tha.au16[2])
@@ -1685,7 +2283,7 @@ static void intnetR0IfSnoopArpAddr(PINTNETIF pIf, PCRTNETARPIPV4 pArpIPv4, uint3
         intnetR0IfAddrCacheDelete(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv4],
                                   (PCRTNETADDRU)&pArpIPv4->ar_tpa, sizeof(RTNETADDRIPV4), "if/arp");
 
-    if (    !memcmp(&pArpIPv4->ar_sha, &pIf->Mac, sizeof(RTMAC))
+    if (    !memcmp(&pArpIPv4->ar_sha, &pIf->MacAddr, sizeof(RTMAC))
         &&  intnetR0IPv4AddrIsGood(pArpIPv4->ar_spa))
         intnetR0IfAddrCacheAdd(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv4],
                                (PCRTNETADDRU)&pArpIPv4->ar_spa, sizeof(RTNETADDRIPV4), "if/arp");
@@ -1781,48 +2379,44 @@ static int intnetR0RingWriteFrame(PINTNETRINGBUF pRingBuf, PCINTNETSG pSG, PCRTM
  */
 static void intnetR0IfSend(PINTNETIF pIf, PINTNETIF pIfSender, PINTNETSG pSG, PCRTMAC pNewDstMac)
 {
-//    LogFlow(("intnetR0IfSend: pIf=%p:{.hIf=%RX32}\n", pIf, pIf->hIf));
+    /*
+     * Grab the receive/producer lock and copy over the frame.
+     */
+    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquireNoInts(pIf->hRecvInSpinlock, &Tmp);
     int rc = intnetR0RingWriteFrame(&pIf->pIntBuf->Recv, pSG, pNewDstMac);
+    RTSpinlockReleaseNoInts(pIf->hRecvInSpinlock, &Tmp);
     if (RT_SUCCESS(rc))
     {
         pIf->cYields = 0;
-        RTSemEventSignal(pIf->Event);
+        RTSemEventSignal(pIf->hRecvEvent);
         return;
     }
 
     Log(("intnetR0IfSend: overflow cb=%d hIf=%RX32\n", pSG->cbTotal, pIf->hIf));
 
-#if 0 /* This is bad stuff now as we're blocking while locking down the network.
-         we really shouldn't delay the network traffic on the host just because
-         some bugger isn't responding. Will have to deal with this in a different
-         manner if required. */
-    /*
-     * Retry a few times, yielding the CPU in between.
-     * But don't let a unresponsive VM harm performance, so give up after a couple of tries.
-     */
-    if (    pIf->fActive
-        &&  pIf->cYields < 100)
-    {
-        unsigned cYields = 10;
-#else
     /*
      * Scheduling hack, for unicore machines primarily.
      */
     if (    pIf->fActive
         &&  pIf->cYields < 4 /* just twice */
-        &&  pIfSender /* but not if it's from the trunk */)
+        &&  pIfSender /* but not if it's from the trunk */
+        &&  RTThreadPreemptIsEnabled(NIL_RTTHREAD)
+       )
     {
         unsigned cYields = 2;
-#endif
         while (--cYields > 0)
         {
-            RTSemEventSignal(pIf->Event);
+            RTSemEventSignal(pIf->hRecvEvent);
             RTThreadYield();
+
+            RTSpinlockAcquireNoInts(pIf->hRecvInSpinlock, &Tmp);
             rc = intnetR0RingWriteFrame(&pIf->pIntBuf->Recv, pSG, pNewDstMac);
+            RTSpinlockReleaseNoInts(pIf->hRecvInSpinlock, &Tmp);
             if (RT_SUCCESS(rc))
             {
                 STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatYieldsOk);
-                RTSemEventSignal(pIf->Event);
+                RTSemEventSignal(pIf->hRecvEvent);
                 return;
             }
             pIf->cYields++;
@@ -1832,7 +2426,7 @@ static void intnetR0IfSend(PINTNETIF pIf, PINTNETIF pIfSender, PINTNETSG pSG, PC
 
     /* ok, the frame is lost. */
     STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatLost);
-    RTSemEventSignal(pIf->Event);
+    RTSemEventSignal(pIf->hRecvEvent);
 }
 
 
@@ -1895,7 +2489,7 @@ static int intnetR0TrunkIfSendGsoFallback(PINTNETTRUNKIF pThis, PINTNETSG pSG, u
  * @returns true if it can, false if it cannot.
  * @param   pThis               The trunk.
  * @param   pSG                 The scatter / gather buffer.
- * @param   fDst                The desitination mask.
+ * @param   fDst                The destination mask.
  */
 DECLINLINE(bool) intnetR0TrunkIfCanHandleGsoFrame(PINTNETTRUNKIF pThis, PINTNETSG pSG, uint32_t fDst)
 {
@@ -1915,18 +2509,15 @@ DECLINLINE(bool) intnetR0TrunkIfCanHandleGsoFrame(PINTNETTRUNKIF pThis, PINTNETS
 /**
  * Sends a frame down the trunk.
  *
- * The caller must own the network mutex, might be abandond temporarily.
- * The fTrunkLock parameter indicates whether the trunk lock is held.
- *
  * @param   pThis           The trunk.
  * @param   pNetwork        The network the frame is being sent to.
- * @param   pIfSender       The IF sending the frame. Used for MAC address checks in shared MAC mode.
+ * @param   pIfSender       The IF sending the frame.  Used for MAC address
+ *                          checks in shared MAC mode.
  * @param   fDst            The destination flags.
  * @param   pSG             Pointer to the gather list.
- * @param   fTrunkLocked    Whether the caller owns the out-bound trunk lock.
  */
 static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, PINTNETIF pIfSender,
-                                uint32_t fDst, PINTNETSG pSG, bool fTrunkLocked)
+                                uint32_t fDst, PINTNETSG pSG)
 {
     /*
      * Quick sanity check.
@@ -1948,31 +2539,26 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
     if (    (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
         &&  (fDst & INTNETTRUNKDIR_WIRE))
     {
-        /* Dispatch it to the host before making changes. */
+        /*
+         * Dispatch it to the host before making changes.
+         */
         if (fDst & INTNETTRUNKDIR_HOST)
         {
             Assert(pSG->fFlags & INTNETSG_FLAGS_TEMP); /* make sure copy is forced */
-            intnetR0TrunkIfSend(pThis, pNetwork, pIfSender, INTNETTRUNKDIR_HOST, pSG, fTrunkLocked);
+            intnetR0TrunkIfSend(pThis, pNetwork, pIfSender, INTNETTRUNKDIR_HOST, pSG);
             fDst &= ~INTNETTRUNKDIR_HOST;
         }
 
+        /*
+         * Edit the source address so that it it's the same as the host.
+         */
         /* ASSUME frame from INTNETR0IfSend! */
         AssertReturnVoid(pSG->cSegsUsed == 1);
         AssertReturnVoid(pSG->cbTotal >= sizeof(RTNETETHERHDR));
-        AssertReturnVoid(fTrunkLocked);
         AssertReturnVoid(pIfSender);
         PRTNETETHERHDR pEthHdr = (PRTNETETHERHDR)pSG->aSegs[0].pv;
 
-        /*
-         * Get the host mac address and update the ethernet header.
-         *
-         * The reason for caching it in the trunk structure is because
-         * we cannot take the trunk out-bound semaphore when we make
-         * edits in the intnetR0TrunkIfPortRecv path.
-         */
-        pThis->pIfPort->pfnGetMacAddress(pThis->pIfPort, &pThis->CachedMac);
-        if (!memcmp(&pEthHdr->SrcMac, &pIfSender->Mac, sizeof(RTMAC)))
-            pEthHdr->SrcMac = pThis->CachedMac;
+        pEthHdr->SrcMac = pThis->MacAddr;
 
         /*
          * Deal with tags from the snooping phase.
@@ -1987,15 +2573,15 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
              *           wireless of course...
              */
             PRTNETARPIPV4 pArp = (PRTNETARPIPV4)(pEthHdr + 1);
-            if (!memcmp(&pArp->ar_sha, &pIfSender->Mac, sizeof(RTMAC)))
+            if (!memcmp(&pArp->ar_sha, &pIfSender->MacAddr, sizeof(RTMAC)))
             {
-                Log6(("tw: ar_sha %.6Rhxs -> %.6Rhxs\n", &pArp->ar_sha, &pThis->CachedMac));
-                pArp->ar_sha = pThis->CachedMac;
+                Log6(("tw: ar_sha %.6Rhxs -> %.6Rhxs\n", &pArp->ar_sha, &pThis->MacAddr));
+                pArp->ar_sha = pThis->MacAddr;
             }
-            if (!memcmp(&pArp->ar_tha, &pIfSender->Mac, sizeof(RTMAC))) /* just in case... */
+            if (!memcmp(&pArp->ar_tha, &pIfSender->MacAddr, sizeof(RTMAC))) /* just in case... */
             {
-                Log6(("tw: ar_tha %.6Rhxs -> %.6Rhxs\n", &pArp->ar_tha, &pThis->CachedMac));
-                pArp->ar_tha = pThis->CachedMac;
+                Log6(("tw: ar_tha %.6Rhxs -> %.6Rhxs\n", &pArp->ar_tha, &pThis->MacAddr));
+                pArp->ar_tha = pThis->MacAddr;
             }
         }
         //else if (pSG->fFlags & INTNETSG_FLAGS_ICMPV6_NDP)
@@ -2004,50 +2590,17 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
     }
 
     /*
-     * Temporarily leave the network lock while transmitting the frame.
-     *
-     * Note that we're relying on the out-bound lock to serialize threads down
-     * in INTNETR0IfSend.  It's theoretically possible for there to be race now
-     * because I didn't implement async SG handling yet.  Which is why we
-     * currently require the trunk to be locked, well, one of the reasons.
-     *
-     * Another reason is that the intnetR0NetworkSendUnicast code may have to
-     * call into the trunk interface component to do package switching.
+     * Grab the out-bound lock and send the frame.
      */
-    AssertReturnVoid(fTrunkLocked); /* to be removed. */
-
     int rc;
-    if (    fTrunkLocked
-        ||  intnetR0TrunkIfRetain(pThis))
+    if (intnetR0TrunkIfOutLock(pThis))
     {
-        rc = RTSemFastMutexRelease(pNetwork->FastMutex2);
-        AssertRC(rc);
-        if (RT_SUCCESS(rc))
-        {
-            if (    fTrunkLocked
-                ||  intnetR0TrunkIfOutLock(pThis))
-            {
-                if (   pSG->GsoCtx.u8Type == PDMNETWORKGSOTYPE_INVALID
-                    || intnetR0TrunkIfCanHandleGsoFrame(pThis, pSG, fDst) )
-                    rc = pThis->pIfPort->pfnXmit(pThis->pIfPort, pSG, fDst);
-                else
-                    rc = intnetR0TrunkIfSendGsoFallback(pThis, pSG, fDst);
-
-                if (!fTrunkLocked)
-                    intnetR0TrunkIfOutUnlock(pThis);
-            }
-            else
-            {
-                AssertFailed();
-                rc = VERR_SEM_DESTROYED;
-            }
-
-            int rc2 = RTSemFastMutexRequest(pNetwork->FastMutex2);
-            AssertRC(rc2);
-        }
-
-        if (!fTrunkLocked)
-            intnetR0TrunkIfRelease(pThis);
+        if (   pSG->GsoCtx.u8Type == PDMNETWORKGSOTYPE_INVALID
+            || intnetR0TrunkIfCanHandleGsoFrame(pThis, pSG, fDst) )
+            rc = pThis->pIfPort->pfnXmit(pThis->pIfPort, pSG, fDst);
+        else
+            rc = intnetR0TrunkIfSendGsoFallback(pThis, pSG, fDst);
+        intnetR0TrunkIfOutUnlock(pThis);
     }
     else
     {
@@ -2056,7 +2609,7 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
     }
 
     /** @todo failure statistics? */
-    Log2(("intnetR0TrunkIfSend: %Rrc fDst=%d\n", rc, fDst));
+    Log2(("intnetR0TrunkIfSend: %Rrc fDst=%d\n", rc, fDst)); NOREF(rc);
 }
 
 
@@ -2112,21 +2665,22 @@ static void intnetR0NetworkEditArpFromWire(PINTNETNETWORK pNetwork, PINTNETSG pS
      * since we modified the MAC in the initial request the guest made.
      */
     if (    ar_oper == RTNET_ARPOP_REPLY
-        &&  !memcmp(&pArpIPv4->ar_tha, &pNetwork->pTrunkIF->CachedMac, sizeof(RTMAC)))
+        &&  !memcmp(&pArpIPv4->ar_tha, &pNetwork->MacTab.pTrunk->MacAddr, sizeof(RTMAC)))
     {
         PINTNETIF pIf = intnetR0NetworkAddrCacheLookupIf(pNetwork, (PCRTNETADDRU)&pArpIPv4->ar_tpa,
                                                          kIntNetAddrType_IPv4, sizeof(pArpIPv4->ar_tpa));
         if (pIf)
         {
-            Log6(("fw: ar_tha %.6Rhxs -> %.6Rhxs\n", &pArpIPv4->ar_tha, &pIf->Mac));
-            pArpIPv4->ar_tha = pIf->Mac;
-            if (!memcmp(&pEthHdr->DstMac, &pNetwork->pTrunkIF->CachedMac, sizeof(RTMAC)))
+            Log6(("fw: ar_tha %.6Rhxs -> %.6Rhxs\n", &pArpIPv4->ar_tha, &pIf->MacAddr));
+            pArpIPv4->ar_tha = pIf->MacAddr;
+            if (!memcmp(&pEthHdr->DstMac, &pNetwork->MacTab.pTrunk->MacAddr, sizeof(RTMAC)))
             {
-                Log6(("fw: DstMac %.6Rhxs -> %.6Rhxs\n", &pEthHdr->DstMac, &pIf->Mac));
-                pEthHdr->DstMac = pIf->Mac;
+                Log6(("fw: DstMac %.6Rhxs -> %.6Rhxs\n", &pEthHdr->DstMac, &pIf->MacAddr));
+                pEthHdr->DstMac = pIf->MacAddr;
                 if ((void *)pEthHdr != pSG->aSegs[0].pv)
-                    intnetR0SgWritePart(pSG, RT_OFFSETOF(RTNETETHERHDR, DstMac), sizeof(RTMAC), &pIf->Mac);
+                    intnetR0SgWritePart(pSG, RT_OFFSETOF(RTNETETHERHDR, DstMac), sizeof(RTMAC), &pIf->MacAddr);
             }
+            intnetR0BusyDecIf(pIf);
 
             /* Write back the packet if we've been making changes to a buffered copy. */
             if (pSG->fFlags & INTNETSG_FLAGS_PKT_CP_IN_TMP)
@@ -2228,119 +2782,160 @@ static void intnetR0NetworkEditDhcpFromIntNet(PINTNETNETWORK pNetwork, PINTNETSG
 
 
 /**
- * Sends a broadcast frame.
+ * Checks if the callers context is okay for sending to the specified
+ * destinations.
  *
- * The caller must own the network mutex, might be abandond temporarily.
- * When pIfSender is not NULL, the caller must also own the trunk semaphore.
- *
- * @returns true if it's addressed to someone on the network, otherwise false.
- * @param   pNetwork        The network the frame is being sent to.
- * @param   pIfSender       The interface sending the frame. This is NULL if it's the trunk.
- * @param   fSrc            The source flags. This 0 if it's not from the trunk.
- * @param   pSG             Pointer to the gather list.
- * @param   fTrunkLocked    Whether the caller owns the out-bound trunk lock.
- * @param   pEthHdr         Pointer to the ethernet header.
+ * @returns true if it's okay, false if it isn't.
+ * @param   pNetwork            The network.
+ * @param   pDstTab             The destination table.
  */
-static bool intnetR0NetworkSendBroadcast(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, uint32_t fSrc,
-                                         PINTNETSG pSG, bool fTrunkLocked, PRTNETETHERHDR pEthHdr)
+DECLINLINE(bool) intnetR0NetworkIsContextOk(PINTNETNETWORK pNetwork, PCINTNETDSTTAB pDstTab)
 {
+    uint32_t const  fTrunkDst = pDstTab->fTrunkDst;
+    if (!fTrunkDst)
+        return true;
+
+    /* ASSUMES: that the trunk won't change its report while we're checking. */
+    PINTNETTRUNKIF  pTrunk = pDstTab->pTrunk;
+    if (    ((fTrunkDst & INTNETTRUNKDIR_HOST) && (pTrunk->fHostNoPreempt || !pNetwork->MacTab.fHostActive))
+        &&  ((fTrunkDst & INTNETTRUNKDIR_WIRE) && (pTrunk->fWireNoPreempt || !pNetwork->MacTab.fWireActive))
+       )
+        return true;
+
+    /* ASSUMES: That a preemption test detects HWACCM contexts. (Will work on
+                non-preemptive systems as well.) */
+    if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+        return true;
+    return false;
+}
+
+
+/**
+ * Checks if the callers context is okay for doing a broadcast given the
+ * specified source.
+ *
+ * @returns true if it's okay, false if it isn't.
+ * @param   pNetwork            The network.
+ * @param   fSrc                The source of the packet.  (0 (intnet),
+ *                              INTNETTRUNKDIR_HOST or INTNETTRUNKDIR_WIRE).
+ */
+DECLINLINE(bool) intnetR0NetworkIsContextOkForBroadcast(PINTNETNETWORK pNetwork, uint32_t fSrc)
+{
+    if (   (!pNetwork->MacTab.fHostActive || fSrc == INTNETTRUNKDIR_HOST)
+        && (!pNetwork->MacTab.fWireActive || fSrc == INTNETTRUNKDIR_WIRE) )
+        return true;
+
+    /* ASSUMES: That a preemption test detects HWACCM contexts. (Will work on
+                non-preemptive systems as well.) */
+    if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+        return true;
+
+    /* PARANOIA: Grab the spinlock to make sure the trunk structure cannot be
+                 freed while we're touching it. */
+    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
+    PINTNETTRUNKIF pTrunk = pNetwork->MacTab.pTrunk;
+
+    bool fRc = !pTrunk
+            || (   (!pNetwork->MacTab.fHostActive || pTrunk->fHostNoPreempt || fSrc == INTNETTRUNKDIR_HOST)
+                && (!pNetwork->MacTab.fWireActive || pTrunk->fWireNoPreempt || fSrc == INTNETTRUNKDIR_WIRE) );
+
+    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+    return fRc;
+}
+
+
+/**
+ * Check context, edit, snoop and switch a broadcast frame when sharing MAC
+ * address on the wire.
+ *
+ * The caller must hold at least one interface on the network busy to prevent it
+ * from destructing beath us.
+ *
+ * @param   pNetwork            The network the frame is being sent to.
+ * @param   fSrc                The source of the packet.  (0 (intnet),
+ *                              INTNETTRUNKDIR_HOST or INTNETTRUNKDIR_WIRE).
+ * @param   pIfSender           The sender interface, NULL if trunk.  Used to
+ *                              prevent sending an echo to the sender.
+ * @param   pSG                 Pointer to the gather list.
+ * @param   pEthHdr             Pointer to the ethernet header.
+ * @param   pDstTab             The destination output table.
+ */
+static INTNETSWDECISION intnetR0NetworkSharedMacFixAndSwitchBroadcast(PINTNETNETWORK pNetwork,
+                                                                      uint32_t fSrc, PINTNETIF pIfSender,
+                                                                      PINTNETSG pSG, PRTNETETHERHDR pEthHdr,
+                                                                      PINTNETDSTTAB pDstTab)
+{
+    /*
+     * Before doing any work here, we need to figure out if we can handle it
+     * in the current context.  The restrictions are solely on the trunk.
+     *
+     * Note! Since at least one interface is busy, there won't be any changes
+     *       to the parameters here (unless the trunk changes its capability
+     *       report, which it shouldn't).
+     */
+    if (!intnetR0NetworkIsContextOkForBroadcast(pNetwork, fSrc))
+        return INTNETSWDECISION_BAD_CONTEXT;
+
     /*
      * Check for ARP packets from the wire since we'll have to make
      * modification to them if we're sharing the MAC address with the host.
      */
-    if (    (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
-        &&  (fSrc & INTNETTRUNKDIR_WIRE)
-        &&  RT_BE2H_U16(pEthHdr->EtherType) == RTNET_ETHERTYPE_ARP)
+    if (    (fSrc & INTNETTRUNKDIR_WIRE)
+        &&  RT_BE2H_U16(pEthHdr->EtherType) == RTNET_ETHERTYPE_ARP
+        &&  pSG->GsoCtx.u8Type == PDMNETWORKGSOTYPE_INVALID)
         intnetR0NetworkEditArpFromWire(pNetwork, pSG, pEthHdr);
 
-     /*
+    /*
      * Check for DHCP packets from the internal net since we'll have to set
      * broadcast flag in DHCP requests if we're sharing the MAC address with
      * the host.  GSO is not applicable to DHCP traffic.
      */
-    if (    (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
-        &&  !fSrc
+    if (    !fSrc
         &&  RT_BE2H_U16(pEthHdr->EtherType) == RTNET_ETHERTYPE_IPV4
         &&  pSG->GsoCtx.u8Type == PDMNETWORKGSOTYPE_INVALID)
         intnetR0NetworkEditDhcpFromIntNet(pNetwork, pSG, pEthHdr);
 
     /*
-     * This is a broadcast or multicast address. For the present we treat those
-     * two as the same - investigating multicast is left for later.
-     *
-     * Write the packet to all the interfaces and signal them.
-     */
-    for (PINTNETIF pIf = pNetwork->pIfs; pIf; pIf = pIf->pNext)
-        if (pIf != pIfSender)
-            intnetR0IfSend(pIf, pIfSender, pSG, NULL);
-
-    /*
-     * Unless the trunk is the origin, broadcast it to both the wire
-     * and the host as well.
-     */
-    PINTNETTRUNKIF pTrunkIf = pNetwork->pTrunkIF;
-    if (    pIfSender
-        &&  pTrunkIf)
-        intnetR0TrunkIfSend(pTrunkIf, pNetwork, pIfSender, INTNETTRUNKDIR_HOST | INTNETTRUNKDIR_WIRE, pSG, fTrunkLocked);
-
-    /*
      * Snoop address info from packet orginating from the trunk connection.
      */
-    else if (   (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
-             && !pIfSender)
+    if (fSrc)
     {
 #ifdef INTNET_WITH_DHCP_SNOOPING
         uint16_t EtherType = RT_BE2H_U16(pEthHdr->EtherType);
         if (    (   EtherType == RTNET_ETHERTYPE_IPV4       /* for DHCP */
                  && pSG->cbTotal >= sizeof(RTNETETHERHDR) + RTNETIPV4_MIN_LEN + RTNETUDP_MIN_LEN + RTNETBOOTP_DHCP_MIN_LEN
                  && pSG->GsoCtx.u8Type == PDMNETWORKGSOTYPE_INVALID )
-            ||  (pSG->fFlags & (INTNETSG_FLAGS_ARP_IPV4)) )
+            ||  (pSG->fFlags & INTNETSG_FLAGS_ARP_IPV4) )
             intnetR0TrunkIfSnoopAddr(pNetwork, pSG, EtherType);
 #else
-       if (pSG->fFlags & (INTNETSG_FLAGS_ARP_IPV4))
+       if (pSG->fFlags & INTNETSG_FLAGS_ARP_IPV4)
            intnetR0TrunkIfSnoopArp(pNetwork, pSG);
 #endif
     }
 
-    return false; /* broadcast frames are never dropped */
+    /*
+     * Create the broadcast destination table.
+     */
+    return intnetR0NetworkSwitchBroadcast(pNetwork, fSrc, pIfSender, pDstTab);
 }
 
 
 /**
- * Sends a multicast frame.
+ * Check context, snoop and switch a unicast frame using the network layer
+ * address of the link layer one (when sharing MAC address on the wire).
  *
- * The caller must own the network mutex, might be abandond temporarily.
- *
- * @returns true if it's addressed to someone on the network, otherwise false.
- * @param   pNetwork        The network the frame is being sent to.
- * @param   pIfSender       The interface sending the frame. This is NULL if it's the trunk.
- * @param   fSrc            The source flags. This 0 if it's not from the trunk.
- * @param   pSG             Pointer to the gather list.
- * @param   fTrunkLocked    Whether the caller owns the out-bound trunk lock.
- * @param   pEthHdr         Pointer to the ethernet header.
- */
-static bool intnetR0NetworkSendMulticast(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, uint32_t fSrc, PINTNETSG pSG, bool fTrunkLocked, PRTNETETHERHDR pEthHdr)
-{
-    /** @todo implement multicast */
-    return intnetR0NetworkSendBroadcast(pNetwork, pIfSender, fSrc, pSG, fTrunkLocked, pEthHdr);
-}
-
-
-/**
- * Sends a unicast frame using the network layer address instead
- * of the link layer one.
- *
- * This function is only used for frames comming from the write (trunk).
- *
- * The caller must own the network mutex, might be abandond temporarily.
+ * This function is only used for frames comming from the wire (trunk).
  *
  * @returns true if it's addressed to someone on the network, otherwise false.
  * @param   pNetwork        The network the frame is being sent to.
  * @param   pSG             Pointer to the gather list.
- * @param   fTrunkLocked    Whether the caller owns the out-bound trunk lock.
  * @param   pEthHdr         Pointer to the ethernet header.
+ * @param   pDstTab         The destination output table.
  */
-static bool intnetR0NetworkSendUnicastWithSharedMac(PINTNETNETWORK pNetwork, PINTNETSG pSG, bool fTrunkLocked, PRTNETETHERHDR pEthHdr)
+static INTNETSWDECISION intnetR0NetworkSharedMacFixAndSwitchUnicast(PINTNETNETWORK pNetwork, PINTNETSG pSG,
+                                                                    PRTNETETHERHDR pEthHdr, PINTNETDSTTAB pDstTab)
 {
     /*
      * Extract the network address from the packet.
@@ -2354,7 +2949,7 @@ static bool intnetR0NetworkSendUnicastWithSharedMac(PINTNETNETWORK pNetwork, PIN
             if (RT_UNLIKELY(!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETIPV4, ip_dst), sizeof(Addr.IPv4), &Addr)))
             {
                 Log(("intnetshareduni: failed to read ip_dst! cbTotal=%#x\n", pSG->cbTotal));
-                return false;
+                return intnetR0NetworkSwitchTrunk(pNetwork, INTNETTRUNKDIR_WIRE, pDstTab);
             }
             enmAddrType = kIntNetAddrType_IPv4;
             cbAddr = sizeof(Addr.IPv4);
@@ -2366,7 +2961,7 @@ static bool intnetR0NetworkSendUnicastWithSharedMac(PINTNETNETWORK pNetwork, PIN
             if (RT_UNLIKELY(!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETIPV6, ip6_dst), sizeof(Addr.IPv6), &Addr)))
             {
                 Log(("intnetshareduni: failed to read ip6_dst! cbTotal=%#x\n", pSG->cbTotal));
-                return false;
+                return intnetR0NetworkSwitchTrunk(pNetwork, INTNETTRUNKDIR_WIRE, pDstTab);
             }
             enmAddrType = kIntNetAddrType_IPv6;
             cbAddr = sizeof(Addr.IPv6);
@@ -2379,7 +2974,7 @@ static bool intnetR0NetworkSendUnicastWithSharedMac(PINTNETNETWORK pNetwork, PIN
             if (RT_UNLIKELY(!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETIPX, ipx_dstnet), sizeof(Addr.IPX), &Addr)))
             {
                 Log(("intnetshareduni: failed to read ipx_dstnet! cbTotal=%#x\n", pSG->cbTotal));
-                return false;
+                return intnetR0NetworkSwitchTrunk(pNetwork, INTNETTRUNKDIR_WIRE, pDstTab);
             }
             enmAddrType = kIntNetAddrType_IPX;
             cbAddr = sizeof(Addr.IPX);
@@ -2393,43 +2988,24 @@ static bool intnetR0NetworkSendUnicastWithSharedMac(PINTNETNETWORK pNetwork, PIN
         case RTNET_ETHERTYPE_ARP:
             Log6(("intnetshareduni: ARP\n"));
             /** @todo revisit this broadcasting of unicast ARP frames! */
-            return intnetR0NetworkSendBroadcast(pNetwork, NULL, INTNETTRUNKDIR_WIRE, pSG, fTrunkLocked, pEthHdr);
+            return intnetR0NetworkSwitchBroadcast(pNetwork, INTNETTRUNKDIR_WIRE, NULL, pDstTab);
 
         /*
-         * Unknown packets are sent do all interfaces that are in promiscuous mode.
+         * Unknown packets are sent to the trunk and any promiscuous interfaces.
          */
         default:
         {
             Log6(("intnetshareduni: unknown ethertype=%#x\n", RT_BE2H_U16(pEthHdr->EtherType)));
-            if (!(pNetwork->fFlags & (INTNET_OPEN_FLAGS_IGNORE_PROMISC | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC)))
-            {
-                for (PINTNETIF pIf = pNetwork->pIfs; pIf; pIf = pIf->pNext)
-                    if (pIf->fPromiscuous)
-                    {
-                        Log2(("Dst=%.6Rhxs => %.6Rhxs\n", &pEthHdr->DstMac, &pIf->Mac));
-                        intnetR0IfSend(pIf, NULL, pSG, NULL);
-                    }
-            }
-            return false;
+            return intnetR0NetworkSwitchTrunkAndPromisc(pNetwork, INTNETTRUNKDIR_WIRE, pDstTab);
         }
     }
 
     /*
-     * Send it to interfaces with matching network addresses.
+     * Do level-3 switching.
      */
-    bool fExactIntNetRecipient = false;
-    for (PINTNETIF pIf = pNetwork->pIfs; pIf; pIf = pIf->pNext)
-    {
-        bool fIt = intnetR0IfAddrCacheLookup(&pIf->aAddrCache[enmAddrType], &Addr, cbAddr) >= 0;
-        if (    fIt
-            ||  (   pIf->fPromiscuous
-                 && !(pNetwork->fFlags & (INTNET_OPEN_FLAGS_IGNORE_PROMISC | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC))))
-        {
-            Log2(("Dst=%.6Rhxs => %.6Rhxs\n", &pEthHdr->DstMac, &pIf->Mac));
-            fExactIntNetRecipient |= fIt;
-            intnetR0IfSend(pIf, NULL, pSG, fIt ? &pIf->Mac : NULL);
-        }
-    }
+    INTNETSWDECISION enmSwDecision = intnetR0NetworkSwitchLevel3(pNetwork, &pEthHdr->DstMac,
+                                                                 enmAddrType, &Addr, cbAddr,
+                                                                 INTNETTRUNKDIR_WIRE, pDstTab);
 
 #ifdef INTNET_WITH_DHCP_SNOOPING
     /*
@@ -2441,86 +3017,85 @@ static bool intnetR0NetworkSendUnicastWithSharedMac(PINTNETNETWORK pNetwork, PIN
         intnetR0TrunkIfSnoopAddr(pNetwork, pSG, RT_BE2H_U16(pEthHdr->EtherType));
 #endif /* INTNET_WITH_DHCP_SNOOPING */
 
-    return fExactIntNetRecipient;
+    return enmSwDecision;
 }
 
 
 /**
- * Sends a unicast frame.
+ * Release all the interfaces in the destination table when we realize that
+ * we're in a context where we cannot get the job done.
  *
- * The caller must own the network mutex, might be abandond temporarily.
- *
- * @returns true if it's addressed to someone on the network, otherwise false.
- * @param   pNetwork        The network the frame is being sent to.
- * @param   pIfSender       The interface sending the frame. This is NULL if it's the trunk.
- * @param   fSrc            The source flags. This 0 if it's not from the trunk.
- * @param   pSG             Pointer to the gather list.
- * @param   fTrunkLocked    Whether the caller owns the out-bound trunk lock.
- * @param   pEthHdr         Pointer to the ethernet header.
+ * @param   pNetwork            The network.
+ * @param   pDstTab             The destination table.
  */
-static bool intnetR0NetworkSendUnicast(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, uint32_t fSrc, PINTNETSG pSG, bool fTrunkLocked, PCRTNETETHERHDR pEthHdr)
+static void intnetR0NetworkReleaseDstTab(PINTNETNETWORK pNetwork, PINTNETDSTTAB pDstTab)
+{
+    /* The trunk interface. */
+    if (pDstTab->fTrunkDst)
+    {
+        PINTNETTRUNKIF pTrunk = pDstTab->pTrunk;
+        intnetR0BusyDec(pNetwork, &pTrunk->cBusy);
+        pDstTab->pTrunk    = NULL;
+        pDstTab->fTrunkDst = 0;
+    }
+
+    /* Regular interfaces. */
+    uint32_t iIf = pDstTab->cIfs;
+    while (iIf-- > 0)
+    {
+        PINTNETIF pIf = pDstTab->aIfs[iIf].pIf;
+        intnetR0BusyDecIf(pIf);
+        pDstTab->aIfs[iIf].pIf = NULL;
+    }
+    pDstTab->cIfs = 0;
+}
+
+
+/**
+ * Deliver the frame to the interfaces specified in the destination table.
+ *
+ * @param   pNetwork            The network.
+ * @param   pDstTab             The destination table.
+ * @param   pSG                 The frame to send.
+ * @param   pIfSender           The sender interface.  NULL if it origined via
+ *                              the trunk.
+ */
+static void intnetR0NetworkDeliver(PINTNETNETWORK pNetwork, PINTNETDSTTAB pDstTab, PINTNETSG pSG, PINTNETIF pIfSender)
 {
     /*
-     * Only send to the interfaces with matching a MAC address.
+     * Trunk first so we don't wast any more time before hitting the wire.
+     *
+     * Note! The switching functions will include the trunk even when the frame
+     *       source is the trunk.  This is because we need it to figure out
+     *       whether the other half of the trunk should see the frame or not
+     *       and let the caller know.
+     *
+     *       So, we'll ignore trunk sends here if the frame origin is
+     *       INTNETTRUNKSWPORT::pfnRecv.
      */
-    bool fExactIntNetRecipient = false;
-    for (PINTNETIF pIf = pNetwork->pIfs; pIf; pIf = pIf->pNext)
+    if (pDstTab->fTrunkDst)
     {
-        bool fIt = false;
-        if (    (   !pIf->fMacSet
-                 || (fIt = !memcmp(&pIf->Mac, &pEthHdr->DstMac, sizeof(pIf->Mac))) )
-            ||  (   pIf->fPromiscuous
-                 && !(pNetwork->fFlags & (INTNET_OPEN_FLAGS_IGNORE_PROMISC | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC))
-                 && pIf != pIfSender /* promiscuous mode: omit the sender */))
-        {
-            Log2(("Dst=%.6Rhxs => %.6Rhxs\n", &pEthHdr->DstMac, &pIf->Mac));
-            fExactIntNetRecipient |= fIt;
-            intnetR0IfSend(pIf, pIfSender, pSG, NULL);
-        }
+        PINTNETTRUNKIF pTrunk = pDstTab->pTrunk;
+        if (pIfSender)
+            intnetR0TrunkIfSend(pTrunk, pNetwork, pIfSender, pDstTab->fTrunkDst, pSG);
+        intnetR0BusyDec(pNetwork, &pTrunk->cBusy);
+        pDstTab->pTrunk    = NULL;
+        pDstTab->fTrunkDst = 0;
     }
 
     /*
-     * Send it to the trunk?
-     * If we didn't find the recipient on the internal network the
-     * frame will hit the wire.
+     * Do the interfaces.
      */
-    uint32_t fDst = 0;
-    PINTNETTRUNKIF pTrunkIf = pNetwork->pTrunkIF;
-    if (    pIfSender
-        &&  pTrunkIf
-        &&  pTrunkIf->pIfPort)
+    uint32_t iIf = pDstTab->cIfs;
+    while (iIf-- > 0)
     {
-        Assert(!fSrc);
-
-        /* promiscuous checks first as they are cheaper than pfnIsHostMac. */
-        if (    pTrunkIf->fWirePromiscuous
-            &&  !(pNetwork->fFlags & (INTNET_OPEN_FLAGS_IGNORE_PROMISC | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC | INTNET_OPEN_FLAGS_IGNORE_PROMISC_TRUNK_WIRE | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC_TRUNK_WIRE)) )
-            fDst |= INTNETTRUNKDIR_WIRE;
-        if (    !(pNetwork->fFlags & (INTNET_OPEN_FLAGS_IGNORE_PROMISC | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC | INTNET_OPEN_FLAGS_IGNORE_PROMISC_TRUNK_HOST | INTNET_OPEN_FLAGS_QUIETLY_IGNORE_PROMISC_TRUNK_HOST))
-            &&  pTrunkIf->pIfPort->pfnIsPromiscuous(pTrunkIf->pIfPort) )
-            fDst |= INTNETTRUNKDIR_HOST;
-
-        if (    fDst != (INTNETTRUNKDIR_HOST | INTNETTRUNKDIR_WIRE)
-            &&  !fExactIntNetRecipient  /* if you have duplicate mac addresses, you're screwed. */ )
-        {
-            if (pTrunkIf->pIfPort->pfnIsHostMac(pTrunkIf->pIfPort, &pEthHdr->DstMac))
-                fDst |= INTNETTRUNKDIR_HOST;
-            else
-                fDst |= INTNETTRUNKDIR_WIRE;
-        }
-
-        if (fDst)
-            intnetR0TrunkIfSend(pTrunkIf, pNetwork, pIfSender, fDst, pSG, fTrunkLocked);
+        PINTNETIF pIf = pDstTab->aIfs[iIf].pIf;
+        intnetR0IfSend(pIf, pIfSender, pSG,
+                       pDstTab->aIfs[iIf].fReplaceDstMac ? &pIf->MacAddr: NULL);
+        intnetR0BusyDecIf(pIf);
+        pDstTab->aIfs[iIf].pIf = NULL;
     }
-
-    /* log it */
-    if (    !fExactIntNetRecipient
-        &&  !fDst
-        &&  (   (pEthHdr->DstMac.au8[0] == 0x08 && pEthHdr->DstMac.au8[1] == 0x00 && pEthHdr->DstMac.au8[2] == 0x27)
-             || (pEthHdr->SrcMac.au8[0] == 0x08 && pEthHdr->SrcMac.au8[1] == 0x00 && pEthHdr->SrcMac.au8[2] == 0x27)))
-        Log2(("Dst=%.6Rhxs ??\n", &pEthHdr->DstMac));
-
-    return fExactIntNetRecipient;
+    pDstTab->cIfs = 0;
 }
 
 
@@ -2532,17 +3107,16 @@ static bool intnetR0NetworkSendUnicast(PINTNETNETWORK pNetwork, PINTNETIF pIfSen
  *
  * The caller must own the network mutex.
  *
- * @returns true if it's addressed to someone on the network, otherwise false.
+ * @returns The switching decision.
  * @param   pNetwork        The network the frame is being sent to.
  * @param   pIfSender       The interface sending the frame. This is NULL if it's the trunk.
  * @param   fSrc            The source flags. This 0 if it's not from the trunk.
  * @param   pSG             Pointer to the gather list.
- * @param   fTrunkLocked    Whether the caller owns the out-bound trunk lock.
+ * @param   pDstTab         The destination table to use.
  */
-static bool intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, uint32_t fSrc, PINTNETSG pSG, bool fTrunkLocked)
+static INTNETSWDECISION intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, uint32_t fSrc,
+                                            PINTNETSG pSG, PINTNETDSTTAB pDstTab)
 {
-    bool fRc = false;
-
     /*
      * Assert reality.
      */
@@ -2554,7 +3128,7 @@ static bool intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, ui
     Assert(pSG->cSegsUsed >= 1);
     Assert(pSG->cSegsUsed <= pSG->cSegsAlloc);
     if (pSG->cbTotal < sizeof(RTNETETHERHDR))
-        return fRc;
+        return INTNETSWDECISION_INVALID;
 
     /*
      * Get the ethernet header (might theoretically involve multiple segments).
@@ -2563,7 +3137,7 @@ static bool intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, ui
     if (pSG->aSegs[0].cb >= sizeof(EthHdr))
         EthHdr = *(PCRTNETETHERHDR)pSG->aSegs[0].pv;
     else if (!intnetR0SgReadPart(pSG, 0, sizeof(EthHdr), &EthHdr))
-        return false;
+        return INTNETSWDECISION_INVALID;
     if (    (EthHdr.DstMac.au8[0] == 0x08 && EthHdr.DstMac.au8[1] == 0x00 && EthHdr.DstMac.au8[2] == 0x27)
         ||  (EthHdr.SrcMac.au8[0] == 0x08 && EthHdr.SrcMac.au8[1] == 0x00 && EthHdr.SrcMac.au8[2] == 0x27)
         ||  (EthHdr.DstMac.au8[0] == 0x00 && EthHdr.DstMac.au8[1] == 0x16 && EthHdr.DstMac.au8[2] == 0xcb)
@@ -2574,42 +3148,74 @@ static bool intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, ui
               &EthHdr.DstMac, &EthHdr.SrcMac, RT_BE2H_U16(EthHdr.EtherType), fSrc, pSG->cbTotal));
 
     /*
-     * Inspect the header updating the mac address of the sender in the process.
+     * Learn the MAC address of the sender.  No re-learning as the interface
+     * user will normally tell us the right MAC address.
      */
-    if (    pIfSender
-        &&  memcmp(&EthHdr.SrcMac, &pIfSender->Mac, sizeof(pIfSender->Mac)))
+    if (RT_UNLIKELY(    pIfSender
+                    &&  !pIfSender->fMacSet
+                    &&  memcmp(&EthHdr.SrcMac, &pIfSender->MacAddr, sizeof(pIfSender->MacAddr))
+                    &&  !intnetR0IsMacAddrMulticast(&EthHdr.SrcMac)
+                    ))
     {
-        /** @todo stats */
-        Log2(("IF MAC: %.6Rhxs -> %.6Rhxs\n", &pIfSender->Mac, &EthHdr.SrcMac));
-        pIfSender->Mac = EthHdr.SrcMac;
-        pIfSender->fMacSet = true;
+        Log2(("IF MAC: %.6Rhxs -> %.6Rhxs\n", &pIfSender->MacAddr, &EthHdr.SrcMac));
+        RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+        RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+        PINTNETMACTABENTRY pIfEntry = intnetR0NetworkFindMacAddrEntry(pNetwork, pIfSender);
+        if (pIfEntry)
+            pIfEntry->MacAddr = EthHdr.SrcMac;
+        pIfSender->MacAddr    = EthHdr.SrcMac;
+
+        RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
     }
 
     /*
-     * Distribute the frame.
+     * Deal with MAC address sharing as that may required editing of the
+     * packets before we dispatch them anywhere.
      */
-    if (   EthHdr.DstMac.au16[0] == 0xffff              /* broadcast address. */
-        && EthHdr.DstMac.au16[1] == 0xffff
-        && EthHdr.DstMac.au16[2] == 0xffff)
-        fRc = intnetR0NetworkSendBroadcast(pNetwork, pIfSender, fSrc, pSG, fTrunkLocked, &EthHdr);
-    else if (RT_UNLIKELY(EthHdr.DstMac.au8[0] & 1))     /* multicast address */
-        fRc = intnetR0NetworkSendMulticast(pNetwork, pIfSender, fSrc, pSG, fTrunkLocked, &EthHdr);
-    else if (   !(pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
-             || !(fSrc & INTNETTRUNKDIR_WIRE))
-        fRc = intnetR0NetworkSendUnicast(pNetwork, pIfSender, fSrc, pSG, fTrunkLocked, &EthHdr);
+    INTNETSWDECISION enmSwDecision;
+    if (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
+    {
+        if (intnetR0IsMacAddrMulticast(&EthHdr.DstMac))
+            enmSwDecision = intnetR0NetworkSharedMacFixAndSwitchBroadcast(pNetwork, fSrc, pIfSender, pSG, &EthHdr, pDstTab);
+        else if (fSrc & INTNETTRUNKDIR_WIRE)
+            enmSwDecision = intnetR0NetworkSharedMacFixAndSwitchUnicast(pNetwork, pSG, &EthHdr, pDstTab);
+        else
+            enmSwDecision = intnetR0NetworkSwitchUnicast(pNetwork, fSrc, pIfSender, &EthHdr.DstMac, pDstTab);
+    }
+    else if (intnetR0IsMacAddrMulticast(&EthHdr.DstMac))
+        enmSwDecision = intnetR0NetworkSwitchBroadcast(pNetwork, fSrc, pIfSender, pDstTab);
     else
-        fRc = intnetR0NetworkSendUnicastWithSharedMac(pNetwork, pSG, fTrunkLocked, &EthHdr);
-    return fRc;
+        enmSwDecision = intnetR0NetworkSwitchUnicast(pNetwork, fSrc, pIfSender, &EthHdr.DstMac, pDstTab);
+
+    /*
+     * Deliver to the destinations if we can.
+     */
+    if (enmSwDecision != INTNETSWDECISION_BAD_CONTEXT)
+    {
+        if (intnetR0NetworkIsContextOk(pNetwork, pDstTab))
+            intnetR0NetworkDeliver(pNetwork, pDstTab, pSG, pIfSender);
+        else
+        {
+            intnetR0NetworkReleaseDstTab(pNetwork, pDstTab);
+            enmSwDecision = INTNETSWDECISION_BAD_CONTEXT;
+        }
+    }
+
+    return enmSwDecision;
 }
 
 
 /**
  * Sends one or more frames.
  *
- * The function will first the frame which is passed as the optional
- * arguments pvFrame and cbFrame. These are optional since it also
- * possible to chain together one or more frames in the send buffer
- * which the function will process after considering it's arguments.
+ * The function will first the frame which is passed as the optional arguments
+ * pvFrame and cbFrame. These are optional since it also possible to chain
+ * together one or more frames in the send buffer which the function will
+ * process after considering it's arguments.
+ *
+ * The caller is responsible for making sure that there are no concurrent calls
+ * to this method (with the same handle).
  *
  * @returns VBox status code.
  * @param   pIntNet     The instance data.
@@ -2629,95 +3235,91 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
         return VERR_INVALID_HANDLE;
 
     /*
-     * Lock the network. If there is a trunk retain it and grab its
-     * out-bound lock (this requires leaving the network lock first).
-     * Grabbing the out-bound lock here simplifies things quite a bit
-     * later on, so while this is excessive and a bit expensive it's
-     * not worth caring about right now.
+     * Make sure we've got a network.
      */
+    int rc  = VINF_SUCCESS;
+    intnetR0BusyIncIf(pIf);
     PINTNETNETWORK pNetwork = pIf->pNetwork;
-    int rc = RTSemFastMutexRequest(pNetwork->FastMutex2);
-    if (RT_FAILURE(rc))
+    if (RT_LIKELY(pNetwork))
     {
-        intnetR0IfRelease(pIf, pSession);
-        return rc;
-    }
-    PINTNETTRUNKIF pTrunkIf = intnetR0TrunkIfRetain(pNetwork->pTrunkIF);
-    if (pTrunkIf)
-    {
-        RTSemFastMutexRelease(pIf->pNetwork->FastMutex2);
-
-        if (!intnetR0TrunkIfOutLock(pTrunkIf))
+        /*
+         * Grab the destination table.
+         */
+        PINTNETDSTTAB pDstTab = (PINTNETDSTTAB)ASMAtomicXchgPtr((void * volatile *)&pIf->pDstTab, NULL);
+        if (RT_LIKELY(pDstTab))
         {
-            intnetR0TrunkIfRelease(pTrunkIf);
-            intnetR0IfRelease(pIf, pSession);
-            return VERR_SEM_DESTROYED;
-        }
-
-        rc = RTSemFastMutexRequest(pNetwork->FastMutex2);
-        if (RT_FAILURE(rc))
-        {
-            intnetR0TrunkIfOutUnlock(pTrunkIf);
-            intnetR0TrunkIfRelease(pTrunkIf);
-            intnetR0IfRelease(pIf, pSession);
-            return rc;
-        }
-    }
-
-    INTNETSG Sg; /** @todo this will have to be changed if we're going to use async sending
-                  * with buffer sharing for some OS or service. Darwin copies everything so
-                  * I won't bother allocating and managing SGs rigth now. Sorry. */
-
-    /*
-     * Process the send buffer.
-     */
-    PINTNETHDR pHdr;
-    while ((pHdr = INTNETRingGetNextFrameToRead(&pIf->pIntBuf->Send)) != NULL)
-    {
-        uint16_t const u16Type = pHdr->u16Type;
-        if (u16Type == INTNETHDR_TYPE_FRAME)
-        {
-            /* Send regular frame. */
-            void *pvCurFrame = INTNETHdrGetFramePtr(pHdr, pIf->pIntBuf);
-            INTNETSgInitTemp(&Sg, pvCurFrame, pHdr->cbFrame);
-            if (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
-                intnetR0IfSnoopAddr(pIf, (uint8_t *)pvCurFrame, pHdr->cbFrame, false /*fGso*/, (uint16_t *)&Sg.fFlags);
-            intnetR0NetworkSend(pNetwork, pIf, 0, &Sg, !!pTrunkIf);
-        }
-        else if (u16Type == INTNETHDR_TYPE_GSO)
-        {
-            /* Send GSO frame if sane*/
-            PPDMNETWORKGSO  pGso       = INTNETHdrGetGsoContext(pHdr, pIf->pIntBuf);
-            uint32_t        cbFrame    = pHdr->cbFrame - sizeof(*pGso);
-            if (RT_LIKELY(PDMNetGsoIsValid(pGso, pHdr->cbFrame, cbFrame)))
+            /*
+             * Process the send buffer.
+             */
+            INTNETSWDECISION    enmSwDecision = INTNETSWDECISION_BROADCAST;
+            INTNETSG            Sg; /** @todo this will have to be changed if we're going to use async sending
+                                     * with buffer sharing for some OS or service. Darwin copies everything so
+                                     * I won't bother allocating and managing SGs rigth now. Sorry. */
+            PINTNETHDR          pHdr;
+            while ((pHdr = INTNETRingGetNextFrameToRead(&pIf->pIntBuf->Send)) != NULL)
             {
-                void       *pvCurFrame = pGso + 1;
-                INTNETSgInitTempGso(&Sg, pvCurFrame, cbFrame, pGso);
-                if (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
-                    intnetR0IfSnoopAddr(pIf, (uint8_t *)pvCurFrame, cbFrame, true /*fGso*/, (uint16_t *)&Sg.fFlags);
-                intnetR0NetworkSend(pNetwork, pIf, 0, &Sg, !!pTrunkIf);
-            }
-            else
-                STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatBadFrames); /* ignore */
-        }
-        /* Unless it's a padding frame, we're getting babble from the producer. */
-        else if (u16Type != INTNETHDR_TYPE_PADDING)
-            STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatBadFrames); /* ignore */
+                uint16_t const      u16Type = pHdr->u16Type;
+                if (u16Type == INTNETHDR_TYPE_FRAME)
+                {
+                    /* Send regular frame. */
+                    void *pvCurFrame = INTNETHdrGetFramePtr(pHdr, pIf->pIntBuf);
+                    INTNETSgInitTemp(&Sg, pvCurFrame, pHdr->cbFrame);
+                    if (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
+                        intnetR0IfSnoopAddr(pIf, (uint8_t *)pvCurFrame, pHdr->cbFrame, false /*fGso*/, (uint16_t *)&Sg.fFlags);
+                    enmSwDecision = intnetR0NetworkSend(pNetwork, pIf,  0 /*fSrc*/, &Sg, pDstTab);
+                }
+                else if (u16Type == INTNETHDR_TYPE_GSO)
+                {
+                    /* Send GSO frame if sane. */
+                    PPDMNETWORKGSO  pGso       = INTNETHdrGetGsoContext(pHdr, pIf->pIntBuf);
+                    uint32_t        cbFrame    = pHdr->cbFrame - sizeof(*pGso);
+                    if (RT_LIKELY(PDMNetGsoIsValid(pGso, pHdr->cbFrame, cbFrame)))
+                    {
+                        void       *pvCurFrame = pGso + 1;
+                        INTNETSgInitTempGso(&Sg, pvCurFrame, cbFrame, pGso);
+                        if (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
+                            intnetR0IfSnoopAddr(pIf, (uint8_t *)pvCurFrame, cbFrame, true /*fGso*/, (uint16_t *)&Sg.fFlags);
+                        enmSwDecision = intnetR0NetworkSend(pNetwork, pIf, 0 /*fSrc*/, &Sg, pDstTab);
+                    }
+                    else
+                    {
+                        STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatBadFrames); /* ignore */
+                        enmSwDecision = INTNETSWDECISION_DROP;
+                    }
+                }
+                /* Unless it's a padding frame, we're getting babble from the producer. */
+                else
+                {
+                    if (u16Type != INTNETHDR_TYPE_PADDING)
+                        STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatBadFrames); /* ignore */
+                    enmSwDecision = INTNETSWDECISION_DROP;
+                }
+                if (enmSwDecision == INTNETSWDECISION_BAD_CONTEXT)
+                {
+                    rc = VERR_TRY_AGAIN;
+                    break;
+                }
 
-        /* Skip to the next frame. */
-        INTNETRingSkipFrame(&pIf->pIntBuf->Send);
+                /* Skip to the next frame. */
+                INTNETRingSkipFrame(&pIf->pIntBuf->Send);
+            }
+
+            /*
+             * Put back the destination table.
+             */
+            Assert(!pIf->pDstTab);
+            ASMAtomicWritePtr((void * volatile *)&pIf->pDstTab, pDstTab);
+        }
+        else
+            rc = VERR_INTERNAL_ERROR_4;
     }
+    else
+        rc = VERR_INTERNAL_ERROR_3;
 
     /*
-     * Release the semaphore(s) and release references.
+     * Release the interface.
      */
-    rc = RTSemFastMutexRelease(pNetwork->FastMutex2);
-    if (pTrunkIf)
-    {
-        intnetR0TrunkIfOutUnlock(pTrunkIf);
-        intnetR0TrunkIfRelease(pTrunkIf);
-    }
-
+    intnetR0BusyDecIf(pIf);
     intnetR0IfRelease(pIf, pSession);
     return rc;
 }
@@ -2767,11 +3369,12 @@ INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
      * ASSUMES that we created the ring-3 mapping when selecting or
      * allocating the buffer.
      */
-    int rc = RTSemFastMutexRequest(pIf->pNetwork->FastMutex2);
+    int rc = RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
     if (RT_SUCCESS(rc))
     {
         *ppRing3Buf = pIf->pIntBufR3;
-        rc = RTSemFastMutexRelease(pIf->pNetwork->FastMutex2);
+
+        rc = RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
     }
 
     intnetR0IfRelease(pIf, pSession);
@@ -2823,12 +3426,12 @@ INTNETR0DECL(int) INTNETR0IfGetRing0Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
      * Grab the lock and get the data.
      * ASSUMES that the handle isn't closed while we're here.
      */
-    int rc = RTSemFastMutexRequest(pIf->pNetwork->FastMutex2);
+    int rc = RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
     if (RT_SUCCESS(rc))
     {
         *ppRing0Buf = pIf->pIntBuf;
 
-        rc = RTSemFastMutexRelease(pIf->pNetwork->FastMutex2);
+        rc = RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
     }
     intnetR0IfRelease(pIf, pSession);
     LogFlow(("INTNETR0IfGetRing0Buffer: returns %Rrc *ppRing0Buf=%p\n", rc, *ppRing0Buf));
@@ -2901,28 +3504,35 @@ INTNETR0DECL(int) INTNETR0IfSetPromiscuousMode(PINTNET pIntNet, INTNETIFHANDLE h
     }
 
     /*
-     * Grab the network semaphore and make the change.
+     * Get the network, take the address spinlock, and make the change.
+     * Paranoia^2: Mark ourselves busy to prevent anything from being destroyed.
      */
-    int rc;
+    int rc = VINF_SUCCESS;
+    intnetR0BusyIncIf(pIf);
     PINTNETNETWORK pNetwork = pIf->pNetwork;
     if (pNetwork)
     {
-        rc = RTSemFastMutexRequest(pNetwork->FastMutex2);
-        if (RT_SUCCESS(rc))
-        {
-            if (pIf->fPromiscuous != fPromiscuous)
-            {
-                Log(("INTNETR0IfSetPromiscuousMode: hIf=%RX32: Changed from %d -> %d\n",
-                     hIf, !fPromiscuous, !!fPromiscuous));
-                ASMAtomicUoWriteBool(&pIf->fPromiscuous, fPromiscuous);
-            }
+        RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+        RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
 
-            rc = RTSemFastMutexRelease(pNetwork->FastMutex2);
+        if (pIf->fPromiscuous != fPromiscuous)
+        {
+            Log(("INTNETR0IfSetPromiscuousMode: hIf=%RX32: Changed from %d -> %d\n",
+                 hIf, !fPromiscuous, !!fPromiscuous));
+            ASMAtomicUoWriteBool(&pIf->fPromiscuous, fPromiscuous);
+
+            PINTNETMACTABENTRY pEntry = intnetR0NetworkFindMacAddrEntry(pNetwork, pIf); Assert(pEntry);
+            if (RT_LIKELY(pEntry))
+                pEntry->fPromiscuous = fPromiscuous;
+            pIf->fPromiscuous        = fPromiscuous;
         }
+
+        RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
     }
     else
         rc = VERR_WRONG_ORDER;
 
+    intnetR0BusyDecIf(pIf);
     intnetR0IfRelease(pIf, pSession);
     return rc;
 }
@@ -2970,29 +3580,35 @@ INTNETR0DECL(int) INTNETR0IfSetMacAddress(PINTNET pIntNet, INTNETIFHANDLE hIf, P
     }
 
     /*
-     * Grab the network semaphore and make the change.
+     * Get the network, take the address spinlock, and make the change.
+     * Paranoia^2: Mark ourselves busy to prevent anything from being destroyed.
      */
-    int rc;
+    int rc = VINF_SUCCESS;
+    intnetR0BusyIncIf(pIf);
     PINTNETNETWORK pNetwork = pIf->pNetwork;
     if (pNetwork)
     {
-        rc = RTSemFastMutexRequest(pNetwork->FastMutex2);
-        if (RT_SUCCESS(rc))
-        {
-            if (memcmp(&pIf->Mac, pMac, sizeof(pIf->Mac)))
-            {
-                Log(("INTNETR0IfSetMacAddress: hIf=%RX32: Changed from %.6Rhxs -> %.6Rhxs\n",
-                     hIf, &pIf->Mac, pMac));
-                pIf->Mac = *pMac;
-                pIf->fMacSet = true;
-            }
+        RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+        RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
 
-            rc = RTSemFastMutexRelease(pNetwork->FastMutex2);
+        if (memcmp(&pIf->MacAddr, pMac, sizeof(pIf->MacAddr)))
+        {
+            Log(("INTNETR0IfSetMacAddress: hIf=%RX32: Changed from %.6Rhxs -> %.6Rhxs\n",
+                 hIf, &pIf->MacAddr, pMac));
+
+            PINTNETMACTABENTRY pEntry = intnetR0NetworkFindMacAddrEntry(pNetwork, pIf); Assert(pEntry);
+            if (RT_LIKELY(pEntry))
+                pEntry->MacAddr = *pMac;
+            pIf->MacAddr        = *pMac;
+            pIf->fMacSet        = true;
         }
+
+        RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
     }
     else
         rc = VERR_WRONG_ORDER;
 
+    intnetR0BusyDecIf(pIf);
     intnetR0IfRelease(pIf, pSession);
     return rc;
 }
@@ -3015,10 +3631,10 @@ INTNETR0DECL(int) INTNETR0IfSetMacAddressReq(PINTNET pIntNet, PSUPDRVSESSION pSe
 
 
 /**
- * Worker for intnetR0IfSetActive.
+ * Worker for intnetR0IfSetActive and intnetR0IfDestruct.
  *
  * This function will update the active interface count on the network and
- * activate or deactivate the trunk connection if necessary. Note that in
+ * activate or deactivate the trunk connection if necessary.  Note that in
  * order to do this it is necessary to abandond the network semaphore.
  *
  * @returns VBox status code.
@@ -3033,77 +3649,57 @@ static int intnetR0NetworkSetIfActive(PINTNETNETWORK pNetwork, PINTNETIF pIf, bo
     AssertPtr(pIf);
 
     /*
-     * If we've got a trunk, lock it now in case we need to call out, and
-     * then lock the network.
+     * The address spinlock of the network protects the variables, while
+     * the out-bound trunk semaphore protects the pfnSetActive call.
+     * Try grab both of them in case we have to make a change.
      */
-    PINTNETTRUNKIF pTrunkIf = pNetwork->pTrunkIF;
-    if (pTrunkIf && !intnetR0TrunkIfOutLock(pTrunkIf))
-        return VERR_SEM_DESTROYED;
+    int             rcTrunkLock = VERR_SEM_DESTROYED;
+    PINTNETTRUNKIF  pTrunk      = pNetwork->MacTab.pTrunk;
+    if (pTrunk && intnetR0TrunkIfOutLock(pTrunk))
+        rcTrunkLock = VINF_SUCCESS;
 
-    int rc = RTSemFastMutexRequest(pNetwork->FastMutex2); AssertRC(rc);
-    if (RT_SUCCESS(rc))
-    {
-        bool fNetworkLocked = true;
-
-        /*
-         * Make the change if necessary.
-         */
-        if (pIf->fActive != fActive)
-        {
-            pIf->fActive = fActive;
-
-            uint32_t const cActiveIFs = pNetwork->cActiveIFs;
-            Assert((int32_t)cActiveIFs + (fActive ? 1 : -1) >= 0);
-            pNetwork->cActiveIFs += fActive ? 1 : -1;
-
-            if (    pTrunkIf
-                &&  (   !pNetwork->cActiveIFs
-                     || !cActiveIFs))
-            {
-                /*
-                 * We'll have to change the trunk status, so, leave
-                 * the network semaphore so we don't create any deadlocks.
-                 */
-                int rc2 = RTSemFastMutexRelease(pNetwork->FastMutex2); AssertRC(rc2);
-                fNetworkLocked = false;
-
-                if (pTrunkIf->pIfPort)
-                    pTrunkIf->pIfPort->pfnSetActive(pTrunkIf->pIfPort, fActive);
-            }
-        }
-
-        if (fNetworkLocked)
-            RTSemFastMutexRelease(pNetwork->FastMutex2);
-    }
-    if (pTrunkIf)
-        intnetR0TrunkIfOutUnlock(pTrunkIf);
-    return rc;
-}
-
-
-/**
- * Activates or deactivates a interface.
- *
- * This is used to enable and disable the trunk connection on demans as well as
- * know when not to expect an interface to want to receive packets.
- *
- * @returns VBox status code.
- * @param   pIf         The interface.
- * @param   fActive     What to do.
- */
-static int intnetR0IfSetActive(PINTNETIF pIf, bool fActive)
-{
-    /* quick sanity check */
-    AssertPtrReturn(pIf, VERR_INVALID_POINTER);
+    bool            fTellTrunk  = false;
+    RTSPINLOCKTMP   Tmp         = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
 
     /*
-     * Hand it to the network since it might involve the trunk
-     * and things are tricky there wrt to locking order.
+     * Do the update.
      */
-    PINTNETNETWORK pNetwork = pIf->pNetwork;
-    if (!pNetwork)
-        return VERR_WRONG_ORDER;
-    return intnetR0NetworkSetIfActive(pNetwork, pIf, fActive);
+    if (pIf->fActive != fActive)
+    {
+        PINTNETMACTABENTRY pEntry = intnetR0NetworkFindMacAddrEntry(pNetwork, pIf); Assert(pEntry);
+        if (RT_LIKELY(pEntry))
+        {
+            pEntry->fActive = fActive;
+            pIf->fActive    = fActive;
+
+            if (fActive)
+            {
+                pNetwork->cActiveIFs++;
+                fTellTrunk = pNetwork->cActiveIFs == 1;
+            }
+            else
+            {
+                pNetwork->cActiveIFs--;
+                fTellTrunk = pNetwork->cActiveIFs == 0;
+            }
+        }
+    }
+
+    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+    /*
+     * Tell the trunk if necessary.
+     */
+    if (RT_SUCCESS(rcTrunkLock))
+    {
+        if (fTellTrunk && pTrunk->pIfPort)
+            pTrunk->pIfPort->pfnSetActive(pTrunk->pIfPort, fActive);
+
+        intnetR0TrunkIfOutUnlock(pTrunk);
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -3132,9 +3728,14 @@ INTNETR0DECL(int) INTNETR0IfSetActive(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPD
     }
 
     /*
-     * Hand it to the network since it might involve the trunk
-     * and things are tricky there wrt to locking order.
+     * Hand it to the network since it might involve the trunk and things are
+     * tricky there wrt to locking order.
+     *
+     * Note! We mark the interface busy so the network cannot be removed while
+     *       we're working on it - paranoia strikes again.
      */
+    intnetR0BusyIncIf(pIf);
+
     int rc;
     PINTNETNETWORK pNetwork = pIf->pNetwork;
     if (pNetwork)
@@ -3142,6 +3743,7 @@ INTNETR0DECL(int) INTNETR0IfSetActive(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPD
     else
         rc = VERR_WRONG_ORDER;
 
+    intnetR0BusyDecIf(pIf);
     intnetR0IfRelease(pIf, pSession);
     return rc;
 }
@@ -3188,10 +3790,10 @@ INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
         Log(("INTNETR0IfWait: returns VERR_INVALID_HANDLE\n"));
         return VERR_INVALID_HANDLE;
     }
-    const INTNETIFHANDLE    hIfSelf = pIf->hIf;
-    const RTSEMEVENT        Event = pIf->Event;
-    if (    hIfSelf != hIf              /* paranoia */
-        &&  Event != NIL_RTSEMEVENT)
+    const INTNETIFHANDLE    hIfSelf    = pIf->hIf;
+    const RTSEMEVENT        hRecvEvent = pIf->hRecvEvent;
+    if (    hIfSelf    != hIf           /* paranoia */
+        &&  hRecvEvent != NIL_RTSEMEVENT)
     {
         Log(("INTNETR0IfWait: returns VERR_SEM_DESTROYED\n"));
         return VERR_SEM_DESTROYED;
@@ -3211,8 +3813,8 @@ INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
      * code must be aligned with the waiting code in intnetR0IfDestruct.
      */
     ASMAtomicIncU32(&pIf->cSleepers);
-    int rc = RTSemEventWaitNoResume(Event, cMillies);
-    if (pIf->Event == Event)
+    int rc = RTSemEventWaitNoResume(hRecvEvent, cMillies);
+    if (pIf->hRecvEvent == hRecvEvent)
     {
         ASMAtomicDecU32(&pIf->cSleepers);
         if (!pIf->fDestroying)
@@ -3269,13 +3871,18 @@ INTNETR0DECL(int) INTNETR0IfClose(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSE
     /* mark the handle as freed so intnetR0IfDestruct won't free it again. */
     ASMAtomicWriteU32(&pIf->hIf, INTNET_HANDLE_INVALID);
 
-
     /*
      * Release the references to the interface object (handle + free lookup).
      * But signal the event semaphore first so any waiter holding a reference
      * will wake up too (he'll see hIf == invalid and return correctly).
      */
-    RTSemEventSignal(pIf->Event);
+    uint32_t i = pIf->cSleepers;
+    while (i-- > 0)
+    {
+        RTSemEventSignal(pIf->hRecvEvent);
+        RTThreadYield();
+    }
+    RTSemEventSignal(pIf->hRecvEvent);
 
     void *pvObj = pIf->pvObj;
     intnetR0IfRelease(pIf, pSession); /* (RTHandleTableFreeWithCtx) */
@@ -3320,7 +3927,7 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
      * We grab the INTNET create/open/destroy semaphore to make sure nobody is
      * adding or removing interface while we're in here.  For paranoid reasons
      * we also mark the interface as destroyed here so any waiting threads can
-     * take the appropriate actions (theoretical case).
+     * take evasive action (theoretical case).
      */
     RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
     ASMAtomicWriteBool(&pIf->fDestroying, true);
@@ -3337,36 +3944,42 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
     }
 
     /*
-     * If we've got a network deactivate and unlink ourselves from it.
-     * Because of cleanup order we might be an orphan now.
+     * If we've got a network deactivate and detach ourselves from it.  Because
+     * of cleanup order we might have been orphaned by the network destructor.
      */
     PINTNETNETWORK pNetwork = pIf->pNetwork;
     if (pNetwork)
     {
-        intnetR0IfSetActive(pIf, false);
+        /* set inactive. */
+        intnetR0NetworkSetIfActive(pNetwork, pIf, false /*fActive*/);
 
-        /* unlink */
-        if (pNetwork->pIfs == pIf)
-            pNetwork->pIfs = pIf->pNext;
-        else
-        {
-            PINTNETIF pPrev = pNetwork->pIfs;
-            while (pPrev)
+        /* remove ourselves from the switch table. */
+        RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+        RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+        uint32_t iIf = pNetwork->MacTab.cEntries;
+        while (iIf-- > 0)
+            if (pNetwork->MacTab.paEntries[iIf].pIf == pIf)
             {
-                if (pPrev->pNext == pIf)
-                {
-                    pPrev->pNext = pIf->pNext;
-                    break;
-                }
-                pPrev = pPrev->pNext;
+                if (iIf + 1 < pNetwork->MacTab.cEntries)
+                    memmove(&pNetwork->MacTab.paEntries[iIf],
+                            &pNetwork->MacTab.paEntries[iIf + 1],
+                            (pNetwork->MacTab.cEntries - iIf - 1) * sizeof(pNetwork->MacTab.paEntries[0]));
+                pNetwork->MacTab.cEntries--;
+                break;
             }
-            Assert(pPrev);
-        }
-        pIf->pNext = NULL;
+
+        RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+        /* Wait for the interface to quiesce while we still can. */
+        intnetR0BusyWait(pNetwork, &pIf->cBusy);
 
         /* Release our reference to the network. */
-        SUPR0ObjRelease(pNetwork->pvObj, pIf->pSession);
+        RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
         pIf->pNetwork = NULL;
+        RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+        SUPR0ObjRelease(pNetwork->pvObj, pIf->pSession);
     }
 
     RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
@@ -3377,13 +3990,13 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
      * We *must* make sure they have woken up properly and realized
      * that the interface is no longer valid.
      */
-    if (pIf->Event != NIL_RTSEMEVENT)
+    if (pIf->hRecvEvent != NIL_RTSEMEVENT)
     {
-        RTSEMEVENT Event = pIf->Event;
-        unsigned cMaxWait = 0x1000;
+        RTSEMEVENT  hRecvEvent = pIf->hRecvEvent;
+        unsigned    cMaxWait   = 0x1000;
         while (pIf->cSleepers && cMaxWait-- > 0)
         {
-            RTSemEventSignal(Event);
+            RTSemEventSignal(hRecvEvent);
             RTThreadYield();
         }
         if (pIf->cSleepers)
@@ -3393,13 +4006,13 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
             cMaxWait = pIf->cSleepers;
             while (pIf->cSleepers && cMaxWait-- > 0)
             {
-                RTSemEventSignal(Event);
+                RTSemEventSignal(hRecvEvent);
                 RTThreadSleep(10);
             }
         }
 
-        RTSemEventDestroy(Event);
-        pIf->Event = NIL_RTSEMEVENT;
+        RTSemEventDestroy(hRecvEvent);
+        pIf->hRecvEvent = NIL_RTSEMEVENT;
     }
 
     /*
@@ -3423,8 +4036,21 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
     }
 
     /*
-     * The interface.
+     * Free remaining resources
      */
+    RTSpinlockDestroy(pIf->hRecvInSpinlock);
+    pIf->hRecvInSpinlock = NIL_RTSPINLOCK;
+
+    RTMemFree(pIf->pDstTab);
+    pIf->pDstTab = NULL;
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pIf->aAddrCache); i++)
+        if (pIf->aAddrCache[i].pbEntries)
+        {
+            RTMemFree(pIf->aAddrCache[i].pbEntries);
+            pIf->aAddrCache[i].pbEntries = NULL;
+        }
+
     pIf->pvObj = NULL;
     RTMemFree(pIf);
 }
@@ -3438,7 +4064,8 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
  * opened so the interface destructor can close it.
  *
  * @returns VBox status code.
- * @param   pNetwork    The network.
+ * @param   pNetwork    The network, referenced.  The reference is consumed on
+ *                      success.
  * @param   pSession    The session handle.
  * @param   cbSend      The size of the send buffer.
  * @param   cbRecv      The size of the receive buffer.
@@ -3457,45 +4084,60 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
     AssertPtr(phIf);
 
     /*
-     * Allocate and initialize the interface structure.
+     * Make sure that all destination tables as well as the  have space of
+     */
+    int rc = intnetR0NetworkEnsureTabSpace(pNetwork);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Allocate the interface and initalize it.
      */
     PINTNETIF pIf = (PINTNETIF)RTMemAllocZ(sizeof(*pIf));
     if (!pIf)
         return VERR_NO_MEMORY;
-    //pIf->pNext = NULL;
-    memset(&pIf->Mac, 0xff, sizeof(pIf->Mac)); /* broadcast */
-    //pIf->fMacSet = false;
-    //pIf->fPromiscuous = false;
-    //pIf->fActive = false;
-    //pIf->fDestroying = false;
-    //pIf->pIntBuf = 0;
-    //pIf->pIntBufR3 = NIL_RTR3PTR;
-    //pIf->pIntBufDefault = 0;
+
+    memset(&pIf->MacAddr, 0xff, sizeof(pIf->MacAddr)); /* broadcast */
+    //pIf->fMacSet          = false;
+    //pIf->fPromiscuous     = false;
+    //pIf->fActive          = false;
+    //pIf->fDestroying      = false;
+    //pIf->cYields          = 0;
+    //pIf->pIntBuf          = 0;
+    //pIf->pIntBufR3        = NIL_RTR3PTR;
+    //pIf->pIntBufDefault   = 0;
     //pIf->pIntBufDefaultR3 = NIL_RTR3PTR;
-    //pIf->cYields = 0;
-    pIf->Event = NIL_RTSEMEVENT;
-    //pIf->cSleepers = 0;
-    pIf->hIf = INTNET_HANDLE_INVALID;
-    pIf->pNetwork = pNetwork;
-    pIf->pSession = pSession;
-    //pIf->pvObj = NULL;
-    //pIf->aAddrCache[kIntNetAddrType_Invalid] = {0};
-    //pIf->aAddrCache[kIntNetAddrType_IPv4].pbEntries = NULL;
-    //pIf->aAddrCache[kIntNetAddrType_IPv4].cEntries = 0;
+    pIf->hRecvEvent         = NIL_RTSEMEVENT;
+    //pIf->cSleepers        = 0;
+    pIf->hIf                = INTNET_HANDLE_INVALID;
+    pIf->pNetwork           = pNetwork;
+    pIf->pSession           = pSession;
+    //pIf->pvObj            = NULL;
+    //pIf->aAddrCache[kIntNetAddrType_Invalid]            = {0};
+    //pIf->aAddrCache[kIntNetAddrType_IPv4].pbEntries     = NULL;
+    //pIf->aAddrCache[kIntNetAddrType_IPv4].cEntries      = 0;
     //pIf->aAddrCache[kIntNetAddrType_IPv4].cEntriesAlloc = 0;
-    pIf->aAddrCache[kIntNetAddrType_IPv4].cbAddress = intnetR0AddrSize(kIntNetAddrType_IPv4);
-    pIf->aAddrCache[kIntNetAddrType_IPv4].cbEntry   = intnetR0AddrSize(kIntNetAddrType_IPv4);
-    //pIf->aAddrCache[kIntNetAddrType_IPv6].pbEntries = NULL;
-    //pIf->aAddrCache[kIntNetAddrType_IPv6].cEntries = 0;
+    pIf->aAddrCache[kIntNetAddrType_IPv4].cbAddress       = intnetR0AddrSize(kIntNetAddrType_IPv4);
+    pIf->aAddrCache[kIntNetAddrType_IPv4].cbEntry         = intnetR0AddrSize(kIntNetAddrType_IPv4);
+    //pIf->aAddrCache[kIntNetAddrType_IPv6].pbEntries     = NULL;
+    //pIf->aAddrCache[kIntNetAddrType_IPv6].cEntries      = 0;
     //pIf->aAddrCache[kIntNetAddrType_IPv6].cEntriesAlloc = 0;
-    pIf->aAddrCache[kIntNetAddrType_IPv6].cbAddress = intnetR0AddrSize(kIntNetAddrType_IPv6);
-    pIf->aAddrCache[kIntNetAddrType_IPv6].cbEntry   = intnetR0AddrSize(kIntNetAddrType_IPv6);
-    //pIf->aAddrCache[kIntNetAddrType_IPX].pbEntries = NULL;
-    //pIf->aAddrCache[kIntNetAddrType_IPX].cEntries = 0;
-    //pIf->aAddrCache[kIntNetAddrType_IPX].cEntriesAlloc = 0;
-    pIf->aAddrCache[kIntNetAddrType_IPX].cbAddress = intnetR0AddrSize(kIntNetAddrType_IPX);
-    pIf->aAddrCache[kIntNetAddrType_IPX].cbEntry   = RT_ALIGN_32(intnetR0AddrSize(kIntNetAddrType_IPv4), 16);
-    int rc = RTSemEventCreate((PRTSEMEVENT)&pIf->Event);
+    pIf->aAddrCache[kIntNetAddrType_IPv6].cbAddress       = intnetR0AddrSize(kIntNetAddrType_IPv6);
+    pIf->aAddrCache[kIntNetAddrType_IPv6].cbEntry         = intnetR0AddrSize(kIntNetAddrType_IPv6);
+    //pIf->aAddrCache[kIntNetAddrType_IPX].pbEntries      = NULL;
+    //pIf->aAddrCache[kIntNetAddrType_IPX].cEntries       = 0;
+    //pIf->aAddrCache[kIntNetAddrType_IPX].cEntriesAlloc  = 0;
+    pIf->aAddrCache[kIntNetAddrType_IPX].cbAddress        = intnetR0AddrSize(kIntNetAddrType_IPX);
+    pIf->aAddrCache[kIntNetAddrType_IPX].cbEntry          = RT_ALIGN_32(intnetR0AddrSize(kIntNetAddrType_IPX), 16);
+    pIf->hRecvInSpinlock    = NIL_RTSPINLOCK;
+    pIf->cBusy              = 0;
+    //pIf->pDstTab          = NULL;
+
+    rc = intnetR0AllocDstTab(pNetwork->MacTab.cEntriesAllocated, (PINTNETDSTTAB *)&pIf->pDstTab);
+    if (RT_SUCCESS(rc))
+        rc = RTSemEventCreate((PRTSEMEVENT)&pIf->hRecvEvent);
+    if (RT_SUCCESS(rc))
+        rc = RTSpinlockCreate(&pIf->hRecvInSpinlock);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -3515,54 +4157,58 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
             INTNETBufInit(pIf->pIntBuf, cbBuf, cbRecv, cbSend);
 
             /*
-             * Link the interface to the network.
+             * Register the interface with the session and create a handle for it.
              */
-            rc = RTSemFastMutexRequest(pNetwork->FastMutex2);
-            if (RT_SUCCESS(rc))
+            pIf->pvObj = SUPR0ObjRegister(pSession, SUPDRVOBJTYPE_INTERNAL_NETWORK_INTERFACE,
+                                          intnetR0IfDestruct, pIf, pNetwork->pIntNet);
+            if (pIf->pvObj)
             {
-                pIf->pNext = pNetwork->pIfs;
-                pNetwork->pIfs = pIf;
-                RTSemFastMutexRelease(pNetwork->FastMutex2);
-
-                /*
-                 * Register the interface with the session, adding another
-                 * reference to the network to ease the cleanup duties of the caller.
-                 */
-                rc = SUPR0ObjAddRef(pNetwork->pvObj, pSession);
+                rc = RTHandleTableAllocWithCtx(pNetwork->pIntNet->hHtIfs, pIf, pSession, (uint32_t *)&pIf->hIf);
                 if (RT_SUCCESS(rc))
                 {
-                    pIf->pvObj = SUPR0ObjRegister(pSession, SUPDRVOBJTYPE_INTERNAL_NETWORK_INTERFACE, intnetR0IfDestruct, pIf, pNetwork->pIntNet);
-                    if (pIf->pvObj)
-                    {
-                        rc = RTHandleTableAllocWithCtx(pNetwork->pIntNet->hHtIfs, pIf, pSession, (uint32_t *)&pIf->hIf);
-                        if (RT_SUCCESS(rc))
-                        {
-                            *phIf = pIf->hIf;
-                            Log(("intnetR0NetworkCreateIf: returns VINF_SUCCESS *phIf=%RX32 cbSend=%u cbRecv=%u cbBuf=%u\n",
-                                 *phIf, pIf->pIntBufDefault->cbSend, pIf->pIntBufDefault->cbRecv, pIf->pIntBufDefault->cbBuf));
-                            return VINF_SUCCESS;
-                        }
+                    /*
+                     * Finally add the interface to the network, consuming the
+                     * network reference of the caller.
+                     */
+                    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+                    RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
 
-                        SUPR0ObjRelease(pIf->pvObj, pSession);
-                        LogFlow(("intnetR0NetworkCreateIf: returns %Rrc\n", rc));
-                        return rc;
-                    }
+                    uint32_t iIf = pNetwork->MacTab.cEntries;
+                    Assert(iIf + 1 <= pNetwork->MacTab.cEntriesAllocated);
 
-                    SUPR0ObjRelease(pNetwork->pvObj, pSession);
+                    pNetwork->MacTab.paEntries[iIf].MacAddr         = pIf->MacAddr;
+                    pNetwork->MacTab.paEntries[iIf].fActive         = false;
+                    pNetwork->MacTab.paEntries[iIf].fPromiscuous    = false;
+                    pNetwork->MacTab.paEntries[iIf].pIf             = pIf;
+
+                    pNetwork->MacTab.cEntries = iIf + 1;
+                    pIf->pNetwork = pNetwork;
+
+                    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+                    *phIf = pIf->hIf;
+                    Log(("intnetR0NetworkCreateIf: returns VINF_SUCCESS *phIf=%RX32 cbSend=%u cbRecv=%u cbBuf=%u\n",
+                         *phIf, pIf->pIntBufDefault->cbSend, pIf->pIntBufDefault->cbRecv, pIf->pIntBufDefault->cbBuf));
+                    return VINF_SUCCESS;
                 }
 
-                RTSemFastMutexDestroy(pNetwork->FastMutex2);
-                pNetwork->FastMutex2 = NIL_RTSEMFASTMUTEX;
+                SUPR0ObjRelease(pIf->pvObj, pSession);
+                LogFlow(("intnetR0NetworkCreateIf: returns %Rrc\n", rc));
+                return rc;
             }
 
+            /* clean up */
             SUPR0MemFree(pIf->pSession, (RTHCUINTPTR)pIf->pIntBufDefault);
             pIf->pIntBufDefault = NULL;
             pIf->pIntBuf = NULL;
         }
-
-        RTSemEventDestroy(pIf->Event);
-        pIf->Event = NIL_RTSEMEVENT;
     }
+
+    RTSpinlockDestroy(pIf->hRecvInSpinlock);
+    pIf->hRecvInSpinlock = NIL_RTSPINLOCK;
+    RTSemEventDestroy(pIf->hRecvEvent);
+    pIf->hRecvEvent = NIL_RTSEMEVENT;
+    RTMemFree(pIf->pDstTab);
     RTMemFree(pIf);
     LogFlow(("intnetR0NetworkCreateIf: returns %Rrc\n", rc));
     return rc;
@@ -3606,7 +4252,7 @@ static DECLCALLBACK(INTNETSWDECISION) intnetR0TrunkIfPortPreRecv(PINTNETTRUNKSWP
 
     /* assert some sanity */
     AssertPtrReturn(pNetwork, INTNETSWDECISION_TRUNK);
-    AssertReturn(pNetwork->FastMutex2 != NIL_RTSEMFASTMUTEX, INTNETSWDECISION_TRUNK);
+    AssertReturn(pNetwork->hEvtBusyIf != NIL_RTSEMEVENT, INTNETSWDECISION_TRUNK);
     AssertPtr(pvSrc);
     AssertPtr(cbSrc >= 6);
     Assert(fSrc);
@@ -3621,29 +4267,114 @@ static DECLCALLBACK(INTNETSWDECISION) intnetR0TrunkIfPortPreRecv(PINTNETTRUNKSWP
 static DECLCALLBACK(bool) intnetR0TrunkIfPortRecv(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG, uint32_t fSrc)
 {
     PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
-    PINTNETNETWORK pNetwork = pThis->pNetwork;
 
     /* assert some sanity */
-    AssertPtrReturn(pNetwork, false);
-    AssertReturn(pNetwork->FastMutex2 != NIL_RTSEMFASTMUTEX, false);
     AssertPtr(pSG);
     Assert(fSrc);
 
     /*
-     * Lock the network and send the frame to it.
+     * Mark the trunk as busy, make sure we've got a network and that there are
+     * some active interfaces around.
      */
-    int rc = RTSemFastMutexRequest(pNetwork->FastMutex2);
-    AssertRCReturn(rc, false);
+    bool fRc = false /* don't drop it */;
+    intnetR0BusyIncTrunk(pThis);
+    PINTNETNETWORK pNetwork = pThis->pNetwork;
+    if (RT_LIKELY(   pNetwork
+                  && pNetwork->cActiveIFs > 0 ))
+    {
+        /*
+         * Grab or allocate a destination table.
+         */
+        bool const      fIntCtx = RTThreadPreemptIsEnabled(NIL_RTTHREAD) || RTThreadIsInInterrupt(NIL_RTTHREAD);
+        unsigned        iDstTab = 0;
+        PINTNETDSTTAB   pDstTab = NULL;
+        RTSPINLOCKTMP   Tmp     = RTSPINLOCKTMP_INITIALIZER;
+        RTSpinlockAcquireNoInts(pThis->hDstTabSpinlock, &Tmp);
+        if (fIntCtx)
+        {
+            /* Interrupt or restricted context. */
+            iDstTab  = RTMpCpuIdToSetIndex(RTMpCpuId());
+            iDstTab %= pThis->cIntDstTabs;
+            pDstTab  = pThis->apIntDstTabs[iDstTab];
+            if (RT_LIKELY(pDstTab))
+                pThis->apIntDstTabs[iDstTab] = NULL;
+            else
+            {
+                iDstTab = pThis->cIntDstTabs;
+                while (iDstTab-- > 0)
+                {
+                    pDstTab = pThis->apIntDstTabs[iDstTab];
+                    if (pDstTab)
+                    {
+                        pThis->apIntDstTabs[iDstTab] = NULL;
+                        break;
+                    }
+                }
+            }
+            RTSpinlockReleaseNoInts(pThis->hDstTabSpinlock, &Tmp);
+            Assert(!pDstTab || iDstTab < pThis->cIntDstTabs);
+        }
+        else
+        {
+            /* Task context, fallback is to allocate a table. */
+            AssertCompile(RT_ELEMENTS(pThis->apTaskDstTabs) == 2); /* for loop rollout */
+            pDstTab = pThis->apIntDstTabs[iDstTab = 0];
+            if (!pDstTab)
+                pDstTab = pThis->apIntDstTabs[iDstTab = 1];
+            if (pDstTab)
+            {
+                pThis->apIntDstTabs[iDstTab] = NULL;
+                RTSpinlockReleaseNoInts(pThis->hDstTabSpinlock, &Tmp);
+                Assert(iDstTab < RT_ELEMENTS(pThis->apTaskDstTabs));
+            }
+            else
+            {
+                RTSpinlockReleaseNoInts(pThis->hDstTabSpinlock, &Tmp);
+                intnetR0AllocDstTab(pNetwork->MacTab.cEntriesAllocated, &pDstTab);
+                iDstTab = 65535;
+            }
+        }
+        if (RT_LIKELY(pDstTab))
+        {
+            /*
+             * Finally, get down to business of sending the frame.
+             */
+            INTNETSWDECISION enmSwDecision = intnetR0NetworkSend(pNetwork, NULL, fSrc, pSG, pDstTab);
+            Assert(enmSwDecision != INTNETSWDECISION_BAD_CONTEXT);
+            if (enmSwDecision == INTNETSWDECISION_INTNET)
+                fRc = true; /* drop it */
 
-    bool fRc;
-    if (RT_LIKELY(pNetwork->cActiveIFs > 0))
-        fRc = intnetR0NetworkSend(pNetwork, NULL, fSrc, pSG, false /* fTrunkLocked */);
-    else
-        fRc = false; /* don't drop it */
+            /*
+             * Free the destination table.
+             */
+            if (iDstTab == 65535)
+                RTMemFree(pDstTab);
+            else
+            {
+                RTSpinlockAcquireNoInts(pThis->hDstTabSpinlock, &Tmp);
+                if (fIntCtx && !pThis->apIntDstTabs[iDstTab])
+                    pThis->apIntDstTabs[iDstTab]  = pDstTab;
+                else if (!fIntCtx && !pThis->apTaskDstTabs[iDstTab])
+                    pThis->apTaskDstTabs[iDstTab] = pDstTab;
+                else
+                {
+                    /* this shouldn't happen! */
+                    PINTNETDSTTAB *papDstTabs = fIntCtx ? &pThis->apIntDstTabs[0] :            &pThis->apTaskDstTabs[0];
+                    iDstTab                   = fIntCtx ? pThis->cIntDstTabs      : RT_ELEMENTS(pThis->apTaskDstTabs);
+                    while (iDstTab-- > 0)
+                        if (!papDstTabs[iDstTab])
+                        {
+                            papDstTabs[iDstTab] = pDstTab;
+                            break;
+                        }
+                }
+                RTSpinlockReleaseNoInts(pThis->hDstTabSpinlock, &Tmp);
+                Assert(iDstTab < RT_MAX(RT_ELEMENTS(pThis->apTaskDstTabs), pThis->cIntDstTabs));
+            }
+        }
+    }
 
-    rc = RTSemFastMutexRelease(pNetwork->FastMutex2);
-    AssertRC(rc);
-
+    intnetR0BusyDecTrunk(pThis);
     return fRc;
 }
 
@@ -3656,7 +4387,7 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortSGRetain(PINTNETTRUNKSWPORT pSwitch
 
     /* assert some sanity */
     AssertPtrReturnVoid(pNetwork);
-    AssertReturnVoid(pNetwork->FastMutex2 != NIL_RTSEMFASTMUTEX);
+    AssertReturnVoid(pNetwork->hEvtBusyIf != NIL_RTSEMEVENT);
     AssertPtr(pSG);
     Assert(pSG->cUsers > 0 && pSG->cUsers < 256);
 
@@ -3673,7 +4404,7 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortSGRelease(PINTNETTRUNKSWPORT pSwitc
 
     /* assert some sanity */
     AssertPtrReturnVoid(pNetwork);
-    AssertReturnVoid(pNetwork->FastMutex2 != NIL_RTSEMFASTMUTEX);
+    AssertReturnVoid(pNetwork->hEvtBusyIf != NIL_RTSEMEVENT);
     AssertPtr(pSG);
     Assert(pSG->cUsers > 0);
 
@@ -3732,12 +4463,12 @@ static void intnetR0TrunkIfRelease(PINTNETTRUNKIF pThis)
 static bool intnetR0TrunkIfOutLock(PINTNETTRUNKIF pThis)
 {
     AssertPtrReturn(pThis, false);
-    int rc = RTSemFastMutexRequest(pThis->FastMutex);
+    int rc = RTSemFastMutexRequest(pThis->FastMutex3);
     if (RT_SUCCESS(rc))
     {
         if (RT_LIKELY(pThis->pIfPort))
             return true;
-        RTSemFastMutexRelease(pThis->FastMutex);
+        RTSemFastMutexRelease(pThis->FastMutex3);
     }
     else
         AssertMsg(rc == VERR_SEM_DESTROYED, ("%Rrc\n", rc));
@@ -3754,25 +4485,24 @@ static void intnetR0TrunkIfOutUnlock(PINTNETTRUNKIF pThis)
 {
     if (pThis)
     {
-        int rc = RTSemFastMutexRelease(pThis->FastMutex);
+        int rc = RTSemFastMutexRelease(pThis->FastMutex3);
         AssertRC(rc);
     }
 }
 
 
 /**
- * Activates the trunk interface.
+ * Deactivates the trunk interface.
  *
  * @param   pThis       The trunk.
- * @param   fActive     What to do with it.
  *
  * @remarks Caller may only own the create/destroy lock.
  */
-static void intnetR0TrunkIfActivate(PINTNETTRUNKIF pThis, bool fActive)
+static void intnetR0TrunkIfDeactivate(PINTNETTRUNKIF pThis)
 {
     if (intnetR0TrunkIfOutLock(pThis))
     {
-        pThis->pIfPort->pfnSetActive(pThis->pIfPort, fActive);
+        pThis->pIfPort->pfnSetActive(pThis->pIfPort, false /*fActive*/);
         intnetR0TrunkIfOutUnlock(pThis);
     }
 }
@@ -3842,11 +4572,24 @@ static void intnetR0TrunkIfDestroy(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork
     /*
      * Free up the resources.
      */
-    RTSEMFASTMUTEX hFastMutex = pThis->FastMutex;
-    pThis->FastMutex = NIL_RTSEMMUTEX;
-    pThis->pNetwork = NULL;
+    RTSEMFASTMUTEX hFastMutex = pThis->FastMutex3;
+    pThis->FastMutex3 = NIL_RTSEMMUTEX;
+    pThis->pNetwork   = NULL;
     RTSemFastMutexRelease(hFastMutex);
     RTSemFastMutexDestroy(hFastMutex);
+    RTSpinlockDestroy(pThis->hDstTabSpinlock);
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->apTaskDstTabs); i++)
+    {
+        Assert(pThis->apTaskDstTabs[i]);
+        RTMemFree(pThis->apTaskDstTabs[i]);
+        pThis->apTaskDstTabs[i] = NULL;
+    }
+    for (unsigned i = 0; i < pThis->cIntDstTabs; i++)
+    {
+        Assert(pThis->apIntDstTabs[i]);
+        RTMemFree(pThis->apIntDstTabs[i]);
+        pThis->apIntDstTabs[i] = NULL;
+    }
     RTMemFree(pThis);
 }
 
@@ -3894,59 +4637,124 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
     }
 
     /*
-     * Allocate the trunk interface.
+     * Allocate the trunk interface and associated destination tables.
+     *
+     * We take a very optimistic view on the parallelism of the host
+     * network stack and NIC driver.  So, we allocate one table for each
+     * possible CPU to deal with interrupt time requests and one for task
+     * time calls.
      */
-    PINTNETTRUNKIF pTrunkIF = (PINTNETTRUNKIF)RTMemAllocZ(sizeof(*pTrunkIF));
-    if (!pTrunkIF)
+    RTCPUID         cCpus    = RTMpGetCount(); Assert(cCpus > 0);
+    PINTNETTRUNKIF  pTrunk = (PINTNETTRUNKIF)RTMemAllocZ(RT_OFFSETOF(INTNETTRUNKIF, apIntDstTabs[cCpus]));
+    if (!pTrunk)
         return VERR_NO_MEMORY;
-    pTrunkIF->SwitchPort.u32Version                 = INTNETTRUNKSWPORT_VERSION;
-    pTrunkIF->SwitchPort.pfnPreRecv                 = intnetR0TrunkIfPortPreRecv;
-    pTrunkIF->SwitchPort.pfnRecv                    = intnetR0TrunkIfPortRecv;
-    pTrunkIF->SwitchPort.pfnSGRetain                = intnetR0TrunkIfPortSGRetain;
-    pTrunkIF->SwitchPort.pfnSGRelease               = intnetR0TrunkIfPortSGRelease;
-    pTrunkIF->SwitchPort.pfnSetSGPhys               = intnetR0TrunkIfPortSetSGPhys;
-    pTrunkIF->SwitchPort.pfnReportGsoCapabilities   = intnetR0TrunkIfPortReportGsoCapabilities;
-    pTrunkIF->SwitchPort.u32VersionEnd              = INTNETTRUNKSWPORT_VERSION;
-    //pTrunkIF->pIfPort = NULL;
-    pTrunkIF->pNetwork = pNetwork;
-    pTrunkIF->CachedMac.au8[0] = 0xfe;
-    pTrunkIF->CachedMac.au8[1] = 0xff;
-    pTrunkIF->CachedMac.au8[2] = 0xff;
-    pTrunkIF->CachedMac.au8[3] = 0xff;
-    pTrunkIF->CachedMac.au8[4] = 0xff;
-    pTrunkIF->CachedMac.au8[5] = 0xff;
-    //pTrunkIF->fPhysSG = false;
-    //pTrunkIF->fWirePromiscuous = false;
-    //pTrunkIF->fGroksGso = false;  /** @todo query GSO support after connecting. */
-    int rc = RTSemFastMutexCreate(&pTrunkIF->FastMutex);
+
+    Assert(pNetwork->MacTab.cEntriesAllocated > 0);
+    int rc = VINF_SUCCESS;
+    pTrunk->cIntDstTabs = cCpus;
+    for (unsigned i = 0; i < cCpus && RT_SUCCESS(rc); i++)
+        rc = intnetR0AllocDstTab(pNetwork->MacTab.cEntriesAllocated, &pTrunk->apIntDstTabs[i]);
+    for (unsigned i = 0; i < RT_ELEMENTS(pTrunk->apTaskDstTabs) && RT_SUCCESS(rc); i++)
+        rc = intnetR0AllocDstTab(pNetwork->MacTab.cEntriesAllocated, &pTrunk->apTaskDstTabs[i]);
+
     if (RT_SUCCESS(rc))
     {
-#ifdef IN_RING0 /* (testcase is ring-3) */
+        pTrunk->SwitchPort.u32Version                 = INTNETTRUNKSWPORT_VERSION;
+        pTrunk->SwitchPort.pfnPreRecv                 = intnetR0TrunkIfPortPreRecv;
+        pTrunk->SwitchPort.pfnRecv                    = intnetR0TrunkIfPortRecv;
+        pTrunk->SwitchPort.pfnSGRetain                = intnetR0TrunkIfPortSGRetain;
+        pTrunk->SwitchPort.pfnSGRelease               = intnetR0TrunkIfPortSGRelease;
+        pTrunk->SwitchPort.pfnSetSGPhys               = intnetR0TrunkIfPortSetSGPhys;
+        pTrunk->SwitchPort.pfnReportGsoCapabilities   = intnetR0TrunkIfPortReportGsoCapabilities;
+        pTrunk->SwitchPort.u32VersionEnd              = INTNETTRUNKSWPORT_VERSION;
+        pTrunk->FastMutex3                = NIL_RTSEMFASTMUTEX;
+        //pTrunk->pIfPort                 = NULL;
+        pTrunk->pNetwork                  = pNetwork;
+        pTrunk->MacAddr.au8[0]            = 0xff;
+        pTrunk->MacAddr.au8[1]            = 0xff;
+        pTrunk->MacAddr.au8[2]            = 0xff;
+        pTrunk->MacAddr.au8[3]            = 0xff;
+        pTrunk->MacAddr.au8[4]            = 0xff;
+        pTrunk->MacAddr.au8[5]            = 0xff;
+        //pTrunk->fWireNoPreempt          = false;
+        //pTrunk->fHostNoPreempt          = false;
+        //pTrunk->fPhysSG                 = false;
+        //pTrunk->cBusy                   = 0;
+        //pTrunk->fWireGsoCapabilites     = 0;
+        //pTrunk->fHostGsoCapabilites     = 0;
+        //pTrunk->abGsoHdrs               = {0};
+        pTrunk->hDstTabSpinlock           = NIL_RTSPINLOCK;
+        //pTrunk->apTaskDstTabs           = above;
+        //pTrunk->cIntDstTabs             = above;
+        //pTrunk->apIntDstTabs            = above;
+
         /*
-         * Query the factory we want, then use it create and connect the trunk.
+         * Create the locks (we've NIL'ed the members above to simplify cleanup).
          */
-        PINTNETTRUNKFACTORY pTrunkFactory = NULL;
-        rc = SUPR0ComponentQueryFactory(pSession, pszName, INTNETTRUNKFACTORY_UUID_STR, (void **)&pTrunkFactory);
+        rc = RTSemFastMutexCreate(&pTrunk->FastMutex3);
+        if (RT_SUCCESS(rc))
+            rc = RTSpinlockCreate(&pTrunk->hDstTabSpinlock);
         if (RT_SUCCESS(rc))
         {
-            rc = pTrunkFactory->pfnCreateAndConnect(pTrunkFactory, pNetwork->szTrunk, &pTrunkIF->SwitchPort,
-                                                    pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE
-                                                    ? INTNETTRUNKFACTORY_FLAG_NO_PROMISC : 0,
-                                                    &pTrunkIF->pIfPort);
-            pTrunkFactory->pfnRelease(pTrunkFactory);
+#ifdef IN_RING0 /* (testcase is ring-3) */
+            /*
+             * Query the factory we want, then use it create and connect the trunk.
+             */
+            PINTNETTRUNKFACTORY pTrunkFactory = NULL;
+            rc = SUPR0ComponentQueryFactory(pSession, pszName, INTNETTRUNKFACTORY_UUID_STR, (void **)&pTrunkFactory);
             if (RT_SUCCESS(rc))
             {
-                Assert(pTrunkIF->pIfPort);
-                pNetwork->pTrunkIF = pTrunkIF;
-                Log(("intnetR0NetworkCreateTrunkIf: VINF_SUCCESS - pszName=%s szTrunk=%s%s Network=%s\n",
-                     pszName, pNetwork->szTrunk, pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE ? " shared-mac" : "", pNetwork->szName));
-                return VINF_SUCCESS;
+                rc = pTrunkFactory->pfnCreateAndConnect(pTrunkFactory, pNetwork->szTrunk, &pTrunk->SwitchPort,
+                                                        pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE
+                                                        ? INTNETTRUNKFACTORY_FLAG_NO_PROMISC : 0,
+                                                        &pTrunk->pIfPort);
+                pTrunkFactory->pfnRelease(pTrunkFactory);
+                if (RT_SUCCESS(rc))
+                {
+                    Assert(pTrunk->pIfPort);
+                    pNetwork->MacTab.pTrunk = pTrunk;
+
+                    /*
+                     * Query the host info.
+                     *
+                     * Note! We don't need to lock the MacTab here since the
+                     *       network is being created.
+                     */
+                    /** @todo this should be reported by VBoxNet* instead of queried by us! */
+                    intnetR0TrunkIfOutLock(pTrunk);
+
+                    pTrunk->pIfPort->pfnGetMacAddress(pTrunk->pIfPort, &pTrunk->MacAddr);
+                    pNetwork->MacTab.HostMac          = pTrunk->MacAddr;
+
+                    pNetwork->MacTab.fHostPromiscuous = pTrunk->pIfPort->pfnIsPromiscuous(pTrunk->pIfPort);
+                    pNetwork->MacTab.fHostActive      = true;
+
+                    pNetwork->MacTab.fWirePromiscuous = false; /** @todo !!(fFlags & INTNET_OPEN_FLAGS_PROMISC_TRUNK_WIRE); */
+                    pNetwork->MacTab.fWireActive      = true;
+
+                    intnetR0TrunkIfOutUnlock(pTrunk);
+
+                    Log(("intnetR0NetworkCreateTrunkIf: VINF_SUCCESS - pszName=%s szTrunk=%s%s Network=%s\n",
+                         pszName, pNetwork->szTrunk, pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE ? " shared-mac" : "", pNetwork->szName));
+                    return VINF_SUCCESS;
+                }
             }
+#else  /* IN_RING3 */
+            rc = VERR_NOT_SUPPORTED;
+#endif /* IN_RING3 */
         }
-#endif /* IN_RING0 */
-        RTSemFastMutexDestroy(pTrunkIF->FastMutex);
+
+        /* bail out and clean up. */
+        RTSpinlockDestroy(pTrunk->hDstTabSpinlock);
+        RTSemFastMutexDestroy(pTrunk->FastMutex3);
     }
-    RTMemFree(pTrunkIF);
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pTrunk->apTaskDstTabs); i++)
+        RTMemFree(pTrunk->apTaskDstTabs[i]);
+    for (unsigned i = 0; i < pTrunk->cIntDstTabs; i++)
+        RTMemFree(pTrunk->apIntDstTabs[i]);
+    RTMemFree(pTrunk);
+
     LogFlow(("intnetR0NetworkCreateTrunkIf: %Rrc - pszName=%s szTrunk=%s Network=%s\n",
              rc, pszName, pNetwork->szTrunk, pNetwork->szName));
     return rc;
@@ -3965,18 +4773,80 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
 static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, void *pvUser2)
 {
     PINTNETNETWORK  pNetwork = (PINTNETNETWORK)pvUser1;
-    PINTNET         pIntNet = (PINTNET)pvUser2;
+    PINTNET         pIntNet  = (PINTNET)pvUser2;
     Log(("intnetR0NetworkDestruct: pvObj=%p pNetwork=%p pIntNet=%p %s\n", pvObj, pNetwork, pIntNet, pNetwork->szName));
     Assert(pNetwork->pIntNet == pIntNet);
 
-    /* take the create/destroy sem. */
+    /* Take the big create/open/destroy sem. */
     RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
 
     /*
      * Deactivate the trunk connection first (if any).
      */
-    if (pNetwork->pTrunkIF)
-        intnetR0TrunkIfActivate(pNetwork->pTrunkIF, false /* fActive */);
+    if (pNetwork->MacTab.pTrunk)
+        intnetR0TrunkIfDeactivate(pNetwork->MacTab.pTrunk);
+
+    /*
+     * Deactivate and orphan any remaining interfaces and wait for them to idle.
+     *
+     * Note! Normally there are no more interfaces at this point, however, when
+     *       supdrvCloseSession / supdrvCleanupSession release the objects the
+     *       order is undefined.  So, it's quite possible that the network will
+     *       be dereference and destroyed before the interfaces.
+     */
+    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+    uint32_t iIf = pNetwork->MacTab.cEntries;
+    while (iIf-- > 0)
+    {
+        pNetwork->MacTab.paEntries[iIf].fActive      = false;
+        pNetwork->MacTab.paEntries[iIf].pIf->fActive = false;
+    }
+
+    pNetwork->MacTab.fHostActive = false;
+    pNetwork->MacTab.fWireActive = false;
+
+    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+    /* Wait for all the interfaces to quiesce.  (Interfaces cannot be
+       removed / added since we're holding the big lock.) */
+    if (pNetwork->MacTab.pTrunk)
+        intnetR0BusyWait(pNetwork, &pNetwork->MacTab.pTrunk->cBusy);
+
+    iIf = pNetwork->MacTab.cEntries;
+    while (iIf-- > 0)
+        intnetR0BusyWait(pNetwork, &pNetwork->MacTab.paEntries[iIf].pIf->cBusy);
+
+    /* Orphan the interfaces (not trunk). */
+    RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
+    while ((iIf = pNetwork->MacTab.cEntries) > 0)
+    {
+        PINTNETIF pIf = pNetwork->MacTab.paEntries[iIf - 1].pIf;
+        RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+        intnetR0BusyWait(pNetwork, &pIf->cBusy);
+
+        RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
+        if (   iIf == pNetwork->MacTab.cEntries /* paranoia */
+            && pIf->cBusy)
+        {
+            pIf->pNetwork = NULL;
+            pNetwork->MacTab.cEntries--;
+        }
+    }
+
+    /*
+     * Grab and zap the trunk pointer while we still own the spinlock, destroy
+     * the trunk after we've left it.  Note that this might take a while...
+     */
+    PINTNETTRUNKIF pTrunk = pNetwork->MacTab.pTrunk;
+    pNetwork->MacTab.pTrunk = NULL;
+
+    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+    if (pTrunk)
+        intnetR0TrunkIfDestroy(pTrunk, pNetwork);
 
     /*
      * Unlink the network.
@@ -3998,43 +4868,17 @@ static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, vo
     pNetwork->pvObj = NULL;
 
     /*
-     * Because of the undefined order of the per session object dereferencing
-     * when closing a session, we have to handle the case where the network is
-     * destroyed before the interfaces.
-     * We deal with this simply by orphaning the interfaces.
-     */
-    RTSemFastMutexRequest(pNetwork->FastMutex2);
-
-    PINTNETIF pCur = pNetwork->pIfs;
-    while (pCur)
-    {
-        PINTNETIF pNext = pCur->pNext;
-        pCur->pNext    = NULL;
-        pCur->pNetwork = NULL;
-        pCur = pNext;
-    }
-
-    /* Grab and zap the trunk pointer before leaving the mutex. */
-    PINTNETTRUNKIF pTrunkIF = pNetwork->pTrunkIF;
-    pNetwork->pTrunkIF = NULL;
-
-    RTSemFastMutexRelease(pNetwork->FastMutex2);
-
-    /*
-     * If there is a trunk, delete it.
-     * Note that this may tak a while if we're unlucky...
-     */
-    if (pTrunkIF)
-        intnetR0TrunkIfDestroy(pTrunkIF, pNetwork);
-
-    /*
      * Free resources.
      */
-    RTSemFastMutexDestroy(pNetwork->FastMutex2);
-    pNetwork->FastMutex2 = NIL_RTSEMFASTMUTEX;
+    RTSemEventDestroy(pNetwork->hEvtBusyIf);
+    pNetwork->hEvtBusyIf = NIL_RTSEMEVENT;
+    RTSpinlockDestroy(pNetwork->hAddrSpinlock);
+    pNetwork->hAddrSpinlock = NIL_RTSPINLOCK;
+    RTMemFree(pNetwork->MacTab.paEntries);
+    pNetwork->MacTab.paEntries = NULL;
     RTMemFree(pNetwork);
 
-    /* release the create/destroy sem. (can be done before trunk destruction.) */
+    /* Release the create/destroy sem. */
     RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
 }
 
@@ -4173,36 +5017,59 @@ static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const
     size_t cb = sizeof(INTNETNETWORK);
     if (fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
         cb += INTNETNETWORK_TMP_SIZE + 64;
-    PINTNETNETWORK pNew = (PINTNETNETWORK)RTMemAllocZ(cb);
-    if (!pNew)
+    PINTNETNETWORK pNetwork = (PINTNETNETWORK)RTMemAllocZ(cb);
+    if (!pNetwork)
         return VERR_NO_MEMORY;
-    int rc = RTSemFastMutexCreate(&pNew->FastMutex2);
+    //pNetwork->pNext                   = NULL;
+    //pNetwork->pIfs                    = NULL;
+    pNetwork->hAddrSpinlock             = NIL_RTSPINLOCK;
+    pNetwork->MacTab.cEntries           = 0;
+    pNetwork->MacTab.cEntriesAllocated  = INTNET_GROW_DSTTAB_SIZE;
+    pNetwork->MacTab.paEntries          = NULL;
+    pNetwork->MacTab.fHostPromiscuous   = false;
+    pNetwork->MacTab.fHostActive        = false;
+    pNetwork->MacTab.fWirePromiscuous   = false;
+    pNetwork->MacTab.fWireActive        = false;
+    pNetwork->MacTab.pTrunk             = NULL;
+    pNetwork->hEvtBusyIf                = NIL_RTSEMEVENT;
+    pNetwork->pIntNet                   = pIntNet;
+    //pNetwork->pvObj                   = NULL;
+    if (fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
+        pNetwork->pbTmp                 = RT_ALIGN_PT(pNetwork + 1, 64, uint8_t *);
+    //else
+    //    pNetwork->pbTmp               = NULL;
+    pNetwork->fFlags                    = fFlags;
+    //pNetwork->cActiveIFs              = 0;
+    size_t cchName                      = strlen(pszNetwork);
+    pNetwork->cchName                   = (uint8_t)cchName;
+    Assert(cchName && cchName < sizeof(pNetwork->szName));  /* caller's responsibility. */
+    memcpy(pNetwork->szName, pszNetwork, cchName);          /* '\0' at courtesy of alloc. */
+    pNetwork->enmTrunkType              = enmTrunkType;
+    Assert(strlen(pszTrunk) < sizeof(pNetwork->szTrunk));   /* caller's responsibility. */
+    strcpy(pNetwork->szTrunk, pszTrunk);
+
+    /*
+     * Create the semaphore, spinlock and allocate the interface table.
+     */
+    int rc = RTSemEventCreate(&pNetwork->hEvtBusyIf);
+    if (RT_SUCCESS(rc))
+        rc = RTSpinlockCreate(&pNetwork->hAddrSpinlock);
     if (RT_SUCCESS(rc))
     {
-        //pNew->pIfs        = NULL;
-        pNew->pIntNet       = pIntNet;
-        //pNew->cActiveIFs  = 0;
-        pNew->fFlags        = fFlags;
-        size_t cchName      = strlen(pszNetwork);
-        pNew->cchName       = (uint8_t)cchName;
-        Assert(cchName && cchName < sizeof(pNew->szName));  /* caller's responsibility. */
-        memcpy(pNew->szName, pszNetwork, cchName);          /* '\0' by alloc. */
-        pNew->enmTrunkType  = enmTrunkType;
-        Assert(strlen(pszTrunk) < sizeof(pNew->szTrunk));   /* caller's responsibility. */
-        strcpy(pNew->szTrunk, pszTrunk);
-        if (fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
-            pNew->pbTmp     = RT_ALIGN_PT(pNew + 1, 64, uint8_t *);
-        //else
-        //    pNew->pbTmp   = NULL;
-
+        pNetwork->MacTab.paEntries = (PINTNETMACTABENTRY)RTMemAlloc(sizeof(INTNETMACTABENTRY) * pNetwork->MacTab.cEntriesAllocated);
+        if (!pNetwork->MacTab.paEntries)
+            rc = VERR_NO_MEMORY;
+    }
+    if (RT_SUCCESS(rc))
+    {
         /*
          * Register the object in the current session and link it into the network list.
          */
-        pNew->pvObj = SUPR0ObjRegister(pSession, SUPDRVOBJTYPE_INTERNAL_NETWORK, intnetR0NetworkDestruct, pNew, pIntNet);
-        if (pNew->pvObj)
+        pNetwork->pvObj = SUPR0ObjRegister(pSession, SUPDRVOBJTYPE_INTERNAL_NETWORK, intnetR0NetworkDestruct, pNetwork, pIntNet);
+        if (pNetwork->pvObj)
         {
-            pNew->pNext = pIntNet->pNetworks;
-            pIntNet->pNetworks = pNew;
+            pNetwork->pNext = pIntNet->pNetworks;
+            pIntNet->pNetworks = pNetwork;
 
             /*
              * Check if the current session is actually allowed to create and
@@ -4210,31 +5077,38 @@ static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const
              * based policies and these must be checked now.  SUPR0ObjRegister
              * does no such checks.
              */
-            rc = SUPR0ObjVerifyAccess(pNew->pvObj, pSession, pNew->szName);
+            rc = SUPR0ObjVerifyAccess(pNetwork->pvObj, pSession, pNetwork->szName);
             if (RT_SUCCESS(rc))
             {
                 /*
                  * Connect the trunk.
                  */
-                rc = intnetR0NetworkCreateTrunkIf(pNew, pSession);
+                rc = intnetR0NetworkCreateTrunkIf(pNetwork, pSession);
                 if (RT_SUCCESS(rc))
                 {
-                    *ppNetwork = pNew;
-                    LogFlow(("intnetR0CreateNetwork: returns VINF_SUCCESS *ppNetwork=%p\n", pNew));
+                    *ppNetwork = pNetwork;
+                    LogFlow(("intnetR0CreateNetwork: returns VINF_SUCCESS *ppNetwork=%p\n", pNetwork));
                     return VINF_SUCCESS;
                 }
             }
 
-            SUPR0ObjRelease(pNew->pvObj, pSession);
+            SUPR0ObjRelease(pNetwork->pvObj, pSession);
             LogFlow(("intnetR0CreateNetwork: returns %Rrc\n", rc));
             return rc;
         }
-        rc = VERR_NO_MEMORY;
 
-        RTSemFastMutexDestroy(pNew->FastMutex2);
-        pNew->FastMutex2 = NIL_RTSEMFASTMUTEX;
+        /* cleanup */
+        rc = VERR_NO_MEMORY;
     }
-    RTMemFree(pNew);
+
+    RTSemEventDestroy(pNetwork->hEvtBusyIf);
+    pNetwork->hEvtBusyIf = NIL_RTSEMEVENT;
+    RTSpinlockDestroy(pNetwork->hAddrSpinlock);
+    pNetwork->hAddrSpinlock = NIL_RTSPINLOCK;
+    RTMemFree(pNetwork->MacTab.paEntries);
+    pNetwork->MacTab.paEntries = NULL;
+    RTMemFree(pNetwork);
+
     LogFlow(("intnetR0CreateNetwork: returns %Rrc\n", rc));
     return rc;
 }
@@ -4323,7 +5197,8 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
         rc = intnetR0NetworkCreateIf(pNetwork, pSession, cbSend, cbRecv, phIf);
         if (RT_SUCCESS(rc))
             rc = VINF_ALREADY_INITIALIZED;
-        SUPR0ObjRelease(pNetwork->pvObj, pSession);
+        else
+            SUPR0ObjRelease(pNetwork->pvObj, pSession);
     }
     else if (rc == VERR_NOT_FOUND)
     {
@@ -4331,7 +5206,8 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
         if (RT_SUCCESS(rc))
         {
             rc = intnetR0NetworkCreateIf(pNetwork, pSession, cbSend, cbRecv, phIf);
-            SUPR0ObjRelease(pNetwork->pvObj, pSession);
+            if (RT_FAILURE(rc))
+                SUPR0ObjRelease(pNetwork->pvObj, pSession);
         }
     }
 

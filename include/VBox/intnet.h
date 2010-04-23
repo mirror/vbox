@@ -365,6 +365,11 @@ typedef enum INTNETSWDECISION
     INTNETSWDECISION_INTNET,
     /** Only for the trunk (host/wire). */
     INTNETSWDECISION_TRUNK,
+    /** Used internally to indicate that the packet cannot be handled in the
+     * current context. */
+    INTNETSWDECISION_BAD_CONTEXT,
+    /** Used internally to indicate that the packet should be dropped. */
+    INTNETSWDECISION_DROP,
     /** The usual 32-bit type expansion. */
     INTNETSWDECISION_32BIT_HACK = 0x7fffffff
 } INTNETSWDECISION;
@@ -720,7 +725,7 @@ typedef struct INTNETTRUNKFACTORY
 typedef INTNETTRUNKFACTORY *PINTNETTRUNKFACTORY;
 
 /** The UUID for the (current) trunk factory. (case sensitive) */
-#define INTNETTRUNKFACTORY_UUID_STR     "b010afb2-cb4c-44b7-9da9-1e113cfcd47c"
+#define INTNETTRUNKFACTORY_UUID_STR     "daeaf07b-9974-48be-843e-b9afd763c2ff"
 
 /** @name INTNETTRUNKFACTORY::pfnCreateAndConnect flags.
  * @{ */

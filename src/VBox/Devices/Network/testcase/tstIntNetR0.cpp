@@ -40,13 +40,15 @@ typedef void *MYPSUPDRVSESSION;
 #include <VBox/intnet.h>
 #include <VBox/sup.h>
 #include <VBox/err.h>
-#include <iprt/stream.h>
-#include <iprt/alloc.h>
-#include <iprt/initterm.h>
-#include <iprt/thread.h>
-#include <iprt/time.h>
 #include <iprt/asm.h>
 #include <iprt/getopt.h>
+#include <iprt/initterm.h>
+#include <iprt/mem.h>
+#include <iprt/mp.h>
+#include <iprt/stream.h>
+#include <iprt/thread.h>
+#include <iprt/time.h>
+#include <iprt/test.h>
 
 
 /*******************************************************************************
@@ -97,29 +99,18 @@ typedef struct OBJREF
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** The error count. */
-unsigned g_cErrors = 0;
-
+/** The test handle.*/
+static RTTEST           g_hTest      = NIL_RTTEST;
+/** The size (in bytes) of the large transfer tests. */
+static uint32_t         g_cbTransfer = _1M * 384;
 /** Fake session handle. */
-const PSUPDRVSESSION g_pSession = (PSUPDRVSESSION)0xdeadface;
-
-/** Testframe 0 */
-struct TESTFRAME
-{
-    uint16_t    au16[7];
-} g_TestFrame0 = { { /* dst:*/ 0xffff, 0xffff, 0xffff, /*src:*/0x8086, 0, 0, 0x0800 } },
-  g_TestFrame1 = { { /* dst:*/ 0, 0, 0,                /*src:*/0x8086, 0, 1, 0x0800 } };
+const PSUPDRVSESSION    g_pSession   = (PSUPDRVSESSION)0xdeadface;
 
 
 INTNETR3DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmType, PFNSUPDRVDESTRUCTOR pfnDestructor, void *pvUser1, void *pvUser2)
 {
-    if (pSession != g_pSession)
-    {
-        RTPrintf("tstIntNetR0: Invalid session pointer %p, %s!\n", pSession, __FUNCTION__);
-        g_cErrors++;
-        return NULL;
-    }
-    POBJREF pRef = (POBJREF)RTMemAlloc(sizeof(OBJREF));
+    RTTEST_CHECK_RET(g_hTest, pSession == g_pSession, NULL);
+    POBJREF pRef = (POBJREF)RTTestGuardedAllocTail(g_hTest, sizeof(OBJREF));
     if (!pRef)
         return NULL;
     pRef->cRefs = 1;
@@ -131,12 +122,7 @@ INTNETR3DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enm
 
 INTNETR3DECL(int) SUPR0ObjAddRefEx(void *pvObj, PSUPDRVSESSION pSession, bool fNoBlocking)
 {
-    if (pSession != g_pSession)
-    {
-        RTPrintf("tstIntNetR0: Invalid session pointer %p, %s!\n", pSession, __FUNCTION__);
-        g_cErrors++;
-        return VERR_INVALID_PARAMETER;
-    }
+    RTTEST_CHECK_RET(g_hTest, pSession == g_pSession, VERR_INVALID_PARAMETER);
     POBJREF pRef = (POBJREF)pvObj;
     ASMAtomicIncU32(&pRef->cRefs);
     return VINF_SUCCESS;
@@ -149,17 +135,12 @@ INTNETR3DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
 
 INTNETR3DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
 {
-    if (pSession != g_pSession)
-    {
-        RTPrintf("tstIntNetR0: Invalid session pointer %p, %s!\n", pSession, __FUNCTION__);
-        g_cErrors++;
-        return VERR_INVALID_PARAMETER;
-    }
+    RTTEST_CHECK_RET(g_hTest, pSession == g_pSession, VERR_INVALID_PARAMETER);
     POBJREF pRef = (POBJREF)pvObj;
     if (!ASMAtomicDecU32(&pRef->cRefs))
     {
         pRef->pfnDestructor(pRef, pRef->pvUser1, pRef->pvUser2);
-        RTMemFree(pRef);
+        RTTestGuardedFree(g_hTest, pRef);
         return VINF_OBJECT_DESTROYED;
     }
     return VINF_SUCCESS;
@@ -167,24 +148,14 @@ INTNETR3DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
 
 INTNETR3DECL(int) SUPR0ObjVerifyAccess(void *pvObj, PSUPDRVSESSION pSession, const char *pszObjName)
 {
-    if (pSession != g_pSession)
-    {
-        RTPrintf("tstIntNetR0: Invalid session pointer %p, %s!\n", pSession, __FUNCTION__);
-        g_cErrors++;
-        return VERR_INVALID_PARAMETER;
-    }
+    RTTEST_CHECK_RET(g_hTest, pSession == g_pSession, VERR_INVALID_PARAMETER);
     return VINF_SUCCESS;
 }
 
 INTNETR3DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR0, PRTR3PTR ppvR3)
 {
-    if (pSession != g_pSession)
-    {
-        RTPrintf("tstIntNetR0: Invalid session pointer %p, %s!\n", pSession, __FUNCTION__);
-        g_cErrors++;
-        return VERR_INVALID_PARAMETER;
-    }
-    void *pv = RTMemAlloc(cb);
+    RTTEST_CHECK_RET(g_hTest, pSession == g_pSession, VERR_INVALID_PARAMETER);
+    void *pv = RTTestGuardedAllocTail(g_hTest, cb);
     if (!pv)
         return VERR_NO_MEMORY;
     *ppvR0 = (RTR0PTR)pv;
@@ -195,16 +166,19 @@ INTNETR3DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR p
 
 INTNETR3DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 {
-    if (pSession != g_pSession)
-    {
-        RTPrintf("tstIntNetR0: Invalid session pointer %p, %s!\n", pSession, __FUNCTION__);
-        g_cErrors++;
-        return VERR_INVALID_PARAMETER;
-    }
-    RTMemFree((void *)uPtr);
+    RTTEST_CHECK_RET(g_hTest, pSession == g_pSession, VERR_INVALID_PARAMETER);
+    RTTestGuardedFree(g_hTest, (void *)uPtr);
     return VINF_SUCCESS;
 }
 
+/* Fake non-existing ring-0 APIs. */
+#define RTThreadIsInInterrupt(hThread)      false
+#define RTThreadPreemptIsEnabled(hThread)   true
+#define RTMpCpuId()                         0
+
+/* No CLI/POPF, please. */
+#define RTSpinlockAcquireNoInts             RTSpinlockAcquire
+#define RTSpinlockReleaseNoInts             RTSpinlockRelease
 
 
 /* ugly but necessary for making R0 code compilable for R3. */
@@ -229,16 +203,27 @@ static int tstIntNetSendBuf(PINTNET pIntNet, PINTNETRINGBUF pRingBuf, INTNETIFHA
 
 typedef struct MYARGS
 {
-    PINTNET pIntNet;
-    PINTNETBUF pBuf;
-    INTNETIFHANDLE hIf;
-    RTMAC Mac;
-    uint64_t u64Start;
-    uint64_t u64End;
+    PINTNET         pIntNet;
+    PINTNETBUF      pBuf;
+    INTNETIFHANDLE  hIf;
+    RTMAC           Mac;
+    uint64_t        u64Start;
+    uint64_t        u64End;
 } MYARGS, *PMYARGS;
 
 
-#define TEST_TRANSFER_SIZE (_1M*384)
+/**
+ * Frame header used when testing.
+ */
+#pragma pack(1)
+typedef struct MYFRAMEHDR
+{
+    RTMAC       SrcMac;
+    RTMAC       DstMac;
+    uint32_t    iFrame;
+    uint32_t    auEos[3];
+} MYFRAMEHDR;
+#pragma pack()
 
 /**
  * Send thread.
@@ -247,61 +232,53 @@ typedef struct MYARGS
 DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
 {
     PMYARGS pArgs = (PMYARGS)pvArg;
+    int rc;
 
     /*
-     * Send 64 MB of data.
+     * Send g_cbTransfer of data.
      */
-    uint8_t abBuf[4096] = {0};
-    PRTMAC  pMacSrc = (PRTMAC)&abBuf[0];
-    PRTMAC  pMacDst = pMacSrc + 1;
-    *pMacSrc = pArgs->Mac;
-    *pMacDst = pArgs->Mac;
-    pMacDst->au16[2] = pArgs->Mac.au16[2] ? 0 : 1;
-    unsigned *puFrame = (unsigned *)(pMacDst + 1);
-    unsigned iFrame = 0;
-    uint32_t cbSent = 0;
-    uint32_t cSend  = 0;
+    uint8_t         abBuf[4096] = {0};
+    MYFRAMEHDR     *pHdr    = (MYFRAMEHDR *)&abBuf[0];
+    uint32_t        iFrame  = 0;
+    uint32_t        cbSent  = 0;
+    uint32_t        cSend   = 0;
+
+    pHdr->SrcMac            = pArgs->Mac;
+    pHdr->DstMac            = pArgs->Mac;
+    pHdr->DstMac.au16[2]    = (pArgs->Mac.au16[2] + 1) % 2;
+
     pArgs->u64Start = RTTimeNanoTS();
-    for (; cbSent < TEST_TRANSFER_SIZE; iFrame++)
+    for (; cbSent < g_cbTransfer; iFrame++)
     {
-        const unsigned cb = iFrame % 1519 + 12 + sizeof(unsigned);
-        *puFrame = iFrame;
+        const unsigned cb = iFrame % 1519 + sizeof(RTMAC) * 2 + sizeof(unsigned);
+         pHdr->iFrame = iFrame;
 
         INTNETSG Sg;
         INTNETSgInitTemp(&Sg, abBuf, cb);
-        int rc = intnetR0RingWriteFrame(&pArgs->pBuf->Send, &Sg, NULL);
+        RTTEST_CHECK_RC_OK(g_hTest, rc = intnetR0RingWriteFrame(&pArgs->pBuf->Send, &Sg, NULL));
         if (RT_SUCCESS(rc))
-            rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, g_pSession);
-        if (RT_FAILURE(rc))
-        {
-            g_cErrors++;
-            RTPrintf("tstIntNetR0: Failed sending %d bytes, rc=%Rrc (%d)\n", cb, rc, INTNETRingGetWritable(&pArgs->pBuf->Send));
-        }
+            RTTEST_CHECK_RC_OK(g_hTest, rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, g_pSession));
         cbSent += cb;
     }
 
     /*
      * Termination frames.
      */
-    puFrame[0] = 0xffffdead;
-    puFrame[1] = 0xffffdead;
-    puFrame[2] = 0xffffdead;
-    puFrame[3] = 0xffffdead;
+    pHdr->iFrame   = 0xffffdead;
+    pHdr->auEos[0] = 0xffffdead;
+    pHdr->auEos[1] = 0xffffdead;
+    pHdr->auEos[2] = 0xffffdead;
     for (unsigned c = 0; c < 20; c++)
     {
-        int rc = tstIntNetSendBuf(pArgs->pIntNet, &pArgs->pBuf->Send, pArgs->hIf, g_pSession,
-                                  abBuf, sizeof(RTMAC) * 2 + sizeof(unsigned) * 4);
-        if (RT_FAILURE(rc))
-        {
-            g_cErrors++;
-            RTPrintf("tstIntNetR0: send failed, rc=%Rrc\n", rc);
-        }
+        RTTEST_CHECK_RC_OK(g_hTest, rc = tstIntNetSendBuf(pArgs->pIntNet, &pArgs->pBuf->Send, pArgs->hIf, g_pSession,
+                                                          abBuf, sizeof(RTMAC) * 2 + sizeof(unsigned) * 4));
         RTThreadSleep(1);
     }
 
-    RTPrintf("tstIntNetR0: sender   thread %.6Rhxs terminating.\n"
-             "tstIntNetR0:   iFrame=%u  cb=%'u\n",
-             &pArgs->Mac, iFrame, cbSent);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                 "sender   thread %.6Rhxs terminating.\n"
+                 "iFrame=%u  cb=%'u\n",
+                 &pArgs->Mac, iFrame, cbSent);
     return 0;
 }
 
@@ -322,6 +299,67 @@ DECLCALLBACK(int) ReceiveThread(RTTHREAD Thread, void *pvArg)
     for (;;)
     {
         /*
+         * Read data.
+         */
+        while (INTNETRingHasMoreToRead(&pArgs->pBuf->Recv))
+        {
+            uint8_t     abBuf[16384];
+            MYFRAMEHDR *pHdr = (MYFRAMEHDR *)&abBuf[0];
+            uint32_t    cb   = INTNETRingReadAndSkipFrame(&pArgs->pBuf->Recv, abBuf);
+
+            /* check for termination frame. */
+            if (    pHdr->iFrame   == 0xffffdead
+                &&  pHdr->auEos[0] == 0xffffdead
+                &&  pHdr->auEos[1] == 0xffffdead
+                &&  pHdr->auEos[2] == 0xffffdead)
+            {
+                pArgs->u64End = RTTimeNanoTS();
+                RTThreadSleep(10);
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                             "receiver thread %.6Rhxs terminating.\n"
+                             "  iFrame=%u  cb=%'u  c=%'u  %'uKB/s  %'ufps  cLost=%'u \n",
+                             &pArgs->Mac, iFrame, cbReceived, iFrame - cLostFrames,
+                             (unsigned)(cbReceived * 1000000000.0 / 1024 / (pArgs->u64End - pArgs->u64Start)),
+                             (unsigned)((iFrame - cLostFrames) * 1000000000.0 / (pArgs->u64End - pArgs->u64Start)),
+                             cLostFrames);
+                return VINF_SUCCESS;
+            }
+
+            /* validate frame header */
+            if (    pHdr->DstMac.au16[0] != pArgs->Mac.au16[0]
+                ||  pHdr->DstMac.au16[1] != pArgs->Mac.au16[1]
+                ||  pHdr->DstMac.au16[2] != pArgs->Mac.au16[2]
+                ||  pHdr->SrcMac.au16[0] != pArgs->Mac.au16[0]
+                ||  pHdr->SrcMac.au16[1] != pArgs->Mac.au16[1]
+                ||  pHdr->SrcMac.au16[2] != (pArgs->Mac.au16[2] + 1) % 2)
+            {
+                RTTestFailed(g_hTest, "receiver thread %.6Rhxs received frame header: %.16Rhxs\n", &pArgs->Mac, abBuf);
+            }
+
+            /* frame stuff and stats. */
+            int32_t off = pHdr->iFrame - (iFrame + 1);
+            if (off)
+            {
+                if (off > 0)
+                {
+#ifndef IGNORE_LOST_FRAMES
+                    RTTestFailed(g_hTest, "receiver thread %.6Rhxs: iFrame=%#x *puFrame=%#x off=%d\n",
+                                 &pArgs->Mac, iFrame, pHdr->iFrame, off);
+#endif
+                    cLostFrames += off;
+                }
+                else
+                {
+                    cLostFrames++;
+                    RTTestFailed(g_hTest, "receiver thread %.6Rhxs: iFrame=%#x *puFrame=%#x off=%d\n",
+                                 &pArgs->Mac, iFrame, pHdr->iFrame, off);
+                }
+            }
+            iFrame = pHdr->iFrame;
+            cbReceived += cb;
+        }
+
+        /*
          * Wait for data.
          */
         int rc = INTNETR0IfWait(pArgs->pIntNet, pArgs->hIf, g_pSession, RT_INDEFINITE_WAIT);
@@ -331,103 +369,376 @@ DECLCALLBACK(int) ReceiveThread(RTTHREAD Thread, void *pvArg)
             case VINF_SUCCESS:
                 break;
             case VERR_SEM_DESTROYED:
-                RTPrintf("tstIntNetR0: receiver thread %.6Rhxs terminating. iFrame=%u cb=%'u c=%'u cLost=%'u\n",
-                         &pArgs->Mac, iFrame, cbReceived, iFrame - cLostFrames, cLostFrames);
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                             "receiver thread %.6Rhxs terminating. iFrame=%u cb=%'u c=%'u cLost=%'u\n",
+                             &pArgs->Mac, iFrame, cbReceived, iFrame - cLostFrames, cLostFrames);
                 return VINF_SUCCESS;
 
             default:
-                RTPrintf("tstIntNetR0: receiver thread %.6Rhxs got odd return value %Rrc! iFrame=%u cb=%'u c=%'u cLost=%'u\n",
-                         &pArgs->Mac, rc, iFrame, cbReceived, iFrame - cLostFrames, cLostFrames);
-                g_cErrors++;
+                RTTestFailed(g_hTest, "receiver thread %.6Rhxs got odd return value %Rrc! iFrame=%u cb=%'u c=%'u cLost=%'u\n",
+                             &pArgs->Mac, rc, iFrame, cbReceived, iFrame - cLostFrames, cLostFrames);
                 return rc;
         }
 
-        /*
-         * Read data.
-         */
-        while (INTNETRingHasMoreToRead(&pArgs->pBuf->Recv))
-        {
-            uint8_t abBuf[16384];
-            uint32_t cb = INTNETRingReadAndSkipFrame(&pArgs->pBuf->Recv, abBuf);
-            unsigned *puFrame = (unsigned *)&abBuf[sizeof(RTMAC) * 2];
-
-            /* check for termination frame. */
-            if (    cb == sizeof(RTMAC) * 2 + sizeof(unsigned) * 4
-                &&  puFrame[0] == 0xffffdead
-                &&  puFrame[1] == 0xffffdead
-                &&  puFrame[2] == 0xffffdead
-                &&  puFrame[3] == 0xffffdead)
-            {
-                pArgs->u64End = RTTimeNanoTS();
-                RTPrintf("tstIntNetR0: receiver thread %.6Rhxs terminating.\n"
-                         "tstIntNetR0:   iFrame=%u  cb=%'u  c=%'u  %'uKB/s  %'ufps  cLost=%'u \n",
-                         &pArgs->Mac, iFrame, cbReceived, iFrame - cLostFrames,
-                         (unsigned)(cbReceived * 1000000000.0 / 1024 / (pArgs->u64End - pArgs->u64Start)),
-                         (unsigned)((iFrame - cLostFrames) * 1000000000.0 / (pArgs->u64End - pArgs->u64Start)),
-                         cLostFrames);
-                return VINF_SUCCESS;
-            }
-
-            /* validate frame header */
-            PRTMAC pMacSrc = (PRTMAC)&abBuf[0];
-            PRTMAC pMacDst = pMacSrc + 1;
-            if (    pMacDst->au16[0] != 0x8086
-                ||  pMacDst->au16[1] != 0
-                ||  pMacDst->au16[2] != pArgs->Mac.au16[2]
-                ||  pMacSrc->au16[0] != 0x8086
-                ||  pMacSrc->au16[1] != 0
-                ||  pMacSrc->au16[2] == pArgs->Mac.au16[2])
-            {
-                RTPrintf("tstIntNetR0: receiver thread %.6Rhxs received frame header: %.16Rhxs\n",
-                         &pArgs->Mac, abBuf);
-                g_cErrors++;
-            }
-
-            /* frame stuff and stats. */
-            int off = iFrame + 1 - *puFrame;
-            if (off)
-            {
-                if (off > 0)
-                {
-                    RTPrintf("tstIntNetR0: receiver thread %.6Rhxs: iFrame=%d *puFrame=%d off=%d\n",
-                             &pArgs->Mac, iFrame, *puFrame, off);
-                    g_cErrors++;
-                    cLostFrames++;
-                }
-                else
-                {
-                    cLostFrames += -off;
-#ifndef IGNORE_LOST_FRAMES
-                    if (off < 50)
-                    {
-                        RTPrintf("tstIntNetR0: receiver thread %.6Rhxs: iFrame=%d *puFrame=%d off=%d\n",
-                                 &pArgs->Mac, iFrame, *puFrame, off);
-                        g_cErrors++;
-                    }
-#endif
-                }
-            }
-            iFrame = *puFrame;
-            cbReceived += cb;
-        }
     }
 }
 
+
+/**
+ * Test state.
+ */
+typedef struct TSTSTATE
+{
+    PINTNET         pIntNet;
+
+    PINTNETBUF      pBuf0;
+    INTNETIFHANDLE  hIf0;
+
+    PINTNETBUF      pBuf1;
+    INTNETIFHANDLE  hIf1;
+} TSTSTATE;
+typedef TSTSTATE *PTSTSTATE;
+
+
+/**
+ * Open two internal network interfaces.
+ *
+ * @returns IPRT status of the first failure.
+ * @param   pThis               The test instance.
+ */
+static int tstOpenInterfaces(PTSTSTATE pThis, const char *pszNetwork, uint32_t cbSend, uint32_t cbRecv)
+{
+    pThis->hIf0 = INTNET_HANDLE_INVALID;
+    RTTESTI_CHECK_RC_OK_RET(INTNETR0Open(pThis->pIntNet, g_pSession, pszNetwork, kIntNetTrunkType_None, "",
+                                         0/*fFlags*/, cbSend, cbRecv, &pThis->hIf0), rcCheck);
+    RTTESTI_CHECK_RET(pThis->hIf0 != INTNET_HANDLE_INVALID, VERR_INTERNAL_ERROR);
+    RTTESTI_CHECK_RC_RET(INTNETR0IfGetRing0Buffer(pThis->pIntNet, pThis->hIf0, g_pSession, &pThis->pBuf0), VINF_SUCCESS, rcCheck);
+    RTTESTI_CHECK_RET(pThis->pBuf0, VERR_INTERNAL_ERROR);
+
+
+    pThis->hIf1 = INTNET_HANDLE_INVALID;
+    RTTESTI_CHECK_RC_OK_RET(INTNETR0Open(pThis->pIntNet, g_pSession, pszNetwork, kIntNetTrunkType_None, "",
+                                         0/*fFlags*/, cbSend, cbRecv, &pThis->hIf1), rcCheck);
+    RTTESTI_CHECK_RET(pThis->hIf1 != INTNET_HANDLE_INVALID, VERR_INTERNAL_ERROR);
+    RTTESTI_CHECK_RC_RET(INTNETR0IfGetRing0Buffer(pThis->pIntNet, pThis->hIf1, g_pSession, &pThis->pBuf1), VINF_SUCCESS, rcCheck);
+    RTTESTI_CHECK_RET(pThis->pBuf1, VERR_INTERNAL_ERROR);
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Close the interfaces.
+ *
+ * @param   pThis               The test instance.
+ */
+static void tstCloseInterfaces(PTSTSTATE pThis)
+{
+    int rc;
+    RTTESTI_CHECK_RC_OK(rc = INTNETR0IfClose(pThis->pIntNet, pThis->hIf0, g_pSession));
+    if (RT_SUCCESS(rc))
+    {
+        pThis->hIf0  = INTNET_HANDLE_INVALID;
+        pThis->pBuf0 = NULL;
+    }
+
+    RTTESTI_CHECK_RC_OK(rc = INTNETR0IfClose(pThis->pIntNet, pThis->hIf1, g_pSession));
+    if (RT_SUCCESS(rc))
+    {
+        pThis->hIf1  = INTNET_HANDLE_INVALID;
+        pThis->pBuf1 = NULL;
+    }
+
+    /* The network should be dead now. */
+    RTTESTI_CHECK(pThis->pIntNet->pNetworks == NULL);
+}
+
+/**
+ * Do the bi-directional transfer test.
+ */
+static void tstBidirectionalTransfer(PTSTSTATE pThis)
+{
+    MYARGS Args0;
+    RT_ZERO(Args0);
+    Args0.hIf         = pThis->hIf0;
+    Args0.pBuf        = pThis->pBuf0;
+    Args0.pIntNet     = pThis->pIntNet;
+    Args0.Mac.au16[0] = 0x8086;
+    Args0.Mac.au16[1] = 0;
+    Args0.Mac.au16[2] = 0;
+
+    MYARGS Args1;
+    RT_ZERO(Args1);
+    Args1.hIf         = pThis->hIf1;
+    Args1.pBuf        = pThis->pBuf1;
+    Args1.pIntNet     = pThis->pIntNet;
+    Args1.Mac.au16[0] = 0x8086;
+    Args1.Mac.au16[1] = 0;
+    Args1.Mac.au16[2] = 1;
+
+    RTTHREAD ThreadRecv0 = NIL_RTTHREAD;
+    RTTHREAD ThreadRecv1 = NIL_RTTHREAD;
+    RTTHREAD ThreadSend0 = NIL_RTTHREAD;
+    RTTHREAD ThreadSend1 = NIL_RTTHREAD;
+    RTTESTI_CHECK_RC_OK_RETV(RTThreadCreate(&ThreadRecv0, ReceiveThread, &Args0, 0, RTTHREADTYPE_IO,        RTTHREADFLAGS_WAITABLE, "RECV0"));
+    RTTESTI_CHECK_RC_OK_RETV(RTThreadCreate(&ThreadRecv1, ReceiveThread, &Args1, 0, RTTHREADTYPE_IO,        RTTHREADFLAGS_WAITABLE, "RECV1"));
+    RTTESTI_CHECK_RC_OK_RETV(RTThreadCreate(&ThreadSend0, SendThread,    &Args0, 0, RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "SEND0"));
+    RTTESTI_CHECK_RC_OK_RETV(RTThreadCreate(&ThreadSend1, SendThread,    &Args1, 0, RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "SEND1"));
+
+    int rc2 = VINF_SUCCESS;
+    int rc;
+    RTTESTI_CHECK_RC_OK(rc = RTThreadWait(ThreadSend0, 5*60*1000, &rc2));
+    if (RT_SUCCESS(rc))
+    {
+        RTTESTI_CHECK_RC_OK(rc2);
+        ThreadSend0 = NIL_RTTHREAD;
+        RTTESTI_CHECK_RC_OK(rc = RTThreadWait(ThreadSend1, 5*60*1000, RT_SUCCESS(rc2) ? &rc2 : NULL));
+        if (RT_SUCCESS(rc))
+        {
+            ThreadSend1 = NIL_RTTHREAD;
+            RTTESTI_CHECK_RC_OK(rc2);
+        }
+    }
+    if (RTTestErrorCount(g_hTest) == 0)
+    {
+        /*
+         * Wait a bit for the receivers to finish up.
+         */
+        unsigned cYields = 100000;
+        while (     (  INTNETRingHasMoreToRead(&pThis->pBuf0->Recv)
+                    || INTNETRingHasMoreToRead(&pThis->pBuf1->Recv))
+               &&   cYields-- > 0)
+            RTThreadYield();
+
+        uint64_t u64Elapsed = RT_MAX(Args0.u64End, Args1.u64End) - RT_MIN(Args0.u64Start, Args1.u64Start);
+        uint64_t u64Speed = (uint64_t)((2 * g_cbTransfer / 1024) / (u64Elapsed / 1000000000.0));
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                     "transfered %u bytes in %'RU64 ns (%'RU64 KB/s)\n",
+                     2 * g_cbTransfer, u64Elapsed, u64Speed);
+
+        /*
+         * Wait for the threads to finish up...
+         */
+        RTTESTI_CHECK_RC_OK(rc = RTThreadWait(ThreadRecv0, 5000, &rc2));
+        if (RT_SUCCESS(rc))
+        {
+            RTTESTI_CHECK_RC_OK(rc2);
+            ThreadRecv0 = NIL_RTTHREAD;
+        }
+
+        RTTESTI_CHECK_RC_OK(rc = RTThreadWait(ThreadRecv1, 5000, &rc2));
+        if (RT_SUCCESS(rc))
+        {
+            RTTESTI_CHECK_RC_OK(rc2);
+            ThreadRecv1 = NIL_RTTHREAD;
+        }
+    }
+
+    /*
+     * Give them a chance to complete...
+     */
+    RTThreadWait(ThreadRecv0, 5000, NULL);
+    RTThreadWait(ThreadRecv1, 5000, NULL);
+    RTThreadWait(ThreadSend0, 5000, NULL);
+    RTThreadWait(ThreadSend1, 5000, NULL);
+
+
+    /*
+     * Display statistics.
+     */
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                 "Buf0: Yields-OK=%llu Yields-NOK=%llu Lost=%llu Bad=%llu\n",
+                 pThis->pBuf0->cStatYieldsOk.c,
+                 pThis->pBuf0->cStatYieldsNok.c,
+                 pThis->pBuf0->cStatLost.c,
+                 pThis->pBuf0->cStatBadFrames.c);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                 "Buf0.Recv: Frames=%llu Bytes=%llu Overflows=%llu\n",
+                 pThis->pBuf0->Recv.cStatFrames,
+                 pThis->pBuf0->Recv.cbStatWritten.c,
+                 pThis->pBuf0->Recv.cOverflows.c);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                 "Buf0.Send: Frames=%llu Bytes=%llu Overflows=%llu\n",
+                 pThis->pBuf0->Send.cStatFrames,
+                 pThis->pBuf0->Send.cbStatWritten.c,
+                 pThis->pBuf0->Send.cOverflows.c);
+
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                 "Buf1: Yields-OK=%llu Yields-NOK=%llu Lost=%llu Bad=%llu\n",
+                 pThis->pBuf1->cStatYieldsOk.c,
+                 pThis->pBuf1->cStatYieldsNok.c,
+                 pThis->pBuf1->cStatLost.c,
+                 pThis->pBuf1->cStatBadFrames.c);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                 "Buf1.Recv: Frames=%llu Bytes=%llu Overflows=%llu\n",
+                 pThis->pBuf1->Recv.cStatFrames,
+                 pThis->pBuf1->Recv.cbStatWritten.c,
+                 pThis->pBuf1->Recv.cOverflows.c);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                 "Buf1.Send: Frames=%llu Bytes=%llu Overflows=%llu\n",
+                 pThis->pBuf1->Send.cStatFrames,
+                 pThis->pBuf1->Send.cbStatWritten.c,
+                 pThis->pBuf1->Send.cOverflows.c);
+
+}
+
+/**
+ * Performs a simple broadcast test.
+ *
+ * @param   pThis               The test instance.
+ * @param   fHeadGuard          Whether to use a head or tail guard.
+ */
+static void doBroadcastTest(PTSTSTATE pThis, bool fHeadGuard)
+{
+    static uint16_t const s_au16Frame[7] = { /* dst:*/ 0xffff, 0xffff, 0xffff, /*src:*/0x8086, 0, 0, 0x0800 };
+
+    RTTESTI_CHECK_RC_RETV(tstIntNetSendBuf(pThis->pIntNet, &pThis->pBuf0->Send, pThis->hIf0,
+                                           g_pSession, &s_au16Frame, sizeof(s_au16Frame)),
+                          VINF_SUCCESS);
+
+    /* No echo, please */
+    RTTESTI_CHECK_RC_RETV(INTNETR0IfWait(pThis->pIntNet, pThis->hIf0, g_pSession, 1), VERR_TIMEOUT);
+
+    /* The other interface should see it though.  But Wait should only return once, thank you. */
+    RTTESTI_CHECK_RC_RETV(INTNETR0IfWait(pThis->pIntNet, pThis->hIf1, g_pSession, 1), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(INTNETR0IfWait(pThis->pIntNet, pThis->hIf1, g_pSession, 0), VERR_TIMEOUT);
+
+    /* Receive the data. */
+    const unsigned cbExpect = RT_ALIGN(sizeof(s_au16Frame) + sizeof(INTNETHDR), sizeof(INTNETHDR));
+    RTTESTI_CHECK_MSG(INTNETRingGetReadable(&pThis->pBuf1->Recv) == cbExpect,
+                      ("%#x vs. %#x\n", INTNETRingGetReadable(&pThis->pBuf1->Recv), cbExpect));
+
+    void *pvBuf;
+    RTTESTI_CHECK_RC_OK_RETV(RTTestGuardedAlloc(g_hTest, sizeof(s_au16Frame), 1, fHeadGuard, &pvBuf));
+    uint32_t cb;
+    RTTESTI_CHECK_MSG_RETV((cb = INTNETRingReadAndSkipFrame(&pThis->pBuf1->Recv, pvBuf)) == sizeof(s_au16Frame),
+                           ("%#x vs. %#x\n", cb, sizeof(s_au16Frame)));
+
+    if (memcmp(pvBuf, &s_au16Frame, sizeof(s_au16Frame)))
+        RTTestIFailed("Got invalid data!\n"
+                      "received: %.*Rhxs\n"
+                      "expected: %.*Rhxs\n",
+                      cb, pvBuf, sizeof(s_au16Frame), &s_au16Frame);
+}
+
+/**
+ * Performs a simple unicast test.
+ *
+ * @param   pThis               The test instance.
+ * @param   fHeadGuard          Whether to use a head or tail guard.
+ */
+static void doUnicastTest(PTSTSTATE pThis, bool fHeadGuard)
+{
+    static uint16_t const s_au16Frame[7] = { /* dst:*/ 0x8086, 0, 0,      /*src:*/0x8086, 0, 1, 0x0800 };
+
+    RTTESTI_CHECK_RC_RETV(tstIntNetSendBuf(pThis->pIntNet, &pThis->pBuf1->Send, pThis->hIf1,
+                                           g_pSession, s_au16Frame, sizeof(s_au16Frame)),
+                          VINF_SUCCESS);
+
+    /* No echo, please */
+    RTTESTI_CHECK_RC_RETV(INTNETR0IfWait(pThis->pIntNet, pThis->hIf1, g_pSession, 1), VERR_TIMEOUT);
+
+    /* The other interface should see it though.  But Wait should only return once, thank you. */
+    RTTESTI_CHECK_RC_RETV(INTNETR0IfWait(pThis->pIntNet, pThis->hIf0, g_pSession, 1), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(INTNETR0IfWait(pThis->pIntNet, pThis->hIf0, g_pSession, 0), VERR_TIMEOUT);
+
+    /* Receive the data. */
+    const unsigned cbExpect = RT_ALIGN(sizeof(s_au16Frame) + sizeof(INTNETHDR), sizeof(INTNETHDR));
+    RTTESTI_CHECK_MSG(INTNETRingGetReadable(&pThis->pBuf0->Recv) == cbExpect,
+                      ("%#x vs. %#x\n", INTNETRingGetReadable(&pThis->pBuf0->Recv), cbExpect));
+
+    void *pvBuf;
+    RTTESTI_CHECK_RC_OK_RETV(RTTestGuardedAlloc(g_hTest, sizeof(s_au16Frame), 1, fHeadGuard, &pvBuf));
+    uint32_t cb;
+    RTTESTI_CHECK_MSG_RETV((cb = INTNETRingReadAndSkipFrame(&pThis->pBuf0->Recv, pvBuf)) == sizeof(s_au16Frame),
+                           ("%#x vs. %#x\n", cb, sizeof(s_au16Frame)));
+
+    if (memcmp(pvBuf, &s_au16Frame, sizeof(s_au16Frame)))
+        RTTestIFailed("Got invalid data!\n"
+                      "received: %.*Rhxs\n"
+                      "expected: %.*Rhxs\n",
+                      cb, pvBuf, sizeof(s_au16Frame), s_au16Frame);
+}
+
+static void doTest(PTSTSTATE pThis, uint32_t cbRecv, uint32_t cbSend)
+{
+
+    /*
+     * Create an INTNET instance.
+     */
+    RTTestISub("INTNETR0Create");
+    RTTESTI_CHECK_RC_RETV(INTNETR0Create(&pThis->pIntNet), VINF_SUCCESS);
+
+    /*
+     * Create two interfaces and activate them.
+     */
+    RTTestISub("Network creation");
+    int rc = tstOpenInterfaces(pThis, "test", cbSend, cbRecv);
+    if (RT_FAILURE(rc))
+        return;
+    RTTESTI_CHECK_RC(INTNETR0IfSetActive(pThis->pIntNet, pThis->hIf0, g_pSession, true), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(INTNETR0IfSetActive(pThis->pIntNet, pThis->hIf1, g_pSession, true), VINF_SUCCESS);
+
+    /*
+     * Test basic waiting.
+     */
+    RTTestISub("INTNETR0IfWait");
+    RTTESTI_CHECK_RC(INTNETR0IfWait(pThis->pIntNet, pThis->hIf0, g_pSession, 1), VERR_TIMEOUT);
+    RTTESTI_CHECK_RC(INTNETR0IfWait(pThis->pIntNet, pThis->hIf0, g_pSession, 0), VERR_TIMEOUT);
+    RTTESTI_CHECK_RC(INTNETR0IfWait(pThis->pIntNet, pThis->hIf1, g_pSession, 1), VERR_TIMEOUT);
+    RTTESTI_CHECK_RC(INTNETR0IfWait(pThis->pIntNet, pThis->hIf1, g_pSession, 0), VERR_TIMEOUT);
+
+    /*
+     * Broadcast send and receive.
+     * (This establishes the MAC address of the 1st interface.)
+     */
+    RTTestISub("Broadcast");
+    doBroadcastTest(pThis, false /*fHeadGuard*/);
+    doBroadcastTest(pThis, true /*fHeadGuard*/);
+
+    /*
+     * Unicast send and receive.
+     * (This establishes the MAC address of the 2nd interface.)
+     */
+    RTTestISub("Unicast");
+    doUnicastTest(pThis, false /*fHeadGuard*/);
+    doUnicastTest(pThis, true /*fHeadGuard*/);
+
+    /*
+     * Do the big bi-directional transfer test if the basics worked out.
+     */
+    if (!RTTestIErrorCount())
+    {
+        RTTestISubF("bi-directional benchmark, cbSend=%u, cbRecv=%u, cbTransfer=%u",
+                    pThis->pBuf0->cbSend, pThis->pBuf0->cbRecv, g_cbTransfer);
+        tstBidirectionalTransfer(pThis);
+    }
+
+    /*
+     * Destroy the service.
+     */
+    tstCloseInterfaces(pThis);
+    INTNETR0Destroy(pThis->pIntNet);
+}
+
+
 int main(int argc, char **argv)
 {
-    /*
-     * Init the runtime and parse arguments.
-     */
-    RTR3Init();
+    int rc = RTTestInitAndCreate("tstIntNetR0", &g_hTest);
+    if (rc)
+        return rc;
 
+    /*
+     * Parse the arguments.
+     */
     static RTGETOPTDEF const s_aOptions[] =
     {
-        { "--recv-buffer",  'r', RTGETOPT_REQ_UINT32 },
-        { "--send-buffer",  's', RTGETOPT_REQ_UINT32 },
+        { "--recv-buffer",   'r', RTGETOPT_REQ_UINT32 },
+        { "--send-buffer",   's', RTGETOPT_REQ_UINT32 },
+        { "--transfer-size", 'l', RTGETOPT_REQ_UINT32 },
     };
 
-    uint32_t cbRecv = 32 * _1K;
-    uint32_t cbSend = 1536*2;
+    uint32_t cbSend = 1536*2 + 4;
+    uint32_t cbRecv = 0x8000;
 
     int ch;
     RTGETOPTUNION Value;
@@ -436,6 +747,10 @@ int main(int argc, char **argv)
     while ((ch = RTGetOpt(&GetState, &Value)))
         switch (ch)
         {
+            case 'l':
+                g_cbTransfer = Value.u32;
+                break;
+
             case 'r':
                 cbRecv = Value.u32;
                 break;
@@ -449,321 +764,12 @@ int main(int argc, char **argv)
         }
 
     /*
-     * Create an INTNET instance.
+     * Do the testing and report summary.
      */
-    RTPrintf("tstIntNetR0: TESTING cbSend=%d cbRecv=%d ...\n", cbSend, cbRecv);
-    PINTNET pIntNet;
-    int rc = INTNETR0Create(&pIntNet);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("tstIntNetR0: INTNETR0Create failed, rc=%Rrc\n");
-        return 1;
-    }
+    TSTSTATE This;
+    RT_ZERO(This);
+    doTest(&This, cbRecv, cbSend);
 
-    /*
-     * Create two interfaces.
-     */
-    INTNETIFHANDLE hIf0 = INTNET_HANDLE_INVALID;
-    rc = INTNETR0Open(pIntNet, g_pSession, "test", kIntNetTrunkType_None, "", 0, 1536*2 + 4, 0x8000, &hIf0);
-    if (RT_SUCCESS(rc))
-    {
-        if (hIf0 != INTNET_HANDLE_INVALID)
-        {
-            INTNETIFHANDLE hIf1 = INTNET_HANDLE_INVALID;
-            rc = INTNETR0Open(pIntNet, g_pSession, "test", kIntNetTrunkType_None, NULL, 0, 1536*2 + 4, 0x8000, &hIf1);
-            if (RT_SUCCESS(rc))
-            {
-                if (hIf1 != INTNET_HANDLE_INVALID)
-                {
-                    PINTNETBUF pBuf0;
-                    rc = INTNETR0IfGetRing0Buffer(pIntNet, hIf0, g_pSession, &pBuf0);
-                    if (RT_FAILURE(rc) || !pBuf0)
-                    {
-                        RTPrintf("tstIntNetR0: INTNETIfGetRing0Buffer failed! pBuf0=%p rc=%Rrc\n", pBuf0, rc);
-                        g_cErrors++;
-                    }
-                    PINTNETBUF pBuf1;
-                    rc = INTNETR0IfGetRing0Buffer(pIntNet, hIf1, g_pSession, &pBuf1);
-                    if (RT_FAILURE(rc))
-                    {
-                        RTPrintf("tstIntNetR0: INTNETIfGetRing0Buffer failed! pBuf1=%p rc=%Rrc\n", pBuf1, rc);
-                        g_cErrors++;
-                    }
-
-                    rc = INTNETR0IfSetActive(pIntNet, hIf0, g_pSession, true);
-                    if (RT_FAILURE(rc))
-                    {
-                        RTPrintf("tstIntNetR0: INTNETR0IfSetActive failed! rc=%Rrc\n", rc);
-                        g_cErrors++;
-                    }
-                    rc = INTNETR0IfSetActive(pIntNet, hIf1, g_pSession, true);
-                    if (RT_FAILURE(rc))
-                    {
-                        RTPrintf("tstIntNetR0: INTNETR0IfSetActive failed! rc=%Rrc\n", rc);
-                        g_cErrors++;
-                    }
-
-
-                    /*
-                     * Test basic waiting.
-                     */
-                    rc = INTNETR0IfWait(pIntNet, hIf0, g_pSession, 1);
-                    if (rc != VERR_TIMEOUT)
-                    {
-                        RTPrintf("tstIntNetR0: INTNETIfWait returned %Rrc expected VERR_TIMEOUT (hIf0)\n", rc);
-                        g_cErrors++;
-                    }
-                    rc = INTNETR0IfWait(pIntNet, hIf1, g_pSession, 0);
-                    if (rc != VERR_TIMEOUT)
-                    {
-                        RTPrintf("tstIntNetR0: INTNETIfWait returned %Rrc expected VERR_TIMEOUT (hIf1)\n", rc);
-                        g_cErrors++;
-                    }
-
-                    /*
-                     * Send and receive.
-                     */
-                    rc = tstIntNetSendBuf(pIntNet, &pBuf0->Send, hIf0, g_pSession, &g_TestFrame0, sizeof(g_TestFrame0));
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = INTNETR0IfWait(pIntNet, hIf0, g_pSession, 1);
-                        if (rc != VERR_TIMEOUT)
-                        {
-                            RTPrintf("tstIntNetR0: INTNETIfWait returned %Rrc expected VERR_TIMEOUT (hIf0, 2nd)\n", rc);
-                            g_cErrors++;
-                        }
-                        rc = INTNETR0IfWait(pIntNet, hIf1, g_pSession, 0);
-                        if (rc == VINF_SUCCESS)
-                        {
-                            /* receive it */
-                            uint8_t abBuf[sizeof(g_TestFrame0)];
-                            const unsigned cbExpect = RT_ALIGN(sizeof(g_TestFrame0) + sizeof(INTNETHDR), sizeof(INTNETHDR));
-                            if (INTNETRingGetReadable(&pBuf1->Recv) != cbExpect)
-                            {
-                                RTPrintf("tstIntNetR0: %d readable bytes, expected %d!\n", INTNETRingGetReadable(&pBuf1->Recv), cbExpect);
-                                g_cErrors++;
-                            }
-                            uint32_t cb = INTNETRingReadAndSkipFrame(&pBuf1->Recv, abBuf);
-                            if (cb != sizeof(g_TestFrame0))
-                            {
-                                RTPrintf("tstIntNetR0: read %d frame bytes, expected %d!\n", cb, sizeof(g_TestFrame0));
-                                g_cErrors++;
-                            }
-                            else if (memcmp(abBuf, &g_TestFrame0, sizeof(g_TestFrame0)))
-                            {
-                                RTPrintf("tstIntNetR0: Got invalid data!\n"
-                                         "received: %.*Rhxs\n"
-                                         "expected: %.*Rhxs\n",
-                                         cb, abBuf, sizeof(g_TestFrame0), &g_TestFrame0);
-                                g_cErrors++;
-                            }
-
-                            /*
-                             * Send a packet from If1 just to set its MAC address.
-                             */
-                            rc = tstIntNetSendBuf(pIntNet, &pBuf1->Send, hIf1, g_pSession, &g_TestFrame1, sizeof(g_TestFrame1));
-                            if (RT_FAILURE(rc))
-                            {
-                                RTPrintf("tstIntNetR0: INTNETIfSend returned %Rrc! (hIf1)\n", rc);
-                                g_cErrors++;
-                            }
-
-
-                            /*
-                             * Start threaded testcase.
-                             * Give it 5 mins to finish.
-                             */
-                            if (!g_cErrors)
-                            {
-                                MYARGS Args0;
-                                RT_ZERO(Args0);
-                                Args0.hIf = hIf0;
-                                Args0.pBuf = pBuf0;
-                                Args0.pIntNet = pIntNet;
-                                Args0.Mac.au16[0] = 0x8086;
-                                Args0.Mac.au16[1] = 0;
-                                Args0.Mac.au16[2] = 0;
-
-                                MYARGS Args1;
-                                RT_ZERO(Args1);
-                                Args1.hIf = hIf1;
-                                Args1.pBuf = pBuf1;
-                                Args1.pIntNet = pIntNet;
-                                Args1.Mac.au16[0] = 0x8086;
-                                Args1.Mac.au16[1] = 0;
-                                Args1.Mac.au16[2] = 1;
-
-                                RTTHREAD ThreadRecv0 = NIL_RTTHREAD;
-                                RTTHREAD ThreadRecv1 = NIL_RTTHREAD;
-                                RTTHREAD ThreadSend0 = NIL_RTTHREAD;
-                                RTTHREAD ThreadSend1 = NIL_RTTHREAD;
-                                rc = RTThreadCreate(&ThreadRecv0, ReceiveThread, &Args0, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "RECV0");
-                                if (RT_SUCCESS(rc))
-                                    rc = RTThreadCreate(&ThreadRecv1, ReceiveThread, &Args1, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "RECV1");
-                                if (RT_SUCCESS(rc))
-                                    rc = RTThreadCreate(&ThreadSend0, SendThread, &Args0, 0, RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "SEND0");
-                                if (RT_SUCCESS(rc))
-                                    rc = RTThreadCreate(&ThreadSend1, SendThread, &Args1, 0, RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE, "SEND1");
-                                if (RT_SUCCESS(rc))
-                                {
-                                    int rc2 = VINF_SUCCESS;
-                                    rc = RTThreadWait(ThreadSend0, 5*60*1000, &rc2);
-                                    AssertRC(rc);
-                                    if (RT_SUCCESS(rc))
-                                    {
-                                        ThreadSend0 = NIL_RTTHREAD;
-                                        rc = RTThreadWait(ThreadSend1, 5*60*1000, RT_SUCCESS(rc2) ? &rc2 : NULL);
-                                        AssertRC(rc);
-                                        if (RT_SUCCESS(rc))
-                                            ThreadSend1 = NIL_RTTHREAD;
-                                    }
-                                    if (    RT_SUCCESS(rc)
-                                        &&  RT_SUCCESS(rc2))
-                                    {
-                                        /*
-                                         * Wait a bit for the receivers to finish up.
-                                         */
-                                        unsigned cYields = 100000;
-                                        while (     (  INTNETRingHasMoreToRead(&pBuf0->Recv)
-                                                    || INTNETRingHasMoreToRead(&pBuf1->Recv))
-                                               &&   cYields-- > 0)
-                                            RTThreadYield();
-
-                                        uint64_t u64Elapsed = RT_MAX(Args0.u64End, Args1.u64End) - RT_MIN(Args0.u64Start, Args1.u64Start);
-                                        uint64_t u64Speed = (uint64_t)((2 * TEST_TRANSFER_SIZE / 1024) / (u64Elapsed / 1000000000.0));
-                                        RTPrintf("tstIntNetR0: transfered %d bytes in %'RU64 ns (%'RU64 KB/s)\n",
-                                                 2 * TEST_TRANSFER_SIZE, u64Elapsed, u64Speed);
-
-                                        /*
-                                         * Closing time...
-                                         */
-                                        rc = RTThreadWait(ThreadRecv0, 5000, &rc2);
-                                        if (RT_SUCCESS(rc))
-                                            ThreadRecv0 = NIL_RTTHREAD;
-                                        if (RT_FAILURE(rc) || RT_FAILURE(rc2))
-                                        {
-                                            RTPrintf("tstIntNetR0: Failed waiting on receiver thread 0, rc=%Rrc, rc2=%Rrc\n", rc, rc2);
-                                            g_cErrors++;
-                                        }
-
-                                        rc = RTThreadWait(ThreadRecv1, 5000, &rc2);
-                                        if (RT_SUCCESS(rc))
-                                            ThreadRecv1 = NIL_RTTHREAD;
-                                        if (RT_FAILURE(rc) || RT_FAILURE(rc2))
-                                        {
-                                            RTPrintf("tstIntNetR0: Failed waiting on receiver thread 1, rc=%Rrc, rc2=%Rrc\n", rc, rc2);
-                                            g_cErrors++;
-                                        }
-
-                                        rc = INTNETR0IfClose(pIntNet, hIf0, g_pSession);
-                                        if (RT_SUCCESS(rc))
-                                        {
-                                            hIf0 = INTNET_HANDLE_INVALID;
-                                            pBuf0 = NULL;
-                                        }
-                                        else
-                                        {
-                                            RTPrintf("tstIntNetR0: INTNETIfClose failed, rc=%Rrc! (hIf0)\n", rc);
-                                            g_cErrors++;
-                                        }
-
-                                        rc = INTNETR0IfClose(pIntNet, hIf1, g_pSession);
-                                        if (RT_SUCCESS(rc))
-                                        {
-                                            hIf1 = INTNET_HANDLE_INVALID;
-                                            pBuf1 = NULL;
-                                        }
-                                        else
-                                        {
-                                            RTPrintf("tstIntNetR0: INTNETIfClose failed, rc=%Rrc! (hIf1)\n", rc);
-                                            g_cErrors++;
-                                        }
-
-
-                                        /* check if the network still exist... */
-                                        if (pIntNet->pNetworks)
-                                        {
-                                            RTPrintf("tstIntNetR0: The network wasn't deleted! (g_cErrors=%d)\n", g_cErrors);
-                                            g_cErrors++;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        RTPrintf("tstIntNetR0: Waiting on senders failed, rc=%Rrc, rc2=%Rrc\n", rc, rc2);
-                                        g_cErrors++;
-                                    }
-
-                                    /*
-                                     * Give them a chance to complete...
-                                     */
-                                    RTThreadWait(ThreadRecv0, 5000, NULL);
-                                    RTThreadWait(ThreadRecv1, 5000, NULL);
-                                    RTThreadWait(ThreadSend0, 5000, NULL);
-                                    RTThreadWait(ThreadSend1, 5000, NULL);
-
-                                }
-                                else
-                                {
-                                    RTPrintf("tstIntNetR0: Failed to create threads, rc=%Rrc\n", rc);
-                                    g_cErrors++;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            RTPrintf("tstIntNetR0: INTNETIfWait returned %Rrc expected VINF_SUCCESS (hIf1)\n", rc);
-                            g_cErrors++;
-                        }
-                    }
-                    else
-                    {
-                        RTPrintf("tstIntNetR0: INTNETIfSend returned %Rrc! (hIf0)\n", rc);
-                        g_cErrors++;
-                    }
-                }
-                else
-                {
-                    RTPrintf("tstIntNetR0: INTNETOpen returned invalid handle on success! (hIf1)\n");
-                    g_cErrors++;
-                }
-
-                if (hIf1 != INTNET_HANDLE_INVALID)
-                    rc = INTNETR0IfClose(pIntNet, hIf1, g_pSession);
-            }
-            else
-            {
-                RTPrintf("tstIntNetR0: INTNETOpen failed for the 2nd interface! rc=%Rrc\n", rc);
-                g_cErrors++;
-            }
-
-            if (hIf0 != INTNET_HANDLE_INVALID)
-                rc = INTNETR0IfClose(pIntNet, hIf0, g_pSession);
-        }
-        else
-        {
-            RTPrintf("tstIntNetR0: INTNETOpen returned invalid handle on success! (hIf0)\n");
-            g_cErrors++;
-        }
-    }
-    else
-    {
-        RTPrintf("tstIntNetR0: INTNETOpen failed for the 1st interface! rc=%Rrc\n", rc);
-        g_cErrors++;
-    }
-
-    /*
-     * Destroy the service.
-     */
-    INTNETR0Destroy(pIntNet);
-
-    /*
-     * Summary.
-     */
-    if (!g_cErrors)
-        RTPrintf("tstIntNetR0: SUCCESS\n");
-    else
-        RTPrintf("tstIntNetR0: FAILURE - %d errors\n", g_cErrors);
-
-    return !!g_cErrors;
+    return RTTestSummaryAndDestroy(g_hTest);
 }
 
