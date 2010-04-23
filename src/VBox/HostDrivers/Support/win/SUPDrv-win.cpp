@@ -685,7 +685,7 @@ int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
         }
         else
         {
-            Log(("rcNt=%#x '%ws'\n", rcNt, pwcsFilename));
+            Log(("rcNt=%#x '%ls'\n", rcNt, pwcsFilename));
             SUPR0Printf("VBoxDrv: rcNt=%#x '%ws'\n", rcNt, pwcsFilename);
             switch (rcNt)
             {
