@@ -518,6 +518,8 @@ public:
     void updateAppearance()
     {
         const CConsole &console = m_session.GetConsole();
+        if (console.isNull())
+            return;
 
         bool bVirtEnabled = console.GetDebugger().GetHWVirtExEnabled();
         QString virtualization = bVirtEnabled ?
