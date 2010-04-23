@@ -326,9 +326,9 @@ void UINewHDWzdPage3::onSelectLocationButtonClicked()
     {
         if (QFileInfo(selected).completeSuffix().isEmpty())
             selected += ".vdi";
-        m_pSizeEditor->setText(QDir::toNativeSeparators(selected));
-        m_pSizeEditor->selectAll();
-        m_pSizeEditor->setFocus();
+        m_pLocationEditor->setText(QDir::toNativeSeparators(selected));
+        m_pLocationEditor->selectAll();
+        m_pLocationEditor->setFocus();
     }
 }
 
