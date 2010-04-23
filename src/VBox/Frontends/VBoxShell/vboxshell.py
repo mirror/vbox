@@ -745,8 +745,12 @@ def execInGuest(ctx,console,args):
     passwd = ""
     tmo = 0
     guest = console.guest
-    print "executing %s with args %s" %(args[0], args[1:])
-    (progress, pid) = guest.executeProcess(args[0], 0, args[1:], [], "", "", "", user, passwd, tmo)
+    if len(args) > 1:
+        gargs = args[1:]
+    else:
+        gargs = []
+    print "executing %s with args %s" %(args[0], gargs)
+    (progress, pid) = guest.executeProcess(args[0], 0, gargs, [], "", "", "", user, passwd, tmo)
     print "executed with pid %d" %(pid)
     if pid != 0:
         while not progress.completed:
