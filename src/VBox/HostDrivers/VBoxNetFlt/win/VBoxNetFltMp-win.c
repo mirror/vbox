@@ -30,17 +30,17 @@
 #else
 
 /** driver handle */
-static NDIS_HANDLE         g_hDriverHandle = NULL;
+static NDIS_HANDLE      g_hDriverHandle            = NULL;
 /** Ndis wrapper handle */
-static NDIS_HANDLE        g_hNdisWrapperHandle;
+static NDIS_HANDLE      g_hNdisWrapperHandle;
 /** device handle for ioctl interface this is not used currently and should be removed soon */
-static NDIS_HANDLE     g_hNdisDeviceHandle = NULL;
+static NDIS_HANDLE      g_hNdisDeviceHandle        = NULL;
 /** device object used for ioctl interface this is not used currently and should be removed soon */
-static PDEVICE_OBJECT  g_pControlDeviceObject = NULL;
+static PDEVICE_OBJECT   g_pControlDeviceObject     = NULL;
 /** ioctl device ref count */
-static LONG               g_cControlDeviceRefs = 0;
+static LONG             g_cControlDeviceRefs       = 0;
 /** true if control device needs to be dereferenced before destroying */
-static bool g_bControlDeviceReferenced = false;
+static bool             g_bControlDeviceReferenced = false;
 
 enum _DEVICE_STATE
 {
@@ -587,7 +587,7 @@ static NDIS_STATUS vboxNetFltWinMpReadApplyConfig(PADAPT pAdapt, NDIS_HANDLE hMi
         vboxNetFltWinGenerateMACAddress(&mac);
     }
 
-    pThis->u.s.Mac = mac;
+    pThis->u.s.MacAddr = mac;
 
     return NDIS_STATUS_SUCCESS;
 }
@@ -1862,7 +1862,7 @@ Notes: Read "Minimizing Miniport Driver Initialization Time" in the DDK
             //
             {
                 PVBOXNETFLTINS pNetFlt = (PADAPT_2_PVBOXNETFLTINS(pAdapt));
-                pInfo = &pNetFlt->u.s.Mac;
+                pInfo = &pNetFlt->u.s.MacAddr;
                 ulInfoLen = VBOXNETADP_ETH_ADDRESS_LENGTH;
             }
             break;
@@ -1876,7 +1876,7 @@ Notes: Read "Minimizing Miniport Driver Initialization Time" in the DDK
             //
             {
                 PVBOXNETFLTINS pNetFlt = (PADAPT_2_PVBOXNETFLTINS(pAdapt));
-                pInfo = &pNetFlt->u.s.Mac;
+                pInfo = &pNetFlt->u.s.MacAddr;
                 ulInfoLen = VBOXNETADP_ETH_ADDRESS_LENGTH;
             }
             break;

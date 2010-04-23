@@ -426,13 +426,13 @@ extern RTMAC g_vboxNetFltWinVerifyMACGuest;
 # define VBOXNETFLT_LBVERIFY(_pnf, _p) \
     do { \
         Assert(!vboxNetFltWinCheckMACs(_p, NULL, &g_vboxNetFltWinVerifyMACGuest)); \
-        Assert(!vboxNetFltWinCheckMACs(_p, NULL, &(_pnf)->u.s.Mac)); \
+        Assert(!vboxNetFltWinCheckMACs(_p, NULL, &(_pnf)->u.s.MacAddr)); \
     } while(0)
 
 # define VBOXNETFLT_LBVERIFYSG(_pnf, _p) \
     do { \
         Assert(!vboxNetFltWinCheckMACsSG(_p, NULL, &g_vboxNetFltWinVerifyMACGuest)); \
-        Assert(!vboxNetFltWinCheckMACsSG(_p, NULL, &(_pnf)->u.s.Mac)); \
+        Assert(!vboxNetFltWinCheckMACsSG(_p, NULL, &(_pnf)->u.s.MacAddr)); \
     } while(0)
 
 #else
