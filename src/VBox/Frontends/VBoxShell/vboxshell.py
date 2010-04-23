@@ -176,7 +176,7 @@ if g_hasreadline:
 
 
         try:
-            for m in getMachines(self.ctx):
+            for m in getMachines(self.ctx, False, True):
                 # although it has autoconversion, we need to cast
                 # explicitly for subscripts to work
                 word = re.sub("(?<!\\\\) ", "\\ ", str(m.name))
@@ -279,11 +279,27 @@ def startVm(ctx,mach,type):
     else:
        reportError(ctx,progress)
 
-def getMachines(ctx, invalidate = False):
+class CachedMach:
+        def __init__(self, mach):
+            self.name = mach.name
+            self.id = mach.id
+
+def cacheMachines(ctx,list):
+    result = []
+    for m in list:
+        elem = CachedMach(m)
+        result.append(elem)
+    return result
+
+def getMachines(ctx, invalidate = False, simple=False):
     if ctx['vb'] is not None:
         if ctx['_machlist'] is None or invalidate:
             ctx['_machlist'] = ctx['global'].getArray(ctx['vb'], 'machines')
-        return ctx['_machlist']
+            ctx['_machlistsimple'] = cacheMachines(ctx,ctx['_machlist'])
+        if simple:
+            return ctx['_machlistsimple']
+        else:
+            return ctx['_machlist']
     else:
         return []
 
@@ -451,7 +467,7 @@ def printSf(ctx,sf):
 def ginfo(ctx,console, args):
     guest = console.guest
     if guest.additionsActive:
-        vers = int(guest.additionsVersion)
+        vers = int(str(guest.additionsVersion))
         print "Additions active, version %d.%d"  %(vers >> 16, vers & 0xffff)
         print "Support seamless: %s"          %(asFlag(guest.supportsSeamless))
         print "Support graphics: %s"          %(asFlag(guest.supportsGraphics))
@@ -1086,7 +1102,7 @@ def hostCmd(ctx, args):
 
    print "USB devices:"
    for ud in ctx['global'].getArray(host, 'USBDevices'):
-       printUsbHostDev(ctx,ud)
+       printHostUsbDev(ctx,ud)
 
    if ctx['perf']:
      for metric in ctx['perf'].query(["*"], [host]):
@@ -1182,7 +1198,7 @@ def showLogCmd(ctx, args):
         if (len(data) == 0):
             break
         # print adds either NL or space to chunks not ending with a NL
-        sys.stdout.write(data)
+        sys.stdout.write(str(data))
         uOffset += len(data)
 
     return 0
