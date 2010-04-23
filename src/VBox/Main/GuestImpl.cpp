@@ -534,7 +534,8 @@ int Guest::notifyCtrlExec(uint32_t              u32Function,
                 break;
 
             case PROC_STS_TEN: /* Terminated normally. */
-                it->pProgress->notifyComplete(S_OK);
+                if (!it->pProgress->getCompleted())
+                    it->pProgress->notifyComplete(S_OK);
                 break;
 
             case PROC_STS_TEA: /* Terminated abnormally. */
@@ -566,8 +567,16 @@ int Guest::notifyCtrlExec(uint32_t              u32Function,
         if (   !it->pProgress.isNull()
             && errMsg.length())
         {
-            it->pProgress->notifyComplete(E_FAIL /** @todo Find a better rc! */, COM_IIDOF(IGuest),
-                                          (CBSTR)Guest::getComponentName(), errMsg.c_str());
+            if (!it->pProgress->getCompleted())
+            {
+                it->pProgress->notifyComplete(E_FAIL /** @todo Find a better rc! */, COM_IIDOF(IGuest),
+                                              (CBSTR)Guest::getComponentName(), errMsg.c_str());
+                LogFlowFunc(("Callback (context ID=%u, status=%u) progress marked as completed\n",
+                             pData->hdr.u32ContextID, pData->u32Status));
+            }
+            else
+                LogFlowFunc(("Callback (context ID=%u, status=%u) progress already marked as completed\n", 
+                             pData->hdr.u32ContextID, pData->u32Status));
         }
         ASMAtomicWriteBool(&it->bCalled, true);
     }
@@ -654,7 +663,8 @@ void Guest::removeCtrlCallbackContext(Guest::CallbackListIter it)
         it->pvData = NULL;
 
         /* Notify outstanding waits for progress ... */
-        if (!it->pProgress.isNull())
+        if (   !it->pProgress.isNull()
+            && !it->pProgress->getCompleted())
         {
             it->pProgress->notifyComplete(S_OK);
             it->pProgress = NULL;
