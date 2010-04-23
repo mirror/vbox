@@ -269,25 +269,29 @@ public:
                                 "network interfaces:</nobr>%1</p>", "Network adapters tooltip");
         QString strFullData;
 
-        for (ulong uSlot = 0; uSlot < uMaxCount; ++ uSlot)
+        for (ulong uSlot = 0, uEnabled = 0; uSlot < uMaxCount; ++ uSlot)
         {
             CNetworkAdapter adapter = machine.GetNetworkAdapter(uSlot);
             if (adapter.GetEnabled())
             {
-                QString strIP;
+                QString strFlags;
+                QString strCount;
                 ULONG64 timestamp;
+                machine.GetGuestProperty("/VirtualBox/GuestInfo/Net/Count", strCount, timestamp, strFlags);
                 RTTIMESPEC time;
                 uint64_t u64Now = RTTimeSpecGetNano(RTTimeNow(&time));
-                QString strFlags;
-                machine.GetGuestProperty(QString("/VirtualBox/GuestInfo/Net/%1/V4/IP").arg(uSlot),
-                                         strIP, timestamp, strFlags);
+                QString strIP;
+                if (   u64Now - timestamp < UINT64_C(60000000000)
+                    && strCount.toInt() > 0)
+                    strIP = machine.GetGuestPropertyValue(QString("/VirtualBox/GuestInfo/Net/%1/V4/IP").arg(uEnabled));
                 strFullData += QApplication::translate("VBoxConsoleWnd", "<br><nobr><b>Adapter %1 (%2)</b>: %3 cable %4</nobr>", "Network adapters tooltip")
                     .arg(uSlot + 1)
                     .arg(vboxGlobal().toString(adapter.GetAttachmentType()))
-                    .arg(strIP.isEmpty() || (u64Now - timestamp > UINT64_C(20000000000)) ? "" : "IP " + strIP + ", ")
+                    .arg(strIP.isEmpty() ? "" : "IP " + strIP + ", ")
                     .arg(adapter.GetCableConnected() ?
                           QApplication::translate("VBoxConsoleWnd", "connected", "Network adapters tooltip") :
                           QApplication::translate("VBoxConsoleWnd", "disconnected", "Network adapters tooltip"));
+                uEnabled++;
             }
         }
 
