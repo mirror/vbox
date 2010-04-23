@@ -4019,7 +4019,7 @@ STDMETHODIMP Machine::ShowConsoleWindow(ULONG64 *aWinId)
 HRESULT Machine::getGuestPropertyFromService(IN_BSTR aName,
                                              BSTR *aValue,
                                              ULONG64 *aTimestamp,
-                                             BSTR *aFlags)
+                                             BSTR *aFlags) const
 {
     using namespace guestProp;
 
@@ -4052,7 +4052,7 @@ HRESULT Machine::getGuestPropertyFromService(IN_BSTR aName,
 HRESULT Machine::getGuestPropertyFromVM(IN_BSTR aName,
                                         BSTR *aValue,
                                         ULONG64 *aTimestamp,
-                                        BSTR *aFlags)
+                                        BSTR *aFlags) const
 {
     HRESULT rc;
     ComPtr<IInternalSessionControl> directControl;

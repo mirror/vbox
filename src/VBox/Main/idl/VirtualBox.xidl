@@ -3734,7 +3734,7 @@
 
   <interface
      name="IInternalMachineControl" extends="$unknown"
-     uuid="35d8d838-d066-447d-927a-fd93afdbec90"
+     uuid="1b61599c-0686-451c-a7b6-96761f3f0ac5"
      internal="yes"
      wsmap="suppress"
      >
@@ -5695,7 +5695,7 @@
       </param>
     </method>
 
-    <method name="getGuestProperty">
+    <method name="getGuestProperty" const="yes">
       <desc>
         Reads an entry from the machine's guest property store.
 
@@ -5729,7 +5729,7 @@
       </param>
     </method>
 
-    <method name="getGuestPropertyValue">
+    <method name="getGuestPropertyValue" const="yes">
       <desc>
         Reads a value from the machine's guest property store.
 
@@ -5751,7 +5751,7 @@
       </param>
     </method>
 
-    <method name="getGuestPropertyTimestamp">
+    <method name="getGuestPropertyTimestamp" const="yes">
       <desc>
         Reads a property timestamp from the machine's guest property store.
 
