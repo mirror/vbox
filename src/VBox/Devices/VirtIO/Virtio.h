@@ -232,7 +232,7 @@ typedef uint32_t (*PFNGETHOSTMINIMALFEATURES)(void *pState);
 typedef void     (*PFNSETHOSTFEATURES)(void *pState, uint32_t uFeatures);
 typedef int      (*PFNGETCONFIG)(void *pState, uint32_t port, uint32_t cb, void *data);
 typedef int      (*PFNSETCONFIG)(void *pState, uint32_t port, uint32_t cb, void *data);
-typedef void     (*PFNRESET)(void *pState);
+typedef int      (*PFNRESET)(void *pState);
 typedef void     (*PFNREADY)(void *pState);
 /*****************************************************************************/
 
