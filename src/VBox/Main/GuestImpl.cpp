@@ -978,9 +978,11 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
     paParms[i++].setUInt32(uContextID);
     paParms[i++].setUInt32(aPID);
     paParms[i++].setUInt32(aFlags); /** @todo Should represent stdout and/or stderr. */
-    //paParms[i++].setPointer(outputData.raw(), aSize);
 
     int vrc = VINF_SUCCESS;
+
+    /* Make sure mParent is valid, so set a read lock in this scope. */
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Forward the information to the VMM device. */
     AssertPtr(mParent);
@@ -992,6 +994,8 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
                                    i, paParms);
     }
 
+    alock.release();
+
     if (RT_SUCCESS(vrc))
     {
         LogFlowFunc(("Waiting for HGCM callback (timeout=%ldms) ...\n", aTimeoutMS));
@@ -1002,41 +1006,50 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
          * get the PID.
          */
         CallbackListIter it = getCtrlCallbackContextByID(uContextID);
-        uint64_t u64Started = RTTimeMilliTS();
-        do
+        if (it != mCallbackList.end())
         {
-            unsigned cMsWait;
-            if (aTimeoutMS == RT_INDEFINITE_WAIT)
-                cMsWait = 1000;
-            else
+            uint64_t u64Started = RTTimeMilliTS();
+            do
             {
-                uint64_t cMsElapsed = RTTimeMilliTS() - u64Started;
-                if (cMsElapsed >= aTimeoutMS)
-                    break; /* timed out */
-                cMsWait = RT_MIN(1000, aTimeoutMS - (uint32_t)cMsElapsed);
+                unsigned cMsWait;
+                if (aTimeoutMS == RT_INDEFINITE_WAIT)
+                    cMsWait = 1000;
+                else
+                {
+                    uint64_t cMsElapsed = RTTimeMilliTS() - u64Started;
+                    if (cMsElapsed >= aTimeoutMS)
+                        break; /* timed out */
+                    cMsWait = RT_MIN(1000, aTimeoutMS - (uint32_t)cMsElapsed);
+                }
+                RTThreadSleep(100);
+            } while (!it->bCalled);
+
+            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+            /* Did we get some output? */
+            PHOSTEXECOUTCALLBACKDATA pData = (HOSTEXECOUTCALLBACKDATA*)it->pvData;
+            Assert(it->cbData == sizeof(HOSTEXECOUTCALLBACKDATA));
+            AssertPtr(pData);
+    
+            if (   it->bCalled
+                && pData->cbData)
+            {
+                /* Do we need to resize the array? */
+                if (pData->cbData > cbData)
+                    outputData.resize(pData->cbData);
+    
+                /* Fill output in supplied out buffer. */
+                memcpy(outputData.raw(), pData->pvData, pData->cbData);
+                outputData.resize(pData->cbData); /* Shrink to fit actual buffer size. */
             }
-            RTThreadSleep(100);
-        } while (it != mCallbackList.end() && !it->bCalled);
+            else
+                vrc = VERR_NO_DATA; /* This is not an error we want to report to COM. */
 
-        /* Did we get some output? */
-        PHOSTEXECOUTCALLBACKDATA pData = (HOSTEXECOUTCALLBACKDATA*)it->pvData;
-        Assert(it->cbData == sizeof(HOSTEXECOUTCALLBACKDATA));
-        AssertPtr(pData);
-
-        if (   it->bCalled
-            && pData->cbData)
-        {
-            /* Do we need to resize the array? */
-            if (pData->cbData > cbData)
-                outputData.resize(pData->cbData);
-
-            /* Fill output in supplied out buffer. */
-            memcpy(outputData.raw(), pData->pvData, pData->cbData);
-            outputData.resize(pData->cbData); /* Shrink to fit actual buffer size. */
+            alock.release();
         }
-        else
-            vrc = VERR_NO_DATA; /* This is not an error we want to report to COM. */
 
+        /* If something failed (or there simply was no data, indicated by VERR_NO_DATA,
+         * we return an empty array so that the frontend knows when to give up. */
         if (RT_FAILURE(vrc) || FAILED(rc))
             outputData.resize(0);
         outputData.detachTo(ComSafeArrayOutArg(aData));
