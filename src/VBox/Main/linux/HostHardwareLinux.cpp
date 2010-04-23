@@ -36,6 +36,7 @@
 # include <VBox/dbus.h>
 #endif
 
+#include <iprt/asm.h>
 #include <iprt/dir.h>
 #include <iprt/env.h>
 #include <iprt/file.h>
@@ -1198,6 +1199,9 @@ class hotplugSysfsFAMImpl : public VBoxMainHotplugWaiterImpl
     RTSOCKET mhFAMFD;
     /** Poll set containing the FAM socket and the termination pipe */
     RTPOLLSET mhPollSet;
+    /** Flag to mark that the Wait() method is currently being called, and to
+     * ensure that it isn't called multiple times in parallel. */
+    uint32_t mfWaiting;
     /** iprt result code from object initialisation.  Should be AssertReturn-ed
      * on at the start of all methods.  I went this way because I didn't want
      * to deal with exceptions. */
@@ -1210,10 +1214,35 @@ class hotplugSysfsFAMImpl : public VBoxMainHotplugWaiterImpl
         FAMFD_ID
     };
 
+    /** Initialise the connection to the FAM daemon, allocating all required
+     * resources.
+     * @returns iprt status code
+     */
+    int initConnection(void);
+
+    /** Clean up the connection to the FAM daemon, freeing any allocated
+     * resources and gracefully skipping over any which have not yet been
+     * allocated or already cleaned up.
+     * @returns iprt status code
+     */
+    void termConnection(void);
+
     /** Clean up any resources in use, gracefully skipping over any which have
      * not yet been allocated or already cleaned up.  Intended to be called
      * from the destructor or after a failed initialisation. */
     void term(void);
+
+    /** Make sure that the object is correctly initialised and re-initialises
+     * it if not, and if the maximum number of connection attempts has not been
+     * reached.
+     * @returns iprt status value
+     * @returns VERR_TRY_AGAIN if we are giving up on this attempt but may
+     *                         still succeed on future attempts
+     */
+    int checkConnection(void);
+
+    /** Quick failure test of the checkConnection() function. */
+    void testCheckConnection(void);
 
     /** Open our connection to FAM and convert the status to iprt.
      * @todo  really convert the status
@@ -1238,12 +1267,29 @@ class hotplugSysfsFAMImpl : public VBoxMainHotplugWaiterImpl
 
     /** Quick failure test of the monitor function - we temporarily invalidate
      * the connection FD to trigger an error path. */
-    void testmonitorDirectoryFAM(void)
+    void testMonitorDirectoryFAM(void)
     {
         int oldFD = FAMCONNECTION_GETFD(&mFAMConnection);
         FAMCONNECTION_GETFD(&mFAMConnection) = -1;
         Assert(monitorDirectoryFAM(NULL) == VERR_FAM_MONITOR_DIRECTORY_FAILED);
         FAMCONNECTION_GETFD(&mFAMConnection) = oldFD;
+    }
+
+    int nextEventFAM(FAMEvent *pEv)
+    {
+        if (FAMNextEvent(&mFAMConnection, pEv) == 1)
+            return VINF_SUCCESS;
+        mStatus = VERR_FAM_CONNECTION_LOST;
+        return VERR_TRY_AGAIN;
+    }
+
+    /** Quick failure test of the nextevent function. */
+    void testNextEventFAM(void)
+    {
+        int oldStatus = mStatus;
+        mStatus = VINF_SUCCESS;
+        Assert(nextEventFAM(NULL) == VERR_TRY_AGAIN);
+        mStatus = oldStatus;
     }
 
     /** Close our connection to FAM.  We ignore errors as there is no
@@ -1284,7 +1330,7 @@ public:
 hotplugSysfsFAMImpl::hotplugSysfsFAMImpl(void) :
     mhWakeupPipeR(NIL_RTPIPE), mhWakeupPipeW(NIL_RTPIPE),
     mfFAMInitialised(false), mhFAMFD(NIL_RTSOCKET), mhPollSet(NIL_RTPOLLSET),
-    mStatus(VERR_WRONG_ORDER)
+    mfWaiting(0), mStatus(VERR_WRONG_ORDER)
 {
 #ifdef DEBUG
     /* Excercise the code path (term() on a not-fully-initialised object) as
@@ -1307,24 +1353,13 @@ hotplugSysfsFAMImpl::hotplugSysfsFAMImpl(void) :
     do {
         if (RT_FAILURE(rc = RTPipeCreate(&mhWakeupPipeR, &mhWakeupPipeW, 0)))
             break;
-        if (RT_FAILURE(rc = openFAM()))
-            break;
-        if (RT_FAILURE(rc = RTSocketFromNative
-                                (&mhFAMFD, FAMCONNECTION_GETFD(&mFAMConnection))))
-            break;
-        if (RT_FAILURE(rc = monitorDirectoryFAM(SYSFS_USB_DEVICE_PATH)))
-            break;
-        if (RT_FAILURE(rc = RTPollSetCreate(&mhPollSet)))
-            break;
-        if (RT_FAILURE(rc = RTPollSetAddSocket
-                                (mhPollSet, mhFAMFD, RTPOLL_EVT_READ, FAMFD_ID)))
-            break;
-        if (RT_FAILURE(rc = RTPollSetAddPipe
-                                (mhPollSet, mhWakeupPipeR, RTPOLL_EVT_READ, RPIPE_ID)))
+        if (RT_FAILURE(rc = initConnection()))
             break;
 #ifdef DEBUG
         /** Other tests */
-        testmonitorDirectoryFAM();
+        testMonitorDirectoryFAM();
+        testNextEventFAM();
+        testCheckConnection();
 #endif
     } while(0);
     mStatus = rc;
@@ -1332,16 +1367,72 @@ hotplugSysfsFAMImpl::hotplugSysfsFAMImpl(void) :
         term();
 }
 
-void hotplugSysfsFAMImpl::term(void)
+int hotplugSysfsFAMImpl::initConnection(void)
 {
-    RTPipeClose(mhWakeupPipeR);
-    mhWakeupPipeR = NIL_RTPIPE;
-    RTPipeClose(mhWakeupPipeW);
-    mhWakeupPipeW = NIL_RTPIPE;
+    int rc;
+
+    if (RT_FAILURE(rc = openFAM()))
+        return rc;
+    if (RT_FAILURE(rc = RTSocketFromNative
+                            (&mhFAMFD, FAMCONNECTION_GETFD(&mFAMConnection))))
+        return rc;
+    if (RT_FAILURE(rc = monitorDirectoryFAM(SYSFS_USB_DEVICE_PATH)))
+        return rc;
+    if (RT_FAILURE(rc = RTPollSetCreate(&mhPollSet)))
+        return rc;
+    if (RT_FAILURE(rc = RTPollSetAddSocket
+                            (mhPollSet, mhFAMFD, RTPOLL_EVT_READ, FAMFD_ID)))
+        return rc;
+    AssertReturn(mhWakeupPipeR != NIL_RTPIPE, VERR_WRONG_ORDER);
+    if (RT_FAILURE(rc = RTPollSetAddPipe(mhPollSet, mhWakeupPipeR,
+                                         RTPOLL_EVT_READ, RPIPE_ID)))
+        return rc;
+    return VINF_SUCCESS;
+}
+
+void hotplugSysfsFAMImpl::termConnection(void)
+{
     closeFAM();
     mhFAMFD = NIL_RTSOCKET;
     RTPollSetDestroy(mhPollSet);
     mhPollSet = NIL_RTPOLLSET;
+}
+
+int hotplugSysfsFAMImpl::checkConnection(void)
+{
+    /** We should only be called from within Wait(). */
+    AssertReturn(mfWaiting, VERR_WRONG_ORDER);
+    if (mStatus == VERR_FAM_CONNECTION_LOST)
+    {
+        termConnection();
+        mStatus = initConnection();
+    }
+    return mStatus;
+}
+
+void hotplugSysfsFAMImpl::testCheckConnection(void)
+{
+    int oldStatus = mStatus;
+    mStatus = VERR_UNRESOLVED_ERROR;
+    
+    bool fEntered = ASMAtomicCmpXchgU32(&mfWaiting, 1, 0);
+    AssertReturnVoid(fEntered);
+    Assert(checkConnection() == VERR_UNRESOLVED_ERROR);
+    mStatus = VERR_FAM_CONNECTION_LOST;
+    AssertRC(checkConnection());
+    mStatus = oldStatus;
+    mfWaiting = 0;
+}
+
+void hotplugSysfsFAMImpl::term(void)
+{
+    /** This would probably be a pending segfault, so die cleanly */
+    AssertRelease(!mfWaiting);
+    termConnection();
+    RTPipeClose(mhWakeupPipeR);
+    mhWakeupPipeR = NIL_RTPIPE;
+    RTPipeClose(mhWakeupPipeW);
+    mhWakeupPipeW = NIL_RTPIPE;
 }
 
 /** Does a FAM event code mean that the available devices have (probably)
@@ -1369,18 +1460,26 @@ int hotplugSysfsFAMImpl::Wait(RTMSINTERVAL aMillies)
     int rc;
     FAMEvent ev;
 
-    if (RT_FAILURE(mStatus))
-        return VERR_NOT_SUPPORTED;
-    /* timeout returns */
-    if (RT_FAILURE(rc = RTPoll(mhPollSet, aMillies, NULL, &id)))
-        return rc;
-    if (id == RPIPE_ID)
-        return drainWakeupPipe();
-    AssertReturn(id == FAMFD_ID, VERR_NOT_SUPPORTED);
-    /* Samba re-opens the connection to FAM if this happens. */
-    AssertReturn(FAMNextEvent(&mFAMConnection, &ev) == 1,
-                 VERR_NOT_SUPPORTED);
-    return sysfsGetStatusForFAMCode(ev.code);
+    bool fEntered = ASMAtomicCmpXchgU32(&mfWaiting, 1, 0);
+    AssertReturn(fEntered, VERR_WRONG_ORDER);
+    do {
+        if (RT_FAILURE(rc = checkConnection()))
+            break;
+        /* timeout returns */
+        if (RT_FAILURE(rc = RTPoll(mhPollSet, aMillies, NULL, &id)))
+            break;
+        if (id == RPIPE_ID)
+        {
+            rc = drainWakeupPipe();
+            break;
+        }
+        AssertBreakStmt(id == FAMFD_ID, rc = VERR_NOT_SUPPORTED);
+        if (RT_FAILURE(rc = nextEventFAM(&ev)))
+            break;
+        rc = sysfsGetStatusForFAMCode(ev.code);
+    } while (false);
+    mfWaiting = 0;
+    return rc;
 }
 
 void hotplugSysfsFAMImpl::Interrupt(void)

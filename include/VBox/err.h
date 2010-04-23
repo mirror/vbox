@@ -1541,6 +1541,8 @@
 #define VERR_FAM_MONITOR_FILE_FAILED                (-5001)
 /** FAM failed to add a directory to the list to be monitored */
 #define VERR_FAM_MONITOR_DIRECTORY_FAILED           (-5002)
+/** The connection to the FAM daemon was lost */
+#define VERR_FAM_CONNECTION_LOST                    (-5003)
 /** @} */
 
 /* SED-END */
