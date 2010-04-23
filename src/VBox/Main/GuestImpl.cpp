@@ -502,7 +502,7 @@ DECLCALLBACK(int) Guest::doGuestCtrlNotification(void    *pvExtension,
     return rc;
 }
 
-/* Notifier function for control execution stuff. */
+/* Function for handling the execution start/termination notification. */
 int Guest::notifyCtrlExec(uint32_t              u32Function,
                           PHOSTEXECCALLBACKDATA pData)
 {
@@ -522,7 +522,7 @@ int Guest::notifyCtrlExec(uint32_t              u32Function,
         pCBData->u32PID = pData->u32PID;
         pCBData->u32Status = pData->u32Status;
         pCBData->u32Flags = pData->u32Flags;
-        /* @todo Copy void* buffer contents! */
+        /** @todo Copy void* buffer contents! */
 
         /* Do progress handling. */
         Utf8Str errMsg;
@@ -576,7 +576,7 @@ int Guest::notifyCtrlExec(uint32_t              u32Function,
     return rc;
 }
 
-/* Notifier function for control execution stuff. */
+/* Function for handling the execution output notification. */
 int Guest::notifyCtrlExecOut(uint32_t                 u32Function,
                              PHOSTEXECOUTCALLBACKDATA pData)
 {
@@ -871,12 +871,23 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                             *aPID = pData->u32PID;
                             break;
 
+                        /* In any other case the process either already 
+                         * terminated or something else went wrong, so no PID ... */
+                        case PROC_STS_TEN: /* Terminated normally. */
+                        case PROC_STS_TEA: /* Terminated abnormally. */
+                        case PROC_STS_TES: /* Terminated through signal. */
+                        case PROC_STS_TOK:
+                        case PROC_STS_TOA:
+                        case PROC_STS_DWN:
+                            *aPID = 0;
+                            break;
+
                         case PROC_STS_ERROR:
                             vrc = pData->u32Flags; /* u32Flags member contains IPRT error code. */
                             break;
 
                         default:
-                            vrc = VERR_INVALID_PARAMETER;
+                            vrc = VERR_INVALID_PARAMETER; /* Unknown status, should never happen! */
                             break;
                     }
                 }
@@ -911,6 +922,11 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                         rc = setError(VBOX_E_IPRT_ERROR,
                                       tr("The guest did not respond within time (%ums)"), aTimeoutMS);
                     }
+                    else if (vrc == VERR_INVALID_PARAMETER)
+                    {
+                        rc = setError(VBOX_E_IPRT_ERROR,
+                                      tr("The guest reported an unknown process status (%u)"), pData->u32Status);
+                    }
                     else
                     {
                         rc = setError(E_UNEXPECTED,
@@ -938,7 +954,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                 else /* HGCM call went wrong. */
                 {
                     rc = setError(E_UNEXPECTED,
-                                  tr("The service call failed with error %Rrc"), vrc);
+                                  tr("The HGCM call failed with error %Rrc"), vrc);
                 }
             }
 
