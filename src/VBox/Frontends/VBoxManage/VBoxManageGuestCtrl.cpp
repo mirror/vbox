@@ -86,11 +86,12 @@ static int handleExecProgram(HandlerArg *a)
     Utf8Str Utf8StdErr;
     Utf8Str Utf8UserName;
     Utf8Str Utf8Password;
-    uint32_t uTimeoutMS = 0;
+    uint32_t u32TimeoutMS = 0;
     bool waitForExit = false;
     bool waitForStdOut = false;
     bool waitForStdErr = false;
     bool verbose = false;
+    bool have_timeout = false;
 
     /* Iterate through all possible commands (if available). */
     bool usageOK = true;
@@ -172,10 +173,16 @@ static int handleExecProgram(HandlerArg *a)
         else if (!strcmp(a->argv[i], "--timeout"))
         {
             if (   i + 1 >= a->argc
-                || RTStrToUInt32Full(a->argv[i + 1], 10, &uTimeoutMS) != VINF_SUCCESS)
+                || RTStrToUInt32Full(a->argv[i + 1], 10, &u32TimeoutMS) != VINF_SUCCESS
+                || u32TimeoutMS == 0)
+            {
                 usageOK = false;
+            }
             else
+            {
+                have_timeout = true;
                 ++i;
+            }
         }
         else if (!strcmp(a->argv[i], "--wait-for"))
         {
@@ -258,43 +265,54 @@ static int handleExecProgram(HandlerArg *a)
 
             if (verbose)
             {
-                if (uTimeoutMS == 0)
+                if (u32TimeoutMS == 0)
                     RTPrintf("Waiting for guest to start process ...\n");
                 else
-                    RTPrintf("Waiting for guest to start process (within %ums)\n", uTimeoutMS);
+                    RTPrintf("Waiting for guest to start process (within %ums)\n", u32TimeoutMS);
             }
 
             /* Get current time stamp to later calculate rest of timeout left. */
-            uint32_t uStartMS = RTTimeMilliTS();
+            uint64_t u64StartMS = RTTimeMilliTS();
 
             /* Execute the process. */
             CHECK_ERROR_BREAK(guest, ExecuteProcess(Bstr(Utf8Cmd), uFlags,
                                                     ComSafeArrayAsInParam(args), ComSafeArrayAsInParam(env),
                                                     Bstr(Utf8StdIn), Bstr(Utf8StdOut), Bstr(Utf8StdErr),
-                                                    Bstr(Utf8UserName), Bstr(Utf8Password), uTimeoutMS,
+                                                    Bstr(Utf8UserName), Bstr(Utf8Password), u32TimeoutMS,
                                                     &uPID, progress.asOutParam()));
             if (verbose) RTPrintf("Process '%s' (PID: %u) started.\n", Utf8Cmd.raw(), uPID);
             if (waitForExit)
             {
-                /* Calculate timeout value left after process has been started.  */
-                if (uTimeoutMS)
-                    uTimeoutMS = uTimeoutMS - (RTTimeMilliTS() - uStartMS);
-                if (verbose)
+                if (have_timeout)
                 {
-                    if (uTimeoutMS == 0)
-                        RTPrintf("Waiting for process to exit ...\n");
+                    /* Calculate timeout value left after process has been started.  */
+                    uint64_t u64Diff = RTTimeMilliTS() - u64StartMS;
+                    /** @todo Check for uint64_t vs. uint32_t here! */
+                    if (u32TimeoutMS > u64Diff) /* Is timeout still bigger than current difference? */
+                    {
+                        u32TimeoutMS = u32TimeoutMS - u64Diff;
+                        if (verbose)
+                            RTPrintf("Waiting for process to exit (%ums left) ...\n", u32TimeoutMS);
+                    }
                     else
-                        RTPrintf("Waiting for process to exit (%ums left) ...\n", uTimeoutMS);
+                    {
+                        if (verbose)
+                            RTPrintf("No time left to wait for process!\n");
+                    }                    
                 }
+                else if (verbose)
+                    RTPrintf("Waiting for process to exit ...\n");                        
 
                 /* Wait for process to exit ... */
                 ASSERT(progress);
-                rc = progress->WaitForCompletion(uTimeoutMS == 0 ? -1 /* Wait forever */ : (uTimeoutMS + 5000));
+                rc = progress->WaitForCompletion(have_timeout ? 
+                                                 (u32TimeoutMS + 5000) :    /* Timeout value + safety counter */
+                                                  -1                        /* Wait forever */);
                 if (FAILED(rc))
                 {
-                    if (uTimeoutMS)
+                    if (u32TimeoutMS)
                         RTPrintf("Process '%s' (PID: %u) did not end within %ums! Wait aborted.\n",
-                                 Utf8Cmd.raw(), uPID, uTimeoutMS);
+                                 Utf8Cmd.raw(), uPID, u32TimeoutMS);
                     break;
                 }
                 else
@@ -330,7 +348,7 @@ static int handleExecProgram(HandlerArg *a)
                             SafeArray<BYTE> aOutputData;
                             ULONG cbOutputData;
                             CHECK_ERROR_BREAK(guest, GetProcessOutput(uPID, 0 /* aFlags */, 
-                                                                      uTimeoutMS, _64K, ComSafeArrayAsOutParam(aOutputData)));
+                                                                      u32TimeoutMS, _64K, ComSafeArrayAsOutParam(aOutputData)));
                             cbOutputData = aOutputData.size();
                             if (cbOutputData == 0)
                                 break;
