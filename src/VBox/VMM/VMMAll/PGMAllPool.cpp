@@ -3859,7 +3859,7 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
     }
     pNew->iNext = iPhysExtStart;
     pNew->aidx[0] = iShwPT;
-    pNew->apte[1] = iPte;
+    pNew->apte[0] = iPte;
     LogFlow(("pgmPoolTrackPhysExtInsert: added new extent %d:{%d pte %d}->%d\n", iPhysExt, iShwPT, iPte, iPhysExtStart));
     return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExt);
 }
