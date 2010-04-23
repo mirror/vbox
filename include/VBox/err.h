@@ -1540,7 +1540,7 @@
 /** FAM failed to add a file to the list to be monitored */
 #define VERR_FAM_MONITOR_FILE_FAILED                (-5001)
 /** FAM failed to add a directory to the list to be monitored */
-#define VERR_FAM_MONITOR_DIRECTORY_FAILED                (-5001)
+#define VERR_FAM_MONITOR_DIRECTORY_FAILED           (-5002)
 /** @} */
 
 /* SED-END */
