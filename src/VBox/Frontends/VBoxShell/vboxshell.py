@@ -753,12 +753,18 @@ def execInGuest(ctx,console,args):
     (progress, pid) = guest.executeProcess(args[0], 0, gargs, [], "", "", "", user, passwd, tmo)
     print "executed with pid %d" %(pid)
     if pid != 0:
-        while not progress.completed:
-            data = guest.getProcessOutput(pid, 0, 1, 4096)
-            if data and len(data) > 0:
-                sys.stdout.write(data)
-            progress.waitForCompletion(100)
-            ctx['global'].waitForEvents(0)
+        try:
+            while not progress.completed:
+                data = None #guest.getProcessOutput(pid, 0, 1, 4096)
+                if data and len(data) > 0:
+                    sys.stdout.write(data)
+                progress.waitForCompletion(100)
+                ctx['global'].waitForEvents(0)
+        except KeyboardInterrupt:
+            print "Interrupted."
+            if progress.cancelable:
+                progress.cancel()
+        return 0
     else:
         reportError(ctx, progress)
 
