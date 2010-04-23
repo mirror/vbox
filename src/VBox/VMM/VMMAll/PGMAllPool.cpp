@@ -2952,11 +2952,12 @@ DECLINLINE(unsigned) pgmPoolTrackGetGuestEntrySize(PGMPOOLKIND enmKind)
  * @param   pPhysPage   The guest page in question.
  * @param   fFlushPTEs  Flush PTEs or allow them to be updated (e.g. in case of an RW bit change)
  * @param   iShw        The shadow page table.
+ * @param   iPte        Page table entry or NIL_PGMPOOL_PHYSEXT_IDX_PTE if unknown
  * @param   cRefs       The number of references made in that PT.
  */
-static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlushPTEs, uint16_t iShw, uint16_t cRefs)
+static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlushPTEs, uint16_t iShw, uint16_t iPte, uint16_t cRefs)
 {
-    LogFlow(("pgmPoolTrackFlushGCPhysPT: pPhysPage=%RHp iShw=%d cRefs=%d\n", PGM_PAGE_GET_HCPHYS(pPhysPage), iShw, cRefs));
+    LogFlow(("pgmPoolTrackFlushGCPhysPT: pPhysPage=%RHp iShw=%d iPte=%d cRefs=%d\n", PGM_PAGE_GET_HCPHYS(pPhysPage), iShw, iPte, cRefs));
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     bool bRet = false;
 
@@ -2964,6 +2965,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
      * Assert sanity.
      */
     Assert(cRefs == 1);
+    Assert(iPte != NIL_PGMPOOL_PHYSEXT_IDX_PTE);
     AssertFatalMsg(iShw < pPool->cCurPages && iShw != NIL_PGMPOOL_IDX, ("iShw=%d\n", iShw));
     PPGMPOOLPAGE pPage = &pPool->aPages[iShw];
 
@@ -3018,21 +3020,18 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
                 pPool->cPresent -= cRefs;
             }
 
-            for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pPT->a); i++)
-                if ((pPT->a[i].u & (X86_PTE_PG_MASK | X86_PTE_P)) == u32)
-                {
-                    X86PTE Pte;
+            if ((pPT->a[iPte].u & (X86_PTE_PG_MASK | X86_PTE_P)) == u32)
+            {
+                X86PTE Pte;
 
-                    Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pte=%RX32 cRefs=%#x\n", i, pPT->a[i], cRefs));
-                    Pte.u = (pPT->a[i].u & u32AndMask) | u32OrMask;
-                    if (Pte.u & PGM_PTFLAGS_TRACK_DIRTY)
-                        Pte.n.u1Write = 0;    /* need to disallow writes when dirty bit tracking is still active. */
+                Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pte=%RX32 cRefs=%#x\n", iPte, pPT->a[iPte], cRefs));
+                Pte.u = (pPT->a[iPte].u & u32AndMask) | u32OrMask;
+                if (Pte.u & PGM_PTFLAGS_TRACK_DIRTY)
+                    Pte.n.u1Write = 0;    /* need to disallow writes when dirty bit tracking is still active. */
 
-                    ASMAtomicWriteSize(&pPT->a[i].u, Pte.u);
-                    cRefs--;
-                    if (!cRefs)
-                        return bRet;
-                }
+                ASMAtomicWriteSize(&pPT->a[iPte].u, Pte.u);
+                return bRet;
+            }
 #ifdef LOG_ENABLED
             Log(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
             for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
@@ -3093,21 +3092,18 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
                 pPool->cPresent -= cRefs;
             }
 
-            for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pPT->a); i++)
-                if ((pPT->a[i].u & (X86_PTE_PAE_PG_MASK | X86_PTE_P)) == u64)
-                {
-                    X86PTEPAE Pte;
+            if ((pPT->a[iPte].u & (X86_PTE_PAE_PG_MASK | X86_PTE_P)) == u64)
+            {
+                X86PTEPAE Pte;
 
-                    Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pte=%RX64 cRefs=%#x\n", i, pPT->a[i], cRefs));
-                    Pte.u = (pPT->a[i].u & u64AndMask) | u64OrMask;
-                    if (Pte.u & PGM_PTFLAGS_TRACK_DIRTY)
-                        Pte.n.u1Write = 0;    /* need to disallow writes when dirty bit tracking is still active. */
+                Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pte=%RX64 cRefs=%#x\n", iPte, pPT->a[iPte], cRefs));
+                Pte.u = (pPT->a[iPte].u & u64AndMask) | u64OrMask;
+                if (Pte.u & PGM_PTFLAGS_TRACK_DIRTY)
+                    Pte.n.u1Write = 0;    /* need to disallow writes when dirty bit tracking is still active. */
 
-                    ASMAtomicWriteSize(&pPT->a[i].u, Pte.u);
-                    cRefs--;
-                    if (!cRefs)
-                        return bRet;
-                }
+                ASMAtomicWriteSize(&pPT->a[iPte].u, Pte.u);
+                return bRet;
+            }
 #ifdef LOG_ENABLED
             Log(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
             for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
@@ -3124,23 +3120,21 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
         {
             const uint64_t  u64 = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PTE_P;
             PEPTPT          pPT = (PEPTPT)PGMPOOL_PAGE_2_PTR(pVM, pPage);
-            for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pPT->a); i++)
-                if ((pPT->a[i].u & (EPT_PTE_PG_MASK | X86_PTE_P)) == u64)
-                {
-                    Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pte=%RX64 cRefs=%#x\n", i, pPT->a[i], cRefs));
-                    STAM_COUNTER_INC(&pPool->StatTrackFlushEntry);
-                    pPT->a[i].u = 0;
-                    cRefs--;
 
-                    /* Update the counter as we're removing references. */
-                    Assert(pPage->cPresent);
-                    Assert(pPool->cPresent);
-                    pPage->cPresent--;
-                    pPool->cPresent--;
+            if ((pPT->a[iPte].u & (EPT_PTE_PG_MASK | X86_PTE_P)) == u64)
+            {
+                Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pte=%RX64 cRefs=%#x\n", iPte, pPT->a[iPte], cRefs));
+                STAM_COUNTER_INC(&pPool->StatTrackFlushEntry);
+                pPT->a[iPte].u = 0;
+                cRefs--;
 
-                    if (!cRefs)
-                        return bRet;
-                }
+                /* Update the counter as we're removing references. */
+                Assert(pPage->cPresent);
+                Assert(pPool->cPresent);
+                pPage->cPresent--;
+                pPool->cPresent--;
+                return bRet;
+            }
 #ifdef LOG_ENABLED
             Log(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
             for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
@@ -3162,23 +3156,22 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
 
             const uint64_t  u64 = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PDE4M_P | X86_PDE4M_PS;
             PEPTPD          pPD = (PEPTPD)PGMPOOL_PAGE_2_PTR(pVM, pPage);
-            for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pPD->a); i++)
-                if ((pPD->a[i].u & (EPT_PDE2M_PG_MASK | X86_PDE4M_P | X86_PDE4M_PS)) == u64)
-                {
-                    Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pde=%RX64 cRefs=%#x\n", i, pPD->a[i], cRefs));
-                    STAM_COUNTER_INC(&pPool->StatTrackFlushEntry);
-                    pPD->a[i].u = 0;
-                    cRefs--;
 
-                    /* Update the counter as we're removing references. */
-                    Assert(pPage->cPresent);
-                    Assert(pPool->cPresent);
-                    pPage->cPresent--;
-                    pPool->cPresent--;
+            if ((pPD->a[iPte].u & (EPT_PDE2M_PG_MASK | X86_PDE4M_P | X86_PDE4M_PS)) == u64)
+            {
+                Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pde=%RX64 cRefs=%#x\n", iPte, pPD->a[iPte], cRefs));
+                STAM_COUNTER_INC(&pPool->StatTrackFlushEntry);
+                pPD->a[iPte].u = 0;
+                cRefs--;
 
-                    if (!cRefs)
-                        return bRet;
-                }
+                /* Update the counter as we're removing references. */
+                Assert(pPage->cPresent);
+                Assert(pPool->cPresent);
+                pPage->cPresent--;
+                pPool->cPresent--;
+
+                return bRet;
+            }
 # ifdef LOG_ENABLED
             Log(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
             for (unsigned i = 0; i < RT_ELEMENTS(pPD->a); i++)
@@ -3199,23 +3192,21 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
 
             const uint64_t  u64 = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PDE4M_P | X86_PDE4M_PS;
             PX86PD          pPD = (PX86PD)PGMPOOL_PAGE_2_PTR(pVM, pPage);
-            for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pPD->a); i++)
-                if ((pPD->a[i].u & (X86_PDE2M_PAE_PG_MASK | X86_PDE4M_P | X86_PDE4M_PS)) == u64)
-                {
-                    Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pde=%RX64 cRefs=%#x\n", i, pPD->a[i], cRefs));
-                    STAM_COUNTER_INC(&pPool->StatTrackFlushEntry);
-                    pPD->a[i].u = 0;
-                    cRefs--;
 
-                    /* Update the counter as we're removing references. */
-                    Assert(pPage->cPresent);
-                    Assert(pPool->cPresent);
-                    pPage->cPresent--;
-                    pPool->cPresent--;
+            if ((pPD->a[iPte].u & (X86_PDE2M_PAE_PG_MASK | X86_PDE4M_P | X86_PDE4M_PS)) == u64)
+            {
+                Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pde=%RX64 cRefs=%#x\n", iPte, pPD->a[iPte], cRefs));
+                STAM_COUNTER_INC(&pPool->StatTrackFlushEntry);
+                pPD->a[iPte].u = 0;
+                cRefs--;
 
-                    if (!cRefs)
-                        return bRet;
-                }
+                /* Update the counter as we're removing references. */
+                Assert(pPage->cPresent);
+                Assert(pPool->cPresent);
+                pPage->cPresent--;
+                pPool->cPresent--;
+                return bRet;
+            }
 # ifdef LOG_ENABLED
             Log(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
             for (unsigned i = 0; i < RT_ELEMENTS(pPD->a); i++)
@@ -3255,7 +3246,7 @@ static void pgmPoolTrackFlushGCPhysPT(PVM pVM, PPGMPAGE pPhysPage, bool fFlushPT
 
     Log2(("pgmPoolTrackFlushGCPhysPT: pPhysPage=%RHp iShw=%d cRefs=%d\n", PGM_PAGE_GET_HCPHYS(pPhysPage), iShw, cRefs));
     STAM_PROFILE_START(&pPool->StatTrackFlushGCPhysPT, f);
-    bool fKeptPTEs = pgmPoolTrackFlushGCPhysPTInt(pVM, pPhysPage, fFlushPTEs, iShw, cRefs);
+    bool fKeptPTEs = pgmPoolTrackFlushGCPhysPTInt(pVM, pPhysPage, fFlushPTEs, iShw, PGM_PAGE_GET_PTE_INDEX(pPhysPage), cRefs);
     if (!fKeptPTEs)
         PGM_PAGE_SET_TRACKING(pPhysPage, 0);
     STAM_PROFILE_STOP(&pPool->StatTrackFlushGCPhysPT, f);
@@ -3289,9 +3280,12 @@ static void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, bool fFlushP
         {
             if (pPhysExt->aidx[i] != NIL_PGMPOOL_IDX)
             {
-                bool fKeptPTEs = pgmPoolTrackFlushGCPhysPTInt(pVM, pPhysPage, fFlushPTEs, pPhysExt->aidx[i], 1);
+                bool fKeptPTEs = pgmPoolTrackFlushGCPhysPTInt(pVM, pPhysPage, fFlushPTEs, pPhysExt->aidx[i], pPhysExt->apte[i], 1);
                 if (!fKeptPTEs)
+                {
                     pPhysExt->aidx[i] = NIL_PGMPOOL_IDX;
+                    pPhysExt->apte[i] = NIL_PGMPOOL_PHYSEXT_IDX_PTE;
+                }
                 else
                     fKeepList = true;
             }
@@ -3305,6 +3299,7 @@ static void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, bool fFlushP
         /* insert the list into the free list and clear the ram range entry. */
         pPhysExt->iNext = pPool->iPhysExtFreeHead;
         pPool->iPhysExtFreeHead = iPhysExtStart;
+        /* Invalidate the tracking data. */
         PGM_PAGE_SET_TRACKING(pPhysPage, 0);
     }
 
@@ -3761,7 +3756,10 @@ void pgmPoolTrackPhysExtFree(PVM pVM, uint16_t iPhysExt)
     Assert(iPhysExt < pPool->cMaxPhysExts);
     PPGMPOOLPHYSEXT pPhysExt = &pPool->CTX_SUFF(paPhysExts)[iPhysExt];
     for (unsigned i = 0; i < RT_ELEMENTS(pPhysExt->aidx); i++)
+    {
         pPhysExt->aidx[i] = NIL_PGMPOOL_IDX;
+        pPhysExt->apte[i] = NIL_PGMPOOL_PHYSEXT_IDX_PTE;
+    }
     pPhysExt->iNext = pPool->iPhysExtFreeHead;
     pPool->iPhysExtFreeHead = iPhysExt;
 }
@@ -3785,7 +3783,10 @@ void pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt)
         Assert(iPhysExt < pPool->cMaxPhysExts);
         pPhysExt = &pPool->CTX_SUFF(paPhysExts)[iPhysExt];
         for (unsigned i = 0; i < RT_ELEMENTS(pPhysExt->aidx); i++)
+        {
             pPhysExt->aidx[i] = NIL_PGMPOOL_IDX;
+            pPhysExt->apte[i] = NIL_PGMPOOL_PHYSEXT_IDX_PTE;
+        }
 
         /* next */
         iPhysExt = pPhysExt->iNext;
@@ -3804,9 +3805,10 @@ void pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt)
  * @param   pVM         The VM handle.
  * @param   iPhysExt    The physical extent index of the list head.
  * @param   iShwPT      The shadow page table index.
+ * @param   iPte        Page table entry
  *
  */
-static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t iShwPT)
+static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t iShwPT, uint16_t iPte)
 {
     Assert(PGMIsLockOwner(pVM));
     PPGMPOOL        pPool = pVM->pgm.s.CTX_SUFF(pPool);
@@ -3816,8 +3818,9 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
     if (paPhysExts[iPhysExt].aidx[2] == NIL_PGMPOOL_IDX)
     {
         paPhysExts[iPhysExt].aidx[2] = iShwPT;
+        paPhysExts[iPhysExt].apte[2] = iPte;
         STAM_COUNTER_INC(&pVM->pgm.s.StatTrackAliasedMany);
-        LogFlow(("pgmPoolTrackPhysExtInsert: %d:{,,%d}\n", iPhysExt, iShwPT));
+        LogFlow(("pgmPoolTrackPhysExtInsert: %d:{,,%d pte %d}\n", iPhysExt, iShwPT, iPte));
         return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExt);
     }
 
@@ -3831,8 +3834,9 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
             if (paPhysExts[iPhysExt].aidx[i] == NIL_PGMPOOL_IDX)
             {
                 paPhysExts[iPhysExt].aidx[i] = iShwPT;
+                paPhysExts[iPhysExt].apte[i] = iPte;
                 STAM_COUNTER_INC(&pVM->pgm.s.StatTrackAliasedMany);
-                LogFlow(("pgmPoolTrackPhysExtInsert: %d:{%d} i=%d cMax=%d\n", iPhysExt, iShwPT, i, cMax));
+                LogFlow(("pgmPoolTrackPhysExtInsert: %d:{%d pte %d} i=%d cMax=%d\n", iPhysExt, iShwPT, iPte, i, cMax));
                 return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExtStart);
             }
         if (!--cMax)
@@ -3855,7 +3859,8 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
     }
     pNew->iNext = iPhysExtStart;
     pNew->aidx[0] = iShwPT;
-    LogFlow(("pgmPoolTrackPhysExtInsert: added new extent %d:{%d}->%d\n", iPhysExt, iShwPT, iPhysExtStart));
+    pNew->apte[1] = iPte;
+    LogFlow(("pgmPoolTrackPhysExtInsert: added new extent %d:{%d pte %d}->%d\n", iPhysExt, iShwPT, iPte, iPhysExtStart));
     return PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExt);
 }
 
@@ -3866,10 +3871,12 @@ static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t i
  * @returns The new tracking data for PGMPAGE.
  *
  * @param   pVM         The VM handle.
+ * @param   pPhysPage   Pointer to the aPages entry in the ram range.
  * @param   u16         The ram range flags (top 16-bits).
  * @param   iShwPT      The shadow page table index.
+ * @param   iPte        Page table entry
  */
-uint16_t pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT)
+uint16_t pgmPoolTrackPhysExtAddref(PVM pVM, PPGMPAGE pPhysPage, uint16_t u16, uint16_t iShwPT, uint16_t iPte)
 {
     pgmLock(pVM);
     if (PGMPOOL_TD_GET_CREFS(u16) != PGMPOOL_TD_CREFS_PHYSEXT)
@@ -3885,7 +3892,9 @@ uint16_t pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT)
             LogFlow(("pgmPoolTrackPhysExtAddref: new extent: %d:{%d, %d}\n", iPhysExt, PGMPOOL_TD_GET_IDX(u16), iShwPT));
             STAM_COUNTER_INC(&pVM->pgm.s.StatTrackAliased);
             pPhysExt->aidx[0] = PGMPOOL_TD_GET_IDX(u16);
+            pPhysExt->apte[0] = PGM_PAGE_GET_PTE_INDEX(pPhysPage);
             pPhysExt->aidx[1] = iShwPT;
+            pPhysExt->apte[1] = iPte;
             u16 = PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExt);
         }
         else
@@ -3896,14 +3905,13 @@ uint16_t pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT)
         /*
          * Insert into the extent list.
          */
-        u16 = pgmPoolTrackPhysExtInsert(pVM, PGMPOOL_TD_GET_IDX(u16), iShwPT);
+        u16 = pgmPoolTrackPhysExtInsert(pVM, PGMPOOL_TD_GET_IDX(u16), iShwPT, iPte);
     }
     else
         STAM_COUNTER_INC(&pVM->pgm.s.StatTrackAliasedLots);
     pgmUnlock(pVM);
     return u16;
 }
-
 
 /**
  * Clear references to guest physical memory.
@@ -3937,6 +3945,7 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
                 if (paPhysExts[iPhysExt].aidx[i] == pPage->idx)
                 {
                     paPhysExts[iPhysExt].aidx[i] = NIL_PGMPOOL_IDX;
+                    paPhysExts[iPhysExt].apte[i] = NIL_PGMPOOL_PHYSEXT_IDX_PTE;
 
                     for (i = 0; i < RT_ELEMENTS(paPhysExts[iPhysExt].aidx); i++)
                         if (paPhysExts[iPhysExt].aidx[i] != NIL_PGMPOOL_IDX)
@@ -3987,7 +3996,6 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
     else /* nothing to do */
         Log2(("pgmPoolTrackPhysExtDerefGCPhys: pPhysPage=%R[pgmpage]\n", pPhysPage));
 }
-
 
 /**
  * Clear references to guest physical memory.
@@ -5136,8 +5144,11 @@ void pgmR3PoolReset(PVM pVM)
     {
         paPhysExts[i].iNext = i + 1;
         paPhysExts[i].aidx[0] = NIL_PGMPOOL_IDX;
+        paPhysExts[i].apte[0] = NIL_PGMPOOL_PHYSEXT_IDX_PTE;
         paPhysExts[i].aidx[1] = NIL_PGMPOOL_IDX;
+        paPhysExts[i].apte[1] = NIL_PGMPOOL_PHYSEXT_IDX_PTE;
         paPhysExts[i].aidx[2] = NIL_PGMPOOL_IDX;
+        paPhysExts[i].apte[2] = NIL_PGMPOOL_PHYSEXT_IDX_PTE;
     }
     paPhysExts[cMaxPhysExts - 1].iNext = NIL_PGMPOOL_PHYSEXT_INDEX;
 

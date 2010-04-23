@@ -1510,6 +1510,7 @@ DECLINLINE(void) pgmTrackDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPG
     if (cRefs == 1)
     {
         Assert(pPoolPage->idx == PGM_PAGE_GET_TD_IDX(pPhysPage));
+        /* Invalidate the tracking data. */
         PGM_PAGE_SET_TRACKING(pPhysPage, 0);
     }
     else

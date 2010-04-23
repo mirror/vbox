@@ -1368,9 +1368,11 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackAddref)(PVMCPU pVCpu, PPGMPOOLP
     {
         STAM_COUNTER_INC(&pVM->pgm.s.StatTrackVirgin);
         u16 = PGMPOOL_TD_MAKE(1, pShwPage->idx);
+        /* Save the page table index. */
+        PGM_PAGE_SET_PTE_INDEX(pPage, iPTDst);
     }
     else
-        u16 = pgmPoolTrackPhysExtAddref(pVM, u16, pShwPage->idx);
+        u16 = pgmPoolTrackPhysExtAddref(pVM, pPage, u16, pShwPage->idx, iPTDst);
 
     /* write back */
     Log2(("SyncPageWorkerTrackAddRef: u16=%#x->%#x  iPTDst=%#x\n", u16, PGM_PAGE_GET_TRACKING(pPage), iPTDst));
