@@ -143,28 +143,20 @@ static void VBoxServiceVMInfoWriteFixedProperties(void)
      */
     char szInfo[256];
     int rc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szInfo, sizeof(szInfo));
-    if (RT_SUCCESS(rc))
-        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Product", "%s", szInfo);
-    else
-        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Product", "");
+    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Product",
+                          "%s", RT_FAILURE(rc) ? "" : szInfo);
 
     rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szInfo, sizeof(szInfo));
-    if (RT_SUCCESS(rc))
-        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Release", "%s", szInfo);
-    else
-        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Release", "");
+    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Release",
+                          "%s", RT_FAILURE(rc) ? "" : szInfo);
 
     rc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szInfo, sizeof(szInfo));
-    if (RT_SUCCESS(rc))
-        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Version", "%s", szInfo);
-    else
-        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Version", "");
+    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Version",
+                          "%s", RT_FAILURE(rc) ? "" : szInfo);
 
     rc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szInfo, sizeof(szInfo));
-    if (RT_SUCCESS(rc))
-        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/ServicePack", "%s", szInfo);
-    else
-        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/ServicePack", "");
+    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/ServicePack",
+                          "%s", RT_FAILURE(rc) ? "" : szInfo);
 
     /*
      * Retrieve version information about Guest Additions and installed files (components).
@@ -172,18 +164,14 @@ static void VBoxServiceVMInfoWriteFixedProperties(void)
     char *pszAddVer;
     char *pszAddRev;
     rc = VbglR3GetAdditionsVersion(&pszAddVer, &pszAddRev);
+    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Version",
+                          "%s", RT_FAILURE(rc) ? "" : pszAddVer);
+    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Revision",
+                          "%s", RT_FAILURE(rc) ? "" : pszAddRev);
     if (RT_SUCCESS(rc))
     {
-        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Version",  "%s", pszAddVer);
-        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Revision", "%s", pszAddRev);
         RTStrFree(pszAddVer);
         RTStrFree(pszAddRev);
-    }
-    else
-    {
-        /* information could not be retrieved, clear stale entries */
-        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Version", "");
-        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Revision", "");
     }
 
 #ifdef RT_OS_WINDOWS
@@ -192,14 +180,10 @@ static void VBoxServiceVMInfoWriteFixedProperties(void)
      */
     char *pszInstDir;
     rc = VbglR3GetAdditionsInstallationPath(&pszInstDir);
+    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/InstallDir",
+                          "%s", RT_FAILURE(rc) ? "" :  pszInstDir);
     if (RT_SUCCESS(rc))
-    {
-        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/InstallDir", "%s", pszInstDir);
         RTStrFree(pszInstDir);
-    }
-    else
-        /* information could not be retrieved, clear stale entry */
-        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/InstallDir", "");
 
     VBoxServiceWinGetComponentVersions(g_VMInfoGuestPropSvcClientID);
 #endif
@@ -497,8 +481,6 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
     WSACleanup();
 #endif
 
-    RTSemEventMultiDestroy(g_VMInfoEvent);
-    g_VMInfoEvent = NIL_RTSEMEVENTMULTI;
     return rc;
 }
 
@@ -521,8 +503,10 @@ static DECLCALLBACK(void) VBoxServiceVMInfoTerm(void)
          *        anymore when VM goes down (reboot/shutdown ). Needs to
          *        be replaced with "temporary properties" later.
          *
-         *  @todo r=bird: This code isn't called on non-Windows systems. We need
-         *        a more formal way of shutting down the service for that to work.
+         *        One idea is to introduce a (HGCM-)session guest property
+         *        flag meaning that a guest property is only valid as long
+         *        as the HGCM session isn't closed (e.g. guest application
+         *        terminates).
          */
         rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", NULL);
         rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/LoggedInUsers", "%d", 0);
