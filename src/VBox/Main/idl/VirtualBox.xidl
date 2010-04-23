@@ -8606,7 +8606,7 @@
       </desc>
       <param name="pid" type="unsigned long" dir="in">
         <desc>
-          Buffer for retrieving the actual output.
+          Process id returned by earlier executeProcess() call.
         </desc>
       </param>
       <param name="flags" type="unsigned long" dir="in">
