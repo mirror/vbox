@@ -712,7 +712,7 @@ int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
                 case    0xC0000428 /* STATUS_INVALID_IMAGE_HASH */ :
                     rc = VERR_LDR_IMAGE_HASH;
                     break;
-                case    0xC000010E /* STATUS_ALREADY_LOADED */ :
+                case    0xC000010E /* STATUS_IMAGE_ALREADY_LOADED */ :
                     rc = VERR_ALREADY_LOADED;
                     break;
                 default:
