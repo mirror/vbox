@@ -1497,8 +1497,9 @@ DECLINLINE(PPGMPOOLPAGE) pgmPoolGetPageByIdx(PPGMPOOL pPool, unsigned idx)
  * @param   pPool       The pool.
  * @param   pPoolPage   The pool page.
  * @param   pPhysPage   The physical guest page tracking structure.
+ * @param   iPte        Shadow PTE index
  */
-DECLINLINE(void) pgmTrackDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPGMPAGE pPhysPage)
+DECLINLINE(void) pgmTrackDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPGMPAGE pPhysPage, uint16_t iPte)
 {
     /*
      * Just deal with the simple case here.
@@ -1510,11 +1511,12 @@ DECLINLINE(void) pgmTrackDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPG
     if (cRefs == 1)
     {
         Assert(pPoolPage->idx == PGM_PAGE_GET_TD_IDX(pPhysPage));
+        Assert(iPte == PGM_PAGE_GET_PTE_INDEX(pPhysPage));
         /* Invalidate the tracking data. */
         PGM_PAGE_SET_TRACKING(pPhysPage, 0);
     }
     else
-        pgmPoolTrackPhysExtDerefGCPhys(pPool, pPoolPage, pPhysPage);
+        pgmPoolTrackPhysExtDerefGCPhys(pPool, pPoolPage, pPhysPage, iPte);
     Log2(("pgmTrackDerefGCPhys: %x -> %x pPhysPage=%R[pgmpage]\n", uOrg, PGM_PAGE_GET_TRACKING(pPhysPage), pPhysPage ));
 }
 
