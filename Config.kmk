@@ -176,7 +176,8 @@ VBOX_PRODUCT = Oracle VM VirtualBox
 # 	src/VBox/Frontends/VirtualBox/src/settings/global/VBoxGLSettingsLanguage.cpp
 # 	src/VBox/Frontends/VirtualBox/nls/*.ts
 # 	debian/control
-#       src/VBox/Installer/linux/{debian,rpm}
+# 	src/VBox/Installer/linux/{debian,rpm}
+# 	src/VBox/Additions/WINNT/Installer/ISO/ReadmeDrivers.txt
 
 # Maybe we want set this manually.
 VBOX_C_YEAR = $(date-utc %Y)
