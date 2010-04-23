@@ -3106,6 +3106,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
             }
 #ifdef LOG_ENABLED
             Log(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
+            Log(("Found %RX64 expected %RX64\n", pPT->a[iPte].u & (X86_PTE_PAE_PG_MASK | X86_PTE_P), u64));
             for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
                 if ((pPT->a[i].u & (X86_PTE_PAE_PG_MASK | X86_PTE_P)) == u64)
                 {
@@ -3126,7 +3127,6 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
                 Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pte=%RX64 cRefs=%#x\n", iPte, pPT->a[iPte], cRefs));
                 STAM_COUNTER_INC(&pPool->StatTrackFlushEntry);
                 pPT->a[iPte].u = 0;
-                cRefs--;
 
                 /* Update the counter as we're removing references. */
                 Assert(pPage->cPresent);
@@ -3152,7 +3152,6 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
         case PGMPOOLKIND_EPT_PD_FOR_PHYS:
         {
             Assert(HWACCMIsNestedPagingActive(pVM));
-            Assert(cRefs == 1);
 
             const uint64_t  u64 = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PDE4M_P | X86_PDE4M_PS;
             PEPTPD          pPD = (PEPTPD)PGMPOOL_PAGE_2_PTR(pVM, pPage);
@@ -3162,7 +3161,6 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
                 Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pde=%RX64 cRefs=%#x\n", iPte, pPD->a[iPte], cRefs));
                 STAM_COUNTER_INC(&pPool->StatTrackFlushEntry);
                 pPD->a[iPte].u = 0;
-                cRefs--;
 
                 /* Update the counter as we're removing references. */
                 Assert(pPage->cPresent);
@@ -3188,7 +3186,6 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
         case PGMPOOLKIND_PAE_PD_PHYS:
         {
             Assert(HWACCMIsNestedPagingActive(pVM));
-            Assert(cRefs == 1);
 
             const uint64_t  u64 = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PDE4M_P | X86_PDE4M_PS;
             PX86PD          pPD = (PX86PD)PGMPOOL_PAGE_2_PTR(pVM, pPage);
@@ -3198,7 +3195,6 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
                 Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pde=%RX64 cRefs=%#x\n", iPte, pPD->a[iPte], cRefs));
                 STAM_COUNTER_INC(&pPool->StatTrackFlushEntry);
                 pPD->a[iPte].u = 0;
-                cRefs--;
 
                 /* Update the counter as we're removing references. */
                 Assert(pPage->cPresent);
