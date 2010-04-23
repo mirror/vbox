@@ -3971,7 +3971,7 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
                     else
                     {
                         /* in list */
-                        Log2(("pgmPoolTrackPhysExtDerefGCPhys: pPhysPage=%R[pgmpage] idx=%d\n", pPhysPage, pPage->idx));
+                        Log2(("pgmPoolTrackPhysExtDerefGCPhys: pPhysPage=%R[pgmpage] idx=%d in list\n", pPhysPage, pPage->idx));
                         paPhysExts[iPhysExtPrev].iNext = iPhysExtNext;
                         pgmPoolTrackPhysExtFree(pVM, iPhysExt);
                     }
