@@ -791,9 +791,9 @@ protected:
 
 #ifdef VBOX_WITH_GUEST_PROPS
     HRESULT getGuestPropertyFromService(IN_BSTR aName, BSTR *aValue,
-                                        ULONG64 *aTimestamp, BSTR *aFlags);
+                                        ULONG64 *aTimestamp, BSTR *aFlags) const;
     HRESULT getGuestPropertyFromVM(IN_BSTR aName, BSTR *aValue,
-                                   ULONG64 *aTimestamp, BSTR *aFlags);
+                                   ULONG64 *aTimestamp, BSTR *aFlags) const;
     HRESULT setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
                                       IN_BSTR aFlags);
     HRESULT setGuestPropertyToVM(IN_BSTR aName, IN_BSTR aValue,
