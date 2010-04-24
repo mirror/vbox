@@ -4790,16 +4790,11 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
     aMachine->COMGETTER(Parent)(virtualBox.asOutParam());
     ComPtr<ISystemProperties> systemProperties;
     virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
-    ULONG uLogHistoryCount = 3;
-    systemProperties->COMGETTER(LogHistoryCount)(&uLogHistoryCount);
-    ComPtr<IHost> host;
-    virtualBox->COMGETTER(Host)(host.asOutParam());
-    ULONG uHostRamMb = 0, uHostRamAvailMb = 0;
-    host->COMGETTER(MemorySize)(&uHostRamMb);
-    host->COMGETTER(MemoryAvailable)(&uHostRamAvailMb);
-    if (uLogHistoryCount)
+    ULONG cHistoryFiles = 3;
+    systemProperties->COMGETTER(LogHistoryCount)(&cHistoryFiles);
+    if (cHistoryFiles)
     {
-        for (int i = uLogHistoryCount-1; i >= 0; i--)
+        for (int i = cHistoryFiles-1; i >= 0; i--)
         {
             Utf8Str *files[] = { &logFile, &pngFile };
             Utf8Str oldName, newName;
@@ -4858,8 +4853,16 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
         vrc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szTmp, sizeof(szTmp));
         if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
             RTLogRelLogger(loggerRelease, 0, ~0U, "OS Service Pack: %s\n", szTmp);
+
+        ComPtr<IHost> host;
+        virtualBox->COMGETTER(Host)(host.asOutParam());
+        ULONG cMbHostRam = 0;
+        ULONG cMbHostRamAvail = 0;
+        host->COMGETTER(MemorySize)(&cMbHostRam);
+        host->COMGETTER(MemoryAvailable)(&cMbHostRamAvail);
         RTLogRelLogger(loggerRelease, 0, ~0U, "Host RAM: %uMB RAM, available: %uMB\n",
-                       uHostRamMb, uHostRamAvailMb);
+                       cMbHostRam, cMbHostRamAvail);
+
         /* the package type is interesting for Linux distributions */
         char szExecName[RTPATH_MAX];
         char *pszExecName = RTProcGetExecutableName(szExecName, sizeof(szExecName));
@@ -4878,11 +4881,22 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
         /* register this logger as the release logger */
         RTLogRelSetDefaultInstance(loggerRelease);
         hrc = S_OK;
+
+        /* Explicitly flush the log in case of VBOX_RELEASE_LOG=buffered. */
+        RTLogFlush(loggerRelease);
     }
     else
         hrc = setError(E_FAIL,
             tr("Failed to open release log (%s, %Rrc)"),
             szError, vrc);
+
+    /* If we've made any directory changes, flush the directory to increase
+       the likelyhood that the log file will be usable after a system panic.
+
+       Tip: Try 'export VBOX_RELEASE_LOG_FLAGS=flush' if the last bits of the log
+            is missing. Just don't have too high hopes for this to help. */
+    if (SUCCEEDED(hrc) || cHistoryFiles)
+        RTDirFlush(logDir.c_str());
 
     return hrc;
 }
