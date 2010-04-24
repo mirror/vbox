@@ -1533,16 +1533,16 @@ void XmlFileWriter::write(const char *pcszFilename, bool fSafe)
 
         /* Construct both filenames first to ease error handling.  */
         char szTmpFilename[RTPATH_MAX];
-        int rc = RTStrCopy(szTmpFilename, sizeof(szTmpFilename) - sizeof("-tmp") + 1, pcszFilename);
+        int rc = RTStrCopy(szTmpFilename, sizeof(szTmpFilename) - strlen(s_pszTmpSuff), pcszFilename);
         if (RT_FAILURE(rc))
             throw EIPRTFailure(rc, "RTStrCopy");
-        strcat(szTmpFilename, "-tmp");
+        strcat(szTmpFilename, s_pszTmpSuff);
 
         char szPrevFilename[RTPATH_MAX];
-        rc = RTStrCopy(szPrevFilename, sizeof(szPrevFilename) - sizeof("-prev") + 1, pcszFilename);
+        rc = RTStrCopy(szPrevFilename, sizeof(szPrevFilename) - strlen(s_pszPrevSuff), pcszFilename);
         if (RT_FAILURE(rc))
             throw EIPRTFailure(rc, "RTStrCopy");
-        strcat(szPrevFilename, "-prev");
+        strcat(szPrevFilename, s_pszPrevSuff);
 
         /* Write the XML document to the temporary file.  */
         writeInternal(szTmpFilename, fSafe);
@@ -1589,6 +1589,9 @@ int XmlFileWriter::CloseCallback(void *aCtxt)
 
     return -1;
 }
+
+/*static*/ const char * const XmlFileWriter::s_pszTmpSuff  = "-tmp";
+/*static*/ const char * const XmlFileWriter::s_pszPrevSuff = "-prev";
 
 
 } // end namespace xml
