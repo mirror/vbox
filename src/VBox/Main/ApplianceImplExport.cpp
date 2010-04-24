@@ -1547,7 +1547,7 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
 
         // now go write the XML
         xml::XmlFileWriter writer(doc);
-        writer.write(locInfo.strPath.c_str());
+        writer.write(locInfo.strPath.c_str(), false /*fSafe*/);
 
         /* Create & write the manifest file */
         const char** ppManifestFiles = (const char**)RTMemAlloc(sizeof(char*)*diskList.size() + 1);

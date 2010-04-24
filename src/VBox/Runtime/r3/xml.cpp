@@ -1,9 +1,10 @@
+/* $Id$ */
 /** @file
- * VirtualBox XML Manipulation API.
+ * IPRT - XML Manipulation API.
  */
 
 /*
- * Copyright (C) 2007-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2007-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,9 +28,11 @@
  * additional information or have any questions.
  */
 
-#include <iprt/cdefs.h>
-#include <iprt/err.h>
+#include <iprt/dir.h>
 #include <iprt/file.h>
+#include <iprt/err.h>
+#include <iprt/param.h>
+#include <iprt/path.h>
 #include <iprt/cpp/lock.h>
 #include <iprt/cpp/xml.h>
 
@@ -178,12 +181,14 @@ struct File::Data
     iprt::MiniString strFileName;
     RTFILE handle;
     bool opened : 1;
+    bool flushOnClose : 1;
 };
 
-File::File(Mode aMode, const char *aFileName)
+File::File(Mode aMode, const char *aFileName, bool aFlushIt /* = false */)
     : m(new Data())
 {
     m->strFileName = aFileName;
+    m->flushOnClose = aFlushIt;
 
     uint32_t flags = 0;
     switch (aMode)
@@ -207,24 +212,34 @@ File::File(Mode aMode, const char *aFileName)
         throw EIPRTFailure(vrc, "Runtime error opening '%s' for reading", aFileName);
 
     m->opened = true;
+    m->flushOnClose = aFlushIt && (flags & RTFILE_O_ACCESS_MASK) != RTFILE_O_READ;
 }
 
-File::File(RTFILE aHandle, const char *aFileName /* = NULL */)
+File::File(RTFILE aHandle, const char *aFileName /* = NULL */, bool aFlushIt /* = false */)
     : m(new Data())
 {
     if (aHandle == NIL_RTFILE)
-        throw EInvalidArg (RT_SRC_POS);
+        throw EInvalidArg(RT_SRC_POS);
 
     m->handle = aHandle;
 
     if (aFileName)
         m->strFileName = aFileName;
 
-    setPos (0);
+    m->flushOnClose = aFlushIt;
+
+    setPos(0);
 }
 
 File::~File()
 {
+    if (m->flushOnClose)
+    {
+        RTFileFlush(m->handle);
+        if (!m->strFileName.isEmpty())
+            RTDirFlushParent(m->strFileName.c_str());
+    }
+
     if (m->opened)
         RTFileClose(m->handle);
     delete m;
@@ -252,7 +267,7 @@ void File::setPos(uint64_t aPos)
     int vrc = VINF_SUCCESS;
 
     /* check if we overflow int64_t and move to INT64_MAX first */
-    if (((int64_t) aPos) < 0)
+    if ((int64_t)aPos < 0)
     {
         vrc = RTFileSeek(m->handle, INT64_MAX, method, &p);
         aPos -= (uint64_t)INT64_MAX;
@@ -1359,8 +1374,8 @@ struct IOContext
     File file;
     iprt::MiniString error;
 
-    IOContext(const char *pcszFilename, File::Mode mode)
-        : file(mode, pcszFilename)
+    IOContext(const char *pcszFilename, File::Mode mode, bool fFlush = false)
+        : file(mode, pcszFilename, fFlush)
     {
     }
 
@@ -1385,8 +1400,8 @@ struct ReadContext : IOContext
 
 struct WriteContext : IOContext
 {
-    WriteContext(const char *pcszFilename)
-        : IOContext(pcszFilename, File::Mode_Overwrite)
+    WriteContext(const char *pcszFilename, bool fFlush)
+        : IOContext(pcszFilename, File::Mode_Overwrite, fFlush)
     {
     }
 };
@@ -1472,9 +1487,9 @@ XmlFileWriter::~XmlFileWriter()
     delete m;
 }
 
-void XmlFileWriter::write(const char *pcszFilename)
+void XmlFileWriter::writeInternal(const char *pcszFilename, bool fSafe)
 {
-    WriteContext context(pcszFilename);
+    WriteContext context(pcszFilename, fSafe);
 
     GlobalLock lock;
 
@@ -1504,6 +1519,50 @@ void XmlFileWriter::write(const char *pcszFilename)
     }
 
     xmlSaveClose(saveCtxt);
+}
+
+void XmlFileWriter::write(const char *pcszFilename, bool fSafe)
+{
+    if (!fSafe)
+        writeInternal(pcszFilename, fSafe);
+    else
+    {
+        /* Empty string and directory spec must be avoid. */
+        if (RTPathFilename(pcszFilename) == NULL)
+            throw xml::LogicError(RT_SRC_POS);
+
+        /* Construct both filenames first to ease error handling.  */
+        char szTmpFilename[RTPATH_MAX];
+        int rc = RTStrCopy(szTmpFilename, sizeof(szTmpFilename) - sizeof("-tmp") + 1, pcszFilename);
+        if (RT_FAILURE(rc))
+            throw EIPRTFailure(rc, "RTStrCopy");
+        strcat(szTmpFilename, "-tmp");
+
+        char szPrevFilename[RTPATH_MAX];
+        rc = RTStrCopy(szPrevFilename, sizeof(szPrevFilename) - sizeof("-prev") + 1, pcszFilename);
+        if (RT_FAILURE(rc))
+            throw EIPRTFailure(rc, "RTStrCopy");
+        strcat(szPrevFilename, "-prev");
+
+        /* Write the XML document to the temporary file.  */
+        writeInternal(szTmpFilename, fSafe);
+
+        /* Make a backup of any existing file (ignore failure). */
+        uint64_t cbPrevFile;
+        rc = RTFileQuerySize(pcszFilename, &cbPrevFile);
+        if (RT_SUCCESS(rc) && cbPrevFile >= 16)
+            RTFileRename(pcszFilename, szPrevFilename, RTPATHRENAME_FLAGS_REPLACE);
+
+        /* Commit the temporary file. Just leave the tmp file behind on failure. */
+        rc = RTFileRename(szTmpFilename, pcszFilename, RTPATHRENAME_FLAGS_REPLACE);
+        if (RT_FAILURE(rc))
+            throw EIPRTFailure(rc, "Failed to replace '%s' with '%s'", pcszFilename, szTmpFilename);
+
+        /* Flush the directory changes (required on linux at least). */
+        RTPathStripFilename(szTmpFilename);
+        rc = RTDirFlush(szTmpFilename);
+        AssertMsg(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED || rc == VERR_NOT_IMPLEMENTED, ("%Rrc\n", rc));
+    }
 }
 
 int XmlFileWriter::WriteCallback(void *aCtxt, const char *aBuf, int aLen)
