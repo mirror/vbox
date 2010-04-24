@@ -158,7 +158,11 @@ RTDECL(int) RTDirFlush(const char *pszPath)
      * look of things fsync(dir) should work.
      */
     int rc;
-    int fd = open(pszPath, O_DIRECTORY | O_RDONLY, 0);
+#ifdef O_DIRECTORY
+    int fd = open(pszPath, O_RDONLY | O_DIRECTORY, 0);
+#else
+    int fd = open(pszPath, O_RDONLY, 0);
+#endif
     if (fd >= 0)
     {
         if (fsync(fd) == 0)
