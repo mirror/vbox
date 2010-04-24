@@ -127,6 +127,12 @@ RTDECL(int) RTDirRemove(const char *pszPath)
 }
 
 
+RTDECL(int) RTDirFlush(const char *pszPath)
+{
+    return VERR_NOT_SUPPORTED;
+}
+
+
 int rtOpenDirNative(PRTDIR pDir, char *pszPathBuf)
 {
     /*
