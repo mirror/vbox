@@ -2787,11 +2787,18 @@ static void intnetR0NetworkEditDhcpFromIntNet(PINTNETNETWORK pNetwork, PINTNETSG
  *
  * @returns true if it's okay, false if it isn't.
  * @param   pNetwork            The network.
+ * @param   pIfSender           The interface sending or NULL if it's the trunk.
  * @param   pDstTab             The destination table.
  */
-DECLINLINE(bool) intnetR0NetworkIsContextOk(PINTNETNETWORK pNetwork, PCINTNETDSTTAB pDstTab)
+DECLINLINE(bool) intnetR0NetworkIsContextOk(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, PCINTNETDSTTAB pDstTab)
 {
-    uint32_t const  fTrunkDst = pDstTab->fTrunkDst;
+    /* Sending to the trunk is the problematic path.  If the trunk is the
+       sender we won't be sending to it, so no problem..
+       Note! fTrunkDst may be set event if if the trunk is the sender. */
+    if (!pIfSender)
+        return true;
+
+    uint32_t const fTrunkDst = pDstTab->fTrunkDst;
     if (!fTrunkDst)
         return true;
 
@@ -2821,8 +2828,9 @@ DECLINLINE(bool) intnetR0NetworkIsContextOk(PINTNETNETWORK pNetwork, PCINTNETDST
  */
 DECLINLINE(bool) intnetR0NetworkIsContextOkForBroadcast(PINTNETNETWORK pNetwork, uint32_t fSrc)
 {
-    if (   (!pNetwork->MacTab.fHostActive || fSrc == INTNETTRUNKDIR_HOST)
-        && (!pNetwork->MacTab.fWireActive || fSrc == INTNETTRUNKDIR_WIRE) )
+    /* Sending to the trunk is the problematic path.  If the trunk is the
+       sender we won't be sending to it, so no problem. */
+    if (fSrc)
         return true;
 
     /* ASSUMES: That a preemption test detects HWACCM contexts. (Will work on
@@ -3193,7 +3201,7 @@ static INTNETSWDECISION intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF p
      */
     if (enmSwDecision != INTNETSWDECISION_BAD_CONTEXT)
     {
-        if (intnetR0NetworkIsContextOk(pNetwork, pDstTab))
+        if (intnetR0NetworkIsContextOk(pNetwork, pIfSender, pDstTab))
             intnetR0NetworkDeliver(pNetwork, pDstTab, pSG, pIfSender);
         else
         {
@@ -4391,7 +4399,7 @@ static DECLCALLBACK(bool) intnetR0TrunkIfPortRecv(PINTNETTRUNKSWPORT pSwitchPort
              * Finally, get down to business of sending the frame.
              */
             INTNETSWDECISION enmSwDecision = intnetR0NetworkSend(pNetwork, NULL, fSrc, pSG, pDstTab);
-            Assert(enmSwDecision != INTNETSWDECISION_BAD_CONTEXT);
+            AssertMsg(enmSwDecision != INTNETSWDECISION_BAD_CONTEXT, ("fSrc=%#x fTrunkDst=%#x hdr=%.14Rhxs\n", fSrc, pDstTab->fTrunkDst, pSG->aSegs[0].pv));
             if (enmSwDecision == INTNETSWDECISION_INTNET)
                 fRc = true; /* drop it */
 
