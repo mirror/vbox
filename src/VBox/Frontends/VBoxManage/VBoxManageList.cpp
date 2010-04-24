@@ -922,6 +922,12 @@ int handleList(HandlerArg *a)
             RTPrintf("Maximum SCSI Port count:         %u\n", ulValue);
             systemProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_SCSI, &ulValue);
             RTPrintf("Maximum Devices per SCSI Port:   %u\n", ulValue);
+            systemProperties->GetMaxInstancesOfStorageBus(StorageBus_SAS, &ulValue);
+            RTPrintf("Maximum SAS Controllers:         %u\n", ulValue);
+            systemProperties->GetMaxPortCountForStorageBus(StorageBus_SAS, &ulValue);
+            RTPrintf("Maximum SAS Port count:          %u\n", ulValue);
+            systemProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_SAS, &ulValue);
+            RTPrintf("Maximum Devices per SAS Port:    %u\n", ulValue);
             systemProperties->GetMaxInstancesOfStorageBus(StorageBus_Floppy, &ulValue);
             RTPrintf("Maximum Floppy Controllers:      %u\n", ulValue);
             systemProperties->GetMaxPortCountForStorageBus(StorageBus_Floppy, &ulValue);
