@@ -158,6 +158,9 @@ const s_aLogFlags[] =
     { "abs",          sizeof("abs"         ) - 1,   RTLOGFLAGS_REL_TS,              true  },
     { "dec",          sizeof("dec"         ) - 1,   RTLOGFLAGS_DECIMAL_TS,          false },
     { "hex",          sizeof("hex"         ) - 1,   RTLOGFLAGS_DECIMAL_TS,          true  },
+    { "writethru",    sizeof("writethru"   ) - 1,   RTLOGFLAGS_WRITE_THROUGH,       true  },
+    { "writethrough", sizeof("writethrough") - 1,   RTLOGFLAGS_WRITE_THROUGH,       true  },
+    { "flush",        sizeof("flush"       ) - 1,   RTLOGFLAGS_FLUSH,               true  },
     { "lockcnts",     sizeof("lockcnts"    ) - 1,   RTLOGFLAGS_PREFIX_LOCK_COUNTS,  false },
     { "cpuid",        sizeof("cpuid"       ) - 1,   RTLOGFLAGS_PREFIX_CPUID,        false },
     { "pid",          sizeof("pid"         ) - 1,   RTLOGFLAGS_PREFIX_PID,          false },
@@ -381,26 +384,16 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
 #ifdef IN_RING3
             if (pLogger->fDestFlags & RTLOGDEST_FILE)
             {
-                if (!(pLogger->fFlags & RTLOGFLAGS_APPEND))
-                    rc = RTFileOpen(&pLogger->File, pLogger->pszFilename,
-                                    RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
+                uint32_t fOpen = RTFILE_O_WRITE | RTFILE_O_DENY_WRITE;
+                if (pLogger->fFlags & RTLOGFLAGS_APPEND)
+                    fOpen |= RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND;
                 else
-                {
-                    /** @todo RTFILE_O_APPEND. */
-                    rc = RTFileOpen(&pLogger->File, pLogger->pszFilename,
-                                    RTFILE_O_WRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE);
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = RTFileSeek(pLogger->File, 0, RTFILE_SEEK_END, NULL);
-                        if (RT_FAILURE(rc))
-                        {
-                            RTFileClose(pLogger->File);
-                            pLogger->File = NIL_RTFILE;
-                        }
-                    }
-                }
+                    fOpen |= RTFILE_O_CREATE_REPLACE;
+                if (pLogger->fFlags & RTLOGFLAGS_WRITE_THROUGH)
+                    fOpen |= RTFILE_O_WRITE_THROUGH;
+                rc = RTFileOpen(&pLogger->File, pLogger->pszFilename, fOpen);
                 if (RT_FAILURE(rc) && pszErrorMsg)
-                    RTStrPrintf(pszErrorMsg, cchErrorMsg, "could not open file '%s'", pLogger->pszFilename);
+                    RTStrPrintf(pszErrorMsg, cchErrorMsg, "could not open file '%s' (fOpen=%#x)", pLogger->pszFilename, fOpen);
             }
 #endif  /* IN_RING3 */
 
@@ -2207,7 +2200,11 @@ static void rtlogFlush(PRTLOGGER pLogger)
 
 # ifdef IN_RING3
     if (pLogger->fDestFlags & RTLOGDEST_FILE)
+    {
         RTFileWrite(pLogger->File, pLogger->achScratch, pLogger->offScratch, NULL);
+        if (pLogger->fFlags & RTLOGFLAGS_FLUSH)
+            RTFileFlush(pLogger->File);
+    }
 # endif
 
     if (pLogger->fDestFlags & RTLOGDEST_STDOUT)
