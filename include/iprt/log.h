@@ -323,8 +323,10 @@ typedef enum RTLOGFLAGS
     RTLOGFLAGS_REL_TS               = 0x00000040,
     /** Show decimal timestamps with PREFIX_TSC and PREFIX_TS */
     RTLOGFLAGS_DECIMAL_TS           = 0x00000080,
-    /** Log flushing disabled. */
-    RTLOGFLAGS_NO_FLUSH             = 0x00000100,
+    /** Open the file in write through mode. */
+    RTLOGFLAGS_WRITE_THROUGH        = 0x00000100,
+    /** Flush the file to disk when flushing the buffer. */
+    RTLOGFLAGS_FLUSH                = 0x00000200,
     /** New lines should be prefixed with the write and read lock counts. */
     RTLOGFLAGS_PREFIX_LOCK_COUNTS   = 0x00008000,
     /** New lines should be prefixed with the CPU id (ApicID on intel/amd). */
