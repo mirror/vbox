@@ -40,13 +40,7 @@
 
 #include "VBoxSCSI.h"
 
-/**
- * Initializes the state for the SCSI interface.
- *
- * @returns VBox status code.
- * @param   pVBoxSCSI    Pointer to the unitialized SCSI state.
- */
-int vboxscsiInitialize(PVBOXSCSI pVBoxSCSI)
+static void vboxscsiReset(PVBOXSCSI pVBoxSCSI)
 {
     pVBoxSCSI->regIdentify = 0;
     pVBoxSCSI->cbCDB       = 0;
@@ -55,8 +49,24 @@ int vboxscsiInitialize(PVBOXSCSI pVBoxSCSI)
     pVBoxSCSI->fBusy       = false;
     pVBoxSCSI->cbBuf       = 0;
     pVBoxSCSI->iBuf        = 0;
+    if (pVBoxSCSI->pBuf)
+        RTMemFree(pVBoxSCSI->pBuf);
+
     pVBoxSCSI->pBuf        = NULL;
     pVBoxSCSI->enmState    = VBOXSCSISTATE_NO_COMMAND;
+
+}
+
+/**
+ * Initializes the state for the SCSI interface.
+ *
+ * @returns VBox status code.
+ * @param   pVBoxSCSI    Pointer to the unitialized SCSI state.
+ */
+int vboxscsiInitialize(PVBOXSCSI pVBoxSCSI)
+{
+    pVBoxSCSI->pBuf        = NULL;
+    vboxscsiReset(pVBoxSCSI);
 
     return VINF_SUCCESS;
 }
@@ -152,13 +162,23 @@ int vboxscsiWriteRegister(PVBOXSCSI pVBoxSCSI, uint8_t iRegister, uint8_t uVal)
             }
             else if (pVBoxSCSI->enmState == VBOXSCSISTATE_READ_TXDIR)
             {
-                pVBoxSCSI->enmState = VBOXSCSISTATE_READ_CDB_SIZE;
-                pVBoxSCSI->uTxDir = uVal;
+                if (uVal != VBOXSCSI_TXDIR_FROM_DEVICE && uVal != VBOXSCSI_TXDIR_TO_DEVICE)
+                    vboxscsiReset(pVBoxSCSI);
+                else
+                {
+                    pVBoxSCSI->enmState = VBOXSCSISTATE_READ_CDB_SIZE;
+                    pVBoxSCSI->uTxDir = uVal;
+                }
             }
             else if (pVBoxSCSI->enmState == VBOXSCSISTATE_READ_CDB_SIZE)
             {
-                pVBoxSCSI->enmState = VBOXSCSISTATE_READ_BUFFER_SIZE_LOW;
-                pVBoxSCSI->cbCDB = uVal;
+                if (uVal > VBOXSCSI_CDB_SIZE_MAX)
+                    vboxscsiReset(pVBoxSCSI);
+                else
+                {
+                    pVBoxSCSI->enmState = VBOXSCSISTATE_READ_BUFFER_SIZE_LOW;
+                    pVBoxSCSI->cbCDB = uVal;
+                }
             }
             else if (pVBoxSCSI->enmState == VBOXSCSISTATE_READ_BUFFER_SIZE_LOW)
             {
@@ -201,18 +221,32 @@ int vboxscsiWriteRegister(PVBOXSCSI pVBoxSCSI, uint8_t iRegister, uint8_t uVal)
         }
         case 1:
         {
-            AssertMsg(pVBoxSCSI->enmState == VBOXSCSISTATE_COMMAND_READY, ("Invalid state\n"));
-            pVBoxSCSI->pBuf[pVBoxSCSI->iBuf++] = uVal;
-            if (pVBoxSCSI->iBuf == pVBoxSCSI->cbBuf)
+            if (   pVBoxSCSI->enmState != VBOXSCSISTATE_COMMAND_READY
+                || pVBoxSCSI->uTxDir != VBOXSCSI_TXDIR_TO_DEVICE)
             {
-                rc = VERR_MORE_DATA;
-                ASMAtomicXchgBool(&pVBoxSCSI->fBusy, true);
+                /* Reset the state */
+                vboxscsiReset(pVBoxSCSI);
+            }
+            else
+            {
+                pVBoxSCSI->pBuf[pVBoxSCSI->iBuf++] = uVal;
+                if (pVBoxSCSI->iBuf == pVBoxSCSI->cbBuf)
+                {
+                    rc = VERR_MORE_DATA;
+                    ASMAtomicXchgBool(&pVBoxSCSI->fBusy, true);
+                }
             }
             break;
         }
         case 2:
         {
             pVBoxSCSI->regIdentify = uVal;
+            break;
+        }
+        case 3:
+        {
+            /* Reset */
+            vboxscsiReset(pVBoxSCSI);
             break;
         }
         default:
