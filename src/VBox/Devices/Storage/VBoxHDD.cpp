@@ -169,7 +169,7 @@ struct VBOXHDD
      * Other write requests which will grow the image too need to be deferred to
      * prevent data corruption. - Protected by the critical section.
      */
-    bool                fGrowing;
+    volatile bool       fGrowing;
     /** List of waiting requests. - Protected by the critical section. */
     RTLISTNODE          ListWriteGrowing;
 };
@@ -229,6 +229,8 @@ typedef struct VDIOCTX
     PVDIMAGE                     pImage;
     /** S/G buffer */
     RTSGBUF                      SgBuf;
+    /** Flag whether the I/O context is blocked because it is in the growing list. */
+    bool                         fBlocked;
     /** How many meta data transfers are pending. */
     volatile uint32_t            cMetaTransfersPending;
     /** Flag whether the request finished */
@@ -599,6 +601,7 @@ DECLINLINE(PVDIOCTX) vdIoCtxAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
         pIoCtx->cbTransfer            = cbTransfer;
         pIoCtx->cMetaTransfersPending = 0;
         pIoCtx->fComplete             = false;
+        pIoCtx->fBlocked              = false;
         pIoCtx->pvAllocation          = pvAllocation;
         pIoCtx->pfnIoCtxTransfer      = pfnIoCtxTransfer;
         pIoCtx->pfnIoCtxTransferNext  = NULL;
@@ -1379,11 +1382,13 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
              * If there is a growing request already put this one onto the waiting list.
              * It will be restarted if the current request completes.
              */
-            if (pDisk->fGrowing)
+            if (ASMAtomicReadBool(&pDisk->fGrowing))
             {
                 LogFlowFunc(("Deferring write pIoCtx=%#p\n", pIoCtx));
                 RTListAppend(&pDisk->ListWriteGrowing, &pIoCtx->NodeWriteGrowing);
+                pIoCtx->fBlocked = true;
                 Assert(pIoCtx->NodeWriteGrowing.pNext == &pDisk->ListWriteGrowing);
+                Assert(pDisk->ListWriteGrowing.pPrev == & pIoCtx->NodeWriteGrowing);
                 rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
                 break;
             }
@@ -1417,7 +1422,7 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
                 /* Set the state to growing. */
                 LogFlowFunc(("Disk is growing because of pIoCtx=%#p pIoCtxWrite=%#p\n",
                              pIoCtx, pIoCtxWrite));
-                pDisk->fGrowing = true;
+                ASMAtomicWriteBool(&pDisk->fGrowing, true);
 
                 pIoCtxWrite->pImage                = pImage;
                 pIoCtxWrite->Type.Child.cbPreRead  = cbPreRead;
@@ -1437,7 +1442,7 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
                     LogFlow(("Child write request completed\n"));
                     Assert(pIoCtx->cbTransferLeft >= cbThisWrite);
                     ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbThisWrite);
-                    pDisk->fGrowing = false;
+                    ASMAtomicWriteBool(&pDisk->fGrowing, false);
                     vdIoCtxFree(pDisk, pIoCtxWrite);
 
                     Assert(RTListIsEmpty(&pDisk->ListWriteGrowing));
@@ -1756,56 +1761,71 @@ static int vdIOReqCompleted(void *pvUser)
 
     vdIoTaskFree(pDisk, pIoTask);
 
-    /* Continue the transfer */
-    rc = vdIoCtxProcess(pIoCtx);
-
-    if (   rc == VINF_VD_ASYNC_IO_FINISHED
-        && ASMAtomicCmpXchgBool(&pIoCtx->fComplete, true, false))
+    if (!pIoCtx->fBlocked)
     {
-        LogFlowFunc(("I/O context completed pIoCtx=%#p\n", pIoCtx));
-        if (pIoCtx->pIoCtxParent)
+        /* Continue the transfer */
+        rc = vdIoCtxProcess(pIoCtx);
+
+        if (   rc == VINF_VD_ASYNC_IO_FINISHED
+            && ASMAtomicCmpXchgBool(&pIoCtx->fComplete, true, false))
         {
-            PVDIOCTX pIoCtxParent = pIoCtx->pIoCtxParent;
-
-            LogFlowFunc(("I/O context transfered %u bytes for the parent pIoCtxParent=%p\n",
-                         pIoCtx->Type.Child.cbTransferParent, pIoCtxParent));
-
-            /* Update the parent state. */
-            Assert(!pIoCtxParent->pIoCtxParent);
-            Assert(pIoCtx->enmTxDir == VDIOCTXTXDIR_WRITE);
-            ASMAtomicSubU32(&pIoCtxParent->cbTransferLeft, pIoCtx->Type.Child.cbTransferParent);
-
-            rc = vdIoCtxProcess(pIoCtxParent);
-
-            if (   rc == VINF_VD_ASYNC_IO_FINISHED
-                && ASMAtomicCmpXchgBool(&pIoCtxParent->fComplete, true, false))
+            LogFlowFunc(("I/O context completed pIoCtx=%#p\n", pIoCtx));
+            if (pIoCtx->pIoCtxParent)
             {
-                LogFlowFunc(("Parent I/O context completed pIoCtxParent=%#p\n", pIoCtx));
-                pIoCtxParent->Type.Root.pfnComplete(pIoCtxParent->Type.Root.pvUser1, pIoCtxParent->Type.Root.pvUser2);
-                vdIoCtxFree(pDisk, pIoCtxParent);
+                PVDIOCTX pIoCtxParent = pIoCtx->pIoCtxParent;
+
+                LogFlowFunc(("I/O context transfered %u bytes for the parent pIoCtxParent=%p\n",
+                             pIoCtx->Type.Child.cbTransferParent, pIoCtxParent));
+
+                /* Update the parent state. */
+                Assert(!pIoCtxParent->pIoCtxParent);
+                Assert(pIoCtx->enmTxDir == VDIOCTXTXDIR_WRITE);
+                ASMAtomicSubU32(&pIoCtxParent->cbTransferLeft, pIoCtx->Type.Child.cbTransferParent);
 
                 /*
-                 * A completed parent means that we finsihed growing the image.
+                 * A completed child write means that we finsihed growing the image.
                  * We have to process any pending writes now.
                  */
                 Assert(pDisk->fGrowing);
+                ASMAtomicWriteBool(&pDisk->fGrowing, false);
 
+                rc = vdIoCtxProcess(pIoCtxParent);
+
+                if (   rc == VINF_VD_ASYNC_IO_FINISHED
+                    && ASMAtomicCmpXchgBool(&pIoCtxParent->fComplete, true, false))
+                {
+                    LogFlowFunc(("Parent I/O context completed pIoCtxParent=%#p\n", pIoCtx));
+                    pIoCtxParent->Type.Root.pfnComplete(pIoCtxParent->Type.Root.pvUser1, pIoCtxParent->Type.Root.pvUser2);
+                    vdIoCtxFree(pDisk, pIoCtxParent);
+                }
+
+                /* Process any pending writes. */
                 RTCritSectEnter(&pDisk->CritSect);
-
-                pDisk->fGrowing = false;
 
                 if (!RTListIsEmpty(&pDisk->ListWriteGrowing))
                 {
                     RTLISTNODE ListTmp;
-                    PVDIOCTX pIoCtxWait;
+
+                    LogFlowFunc(("Before: pNext=%#p pPrev=%#p\n", pDisk->ListWriteGrowing.pNext,
+                                 pDisk->ListWriteGrowing.pPrev));
 
                     RTListMove(&ListTmp, &pDisk->ListWriteGrowing);
+
+                    LogFlowFunc(("After: pNext=%#p pPrev=%#p\n", pDisk->ListWriteGrowing.pNext,
+                                 pDisk->ListWriteGrowing.pPrev));
 
                     RTCritSectLeave(&pDisk->CritSect);
 
                     /* Process the list. */
-                    RTListForEach(&ListTmp, pIoCtxWait, VDIOCTX, NodeWriteGrowing)
+                    do
                     {
+                        PVDIOCTX pIoCtxWait = RTListNodeGetFirst(&ListTmp, VDIOCTX, NodeWriteGrowing);
+                        AssertPtr(pIoCtxWait);
+
+                        RTListNodeRemove(&pIoCtxWait->NodeWriteGrowing);
+
+                        pIoCtxWait->fBlocked = false;
+
                         Assert(!pIoCtxWait->pIoCtxParent);
 
                         LogFlowFunc(("Processing waiting I/O context pIoCtxWait=%#p\n", pIoCtxWait));
@@ -1819,16 +1839,16 @@ static int vdIOReqCompleted(void *pvUser)
                                                               pIoCtxWait->Type.Root.pvUser2);
                             vdIoCtxFree(pDisk, pIoCtxWait);
                         }
-                    }
+                    } while (!RTListIsEmpty(&ListTmp));
                 }
                 else
                     RTCritSectLeave(&pDisk->CritSect);
             }
-        }
-        else
-            pIoCtx->Type.Root.pfnComplete(pIoCtx->Type.Root.pvUser1, pIoCtx->Type.Root.pvUser2);
+            else
+                pIoCtx->Type.Root.pfnComplete(pIoCtx->Type.Root.pvUser1, pIoCtx->Type.Root.pvUser2);
 
-        vdIoCtxFree(pDisk, pIoCtx);
+            vdIoCtxFree(pDisk, pIoCtx);
+        }
     }
 
     return VINF_SUCCESS;
