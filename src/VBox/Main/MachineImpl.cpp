@@ -3784,6 +3784,13 @@ STDMETHODIMP Machine::DeleteSettings()
                             mData->m_strConfigFileFull.raw(),
                             vrc);
 
+        /* Delete any backup or uncommitted XML files. Ignore failures.
+           See the fSafe parameter of xml::XmlFileWriter::write for details. */
+        Utf8Str otherXml = Utf8StrFmt("%s-tmp", mData->m_strConfigFileFull.c_str());
+        RTFileDelete(otherXml.c_str());
+        otherXml = Utf8StrFmt("%s-prev", mData->m_strConfigFileFull.c_str());
+        RTFileDelete(otherXml.c_str());
+
         /* delete the Logs folder, nothing important should be left
          * there (we don't check for errors because the user might have
          * some private files there that we don't want to delete) */
