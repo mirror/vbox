@@ -682,11 +682,18 @@ public:
      *                              -# The '-tmp' file is then renamed to the
      *                                 specified name.
      *                              -# The directory changes are flushed to disk.
+     *                          The suffixes are available via s_pszTmpSuff and
+     *                          s_pszPrevSuff.
      */
     void write(const char *pcszFilename, bool fSafe);
 
     static int WriteCallback(void *aCtxt, const char *aBuf, int aLen);
-    static int CloseCallback (void *aCtxt);
+    static int CloseCallback(void *aCtxt);
+
+    /** The suffix used by XmlFileWriter::write() for the temporary file. */
+    static const char * const s_pszTmpSuff;
+    /** The suffix used by XmlFileWriter::write() for the previous (backup) file. */
+    static const char * const s_pszPrevSuff;
 
 private:
     void writeInternal(const char *pcszFilename, bool fSafe);
