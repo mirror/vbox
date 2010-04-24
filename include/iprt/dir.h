@@ -125,6 +125,31 @@ RTDECL(int) RTDirRemoveRecursive(const char *pszPath, uint32_t fFlags);
 #define RTDIRRMREC_F_VALID_MASK     UINT32_C(0x00000001)
 /** @} */
 
+/**
+ * Flushes the specified directory.
+ *
+ * This API is not implemented on all systems.  On some systems it may be
+ * unnecessary if you've already flushed the file.  If you really care for your
+ * data and is entering dangerous territories, it doesn't hurt calling it after
+ * flushing and closing the file.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_IMPLEMENTED must be expected.
+ * @retval  VERR_NOT_SUPPORTED must be expected.
+ * @param   pszPath     Path to the directory.
+ */
+RTDECL(int) RTDirFlush(const char *pszPath);
+
+/**
+ * Flushes the parent directory of the specified file.
+ *
+ * This is just a wrapper around RTDirFlush.
+ *
+ * @returns IPRT status code, see RTDirFlush for details.
+ * @param   pszChild    Path to the file which parent should be flushed.
+ */
+RTDECL(int) RTDirFlushParent(const char *pszChild);
+
 
 /** Pointer to an open directory (sort of handle). */
 typedef struct RTDIR *PRTDIR;

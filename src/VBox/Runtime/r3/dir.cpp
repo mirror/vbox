@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,14 +42,16 @@
 #endif
 
 #include <iprt/dir.h>
-#include <iprt/file.h>
-#include <iprt/path.h>
-#include <iprt/alloc.h>
-#include <iprt/log.h>
-#include <iprt/param.h>
-#include <iprt/string.h>
-#include <iprt/err.h>
+#include "internal/iprt.h"
+
 #include <iprt/assert.h>
+#include <iprt/file.h>
+#include <iprt/err.h>
+#include <iprt/log.h>
+#include <iprt/mem.h>
+#include <iprt/param.h>
+#include <iprt/path.h>
+#include <iprt/string.h>
 #include <iprt/uni.h>
 #include "internal/dir.h"
 #include "internal/path.h"
@@ -860,6 +862,19 @@ RTDECL(int) RTDirRemoveRecursive(const char *pszPath, uint32_t fFlags)
     {
         szAbsPath[cchAbsPath] = 0;
         rc = RTDirRemove(szAbsPath);
+    }
+    return rc;
+}
+
+
+RTDECL(int) RTDirFlushParent(const char *pszChild)
+{
+    char szPath[RTPATH_MAX];
+    int rc = RTStrCopy(szPath, sizeof(szPath), pszChild);
+    if (RT_SUCCESS(rc))
+    {
+        RTPathStripFilename(szPath);
+        rc = RTDirFlush(szPath);
     }
     return rc;
 }
