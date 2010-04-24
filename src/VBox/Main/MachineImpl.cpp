@@ -65,6 +65,7 @@
 #include <iprt/lockvalidator.h>
 #include <iprt/process.h>
 #include <iprt/cpp/utils.h>
+#include <iprt/cpp/xml.h>               /* xml::XmlFileWriter::s_psz*Suff. */
 #include <iprt/string.h>
 
 #include <VBox/com/array.h>
@@ -3786,9 +3787,10 @@ STDMETHODIMP Machine::DeleteSettings()
 
         /* Delete any backup or uncommitted XML files. Ignore failures.
            See the fSafe parameter of xml::XmlFileWriter::write for details. */
-        Utf8Str otherXml = Utf8StrFmt("%s-tmp", mData->m_strConfigFileFull.c_str());
+        /** @todo Find a way to avoid referring directly to iprt/xml.h here. */
+        Utf8Str otherXml = Utf8StrFmt("%s%s", mData->m_strConfigFileFull.c_str(), xml::XmlFileWriter::s_pszTmpSuff);
         RTFileDelete(otherXml.c_str());
-        otherXml = Utf8StrFmt("%s-prev", mData->m_strConfigFileFull.c_str());
+        otherXml = Utf8StrFmt("%s%s", mData->m_strConfigFileFull.c_str(), xml::XmlFileWriter::s_pszPrevSuff);
         RTFileDelete(otherXml.c_str());
 
         /* delete the Logs folder, nothing important should be left
