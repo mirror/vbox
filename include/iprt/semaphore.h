@@ -111,6 +111,10 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem);
  *
  * @returns iprt status code.
  * @param   hEventSem           The event semaphore to signal.
+ *
+ * @remarks ring-0: This works when preemption is disabled.  However it is
+ *          system specific whether it works in interrupt context or with
+ *          interrupts disabled.
  */
 RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem);
 
@@ -231,6 +235,10 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem);
  *
  * @returns iprt status code.
  * @param   hEventMultiSem      The multiple release event sempahore.
+ *
+ * @remarks ring-0: This works when preemption is disabled.  However it is
+ *          system specific whether it works in interrupt context or with
+ *          interrupts disabled.
  */
 RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem);
 
