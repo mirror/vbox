@@ -1,9 +1,9 @@
 /** @file
- * VirtualBox XML helper APIs.
+ * IPRT - XML Helper APIs.
  */
 
 /*
- * Copyright (C) 2007-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2007-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,8 +27,8 @@
  * additional information or have any questions.
  */
 
-#ifndef ___VBox_vboxxml_h
-#define ___VBox_vboxxml_h
+#ifndef ___iprt_xml_h
+#define ___iprt_xml_h
 
 #ifndef IN_RING3
 # error "There are no XML APIs available in Ring-0 Context!"
@@ -287,8 +287,9 @@ public:
      *
      * @param aMode     File mode.
      * @param aFileName File name.
+     * @param aFlushIt  Whether to flush a writable file before closing it.
      */
-    File(Mode aMode, const char *aFileName);
+    File(Mode aMode, const char *aFileName, bool aFlushIt = false);
 
     /**
      * Uses the given file handle to perform file operations. This file
@@ -307,8 +308,9 @@ public:
      *
      * @param aHandle   Open file handle.
      * @param aFileName File name (for reference).
+     * @param aFlushIt  Whether to flush a writable file before closing it.
      */
-    File(RTFILE aHandle, const char *aFileName = NULL);
+    File(RTFILE aHandle, const char *aFileName = NULL, bool aFlushIt = false);
 
     /**
      * Destroys the File object. If the object was created from a file name
@@ -668,12 +670,27 @@ public:
     XmlFileWriter(Document &doc);
     ~XmlFileWriter();
 
-    void write(const char *pcszFilename);
+    /**
+     * Writes the XML document to the specified file.
+     *
+     * @param   pcszFilename    The name of the output file.
+     * @param   fSafe           If @c true, some extra safety precautions will be
+     *                          taken when writing the file:
+     *                              -# The file is written with a '-tmp' suffix.
+     *                              -# It is flushed to disk after writing.
+     *                              -# Any original file is renamed to '-prev'.
+     *                              -# The '-tmp' file is then renamed to the
+     *                                 specified name.
+     *                              -# The directory changes are flushed to disk.
+     */
+    void write(const char *pcszFilename, bool fSafe);
 
     static int WriteCallback(void *aCtxt, const char *aBuf, int aLen);
     static int CloseCallback (void *aCtxt);
 
 private:
+    void writeInternal(const char *pcszFilename, bool fSafe);
+
     /* Obscure class data */
     struct Data;
     Data *m;
@@ -687,4 +704,4 @@ private:
 
 } // end namespace xml
 
-#endif /* ___VBox_vboxxml_h */
+#endif /* !___iprt_xml_h */
