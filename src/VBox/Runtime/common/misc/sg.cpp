@@ -358,6 +358,12 @@ RTDECL(size_t) RTSgBufSegArrayCreate(PRTSGBUF pSgBuf, PRTSGSEG paSeg, unsigned *
 
         pvSeg = sgBufGet(pSgBuf, &cbThisSeg);
 
+        if (!cbThisSeg)
+        {
+            Assert(!pvSeg);
+            break;
+        }
+
         AssertMsg(cbThisSeg <= cbData, ("Impossible!\n"));
 
         paSeg[cSeg].cbSeg = cbThisSeg;
