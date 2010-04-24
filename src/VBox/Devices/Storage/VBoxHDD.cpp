@@ -743,8 +743,11 @@ static int vdIoCtxProcess(PVDIOCTX pIoCtx)
     int rc = VINF_SUCCESS;
     PVBOXHDD pDisk = pIoCtx->pDisk;
 
+    LogFlowFunc(("pIoCtx=%#p\n"));
+
     if (   !pIoCtx->cbTransferLeft
-        && !pIoCtx->cMetaTransfersPending)
+        && !pIoCtx->cMetaTransfersPending
+        && !pIoCtx->pfnIoCtxTransfer)
         return VINF_VD_ASYNC_IO_FINISHED;
 
     if (pIoCtx->pfnIoCtxTransfer)
@@ -754,6 +757,7 @@ static int vdIoCtxProcess(PVDIOCTX pIoCtx)
         while (   pIoCtx->pfnIoCtxTransfer
                && RT_SUCCESS(rc))
         {
+            LogFlowFunc(("calling transfer function %#p\n", pIoCtx->pfnIoCtxTransfer));
             rc = pIoCtx->pfnIoCtxTransfer(pIoCtx);
 
             /* Advance to the next part of the transfer if the current one succeeded. */
@@ -1228,6 +1232,8 @@ static int vdWriteHelperOptimizedCmpAndWriteAsync(PVDIOCTX pIoCtx)
     size_t cbReadImage    = pIoCtx->Type.Child.Write.Optimized.cbReadImage;
     PVDIOCTX pIoCtxParent = pIoCtx->pIoCtxParent;
 
+    LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
+
     AssertPtr(pIoCtxParent);
     Assert(!pIoCtx->cbTransferLeft && !pIoCtx->cMetaTransfersPending);
 
@@ -1288,8 +1294,21 @@ static int vdWriteHelperOptimizedCmpAndWriteAsync(PVDIOCTX pIoCtx)
 
 static int vdWriteHelperOptimizedPreReadAsync(PVDIOCTX pIoCtx)
 {
-    pIoCtx->pfnIoCtxTransferNext = vdWriteHelperOptimizedCmpAndWriteAsync;
-    return vdReadHelperAsync(pIoCtx);
+    int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
+
+    if (pIoCtx->cbTransferLeft)
+        rc = vdReadHelperAsync(pIoCtx);
+
+    if (   RT_SUCCESS(rc)
+        && (   pIoCtx->cbTransferLeft
+            || pIoCtx->cMetaTransfersPending))
+        rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+     else
+        pIoCtx->pfnIoCtxTransferNext = vdWriteHelperOptimizedCmpAndWriteAsync;
+
+    return rc;
 }
 
 /**
@@ -1310,6 +1329,8 @@ static int vdWriteHelperOptimizedAsync(PVDIOCTX pIoCtx)
     size_t cbWriteCopy = 0;
     size_t cbReadImage = 0;
     int rc;
+
+    LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
 
     AssertPtr(pIoCtx->pIoCtxParent);
 
@@ -1445,7 +1466,6 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
                     ASMAtomicWriteBool(&pDisk->fGrowing, false);
                     vdIoCtxFree(pDisk, pIoCtxWrite);
 
-                    Assert(RTListIsEmpty(&pDisk->ListWriteGrowing));
                     rc = VINF_SUCCESS;
                 }
                 else
