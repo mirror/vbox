@@ -135,13 +135,31 @@ class VBoxMonitor:
     def onGuestPropertyChange(self, id, name, newValue, flags):
        print "onGuestPropertyChange: %s: %s=%s" %(id, name, newValue)
 
-g_hasreadline = 1
+g_hasreadline = True
 try:
     import readline
     import rlcompleter
 except:
-    g_hasreadline = 0
+    g_hasreadline = False
 
+
+g_hascolors = True
+term_colors = {
+    'red':'\033[31m',
+    'blue':'\033[94m',
+    'green':'\033[92m',
+    'yellow':'\033[93m',
+    'magenta':'\033[35m'
+    }
+def colored(str,color):
+    if not g_hascolors:
+        return str
+    global term_colors
+    col = term_colors.get(color,None)
+    if col:
+        return col+str+'\033[0m'
+    else:
+        return str
 
 if g_hasreadline:
   class CompleterNG(rlcompleter.Completer):
@@ -188,8 +206,9 @@ if g_hasreadline:
                 if word[:n] == text:
                     matches.append(word)
         except Exception,e:
-            traceback.print_exc()
-            print e
+            printErr(e)
+            if g_verbose:
+                traceback.print_exc()
 
         return matches
 
@@ -206,11 +225,17 @@ def autoCompletion(commands, ctx):
   delims = readline.get_completer_delims()
   readline.set_completer_delims(re.sub("[\\.]", "", delims)) # remove some of the delimiters
   # OSX need it
+  readline.parse_and_bind("set editing-mode emacs")
   if platform.system() == 'Darwin':
+      # see http://www.certif.com/spec_help/readline.html
       readline.parse_and_bind ("bind ^I rl_complete")
+      readline.parse_and_bind ("bind ^W ed-delete-prev-word")
+      # Doesn't work well
+      # readline.parse_and_bind ("bind ^R em-inc-search-prev")
   readline.parse_and_bind("tab: complete")
 
-g_verbose = True
+
+g_verbose = False
 
 def split_no_quotes(s):
     return shlex.split(s)
@@ -218,7 +243,7 @@ def split_no_quotes(s):
 def progressBar(ctx,p,wait=1000):
     try:
         while not p.completed:
-            print "%d %%\r" %(p.percent),
+            print "%s %%\r" %(colored(str(p.percent),'red')),
             sys.stdout.flush()
             p.waitForCompletion(wait)
             ctx['global'].waitForEvents(0)
@@ -230,10 +255,19 @@ def progressBar(ctx,p,wait=1000):
             p.cancel()
         return 0
 
+def printErr(ctx,e):
+     print colored(str(e), 'red')
+
 def reportError(ctx,progress):
     ei = progress.errorInfo
     if ei:
-        print "Error in %s: %s" %(ei.component, ei.text)
+        print colored("Error in %s: %s" %(ei.component, ei.text), 'red')
+
+def colCat(ctx,str):
+    return colored(str, 'magenta')
+
+def colVm(ctx,vm):
+    return colored(vm, 'blue')
 
 def createVm(ctx,name,kind,base):
     mgr = ctx['mgr']
@@ -271,7 +305,7 @@ def startVm(ctx,mach,type):
           try:
             perf.setup(['*'], [mach], 10, 15)
           except Exception,e:
-            print e
+            printErr(ctx, e)
             if g_verbose:
                 traceback.print_exc()
          # if session not opened, close doesn't make sense
@@ -305,9 +339,9 @@ def getMachines(ctx, invalidate = False, simple=False):
 
 def asState(var):
     if var:
-        return 'on'
+        return colored('on', 'green')
     else:
-        return 'off'
+        return colored('off', 'green')
 
 def asFlag(var):
     if var:
@@ -456,13 +490,13 @@ def cond(c,v1,v2):
         return v2
 
 def printHostUsbDev(ctx,ud):
-    print "  %s: %s (vendorId=%d productId=%d serial=%s) %s" %(ud.id, ud.product, ud.vendorId, ud.productId, ud.serialNumber,getUSBStateString(ud.state))
+    print "  %s: %s (vendorId=%d productId=%d serial=%s) %s" %(ud.id, colored(ud.product,'blue'), ud.vendorId, ud.productId, ud.serialNumber,asEnumElem(ctx, 'USBDeviceState', ud.state))
 
 def printUsbDev(ctx,ud):
-    print "  %s: %s (vendorId=%d productId=%d serial=%s)" %(ud.id, ud.product, ud.vendorId, ud.productId, ud.serialNumber)
+    print "  %s: %s (vendorId=%d productId=%d serial=%s)" %(ud.id,  colored(ud.product,'blue'), ud.vendorId, ud.productId, ud.serialNumber)
 
 def printSf(ctx,sf):
-    print "name=%s host=%s %s %s" %(sf.name, sf.hostPath, cond(sf.accessible, "accessible", "not accessible"), cond(sf.writable, "writable", "read-only"))
+    print "    name=%s host=%s %s %s" %(sf.name, sf.hostPath, cond(sf.accessible, "accessible", "not accessible"), cond(sf.writable, "writable", "read-only"))
 
 def ginfo(ctx,console, args):
     guest = console.guest
@@ -496,7 +530,7 @@ def cmdExistingVm(ctx,mach,cmd,args):
     try:
         progress = vb.openExistingSession(session, uuid)
     except Exception,e:
-        print "Session to '%s' not open: %s" %(mach.name,e)
+        printErr(ctx, "Session to '%s' not open: %s" %(mach.name,str(e)))
         if g_verbose:
             traceback.print_exc()
         return
@@ -529,7 +563,7 @@ def cmdExistingVm(ctx,mach,cmd,args):
     try:
         ops[cmd]()
     except Exception, e:
-        print 'failed: ',e
+        printErr(ctx,e)
         if g_verbose:
             traceback.print_exc()
 
@@ -542,7 +576,7 @@ def cmdClosedVm(ctx,mach,cmd,args=[],save=True):
     try:
          cmd(ctx, mach, args)
     except Exception, e:
-        print 'failed: ',e
+        printErr(ctx,e)
         if g_verbose:
             traceback.print_exc()
     if save:
@@ -578,7 +612,7 @@ def helpSingleCmd(cmd,h,sp):
         spec = " [ext from "+sp+"]"
     else:
         spec = ""
-    print "    %s: %s%s" %(cmd,h,spec)
+    print "    %s: %s%s" %(colored(cmd,'blue'),h,spec)
 
 def helpCmd(ctx, args):
     if len(args) == 1:
@@ -600,8 +634,8 @@ def asEnumElem(ctx,enum,elem):
     all = ctx['ifaces'].all_values(enum)
     for e in all.keys():
         if str(elem) == str(all[e]):
-            return e
-    return "<unknown>"
+            return colored(e, 'green')
+    return colored("<unknown>", 'green')
 
 def enumFromString(ctx,enum,str):
     all = ctx['ifaces'].all_values(enum)
@@ -613,7 +647,7 @@ def listCmd(ctx, args):
             tele = "[T] "
         else:
             tele = "    "
-        print "%sMachine '%s' [%s], state=%s" %(tele,m.name,m.id,asEnumElem(ctx,"SessionState", m.sessionState))
+        print "%sMachine '%s' [%s], state=%s" %(tele,colVm(ctx,m.name),m.id,asEnumElem(ctx,"SessionState", m.sessionState))
     return 0
 
 def infoCmd(ctx,args):
@@ -625,7 +659,7 @@ def infoCmd(ctx,args):
         return 0
     os = ctx['vb'].getGuestOSType(mach.OSTypeId)
     print " One can use setvar <mach> <var> <value> to change variable, using name in []."
-    print "  Name [name]: %s" %(mach.name)
+    print "  Name [name]: %s" %(colVm(ctx,mach.name))
     print "  Description [description]: %s" %(mach.description)
     print "  ID [n/a]: %s" %(mach.id)
     print "  OS Type [via OSTypeId]: %s" %(os.description)
@@ -670,14 +704,14 @@ def infoCmd(ctx,args):
     controllers = ctx['global'].getArray(mach, 'storageControllers')
     if controllers:
         print
-        print "  Controllers:"
+        print colCat(ctx,"  Controllers:")
     for controller in controllers:
         print "    '%s': bus %s type %s" % (controller.name, asEnumElem(ctx,"StorageBus", controller.bus), asEnumElem(ctx,"StorageControllerType", controller.controllerType))
 
     attaches = ctx['global'].getArray(mach, 'mediumAttachments')
     if attaches:
         print
-        print "  Mediums:"
+        print colCat(ctx,"  Mediums:")
     for a in attaches:
         print "   Controller: '%s' port/device: %d:%d type: %s (%s):" % (a.controller, a.port, a.device, asEnumElem(ctx,"DeviceType", a.type), a.type)
         m = a.medium
@@ -711,6 +745,10 @@ def infoCmd(ctx,args):
                 else:
                     print "    Virtual image at %s" %(m.location)
                     print "    Size: %s" %(m.size)
+
+    print colCat(ctx,"   Shared folders:")
+    for sf in ctx['global'].getArray(mach, 'sharedFolders'):
+        printSf(ctx,sf)
 
     return 0
 
@@ -1058,49 +1096,46 @@ def verboseCmd(ctx, args):
     g_verbose = not g_verbose
     return 0
 
-def getUSBStateString(state):
-    if state == 0:
-        return "NotSupported"
-    elif state == 1:
-        return "Unavailable"
-    elif state == 2:
-        return "Busy"
-    elif state == 3:
-        return "Available"
-    elif state == 4:
-        return "Held"
-    elif state == 5:
-        return "Captured"
-    else:
-        return "Unknown"
+def colorsCmd(ctx, args):
+    global g_hascolors
+    g_hascolors = not g_hascolors
+    return 0
 
 def hostCmd(ctx, args):
-   host = ctx['vb'].host
+   vb = ctx['vb']
+   print "VirtualBox version %s" %(vb.version)
+   #print "Global shared folders:"
+   #for ud in ctx['global'].getArray(vb, 'sharedFolders'):
+   #    printSf(ctx,sf)
+   host = vb.host
    cnt = host.processorCount
-   print "Processors available/online: %d/%d " %(cnt,host.processorOnlineCount)
+   print colCat(ctx,"Processors:")
+   print "  available/online: %d/%d " %(cnt,host.processorOnlineCount)
    for i in range(0,cnt):
-      print "Processor #%d speed: %dMHz %s" %(i,host.getProcessorSpeed(i), host.getProcessorDescription(i))
+       print "  processor #%d speed: %dMHz %s" %(i,host.getProcessorSpeed(i), host.getProcessorDescription(i))
 
-   print "RAM: %dM (free %dM)" %(host.memorySize, host.memoryAvailable)
-   print "OS: %s (%s)" %(host.operatingSystem, host.OSVersion)
+   print colCat(ctx, "RAM:")
+   print "  %dM (free %dM)" %(host.memorySize, host.memoryAvailable)
+   print colCat(ctx,"OS:");
+   print "  %s (%s)" %(host.operatingSystem, host.OSVersion)
    if host.Acceleration3DAvailable:
-       print "3D acceleration available"
+       print colCat(ctx,"3D acceleration available")
    else:
-       print "3D acceleration NOT available"
+       print colCat(ctx,"3D acceleration NOT available")
 
-   print "Network interfaces:"
+   print colCat(ctx,"Network interfaces:")
    for ni in ctx['global'].getArray(host, 'networkInterfaces'):
        print "  %s (%s)" %(ni.name, ni.IPAddress)
 
-   print "DVD drives:"
+   print colCat(ctx,"DVD drives:")
    for dd in ctx['global'].getArray(host, 'DVDDrives'):
        print "  %s - %s" %(dd.name, dd.description)
 
-   print "Floppy drives:"
+   print colCat(ctx,"Floppy drives:")
    for dd in ctx['global'].getArray(host, 'floppyDrives'):
        print "  %s - %s" %(dd.name, dd.description)
 
-   print "USB devices:"
+   print colCat(ctx,"USB devices:")
    for ud in ctx['global'].getArray(host, 'USBDevices'):
        printHostUsbDev(ctx,ud)
 
@@ -1182,23 +1217,53 @@ def portForwardCmd(ctx, args):
 
 def showLogCmd(ctx, args):
     if (len(args) < 2):
-        print "usage: showLog <vm> <num>"
+        print "usage: showLog vm <num>"
         return 0
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
 
-    log = 0;
+    log = 0
     if (len(args) > 2):
-       log  = args[2];
+       log  = args[2]
 
-    uOffset = 0;
+    uOffset = 0
     while True:
-        data = mach.readLog(log, uOffset, 1024*1024)
+        data = mach.readLog(log, uOffset, 4096)
         if (len(data) == 0):
             break
         # print adds either NL or space to chunks not ending with a NL
         sys.stdout.write(str(data))
+        uOffset += len(data)
+
+    return 0
+
+def findLogCmd(ctx, args):
+    if (len(args) < 3):
+        print "usage: findLog vm pattern <num>"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+
+    log = 0
+    if (len(args) > 3):
+       log  = args[3]
+
+    pattern = args[2]
+    uOffset = 0
+    while True:
+        # to reduce line splits on buffer boundary
+        data = mach.readLog(log, uOffset, 512*1024)
+        if (len(data) == 0):
+            break
+        d = str(data).split("\n")
+        for s in d:
+            m = re.findall(pattern, s)
+            if len(m) > 0:
+                for mt in m:
+                    s = s.replace(mt, colored(mt,'red'))
+                print s
         uOffset += len(data)
 
     return 0
@@ -1208,7 +1273,7 @@ def evalCmd(ctx, args):
    try:
         exec expr
    except Exception, e:
-        print 'failed: ',e
+        printErr(ctx,e)
         if g_verbose:
             traceback.print_exc()
    return 0
@@ -1235,9 +1300,9 @@ def runScriptCmd(ctx, args):
             done = runCommand(ctx, line)
             if done != 0: break
     except Exception,e:
-        print "error:",e
+        printErr(ctx,e)
         if g_verbose:
-                traceback.print_exc()
+            traceback.print_exc()
     lf.close()
     return 0
 
@@ -1964,6 +2029,49 @@ def guiCmd(ctx,args):
         pass
    return 0
 
+def shareFolderCmd(ctx,args):
+    if (len(args) < 4):
+        print "usage: shareFolder vm path name <writable> <persistent>"
+        return 0
+
+    mach = argsToMach(ctx,args)
+    if mach is None:
+        return 0
+    path = args[2]
+    name = args[3]
+    writable = False
+    persistent = False
+    if len(args) > 4:
+        for a in args[4:]:
+            if a == 'writable':
+                writable = True
+            if a == 'persistent':
+                persistent = True
+    if persistent:
+        cmdClosedVm(ctx, mach, lambda ctx,mach,args: mach.createSharedFolder(name, path, writable), [])
+    else:
+        cmdExistingVm(ctx, mach, 'guestlambda', [lambda ctx,mach,console,args: console.createSharedFolder(name, path, writable)])
+    return 0
+
+def unshareFolderCmd(ctx,args):
+    if (len(args) < 3):
+        print "usage: unshareFolder vm name"
+        return 0
+
+    mach = argsToMach(ctx,args)
+    if mach is None:
+        return 0
+    name = args[2]
+    found = False
+    for sf in ctx['global'].getArray(mach, 'sharedFolders'):
+        if sf.name == name:
+            cmdClosedVm(ctx, mach, lambda ctx,mach,args: mach.removeSharedFolder(name), [])
+            found = True
+            break
+    if not found:
+        cmdExistingVm(ctx, mach, 'guestlambda', [lambda ctx,mach,console,args: console.removeSharedFolder(name)])
+    return 0
+
 aliases = {'s':'start',
            'i':'info',
            'l':'list',
@@ -1998,6 +2106,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'monitorVBox':['Monitor what happens with Virtual Box for some time: monitorVBox 10', monitorVBoxCmd, 0],
             'portForward':['Setup permanent port forwarding for a VM, takes adapter number host port and guest port: portForward Win32 0 8080 80', portForwardCmd, 0],
             'showLog':['Show log file of the VM, : showLog Win32', showLogCmd, 0],
+            'findLog':['Show entries matching pattern in log file of the VM, : findLog Win32 PDM|CPUM', findLogCmd, 0],
             'reloadExt':['Reload custom extensions: reloadExt', reloadExtCmd, 0],
             'runScript':['Run VBox script: runScript script.vbox', runScriptCmd, 0],
             'sleep':['Sleep for specified number of seconds: sleep 3.14159', sleepCmd, 0],
@@ -2029,10 +2138,13 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'attachCtr': ['Attach storage controller to the VM: attachCtr win Ctr0 IDE ICH6', attachCtrCmd, 0],
             'detachCtr': ['Detach HDD from the VM: detachCtr win Ctr0', detachCtrCmd, 0],
             'attachUsb': ['Attach USB device to the VM (use listUsb to show available devices): attachUsb win uuid', attachUsbCmd, 0],
-            'detachUsb': ['Detach USB device from the VM: detachUsb win uui', detachUsbCmd, 0],
+            'detachUsb': ['Detach USB device from the VM: detachUsb win uuid', detachUsbCmd, 0],
             'listMediums': ['List mediums known to this VBox instance', listMediumsCmd, 0],
             'listUsb': ['List known USB devices', listUsbCmd, 0],
-            'gui': ['Start GUI frontend', guiCmd, 0]
+            'shareFolder': ['Make host\'s folder visible to guest: shareFolder win /share share writable', shareFolderCmd, 0],
+            'unshareFolder': ['Remove folder sharing', unshareFolderCmd, 0],
+            'gui': ['Start GUI frontend', guiCmd, 0],
+            'colors':['Toggle colors', colorsCmd, 0],
             }
 
 def runCommandArgs(ctx, args):
@@ -2134,16 +2246,15 @@ def interpret(ctx):
 
     while True:
         try:
-            cmd = raw_input("vbox> ")
+            cmd = raw_input(colored("vbox> ", 'blue'))
             done = runCommand(ctx, cmd)
             if done != 0: break
         except KeyboardInterrupt:
             print '====== You can type quit or q to leave'
-            break
         except EOFError:
-            break;
+            break
         except Exception,e:
-            print e
+            printErr(ctx,e)
             if g_verbose:
                 traceback.print_exc()
         ctx['global'].waitForEvents(0)
