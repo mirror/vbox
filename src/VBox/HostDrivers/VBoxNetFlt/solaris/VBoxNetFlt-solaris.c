@@ -2619,6 +2619,7 @@ static int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis)
              * counter. Currently we just return false.  */
             pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, false);
             pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0,  INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
+            pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, 0 /* none */);
 
             /*
              * Ipv4 is successful, and maybe Ipv6, we're ready for transfers.

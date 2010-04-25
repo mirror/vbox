@@ -3281,6 +3281,8 @@ static void vboxNetFltWinAttachToInterfaceWorker(PATTACH_INFO pAttachInfo)
                                                                              vboxNetFltWinIsPromiscuous2(pThis));
                                 pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0,
                                                                              INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
+                                /** @todo We should be able to do pfnXmit at DISPATCH_LEVEL... */
+                                pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, 0 /* none */);
                             }
                             return;
                         }

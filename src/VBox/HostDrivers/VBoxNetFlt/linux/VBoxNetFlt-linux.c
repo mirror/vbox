@@ -1377,6 +1377,7 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
         vboxNetFltLinuxReportNicGsoCapabilities(pThis);
         pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
         pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, vboxNetFltLinuxPromiscuous(pThis));
+        pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
     }
     else
     {
@@ -1662,6 +1663,7 @@ int  vboxNetFltOsConnectIt(PVBOXNETFLTINS pThis)
     /*
      * Report the GSO capabilities of the host and device (if connected).
      */
+    /** @todo duplicate work here now? Attach */
 #if defined(VBOXNETFLT_WITH_GSO_XMIT_HOST)
     pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort,
                                                  0

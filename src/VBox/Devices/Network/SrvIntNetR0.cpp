@@ -4284,7 +4284,7 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortReportPromiscuousMode(PINTNETTRUNKS
 
 /** @copydoc INTNETTRUNKSWPORT::pfnReportGsoCapabilities */
 static DECLCALLBACK(void) intnetR0TrunkIfPortReportGsoCapabilities(PINTNETTRUNKSWPORT pSwitchPort,
-                                                                  uint32_t fGsoCapabilities, uint32_t fDst)
+                                                                   uint32_t fGsoCapabilities, uint32_t fDst)
 {
     PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
 
@@ -4298,6 +4298,16 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortReportGsoCapabilities(PINTNETTRUNKS
 
     if (fDst & INTNETTRUNKDIR_WIRE)
         pThis->fWireGsoCapabilites = fGsoCapabilities;
+}
+
+
+/** @copydoc INTNETTRUNKSWPORT::pfnReportNoPreemptDsts */
+static DECLCALLBACK(void) intnetR0TrunkIfPortReportNoPreemptDsts(PINTNETTRUNKSWPORT pSwitchPort, uint32_t fNoPreemptDsts)
+{
+    PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
+    Assert(!(fNoPreemptDsts & ~INTNETTRUNKDIR_VALID_MASK));
+
+    pThis->fNoPreemptDsts = fNoPreemptDsts;
 }
 
 
@@ -4726,6 +4736,7 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
         pTrunk->SwitchPort.pfnReportMacAddress        = intnetR0TrunkIfPortReportMacAddress;
         pTrunk->SwitchPort.pfnReportPromiscuousMode   = intnetR0TrunkIfPortReportPromiscuousMode;
         pTrunk->SwitchPort.pfnReportGsoCapabilities   = intnetR0TrunkIfPortReportGsoCapabilities;
+        pTrunk->SwitchPort.pfnReportNoPreemptDsts     = intnetR0TrunkIfPortReportNoPreemptDsts;
         pTrunk->SwitchPort.u32VersionEnd              = INTNETTRUNKSWPORT_VERSION;
         pTrunk->FastMutex3                = NIL_RTSEMFASTMUTEX;
         //pTrunk->pIfPort                 = NULL;

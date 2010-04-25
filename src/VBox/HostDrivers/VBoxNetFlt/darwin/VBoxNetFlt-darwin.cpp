@@ -965,6 +965,7 @@ static int vboxNetFltDarwinAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
             pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
             pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, vboxNetFltDarwinIsPromiscuous(pThis));
             pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0,  INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
+            pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, 0 /* none */);
         }
     }
 
