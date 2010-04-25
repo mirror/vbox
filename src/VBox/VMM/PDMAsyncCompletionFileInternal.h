@@ -125,6 +125,10 @@ typedef enum PDMACEPFILEMGRSTATE
      * for remaining ones to finish.
      */
     PDMACEPFILEMGRSTATE_SHUTDOWN,
+    /** The I/O manager waits for all active requests to complete and doesn't queue
+     * new ones because it needs to grow to handle more requests.
+     */
+    PDMACEPFILEMGRSTATE_GROWING,
     /** 32bit hack */
     PDMACEPFILEMGRSTATE_32BIT_HACK = 0x7fffffff
 } PDMACEPFILEMGRSTATE;
@@ -162,10 +166,8 @@ typedef struct PDMACEPFILEMGR
     uint32_t                               cRequestsActiveMax;
     /** Pointer to an array of free async I/O request handles. */
     RTFILEAIOREQ                          *pahReqsFree;
-    /** Next free position for a free request handle. */
-    unsigned                               iFreeEntryNext;
-    /** Position of the next free task handle */
-    unsigned                               iFreeReqNext;
+    /** Index of the next free entry in the cache. */
+    uint32_t                               iFreeEntry;
     /** Size of the array. */
     unsigned                               cReqEntries;
     /** Flag whether at least one endpoint reached its bandwidth limit. */

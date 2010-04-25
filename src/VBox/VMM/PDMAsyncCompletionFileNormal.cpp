@@ -33,7 +33,7 @@
 /** The update period for the I/O load statistics in ms. */
 #define PDMACEPFILEMGR_LOAD_UPDATE_PERIOD 1000
 /** Maximum number of requests a manager will handle. */
-#define PDMACEPFILEMGR_REQS_MAX 512 /* @todo: Find better solution wrt. the request number*/
+#define PDMACEPFILEMGR_REQS_STEP 512
 
 /*******************************************************************************
 *   Internal functions                                                         *
@@ -50,18 +50,17 @@ int pdmacFileAioMgrNormalInit(PPDMACEPFILEMGR pAioMgr)
 {
     int rc = VINF_SUCCESS;
 
-    pAioMgr->cRequestsActiveMax = PDMACEPFILEMGR_REQS_MAX;
+    pAioMgr->cRequestsActiveMax = PDMACEPFILEMGR_REQS_STEP;
 
     rc = RTFileAioCtxCreate(&pAioMgr->hAioCtx, RTFILEAIO_UNLIMITED_REQS);
     if (rc == VERR_OUT_OF_RANGE)
-        rc = RTFileAioCtxCreate(&pAioMgr->hAioCtx, PDMACEPFILEMGR_REQS_MAX);
+        rc = RTFileAioCtxCreate(&pAioMgr->hAioCtx, pAioMgr->cRequestsActiveMax);
 
     if (RT_SUCCESS(rc))
     {
         /* Initialize request handle array. */
-        pAioMgr->iFreeEntryNext = 0;
-        pAioMgr->iFreeReqNext   = 0;
-        pAioMgr->cReqEntries    = pAioMgr->cRequestsActiveMax + 1;
+        pAioMgr->iFreeEntry = 0;
+        pAioMgr->cReqEntries    = pAioMgr->cRequestsActiveMax;
         pAioMgr->pahReqsFree    = (RTFILEAIOREQ *)RTMemAllocZ(pAioMgr->cReqEntries * sizeof(RTFILEAIOREQ));
 
         if (pAioMgr->pahReqsFree)
@@ -88,10 +87,11 @@ void pdmacFileAioMgrNormalDestroy(PPDMACEPFILEMGR pAioMgr)
 {
     RTFileAioCtxDestroy(pAioMgr->hAioCtx);
 
-    while (pAioMgr->iFreeReqNext != pAioMgr->iFreeEntryNext)
+    while (pAioMgr->iFreeEntry > 0)
     {
-        RTFileAioReqDestroy(pAioMgr->pahReqsFree[pAioMgr->iFreeReqNext]);
-        pAioMgr->iFreeReqNext = (pAioMgr->iFreeReqNext + 1) % pAioMgr->cReqEntries;
+        pAioMgr->iFreeEntry--;
+        Assert(pAioMgr->pahReqsFree[pAioMgr->iFreeEntry] != NIL_RTFILEAIOREQ);
+        RTFileAioReqDestroy(pAioMgr->pahReqsFree[pAioMgr->iFreeEntry]);
     }
 
     RTMemFree(pAioMgr->pahReqsFree);
@@ -315,6 +315,96 @@ static void pdmacFileAioMgrNormalBalanceLoad(PPDMACEPFILEMGR pAioMgr)
 }
 
 /**
+ * Increase the maximum number of active requests for the given I/O manager.
+ *
+ * @returns VBox status code.
+ * @param   pAioMgr    The I/O manager to grow.
+ */
+static int pdmacFileAioMgrNormalGrow(PPDMACEPFILEMGR pAioMgr)
+{
+    int rc = VINF_SUCCESS;
+    RTFILEAIOCTX hAioCtxNew = NIL_RTFILEAIOCTX;
+
+    LogFlowFunc(("pAioMgr=%#p\n", pAioMgr));
+
+    AssertMsg(    pAioMgr->enmState == PDMACEPFILEMGRSTATE_GROWING
+              && !pAioMgr->cRequestsActive,
+              ("Invalid state of the I/O manager\n"));
+
+    /*
+     * Reopen the files of all assigned endpoints first so we can assign them to the new
+     * I/O context.
+     */
+    PPDMASYNCCOMPLETIONENDPOINTFILE pCurr = pAioMgr->pEndpointsHead;
+
+    while (pCurr)
+    {
+        RTFileClose(pCurr->File);
+        rc = RTFileOpen(&pCurr->File, pCurr->Core.pszUri, pCurr->fFlags);
+        AssertRC(rc);
+
+        pCurr = pCurr->AioMgr.pEndpointNext;
+    }
+
+    /* Create the new bigger context. */
+    pAioMgr->cRequestsActiveMax += PDMACEPFILEMGR_REQS_STEP;
+
+    rc = RTFileAioCtxCreate(&hAioCtxNew, RTFILEAIO_UNLIMITED_REQS);
+    if (rc == VERR_OUT_OF_RANGE)
+        rc = RTFileAioCtxCreate(&hAioCtxNew, pAioMgr->cRequestsActiveMax);
+
+    if (RT_SUCCESS(rc))
+    {
+        /* Close the old context. */
+        rc = RTFileAioCtxDestroy(pAioMgr->hAioCtx);
+        AssertRC(rc);
+
+        pAioMgr->hAioCtx = hAioCtxNew;
+
+        /* Create a new I/O task handle array */
+        uint32_t cReqEntriesNew = pAioMgr->cRequestsActiveMax + 1;
+        RTFILEAIOREQ *pahReqNew = (RTFILEAIOREQ *)RTMemAllocZ(cReqEntriesNew * sizeof(RTFILEAIOREQ));
+
+        if (pahReqNew)
+        {
+            /* Copy the cached request handles. */
+            for (uint32_t iReq = 0; iReq < pAioMgr->cReqEntries; iReq++)
+                pahReqNew[iReq] = pAioMgr->pahReqsFree[iReq];
+
+            RTMemFree(pAioMgr->pahReqsFree);
+            pAioMgr->pahReqsFree = pahReqNew;
+            pAioMgr->cReqEntries = cReqEntriesNew;
+            LogFlowFunc(("I/O manager increased to handle a maximum of %u requests\n",
+                         pAioMgr->cRequestsActiveMax));
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    /* Assign the file to the new context. */
+    pCurr = pAioMgr->pEndpointsHead;
+
+    while (pCurr)
+    {
+        rc = RTFileAioCtxAssociateWithFile(pAioMgr->hAioCtx, pCurr->File);
+        AssertRC(rc);
+
+        pCurr = pCurr->AioMgr.pEndpointNext;
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        LogFlow(("Increasing size of the I/O manager failed with rc=%Rrc\n", rc));
+        pAioMgr->cRequestsActiveMax -= PDMACEPFILEMGR_REQS_STEP;
+    }
+
+    pAioMgr->enmState = PDMACEPFILEMGRSTATE_RUNNING;
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
+
+    return rc;
+}
+
+/**
  * Error handler which will create the failsafe managers and destroy the failed I/O manager.
  *
  * @returns VBox status code
@@ -382,6 +472,49 @@ DECLINLINE(void) pdmacFileAioMgrEpAddTask(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpo
 }
 
 /**
+ * Allocates a async I/O request.
+ *
+ * @returns Handle to the request.
+ * @param   pAioMgr    The I/O manager.
+ */
+static RTFILEAIOREQ pdmacFileAioMgrNormalRequestAlloc(PPDMACEPFILEMGR pAioMgr)
+{
+    RTFILEAIOREQ hReq = NIL_RTFILEAIOREQ;
+
+    /* Get a request handle. */
+    if (pAioMgr->iFreeEntry > 0)
+    {
+        pAioMgr->iFreeEntry--;
+        hReq = pAioMgr->pahReqsFree[pAioMgr->iFreeEntry];
+        pAioMgr->pahReqsFree[pAioMgr->iFreeEntry] = NIL_RTFILEAIOREQ;
+        Assert(hReq != NIL_RTFILEAIOREQ);
+    }
+    else
+    {
+        int rc = RTFileAioReqCreate(&hReq);
+        AssertRC(rc);
+    }
+
+    return hReq;
+}
+
+/**
+ * Frees a async I/O request handle.
+ *
+ * @returns nothing.
+ * @param   pAioMgr    The I/O manager.
+ * @param   hReq       The I/O request handle to free.
+ */
+static void pdmacFileAioMgrNormalRequestFree(PPDMACEPFILEMGR pAioMgr, RTFILEAIOREQ hReq)
+{
+    Assert(pAioMgr->iFreeEntry < pAioMgr->cReqEntries);
+    Assert(pAioMgr->pahReqsFree[pAioMgr->iFreeEntry] == NIL_RTFILEAIOREQ);
+
+    pAioMgr->pahReqsFree[pAioMgr->iFreeEntry] = hReq;
+    pAioMgr->iFreeEntry++;
+}
+
+/**
  * Wrapper around RTFIleAioCtxSubmit() which is also doing error handling.
  */
 static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
@@ -427,9 +560,7 @@ static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
                     PPDMACTASKFILE pTask = (PPDMACTASKFILE)RTFileAioReqGetUser(pahReqs[i]);
                     PPDMACTASKFILE pTasksWaiting;
 
-                    /* Put the entry on the free array */
-                    pAioMgr->pahReqsFree[pAioMgr->iFreeEntryNext] = pahReqs[i];
-                    pAioMgr->iFreeEntryNext = (pAioMgr->iFreeEntryNext + 1) % pAioMgr->cReqEntries;
+                    pdmacFileAioMgrNormalRequestFree(pAioMgr, pahReqs[i]);
 
                     if (pTask->cbBounceBuffer)
                         RTMemFree(pTask->pvBounceBuffer);
@@ -458,32 +589,6 @@ static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
     }
 
     return rc;
-}
-
-/**
- * Allocates a async I/O request.
- *
- * @returns Handle to the request.
- * @param   pAioMgr    The I/O manager.
- */
-static RTFILEAIOREQ pdmacFileAioMgrNormalRequestAlloc(PPDMACEPFILEMGR pAioMgr)
-{
-    RTFILEAIOREQ hReq = NIL_RTFILEAIOREQ;
-
-    /* Get a request handle. */
-    if (pAioMgr->iFreeReqNext != pAioMgr->iFreeEntryNext)
-    {
-        hReq = pAioMgr->pahReqsFree[pAioMgr->iFreeReqNext];
-        pAioMgr->pahReqsFree[pAioMgr->iFreeReqNext] = NIL_RTFILEAIOREQ;
-        pAioMgr->iFreeReqNext = (pAioMgr->iFreeReqNext + 1) % pAioMgr->cReqEntries;
-    }
-    else
-    {
-        int rc = RTFileAioReqCreate(&hReq);
-        AssertRC(rc);
-    }
-
-    return hReq;
 }
 
 static bool pdmacFileAioMgrNormalIsRangeLocked(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
@@ -896,12 +1001,17 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                         && !pEndpoint->pFlushReq
                         && !pAioMgr->fBwLimitReached))
         {
+#if 0
             /*
              * The I/O manager has no room left for more requests
              * but there are still requests to process.
              * Create a new I/O manager and let it handle some endpoints.
              */
             pdmacFileAioMgrNormalBalanceLoad(pAioMgr);
+#else
+            /* Grow the I/O manager */
+            pAioMgr->enmState = PDMACEPFILEMGRSTATE_GROWING;
+#endif
         }
     }
 
@@ -1133,8 +1243,7 @@ static void pdmacFileAioMgrNormalReqComplete(PPDMACEPFILEMGR pAioMgr, RTFILEAIOR
     if (RT_FAILURE(rcReq))
     {
         /* Free bounce buffers and the IPRT request. */
-        pAioMgr->pahReqsFree[pAioMgr->iFreeEntryNext] = hReq;
-        pAioMgr->iFreeEntryNext = (pAioMgr->iFreeEntryNext + 1) % pAioMgr->cReqEntries;
+        pdmacFileAioMgrNormalRequestFree(pAioMgr, hReq);
 
         /* Free the lock and process pending tasks if neccessary */
         pTasksWaiting = pdmacFileAioMgrNormalRangeLockFree(pAioMgr, pEndpoint, pTask->pRangeLock);
@@ -1228,9 +1337,7 @@ static void pdmacFileAioMgrNormalReqComplete(PPDMACEPFILEMGR pAioMgr, RTFILEAIOR
                 RTMemPageFree(pTask->pvBounceBuffer, pTask->cbBounceBuffer);
             }
 
-            /* Put the entry on the free array */
-            pAioMgr->pahReqsFree[pAioMgr->iFreeEntryNext] = hReq;
-            pAioMgr->iFreeEntryNext = (pAioMgr->iFreeEntryNext + 1) % pAioMgr->cReqEntries;
+            pdmacFileAioMgrNormalRequestFree(pAioMgr, hReq);
 
             pAioMgr->cRequestsActive--;
             pEndpoint->AioMgr.cRequestsActive--;
@@ -1385,9 +1492,19 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
                 }
 
                 /* Check endpoints for new requests. */
-                rc = pdmacFileAioMgrNormalCheckEndpoints(pAioMgr);
-                CHECK_RC(pAioMgr, rc);
+                if (pAioMgr->enmState != PDMACEPFILEMGRSTATE_GROWING)
+                {
+                    rc = pdmacFileAioMgrNormalCheckEndpoints(pAioMgr);
+                    CHECK_RC(pAioMgr, rc);
+                }
             } /* while requests are active. */
+
+            if (pAioMgr->enmState == PDMACEPFILEMGRSTATE_GROWING)
+            {
+                rc = pdmacFileAioMgrNormalGrow(pAioMgr);
+                AssertRC(rc);
+                Assert(pAioMgr->enmState == PDMACEPFILEMGRSTATE_RUNNING);
+            }
         } /* if still running */
     } /* while running */
 
