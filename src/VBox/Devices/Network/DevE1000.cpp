@@ -3851,7 +3851,7 @@ static DECLCALLBACK(bool) e1kTxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCO
 {
     NOREF(pItem);
     E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
-    E1kLog2(("%s e1kTxQueueConsumer: Waking up TX thread...\n", INSTANCE(pState)));
+    E1kLog2(("%s e1kTxQueueConsumer:\n", INSTANCE(pState)));
 
     int rc = e1kXmitPending(pState, false /*fOnWorkerThread*/);
     AssertMsg(RT_SUCCESS(rc) || rc == VERR_TRY_AGAIN, ("%Rrc\n", rc));
@@ -3902,7 +3902,7 @@ static int e1kRegWriteTDT(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
 
         /* Transmit pending packets if possible, defere it if we cannot do it
            in the current context. */
-# if defined(IN_RING0) || defined(IN_RC)
+# ifndef IN_RING3
         if (!pState->CTX_SUFF(pDrv))
         {
             PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pState->CTX_SUFF(pTxQueue));
