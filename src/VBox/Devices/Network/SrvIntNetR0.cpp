@@ -1363,7 +1363,7 @@ static INTNETSWDECISION intnetR0NetworkSwitchLevel3(PINTNETNETWORK pNetwork, PCR
      */
     PINTNETMACTAB   pTab    = &pNetwork->MacTab;
     RTSPINLOCKTMP   Tmp     = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquire(pNetwork->hAddrSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
 
     pDstTab->fTrunkDst  = 0;
     pDstTab->pTrunk     = 0;
@@ -1414,7 +1414,7 @@ static INTNETSWDECISION intnetR0NetworkSwitchLevel3(PINTNETNETWORK pNetwork, PCR
         intnetR0BusyIncTrunk(pTrunk);
     }
 
-    RTSpinlockRelease(pNetwork->hAddrSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
     return pDstTab->cIfs
          ? (!pDstTab->fTrunkDst ? INTNETSWDECISION_INTNET : INTNETSWDECISION_BROADCAST)
          : (!pDstTab->fTrunkDst ? INTNETSWDECISION_DROP   : INTNETSWDECISION_TRUNK);
@@ -1444,7 +1444,7 @@ static INTNETSWDECISION intnetR0NetworkSwitchUnicast(PINTNETNETWORK pNetwork, ui
      */
     PINTNETMACTAB   pTab    = &pNetwork->MacTab;
     RTSPINLOCKTMP   Tmp     = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquire(pNetwork->hAddrSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
 
     pDstTab->fTrunkDst  = 0;
     pDstTab->pTrunk     = 0;
@@ -1505,7 +1505,7 @@ static INTNETSWDECISION intnetR0NetworkSwitchUnicast(PINTNETNETWORK pNetwork, ui
         intnetR0BusyIncTrunk(pTrunk);
     }
 
-    RTSpinlockRelease(pNetwork->hAddrSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
     return pDstTab->cIfs
          ? (!pDstTab->fTrunkDst ? INTNETSWDECISION_INTNET : INTNETSWDECISION_BROADCAST)
          : (!pDstTab->fTrunkDst ? INTNETSWDECISION_DROP   : INTNETSWDECISION_TRUNK);
@@ -1532,7 +1532,7 @@ static INTNETSWDECISION intnetR0NetworkSwitchBroadcast(PINTNETNETWORK pNetwork, 
      */
     PINTNETMACTAB   pTab    = &pNetwork->MacTab;
     RTSPINLOCKTMP   Tmp     = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquire(pNetwork->hAddrSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
 
     pDstTab->fTrunkDst  = 0;
     pDstTab->pTrunk     = 0;
@@ -1568,7 +1568,7 @@ static INTNETSWDECISION intnetR0NetworkSwitchBroadcast(PINTNETNETWORK pNetwork, 
         intnetR0BusyIncTrunk(pTrunk);
     }
 
-    RTSpinlockRelease(pNetwork->hAddrSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
     return INTNETSWDECISION_BROADCAST;
 }
 
@@ -1594,7 +1594,7 @@ static INTNETSWDECISION intnetR0NetworkSwitchTrunkAndPromisc(PINTNETNETWORK pNet
      */
     PINTNETMACTAB   pTab    = &pNetwork->MacTab;
     RTSPINLOCKTMP   Tmp     = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquire(pNetwork->hAddrSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
 
     pDstTab->fTrunkDst  = 0;
     pDstTab->pTrunk     = 0;
@@ -1628,7 +1628,7 @@ static INTNETSWDECISION intnetR0NetworkSwitchTrunkAndPromisc(PINTNETNETWORK pNet
         intnetR0BusyIncTrunk(pTrunk);
     }
 
-    RTSpinlockRelease(pNetwork->hAddrSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
     return !pDstTab->cIfs
         ? (!pDstTab->fTrunkDst ? INTNETSWDECISION_DROP   : INTNETSWDECISION_TRUNK)
         : (!pDstTab->fTrunkDst ? INTNETSWDECISION_INTNET : INTNETSWDECISION_BROADCAST);
@@ -1652,7 +1652,7 @@ static INTNETSWDECISION intnetR0NetworkSwitchTrunk(PINTNETNETWORK pNetwork, uint
      */
     PINTNETMACTAB   pTab= &pNetwork->MacTab;
     RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquire(pNetwork->hAddrSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
 
     pDstTab->fTrunkDst  = 0;
     pDstTab->pTrunk     = 0;
@@ -1671,7 +1671,7 @@ static INTNETSWDECISION intnetR0NetworkSwitchTrunk(PINTNETNETWORK pNetwork, uint
         intnetR0BusyIncTrunk(pTrunk);
     }
 
-    RTSpinlockRelease(pNetwork->hAddrSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
     return pDstTab->fTrunkDst ? INTNETSWDECISION_TRUNK : INTNETSWDECISION_DROP;
 }
 
