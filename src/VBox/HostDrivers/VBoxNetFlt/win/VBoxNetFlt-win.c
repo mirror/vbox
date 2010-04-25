@@ -417,7 +417,7 @@ static PINTNETSG vboxNetFltWinCreateSG(uint32_t cSegs)
     NTSTATUS Status = vboxNetFltWinMemAlloc((PVOID*)&pSG, RT_OFFSETOF(INTNETSG, aSegs[cSegs]));
     if(Status == STATUS_SUCCESS)
     {
-        INTNETSgInitTempSegs(pSG, 0 /*cbTotal*/, cSegs, 0 /*cSegsUsed*/);
+        IntNetSgInitTempSegs(pSG, 0 /*cbTotal*/, cSegs, 0 /*cSegsUsed*/);
         return pSG;
     }
 
@@ -634,7 +634,7 @@ static bool vboxNetFltWinQuProcessInfo(PVBOXNETFLTINS pNetFltIf, PPACKET_QUEUE_W
         if(pSG)
         {
             /* reinitialize */
-            INTNETSgInitTempSegs(pSG, 0 /*cbTotal*/, pSG->cSegsAlloc, 0 /*cSegsUsed*/);
+            IntNetSgInitTempSegs(pSG, 0 /*cbTotal*/, pSG->cSegsAlloc, 0 /*cSegsUsed*/);
 
             /* convert the ndis buffers to INTNETSG */
             Status = vboxNetFltWinNdisBuffersToSG(pCurrentBuffer, pSG);
@@ -1154,7 +1154,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinAllocSG(UINT cbPacket, PINTNETSG *ppSG)
     Status = vboxNetFltWinMemAlloc((PVOID*)&pSG, cbPacket + sizeof(INTNETSG));
     if(Status == NDIS_STATUS_SUCCESS)
     {
-        INTNETSgInitTemp(pSG, pSG + 1, cbPacket);
+        IntNetSgInitTemp(pSG, pSG + 1, cbPacket);
         LogFlow(("pSG created  (%p)\n", pSG));
         *ppSG = pSG;
     }
@@ -1692,7 +1692,7 @@ DECLHIDDEN(PNDIS_PACKET) vboxNetFltWinNdisPacketFromSG(PADAPT pAdapt, PINTNETSG 
             fStatus = vboxNetFltWinMemAlloc(&pvMemBuf, pSG->cbTotal);
             if(fStatus == NDIS_STATUS_SUCCESS)
             {
-                INTNETSgRead(pSG, pvMemBuf);
+                IntNetSgRead(pSG, pvMemBuf);
             }
             else
             {

@@ -987,7 +987,7 @@ int VBoxNetDhcp::run(void)
         /*
          * Process the receive buffer.
          */
-        while (INTNETRingHasMoreToRead(pRingBuf))
+        while (IntNetRingHasMoreToRead(pRingBuf))
         {
             size_t  cb;
             void   *pv = VBoxNetUDPMatch(m_pIfBuf, RTNETIPV4_PORT_BOOTPS, &m_MacAddress,
@@ -1019,7 +1019,7 @@ int VBoxNetDhcp::run(void)
             }
 
             /* Advance to the next frame. */
-            INTNETRingSkipFrame(pRingBuf);
+            IntNetRingSkipFrame(pRingBuf);
         }
     }
 

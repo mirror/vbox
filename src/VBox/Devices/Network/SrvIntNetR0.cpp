@@ -2366,16 +2366,16 @@ static int intnetR0RingWriteFrame(PINTNETRINGBUF pRingBuf, PCINTNETSG pSG, PCRTM
     void       *pvDst = NULL; /* ditto */
     int         rc;
     if (pSG->GsoCtx.u8Type == PDMNETWORKGSOTYPE_INVALID)
-        rc = INTNETRingAllocateFrame(pRingBuf, pSG->cbTotal, &pHdr, &pvDst);
+        rc = IntNetRingAllocateFrame(pRingBuf, pSG->cbTotal, &pHdr, &pvDst);
     else
-        rc = INTNETRingAllocateGsoFrame(pRingBuf, pSG->cbTotal, &pSG->GsoCtx, &pHdr, &pvDst);
+        rc = IntNetRingAllocateGsoFrame(pRingBuf, pSG->cbTotal, &pSG->GsoCtx, &pHdr, &pvDst);
     if (RT_SUCCESS(rc))
     {
-        INTNETSgRead(pSG, pvDst);
+        IntNetSgRead(pSG, pvDst);
         if (pNewDstMac)
             ((PRTNETETHERHDR)pvDst)->DstMac = *pNewDstMac;
 
-        INTNETRingCommitFrame(pRingBuf, pHdr);
+        IntNetRingCommitFrame(pRingBuf, pHdr);
         return VINF_SUCCESS;
     }
     return rc;
@@ -2480,7 +2480,7 @@ static int intnetR0TrunkIfSendGsoFallback(PINTNETTRUNKIF pThis, PINTNETSG pSG, u
         uint32_t offSegPayload = PDMNetGsoCarveSegment(&pSG->GsoCtx, (uint8_t *)pSG->aSegs[0].pv, pSG->cbTotal, iSeg, cSegs,
                                                        pThis->abGsoHdrs, &cbSegPayload);
 
-        INTNETSgInitTempSegs(&u.SG, pSG->GsoCtx.cbHdrs + cbSegPayload, 2, 2);
+        IntNetSgInitTempSegs(&u.SG, pSG->GsoCtx.cbHdrs + cbSegPayload, 2, 2);
         u.SG.aSegs[0].Phys = NIL_RTHCPHYS;
         u.SG.aSegs[0].pv   = pThis->abGsoHdrs;
         u.SG.aSegs[0].cb   = pSG->GsoCtx.cbHdrs;
@@ -3279,14 +3279,14 @@ INTNETR0DECL(int) IntNetR0IfSend(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
                                      * with buffer sharing for some OS or service. Darwin copies everything so
                                      * I won't bother allocating and managing SGs rigth now. Sorry. */
             PINTNETHDR          pHdr;
-            while ((pHdr = INTNETRingGetNextFrameToRead(&pIf->pIntBuf->Send)) != NULL)
+            while ((pHdr = IntNetRingGetNextFrameToRead(&pIf->pIntBuf->Send)) != NULL)
             {
                 uint16_t const      u16Type = pHdr->u16Type;
                 if (u16Type == INTNETHDR_TYPE_FRAME)
                 {
                     /* Send regular frame. */
-                    void *pvCurFrame = INTNETHdrGetFramePtr(pHdr, pIf->pIntBuf);
-                    INTNETSgInitTemp(&Sg, pvCurFrame, pHdr->cbFrame);
+                    void *pvCurFrame = IntNetHdrGetFramePtr(pHdr, pIf->pIntBuf);
+                    IntNetSgInitTemp(&Sg, pvCurFrame, pHdr->cbFrame);
                     if (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
                         intnetR0IfSnoopAddr(pIf, (uint8_t *)pvCurFrame, pHdr->cbFrame, false /*fGso*/, (uint16_t *)&Sg.fFlags);
                     enmSwDecision = intnetR0NetworkSend(pNetwork, pIf,  0 /*fSrc*/, &Sg, pDstTab);
@@ -3294,12 +3294,12 @@ INTNETR0DECL(int) IntNetR0IfSend(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
                 else if (u16Type == INTNETHDR_TYPE_GSO)
                 {
                     /* Send GSO frame if sane. */
-                    PPDMNETWORKGSO  pGso       = INTNETHdrGetGsoContext(pHdr, pIf->pIntBuf);
+                    PPDMNETWORKGSO  pGso       = IntNetHdrGetGsoContext(pHdr, pIf->pIntBuf);
                     uint32_t        cbFrame    = pHdr->cbFrame - sizeof(*pGso);
                     if (RT_LIKELY(PDMNetGsoIsValid(pGso, pHdr->cbFrame, cbFrame)))
                     {
                         void       *pvCurFrame = pGso + 1;
-                        INTNETSgInitTempGso(&Sg, pvCurFrame, cbFrame, pGso);
+                        IntNetSgInitTempGso(&Sg, pvCurFrame, cbFrame, pGso);
                         if (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
                             intnetR0IfSnoopAddr(pIf, (uint8_t *)pvCurFrame, cbFrame, true /*fGso*/, (uint16_t *)&Sg.fFlags);
                         enmSwDecision = intnetR0NetworkSend(pNetwork, pIf, 0 /*fSrc*/, &Sg, pDstTab);
@@ -3324,7 +3324,7 @@ INTNETR0DECL(int) IntNetR0IfSend(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
                 }
 
                 /* Skip to the next frame. */
-                INTNETRingSkipFrame(&pIf->pIntBuf->Send);
+                IntNetRingSkipFrame(&pIf->pIntBuf->Send);
             }
 
             /*
@@ -4159,7 +4159,7 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
 
             pIf->pIntBuf   = pIf->pIntBufDefault;
             pIf->pIntBufR3 = pIf->pIntBufDefaultR3;
-            INTNETBufInit(pIf->pIntBuf, cbBuf, cbRecv, cbSend);
+            IntNetBufInit(pIf->pIntBuf, cbBuf, cbRecv, cbSend);
 
             /*
              * Register the interface with the session and create a handle for it.

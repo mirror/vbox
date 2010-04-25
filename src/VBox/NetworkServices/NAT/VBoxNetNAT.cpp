@@ -241,7 +241,7 @@ void VBoxNetNAT::run()
          * Process the receive buffer.
          */
         PCINTNETHDR pHdr;
-        while ((pHdr = INTNETRingGetNextFrameToRead(pRingBuf)) != NULL)
+        while ((pHdr = IntNetRingGetNextFrameToRead(pRingBuf)) != NULL)
         {
             uint16_t const u16Type = pHdr->u16Type;
             if (RT_LIKELY(   u16Type == INTNETHDR_TYPE_FRAME
@@ -259,8 +259,8 @@ void VBoxNetNAT::run()
                         LogRel(("NAT: Can't allocate send buffer cbFrame=%u\n", cbFrame));
                         break;
                     }
-                    memcpy(pvSlirpFrame, INTNETHdrGetFramePtr(pHdr, m_pIfBuf), cbFrame);
-                    INTNETRingSkipFrame(&m_pIfBuf->Recv);
+                    memcpy(pvSlirpFrame, IntNetHdrGetFramePtr(pHdr, m_pIfBuf), cbFrame);
+                    IntNetRingSkipFrame(&m_pIfBuf->Recv);
 
                     /* don't wait, we may have to wakeup the NAT thread first */
                     rc = RTReqCallEx(m_pReqQueue, NULL /*ppReq*/, 0 /*cMillies*/, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
@@ -270,10 +270,10 @@ void VBoxNetNAT::run()
                 else
                 {
                     /** @todo pass these unmodified. */
-                    PCPDMNETWORKGSO pGso  = INTNETHdrGetGsoContext(pHdr, m_pIfBuf);
+                    PCPDMNETWORKGSO pGso  = IntNetHdrGetGsoContext(pHdr, m_pIfBuf);
                     if (!PDMNetGsoIsValid(pGso, cbFrame, cbFrame - sizeof(*pGso)))
                     {
-                        INTNETRingSkipFrame(&m_pIfBuf->Recv);
+                        IntNetRingSkipFrame(&m_pIfBuf->Recv);
                         STAM_REL_COUNTER_INC(&m_pIfBuf->cStatBadFrames);
                         continue;
                     }
@@ -297,7 +297,7 @@ void VBoxNetNAT::run()
                                          (PFNRT)SendWorker, 2, m, cbSegFrame);
                         AssertReleaseRC(rc);
                     }
-                    INTNETRingSkipFrame(&m_pIfBuf->Recv);
+                    IntNetRingSkipFrame(&m_pIfBuf->Recv);
                 }
 
 #ifndef RT_OS_WINDOWS
@@ -311,10 +311,10 @@ void VBoxNetNAT::run()
 #endif
             }
             else if (u16Type == INTNETHDR_TYPE_PADDING)
-                INTNETRingSkipFrame(&m_pIfBuf->Recv);
+                IntNetRingSkipFrame(&m_pIfBuf->Recv);
             else
             {
-                INTNETRingSkipFrame(&m_pIfBuf->Recv);
+                IntNetRingSkipFrame(&m_pIfBuf->Recv);
                 STAM_REL_COUNTER_INC(&m_pIfBuf->cStatBadFrames);
             }
         }
@@ -400,7 +400,7 @@ static void IntNetSendWorker(bool urg, const void *pvFrame, size_t cbFrame, stru
         while (ASMAtomicReadU32(&g_pNAT->cUrgPkt) == 0)
             rc = RTSemEventWait(g_pNAT->m_EventUrgSend, RT_INDEFINITE_WAIT);
     }
-    rc = INTNETRingWriteFrame(&pThis->m_pIfBuf->Send, pvFrame, cbFrame);
+    rc = IntNetRingWriteFrame(&pThis->m_pIfBuf->Send, pvFrame, cbFrame);
     if (RT_FAILURE(rc))
     {
         SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
@@ -409,7 +409,7 @@ static void IntNetSendWorker(bool urg, const void *pvFrame, size_t cbFrame, stru
         SendReq.hIf          = pThis->m_hIf;
         rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_SEND, 0, &SendReq.Hdr);
 
-        rc = INTNETRingWriteFrame(&pThis->m_pIfBuf->Send, pvFrame, cbFrame);
+        rc = IntNetRingWriteFrame(&pThis->m_pIfBuf->Send, pvFrame, cbFrame);
 
     }
     if (RT_SUCCESS(rc))

@@ -49,7 +49,7 @@
  * @returns  true / false.
  * @param   u16Type             The frame type to check.
  */
-DECLINLINE(bool) INETNETIsValidFrameType(uint16_t u16Type)
+DECLINLINE(bool) IntNetIsValidFrameType(uint16_t u16Type)
 {
     if (RT_LIKELY(   u16Type == INTNETHDR_TYPE_FRAME
                   || u16Type == INTNETHDR_TYPE_GSO
@@ -69,7 +69,7 @@ DECLINLINE(bool) INETNETIsValidFrameType(uint16_t u16Type)
  * @param   cSegs       The number of segments.
  * @param   cSegsUsed   The number of used segments.
  */
-DECLINLINE(void) INTNETSgInitTempSegs(PINTNETSG pSG, uint32_t cbTotal, unsigned cSegs, unsigned cSegsUsed)
+DECLINLINE(void) IntNetSgInitTempSegs(PINTNETSG pSG, uint32_t cbTotal, unsigned cSegs, unsigned cSegsUsed)
 {
     pSG->pvOwnerData    = NULL;
     pSG->pvUserData     = NULL;
@@ -106,7 +106,7 @@ DECLINLINE(void) INTNETSgInitTempSegs(PINTNETSG pSG, uint32_t cbTotal, unsigned 
  * @param   cSegsUsed   The number of used segments.
  * @param   pGso        The GSO context.
  */
-DECLINLINE(void) INTNETSgInitTempSegsGso(PINTNETSG pSG, uint32_t cbTotal, unsigned cSegs,
+DECLINLINE(void) IntNetSgInitTempSegsGso(PINTNETSG pSG, uint32_t cbTotal, unsigned cSegs,
                                          unsigned cSegsUsed, PCPDMNETWORKGSO pGso)
 {
     pSG->pvOwnerData    = NULL;
@@ -142,9 +142,9 @@ DECLINLINE(void) INTNETSgInitTempSegsGso(PINTNETSG pSG, uint32_t cbTotal, unsign
  * @param   pvFrame     Pointer to the frame
  * @param   cbFrame     The size of the frame.
  */
-DECLINLINE(void) INTNETSgInitTemp(PINTNETSG pSG, void *pvFrame, uint32_t cbFrame)
+DECLINLINE(void) IntNetSgInitTemp(PINTNETSG pSG, void *pvFrame, uint32_t cbFrame)
 {
-    INTNETSgInitTempSegs(pSG, cbFrame, 1, 1);
+    IntNetSgInitTempSegs(pSG, cbFrame, 1, 1);
     pSG->aSegs[0].Phys  = NIL_RTHCPHYS;
     pSG->aSegs[0].pv    = pvFrame;
     pSG->aSegs[0].cb    = cbFrame;
@@ -159,9 +159,9 @@ DECLINLINE(void) INTNETSgInitTemp(PINTNETSG pSG, void *pvFrame, uint32_t cbFrame
  * @param   cbFrame     The size of the frame.
  * @param   pGso        The GSO context.
  */
-DECLINLINE(void) INTNETSgInitTempGso(PINTNETSG pSG, void *pvFrame, uint32_t cbFrame, PCPDMNETWORKGSO pGso)
+DECLINLINE(void) IntNetSgInitTempGso(PINTNETSG pSG, void *pvFrame, uint32_t cbFrame, PCPDMNETWORKGSO pGso)
 {
-    INTNETSgInitTempSegsGso(pSG, cbFrame, 1, 1, pGso);
+    IntNetSgInitTempSegsGso(pSG, cbFrame, 1, 1, pGso);
     pSG->aSegs[0].Phys  = NIL_RTHCPHYS;
     pSG->aSegs[0].pv    = pvFrame;
     pSG->aSegs[0].cb    = cbFrame;
@@ -174,7 +174,7 @@ DECLINLINE(void) INTNETSgInitTempGso(PINTNETSG pSG, void *pvFrame, uint32_t cbFr
  * @param   pSG         The SG list to read.
  * @param   pvBuf       The buffer to read into (at least pSG->cbTotal in size).
  */
-DECLINLINE(void) INTNETSgRead(PCINTNETSG pSG, void *pvBuf)
+DECLINLINE(void) IntNetSgRead(PCINTNETSG pSG, void *pvBuf)
 {
     memcpy(pvBuf, pSG->aSegs[0].pv, pSG->aSegs[0].cb);
     if (pSG->cSegsUsed == 1)
@@ -203,7 +203,7 @@ DECLINLINE(void) INTNETSgRead(PCINTNETSG pSG, void *pvBuf)
  * @param   cbToRead    The number of bytes to copy.
  * @param   pvBuf       The buffer to read into, cb or more in size.
  */
-DECLINLINE(void) INTNETSgReadEx(PCINTNETSG pSG, uint32_t offSrc, uint32_t cbToRead, void *pvBuf)
+DECLINLINE(void) IntNetSgReadEx(PCINTNETSG pSG, uint32_t offSrc, uint32_t cbToRead, void *pvBuf)
 {
     uint8_t    *pbDst = (uint8_t *)pvBuf;
     uint32_t    iSeg  = 0;
@@ -263,7 +263,7 @@ DECLINLINE(void) INTNETSgReadEx(PCINTNETSG pSG, uint32_t offSrc, uint32_t cbToRe
  * @returns Number of available bytes.
  * @param   pRingBuf        The ring buffer.
  */
-DECLINLINE(uint32_t) INTNETRingGetWritable(PINTNETRINGBUF pRingBuf)
+DECLINLINE(uint32_t) IntNetRingGetWritable(PINTNETRINGBUF pRingBuf)
 {
     uint32_t const offRead     = ASMAtomicUoReadU32(&pRingBuf->offReadX);
     uint32_t const offWriteInt = ASMAtomicUoReadU32(&pRingBuf->offWriteInt);
@@ -279,7 +279,7 @@ DECLINLINE(uint32_t) INTNETRingGetWritable(PINTNETRINGBUF pRingBuf)
  * @returns Number of ready bytes.
  * @param   pRingBuf        The ring buffer.
  */
-DECLINLINE(bool) INTNETRingHasMoreToRead(PINTNETRINGBUF pRingBuf)
+DECLINLINE(bool) IntNetRingHasMoreToRead(PINTNETRINGBUF pRingBuf)
 {
     uint32_t const offRead     = ASMAtomicUoReadU32(&pRingBuf->offReadX);
     uint32_t const offWriteCom = ASMAtomicUoReadU32(&pRingBuf->offWriteCom);
@@ -293,7 +293,7 @@ DECLINLINE(bool) INTNETRingHasMoreToRead(PINTNETRINGBUF pRingBuf)
  * @returns Pointer to the next frame.  NULL if done.
  * @param   pRingBuf        The ring buffer.
  */
-DECLINLINE(PINTNETHDR) INTNETRingGetNextFrameToRead(PINTNETRINGBUF pRingBuf)
+DECLINLINE(PINTNETHDR) IntNetRingGetNextFrameToRead(PINTNETRINGBUF pRingBuf)
 {
     uint32_t const offRead     = ASMAtomicUoReadU32(&pRingBuf->offReadX);
     uint32_t const offWriteCom = ASMAtomicUoReadU32(&pRingBuf->offWriteCom);
@@ -309,7 +309,7 @@ DECLINLINE(PINTNETHDR) INTNETRingGetNextFrameToRead(PINTNETRINGBUF pRingBuf)
  * @returns Number of ready bytes.
  * @param   pRingBuf        The ring buffer.
  */
-DECLINLINE(uint32_t) INTNETRingGetReadable(PINTNETRINGBUF pRingBuf)
+DECLINLINE(uint32_t) IntNetRingGetReadable(PINTNETRINGBUF pRingBuf)
 {
     uint32_t const offRead     = ASMAtomicUoReadU32(&pRingBuf->offReadX);
     uint32_t const offWriteCom = ASMAtomicUoReadU32(&pRingBuf->offWriteCom);
@@ -326,12 +326,12 @@ DECLINLINE(uint32_t) INTNETRingGetReadable(PINTNETRINGBUF pRingBuf)
  * @param   pHdr        Pointer to the packet header
  * @param   pBuf        The buffer the header is within. Only used in strict builds.
  */
-DECLINLINE(void *) INTNETHdrGetFramePtr(PCINTNETHDR pHdr, PCINTNETBUF pBuf)
+DECLINLINE(void *) IntNetHdrGetFramePtr(PCINTNETHDR pHdr, PCINTNETBUF pBuf)
 {
     uint8_t *pu8 = (uint8_t *)pHdr + pHdr->offFrame;
 #ifdef VBOX_STRICT
     const uintptr_t off = (uintptr_t)pu8 - (uintptr_t)pBuf;
-    Assert(INETNETIsValidFrameType(pHdr->u16Type));
+    Assert(IntNetIsValidFrameType(pHdr->u16Type));
     Assert(off < pBuf->cbBuf);
     Assert(off + pHdr->cbFrame <= pBuf->cbBuf);
 #endif
@@ -352,7 +352,7 @@ DECLINLINE(void *) INTNETHdrGetFramePtr(PCINTNETHDR pHdr, PCINTNETBUF pBuf)
  * @param   pHdr        Pointer to the packet header
  * @param   pBuf        The buffer the header is within. Only used in strict builds.
  */
-DECLINLINE(PPDMNETWORKGSO) INTNETHdrGetGsoContext(PCINTNETHDR pHdr, PCINTNETBUF pBuf)
+DECLINLINE(PPDMNETWORKGSO) IntNetHdrGetGsoContext(PCINTNETHDR pHdr, PCINTNETBUF pBuf)
 {
     PPDMNETWORKGSO pGso = (PPDMNETWORKGSO)((uint8_t *)pHdr + pHdr->offFrame);
 #ifdef VBOX_STRICT
@@ -371,14 +371,14 @@ DECLINLINE(PPDMNETWORKGSO) INTNETHdrGetGsoContext(PCINTNETHDR pHdr, PCINTNETBUF 
  *
  * @param   pRingBuf    The ring buffer in question.
  */
-DECLINLINE(void) INTNETRingSkipFrame(PINTNETRINGBUF pRingBuf)
+DECLINLINE(void) IntNetRingSkipFrame(PINTNETRINGBUF pRingBuf)
 {
     uint32_t const  offReadOld  = ASMAtomicUoReadU32(&pRingBuf->offReadX);
     PINTNETHDR      pHdr        = (PINTNETHDR)((uint8_t *)pRingBuf + offReadOld);
     Assert(offReadOld >= pRingBuf->offStart);
     Assert(offReadOld <  pRingBuf->offEnd);
     Assert(RT_ALIGN_PT(pHdr, INTNETHDR_ALIGNMENT, INTNETHDR *) == pHdr);
-    Assert(INETNETIsValidFrameType(pHdr->u16Type));
+    Assert(IntNetIsValidFrameType(pHdr->u16Type));
 
     /* skip the frame */
     uint32_t        offReadNew  = offReadOld + pHdr->offFrame + pHdr->cbFrame;
@@ -386,7 +386,7 @@ DECLINLINE(void) INTNETRingSkipFrame(PINTNETRINGBUF pRingBuf)
     Assert(offReadNew <= pRingBuf->offEnd && offReadNew >= pRingBuf->offStart);
     if (offReadNew >= pRingBuf->offEnd)
         offReadNew = pRingBuf->offStart;
-    Log2(("INTNETRingSkipFrame: offReadX: %#x -> %#x (1)\n", offReadOld, offReadNew));
+    Log2(("IntNetRingSkipFrame: offReadX: %#x -> %#x (1)\n", offReadOld, offReadNew));
 #ifdef INTNET_POISON_READ_FRAMES
     memset((uint8_t *)pHdr + pHdr->offFrame, 0xfe, RT_ALIGN_32(pHdr->cbFrame, INTNETHDR_ALIGNMENT));
     memset(pHdr, 0xef, sizeof(*pHdr));
@@ -500,7 +500,7 @@ DECLINLINE(int) intnetRingAllocateFrameInternal(PINTNETRINGBUF pRingBuf, uint32_
  *                              Don't touch this!
  * @param   ppvFrame            Where to return the frame pointer.
  */
-DECLINLINE(int) INTNETRingAllocateFrame(PINTNETRINGBUF pRingBuf, uint32_t cbFrame, PINTNETHDR *ppHdr, void **ppvFrame)
+DECLINLINE(int) IntNetRingAllocateFrame(PINTNETRINGBUF pRingBuf, uint32_t cbFrame, PINTNETHDR *ppHdr, void **ppvFrame)
 {
     return intnetRingAllocateFrameInternal(pRingBuf, cbFrame, INTNETHDR_TYPE_FRAME, ppHdr, ppvFrame);
 }
@@ -517,7 +517,7 @@ DECLINLINE(int) INTNETRingAllocateFrame(PINTNETRINGBUF pRingBuf, uint32_t cbFram
  *                              Don't touch this!
  * @param   ppvFrame            Where to return the frame pointer.
  */
-DECLINLINE(int) INTNETRingAllocateGsoFrame(PINTNETRINGBUF pRingBuf, uint32_t cbFrame, PCPDMNETWORKGSO pGso,
+DECLINLINE(int) IntNetRingAllocateGsoFrame(PINTNETRINGBUF pRingBuf, uint32_t cbFrame, PCPDMNETWORKGSO pGso,
                                            PINTNETHDR *ppHdr, void **ppvFrame)
 {
     void *pvFrame = NULL; /* gcc maybe used uninitialized */
@@ -540,9 +540,9 @@ DECLINLINE(int) INTNETRingAllocateGsoFrame(PINTNETRINGBUF pRingBuf, uint32_t cbF
  * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
  * @param   pRingBuf            The ring buffer.
  * @param   pHdr                The frame header returned by
- *                              INTNETRingAllocateFrame.
+ *                              IntNetRingAllocateFrame.
  */
-DECLINLINE(void) INTNETRingCommitFrame(PINTNETRINGBUF pRingBuf, PINTNETHDR pHdr)
+DECLINLINE(void) IntNetRingCommitFrame(PINTNETRINGBUF pRingBuf, PINTNETHDR pHdr)
 {
     /*
      * Validate input and commit order.
@@ -564,7 +564,7 @@ DECLINLINE(void) INTNETRingCommitFrame(PINTNETRINGBUF pRingBuf, PINTNETHDR pHdr)
         Assert(offWriteCom == pRingBuf->offEnd);
         offWriteCom = pRingBuf->offStart;
     }
-    Log2(("INTNETRingCommitFrame:   offWriteCom: %#x -> %#x (R=%#x T=%#x S=%#x)\n", pRingBuf->offWriteCom, offWriteCom, pRingBuf->offReadX, pHdr->u16Type, cbFrame));
+    Log2(("IntNetRingCommitFrame:   offWriteCom: %#x -> %#x (R=%#x T=%#x S=%#x)\n", pRingBuf->offWriteCom, offWriteCom, pRingBuf->offReadX, pHdr->u16Type, cbFrame));
     ASMAtomicWriteU32(&pRingBuf->offWriteCom, offWriteCom);
     STAM_REL_COUNTER_ADD(&pRingBuf->cbStatWritten, cbFrame);
     STAM_REL_COUNTER_INC(&pRingBuf->cStatFrames);
@@ -579,11 +579,11 @@ DECLINLINE(void) INTNETRingCommitFrame(PINTNETRINGBUF pRingBuf, PINTNETHDR pHdr)
  * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
  * @param   pRingBuf            The ring buffer.
  * @param   pHdr                The frame header returned by
- *                              INTNETRingAllocateFrame.
+ *                              IntNetRingAllocateFrame.
  * @param   cbUsed              The amount of space actually used.  This does
  *                              not include the GSO part.
  */
-DECLINLINE(void) INTNETRingCommitFrameEx(PINTNETRINGBUF pRingBuf, PINTNETHDR pHdr, size_t cbUsed)
+DECLINLINE(void) IntNetRingCommitFrameEx(PINTNETRINGBUF pRingBuf, PINTNETHDR pHdr, size_t cbUsed)
 {
     /*
      * Validate input and commit order.
@@ -622,7 +622,7 @@ DECLINLINE(void) INTNETRingCommitFrameEx(PINTNETRINGBUF pRingBuf, PINTNETHDR pHd
         pHdr->cbFrame = (uint16_t)cbUsed;
     }
 
-    Log2(("INTNETRingCommitFrameEx:   offWriteCom: %#x -> %#x (R=%#x T=%#x S=%#x P=%#x)\n", pRingBuf->offWriteCom, offWriteCom, pRingBuf->offReadX, pHdr->u16Type, pHdr->cbFrame, cbAlignedFrame - cbAlignedUsed));
+    Log2(("IntNetRingCommitFrameEx:   offWriteCom: %#x -> %#x (R=%#x T=%#x S=%#x P=%#x)\n", pRingBuf->offWriteCom, offWriteCom, pRingBuf->offReadX, pHdr->u16Type, pHdr->cbFrame, cbAlignedFrame - cbAlignedUsed));
     ASMAtomicWriteU32(&pRingBuf->offWriteCom, offWriteCom);
     STAM_REL_COUNTER_ADD(&pRingBuf->cbStatWritten, cbUsed);
     STAM_REL_COUNTER_INC(&pRingBuf->cStatFrames);
@@ -639,7 +639,7 @@ DECLINLINE(void) INTNETRingCommitFrameEx(PINTNETRINGBUF pRingBuf, PINTNETHDR pHd
  * @param   pvFrame             The bits to write.
  * @param   cbFrame             How much to write.
  */
-DECLINLINE(int) INTNETRingWriteFrame(PINTNETRINGBUF pRingBuf, const void *pvFrame, size_t cbFrame)
+DECLINLINE(int) IntNetRingWriteFrame(PINTNETRINGBUF pRingBuf, const void *pvFrame, size_t cbFrame)
 {
     /*
      * Validate input.
@@ -665,7 +665,7 @@ DECLINLINE(int) INTNETRingWriteFrame(PINTNETRINGBUF pRingBuf, const void *pvFram
                 offNew = pRingBuf->offStart;
             if (RT_UNLIKELY(!ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
                 return VERR_WRONG_ORDER; /* race */
-            Log2(("INTNETRingWriteFrame: offWriteInt: %#x -> %#x (1)\n", offWriteInt, offNew));
+            Log2(("IntNetRingWriteFrame: offWriteInt: %#x -> %#x (1)\n", offWriteInt, offNew));
 
             PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
             pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
@@ -674,7 +674,7 @@ DECLINLINE(int) INTNETRingWriteFrame(PINTNETRINGBUF pRingBuf, const void *pvFram
 
             memcpy(pHdr + 1, pvFrame, cbFrame);
 
-            Log2(("INTNETRingWriteFrame: offWriteCom: %#x -> %#x (1)\n", pRingBuf->offWriteCom, offNew));
+            Log2(("IntNetRingWriteFrame: offWriteCom: %#x -> %#x (1)\n", pRingBuf->offWriteCom, offNew));
             ASMAtomicWriteU32(&pRingBuf->offWriteCom, offNew);
             STAM_REL_COUNTER_ADD(&pRingBuf->cbStatWritten, cbFrame);
             STAM_REL_COUNTER_INC(&pRingBuf->cStatFrames);
@@ -690,7 +690,7 @@ DECLINLINE(int) INTNETRingWriteFrame(PINTNETRINGBUF pRingBuf, const void *pvFram
             uint32_t offNew = pRingBuf->offStart + cb;
             if (RT_UNLIKELY(!ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
                 return VERR_WRONG_ORDER; /* race */
-            Log2(("INTNETRingWriteFrame: offWriteInt: %#x -> %#x (2)\n", offWriteInt, offNew));
+            Log2(("IntNetRingWriteFrame: offWriteInt: %#x -> %#x (2)\n", offWriteInt, offNew));
 
             PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
             pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
@@ -699,7 +699,7 @@ DECLINLINE(int) INTNETRingWriteFrame(PINTNETRINGBUF pRingBuf, const void *pvFram
 
             memcpy((uint8_t *)pRingBuf + pRingBuf->offStart, pvFrame, cbFrame);
 
-            Log2(("INTNETRingWriteFrame: offWriteCom: %#x -> %#x (2)\n", pRingBuf->offWriteCom, offNew));
+            Log2(("IntNetRingWriteFrame: offWriteCom: %#x -> %#x (2)\n", pRingBuf->offWriteCom, offNew));
             ASMAtomicWriteU32(&pRingBuf->offWriteCom, offNew);
             STAM_REL_COUNTER_ADD(&pRingBuf->cbStatWritten, cbFrame);
             STAM_REL_COUNTER_INC(&pRingBuf->cStatFrames);
@@ -714,7 +714,7 @@ DECLINLINE(int) INTNETRingWriteFrame(PINTNETRINGBUF pRingBuf, const void *pvFram
         uint32_t offNew = offWriteInt + cb + sizeof(INTNETHDR);
         if (RT_UNLIKELY(!ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
             return VERR_WRONG_ORDER; /* race */
-        Log2(("INTNETRingWriteFrame: offWriteInt: %#x -> %#x (3)\n", offWriteInt, offNew));
+        Log2(("IntNetRingWriteFrame: offWriteInt: %#x -> %#x (3)\n", offWriteInt, offNew));
 
         PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
         pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
@@ -723,7 +723,7 @@ DECLINLINE(int) INTNETRingWriteFrame(PINTNETRINGBUF pRingBuf, const void *pvFram
 
         memcpy(pHdr + 1, pvFrame, cbFrame);
 
-        Log2(("INTNETRingWriteFrame: offWriteCom: %#x -> %#x (3)\n", pRingBuf->offWriteCom, offNew));
+        Log2(("IntNetRingWriteFrame: offWriteCom: %#x -> %#x (3)\n", pRingBuf->offWriteCom, offNew));
         ASMAtomicWriteU32(&pRingBuf->offWriteCom, offNew);
         STAM_REL_COUNTER_ADD(&pRingBuf->cbStatWritten, cbFrame);
         STAM_REL_COUNTER_INC(&pRingBuf->cStatFrames);
@@ -746,7 +746,7 @@ DECLINLINE(int) INTNETRingWriteFrame(PINTNETRINGBUF pRingBuf, const void *pvFram
  *
  * @deprecated  Bad interface, do NOT use it!  Only for tstIntNetR0.
  */
-DECLINLINE(uint32_t) INTNETRingReadAndSkipFrame(PINTNETRINGBUF pRingBuf, void *pvFrameDst)
+DECLINLINE(uint32_t) IntNetRingReadAndSkipFrame(PINTNETRINGBUF pRingBuf, void *pvFrameDst)
 {
     INTNETRINGBUF_ASSERT_SANITY(pRingBuf);
 
@@ -788,7 +788,7 @@ DECLINLINE(uint32_t) INTNETRingReadAndSkipFrame(PINTNETRINGBUF pRingBuf, void *p
  * @param   cbRecv              The receive size.
  * @param   cbSend              The send size.
  */
-DECLINLINE(void) INTNETBufInit(PINTNETBUF pIntBuf, uint32_t cbBuf, uint32_t cbRecv, uint32_t cbSend)
+DECLINLINE(void) IntNetBufInit(PINTNETBUF pIntBuf, uint32_t cbBuf, uint32_t cbRecv, uint32_t cbSend)
 {
     AssertCompileSizeAlignment(INTNETBUF, INTNETHDR_ALIGNMENT);
     AssertCompileSizeAlignment(INTNETBUF, INTNETRINGBUF_ALIGNMENT);

@@ -480,7 +480,7 @@ LOCAL int vboxNetFltSolarisMBlkToSG(PVBOXNETFLTINS pThis, mblk_t *pMsg, PINTNETS
     /*
      * Convert the message block to segments. Works cbTotal and sets cSegsUsed.
      */
-    INTNETSgInitTempSegs(pSG, 0 /*cbTotal*/, cSegs, 0 /*cSegsUsed*/);
+    IntNetSgInitTempSegs(pSG, 0 /*cbTotal*/, cSegs, 0 /*cSegsUsed*/);
     mblk_t *pCur = pMsg;
     unsigned iSeg = 0;
     while (pCur)
