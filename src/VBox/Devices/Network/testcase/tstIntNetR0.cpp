@@ -189,21 +189,20 @@ INTNETR3DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 /**
  * Sends the data @a pvBuf points to.
  */
-static int tstIntNetSendBuf(PINTNET pIntNet, PINTNETRINGBUF pRingBuf, INTNETIFHANDLE hIf,
+static int tstIntNetSendBuf(PINTNETRINGBUF pRingBuf, INTNETIFHANDLE hIf,
                             PSUPDRVSESSION pSession, void const *pvBuf, size_t cbBuf)
 {
     INTNETSG Sg;
     INTNETSgInitTemp(&Sg, (void *)pvBuf, cbBuf);
     int rc = intnetR0RingWriteFrame(pRingBuf, &Sg, NULL);
     if (RT_SUCCESS(rc))
-        rc = INTNETR0IfSend(pIntNet, hIf, pSession);
+        rc = IntNetR0IfSend(hIf, pSession);
     return rc;
 }
 
 
 typedef struct MYARGS
 {
-    PINTNET         pIntNet;
     PINTNETBUF      pBuf;
     INTNETIFHANDLE  hIf;
     RTMAC           Mac;
@@ -257,7 +256,7 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
         INTNETSgInitTemp(&Sg, abBuf, cb);
         RTTEST_CHECK_RC_OK(g_hTest, rc = intnetR0RingWriteFrame(&pArgs->pBuf->Send, &Sg, NULL));
         if (RT_SUCCESS(rc))
-            RTTEST_CHECK_RC_OK(g_hTest, rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, g_pSession));
+            RTTEST_CHECK_RC_OK(g_hTest, rc = IntNetR0IfSend(pArgs->hIf, g_pSession));
         cbSent += cb;
     }
 
@@ -270,7 +269,7 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
     pHdr->auEos[2] = 0xffffdead;
     for (unsigned c = 0; c < 20; c++)
     {
-        RTTEST_CHECK_RC_OK(g_hTest, rc = tstIntNetSendBuf(pArgs->pIntNet, &pArgs->pBuf->Send, pArgs->hIf, g_pSession,
+        RTTEST_CHECK_RC_OK(g_hTest, rc = tstIntNetSendBuf(&pArgs->pBuf->Send, pArgs->hIf, g_pSession,
                                                           abBuf, sizeof(RTMAC) * 2 + sizeof(unsigned) * 4));
         RTThreadSleep(1);
     }
@@ -362,7 +361,7 @@ DECLCALLBACK(int) ReceiveThread(RTTHREAD Thread, void *pvArg)
         /*
          * Wait for data.
          */
-        int rc = INTNETR0IfWait(pArgs->pIntNet, pArgs->hIf, g_pSession, RT_INDEFINITE_WAIT);
+        int rc = IntNetR0IfWait(pArgs->hIf, g_pSession, RT_INDEFINITE_WAIT);
         switch (rc)
         {
             case VERR_INTERRUPTED:
@@ -389,8 +388,6 @@ DECLCALLBACK(int) ReceiveThread(RTTHREAD Thread, void *pvArg)
  */
 typedef struct TSTSTATE
 {
-    PINTNET         pIntNet;
-
     PINTNETBUF      pBuf0;
     INTNETIFHANDLE  hIf0;
 
@@ -409,18 +406,18 @@ typedef TSTSTATE *PTSTSTATE;
 static int tstOpenInterfaces(PTSTSTATE pThis, const char *pszNetwork, uint32_t cbSend, uint32_t cbRecv)
 {
     pThis->hIf0 = INTNET_HANDLE_INVALID;
-    RTTESTI_CHECK_RC_OK_RET(INTNETR0Open(pThis->pIntNet, g_pSession, pszNetwork, kIntNetTrunkType_None, "",
+    RTTESTI_CHECK_RC_OK_RET(IntNetR0Open(g_pSession, pszNetwork, kIntNetTrunkType_None, "",
                                          0/*fFlags*/, cbSend, cbRecv, &pThis->hIf0), rcCheck);
     RTTESTI_CHECK_RET(pThis->hIf0 != INTNET_HANDLE_INVALID, VERR_INTERNAL_ERROR);
-    RTTESTI_CHECK_RC_RET(INTNETR0IfGetRing0Buffer(pThis->pIntNet, pThis->hIf0, g_pSession, &pThis->pBuf0), VINF_SUCCESS, rcCheck);
+    RTTESTI_CHECK_RC_RET(IntNetR0IfGetRing0Buffer(pThis->hIf0, g_pSession, &pThis->pBuf0), VINF_SUCCESS, rcCheck);
     RTTESTI_CHECK_RET(pThis->pBuf0, VERR_INTERNAL_ERROR);
 
 
     pThis->hIf1 = INTNET_HANDLE_INVALID;
-    RTTESTI_CHECK_RC_OK_RET(INTNETR0Open(pThis->pIntNet, g_pSession, pszNetwork, kIntNetTrunkType_None, "",
+    RTTESTI_CHECK_RC_OK_RET(IntNetR0Open(g_pSession, pszNetwork, kIntNetTrunkType_None, "",
                                          0/*fFlags*/, cbSend, cbRecv, &pThis->hIf1), rcCheck);
     RTTESTI_CHECK_RET(pThis->hIf1 != INTNET_HANDLE_INVALID, VERR_INTERNAL_ERROR);
-    RTTESTI_CHECK_RC_RET(INTNETR0IfGetRing0Buffer(pThis->pIntNet, pThis->hIf1, g_pSession, &pThis->pBuf1), VINF_SUCCESS, rcCheck);
+    RTTESTI_CHECK_RC_RET(IntNetR0IfGetRing0Buffer(pThis->hIf1, g_pSession, &pThis->pBuf1), VINF_SUCCESS, rcCheck);
     RTTESTI_CHECK_RET(pThis->pBuf1, VERR_INTERNAL_ERROR);
 
     return VINF_SUCCESS;
@@ -434,14 +431,14 @@ static int tstOpenInterfaces(PTSTSTATE pThis, const char *pszNetwork, uint32_t c
 static void tstCloseInterfaces(PTSTSTATE pThis)
 {
     int rc;
-    RTTESTI_CHECK_RC_OK(rc = INTNETR0IfClose(pThis->pIntNet, pThis->hIf0, g_pSession));
+    RTTESTI_CHECK_RC_OK(rc = IntNetR0IfClose(pThis->hIf0, g_pSession));
     if (RT_SUCCESS(rc))
     {
         pThis->hIf0  = INTNET_HANDLE_INVALID;
         pThis->pBuf0 = NULL;
     }
 
-    RTTESTI_CHECK_RC_OK(rc = INTNETR0IfClose(pThis->pIntNet, pThis->hIf1, g_pSession));
+    RTTESTI_CHECK_RC_OK(rc = IntNetR0IfClose(pThis->hIf1, g_pSession));
     if (RT_SUCCESS(rc))
     {
         pThis->hIf1  = INTNET_HANDLE_INVALID;
@@ -449,7 +446,7 @@ static void tstCloseInterfaces(PTSTSTATE pThis)
     }
 
     /* The network should be dead now. */
-    RTTESTI_CHECK(pThis->pIntNet->pNetworks == NULL);
+    RTTESTI_CHECK(IntNetR0GetNetworkCount() == 0);
 }
 
 /**
@@ -461,7 +458,6 @@ static void tstBidirectionalTransfer(PTSTSTATE pThis)
     RT_ZERO(Args0);
     Args0.hIf         = pThis->hIf0;
     Args0.pBuf        = pThis->pBuf0;
-    Args0.pIntNet     = pThis->pIntNet;
     Args0.Mac.au16[0] = 0x8086;
     Args0.Mac.au16[1] = 0;
     Args0.Mac.au16[2] = 0;
@@ -470,7 +466,6 @@ static void tstBidirectionalTransfer(PTSTSTATE pThis)
     RT_ZERO(Args1);
     Args1.hIf         = pThis->hIf1;
     Args1.pBuf        = pThis->pBuf1;
-    Args1.pIntNet     = pThis->pIntNet;
     Args1.Mac.au16[0] = 0x8086;
     Args1.Mac.au16[1] = 0;
     Args1.Mac.au16[2] = 1;
@@ -591,16 +586,16 @@ static void doBroadcastTest(PTSTSTATE pThis, bool fHeadGuard)
 {
     static uint16_t const s_au16Frame[7] = { /* dst:*/ 0xffff, 0xffff, 0xffff, /*src:*/0x8086, 0, 0, 0x0800 };
 
-    RTTESTI_CHECK_RC_RETV(tstIntNetSendBuf(pThis->pIntNet, &pThis->pBuf0->Send, pThis->hIf0,
+    RTTESTI_CHECK_RC_RETV(tstIntNetSendBuf(&pThis->pBuf0->Send, pThis->hIf0,
                                            g_pSession, &s_au16Frame, sizeof(s_au16Frame)),
                           VINF_SUCCESS);
 
     /* No echo, please */
-    RTTESTI_CHECK_RC_RETV(INTNETR0IfWait(pThis->pIntNet, pThis->hIf0, g_pSession, 1), VERR_TIMEOUT);
+    RTTESTI_CHECK_RC_RETV(IntNetR0IfWait(pThis->hIf0, g_pSession, 1), VERR_TIMEOUT);
 
     /* The other interface should see it though.  But Wait should only return once, thank you. */
-    RTTESTI_CHECK_RC_RETV(INTNETR0IfWait(pThis->pIntNet, pThis->hIf1, g_pSession, 1), VINF_SUCCESS);
-    RTTESTI_CHECK_RC_RETV(INTNETR0IfWait(pThis->pIntNet, pThis->hIf1, g_pSession, 0), VERR_TIMEOUT);
+    RTTESTI_CHECK_RC_RETV(IntNetR0IfWait(pThis->hIf1, g_pSession, 1), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(IntNetR0IfWait(pThis->hIf1, g_pSession, 0), VERR_TIMEOUT);
 
     /* Receive the data. */
     const unsigned cbExpect = RT_ALIGN(sizeof(s_au16Frame) + sizeof(INTNETHDR), sizeof(INTNETHDR));
@@ -630,16 +625,16 @@ static void doUnicastTest(PTSTSTATE pThis, bool fHeadGuard)
 {
     static uint16_t const s_au16Frame[7] = { /* dst:*/ 0x8086, 0, 0,      /*src:*/0x8086, 0, 1, 0x0800 };
 
-    RTTESTI_CHECK_RC_RETV(tstIntNetSendBuf(pThis->pIntNet, &pThis->pBuf1->Send, pThis->hIf1,
+    RTTESTI_CHECK_RC_RETV(tstIntNetSendBuf(&pThis->pBuf1->Send, pThis->hIf1,
                                            g_pSession, s_au16Frame, sizeof(s_au16Frame)),
                           VINF_SUCCESS);
 
     /* No echo, please */
-    RTTESTI_CHECK_RC_RETV(INTNETR0IfWait(pThis->pIntNet, pThis->hIf1, g_pSession, 1), VERR_TIMEOUT);
+    RTTESTI_CHECK_RC_RETV(IntNetR0IfWait(pThis->hIf1, g_pSession, 1), VERR_TIMEOUT);
 
     /* The other interface should see it though.  But Wait should only return once, thank you. */
-    RTTESTI_CHECK_RC_RETV(INTNETR0IfWait(pThis->pIntNet, pThis->hIf0, g_pSession, 1), VINF_SUCCESS);
-    RTTESTI_CHECK_RC_RETV(INTNETR0IfWait(pThis->pIntNet, pThis->hIf0, g_pSession, 0), VERR_TIMEOUT);
+    RTTESTI_CHECK_RC_RETV(IntNetR0IfWait(pThis->hIf0, g_pSession, 1), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(IntNetR0IfWait(pThis->hIf0, g_pSession, 0), VERR_TIMEOUT);
 
     /* Receive the data. */
     const unsigned cbExpect = RT_ALIGN(sizeof(s_au16Frame) + sizeof(INTNETHDR), sizeof(INTNETHDR));
@@ -665,8 +660,8 @@ static void doTest(PTSTSTATE pThis, uint32_t cbRecv, uint32_t cbSend)
     /*
      * Create an INTNET instance.
      */
-    RTTestISub("INTNETR0Create");
-    RTTESTI_CHECK_RC_RETV(INTNETR0Create(&pThis->pIntNet), VINF_SUCCESS);
+    RTTestISub("IntNetR0Init");
+    RTTESTI_CHECK_RC_RETV(IntNetR0Init(), VINF_SUCCESS);
 
     /*
      * Create two interfaces and activate them.
@@ -675,17 +670,17 @@ static void doTest(PTSTSTATE pThis, uint32_t cbRecv, uint32_t cbSend)
     int rc = tstOpenInterfaces(pThis, "test", cbSend, cbRecv);
     if (RT_FAILURE(rc))
         return;
-    RTTESTI_CHECK_RC(INTNETR0IfSetActive(pThis->pIntNet, pThis->hIf0, g_pSession, true), VINF_SUCCESS);
-    RTTESTI_CHECK_RC(INTNETR0IfSetActive(pThis->pIntNet, pThis->hIf1, g_pSession, true), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(IntNetR0IfSetActive(pThis->hIf0, g_pSession, true), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(IntNetR0IfSetActive(pThis->hIf1, g_pSession, true), VINF_SUCCESS);
 
     /*
      * Test basic waiting.
      */
-    RTTestISub("INTNETR0IfWait");
-    RTTESTI_CHECK_RC(INTNETR0IfWait(pThis->pIntNet, pThis->hIf0, g_pSession, 1), VERR_TIMEOUT);
-    RTTESTI_CHECK_RC(INTNETR0IfWait(pThis->pIntNet, pThis->hIf0, g_pSession, 0), VERR_TIMEOUT);
-    RTTESTI_CHECK_RC(INTNETR0IfWait(pThis->pIntNet, pThis->hIf1, g_pSession, 1), VERR_TIMEOUT);
-    RTTESTI_CHECK_RC(INTNETR0IfWait(pThis->pIntNet, pThis->hIf1, g_pSession, 0), VERR_TIMEOUT);
+    RTTestISub("IntNetR0IfWait");
+    RTTESTI_CHECK_RC(IntNetR0IfWait(pThis->hIf0, g_pSession, 1), VERR_TIMEOUT);
+    RTTESTI_CHECK_RC(IntNetR0IfWait(pThis->hIf0, g_pSession, 0), VERR_TIMEOUT);
+    RTTESTI_CHECK_RC(IntNetR0IfWait(pThis->hIf1, g_pSession, 1), VERR_TIMEOUT);
+    RTTESTI_CHECK_RC(IntNetR0IfWait(pThis->hIf1, g_pSession, 0), VERR_TIMEOUT);
 
     /*
      * Broadcast send and receive.
@@ -717,7 +712,7 @@ static void doTest(PTSTSTATE pThis, uint32_t cbRecv, uint32_t cbSend)
      * Destroy the service.
      */
     tstCloseInterfaces(pThis);
-    INTNETR0Destroy(pThis->pIntNet);
+    IntNetR0Term();
 }
 
 

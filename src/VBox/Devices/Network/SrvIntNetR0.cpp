@@ -384,6 +384,8 @@ typedef INTNETNETWORK *PINTNETNETWORK;
  */
 typedef struct INTNET
 {
+    /** Magic number (INTNET_MAGIC). */
+    uint32_t volatile       u32Magic;
     /** Mutex protecting the creation, opening and destruction of both networks and
      * interfaces.  (This means all operations affecting the pNetworks list.) */
     RTSEMMUTEX              hMtxCreateOpenDestroy;
@@ -392,7 +394,18 @@ typedef struct INTNET
     /** Handle table for the interfaces. */
     RTHANDLETABLE           hHtIfs;
 } INTNET;
+/** Pointer to an internal network ring-0 instance. */
+typedef struct INTNET *PINTNET;
 
+/** Magic number for the internal network instance data (Hayao Miyazaki). */
+#define INTNET_MAGIC        UINT32_C(0x19410105)
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** Pointer to the internal network instance data. */
+static PINTNET volatile g_pIntNet = NULL;
 
 
 /*******************************************************************************
@@ -2552,7 +2565,7 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
         /*
          * Edit the source address so that it it's the same as the host.
          */
-        /* ASSUME frame from INTNETR0IfSend! */
+        /* ASSUME frame from IntNetR0IfSend! */
         AssertReturnVoid(pSG->cSegsUsed == 1);
         AssertReturnVoid(pSG->cbTotal >= sizeof(RTNETETHERHDR));
         AssertReturnVoid(pIfSender);
@@ -3226,18 +3239,20 @@ static INTNETSWDECISION intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF p
  * to this method (with the same handle).
  *
  * @returns VBox status code.
- * @param   pIntNet     The instance data.
  * @param   hIf         The interface handle.
  * @param   pSession    The caller's session.
  */
-INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
+INTNETR0DECL(int) IntNetR0IfSend(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
 {
-    Log5(("INTNETR0IfSend: pIntNet=%p hIf=%RX32\n", pIntNet, hIf));
+    Log5(("IntNetR0IfSend: hIf=%RX32\n", hIf));
 
     /*
      * Validate input and translate the handle.
      */
-    AssertReturn(pIntNet, VERR_INVALID_PARAMETER);
+    PINTNET pIntNet = g_pIntNet;
+    AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
+    AssertReturn(pIntNet->u32Magic, VERR_INVALID_MAGIC);
+
     PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
     if (!pIf)
         return VERR_INVALID_HANDLE;
@@ -3334,18 +3349,17 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
 
 
 /**
- * VMMR0 request wrapper for INTNETR0IfSend.
+ * VMMR0 request wrapper for IntNetR0IfSend.
  *
- * @returns see INTNETR0IfSend.
- * @param   pIntNet         The internal networking instance.
+ * @returns see IntNetR0IfSend.
  * @param   pSession        The caller's session.
  * @param   pReq            The request packet.
  */
-INTNETR0DECL(int) INTNETR0IfSendReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFSENDREQ pReq)
+INTNETR0DECL(int) IntNetR0IfSendReq(PSUPDRVSESSION pSession, PINTNETIFSENDREQ pReq)
 {
     if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
         return VERR_INVALID_PARAMETER;
-    return INTNETR0IfSend(pIntNet, pReq->hIf, pSession);
+    return IntNetR0IfSend(pReq->hIf, pSession);
 }
 
 
@@ -3353,19 +3367,21 @@ INTNETR0DECL(int) INTNETR0IfSendReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PI
  * Maps the default buffer into ring 3.
  *
  * @returns VBox status code.
- * @param   pIntNet         The instance data.
  * @param   hIf             The interface handle.
  * @param   pSession        The caller's session.
  * @param   ppRing3Buf      Where to store the address of the ring-3 mapping.
  */
-INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, R3PTRTYPE(PINTNETBUF) *ppRing3Buf)
+INTNETR0DECL(int) IntNetR0IfGetRing3Buffer(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, R3PTRTYPE(PINTNETBUF) *ppRing3Buf)
 {
-    LogFlow(("INTNETR0IfGetRing3Buffer: pIntNet=%p hIf=%RX32 ppRing3Buf=%p\n", pIntNet, hIf, ppRing3Buf));
+    LogFlow(("IntNetR0IfGetRing3Buffer: hIf=%RX32 ppRing3Buf=%p\n", hIf, ppRing3Buf));
 
     /*
      * Validate input.
      */
-    AssertReturn(pIntNet, VERR_INVALID_PARAMETER);
+    PINTNET pIntNet = g_pIntNet;
+    AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
+    AssertReturn(pIntNet->u32Magic, VERR_INVALID_MAGIC);
+
     AssertPtrReturn(ppRing3Buf, VERR_INVALID_PARAMETER);
     *ppRing3Buf = 0;
     PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
@@ -3386,24 +3402,23 @@ INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
     }
 
     intnetR0IfRelease(pIf, pSession);
-    LogFlow(("INTNETR0IfGetRing3Buffer: returns %Rrc *ppRing3Buf=%p\n", rc, *ppRing3Buf));
+    LogFlow(("IntNetR0IfGetRing3Buffer: returns %Rrc *ppRing3Buf=%p\n", rc, *ppRing3Buf));
     return rc;
 }
 
 
 /**
- * VMMR0 request wrapper for INTNETR0IfGetRing3Buffer.
+ * VMMR0 request wrapper for IntNetR0IfGetRing3Buffer.
  *
- * @returns see INTNETR0IfGetRing3Buffer.
- * @param   pIntNet         The internal networking instance.
+ * @returns see IntNetR0IfGetRing3Buffer.
  * @param   pSession        The caller's session.
  * @param   pReq            The request packet.
  */
-INTNETR0DECL(int) INTNETR0IfGetRing3BufferReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFGETRING3BUFFERREQ pReq)
+INTNETR0DECL(int) IntNetR0IfGetRing3BufferReq(PSUPDRVSESSION pSession, PINTNETIFGETRING3BUFFERREQ pReq)
 {
     if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
         return VERR_INVALID_PARAMETER;
-    return INTNETR0IfGetRing3Buffer(pIntNet, pReq->hIf, pSession, &pReq->pRing3Buf);
+    return IntNetR0IfGetRing3Buffer(pReq->hIf, pSession, &pReq->pRing3Buf);
 }
 
 
@@ -3411,21 +3426,23 @@ INTNETR0DECL(int) INTNETR0IfGetRing3BufferReq(PINTNET pIntNet, PSUPDRVSESSION pS
  * Gets the ring-0 address of the current buffer.
  *
  * @returns VBox status code.
- * @param   pIntNet         The instance data.
  * @param   hIf             The interface handle.
  * @param   pSession        The caller's session.
  * @param   ppRing0Buf      Where to store the address of the ring-3 mapping.
  */
-INTNETR0DECL(int) INTNETR0IfGetRing0Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF *ppRing0Buf)
+INTNETR0DECL(int) IntNetR0IfGetRing0Buffer(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF *ppRing0Buf)
 {
-    LogFlow(("INTNETR0IfGetRing0Buffer: pIntNet=%p hIf=%RX32 ppRing0Buf=%p\n", pIntNet, hIf, ppRing0Buf));
+    LogFlow(("IntNetR0IfGetRing0Buffer: hIf=%RX32 ppRing0Buf=%p\n", hIf, ppRing0Buf));
 
     /*
      * Validate input.
      */
+    PINTNET pIntNet = g_pIntNet;
+    AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
+    AssertReturn(pIntNet->u32Magic, VERR_INVALID_MAGIC);
+
     AssertPtrReturn(ppRing0Buf, VERR_INVALID_PARAMETER);
     *ppRing0Buf = NULL;
-    AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
     PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
     if (!pIf)
         return VERR_INVALID_HANDLE;
@@ -3442,7 +3459,7 @@ INTNETR0DECL(int) INTNETR0IfGetRing0Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
         rc = RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
     }
     intnetR0IfRelease(pIf, pSession);
-    LogFlow(("INTNETR0IfGetRing0Buffer: returns %Rrc *ppRing0Buf=%p\n", rc, *ppRing0Buf));
+    LogFlow(("IntNetR0IfGetRing0Buffer: returns %Rrc *ppRing0Buf=%p\n", rc, *ppRing0Buf));
     return rc;
 }
 
@@ -3452,17 +3469,19 @@ INTNETR0DECL(int) INTNETR0IfGetRing0Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, 
  * Gets the physical addresses of the default interface buffer.
  *
  * @returns VBox status code.
- * @param   pIntNet     The instance data.
  * @param   hIF         The interface handle.
  * @param   paPages     Where to store the addresses. (The reserved fields will be set to zero.)
  * @param   cPages
  */
-INTNETR0DECL(int) INTNETR0IfGetPhysBuffer(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPPAGE paPages, unsigned cPages)
+INTNETR0DECL(int) IntNetR0IfGetPhysBuffer(INTNETIFHANDLE hIf, PSUPPAGE paPages, unsigned cPages)
 {
     /*
      * Validate input.
      */
-    AssertReturn(pIntNet, VERR_INVALID_PARAMETER);
+    PINTNET pIntNet = g_pIntNet;
+    AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
+    AssertReturn(pIntNet->u32Magic, VERR_INVALID_MAGIC);
+
     AssertPtrReturn(paPages, VERR_INVALID_PARAMETER);
     AssertPtrReturn((uint8_t *)&paPages[cPages] - 1, VERR_INVALID_PARAMETER);
     PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
@@ -3491,23 +3510,25 @@ INTNETR0DECL(int) INTNETR0IfGetPhysBuffer(PINTNET pIntNet, INTNETIFHANDLE hIf, P
  * Sets the promiscuous mode property of an interface.
  *
  * @returns VBox status code.
- * @param   pIntNet         The instance handle.
  * @param   hIf             The interface handle.
  * @param   pSession        The caller's session.
  * @param   fPromiscuous    Set if the interface should be in promiscuous mode, clear if not.
  */
-INTNETR0DECL(int) INTNETR0IfSetPromiscuousMode(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fPromiscuous)
+INTNETR0DECL(int) IntNetR0IfSetPromiscuousMode(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fPromiscuous)
 {
-    LogFlow(("INTNETR0IfSetPromiscuousMode: pIntNet=%p hIf=%RX32 fPromiscuous=%d\n", pIntNet, hIf, fPromiscuous));
+    LogFlow(("IntNetR0IfSetPromiscuousMode: hIf=%RX32 fPromiscuous=%d\n", hIf, fPromiscuous));
 
     /*
      * Validate & translate input.
      */
-    AssertReturn(pIntNet, VERR_INVALID_PARAMETER);
+    PINTNET pIntNet = g_pIntNet;
+    AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
+    AssertReturn(pIntNet->u32Magic, VERR_INVALID_MAGIC);
+
     PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
     if (!pIf)
     {
-        Log(("INTNETR0IfSetPromiscuousMode: returns VERR_INVALID_HANDLE\n"));
+        Log(("IntNetR0IfSetPromiscuousMode: returns VERR_INVALID_HANDLE\n"));
         return VERR_INVALID_HANDLE;
     }
 
@@ -3525,7 +3546,7 @@ INTNETR0DECL(int) INTNETR0IfSetPromiscuousMode(PINTNET pIntNet, INTNETIFHANDLE h
 
         if (pIf->fPromiscuous != fPromiscuous)
         {
-            Log(("INTNETR0IfSetPromiscuousMode: hIf=%RX32: Changed from %d -> %d\n",
+            Log(("IntNetR0IfSetPromiscuousMode: hIf=%RX32: Changed from %d -> %d\n",
                  hIf, !fPromiscuous, !!fPromiscuous));
             ASMAtomicUoWriteBool(&pIf->fPromiscuous, fPromiscuous);
 
@@ -3547,18 +3568,17 @@ INTNETR0DECL(int) INTNETR0IfSetPromiscuousMode(PINTNET pIntNet, INTNETIFHANDLE h
 
 
 /**
- * VMMR0 request wrapper for INTNETR0IfSetPromiscuousMode.
+ * VMMR0 request wrapper for IntNetR0IfSetPromiscuousMode.
  *
- * @returns see INTNETR0IfSetPromiscuousMode.
- * @param   pIntNet         The internal networking instance.
+ * @returns see IntNetR0IfSetPromiscuousMode.
  * @param   pSession        The caller's session.
  * @param   pReq            The request packet.
  */
-INTNETR0DECL(int) INTNETR0IfSetPromiscuousModeReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFSETPROMISCUOUSMODEREQ pReq)
+INTNETR0DECL(int) IntNetR0IfSetPromiscuousModeReq(PSUPDRVSESSION pSession, PINTNETIFSETPROMISCUOUSMODEREQ pReq)
 {
     if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
         return VERR_INVALID_PARAMETER;
-    return INTNETR0IfSetPromiscuousMode(pIntNet, pReq->hIf, pSession, pReq->fPromiscuous);
+    return IntNetR0IfSetPromiscuousMode(pReq->hIf, pSession, pReq->fPromiscuous);
 }
 
 
@@ -3566,24 +3586,26 @@ INTNETR0DECL(int) INTNETR0IfSetPromiscuousModeReq(PINTNET pIntNet, PSUPDRVSESSIO
  * Sets the MAC address of an interface.
  *
  * @returns VBox status code.
- * @param   pIntNet         The instance handle.
  * @param   hIf             The interface handle.
  * @param   pSession        The caller's session.
  * @param   pMAC            The new MAC address.
  */
-INTNETR0DECL(int) INTNETR0IfSetMacAddress(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PCRTMAC pMac)
+INTNETR0DECL(int) IntNetR0IfSetMacAddress(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PCRTMAC pMac)
 {
-    LogFlow(("INTNETR0IfSetMacAddress: pIntNet=%p hIf=%RX32 pMac=%p:{%.6Rhxs}\n", pIntNet, hIf, pMac, pMac));
+    LogFlow(("IntNetR0IfSetMacAddress: hIf=%RX32 pMac=%p:{%.6Rhxs}\n", hIf, pMac, pMac));
 
     /*
      * Validate & translate input.
      */
+    PINTNET pIntNet = g_pIntNet;
     AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
+    AssertReturn(pIntNet->u32Magic, VERR_INVALID_MAGIC);
+
     AssertPtrReturn(pMac, VERR_INVALID_PARAMETER);
     PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
     if (!pIf)
     {
-        Log(("INTNETR0IfSetMacAddress: returns VERR_INVALID_HANDLE\n"));
+        Log(("IntNetR0IfSetMacAddress: returns VERR_INVALID_HANDLE\n"));
         return VERR_INVALID_HANDLE;
     }
 
@@ -3601,7 +3623,7 @@ INTNETR0DECL(int) INTNETR0IfSetMacAddress(PINTNET pIntNet, INTNETIFHANDLE hIf, P
 
         if (memcmp(&pIf->MacAddr, pMac, sizeof(pIf->MacAddr)))
         {
-            Log(("INTNETR0IfSetMacAddress: hIf=%RX32: Changed from %.6Rhxs -> %.6Rhxs\n",
+            Log(("IntNetR0IfSetMacAddress: hIf=%RX32: Changed from %.6Rhxs -> %.6Rhxs\n",
                  hIf, &pIf->MacAddr, pMac));
 
             PINTNETMACTABENTRY pEntry = intnetR0NetworkFindMacAddrEntry(pNetwork, pIf); Assert(pEntry);
@@ -3623,18 +3645,17 @@ INTNETR0DECL(int) INTNETR0IfSetMacAddress(PINTNET pIntNet, INTNETIFHANDLE hIf, P
 
 
 /**
- * VMMR0 request wrapper for INTNETR0IfSetMacAddress.
+ * VMMR0 request wrapper for IntNetR0IfSetMacAddress.
  *
- * @returns see INTNETR0IfSetMacAddress.
- * @param   pIntNet         The internal networking instance.
+ * @returns see IntNetR0IfSetMacAddress.
  * @param   pSession        The caller's session.
  * @param   pReq            The request packet.
  */
-INTNETR0DECL(int) INTNETR0IfSetMacAddressReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFSETMACADDRESSREQ pReq)
+INTNETR0DECL(int) IntNetR0IfSetMacAddressReq(PSUPDRVSESSION pSession, PINTNETIFSETMACADDRESSREQ pReq)
 {
     if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
         return VERR_INVALID_PARAMETER;
-    return INTNETR0IfSetMacAddress(pIntNet, pReq->hIf, pSession, &pReq->Mac);
+    return IntNetR0IfSetMacAddress(pReq->hIf, pSession, &pReq->Mac);
 }
 
 
@@ -3715,23 +3736,25 @@ static int intnetR0NetworkSetIfActive(PINTNETNETWORK pNetwork, PINTNETIF pIf, bo
  * Sets the active property of an interface.
  *
  * @returns VBox status code.
- * @param   pIntNet         The instance handle.
  * @param   hIf             The interface handle.
  * @param   pSession        The caller's session.
  * @param   fActive         The new state.
  */
-INTNETR0DECL(int) INTNETR0IfSetActive(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fActive)
+INTNETR0DECL(int) IntNetR0IfSetActive(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fActive)
 {
-    LogFlow(("INTNETR0IfSetActive: pIntNet=%p hIf=%RX32 fActive=%RTbool\n", pIntNet, hIf, fActive));
+    LogFlow(("IntNetR0IfSetActive: hIf=%RX32 fActive=%RTbool\n", hIf, fActive));
 
     /*
      * Validate & translate input.
      */
+    PINTNET pIntNet = g_pIntNet;
     AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
+    AssertReturn(pIntNet->u32Magic, VERR_INVALID_MAGIC);
+
     PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
     if (!pIf)
     {
-        Log(("INTNETR0IfSetActive: returns VERR_INVALID_HANDLE\n"));
+        Log(("IntNetR0IfSetActive: returns VERR_INVALID_HANDLE\n"));
         return VERR_INVALID_HANDLE;
     }
 
@@ -3758,18 +3781,18 @@ INTNETR0DECL(int) INTNETR0IfSetActive(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPD
 
 
 /**
- * VMMR0 request wrapper for INTNETR0IfSetActive.
+ * VMMR0 request wrapper for IntNetR0IfSetActive.
  *
- * @returns see INTNETR0IfSetActive.
+ * @returns see IntNetR0IfSetActive.
  * @param   pIntNet         The internal networking instance.
  * @param   pSession        The caller's session.
  * @param   pReq            The request packet.
  */
-INTNETR0DECL(int) INTNETR0IfSetActiveReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFSETACTIVEREQ pReq)
+INTNETR0DECL(int) IntNetR0IfSetActiveReq(PSUPDRVSESSION pSession, PINTNETIFSETACTIVEREQ pReq)
 {
     if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
         return VERR_INVALID_PARAMETER;
-    return INTNETR0IfSetActive(pIntNet, pReq->hIf, pSession, pReq->fActive);
+    return IntNetR0IfSetActive(pReq->hIf, pSession, pReq->fActive);
 }
 
 
@@ -3778,24 +3801,26 @@ INTNETR0DECL(int) INTNETR0IfSetActiveReq(PINTNET pIntNet, PSUPDRVSESSION pSessio
  * The interface will be signaled when is put into the receive buffer.
  *
  * @returns VBox status code.
- * @param   pIntNet         The instance handle.
  * @param   hIf             The interface handle.
  * @param   pSession        The caller's session.
  * @param   cMillies        Number of milliseconds to wait. RT_INDEFINITE_WAIT should be
  *                          used if indefinite wait is desired.
  */
-INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, uint32_t cMillies)
+INTNETR0DECL(int) IntNetR0IfWait(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, uint32_t cMillies)
 {
-    Log4(("INTNETR0IfWait: pIntNet=%p hIf=%RX32 cMillies=%u\n", pIntNet, hIf, cMillies));
+    Log4(("IntNetR0IfWait: hIf=%RX32 cMillies=%u\n", hIf, cMillies));
 
     /*
      * Get and validate essential handles.
      */
+    PINTNET pIntNet = g_pIntNet;
     AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
+    AssertReturn(pIntNet->u32Magic, VERR_INVALID_MAGIC);
+
     PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
     if (!pIf)
     {
-        Log(("INTNETR0IfWait: returns VERR_INVALID_HANDLE\n"));
+        Log(("IntNetR0IfWait: returns VERR_INVALID_HANDLE\n"));
         return VERR_INVALID_HANDLE;
     }
     const INTNETIFHANDLE    hIfSelf    = pIf->hIf;
@@ -3803,7 +3828,7 @@ INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
     if (    hIfSelf    != hIf           /* paranoia */
         &&  hRecvEvent != NIL_RTSEMEVENT)
     {
-        Log(("INTNETR0IfWait: returns VERR_SEM_DESTROYED\n"));
+        Log(("IntNetR0IfWait: returns VERR_SEM_DESTROYED\n"));
         return VERR_SEM_DESTROYED;
     }
 
@@ -3835,24 +3860,23 @@ INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
     }
     else
         rc = VERR_SEM_DESTROYED;
-    Log4(("INTNETR0IfWait: returns %Rrc\n", rc));
+    Log4(("IntNetR0IfWait: returns %Rrc\n", rc));
     return rc;
 }
 
 
 /**
- * VMMR0 request wrapper for INTNETR0IfWait.
+ * VMMR0 request wrapper for IntNetR0IfWait.
  *
- * @returns see INTNETR0IfWait.
- * @param   pIntNet         The internal networking instance.
+ * @returns see IntNetR0IfWait.
  * @param   pSession        The caller's session.
  * @param   pReq            The request packet.
  */
-INTNETR0DECL(int) INTNETR0IfWaitReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFWAITREQ pReq)
+INTNETR0DECL(int) IntNetR0IfWaitReq(PSUPDRVSESSION pSession, PINTNETIFWAITREQ pReq)
 {
     if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
         return VERR_INVALID_PARAMETER;
-    return INTNETR0IfWait(pIntNet, pReq->hIf, pSession, pReq->cMillies);
+    return IntNetR0IfWait(pReq->hIf, pSession, pReq->cMillies);
 }
 
 
@@ -3864,14 +3888,17 @@ INTNETR0DECL(int) INTNETR0IfWaitReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PI
  * @param   hIf         The interface handle.
  * @param   pSession        The caller's session.
  */
-INTNETR0DECL(int) INTNETR0IfClose(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
+INTNETR0DECL(int) IntNetR0IfClose(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
 {
-    LogFlow(("INTNETR0IfClose: pIntNet=%p hIf=%RX32\n", pIntNet, hIf));
+    LogFlow(("IntNetR0IfClose: hIf=%RX32\n", hIf));
 
     /*
      * Validate and free the handle.
      */
+    PINTNET pIntNet = g_pIntNet;
     AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
+    AssertReturn(pIntNet->u32Magic, VERR_INVALID_MAGIC);
+
     PINTNETIF pIf = (PINTNETIF)RTHandleTableFreeWithCtx(pIntNet->hHtIfs, hIf, pSession);
     if (!pIf)
         return VERR_INVALID_HANDLE;
@@ -3896,24 +3923,23 @@ INTNETR0DECL(int) INTNETR0IfClose(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSE
     intnetR0IfRelease(pIf, pSession); /* (RTHandleTableFreeWithCtx) */
 
     int rc = SUPR0ObjRelease(pvObj, pSession);
-    LogFlow(("INTNETR0IfClose: returns %Rrc\n", rc));
+    LogFlow(("IntNetR0IfClose: returns %Rrc\n", rc));
     return rc;
 }
 
 
 /**
- * VMMR0 request wrapper for INTNETR0IfCloseReq.
+ * VMMR0 request wrapper for IntNetR0IfCloseReq.
  *
- * @returns see INTNETR0IfClose.
- * @param   pIntNet         The internal networking instance.
+ * @returns see IntNetR0IfClose.
  * @param   pSession        The caller's session.
  * @param   pReq            The request packet.
  */
-INTNETR0DECL(int) INTNETR0IfCloseReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFCLOSEREQ pReq)
+INTNETR0DECL(int) IntNetR0IfCloseReq(PSUPDRVSESSION pSession, PINTNETIFCLOSEREQ pReq)
 {
     if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
         return VERR_INVALID_PARAMETER;
-    return INTNETR0IfClose(pIntNet, pReq->hIf, pSession);
+    return IntNetR0IfClose(pReq->hIf, pSession);
 }
 
 
@@ -5178,7 +5204,6 @@ static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const
  * Opens a network interface and connects it to the specified network.
  *
  * @returns VBox status code.
- * @param   pIntNet         The internal network instance.
  * @param   pSession        The session handle.
  * @param   pszNetwork      The network name.
  * @param   enmTrunkType    The trunk type.
@@ -5189,17 +5214,19 @@ static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const
  * @param   cbRecv          The receive buffer size.
  * @param   phIf            Where to store the handle to the network interface.
  */
-INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork,
+INTNETR0DECL(int) IntNetR0Open(PSUPDRVSESSION pSession, const char *pszNetwork,
                                INTNETTRUNKTYPE enmTrunkType, const char *pszTrunk, uint32_t fFlags,
-                               unsigned cbSend, unsigned cbRecv, PINTNETIFHANDLE phIf)
+                               uint32_t cbSend, uint32_t cbRecv, PINTNETIFHANDLE phIf)
 {
-    LogFlow(("INTNETR0Open: pIntNet=%p pSession=%p pszNetwork=%p:{%s} enmTrunkType=%d pszTrunk=%p:{%s} fFlags=%#x cbSend=%u cbRecv=%u phIf=%p\n",
-             pIntNet, pSession, pszNetwork, pszNetwork, enmTrunkType, pszTrunk, pszTrunk, fFlags, cbSend, cbRecv, phIf));
+    LogFlow(("IntNetR0Open: pSession=%p pszNetwork=%p:{%s} enmTrunkType=%d pszTrunk=%p:{%s} fFlags=%#x cbSend=%u cbRecv=%u phIf=%p\n",
+             pSession, pszNetwork, pszNetwork, enmTrunkType, pszTrunk, pszTrunk, fFlags, cbSend, cbRecv, phIf));
 
     /*
      * Validate input.
      */
+    PINTNET pIntNet = g_pIntNet;
     AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
+    AssertReturn(pIntNet->u32Magic, VERR_INVALID_MAGIC);
 
     AssertPtrReturn(pszNetwork, VERR_INVALID_PARAMETER);
     const char *pszNetworkEnd = (const char *)memchr(pszNetwork, '\0', INTNET_MAX_NETWORK_NAME);
@@ -5272,7 +5299,7 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
     }
 
     RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
-    LogFlow(("INTNETR0Open: return %Rrc *phIf=%RX32\n", rc, *phIf));
+    LogFlow(("IntNetR0Open: return %Rrc *phIf=%RX32\n", rc, *phIf));
     return rc;
 }
 
@@ -5281,38 +5308,76 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
  * VMMR0 request wrapper for GMMR0MapUnmapChunk.
  *
  * @returns see GMMR0MapUnmapChunk.
- * @param   pIntNet         The internal networking instance.
  * @param   pSession        The caller's session.
  * @param   pReq            The request packet.
  */
-INTNETR0DECL(int) INTNETR0OpenReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETOPENREQ pReq)
+INTNETR0DECL(int) IntNetR0OpenReq(PSUPDRVSESSION pSession, PINTNETOPENREQ pReq)
 {
     if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
         return VERR_INVALID_PARAMETER;
-    return INTNETR0Open(pIntNet, pSession, &pReq->szNetwork[0], pReq->enmTrunkType, pReq->szTrunk,
+    return IntNetR0Open(pSession, &pReq->szNetwork[0], pReq->enmTrunkType, pReq->szTrunk,
                         pReq->fFlags, pReq->cbSend, pReq->cbRecv, &pReq->hIf);
 }
 
 
 /**
- * Destroys an instance of the Ring-0 internal networking service.
+ * Count the internal networks.
  *
- * @param   pIntNet     Pointer to the instance data.
+ * This is mainly for providing the testcase with some introspection to validate
+ * behavior when closing interfaces.
+ *
+ * @returns The number of networks.
  */
-INTNETR0DECL(void) INTNETR0Destroy(PINTNET pIntNet)
+INTNETR0DECL(uint32_t) IntNetR0GetNetworkCount(void)
 {
-    LogFlow(("INTNETR0Destroy: pIntNet=%p\n", pIntNet));
+    /*
+     * Grab the instance.
+     */
+    PINTNET pIntNet = g_pIntNet;
+    if (!pIntNet)
+        return 0;
+    AssertPtrReturn(pIntNet, 0);
+    AssertReturn(pIntNet->u32Magic == INTNET_MAGIC, 0);
 
     /*
-     * Allow NULL pointers.
+     * Grab the mutex and count the networks.
      */
+    int rc = RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
+    if (RT_FAILURE(rc))
+        return 0;
+
+    uint32_t cNetworks = 0;
+    for (PINTNETNETWORK pCur = pIntNet->pNetworks; pCur; pCur = pCur->pNext)
+        cNetworks++;
+
+    RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
+
+    return cNetworks;
+}
+
+
+
+/**
+ * Destroys an instance of the Ring-0 internal networking service.
+ */
+INTNETR0DECL(void) IntNetR0Term(void)
+{
+    LogFlow(("IntNetR0Term:\n"));
+
+    /*
+     * Zap the global pointer and validate it.
+     */
+    PINTNET pIntNet = g_pIntNet;
+    g_pIntNet = NULL;
     if (!pIntNet)
         return;
     AssertPtrReturnVoid(pIntNet);
+    AssertReturnVoid(pIntNet->u32Magic == INTNET_MAGIC);
 
     /*
      * There is not supposed to be any networks hanging around at this time.
      */
+    AssertReturnVoid(ASMAtomicCmpXchgU32(&pIntNet->u32Magic, ~INTNET_MAGIC, INTNET_MAGIC));
     Assert(pIntNet->pNetworks == NULL);
     if (pIntNet->hMtxCreateOpenDestroy != NIL_RTSEMMUTEX)
     {
@@ -5331,14 +5396,13 @@ INTNETR0DECL(void) INTNETR0Destroy(PINTNET pIntNet)
 
 
 /**
- * Create an instance of the Ring-0 internal networking service.
+ * Initalizes the internal network ring-0 service.
  *
  * @returns VBox status code.
- * @param   ppIntNet    Where to store the instance pointer.
  */
-INTNETR0DECL(int) INTNETR0Create(PINTNET *ppIntNet)
+INTNETR0DECL(int) IntNetR0Init(void)
 {
-    LogFlow(("INTNETR0Create: ppIntNet=%p\n", ppIntNet));
+    LogFlow(("IntNetR0Init:\n"));
     int rc = VERR_NO_MEMORY;
     PINTNET pIntNet = (PINTNET)RTMemAllocZ(sizeof(*pIntNet));
     if (pIntNet)
@@ -5352,8 +5416,9 @@ INTNETR0DECL(int) INTNETR0Create(PINTNET *ppIntNet)
                                        UINT32_C(0x8ffe0000), 4096, intnetR0IfRetainHandle, NULL);
             if (RT_SUCCESS(rc))
             {
-                *ppIntNet = pIntNet;
-                LogFlow(("INTNETR0Create: returns VINF_SUCCESS *ppIntNet=%p\n", pIntNet));
+                pIntNet->u32Magic = INTNET_MAGIC;
+                g_pIntNet = pIntNet;
+                LogFlow(("IntNetR0Init: returns VINF_SUCCESS pIntNet=%p\n", pIntNet));
                 return VINF_SUCCESS;
             }
 
@@ -5361,8 +5426,7 @@ INTNETR0DECL(int) INTNETR0Create(PINTNET *ppIntNet)
         }
         RTMemFree(pIntNet);
     }
-    *ppIntNet = NULL;
-    LogFlow(("INTNETR0Create: returns %Rrc\n", rc));
+    LogFlow(("IntNetR0Init: returns %Rrc\n", rc));
     return rc;
 }
 

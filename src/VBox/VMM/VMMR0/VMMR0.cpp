@@ -69,9 +69,8 @@ RT_C_DECLS_END
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** Pointer to the internal networking service instance. */
-PINTNET g_pIntNet = 0;
-
+/** Drag in necessary library bits.
+ * The runtime lives here (in VMMR0.r0) and VBoxDD*R0.r0 links against us. */
 PFNRT g_VMMGCDeps[] =
 {
     (PFNRT)RTCrc32
@@ -109,18 +108,14 @@ VMMR0DECL(int) ModuleInit(void)
 #endif
                     if (RT_SUCCESS(rc))
                     {
-                        LogFlow(("ModuleInit: g_pIntNet=%p\n", g_pIntNet));
-                        g_pIntNet = NULL;
-                        LogFlow(("ModuleInit: g_pIntNet=%p should be NULL now...\n", g_pIntNet));
-                        rc = INTNETR0Create(&g_pIntNet);
+                        rc = IntNetR0Init();
                         if (RT_SUCCESS(rc))
                         {
-                            LogFlow(("ModuleInit: returns success. g_pIntNet=%p\n", g_pIntNet));
+                            LogFlow(("ModuleInit: returns success.\n"));
                             return VINF_SUCCESS;
                         }
 
                         /* bail out */
-                        g_pIntNet = NULL;
                         LogFlow(("ModuleTerm: returns %Rrc\n", rc));
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
                         PGMR0DynMapTerm();
@@ -149,17 +144,12 @@ VMMR0DECL(void) ModuleTerm(void)
     LogFlow(("ModuleTerm:\n"));
 
     /*
-     * Destroy the internal networking instance.
+     * Terminate the internal network service.
      */
-    if (g_pIntNet)
-    {
-        INTNETR0Destroy(g_pIntNet);
-        g_pIntNet = NULL;
-    }
+    IntNetR0Term();
 
     /*
      * PGM (Darwin) and HWACCM global cleanup.
-     * Destroy the GMM and GVMM instances.
      */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     PGMR0DynMapTerm();
@@ -167,6 +157,9 @@ VMMR0DECL(void) ModuleTerm(void)
     PGMDeregisterStringFormatTypes();
     HWACCMR0Term();
 
+    /*
+     * Destroy the GMM and GVMM instances.
+     */
     GMMR0Term();
     GVMMR0Term();
 
@@ -997,59 +990,43 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
             PINTNETOPENREQ pReq = (PINTNETOPENREQ)pReqHdr;
             if (u64Arg || !pReq || !vmmR0IsValidSession(pVM, pReq->pSession, pSession) || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
-            if (!g_pIntNet)
-                return VERR_NOT_SUPPORTED;
-            return INTNETR0OpenReq(g_pIntNet, pSession, pReq);
+            return IntNetR0OpenReq(pSession, pReq);
         }
 
         case VMMR0_DO_INTNET_IF_CLOSE:
             if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFCLOSEREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
-            if (!g_pIntNet)
-                return VERR_NOT_SUPPORTED;
-            return INTNETR0IfCloseReq(g_pIntNet, pSession, (PINTNETIFCLOSEREQ)pReqHdr);
+            return IntNetR0IfCloseReq(pSession, (PINTNETIFCLOSEREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_GET_RING3_BUFFER:
             if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFGETRING3BUFFERREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
-            if (!g_pIntNet)
-                return VERR_NOT_SUPPORTED;
-            return INTNETR0IfGetRing3BufferReq(g_pIntNet, pSession, (PINTNETIFGETRING3BUFFERREQ)pReqHdr);
+            return IntNetR0IfGetRing3BufferReq(pSession, (PINTNETIFGETRING3BUFFERREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE:
             if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSETPROMISCUOUSMODEREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
-            if (!g_pIntNet)
-                return VERR_NOT_SUPPORTED;
-            return INTNETR0IfSetPromiscuousModeReq(g_pIntNet, pSession, (PINTNETIFSETPROMISCUOUSMODEREQ)pReqHdr);
+            return IntNetR0IfSetPromiscuousModeReq(pSession, (PINTNETIFSETPROMISCUOUSMODEREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_SET_MAC_ADDRESS:
             if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSETMACADDRESSREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
-            if (!g_pIntNet)
-                return VERR_NOT_SUPPORTED;
-            return INTNETR0IfSetMacAddressReq(g_pIntNet, pSession, (PINTNETIFSETMACADDRESSREQ)pReqHdr);
+            return IntNetR0IfSetMacAddressReq(pSession, (PINTNETIFSETMACADDRESSREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_SET_ACTIVE:
             if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSETACTIVEREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
-            if (!g_pIntNet)
-                return VERR_NOT_SUPPORTED;
-            return INTNETR0IfSetActiveReq(g_pIntNet, pSession, (PINTNETIFSETACTIVEREQ)pReqHdr);
+            return IntNetR0IfSetActiveReq(pSession, (PINTNETIFSETACTIVEREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_SEND:
             if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSENDREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
-            if (!g_pIntNet)
-                return VERR_NOT_SUPPORTED;
-            return INTNETR0IfSendReq(g_pIntNet, pSession, (PINTNETIFSENDREQ)pReqHdr);
+            return IntNetR0IfSendReq(pSession, (PINTNETIFSENDREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_WAIT:
             if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFWAITREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
-            if (!g_pIntNet)
-                return VERR_NOT_SUPPORTED;
-            return INTNETR0IfWaitReq(g_pIntNet, pSession, (PINTNETIFWAITREQ)pReqHdr);
+            return IntNetR0IfWaitReq(pSession, (PINTNETIFWAITREQ)pReqHdr);
 
         /*
          * For profiling.
