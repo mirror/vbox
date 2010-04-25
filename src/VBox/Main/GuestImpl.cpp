@@ -528,7 +528,7 @@ int Guest::notifyCtrlExec(uint32_t              u32Function,
                              pData->hdr.u32ContextID, pData->u32Status));
             }
             else
-                LogFlowFunc(("Callback (context ID=%u, status=%u) progress already marked as completed\n", 
+                LogFlowFunc(("Callback (context ID=%u, status=%u) progress already marked as completed\n",
                              pData->hdr.u32ContextID, pData->u32Status));
         }
         ASMAtomicWriteBool(&it->bCalled, true);
@@ -835,7 +835,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                             *aPID = pData->u32PID;
                             break;
 
-                        /* In any other case the process either already 
+                        /* In any other case the process either already
                          * terminated or something else went wrong, so no PID ... */
                         case PROC_STS_TEN: /* Terminated normally. */
                         case PROC_STS_TEA: /* Terminated abnormally. */
@@ -946,7 +946,6 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
 
     /* Search for existing PID. */
     PHOSTEXECOUTCALLBACKDATA pData = (HOSTEXECOUTCALLBACKDATA*)RTMemAlloc(sizeof(HOSTEXECOUTCALLBACKDATA));
-    AssertPtr(pData);
     uint32_t uContextID = addCtrlCallbackContext(pData, sizeof(HOSTEXECOUTCALLBACKDATA), NULL /* pProgress */);
     Assert(uContextID > 0);
 
@@ -961,20 +960,20 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
 
     int vrc = VINF_SUCCESS;
 
-    /* Make sure mParent is valid, so set the read lock while using. */
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    /* Forward the information to the VMM device. */
-    AssertPtr(mParent);
-    VMMDev *vmmDev = mParent->getVMMDev();
-    if (vmmDev)
     {
-        LogFlowFunc(("hgcmHostCall numParms=%d\n", i));
-        vrc = vmmDev->hgcmHostCall("VBoxGuestControlSvc", HOST_EXEC_GET_OUTPUT,
-                                   i, paParms);
-    }
+        /* Make sure mParent is valid, so set the read lock while using. */
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    alock.release();
+        /* Forward the information to the VMM device. */
+        AssertPtr(mParent);
+        VMMDev *vmmDev = mParent->getVMMDev();
+        if (vmmDev)
+        {
+            LogFlowFunc(("hgcmHostCall numParms=%d\n", i));
+            vrc = vmmDev->hgcmHostCall("VBoxGuestControlSvc", HOST_EXEC_GET_OUTPUT,
+                                       i, paParms);
+        }
+    }
 
     if (RT_SUCCESS(vrc))
     {
@@ -1007,25 +1006,23 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
             AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
             /* Did we get some output? */
-            PHOSTEXECOUTCALLBACKDATA pData = (HOSTEXECOUTCALLBACKDATA*)it->pvData;
+            pData = (HOSTEXECOUTCALLBACKDATA*)it->pvData;
             Assert(it->cbData == sizeof(HOSTEXECOUTCALLBACKDATA));
             AssertPtr(pData);
-    
+
             if (   it->bCalled
                 && pData->cbData)
             {
                 /* Do we need to resize the array? */
                 if (pData->cbData > cbData)
                     outputData.resize(pData->cbData);
-    
+
                 /* Fill output in supplied out buffer. */
                 memcpy(outputData.raw(), pData->pvData, pData->cbData);
                 outputData.resize(pData->cbData); /* Shrink to fit actual buffer size. */
             }
             else
                 vrc = VERR_NO_DATA; /* This is not an error we want to report to COM. */
-
-            alock.release();
         }
 
         /* If something failed (or there simply was no data, indicated by VERR_NO_DATA,
