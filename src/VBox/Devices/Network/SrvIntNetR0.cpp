@@ -292,16 +292,16 @@ typedef struct INTNETTRUNKIF
     /** The current MAC address for the interface. (reported)
      * Updated while owning the switch table spinlock.  */
     RTMAC                   MacAddr;
-    /** Can pfnXmit cope with disabled preemption for the 'wire'. (reported) */
-    bool                    fWireNoPreempt;
-    /** Can pfnXmit cope with disabled preemption for the 'host'. (reported) */
-    bool                    fHostNoPreempt;
     /** Whether to supply physical addresses with the outbound SGs. (reported) */
     bool                    fPhysSG;
+    /** Explicit alignment. */
+    bool                    fUnused;
     /** Busy count for tracking destination table references and active sends.
      * Usually incremented while owning the switch table spinlock.  The 30th bit
      * is used to indicate wakeup. */
     uint32_t volatile       cBusy;
+    /** Mask of destinations that pfnXmit cope with disabled preemption for. */
+    uint32_t                fNoPreemptDsts;
     /** The GSO capabilities of the wire destination. (reported) */
     uint32_t                fWireGsoCapabilites;
     /** The GSO capabilities of the host destination. (reported)
@@ -2606,14 +2606,17 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
      * Grab the out-bound lock and send the frame.
      */
     int rc;
-    if (intnetR0TrunkIfOutLock(pThis))
+    if (   (fDst & pThis->fNoPreemptDsts) == fDst
+        || intnetR0TrunkIfOutLock(pThis))
     {
         if (   pSG->GsoCtx.u8Type == PDMNETWORKGSOTYPE_INVALID
             || intnetR0TrunkIfCanHandleGsoFrame(pThis, pSG, fDst) )
             rc = pThis->pIfPort->pfnXmit(pThis->pIfPort, pSG, fDst);
         else
             rc = intnetR0TrunkIfSendGsoFallback(pThis, pSG, fDst);
-        intnetR0TrunkIfOutUnlock(pThis);
+
+        if ((fDst & pThis->fNoPreemptDsts) != fDst)
+            intnetR0TrunkIfOutUnlock(pThis);
     }
     else
     {
@@ -2817,9 +2820,7 @@ DECLINLINE(bool) intnetR0NetworkIsContextOk(PINTNETNETWORK pNetwork, PINTNETIF p
 
     /* ASSUMES: that the trunk won't change its report while we're checking. */
     PINTNETTRUNKIF  pTrunk = pDstTab->pTrunk;
-    if (    ((fTrunkDst & INTNETTRUNKDIR_HOST) && (pTrunk->fHostNoPreempt || !pNetwork->MacTab.fHostActive))
-        &&  ((fTrunkDst & INTNETTRUNKDIR_WIRE) && (pTrunk->fWireNoPreempt || !pNetwork->MacTab.fWireActive))
-       )
+    if ((fTrunkDst & pTrunk->fNoPreemptDsts) == fTrunkDst)
         return true;
 
     /* ASSUMES: That a preemption test detects HWACCM contexts. (Will work on
@@ -2858,8 +2859,9 @@ DECLINLINE(bool) intnetR0NetworkIsContextOkForBroadcast(PINTNETNETWORK pNetwork,
     PINTNETTRUNKIF pTrunk = pNetwork->MacTab.pTrunk;
 
     bool fRc = !pTrunk
-            || (   (!pNetwork->MacTab.fHostActive || pTrunk->fHostNoPreempt || fSrc == INTNETTRUNKDIR_HOST)
-                && (!pNetwork->MacTab.fWireActive || pTrunk->fWireNoPreempt || fSrc == INTNETTRUNKDIR_WIRE) );
+            || pTrunk->fNoPreemptDsts == (INTNETTRUNKDIR_HOST | INTNETTRUNKDIR_WIRE)
+            || (   (!pNetwork->MacTab.fHostActive || (pTrunk->fNoPreemptDsts & INTNETTRUNKDIR_HOST) )
+                && (!pNetwork->MacTab.fWireActive || (pTrunk->fNoPreemptDsts & INTNETTRUNKDIR_WIRE) ) );
 
     RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
 
@@ -4734,10 +4736,10 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
         pTrunk->MacAddr.au8[3]            = 0xff;
         pTrunk->MacAddr.au8[4]            = 0xff;
         pTrunk->MacAddr.au8[5]            = 0xff;
-        //pTrunk->fWireNoPreempt          = false;
-        //pTrunk->fHostNoPreempt          = false;
         //pTrunk->fPhysSG                 = false;
+        //pTrunk->fUnused                 = false;
         //pTrunk->cBusy                   = 0;
+        //pTrunk->fNoPreemptDsts          = 0;
         //pTrunk->fWireGsoCapabilites     = 0;
         //pTrunk->fHostGsoCapabilites     = 0;
         //pTrunk->abGsoHdrs               = {0};
