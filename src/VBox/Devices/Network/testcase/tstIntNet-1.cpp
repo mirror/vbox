@@ -820,16 +820,17 @@ int main(int argc, char **argv)
         /*
          * Get the ring-3 address of the shared interface buffer.
          */
-        INTNETIFGETRING3BUFFERREQ GetRing3BufferReq;
-        GetRing3BufferReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-        GetRing3BufferReq.Hdr.cbReq = sizeof(GetRing3BufferReq);
-        GetRing3BufferReq.pSession = pSession;
-        GetRing3BufferReq.hIf = OpenReq.hIf;
-        GetRing3BufferReq.pRing3Buf = NULL;
-        rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_GET_RING3_BUFFER, 0, &GetRing3BufferReq.Hdr);
+        INTNETIFGETBUFFERPTRSREQ GetBufferPtrsReq;
+        GetBufferPtrsReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        GetBufferPtrsReq.Hdr.cbReq = sizeof(GetBufferPtrsReq);
+        GetBufferPtrsReq.pSession = pSession;
+        GetBufferPtrsReq.hIf = OpenReq.hIf;
+        GetBufferPtrsReq.pRing3Buf = NULL;
+        GetBufferPtrsReq.pRing0Buf = NULL;
+        rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS, 0, &GetBufferPtrsReq.Hdr);
         if (RT_SUCCESS(rc))
         {
-            PINTNETBUF pBuf = GetRing3BufferReq.pRing3Buf;
+            PINTNETBUF pBuf = GetBufferPtrsReq.pRing3Buf;
             RTPrintf("tstIntNet-1: pBuf=%p cbBuf=%d cbSend=%d cbRecv=%d\n",
                      pBuf, pBuf->cbBuf, pBuf->cbSend, pBuf->cbRecv);
             RTStrmFlush(g_pStdOut);
@@ -912,7 +913,7 @@ int main(int argc, char **argv)
         }
         else
         {
-            RTPrintf("tstIntNet-1: SUPR3CallVMMR0Ex(,VMMR0_DO_INTNET_IF_GET_RING3_BUFFER,) failed, rc=%Rrc\n", rc);
+            RTPrintf("tstIntNet-1: SUPR3CallVMMR0Ex(,VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS,) failed, rc=%Rrc\n", rc);
             g_cErrors++;
         }
     }

@@ -859,10 +859,10 @@ INTNETR0DECL(int) IntNetR0IfCloseReq(PSUPDRVSESSION pSession, PINTNETIFCLOSEREQ 
 
 /**
  * Request buffer for IntNetR0IfGetRing3BufferReq /
- * VMMR0_DO_INTNET_IF_GET_RING3_BUFFER.
+ * VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS.
  * @see IntNetR0IfGetRing3Buffer.
  */
-typedef struct INTNETIFGETRING3BUFFERREQ
+typedef struct INTNETIFGETBUFFERPTRSREQ
 {
     /** The request header. */
     SUPVMMR0REQHDR  Hdr;
@@ -871,14 +871,16 @@ typedef struct INTNETIFGETRING3BUFFERREQ
     PSUPDRVSESSION  pSession;
     /** Handle to the interface. */
     INTNETIFHANDLE  hIf;
-    /** The pointer to the ring3 buffer. (output) */
+    /** The pointer to the ring-3 buffer. (output) */
     R3PTRTYPE(PINTNETBUF)   pRing3Buf;
-} INTNETIFGETRING3BUFFERREQ;
+    /** The pointer to the ring-0 buffer. (output) */
+    R0PTRTYPE(PINTNETBUF)   pRing0Buf;
+} INTNETIFGETBUFFERPTRSREQ;
 /** Pointer to an IntNetR0IfGetRing3BufferReq /
- *  VMMR0_DO_INTNET_IF_GET_RING3_BUFFER request buffer. */
-typedef INTNETIFGETRING3BUFFERREQ *PINTNETIFGETRING3BUFFERREQ;
+ *  VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS request buffer. */
+typedef INTNETIFGETBUFFERPTRSREQ *PINTNETIFGETBUFFERPTRSREQ;
 
-INTNETR0DECL(int) IntNetR0IfGetRing3BufferReq(PSUPDRVSESSION pSession, PINTNETIFGETRING3BUFFERREQ pReq);
+INTNETR0DECL(int) IntNetR0IfGetBufferPtrsReq(PSUPDRVSESSION pSession, PINTNETIFGETBUFFERPTRSREQ pReq);
 
 
 /**
@@ -1006,14 +1008,14 @@ INTNETR0DECL(int)      IntNetR0Open(PSUPDRVSESSION pSession, const char *pszNetw
                                     uint32_t cbSend, uint32_t cbRecv, PINTNETIFHANDLE phIf);
 INTNETR0DECL(uint32_t) IntNetR0GetNetworkCount(void);
 
-INTNETR0DECL(int) IntNetR0IfClose(             INTNETIFHANDLE hIf, PSUPDRVSESSION pSession);
-INTNETR0DECL(int) IntNetR0IfGetRing0Buffer(    INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF *ppRing0Buf);
-INTNETR0DECL(int) IntNetR0IfGetRing3Buffer(    INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, R3PTRTYPE(PINTNETBUF) *ppRing3Buf);
-INTNETR0DECL(int) IntNetR0IfSetPromiscuousMode(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fPromiscuous);
-INTNETR0DECL(int) IntNetR0IfSetMacAddress(     INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PCRTMAC pMac);
-INTNETR0DECL(int) IntNetR0IfSetActive(         INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fActive);
-INTNETR0DECL(int) IntNetR0IfSend(              INTNETIFHANDLE hIf, PSUPDRVSESSION pSession);
-INTNETR0DECL(int) IntNetR0IfWait(              INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, uint32_t cMillies);
+INTNETR0DECL(int)       IntNetR0IfClose(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession);
+INTNETR0DECL(int)       IntNetR0IfGetBufferPtrs(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession,
+                                                R3PTRTYPE(PINTNETBUF) *ppRing3Buf, R0PTRTYPE(PINTNETBUF) *ppRing0Buf);
+INTNETR0DECL(int)       IntNetR0IfSetPromiscuousMode(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fPromiscuous);
+INTNETR0DECL(int)       IntNetR0IfSetMacAddress(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PCRTMAC pMac);
+INTNETR0DECL(int)       IntNetR0IfSetActive(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fActive);
+INTNETR0DECL(int)       IntNetR0IfSend(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession);
+INTNETR0DECL(int)       IntNetR0IfWait(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, uint32_t cMillies);
 
 /** @} */
 #endif /* IN_RING0 */

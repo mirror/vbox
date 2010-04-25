@@ -3369,11 +3369,15 @@ INTNETR0DECL(int) IntNetR0IfSendReq(PSUPDRVSESSION pSession, PINTNETIFSENDREQ pR
  * @returns VBox status code.
  * @param   hIf             The interface handle.
  * @param   pSession        The caller's session.
- * @param   ppRing3Buf      Where to store the address of the ring-3 mapping.
+ * @param   ppRing3Buf      Where to store the address of the ring-3 mapping
+ *                          (optional).
+ * @param   ppRing0Buf      Where to store the address of the ring-0 mapping
+ *                          (optional).
  */
-INTNETR0DECL(int) IntNetR0IfGetRing3Buffer(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, R3PTRTYPE(PINTNETBUF) *ppRing3Buf)
+INTNETR0DECL(int)       IntNetR0IfGetBufferPtrs(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession,
+                                                R3PTRTYPE(PINTNETBUF) *ppRing3Buf, R0PTRTYPE(PINTNETBUF) *ppRing0Buf)
 {
-    LogFlow(("IntNetR0IfGetRing3Buffer: hIf=%RX32 ppRing3Buf=%p\n", hIf, ppRing3Buf));
+    LogFlow(("IntNetR0IfGetBufferPtrs: hIf=%RX32 ppRing3Buf=%p ppRing0Buf=%p\n", hIf, ppRing3Buf, ppRing0Buf));
 
     /*
      * Validate input.
@@ -3382,8 +3386,13 @@ INTNETR0DECL(int) IntNetR0IfGetRing3Buffer(INTNETIFHANDLE hIf, PSUPDRVSESSION pS
     AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
     AssertReturn(pIntNet->u32Magic, VERR_INVALID_MAGIC);
 
-    AssertPtrReturn(ppRing3Buf, VERR_INVALID_PARAMETER);
-    *ppRing3Buf = 0;
+    AssertPtrNullReturn(ppRing3Buf, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(ppRing0Buf, VERR_INVALID_PARAMETER);
+    if (ppRing3Buf)
+        *ppRing3Buf = 0;
+    if (ppRing0Buf)
+        *ppRing0Buf = 0;
+
     PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
     if (!pIf)
         return VERR_INVALID_HANDLE;
@@ -3396,71 +3405,33 @@ INTNETR0DECL(int) IntNetR0IfGetRing3Buffer(INTNETIFHANDLE hIf, PSUPDRVSESSION pS
     int rc = RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
     if (RT_SUCCESS(rc))
     {
-        *ppRing3Buf = pIf->pIntBufR3;
+        if (ppRing3Buf)
+            *ppRing3Buf = pIf->pIntBufR3;
+        if (ppRing0Buf)
+            *ppRing0Buf = (R0PTRTYPE(PINTNETBUF))pIf->pIntBuf; /* tstIntNetR0 mess */
 
         rc = RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
     }
 
     intnetR0IfRelease(pIf, pSession);
-    LogFlow(("IntNetR0IfGetRing3Buffer: returns %Rrc *ppRing3Buf=%p\n", rc, *ppRing3Buf));
+    LogFlow(("IntNetR0IfGetBufferPtrs: returns %Rrc *ppRing3Buf=%p *ppRing0Buf=%p\n",
+             rc, ppRing3Buf ? *ppRing3Buf : NULL, ppRing0Buf ? *ppRing0Buf : NULL));
     return rc;
 }
 
 
 /**
- * VMMR0 request wrapper for IntNetR0IfGetRing3Buffer.
+ * VMMR0 request wrapper for IntNetR0IfGetBufferPtrs.
  *
  * @returns see IntNetR0IfGetRing3Buffer.
  * @param   pSession        The caller's session.
  * @param   pReq            The request packet.
  */
-INTNETR0DECL(int) IntNetR0IfGetRing3BufferReq(PSUPDRVSESSION pSession, PINTNETIFGETRING3BUFFERREQ pReq)
+INTNETR0DECL(int) IntNetR0IfGetBufferPtrsReq(PSUPDRVSESSION pSession, PINTNETIFGETBUFFERPTRSREQ pReq)
 {
     if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
         return VERR_INVALID_PARAMETER;
-    return IntNetR0IfGetRing3Buffer(pReq->hIf, pSession, &pReq->pRing3Buf);
-}
-
-
-/**
- * Gets the ring-0 address of the current buffer.
- *
- * @returns VBox status code.
- * @param   hIf             The interface handle.
- * @param   pSession        The caller's session.
- * @param   ppRing0Buf      Where to store the address of the ring-3 mapping.
- */
-INTNETR0DECL(int) IntNetR0IfGetRing0Buffer(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF *ppRing0Buf)
-{
-    LogFlow(("IntNetR0IfGetRing0Buffer: hIf=%RX32 ppRing0Buf=%p\n", hIf, ppRing0Buf));
-
-    /*
-     * Validate input.
-     */
-    PINTNET pIntNet = g_pIntNet;
-    AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
-    AssertReturn(pIntNet->u32Magic, VERR_INVALID_MAGIC);
-
-    AssertPtrReturn(ppRing0Buf, VERR_INVALID_PARAMETER);
-    *ppRing0Buf = NULL;
-    PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
-    if (!pIf)
-        return VERR_INVALID_HANDLE;
-
-    /*
-     * Grab the lock and get the data.
-     * ASSUMES that the handle isn't closed while we're here.
-     */
-    int rc = RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
-    if (RT_SUCCESS(rc))
-    {
-        *ppRing0Buf = pIf->pIntBuf;
-
-        rc = RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
-    }
-    intnetR0IfRelease(pIf, pSession);
-    LogFlow(("IntNetR0IfGetRing0Buffer: returns %Rrc *ppRing0Buf=%p\n", rc, *ppRing0Buf));
-    return rc;
+    return IntNetR0IfGetBufferPtrs(pReq->hIf, pSession, &pReq->pRing3Buf, &pReq->pRing0Buf);
 }
 
 

@@ -84,9 +84,9 @@ typedef struct DRVINTNET
     /** The network config interface.
      * Can (in theory at least) be NULL. */
     R3PTRTYPE(PPDMINETWORKCONFIG)   pIAboveConfigR3;
-    /** Pointer to the driver instance. */
+    /** Pointer to the driver instance (ring-3). */
     PPDMDRVINSR3                    pDrvInsR3;
-    /** Pointer to the communication buffer. */
+    /** Pointer to the communication buffer (ring-3). */
     R3PTRTYPE(PINTNETBUF)           pBufR3;
     /** Ring-3 base interface for the ring-0 context. */
     PDMIBASER0                      IBaseR0;
@@ -96,9 +96,10 @@ typedef struct DRVINTNET
 
     /** The network interface for the ring-0 context. */
     PDMINETWORKUPR0                 INetworkUpR0;
-    /** Pointer to the driver instance. */
+    /** Pointer to the driver instance (ring-0). */
     PPDMDRVINSR0                    pDrvInsR0;
-    RTR0PTR                         R0PtrAlignment;
+    /** Pointer to the communication buffer (ring-0). */
+    R0PTRTYPE(PINTNETBUF)           pBufR0;
 
     /** The network interface for the raw-mode context. */
     PDMINETWORKUPRC                 INetworkUpRC;
@@ -131,11 +132,21 @@ typedef struct DRVINTNET
     bool volatile                   fXmitSignalled;
     /** Set if the transmit thread the one busy transmitting. */
     bool volatile                   fXmitOnXmitThread;
+    /** The xmit thread should process the ring ASAP. */
+    bool                            fXmitProcessRing;
     /** Set if data transmission should start immediately and deactivate
      * as late as possible. */
     bool                            fActivateEarlyDeactivateLate;
     /** Padding. */
-    bool                            afReserved[HC_ARCH_BITS == 64 ? 4 : 4];
+    bool                            afReserved[HC_ARCH_BITS == 64 ? 3 : 3];
+    /** Scratch space for holding the ring-0 scatter / gather descriptor.
+     * The PDMSCATTERGATHER::fFlags member is used to indicate whether it is in
+     * use or not.  Always accessed while owning the XmitLock. */
+    union
+    {
+        PDMSCATTERGATHER            Sg;
+        uint8_t                     padding[8 * sizeof(RTUINTPTR)];
+    }                               u;
     /** The network name. */
     char                            szNetwork[INTNET_MAX_NETWORK_NAME];
 
@@ -143,11 +154,21 @@ typedef struct DRVINTNET
     STAMCOUNTER                     StatSentGso;
     /** Number of GSO packets recevied. */
     STAMCOUNTER                     StatReceivedGso;
+    /** Number of packets send from ring-0. */
+    STAMCOUNTER                     StatSentR0;
 #ifdef VBOX_WITH_STATISTICS
     /** Profiling packet transmit runs. */
     STAMPROFILE                     StatTransmit;
     /** Profiling packet receive runs. */
     STAMPROFILEADV                  StatReceive;
+    /** The number of times we've had to wake up the xmit thread to contine the
+     *  ring-0 job. */
+    STAMCOUNTER                     StatXmitWakeupR0;
+    /** The number of times we've had to wake up the xmit thread to contine the
+     *  ring-3 job. */
+    STAMCOUNTER                     StatXmitWakeupR3;
+    /** The times the xmit thread has been told to process the ring. */
+    STAMCOUNTER                     StatXmitProcessRing;
 #endif /* VBOX_WITH_STATISTICS */
 #ifdef LOG_ENABLED
     /** The nano ts of the last transfer. */
@@ -224,19 +245,67 @@ static int drvR3IntNetSetActive(PDRVINTNET pThis, bool fActive)
 /* -=-=-=-=- PDMINETWORKUP -=-=-=-=- */
 
 /**
+ * Helper for signalling the xmit thread.
+ *
+ * @returns VERR_TRY_AGAIN (convenience).
+ * @param   pThis               The instance data..
+ */
+DECLINLINE(int) drvIntNetSignalXmit(PDRVINTNET pThis)
+{
+    /// @todo if (!ASMAtomicXchgBool(&pThis->fXmitSignalled, true)) - needs careful optimizing.
+    {
+        int rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hXmitEvt);
+        AssertRC(rc);
+        STAM_COUNTER_INC(&pThis->CTX_SUFF(StatXmitWakeup));
+    }
+    return VERR_TRY_AGAIN;
+}
+
+
+/**
+ * Helper for processing the ring-0 consumer side of the xmit ring.
+ *
+ * The caller MUST own the xmit lock.
+ *
+ * @returns Status code from IntNetR0IfSend, except for VERR_TRY_AGAIN.
+ * @param   pThis               The instance data..
+ */
+DECLINLINE(int) drvIntNetProcessXmit(PDRVINTNET pThis)
+{
+    Assert(PDMCritSectIsOwner(&pThis->XmitLock));
+
+#ifdef IN_RING3
+    INTNETIFSENDREQ SendReq;
+    SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    SendReq.Hdr.cbReq = sizeof(SendReq);
+    SendReq.pSession = NIL_RTR0PTR;
+    SendReq.hIf = pThis->hIf;
+    int rc = PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
+#else
+    int rc = IntNetR0IfSend(pThis->hIf, pThis->pSupDrvSession);
+    if (rc == VERR_TRY_AGAIN)
+    {
+        ASMAtomicUoWriteBool(&pThis->fXmitProcessRing, true);
+        drvIntNetSignalXmit(pThis);
+        rc = VINF_SUCCESS;
+    }
+#endif
+    return rc;
+}
+
+
+
+/**
  * @interface_method_impl{PDMINETWORKUP,pfnBeginXmit}
  */
 PDMBOTHCBDECL(int) drvIntNetUp_BeginXmit(PPDMINETWORKUP pInterface, bool fOnWorkerThread)
 {
     PDRVINTNET pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, CTX_SUFF(INetworkUp));
-#if !defined(IN_RING3)
-    int rc = VERR_SEM_BUSY;
+#ifndef IN_RING3
     Assert(!fOnWorkerThread);
-#elif 1
-    int rc = PDMCritSectTryEnter(&pThis->XmitLock);
-#else
-    int rc = fOnWorkerThread ? PDMCritSectTryEnter(&pThis->XmitLock) : VERR_SEM_BUSY;
 #endif
+
+    int rc = PDMCritSectTryEnter(&pThis->XmitLock);
     if (RT_SUCCESS(rc))
     {
         if (fOnWorkerThread)
@@ -248,7 +317,11 @@ PDMBOTHCBDECL(int) drvIntNetUp_BeginXmit(PPDMINETWORKUP pInterface, bool fOnWork
     else if (rc == VERR_SEM_BUSY)
     {
         /** @todo Does this actually make sense if the other dude is an EMT and so
-         *        forth?  I seriously think this is ring-0 only... */
+         *        forth?  I seriously think this is ring-0 only...
+         * We might end up waking up the xmit thread unnecessarily here, even when in
+         * ring-0... This needs some more thought and opitmizations when the ring-0 bits
+         * are working. */
+#ifdef IN_RING3
         if (    !fOnWorkerThread
             /*&&  !ASMAtomicUoReadBool(&pThis->fXmitOnXmitThread)
             &&  ASMAtomicCmpXchgBool(&pThis->fXmitSignalled, true, false)*/)
@@ -257,6 +330,9 @@ PDMBOTHCBDECL(int) drvIntNetUp_BeginXmit(PPDMINETWORKUP pInterface, bool fOnWork
             AssertRC(rc);
         }
         rc = VERR_TRY_AGAIN;
+#else  /* IN_RING0 */
+        rc = drvIntNetSignalXmit(pThis);
+#endif /* IN_RING0 */
     }
     return rc;
 }
@@ -273,73 +349,88 @@ PDMBOTHCBDECL(int) drvIntNetUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin,
     Assert(cbMin < UINT32_MAX / 2);
     Assert(PDMCritSectIsOwner(&pThis->XmitLock));
 
-#ifdef IN_RING3
     /*
-     * Allocate a S/G buffer.
+     * Allocate a S/G descriptor.
+     * This shouldn't normally fail as the NICs usually won't allocate more
+     * than one buffer at a time and the SG gets freed on sending.
      */
+#ifdef IN_RING3
     PPDMSCATTERGATHER pSgBuf = (PPDMSCATTERGATHER)RTMemCacheAlloc(pThis->hSgCache);
-    if (pSgBuf)
+    if (!pSgBuf)
+        return VERR_NO_MEMORY;
+#else
+    PPDMSCATTERGATHER pSgBuf = &pThis->u.Sg;
+    if (RT_UNLIKELY(pSgBuf->fFlags != 0))
+        return drvIntNetSignalXmit(pThis);
+#endif
+
+    /*
+     * Allocate room in the ring buffer.
+     *
+     * In ring-3 we may have to process the xmit ring before there is
+     * sufficient buffer space since we might've stacked up a few frames to the
+     * trunk while in ring-0.  (There is not point of doing this in ring-0.)
+     */
+    PINTNETHDR pHdr;
+    if (pGso)
+        rc = INTNETRingAllocateGsoFrame(&pThis->CTX_SUFF(pBuf)->Send, (uint32_t)cbMin, pGso,
+                                        &pHdr, &pSgBuf->aSegs[0].pvSeg);
+    else
+        rc = INTNETRingAllocateFrame(&pThis->CTX_SUFF(pBuf)->Send, (uint32_t)cbMin,
+                                     &pHdr, &pSgBuf->aSegs[0].pvSeg);
+#ifdef IN_RING3
+    if (    RT_FAILURE(rc)
+        &&  pThis->CTX_SUFF(pBuf)->cbSend >= cbMin * 2 + sizeof(INTNETHDR))
     {
-        PINTNETHDR pHdr;
+        drvIntNetProcessXmit(pThis);
         if (pGso)
-            rc = INTNETRingAllocateGsoFrame(&pThis->pBufR3->Send, (uint32_t)cbMin, pGso,
+            rc = INTNETRingAllocateGsoFrame(&pThis->CTX_SUFF(pBuf)->Send, (uint32_t)cbMin, pGso,
                                             &pHdr, &pSgBuf->aSegs[0].pvSeg);
         else
-            rc = INTNETRingAllocateFrame(&pThis->pBufR3->Send, (uint32_t)cbMin,
+            rc = INTNETRingAllocateFrame(&pThis->CTX_SUFF(pBuf)->Send, (uint32_t)cbMin,
                                          &pHdr, &pSgBuf->aSegs[0].pvSeg);
-
-#if 1 /** @todo implement VERR_TRY_AGAIN once this moves to EMT?  -- Not needed unless we make the consumer side (ring-0) asynchronous.  */
-        if (    RT_FAILURE(rc)
-            &&  pThis->pBufR3->cbSend >= cbMin * 2 + sizeof(INTNETHDR))
-        {
-            INTNETIFSENDREQ SendReq;
-            SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-            SendReq.Hdr.cbReq = sizeof(SendReq);
-            SendReq.pSession = NIL_RTR0PTR;
-            SendReq.hIf = pThis->hIf;
-            PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
-
-            if (pGso)
-                rc = INTNETRingAllocateGsoFrame(&pThis->pBufR3->Send, (uint32_t)cbMin, pGso,
-                                                &pHdr, &pSgBuf->aSegs[0].pvSeg);
-            else
-                rc = INTNETRingAllocateFrame(&pThis->pBufR3->Send, (uint32_t)cbMin,
-                                             &pHdr, &pSgBuf->aSegs[0].pvSeg);
-        }
+    }
 #endif
-        if (RT_SUCCESS(rc))
-        {
-            pSgBuf->fFlags          = PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1;
-            pSgBuf->cbUsed          = 0;
-            pSgBuf->cbAvailable     = cbMin;
-            pSgBuf->pvAllocator     = pHdr;
-            pSgBuf->pvUser          = pGso ? (PPDMNETWORKGSO)pSgBuf->aSegs[0].pvSeg - 1 : NULL;
-            pSgBuf->cSegs           = 1;
-            pSgBuf->aSegs[0].cbSeg  = cbMin;
-
-            *ppSgBuf = pSgBuf;
-            return VINF_SUCCESS;
-        }
-
+    if (RT_SUCCESS(rc))
+    {
         /*
-         * Arm the try again stuff.
+         * Set up the S/G descriptor and return successfully.
          */
-/** @todo        if (pThis->pBufR3->cbSend >= cbMin * 2 + sizeof(INTNETHDR))
-            rc = VERR_TRY_AGAIN;
-        else */
-            rc = VERR_NO_MEMORY;
+        pSgBuf->fFlags          = PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1;
+        pSgBuf->cbUsed          = 0;
+        pSgBuf->cbAvailable     = cbMin;
+        pSgBuf->pvAllocator     = pHdr;
+        pSgBuf->pvUser          = pGso ? (PPDMNETWORKGSO)pSgBuf->aSegs[0].pvSeg - 1 : NULL;
+        pSgBuf->cSegs           = 1;
+        pSgBuf->aSegs[0].cbSeg  = cbMin;
 
-        RTMemCacheFree(pThis->hSgCache, pSgBuf);
+        *ppSgBuf = pSgBuf;
+        return VINF_SUCCESS;
+    }
+
+#ifdef IN_RING3
+    /*
+     * If the above fails, then we're really out of space.  There are nobody
+     * competing with us here because of the xmit lock.
+     */
+    rc = VERR_NO_MEMORY;
+    RTMemCacheFree(pThis->hSgCache, pSgBuf);
+
+#else  /* IN_RING0 */
+    /*
+     * If the request is reasonable, kick the xmit thread and tell it to
+     * process the xmit ring ASAP.
+     */
+    if (pThis->CTX_SUFF(pBuf)->cbSend >= cbMin * 2 + sizeof(INTNETHDR))
+    {
+        pThis->fXmitProcessRing = true;
+        rc = drvIntNetSignalXmit(pThis);
     }
     else
         rc = VERR_NO_MEMORY;
-    /** @todo implement VERR_TRY_AGAIN  */
+    pSgBuf->fFlags = 0;
+#endif /* IN_RING0 */
     return rc;
-
-#else   /* !IN_RING3 */
-    rc = VERR_TRY_AGAIN;
-    return rc;
-#endif  /* !IN_RING3 */
 }
 
 
@@ -350,22 +441,25 @@ PDMBOTHCBDECL(int) drvIntNetUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGAT
 {
     PDRVINTNET  pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, CTX_SUFF(INetworkUp));
     PINTNETHDR  pHdr  = (PINTNETHDR)pSgBuf->pvAllocator;
+#ifdef IN_RING0
+    Assert(pSgBuf == &pThis->u.Sg);
+#endif
     Assert(pSgBuf->fFlags == (PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1));
     Assert(pSgBuf->cbUsed <= pSgBuf->cbAvailable);
     Assert(   pHdr->u16Type == INTNETHDR_TYPE_FRAME
            || pHdr->u16Type == INTNETHDR_TYPE_GSO);
     Assert(PDMCritSectIsOwner(&pThis->XmitLock));
 
-#ifdef IN_RING3
     /** @todo LATER: try unalloc the frame. */
     pHdr->u16Type = INTNETHDR_TYPE_PADDING;
-    INTNETRingCommitFrame(&pThis->pBufR3->Send, pHdr);
+    INTNETRingCommitFrame(&pThis->CTX_SUFF(pBuf)->Send, pHdr);
 
+#ifdef IN_RING3
     RTMemCacheFree(pThis->hSgCache, pSgBuf);
-    return VINF_SUCCESS;
 #else
-    return VERR_INTERNAL_ERROR_5;
+    pSgBuf->fFlags = 0;
 #endif
+    return VINF_SUCCESS;
 }
 
 
@@ -385,27 +479,24 @@ PDMBOTHCBDECL(int) drvIntNetUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGAT
     if (pSgBuf->pvUser)
         STAM_COUNTER_INC(&pThis->StatSentGso);
 
-#ifdef IN_RING3
     /*
      * Commit the frame and push it thru the switch.
      */
     PINTNETHDR pHdr = (PINTNETHDR)pSgBuf->pvAllocator;
-    INTNETRingCommitFrameEx(&pThis->pBufR3->Send, pHdr, pSgBuf->cbUsed);
-
-    INTNETIFSENDREQ SendReq;
-    SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    SendReq.Hdr.cbReq = sizeof(SendReq);
-    SendReq.pSession = NIL_RTR0PTR;
-    SendReq.hIf = pThis->hIf;
-    PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
-
-    RTMemCacheFree(pThis->hSgCache, pSgBuf);
-
+    INTNETRingCommitFrameEx(&pThis->CTX_SUFF(pBuf)->Send, pHdr, pSgBuf->cbUsed);
+    int rc = drvIntNetProcessXmit(pThis);
     STAM_PROFILE_STOP(&pThis->StatTransmit, a);
-    return VINF_SUCCESS;
+
+    /*
+     * Free the descriptor and return.
+     */
+#ifdef IN_RING3
+    RTMemCacheFree(pThis->hSgCache, pSgBuf);
 #else
-    return VERR_INTERNAL_ERROR_4;
+    STAM_REL_COUNTER_INC(&pThis->StatSentR0);
+    pSgBuf->fFlags = 0;
 #endif
+    return rc;
 }
 
 
@@ -426,6 +517,7 @@ PDMBOTHCBDECL(void) drvIntNetUp_EndXmit(PPDMINETWORKUP pInterface)
 PDMBOTHCBDECL(void) drvIntNetUp_SetPromiscuousMode(PPDMINETWORKUP pInterface, bool fPromiscuous)
 {
     PDRVINTNET pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, CTX_SUFF(INetworkUp));
+
 #ifdef IN_RING3
     INTNETIFSETPROMISCUOUSMODEREQ Req;
     Req.Hdr.u32Magic    = SUPVMMR0REQHDR_MAGIC;
@@ -434,12 +526,12 @@ PDMBOTHCBDECL(void) drvIntNetUp_SetPromiscuousMode(PPDMINETWORKUP pInterface, bo
     Req.hIf             = pThis->hIf;
     Req.fPromiscuous    = fPromiscuous;
     int rc = PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE, &Req, sizeof(Req));
+#else  /* IN_RING0 */
+    int rc = IntNetR0IfSetPromiscuousMode(pThis->hIf, pThis->pSupDrvSession, fPromiscuous);
+#endif /* IN_RING0 */
+
     LogFlow(("drvIntNetUp_SetPromiscuousMode: fPromiscuous=%RTbool\n", fPromiscuous));
     AssertRC(rc);
-#else
-    /** @todo  */
-    AssertFailed();
-#endif
 }
 
 #ifdef IN_RING3
@@ -484,6 +576,30 @@ static DECLCALLBACK(int) drvR3IntNetXmitThread(PPDMDRVINS pDrvIns, PPDMTHREAD pT
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
         /*
+         * Transmit any pending packets.
+         */
+        /** @todo Optimize this. We shouldn't call pfnXmitPending unless asked for.
+         *        Also there is no need to call drvIntNetProcessXmit if we also
+         *        called pfnXmitPending and send one or more frames. */
+        if (ASMAtomicXchgBool(&pThis->fXmitProcessRing, false))
+        {
+            STAM_COUNTER_INC(&pThis->StatXmitProcessRing);
+            PDMCritSectEnter(&pThis->XmitLock, VERR_IGNORED);
+            drvIntNetProcessXmit(pThis);
+            PDMCritSectLeave(&pThis->XmitLock);
+        }
+
+        pThis->pIAboveNet->pfnXmitPending(pThis->pIAboveNet);
+
+        if (ASMAtomicXchgBool(&pThis->fXmitProcessRing, false))
+        {
+            STAM_COUNTER_INC(&pThis->StatXmitProcessRing);
+            PDMCritSectEnter(&pThis->XmitLock, VERR_IGNORED);
+            drvIntNetProcessXmit(pThis);
+            PDMCritSectLeave(&pThis->XmitLock);
+        }
+
+        /*
          * Block until we've got something to send or is supposed
          * to leave the running state.
          */
@@ -492,10 +608,6 @@ static DECLCALLBACK(int) drvR3IntNetXmitThread(PPDMDRVINS pDrvIns, PPDMTHREAD pT
         if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
             break;
 
-        /*
-         * Transmit any pending packets.
-         */
-        pThis->pIAboveNet->pfnXmitPending(pThis->pIAboveNet);
    }
 
     /* The thread is being initialized, suspended or terminated. */
@@ -550,7 +662,7 @@ static int drvR3IntNetRecvRun(PDRVINTNET pThis)
      * The running loop - processing received data and waiting for more to arrive.
      */
     STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
-    PINTNETBUF      pBuf     = pThis->pBufR3;
+    PINTNETBUF      pBuf     = pThis->CTX_SUFF(pBuf);
     PINTNETRINGBUF  pRingBuf = &pBuf->Recv;
     for (;;)
     {
@@ -1403,18 +1515,20 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /*
      * Get default buffer.
      */
-    INTNETIFGETRING3BUFFERREQ GetRing3BufferReq;
-    GetRing3BufferReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    GetRing3BufferReq.Hdr.cbReq = sizeof(GetRing3BufferReq);
-    GetRing3BufferReq.pSession = NIL_RTR0PTR;
-    GetRing3BufferReq.hIf = pThis->hIf;
-    GetRing3BufferReq.pRing3Buf = NULL;
-    rc = PDMDrvHlpSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_GET_RING3_BUFFER, &GetRing3BufferReq, sizeof(GetRing3BufferReq));
+    INTNETIFGETBUFFERPTRSREQ GetBufferPtrsReq;
+    GetBufferPtrsReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    GetBufferPtrsReq.Hdr.cbReq = sizeof(GetBufferPtrsReq);
+    GetBufferPtrsReq.pSession = NIL_RTR0PTR;
+    GetBufferPtrsReq.hIf = pThis->hIf;
+    GetBufferPtrsReq.pRing3Buf = NULL;
+    GetBufferPtrsReq.pRing0Buf = NULL;
+    rc = PDMDrvHlpSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS, &GetBufferPtrsReq, sizeof(GetBufferPtrsReq));
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Failed to get ring-3 buffer for the newly created interface to '%s'"), pThis->szNetwork);
-    AssertRelease(VALID_PTR(GetRing3BufferReq.pRing3Buf));
-    pThis->pBufR3 = GetRing3BufferReq.pRing3Buf;
+    AssertRelease(VALID_PTR(GetBufferPtrsReq.pRing3Buf));
+    pThis->pBufR3 = GetBufferPtrsReq.pRing3Buf;
+    pThis->pBufR0 = GetBufferPtrsReq.pRing0Buf;
 
     /*
      * Register statistics.
@@ -1427,6 +1541,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->Send.cStatFrames,   "Packets/Sent",         STAMUNIT_COUNT, "Number of sent packets.");
     PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatReceivedGso,            "Packets/Received-Gso", STAMUNIT_COUNT, "The GSO portion of the received packets.");
     PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatSentGso,                "Packets/Sent-Gso",     STAMUNIT_COUNT, "The GSO portion of the sent packets.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatSentR0,                 "Packets/Sent-R0",      STAMUNIT_COUNT, "The ring-0 portion of the sent packets.");
 
     PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->cStatLost,          "Packets/Lost",         STAMUNIT_COUNT, "Number of lost packets.");
     PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->cStatYieldsNok,     "YieldOk",              STAMUNIT_COUNT, "Number of times yielding helped fix an overflow.");
@@ -1435,6 +1550,9 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
 #ifdef VBOX_WITH_STATISTICS
     PDMDrvHlpSTAMRegProfileAdv(pDrvIns, &pThis->StatReceive,             "Receive",     STAMUNIT_TICKS_PER_CALL, "Profiling packet receive runs.");
     PDMDrvHlpSTAMRegProfile(pDrvIns, &pThis->StatTransmit,               "Transmit",    STAMUNIT_TICKS_PER_CALL, "Profiling packet transmit runs.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatXmitWakeupR0,           "XmitWakeup-R0",        STAMUNIT_COUNT, "Xmit thread wakeups from ring-0.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatXmitWakeupR3,           "XmitWakeup-R3",        STAMUNIT_COUNT, "Xmit thread wakeups from ring-3.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatXmitProcessRing,        "XmitProcessRing",      STAMUNIT_COUNT, "Time xmit thread was told to process the ring.");
 #endif
 
     /*
