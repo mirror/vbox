@@ -518,9 +518,25 @@ typedef struct INTNETTRUNKSWPORT
      *                              corresponds to the GSO type with the same value.
      * @param   fDst                The destination mask (INTNETTRUNKDIR_XXX).
      *
-     * @remarks May take a spinlock or two.
+     * @remarks Does not take any locks.
      */
     DECLR0CALLBACKMEMBER(void, pfnReportGsoCapabilities,(PINTNETTRUNKSWPORT pSwitchPort, uint32_t fGsoCapabilities, uint32_t fDst));
+
+    /**
+     * Reports the no-preemption-xmit capabilities of the host and wire.
+     *
+     * This is supposed to be used only when creating, connecting or reconnecting
+     * the trunk.  It is assumed that the GSO capabilities are kind of static the
+     * rest of the time.
+     *
+     * @param   pSwitchPort         Pointer to this structure.
+     * @param   fNoPreemptDsts      The destinations  (INTNETTRUNKDIR_XXX) which it
+     *                              is safe to transmit to with preemption disabled.
+     * @param   fDst                The destination mask (INTNETTRUNKDIR_XXX).
+     *
+     * @remarks Does not take any locks.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnReportNoPreemptDsts,(PINTNETTRUNKSWPORT pSwitchPort, uint32_t fNoPreemptDsts));
 
     /** Structure version number. (INTNETTRUNKSWPORT_VERSION) */
     uint32_t u32VersionEnd;
@@ -730,7 +746,7 @@ typedef struct INTNETTRUNKFACTORY
 typedef INTNETTRUNKFACTORY *PINTNETTRUNKFACTORY;
 
 /** The UUID for the (current) trunk factory. (case sensitive) */
-#define INTNETTRUNKFACTORY_UUID_STR     "7eb192c8-6ee3-4d0a-96fb-f51ce7381354"
+#define INTNETTRUNKFACTORY_UUID_STR     "5d347cb7-98e3-411f-916a-67c4becae09b"
 
 /** @name INTNETTRUNKFACTORY::pfnCreateAndConnect flags.
  * @{ */
