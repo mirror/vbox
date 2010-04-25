@@ -156,11 +156,6 @@ typedef struct DRVINTNET
     STAMCOUNTER                     StatReceivedGso;
     /** Number of packets send from ring-0. */
     STAMCOUNTER                     StatSentR0;
-#ifdef VBOX_WITH_STATISTICS
-    /** Profiling packet transmit runs. */
-    STAMPROFILE                     StatTransmit;
-    /** Profiling packet receive runs. */
-    STAMPROFILEADV                  StatReceive;
     /** The number of times we've had to wake up the xmit thread to contine the
      *  ring-0 job. */
     STAMCOUNTER                     StatXmitWakeupR0;
@@ -169,6 +164,11 @@ typedef struct DRVINTNET
     STAMCOUNTER                     StatXmitWakeupR3;
     /** The times the xmit thread has been told to process the ring. */
     STAMCOUNTER                     StatXmitProcessRing;
+#ifdef VBOX_WITH_STATISTICS
+    /** Profiling packet transmit runs. */
+    STAMPROFILE                     StatTransmit;
+    /** Profiling packet receive runs. */
+    STAMPROFILEADV                  StatReceive;
 #endif /* VBOX_WITH_STATISTICS */
 #ifdef LOG_ENABLED
     /** The nano ts of the last transfer. */
@@ -256,7 +256,7 @@ DECLINLINE(int) drvIntNetSignalXmit(PDRVINTNET pThis)
     {
         int rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hXmitEvt);
         AssertRC(rc);
-        STAM_COUNTER_INC(&pThis->CTX_SUFF(StatXmitWakeup));
+        STAM_REL_COUNTER_INC(&pThis->CTX_SUFF(StatXmitWakeup));
     }
     return VERR_TRY_AGAIN;
 }
@@ -583,7 +583,7 @@ static DECLCALLBACK(int) drvR3IntNetXmitThread(PPDMDRVINS pDrvIns, PPDMTHREAD pT
          *        called pfnXmitPending and send one or more frames. */
         if (ASMAtomicXchgBool(&pThis->fXmitProcessRing, false))
         {
-            STAM_COUNTER_INC(&pThis->StatXmitProcessRing);
+            STAM_REL_COUNTER_INC(&pThis->StatXmitProcessRing);
             PDMCritSectEnter(&pThis->XmitLock, VERR_IGNORED);
             drvIntNetProcessXmit(pThis);
             PDMCritSectLeave(&pThis->XmitLock);
@@ -593,7 +593,7 @@ static DECLCALLBACK(int) drvR3IntNetXmitThread(PPDMDRVINS pDrvIns, PPDMTHREAD pT
 
         if (ASMAtomicXchgBool(&pThis->fXmitProcessRing, false))
         {
-            STAM_COUNTER_INC(&pThis->StatXmitProcessRing);
+            STAM_REL_COUNTER_INC(&pThis->StatXmitProcessRing);
             PDMCritSectEnter(&pThis->XmitLock, VERR_IGNORED);
             drvIntNetProcessXmit(pThis);
             PDMCritSectLeave(&pThis->XmitLock);
@@ -1550,10 +1550,10 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
 #ifdef VBOX_WITH_STATISTICS
     PDMDrvHlpSTAMRegProfileAdv(pDrvIns, &pThis->StatReceive,             "Receive",     STAMUNIT_TICKS_PER_CALL, "Profiling packet receive runs.");
     PDMDrvHlpSTAMRegProfile(pDrvIns, &pThis->StatTransmit,               "Transmit",    STAMUNIT_TICKS_PER_CALL, "Profiling packet transmit runs.");
+#endif
     PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatXmitWakeupR0,           "XmitWakeup-R0",        STAMUNIT_COUNT, "Xmit thread wakeups from ring-0.");
     PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatXmitWakeupR3,           "XmitWakeup-R3",        STAMUNIT_COUNT, "Xmit thread wakeups from ring-3.");
     PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatXmitProcessRing,        "XmitProcessRing",      STAMUNIT_COUNT, "Time xmit thread was told to process the ring.");
-#endif
 
     /*
      * Create the async I/O threads.
