@@ -69,8 +69,7 @@ EXPORTS
     ; Internal Networking
     IntNetR0Open
     IntNetR0IfClose
-    IntNetR0IfGetRing0Buffer
-    IntNetR0IfGetRing3Buffer
+    IntNetR0IfGetBufferPtrs
     IntNetR0IfSetPromiscuousMode
     IntNetR0IfSetMacAddress
     IntNetR0IfSetActive
