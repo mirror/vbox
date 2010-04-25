@@ -39,9 +39,6 @@
 RT_C_DECLS_BEGIN
 
 
-/** Pointer to an internal network ring-0 instance. */
-typedef struct INTNET *PINTNET;
-
 /**
  * Generic two-sided ring buffer.
  *
@@ -748,7 +745,7 @@ typedef INTNETTRUNKFACTORY *PINTNETTRUNKFACTORY;
 /**
  * The trunk connection type.
  *
- * Used by INTNETR0Open and assoicated interfaces.
+ * Used by IntNetR0Open and assoicated interfaces.
  */
 typedef enum INTNETTRUNKTYPE
 {
@@ -772,7 +769,7 @@ typedef enum INTNETTRUNKTYPE
     kIntNetTrunkType_32bitHack = 0x7fffffff
 } INTNETTRUNKTYPE;
 
-/** @name INTNETR0Open flags.
+/** @name IntNetR0Open flags.
  * @{ */
 /** Share the MAC address with the host when sending something to the wire via the trunk.
  * This is typically used when the trunk is a NetFlt for a wireless interface. */
@@ -807,8 +804,8 @@ typedef enum INTNETTRUNKTYPE
 
 
 /**
- * Request buffer for INTNETR0OpenReq / VMMR0_DO_INTNET_OPEN.
- * @see INTNETR0Open.
+ * Request buffer for IntNetR0OpenReq / VMMR0_DO_INTNET_OPEN.
+ * @see IntNetR0Open.
  */
 typedef struct INTNETOPENREQ
 {
@@ -833,15 +830,15 @@ typedef struct INTNETOPENREQ
     /** The handle to the network interface. (output) */
     INTNETIFHANDLE  hIf;
 } INTNETOPENREQ;
-/** Pointer to an INTNETR0OpenReq / VMMR0_DO_INTNET_OPEN request buffer. */
+/** Pointer to an IntNetR0OpenReq / VMMR0_DO_INTNET_OPEN request buffer. */
 typedef INTNETOPENREQ *PINTNETOPENREQ;
 
-INTNETR0DECL(int) INTNETR0OpenReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETOPENREQ pReq);
+INTNETR0DECL(int) IntNetR0OpenReq(PSUPDRVSESSION pSession, PINTNETOPENREQ pReq);
 
 
 /**
- * Request buffer for INTNETR0IfCloseReq / VMMR0_DO_INTNET_IF_CLOSE.
- * @see INTNETR0IfClose.
+ * Request buffer for IntNetR0IfCloseReq / VMMR0_DO_INTNET_IF_CLOSE.
+ * @see IntNetR0IfClose.
  */
 typedef struct INTNETIFCLOSEREQ
 {
@@ -853,15 +850,17 @@ typedef struct INTNETIFCLOSEREQ
     /** The handle to the network interface. */
     INTNETIFHANDLE  hIf;
 } INTNETIFCLOSEREQ;
-/** Pointer to an INTNETR0IfCloseReq / VMMR0_DO_INTNET_IF_CLOSE request buffer. */
+/** Pointer to an IntNetR0IfCloseReq / VMMR0_DO_INTNET_IF_CLOSE request
+ *  buffer. */
 typedef INTNETIFCLOSEREQ *PINTNETIFCLOSEREQ;
 
-INTNETR0DECL(int) INTNETR0IfCloseReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFCLOSEREQ pReq);
+INTNETR0DECL(int) IntNetR0IfCloseReq(PSUPDRVSESSION pSession, PINTNETIFCLOSEREQ pReq);
 
 
 /**
- * Request buffer for INTNETR0IfGetRing3BufferReq / VMMR0_DO_INTNET_IF_GET_RING3_BUFFER.
- * @see INTNETR0IfGetRing3Buffer.
+ * Request buffer for IntNetR0IfGetRing3BufferReq /
+ * VMMR0_DO_INTNET_IF_GET_RING3_BUFFER.
+ * @see IntNetR0IfGetRing3Buffer.
  */
 typedef struct INTNETIFGETRING3BUFFERREQ
 {
@@ -875,15 +874,17 @@ typedef struct INTNETIFGETRING3BUFFERREQ
     /** The pointer to the ring3 buffer. (output) */
     R3PTRTYPE(PINTNETBUF)   pRing3Buf;
 } INTNETIFGETRING3BUFFERREQ;
-/** Pointer to an INTNETR0IfGetRing3BufferReq / VMMR0_DO_INTNET_IF_GET_RING3_BUFFER request buffer. */
+/** Pointer to an IntNetR0IfGetRing3BufferReq /
+ *  VMMR0_DO_INTNET_IF_GET_RING3_BUFFER request buffer. */
 typedef INTNETIFGETRING3BUFFERREQ *PINTNETIFGETRING3BUFFERREQ;
 
-INTNETR0DECL(int) INTNETR0IfGetRing3BufferReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFGETRING3BUFFERREQ pReq);
+INTNETR0DECL(int) IntNetR0IfGetRing3BufferReq(PSUPDRVSESSION pSession, PINTNETIFGETRING3BUFFERREQ pReq);
 
 
 /**
- * Request buffer for INTNETR0IfSetPromiscuousModeReq / VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE.
- * @see INTNETR0IfSetPromiscuousMode.
+ * Request buffer for IntNetR0IfSetPromiscuousModeReq /
+ * VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE.
+ * @see IntNetR0IfSetPromiscuousMode.
  */
 typedef struct INTNETIFSETPROMISCUOUSMODEREQ
 {
@@ -897,15 +898,17 @@ typedef struct INTNETIFSETPROMISCUOUSMODEREQ
     /** The new promiscuous mode. */
     bool            fPromiscuous;
 } INTNETIFSETPROMISCUOUSMODEREQ;
-/** Pointer to an INTNETR0IfSetPromiscuousModeReq / VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE request buffer. */
+/** Pointer to an IntNetR0IfSetPromiscuousModeReq /
+ *  VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE request buffer. */
 typedef INTNETIFSETPROMISCUOUSMODEREQ *PINTNETIFSETPROMISCUOUSMODEREQ;
 
-INTNETR0DECL(int) INTNETR0IfSetPromiscuousModeReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFSETPROMISCUOUSMODEREQ pReq);
+INTNETR0DECL(int) IntNetR0IfSetPromiscuousModeReq(PSUPDRVSESSION pSession, PINTNETIFSETPROMISCUOUSMODEREQ pReq);
 
 
 /**
- * Request buffer for INTNETR0IfSetMacAddressReq / VMMR0_DO_INTNET_IF_SET_MAC_ADDRESS.
- * @see INTNETR0IfSetMacAddress.
+ * Request buffer for IntNetR0IfSetMacAddressReq /
+ * VMMR0_DO_INTNET_IF_SET_MAC_ADDRESS.
+ * @see IntNetR0IfSetMacAddress.
  */
 typedef struct INTNETIFSETMACADDRESSREQ
 {
@@ -919,15 +922,16 @@ typedef struct INTNETIFSETMACADDRESSREQ
     /** The new MAC address. */
     RTMAC           Mac;
 } INTNETIFSETMACADDRESSREQ;
-/** Pointer to an INTNETR0IfSetMacAddressReq / VMMR0_DO_INTNET_IF_SET_MAC_ADDRESS request buffer. */
+/** Pointer to an IntNetR0IfSetMacAddressReq /
+ *  VMMR0_DO_INTNET_IF_SET_MAC_ADDRESS request buffer. */
 typedef INTNETIFSETMACADDRESSREQ *PINTNETIFSETMACADDRESSREQ;
 
-INTNETR0DECL(int) INTNETR0IfSetMacAddressReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFSETMACADDRESSREQ pReq);
+INTNETR0DECL(int) IntNetR0IfSetMacAddressReq(PSUPDRVSESSION pSession, PINTNETIFSETMACADDRESSREQ pReq);
 
 
 /**
- * Request buffer for INTNETR0IfSetActiveReq / VMMR0_DO_INTNET_IF_SET_ACTIVE.
- * @see INTNETR0IfSetActive.
+ * Request buffer for IntNetR0IfSetActiveReq / VMMR0_DO_INTNET_IF_SET_ACTIVE.
+ * @see IntNetR0IfSetActive.
  */
 typedef struct INTNETIFSETACTIVEREQ
 {
@@ -941,15 +945,16 @@ typedef struct INTNETIFSETACTIVEREQ
     /** The new state. */
     bool            fActive;
 } INTNETIFSETACTIVEREQ;
-/** Pointer to an INTNETR0IfSetActiveReq / VMMR0_DO_INTNET_IF_SET_ACTIVE request buffer. */
+/** Pointer to an IntNetR0IfSetActiveReq / VMMR0_DO_INTNET_IF_SET_ACTIVE
+ *  request buffer. */
 typedef INTNETIFSETACTIVEREQ *PINTNETIFSETACTIVEREQ;
 
-INTNETR0DECL(int) INTNETR0IfSetActiveReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFSETACTIVEREQ pReq);
+INTNETR0DECL(int) IntNetR0IfSetActiveReq(PSUPDRVSESSION pSession, PINTNETIFSETACTIVEREQ pReq);
 
 
 /**
- * Request buffer for INTNETR0IfSendReq / VMMR0_DO_INTNET_IF_SEND.
- * @see INTNETR0IfSend.
+ * Request buffer for IntNetR0IfSendReq / VMMR0_DO_INTNET_IF_SEND.
+ * @see IntNetR0IfSend.
  */
 typedef struct INTNETIFSENDREQ
 {
@@ -961,15 +966,15 @@ typedef struct INTNETIFSENDREQ
     /** Handle to the interface. */
     INTNETIFHANDLE  hIf;
 } INTNETIFSENDREQ;
-/** Pointer to an INTNETR0IfSend() argument package. */
+/** Pointer to an IntNetR0IfSend() argument package. */
 typedef INTNETIFSENDREQ *PINTNETIFSENDREQ;
 
-INTNETR0DECL(int) INTNETR0IfSendReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFSENDREQ pReq);
+INTNETR0DECL(int) IntNetR0IfSendReq(PSUPDRVSESSION pSession, PINTNETIFSENDREQ pReq);
 
 
 /**
- * Request buffer for INTNETR0IfWaitReq / VMMR0_DO_INTNET_IF_WAIT.
- * @see INTNETR0IfWait.
+ * Request buffer for IntNetR0IfWaitReq / VMMR0_DO_INTNET_IF_WAIT.
+ * @see IntNetR0IfWait.
  */
 typedef struct INTNETIFWAITREQ
 {
@@ -983,10 +988,10 @@ typedef struct INTNETIFWAITREQ
     /** The number of milliseconds to wait. */
     uint32_t        cMillies;
 } INTNETIFWAITREQ;
-/** Pointer to an INTNETR0IfWaitReq / VMMR0_DO_INTNET_IF_WAIT request buffer. */
+/** Pointer to an IntNetR0IfWaitReq / VMMR0_DO_INTNET_IF_WAIT request buffer. */
 typedef INTNETIFWAITREQ *PINTNETIFWAITREQ;
 
-INTNETR0DECL(int) INTNETR0IfWaitReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PINTNETIFWAITREQ pReq);
+INTNETR0DECL(int) IntNetR0IfWaitReq(PSUPDRVSESSION pSession, PINTNETIFWAITREQ pReq);
 
 
 #if defined(IN_RING0) || defined(IN_INTNET_TESTCASE)
@@ -994,112 +999,21 @@ INTNETR0DECL(int) INTNETR0IfWaitReq(PINTNET pIntNet, PSUPDRVSESSION pSession, PI
  * @{
  */
 
-/**
- * Create an instance of the Ring-0 internal networking service.
- *
- * @returns VBox status code.
- * @param   ppIntNet    Where to store the instance pointer.
- */
-INTNETR0DECL(int) INTNETR0Create(PINTNET *ppIntNet);
+INTNETR0DECL(int)      IntNetR0Init(void);
+INTNETR0DECL(void)     IntNetR0Term(void);
+INTNETR0DECL(int)      IntNetR0Open(PSUPDRVSESSION pSession, const char *pszNetwork,
+                                    INTNETTRUNKTYPE enmTrunkType, const char *pszTrunk, uint32_t fFlags,
+                                    uint32_t cbSend, uint32_t cbRecv, PINTNETIFHANDLE phIf);
+INTNETR0DECL(uint32_t) IntNetR0GetNetworkCount(void);
 
-/**
- * Destroys an instance of the Ring-0 internal networking service.
- *
- * @param   pIntNet     Pointer to the instance data.
- */
-INTNETR0DECL(void) INTNETR0Destroy(PINTNET pIntNet);
-
-/**
- * Opens a network interface and connects it to the specified network.
- *
- * @returns VBox status code.
- * @param   pIntNet         The internal network instance.
- * @param   pSession        The session handle.
- * @param   pszNetwork      The network name.
- * @param   enmTrunkType    The trunk type.
- * @param   pszTrunk        The trunk name. Its meaning is specfic to the type.
- * @param   fFlags          Flags, see INTNET_OPEN_FLAGS_*.
- * @param   fRestrictAccess Whether new participants should be subjected to access check or not.
- * @param   cbSend          The send buffer size.
- * @param   cbRecv          The receive buffer size.
- * @param   phIf            Where to store the handle to the network interface.
- */
-INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const char *pszNetwork,
-                               INTNETTRUNKTYPE enmTrunkType, const char *pszTrunk, uint32_t fFlags,
-                               unsigned cbSend, unsigned cbRecv, PINTNETIFHANDLE phIf);
-
-/**
- * Close an interface.
- *
- * @returns VBox status code.
- * @param   pIntNet     The instance handle.
- * @param   hIf         The interface handle.
- * @param   pSession        The caller's session.
- */
-INTNETR0DECL(int) INTNETR0IfClose(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession);
-
-/**
- * Gets the ring-0 address of the current buffer.
- *
- * @returns VBox status code.
- * @param   pIntNet     The instance data.
- * @param   hIf         The interface handle.
- * @param   pSession        The caller's session.
- * @param   ppRing0Buf  Where to store the address of the ring-3 mapping.
- */
-INTNETR0DECL(int) INTNETR0IfGetRing0Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF *ppRing0Buf);
-
-/**
- * Maps the default buffer into ring 3.
- *
- * @returns VBox status code.
- * @param   pIntNet         The instance data.
- * @param   hIf             The interface handle.
- * @param   pSession        The caller's session.
- * @param   ppRing3Buf      Where to store the address of the ring-3 mapping.
- */
-INTNETR0DECL(int) INTNETR0IfGetRing3Buffer(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, R3PTRTYPE(PINTNETBUF) *ppRing3Buf);
-
-/**
- * Sets the promiscuous mode property of an interface.
- *
- * @returns VBox status code.
- * @param   pIntNet         The instance handle.
- * @param   hIf             The interface handle.
- * @param   pSession        The caller's session.
- * @param   fPromiscuous    Set if the interface should be in promiscuous mode, clear if not.
- */
-INTNETR0DECL(int) INTNETR0IfSetPromiscuousMode( PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fPromiscuous);
-INTNETR0DECL(int) INTNETR0IfSetMacAddress(      PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PCRTMAC pMac);
-INTNETR0DECL(int) INTNETR0IfSetActive(          PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fActive);
-
-/**
- * Sends one or more frames.
- *
- * The function will first the frame which is passed as the optional
- * arguments pvFrame and cbFrame. These are optional since it also
- * possible to chain together one or more frames in the send buffer
- * which the function will process after considering it's arguments.
- *
- * @returns VBox status code.
- * @param   pIntNet     The instance data.
- * @param   hIf         The interface handle.
- * @param   pSession    The caller's session.
- */
-INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession);
-
-/**
- * Wait for the interface to get signaled.
- * The interface will be signaled when is put into the receive buffer.
- *
- * @returns VBox status code.
- * @param   pIntNet         The instance handle.
- * @param   hIf             The interface handle.
- * @param   pSession        The caller's session.
- * @param   cMillies        Number of milliseconds to wait. RT_INDEFINITE_WAIT should be
- *                          used if indefinite wait is desired.
- */
-INTNETR0DECL(int) INTNETR0IfWait(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, uint32_t cMillies);
+INTNETR0DECL(int) IntNetR0IfClose(             INTNETIFHANDLE hIf, PSUPDRVSESSION pSession);
+INTNETR0DECL(int) IntNetR0IfGetRing0Buffer(    INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF *ppRing0Buf);
+INTNETR0DECL(int) IntNetR0IfGetRing3Buffer(    INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, R3PTRTYPE(PINTNETBUF) *ppRing3Buf);
+INTNETR0DECL(int) IntNetR0IfSetPromiscuousMode(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fPromiscuous);
+INTNETR0DECL(int) IntNetR0IfSetMacAddress(     INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PCRTMAC pMac);
+INTNETR0DECL(int) IntNetR0IfSetActive(         INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fActive);
+INTNETR0DECL(int) IntNetR0IfSend(              INTNETIFHANDLE hIf, PSUPDRVSESSION pSession);
+INTNETR0DECL(int) IntNetR0IfWait(              INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, uint32_t cMillies);
 
 /** @} */
 #endif /* IN_RING0 */

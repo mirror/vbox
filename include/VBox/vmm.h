@@ -324,21 +324,21 @@ typedef enum VMMR0OPERATION
 
     /** The start of the R0 service operations. */
     VMMR0_DO_SRV_START,
-    /** Call INTNETR0Open(). */
+    /** Call IntNetR0Open(). */
     VMMR0_DO_INTNET_OPEN,
-    /** Call INTNETR0IfClose(). */
+    /** Call IntNetR0IfClose(). */
     VMMR0_DO_INTNET_IF_CLOSE,
-    /** Call INTNETR0IfGetRing3Buffer(). */
+    /** Call IntNetR0IfGetRing3Buffer(). */
     VMMR0_DO_INTNET_IF_GET_RING3_BUFFER,
-    /** Call INTNETR0IfSetPromiscuousMode(). */
+    /** Call IntNetR0IfSetPromiscuousMode(). */
     VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE,
-    /** Call INTNETR0IfSetMacAddress(). */
+    /** Call IntNetR0IfSetMacAddress(). */
     VMMR0_DO_INTNET_IF_SET_MAC_ADDRESS,
-    /** Call INTNETR0IfSetActive(). */
+    /** Call IntNetR0IfSetActive(). */
     VMMR0_DO_INTNET_IF_SET_ACTIVE,
-    /** Call INTNETR0IfSend(). */
+    /** Call IntNetR0IfSend(). */
     VMMR0_DO_INTNET_IF_SEND,
-    /** Call INTNETR0IfWait(). */
+    /** Call IntNetR0IfWait(). */
     VMMR0_DO_INTNET_IF_WAIT,
     /** The end of the R0 service operations. */
     VMMR0_DO_SRV_END,
