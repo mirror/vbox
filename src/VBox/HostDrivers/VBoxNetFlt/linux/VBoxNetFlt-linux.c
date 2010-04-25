@@ -22,6 +22,8 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_NET_FLT_DRV
+#define VBOXNETFLT_LINUX_NO_XMIT_QUEUE
 #include "the-linux-kernel.h"
 #include "version-generated.h"
 #include "product-generated.h"
@@ -31,7 +33,6 @@
 #include <linux/miscdevice.h>
 #include <linux/ip.h>
 
-#define LOG_GROUP LOG_GROUP_NET_FLT_DRV
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <VBox/intnetinline.h>
@@ -57,9 +58,11 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#define VBOX_FLT_NB_TO_INST(pNB) ((PVBOXNETFLTINS)((uint8_t *)pNB - RT_OFFSETOF(VBOXNETFLTINS, u.s.Notifier)))
-#define VBOX_FLT_PT_TO_INST(pPT) ((PVBOXNETFLTINS)((uint8_t *)pPT - RT_OFFSETOF(VBOXNETFLTINS, u.s.PacketType)))
-#define VBOX_FLT_XT_TO_INST(pXT) ((PVBOXNETFLTINS)((uint8_t *)pXT - RT_OFFSETOF(VBOXNETFLTINS, u.s.XmitTask)))
+#define VBOX_FLT_NB_TO_INST(pNB)    RT_FROM_MEMBER(pNB, VBOXNETFLTINS, u.s.Notifier)
+#define VBOX_FLT_PT_TO_INST(pPT)    RT_FROM_MEMBER(pPT, VBOXNETFLTINS, u.s.PacketType)
+#ifndef VBOXNETFLT_LINUX_NO_XMIT_QUEUE
+# define VBOX_FLT_XT_TO_INST(pXT)   RT_FROM_MEMBER(pXT, VBOXNETFLTINS, u.s.XmitTask)
+#endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
 # define VBOX_SKB_RESET_NETWORK_HDR(skb)    skb_reset_network_header(skb)
@@ -120,6 +123,7 @@
 *******************************************************************************/
 static int      VBoxNetFltLinuxInit(void);
 static void     VBoxNetFltLinuxUnload(void);
+static void     vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff *pBuf);
 
 
 /*******************************************************************************
@@ -759,11 +763,16 @@ static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
     }
 #endif
 
+#ifdef VBOXNETFLT_LINUX_NO_XMIT_QUEUE
+    /* Forward it to the internal network. */
+    vboxNetFltLinuxForwardToIntNet(pThis, pBuf);
+#else
     /* Add the packet to transmit queue and schedule the bottom half. */
     skb_queue_tail(&pThis->u.s.XmitQueue, pBuf);
     schedule_work(&pThis->u.s.XmitTask);
     Log4(("vboxNetFltLinuxPacketHandler: scheduled work %p for sk_buff %p\n",
           &pThis->u.s.XmitTask, pBuf));
+#endif
 
     /* It does not really matter what we return, it is ignored by the kernel. */
     return 0;
@@ -1123,6 +1132,10 @@ static int vboxNetFltLinuxForwardSegment(PVBOXNETFLTINS pThis, struct sk_buff *p
     return rc;
 }
 
+/**
+ *
+ * @param   pBuf        The socket buffer.  This is consumed by this function.
+ */
 static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff *pBuf)
 {
     uint32_t fSrc = pBuf->pkt_type == PACKET_OUTGOING ? INTNETTRUNKDIR_HOST : INTNETTRUNKDIR_WIRE;
@@ -1192,17 +1205,18 @@ static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff 
     }
 }
 
+#ifndef VBOXNETFLT_LINUX_NO_XMIT_QUEUE
 /**
  * Work queue handler that forwards the socket buffers queued by
  * vboxNetFltLinuxPacketHandler to the internal network.
  *
  * @param   pWork               The work queue.
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
 static void vboxNetFltLinuxXmitTask(struct work_struct *pWork)
-#else
+# else
 static void vboxNetFltLinuxXmitTask(void *pWork)
-#endif
+# endif
 {
     PVBOXNETFLTINS  pThis   = VBOX_FLT_XT_TO_INST(pWork);
     RTSPINLOCKTMP   Tmp     = RTSPINLOCKTMP_INITIALIZER;
@@ -1234,6 +1248,7 @@ static void vboxNetFltLinuxXmitTask(void *pWork)
          *        too)? */
     }
 }
+#endif /* !VBOXNETFLT_LINUX_NO_XMIT_QUEUE */
 
 /**
  * Reports the GSO capabilites of the hardware NIC.
@@ -1397,7 +1412,9 @@ static int vboxNetFltLinuxUnregisterDevice(PVBOXNETFLTINS pThis, struct net_devi
     RTSpinlockRelease(pThis->hSpinlock, &Tmp);
 
     dev_remove_pack(&pThis->u.s.PacketType);
+#ifndef VBOXNETFLT_LINUX_NO_XMIT_QUEUE
     skb_queue_purge(&pThis->u.s.XmitQueue);
+#endif
     Log(("vboxNetFltLinuxUnregisterDevice: this=%p: Packet handler removed, xmit queue purged.\n", pThis));
     Log(("vboxNetFltLinuxUnregisterDevice: Device %p(%s) released. ref=%d\n", pDev, pDev->name, atomic_read(&pDev->refcnt)));
     dev_put(pDev);
@@ -1686,7 +1703,9 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
     if (fRegistered)
     {
         dev_remove_pack(&pThis->u.s.PacketType);
+#ifndef VBOXNETFLT_LINUX_NO_XMIT_QUEUE
         skb_queue_purge(&pThis->u.s.XmitQueue);
+#endif
         Log(("vboxNetFltOsDeleteInstance: this=%p: Packet handler removed, xmit queue purged.\n", pThis));
         Log(("vboxNetFltOsDeleteInstance: Device %p(%s) released. ref=%d\n", pDev, pDev->name, atomic_read(&pDev->refcnt)));
         dev_put(pDev);
@@ -1730,11 +1749,13 @@ int  vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
     pThis->u.s.fRegistered = false;
     pThis->u.s.fPromiscuousSet = false;
     memset(&pThis->u.s.PacketType, 0, sizeof(pThis->u.s.PacketType));
+#ifndef VBOXNETFLT_LINUX_NO_XMIT_QUEUE
     skb_queue_head_init(&pThis->u.s.XmitQueue);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
     INIT_WORK(&pThis->u.s.XmitTask, vboxNetFltLinuxXmitTask);
-#else
+# else
     INIT_WORK(&pThis->u.s.XmitTask, vboxNetFltLinuxXmitTask, &pThis->u.s.XmitTask);
+# endif
 #endif
 
     return VINF_SUCCESS;
