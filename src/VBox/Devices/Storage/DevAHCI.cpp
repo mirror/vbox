@@ -291,6 +291,10 @@ typedef struct AHCIPORTTASKSTATE
      * If this is set we will use a buffer for the data
      * and the callback copies the data to the destination. */
     PFNAHCIPOSTPROCESS         pfnPostProcess;
+#ifdef RT_STRICT
+    /** Flag whether the task state is currently active - used for debugging */
+    volatile bool              fActive;
+#endif
 } AHCIPORTTASKSTATE;
 
 /**
@@ -4885,11 +4889,23 @@ static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPor
         ahciLog(("%s: After decrement uActTasksActive=%u\n", __FUNCTION__, cOutstandingTasks));
         ASMAtomicOrU32(&pAhciPort->u32QueuedTasksFinished, (1 << pAhciPortTaskState->uTag));
 
+#ifdef RT_STRICT
+        bool fXchg = ASMAtomicCmpXchgBool(&pAhciPortTaskState->fActive, false, true);
+        AssertMsg(fXchg, ("Task is not active\n"));
+#endif
+
         if (!cOutstandingTasks)
-            ahciSendSDBFis(pAhciPort, pAhciPort->u32QueuedTasksFinished, pAhciPortTaskState, true);
+            ahciSendSDBFis(pAhciPort, 0, pAhciPortTaskState, true);
     }
     else
+    {
+#ifdef RT_STRICT
+        bool fXchg = ASMAtomicCmpXchgBool(&pAhciPortTaskState->fActive, false, true);
+        AssertMsg(fXchg, ("Task is not active\n"));
+#endif
+
         ahciSendD2HFis(pAhciPort, pAhciPortTaskState, pAhciPortTaskState->cmdFis, true);
+    }
 
     /* Add the task to the cache. */
     pAhciPort->aCachedTasks[pAhciPortTaskState->uTag] = pAhciPortTaskState;
@@ -5235,7 +5251,8 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
 
         ahciLog(("%s: Processing command at slot %d\n", __FUNCTION__, pNotifierItem->iTask));
 
-        /* Check if there is already an allocated task struct in the cache.
+        /*
+         * Check if there is already an allocated task struct in the cache.
          * Allocate a new task otherwise.
          */
         if (!pAhciPort->aCachedTasks[pNotifierItem->iTask])
@@ -5247,6 +5264,11 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
         {
             pAhciPortTaskState = pAhciPort->aCachedTasks[pNotifierItem->iTask];
         }
+
+#ifdef RT_STRICT
+        bool fXchg = ASMAtomicCmpXchgBool(&pAhciPortTaskState->fActive, true, false);
+        AssertMsg(fXchg, ("Task is already active\n"));
+#endif
 
         /** Set current command slot */
         pAhciPortTaskState->uTag = pNotifierItem->iTask;
@@ -5337,6 +5359,11 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
         }
         else
         {
+#ifdef RT_STRICT
+            bool fXchg = ASMAtomicCmpXchgBool(&pAhciPortTaskState->fActive, false, true);
+            AssertMsg(fXchg, ("Task is not active\n"));
+#endif
+
             /* There is nothing left to do. Notify the guest. */
             ahciSendD2HFis(pAhciPort, pAhciPortTaskState, &pAhciPortTaskState->cmdFis[0], true);
             /* Add the task to the cache. */
