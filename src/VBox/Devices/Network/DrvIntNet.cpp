@@ -371,7 +371,7 @@ PDMBOTHCBDECL(int) drvIntNetUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin,
      * sufficient buffer space since we might've stacked up a few frames to the
      * trunk while in ring-0.  (There is not point of doing this in ring-0.)
      */
-    PINTNETHDR pHdr;
+    PINTNETHDR pHdr = NULL;             /* gcc silliness */
     if (pGso)
         rc = IntNetRingAllocateGsoFrame(&pThis->CTX_SUFF(pBuf)->Send, (uint32_t)cbMin, pGso,
                                         &pHdr, &pSgBuf->aSegs[0].pvSeg);
