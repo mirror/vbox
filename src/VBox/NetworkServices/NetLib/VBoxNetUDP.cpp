@@ -63,14 +63,14 @@ void *VBoxNetUDPMatch(PINTNETBUF pBuf, unsigned uDstPort, PCRTMAC pDstMac, uint3
     /*
      * Valid IntNet Ethernet frame?
      */
-    PCINTNETHDR pHdr = INTNETRingGetNextFrameToRead(&pBuf->Recv);
+    PCINTNETHDR pHdr = IntNetRingGetNextFrameToRead(&pBuf->Recv);
     if (    !pHdr
         ||  (   pHdr->u16Type != INTNETHDR_TYPE_FRAME
              && pHdr->u16Type != INTNETHDR_TYPE_GSO))
         return NULL;
 
     size_t          cbFrame = pHdr->cbFrame;
-    const void     *pvFrame = INTNETHdrGetFramePtr(pHdr, pBuf);
+    const void     *pvFrame = IntNetHdrGetFramePtr(pHdr, pBuf);
     PCPDMNETWORKGSO pGso    = NULL;
     if (pHdr->u16Type == INTNETHDR_TYPE_GSO)
     {

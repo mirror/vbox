@@ -79,8 +79,6 @@ static void vboxnetIntIfCopySG(void *pvFrame, size_t cSegs, PCINTNETSEG paSegs)
  * @param   pRingBuf    The ring buffer to read from.
  * @param   cSegs       The number of segments.
  * @param   paSegs      The segments.
- * @remark  This is the same as INTNETRingWriteFrame and
- *          drvIntNetRingWriteFrame.
  */
 int VBoxNetIntIfRingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, size_t cSegs, PCINTNETSEG paSegs)
 {
@@ -105,11 +103,11 @@ int VBoxNetIntIfRingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, size_t 
      */
     PINTNETHDR pHdr;
     void *pvFrame;
-    int rc = INTNETRingAllocateFrame(pRingBuf, cbFrame, &pHdr, &pvFrame);
+    int rc = IntNetRingAllocateFrame(pRingBuf, cbFrame, &pHdr, &pvFrame);
     if (RT_SUCCESS(rc))
     {
         vboxnetIntIfCopySG(pvFrame, cSegs, paSegs);
-        INTNETRingCommitFrame(pRingBuf, pHdr);
+        IntNetRingCommitFrame(pRingBuf, pHdr);
         return VINF_SUCCESS;
     }
 

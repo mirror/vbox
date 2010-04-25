@@ -373,10 +373,10 @@ PDMBOTHCBDECL(int) drvIntNetUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin,
      */
     PINTNETHDR pHdr;
     if (pGso)
-        rc = INTNETRingAllocateGsoFrame(&pThis->CTX_SUFF(pBuf)->Send, (uint32_t)cbMin, pGso,
+        rc = IntNetRingAllocateGsoFrame(&pThis->CTX_SUFF(pBuf)->Send, (uint32_t)cbMin, pGso,
                                         &pHdr, &pSgBuf->aSegs[0].pvSeg);
     else
-        rc = INTNETRingAllocateFrame(&pThis->CTX_SUFF(pBuf)->Send, (uint32_t)cbMin,
+        rc = IntNetRingAllocateFrame(&pThis->CTX_SUFF(pBuf)->Send, (uint32_t)cbMin,
                                      &pHdr, &pSgBuf->aSegs[0].pvSeg);
 #ifdef IN_RING3
     if (    RT_FAILURE(rc)
@@ -384,10 +384,10 @@ PDMBOTHCBDECL(int) drvIntNetUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin,
     {
         drvIntNetProcessXmit(pThis);
         if (pGso)
-            rc = INTNETRingAllocateGsoFrame(&pThis->CTX_SUFF(pBuf)->Send, (uint32_t)cbMin, pGso,
+            rc = IntNetRingAllocateGsoFrame(&pThis->CTX_SUFF(pBuf)->Send, (uint32_t)cbMin, pGso,
                                             &pHdr, &pSgBuf->aSegs[0].pvSeg);
         else
-            rc = INTNETRingAllocateFrame(&pThis->CTX_SUFF(pBuf)->Send, (uint32_t)cbMin,
+            rc = IntNetRingAllocateFrame(&pThis->CTX_SUFF(pBuf)->Send, (uint32_t)cbMin,
                                          &pHdr, &pSgBuf->aSegs[0].pvSeg);
     }
 #endif
@@ -452,7 +452,7 @@ PDMBOTHCBDECL(int) drvIntNetUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGAT
 
     /** @todo LATER: try unalloc the frame. */
     pHdr->u16Type = INTNETHDR_TYPE_PADDING;
-    INTNETRingCommitFrame(&pThis->CTX_SUFF(pBuf)->Send, pHdr);
+    IntNetRingCommitFrame(&pThis->CTX_SUFF(pBuf)->Send, pHdr);
 
 #ifdef IN_RING3
     RTMemCacheFree(pThis->hSgCache, pSgBuf);
@@ -483,7 +483,7 @@ PDMBOTHCBDECL(int) drvIntNetUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGAT
      * Commit the frame and push it thru the switch.
      */
     PINTNETHDR pHdr = (PINTNETHDR)pSgBuf->pvAllocator;
-    INTNETRingCommitFrameEx(&pThis->CTX_SUFF(pBuf)->Send, pHdr, pSgBuf->cbUsed);
+    IntNetRingCommitFrameEx(&pThis->CTX_SUFF(pBuf)->Send, pHdr, pSgBuf->cbUsed);
     int rc = drvIntNetProcessXmit(pThis);
     STAM_PROFILE_STOP(&pThis->StatTransmit, a);
 
@@ -670,7 +670,7 @@ static int drvR3IntNetRecvRun(PDRVINTNET pThis)
          * Process the receive buffer.
          */
         PINTNETHDR pHdr;
-        while ((pHdr = INTNETRingGetNextFrameToRead(pRingBuf)) != NULL)
+        while ((pHdr = IntNetRingGetNextFrameToRead(pRingBuf)) != NULL)
         {
             /*
              * Check the state and then inspect the packet.
@@ -709,14 +709,14 @@ static int drvR3IntNetRecvRun(PDRVINTNET pThis)
                             pThis->u64LastReceiveTS = u64Now;
                             Log2(("drvR3IntNetRecvRun: cbFrame=%#x\n"
                                   "%.*Rhxd\n",
-                                  cbFrame, cbFrame, INTNETHdrGetFramePtr(pHdr, pBuf)));
+                                  cbFrame, cbFrame, IntNetHdrGetFramePtr(pHdr, pBuf)));
                         }
 #endif
-                        rc = pThis->pIAboveNet->pfnReceive(pThis->pIAboveNet, INTNETHdrGetFramePtr(pHdr, pBuf), cbFrame);
+                        rc = pThis->pIAboveNet->pfnReceive(pThis->pIAboveNet, IntNetHdrGetFramePtr(pHdr, pBuf), cbFrame);
                         AssertRC(rc);
 
                         /* skip to the next frame. */
-                        INTNETRingSkipFrame(pRingBuf);
+                        IntNetRingSkipFrame(pRingBuf);
                     }
                     else
                     {
@@ -727,7 +727,7 @@ static int drvR3IntNetRecvRun(PDRVINTNET pThis)
                          * emulate any NICs with large receive offload (LRO).
                          */
                         STAM_COUNTER_INC(&pThis->StatReceivedGso);
-                        PCPDMNETWORKGSO pGso = INTNETHdrGetGsoContext(pHdr, pBuf);
+                        PCPDMNETWORKGSO pGso = IntNetHdrGetGsoContext(pHdr, pBuf);
                         if (PDMNetGsoIsValid(pGso, cbFrame, cbFrame - sizeof(PDMNETWORKGSO)))
                         {
                             cbFrame -= sizeof(PDMNETWORKGSO);
@@ -769,7 +769,7 @@ static int drvR3IntNetRecvRun(PDRVINTNET pThis)
                             STAM_REL_COUNTER_INC(&pBuf->cStatBadFrames);
                         }
 
-                        INTNETRingSkipFrame(pRingBuf);
+                        IntNetRingSkipFrame(pRingBuf);
                     }
                 }
                 else
@@ -785,8 +785,8 @@ static int drvR3IntNetRecvRun(PDRVINTNET pThis)
                             /*
                              * NIC is going down, likely because the VM is being reset. Skip the frame.
                              */
-                            AssertMsg(INETNETIsValidFrameType(pHdr->u16Type), ("Unknown frame type %RX16! offRead=%#x\n", pHdr->u16Type, pRingBuf->offReadX));
-                            INTNETRingSkipFrame(pRingBuf);
+                            AssertMsg(IntNetIsValidFrameType(pHdr->u16Type), ("Unknown frame type %RX16! offRead=%#x\n", pHdr->u16Type, pRingBuf->offReadX));
+                            IntNetRingSkipFrame(pRingBuf);
                         }
                         else
                         {
@@ -802,8 +802,8 @@ static int drvR3IntNetRecvRun(PDRVINTNET pThis)
                 /*
                  * Link down or unknown frame - skip to the next frame.
                  */
-                AssertMsg(INETNETIsValidFrameType(pHdr->u16Type), ("Unknown frame type %RX16! offRead=%#x\n", pHdr->u16Type, pRingBuf->offReadX));
-                INTNETRingSkipFrame(pRingBuf);
+                AssertMsg(IntNetIsValidFrameType(pHdr->u16Type), ("Unknown frame type %RX16! offRead=%#x\n", pHdr->u16Type, pRingBuf->offReadX));
+                IntNetRingSkipFrame(pRingBuf);
                 STAM_REL_COUNTER_INC(&pBuf->cStatBadFrames);
             }
         } /* while more received data */
@@ -968,7 +968,7 @@ static int drvR3IntNetResumeSend(PDRVINTNET pThis, const void *pvBuf, size_t cb)
     /*
      * Add the frame to the send buffer and push it onto the network.
      */
-    int rc = INTNETRingWriteFrame(&pThis->pBufR3->Send, pvBuf, (uint32_t)cb);
+    int rc = IntNetRingWriteFrame(&pThis->pBufR3->Send, pvBuf, (uint32_t)cb);
     if (    rc == VERR_BUFFER_OVERFLOW
         &&  pThis->pBufR3->cbSend < cb)
     {
@@ -979,7 +979,7 @@ static int drvR3IntNetResumeSend(PDRVINTNET pThis, const void *pvBuf, size_t cb)
         SendReq.hIf = pThis->hIf;
         PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
 
-        rc = INTNETRingWriteFrame(&pThis->pBufR3->Send, pvBuf, (uint32_t)cb);
+        rc = IntNetRingWriteFrame(&pThis->pBufR3->Send, pvBuf, (uint32_t)cb);
     }
 
     if (RT_SUCCESS(rc))

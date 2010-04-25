@@ -45,13 +45,13 @@ bool VBoxNetArpHandleIt(PSUPDRVSESSION pSession, INTNETIFHANDLE hIf, PINTNETBUF 
     /*
      * Valid IntNet Ethernet frame? Skip GSO, no ARP in there.
      */
-    PCINTNETHDR pHdr = INTNETRingGetNextFrameToRead(&pBuf->Recv);
+    PCINTNETHDR pHdr = IntNetRingGetNextFrameToRead(&pBuf->Recv);
     if (   !pHdr
         || pHdr->u16Type != INTNETHDR_TYPE_FRAME)
         return false;
 
     size_t          cbFrame = pHdr->cbFrame;
-    const void     *pvFrame = INTNETHdrGetFramePtr(pHdr, pBuf);
+    const void     *pvFrame = IntNetHdrGetFramePtr(pHdr, pBuf);
     PCRTNETETHERHDR pEthHdr = (PCRTNETETHERHDR)pvFrame;
 
     /*

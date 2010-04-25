@@ -203,7 +203,7 @@ static void doXmitFrame(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF 
      * Don't bother with dealing with overflows like DrvIntNet does, because
      * it's not supposed to happen here in this testcase.
      */
-    int rc = INTNETRingWriteFrame(&pBuf->Send, pvFrame, cbFrame);
+    int rc = IntNetRingWriteFrame(&pBuf->Send, pvFrame, cbFrame);
     if (RT_SUCCESS(rc))
     {
         if (pFileRaw)
@@ -211,7 +211,7 @@ static void doXmitFrame(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF 
     }
     else
     {
-        RTPrintf("tstIntNet-1: INTNETRingWriteFrame failed, %Rrc; cbFrame=%d pBuf->cbSend=%d\n", rc, cbFrame, pBuf->cbSend);
+        RTPrintf("tstIntNet-1: IntNetRingWriteFrame failed, %Rrc; cbFrame=%d pBuf->cbSend=%d\n", rc, cbFrame, pBuf->cbSend);
         g_cErrors++;
     }
 
@@ -464,12 +464,12 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
          * Process the receive buffer.
          */
         PINTNETHDR pHdr;
-        while ((pHdr = INTNETRingGetNextFrameToRead(pRingBuf)))
+        while ((pHdr = IntNetRingGetNextFrameToRead(pRingBuf)))
         {
             if (pHdr->u16Type == INTNETHDR_TYPE_FRAME)
             {
                 size_t      cbFrame = pHdr->cbFrame;
-                const void *pvFrame = INTNETHdrGetFramePtr(pHdr, pBuf);
+                const void *pvFrame = IntNetHdrGetFramePtr(pHdr, pBuf);
                 uint64_t    NanoTS  = RTTimeNanoTS() - g_StartTS;
 
                 if (pFileRaw)
@@ -545,7 +545,7 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
             }
             else if (pHdr->u16Type == INTNETHDR_TYPE_GSO)
             {
-                PCPDMNETWORKGSO pGso    = INTNETHdrGetGsoContext(pHdr, pBuf);
+                PCPDMNETWORKGSO pGso    = IntNetHdrGetGsoContext(pHdr, pBuf);
                 size_t          cbFrame = pHdr->cbFrame;
                 if (PDMNetGsoIsValid(pGso, cbFrame, cbFrame - sizeof(*pGso)))
                 {
@@ -579,7 +579,7 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
             }
 
             /* Advance to the next frame. */
-            INTNETRingSkipFrame(pRingBuf);
+            IntNetRingSkipFrame(pRingBuf);
         }
     }
 

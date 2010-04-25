@@ -193,7 +193,7 @@ static int tstIntNetSendBuf(PINTNETRINGBUF pRingBuf, INTNETIFHANDLE hIf,
                             PSUPDRVSESSION pSession, void const *pvBuf, size_t cbBuf)
 {
     INTNETSG Sg;
-    INTNETSgInitTemp(&Sg, (void *)pvBuf, cbBuf);
+    IntNetSgInitTemp(&Sg, (void *)pvBuf, cbBuf);
     int rc = intnetR0RingWriteFrame(pRingBuf, &Sg, NULL);
     if (RT_SUCCESS(rc))
         rc = IntNetR0IfSend(hIf, pSession);
@@ -253,7 +253,7 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
          pHdr->iFrame = iFrame;
 
         INTNETSG Sg;
-        INTNETSgInitTemp(&Sg, abBuf, cb);
+        IntNetSgInitTemp(&Sg, abBuf, cb);
         RTTEST_CHECK_RC_OK(g_hTest, rc = intnetR0RingWriteFrame(&pArgs->pBuf->Send, &Sg, NULL));
         if (RT_SUCCESS(rc))
             RTTEST_CHECK_RC_OK(g_hTest, rc = IntNetR0IfSend(pArgs->hIf, g_pSession));
@@ -300,11 +300,11 @@ DECLCALLBACK(int) ReceiveThread(RTTHREAD Thread, void *pvArg)
         /*
          * Read data.
          */
-        while (INTNETRingHasMoreToRead(&pArgs->pBuf->Recv))
+        while (IntNetRingHasMoreToRead(&pArgs->pBuf->Recv))
         {
             uint8_t     abBuf[16384];
             MYFRAMEHDR *pHdr = (MYFRAMEHDR *)&abBuf[0];
-            uint32_t    cb   = INTNETRingReadAndSkipFrame(&pArgs->pBuf->Recv, abBuf);
+            uint32_t    cb   = IntNetRingReadAndSkipFrame(&pArgs->pBuf->Recv, abBuf);
 
             /* check for termination frame. */
             if (    pHdr->iFrame   == 0xffffdead
@@ -499,8 +499,8 @@ static void tstBidirectionalTransfer(PTSTSTATE pThis)
          * Wait a bit for the receivers to finish up.
          */
         unsigned cYields = 100000;
-        while (     (  INTNETRingHasMoreToRead(&pThis->pBuf0->Recv)
-                    || INTNETRingHasMoreToRead(&pThis->pBuf1->Recv))
+        while (     (  IntNetRingHasMoreToRead(&pThis->pBuf0->Recv)
+                    || IntNetRingHasMoreToRead(&pThis->pBuf1->Recv))
                &&   cYields-- > 0)
             RTThreadYield();
 
@@ -599,13 +599,13 @@ static void doBroadcastTest(PTSTSTATE pThis, bool fHeadGuard)
 
     /* Receive the data. */
     const unsigned cbExpect = RT_ALIGN(sizeof(s_au16Frame) + sizeof(INTNETHDR), sizeof(INTNETHDR));
-    RTTESTI_CHECK_MSG(INTNETRingGetReadable(&pThis->pBuf1->Recv) == cbExpect,
-                      ("%#x vs. %#x\n", INTNETRingGetReadable(&pThis->pBuf1->Recv), cbExpect));
+    RTTESTI_CHECK_MSG(IntNetRingGetReadable(&pThis->pBuf1->Recv) == cbExpect,
+                      ("%#x vs. %#x\n", IntNetRingGetReadable(&pThis->pBuf1->Recv), cbExpect));
 
     void *pvBuf;
     RTTESTI_CHECK_RC_OK_RETV(RTTestGuardedAlloc(g_hTest, sizeof(s_au16Frame), 1, fHeadGuard, &pvBuf));
     uint32_t cb;
-    RTTESTI_CHECK_MSG_RETV((cb = INTNETRingReadAndSkipFrame(&pThis->pBuf1->Recv, pvBuf)) == sizeof(s_au16Frame),
+    RTTESTI_CHECK_MSG_RETV((cb = IntNetRingReadAndSkipFrame(&pThis->pBuf1->Recv, pvBuf)) == sizeof(s_au16Frame),
                            ("%#x vs. %#x\n", cb, sizeof(s_au16Frame)));
 
     if (memcmp(pvBuf, &s_au16Frame, sizeof(s_au16Frame)))
@@ -638,13 +638,13 @@ static void doUnicastTest(PTSTSTATE pThis, bool fHeadGuard)
 
     /* Receive the data. */
     const unsigned cbExpect = RT_ALIGN(sizeof(s_au16Frame) + sizeof(INTNETHDR), sizeof(INTNETHDR));
-    RTTESTI_CHECK_MSG(INTNETRingGetReadable(&pThis->pBuf0->Recv) == cbExpect,
-                      ("%#x vs. %#x\n", INTNETRingGetReadable(&pThis->pBuf0->Recv), cbExpect));
+    RTTESTI_CHECK_MSG(IntNetRingGetReadable(&pThis->pBuf0->Recv) == cbExpect,
+                      ("%#x vs. %#x\n", IntNetRingGetReadable(&pThis->pBuf0->Recv), cbExpect));
 
     void *pvBuf;
     RTTESTI_CHECK_RC_OK_RETV(RTTestGuardedAlloc(g_hTest, sizeof(s_au16Frame), 1, fHeadGuard, &pvBuf));
     uint32_t cb;
-    RTTESTI_CHECK_MSG_RETV((cb = INTNETRingReadAndSkipFrame(&pThis->pBuf0->Recv, pvBuf)) == sizeof(s_au16Frame),
+    RTTESTI_CHECK_MSG_RETV((cb = IntNetRingReadAndSkipFrame(&pThis->pBuf0->Recv, pvBuf)) == sizeof(s_au16Frame),
                            ("%#x vs. %#x\n", cb, sizeof(s_au16Frame)));
 
     if (memcmp(pvBuf, &s_au16Frame, sizeof(s_au16Frame)))
