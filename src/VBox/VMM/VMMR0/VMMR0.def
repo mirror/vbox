@@ -66,6 +66,17 @@ EXPORTS
     VMSetError
     VMSetErrorV
 
+    ; Internal Networking
+    IntNetR0Open
+    IntNetR0IfClose
+    IntNetR0IfGetRing0Buffer
+    IntNetR0IfGetRing3Buffer
+    IntNetR0IfSetPromiscuousMode
+    IntNetR0IfSetMacAddress
+    IntNetR0IfSetActive
+    IntNetR0IfSend
+    IntNetR0IfWait
+
     ; runtime
     RTAssertMsg1Weak
     RTAssertMsg2Weak

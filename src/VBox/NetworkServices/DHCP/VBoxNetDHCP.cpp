@@ -911,16 +911,17 @@ int VBoxNetDhcp::tryGoOnline(void)
         /*
          * Get the ring-3 address of the shared interface buffer.
          */
-        INTNETIFGETRING3BUFFERREQ GetRing3BufferReq;
-        GetRing3BufferReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-        GetRing3BufferReq.Hdr.cbReq = sizeof(GetRing3BufferReq);
-        GetRing3BufferReq.pSession = m_pSession;
-        GetRing3BufferReq.hIf = m_hIf;
-        GetRing3BufferReq.pRing3Buf = NULL;
-        rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_GET_RING3_BUFFER, 0, &GetRing3BufferReq.Hdr);
+        INTNETIFGETBUFFERPTRSREQ GetBufferPtrsReq;
+        GetBufferPtrsReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        GetBufferPtrsReq.Hdr.cbReq = sizeof(GetBufferPtrsReq);
+        GetBufferPtrsReq.pSession = m_pSession;
+        GetBufferPtrsReq.hIf = m_hIf;
+        GetBufferPtrsReq.pRing3Buf = NULL;
+        GetBufferPtrsReq.pRing0Buf = NULL;
+        rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS, 0, &GetBufferPtrsReq.Hdr);
         if (RT_SUCCESS(rc))
         {
-            PINTNETBUF pBuf = GetRing3BufferReq.pRing3Buf;
+            PINTNETBUF pBuf = GetBufferPtrsReq.pRing3Buf;
             debugPrint(1, false, "pBuf=%p cbBuf=%d cbSend=%d cbRecv=%d",
                        pBuf, pBuf->cbBuf, pBuf->cbSend, pBuf->cbRecv);
             m_pIfBuf = pBuf;
@@ -942,7 +943,7 @@ int VBoxNetDhcp::tryGoOnline(void)
             RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPR3CallVMMR0Ex(,VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE,) failed, rc=%Rrc\n", rc);
         }
         else
-            RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPR3CallVMMR0Ex(,VMMR0_DO_INTNET_IF_GET_RING3_BUFFER,) failed, rc=%Rrc\n", rc);
+            RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPR3CallVMMR0Ex(,VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS,) failed, rc=%Rrc\n", rc);
     }
     else
         RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: SUPR3CallVMMR0Ex(,VMMR0_DO_INTNET_OPEN,) failed, rc=%Rrc\n", rc);

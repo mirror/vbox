@@ -998,10 +998,10 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
                 return VERR_INVALID_PARAMETER;
             return IntNetR0IfCloseReq(pSession, (PINTNETIFCLOSEREQ)pReqHdr);
 
-        case VMMR0_DO_INTNET_IF_GET_RING3_BUFFER:
-            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFGETRING3BUFFERREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)
+        case VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS:
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFGETBUFFERPTRSREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
-            return IntNetR0IfGetRing3BufferReq(pSession, (PINTNETIFGETRING3BUFFERREQ)pReqHdr);
+            return IntNetR0IfGetBufferPtrsReq(pSession, (PINTNETIFGETBUFFERPTRSREQ)pReqHdr);
 
         case VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE:
             if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFSETPROMISCUOUSMODEREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)

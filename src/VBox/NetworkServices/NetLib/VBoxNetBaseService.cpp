@@ -263,19 +263,20 @@ int VBoxNetBaseService::tryGoOnline(void)
     /*
      * Get the ring-3 address of the shared interface buffer.
      */
-    INTNETIFGETRING3BUFFERREQ GetRing3BufferReq;
-    GetRing3BufferReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    GetRing3BufferReq.Hdr.cbReq = sizeof(GetRing3BufferReq);
-    GetRing3BufferReq.pSession = m_pSession;
-    GetRing3BufferReq.hIf = m_hIf;
-    GetRing3BufferReq.pRing3Buf = NULL;
-    rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_GET_RING3_BUFFER, 0, &GetRing3BufferReq.Hdr);
+    GetRing3BufferReq GetBufferPtrsReq;
+    GetBufferPtrsReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    GetBufferPtrsReq.Hdr.cbReq = sizeof(GetBufferPtrsReq);
+    GetBufferPtrsReq.pSession = m_pSession;
+    GetBufferPtrsReq.hIf = m_hIf;
+    GetBufferPtrsReq.pRing3Buf = NULL;
+    GetBufferPtrsReq.pRing0Buf = NULL;
+    rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS, 0, &GetBufferPtrsReq.Hdr);
     if (RT_FAILURE(rc))
     {
-        Log2(("VBoxNetBaseService: SUPR3CallVMMR0Ex(,VMMR0_DO_INTNET_IF_GET_RING3_BUFFER,) failed, rc=%Rrc\n", rc));
+        Log2(("VBoxNetBaseService: SUPR3CallVMMR0Ex(,VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS,) failed, rc=%Rrc\n", rc));
         goto bad;
     }
-    pBuf = GetRing3BufferReq.pRing3Buf;
+    pBuf = GetBufferPtrsReq.pRing3Buf;
     Log2(("pBuf=%p cbBuf=%d cbSend=%d cbRecv=%d\n",
                pBuf, pBuf->cbBuf, pBuf->cbSend, pBuf->cbRecv));
     m_pIfBuf = pBuf;

@@ -328,8 +328,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_INTNET_OPEN,
     /** Call IntNetR0IfClose(). */
     VMMR0_DO_INTNET_IF_CLOSE,
-    /** Call IntNetR0IfGetRing3Buffer(). */
-    VMMR0_DO_INTNET_IF_GET_RING3_BUFFER,
+    /** Call IntNetR0IfGetBufferPtrs(). */
+    VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS,
     /** Call IntNetR0IfSetPromiscuousMode(). */
     VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE,
     /** Call IntNetR0IfSetMacAddress(). */
