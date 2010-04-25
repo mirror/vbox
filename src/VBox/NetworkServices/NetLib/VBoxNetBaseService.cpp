@@ -263,7 +263,7 @@ int VBoxNetBaseService::tryGoOnline(void)
     /*
      * Get the ring-3 address of the shared interface buffer.
      */
-    GetRing3BufferReq GetBufferPtrsReq;
+    INTNETIFGETBUFFERPTRSREQ GetBufferPtrsReq;
     GetBufferPtrsReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
     GetBufferPtrsReq.Hdr.cbReq = sizeof(GetBufferPtrsReq);
     GetBufferPtrsReq.pSession = m_pSession;
