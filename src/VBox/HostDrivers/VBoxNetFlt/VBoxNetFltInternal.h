@@ -169,8 +169,10 @@ typedef struct VBOXNETFLTINS
             RTMAC MacAddr;
             struct notifier_block Notifier;
             struct packet_type    PacketType;
+#  ifndef VBOXNETFLT_LINUX_NO_XMIT_QUEUE
             struct sk_buff_head   XmitQueue;
             struct work_struct    XmitTask;
+#  endif
             /** @} */
 # elif defined(RT_OS_SOLARIS)
             /** @name Solaris instance data.
