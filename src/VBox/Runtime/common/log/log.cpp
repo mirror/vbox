@@ -2615,7 +2615,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                  * Done, figure what we've used and advance the buffer and free size.
                  */
                 cb = psz - &pLogger->achScratch[pLogger->offScratch];
-                Assert(cb <= 198);
+                AssertMsg(cb <= 223, ("%#zx (%zd) - fFlags=%#x\n", cb, cb, pLogger->fFlags)));
                 pLogger->offScratch += (uint32_t)cb;
                 cb = sizeof(pLogger->achScratch) - pLogger->offScratch - 1;
             }
