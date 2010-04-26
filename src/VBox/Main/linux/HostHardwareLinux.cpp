@@ -171,9 +171,6 @@ static bool floppyGetName(const char *pcszNode, unsigned Number,
     if (RT_SUCCESS(rc))
     {
         int rcIoCtl;
-        /** @todo The next line can produce a warning, as the ioctl request
-         * field is defined as signed, but the Linux ioctl definition macros
-         * produce unsigned constants. */
         rc = RTFileIoCtl(File, FDGETDRVTYP, pszName, 0, &rcIoCtl);
         RTFileClose(File);
         if (RT_SUCCESS(rc) && rcIoCtl >= 0)
@@ -1590,6 +1587,28 @@ int getDeviceInfoFromSysfs(const char *pcszPath, sysfsPathHandler *pHandler)
 }
 
 
+#define USBDEVICE_MAJOR 189
+
+/** Deduce the bus that a USB device is plugged into from the device node
+ * number.  See drivers/usb/core/hub.c:usb_new_device as of Linux 2.6.20. */
+static unsigned usbBusFromDevNum(dev_t devNum)
+{
+    AssertReturn(devNum, 0);
+    AssertReturn(major(devNum) == USBDEVICE_MAJOR, 0);
+    return (minor(devNum) >> 7) + 1;
+}
+
+
+/** Deduce the device number of a USB device on the bus from the device node
+ * number.  See drivers/usb/core/hub.c:usb_new_device as of Linux 2.6.20. */
+static unsigned usbDeviceFromDevNum(dev_t devNum)
+{
+    AssertReturn(devNum, 0);
+    AssertReturn(major(devNum) == USBDEVICE_MAJOR, 0);
+    return (minor(devNum) & 127) + 1;
+}
+
+
 /**
  * Tell whether a file in /sys/bus/usb/devices is a device rather than an
  * interface.  To be used with getDeviceInfoFromSysfs().
@@ -1606,14 +1625,17 @@ private:
         if (strchr(pcszFile, ':'))
             return true;
         dev_t devnum = RTLinuxSysFsReadDevNumFile("%s/dev", pcszNode);
+        /* Sanity test of our static helpers */
+        Assert(usbBusFromDevNum(makedev(USBDEVICE_MAJOR, 517)) == 5);
+        Assert(usbDeviceFromDevNum(makedev(USBDEVICE_MAJOR, 517)) == 6);
         AssertReturn (devnum, true);
         char szDevPath[RTPATH_MAX];
         ssize_t cchDevPath;
         cchDevPath = RTLinuxFindDevicePath(devnum, RTFS_TYPE_DEV_CHAR,
                                            szDevPath, sizeof(szDevPath),
                                            "/dev/bus/usb/%.3d/%.3d",
-                                           RTLinuxSysFsReadIntFile(10, "%s/busnum", pcszNode),
-                                           RTLinuxSysFsReadIntFile(10, "%s/devnum", pcszNode));
+                                           usbBusFromDevNum(devnum),
+                                           usbDeviceFromDevNum(devnum));
         if (cchDevPath < 0)
             return true;
         try
