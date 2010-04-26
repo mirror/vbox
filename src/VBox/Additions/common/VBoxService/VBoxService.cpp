@@ -98,7 +98,9 @@ static struct
     { &g_CpuHotPlug, NIL_RTTHREAD, false, false, false, true },
 #endif
 #ifdef VBOXSERVICE_MANAGEMENT
+ #ifdef VBOX_WITH_MEMBALLOON
     { &g_MemBalloon, NIL_RTTHREAD, false, false, false, true },
+ #endif    
     { &g_VMStatistics, NIL_RTTHREAD, false, false, false, true },
 #endif
 };
