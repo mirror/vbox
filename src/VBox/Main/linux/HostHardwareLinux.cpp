@@ -32,7 +32,7 @@
 #include <VBox/err.h>
 #include <VBox/log.h>
 
-#ifdef VBOX_WITH_DBUS
+#ifdef VBOX_USB_WITH_DBUS
 # include <VBox/dbus.h>
 #endif
 
@@ -99,7 +99,7 @@ static int getDriveInfoFromSysfs(DriveInfoList *pList, bool isDVD,
 # ifdef VBOX_USB_WITH_FAM
 static int getUSBDeviceInfoFromSysfs(USBDeviceInfoList *pList, bool *pfSuccess);
 # endif
-# ifdef VBOX_WITH_DBUS
+# ifdef VBOX_USB_WITH_DBUS
 /* These must be extern to be usable in the RTMemAutoPtr template */
 extern void VBoxHalShutdown (DBusConnection *pConnection);
 extern void VBoxHalShutdownPrivate (DBusConnection *pConnection);
@@ -135,7 +135,7 @@ static int getUSBInterfacesFromHal(std::vector <iprt::MiniString> *pList,
                                    const char *pcszUdi, bool *pfSuccess);
 static DBusHandlerResult dbusFilterFunction (DBusConnection *pConnection,
                                              DBusMessage *pMessage, void *pvUser);
-# endif  /* VBOX_WITH_DBUS */
+# endif  /* VBOX_USB_WITH_DBUS */
 #endif /* VBOX_USB_WITH_SYSFS */
 
 
@@ -1030,7 +1030,7 @@ int VBoxMainUSBDeviceInfo::UpdateDevices ()
     {
         mDeviceList.clear();
 #ifdef VBOX_USB_WITH_SYSFS
-# ifdef VBOX_WITH_DBUS
+# ifdef VBOX_USB_WITH_DBUS
         bool halSuccess = false;
         if (   RT_SUCCESS(rc)
             && RT_SUCCESS(RTDBusLoadLib())
@@ -1042,7 +1042,7 @@ int VBoxMainUSBDeviceInfo::UpdateDevices ()
             rc = getOldUSBDeviceInfoFromHal(&mDeviceList, &halSuccess);
         if (!success)
             success = halSuccess;
-# endif /* VBOX_WITH_DBUS */
+# endif /* VBOX_USB_WITH_DBUS */
 # ifdef VBOX_USB_WITH_FAM
         if (   RT_SUCCESS(rc)
             && (!success || testing()))
@@ -1060,7 +1060,7 @@ int VBoxMainUSBDeviceInfo::UpdateDevices ()
     return rc;
 }
 
-#if defined VBOX_USB_WITH_SYSFS && defined VBOX_WITH_DBUS
+#if defined VBOX_USB_WITH_SYSFS && defined VBOX_USB_WITH_DBUS
 class hotplugDBusImpl : public VBoxMainHotplugWaiterImpl
 {
     /** The connection to DBus */
@@ -1167,7 +1167,7 @@ void hotplugDBusImpl::Interrupt()
     LogFlowFunc(("\n"));
     mInterrupt = true;
 }
-#endif  /* VBOX_USB_WITH_SYSFS && VBOX_WITH_DBUS */
+#endif  /* VBOX_USB_WITH_SYSFS && VBOX_USB_WITH_DBUS */
 
 class hotplugNullImpl : public VBoxMainHotplugWaiterImpl
 {
@@ -1348,7 +1348,7 @@ hotplugSysfsFAMImpl::hotplugSysfsFAMImpl(void) :
 #   ifndef VBOX_USB_WITH_SYSFS_BY_DEFAULT
         Assert(!RTFileExists("/proc/bus/usb/devices"));
 #   endif
-#   ifdef VBOX_WITH_DBUS
+#   ifdef VBOX_USB_WITH_DBUS
         Assert(!hotplugDBusImpl::HalAvailable());
 #   endif
     }
@@ -1501,13 +1501,13 @@ void hotplugSysfsFAMImpl::Interrupt(void)
 VBoxMainHotplugWaiter::VBoxMainHotplugWaiter(void)
 {
 #ifdef VBOX_USB_WITH_SYSFS
-# ifdef VBOX_WITH_DBUS
+# ifdef VBOX_USB_WITH_DBUS
     if (hotplugDBusImpl::HalAvailable())
     {
         mImpl = new hotplugDBusImpl;
         return;
     }
-# endif  /* VBOX_WITH_DBUS */
+# endif  /* VBOX_USB_WITH_DBUS */
 # ifdef VBOX_USB_WITH_FAM
     if (hotplugSysfsFAMImpl::SysfsAvailable())
     {
@@ -1759,7 +1759,7 @@ static int getUSBDeviceInfoFromSysfs(USBDeviceInfoList *pList,
 # endif /* VBOX_USB_WITH_FAM */
 #endif /* VBOX_USB_WITH_SYSFS */
 
-#if defined VBOX_USB_WITH_SYSFS && defined VBOX_WITH_DBUS
+#if defined VBOX_USB_WITH_SYSFS && defined VBOX_USB_WITH_DBUS
 /** Wrapper class around DBusError for automatic cleanup */
 class autoDBusError
 {
@@ -2528,5 +2528,5 @@ DBusHandlerResult dbusFilterFunction(DBusConnection * /* pConnection */,
     }
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
-#endif  /* VBOX_USB_WITH_SYSFS && VBOX_WITH_DBUS */
+#endif  /* VBOX_USB_WITH_SYSFS && VBOX_USB_WITH_DBUS */
 
