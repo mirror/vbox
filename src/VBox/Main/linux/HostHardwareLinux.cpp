@@ -57,7 +57,9 @@
 #include <iprt/linux/sysfs.h>
 
 #ifdef VBOX_USB_WITH_SYSFS
-# include <fam.h>
+# ifdef VBOX_USB_WITH_FAM
+#  include <fam.h>
+# endif
 #endif
 
 #include <vector>
@@ -94,7 +96,9 @@ static int getDriveInfoFromDev(DriveInfoList *pList, bool isDVD,
 static int getDriveInfoFromSysfs(DriveInfoList *pList, bool isDVD,
                                  bool *pfSuccess);
 #ifdef VBOX_USB_WITH_SYSFS
+# ifdef VBOX_USB_WITH_FAM
 static int getUSBDeviceInfoFromSysfs(USBDeviceInfoList *pList, bool *pfSuccess);
+# endif
 # ifdef VBOX_WITH_DBUS
 /* These must be extern to be usable in the RTMemAutoPtr template */
 extern void VBoxHalShutdown (DBusConnection *pConnection);
@@ -1042,9 +1046,11 @@ int VBoxMainUSBDeviceInfo::UpdateDevices ()
         if (!success)
             success = halSuccess;
 # endif /* VBOX_WITH_DBUS */
+# ifdef VBOX_USB_WITH_FAM
         if (   RT_SUCCESS(rc)
             && (!success || testing()))
             rc = getUSBDeviceInfoFromSysfs(&mDeviceList, &success);
+# endif
 #else /* !VBOX_USB_WITH_SYSFS */
         NOREF(success);
 #endif /* !VBOX_USB_WITH_SYSFS */
@@ -1181,9 +1187,10 @@ public:
 };
 
 #ifdef VBOX_USB_WITH_SYSFS
+# ifdef VBOX_USB_WITH_FAM
 
-#define SYSFS_USB_DEVICE_PATH "/dev/bus/usb"
-#define SYSFS_WAKEUP_STRING "Wake up!"
+# define SYSFS_USB_DEVICE_PATH "/dev/bus/usb"
+# define SYSFS_WAKEUP_STRING "Wake up!"
 
 class hotplugSysfsFAMImpl : public VBoxMainHotplugWaiterImpl
 {
@@ -1332,7 +1339,7 @@ hotplugSysfsFAMImpl::hotplugSysfsFAMImpl(void) :
     mfFAMInitialised(false), mhFAMFD(NIL_RTSOCKET), mhPollSet(NIL_RTPOLLSET),
     mfWaiting(0), mStatus(VERR_WRONG_ORDER)
 {
-#ifdef DEBUG
+#  ifdef DEBUG
     /* Excercise the code path (term() on a not-fully-initialised object) as
      * well as we can.  On an uninitialised object this method is a sematic
      * no-op. */
@@ -1341,26 +1348,26 @@ hotplugSysfsFAMImpl::hotplugSysfsFAMImpl(void) :
      * available */
     if (!testing())
     {
-#ifndef VBOX_USB_WITH_SYSFS_BY_DEFAULT
+#   ifndef VBOX_USB_WITH_SYSFS_BY_DEFAULT
         Assert(!RTFileExists("/proc/bus/usb/devices"));
-#endif
-#ifdef VBOX_WITH_DBUS
+#   endif
+#   ifdef VBOX_WITH_DBUS
         Assert(!hotplugDBusImpl::HalAvailable());
-#endif
+#   endif
     }
-#endif
+#  endif
     int rc;
     do {
         if (RT_FAILURE(rc = RTPipeCreate(&mhWakeupPipeR, &mhWakeupPipeW, 0)))
             break;
         if (RT_FAILURE(rc = initConnection()))
             break;
-#ifdef DEBUG
+#  ifdef DEBUG
         /** Other tests */
         testMonitorDirectoryFAM();
         testNextEventFAM();
         testCheckConnection();
-#endif
+#  endif
     } while(0);
     mStatus = rc;
     if (RT_FAILURE(rc))
@@ -1491,6 +1498,7 @@ void hotplugSysfsFAMImpl::Interrupt(void)
         RTPipeFlush(mhWakeupPipeW);
 }
 
+# endif /* VBOX_USB_WITH_FAM */
 #endif  /* VBOX_USB_WTH_SYSFS */
 
 VBoxMainHotplugWaiter::VBoxMainHotplugWaiter(void)
@@ -1503,16 +1511,19 @@ VBoxMainHotplugWaiter::VBoxMainHotplugWaiter(void)
         return;
     }
 # endif  /* VBOX_WITH_DBUS */
+# ifdef VBOX_USB_WITH_FAM
     if (hotplugSysfsFAMImpl::SysfsAvailable())
     {
         mImpl = new hotplugSysfsFAMImpl;
         return;
     }
+# endif /* VBOX_USB_WITH_FAM */
 #endif  /* VBOX_USB_WITH_SYSFS */
     mImpl = new hotplugNullImpl;
 }
 
 #ifdef VBOX_USB_WITH_SYSFS
+# ifdef VBOX_USB_WITH_FAM
 class sysfsPathHandler
 {
     /** Called on each element of the sysfs directory.  Can e.g. store
@@ -1723,6 +1734,7 @@ static int getUSBDeviceInfoFromSysfs(USBDeviceInfoList *pList,
     LogFlow (("rc=%Rrc\n", rc));
     return rc;
 }
+# endif /* VBOX_USB_WITH_FAM */
 #endif /* VBOX_USB_WITH_SYSFS */
 
 #if defined VBOX_USB_WITH_SYSFS && defined VBOX_WITH_DBUS
