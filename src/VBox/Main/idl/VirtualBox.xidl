@@ -743,7 +743,7 @@
         Pseudo-state: first online state (for use in relational expressions).
       </desc>
     </const>
-    <const name="LastOnline"  value="13" wsmap="suppress"> <!-- TeleportingIn -->
+    <const name="LastOnline"  value="15" wsmap="suppress"> <!-- TeleportingIn -->
       <desc>
         Pseudo-state: last online state (for use in relational expressions).
       </desc>
