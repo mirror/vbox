@@ -266,8 +266,8 @@ void VBoxVMSettingsDisplay::retranslateUi()
     Ui::VBoxVMSettingsDisplay::retranslateUi (this);
 
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
-    mLbMemoryMin->setText (tr ("<qt>%1&nbsp;MiB</qt>").arg (m_minVRAM));
-    mLbMemoryMax->setText (tr ("<qt>%1&nbsp;MiB</qt>").arg (m_maxVRAMVisible));
+    mLbMemoryMin->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (m_minVRAM));
+    mLbMemoryMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (m_maxVRAMVisible));
     mLbMonitorsMin->setText (tr ("<qt>%1</qt>").arg (1));
     mLbMonitorsMax->setText (tr ("<qt>%1</qt>").arg (sys.GetMaxGuestMonitors()));
 
