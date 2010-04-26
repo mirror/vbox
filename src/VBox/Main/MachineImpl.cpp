@@ -211,11 +211,7 @@ Machine::HWData::HWData()
         mCPUAttached[i] = false;
 
     mIoMgrType     = IoMgrType_Async;
-#if defined(RT_OS_LINUX)
     mIoBackendType = IoBackendType_Unbuffered;
-#else
-    mIoBackendType = IoBackendType_Buffered;
-#endif
     mIoCacheEnabled = true;
     mIoCacheSize    = 5; /* 5MB */
     mIoBandwidthMax = 0; /* Unlimited */
@@ -6968,6 +6964,9 @@ HRESULT Machine::loadStorageControllers(const settings::Storage &data,
         rc = pCtl->COMSETTER(PortCount)(ctlData.ulPortCount);
         if (FAILED(rc)) return rc;
 
+        rc = pCtl->COMSETTER(IoBackend)(ctlData.ioBackendType);
+        if (FAILED(rc)) return rc;
+
         /* Set IDE emulation settings (only for AHCI controller). */
         if (ctlData.controllerType == StorageControllerType_IntelAhci)
         {
@@ -8026,6 +8025,12 @@ HRESULT Machine::saveStorageControllers(settings::Storage &data)
         rc = pCtl->COMGETTER(PortCount)(&portCount);
         ComAssertComRCRet(rc, rc);
         ctl.ulPortCount = portCount;
+
+        /* Save I/O backend */
+        IoBackendType_T ioBackendType;
+        rc = pCtl->COMGETTER(IoBackend)(&ioBackendType);
+        ComAssertComRCRet(rc, rc);
+        ctl.ioBackendType = ioBackendType;
 
         /* Save IDE emulation settings. */
         if (ctl.controllerType == StorageControllerType_IntelAhci)

@@ -13487,7 +13487,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IStorageController" extends="$unknown"
-    uuid="ce37b7a9-d895-4ee8-b9f8-9579bfc85813"
+    uuid="7635f4ec-8a28-44b5-9223-315a87b710fb"
     wsmap="managed"
   >
     <desc>
@@ -13567,6 +13567,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         but for IDE and SCSI, there are several.
 
         For SCSI controllers, the default type is LsiLogic.
+      </desc>
+    </attribute>
+
+    <attribute name="ioBackend" type="IoBackendType">
+      <desc>
+        The I/O backend to use for the given storage controller.
       </desc>
     </attribute>
 

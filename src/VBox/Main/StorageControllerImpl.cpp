@@ -48,6 +48,7 @@ struct BackupableStorageControllerData
           mStorageControllerType(StorageControllerType_PIIX4),
           mInstance(0),
           mPortCount(2),
+          mIoBackendType(IoBackendType_Buffered),
           mPortIde0Master(0),
           mPortIde0Slave(1),
           mPortIde1Master(2),
@@ -64,6 +65,8 @@ struct BackupableStorageControllerData
     ULONG mInstance;
     /** Number of usable ports. */
     ULONG mPortCount;
+    /** I/O backend type */
+    IoBackendType_T         mIoBackendType;
 
     /** The following is only for the SATA controller atm. */
     /** Port which acts as primary master for ide emulation. */
@@ -144,6 +147,7 @@ HRESULT StorageController::init(Machine *aParent,
     m->bd->strName = aName;
     m->bd->mInstance = aInstance;
     m->bd->mStorageBus = aStorageBus;
+    m->bd->mIoBackendType = IoBackendType_Buffered;
 
     switch (aStorageBus)
     {
@@ -600,6 +604,47 @@ STDMETHODIMP StorageController::COMSETTER(Instance) (ULONG aInstance)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd->mInstance = aInstance;
+
+    return S_OK;
+}
+
+STDMETHODIMP StorageController::COMGETTER(IoBackend) (IoBackendType_T *aIoBackend)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* The machine doesn't need to be mutable. */
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aIoBackend = m->bd->mIoBackendType;
+
+    return S_OK;
+}
+
+STDMETHODIMP StorageController::COMSETTER(IoBackend) (IoBackendType_T aIoBackend)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pParent);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (m->bd->mIoBackendType != aIoBackend)
+    {
+        m->bd.backup();
+        m->bd->mIoBackendType = aIoBackend;
+
+        alock.release();
+        AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);        // m->pParent is const, needs no locking
+        m->pParent->setModified(Machine::IsModified_Storage);
+        mlock.release();
+
+        m->pParent->onStorageControllerChange();
+    }
 
     return S_OK;
 }

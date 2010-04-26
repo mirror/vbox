@@ -1575,6 +1575,7 @@ bool StorageController::operator==(const StorageController &s) const
                   && (controllerType            == s.controllerType)
                   && (ulPortCount               == s.ulPortCount)
                   && (ulInstance                == s.ulInstance)
+                  && (ioBackendType             == s.ioBackendType)
                   && (lIDE0MasterEmulationPort  == s.lIDE0MasterEmulationPort)
                   && (lIDE0SlaveEmulationPort   == s.lIDE0SlaveEmulationPort)
                   && (lIDE1MasterEmulationPort  == s.lIDE1MasterEmulationPort)
@@ -1622,11 +1623,7 @@ bool Snapshot::operator==(const Snapshot &s) const
 IoSettings::IoSettings()
 {
     ioMgrType        = IoMgrType_Async;
-#if defined(RT_OS_LINUX)
     ioBackendType    = IoBackendType_Unbuffered;
-#else
-    ioBackendType    = IoBackendType_Buffered;
-#endif
     fIoCacheEnabled  = true;
     ulIoCacheSize    = 5;
     ulIoBandwidthMax = 0;
@@ -2063,6 +2060,20 @@ void MachineConfigFile::readStorageControllerAttributes(const xml::ElementNode &
     elmStorageController.getAttributeValue("IDE0SlaveEmulationPort", sctl.lIDE0SlaveEmulationPort);
     elmStorageController.getAttributeValue("IDE1MasterEmulationPort", sctl.lIDE1MasterEmulationPort);
     elmStorageController.getAttributeValue("IDE1SlaveEmulationPort", sctl.lIDE1SlaveEmulationPort);
+
+    Utf8Str strIoBackend;
+    if (elmStorageController.getAttributeValue("IoBackend", strIoBackend))
+    {
+        if (strIoBackend == "Buffered")
+            sctl.ioBackendType = IoBackendType_Buffered;
+        else if (strIoBackend == "Unbuffered")
+            sctl.ioBackendType = IoBackendType_Unbuffered;
+        else
+            throw ConfigFileError(this,
+                                  &elmStorageController,
+                                  N_("Invalid value '%s' in StorageController/@IoBackend"),
+                                  strIoBackend.c_str());
+    }
 }
 
 /**
@@ -3703,6 +3714,18 @@ void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
             if (sc.ulInstance)
                 pelmController->setAttribute("Instance", sc.ulInstance);
 
+        if (m->sv >= SettingsVersion_v1_9)
+        {
+            const char *pcszIoBackend;
+            switch (sc.ioBackendType)
+            {
+                case IoBackendType_Unbuffered: pcszIoBackend = "Unbuffered"; break;
+                default: /*case IoBackendType_Buffered:*/ pcszIoBackend = "Buffered"; break;
+            }
+
+            pelmController->setAttribute("IoBackend", pcszIoBackend);
+        }
+
         if (sc.controllerType == StorageControllerType_IntelAhci)
         {
             pelmController->setAttribute("IDE0MasterEmulationPort", sc.lIDE0MasterEmulationPort);
@@ -3949,6 +3972,13 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                 }
                 else if (att.deviceType == DeviceType_Floppy)
                     ++cFloppies;
+
+                // The I/O backend setting is only supported with v.10
+                if (sctl.ioBackendType != IoBackendType_Buffered)
+                {
+                    m->sv = SettingsVersion_v1_10;
+                    break;
+                }
             }
         }
 
@@ -4013,16 +4043,9 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         if (   hardwareMachine.ioSettings.fIoCacheEnabled != true
             || hardwareMachine.ioSettings.ulIoCacheSize != 5
             || hardwareMachine.ioSettings.ulIoBandwidthMax != 0
-            || hardwareMachine.ioSettings.ioMgrType != IoMgrType_Async)
+            || hardwareMachine.ioSettings.ioMgrType != IoMgrType_Async
+            || hardwareMachine.ioSettings.ioBackendType != IoBackendType_Unbuffered)
             m->sv = SettingsVersion_v1_10;
-
-#if defined(RT_OS_LINUX)
-        if (hardwareMachine.ioSettings.ioBackendType != IoBackendType_Unbuffered)
-            m->sv = SettingsVersion_v1_10;
-#else
-        if (hardwareMachine.ioSettings.ioBackendType != IoBackendType_Buffered)
-            m->sv = SettingsVersion_v1_10;
-#endif
     }
 }
 

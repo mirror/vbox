@@ -656,6 +656,7 @@ static const RTGETOPTDEF g_aStorageControllerOptions[] =
     { "--sataideemulation", 'e', RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
     { "--sataportcount",    'p', RTGETOPT_REQ_UINT32 },
     { "--remove",           'r', RTGETOPT_REQ_NOTHING },
+    { "--iobackend",        'i', RTGETOPT_REQ_STRING },
 };
 
 int handleStorageController(HandlerArg *a)
@@ -665,6 +666,7 @@ int handleStorageController(HandlerArg *a)
     const char       *pszCtl         = NULL;
     const char       *pszBusType     = NULL;
     const char       *pszCtlType     = NULL;
+    const char       *pszIoBackend   = NULL;
     ULONG             satabootdev    = ~0U;
     ULONG             sataidedev     = ~0U;
     ULONG             sataportcount  = ~0U;
@@ -728,6 +730,12 @@ int handleStorageController(HandlerArg *a)
             case 'r':   // remove controller
             {
                 fRemoveCtl = true;
+                break;
+            }
+
+            case 'i':
+            {
+                pszIoBackend = ValueUnion.psz;
                 break;
             }
 
@@ -914,6 +922,28 @@ int handleStorageController(HandlerArg *a)
                 errorArgument("Couldn't find the controller with the name: '%s'\n", pszCtl);
                 rc = E_FAIL;
             }
+        }
+
+        if (   pszIoBackend
+            && SUCCEEDED(rc))
+        {
+                ComPtr<IStorageController> ctl;
+
+                CHECK_ERROR(machine, GetStorageControllerByName(Bstr(pszCtl), ctl.asOutParam()));
+
+                if (!RTStrICmp(pszIoBackend, "buffered"))
+                {
+                    CHECK_ERROR(ctl, COMSETTER(IoBackend)(IoBackendType_Buffered));
+                }
+                else if (!RTStrICmp(pszIoBackend, "unbuffered"))
+                {
+                    CHECK_ERROR(ctl, COMSETTER(IoBackend)(IoBackendType_Unbuffered));
+                }
+                else
+                {
+                    errorArgument("Invalid --type argument '%s'", pszIoBackend);
+                    rc = E_FAIL;
+                }
         }
     }
 

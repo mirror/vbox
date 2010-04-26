@@ -3089,6 +3089,9 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
     ULONG uInstance;
     rc = ctrl->COMGETTER(Instance)(&uInstance);
     AssertComRC(rc);
+    IoBackendType_T enmIoBackend;
+    rc = ctrl->COMGETTER(Bus)(&enmIoBackend);
+    AssertComRC(rc);
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
@@ -3101,8 +3104,9 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
      */
     PVMREQ pReq;
     int vrc = VMR3ReqCall(mpVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                          (PFNRT)Console::changeRemovableMedium, 6,
-                          this, pszDevice, uInstance, enmBus, aMediumAttachment, fForce);
+                          (PFNRT)Console::changeRemovableMedium, 7,
+                          this, pszDevice, uInstance, enmBus, enmIoBackend,
+                          aMediumAttachment, fForce);
 
     /* leave the lock before waiting for a result (EMT will call us back!) */
     alock.leave();
@@ -3155,6 +3159,7 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pThis,
                                                  const char *pcszDevice,
                                                  unsigned uInstance,
                                                  StorageBus_T enmBus,
+                                                 IoBackendType_T enmIoBackend,
                                                  IMediumAttachment *aMediumAtt,
                                                  bool fForce)
 {
@@ -3214,7 +3219,7 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pThis,
     int rcRet = VINF_SUCCESS;
 
     rcRet = Console::configMediumAttachment(pCtlInst, pcszDevice, uInstance,
-                                            enmBus, aMediumAtt,
+                                            enmBus, enmIoBackend, aMediumAtt,
                                             pThis->mMachineState,
                                             NULL /* phrc */,
                                             true /* fAttachDetach */,
@@ -7217,6 +7222,7 @@ DECLCALLBACK(int) Console::reconfigureMediumAttachment(PVM pVM,
                                                        const char *pcszDevice,
                                                        unsigned uInstance,
                                                        StorageBus_T enmBus,
+                                                       IoBackendType_T enmIoBackend,
                                                        IMediumAttachment *aMediumAtt,
                                                        MachineState_T aMachineState,
                                                        HRESULT *phrc)
@@ -7244,7 +7250,8 @@ DECLCALLBACK(int) Console::reconfigureMediumAttachment(PVM pVM,
 
     /* Update the device instance configuration. */
     rc = Console::configMediumAttachment(pCtlInst, pcszDevice, uInstance,
-                                         enmBus, aMediumAtt, aMachineState,
+                                         enmBus, enmIoBackend,
+                                         aMediumAtt, aMachineState,
                                          phrc, true /* fAttachDetach */,
                                          false /* fForceUnmount */, pVM,
                                          NULL /* paLedDevType */);
@@ -7391,6 +7398,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 ULONG lInstance;
                 StorageControllerType_T enmController;
                 StorageBus_T enmBus;
+                IoBackendType_T enmIoBackend;
 
                 /*
                 * We can't pass a storage controller object directly
@@ -7414,6 +7422,10 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 rc = controller->COMGETTER(Bus)(&enmBus);
                 if (FAILED(rc))
                     throw rc;
+                rc = controller->COMGETTER(IoBackend)(&enmIoBackend);
+                if (FAILED(rc))
+                    throw rc;
+
                 const char *pcszDevice = Console::convertControllerTypeToDev(enmController);
 
                 /*
@@ -7423,11 +7435,12 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 vrc = VMR3ReqCallWait(that->mpVM,
                                       VMCPUID_ANY,
                                       (PFNRT)reconfigureMediumAttachment,
-                                      7,
+                                      8,
                                       that->mpVM,
                                       pcszDevice,
                                       lInstance,
                                       enmBus,
+                                      enmIoBackend,
                                       atts[i],
                                       that->mMachineState,
                                       &rc);
