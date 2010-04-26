@@ -1072,6 +1072,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         ULONG ulInstance = 999;
         rc = ctrls[i]->COMGETTER(Instance)(&ulInstance);                                        H();
 
+        IoBackendType_T enmIoBackend;
+        rc = ctrls[i]->COMGETTER(IoBackend)(&enmIoBackend);                                     H();
+
         /* /Devices/<ctrldev>/ */
         const char *pszCtrlDev = pConsole->convertControllerTypeToDev(enmCtrlType);
         pDev = aCtrlNodes[enmCtrlType];
@@ -1260,7 +1263,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         for (size_t j = 0; j < atts.size(); ++j)
         {
             rc = Console::configMediumAttachment(pCtlInst, pszCtrlDev,
-                                                 ulInstance, enmBus, atts[j],
+                                                 ulInstance, enmBus, enmIoBackend,
+                                                 atts[j],
                                                  pConsole->mMachineState,
                                                  NULL /* phrc */,
                                                  false /* fAttachDetach */,
@@ -2269,6 +2273,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 /* static */
 int Console::configMediumAttachment(PCFGMNODE pCtlInst, const char *pcszDevice,
                                     unsigned uInstance, StorageBus_T enmBus,
+                                    IoBackendType_T enmIoBackend,
                                     IMediumAttachment *pMediumAtt,
                                     MachineState_T aMachineState,
                                     HRESULT *phrc, bool fAttachDetach,
@@ -2351,6 +2356,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst, const char *pcszDevice,
     BOOL fPassthrough;
     hrc = pMediumAtt->COMGETTER(Passthrough)(&fPassthrough);            H();
     rc = Console::configMedium(pLunL0, !!fPassthrough, lType,
+                               enmIoBackend,
                                pMedium, aMachineState, phrc);           RC_CHECK();
 
     if (fAttachDetach)
@@ -2377,6 +2383,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst, const char *pcszDevice,
 int Console::configMedium(PCFGMNODE pLunL0,
                           bool fPassthrough,
                           DeviceType_T enmType,
+                          IoBackendType_T enmIoBackend,
                           IMedium *pMedium,
                           MachineState_T aMachineState,
                           HRESULT *phrc)
@@ -2474,6 +2481,11 @@ int Console::configMedium(PCFGMNODE pLunL0,
             else if (aMachineState == MachineState_TeleportingIn)
             {
                 rc = CFGMR3InsertInteger(pCfg, "TempReadOnly", 1);                      RC_CHECK();
+            }
+
+            if (enmIoBackend == IoBackendType_Unbuffered)
+            {
+                rc = CFGMR3InsertInteger(pCfg, "UseNewIo", 1);                          RC_CHECK();
             }
 
             /* Pass all custom parameters. */

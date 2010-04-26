@@ -438,18 +438,20 @@ private:
                                       const char *pcszDevice,
                                       unsigned uInstance,
                                       StorageBus_T enmBus,
+                                      IoBackendType_T enmIoBackend,
                                       IMediumAttachment *pMediumAtt,
                                       MachineState_T aMachineState,
                                       HRESULT *phrc, bool fAttachDetach,
                                       bool fForceUnmount, PVM pVM,
                                       DeviceType_T *paLedDevType);
     static int configMedium(PCFGMNODE pLunL0, bool fPassthrough,
-                            DeviceType_T enmType, IMedium *pMedium,
-                            MachineState_T aMachineState, HRESULT *phrc);
+                            DeviceType_T enmType, IoBackendType_T enmIoBackend,
+                            IMedium *pMedium, MachineState_T aMachineState, HRESULT *phrc);
     static DECLCALLBACK(int) reconfigureMediumAttachment(PVM pVM,
                                                          const char *pcszDevice,
                                                          unsigned uInstance,
                                                          StorageBus_T enmBus,
+                                                         IoBackendType_T enmIoBackend,
                                                          IMediumAttachment *aMediumAtt,
                                                          MachineState_T aMachineState,
                                                          HRESULT *phrc);
@@ -457,6 +459,7 @@ private:
                                                    const char *pcszDevice,
                                                    unsigned uInstance,
                                                    StorageBus_T enmBus,
+                                                   IoBackendType_T enmIoBackend,
                                                    IMediumAttachment *aMediumAtt,
                                                    bool fForce);
 
@@ -609,7 +612,9 @@ private:
         cLedSata    = 30,
         iLedScsi    = iLedSata + cLedSata,
         cLedScsi    = 16,
-        cLedStorage = cLedFloppy + cLedIde + cLedSata + cLedScsi,
+        iLedSas     = iLedScsi + cLedScsi,
+        cLedSas     = 8,
+        cLedStorage = cLedFloppy + cLedIde + cLedSata + cLedScsi + cLedSas,
     };
     DeviceType_T maStorageDevType[cLedStorage];
     PPDMLED      mapStorageLeds[cLedStorage];
