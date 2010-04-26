@@ -380,8 +380,8 @@ void VBoxVMSettingsSystem::retranslateUi()
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
 
     /* Retranslate the memory slider legend */
-    mLbMemoryMin->setText (tr ("<qt>%1&nbsp;MiB</qt>").arg (mSlMemory->minRAM()));
-    mLbMemoryMax->setText (tr ("<qt>%1&nbsp;MiB</qt>").arg (mSlMemory->maxRAM()));
+    mLbMemoryMin->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (mSlMemory->minRAM()));
+    mLbMemoryMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (mSlMemory->maxRAM()));
 
     /* Retranslate the cpu slider legend */
     mLbCPUMin->setText (tr ("<qt>%1&nbsp;CPU</qt>", "%1 is 1 for now").arg (mMinGuestCPU));

@@ -280,11 +280,11 @@ void UINewVMWzdPage3::retranslateUi()
     /* Translate recommended 'ram' field value */
     QString strRecommendedRAM = field("type").value<CGuestOSType>().isNull() ? QString() :
                                 QString::number(field("type").value<CGuestOSType>().GetRecommendedRAM());
-    m_pPage3Text2->setText(tr("The recommended base memory size is <b>%1</b> MiB.").arg(strRecommendedRAM));
+    m_pPage3Text2->setText(tr("The recommended base memory size is <b>%1</b> MB.").arg(strRecommendedRAM));
 
     /* Translate minimum & maximum 'ram' field values */
-    m_pRamMin->setText(QString("%1 %2").arg(m_pRamSlider->minRAM()).arg(tr("MiB", "size suffix MiBytes")));
-    m_pRamMax->setText(QString("%1 %2").arg(m_pRamSlider->maxRAM()).arg(tr("MiB", "size suffix MiBytes")));
+    m_pRamMin->setText(QString("%1 %2").arg(m_pRamSlider->minRAM()).arg(tr("MB", "size suffix MBytes=1024 KBytes")));
+    m_pRamMax->setText(QString("%1 %2").arg(m_pRamSlider->maxRAM()).arg(tr("MB", "size suffix MBytes=1024 KBytes")));
 }
 
 void UINewVMWzdPage3::initializePage()
@@ -373,7 +373,7 @@ void UINewVMWzdPage4::retranslateUi()
     /* Translate recommended 'hdd' field value */
     QString strRecommendedHDD = field("type").value<CGuestOSType>().isNull() ? QString() :
                                 QString::number(field("type").value<CGuestOSType>().GetRecommendedHDD());
-    m_pPage4Text2->setText (tr ("The recommended size of the boot hard disk is <b>%1</b> MiB.").arg (strRecommendedHDD));
+    m_pPage4Text2->setText (tr ("The recommended size of the boot hard disk is <b>%1</b> MB.").arg (strRecommendedHDD));
 }
 
 void UINewVMWzdPage4::initializePage()
@@ -584,7 +584,7 @@ void UINewVMWzdPage5::retranslateUi()
     )
     .arg(tr("Name", "summary"), name)
     .arg(tr("OS Type", "summary"), type)
-    .arg(tr("Base Memory", "summary"), ram, tr("MiB", "size suffix MiBytes"))
+    .arg(tr("Base Memory", "summary"), ram, tr("MB", "size suffix MBytes=1024KBytes"))
     ;
     /* Feat summary to 3 lines */
     setSummaryFieldLinesNumber(m_pSummaryText, 3);
