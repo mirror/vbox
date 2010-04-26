@@ -207,7 +207,9 @@ static void VBoxServiceVMStatsReport(void)
        memory plus the size of the page file, minus a small overhead. */
     req.guestStats.u32PageFileSize      = (uint32_t)(memStatus.ullTotalPageFile / _4K) - req.guestStats.u32PhysMemTotal;
     req.guestStats.u32MemoryLoad        = memStatus.dwMemoryLoad;
-    req.guestStats.u32StatCaps          = VBOX_GUEST_STAT_PHYS_MEM_TOTAL | VBOX_GUEST_STAT_PHYS_MEM_AVAIL | VBOX_GUEST_STAT_PAGE_FILE_SIZE
+    req.guestStats.u32StatCaps          = VBOX_GUEST_STAT_PHYS_MEM_TOTAL
+                                        | VBOX_GUEST_STAT_PHYS_MEM_AVAIL
+                                        | VBOX_GUEST_STAT_PAGE_FILE_SIZE
                                         | VBOX_GUEST_STAT_MEMORY_LOAD;
 #ifdef VBOX_WITH_MEMBALLOON
     req.guestStats.u32PhysMemBalloon    = VBoxServiceBalloonQueryPages(_4K);
@@ -352,8 +354,8 @@ static void VBoxServiceVMStatsReport(void)
         VBoxServiceVerbose(3, "VBoxStatsReportStatistics: memory info not available!\n");
 
     req.guestStats.u32PageSize = getpagesize();
-    req.guestStats.u32StatCaps  = VBOX_GUEST_STAT_PHYS_MEM_TOTAL \
-                                | VBOX_GUEST_STAT_PHYS_MEM_AVAIL \
+    req.guestStats.u32StatCaps  = VBOX_GUEST_STAT_PHYS_MEM_TOTAL
+                                | VBOX_GUEST_STAT_PHYS_MEM_AVAIL
                                 | VBOX_GUEST_STAT_PAGE_FILE_SIZE;
 #ifdef VBOX_WITH_MEMBALLOON
     req.guestStats.u32PhysMemBalloon  = VBoxServiceBalloonQueryPages(_4K);
@@ -425,8 +427,8 @@ static void VBoxServiceVMStatsReport(void)
                     req.guestStats.u32CpuLoad_Kernel = (uint32_t)(u64DeltaSystem * 100 / u64DeltaAll);
                     req.guestStats.u32CpuLoad_User   = (uint32_t)((u64DeltaUser
                                                                  + u64DeltaNice) * 100 / u64DeltaAll);
-                    req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE \
-                                               |  VBOX_GUEST_STAT_CPU_LOAD_KERNEL \
+                    req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE
+                                               |  VBOX_GUEST_STAT_CPU_LOAD_KERNEL
                                                |  VBOX_GUEST_STAT_CPU_LOAD_USER;
                     fCpuInfoAvail = true;
                     rc = VbglR3StatReport(&req);
@@ -529,8 +531,8 @@ static void VBoxServiceVMStatsReport(void)
         /** @todo req.guestStats.u32MemKernelNonPaged */
         req.guestStats.u32PageSize = getpagesize();
 
-        req.guestStats.u32StatCaps = VBOX_GUEST_STAT_PHYS_MEM_TOTAL \
-                                   | VBOX_GUEST_STAT_PHYS_MEM_AVAIL \
+        req.guestStats.u32StatCaps = VBOX_GUEST_STAT_PHYS_MEM_TOTAL
+                                   | VBOX_GUEST_STAT_PHYS_MEM_AVAIL
                                    | VBOX_GUEST_STAT_PAGE_FILE_SIZE;
 #ifdef VBOX_WITH_MEMBALLOON
         req.guestStats.u32PhysMemBalloon  = VBoxServiceBalloonQueryPages(_4K);
@@ -574,8 +576,8 @@ static void VBoxServiceVMStatsReport(void)
                 req.guestStats.u32CpuLoad_Kernel = (uint32_t)(u64DeltaSystem * 100 / u64DeltaAll);
                 req.guestStats.u32CpuLoad_User   = (uint32_t)(u64DeltaUser   * 100 / u64DeltaAll);
 
-                req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE \
-                                           |  VBOX_GUEST_STAT_CPU_LOAD_KERNEL \
+                req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE
+                                           |  VBOX_GUEST_STAT_CPU_LOAD_KERNEL
                                            |  VBOX_GUEST_STAT_CPU_LOAD_USER;
                 fCpuInfoAvail = true;
 
