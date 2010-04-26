@@ -8378,7 +8378,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="a772d41d-8f60-4247-9a0e-fea7ebec2151"
+     uuid="d073545f-9635-489e-b36f-d468a10f8987"
      wsmap="managed"
      >
     <desc>
@@ -8649,17 +8649,17 @@
           Process id returned by earlier executeProcess() call.
         </desc>
       </param>
-      <param name="reason" type="unsigned long" dir="out">
-        <desc>
-          The reason of exit.
-        </desc>
-      </param>
       <param name="exitcode" type="unsigned long" dir="out">
         <desc>
-          The actual exit code.
+          The exit code (if available).
         </desc>
       </param>
-      <param name="status" type="unsigned long" dir="return">
+      <param name="flags" type="unsigned long" dir="out">
+        <desc>
+          Additional flags of process status (not used at the moment).
+        </desc>
+      </param>
+      <param name="reason" type="unsigned long" dir="return">
         <desc>
           The current process status.
         </desc>
