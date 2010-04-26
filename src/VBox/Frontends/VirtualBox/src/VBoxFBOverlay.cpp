@@ -4684,8 +4684,8 @@ quint64 VBoxQGLOverlay::required2DOffscreenVideoMemory()
 {
     /* HDTV == 1920x1080 ~ 2M
      * for the 4:2:2 formats each pixel is 2Bytes
-     * so each frame may be 4MB
-     * so for triple-buffering we would need 12 MB */
+     * so each frame may be 4MiB
+     * so for triple-buffering we would need 12 MiB */
     return _1M * 12;
 }
 

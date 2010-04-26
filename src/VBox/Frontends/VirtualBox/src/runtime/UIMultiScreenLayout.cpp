@@ -155,7 +155,7 @@ void UIMultiScreenLayout::sltScreenLayoutChanged(QAction *pAction)
     if (m_pMachineLogic->uisession()->isGuestAdditionsActive())
     {
         quint64 availBits = machine.GetVRAMSize() /* VRAM */
-            * _1M /* MB to bytes */
+            * _1M /* MiB to bytes */
             * 8; /* to bits */
         quint64 usedBits = memoryRequirements(pTmpMap);
 

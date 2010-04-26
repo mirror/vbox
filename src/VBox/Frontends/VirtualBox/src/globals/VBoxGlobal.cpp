@@ -1977,7 +1977,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
             iRowCount += 2; /* VT-x/AMD-V items. */
 
         QString item = QString (sSectionItemTpl2).arg (tr ("Base Memory", "details report"),
-                                                       tr ("<nobr>%1 MB</nobr>", "details report"))
+                                                       tr ("<nobr>%1 MiB</nobr>", "details report"))
                        .arg (aMachine.GetMemorySize())
                      + QString (sSectionItemTpl2).arg (tr ("Processor(s)", "details report"),
                                                        tr ("<nobr>%1</nobr>", "details report"))
@@ -2010,7 +2010,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         /* Video tab */
         QString item = QString(sSectionItemTpl2)
                        .arg(tr ("Video Memory", "details report"),
-                             tr ("<nobr>%1 MB</nobr>", "details report"))
+                             tr ("<nobr>%1 MiB</nobr>", "details report"))
                        .arg(aMachine.GetVRAMSize());
         ++rows;
 
@@ -3831,7 +3831,7 @@ QChar VBoxGlobal::decimalSep()
 
 /**
  *  Returns the regexp string that defines the format of the human-readable
- *  size representation, <tt>####[.##] B|KB|MB|GB|TB|PB</tt>.
+ *  size representation, <tt>####[.##] B|kB|KB|KiB|MB|MiB|GB|GiB|TB|TiB|PB|PiB</tt>.
  *
  *  This regexp will capture 5 groups of text:
  *  - cap(1): integer number in case when no decimal point is present
@@ -3846,15 +3846,15 @@ QChar VBoxGlobal::decimalSep()
 QString VBoxGlobal::sizeRegexp()
 {
     QString regexp =
-        QString ("^(?:(?:(\\d+)(?:\\s?([KMGTP]?B))?)|(?:(\\d*)%1(\\d{1,2})(?:\\s?([KMGTP]B))))$")
-                 .arg (decimalSep());
+        tr ("^(?:(?:(\\d+)(?:\\s?(B|kB|KB|KiB|MB|MiB|GB|GiB|TB|TiB|PB|PiB))?)|(?:(\\d*)%1(\\d{1,2})(?:\\s?(kB|KB|KiB|MB|MiB|GB|GiB|TB|TiB|PB|PiB))))$", "regexp for matching ####[.##] B|kB|KB|KiB|MB|MiB|GB|GiB|TB|TiB|PB|PiB, %1=decimal point")
+            .arg (decimalSep());
     return regexp;
 }
 
 /**
  *  Parses the given size string that should be in form of
- *  <tt>####[.##] B|KB|MB|GB|TB|PB</tt> and returns the size value
- *  in bytes. Zero is returned on error.
+ *  <tt>####[.##] B|kB|KB|KiB|MB|MiB|GB|GiB|TB|TiB|PB|PiB</tt> and returns
+ *  the size value in bytes. Zero is returned on error.
  */
 /* static */
 quint64 VBoxGlobal::parseSize (const QString &aText)
@@ -3874,17 +3874,28 @@ quint64 VBoxGlobal::parseSize (const QString &aText)
         }
 
         quint64 denom = 0;
-        if (suff.isEmpty() || suff == "B")
+        if (suff.isEmpty() || suff == tr ("B", "size suffix Bytes"))
             denom = 1;
-        else if (suff == "KB")
+        else if (suff == tr ("kB", "size suffix kBytes=1000 Bytes"))
+            denom = 1000;
+        else if (   suff == tr ("KiB", "size suffix KiBytes")
+                 || suff == tr ("KB", "size suffix legacy KB=KiBytes"))
             denom = _1K;
-        else if (suff == "MB")
+        else if (suff == tr ("MB", "size suffix MBytes=1000 kBytes"))
+            denom = 1000000;
+        else if (suff == tr ("MiB", "size suffix MiBytes"))
             denom = _1M;
-        else if (suff == "GB")
+        else if (suff == tr ("GB", "size suffix GBytes=1000 MBytes"))
+            denom = 1000000000;
+        else if (suff == tr ("GiB", "size suffix GiBytes"))
             denom = _1G;
-        else if (suff == "TB")
+        else if (suff == tr ("TB", "size suffix TBytes=1000 GBytes"))
+            denom = 1000000000000ULL;
+        else if (suff == tr ("TiB", "size suffix TiBytes"))
             denom = _1T;
-        else if (suff == "PB")
+        else if (suff == tr ("PB", "size suffix PBytes=1000 TBytes"))
+            denom = 1000000000000000ULL;
+        else if (suff == tr ("PiB", "size suffix PiBytes"))
             denom = _1P;
 
         quint64 intg = intgS.toULongLong();
@@ -3902,10 +3913,10 @@ quint64 VBoxGlobal::parseSize (const QString &aText)
 
 /**
  * Formats the given @a aSize value in bytes to a human readable string
- * in form of <tt>####[.##] B|KB|MB|GB|TB|PB</tt>.
+ * in form of <tt>####[.##] B|KiB|MiB|GiB|TiB|PiB</tt>.
  *
  * The @a aMode and @a aDecimal parameters are used for rounding the resulting
- * number when converting the size value to KB, MB, etc gives a fractional part:
+ * number when converting the size value to KiB, MiB, etc gives a fractional part:
  * <ul>
  * <li>When \a aMode is FormatSize_Round, the result is rounded to the
  *     closest number containing \a aDecimal decimal digits.
@@ -3933,7 +3944,15 @@ quint64 VBoxGlobal::parseSize (const QString &aText)
 QString VBoxGlobal::formatSize (quint64 aSize, uint aDecimal /* = 2 */,
                                 VBoxDefs::FormatSize aMode /* = FormatSize_Round */)
 {
-    static const char *Suffixes [] = { "B", "KB", "MB", "GB", "TB", "PB", NULL };
+    static QString Suffixes [7];
+    Suffixes[0] = tr ("B", "size suffix Bytes");
+    Suffixes[1] = tr ("KiB", "size suffix KiBytes");
+    Suffixes[2] = tr ("MiB", "size suffix MiBytes");
+    Suffixes[3] = tr ("GiB", "size suffix GiBytes");
+    Suffixes[4] = tr ("TiB", "size suffix TiBytes");
+    Suffixes[5] = tr ("PiB", "size suffix PiBytes");
+    Suffixes[6] = (const char *)NULL;
+    AssertCompile(6 < RT_ELEMENTS (Suffixes));
 
     quint64 denom = 0;
     int suffix = 0;
@@ -3994,7 +4013,7 @@ QString VBoxGlobal::formatSize (quint64 aSize, uint aDecimal /* = 2 */,
         {
             decm = 0;
             ++ intg;
-            /* check if we've got 1024 XB after rounding and scale down if so */
+            /* check if we've got 1024 XiB after rounding and scale down if so */
             if (intg == 1024 && Suffixes [suffix + 1] != NULL)
             {
                 intg /= 1024;
