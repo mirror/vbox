@@ -359,6 +359,11 @@ STDMETHODIMP Snapshot::COMSETTER(Name)(IN_BSTR aName)
 
         alock.leave(); /* Important! (child->parent locks are forbidden) */
 
+        // flag the machine as dirty or change won't get saved
+        AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+        m->pMachine->setModified(Machine::IsModified_Snapshots);
+        mlock.leave();
+
         return m->pMachine->onSnapshotChange(this);
     }
 
@@ -392,6 +397,11 @@ STDMETHODIMP Snapshot::COMSETTER(Description)(IN_BSTR aDescription)
         m->strDescription = strDescription;
 
         alock.leave(); /* Important! (child->parent locks are forbidden) */
+
+        // flag the machine as dirty or change won't get saved
+        AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+        m->pMachine->setModified(Machine::IsModified_Snapshots);
+        mlock.leave();
 
         return m->pMachine->onSnapshotChange(this);
     }
