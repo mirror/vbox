@@ -267,7 +267,7 @@ def colCat(ctx,str):
     return colored(str, 'magenta')
 
 def colVm(ctx,vm):
-    return colored(vm, 'blue')
+    return colored(str(vm), 'blue')
 
 def createVm(ctx,name,kind,base):
     mgr = ctx['mgr']
@@ -746,7 +746,8 @@ def infoCmd(ctx,args):
                     print "    Virtual image at %s" %(m.location)
                     print "    Size: %s" %(m.size)
 
-    print colCat(ctx,"   Shared folders:")
+    print
+    print colCat(ctx,"  Shared folders:")
     for sf in ctx['global'].getArray(mach, 'sharedFolders'):
         printSf(ctx,sf)
 
