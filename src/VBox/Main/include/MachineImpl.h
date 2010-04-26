@@ -602,7 +602,8 @@ public:
         IsModified_AudioAdapter         = 0x0080,
         IsModified_USB                  = 0x0100,
         IsModified_BIOS                 = 0x0200,
-        IsModified_SharedFolders        = 0x0400
+        IsModified_SharedFolders        = 0x0400,
+        IsModified_Snapshots            = 0x0800
     };
 
     void setModified(uint32_t fl);
