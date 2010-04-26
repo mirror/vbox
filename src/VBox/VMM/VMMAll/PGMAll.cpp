@@ -953,7 +953,7 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDPE pGstPdpe, PX86PDPAE
         AssertRCReturn(rc, rc);
 
         /* The PD was cached or created; hook it up now. */
-        pPdpe->u  = pShwPage->Core.Key
+        pPdpe->u |= pShwPage->Core.Key
                  | (pGstPdpe->u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
 
 # if defined(IN_RC)
@@ -1073,7 +1073,7 @@ int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, 
         pgmPoolCacheUsed(pPool, pShwPage);
     }
     /* The PDPT was cached or created; hook it up now. */
-    pPml4e->u = pShwPage->Core.Key
+    pPml4e->u |= pShwPage->Core.Key
               | (pGstPml4e->u & ~(X86_PML4E_PG_MASK | X86_PML4E_AVL_MASK | X86_PML4E_PCD | X86_PML4E_PWT));
 
     const unsigned iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
@@ -1113,7 +1113,7 @@ int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E pGstPml4e, 
         pgmPoolCacheUsed(pPool, pShwPage);
     }
     /* The PD was cached or created; hook it up now. */
-    pPdpe->u = pShwPage->Core.Key
+    pPdpe->u |= pShwPage->Core.Key
              | (pGstPdpe->u & ~(X86_PDPE_PG_MASK | X86_PDPE_AVL_MASK | X86_PDPE_PCD | X86_PDPE_PWT));
 
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
