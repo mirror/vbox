@@ -415,6 +415,8 @@ class <xsl:value-of select="@name"/>:
          return self.handle == other.handle
       if isinstance(other,int):
          return self.handle == other
+      if isinstance(other,basestring):
+         return str(self) == other
       return False
 
    def __ne__(self,other):
@@ -422,6 +424,8 @@ class <xsl:value-of select="@name"/>:
          return self.handle != other.handle
       if isinstance(other,int):
          return self.handle != other
+      if isinstance(other,basestring):
+         return str(self) != other
       return True
 
    def __str__(self):
@@ -529,7 +533,7 @@ class String:
 
   def __ne__(self,other):
       if self.isarray:
-         return not isinstance(other,String) or self.handle == other.handle
+         return not isinstance(other,String) or self.handle != other.handle
       if isinstance(other,String):
          return self.handle != other.handle
       if isinstance(other,basestring):
@@ -638,6 +642,36 @@ class Number:
 
   def __float__(self):
        return float(self.handle)
+
+  def __lt__(self, other):
+       if self.isarray:
+            return NotImplemented
+       else:
+            return self.handle &lt; other
+
+  def __le__(self, other):
+       if self.isarray:
+            return NotImplemented
+       else:
+            return self.handle &lt;= other
+
+  def __eq__(self, other):
+       return self.handle == other
+
+  def __ne__(self, other):
+       return self.handle != other
+
+  def __gt__(self, other):
+       if self.isarray:
+            return NotImplemented
+       else:
+            return self.handle &gt; other
+
+  def __ge__(self, other):
+       if self.isarray:
+            return NotImplemented
+       else:
+            return self.handle &gt;= other
 
 import struct
 
@@ -783,6 +817,12 @@ class IUnknown:
 
   def __str__(self):
        return str(self.handle)
+
+  def __eq__(self, other):
+       return self.handle == other
+
+  def __ne__(self, other):
+       return self.handle != other
 
   def __getattr__(self,attr):
        if self.__class__.__dict__.get(attr) != None:
