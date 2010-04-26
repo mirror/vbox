@@ -1483,6 +1483,10 @@ int hotplugSysfsFAMImpl::Wait(RTMSINTERVAL aMillies)
         rc = sysfsGetStatusForFAMCode(ev.code);
     } while (false);
     mfWaiting = 0;
+    /* If at all, this should only get called once. */
+    AssertLogRelMsg(   RT_SUCCESS(rc)
+                    || rc == VERR_TRY_AGAIN
+                    || rc == VERR_TIMEOUT, ("rc = %Rrc\n", rc));
     return rc;
 }
 
