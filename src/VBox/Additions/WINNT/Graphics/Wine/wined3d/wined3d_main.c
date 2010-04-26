@@ -75,7 +75,7 @@ wined3d_settings_t wined3d_settings =
     VS_HW,          /* Hardware by default */
     PS_HW,          /* Hardware by default */
     TRUE,           /* Use of GLSL enabled by default */
-    ORM_FBO,        /* Use FBOs to do offscreen rendering */
+    ORM_BACKBUFFER, /* Use Backbuffer to do offscreen rendering */
     RTL_READTEX,    /* Default render target locking method */
     PCI_VENDOR_NONE,/* PCI Vendor ID */
     PCI_DEVICE_NONE,/* PCI Device ID */
