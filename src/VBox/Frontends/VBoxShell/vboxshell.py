@@ -647,7 +647,7 @@ def listCmd(ctx, args):
             tele = "[T] "
         else:
             tele = "    "
-        print "%sMachine '%s' [%s], state=%s" %(tele,colVm(ctx,m.name),m.id,asEnumElem(ctx,"SessionState", m.sessionState))
+        print "%sMachine '%s' [%s], machineState=%s, sessionState=%s" %(tele,colVm(ctx,m.name),m.id,asEnumElem(ctx, "MachineState", m.state), asEnumElem(ctx,"SessionState", m.sessionState))
     return 0
 
 def infoCmd(ctx,args):
@@ -711,7 +711,7 @@ def infoCmd(ctx,args):
     attaches = ctx['global'].getArray(mach, 'mediumAttachments')
     if attaches:
         print
-        print colCat(ctx,"  Mediums:")
+        print colCat(ctx,"  Media:")
     for a in attaches:
         print "   Controller: '%s' port/device: %d:%d type: %s (%s):" % (a.controller, a.port, a.device, asEnumElem(ctx,"DeviceType", a.type), a.type)
         m = a.medium
@@ -1611,7 +1611,7 @@ def asSize(val,inBytes):
    else:
       return int(val)
 
-def listMediumsCmd(ctx,args):
+def listMediaCmd(ctx,args):
    if len(args) > 1:
       verbose = int(args[1])
    else:
@@ -2137,7 +2137,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'detachCtr': ['Detach HDD from the VM: detachCtr win Ctr0', detachCtrCmd, 0],
             'attachUsb': ['Attach USB device to the VM (use listUsb to show available devices): attachUsb win uuid', attachUsbCmd, 0],
             'detachUsb': ['Detach USB device from the VM: detachUsb win uuid', detachUsbCmd, 0],
-            'listMediums': ['List mediums known to this VBox instance', listMediumsCmd, 0],
+            'listMedia': ['List media known to this VBox instance', listMediaCmd, 0],
             'listUsb': ['List known USB devices', listUsbCmd, 0],
             'shareFolder': ['Make host\'s folder visible to guest: shareFolder win /share share writable', shareFolderCmd, 0],
             'unshareFolder': ['Remove folder sharing', unshareFolderCmd, 0],
