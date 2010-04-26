@@ -3090,7 +3090,7 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
     rc = ctrl->COMGETTER(Instance)(&uInstance);
     AssertComRC(rc);
     IoBackendType_T enmIoBackend;
-    rc = ctrl->COMGETTER(Bus)(&enmIoBackend);
+    rc = ctrl->COMGETTER(IoBackend)(&enmIoBackend);
     AssertComRC(rc);
 
     /* protect mpVM */
