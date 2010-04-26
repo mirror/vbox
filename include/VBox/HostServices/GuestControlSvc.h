@@ -123,6 +123,13 @@ enum
     HOSTEXECOUTCALLBACKDATAMAGIC = 0x11061949
 };
 
+enum eVBoxGuestCtrlCallbackType
+{
+    VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN = 0,
+    VBOXGUESTCTRLCALLBACKTYPE_EXEC_START = 1,
+    VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT = 2
+};
+
 /**
  * The service functions which are callable by host.
  */

@@ -95,8 +95,9 @@ public:
                               ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
                               IN_BSTR aStdIn, IN_BSTR aStdOut, IN_BSTR aStdErr,
                               IN_BSTR aUserName, IN_BSTR aPassword,
-                              ULONG aTimeoutMS, ULONG* aPID, IProgress **aProgress);
+                              ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress);
     STDMETHOD(GetProcessOutput)(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, ULONG64 aSize, ComSafeArrayOut(BYTE, aData));
+    STDMETHOD(GetProcessStatus)(ULONG aPID, ULONG *aReason, ULONG *aExitCode, ULONG *aStatus);
     STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemCache,
                                      ULONG *aPageTotal, ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal);
@@ -123,26 +124,38 @@ private:
 # ifdef VBOX_WITH_GUEST_CONTROL
     struct CallbackContext
     {
-        uint32_t            mContextID;
-        void               *pvData;
-        uint32_t            cbData;
+        uint32_t                    mContextID;
+        eVBoxGuestCtrlCallbackType  mType;
+        void                       *pvData;
+        uint32_t                    cbData;
         /** Atomic flag whether callback was called. */
-        volatile bool       bCalled;
+        volatile bool               bCalled;
         /** Pointer to user-supplied IProgress. */
-        ComObjPtr<Progress> pProgress;
+        ComObjPtr<Progress>         pProgress;
     };
     typedef std::list< CallbackContext > CallbackList;
     typedef std::list< CallbackContext >::iterator CallbackListIter;
     typedef std::list< CallbackContext >::const_iterator CallbackListIterConst;
+
+    struct GuestProcess
+    {
+        uint32_t                 mPID;
+        uint32_t                 mStatus;
+        uint32_t                 mReason;
+        uint32_t                 mExitCode;
+    };
+    typedef std::list< GuestProcess > GuestProcessList;
+    typedef std::list< GuestProcess >::iterator GuestProcessIter;
+    typedef std::list< GuestProcess >::const_iterator GuestProcessIterConst;
 
     int prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);
     /** Handler for guest execution control notifications. */
     int notifyCtrlExec(uint32_t u32Function, PHOSTEXECCALLBACKDATA pData);
     int notifyCtrlExecOut(uint32_t u32Function, PHOSTEXECOUTCALLBACKDATA pData);
     CallbackListIter getCtrlCallbackContextByID(uint32_t u32ContextID);
-    CallbackListIter getCtrlCallbackContextByPID(uint32_t u32PID);
+    GuestProcessIter getProcessByPID(uint32_t u32PID);
     void removeCtrlCallbackContext(CallbackListIter it);
-    uint32_t addCtrlCallbackContext(void *pvData, uint32_t cbData, Progress* pProgress);
+    uint32_t addCtrlCallbackContext(eVBoxGuestCtrlCallbackType enmType, void *pvData, uint32_t cbData, Progress* pProgress);
 # endif
 
     struct Data
@@ -170,6 +183,7 @@ private:
 
     volatile uint32_t mNextContextID;
     CallbackList mCallbackList;
+    GuestProcessList mGuestProcessList;
 # endif
 };
 

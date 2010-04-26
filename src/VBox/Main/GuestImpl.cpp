@@ -116,6 +116,9 @@ void Guest::uninit()
     CallbackListIter it;
     for (it = mCallbackList.begin(); it != mCallbackList.end(); it++)
         removeCtrlCallbackContext(it);
+
+    /* Clear process list. */
+    mGuestProcessList.clear();
 #endif
 
     /* Enclose the state transition Ready->InUninit->NotReady */
@@ -517,6 +520,28 @@ int Guest::notifyCtrlExec(uint32_t              u32Function,
                 break;
         }
 
+        /* Handle process list. */
+        /** @todo What happens on/deal with PID reuse? */
+        /** @todo How to deal with multiple updates at once? */
+        GuestProcessIter it_proc = getProcessByPID(pCBData->u32PID);
+        if (it_proc == mGuestProcessList.end())
+        {
+            /* Not found, add to list. */
+            GuestProcess p;
+            p.mPID = pCBData->u32PID;
+            p.mStatus = pCBData->u32Status;
+            //p.mReason = pCBData->u32Reason;
+            p.mExitCode = pCBData->u32Flags; /* Contains exit code. */
+            
+            mGuestProcessList.push_back(p);
+        }
+        else /* Update list. */
+        {
+            it_proc->mStatus = pCBData->u32Status;
+            //it_proc->mReason = pCBData->u32Reason;
+            it_proc->mExitCode = pCBData->u32Flags; /* Contains exit code. */
+        }
+
         if (   !it->pProgress.isNull()
             && errMsg.length())
         {
@@ -590,16 +615,15 @@ Guest::CallbackListIter Guest::getCtrlCallbackContextByID(uint32_t u32ContextID)
     return it;
 }
 
-Guest::CallbackListIter Guest::getCtrlCallbackContextByPID(uint32_t u32PID)
+Guest::GuestProcessIter Guest::getProcessByPID(uint32_t u32PID)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /** @todo Maybe use a map instead of list for fast context lookup. */
-    CallbackListIter it;
-    for (it = mCallbackList.begin(); it != mCallbackList.end(); it++)
+    GuestProcessIter it;
+    for (it = mGuestProcessList.begin(); it != mGuestProcessList.end(); it++)
     {
-        PHOSTEXECCALLBACKDATA pCBData = (HOSTEXECCALLBACKDATA*)it->pvData;
-        if (pCBData && pCBData->u32PID == u32PID)
+        if (it->mPID == u32PID)
             return (it);
     }
     return it;
@@ -629,7 +653,7 @@ void Guest::removeCtrlCallbackContext(Guest::CallbackListIter it)
 /* Adds a callback with a user provided data block and an optional progress object
  * to the callback list. A callback is identified by a unique context ID which is used
  * to identify a callback from the guest side. */
-uint32_t Guest::addCtrlCallbackContext(void *pvData, uint32_t cbData, Progress *pProgress)
+uint32_t Guest::addCtrlCallbackContext(eVBoxGuestCtrlCallbackType enmType, void *pvData, uint32_t cbData, Progress *pProgress)
 {
     LogFlowFuncEnter();
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -639,6 +663,7 @@ uint32_t Guest::addCtrlCallbackContext(void *pvData, uint32_t cbData, Progress *
 
     CallbackContext context;
     context.mContextID = uNewContext;
+    context.mType = enmType;
     context.bCalled = false;
     context.pvData = pvData;
     context.cbData = cbData;
@@ -754,7 +779,8 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                 {
                     PHOSTEXECCALLBACKDATA pData = (HOSTEXECCALLBACKDATA*)RTMemAlloc(sizeof(HOSTEXECCALLBACKDATA));
                     AssertPtr(pData);
-                    uContextID = addCtrlCallbackContext(pData, sizeof(HOSTEXECCALLBACKDATA), progress);
+                    uContextID = addCtrlCallbackContext(VBOXGUESTCTRLCALLBACKTYPE_EXEC_START, 
+                                                        pData, sizeof(HOSTEXECCALLBACKDATA), progress);
                     Assert(uContextID > 0);
 
                     VBOXHGCMSVCPARM paParms[15];
@@ -951,7 +977,8 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
 
     /* Search for existing PID. */
     PHOSTEXECOUTCALLBACKDATA pData = (HOSTEXECOUTCALLBACKDATA*)RTMemAlloc(sizeof(HOSTEXECOUTCALLBACKDATA));
-    uint32_t uContextID = addCtrlCallbackContext(pData, sizeof(HOSTEXECOUTCALLBACKDATA), NULL /* pProgress */);
+    uint32_t uContextID = addCtrlCallbackContext(VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT,
+                                                 pData, sizeof(HOSTEXECOUTCALLBACKDATA), NULL /* pProgress */);
     Assert(uContextID > 0);
 
     size_t cbData = (size_t)RT_MIN(aSize, _64K);
@@ -1036,6 +1063,37 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
             outputData.resize(0);
         outputData.detachTo(ComSafeArrayOutArg(aData));
     }
+    return rc;
+#endif
+}
+
+STDMETHODIMP Guest::GetProcessStatus(ULONG aPID, ULONG *aReason, ULONG *aExitCode, ULONG *aStatus)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else  /* VBOX_WITH_GUEST_CONTROL */
+    using namespace guestControl;
+
+    HRESULT rc = S_OK;
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    GuestProcessIterConst it;
+    for (it = mGuestProcessList.begin(); it != mGuestProcessList.end(); it++)
+    {
+        if (it->mPID == aPID)
+            break;
+    }
+
+    if (it != mGuestProcessList.end())
+    {
+        *aReason = it->mReason;
+        *aExitCode = it->mExitCode;
+        *aStatus = it->mStatus;
+    }
+    else
+        rc = setError(VBOX_E_IPRT_ERROR,
+                      tr("Process (PID %u) not found!"), aPID);
     return rc;
 #endif
 }
