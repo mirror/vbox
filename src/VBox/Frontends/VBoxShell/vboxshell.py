@@ -32,6 +32,7 @@ import traceback
 import shlex
 import time
 import re
+import platform
 
 # Simple implementation of IConsoleCallback, one can use it as skeleton
 # for custom implementations
@@ -213,7 +214,6 @@ if g_hasreadline:
         return matches
 
 def autoCompletion(commands, ctx):
-  import platform
   if  not g_hasreadline:
       return
 
@@ -2229,7 +2229,9 @@ def interpret(ctx):
 
     home = getHomeFolder(ctx)
     checkUserExtensions(ctx, commands, home)
-
+    if platform.system() == 'Windows':
+        global g_hascolors
+        g_hascolors = False
     hist_file=os.path.join(home, ".vboxshellhistory")
     autoCompletion(commands, ctx)
 
