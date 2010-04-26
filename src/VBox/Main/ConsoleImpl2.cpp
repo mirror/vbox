@@ -1232,9 +1232,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
             case StorageControllerType_LsiLogicSas:
             {
-                rc = CFGMR3InsertInteger(pCtlInst, "PCIDeviceNo",          21);                 RC_CHECK();
-                Assert(!afPciDeviceNo[21]);
-                afPciDeviceNo[21] = true;
+                rc = CFGMR3InsertInteger(pCtlInst, "PCIDeviceNo",          22);                 RC_CHECK();
+                Assert(!afPciDeviceNo[22]);
+                afPciDeviceNo[22] = true;
                 rc = CFGMR3InsertInteger(pCtlInst, "PCIFunctionNo",        0);                  RC_CHECK();
 
                 rc = CFGMR3InsertString(pCfg,  "ControllerType", "SAS1068");                    RC_CHECK();
