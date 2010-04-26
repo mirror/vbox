@@ -7306,14 +7306,6 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
         return autoCaller.rc();
     }
 
-    /* protect mpVM */
-    AutoVMCaller autoVMCaller(that);
-    if (FAILED(autoVMCaller.rc()))
-    {
-        that->mptrCancelableProgress.setNull();
-        return autoVMCaller.rc();
-    }
-
     AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
