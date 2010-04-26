@@ -337,8 +337,11 @@ static int handleExecProgram(HandlerArg *a)
                     }
                     else
                     {   
+                        ULONG uStatus, uExitCode, uFlags;
+                        CHECK_ERROR_BREAK(guest, GetProcessStatus(uPID, &uExitCode, &uFlags, &uStatus));
                         if (verbose)
-                            RTPrintf("Process completed.\n");
+                            RTPrintf("Process completed. Exit code = %u (Status = %u, Flags = %u)\n",
+                                     uExitCode, uStatus, uFlags);
                     }
 
                     /* Print output if wanted. */

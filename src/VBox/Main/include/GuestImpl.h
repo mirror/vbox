@@ -97,7 +97,7 @@ public:
                               IN_BSTR aUserName, IN_BSTR aPassword,
                               ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress);
     STDMETHOD(GetProcessOutput)(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, ULONG64 aSize, ComSafeArrayOut(BYTE, aData));
-    STDMETHOD(GetProcessStatus)(ULONG aPID, ULONG *aReason, ULONG *aExitCode, ULONG *aStatus);
+    STDMETHOD(GetProcessStatus)(ULONG aPID, ULONG *aExitCode, ULONG *aFlags, ULONG *aStatus);
     STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemCache,
                                      ULONG *aPageTotal, ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal);
@@ -141,7 +141,7 @@ private:
     {
         uint32_t                 mPID;
         uint32_t                 mStatus;
-        uint32_t                 mReason;
+        uint32_t                 mFlags;
         uint32_t                 mExitCode;
     };
     typedef std::list< GuestProcess > GuestProcessList;
