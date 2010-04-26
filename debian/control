@@ -1,7 +1,7 @@
 Source: virtualbox-ose
 Section: misc
 Priority: optional
-Maintainer: Sun Microsystems, Inc. <info@virtualbox.org>
+Maintainer: Oracle Corporation <info@virtualbox.org>
 Standards-Version: 3.2.1
 Build-Depends: debhelper (>= 5), libz-dev, libssl-dev, libqt4-dev,
   libqt4-opengl-dev, libsdl1.2-dev, uuid-dev, libxcursor-dev,
