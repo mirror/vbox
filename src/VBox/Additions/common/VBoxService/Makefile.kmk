@@ -28,9 +28,6 @@ include	$(KBUILD_PATH)/subheader.kmk
 PROGRAMS += VBoxService
 PROGRAMS.win.x86 += VBoxServiceNT
 
-# Hack. Should be in Config.kmk later!
-VBOX_WITH_MEMBALLOON     := 1
-
 #
 # VBoxService
 #

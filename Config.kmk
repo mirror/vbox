@@ -484,6 +484,8 @@ VBOX_WITH_GUEST_PROPS_RDONLY_GUEST =
 if1of ($(KBUILD_TARGET), linux solaris win darwin)
  VBOX_WITH_GUEST_CONTROL = 1
 endif
+# Enable ballooning
+VBOX_WITH_MEMBALLOON = 1
 # Enable crOpenGL service
 if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_CROGL = 1
