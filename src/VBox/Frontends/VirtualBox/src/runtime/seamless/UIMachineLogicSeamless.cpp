@@ -81,7 +81,7 @@ bool UIMachineLogicSeamless::checkAvailability()
     if (uisession()->isGuestAdditionsActive())
     {
         quint64 availBits = machine.GetVRAMSize() /* VRAM */
-                            * _1M /* MB to bytes */
+                            * _1M /* MiB to bytes */
                             * 8; /* to bits */
         quint64 usedBits = m_pScreenLayout->memoryRequirements();
         if (availBits < usedBits)

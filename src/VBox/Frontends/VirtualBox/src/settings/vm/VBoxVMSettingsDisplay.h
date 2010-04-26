@@ -66,11 +66,11 @@ private:
     CMachine mMachine;
     QIWidgetValidator *mValidator;
 
-    /* System minimum lower limit of VRAM (MB). */
+    /* System minimum lower limit of VRAM (MiB). */
     int m_minVRAM;
-    /* System maximum limit of VRAM (MB). */
+    /* System maximum limit of VRAM (MiB). */
     int m_maxVRAM;
-    /* Upper limit of VRAM in MB for this dialog. This value is lower than
+    /* Upper limit of VRAM in MiB for this dialog. This value is lower than
      * m_maxVRAM to save careless users from setting useless big values. */
     int m_maxVRAMVisible;
     /* Initial VRAM value when the dialog is opened. */

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2009 Sun Microsystems, Inc.
+ * Copyright (C) 2009-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -219,7 +219,7 @@ QVariant HardwareItem::data (int aColumn, int aRole) const
                                 v = tmp; break;
                             }
                         case KVirtualSystemDescriptionType_OS: v = vboxGlobal().vmGuestOSTypeDescription (mConfigValue); break;
-                        case KVirtualSystemDescriptionType_Memory: v = mConfigValue + " " + VBoxApplianceEditorWgt::tr ("MB"); break;
+                        case KVirtualSystemDescriptionType_Memory: v = mConfigValue + " " + VBoxApplianceEditorWgt::tr ("MiB", "size suffix MiBytes"); break;
                         case KVirtualSystemDescriptionType_SoundCard: v = vboxGlobal().toString (static_cast<KAudioControllerType> (mConfigValue.toInt())); break;
                         case KVirtualSystemDescriptionType_NetworkAdapter: v = vboxGlobal().toString (static_cast<KNetworkAdapterType> (mConfigValue.toInt())); break;
                         default: v = mConfigValue; break;
@@ -398,7 +398,7 @@ QWidget * HardwareItem::createEditor (QWidget *aParent, const QStyleOptionViewIt
                 {
                     QSpinBox *e = new QSpinBox (aParent);
                     e->setRange (VBoxApplianceEditorWgt::minGuestRAM(), VBoxApplianceEditorWgt::maxGuestRAM());
-                    e->setSuffix (" " + VBoxApplianceEditorWgt::tr ("MB"));
+                    e->setSuffix (" " + VBoxApplianceEditorWgt::tr ("MiB", "size suffix MiBytes"));
                     editor = e;
                     break;
                 }
