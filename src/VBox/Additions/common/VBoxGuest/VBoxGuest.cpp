@@ -124,7 +124,7 @@ static int vboxGuestInitFixateGuestMappings(PVBOXGUESTDEVEXT pDevExt)
             {
                 if (hFictive == NIL_RTR0MEMOBJ)
                 {
-                    rc = RTR0MemObjEnterPhys(&hObj, VBOXGUEST_HYPERVISOR_PHYSICAL_START, cbHypervisor + _4M);
+                    rc = RTR0MemObjEnterPhys(&hObj, VBOXGUEST_HYPERVISOR_PHYSICAL_START, cbHypervisor + _4M, RTMEM_CACHE_POLICY_DONT_CARE);
                     if (RT_FAILURE(rc))
                         break;
                     hFictive = hObj;

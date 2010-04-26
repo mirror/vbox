@@ -190,6 +190,8 @@ typedef struct RTR0MEMOBJINTERNAL
             /** If set this object was created by RTR0MemPhysAlloc, otherwise it was
              * created by RTR0MemPhysEnter. */
             bool        fAllocated;
+            /** See RTMEM_CACHE_POLICY_XXX constants */
+            unsigned    CachePolicy;
         } Phys;
 
         /** RTR0MEMTYPE_PHYS_NC. */
@@ -386,8 +388,9 @@ int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS 
  * @param   ppMem           Where to store the ring-0 memory object handle.
  * @param   Phys            The physical address to start at, page aligned.
  * @param   cb              The size of the object in bytes, page aligned.
+ * @param   CachePolicy     One of the RTMEM_CACHE_XXX modes.
  */
-int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t cb);
+int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t cb, unsigned CachePolicy);
 
 /**
  * Reserves kernel virtual address space.

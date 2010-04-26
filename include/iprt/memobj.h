@@ -221,6 +221,15 @@ RTR0DECL(int) RTR0MemObjAllocPhysEx(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS Phy
  */
 RTR0DECL(int) RTR0MemObjAllocPhysNC(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysHighest);
 
+/** Memory cache policy for RTR0MemObjEnterPhys.
+ * @{
+ */
+/** Default caching policy -- don't care. */
+#define RTMEM_CACHE_POLICY_DONT_CARE    0
+/** MMIO caching policy -- uncachable. */
+#define RTMEM_CACHE_POLICY_MMIO         1
+/** @} */
+
 /**
  * Creates a page aligned, contiguous, physical memory object.
  *
@@ -231,8 +240,9 @@ RTR0DECL(int) RTR0MemObjAllocPhysNC(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS Phy
  * @param   Phys            The physical address to start at. This is rounded down to the
  *                          nearest page boundrary.
  * @param   cb              The size of the object in bytes. This is rounded up to nearest page boundrary.
+ * @param   CachePolicy     One of the RTMEM_CACHE_XXX modes.
  */
-RTR0DECL(int) RTR0MemObjEnterPhys(PRTR0MEMOBJ pMemObj, RTHCPHYS Phys, size_t cb);
+RTR0DECL(int) RTR0MemObjEnterPhys(PRTR0MEMOBJ pMemObj, RTHCPHYS Phys, size_t cb, unsigned CachePolicy);
 
 /**
  * Reserves kernel virtual address space.

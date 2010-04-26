@@ -724,7 +724,7 @@ static int pgmR0DynMapPagingArrayMapPte(PPGMR0DYNMAP pThis, PPGMR0DYNMAPPGLVL pP
                 pPgLvl->a[i].hMemObj = pPgLvl->a[i].hMapObj = NIL_RTR0MEMOBJ;
             }
 
-            int rc = RTR0MemObjEnterPhys(&pPgLvl->a[i].hMemObj, HCPhys, PAGE_SIZE);
+            int rc = RTR0MemObjEnterPhys(&pPgLvl->a[i].hMemObj, HCPhys, PAGE_SIZE, RTMEM_CACHE_POLICY_DONT_CARE);
             if (RT_SUCCESS(rc))
             {
                 rc = RTR0MemObjMapKernel(&pPgLvl->a[i].hMapObj, pPgLvl->a[i].hMemObj,
