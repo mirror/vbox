@@ -518,7 +518,7 @@ static DECLCALLBACK(int) drvdiskintGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 /** Makes a PDRVBLOCKASYNC out of a PPDMIMEDIAASYNCPORT. */
 #define PDMIMEDIAASYNCPORT_2_DRVDISKINTEGRITY(pInterface)    ( (PDRVDISKINTEGRITY((uintptr_t)pInterface - RT_OFFSETOF(DRVDISKINTEGRITY, IMediaAsyncPort))) )
 
-static DECLCALLBACK(int) drvdiskintAsyncTransferCompleteNotify(PPDMIMEDIAASYNCPORT pInterface, void *pvUser)
+static DECLCALLBACK(int) drvdiskintAsyncTransferCompleteNotify(PPDMIMEDIAASYNCPORT pInterface, void *pvUser, int rcReq)
 {
     PDRVDISKINTEGRITY pThis = PDMIMEDIAASYNCPORT_2_DRVDISKINTEGRITY(pInterface);
     PDRVDISKAIOREQ pIoReq = (PDRVDISKAIOREQ)pvUser;
@@ -526,14 +526,17 @@ static DECLCALLBACK(int) drvdiskintAsyncTransferCompleteNotify(PPDMIMEDIAASYNCPO
 
     LogFlowFunc(("pIoReq=%#p\n", pIoReq));
 
-    if (pIoReq->fRead)
-        rc = drvdiskintReadVerify(pThis, pIoReq->paSeg, pIoReq->cSeg, pIoReq->off, pIoReq->cbTransfer);
-    else
-        rc = drvdiskintWriteRecord(pThis, pIoReq->paSeg, pIoReq->cSeg, pIoReq->off, pIoReq->cbTransfer);
+    if (RT_SUCCESS(rcReq))
+    {
+        if (pIoReq->fRead)
+            rc = drvdiskintReadVerify(pThis, pIoReq->paSeg, pIoReq->cSeg, pIoReq->off, pIoReq->cbTransfer);
+        else
+            rc = drvdiskintWriteRecord(pThis, pIoReq->paSeg, pIoReq->cSeg, pIoReq->off, pIoReq->cbTransfer);
 
-    AssertRC(rc);
+        AssertRC(rc);
+    }
 
-    rc = pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort, pIoReq->pvUser);
+    rc = pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort, pIoReq->pvUser, rcReq);
     RTMemFree(pIoReq);
 
     return rc;

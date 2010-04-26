@@ -459,8 +459,9 @@ DECLINLINE(PVDINTERFACEERROR) VDGetInterfaceError(PVDINTERFACE pInterface)
  *
  * @return  VBox status code.
  * @param   pvUser          Opaque user data which is passed on request submission.
+ * @param   rcReq           Status code of the completed request.
  */
-typedef DECLCALLBACK(int) FNVDCOMPLETED(void *pvUser);
+typedef DECLCALLBACK(int) FNVDCOMPLETED(void *pvUser, int rcReq);
 /** Pointer to FNVDCOMPLETED() */
 typedef FNVDCOMPLETED *PFNVDCOMPLETED;
 
@@ -1615,7 +1616,7 @@ typedef VBOXHDD *PVBOXHDD;
 /**
  * Request completion callback for the async read/write API.
  */
-typedef void (FNVDASYNCTRANSFERCOMPLETE) (void *pvUser1, void *pvUser2);
+typedef void (FNVDASYNCTRANSFERCOMPLETE) (void *pvUser1, void *pvUser2, int rcReq);
 /** Pointer to a transfer compelte callback. */
 typedef FNVDASYNCTRANSFERCOMPLETE *PFNVDASYNCTRANSFERCOMPLETE;
 
