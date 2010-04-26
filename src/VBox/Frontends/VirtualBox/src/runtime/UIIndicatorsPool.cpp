@@ -521,12 +521,16 @@ public:
         if (console.isNull())
             return;
 
-        bool bVirtEnabled = console.GetDebugger().GetHWVirtExEnabled();
+        const CMachineDebugger &debugger = console.GetDebugger();
+        if (debugger.isNull())
+            return;
+
+        bool bVirtEnabled = debugger.GetHWVirtExEnabled();
         QString virtualization = bVirtEnabled ?
             VBoxGlobal::tr("Enabled", "details report (VT-x/AMD-V)") :
             VBoxGlobal::tr("Disabled", "details report (VT-x/AMD-V)");
 
-        bool bNestEnabled = console.GetDebugger().GetHWVirtExNestedPagingEnabled();
+        bool bNestEnabled = debugger.GetHWVirtExNestedPagingEnabled();
         QString nestedPaging = bNestEnabled ?
             VBoxGlobal::tr("Enabled", "nested paging") :
             VBoxGlobal::tr("Disabled", "nested paging");
