@@ -899,7 +899,7 @@ VMMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
  */
 VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage)
 {
-    LogFlow(("PGMHandlerPhysicalPageTempOff GCPhys=%RGp\n", GCPhysPage));
+    LogFlow(("PGMHandlerPhysicalPageTempOff GCPhysPage=%RGp\n", GCPhysPage));
 
     pgmLock(pVM);
     /*
@@ -915,8 +915,8 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
             Assert((pCur->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK);
 
             AssertReturnStmt(   pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_WRITE
-                         || pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_ALL,
-                         pgmUnlock(pVM), VERR_ACCESS_DENIED);
+                             || pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_ALL,
+                             pgmUnlock(pVM), VERR_ACCESS_DENIED);
 
             /*
              * Change the page status.
