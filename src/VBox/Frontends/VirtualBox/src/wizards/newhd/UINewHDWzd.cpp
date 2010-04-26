@@ -219,7 +219,7 @@ UINewHDWzdPage3::UINewHDWzdPage3()
     m_iSliderScale = qMax(m_iSliderScale, 8);
 
     /* Setup size-editor field */
-    m_pSizeEditor->setFixedWidthByText("88888.88 MiB");
+    m_pSizeEditor->setFixedWidthByText("88888.88 MB");
     m_pSizeEditor->setAlignment(Qt::AlignRight);
     m_pSizeEditor->setValidator(new QRegExpValidator(QRegExp(vboxGlobal().sizeRegexp()), this));
 
