@@ -1758,7 +1758,7 @@ static int vdAsyncIOFlushAsync(void *pvUser, void *pStorage,
     return VERR_NOT_IMPLEMENTED;
 }
 
-static int vdIOReqCompleted(void *pvUser)
+static int vdIOReqCompleted(void *pvUser, int rcReq)
 {
     int rc = VINF_SUCCESS;
     PVDIOTASK pIoTask = (PVDIOTASK)pvUser;
@@ -1815,7 +1815,9 @@ static int vdIOReqCompleted(void *pvUser)
                     && ASMAtomicCmpXchgBool(&pIoCtxParent->fComplete, true, false))
                 {
                     LogFlowFunc(("Parent I/O context completed pIoCtxParent=%#p\n", pIoCtx));
-                    pIoCtxParent->Type.Root.pfnComplete(pIoCtxParent->Type.Root.pvUser1, pIoCtxParent->Type.Root.pvUser2);
+                    pIoCtxParent->Type.Root.pfnComplete(pIoCtxParent->Type.Root.pvUser1,
+                                                        pIoCtxParent->Type.Root.pvUser2,
+                                                        pIoCtxParent->rcReq);
                     vdIoCtxFree(pDisk, pIoCtxParent);
                 }
 
@@ -1856,7 +1858,8 @@ static int vdIOReqCompleted(void *pvUser)
                         {
                             LogFlowFunc(("Waiting I/O context completed pIoCtxWait=%#p\n", pIoCtxWait));
                             pIoCtxWait->Type.Root.pfnComplete(pIoCtxWait->Type.Root.pvUser1,
-                                                              pIoCtxWait->Type.Root.pvUser2);
+                                                              pIoCtxWait->Type.Root.pvUser2,
+                                                              pIoCtxWait->rcReq);
                             vdIoCtxFree(pDisk, pIoCtxWait);
                         }
                     } while (!RTListIsEmpty(&ListTmp));
@@ -1865,7 +1868,9 @@ static int vdIOReqCompleted(void *pvUser)
                     RTCritSectLeave(&pDisk->CritSect);
             }
             else
-                pIoCtx->Type.Root.pfnComplete(pIoCtx->Type.Root.pvUser1, pIoCtx->Type.Root.pvUser2);
+                pIoCtx->Type.Root.pfnComplete(pIoCtx->Type.Root.pvUser1,
+                                              pIoCtx->Type.Root.pvUser2,
+                                              pIoCtx->rcReq);
 
             vdIoCtxFree(pDisk, pIoCtx);
         }

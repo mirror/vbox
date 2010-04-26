@@ -355,11 +355,11 @@ static DECLCALLBACK(int) drvblockAsyncFlushStart(PPDMIBLOCKASYNC pInterface, voi
 /** Makes a PDRVBLOCKASYNC out of a PPDMIMEDIAASYNCPORT. */
 #define PDMIMEDIAASYNCPORT_2_DRVBLOCK(pInterface)    ( (PDRVBLOCK((uintptr_t)pInterface - RT_OFFSETOF(DRVBLOCK, IMediaAsyncPort))) )
 
-static DECLCALLBACK(int) drvblockAsyncTransferCompleteNotify(PPDMIMEDIAASYNCPORT pInterface, void *pvUser)
+static DECLCALLBACK(int) drvblockAsyncTransferCompleteNotify(PPDMIMEDIAASYNCPORT pInterface, void *pvUser, int rcReq)
 {
     PDRVBLOCK pThis = PDMIMEDIAASYNCPORT_2_DRVBLOCK(pInterface);
 
-    return pThis->pDrvBlockAsyncPort->pfnTransferCompleteNotify(pThis->pDrvBlockAsyncPort, pvUser);
+    return pThis->pDrvBlockAsyncPort->pfnTransferCompleteNotify(pThis->pDrvBlockAsyncPort, pvUser, rcReq);
 }
 
 /* -=-=-=-=- IBlockBios -=-=-=-=- */

@@ -190,7 +190,7 @@ static int drvscsiGetSize(VSCSILUN hVScsiLun, void *pvScsiLunUser, uint64_t *pcb
     return VINF_SUCCESS;
 }
 
-static int drvscsiTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *pvUser)
+static int drvscsiTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *pvUser, int rc)
 {
     PDRVSCSI pThis = PDMIBLOCKASYNCPORT_2_DRVSCSI(pInterface);
     VSCSIIOREQ hVScsiIoReq = (VSCSIIOREQ)pvUser;
@@ -206,7 +206,7 @@ static int drvscsiTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *p
         AssertMsgFailed(("Invalid transfer direction %u\n", enmTxDir));
 
     ASMAtomicDecU32(&pThis->StatIoDepth);
-    VSCSIIoReqCompleted(hVScsiIoReq, VINF_SUCCESS);
+    VSCSIIoReqCompleted(hVScsiIoReq, rc);
 
     return VINF_SUCCESS;
 }

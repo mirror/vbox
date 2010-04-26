@@ -303,7 +303,7 @@ static DECLCALLBACK(void) drvvdAsyncTaskCompleted(PPDMDRVINS pDrvIns, void *pvTe
         int rc;
 
         AssertPtr(pStorageBackend->pfnCompleted);
-        rc = pStorageBackend->pfnCompleted(pvUser);
+        rc = pStorageBackend->pfnCompleted(pvUser, rcReq);
         AssertRC(rc);
 
         /* If thread synchronization is active, then signal the end of the
@@ -990,12 +990,12 @@ static DECLCALLBACK(int) drvvdGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 *   Async Media interface methods                                              *
 *******************************************************************************/
 
-static void drvvdAsyncReqComplete(void *pvUser1, void *pvUser2)
+static void drvvdAsyncReqComplete(void *pvUser1, void *pvUser2, int rcReq)
 {
     PVBOXDISK pThis = (PVBOXDISK)pvUser1;
 
     int rc = pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort,
-                                                                  pvUser2);
+                                                                  pvUser2, rcReq);
     AssertRC(rc);
 }
 

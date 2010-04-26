@@ -1368,9 +1368,10 @@ typedef struct PDMIBLOCKASYNCPORT
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pvUser          The user argument given in pfnStartWrite/Read.
+     * @param   rcReq           IPRT Status code of the completed request.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnTransferCompleteNotify, (PPDMIBLOCKASYNCPORT pInterface, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnTransferCompleteNotify, (PPDMIBLOCKASYNCPORT pInterface, void *pvUser, int rcReq));
 } PDMIBLOCKASYNCPORT;
 /** PDMIBLOCKASYNCPORT interface ID. */
 #define PDMIBLOCKASYNCPORT_IID                  "e3bdc0cb-9d99-41dd-8eec-0dc8cf5b2a92"
@@ -1442,9 +1443,10 @@ typedef struct PDMIMEDIAASYNCPORT
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pvUser          The user argument given in pfnStartWrite.
+     * @param   rcReq           IPRT Status code of the completed request.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnTransferCompleteNotify, (PPDMIMEDIAASYNCPORT pInterface, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnTransferCompleteNotify, (PPDMIMEDIAASYNCPORT pInterface, void *pvUser, int rcReq));
 } PDMIMEDIAASYNCPORT;
 /** PDMIMEDIAASYNCPORT interface ID. */
 #define PDMIMEDIAASYNCPORT_IID                  "22d38853-901f-4a71-9670-4d9da6e82317"
