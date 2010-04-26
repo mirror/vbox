@@ -157,8 +157,8 @@ void printUsage(USAGECATEGORY u64Cmd)
         RTPrintf("VBoxManage modifyvm         <uuid|name>\n"
                  "                            [--name <name>]\n"
                  "                            [--ostype <ostype>]\n"
-                 "                            [--memory <memorysize in MiB>]\n"
-                 "                            [--vram <vramsize in MiB>]\n"
+                 "                            [--memory <memorysize in MB>]\n"
+                 "                            [--vram <vramsize in MB>]\n"
                  "                            [--acpi on|off]\n"
                  "                            [--ioapic on|off]\n"
                  "                            [--pae on|off]\n"
@@ -233,7 +233,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                                             client <pipe>|\n"
                  "                                             file <file>|\n"
                  "                                             <devicename>]\n"
-                 "                            [--guestmemoryballoon <balloonsize in MiB>]\n"
+                 "                            [--guestmemoryballoon <balloonsize in MB>]\n"
                  "                            [--gueststatisticsinterval <seconds>]\n"
                  );
         RTPrintf("                            [--audio none|null");
@@ -300,8 +300,8 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--iomgr simple|async]\n"
                  "                            [--iobackend buffered|unbuffered]\n"
                  "                            [--iocache on|off]\n"
-                 "                            [--iocachesize <I/O cache size in MiB>]\n"
-                 "                            [--iobandwidthmax <Maximum I/O bandwidth in MiB/s>]\n"
+                 "                            [--iocachesize <I/O cache size in MB>]\n"
+                 "                            [--iobandwidthmax <Maximum I/O bandwidth in MB>]\n"
 #endif
                 );
         RTPrintf("\n");
@@ -360,7 +360,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            nictrace<1-N> on|off\n"
                  "                            nictracefile<1-N> <filename>\n"
 #endif /* VBOX_DYNAMIC_NET_ATTACH */
-                 "                            guestmemoryballoon <balloonsize in MiB>]\n"
+                 "                            guestmemoryballoon <balloonsize in MB>]\n"
                  "                            gueststatisticsinterval <seconds>]\n"
                  "                            usbattach <uuid>|<address> |\n"
                  "                            usbdetach <uuid>|<address> |\n");

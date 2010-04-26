@@ -493,7 +493,7 @@ int handleImportAppliance(HandlerArg *arg)
                                 if (VINF_SUCCESS == strOverride.toInt(ulMemMB))
                                 {
                                     bstrFinalValue = strOverride;
-                                    RTPrintf("%2u: Guest memory specified with --memory: %ls MiB\n",
+                                    RTPrintf("%2u: Guest memory specified with --memory: %ls MB\n",
                                              a, bstrFinalValue.raw());
                                 }
                                 else
@@ -501,7 +501,7 @@ int handleImportAppliance(HandlerArg *arg)
                                                        "Argument to --memory option must be a non-negative number.");
                             }
                             else
-                                RTPrintf("%2u: Guest memory: %ls MiB\n    (change with \"--vsys %u --memory <MiB>\")\n",
+                                RTPrintf("%2u: Guest memory: %ls MB\n    (change with \"--vsys %u --memory <MB>\")\n",
                                          a, bstrFinalValue.raw(), i);
                         }
                         break;

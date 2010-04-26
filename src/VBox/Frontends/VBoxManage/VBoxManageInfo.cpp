@@ -1878,7 +1878,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("GuestMemoryBalloon=%d\n", guestVal);
         else
-            RTPrintf("Configured memory balloon size:      %d MiB\n", guestVal);
+            RTPrintf("Configured memory balloon size:      %d MB\n", guestVal);
     }
     if (details != VMINFO_MACHINEREADABLE)
         RTPrintf("\n");
