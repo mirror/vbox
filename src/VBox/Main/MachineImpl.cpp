@@ -9193,11 +9193,11 @@ void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachin
     mGuestHAL = new pm::CollectorGuestHAL(this, hal);
 
     /* Create sub metrics */
-    pm::SubMetric *guestLoadUser = new pm::SubMetric("Guest/Cpu/Load/User",
+    pm::SubMetric *guestLoadUser = new pm::SubMetric("Guest/CPU/Load/User",
         "Percentage of processor time spent in user mode as seen by the guest.");
-    pm::SubMetric *guestLoadKernel = new pm::SubMetric("Guest/Cpu/Load/Kernel",
+    pm::SubMetric *guestLoadKernel = new pm::SubMetric("Guest/CPU/Load/Kernel",
         "Percentage of processor time spent in kernel mode as seen by the guest.");
-    pm::SubMetric *guestLoadIdle = new pm::SubMetric("Guest/Cpu/Load/Idle",
+    pm::SubMetric *guestLoadIdle = new pm::SubMetric("Guest/CPU/Load/Idle",
         "Percentage of processor time spent idling as seen by the guest.");
 
     /* The total amount of physical ram is fixed now, but we'll support dynamic guest ram configurations in the future. */
