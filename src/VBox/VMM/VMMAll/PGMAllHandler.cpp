@@ -899,7 +899,7 @@ VMMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
  */
 VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage)
 {
-    LogFlow(("PGMHandlerPhysicalPageTempOff GCPhys=%RGp\n", GCPhys));
+    LogFlow(("PGMHandlerPhysicalPageTempOff GCPhys=%RGp\n", GCPhysPage));
 
     pgmLock(pVM);
     /*
