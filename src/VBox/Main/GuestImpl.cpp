@@ -832,6 +832,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                     switch (pData->u32Status)
                     {
                         case PROC_STS_STARTED:
+                            /* Process is (still) running; get PID. */
                             *aPID = pData->u32PID;
                             break;
 
@@ -843,7 +844,11 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                         case PROC_STS_TOK:
                         case PROC_STS_TOA:
                         case PROC_STS_DWN:
-                            *aPID = 0;
+                            /* 
+                             * Process (already) ended, but we want to get the
+                             * PID anyway to retrieve the output in a later call. 
+                             */
+                            *aPID = pData->u32PID;
                             break;
 
                         case PROC_STS_ERROR:
