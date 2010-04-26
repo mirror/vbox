@@ -95,7 +95,7 @@
       <item row="0" column="4">
        <widget class="QLabel" name="m_pRamUnits">
         <property name="text">
-         <string>MB</string>
+         <string>MiB</string>
         </property>
        </widget>
       </item>

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2008 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -888,25 +888,6 @@ bool VBoxProblemReporter::askAboutSnapshotDeleting (const QString &aSnapshotName
             "several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information "
             "in the snapshot cannot be recovered.</p></p>Are you sure you want to delete the selected snapshot <b>%1</b>?</p>")
             .arg (aSnapshotName),
-        /* Do NOT allow this message to be disabled! */
-        NULL /* aAutoConfirmId */,
-        tr ("Delete"), tr ("Cancel"));
-}
-
-bool VBoxProblemReporter::askAboutSnapshotDeletingFreeSpace (const QString &aSnapshotName,
-                                                             const QString &aTargetImageName,
-                                                             const QString &aTargetImageMaxSize,
-                                                             const QString &aTargetFilesystemFree)
-{
-    return messageOkCancel (mainWindowShown(), Question,
-        tr ("<p>Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, "
-            "however on this filesystem there is only %4 free.</p><p>Running out of disk space during the merge operation can result in "
-            "corruption of the image and the VM configuration, i.e. loss of the VM and its data.</p><p>You may continue with deleting "
-            "the snapshot at your own risk.</p>")
-            .arg (aSnapshotName)
-            .arg (aTargetImageName)
-            .arg (aTargetImageMaxSize)
-            .arg (aTargetFilesystemFree),
         /* Do NOT allow this message to be disabled! */
         NULL /* aAutoConfirmId */,
         tr ("Delete"), tr ("Cancel"));
