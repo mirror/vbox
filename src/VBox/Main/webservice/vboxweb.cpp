@@ -1655,6 +1655,10 @@ int __vbox__IWebsessionManager_USCORElogoff(
     WEBDEBUG(("\n-- entering %s\n", __FUNCTION__));
 
     do {
+        // findSessionFromRef needs read lock, and the session destructor requires
+        // the write lock, so get the write lock here
+        util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
+
         WebServiceSession* pSession;
         if ((pSession = WebServiceSession::findSessionFromRef(req->refIVirtualBox)))
         {
