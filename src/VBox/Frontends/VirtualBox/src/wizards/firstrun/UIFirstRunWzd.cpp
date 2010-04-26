@@ -125,12 +125,7 @@ UIFirstRunWzdPage2::UIFirstRunWzdPage2()
     /* Decorate page */
     Ui::UIFirstRunWzdPage2::setupUi(this);
 
-    /* Register KStorageBus class */
-    qRegisterMetaType<KStorageBus>();
-
-    /* Register 'type', 'description', 'source', 'id' fields! */
-    registerField("bus", this, "bus");
-    registerField("description", this, "description");
+    /* Register 'source' and 'id' fields! */
     registerField("source", this, "source");
     registerField("id", this, "id");
 
@@ -138,10 +133,8 @@ UIFirstRunWzdPage2::UIFirstRunWzdPage2()
     m_pSelectMediaButton->setIcon(VBoxGlobal::iconSet(":/select_file_16px.png", ":/select_file_dis_16px.png"));
 
     /* Setup connections */
-    connect (m_pTypeCD, SIGNAL(clicked()), this, SLOT(sltMediumChanged()));
-    connect (m_pTypeFD, SIGNAL(clicked()), this, SLOT(sltMediumChanged()));
-    connect (m_pMediaSelector, SIGNAL(currentIndexChanged(int)), this, SLOT(sltMediumChanged()));
-    connect (m_pSelectMediaButton, SIGNAL(clicked()), this, SLOT(sltOpenVirtualMediaManager()));
+    connect(m_pMediaSelector, SIGNAL(currentIndexChanged(int)), this, SLOT(sltMediumChanged()));
+    connect(m_pSelectMediaButton, SIGNAL(clicked()), this, SLOT(sltOpenVirtualMediaManager()));
 }
 
 void UIFirstRunWzdPage2::init()
@@ -154,11 +147,11 @@ void UIFirstRunWzdPage2::init()
     CMediumAttachment hda = machine.GetMediumAttachment(VBoxVMSettingsHD::tr("IDE Controller"), 0, 0);
     m_pPage2Text1Var1->setHidden(hda.isNull());
     m_pPage2Text1Var2->setHidden(!hda.isNull());
-    m_pPage2Text2Var1->setHidden(hda.isNull());
-    m_pPage2Text2Var2->setHidden(!hda.isNull());
 
-    /* Assign selector machine */
+    /* Assign media selector attributes */
     m_pMediaSelector->setMachineId(machine.GetId());
+    m_pMediaSelector->setType(VBoxDefs::MediumType_DVD);
+    m_pMediaSelector->repopulate();
 }
 
 void UIFirstRunWzdPage2::retranslateUi()
@@ -176,11 +169,11 @@ void UIFirstRunWzdPage2::initializePage()
     retranslateUi();
 
     /* Initial choice */
-    m_pTypeCD->click();
     m_pMediaSelector->setCurrentIndex(0);
+    sltMediumChanged();
 
-    /* CD button should initially have focus */
-    m_pTypeCD->isChecked();
+    /* Media selector should initially have focus */
+    m_pMediaSelector->setFocus();
 }
 
 bool UIFirstRunWzdPage2::isComplete() const
@@ -190,39 +183,8 @@ bool UIFirstRunWzdPage2::isComplete() const
 
 void UIFirstRunWzdPage2::sltMediumChanged()
 {
-    /* Update data */
-    if (m_pTypeCD->isChecked())
-    {
-        if (m_pMediaSelector->type() != VBoxDefs::MediumType_DVD)
-        {
-            m_pMediaSelector->setType(VBoxDefs::MediumType_DVD);
-            m_pMediaSelector->repopulate();
-        }
-        m_Bus = KStorageBus_IDE;
-        m_strDescription = VBoxGlobal::removeAccelMark(m_pTypeCD->text());
-        m_strSource = m_pMediaSelector->currentText();
-        m_strId = m_pMediaSelector->id();
-    }
-    else if (m_pTypeFD->isChecked())
-    {
-        if (m_pMediaSelector->type() != VBoxDefs::MediumType_Floppy)
-        {
-            m_pMediaSelector->setType(VBoxDefs::MediumType_Floppy);
-            m_pMediaSelector->repopulate();
-        }
-        m_Bus = KStorageBus_Floppy;
-        m_strDescription = VBoxGlobal::removeAccelMark(m_pTypeFD->text());
-        m_strSource = m_pMediaSelector->currentText();
-        m_strId = m_pMediaSelector->id();
-    }
-    else
-    {
-        m_Bus = KStorageBus_Null;
-        m_strDescription.clear();
-        m_strSource.clear();
-        m_strId.clear();
-    }
-
+    m_strSource = m_pMediaSelector->currentText();
+    m_strId = m_pMediaSelector->id();
     emit completeChanged();
 }
 
@@ -230,7 +192,7 @@ void UIFirstRunWzdPage2::sltOpenVirtualMediaManager()
 {
     /* Create & open VMM */
     VBoxMediaManagerDlg dlg(this);
-    dlg.setup(m_pMediaSelector->type(), true /* aDoSelect */);
+    dlg.setup(m_pMediaSelector->type(), true /* propose to choose? */);
     if (dlg.exec() == QDialog::Accepted)
         m_pMediaSelector->setCurrentItem(dlg.selectedId());
 }
@@ -247,9 +209,9 @@ UIFirstRunWzdPage3::UIFirstRunWzdPage3()
     registerField("machine", this, "machine");
 
     /* Disable the background painting of the summary widget */
-    m_pSummaryText->viewport()->setAutoFillBackground (false);
+    m_pSummaryText->viewport()->setAutoFillBackground(false);
     /* Make the summary field read-only */
-    m_pSummaryText->setReadOnly (true);
+    m_pSummaryText->setReadOnly(true);
 }
 
 void UIFirstRunWzdPage3::init()
@@ -277,7 +239,7 @@ void UIFirstRunWzdPage3::retranslateUi()
     /* Compose common summary */
     QString summary;
 
-    QString description = field("description").toString();
+    QString description = tr("CD/DVD-ROM Device");
     QString source = field("source").toString();
 
     summary += QString
@@ -285,8 +247,8 @@ void UIFirstRunWzdPage3::retranslateUi()
         "<tr><td><nobr>%1: </nobr></td><td><nobr>%2</nobr></td></tr>"
         "<tr><td><nobr>%3: </nobr></td><td><nobr>%4</nobr></td></tr>"
     )
-    .arg (tr("Type", "summary"), description)
-    .arg (tr("Source", "summary"), source)
+    .arg(tr("Type", "summary"), description)
+    .arg(tr("Source", "summary"), source)
     ;
     /* Feat summary to 3 lines */
     setSummaryFieldLinesNumber(m_pSummaryText, 2);
@@ -316,22 +278,21 @@ bool UIFirstRunWzdPage3::validatePage()
 bool UIFirstRunWzdPage3::insertDevice()
 {
     /* Composing default controller name */
-    KStorageBus bus = field("bus").value<KStorageBus>();
     QString mediumId = field("id").toString();
-    LONG port = bus == KStorageBus_IDE ? 1 : 0;
+    LONG port = 1;
     LONG device = 0;
     QString name;
     /* Search for the first controller of the given type */
     QVector<CStorageController> controllers = m_Machine.GetStorageControllers();
     foreach (CStorageController controller, controllers)
     {
-        if (controller.GetBus() == bus)
+        if (controller.GetBus() == KStorageBus_IDE)
         {
             name = controller.GetName();
             break;
         }
     }
-    Assert (!name.isEmpty());
+    Assert(!name.isEmpty());
 
     /* Mount medium to the predefined port/device */
     m_Machine.MountMedium(name, port, device, mediumId, false /* force */);
