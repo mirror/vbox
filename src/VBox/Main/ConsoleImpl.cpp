@@ -1793,6 +1793,8 @@ DECLCALLBACK(int) Console::plugCpu(Console *pThis, unsigned uCpu)
 
     CFGMR3Dump(pInst);
 
+#undef RC_CHECK
+
     return VINF_SUCCESS;
 }
 
@@ -3042,16 +3044,20 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
 
     HRESULT rc = S_OK;
     const char *pszDevice = NULL;
-    unsigned uInstance = 0;
-    unsigned uLun = 0;
-    BOOL fHostDrive = FALSE;
-    Utf8Str location;
-    Utf8Str format;
-    BOOL fPassthrough = FALSE;
 
     SafeIfaceArray<IStorageController> ctrls;
     rc = mMachine->COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(ctrls));
     AssertComRC(rc);
+    IMedium *pMedium;
+    rc = aMediumAttachment->COMGETTER(Medium)(&pMedium);
+    AssertComRC(rc);
+    Bstr mediumLocation;
+    if (pMedium)
+    {
+        rc = pMedium->COMGETTER(Location)(mediumLocation.asOutParam());
+        AssertComRC(rc);
+    }
+
     Bstr attCtrlName;
     rc = aMediumAttachment->COMGETTER(Controller)(attCtrlName.asOutParam());
     AssertComRC(rc);
@@ -3077,37 +3083,11 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
     AssertComRC(rc);
     pszDevice = convertControllerTypeToDev(enmCtrlType);
 
-    /** @todo support multiple instances of a controller */
-    uInstance = 0;
-
-    LONG device;
-    rc = aMediumAttachment->COMGETTER(Device)(&device);
-    AssertComRC(rc);
-    LONG port;
-    rc = aMediumAttachment->COMGETTER(Port)(&port);
-    AssertComRC(rc);
     StorageBus_T enmBus;
     rc = ctrl->COMGETTER(Bus)(&enmBus);
     AssertComRC(rc);
-    rc = convertBusPortDeviceToLun(enmBus, port, device, uLun);
-    AssertComRCReturnRC(rc);
-
-    ComPtr<IMedium> medium;
-    rc = aMediumAttachment->COMGETTER(Medium)(medium.asOutParam());
-    if (SUCCEEDED(rc) && !medium.isNull())
-    {
-        Bstr loc;
-        rc = medium->COMGETTER(Location)(loc.asOutParam());
-        AssertComRC(rc);
-        location = loc;
-        Bstr fmt;
-        rc = medium->COMGETTER(Format)(fmt.asOutParam());
-        AssertComRC(rc);
-        format = fmt;
-        rc = medium->COMGETTER(HostDrive)(&fHostDrive);
-        AssertComRC(rc);
-    }
-    rc = aMediumAttachment->COMGETTER(Passthrough)(&fPassthrough);
+    ULONG uInstance;
+    rc = ctrl->COMGETTER(Instance)(&uInstance);
     AssertComRC(rc);
 
     /* protect mpVM */
@@ -3121,8 +3101,8 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
      */
     PVMREQ pReq;
     int vrc = VMR3ReqCall(mpVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                          (PFNRT)Console::changeDrive, 9,
-                          this, pszDevice, uInstance, uLun, !!fHostDrive, location.raw(), format.raw(), !!fPassthrough, fForce);
+                          (PFNRT)Console::changeRemovableMedium, 6,
+                          this, pszDevice, uInstance, enmBus, aMediumAttachment, fForce);
 
     /* leave the lock before waiting for a result (EMT will call us back!) */
     alock.leave();
@@ -3142,10 +3122,10 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
         return S_OK;
     }
 
-    if (!location.isEmpty())
+    if (!pMedium)
         return setError(E_FAIL,
-            tr("Could not mount the media/drive '%s' (%Rrc)"),
-            location.raw(), vrc);
+            tr("Could not mount the media/drive '%ls' (%Rrc)"),
+            mediumLocation.raw(), vrc);
 
     return setError(E_FAIL,
         tr("Could not unmount the currently mounted media/drive (%Rrc)"),
@@ -3158,7 +3138,7 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
  * @returns VBox status code.
  *
  * @param   pThis           Pointer to the Console object.
- * @param   pszDevice       The PDM device name.
+ * @param   pcszDevice      The PDM device name.
  * @param   uInstance       The PDM device instance.
  * @param   uLun            The PDM LUN number of the drive.
  * @param   fHostDrive      True if this is a host drive attachment.
@@ -3170,24 +3150,21 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
  * @param   fPassthrough    Enables using passthrough mode of the host DVD drive if applicable.
  *
  * @thread  EMT
- * @note Locks the Console object for writing.
- * @todo the error handling in this method needs to be improved seriously - what if mounting fails...
  */
-DECLCALLBACK(int) Console::changeDrive(Console *pThis, const char *pszDevice, unsigned uInstance, unsigned uLun,
-                                       bool fHostDrive, const char *pszPath, const char *pszFormat, bool fPassthrough, bool fForce)
+DECLCALLBACK(int) Console::changeRemovableMedium(Console *pThis,
+                                                 const char *pcszDevice,
+                                                 unsigned uInstance,
+                                                 StorageBus_T enmBus,
+                                                 IMediumAttachment *aMediumAtt,
+                                                 bool fForce)
 {
-/// @todo change this to use the same code as in ConsoleImpl2.cpp
-    LogFlowFunc(("pThis=%p pszDevice=%p:{%s} uInstance=%u uLun=%u fHostDrive=%d pszPath=%p:{%s} pszFormat=%p:{%s} fPassthrough=%d fForce=%d\n",
-                 pThis, pszDevice, pszDevice, uInstance, uLun, fHostDrive, pszPath, pszPath, pszFormat, pszFormat, fPassthrough, fForce));
+    LogFlowFunc(("pThis=%p uInstance=%u pszDevice=%p:{%s} enmBus=%u, aMediumAtt=%p, fForce=%d\n",
+                 pThis, uInstance, pcszDevice, enmBus, fForce));
 
     AssertReturn(pThis, VERR_INVALID_PARAMETER);
 
     AutoCaller autoCaller(pThis);
     AssertComRCReturn(autoCaller.rc(), VERR_ACCESS_DENIED);
-
-    /* protect mpVM */
-    AutoVMCaller autoVMCaller(pThis);
-    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
     PVM pVM = pThis->mpVM;
 
@@ -3227,146 +3204,25 @@ DECLCALLBACK(int) Console::changeDrive(Console *pThis, const char *pszDevice, un
             AssertMsgFailedReturn(("enmVMState=%d\n", enmVMState), VERR_ACCESS_DENIED);
     }
 
+    /* Determine the base path for the device instance. */
+    PCFGMNODE pCtlInst;
+    pCtlInst = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%u/", pcszDevice,
+ uInstance);
+    AssertReturn(pCtlInst, VERR_INTERNAL_ERROR);
+
     int rc = VINF_SUCCESS;
     int rcRet = VINF_SUCCESS;
 
-    /*
-       In general locking the object before doing VMR3* calls is quite safe
-       here, since we're on EMT. Anyway we lock for write after eventually
-       suspending the vm. The reason is that in the vmstateChangeCallback the
-       var mVMStateChangeCallbackDisabled is checked under a lock also, which
-       can lead to an dead lock. The write lock is necessary because we
-       indirectly modify the meDVDState/meFloppyState members (pointed to by
-       peState).
-     */
-    AutoWriteLock alock(pThis COMMA_LOCKVAL_SRC_POS);
-
-    do
-    {
-        /*
-         * Unmount existing media / detach host drive.
-         */
-        PPDMIBASE pBase;
-        rc = PDMR3QueryLun(pVM, pszDevice, uInstance, uLun, &pBase);
-        if (RT_FAILURE(rc))
-        {
-            if (rc == VERR_PDM_LUN_NOT_FOUND || rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
-                rc = VINF_SUCCESS;
-            AssertRC(rc);
-        }
-        else
-        {
-            PPDMIMOUNT pIMount = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMOUNT);
-            AssertBreakStmt(pIMount, rc = VERR_INVALID_POINTER);
-
-            /*
-             * Unmount the media.
-             */
-            rc = pIMount->pfnUnmount(pIMount, fForce);
-            if (rc == VERR_PDM_MEDIA_NOT_MOUNTED)
-                rc = VINF_SUCCESS;
-
-            if (RT_SUCCESS(rc))
-            {
-                rc = PDMR3DeviceDetach(pVM, pszDevice, uInstance, uLun, PDM_TACH_FLAGS_NOT_HOT_PLUG);
-                if (rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
-                    rc = VINF_SUCCESS;
-            }
-        }
-
-        if (RT_FAILURE(rc))
-        {
-            rcRet = rc;
-            break;
-        }
-
-        /** @todo this does a very thorough job. usually it's too much,
-         * as a simple medium change (without changing between host attachment
-         * and image) could be done with a lot less effort, by just using the
-         * pfnUnmount and pfnMount interfaces. Later. */
-
-        /*
-         * Construct a new driver configuration.
-         */
-        PCFGMNODE pInst = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%d/", pszDevice, uInstance);
-        AssertRelease(pInst);
-        /* nuke anything which might have been left behind. */
-        CFGMR3RemoveNode(CFGMR3GetChildF(pInst, "LUN#%d", uLun));
-
-#define RC_CHECK() do { if (RT_FAILURE(rc)) { AssertReleaseRC(rc); break; } } while (0)
-
-        PCFGMNODE pLunL0;
-        PCFGMNODE pCfg;
-        rc = CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%d", uLun);     RC_CHECK();
-
-        if (fHostDrive)
-        {
-            rc = CFGMR3InsertString(pLunL0, "Driver",       !strcmp(pszDevice, "i82078") ? "HostFloppy" : "HostDVD");   RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL0,   "Config",       &pCfg);     RC_CHECK();
-            Assert(pszPath && *pszPath);
-            rc = CFGMR3InsertString(pCfg,   "Path",         pszPath);   RC_CHECK();
-            if (strcmp(pszDevice, "i82078"))
-            {
-                rc = CFGMR3InsertInteger(pCfg, "Passthrough", fPassthrough); RC_CHECK();
-            }
-        }
-        else
-        {
-            /* create a new block driver config */
-            rc = CFGMR3InsertString(pLunL0, "Driver",       "Block");   RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL0,   "Config",       &pCfg);     RC_CHECK();
-            rc = CFGMR3InsertString(pCfg,   "Type",         !strcmp(pszDevice, "i82078") ? "Floppy 1.44" : "DVD"); RC_CHECK();
-            rc = CFGMR3InsertInteger(pCfg,  "Mountable",    1);         RC_CHECK();
-        }
-
-        /*
-         * Attach the driver.
-         */
-        rc = PDMR3DeviceAttach(pVM, pszDevice, uInstance, uLun, PDM_TACH_FLAGS_NOT_HOT_PLUG, &pBase); RC_CHECK();
-
-        if (!fHostDrive && pszPath && *pszPath)
-        {
-            PCFGMNODE pLunL1;
-            rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1); RC_CHECK();
-            rc = CFGMR3InsertString(pLunL1, "Driver",       "VD");      RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL1,   "Config",       &pCfg);     RC_CHECK();
-            rc = CFGMR3InsertString(pCfg,   "Path",         pszPath);   RC_CHECK();
-            rc = CFGMR3InsertString(pCfg,   "Format",       pszFormat); RC_CHECK();
-            if (strcmp(pszDevice, "i82078"))
-            {
-                rc = CFGMR3InsertInteger(pCfg, "ReadOnly",  1);         RC_CHECK();
-            }
-            /** @todo later pass full VDConfig information and parent images */
-        }
-
-        /* Dump the new controller configuration. */
-        CFGMR3Dump(pInst);
-
-        if (!fHostDrive && pszPath && *pszPath)
-        {
-            PPDMIMOUNT pIMount = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMOUNT);
-            if (!pIMount)
-            {
-                AssertFailed();
-                return rc;
-            }
-
-            rc = pIMount->pfnMount(pIMount, NULL , NULL);
-        }
-
-#undef RC_CHECK
-
-        if (RT_FAILURE(rc) && RT_SUCCESS(rcRet))
-            rcRet = rc;
-
-    }
-    while (0);
-
-    /*
-       Unlock before resuming because the vmstateChangeCallback problem
-       described above.
-     */
-    alock.release();
+    rcRet = Console::configMediumAttachment(pCtlInst, pcszDevice, uInstance,
+                                            enmBus, aMediumAtt,
+                                            pThis->mMachineState,
+                                            NULL /* phrc */,
+                                            true /* fAttachDetach */,
+                                            fForce /* fForceUnmount */,
+                                            pVM, NULL /* paLedDevType */);
+    /** @todo this dumps everything attached to this device instance, which
+     * is more than necessary. Dumping the changed LUN would be enough. */
+    CFGMR3Dump(pCtlInst);
 
     /*
      * Resume the VM if necessary.
@@ -3676,7 +3532,7 @@ DECLCALLBACK(int) Console::changeNetworkAttachment(Console *pThis,
     PCFGMNODE pInst = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%d/", pszDevice, uInstance);
     AssertRelease(pInst);
 
-    rcRet = configNetwork(pThis, pszDevice, uInstance, uLun, aNetworkAdapter, pCfg, pLunL0, pInst, true);
+    rcRet = pThis->configNetwork(pszDevice, uInstance, uLun, aNetworkAdapter, pCfg, pLunL0, pInst, true);
 
     /*
      * Resume the VM if necessary.
@@ -7349,17 +7205,21 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
  *
  * @param   pVM           The VM handle.
  * @param   lInstance     The instance of the controller.
- * @param   enmController The type of the controller.
+ * @param   pcszDevice    The name of the controller type.
  * @param   enmBus        The storage bus type of the controller.
  * @param   aMediumAtt    The medium attachment.
+ * @param   aMachineState The current machine state.
  * @param   phrc          Where to store com error - only valid if we return VERR_GENERAL_FAILURE.
  * @return  VBox status code.
  */
-static DECLCALLBACK(int) reconfigureMedium(PVM pVM, ULONG lInstance,
-                                           StorageControllerType_T enmController,
-                                           StorageBus_T enmBus,
-                                           IMediumAttachment *aMediumAtt,
-                                           HRESULT *phrc)
+/* static */
+DECLCALLBACK(int) Console::reconfigureMediumAttachment(PVM pVM,
+                                                       const char *pcszDevice,
+                                                       unsigned uInstance,
+                                                       StorageBus_T enmBus,
+                                                       IMediumAttachment *aMediumAtt,
+                                                       MachineState_T aMachineState,
+                                                       HRESULT *phrc)
 {
     LogFlowFunc(("pVM=%p aMediumAtt=%p phrc=%p\n", pVM, aMediumAtt, phrc));
 
@@ -7370,192 +7230,34 @@ static DECLCALLBACK(int) reconfigureMedium(PVM pVM, ULONG lInstance,
 #define RC_CHECK() do { if (RT_FAILURE(rc)) { AssertMsgFailed(("rc=%Rrc\n", rc)); return rc; } } while (0)
 #define H() do { if (FAILED(hrc)) { AssertMsgFailed(("hrc=%Rhrc (%#x)\n", hrc, hrc)); *phrc = hrc; return VERR_GENERAL_FAILURE; } } while (0)
 
-    /*
-     * Figure out medium and other attachment details.
-     */
-    ComPtr<IMedium> medium;
-    hrc = aMediumAtt->COMGETTER(Medium)(medium.asOutParam());                   H();
-    LONG lDev;
-    hrc = aMediumAtt->COMGETTER(Device)(&lDev);                                 H();
-    LONG lPort;
-    hrc = aMediumAtt->COMGETTER(Port)(&lPort);                                  H();
-    DeviceType_T lType;
-    hrc = aMediumAtt->COMGETTER(Type)(&lType);                                  H();
-
-    unsigned iLUN;
-    const char *pcszDevice = Console::convertControllerTypeToDev(enmController);
-    AssertMsgReturn(pcszDevice, ("invalid disk controller type: %d\n", enmController), VERR_GENERAL_FAILURE);
-    hrc = Console::convertBusPortDeviceToLun(enmBus, lPort, lDev, iLUN);        H();
-
     /* Ignore attachments other than hard disks, since at the moment they are
      * not subject to snapshotting in general. */
-    if (lType != DeviceType_HardDisk || medium.isNull())
+    DeviceType_T lType;
+    hrc = aMediumAtt->COMGETTER(Type)(&lType);                                  H();
+    if (lType != DeviceType_HardDisk)
         return VINF_SUCCESS;
 
-    /** @todo this should be unified with the relevant part of
-    * Console::configConstructor to avoid inconsistencies. */
+    /* Determine the base path for the device instance. */
+    PCFGMNODE pCtlInst;
+    pCtlInst = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%u/", pcszDevice, uInstance);
+    AssertReturn(pCtlInst, VERR_INTERNAL_ERROR);
 
-    /*
-     * Is there an existing LUN? If not create it.
-     */
-    PCFGMNODE pCfg;
-    PCFGMNODE pLunL1;
+    /* Update the device instance configuration. */
+    rc = Console::configMediumAttachment(pCtlInst, pcszDevice, uInstance,
+                                         enmBus, aMediumAtt, aMachineState,
+                                         phrc, true /* fAttachDetach */,
+                                         false /* fForceUnmount */, pVM,
+                                         NULL /* paLedDevType */);
+    /** @todo this dumps everything attached to this device instance, which
+     * is more than necessary. Dumping the changed LUN would be enough. */
+    CFGMR3Dump(pCtlInst);
+    RC_CHECK();
 
-    /* SCSI has an extra driver between the device and the block driver. */
-    if (enmBus == StorageBus_SCSI)
-        pLunL1 = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%u/LUN#%u/AttachedDriver/AttachedDriver/", pcszDevice, lInstance, iLUN);
-    else
-        pLunL1 = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%u/LUN#%u/AttachedDriver/", pcszDevice, lInstance, iLUN);
-
-    if (!pLunL1)
-    {
-        PCFGMNODE pInst = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%u/", pcszDevice, lInstance);
-        AssertReturn(pInst, VERR_INTERNAL_ERROR);
-
-        PCFGMNODE pLunL0;
-        rc = CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%u", iLUN);                     RC_CHECK();
-
-        if (enmBus == StorageBus_SCSI)
-        {
-            rc = CFGMR3InsertString(pLunL0, "Driver",              "SCSI");             RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
-
-            rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL0);                 RC_CHECK();
-        }
-
-        rc = CFGMR3InsertString(pLunL0, "Driver",              "Block");            RC_CHECK();
-        rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
-        rc = CFGMR3InsertString(pCfg,   "Type",                "HardDisk");         RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "Mountable",            0);                 RC_CHECK();
-
-        rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
-        rc = CFGMR3InsertString(pLunL1, "Driver",              "VD");               RC_CHECK();
-        rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
-    }
-    else
-    {
-#ifdef VBOX_STRICT
-        char *pszDriver;
-        rc = CFGMR3QueryStringAlloc(pLunL1, "Driver", &pszDriver);                  RC_CHECK();
-        Assert(!strcmp(pszDriver, "VD"));
-        MMR3HeapFree(pszDriver);
-#endif
-
-        pCfg = CFGMR3GetChild(pLunL1, "Config");
-        AssertReturn(pCfg, VERR_INTERNAL_ERROR);
-
-        /* Here used to be a lot of code checking if things have changed,
-         * but that's not really worth it, as with snapshots there is always
-         * some change, so the code was just logging useless information in
-         * a hard to analyze form. */
-
-        /*
-         * Detach the driver and replace the config node.
-         */
-        rc = PDMR3DeviceDetach(pVM, pcszDevice, 0, iLUN, PDM_TACH_FLAGS_NOT_HOT_PLUG); RC_CHECK();
-        CFGMR3RemoveNode(pCfg);
-        rc = CFGMR3InsertNode(pLunL1, "Config", &pCfg);                             RC_CHECK();
-    }
-
-    /*
-     * Create the driver configuration.
-     */
-    hrc = medium->COMGETTER(Location)(bstr.asOutParam());                       H();
-    LogFlowFunc(("LUN#%u: leaf location '%ls'\n", iLUN, bstr.raw()));
-    rc = CFGMR3InsertString(pCfg, "Path", Utf8Str(bstr).c_str());                       RC_CHECK();
-    hrc = medium->COMGETTER(Format)(bstr.asOutParam());                         H();
-    LogFlowFunc(("LUN#%u: leaf format '%ls'\n", iLUN, bstr.raw()));
-    rc = CFGMR3InsertString(pCfg, "Format", Utf8Str(bstr).c_str());                     RC_CHECK();
-
-    /* Pass all custom parameters. */
-    bool fHostIP = true;
-    SafeArray<BSTR> names;
-    SafeArray<BSTR> values;
-    hrc = medium->GetProperties(NULL,
-                                ComSafeArrayAsOutParam(names),
-                                ComSafeArrayAsOutParam(values));        H();
-
-    if (names.size() != 0)
-    {
-        PCFGMNODE pVDC;
-        rc = CFGMR3InsertNode(pCfg, "VDConfig", &pVDC);                 RC_CHECK();
-        for (size_t i = 0; i < names.size(); ++ i)
-        {
-            if (values[i] && *values[i])
-            {
-                Utf8Str name = names[i];
-                Utf8Str value = values[i];
-                rc = CFGMR3InsertString(pVDC, name.c_str(), value.c_str());
-                if (    !(name.compare("HostIPStack"))
-                    &&  !(value.compare("0")))
-                    fHostIP = false;
-            }
-        }
-    }
-
-    /* Create an inversed tree of parents. */
-    ComPtr<IMedium> parentMedium = medium;
-    for (PCFGMNODE pParent = pCfg;;)
-    {
-        hrc = parentMedium->COMGETTER(Parent)(medium.asOutParam());             H();
-        if (medium.isNull())
-            break;
-
-        PCFGMNODE pCur;
-        rc = CFGMR3InsertNode(pParent, "Parent", &pCur);                        RC_CHECK();
-        hrc = medium->COMGETTER(Location)(bstr.asOutParam());                   H();
-        rc = CFGMR3InsertString(pCur,  "Path", Utf8Str(bstr).c_str());          RC_CHECK();
-
-        hrc = medium->COMGETTER(Format)(bstr.asOutParam());                     H();
-        rc = CFGMR3InsertString(pCur,  "Format", Utf8Str(bstr).c_str());        RC_CHECK();
-
-        /* Pass all custom parameters. */
-        SafeArray<BSTR> aNames;
-        SafeArray<BSTR> aValues;
-        hrc = medium->GetProperties(NULL,
-                                    ComSafeArrayAsOutParam(aNames),
-                                    ComSafeArrayAsOutParam(aValues));            H();
-
-        if (aNames.size() != 0)
-        {
-            PCFGMNODE pVDC;
-            rc = CFGMR3InsertNode(pCur, "VDConfig", &pVDC);             RC_CHECK();
-            for (size_t i = 0; i < aNames.size(); ++ i)
-            {
-                if (aValues[i] && *aValues[i])
-                {
-                    Utf8Str name = aNames[i];
-                    Utf8Str value = aValues[i];
-                    rc = CFGMR3InsertString(pVDC, name.c_str(), value.c_str()); RC_CHECK();
-                    if (    !(name.compare("HostIPStack"))
-                        &&  !(value.compare("0")))
-                        fHostIP = false;
-                }
-            }
-        }
-
-        /* Custom code: put marker to not use host IP stack to driver
-        * configuration node. Simplifies life of DrvVD a bit. */
-        if (!fHostIP)
-        {
-            rc = CFGMR3InsertInteger(pCfg, "HostIPStack", 0);           RC_CHECK();
-        }
-
-
-        /* next */
-        pParent = pCur;
-        parentMedium = medium;
-    }
-
-    CFGMR3Dump(CFGMR3GetRoot(pVM));
-
-    /*
-     * Attach the new driver.
-     */
-    rc = PDMR3DeviceAttach(pVM, pcszDevice, 0, iLUN, PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/); RC_CHECK();
+#undef RC_CHECK
+#undef H
 
     LogFlowFunc(("Returns success\n"));
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -7595,6 +7297,14 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
     {
         that->mptrCancelableProgress.setNull();
         return autoCaller.rc();
+    }
+
+    /* protect mpVM */
+    AutoVMCaller autoVMCaller(that);
+    if (FAILED(autoVMCaller.rc()))
+    {
+        that->mptrCancelableProgress.setNull();
+        return autoVMCaller.rc();
     }
 
     AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
@@ -7704,20 +7414,22 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 rc = controller->COMGETTER(Bus)(&enmBus);
                 if (FAILED(rc))
                     throw rc;
+                const char *pcszDevice = Console::convertControllerTypeToDev(enmController);
 
                 /*
-                 * don't leave the lock since reconfigureMedium isn't going
-                 * to access Console.
+                 * don't leave the lock since reconfigureMediumAttachment
+                 * isn't going to need the Console lock.
                  */
                 vrc = VMR3ReqCallWait(that->mpVM,
                                       VMCPUID_ANY,
-                                      (PFNRT)reconfigureMedium,
-                                      6,
+                                      (PFNRT)reconfigureMediumAttachment,
+                                      7,
                                       that->mpVM,
+                                      pcszDevice,
                                       lInstance,
-                                      enmController,
                                       enmBus,
                                       atts[i],
+                                      that->mMachineState,
                                       &rc);
                 if (RT_FAILURE(vrc))
                     throw setError(E_FAIL, Console::tr("%Rrc"), vrc);
