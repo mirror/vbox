@@ -230,8 +230,10 @@ int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS 
 }
 
 
-int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t cb)
+int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t cb, unsigned CachePolicy)
 {
+    AssertReturn(CachePolicy == RTMEM_CACHE_POLICY_DONT_CARE, VERR_NOT_IMPLEMENTED);
+
     /* create the object. */
     PRTR0MEMOBJOS2 pMemOs2 = (PRTR0MEMOBJOS2)rtR0MemObjNew(RT_OFFSETOF(RTR0MEMOBJOS2, Lock), RTR0MEMOBJTYPE_PHYS, NULL, cb);
     if (!pMemOs2)

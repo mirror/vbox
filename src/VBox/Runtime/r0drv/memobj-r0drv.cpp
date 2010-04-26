@@ -664,8 +664,9 @@ RT_EXPORT_SYMBOL(RTR0MemObjAllocPhysNC);
  * @param   Phys            The physical address to start at. This is rounded down to the
  *                          nearest page boundrary.
  * @param   cb              The size of the object in bytes. This is rounded up to nearest page boundrary.
+ * @param   CachePolicy     One of the RTMEM_CACHE_XXX modes.
  */
-RTR0DECL(int) RTR0MemObjEnterPhys(PRTR0MEMOBJ pMemObj, RTHCPHYS Phys, size_t cb)
+RTR0DECL(int) RTR0MemObjEnterPhys(PRTR0MEMOBJ pMemObj, RTHCPHYS Phys, size_t cb, unsigned CachePolicy)
 {
     /* sanity checks. */
     const size_t cbAligned = RT_ALIGN_Z(cb + (Phys & PAGE_OFFSET_MASK), PAGE_SIZE);
@@ -678,7 +679,7 @@ RTR0DECL(int) RTR0MemObjEnterPhys(PRTR0MEMOBJ pMemObj, RTHCPHYS Phys, size_t cb)
     RT_ASSERT_PREEMPTIBLE();
 
     /* do the allocation. */
-    return rtR0MemObjNativeEnterPhys(pMemObj, PhysAligned, cbAligned);
+    return rtR0MemObjNativeEnterPhys(pMemObj, PhysAligned, cbAligned, CachePolicy);
 }
 RT_EXPORT_SYMBOL(RTR0MemObjEnterPhys);
 

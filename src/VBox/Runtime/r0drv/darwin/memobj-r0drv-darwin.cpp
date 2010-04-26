@@ -607,8 +607,10 @@ int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS 
 }
 
 
-int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t cb)
+int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t cb, unsigned CachePolicy)
 {
+    AssertReturn(CachePolicy == RTMEM_CACHE_POLICY_DONT_CARE, VERR_NOT_IMPLEMENTED);
+
     /*
      * Create a descriptor for it (the validation is always true on intel macs, but
      * as it doesn't harm us keep it in).

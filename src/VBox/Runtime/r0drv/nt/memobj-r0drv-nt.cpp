@@ -487,8 +487,10 @@ int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS 
 }
 
 
-int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t cb)
+int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t cb, unsigned CachePolicy)
 {
+    AssertReturn(CachePolicy == RTMEM_CACHE_POLICY_DONT_CARE, VERR_NOT_IMPLEMENTED);
+
     /*
      * Validate the address range and create a descriptor for it.
      */

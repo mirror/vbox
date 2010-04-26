@@ -253,11 +253,11 @@ static int vboxGuestOS2MapMemory(void)
      * a qualified guess using the VMMDEV_RAM_SIZE.
      */
     size_t cb = RT_ALIGN_Z(VMMDEV_RAM_SIZE, PAGE_SIZE);
-    int rc = RTR0MemObjEnterPhys(&g_MemObjMMIO, PhysMMIOBase, cb);
+    int rc = RTR0MemObjEnterPhys(&g_MemObjMMIO, PhysMMIOBase, cb, RTMEM_CACHE_POLICY_DONT_CARE);
     if (RT_FAILURE(rc))
     {
         cb = _4K;
-        rc = RTR0MemObjEnterPhys(&g_MemObjMMIO, PhysMMIOBase, cb);
+        rc = RTR0MemObjEnterPhys(&g_MemObjMMIO, PhysMMIOBase, cb, RTMEM_CACHE_POLICY_DONT_CARE);
     }
     if (RT_FAILURE(rc))
     {
@@ -299,7 +299,7 @@ static int vboxGuestOS2MapMemory(void)
             rc = RTR0MemObjFree(g_MemObjMMIO, true); AssertRC(rc);
             g_MemObjMMIO = g_MemMapMMIO = NIL_RTR0MEMOBJ;
 
-            rc = RTR0MemObjEnterPhys(&g_MemObjMMIO, PhysMMIOBase, cb);
+            rc = RTR0MemObjEnterPhys(&g_MemObjMMIO, PhysMMIOBase, cb, RTMEM_CACHE_POLICY_DONT_CARE);
             if (RT_SUCCESS(rc))
             {
                 rc = RTR0MemObjMapKernel(&g_MemMapMMIO, g_MemObjMMIO, (void *)-1, 0,
