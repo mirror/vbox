@@ -1345,7 +1345,7 @@ hotplugSysfsFAMImpl::hotplugSysfsFAMImpl(void) :
      * available */
     if (!testing())
     {
-#   ifndef VBOX_USB_WITH_SYSFS_BY_DEFAULT
+#   ifndef VBOX_WITH_SYSFS_BY_DEFAULT
         Assert(!RTFileExists("/proc/bus/usb/devices"));
 #   endif
 #   ifdef VBOX_USB_WITH_DBUS
