@@ -8378,7 +8378,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="4b8f90ce-e8ef-4f07-af1b-b0b85bc07e37"
+     uuid="a772d41d-8f60-4247-9a0e-fea7ebec2151"
      wsmap="managed"
      >
     <desc>
@@ -8633,6 +8633,37 @@
           the system the server is running on.
         </desc>
       </param>
+    </method>
+
+    <method name="getProcessStatus">
+      <desc>
+        Retrieves status, exit code and the exit reason of a formerly started process.
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Process with specified PID was not found.
+        </result>
+
+      </desc>
+      <param name="pid" type="unsigned long" dir="in">
+        <desc>
+          Process id returned by earlier executeProcess() call.
+        </desc>
+      </param>
+      <param name="reason" type="unsigned long" dir="out">
+        <desc>
+          The reason of exit.
+        </desc>
+      </param>
+      <param name="exitcode" type="unsigned long" dir="out">
+        <desc>
+          The actual exit code.
+        </desc>
+      </param>
+      <param name="status" type="unsigned long" dir="return">
+        <desc>
+          The current process status.
+        </desc>
+      </param>      
     </method>
 
   </interface>
