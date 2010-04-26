@@ -577,7 +577,6 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
     uint32_t fFlags = NILFLAG;
     RTTIMESPEC time;
     uint64_t u64TimeNano = RTTimeSpecGetNano(RTTimeNow(&time));
-    bool fNotify = true;
 
     LogFlowThisFunc(("\n"));
     /*
@@ -636,9 +635,6 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
              */
             if (found)
             {
-                if (   !it->mValue.compare(pcszValue)
-                    && (it->mFlags == fFlags))
-                    fNotify = false;
                 it->mValue = pcszValue;
                 it->mTimestamp = u64TimeNano;
                 it->mFlags = fFlags;
@@ -649,7 +645,8 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
             /*
              * Send a notification to the host and return.
              */
-            if (fNotify)
+            // if (isGuest)  /* Notify the host even for properties that the host
+            //                * changed.  Less efficient, but ensures consistency. */
                 doNotifications(pcszName, u64TimeNano);
             Log2(("Set string %s, rc=%Rrc, value=%s\n", pcszName, rc, pcszValue));
         }
