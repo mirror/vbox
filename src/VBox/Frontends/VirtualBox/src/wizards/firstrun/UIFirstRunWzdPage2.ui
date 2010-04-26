@@ -40,49 +40,6 @@
    <item>
     <widget class="QILabel" name="m_pPage2Text1Var1">
      <property name="text">
-      <string>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</string>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QILabel" name="m_pPage2Text1Var2">
-     <property name="text">
-      <string>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</string>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="m_pCntType">
-     <property name="title">
-      <string>Media Type</string>
-     </property>
-     <layout class="QVBoxLayout" name="m_pLayout2">
-      <item>
-       <widget class="QRadioButton" name="m_pTypeCD">
-        <property name="text">
-         <string>&amp;CD/DVD-ROM Device</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QRadioButton" name="m_pTypeFD">
-        <property name="text">
-         <string>&amp;Floppy Device</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QILabel" name="m_pPage2Text2Var1">
-     <property name="text">
       <string>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</string>
      </property>
      <property name="wordWrap">
@@ -91,7 +48,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QILabel" name="m_pPage2Text2Var2">
+    <widget class="QILabel" name="m_pPage2Text1Var2">
      <property name="text">
       <string>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</string>
      </property>

@@ -65,8 +65,6 @@ protected:
 class UIFirstRunWzdPage2 : public QIWizardPage, public Ui::UIFirstRunWzdPage2
 {
     Q_OBJECT;
-    Q_PROPERTY(KStorageBus bus READ bus WRITE setBus);
-    Q_PROPERTY(QString description READ description WRITE setDescription);
     Q_PROPERTY(QString source READ source WRITE setSource);
     Q_PROPERTY(QString id READ id WRITE setId);
 
@@ -90,14 +88,6 @@ private slots:
     void sltOpenVirtualMediaManager();
 
 private:
-
-    KStorageBus bus() const { return m_Bus; }
-    void setBus(KStorageBus bus) { m_Bus = bus; }
-    KStorageBus m_Bus;
-
-    QString description() const { return m_strDescription; }
-    void setDescription(const QString &strDescription) { m_strDescription = strDescription; }
-    QString m_strDescription;
 
     QString source() const { return m_strSource; }
     void setSource(const QString &strSource) { m_strSource = strSource; }
