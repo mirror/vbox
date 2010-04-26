@@ -144,7 +144,7 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>MiB</string>
+            <string>MB</string>
            </property>
           </widget>
          </item>
