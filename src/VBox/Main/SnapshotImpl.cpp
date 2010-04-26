@@ -2435,6 +2435,8 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 if (!pMedium->getParent().isNull())
                 {
                     Assert(pMedium->getState() == MediumState_Deleting);
+                    /* No need to hold the lock any longer. */
+                    mLock.release();
                     rc = pMedium->deleteStorage(&aTask.pProgress,
                                                 true /* aWait */,
                                                 &fNeedsSaveSettings);
