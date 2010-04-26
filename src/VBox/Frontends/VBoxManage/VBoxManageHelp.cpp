@@ -301,7 +301,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--iobackend buffered|unbuffered]\n"
                  "                            [--iocache on|off]\n"
                  "                            [--iocachesize <I/O cache size in MB>]\n"
-                 "                            [--iobandwidthmax <Maximum I/O bandwidth in MB>]\n"
+                 "                            [--iobandwidthmax <Maximum I/O bandwidth in MB/s>]\n"
 #endif
                 );
         RTPrintf("\n");
