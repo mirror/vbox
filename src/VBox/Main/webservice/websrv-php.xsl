@@ -269,6 +269,17 @@ class <xsl:value-of select="$ifname"/> extends VBox_Struct {
 }
 </xsl:template>
 
+<xsl:template name="structcollection">
+   <xsl:variable name="ifname"><xsl:value-of select="@name" /></xsl:variable>
+   <xsl:text>
+/**
+* Generated VBoxWebService Struct Collection
+*/</xsl:text>
+class <xsl:value-of select="$ifname"/>Collection extends VBox_StructCollection {
+   protected $_interfaceName = "<xsl:value-of select="$ifname"/>";
+}
+</xsl:template>
+
 <xsl:template name="genreq">
        <xsl:param name="wsmap" />
        <xsl:text>$request = new stdClass()</xsl:text>;
@@ -333,6 +344,17 @@ class <xsl:value-of select="@name"/> extends VBox_Enum {
 }
 </xsl:template>
 
+<xsl:template name="enumcollection">
+   <xsl:variable name="ifname"><xsl:value-of select="@name" /></xsl:variable>
+   <xsl:text>
+/**
+* Generated VBoxWebService Enum Collection
+*/</xsl:text>
+class <xsl:value-of select="$ifname"/>Collection extends VBox_EnumCollection {
+   protected $_interfaceName = "<xsl:value-of select="$ifname"/>";
+}
+</xsl:template>
+
 <xsl:template match="/">
 <xsl:text>&lt;?php
 
@@ -359,7 +381,7 @@ class VBox_ManagedObject
     protected $connection;
     protected $handle;
 
-    public function  __construct($soap, $handle = null)
+    public function __construct($soap, $handle = null)
     {
         $this->connection = $soap;
         $this->handle = $handle;
@@ -413,46 +435,95 @@ class VBox_ManagedObject
    }
 }
 
-class VBox_ManagedObjectCollection implements Iterator, Countable {
-    protected $connection;
-    protected $handles;
-    protected $_interfaceName = null;
+abstract class VBox_Collection implements ArrayAccess, Iterator, Countable {
+    protected $_connection;
+    protected $_values;
+    protected $_objects;
+    protected $_interfaceName;
 
-    public function __construct($soap, array $handles = array())
-    {
-        $this->connection = $soap;
-        $this->handles = $handles;
+    public function __construct($soap, array $values = array()) {
+        $this->_connection = $soap;
+        $this->_values = $values;
+        $this->_soapToObject();
     }
 
+    protected function _soapToObject() {
+        $this->_objects = array();
+        foreach($this->_values as $value)
+        {
+            $this->_objects[] = new $this->_interfaceName($this->_connection, $value);
+        }
+    }
+
+    /** ArrayAccess Functions **/ 
+    public function offsetSet($offset, $value) {
+        if ($value instanceof $this->_interfaceName)
+        {
+            if ($offset)
+            {
+                $this->_objects[$offset] = $value;
+            }
+            else
+            {
+                $this->_objects[] = $value;
+            }
+        } 
+        else
+        {
+            throw new Exception("Value must be a instance of " . $this->_interfaceName);
+        }
+    }
+
+    public function offsetExists($offset) {
+        return isset($this->_objects[$offset]);
+    }
+
+    public function offsetUnset($offset) {
+        unset($this->_objects[$offset]);
+    }
+
+    public function offsetGet($offset) {
+        return isset($this->_objects[$offset]) ? $this->_objects[$offset] : null;
+    }
+
+    /** Iterator Functions **/
     public function rewind() {
-        reset($this->handles);
+        reset($this->_objects);
     }
 
     public function current() {
-        $handle = current($this->handles);
-        if ($handle !== false &amp;&amp; !$handle instanceof $this->_interfaceName) {
-            $handle = new $this->_interfaceName($this->connection, $handle);
-        }
-        return $handle;
+        return current($this->_objects);
     }
 
     public function key() {
-        $handle = key($this->handles);
-        return $handle;
+        return key($this->_objects);
     }
 
     public function next() {
-        $handle = next($this->handles);
-        return $handle;
+        return next($this->_objects);
     }
 
     public function valid() {
-        $handle = $this->current() !== false;
-        return $handle;
+        return ($this->current() !== false);
     }
 
+    /** Countable Functions **/
     public function count() {
-        return count($this->handles);
+        return count($this->_objects);
+    }
+}
+
+class VBox_ManagedObjectCollection extends VBox_Collection {
+    protected $_interfaceName = 'VBox_ManagedObject';
+
+    // Result is undefined if this is called AFTER any call to VBox_Collection::offsetSet or VBox_Collection::offsetUnset
+    public function setInterfaceName($interface) {
+       if (!is_subclass_of($interface, 'VBox_ManagedObject'))
+       {
+           throw new Exception('Cannot set collection interface to non-child class of VBox_ManagedObject');
+       }
+       $this->_interfaceName = $interface;
+       $this->_soapToObject();
     }
 }
 
@@ -469,21 +540,36 @@ abstract class VBox_Struct {
     }
 }
 
+abstract class VBox_StructCollection extends VBox_Collection {
+
+    public function __construct($soap, array $values = array())
+    {
+        if (!(array_values($values) === $values))
+        {
+            $values = array((object)$values); //Fix for when struct return value only contains one list item (e.g. one medium attachment)
+        }
+        parent::__construct($soap, $values);
+    }
+}
+
 abstract class VBox_Enum {
-   protected $handle;
+   protected $_handle;
 
    public function __construct($connection, $handle)
    {
        if (is_string($handle))
-           $this->handle = $this->ValueMap[$handle];
+           $this->_handle = $this->ValueMap[$handle];
        else
-           $this->handle = $handle;
+           $this->_handle = $handle;
    }
 
    public function __toString()
    {
-       return (string)$this->NameMap[$this->handle];
+       return (string)$this->NameMap[$this->_handle];
    }
+}
+
+abstract class VBox_EnumCollection extends VBox_Collection {
 }
 
 </xsl:text>
@@ -493,11 +579,11 @@ abstract class VBox_Enum {
   </xsl:for-each>
    <xsl:for-each select="//interface[@wsmap='struct']">
        <xsl:call-template name="interfacestruct"/>
-       <xsl:call-template name="collection"/>
+       <xsl:call-template name="structcollection"/>
   </xsl:for-each>
   <xsl:for-each select="//enum">
        <xsl:call-template name="enum"/>
-       <xsl:call-template name="collection"/>
+       <xsl:call-template name="enumcollection"/>
   </xsl:for-each>
 
 </xsl:template>
