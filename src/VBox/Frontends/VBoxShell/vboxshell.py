@@ -152,15 +152,15 @@ term_colors = {
     'yellow':'\033[93m',
     'magenta':'\033[35m'
     }
-def colored(str,color):
+def colored(string,color):
     if not g_hascolors:
-        return str
+        return string
     global term_colors
     col = term_colors.get(color,None)
     if col:
-        return col+str+'\033[0m'
+        return col+str(string)+'\033[0m'
     else:
-        return str
+        return string
 
 if g_hasreadline:
   class CompleterNG(rlcompleter.Completer):
@@ -267,7 +267,7 @@ def colCat(ctx,str):
     return colored(str, 'magenta')
 
 def colVm(ctx,vm):
-    return colored(str(vm), 'blue')
+    return colored(vm, 'blue')
 
 def createVm(ctx,name,kind,base):
     mgr = ctx['mgr']
@@ -1334,7 +1334,7 @@ def shellCmd(ctx, args):
 
 def connectCmd(ctx, args):
     if (len(args) > 4):
-        print "usage: connect [url] [username] [passwd]"
+        print "usage: connect url <username> <passwd>"
         return 0
 
     if ctx['vb'] is not None:
@@ -1356,6 +1356,7 @@ def connectCmd(ctx, args):
     else:
         passwd = ""
 
+    ctx['wsinfo'] = [url, user, passwd]
     vbox = ctx['global'].platform.connect(url, user, passwd)
     ctx['vb'] = vbox
     print "Running VirtualBox version %s" %(vbox.version)
@@ -1378,6 +1379,21 @@ def disconnectCmd(ctx, args):
         raise
 
     ctx['vb'] = None
+    return 0
+
+def reconnectCmd(ctx, args):
+    if ctx['wsinfo'] is None:
+        print "Never connected..."
+        return 0
+
+    try:
+        ctx['global'].platform.disconnect()
+    except:
+        pass
+
+    [url,user,passwd] = ctx['wsinfo']
+    ctx['vb'] = ctx['global'].platform.connect(url, user, passwd)
+    print "Running VirtualBox version %s" %(ctx['vb'].version)
     return 0
 
 def exportVMCmd(ctx, args):
@@ -2154,6 +2170,10 @@ def runCommandArgs(ctx, args):
     if ci == None:
         print "Unknown command: '%s', type 'help' for list of known commands" %(c)
         return 0
+    if ctx['remote'] and ctx['vb'] is None:
+        if c not in ['connect', 'reconnect', 'help', 'quit']:
+            print "First connect to remote server with %s command." %(colored('connect', 'blue'))
+            return 0
     return ci[1](ctx, args)
 
 
@@ -2215,8 +2235,10 @@ def getHomeFolder(ctx):
 
 def interpret(ctx):
     if ctx['remote']:
-        commands['connect'] = ["Connect to remote VBox instance", connectCmd, 0]
+        commands['connect'] = ["Connect to remote VBox instance: connect http://server:18083 user password", connectCmd, 0]
         commands['disconnect'] = ["Disconnect from remote VBox instance", disconnectCmd, 0]
+        commands['reconnect'] = ["Reconnect to remote VBox instance", reconnectCmd, 0]
+        ctx['wsinfo'] = ["http://localhost:18083", "", ""]
 
     vbox = ctx['vb']
 
