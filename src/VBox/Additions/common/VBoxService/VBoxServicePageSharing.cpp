@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxService - Memory Ballooning.
+ * VBoxService - Guest page sharing.
  */
 
 /*
