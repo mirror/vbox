@@ -278,10 +278,6 @@ typedef struct INTNETTRUNKIF
     INTNETTRUNKSWPORT       SwitchPort;
     /** The port interface we get from the component. */
     PINTNETTRUNKIFPORT      pIfPort;
-    /** The trunk mutex that serializes all calls <b>to</b> the component. */
-    /** @todo This won't quite cut the mustard any longer.  That said, GSO
-     *        segmentation needs to be serialized because of the header buffer. */
-    RTSEMFASTMUTEX          FastMutex3;
     /** Pointer to the network we're connect to.
      * This may be NULL if we're orphaned? */
     struct INTNETNETWORK   *pNetwork;
@@ -409,8 +405,6 @@ static PINTNET volatile g_pIntNet = NULL;
 *******************************************************************************/
 static PINTNETTRUNKIF intnetR0TrunkIfRetain(PINTNETTRUNKIF pThis);
 static void intnetR0TrunkIfRelease(PINTNETTRUNKIF pThis);
-static bool intnetR0TrunkIfOutLock(PINTNETTRUNKIF pThis);
-static void intnetR0TrunkIfOutUnlock(PINTNETTRUNKIF pThis);
 
 
 /**
@@ -2599,26 +2593,17 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
     }
 
     /*
-     * Grab the out-bound lock and send the frame.
+     * Send the frame, handling the GSO fallback                                                                                           .
+     *                                                                                                                                     .
+     * Note! The trunk implementation will re-check that the trunk is active                                                               .
+     *       before sending, so we don't have to duplicate that effort here.
      */
     int rc;
-    if (   (fDst & pThis->fNoPreemptDsts) == fDst
-        || intnetR0TrunkIfOutLock(pThis))
-    {
-        if (   pSG->GsoCtx.u8Type == PDMNETWORKGSOTYPE_INVALID
-            || intnetR0TrunkIfCanHandleGsoFrame(pThis, pSG, fDst) )
-            rc = pThis->pIfPort->pfnXmit(pThis->pIfPort, pSG, fDst);
-        else
-            rc = intnetR0TrunkIfSendGsoFallback(pThis, pSG, fDst);
-
-        if ((fDst & pThis->fNoPreemptDsts) != fDst)
-            intnetR0TrunkIfOutUnlock(pThis);
-    }
+    if (   pSG->GsoCtx.u8Type == PDMNETWORKGSOTYPE_INVALID
+        || intnetR0TrunkIfCanHandleGsoFrame(pThis, pSG, fDst) )
+        rc = pThis->pIfPort->pfnXmit(pThis->pIfPort, pSG, fDst);
     else
-    {
-        AssertFailed();
-        rc = VERR_SEM_DESTROYED;
-    }
+        rc = intnetR0TrunkIfSendGsoFallback(pThis, pSG, fDst);
 
     /** @todo failure statistics? */
     Log2(("intnetR0TrunkIfSend: %Rrc fDst=%d\n", rc, fDst)); NOREF(rc);
@@ -3647,17 +3632,16 @@ static int intnetR0NetworkSetIfActive(PINTNETNETWORK pNetwork, PINTNETIF pIf, bo
     AssertPtr(pIf);
 
     /*
-     * The address spinlock of the network protects the variables, while
-     * the out-bound trunk semaphore protects the pfnSetActive call.
-     * Try grab both of them in case we have to make a change.
+     * The address spinlock of the network protects the variables, while the
+     * big lock protects the calling of pfnSetState.  Grab both lock at once
+     * to save us the extra hazzle.
      */
-    int             rcTrunkLock = VERR_SEM_DESTROYED;
-    PINTNETTRUNKIF  pTrunk      = pNetwork->MacTab.pTrunk;
-    if (pTrunk && intnetR0TrunkIfOutLock(pTrunk))
-        rcTrunkLock = VINF_SUCCESS;
+    PINTNET         pIntNet = pNetwork->pIntNet;
+    int rc = RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
+    AssertRCReturn(rc, rc);
 
-    bool            fTellTrunk  = false;
-    RTSPINLOCKTMP   Tmp         = RTSPINLOCKTMP_INITIALIZER;
+    PINTNETTRUNKIF  pTrunk  = NULL;
+    RTSPINLOCKTMP   Tmp     = RTSPINLOCKTMP_INITIALIZER;
     RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
 
     /*
@@ -3674,12 +3658,25 @@ static int intnetR0NetworkSetIfActive(PINTNETNETWORK pNetwork, PINTNETIF pIf, bo
             if (fActive)
             {
                 pNetwork->cActiveIFs++;
-                fTellTrunk = pNetwork->cActiveIFs == 1;
+                if (pNetwork->cActiveIFs == 1)
+                {
+                    pTrunk = pNetwork->MacTab.pTrunk;
+                    if (pTrunk)
+                    {
+                        pNetwork->MacTab.fHostActive = true;
+                        pNetwork->MacTab.fWireActive = true;
+                    }
+                }
             }
             else
             {
                 pNetwork->cActiveIFs--;
-                fTellTrunk = pNetwork->cActiveIFs == 0;
+                if (pNetwork->cActiveIFs == 0)
+                {
+                    pTrunk = pNetwork->MacTab.pTrunk;
+                    pNetwork->MacTab.fHostActive = false;
+                    pNetwork->MacTab.fWireActive = false;
+                }
             }
         }
     }
@@ -3689,13 +3686,10 @@ static int intnetR0NetworkSetIfActive(PINTNETNETWORK pNetwork, PINTNETIF pIf, bo
     /*
      * Tell the trunk if necessary.
      */
-    if (RT_SUCCESS(rcTrunkLock))
-    {
-        if (fTellTrunk && pTrunk->pIfPort)
-            pTrunk->pIfPort->pfnSetActive(pTrunk->pIfPort, fActive);
+    if (pTrunk && pTrunk->pIfPort)
+        pTrunk->pIfPort->pfnSetState(pTrunk->pIfPort, fActive ? INTNETTRUNKIFSTATE_ACTIVE : INTNETTRUNKIFSTATE_INACTIVE);
 
-        intnetR0TrunkIfOutUnlock(pTrunk);
-    }
+    RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
 
     return VINF_SUCCESS;
 }
@@ -4515,71 +4509,12 @@ static void intnetR0TrunkIfRelease(PINTNETTRUNKIF pThis)
 
 
 /**
- * Takes the out-bound trunk lock.
- *
- * This will ensure that pIfPort is valid.
- *
- * @returns success indicator.
- * @param   pThis       The trunk.
- *
- * @remarks No locks other than the create/destroy one.
- */
-static bool intnetR0TrunkIfOutLock(PINTNETTRUNKIF pThis)
-{
-    AssertPtrReturn(pThis, false);
-    int rc = RTSemFastMutexRequest(pThis->FastMutex3);
-    if (RT_SUCCESS(rc))
-    {
-        if (RT_LIKELY(pThis->pIfPort))
-            return true;
-        RTSemFastMutexRelease(pThis->FastMutex3);
-    }
-    else
-        AssertMsg(rc == VERR_SEM_DESTROYED, ("%Rrc\n", rc));
-    return false;
-}
-
-
-/**
- * Releases the out-bound trunk lock.
- *
- * @param   pThis       The trunk.
- */
-static void intnetR0TrunkIfOutUnlock(PINTNETTRUNKIF pThis)
-{
-    if (pThis)
-    {
-        int rc = RTSemFastMutexRelease(pThis->FastMutex3);
-        AssertRC(rc);
-    }
-}
-
-
-/**
- * Deactivates the trunk interface.
- *
- * @param   pThis       The trunk.
- *
- * @remarks Caller may only own the create/destroy lock.
- */
-static void intnetR0TrunkIfDeactivate(PINTNETTRUNKIF pThis)
-{
-    if (intnetR0TrunkIfOutLock(pThis))
-    {
-        pThis->pIfPort->pfnSetActive(pThis->pIfPort, false /*fActive*/);
-        intnetR0TrunkIfOutUnlock(pThis);
-    }
-}
-
-
-/**
  * Shutdown the trunk interface.
  *
  * @param   pThis       The trunk.
  * @param   pNetworks   The network.
  *
- * @remarks The caller must *NOT* hold the network lock. The global
- *          create/destroy lock is fine though.
+ * @remarks The caller must hold the global lock.
  */
 static void intnetR0TrunkIfDestroy(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork)
 {
@@ -4597,8 +4532,6 @@ static void intnetR0TrunkIfDestroy(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork
     PINTNETTRUNKIFPORT pIfPort = pThis->pIfPort;
     if (pIfPort)
     {
-        intnetR0TrunkIfOutLock(pThis);
-
         /* unset it */
         pThis->pIfPort = NULL;
 
@@ -4636,11 +4569,7 @@ static void intnetR0TrunkIfDestroy(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork
     /*
      * Free up the resources.
      */
-    RTSEMFASTMUTEX hFastMutex = pThis->FastMutex3;
-    pThis->FastMutex3 = NIL_RTSEMMUTEX;
     pThis->pNetwork   = NULL;
-    RTSemFastMutexRelease(hFastMutex);
-    RTSemFastMutexDestroy(hFastMutex);
     RTSpinlockDestroy(pThis->hDstTabSpinlock);
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->apTaskDstTabs); i++)
     {
@@ -4734,7 +4663,6 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
         pTrunk->SwitchPort.pfnReportGsoCapabilities   = intnetR0TrunkIfPortReportGsoCapabilities;
         pTrunk->SwitchPort.pfnReportNoPreemptDsts     = intnetR0TrunkIfPortReportNoPreemptDsts;
         pTrunk->SwitchPort.u32VersionEnd              = INTNETTRUNKSWPORT_VERSION;
-        pTrunk->FastMutex3                = NIL_RTSEMFASTMUTEX;
         //pTrunk->pIfPort                 = NULL;
         pTrunk->pNetwork                  = pNetwork;
         pTrunk->MacAddr.au8[0]            = 0xff;
@@ -4756,11 +4684,9 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
         //pTrunk->apIntDstTabs            = above;
 
         /*
-         * Create the locks (we've NIL'ed the members above to simplify cleanup).
+         * Create the lock (we've NIL'ed the members above to simplify cleanup).
          */
-        rc = RTSemFastMutexCreate(&pTrunk->FastMutex3);
-        if (RT_SUCCESS(rc))
-            rc = RTSpinlockCreate(&pTrunk->hDstTabSpinlock);
+        rc = RTSpinlockCreate(&pTrunk->hDstTabSpinlock);
         if (RT_SUCCESS(rc))
         {
             /*
@@ -4772,9 +4698,9 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
             pNetwork->MacTab.pTrunk           = pTrunk;
             pNetwork->MacTab.HostMac          = pTrunk->MacAddr;
             pNetwork->MacTab.fHostPromiscuous = false;
-            pNetwork->MacTab.fHostActive      = true;
+            pNetwork->MacTab.fHostActive      = false;
             pNetwork->MacTab.fWirePromiscuous = false; /** @todo !!(fFlags & INTNET_OPEN_FLAGS_PROMISC_TRUNK_WIRE); */
-            pNetwork->MacTab.fWireActive      = true;
+            pNetwork->MacTab.fWireActive      = false;
 
 #ifdef IN_RING0 /* (testcase is ring-3) */
             /*
@@ -4806,13 +4732,10 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
 #endif /* IN_RING3 */
 
             pNetwork->MacTab.pTrunk      = NULL;
-            pNetwork->MacTab.fHostActive = false;
-            pNetwork->MacTab.fWireActive = false;
         }
 
         /* bail out and clean up. */
         RTSpinlockDestroy(pTrunk->hDstTabSpinlock);
-        RTSemFastMutexDestroy(pTrunk->FastMutex3);
     }
 
     for (unsigned i = 0; i < RT_ELEMENTS(pTrunk->apTaskDstTabs); i++)
@@ -4847,10 +4770,12 @@ static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, vo
     RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
 
     /*
-     * Deactivate the trunk connection first (if any).
+     * Tell the trunk, if present, that we're about to disconnect it and wish
+     * no further calls from it.
      */
-    if (pNetwork->MacTab.pTrunk)
-        intnetR0TrunkIfDeactivate(pNetwork->MacTab.pTrunk);
+    PINTNETTRUNKIF pTrunk = pNetwork->MacTab.pTrunk;
+    if (pTrunk)
+        pTrunk->pIfPort->pfnSetState(pTrunk->pIfPort, INTNETTRUNKIFSTATE_DISCONNECTING);
 
     /*
      * Deactivate and orphan any remaining interfaces and wait for them to idle.
@@ -4877,8 +4802,8 @@ static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, vo
 
     /* Wait for all the interfaces to quiesce.  (Interfaces cannot be
        removed / added since we're holding the big lock.) */
-    if (pNetwork->MacTab.pTrunk)
-        intnetR0BusyWait(pNetwork, &pNetwork->MacTab.pTrunk->cBusy);
+    if (pTrunk)
+        intnetR0BusyWait(pNetwork, &pTrunk->cBusy);
 
     iIf = pNetwork->MacTab.cEntries;
     while (iIf-- > 0)
@@ -4903,10 +4828,9 @@ static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, vo
     }
 
     /*
-     * Grab and zap the trunk pointer while we still own the spinlock, destroy
-     * the trunk after we've left it.  Note that this might take a while...
+     * Zap the trunk pointer while we still own the spinlock, destroy the
+     * trunk after we've left it.  Note that this might take a while...
      */
-    PINTNETTRUNKIF pTrunk = pNetwork->MacTab.pTrunk;
     pNetwork->MacTab.pTrunk = NULL;
 
     RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
