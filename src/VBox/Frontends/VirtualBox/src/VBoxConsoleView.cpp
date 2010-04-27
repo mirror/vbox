@@ -4282,7 +4282,9 @@ void VBoxConsoleView::updateDockOverlay()
          mLastState == KMachineState_Restoring ||
          mLastState == KMachineState_TeleportingPausedVM ||
          mLastState == KMachineState_TeleportingIn ||
-         mLastState == KMachineState_Saving))
+         mLastState == KMachineState_Saving ||
+         mLastState == KMachineState_DeletingSnapshotOnline ||
+         mLastState == KMachineState_DeletingSnapshotPaused))
         updateDockIcon();
     else
         mDockIconPreview->updateDockOverlay();
