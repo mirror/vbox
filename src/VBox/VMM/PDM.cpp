@@ -1948,6 +1948,55 @@ VMMR3DECL(int) PDMR3QueryLun(PVM pVM, const char *pszDevice, unsigned iInstance,
     return rc;
 }
 
+
+/**
+ * Query the interface of a named driver on a LUN.
+ *
+ * If the driver appears more than once in the driver chain, the first instance
+ * is returned.
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM Handle.
+ * @param   pszDevice       Device name.
+ * @param   iInstance       Device instance.
+ * @param   iLun            The Logical Unit to obtain the interface of.
+ * @param   pszDriver       The driver name.
+ * @param   ppBase          Where to store the base interface pointer.
+ *
+ * @remark  We're not doing any locking ATM, so don't try call this at times when the
+ *          device chain is known to be updated.
+ */
+VMMR3DECL(int) PDMR3QueryDriverOnLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, const char *pszDriver, PPPDMIBASE ppBase)
+{
+    LogFlow(("PDMR3QueryDriverOnLun: pszDevice=%p:{%s} iInstance=%u iLun=%u pszDriver=%p:{%s} ppBase=%p\n",
+             pszDevice, pszDevice, iInstance, iLun, pszDriver, pszDriver, ppBase));
+
+    /*
+     * Find the LUN.
+     */
+    PPDMLUN pLun;
+    int rc = pdmR3DevFindLun(pVM, pszDevice, iInstance, iLun, &pLun);
+    if (RT_SUCCESS(rc))
+    {
+        if (pLun->pTop)
+        {
+            for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                if (!strcmp(pDrvIns->pReg->szName, pszDriver))
+                {
+                    *ppBase = &pDrvIns->IBase;
+                    LogFlow(("PDMR3QueryDriverOnLun: return %Rrc and *ppBase=%p\n", VINF_SUCCESS, *ppBase));
+                    return VINF_SUCCESS;
+
+                }
+            rc = VERR_PDM_DRIVER_NOT_FOUND;
+        }
+        else
+            rc = VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN;
+    }
+    LogFlow(("PDMR3QueryDriverOnLun: returns %Rrc\n", rc));
+    return rc;
+}
+
 /**
  * Executes pending DMA transfers.
  * Forced Action handler.
