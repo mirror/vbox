@@ -17,24 +17,61 @@
 
 /** @page pg_netflt     VBoxNetFlt - Network Interface Filter
  *
- * This is a kernel module that attaches to a real interface on the host
- * and filters and injects packets.
+ * This is a kernel module that attaches to a real interface on the host and
+ * filters and injects packets.
  *
  * In the big picture we're one of the three trunk interface on the internal
  * network, the one named "NIC Filter Driver": @image html Networking_Overview.gif
  *
  *
- * @section  sec_netflt_msc      Locking / Sequence Diagrams
+ * @section  sec_netflt_locking     Locking and Potential Races
+ *
+ * The main challenge here is to make sure the netfilter and internal network
+ * instances won't be destroyed while someone is calling into them.
+ *
+ * The main calls into or out of of the filter driver are:
+ *      - Send.
+ *      - Async send completion (not implemented yet)
+ *      - Release by the internal network.
+ *      - Receive.
+ *      - Disappearance of the host networking interface.
+ *      - Reappearance of the host networking interface.
+ *
+ * The latter two calls are can be caused by driver unloading/loading or the
+ * device being physical unplugged (e.g. a USB network device).  Actually, the
+ * unload scenario must fervently be prevent as it will cause panics because the
+ * internal network will assume the trunk is around until it releases it.
+ * @todo Need to figure which host allow unloading and block/fix it.
+ *
+ * Currently the netfilter instance lives until the internal network releases
+ * it. So, it is the internal networks responsibility to make sure there are no
+ * active calls when it releases the trunk and destroys the network.  The
+ * netfilter assists in this by providing INTNETTRUNKIFPORT::pfnSetState and
+ * INTNETTRUNKIFPORT::pfnWaitForIdle.  The trunk state is used to enable/disable
+ * promiscuous mode on the hardware NIC (or similar activation) as well
+ * indicating that disconnect is imminent and no further calls shall be made
+ * into the internal network.  After changing the state to disconnecting and
+ * prior to invoking INTNETTRUNKIFPORT::pfnDisconnectAndRelease, the internal
+ * network will use INTNETTRUNKIFPORT::pfnWaitForIdle to wait for any still
+ * active calls to complete.
+ *
+ * The netfilter employs a busy counter and an internal state in addition to the
+ * public trunk state.  All these variables are protected using a spinlock.
+ *
+ *
+ * @section  sec_netflt_msc     Locking / Sequence Diagrams - OBSOLETE
+ *
+ * !OBSOLETE! - THIS WAS THE OLD APPROACH!
  *
  * This secion contains a few sequence diagrams describing the problematic
  * transitions of a host interface filter instance.
  *
  * The thing that makes it all a bit problematic is that multiple events may
  * happen at the same time, and that we have to be very careful to avoid
- * deadlocks caused by mixing our locks with the ones in the host kernel.
- * The main events are receive, send, async send completion, disappearance of
- * the host networking interface and it's reappearance. The latter two events
- * are can be caused by driver unloading/loading or the device being physical
+ * deadlocks caused by mixing our locks with the ones in the host kernel. The
+ * main events are receive, send, async send completion, disappearance of the
+ * host networking interface and its reappearance.  The latter two events are
+ * can be caused by driver unloading/loading or the device being physical
  * unplugged (e.g. a USB network device).
  *
  * The strategy for dealing with these issues are:
@@ -48,7 +85,7 @@
  *      using a spinlock.
  *
  *
- * @subsection subsec_netflt_msc_dis_rel    Disconnect from the network and release
+ * @subsection subsec_netflt_msc_dis_rel    Disconnect from the network and release - OBSOLETE
  *
  * @msc
  *      VM, IntNet, NetFlt, Kernel, Wire;
@@ -113,7 +150,7 @@
  *
  *
  *
- * @subsection subsec_netflt_msc_hif_rm    Host Interface Removal
+ * @subsection subsec_netflt_msc_hif_rm    Host Interface Removal - OBSOLETE
  *
  * The ifnet_t (pIf) is a tricky customer as any reference to it can potentially
  * race the filter detaching. The simple way of solving it on Darwin is to guard
@@ -153,7 +190,7 @@
  *
  *
  *
- * @subsection subsec_netflt_msc_hif_rm    Host Interface Rediscovery
+ * @subsection subsec_netflt_msc_hif_rm    Host Interface Rediscovery - OBSOLETE
  *
  * The rediscovery is performed when we receive a send request and a certain
  * period have elapsed since the last attempt, i.e. we're polling it. We
@@ -337,15 +374,28 @@ static void vboxNetFltUnlinkLocked(PVBOXNETFLTGLOBALS pGlobals, PVBOXNETFLTINS p
  */
 static bool vboxNetFltMaybeRediscovered(PVBOXNETFLTINS pThis)
 {
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    uint64_t Now = RTTimeNanoTS();
-    bool fRediscovered;
-    bool fDoIt;
+    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
+    uint64_t        Now;
+    bool            fRediscovered;
+    bool            fDoIt;
+
+    /*
+     * Don't do rediscovery if we're called with preemption disabled.
+     *
+     * Note! This may cause trouble if we're always called with preemptioni
+     *       disabled and vboxNetFltOsMaybeRediscovered actually does some real
+     *       work.  For the time being though, only Darwin and FreeBSD depends
+     *       on these call outs and neither supports sending with preemption
+     *       disabled.
+     */
+    if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+        return false;
 
     /*
      * Rediscovered already? Time to try again?
      */
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    Now = RTTimeNanoTS();
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
 
     fRediscovered = !ASMAtomicUoReadBool(&pThis->fDisconnectedFromHost);
     fDoIt = !fRediscovered
@@ -354,7 +404,7 @@ static bool vboxNetFltMaybeRediscovered(PVBOXNETFLTINS pThis)
     if (fDoIt)
         ASMAtomicWriteBool(&pThis->fRediscoveryPending, true);
 
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     /*
      * Call the OS specific code to do the job.
@@ -371,7 +421,8 @@ static bool vboxNetFltMaybeRediscovered(PVBOXNETFLTINS pThis)
         ASMAtomicWriteBool(&pThis->fRediscoveryPending, false);
 
         if (fRediscovered)
-            vboxNetFltPortOsSetActive(pThis, pThis->fActive);
+            /** @todo this isn't 100% serialized. */
+            vboxNetFltPortOsSetActive(pThis, pThis->enmTrunkState == INTNETTRUNKIFSTATE_ACTIVE);
     }
 
     return fRediscovered;
@@ -393,17 +444,18 @@ static DECLCALLBACK(int) vboxNetFltPortXmit(PINTNETTRUNKIFPORT pIfPort, PINTNETS
     AssertPtr(pSG);
     Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
     AssertReturn(vboxNetFltGetState(pThis) == kVBoxNetFltInsState_Connected, VERR_INVALID_STATE);
-    Assert(pThis->fActive);
 
     /*
      * Do a busy retain and then make sure we're connected to the interface
      * before invoking the OS specific code.
      */
-    vboxNetFltRetain(pThis, true /* fBusy */);
-    if (    !ASMAtomicUoReadBool(&pThis->fDisconnectedFromHost)
-        ||  vboxNetFltMaybeRediscovered(pThis))
-        rc = vboxNetFltPortOsXmit(pThis, pSG, fDst);
-    vboxNetFltRelease(pThis, true /* fBusy */);
+    if (RT_LIKELY(vboxNetFltTryRetainBusyActive(pThis)))
+    {
+        if (    !ASMAtomicUoReadBool(&pThis->fDisconnectedFromHost)
+            ||  vboxNetFltMaybeRediscovered(pThis))
+            rc = vboxNetFltPortOsXmit(pThis, pSG, fDst);
+        vboxNetFltRelease(pThis, true /* fBusy */);
+    }
 
     return rc;
 }
@@ -423,7 +475,7 @@ static DECLCALLBACK(int) vboxNetFltPortWaitForIdle(PINTNETTRUNKIFPORT pIfPort, u
     AssertPtr(pThis);
     Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
     AssertReturn(vboxNetFltGetState(pThis) == kVBoxNetFltInsState_Connected, VERR_INVALID_STATE);
-    AssertReturn(!pThis->fActive, VERR_INVALID_STATE);
+    AssertReturn(pThis->enmTrunkState == INTNETTRUNKIFSTATE_DISCONNECTING, VERR_INVALID_STATE);
 
     /*
      * Go to sleep on the semaphore after checking the busy count.
@@ -441,11 +493,13 @@ static DECLCALLBACK(int) vboxNetFltPortWaitForIdle(PINTNETTRUNKIFPORT pIfPort, u
 
 
 /**
- * @copydoc INTNETTRUNKIFPORT::pfnSetActive
+ * @copydoc INTNETTRUNKIFPORT::pfnSetState
  */
-static DECLCALLBACK(bool) vboxNetFltPortSetActive(PINTNETTRUNKIFPORT pIfPort, bool fActive)
+static DECLCALLBACK(INTNETTRUNKIFSTATE) vboxNetFltPortSetState(PINTNETTRUNKIFPORT pIfPort, INTNETTRUNKIFSTATE enmState)
 {
-    PVBOXNETFLTINS pThis = IFPORT_2_VBOXNETFLTINS(pIfPort);
+    PVBOXNETFLTINS      pThis = IFPORT_2_VBOXNETFLTINS(pIfPort);
+    RTSPINLOCKTMP       Tmp   = RTSPINLOCKTMP_INITIALIZER;
+    INTNETTRUNKIFSTATE  enmOldTrunkState;
 
     /*
      * Input validation.
@@ -453,25 +507,29 @@ static DECLCALLBACK(bool) vboxNetFltPortSetActive(PINTNETTRUNKIFPORT pIfPort, bo
     AssertPtr(pThis);
     AssertPtr(pThis->pGlobals);
     Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
-    AssertReturn(vboxNetFltGetState(pThis) == kVBoxNetFltInsState_Connected, false);
+    AssertReturn(vboxNetFltGetState(pThis) == kVBoxNetFltInsState_Connected, INTNETTRUNKIFSTATE_INVALID);
+    AssertReturn(enmState > INTNETTRUNKIFSTATE_INVALID && enmState < INTNETTRUNKIFSTATE_END,
+                 INTNETTRUNKIFSTATE_INVALID);
 
     /*
-     * We're assuming that the caller is serializing the calls, so we don't
-     * have to be extremely careful here. Just update first and then call
-     * the OS specific code, the update must be serialized for various reasons.
+     * Take the lock and change the state.
      */
-    if (ASMAtomicReadBool(&pThis->fActive) != fActive)
-    {
-        RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-        RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
-        ASMAtomicWriteBool(&pThis->fActive, fActive);
-        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
+    enmOldTrunkState = pThis->enmTrunkState;
+    if (enmOldTrunkState != enmState)
+        ASMAtomicWriteU32((uint32_t volatile *)&pThis->enmTrunkState, enmState);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
-        vboxNetFltPortOsSetActive(pThis, fActive);
-    }
-    else
-        fActive = !fActive;
-    return !fActive;
+    /*
+     * If the state change indicates that the trunk has become active or
+     * inactive, call the OS specific part so they can work the promiscuous
+     * settings and such.
+     * Note! The caller makes sure there are no concurrent pfnSetState calls.
+     */
+    if ((enmOldTrunkState == INTNETTRUNKIFSTATE_ACTIVE) != (enmState == INTNETTRUNKIFSTATE_ACTIVE))
+        vboxNetFltPortOsSetActive(pThis, (enmState == INTNETTRUNKIFSTATE_ACTIVE));
+
+    return enmOldTrunkState;
 }
 
 
@@ -495,24 +553,24 @@ static DECLCALLBACK(void) vboxNetFltPortDisconnectAndRelease(PINTNETTRUNKIFPORT 
     Assert(pThis->szName[0]);
 
     Assert(vboxNetFltGetState(pThis) == kVBoxNetFltInsState_Connected);
-    Assert(!pThis->fActive);
+    Assert(pThis->enmTrunkState == INTNETTRUNKIFSTATE_DISCONNECTING);
     Assert(!pThis->fRediscoveryPending);
     Assert(!pThis->cBusy);
 
     /*
      * Disconnect and release it.
      */
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     vboxNetFltSetState(pThis, kVBoxNetFltInsState_Disconnecting);
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     vboxNetFltOsDisconnectIt(pThis);
     pThis->pSwitchPort = NULL;
 
 #ifdef VBOXNETFLT_STATIC_CONFIG
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     vboxNetFltSetState(pThis, kVBoxNetFltInsState_Unconnected);
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 #endif
 
     vboxNetFltRelease(pThis, false /* fBusy */);
@@ -542,7 +600,7 @@ static bool vboxNetFltDestroyInstance(PVBOXNETFLTINS pThis)
 #else
     Assert(vboxNetFltGetState(pThis) == kVBoxNetFltInsState_Disconnecting);
 #endif
-    Assert(!pThis->fActive);
+    Assert(pThis->enmTrunkState == INTNETTRUNKIFSTATE_DISCONNECTING);
     Assert(!pThis->fRediscoveryPending);
     Assert(!pThis->cRefs);
     Assert(!pThis->cBusy);
@@ -683,6 +741,101 @@ DECLHIDDEN(void) vboxNetFltRetain(PVBOXNETFLTINS pThis, bool fBusy)
 
 
 /**
+ * Tries to retain the device as busy if the trunk is active.
+ *
+ * This is used before calling pfnRecv or pfnPreRecv.
+ *
+ * @returns true if we succeeded in retaining a busy reference to the active
+ *          device.  false if we failed.
+ * @param   pThis           The instance.
+ */
+DECLHIDDEN(bool) vboxNetFltTryRetainBusyActive(PVBOXNETFLTINS pThis)
+{
+    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
+    uint32_t        cRefs;
+    bool            fRc;
+
+    /*
+     * Paranoid Android.
+     */
+    AssertPtr(pThis);
+    Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
+    Assert(pThis->MyPort.u32VersionEnd == INTNETTRUNKIFPORT_VERSION);
+    Assert(   vboxNetFltGetState(pThis) > kVBoxNetFltInsState_Invalid
+           && vboxNetFltGetState(pThis) < kVBoxNetFltInsState_Destroyed);
+    AssertPtr(pThis->pGlobals);
+    Assert(pThis->hEventIdle != NIL_RTSEMEVENT);
+    Assert(pThis->hSpinlock != NIL_RTSPINLOCK);
+    Assert(pThis->szName[0]);
+
+    /*
+     * Do the retaining and checking behind the spinlock.
+     */
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
+    fRc = pThis->enmTrunkState == INTNETTRUNKIFSTATE_ACTIVE;
+    if (fRc)
+    {
+        cRefs = ASMAtomicIncU32(&pThis->cRefs);
+        AssertMsg(cRefs > 1 && cRefs < UINT32_MAX / 2, ("%d\n", cRefs)); NOREF(cRefs);
+
+        cRefs = ASMAtomicIncU32(&pThis->cBusy);
+        AssertMsg(cRefs >= 1 && cRefs < UINT32_MAX / 2, ("%d\n", cRefs)); NOREF(cRefs);
+    }
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
+
+    return fRc;
+}
+
+
+/**
+ * Tries to retain the device as busy if the trunk is not disconnecting.
+ *
+ * This is used before reporting stuff to the internal network.
+ *
+ * @returns true if we succeeded in retaining a busy reference to the active
+ *          device.  false if we failed.
+ * @param   pThis           The instance.
+ */
+DECLHIDDEN(bool) vboxNetFltTryRetainBusyNotDisconnected(PVBOXNETFLTINS pThis)
+{
+    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
+    uint32_t        cRefs;
+    bool            fRc;
+
+    /*
+     * Paranoid Android.
+     */
+    AssertPtr(pThis);
+    Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
+    Assert(pThis->MyPort.u32VersionEnd == INTNETTRUNKIFPORT_VERSION);
+    Assert(   vboxNetFltGetState(pThis) > kVBoxNetFltInsState_Invalid
+           && vboxNetFltGetState(pThis) < kVBoxNetFltInsState_Destroyed);
+    AssertPtr(pThis->pGlobals);
+    Assert(pThis->hEventIdle != NIL_RTSEMEVENT);
+    Assert(pThis->hSpinlock != NIL_RTSPINLOCK);
+    Assert(pThis->szName[0]);
+
+    /*
+     * Do the retaining and checking behind the spinlock.
+     */
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
+    fRc =  pThis->enmTrunkState == INTNETTRUNKIFSTATE_ACTIVE
+        || pThis->enmTrunkState == INTNETTRUNKIFSTATE_INACTIVE;
+    if (fRc)
+    {
+        cRefs = ASMAtomicIncU32(&pThis->cRefs);
+        AssertMsg(cRefs > 1 && cRefs < UINT32_MAX / 2, ("%d\n", cRefs)); NOREF(cRefs);
+
+        cRefs = ASMAtomicIncU32(&pThis->cBusy);
+        AssertMsg(cRefs >= 1 && cRefs < UINT32_MAX / 2, ("%d\n", cRefs)); NOREF(cRefs);
+    }
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
+
+    return fRc;
+}
+
+
+/**
  * @copydoc INTNETTRUNKIFPORT::pfnRetain
  */
 static DECLCALLBACK(void) vboxNetFltPortRetain(PINTNETTRUNKIFPORT pIfPort)
@@ -712,7 +865,7 @@ static int vboxNetFltConnectIt(PVBOXNETFLTINS pThis, PINTNETTRUNKSWPORT pSwitchP
     /*
      * Validate state.
      */
-    Assert(!pThis->fActive);
+    Assert(pThis->enmTrunkState == INTNETTRUNKIFSTATE_INACTIVE);
     Assert(!pThis->fRediscoveryPending);
     Assert(!pThis->cBusy);
 #ifdef VBOXNETFLT_STATIC_CONFIG
@@ -735,7 +888,7 @@ static int vboxNetFltConnectIt(PVBOXNETFLTINS pThis, PINTNETTRUNKSWPORT pSwitchP
     else
         pThis->pSwitchPort = NULL;
 
-    Assert(!pThis->fActive);
+    Assert(pThis->enmTrunkState == INTNETTRUNKIFSTATE_INACTIVE);
     return rc;
 }
 
@@ -772,7 +925,7 @@ static int vboxNetFltNewInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszNam
     pNew->MyPort.pfnRetain              = vboxNetFltPortRetain;
     pNew->MyPort.pfnRelease             = vboxNetFltPortRelease;
     pNew->MyPort.pfnDisconnectAndRelease= vboxNetFltPortDisconnectAndRelease;
-    pNew->MyPort.pfnSetActive           = vboxNetFltPortSetActive;
+    pNew->MyPort.pfnSetState            = vboxNetFltPortSetState;
     pNew->MyPort.pfnWaitForIdle         = vboxNetFltPortWaitForIdle;
     pNew->MyPort.pfnXmit                = vboxNetFltPortXmit;
     pNew->MyPort.u32VersionEnd          = INTNETTRUNKIFPORT_VERSION;
@@ -780,7 +933,7 @@ static int vboxNetFltNewInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszNam
     pNew->pGlobals                      = pGlobals;
     pNew->hSpinlock                     = NIL_RTSPINLOCK;
     pNew->enmState                      = kVBoxNetFltInsState_Initializing;
-    pNew->fActive                       = false;
+    pNew->enmTrunkState                 = INTNETTRUNKIFSTATE_INACTIVE;
     pNew->fDisconnectedFromHost         = false;
     pNew->fRediscoveryPending           = false;
     pNew->fDisablePromiscuous           = fNoPromisc;
