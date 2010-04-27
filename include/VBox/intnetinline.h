@@ -205,7 +205,7 @@ DECLINLINE(void) IntNetSgReadEx(PCINTNETSG pSG, uint32_t offSrc, uint32_t cbToRe
     uint32_t    iSeg  = 0;
 
     /* validate assumptions */
-    Assert(cbToRead          <  pSG->cbTotal);
+    Assert(cbToRead          <= pSG->cbTotal);
     Assert(offSrc            <= pSG->cbTotal);
     Assert(offSrc + cbToRead <= pSG->cbTotal);
 
