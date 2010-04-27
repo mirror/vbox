@@ -380,7 +380,7 @@ int main(int argc, char **argv)
 
     RTR3Init();
     RTPrintf("vditool -- for internal use only!\n"
-             "Copyright (c) 2009 Sun Microsystems, Inc.\n\n");
+             "Copyright (c) 2009 Oracle Corporation\n\n");
 
     /*
      * Do cmd line parsing.
