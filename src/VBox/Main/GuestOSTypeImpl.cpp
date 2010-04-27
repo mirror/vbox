@@ -30,7 +30,10 @@ GuestOSType::GuestOSType()
     , mHDDSize (0), mMonitorCount (0)
     , mNetworkAdapterType (NetworkAdapterType_Am79C973)
     , mNumSerialEnabled (0)
-    , mStorageControllerType(StorageControllerType_PIIX3)
+    , mDvdStorageControllerType(StorageControllerType_PIIX3)
+    , mDvdStorageBusType(StorageBus_IDE)
+    , mHdStorageControllerType(StorageControllerType_PIIX3)
+    , mHdStorageBusType(StorageBus_IDE)
 {
 }
 
@@ -71,7 +74,10 @@ HRESULT GuestOSType::init (const char *aFamilyId, const char *aFamilyDescription
                            uint32_t aRAMSize, uint32_t aVRAMSize, uint32_t aHDDSize,
                            NetworkAdapterType_T aNetworkAdapterType,
                            uint32_t aNumSerialEnabled,
-                           StorageControllerType_T aStorageControllerType)
+                           StorageControllerType_T aDvdStorageControllerType,
+                           StorageBus_T aDvdStorageBusType,
+                           StorageControllerType_T aHdStorageControllerType,
+                           StorageBus_T aHdStorageBusType)
 {
 #if 0
     LogFlowThisFunc(("aFamilyId='%s', aFamilyDescription='%s', "
@@ -106,7 +112,10 @@ HRESULT GuestOSType::init (const char *aFamilyId, const char *aFamilyDescription
     unconst(mHDDSize) = aHDDSize;
     unconst(mNetworkAdapterType) = aNetworkAdapterType;
     unconst(mNumSerialEnabled) = aNumSerialEnabled;
-    unconst(mStorageControllerType) = aStorageControllerType;
+    unconst(mDvdStorageControllerType) = aDvdStorageControllerType;
+    unconst(mDvdStorageBusType)        = aDvdStorageBusType;
+    unconst(mHdStorageControllerType)  = aHdStorageControllerType;
+    unconst(mHdStorageBusType)         = aHdStorageBusType;
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
@@ -301,7 +310,7 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedFirmware) (FirmwareType_T *aFirmw
     return S_OK;
 }
 
-STDMETHODIMP GuestOSType::COMGETTER(RecommendedStorageController) (StorageControllerType_T * aStorageControllerType)
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedDvdStorageController) (StorageControllerType_T * aStorageControllerType)
 {
     CheckComArgOutPointerValid(aStorageControllerType);
 
@@ -309,7 +318,46 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedStorageController) (StorageContro
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* storage controller type is constant during life time, no need to lock */
-    *aStorageControllerType = mStorageControllerType;
+    *aStorageControllerType = mDvdStorageControllerType;
+
+    return S_OK;
+}
+
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedDvdStorageBus) (StorageBus_T * aStorageBusType)
+{
+    CheckComArgOutPointerValid(aStorageBusType);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* storage controller type is constant during life time, no need to lock */
+    *aStorageBusType = mDvdStorageBusType;
+
+    return S_OK;
+}
+
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedHdStorageController) (StorageControllerType_T * aStorageControllerType)
+{
+    CheckComArgOutPointerValid(aStorageControllerType);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* storage controller type is constant during life time, no need to lock */
+    *aStorageControllerType = mHdStorageControllerType;
+
+    return S_OK;
+}
+
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedHdStorageBus) (StorageBus_T * aStorageBusType)
+{
+    CheckComArgOutPointerValid(aStorageBusType);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* storage controller type is constant during life time, no need to lock */
+    *aStorageBusType = mHdStorageBusType;
 
     return S_OK;
 }

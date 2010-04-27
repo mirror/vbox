@@ -666,16 +666,41 @@ bool UINewVMWzdPage5::constructMachine()
     }
 
     /* Create default storage controllers */
-    QString ctrName = VBoxVMSettingsHD::tr("Storage Controller");
-    KStorageBus ideBus = KStorageBus_IDE;
+    QString ctrDvdName = VBoxVMSettingsHD::tr("Storage Controller");
+    KStorageBus ctrDvdBus = type.GetRecommendedDvdStorageBus();
 
-    // Add storage controller
-    m_Machine.AddStorageController(ctrName, ideBus);
+    // Add IDE storage controller
+    m_Machine.AddStorageController(ctrDvdName, ctrDvdBus);
 
-    // Set storage controller type
-    CStorageController ctr = m_Machine.GetStorageControllerByName(ctrName);
-    KStorageControllerType storageControllerType = type.GetRecommendedStorageController();
-    ctr.SetControllerType(storageControllerType);
+    // Set DVD storage controller type
+    CStorageController dvdCtr = m_Machine.GetStorageControllerByName(ctrDvdName);
+    KStorageControllerType dvdStorageControllerType = type.GetRecommendedDvdStorageController();
+    dvdCtr.SetControllerType(dvdStorageControllerType);
+
+    // Create a storage controller for harddisks if this is not the same as the DVD controller
+    KStorageBus ctrHdBus = type.GetRecommendedHdStorageBus();
+    KStorageControllerType hdStorageControllerType = type.GetRecommendedHdStorageController();
+    CStorageController hdCtr;
+    QString ctrHdName;
+
+    if (   ctrHdBus != ctrDvdBus
+        && hdStorageControllerType != dvdStorageControllerType)
+    {
+        ctrHdName = VBoxVMSettingsHD::tr("Storage Controller 1");
+        m_Machine.AddStorageController(ctrHdName, ctrHdBus);
+        hdCtr = m_Machine.GetStorageControllerByName(ctrHdName);
+        hdCtr.SetControllerType(hdStorageControllerType);
+
+        // Disable the I/O cache if this is not a IDE controller.
+        if (ctrHdBus != KStorageBus_IDE)
+            hdCtr.SetIoBackend(KIoBackendType_Unbuffered);
+    }
+    else
+    {
+        // The Hard disk controller is the same
+        hdCtr = dvdCtr;
+        ctrHdName = ctrDvdName;
+    }
 
     // Turn on PAE, if recommended
     m_Machine.SetCPUProperty(KCPUPropertyType_PAE, type.GetRecommendedPae());
@@ -726,16 +751,16 @@ bool UINewVMWzdPage5::constructMachine()
             /* Boot hard disk (IDE Primary Master) */
             if (!field("hardDiskId").toString().isNull())
             {
-                m.AttachDevice(ctrName, 0, 0, KDeviceType_HardDisk, field("hardDiskId").toString());
+                m.AttachDevice(ctrHdName, 0, 0, KDeviceType_HardDisk, field("hardDiskId").toString());
                 if (!m.isOk())
                     vboxProblem().cannotAttachDevice(this, m, VBoxDefs::MediumType_HardDisk,
-                                                     field("hardDiskLocation").toString(), ideBus, 0, 0);
+                                                     field("hardDiskLocation").toString(), ctrHdBus, 0, 0);
             }
 
             /* Attach empty CD/DVD ROM Device */
-            m.AttachDevice(ctrName, 1, 0, KDeviceType_DVD, QString(""));
+            m.AttachDevice(ctrDvdName, 1, 0, KDeviceType_DVD, QString(""));
             if (!m.isOk())
-                vboxProblem().cannotAttachDevice(this, m, VBoxDefs::MediumType_DVD, QString(), ideBus, 1, 0);
+                vboxProblem().cannotAttachDevice(this, m, VBoxDefs::MediumType_DVD, QString(), ctrDvdBus, 1, 0);
 
             if (m.isOk())
             {
