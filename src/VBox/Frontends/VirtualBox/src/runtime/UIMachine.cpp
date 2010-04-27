@@ -423,7 +423,6 @@ void UIMachine::loadMachineSettings()
         {
             /* Test 'seamless' flag: */
             QString strSeamlessSettings = machine.GetExtraData(VBoxDefs::GUI_Seamless);
-            printf ("%s\n", qPrintable(strSeamlessSettings));
             if (strSeamlessSettings == "on")
             {
                 fIsSomeExtendedModeChosen = true;
