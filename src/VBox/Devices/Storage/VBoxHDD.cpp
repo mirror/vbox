@@ -605,6 +605,7 @@ DECLINLINE(PVDIOCTX) vdIoCtxAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
         pIoCtx->pvAllocation          = pvAllocation;
         pIoCtx->pfnIoCtxTransfer      = pfnIoCtxTransfer;
         pIoCtx->pfnIoCtxTransferNext  = NULL;
+        pIoCtx->rcReq                 = VINF_SUCCESS;
 
         RTSgBufInit(&pIoCtx->SgBuf, pcaSeg, cSeg);
     }
