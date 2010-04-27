@@ -1169,6 +1169,20 @@ void Medium::deparent()
     m->pParent.setNull();
 }
 
+/**
+ * Internal helper that removes "this" from the list of children of its
+ * parent. Used in uninit() and other places when reparenting is necessary.
+ *
+ * The caller must hold the hard disk tree lock!
+ */
+void Medium::setParent(const ComObjPtr<Medium> &pParent)
+{
+    m->pParent = pParent;
+    if (pParent)
+        pParent->m->llChildren.push_back(this);
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // IMedium public methods
@@ -1746,7 +1760,14 @@ STDMETHODIMP Medium::UnlockRead(MediumState_T *aState)
 
             /* Reset the state after the last reader */
             if (m->readers == 0)
+            {
                 m->state = m->preLockState;
+                /* There are cases where we inject the deleting state into
+                 * a medium locked for reading. Make sure #unmarkForDeletion()
+                 * gets the right state afterwards. */
+                if (m->preLockState == MediumState_Deleting)
+                    m->preLockState = MediumState_Created;
+            }
 
             LogFlowThisFunc(("new state=%d\n", m->state));
             break;
@@ -1833,6 +1854,11 @@ STDMETHODIMP Medium::UnlockWrite(MediumState_T *aState)
         case MediumState_LockedWrite:
         {
             m->state = m->preLockState;
+            /* There are cases where we inject the deleting state into
+             * a medium locked for writing. Make sure #unmarkForDeletion()
+             * gets the right state afterwards. */
+            if (m->preLockState == MediumState_Deleting)
+                m->preLockState = MediumState_Created;
             LogFlowThisFunc(("new state=%d locationFull=%s\n", m->state, getLocationFull().c_str()));
             break;
         }
@@ -2544,6 +2570,15 @@ const Utf8Str& Medium::getLocation() const
 const Utf8Str& Medium::getLocationFull() const
 {
     return m->strLocationFull;
+}
+
+/**
+ * Internal method to return the medium's format. Must have caller + locking!
+ * @return
+ */
+const Utf8Str& Medium::getFormat() const
+{
+    return m->strFormat;
 }
 
 /**
@@ -4317,10 +4352,16 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
         {
             if (fLockMedia)
                 throw setStateError();
-            else if (   (   m->state == MediumState_LockedWrite
-                         || m->state == MediumState_LockedRead)
-                     && (m->preLockState == MediumState_Created))
-                markLockedForDeletion();
+            else if (   m->state == MediumState_LockedWrite
+                     || m->state == MediumState_LockedRead)
+            {
+                /* Either mark it for deletiion in locked state or allow
+                 * others to have done so. */
+                if (m->preLockState == MediumState_Created)
+                    markLockedForDeletion();
+                else if (m->preLockState != MediumState_Deleting)
+                    throw setStateError();
+            }
             else
                 throw setStateError();
         }
@@ -4338,9 +4379,12 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
                  ++it)
             {
                 pMedium = *it;
-                rc = pMedium->LockWrite(NULL);
-                if (FAILED(rc))
-                    throw rc;
+                if (fLockMedia)
+                {
+                    rc = pMedium->LockWrite(NULL);
+                    if (FAILED(rc))
+                        throw rc;
+                }
 
                 aChildrenToReparent.push_back(pMedium);
             }
@@ -5277,6 +5321,10 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
 
         try
         {
+            // Similar code appears in SessionMachine::onlineMergeMedium, so
+            // if you make any changes below check whether they are applicable
+            // in that context as well.
+
             unsigned uTargetIdx = VD_LAST_IMAGE;
             unsigned uSourceIdx = VD_LAST_IMAGE;
             /* Open all hard disks in the chain. */
@@ -5380,6 +5428,8 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
                         vrc = VDClose(hdd, false /* fDelete */);
                         if (RT_FAILURE(vrc))
                             throw vrc;
+
+                        (*it)->UnlockWrite(NULL);
                     }
                 }
             }
@@ -5435,14 +5485,14 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
             /* disconnect the deleted branch at the elder end */
             targetChild->deparent();
 
-            /* reparent source's chidren and disconnect the deleted
-             * branch at the younger end m*/
+            /* reparent source's children and disconnect the deleted
+             * branch at the younger end */
             if (task.mChildrenToReparent.size() > 0)
             {
                 /* obey {parent,child} lock order */
                 AutoWriteLock sourceLock(this COMMA_LOCKVAL_SRC_POS);
 
-                for (MediaList::iterator it = task.mChildrenToReparent.begin();
+                for (MediaList::const_iterator it = task.mChildrenToReparent.begin();
                      it != task.mChildrenToReparent.end();
                      it++)
                 {

@@ -45,21 +45,15 @@ MediumLock::MediumLock(const ComObjPtr<Medium> &aMedium, bool aLockWrite)
 
 HRESULT MediumLock::UpdateLock(bool aLockWrite)
 {
-    if (aLockWrite == mLockWrite)
-        return S_OK;
+    bool fPrevLockWrite = mLockWrite;
     if (mIsLocked)
     {
-        HRESULT rc = Unlock();
-        if (FAILED(rc))
-        {
-            Lock();
-            return rc;
-        }
+        Unlock();
         mLockWrite = aLockWrite;
-        rc = Lock();
+        HRESULT rc = Lock();
         if (FAILED(rc))
         {
-            mLockWrite = !mLockWrite;
+            mLockWrite = fPrevLockWrite;
             Lock();
             return rc;
         }

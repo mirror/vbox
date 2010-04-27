@@ -3020,6 +3020,8 @@ void VBoxGlobal::retranslateUi()
     mMachineStates [KMachineState_TeleportingIn] = tr ("Teleporting", "MachineState");
     mMachineStates [KMachineState_RestoringSnapshot] = tr ("Restoring Snapshot", "MachineState");
     mMachineStates [KMachineState_DeletingSnapshot] = tr ("Deleting Snapshot", "MachineState");
+    mMachineStates [KMachineState_DeletingSnapshotOnline] = tr ("Deleting Snapshot", "MachineState");
+    mMachineStates [KMachineState_DeletingSnapshotPaused] = tr ("Deleting Snapshot", "MachineState");
     mMachineStates [KMachineState_SettingUp] =  tr ("Setting Up", "MachineState");
 
     mSessionStates [KSessionState_Closed] =     tr ("Closed", "SessionState");
@@ -5115,6 +5117,8 @@ void VBoxGlobal::init()
         {KMachineState_TeleportingIn, ":/state_restoring_16px.png"},    /** @todo Live Migration: New icon? (not really important) */
         {KMachineState_RestoringSnapshot, ":/state_discarding_16px.png"},
         {KMachineState_DeletingSnapshot, ":/state_discarding_16px.png"},
+        {KMachineState_DeletingSnapshotOnline, ":/state_discarding_16px.png"},  /// @todo live snapshot deletion: new icon?
+        {KMachineState_DeletingSnapshotPaused, ":/state_discarding_16px.png"},  /// @todo live snapshot deletion: new icon?
         {KMachineState_SettingUp, ":/settings_16px.png"},
     };
     for (uint n = 0; n < SIZEOF_ARRAY (kVMStateIcons); n ++)
@@ -5142,6 +5146,8 @@ void VBoxGlobal::init()
     mVMStateColors.insert (KMachineState_TeleportingIn, new QColor (Qt::blue));
     mVMStateColors.insert (KMachineState_RestoringSnapshot, new QColor (Qt::green));
     mVMStateColors.insert (KMachineState_DeletingSnapshot, new QColor (Qt::green));
+    mVMStateColors.insert (KMachineState_DeletingSnapshotOnline, new QColor (Qt::green));
+    mVMStateColors.insert (KMachineState_DeletingSnapshotPaused, new QColor (Qt::darkGreen));
     mVMStateColors.insert (KMachineState_SettingUp,     new QColor (Qt::green));
 
     /* online/offline snapshot icons */

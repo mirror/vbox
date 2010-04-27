@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2008-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -332,16 +332,18 @@ Global::stringifyMachineState(MachineState_T aState)
         case MachineState_Teleported:           return "Teleported";
         case MachineState_Aborted:              return "Aborted";
         case MachineState_Running:              return "Running";
-        case MachineState_Teleporting:          return "Teleporting";
-        case MachineState_LiveSnapshotting:     return "LiveSnapshotting";
         case MachineState_Paused:               return "Paused";
         case MachineState_Stuck:                return "GuruMeditation";
+        case MachineState_Teleporting:          return "Teleporting";
+        case MachineState_LiveSnapshotting:     return "LiveSnapshotting";
         case MachineState_Starting:             return "Starting";
         case MachineState_Stopping:             return "Stopping";
         case MachineState_Saving:               return "Saving";
         case MachineState_Restoring:            return "Restoring";
         case MachineState_TeleportingPausedVM:  return "TeleportingPausedVM";
         case MachineState_TeleportingIn:        return "TeleportingIn";
+        case MachineState_DeletingSnapshotOnline: return "DeletingSnapshotOnline";
+        case MachineState_DeletingSnapshotPaused: return "DeletingSnapshotPaused";
         case MachineState_RestoringSnapshot:    return "RestoringSnapshot";
         case MachineState_DeletingSnapshot:     return "DeletingSnapshot";
         case MachineState_SettingUp:            return "SettingUp";
