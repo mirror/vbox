@@ -834,7 +834,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                 if (it != mCallbackList.end())
                 {
                     uint64_t u64Started = RTTimeMilliTS();
-                    do
+                    while (!it->bCalled)
                     {
                         unsigned cMsWait;
                         if (aTimeoutMS == RT_INDEFINITE_WAIT)
@@ -847,7 +847,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                             cMsWait = RT_MIN(1000, aTimeoutMS - (uint32_t)cMsElapsed);
                         }
                         RTThreadYield();
-                    } while (!it->bCalled);
+                    }
                 }
 
                 AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -1030,7 +1030,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
             if (it != mCallbackList.end())
             {
                 uint64_t u64Started = RTTimeMilliTS();
-                do
+                while (!it->bCalled)
                 {
                     unsigned cMsWait;
                     if (aTimeoutMS == RT_INDEFINITE_WAIT)
@@ -1043,7 +1043,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
                         cMsWait = RT_MIN(1000, aTimeoutMS - (uint32_t)cMsElapsed);
                     }
                     RTThreadYield();
-                } while (!it->bCalled);
+                } 
     
                 if (it->bCalled)
                 {
