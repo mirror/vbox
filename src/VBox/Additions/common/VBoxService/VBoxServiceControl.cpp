@@ -146,6 +146,8 @@ static int VBoxServiceControlHandleCmdStartProcess(uint32_t u32ClientId, uint32_
                                            szStdIn, szStdOut, szStdErr,
                                            szUser, szPassword, uTimeLimitMS);
     }
+
+    VBoxServiceVerbose(4, "Control: VBoxServiceControlHandleCmdStartProcess returned with %Rrc\n", rc);
     return rc;
 }
 
@@ -187,11 +189,12 @@ static int VBoxServiceControlHandleCmdGetOutput(uint32_t u32ClientId, uint32_t u
             PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData;
             AssertPtr(pData);
 
-            uint32_t cbRead = _4K; /* Try reading 4k. */
-            uint8_t *pBuf = (uint8_t*)RTMemAlloc(cbRead);
+            uint32_t cbSize = _4K;
+            uint32_t cbRead = cbSize;
+            uint8_t *pBuf = (uint8_t*)RTMemAlloc(cbSize);
             if (pBuf)
             {
-                rc = VBoxServiceControlExecReadPipeBufferContent(&pData->stdOut, pBuf, cbRead, &cbRead);
+                rc = VBoxServiceControlExecReadPipeBufferContent(&pData->stdOut, pBuf, cbSize, &cbRead);
                 if (RT_SUCCESS(rc))
                 {
                     AssertPtr(pBuf);
@@ -207,6 +210,7 @@ static int VBoxServiceControlHandleCmdGetOutput(uint32_t u32ClientId, uint32_t u
         else
             rc = VERR_NOT_FOUND; /* PID not found! */
     }
+    VBoxServiceVerbose(4, "Control: VBoxServiceControlHandleCmdGetOutput returned with %Rrc\n", rc);
     return rc;
 }
 

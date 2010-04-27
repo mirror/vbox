@@ -581,13 +581,20 @@ int Guest::notifyCtrlExecOut(uint32_t                 u32Function,
         pCBData->u32HandleId = pData->u32HandleId;
         pCBData->u32Flags = pData->u32Flags;
 
-        /* Allocate data buffer and copy it */
-        if (pData->cbData && pData->pvData)
+        /* Make sure we really got something! */
+        if (   pData->cbData
+            && pData->pvData)
         {
+            /* Allocate data buffer and copy it */
             pCBData->pvData = RTMemAlloc(pData->cbData);
             AssertReturn(pCBData->pvData, VERR_NO_MEMORY);
             memcpy(pCBData->pvData, pData->pvData, pData->cbData);
             pCBData->cbData = pData->cbData;
+        }
+        else
+        {
+            pCBData->pvData = NULL;
+            pCBData->cbData = 0;
         }
         ASMAtomicWriteBool(&it->bCalled, true);
     }
@@ -1038,27 +1045,48 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
                     RTThreadYield();
                 } while (!it->bCalled);
     
-                AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    
-                /* Did we get some output? */
-                pData = (HOSTEXECOUTCALLBACKDATA*)it->pvData;
-                Assert(it->cbData == sizeof(HOSTEXECOUTCALLBACKDATA));
-                AssertPtr(pData);
-    
-                if (   it->bCalled
-                    && pData->cbData
-                    && pData->pvData)
+                if (it->bCalled)
                 {
-                    /* Do we need to resize the array? */
-                    if (pData->cbData > cbData)
-                        outputData.resize(pData->cbData);
-    
-                    /* Fill output in supplied out buffer. */
-                    memcpy(outputData.raw(), pData->pvData, pData->cbData);
-                    outputData.resize(pData->cbData); /* Shrink to fit actual buffer size. */
+                    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        
+                    /* Did we get some output? */
+                    pData = (HOSTEXECOUTCALLBACKDATA*)it->pvData;
+                    Assert(it->cbData == sizeof(HOSTEXECOUTCALLBACKDATA));
+                    AssertPtr(pData);
+        
+                    if (pData->cbData)
+                    {
+                        /* Do we need to resize the array? */
+                        if (pData->cbData > cbData)
+                            outputData.resize(pData->cbData);
+        
+                        /* Fill output in supplied out buffer. */
+                        memcpy(outputData.raw(), pData->pvData, pData->cbData);
+                        outputData.resize(pData->cbData); /* Shrink to fit actual buffer size. */
+                    }
+                    else
+                        vrc = VERR_NO_DATA; /* This is not an error we want to report to COM. */
                 }
-                else
-                    vrc = VERR_NO_DATA; /* This is not an error we want to report to COM. */
+                else /* If callback not called within time ... well, that's a timeout! */
+                    vrc = VERR_TIMEOUT;
+
+                if (RT_FAILURE(vrc))
+                {
+                    if (vrc == VERR_NO_DATA)
+                    {
+                        /* This is not an error we want to report to COM. */
+                    }
+                    else if (vrc == VERR_TIMEOUT)
+                    {
+                        rc = setError(VBOX_E_IPRT_ERROR,
+                                      tr("The guest did not output within time (%ums)"), aTimeoutMS);
+                    }
+                    else
+                    {
+                        rc = setError(E_UNEXPECTED,
+                                      tr("The service call failed with error %Rrc"), vrc);
+                    }
+                }
             }
             else
                 rc = setError(VBOX_E_IPRT_ERROR,

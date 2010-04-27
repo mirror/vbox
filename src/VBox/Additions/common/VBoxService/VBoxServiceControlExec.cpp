@@ -263,8 +263,8 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
      * Before entering the loop, tell the host that we've started the guest
      * and that it's now OK to send input to the process.
      */
-    VBoxServiceVerbose(3, "Control: Process started: PID=%u, CID=%u\n",
-                       pData->uPID, pThread->uContextID);
+    VBoxServiceVerbose(3, "Control: Process started: PID=%u, CID=%u, User=%s, PW=%s\n",
+                       pData->uPID, pThread->uContextID, pData->pszUser, pData->pszPassword);
     rc = VbglR3GuestCtrlExecReportStatus(pThread->uClientID, pThread->uContextID,
                                          pData->uPID, PROC_STS_STARTED, 0 /* u32Flags */,
                                          NULL /* pvData */, 0 /* cbData */);
@@ -544,7 +544,10 @@ int VBoxServiceControlExecReadPipeBufferContent(PVBOXSERVICECTRLEXECPIPEBUF pBuf
         pBuf->cbRead += *pcbToRead;
     }
     else
+    {
         pbBuffer = NULL;
+        *pcbToRead = 0;
+    }
     return VINF_SUCCESS;
 }
 
