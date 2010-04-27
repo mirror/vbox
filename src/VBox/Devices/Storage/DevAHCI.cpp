@@ -4854,17 +4854,44 @@ static int ahciScatterGatherListCopyFromBuffer(PAHCIPORTTASKSTATE pAhciPortTaskS
  *
  * @param pAhciPort             Pointer to the port where to request completed.
  * @param pAhciPortTaskState    Pointer to the task which finished.
+ * @param rcReq                 IPRT status code of the completed request.
  */
-static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskState)
+static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskState, int rcReq)
 {
     /* Free system resources occupied by the scatter gather list. */
     if (pAhciPortTaskState->enmTxDir != AHCITXDIR_FLUSH)
         ahciScatterGatherListDestroy(pAhciPort, pAhciPortTaskState);
 
-    pAhciPortTaskState->cmdHdr.u32PRDBC = pAhciPortTaskState->cbTransfer;
+    if (RT_FAILURE(rcReq))
+    {
+        pAhciPortTaskState->cmdHdr.u32PRDBC = 0;
+        pAhciPortTaskState->uATARegError = ID_ERR;
+        pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
 
-    pAhciPortTaskState->uATARegError = 0;
-    pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
+        /* Log the error. */
+        if (pAhciPort->cErrors++ < MAX_LOG_REL_ERRORS)
+        {
+            if (pAhciPortTaskState->enmTxDir == AHCITXDIR_FLUSH)
+                LogRel(("AHCI#%u: Flush returned rc=%Rrc\n",
+                        pAhciPort->iLUN, rcReq));
+            else
+                LogRel(("AHCI#%u: %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
+                        pAhciPort->iLUN,
+                        pAhciPortTaskState->enmTxDir == AHCITXDIR_READ
+                        ? "Read"
+                        : "Write",
+                        pAhciPortTaskState->uOffset,
+                        pAhciPortTaskState->cbTransfer, rcReq));
+        }
+    }
+    else
+    {
+        pAhciPortTaskState->cmdHdr.u32PRDBC = pAhciPortTaskState->cbTransfer;
+
+        pAhciPortTaskState->uATARegError = 0;
+        pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
+    }
+
     /* Write updated command header into memory of the guest. */
     PDMDevHlpPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciPortTaskState->GCPhysCmdHdrAddr,
                        &pAhciPortTaskState->cmdHdr, sizeof(CmdHdr));
@@ -4929,7 +4956,7 @@ static DECLCALLBACK(int) ahciTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterfa
     ahciLog(("%s: pInterface=%p pvUser=%p uTag=%u\n",
              __FUNCTION__, pInterface, pvUser, pAhciPortTaskState->uTag));
 
-    int rc = ahciTransferComplete(pAhciPort, pAhciPortTaskState);
+    int rc = ahciTransferComplete(pAhciPort, pAhciPortTaskState, rcReq);
 
     if (pAhciPort->uActTasksActive == 0 && pAhciPort->pAhciR3->fSignalIdle)
         PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
@@ -5353,10 +5380,10 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
                                                               pAhciPortTaskState);
             }
             if (rc == VINF_VD_ASYNC_IO_FINISHED)
-                rc = ahciTransferComplete(pAhciPort, pAhciPortTaskState);
+                rc = ahciTransferComplete(pAhciPort, pAhciPortTaskState, VINF_SUCCESS);
 
             if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
-                AssertMsgFailed(("%s: Failed to enqueue command %Rrc\n", __FUNCTION__, rc));
+                rc = ahciTransferComplete(pAhciPort, pAhciPortTaskState, rc);
         }
         else
         {
