@@ -9,9 +9,9 @@
         VirtualBox.xidl. This PHP file represents our
         web service API. Depends on WSDL file for actual SOAP bindings.
 
-    Contributed by James Lucas (mjlucas at eng.uts.edu.au).
+     Contributed by James Lucas (mjlucas at eng.uts.edu.au).
 
-     Copyright (C) 2009 Oracle Corporation
+     Copyright (C) 2006-2010 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -54,23 +54,16 @@
         <xsl:with-param name="safearray" select="$safearray"/>
       </xsl:call-template>
     </xsl:when>
-    <xsl:when test="$type='long' or $type='unsigned long' or $type='long long' or $type='short' or $type='unsigned short' or $type='unsigned long long' or $type='result'">
+    <xsl:when test="$type='short' or $type='unsigned short' or $type='long' or $type='octet'">
       <xsl:call-template name="emitPrimitive">
         <xsl:with-param name="type">int</xsl:with-param>
         <xsl:with-param name="value" select="$value" />
         <xsl:with-param name="safearray" select="$safearray"/>
       </xsl:call-template>
     </xsl:when>
-    <xsl:when test="$type='double' or $type='float'">
+    <xsl:when test="$type='double' or $type='float' or $type='unsigned long' or $type='long long' or $type='unsigned long long'">
       <xsl:call-template name="emitPrimitive">
         <xsl:with-param name="type">float</xsl:with-param>
-        <xsl:with-param name="value" select="$value" />
-        <xsl:with-param name="safearray" select="$safearray"/>
-      </xsl:call-template>
-    </xsl:when>
-    <xsl:when test="$type='octet'">
-      <xsl:call-template name="emitPrimitive">
-        <xsl:with-param name="type">octet</xsl:with-param>
         <xsl:with-param name="value" select="$value" />
         <xsl:with-param name="safearray" select="$safearray"/>
       </xsl:call-template>
@@ -80,14 +73,14 @@
         <xsl:with-param name="type">VBox_ManagedObject</xsl:with-param>
         <xsl:with-param name="value" select="$value" />
         <xsl:with-param name="safearray" select="$safearray"/>
-      </xsl:call-template> 
+      </xsl:call-template>
    </xsl:when>
     <xsl:otherwise>
       <xsl:call-template name="emitObject">
         <xsl:with-param name="type" select="$type" />
         <xsl:with-param name="value" select="$value" />
         <xsl:with-param name="safearray" select="$safearray"/>
-      </xsl:call-template> 
+      </xsl:call-template>
     </xsl:otherwise>
   </xsl:choose>
 </xsl:template>
@@ -451,7 +444,7 @@ abstract class VBox_Collection implements ArrayAccess, Iterator, Countable {
         }
     }
 
-    /** ArrayAccess Functions **/ 
+    /** ArrayAccess Functions **/
     public function offsetSet($offset, $value) {
         if ($value instanceof $this->_interfaceName)
         {
@@ -463,7 +456,7 @@ abstract class VBox_Collection implements ArrayAccess, Iterator, Countable {
             {
                 $this->_objects[] = $value;
             }
-        } 
+        }
         else
         {
             throw new Exception("Value must be a instance of " . $this->_interfaceName);
