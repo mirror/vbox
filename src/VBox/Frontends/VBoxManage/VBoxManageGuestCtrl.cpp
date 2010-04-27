@@ -335,14 +335,11 @@ static int handleExecProgram(HandlerArg *a)
                         GluePrintErrorInfo(info);
                         RTPrintf("\n");
                     }
-                    else
-                    {   
-                        ULONG uStatus, uExitCode, uFlags;
-                        CHECK_ERROR_BREAK(guest, GetProcessStatus(uPID, &uExitCode, &uFlags, &uStatus));
-                        if (verbose)
-                            RTPrintf("Process completed. Exit code = %u (Status = %u, Flags = %u)\n",
-                                     uExitCode, uStatus, uFlags);
-                    }
+
+                    ULONG uStatus, uExitCode, uFlags;
+                    CHECK_ERROR_BREAK(guest, GetProcessStatus(uPID, &uExitCode, &uFlags, &uStatus));
+                    if (verbose)
+                        RTPrintf("Exit code=%u (Status=%u, Flags=%u)\n", uExitCode, uStatus, uFlags);
 
                     /* Print output if wanted. */
                     if (   waitForStdOut
