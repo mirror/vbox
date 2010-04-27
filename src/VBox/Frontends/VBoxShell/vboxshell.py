@@ -220,8 +220,8 @@ def autoCompletion(commands, ctx):
   readline.set_completer(completer.complete)
   delims = readline.get_completer_delims()
   readline.set_completer_delims(re.sub("[\\.]", "", delims)) # remove some of the delimiters
+  readline.parse_and_bind("set editing-mode emacs")  
   # OSX need it
-  readline.parse_and_bind("set editing-mode emacs")
   if platform.system() == 'Darwin':
       # see http://www.certif.com/spec_help/readline.html
       readline.parse_and_bind ("bind ^I rl_complete")
@@ -2280,7 +2280,7 @@ def interpret(ctx):
 
     while True:
         try:
-            cmd = raw_input(colored("vbox> ", 'blue'))
+            cmd = raw_input("vbox> ")
             done = runCommand(ctx, cmd)
             if done != 0: break
         except KeyboardInterrupt:
