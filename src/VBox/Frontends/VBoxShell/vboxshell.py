@@ -686,9 +686,10 @@ def infoCmd(ctx,args):
     hwVirtNestedPaging = mach.getHWVirtExProperty(ctx['global'].constants.HWVirtExPropertyType_NestedPaging)
     print "  Nested paging [mach.setHWVirtExProperty(ctx['global'].constants.HWVirtExPropertyType_NestedPaging,value)]: " + asState(hwVirtNestedPaging)
 
-    print "  Hardware 3d acceleration[accelerate3DEnabled]: " + asState(mach.accelerate3DEnabled)
-    print "  Hardware 2d video acceleration[accelerate2DVideoEnabled]: " + asState(mach.accelerate2DVideoEnabled)
+    print "  Hardware 3d acceleration [accelerate3DEnabled]: " + asState(mach.accelerate3DEnabled)
+    print "  Hardware 2d video acceleration [accelerate2DVideoEnabled]: " + asState(mach.accelerate2DVideoEnabled)
 
+    print "  Use universal time [RTCUseUTC]: %s" %(asState(mach.RTCUseUTC))
     print "  HPET [hpetEnabled]: %s" %(asState(mach.hpetEnabled))
     if mach.audioAdapter.enabled:
         print "  Audio [via audioAdapter]: chip %s; host driver %s" %(asEnumElem(ctx,"AudioControllerType", mach.audioAdapter.audioController), asEnumElem(ctx,"AudioDriverType",  mach.audioAdapter.audioDriver))
@@ -700,6 +701,14 @@ def infoCmd(ctx,args):
     print "  Pointing device [pointingHidType]: %s (%s)" %(asEnumElem(ctx,"PointingHidType", mach.pointingHidType), mach.pointingHidType)
     print "  Last changed [n/a]: " + time.asctime(time.localtime(long(mach.lastStateChange)/1000))
     print "  VRDP server [VRDPServer.enabled]: %s" %(asState(mach.VRDPServer.enabled))
+
+    print
+    print colCat(ctx,"  I/O subsystem info:")
+    print "   I/O manager [ioMgr]: %s" %(asEnumElem(ctx, "IoMgrType", mach.ioMgr))
+    print "   I/O backend [ioBackend]: %s" %(asEnumElem(ctx, "IoBackendType", mach.ioBackend))
+    print "   Cache enabled [ioCacheEnabled]: %s" %(asState(mach.ioCacheEnabled))
+    print "   Cache size [ioCacheSize]: %dM" %(mach.ioCacheSize)
+    print "   Bandwidth limit [ioBandwidthMax]: %dM/s" %(mach.ioBandwidthMax)
 
     controllers = ctx['global'].getArray(mach, 'storageControllers')
     if controllers:
@@ -792,7 +801,7 @@ def ginfoCmd(ctx,args):
     cmdExistingVm(ctx, mach, 'ginfo', '')
     return 0
 
-def execInGuest(ctx,console,args):
+def execInGuest(ctx,console,args,env):
     if len(args) < 1:
         print "exec in guest needs at least program name"
         return
@@ -803,7 +812,7 @@ def execInGuest(ctx,console,args):
     # shall contain program name as argv[0]
     gargs = args
     print "executing %s with args %s" %(args[0], gargs)
-    (progress, pid) = guest.executeProcess(args[0], 0, gargs, [], "", "", "", user, passwd, tmo)
+    (progress, pid) = guest.executeProcess(args[0], 0, gargs, env, "", "", "", user, passwd, tmo)
     print "executed with pid %d" %(pid)
     if pid != 0:
         try:
@@ -815,7 +824,7 @@ def execInGuest(ctx,console,args):
                 ctx['global'].waitForEvents(0)
         except KeyboardInterrupt:
             print "Interrupted."
-            if progress.cancelable:
+            if progress.cancelabe:
                 progress.cancel()
         return 0
     else:
@@ -829,7 +838,8 @@ def gexecCmd(ctx,args):
     if mach == None:
         return 0
     gargs = args[2:]
-    gargs.insert(0, lambda ctx,mach,console,args: execInGuest(ctx,console,args))
+    env = [] # ["DISPLAY=:0"]
+    gargs.insert(0, lambda ctx,mach,console,args: execInGuest(ctx,console,args,env))
     cmdExistingVm(ctx, mach, 'guestlambda', gargs)
     return 0
 
@@ -841,7 +851,8 @@ def gcatCmd(ctx,args):
     if mach == None:
         return 0
     gargs = args[2:]
-    gargs.insert(0, lambda ctx,mach,console,args: execInGuest(ctx,console,args))
+    env = []
+    gargs.insert(0, lambda ctx,mach,console,args: execInGuest(ctx,console,args,env))
     cmdExistingVm(ctx, mach, 'guestlambda', gargs)
     return 0
 
