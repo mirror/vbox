@@ -454,6 +454,11 @@ typedef GMMFREELARGEPAGEREQ *PGMMFREELARGEPAGEREQ;
 
 GMMR0DECL(int) GMMR0FreeLargePageReq(PVM pVM, VMCPUID idCpu, PGMMFREELARGEPAGEREQ pReq);
 
+/** Maximum length of the shared module name string. */
+#define GMM_SHARED_MODULE_MAX_NAME_STRING       128
+/** Maximum length of the shared module version string. */
+#define GMM_SHARED_MODULE_MAX_VERSION_STRING    16
+
 /**
  * Request buffer for GMMR0RegisterSharedModuleReq / VMMR0_DO_GMM_REGISTER_SHARED_MODULE.
  * @see GMMR0RegisterSharedModule.
@@ -469,9 +474,9 @@ typedef struct GMMREGISTERSHAREDMODULEREQ
     /** Base address of the shared module. */
     RTGCPTR64                   GCBaseAddr;
     /** Module name */
-    char                        szName[128];
+    char                        szName[GMM_SHARED_MODULE_MAX_NAME_STRING];
     /** Module version */
-    char                        szVersion[16];
+    char                        szVersion[GMM_SHARED_MODULE_MAX_VERSION_STRING];
     /** Shared region descriptor(s). */
     VMMDEVSHAREDREGIONDESC      aRegions[1];
 } GMMREGISTERSHAREDMODULEREQ;
@@ -496,9 +501,9 @@ typedef struct GMMUNREGISTERSHAREDMODULEREQ
     /** Base address of the shared module. */
     RTGCPTR64                   GCBaseAddr;
     /** Module name */
-    char                        szName[128];
+    char                        szName[GMM_SHARED_MODULE_MAX_NAME_STRING];
     /** Module version */
-    char                        szVersion[16];
+    char                        szVersion[GMM_SHARED_MODULE_MAX_VERSION_STRING];
 } GMMUNREGISTERSHAREDMODULEREQ;
 /** Pointer to a GMMR0UnregisterSharedModuleReq / VMMR0_DO_GMM_UNREGISTER_SHARED_MODULE request buffer. */
 typedef GMMUNREGISTERSHAREDMODULEREQ *PGMMUNREGISTERSHAREDMODULEREQ;
