@@ -73,9 +73,9 @@ public:
     STDMETHOD(COMGETTER(RecommendedHDD)) (ULONG *aHDDSize);
     STDMETHOD(COMGETTER(AdapterType)) (NetworkAdapterType_T *aNetworkAdapterType);
     STDMETHOD(COMGETTER(RecommendedFirmware)) (FirmwareType_T *aFirmwareType);
-    STDMETHOD(COMGETTER(RecommendedDvdStorageBus)) (StorageControllerType_T *aStorageBusType);
+    STDMETHOD(COMGETTER(RecommendedDvdStorageBus)) (StorageBus_T *aStorageBusType);
     STDMETHOD(COMGETTER(RecommendedDvdStorageController)) (StorageControllerType_T *aStorageControllerType);
-    STDMETHOD(COMGETTER(RecommendedHdStorageBus)) (StorageControllerType_T *aStorageBusType);
+    STDMETHOD(COMGETTER(RecommendedHdStorageBus)) (StorageBus_T *aStorageBusType);
     STDMETHOD(COMGETTER(RecommendedHdStorageController)) (StorageControllerType_T *aStorageControllerType);
     STDMETHOD(COMGETTER(RecommendedPae)) (BOOL *aRecommendedExtHw);
     STDMETHOD(COMGETTER(RecommendedUsbHid)) (BOOL *aRecommendedUsbHid);
