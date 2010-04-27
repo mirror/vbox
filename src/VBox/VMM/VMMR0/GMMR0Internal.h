@@ -19,6 +19,7 @@
 #define ___GMMR0Internal_h
 
 #include <VBox/gmm.h>
+#include <iprt/avl.h>
 
 /**
  * The allocation sizes.
@@ -37,45 +38,70 @@ typedef GMMVMSIZES *PGMMVMSIZES;
 
 
 /**
+ * Shared module registration info
+ */
+typedef struct GMMSHAREDMODULE
+{
+    /* Tree node. */
+    AVLGCPTRNODECORE            Core;
+    /** Shared module size. */
+    uint32_t                    cbModule;
+    /** Number of included region descriptors */
+    uint32_t                    cRegions;
+    /** Module name */
+    char                        szName[GMM_SHARED_MODULE_MAX_NAME_STRING];
+    /** Module version */
+    char                        szVersion[GMM_SHARED_MODULE_MAX_VERSION_STRING];
+    /** Shared region descriptor(s). */
+    VMMDEVSHAREDREGIONDESC      aRegions[1];
+} GMMSHAREDMODULE;
+/** Pointer to a GMMMODULE. */
+typedef GMMSHAREDMODULE *PGMMSHAREDMODULE;
+
+/**
  * The per-VM GMM data.
  */
 typedef struct GMMPERVM
 {
     /** The reservations. */
-    GMMVMSIZES      Reserved;
+    GMMVMSIZES          Reserved;
     /** The actual allocations.
      * This includes both private and shared page allocations. */
-    GMMVMSIZES      Allocated;
+    GMMVMSIZES          Allocated;
 
     /** The current number of private pages. */
-    uint64_t        cPrivatePages;
+    uint64_t            cPrivatePages;
     /** The current number of shared pages. */
-    uint64_t        cSharedPages;
+    uint64_t            cSharedPages;
     /** The current over-comitment policy. */
-    GMMOCPOLICY     enmPolicy;
+    GMMOCPOLICY         enmPolicy;
     /** The VM priority for arbitrating VMs in low and out of memory situation.
      * Like which VMs to start sequeezing first. */
-    GMMPRIORITY     enmPriority;
+    GMMPRIORITY         enmPriority;
 
     /** The current number of ballooned pages. */
-    uint64_t        cBalloonedPages;
+    uint64_t            cBalloonedPages;
     /** The max number of pages that can be ballooned. */
-    uint64_t        cMaxBalloonedPages;
+    uint64_t            cMaxBalloonedPages;
     /** The number of pages we've currently requested the guest to give us.
      * This is 0 if no pages currently requested. */
-    uint64_t        cReqBalloonedPages;
+    uint64_t            cReqBalloonedPages;
     /** The number of pages the guest has given us in response to the request.
      * This is not reset on request completed and may be used in later decisions. */
-    uint64_t        cReqActuallyBalloonedPages;
+    uint64_t            cReqActuallyBalloonedPages;
     /** The number of pages we've currently requested the guest to take back. */
-    uint64_t        cReqDeflatePages;
+    uint64_t            cReqDeflatePages;
+
     /** Whether ballooning is enabled or not. */
-    bool            fBallooningEnabled;
+    bool                fBallooningEnabled;
+
+    /** Whether shared paging is enabled or not. */
+    bool                fSharedPagingEnabled;
 
     /** Whether the VM is allowed to allocate memory or not.
      * This is used when the reservation update request fails or when the VM has
      * been told to suspend/save/die in an out-of-memory case. */
-    bool            fMayAllocate;
+    bool                fMayAllocate;
 } GMMPERVM;
 /** Pointer to the per-VM GMM data. */
 typedef GMMPERVM *PGMMPERVM;

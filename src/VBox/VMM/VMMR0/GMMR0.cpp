@@ -482,6 +482,9 @@ typedef struct GMM
     /** The shared free set. */
     GMMCHUNKFREESET     Shared;
 
+    /** Shared module tree (global). */
+    PAVLGCPTRNODECORE   pSharedModuleTree;
+
     /** The maximum number of pages we're allowed to allocate.
      * @gcfgm   64-bit GMM/MaxPages Direct.
      * @gcfgm   32-bit GMM/PctPages Relative to the number of host pages. */
@@ -3326,7 +3329,56 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
 GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule,
                                          unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions)
 {
+#ifdef VBOX_WITH_PAGE_SHARING
+    /*
+     * Validate input and get the basics.
+     */
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    PGVM pGVM;
+    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Take the sempahore and do some more validations.
+     */
+    rc = RTSemFastMutexRequest(pGMM->Mtx);
+    AssertRC(rc);
+    if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
+    {
+        /* Check if this module was already globally registered. */
+        PGMMSHAREDMODULE pRec = (PGMMSHAREDMODULE)RTAvlGCPtrGet(&pGMM->pSharedModuleTree, GCBaseAddr);
+        if (!pRec)
+        {
+            pRec = (PGMMSHAREDMODULE)RTMemAllocZ(RT_OFFSETOF(GMMSHAREDMODULE, aRegions[cRegions]));
+            pRec->Core.Key = GCBaseAddr;
+            pRec->cbModule = cbModule;
+            /* Input limit already safe; no need to check again. */
+            strcpy(pRec->szName, pszModuleName);
+            strcpy(pRec->szVersion, pszVersion);
+
+            pRec->cRegions = cRegions;
+
+            for (unsigned i = 0; i < cRegions; i++)
+                pRec->aRegions[i] = pRegions[i];
+
+            /** @todo references to pages */
+        }
+        else
+        {
+        }
+
+        GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
+    }
+    else
+        rc = VERR_INTERNAL_ERROR_5;
+
+    RTSemFastMutexRelease(pGMM->Mtx);
+    return rc;
+#else
     return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 
