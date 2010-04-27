@@ -3144,7 +3144,7 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium(IMediumAttachment *aMediumA
         // both ends (chain->parent() is source's parent)
         pTarget->deparent();
         pTarget->setParent(pParentForTarget);
-        if (aParentForTarget)
+        if (pParentForTarget)
             pSource->deparent();
 
         // then, register again
@@ -3245,6 +3245,21 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium(IMediumAttachment *aMediumA
         if (pMedium == pLast)
             break;
     }
+
+    /* Could be in principle folded into the previous loop, but let's keep
+     * things simple. Update the medium locking to be the standard state:
+     * all parent images locked for reading, just the last diff for writing. */
+    lockListBegin = pMediumLockList->GetBegin();
+    lockListEnd = pMediumLockList->GetEnd();
+    MediumLockList::Base::iterator lockListLast = lockListEnd;
+    lockListLast--;
+    for (MediumLockList::Base::iterator it = lockListBegin;
+         it != lockListEnd;
+         ++it)
+    {
+         it->UpdateLock(it == lockListLast);
+    }
+
 
     return S_OK;
 }
