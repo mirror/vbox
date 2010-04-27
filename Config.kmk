@@ -459,7 +459,7 @@ VBOX_WITH_PYTHON ?= 1
 # Build against multiple Python versions present in the system
 VBOX_WITH_MULTIVERSION_PYTHON ?= 1
 # Enable the kchmviewer.
-VBOX_WITH_KCHMVIEWER =
+VBOX_WITH_KCHMVIEWER = 1
 # Build the testsuite.
 VBOX_WITH_TESTSUITE = 1
 # Build the testcases.

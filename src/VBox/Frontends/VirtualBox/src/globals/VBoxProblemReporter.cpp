@@ -2604,7 +2604,17 @@ void VBoxProblemReporter::sltShowUserManual(const QString &strLocation)
 {
 #if defined (Q_WS_WIN32)
     HtmlHelp(GetDesktopWindow(), strLocation.utf16(), HH_DISPLAY_TOPIC, NULL);
-#elif defined (Q_WS_X11) || defined (Q_WS_MAC)
+#elif defined (Q_WS_X11)
+# ifndef VBOX_OSE
+    char szViewerPath[RTPATH_MAX];
+    int rc;
+    rc = RTPathAppPrivateArch(szViewerPath, sizeof(szViewerPath));
+    AssertRC(rc);
+    QProcess::startDetached(QString(szViewerPath) + "/kchmviewer", QStringList(strLocation));
+# else /* #ifndef VBOX_OSE */
+    vboxGlobal().openURL("file://" + strLocation);
+# endif /* #ifdef VBOX_OSE */
+#elif defined (Q_WS_MAC)
     vboxGlobal().openURL("file://" + strLocation);
 #endif
 }
