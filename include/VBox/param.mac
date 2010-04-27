@@ -37,4 +37,5 @@
 %define VBOX_VESA_DEVICEID          (0xbeef)
 %define VMMDEV_VENDORID             VBOX_PCI_VENDORID
 %define VMMDEV_DEVICEID             (0xcafe)
+%define VBOX_MAX_GSO_SIZE           0xfff0
 %endif
