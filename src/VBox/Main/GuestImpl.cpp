@@ -973,6 +973,10 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
 
     try
     {
+        /* Adjust timeout */
+        if (aTimeoutMS == 0)
+            aTimeoutMS = UINT32_MAX;
+
         /* Search for existing PID. */
         PHOSTEXECOUTCALLBACKDATA pData = (HOSTEXECOUTCALLBACKDATA*)RTMemAlloc(sizeof(HOSTEXECOUTCALLBACKDATA));
         AssertReturn(pData, VBOX_E_IPRT_ERROR);
