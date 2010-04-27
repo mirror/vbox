@@ -10285,7 +10285,6 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
             case MachineState_LiveSnapshotting:
             case MachineState_DeletingSnapshotOnline:
             case MachineState_DeletingSnapshotPaused:
-            case MachineState_LiveSnapshotting:
             case MachineState_Saving:
                 break;
 
