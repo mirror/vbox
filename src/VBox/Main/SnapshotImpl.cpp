@@ -3186,6 +3186,7 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium(IMediumAttachment *aMediumA
     MediumLockList *pMediumLockList = NULL;
     rc = mData->mSession.mLockedMedia.Get(static_cast<MediumAttachment *>(aMediumAttachment),
                                           pMediumLockList);
+    const ComObjPtr<Medium> &pLast = aMergeForward ? pTarget : pSource;
     AssertReturn(SUCCEEDED(rc) && pMediumLockList, E_FAIL);
     MediumLockList::Base::iterator lockListBegin =
         pMediumLockList->GetBegin();
@@ -3205,38 +3206,44 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium(IMediumAttachment *aMediumA
             || pMedium->getState() == MediumState_LockedRead)
         {
             ++it;
-            continue;
         }
-
-        rc = mParent->unregisterHardDisk(pMedium,
-                                         NULL /*pfNeedsSaveSettings*/);
-        AssertComRC(rc);
-
-        /* now, uninitialize the deleted hard disk (note that
-         * due to the Deleting state, uninit() will not touch
-         * the parent-child relationship so we need to
-         * uninitialize each disk individually) */
-
-        /* note that the operation initiator hard disk (which is
-         * normally also the source hard disk) is a special case
-         * -- there is one more caller added by Task to it which
-         * we must release. Also, if we are in sync mode, the
-         * caller may still hold an AutoCaller instance for it
-         * and therefore we cannot uninit() it (it's therefore
-         * the caller's responsibility) */
-        if (pMedium == aSource)
+        else
         {
-            Assert(pSource->getChildren().size() == 0);
-            Assert(pSource->getFirstMachineBackrefId() == NULL);
+            rc = mParent->unregisterHardDisk(pMedium,
+                                             NULL /*pfNeedsSaveSettings*/);
+            AssertComRC(rc);
+
+            /* now, uninitialize the deleted hard disk (note that
+             * due to the Deleting state, uninit() will not touch
+             * the parent-child relationship so we need to
+             * uninitialize each disk individually) */
+
+            /* note that the operation initiator hard disk (which is
+             * normally also the source hard disk) is a special case
+             * -- there is one more caller added by Task to it which
+             * we must release. Also, if we are in sync mode, the
+             * caller may still hold an AutoCaller instance for it
+             * and therefore we cannot uninit() it (it's therefore
+             * the caller's responsibility) */
+            if (pMedium == aSource)
+            {
+                Assert(pSource->getChildren().size() == 0);
+                Assert(pSource->getFirstMachineBackrefId() == NULL);
+            }
+
+            /* Delete the medium lock list entry, which also releases the
+             * caller added by MergeChain before uninit() and updates the
+             * iterator to point to the right place. */
+            rc = pMediumLockList->RemoveByIterator(it);
+            AssertComRC(rc);
+
+            pMedium->uninit();
         }
 
-        /* Delete the medium lock list entry, which also releases the
-         * caller added by MergeChain before uninit() and updates the
-         * iterator to point to the right place. */
-        rc = pMediumLockList->RemoveByIterator(it);
-        AssertComRC(rc);
-
-        pMedium->uninit();
+        /* Stop as soon as we reached the last medium affected by the merge.
+         * The remaining images must be kept unchanged. */
+        if (pMedium == pLast)
+            break;
     }
 
     return S_OK;
