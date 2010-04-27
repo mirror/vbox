@@ -326,7 +326,7 @@ RT_C_DECLS_END
  * @param   member  The member.
  * @param   align   The member offset alignment to assert.
  */
-#if defined(__GNUC__) && (defined(__cplusplus) || (__GNUC__ * 100 + __GNUC_MINOR__ >= 405))
+#if defined(__GNUC__)
 # if __GNUC__ >= 4
 #  define AssertCompileMemberAlignment(type, member, align) \
     AssertCompile(!(__builtin_offsetof(type, member) & ((align) - 1)))
@@ -345,7 +345,7 @@ RT_C_DECLS_END
  * @param   member  The member.
  * @param   off     The expected offset.
  */
-#if defined(__GNUC__) && (defined(__cplusplus) || (__GNUC__ * 100 + __GNUC_MINOR__ >= 405))
+#if defined(__GNUC__)
 # if __GNUC__ >= 4
 #  define AssertCompileMemberOffset(type, member, off) \
     AssertCompile(__builtin_offsetof(type, member) == (off))
@@ -364,7 +364,7 @@ RT_C_DECLS_END
  * @param   member1 The first member.
  * @param   member2 The second member.
  */
-#if defined(__GNUC__) && defined(__cplusplus)
+#if defined(__GNUC__)
 # if __GNUC__ >= 4
 #  define AssertCompile2MemberOffsets(type, member1, member2) \
     AssertCompile(__builtin_offsetof(type, member1) == __builtin_offsetof(type, member2))
@@ -383,7 +383,7 @@ RT_C_DECLS_END
  * @param   member1 The first member.
  * @param   member2 The second member.
  */
-#if defined(__GNUC__) && defined(__cplusplus)
+#if defined(__GNUC__)
 # if __GNUC__ >= 4
 #  define AssertCompileAdjacentMembers(type, member1, member2) \
     AssertCompile(__builtin_offsetof(type, member1) + RT_SIZEOFMEMB(type, member1) == __builtin_offsetof(type, member2))
