@@ -3049,6 +3049,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
         case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
         case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
         case PGMPOOLKIND_PAE_PT_FOR_PHYS:
+        case PGMPOOLKIND_EPT_PT_FOR_PHYS:   /* physical mask the same as PAE; RW bit as well; be careful! */
         {
             const uint64_t  u64 = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PTE_P;
             PX86PTPAE       pPT = (PX86PTPAE)PGMPOOL_PAGE_2_PTR(pVM, pPage);
@@ -3114,36 +3115,6 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
                 }
 #endif
             AssertFatalMsgFailed(("cRefs=%d iFirstPresent=%d cPresent=%d u64=%RX64 poolkind=%x\n", cRefs, pPage->iFirstPresent, pPage->cPresent, u64, pPage->enmKind));
-            break;
-        }
-
-        case PGMPOOLKIND_EPT_PT_FOR_PHYS:
-        {
-            const uint64_t  u64 = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PTE_P;
-            PEPTPT          pPT = (PEPTPT)PGMPOOL_PAGE_2_PTR(pVM, pPage);
-
-            if ((pPT->a[iPte].u & (EPT_PTE_PG_MASK | X86_PTE_P)) == u64)
-            {
-                Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pte=%RX64 cRefs=%#x\n", iPte, pPT->a[iPte], cRefs));
-                STAM_COUNTER_INC(&pPool->StatTrackFlushEntry);
-                pPT->a[iPte].u = 0;
-
-                /* Update the counter as we're removing references. */
-                Assert(pPage->cPresent);
-                Assert(pPool->cPresent);
-                pPage->cPresent--;
-                pPool->cPresent--;
-                return bRet;
-            }
-#ifdef LOG_ENABLED
-            Log(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
-            for (unsigned i = 0; i < RT_ELEMENTS(pPT->a); i++)
-                if ((pPT->a[i].u & (EPT_PTE_PG_MASK | X86_PTE_P)) == u64)
-                {
-                    Log(("i=%d cRefs=%d\n", i, cRefs--));
-                }
-#endif
-            AssertFatalMsgFailed(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
             break;
         }
 
