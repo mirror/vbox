@@ -5156,11 +5156,11 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
      * that need it) may be called after this point
      * ---------------------------------------------------------------------- */
 
+    /* go to the destroying state to prevent from adding new callers */
+    mVMDestroying = true;
+
     if (mVMCallers > 0)
     {
-        /* go to the destroying state to prevent from adding new callers */
-        mVMDestroying = true;
-
         /* lazy creation */
         if (mVMZeroCallersSem == NIL_RTSEMEVENT)
             RTSemEventCreate(&mVMZeroCallersSem);
