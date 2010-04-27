@@ -401,7 +401,9 @@ typedef struct INTNETTRUNKSWPORT
      * @param   fSrc        Where this frame comes from.  Only one bit should be
      *                      set!
      *
-     * @remarks Will only grab the switch table spinlock (interrupt safe).
+     * @remarks Will only grab the switch table spinlock (interrupt safe).  May
+     *          signal an event semaphore iff we're racing network cleanup.  The
+     *          caller must be busy when calling.
      */
     DECLR0CALLBACKMEMBER(INTNETSWDECISION, pfnPreRecv,(PINTNETTRUNKSWPORT pSwitchPort,
                                                        void const *pvHdrs, size_t cbHdrs, uint32_t fSrc));
@@ -410,26 +412,29 @@ typedef struct INTNETTRUNKSWPORT
      * Incoming frame.
      *
      * The frame may be modified when the trunk port on the switch is set to share
-     * the mac address of the host when hitting the wire. Currently rames containing
-     * ARP packets are subject to this, later other protocols like NDP/ICMPv6 may
-     * need editing as well when operating in this mode.
+     * the mac address of the host when hitting the wire.  Currently frames
+     * containing ARP packets are subject to this, later other protocols like
+     * NDP/ICMPv6 may need editing as well when operating in this mode.  The edited
+     * packet should be forwarded to the host/wire when @c false is returned.
      *
      * @returns true if we've handled it and it should be dropped.
      *          false if it should hit the wire/host.
      *
      * @param   pSwitchPort Pointer to this structure.
-     * @param   pSG         The (scatter /) gather structure for the frame.
-     *                      This will only be use during the call, so a temporary one can
-     *                      be used. The Phys member will not be used.
-     * @param   fSrc        Where this frame comes from. Only one bit should be set!
+     * @param   pSG         The (scatter /) gather structure for the frame.  This
+     *                      will only be use during the call, so a temporary one can
+     *                      be used.  The Phys member will not be used.
+     * @param   fSrc        Where this frame comes from.  Exactly one bit shall be
+     *                      set!
      *
-     * @remarks Will grab the network semaphore.
+     * @remarks Will only grab the switch table spinlock (interrupt safe).  Will
+     *          signal event semaphores.  The caller must be busy when calling.
      *
      * @remarks NAT and TAP will use this interface.
      *
-     * @todo    Do any of the host require notification before frame modifications? If so,
-     *          we'll add a callback to INTNETTRUNKIFPORT for this (pfnSGModifying) and
-     *          a SG flag.
+     * @todo    Do any of the host require notification before frame modifications?
+     *          If so, we'll add a callback to INTNETTRUNKIFPORT for this
+     *          (pfnSGModifying) and a SG flag.
      */
     DECLR0CALLBACKMEMBER(bool, pfnRecv,(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG, uint32_t fSrc));
 
@@ -439,20 +444,21 @@ typedef struct INTNETTRUNKSWPORT
      * @param   pSwitchPort Pointer to this structure.
      * @param   pSG         Pointer to the (scatter /) gather structure.
      *
-     * @remarks Will not grab any locks.
+     * @remarks Will not grab any locks.  The caller must be busy when calling.
      */
     DECLR0CALLBACKMEMBER(void, pfnSGRetain,(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG));
 
     /**
      * Release a SG.
      *
-     * This is called by the pfnXmit code when done with a SG. This may safe
+     * This is called by the pfnXmit code when done with a SG.  This may safe
      * be done in an asynchronous manner.
      *
      * @param   pSwitchPort Pointer to this structure.
      * @param   pSG         Pointer to the (scatter /) gather structure.
      *
-     * @remarks Will grab the network semaphore.
+     * @remarks May signal an event semaphore later on, currently code won't though.
+     *          The caller is busy when making this call.
      */
     DECLR0CALLBACKMEMBER(void, pfnSGRelease,(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG));
 
@@ -461,8 +467,8 @@ typedef struct INTNETTRUNKSWPORT
      *
      * By enabling physical addresses in the scatter / gather segments it should
      * be possible to save some unnecessary address translation and memory locking
-     * in the network stack. (Internal networking knows the physical address for
-     * all the INTNETBUF data and that it's locked memory.) There is a negative
+     * in the network stack.  (Internal networking knows the physical address for
+     * all the INTNETBUF data and that it's locked memory.)  There is a negative
      * side effects though, frames that crosses page boundraries will require
      * multiple scather / gather segments.
      *
@@ -471,7 +477,7 @@ typedef struct INTNETTRUNKSWPORT
      * @param   pSwitchPort Pointer to this structure.
      * @param   fEnable     Whether to enable or disable it.
      *
-     * @remarks Will grab the network semaphore.
+     * @remarks Will not grab any locks.  The caller must be busy when calling.
      */
     DECLR0CALLBACKMEMBER(bool, pfnSetSGPhys,(PINTNETTRUNKSWPORT pSwitchPort, bool fEnable));
 
@@ -484,7 +490,7 @@ typedef struct INTNETTRUNKSWPORT
      * @param   pSwitchPort         Pointer to this structure.
      * @param   pMacAddr            The MAC address.
      *
-     * @remarks May take a spinlock or two.
+     * @remarks May take a spinlock or two.  The caller must be busy when calling.
      */
     DECLR0CALLBACKMEMBER(void, pfnReportMacAddress,(PINTNETTRUNKSWPORT pSwitchPort, PCRTMAC pMacAddr));
 
@@ -498,7 +504,7 @@ typedef struct INTNETTRUNKSWPORT
      * @param   fPromiscuous        True if the host operates the interface in
      *                              promiscuous mode, false if not.
      *
-     * @remarks May take a spinlock or two.
+     * @remarks May take a spinlock or two.  The caller must be busy when calling.
      */
     DECLR0CALLBACKMEMBER(void, pfnReportPromiscuousMode,(PINTNETTRUNKSWPORT pSwitchPort, bool fPromiscuous));
 
@@ -514,7 +520,7 @@ typedef struct INTNETTRUNKSWPORT
      *                              corresponds to the GSO type with the same value.
      * @param   fDst                The destination mask (INTNETTRUNKDIR_XXX).
      *
-     * @remarks Does not take any locks.
+     * @remarks Does not take any locks.  The caller must be busy when calling.
      */
     DECLR0CALLBACKMEMBER(void, pfnReportGsoCapabilities,(PINTNETTRUNKSWPORT pSwitchPort, uint32_t fGsoCapabilities, uint32_t fDst));
 
@@ -530,7 +536,7 @@ typedef struct INTNETTRUNKSWPORT
      *                              is safe to transmit to with preemption disabled.
      * @param   fDst                The destination mask (INTNETTRUNKDIR_XXX).
      *
-     * @remarks Does not take any locks.
+     * @remarks Does not take any locks.  The caller must be busy when calling.
      */
     DECLR0CALLBACKMEMBER(void, pfnReportNoPreemptDsts,(PINTNETTRUNKSWPORT pSwitchPort, uint32_t fNoPreemptDsts));
 
@@ -542,18 +548,34 @@ typedef struct INTNETTRUNKSWPORT
 #define INTNETTRUNKSWPORT_VERSION   UINT32_C(0xA2CDf001)
 
 
+/**
+ * The trunk interface state used set by INTNETTRUNKIFPORT::pfnSetState.
+ */
+typedef enum INTNETTRUNKIFSTATE
+{
+    /** The invalid zero entry. */
+    INTNETTRUNKIFSTATE_INVALID = 0,
+    /** The trunk is inactive.  No calls to INTNETTRUNKSWPORT::pfnRecv or
+     *  INTNETTRUNKSWPORT::pfnPreRecv.  Calling other methods is OK. */
+    INTNETTRUNKIFSTATE_INACTIVE,
+    /** The trunk is active, no restrictions on methods or anything. */
+    INTNETTRUNKIFSTATE_ACTIVE,
+    /** The trunk is about to be disconnected from the internal network.  No
+     *  calls to any INTNETRUNKSWPORT methods. */
+    INTNETTRUNKIFSTATE_DISCONNECTING,
+    /** The end of the valid states. */
+    INTNETTRUNKIFSTATE_END,
+    /** The usual 32-bit type blow up hack. */
+    INTNETTRUNKIFSTATE_32BIT_HACK = 0x7fffffff
+} INTNETTRUNKIFSTATE;
+
 /** Pointer to the interface side of a trunk port. */
 typedef struct INTNETTRUNKIFPORT *PINTNETTRUNKIFPORT;
 /**
- * This is the port on the trunk interface, i.e. the driver
- * side which the internal network is connected to.
+ * This is the port on the trunk interface, i.e. the driver side which the
+ * internal network is connected to.
  *
  * This is only used for the in-kernel trunk connections.
- *
- * @remarks The internal network side is responsible for serializing all calls
- *          to this interface. This is (assumed) to be implemented using a lock
- *          that is only ever taken before a call to this interface. The lock
- *          is referred to as the out-bound trunk port lock.
  */
 typedef struct INTNETTRUNKIFPORT
 {
@@ -567,7 +589,7 @@ typedef struct INTNETTRUNKIFPORT
      *
      * @param   pIfPort     Pointer to this structure.
      *
-     * @remarks The caller may own any locks or none at all, we don't care.
+     * @remarks May own the big mutex, no spinlocks.
      */
     DECLR0CALLBACKMEMBER(void, pfnRetain,(PINTNETTRUNKIFPORT pIfPort));
 
@@ -579,8 +601,7 @@ typedef struct INTNETTRUNKIFPORT
      *
      * @param   pIfPort     Pointer to this structure.
      *
-     * @remarks Only the out-bound trunk port lock, unless the caller is certain the
-     *          call is not going to cause destruction (wont happen).
+     * @remarks May own the big mutex, no spinlocks.
      */
     DECLR0CALLBACKMEMBER(void, pfnRelease,(PINTNETTRUNKIFPORT pIfPort));
 
@@ -592,39 +613,44 @@ typedef struct INTNETTRUNKIFPORT
      *
      * @param   pIfPort     Pointer to this structure.
      *
-     * @remarks Called holding the out-bound trunk port lock.
+     * @remarks Owns the big mutex.
      */
     DECLR0CALLBACKMEMBER(void, pfnDisconnectAndRelease,(PINTNETTRUNKIFPORT pIfPort));
 
     /**
-     * Changes the active state of the interface.
+     * Changes the state of the trunk interface.
      *
-     * The interface is created in the suspended (non-active) state and then activated
-     * when the VM/network is started. It may be suspended and re-activated later
-     * for various reasons. It will finally be suspended again before disconnecting
-     * the interface from the internal network, however, this might be done immediately
-     * before disconnecting and may leave an incoming frame waiting on the internal network
-     * semaphore. So, after the final suspend a pfnWaitForIdle is always called to make sure
-     * the interface is idle before pfnDisconnectAndRelease is called.
+     * The interface is created in the inactive state (INTNETTRUNKIFSTATE_INACTIVE).
+     * When the first connect VM or service is activated, the internal network
+     * activates the trunk (INTNETTRUNKIFSTATE_ACTIVE).  The state may then be set
+     * back and forth between INACTIVE and ACTIVE as VMs are paused, added and
+     * removed.
+     *
+     * Eventually though, the network is destroyed as a result of there being no
+     * more VMs left in it and the state is changed to disconnecting
+     * (INTNETTRUNKIFSTATE_DISCONNECTING) and pfnWaitForIdle is called to make sure
+     * there are no active calls in either direction when pfnDisconnectAndRelease is
+     * called.
      *
      * A typical operation to performed by this method is to enable/disable promiscuous
-     * mode on the host network interface. (This is the reason we cannot call this when
-     * owning any semaphores.)
+     * mode on the host network interface when entering/leaving the active state.
      *
      * @returns The previous state.
      *
      * @param   pIfPort     Pointer to this structure.
-     * @param   fActive     True if the new state is 'active', false if the new state is 'suspended'.
+     * @param   enmState    The new state.
      *
-     * @remarks Called holding the out-bound trunk port lock.
+     * @remarks Owns the big mutex.  No racing pfnSetState, pfnWaitForIdle,
+     *          pfnDisconnectAndRelease or INTNETTRUNKFACTORY::pfnCreateAndConnect
+     *          calls.
      */
-    DECLR0CALLBACKMEMBER(bool, pfnSetActive,(PINTNETTRUNKIFPORT pIfPort, bool fActive));
+    DECLR0CALLBACKMEMBER(INTNETTRUNKIFSTATE, pfnSetState,(PINTNETTRUNKIFPORT pIfPort, INTNETTRUNKIFSTATE enmState));
 
     /**
      * Waits for the interface to become idle.
      *
-     * This method must be called before disconnecting and releasing the
-     * object in order to prevent racing incoming/outgoing frames and device
+     * This method must be called before disconnecting and releasing the object in
+     * order to prevent racing incoming/outgoing frames and device
      * enabling/disabling.
      *
      * @returns IPRT status code (see RTSemEventWait).
@@ -633,39 +659,9 @@ typedef struct INTNETTRUNKIFPORT
      *                      no waiting at all. Use RT_INDEFINITE_WAIT for
      *                      an indefinite wait.
      *
-     * @remarks Called holding the out-bound trunk port lock.
+     * @remarks Owns the big mutex.  No racing pfnDisconnectAndRelease.
      */
     DECLR0CALLBACKMEMBER(int, pfnWaitForIdle,(PINTNETTRUNKIFPORT pIfPort, uint32_t cMillies));
-
-    /**
-     * Gets the MAC address of the host network interface that we're attached to.
-     *
-     * @param   pIfPort     Pointer to this structure.
-     * @param   pMac        Where to store the host MAC address.
-     *
-     * @remarks Called while owning the network and the out-bound trunk port semaphores.
-     */
-    DECLR0CALLBACKMEMBER(void, pfnGetMacAddress,(PINTNETTRUNKIFPORT pIfPort, PRTMAC pMac));
-
-    /**
-     * Tests whether the host is operating the interface is promiscuous mode.
-     *
-     * The default behavior of the internal networking 'switch' is to 'autodetect'
-     * promiscuous mode on the trunk port, which is when this method is used.
-     * For security reasons this default may of course be overridden so that the
-     * host cannot sniff at what's going on.
-     *
-     * Note that this differs from operating the trunk port on the switch in
-     * 'promiscuous' mode, because that relates to the bits going to the wire.
-     *
-     * @returns true / false.
-     *
-     * @param   pIfPort     Pointer to this structure.
-     *
-     * @remarks Usuaully called while owning the network and the out-bound trunk
-     *          port semaphores.
-     */
-    DECLR0CALLBACKMEMBER(bool, pfnIsPromiscuous,(PINTNETTRUNKIFPORT pIfPort));
 
     /**
      * Transmit a frame.
@@ -678,11 +674,7 @@ typedef struct INTNETTRUNKIFPORT
      *                      of the frame unless it can be transmitted synchronously.
      * @param   fDst        The destination mask. At least one bit will be set.
      *
-     * @remarks Called holding the out-bound trunk port lock.
-     *
-     * @remarks TAP and NAT will use this interface for all their traffic, see pfnIsHostMac.
-     *
-     * @todo
+     * @remarks No locks.  May be called concurrently on several threads.
      */
     DECLR0CALLBACKMEMBER(int, pfnXmit,(PINTNETTRUNKIFPORT pIfPort, PINTNETSG pSG, uint32_t fDst));
 
@@ -742,7 +734,7 @@ typedef struct INTNETTRUNKFACTORY
 typedef INTNETTRUNKFACTORY *PINTNETTRUNKFACTORY;
 
 /** The UUID for the (current) trunk factory. (case sensitive) */
-#define INTNETTRUNKFACTORY_UUID_STR     "5d347cb7-98e3-411f-916a-67c4becae09b"
+#define INTNETTRUNKFACTORY_UUID_STR     "1849823d-33ed-4f23-a32f-ef7203ee2b9f"
 
 /** @name INTNETTRUNKFACTORY::pfnCreateAndConnect flags.
  * @{ */

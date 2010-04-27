@@ -485,7 +485,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinMpDoDeinitialization(PADAPT pAdapt)
      * Set the flag that the miniport below is unbinding, so the request handlers will
      * fail any request comming later
      */
-    RTSpinlockAcquire(pNetFlt->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pNetFlt->hSpinlock, &Tmp);
 
     ASMAtomicUoWriteBool(&pNetFlt->fDisconnectedFromHost, true);
     ASMAtomicUoWriteBool(&pNetFlt->fRediscoveryPending, false);
@@ -493,7 +493,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinMpDoDeinitialization(PADAPT pAdapt)
 
     vboxNetFltWinSetOpState(&pAdapt->MPState, kVBoxNetDevOpState_Deinitializing);
 
-    RTSpinlockRelease(pNetFlt->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
 
     vboxNetFltWinWaitDereference(&pAdapt->MPState);
 
@@ -1000,11 +1000,11 @@ vboxNetFltWinMpQueryInformation(
         /*
          * If the miniport below is binding, fail the request
          */
-        RTSpinlockAcquire(pNetFlt->hSpinlock, &Tmp);
+        RTSpinlockAcquireNoInts(pNetFlt->hSpinlock, &Tmp);
 
         if (vboxNetFltWinGetOpState(&pAdapt->PTState) > kVBoxNetDevOpState_Initialized)
         {
-            RTSpinlockRelease(pNetFlt->hSpinlock, &Tmp);
+            RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
             Status = NDIS_STATUS_FAILURE;
             break;
         }
@@ -1016,7 +1016,7 @@ vboxNetFltWinMpQueryInformation(
                 && (pAdapt->bStandingBy == FALSE))
         {
             pAdapt->bQueuedRequest = TRUE;
-            RTSpinlockRelease(pNetFlt->hSpinlock, &Tmp);
+            RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
             Status = NDIS_STATUS_PENDING;
             break;
         }
@@ -1025,13 +1025,13 @@ vboxNetFltWinMpQueryInformation(
          */
         if (pAdapt->bStandingBy == TRUE)
         {
-            RTSpinlockRelease(pNetFlt->hSpinlock, &Tmp);
+            RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
             Status = NDIS_STATUS_FAILURE;
             break;
         }
         pAdapt->bOutstandingRequests = TRUE;
 
-        RTSpinlockRelease(pNetFlt->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
         if(Oid == OID_GEN_CURRENT_PACKET_FILTER && VBOXNETFLT_PROMISCUOUS_SUPPORTED(pAdapt))
         {
             bool fNetFltActive;
@@ -1049,9 +1049,9 @@ vboxNetFltWinMpQueryInformation(
                 vboxNetFltWinDereferenceNetFlt(pNetFlt);
                 vboxNetFltWinDereferenceAdapt(pAdapt);
 
-                RTSpinlockAcquire(pNetFlt->hSpinlock, &Tmp);
+                RTSpinlockAcquireNoInts(pNetFlt->hSpinlock, &Tmp);
                 pAdapt->bOutstandingRequests = FALSE;
-                RTSpinlockRelease(pNetFlt->hSpinlock, &Tmp);
+                RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
                 break;
             }
             else if(fAdaptActive)
@@ -1345,10 +1345,10 @@ vboxNetFltWinMpSetInformation(
         /*
          * If the miniport below is unbinding, fail the request
          */
-        RTSpinlockAcquire(pNetFlt->hSpinlock, &Tmp);
+        RTSpinlockAcquireNoInts(pNetFlt->hSpinlock, &Tmp);
         if (vboxNetFltWinGetOpState(&pAdapt->PTState) > kVBoxNetDevOpState_Initialized)
         {
-            RTSpinlockRelease(pNetFlt->hSpinlock, &Tmp);
+            RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
             Status = NDIS_STATUS_FAILURE;
             break;
         }
@@ -1361,7 +1361,7 @@ vboxNetFltWinMpSetInformation(
                 && (pAdapt->bStandingBy == FALSE))
         {
             pAdapt->bQueuedRequest = TRUE;
-            RTSpinlockRelease(pNetFlt->hSpinlock, &Tmp);
+            RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
             Status = NDIS_STATUS_PENDING;
             break;
         }
@@ -1370,13 +1370,13 @@ vboxNetFltWinMpSetInformation(
          */
         if (pAdapt->bStandingBy == TRUE)
         {
-            RTSpinlockRelease(pNetFlt->hSpinlock, &Tmp);
+            RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
             Status = NDIS_STATUS_FAILURE;
             break;
         }
         pAdapt->bOutstandingRequests = TRUE;
 
-        RTSpinlockRelease(pNetFlt->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
 
         if(Oid == OID_GEN_CURRENT_PACKET_FILTER && VBOXNETFLT_PROMISCUOUS_SUPPORTED(pAdapt))
         {
@@ -1412,9 +1412,9 @@ vboxNetFltWinMpSetInformation(
                     vboxNetFltWinDereferenceNetFlt(pNetFlt);
                     vboxNetFltWinDereferenceAdapt(pAdapt);
 
-                    RTSpinlockAcquire(pNetFlt->hSpinlock, &Tmp);
+                    RTSpinlockAcquireNoInts(pNetFlt->hSpinlock, &Tmp);
                     pAdapt->bOutstandingRequests = FALSE;
-                    RTSpinlockRelease(pNetFlt->hSpinlock, &Tmp);
+                    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
                     break;
                 }
             }

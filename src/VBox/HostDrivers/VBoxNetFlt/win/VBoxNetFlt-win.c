@@ -1111,12 +1111,12 @@ DECLHIDDEN(void) vboxNetFltWinQuFiniPacketQueue(PVBOXNETFLTINS pInstance)
 //    Assert(pAdapt->pPacketQueueSG);
 
     /* using the pPacketQueueSG as an indicator that the packet queue is initialized */
-    RTSpinlockAcquire((pInstance)->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts((pInstance)->hSpinlock, &Tmp);
     if(pWorker->pSG)
     {
         pSG = pWorker->pSG;
         pWorker->pSG = NULL;
-        RTSpinlockRelease((pInstance)->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts((pInstance)->hSpinlock, &Tmp);
         KeSetEvent(&pWorker->KillEvent, 0, FALSE);
 
         KeWaitForSingleObject(pWorker->pThread, Executive,
@@ -1130,7 +1130,7 @@ DECLHIDDEN(void) vboxNetFltWinQuFiniPacketQueue(PVBOXNETFLTINS pInstance)
     }
     else
     {
-        RTSpinlockRelease((pInstance)->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts((pInstance)->hSpinlock, &Tmp);
     }
 }
 
@@ -3022,7 +3022,7 @@ static int vboxNetFltWinDeleteInstance(PVBOXNETFLTINS pThis)
     Assert(pThis);
     Assert(pThis->fDisconnectedFromHost);
     Assert(!pThis->fRediscoveryPending);
-    Assert(!pThis->fActive);
+    Assert(pThis->enmTrunkState != INTNETTRUNKIFSTATE_ACTIVE);
 #ifndef VBOXNETADP
     Assert(pAdapt->PTState.OpState == kVBoxNetDevOpState_Deinitialized);
     Assert(!pAdapt->hBindingHandle);
@@ -3254,12 +3254,11 @@ static void vboxNetFltWinAttachToInterfaceWorker(PATTACH_INFO pAttachInfo)
 //                            vboxNetFltWinSetOpState(&pAdapt->PTState, kVBoxNetDevOpState_Initialized);
 //#endif
 
-                            RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
 
                             /* 4. mark as connected */
+                            RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
                             ASMAtomicUoWriteBool(&pThis->fDisconnectedFromHost, false);
-
-                            RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+                            RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
                             pAttachInfo->Status = VINF_SUCCESS;
                             pAttachInfo->pCreateContext->Status = NDIS_STATUS_SUCCESS;
@@ -3270,7 +3269,8 @@ static void vboxNetFltWinAttachToInterfaceWorker(PATTACH_INFO pAttachInfo)
 
                             /* 5. Report MAC address, promiscuousness and GSO capabilities. */
                             /** @todo Keep these up to date, esp. the promiscuous mode bit. */
-                            if (pThis->pSwitchPort)
+                            if (   pThis->pSwitchPort
+                                && vboxNetFltTryRetainBusyNotDisconnected(pThis))
                             {
                                 pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
                                 pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort,
@@ -3279,6 +3279,7 @@ static void vboxNetFltWinAttachToInterfaceWorker(PATTACH_INFO pAttachInfo)
                                                                              INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
                                 /** @todo We should be able to do pfnXmit at DISPATCH_LEVEL... */
                                 pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, 0 /* none */);
+                                vboxNetFltRelease(pThis, true /*fBusy*/);
                             }
                             return;
                         }

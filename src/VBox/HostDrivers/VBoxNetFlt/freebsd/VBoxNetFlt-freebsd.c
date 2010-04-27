@@ -315,7 +315,7 @@ static int ng_vboxnetflt_rcvdata(hook_p hook, item_p item)
     struct m_tag *mtag;
     bool fActive;
 
-    fActive = ASMAtomicUoReadBool(&pThis->fActive);
+    fActive = vboxNetFltTryRetainBusyActive(pThis);
 
     NGI_GET_M(item, m);
     NG_FREE_ITEM(item);
@@ -337,6 +337,8 @@ static int ng_vboxnetflt_rcvdata(hook_p hook, item_p item)
         if (mtag != NULL || !fActive)
         {
             ether_demux(ifp, m);
+            if (fActive)
+                vboxNetFltRelease(pThis, true /*fBusy*/);
             return (0);
         }
         mtx_lock_spin(&pThis->u.s.inq.ifq_mtx);
@@ -344,13 +346,18 @@ static int ng_vboxnetflt_rcvdata(hook_p hook, item_p item)
         mtx_unlock_spin(&pThis->u.s.inq.ifq_mtx);
         taskqueue_enqueue_fast(taskqueue_fast, &pThis->u.s.tskin);
     }
-    /**
+    /*
      * Handle mbufs on the outgoing hook, frames going to the interface
      */
     else if (pThis->u.s.output == hook)
     {
         if (mtag != NULL || !fActive)
-            return ether_output_frame(ifp, m);
+        {
+            int rc = ether_output_frame(ifp, m);
+            if (fActive)
+                vboxNetFltRelease(pThis, true /*fBusy*/);
+            return rc;
+        }
         mtx_lock_spin(&pThis->u.s.outq.ifq_mtx);
         _IF_ENQUEUE(&pThis->u.s.outq, m);
         mtx_unlock_spin(&pThis->u.s.outq.ifq_mtx);
@@ -360,6 +367,9 @@ static int ng_vboxnetflt_rcvdata(hook_p hook, item_p item)
     {
         m_freem(m);
     }
+
+    if (fActive)
+        vboxNetFltRelease(pThis, true /*fBusy*/);
     return (0);
 }
 
@@ -369,8 +379,7 @@ static int ng_vboxnetflt_shutdown(node_p node)
     bool fActive;
 
     /* Prevent node shutdown if we're active */
-    fActive = ASMAtomicUoReadBool(&pThis->fActive);
-    if (fActive)
+    if (pThis->enmTrunkState == INTNETTRUNKIFSTATE_ACTIVE)
         return (EBUSY);
     NG_NODE_UNREF(node);
     return (0);
@@ -547,7 +556,8 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     if (ng_make_node_common(&ng_vboxnetflt_typestruct, &node) != 0)
         return VERR_INTERNAL_ERROR;
 
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
+
     ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.ifp, ifp);
     pThis->u.s.node = node;
     bcopy(IF_LLADDR(ifp), &pThis->u.s.MacAddr, ETHER_ADDR_LEN);
@@ -563,7 +573,7 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     mtx_init(&pThis->u.s.outq.ifq_mtx, "vboxnetflt outq", NULL, MTX_SPIN);
     TASK_INIT(&pThis->u.s.tskout, 0, vboxNetFltFreeBSDoutput, pThis);
 
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     NG_NODE_SET_PRIVATE(node, pThis);
 
@@ -574,11 +584,15 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     /* Report MAC address, promiscuous mode and GSO capabilities. */
     /** @todo keep these reports up to date, either by polling for changes or
      *        intercept some control flow if possible. */
-    Assert(pThis->pSwitchPort);
-    pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
-    pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, vboxNetFltFreeBsdIsPromiscuous(pThis));
-    pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0, INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
-    pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, 0 /* none */);
+    if (vboxNetFltTryRetainBusyNotDisconnected(pThis))
+    {
+        Assert(pThis->pSwitchPort);
+        pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
+        pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, vboxNetFltFreeBsdIsPromiscuous(pThis));
+        pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0, INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
+        pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, 0 /* none */);
+        vboxNetFltRelease(pThis, true /*fBusy*/);
+    }
 
     return VINF_SUCCESS;
 }
