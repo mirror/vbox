@@ -229,7 +229,6 @@ VMMR3DECL(int) PDMR3AsyncCompletionTemplateCreateDriver(PVM pVM, PPDMDRVINS pDrv
     /*
      * Validate input.
      */
-    VM_ASSERT_EMT(pVM);
     if (!pfnCompleted)
     {
         AssertMsgFailed(("No completion callback!\n"));
