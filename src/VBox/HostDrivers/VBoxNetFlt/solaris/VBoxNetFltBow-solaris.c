@@ -618,13 +618,7 @@ LOCAL void vboxNetFltSolarisRecv(void *pvData, mac_resource_handle_t hResource, 
     /*
      * Active? Retain the instance and increment the busy counter.
      */
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
-    const bool fActive = ASMAtomicUoReadBool(&pThis->fActive);
-    if (fActive)
-        vboxNetFltRetain(pThis, true /* fBusy */);
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
-    if (!fActive)
+    if (!vboxNetFltTryRetainBusyActive(pThis))
         return;
 
     uint32_t fSrc = INTNETTRUNKDIR_WIRE;
@@ -839,11 +833,15 @@ LOCAL int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
                             /*
                              * Report MAC address, promiscuous mode and capabilities.
                              */
-                            Assert(pThis->pSwitchPort);
-                            pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
-                            pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, false); /** @todo Promisc */
-                            pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0, INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
-                            pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, 0 /* none */);
+                            if (vboxNetFltTryRetainBusyNotDisconnected(pThis))
+                            {
+                                Assert(pThis->pSwitchPort);
+                                pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
+                                pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, false); /** @todo Promisc */
+                                pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0, INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
+                                pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, 0 /* none */);
+                                vboxNetFltRelease(pThis, true /*fBusy*/);
+                            }
 
                             LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface successfully attached over '%s'\n", pThis->szName));
                             return VINF_SUCCESS;

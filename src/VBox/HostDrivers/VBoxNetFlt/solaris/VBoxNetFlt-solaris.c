@@ -994,10 +994,10 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
              * the promiscuous OFF acknowledgement case).
              */
             RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-            RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
-            const bool fActive = ASMAtomicUoReadBool(&pThis->fActive);
+            RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
+            const bool fActive = pThis->enmTrunkState == INTNETTRUNKIFSTATE_ACTIVE;
             vboxNetFltRetain(pThis, true /* fBusy */);
-            RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+            RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
             vboxnetflt_promisc_stream_t *pPromiscStream = (vboxnetflt_promisc_stream_t *)pStream;
 
@@ -1059,23 +1059,15 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
 
                                 case DL_NOTE_LINK_UP:
                                 {
-                                    const bool fDisconnected = ASMAtomicUoReadBool(&pThis->fActive);
-                                    if (fDisconnected)
-                                    {
-                                        ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, false);
+                                    if (ASMAtomicXchgBool(&pThis->fDisconnectedFromHost, false))
                                         LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: DL_NOTE_LINK_UP.\n"));
-                                    }
                                     break;
                                 }
 
                                 case DL_NOTE_LINK_DOWN:
                                 {
-                                    const bool fDisconnected = ASMAtomicUoReadBool(&pThis->fActive);
-                                    if (!fDisconnected)
-                                    {
-                                        ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, true);
+                                    if (!ASMAtomicXchgBool(&pThis->fDisconnectedFromHost, true))
                                         LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut: DL_NOTE_LINK_DOWN.\n"));
-                                    }
                                     break;
                                 }
                             }
@@ -1383,11 +1375,13 @@ static void vboxNetFltSolarisCachePhysAddr(PVBOXNETFLTINS pThis, mblk_t *pMsg)
         LogFlow((DEVICE_NAME ":vboxNetFltSolarisCachePhysAddr: DL_PHYS_ADDR_ACK: Mac=%.*Rhxs\n",
                  sizeof(pThis->u.s.MacAddr), &pThis->u.s.MacAddr));
 
-        vboxNetFltRetain(pThis, true /*fBusy*/);
-        Assert(pThis->pSwitchPort);
-        if (pThis->pSwitchPort)
-            pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
-        vboxNetFltRelease(pThis, true /*fBusy*/);
+        if (vboxNetFltTryRetainBusyNotDisconnected(pThis))
+        {
+            Assert(pThis->pSwitchPort);
+            if (pThis->pSwitchPort)
+                pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
+            vboxNetFltRelease(pThis, true /*fBusy*/);
+        }
     }
     else
     {
@@ -2610,12 +2604,16 @@ static int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis)
             /*
              * Report promiscuousness and capabilities.
              */
-            Assert(pThis->pSwitchPort);
-            /** @todo There is no easy way of obtaining the global host side promiscuous
-             * counter. Currently we just return false.  */
-            pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, false);
-            pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0,  INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
-            pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, 0 /* none */);
+            if (vboxNetFltTryRetainBusyNotDisconnected(pThis))
+            {
+                Assert(pThis->pSwitchPort);
+                /** @todo There is no easy way of obtaining the global host side promiscuous
+                 * counter. Currently we just return false.  */
+                pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, false);
+                pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0,  INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
+                pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, 0 /* none */);
+                vboxNetFltRelease(pThis, true /*fBusy*/);
+            }
 
             /*
              * Ipv4 is successful, and maybe Ipv6, we're ready for transfers.

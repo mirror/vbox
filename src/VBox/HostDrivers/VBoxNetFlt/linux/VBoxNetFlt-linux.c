@@ -350,9 +350,9 @@ static void vboxNetFltLinuxHookDev(PVBOXNETFLTINS pThis, struct net_device *pDev
     pOverride->cFiltered            = 0;
     pOverride->pVBoxNetFlt          = pThis;
 
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp); /* (this isn't necessary, but so what) */
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp); /* (this isn't necessary, but so what) */
     ASMAtomicXchgPtr((void * volatile *)&pDev->netdev_ops, pOverride);
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 }
 
 /**
@@ -367,7 +367,7 @@ static void vboxNetFltLinuxUnhookDev(PVBOXNETFLTINS pThis, struct net_device *pD
     PVBOXNETDEVICEOPSOVERRIDE   pOverride;
     RTSPINLOCKTMP               Tmp = RTSPINLOCKTMP_INITIALIZER;
 
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     if (!pDev)
         pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
     if (VALID_PTR(pDev))
@@ -386,7 +386,7 @@ static void vboxNetFltLinuxUnhookDev(PVBOXNETFLTINS pThis, struct net_device *pD
     }
     else
         pOverride = NULL;
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     if (pOverride)
     {
@@ -1215,7 +1215,6 @@ static void vboxNetFltLinuxXmitTask(void *pWork)
 # endif
 {
     PVBOXNETFLTINS  pThis   = VBOX_FLT_XT_TO_INST(pWork);
-    RTSPINLOCKTMP   Tmp     = RTSPINLOCKTMP_INITIALIZER;
     struct sk_buff *pBuf;
 
     Log4(("vboxNetFltLinuxXmitTask: Got work %p.\n", pWork));
@@ -1223,12 +1222,8 @@ static void vboxNetFltLinuxXmitTask(void *pWork)
     /*
      * Active? Retain the instance and increment the busy counter.
      */
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
-    if (ASMAtomicUoReadBool(&pThis->fActive))
+    if (vboxNetFltTryRetainBusyActive(pThis))
     {
-        vboxNetFltRetain(pThis, true /* fBusy */);
-        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
-
         while ((pBuf = skb_dequeue(&pThis->u.s.XmitQueue)) != NULL)
             vboxNetFltLinuxForwardToIntNet(pThis, pBuf);
 
@@ -1236,7 +1231,6 @@ static void vboxNetFltLinuxXmitTask(void *pWork)
     }
     else
     {
-        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
         /** @todo Shouldn't we just drop the packets here? There is little point in
          *        making them accumulate when the VM is paused and it'll only waste
          *        kernel memory anyway... Hmm. maybe wait a short while (2-5 secs)
@@ -1255,37 +1249,42 @@ static void vboxNetFltLinuxXmitTask(void *pWork)
 static void vboxNetFltLinuxReportNicGsoCapabilities(PVBOXNETFLTINS pThis)
 {
 #ifdef VBOXNETFLT_WITH_GSO_XMIT_WIRE
-    struct net_device  *pDev;
-    PINTNETTRUNKSWPORT  pSwitchPort;
-    unsigned int        fFeatures;
-    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
-
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
-
-    pSwitchPort = pThis->pSwitchPort; /* this doesn't need to be here, but it doesn't harm. */
-    pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
-    if (pDev)
-        fFeatures = pDev->features;
-    else
-        fFeatures = 0;
-
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
-
-    if (pThis->pSwitchPort)
+    if (vboxNetFltTryRetainBusyNotDisconnected(pThis))
     {
-        /* Set/update the GSO capabilities of the NIC. */
-        uint32_t fGsoCapabilites = 0;
-        if (fFeatures & NETIF_F_TSO)
-            fGsoCapabilites |= RT_BIT_32(PDMNETWORKGSOTYPE_IPV4_TCP);
-        if (fFeatures & NETIF_F_TSO6)
-            fGsoCapabilites |= RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_TCP);
+        struct net_device  *pDev;
+        PINTNETTRUNKSWPORT  pSwitchPort;
+        unsigned int        fFeatures;
+        RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
+
+        RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
+
+        pSwitchPort = pThis->pSwitchPort; /* this doesn't need to be here, but it doesn't harm. */
+        pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
+        if (pDev)
+            fFeatures = pDev->features;
+        else
+            fFeatures = 0;
+
+        RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
+
+        if (pThis->pSwitchPort)
+        {
+            /* Set/update the GSO capabilities of the NIC. */
+            uint32_t fGsoCapabilites = 0;
+            if (fFeatures & NETIF_F_TSO)
+                fGsoCapabilites |= RT_BIT_32(PDMNETWORKGSOTYPE_IPV4_TCP);
+            if (fFeatures & NETIF_F_TSO6)
+                fGsoCapabilites |= RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_TCP);
 # if 0 /** @todo GSO: Test UDP offloading (UFO) on linux. */
-        if (fFeatures & NETIF_F_UFO)
-            fGsoCapabilites |= RT_BIT_32(PDMNETWORKGSOTYPE_IPV4_UDP);
-        if (fFeatures & NETIF_F_UFO)
-            fGsoCapabilites |= RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_UDP);
+            if (fFeatures & NETIF_F_UFO)
+                fGsoCapabilites |= RT_BIT_32(PDMNETWORKGSOTYPE_IPV4_UDP);
+            if (fFeatures & NETIF_F_UFO)
+                fGsoCapabilites |= RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_UDP);
 # endif
-        pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, fGsoCapabilites, INTNETTRUNKDIR_WIRE);
+            pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, fGsoCapabilites, INTNETTRUNKDIR_WIRE);
+        }
+
+        vboxNetFltRelease(pThis, true /*fBusy*/);
     }
 #endif /* VBOXNETFLT_WITH_GSO_XMIT_WIRE */
 }
@@ -1326,9 +1325,9 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
      */
     dev_hold(pDev);
 
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pDev, pDev);
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     Log(("vboxNetFltLinuxAttachToInterface: Device %p(%s) retained. ref=%d\n", pDev, pDev->name, atomic_read(&pDev->refcnt)));
     Log(("vboxNetFltLinuxAttachToInterface: Got pDev=%p pThis=%p pThis->u.s.pDev=%p\n", pDev, pThis, ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev)));
@@ -1352,7 +1351,7 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
      * Set indicators that require the spinlock. Be abit paranoid about racing
      * the device notification handle.
      */
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
     if (pDev)
     {
@@ -1360,7 +1359,7 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
         ASMAtomicUoWriteBool(&pThis->u.s.fRegistered, true);
         pDev = NULL; /* don't dereference it */
     }
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
     Log(("vboxNetFltLinuxAttachToInterface: this=%p: Packet handler installed.\n", pThis));
 
     /*
@@ -1370,19 +1369,23 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
     if (!pDev)
     {
         Assert(pThis->pSwitchPort);
-        vboxNetFltLinuxReportNicGsoCapabilities(pThis);
-        pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
-        pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, vboxNetFltLinuxPromiscuous(pThis));
-        pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
+        if (vboxNetFltTryRetainBusyNotDisconnected(pThis))
+        {
+            vboxNetFltLinuxReportNicGsoCapabilities(pThis);
+            pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
+            pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, vboxNetFltLinuxPromiscuous(pThis));
+            pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
+            vboxNetFltRelease(pThis, true /*fBusy*/);
+        }
     }
     else
     {
 #ifdef VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT
         vboxNetFltLinuxUnhookDev(pThis, pDev);
 #endif
-        RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+        RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
         ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pDev, NULL);
-        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
         dev_put(pDev);
         Log(("vboxNetFltLinuxAttachToInterface: Device %p(%s) released. ref=%d\n", pDev, pDev->name, atomic_read(&pDev->refcnt)));
     }
@@ -1402,11 +1405,11 @@ static int vboxNetFltLinuxUnregisterDevice(PVBOXNETFLTINS pThis, struct net_devi
     vboxNetFltLinuxUnhookDev(pThis, pDev);
 #endif
 
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     ASMAtomicWriteBool(&pThis->u.s.fRegistered, false);
     ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, true);
     ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pDev, NULL);
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     dev_remove_pack(&pThis->u.s.PacketType);
 #ifndef VBOXNETFLT_LINUX_NO_XMIT_QUEUE
@@ -1422,7 +1425,8 @@ static int vboxNetFltLinuxUnregisterDevice(PVBOXNETFLTINS pThis, struct net_devi
 static int vboxNetFltLinuxDeviceIsUp(PVBOXNETFLTINS pThis, struct net_device *pDev)
 {
     /* Check if we are not suspended and promiscuous mode has not been set. */
-    if (ASMAtomicUoReadBool(&pThis->fActive) && !ASMAtomicUoReadBool(&pThis->u.s.fPromiscuousSet))
+    if (   pThis->enmTrunkState == INTNETTRUNKIFSTATE_ACTIVE
+        && !ASMAtomicUoReadBool(&pThis->u.s.fPromiscuousSet))
     {
         /* Note that there is no need for locking as the kernel got hold of the lock already. */
         dev_set_promiscuity(pDev, 1);
@@ -1658,6 +1662,7 @@ int  vboxNetFltOsConnectIt(PVBOXNETFLTINS pThis)
 {
     /*
      * Report the GSO capabilities of the host and device (if connected).
+     * Note! No need to mark ourselves busy here.
      */
     /** @todo duplicate work here now? Attach */
 #if defined(VBOXNETFLT_WITH_GSO_XMIT_HOST)
@@ -1693,10 +1698,10 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
      *        state (just reads it), it is likely to panic in some interesting
      *        ways. */
 
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
     fRegistered = ASMAtomicUoReadBool(&pThis->u.s.fRegistered);
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     if (fRegistered)
     {

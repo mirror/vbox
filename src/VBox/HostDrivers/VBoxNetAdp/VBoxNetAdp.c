@@ -36,6 +36,7 @@
 #include <iprt/string.h>
 
 #ifdef VBOXANETADP_DO_NOT_USE_NETFLT
+#error "this code is broken"
 
 #include <VBox/sup.h>
 #include <iprt/assert.h>
@@ -106,9 +107,9 @@ DECLINLINE(void) vboxNetAdpSetStateWithLock(PVBOXNETADP pThis, VBOXNETADPSTATE e
 {
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
     Log(("vboxNetAdpSetStateWithLock: pThis=%p, state=%d.\n", pThis, enmNewState));
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     vboxNetAdpSetState(pThis, enmNewState);
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 }
 
 
@@ -124,9 +125,9 @@ DECLINLINE(VBOXNETADPSTATE) vboxNetAdpGetStateWithLock(PVBOXNETADP pThis)
 {
     VBOXNETADPSTATE enmState;
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     enmState = vboxNetAdpGetState(pThis);
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
     Log(("vboxNetAdpGetStateWithLock: pThis=%p, state=%d.\n", pThis, enmState));
     return enmState;
 }
@@ -147,13 +148,13 @@ DECLINLINE(bool) vboxNetAdpCheckAndSetState(PVBOXNETADP pThis, VBOXNETADPSTATE e
     bool fRc = true; /* be optimistic */
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
 
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     enmActualState = vboxNetAdpGetState(pThis); /** @todo r=bird: ASMAtomicCmpXchgU32()*/
     if (enmActualState == enmOldState)
         vboxNetAdpSetState(pThis, enmNewState);
     else
         fRc = false;
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     if (fRc)
         Log(("vboxNetAdpCheckAndSetState: pThis=%p, state changed: %d -> %d.\n", pThis, enmOldState, enmNewState));
@@ -178,14 +179,14 @@ static PVBOXNETADP vboxNetAdpFind(PVBOXNETADPGLOBALS pGlobals, const char *pszNa
     {
         RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
         PVBOXNETADP pThis = &pGlobals->aAdapters[i];
-        RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+        RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
         if (    vboxNetAdpGetState(pThis)
             &&  !strcmp(pThis->szName, pszName))
         {
-            RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+            RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
             return pThis;
         }
-        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
     }
     return NULL;
 }
@@ -345,14 +346,14 @@ DECLHIDDEN(bool) vboxNetAdpPrepareToReceive(PVBOXNETADP pThis)
      */
     AssertPtr(pThis);
     Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     if (vboxNetAdpGetState(pThis) == kVBoxNetAdpState_Active)
     {
         fCanReceive = true;
         vboxNetAdpRetain(pThis);
         vboxNetAdpBusy(pThis);
     }
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
     Log(("vboxNetAdpPrepareToReceive: fCanReceive=%d.\n", fCanReceive));
 
     return fCanReceive;
@@ -415,17 +416,17 @@ static DECLCALLBACK(int) vboxNetAdpPortXmit(PINTNETTRUNKIFPORT pIfPort, PINTNETS
     /*
      * Do a retain/busy, invoke the OS specific code.
      */
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     if (vboxNetAdpGetState(pThis) != kVBoxNetAdpState_Active)
     {
-        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
         Log(("vboxNetAdpReceive: Dropping incoming packet for inactive interface %s.\n",
              pThis->szName));
         return VERR_INVALID_STATE;
     }
     vboxNetAdpRetain(pThis);
     vboxNetAdpBusy(pThis);
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     rc = vboxNetAdpPortOsXmit(pThis, pSG, fDst);
     vboxNetAdpIdle(pThis);
@@ -503,7 +504,7 @@ static DECLCALLBACK(bool) vboxNetAdpPortSetActive(PINTNETTRUNKIFPORT pIfPort, bo
     Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
 
     Log(("vboxNetAdpPortSetActive: pThis=%p, fActive=%d, state before: %d.\n", pThis, fActive, vboxNetAdpGetState(pThis)));
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
 
     fPreviouslyActive = vboxNetAdpGetState(pThis) == kVBoxNetAdpState_Active;
     if (fPreviouslyActive != fActive)
@@ -521,7 +522,7 @@ static DECLCALLBACK(bool) vboxNetAdpPortSetActive(PINTNETTRUNKIFPORT pIfPort, bo
         }
     }
 
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
     Log(("vboxNetAdpPortSetActive: state after: %RTbool.\n", vboxNetAdpGetState(pThis)));
     return fPreviouslyActive;
 }
@@ -549,18 +550,18 @@ static DECLCALLBACK(void) vboxNetAdpPortDisconnectAndRelease(PINTNETTRUNKIFPORT 
     /*
      * Disconnect and release it.
      */
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     //Assert(vboxNetAdpGetState(pThis) == kVBoxNetAdpState_Connected);
     Assert(!pThis->cBusy);
     vboxNetAdpSetState(pThis, kVBoxNetAdpState_Transitional);
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     vboxNetAdpOsDisconnectIt(pThis);
     pThis->pSwitchPort = NULL;
 
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     vboxNetAdpSetState(pThis, kVBoxNetAdpState_Available);
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     vboxNetAdpRelease(pThis);
 }
@@ -605,9 +606,9 @@ int vboxNetAdpCreate (PINTNETTRUNKFACTORY pIfFactory, PVBOXNETADP *ppNew)
             vboxNetAdpComposeMACAddress(pThis, &Mac);
             rc = vboxNetAdpOsCreate(pThis, &Mac);
             *ppNew = pThis;
-            RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+            RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
             vboxNetAdpSetState(pThis, kVBoxNetAdpState_Available);
-            RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+            RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
             return rc;
         }
     }
@@ -621,21 +622,21 @@ int vboxNetAdpDestroy (PVBOXNETADP pThis)
     int rc = VINF_SUCCESS;
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
 
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     if (vboxNetAdpGetState(pThis) != kVBoxNetAdpState_Available || pThis->cBusy)
     {
-        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
         return VERR_INTNET_FLT_IF_BUSY;
     }
     vboxNetAdpSetState(pThis, kVBoxNetAdpState_Transitional);
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
     vboxNetAdpRelease(pThis);
 
     vboxNetAdpOsDestroy(pThis);
 
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     vboxNetAdpSetState(pThis, kVBoxNetAdpState_Invalid);
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     return rc;
 }
@@ -841,9 +842,8 @@ static int vboxNetAdpSlotCreate(PVBOXNETADPGLOBALS pGlobals, unsigned uUnit, PVB
     pNew->MyPort.pfnRetain              = vboxNetAdpPortRetain;
     pNew->MyPort.pfnRelease             = vboxNetAdpPortRelease;
     pNew->MyPort.pfnDisconnectAndRelease= vboxNetAdpPortDisconnectAndRelease;
-    pNew->MyPort.pfnSetActive           = vboxNetAdpPortSetActive;
+    pNew->MyPort.pfnSetState            = vboxNetAdpPortSetState;
     pNew->MyPort.pfnWaitForIdle         = vboxNetAdpPortWaitForIdle;
-    pNew->MyPort.pfnGetMacAddress       = vboxNetAdpPortGetMacAddress;
     pNew->MyPort.pfnXmit                = vboxNetAdpPortXmit;
     pNew->MyPort.u32VersionEnd          = INTNETTRUNKIFPORT_VERSION;
     pNew->pSwitchPort                   = NULL;

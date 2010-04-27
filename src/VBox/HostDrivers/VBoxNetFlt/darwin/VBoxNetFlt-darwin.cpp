@@ -232,14 +232,14 @@ DECLINLINE(ifnet_t) vboxNetFltDarwinRetainIfNet(PVBOXNETFLTINS pThis)
     /*
      * Be careful here to avoid problems racing the detached callback.
      */
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     if (!ASMAtomicUoReadBool(&pThis->fDisconnectedFromHost))
     {
         pIfNet = (ifnet_t)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pIfNet);
         if (pIfNet)
             ifnet_reference(pIfNet);
     }
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     return pIfNet;
 }
@@ -663,7 +663,7 @@ static void vboxNetFltDarwinIffDetached(void *pvThis, ifnet_t pIfNet)
      * We carefully take the spinlock and increase the interface reference
      * behind it in order to avoid problematic races with the detached callback.
      */
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
 
     pIfNet = (ifnet_t)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pIfNet);
     int cPromisc = VALID_PTR(pIfNet) ? VBOX_GET_PCOUNT(pIfNet) : - 1;
@@ -676,7 +676,7 @@ static void vboxNetFltDarwinIffDetached(void *pvThis, ifnet_t pIfNet)
     ASMAtomicUoWriteBool(&pThis->fRediscoveryPending, false);
     ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, true);
 
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     if (pIfNet)
         ifnet_release(pIfNet);
@@ -816,13 +816,7 @@ static errno_t vboxNetFltDarwinIffInputOutputWorker(PVBOXNETFLTINS pThis, mbuf_t
     /*
      * Active? Retain the instance and increment the busy counter.
      */
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
-    const bool fActive = ASMAtomicUoReadBool(&pThis->fActive);
-    if (fActive)
-        vboxNetFltRetain(pThis, true /* fBusy */);
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
-    if (!fActive)
+    if (!vboxNetFltTryRetainBusyActive(pThis))
         return 0;
 
     /*
@@ -918,9 +912,9 @@ static int vboxNetFltDarwinAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
     }
 
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pIfNet, pIfNet);
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     /*
      * Get the mac address while we still have a valid ifnet reference.
@@ -944,7 +938,7 @@ static int vboxNetFltDarwinAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
         err = iflt_attach(pIfNet, &RegRec, &pIfFilter);
         Assert(err || pIfFilter);
 
-        RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+        RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
         pIfNet = (ifnet_t)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pIfNet);
         if (pIfNet && !err)
         {
@@ -952,16 +946,18 @@ static int vboxNetFltDarwinAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
             ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pIfFilter, pIfFilter);
             pIfNet = NULL; /* don't dereference it */
         }
-        RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
         /* Report capabilities. */
-        if (!pIfNet)
+        if (   !pIfNet
+            && vboxNetFltTryRetainBusyNotDisconnected(pThis))
         {
             Assert(pThis->pSwitchPort);
             pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
             pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, vboxNetFltDarwinIsPromiscuous(pThis));
             pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0,  INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
             pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, 0 /* none */);
+            vboxNetFltRelease(pThis, true /*fBusy*/);
         }
     }
 
@@ -1162,11 +1158,11 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
     /*
      * Carefully obtain the interface filter reference and detach it.
      */
-    RTSpinlockAcquire(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     pIfFilter = (interface_filter_t)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pIfFilter);
     if (pIfFilter)
         ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pIfFilter, NULL);
-    RTSpinlockRelease(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     if (pIfFilter)
         iflt_detach(pIfFilter);

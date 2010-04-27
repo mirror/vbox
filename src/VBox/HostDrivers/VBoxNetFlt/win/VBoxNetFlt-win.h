@@ -635,22 +635,22 @@ DECLINLINE(PVBOXNETFLTINS) vboxNetFltWinReferenceAdaptNetFltFromAdapt(PADAPT pAd
 
     pNetFlt = PADAPT_2_PVBOXNETFLTINS(pAdapt);
 
-    RTSpinlockAcquire((pNetFlt)->hSpinlock, &Tmp);
-    if(!ASMAtomicUoReadBool(&(pNetFlt)->fActive))
+    RTSpinlockAcquireNoInts((pNetFlt)->hSpinlock, &Tmp);
+    if(pNetFlt->enmTrunkState != INTNETTRUNKIFSTATE_ACTIVE)
     {
-        RTSpinlockRelease((pNetFlt)->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock, &Tmp);
         return NULL;
     }
 
     if(!vboxNetFltWinDoReferenceDevice(pAdapt, &pAdapt->PTState))
     {
-        RTSpinlockRelease((pNetFlt)->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock, &Tmp);
         return NULL;
     }
 
     vboxNetFltRetain((pNetFlt), true /* fBusy */);
 
-    RTSpinlockRelease((pNetFlt)->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock, &Tmp);
 
     return pNetFlt;
 }
@@ -659,29 +659,29 @@ DECLINLINE(bool) vboxNetFltWinReferenceAdaptNetFlt(PVBOXNETFLTINS pNetFlt, PADAP
 {
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
 
-    RTSpinlockAcquire((pNetFlt)->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts((pNetFlt)->hSpinlock, &Tmp);
 #ifndef VBOXNETADP
     if(!vboxNetFltWinDoReferenceDevices(pAdapt, &pAdapt->MPState, &pAdapt->PTState))
 #else
     if(!vboxNetFltWinDoReferenceDevice(pAdapt, &pAdapt->MPState))
 #endif
     {
-        RTSpinlockRelease((pNetFlt)->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock, &Tmp);
         *pbNetFltActive = false;
         return false;
     }
 
-    if(!ASMAtomicUoReadBool(&(pNetFlt)->fActive))
+    if(pNetFlt->enmTrunkState != INTNETTRUNKIFSTATE_ACTIVE)
     {
         vboxNetFltWinReferenceModePassThru(pNetFlt);
-        RTSpinlockRelease((pNetFlt)->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock, &Tmp);
         *pbNetFltActive = false;
         return true;
     }
 
     vboxNetFltRetain((pNetFlt), true /* fBusy */);
     vboxNetFltWinReferenceModeNetFlt(pNetFlt);
-    RTSpinlockRelease((pNetFlt)->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock, &Tmp);
 
     *pbNetFltActive = true;
     return true;
@@ -703,22 +703,22 @@ DECLINLINE(PVBOXNETFLTINS) vboxNetFltWinIncReferenceAdaptNetFltFromAdapt(PADAPT 
 
     pNetFlt = PADAPT_2_PVBOXNETFLTINS(pAdapt);
 
-    RTSpinlockAcquire((pNetFlt)->hSpinlock, &Tmp);
-    if(!ASMAtomicUoReadBool(&(pNetFlt)->fActive))
+    RTSpinlockAcquireNoInts((pNetFlt)->hSpinlock, &Tmp);
+    if(pNetFlt->enmTrunkState != INTNETTRUNKIFSTATE_ACTIVE)
     {
-        RTSpinlockRelease((pNetFlt)->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock, &Tmp);
         return NULL;
     }
 
     if(!vboxNetFltWinDoIncReferenceDevice(pAdapt, &pAdapt->PTState, v))
     {
-        RTSpinlockRelease((pNetFlt)->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock, &Tmp);
         return NULL;
     }
 
     vboxNetFltRetain((pNetFlt), true /* fBusy */);
 
-    RTSpinlockRelease((pNetFlt)->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock, &Tmp);
 
     /* we have marked it as busy, so can do the res references outside the lock */
     for(i = 0; i < v-1; i++)
@@ -741,23 +741,23 @@ DECLINLINE(bool) vboxNetFltWinIncReferenceAdaptNetFlt(PVBOXNETFLTINS pNetFlt, PA
         return false;
     }
 
-    RTSpinlockAcquire((pNetFlt)->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts((pNetFlt)->hSpinlock, &Tmp);
 #ifndef VBOXNETADP
     if(!vboxNetFltWinDoIncReferenceDevices(pAdapt, &pAdapt->MPState, &pAdapt->PTState, v))
 #else
     if(!vboxNetFltWinDoIncReferenceDevice(pAdapt, &pAdapt->MPState, v))
 #endif
     {
-        RTSpinlockRelease(pNetFlt->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
         *pbNetFltActive = false;
         return false;
     }
 
-    if(!ASMAtomicUoReadBool(&(pNetFlt)->fActive))
+    if(pNetFlt->enmTrunkState != INTNETTRUNKIFSTATE_ACTIVE)
     {
         vboxNetFltWinIncReferenceModePassThru(pNetFlt, v);
 
-        RTSpinlockRelease((pNetFlt)->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock, &Tmp);
         *pbNetFltActive = false;
         return true;
     }
@@ -766,7 +766,7 @@ DECLINLINE(bool) vboxNetFltWinIncReferenceAdaptNetFlt(PVBOXNETFLTINS pNetFlt, PA
 
     vboxNetFltWinIncReferenceModeNetFlt(pNetFlt, v);
 
-    RTSpinlockRelease(pNetFlt->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
 
     /* we have marked it as busy, so can do the res references outside the lock */
     for(i = 0; i < v-1; i++)
@@ -832,7 +832,7 @@ DECLINLINE(bool) vboxNetFltWinIncReferenceAdapt(PADAPT pAdapt, uint32_t v)
         return false;
     }
 
-    RTSpinlockAcquire(pNetFlt->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pNetFlt->hSpinlock, &Tmp);
 #ifdef VBOX_NETFLT_ONDEMAND_BIND
     if(vboxNetFltWinDoIncReferenceDevice(pAdapt, &pAdapt->PTState))
 #elif defined(VBOXNETADP)
@@ -841,11 +841,11 @@ DECLINLINE(bool) vboxNetFltWinIncReferenceAdapt(PADAPT pAdapt, uint32_t v)
     if(vboxNetFltWinDoIncReferenceDevices(pAdapt, &pAdapt->MPState, &pAdapt->PTState, v))
 #endif
     {
-        RTSpinlockRelease(pNetFlt->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
         return true;
     }
 
-    RTSpinlockRelease(pNetFlt->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
     return false;
 }
 
@@ -853,7 +853,7 @@ DECLINLINE(bool) vboxNetFltWinReferenceAdapt(PADAPT pAdapt)
 {
     PVBOXNETFLTINS pNetFlt = PADAPT_2_PVBOXNETFLTINS(pAdapt);
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquire(pNetFlt->hSpinlock, &Tmp);
+    RTSpinlockAcquireNoInts(pNetFlt->hSpinlock, &Tmp);
 #ifdef VBOX_NETFLT_ONDEMAND_BIND
     if(vboxNetFltWinDoReferenceDevice(pAdapt, &pAdapt->PTState))
 #elif defined(VBOXNETADP)
@@ -862,11 +862,11 @@ DECLINLINE(bool) vboxNetFltWinReferenceAdapt(PADAPT pAdapt)
     if(vboxNetFltWinDoReferenceDevices(pAdapt, &pAdapt->MPState, &pAdapt->PTState))
 #endif
     {
-        RTSpinlockRelease(pNetFlt->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
         return true;
     }
 
-    RTSpinlockRelease(pNetFlt->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
     return false;
 }
 
