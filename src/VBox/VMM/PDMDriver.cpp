@@ -1198,7 +1198,6 @@ static DECLCALLBACK(int) pdmR3DrvHlp_AsyncCompletionTemplateCreate(PPDMDRVINS pD
                                                                    const char *pszDesc)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    VM_ASSERT_EMT(pDrvIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DrvHlp_AsyncCompletionTemplateCreate: caller='%s'/%d: ppTemplate=%p pfnCompleted=%p pszDesc=%p:{%s}\n",
              pDrvIns->pReg->szName, pDrvIns->iInstance, ppTemplate, pfnCompleted, pszDesc, pszDesc));
 
