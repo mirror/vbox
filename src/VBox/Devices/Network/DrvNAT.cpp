@@ -1080,7 +1080,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     if (!CFGMR3AreValuesValid(pCfg,
                               "PassDomain\0TFTPPrefix\0BootFile\0Network"
                               "\0NextServer\0DNSProxy\0BindIP\0UseHostResolver\0"
-                              "SlirpMTU\0"
+                              "SlirpMTU\0AliasMode\0"
                               "SockRcv\0SockSnd\0TcpRcv\0TcpSnd\0"))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
                                 N_("Unknown NAT configuration option, only supports PassDomain,"
@@ -1130,7 +1130,13 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     int MTU = 1500;
     GET_S32(rc, pThis, pCfg, "SlirpMTU", MTU);
 #endif
+    int i32AliasMode = 0;
+    int i32MainAliasMode = 0;
+    GET_S32(rc, pThis, pCfg, "AliasMode", i32MainAliasMode);
 
+    i32AliasMode |= (i32MainAliasMode & 0x1 ? 0x1 : 0);
+    i32AliasMode |= (i32MainAliasMode & 0x2 ? 0x40 : 0);
+    i32AliasMode |= (i32MainAliasMode & 0x4 ? 0x4 : 0);
     /*
      * Query the network port interface.
      */
@@ -1165,7 +1171,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
      * Initialize slirp.
      */
     rc = slirp_init(&pThis->pNATState, RT_H2N_U32(Network), Netmask,
-                    fPassDomain, !!fUseHostResolver, pThis);
+                    fPassDomain, !!fUseHostResolver, i32AliasMode, pThis);
     if (RT_SUCCESS(rc))
     {
         slirp_set_dhcp_TFTP_prefix(pThis->pNATState, pThis->pszTFTPPrefix);

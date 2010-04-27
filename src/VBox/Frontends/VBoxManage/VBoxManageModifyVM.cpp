@@ -118,6 +118,7 @@ enum
     MODIFYVM_NATBINDIP,
     MODIFYVM_NATSETTINGS,
     MODIFYVM_NATPF,
+    MODIFYVM_NATALIASMODE,
     MODIFYVM_NATTFTPPREFIX,
     MODIFYVM_NATTFTPFILE,
     MODIFYVM_NATTFTPSERVER,
@@ -223,6 +224,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--natbindip",                MODIFYVM_NATBINDIP,                 RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--natsettings",              MODIFYVM_NATSETTINGS,               RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--natpf",                    MODIFYVM_NATPF,                     RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--nataliasmode",             MODIFYVM_NATALIASMODE,              RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--nattftpprefix",            MODIFYVM_NATTFTPPREFIX,             RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--nattftpfile",              MODIFYVM_NATTFTPFILE,               RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--nattftpserver",            MODIFYVM_NATTFTPSERVER,             RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
@@ -1381,6 +1383,40 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
             #undef ITERATE_TO_NEXT_TERM
+            case MODIFYVM_NATALIASMODE:
+            {
+                ComPtr<INetworkAdapter> nic;
+                ComPtr<INATEngine> driver;
+                uint32_t aliasMode = 0;
+
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
+                ASSERT(nic);
+
+                CHECK_ERROR(nic, COMGETTER(NatDriver)(driver.asOutParam()));
+                if (RTStrCmp(ValueUnion.psz,"default") == 0)
+                {
+                    aliasMode = 0;
+                }
+                else
+                {
+                    char *token = (char *)ValueUnion.psz;
+                    while(token)
+                    {
+                        if (RTStrNCmp(token, "log", 3) == 0)
+                            aliasMode |= 0x1;
+                        else if (RTStrNCmp(token, "proxyonly", 9) == 0)
+                            aliasMode |= 0x2;
+                        else if (RTStrNCmp(token, "sameports", 9) == 0)
+                            aliasMode |= 0x4;
+                        token = RTStrStr(token, ",");
+                        if (token == NULL)
+                            break;
+                        token++;
+                    }
+                }
+                CHECK_ERROR(driver, COMSETTER(AliasMode)(aliasMode));
+                break;
+            }
 
             case MODIFYVM_NATTFTPPREFIX:
             {

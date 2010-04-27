@@ -364,7 +364,10 @@ struct USBController
          u32TcpSnd(0),
          fDnsPassDomain(true), /* historically this value is true */
          fDnsProxy(false),
-         fDnsUseHostResolver(false){}
+         fDnsUseHostResolver(false),
+         fAliasLog(false),
+         fAliasProxyOnly(false),
+         fAliasUseSamePorts(false){}
      com::Utf8Str            strNetwork;
      com::Utf8Str            strBindIP;
      uint32_t                u32Mtu;
@@ -378,6 +381,9 @@ struct USBController
      bool                    fDnsPassDomain;
      bool                    fDnsProxy;
      bool                    fDnsUseHostResolver;
+     bool                    fAliasLog;
+     bool                    fAliasProxyOnly;
+     bool                    fAliasUseSamePorts;
      NATRuleList             llRules;
      bool operator==(const NAT &n) const
      {
