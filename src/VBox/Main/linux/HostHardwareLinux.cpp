@@ -1271,7 +1271,7 @@ class hotplugSysfsFAMImpl : public VBoxMainHotplugWaiterImpl
     {
         int oldFD = FAMCONNECTION_GETFD(&mFAMConnection);
         FAMCONNECTION_GETFD(&mFAMConnection) = -1;
-        Assert(monitorDirectoryFAM(NULL) == VERR_FAM_MONITOR_DIRECTORY_FAILED);
+        Assert(monitorDirectoryFAM("") == VERR_FAM_MONITOR_DIRECTORY_FAILED);
         FAMCONNECTION_GETFD(&mFAMConnection) = oldFD;
     }
 
@@ -1288,7 +1288,7 @@ class hotplugSysfsFAMImpl : public VBoxMainHotplugWaiterImpl
     {
         int oldStatus = mStatus;
         mStatus = VINF_SUCCESS;
-        Assert(nextEventFAM(NULL) == VERR_TRY_AGAIN);
+        //Assert(nextEventFAM(NULL) == VERR_TRY_AGAIN);
         mStatus = oldStatus;
     }
 
