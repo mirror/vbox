@@ -114,7 +114,7 @@ typedef struct VBOXNETFLTINS
     bool volatile fRediscoveryPending;
     /** Whether we should not attempt to set promiscuous mode at all. */
     bool fDisablePromiscuous;
-#if (ARCH_BITS == 32) && defined(__GNUC__) && 0
+#if (ARCH_BITS == 32) && defined(__GNUC__)
     uint32_t u32Padding;    /**< Alignment padding, will assert in ASMAtomicUoWriteU64 otherwise. */
 #endif
     /** The timestamp of the last rediscovery. */
