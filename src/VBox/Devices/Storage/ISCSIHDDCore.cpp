@@ -534,15 +534,18 @@ static int iscsiTransportConnect(PISCSIIMAGE pImage)
         return VERR_NET_DEST_ADDRESS_REQUIRED;
 
     rc = pImage->pInterfaceNetCallbacks->pfnClientConnect(pImage->pszHostname, pImage->uPort, &pImage->Socket);
-    if (RT_UNLIKELY(   RT_FAILURE(rc)
-                    && (   rc == VERR_NET_CONNECTION_REFUSED
-                        || rc == VERR_NET_CONNECTION_RESET
-                        || rc == VERR_NET_UNREACHABLE
-                        || rc == VERR_NET_HOST_UNREACHABLE
-                        || rc == VERR_NET_CONNECTION_TIMED_OUT)))
+    if (RT_FAILURE(rc))
     {
-        /* Standardize return value for no connection. */
-        return VERR_NET_CONNECTION_REFUSED;
+        if (   rc == VERR_NET_CONNECTION_REFUSED
+            || rc == VERR_NET_CONNECTION_RESET
+            || rc == VERR_NET_UNREACHABLE
+            || rc == VERR_NET_HOST_UNREACHABLE
+            || rc == VERR_NET_CONNECTION_TIMED_OUT)
+        {
+            /* Standardize return value for no connection. */
+            rc = VERR_NET_CONNECTION_REFUSED;
+        }
+        return rc;
     }
 
     /* Make initiator name and ISID unique on this host. */
