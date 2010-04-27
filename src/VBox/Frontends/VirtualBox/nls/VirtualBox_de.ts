@@ -363,7 +363,7 @@
     <name>QIWizardPage</name>
     <message>
         <source>Use the &lt;b&gt;%1&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;%2&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;%3&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Wählen Sie &lt;b&gt;%1&lt;/b&gt;, um auf die nächste Seite zu gelangen oder &lt;b&gt;%2&lt;/b&gt;, um auf die vorherige Seite zurückzukehren.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -542,7 +542,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the process of exporting an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Please select the virtual machines that should be added to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Dieser Assistent hilft Ihnen beim Export einer Appliance. &lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Bitte wählen Sie die virtuellen Maschinen aus, die in die Appliance exportiert werden sollen. Sie können auch mehrere VMs auswählen. Bitte beachten Sie, dass diese Maschinen ausgeschaltet sein müssen, damit sie exportiert werden können.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -615,7 +615,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Appliance</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Select a file to export into</source>
@@ -767,34 +767,34 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sie haben eine neu erzeugte virtuelle Maschine zum ersten Mal gestartet. Dieser Assistent wird Ihnen helfen, die für die Installation eines Betriebssystems Ihrer Wahl notwendigen Schritte auszuführen.&lt;/p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sie haben eine neu erzeugte virtuelle Maschine zum ersten Mal gestartet. Dieser Assistent wird Ihnen helfen, die für die Installation eines Betriebssystems Ihrer Wahl notwendigen Schritte auszuführen.&lt;/p&gt;&lt;p&gt;Beachten Sie, dass Sie kein Betriebssystem in dieser virtuellen Maschine installieren können, da Sie ihr keine Festplatte zugewiesen haben. Falls Sie eine Festplatte zuweisen wollen, beenden Sie diesen Assistenten, wählen Sie &lt;b&gt;Einstellungen&lt;/b&gt; aus dem Menü &lt;b&gt;Maschine&lt;/b&gt; des Hauptfensters um den Einstellungsdialog dieser VM zu aktivieren und ändern Sie die Konfiguration der Festplatten.&lt;/p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIFirstRunWzdPage2</name>
     <message>
         <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Wählen Sie den Typ des Mediums, das Sie für die Installation verwenden möchten.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Wählen Sie den Typ des Mediums, das Sie für die Installation verwenden möchten.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Wählen Sie den Typ des Mediums, den Sie zum Booten des Betriebssystems benutzen wollen.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Wählen Sie den Typ des Mediums, den Sie zum Booten des Betriebssystems benutzen wollen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Type</source>
-        <translation>Medientyp</translation>
+        <translation type="obsolete">Medientyp</translation>
     </message>
     <message>
         <source>&amp;CD/DVD-ROM Device</source>
-        <translation>&amp;CD/DVD-ROM-Laufwerk</translation>
+        <translation type="obsolete">&amp;CD/DVD-ROM-Laufwerk</translation>
     </message>
     <message>
         <source>&amp;Floppy Device</source>
-        <translation>&amp;Diskettenlaufwerk</translation>
+        <translation type="obsolete">&amp;Diskettenlaufwerk</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
@@ -844,6 +844,10 @@ p, li { white-space: pre-wrap; }
         <source>Source</source>
         <comment>summary</comment>
         <translation>Quelle</translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM Device</source>
+        <translation>CD/DVD-ROM-Gerät</translation>
     </message>
 </context>
 <context>
@@ -925,18 +929,18 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through importing an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Dieser Assistent begleitet Sie beim Import einer Appliance. &lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;VirtualBox unterstützt im Moment das Open Virtualization Format (OVF). Wählen Sie die zu importierende Datei aus:&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIImportApplianceWzdPage2</name>
     <message>
         <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation type="unfinished">Dies sind die in der Appliance beschriebenen virtuellen Maschinen mit den entsprechenden Abbildungen für den Import in VirtualBox. Sie können Änderungen an vielen dieser Einstellungen mittels Doppelklick bzw. duch Auswahl der entsprechenden Checkbox ändern.</translation>
+        <translation>Dies sind die in der Appliance beschriebenen virtuellen Maschinen mit den entsprechenden Abbildungen für den Import in VirtualBox. Sie können Änderungen an vielen dieser Einstellungen mittels Doppelklick bzw. duch Auswahl der entsprechenden Checkbox ändern.</translation>
     </message>
     <message>
         <source>Appliance Import Settings</source>
-        <translation type="unfinished">Appliance Import-Einstellungen</translation>
+        <translation>Appliance Import-Einstellungen</translation>
     </message>
 </context>
 <context>
@@ -1153,7 +1157,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Dieser Assistent wird Ihnen helfen, eine neue virtuelle Festplatte für Ihre virtuelle Maschine zu erstellen.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -1245,7 +1249,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Klicken Sie auf &lt;b&gt;%1&lt;/b&gt;, wenn alle oben angegebenen Einstellungen richtig sind. Damit wird eine neue virtuelle Festplatte erstellt.</translation>
     </message>
 </context>
 <context>
@@ -1375,7 +1379,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Dieser Dialog wird Sie durch die für die Erstellung einer virtuellen Maschine notwendigen Schritte führen.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -1422,6 +1426,11 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>MB</source>
         <comment>megabytes</comment>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
         <translation>MB</translation>
     </message>
 </context>
@@ -1480,7 +1489,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>MB</source>
         <comment>megabytes</comment>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>Boot Hard Disk</source>
@@ -1489,7 +1498,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Klicken Sie auf &lt;b&gt;%1&lt;/b&gt;, wenn alle oben angegebenen Einstellungen richtig sind. Damit wird eine neue virtuelle Maschine erzeugt.&lt;/p&gt;&lt;/p&gt;Sie können diese und andere Einstellungen der virtuellen Maschine jederzeit im Dialog &lt;b&gt;Einstellungen&lt;/b&gt; ausgehend vom Hauptfenster ändern.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation>MB</translation>
     </message>
 </context>
 <context>
@@ -1599,7 +1613,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>MB</source>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
@@ -1612,6 +1626,16 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Warnings:</source>
         <translation>Warnungen:</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation>MB</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation>MB</translation>
     </message>
 </context>
 <context>
@@ -3606,6 +3630,41 @@ p, li { white-space: pre-wrap; }
         <source>Nested Paging</source>
         <translation>Nested Paging</translation>
     </message>
+    <message>
+        <source>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</source>
+        <comment>regexp for matching ####[.##] B|KB|MB|GB|TB|PB, %1=decimal point</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>B</source>
+        <comment>size suffix Bytes</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>KB</source>
+        <comment>size suffix KBytes=1024 Bytes</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation>MB</translation>
+    </message>
+    <message>
+        <source>GB</source>
+        <comment>size suffix GBytes=1024 MBytes</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>TB</source>
+        <comment>size suffix TBytes=1024 GBytes</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>PB</source>
+        <comment>size suffix PBytes=1024 TBytes</comment>
+        <translation></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -4704,15 +4763,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VT-x/AMD-V-Hardwarebeschleunigung ist auf Ihrem System nicht verfügbar. Der Gast wird keine 64-Bit-fähige CPU erkennen und daher nicht booten können.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VT-x/AMD-V-Hardwarebeschleunigung ist auf Ihrem System nicht verfügbar. Einige Gäste (z.B. OS/2 oder QNX) benötigen dieses Feature und werden ohne nicht ordnungsgemäß ausgeführt.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Der Gast-Bildschirm konnte nicht auf diesen Host-Bildschirm gesetzt werden, weil dem Gast zu wenig Video-RAM zugewiesen wurde.&lt;/p&gt;&lt;p&gt;Sie sollten der VM mindestens &lt;b&gt;%1&lt;/b&gt; Video-RAM zur Verfügung stellen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
@@ -4732,7 +4791,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie wirklich das VirtualBox-Benutzerhandbuch von &lt;nobr&gt;&lt;a href=&quot;&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (Größe %3 Byte) herunterladen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
@@ -5793,11 +5852,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Controls the amount of virtual monitors provided to the virtual machine. Currently 2D and 3D acceleration isn&apos;t available when more than one monitor is selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ändern der Anzahl der virtuellen Monitore für diesen Gast. 2D- und 3D-Beschleunigung ist momentan nicht verfügbar, wenn mehr als ein virtueller Monitor eingestellt ist.</translation>
     </message>
     <message>
         <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ändern der Anzahl der virtuellen Monitore für diese virtuelle Maschine.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
@@ -6179,6 +6238,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Storage Controller</source>
         <translation></translation>
+    </message>
+    <message>
+        <source>Allows to use host I/O caching capabilities.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use host I/O cache</source>
+        <translation>Host I/O-Cache verwenden</translation>
     </message>
 </context>
 <context>
@@ -6655,7 +6722,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Durch Aktivierung wird die virtuelle Echtzeituhr die Uhrzeit in UTC bereitstellen, anderenfalls in lokaler (Host-)Zeit. Unix-Gäste erwarten die Zeit normalerweise in UTC.</translation>
     </message>
     <message>
         <source>Hardware clock in &amp;UTC time</source>
@@ -6663,7 +6730,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
-        <translation type="unfinished"></translation>
+        <translation>Legt die Anzahld der virtuellen CPUs dieser VM fest. Der Host muss Hardware-Virtualisierung unterstützen, falls mehr als eine virtuelle CPU emuliert werden soll.</translation>
     </message>
 </context>
 <context>
