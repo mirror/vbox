@@ -5159,6 +5159,7 @@ void VBoxGlobal::init()
     /* process command line */
 
     bool bForceSeamless = false;
+    bool bForceFullscreen = false;
 
     vm_render_mode_str = RTStrDup (virtualBox()
             .GetExtraData (VBoxDefs::GUI_RenderMode).toAscii().constData());
@@ -5202,6 +5203,10 @@ void VBoxGlobal::init()
         else if (!::strcmp(arg, "-seamless") || !::strcmp(arg, "--seamless"))
         {
             bForceSeamless = true;
+        }
+        else if (!::strcmp(arg, "-fullscreen") || !::strcmp(arg, "--fullscreen"))
+        {
+            bForceFullscreen = true;
         }
 #ifdef VBOX_GUI_WITH_SYSTRAY
         else if (!::strcmp (arg, "-systray") || !::strcmp (arg, "--systray"))
@@ -5289,6 +5294,10 @@ void VBoxGlobal::init()
     if (bForceSeamless && !vmUuid.isEmpty())
     {
         mVBox.GetMachine(vmUuid).SetExtraData(VBoxDefs::GUI_Seamless, "on");
+    }
+    else if (bForceFullscreen && !vmUuid.isEmpty())
+    {
+        mVBox.GetMachine(vmUuid).SetExtraData(VBoxDefs::GUI_Fullscreen, "on");
     }
 
     vm_render_mode = vboxGetRenderMode (vm_render_mode_str);
