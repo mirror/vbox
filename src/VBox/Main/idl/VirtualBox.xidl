@@ -12841,6 +12841,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
+    <attribute name="videoChannel" type="boolean">
+      <desc>
+        Flag whether RDP video channel is supported.
+      </desc>
+    </attribute>
+
+    <attribute name="videoChannelQuality" type="unsigned long">
+      <desc>
+        Image quality in percents.
+      </desc>
+    </attribute>
+
   </interface>
 
 

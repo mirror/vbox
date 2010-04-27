@@ -756,6 +756,46 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
             *pcbOut = (uint32_t)cbPortRange;
         } break;
 
+#ifdef VBOX_WITH_VRDP_VIDEO_CHANNEL
+        case VRDP_QP_VIDEO_CHANNEL:
+        {
+            BOOL fVideoEnabled = FALSE;
+
+            server->mConsole->getVRDPServer()->COMGETTER(VideoChannel)(&fVideoEnabled);
+
+            if (cbBuffer >= sizeof(uint32_t))
+            {
+                *(uint32_t *)pvBuffer = (uint32_t)fVideoEnabled;
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                rc = VINF_BUFFER_OVERFLOW;
+            }
+
+            *pcbOut = sizeof(uint32_t);
+        } break;
+
+        case VRDP_QP_VIDEO_CHANNEL_QUALITY:
+        {
+            ULONG ulQuality = 0;
+
+            server->mConsole->getVRDPServer()->COMGETTER(VideoChannelQuality)(&ulQuality);
+
+            if (cbBuffer >= sizeof(uint32_t))
+            {
+                *(uint32_t *)pvBuffer = (uint32_t)ulQuality;
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                rc = VINF_BUFFER_OVERFLOW;
+            }
+
+            *pcbOut = sizeof(uint32_t);
+        } break;
+#endif /* VBOX_WITH_VRDP_VIDEO_CHANNEL */
+
         case VRDP_SP_NETWORK_BIND_PORT:
         {
             if (cbBuffer != sizeof(uint32_t))
