@@ -14163,7 +14163,20 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
   </interface>
-
+ <enum
+  name="NATAliasMode"
+  uuid="67772168-50d9-11df-9669-7fb714ee4fa1">
+  <desc></desc>
+  <const name="AliasLog" value="0x1">
+    <desc></desc>
+  </const>
+  <const name="AliasProxyOnly" value="0x02">
+    <desc></desc>
+  </const>
+  <const name="AliasUseSamePorts" value="0x04">
+    <desc></desc>
+  </const>
+ </enum>
   <enum
     name="NATProtocol"
     uuid="e90164be-eb03-11de-94af-fff9b1c1b19f"
@@ -14207,6 +14220,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         the corresponding fields of DHCP leases.
         <note>The preferred form is IPv4 addresses.</note>
       </desc>
+    </attribute>
+    <attribute name="aliasMode" type="unsigned long">
+      <desc></desc>
     </attribute>
     <attribute name="dnsPassDomain" type="boolean">
       <desc>Whether the DHCP server should pass the DNS domain used by the host.</desc>

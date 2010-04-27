@@ -330,6 +330,10 @@ HRESULT NATEngine::loadSettings(const settings::NAT &data)
     mData->mDnsPassDomain = data.fDnsPassDomain;
     mData->mDnsProxy = data.fDnsProxy;
     mData->mDnsUseHostResolver = data.fDnsUseHostResolver;
+    /* Alias */
+    mData->mAliasMode |= (data.fAliasLog ? NATAliasMode_AliasLog : 0);
+    mData->mAliasMode |= (data.fAliasProxyOnly ? NATAliasMode_AliasProxyOnly : 0);
+    mData->mAliasMode = (data.fAliasUseSamePorts ? NATAliasMode_AliasUseSamePorts : 0);
     /* port forwarding */
     mNATRules.clear();
     for (settings::NATRuleList::const_iterator it = data.llRules.begin();
@@ -364,6 +368,10 @@ HRESULT NATEngine::saveSettings(settings::NAT &data)
     data.fDnsPassDomain = mData->mDnsPassDomain;
     data.fDnsProxy = mData->mDnsProxy;
     data.fDnsUseHostResolver = mData->mDnsUseHostResolver;
+    /* Alias */
+    data.fAliasLog = mData->mAliasMode & NATAliasMode_AliasLog;
+    data.fAliasProxyOnly = mData->mAliasMode & NATAliasMode_AliasProxyOnly;
+    data.fAliasUseSamePorts = mData->mAliasMode & NATAliasMode_AliasUseSamePorts;
 
     for (NATRuleMap::iterator it = mNATRules.begin();
         it != mNATRules.end(); ++it)
@@ -603,3 +611,30 @@ NATEngine::COMSETTER(DnsUseHostResolver)(BOOL aDnsUseHostResolver)
     }
     return S_OK;
 }
+
+STDMETHODIMP NATEngine::COMSETTER(AliasMode) (ULONG aAliasMode)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (mData->mAliasMode != aAliasMode)
+    {
+        mData.backup();
+        mData->mAliasMode = aAliasMode;
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        m_fModified = true;
+    }
+    return S_OK;
+}
+
+STDMETHODIMP NATEngine::COMGETTER(AliasMode) (ULONG *aAliasMode)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC (autoCaller.rc());
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *aAliasMode = mData->mAliasMode;
+    return S_OK;
+}
+

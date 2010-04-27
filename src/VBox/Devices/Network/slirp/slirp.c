@@ -570,7 +570,7 @@ int get_dns_addr(PNATState pData, struct in_addr *pdns_addr)
 }
 
 int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
-               bool fPassDomain, bool fUseHostResolver, void *pvUser)
+               bool fPassDomain, bool fUseHostResolver, int i32AliasMode, void *pvUser)
 {
     int fNATfailed = 0;
     int rc;
@@ -640,7 +640,12 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 
         dnsproxy_init(pData);
     }
-
+    if (i32AliasMode & ~(PKT_ALIAS_LOG|PKT_ALIAS_SAME_PORTS|PKT_ALIAS_PROXY_ONLY))
+    {
+        LogRel(("NAT: alias mode %x is ignored\n", i32AliasMode));
+        i32AliasMode = 0;
+    }
+    pData->i32AliasMode = i32AliasMode;
     getouraddr(pData);
     {
         int flags = 0;
@@ -655,8 +660,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 #ifndef NO_FW_PUNCH
         flags |= PKT_ALIAS_PUNCH_FW;
 #endif
-        flags |= PKT_ALIAS_PROXY_ONLY; /* do transparent proxying */
-        flags |= PKT_ALIAS_LOG; /* set logging */
+        flags |= pData->i32AliasMode; /* do transparent proxying */
         flags = LibAliasSetMode(pData->proxy_alias, flags, ~0);
         proxy_addr.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
         LibAliasSetAddress(pData->proxy_alias, proxy_addr);
@@ -1780,9 +1784,8 @@ static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
 
         lib = LibAliasInit(pData, NULL);
         flags = LibAliasSetMode(lib, 0, 0);
-        flags |= PKT_ALIAS_LOG; /* set logging */
-        flags |= PKT_ALIAS_PROXY_ONLY; /* do transparent proxying */
-        flags |= PKT_ALIAS_REVERSE; /* set logging */
+        flags |= pData->i32AliasMode; 
+        flags |= PKT_ALIAS_REVERSE; /* set reverse  */
         flags = LibAliasSetMode(lib, flags, ~0);
 
         alias.s_addr = RT_H2N_U32(RT_N2H_U32(guest_addr) | CTL_ALIAS);

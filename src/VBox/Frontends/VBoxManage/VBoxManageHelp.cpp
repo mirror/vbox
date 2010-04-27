@@ -224,6 +224,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--natdnspassdomain<1-N> on|off]\n"
                  "                            [--natdnsproxy<1-N> on|off]\n"
                  "                            [--natdnshostresolver<1-N> on|off]\n"
+                 "                            [--nataliasmode<1-N> default|[log],[proxyonly],[sameports]]\n"
                  "                            [--macaddress<1-N> auto|<mac>]\n"
                  "                            [--mouse ps2|usb|usbtablet\n"
                  "                            [--keyboard ps2|usb\n"

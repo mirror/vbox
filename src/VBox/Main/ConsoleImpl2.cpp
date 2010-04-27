@@ -2799,6 +2799,11 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
             rc = CFGMR3InsertInteger(pCfg, "DNSProxy", fDnsFlag);        RC_CHECK();
             hrc = natDriver->COMGETTER(DnsUseHostResolver)(&fDnsFlag);   H();
             rc = CFGMR3InsertInteger(pCfg, "UseHostResolver", fDnsFlag); RC_CHECK();
+
+            ULONG aliasMode;
+            hrc = natDriver->COMGETTER(AliasMode)(&aliasMode);           H();
+            rc = CFGMR3InsertInteger(pCfg, "AliasMode", aliasMode);      RC_CHECK();
+
             /* port-forwarding */
             SafeArray<BSTR> pfs;
             hrc = natDriver->COMGETTER(Redirects)(ComSafeArrayAsOutParam(pfs)); H();

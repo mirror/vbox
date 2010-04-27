@@ -1879,6 +1879,13 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
             pelmDNS->getAttributeValue("use-proxy", nic.nat.fDnsProxy);
             pelmDNS->getAttributeValue("use-host-resolver", nic.nat.fDnsUseHostResolver);
         }
+        const xml::ElementNode *pelmAlias;
+        if ((pelmAlias = elmMode.findChildElement("Alias")))
+        {
+            pelmAlias->getAttributeValue("logging", nic.nat.fAliasLog);
+            pelmAlias->getAttributeValue("proxy-only", nic.nat.fAliasProxyOnly);
+            pelmAlias->getAttributeValue("use-same-ports", nic.nat.fAliasUseSamePorts);
+        }
         const xml::ElementNode *pelmTFTP;
         if ((pelmTFTP = elmMode.findChildElement("TFTP")))
         {
@@ -3605,6 +3612,13 @@ void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode,
             pelmDNS->setAttribute("pass-domain", nic.nat.fDnsPassDomain);
             pelmDNS->setAttribute("use-proxy", nic.nat.fDnsProxy);
             pelmDNS->setAttribute("use-host-resolver", nic.nat.fDnsUseHostResolver);
+
+            xml::ElementNode *pelmAlias;
+            pelmAlias = pelmNAT->createChild("Alias");
+            pelmAlias->setAttribute("logging", nic.nat.fAliasLog);
+            pelmAlias->setAttribute("proxy-only", nic.nat.fAliasProxyOnly);
+            pelmAlias->setAttribute("use-same-ports", nic.nat.fAliasUseSamePorts);
+
             if (   nic.nat.strTftpPrefix.length()
                 || nic.nat.strTftpBootFile.length()
                 || nic.nat.strTftpNextServer.length())
@@ -4020,6 +4034,9 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                      || !netit->nat.fDnsPassDomain
                      || netit->nat.fDnsProxy
                      || netit->nat.fDnsUseHostResolver
+                     || !netit->nat.fAliasLog
+                     || !netit->nat.fAliasProxyOnly
+                     || !netit->nat.fAliasUseSamePorts
                      || netit->nat.strTftpPrefix.length()
                      || netit->nat.strTftpBootFile.length()
                      || netit->nat.strTftpNextServer.length()
