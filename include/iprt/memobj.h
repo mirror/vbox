@@ -225,9 +225,9 @@ RTR0DECL(int) RTR0MemObjAllocPhysNC(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS Phy
  * @{
  */
 /** Default caching policy -- don't care. */
-#define RTMEM_CACHE_POLICY_DONT_CARE    0
+#define RTMEM_CACHE_POLICY_DONT_CARE    UINT32_C(0)
 /** MMIO caching policy -- uncachable. */
-#define RTMEM_CACHE_POLICY_MMIO         1
+#define RTMEM_CACHE_POLICY_MMIO         UINT32_C(1)
 /** @} */
 
 /**
