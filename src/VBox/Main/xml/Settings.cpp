@@ -2318,7 +2318,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             {
                 pelmVideoChannel->getAttributeValue("enabled", hw.vrdpSettings.fVideoChannel);
                 pelmVideoChannel->getAttributeValue("quality", hw.vrdpSettings.ulVideoChannelQuality);
-                RT_CLAMP(hw.vrdpSettings.ulVideoChannelQuality, 10, 100);
+                hw.vrdpSettings.ulVideoChannelQuality = RT_CLAMP(hw.vrdpSettings.ulVideoChannelQuality, 10, 100);
             }
         }
         else if (pelmHwChild->nameEquals("BIOS"))
