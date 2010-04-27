@@ -405,6 +405,7 @@ ControllerItem::ControllerItem (AbstractItem *aParent, const QString &aName,
     : AbstractItem (aParent)
     , mCtrName (aName)
     , mCtrType (0)
+    , mUseIoCache (true)
 {
     /* Check for proper parent type */
     AssertMsg (mParent->rtti() == AbstractItem::Type_RootItem, ("Incorrect parent type!\n"));
@@ -460,6 +461,11 @@ ControllerTypeList ControllerItem::ctrTypes() const
     return mCtrType->ctrTypes();
 }
 
+bool ControllerItem::ctrUseIoCache() const
+{
+    return mUseIoCache;
+}
+
 void ControllerItem::setCtrName (const QString &aCtrName)
 {
     mCtrName = aCtrName;
@@ -468,6 +474,11 @@ void ControllerItem::setCtrName (const QString &aCtrName)
 void ControllerItem::setCtrType (KStorageControllerType aCtrType)
 {
     mCtrType->setCtrType (aCtrType);
+}
+
+void ControllerItem::setCtrUseIoCache (bool aUseIoCache)
+{
+    mUseIoCache = aUseIoCache;
 }
 
 SlotsList ControllerItem::ctrAllSlots() const
@@ -1100,6 +1111,13 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
                     result.setValue (static_cast <ControllerItem*> (item)->ctrBusType());
             return result;
         }
+        case R_CtrIoCache:
+        {
+            if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
+                if (item->rtti() == AbstractItem::Type_ControllerItem)
+                    return static_cast <ControllerItem*> (item)->ctrUseIoCache();
+            return false;
+        }
 
         case R_AttSlot:
         {
@@ -1294,6 +1312,17 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
                 if (item->rtti() == AbstractItem::Type_ControllerItem)
                 {
                     static_cast <ControllerItem*> (item)->setCtrType (aValue.value <KStorageControllerType>());
+                    emit dataChanged (aIndex, aIndex);
+                    return true;
+                }
+            return false;
+        }
+        case R_CtrIoCache:
+        {
+            if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
+                if (item->rtti() == AbstractItem::Type_ControllerItem)
+                {
+                    static_cast <ControllerItem*> (item)->setCtrUseIoCache (aValue.toBool());
                     emit dataChanged (aIndex, aIndex);
                     return true;
                 }
@@ -1671,6 +1700,7 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
     connect (mLeName, SIGNAL (textEdited (const QString&)), this, SLOT (setInformation()));
     connect (mCbType, SIGNAL (activated (int)), this, SLOT (setInformation()));
     connect (mCbSlot, SIGNAL (activated (int)), this, SLOT (setInformation()));
+    connect (mCbIoCache, SIGNAL (stateChanged (int)), this, SLOT (setInformation()));
     connect (mCbVdi, SIGNAL (activated (int)), this, SLOT (setInformation()));
     connect (mTbVmm, SIGNAL (clicked (bool)), this, SLOT (onVmmInvoked()));
     connect (mCbShowDiffs, SIGNAL (stateChanged (int)), this, SLOT (setInformation()));
@@ -1702,6 +1732,12 @@ void VBoxVMSettingsHD::getFrom (const CMachine &aMachine)
         QString controllerName = controller.GetName();
         QModelIndex ctrIndex = mStorageModel->addController (controllerName, controller.GetBus(), controller.GetControllerType());
         QUuid ctrId = QUuid (mStorageModel->data (ctrIndex, StorageModel::R_ItemId).toString());
+
+        bool useIoCache = true;
+        if (controller.GetIoBackend() == KIoBackendType_Unbuffered)
+            useIoCache = false;
+
+        mStorageModel->setData (ctrIndex, useIoCache, StorageModel::R_CtrIoCache);
 
         CMediumAttachmentVector attachments = mMachine.GetMediumAttachmentsOfController (controllerName);
         foreach (const CMediumAttachment &attachment, attachments)
@@ -1742,8 +1778,10 @@ void VBoxVMSettingsHD::putBackTo()
         QString ctrName = mStorageModel->data (ctrIndex, StorageModel::R_CtrName).toString();
         KStorageBus ctrBusType = mStorageModel->data (ctrIndex, StorageModel::R_CtrBusType).value <KStorageBus>();
         KStorageControllerType ctrType = mStorageModel->data (ctrIndex, StorageModel::R_CtrType).value <KStorageControllerType>();
+        bool useIoCache = mStorageModel->data (ctrIndex, StorageModel::R_CtrIoCache).toBool();
         CStorageController ctr = mMachine.AddStorageController (ctrName, ctrBusType);
         ctr.SetControllerType (ctrType);
+        ctr.SetIoBackend(useIoCache ? KIoBackendType_Buffered : KIoBackendType_Unbuffered);
         int maxUsedPort = -1;
         for (int j = 0; j < mStorageModel->rowCount (ctrIndex); ++ j)
         {
@@ -2069,6 +2107,9 @@ void VBoxVMSettingsHD::getInformation()
                 int ctrPos = mCbType->findText (vboxGlobal().toString (type));
                 mCbType->setCurrentIndex (ctrPos == -1 ? 0 : ctrPos);
 
+                bool isUseIoCache = mStorageModel->data (index, StorageModel::R_CtrIoCache).toBool();
+                mCbIoCache->setChecked(isUseIoCache);
+
                 /* Showing Controller Page */
                 mSwRightPane->setCurrentIndex (1);
                 break;
@@ -2159,6 +2200,8 @@ void VBoxVMSettingsHD::setInformation()
             else if (sdr == mCbType)
                 mStorageModel->setData (index, QVariant::fromValue (vboxGlobal().toControllerType (mCbType->currentText())),
                                         StorageModel::R_CtrType);
+            else if (sdr == mCbIoCache)
+                mStorageModel->setData (index, mCbIoCache->isChecked(), StorageModel::R_CtrIoCache);
             break;
         }
         case AbstractItem::Type_AttachmentItem:

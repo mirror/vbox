@@ -296,9 +296,11 @@ public:
     QString ctrName() const;
     KStorageControllerType ctrType() const;
     ControllerTypeList ctrTypes() const;
+    bool ctrUseIoCache() const;
 
     void setCtrName (const QString &aCtrName);
     void setCtrType (KStorageControllerType aCtrType);
+    void setCtrUseIoCache (bool aUseIoCache);
 
     SlotsList ctrAllSlots() const;
     SlotsList ctrUsedSlots() const;
@@ -321,6 +323,7 @@ private:
 
     QString mCtrName;
     AbstractControllerType *mCtrType;
+    bool mUseIoCache;
     QList <AbstractItem*> mAttachments;
 };
 
@@ -418,6 +421,7 @@ public:
         R_CtrTypes,
         R_CtrDevices,
         R_CtrBusType,
+        R_CtrIoCache,
 
         R_AttSlot,
         R_AttSlots,
