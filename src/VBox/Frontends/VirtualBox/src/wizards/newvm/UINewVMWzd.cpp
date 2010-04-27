@@ -667,10 +667,10 @@ bool UINewVMWzdPage5::constructMachine()
 
     /* Create default storage controllers */
     QString ctrName = VBoxVMSettingsHD::tr("Storage Controller");
-    KStorageBus ideBus = KStorageBus_IDE;
+    KStorageBus storageBus = type.GetRecommendedStorageBus();
 
     // Add storage controller
-    m_Machine.AddStorageController(ctrName, ideBus);
+    m_Machine.AddStorageController(ctrName, storageBus);
 
     // Set storage controller type
     CStorageController ctr = m_Machine.GetStorageControllerByName(ctrName);
