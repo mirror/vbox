@@ -1169,7 +1169,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
              * MMIO / physical memory.
              */
             Assert(pMemLnxToMap->Core.enmType == RTR0MEMOBJTYPE_PHYS && !pMemLnxToMap->Core.u.Phys.fAllocated);
-            pMemLnx->Core.pv = (pMemLnx->Core.u.Phys.CachePolicy == RTMEM_CACHE_POLICY_MMIO)
+            pMemLnx->Core.pv = (pMemLnxToMap->Core.u.Phys.CachePolicy == RTMEM_CACHE_POLICY_MMIO)
                                    ? ioremap_nocache(pMemLnxToMap->Core.u.Phys.PhysBase, pMemLnxToMap->Core.cb)
                                    : ioremap(pMemLnxToMap->Core.u.Phys.PhysBase, pMemLnxToMap->Core.cb);
             if (pMemLnx->Core.pv)
