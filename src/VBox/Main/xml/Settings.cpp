@@ -4034,9 +4034,9 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                      || !netit->nat.fDnsPassDomain
                      || netit->nat.fDnsProxy
                      || netit->nat.fDnsUseHostResolver
-                     || !netit->nat.fAliasLog
-                     || !netit->nat.fAliasProxyOnly
-                     || !netit->nat.fAliasUseSamePorts
+                     || netit->nat.fAliasLog
+                     || netit->nat.fAliasProxyOnly
+                     || netit->nat.fAliasUseSamePorts
                      || netit->nat.strTftpPrefix.length()
                      || netit->nat.strTftpBootFile.length()
                      || netit->nat.strTftpNextServer.length()
