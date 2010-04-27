@@ -403,7 +403,9 @@ void UIMachineLogic::updateDockOverlay()
          state == KMachineState_Restoring ||
          state == KMachineState_TeleportingPausedVM ||
          state == KMachineState_TeleportingIn ||
-         state == KMachineState_Saving))
+         state == KMachineState_Saving ||
+         state == KMachineState_DeletingSnapshotOnline ||
+         state == KMachineState_DeletingSnapshotPaused))
         updateDockIcon();
     else if (m_pDockIconPreview)
         m_pDockIconPreview->updateDockOverlay();
