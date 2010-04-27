@@ -8292,7 +8292,7 @@
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="3fcf2078-3c69-45ca-bd5c-79c3e3c15362"
+    uuid="8aa950f6-668c-4388-b251-3809b404e862"
     wsmap="struct"
   >
     <desc>
@@ -8346,8 +8346,20 @@
       <desc>Returns @c true if using PAE is recommended for this OS type.</desc>
     </attribute>
 
-    <attribute name="recommendedStorageController" type="StorageControllerType" readonly="yes">
-      <desc>Recommended storage controller type.</desc>
+    <attribute name="recommendedDvdStorageController" type="StorageControllerType" readonly="yes">
+      <desc>Recommended storage controller type for DVD/CD drives.</desc>
+    </attribute>
+
+    <attribute name="recommendedDvdStorageBus" type="StorageBus" readonly="yes">
+      <desc>Recommended storage bus type for DVD/CD drives.</desc>
+    </attribute>
+
+    <attribute name="recommendedHdStorageController" type="StorageControllerType" readonly="yes">
+      <desc>Recommended storage controller type for HD drives.</desc>
+    </attribute>
+
+    <attribute name="recommendedHdStorageBus" type="StorageBus" readonly="yes">
+      <desc>Recommended storage bus type for HD drives.</desc>
     </attribute>
 
     <attribute name="recommendedFirmware" type="FirmwareType" readonly="yes">

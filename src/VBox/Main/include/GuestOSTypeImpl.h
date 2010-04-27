@@ -54,7 +54,10 @@ public:
                   VBOXOSTYPE aOSType, uint32_t aOSHint,
                   uint32_t aRAMSize, uint32_t aVRAMSize, uint32_t aHDDSize,
                   NetworkAdapterType_T aNetworkAdapterType, uint32_t numSerialEnabled,
-                  StorageControllerType_T aStorageControllerType);
+                  StorageControllerType_T aDvdStorageControllerType,
+                  StorageBus_T aDvdStorageBusType,
+                  StorageControllerType_T aHdStorageControllerType,
+                  StorageBus_T aHdStorageBusType);
     void uninit();
 
     // IGuestOSType properties
@@ -70,7 +73,10 @@ public:
     STDMETHOD(COMGETTER(RecommendedHDD)) (ULONG *aHDDSize);
     STDMETHOD(COMGETTER(AdapterType)) (NetworkAdapterType_T *aNetworkAdapterType);
     STDMETHOD(COMGETTER(RecommendedFirmware)) (FirmwareType_T *aFirmwareType);
-    STDMETHOD(COMGETTER(RecommendedStorageController)) (StorageControllerType_T *aStorageControllerType);
+    STDMETHOD(COMGETTER(RecommendedDvdStorageBus)) (StorageControllerType_T *aStorageBusType);
+    STDMETHOD(COMGETTER(RecommendedDvdStorageController)) (StorageControllerType_T *aStorageControllerType);
+    STDMETHOD(COMGETTER(RecommendedHdStorageBus)) (StorageControllerType_T *aStorageBusType);
+    STDMETHOD(COMGETTER(RecommendedHdStorageController)) (StorageControllerType_T *aStorageControllerType);
     STDMETHOD(COMGETTER(RecommendedPae)) (BOOL *aRecommendedExtHw);
     STDMETHOD(COMGETTER(RecommendedUsbHid)) (BOOL *aRecommendedUsbHid);
     STDMETHOD(COMGETTER(RecommendedHpet)) (BOOL *aRecommendedHpet);
@@ -103,7 +109,10 @@ private:
     const uint32_t mMonitorCount;
     const NetworkAdapterType_T mNetworkAdapterType;
     const uint32_t mNumSerialEnabled;
-    const StorageControllerType_T mStorageControllerType;
+    const StorageControllerType_T mDvdStorageControllerType;
+    const StorageBus_T mDvdStorageBusType;
+    const StorageControllerType_T mHdStorageControllerType;
+    const StorageBus_T mHdStorageBusType;
 };
 
 #endif // ____H_GUESTOSTYPEIMPL
