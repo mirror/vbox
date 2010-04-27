@@ -165,7 +165,7 @@ void VBoxNetNAT::init()
     /*
      * Initialize slirp.
      */
-    rc = slirp_init(&m_pNATState, m_Ipv4Address.u, m_Ipv4Netmask.u, m_fPassDomain, false, this);
+    rc = slirp_init(&m_pNATState, m_Ipv4Address.u, m_Ipv4Netmask.u, m_fPassDomain, false, 0, this);
     AssertReleaseRC(rc);
 
     slirp_set_ethaddr_and_activate_port_forwarding(m_pNATState, &m_MacAddress.au8[0], INADDR_ANY);
