@@ -1300,6 +1300,10 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
             vrdpServer->COMGETTER(AllowMultiConnection)(&fMultiCon);
             BOOL fReuseCon;
             vrdpServer->COMGETTER(ReuseSingleConnection)(&fReuseCon);
+            BOOL fVideoChannel;
+            vrdpServer->COMGETTER(VideoChannel)(&fVideoChannel);
+            ULONG ulVideoChannelQuality;
+            vrdpServer->COMGETTER(VideoChannelQuality)(&ulVideoChannelQuality);
             VRDPAuthType_T vrdpAuthType;
             const char *strAuthType;
             vrdpServer->COMGETTER(AuthType)(&vrdpAuthType);
@@ -1343,6 +1347,9 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 RTPrintf("vrdpauthtype=\"%s\"\n", strAuthType);
                 RTPrintf("vrdpmulticon=\"%s\"\n", fMultiCon ? "on" : "off");
                 RTPrintf("vrdpreusecon=\"%s\"\n", fReuseCon ? "on" : "off");
+                RTPrintf("vrdpvideochannel=\"%s\"\n", fVideoChannel ? "on" : "off");
+                if (fVideoChannel)
+                    RTPrintf("vrdpvideochannelquality=\"%d\"\n", ulVideoChannelQuality);
             }
             else
             {
@@ -1351,6 +1358,10 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 RTPrintf("VRDP:            enabled (Address %lS, Ports %lS, MultiConn: %s, ReuseSingleConn: %s, Authentication type: %s)\n", address.raw(), ports.raw(), fMultiCon ? "on" : "off", fReuseCon ? "on" : "off", strAuthType);
                 if (console && vrdpPort != -1 && vrdpPort != 0)
                    RTPrintf("VRDP port:       %d\n", vrdpPort);
+                if (fVideoChannel)
+                    RTPrintf("Video redirection: enabled (Quality %d)\n", ulVideoChannelQuality);
+                else
+                    RTPrintf("Video redirection: disabled\n");
             }
         }
         else

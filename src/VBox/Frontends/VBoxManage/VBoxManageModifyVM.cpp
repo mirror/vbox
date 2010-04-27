@@ -136,6 +136,8 @@ enum
     MODIFYVM_VRDPAUTHTYPE,
     MODIFYVM_VRDPMULTICON,
     MODIFYVM_VRDPREUSECON,
+    MODIFYVM_VRDPVIDEOCHANNEL,
+    MODIFYVM_VRDPVIDEOCHANNELQUALITY,
     MODIFYVM_VRDP,
 #endif
     MODIFYVM_RTCUSEUTC,
@@ -242,6 +244,8 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--vrdpauthtype",             MODIFYVM_VRDPAUTHTYPE,              RTGETOPT_REQ_STRING },
     { "--vrdpmulticon",             MODIFYVM_VRDPMULTICON,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--vrdpreusecon",             MODIFYVM_VRDPREUSECON,              RTGETOPT_REQ_BOOL_ONOFF },
+    { "--vrdpvideochannel",         MODIFYVM_VRDPVIDEOCHANNEL,          RTGETOPT_REQ_BOOL_ONOFF },
+    { "--vrdpvideochannelquality",  MODIFYVM_VRDPVIDEOCHANNELQUALITY,   RTGETOPT_REQ_UINT32 },
     { "--vrdp",                     MODIFYVM_VRDP,                      RTGETOPT_REQ_BOOL_ONOFF },
 #endif
     { "--usbehci",                  MODIFYVM_USBEHCI,                   RTGETOPT_REQ_BOOL_ONOFF },
@@ -1875,6 +1879,26 @@ int handleModifyVM(HandlerArg *a)
                 ASSERT(vrdpServer);
 
                 CHECK_ERROR(vrdpServer, COMSETTER(ReuseSingleConnection)(ValueUnion.f));
+                break;
+            }
+
+            case MODIFYVM_VRDPVIDEOCHANNEL:
+            {
+                ComPtr<IVRDPServer> vrdpServer;
+                machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
+                ASSERT(vrdpServer);
+
+                CHECK_ERROR(vrdpServer, COMSETTER(VideoChannel)(ValueUnion.f));
+                break;
+            }
+
+            case MODIFYVM_VRDPVIDEOCHANNELQUALITY:
+            {
+                ComPtr<IVRDPServer> vrdpServer;
+                machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
+                ASSERT(vrdpServer);
+
+                CHECK_ERROR(vrdpServer, COMSETTER(VideoChannelQuality)(ValueUnion.u32));
                 break;
             }
 
