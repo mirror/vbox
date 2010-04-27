@@ -2987,7 +2987,7 @@ QString VBoxGlobal::languageCountryEnglish() const
 
 /**
  *  Comma-separated list of authors of the currently installed translation.
- *  Returns "Sun Microsystems, Inc." if no translation is installed or if the
+ *  Returns "Oracle Corporation" if no translation is installed or if the
  *  translation file is invalid, or if the translation is supplied by Sun
  *  Microsystems, inc.
  */

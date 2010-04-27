@@ -718,7 +718,7 @@ static int supSvcWinShowVersion(int argc, char **argv)
         RTPrintf("%s\n", VBOX_VERSION_STRING);
     else
         RTPrintf("VirtualBox System Service Version %s\n"
-                 "(C) 2008 Sun Microsystems, Inc.\n"
+                 "(C) 2008-2010 Oracle Corporation\n"
                  "All rights reserved.\n",
                  VBOX_VERSION_STRING);
     return 0;
@@ -733,7 +733,7 @@ static int supSvcWinShowVersion(int argc, char **argv)
 static int supSvcWinShowHelp(void)
 {
     RTPrintf("VirtualBox System Service Version %s\n"
-             "(C) 2008 Sun Microsystems, Inc.\n"
+             "(C) 2008-2010 Oracle Corporation\n"
              "All rights reserved.\n"
              "\n",
              VBOX_VERSION_STRING);

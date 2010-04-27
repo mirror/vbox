@@ -57,7 +57,7 @@ __FBSDID("$FreeBSD$");
 #include "dev/drm/drmP.h"
 #include "dev/drm/drm_pciids.h"
 
-#define DRIVER_AUTHOR                   "Sun Microsystems Inc."
+#define DRIVER_AUTHOR                   "Oracle Corporation"
 #define DRIVER_NAME                     "vboxvideo"
 #define DRIVER_DESC                     "VirtualBox DRM"
 #define DRIVER_DATE                     "20090317"
