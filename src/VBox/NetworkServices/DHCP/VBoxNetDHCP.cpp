@@ -913,7 +913,7 @@ int VBoxNetDhcp::tryGoOnline(void)
         GetBufferPtrsReq.pSession = m_pSession;
         GetBufferPtrsReq.hIf = m_hIf;
         GetBufferPtrsReq.pRing3Buf = NULL;
-        GetBufferPtrsReq.pRing0Buf = NULL;
+        GetBufferPtrsReq.pRing0Buf = NIL_RTR0PTR;
         rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS, 0, &GetBufferPtrsReq.Hdr);
         if (RT_SUCCESS(rc))
         {
