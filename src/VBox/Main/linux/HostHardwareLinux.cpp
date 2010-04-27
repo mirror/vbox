@@ -1342,7 +1342,8 @@ hotplugSysfsFAMImpl::hotplugSysfsFAMImpl(void) :
     if (!testing())
     {
 #   ifndef VBOX_WITH_SYSFS_BY_DEFAULT
-        Assert(!RTFileExists("/proc/bus/usb/devices"));
+        /** @todo only create this object if we will use it */
+        // Assert(!RTFileExists("/proc/bus/usb/devices"));
 #   endif
 #   ifdef VBOX_USB_WITH_DBUS
         Assert(!hotplugDBusImpl::HalAvailable());
