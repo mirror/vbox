@@ -167,7 +167,7 @@
             <item>
              <widget class="QIAdvancedSlider" name="mSlMonitors">
               <property name="whatsThis">
-               <string>Controls the amount of virtual monitors provided to the virtual machine. Currently 2D and 3D acceleration isn't available when more than one monitor is selected.</string>
+               <string>Controls the amount of virtual monitors provided to the virtual machine.</string>
               </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
