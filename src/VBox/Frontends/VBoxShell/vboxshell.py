@@ -816,12 +816,16 @@ def execInGuest(ctx,console,args,env):
     print "executed with pid %d" %(pid)
     if pid != 0:
         try:
-            while not progress.completed:
-                data = None #guest.getProcessOutput(pid, 0, 1, 4096)
+            while True:
+                data = guest.getProcessOutput(pid, 0, 1000, 4096)
                 if data and len(data) > 0:
                     sys.stdout.write(data)
+                    continue
                 progress.waitForCompletion(100)
                 ctx['global'].waitForEvents(0)
+                if progress.completed:
+                    break
+
         except KeyboardInterrupt:
             print "Interrupted."
             if progress.cancelable:
