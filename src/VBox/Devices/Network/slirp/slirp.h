@@ -408,7 +408,7 @@ int sscanf(const char *s, const char *format, ...);
 # define stderr NULL
 # define stdout NULL
 
-# ifdef DEBUG
+# ifdef VBOX_WITH_DEBUG_LIBALIAS
 #  define LIBALIAS_DEBUG
 # endif
 
