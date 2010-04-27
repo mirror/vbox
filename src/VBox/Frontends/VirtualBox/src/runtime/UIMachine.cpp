@@ -423,7 +423,8 @@ void UIMachine::loadMachineSettings()
         {
             /* Test 'seamless' flag: */
             QString strSeamlessSettings = machine.GetExtraData(VBoxDefs::GUI_Seamless);
-            if (strSeamlessSettings == "yes")
+            printf ("%s\n", qPrintable(strSeamlessSettings));
+            if (strSeamlessSettings == "on")
             {
                 fIsSomeExtendedModeChosen = true;
                 /* We can't enter seamless mode initially,
@@ -436,7 +437,7 @@ void UIMachine::loadMachineSettings()
         {
             /* Test 'fullscreen' flag: */
             QString strFullscreenSettings = machine.GetExtraData(VBoxDefs::GUI_Fullscreen);
-            if (strFullscreenSettings == "yes")
+            if (strFullscreenSettings == "on")
             {
                 fIsSomeExtendedModeChosen = true;
                 /* We can enter fullscreen mode initially: */
@@ -455,11 +456,11 @@ void UIMachine::saveMachineSettings()
     {
         /* Set 'seamless' flag: */
         machine.SetExtraData(VBoxDefs::GUI_Seamless, m_pVisualState &&
-                             m_pVisualState->visualStateType() == UIVisualStateType_Seamless ? "yes" : QString());
+                             m_pVisualState->visualStateType() == UIVisualStateType_Seamless ? "on" : QString());
 
         /* Set 'fullscreen' flag: */
         machine.SetExtraData(VBoxDefs::GUI_Fullscreen, m_pVisualState &&
-                             m_pVisualState->visualStateType() == UIVisualStateType_Fullscreen ? "yes" : QString());
+                             m_pVisualState->visualStateType() == UIVisualStateType_Fullscreen ? "on" : QString());
     }
 }
 
