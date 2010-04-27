@@ -1316,6 +1316,8 @@ bool VRDPSettings::operator==(const VRDPSettings& v) const
                   && (ulAuthTimeout             == v.ulAuthTimeout)
                   && (fAllowMultiConnection     == v.fAllowMultiConnection)
                   && (fReuseSingleConnection    == v.fReuseSingleConnection)
+                  && (fVideoChannel             == v.fVideoChannel)
+                  && (ulVideoChannelQuality     == v.ulVideoChannelQuality)
                 )
            );
 }
@@ -2310,6 +2312,14 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             pelmHwChild->getAttributeValue("authTimeout", hw.vrdpSettings.ulAuthTimeout);
             pelmHwChild->getAttributeValue("allowMultiConnection", hw.vrdpSettings.fAllowMultiConnection);
             pelmHwChild->getAttributeValue("reuseSingleConnection", hw.vrdpSettings.fReuseSingleConnection);
+
+            const xml::ElementNode *pelmVideoChannel;
+            if ((pelmVideoChannel = pelmHwChild->findChildElement("VideoChannel")))
+            {
+                pelmVideoChannel->getAttributeValue("enabled", hw.vrdpSettings.fVideoChannel);
+                pelmVideoChannel->getAttributeValue("quality", hw.vrdpSettings.ulVideoChannelQuality);
+                RT_CLAMP(hw.vrdpSettings.ulVideoChannelQuality, 10, 100);
+            }
         }
         else if (pelmHwChild->nameEquals("BIOS"))
         {
@@ -3246,6 +3256,13 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     if (hw.vrdpSettings.fReuseSingleConnection)
         pelmVRDP->setAttribute("reuseSingleConnection", hw.vrdpSettings.fReuseSingleConnection);
 
+    if (m->sv >= SettingsVersion_v1_10)
+    {
+        xml::ElementNode *pelmVideoChannel = pelmVRDP->createChild("VideoChannel");
+        pelmVideoChannel->setAttribute("enabled", hw.vrdpSettings.fVideoChannel);
+        pelmVideoChannel->setAttribute("quality", hw.vrdpSettings.ulVideoChannelQuality);
+    }
+
     xml::ElementNode *pelmBIOS = pelmHardware->createChild("BIOS");
     pelmBIOS->createChild("ACPI")->setAttribute("enabled", hw.biosSettings.fACPIEnabled);
     pelmBIOS->createChild("IOAPIC")->setAttribute("enabled", hw.biosSettings.fIOAPICEnabled);
@@ -4060,6 +4077,14 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             || hardwareMachine.ioSettings.ioBackendType != IoBackendType_Unbuffered)
             m->sv = SettingsVersion_v1_10;
     }
+
+    // VirtualBox 3.2 adds support for VRDP video channel
+    if (    m->sv < SettingsVersion_v1_10
+         && (    hardwareMachine.vrdpSettings.fVideoChannel
+            )
+       )
+        m->sv = SettingsVersion_v1_10;
+
 }
 
 /**

@@ -264,7 +264,9 @@ struct VRDPSettings
           authType(VRDPAuthType_Null),
           ulAuthTimeout(5000),
           fAllowMultiConnection(false),
-          fReuseSingleConnection(false)
+          fReuseSingleConnection(false),
+          fVideoChannel(false),
+          ulVideoChannelQuality(75)
     {}
 
     bool operator==(const VRDPSettings& v) const;
@@ -275,7 +277,9 @@ struct VRDPSettings
     VRDPAuthType_T  authType;
     uint32_t        ulAuthTimeout;
     bool            fAllowMultiConnection,
-                    fReuseSingleConnection;
+                    fReuseSingleConnection,
+                    fVideoChannel;
+    uint32_t        ulVideoChannelQuality;
 };
 
 /**
