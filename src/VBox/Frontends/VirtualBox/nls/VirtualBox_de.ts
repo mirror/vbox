@@ -363,7 +363,7 @@
     <name>QIWizardPage</name>
     <message>
         <source>Use the &lt;b&gt;%1&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;%2&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;%3&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
-        <translation>Wählen Sie &lt;b&gt;%1&lt;/b&gt;, um auf die nächste Seite zu gelangen oder &lt;b&gt;%2&lt;/b&gt;, um auf die vorherige Seite zurückzukehren.&lt;/p&gt;</translation>
+        <translation>Wählen Sie &lt;b&gt;%1&lt;/b&gt;, um auf die nächste Seite zu gelangen oder &lt;b&gt;%2&lt;/b&gt;, um auf die vorherige Seite zurückzukehren. Wählen Sie &lt;b&gt;%3&lt;/b&gt;, um den Assistenten zu beenden.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
