@@ -71,6 +71,10 @@ public:
 
     // helpers
 
+    bool isAlreadyShown(const QString &strGuardBlockName) const;
+    void setShownStatus(const QString &strGuardBlockName);
+    void clearShownStatus(const QString &strGuardBlockName);
+
     int message (QWidget *aParent, Type aType, const QString &aMessage,
                  const QString &aDetails = QString::null,
                  const char *aAutoConfirmId = 0,
@@ -410,6 +414,8 @@ private:
 
     static QString doFormatErrorInfo (const COMErrorInfo &aInfo,
                                       HRESULT aWrapperRC = S_OK);
+
+    QStringList m_shownWarnings;
 };
 
 /**

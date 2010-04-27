@@ -73,6 +73,23 @@ bool VBoxProblemReporter::isValid() const
 // Helpers
 /////////////////////////////////////////////////////////////////////////////
 
+bool VBoxProblemReporter::isAlreadyShown(const QString &strWarningName) const
+{
+    return m_shownWarnings.contains(strWarningName);
+}
+
+void VBoxProblemReporter::setShownStatus(const QString &strWarningName)
+{
+    if (!m_shownWarnings.contains(strWarningName))
+        m_shownWarnings.append(strWarningName);
+}
+
+void VBoxProblemReporter::clearShownStatus(const QString &strWarningName)
+{
+    if (m_shownWarnings.contains(strWarningName))
+        m_shownWarnings.removeAll(strWarningName);
+}
+
 /**
  *  Shows a message box of the given type with the given text and with buttons
  *  according to arguments b1, b2 and b3 (in the same way as QMessageBox does
@@ -1881,6 +1898,10 @@ void VBoxProblemReporter::remindAboutAutoCapture()
 
 void VBoxProblemReporter::remindAboutMouseIntegration (bool aSupportsAbsolute)
 {
+    if (isAlreadyShown("remindAboutMouseIntegration"))
+        return;
+    setShownStatus("remindAboutMouseIntegration");
+
     static const char *kNames [2] =
     {
         "remindAboutMouseIntegrationOff",
@@ -1931,6 +1952,8 @@ void VBoxProblemReporter::remindAboutMouseIntegration (bool aSupportsAbsolute)
                 "mouse inside the guest OS.</p>"),
             kNames [0] /* aAutoConfirmId */);
     }
+
+    clearShownStatus("remindAboutMouseIntegration");
 }
 
 /**
