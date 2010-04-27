@@ -82,6 +82,8 @@
 %define X86_CPUID_FEATURE_EDX_HTT       RT_BIT(28)
 %define X86_CPUID_FEATURE_EDX_TM        RT_BIT(29)
 %define X86_CPUID_FEATURE_EDX_PBE       RT_BIT(31)
+%define X86_CPUID_MWAIT_ECX_EXT            RT_BIT(0)
+%define X86_CPUID_MWAIT_ECX_BREAKIRQIF0    RT_BIT(1)
 %define X86_CPUID_AMD_FEATURE_EDX_FPU       RT_BIT(0)
 %define X86_CPUID_AMD_FEATURE_EDX_VME       RT_BIT(1)
 %define X86_CPUID_AMD_FEATURE_EDX_DE        RT_BIT(2)
@@ -225,6 +227,12 @@
 %define MSR_IA32_FEATURE_CONTROL_VMXON      RT_BIT(2)
 %define MSR_IA32_BIOS_UPDT_TRIG             0x79
 %define MSR_IA32_BIOS_SIGN_ID               0x8B
+%define MSR_IA32_PMC0                       0xC1
+%define MSR_IA32_PMC1                       0xC2
+%define MSR_IA32_PMC2                       0xC3
+%define MSR_IA32_PMC3                       0xC4
+%define MSR_IA32_PLATFORM_INFO              0xCE
+%define MSR_IA32_FSB_CLOCK_STS              0xCD
 %define MSR_IA32_MTRR_CAP                   0xFE
 %ifndef MSR_IA32_SYSENTER_CS
 %define MSR_IA32_SYSENTER_CS                0x174
@@ -238,8 +246,11 @@
 %define MSR_IA32_CR_PAT                     0x277
 %define MSR_IA32_PERFEVTSEL0                0x186
 %define MSR_IA32_PERFEVTSEL1                0x187
+%define MSR_IA32_FLEX_RATIO                 0x194
 %define MSR_IA32_PERF_STATUS                0x198
 %define MSR_IA32_PERF_CTL                   0x199
+%define MSR_IA32_THERM_STATUS               0x19c
+%define MSR_IA32_MISC_ENABLE                0x1A0
 %define MSR_IA32_MTRR_DEF_TYPE              0x2FF
 %define MSR_IA32_MC0_CTL                    0x400
 %define MSR_IA32_MC0_STATUS                 0x401
