@@ -824,7 +824,7 @@ def execInGuest(ctx,console,args,env):
                 ctx['global'].waitForEvents(0)
         except KeyboardInterrupt:
             print "Interrupted."
-            if progress.cancelabe:
+            if progress.cancelable:
                 progress.cancel()
         return 0
     else:
