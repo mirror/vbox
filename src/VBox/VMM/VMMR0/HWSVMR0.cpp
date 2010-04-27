@@ -362,7 +362,8 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         pVMCB->ctrl.TLBCtrl.n.u32ASID = 1;
 
         /** Setup the PAT msr (nested paging only) */
-        pVMCB->guest.u64GPAT = 0x0007040600070406ULL;
+        /* The default value should be 0x0007040600070406ULL, but we want to treat all guest memory as WB, so choose type 6 for all PAT slots. */
+        pVMCB->guest.u64GPAT = 0x0006060606060606ULL;
 
         /* The following MSRs are saved automatically by vmload/vmsave, so we allow the guest
          * to modify them directly.
