@@ -1182,12 +1182,6 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
         rc = RTSemFastMutexDestroy(mutex);
         AssertRC(rc);
     }
-    if (pThis->MergeLock != NIL_RTSEMRW)
-    {
-        int rc = RTSemRWDestroy(pThis->MergeLock);
-        AssertRC(rc);
-        pThis->MergeLock = NIL_RTSEMRW;
-    }
 
     if (VALID_PTR(pThis->pDisk))
     {
@@ -1195,6 +1189,13 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
         pThis->pDisk = NULL;
     }
     drvvdFreeImages(pThis);
+
+    if (pThis->MergeLock != NIL_RTSEMRW)
+    {
+        int rc = RTSemRWDestroy(pThis->MergeLock);
+        AssertRC(rc);
+        pThis->MergeLock = NIL_RTSEMRW;
+    }
 }
 
 /**
@@ -1292,7 +1293,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             fValid = CFGMR3AreValuesValid(pCurNode,
                                           "Format\0Path\0"
                                           "ReadOnly\0TempReadOnly\0HonorZeroWrites\0"
-                                          "HostIPStack\0UseNewIo\0SetupMerge\0");
+                                          "HostIPStack\0UseNewIo\0"
+                                          "SetupMerge\0MergeSource\0MergeTarget\0");
         }
         else
         {
@@ -1610,7 +1612,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
 
         /* next */
         iLevel--;
-        iImageIdx--;
+        iImageIdx++;
         pCurNode = CFGMR3GetParent(pCurNode);
     }
 

@@ -474,7 +474,7 @@
 
   <enum
     name="MachineState"
-    uuid="36518cf6-cdf0-4d0d-ad2a-5ee9c60c7494"
+    uuid="e998d075-543a-41fc-8aa9-5ca3e92393fd"
   >
     <desc>
       Virtual machine execution state.
@@ -717,18 +717,28 @@
         Teleporting the machine state in from another host or process.
       </desc>
     </const>
-    <const name="RestoringSnapshot"     value="16">
+    <const name="DeletingSnapshotOnline" value="16">
+      <desc>
+        Teleporting the machine state in from another host or process.
+      </desc>
+    </const>
+    <const name="DeletingSnapshotPaused" value="17">
+      <desc>
+        Teleporting the machine state in from another host or process.
+      </desc>
+    </const>
+    <const name="RestoringSnapshot"     value="18">
       <desc>
         A machine snapshot is being restored; this typically does not take long.
       </desc>
     </const>
-    <const name="DeletingSnapshot"      value="17">
+    <const name="DeletingSnapshot"      value="19">
       <desc>
         A machine snapshot is being deleted; this can take a long time since this
         may require merging differencing media.
       </desc>
     </const>
-    <const name="SettingUp"             value="18">
+    <const name="SettingUp"             value="20">
       <desc>
         Lengthy setup operation is in progress.
       </desc>
@@ -739,7 +749,7 @@
         Pseudo-state: first online state (for use in relational expressions).
       </desc>
     </const>
-    <const name="LastOnline"  value="15" wsmap="suppress"> <!-- TeleportingIn -->
+    <const name="LastOnline"  value="17" wsmap="suppress"> <!-- DeletingSnapshotPaused -->
       <desc>
         Pseudo-state: last online state (for use in relational expressions).
       </desc>
@@ -750,7 +760,7 @@
         Pseudo-state: first transient state (for use in relational expressions).
       </desc>
     </const>
-    <const name="LastTransient"  value="18" wsmap="suppress"> <!-- SettingUp -->
+    <const name="LastTransient"  value="20" wsmap="suppress"> <!-- SettingUp -->
       <desc>
         Pseudo-state: last transient state (for use in relational expressions).
       </desc>
@@ -3730,7 +3740,7 @@
 
   <interface
      name="IInternalMachineControl" extends="$unknown"
-     uuid="1b61599c-0686-451c-a7b6-96761f3f0ac5"
+     uuid="57e9a280-8d57-4331-aa31-f009f5194f52"
      internal="yes"
      wsmap="suppress"
      >
@@ -3982,6 +3992,31 @@
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="finishOnlineMergeMedium">
+      <desc>
+        Gets called by IConsole::onlineMergeMedium.
+      </desc>
+      <param name="mediumAttachment" type="IMediumAttachment" dir="in">
+        <desc>The medium attachment which needs to be cleaned up.</desc>
+      </param>
+      <param name="source" type="IMedium" dir="in">
+        <desc>Merge source medium.</desc>
+      </param>
+      <param name="target" type="IMedium" dir="in">
+        <desc>Merge target medium.</desc>
+      </param>
+      <param name="mergeForward" type="boolean" dir="in">
+        <desc>Merge direction.</desc>
+      </param>
+      <param name="parentForTarget" type="IMedium" dir="in">
+        <desc>For forward merges: new parent for target medium.</desc>
+      </param>
+      <param name="childrenToReparent" type="IMedium" safearray="yes" dir="in">
+        <desc>For backward merges: list of media which need their parent UUID
+        updated.</desc>
       </param>
     </method>
 
@@ -12975,7 +13010,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IInternalSessionControl" extends="$unknown"
-     uuid="f9aac6d0-41b3-46b7-bea4-6370b4036de6"
+     uuid="cc8d63a0-568e-45dd-9bf6-6354049ece1e"
      internal="yes"
      wsmap="suppress"
      >
@@ -13330,6 +13365,53 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <desc>
           The flags of the properties returned.  The array entries match the
           corresponding entries in the @a key array.
+        </desc>
+      </param>
+    </method>
+
+    <method name="onlineMergeMedium">
+      <desc>
+        Triggers online merging of a hard disk. Used internally when deleting
+        a snapshot while a VM referring to the same hard disk chain is running.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Machine session is not open.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type is not direct.
+        </result>
+
+      </desc>
+      <param name="mediumAttachment" type="IMediumAttachment" dir="in">
+        <desc>The medium attachment to identify the medium chain.</desc>
+      </param>
+      <param name="sourceIdx" type="unsigned long" dir="in">
+        <desc>The index of the source image in the chain.
+        Redundant, but drastically reduces IPC.</desc>
+      </param>
+      <param name="targetIdx" type="unsigned long" dir="in">
+        <desc>The index of the target image in the chain.
+        Redundant, but drastically reduces IPC.</desc>
+      </param>
+      <param name="source" type="IMedium" dir="in">
+        <desc>Merge source medium.</desc>
+      </param>
+      <param name="target" type="IMedium" dir="in">
+        <desc>Merge target medium.</desc>
+      </param>
+      <param name="mergeForward" type="boolean" dir="in">
+        <desc>Merge direction.</desc>
+      </param>
+      <param name="parentForTarget" type="IMedium" dir="in">
+        <desc>For forward merges: new parent for target medium.</desc>
+      </param>
+      <param name="childrenToReparent" type="IMedium" safearray="yes" dir="in">
+        <desc>For backward merges: list of media which need their parent UUID
+        updated.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="in">
+        <desc>
+          Progress object for this operation.
         </desc>
       </param>
     </method>

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -68,23 +68,23 @@ public:
 
     // public initializers/uninitializers only for internal purposes
     HRESULT init();
-    void uninit (bool aFinalRelease);
+    void uninit(bool aFinalRelease);
 
     // ISession properties
-    STDMETHOD(COMGETTER(State)) (SessionState_T *aState);
-    STDMETHOD(COMGETTER(Type)) (SessionType_T *aType);
-    STDMETHOD(COMGETTER(Machine)) (IMachine **aMachine);
-    STDMETHOD(COMGETTER(Console)) (IConsole **aConsole);
+    STDMETHOD(COMGETTER(State))(SessionState_T *aState);
+    STDMETHOD(COMGETTER(Type))(SessionType_T *aType);
+    STDMETHOD(COMGETTER(Machine))(IMachine **aMachine);
+    STDMETHOD(COMGETTER(Console))(IConsole **aConsole);
 
     // ISession methods
     STDMETHOD(Close)();
 
     // IInternalSessionControl methods
-    STDMETHOD(GetPID) (ULONG *aPid);
-    STDMETHOD(GetRemoteConsole) (IConsole **aConsole);
-    STDMETHOD(AssignMachine) (IMachine *aMachine);
-    STDMETHOD(AssignRemoteMachine) (IMachine *aMachine, IConsole *aConsole);
-    STDMETHOD(UpdateMachineState) (MachineState_T aMachineState);
+    STDMETHOD(GetPID)(ULONG *aPid);
+    STDMETHOD(GetRemoteConsole)(IConsole **aConsole);
+    STDMETHOD(AssignMachine)(IMachine *aMachine);
+    STDMETHOD(AssignRemoteMachine)(IMachine *aMachine, IConsole *aConsole);
+    STDMETHOD(UpdateMachineState)(MachineState_T aMachineState);
     STDMETHOD(Uninitialize)();
     STDMETHOD(OnNetworkAdapterChange)(INetworkAdapter *networkAdapter, BOOL changeAdapter);
     STDMETHOD(OnSerialPortChange)(ISerialPort *serialPort);
@@ -94,24 +94,30 @@ public:
     STDMETHOD(OnCPUChange)(ULONG aCPU, BOOL aRemove);
     STDMETHOD(OnVRDPServerChange)();
     STDMETHOD(OnUSBControllerChange)();
-    STDMETHOD(OnSharedFolderChange) (BOOL aGlobal);
-    STDMETHOD(OnUSBDeviceAttach) (IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs);
-    STDMETHOD(OnUSBDeviceDetach) (IN_BSTR aId, IVirtualBoxErrorInfo *aError);
-    STDMETHOD(OnShowWindow) (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId);
-    STDMETHOD(AccessGuestProperty) (IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags,
-                                    BOOL aIsSetter, BSTR *aRetValue, ULONG64 *aRetTimestamp, BSTR *aRetFlags);
-    STDMETHOD(EnumerateGuestProperties) (IN_BSTR aPatterns,
-                                         ComSafeArrayOut(BSTR, aNames),
-                                         ComSafeArrayOut(BSTR, aValues),
-                                         ComSafeArrayOut(ULONG64, aTimestamps),
-                                         ComSafeArrayOut(BSTR, aFlags));
+    STDMETHOD(OnSharedFolderChange)(BOOL aGlobal);
+    STDMETHOD(OnUSBDeviceAttach)(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs);
+    STDMETHOD(OnUSBDeviceDetach)(IN_BSTR aId, IVirtualBoxErrorInfo *aError);
+    STDMETHOD(OnShowWindow)(BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId);
+    STDMETHOD(AccessGuestProperty)(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags,
+                                   BOOL aIsSetter, BSTR *aRetValue, ULONG64 *aRetTimestamp, BSTR *aRetFlags);
+    STDMETHOD(EnumerateGuestProperties)(IN_BSTR aPatterns,
+                                        ComSafeArrayOut(BSTR, aNames),
+                                        ComSafeArrayOut(BSTR, aValues),
+                                        ComSafeArrayOut(ULONG64, aTimestamps),
+                                        ComSafeArrayOut(BSTR, aFlags));
+    STDMETHOD(OnlineMergeMedium)(IMediumAttachment *aMediumAttachment,
+                                 ULONG aSourceIdx, ULONG aTargetIdx,
+                                 IMedium *aSource, IMedium *aTarget,
+                                 BOOL aMergeForward, IMedium *aParentForTarget,
+                                 ComSafeArrayIn(IMedium *, aChildrenToReparent),
+                                 IProgress *aProgress);
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Session"; }
 
 private:
 
-    HRESULT close (bool aFinalRelease, bool aFromServer);
+    HRESULT close(bool aFinalRelease, bool aFromServer);
     HRESULT grabIPCSemaphore();
     void releaseIPCSemaphore();
 

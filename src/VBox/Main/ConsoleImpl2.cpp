@@ -1260,6 +1260,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         {
             rc = Console::configMediumAttachment(pCtlInst, pszCtrlDev,
                                                  ulInstance, enmBus, enmIoBackend,
+                                                 false /* fSetupMerge */,
+                                                 0 /* uMergeSource */,
+                                                 0 /* uMergeTarget */,
                                                  atts[j],
                                                  pConsole->mMachineState,
                                                  NULL /* phrc */,
@@ -2270,6 +2273,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 int Console::configMediumAttachment(PCFGMNODE pCtlInst, const char *pcszDevice,
                                     unsigned uInstance, StorageBus_T enmBus,
                                     IoBackendType_T enmIoBackend,
+                                    bool fSetupMerge, unsigned uMergeSource,
+                                    unsigned uMergeTarget,
                                     IMediumAttachment *pMediumAtt,
                                     MachineState_T aMachineState,
                                     HRESULT *phrc, bool fAttachDetach,
@@ -2352,8 +2357,9 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst, const char *pcszDevice,
     BOOL fPassthrough;
     hrc = pMediumAtt->COMGETTER(Passthrough)(&fPassthrough);            H();
     rc = Console::configMedium(pLunL0, !!fPassthrough, lType,
-                               enmIoBackend,
-                               pMedium, aMachineState, phrc);           RC_CHECK();
+                               enmIoBackend, fSetupMerge, uMergeSource,
+                               uMergeTarget, pMedium, aMachineState,
+                               phrc);                                   RC_CHECK();
 
     if (fAttachDetach)
     {
@@ -2376,13 +2382,11 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst, const char *pcszDevice,
     return VINF_SUCCESS;;
 }
 
-int Console::configMedium(PCFGMNODE pLunL0,
-                          bool fPassthrough,
-                          DeviceType_T enmType,
-                          IoBackendType_T enmIoBackend,
-                          IMedium *pMedium,
-                          MachineState_T aMachineState,
-                          HRESULT *phrc)
+int Console::configMedium(PCFGMNODE pLunL0, bool fPassthrough,
+                          DeviceType_T enmType, IoBackendType_T enmIoBackend,
+                          bool fSetupMerge, unsigned uMergeSource,
+                          unsigned uMergeTarget, IMedium *pMedium,
+                          MachineState_T aMachineState, HRESULT *phrc)
 {
     int rc = VINF_SUCCESS;
     HRESULT hrc;
@@ -2447,6 +2451,17 @@ int Console::configMedium(PCFGMNODE pLunL0,
 
         if (pMedium)
         {
+            /* Start with length of parent chain, as the list is reversed */
+            unsigned uImage = 0;
+            IMedium *pTmp = pMedium;
+            while (pTmp)
+            {
+                uImage++;
+                hrc = pTmp->COMGETTER(Parent)(&pTmp);                                   H();
+            }
+            /* Index of last image */
+            uImage--;
+
             rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL1);                   RC_CHECK();
             rc = CFGMR3InsertString(pLunL1, "Driver", "VD");                            RC_CHECK();
             rc = CFGMR3InsertNode(pLunL1, "Config", &pCfg);                             RC_CHECK();
@@ -2484,6 +2499,19 @@ int Console::configMedium(PCFGMNODE pLunL0,
                 rc = CFGMR3InsertInteger(pCfg, "UseNewIo", 1);                          RC_CHECK();
             }
 
+            if (fSetupMerge)
+            {
+                rc = CFGMR3InsertInteger(pCfg, "SetupMerge", 1);                        RC_CHECK();
+                if (uImage == uMergeSource)
+                {
+                    rc = CFGMR3InsertInteger(pCfg, "MergeSource", 1);                   RC_CHECK();
+                }
+                else if (uImage == uMergeTarget)
+                {
+                    rc = CFGMR3InsertInteger(pCfg, "MergeTarget", 1);                   RC_CHECK();
+                }
+            }
+
             /* Pass all custom parameters. */
             bool fHostIP = true;
             SafeArray<BSTR> names;
@@ -2510,9 +2538,10 @@ int Console::configMedium(PCFGMNODE pLunL0,
                 }
             }
 
-            /* Create an inversed tree of parents. */
+            /* Create an inversed list of parents. */
+            uImage--;
             IMedium *pParentMedium = pMedium;
-            for (PCFGMNODE pParent = pCfg;;)
+            for (PCFGMNODE pParent = pCfg;; uImage--)
             {
                 hrc = pParentMedium->COMGETTER(Parent)(&pMedium);                       H();
                 if (!pMedium)
@@ -2527,6 +2556,18 @@ int Console::configMedium(PCFGMNODE pLunL0,
                 hrc = pMedium->COMGETTER(Format)(&str);                                 H();
                 rc = CFGMR3InsertStringW(pCur, "Format", str);                          RC_CHECK();
                 STR_FREE();
+
+                if (fSetupMerge)
+                {
+                    if (uImage == uMergeSource)
+                    {
+                        rc = CFGMR3InsertInteger(pCur, "MergeSource", 1);               RC_CHECK();
+                    }
+                    else if (uImage == uMergeTarget)
+                    {
+                        rc = CFGMR3InsertInteger(pCur, "MergeTarget", 1);               RC_CHECK();
+                    }
+                }
 
                 /* Pass all custom parameters. */
                 SafeArray<BSTR> aNames;

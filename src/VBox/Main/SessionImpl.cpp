@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -745,6 +745,33 @@ STDMETHODIMP Session::EnumerateGuestProperties(IN_BSTR aPatterns,
     ReturnComNotImplemented();
 #endif /* VBOX_WITH_GUEST_PROPS not defined */
 }
+
+STDMETHODIMP Session::OnlineMergeMedium(IMediumAttachment *aMediumAttachment,
+                                        ULONG aSourceIdx, ULONG aTargetIdx,
+                                        IMedium *aSource, IMedium *aTarget,
+                                        BOOL aMergeForward,
+                                        IMedium *aParentForTarget,
+                                        ComSafeArrayIn(IMedium *, aChildrenToReparent),
+                                        IProgress *aProgress)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    if (mState != SessionState_Open)
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("Machine session is not open (session state: %s)."),
+                        Global::stringifySessionState(mState));
+    AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
+    CheckComArgNotNull(aMediumAttachment);
+    CheckComArgSafeArrayNotNull(aChildrenToReparent);
+
+    return mConsole->onlineMergeMedium(aMediumAttachment, aSourceIdx,
+                                       aTargetIdx, aSource, aTarget,
+                                       aMergeForward, aParentForTarget,
+                                       ComSafeArrayInArg(aChildrenToReparent),
+                                       aProgress);
+}
+
 
 // private methods
 ///////////////////////////////////////////////////////////////////////////////

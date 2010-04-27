@@ -494,8 +494,16 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
             break;
         case MachineState_RestoringSnapshot:
             pszState = details == VMINFO_MACHINEREADABLE ? "restoringsnapshot"   : "restoring snapshot";
+            break;
         case MachineState_DeletingSnapshot:
             pszState = details == VMINFO_MACHINEREADABLE ? "deletingsnapshot"    : "deleting snapshot";
+            break;
+        case MachineState_DeletingSnapshotOnline:
+            pszState = details == VMINFO_MACHINEREADABLE ? "deletingsnapshotlive" : "deleting snapshot live";
+            break;
+        case MachineState_DeletingSnapshotPaused:
+            pszState = details == VMINFO_MACHINEREADABLE ? "deletingsnapshotlivepaused" : "deleting snapshot live paused";
+            break;
         case MachineState_SettingUp:
             pszState = details == VMINFO_MACHINEREADABLE ? "settingup"           : "setting up";
             break;

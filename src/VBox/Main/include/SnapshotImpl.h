@@ -107,6 +107,7 @@ public:
     }
 
     const ComObjPtr<Snapshot>& getParent() const;
+    const ComObjPtr<Snapshot> getFirstChild() const;
 
     const Utf8Str& stateFilePath() const;
     HRESULT deleteStateFile();

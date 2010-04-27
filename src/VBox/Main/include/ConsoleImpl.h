@@ -181,6 +181,12 @@ public:
     HRESULT getGuestProperty(IN_BSTR aKey, BSTR *aValue, ULONG64 *aTimestamp, BSTR *aFlags);
     HRESULT setGuestProperty(IN_BSTR aKey, IN_BSTR aValue, IN_BSTR aFlags);
     HRESULT enumerateGuestProperties(IN_BSTR aPatterns, ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues), ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));
+    HRESULT onlineMergeMedium(IMediumAttachment *aMediumAttachment,
+                              ULONG aSourceIdx, ULONG aTargetIdx,
+                              IMedium *aSource, IMedium *aTarget,
+                              BOOL aMergeForward, IMedium *aParentForTarget,
+                              ComSafeArrayIn(IMedium *, aChildrenToReparent),
+                              IProgress *aProgress);
     VMMDev *getVMMDev() { return mVMMDev; }
     AudioSniffer *getAudioSniffer() { return mAudioSniffer; }
 
@@ -435,6 +441,8 @@ private:
                                       unsigned uInstance,
                                       StorageBus_T enmBus,
                                       IoBackendType_T enmIoBackend,
+                                      bool fSetupMerge, unsigned uMergeSource,
+                                      unsigned uMergeTarget,
                                       IMediumAttachment *pMediumAtt,
                                       MachineState_T aMachineState,
                                       HRESULT *phrc, bool fAttachDetach,
@@ -442,12 +450,17 @@ private:
                                       DeviceType_T *paLedDevType);
     static int configMedium(PCFGMNODE pLunL0, bool fPassthrough,
                             DeviceType_T enmType, IoBackendType_T enmIoBackend,
-                            IMedium *pMedium, MachineState_T aMachineState, HRESULT *phrc);
+                            bool fSetupMerge, unsigned uMergeSource,
+                            unsigned uMergeTarget, IMedium *pMedium,
+                            MachineState_T aMachineState, HRESULT *phrc);
     static DECLCALLBACK(int) reconfigureMediumAttachment(PVM pVM,
                                                          const char *pcszDevice,
                                                          unsigned uInstance,
                                                          StorageBus_T enmBus,
                                                          IoBackendType_T enmIoBackend,
+                                                         bool fSetupMerge,
+                                                         unsigned uMergeSource,
+                                                         unsigned uMergeTarget,
                                                          IMediumAttachment *aMediumAtt,
                                                          MachineState_T aMachineState,
                                                          HRESULT *phrc);

@@ -3215,8 +3215,11 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pThis,
     int rcRet = VINF_SUCCESS;
 
     rcRet = Console::configMediumAttachment(pCtlInst, pcszDevice, uInstance,
-                                            enmBus, enmIoBackend, aMediumAtt,
-                                            pThis->mMachineState,
+                                            enmBus, enmIoBackend,
+                                            false /* fSetupMerge */,
+                                            0 /* uMergeSource */,
+                                            0 /* uMergeTarget */,
+                                            aMediumAtt, pThis->mMachineState,
                                             NULL /* phrc */,
                                             true /* fAttachDetach */,
                                             fForce /* fForceUnmount */,
@@ -4257,6 +4260,246 @@ HRESULT Console::enumerateGuestProperties(IN_BSTR aPatterns,
 #endif /* VBOX_WITH_GUEST_PROPS */
 }
 
+
+/*
+ * Internal: helper function for connecting progress reporting
+ */
+static int onlineMergeMediumProgress(void *pvUser, unsigned uPercentage)
+{
+    HRESULT rc = S_OK;
+    IProgress *pProgress = static_cast<IProgress *>(pvUser);
+    if (pProgress)
+        rc = pProgress->SetCurrentOperationProgress(uPercentage);
+    return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
+}
+
+/**
+ * @note Temporarily locks this object for writing.
+ */
+HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
+                                   ULONG aSourceIdx, ULONG aTargetIdx,
+                                   IMedium *aSource, IMedium *aTarget,
+                                   BOOL aMergeForward,
+                                   IMedium *aParentForTarget,
+                                   ComSafeArrayIn(IMedium *, aChildrenToReparent),
+                                   IProgress *aProgress)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    HRESULT rc = S_OK;
+    int vrc = VINF_SUCCESS;
+    PVM pVM = mpVM;
+
+/// @todo handling the list of children to reparent is not yet done, get out
+    com::SafeIfaceArray<IMedium> sfaToReparent(ComSafeArrayInArg(aChildrenToReparent));
+    if (sfaToReparent.size() > 0)
+        return setError(E_NOTIMPL,
+                        tr("Cannot do online merging yet which involves adjusting the UUID of dependent media."));
+
+    /* We will need to release the lock before doing the actual merge */
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* paranoia - we don't want merges to happen while teleporting etc. */
+    switch (mMachineState)
+    {
+        case MachineState_DeletingSnapshotOnline:
+        case MachineState_DeletingSnapshotPaused:
+            break;
+
+        default:
+            return setError(VBOX_E_INVALID_VM_STATE,
+                            tr("Invalid machine state: %s"),
+                            Global::stringifyMachineState(mMachineState));
+    }
+
+    SafeIfaceArray<IStorageController> ctrls;
+    rc = mMachine->COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(ctrls));
+    AssertComRC(rc);
+    LONG lDev;
+    rc = aMediumAttachment->COMGETTER(Device)(&lDev);
+    AssertComRC(rc);
+    LONG lPort;
+    rc = aMediumAttachment->COMGETTER(Port)(&lPort);
+    AssertComRC(rc);
+    IMedium *pMedium;
+    rc = aMediumAttachment->COMGETTER(Medium)(&pMedium);
+    AssertComRC(rc);
+    Bstr mediumLocation;
+    if (pMedium)
+    {
+        rc = pMedium->COMGETTER(Location)(mediumLocation.asOutParam());
+        AssertComRC(rc);
+    }
+
+    Bstr attCtrlName;
+    rc = aMediumAttachment->COMGETTER(Controller)(attCtrlName.asOutParam());
+    AssertComRC(rc);
+    ComPtr<IStorageController> ctrl;
+    for (size_t i = 0; i < ctrls.size(); ++i)
+    {
+        Bstr ctrlName;
+        rc = ctrls[i]->COMGETTER(Name)(ctrlName.asOutParam());
+        AssertComRC(rc);
+        if (attCtrlName == ctrlName)
+        {
+            ctrl = ctrls[i];
+            break;
+        }
+    }
+    if (ctrl.isNull())
+    {
+        return setError(E_FAIL,
+                        tr("Could not find storage controller '%ls'"), attCtrlName.raw());
+    }
+    StorageControllerType_T enmCtrlType;
+    rc = ctrl->COMGETTER(ControllerType)(&enmCtrlType);
+    AssertComRC(rc);
+    const char *pcszDevice = convertControllerTypeToDev(enmCtrlType);
+
+    StorageBus_T enmBus;
+    rc = ctrl->COMGETTER(Bus)(&enmBus);
+    AssertComRC(rc);
+    ULONG uInstance;
+    rc = ctrl->COMGETTER(Instance)(&uInstance);
+    AssertComRC(rc);
+    IoBackendType_T enmIoBackend;
+    rc = ctrl->COMGETTER(IoBackend)(&enmIoBackend);
+    AssertComRC(rc);
+
+    unsigned uLUN;
+    rc = Console::convertBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);
+    AssertComRCReturnRC(rc);
+
+    alock.release();
+
+    /* Pause the VM, as it might have pending IO on this drive */
+    VMSTATE enmVMState = VMR3GetState(pVM);
+    if (mMachineState == MachineState_DeletingSnapshotOnline)
+    {
+        LogFlowFunc(("Suspending the VM...\n"));
+        /* disable the callback to prevent Console-level state change */
+        mVMStateChangeCallbackDisabled = true;
+        int vrc2 = VMR3Suspend(pVM);
+        mVMStateChangeCallbackDisabled = false;
+        AssertRCReturn(vrc2, E_FAIL);
+    }
+
+    vrc = VMR3ReqCallWait(pVM,
+                          VMCPUID_ANY,
+                          (PFNRT)reconfigureMediumAttachment,
+                          11,
+                          pVM,
+                          pcszDevice,
+                          uInstance,
+                          enmBus,
+                          enmIoBackend,
+                          true /* fSetupMerge */,
+                          aSourceIdx,
+                          aTargetIdx,
+                          aMediumAttachment,
+                          mMachineState,
+                          &rc);
+    /* error handling is after resuming the VM */
+
+    if (mMachineState == MachineState_DeletingSnapshotOnline)
+    {
+        LogFlowFunc(("Resuming the VM...\n"));
+        /* disable the callback to prevent Console-level state change */
+        mVMStateChangeCallbackDisabled = true;
+        int vrc2 = VMR3Resume(pVM);
+        mVMStateChangeCallbackDisabled = false;
+        AssertRC(vrc2);
+        if (RT_FAILURE(vrc2))
+        {
+            /* too bad, we failed. try to sync the console state with the VMM state */
+            vmstateChangeCallback(pVM, VMSTATE_SUSPENDED, enmVMState, this);
+        }
+    }
+
+    if (RT_FAILURE(vrc))
+        return setError(E_FAIL, tr("%Rrc"), vrc);
+    if (FAILED(rc))
+        return rc;
+
+    PPDMIBASE pIBase = NULL;
+    PPDMIMEDIA pIMedium = NULL;
+    vrc = PDMR3QueryDriverOnLun(pVM, pcszDevice, uInstance, uLUN, "VD", &pIBase);
+    if (RT_SUCCESS(vrc))
+    {
+        if (pIBase)
+        {
+            pIMedium = (PPDMIMEDIA)pIBase->pfnQueryInterface(pIBase, PDMIMEDIA_IID);
+            if (!pIMedium)
+                return setError(E_FAIL, tr("could not query medium interface of controller"));
+        }
+        else
+            return setError(E_FAIL, tr("could not query base interface of controller"));
+    }
+
+    /* Finally trigger the merge. */
+    vrc = pIMedium->pfnMerge(pIMedium, onlineMergeMediumProgress, aProgress);
+    if (RT_FAILURE(vrc))
+        return setError(E_FAIL, tr("Failed to perform an online medium merge (%Rrc)"), vrc);
+
+    /* Pause the VM, as it might have pending IO on this drive */
+    enmVMState = VMR3GetState(pVM);
+    if (mMachineState == MachineState_DeletingSnapshotOnline)
+    {
+        LogFlowFunc(("Suspending the VM...\n"));
+        /* disable the callback to prevent Console-level state change */
+        mVMStateChangeCallbackDisabled = true;
+        int vrc2 = VMR3Suspend(pVM);
+        mVMStateChangeCallbackDisabled = false;
+        AssertRCReturn(vrc2, E_FAIL);
+    }
+
+    /* Update medium chain and state now, so that the VM can continue. */
+    rc = mControl->FinishOnlineMergeMedium(aMediumAttachment, aSource, aTarget,
+                                           aMergeForward, aParentForTarget,
+                                           ComSafeArrayInArg(aChildrenToReparent));
+
+    vrc = VMR3ReqCallWait(pVM,
+                          VMCPUID_ANY,
+                          (PFNRT)reconfigureMediumAttachment,
+                          11,
+                          pVM,
+                          pcszDevice,
+                          uInstance,
+                          enmBus,
+                          enmIoBackend,
+                          false /* fSetupMerge */,
+                          0 /* uMergeSource */,
+                          0 /* uMergeTarget */,
+                          aMediumAttachment,
+                          mMachineState,
+                          &rc);
+    /* error handling is after resuming the VM */
+
+    if (mMachineState == MachineState_DeletingSnapshotOnline)
+    {
+        LogFlowFunc(("Resuming the VM...\n"));
+        /* disable the callback to prevent Console-level state change */
+        mVMStateChangeCallbackDisabled = true;
+        int vrc2 = VMR3Resume(pVM);
+        mVMStateChangeCallbackDisabled = false;
+        AssertRC(vrc2);
+        if (RT_FAILURE(vrc2))
+        {
+            /* too bad, we failed. try to sync the console state with the VMM state */
+            vmstateChangeCallback(pVM, VMSTATE_SUSPENDED, enmVMState, this);
+        }
+    }
+
+    if (RT_FAILURE(vrc))
+        return setError(E_FAIL, tr("%Rrc"), vrc);
+    if (FAILED(rc))
+        return rc;
+
+    return rc;
+}
+
+
 /**
  * Gets called by Session::UpdateMachineState()
  * (IInternalSessionControl::updateMachineState()).
@@ -4276,6 +4519,8 @@ HRESULT Console::updateMachineState(MachineState_T aMachineState)
                  || mMachineState == MachineState_LiveSnapshotting
                  || mMachineState == MachineState_RestoringSnapshot
                  || mMachineState == MachineState_DeletingSnapshot
+                 || mMachineState == MachineState_DeletingSnapshotOnline
+                 || mMachineState == MachineState_DeletingSnapshotPaused
                  , E_FAIL);
 
     return setMachineStateLocally(aMachineState);
@@ -5926,6 +6171,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                                || that->mMachineState == MachineState_Saving
                               )
                            && aOldState == VMSTATE_RESUMING));
+
                 that->setMachineState(MachineState_Running);
             }
 
@@ -7202,12 +7448,15 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
 
 
 /**
- * Reconfigures a medium attachment (part of taking an online snapshot).
+ * Reconfigures a medium attachment (part of taking or deleting an online snapshot).
  *
  * @param   pVM           The VM handle.
  * @param   lInstance     The instance of the controller.
  * @param   pcszDevice    The name of the controller type.
  * @param   enmBus        The storage bus type of the controller.
+ * @param   fSetupMerge   Whether to set up a medium merge
+ * @param   uMergeSource  Merge source image index
+ * @param   uMergeTarget  Merge target image index
  * @param   aMediumAtt    The medium attachment.
  * @param   aMachineState The current machine state.
  * @param   phrc          Where to store com error - only valid if we return VERR_GENERAL_FAILURE.
@@ -7219,6 +7468,9 @@ DECLCALLBACK(int) Console::reconfigureMediumAttachment(PVM pVM,
                                                        unsigned uInstance,
                                                        StorageBus_T enmBus,
                                                        IoBackendType_T enmIoBackend,
+                                                       bool fSetupMerge,
+                                                       unsigned uMergeSource,
+                                                       unsigned uMergeTarget,
                                                        IMediumAttachment *aMediumAtt,
                                                        MachineState_T aMachineState,
                                                        HRESULT *phrc)
@@ -7247,8 +7499,10 @@ DECLCALLBACK(int) Console::reconfigureMediumAttachment(PVM pVM,
     /* Update the device instance configuration. */
     rc = Console::configMediumAttachment(pCtlInst, pcszDevice, uInstance,
                                          enmBus, enmIoBackend,
-                                         aMediumAtt, aMachineState,
-                                         phrc, true /* fAttachDetach */,
+                                         fSetupMerge, uMergeSource,
+                                         uMergeTarget, aMediumAtt,
+                                         aMachineState, phrc,
+                                         true /* fAttachDetach */,
                                          false /* fForceUnmount */, pVM,
                                          NULL /* paLedDevType */);
     /** @todo this dumps everything attached to this device instance, which
@@ -7423,12 +7677,15 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 vrc = VMR3ReqCallWait(that->mpVM,
                                       VMCPUID_ANY,
                                       (PFNRT)reconfigureMediumAttachment,
-                                      8,
+                                      11,
                                       that->mpVM,
                                       pcszDevice,
                                       lInstance,
                                       enmBus,
                                       enmIoBackend,
+                                      false /* fSetupMerge */,
+                                      0 /* uMergeSource */,
+                                      0 /* uMergeTarget */,
                                       atts[i],
                                       that->mMachineState,
                                       &rc);
