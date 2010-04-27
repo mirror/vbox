@@ -4833,6 +4833,7 @@ static int vmdkCreate(const char *pszFilename, uint64_t cbSize,
     pImage->pGTCache = NULL;
     pImage->pDescData = NULL;
     pImage->pVDIfsDisk = pVDIfsDisk;
+    pImage->pVDIfsImage = pVDIfsImage;
     /* Descriptors for split images can be pretty large, especially if the
      * filename is long. So prepare for the worst, and allocate quite some
      * memory for the descriptor in this case. */
