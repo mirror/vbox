@@ -99,7 +99,7 @@ RTDECL(bool) RTFileExists(const char *pszPath)
         fRc = !stat(pszNativePath, &s)
             && S_ISREG(s.st_mode);
 
-        rtPathFreeNative(pszNativePath);
+        rtPathFreeNative(pszNativePath, pszPath);
     }
 
     LogFlow(("RTFileExists(%p={%s}): returns %RTbool\n", pszPath, pszPath, fRc));
@@ -211,7 +211,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
 
     int fh = open(pszNativeFilename, fOpenMode, fMode);
     int iErr = errno;
-    rtPathFreeNative(pszNativeFilename);
+    rtPathFreeNative(pszNativeFilename, pszFilename);
 #endif
     if (fh >= 0)
     {
@@ -377,7 +377,7 @@ RTR3DECL(int)  RTFileDelete(const char *pszFilename)
     {
         if (unlink(pszNativeFilename) != 0)
             rc = RTErrConvertFromErrno(errno);
-        rtPathFreeNative(pszNativeFilename);
+        rtPathFreeNative(pszNativeFilename, pszFilename);
     }
     return rc;
 }

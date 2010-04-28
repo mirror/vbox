@@ -47,29 +47,34 @@ DECLHIDDEN(int)     rtPathWin32MoveRename(const char *pszSrc, const char *pszDst
 /**
  * Converts a path from IPRT to native representation.
  *
- * This may involve querying filesystems what codeset they
- * speak and so forth.
+ * This may involve querying filesystems what codeset they speak and so forth.
  *
  * @returns IPRT status code.
  * @param   ppszNativePath  Where to store the pointer to the native path.
  *                          Free by calling rtPathFreeHost(). NULL on failure.
+ *                          Can be the same as pszPath.
  * @param   pszPath         The path to convert.
- * @remark  This function is not available on hosts using something else than byte seqences as names. (eg win32)
+ *
+ * @remark  This function is not available on hosts using something else than
+ *          byte seqences as names (eg win32).
  */
 int rtPathToNative(char **ppszNativePath, const char *pszPath);
 
 /**
  * Converts a path from IPRT to native representation.
  *
- * This may involve querying filesystems what codeset they
- * speak and so forth.
+ * This may involve querying filesystems what codeset they speak and so forth.
  *
  * @returns IPRT status code.
  * @param   ppszNativePath  Where to store the pointer to the native path.
- *                          Free by calling rtPathFreeHost(). NULL on failure.
+ *                          Free by calling rtPathFreeHost().  NULL on failure.
+ *                          Can be the same as pszPath.
  * @param   pszPath         The path to convert.
- * @param   pszBasePath     What pszPath is relative to. If NULL the function behaves like rtPathToNative().
- * @remark  This function is not available on hosts using something else than byte seqences as names. (eg win32)
+ * @param   pszBasePath     What pszPath is relative to. If NULL the function
+ *                          behaves like rtPathToNative().
+ *
+ * @remark  This function is not available on hosts using something else than
+ *          byte seqences as names (eg win32).
  */
 int rtPathToNativeEx(char **ppszNativePath, const char *pszPath, const char *pszBasePath);
 
@@ -77,9 +82,13 @@ int rtPathToNativeEx(char **ppszNativePath, const char *pszPath, const char *psz
  * Frees a native path returned by rtPathToNative() or rtPathToNativeEx().
  *
  * @param   pszNativePath   The host path to free. NULL allowed.
- * @remark  This function is not available on hosts using something else than byte seqences as names. (eg win32)
+ * @param   pszPath         The original path.  This is for checking if
+ *                          rtPathToNative returned the pointer to the original.
+ *
+ * @remark  This function is not available on hosts using something else than
+ *          byte seqences as names (eg win32).
  */
-void rtPathFreeNative(char *pszNativePath);
+void rtPathFreeNative(char *pszNativePath, const char *pszPath);
 
 /**
  * Converts a path from the native to the IPRT representation.
@@ -88,7 +97,9 @@ void rtPathFreeNative(char *pszNativePath);
  * @param   ppszPath        Where to store the pointer to the IPRT path.
  *                          Free by calling RTStrFree(). NULL on failure.
  * @param   pszNativePath   The native path to convert.
- * @remark  This function is not available on hosts using something else than byte seqences as names. (eg win32)
+ *
+ * @remark  This function is not available on hosts using something else than
+ *          byte seqences as names (eg win32).
  */
 int rtPathFromNative(char **ppszPath, const char *pszNativePath);
 
@@ -99,9 +110,12 @@ int rtPathFromNative(char **ppszPath, const char *pszNativePath);
  * @param   ppszPath        Where to store the pointer to the IPRT path.
  *                          Free by calling RTStrFree(). NULL on failure.
  * @param   pszNativePath   The native path to convert.
- * @param   pszBasePath     What pszHostPath is relative to - in IPRT representation.
- *                          If NULL the function behaves like rtPathFromNative().
- * @remark  This function is not available on hosts using something else than byte seqences as names. (eg win32)
+ * @param   pszBasePath     What pszHostPath is relative to - in IPRT
+ *                          representation.  If NULL the function behaves like
+ *                          rtPathFromNative().
+ *
+ * @remark  This function is not  available on hosts using something else than
+ *          byte seqences as names (eg win32).
  */
 int rtPathFromNativeEx(char **ppszPath, const char *pszNativePath, const char *pszBasePath);
 
