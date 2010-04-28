@@ -4291,12 +4291,6 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
     int vrc = VINF_SUCCESS;
     PVM pVM = mpVM;
 
-/// @todo handling the list of children to reparent is not yet done, get out
-    com::SafeIfaceArray<IMedium> sfaToReparent(ComSafeArrayInArg(aChildrenToReparent));
-    if (sfaToReparent.size() > 0)
-        return setError(E_NOTIMPL,
-                        tr("Cannot do online merging yet which involves adjusting the UUID of dependent media."));
-
     /* We will need to release the lock before doing the actual merge */
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
