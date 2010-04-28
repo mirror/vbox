@@ -511,7 +511,7 @@ RTR3DECL(int) RTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFS
         }
         else
             rc = RTErrConvertFromErrno(errno);
-        rtPathFreeNative(pszNativePath);
+        rtPathFreeNative(pszNativePath, pszPath);
     }
 
     LogFlow(("RTPathQueryInfo(%p:{%s}, pObjInfo=%p, %d): returns %Rrc\n",
@@ -614,7 +614,7 @@ RTR3DECL(int) RTPathSetTimesEx(const char *pszPath, PCRTTIMESPEC pAccessTime, PC
                          pszPath, pAccessTime, pModificationTime, rc, errno));
             }
         }
-        rtPathFreeNative(pszNativePath);
+        rtPathFreeNative(pszNativePath, pszPath);
     }
 
     LogFlow(("RTPathSetTimes(%p:{%s}, %p:{%RDtimespec}, %p:{%RDtimespec}, %p:{%RDtimespec}, %p:{%RDtimespec}): return %Rrc\n",
@@ -788,9 +788,9 @@ DECLHIDDEN(int) rtPathPosixRename(const char *pszSrc, const char *pszDst, unsign
                 Log(("rtPathRename('%s', '%s', %#x ,%RTfmode): source type check failed rc=%Rrc errno=%d\n",
                      pszSrc, pszDst, fRename, fFileType, rc, errno));
 
-            rtPathFreeNative(pszNativeDst);
+            rtPathFreeNative(pszNativeDst, pszDst);
         }
-        rtPathFreeNative(pszNativeSrc);
+        rtPathFreeNative(pszNativeSrc, pszSrc);
     }
     return rc;
 }

@@ -1,10 +1,14 @@
 /* $Id$ */
 /** @file
- * IPRT - Path Convertions, generic.
+ * IPRT - Path Convertions, Darwin.
+ *
+ * On darwin path names on the disk are decomposed using normalization
+ * form D (NFD).  Since this behavior is unique for the Mac, we will precompose
+ * the path name strings we get from the XNU kernel.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,31 +41,40 @@
 
 int rtPathToNative(char **ppszNativePath, const char *pszPath)
 {
-    return RTStrUtf8ToCurrentCP(ppszNativePath, pszPath);
+    /** @todo We should decompose the string here, but the file system will do
+     *        that for us if we don't, so why bother. */
+    *ppszNativePath = (char *)pszPath;
+    return VINF_SUCCESS;
 }
+
 
 int rtPathToNativeEx(char **ppszNativePath, const char *pszPath, const char *pszBasePath)
 {
     NOREF(pszBasePath);
-    return RTStrUtf8ToCurrentCP(ppszNativePath, pszPath);
+    return rtPathToNative(ppszNativePath, pszPath);
 }
+
 
 void rtPathFreeNative(char *pszNativePath, const char *pszPath)
 {
-    if (pszNativePath)
-        RTStrFree(pszNativePath);
+    Assert((const char *)pszNativePath == pszPath || !pszNativePath);
+    NOREF(pszNativePath);
+    NOREF(pszPath);
 }
 
 
 int rtPathFromNative(char **pszPath, const char *pszNativePath)
 {
-    return RTStrCurrentCPToUtf8(pszPath, pszNativePath);
+    /** @todo We must compose the codepoints in the string here.  We get file names
+     *        in normalization form D so we'll end up with normalization form C
+     *        whatever approach we take. */
+    return RTStrDupEx(ppszPath, pszNativePath);
 }
 
 
 int rtPathFromNativeEx(char **pszPath, const char *pszNativePath, const char *pszBasePath)
 {
     NOREF(pszBasePath);
-    return RTStrCurrentCPToUtf8(pszPath, pszNativePath);
+    return rtPathFromNative(ppszPath, pszNativePath);
 }
 

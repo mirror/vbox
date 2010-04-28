@@ -69,7 +69,7 @@ RTDECL(bool) RTDirExists(const char *pszPath)
         fRc = !stat(pszNativePath, &s)
             && S_ISDIR(s.st_mode);
 
-        rtPathFreeNative(pszNativePath);
+        rtPathFreeNative(pszNativePath, pszPath);
     }
 
     LogFlow(("RTDirExists(%p={%s}): returns %RTbool\n", pszPath, pszPath, fRc));
@@ -109,7 +109,7 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode)
             }
         }
 
-        rtPathFreeNative(pszNativePath);
+        rtPathFreeNative(pszNativePath, pszPath);
     }
     else
     {
@@ -130,7 +130,7 @@ RTDECL(int) RTDirRemove(const char *pszPath)
         if (rmdir(pszNativePath))
             rc = RTErrConvertFromErrno(errno);
 
-        rtPathFreeNative(pszNativePath);
+        rtPathFreeNative(pszNativePath, pszPath);
     }
 
     LogFlow(("RTDirRemove(%p={%s}): returns %Rrc\n", pszPath, pszPath, rc));
@@ -195,7 +195,7 @@ int rtOpenDirNative(PRTDIR pDir, char *pszPathBuf)
         else
             rc = RTErrConvertFromErrno(errno);
 
-        rtPathFreeNative(pszNativePath);
+        rtPathFreeNative(pszNativePath, pDir->pszPath);
     }
 
     return rc;
