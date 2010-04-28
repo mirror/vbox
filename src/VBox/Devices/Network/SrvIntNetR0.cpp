@@ -5209,7 +5209,7 @@ INTNETR0DECL(int) IntNetR0Open(PSUPDRVSESSION pSession, const char *pszNetwork,
 
 
 /**
- * VMMR0 request wrapper for GMMR0MapUnmapChunk.
+ * VMMR0 request wrapper for IntNetR0Open.
  *
  * @returns see GMMR0MapUnmapChunk.
  * @param   pSession        The caller's session.
