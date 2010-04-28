@@ -202,6 +202,8 @@ typedef struct VBOXNETFLTINS
             void volatile *pvPromiscStream;
             /** Whether we are attaching to IPv6 stream dynamically now. */
             bool volatile fAttaching;
+            /** Whether this is a VLAN interface or not. */
+            bool volatile fVLAN;
             /** Layered device handle to the interface. */
             ldi_handle_t hIface;
             /** The MAC address of the interface. */

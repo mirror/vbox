@@ -109,6 +109,18 @@
 /** Maximum loopback packet queue size per interface */
 #define VBOXNETFLT_LOOPBACK_SIZE        32
 
+/** VLAN tag masking, should probably be in IPRT? */
+#define VLAN_ID(vlan)          (((vlan) >>  0) & 0x0fffu)
+#define VLAN_CFI(vlan)         (((vlan) >> 12) & 0x0001u)
+#define VLAN_PRI(vlan)         (((vlan) >> 13) & 0x0007u)
+
+typedef struct VLANHEADER
+{
+    uint16_t Type;
+    uint16_t Data;
+} VLANHEADER;
+typedef struct VLANHEADER *PVLANHEADER;
+
 /*******************************************************************************
 *   Global Functions                                                           *
 *******************************************************************************/
@@ -1813,13 +1825,9 @@ static int vboxNetFltSolarisOpenStyle2(PVBOXNETFLTINS pThis, ldi_ident_t *pDevId
         return VERR_NO_MEMORY;
 
     char *pszEnd = strchr(pszDev, '\0');
-    int PPALen = 0;
     while (--pszEnd > pszDev)
-    {
         if (!RT_C_IS_DIGIT(*pszEnd))
             break;
-        PPALen++;
-    }
     pszEnd++;
 
     int rc = VERR_GENERAL_FAILURE;
@@ -1874,6 +1882,22 @@ static int vboxNetFltSolarisOpenStream(PVBOXNETFLTINS pThis)
     ldi_ident_t DevId;
     DevId = ldi_ident_from_anon();
     int ret;
+
+    /*
+     * Figure out if this is a VLAN interface or not based on the interface name.
+     * Only works for the VLAN PPA-hack based names. See #4854 for details.
+     */
+    char *pszEnd = strchr(pThis->szName, '\0');
+    while (--pszEnd > pThis->szName)
+        if (!RT_C_IS_DIGIT(*pszEnd))
+            break;
+    pszEnd++;
+    uint32_t PPA = RTStrToUInt32(pszEnd);
+    if (PPA > 1000)
+    {
+        pThis->u.s.fVLAN = true;
+        LogRel((DEVICE_NAME ": %s detected as VLAN interface with VID=%u.\n", pThis->szName, PPA / 1000U));
+    }
 
     /*
      * Try style-1 open first.
@@ -2570,6 +2594,11 @@ static int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis)
 {
     LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface pThis=%p\n", pThis));
 
+    /*
+     * Since this is asynchronous streams injection, let the attach succeed before we can start
+     * processing the stream.
+     */
+    ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, true);
     int rc = vboxNetFltSolarisOpenStream(pThis);
     if (RT_SUCCESS(rc))
     {
@@ -3232,6 +3261,75 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
 #endif
 
     /*
+     * Solaris raw mode streams for priority-tagged VLAN does not strip the VLAN tag.
+     * It zero's the VLAN-Id but keeps the tag intact as part of the Ethernet header.
+     * We need to manually strip these tags out or the guests might get confused.
+     */
+    bool fCopied = false;
+    if (   pThis->u.s.fVLAN
+        && pPromiscStream->fRawMode)
+    {
+        if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_VLAN))
+        {
+            if (msgdsize(pMsg) > sizeof(RTNETETHERHDR) + sizeof(VLANHEADER))
+            {
+                if (pMsg->b_cont)
+                {
+                    mblk_t *pFullMsg = msgpullup(pMsg, -1 /* all data blocks */);
+                    if (pFullMsg)
+                    {
+                        /* Original pMsg will be freed by the caller */
+                        pMsg = pFullMsg;
+                        fCopied = true;
+                    }
+                    else
+                    {
+                        LogRel((DEVICE_NAME ":vboxNetFltSolarisRecv msgpullup failed.\n"));
+                        return VERR_NO_MEMORY;
+                    }
+                }
+
+                PVLANHEADER pVlanHdr = (PVLANHEADER)(pMsg->b_rptr + sizeof(RTNETETHERHDR) - sizeof(pEthHdr->EtherType));
+                LogFlow((DEVICE_NAME ":Recv VLAN Pcp=%u Cfi=%u Id=%u\n", VLAN_PRI(RT_BE2H_U16(pVlanHdr->Data)),
+                            VLAN_CFI(RT_BE2H_U16(pVlanHdr->Data)), VLAN_ID(RT_BE2H_U16(pVlanHdr->Data))));
+                if (   VLAN_PRI(RT_BE2H_U16(pVlanHdr->Data)) > 0
+                    && VLAN_ID(RT_BE2H_U16(pVlanHdr->Data) == 0)
+                {
+                    /*
+                     * Create new Ethernet header with stripped VLAN tag.
+                     */
+                    size_t cbEthPrefix = sizeof(RTNETETHERHDR) - sizeof(pEthHdr->EtherType);
+                    mblk_t *pStrippedMsg = allocb(cbEthPrefix, BPRI_MED);
+                    if (RT_LIKELY(pStrippedMsg))
+                    {
+                        /*
+                         * Copy ethernet header excluding the ethertype.
+                         */
+                        bcopy(pMsg->b_rptr, pStrippedMsg->b_wptr, cbEthPrefix);
+                        pStrippedMsg->b_wptr += cbEthPrefix;
+
+                        /*
+                         * Link the rest of the message (ethertype + data, skipping VLAN header).
+                         */
+                        pMsg->b_rptr += cbEthPrefix + sizeof(VLANHEADER);
+                        pStrippedMsg->b_cont = pMsg;
+                        pMsg = pStrippedMsg;
+                        LogFlow((DEVICE_NAME ":Stripped VLAN tag.\n"));
+                    }
+                    else
+                    {
+                        LogRel((DEVICE_NAME ":vboxNetFltSolarisRecv insufficient memory for creating VLAN stripped packet cbMsg=%u.\n",
+                                    cbEthPrefix));
+                        if (fCopied)
+                            freemsg(pMsg);
+                        return VERR_NO_MEMORY;
+                    }
+                }
+            }
+        }
+    }
+
+    /*
      * Route all received packets into the internal network.
      */
     unsigned cSegs = vboxNetFltSolarisMBlkCalcSGSegs(pThis, pMsg);
@@ -3241,6 +3339,12 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
         pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, pSG, fSrc);
     else
         LogRel((DEVICE_NAME ":vboxNetFltSolarisMBlkToSG failed. rc=%d\n", rc));
+
+    /*
+     * If we made an extra copy for VLAN stripping, we need to free that ourselves.
+     */
+    if (fCopied)
+        freemsg(pMsg);
 
     return VINF_SUCCESS;
 }
@@ -3398,9 +3502,9 @@ static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg)
         if (!pMsg->b_cont)
         {
             if (pIpHdr->ip_p == RTNETIPV4_PROT_ICMP)
-                LogFlow((DEVICE_NAME ":ICMP D=%.6Rhxs  S=%.6Rhxs  T=%04x\n", pb, pb + 6, RT_BE2H_U16(*(uint16_t *)(pb + 12))));
+                LogRel((DEVICE_NAME ":ICMP D=%.6Rhxs  S=%.6Rhxs  T=%04x\n", pb, pb + 6, RT_BE2H_U16(*(uint16_t *)(pb + 12))));
             else if (pIpHdr->ip_p == RTNETIPV4_PROT_TCP)
-                LogFlow((DEVICE_NAME ":TCP D=%.6Rhxs  S=%.6Rhxs\n", pb, pb + 6));
+                LogRel((DEVICE_NAME ":TCP D=%.6Rhxs  S=%.6Rhxs\n", pb, pb + 6));
             else if (pIpHdr->ip_p == RTNETIPV4_PROT_UDP)
             {
                 PCRTNETUDP pUdpHdr = (PCRTNETUDP)((uint32_t *)pIpHdr + pIpHdr->ip_hl);
@@ -3419,35 +3523,28 @@ static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg)
     }
     else if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_VLAN))
     {
-        typedef struct VLANHEADER
-        {
-            int Pcp:3;
-            int Cfi:1;
-            int Vid:12;
-        } VLANHEADER;
-
-        VLANHEADER *pVlanHdr = (VLANHEADER *)(pMsg->b_rptr + sizeof(RTNETETHERHDR));
-        LogFlow((DEVICE_NAME ":VLAN Pcp=%d Cfi=%d Id=%d\n", pVlanHdr->Pcp, pVlanHdr->Cfi, pVlanHdr->Vid >> 4));
-        LogFlow((DEVICE_NAME "%.*Rhxd\n", MBLKL(pMsg), pMsg->b_rptr));
+        PVLANHEADER pVlanHdr = (PVLANHEADER)(pMsg->b_rptr + sizeof(RTNETETHERHDR) - sizeof(pEthHdr->EtherType));
+        LogRel((DEVICE_NAME ":VLAN Pcp=%u Cfi=%u Id=%u\n", VLAN_PRI(RT_BE2H_U16(pVlanHdr->Data)), VLAN_CFI(RT_BE2H_U16(pVlanHdr->Data)), VLAN_ID(RT_BE2H_U16(pVlanHdr->Data))));
+        LogRel((DEVICE_NAME "%.*Rhxd\n", sizeof(VLANHEADER), pVlanHdr));
     }
     else if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_ARP))
     {
         PRTNETARPHDR pArpHdr = (PRTNETARPHDR)(pEthHdr + 1);
-        LogFlow((DEVICE_NAME ":ARP Op=%d\n", pArpHdr->ar_oper));
+        LogRel((DEVICE_NAME ":ARP Op=%d\n", pArpHdr->ar_oper));
     }
     else if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPV6))
     {
-        LogFlow((DEVICE_NAME ":IPv6 D=%.6Rhxs S=%.6Rhxs\n", pb, pb + 6));
+        LogRel((DEVICE_NAME ":IPv6 D=%.6Rhxs S=%.6Rhxs\n", pb, pb + 6));
     }
     else if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPX_1)
              || pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPX_2)
              || pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPX_3))
     {
-        LogFlow((DEVICE_NAME ":IPX packet.\n"));
+        LogRel((DEVICE_NAME ":IPX packet.\n"));
     }
     else
     {
-        LogFlow((DEVICE_NAME ":Unknown EtherType=%x D=%.6Rhxs S=%.6Rhxs\n", RT_H2BE_U16(pEthHdr->EtherType), &pEthHdr->DstMac,
+        LogRel((DEVICE_NAME ":Unknown EtherType=%x D=%.6Rhxs S=%.6Rhxs\n", RT_H2BE_U16(pEthHdr->EtherType), &pEthHdr->DstMac,
                     &pEthHdr->SrcMac));
         /* LogFlow((DEVICE_NAME ":%.*Rhxd\n", MBLKL(pMsg), pMsg->b_rptr)); */
     }
@@ -3571,6 +3668,8 @@ int vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
     pThis->u.s.pvIp6Stream = NULL;
     pThis->u.s.pvArpStream = NULL;
     pThis->u.s.pvPromiscStream = NULL;
+    pThis->u.s.fAttaching = false;
+    pThis->u.s.fVLAN = false;
     pThis->u.s.hFastMtx = NIL_RTSEMFASTMUTEX;
 #ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
     pThis->u.s.hPollMtx = NIL_RTSEMFASTMUTEX;
