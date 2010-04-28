@@ -327,9 +327,9 @@ HRESULT NATEngine::loadSettings(const settings::NAT &data)
     mData->mDnsProxy = data.fDnsProxy;
     mData->mDnsUseHostResolver = data.fDnsUseHostResolver;
     /* Alias */
-    mData->mAliasMode |= (data.fAliasLog ? NATAliasMode_AliasLog : 0);
-    mData->mAliasMode |= (data.fAliasProxyOnly ? NATAliasMode_AliasProxyOnly : 0);
-    mData->mAliasMode = (data.fAliasUseSamePorts ? NATAliasMode_AliasUseSamePorts : 0);
+    mData->mAliasMode  = (data.fAliasUseSamePorts ? NATAliasMode_AliasUseSamePorts : 0);
+    mData->mAliasMode |= (data.fAliasLog          ? NATAliasMode_AliasLog          : 0);
+    mData->mAliasMode |= (data.fAliasProxyOnly    ? NATAliasMode_AliasProxyOnly    : 0);
     /* port forwarding */
     mNATRules.clear();
     for (settings::NATRuleList::const_iterator it = data.llRules.begin();
