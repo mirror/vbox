@@ -39,14 +39,16 @@ class ATL_NO_VTABLE NATEngine :
     typedef std::map<Utf8Str, settings::NATRule> NATRuleMap;
     struct Data
     {
-        Data(): mMtu(0),
-               mSockRcv(0),
-               mSockSnd(0),
-               mTcpRcv(0),
-               mTcpSnd(0),
-               mDnsPassDomain(TRUE),
-               mDnsProxy(FALSE),
-               mDnsUseHostResolver(FALSE) {}
+        Data() : mMtu(0),
+                 mSockRcv(0),
+                 mSockSnd(0),
+                 mTcpRcv(0),
+                 mTcpSnd(0),
+                 mDnsPassDomain(TRUE),
+                 mDnsProxy(FALSE),
+                 mDnsUseHostResolver(FALSE),
+                 mAliasMode(0)
+        {}
 
         com::Utf8Str mNetwork;
         com::Utf8Str mBindIP;
@@ -64,7 +66,7 @@ class ATL_NO_VTABLE NATEngine :
         BOOL     mDnsProxy;
         BOOL     mDnsUseHostResolver;
         /* Alias service */
-        ULONG     mAliasMode;
+        ULONG    mAliasMode;
     };
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (NATEngine)
 
