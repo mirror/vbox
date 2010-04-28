@@ -2488,9 +2488,6 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 if (it->mfNeedsOnlineMerge)
                 {
 /// @todo VBoxHDD cannot handle backward merges where source==active disk yet
-// and as Console::onlineMergeMedium blocks all othert backward merges since
-// SessionMachine::FinishOnlineMergeMedium can't handle reparenting yet, block
-// here. Can be removed step by step.
                     if (!it->mfMergeForward && it->mChildrenToReparent.size() == 0)
                         throw setError(E_NOTIMPL,
                                        tr("Snapshot '%s' of the machine '%ls' cannot be deleted while a VM is running, as this case is not implemented yet. You can delete the snapshot when the VM is powered off"),
