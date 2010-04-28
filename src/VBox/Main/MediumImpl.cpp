@@ -4948,6 +4948,86 @@ HRESULT Medium::startThread(Medium::Task *pTask)
 }
 
 /**
+ * Fix the parent UUID of all children to point to this medium as their
+ * parent.
+ */
+HRESULT Medium::fixParentUuidOfChildren(const MediaList &childrenToReparent)
+{
+    MediumLockList mediumLockList;
+    HRESULT rc = createMediumLockList(false, this, mediumLockList);
+    AssertComRCReturnRC(rc);
+
+    try
+    {
+        PVBOXHDD hdd;
+        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        ComAssertRCThrow(vrc, E_FAIL);
+
+        try
+        {
+            MediumLockList::Base::iterator lockListBegin =
+                mediumLockList.GetBegin();
+            MediumLockList::Base::iterator lockListEnd =
+                mediumLockList.GetEnd();
+            for (MediumLockList::Base::iterator it = lockListBegin;
+                 it != lockListEnd;
+                 ++it)
+            {
+                MediumLock &mediumLock = *it;
+                const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
+                AutoReadLock(pMedium COMMA_LOCKVAL_SRC_POS);
+
+                // open the image
+                vrc = VDOpen(hdd,
+                             pMedium->m->strFormat.c_str(),
+                             pMedium->m->strLocationFull.c_str(),
+                             VD_OPEN_FLAGS_READONLY,
+                             pMedium->m->vdDiskIfaces);
+                if (RT_FAILURE(vrc))
+                    throw vrc;
+            }
+
+            for (MediaList::const_iterator it = childrenToReparent.begin();
+                 it != childrenToReparent.end();
+                 ++it)
+            {
+                /* VD_OPEN_FLAGS_INFO since UUID is wrong yet */
+                vrc = VDOpen(hdd,
+                             (*it)->m->strFormat.c_str(),
+                             (*it)->m->strLocationFull.c_str(),
+                             VD_OPEN_FLAGS_INFO,
+                             (*it)->m->vdDiskIfaces);
+                if (RT_FAILURE(vrc))
+                    throw vrc;
+
+                vrc = VDSetParentUuid(hdd, VD_LAST_IMAGE, m->id);
+                if (RT_FAILURE(vrc))
+                    throw vrc;
+
+                vrc = VDClose(hdd, false /* fDelete */);
+                if (RT_FAILURE(vrc))
+                    throw vrc;
+
+                (*it)->UnlockWrite(NULL);
+            }
+        }
+        catch (HRESULT aRC) { rc = aRC; }
+        catch (int aVRC)
+        {
+            throw setError(E_FAIL,
+                            tr("Could not update medium UUID references to parent '%s' (%s)"),
+                            m->strLocationFull.raw(),
+                            vdError(aVRC).raw());
+        }
+
+        VDDestroy(hdd);
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    return rc;
+}
+
+/**
  * Runs Medium::Task::handler() on the current thread instead of creating
  * a new one.
  *
@@ -5216,8 +5296,8 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
                                 tr("Could not create the differencing hard disk storage unit '%s'%s"),
                                 targetLocation.raw(), vdError(vrc).raw());
 
-            size = VDGetFileSize(hdd, 1);
-            logicalSize = VDGetSize(hdd, 1) / _1M;
+            size = VDGetFileSize(hdd, VD_LAST_IMAGE);
+            logicalSize = VDGetSize(hdd, VD_LAST_IMAGE) / _1M;
         }
         catch (HRESULT aRC) { rc = aRC; }
 
@@ -5420,7 +5500,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
                         if (RT_FAILURE(vrc))
                             throw vrc;
 
-                        vrc = VDSetParentUuid(hdd, 1,
+                        vrc = VDSetParentUuid(hdd, VD_LAST_IMAGE,
                                               pTarget->m->id);
                         if (RT_FAILURE(vrc))
                             throw vrc;
@@ -5439,7 +5519,8 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
         {
             throw setError(E_FAIL,
                             tr("Could not merge the hard disk '%s' to '%s'%s"),
-                            m->strLocationFull.raw(), m->strLocationFull.raw(),
+                            m->strLocationFull.raw(),
+                            pTarget->m->strLocationFull.raw(),
                             vdError(aVRC).raw());
         }
 
@@ -5500,8 +5581,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
                     AutoWriteLock childLock(pMedium COMMA_LOCKVAL_SRC_POS);
 
                     pMedium->deparent();  // removes pMedium from source
-                    pTarget->m->llChildren.push_back(pMedium);
-                    pMedium->m->pParent = pTarget;
+                    pMedium->setParent(pTarget);
                 }
             }
         }
@@ -5747,8 +5827,8 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                                     tr("Could not create the clone hard disk '%s'%s"),
                                     targetLocation.raw(), vdError(vrc).raw());
 
-                size = VDGetFileSize(targetHdd, 0);
-                logicalSize = VDGetSize(targetHdd, 0) / _1M;
+                size = VDGetFileSize(targetHdd, VD_LAST_IMAGE);
+                logicalSize = VDGetSize(targetHdd, VD_LAST_IMAGE) / _1M;
             }
             catch (HRESULT aRC) { rc = aRC; }
 
@@ -5942,15 +6022,42 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
 
         try
         {
-            /* first, delete the storage unit */
-            vrc = VDOpen(hdd,
-                         format.c_str(),
-                         location.c_str(),
-                         VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
-                         m->vdDiskIfaces);
-            if (RT_SUCCESS(vrc))
-                vrc = VDClose(hdd, true /* fDelete */);
+            /* Open all hard disk images in the target chain but the last. */
+            MediumLockList::Base::const_iterator targetListBegin =
+                task.mpMediumLockList->GetBegin();
+            MediumLockList::Base::const_iterator targetListEnd =
+                task.mpMediumLockList->GetEnd();
+            for (MediumLockList::Base::const_iterator it = targetListBegin;
+                 it != targetListEnd;
+                 ++it)
+            {
+                const MediumLock &mediumLock = *it;
+                const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
 
+                AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+
+                /* sanity check */
+                Assert(pMedium->m->state == MediumState_LockedRead);
+
+                /* Open all images in appropriate mode. */
+                vrc = VDOpen(hdd,
+                             pMedium->m->strFormat.c_str(),
+                             pMedium->m->strLocationFull.c_str(),
+                             VD_OPEN_FLAGS_READONLY,
+                             pMedium->m->vdDiskIfaces);
+                if (RT_FAILURE(vrc))
+                    throw setError(E_FAIL,
+                                   tr("Could not open the hard disk storage unit '%s'%s"),
+                                   pMedium->m->strLocationFull.raw(),
+                                   vdError(vrc).raw());
+
+                /* Done when we hit the image which should be reset */
+                if (pMedium == this)
+                    break;
+            }
+
+            /* first, delete the storage unit */
+            vrc = VDClose(hdd, true /* fDelete */);
             if (RT_FAILURE(vrc))
                 throw setError(E_FAIL,
                                tr("Could not delete the hard disk storage unit '%s'%s"),
@@ -5983,8 +6090,8 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
                                 tr("Could not create the differencing hard disk storage unit '%s'%s"),
                                 location.raw(), vdError(vrc).raw());
 
-            size = VDGetFileSize(hdd, 1);
-            logicalSize = VDGetSize(hdd, 1) / _1M;
+            size = VDGetFileSize(hdd, VD_LAST_IMAGE);
+            logicalSize = VDGetSize(hdd, VD_LAST_IMAGE) / _1M;
         }
         catch (HRESULT aRC) { rc = aRC; }
 
