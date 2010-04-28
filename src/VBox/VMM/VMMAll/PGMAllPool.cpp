@@ -3406,17 +3406,16 @@ int pgmPoolTrackFlushGCPhysPTsSlow(PVM pVM, PPGMPAGE pPhysPage)
     LogFlow(("pgmPoolTrackFlushGCPhysPTsSlow: cUsedPages=%d cPresent=%d pPhysPage=%R[pgmpage]\n",
              pPool->cUsedPages, pPool->cPresent, pPhysPage));
 
-#if 1
     /*
      * There is a limit to what makes sense.
      */
-    if (pPool->cPresent > 1024)
+    if (    pPool->cPresent > 1024
+        &&  pVM->cCpus == 1)
     {
         LogFlow(("pgmPoolTrackFlushGCPhysPTsSlow: giving up... (cPresent=%d)\n", pPool->cPresent));
         STAM_PROFILE_STOP(&pPool->StatTrackFlushGCPhysPTsSlow, s);
         return VINF_PGM_GCPHYS_ALIASED;
     }
-#endif
 
     /*
      * Iterate all the pages until we've encountered all that in use.
@@ -3523,6 +3522,16 @@ int pgmPoolTrackFlushGCPhysPTsSlow(PVM pVM, PPGMPAGE pPhysPage)
 
     PGM_PAGE_SET_TRACKING(pPhysPage, 0);
     STAM_PROFILE_STOP(&pPool->StatTrackFlushGCPhysPTsSlow, s);
+
+    /*
+     * There is a limit to what makes sense. The above search is very expensive, so force a pgm pool flush.
+     */
+    if (pPool->cPresent > 1024)
+    {
+        LogFlow(("pgmPoolTrackFlushGCPhysPTsSlow: giving up... (cPresent=%d)\n", pPool->cPresent));
+        return VINF_PGM_GCPHYS_ALIASED;
+    }
+
     return VINF_SUCCESS;
 }
 
