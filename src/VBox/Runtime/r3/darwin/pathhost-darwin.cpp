@@ -33,6 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_PATH
+#include <iprt/assert.h>
 #include <iprt/string.h>
 #include "internal/iprt.h"
 
@@ -63,7 +64,7 @@ void rtPathFreeNative(char *pszNativePath, const char *pszPath)
 }
 
 
-int rtPathFromNative(char **pszPath, const char *pszNativePath)
+int rtPathFromNative(char **ppszPath, const char *pszNativePath)
 {
     /** @todo We must compose the codepoints in the string here.  We get file names
      *        in normalization form D so we'll end up with normalization form C
@@ -72,7 +73,7 @@ int rtPathFromNative(char **pszPath, const char *pszNativePath)
 }
 
 
-int rtPathFromNativeEx(char **pszPath, const char *pszNativePath, const char *pszBasePath)
+int rtPathFromNativeEx(char **ppszPath, const char *pszNativePath, const char *pszBasePath)
 {
     NOREF(pszBasePath);
     return rtPathFromNative(ppszPath, pszNativePath);
