@@ -420,12 +420,8 @@ int handleSnapshot(HandlerArg *a)
             else
             {
                 /* assume it's a UUID */
-                Bstr guidSnap(a->argv[2]);
-                if (!guidSnap.isEmpty())
-                {
-                    CHECK_ERROR_BREAK(pMachine, GetSnapshot(guidSnap, snapshot.asOutParam()));
-                }
-                else
+                rc = pMachine->GetSnapshot(Bstr(a->argv[2]), snapshot.asOutParam());
+                if (FAILED(rc) || !snapshot)
                 {
                     /* then it must be a name */
                     CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]), snapshot.asOutParam()));
@@ -483,12 +479,8 @@ int handleSnapshot(HandlerArg *a)
             ComPtr<ISnapshot> snapshot;
 
             /* assume it's a UUID */
-            Bstr guidSnap(a->argv[2]);
-            if (!guidSnap.isEmpty())
-            {
-                CHECK_ERROR_BREAK(pMachine, GetSnapshot(guidSnap, snapshot.asOutParam()));
-            }
-            else
+            rc = pMachine->GetSnapshot(Bstr(a->argv[2]), snapshot.asOutParam());
+            if (FAILED(rc) || !snapshot)
             {
                 /* then it must be a name */
                 CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]), snapshot.asOutParam()));
