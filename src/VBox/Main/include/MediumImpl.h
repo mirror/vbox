@@ -218,6 +218,8 @@ public:
     void cancelMergeTo(const MediaList &aChildrenToReparent,
                        MediumLockList *aMediumLockList);
 
+    HRESULT fixParentUuidOfChildren(const MediaList &childrenToReparent);
+
     /** Returns a preferred format for a differencing hard disk. */
     Bstr preferredDiffFormat();
 
