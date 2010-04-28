@@ -4886,11 +4886,11 @@ static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPor
 
         pAhciPortTaskState->uATARegError = 0;
         pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
-    }
 
-    /* Write updated command header into memory of the guest. */
-    PDMDevHlpPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciPortTaskState->GCPhysCmdHdrAddr,
-                       &pAhciPortTaskState->cmdHdr, sizeof(CmdHdr));
+        /* Write updated command header into memory of the guest. */
+        PDMDevHlpPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciPortTaskState->GCPhysCmdHdrAddr,
+                           &pAhciPortTaskState->cmdHdr, sizeof(CmdHdr));
+    }
 
     if (pAhciPortTaskState->enmTxDir == AHCITXDIR_READ)
     {
@@ -4917,7 +4917,7 @@ static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPor
         AssertMsg(fXchg, ("Task is not active\n"));
 #endif
 
-        if (!cOutstandingTasks)
+        if (!cOutstandingTasks || RT_FAILURE(rcReq))
             ahciSendSDBFis(pAhciPort, 0, pAhciPortTaskState, true);
     }
     else
