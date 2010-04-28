@@ -27,12 +27,22 @@ static CRGLSLShader* crStateGetShaderObj(GLuint id)
 {
     CRContext *g = GetCurrentContext();
 
+    if (!g)
+    {
+        crWarning("crStateGetShaderObj called without current ctx");
+    }
+
     return !g ? NULL : (CRGLSLShader *) crHashtableSearch(g->glsl.shaders, id);
 }
 
 static CRGLSLProgram* crStateGetProgramObj(GLuint id)
 {
     CRContext *g = GetCurrentContext();
+
+    if (!g)
+    {
+        crWarning("crStateGetProgramObj called without current ctx");
+    }
 
     return !g ? NULL : (CRGLSLProgram *) crHashtableSearch(g->glsl.programs, id);
 }
