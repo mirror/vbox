@@ -40,14 +40,18 @@ public:
 
     struct Data
     {
-        Data() : mSlot(0), mEnabled(FALSE),
+        Data() : mSlot(0),
+                 mEnabled(FALSE),
                  mAttachmentType(NetworkAttachmentType_Null),
-                 mCableConnected(TRUE), mLineSpeed(0), mTraceEnabled(FALSE),
+                 mCableConnected(TRUE),
+                 mLineSpeed(0),
+                 mTraceEnabled(FALSE),
                  mHostInterface("") /* cannot be null */,
 #ifdef VBOX_WITH_VDE
                  mVDENetwork("") /* can be null */,
 #endif
-                 mNATNetwork("") /* cannot be null */
+                 mNATNetwork("") /* cannot be null */,
+                 mBootPriority(0)
         {}
 
         NetworkAdapterType_T mAdapterType;

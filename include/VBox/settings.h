@@ -357,17 +357,17 @@ struct USBController
 
  struct NAT
  {
-     NAT(): u32Mtu(0),
-         u32SockRcv(0),
-         u32SockSnd(0),
-         u32TcpRcv(0),
-         u32TcpSnd(0),
-         fDnsPassDomain(true), /* historically this value is true */
-         fDnsProxy(false),
-         fDnsUseHostResolver(false),
-         fAliasLog(false),
-         fAliasProxyOnly(false),
-         fAliasUseSamePorts(false){}
+     NAT() : u32Mtu(0),
+             u32SockRcv(0),
+             u32SockSnd(0),
+             u32TcpRcv(0),
+             u32TcpSnd(0),
+             fDnsPassDomain(true), /* historically this value is true */
+             fDnsProxy(false),
+             fDnsUseHostResolver(false),
+             fAliasLog(false),
+             fAliasProxyOnly(false),
+             fAliasUseSamePorts(false) {}
      com::Utf8Str            strNetwork;
      com::Utf8Str            strBindIP;
      uint32_t                u32Mtu;
@@ -387,20 +387,23 @@ struct USBController
      NATRuleList             llRules;
      bool operator==(const NAT &n) const
      {
-        return strNetwork == n.strNetwork
-             && strBindIP == n.strBindIP
-             && u32Mtu == n.u32Mtu
-             && u32SockRcv == n.u32SockRcv
-             && u32SockSnd == n.u32SockSnd
-             && u32TcpSnd == n.u32TcpSnd
-             && u32TcpRcv == n.u32TcpRcv
-             && strTftpPrefix == n.strTftpPrefix
-             && strTftpBootFile == n.strTftpBootFile
-             && strTftpNextServer == n.strTftpNextServer
-             && fDnsPassDomain == n.fDnsPassDomain
-             && fDnsProxy == n.fDnsProxy
+        return strNetwork           == n.strNetwork
+             && strBindIP           == n.strBindIP
+             && u32Mtu              == n.u32Mtu
+             && u32SockRcv          == n.u32SockRcv
+             && u32SockSnd          == n.u32SockSnd
+             && u32TcpSnd           == n.u32TcpSnd
+             && u32TcpRcv           == n.u32TcpRcv
+             && strTftpPrefix       == n.strTftpPrefix
+             && strTftpBootFile     == n.strTftpBootFile
+             && strTftpNextServer   == n.strTftpNextServer
+             && fDnsPassDomain      == n.fDnsPassDomain
+             && fDnsProxy           == n.fDnsProxy
              && fDnsUseHostResolver == n.fDnsUseHostResolver
-             && llRules == n.llRules;
+             && fAliasLog           == n.fAliasLog
+             && fAliasProxyOnly     == n.fAliasProxyOnly
+             && fAliasUseSamePorts  == n.fAliasUseSamePorts
+             && llRules             == n.llRules;
      }
  };
 /**

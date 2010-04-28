@@ -1374,8 +1374,10 @@ bool NetworkAdapter::operator==(const NetworkAdapter &n) const
                   && (fTraceEnabled     == n.fTraceEnabled)
                   && (strTraceFile      == n.strTraceFile)
                   && (mode              == n.mode)
+                  && (nat               == n.nat)
                   && (strName           == n.strName)
                   && (ulBootPriority    == n.ulBootPriority)
+                  && (fHasDisabledNAT   == n.fHasDisabledNAT)
                 )
            );
 }
