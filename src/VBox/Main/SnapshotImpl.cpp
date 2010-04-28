@@ -2491,7 +2491,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
 // and as Console::onlineMergeMedium blocks all othert backward merges since
 // SessionMachine::FinishOnlineMergeMedium can't handle reparenting yet, block
 // here. Can be removed step by step.
-                    if (!it->mfMergeForward)
+                    if (!it->mfMergeForward && it->mChildrenToReparent.size() == 0)
                         throw setError(E_NOTIMPL,
                                        tr("Snapshot '%s' of the machine '%ls' cannot be deleted while a VM is running, as this case is not implemented yet. You can delete the snapshot when the VM is powered off"),
                                        aTask.pSnapshot->getName().c_str(),
@@ -3159,15 +3159,24 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium(IMediumAttachment *aMediumA
         // disconnect the deleted branch at the elder end
         targetChild->deparent();
 
-        // reparent source's children and disconnect the deleted
-        // branch at the younger end
+        // Update parent UUIDs of the source's children, reparent them and
+        // disconnect the deleted branch at the younger end
         com::SafeIfaceArray<IMedium> childrenToReparent(ComSafeArrayInArg(aChildrenToReparent));
         if (childrenToReparent.size() > 0)
         {
-/// @todo this is NOT fully working, the image open/parent change is missing.
-// See Medium::taskMergeHandler. Should be safe to add, as the VM is paused
-// right now. Should not get here, check in Console::onlineMergeMedium.
-            AssertFailedReturn(E_FAIL);
+            // Fix the parent UUID of the images which needs to be moved to
+            // underneath target. The running machine has the images opened,
+            // but only for reading since the VM is paused. If anything fails
+            // we must continue. The worst possible result is that the images
+            // need manual fixing via VBoxManage to adjust the parent UUID.
+            MediaList toReparent;
+            for (size_t i = 0; i < childrenToReparent.size(); i++)
+            {
+                Medium *pMedium = static_cast<Medium *>(childrenToReparent[i]);
+                toReparent.push_back(pMedium);
+            }
+            pTarget->fixParentUuidOfChildren(toReparent);
+
             // obey {parent,child} lock order
             AutoWriteLock sourceLock(pSource COMMA_LOCKVAL_SRC_POS);
 
