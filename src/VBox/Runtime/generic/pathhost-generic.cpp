@@ -53,15 +53,15 @@ void rtPathFreeNative(char *pszNativePath, const char *pszPath)
 }
 
 
-int rtPathFromNative(char **pszPath, const char *pszNativePath)
+int rtPathFromNative(char **ppszPath, const char *pszNativePath)
 {
-    return RTStrCurrentCPToUtf8(pszPath, pszNativePath);
+    return RTStrCurrentCPToUtf8(ppszPath, pszNativePath);
 }
 
 
-int rtPathFromNativeEx(char **pszPath, const char *pszNativePath, const char *pszBasePath)
+int rtPathFromNativeEx(char **ppszPath, const char *pszNativePath, const char *pszBasePath)
 {
     NOREF(pszBasePath);
-    return RTStrCurrentCPToUtf8(pszPath, pszNativePath);
+    return RTStrCurrentCPToUtf8(ppszPath, pszNativePath);
 }
 
