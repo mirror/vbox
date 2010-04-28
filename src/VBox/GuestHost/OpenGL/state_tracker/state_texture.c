@@ -2191,8 +2191,12 @@ crStateTexGendv(GLenum coord, GLenum pname, const GLdouble *param)
 					e = (GLenum) *param;
 					if (e == GL_OBJECT_LINEAR ||
 						e == GL_EYE_LINEAR ||
-						e == GL_SPHERE_MAP)
-					{
+						e == GL_SPHERE_MAP
+#if defined(GL_ARB_texture_cube_map) || defined(GL_EXT_texture_cube_map) || defined(GL_NV_texgen_reflection)
+						|| ((e == GL_REFLECTION_MAP_ARB || e == GL_NORMAL_MAP_ARB)
+							&& g->extensions.ARB_texture_cube_map)
+#endif
+					) {
 						t->unit[t->curTextureUnit].gen.q = e;
 						DIRTY(tb->genMode[t->curTextureUnit], g->neg_bitid);
 						DIRTY(tb->dirty, g->neg_bitid);
