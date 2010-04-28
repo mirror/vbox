@@ -143,7 +143,7 @@ RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
         i = 1;
     }
 
-    Assert(i == 0 || i == -1 || i == 1);
+    AssertMsg(i == 0 || i == -1 || i == 1, ("i=%d\n", i));
     return i != 0 && i != -1;
 }
 
