@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2008-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,6 +15,10 @@
  * Foundation, in version 2 as it comes in the "COPYING" file of the
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ * Clara, CA 95054 USA or visit http://www.sun.com if you need
+ * additional information or have any questions.
  */
 
 #define LOG_GROUP LOG_GROUP_MAIN
@@ -39,9 +43,6 @@
 #include <iprt/mem.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
-#include <iprt/pipe.h>
-#include <iprt/poll.h>
-#include <iprt/socket.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>  /* for RTThreadSleep() */
 
@@ -53,8 +54,12 @@
 #include <iprt/linux/sysfs.h>
 
 #ifdef VBOX_USB_WITH_SYSFS
-# ifdef VBOX_USB_WITH_FAM
-#  include <fam.h>
+# ifdef VBOX_USB_WITH_INOTIFY
+#  include <dlfcn.h>
+#  include <fcntl.h>
+#  include <poll.h>
+#  include <signal.h>
+#  include <unistd.h>
 # endif
 #endif
 
@@ -92,8 +97,27 @@ static int getDriveInfoFromDev(DriveInfoList *pList, bool isDVD,
 static int getDriveInfoFromSysfs(DriveInfoList *pList, bool isDVD,
                                  bool *pfSuccess);
 #ifdef VBOX_USB_WITH_SYSFS
-# ifdef VBOX_USB_WITH_FAM
+# ifdef VBOX_USB_WITH_INOTIFY
 static int getUSBDeviceInfoFromSysfs(USBDeviceInfoList *pList, bool *pfSuccess);
+
+/** Function object to be invoked on filenames from a directory. */
+class pathHandler
+{
+    /** Called on each element of the sysfs directory.  Can e.g. store
+     * interesting entries in a list. */
+    virtual bool handle(const char *pcszNode) = 0;
+public:
+    bool doHandle(const char *pcszNode)
+    {
+        AssertPtr(pcszNode);
+        Assert(pcszNode[0] == '/');
+        return handle(pcszNode);
+    }
+};
+
+static int walkDirectory(const char *pcszPath, pathHandler *pHandler,
+                         bool useRealPath);
+static int getDeviceInfoFromSysfs(const char *pcszPath, pathHandler *pHandler);
 # endif
 # ifdef VBOX_USB_WITH_DBUS
 /* These must be extern to be usable in the RTMemAutoPtr template */
@@ -1039,7 +1063,7 @@ int VBoxMainUSBDeviceInfo::UpdateDevices ()
         if (!success)
             success = halSuccess;
 # endif /* VBOX_USB_WITH_DBUS */
-# ifdef VBOX_USB_WITH_FAM
+# ifdef VBOX_USB_WITH_INOTIFY
         if (   RT_SUCCESS(rc)
             && (!success || testing()))
             rc = getUSBDeviceInfoFromSysfs(&mDeviceList, &success);
@@ -1066,10 +1090,12 @@ class hotplugDBusImpl : public VBoxMainHotplugWaiterImpl
     volatile bool mTriggered;
     /** A flag to say that we wish to interrupt the current wait. */
     volatile bool mInterrupt;
+    /** The constructor "return code" */
+    int mStatus;
 
 public:
     /** Test whether this implementation can be used on the current system */
-    static bool HalAvailable(void)
+    static bool Available(void)
     {
         RTMemAutoPtr<DBusConnection, VBoxHalShutdown> dbusConnection;
 
@@ -1086,6 +1112,11 @@ public:
     virtual int Wait (RTMSINTERVAL cMillies);
     /** @copydoc VBoxMainHotplugWaiter::Interrupt */
     virtual void Interrupt (void);
+    /** @copydoc VBoxMainHotplugWaiter::getStatus */
+    virtual int getStatus(void)
+    {
+        return mStatus;
+    }
 };
 
 /* This constructor sets up a private connection to the DBus daemon, connects
@@ -1094,9 +1125,9 @@ public:
  * removed. */
 hotplugDBusImpl::hotplugDBusImpl (void) : mTriggered(false), mInterrupt(false)
 {
-    int rc = VINF_SUCCESS;
+    int rc;
 
-    if (RT_SUCCESS(RTDBusLoadLib()))
+    if (RT_SUCCESS(rc = RTDBusLoadLib()))
     {
         for (unsigned i = 0; RT_SUCCESS(rc) && i < 5 && !mConnection; ++i)
         {
@@ -1116,6 +1147,7 @@ hotplugDBusImpl::hotplugDBusImpl (void) : mTriggered(false), mInterrupt(false)
         if (RT_FAILURE(rc))
             mConnection.reset();
     }
+    mStatus = rc;
 }
 
 /* Destructor */
@@ -1177,31 +1209,124 @@ public:
     }
     /** @copydoc VBoxMainHotplugWaiter::Interrupt */
     virtual void Interrupt (void) {}
+    virtual int getStatus(void)
+    {
+        return VERR_NOT_SUPPORTED;
+    }
+
 };
 
 #ifdef VBOX_USB_WITH_SYSFS
-# ifdef VBOX_USB_WITH_FAM
+# ifdef VBOX_USB_WITH_INOTIFY
+/** Class wrapper around an inotify watch (or a group of them to be precise).
+ * Inherits from pathHandler so that it can be passed to walkDirectory() to
+ * easily add all files from a directory. */
+class inotifyWatch : public pathHandler
+{
+    /** Pointer to the inotify_add_watch() glibc function/Linux API */
+    int (*inotify_add_watch)(int, const char *, uint32_t);
+    /** The native handle of the inotify fd. */
+    int mhInotify;
+    /** Object initialisation status, to save us throwing an exception from
+     * the constructor if we can't initialise */
+    int mStatus;
+
+    /** Object initialistation */
+    int initInotify(void);
+
+public:
+    /** Add @a pcszPath to the list of files and directories to be monitored */
+    virtual bool handle(const char *pcszPath);
+
+    inotifyWatch(void) : mhInotify(-1)
+    {
+        mStatus = initInotify();
+    }
+
+    ~inotifyWatch(void)
+    {
+        close(mhInotify);
+    }
+
+    int getStatus(void)
+    {
+        return mStatus;
+    }
+
+    int getFD(void)
+    {
+        AssertRCReturn(mStatus, -1);
+        return mhInotify;
+    }
+};
+
+int inotifyWatch::initInotify(void)
+{
+    int (*inotify_init)(void);
+    int fd, flags;
+
+    errno = 0;
+    *(void **)(&inotify_init) = dlsym(RTLD_DEFAULT, "inotify_init");
+    if (!inotify_init)
+        return VERR_LDR_IMPORTED_SYMBOL_NOT_FOUND;
+    *(void **)(&inotify_add_watch) = dlsym(RTLD_DEFAULT, "inotify_add_watch");
+    if (!inotify_add_watch)
+        return VERR_LDR_IMPORTED_SYMBOL_NOT_FOUND;
+    fd = inotify_init();
+    if (fd < 0)
+    {
+        Assert(errno > 0);
+        return RTErrConvertFromErrno(errno);
+    }
+    Assert(errno == 0);
+
+    int rc = VINF_SUCCESS;
+
+    flags = fcntl(fd, F_GETFL, NULL);
+    if (   flags < 0
+        || fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0)
+    {
+        Assert(errno > 0);
+        rc = RTErrConvertFromErrno(errno);
+    }
+    if (RT_FAILURE(rc))
+        close(fd);
+    else
+    {
+        Assert(errno == 0);
+        mhInotify = fd;
+    }
+    return rc;
+}
+
+/** The flags we pass to inotify - modify, create, delete */
+#define IN_FLAGS 0x302
+
+bool inotifyWatch::handle(const char *pcszPath)
+{
+    AssertRCReturn(mStatus, false);
+    errno = 0;
+    if (  inotify_add_watch(mhInotify, pcszPath, IN_FLAGS) >= 0
+        || (errno == EACCES))
+        return true;
+    /* Other errors listed in the manpage can be treated as fatal */
+    return false;
+}
 
 # define SYSFS_USB_DEVICE_PATH "/dev/bus/usb"
 # define SYSFS_WAKEUP_STRING "Wake up!"
 
-class hotplugSysfsFAMImpl : public VBoxMainHotplugWaiterImpl
+class hotplugInotifyImpl : public VBoxMainHotplugWaiterImpl
 {
     /** Pipe used to interrupt wait(), the read end. */
-    RTPIPE mhWakeupPipeR;
+    int mhWakeupPipeR;
     /** Pipe used to interrupt wait(), the write end. */
-    RTPIPE mhWakeupPipeW;
-    /** Our connection to FAM for polling for changes on sysfs. */
-    FAMConnection mFAMConnection;
-    /** Has our connection been initialised? */
-    bool mfFAMInitialised;
-    /** The iprt native handle of the FAM fd socket. */
-    RTSOCKET mhFAMFD;
-    /** Poll set containing the FAM socket and the termination pipe */
-    RTPOLLSET mhPollSet;
+    int mhWakeupPipeW;
+    /** The inotify watch set */
+    inotifyWatch mWatches;
     /** Flag to mark that the Wait() method is currently being called, and to
      * ensure that it isn't called multiple times in parallel. */
-    uint32_t mfWaiting;
+    volatile uint32_t mfWaiting;
     /** iprt result code from object initialisation.  Should be AssertReturn-ed
      * on at the start of all methods.  I went this way because I didn't want
      * to deal with exceptions. */
@@ -1210,103 +1335,23 @@ class hotplugSysfsFAMImpl : public VBoxMainHotplugWaiterImpl
      */
     enum
     {
-        RPIPE_ID = 1,
-        FAMFD_ID
+        RPIPE_ID = 0,
+        INOTIFY_ID,
+        MAX_POLLID
     };
-
-    /** Initialise the connection to the FAM daemon, allocating all required
-     * resources.
-     * @returns iprt status code
-     */
-    int initConnection(void);
-
-    /** Clean up the connection to the FAM daemon, freeing any allocated
-     * resources and gracefully skipping over any which have not yet been
-     * allocated or already cleaned up.
-     * @returns iprt status code
-     */
-    void termConnection(void);
 
     /** Clean up any resources in use, gracefully skipping over any which have
      * not yet been allocated or already cleaned up.  Intended to be called
      * from the destructor or after a failed initialisation. */
     void term(void);
 
-    /** Make sure that the object is correctly initialised and re-initialises
-     * it if not, and if the maximum number of connection attempts has not been
-     * reached.
-     * @returns iprt status value
-     * @returns VERR_TRY_AGAIN if we are giving up on this attempt but may
-     *                         still succeed on future attempts
-     */
-    int checkConnection(void);
-
-    /** Quick failure test of the checkConnection() function. */
-    void testCheckConnection(void);
-
-    /** Open our connection to FAM and convert the status to iprt.
-     * @todo  really convert the status
-     */
-    int openFAM(void)
-    {
-        if (FAMOpen(&mFAMConnection) < 0)
-            return VERR_FAM_OPEN_FAILED;
-        mfFAMInitialised = true;
-        return VINF_SUCCESS;
-    }
-
-    /** Monitor a file through the FAM connection. */
-    int monitorDirectoryFAM(const char *pszName)
-    {
-        AssertReturn(mfFAMInitialised, VERR_WRONG_ORDER);
-        FAMRequest dummyReq;
-        if (FAMMonitorDirectory(&mFAMConnection, pszName, &dummyReq, NULL) < 0)
-            return VERR_FAM_MONITOR_DIRECTORY_FAILED;
-        return VINF_SUCCESS;
-    }
-
-    /** Quick failure test of the monitor function - we temporarily invalidate
-     * the connection FD to trigger an error path. */
-    void testMonitorDirectoryFAM(void)
-    {
-        int oldFD = FAMCONNECTION_GETFD(&mFAMConnection);
-        FAMCONNECTION_GETFD(&mFAMConnection) = -1;
-        Assert(monitorDirectoryFAM("") == VERR_FAM_MONITOR_DIRECTORY_FAILED);
-        FAMCONNECTION_GETFD(&mFAMConnection) = oldFD;
-    }
-
-    int nextEventFAM(FAMEvent *pEv)
-    {
-        if (FAMNextEvent(&mFAMConnection, pEv) == 1)
-            return VINF_SUCCESS;
-        mStatus = VERR_FAM_CONNECTION_LOST;
-        return VERR_TRY_AGAIN;
-    }
-
-    /** Quick failure test of the nextevent function. */
-    void testNextEventFAM(void)
-    {
-        int oldStatus = mStatus;
-        mStatus = VINF_SUCCESS;
-        //Assert(nextEventFAM(NULL) == VERR_TRY_AGAIN);
-        mStatus = oldStatus;
-    }
-
-    /** Close our connection to FAM.  We ignore errors as there is no
-     * documentation as to what they mean, and the only error which might
-     * interest us (EINTR) should be (but isn't) handled inside the library. */
-    void closeFAM(void)
-    {
-        if (mfFAMInitialised)
-            FAMClose(&mFAMConnection);
-        mfFAMInitialised = false;
-    }
+    int drainInotify();
 
     /** Read the wakeup string from the wakeup pipe */
     int drainWakeupPipe(void);
 public:
-    hotplugSysfsFAMImpl(void);
-    virtual ~hotplugSysfsFAMImpl(void)
+    hotplugInotifyImpl(void);
+    virtual ~hotplugInotifyImpl(void)
     {
         term();
 #ifdef DEBUG
@@ -1315,22 +1360,51 @@ public:
         term();
 #endif
     }
-    /** Is sysfs available on this system?  If so we expect that this
-     * implementation will be usable. */
-    static bool SysfsAvailable(void)
+    /** Are sysfs and inotify available on this system?  If so we expect that
+     * this implementation will be usable. */
+    static bool Available(void)
     {
-        return RTDirExists(SYSFS_USB_DEVICE_PATH);
+        return (   RTDirExists(SYSFS_USB_DEVICE_PATH)
+                && dlsym(RTLD_DEFAULT, "inotify_init") != NULL);
     }
+
+    virtual int getStatus(void)
+    {
+        return mStatus;
+    }
+
     /** @copydoc VBoxMainHotplugWaiter::Wait */
     virtual int Wait(RTMSINTERVAL);
     /** @copydoc VBoxMainHotplugWaiter::Interrupt */
     virtual void Interrupt(void);
 };
 
-hotplugSysfsFAMImpl::hotplugSysfsFAMImpl(void) :
-    mhWakeupPipeR(NIL_RTPIPE), mhWakeupPipeW(NIL_RTPIPE),
-    mfFAMInitialised(false), mhFAMFD(NIL_RTSOCKET), mhPollSet(NIL_RTPOLLSET),
-    mfWaiting(0), mStatus(VERR_WRONG_ORDER)
+/** Simplified version of RTPipeCreate */
+static int pipeCreateSimple(int *phPipeRead, int *phPipeWrite)
+{
+    AssertPtrReturn(phPipeRead, VERR_INVALID_POINTER);
+    AssertPtrReturn(phPipeWrite, VERR_INVALID_POINTER);
+
+    /*
+     * Create the pipe and set the close-on-exec flag if requested.
+     */
+    int aFds[2] = {-1, -1};
+    if (pipe(aFds))
+        return RTErrConvertFromErrno(errno);
+
+    *phPipeRead  = aFds[0];
+    *phPipeWrite = aFds[1];
+
+    /*
+     * Before we leave, make sure to shut up SIGPIPE.
+     */
+    signal(SIGPIPE, SIG_IGN);
+    return VINF_SUCCESS;
+}
+
+hotplugInotifyImpl::hotplugInotifyImpl(void) :
+    mhWakeupPipeR(-1), mhWakeupPipeW(-1), mfWaiting(0),
+    mStatus(VERR_WRONG_ORDER)
 {
 #  ifdef DEBUG
     /* Excercise the code path (term() on a not-fully-initialised object) as
@@ -1341,215 +1415,163 @@ hotplugSysfsFAMImpl::hotplugSysfsFAMImpl(void) :
      * available */
     if (!testing())
     {
-#   ifndef VBOX_WITH_SYSFS_BY_DEFAULT
-        /** @todo only create this object if we will use it */
-        // Assert(!RTFileExists("/proc/bus/usb/devices"));
-#   endif
 #   ifdef VBOX_USB_WITH_DBUS
-        Assert(!hotplugDBusImpl::HalAvailable());
+        Assert(!hotplugDBusImpl::Available());
 #   endif
     }
 #  endif
     int rc;
     do {
-        if (RT_FAILURE(rc = RTPipeCreate(&mhWakeupPipeR, &mhWakeupPipeW, 0)))
+        if (RT_FAILURE(rc = mWatches.getStatus()))
             break;
-        if (RT_FAILURE(rc = initConnection()))
+        mWatches.doHandle(SYSFS_USB_DEVICE_PATH);
+        if (RT_FAILURE(rc = pipeCreateSimple(&mhWakeupPipeR, &mhWakeupPipeW)))
             break;
-#  ifdef DEBUG
-        /** Other tests */
-        testMonitorDirectoryFAM();
-        testNextEventFAM();
-        testCheckConnection();
-#  endif
     } while(0);
     mStatus = rc;
     if (RT_FAILURE(rc))
         term();
 }
 
-int hotplugSysfsFAMImpl::initConnection(void)
-{
-    int rc;
-
-    if (RT_FAILURE(rc = openFAM()))
-        return rc;
-    if (RT_FAILURE(rc = RTSocketFromNative
-                            (&mhFAMFD, FAMCONNECTION_GETFD(&mFAMConnection))))
-        return rc;
-    if (RT_FAILURE(rc = monitorDirectoryFAM(SYSFS_USB_DEVICE_PATH)))
-        return rc;
-    if (RT_FAILURE(rc = RTPollSetCreate(&mhPollSet)))
-        return rc;
-    if (RT_FAILURE(rc = RTPollSetAddSocket
-                            (mhPollSet, mhFAMFD, RTPOLL_EVT_READ, FAMFD_ID)))
-        return rc;
-    AssertReturn(mhWakeupPipeR != NIL_RTPIPE, VERR_WRONG_ORDER);
-    if (RT_FAILURE(rc = RTPollSetAddPipe(mhPollSet, mhWakeupPipeR,
-                                         RTPOLL_EVT_READ, RPIPE_ID)))
-        return rc;
-    return VINF_SUCCESS;
-}
-
-void hotplugSysfsFAMImpl::termConnection(void)
-{
-    closeFAM();
-    mhFAMFD = NIL_RTSOCKET;
-    RTPollSetDestroy(mhPollSet);
-    mhPollSet = NIL_RTPOLLSET;
-}
-
-int hotplugSysfsFAMImpl::checkConnection(void)
-{
-    /** We should only be called from within Wait(). */
-    AssertReturn(mfWaiting, VERR_WRONG_ORDER);
-    if (mStatus == VERR_FAM_CONNECTION_LOST)
-    {
-        termConnection();
-        mStatus = initConnection();
-    }
-    return mStatus;
-}
-
-void hotplugSysfsFAMImpl::testCheckConnection(void)
-{
-    int oldStatus = mStatus;
-    mStatus = VERR_UNRESOLVED_ERROR;
-    
-    bool fEntered = ASMAtomicCmpXchgU32(&mfWaiting, 1, 0);
-    AssertReturnVoid(fEntered);
-    Assert(checkConnection() == VERR_UNRESOLVED_ERROR);
-    mStatus = VERR_FAM_CONNECTION_LOST;
-    AssertRC(checkConnection());
-    mStatus = oldStatus;
-    mfWaiting = 0;
-}
-
-void hotplugSysfsFAMImpl::term(void)
+void hotplugInotifyImpl::term(void)
 {
     /** This would probably be a pending segfault, so die cleanly */
     AssertRelease(!mfWaiting);
-    termConnection();
-    RTPipeClose(mhWakeupPipeR);
-    mhWakeupPipeR = NIL_RTPIPE;
-    RTPipeClose(mhWakeupPipeW);
-    mhWakeupPipeW = NIL_RTPIPE;
+    close(mhWakeupPipeR);
+    mhWakeupPipeR = -1;
+    close(mhWakeupPipeW);
+    mhWakeupPipeW = -1;
 }
 
-/** Does a FAM event code mean that the available devices have (probably)
- * changed? */
-static int sysfsGetStatusForFAMCode(FAMCodes enmCode)
+int hotplugInotifyImpl::drainInotify()
 {
-    if (enmCode == FAMExists || enmCode == FAMEndExist)
-        return VERR_TRY_AGAIN;
-    return VINF_SUCCESS;
+    char chBuf[RTPATH_MAX + 256];  /* Should always be big enough */
+    ssize_t cchRead;
+
+    AssertRCReturn(mStatus, VERR_WRONG_ORDER);
+    errno = 0;
+    do {
+        cchRead = read(mWatches.getFD(), chBuf, sizeof(chBuf));
+    } while (cchRead > 0);
+    if (cchRead == 0)
+        return VINF_SUCCESS;
+    if (cchRead < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+        return VINF_SUCCESS;
+    Assert(errno > 0);
+    return RTErrConvertFromErrno(errno);
 }
 
-int hotplugSysfsFAMImpl::drainWakeupPipe(void)
+int hotplugInotifyImpl::drainWakeupPipe(void)
 {
     char szBuf[sizeof(SYSFS_WAKEUP_STRING)];
-    size_t cbDummy;
+    ssize_t cbRead;
 
-    int rc = RTPipeRead(mhWakeupPipeR, szBuf, sizeof(szBuf), &cbDummy);
-    AssertRC(rc);
+    AssertRCReturn(mStatus, VERR_WRONG_ORDER);
+    cbRead = read(mhWakeupPipeR, szBuf, sizeof(szBuf));
+    Assert(cbRead > 0);
     return VINF_SUCCESS;
 }
 
-int hotplugSysfsFAMImpl::Wait(RTMSINTERVAL aMillies)
+int hotplugInotifyImpl::Wait(RTMSINTERVAL aMillies)
 {
-    uint32_t id;
     int rc;
-    FAMEvent ev;
 
+    AssertRCReturn(mStatus, VERR_WRONG_ORDER);
     bool fEntered = ASMAtomicCmpXchgU32(&mfWaiting, 1, 0);
     AssertReturn(fEntered, VERR_WRONG_ORDER);
     do {
-        if (RT_FAILURE(rc = checkConnection()))
+        struct pollfd pollFD[MAX_POLLID];
+
+        if (RT_FAILURE(rc = walkDirectory(SYSFS_USB_DEVICE_PATH, &mWatches,
+                                          false)))
             break;
-        /* timeout returns */
-        if (RT_FAILURE(rc = RTPoll(mhPollSet, aMillies, NULL, &id)))
-            break;
-        if (id == RPIPE_ID)
+        pollFD[RPIPE_ID].fd = mhWakeupPipeR;
+        pollFD[RPIPE_ID].events = POLLIN;
+        pollFD[INOTIFY_ID].fd = mWatches.getFD();
+        pollFD[INOTIFY_ID].events = POLLIN | POLLERR | POLLHUP;
+        errno = 0;
+        int cPolled = poll(pollFD, RT_ELEMENTS(pollFD), aMillies);
+        if (cPolled < 0)
+        {
+            Assert(errno > 0);
+            rc = RTErrConvertFromErrno(errno);
+        }
+        else if (pollFD[RPIPE_ID].revents)
         {
             rc = drainWakeupPipe();
+            if (RT_SUCCESS(rc))
+                rc = VERR_INTERRUPTED;
             break;
         }
-        AssertBreakStmt(id == FAMFD_ID, rc = VERR_NOT_SUPPORTED);
-        if (RT_FAILURE(rc = nextEventFAM(&ev)))
+        else if (!(pollFD[INOTIFY_ID].revents))
+        {
+            AssertBreakStmt(cPolled == 0, rc = VERR_INTERNAL_ERROR);
+            rc = VERR_TIMEOUT;
+        }
+        Assert(errno == 0 || (RT_FAILURE(rc) && rc != VERR_TIMEOUT));
+        if (RT_FAILURE(rc))
             break;
-        rc = sysfsGetStatusForFAMCode(ev.code);
+        AssertBreakStmt(cPolled == 1, rc = VERR_INTERNAL_ERROR);
+        if (RT_FAILURE(rc = drainInotify()))
+            break;
     } while (false);
     mfWaiting = 0;
-    /* If at all, this should only get called once. */
-    AssertLogRelMsg(   RT_SUCCESS(rc)
-                    || rc == VERR_TRY_AGAIN
-                    || rc == VERR_FAM_OPEN_FAILED
-                    || rc == VERR_TIMEOUT, ("rc = %Rrc\n", rc));
     return rc;
 }
 
-void hotplugSysfsFAMImpl::Interrupt(void)
+void hotplugInotifyImpl::Interrupt(void)
 {
-    size_t cbDummy;
-    int rc = RTPipeWrite(mhWakeupPipeW, SYSFS_WAKEUP_STRING,
-                         sizeof(SYSFS_WAKEUP_STRING), &cbDummy);
-    if (RT_SUCCESS(rc))
-        RTPipeFlush(mhWakeupPipeW);
+    AssertRCReturnVoid(mStatus);
+    ssize_t cbWritten = write(mhWakeupPipeW, SYSFS_WAKEUP_STRING,
+                         sizeof(SYSFS_WAKEUP_STRING));
+    if (cbWritten > 0)
+        fsync(mhWakeupPipeW);
 }
 
-# endif /* VBOX_USB_WITH_FAM */
+# endif /* VBOX_USB_WITH_INOTIFY */
 #endif  /* VBOX_USB_WTH_SYSFS */
 
 VBoxMainHotplugWaiter::VBoxMainHotplugWaiter(void)
 {
+    try
+    {
 #ifdef VBOX_USB_WITH_SYSFS
-# ifdef VBOX_USB_WITH_DBUS
-    if (hotplugDBusImpl::HalAvailable())
-    {
-        mImpl = new hotplugDBusImpl;
-        return;
-    }
-# endif  /* VBOX_USB_WITH_DBUS */
-# ifdef VBOX_USB_WITH_FAM
-    if (hotplugSysfsFAMImpl::SysfsAvailable())
-    {
-        mImpl = new hotplugSysfsFAMImpl;
-        return;
-    }
-# endif /* VBOX_USB_WITH_FAM */
+# ifdef VBOX_WITH_DBUS
+        if (hotplugDBusImpl::Available())
+        {
+            mImpl = new hotplugDBusImpl;
+            return;
+        }
+# endif  /* VBOX_WITH_DBUS */
+# ifdef VBOX_USB_WITH_INOTIFY
+        if (hotplugInotifyImpl::Available())
+        {
+            mImpl = new hotplugInotifyImpl;
+            return;
+        }
+# endif /* VBOX_USB_WITH_INOTIFY */
 #endif  /* VBOX_USB_WITH_SYSFS */
-    mImpl = new hotplugNullImpl;
+        mImpl = new hotplugNullImpl;
+    }
+    catch(std::bad_alloc &e)
+    { }
 }
 
 #ifdef VBOX_USB_WITH_SYSFS
-# ifdef VBOX_USB_WITH_FAM
-class sysfsPathHandler
-{
-    /** Called on each element of the sysfs directory.  Can e.g. store
-     * interesting entries in a list. */
-    virtual bool handle(const char *pcszNode) = 0;
-public:
-    bool doHandle(const char *pcszNode)
-    {
-        AssertPtr(pcszNode);
-        Assert(pcszNode[0] == '/');
-        Assert(RTPathExists(pcszNode));
-        return handle(pcszNode);
-    }
-};
-
+# ifdef VBOX_USB_WITH_INOTIFY
 /**
- * Helper function to walk a sysfs directory for extracting information about
- * devices.
+ * Helper function to walk a directory, calling a function object on its files
  * @returns iprt status code
- * @param   pcszPath   Sysfs directory to walk.  Must exist.
- * @param   pHandler   Handler object which will be invoked on each directory
- *                     entry
+ * @param   pcszPath     Directory to walk.
+ * @param   pHandler     Handler object which will be invoked on each file
+ * @param   useRealPath  Whether to resolve the filename to its real path
+ *                       before calling the handler.  In this case the target
+ *                       must exist.
  *
  * @returns IPRT status code
  */
 /* static */
-int getDeviceInfoFromSysfs(const char *pcszPath, sysfsPathHandler *pHandler)
+int walkDirectory(const char *pcszPath, pathHandler *pHandler, bool useRealPath)
 {
     AssertPtrReturn(pcszPath, VERR_INVALID_POINTER);
     AssertPtrReturn(pHandler, VERR_INVALID_POINTER);
@@ -1558,7 +1580,8 @@ int getDeviceInfoFromSysfs(const char *pcszPath, sysfsPathHandler *pHandler)
     int rc;
 
     rc = RTDirOpen(&pDir, pcszPath);
-    AssertRCReturn(rc, rc);
+    if (RT_FAILURE(rc))
+        return rc;
     while (RT_SUCCESS(rc))
     {
         RTDIRENTRY entry;
@@ -1576,16 +1599,39 @@ int getDeviceInfoFromSysfs(const char *pcszPath, sysfsPathHandler *pHandler)
             rc = VERR_BUFFER_OVERFLOW;
         if (RT_FAILURE(rc))
             break;
-        rc = RTPathReal(szPath, szAbsPath, sizeof(szAbsPath));
-        AssertRCBreak(rc);  /* sysfs should guarantee that this exists */
-        if (!pHandler->doHandle(szAbsPath))
-            break;
+        if (useRealPath)
+        {
+            rc = RTPathReal(szPath, szAbsPath, sizeof(szAbsPath));
+            AssertRCBreak(rc);  /* sysfs should guarantee that this exists */
+            if (!pHandler->doHandle(szAbsPath))
+                break;
+        }
+        else
+            if (!pHandler->doHandle(szPath))
+                break;
     }
     RTDirClose(pDir);
     if (rc == VERR_NO_MORE_FILES)
         rc = VINF_SUCCESS;
     LogFlow (("rc=%Rrc\n", rc));
     return rc;
+}
+
+
+/**
+ * Helper function to walk a sysfs directory for extracting information about
+ * devices.
+ * @returns iprt status code
+ * @param   pcszPath   Sysfs directory to walk.  Must exist.
+ * @param   pHandler   Handler object which will be invoked on each directory
+ *                     entry
+ *
+ * @returns IPRT status code
+ */
+/* static */
+int getDeviceInfoFromSysfs(const char *pcszPath, pathHandler *pHandler)
+{
+    return walkDirectory(pcszPath, pHandler, true);
 }
 
 
@@ -1615,7 +1661,7 @@ static unsigned usbDeviceFromDevNum(dev_t devNum)
  * Tell whether a file in /sys/bus/usb/devices is a device rather than an
  * interface.  To be used with getDeviceInfoFromSysfs().
  */
-class matchUSBDevice : public sysfsPathHandler
+class matchUSBDevice : public pathHandler
 {
     USBDeviceInfoList *mList;
 public:
@@ -1656,7 +1702,7 @@ private:
  * Tell whether a file in /sys/bus/usb/devices is an interface rather than a
  * device.  To be used with getDeviceInfoFromSysfs().
  */
-class matchUSBInterface : public sysfsPathHandler
+class matchUSBInterface : public pathHandler
 {
     USBDeviceInfo *mInfo;
 public:
@@ -1758,7 +1804,7 @@ static int getUSBDeviceInfoFromSysfs(USBDeviceInfoList *pList,
     LogFlow (("rc=%Rrc\n", rc));
     return rc;
 }
-# endif /* VBOX_USB_WITH_FAM */
+# endif /* VBOX_USB_WITH_INOTIFY */
 #endif /* VBOX_USB_WITH_SYSFS */
 
 #if defined VBOX_USB_WITH_SYSFS && defined VBOX_USB_WITH_DBUS
