@@ -4279,7 +4279,7 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
         /* check medium attachment and other sanity conditions */
         if (fMergeForward)
         {
-            AutoReadLock(this COMMA_LOCKVAL_SRC_POS);
+            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
             if (getChildren().size() > 1)
             {
                 throw setError(E_FAIL,
@@ -4975,7 +4975,7 @@ HRESULT Medium::fixParentUuidOfChildren(const MediaList &childrenToReparent)
             {
                 MediumLock &mediumLock = *it;
                 const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
-                AutoReadLock(pMedium COMMA_LOCKVAL_SRC_POS);
+                AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
 
                 // open the image
                 vrc = VDOpen(hdd,
