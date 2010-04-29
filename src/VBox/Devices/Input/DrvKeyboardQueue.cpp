@@ -137,6 +137,17 @@ static DECLCALLBACK(void) drvKbdPassThruLedsChange(PPDMIKEYBOARDCONNECTOR pInter
     pDrv->pDownConnector->pfnLedStatusChange(pDrv->pDownConnector, enmLeds);
 }
 
+/**
+ * Pass keyboard state changes from the guest thru to the frontent driver.
+ *
+ * @param   pInterface  Pointer to the keyboard connector interface structure.
+ * @param   fActive     The new active/inactive state.
+ */
+static DECLCALLBACK(void) drvKbdPassThruSetActive(PPDMIKEYBOARDCONNECTOR pInterface, bool fActive)
+{
+    PDRVKBDQUEUE pDrv = PPDMIKEYBOARDCONNECTOR_2_DRVKBDQUEUE(pInterface);
+    pDrv->pDownConnector->pfnSetActive(pDrv->pDownConnector, fActive);
+}
 
 
 /* -=-=-=-=- queue -=-=-=-=- */
@@ -249,6 +260,7 @@ static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pDrvIns->IBase.pfnQueryInterface        = drvKbdQueueQueryInterface;
     /* IKeyboardConnector. */
     pDrv->IConnector.pfnLedStatusChange     = drvKbdPassThruLedsChange;
+    pDrv->IConnector.pfnSetActive           = drvKbdPassThruSetActive;
     /* IKeyboardPort. */
     pDrv->IPort.pfnPutEvent                 = drvKbdQueuePutEvent;
 
