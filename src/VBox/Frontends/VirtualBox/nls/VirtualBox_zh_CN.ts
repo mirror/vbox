@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1" language="zh_CN">
-<defaultcodec></defaultcodec>
+<!DOCTYPE TS>
+<TS version="2.0" language="zh_CN">
 <context>
     <name>@@@</name>
     <message>
@@ -449,10 +449,1457 @@
     </message>
 </context>
 <context>
+    <name>QIWizardPage</name>
+    <message>
+        <source>Use the &lt;b&gt;%1&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;%2&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;%3&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QListBox</name>
     <message>
         <source>Inaccessible</source>
         <translation type="obsolete">不可使用</translation>
+    </message>
+</context>
+<context>
+    <name>UIDownloader</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">取消</translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="obsolete">下载增强功能包 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="obsolete">取消下载增强功能包</translation>
+    </message>
+    <message>
+        <source>Could not locate the file on the server (response: %1).</source>
+        <translation type="obsolete">无法在服务器上找到该文件 (回应: %1).</translation>
+    </message>
+    <message>
+        <source>Could not determine the file size.</source>
+        <translation type="obsolete">无法检测到文件大小.</translation>
+    </message>
+    <message>
+        <source>Could not connect to the server (%1).</source>
+        <translation type="obsolete">无法连接到服务器 (%1).</translation>
+    </message>
+    <message>
+        <source>Could not download the file (%1).</source>
+        <translation type="obsolete">无法下载该文件 (%1).</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;无法将下载的文件保存为 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Select folder to save Guest Additions image to</source>
+        <translation type="obsolete">选择用于保存增强功能包的文件夹</translation>
+    </message>
+    <message>
+        <source>Connection timed out.</source>
+        <translation type="obsolete">连接超时.</translation>
+    </message>
+    <message>
+        <source>The download process has been cancelled by the user.</source>
+        <translation type="obsolete">下载进程被用户取消.</translation>
+    </message>
+    <message>
+        <source>The download process has been canceled by the user.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDownloaderAdditions</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">取消</translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="obsolete">下载增强功能包，该功能包当前位于 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="obsolete">取消下载增强功能包</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;无法将下载的文件保存为 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Select folder to save Guest Additions image to</source>
+        <translation>选择用于保存增强功能包的文件夹</translation>
+    </message>
+</context>
+<context>
+    <name>UIDownloaderUserManual</name>
+    <message>
+        <source>Select folder to save User Manual to</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzd</name>
+    <message>
+        <source>Select a file to export into</source>
+        <translation type="obsolete">选择一个用于保存的文件</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="obsolete">Open Virtualization Format (%1)</translation>
+    </message>
+    <message>
+        <source>Appliance</source>
+        <translation type="obsolete">虚拟电脑</translation>
+    </message>
+    <message>
+        <source>Exporting Appliance ...</source>
+        <translation type="obsolete">导出虚拟电脑 ...</translation>
+    </message>
+    <message>
+        <source>Appliance Export Wizard</source>
+        <translation>虚拟电脑导出向导</translation>
+    </message>
+    <message>
+        <source>Welcome to the Appliance Export Wizard!</source>
+        <translation type="obsolete">欢迎使用虚拟电脑导出向导!</translation>
+    </message>
+    <message>
+        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will you guide to the process of exporting an appliance. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="obsolete">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;本向导将指引您如何导出一个虚拟电脑. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;按 &lt;span style=&quot; font-weight:600;&quot;&gt;下一步&lt;/span&gt; 按钮进入向导的下一个页面，按 &lt;span style=&quot; font-weight:600;&quot;&gt;返回&lt;/span&gt; 按钮可退回向导的上一个页面.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;选择您要导出的虚拟电脑。您可同时选择多个虚拟电脑一块导出，请注意：要导出的虚拟电脑必须处于关闭状态。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; 返回(&amp;B)</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">下一步(&amp;N) &gt;</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">取消</translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="obsolete">虚拟电脑导出设置</translation>
+    </message>
+    <message>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
+        <translation type="obsolete">您可以在此更改所选虚拟电脑的其它设置。通过双击该项目即可修改大部分的显示属性.</translation>
+    </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>恢复为默认值</translation>
+    </message>
+    <message>
+        <source>Please specify a filename into which the appliance information will be written. Currently VirtualBox supports the Open Virtualization Format (OVF).</source>
+        <translation type="obsolete">请指定一个用于保存虚拟电脑信息的文件。当前只支持开放虚拟格式(OVF).</translation>
+    </message>
+    <message>
+        <source>&amp;Export &gt;</source>
+        <translation type="obsolete">导出(&amp;E) &gt;</translation>
+    </message>
+    <message>
+        <source>Please choose a filename to export the OVF to.</source>
+        <translation type="obsolete">为要导出的虚拟电脑指定一个文件名.</translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="obsolete">请填写额外的字段如用户名，密码和存储桶，并为要导出的虚拟电脑指定一个文件名.</translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="obsolete">请填写额外的字段如用户名，密码，主机名和存储桶，并为要导出的虚拟电脑指定一个文件名.</translation>
+    </message>
+    <message>
+        <source>Checking files ...</source>
+        <translation type="obsolete">检测文件 ...</translation>
+    </message>
+    <message>
+        <source>Removing files ...</source>
+        <translation type="obsolete">删除文件 ...</translation>
+    </message>
+    <message>
+        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="obsolete">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;本向导将指引您如何导出一个虚拟电脑. &lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;下一步&lt;/span&gt; 按钮进入向导的下一个页面，按 &lt;span style=&quot; font-weight:600;&quot;&gt;返回&lt;/span&gt; 按钮可退回向导的上一个页面.&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;选择您要导出的虚拟电脑。您可同时选择多个虚拟电脑一块导出，请注意：要导出的虚拟电脑必须处于关闭状态。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <translation type="obsolete">请为要导出的虚拟电脑指定一个存储位置。您既可以选择一个本地的文件系统，也可以选择上传到Sun云服务或S3存储服务器.</translation>
+    </message>
+    <message>
+        <source>&amp;Local Filesystem </source>
+        <translation type="obsolete">本地文件系统(&amp;L)</translation>
+    </message>
+    <message>
+        <source>Sun &amp;Cloud</source>
+        <translation type="obsolete">Sun 云服务(&amp;C)</translation>
+    </message>
+    <message>
+        <source>&amp;Simple Storage System (S3)</source>
+        <translation type="obsolete">(S3)简单存储系统(&amp;S)</translation>
+    </message>
+    <message>
+        <source>&amp;Username:</source>
+        <translation type="obsolete">用户名(&amp;U):</translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="obsolete">密码(&amp;P):</translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="obsolete">文件(&amp;F):</translation>
+    </message>
+    <message>
+        <source>&amp;Bucket:</source>
+        <translation type="obsolete">存储桶(&amp;B):</translation>
+    </message>
+    <message>
+        <source>&amp;Hostname:</source>
+        <translation type="obsolete">主机名(&amp;H):</translation>
+    </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="obsolete">用传统的 OVF 0.9 格式保存，以兼容其它的虚拟电脑产品.</translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="obsolete">用传统的 OVF 0.9 格式保存(&amp;W)</translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage1</name>
+    <message>
+        <source>Welcome to the Appliance Export Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through the process of exporting an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Please select the virtual machines that should be added to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage2</name>
+    <message>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage3</name>
+    <message>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Local Filesystem </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sun &amp;Cloud</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Simple Storage System (S3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage4</name>
+    <message>
+        <source>&amp;Username:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Hostname:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Bucket:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a file to export into</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a filename to export the OVF to.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Checking files ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing files ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exporting Appliance ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzd</name>
+    <message>
+        <source>First Run Wizard</source>
+        <translation>首次运行向导</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;这是您第一次启动这个新建的虚拟电脑。本向导将协助您一步步把操作系统安装到该虚拟电脑上。&lt;/p&gt;&lt;p&gt;按 &lt;b&gt;下一步&lt;/b&gt; 按钮进入向导的下一页，按 &lt;b&gt;返回&lt;/b&gt; 按钮返回上一页，你也能按 &lt;b&gt;取消&lt;/b&gt; 如果您不想执行本向导.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Welcome to the First Run Wizard!</source>
+        <translation type="obsolete">欢迎使用首次运行向导!</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;选择用于安装系统介质类型.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Media Type</source>
+        <translation type="obsolete">介质类型</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD-ROM Device</source>
+        <translation type="obsolete">光驱(&amp;C)</translation>
+    </message>
+    <message>
+        <source>Alt+C</source>
+        <translation type="obsolete">Alt+C</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Device</source>
+        <translation type="obsolete">软驱(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Alt+F</source>
+        <translation type="obsolete">Alt+F</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;选择含有您所要安装的操作系统的安装程序的介质。该介质必须是可引导的，否则安装程序无法启动.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Media Source</source>
+        <translation type="obsolete">介质位置</translation>
+    </message>
+    <message>
+        <source>&amp;Host Drive</source>
+        <translation type="obsolete">物理介质(&amp;H)</translation>
+    </message>
+    <message>
+        <source>Alt+H</source>
+        <translation type="obsolete">Alt+H</translation>
+    </message>
+    <message>
+        <source>&amp;Image File</source>
+        <translation type="obsolete">虚拟介质(&amp;I)</translation>
+    </message>
+    <message>
+        <source>Alt+I</source>
+        <translation type="obsolete">Alt+I</translation>
+    </message>
+    <message>
+        <source>VDM</source>
+        <translation type="obsolete">VDM</translation>
+    </message>
+    <message>
+        <source>Select Installation Media</source>
+        <translation type="obsolete">选择安装介质</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;您已经选择如下介质用于引导:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;如果以上的设置完全正确，请按 &lt;b&gt;完成&lt;/b&gt; 按钮. 一旦您按下它，所选择的安装介质将被临时挂载到该虚拟电脑，然后该虚拟电脑将被启动.&lt;/p&gt;&lt;p&gt;请注意，当您关闭虚拟电脑后，该安装介质将被自动卸载，而启动设备将被设置为第一个虚拟硬盘.&lt;/p&gt;&lt;p&gt;根据安装程序的类型, 在安装程序重启电脑后，您可能需要手动卸载该安装介质, 为了防止安装程序重新执行一遍. 您可以在 &lt;b&gt;设备&lt;/b&gt; 菜单 中选择 &lt;b&gt;释放...&lt;/b&gt; 该介质.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">摘要</translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM Device</source>
+        <translation type="obsolete">光驱</translation>
+    </message>
+    <message>
+        <source>Floppy Device</source>
+        <translation type="obsolete">软驱</translation>
+    </message>
+    <message>
+        <source>Host Drive %1</source>
+        <translation type="obsolete">物理设备 %1</translation>
+    </message>
+    <message>
+        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;类型:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;位置:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;这是您第一次启动这个新建的虚拟电脑。本向导将协助您一步步把操作系统安装到该虚拟电脑上。&lt;/p&gt;&lt;p&gt;请注意您现在还不能把一个操作系统安装到该虚拟电脑上，因为您还没有给它分配一个硬盘。因此您应先取消本向导，然后到该虚拟电脑的设置对话框中为该虚拟电脑分配一个硬盘。&lt;/p&gt;&lt;p&gt;按  &lt;b&gt;下一步&lt;/b&gt; 按钮进入向导的下一页，按 &lt;b&gt;返回&lt;/b&gt; 按钮返回上一页。你也能按 &lt;b&gt;取消&lt;/b&gt; 如果您不想执行本向导.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;选择您要用于引导操作系统的介质类型.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;选择含有您要使用的操作系统的介质。该介质必须是可引导的，否则操作系统将无法被启动.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;您已选择从下面的介质中引导操作系统:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;如果以上的设置完全正确，请按 &lt;b&gt;完成&lt;/b&gt; 按钮。一旦您按下它，所选择的安装介质将被挂载到该虚拟电脑，然后该虚拟电脑将被启动.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; 返回(&amp;B)</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">下一步(&amp;N) &gt;</translation>
+    </message>
+    <message>
+        <source>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If the above is correct, press the &lt;span style=&quot; font-weight:600;&quot;&gt;Finish&lt;/span&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;span style=&quot; font-weight:600;&quot;&gt;Unmount...&lt;/span&gt; action in the &lt;span style=&quot; font-weight:600;&quot;&gt;Devices&lt;/span&gt; menu&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="obsolete">&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;如果以上设置没有问题请按 &lt;span style=&quot; font-weight:600;&quot;&gt;完成&lt;/span&gt; 按钮。 刚刚指定的介质将被临时分配给该虚拟电脑，并开始启动该虚拟电脑&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;请注意：当该虚拟电脑关闭后，该介质将自动从该虚拟电脑上释放，以便该虚拟电脑能从原来的虚拟硬盘上启动.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;根据操作系统安装程序的不同，可能需要在安装程序重启后手动释放（或弹出）该介质，以避免安装程序再次启动，这只需在 &lt;span style=&quot; font-weight:600;&quot;&gt;设备&lt;/span&gt; 菜单中执行相应的 &lt;span style=&quot; font-weight:600;&quot;&gt;释放...&lt;/span&gt; 操作即可&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Finish</source>
+        <translation type="obsolete">完成(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="obsolete">类型</translation>
+    </message>
+    <message>
+        <source>Source</source>
+        <comment>summary</comment>
+        <translation type="obsolete">位置</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">取消</translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzdPage1</name>
+    <message>
+        <source>Welcome to the First Run Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzdPage2</name>
+    <message>
+        <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Media Source</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select Installation Media</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzdPage3</name>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Source</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIImportApplianceWzd</name>
+    <message>
+        <source>Select an appliance to import</source>
+        <translation type="obsolete">选择一个要导入的虚拟电脑</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="obsolete">开放虚拟格式 (%1)</translation>
+    </message>
+    <message>
+        <source>Appliance Import Wizard</source>
+        <translation>虚拟电脑导入向导</translation>
+    </message>
+    <message>
+        <source>Welcome to the Appliance Import Wizard!</source>
+        <translation type="obsolete">欢迎使用虚拟电脑导入向导!</translation>
+    </message>
+    <message>
+        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="obsolete">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;本向导将指引您如何导入一个虚拟电脑. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;按 &lt;span style=&quot; font-weight:600;&quot;&gt;下一步&lt;/span&gt; 按钮进入向导的下一个页面，按 &lt;span style=&quot; font-weight:600;&quot;&gt;返回&lt;/span&gt; 按钮可退回向导的上一个页面.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;为导入一个虚拟电脑，您需首先指定该虚拟电脑所在的文件。当前只支持开放虚拟格式(OVF)的虚拟电脑的导入。请从下面选择一个您要导入的文件以继续:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; 返回(&amp;B)</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">下一步(&amp;N) &gt;</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">取消</translation>
+    </message>
+    <message>
+        <source>Appliance Import Settings</source>
+        <translation type="obsolete">虚拟电脑导入设置</translation>
+    </message>
+    <message>
+        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
+        <translation type="obsolete">这是即将导入的虚拟电脑及建议的映射关系。您可以通过双击该项目来调整其设置，或使用下面的选择框来禁用它们.</translation>
+    </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>恢复为默认值</translation>
+    </message>
+    <message>
+        <source>&amp;Import &gt;</source>
+        <translation type="obsolete">导入(&amp;I) &gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIImportApplianceWzdPage1</name>
+    <message>
+        <source>Select an appliance to import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Welcome to the Appliance Import Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through importing an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIImportApplianceWzdPage2</name>
+    <message>
+        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Import Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIImportLicenseViewer</name>
+    <message>
+        <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
+        <translation>&lt;b&gt;虚拟电脑内的系统 &quot;%1&quot; 要求您同意下面显示的软件授权协议的各项条款。&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;按 &lt;b&gt;同意&lt;/b&gt; 继续或按 &lt;b&gt;不同意&lt;/b&gt; 取消导入.</translation>
+    </message>
+    <message>
+        <source>Software License Agreement</source>
+        <translation>软件授权协议</translation>
+    </message>
+    <message>
+        <source>&amp;Disagree</source>
+        <translation>不同意(&amp;D)</translation>
+    </message>
+    <message>
+        <source>&amp;Agree</source>
+        <translation>同意(&amp;A)</translation>
+    </message>
+    <message>
+        <source>&amp;Print...</source>
+        <translation>打印(&amp;P)...</translation>
+    </message>
+    <message>
+        <source>&amp;Save...</source>
+        <translation>保存(&amp;S)...</translation>
+    </message>
+    <message>
+        <source>Text (*.txt)</source>
+        <translation>Text (*.txt)</translation>
+    </message>
+    <message>
+        <source>Save license to file...</source>
+        <translation>保存协议到文件...</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineLogic</name>
+    <message>
+        <source>VirtualBox OSE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> EXPERIMENTAL build %1r%2 - %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProcessWidgetAdditions</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProcessWidgetUserManual</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox User Manual download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox User Manual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMultiScreenLayout</name>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzd</name>
+    <message>
+        <source>Create New Virtual Disk</source>
+        <translation>创建新的虚拟硬盘</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
+&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
+and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;本向导将帮助你为虚拟电脑创建一个新的虚拟硬盘.&lt;/p&gt;
+&lt;p&gt;单击&lt;b&gt;下一步&lt;/b&gt;按钮进入本向导的下一个页面
+单击&lt;b&gt;返回&lt;/b&gt;按钮返回上一个页面.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Welcome to the Create New Virtual Disk Wizard!</source>
+        <translation type="obsolete">欢迎使用新建虚拟硬盘向导!</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
+of space on your physical hard disk. It will grow dynamically (up to
+the size specified) as the Guest OS claims disk space.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
+the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;选择你要建立的虚拟硬盘类型.&lt;/p&gt;
+&lt;p&gt;一个&lt;b&gt;动态扩展映像&lt;/b&gt;最初只需占用非常小的物理硬盘空间. 然后不断增加(最高
+到当前指定的大小)，具体大小根据虚拟电脑的实际需求动态分配.&lt;/p&gt;
+&lt;p&gt;一个&lt;b&gt;固定大小映像&lt;/b&gt; 一旦建立就需分配指定大小的物理磁盘空间给该虚拟硬盘使用，性能上有一定优势.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Image Type</source>
+        <translation type="obsolete">硬盘类型</translation>
+    </message>
+    <message>
+        <source>&amp;Dynamically expanding image</source>
+        <translation type="obsolete">动态扩展(&amp;D)</translation>
+    </message>
+    <message>
+        <source>Alt+D</source>
+        <translation type="obsolete">Alt+D</translation>
+    </message>
+    <message>
+        <source>&amp;Fixed-size image</source>
+        <translation type="obsolete">固定大小(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Alt+F</source>
+        <translation type="obsolete">Alt+F</translation>
+    </message>
+    <message>
+        <source>Virtual Disk Image Type</source>
+        <translation type="obsolete">虚拟硬盘类型</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
+to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;单击&lt;b&gt;选择&lt;/b&gt;按钮指定虚拟硬盘所在映像文件名及其存储位置或者直接在输入框中输入一个映像文件名.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Image File Name</source>
+        <translation type="obsolete">虚拟硬盘文件名(&amp;I)</translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <translation type="obsolete">选择</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
+as the size of the virtual hard disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;设定所需创建的虚拟硬盘的大小. &lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Image &amp;Size</source>
+        <translation type="obsolete">虚拟硬盘大小(&amp;S)</translation>
+    </message>
+    <message>
+        <source>Virtual Disk Location and Size</source>
+        <translation type="obsolete">虚拟硬盘所在位置和空间大小</translation>
+    </message>
+    <message>
+        <source>You are going to create a new virtual hard disk image with the following parameters:</source>
+        <translation type="obsolete">现在将根据下面所列参数创建一个新的虚拟硬盘:</translation>
+    </message>
+    <message>
+        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
+                            Once you press it, a new hard disk image will be created.
+                            </source>
+        <translation type="obsolete">如果上面的设置正确, 单击&lt;b&gt;完成&lt;/b&gt; 按钮， 一个新的虚拟硬盘将会被建立.
+                            </translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">摘要</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
+        <translation type="obsolete">&lt;nobr&gt;%1 字节&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;类型:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;位置:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;大小:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+    </message>
+    <message>
+        <source>Hard disk images (*.vdi)</source>
+        <translation type="obsolete">虚拟硬盘文件 (*.vdi)</translation>
+    </message>
+    <message>
+        <source>Select a file for the new hard disk image file</source>
+        <translation type="obsolete">选择一个文件作为新的虚拟硬盘</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
+of space on your physical hard disk. It will grow dynamically (up to
+the size specified) as the Guest OS claims disk space.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
+the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long
+time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;选择你要建立的虚拟硬盘类型.&lt;/p&gt;
+&lt;p&gt;一个 &lt;b&gt;动态扩展映像&lt;/b&gt; 一开始只占用非常小的存储空间. 只有当你开始存储数据时才真正从硬盘上将空间划走 (这里指定的大小是指其可用的最大空间) .&lt;/p&gt;
+&lt;p&gt;一个 &lt;b&gt;固定大小映像&lt;/b&gt; 一建立就需从硬盘上将指定大小的空间划走. 建立固定大小映像的时间可能会比较长，这取决于它的大小和硬盘的性能.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;本向导将帮助你为虚拟电脑创建一个新的虚拟硬盘。&lt;/p&gt;&lt;p&gt;单击&lt;b&gt;下一步&lt;/b&gt;按钮进入本向导的下一个页面，单击&lt;b&gt;返回&lt;/b&gt;按钮返回上一个页面.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; 返回(&amp;B)</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">下一步(&amp;N) &gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;选择你要新建的虚拟硬盘类型.&lt;/p&gt;&lt;p&gt;其中 &lt;b&gt;动态扩展&lt;/b&gt; 类型最初只需占用非常小的物理硬盘空间。然后不断增加(最大到当前指定的大小)，具体大小根据虚拟电脑的实际需求动态分配。&lt;/p&gt;&lt;p&gt;其中 &lt;b&gt;固定大小&lt;/b&gt; 类型一旦建立就需分配指定大小的物理磁盘空间给该虚拟硬盘使用，性能上有一定优势。建立这种类型的虚拟硬盘需花费较多的时间.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;单击&lt;b&gt;选择&lt;/b&gt;按钮用来指定保存虚拟硬盘的文件名及其位置，或者也可直接在输入框中输入.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS as the size of the virtual hard disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;以兆(M)为单位指定要新建的虚拟硬盘大小. &lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk image will be created.</source>
+        <translation type="obsolete">如果上面的设置正确，单击&lt;b&gt;完成&lt;/b&gt; 按钮，一个新的虚拟硬盘将会被建立.</translation>
+    </message>
+    <message>
+        <source>&amp;Finish</source>
+        <translation type="obsolete">完成(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="obsolete">类型</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <comment>summary</comment>
+        <translation type="obsolete">位置</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <comment>summary</comment>
+        <translation type="obsolete">大小</translation>
+    </message>
+    <message>
+        <source>Bytes</source>
+        <comment>summary</comment>
+        <translation type="obsolete">字节</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">取消</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;本向导将帮助你为虚拟电脑创建一个新的虚拟硬盘。&lt;/p&gt;&lt;p&gt;单击&lt;b&gt;下一步&lt;/b&gt;按钮进入本向导的下一个页面，单击&lt;b&gt;返回&lt;/b&gt;按钮返回上一个页面.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Hard Disk Storage Type</source>
+        <translation type="obsolete">虚拟硬盘类型</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;选择你要新建的虚拟硬盘类型.&lt;/p&gt;&lt;p&gt;其中 &lt;b&gt;动态扩展&lt;/b&gt; 类型最初只需占用非常小的物理硬盘空间。然后不断增加(最大到当前指定的大小)，具体大小根据虚拟电脑的实际需求动态分配。&lt;/p&gt;&lt;p&gt;其中 &lt;b&gt;固定大小&lt;/b&gt; 类型一旦建立就需分配指定大小的物理磁盘空间给该虚拟硬盘使用，性能上有一定优势。建立这种类型的虚拟硬盘需花费较多的时间.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Storage Type</source>
+        <translation type="obsolete">虚拟硬盘类型</translation>
+    </message>
+    <message>
+        <source>&amp;Dynamically expanding storage</source>
+        <translation type="obsolete">动态扩展(&amp;D)</translation>
+    </message>
+    <message>
+        <source>&amp;Fixed-size storage</source>
+        <translation type="obsolete">固定大小(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;单击&lt;b&gt;选择&lt;/b&gt;按钮用来指定保存虚拟硬盘的文件名及其位置，或者也可直接在输入框中输入.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Location</source>
+        <translation type="obsolete">位置(&amp;L)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;以兆(M)为单位指定要新建的虚拟硬盘大小. &lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Size</source>
+        <translation type="obsolete">大小(&amp;S)</translation>
+    </message>
+    <message>
+        <source>You are going to create a new virtual hard disk with the following parameters:</source>
+        <translation type="obsolete">现在将根据下面所列参数创建一个新的虚拟硬盘:</translation>
+    </message>
+    <message>
+        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
+        <translation type="obsolete">如果上面的设置正确，单击&lt;b&gt;完成&lt;/b&gt; 按钮，一个新的虚拟硬盘将会被建立.</translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage1</name>
+    <message>
+        <source>Welcome to the Create New Virtual Disk Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage2</name>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Dynamically expanding storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Fixed-size storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk Storage Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage3</name>
+    <message>
+        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Location</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Disk Location and Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a file for the new hard disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard disk images (*.vdi)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage4</name>
+    <message>
+        <source>You are going to create a new virtual hard disk with the following parameters:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 B</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If the above settings are correct, press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzd</name>
+    <message>
+        <source>Create New Virtual Machine</source>
+        <translation>新建虚拟电脑</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
+a new virtual machine for VirtualBox.&lt;/p&gt;
+&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
+and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;本向导将指引你一步步建立一个虚拟电脑.&lt;/p&gt;
+&lt;p&gt;使用&lt;b&gt;下一步&lt;/b&gt;按钮进入向导的下一步操作界面，
+使用&lt;b&gt;返回&lt;/b&gt;按钮返回向导的上一个页面.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Welcome to the New Virtual Machine Wizard!</source>
+        <translation type="obsolete">欢迎使用新建虚拟电脑向导!</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
+system you plan to install onto the virtual machine.&lt;/p&gt;
+&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
+It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;为即将新建的虚拟电脑输入一个名称，并指定虚拟电脑上即将安装的操作系统类型.&lt;/p&gt;
+&lt;p&gt;每个虚拟电脑都要有一个唯一的名称来标识，用来区分该虚拟电脑的硬件配置和上面的系统、软件和数据.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>N&amp;ame</source>
+        <translation type="obsolete">名称(&amp;a)</translation>
+    </message>
+    <message>
+        <source>OS &amp;Type</source>
+        <translation type="obsolete">系统类型(&amp;T)</translation>
+    </message>
+    <message>
+        <source>VM Name and OS Type</source>
+        <translation type="obsolete">虚拟电脑名称和系统类型</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;指定虚拟电脑可用内存大小，单位为: MB .&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory Size</source>
+        <translation type="obsolete">内存大小(&amp;M)</translation>
+    </message>
+    <message>
+        <source>&lt;</source>
+        <translation type="obsolete">&lt;</translation>
+    </message>
+    <message>
+        <source>=</source>
+        <translation type="obsolete">=</translation>
+    </message>
+    <message>
+        <source>&gt;</source>
+        <translation type="obsolete">&gt;</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Memory</source>
+        <translation type="obsolete">内存</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select a hard disk image to be used
+as the boot hard disk of the virtual machine. You can either create a new hard
+disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
+image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
+button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
+&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
+step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;选择一个虚拟硬盘作为虚拟电脑的主硬盘.。你即可以单击&lt;b&gt;新建&lt;/b&gt;按钮建立一个新的硬盘映像，
+也可以在下拉列表中选择一个现有的硬盘映像，或者单击&lt;b&gt;现有&lt;/b&gt;
+按钮 (打开虚拟介质管理器).&lt;/p&gt;
+&lt;p&gt;如果你需要一个更复杂的硬盘设置，也可以忽略这步，以后再在虚拟电脑设置对话框中指定硬盘.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>B&amp;oot Hard Disk (Primary Master)</source>
+        <translation type="obsolete">启动盘(第一IDE控制器主通道)(&amp;o)</translation>
+    </message>
+    <message>
+        <source>N&amp;ew...</source>
+        <translation type="obsolete">新建(&amp;e)...</translation>
+    </message>
+    <message>
+        <source>E&amp;xisting...</source>
+        <translation type="obsolete">现有(&amp;x)...</translation>
+    </message>
+    <message>
+        <source>Virtual Hard Disk</source>
+        <translation type="obsolete">虚拟硬盘</translation>
+    </message>
+    <message>
+        <source>
+                            &lt;p&gt;
+                            You are going to create a new virtual machine
+                            with the following parameters:
+                            &lt;/p&gt;
+                            </source>
+        <translation type="obsolete">&lt;p&gt;现在将根据下列参数来创建一个新的虚拟电脑:&lt;/p&gt;
+                         </translation>
+    </message>
+    <message>
+        <source>
+                            &lt;p&gt;
+                            If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button.
+                            Once you press it, a new virtual machine will be created.
+                            &lt;/p&gt;&lt;p&gt;
+                            Note that you can alter these and all other setting of the
+                            created virtual machine at any time using the
+                            &lt;b&gt;Settings&lt;/b&gt; dialog accessible through
+                            the menu of the main window.
+                            &lt;/p&gt;
+                            </source>
+        <translation type="obsolete">&lt;p&gt;如果上面的设置正确，请按&lt;b&gt;完成&lt;/b&gt; 按钮，一个新的虚拟电脑就会被创建。&lt;/p&gt;
+&lt;p&gt;今后你还可以通过主窗口中的&lt;b&gt;设置&lt;/b&gt;对话框随时调整这些或其它设置.&lt;/p&gt;
+                            </translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">摘要</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
+        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;指定名称:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;系统类型:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;内存大小:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
+        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;引导盘:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
+    </message>
+    <message>
+        <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="obsolete">建议分配的内存大小是 &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="obsolete">建议分配的虚拟硬盘大小是： &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;本向导将一步步引导你建立一个新的虚拟电脑.&lt;/p&gt;&lt;p&gt;使用&lt;b&gt;下一步&lt;/b&gt;按钮进入向导的下一步操作界面，使用&lt;b&gt;返回&lt;/b&gt;按钮返回向导的上一个操作页面.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; 返回(&amp;B)</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">下一步(&amp;N) &gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;为即将新建的虚拟电脑输入一个名称，并指定虚拟电脑上即将安装的操作系统类型.&lt;/p&gt;&lt;p&gt;每个虚拟电脑都要有一个唯一的名称来标识，用来区分该虚拟电脑的硬件配置和上面的系统、软件和数据.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;选择一个虚拟硬盘作为虚拟电脑的主硬盘。你即可以单击&lt;b&gt;新建&lt;/b&gt;按钮建立一个新的虚拟硬盘，也可以在下拉列表中选择一个现有的虚拟硬盘，或者单击&lt;b&gt;现有&lt;/b&gt;按钮 (打开虚拟介质管理器).&lt;/p&gt;&lt;p&gt;如果你需要一个更复杂的硬盘设置，也可以忽略这步，以后再在虚拟电脑设置对话框中指定硬盘.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;现在将根据下面所列参数创建一个新的虚拟电脑:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;如果上面的设置没有问题，请按 &lt;b&gt;完成&lt;/b&gt; 按钮。 一个新的虚拟电脑将被建立。&lt;/p&gt;&lt;p&gt;请注意：你可以通过虚拟电脑的 &lt;b&gt;设置&lt;/b&gt; 对话框来更改上面的有关该虚拟电脑的各种设置.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Finish</source>
+        <translation type="obsolete">完成(&amp;F)</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>megabytes</comment>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <comment>summary</comment>
+        <translation type="obsolete">名称</translation>
+    </message>
+    <message>
+        <source>OS Type</source>
+        <comment>summary</comment>
+        <translation type="obsolete">系统类型</translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>summary</comment>
+        <translation type="obsolete">内存大小</translation>
+    </message>
+    <message>
+        <source>Boot Hard Disk</source>
+        <comment>summary</comment>
+        <translation type="obsolete">主硬盘</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">取消</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;选择一个虚拟硬盘作为虚拟电脑的主硬盘。你即可以单击&lt;b&gt;新建&lt;/b&gt;按钮建立一个新的虚拟硬盘，也可以在下拉列表中选择一个现有的虚拟硬盘，或者单击&lt;b&gt;现有&lt;/b&gt;按钮 (打开虚拟介质管理器).&lt;/p&gt;&lt;p&gt;如果你需要一个更复杂的硬盘设置，也可以忽略这步，以后再在虚拟电脑设置对话框中指定硬盘.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <translation type="obsolete">启动盘(第一IDE控制器主通道)(&amp;D)</translation>
+    </message>
+    <message>
+        <source>&amp;Create new hard disk</source>
+        <translation type="obsolete">创建新的虚拟硬盘(&amp;C)</translation>
+    </message>
+    <message>
+        <source>&amp;Use existing hard disk</source>
+        <translation type="obsolete">使用现有的虚拟硬盘(&amp;U)</translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage1</name>
+    <message>
+        <source>Welcome to the New Virtual Machine Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage2</name>
+    <message>
+        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>N&amp;ame</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OS &amp;Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VM Name and OS Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage3</name>
+    <message>
+        <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage4</name>
+    <message>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create new hard disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Use existing hard disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Hard Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage5</name>
+    <message>
+        <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OS Type</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boot Hard Disk</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -588,29 +2035,6 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>UIDownloaderAdditions</name>
-    <message>
-        <source>Cancel</source>
-        <translation>取消</translation>
-    </message>
-    <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>下载增强功能包，该功能包当前位于 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>取消下载增强功能包</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;无法将下载的文件保存为 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Select folder to save Guest Additions image to</source>
-        <translation>选择用于保存增强功能包的文件夹</translation>
-    </message>
-</context>
-<context>
     <name>VBoxApplianceEditorWgt</name>
     <message>
         <source>Virtual System %1</source>
@@ -702,7 +2126,7 @@ Version %1</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
@@ -715,6 +2139,16 @@ Version %1</translation>
     <message>
         <source>Warnings:</source>
         <translation>警告:</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1246,7 +2680,7 @@ Version %1</translation>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;网络连接 %1 (%2)&lt;/b&gt;:%3&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;网络连接 %1 (%2)&lt;/b&gt;:%3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>connected</source>
@@ -1361,7 +2795,7 @@ Version %1</translation>
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation>Sun VirtualBox</translation>
+        <translation type="obsolete">Sun VirtualBox</translation>
     </message>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
@@ -1460,6 +2894,51 @@ Version %1</translation>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示数据空间活动状态:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Dock Icon</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Application Icon</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Monitor Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
+        <comment>Network adapters tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ACPI Sh&amp;utdown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preview Monitor %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No CD/DVD devices attached to that VM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No floppy devices attached to that VM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No USB Devices Connected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No supported devices connected to the host PC</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1780,206 +3259,10 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>UIDownloader</name>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">取消</translation>
-    </message>
-    <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="obsolete">下载增强功能包 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="obsolete">取消下载增强功能包</translation>
-    </message>
-    <message>
-        <source>Could not locate the file on the server (response: %1).</source>
-        <translation type="obsolete">无法在服务器上找到该文件 (回应: %1).</translation>
-    </message>
-    <message>
-        <source>Could not determine the file size.</source>
-        <translation type="obsolete">无法检测到文件大小.</translation>
-    </message>
-    <message>
-        <source>Could not connect to the server (%1).</source>
-        <translation type="obsolete">无法连接到服务器 (%1).</translation>
-    </message>
-    <message>
-        <source>Could not download the file (%1).</source>
-        <translation type="obsolete">无法下载该文件 (%1).</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;无法将下载的文件保存为 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Select folder to save Guest Additions image to</source>
-        <translation type="obsolete">选择用于保存增强功能包的文件夹</translation>
-    </message>
-    <message>
-        <source>Connection timed out.</source>
-        <translation type="obsolete">连接超时.</translation>
-    </message>
-    <message>
-        <source>The download process has been cancelled by the user.</source>
-        <translation>下载进程被用户取消.</translation>
-    </message>
-</context>
-<context>
     <name>VBoxEmptyFileSelector</name>
     <message>
         <source>&amp;Choose...</source>
         <translation>选择(&amp;C)...</translation>
-    </message>
-</context>
-<context>
-    <name>UIExportApplianceWzd</name>
-    <message>
-        <source>Select a file to export into</source>
-        <translation>选择一个用于保存的文件</translation>
-    </message>
-    <message>
-        <source>Open Virtualization Format (%1)</source>
-        <translation>Open Virtualization Format (%1)</translation>
-    </message>
-    <message>
-        <source>Appliance</source>
-        <translation>虚拟电脑</translation>
-    </message>
-    <message>
-        <source>Exporting Appliance ...</source>
-        <translation>导出虚拟电脑 ...</translation>
-    </message>
-    <message>
-        <source>Appliance Export Wizard</source>
-        <translation>虚拟电脑导出向导</translation>
-    </message>
-    <message>
-        <source>Welcome to the Appliance Export Wizard!</source>
-        <translation>欢迎使用虚拟电脑导出向导!</translation>
-    </message>
-    <message>
-        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will you guide to the process of exporting an appliance. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="obsolete">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;本向导将指引您如何导出一个虚拟电脑. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;按 &lt;span style=&quot; font-weight:600;&quot;&gt;下一步&lt;/span&gt; 按钮进入向导的下一个页面，按 &lt;span style=&quot; font-weight:600;&quot;&gt;返回&lt;/span&gt; 按钮可退回向导的上一个页面.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;选择您要导出的虚拟电脑。您可同时选择多个虚拟电脑一块导出，请注意：要导出的虚拟电脑必须处于关闭状态。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; 返回(&amp;B)</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>下一步(&amp;N) &gt;</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>取消</translation>
-    </message>
-    <message>
-        <source>Appliance Export Settings</source>
-        <translation>虚拟电脑导出设置</translation>
-    </message>
-    <message>
-        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation>您可以在此更改所选虚拟电脑的其它设置。通过双击该项目即可修改大部分的显示属性.</translation>
-    </message>
-    <message>
-        <source>Restore Defaults</source>
-        <translation>恢复为默认值</translation>
-    </message>
-    <message>
-        <source>Please specify a filename into which the appliance information will be written. Currently VirtualBox supports the Open Virtualization Format (OVF).</source>
-        <translation type="obsolete">请指定一个用于保存虚拟电脑信息的文件。当前只支持开放虚拟格式(OVF).</translation>
-    </message>
-    <message>
-        <source>&amp;Export &gt;</source>
-        <translation>导出(&amp;E) &gt;</translation>
-    </message>
-    <message>
-        <source>Please choose a filename to export the OVF to.</source>
-        <translation>为要导出的虚拟电脑指定一个文件名.</translation>
-    </message>
-    <message>
-        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation>请填写额外的字段如用户名，密码和存储桶，并为要导出的虚拟电脑指定一个文件名.</translation>
-    </message>
-    <message>
-        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation>请填写额外的字段如用户名，密码，主机名和存储桶，并为要导出的虚拟电脑指定一个文件名.</translation>
-    </message>
-    <message>
-        <source>Checking files ...</source>
-        <translation>检测文件 ...</translation>
-    </message>
-    <message>
-        <source>Removing files ...</source>
-        <translation>删除文件 ...</translation>
-    </message>
-    <message>
-        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;本向导将指引您如何导出一个虚拟电脑. &lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;下一步&lt;/span&gt; 按钮进入向导的下一个页面，按 &lt;span style=&quot; font-weight:600;&quot;&gt;返回&lt;/span&gt; 按钮可退回向导的上一个页面.&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;选择您要导出的虚拟电脑。您可同时选择多个虚拟电脑一块导出，请注意：要导出的虚拟电脑必须处于关闭状态。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation>请为要导出的虚拟电脑指定一个存储位置。您既可以选择一个本地的文件系统，也可以选择上传到Sun云服务或S3存储服务器.</translation>
-    </message>
-    <message>
-        <source>&amp;Local Filesystem </source>
-        <translation>本地文件系统(&amp;L)</translation>
-    </message>
-    <message>
-        <source>Sun &amp;Cloud</source>
-        <translation>Sun 云服务(&amp;C)</translation>
-    </message>
-    <message>
-        <source>&amp;Simple Storage System (S3)</source>
-        <translation>(S3)简单存储系统(&amp;S)</translation>
-    </message>
-    <message>
-        <source>&amp;Username:</source>
-        <translation>用户名(&amp;U):</translation>
-    </message>
-    <message>
-        <source>&amp;Password:</source>
-        <translation>密码(&amp;P):</translation>
-    </message>
-    <message>
-        <source>&amp;File:</source>
-        <translation>文件(&amp;F):</translation>
-    </message>
-    <message>
-        <source>&amp;Bucket:</source>
-        <translation>存储桶(&amp;B):</translation>
-    </message>
-    <message>
-        <source>&amp;Hostname:</source>
-        <translation>主机名(&amp;H):</translation>
-    </message>
-    <message>
-        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation>用传统的 OVF 0.9 格式保存，以兼容其它的虚拟电脑产品.</translation>
-    </message>
-    <message>
-        <source>&amp;Write legacy OVF 0.9</source>
-        <translation>用传统的 OVF 0.9 格式保存(&amp;W)</translation>
     </message>
 </context>
 <context>
@@ -2108,11 +3391,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
-        <translation>选中，托盘图标将实时反应虚拟电脑窗口的内容.</translation>
+        <translation type="obsolete">选中，托盘图标将实时反应虚拟电脑窗口的内容.</translation>
     </message>
     <message>
         <source>&amp;Dock Icon Realtime Preview</source>
-        <translation>托盘图标实时预览(&amp;D)</translation>
+        <translation type="obsolete">托盘图标实时预览(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Auto show Dock and Menubar in fullscreen</source>
@@ -2136,6 +3419,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Auto Capture Keyboard</source>
         <translation>自动独占键盘(&amp;A)</translation>
+    </message>
+    <message>
+        <source>Reset Host Key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resets the key used as a Host Key in the VM window.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3724,6 +5015,80 @@ p, li { white-space: pre-wrap; }
         <source>(CD/DVD)</source>
         <translation>(光驱)</translation>
     </message>
+    <message>
+        <source>Screens</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VDE network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VDE Adapter</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>LsiLogic SAS</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</source>
+        <comment>regexp for matching ####[.##] B|KB|MB|GB|TB|PB, %1=decimal point</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>B</source>
+        <comment>size suffix Bytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>KB</source>
+        <comment>size suffix KBytes=1024 Bytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>GB</source>
+        <comment>size suffix GBytes=1024 MBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TB</source>
+        <comment>size suffix TBytes=1024 GBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PB</source>
+        <comment>size suffix PBytes=1024 TBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>nested paging</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>nested paging</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -4327,104 +5692,6 @@ to the system default language.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>UIImportApplianceWzd</name>
-    <message>
-        <source>Select an appliance to import</source>
-        <translation>选择一个要导入的虚拟电脑</translation>
-    </message>
-    <message>
-        <source>Open Virtualization Format (%1)</source>
-        <translation>开放虚拟格式 (%1)</translation>
-    </message>
-    <message>
-        <source>Appliance Import Wizard</source>
-        <translation>虚拟电脑导入向导</translation>
-    </message>
-    <message>
-        <source>Welcome to the Appliance Import Wizard!</source>
-        <translation>欢迎使用虚拟电脑导入向导!</translation>
-    </message>
-    <message>
-        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;本向导将指引您如何导入一个虚拟电脑. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;按 &lt;span style=&quot; font-weight:600;&quot;&gt;下一步&lt;/span&gt; 按钮进入向导的下一个页面，按 &lt;span style=&quot; font-weight:600;&quot;&gt;返回&lt;/span&gt; 按钮可退回向导的上一个页面.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;为导入一个虚拟电脑，您需首先指定该虚拟电脑所在的文件。当前只支持开放虚拟格式(OVF)的虚拟电脑的导入。请从下面选择一个您要导入的文件以继续:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; 返回(&amp;B)</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>下一步(&amp;N) &gt;</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>取消</translation>
-    </message>
-    <message>
-        <source>Appliance Import Settings</source>
-        <translation>虚拟电脑导入设置</translation>
-    </message>
-    <message>
-        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation>这是即将导入的虚拟电脑及建议的映射关系。您可以通过双击该项目来调整其设置，或使用下面的选择框来禁用它们.</translation>
-    </message>
-    <message>
-        <source>Restore Defaults</source>
-        <translation>恢复为默认值</translation>
-    </message>
-    <message>
-        <source>&amp;Import &gt;</source>
-        <translation>导入(&amp;I) &gt;</translation>
-    </message>
-</context>
-<context>
-    <name>UIImportLicenseViewer</name>
-    <message>
-        <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
-        <translation>&lt;b&gt;虚拟电脑内的系统 &quot;%1&quot; 要求您同意下面显示的软件授权协议的各项条款。&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;按 &lt;b&gt;同意&lt;/b&gt; 继续或按 &lt;b&gt;不同意&lt;/b&gt; 取消导入.</translation>
-    </message>
-    <message>
-        <source>Software License Agreement</source>
-        <translation>软件授权协议</translation>
-    </message>
-    <message>
-        <source>&amp;Disagree</source>
-        <translation>不同意(&amp;D)</translation>
-    </message>
-    <message>
-        <source>&amp;Agree</source>
-        <translation>同意(&amp;A)</translation>
-    </message>
-    <message>
-        <source>&amp;Print...</source>
-        <translation>打印(&amp;P)...</translation>
-    </message>
-    <message>
-        <source>&amp;Save...</source>
-        <translation>保存(&amp;S)...</translation>
-    </message>
-    <message>
-        <source>Text (*.txt)</source>
-        <translation>Text (*.txt)</translation>
-    </message>
-    <message>
-        <source>Save license to file...</source>
-        <translation>保存协议到文件...</translation>
-    </message>
-</context>
-<context>
     <name>VBoxLicenseViewer</name>
     <message>
         <source>I &amp;Agree</source>
@@ -4722,458 +5989,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Network Adapters</source>
         <translation>网络连接</translation>
-    </message>
-</context>
-<context>
-    <name>UINewHDWzd</name>
-    <message>
-        <source>Create New Virtual Disk</source>
-        <translation>创建新的虚拟硬盘</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
-&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
-and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;本向导将帮助你为虚拟电脑创建一个新的虚拟硬盘.&lt;/p&gt;
-&lt;p&gt;单击&lt;b&gt;下一步&lt;/b&gt;按钮进入本向导的下一个页面
-单击&lt;b&gt;返回&lt;/b&gt;按钮返回上一个页面.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation>欢迎使用新建虚拟硬盘向导!</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
-&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
-of space on your physical hard disk. It will grow dynamically (up to
-the size specified) as the Guest OS claims disk space.&lt;/p&gt;
-&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
-the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;选择你要建立的虚拟硬盘类型.&lt;/p&gt;
-&lt;p&gt;一个&lt;b&gt;动态扩展映像&lt;/b&gt;最初只需占用非常小的物理硬盘空间. 然后不断增加(最高
-到当前指定的大小)，具体大小根据虚拟电脑的实际需求动态分配.&lt;/p&gt;
-&lt;p&gt;一个&lt;b&gt;固定大小映像&lt;/b&gt; 一旦建立就需分配指定大小的物理磁盘空间给该虚拟硬盘使用，性能上有一定优势.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Image Type</source>
-        <translation type="obsolete">硬盘类型</translation>
-    </message>
-    <message>
-        <source>&amp;Dynamically expanding image</source>
-        <translation type="obsolete">动态扩展(&amp;D)</translation>
-    </message>
-    <message>
-        <source>Alt+D</source>
-        <translation type="obsolete">Alt+D</translation>
-    </message>
-    <message>
-        <source>&amp;Fixed-size image</source>
-        <translation type="obsolete">固定大小(&amp;F)</translation>
-    </message>
-    <message>
-        <source>Alt+F</source>
-        <translation type="obsolete">Alt+F</translation>
-    </message>
-    <message>
-        <source>Virtual Disk Image Type</source>
-        <translation type="obsolete">虚拟硬盘类型</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
-to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;单击&lt;b&gt;选择&lt;/b&gt;按钮指定虚拟硬盘所在映像文件名及其存储位置或者直接在输入框中输入一个映像文件名.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Image File Name</source>
-        <translation type="obsolete">虚拟硬盘文件名(&amp;I)</translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <translation type="obsolete">选择</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
-as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;设定所需创建的虚拟硬盘的大小. &lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Image &amp;Size</source>
-        <translation type="obsolete">虚拟硬盘大小(&amp;S)</translation>
-    </message>
-    <message>
-        <source>Virtual Disk Location and Size</source>
-        <translation>虚拟硬盘所在位置和空间大小</translation>
-    </message>
-    <message>
-        <source>You are going to create a new virtual hard disk image with the following parameters:</source>
-        <translation type="obsolete">现在将根据下面所列参数创建一个新的虚拟硬盘:</translation>
-    </message>
-    <message>
-        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
-                            Once you press it, a new hard disk image will be created.
-                            </source>
-        <translation type="obsolete">如果上面的设置正确, 单击&lt;b&gt;完成&lt;/b&gt; 按钮， 一个新的虚拟硬盘将会被建立.
-                            </translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>摘要</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;%1 字节&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;类型:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;位置:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;大小:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
-    </message>
-    <message>
-        <source>Hard disk images (*.vdi)</source>
-        <translation>虚拟硬盘文件 (*.vdi)</translation>
-    </message>
-    <message>
-        <source>Select a file for the new hard disk image file</source>
-        <translation>选择一个文件作为新的虚拟硬盘</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
-&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
-of space on your physical hard disk. It will grow dynamically (up to
-the size specified) as the Guest OS claims disk space.&lt;/p&gt;
-&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
-the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long
-time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;选择你要建立的虚拟硬盘类型.&lt;/p&gt;
-&lt;p&gt;一个 &lt;b&gt;动态扩展映像&lt;/b&gt; 一开始只占用非常小的存储空间. 只有当你开始存储数据时才真正从硬盘上将空间划走 (这里指定的大小是指其可用的最大空间) .&lt;/p&gt;
-&lt;p&gt;一个 &lt;b&gt;固定大小映像&lt;/b&gt; 一建立就需从硬盘上将指定大小的空间划走. 建立固定大小映像的时间可能会比较长，这取决于它的大小和硬盘的性能.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;本向导将帮助你为虚拟电脑创建一个新的虚拟硬盘。&lt;/p&gt;&lt;p&gt;单击&lt;b&gt;下一步&lt;/b&gt;按钮进入本向导的下一个页面，单击&lt;b&gt;返回&lt;/b&gt;按钮返回上一个页面.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; 返回(&amp;B)</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>下一步(&amp;N) &gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;选择你要新建的虚拟硬盘类型.&lt;/p&gt;&lt;p&gt;其中 &lt;b&gt;动态扩展&lt;/b&gt; 类型最初只需占用非常小的物理硬盘空间。然后不断增加(最大到当前指定的大小)，具体大小根据虚拟电脑的实际需求动态分配。&lt;/p&gt;&lt;p&gt;其中 &lt;b&gt;固定大小&lt;/b&gt; 类型一旦建立就需分配指定大小的物理磁盘空间给该虚拟硬盘使用，性能上有一定优势。建立这种类型的虚拟硬盘需花费较多的时间.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;单击&lt;b&gt;选择&lt;/b&gt;按钮用来指定保存虚拟硬盘的文件名及其位置，或者也可直接在输入框中输入.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;以兆(M)为单位指定要新建的虚拟硬盘大小. &lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk image will be created.</source>
-        <translation type="obsolete">如果上面的设置正确，单击&lt;b&gt;完成&lt;/b&gt; 按钮，一个新的虚拟硬盘将会被建立.</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation>完成(&amp;F)</translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <comment>summary</comment>
-        <translation>类型</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <comment>summary</comment>
-        <translation>位置</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <comment>summary</comment>
-        <translation>大小</translation>
-    </message>
-    <message>
-        <source>Bytes</source>
-        <comment>summary</comment>
-        <translation>字节</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>取消</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;本向导将帮助你为虚拟电脑创建一个新的虚拟硬盘。&lt;/p&gt;&lt;p&gt;单击&lt;b&gt;下一步&lt;/b&gt;按钮进入本向导的下一个页面，单击&lt;b&gt;返回&lt;/b&gt;按钮返回上一个页面.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Hard Disk Storage Type</source>
-        <translation>虚拟硬盘类型</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;选择你要新建的虚拟硬盘类型.&lt;/p&gt;&lt;p&gt;其中 &lt;b&gt;动态扩展&lt;/b&gt; 类型最初只需占用非常小的物理硬盘空间。然后不断增加(最大到当前指定的大小)，具体大小根据虚拟电脑的实际需求动态分配。&lt;/p&gt;&lt;p&gt;其中 &lt;b&gt;固定大小&lt;/b&gt; 类型一旦建立就需分配指定大小的物理磁盘空间给该虚拟硬盘使用，性能上有一定优势。建立这种类型的虚拟硬盘需花费较多的时间.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Storage Type</source>
-        <translation>虚拟硬盘类型</translation>
-    </message>
-    <message>
-        <source>&amp;Dynamically expanding storage</source>
-        <translation>动态扩展(&amp;D)</translation>
-    </message>
-    <message>
-        <source>&amp;Fixed-size storage</source>
-        <translation>固定大小(&amp;F)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;单击&lt;b&gt;选择&lt;/b&gt;按钮用来指定保存虚拟硬盘的文件名及其位置，或者也可直接在输入框中输入.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Location</source>
-        <translation>位置(&amp;L)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;以兆(M)为单位指定要新建的虚拟硬盘大小. &lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Size</source>
-        <translation>大小(&amp;S)</translation>
-    </message>
-    <message>
-        <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation>现在将根据下面所列参数创建一个新的虚拟硬盘:</translation>
-    </message>
-    <message>
-        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
-        <translation>如果上面的设置正确，单击&lt;b&gt;完成&lt;/b&gt; 按钮，一个新的虚拟硬盘将会被建立.</translation>
-    </message>
-</context>
-<context>
-    <name>UINewVMWzd</name>
-    <message>
-        <source>Create New Virtual Machine</source>
-        <translation>新建虚拟电脑</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
-a new virtual machine for VirtualBox.&lt;/p&gt;
-&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
-and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;本向导将指引你一步步建立一个虚拟电脑.&lt;/p&gt;
-&lt;p&gt;使用&lt;b&gt;下一步&lt;/b&gt;按钮进入向导的下一步操作界面，
-使用&lt;b&gt;返回&lt;/b&gt;按钮返回向导的上一个页面.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation>欢迎使用新建虚拟电脑向导!</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
-system you plan to install onto the virtual machine.&lt;/p&gt;
-&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
-It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;为即将新建的虚拟电脑输入一个名称，并指定虚拟电脑上即将安装的操作系统类型.&lt;/p&gt;
-&lt;p&gt;每个虚拟电脑都要有一个唯一的名称来标识，用来区分该虚拟电脑的硬件配置和上面的系统、软件和数据.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>N&amp;ame</source>
-        <translation>名称(&amp;a)</translation>
-    </message>
-    <message>
-        <source>OS &amp;Type</source>
-        <translation>系统类型(&amp;T)</translation>
-    </message>
-    <message>
-        <source>VM Name and OS Type</source>
-        <translation>虚拟电脑名称和系统类型</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;指定虚拟电脑可用内存大小，单位为: MB .&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Base &amp;Memory Size</source>
-        <translation>内存大小(&amp;M)</translation>
-    </message>
-    <message>
-        <source>&lt;</source>
-        <translation type="obsolete">&lt;</translation>
-    </message>
-    <message>
-        <source>=</source>
-        <translation type="obsolete">=</translation>
-    </message>
-    <message>
-        <source>&gt;</source>
-        <translation type="obsolete">&gt;</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation>MB</translation>
-    </message>
-    <message>
-        <source>Memory</source>
-        <translation>内存</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select a hard disk image to be used
-as the boot hard disk of the virtual machine. You can either create a new hard
-disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
-image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
-button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
-&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
-step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;选择一个虚拟硬盘作为虚拟电脑的主硬盘.。你即可以单击&lt;b&gt;新建&lt;/b&gt;按钮建立一个新的硬盘映像，
-也可以在下拉列表中选择一个现有的硬盘映像，或者单击&lt;b&gt;现有&lt;/b&gt;
-按钮 (打开虚拟介质管理器).&lt;/p&gt;
-&lt;p&gt;如果你需要一个更复杂的硬盘设置，也可以忽略这步，以后再在虚拟电脑设置对话框中指定硬盘.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>B&amp;oot Hard Disk (Primary Master)</source>
-        <translation type="obsolete">启动盘(第一IDE控制器主通道)(&amp;o)</translation>
-    </message>
-    <message>
-        <source>N&amp;ew...</source>
-        <translation type="obsolete">新建(&amp;e)...</translation>
-    </message>
-    <message>
-        <source>E&amp;xisting...</source>
-        <translation type="obsolete">现有(&amp;x)...</translation>
-    </message>
-    <message>
-        <source>Virtual Hard Disk</source>
-        <translation>虚拟硬盘</translation>
-    </message>
-    <message>
-        <source>
-                            &lt;p&gt;
-                            You are going to create a new virtual machine
-                            with the following parameters:
-                            &lt;/p&gt;
-                            </source>
-        <translation type="obsolete">&lt;p&gt;现在将根据下列参数来创建一个新的虚拟电脑:&lt;/p&gt;
-                         </translation>
-    </message>
-    <message>
-        <source>
-                            &lt;p&gt;
-                            If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button.
-                            Once you press it, a new virtual machine will be created.
-                            &lt;/p&gt;&lt;p&gt;
-                            Note that you can alter these and all other setting of the
-                            created virtual machine at any time using the
-                            &lt;b&gt;Settings&lt;/b&gt; dialog accessible through
-                            the menu of the main window.
-                            &lt;/p&gt;
-                            </source>
-        <translation type="obsolete">&lt;p&gt;如果上面的设置正确，请按&lt;b&gt;完成&lt;/b&gt; 按钮，一个新的虚拟电脑就会被创建。&lt;/p&gt;
-&lt;p&gt;今后你还可以通过主窗口中的&lt;b&gt;设置&lt;/b&gt;对话框随时调整这些或其它设置.&lt;/p&gt;
-                            </translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>摘要</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;指定名称:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;系统类型:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;内存大小:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;引导盘:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
-    </message>
-    <message>
-        <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>建议分配的内存大小是 &lt;b&gt;%1&lt;/b&gt; MB.</translation>
-    </message>
-    <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>建议分配的虚拟硬盘大小是： &lt;b&gt;%1&lt;/b&gt; MB.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;本向导将一步步引导你建立一个新的虚拟电脑.&lt;/p&gt;&lt;p&gt;使用&lt;b&gt;下一步&lt;/b&gt;按钮进入向导的下一步操作界面，使用&lt;b&gt;返回&lt;/b&gt;按钮返回向导的上一个操作页面.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; 返回(&amp;B)</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>下一步(&amp;N) &gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;为即将新建的虚拟电脑输入一个名称，并指定虚拟电脑上即将安装的操作系统类型.&lt;/p&gt;&lt;p&gt;每个虚拟电脑都要有一个唯一的名称来标识，用来区分该虚拟电脑的硬件配置和上面的系统、软件和数据.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;选择一个虚拟硬盘作为虚拟电脑的主硬盘。你即可以单击&lt;b&gt;新建&lt;/b&gt;按钮建立一个新的虚拟硬盘，也可以在下拉列表中选择一个现有的虚拟硬盘，或者单击&lt;b&gt;现有&lt;/b&gt;按钮 (打开虚拟介质管理器).&lt;/p&gt;&lt;p&gt;如果你需要一个更复杂的硬盘设置，也可以忽略这步，以后再在虚拟电脑设置对话框中指定硬盘.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;现在将根据下面所列参数创建一个新的虚拟电脑:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;如果上面的设置没有问题，请按 &lt;b&gt;完成&lt;/b&gt; 按钮。 一个新的虚拟电脑将被建立。&lt;/p&gt;&lt;p&gt;请注意：你可以通过虚拟电脑的 &lt;b&gt;设置&lt;/b&gt; 对话框来更改上面的有关该虚拟电脑的各种设置.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation>完成(&amp;F)</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>megabytes</comment>
-        <translation>MB</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <comment>summary</comment>
-        <translation>名称</translation>
-    </message>
-    <message>
-        <source>OS Type</source>
-        <comment>summary</comment>
-        <translation>系统类型</translation>
-    </message>
-    <message>
-        <source>Base Memory</source>
-        <comment>summary</comment>
-        <translation>内存大小</translation>
-    </message>
-    <message>
-        <source>Boot Hard Disk</source>
-        <comment>summary</comment>
-        <translation>主硬盘</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>取消</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;选择一个虚拟硬盘作为虚拟电脑的主硬盘。你即可以单击&lt;b&gt;新建&lt;/b&gt;按钮建立一个新的虚拟硬盘，也可以在下拉列表中选择一个现有的虚拟硬盘，或者单击&lt;b&gt;现有&lt;/b&gt;按钮 (打开虚拟介质管理器).&lt;/p&gt;&lt;p&gt;如果你需要一个更复杂的硬盘设置，也可以忽略这步，以后再在虚拟电脑设置对话框中指定硬盘.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation>启动盘(第一IDE控制器主通道)(&amp;D)</translation>
-    </message>
-    <message>
-        <source>&amp;Create new hard disk</source>
-        <translation>创建新的虚拟硬盘(&amp;C)</translation>
-    </message>
-    <message>
-        <source>&amp;Use existing hard disk</source>
-        <translation>使用现有的虚拟硬盘(&amp;U)</translation>
     </message>
 </context>
 <context>
@@ -6294,6 +7109,54 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <comment>medium</comment>
         <translation>删除(&amp;R)</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
@@ -6328,7 +7191,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <name>VBoxRegistrationDlg</name>
     <message>
         <source>VirtualBox Registration Dialog</source>
-        <translation>VirtualBox Registration Dialog</translation>
+        <translation type="obsolete">VirtualBox Registration Dialog</translation>
     </message>
     <message>
         <source>&amp;Name</source>
@@ -6336,7 +7199,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Enter your full name using Latin characters.</source>
-        <translation>Enter your full name using Latin characters.</translation>
+        <translation type="obsolete">Enter your full name using Latin characters.</translation>
     </message>
     <message>
         <source>&amp;E-mail</source>
@@ -6344,7 +7207,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Enter your e-mail address. Please use a valid address here.</source>
-        <translation>Enter your e-mail address. Please use a valid address here.</translation>
+        <translation type="obsolete">Enter your e-mail address. Please use a valid address here.</translation>
     </message>
     <message>
         <source>&amp;Please do not use this information to contact me</source>
@@ -6352,7 +7215,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
-        <translation>Welcome to the VirtualBox Registration Form!</translation>
+        <translation type="obsolete">Welcome to the VirtualBox Registration Form!</translation>
     </message>
     <message>
         <source>&amp;Confirm</source>
@@ -6368,7 +7231,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Could not perform connection handshake.</source>
-        <translation>Could not perform connection handshake.</translation>
+        <translation type="obsolete">Could not perform connection handshake.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
@@ -6384,63 +7247,63 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Cancel</source>
-        <translation>取消</translation>
+        <translation type="obsolete">取消</translation>
     </message>
     <message>
         <source>Select Country/Territory</source>
-        <translation>Select Country/Territory</translation>
+        <translation type="obsolete">Select Country/Territory</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>I &amp;already have a Sun Online account:</source>
-        <translation>I &amp;already have a Sun Online account:</translation>
+        <translation type="obsolete">I &amp;already have a Sun Online account:</translation>
     </message>
     <message>
         <source>&amp;E-mail:</source>
-        <translation>&amp;E-mail:</translation>
+        <translation type="obsolete">&amp;E-mail:</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation>&amp;Password:</translation>
+        <translation type="obsolete">&amp;Password:</translation>
     </message>
     <message>
         <source>I &amp;would like to create a new Sun Online account:</source>
-        <translation>I &amp;would like to create a new Sun Online account:</translation>
+        <translation type="obsolete">I &amp;would like to create a new Sun Online account:</translation>
     </message>
     <message>
         <source>&amp;First Name:</source>
-        <translation>&amp;First Name:</translation>
+        <translation type="obsolete">&amp;First Name:</translation>
     </message>
     <message>
         <source>&amp;Last Name:</source>
-        <translation>&amp;Last Name:</translation>
+        <translation type="obsolete">&amp;Last Name:</translation>
     </message>
     <message>
         <source>&amp;Company:</source>
-        <translation>&amp;Company:</translation>
+        <translation type="obsolete">&amp;Company:</translation>
     </message>
     <message>
         <source>Co&amp;untry:</source>
-        <translation>Co&amp;untry:</translation>
+        <translation type="obsolete">Co&amp;untry:</translation>
     </message>
     <message>
         <source>E-&amp;mail:</source>
-        <translation>E-&amp;mail:</translation>
+        <translation type="obsolete">E-&amp;mail:</translation>
     </message>
     <message>
         <source>P&amp;assword:</source>
-        <translation>P&amp;assword:</translation>
+        <translation type="obsolete">P&amp;assword:</translation>
     </message>
     <message>
         <source>Co&amp;nfirm Password:</source>
-        <translation>Co&amp;nfirm Password:</translation>
+        <translation type="obsolete">Co&amp;nfirm Password:</translation>
     </message>
     <message>
         <source>&amp;Register</source>
-        <translation>&amp;Register</translation>
+        <translation type="obsolete">&amp;Register</translation>
     </message>
 </context>
 <context>
@@ -6771,7 +7634,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation>Sun VirtualBox</translation>
+        <translation type="obsolete">Sun VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Import Appliance...</source>
@@ -7591,165 +8454,6 @@ value.&lt;/qt&gt;</source>
     </message>
 </context>
 <context>
-    <name>UIFirstRunWzd</name>
-    <message>
-        <source>First Run Wizard</source>
-        <translation>首次运行向导</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;这是您第一次启动这个新建的虚拟电脑。本向导将协助您一步步把操作系统安装到该虚拟电脑上。&lt;/p&gt;&lt;p&gt;按 &lt;b&gt;下一步&lt;/b&gt; 按钮进入向导的下一页，按 &lt;b&gt;返回&lt;/b&gt; 按钮返回上一页，你也能按 &lt;b&gt;取消&lt;/b&gt; 如果您不想执行本向导.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Welcome to the First Run Wizard!</source>
-        <translation>欢迎使用首次运行向导!</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;选择用于安装系统介质类型.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Media Type</source>
-        <translation>介质类型</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD-ROM Device</source>
-        <translation>光驱(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Alt+C</source>
-        <translation type="obsolete">Alt+C</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Device</source>
-        <translation>软驱(&amp;F)</translation>
-    </message>
-    <message>
-        <source>Alt+F</source>
-        <translation type="obsolete">Alt+F</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;选择含有您所要安装的操作系统的安装程序的介质。该介质必须是可引导的，否则安装程序无法启动.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Media Source</source>
-        <translation>介质位置</translation>
-    </message>
-    <message>
-        <source>&amp;Host Drive</source>
-        <translation type="obsolete">物理介质(&amp;H)</translation>
-    </message>
-    <message>
-        <source>Alt+H</source>
-        <translation type="obsolete">Alt+H</translation>
-    </message>
-    <message>
-        <source>&amp;Image File</source>
-        <translation type="obsolete">虚拟介质(&amp;I)</translation>
-    </message>
-    <message>
-        <source>Alt+I</source>
-        <translation type="obsolete">Alt+I</translation>
-    </message>
-    <message>
-        <source>VDM</source>
-        <translation type="obsolete">VDM</translation>
-    </message>
-    <message>
-        <source>Select Installation Media</source>
-        <translation>选择安装介质</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您已经选择如下介质用于引导:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;如果以上的设置完全正确，请按 &lt;b&gt;完成&lt;/b&gt; 按钮. 一旦您按下它，所选择的安装介质将被临时挂载到该虚拟电脑，然后该虚拟电脑将被启动.&lt;/p&gt;&lt;p&gt;请注意，当您关闭虚拟电脑后，该安装介质将被自动卸载，而启动设备将被设置为第一个虚拟硬盘.&lt;/p&gt;&lt;p&gt;根据安装程序的类型, 在安装程序重启电脑后，您可能需要手动卸载该安装介质, 为了防止安装程序重新执行一遍. 您可以在 &lt;b&gt;设备&lt;/b&gt; 菜单 中选择 &lt;b&gt;释放...&lt;/b&gt; 该介质.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>摘要</translation>
-    </message>
-    <message>
-        <source>CD/DVD-ROM Device</source>
-        <translation>光驱</translation>
-    </message>
-    <message>
-        <source>Floppy Device</source>
-        <translation>软驱</translation>
-    </message>
-    <message>
-        <source>Host Drive %1</source>
-        <translation type="obsolete">物理设备 %1</translation>
-    </message>
-    <message>
-        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;类型:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;位置:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;这是您第一次启动这个新建的虚拟电脑。本向导将协助您一步步把操作系统安装到该虚拟电脑上。&lt;/p&gt;&lt;p&gt;请注意您现在还不能把一个操作系统安装到该虚拟电脑上，因为您还没有给它分配一个硬盘。因此您应先取消本向导，然后到该虚拟电脑的设置对话框中为该虚拟电脑分配一个硬盘。&lt;/p&gt;&lt;p&gt;按  &lt;b&gt;下一步&lt;/b&gt; 按钮进入向导的下一页，按 &lt;b&gt;返回&lt;/b&gt; 按钮返回上一页。你也能按 &lt;b&gt;取消&lt;/b&gt; 如果您不想执行本向导.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;选择您要用于引导操作系统的介质类型.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;选择含有您要使用的操作系统的介质。该介质必须是可引导的，否则操作系统将无法被启动.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您已选择从下面的介质中引导操作系统:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;如果以上的设置完全正确，请按 &lt;b&gt;完成&lt;/b&gt; 按钮。一旦您按下它，所选择的安装介质将被挂载到该虚拟电脑，然后该虚拟电脑将被启动.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; 返回(&amp;B)</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>下一步(&amp;N) &gt;</translation>
-    </message>
-    <message>
-        <source>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If the above is correct, press the &lt;span style=&quot; font-weight:600;&quot;&gt;Finish&lt;/span&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;span style=&quot; font-weight:600;&quot;&gt;Unmount...&lt;/span&gt; action in the &lt;span style=&quot; font-weight:600;&quot;&gt;Devices&lt;/span&gt; menu&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="obsolete">&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;如果以上设置没有问题请按 &lt;span style=&quot; font-weight:600;&quot;&gt;完成&lt;/span&gt; 按钮。 刚刚指定的介质将被临时分配给该虚拟电脑，并开始启动该虚拟电脑&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;请注意：当该虚拟电脑关闭后，该介质将自动从该虚拟电脑上释放，以便该虚拟电脑能从原来的虚拟硬盘上启动.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;根据操作系统安装程序的不同，可能需要在安装程序重启后手动释放（或弹出）该介质，以避免安装程序再次启动，这只需在 &lt;span style=&quot; font-weight:600;&quot;&gt;设备&lt;/span&gt; 菜单中执行相应的 &lt;span style=&quot; font-weight:600;&quot;&gt;释放...&lt;/span&gt; 操作即可&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation>完成(&amp;F)</translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <comment>summary</comment>
-        <translation>类型</translation>
-    </message>
-    <message>
-        <source>Source</source>
-        <comment>summary</comment>
-        <translation>位置</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>取消</translation>
-    </message>
-</context>
-<context>
     <name>VBoxVMInformationDlg</name>
     <message>
         <source>Session Information Dialog</source>
@@ -7870,7 +8574,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Version %1.%2</source>
         <comment>guest additions</comment>
-        <translation>版本 %1.%2</translation>
+        <translation type="obsolete">版本 %1.%2</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -8586,6 +9290,18 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
         <translation>VRDP 服务器端口号. 指定 &lt;tt&gt;0&lt;/tt&gt; (零) 将使用默认的端口号3389.</translation>
+    </message>
+    <message>
+        <source>Mo&amp;nitor Count:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -10260,6 +10976,30 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <source>Attached To:</source>
         <translation>分配到:</translation>
     </message>
+    <message>
+        <source>Allows to use host I/O caching capabilities.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use host I/O cache</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add SAS Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage Controller 1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMSettingsNetwork</name>
@@ -10939,7 +11679,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine.</source>
-        <translation>指定分配给虚拟电脑的虚拟CPU数量。</translation>
+        <translation type="obsolete">指定分配给虚拟电脑的虚拟CPU数量。</translation>
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
@@ -10985,6 +11725,18 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     <message>
         <source>Enable &amp;EFI (special OSes only)</source>
         <translation>启用 &amp;EFI (只针对某些操作系统)</translation>
+    </message>
+    <message>
+        <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hardware clock in &amp;UTC time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -398,6 +398,1166 @@
     </message>
 </context>
 <context>
+    <name>QIWizardPage</name>
+    <message>
+        <source>Use the &lt;b&gt;%1&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;%2&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;%3&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDownloader</name>
+    <message>
+        <source>The download process has been cancelled by the user.</source>
+        <translation type="obsolete">Filhentning annulleret af bruger.</translation>
+    </message>
+    <message>
+        <source>The download process has been canceled by the user.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDownloaderAdditions</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Annullér</translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="obsolete">Henter CD&apos;en med VirtualBox Gæstetilføjelser fra &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="obsolete">Afbryd hentningen af CD&apos;en med VirtualBox Gæstetilføjelser</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Kunne ikke gemme den hentede fil som &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Select folder to save Guest Additions image to</source>
+        <translation>Vælg mappen hvor CD&apos;en med Gæstetilføjelser skal gemmes</translation>
+    </message>
+</context>
+<context>
+    <name>UIDownloaderUserManual</name>
+    <message>
+        <source>Select folder to save User Manual to</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzd</name>
+    <message>
+        <source>Select a file to export into</source>
+        <translation type="obsolete">Vælg den fil, der skal eksporteres til</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="obsolete">Open Virtualization Format (%1)</translation>
+    </message>
+    <message>
+        <source>Appliance</source>
+        <translation type="obsolete">Prækonfigureret system</translation>
+    </message>
+    <message>
+        <source>Exporting Appliance ...</source>
+        <translation type="obsolete">Eksporterer Prækonfigureret system ...</translation>
+    </message>
+    <message>
+        <source>Appliance Export Wizard</source>
+        <translation>Eksport af Prækonfigureret system</translation>
+    </message>
+    <message>
+        <source>Welcome to the Appliance Export Wizard!</source>
+        <translation type="obsolete">Denne guide hjælper dig med at eksportere et Prækonfigureret system!</translation>
+    </message>
+    <message>
+        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="obsolete">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Denne guide hjælper dig med at eksportere dit eget prækonfigurerede system. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Brug knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Næste&lt;/span&gt; for at gå til næste side af guiden og knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Forrige&lt;/span&gt; for at gå til den forrige side.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Vælg nu de virtuelle maskiner, der skal danne grundlag for dit prækonfigurerede system. Du kan vælge mere end en. Bemærk at disse maskiner skal være lukket ned før de kan eksporteres.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; Til&amp;bage</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">&amp;Næste &gt;</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Annuller</translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="obsolete">Indstillinger for eksport af Prækonfigureret system</translation>
+    </message>
+    <message>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
+        <translation type="obsolete">Her kan du tilpasse yderligere indstillinger for de valgte virtuelle maskiner. Du kan ændre de fleste af de viste egenskaber ved at dobbeltklikke på værdien.</translation>
+    </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>Brug standardværdier</translation>
+    </message>
+    <message>
+        <source>&amp;Export &gt;</source>
+        <translation type="obsolete">&amp;Eksporter &gt;</translation>
+    </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="obsolete">Gem i OVF 0.9 format for kompatibilitet med andre virtualiseringsprogrammer.</translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="obsolete">Gem i OVF 0.9 format</translation>
+    </message>
+    <message>
+        <source>Please choose a filename to export the OVF to.</source>
+        <translation type="obsolete">Angiv et filnavn til OVF-eksporten.</translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="obsolete">Udfyld de øvrige felter såsom brugernavn, kodeord og bucket. Afslut med at angive et filnavn til OVF-eksporten.</translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="obsolete">Udfyld de øvrige felter såsom brugernavn, kodeord, værtsnavn og bucket. Afslut med at angive et filnavn til OVF-eksporten.</translation>
+    </message>
+    <message>
+        <source>Checking files ...</source>
+        <translation type="obsolete">Kontrollerer filer ...</translation>
+    </message>
+    <message>
+        <source>Removing files ...</source>
+        <translation type="obsolete">Fjerner filer ...</translation>
+    </message>
+    <message>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <translation type="obsolete">Angiv destinationen for OVF-eksporten. Du kan vælge at eksportere til et lokalt filsystem eller sende OVF&apos;en til Sun Cloud servicen eller en S3 lagerserver.</translation>
+    </message>
+    <message>
+        <source>&amp;Local Filesystem </source>
+        <translation type="obsolete">&amp;Lokalt filsystem</translation>
+    </message>
+    <message>
+        <source>Sun &amp;Cloud</source>
+        <translation type="obsolete">Sun &amp;Cloud</translation>
+    </message>
+    <message>
+        <source>&amp;Simple Storage System (S3)</source>
+        <translation type="obsolete">&amp;Simple Storage System (S3)</translation>
+    </message>
+    <message>
+        <source>&amp;Username:</source>
+        <translation type="obsolete">Br&amp;ugernavn:</translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="obsolete">Kodeord:</translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="obsolete">&amp;Fil:</translation>
+    </message>
+    <message>
+        <source>&amp;Bucket:</source>
+        <translation type="obsolete">&amp;Bucket:</translation>
+    </message>
+    <message>
+        <source>&amp;Hostname:</source>
+        <translation type="obsolete">Værtsnavn:</translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage1</name>
+    <message>
+        <source>Welcome to the Appliance Export Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through the process of exporting an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Please select the virtual machines that should be added to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage2</name>
+    <message>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage3</name>
+    <message>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Local Filesystem </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sun &amp;Cloud</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Simple Storage System (S3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage4</name>
+    <message>
+        <source>&amp;Username:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Hostname:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Bucket:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a file to export into</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a filename to export the OVF to.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Checking files ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing files ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exporting Appliance ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzd</name>
+    <message>
+        <source>First Run Wizard</source>
+        <translation>Guide til 1.gang</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Du har startet en nyoprettet virtuel maskine for første gang. Denne guide hjælper dig med at udføre de trin, der er nødvendige for at installere det ønskede operativsystem i den virtuelle maskine.&lt;/p&gt;&lt;p&gt;Klik på &lt;b&gt;Næste&lt;/b&gt; for at gå til næste side af guiden og &lt;b&gt;Tilbage&lt;/b&gt; for at gå tilbage til den forrige side. Du kan også vælge &lt;b&gt;Annullér&lt;/b&gt;, hvis du vil afbryde denne guide.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Welcome to the First Run Wizard!</source>
+        <translation type="obsolete">Velkommen til 1.gang-guiden!</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vælg medietypen, som du ønsker at bruge til installationsarbejdet, nedenfor.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Media Type</source>
+        <translation type="obsolete">Medietype</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD-ROM Device</source>
+        <translation type="obsolete">&amp;CD/DVD-ROM drev</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Device</source>
+        <translation type="obsolete">Diskettedrev</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vælg mediet, som indeholder opsætningsprogrammet til det ønskede operativsystem. Det skal være muligt at starte op på mediet for at opsætningsprogrammet kan køre.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Media Source</source>
+        <translation type="obsolete">Mediekilde</translation>
+    </message>
+    <message>
+        <source>&amp;Host Drive</source>
+        <translation type="obsolete">Værtsdrev</translation>
+    </message>
+    <message>
+        <source>&amp;Image File</source>
+        <translation type="obsolete">Aftryksf&amp;il</translation>
+    </message>
+    <message>
+        <source>Select Installation Media</source>
+        <translation type="obsolete">Vælg installationsmedie</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Du har valgt at starte op på følgende medie:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Oversigt</translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM Device</source>
+        <translation type="obsolete">CD/DVD-ROM drev</translation>
+    </message>
+    <message>
+        <source>Floppy Device</source>
+        <translation type="obsolete">Diskettedrev</translation>
+    </message>
+    <message>
+        <source>Host Drive %1</source>
+        <translation type="obsolete">Værtsdrev %1</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Du har startet en nyoprettet virtuel maskine for første gang. Denne guide hjælper dig med at udføre de trin, der er nødvendige for at starte et operativsystem i den virtuelle maskine.&lt;/p&gt;&lt;p&gt;Bemærk at du ikke kan installere et operativsystem i denne virtuelle maskine endnu, da du ikke har tilsluttet en harddisk til den. Hvis du ønsker at tilføje en harddisk, så skal du afbryde denne guide og vælge &lt;b&gt;Indstillinger&lt;/b&gt; fra menuen &lt;b&gt;Maskine&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Klik &lt;b&gt;Næste&lt;/b&gt; for at gå til næste side af guiden og &lt;b&gt;Tilbage&lt;/b&gt; for at gå til den forrige side. Du kan også vælge &lt;b&gt;Annullér&lt;/b&gt;, hvis du vil afbryde denne guide.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vælg medietypen, som du ønsker at bruge til opstarten af et operativsystem.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vælg mediet, som indeholder operativsystemet du vil anvende. Det skal være muligt at starte op på mediet for at operativsystem kan starte.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Du har valgt at starte et operativsystem fra følgende medie:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Tryk &lt;b&gt;Færdig&lt;/b&gt; hvis ovenstående er korrekt. Det valgte medie vil så blive monteret på den virtuelle maskine og maskinen vil begynde afviklingen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; Til&amp;bage</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">&amp;Næste &gt;</translation>
+    </message>
+    <message>
+        <source>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If the above is correct, press the &lt;span style=&quot; font-weight:600;&quot;&gt;Finish&lt;/span&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;span style=&quot; font-weight:600;&quot;&gt;Unmount...&lt;/span&gt; action in the &lt;span style=&quot; font-weight:600;&quot;&gt;Devices&lt;/span&gt; menu&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="obsolete">&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Hvis ovenstående er korrekt, klik på.knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Færdig&lt;/span&gt;. Herefter vil det valgte medie blive monteret midlertidigt på den virtuelle maskine, som så begynder afviklingen.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Bemærk at når du lukker den virtuelle maskine vil det valgte medie automatisk blive afmonteret og opstartsenheden vil blive sat til den første harddisk.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Afhængig af typen af opsætningsprogram, kan det være nødvendigt manuelt at afmontere (fjerne) mediet, når opsætningsprogrammet genstarter den virtuelle maskine for at undgå at opsætningsprogrammet starter igen. Du kan gøre dette ved at vælge handlingen &lt;span style=&quot; font-weight:600;&quot;&gt;Afmontér...&lt;/span&gt; i menuen &lt;span style=&quot; font-weight:600;&quot;&gt;Enheder&lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Finish</source>
+        <translation type="obsolete">A&amp;fslut</translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Type</translation>
+    </message>
+    <message>
+        <source>Source</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Kilde</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Annullér</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Tryk på knappen &lt;b&gt;Færdig&lt;/b&gt;, hvis ovenstående er korrekt. Når du trykker, vil det valgte medie midlertidigt blive monteret i den virtuelle maskine, som derefter vil starte op.&lt;/p&gt;&lt;p&gt;Bemærk at når du lukker den virtuelle maskine, vil det angivne medie automatisk blive afmonteret og opstartsenheden vil igen være den første harddisk.&lt;/p&gt;&lt;p&gt;Afhængig af dit installationsprogram kan det være nødvendigt manuelt at afmontere mediet efter installationsprogrammet har genstartet den virtuelle maskine for at undgå at installationsprogrammet starter forfra. Du kan gøre dette ved at vælge &lt;b&gt;Afmontér...&lt;/b&gt; i menuen &lt;b&gt;Enheder&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzdPage1</name>
+    <message>
+        <source>Welcome to the First Run Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzdPage2</name>
+    <message>
+        <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Media Source</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select Installation Media</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzdPage3</name>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Source</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIImportApplianceWzd</name>
+    <message>
+        <source>Select an appliance to import</source>
+        <translation type="obsolete">Vælg det Prækonfigurerede system, der skal importeres</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="obsolete">Open Virtualization Format (%1)</translation>
+    </message>
+    <message>
+        <source>Appliance Import Wizard</source>
+        <translation>Guide til import af Prækonfigureret system</translation>
+    </message>
+    <message>
+        <source>Welcome to the Appliance Import Wizard!</source>
+        <translation type="obsolete">Denne guide hjælper dig med at importere et Prækonfigureret system!</translation>
+    </message>
+    <message>
+        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="obsolete">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Denne guide hjælper dig med at importere et Prækonfigureret system. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Brug knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Næste&lt;/span&gt; for at gå til næste trin i guiden og knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Forrige&lt;/span&gt; for at gå til det forrige trin i guiden.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For at kunne importere et Prækonfigureret system, skal du først vælge filen, der beskriver det Prækonfigurerede system. VirtualBox understøtter Open Virtualization Format (OVF). For at fortsætte, vælg filen herunder:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; Til&amp;bage</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">&amp;Næste &gt;</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Annullér</translation>
+    </message>
+    <message>
+        <source>Appliance Import Settings</source>
+        <translation type="obsolete">Indstillinger for import af Prækonfigureret system</translation>
+    </message>
+    <message>
+        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
+        <translation type="obsolete">Disse virtuelle maskiner og deres konfiguration er en del af det Prækonfigurerede system og kan importeres til VirtualBox. Du kan ændre de fleste af de viste egenskaber ved at dobbeltklikke på værdierne og deaktivere andre ved hjælp af afkrydsningsfelterne.</translation>
+    </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>Brug standardværdier</translation>
+    </message>
+    <message>
+        <source>&amp;Import &gt;</source>
+        <translation type="obsolete">&amp;Importer &gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIImportApplianceWzdPage1</name>
+    <message>
+        <source>Select an appliance to import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Welcome to the Appliance Import Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through importing an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIImportApplianceWzdPage2</name>
+    <message>
+        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Import Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIImportLicenseViewer</name>
+    <message>
+        <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
+        <translation>&lt;b&gt;Det virtuelle system &quot;%1&quot; kræver at du accepterer betingelserne i software-licensaftalen vist herunder.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Vælg &lt;b&gt;Acceptér&lt;/b&gt; for at fortsætte eller &lt;b&gt;Afvis&lt;/b&gt; for at annullere importen.</translation>
+    </message>
+    <message>
+        <source>Software License Agreement</source>
+        <translation>Software-licensaftale</translation>
+    </message>
+    <message>
+        <source>&amp;Disagree</source>
+        <translation>Afvis</translation>
+    </message>
+    <message>
+        <source>&amp;Agree</source>
+        <translation>&amp;Acceptér</translation>
+    </message>
+    <message>
+        <source>&amp;Print...</source>
+        <translation>Udskriv...</translation>
+    </message>
+    <message>
+        <source>&amp;Save...</source>
+        <translation>Gem...</translation>
+    </message>
+    <message>
+        <source>Text (*.txt)</source>
+        <translation>Tekst (*.txt)</translation>
+    </message>
+    <message>
+        <source>Save license to file...</source>
+        <translation>Gem licens som fil...</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineLogic</name>
+    <message>
+        <source>VirtualBox OSE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> EXPERIMENTAL build %1r%2 - %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProcessWidgetAdditions</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProcessWidgetUserManual</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox User Manual download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox User Manual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMultiScreenLayout</name>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzd</name>
+    <message>
+        <source>Create New Virtual Disk</source>
+        <translation>Opret ny virtuel disk</translation>
+    </message>
+    <message>
+        <source>Welcome to the Create New Virtual Disk Wizard!</source>
+        <translation type="obsolete">Denne guide hjælper dig med at oprette en ny virtuel disk!</translation>
+    </message>
+    <message>
+        <source>Virtual Disk Location and Size</source>
+        <translation type="obsolete">Placering og størrelse af virtuel disk</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Oversigt</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
+        <translation type="obsolete">&lt;nobr&gt;%1 bytes&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Hard disk images (*.vdi)</source>
+        <translation type="obsolete">Harddisk-aftryk (*.vdi)</translation>
+    </message>
+    <message>
+        <source>Select a file for the new hard disk image file</source>
+        <translation type="obsolete">Vælg et filnavn til det nye harddisk-aftryk</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; Til&amp;bage</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">&amp;Næste &gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Finish</source>
+        <translation type="obsolete">A&amp;fslut</translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Type</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Placering</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Størrelse</translation>
+    </message>
+    <message>
+        <source>Bytes</source>
+        <comment>summary</comment>
+        <translation type="obsolete">bytes</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Annullér</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Denne guide hjælper dig med at oprette en ny harddisk til din virtuelle maskine.&lt;/p&gt;&lt;p&gt;Brug knappen &lt;b&gt;Næste&lt;/b&gt; for at gå til næste side af guiden og &lt;b&gt;Tilbage&lt;/b&gt; for at gå til den forrige side.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Hard Disk Storage Type</source>
+        <translation type="obsolete">Allokeringsstrategi</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vælg en allokeringsstrategi for din virtuelle harddisk.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Dynamisk udvidelse&lt;/b&gt; optager kun lidt plads i starten, men vokser dynamisk (op til den angivne størrelse i takt med at gæsteoperativsystemet allokerer plads.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Fast størrelse&lt;/b&gt; vokser aldrig. Pladsen allokeres på forhånd i en fil af samme størrelse som den virtuelle harddisk. Oprettelsen af denne type harddisk kan tage lang tid afhængig af den valgte størrelse og skrivehastigheden på din fysiske harddisk.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Storage Type</source>
+        <translation type="obsolete">Allokeringsstrategi</translation>
+    </message>
+    <message>
+        <source>&amp;Dynamically expanding storage</source>
+        <translation type="obsolete">&amp;Dynamisk udvidelse</translation>
+    </message>
+    <message>
+        <source>&amp;Fixed-size storage</source>
+        <translation type="obsolete">&amp;Fast størrelse</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Klik på &lt;b&gt;Vælg&lt;/b&gt; for at vælge placeringen af filen, som harddisken gemmes i eller indtast et filnavn i feltet.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Location</source>
+        <translation type="obsolete">P&amp;lacering</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Angiv størrelsen af den virtuelle harddisk i megabytes. Gæsteoperativsystemet vil se denne værdi som harddiskens maksimale størrelse.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Size</source>
+        <translation type="obsolete">&amp;Størrelse</translation>
+    </message>
+    <message>
+        <source>You are going to create a new virtual hard disk with the following parameters:</source>
+        <translation type="obsolete">Du er ved at oprette en ny virtuel harddisk med følgende egenskaber:</translation>
+    </message>
+    <message>
+        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
+        <translation type="obsolete">Hvis indstillingerne er som du ønsker, så klik på &lt;b&gt;Færdig&lt;/b&gt; for at oprette din nye harddisk.</translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage1</name>
+    <message>
+        <source>Welcome to the Create New Virtual Disk Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage2</name>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Dynamically expanding storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Fixed-size storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk Storage Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage3</name>
+    <message>
+        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Location</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Disk Location and Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a file for the new hard disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard disk images (*.vdi)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage4</name>
+    <message>
+        <source>You are going to create a new virtual hard disk with the following parameters:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 B</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If the above settings are correct, press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzd</name>
+    <message>
+        <source>Create New Virtual Machine</source>
+        <translation>Opret ny virtuel maskine</translation>
+    </message>
+    <message>
+        <source>Welcome to the New Virtual Machine Wizard!</source>
+        <translation type="obsolete">Denne guide hjælper dig med at oprette en ny virtuel maskine!</translation>
+    </message>
+    <message>
+        <source>N&amp;ame</source>
+        <translation type="obsolete">N&amp;avn</translation>
+    </message>
+    <message>
+        <source>OS &amp;Type</source>
+        <translation type="obsolete">OS &amp;type</translation>
+    </message>
+    <message>
+        <source>VM Name and OS Type</source>
+        <translation type="obsolete">VM-navn og OS-type</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vælg størrelsen af hukommelsen (RAM) i megabytes, der skal tildeles den virtuelle maskine.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory Size</source>
+        <translation type="obsolete">Størrelse på huko&amp;mmelse</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Memory</source>
+        <translation type="obsolete">Hukommelse</translation>
+    </message>
+    <message>
+        <source>Virtual Hard Disk</source>
+        <translation type="obsolete">Virtuel harddisk</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Oversigt</translation>
+    </message>
+    <message>
+        <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="obsolete">Anbefalet størrelse på hukommelsen er &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="obsolete">Anbefalet størrelse på opstartsharddisken er &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="obsolete">Denne guide hjælper dig igennem de nødvendige trin for at oprette en ny virtuel maskine i VirtualBox.&lt;/p&gt;&lt;p&gt;Klik på &lt;b&gt;Næste&lt;/b&gt; for at gå til næste side af guiden og &lt;b&gt;Forrige&lt;/b&gt; for at gå til den forrige side.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; Til&amp;bage</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">&amp;Næste &gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Indtast navnet på den nye virtuelle maskine og vælg typen af operativsystem du planlægger at installere på den.&lt;/p&gt;&lt;p&gt;Navnet på den virtuelle maskine bør indikere dens software- og hardware-konfiguration, da det vil blive brugt af alle VirtualBox&apos; komponenter til at identificere din virtuelle maskine.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Du er ved at oprette en ny virtuel maskine med følgende egenskaber:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Hvis ovenstående er korrekt, klik på &lt;b&gt;Afslut&lt;/b&gt; for at oprette en ny virtuel maskine.&lt;/p&gt;&lt;p&gt;Bemærk at du kan ændre alle indstillinger for den virtuelle maskine når som helst ved hjælp af menupunktet &lt;b&gt;Indstillinger&lt;/b&gt; i hovedvinduet.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Finish</source>
+        <translation type="obsolete">A&amp;fslut</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>megabytes</comment>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Navn</translation>
+    </message>
+    <message>
+        <source>OS Type</source>
+        <comment>summary</comment>
+        <translation type="obsolete">OS type</translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Hukommelse</translation>
+    </message>
+    <message>
+        <source>Boot Hard Disk</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Opstartsdisk</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Annullér</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vælg det harddisk-aftryk, som den virtuelle maskine skal starte op fra. Du kan enten oprette en ny harddisk ved hjælp af knappen &lt;b&gt;Ny&lt;/b&gt; eller vælge et eksisterende harddisk-aftryk fra rullegardinmenuen eller ved at klikke på knappen &lt;b&gt;Eksisterende&lt;/b&gt; (starter Virtuel diskhåndtering).&lt;/p&gt;&lt;p&gt;Har du brug for en mere avanceret harddisk-opsætning, kan du springe dette trin over og montere dine harddiske senere i &lt;i&gt;Indstillinger for VM&lt;/i&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <translation type="obsolete">Opstarts&amp;disk (Primær master)</translation>
+    </message>
+    <message>
+        <source>&amp;Create new hard disk</source>
+        <translation type="obsolete">Opret ny harddisk</translation>
+    </message>
+    <message>
+        <source>&amp;Use existing hard disk</source>
+        <translation type="obsolete">Br&amp;ug eksisterende harddisk</translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage1</name>
+    <message>
+        <source>Welcome to the New Virtual Machine Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage2</name>
+    <message>
+        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>N&amp;ame</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OS &amp;Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VM Name and OS Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage3</name>
+    <message>
+        <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage4</name>
+    <message>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create new hard disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Use existing hard disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Hard Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage5</name>
+    <message>
+        <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OS Type</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boot Hard Disk</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>VBoxAboutDlg</name>
     <message>
         <source>VirtualBox - About</source>
@@ -410,29 +1570,6 @@
     <message>
         <source>Version %1</source>
         <translation>Version %1</translation>
-    </message>
-</context>
-<context>
-    <name>UIDownloaderAdditions</name>
-    <message>
-        <source>Cancel</source>
-        <translation>Annullér</translation>
-    </message>
-    <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>Henter CD&apos;en med VirtualBox Gæstetilføjelser fra &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>Afbryd hentningen af CD&apos;en med VirtualBox Gæstetilføjelser</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kunne ikke gemme den hentede fil som &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Select folder to save Guest Additions image to</source>
-        <translation>Vælg mappen hvor CD&apos;en med Gæstetilføjelser skal gemmes</translation>
     </message>
 </context>
 <context>
@@ -527,7 +1664,7 @@
     </message>
     <message>
         <source>MB</source>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
@@ -540,6 +1677,16 @@
     <message>
         <source>Warnings:</source>
         <translation>Advarsler:</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -903,7 +2050,7 @@
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Netværkskort %1 (%2)&lt;/b&gt;: kabel %3&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Netværkskort %1 (%2)&lt;/b&gt;: kabel %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>connected</source>
@@ -991,7 +2138,7 @@
     <message>
         <source>Sun VirtualBox</source>
         <translatorcomment>Sol kunstigboks?</translatorcomment>
-        <translation>Sun VirtualBox</translation>
+        <translation type="obsolete">Sun VirtualBox</translation>
     </message>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
@@ -1100,12 +2247,50 @@
         <comment>Shared folders tooltip</comment>
         <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Viser aktiviteten på maskinens delte mapper:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
-</context>
-<context>
-    <name>UIDownloader</name>
     <message>
-        <source>The download process has been cancelled by the user.</source>
-        <translation>Filhentning annulleret af bruger.</translation>
+        <source>Dock Icon</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Application Icon</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Monitor Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
+        <comment>Network adapters tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ACPI Sh&amp;utdown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preview Monitor %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No CD/DVD devices attached to that VM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No floppy devices attached to that VM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No USB Devices Connected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No supported devices connected to the host PC</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1113,141 +2298,6 @@
     <message>
         <source>&amp;Choose...</source>
         <translation>Vælg...</translation>
-    </message>
-</context>
-<context>
-    <name>UIExportApplianceWzd</name>
-    <message>
-        <source>Select a file to export into</source>
-        <translation>Vælg den fil, der skal eksporteres til</translation>
-    </message>
-    <message>
-        <source>Open Virtualization Format (%1)</source>
-        <translation>Open Virtualization Format (%1)</translation>
-    </message>
-    <message>
-        <source>Appliance</source>
-        <translation>Prækonfigureret system</translation>
-    </message>
-    <message>
-        <source>Exporting Appliance ...</source>
-        <translation>Eksporterer Prækonfigureret system ...</translation>
-    </message>
-    <message>
-        <source>Appliance Export Wizard</source>
-        <translation>Eksport af Prækonfigureret system</translation>
-    </message>
-    <message>
-        <source>Welcome to the Appliance Export Wizard!</source>
-        <translation>Denne guide hjælper dig med at eksportere et Prækonfigureret system!</translation>
-    </message>
-    <message>
-        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Denne guide hjælper dig med at eksportere dit eget prækonfigurerede system. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Brug knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Næste&lt;/span&gt; for at gå til næste side af guiden og knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Forrige&lt;/span&gt; for at gå til den forrige side.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Vælg nu de virtuelle maskiner, der skal danne grundlag for dit prækonfigurerede system. Du kan vælge mere end en. Bemærk at disse maskiner skal være lukket ned før de kan eksporteres.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; Til&amp;bage</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>&amp;Næste &gt;</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Annuller</translation>
-    </message>
-    <message>
-        <source>Appliance Export Settings</source>
-        <translation>Indstillinger for eksport af Prækonfigureret system</translation>
-    </message>
-    <message>
-        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation>Her kan du tilpasse yderligere indstillinger for de valgte virtuelle maskiner. Du kan ændre de fleste af de viste egenskaber ved at dobbeltklikke på værdien.</translation>
-    </message>
-    <message>
-        <source>Restore Defaults</source>
-        <translation>Brug standardværdier</translation>
-    </message>
-    <message>
-        <source>&amp;Export &gt;</source>
-        <translation>&amp;Eksporter &gt;</translation>
-    </message>
-    <message>
-        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation>Gem i OVF 0.9 format for kompatibilitet med andre virtualiseringsprogrammer.</translation>
-    </message>
-    <message>
-        <source>&amp;Write legacy OVF 0.9</source>
-        <translation>Gem i OVF 0.9 format</translation>
-    </message>
-    <message>
-        <source>Please choose a filename to export the OVF to.</source>
-        <translation>Angiv et filnavn til OVF-eksporten.</translation>
-    </message>
-    <message>
-        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation>Udfyld de øvrige felter såsom brugernavn, kodeord og bucket. Afslut med at angive et filnavn til OVF-eksporten.</translation>
-    </message>
-    <message>
-        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation>Udfyld de øvrige felter såsom brugernavn, kodeord, værtsnavn og bucket. Afslut med at angive et filnavn til OVF-eksporten.</translation>
-    </message>
-    <message>
-        <source>Checking files ...</source>
-        <translation>Kontrollerer filer ...</translation>
-    </message>
-    <message>
-        <source>Removing files ...</source>
-        <translation>Fjerner filer ...</translation>
-    </message>
-    <message>
-        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation>Angiv destinationen for OVF-eksporten. Du kan vælge at eksportere til et lokalt filsystem eller sende OVF&apos;en til Sun Cloud servicen eller en S3 lagerserver.</translation>
-    </message>
-    <message>
-        <source>&amp;Local Filesystem </source>
-        <translation>&amp;Lokalt filsystem</translation>
-    </message>
-    <message>
-        <source>Sun &amp;Cloud</source>
-        <translation>Sun &amp;Cloud</translation>
-    </message>
-    <message>
-        <source>&amp;Simple Storage System (S3)</source>
-        <translation>&amp;Simple Storage System (S3)</translation>
-    </message>
-    <message>
-        <source>&amp;Username:</source>
-        <translation>Br&amp;ugernavn:</translation>
-    </message>
-    <message>
-        <source>&amp;Password:</source>
-        <translation>Kodeord:</translation>
-    </message>
-    <message>
-        <source>&amp;File:</source>
-        <translation>&amp;Fil:</translation>
-    </message>
-    <message>
-        <source>&amp;Bucket:</source>
-        <translation>&amp;Bucket:</translation>
-    </message>
-    <message>
-        <source>&amp;Hostname:</source>
-        <translation>Værtsnavn:</translation>
     </message>
 </context>
 <context>
@@ -1372,11 +2422,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
-        <translation>Hvis markeret, vil Dock-ikonet løbende vise indholdet af VM-vinduet.</translation>
+        <translation type="obsolete">Hvis markeret, vil Dock-ikonet løbende vise indholdet af VM-vinduet.</translation>
     </message>
     <message>
         <source>&amp;Dock Icon Realtime Preview</source>
-        <translation>&amp;Dock-ikon viser indhold af VM</translation>
+        <translation type="obsolete">&amp;Dock-ikon viser indhold af VM</translation>
     </message>
     <message>
         <source>&amp;Auto show Dock and Menubar in fullscreen</source>
@@ -1400,6 +2450,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Auto Capture Keyboard</source>
         <translation>Indf&amp;ang tastatur automatisk</translation>
+    </message>
+    <message>
+        <source>Reset Host Key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resets the key used as a Host Key in the VM window.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2832,6 +3890,80 @@ p, li { white-space: pre-wrap; }
         <source>(CD/DVD)</source>
         <translation>(CD/DVD)</translation>
     </message>
+    <message>
+        <source>Screens</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VDE network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VDE Adapter</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>LsiLogic SAS</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</source>
+        <comment>regexp for matching ####[.##] B|KB|MB|GB|TB|PB, %1=decimal point</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>B</source>
+        <comment>size suffix Bytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>KB</source>
+        <comment>size suffix KBytes=1024 Bytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>GB</source>
+        <comment>size suffix GBytes=1024 MBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TB</source>
+        <comment>size suffix TBytes=1024 GBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PB</source>
+        <comment>size suffix PBytes=1024 TBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>nested paging</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>nested paging</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -2864,104 +3996,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Reading Appliance ...</source>
         <translation>Indlæser Prækonfigureret system ...</translation>
-    </message>
-</context>
-<context>
-    <name>UIImportApplianceWzd</name>
-    <message>
-        <source>Select an appliance to import</source>
-        <translation>Vælg det Prækonfigurerede system, der skal importeres</translation>
-    </message>
-    <message>
-        <source>Open Virtualization Format (%1)</source>
-        <translation>Open Virtualization Format (%1)</translation>
-    </message>
-    <message>
-        <source>Appliance Import Wizard</source>
-        <translation>Guide til import af Prækonfigureret system</translation>
-    </message>
-    <message>
-        <source>Welcome to the Appliance Import Wizard!</source>
-        <translation>Denne guide hjælper dig med at importere et Prækonfigureret system!</translation>
-    </message>
-    <message>
-        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Denne guide hjælper dig med at importere et Prækonfigureret system. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Brug knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Næste&lt;/span&gt; for at gå til næste trin i guiden og knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Forrige&lt;/span&gt; for at gå til det forrige trin i guiden.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;For at kunne importere et Prækonfigureret system, skal du først vælge filen, der beskriver det Prækonfigurerede system. VirtualBox understøtter Open Virtualization Format (OVF). For at fortsætte, vælg filen herunder:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; Til&amp;bage</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>&amp;Næste &gt;</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Annullér</translation>
-    </message>
-    <message>
-        <source>Appliance Import Settings</source>
-        <translation>Indstillinger for import af Prækonfigureret system</translation>
-    </message>
-    <message>
-        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation>Disse virtuelle maskiner og deres konfiguration er en del af det Prækonfigurerede system og kan importeres til VirtualBox. Du kan ændre de fleste af de viste egenskaber ved at dobbeltklikke på værdierne og deaktivere andre ved hjælp af afkrydsningsfelterne.</translation>
-    </message>
-    <message>
-        <source>Restore Defaults</source>
-        <translation>Brug standardværdier</translation>
-    </message>
-    <message>
-        <source>&amp;Import &gt;</source>
-        <translation>&amp;Importer &gt;</translation>
-    </message>
-</context>
-<context>
-    <name>UIImportLicenseViewer</name>
-    <message>
-        <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
-        <translation>&lt;b&gt;Det virtuelle system &quot;%1&quot; kræver at du accepterer betingelserne i software-licensaftalen vist herunder.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Vælg &lt;b&gt;Acceptér&lt;/b&gt; for at fortsætte eller &lt;b&gt;Afvis&lt;/b&gt; for at annullere importen.</translation>
-    </message>
-    <message>
-        <source>Software License Agreement</source>
-        <translation>Software-licensaftale</translation>
-    </message>
-    <message>
-        <source>&amp;Disagree</source>
-        <translation>Afvis</translation>
-    </message>
-    <message>
-        <source>&amp;Agree</source>
-        <translation>&amp;Acceptér</translation>
-    </message>
-    <message>
-        <source>&amp;Print...</source>
-        <translation>Udskriv...</translation>
-    </message>
-    <message>
-        <source>&amp;Save...</source>
-        <translation>Gem...</translation>
-    </message>
-    <message>
-        <source>Text (*.txt)</source>
-        <translation>Tekst (*.txt)</translation>
-    </message>
-    <message>
-        <source>Save license to file...</source>
-        <translation>Gem licens som fil...</translation>
     </message>
 </context>
 <context>
@@ -3211,249 +4245,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Network Adapters</source>
         <translation>Netværkskort</translation>
-    </message>
-</context>
-<context>
-    <name>UINewHDWzd</name>
-    <message>
-        <source>Create New Virtual Disk</source>
-        <translation>Opret ny virtuel disk</translation>
-    </message>
-    <message>
-        <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation>Denne guide hjælper dig med at oprette en ny virtuel disk!</translation>
-    </message>
-    <message>
-        <source>Virtual Disk Location and Size</source>
-        <translation>Placering og størrelse af virtuel disk</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Oversigt</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;%1 bytes&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Hard disk images (*.vdi)</source>
-        <translation>Harddisk-aftryk (*.vdi)</translation>
-    </message>
-    <message>
-        <source>Select a file for the new hard disk image file</source>
-        <translation>Vælg et filnavn til det nye harddisk-aftryk</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; Til&amp;bage</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>&amp;Næste &gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation>A&amp;fslut</translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <comment>summary</comment>
-        <translation>Type</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <comment>summary</comment>
-        <translation>Placering</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <comment>summary</comment>
-        <translation>Størrelse</translation>
-    </message>
-    <message>
-        <source>Bytes</source>
-        <comment>summary</comment>
-        <translation>bytes</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Annullér</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Denne guide hjælper dig med at oprette en ny harddisk til din virtuelle maskine.&lt;/p&gt;&lt;p&gt;Brug knappen &lt;b&gt;Næste&lt;/b&gt; for at gå til næste side af guiden og &lt;b&gt;Tilbage&lt;/b&gt; for at gå til den forrige side.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Hard Disk Storage Type</source>
-        <translation>Allokeringsstrategi</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vælg en allokeringsstrategi for din virtuelle harddisk.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Dynamisk udvidelse&lt;/b&gt; optager kun lidt plads i starten, men vokser dynamisk (op til den angivne størrelse i takt med at gæsteoperativsystemet allokerer plads.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Fast størrelse&lt;/b&gt; vokser aldrig. Pladsen allokeres på forhånd i en fil af samme størrelse som den virtuelle harddisk. Oprettelsen af denne type harddisk kan tage lang tid afhængig af den valgte størrelse og skrivehastigheden på din fysiske harddisk.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Storage Type</source>
-        <translation>Allokeringsstrategi</translation>
-    </message>
-    <message>
-        <source>&amp;Dynamically expanding storage</source>
-        <translation>&amp;Dynamisk udvidelse</translation>
-    </message>
-    <message>
-        <source>&amp;Fixed-size storage</source>
-        <translation>&amp;Fast størrelse</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Klik på &lt;b&gt;Vælg&lt;/b&gt; for at vælge placeringen af filen, som harddisken gemmes i eller indtast et filnavn i feltet.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Location</source>
-        <translation>P&amp;lacering</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Angiv størrelsen af den virtuelle harddisk i megabytes. Gæsteoperativsystemet vil se denne værdi som harddiskens maksimale størrelse.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Size</source>
-        <translation>&amp;Størrelse</translation>
-    </message>
-    <message>
-        <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation>Du er ved at oprette en ny virtuel harddisk med følgende egenskaber:</translation>
-    </message>
-    <message>
-        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
-        <translation>Hvis indstillingerne er som du ønsker, så klik på &lt;b&gt;Færdig&lt;/b&gt; for at oprette din nye harddisk.</translation>
-    </message>
-</context>
-<context>
-    <name>UINewVMWzd</name>
-    <message>
-        <source>Create New Virtual Machine</source>
-        <translation>Opret ny virtuel maskine</translation>
-    </message>
-    <message>
-        <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation>Denne guide hjælper dig med at oprette en ny virtuel maskine!</translation>
-    </message>
-    <message>
-        <source>N&amp;ame</source>
-        <translation>N&amp;avn</translation>
-    </message>
-    <message>
-        <source>OS &amp;Type</source>
-        <translation>OS &amp;type</translation>
-    </message>
-    <message>
-        <source>VM Name and OS Type</source>
-        <translation>VM-navn og OS-type</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vælg størrelsen af hukommelsen (RAM) i megabytes, der skal tildeles den virtuelle maskine.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Base &amp;Memory Size</source>
-        <translation>Størrelse på huko&amp;mmelse</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation>MB</translation>
-    </message>
-    <message>
-        <source>Memory</source>
-        <translation>Hukommelse</translation>
-    </message>
-    <message>
-        <source>Virtual Hard Disk</source>
-        <translation>Virtuel harddisk</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Oversigt</translation>
-    </message>
-    <message>
-        <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>Anbefalet størrelse på hukommelsen er &lt;b&gt;%1&lt;/b&gt; MB.</translation>
-    </message>
-    <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>Anbefalet størrelse på opstartsharddisken er &lt;b&gt;%1&lt;/b&gt; MB.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>Denne guide hjælper dig igennem de nødvendige trin for at oprette en ny virtuel maskine i VirtualBox.&lt;/p&gt;&lt;p&gt;Klik på &lt;b&gt;Næste&lt;/b&gt; for at gå til næste side af guiden og &lt;b&gt;Forrige&lt;/b&gt; for at gå til den forrige side.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; Til&amp;bage</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>&amp;Næste &gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Indtast navnet på den nye virtuelle maskine og vælg typen af operativsystem du planlægger at installere på den.&lt;/p&gt;&lt;p&gt;Navnet på den virtuelle maskine bør indikere dens software- og hardware-konfiguration, da det vil blive brugt af alle VirtualBox&apos; komponenter til at identificere din virtuelle maskine.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Du er ved at oprette en ny virtuel maskine med følgende egenskaber:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Hvis ovenstående er korrekt, klik på &lt;b&gt;Afslut&lt;/b&gt; for at oprette en ny virtuel maskine.&lt;/p&gt;&lt;p&gt;Bemærk at du kan ændre alle indstillinger for den virtuelle maskine når som helst ved hjælp af menupunktet &lt;b&gt;Indstillinger&lt;/b&gt; i hovedvinduet.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation>A&amp;fslut</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>megabytes</comment>
-        <translation>MB</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <comment>summary</comment>
-        <translation>Navn</translation>
-    </message>
-    <message>
-        <source>OS Type</source>
-        <comment>summary</comment>
-        <translation>OS type</translation>
-    </message>
-    <message>
-        <source>Base Memory</source>
-        <comment>summary</comment>
-        <translation>Hukommelse</translation>
-    </message>
-    <message>
-        <source>Boot Hard Disk</source>
-        <comment>summary</comment>
-        <translation>Opstartsdisk</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Annullér</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vælg det harddisk-aftryk, som den virtuelle maskine skal starte op fra. Du kan enten oprette en ny harddisk ved hjælp af knappen &lt;b&gt;Ny&lt;/b&gt; eller vælge et eksisterende harddisk-aftryk fra rullegardinmenuen eller ved at klikke på knappen &lt;b&gt;Eksisterende&lt;/b&gt; (starter Virtuel diskhåndtering).&lt;/p&gt;&lt;p&gt;Har du brug for en mere avanceret harddisk-opsætning, kan du springe dette trin over og montere dine harddiske senere i &lt;i&gt;Indstillinger for VM&lt;/i&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation>Opstarts&amp;disk (Primær master)</translation>
-    </message>
-    <message>
-        <source>&amp;Create new hard disk</source>
-        <translation>Opret ny harddisk</translation>
-    </message>
-    <message>
-        <source>&amp;Use existing hard disk</source>
-        <translation>Br&amp;ug eksisterende harddisk</translation>
     </message>
 </context>
 <context>
@@ -4379,6 +5170,54 @@ p, li { white-space: pre-wrap; }
         <comment>medium</comment>
         <translation>&amp;Fje&amp;rn</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
@@ -4469,83 +5308,83 @@ p, li { white-space: pre-wrap; }
     <name>VBoxRegistrationDlg</name>
     <message>
         <source>VirtualBox Registration Dialog</source>
-        <translation>Registrering af VirtualBox</translation>
+        <translation type="obsolete">Registrering af VirtualBox</translation>
     </message>
     <message>
         <source>Enter your full name using Latin characters.</source>
-        <translation>Indtast dit navn.</translation>
+        <translation type="obsolete">Indtast dit navn.</translation>
     </message>
     <message>
         <source>Enter your e-mail address. Please use a valid address here.</source>
-        <translation>Indtast din email-adresse.</translation>
+        <translation type="obsolete">Indtast din email-adresse.</translation>
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
-        <translation>Velkommen til Registrering af VirtualBox!</translation>
+        <translation type="obsolete">Velkommen til Registrering af VirtualBox!</translation>
     </message>
     <message>
         <source>Could not perform connection handshake.</source>
-        <translation>Kunne ikke udføre forhandling af forbindelse.</translation>
+        <translation type="obsolete">Kunne ikke udføre forhandling af forbindelse.</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Annullér</translation>
+        <translation type="obsolete">Annullér</translation>
     </message>
     <message>
         <source>Select Country/Territory</source>
-        <translation>Vælg land/område</translation>
+        <translation type="obsolete">Vælg land/område</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Udfyld venligst denne registreringsformular for at lade os vide at du bruger VirtualBox og, hvis du ønsker det, så vi kan holde dig underrettet om VirtualBox-nyheder og opdateringer.&lt;/p&gt;&lt;p&gt;Brug latinske bogstaver i nedenstående felter. Vær opmærksom på at Sun Microsystems kun bruger denne information til at indsamle brugsstatistik og til at sende dig nyhedsbreve om VirtualBox. Sun Microsystems vil aldrig overgive dine data til tredjepart. Detaljeret information om hvad vi bruger dine personlige data til, kan findes i afsnittet &lt;b&gt;Privacy Policy&lt;/b&gt; i VirtualBox&apos; manual eller under &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; på VirtualBox&apos; hjemmeside.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Udfyld venligst denne registreringsformular for at lade os vide at du bruger VirtualBox og, hvis du ønsker det, så vi kan holde dig underrettet om VirtualBox-nyheder og opdateringer.&lt;/p&gt;&lt;p&gt;Brug latinske bogstaver i nedenstående felter. Vær opmærksom på at Sun Microsystems kun bruger denne information til at indsamle brugsstatistik og til at sende dig nyhedsbreve om VirtualBox. Sun Microsystems vil aldrig overgive dine data til tredjepart. Detaljeret information om hvad vi bruger dine personlige data til, kan findes i afsnittet &lt;b&gt;Privacy Policy&lt;/b&gt; i VirtualBox&apos; manual eller under &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; på VirtualBox&apos; hjemmeside.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>I &amp;already have a Sun Online account:</source>
-        <translation>Jeg &amp;har allerede en Sun Online konto:</translation>
+        <translation type="obsolete">Jeg &amp;har allerede en Sun Online konto:</translation>
     </message>
     <message>
         <source>&amp;E-mail:</source>
-        <translation>&amp;E-mail:</translation>
+        <translation type="obsolete">&amp;E-mail:</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation>Kodeord:</translation>
+        <translation type="obsolete">Kodeord:</translation>
     </message>
     <message>
         <source>I &amp;would like to create a new Sun Online account:</source>
-        <translation>Jeg vil gerne oprette en Sun Online konto:</translation>
+        <translation type="obsolete">Jeg vil gerne oprette en Sun Online konto:</translation>
     </message>
     <message>
         <source>&amp;First Name:</source>
-        <translation>&amp;Fornavn:</translation>
+        <translation type="obsolete">&amp;Fornavn:</translation>
     </message>
     <message>
         <source>&amp;Last Name:</source>
-        <translation>Efternavn:</translation>
+        <translation type="obsolete">Efternavn:</translation>
     </message>
     <message>
         <source>&amp;Company:</source>
-        <translation>Firma:</translation>
+        <translation type="obsolete">Firma:</translation>
     </message>
     <message>
         <source>Co&amp;untry:</source>
-        <translation>Land:</translation>
+        <translation type="obsolete">Land:</translation>
     </message>
     <message>
         <source>E-&amp;mail:</source>
-        <translation>E-&amp;mail:</translation>
+        <translation type="obsolete">E-&amp;mail:</translation>
     </message>
     <message>
         <source>P&amp;assword:</source>
-        <translation>Kodeord:</translation>
+        <translation type="obsolete">Kodeord:</translation>
     </message>
     <message>
         <source>Co&amp;nfirm Password:</source>
-        <translation>Ge&amp;ntag kodeord:</translation>
+        <translation type="obsolete">Ge&amp;ntag kodeord:</translation>
     </message>
     <message>
         <source>&amp;Register</source>
-        <translation>&amp;Registrér</translation>
+        <translation type="obsolete">&amp;Registrér</translation>
     </message>
 </context>
 <context>
@@ -4716,7 +5555,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation>Sun VirtualBox</translation>
+        <translation type="obsolete">Sun VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Import Appliance...</source>
@@ -5169,141 +6008,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIFirstRunWzd</name>
-    <message>
-        <source>First Run Wizard</source>
-        <translation>Guide til 1.gang</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Du har startet en nyoprettet virtuel maskine for første gang. Denne guide hjælper dig med at udføre de trin, der er nødvendige for at installere det ønskede operativsystem i den virtuelle maskine.&lt;/p&gt;&lt;p&gt;Klik på &lt;b&gt;Næste&lt;/b&gt; for at gå til næste side af guiden og &lt;b&gt;Tilbage&lt;/b&gt; for at gå tilbage til den forrige side. Du kan også vælge &lt;b&gt;Annullér&lt;/b&gt;, hvis du vil afbryde denne guide.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Welcome to the First Run Wizard!</source>
-        <translation>Velkommen til 1.gang-guiden!</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vælg medietypen, som du ønsker at bruge til installationsarbejdet, nedenfor.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Media Type</source>
-        <translation>Medietype</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD-ROM Device</source>
-        <translation>&amp;CD/DVD-ROM drev</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Device</source>
-        <translation>Diskettedrev</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vælg mediet, som indeholder opsætningsprogrammet til det ønskede operativsystem. Det skal være muligt at starte op på mediet for at opsætningsprogrammet kan køre.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Media Source</source>
-        <translation>Mediekilde</translation>
-    </message>
-    <message>
-        <source>&amp;Host Drive</source>
-        <translation type="obsolete">Værtsdrev</translation>
-    </message>
-    <message>
-        <source>&amp;Image File</source>
-        <translation type="obsolete">Aftryksf&amp;il</translation>
-    </message>
-    <message>
-        <source>Select Installation Media</source>
-        <translation>Vælg installationsmedie</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Du har valgt at starte op på følgende medie:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Oversigt</translation>
-    </message>
-    <message>
-        <source>CD/DVD-ROM Device</source>
-        <translation>CD/DVD-ROM drev</translation>
-    </message>
-    <message>
-        <source>Floppy Device</source>
-        <translation>Diskettedrev</translation>
-    </message>
-    <message>
-        <source>Host Drive %1</source>
-        <translation type="obsolete">Værtsdrev %1</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Du har startet en nyoprettet virtuel maskine for første gang. Denne guide hjælper dig med at udføre de trin, der er nødvendige for at starte et operativsystem i den virtuelle maskine.&lt;/p&gt;&lt;p&gt;Bemærk at du ikke kan installere et operativsystem i denne virtuelle maskine endnu, da du ikke har tilsluttet en harddisk til den. Hvis du ønsker at tilføje en harddisk, så skal du afbryde denne guide og vælge &lt;b&gt;Indstillinger&lt;/b&gt; fra menuen &lt;b&gt;Maskine&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Klik &lt;b&gt;Næste&lt;/b&gt; for at gå til næste side af guiden og &lt;b&gt;Tilbage&lt;/b&gt; for at gå til den forrige side. Du kan også vælge &lt;b&gt;Annullér&lt;/b&gt;, hvis du vil afbryde denne guide.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vælg medietypen, som du ønsker at bruge til opstarten af et operativsystem.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vælg mediet, som indeholder operativsystemet du vil anvende. Det skal være muligt at starte op på mediet for at operativsystem kan starte.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Du har valgt at starte et operativsystem fra følgende medie:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tryk &lt;b&gt;Færdig&lt;/b&gt; hvis ovenstående er korrekt. Det valgte medie vil så blive monteret på den virtuelle maskine og maskinen vil begynde afviklingen.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; Til&amp;bage</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>&amp;Næste &gt;</translation>
-    </message>
-    <message>
-        <source>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If the above is correct, press the &lt;span style=&quot; font-weight:600;&quot;&gt;Finish&lt;/span&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;span style=&quot; font-weight:600;&quot;&gt;Unmount...&lt;/span&gt; action in the &lt;span style=&quot; font-weight:600;&quot;&gt;Devices&lt;/span&gt; menu&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="obsolete">&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Hvis ovenstående er korrekt, klik på.knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Færdig&lt;/span&gt;. Herefter vil det valgte medie blive monteret midlertidigt på den virtuelle maskine, som så begynder afviklingen.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Bemærk at når du lukker den virtuelle maskine vil det valgte medie automatisk blive afmonteret og opstartsenheden vil blive sat til den første harddisk.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Afhængig af typen af opsætningsprogram, kan det være nødvendigt manuelt at afmontere (fjerne) mediet, når opsætningsprogrammet genstarter den virtuelle maskine for at undgå at opsætningsprogrammet starter igen. Du kan gøre dette ved at vælge handlingen &lt;span style=&quot; font-weight:600;&quot;&gt;Afmontér...&lt;/span&gt; i menuen &lt;span style=&quot; font-weight:600;&quot;&gt;Enheder&lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation>A&amp;fslut</translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <comment>summary</comment>
-        <translation>Type</translation>
-    </message>
-    <message>
-        <source>Source</source>
-        <comment>summary</comment>
-        <translation>Kilde</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Annullér</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tryk på knappen &lt;b&gt;Færdig&lt;/b&gt;, hvis ovenstående er korrekt. Når du trykker, vil det valgte medie midlertidigt blive monteret i den virtuelle maskine, som derefter vil starte op.&lt;/p&gt;&lt;p&gt;Bemærk at når du lukker den virtuelle maskine, vil det angivne medie automatisk blive afmonteret og opstartsenheden vil igen være den første harddisk.&lt;/p&gt;&lt;p&gt;Afhængig af dit installationsprogram kan det være nødvendigt manuelt at afmontere mediet efter installationsprogrammet har genstartet den virtuelle maskine for at undgå at installationsprogrammet starter forfra. Du kan gøre dette ved at vælge &lt;b&gt;Afmontér...&lt;/b&gt; i menuen &lt;b&gt;Enheder&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-</context>
-<context>
     <name>VBoxVMInformationDlg</name>
     <message>
         <source>%1 - Session Information</source>
@@ -5360,7 +6064,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Version %1.%2</source>
         <comment>guest additions</comment>
-        <translation>Version %1.%2</translation>
+        <translation type="obsolete">Version %1.%2</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -5684,6 +6388,18 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
         <translation>Portnummer for VRDP-server. Du kan angive &lt;tt&gt;0&lt;/tt&gt; (nul) for at vælge port 3389, som er standardporten for RDP.</translation>
+    </message>
+    <message>
+        <source>Mo&amp;nitor Count:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6157,6 +6873,30 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Attached To:</source>
         <translation>Tilsluttet til:</translation>
+    </message>
+    <message>
+        <source>Allows to use host I/O caching capabilities.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use host I/O cache</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add SAS Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage Controller 1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6656,7 +7396,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine.</source>
-        <translation>Angiver antallet af virtuelle CPU&apos;er i den virtuelle maskine.</translation>
+        <translation type="obsolete">Angiver antallet af virtuelle CPU&apos;er i den virtuelle maskine.</translation>
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
@@ -6702,6 +7442,18 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Enable &amp;EFI (special OSes only)</source>
         <translation>Aktivér &amp;EFI (kun særlige operativsystemer)</translation>
+    </message>
+    <message>
+        <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hardware clock in &amp;UTC time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

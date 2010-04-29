@@ -437,6 +437,1299 @@
     </message>
 </context>
 <context>
+    <name>QIWizardPage</name>
+    <message>
+        <source>Use the &lt;b&gt;%1&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;%2&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;%3&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDownloader</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Zrušiť</translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="obsolete">Sťahuje sa obraz CD Hosťovské doplnky VirtualBox z &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="obsolete">Zrušiť sťahovanie obrazu CD Hosťovské doplnky VirtualBox</translation>
+    </message>
+    <message>
+        <source>Could not locate the file on the server (response: %1).</source>
+        <translation type="obsolete">Nepodarilo sa nájsť súbor na serveri (odpoveď: %1).</translation>
+    </message>
+    <message>
+        <source>Could not determine the file size.</source>
+        <translation type="obsolete">Nepodarilo sa zistiť veľkosť súbrou.</translation>
+    </message>
+    <message>
+        <source>Could not connect to the server (%1).</source>
+        <translation type="obsolete">Nepodarilo sa pripojiť sa k serveru (%1).</translation>
+    </message>
+    <message>
+        <source>Could not download the file (%1).</source>
+        <translation type="obsolete">Nepodarilo sa stiahnuť súbor (%1).</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Nepodarilo sa uložiť stiahnutý súbor ako &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Select folder to save Guest Additions image to</source>
+        <translation type="obsolete">Vyberte, do ktorého priečinka uložiť obraz Hosťovské doplnky</translation>
+    </message>
+    <message>
+        <source>Connection timed out.</source>
+        <translation type="obsolete">Čas spojenia vypršal.</translation>
+    </message>
+    <message>
+        <source>The download process has been cancelled by the user.</source>
+        <translation type="obsolete">Používateľ prerušil proces sťahovania.</translation>
+    </message>
+    <message>
+        <source>The download process has been canceled by the user.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDownloaderAdditions</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Zrušiť</translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="obsolete">Sťahujem obraz CD Hosťovské doplnky VirtualBox z &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="obsolete">Zrušiť sťahovanie obrazu CD Hosťovské doplnky VirtualBoxu</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepodarilo sa uložiť stiahnutý súbor ako &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Select folder to save Guest Additions image to</source>
+        <translation>Vyberte, do ktorého priečinka uložiť obraz Hosťovské doplnky</translation>
+    </message>
+</context>
+<context>
+    <name>UIDownloaderUserManual</name>
+    <message>
+        <source>Select folder to save User Manual to</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzd</name>
+    <message>
+        <source>Select a file to export into</source>
+        <translation type="obsolete">Vyberte súbor pre export</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="obsolete">Formát Open Virtualization Format (%1)</translation>
+    </message>
+    <message>
+        <source>Appliance Export Wizard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; &amp;Späť</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">Ď&amp;alší &gt;</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Zrušiť</translation>
+    </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>Obnoviť východzie hodnoty</translation>
+    </message>
+    <message>
+        <source>&amp;Export &gt;</source>
+        <translation type="obsolete">&amp;Export &gt;</translation>
+    </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="obsolete">Uložiť v staršom formáte OVF 0.9 kvôli kompatibilite so staršími virtualizačnými produktami.</translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="obsolete">&amp;Uložiť vo formáte OVF 0.9</translation>
+    </message>
+    <message>
+        <source>Please choose a filename to export the OVF to.</source>
+        <translation type="obsolete">Prosím, vyberte názov súboru pre export OVF.</translation>
+    </message>
+    <message>
+        <source>Checking files ...</source>
+        <translation type="obsolete">Kontrolujem súbory ...</translation>
+    </message>
+    <message>
+        <source>Removing files ...</source>
+        <translation type="obsolete">Odstraňujem súbory ...</translation>
+    </message>
+    <message>
+        <source>&amp;Local Filesystem </source>
+        <translation type="obsolete">&amp;Miestny súborový systém </translation>
+    </message>
+    <message>
+        <source>&amp;Username:</source>
+        <translation type="obsolete">&amp;Meno užívateľa:</translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="obsolete">&amp;Heslo:</translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="obsolete">&amp;Súbor:</translation>
+    </message>
+    <message>
+        <source>&amp;Bucket:</source>
+        <translation type="obsolete">&amp;Sektor:</translation>
+    </message>
+    <message>
+        <source>&amp;Hostname:</source>
+        <translation type="obsolete">&amp;Hostiteľ:</translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage1</name>
+    <message>
+        <source>Welcome to the Appliance Export Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through the process of exporting an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Please select the virtual machines that should be added to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage2</name>
+    <message>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage3</name>
+    <message>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Local Filesystem </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sun &amp;Cloud</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Simple Storage System (S3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage4</name>
+    <message>
+        <source>&amp;Username:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Hostname:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Bucket:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a file to export into</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a filename to export the OVF to.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Checking files ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing files ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exporting Appliance ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzd</name>
+    <message>
+        <source>First Run Wizard</source>
+        <translation>Sprievodca prvým spustením</translation>
+    </message>
+    <message>
+        <source>Welcome to the First Run Wizard!</source>
+        <translation type="obsolete">Vitajte v Sprievodcovi prvým spustením!</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vyberte typ média, ktoré chcete použiť na inštaláciu.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Media Type</source>
+        <translation type="obsolete">Typ média</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD-ROM Device</source>
+        <translation type="obsolete">Zariadenie &amp;CD/DVD-ROM</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Device</source>
+        <translation type="obsolete">Zariadenie &amp;disketovej mechaniky</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vyberte médium, ktoré obsahuje inštalačný program pre operačný systém, ktorý chcete nainštalovať. Toto médium musí byť bootovateľné, inak inštalačný program nebude možné spustiť.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Media Source</source>
+        <translation type="obsolete">Zdroj média</translation>
+    </message>
+    <message>
+        <source>&amp;Host Drive</source>
+        <translation type="obsolete">&amp;Mechanika hostiteľa</translation>
+    </message>
+    <message>
+        <source>&amp;Image File</source>
+        <translation type="obsolete">&amp;Súbor s obrazom</translation>
+    </message>
+    <message>
+        <source>VDM</source>
+        <translation type="obsolete">VDM</translation>
+    </message>
+    <message>
+        <source>Select Installation Media</source>
+        <translation type="obsolete">Vyberte inštalačné médium</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vybrali ste bootovanie z nasledujúcich médii:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Ak sú vyššie uvedené údaje správne, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;. Keď ho stlačíte, vybrané médium bude dočasne pripojené k virtuálnemu stroju a stroj bude spustený.&lt;/p&gt;&lt;p&gt;Majte na pamäti, že pri ukončení virtuálneho stroja bude špecifikované médium automaticky odpojené a bootovateľné zariadenie bude znovu nastavené na prvý pevný disk.&lt;/p&gt;&lt;p&gt;V závislosti na type inštalačného programu budete možno musieť manuálne odpojiť (vybrať) médium predtým, ako inštalácia reštartuje virtuálny stroj, aby ste tak zabránili opätovnému spusteniu inštalácie. Môžete tak učiniť výberom zodpovedajúcej akcie &lt;b&gt;Odpojiť...&lt;/b&gt; z ponuky &lt;b&gt;Zariadenia&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Zhrnutie</translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM Device</source>
+        <translation type="obsolete">Zariadenie CD/DVD-ROM</translation>
+    </message>
+    <message>
+        <source>Floppy Device</source>
+        <translation type="obsolete">Zariadenie disketovej mechaniky</translation>
+    </message>
+    <message>
+        <source>Host Drive %1</source>
+        <translation type="obsolete">Mechanika hostiteľa %1</translation>
+    </message>
+    <message>
+        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Typ:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Zdroj:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vyberte typ média, ktoré chcete použiť na bootovanie operačného systému.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vyberte médium, ktoré obsahuje inštalačný program pre operačný systém, ktorý chcete nainštalovať. Toto médium musí byť bootovateľné, inak inštalačný program nebude možné spustiť.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vybrali ste bootovanie operačného systmu z nasledujúcich médii:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Ak sú vyššie uvedené nastavenia správne, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;. Keď ho stlačíte, vybrané médium bude pripojené pre virtuálny stroj a stroj bude spustený.&lt;/p&gt;                            </translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; &amp;Späť</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">Ď&amp;alej &gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Finish</source>
+        <translation type="obsolete">&amp;Dokončiť</translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Typ</translation>
+    </message>
+    <message>
+        <source>Source</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Zdroj</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Zrušiť</translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzdPage1</name>
+    <message>
+        <source>Welcome to the First Run Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzdPage2</name>
+    <message>
+        <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Media Source</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select Installation Media</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzdPage3</name>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Source</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIImportApplianceWzd</name>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="obsolete">Formát Open Virtualization Format (%1)</translation>
+    </message>
+    <message>
+        <source>Appliance Import Wizard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; &amp;Späť</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">Ď&amp;alej &gt;</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Zrušiť</translation>
+    </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>Obnoviť východzie hodnoty</translation>
+    </message>
+    <message>
+        <source>&amp;Import &gt;</source>
+        <translation type="obsolete">&amp;Importovať &gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIImportApplianceWzdPage1</name>
+    <message>
+        <source>Select an appliance to import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Welcome to the Appliance Import Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through importing an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIImportApplianceWzdPage2</name>
+    <message>
+        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Import Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIImportLicenseViewer</name>
+    <message>
+        <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Software License Agreement</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Disagree</source>
+        <translation>&amp;Nesúhlasím</translation>
+    </message>
+    <message>
+        <source>&amp;Agree</source>
+        <translation>&amp;Súhlasím</translation>
+    </message>
+    <message>
+        <source>&amp;Print...</source>
+        <translation>&amp;Tlačiť...</translation>
+    </message>
+    <message>
+        <source>&amp;Save...</source>
+        <translation>&amp;Uložiť...</translation>
+    </message>
+    <message>
+        <source>Text (*.txt)</source>
+        <translation>Text (*.txt)</translation>
+    </message>
+    <message>
+        <source>Save license to file...</source>
+        <translation>Uložiť licenciu do súboru...</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineLogic</name>
+    <message>
+        <source>VirtualBox OSE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> EXPERIMENTAL build %1r%2 - %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProcessWidgetAdditions</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProcessWidgetUserManual</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox User Manual download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox User Manual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMultiScreenLayout</name>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzd</name>
+    <message>
+        <source>Create New Virtual Disk</source>
+        <translation>Vytvoriť nový virtuálny disk</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
+&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
+and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Tento sprievodca vám pomôže vytvoriť nový obraz virtuálneho disku pre váš virtuálny stroj.&lt;/p&gt;
+&lt;p&gt;Pre prechod na ďalšiu stránku sprievodcu použite tlačidlo &lt;b&gt;Ďalej&lt;/b&gt;
+a pre prechod na predošlú stránku tlačidlo &lt;b&gt;Späť&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Welcome to the Create New Virtual Disk Wizard!</source>
+        <translation type="obsolete">Vitajte v sprievodcovi vytvorením nového virtuálneho disku!</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
+of space on your physical hard disk. It will grow dynamically (up to
+the size specified) as the Guest OS claims disk space.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
+the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vyberte typ obrazu virtuálneho disku, ktorý chcete vytvoriť.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Dynamicky expandujúci obraz&lt;/b&gt; na začiatku zaberá veľmi málo miesta
+na vašom fyzickom pevnom disku. Dynamicky bude rásť (do vami zadanej
+veľkosti) postupne ako bude hosťovský OS vyžadovať miesto na disku.&lt;/p&gt;
+&lt;p&gt;&lt;b&gt;Obraz s pevnou veľkosťou&lt;/b&gt; nerastie. Uloží sa ako súbor približne
+rovnakej veľkosti ako veľkosť virtuálneho disku.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Image Type</source>
+        <translation type="obsolete">Typ obrazu</translation>
+    </message>
+    <message>
+        <source>&amp;Dynamically expanding image</source>
+        <translation type="obsolete">&amp;Dynamicky expandujúci obraz</translation>
+    </message>
+    <message>
+        <source>Alt+D</source>
+        <translation type="obsolete">Alt+D</translation>
+    </message>
+    <message>
+        <source>&amp;Fixed-size image</source>
+        <translation type="obsolete">&amp;Obraz s pevnou veľkosťou</translation>
+    </message>
+    <message>
+        <source>Alt+F</source>
+        <translation type="obsolete">Alt+F</translation>
+    </message>
+    <message>
+        <source>Virtual Disk Image Type</source>
+        <translation type="obsolete">Typ obrazu virtuálneho disku</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
+to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Stlačením tlačidla &lt;b&gt;Vybrať&lt;/b&gt; vyberiete umiestnenie a názov súboru
+s obrazom pevného disku alebo môžete názov súboru napísať do vstupného poľa.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Image File Name</source>
+        <translation type="obsolete">&amp;Názov súboru s obrazom pevného disku</translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <translation type="obsolete">Vybrať</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
+as the size of the virtual hard disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vyberte veľkosť obrazu pevného disku v megabajtoch. Táto veľkosť sa oznámi hosťovskémuOS
+ako veľkosť virtuálneho pevného disku.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Image &amp;Size</source>
+        <translation type="obsolete">&amp;Veľkosť obrazu</translation>
+    </message>
+    <message>
+        <source>Virtual Disk Location and Size</source>
+        <translation type="obsolete">Umiestnenie a veľkosť virtuálneho disku</translation>
+    </message>
+    <message>
+        <source>You are going to create a new virtual hard disk image with the following parameters:</source>
+        <translation type="obsolete">Chystáte sa vytvoriť nový virtuálny pevný disk s nasledovnými parametrami:</translation>
+    </message>
+    <message>
+        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
+                            Once you press it, a new hard disk image will be created.
+                            </source>
+        <translation type="obsolete">Ak sú vyššie uvedené nastavenia správne, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;.
+                            Keď ho stlačíte, vytvorí sa obraz pevného disku.
+                            </translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Zhrnutie</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
+        <translation type="obsolete">&lt;nobr&gt;%1 bajtov&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Typ:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Umiestnenie:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Veľkosť:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;bajtov)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+    </message>
+    <message>
+        <source>Hard disk images (*.vdi)</source>
+        <translation type="obsolete">Obrazy pevných diskov (*.vdi)</translation>
+    </message>
+    <message>
+        <source>Select a file for the new hard disk image file</source>
+        <translation type="obsolete">Vyberte súbor pre obraz nového pevného disku</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; &amp;Späť</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">Ď&amp;alší &gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Finish</source>
+        <translation type="obsolete">&amp;Dokončiť</translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Typ</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Umiestnenie</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Veľkosť</translation>
+    </message>
+    <message>
+        <source>Bytes</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Bytov</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Zrušiť</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Tento sprievodca vám pomôže vytvoriť nový virtuálny pevný disk pre váš virtuálny stroj.&lt;/p&gt;&lt;p&gt;Použite tlačidlo &lt;b&gt;Ďalej&lt;/b&gt; pre posun na nasledujúcu stranu sprievodcu a tlačidlo &lt;b&gt;Späť&lt;/b&gt; pre posun na predchádzajúcu stranu.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Hard Disk Storage Type</source>
+        <translation type="obsolete">Typ úložiska pevného disku</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vyberte typ virtuálneho pevného disku, ktorý chcete vytvoriť.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Dynamicky sa zväčšujúce úložisko&lt;/b&gt; najprv zaberá veľmi málo miesta na fyzickom pevnom disku. Potom dynamicky rastie (až do definovanej veľkosti) podľa toho, koľko miesta si OS hosťa nárokuje.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Úložisko s fixnou veľkosťou&lt;/b&gt; nerastie. Je uložené v súbore o približne rovnakej veľkosti ako virtuálny pevný disk. Vytvorenie úložiska s pevnou veľkosťou môže trvať dlhší čas v závislosti od jeho veľkosti a výkonu vášho disku pri zápise.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Storage Type</source>
+        <translation type="obsolete">Typ úložiska</translation>
+    </message>
+    <message>
+        <source>&amp;Dynamically expanding storage</source>
+        <translation type="obsolete">&amp;Dynamicky sa zväčšujúce úložisko</translation>
+    </message>
+    <message>
+        <source>&amp;Fixed-size storage</source>
+        <translation type="obsolete">Ú&amp;ložisko s fixnou veľkosťou</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Stlačte tlačidlo &lt;b&gt;Výber&lt;/b&gt; a vyberte umiestnenie súboru, ktoré bude slúžiť na ukladanie dát pevného disku alebo napíšte jeho meno do poľa vstupu.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Location</source>
+        <translation type="obsolete">&amp;Umiestnenie</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vyberte veľkosť virtuálneho pevného disku v megabajtoch. Túto veľkosť bude vidieť OS hosťa ako maximálnu veľkosť pevného disku.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Size</source>
+        <translation type="obsolete">&amp;Veľkosť</translation>
+    </message>
+    <message>
+        <source>You are going to create a new virtual hard disk with the following parameters:</source>
+        <translation type="obsolete">Chystáte sa vytvoriť nový virtuálny pevný disk s nasledujúcimi parametrami:</translation>
+    </message>
+    <message>
+        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
+        <translation type="obsolete">Ak sú vyššie uvedené nastavenia správne, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;. Po jeho stlačení bude vytvorený nový pevný disk.</translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage1</name>
+    <message>
+        <source>Welcome to the Create New Virtual Disk Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage2</name>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Dynamically expanding storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Fixed-size storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk Storage Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage3</name>
+    <message>
+        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Location</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Disk Location and Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a file for the new hard disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard disk images (*.vdi)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage4</name>
+    <message>
+        <source>You are going to create a new virtual hard disk with the following parameters:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 B</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If the above settings are correct, press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzd</name>
+    <message>
+        <source>Create New Virtual Machine</source>
+        <translation>Vytvoriť nový virtuálny stroj</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
+a new virtual machine for VirtualBox.&lt;/p&gt;
+&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
+and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Tento sprievodca vám pomôže vytvoriť nový virtuálny stroj VirtualBox.&lt;/p&gt;
+&lt;p&gt;Pre prechod na ďalšiu stránku sprievodcu použite tlačidlo &lt;b&gt;Ďalej&lt;/b&gt;
+a pre prechod na predošlú stránku tlačidlo &lt;b&gt;Späť&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Welcome to the New Virtual Machine Wizard!</source>
+        <translation type="obsolete">Vitajte v sprievodcovi vytvorením nového virtuálneho stroja!</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
+system you plan to install onto the virtual machine.&lt;/p&gt;
+&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
+It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Zadajte názov nového virtuálneho stroja a vyberte typ hosťovského operačného
+systému, ktorý plánujete na virtuálny stroj nainštalovať.&lt;/p&gt;
+&lt;p&gt;Názov virtuálneho stroja označuje jeho hardvérovú a softvérovú konfiguráciu.
+Všetky súčasti VirtualBox ho použijú na označenie vášho virtuálneho stroja.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>N&amp;ame</source>
+        <translation type="obsolete">&amp;Názov</translation>
+    </message>
+    <message>
+        <source>OS &amp;Type</source>
+        <translation type="obsolete">&amp;Typ OS</translation>
+    </message>
+    <message>
+        <source>VM Name and OS Type</source>
+        <translation type="obsolete">Názov virtuálneho stroja a typ úložiska</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Zvoľte veľkosť základnej pamäte (RAM) v megabajtoch, ktorá sa alokuje pre virtuálny stroj.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory Size</source>
+        <translation type="obsolete">Veľkosť &amp;základnej pamäte</translation>
+    </message>
+    <message>
+        <source>&lt;</source>
+        <translation type="obsolete">&lt;</translation>
+    </message>
+    <message>
+        <source>=</source>
+        <translation type="obsolete">=</translation>
+    </message>
+    <message>
+        <source>&gt;</source>
+        <translation type="obsolete">&gt;</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Memory</source>
+        <translation type="obsolete">Pamäť</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select a hard disk image to be used
+as the boot hard disk of the virtual machine. You can either create a new hard
+disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
+image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
+button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
+&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
+step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vyberte obraz pevného disku, ktorý sa má použiť ako
+bootovací disk virtuálneho stroja. Môžete byť vytvoriť nový pevný disk
+pomocou tlačidla &lt;b&gt;Nový&lt;/b&gt; alebo zvoliť existujúci obraz pevného
+disku z roletovej ponuky alebo stlačením tlačidla &lt;b&gt;Existujúci&lt;/b&gt;
+(čím vyvoláte dialóg Správca virtuálnych diskov).&lt;/p&gt;
+&lt;p&gt;Ak potrebujete komplikovanejšie nastavenie pevných diskov, môžete tiež tento krok
+preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuálneho stroja.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>B&amp;oot Hard Disk (Primary Master)</source>
+        <translation type="obsolete">&amp;Bootovací pevný disk (Primary Master)</translation>
+    </message>
+    <message>
+        <source>N&amp;ew...</source>
+        <translation type="obsolete">&amp;Nový...</translation>
+    </message>
+    <message>
+        <source>E&amp;xisting...</source>
+        <translation type="obsolete">&amp;Existújúci...</translation>
+    </message>
+    <message>
+        <source>Virtual Hard Disk</source>
+        <translation type="obsolete">Virtuálny pevný disk</translation>
+    </message>
+    <message>
+        <source>
+                            &lt;p&gt;
+                            You are going to create a new virtual machine
+                            with the following parameters:
+                            &lt;/p&gt;
+                            </source>
+        <translation type="obsolete">
+                            &lt;p&gt;
+                            Chystáte sa vytvoriť nový virtuálny stroj
+                            s nasledovnými parametrami:
+                            &lt;/p&gt;
+                            </translation>
+    </message>
+    <message>
+        <source>
+                            &lt;p&gt;
+                            If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button.
+                            Once you press it, a new virtual machine will be created.
+                            &lt;/p&gt;&lt;p&gt;
+                            Note that you can alter these and all other setting of the
+                            created virtual machine at any time using the
+                            &lt;b&gt;Settings&lt;/b&gt; dialog accessible through
+                            the menu of the main window.
+                            &lt;/p&gt;
+                            </source>
+        <translation type="obsolete">
+                            &lt;p&gt;
+                            Ak sú vyššie uvedené údaje správne, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;.
+                            Keď ho stlačíte, vytvorí sa virtuálny stroj.
+                            &lt;/p&gt;&lt;p&gt;
+                            Majte na pamäti, že tieto a ďalšie nastavenia vytvoreného
+                            virtuálneho stroja môžete kedykoľvek zmeniť pomocou
+                            dialógu &lt;b&gt;Nastavenia&lt;/b&gt;, ktorý je dostupný
+                            z ponuky hlavného okna.
+                            &lt;/p&gt;
+                            </translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Zhrnutie</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
+        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Názov:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Typ OS:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Základná pamäť:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
+        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Bootovací pevný disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
+    </message>
+    <message>
+        <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="obsolete">Odporúčaná veľkosť základnej pamäťe je &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="obsolete">Odporúčaná veľkosť bootovacieho pevného disku je &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Tento sprievodca vás prevedie krokmi potrebnými na vytvorenie nového virtuálneho stroja pre VirtualBox.&lt;/p&gt;&lt;p&gt;Použite tlačidlo &lt;b&gt;Ďalej&lt;/b&gt; pre prechod na nasledujúcu stranu sprievodcu a tlačidlo &lt;b&gt;Späť&lt;/b&gt; pre návrat na predchádzajúcu stranu.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; &amp;Späť</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">Ď&amp;alej &gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Zadajte názov nového virtuálneho stroja a vyberte typ hosťovaného operačného systému, ktorý naň hodláte inštalovať.&lt;/p&gt;&lt;p&gt;Názov virtuálneho počítača obvykle indikuje jeho softvérovú a hardvérovú konfiguráciu. Bude použité ďalšími komponentami VirtualBoxu pre identifikáciu vášho virtuálneho stroja.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Chystáte sa vytvoriť nový virtuálny pevný disk s nasledujúcimi parametrami:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Ak je vyššie uvedené v poriadku, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;. Potom sa začne vytvárať virtuálny stroj.&lt;/p&gt;&lt;p&gt;Poznámka: Všetky tieto i ďalšie nastavenia pre virtuálny stroj môžete kedykoľvek zmeniť v dialógovom okne &lt;b&gt;Nastavenia&lt;/b&gt;, ktoré vyvoláte z ponuky v hlavnom menu.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Finish</source>
+        <translation type="obsolete">&amp;Dokončiť</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>megabytes</comment>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Názov</translation>
+    </message>
+    <message>
+        <source>OS Type</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Typ OS</translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Základná pamäť</translation>
+    </message>
+    <message>
+        <source>Boot Hard Disk</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Bootovací pevný disk</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Zrušiť</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vyberte obraz pevného disku, ktorý bude použitý ako bootovací pevný disk pre virtuálny stroj. Môžete buď vytvoriť nový pevný disk pomocou tlačidla &lt;b&gt;Nový&lt;/b&gt; alebo vybrať existujúci obraz pevného disku z rozbaľovacieho menu alebo stlačením tlačidla &lt;b&gt;Existujúci&lt;/b&gt; (spustí sa dialógové okno Správcu virtuálnych médii).&lt;/p&gt;&lt;p&gt;Ak potrebujete sofistikovanejšie nastavenie pevného disku, môžete tento krok preskočiť a pripojiť pevné disky neskôr v dialógovom okne Nastavení virtuálneho stroja.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <translation type="obsolete">Boo&amp;tovací pevný disk (Primary Master)</translation>
+    </message>
+    <message>
+        <source>&amp;Create new hard disk</source>
+        <translation type="obsolete">&amp;Vytvoriť nový pevný disk</translation>
+    </message>
+    <message>
+        <source>&amp;Use existing hard disk</source>
+        <translation type="obsolete">&amp;Použiť existujúci pevný disk</translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage1</name>
+    <message>
+        <source>Welcome to the New Virtual Machine Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage2</name>
+    <message>
+        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>N&amp;ame</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OS &amp;Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VM Name and OS Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage3</name>
+    <message>
+        <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage4</name>
+    <message>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create new hard disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Use existing hard disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Hard Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage5</name>
+    <message>
+        <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OS Type</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boot Hard Disk</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>VBoxAboutDlg</name>
     <message>
         <source>VirtualBox - About</source>
@@ -549,29 +1842,6 @@ verzia %1</translation>
     </message>
 </context>
 <context>
-    <name>UIDownloaderAdditions</name>
-    <message>
-        <source>Cancel</source>
-        <translation>Zrušiť</translation>
-    </message>
-    <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>Sťahujem obraz CD Hosťovské doplnky VirtualBox z &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>Zrušiť sťahovanie obrazu CD Hosťovské doplnky VirtualBoxu</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepodarilo sa uložiť stiahnutý súbor ako &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Select folder to save Guest Additions image to</source>
-        <translation>Vyberte, do ktorého priečinka uložiť obraz Hosťovské doplnky</translation>
-    </message>
-</context>
-<context>
     <name>VBoxApplianceEditorWgt</name>
     <message>
         <source>Virtual System %1</source>
@@ -663,7 +1933,7 @@ verzia %1</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
@@ -676,6 +1946,16 @@ verzia %1</translation>
     <message>
         <source>Warnings:</source>
         <translation>Upozornenia:</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1131,7 +2411,7 @@ verzia %1</translation>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adaptér %1 (%2)&lt;/b&gt;: kábel %3&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adaptér %1 (%2)&lt;/b&gt;: kábel %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>connected</source>
@@ -1242,7 +2522,7 @@ verzia %1</translation>
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation>Sun VirtualBox</translation>
+        <translation type="obsolete">Sun VirtualBox</translation>
     </message>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
@@ -1345,6 +2625,51 @@ verzia %1</translation>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Zobrazuje aktivitu zdieľaných priečinkov stroja:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Dock Icon</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Application Icon</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Monitor Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
+        <comment>Network adapters tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ACPI Sh&amp;utdown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preview Monitor %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No CD/DVD devices attached to that VM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No floppy devices attached to that VM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No USB Devices Connected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No supported devices connected to the host PC</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1614,186 +2939,10 @@ verzia %1</translation>
     </message>
 </context>
 <context>
-    <name>UIDownloader</name>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">Zrušiť</translation>
-    </message>
-    <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="obsolete">Sťahuje sa obraz CD Hosťovské doplnky VirtualBox z &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="obsolete">Zrušiť sťahovanie obrazu CD Hosťovské doplnky VirtualBox</translation>
-    </message>
-    <message>
-        <source>Could not locate the file on the server (response: %1).</source>
-        <translation type="obsolete">Nepodarilo sa nájsť súbor na serveri (odpoveď: %1).</translation>
-    </message>
-    <message>
-        <source>Could not determine the file size.</source>
-        <translation type="obsolete">Nepodarilo sa zistiť veľkosť súbrou.</translation>
-    </message>
-    <message>
-        <source>Could not connect to the server (%1).</source>
-        <translation type="obsolete">Nepodarilo sa pripojiť sa k serveru (%1).</translation>
-    </message>
-    <message>
-        <source>Could not download the file (%1).</source>
-        <translation type="obsolete">Nepodarilo sa stiahnuť súbor (%1).</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nepodarilo sa uložiť stiahnutý súbor ako &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Select folder to save Guest Additions image to</source>
-        <translation type="obsolete">Vyberte, do ktorého priečinka uložiť obraz Hosťovské doplnky</translation>
-    </message>
-    <message>
-        <source>Connection timed out.</source>
-        <translation type="obsolete">Čas spojenia vypršal.</translation>
-    </message>
-    <message>
-        <source>The download process has been cancelled by the user.</source>
-        <translation>Používateľ prerušil proces sťahovania.</translation>
-    </message>
-</context>
-<context>
     <name>VBoxEmptyFileSelector</name>
     <message>
         <source>&amp;Choose...</source>
         <translation>&amp;Vybrať...</translation>
-    </message>
-</context>
-<context>
-    <name>UIExportApplianceWzd</name>
-    <message>
-        <source>Select a file to export into</source>
-        <translation>Vyberte súbor pre export</translation>
-    </message>
-    <message>
-        <source>Open Virtualization Format (%1)</source>
-        <translation>Formát Open Virtualization Format (%1)</translation>
-    </message>
-    <message>
-        <source>Appliance</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Exporting Appliance ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Appliance Export Wizard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Welcome to the Appliance Export Wizard!</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Späť</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>Ď&amp;alší &gt;</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Zrušiť</translation>
-    </message>
-    <message>
-        <source>Appliance Export Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Restore Defaults</source>
-        <translation>Obnoviť východzie hodnoty</translation>
-    </message>
-    <message>
-        <source>&amp;Export &gt;</source>
-        <translation>&amp;Export &gt;</translation>
-    </message>
-    <message>
-        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation>Uložiť v staršom formáte OVF 0.9 kvôli kompatibilite so staršími virtualizačnými produktami.</translation>
-    </message>
-    <message>
-        <source>&amp;Write legacy OVF 0.9</source>
-        <translation>&amp;Uložiť vo formáte OVF 0.9</translation>
-    </message>
-    <message>
-        <source>Please choose a filename to export the OVF to.</source>
-        <translation>Prosím, vyberte názov súboru pre export OVF.</translation>
-    </message>
-    <message>
-        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Checking files ...</source>
-        <translation>Kontrolujem súbory ...</translation>
-    </message>
-    <message>
-        <source>Removing files ...</source>
-        <translation>Odstraňujem súbory ...</translation>
-    </message>
-    <message>
-        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Local Filesystem </source>
-        <translation>&amp;Miestny súborový systém </translation>
-    </message>
-    <message>
-        <source>Sun &amp;Cloud</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Simple Storage System (S3)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Username:</source>
-        <translation>&amp;Meno užívateľa:</translation>
-    </message>
-    <message>
-        <source>&amp;Password:</source>
-        <translation>&amp;Heslo:</translation>
-    </message>
-    <message>
-        <source>&amp;File:</source>
-        <translation>&amp;Súbor:</translation>
-    </message>
-    <message>
-        <source>&amp;Bucket:</source>
-        <translation>&amp;Sektor:</translation>
-    </message>
-    <message>
-        <source>&amp;Hostname:</source>
-        <translation>&amp;Hostiteľ:</translation>
     </message>
 </context>
 <context>
@@ -1922,11 +3071,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
-        <translation>Ak je zaškrtnuté, ikona v systémovej oblasti bude odrážať obsah okna virtuálneho stroja v reálnom čase.</translation>
+        <translation type="obsolete">Ak je zaškrtnuté, ikona v systémovej oblasti bude odrážať obsah okna virtuálneho stroja v reálnom čase.</translation>
     </message>
     <message>
         <source>&amp;Dock Icon Realtime Preview</source>
-        <translation>&amp;Náhľad v systémovej oblasti</translation>
+        <translation type="obsolete">&amp;Náhľad v systémovej oblasti</translation>
     </message>
     <message>
         <source>&amp;Auto show Dock and Menubar in fullscreen</source>
@@ -1950,6 +3099,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Auto Capture Keyboard</source>
         <translation>&amp;Automaticky zachytávať klávesnicu</translation>
+    </message>
+    <message>
+        <source>Reset Host Key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resets the key used as a Host Key in the VM window.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3525,6 +4682,80 @@ p, li { white-space: pre-wrap; }
         <source>(CD/DVD)</source>
         <translation>(CD/DVD)</translation>
     </message>
+    <message>
+        <source>Screens</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VDE network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VDE Adapter</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>LsiLogic SAS</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</source>
+        <comment>regexp for matching ####[.##] B|KB|MB|GB|TB|PB, %1=decimal point</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>B</source>
+        <comment>size suffix Bytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>KB</source>
+        <comment>size suffix KBytes=1024 Bytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>GB</source>
+        <comment>size suffix GBytes=1024 MBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TB</source>
+        <comment>size suffix TBytes=1024 GBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PB</source>
+        <comment>size suffix PBytes=1024 TBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>nested paging</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>nested paging</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -3967,98 +5198,6 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     </message>
 </context>
 <context>
-    <name>UIImportApplianceWzd</name>
-    <message>
-        <source>Select an appliance to import</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Open Virtualization Format (%1)</source>
-        <translation>Formát Open Virtualization Format (%1)</translation>
-    </message>
-    <message>
-        <source>Appliance Import Wizard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Welcome to the Appliance Import Wizard!</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Späť</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>Ď&amp;alej &gt;</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Zrušiť</translation>
-    </message>
-    <message>
-        <source>Appliance Import Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Restore Defaults</source>
-        <translation>Obnoviť východzie hodnoty</translation>
-    </message>
-    <message>
-        <source>&amp;Import &gt;</source>
-        <translation>&amp;Importovať &gt;</translation>
-    </message>
-</context>
-<context>
-    <name>UIImportLicenseViewer</name>
-    <message>
-        <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Software License Agreement</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Disagree</source>
-        <translation>&amp;Nesúhlasím</translation>
-    </message>
-    <message>
-        <source>&amp;Agree</source>
-        <translation>&amp;Súhlasím</translation>
-    </message>
-    <message>
-        <source>&amp;Print...</source>
-        <translation>&amp;Tlačiť...</translation>
-    </message>
-    <message>
-        <source>&amp;Save...</source>
-        <translation>&amp;Uložiť...</translation>
-    </message>
-    <message>
-        <source>Text (*.txt)</source>
-        <translation>Text (*.txt)</translation>
-    </message>
-    <message>
-        <source>Save license to file...</source>
-        <translation>Uložiť licenciu do súboru...</translation>
-    </message>
-</context>
-<context>
     <name>VBoxLicenseViewer</name>
     <message>
         <source>I &amp;Agree</source>
@@ -4356,444 +5495,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Network Adapters</source>
         <translation>Sieťové adaptéry</translation>
-    </message>
-</context>
-<context>
-    <name>UINewHDWzd</name>
-    <message>
-        <source>Create New Virtual Disk</source>
-        <translation>Vytvoriť nový virtuálny disk</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
-&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
-and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Tento sprievodca vám pomôže vytvoriť nový obraz virtuálneho disku pre váš virtuálny stroj.&lt;/p&gt;
-&lt;p&gt;Pre prechod na ďalšiu stránku sprievodcu použite tlačidlo &lt;b&gt;Ďalej&lt;/b&gt;
-a pre prechod na predošlú stránku tlačidlo &lt;b&gt;Späť&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation>Vitajte v sprievodcovi vytvorením nového virtuálneho disku!</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
-&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
-of space on your physical hard disk. It will grow dynamically (up to
-the size specified) as the Guest OS claims disk space.&lt;/p&gt;
-&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
-the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Vyberte typ obrazu virtuálneho disku, ktorý chcete vytvoriť.&lt;/p&gt;
-&lt;p&gt;&lt;b&gt;Dynamicky expandujúci obraz&lt;/b&gt; na začiatku zaberá veľmi málo miesta
-na vašom fyzickom pevnom disku. Dynamicky bude rásť (do vami zadanej
-veľkosti) postupne ako bude hosťovský OS vyžadovať miesto na disku.&lt;/p&gt;
-&lt;p&gt;&lt;b&gt;Obraz s pevnou veľkosťou&lt;/b&gt; nerastie. Uloží sa ako súbor približne
-rovnakej veľkosti ako veľkosť virtuálneho disku.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Image Type</source>
-        <translation type="obsolete">Typ obrazu</translation>
-    </message>
-    <message>
-        <source>&amp;Dynamically expanding image</source>
-        <translation type="obsolete">&amp;Dynamicky expandujúci obraz</translation>
-    </message>
-    <message>
-        <source>Alt+D</source>
-        <translation type="obsolete">Alt+D</translation>
-    </message>
-    <message>
-        <source>&amp;Fixed-size image</source>
-        <translation type="obsolete">&amp;Obraz s pevnou veľkosťou</translation>
-    </message>
-    <message>
-        <source>Alt+F</source>
-        <translation type="obsolete">Alt+F</translation>
-    </message>
-    <message>
-        <source>Virtual Disk Image Type</source>
-        <translation type="obsolete">Typ obrazu virtuálneho disku</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
-to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Stlačením tlačidla &lt;b&gt;Vybrať&lt;/b&gt; vyberiete umiestnenie a názov súboru
-s obrazom pevného disku alebo môžete názov súboru napísať do vstupného poľa.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Image File Name</source>
-        <translation type="obsolete">&amp;Názov súboru s obrazom pevného disku</translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <translation type="obsolete">Vybrať</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
-as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Vyberte veľkosť obrazu pevného disku v megabajtoch. Táto veľkosť sa oznámi hosťovskémuOS
-ako veľkosť virtuálneho pevného disku.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Image &amp;Size</source>
-        <translation type="obsolete">&amp;Veľkosť obrazu</translation>
-    </message>
-    <message>
-        <source>Virtual Disk Location and Size</source>
-        <translation>Umiestnenie a veľkosť virtuálneho disku</translation>
-    </message>
-    <message>
-        <source>You are going to create a new virtual hard disk image with the following parameters:</source>
-        <translation type="obsolete">Chystáte sa vytvoriť nový virtuálny pevný disk s nasledovnými parametrami:</translation>
-    </message>
-    <message>
-        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
-                            Once you press it, a new hard disk image will be created.
-                            </source>
-        <translation type="obsolete">Ak sú vyššie uvedené nastavenia správne, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;.
-                            Keď ho stlačíte, vytvorí sa obraz pevného disku.
-                            </translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Zhrnutie</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;%1 bajtov&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Typ:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Umiestnenie:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Veľkosť:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;bajtov)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
-    </message>
-    <message>
-        <source>Hard disk images (*.vdi)</source>
-        <translation>Obrazy pevných diskov (*.vdi)</translation>
-    </message>
-    <message>
-        <source>Select a file for the new hard disk image file</source>
-        <translation>Vyberte súbor pre obraz nového pevného disku</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Späť</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>Ď&amp;alší &gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation>&amp;Dokončiť</translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <comment>summary</comment>
-        <translation>Typ</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <comment>summary</comment>
-        <translation>Umiestnenie</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <comment>summary</comment>
-        <translation>Veľkosť</translation>
-    </message>
-    <message>
-        <source>Bytes</source>
-        <comment>summary</comment>
-        <translation>Bytov</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Zrušiť</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tento sprievodca vám pomôže vytvoriť nový virtuálny pevný disk pre váš virtuálny stroj.&lt;/p&gt;&lt;p&gt;Použite tlačidlo &lt;b&gt;Ďalej&lt;/b&gt; pre posun na nasledujúcu stranu sprievodcu a tlačidlo &lt;b&gt;Späť&lt;/b&gt; pre posun na predchádzajúcu stranu.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Hard Disk Storage Type</source>
-        <translation>Typ úložiska pevného disku</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vyberte typ virtuálneho pevného disku, ktorý chcete vytvoriť.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Dynamicky sa zväčšujúce úložisko&lt;/b&gt; najprv zaberá veľmi málo miesta na fyzickom pevnom disku. Potom dynamicky rastie (až do definovanej veľkosti) podľa toho, koľko miesta si OS hosťa nárokuje.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Úložisko s fixnou veľkosťou&lt;/b&gt; nerastie. Je uložené v súbore o približne rovnakej veľkosti ako virtuálny pevný disk. Vytvorenie úložiska s pevnou veľkosťou môže trvať dlhší čas v závislosti od jeho veľkosti a výkonu vášho disku pri zápise.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Storage Type</source>
-        <translation>Typ úložiska</translation>
-    </message>
-    <message>
-        <source>&amp;Dynamically expanding storage</source>
-        <translation>&amp;Dynamicky sa zväčšujúce úložisko</translation>
-    </message>
-    <message>
-        <source>&amp;Fixed-size storage</source>
-        <translation>Ú&amp;ložisko s fixnou veľkosťou</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Stlačte tlačidlo &lt;b&gt;Výber&lt;/b&gt; a vyberte umiestnenie súboru, ktoré bude slúžiť na ukladanie dát pevného disku alebo napíšte jeho meno do poľa vstupu.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Location</source>
-        <translation>&amp;Umiestnenie</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vyberte veľkosť virtuálneho pevného disku v megabajtoch. Túto veľkosť bude vidieť OS hosťa ako maximálnu veľkosť pevného disku.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Size</source>
-        <translation>&amp;Veľkosť</translation>
-    </message>
-    <message>
-        <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation>Chystáte sa vytvoriť nový virtuálny pevný disk s nasledujúcimi parametrami:</translation>
-    </message>
-    <message>
-        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
-        <translation>Ak sú vyššie uvedené nastavenia správne, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;. Po jeho stlačení bude vytvorený nový pevný disk.</translation>
-    </message>
-</context>
-<context>
-    <name>UINewVMWzd</name>
-    <message>
-        <source>Create New Virtual Machine</source>
-        <translation>Vytvoriť nový virtuálny stroj</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
-a new virtual machine for VirtualBox.&lt;/p&gt;
-&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
-and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Tento sprievodca vám pomôže vytvoriť nový virtuálny stroj VirtualBox.&lt;/p&gt;
-&lt;p&gt;Pre prechod na ďalšiu stránku sprievodcu použite tlačidlo &lt;b&gt;Ďalej&lt;/b&gt;
-a pre prechod na predošlú stránku tlačidlo &lt;b&gt;Späť&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation>Vitajte v sprievodcovi vytvorením nového virtuálneho stroja!</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
-system you plan to install onto the virtual machine.&lt;/p&gt;
-&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
-It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Zadajte názov nového virtuálneho stroja a vyberte typ hosťovského operačného
-systému, ktorý plánujete na virtuálny stroj nainštalovať.&lt;/p&gt;
-&lt;p&gt;Názov virtuálneho stroja označuje jeho hardvérovú a softvérovú konfiguráciu.
-Všetky súčasti VirtualBox ho použijú na označenie vášho virtuálneho stroja.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>N&amp;ame</source>
-        <translation>&amp;Názov</translation>
-    </message>
-    <message>
-        <source>OS &amp;Type</source>
-        <translation>&amp;Typ OS</translation>
-    </message>
-    <message>
-        <source>VM Name and OS Type</source>
-        <translation>Názov virtuálneho stroja a typ úložiska</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Zvoľte veľkosť základnej pamäte (RAM) v megabajtoch, ktorá sa alokuje pre virtuálny stroj.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Base &amp;Memory Size</source>
-        <translation>Veľkosť &amp;základnej pamäte</translation>
-    </message>
-    <message>
-        <source>&lt;</source>
-        <translation type="obsolete">&lt;</translation>
-    </message>
-    <message>
-        <source>=</source>
-        <translation type="obsolete">=</translation>
-    </message>
-    <message>
-        <source>&gt;</source>
-        <translation type="obsolete">&gt;</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation>MB</translation>
-    </message>
-    <message>
-        <source>Memory</source>
-        <translation>Pamäť</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select a hard disk image to be used
-as the boot hard disk of the virtual machine. You can either create a new hard
-disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
-image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
-button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
-&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
-step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Vyberte obraz pevného disku, ktorý sa má použiť ako
-bootovací disk virtuálneho stroja. Môžete byť vytvoriť nový pevný disk
-pomocou tlačidla &lt;b&gt;Nový&lt;/b&gt; alebo zvoliť existujúci obraz pevného
-disku z roletovej ponuky alebo stlačením tlačidla &lt;b&gt;Existujúci&lt;/b&gt;
-(čím vyvoláte dialóg Správca virtuálnych diskov).&lt;/p&gt;
-&lt;p&gt;Ak potrebujete komplikovanejšie nastavenie pevných diskov, môžete tiež tento krok
-preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuálneho stroja.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>B&amp;oot Hard Disk (Primary Master)</source>
-        <translation type="obsolete">&amp;Bootovací pevný disk (Primary Master)</translation>
-    </message>
-    <message>
-        <source>N&amp;ew...</source>
-        <translation type="obsolete">&amp;Nový...</translation>
-    </message>
-    <message>
-        <source>E&amp;xisting...</source>
-        <translation type="obsolete">&amp;Existújúci...</translation>
-    </message>
-    <message>
-        <source>Virtual Hard Disk</source>
-        <translation>Virtuálny pevný disk</translation>
-    </message>
-    <message>
-        <source>
-                            &lt;p&gt;
-                            You are going to create a new virtual machine
-                            with the following parameters:
-                            &lt;/p&gt;
-                            </source>
-        <translation type="obsolete">
-                            &lt;p&gt;
-                            Chystáte sa vytvoriť nový virtuálny stroj
-                            s nasledovnými parametrami:
-                            &lt;/p&gt;
-                            </translation>
-    </message>
-    <message>
-        <source>
-                            &lt;p&gt;
-                            If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button.
-                            Once you press it, a new virtual machine will be created.
-                            &lt;/p&gt;&lt;p&gt;
-                            Note that you can alter these and all other setting of the
-                            created virtual machine at any time using the
-                            &lt;b&gt;Settings&lt;/b&gt; dialog accessible through
-                            the menu of the main window.
-                            &lt;/p&gt;
-                            </source>
-        <translation type="obsolete">
-                            &lt;p&gt;
-                            Ak sú vyššie uvedené údaje správne, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;.
-                            Keď ho stlačíte, vytvorí sa virtuálny stroj.
-                            &lt;/p&gt;&lt;p&gt;
-                            Majte na pamäti, že tieto a ďalšie nastavenia vytvoreného
-                            virtuálneho stroja môžete kedykoľvek zmeniť pomocou
-                            dialógu &lt;b&gt;Nastavenia&lt;/b&gt;, ktorý je dostupný
-                            z ponuky hlavného okna.
-                            &lt;/p&gt;
-                            </translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Zhrnutie</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Názov:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Typ OS:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Základná pamäť:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Bootovací pevný disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
-    </message>
-    <message>
-        <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>Odporúčaná veľkosť základnej pamäťe je &lt;b&gt;%1&lt;/b&gt; MB.</translation>
-    </message>
-    <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>Odporúčaná veľkosť bootovacieho pevného disku je &lt;b&gt;%1&lt;/b&gt; MB.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tento sprievodca vás prevedie krokmi potrebnými na vytvorenie nového virtuálneho stroja pre VirtualBox.&lt;/p&gt;&lt;p&gt;Použite tlačidlo &lt;b&gt;Ďalej&lt;/b&gt; pre prechod na nasledujúcu stranu sprievodcu a tlačidlo &lt;b&gt;Späť&lt;/b&gt; pre návrat na predchádzajúcu stranu.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Späť</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>Ď&amp;alej &gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Zadajte názov nového virtuálneho stroja a vyberte typ hosťovaného operačného systému, ktorý naň hodláte inštalovať.&lt;/p&gt;&lt;p&gt;Názov virtuálneho počítača obvykle indikuje jeho softvérovú a hardvérovú konfiguráciu. Bude použité ďalšími komponentami VirtualBoxu pre identifikáciu vášho virtuálneho stroja.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Chystáte sa vytvoriť nový virtuálny pevný disk s nasledujúcimi parametrami:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ak je vyššie uvedené v poriadku, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;. Potom sa začne vytvárať virtuálny stroj.&lt;/p&gt;&lt;p&gt;Poznámka: Všetky tieto i ďalšie nastavenia pre virtuálny stroj môžete kedykoľvek zmeniť v dialógovom okne &lt;b&gt;Nastavenia&lt;/b&gt;, ktoré vyvoláte z ponuky v hlavnom menu.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation>&amp;Dokončiť</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>megabytes</comment>
-        <translation>MB</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <comment>summary</comment>
-        <translation>Názov</translation>
-    </message>
-    <message>
-        <source>OS Type</source>
-        <comment>summary</comment>
-        <translation>Typ OS</translation>
-    </message>
-    <message>
-        <source>Base Memory</source>
-        <comment>summary</comment>
-        <translation>Základná pamäť</translation>
-    </message>
-    <message>
-        <source>Boot Hard Disk</source>
-        <comment>summary</comment>
-        <translation>Bootovací pevný disk</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Zrušiť</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vyberte obraz pevného disku, ktorý bude použitý ako bootovací pevný disk pre virtuálny stroj. Môžete buď vytvoriť nový pevný disk pomocou tlačidla &lt;b&gt;Nový&lt;/b&gt; alebo vybrať existujúci obraz pevného disku z rozbaľovacieho menu alebo stlačením tlačidla &lt;b&gt;Existujúci&lt;/b&gt; (spustí sa dialógové okno Správcu virtuálnych médii).&lt;/p&gt;&lt;p&gt;Ak potrebujete sofistikovanejšie nastavenie pevného disku, môžete tento krok preskočiť a pripojiť pevné disky neskôr v dialógovom okne Nastavení virtuálneho stroja.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation>Boo&amp;tovací pevný disk (Primary Master)</translation>
-    </message>
-    <message>
-        <source>&amp;Create new hard disk</source>
-        <translation>&amp;Vytvoriť nový pevný disk</translation>
-    </message>
-    <message>
-        <source>&amp;Use existing hard disk</source>
-        <translation>&amp;Použiť existujúci pevný disk</translation>
     </message>
 </context>
 <context>
@@ -5770,6 +6471,54 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <comment>medium</comment>
         <translation>&amp;Odstrániť</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
@@ -5804,7 +6553,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     <name>VBoxRegistrationDlg</name>
     <message>
         <source>VirtualBox Registration Dialog</source>
-        <translation>Registračný formulár pre VirtualBox</translation>
+        <translation type="obsolete">Registračný formulár pre VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Name</source>
@@ -5812,83 +6561,75 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>Enter your full name using Latin characters.</source>
-        <translation>Zadajte vaše celé meno bez diakritiky.</translation>
+        <translation type="obsolete">Zadajte vaše celé meno bez diakritiky.</translation>
     </message>
     <message>
         <source>Enter your e-mail address. Please use a valid address here.</source>
-        <translation>Zadajte vašu platnú e-mailovú adresu.</translation>
+        <translation type="obsolete">Zadajte vašu platnú e-mailovú adresu.</translation>
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
-        <translation>Vitajte vo formulári na registráciu VirtualBoxu!</translation>
+        <translation type="obsolete">Vitajte vo formulári na registráciu VirtualBoxu!</translation>
     </message>
     <message>
         <source>Connection timed out.</source>
         <translation type="obsolete">Čas spojenia vypršal.</translation>
     </message>
     <message>
-        <source>Could not perform connection handshake.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Cancel</source>
-        <translation>Zrušiť</translation>
+        <translation type="obsolete">Zrušiť</translation>
     </message>
     <message>
         <source>Select Country/Territory</source>
-        <translation>Vyberte krajinu/teritórium</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Vyberte krajinu/teritórium</translation>
     </message>
     <message>
         <source>I &amp;already have a Sun Online account:</source>
-        <translation>Už &amp;som vlastníkom účtu Sun Online:</translation>
+        <translation type="obsolete">Už &amp;som vlastníkom účtu Sun Online:</translation>
     </message>
     <message>
         <source>&amp;E-mail:</source>
-        <translation>&amp;E-mail:</translation>
+        <translation type="obsolete">&amp;E-mail:</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation>&amp;Heslo:</translation>
+        <translation type="obsolete">&amp;Heslo:</translation>
     </message>
     <message>
         <source>I &amp;would like to create a new Sun Online account:</source>
-        <translation>Rá&amp;d by som si vytvoril nový účet u Sun Online:</translation>
+        <translation type="obsolete">Rá&amp;d by som si vytvoril nový účet u Sun Online:</translation>
     </message>
     <message>
         <source>&amp;First Name:</source>
-        <translation>&amp;Krstné meno:</translation>
+        <translation type="obsolete">&amp;Krstné meno:</translation>
     </message>
     <message>
         <source>&amp;Last Name:</source>
-        <translation>&amp;Priezvisko:</translation>
+        <translation type="obsolete">&amp;Priezvisko:</translation>
     </message>
     <message>
         <source>&amp;Company:</source>
-        <translation>&amp;Spoločnosť:</translation>
+        <translation type="obsolete">&amp;Spoločnosť:</translation>
     </message>
     <message>
         <source>Co&amp;untry:</source>
-        <translation>Kr&amp;ajina:</translation>
+        <translation type="obsolete">Kr&amp;ajina:</translation>
     </message>
     <message>
         <source>E-&amp;mail:</source>
-        <translation>E-&amp;mail:</translation>
+        <translation type="obsolete">E-&amp;mail:</translation>
     </message>
     <message>
         <source>P&amp;assword:</source>
-        <translation>&amp;Heslo:</translation>
+        <translation type="obsolete">&amp;Heslo:</translation>
     </message>
     <message>
         <source>Co&amp;nfirm Password:</source>
-        <translation>&amp;Potvrdiť heslo:</translation>
+        <translation type="obsolete">&amp;Potvrdiť heslo:</translation>
     </message>
     <message>
         <source>&amp;Register</source>
-        <translation>&amp;Registrovať sa</translation>
+        <translation type="obsolete">&amp;Registrovať sa</translation>
     </message>
 </context>
 <context>
@@ -6203,7 +6944,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation>Sun VirtualBox</translation>
+        <translation type="obsolete">Sun VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Import Appliance...</source>
@@ -6648,6 +7389,8 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
         <translation type="unfinished">
             <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
 </context>
@@ -6896,135 +7639,6 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
 </context>
 <context>
-    <name>UIFirstRunWzd</name>
-    <message>
-        <source>First Run Wizard</source>
-        <translation>Sprievodca prvým spustením</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Welcome to the First Run Wizard!</source>
-        <translation>Vitajte v Sprievodcovi prvým spustením!</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vyberte typ média, ktoré chcete použiť na inštaláciu.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Media Type</source>
-        <translation>Typ média</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD-ROM Device</source>
-        <translation>Zariadenie &amp;CD/DVD-ROM</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Device</source>
-        <translation>Zariadenie &amp;disketovej mechaniky</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vyberte médium, ktoré obsahuje inštalačný program pre operačný systém, ktorý chcete nainštalovať. Toto médium musí byť bootovateľné, inak inštalačný program nebude možné spustiť.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Media Source</source>
-        <translation>Zdroj média</translation>
-    </message>
-    <message>
-        <source>&amp;Host Drive</source>
-        <translation type="obsolete">&amp;Mechanika hostiteľa</translation>
-    </message>
-    <message>
-        <source>&amp;Image File</source>
-        <translation type="obsolete">&amp;Súbor s obrazom</translation>
-    </message>
-    <message>
-        <source>VDM</source>
-        <translation type="obsolete">VDM</translation>
-    </message>
-    <message>
-        <source>Select Installation Media</source>
-        <translation>Vyberte inštalačné médium</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vybrali ste bootovanie z nasledujúcich médii:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ak sú vyššie uvedené údaje správne, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;. Keď ho stlačíte, vybrané médium bude dočasne pripojené k virtuálnemu stroju a stroj bude spustený.&lt;/p&gt;&lt;p&gt;Majte na pamäti, že pri ukončení virtuálneho stroja bude špecifikované médium automaticky odpojené a bootovateľné zariadenie bude znovu nastavené na prvý pevný disk.&lt;/p&gt;&lt;p&gt;V závislosti na type inštalačného programu budete možno musieť manuálne odpojiť (vybrať) médium predtým, ako inštalácia reštartuje virtuálny stroj, aby ste tak zabránili opätovnému spusteniu inštalácie. Môžete tak učiniť výberom zodpovedajúcej akcie &lt;b&gt;Odpojiť...&lt;/b&gt; z ponuky &lt;b&gt;Zariadenia&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Zhrnutie</translation>
-    </message>
-    <message>
-        <source>CD/DVD-ROM Device</source>
-        <translation>Zariadenie CD/DVD-ROM</translation>
-    </message>
-    <message>
-        <source>Floppy Device</source>
-        <translation>Zariadenie disketovej mechaniky</translation>
-    </message>
-    <message>
-        <source>Host Drive %1</source>
-        <translation type="obsolete">Mechanika hostiteľa %1</translation>
-    </message>
-    <message>
-        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Typ:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Zdroj:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vyberte typ média, ktoré chcete použiť na bootovanie operačného systému.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vyberte médium, ktoré obsahuje inštalačný program pre operačný systém, ktorý chcete nainštalovať. Toto médium musí byť bootovateľné, inak inštalačný program nebude možné spustiť.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vybrali ste bootovanie operačného systmu z nasledujúcich médii:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ak sú vyššie uvedené nastavenia správne, stlačte tlačidlo &lt;b&gt;Dokončiť&lt;/b&gt;. Keď ho stlačíte, vybrané médium bude pripojené pre virtuálny stroj a stroj bude spustený.&lt;/p&gt;                            </translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Späť</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>Ď&amp;alej &gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation>&amp;Dokončiť</translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <comment>summary</comment>
-        <translation>Typ</translation>
-    </message>
-    <message>
-        <source>Source</source>
-        <comment>summary</comment>
-        <translation>Zdroj</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Zrušiť</translation>
-    </message>
-</context>
-<context>
     <name>VBoxVMInformationDlg</name>
     <message>
         <source>Session Information Dialog</source>
@@ -7097,7 +7711,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     <message>
         <source>Version %1.%2</source>
         <comment>guest additions</comment>
-        <translation>Verzia %1.%2</translation>
+        <translation type="obsolete">Verzia %1.%2</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -7590,6 +8204,18 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     <message>
         <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
         <translation>Číslo portu VRDP servera. Môžete zadať &lt;tt&gt;0&lt;/tt&gt; (nula), čím vyberiete port 3389, štandardný port pre RDP.</translation>
+    </message>
+    <message>
+        <source>Mo&amp;nitor Count:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8776,6 +9402,30 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
         <source>Attached To:</source>
         <translation>Pripojený k:</translation>
     </message>
+    <message>
+        <source>Allows to use host I/O caching capabilities.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use host I/O cache</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add SAS Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage Controller 1</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMSettingsNetwork</name>
@@ -9282,7 +9932,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine.</source>
-        <translation>Ovláda počet virtuálnych CPU vo virtuálnom stroji.</translation>
+        <translation type="obsolete">Ovláda počet virtuálnych CPU vo virtuálnom stroji.</translation>
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
@@ -9327,6 +9977,18 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>Enable &amp;EFI (special OSes only)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hardware clock in &amp;UTC time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -408,6 +408,1262 @@
     </message>
 </context>
 <context>
+    <name>QIWizardPage</name>
+    <message>
+        <source>Use the &lt;b&gt;%1&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;%2&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;%3&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDownloader</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Avbryt</translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="obsolete">Hämtar ner cd-avbildning för VirtualBox Gästtillägg från &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="obsolete">Avbryt hämtning av cd-avbildning för VirtualBox Gästtillägg</translation>
+    </message>
+    <message>
+        <source>Could not locate the file on the server (response: %1).</source>
+        <translation type="obsolete">Kunde inte hitta filen på servern (svar: %1).</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Misslyckades med att spara den hämtade filen som &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Select folder to save Guest Additions image to</source>
+        <translation type="obsolete">Välj en mapp att spara avbildning för Gästtillägg till</translation>
+    </message>
+    <message>
+        <source>Connection timed out.</source>
+        <translation type="obsolete">Tidsgräns för anslutningen överstegs.</translation>
+    </message>
+    <message>
+        <source>The download process has been cancelled by the user.</source>
+        <translation type="obsolete">Hämtningsprocessen avbröts av användare.</translation>
+    </message>
+    <message>
+        <source>The download process has been canceled by the user.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDownloaderAdditions</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Avbryt</translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="obsolete">Hämtar ner cd-avbildning för VirtualBox Gästtillägg från &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="obsolete">Avbryt hämtning av cd-avbildning för VirtualBox Gästtillägg</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Misslyckades med att spara den hämtade filen som &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Select folder to save Guest Additions image to</source>
+        <translation>Välj en mapp att spara avbildning för Gästtillägg till</translation>
+    </message>
+</context>
+<context>
+    <name>UIDownloaderUserManual</name>
+    <message>
+        <source>Select folder to save User Manual to</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzd</name>
+    <message>
+        <source>Select a file to export into</source>
+        <translation type="obsolete">Välj en fil att exportera till</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="obsolete">Open Virtualization Format (%1)</translation>
+    </message>
+    <message>
+        <source>Appliance</source>
+        <translation type="obsolete">Appliance</translation>
+    </message>
+    <message>
+        <source>Exporting Appliance ...</source>
+        <translation type="obsolete">Exporterar appliance ...</translation>
+    </message>
+    <message>
+        <source>Appliance Export Wizard</source>
+        <translation>Exportguide för appliance</translation>
+    </message>
+    <message>
+        <source>Welcome to the Appliance Export Wizard!</source>
+        <translation type="obsolete">Välkommen till exportguiden för appliance!</translation>
+    </message>
+    <message>
+        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="obsolete">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Denna guide kommer att hjälpa dig genom processen att exportera till en appliance. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Använd knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Nästa&lt;/span&gt; för att gå till nästa sida i guiden och knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Bakåt&lt;/span&gt; för att återgå till föregående sida.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Välj de virtuella maskiner som ska exporteras till din appliance. Du kan välja fler än en. Observera att dessa maskiner måste vara avstängda innan de kan exporteras.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; &amp;Bakåt</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">&amp;Nästa &gt;</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Avbryt</translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="obsolete">Exportinställningar för appliance</translation>
+    </message>
+    <message>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
+        <translation type="obsolete">Här kan du ändra ytterligare konfigurationsvärden för de valda virtuella maskinerna. Du kan ändra de flesta av de visade egenskaperna genom att dubbelklicka på dem.</translation>
+    </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>Återställ till standardvärden</translation>
+    </message>
+    <message>
+        <source>Please specify a filename into which the appliance information will be written. Currently VirtualBox supports the Open Virtualization Format (OVF).</source>
+        <translation type="obsolete">Ange ett filnamn till vilket appliance-informationen ska skrivas. För närvarande har VirtualBox stöd för Open Virtualization Format (OVF).</translation>
+    </message>
+    <message>
+        <source>&amp;Export &gt;</source>
+        <translation type="obsolete">&amp;Exportera &gt;</translation>
+    </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="obsolete">Skriv i gamla formatet OVF 0.9 för kompatibilitet med andra virtualiseringsprodukter.</translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="obsolete">&amp;Skriv i gamla OVF 0.9</translation>
+    </message>
+    <message>
+        <source>Please choose a filename to export the OVF to.</source>
+        <translation type="obsolete">Välj ett filnamn att exportera OVF-filen till.</translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="obsolete">Färdigställ ytterligare fält såsom användarnamn, lösenord och bucket. Till sist behöver du ange ett filnamn för OVF-målet.</translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="obsolete">Färdigställ ytterligare fält såsom användarnamn, lösenord, värdnamn och bucket. Till sist behöver du ange ett filnamn för OVF-målet.</translation>
+    </message>
+    <message>
+        <source>Checking files ...</source>
+        <translation type="obsolete">Kontrollerar filer ...</translation>
+    </message>
+    <message>
+        <source>Removing files ...</source>
+        <translation type="obsolete">Tar bort filer ...</translation>
+    </message>
+    <message>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <translation type="obsolete">Ange målet för OVF-exporteringen. Du kan välja mellan en export till lokalt filsystem, skicka upp OVF-filen till Sun Cloud-tjänsten eller en S3-lagringsserver.</translation>
+    </message>
+    <message>
+        <source>&amp;Local Filesystem </source>
+        <translation type="obsolete">&amp;Lokalt filsystem </translation>
+    </message>
+    <message>
+        <source>Sun &amp;Cloud</source>
+        <translation type="obsolete">Sun &amp;Cloud</translation>
+    </message>
+    <message>
+        <source>&amp;Simple Storage System (S3)</source>
+        <translation type="obsolete">&amp;Simple Storage System (S3)</translation>
+    </message>
+    <message>
+        <source>&amp;Username:</source>
+        <translation type="obsolete">&amp;Användarnamn:</translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="obsolete">&amp;Lösenord:</translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="obsolete">&amp;Fil:</translation>
+    </message>
+    <message>
+        <source>&amp;Bucket:</source>
+        <translation type="obsolete">&amp;Bucket:</translation>
+    </message>
+    <message>
+        <source>&amp;Hostname:</source>
+        <translation type="obsolete">&amp;Värdnamn:</translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage1</name>
+    <message>
+        <source>Welcome to the Appliance Export Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through the process of exporting an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Please select the virtual machines that should be added to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage2</name>
+    <message>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage3</name>
+    <message>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Local Filesystem </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sun &amp;Cloud</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Simple Storage System (S3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage4</name>
+    <message>
+        <source>&amp;Username:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Hostname:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Bucket:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a file to export into</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a filename to export the OVF to.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Checking files ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing files ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exporting Appliance ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzd</name>
+    <message>
+        <source>First Run Wizard</source>
+        <translation>Förstagångsguide</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Du har startat en nyligen skapad virtuell maskin för första gången. Den här guiden kommer att hjälpa dig att genomföra de nödvändiga steg som krävs för att installera ett operativsystem på den virtuella maskinen.&lt;/p&gt;&lt;p&gt;Använd knappen &lt;b&gt;Nästa&lt;/b&gt; för att gå till nästa sida i guiden och &lt;b&gt;Bakåt&lt;/b&gt; för att återgå till föregående sida. Du kan även trycka på &lt;b&gt;Avbryt&lt;/b&gt; om du vill avbryta körningen av den här guiden.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Welcome to the First Run Wizard!</source>
+        <translation type="obsolete">Välkommen till förstagångsguiden!</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Välj den typ av media som du vill använda för installationssyften nedan.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Media Type</source>
+        <translation type="obsolete">Mediatyp</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD-ROM Device</source>
+        <translation type="obsolete">&amp;CD/DVD-ROM-enhet</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Device</source>
+        <translation type="obsolete">&amp;Diskettenhet</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Välj det media som innehåller konfigurationsprogrammet för operativsystemet som du vill installera. Det här mediet måste vara startbart, annars kommer inte konfigurationsprogrammet att kunna starta.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Media Source</source>
+        <translation type="obsolete">Mediakälla</translation>
+    </message>
+    <message>
+        <source>&amp;Host Drive</source>
+        <translation type="obsolete">&amp;Värdenhet</translation>
+    </message>
+    <message>
+        <source>&amp;Image File</source>
+        <translation type="obsolete">Av&amp;bildningsfil</translation>
+    </message>
+    <message>
+        <source>Select Installation Media</source>
+        <translation type="obsolete">Välj installationsmedia</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Du har valt följande media att starta upp från:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Sammandrag</translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM Device</source>
+        <translation type="obsolete">CD/DVD-ROM-enhet</translation>
+    </message>
+    <message>
+        <source>Floppy Device</source>
+        <translation type="obsolete">Diskettenhet</translation>
+    </message>
+    <message>
+        <source>Host Drive %1</source>
+        <translation type="obsolete">Värdenhet %1</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Du har startat en nyligen skapad virtuell maskin för första gången. Den här guiden kommer att hjälpa dig att genomföra de nödvändiga stegen som behövs för att starta upp ett valfritt operativsystem på den virtuella maskinen.&lt;/p&gt;&lt;p&gt;Observera att du inte kan installera ett operativsystem på den här virtuella maskinen just nu därför att du inte har anslutit en hårddisk till den. Om det inte är vad du vill göra så kan du avbryta körningen av den här guiden eller välja &lt;b&gt;Inställningar&lt;/b&gt; från menyn &lt;b&gt;Maskin&lt;/b&gt; i VirtualBox huvudfönster för att komma åt inställningsdialogrutan för den här maskinen och ändra hårddiskkonfigurationen.&lt;/p&gt;&lt;p&gt;Använd knappen &lt;b&gt;Nästa&lt;/b&gt; för att gå till nästa sida i guiden och &lt;b&gt;Bakåt&lt;/b&gt; för att återgå till föregående sida. Du kan även trycka på &lt;b&gt;Avbryt&lt;/b&gt; om du vill avbryta körningen av den här guiden.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Välj den typ av media som du vill använda för att starta upp ett operativsystem.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Välj det media som innehåller operativsystemet som du vill arbeta med. Detta media måste vara startbart, annars kommer operativsystemet inte kunna starta upp.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Du har valt följande media att starta upp ett operativsystem från:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Om ovanstående är korrekt kan du trycka på knappen &lt;b&gt;Färdigställ&lt;/b&gt;. När du trycker på den kommer det media som valts att monteras på den virtuella maskinen och maskinen kommer sedan att startas.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; &amp;Bakåt</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">&amp;Nästa &gt;</translation>
+    </message>
+    <message>
+        <source>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If the above is correct, press the &lt;span style=&quot; font-weight:600;&quot;&gt;Finish&lt;/span&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;span style=&quot; font-weight:600;&quot;&gt;Unmount...&lt;/span&gt; action in the &lt;span style=&quot; font-weight:600;&quot;&gt;Devices&lt;/span&gt; menu&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="obsolete">&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Tryck på knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Färdigställ&lt;/span&gt; om ovanstående är korrekt. När du trycker på den kommer det valda mediat att temporärt monteras på den virtuella maskinen och maskinen kommer att starta körningen.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Observera att när du stänger den virtuella maskinen kommer den angivna mediat att automatiskt avmonteras och uppstartsenheten kommer att återställas till den första hårddisken.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Beroende på typen av konfigurationsprogram så kan du behöva manuellt att avmontera (mata ut) mediat efter att konfigurationsprogrammet har startat om den virtuella maskinen för att förhindra att installationsprocessen startar upp igen. Du kan göra detta genom att välja motsvarande &lt;span style=&quot; font-weight:600;&quot;&gt;Avmontera...&lt;/span&gt;-åtgärd i menyn &lt;span style=&quot; font-weight:600;&quot;&gt;Enheter&lt;/span&gt; &lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Finish</source>
+        <translation type="obsolete">&amp;Färdigställ</translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Typ</translation>
+    </message>
+    <message>
+        <source>Source</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Källa</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Avbryt</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Om ovanstående är korrekt så kan du trycka på knappen &lt;b&gt;Färdigställ&lt;/b&gt;. När du har tryckt på den så kommer valt media att temporärt monteras på den virtuella maskinen och maskinen kommer att starta körningen.&lt;/p&gt;&lt;p&gt;Observera att när du stänger den virtuella maskinen så kommer valt media att automatiskt avmonteras och uppstartsenheten kommer att ställas tillbaka till den första hårddisken.&lt;/p&gt;&lt;p&gt;Beroende på typ av konfigurationsprogram så kan du behöva att manuellt avmontera (mata ut) detta media efter att konfigurationsprogrammet startar om den virtuella maskinen för att förhindra att installationsprocessen startar en gång till. Du kan göra detta genom att välja den motsvarande &lt;b&gt;Avmontera...&lt;/b&gt;-åtgärden i menyn &lt;b&gt;Enheter&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzdPage1</name>
+    <message>
+        <source>Welcome to the First Run Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzdPage2</name>
+    <message>
+        <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Media Source</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select Installation Media</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzdPage3</name>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Source</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIImportApplianceWzd</name>
+    <message>
+        <source>Select an appliance to import</source>
+        <translation type="obsolete">Välj en appliance att importera</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="obsolete">Open Virtualization Format (%1)</translation>
+    </message>
+    <message>
+        <source>Appliance Import Wizard</source>
+        <translation>Importguide för appliance</translation>
+    </message>
+    <message>
+        <source>Welcome to the Appliance Import Wizard!</source>
+        <translation type="obsolete">Välkommen till importguiden för appliance!</translation>
+    </message>
+    <message>
+        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="obsolete">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Denna guide kommer att hjälpa dig att importera en appliance. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Använd knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Nästa&lt;/span&gt; för att gå till nästa sida i guiden och knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Bakåt&lt;/span&gt; för att återgå till föregående sida.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Du måste välja en fil som beskriver din appliance först för att kunna importera en appliance. För närvarande har VirtualBox stöd för Open Virtualization Format (OVF). Välj filen att importera nedan för att fortsätta:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; &amp;Bakåt</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">&amp;Nästa &gt;</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Avbryt</translation>
+    </message>
+    <message>
+        <source>Appliance Import Settings</source>
+        <translation type="obsolete">Importinställningar för appliance</translation>
+    </message>
+    <message>
+        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
+        <translation type="obsolete">Dessa är de virtuella maskinerna som beskrivs i din appliance med deras föreslagna mappningar för import till VirtualBox. Du kan ändra många av de egenskaper som visas genom att dubbelklicka på dem och inaktivera andra genom att använda kryssrutorna nedan.</translation>
+    </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>Återställ till standardvärden</translation>
+    </message>
+    <message>
+        <source>&amp;Import &gt;</source>
+        <translation type="obsolete">&amp;Importera &gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIImportApplianceWzdPage1</name>
+    <message>
+        <source>Select an appliance to import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Welcome to the Appliance Import Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through importing an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIImportApplianceWzdPage2</name>
+    <message>
+        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Import Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIImportLicenseViewer</name>
+    <message>
+        <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
+        <translation>&lt;b&gt;Det virtuella systemet &quot;%1&quot; kräver att du godkänner villkoren för programvarans licens som visas nedan.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Klicka på &lt;b&gt;Godkänn&lt;/b&gt; för att fortsätta eller klicka på &lt;b&gt;Godkänn inte&lt;/b&gt; för att avbryta importen.</translation>
+    </message>
+    <message>
+        <source>Software License Agreement</source>
+        <translation>Licensavtal för programvara</translation>
+    </message>
+    <message>
+        <source>&amp;Disagree</source>
+        <translation>Godkänn &amp;inte</translation>
+    </message>
+    <message>
+        <source>&amp;Agree</source>
+        <translation>&amp;Godkänn</translation>
+    </message>
+    <message>
+        <source>&amp;Print...</source>
+        <translation>Skriv &amp;ut...</translation>
+    </message>
+    <message>
+        <source>&amp;Save...</source>
+        <translation>&amp;Spara...</translation>
+    </message>
+    <message>
+        <source>Text (*.txt)</source>
+        <translation>Text (*.txt)</translation>
+    </message>
+    <message>
+        <source>Save license to file...</source>
+        <translation>Spara licens till fil...</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineLogic</name>
+    <message>
+        <source>VirtualBox OSE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> EXPERIMENTAL build %1r%2 - %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProcessWidgetAdditions</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProcessWidgetUserManual</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox User Manual download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox User Manual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMultiScreenLayout</name>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzd</name>
+    <message>
+        <source>Create New Virtual Disk</source>
+        <translation>Skapa ny virtuell disk</translation>
+    </message>
+    <message>
+        <source>Welcome to the Create New Virtual Disk Wizard!</source>
+        <translation type="obsolete">Välkommen till guiden för att skapa ny virtuell disk!</translation>
+    </message>
+    <message>
+        <source>Image Type</source>
+        <translation type="obsolete">Avbildningstyp</translation>
+    </message>
+    <message>
+        <source>&amp;Dynamically expanding image</source>
+        <translation type="obsolete">&amp;Dynamiskt växande avbildning</translation>
+    </message>
+    <message>
+        <source>&amp;Fixed-size image</source>
+        <translation type="obsolete">A&amp;vbildning med fast storlek</translation>
+    </message>
+    <message>
+        <source>Virtual Disk Image Type</source>
+        <translation type="obsolete">Typ av virtuell diskavbildning</translation>
+    </message>
+    <message>
+        <source>&amp;Image File Name</source>
+        <translation type="obsolete">Filnamn för &amp;avbildning</translation>
+    </message>
+    <message>
+        <source>Image &amp;Size</source>
+        <translation type="obsolete">Avbildnings&amp;storlek</translation>
+    </message>
+    <message>
+        <source>Virtual Disk Location and Size</source>
+        <translation type="obsolete">Plats och storlek för virtuell disk</translation>
+    </message>
+    <message>
+        <source>You are going to create a new virtual hard disk image with the following parameters:</source>
+        <translation type="obsolete">Du kommer att skapa en ny virtuell hårddiskavbildning med följande parametrar:</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Sammandrag</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
+        <translation type="obsolete">&lt;nobr&gt;%1 byte&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Hard disk images (*.vdi)</source>
+        <translation type="obsolete">Hårddiskavbildningar (*.vdi)</translation>
+    </message>
+    <message>
+        <source>Select a file for the new hard disk image file</source>
+        <translation type="obsolete">Välj en fil för den nya hårddiskavbildningsfilen</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Denna guide hjälper dig att skapa en ny virtuella hårddiskavbildning för din virtuella maskin.&lt;/p&gt;&lt;p&gt;Använd knappen &lt;b&gt;Nästa&lt;/b&gt; för att gå till nästa sida i guiden och &lt;b&gt;Bakåt&lt;/b&gt; för att återgå till föregående sida.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; &amp;Bakåt</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">&amp;Nästa &gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Välj den typ av virtuell hårddiskavbildning som du vill skapa.&lt;/p&gt;&lt;p&gt;En &lt;b&gt;dynamiskt växande avbildning&lt;/b&gt; tar initialt upp en mycket liten mängd uttrymme på din fysiska hårddisk. Den kommer att växa dynamiskt (upp till angiven storlek) när gästoperativsystemet behöver diskutrymmet.&lt;/p&gt;&lt;p&gt;En &lt;b&gt;avbildning med fast storlek&lt;/b&gt; växer inte. Den lagras i en fil med ungefär samma storlek som storleken för den virtuella hårddisken. Skapandet av en avbildning med fast storlek kan ta mycket lång tid beroende på avbildningens storlek och skrivprestandan för din hårddisk.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Tryck på knappen &lt;b&gt;Välj&lt;/b&gt; för att välja en plats och namn för filen att lagra den virtuella hårddiskavbildningen som eller ange ett filnamn i inmatningsfältet.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS as the size of the virtual hard disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Välj storlek för den virtuella hårddiskavbildningen i megabyte. Denna storlek kommer att rapporteras till gästoperativsystemet som storleken för den virtuella hårddisken.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk image will be created.</source>
+        <translation type="obsolete">Tryck på knappen &lt;b&gt;Färdigställ&lt;/b&gt; om ovanstående inställningar är korrekta. När du trycker på den kommer en ny hårddiskavbildning att skapas.</translation>
+    </message>
+    <message>
+        <source>&amp;Finish</source>
+        <translation type="obsolete">&amp;Färdigställ</translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Typ</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Plats</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Storlek</translation>
+    </message>
+    <message>
+        <source>Bytes</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Byte</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Avbryt</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Denna guide hjälper dig att skapa en ny virtuell hårddisk för din virtuella maskin.&lt;/p&gt;&lt;p&gt;Använd knappen &lt;b&gt;Nästa&lt;/b&gt; för att gå till nästa sida i guiden och knappen &lt;b&gt;Bakåt&lt;/b&gt; för att gå tillbaka till föregående sida.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Hard Disk Storage Type</source>
+        <translation type="obsolete">Lagringstyp för hårddisk</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Välj den typ av virtuell hårddisk som du vill skapa.&lt;/p&gt;&lt;p&gt;En &lt;b&gt;dynamiskt växande lagring&lt;/b&gt; tar initialt upp en mycket liten mängd utrymme på din fysiska hårddisk. Den kommer att växa dynamiskt (upp till angiven storlek) allt eftersom gästoperativsystemet använder det lediga diskutrymmet.&lt;/p&gt;&lt;p&gt;En &lt;b&gt;lagring med fast storlek&lt;/b&gt; växer inte. Den lagras i en fil av ungefär samma storlek som den virtuella hårddisken. Skapandet av en lagringsplats med fast storlek kan ta lång tid beroende på lagringsstorleken och skrivprestandan för din hårddisk.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Storage Type</source>
+        <translation type="obsolete">Lagringstyp</translation>
+    </message>
+    <message>
+        <source>&amp;Dynamically expanding storage</source>
+        <translation type="obsolete">&amp;Dynamiskt växande lagring</translation>
+    </message>
+    <message>
+        <source>&amp;Fixed-size storage</source>
+        <translation type="obsolete">Lagring med &amp;fast storlek</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Tryck på knappen &lt;b&gt;Välj&lt;/b&gt; för att välja platsen för en fil att lagra hårddiskens data eller ange ett filnamn i inmatningsfältet.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Location</source>
+        <translation type="obsolete">&amp;Plats</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Välj storleken för den virtuella hårddisken i megabyte. Denna storlek kommer att rapporteras till gästoperativsystemet som den maximala storleken för denna hårddisk.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Size</source>
+        <translation type="obsolete">&amp;Storlek</translation>
+    </message>
+    <message>
+        <source>You are going to create a new virtual hard disk with the following parameters:</source>
+        <translation type="obsolete">Du är på väg att skapa en ny virtuell hårddisk med följande parametrar:</translation>
+    </message>
+    <message>
+        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
+        <translation type="obsolete">Tryck på knappen &lt;b&gt;Färdigställ&lt;/b&gt; om ovanstående inställningar är korrekt. Den nya hårddisken kommer att skapas när du har tryckt på denna knapp.</translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage1</name>
+    <message>
+        <source>Welcome to the Create New Virtual Disk Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage2</name>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Dynamically expanding storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Fixed-size storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk Storage Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage3</name>
+    <message>
+        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Location</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Disk Location and Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a file for the new hard disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard disk images (*.vdi)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage4</name>
+    <message>
+        <source>You are going to create a new virtual hard disk with the following parameters:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 B</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If the above settings are correct, press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzd</name>
+    <message>
+        <source>Create New Virtual Machine</source>
+        <translation>Skapa ny virtuell maskin</translation>
+    </message>
+    <message>
+        <source>Welcome to the New Virtual Machine Wizard!</source>
+        <translation type="obsolete">Välkommen till guiden för ny virtuell maskin!</translation>
+    </message>
+    <message>
+        <source>N&amp;ame</source>
+        <translation type="obsolete">N&amp;amn</translation>
+    </message>
+    <message>
+        <source>OS &amp;Type</source>
+        <translation type="obsolete">Operativsys&amp;tem</translation>
+    </message>
+    <message>
+        <source>VM Name and OS Type</source>
+        <translation type="obsolete">Namn och operativsystem</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Välj den mängd basminne (RAM) i megabyte som ska allokeras till den virtuella maskinen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory Size</source>
+        <translation type="obsolete">Bas&amp;minnesstorlek</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Memory</source>
+        <translation type="obsolete">Minne</translation>
+    </message>
+    <message>
+        <source>B&amp;oot Hard Disk (Primary Master)</source>
+        <translation type="obsolete">Upps&amp;tartshårddisk (primär master)</translation>
+    </message>
+    <message>
+        <source>N&amp;ew...</source>
+        <translation type="obsolete">N&amp;y...</translation>
+    </message>
+    <message>
+        <source>E&amp;xisting...</source>
+        <translation type="obsolete">B&amp;efintlig...</translation>
+    </message>
+    <message>
+        <source>Virtual Hard Disk</source>
+        <translation type="obsolete">Virtuell hårddisk</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Sammandrag</translation>
+    </message>
+    <message>
+        <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="obsolete">Den rekommenderade storleken på basminnet är &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="obsolete">Den rekommenderade storleken på uppstartshårddisken är &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Denna guide kommer att hjälpa dig genom de steg som är nödvändiga för att skapa en ny virtuell maskin för VirtualBox.&lt;/p&gt;&lt;p&gt;Använd knappen &lt;b&gt;Nästa&lt;/b&gt; för att gå till nästa sida i guiden och knappen &lt;b&gt;Bakåt&lt;/b&gt; för att återgå till föregående sida.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; &amp;Bakåt</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">&amp;Nästa &gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Ange ett namn för den nya virtuella maskinen och välj vilken typ av gästoperativsystem som du planerar att installera på den virtuella maskinen.&lt;/p&gt;&lt;p&gt;Namnet på den virtuella maskinen brukar ofta indikera dess programvara och maskinvarukonfiguration. Det kommer att användas av alla VirtualBox-komponenter för att identifiera din virtuella maskin.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Välj en hårddiskavbildning som ska användas som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk med knappen &lt;b&gt;Ny&lt;/b&gt; eller välja en befintlig hårddiskavbildning från rullgardinslistan eller trycka på knappen &lt;b&gt;Befintlig&lt;/b&gt;  (för att anropa Virtuella diskhanteraren).&lt;/p&gt;&lt;p&gt;Om du behöver en mer avancerat hårddiskkonfiguration kan du även hoppa över detta steg och ansluta hårddiskar senare via inställningsdialogrutan.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Du är på väg att skapa en ny virtuell maskin med följande parametrar:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Tryck på knappen &lt;b&gt;Färdigställ&lt;/b&gt; om ovanstående är korrekt. När du har tryckt på den kommer en ny virtuell maskin att skapas. &lt;/p&gt;&lt;p&gt;Observera att du kan ändra dessa och alla andra inställningar för den skapade virtuella maskinen när som helst via dialogrutan &lt;b&gt;Inställningar&lt;/b&gt; som kan nås via menyn i huvudfönstret.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Finish</source>
+        <translation type="obsolete">&amp;Färdigställ</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>megabytes</comment>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Namn</translation>
+    </message>
+    <message>
+        <source>OS Type</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Operativsystem</translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Basminne</translation>
+    </message>
+    <message>
+        <source>Boot Hard Disk</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Uppstartshårddisk</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Avbryt</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Välj en hårddiskavbildning att använda som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk med knappen &lt;b&gt;Ny&lt;/b&gt; eller välja en befintlig hårddiskavbildning från rullgardinslistan eller genom att trycka på knappen &lt;b&gt;Befintlig&lt;/b&gt; (för att anropa Hantera för virtuella media).&lt;/p&gt;&lt;p&gt;Om du behöver en mer komplicerad hårddiskkonfiguration kan du även hoppa över detta steg och ansluta hårddiskar senare via inställningarna för virtuella maskinen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <translation type="obsolete">Uppstartshård&amp;disk (Primär master)</translation>
+    </message>
+    <message>
+        <source>&amp;Create new hard disk</source>
+        <translation type="obsolete">&amp;Skapa ny hårddisk</translation>
+    </message>
+    <message>
+        <source>&amp;Use existing hard disk</source>
+        <translation type="obsolete">&amp;Använd befintlig hårddisk</translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage1</name>
+    <message>
+        <source>Welcome to the New Virtual Machine Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage2</name>
+    <message>
+        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>N&amp;ame</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OS &amp;Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VM Name and OS Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage3</name>
+    <message>
+        <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage4</name>
+    <message>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create new hard disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Use existing hard disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Hard Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage5</name>
+    <message>
+        <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OS Type</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boot Hard Disk</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>VBoxAboutDlg</name>
     <message>
         <source>VirtualBox - About</source>
@@ -460,29 +1716,6 @@ Version %1</translation>
     <message>
         <source>Cancel</source>
         <translation type="obsolete">Avbryt</translation>
-    </message>
-</context>
-<context>
-    <name>UIDownloaderAdditions</name>
-    <message>
-        <source>Cancel</source>
-        <translation>Avbryt</translation>
-    </message>
-    <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>Hämtar ner cd-avbildning för VirtualBox Gästtillägg från &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>Avbryt hämtning av cd-avbildning för VirtualBox Gästtillägg</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Misslyckades med att spara den hämtade filen som &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Select folder to save Guest Additions image to</source>
-        <translation>Välj en mapp att spara avbildning för Gästtillägg till</translation>
     </message>
 </context>
 <context>
@@ -577,7 +1810,7 @@ Version %1</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
@@ -590,6 +1823,16 @@ Version %1</translation>
     <message>
         <source>Warnings:</source>
         <translation>Varningar:</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -960,7 +2203,7 @@ Version %1</translation>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: kabel %3&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: kabel %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>connected</source>
@@ -1047,7 +2290,7 @@ Version %1</translation>
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation>Sun VirtualBox</translation>
+        <translation type="obsolete">Sun VirtualBox</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</source>
@@ -1155,6 +2398,51 @@ Version %1</translation>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indikerar aktiviteten för maskinens delade mappar:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Dock Icon</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Application Icon</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Monitor Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
+        <comment>Network adapters tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ACPI Sh&amp;utdown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preview Monitor %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No CD/DVD devices attached to that VM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No floppy devices attached to that VM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No USB Devices Connected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No supported devices connected to the host PC</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1352,184 +2640,10 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>UIDownloader</name>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">Avbryt</translation>
-    </message>
-    <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="obsolete">Hämtar ner cd-avbildning för VirtualBox Gästtillägg från &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="obsolete">Avbryt hämtning av cd-avbildning för VirtualBox Gästtillägg</translation>
-    </message>
-    <message>
-        <source>Could not locate the file on the server (response: %1).</source>
-        <translation type="obsolete">Kunde inte hitta filen på servern (svar: %1).</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Misslyckades med att spara den hämtade filen som &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Select folder to save Guest Additions image to</source>
-        <translation type="obsolete">Välj en mapp att spara avbildning för Gästtillägg till</translation>
-    </message>
-    <message>
-        <source>Connection timed out.</source>
-        <translation type="obsolete">Tidsgräns för anslutningen överstegs.</translation>
-    </message>
-    <message>
-        <source>The download process has been cancelled by the user.</source>
-        <translation>Hämtningsprocessen avbröts av användare.</translation>
-    </message>
-</context>
-<context>
     <name>VBoxEmptyFileSelector</name>
     <message>
         <source>&amp;Choose...</source>
         <translation>&amp;Välj...</translation>
-    </message>
-</context>
-<context>
-    <name>UIExportApplianceWzd</name>
-    <message>
-        <source>Select a file to export into</source>
-        <translation>Välj en fil att exportera till</translation>
-    </message>
-    <message>
-        <source>Open Virtualization Format (%1)</source>
-        <translation>Open Virtualization Format (%1)</translation>
-    </message>
-    <message>
-        <source>Appliance</source>
-        <translation>Appliance</translation>
-    </message>
-    <message>
-        <source>Exporting Appliance ...</source>
-        <translation>Exporterar appliance ...</translation>
-    </message>
-    <message>
-        <source>Appliance Export Wizard</source>
-        <translation>Exportguide för appliance</translation>
-    </message>
-    <message>
-        <source>Welcome to the Appliance Export Wizard!</source>
-        <translation>Välkommen till exportguiden för appliance!</translation>
-    </message>
-    <message>
-        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Denna guide kommer att hjälpa dig genom processen att exportera till en appliance. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Använd knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Nästa&lt;/span&gt; för att gå till nästa sida i guiden och knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Bakåt&lt;/span&gt; för att återgå till föregående sida.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Välj de virtuella maskiner som ska exporteras till din appliance. Du kan välja fler än en. Observera att dessa maskiner måste vara avstängda innan de kan exporteras.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Bakåt</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>&amp;Nästa &gt;</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Avbryt</translation>
-    </message>
-    <message>
-        <source>Appliance Export Settings</source>
-        <translation>Exportinställningar för appliance</translation>
-    </message>
-    <message>
-        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation>Här kan du ändra ytterligare konfigurationsvärden för de valda virtuella maskinerna. Du kan ändra de flesta av de visade egenskaperna genom att dubbelklicka på dem.</translation>
-    </message>
-    <message>
-        <source>Restore Defaults</source>
-        <translation>Återställ till standardvärden</translation>
-    </message>
-    <message>
-        <source>Please specify a filename into which the appliance information will be written. Currently VirtualBox supports the Open Virtualization Format (OVF).</source>
-        <translation type="obsolete">Ange ett filnamn till vilket appliance-informationen ska skrivas. För närvarande har VirtualBox stöd för Open Virtualization Format (OVF).</translation>
-    </message>
-    <message>
-        <source>&amp;Export &gt;</source>
-        <translation>&amp;Exportera &gt;</translation>
-    </message>
-    <message>
-        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation>Skriv i gamla formatet OVF 0.9 för kompatibilitet med andra virtualiseringsprodukter.</translation>
-    </message>
-    <message>
-        <source>&amp;Write legacy OVF 0.9</source>
-        <translation>&amp;Skriv i gamla OVF 0.9</translation>
-    </message>
-    <message>
-        <source>Please choose a filename to export the OVF to.</source>
-        <translation>Välj ett filnamn att exportera OVF-filen till.</translation>
-    </message>
-    <message>
-        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation>Färdigställ ytterligare fält såsom användarnamn, lösenord och bucket. Till sist behöver du ange ett filnamn för OVF-målet.</translation>
-    </message>
-    <message>
-        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation>Färdigställ ytterligare fält såsom användarnamn, lösenord, värdnamn och bucket. Till sist behöver du ange ett filnamn för OVF-målet.</translation>
-    </message>
-    <message>
-        <source>Checking files ...</source>
-        <translation>Kontrollerar filer ...</translation>
-    </message>
-    <message>
-        <source>Removing files ...</source>
-        <translation>Tar bort filer ...</translation>
-    </message>
-    <message>
-        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation>Ange målet för OVF-exporteringen. Du kan välja mellan en export till lokalt filsystem, skicka upp OVF-filen till Sun Cloud-tjänsten eller en S3-lagringsserver.</translation>
-    </message>
-    <message>
-        <source>&amp;Local Filesystem </source>
-        <translation>&amp;Lokalt filsystem </translation>
-    </message>
-    <message>
-        <source>Sun &amp;Cloud</source>
-        <translation>Sun &amp;Cloud</translation>
-    </message>
-    <message>
-        <source>&amp;Simple Storage System (S3)</source>
-        <translation>&amp;Simple Storage System (S3)</translation>
-    </message>
-    <message>
-        <source>&amp;Username:</source>
-        <translation>&amp;Användarnamn:</translation>
-    </message>
-    <message>
-        <source>&amp;Password:</source>
-        <translation>&amp;Lösenord:</translation>
-    </message>
-    <message>
-        <source>&amp;File:</source>
-        <translation>&amp;Fil:</translation>
-    </message>
-    <message>
-        <source>&amp;Bucket:</source>
-        <translation>&amp;Bucket:</translation>
-    </message>
-    <message>
-        <source>&amp;Hostname:</source>
-        <translation>&amp;Värdnamn:</translation>
     </message>
 </context>
 <context>
@@ -1658,11 +2772,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
-        <translation>När kryssad så kommer dockningsikonen att återspegla fönsterinnehållet för virtuella maskinen i realtid.</translation>
+        <translation type="obsolete">När kryssad så kommer dockningsikonen att återspegla fönsterinnehållet för virtuella maskinen i realtid.</translation>
     </message>
     <message>
         <source>&amp;Dock Icon Realtime Preview</source>
-        <translation>Realtidsvisning för &amp;dockningsikon</translation>
+        <translation type="obsolete">Realtidsvisning för &amp;dockningsikon</translation>
     </message>
     <message>
         <source>&amp;Auto show Dock and Menubar in fullscreen</source>
@@ -1686,6 +2800,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Auto Capture Keyboard</source>
         <translation>Fånga tangentbord &amp;automatiskt</translation>
+    </message>
+    <message>
+        <source>Reset Host Key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resets the key used as a Host Key in the VM window.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3245,6 +4367,80 @@ p, li { white-space: pre-wrap; }
         <source>(CD/DVD)</source>
         <translation>(CD/DVD)</translation>
     </message>
+    <message>
+        <source>Screens</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VDE network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VDE Adapter</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>LsiLogic SAS</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</source>
+        <comment>regexp for matching ####[.##] B|KB|MB|GB|TB|PB, %1=decimal point</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>B</source>
+        <comment>size suffix Bytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>KB</source>
+        <comment>size suffix KBytes=1024 Bytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>GB</source>
+        <comment>size suffix GBytes=1024 MBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TB</source>
+        <comment>size suffix TBytes=1024 GBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PB</source>
+        <comment>size suffix PBytes=1024 TBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>nested paging</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>nested paging</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -3277,104 +4473,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Reading Appliance ...</source>
         <translation>Läser appliance ...</translation>
-    </message>
-</context>
-<context>
-    <name>UIImportApplianceWzd</name>
-    <message>
-        <source>Select an appliance to import</source>
-        <translation>Välj en appliance att importera</translation>
-    </message>
-    <message>
-        <source>Open Virtualization Format (%1)</source>
-        <translation>Open Virtualization Format (%1)</translation>
-    </message>
-    <message>
-        <source>Appliance Import Wizard</source>
-        <translation>Importguide för appliance</translation>
-    </message>
-    <message>
-        <source>Welcome to the Appliance Import Wizard!</source>
-        <translation>Välkommen till importguiden för appliance!</translation>
-    </message>
-    <message>
-        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Denna guide kommer att hjälpa dig att importera en appliance. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Använd knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Nästa&lt;/span&gt; för att gå till nästa sida i guiden och knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Bakåt&lt;/span&gt; för att återgå till föregående sida.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Du måste välja en fil som beskriver din appliance först för att kunna importera en appliance. För närvarande har VirtualBox stöd för Open Virtualization Format (OVF). Välj filen att importera nedan för att fortsätta:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Bakåt</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>&amp;Nästa &gt;</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Avbryt</translation>
-    </message>
-    <message>
-        <source>Appliance Import Settings</source>
-        <translation>Importinställningar för appliance</translation>
-    </message>
-    <message>
-        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation>Dessa är de virtuella maskinerna som beskrivs i din appliance med deras föreslagna mappningar för import till VirtualBox. Du kan ändra många av de egenskaper som visas genom att dubbelklicka på dem och inaktivera andra genom att använda kryssrutorna nedan.</translation>
-    </message>
-    <message>
-        <source>Restore Defaults</source>
-        <translation>Återställ till standardvärden</translation>
-    </message>
-    <message>
-        <source>&amp;Import &gt;</source>
-        <translation>&amp;Importera &gt;</translation>
-    </message>
-</context>
-<context>
-    <name>UIImportLicenseViewer</name>
-    <message>
-        <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
-        <translation>&lt;b&gt;Det virtuella systemet &quot;%1&quot; kräver att du godkänner villkoren för programvarans licens som visas nedan.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Klicka på &lt;b&gt;Godkänn&lt;/b&gt; för att fortsätta eller klicka på &lt;b&gt;Godkänn inte&lt;/b&gt; för att avbryta importen.</translation>
-    </message>
-    <message>
-        <source>Software License Agreement</source>
-        <translation>Licensavtal för programvara</translation>
-    </message>
-    <message>
-        <source>&amp;Disagree</source>
-        <translation>Godkänn &amp;inte</translation>
-    </message>
-    <message>
-        <source>&amp;Agree</source>
-        <translation>&amp;Godkänn</translation>
-    </message>
-    <message>
-        <source>&amp;Print...</source>
-        <translation>Skriv &amp;ut...</translation>
-    </message>
-    <message>
-        <source>&amp;Save...</source>
-        <translation>&amp;Spara...</translation>
-    </message>
-    <message>
-        <source>Text (*.txt)</source>
-        <translation>Text (*.txt)</translation>
-    </message>
-    <message>
-        <source>Save license to file...</source>
-        <translation>Spara licens till fil...</translation>
     </message>
 </context>
 <context>
@@ -3667,313 +4765,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Network Adapters</source>
         <translation>Nätverkskort</translation>
-    </message>
-</context>
-<context>
-    <name>UINewHDWzd</name>
-    <message>
-        <source>Create New Virtual Disk</source>
-        <translation>Skapa ny virtuell disk</translation>
-    </message>
-    <message>
-        <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation>Välkommen till guiden för att skapa ny virtuell disk!</translation>
-    </message>
-    <message>
-        <source>Image Type</source>
-        <translation type="obsolete">Avbildningstyp</translation>
-    </message>
-    <message>
-        <source>&amp;Dynamically expanding image</source>
-        <translation type="obsolete">&amp;Dynamiskt växande avbildning</translation>
-    </message>
-    <message>
-        <source>&amp;Fixed-size image</source>
-        <translation type="obsolete">A&amp;vbildning med fast storlek</translation>
-    </message>
-    <message>
-        <source>Virtual Disk Image Type</source>
-        <translation type="obsolete">Typ av virtuell diskavbildning</translation>
-    </message>
-    <message>
-        <source>&amp;Image File Name</source>
-        <translation type="obsolete">Filnamn för &amp;avbildning</translation>
-    </message>
-    <message>
-        <source>Image &amp;Size</source>
-        <translation type="obsolete">Avbildnings&amp;storlek</translation>
-    </message>
-    <message>
-        <source>Virtual Disk Location and Size</source>
-        <translation>Plats och storlek för virtuell disk</translation>
-    </message>
-    <message>
-        <source>You are going to create a new virtual hard disk image with the following parameters:</source>
-        <translation type="obsolete">Du kommer att skapa en ny virtuell hårddiskavbildning med följande parametrar:</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Sammandrag</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;%1 byte&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Hard disk images (*.vdi)</source>
-        <translation>Hårddiskavbildningar (*.vdi)</translation>
-    </message>
-    <message>
-        <source>Select a file for the new hard disk image file</source>
-        <translation>Välj en fil för den nya hårddiskavbildningsfilen</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Denna guide hjälper dig att skapa en ny virtuella hårddiskavbildning för din virtuella maskin.&lt;/p&gt;&lt;p&gt;Använd knappen &lt;b&gt;Nästa&lt;/b&gt; för att gå till nästa sida i guiden och &lt;b&gt;Bakåt&lt;/b&gt; för att återgå till föregående sida.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Bakåt</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>&amp;Nästa &gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Välj den typ av virtuell hårddiskavbildning som du vill skapa.&lt;/p&gt;&lt;p&gt;En &lt;b&gt;dynamiskt växande avbildning&lt;/b&gt; tar initialt upp en mycket liten mängd uttrymme på din fysiska hårddisk. Den kommer att växa dynamiskt (upp till angiven storlek) när gästoperativsystemet behöver diskutrymmet.&lt;/p&gt;&lt;p&gt;En &lt;b&gt;avbildning med fast storlek&lt;/b&gt; växer inte. Den lagras i en fil med ungefär samma storlek som storleken för den virtuella hårddisken. Skapandet av en avbildning med fast storlek kan ta mycket lång tid beroende på avbildningens storlek och skrivprestandan för din hårddisk.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Tryck på knappen &lt;b&gt;Välj&lt;/b&gt; för att välja en plats och namn för filen att lagra den virtuella hårddiskavbildningen som eller ange ett filnamn i inmatningsfältet.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Välj storlek för den virtuella hårddiskavbildningen i megabyte. Denna storlek kommer att rapporteras till gästoperativsystemet som storleken för den virtuella hårddisken.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk image will be created.</source>
-        <translation type="obsolete">Tryck på knappen &lt;b&gt;Färdigställ&lt;/b&gt; om ovanstående inställningar är korrekta. När du trycker på den kommer en ny hårddiskavbildning att skapas.</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation>&amp;Färdigställ</translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <comment>summary</comment>
-        <translation>Typ</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <comment>summary</comment>
-        <translation>Plats</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <comment>summary</comment>
-        <translation>Storlek</translation>
-    </message>
-    <message>
-        <source>Bytes</source>
-        <comment>summary</comment>
-        <translation>Byte</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Avbryt</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Denna guide hjälper dig att skapa en ny virtuell hårddisk för din virtuella maskin.&lt;/p&gt;&lt;p&gt;Använd knappen &lt;b&gt;Nästa&lt;/b&gt; för att gå till nästa sida i guiden och knappen &lt;b&gt;Bakåt&lt;/b&gt; för att gå tillbaka till föregående sida.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Hard Disk Storage Type</source>
-        <translation>Lagringstyp för hårddisk</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Välj den typ av virtuell hårddisk som du vill skapa.&lt;/p&gt;&lt;p&gt;En &lt;b&gt;dynamiskt växande lagring&lt;/b&gt; tar initialt upp en mycket liten mängd utrymme på din fysiska hårddisk. Den kommer att växa dynamiskt (upp till angiven storlek) allt eftersom gästoperativsystemet använder det lediga diskutrymmet.&lt;/p&gt;&lt;p&gt;En &lt;b&gt;lagring med fast storlek&lt;/b&gt; växer inte. Den lagras i en fil av ungefär samma storlek som den virtuella hårddisken. Skapandet av en lagringsplats med fast storlek kan ta lång tid beroende på lagringsstorleken och skrivprestandan för din hårddisk.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Storage Type</source>
-        <translation>Lagringstyp</translation>
-    </message>
-    <message>
-        <source>&amp;Dynamically expanding storage</source>
-        <translation>&amp;Dynamiskt växande lagring</translation>
-    </message>
-    <message>
-        <source>&amp;Fixed-size storage</source>
-        <translation>Lagring med &amp;fast storlek</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tryck på knappen &lt;b&gt;Välj&lt;/b&gt; för att välja platsen för en fil att lagra hårddiskens data eller ange ett filnamn i inmatningsfältet.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Location</source>
-        <translation>&amp;Plats</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Välj storleken för den virtuella hårddisken i megabyte. Denna storlek kommer att rapporteras till gästoperativsystemet som den maximala storleken för denna hårddisk.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Size</source>
-        <translation>&amp;Storlek</translation>
-    </message>
-    <message>
-        <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation>Du är på väg att skapa en ny virtuell hårddisk med följande parametrar:</translation>
-    </message>
-    <message>
-        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
-        <translation>Tryck på knappen &lt;b&gt;Färdigställ&lt;/b&gt; om ovanstående inställningar är korrekt. Den nya hårddisken kommer att skapas när du har tryckt på denna knapp.</translation>
-    </message>
-</context>
-<context>
-    <name>UINewVMWzd</name>
-    <message>
-        <source>Create New Virtual Machine</source>
-        <translation>Skapa ny virtuell maskin</translation>
-    </message>
-    <message>
-        <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation>Välkommen till guiden för ny virtuell maskin!</translation>
-    </message>
-    <message>
-        <source>N&amp;ame</source>
-        <translation>N&amp;amn</translation>
-    </message>
-    <message>
-        <source>OS &amp;Type</source>
-        <translation>Operativsys&amp;tem</translation>
-    </message>
-    <message>
-        <source>VM Name and OS Type</source>
-        <translation>Namn och operativsystem</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Välj den mängd basminne (RAM) i megabyte som ska allokeras till den virtuella maskinen.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Base &amp;Memory Size</source>
-        <translation>Bas&amp;minnesstorlek</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation>MB</translation>
-    </message>
-    <message>
-        <source>Memory</source>
-        <translation>Minne</translation>
-    </message>
-    <message>
-        <source>B&amp;oot Hard Disk (Primary Master)</source>
-        <translation type="obsolete">Upps&amp;tartshårddisk (primär master)</translation>
-    </message>
-    <message>
-        <source>N&amp;ew...</source>
-        <translation type="obsolete">N&amp;y...</translation>
-    </message>
-    <message>
-        <source>E&amp;xisting...</source>
-        <translation type="obsolete">B&amp;efintlig...</translation>
-    </message>
-    <message>
-        <source>Virtual Hard Disk</source>
-        <translation>Virtuell hårddisk</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Sammandrag</translation>
-    </message>
-    <message>
-        <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>Den rekommenderade storleken på basminnet är &lt;b&gt;%1&lt;/b&gt; MB.</translation>
-    </message>
-    <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>Den rekommenderade storleken på uppstartshårddisken är &lt;b&gt;%1&lt;/b&gt; MB.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Denna guide kommer att hjälpa dig genom de steg som är nödvändiga för att skapa en ny virtuell maskin för VirtualBox.&lt;/p&gt;&lt;p&gt;Använd knappen &lt;b&gt;Nästa&lt;/b&gt; för att gå till nästa sida i guiden och knappen &lt;b&gt;Bakåt&lt;/b&gt; för att återgå till föregående sida.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Bakåt</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>&amp;Nästa &gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ange ett namn för den nya virtuella maskinen och välj vilken typ av gästoperativsystem som du planerar att installera på den virtuella maskinen.&lt;/p&gt;&lt;p&gt;Namnet på den virtuella maskinen brukar ofta indikera dess programvara och maskinvarukonfiguration. Det kommer att användas av alla VirtualBox-komponenter för att identifiera din virtuella maskin.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Välj en hårddiskavbildning som ska användas som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk med knappen &lt;b&gt;Ny&lt;/b&gt; eller välja en befintlig hårddiskavbildning från rullgardinslistan eller trycka på knappen &lt;b&gt;Befintlig&lt;/b&gt;  (för att anropa Virtuella diskhanteraren).&lt;/p&gt;&lt;p&gt;Om du behöver en mer avancerat hårddiskkonfiguration kan du även hoppa över detta steg och ansluta hårddiskar senare via inställningsdialogrutan.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Du är på väg att skapa en ny virtuell maskin med följande parametrar:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tryck på knappen &lt;b&gt;Färdigställ&lt;/b&gt; om ovanstående är korrekt. När du har tryckt på den kommer en ny virtuell maskin att skapas. &lt;/p&gt;&lt;p&gt;Observera att du kan ändra dessa och alla andra inställningar för den skapade virtuella maskinen när som helst via dialogrutan &lt;b&gt;Inställningar&lt;/b&gt; som kan nås via menyn i huvudfönstret.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation>&amp;Färdigställ</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>megabytes</comment>
-        <translation>MB</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <comment>summary</comment>
-        <translation>Namn</translation>
-    </message>
-    <message>
-        <source>OS Type</source>
-        <comment>summary</comment>
-        <translation>Operativsystem</translation>
-    </message>
-    <message>
-        <source>Base Memory</source>
-        <comment>summary</comment>
-        <translation>Basminne</translation>
-    </message>
-    <message>
-        <source>Boot Hard Disk</source>
-        <comment>summary</comment>
-        <translation>Uppstartshårddisk</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Avbryt</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Välj en hårddiskavbildning att använda som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk med knappen &lt;b&gt;Ny&lt;/b&gt; eller välja en befintlig hårddiskavbildning från rullgardinslistan eller genom att trycka på knappen &lt;b&gt;Befintlig&lt;/b&gt; (för att anropa Hantera för virtuella media).&lt;/p&gt;&lt;p&gt;Om du behöver en mer komplicerad hårddiskkonfiguration kan du även hoppa över detta steg och ansluta hårddiskar senare via inställningarna för virtuella maskinen.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation>Uppstartshård&amp;disk (Primär master)</translation>
-    </message>
-    <message>
-        <source>&amp;Create new hard disk</source>
-        <translation>&amp;Skapa ny hårddisk</translation>
-    </message>
-    <message>
-        <source>&amp;Use existing hard disk</source>
-        <translation>&amp;Använd befintlig hårddisk</translation>
     </message>
 </context>
 <context>
@@ -5026,6 +5817,54 @@ p, li { white-space: pre-wrap; }
         <comment>medium</comment>
         <translation>&amp;Ta bort</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
@@ -5116,7 +5955,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxRegistrationDlg</name>
     <message>
         <source>VirtualBox Registration Dialog</source>
-        <translation>Registreringsdialog för VirtualBox</translation>
+        <translation type="obsolete">Registreringsdialog för VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Name</source>
@@ -5124,7 +5963,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enter your full name using Latin characters.</source>
-        <translation>Ange ditt fullständiga namn med latinska bokstäver.</translation>
+        <translation type="obsolete">Ange ditt fullständiga namn med latinska bokstäver.</translation>
     </message>
     <message>
         <source>&amp;E-mail</source>
@@ -5132,7 +5971,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enter your e-mail address. Please use a valid address here.</source>
-        <translation>Ange din giltiga e-postadress.</translation>
+        <translation type="obsolete">Ange din giltiga e-postadress.</translation>
     </message>
     <message>
         <source>&amp;Please do not use this information to contact me</source>
@@ -5140,7 +5979,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
-        <translation>Välkommen till registreringsformuläret för VirtualBox!</translation>
+        <translation type="obsolete">Välkommen till registreringsformuläret för VirtualBox!</translation>
     </message>
     <message>
         <source>Connection timed out.</source>
@@ -5152,7 +5991,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Could not perform connection handshake.</source>
-        <translation>Kunde inte genomföra anslutningshandskakning.</translation>
+        <translation type="obsolete">Kunde inte genomföra anslutningshandskakning.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
@@ -5168,63 +6007,63 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Avbryt</translation>
+        <translation type="obsolete">Avbryt</translation>
     </message>
     <message>
         <source>Select Country/Territory</source>
-        <translation>Välj land/region</translation>
+        <translation type="obsolete">Välj land/region</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Fyll i detta registreringsformulär för att informera oss om att du använder VirtualBox och, upp till dig själv, för att hålla dig informerad om nyheter och uppdateringar för VirtualBox.&lt;/p&gt;&lt;p&gt;Observera att Sun Microsystems endast kommer att använda denna information för att samla in statistik om användningen av produkten och för att skicka ut nyhetsbrev om VirtualBox. Sun Microsystems kommer aldrig att skicka vidare din information till tredje part. Detaljerad information om hur vi använder din personliga information kan hittas i &lt;b&gt;Privacy Policy&lt;/b&gt;-avsnittet i VirtualBox-handboken eller på sidan &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; på VirtualBox webbplats.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Fyll i detta registreringsformulär för att informera oss om att du använder VirtualBox och, upp till dig själv, för att hålla dig informerad om nyheter och uppdateringar för VirtualBox.&lt;/p&gt;&lt;p&gt;Observera att Sun Microsystems endast kommer att använda denna information för att samla in statistik om användningen av produkten och för att skicka ut nyhetsbrev om VirtualBox. Sun Microsystems kommer aldrig att skicka vidare din information till tredje part. Detaljerad information om hur vi använder din personliga information kan hittas i &lt;b&gt;Privacy Policy&lt;/b&gt;-avsnittet i VirtualBox-handboken eller på sidan &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; på VirtualBox webbplats.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>I &amp;already have a Sun Online account:</source>
-        <translation>Jag &amp;har ett Sun Online-konto redan:</translation>
+        <translation type="obsolete">Jag &amp;har ett Sun Online-konto redan:</translation>
     </message>
     <message>
         <source>&amp;E-mail:</source>
-        <translation>&amp;E-post:</translation>
+        <translation type="obsolete">&amp;E-post:</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation>&amp;Lösenord:</translation>
+        <translation type="obsolete">&amp;Lösenord:</translation>
     </message>
     <message>
         <source>I &amp;would like to create a new Sun Online account:</source>
-        <translation>Jag &amp;vill registrera och skapa ett nytt Sun Online-konto:</translation>
+        <translation type="obsolete">Jag &amp;vill registrera och skapa ett nytt Sun Online-konto:</translation>
     </message>
     <message>
         <source>&amp;First Name:</source>
-        <translation>&amp;Förnamn:</translation>
+        <translation type="obsolete">&amp;Förnamn:</translation>
     </message>
     <message>
         <source>&amp;Last Name:</source>
-        <translation>&amp;Efternamn:</translation>
+        <translation type="obsolete">&amp;Efternamn:</translation>
     </message>
     <message>
         <source>&amp;Company:</source>
-        <translation>F&amp;öretag:</translation>
+        <translation type="obsolete">F&amp;öretag:</translation>
     </message>
     <message>
         <source>Co&amp;untry:</source>
-        <translation>La&amp;nd:</translation>
+        <translation type="obsolete">La&amp;nd:</translation>
     </message>
     <message>
         <source>E-&amp;mail:</source>
-        <translation>E-&amp;post:</translation>
+        <translation type="obsolete">E-&amp;post:</translation>
     </message>
     <message>
         <source>P&amp;assword:</source>
-        <translation>&amp;Lösenord:</translation>
+        <translation type="obsolete">&amp;Lösenord:</translation>
     </message>
     <message>
         <source>Co&amp;nfirm Password:</source>
-        <translation>&amp;Bekräfta lösenordet:</translation>
+        <translation type="obsolete">&amp;Bekräfta lösenordet:</translation>
     </message>
     <message>
         <source>&amp;Register</source>
-        <translation>&amp;Registrera</translation>
+        <translation type="obsolete">&amp;Registrera</translation>
     </message>
 </context>
 <context>
@@ -5407,7 +6246,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation>Sun VirtualBox</translation>
+        <translation type="obsolete">Sun VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Import Appliance...</source>
@@ -5882,141 +6721,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIFirstRunWzd</name>
-    <message>
-        <source>First Run Wizard</source>
-        <translation>Förstagångsguide</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Du har startat en nyligen skapad virtuell maskin för första gången. Den här guiden kommer att hjälpa dig att genomföra de nödvändiga steg som krävs för att installera ett operativsystem på den virtuella maskinen.&lt;/p&gt;&lt;p&gt;Använd knappen &lt;b&gt;Nästa&lt;/b&gt; för att gå till nästa sida i guiden och &lt;b&gt;Bakåt&lt;/b&gt; för att återgå till föregående sida. Du kan även trycka på &lt;b&gt;Avbryt&lt;/b&gt; om du vill avbryta körningen av den här guiden.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Welcome to the First Run Wizard!</source>
-        <translation>Välkommen till förstagångsguiden!</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Välj den typ av media som du vill använda för installationssyften nedan.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Media Type</source>
-        <translation>Mediatyp</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD-ROM Device</source>
-        <translation>&amp;CD/DVD-ROM-enhet</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Device</source>
-        <translation>&amp;Diskettenhet</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Välj det media som innehåller konfigurationsprogrammet för operativsystemet som du vill installera. Det här mediet måste vara startbart, annars kommer inte konfigurationsprogrammet att kunna starta.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Media Source</source>
-        <translation>Mediakälla</translation>
-    </message>
-    <message>
-        <source>&amp;Host Drive</source>
-        <translation type="obsolete">&amp;Värdenhet</translation>
-    </message>
-    <message>
-        <source>&amp;Image File</source>
-        <translation type="obsolete">Av&amp;bildningsfil</translation>
-    </message>
-    <message>
-        <source>Select Installation Media</source>
-        <translation>Välj installationsmedia</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Du har valt följande media att starta upp från:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Sammandrag</translation>
-    </message>
-    <message>
-        <source>CD/DVD-ROM Device</source>
-        <translation>CD/DVD-ROM-enhet</translation>
-    </message>
-    <message>
-        <source>Floppy Device</source>
-        <translation>Diskettenhet</translation>
-    </message>
-    <message>
-        <source>Host Drive %1</source>
-        <translation type="obsolete">Värdenhet %1</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Du har startat en nyligen skapad virtuell maskin för första gången. Den här guiden kommer att hjälpa dig att genomföra de nödvändiga stegen som behövs för att starta upp ett valfritt operativsystem på den virtuella maskinen.&lt;/p&gt;&lt;p&gt;Observera att du inte kan installera ett operativsystem på den här virtuella maskinen just nu därför att du inte har anslutit en hårddisk till den. Om det inte är vad du vill göra så kan du avbryta körningen av den här guiden eller välja &lt;b&gt;Inställningar&lt;/b&gt; från menyn &lt;b&gt;Maskin&lt;/b&gt; i VirtualBox huvudfönster för att komma åt inställningsdialogrutan för den här maskinen och ändra hårddiskkonfigurationen.&lt;/p&gt;&lt;p&gt;Använd knappen &lt;b&gt;Nästa&lt;/b&gt; för att gå till nästa sida i guiden och &lt;b&gt;Bakåt&lt;/b&gt; för att återgå till föregående sida. Du kan även trycka på &lt;b&gt;Avbryt&lt;/b&gt; om du vill avbryta körningen av den här guiden.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Välj den typ av media som du vill använda för att starta upp ett operativsystem.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Välj det media som innehåller operativsystemet som du vill arbeta med. Detta media måste vara startbart, annars kommer operativsystemet inte kunna starta upp.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Du har valt följande media att starta upp ett operativsystem från:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Om ovanstående är korrekt kan du trycka på knappen &lt;b&gt;Färdigställ&lt;/b&gt;. När du trycker på den kommer det media som valts att monteras på den virtuella maskinen och maskinen kommer sedan att startas.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Bakåt</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>&amp;Nästa &gt;</translation>
-    </message>
-    <message>
-        <source>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If the above is correct, press the &lt;span style=&quot; font-weight:600;&quot;&gt;Finish&lt;/span&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;span style=&quot; font-weight:600;&quot;&gt;Unmount...&lt;/span&gt; action in the &lt;span style=&quot; font-weight:600;&quot;&gt;Devices&lt;/span&gt; menu&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="obsolete">&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Tryck på knappen &lt;span style=&quot; font-weight:600;&quot;&gt;Färdigställ&lt;/span&gt; om ovanstående är korrekt. När du trycker på den kommer det valda mediat att temporärt monteras på den virtuella maskinen och maskinen kommer att starta körningen.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Observera att när du stänger den virtuella maskinen kommer den angivna mediat att automatiskt avmonteras och uppstartsenheten kommer att återställas till den första hårddisken.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Beroende på typen av konfigurationsprogram så kan du behöva manuellt att avmontera (mata ut) mediat efter att konfigurationsprogrammet har startat om den virtuella maskinen för att förhindra att installationsprocessen startar upp igen. Du kan göra detta genom att välja motsvarande &lt;span style=&quot; font-weight:600;&quot;&gt;Avmontera...&lt;/span&gt;-åtgärd i menyn &lt;span style=&quot; font-weight:600;&quot;&gt;Enheter&lt;/span&gt; &lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation>&amp;Färdigställ</translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <comment>summary</comment>
-        <translation>Typ</translation>
-    </message>
-    <message>
-        <source>Source</source>
-        <comment>summary</comment>
-        <translation>Källa</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Avbryt</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Om ovanstående är korrekt så kan du trycka på knappen &lt;b&gt;Färdigställ&lt;/b&gt;. När du har tryckt på den så kommer valt media att temporärt monteras på den virtuella maskinen och maskinen kommer att starta körningen.&lt;/p&gt;&lt;p&gt;Observera att när du stänger den virtuella maskinen så kommer valt media att automatiskt avmonteras och uppstartsenheten kommer att ställas tillbaka till den första hårddisken.&lt;/p&gt;&lt;p&gt;Beroende på typ av konfigurationsprogram så kan du behöva att manuellt avmontera (mata ut) detta media efter att konfigurationsprogrammet startar om den virtuella maskinen för att förhindra att installationsprocessen startar en gång till. Du kan göra detta genom att välja den motsvarande &lt;b&gt;Avmontera...&lt;/b&gt;-åtgärden i menyn &lt;b&gt;Enheter&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-</context>
-<context>
     <name>VBoxVMInformationDlg</name>
     <message>
         <source>%1 - Session Information</source>
@@ -6073,7 +6777,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Version %1.%2</source>
         <comment>guest additions</comment>
-        <translation>Version %1.%2</translation>
+        <translation type="obsolete">Version %1.%2</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -6400,6 +7104,18 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
         <translation>VRDP-serverns portnummer. Du kan ange &lt;tt&gt;0&lt;/tt&gt; (noll) för att välja port 3389 som är standardporten för RDP.</translation>
+    </message>
+    <message>
+        <source>Mo&amp;nitor Count:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7068,6 +7784,30 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Attached To:</source>
         <translation>Ansluten till:</translation>
+    </message>
+    <message>
+        <source>Allows to use host I/O caching capabilities.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use host I/O cache</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add SAS Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage Controller 1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7773,7 +8513,7 @@ serial ports</comment>
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine.</source>
-        <translation>Kontrollerar antalet virtuella processorer i den virtuella maskinen.</translation>
+        <translation type="obsolete">Kontrollerar antalet virtuella processorer i den virtuella maskinen.</translation>
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
@@ -7819,6 +8559,18 @@ serial ports</comment>
     <message>
         <source>Enable &amp;EFI (special OSes only)</source>
         <translation>Aktivera &amp;EFI (endast speciella OS)</translation>
+    </message>
+    <message>
+        <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hardware clock in &amp;UTC time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
