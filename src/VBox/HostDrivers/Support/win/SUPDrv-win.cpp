@@ -709,6 +709,7 @@ int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
                     rc = VERR_LDR_IMAGE_HASH;
                     break;
                 case    0xC000010E /* STATUS_IMAGE_ALREADY_LOADED */ :
+                    Log(("WARNING: see #4853 for cause of this failure on Windows 7 x64\n"));
                     rc = VERR_ALREADY_LOADED;
                     break;
                 default:
