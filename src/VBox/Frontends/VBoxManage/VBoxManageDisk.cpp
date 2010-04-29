@@ -108,6 +108,8 @@ static int parseDiskType(const char *psz, MediumType_T *pDiskType)
         DiskType = MediumType_Immutable;
     else if (!RTStrICmp(psz, "writethrough"))
         DiskType = MediumType_Writethrough;
+    else if (!RTStrICmp(psz, "shareable"))
+        DiskType = MediumType_Shareable;
     else
         rc = VERR_PARSE_ERROR;
 
@@ -1229,6 +1231,9 @@ int handleShowHardDiskInfo(HandlerArg *a)
                 break;
             case MediumType_Writethrough:
                 typeStr = "writethrough";
+                break;
+            case MediumType_Shareable:
+                typeStr = "shareable";
                 break;
         }
         RTPrintf("Type:                 %s\n", typeStr);

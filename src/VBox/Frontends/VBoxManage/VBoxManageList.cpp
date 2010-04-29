@@ -124,6 +124,9 @@ static void listHardDisks(const ComPtr<IVirtualBox> aVirtualBox,
             case MediumType_Writethrough:
                 typeStr = "writethrough";
                 break;
+            case MediumType_Shareable:
+                typeStr = "shareable";
+                break;
         }
         RTPrintf("Type:        %s\n", typeStr);
 
