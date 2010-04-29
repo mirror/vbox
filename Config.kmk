@@ -1240,11 +1240,11 @@ ifeq ($(KBUILD_TYPE),debug)
  VBOX_GCC_OPT    ?= -O0
  VBOX_VCC_FP     ?= -Oy-
  VBOX_VCC_OPT    ?=
- VBOX_GCC_R0_FP  ?= -fno-omit-frame-pointer
+ VBOX_GCC_R0_FP  ?= -fno-omit-frame-pointer -fno-optimize-sibling-calls
  VBOX_GCC_R0_OPT ?= -O2
  VBOX_VCC_R0_FP  ?= -Oy-
  VBOX_VCC_R0_OPT ?=
- VBOX_GCC_GC_FP  ?= -fno-omit-frame-pointer
+ VBOX_GCC_GC_FP  ?= -fno-omit-frame-pointer -fno-optimize-sibling-calls
  VBOX_GCC_GC_OPT ?= -O2
  VBOX_VCC_GC_FP  ?= -Oy-
  VBOX_VCC_GC_OPT ?=
