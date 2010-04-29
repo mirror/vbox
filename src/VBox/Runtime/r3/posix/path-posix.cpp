@@ -848,7 +848,7 @@ RTDECL(bool) RTPathExistsEx(const char *pszPath, uint32_t fFlags)
             rc = VINF_SUCCESS;
         else
             rc = VERR_GENERAL_FAILURE;
-        rtPathFreeNative(pszNativePath);
+        rtPathFreeNative(pszNativePath, pszPath);
     }
     return RT_SUCCESS(rc);
 }
@@ -899,7 +899,7 @@ RTDECL(int) RTPathSetCurrent(const char *pszPath)
     {
         if (chdir(pszNativePath))
             rc = RTErrConvertFromErrno(errno);
-        rtPathFreeNative(pszNativePath);
+        rtPathFreeNative(pszNativePath, pszPath);
     }
     return rc;
 }
