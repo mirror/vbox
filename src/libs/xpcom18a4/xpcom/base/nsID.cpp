@@ -138,3 +138,15 @@ NS_COM char *nsID::ToString() const
   return res;
 }
 
+#ifdef VBOX
+void nsID::ToProvidedString(char (&dest)[NSID_LENGTH]) const 
+{
+  PR_snprintf(dest, NSID_LENGTH, gIDFormat,
+              m0, (PRUint32) m1, (PRUint32) m2,
+              (PRUint32) m3[0], (PRUint32) m3[1], (PRUint32) m3[2],
+              (PRUint32) m3[3], (PRUint32) m3[4], (PRUint32) m3[5],
+              (PRUint32) m3[6], (PRUint32) m3[7]);
+}
+#endif
+
+
