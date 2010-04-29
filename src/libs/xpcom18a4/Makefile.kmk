@@ -1359,6 +1359,10 @@ ifdef VBOX_WITH_PYTHON
   include $(PATH_SUB_CURRENT)/python/Makefile.kmk
 endif # VBOX_WITH_PYTHON
 
+ifdef VBOX_WITH_JXPCOM
+  include $(PATH_SUB_CURRENT)/java/Makefile.kmk
+endif # VBOX_WITH_JXPCOM
+
 #
 # testcases
 #
