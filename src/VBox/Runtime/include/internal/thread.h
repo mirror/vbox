@@ -36,10 +36,11 @@
 #endif
 #include "internal/lockvalidator.h"
 #include "internal/magics.h"
+#ifdef RT_WITH_ICONV_CACHE
+# include "internal/string.h"
+#endif
 
 RT_C_DECLS_BEGIN
-
-
 
 
 /** Max thread name length. */
@@ -96,6 +97,11 @@ typedef struct RTTHREADINT
     /** The lock validator data. */
     RTLOCKVALPERTHREAD      LockValidator;
 #endif /* IN_RING3 */
+#ifdef RT_WITH_ICONV_CACHE
+    /** Handle cache for iconv.
+     * @remarks ASSUMES sizeof(void *) >= sizeof(iconv_t). */
+    void *ahIconvs[RTSTRICONV_END];
+#endif
 #ifdef IPRT_WITH_GENERIC_TLS
     /** The TLS entries for this thread. */
     void                   *apvTlsEntries[RTTHREAD_TLS_ENTRIES];

@@ -37,6 +37,11 @@ RT_C_DECLS_BEGIN
 # define HAVE_DRIVE 1
 #endif
 
+/** The name of the environment variable that is used to override the default
+ * codeset used when talking to the file systems.  This is only available on
+ * Mac OS X and UNIX systems. */
+#define RTPATH_CODESET_ENV_VAR          "IPRT_PATH_CODESET"
+
 
 DECLHIDDEN(size_t)  rtPathRootSpecLen(const char *pszPath);
 DECLHIDDEN(size_t)  rtPathVolumeSpecLen(const char *pszPath);

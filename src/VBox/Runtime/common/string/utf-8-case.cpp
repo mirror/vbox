@@ -108,7 +108,7 @@ RTDECL(int) RTStrICmp(const char *psz1, const char *psz2)
             return 0;
     }
 
-    /* Hit some bad encoding, continue in case insensitive mode. */
+    /* Hit some bad encoding, continue in case sensitive mode. */
     return RTStrCmp(psz1, psz2);
 }
 RT_EXPORT_SYMBOL(RTStrICmp);

@@ -48,6 +48,9 @@
 #include "internal/thread.h"
 #include "internal/sched.h"
 #include "internal/process.h"
+#ifdef RT_WITH_ICONV_CACHE
+# include "internal/string.h"
+#endif
 
 
 /*******************************************************************************
@@ -354,6 +357,9 @@ PRTTHREADINT rtThreadAlloc(RTTHREADTYPE enmType, unsigned fFlags, uint32_t fIntF
 #ifdef IN_RING3
         rtLockValidatorInitPerThread(&pThread->LockValidator);
 #endif
+#ifdef RT_WITH_ICONV_CACHE
+        rtStrIconvCacheInit(pThread);
+#endif
         int rc = RTSemEventMultiCreate(&pThread->EventUser);
         if (RT_SUCCESS(rc))
         {
@@ -574,6 +580,9 @@ static void rtThreadDestroy(PRTTHREADINT pThread)
     rtLockValidatorSerializeDestructEnter();
 
     rtLockValidatorDeletePerThread(&pThread->LockValidator);
+#endif
+#ifdef RT_WITH_ICONV_CACHE
+    rtStrIconvCacheDestroy(pThread);
 #endif
     ASMAtomicXchgU32(&pThread->u32Magic, RTTHREADINT_MAGIC_DEAD);
     ASMAtomicWritePtr(&pThread->Core.Key, (void *)NIL_RTTHREAD);

@@ -29,6 +29,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/string.h>
+#include "internal/iprt.h"
+
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -39,17 +41,55 @@
 #include <iconv.h>
 #include <wctype.h>
 
-#ifdef RT_OS_SOLARIS
-# include <langinfo.h>
-#endif
+#include <langinfo.h>
 
 #include "internal/alignmentchecks.h"
+#ifdef RT_WITH_ICONV_CACHE
+# include "internal/thread.h"
+# include "internal/string.h"
+AssertCompile(sizeof(iconv_t) <= sizeof(void *));
+#endif
 
 
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-static int rtstrConvert(const void *pvInput, size_t cbInput, const char *pszInputCS, void **ppvOutput, size_t cbOutput, const char *pszOutputCS, unsigned cFactor);
+/**
+ * Gets the codeset of the current locale (LC_CTYPE).
+ *
+ * @returns Pointer to read-only string with the codeset name.
+ */
+const char *rtStrGetLocaleCodeset(void)
+{
+    return nl_langinfo(CODESET);
+}
+
+
+#ifdef RT_WITH_ICONV_CACHE
+
+/**
+ * Initializes the iconv handle cache associated with a thread.
+ *
+ * @param   pThread             The thread in question.
+ */
+void rtStrIconvCacheInit(PRTTHREADINT pThread)
+{
+    for (size_t i = 0; i < RT_ELEMENTS(pThread->ahIconvs); i++)
+        pThread->ahIconvs[i] = (iconv_t)-1;
+}
+
+/**
+ * Destroys the iconv handle cache associated with a thread.
+ *
+ * @param   pThread             The thread in question.
+ */
+void rtStrIconvCacheDestroy(PRTTHREADINT pThread)
+{
+    for (size_t i = 0; i < RT_ELEMENTS(pThread->ahIconvs); i++)
+    {
+        iconv_t hIconv = pThread->ahIconvs[i];
+        pThread->ahIconvs[i] = NULL;
+        if (hIconv != (iconv_t)-1)
+            iconv_close(hIconv);
+    }
+}
 
 
 /**
@@ -65,8 +105,137 @@ static int rtstrConvert(const void *pvInput, size_t cbInput, const char *pszInpu
  * @param   cbOutput        Size of the passed in buffer.
  * @param   pszOutputCS     Codeset of the input string.
  * @param   cFactor         Input vs. output size factor.
+ * @param   phIconv         Pointer to the cache entry.
  */
-static int rtstrConvert(const void *pvInput, size_t cbInput, const char *pszInputCS, void **ppvOutput, size_t cbOutput, const char *pszOutputCS, unsigned cFactor)
+static int rtstrConvertCached(const void *pvInput, size_t cbInput, const char *pszInputCS,
+                              void **ppvOutput, size_t cbOutput, const char *pszOutputCS,
+                              unsigned cFactor, iconv_t *phIconv)
+{
+    /*
+     * Allocate buffer
+     */
+    bool    fUcs2Term;
+    void   *pvOutput;
+    size_t  cbOutput2;
+    if (!cbOutput)
+    {
+        cbOutput2 = cbInput * cFactor;
+        pvOutput = RTMemTmpAlloc(cbOutput2 + sizeof(RTUTF16));
+        if (!pvOutput)
+            return VERR_NO_TMP_MEMORY;
+        fUcs2Term = true;
+    }
+    else
+    {
+        pvOutput = *ppvOutput;
+        fUcs2Term = !strcmp(pszOutputCS, "UCS-2")
+                 || !strcmp(pszOutputCS, "UTF-16")
+                 || !strcmp(pszOutputCS, "ucs-2")
+                 || !strcmp(pszOutputCS, "utf-16");
+        cbOutput2 = cbOutput - (fUcs2Term ? sizeof(RTUTF16) : 1);
+        if (cbOutput2 > cbOutput)
+            return VERR_BUFFER_OVERFLOW;
+    }
+
+    /*
+     * Use a loop here to retry with bigger buffers.
+     */
+    for (unsigned cTries = 10; cTries > 0; cTries--)
+    {
+        /*
+         * Create conversion object if necessary.
+         */
+        iconv_t hIconv = (iconv_t)*phIconv;
+        if (hIconv == (iconv_t)-1)
+        {
+            IPRT_ALIGNMENT_CHECKS_DISABLE(); /* glibc causes trouble */
+            *phIconv = hIconv = iconv_open(pszOutputCS, pszInputCS);
+            IPRT_ALIGNMENT_CHECKS_ENABLE();
+        }
+        if (hIconv != (iconv_t)-1)
+        {
+            /*
+             * Do the conversion.
+             */
+            size_t      cbInLeft = cbInput;
+            size_t      cbOutLeft = cbOutput2;
+            const void *pvInputLeft = pvInput;
+            void       *pvOutputLeft = pvOutput;
+#if defined(RT_OS_LINUX) || (defined(RT_OS_DARWIN) && defined(_DARWIN_FEATURE_UNIX_CONFORMANCE)) /* there are different opinions about the constness of the input buffer. */
+            if (iconv(hIconv, (char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft) != (size_t)-1)
+#else
+            if (iconv(hIconv, (const char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft) != (size_t)-1)
+#endif
+            {
+                if (!cbInLeft)
+                {
+                    /*
+                     * We're done, just add the terminator and return.
+                     * (Two terminators to support UCS-2 output, too.)
+                     */
+                    ((char *)pvOutputLeft)[0] = '\0';
+                    if (fUcs2Term)
+                        ((char *)pvOutputLeft)[1] = '\0';
+                    *ppvOutput = pvOutput;
+                    return VINF_SUCCESS;
+                }
+                errno = E2BIG;
+            }
+
+            /*
+             * If we failed because of output buffer space we'll
+             * increase the output buffer size and retry.
+             */
+            if (errno == E2BIG)
+            {
+                if (!cbOutput)
+                {
+                    RTMemTmpFree(pvOutput);
+                    cbOutput2 *= 2;
+                    pvOutput = RTMemTmpAlloc(cbOutput2 + sizeof(RTUTF16));
+                    if (!pvOutput)
+                        return VERR_NO_TMP_MEMORY;
+                    continue;
+                }
+                return VERR_BUFFER_OVERFLOW;
+            }
+
+            /*
+             * Close the handle on all other errors to make sure we won't carry
+             * any bad state with us.
+             */
+            *phIconv = (iconv_t)-1;
+            iconv_close(hIconv);
+        }
+        break;
+    }
+
+    /* failure */
+    if (!cbOutput)
+        RTMemTmpFree(pvOutput);
+    return VERR_NO_TRANSLATION;
+}
+
+#endif /* RT_WITH_ICONV_CACHE */
+
+/**
+ * Converts a string from one charset to another without using the handle cache.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   pvInput         Pointer to intput string.
+ * @param   cbInput         Size (in bytes) of input string. Excludes any terminators.
+ * @param   pszInputCS      Codeset of the input string.
+ * @param   ppvOutput       Pointer to pointer to output buffer if cbOutput > 0.
+ *                          If cbOutput is 0 this is where the pointer to the allocated
+ *                          buffer is stored.
+ * @param   cbOutput        Size of the passed in buffer.
+ * @param   pszOutputCS     Codeset of the input string.
+ * @param   cFactor         Input vs. output size factor.
+ */
+static int rtStrConvertUncached(const void *pvInput, size_t cbInput, const char *pszInputCS,
+                                void **ppvOutput, size_t cbOutput, const char *pszOutputCS,
+                                unsigned cFactor)
 {
     /*
      * Allocate buffer
@@ -102,9 +271,9 @@ static int rtstrConvert(const void *pvInput, size_t cbInput, const char *pszInpu
 #ifdef RT_OS_SOLARIS
         /* Solaris doesn't grok empty codeset strings, so help it find the current codeset. */
         if (!*pszInputCS)
-            pszInputCS = nl_langinfo(CODESET);
+            pszInputCS = rtStrGetLocaleCodeset();
         if (!*pszOutputCS)
-            pszOutputCS = nl_langinfo(CODESET);
+            pszOutputCS = rtStrGetLocaleCodeset();
 #endif
         IPRT_ALIGNMENT_CHECKS_DISABLE(); /* glibc causes trouble */
         iconv_t icHandle = iconv_open(pszOutputCS, pszInputCS);
@@ -170,6 +339,73 @@ static int rtstrConvert(const void *pvInput, size_t cbInput, const char *pszInpu
 
 
 /**
+ * Wrapper that selects rtStrConvertCached or rtStrConvertUncached.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   pszInput        Pointer to intput string.
+ * @param   cchInput        Size (in bytes) of input string. Excludes any
+ *                          terminators.
+ * @param   pszInputCS      Codeset of the input string.
+ * @param   ppszOutput      Pointer to pointer to output buffer if cbOutput > 0.
+ *                          If cbOutput is 0 this is where the pointer to the
+ *                          allocated buffer is stored.
+ * @param   cbOutput        Size of the passed in buffer.
+ * @param   pszOutputCS     Codeset of the input string.
+ * @param   cFactor         Input vs. output size factor.
+ * @param   enmCacheIdx     The iconv cache index.
+ */
+DECLINLINE(int) rtStrConvertWrapper(const char *pchInput, size_t cchInput, const char *pszInputCS,
+                                    char **ppszOutput, size_t cbOutput, const char *pszOutputCS,
+                                    unsigned cFactor, RTSTRICONV enmCacheIdx)
+{
+#ifdef RT_WITH_ICONV_CACHE
+    RTTHREAD hSelf = RTThreadSelf();
+    if (hSelf != NIL_RTTHREAD)
+    {
+        PRTTHREADINT pThread = rtThreadGet(hSelf);
+        if (   pThread
+            && (pThread->fIntFlags & (RTTHREADINT_FLAGS_ALIEN | RTTHREADINT_FLAGS_MAIN)) != RTTHREADINT_FLAGS_ALIEN)
+            return rtstrConvertCached(pchInput, cchInput, pszInputCS,
+                                      (void **)ppszOutput, cbOutput, pszOutputCS,
+                                      cFactor, &pThread->ahIconvs[enmCacheIdx]);
+    }
+#endif
+    return rtStrConvertUncached(pchInput, cchInput, pszInputCS,
+                                (void **)ppszOutput, cbOutput, pszOutputCS,
+                                cFactor);
+}
+
+
+/**
+ * Internal API for use by the path conversion code.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   pszInput        Pointer to intput string.
+ * @param   cchInput        Size (in bytes) of input string. Excludes any
+ *                          terminators.
+ * @param   pszInputCS      Codeset of the input string.
+ * @param   ppszOutput      Pointer to pointer to output buffer if cbOutput > 0.
+ *                          If cbOutput is 0 this is where the pointer to the
+ *                          allocated buffer is stored.
+ * @param   cbOutput        Size of the passed in buffer.
+ * @param   pszOutputCS     Codeset of the input string.
+ * @param   cFactor         Input vs. output size factor.
+ * @param   enmCacheIdx     The iconv cache index.
+ */
+int rtStrConvert(const char *pchInput, size_t cchInput, const char *pszInputCS,
+                 char **ppszOutput, size_t cbOutput, const char *pszOutputCS,
+                 unsigned cFactor, RTSTRICONV enmCacheIdx)
+{
+    Assert(enmCacheIdx >= 0 && enmCacheIdx < RTSTRICONV_END);
+    return rtStrConvertWrapper(pchInput, cchInput, pszInputCS,
+                               ppszOutput, cbOutput, pszOutputCS,
+                               cFactor, enmCacheIdx);
+}
+
+
+/**
  * Allocates tmp buffer, translates pszString from UTF8 to current codepage.
  *
  * @returns iprt status code.
@@ -195,7 +431,7 @@ RTR3DECL(int)  RTStrUtf8ToCurrentCP(char **ppszString, const char *pszString)
             return VINF_SUCCESS;
         return VERR_NO_TMP_MEMORY;
     }
-    return rtstrConvert(pszString, cch, "UTF-8", (void **)ppszString, 0, "", 1);
+    return rtStrConvertWrapper(pszString, cch, "UTF-8", ppszString, 0, "", 1, RTSTRICONV_UTF8_TO_LOCALE);
 }
 
 
@@ -214,7 +450,7 @@ RTR3DECL(int)  RTStrCurrentCPToUtf8(char **ppszString, const char *pszString)
     *ppszString = NULL;
 
     /*
-     * Attempt with UTF-8 length of 2x the native lenght.
+     * Attempt with UTF-8 length of 2x the native length.
      */
     size_t cch = strlen(pszString);
     if (cch <= 0)
@@ -225,6 +461,6 @@ RTR3DECL(int)  RTStrCurrentCPToUtf8(char **ppszString, const char *pszString)
             return VINF_SUCCESS;
         return VERR_NO_TMP_MEMORY;
     }
-    return rtstrConvert(pszString, cch, "", (void **)ppszString, 0, "UTF-8", 2);
+    return rtStrConvertWrapper(pszString, cch, "", ppszString, 0, "UTF-8", 2, RTSTRICONV_LOCALE_TO_UTF8);
 }
 
