@@ -70,7 +70,7 @@ RTDECL(int) RTPathExecDir(char *pszPath, size_t cchPath)
 RTDECL(int) RTPathAppPrivateNoArch(char *pszPath, size_t cchPath)
 {
 #if !defined(RT_OS_WINDOWS) && defined(RTPATH_APP_PRIVATE)
-    return RTStrCopyEx(pszPath, cchPath, RTPATH_APP_PRIVATE, RTSTR_MAX);
+    return RTStrCopy(pszPath, cchPath, RTPATH_APP_PRIVATE);
 #else
     return RTPathExecDir(pszPath, cchPath);
 #endif
@@ -92,7 +92,7 @@ RTDECL(int) RTPathAppPrivateNoArch(char *pszPath, size_t cchPath)
 RTDECL(int) RTPathAppPrivateArch(char *pszPath, size_t cchPath)
 {
 #if !defined(RT_OS_WINDOWS) && defined(RTPATH_APP_PRIVATE_ARCH)
-    return RTStrCopyEx(pszPath, cchPath, RTPATH_APP_PRIVATE_ARCH, RTSTR_MAX);
+    return RTStrCopy(pszPath, cchPath, RTPATH_APP_PRIVATE_ARCH);
 #else
     return RTPathExecDir(pszPath, cchPath);
 #endif
@@ -115,7 +115,7 @@ RTDECL(int) RTPathAppPrivateArch(char *pszPath, size_t cchPath)
 RTDECL(int) RTPathSharedLibs(char *pszPath, size_t cchPath)
 {
 #if !defined(RT_OS_WINDOWS) && defined(RTPATH_SHARED_LIBS)
-    return RTStrCopyEx(pszPath, cchPath, RTPATH_SHARED_LIBS, RTSTR_MAX);
+    return RTStrCopy(pszPath, cchPath, RTPATH_SHARED_LIBS);
 #else
     return RTPathExecDir(pszPath, cchPath);
 #endif
@@ -136,7 +136,7 @@ RTDECL(int) RTPathSharedLibs(char *pszPath, size_t cchPath)
 RTDECL(int) RTPathAppDocs(char *pszPath, size_t cchPath)
 {
 #if !defined(RT_OS_WINDOWS) && defined(RTPATH_APP_DOCS)
-    return RTStrCopyEx(pszPath, cchPath, RTPATH_APP_DOCS, RTSTR_MAX);
+    return RTStrCopy(pszPath, cchPath, RTPATH_APP_DOCS);
 #else
     return RTPathExecDir(pszPath, cchPath);
 #endif

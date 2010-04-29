@@ -249,7 +249,7 @@ int rtPathFromNativeCopy(char *pszPath, size_t cbPath, const char *pszNativePath
     if (RT_SUCCESS(rc))
     {
         if (g_fPassthruUtf8 || !*pszNativePath)
-            rc = RTStrCopyEx(pszPath, cbPath, pszNativePath, RTSTR_MAX);
+            rc = RTStrCopy(pszPath, cbPath, pszNativePath);
         else if (cbPath)
             rc = rtStrConvert(pszNativePath, strlen(pszNativePath), g_szFsCodeset,
                               &pszPath, cbPath, "UTF-8",
