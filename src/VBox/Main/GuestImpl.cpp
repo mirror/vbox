@@ -838,15 +838,15 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                     {
                         unsigned cMsWait;
                         if (aTimeoutMS == RT_INDEFINITE_WAIT)
-                            cMsWait = 1000;
+                            cMsWait = 10;
                         else
                         {
                             uint64_t cMsElapsed = RTTimeMilliTS() - u64Started;
                             if (cMsElapsed >= aTimeoutMS)
                                 break; /* Timed out. */
-                            cMsWait = RT_MIN(1000, aTimeoutMS - (uint32_t)cMsElapsed);
+                            cMsWait = RT_MIN(10, aTimeoutMS - (uint32_t)cMsElapsed);
                         }
-                        RTThreadYield();
+                        RTThreadSleep(cMsWait);
                     }
                 }
 
@@ -1034,15 +1034,15 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
                 {
                     unsigned cMsWait;
                     if (aTimeoutMS == RT_INDEFINITE_WAIT)
-                        cMsWait = 1000;
+                        cMsWait = 10;
                     else
                     {
                         uint64_t cMsElapsed = RTTimeMilliTS() - u64Started;
                         if (cMsElapsed >= aTimeoutMS)
                             break; /* timed out */
-                        cMsWait = RT_MIN(1000, aTimeoutMS - (uint32_t)cMsElapsed);
+                        cMsWait = RT_MIN(10, aTimeoutMS - (uint32_t)cMsElapsed);
                     }
-                    RTThreadYield();
+                    RTThreadSleep(cMsWait);
                 } 
     
                 if (it->bCalled)

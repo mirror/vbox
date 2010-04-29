@@ -297,7 +297,6 @@ unsigned VBoxServiceGetStartedServices(void)
 int VBoxServiceStartServices(unsigned iMain)
 {
     int rc;
-
     /*
      * Initialize the services.
      */
@@ -313,7 +312,6 @@ int VBoxServiceStartServices(unsigned iMain)
                 return rc;
             }
         }
-
     /*
      * Start the service(s).
      */
