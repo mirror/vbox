@@ -601,7 +601,7 @@ void ControllerItem::delChild (AbstractItem *aItem)
 }
 
 /* Attachment Item */
-AttachmentItem::AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType, bool aVerbose)
+AttachmentItem::AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType)
     : AbstractItem (aParent)
     , mAttDeviceType (aDeviceType)
     , mAttIsShowDiffs (false)
@@ -615,24 +615,10 @@ AttachmentItem::AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType, 
     AssertMsg (!attSlots().isEmpty(), ("There should be at least one available slot!\n"));
     mAttSlot = attSlots() [0];
 
-    /* Try to select unique medium */
+    /* Try to select unique medium for HD and empty medium for CD/FD device */
     QStringList freeMediumIds (attMediumIds());
-    switch (mAttDeviceType)
-    {
-        case KDeviceType_HardDisk:
-            if (freeMediumIds.size() > 0)
-                setAttMediumId (freeMediumIds [0]);
-            break;
-        case KDeviceType_DVD:
-        case KDeviceType_Floppy:
-            if (freeMediumIds.size() > 1)
-                setAttMediumId (freeMediumIds [1]);
-            else if (!aVerbose && freeMediumIds.size() > 0)
-                setAttMediumId (freeMediumIds [0]);
-            break;
-        default:
-            break;
-    }
+    if (freeMediumIds.size() > 0)
+        setAttMediumId (freeMediumIds [0]);
 }
 
 StorageSlot AttachmentItem::attSlot() const
@@ -1409,14 +1395,14 @@ void StorageModel::delController (const QUuid &aCtrId)
     }
 }
 
-QModelIndex StorageModel::addAttachment (const QUuid &aCtrId, KDeviceType aDeviceType, bool aVerbose)
+QModelIndex StorageModel::addAttachment (const QUuid &aCtrId, KDeviceType aDeviceType)
 {
     if (AbstractItem *parent = mRootItem->childById (aCtrId))
     {
         int parentPosition = mRootItem->posOfChild (parent);
         QModelIndex parentIndex = index (parentPosition, 0, root());
         beginInsertRows (parentIndex, parent->childCount(), parent->childCount());
-        new AttachmentItem (parent, aDeviceType, aVerbose);
+        new AttachmentItem (parent, aDeviceType);
         endInsertRows();
         return index (parent->childCount() - 1, 0, parentIndex);
     }
@@ -1742,7 +1728,7 @@ void VBoxVMSettingsHD::getFrom (const CMachine &aMachine)
         CMediumAttachmentVector attachments = mMachine.GetMediumAttachmentsOfController (controllerName);
         foreach (const CMediumAttachment &attachment, attachments)
         {
-            QModelIndex attIndex = mStorageModel->addAttachment (ctrId, attachment.GetType(), false);
+            QModelIndex attIndex = mStorageModel->addAttachment (ctrId, attachment.GetType());
             mStorageModel->setData (attIndex, QVariant::fromValue (StorageSlot (controller.GetBus(), attachment.GetPort(), attachment.GetDevice())), StorageModel::R_AttSlot);
             CMedium medium (attachment.GetMedium());
             VBoxMedium vboxMedium;
@@ -2568,7 +2554,7 @@ void VBoxVMSettingsHD::addAttachmentWrapper (KDeviceType aDevice)
     Assert (mStorageModel->data (index, StorageModel::R_IsController).toBool());
     Assert (mStorageModel->data (index, StorageModel::R_IsMoreAttachmentsPossible).toBool());
 
-    mStorageModel->addAttachment (QUuid (mStorageModel->data (index, StorageModel::R_ItemId).toString()), aDevice, true);
+    mStorageModel->addAttachment (QUuid (mStorageModel->data (index, StorageModel::R_ItemId).toString()), aDevice);
     emit storageChanged();
     if (mValidator) mValidator->revalidate();
 }
