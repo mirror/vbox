@@ -238,16 +238,17 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
         uint32_t uNumParms;
         VBoxServiceVerbose(4, "Control: Waiting for host msg ...\n");
         rc = VbglR3GuestCtrlGetHostMsg(g_GuestControlSvcClientID, &uMsg, &uNumParms, 1000 /* 1s timeout */);
-        if (rc == VERR_TOO_MUCH_DATA)
+        if (RT_FAILURE(rc))
         {
-            VBoxServiceVerbose(3, "Control: Message requires %ld parameters, but only 2 supplied -- retrying request ...\n", uNumParms);
-            rc = VINF_SUCCESS;
+            if (rc == VERR_TOO_MUCH_DATA)
+            {
+                VBoxServiceVerbose(3, "Control: Message requires %ld parameters, but only 2 supplied -- retrying request ...\n", uNumParms);
+                rc = VINF_SUCCESS; /* Try to get "real" message in next block below. */
+            }
+            else
+                VBoxServiceVerbose(3, "Control: Getting host message failed with %Rrc\n", rc); /* VERR_GEN_IO_FAILURE seems to be normal if ran  into timeout. */
         }
-        else if (rc == VERR_TIMEOUT)
-        {
-            VBoxServiceVerbose(3, "Control: Wait timed out, waiting for next round ...\n");
-            RTThreadSleep(100);
-        }
+
         if (RT_SUCCESS(rc))
         {
             VBoxServiceVerbose(3, "Control: Msg=%u (%u parms) retrieved\n", uMsg, uNumParms);
@@ -271,29 +272,15 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
                 VBoxServiceVerbose(3, "Control: Message was processed with rc=%Rrc\n", rc);
         }
 
-        /*
-         * Block for a while.
-         *
-         * The event semaphore takes care of ignoring interruptions and it
-         * allows us to implement service wakeup later.
-         */
+        /* Do we need to shutdown? */
         if (*pfShutdown)
         {
             rc = 0;
             break;
         }
-        int rc2 = RTSemEventMultiWait(g_hControlEvent, g_ControlInterval);
-        if (*pfShutdown)
-        {
-            rc = 0;
-            break;
-        }
-        if (rc2 != VERR_TIMEOUT && RT_FAILURE(rc2))
-        {
-            VBoxServiceError("Control: RTSemEventMultiWait failed; rc2=%Rrc\n", rc2);
-            rc = rc2;
-            break;
-        }
+
+        /* Let's sleep for a bit and let others run ... */
+        RTThreadYield();
     }
 
     RTSemEventMultiDestroy(g_hControlEvent);

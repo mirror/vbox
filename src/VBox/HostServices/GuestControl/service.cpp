@@ -54,8 +54,10 @@ struct HostCmd
     /** Dynamic structure for holding the HGCM parms */
     VBOXGUESTCTRPARAMBUFFER parmBuf;
 };
-/** The host cmd list type */
-typedef std::list <HostCmd> HostCmdList;
+/** The host cmd list + iterator type */
+typedef std::list< HostCmd > HostCmdList;
+typedef std::list< HostCmd >::iterator HostCmdListIter;
+typedef std::list< HostCmd >::const_iterator HostCmdListIterConst;
 
 /**
  * Structure for holding an uncompleted guest call
@@ -64,22 +66,16 @@ struct GuestCall
 {
     /** The call handle */
     VBOXHGCMCALLHANDLE mHandle;
-    /** The function that was requested */
-    uint32_t mFunction;
     /** The call parameters */
     VBOXHGCMSVCPARM *mParms;
     /** Number of parameters */
     uint32_t mNumParms;
-    /** The default return value, used for passing warnings */
-    int mRc;
 
     /** The standard constructor */
-    GuestCall() : mFunction(0) {}
+    GuestCall() : mHandle(0), mParms(NULL), mNumParms(0) {}
     /** The normal contructor */
-    GuestCall(VBOXHGCMCALLHANDLE aHandle, uint32_t aFunction,
-              VBOXHGCMSVCPARM aParms[], int cParms, int aRc)
-              : mHandle(aHandle), mFunction(aFunction), mParms(aParms),
-                mNumParms(cParms), mRc(aRc) {}
+    GuestCall(VBOXHGCMCALLHANDLE aHandle, VBOXHGCMSVCPARM aParms[], int cParms)
+              : mHandle(aHandle), mParms(aParms), mNumParms(cParms) {}
 };
 /** The guest call list type */
 typedef std::list <GuestCall> CallList;
@@ -109,7 +105,7 @@ private:
     /** User data pointer to be supplied to the host callback function */
     void *mpvHostData;
     /** The deferred calls list */
-    CallList mGuestWaiters;
+    CallList mClientList;
     /** The host command list */
     HostCmdList mHostCmds;
 
@@ -237,10 +233,10 @@ private:
     static DECLCALLBACK(int) reqThreadFn(RTTHREAD ThreadSelf, void *pvUser);
     int clientConnect(uint32_t u32ClientID, void *pvClient);
     int clientDisconnect(uint32_t u32ClientID, void *pvClient);
-    int processHostMsg(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int notifyGuest(GuestCall *pCall, uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int sendHostCmdToGuest(HostCmd *pCmd, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int retrieveNextHostCmd(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int notifyHost(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int processCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int processHostCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     void call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
               void *pvClient, uint32_t eFunction, uint32_t cParms,
               VBOXHGCMSVCPARM paParms[]);
@@ -398,84 +394,64 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
     return VINF_SUCCESS;
 }
 
-/*
- * Either fills in parameters from a pending host command into our guest context or
- * defer the guest call until we have something from the host.
- */
-int Service::processHostMsg(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::sendHostCmdToGuest(HostCmd *pCmd, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    int rc = VINF_SUCCESS;
-
-    if (cParms < 2)
+    AssertPtr(pCmd);
+    int rc;
+  
+    /* Sufficient parameter space? */
+    if (pCmd->parmBuf.uParmCount > cParms)
     {
-        LogFlowFunc(("Guest parameter buffer is too small!\n"));
-        rc = VERR_INVALID_PARAMETER;
+        paParms[0].setUInt32(pCmd->parmBuf.uMsg);       /* Message ID */
+        paParms[1].setUInt32(pCmd->parmBuf.uParmCount); /* Required parameters for message */
+        
+        /*
+        * So this call apparently failed because the guest wanted to peek
+        * how much parameters it has to supply in order to successfully retrieve
+        * this command. Let's tell him so!
+        */
+        rc = VERR_TOO_MUCH_DATA;
     }
     else
     {
-        /*
-         * If host command list is empty (nothing to do right now) just
-         * defer the call until we got something to do (makes the client
-         * wait, depending on the flags set).
-         */
-        if (mHostCmds.empty()) /* Command list is empty, defer ... */
-            rc = VINF_HGCM_ASYNC_EXECUTE;
-
-        if (rc != VINF_HGCM_ASYNC_EXECUTE)
-        {
-            /*
-             * Get the next unassigned host command in the list.
-             */
-             HostCmd curCmd = mHostCmds.front();
-             uint32_t uParmCount = curCmd.parmBuf.uParmCount;
-
-             /* Sufficient parameter space? */
-             if (uParmCount > cParms)
-             {
-                 paParms[0].setUInt32(curCmd.parmBuf.uMsg); /* Message ID */
-                 paParms[1].setUInt32(uParmCount); /* Required parameters for message */
-
-                 /*
-                  * So this call apparently failed because the guest wanted to peek
-                  * how much parameters it has to supply in order to successfully retrieve
-                  * this command. Let's tell him so!
-                  */
-                 rc = VERR_TOO_MUCH_DATA;
-             }
-             else
-             {
-                 rc = paramBufferAssign(&curCmd.parmBuf, cParms, paParms);
-                 if (RT_SUCCESS(rc))
-                 {
-                     paramBufferFree(&curCmd.parmBuf);
-                     mHostCmds.pop_front();
-                 }
-             }
-        }
-        else
-        {
-            /* Call is deferred because of reasons above. */
-            mGuestWaiters.push_back(GuestCall(callHandle, GUEST_GET_HOST_MSG,
-                                              paParms, cParms, rc));
-        }
+        rc = paramBufferAssign(&pCmd->parmBuf, cParms, paParms);
     }
     return rc;
 }
 
 /*
- * Sends a command notification to the first waiting (deferred) client/guest in line in
- * order to wake up and do some work.
+ * Either fills in parameters from a pending host command into our guest context or
+ * defer the guest call until we have something from the host.
  */
-int Service::notifyGuest(GuestCall *pCall, uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::retrieveNextHostCmd(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    AssertPtr(pCall);
     int rc = VINF_SUCCESS;
 
-    int rc2 = processHostMsg(pCall->mHandle, pCall->mNumParms, pCall->mParms);
-    if (RT_SUCCESS(rc2))
-        rc2 = pCall->mRc;
-    AssertPtr(mpHelpers);
-    mpHelpers->pfnCallComplete(pCall->mHandle, rc2);
+    /*
+     * If host command list is empty (nothing to do right now) just
+     * defer the call until we got something to do (makes the client
+     * wait, depending on the flags set).
+     */
+    if (mHostCmds.empty()) /* If command list is empty, defer ... */
+    {
+        mClientList.push_back(GuestCall(callHandle, paParms, cParms));
+        rc = VINF_HGCM_ASYNC_EXECUTE;
+    }
+    else
+    {
+        /*
+         * Get the next unassigned host command in the list.
+         */
+         HostCmd curCmd = mHostCmds.front();
+         rc = sendHostCmdToGuest(&curCmd, callHandle, cParms, paParms);
+         if (RT_SUCCESS(rc))
+         {
+             /* Only if the guest really got and understood the message 
+              * remove it from the list. */
+             paramBufferFree(&curCmd.parmBuf);
+             mHostCmds.pop_front();
+         }
+    }
     return rc;
 }
 
@@ -522,30 +498,50 @@ int Service::notifyHost(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paP
     return rc;
 }
 
-int Service::processCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::processHostCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
 
-    /* Some lazy guests to wake up which can process this command right now? */
-    if (!mGuestWaiters.empty())
+    HostCmd newCmd;
+    bool fProcessed = false;
+    rc = paramBufferAllocate(&newCmd.parmBuf, eFunction, cParms, paParms);
+    if (RT_SUCCESS(rc))
     {
-        HostCmd newCmd;
-        rc = paramBufferAllocate(&newCmd.parmBuf, eFunction, cParms, paParms);
-        if (RT_SUCCESS(rc))
+        /* Can we wake up a waiting client on guest? */
+        if (!mClientList.empty())
+        {
+            GuestCall guest = mClientList.front();
+            rc = sendHostCmdToGuest(&newCmd, 
+                             guest.mHandle, guest.mNumParms, guest.mParms);
+
+            /* In any case the client did something, so wake up and remove from list. */
+            mpHelpers->pfnCallComplete(guest.mHandle, rc);
+            mClientList.pop_front();                       
+
+            /* If command was understood by client, free and remove from host commands list. */
+            if (RT_SUCCESS(rc))
+            {
+                paramBufferFree(&newCmd.parmBuf);
+                fProcessed = true;
+            }
+            else if (rc == VERR_TOO_MUCH_DATA)
+            {
+                /* If we got VERR_TOO_MUCH_DATA we buffer the host command in the next block
+                 * and return success to the host. */
+                rc = VINF_SUCCESS;
+            }
+        }
+
+        /* If not processed, buffer it ... */
+        if (!fProcessed)
         {
             mHostCmds.push_back(newCmd);
     
             /* Limit list size by deleting oldest element. */
             if (mHostCmds.size() > 256) /** @todo Use a define! */
                 mHostCmds.pop_front();
-
-            GuestCall curCall = mGuestWaiters.front();
-            rc = notifyGuest(&curCall, eFunction, cParms, paParms);
-            mGuestWaiters.pop_front();
         }
     }
-    else /* No guest waiting, don't bother ... */
-        rc = VERR_TIMEOUT;
     return rc;
 }
 
@@ -572,7 +568,7 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
             /* The guest asks the host for the next messsage to process. */
             case GUEST_GET_HOST_MSG:
                 LogFlowFunc(("GUEST_GET_HOST_MSG\n"));
-                rc = processHostMsg(callHandle, cParms, paParms);
+                rc = retrieveNextHostCmd(callHandle, cParms, paParms);
                 break;
 
             /* The guest notifies the host that some output at stdout/stderr is available. */
@@ -591,11 +587,9 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                 rc = VERR_NOT_SUPPORTED;
                 break;
         }
-        /*
-         * If current call is not deferred, call the completion function.
-         */
         if (rc != VINF_HGCM_ASYNC_EXECUTE)
         {
+            /* Tell the client that the call is complete (unblocks waiting). */
             mpHelpers->pfnCallComplete(callHandle, rc);
         }
     }
@@ -623,7 +617,7 @@ int Service::hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPar
             /* The host wants to execute something. */
             case HOST_EXEC_CMD:
                 LogFlowFunc(("HOST_EXEC_CMD\n"));
-                rc = processCmd(eFunction, cParms, paParms);
+                rc = processHostCmd(eFunction, cParms, paParms);
                 break;
 
             /* The host wants to send something to the guest's stdin pipe. */
@@ -633,7 +627,7 @@ int Service::hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPar
 
             case HOST_EXEC_GET_OUTPUT:
                 LogFlowFunc(("HOST_EXEC_GET_OUTPUT\n"));
-                rc = processCmd(eFunction, cParms, paParms);
+                rc = processHostCmd(eFunction, cParms, paParms);
                 break;
 
             default:
@@ -652,8 +646,13 @@ int Service::hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPar
 
 int Service::uninit()
 {
-    int rc = VINF_SUCCESS;
-    return rc;
+    /* Free allocated buffered host commands. */
+    HostCmdListIter it;
+    for (it = mHostCmds.begin(); it != mHostCmds.end(); it++)
+        paramBufferFree(&it->parmBuf);
+    mHostCmds.clear();
+
+    return VINF_SUCCESS;
 }
 
 } /* namespace guestControl */

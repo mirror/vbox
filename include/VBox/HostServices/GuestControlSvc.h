@@ -195,7 +195,7 @@ enum eGetHostMsgFn
 #pragma pack (1)
 typedef struct _VBoxGuestCtrlHGCMMsgType
 {
-    VBoxGuestHGCMCallInfoTimed hdr;
+    VBoxGuestHGCMCallInfo hdr;
 
     /**
      * The returned command the host wants to
