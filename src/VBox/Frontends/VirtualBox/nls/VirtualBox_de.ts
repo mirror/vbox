@@ -369,28 +369,12 @@
 <context>
     <name>UIDownloader</name>
     <message>
-        <source>The download process has been cancelled by the user.</source>
-        <translation type="obsolete">Das Herunterladen wurde vom Nutzer unterbrochen.</translation>
-    </message>
-    <message>
         <source>The download process has been canceled by the user.</source>
         <translation>Das Herunterladen wurde vom Nutzer unterbrochen.</translation>
     </message>
 </context>
 <context>
     <name>UIDownloaderAdditions</name>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">Abbrechen</translation>
-    </message>
-    <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="obsolete">Lade das CDROM-Abbild mit den VirtualBox-Gasterweiterungen von &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="obsolete">Bricht das Herunterladen der VirtualBox-Gasterweiterungen ab</translation>
-    </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Die heruntergeladene Datei konnte nicht als &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; gespeichert werden.&lt;/nobr&gt;&lt;/p&gt;</translation>
@@ -410,128 +394,12 @@
 <context>
     <name>UIExportApplianceWzd</name>
     <message>
-        <source>Select a file to export into</source>
-        <translation type="obsolete">Wählt eine Datei aus, in die exportiert werden soll</translation>
-    </message>
-    <message>
-        <source>Exporting Appliance ...</source>
-        <translation type="obsolete">Exportiere Appliance ...</translation>
-    </message>
-    <message>
         <source>Appliance Export Wizard</source>
         <translation>Appliance Exportassistent</translation>
     </message>
     <message>
-        <source>Welcome to the Appliance Export Wizard!</source>
-        <translation type="obsolete">Appliance Exportassistent</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation type="obsolete">&lt; &amp;Zurück</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation type="obsolete">&amp;Weiter &gt;</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">Abbrechen</translation>
-    </message>
-    <message>
-        <source>Appliance Export Settings</source>
-        <translation type="obsolete">Appliance Exporteinstellungen</translation>
-    </message>
-    <message>
-        <source>&amp;Export &gt;</source>
-        <translation type="obsolete">&amp;Exportieren</translation>
-    </message>
-    <message>
-        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="obsolete">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Dieser Assistent hilft Ihnen beim Export einer Appliance. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Wählen Sie &lt;span style=&quot; font-weight:600;&quot;&gt;Weiter&lt;/span&gt;, um auf die nächste Seite zu gelangen und &lt;span style=&quot; font-weight:600;&quot;&gt;Zurück&lt;/span&gt;, um auf die vorherige Seite zurückzukehren.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Bitte wählen Sie die virtuellen Maschinen aus, die in die Appliance exportiert werden sollen. Sie können auch mehrere VMs auswählen. Bitte beachten Sie, dass diese Maschinen ausgeschaltet sein müssen, damit sie exportiert werden können.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation type="obsolete">Hier können Sie weitere Einstellungen der ausgewählten virtuellen Maschinen ändern. Sie können die meisten der gezeigten Eigenschaften durch Doppelklick auf den Eintrag ändern.</translation>
-    </message>
-    <message>
         <source>Restore Defaults</source>
         <translation>Standardeinstellungen</translation>
-    </message>
-    <message>
-        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation type="obsolete">Erstelle das ältere OVF-Format 0.9 für die Kompatibilität mit anderen Virtualisierungsprodukten.</translation>
-    </message>
-    <message>
-        <source>&amp;Write legacy OVF 0.9</source>
-        <translation type="obsolete">Erzeuge &amp;Legacy OVF 0.9</translation>
-    </message>
-    <message>
-        <source>Please choose a filename to export the OVF to.</source>
-        <translation type="obsolete">Bitte wählen Sie eine Datei für den OVF-Export.</translation>
-    </message>
-    <message>
-        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="obsolete">Bitte fügen Sie die Felder für Nutzername, Passwort und Bucket aus und geben Sie einen Dateinamen für den OVF-Export an.</translation>
-    </message>
-    <message>
-        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="obsolete">Bitte fügen Sie die Felder für Nutzername, Passwort, Hostname und Bucket aus und geben Sie einen Dateinamen für den OVF-Export an.</translation>
-    </message>
-    <message>
-        <source>Checking files ...</source>
-        <translation type="obsolete">Überprüfe Dateien ...</translation>
-    </message>
-    <message>
-        <source>Removing files ...</source>
-        <translation type="obsolete">Lösche Dateien ...</translation>
-    </message>
-    <message>
-        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation type="obsolete">Bitte geben Sie eine Datei für den OVF-Export an. Sie können zwischen Abspeichern auf einem lokalen Dateisystem, dem Upload des OVF in den Sun Cloud-Service oder in einen S3-Storage-Server wählen.</translation>
-    </message>
-    <message>
-        <source>&amp;Local Filesystem </source>
-        <translation type="obsolete">&amp;Lokales Dateisystem</translation>
-    </message>
-    <message>
-        <source>Sun &amp;Cloud</source>
-        <translation type="obsolete">Sun &amp;Cloud</translation>
-    </message>
-    <message>
-        <source>&amp;Simple Storage System (S3)</source>
-        <translation type="obsolete">&amp;Simple Storage System (S3)</translation>
-    </message>
-    <message>
-        <source>&amp;Username:</source>
-        <translation type="obsolete">&amp;Nutzername:</translation>
-    </message>
-    <message>
-        <source>&amp;Password:</source>
-        <translation type="obsolete">&amp;Passwort:</translation>
-    </message>
-    <message>
-        <source>&amp;File:</source>
-        <translation type="obsolete">&amp;Datei:</translation>
-    </message>
-    <message>
-        <source>&amp;Bucket:</source>
-        <translation type="obsolete">&amp;Bucket:</translation>
-    </message>
-    <message>
-        <source>&amp;Hostname:</source>
-        <translation type="obsolete">&amp;Hostname:</translation>
     </message>
 </context>
 <context>
@@ -656,108 +524,6 @@ p, li { white-space: pre-wrap; }
         <source>First Run Wizard</source>
         <translation>Startassistent</translation>
     </message>
-    <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Sie haben eine neu erzeugte virtuelle Maschine zum ersten Mal gestartet. Dieser Assistent wird Ihnen helfen, die für die Installation eines Betriebssystems Ihrer Wahl notwendigen Schritte auszuführen.&lt;/p&gt;&lt;p&gt;Betätigen Sie &lt;b&gt;Weiter&lt;/b&gt;, um auf die nächste Seite des Assistenten zu wechseln und &lt;b&gt;Zurück&lt;/b&gt; für die Rückkehr auf die vorherige Seite. Sie können ebenso &lt;b&gt;Abbrechen&lt;/b&gt; betätigen, um den Assistenten sofort abzubrechen.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Welcome to the First Run Wizard!</source>
-        <translation type="obsolete">Startassistent</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Wählen Sie den Typ des Mediums, das Sie für die Installation verwenden möchten.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Media Type</source>
-        <translation type="obsolete">Medientyp</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD-ROM Device</source>
-        <translation type="obsolete">&amp;CD/DVD-ROM-Laufwerk</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Device</source>
-        <translation type="obsolete">&amp;Diskettenlaufwerk</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Wählen Sie das Medium mit dem Installationsprogramm des Betriebssystems, das Sie installieren wollen. Dieses Medium muss bootbar sein, anderenfalls kann das Installationsprogramm nicht starten.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Media Source</source>
-        <translation type="obsolete">Medienquelle</translation>
-    </message>
-    <message>
-        <source>Select Installation Media</source>
-        <translation type="obsolete">Installationsmedium auswählen</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Sie haben die folgenden Medien zum Booten ausgewählt:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation type="obsolete">Zusammenfassung</translation>
-    </message>
-    <message>
-        <source>CD/DVD-ROM Device</source>
-        <translation type="obsolete">CD/DVD-ROM-Gerät</translation>
-    </message>
-    <message>
-        <source>Floppy Device</source>
-        <translation type="obsolete">Diskettenlaufwerk</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Sie haben eine neu erzeugte virtuelle Maschine zum ersten Mal gestartet. Dieser Assistent wird Ihnen helfen, die für die Installation eines Betriebssystems Ihrer Wahl notwendigen Schritte auszuführen.&lt;/p&gt;&lt;p&gt;Beachten Sie, dass Sie kein Betriebssystem in dieser virtuellen Maschine installieren können, da Sie ihr keine Festplatte zugewiesen haben. Falls Sie eine Festplatte zuweisen wollen, beenden Sie diesen Assistenten, wählen Sie &lt;b&gt;Einstellungen&lt;/b&gt; aus dem Menü &lt;b&gt;Maschine&lt;/b&gt; des Hauptfensters um den Einstellungsdialog dieser VM zu aktivieren und ändern Sie die Konfiguration der Festplatten.&lt;/p&gt;&lt;p&gt;Betätigen Sie &lt;b&gt;Weiter&lt;/b&gt; um auf die nächste Seite des Assistenten zu wechseln und &lt;b&gt;Zurück&lt;/b&gt; für die Rückkehr auf die vorherige Seite. Sie können ebenso &lt;b&gt;Abbrechen&lt;/b&gt; betätigen, um den Assistenten sofort abzubrechen.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Wählen Sie den Typ des Mediums, den Sie zum Booten des Betriebssystems benutzen wollen.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Wählen Sie das Medium mit dem Betriebssystem, mit dem Sie arbeiten wollen. Dieses Medium muss bootbar sein, weil das System sonst nicht starten kann.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Sie haben das folgende Medium zum Booten eines Betriebssystems ausgewählt:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Wenn die Auswahl stimmt, wählen Sie bitte &lt;b&gt;Fertigstellen&lt;/b&gt;. Danach wird das ausgewählte Medium der virtuellen Maschine zugewiesen und die Ausführung der Maschine beginnt.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation type="obsolete">&lt; &amp;Rückw</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation type="obsolete">&amp;Weiter &gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation type="obsolete">&amp;Fertig</translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <comment>summary</comment>
-        <translation type="obsolete">Typ</translation>
-    </message>
-    <message>
-        <source>Source</source>
-        <comment>summary</comment>
-        <translation type="obsolete">Quelle</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">Abbrechen</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Betätigen Sie &lt;b&gt;Fertig&lt;/b&gt; wenn diese Angaben richtig sind. Nachdem Sie dies getan haben, wird das ausgewählte Medium temporär der virtuellen Maschine zugewiesen und diese startet.&lt;/p&gt;￼&lt;p&gt;Bitte beachten Sie, dass die Zuweisung des Mediums automatisch nach dem Ausschalten der virtuellen Maschine aufgehoben und die Bootreihenfolge auf die erste Festplatte zurückgesetzt wird.&lt;/p&gt;￼&lt;p&gt;Abhängig von der Art des Installationsprogrammes kann es möglich sein, dass Sie das Medium manuell auswerfen müssen, wenn nach der Installation die virtuelle Maschine neu bootet, anderenfalls würde das Installationsprogramm erneut starten. Die Zuweisung kann durch den Punkt &lt;b&gt;Trennen...&lt;/b&gt; im Menü &lt;b&gt;Geräte&lt;/b&gt; menu aufgehoben werden.&lt;/p&gt;</translation>
-    </message>
 </context>
 <context>
     <name>UIFirstRunWzdPage1</name>
@@ -776,26 +542,6 @@ p, li { white-space: pre-wrap; }
 </context>
 <context>
     <name>UIFirstRunWzdPage2</name>
-    <message>
-        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Wählen Sie den Typ des Mediums, das Sie für die Installation verwenden möchten.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Wählen Sie den Typ des Mediums, den Sie zum Booten des Betriebssystems benutzen wollen.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Media Type</source>
-        <translation type="obsolete">Medientyp</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD-ROM Device</source>
-        <translation type="obsolete">&amp;CD/DVD-ROM-Laufwerk</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Device</source>
-        <translation type="obsolete">&amp;Diskettenlaufwerk</translation>
-    </message>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Wählen Sie das Medium mit dem Installationsprogramm des Betriebssystems, das Sie installieren wollen. Dieses Medium muss bootbar sein, anderenfalls kann das Installationsprogramm nicht starten.&lt;/p&gt;</translation>
@@ -853,64 +599,12 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIImportApplianceWzd</name>
     <message>
-        <source>Select an appliance to import</source>
-        <translation type="obsolete">Auswahl einer Appliance für den Import</translation>
-    </message>
-    <message>
-        <source>Open Virtualization Format (%1)</source>
-        <translation type="obsolete">Open Virtualization Format (%1)</translation>
-    </message>
-    <message>
         <source>Appliance Import Wizard</source>
         <translation>Appliance importieren</translation>
     </message>
     <message>
-        <source>Welcome to the Appliance Import Wizard!</source>
-        <translation type="obsolete">Appliance importieren</translation>
-    </message>
-    <message>
-        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="obsolete">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Dieser Assistent begleitet Sie beim Import einer Appliance. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Wählen Sie &lt;span style=&quot; font-weight:600;&quot;&gt;Weiter&lt;/span&gt;, um auf die nächste Seite zu gelangen und &lt;span style=&quot; font-weight:600;&quot;&gt;Zurück&lt;/span&gt;, um auf die vorherige Seite zurückzukehren.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Für den Import einer Appliance müssen Sie zuerst eine Datei mit der Beschreibung dieser Appliance auswählen. VirtualBox unterstützt im Moment das Open Virtualization Format (OVF). Wählen Sie die zu importierende Datei aus:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation type="obsolete">&lt; &amp;Zurück</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation type="obsolete">&amp;Weiter &gt;</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">Abbrechen</translation>
-    </message>
-    <message>
-        <source>Appliance Import Settings</source>
-        <translation type="obsolete">Appliance Import-Einstellungen</translation>
-    </message>
-    <message>
-        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation type="obsolete">Dies sind die in der Appliance beschriebenen virtuellen Maschinen mit den entsprechenden Abbildungen für den Import in VirtualBox. Sie können Änderungen an vielen dieser Einstellungen mittels Doppelklick bzw. duch Auswahl der entsprechenden Checkbox ändern.</translation>
-    </message>
-    <message>
         <source>Restore Defaults</source>
         <translation>Standardeinstellungen</translation>
-    </message>
-    <message>
-        <source>&amp;Import &gt;</source>
-        <translation type="obsolete">&amp;Importieren &gt;</translation>
     </message>
 </context>
 <context>
@@ -1040,114 +734,6 @@ p, li { white-space: pre-wrap; }
         <source>Create New Virtual Disk</source>
         <translation>Neue virtuelle Festplatte erstellen</translation>
     </message>
-    <message>
-        <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation type="obsolete">Erstellen einer virtuellen Festplatte</translation>
-    </message>
-    <message>
-        <source>Virtual Disk Location and Size</source>
-        <translation type="obsolete">Lage und Größe der virtuellen Festplatte</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation type="obsolete">Zusammenfassung</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;%1 Byte&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Hard disk images (*.vdi)</source>
-        <translation type="obsolete">Plattenabbilder (*.vdi)</translation>
-    </message>
-    <message>
-        <source>Select a file for the new hard disk image file</source>
-        <translation type="obsolete">Wählen Sie eine Datei für ein neues Plattenabbild aus</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation type="obsolete">&lt; &amp;Zurück</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation type="obsolete">&amp;Weiter &gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation type="obsolete">&amp;Fertig</translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <comment>summary</comment>
-        <translation type="obsolete">Typ</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <comment>summary</comment>
-        <translation type="obsolete">Ort</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <comment>summary</comment>
-        <translation type="obsolete">Größe</translation>
-    </message>
-    <message>
-        <source>Bytes</source>
-        <comment>summary</comment>
-        <translation type="obsolete">Byte</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">Abbrechen</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Dieser Assistent wird Ihnen helfen, eine neue virtuelle Festplatte für Ihre virtuelle Maschine zu erstellen.&lt;/p&gt;&lt;p&gt;Wählen Sie &lt;b&gt;Weiter&lt;/b&gt;, um auf die nächste Seite des Assistenten zu wechseln bzw. &lt;b&gt;Zurück&lt;/b&gt;, um auf die vorherige Seite zurückzukehren.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Hard Disk Storage Type</source>
-        <translation type="obsolete">Typ der Festplatte</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Wählen Sie den Typ der virtuellen Festplatte.&lt;/p&gt;&lt;p&gt;Ein &lt;b&gt;dynamisch expandierendes Medium&lt;/b&gt; belegt bei der Erzeugung nur sehr wenig Platz auf der physischen Festplatte. Es wächst in dem Maße dynamisch (bis zur vorher festgelegten Größe), wie das Gastsystem Blöcke auf der virtuellen Platte beschreibt.&lt;/p&gt;&lt;p&gt;Ein &lt;b&gt;Medium fester Größe&lt;/b&gt; wächst nicht zur Laufzeit, sondern wird sofort mit der endgültigen Größe erzeugt. Das Erstellen eines Mediums fester Größe kann in Abhängigkeit von der Größe und der Schreibrate der Festplatte sehr lange (Minuten) dauern.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Storage Type</source>
-        <translation type="obsolete">Datenspeichertyp</translation>
-    </message>
-    <message>
-        <source>&amp;Dynamically expanding storage</source>
-        <translation type="obsolete">&amp;Dynamisch wachsendes Medium</translation>
-    </message>
-    <message>
-        <source>&amp;Fixed-size storage</source>
-        <translation type="obsolete">Medium &amp;fester Größe</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Klicken Sie auf &lt;b&gt;Auswählen&lt;/b&gt;, um den Speicherort der Daten auf der Festplatte auszuwählen oder tippen Sie den Namen in das Eingabefeld.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Location</source>
-        <translation type="obsolete">&amp;Ort</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Wählen Sie die Größe der virtuellen Festplatte in Megabyte. Diese Größe wird dem Gastsystem als Größe der virtuellen Festplatte übermittelt.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Size</source>
-        <translation type="obsolete">&amp;Größe</translation>
-    </message>
-    <message>
-        <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation type="obsolete">Sie möchten eine neue virtuelle Festplatte mit den folgenden Parametern erstellen:</translation>
-    </message>
-    <message>
-        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
-        <translation type="obsolete">Klicken Sie auf &lt;b&gt;Fertig&lt;/b&gt;, wenn alle oben angegebenen Einstellungen richtig sind. Damit wird eine neue virtuelle Festplatte erstellt.</translation>
-    </message>
 </context>
 <context>
     <name>UINewHDWzdPage1</name>
@@ -1258,118 +844,6 @@ p, li { white-space: pre-wrap; }
         <source>Create New Virtual Machine</source>
         <translation>Neue virtuelle Maschine erstellen</translation>
     </message>
-    <message>
-        <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation type="obsolete">Erstellen einer Virtuellen Maschine</translation>
-    </message>
-    <message>
-        <source>N&amp;ame</source>
-        <translation type="obsolete">N&amp;ame</translation>
-    </message>
-    <message>
-        <source>OS &amp;Type</source>
-        <translation type="obsolete">&amp;Typ des Gastbetriebssystems</translation>
-    </message>
-    <message>
-        <source>VM Name and OS Type</source>
-        <translation type="obsolete">VM-Name und BS-Typ</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Wählen Sie die Größe des Hauptspeichers (RAM) in Megabyte, die für die virtuelle Maschine verwendet werden soll.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Base &amp;Memory Size</source>
-        <translation type="obsolete">Größe &amp;Hauptspeicher</translation>
-    </message>
-    <message>
-        <source>Memory</source>
-        <translation type="obsolete">Speicher</translation>
-    </message>
-    <message>
-        <source>Virtual Hard Disk</source>
-        <translation type="obsolete">Virtuelle Festplatte</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation type="obsolete">Zusammenfassung</translation>
-    </message>
-    <message>
-        <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="obsolete">Die empfohlene Hauptspeichergröße beträgt &lt;b&gt;%1&lt;/b&gt; MB.</translation>
-    </message>
-    <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="obsolete">Die empfohlene Größe der Bootplatte beträgt &lt;b&gt;%1&lt;/b&gt; MB.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Dieser Dialog wird Sie durch die für die Erstellung einer virtuellen Maschine notwendigen Schritte führen.&lt;/p&gt;&lt;p&gt;Klicken Sie auf &lt;b&gt;Weiter&lt;/b&gt;, um auf die nächste Seite des Assistenten zu gelangen bzw. auf &lt;b&gt;Zurück&lt;/b&gt;, um auf die vorherige Seite zurückzukehren.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation type="obsolete">&lt; &amp;Zurück</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation type="obsolete">&amp;Weiter &gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Geben Sie einen Namen für die neue virtuelle Maschine ein und wählen Sie den Typ des Gast-Betriebssystems, das Sie installieren wollen.&lt;/p&gt;&lt;p&gt;Der Name der virtuellen Maschine gibt üblicherweise einen Anhaltspunkt über die Software und die Konfiguration der virtuellen Hardware. Er wird von allen VirtualBox-Produkten benutzt, um die VM eindeutig zu identifizieren.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Sie möchten eine neue virtuelle Festplatte mit den folgenden Parametern erstellen:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Klicken Sie auf &lt;b&gt;Fertig&lt;/b&gt;, wenn alle oben angegebenen Einstellungen richtig sind. Damit wird eine neue virtuelle Maschine erzeugt.&lt;/p&gt;&lt;/p&gt;Sie können diese und andere Einstellungen der virtuellen Maschine jederzeit im Dialog &lt;b&gt;Einstellungen&lt;/b&gt; ausgehend vom Hauptfenster ändern.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation type="obsolete">&amp;Fertig</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <comment>summary</comment>
-        <translation type="obsolete">Name</translation>
-    </message>
-    <message>
-        <source>OS Type</source>
-        <comment>summary</comment>
-        <translation type="obsolete">BS-Typ</translation>
-    </message>
-    <message>
-        <source>Base Memory</source>
-        <comment>summary</comment>
-        <translation type="obsolete">Hauptspeicher</translation>
-    </message>
-    <message>
-        <source>Boot Hard Disk</source>
-        <comment>summary</comment>
-        <translation type="obsolete">Bootfestplatte</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">Abbrechen</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Wählen Sie ein Abbild einer Festplatte, die als Bootplatte der virtuellen Maschine dienen soll. Sie können entweder eine neue Festplatte durch Klicken auf &lt;b&gt;Neu&lt;/b&gt; erstellen oder ein existierendes Abbild durch Klicken auf &lt;b&gt;Existierend&lt;/b&gt; auswählen (durch Aufruf des Managers virtueller Platten).&lt;/p&gt;&lt;p&gt;Falls die virtuelle Platte zusätzliche Parameter benötigt, kann dieser Schritt auch übersprungen werden und ein Abbild später über den VM-Einstellungs-Dialog angeschlossen werden.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation type="obsolete">B&amp;oot Festplatte (Primärer Master)</translation>
-    </message>
-    <message>
-        <source>&amp;Create new hard disk</source>
-        <translation type="obsolete">Festplatte &amp;erzeugen</translation>
-    </message>
-    <message>
-        <source>&amp;Use existing hard disk</source>
-        <translation type="obsolete">Festplatte &amp;benutzen</translation>
-    </message>
 </context>
 <context>
     <name>UINewVMWzdPage1</name>
@@ -1422,11 +896,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>Die empfohlene Hauptspeichergröße beträgt &lt;b&gt;%1&lt;/b&gt; MB.</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>megabytes</comment>
-        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>MB</source>
@@ -1485,11 +954,6 @@ p, li { white-space: pre-wrap; }
         <source>Base Memory</source>
         <comment>summary</comment>
         <translation>Hauptspeicher</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>megabytes</comment>
-        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>Boot Hard Disk</source>
@@ -1610,10 +1074,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Unknown Hardware Item</source>
         <translation>Unbekannter Hardware</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
@@ -1867,11 +1327,6 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Keine Festplatten angeschlossen&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
-        <comment>Network adapters tooltip</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: Kabel %3&lt;/nobr&gt;</translation>
-    </message>
-    <message>
         <source>connected</source>
         <comment>Network adapters tooltip</comment>
         <translation>verbunden</translation>
@@ -1943,10 +1398,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
         <translation>Zeigt die momentan zugeordnete Host-Taste.&lt;br&gt;Wird diese Taste allein gedrückt, schaltet sie den Fangmodus für Tastatur und Maus um. Die Taste führt in Kombination mit anderen Tasten bestimmte Aktionen aus dem Hauptmenü aus.</translation>
-    </message>
-    <message>
-        <source>Sun VirtualBox</source>
-        <translation type="obsolete">Sun VirtualBox</translation>
     </message>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
@@ -2223,14 +1674,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Show System Tray Icon</source>
         <translation>&amp;Zeige Systray-Icon</translation>
-    </message>
-    <message>
-        <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
-        <translation type="obsolete">Aktualisiert das Dock-Icon in Echtzeit.</translation>
-    </message>
-    <message>
-        <source>&amp;Dock Icon Realtime Preview</source>
-        <translation type="obsolete">Echtzeit-Vorschau im &amp;Dock-Icon</translation>
     </message>
     <message>
         <source>&amp;Auto show Dock and Menubar in fullscreen</source>
@@ -3665,6 +3108,11 @@ p, li { white-space: pre-wrap; }
         <comment>size suffix PBytes=1024 TBytes</comment>
         <translation></translation>
     </message>
+    <message>
+        <source>Shareable</source>
+        <comment>DiskType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -4795,75 +4243,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Das VirtualBox Benutzerhandbuch konnte nicht von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; heruntergeladen werden&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Das VirtualBox-Benutzerhandbuch konnte nicht von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; heruntergeladen werden&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Das VirtualBox Benutzerhandbuch wurde erfolgreich von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; heruntergeladen und lokal in &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt; gespeichert.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Das VirtualBox-Benutzerhandbuch wurde erfolgreich von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; heruntergeladen und lokal unter &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt; gespeichert.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Das VirtualBox-Benutzerhandbuch wurde erfolgreich von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; heruntergeladen, kann aber nicht lokal unter &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt; gespeichert werden. Bitte wählen Sie ein anderes Verzeichnis.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Für das Löschen des Sicherungspunktes %1 wird vorübergehend mehr Platz auf der Festplatte benötigt. Im schlimmsten Fall wird die Größe des Abbildes %2 um %3 wachsen. Auf diesem Dateisystem sind aber nur noch %4 frei.&lt;/p&gt;&lt;p&gt;Falls während der Operation der Plattenplatz nicht ausreicht kann dies zu Fehlern im Abbild und in der VM-Konfiguration führen, im schlimmsten Fall zum Verlust von VM und VM-Abbild.&lt;/p&gt;&lt;p&gt;Sie können auf eigenes Risiko fortfahren.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
-    <message>
-        <source>%1 days, %2 hours remaining</source>
-        <translation type="obsolete">noch %1 Tag(e), %2 Stunde(n)</translation>
-    </message>
-    <message>
-        <source>%1 days, %2 minutes remaining</source>
-        <translation type="obsolete">noch %1 Tage und %2 Minute(n)</translation>
-    </message>
-    <message>
-        <source>%1 days remaining</source>
-        <translation type="obsolete">noch %1 Tage</translation>
-    </message>
-    <message>
-        <source>1 day, %1 hours remaining</source>
-        <translation type="obsolete">noch einen Tag und %1 Stunde(n)</translation>
-    </message>
-    <message>
-        <source>1 day, %1 minutes remaining</source>
-        <translation type="obsolete">noch einen Tag und %1 Minute(n)</translation>
-    </message>
-    <message>
-        <source>1 day remaining</source>
-        <translation type="obsolete">noch einen Tag</translation>
-    </message>
-    <message>
-        <source>%1 hours, %2 minutes remaining</source>
-        <translation type="obsolete">noch %1 Stunden und %2 Minute(n)</translation>
-    </message>
-    <message>
-        <source>1 hour, %1 minutes remaining</source>
-        <translation type="obsolete">noch eine Stunde und %1 Minute(n)</translation>
-    </message>
-    <message>
-        <source>1 hour remaining</source>
-        <translation type="obsolete">noch eine Stunde</translation>
-    </message>
-    <message>
-        <source>%1 minutes remaining</source>
-        <translation type="obsolete">noch %1 Minuten</translation>
-    </message>
-    <message>
-        <source>1 minute, %2 seconds remaining</source>
-        <translation type="obsolete">noch eine Minute und %2 Sekunden</translation>
-    </message>
-    <message>
-        <source>1 minute remaining</source>
-        <translation type="obsolete">noch eine Minute</translation>
-    </message>
-    <message>
-        <source>%1 seconds remaining</source>
-        <translation type="obsolete">noch %1 Sekunden</translation>
-    </message>
     <message>
         <source>A few seconds remaining</source>
         <translation>noch einige Sekunden</translation>
@@ -4889,89 +4285,6 @@ p, li { white-space: pre-wrap; }
         <source>%1 remaining</source>
         <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
         <translation>noch %1</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxRegistrationDlg</name>
-    <message>
-        <source>VirtualBox Registration Dialog</source>
-        <translation type="obsolete">VirtualBox registrieren</translation>
-    </message>
-    <message>
-        <source>Enter your full name using Latin characters.</source>
-        <translation type="obsolete">Geben Sie hier Ihren vollen Namen in lateinischen Buchstaben ein.</translation>
-    </message>
-    <message>
-        <source>Enter your e-mail address. Please use a valid address here.</source>
-        <translation type="obsolete">Tragen Sie hier eine gültige EMail-Adresse ein.</translation>
-    </message>
-    <message>
-        <source>Welcome to the VirtualBox Registration Form!</source>
-        <translation type="obsolete">VirtualBox registrieren</translation>
-    </message>
-    <message>
-        <source>Could not perform connection handshake.</source>
-        <translation type="obsolete">Der Server lieferte nicht die erwarteten Daten als Antwort.</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">Abbrechen</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Bitte füllen Sie dieses Formular aus, damit wir wissen, dass Sie VirtualBox benutzen. Außerdem möchten wir Sie gern über Updates sowie über Neuigkeiten rund um VirtualBox informieren.&lt;p&gt;&lt;p&gt;Bitte benutzen Sie möglichst lateinische Buchstaben. Sun Microsystems wird diese Daten nur benutzen, um Nutzerstatistiken von VirtualBox zu erstellen und um Ihnen optional Informationen zu VirtualBox zu senden. Insbesondere wird Sun Microsystems Ihre persönlichen Daten niemals an Dritte weitergeben. Detaillierte Informationen über die Nutzung Ihrer persönlichen Daten können Sie im Abschnitt &lt;b&gt;Privacy Policy&lt;/b&gt; des Handbuchs oder unter &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; auf der VirtualBox-Webseite nachlesen.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>I &amp;already have a Sun Online account:</source>
-        <translation type="obsolete">Ich &amp;besitze bereits einen Sun-Online-Account:</translation>
-    </message>
-    <message>
-        <source>&amp;E-mail:</source>
-        <translation type="obsolete">&amp;E-mail:</translation>
-    </message>
-    <message>
-        <source>&amp;Password:</source>
-        <translation type="obsolete">&amp;Passwort:</translation>
-    </message>
-    <message>
-        <source>I &amp;would like to create a new Sun Online account:</source>
-        <translation type="obsolete">Ich &amp;möchte einen neuen Sun-Account für die Registrierung erzeugen:</translation>
-    </message>
-    <message>
-        <source>&amp;First Name:</source>
-        <translation type="obsolete">&amp;Vorname:</translation>
-    </message>
-    <message>
-        <source>&amp;Last Name:</source>
-        <translation type="obsolete">&amp;Nachname:</translation>
-    </message>
-    <message>
-        <source>&amp;Company:</source>
-        <translation type="obsolete">&amp;Firma:</translation>
-    </message>
-    <message>
-        <source>Co&amp;untry:</source>
-        <translation type="obsolete">&amp;Land:</translation>
-    </message>
-    <message>
-        <source>E-&amp;mail:</source>
-        <translation type="obsolete">E-&amp;mail:</translation>
-    </message>
-    <message>
-        <source>P&amp;assword:</source>
-        <translation type="obsolete">P&amp;asswort:</translation>
-    </message>
-    <message>
-        <source>Co&amp;nfirm Password:</source>
-        <translation type="obsolete">Pa&amp;sswort bestätigen:</translation>
-    </message>
-    <message>
-        <source>&amp;Register</source>
-        <translation type="obsolete">&amp;Registrieren</translation>
-    </message>
-    <message>
-        <source>Select Country/Territory</source>
-        <translation type="obsolete">Wählen Sie das Land/Gebiet</translation>
     </message>
 </context>
 <context>
@@ -5157,10 +4470,6 @@ p, li { white-space: pre-wrap; }
         <translation>Exportiert eine Appliance aus VirtualBox</translation>
     </message>
     <message>
-        <source>Sun VirtualBox</source>
-        <translation type="obsolete">Sun VirtualBox</translation>
-    </message>
-    <message>
         <source>Re&amp;fresh</source>
         <translation>&amp;Aktualisieren</translation>
     </message>
@@ -5292,34 +4601,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source> (%1)</source>
         <translation> (%1)</translation>
-    </message>
-    <message numerus="yes">
-        <source> (%n day(s) ago)</source>
-        <translation type="obsolete">
-            <numerusform> (vor %n Tag)</numerusform>
-            <numerusform> (vor %n Tagen)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source> (%n hour(s) ago)</source>
-        <translation type="obsolete">
-            <numerusform> (vor %n Stunde)</numerusform>
-            <numerusform> (vor %n Stunden)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source> (%n minute(s) ago)</source>
-        <translation type="obsolete">
-            <numerusform> (vor %n Minute)</numerusform>
-            <numerusform> (vor %n Minuten)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source> (%n second(s) ago)</source>
-        <translation type="obsolete">
-            <numerusform> (vor %n Sekunde)</numerusform>
-            <numerusform> (vor %n Sekunden)</numerusform>
-        </translation>
     </message>
     <message>
         <source>&amp;Restore Snapshot</source>
@@ -5591,11 +4872,6 @@ p, li { white-space: pre-wrap; }
         <translation>Auflösung</translation>
     </message>
     <message>
-        <source>Version %1.%2</source>
-        <comment>guest additions</comment>
-        <translation type="obsolete">Version %1.%2</translation>
-    </message>
-    <message>
         <source>Not Detected</source>
         <comment>guest additions</comment>
         <translation>nicht erkannt</translation>
@@ -5853,10 +5129,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Mo&amp;nitor Count:</source>
         <translation>Anzahl &amp;Bildschirme:</translation>
-    </message>
-    <message>
-        <source>Controls the amount of virtual monitors provided to the virtual machine. Currently 2D and 3D acceleration isn&apos;t available when more than one monitor is selected.</source>
-        <translation type="obsolete">Ändern der Anzahl der virtuellen Monitore für diesen Gast. 2D- und 3D-Beschleunigung ist momentan nicht verfügbar, wenn mehr als ein virtueller Monitor eingestellt ist.</translation>
     </message>
     <message>
         <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
@@ -6253,7 +5525,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Storage Controller 1</source>
-        <translation type="unfinished"></translation>
+        <translation>Speicher-Controller 1</translation>
     </message>
 </context>
 <context>
@@ -6678,10 +5950,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Processor(s):</source>
         <translation>&amp;Prozessoren:</translation>
-    </message>
-    <message>
-        <source>Controls the number of virtual CPUs in the virtual machine.</source>
-        <translation type="obsolete">Legt die Anzahld er virtuellen CPUs dieser VM fest.</translation>
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
