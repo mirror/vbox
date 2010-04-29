@@ -72,7 +72,7 @@ int rtPathFromNativeCopy(char *pszPath, size_t cbPath, const char *pszNativePath
 {
     int rc = RTStrValidateEncodingEx(pszNativePath, RTSTR_MAX, 0 /*fFlags*/);
     if (RT_SUCCESS(rc))
-        rc = RTStrCopyEx(pszPath, cbPath, pszNativePath, RTSTR_MAX);
+        rc = RTStrCopy(pszPath, cbPath, pszNativePath);
     NOREF(pszBasePath); /* We don't query the FS for codeset preferences. */
     return rc;
 }
