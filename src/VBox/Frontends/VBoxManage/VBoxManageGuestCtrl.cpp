@@ -334,10 +334,10 @@ static int handleExecProgram(HandlerArg *a)
                         RTPrintf("\n");
                     }
 
-                    ULONG uStatus, uExitCode, uFlags;
-                    CHECK_ERROR_BREAK(guest, GetProcessStatus(uPID, &uExitCode, &uFlags, &uStatus));
+                    ULONG uRetStatus, uRetExitCode, uRetFlags;
+                    CHECK_ERROR_BREAK(guest, GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus));
                     if (verbose)
-                        RTPrintf("Exit code=%u (Status=%u, Flags=%u)\n", uExitCode, uStatus, uFlags);
+                        RTPrintf("Exit code=%u (Status=%u, Flags=%u)\n", uRetExitCode, uRetStatus, uRetFlags);
 
                     /* Print output if wanted. */
                     if (   waitForStdOut
