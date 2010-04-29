@@ -43,9 +43,10 @@
 #include <iprt/spinlock.h>
 #include <iprt/thread.h>
 #include <iprt/uuid.h>
+#include <iprt/net.h>
+#include <iprt/avl.h>
+#include <iprt/crc32.h>
 #if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
-# include <iprt/crc32.h>
-# include <iprt/net.h>
 # include <iprt/string.h>
 # include <iprt/rand.h>
 # include <iprt/path.h>
@@ -294,6 +295,49 @@ static SUPFUNC g_aFunctions[] =
     { "RTAssertMayPanic",                       (void *)RTAssertMayPanic },
     { "RTAssertSetMayPanic",                    (void *)RTAssertSetMayPanic },
     { "RTAssertAreQuiet",                       (void *)RTAssertAreQuiet },
+#ifdef RT_OS_WINDOWS
+    /* We need to include more of our runtime to prevent the dynamically linked R0 modules to get too large. */
+    { "RTNetIPv4AddDataChecksum",               (void *)RTNetIPv4AddDataChecksum },
+    { "RTNetIPv4AddTCPChecksum",                (void *)RTNetIPv4AddTCPChecksum },
+    { "RTNetIPv4AddUDPChecksum",                (void *)RTNetIPv4AddUDPChecksum },
+    { "RTNetIPv4FinalizeChecksum",              (void *)RTNetIPv4FinalizeChecksum },
+    { "RTNetIPv4HdrChecksum",                   (void *)RTNetIPv4HdrChecksum },
+    { "RTNetIPv4IsDHCPValid",                   (void *)RTNetIPv4IsDHCPValid },
+    { "RTNetIPv4IsHdrValid",                    (void *)RTNetIPv4IsHdrValid },
+    { "RTNetIPv4IsTCPSizeValid",                (void *)RTNetIPv4IsTCPSizeValid },
+    { "RTNetIPv4IsTCPValid",                    (void *)RTNetIPv4IsTCPValid },
+    { "RTNetIPv4IsUDPSizeValid",                (void *)RTNetIPv4IsUDPSizeValid },
+    { "RTNetIPv4IsUDPValid",                    (void *)RTNetIPv4IsUDPValid },
+    { "RTNetIPv4PseudoChecksum",                (void *)RTNetIPv4PseudoChecksum },
+    { "RTNetIPv4PseudoChecksumBits",            (void *)RTNetIPv4PseudoChecksumBits },
+    { "RTNetIPv4TCPChecksum",                   (void *)RTNetIPv4TCPChecksum },
+    { "RTNetIPv4UDPChecksum",                   (void *)RTNetIPv4UDPChecksum },
+    { "RTNetIPv6PseudoChecksum",                (void *)RTNetIPv6PseudoChecksum },
+    { "RTNetIPv6PseudoChecksumBits",            (void *)RTNetIPv6PseudoChecksumBits },
+    { "RTNetIPv6PseudoChecksumEx",              (void *)RTNetIPv6PseudoChecksumEx },
+    { "RTNetTCPChecksum",                       (void *)RTNetTCPChecksum },
+    { "RTNetUDPChecksum",                       (void *)RTNetUDPChecksum },
+    { "RTStrFormat",                            (void *)RTStrFormat },
+    { "RTStrFormatNumber",                      (void *)RTStrFormatNumber },
+    { "RTStrFormatTypeDeregister",              (void *)RTStrFormatTypeDeregister },
+    { "RTStrFormatTypeRegister",                (void *)RTStrFormatTypeRegister },
+    { "RTStrFormatTypeSetUser",                 (void *)RTStrFormatTypeSetUser },
+    { "RTStrFormatV",                           (void *)RTStrFormatV },
+    { "RTStrPrintf",                            (void *)RTStrPrintf },
+    { "RTStrPrintfEx",                          (void *)RTStrPrintfEx },
+    { "RTStrPrintfExV",                         (void *)RTStrPrintfExV },
+    { "RTStrPrintfV",                           (void *)RTStrPrintfV },
+    { "RTCrc32",                                (void *)RTCrc32 },
+    { "RTCrc32Finish",                          (void *)RTCrc32Finish },
+    { "RTCrc32Process",                         (void *)RTCrc32Process },
+    { "RTCrc32Start",                           (void *)RTCrc32Start },
+    { "RTHandleTableAllocWithCtx",              (void *)RTHandleTableAllocWithCtx },
+    { "RTHandleTableCreate",                    (void *)RTHandleTableCreate },
+    { "RTHandleTableCreateEx",                  (void *)RTHandleTableCreateEx },
+    { "RTHandleTableDestroy",                   (void *)RTHandleTableDestroy },
+    { "RTHandleTableFreeWithCtx",               (void *)RTHandleTableFreeWithCtx },
+    { "RTHandleTableLookupWithCtx",             (void *)RTHandleTableLookupWithCtx },
+#endif
 };
 
 #if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)

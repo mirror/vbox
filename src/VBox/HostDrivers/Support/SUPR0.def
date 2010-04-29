@@ -155,6 +155,48 @@ EXPORTS
     RTAssertSetMayPanic
     RTAssertAreQuiet
 
+    RTNetIPv4AddDataChecksum
+    RTNetIPv4AddTCPChecksum
+    RTNetIPv4AddUDPChecksum
+    RTNetIPv4FinalizeChecksum
+    RTNetIPv4HdrChecksum
+    RTNetIPv4IsDHCPValid
+    RTNetIPv4IsHdrValid
+    RTNetIPv4IsTCPSizeValid
+    RTNetIPv4IsTCPValid
+    RTNetIPv4IsUDPSizeValid
+    RTNetIPv4IsUDPValid
+    RTNetIPv4PseudoChecksum
+    RTNetIPv4PseudoChecksumBits
+    RTNetIPv4TCPChecksum
+    RTNetIPv4UDPChecksum
+    RTNetIPv6PseudoChecksum
+    RTNetIPv6PseudoChecksumBits
+    RTNetIPv6PseudoChecksumEx
+    RTNetTCPChecksum
+    RTNetUDPChecksum
+    RTStrFormat
+    RTStrFormatNumber
+    RTStrFormatTypeDeregister
+    RTStrFormatTypeRegister
+    RTStrFormatTypeSetUser
+    RTStrFormatV
+    RTStrPrintf
+    RTStrPrintfEx
+    RTStrPrintfExV
+    RTStrPrintfV
+
+    RTCrc32
+    RTCrc32Finish
+    RTCrc32Process
+    RTCrc32Start
+    RTHandleTableAllocWithCtx
+    RTHandleTableCreate
+    RTHandleTableCreateEx
+    RTHandleTableDestroy
+    RTHandleTableFreeWithCtx
+    RTHandleTableLookupWithCtx
+
     ; data
     g_pSUPGlobalInfoPage DATA ; NT
     g_SUPGlobalInfoPage  DATA ; OS2
