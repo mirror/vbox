@@ -1382,6 +1382,9 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
             return setStateError();
     }
 
+    /** @todo implement this case later */
+    CheckComArgExpr(aType, aType != MediumType_Shareable);
+
     if (m->type == aType)
     {
         /* Nothing to do */
@@ -1394,8 +1397,8 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
                         tr("Cannot change the type of hard disk '%s' because it is a differencing hard disk"),
                         m->strLocationFull.raw());
 
-    /* cannot change the type of a hard disk being in use */
-    if (m->backRefs.size() != 0)
+    /* cannot change the type of a hard disk being in use by more than one VM */
+    if (m->backRefs.size() > 1)
         return setError(E_FAIL,
                         tr("Cannot change the type of hard disk '%s' because it is attached to %d virtual machines"),
                         m->strLocationFull.raw(), m->backRefs.size());
@@ -1411,8 +1414,9 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
             break;
         }
         case MediumType_Writethrough:
+        case MediumType_Shareable:
         {
-            /* cannot change to writethrough if there are children */
+            /* cannot change to writethrough or shareable if there are children */
             if (getChildren().size() != 0)
                 return setError(E_FAIL,
                                 tr("Cannot change type for hard disk '%s' since it has %d child hard disk(s)"),
@@ -2933,13 +2937,10 @@ bool Medium::isReadOnly()
             return false;
         }
         case MediumType_Immutable:
-        {
             return true;
-        }
         case MediumType_Writethrough:
-        {
+        case MediumType_Shareable:
             return false;
-        }
         default:
             break;
     }

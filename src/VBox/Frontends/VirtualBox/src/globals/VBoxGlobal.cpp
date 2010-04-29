@@ -3062,6 +3062,7 @@ void VBoxGlobal::retranslateUi()
     mDiskTypes [KMediumType_Normal] =           tr ("Normal", "DiskType");
     mDiskTypes [KMediumType_Immutable] =        tr ("Immutable", "DiskType");
     mDiskTypes [KMediumType_Writethrough] =     tr ("Writethrough", "DiskType");
+    mDiskTypes [KMediumType_Shareable] =        tr ("Shareable", "DiskType");
     mDiskTypes_Differencing =                   tr ("Differencing", "DiskType");
 
     mVRDPAuthTypes [KVRDPAuthType_Null] =       tr ("Null", "VRDPAuthType");

@@ -9136,7 +9136,7 @@
 
   <enum
     name="MediumType"
-    uuid="11f6f7a5-0327-409a-9d42-7db6a0cec578"
+    uuid="46bf1fd4-ad86-4ded-8c49-28bd2d148e5a"
    >
     <desc>
       Virtual medium type.
@@ -9159,6 +9159,12 @@
       <desc>
         Write through medium (attached directly, ignored when
         taking snapshots).
+      </desc>
+    </const>
+    <const name="Shareable"         value="3">
+      <desc>
+        Allow using this medium concurrently by several machines.
+        <note>This is a stub value. Not usable until this note is removed.</note>
       </desc>
     </const>
   </enum>

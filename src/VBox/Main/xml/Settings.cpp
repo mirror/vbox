@@ -920,6 +920,12 @@ void MainConfigFile::readMedium(MediaType t,
                 med.hdType = MediumType_Immutable;
             else if (strType == "WRITETHROUGH")
                 med.hdType = MediumType_Writethrough;
+            else if (strType == "SHAREABLE")
+            {
+                /// @todo remove check once the medium type is implemented
+                throw ConfigFileError(this, &elmMedium, N_("HardDisk/@type attribute of Shareable is not implemented yet"));
+                med.hdType = MediumType_Shareable;
+            }
             else
                 throw ConfigFileError(this, &elmMedium, N_("HardDisk/@type attribute must be one of Normal, Immutable or Writethrough"));
         }
@@ -1177,7 +1183,8 @@ void MainConfigFile::writeHardDisk(xml::ElementNode &elmMedium,
         const char *pcszType =
             mdm.hdType == MediumType_Normal ? "Normal" :
             mdm.hdType == MediumType_Immutable ? "Immutable" :
-            /*mdm.hdType == MediumType_Writethrough ?*/ "Writethrough";
+            mdm.hdType == MediumType_Writethrough ? "Writethrough" :
+            mdm.hdType == MediumType_Shareable ? "Shareable" : "INVALID";
         pelmHardDisk->setAttribute("type", pcszType);
     }
 
