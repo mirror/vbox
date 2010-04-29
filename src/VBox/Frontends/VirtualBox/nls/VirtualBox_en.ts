@@ -4,7 +4,7 @@
 <context>
     <name>VBoxGlobal</name>
     <message numerus="yes">
-        <location filename="../include/VBoxGlobal.h" line="350"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="371"/>
         <source>%n year(s)</source>
         <translation>
             <numerusform>%n year</numerusform>
@@ -12,7 +12,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../include/VBoxGlobal.h" line="355"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="376"/>
         <source>%n month(s)</source>
         <translation>
             <numerusform>%n month</numerusform>
@@ -20,7 +20,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../include/VBoxGlobal.h" line="360"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="381"/>
         <source>%n day(s)</source>
         <translation>
             <numerusform>%n day</numerusform>
@@ -28,7 +28,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../include/VBoxGlobal.h" line="365"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="386"/>
         <source>%n hour(s)</source>
         <translation>
             <numerusform>%n hour</numerusform>
@@ -36,7 +36,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../include/VBoxGlobal.h" line="375"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="396"/>
         <source>%n second(s)</source>
         <translation>
             <numerusform>%n second</numerusform>
@@ -44,7 +44,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../include/VBoxGlobal.h" line="370"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="391"/>
         <source>%n minute(s)</source>
         <translation>
             <numerusform>%n minute</numerusform>
@@ -55,7 +55,7 @@
 <context>
     <name>VBoxTakeSnapshotDlg</name>
     <message numerus="yes">
-        <location filename="../src/VBoxTakeSnapshotDlg.cpp" line="60"/>
+        <location filename="../src/VBoxTakeSnapshotDlg.cpp" line="61"/>
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
         <translation>
             <numerusform>Warning: You are taking a snapshot of a running machine which has %n immutable image attached to it. As long as you are working from this snapshot the immutable image will not be reset to avoid loss of data.</numerusform>

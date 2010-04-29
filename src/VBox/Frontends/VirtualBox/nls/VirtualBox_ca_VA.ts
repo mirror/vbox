@@ -441,6 +441,1430 @@
     </message>
 </context>
 <context>
+    <name>QIWizardPage</name>
+    <message>
+        <source>Use the &lt;b&gt;%1&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;%2&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;%3&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDownloader</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Cancel·la</translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="obsolete">S&apos;està baixant la imatge del CD de les Guest Additions del VirtualBox des de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="obsolete">Cancel·la la descàrrega de la imatge del CD de les Guest Additions del VirtualBox</translation>
+    </message>
+    <message>
+        <source>Could not locate the file on the server (response: %1).</source>
+        <translation type="obsolete">No es pot localitzar el fitxer al servidor (resposta: %1).</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Hi ha hagut un error mentre es desava el fitxer descarregat com a &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Select folder to save Guest Additions image to</source>
+        <translation type="obsolete">Seleccioneu la carpeta on alçar la imatge de les Guest Additions</translation>
+    </message>
+    <message>
+        <source>Connection timed out.</source>
+        <translation type="obsolete">S&apos;ha excedit el temps d&apos;espera de la connexió.</translation>
+    </message>
+    <message>
+        <source>The download process has been cancelled by the user.</source>
+        <translation type="obsolete">L&apos;usuari ha cancel·lat el procés de baixada.</translation>
+    </message>
+    <message>
+        <source>The download process has been canceled by the user.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDownloaderAdditions</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Cancel·la</translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="obsolete">S&apos;està baixant la imatge de les Guest Additions del VirtualBox des de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="obsolete">Cancel·la la baixada de la imatge de les Guest Additions del VirtualBox</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;No s&apos;ha pogut alçar el fitxer baixat com a &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Select folder to save Guest Additions image to</source>
+        <translation>Seleccioneu la carpeta on alçar la imatge de les Guest Additions</translation>
+    </message>
+</context>
+<context>
+    <name>UIDownloaderUserManual</name>
+    <message>
+        <source>Select folder to save User Manual to</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzd</name>
+    <message>
+        <source>Select a file to export into</source>
+        <translation type="obsolete">Seleccioneu un fitxer al qual s&apos;exportarà</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="obsolete">Format virtual obert (%1)</translation>
+    </message>
+    <message>
+        <source>Appliance</source>
+        <translation type="obsolete">Aplicació virtual</translation>
+    </message>
+    <message>
+        <source>Exporting Appliance ...</source>
+        <translation type="obsolete">S&apos;està exportant l&apos;aplicació virtual...</translation>
+    </message>
+    <message>
+        <source>Appliance Export Wizard</source>
+        <translation>Assistent d&apos;exportació d&apos;aplicació virtuals</translation>
+    </message>
+    <message>
+        <source>Welcome to the Appliance Export Wizard!</source>
+        <translation type="obsolete">Benvingut a l&apos;assistent d&apos;exportació d&apos;aplicacions virtuals!</translation>
+    </message>
+    <message>
+        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="obsolete">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Este assitent vos guiarà durant el procés d&apos;exportació d&apos;una aplicació virtual. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Feu servir el botó &lt;span style=&quot; font-weight:600;&quot;&gt;Següent&lt;/span&gt; per anar a la següent pàgina de l&apos;assistent i el botó &lt;span style=&quot; font-weight:600;&quot;&gt;Arrere&lt;/span&gt; per anar a la pàgina prèvia.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Seleccioneu les màquines virtuals que s&apos;haurien d&apos;exportar a l&apos;aplicació virtual. En podeu seleccionar més d&apos;una. Tingueu en compte que estes màquines han d&apos;estar aturades per tal que puguen importar-se.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; &amp;Arrere</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">&amp;Següent &gt;</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Cancel·la</translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="obsolete">Paràmetres d&apos;exportació de l&apos;aplicació virtual</translation>
+    </message>
+    <message>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
+        <translation type="obsolete">Ací podeu canviar valors adicionals de la configuració de les màquines virtuals seleccionades. Podeu modificar la majoria de les propietats mostrades fent doble clic sobre els ítems.</translation>
+    </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>Restaura els paràmetres per defecte</translation>
+    </message>
+    <message>
+        <source>Please specify a filename into which the appliance information will be written. Currently VirtualBox supports the Open Virtualization Format (OVF).</source>
+        <translation type="obsolete">Especifiqueu un nom de fitxer a dins del qual s&apos;escriurà la informació de l&apos;aplicació virtual. Actualment el VirtualBox suporta el format obert de virtualització (OVF).</translation>
+    </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="obsolete">Escriu en format OVF 0.9 original per ser compatible amb altres productes de virtualització.</translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="obsolete">&amp;Escriu en format OVF 0.9 original</translation>
+    </message>
+    <message>
+        <source>&amp;Export &gt;</source>
+        <translation type="obsolete">&amp;Exporta &gt;</translation>
+    </message>
+    <message>
+        <source>Please choose a filename to export the OVF to.</source>
+        <translation type="obsolete">Seleccioneu un nom de fitxer al qual exportar l&apos;OVF.</translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="obsolete">Ompliu els camps addicionals com el nom d&apos;usuari, conrasenya i el contenidor. Després haureu de proveir un nom de fitxer a l&apos;objectiu de l&apos;OVF.</translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="obsolete">Completeu els camps addicionals com el nom d&apos;usuari, la contrasenya, el nom de l&apos;amfitrió i el contenidor. Després haureu de proveir un nom de fitxer a l&apos;objectiu de l&apos;OVF.</translation>
+    </message>
+    <message>
+        <source>Checking files ...</source>
+        <translation type="obsolete">S&apos;estan comprovant els fitxers...</translation>
+    </message>
+    <message>
+        <source>Removing files ...</source>
+        <translation type="obsolete">S&apos;estan eliminant els fitxers...</translation>
+    </message>
+    <message>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <translation type="obsolete">Especifiqueu l&apos;objectiu per a l&apos;exportació OVF. Podeu triar entre una exportació del sistema a fitxer local, pujar l&apos;OVF al servei Sun Cloud o en un servidor d&apos;emmagatzamatge S3.</translation>
+    </message>
+    <message>
+        <source>&amp;Local Filesystem </source>
+        <translation type="obsolete">Sistema de fitxers &amp;local </translation>
+    </message>
+    <message>
+        <source>Sun &amp;Cloud</source>
+        <translation type="obsolete">Sun &amp;Cloud</translation>
+    </message>
+    <message>
+        <source>&amp;Simple Storage System (S3)</source>
+        <translation type="obsolete">&amp;Sistema d&apos;emmagatzematge simple (S3)</translation>
+    </message>
+    <message>
+        <source>&amp;Username:</source>
+        <translation type="obsolete">Nom d&apos;&amp;usuari:</translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="obsolete">&amp;Contrasenya:</translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="obsolete">&amp;Fitxer:</translation>
+    </message>
+    <message>
+        <source>&amp;Bucket:</source>
+        <translation type="obsolete">&amp;Contenidor:</translation>
+    </message>
+    <message>
+        <source>&amp;Hostname:</source>
+        <translation type="obsolete">&amp;Nom de l&apos;amfitrió:</translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage1</name>
+    <message>
+        <source>Welcome to the Appliance Export Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through the process of exporting an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Please select the virtual machines that should be added to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage2</name>
+    <message>
+        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage3</name>
+    <message>
+        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Local Filesystem </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sun &amp;Cloud</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Simple Storage System (S3)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIExportApplianceWzdPage4</name>
+    <message>
+        <source>&amp;Username:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Hostname:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Bucket:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Write legacy OVF 0.9</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Export Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a file to export into</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a filename to export the OVF to.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Checking files ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removing files ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exporting Appliance ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzd</name>
+    <message>
+        <source>&amp;CD/DVD-ROM Device</source>
+        <translation type="obsolete">Dispositiu &amp;CD/DVD</translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM Device</source>
+        <translation type="obsolete">Dispositiu CD/DVD</translation>
+    </message>
+    <message>
+        <source>First Run Wizard</source>
+        <translation>Executa l&apos;auxiliar d&apos;inici</translation>
+    </message>
+    <message>
+        <source>Floppy Device</source>
+        <translation type="obsolete">Disquet</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Device</source>
+        <translation type="obsolete">Dis&amp;quet</translation>
+    </message>
+    <message>
+        <source>&amp;Host Drive</source>
+        <translation type="obsolete">&amp;Dispositiu amfitrió</translation>
+    </message>
+    <message>
+        <source>Host Drive %1</source>
+        <translation type="obsolete">Dispositiu amfitrió %1</translation>
+    </message>
+    <message>
+        <source>&amp;Image File</source>
+        <translation type="obsolete">Fitxer d&apos;&amp;imatge</translation>
+    </message>
+    <message>
+        <source>Media Source</source>
+        <translation type="obsolete">Suport font</translation>
+    </message>
+    <message>
+        <source>Media Type</source>
+        <translation type="obsolete">Tipus de suport</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Si el que hi ha a continuació és correcte, premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;. Quan el premeu, el dispositiu seleccionat es muntarà a la màquina virtual.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Si el que hi ha a continuació és correcte, premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;. Quan el premeu, el dispositiu seleccionat es muntarà a la màquina virtual.&lt;/p&gt;&lt;p&gt;Tingueu en compte que quan tanqueu la màquina virtual, el dispositiu especificat es desmuntarà automàticament i el dispositiu d&apos;inici tornarà a ser el primer disc d&apos;arrencada.&lt;/p&gt;&lt;p&gt;Segons el tipus del programa de configuració, necessitareu desmuntar manualment (expulsar) el dispositiu una vegada que el programa de configuració haja reiniciat la màquina virtual, per tal de prevenir que s&apos;inicie novament el procés d&apos;instal·lació. Podeu fer axiò seleccionat l&apos;acció corresponent &lt;b&gt;Desmunta...&lt;/b&gt; al menú &lt;b&gt;Dispositius.&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Seleccioneu el suport que conté el sistema operatiu amb el qual voleu treballar. Este suport ha d&apos;ésser arrencable, en altre cas el sistema no podrà iniciar-se.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Seleccioneu el suport que conté el programa de configuració del sistema operatiu amb el qual voleu treballar. Este suport ha d&apos;ésser arrencable, en altre cas el sistema no podrà iniciar-se.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Seleccioneu el tipus de suport que voleu fer servir per iniciar un sistema operatiu.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Seleccioneu el tipus de suport que voleu fer servir per a la instal·lació dels elements mostrats.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Heu seleccionat el següent suport per iniciar un sistema operatiu des de:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Heu seleccionat el següent suport per iniciar des de:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Heu iniciat un nova màquina virtual per primera vegada. Este assistent vos ajudarà a dur a terme els passos necessaris per iniciar un sistema operatiu de la vostra elecció a la màquina virtual.&lt;/p&gt;&lt;p&gt;Tingueu en compte que no podeu instal·lar un sistema operatiu a dins d&apos;esta màquina virtual en este moment perquè encara no heu seleccionat un disc. Si això no és el que voleu, podeu cancel·lar l&apos;execució d&apos;este assistent, seleccioneu &lt;b&gt;Paràmetres&lt;/b&gt; des del menú &lt;b&gt;Màquina&lt;/b&gt; de la finestra principal del VirtualBox per accedir al diàleg de configuració d&apos;este màquina i canviar la configuració de disc.&lt;/p&gt;&lt;p&gt;Feu servir el botó &lt;b&gt;Següent&lt;/b&gt; per continuar amb la següent pàgina de l&apos;assistent i el botó &lt;b&gt;Arrere&lt;/b&gt; per tornar a la pàgina anterior. Podeu prémer també &lt;b&gt;Cancel·la&lt;/b&gt; si voleu cancel·lar l&apos;execució d&apos;este assistent.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Heu iniciat un nova màquina virtual per primera vegada. Este assistent vos ajudarà a dur a terme els passos necessaris per iniciar un sistema operatiu de la vostra elecció a la màquina virtual.&lt;/p&gt;&lt;p&gt;Feu servir el botó &lt;b&gt;Següent&lt;/b&gt; per continuar amb la següent pàgina de l&apos;assistent i el botó &lt;b&gt;Arrere&lt;/b&gt; per tornar a la pàgina anterior. Podeu prémer també &lt;b&gt;Cancel·la&lt;/b&gt; si voleu cancel·lar l&apos;execució d&apos;este assistent.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Select Installation Media</source>
+        <translation type="obsolete">Selecciona el suport d&apos;instal·lació</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Resum</translation>
+    </message>
+    <message>
+        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Tipus:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Font:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+    </message>
+    <message>
+        <source>VDM</source>
+        <translation type="obsolete">VDM</translation>
+    </message>
+    <message>
+        <source>Welcome to the First Run Wizard!</source>
+        <translation type="obsolete">Benvingut a l&apos;auxiliar d&apos;inici!</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; &amp;Arrere</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">&amp;Següent &gt;</translation>
+    </message>
+    <message>
+        <source>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If the above is correct, press the &lt;span style=&quot; font-weight:600;&quot;&gt;Finish&lt;/span&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;span style=&quot; font-weight:600;&quot;&gt;Unmount...&lt;/span&gt; action in the &lt;span style=&quot; font-weight:600;&quot;&gt;Devices&lt;/span&gt; menu&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="obsolete">&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Si el que posa amunt és correcte, premeu sobre &lt;span style=&quot; font-weight:600;&quot;&gt;Finalitza&lt;/span&gt;. Una vegada que premeu el botó, el dispositiu seleccionat es muntarà temporalment a la màquina virtual i començarà l&apos;execució..&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Tingueu en compte que quan tanqueu la màquina virtual, el dispositiu s&apos;expulsarà automàticament.&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Segons el tipus de programa de configuració, potser necessitareu expulsar manualment el dispositiu després que la màquina virtual es torne a iniciar per tal que el procés d&apos;instal·lació s&apos;inicie novament. Podeu fer això seleccionant l&apos;acció corresponent &lt;span style=&quot; font-weight:600;&quot;&gt;Expulsa...&lt;/span&gt; al menú &lt;span style=&quot; font-weight:600;&quot;&gt;Dispositius&lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Finish</source>
+        <translation type="obsolete">&amp;Finalitza</translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Tipus</translation>
+    </message>
+    <message>
+        <source>Source</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Font</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Cancel·la</translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzdPage1</name>
+    <message>
+        <source>Welcome to the First Run Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzdPage2</name>
+    <message>
+        <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Media Source</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select Installation Media</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIFirstRunWzdPage3</name>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD-ROM Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Source</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIImportApplianceWzd</name>
+    <message>
+        <source>Select an appliance to import</source>
+        <translation type="obsolete">Seleccioneu una aplicació virtual per importar</translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="obsolete">Format obert de virtualització (%1)</translation>
+    </message>
+    <message>
+        <source>Appliance Import Wizard</source>
+        <translation>Assistent d&apos;importació d&apos;aplicacions virtuals</translation>
+    </message>
+    <message>
+        <source>Welcome to the Appliance Import Wizard!</source>
+        <translation type="obsolete">Benvingut a l&apos;assistent d&apos;importació d&apos;aplicacions virtuals!</translation>
+    </message>
+    <message>
+        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="obsolete">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Este assitent vos guiarà durant el procés d&apos;importació d&apos;una aplicació virtual. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Feu servir el botó &lt;span style=&quot; font-weight:600;&quot;&gt;Següent&lt;/span&gt; per anar a la següent pàgina de l&apos;assistent i el botó &lt;span style=&quot; font-weight:600;&quot;&gt;Arrere&lt;/span&gt; per anar a la pàgina prèvia.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Per importar una aplicació virtual, heu de seleccionar un fitxer que el descrigui primer. Actualment el VirtualBox suporta el format obert de virtualització (OVF). Per continuar, seleccioneu el fitxer per a importar:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; &amp;Arrere</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">&amp;Següent &gt;</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Cancel·la</translation>
+    </message>
+    <message>
+        <source>Appliance Import Settings</source>
+        <translation type="obsolete">Paràmetres d&apos;importació de l&apos;aplicació virtual</translation>
+    </message>
+    <message>
+        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
+        <translation type="obsolete">Estes són les màquines virtuals que es descriuen a l&apos;aplicació virtual amb els mapejats suggerits per a la importació al VirtualBox. Podeu canviar la majoria dels paràmetres mostrats fent doble clic sobre els ítems i inhabilitar altres fent servir els quadres de verificació.</translation>
+    </message>
+    <message>
+        <source>Restore Defaults</source>
+        <translation>Restaura els paràmetres per defecte</translation>
+    </message>
+    <message>
+        <source>&amp;Import &gt;</source>
+        <translation type="obsolete">&amp;Importa &gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIImportApplianceWzdPage1</name>
+    <message>
+        <source>Select an appliance to import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Virtualization Format (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Welcome to the Appliance Import Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through importing an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIImportApplianceWzdPage2</name>
+    <message>
+        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Appliance Import Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIImportLicenseViewer</name>
+    <message>
+        <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
+        <translation>&lt;b&gt;El sistema virtual &quot;%1&quot; requreix l&apos;acceptació dels termes i condicions de l&apos;acord de llicència del programari que es mostra.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Premeu &lt;b&gt;Hi estic d&apos;acord&lt;/b&gt; per continuar o &lt;b&gt;No hi estic d&apos;acord&lt;/b&gt; per a cancel·lar la importació.</translation>
+    </message>
+    <message>
+        <source>Software License Agreement</source>
+        <translation>Acord de llicència de programari</translation>
+    </message>
+    <message>
+        <source>&amp;Disagree</source>
+        <translation>&amp;No hi estic d&apos;acord</translation>
+    </message>
+    <message>
+        <source>&amp;Agree</source>
+        <translation>Hi estic d&apos;&amp;acord</translation>
+    </message>
+    <message>
+        <source>&amp;Print...</source>
+        <translation>Im&amp;primeix...</translation>
+    </message>
+    <message>
+        <source>&amp;Save...</source>
+        <translation>De&amp;sa...</translation>
+    </message>
+    <message>
+        <source>Text (*.txt)</source>
+        <translation>Text (*.txt)</translation>
+    </message>
+    <message>
+        <source>Save license to file...</source>
+        <translation>Anomena i alça la llicència...</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineLogic</name>
+    <message>
+        <source>VirtualBox OSE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> EXPERIMENTAL build %1r%2 - %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProcessWidgetAdditions</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProcessWidgetUserManual</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel the VirtualBox User Manual download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox User Manual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMultiScreenLayout</name>
+    <message>
+        <source>Virtual Screen %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use Host Screen %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzd</name>
+    <message>
+        <source>Create New Virtual Disk</source>
+        <translation>Crea un disc virtual nou</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
+&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
+and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Este auxiliar vos ajudarà a crear una nova imatge de disc dur virtual per a la vostra màquina virtual.&lt;/p&gt;
+&lt;p&gt;Feu servir el botó &lt;b&gt;Següent&lt;/b&gt; per anar a la pàgina següent de l&apos;auxiliar
+i el botó &lt;b&gt;Arrere&lt;/b&gt; per a tornar a la pàgina anterior.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Welcome to the Create New Virtual Disk Wizard!</source>
+        <translation type="obsolete">Benvingut a l&apos;auxiliar per a la creació d&apos;un disc virtual nou!</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
+of space on your physical hard disk. It will grow dynamically (up to
+the size specified) as the Guest OS claims disk space.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
+the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Seleccioneu el tipus d&apos;imatge de disc dur virtual que voleu crear.&lt;/p&gt;
+&lt;p&gt;Una &lt;b&gt;imatge que s&apos;expandeix dinàmicament&lt;/b&gt; inicialment ocupa molt poc espai
+al vostre disc dur físic. Augmentarà dinàmicament (fins a la mida especificada)
+a mesura que el sistema operatiu client necessite espai de disc.&lt;/p&gt;
+&lt;p&gt;Una &lt;b&gt;imatge de mida fixa&lt;/b&gt; no augmenta. S&apos;emmagetzema en un fitxer que té
+aproximadament la mateixa mida que el disc dur virtual.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Image Type</source>
+        <translation type="obsolete">Tipus d&apos;imatge</translation>
+    </message>
+    <message>
+        <source>&amp;Dynamically expanding image</source>
+        <translation type="obsolete">Imatge que s&apos;expandeix &amp;dinàmicament</translation>
+    </message>
+    <message>
+        <source>&amp;Fixed-size image</source>
+        <translation type="obsolete">Imatge de mida &amp;fixa</translation>
+    </message>
+    <message>
+        <source>Virtual Disk Image Type</source>
+        <translation type="obsolete">Tipus d&apos;imatge de disc virtual</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
+to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Premeu el botó &lt;b&gt;Selecciona&lt;/b&gt; per seleccionar el lloc i el nom del fitxer
+on emmagatzemar la imatge del disc dur virtual o escriviu el nom del fitxer en el camp d&apos;entrada.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Image File Name</source>
+        <translation type="obsolete">Nom del fitxer d&apos;&amp;imatge</translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <translation type="obsolete">Selecciona</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
+as the size of the virtual hard disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Seleccioneu la mida de la imatge del disc dur virtual en megabytes. Esta serà la mida que s&apos;informarà
+al sistema operatiu client com a mida del disc dur.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Image &amp;Size</source>
+        <translation type="obsolete">&amp;Mida de la imatge</translation>
+    </message>
+    <message>
+        <source>Virtual Disk Location and Size</source>
+        <translation type="obsolete">Ubicació i mida del disc virtual</translation>
+    </message>
+    <message>
+        <source>You are going to create a new virtual hard disk image with the following parameters:</source>
+        <translation type="obsolete">Esteu a punt de crear una imatge de disc dur virtual amb els paràmetres següents:</translation>
+    </message>
+    <message>
+        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
+                            Once you press it, a new hard disk image will be created.
+                            </source>
+        <translation type="obsolete">Si el que hi ha més amunt és correcte premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;.
+                            Quan el premeu, es crearà una imatge de disc dur nova.
+                            </translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Resum</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
+        <translation type="obsolete">&lt;nobr&gt;%1 bytes&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
+        <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Tipus:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Ubicació:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Mida:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
+    </message>
+    <message>
+        <source>Hard disk images (*.vdi)</source>
+        <translation type="obsolete">Imatges de disc dur (*.vdi)</translation>
+    </message>
+    <message>
+        <source>Select a file for the new hard disk image file</source>
+        <translation type="obsolete">Seleccioneu un fitxer per al fitxer d&apos;imatge del disc dur nou</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
+of space on your physical hard disk. It will grow dynamically (up to
+the size specified) as the Guest OS claims disk space.&lt;/p&gt;
+&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
+the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long
+time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Seleccioneu la imatge de disc dur virtual que voleu crear.&lt;/p&gt;
+&lt;p&gt;Una &lt;b&gt;imatge d&apos;expansió dinàmica&lt;/b&gt; ocupa inicialment una quantiat
+molt petita d&apos;espai al disc dur físic. Creixerà dinàmicament (fins a la mida
+especificada) conforme el Sistema Amfitrió consumisca espai.&lt;/p&gt;
+&lt;p&gt;Una &lt;b&gt;imatge de mida fixa&lt;/b&gt; no creix. S&apos;emmagatzema en un fitxer
+de mida aproximadament la que s&apos;indica per al disc dur virtual. La creació d&apos;una
+imatge de mida fixa triga un temps segons la grandària de la mateixa i de
+l&apos;eficiència d&apos;escriptura del disc dur físic.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Este auxiliar vos ajudarà a crear una nova imatge de disc dur virtual per a la vostra màquina virtual.&lt;/p&gt;&lt;p&gt;Feu servir el botó &lt;b&gt;Següent&lt;/b&gt; per anar a la pàgina següent de l&apos;auxiliar i el botó &lt;b&gt;Arrere&lt;/b&gt; per a tornar a la pàgina anterior.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; &amp;Arrere</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">&amp;Següent &gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Seleccioneu el tipus d&apos;imatge de disc dur virtual que voleu crear.&lt;/p&gt; &lt;p&gt;Una &lt;b&gt;imatge que s&apos;expandeix dinàmicament&lt;/b&gt; inicialment ocupa molt poc espai al vostre disc dur físic. Augmentarà dinàmicament (fins a la mida especificada) a mesura que el sistema operatiu client necessite espai de disc.&lt;/p&gt;&lt;p&gt;Una &lt;b&gt;imatge de mida fixa&lt;/b&gt; no augmenta. S&apos;emmagetzema en un fitxer que té aproximadament la mateixa mida que el disc dur virtual.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Premeu el botó &lt;b&gt;Selecciona&lt;/b&gt; per seleccionar el lloc i el nom del fitxer on emmagatzemar la imatge del disc dur virtual o escriviu el nom del fitxer en el camp d&apos;entrada.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS as the size of the virtual hard disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Seleccioneu la mida de la imatge del disc dur virtual en megabytes. Esta serà la mida que s&apos;informarà al sistema operatiu client com a mida del disc dur.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk image will be created.</source>
+        <translation type="obsolete">Si el que hi ha més amunt és correcte premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;. Quan el premeu, es crearà una imatge de disc dur nova.</translation>
+    </message>
+    <message>
+        <source>&amp;Finish</source>
+        <translation type="obsolete">&amp;Finalitza</translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Tipus</translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Ubicació</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Mida</translation>
+    </message>
+    <message>
+        <source>Bytes</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Bytes</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Cancel·la</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Este auxiliar vos ajudarà a crear una nova imatge de disc dur virtual per a la vostra màquina virtual.&lt;/p&gt;&lt;p&gt;Feu servir el botó &lt;b&gt;Següent&lt;/b&gt; per anar a la pàgina següent de l&apos;auxiliar i el botó &lt;b&gt;Arrere&lt;/b&gt; per a tornar a la pàgina anterior.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Hard Disk Storage Type</source>
+        <translation type="obsolete">Tipus d&apos;emmagatzematge per al disc dur</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Seleccioneu la imatge de disc dur virtual que voleu crear. Una &lt;b&gt;imatge d&apos;expansió dinàmica&lt;/b&gt; ocupa inicialment una quantiat molt petita d&apos;espai al disc dur físic. Creixerà dinàmicament (fins a la mida especificada) conforme el Sistema Amfitrió consumisca espai. Una &lt;b&gt;imatge de mida fixa&lt;/b&gt; no creix. S&apos;emmagatzema en un fitxer de mida aproximadament la que s&apos;indica per al disc dur virtual. La creació d&apos;una imatge de mida fixa triga un temps segons la mida de la mateixa i de l&apos;eficiència d&apos;escriptura del disc dur físic.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Storage Type</source>
+        <translation type="obsolete">Tipus d&apos;emmagatzematge</translation>
+    </message>
+    <message>
+        <source>&amp;Dynamically expanding storage</source>
+        <translation type="obsolete">Imatge que s&apos;expandeix &amp;dinàmicament</translation>
+    </message>
+    <message>
+        <source>&amp;Fixed-size storage</source>
+        <translation type="obsolete">Imatge de mida &amp;fixa</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Premeu el botó &lt;b&gt;Selecciona&lt;/b&gt; per seleccionar el lloc i el nom del fitxer on emmagatzemar la imatge del disc dur virtual o escriviu el nom del fitxer en el camp d&apos;entrada.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Location</source>
+        <translation type="obsolete">&amp;Ubicació</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Seleccioneu la mida de la imatge del disc dur virtual en megabytes. Esta serà la mida que s&apos;informarà al sistema operatiu client com a mida del disc dur.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Size</source>
+        <translation type="obsolete">&amp;Mida</translation>
+    </message>
+    <message>
+        <source>You are going to create a new virtual hard disk with the following parameters:</source>
+        <translation type="obsolete">Ara creareu una imatge de disc dur virtual amb els paràmetres següents:</translation>
+    </message>
+    <message>
+        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
+        <translation type="obsolete">Si el que hi ha més amunt és correcte premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;. Quan el premeu, es crearà una imatge de disc dur nova.</translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage1</name>
+    <message>
+        <source>Welcome to the Create New Virtual Disk Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage2</name>
+    <message>
+        <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Dynamically expanding storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Fixed-size storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk Storage Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage3</name>
+    <message>
+        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Location</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Disk Location and Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a file for the new hard disk image file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard disk images (*.vdi)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWzdPage4</name>
+    <message>
+        <source>You are going to create a new virtual hard disk with the following parameters:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 B</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Location</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If the above settings are correct, press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzd</name>
+    <message>
+        <source>Create New Virtual Machine</source>
+        <translation>Crea una màquina virtual nova</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
+a new virtual machine for VirtualBox.&lt;/p&gt;
+&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
+and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Este auxiliar vos guiarà a través dels passos que calen per crear
+una nova màquina virtual per a VirtualBox.&lt;/p&gt;
+&lt;p&gt;Utilitzeu el botó &lt;b&gt;Següent&lt;/b&gt; per a anar a la pàgina següent de l&apos;auxiliar
+i el botó &lt;b&gt;Arrere&lt;/b&gt; per a tornar a la pàgina anterior.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Welcome to the New Virtual Machine Wizard!</source>
+        <translation type="obsolete">Benvingut a l&apos;auxiliar per a la creació d&apos;una màquina virtual nova!</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
+system you plan to install onto the virtual machine.&lt;/p&gt;
+&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
+It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Introduïu un nom per a la màquina virtual nova i seleccioneu el tipus del sistema
+operatiu client que voleu instal·lar en la màquina virtual.&lt;/p&gt;
+&lt;p&gt;Normalment, el nom de la màquina virtual indica la seua configuració de programari i maquinari.
+Tots els components del VirtualBox el faran servir per a identificar la màquina virtual.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>N&amp;ame</source>
+        <translation type="obsolete">N&amp;om</translation>
+    </message>
+    <message>
+        <source>OS &amp;Type</source>
+        <translation type="obsolete">&amp;Tipus de sistema operatiu</translation>
+    </message>
+    <message>
+        <source>VM Name and OS Type</source>
+        <translation type="obsolete">Nom de la màquina virtual i tipus de sistema operatiu</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Seleccioneu la quantitat de memòria base (RAM) en megabytes que s&apos;assignaran a la màquina virtual&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory Size</source>
+        <translation type="obsolete">Mida de la &amp;memòria base</translation>
+    </message>
+    <message>
+        <source>&lt;</source>
+        <translation type="obsolete">&lt;</translation>
+    </message>
+    <message>
+        <source>=</source>
+        <translation type="obsolete">=</translation>
+    </message>
+    <message>
+        <source>&gt;</source>
+        <translation type="obsolete">&gt;</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Memory</source>
+        <translation type="obsolete">Memòria</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select a hard disk image to be used
+as the boot hard disk of the virtual machine. You can either create a new hard
+disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
+image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
+button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
+&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
+step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Seleccioneu la imatge de disc dur que es farà servir
+com a disc dur d&apos;arrrencada de la màquina virtual. Podeu crear un disc dur nou
+usant el botó &lt;b&gt;Nou&lt;/b&gt; o seleccionar una imatge de disc
+dur existent de la llista desplegable o prement el botó &lt;b&gt;Existents&lt;/b&gt;
+(per a invocar el diàleg del gestor de discos virtuals).&lt;/p&gt;
+&lt;p&gt;Si vos cal una configuració de disc dur més complexa, podeu també saltar-vos este
+pas i connectar discos durs més avant, fent servir el diàleg de configuració de la màquina virtual.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>B&amp;oot Hard Disk (Primary Master)</source>
+        <translation type="obsolete">D&amp;isc dur d&apos;arrencada (primari mestre)</translation>
+    </message>
+    <message>
+        <source>N&amp;ew...</source>
+        <translation type="obsolete">N&amp;ou...</translation>
+    </message>
+    <message>
+        <source>E&amp;xisting...</source>
+        <translation type="obsolete">E&amp;xistents...</translation>
+    </message>
+    <message>
+        <source>Virtual Hard Disk</source>
+        <translation type="obsolete">Disc dur virtual</translation>
+    </message>
+    <message>
+        <source>
+                            &lt;p&gt;
+                            You are going to create a new virtual machine
+                            with the following parameters:
+                            &lt;/p&gt;
+                            </source>
+        <translation type="obsolete">
+                            &lt;p&gt;
+                            Creareu una màquina virtual nova
+                            amb els paràmetres següents:
+                            &lt;/p&gt;
+                            </translation>
+    </message>
+    <message>
+        <source>
+                            &lt;p&gt;
+                            If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button.
+                            Once you press it, a new virtual machine will be created.
+                            &lt;/p&gt;&lt;p&gt;
+                            Note that you can alter these and all other setting of the
+                            created virtual machine at any time using the
+                            &lt;b&gt;Settings&lt;/b&gt; dialog accessible through
+                            the menu of the main window.
+                            &lt;/p&gt;
+                            </source>
+        <translation type="obsolete">
+                            &lt;p&gt;
+                            Si el que hi ha més amunt és correcte premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;.
+                            Quan el premeu, es crearà una màquina virtual nova.
+                            &lt;/p&gt;&lt;p&gt;
+                            Tingueu en compte que podeu canviar estos i els altres paràmetres de la
+                            màquina virtua creada en qualsevol moment fent servir el
+                            diàleg &lt;b&gt;Paràmetres&lt;/b&gt; a través del
+                            menú de la finestra principal.
+                            &lt;/p&gt;
+                            </translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Resum</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
+        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
+        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Nom:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Tipus de sistema operatiu:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Memòria RAM:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
+        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Disc dur d&apos;arrencada:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
+    </message>
+    <message>
+        <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="obsolete">La mida de memòria base recomanada és &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="obsolete">La mida del disc dur d&apos;arrencada recomanada és &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Este auxiliar vos guiarà a través dels passos que calen per crear una nova màquina virtual per a VirtualBox.&lt;/p&gt;&lt;p&gt;Utilitzeu el botó &lt;b&gt;Següent&lt;/b&gt; per a anar a la pàgina següent de l&apos;auxiliar i el botó &lt;b&gt;Arrere&lt;/b&gt; per a tornar a la pàgina anterior.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt; &amp;Back</source>
+        <translation type="obsolete">&lt; &amp;Arrere</translation>
+    </message>
+    <message>
+        <source>&amp;Next &gt;</source>
+        <translation type="obsolete">&amp;Següent &gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Introduïu un nom per a la màquina virtual nova i seleccioneu el tipus del sistema operatiu client que voleu instal·lar en la màquina virtual.&lt;/p&gt;&lt;p&gt;Normalment, el nom de la màquina virtual indica la seua configuració de programari i maquinari. Tots els components del VirtualBox el faran servir per a identificar la màquina virtual.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Create new hard disk</source>
+        <translation type="obsolete">&amp;Crea un disc nou</translation>
+    </message>
+    <message>
+        <source>&amp;Use existing hard disk</source>
+        <translation type="obsolete">&amp;Fes servir un disc existent</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Seleccioneu la imatge de disc dur que es farà servir com a disc dur d&apos;arrrencada de la màquina virtual. Podeu crear un disc dur nou usant el botó &lt;b&gt;Nou&lt;/b&gt; o seleccionar una imatge de disc dur existent de la llista desplegable o prement el botó &lt;b&gt;Existents&lt;/b&gt; (per a invocar el diàleg del gestor de discos virtuals).&lt;/p&gt; &lt;p&gt;Si vos cal una configuració de disc dur més complexa, podeu també saltar-vos este pas i connectar discos durs més avant, fent servir el diàleg de configuració de la màquina virtual.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
+        <translation type="obsolete">Creareu una màquina virtual nova amb els paràmetres següents:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Si el que hi ha més amunt és correcte premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;. Quan el premeu, es crearà una màquina virtual nova.&lt;/p&gt;&lt;p&gt;Tingueu en compte que podeu canviar estos i els altres paràmetres de la màquina virtual creada en qualsevol moment fent servir el diàleg &lt;b&gt;Paràmetres&lt;/b&gt; a través del menú de la finestra principal.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Finish</source>
+        <translation type="obsolete">&amp;Finalitza</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>megabytes</comment>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Nom</translation>
+    </message>
+    <message>
+        <source>OS Type</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Tipus de sistema operatiu</translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Memòria RAM</translation>
+    </message>
+    <message>
+        <source>Boot Hard Disk</source>
+        <comment>summary</comment>
+        <translation type="obsolete">Arrenca Disc Dur</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Cancel·la</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Seleccioneu la imatge de disc dur que es farà servir com a disc dur d&apos;arrrencada de la màquina virtual. Podeu crear un disc dur nou usant el botó &lt;b&gt;Nou&lt;/b&gt; o seleccionar una imatge de disc dur existent de la llista desplegable o prement el botó &lt;b&gt;Existents&lt;/b&gt; (per a invocar el diàleg del gestor de discos virtuals). Si vos cal una configuració de disc dur més complexa, podeu també saltar-vos este pas i connectar discos durs més avant, fent servir el diàleg de configuració de la màquina virtual.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <translation type="obsolete">D&amp;isc dur d&apos;arrencada (primari mestre)</translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage1</name>
+    <message>
+        <source>Welcome to the New Virtual Machine Wizard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage2</name>
+    <message>
+        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>N&amp;ame</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OS &amp;Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VM Name and OS Type</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage3</name>
+    <message>
+        <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base &amp;Memory Size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Memory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage4</name>
+    <message>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create new hard disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Use existing hard disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Hard Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewVMWzdPage5</name>
+    <message>
+        <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OS Type</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boot Hard Disk</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>VBoxAboutDlg</name>
     <message>
         <source>VirtualBox - About</source>
@@ -557,29 +1981,6 @@ Versió %1</translation>
     </message>
 </context>
 <context>
-    <name>UIDownloaderAdditions</name>
-    <message>
-        <source>Cancel</source>
-        <translation>Cancel·la</translation>
-    </message>
-    <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>S&apos;està baixant la imatge de les Guest Additions del VirtualBox des de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>Cancel·la la baixada de la imatge de les Guest Additions del VirtualBox</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;No s&apos;ha pogut alçar el fitxer baixat com a &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Select folder to save Guest Additions image to</source>
-        <translation>Seleccioneu la carpeta on alçar la imatge de les Guest Additions</translation>
-    </message>
-</context>
-<context>
     <name>VBoxApplianceEditorWgt</name>
     <message>
         <source>Virtual System %1</source>
@@ -671,7 +2072,7 @@ Versió %1</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
     </message>
     <message>
         <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
@@ -684,6 +2085,16 @@ Versió %1</translation>
     <message>
         <source>Warnings:</source>
         <translation>Avisos:</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -734,7 +2145,7 @@ Versió %1</translation>
 &lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Alça l&apos;estat d&apos;execució actual de la màquina virtual al disc dur físic de l&apos;ordinador d&apos;amfitrió.&lt;/p&gt;
 &lt;p&gt;La propera vegada que s&apos;engegue esta màquina, es restaurarà des de l&apos;estat alçat i continuarà l&apos;execució des del mateix lloc en què l&apos;heu alçat, cosa que vos permetrà continuar immediatament amb el vostre treball.&lt;/p&gt;
-&lt;p&gt;Tingueu en compte que l&apos;operació d'alçar l&apos;estat de la màquina pot prendre molt de temps, depenent del tipus de sistema operatiu client i la quantitat de memòria assignada a la màquina virtual.&lt;/p&gt;</translation>
+&lt;p&gt;Tingueu en compte que l&apos;operació d&apos;alçar l&apos;estat de la màquina pot prendre molt de temps, depenent del tipus de sistema operatiu client i la quantitat de memòria assignada a la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
@@ -745,7 +2156,7 @@ Versió %1</translation>
 &lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
 &lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Envia a la màquina virtual l&apos;esdeveniment de prémer el botó ACPI Power.&lt;/p&gt;
-&lt;p&gt;Normalment, el sistema operatiu client que s&apos;està executant a dins de la màquina virtual detectarà este esdeveniment i realitzarà un procediment de tancament net. Esta és una manera recomanada de tancar la màquina virtual perquè totes les aplicacions que s&apos;estan executant en ella tindran la possibilitat d'alçar les seues dades i estat.&lt;/p&gt;
+&lt;p&gt;Normalment, el sistema operatiu client que s&apos;està executant a dins de la màquina virtual detectarà este esdeveniment i realitzarà un procediment de tancament net. Esta és una manera recomanada de tancar la màquina virtual perquè totes les aplicacions que s&apos;estan executant en ella tindran la possibilitat d&apos;alçar les seues dades i estat.&lt;/p&gt;
 &lt;p&gt;Si la màquina no respon a esta acció potser el sistema operatiu client pot estar mal configurat o no entén els events del botó ACPI Power. En este cas, seleccioneu l&apos;acció &lt;b&gt;Atura la màquina&lt;/b&gt; per aturar l&apos;execució de la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -760,11 +2171,11 @@ Versió %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Alça l&apos;estat d&apos;execució actual de la màquina virtual al disc dur físic de l&apos;ordinador amfitrió.&lt;/p&gt;&lt;p&gt;La propera vegada que s&apos;iniciÏ esta màquina, es restaurarà des de l&apos;estat alçat i continuarà l&apos;execució des del mateix lloc en què l&apos;heu alçat, cosa que permetrà continuar immediatament amb el vostre treball.&lt;/p&gt;&lt;p&gt;Tingueu en compte que l&apos;operació d'alçar l&apos;estat de la màquina pot prendre molt de temps, depenent del tipus de sistema operatiu client i la quantitat de memòria assignada a la màquina virtual.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Alça l&apos;estat d&apos;execució actual de la màquina virtual al disc dur físic de l&apos;ordinador amfitrió.&lt;/p&gt;&lt;p&gt;La propera vegada que s&apos;iniciÏ esta màquina, es restaurarà des de l&apos;estat alçat i continuarà l&apos;execució des del mateix lloc en què l&apos;heu alçat, cosa que permetrà continuar immediatament amb el vostre treball.&lt;/p&gt;&lt;p&gt;Tingueu en compte que l&apos;operació d&apos;alçar l&apos;estat de la màquina pot prendre molt de temps, depenent del tipus de sistema operatiu client i la quantitat de memòria assignada a la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Envia a la màquina virtual l&apos;esdeveniment de prémer el botó ACPI Power.&lt;/p&gt;&lt;p&gt;Normalment, el sistema operatiu client que s&apos;està executant a dins de la màquina virtual detectarà este esdeveniment i realitzarà un procediment de tancament net. Esta és una manera recomanada de tancar la màquina virtual perquè totes les aplicacions que s&apos;estan executant en ella tindran la possibilitat d'alçar les seues dades i estat.&lt;/p&gt;&lt;p&gt;Si la màquina no respon a esta acció potser el sistema operatiu client pot estar mal configurat o no entén els events del botó ACPI Power. En este cas, seleccioneu l&apos;acció &lt;b&gt;Atura la màquina&lt;/b&gt; per aturar l&apos;execució de la màquina virtual.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Envia a la màquina virtual l&apos;esdeveniment de prémer el botó ACPI Power.&lt;/p&gt;&lt;p&gt;Normalment, el sistema operatiu client que s&apos;està executant a dins de la màquina virtual detectarà este esdeveniment i realitzarà un procediment de tancament net. Esta és una manera recomanada de tancar la màquina virtual perquè totes les aplicacions que s&apos;estan executant en ella tindran la possibilitat d&apos;alçar les seues dades i estat.&lt;/p&gt;&lt;p&gt;Si la màquina no respon a esta acció potser el sistema operatiu client pot estar mal configurat o no entén els events del botó ACPI Power. En este cas, seleccioneu l&apos;acció &lt;b&gt;Atura la màquina&lt;/b&gt; per aturar l&apos;execució de la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
@@ -1068,7 +2479,7 @@ Versió %1</translation>
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation>Sun VirtualBox</translation>
+        <translation type="obsolete">Sun VirtualBox</translation>
     </message>
     <message>
         <source>Mount the selected physical drive of the host PC</source>
@@ -1153,7 +2564,7 @@ Versió %1</translation>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adaptador %1 (%2)&lt;/b&gt;: el fil està %3&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adaptador %1 (%2)&lt;/b&gt;: el fil està %3&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>connected</source>
@@ -1359,6 +2770,51 @@ Versió %1</translation>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indica l&apos;activitat de les carpetes compartides per la màquina virtual:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Dock Icon</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Application Icon</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Monitor Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
+        <comment>Network adapters tooltip</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ACPI Sh&amp;utdown</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;View</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Preview Monitor %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No CD/DVD devices attached to that VM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No floppy devices attached to that VM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No USB Devices Connected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No supported devices connected to the host PC</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1652,184 +3108,10 @@ Versió %1</translation>
     </message>
 </context>
 <context>
-    <name>UIDownloader</name>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">Cancel·la</translation>
-    </message>
-    <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="obsolete">S&apos;està baixant la imatge del CD de les Guest Additions del VirtualBox des de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="obsolete">Cancel·la la descàrrega de la imatge del CD de les Guest Additions del VirtualBox</translation>
-    </message>
-    <message>
-        <source>Could not locate the file on the server (response: %1).</source>
-        <translation type="obsolete">No es pot localitzar el fitxer al servidor (resposta: %1).</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Hi ha hagut un error mentre es desava el fitxer descarregat com a &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Select folder to save Guest Additions image to</source>
-        <translation type="obsolete">Seleccioneu la carpeta on alçar la imatge de les Guest Additions</translation>
-    </message>
-    <message>
-        <source>Connection timed out.</source>
-        <translation type="obsolete">S&apos;ha excedit el temps d&apos;espera de la connexió.</translation>
-    </message>
-    <message>
-        <source>The download process has been cancelled by the user.</source>
-        <translation>L&apos;usuari ha cancel·lat el procés de baixada.</translation>
-    </message>
-</context>
-<context>
     <name>VBoxEmptyFileSelector</name>
     <message>
         <source>&amp;Choose...</source>
         <translation>&amp;Trieu...</translation>
-    </message>
-</context>
-<context>
-    <name>UIExportApplianceWzd</name>
-    <message>
-        <source>Select a file to export into</source>
-        <translation>Seleccioneu un fitxer al qual s&apos;exportarà</translation>
-    </message>
-    <message>
-        <source>Open Virtualization Format (%1)</source>
-        <translation>Format virtual obert (%1)</translation>
-    </message>
-    <message>
-        <source>Appliance</source>
-        <translation>Aplicació virtual</translation>
-    </message>
-    <message>
-        <source>Exporting Appliance ...</source>
-        <translation>S&apos;està exportant l&apos;aplicació virtual...</translation>
-    </message>
-    <message>
-        <source>Appliance Export Wizard</source>
-        <translation>Assistent d&apos;exportació d&apos;aplicació virtuals</translation>
-    </message>
-    <message>
-        <source>Welcome to the Appliance Export Wizard!</source>
-        <translation>Benvingut a l&apos;assistent d&apos;exportació d&apos;aplicacions virtuals!</translation>
-    </message>
-    <message>
-        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Este assitent vos guiarà durant el procés d&apos;exportació d&apos;una aplicació virtual. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Feu servir el botó &lt;span style=&quot; font-weight:600;&quot;&gt;Següent&lt;/span&gt; per anar a la següent pàgina de l&apos;assistent i el botó &lt;span style=&quot; font-weight:600;&quot;&gt;Arrere&lt;/span&gt; per anar a la pàgina prèvia.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Seleccioneu les màquines virtuals que s&apos;haurien d&apos;exportar a l&apos;aplicació virtual. En podeu seleccionar més d&apos;una. Tingueu en compte que estes màquines han d&apos;estar aturades per tal que puguen importar-se.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Arrere</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>&amp;Següent &gt;</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Cancel·la</translation>
-    </message>
-    <message>
-        <source>Appliance Export Settings</source>
-        <translation>Paràmetres d&apos;exportació de l&apos;aplicació virtual</translation>
-    </message>
-    <message>
-        <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation>Ací podeu canviar valors adicionals de la configuració de les màquines virtuals seleccionades. Podeu modificar la majoria de les propietats mostrades fent doble clic sobre els ítems.</translation>
-    </message>
-    <message>
-        <source>Restore Defaults</source>
-        <translation>Restaura els paràmetres per defecte</translation>
-    </message>
-    <message>
-        <source>Please specify a filename into which the appliance information will be written. Currently VirtualBox supports the Open Virtualization Format (OVF).</source>
-        <translation type="obsolete">Especifiqueu un nom de fitxer a dins del qual s&apos;escriurà la informació de l&apos;aplicació virtual. Actualment el VirtualBox suporta el format obert de virtualització (OVF).</translation>
-    </message>
-    <message>
-        <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation>Escriu en format OVF 0.9 original per ser compatible amb altres productes de virtualització.</translation>
-    </message>
-    <message>
-        <source>&amp;Write legacy OVF 0.9</source>
-        <translation>&amp;Escriu en format OVF 0.9 original</translation>
-    </message>
-    <message>
-        <source>&amp;Export &gt;</source>
-        <translation>&amp;Exporta &gt;</translation>
-    </message>
-    <message>
-        <source>Please choose a filename to export the OVF to.</source>
-        <translation>Seleccioneu un nom de fitxer al qual exportar l&apos;OVF.</translation>
-    </message>
-    <message>
-        <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation>Ompliu els camps addicionals com el nom d&apos;usuari, conrasenya i el contenidor. Després haureu de proveir un nom de fitxer a l&apos;objectiu de l&apos;OVF.</translation>
-    </message>
-    <message>
-        <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation>Completeu els camps addicionals com el nom d&apos;usuari, la contrasenya, el nom de l&apos;amfitrió i el contenidor. Després haureu de proveir un nom de fitxer a l&apos;objectiu de l&apos;OVF.</translation>
-    </message>
-    <message>
-        <source>Checking files ...</source>
-        <translation>S&apos;estan comprovant els fitxers...</translation>
-    </message>
-    <message>
-        <source>Removing files ...</source>
-        <translation>S&apos;estan eliminant els fitxers...</translation>
-    </message>
-    <message>
-        <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation>Especifiqueu l&apos;objectiu per a l&apos;exportació OVF. Podeu triar entre una exportació del sistema a fitxer local, pujar l&apos;OVF al servei Sun Cloud o en un servidor d&apos;emmagatzamatge S3.</translation>
-    </message>
-    <message>
-        <source>&amp;Local Filesystem </source>
-        <translation>Sistema de fitxers &amp;local </translation>
-    </message>
-    <message>
-        <source>Sun &amp;Cloud</source>
-        <translation>Sun &amp;Cloud</translation>
-    </message>
-    <message>
-        <source>&amp;Simple Storage System (S3)</source>
-        <translation>&amp;Sistema d&apos;emmagatzematge simple (S3)</translation>
-    </message>
-    <message>
-        <source>&amp;Username:</source>
-        <translation>Nom d&apos;&amp;usuari:</translation>
-    </message>
-    <message>
-        <source>&amp;Password:</source>
-        <translation>&amp;Contrasenya:</translation>
-    </message>
-    <message>
-        <source>&amp;File:</source>
-        <translation>&amp;Fitxer:</translation>
-    </message>
-    <message>
-        <source>&amp;Bucket:</source>
-        <translation>&amp;Contenidor:</translation>
-    </message>
-    <message>
-        <source>&amp;Hostname:</source>
-        <translation>&amp;Nom de l&apos;amfitrió:</translation>
     </message>
 </context>
 <context>
@@ -1946,11 +3228,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
-        <translation>Quan estiga marcat, la icona del dock mostrarà el contingut de la finestra de la màquina virtual en temps real.</translation>
+        <translation type="obsolete">Quan estiga marcat, la icona del dock mostrarà el contingut de la finestra de la màquina virtual en temps real.</translation>
     </message>
     <message>
         <source>&amp;Dock Icon Realtime Preview</source>
-        <translation>Previsualització en temps real a la icona del &amp;dock</translation>
+        <translation type="obsolete">Previsualització en temps real a la icona del &amp;dock</translation>
     </message>
     <message>
         <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
@@ -1986,6 +3268,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Auto Capture Keyboard</source>
         <translation>&amp;Auto-captura el teclat</translation>
+    </message>
+    <message>
+        <source>Reset Host Key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resets the key used as a Host Key in the VM window.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3533,53 +4823,115 @@ p, li { white-space: pre-wrap; }
         <source>%n year(s)</source>
         <translation>
             <numerusform>%n any</numerusform>
-            <numerusform>%n anys</numerusform>
-            <numerusform>%n anys</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n month(s)</source>
         <translation>
             <numerusform>%n mes</numerusform>
-            <numerusform>%n mesos</numerusform>
-            <numerusform>%n mesos</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s)</source>
         <translation>
             <numerusform>%n dia</numerusform>
-            <numerusform>%n dies</numerusform>
-            <numerusform>%n dies</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s)</source>
         <translation>
             <numerusform>%n hora</numerusform>
-            <numerusform>%n hores</numerusform>
-            <numerusform>%n hores</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s)</source>
         <translation>
             <numerusform>%n minut</numerusform>
-            <numerusform>%n minuts</numerusform>
-            <numerusform>%n minuts</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n second(s)</source>
         <translation>
             <numerusform>%n segon</numerusform>
-            <numerusform>%n segons</numerusform>
-            <numerusform>%n segons</numerusform>
         </translation>
     </message>
     <message>
         <source>(CD/DVD)</source>
         <translation>(CD/DVD)</translation>
+    </message>
+    <message>
+        <source>Screens</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VDE network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VDE Adapter</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>LsiLogic SAS</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</source>
+        <comment>regexp for matching ####[.##] B|KB|MB|GB|TB|PB, %1=decimal point</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>B</source>
+        <comment>size suffix Bytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>KB</source>
+        <comment>size suffix KBytes=1024 Bytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>GB</source>
+        <comment>size suffix GBytes=1024 MBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TB</source>
+        <comment>size suffix TBytes=1024 GBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PB</source>
+        <comment>size suffix PBytes=1024 TBytes</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>nested paging</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>nested paging</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4148,104 +5500,6 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
     </message>
 </context>
 <context>
-    <name>UIImportApplianceWzd</name>
-    <message>
-        <source>Select an appliance to import</source>
-        <translation>Seleccioneu una aplicació virtual per importar</translation>
-    </message>
-    <message>
-        <source>Open Virtualization Format (%1)</source>
-        <translation>Format obert de virtualització (%1)</translation>
-    </message>
-    <message>
-        <source>Appliance Import Wizard</source>
-        <translation>Assistent d&apos;importació d&apos;aplicacions virtuals</translation>
-    </message>
-    <message>
-        <source>Welcome to the Appliance Import Wizard!</source>
-        <translation>Benvingut a l&apos;assistent d&apos;importació d&apos;aplicacions virtuals!</translation>
-    </message>
-    <message>
-        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through importing an appliance. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Este assitent vos guiarà durant el procés d&apos;importació d&apos;una aplicació virtual. &lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Feu servir el botó &lt;span style=&quot; font-weight:600;&quot;&gt;Següent&lt;/span&gt; per anar a la següent pàgina de l&apos;assistent i el botó &lt;span style=&quot; font-weight:600;&quot;&gt;Arrere&lt;/span&gt; per anar a la pàgina prèvia.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Per importar una aplicació virtual, heu de seleccionar un fitxer que el descrigui primer. Actualment el VirtualBox suporta el format obert de virtualització (OVF). Per continuar, seleccioneu el fitxer per a importar:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Arrere</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>&amp;Següent &gt;</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Cancel·la</translation>
-    </message>
-    <message>
-        <source>Appliance Import Settings</source>
-        <translation>Paràmetres d&apos;importació de l&apos;aplicació virtual</translation>
-    </message>
-    <message>
-        <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation>Estes són les màquines virtuals que es descriuen a l&apos;aplicació virtual amb els mapejats suggerits per a la importació al VirtualBox. Podeu canviar la majoria dels paràmetres mostrats fent doble clic sobre els ítems i inhabilitar altres fent servir els quadres de verificació.</translation>
-    </message>
-    <message>
-        <source>Restore Defaults</source>
-        <translation>Restaura els paràmetres per defecte</translation>
-    </message>
-    <message>
-        <source>&amp;Import &gt;</source>
-        <translation>&amp;Importa &gt;</translation>
-    </message>
-</context>
-<context>
-    <name>UIImportLicenseViewer</name>
-    <message>
-        <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
-        <translation>&lt;b&gt;El sistema virtual &quot;%1&quot; requreix l&apos;acceptació dels termes i condicions de l&apos;acord de llicència del programari que es mostra.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Premeu &lt;b&gt;Hi estic d&apos;acord&lt;/b&gt; per continuar o &lt;b&gt;No hi estic d&apos;acord&lt;/b&gt; per a cancel·lar la importació.</translation>
-    </message>
-    <message>
-        <source>Software License Agreement</source>
-        <translation>Acord de llicència de programari</translation>
-    </message>
-    <message>
-        <source>&amp;Disagree</source>
-        <translation>&amp;No hi estic d&apos;acord</translation>
-    </message>
-    <message>
-        <source>&amp;Agree</source>
-        <translation>Hi estic d&apos;&amp;acord</translation>
-    </message>
-    <message>
-        <source>&amp;Print...</source>
-        <translation>Im&amp;primeix...</translation>
-    </message>
-    <message>
-        <source>&amp;Save...</source>
-        <translation>De&amp;sa...</translation>
-    </message>
-    <message>
-        <source>Text (*.txt)</source>
-        <translation>Text (*.txt)</translation>
-    </message>
-    <message>
-        <source>Save license to file...</source>
-        <translation>Anomena i alça la llicència...</translation>
-    </message>
-</context>
-<context>
     <name>VBoxLicenseViewer</name>
     <message>
         <source>I &amp;Agree</source>
@@ -4535,478 +5789,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Network Adapters</source>
         <translation>Adaptadors de xarxa</translation>
-    </message>
-</context>
-<context>
-    <name>UINewHDWzd</name>
-    <message>
-        <source>Create New Virtual Disk</source>
-        <translation>Crea un disc virtual nou</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
-&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
-and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Este auxiliar vos ajudarà a crear una nova imatge de disc dur virtual per a la vostra màquina virtual.&lt;/p&gt;
-&lt;p&gt;Feu servir el botó &lt;b&gt;Següent&lt;/b&gt; per anar a la pàgina següent de l&apos;auxiliar
-i el botó &lt;b&gt;Arrere&lt;/b&gt; per a tornar a la pàgina anterior.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation>Benvingut a l&apos;auxiliar per a la creació d&apos;un disc virtual nou!</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
-&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
-of space on your physical hard disk. It will grow dynamically (up to
-the size specified) as the Guest OS claims disk space.&lt;/p&gt;
-&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
-the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Seleccioneu el tipus d&apos;imatge de disc dur virtual que voleu crear.&lt;/p&gt;
-&lt;p&gt;Una &lt;b&gt;imatge que s&apos;expandeix dinàmicament&lt;/b&gt; inicialment ocupa molt poc espai
-al vostre disc dur físic. Augmentarà dinàmicament (fins a la mida especificada)
-a mesura que el sistema operatiu client necessite espai de disc.&lt;/p&gt;
-&lt;p&gt;Una &lt;b&gt;imatge de mida fixa&lt;/b&gt; no augmenta. S&apos;emmagetzema en un fitxer que té
-aproximadament la mateixa mida que el disc dur virtual.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Image Type</source>
-        <translation type="obsolete">Tipus d&apos;imatge</translation>
-    </message>
-    <message>
-        <source>&amp;Dynamically expanding image</source>
-        <translation type="obsolete">Imatge que s&apos;expandeix &amp;dinàmicament</translation>
-    </message>
-    <message>
-        <source>&amp;Fixed-size image</source>
-        <translation type="obsolete">Imatge de mida &amp;fixa</translation>
-    </message>
-    <message>
-        <source>Virtual Disk Image Type</source>
-        <translation type="obsolete">Tipus d&apos;imatge de disc virtual</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
-to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Premeu el botó &lt;b&gt;Selecciona&lt;/b&gt; per seleccionar el lloc i el nom del fitxer
-on emmagatzemar la imatge del disc dur virtual o escriviu el nom del fitxer en el camp d&apos;entrada.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Image File Name</source>
-        <translation type="obsolete">Nom del fitxer d&apos;&amp;imatge</translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <translation type="obsolete">Selecciona</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
-as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Seleccioneu la mida de la imatge del disc dur virtual en megabytes. Esta serà la mida que s&apos;informarà
-al sistema operatiu client com a mida del disc dur.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Image &amp;Size</source>
-        <translation type="obsolete">&amp;Mida de la imatge</translation>
-    </message>
-    <message>
-        <source>Virtual Disk Location and Size</source>
-        <translation>Ubicació i mida del disc virtual</translation>
-    </message>
-    <message>
-        <source>You are going to create a new virtual hard disk image with the following parameters:</source>
-        <translation type="obsolete">Esteu a punt de crear una imatge de disc dur virtual amb els paràmetres següents:</translation>
-    </message>
-    <message>
-        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
-                            Once you press it, a new hard disk image will be created.
-                            </source>
-        <translation type="obsolete">Si el que hi ha més amunt és correcte premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;.
-                            Quan el premeu, es crearà una imatge de disc dur nova.
-                            </translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Resum</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;%1 bytes&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Tipus:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Ubicació:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Mida:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
-    </message>
-    <message>
-        <source>Hard disk images (*.vdi)</source>
-        <translation>Imatges de disc dur (*.vdi)</translation>
-    </message>
-    <message>
-        <source>Select a file for the new hard disk image file</source>
-        <translation>Seleccioneu un fitxer per al fitxer d&apos;imatge del disc dur nou</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
-&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
-of space on your physical hard disk. It will grow dynamically (up to
-the size specified) as the Guest OS claims disk space.&lt;/p&gt;
-&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately
-the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long
-time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Seleccioneu la imatge de disc dur virtual que voleu crear.&lt;/p&gt;
-&lt;p&gt;Una &lt;b&gt;imatge d&apos;expansió dinàmica&lt;/b&gt; ocupa inicialment una quantiat
-molt petita d&apos;espai al disc dur físic. Creixerà dinàmicament (fins a la mida
-especificada) conforme el Sistema Amfitrió consumisca espai.&lt;/p&gt;
-&lt;p&gt;Una &lt;b&gt;imatge de mida fixa&lt;/b&gt; no creix. S&apos;emmagatzema en un fitxer
-de mida aproximadament la que s&apos;indica per al disc dur virtual. La creació d&apos;una
-imatge de mida fixa triga un temps segons la grandària de la mateixa i de
-l&apos;eficiència d&apos;escriptura del disc dur físic.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Este auxiliar vos ajudarà a crear una nova imatge de disc dur virtual per a la vostra màquina virtual.&lt;/p&gt;&lt;p&gt;Feu servir el botó &lt;b&gt;Següent&lt;/b&gt; per anar a la pàgina següent de l&apos;auxiliar i el botó &lt;b&gt;Arrere&lt;/b&gt; per a tornar a la pàgina anterior.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Arrere</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>&amp;Següent &gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Seleccioneu el tipus d&apos;imatge de disc dur virtual que voleu crear.&lt;/p&gt; &lt;p&gt;Una &lt;b&gt;imatge que s&apos;expandeix dinàmicament&lt;/b&gt; inicialment ocupa molt poc espai al vostre disc dur físic. Augmentarà dinàmicament (fins a la mida especificada) a mesura que el sistema operatiu client necessite espai de disc.&lt;/p&gt;&lt;p&gt;Una &lt;b&gt;imatge de mida fixa&lt;/b&gt; no augmenta. S&apos;emmagetzema en un fitxer que té aproximadament la mateixa mida que el disc dur virtual.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Premeu el botó &lt;b&gt;Selecciona&lt;/b&gt; per seleccionar el lloc i el nom del fitxer on emmagatzemar la imatge del disc dur virtual o escriviu el nom del fitxer en el camp d&apos;entrada.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Seleccioneu la mida de la imatge del disc dur virtual en megabytes. Esta serà la mida que s&apos;informarà al sistema operatiu client com a mida del disc dur.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk image will be created.</source>
-        <translation type="obsolete">Si el que hi ha més amunt és correcte premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;. Quan el premeu, es crearà una imatge de disc dur nova.</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation>&amp;Finalitza</translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <comment>summary</comment>
-        <translation>Tipus</translation>
-    </message>
-    <message>
-        <source>Location</source>
-        <comment>summary</comment>
-        <translation>Ubicació</translation>
-    </message>
-    <message>
-        <source>Size</source>
-        <comment>summary</comment>
-        <translation>Mida</translation>
-    </message>
-    <message>
-        <source>Bytes</source>
-        <comment>summary</comment>
-        <translation>Bytes</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Cancel·la</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Este auxiliar vos ajudarà a crear una nova imatge de disc dur virtual per a la vostra màquina virtual.&lt;/p&gt;&lt;p&gt;Feu servir el botó &lt;b&gt;Següent&lt;/b&gt; per anar a la pàgina següent de l&apos;auxiliar i el botó &lt;b&gt;Arrere&lt;/b&gt; per a tornar a la pàgina anterior.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Hard Disk Storage Type</source>
-        <translation>Tipus d&apos;emmagatzematge per al disc dur</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccioneu la imatge de disc dur virtual que voleu crear. Una &lt;b&gt;imatge d&apos;expansió dinàmica&lt;/b&gt; ocupa inicialment una quantiat molt petita d&apos;espai al disc dur físic. Creixerà dinàmicament (fins a la mida especificada) conforme el Sistema Amfitrió consumisca espai. Una &lt;b&gt;imatge de mida fixa&lt;/b&gt; no creix. S&apos;emmagatzema en un fitxer de mida aproximadament la que s&apos;indica per al disc dur virtual. La creació d&apos;una imatge de mida fixa triga un temps segons la mida de la mateixa i de l&apos;eficiència d&apos;escriptura del disc dur físic.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Storage Type</source>
-        <translation>Tipus d&apos;emmagatzematge</translation>
-    </message>
-    <message>
-        <source>&amp;Dynamically expanding storage</source>
-        <translation>Imatge que s&apos;expandeix &amp;dinàmicament</translation>
-    </message>
-    <message>
-        <source>&amp;Fixed-size storage</source>
-        <translation>Imatge de mida &amp;fixa</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Premeu el botó &lt;b&gt;Selecciona&lt;/b&gt; per seleccionar el lloc i el nom del fitxer on emmagatzemar la imatge del disc dur virtual o escriviu el nom del fitxer en el camp d&apos;entrada.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Location</source>
-        <translation>&amp;Ubicació</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccioneu la mida de la imatge del disc dur virtual en megabytes. Esta serà la mida que s&apos;informarà al sistema operatiu client com a mida del disc dur.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Size</source>
-        <translation>&amp;Mida</translation>
-    </message>
-    <message>
-        <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation>Ara creareu una imatge de disc dur virtual amb els paràmetres següents:</translation>
-    </message>
-    <message>
-        <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
-        <translation>Si el que hi ha més amunt és correcte premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;. Quan el premeu, es crearà una imatge de disc dur nova.</translation>
-    </message>
-</context>
-<context>
-    <name>UINewVMWzd</name>
-    <message>
-        <source>Create New Virtual Machine</source>
-        <translation>Crea una màquina virtual nova</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
-a new virtual machine for VirtualBox.&lt;/p&gt;
-&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
-and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Este auxiliar vos guiarà a través dels passos que calen per crear
-una nova màquina virtual per a VirtualBox.&lt;/p&gt;
-&lt;p&gt;Utilitzeu el botó &lt;b&gt;Següent&lt;/b&gt; per a anar a la pàgina següent de l&apos;auxiliar
-i el botó &lt;b&gt;Arrere&lt;/b&gt; per a tornar a la pàgina anterior.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation>Benvingut a l&apos;auxiliar per a la creació d&apos;una màquina virtual nova!</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
-system you plan to install onto the virtual machine.&lt;/p&gt;
-&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
-It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Introduïu un nom per a la màquina virtual nova i seleccioneu el tipus del sistema
-operatiu client que voleu instal·lar en la màquina virtual.&lt;/p&gt;
-&lt;p&gt;Normalment, el nom de la màquina virtual indica la seua configuració de programari i maquinari.
-Tots els components del VirtualBox el faran servir per a identificar la màquina virtual.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>N&amp;ame</source>
-        <translation>N&amp;om</translation>
-    </message>
-    <message>
-        <source>OS &amp;Type</source>
-        <translation>&amp;Tipus de sistema operatiu</translation>
-    </message>
-    <message>
-        <source>VM Name and OS Type</source>
-        <translation>Nom de la màquina virtual i tipus de sistema operatiu</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccioneu la quantitat de memòria base (RAM) en megabytes que s&apos;assignaran a la màquina virtual&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Base &amp;Memory Size</source>
-        <translation>Mida de la &amp;memòria base</translation>
-    </message>
-    <message>
-        <source>&lt;</source>
-        <translation type="obsolete">&lt;</translation>
-    </message>
-    <message>
-        <source>=</source>
-        <translation type="obsolete">=</translation>
-    </message>
-    <message>
-        <source>&gt;</source>
-        <translation type="obsolete">&gt;</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation>MB</translation>
-    </message>
-    <message>
-        <source>Memory</source>
-        <translation>Memòria</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select a hard disk image to be used
-as the boot hard disk of the virtual machine. You can either create a new hard
-disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
-image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
-button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
-&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
-step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Seleccioneu la imatge de disc dur que es farà servir
-com a disc dur d&apos;arrrencada de la màquina virtual. Podeu crear un disc dur nou
-usant el botó &lt;b&gt;Nou&lt;/b&gt; o seleccionar una imatge de disc
-dur existent de la llista desplegable o prement el botó &lt;b&gt;Existents&lt;/b&gt;
-(per a invocar el diàleg del gestor de discos virtuals).&lt;/p&gt;
-&lt;p&gt;Si vos cal una configuració de disc dur més complexa, podeu també saltar-vos este
-pas i connectar discos durs més avant, fent servir el diàleg de configuració de la màquina virtual.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>B&amp;oot Hard Disk (Primary Master)</source>
-        <translation type="obsolete">D&amp;isc dur d&apos;arrencada (primari mestre)</translation>
-    </message>
-    <message>
-        <source>N&amp;ew...</source>
-        <translation type="obsolete">N&amp;ou...</translation>
-    </message>
-    <message>
-        <source>E&amp;xisting...</source>
-        <translation type="obsolete">E&amp;xistents...</translation>
-    </message>
-    <message>
-        <source>Virtual Hard Disk</source>
-        <translation>Disc dur virtual</translation>
-    </message>
-    <message>
-        <source>
-                            &lt;p&gt;
-                            You are going to create a new virtual machine
-                            with the following parameters:
-                            &lt;/p&gt;
-                            </source>
-        <translation type="obsolete">
-                            &lt;p&gt;
-                            Creareu una màquina virtual nova
-                            amb els paràmetres següents:
-                            &lt;/p&gt;
-                            </translation>
-    </message>
-    <message>
-        <source>
-                            &lt;p&gt;
-                            If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button.
-                            Once you press it, a new virtual machine will be created.
-                            &lt;/p&gt;&lt;p&gt;
-                            Note that you can alter these and all other setting of the
-                            created virtual machine at any time using the
-                            &lt;b&gt;Settings&lt;/b&gt; dialog accessible through
-                            the menu of the main window.
-                            &lt;/p&gt;
-                            </source>
-        <translation type="obsolete">
-                            &lt;p&gt;
-                            Si el que hi ha més amunt és correcte premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;.
-                            Quan el premeu, es crearà una màquina virtual nova.
-                            &lt;/p&gt;&lt;p&gt;
-                            Tingueu en compte que podeu canviar estos i els altres paràmetres de la
-                            màquina virtua creada en qualsevol moment fent servir el
-                            diàleg &lt;b&gt;Paràmetres&lt;/b&gt; a través del
-                            menú de la finestra principal.
-                            &lt;/p&gt;
-                            </translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Resum</translation>
-    </message>
-    <message>
-        <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Nom:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Tipus de sistema operatiu:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Memòria RAM:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
-        <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Disc dur d&apos;arrencada:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
-    </message>
-    <message>
-        <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>La mida de memòria base recomanada és &lt;b&gt;%1&lt;/b&gt; MB.</translation>
-    </message>
-    <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation>La mida del disc dur d&apos;arrencada recomanada és &lt;b&gt;%1&lt;/b&gt; MB.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Este auxiliar vos guiarà a través dels passos que calen per crear una nova màquina virtual per a VirtualBox.&lt;/p&gt;&lt;p&gt;Utilitzeu el botó &lt;b&gt;Següent&lt;/b&gt; per a anar a la pàgina següent de l&apos;auxiliar i el botó &lt;b&gt;Arrere&lt;/b&gt; per a tornar a la pàgina anterior.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Arrere</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>&amp;Següent &gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Introduïu un nom per a la màquina virtual nova i seleccioneu el tipus del sistema operatiu client que voleu instal·lar en la màquina virtual.&lt;/p&gt;&lt;p&gt;Normalment, el nom de la màquina virtual indica la seua configuració de programari i maquinari. Tots els components del VirtualBox el faran servir per a identificar la màquina virtual.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Create new hard disk</source>
-        <translation>&amp;Crea un disc nou</translation>
-    </message>
-    <message>
-        <source>&amp;Use existing hard disk</source>
-        <translation>&amp;Fes servir un disc existent</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Seleccioneu la imatge de disc dur que es farà servir com a disc dur d&apos;arrrencada de la màquina virtual. Podeu crear un disc dur nou usant el botó &lt;b&gt;Nou&lt;/b&gt; o seleccionar una imatge de disc dur existent de la llista desplegable o prement el botó &lt;b&gt;Existents&lt;/b&gt; (per a invocar el diàleg del gestor de discos virtuals).&lt;/p&gt; &lt;p&gt;Si vos cal una configuració de disc dur més complexa, podeu també saltar-vos este pas i connectar discos durs més avant, fent servir el diàleg de configuració de la màquina virtual.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation>Creareu una màquina virtual nova amb els paràmetres següents:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Si el que hi ha més amunt és correcte premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;. Quan el premeu, es crearà una màquina virtual nova.&lt;/p&gt;&lt;p&gt;Tingueu en compte que podeu canviar estos i els altres paràmetres de la màquina virtual creada en qualsevol moment fent servir el diàleg &lt;b&gt;Paràmetres&lt;/b&gt; a través del menú de la finestra principal.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation>&amp;Finalitza</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>megabytes</comment>
-        <translation>MB</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <comment>summary</comment>
-        <translation>Nom</translation>
-    </message>
-    <message>
-        <source>OS Type</source>
-        <comment>summary</comment>
-        <translation>Tipus de sistema operatiu</translation>
-    </message>
-    <message>
-        <source>Base Memory</source>
-        <comment>summary</comment>
-        <translation>Memòria RAM</translation>
-    </message>
-    <message>
-        <source>Boot Hard Disk</source>
-        <comment>summary</comment>
-        <translation>Arrenca Disc Dur</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Cancel·la</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccioneu la imatge de disc dur que es farà servir com a disc dur d&apos;arrrencada de la màquina virtual. Podeu crear un disc dur nou usant el botó &lt;b&gt;Nou&lt;/b&gt; o seleccionar una imatge de disc dur existent de la llista desplegable o prement el botó &lt;b&gt;Existents&lt;/b&gt; (per a invocar el diàleg del gestor de discos virtuals). Si vos cal una configuració de disc dur més complexa, podeu també saltar-vos este pas i connectar discos durs més avant, fent servir el diàleg de configuració de la màquina virtual.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation>D&amp;isc dur d&apos;arrencada (primari mestre)</translation>
     </message>
 </context>
 <context>
@@ -5544,7 +6326,7 @@ pas i connectar discos durs més avant, fent servir el diàleg de configuració 
     </message>
     <message>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Els següents fitxers de paràmetres del VirtualBox s&apos;han convertit automàticament al nou format &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tot i així, els resultats de la conversió encara no s&apos;han alçat al disc. Premeu:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Alça&lt;/b&gt; per alçar ara els fitxers auto-convertits (ja no serà possible fer servir estos paràmetres amb una versió anterior del VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Còpia de seguretat&lt;/b&gt; per crear una còpia de seguretat dels fitxers de paràmetres en el format antic abans d'alçar-los en el nou format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel·la&lt;/b&gt; per no alçar ara els fitxers de paràmetres auto-convertits.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Tingueu en compte que si seleccioneu &lt;b&gt;Cancel·la&lt;/b&gt;, els fitxers de paràmetres auto-convertits s'alçaran implícitament en el nou format tot i que una vegada que canvieu algun paràmetre o inicieu una màquina virtual, en canvi en este cas  &lt;b&gt;no&lt;/b&gt; es faran còpies de seguretat.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Els següents fitxers de paràmetres del VirtualBox s&apos;han convertit automàticament al nou format &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tot i així, els resultats de la conversió encara no s&apos;han alçat al disc. Premeu:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Alça&lt;/b&gt; per alçar ara els fitxers auto-convertits (ja no serà possible fer servir estos paràmetres amb una versió anterior del VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Còpia de seguretat&lt;/b&gt; per crear una còpia de seguretat dels fitxers de paràmetres en el format antic abans d&apos;alçar-los en el nou format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel·la&lt;/b&gt; per no alçar ara els fitxers de paràmetres auto-convertits.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Tingueu en compte que si seleccioneu &lt;b&gt;Cancel·la&lt;/b&gt;, els fitxers de paràmetres auto-convertits s&apos;alçaran implícitament en el nou format tot i que una vegada que canvieu algun paràmetre o inicieu una màquina virtual, en canvi en este cas  &lt;b&gt;no&lt;/b&gt; es faran còpies de seguretat.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Save</source>
@@ -5890,7 +6672,7 @@ pas i connectar discos durs més avant, fent servir el diàleg de configuració 
     </message>
     <message>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Els següents fitxers de paràmetres del VirtualBox s&apos;han convertit automàticament al nou format &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tot i així, els resultats de la conversió encara no s&apos;han alçat al disc. Premeu:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Alça&lt;/b&gt; per alçar ara els fitxers auto-convertits (ja no serà possible fer servir estos paràmetres amb una versió anterior del VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Còpia de seguretat&lt;/b&gt; per crear una còpia de seguretat dels fitxers de paràmetres en el format antic abans d'alçar-los en el nou format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Sobreescriu&lt;/b&gt; per alçar tots els fitxers auto-convertitts sense crear còpies de seguretat;&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;Es recomana seleccionar en tot moment &lt;b&gt;Còpia de seguretat&lt;/b&gt; perquè sempre serà possible tornar a l&apos;estat anterior sense perdre els paràmetres de configuració actuals. Mireu el manual del VirtualBox per a més informació sobre desactualització.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Els següents fitxers de paràmetres del VirtualBox s&apos;han convertit automàticament al nou format &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tot i així, els resultats de la conversió encara no s&apos;han alçat al disc. Premeu:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Alça&lt;/b&gt; per alçar ara els fitxers auto-convertits (ja no serà possible fer servir estos paràmetres amb una versió anterior del VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Còpia de seguretat&lt;/b&gt; per crear una còpia de seguretat dels fitxers de paràmetres en el format antic abans d&apos;alçar-los en el nou format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Sobreescriu&lt;/b&gt; per alçar tots els fitxers auto-convertitts sense crear còpies de seguretat;&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;Es recomana seleccionar en tot moment &lt;b&gt;Còpia de seguretat&lt;/b&gt; perquè sempre serà possible tornar a l&apos;estat anterior sense perdre els paràmetres de configuració actuals. Mireu el manual del VirtualBox per a més informació sobre desactualització.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
@@ -6116,6 +6898,54 @@ pas i connectar discos durs més avant, fent servir el diàleg de configuració 
         <comment>medium</comment>
         <translation>&amp;Elimina</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxProgressDialog</name>
@@ -6226,11 +7056,11 @@ pas i connectar discos durs més avant, fent servir el diàleg de configuració 
     </message>
     <message>
         <source>Enter your full name using Latin characters.</source>
-        <translation>Introduïu el nom complet fent servir caràcters llatins.</translation>
+        <translation type="obsolete">Introduïu el nom complet fent servir caràcters llatins.</translation>
     </message>
     <message>
         <source>Enter your e-mail address. Please use a valid address here.</source>
-        <translation>Introduïu una adreça de correu vàlida.</translation>
+        <translation type="obsolete">Introduïu una adreça de correu vàlida.</translation>
     </message>
     <message>
         <source>&amp;Name</source>
@@ -6246,15 +7076,15 @@ pas i connectar discos durs més avant, fent servir el diàleg de configuració 
     </message>
     <message>
         <source>VirtualBox Registration Dialog</source>
-        <translation>Diàleg de registre del VirtualBox</translation>
+        <translation type="obsolete">Diàleg de registre del VirtualBox</translation>
     </message>
     <message>
         <source>Welcome to the VirtualBox Registration Form!</source>
-        <translation>Benvingut al formulari de registre del VirtualBox!</translation>
+        <translation type="obsolete">Benvingut al formulari de registre del VirtualBox!</translation>
     </message>
     <message>
         <source>Could not perform connection handshake.</source>
-        <translation>No s&apos;ha pogut dur a terme la conformitat de connexió.</translation>
+        <translation type="obsolete">No s&apos;ha pogut dur a terme la conformitat de connexió.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let vos know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
@@ -6270,63 +7100,63 @@ pas i connectar discos durs més avant, fent servir el diàleg de configuració 
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Cancel·la</translation>
+        <translation type="obsolete">Cancel·la</translation>
     </message>
     <message>
         <source>Select Country/Territory</source>
-        <translation>Seleccioneu un país/territori</translation>
+        <translation type="obsolete">Seleccioneu un país/territori</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let vos know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ompliu este formulari de registre per permetre&apos;ns conèixer que feu servir el VirtualBox i, opcionalment, mantindre-vos informat sobre novetats i actualitzacions del VirtualBox.&lt;/p&gt;&lt;p&gt;Feu servir caràcters llatins per omplir els camps següents. Tingueu en compte que Sun Microsystems farà servir esta informació només per a usos estadístics i per enviar-vos notícies sobre el VirtualBox. Sun Microsystems mai compartirà les vostres dades amb terceres parts. Més informació detallada sobre l&apos;ús de les vostres dades personals poden trobar-se a la secció de &lt;b&gt;Política de privacitat&lt;/b&gt; al manual de VirtualBox o al&lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; lloc web del VirtualBox.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Ompliu este formulari de registre per permetre&apos;ns conèixer que feu servir el VirtualBox i, opcionalment, mantindre-vos informat sobre novetats i actualitzacions del VirtualBox.&lt;/p&gt;&lt;p&gt;Feu servir caràcters llatins per omplir els camps següents. Tingueu en compte que Sun Microsystems farà servir esta informació només per a usos estadístics i per enviar-vos notícies sobre el VirtualBox. Sun Microsystems mai compartirà les vostres dades amb terceres parts. Més informació detallada sobre l&apos;ús de les vostres dades personals poden trobar-se a la secció de &lt;b&gt;Política de privacitat&lt;/b&gt; al manual de VirtualBox o al&lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; lloc web del VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>I &amp;already have a Sun Online account:</source>
-        <translation>Ja tinc un compte a &amp;Sun Online:</translation>
+        <translation type="obsolete">Ja tinc un compte a &amp;Sun Online:</translation>
     </message>
     <message>
         <source>&amp;E-mail:</source>
-        <translation>Corr&amp;eu:</translation>
+        <translation type="obsolete">Corr&amp;eu:</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation>&amp;Contrasenya:</translation>
+        <translation type="obsolete">&amp;Contrasenya:</translation>
     </message>
     <message>
         <source>I &amp;would like to create a new Sun Online account:</source>
-        <translation>Vull &amp;registrar-me creant un nou compte a Sun Online:</translation>
+        <translation type="obsolete">Vull &amp;registrar-me creant un nou compte a Sun Online:</translation>
     </message>
     <message>
         <source>&amp;First Name:</source>
-        <translation>&amp;Nom:</translation>
+        <translation type="obsolete">&amp;Nom:</translation>
     </message>
     <message>
         <source>&amp;Last Name:</source>
-        <translation>&amp;Cognoms:</translation>
+        <translation type="obsolete">&amp;Cognoms:</translation>
     </message>
     <message>
         <source>&amp;Company:</source>
-        <translation>C&amp;ompanyia:</translation>
+        <translation type="obsolete">C&amp;ompanyia:</translation>
     </message>
     <message>
         <source>Co&amp;untry:</source>
-        <translation>&amp;País:</translation>
+        <translation type="obsolete">&amp;País:</translation>
     </message>
     <message>
         <source>E-&amp;mail:</source>
-        <translation>Corre&amp;u:</translation>
+        <translation type="obsolete">Corre&amp;u:</translation>
     </message>
     <message>
         <source>P&amp;assword:</source>
-        <translation>Con&amp;trasenya:</translation>
+        <translation type="obsolete">Con&amp;trasenya:</translation>
     </message>
     <message>
         <source>Co&amp;nfirm Password:</source>
-        <translation>Confirmeu la contrasen&amp;ya:</translation>
+        <translation type="obsolete">Confirmeu la contrasen&amp;ya:</translation>
     </message>
     <message>
         <source>&amp;Register</source>
-        <translation>&amp;Registra</translation>
+        <translation type="obsolete">&amp;Registra</translation>
     </message>
 </context>
 <context>
@@ -6636,7 +7466,7 @@ pas i connectar discos durs més avant, fent servir el diàleg de configuració 
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation>Sun VirtualBox</translation>
+        <translation type="obsolete">Sun VirtualBox</translation>
     </message>
     <message>
         <source>Display the Virtual Media Manager dialog</source>
@@ -6672,7 +7502,7 @@ pas i connectar discos durs més avant, fent servir el diàleg de configuració 
     <name>VBoxSettingsDialog</name>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;Seleccioneu una categoria de paràmetres en la llista de l&apos;esquerra i deplaceu el ratolí sobre un element de la dreta per obtindre'n més informació&lt;i&gt;.</translation>
+        <translation>&lt;i&gt;Seleccioneu una categoria de paràmetres en la llista de l&apos;esquerra i deplaceu el ratolí sobre un element de la dreta per obtindre&apos;n més informació&lt;i&gt;.</translation>
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
@@ -7021,32 +7851,24 @@ per accedir a ella des d&apos;un sistema Linux. Esta característica requereix G
         <source> (%n day(s) ago)</source>
         <translation type="obsolete">
             <numerusform> (fa %n dia)</numerusform>
-            <numerusform> (fa %n dies)</numerusform>
-            <numerusform> (fa %n dies)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n hour(s) ago)</source>
         <translation type="obsolete">
             <numerusform> (fa %n hora)</numerusform>
-            <numerusform> (fa %n hores)</numerusform>
-            <numerusform> (fa %n hores)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n minute(s) ago)</source>
         <translation type="obsolete">
             <numerusform> (fa %n minut)</numerusform>
-            <numerusform> (fa %n minuts)</numerusform>
-            <numerusform> (fa %n minuts)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source> (%n second(s) ago)</source>
         <translation type="obsolete">
             <numerusform> (fa %n segon)</numerusform>
-            <numerusform> (fa %n segons)</numerusform>
-            <numerusform> (fa %n segons)</numerusform>
         </translation>
     </message>
     <message>
@@ -7119,8 +7941,6 @@ per accedir a ella des d&apos;un sistema Linux. Esta característica requereix G
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
         <translation>
             <numerusform>Avís: esteu fent una captura d&apos;una màquina que té %n imatge immutable connectada. Mentre treballeu amb esta captura, la imatge immutable no es reiniciarà per evitar la pèrdua de dades.</numerusform>
-            <numerusform>Avís: esteu fent una captura d&apos;una màquina que té %n imatge immutables connectades. Mentre treballeu amb esta captura, les imatges immutables no es reiniciaran per evitar la pèrdua de dades.</numerusform>
-            <numerusform>Avís: esteu fent una captura d&apos;una màquina que té %n imatge immutables connectades. Mentre treballeu amb esta captura, les imatges immutables no es reiniciaran per evitar la pèrdua de dades.</numerusform>
         </translation>
     </message>
 </context>
@@ -7464,144 +8284,6 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>UIFirstRunWzd</name>
-    <message>
-        <source>&amp;CD/DVD-ROM Device</source>
-        <translation>Dispositiu &amp;CD/DVD</translation>
-    </message>
-    <message>
-        <source>CD/DVD-ROM Device</source>
-        <translation>Dispositiu CD/DVD</translation>
-    </message>
-    <message>
-        <source>First Run Wizard</source>
-        <translation>Executa l&apos;auxiliar d&apos;inici</translation>
-    </message>
-    <message>
-        <source>Floppy Device</source>
-        <translation>Disquet</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Device</source>
-        <translation>Dis&amp;quet</translation>
-    </message>
-    <message>
-        <source>&amp;Host Drive</source>
-        <translation type="obsolete">&amp;Dispositiu amfitrió</translation>
-    </message>
-    <message>
-        <source>Host Drive %1</source>
-        <translation type="obsolete">Dispositiu amfitrió %1</translation>
-    </message>
-    <message>
-        <source>&amp;Image File</source>
-        <translation type="obsolete">Fitxer d&apos;&amp;imatge</translation>
-    </message>
-    <message>
-        <source>Media Source</source>
-        <translation>Suport font</translation>
-    </message>
-    <message>
-        <source>Media Type</source>
-        <translation>Tipus de suport</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Si el que hi ha a continuació és correcte, premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;. Quan el premeu, el dispositiu seleccionat es muntarà a la màquina virtual.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Si el que hi ha a continuació és correcte, premeu el botó &lt;b&gt;Finalitza&lt;/b&gt;. Quan el premeu, el dispositiu seleccionat es muntarà a la màquina virtual.&lt;/p&gt;&lt;p&gt;Tingueu en compte que quan tanqueu la màquina virtual, el dispositiu especificat es desmuntarà automàticament i el dispositiu d&apos;inici tornarà a ser el primer disc d&apos;arrencada.&lt;/p&gt;&lt;p&gt;Segons el tipus del programa de configuració, necessitareu desmuntar manualment (expulsar) el dispositiu una vegada que el programa de configuració haja reiniciat la màquina virtual, per tal de prevenir que s&apos;inicie novament el procés d&apos;instal·lació. Podeu fer axiò seleccionat l&apos;acció corresponent &lt;b&gt;Desmunta...&lt;/b&gt; al menú &lt;b&gt;Dispositius.&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccioneu el suport que conté el sistema operatiu amb el qual voleu treballar. Este suport ha d&apos;ésser arrencable, en altre cas el sistema no podrà iniciar-se.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccioneu el suport que conté el programa de configuració del sistema operatiu amb el qual voleu treballar. Este suport ha d&apos;ésser arrencable, en altre cas el sistema no podrà iniciar-se.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccioneu el tipus de suport que voleu fer servir per iniciar un sistema operatiu.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Seleccioneu el tipus de suport que voleu fer servir per a la instal·lació dels elements mostrats.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Heu seleccionat el següent suport per iniciar un sistema operatiu des de:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Heu seleccionat el següent suport per iniciar des de:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Heu iniciat un nova màquina virtual per primera vegada. Este assistent vos ajudarà a dur a terme els passos necessaris per iniciar un sistema operatiu de la vostra elecció a la màquina virtual.&lt;/p&gt;&lt;p&gt;Tingueu en compte que no podeu instal·lar un sistema operatiu a dins d&apos;esta màquina virtual en este moment perquè encara no heu seleccionat un disc. Si això no és el que voleu, podeu cancel·lar l&apos;execució d&apos;este assistent, seleccioneu &lt;b&gt;Paràmetres&lt;/b&gt; des del menú &lt;b&gt;Màquina&lt;/b&gt; de la finestra principal del VirtualBox per accedir al diàleg de configuració d&apos;este màquina i canviar la configuració de disc.&lt;/p&gt;&lt;p&gt;Feu servir el botó &lt;b&gt;Següent&lt;/b&gt; per continuar amb la següent pàgina de l&apos;assistent i el botó &lt;b&gt;Arrere&lt;/b&gt; per tornar a la pàgina anterior. Podeu prémer també &lt;b&gt;Cancel·la&lt;/b&gt; si voleu cancel·lar l&apos;execució d&apos;este assistent.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Heu iniciat un nova màquina virtual per primera vegada. Este assistent vos ajudarà a dur a terme els passos necessaris per iniciar un sistema operatiu de la vostra elecció a la màquina virtual.&lt;/p&gt;&lt;p&gt;Feu servir el botó &lt;b&gt;Següent&lt;/b&gt; per continuar amb la següent pàgina de l&apos;assistent i el botó &lt;b&gt;Arrere&lt;/b&gt; per tornar a la pàgina anterior. Podeu prémer també &lt;b&gt;Cancel·la&lt;/b&gt; si voleu cancel·lar l&apos;execució d&apos;este assistent.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Select Installation Media</source>
-        <translation>Selecciona el suport d&apos;instal·lació</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Resum</translation>
-    </message>
-    <message>
-        <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
-        <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Tipus:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Font:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
-    </message>
-    <message>
-        <source>VDM</source>
-        <translation type="obsolete">VDM</translation>
-    </message>
-    <message>
-        <source>Welcome to the First Run Wizard!</source>
-        <translation>Benvingut a l&apos;auxiliar d&apos;inici!</translation>
-    </message>
-    <message>
-        <source>&lt; &amp;Back</source>
-        <translation>&lt; &amp;Arrere</translation>
-    </message>
-    <message>
-        <source>&amp;Next &gt;</source>
-        <translation>&amp;Següent &gt;</translation>
-    </message>
-    <message>
-        <source>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If the above is correct, press the &lt;span style=&quot; font-weight:600;&quot;&gt;Finish&lt;/span&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;span style=&quot; font-weight:600;&quot;&gt;Unmount...&lt;/span&gt; action in the &lt;span style=&quot; font-weight:600;&quot;&gt;Devices&lt;/span&gt; menu&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="obsolete">&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Si el que posa amunt és correcte, premeu sobre &lt;span style=&quot; font-weight:600;&quot;&gt;Finalitza&lt;/span&gt;. Una vegada que premeu el botó, el dispositiu seleccionat es muntarà temporalment a la màquina virtual i començarà l&apos;execució..&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Tingueu en compte que quan tanqueu la màquina virtual, el dispositiu s&apos;expulsarà automàticament.&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Segons el tipus de programa de configuració, potser necessitareu expulsar manualment el dispositiu després que la màquina virtual es torne a iniciar per tal que el procés d&apos;instal·lació s&apos;inicie novament. Podeu fer això seleccionant l&apos;acció corresponent &lt;span style=&quot; font-weight:600;&quot;&gt;Expulsa...&lt;/span&gt; al menú &lt;span style=&quot; font-weight:600;&quot;&gt;Dispositius&lt;/span&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Finish</source>
-        <translation>&amp;Finalitza</translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <comment>summary</comment>
-        <translation>Tipus</translation>
-    </message>
-    <message>
-        <source>Source</source>
-        <comment>summary</comment>
-        <translation>Font</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Cancel·la</translation>
-    </message>
-</context>
-<context>
     <name>VBoxVMInformationDlg</name>
     <message>
         <source>Session Information Dialog</source>
@@ -7718,7 +8400,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Version %1.%2</source>
         <comment>guest additions</comment>
-        <translation>Versió %1.%2</translation>
+        <translation type="obsolete">Versió %1.%2</translation>
     </message>
     <message>
         <source>Not Detected</source>
@@ -8140,7 +8822,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation>Gestiona el controlador d'eixida de so. El &lt;b&gt;controlador d&apos;àudio Nul&lt;/b&gt; fa que el client veja una tarjeta de so, però l&apos;accés a ella s&apos;ignorarà.</translation>
+        <translation>Gestiona el controlador d&apos;eixida de so. El &lt;b&gt;controlador d&apos;àudio Nul&lt;/b&gt; fa que el client veja una tarjeta de so, però l&apos;accés a ella s&apos;ignorarà.</translation>
     </message>
     <message>
         <source>Audio &amp;Controller:</source>
@@ -8299,6 +8981,18 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
         <translation>El número de port de servidor VRDP. Heu d&apos;especificar &lt;tt&gt;0&lt;/tt&gt; (cero) per a seleccionar el port 3389, el port estàndard per a RDP.</translation>
+    </message>
+    <message>
+        <source>Mo&amp;nitor Count:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8506,7 +9200,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
-        <translation type="obsolete">Mostra la ruta on les captures d&apos;esta màquina virtual s'alçaran. Tingueu en compte que les captures poden ocupar prou quantitat d&apos;espai al disc dur.</translation>
+        <translation type="obsolete">Mostra la ruta on les captures d&apos;esta màquina virtual s&apos;alçaran. Tingueu en compte que les captures poden ocupar prou quantitat d&apos;espai al disc dur.</translation>
     </message>
     <message>
         <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
@@ -8602,7 +9296,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation type="obsolete">Si està marcat, qualsevol canvi al CD/DVD o disquet muntat s'alçarà al fitxer de configuració per tal de preservar la configuració dels suports muntats entre cada execució de la màquina virtual.</translation>
+        <translation type="obsolete">Si està marcat, qualsevol canvi al CD/DVD o disquet muntat s&apos;alçarà al fitxer de configuració per tal de preservar la configuració dels suports muntats entre cada execució de la màquina virtual.</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
@@ -8786,7 +9480,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Gestiona el controlador d'eixida de so. El &lt;b&gt;controlador d&apos;àudio Nul&lt;/b&gt;
+        <translation type="obsolete">&lt;qt&gt;Gestiona el controlador d&apos;eixida de so. El &lt;b&gt;controlador d&apos;àudio Nul&lt;/b&gt;
 fa que el client veja una tarjeta de so, però l&apos;accés a ella s&apos;ignorarà.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -9313,7 +10007,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
-        <translation>Mostra la ruta on les captures d&apos;esta màquina virtual s'alçaran. Tingueu en compte que les captures poden ocupar prou quantitat d&apos;espai al disc dur.</translation>
+        <translation>Mostra la ruta on les captures d&apos;esta màquina virtual s&apos;alçaran. Tingueu en compte que les captures poden ocupar prou quantitat d&apos;espai al disc dur.</translation>
     </message>
     <message>
         <source>&amp;Basic</source>
@@ -9477,7 +10171,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation>Si està marcat, qualsevol canvi al CD/DVD o disquet muntat s'alçarà al fitxer de configuració per tal de preservar la configuració dels suports muntats entre cada execució de la màquina virtual.</translation>
+        <translation>Si està marcat, qualsevol canvi al CD/DVD o disquet muntat s&apos;alçarà al fitxer de configuració per tal de preservar la configuració dels suports muntats entre cada execució de la màquina virtual.</translation>
     </message>
     <message>
         <source>&amp;Remember Mounted Media</source>
@@ -9529,7 +10223,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation>Si està marcat, mostra una barra d&apos;eines petita a la part de dalt de la pantalla en lloc d'a la posició per defecte a la part de sota.</translation>
+        <translation>Si està marcat, mostra una barra d&apos;eines petita a la part de dalt de la pantalla en lloc d&apos;a la posició per defecte a la part de sota.</translation>
     </message>
     <message>
         <source>Show At &amp;Top Of Screen</source>
@@ -9600,7 +10294,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
-        <translation>Si està marcat, mostrarà de forma diferenciada els discos durs connectats a les ranures en lloc d'als discos durs base (mostrat en cas d&apos;adjuncions indirectes), a més permetrà connectar altres discos durs explícitament. Marqueu això només si necessiteu una configuració complexa del disc dur.</translation>
+        <translation>Si està marcat, mostrarà de forma diferenciada els discos durs connectats a les ranures en lloc d&apos;als discos durs base (mostrat en cas d&apos;adjuncions indirectes), a més permetrà connectar altres discos durs explícitament. Marqueu això només si necessiteu una configuració complexa del disc dur.</translation>
     </message>
     <message>
         <source>&amp;Show Differencing Hard Disks</source>
@@ -9821,6 +10515,30 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <source>Attached To:</source>
         <translation>Connectat a:</translation>
+    </message>
+    <message>
+        <source>Allows to use host I/O caching capabilities.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use host I/O cache</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add SAS Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage Controller 1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -10514,7 +11232,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine.</source>
-        <translation>Controla el nombre de CPUs virtuals a la màquina virtual.</translation>
+        <translation type="obsolete">Controla el nombre de CPUs virtuals a la màquina virtual.</translation>
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
@@ -10560,6 +11278,18 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <message>
         <source>Enable &amp;EFI (special OSes only)</source>
         <translation>Activa &amp;EFI (només SO especials)</translation>
+    </message>
+    <message>
+        <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hardware clock in &amp;UTC time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
