@@ -491,7 +491,6 @@ RuntimeR3_SOURCES.win.amd64 = $(RuntimeWin64ASM_SOURCES)
 RuntimeR3_SOURCES.win.x86   = $(RuntimeWin32ASM_SOURCES)
 
 RuntimeR3_SOURCES.linux = \
-	generic/pathhost-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
@@ -521,6 +520,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
+	r3/posix/pathhost-posix.cpp \
 	r3/posix/pipe-posix.cpp \
 	r3/posix/poll-posix.cpp \
 	r3/posix/process-posix.cpp \
@@ -556,7 +556,6 @@ else
 endif
 
 RuntimeR3_SOURCES.os2   = \
-	generic/pathhost-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
@@ -600,6 +599,7 @@ RuntimeR3_SOURCES.os2   = \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
+	r3/posix/pathhost-posix.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/RTTimeSet-posix.cpp \
@@ -657,7 +657,6 @@ RuntimeR3_SOURCES.darwin = \
 
 ## @todo Make BSD sched, implement RTMP*.
 RuntimeR3_SOURCES.freebsd = \
-	generic/pathhost-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
@@ -693,6 +692,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
+	r3/posix/pathhost-posix.cpp \
 	r3/posix/pipe-posix.cpp \
 	r3/posix/poll-posix.cpp \
 	r3/posix/process-posix.cpp \
@@ -712,7 +712,6 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/utf8-posix.cpp
 
 RuntimeR3_SOURCES.solaris = \
-	generic/pathhost-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
@@ -735,6 +734,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
+	r3/posix/pathhost-posix.cpp \
 	r3/posix/pipe-posix.cpp \
 	r3/posix/poll-posix.cpp \
 	r3/posix/process-posix.cpp \
