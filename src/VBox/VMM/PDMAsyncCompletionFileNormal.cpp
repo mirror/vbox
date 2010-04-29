@@ -1289,12 +1289,57 @@ static void pdmacFileAioMgrNormalReqComplete(PPDMACEPFILEMGR pAioMgr, RTFILEAIOR
     }
     else
     {
-        AssertMsg(   RT_FAILURE(rcReq)
-                  || (   (cbTransfered == pTask->DataSeg.cbSeg)
-                      || (pTask->cbBounceBuffer && cbTransfered >= pTask->DataSeg.cbSeg)),
-                  ("Task didn't completed successfully (rc=%Rrc) or was incomplete (cbTransfered=%u)\n", rcReq, cbTransfered));
+        /*
+         * Restart an incomplete transfer.
+         * This usually means that the request will return an error now
+         * but to get the cause of the error (disk full, file too big, I/O error, ...)
+         * the transfer needs to be continued.
+         */
+        if (RT_UNLIKELY(   cbTransfered < pTask->DataSeg.cbSeg
+                        || (   pTask->cbBounceBuffer
+                            && cbTransfered < pTask->cbBounceBuffer)))
+        {
+            RTFOFF offStart;
+            size_t cbToTransfer;
+            uint8_t *pbBuf = NULL;
 
-        if (pTask->fPrefetch)
+            LogFlow(("Restarting incomplete transfer %#p (%zu bytes transfered)\n",
+                     pTask, cbTransfered));
+            Assert(cbTransfered % 512 == 0);
+
+            if (pTask->cbBounceBuffer)
+            {
+                AssertPtr(pTask->pvBounceBuffer);
+                offStart     = (pTask->Off & ~((RTFOFF)512-1)) + cbTransfered;
+                cbToTransfer = pTask->cbBounceBuffer - cbTransfered;
+                pbBuf        = (uint8_t *)pTask->pvBounceBuffer + cbTransfered;
+            }
+            else
+            {
+                Assert(!pTask->pvBounceBuffer);
+                offStart     = pTask->Off + cbTransfered;
+                cbToTransfer = pTask->DataSeg.cbSeg - cbTransfered;
+                pbBuf        = (uint8_t *)pTask->DataSeg.pvSeg + cbTransfered;
+            }
+
+            if (pTask->fPrefetch || pTask->enmTransferType == PDMACTASKFILETRANSFER_READ)
+            {
+                rc = RTFileAioReqPrepareRead(hReq, pEndpoint->File, offStart,
+                                             pbBuf, cbToTransfer, pTask);
+            }
+            else
+            {
+                AssertMsg(pTask->enmTransferType == PDMACTASKFILETRANSFER_WRITE,
+                          ("Invalid transfer type\n"));
+                rc = RTFileAioReqPrepareWrite(hReq, pEndpoint->File, offStart,
+                                              pbBuf, cbToTransfer, pTask);
+            }
+
+            AssertRC(rc);
+            rc = RTFileAioCtxSubmit(pAioMgr->hAioCtx, &hReq, 1);
+            AssertRC(rc);
+        }
+        else if (pTask->fPrefetch)
         {
             Assert(pTask->enmTransferType == PDMACTASKFILETRANSFER_WRITE);
             Assert(pTask->cbBounceBuffer);
