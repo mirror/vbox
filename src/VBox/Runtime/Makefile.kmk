@@ -1191,11 +1191,6 @@ RuntimeR0_TEMPLATE      = VBoxR0
 RuntimeR0_DEFS          = IN_RT_R0 RT_WITH_VBOX
 RuntimeR0_INCS          = include
 RuntimeR0_SOURCES       = \
-	common/checksum/crc32.cpp \
-	common/checksum/crc64.cpp \
-	common/checksum/md5.cpp \
-	common/checksum/ipv4.cpp \
-	common/checksum/ipv6.cpp \
 	common/log/logellipsis.cpp \
 	common/log/logrelellipsis.cpp \
 	common/log/logcom.cpp \
@@ -1208,18 +1203,11 @@ RuntimeR0_SOURCES       = \
 	common/misc/RTAssertMsg2Weak.cpp \
 	common/misc/RTAssertMsg2WeakV.cpp \
 	common/misc/buildconfig.cpp \
-	common/misc/handletable.cpp \
-	common/misc/handletablectx.cpp \
-	common/misc/handletablesimple.cpp \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
 	common/misc/term.cpp \
-	common/string/strformat.cpp \
-	common/string/strformatrt.cpp \
-	common/string/strformattype.cpp \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
-	common/string/strprintf.cpp \
 	common/table/avlgcptr.cpp \
 	common/table/avlhcphys.cpp \
 	common/table/avllu32.cpp \
@@ -1238,6 +1226,22 @@ RuntimeR0_SOURCES       = \
 	generic/RTAssertShouldPanic-generic.cpp \
 	\
 	$(RuntimeNoCrt_SOURCES)
+
+ifneq ($(KBUILD_TARGET),win)
+RuntimeR0_SOURCES      += \
+	common/checksum/crc32.cpp \
+	common/checksum/crc64.cpp \
+	common/checksum/md5.cpp \
+	common/checksum/ipv4.cpp \
+	common/checksum/ipv6.cpp \
+	common/misc/handletable.cpp \
+	common/misc/handletablectx.cpp \
+	common/misc/handletablesimple.cpp \
+	common/string/strformat.cpp \
+	common/string/strformatrt.cpp \
+	common/string/strformattype.cpp \
+	common/string/strprintf.cpp
+endif
 
 if1of ($(KBUILD_TARGET), darwin solaris freebsd)
 RuntimeR0_SOURCES += \
