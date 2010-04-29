@@ -77,7 +77,11 @@ typedef struct RTDIR
 #ifndef RT_DONT_CONVERT_FILENAMES
     /** Pointer to the converted filename.
      * This can be NULL. */
+#ifdef RT_OS_WINDOWS
+    char               *pszName;
+#else
     char const         *pszName;
+#endif
     /** The length of the converted filename. */
     size_t              cchName;
 #endif
