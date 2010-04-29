@@ -608,6 +608,11 @@ static int usbHidCompleteOk(PUSBHID pThis, PVUSBURB pUrb, size_t cbData)
 static int usbHidResetWorker(PUSBHID pThis, PVUSBURB pUrb, bool fSetConfig)
 {
     /*
+     * Deactivate the keyboard.
+     */
+    pThis->Lun0.pDrv->pfnSetActive(pThis->Lun0.pDrv, false);
+
+    /*
      * Reset the device state.
      */
     pThis->enmState = USBHIDREQSTATE_READY;
@@ -1211,6 +1216,12 @@ static DECLCALLBACK(int) usbHidUsbSetConfiguration(PPDMUSBINS pUsbIns, uint8_t b
         usbHidResetWorker(pThis, NULL, true /*fSetConfig*/); /** @todo figure out the exact difference */
     pThis->bConfigurationValue = bConfigurationValue;
 
+    /*
+     * Tell the other end that the keyboard is now enabled and wants
+     * to receive keystrokes.
+     */
+    pThis->Lun0.pDrv->pfnSetActive(pThis->Lun0.pDrv, true);
+
     RTCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
 }
@@ -1307,6 +1318,10 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
     rc = pUsbIns->pHlpR3->pfnDriverAttach(pUsbIns, 0 /*iLun*/, &pThis->Lun0.IBase, &pThis->Lun0.pDrvBase, "Keyboard Port");
     if (RT_FAILURE(rc))
         return PDMUsbHlpVMSetError(pUsbIns, rc, RT_SRC_POS, N_("HID failed to attach keyboard driver"));
+
+    pThis->Lun0.pDrv = PDMIBASE_QUERY_INTERFACE(pThis->Lun0.pDrvBase, PDMIKEYBOARDCONNECTOR);
+    if (!pThis->Lun0.pDrv)
+        return PDMUsbHlpVMSetError(pUsbIns, VERR_PDM_MISSING_INTERFACE, RT_SRC_POS, N_("HID failed to query keyboard interface"));
 
     return VINF_SUCCESS;
 }

@@ -31,6 +31,16 @@
 // globals
 ////////////////////////////////////////////////////////////////////////////////
 
+/** @name Keyboard device capabilities bitfield
+ * @{ */
+enum
+{
+    /** The keyboard device does not wish to receive keystrokes. */
+    KEYBOARD_DEVCAP_DISABLED = 0,
+    /** The keyboard device does wishes to receive keystrokes. */
+    KEYBOARD_DEVCAP_ENABLED  = 1
+};
+
 /**
  * Keyboard driver instance data.
  */
@@ -42,8 +52,10 @@ typedef struct DRVMAINKEYBOARD
     PPDMDRVINS                  pDrvIns;
     /** Pointer to the keyboard port interface of the driver/device above us. */
     PPDMIKEYBOARDPORT           pUpPort;
-    /** Our mouse connector interface. */
+    /** Our keyboard connector interface. */
     PDMIKEYBOARDCONNECTOR       IConnector;
+    /** The capabilities of this device. */
+    uint32_t                    u32DevCaps;
 } DRVMAINKEYBOARD, *PDRVMAINKEYBOARD;
 
 /** Converts PDMIVMMDEVCONNECTOR pointer to a DRVMAINVMMDEV pointer. */
@@ -64,7 +76,7 @@ Keyboard::~Keyboard()
 
 HRESULT Keyboard::FinalConstruct()
 {
-    mpDrv = NULL;
+    RT_ZERO(mpDrv);
     mpVMMDev = NULL;
     mfVMMDevInited = false;
     return S_OK;
@@ -115,10 +127,13 @@ void Keyboard::uninit()
     if (autoUninitSpan.uninitDone())
         return;
 
-    if (mpDrv)
-        mpDrv->pKeyboard = NULL;
+    for (unsigned i = 0; i < KEYBOARD_MAX_DEVICES; ++i)
+    {
+        if (mpDrv[i])
+            mpDrv[i]->pKeyboard = NULL;
+        mpDrv[i] = NULL;
+    }
 
-    mpDrv = NULL;
     mpVMMDev = NULL;
     mfVMMDevInited = true;
 
@@ -140,9 +155,22 @@ STDMETHODIMP Keyboard::PutScancode (LONG scancode)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    CHECK_CONSOLE_DRV(mpDrv);
+    CHECK_CONSOLE_DRV(mpDrv[0]);
 
-    int vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, (uint8_t)scancode);
+    PPDMIKEYBOARDPORT pUpPort = NULL;
+    for (int i = KEYBOARD_MAX_DEVICES - 1; i >= 0 ; --i)
+    {
+        if (mpDrv[i] && (mpDrv[i]->u32DevCaps & KEYBOARD_DEVCAP_ENABLED))
+        {
+            pUpPort = mpDrv[i]->pUpPort;
+            break;
+        }
+    }
+    /* No enabled keyboard - throw the input away. */
+    if (!pUpPort)
+        return rc;
+    
+    int vrc = pUpPort->pfnPutEvent(pUpPort, (uint8_t)scancode);
 
     if (RT_FAILURE(vrc))
         rc = setError(VBOX_E_IPRT_ERROR,
@@ -175,13 +203,29 @@ STDMETHODIMP Keyboard::PutScancodes (ComSafeArrayIn (LONG, scancodes),
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    CHECK_CONSOLE_DRV (mpDrv);
+    CHECK_CONSOLE_DRV(mpDrv[0]);
+
+    /* Send input to the last enabled device. Relies on the fact that
+     * the USB keyboard is always initialized after the PS/2 keyboard.
+     */
+    PPDMIKEYBOARDPORT pUpPort = NULL;
+    for (int i = KEYBOARD_MAX_DEVICES - 1; i >= 0 ; --i)
+    {
+        if (mpDrv[i] && (mpDrv[i]->u32DevCaps & KEYBOARD_DEVCAP_ENABLED))
+        {
+            pUpPort = mpDrv[i]->pUpPort;
+            break;
+        }
+    }
+    /* No enabled keyboard - throw the input away. */
+    if (!pUpPort)
+        return rc;
 
     com::SafeArray<LONG> keys (ComSafeArrayInArg (scancodes));
     int vrc = VINF_SUCCESS;
 
     for (uint32_t i = 0; (i < keys.size()) && RT_SUCCESS(vrc); i++)
-        vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, (uint8_t)keys[i]);
+        vrc = pUpPort->pfnPutEvent(pUpPort, (uint8_t)keys[i]);
 
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_IPRT_ERROR,
@@ -249,7 +293,12 @@ DECLCALLBACK(void) Keyboard::drvDestruct (PPDMDRVINS pDrvIns)
     if (pData->pKeyboard)
     {
         AutoWriteLock kbdLock(pData->pKeyboard COMMA_LOCKVAL_SRC_POS);
-        pData->pKeyboard->mpDrv = NULL;
+        for (unsigned cDev = 0; cDev < KEYBOARD_MAX_DEVICES; ++cDev)
+            if (pData->pKeyboard->mpDrv[cDev] == pData)
+            {
+                pData->pKeyboard->mpDrv[cDev] = NULL;
+                break;
+            }
         pData->pKeyboard->mpVMMDev = NULL;
     }
 }
@@ -260,6 +309,18 @@ DECLCALLBACK(void) keyboardLedStatusChange (PPDMIKEYBOARDCONNECTOR pInterface, P
     pDrv->pKeyboard->getParent()->onKeyboardLedsChange (!!(enmLeds & PDMKEYBLEDS_NUMLOCK),
                                                         !!(enmLeds & PDMKEYBLEDS_CAPSLOCK),
                                                         !!(enmLeds & PDMKEYBLEDS_SCROLLLOCK));
+}
+
+/**
+ * @interface_method_impl{PDMIKEYBOARDCONNECTOR,pfnSetActive}
+ */
+DECLCALLBACK(void) Keyboard::keyboardSetActive(PPDMIKEYBOARDCONNECTOR pInterface, bool fActive)
+{
+    PDRVMAINKEYBOARD pDrv = PPDMIKEYBOARDCONNECTOR_2_MAINKEYBOARD(pInterface);
+    if (fActive)
+        pDrv->u32DevCaps |= KEYBOARD_DEVCAP_ENABLED;
+    else
+        pDrv->u32DevCaps &= ~KEYBOARD_DEVCAP_ENABLED;
 }
 
 /**
@@ -288,6 +349,7 @@ DECLCALLBACK(int) Keyboard::drvConstruct (PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pDrvIns->IBase.pfnQueryInterface        = Keyboard::drvQueryInterface;
 
     pData->IConnector.pfnLedStatusChange    = keyboardLedStatusChange;
+    pData->IConnector.pfnSetActive          = keyboardSetActive;
 
     /*
      * Get the IKeyboardPort interface of the above driver/device.
@@ -310,7 +372,15 @@ DECLCALLBACK(int) Keyboard::drvConstruct (PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
         return rc;
     }
     pData->pKeyboard = (Keyboard *)pv;        /** @todo Check this cast! */
-    pData->pKeyboard->mpDrv = pData;
+    unsigned cDev;
+    for (cDev = 0; cDev < KEYBOARD_MAX_DEVICES; ++cDev)
+        if (!pData->pKeyboard->mpDrv[cDev])
+        {
+            pData->pKeyboard->mpDrv[cDev] = pData;
+            break;
+        }
+    if (cDev == KEYBOARD_MAX_DEVICES)
+        return VERR_NO_MORE_HANDLES;
 
     return VINF_SUCCESS;
 }

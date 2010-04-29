@@ -1482,7 +1482,11 @@ static DECLCALLBACK(int) kbdLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
  */
 static DECLCALLBACK(void)  kbdReset(PPDMDEVINS pDevIns)
 {
-    kbd_reset(PDMINS_2_DATA(pDevIns, KBDState *));
+    KBDState   *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
+
+    kbd_reset(pThis);
+    /* Activate the PS/2 keyboard by default. */
+    pThis->Keyboard.pDrv->pfnSetActive(pThis->Keyboard.pDrv, true);
 }
 
 
