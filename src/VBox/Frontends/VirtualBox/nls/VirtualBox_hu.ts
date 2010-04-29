@@ -145,8 +145,8 @@
     </message>
     <message>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.</source>
-        <translatorcomment>CHECKIT</translatorcomment>
-        <translation>A kernel driver nem tudott elegendő memóriát foglalni, vagy valamilyen memóriaművelet nem sikerült.</translation>
+        <translatorcomment>CHECK</translatorcomment>
+        <translation>A kernel driver nem tudott elegendő memóriát lefoglalni, vagy valamilyen memóriaművelet nem sikerült.</translation>
     </message>
 </context>
 <context>
@@ -434,7 +434,7 @@
     </message>
     <message>
         <source>&lt;qt&gt;The value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;A(z) &lt;b&gt;%1&lt;/b&gt;-s mező a &lt;b&gt;%2&lt;/b&gt; lapon %3.&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;A(z) &lt;b&gt;%1&lt;/b&gt; mező a &lt;b&gt;%2&lt;/b&gt; lapon %3.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;One of the values on the &lt;b&gt;%1&lt;/b&gt; page is %2.&lt;/qt&gt;</source>
@@ -554,7 +554,7 @@ Verzió %1</translation>
     </message>
 </context>
 <context>
-    <name>UIDownloaderAdditions</name>
+    <name>VBoxAdditionsDownloader</name>
     <message>
         <source>Cancel</source>
         <translation>Mégsem</translation>
@@ -942,11 +942,11 @@ Verzió %1</translation>
     </message>
     <message>
         <source>&amp;Shared Folders...</source>
-        <translation>&amp;Osztott mappák...</translation>
+        <translation>&amp;Megosztott mappák...</translation>
     </message>
     <message>
         <source>Create or modify shared folders</source>
-        <translation>Ablak megnyitása az osztott mappák beállításához</translation>
+        <translation>Ablak megnyitása az megosztott mappák beállításához</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
@@ -1030,7 +1030,7 @@ Verzió %1</translation>
     </message>
     <message>
         <source>Provides quick access to shared folders (by a right mouse button click).&lt;br&gt;Note that the shared folders feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Gyors hozzáférés az osztott mappák kezelőjéhez (jobb egérgomb megnyomása szükséges).&lt;br&gt;Az osztott mappák használatához szükséges a telepített Guest Additions.</translation>
+        <translation type="obsolete">Gyors hozzáférés a megosztott mappák kezelőjéhez (jobb egérgomb megnyomása szükséges).&lt;br&gt;A megosztott mappák használatához szükséges a telepített Guest Additions.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;floppy&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
@@ -1439,7 +1439,7 @@ Verzió %1</translation>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;p style=&apos;white-space: pre&apos;&gt;&lt;nobr&gt;Jelzi az osztott mappa aktivitását:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation>&lt;p style=&apos;white-space: pre&apos;&gt;&lt;nobr&gt;Jelzi a megosztott mappa aktivitását:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -1665,7 +1665,7 @@ Verzió %1</translation>
     </message>
     <message>
         <source>Select a hard disk image file</source>
-        <translation type="obsolete">Merevlemez képfájl kiválasztása</translation>
+        <translation type="obsolete">Válaszd ki az új merevlemezkép fájlját</translation>
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso)</source>
@@ -1741,7 +1741,7 @@ Verzió %1</translation>
     </message>
 </context>
 <context>
-    <name>UIDownloader</name>
+    <name>VBoxDownloaderWgt</name>
     <message>
         <source>Cancel</source>
         <translation type="obsolete">Mégsem</translation>
@@ -1779,11 +1779,11 @@ Verzió %1</translation>
     <name>VBoxEmptyFileSelector</name>
     <message>
         <source>&amp;Choose...</source>
-        <translation>&amp;Válassz...</translation>
+        <translation>&amp;Kiválaszt...</translation>
     </message>
 </context>
 <context>
-    <name>UIExportApplianceWzd</name>
+    <name>VBoxExportApplianceWzd</name>
     <message>
         <source>Select a file to export into</source>
         <translation>Válaszd ki a fájlt, amibe az exportálás történik</translation>
@@ -2056,7 +2056,7 @@ p, li { white-space: pre-wrap; }
         <translation>Valós idejű &amp;dock ikon</translation>
     </message>
     <message>
-        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
         <translation>A dock és a menüsor &amp;automatikus megjelenítése teljes képernyőn</translation>
     </message>
 </context>
@@ -2754,7 +2754,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Normal</source>
         <comment>DiskType</comment>
-        <translation>Normális</translation>
+        <translation>Normál</translation>
     </message>
     <message>
         <source>Immutable</source>
@@ -3082,7 +3082,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Shared Folder</source>
         <comment>DeviceType</comment>
-        <translation>Osztott mappák</translation>
+        <translation>Megosztott mappák</translation>
     </message>
     <message>
         <source>IDE</source>
@@ -3446,32 +3446,32 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Teleported</source>
         <comment>MachineState</comment>
-        <translatorcomment>CHECKIT</translatorcomment>
-        <translation>Áthelyezve</translation>
+        <translatorcomment>CHECK</translatorcomment>
+        <translation>Teleportálva</translation>
     </message>
     <message>
         <source>Guru Meditation</source>
         <comment>MachineState</comment>
-        <translatorcomment>CHECKIT</translatorcomment>
-        <translation>Gondolkodik</translation>
+        <translatorcomment>CHECK</translatorcomment>
+        <translation>Guru meditálás</translation>
     </message>
     <message>
         <source>Teleporting</source>
         <comment>MachineState</comment>
-        <translatorcomment>CHECKIT</translatorcomment>
-        <translation>Áthelyezés alatt</translation>
+        <translatorcomment>CHECK</translatorcomment>
+        <translation>Teleportálás alatt</translation>
     </message>
     <message>
         <source>Taking Live Snapshot</source>
         <comment>MachineState</comment>
-        <translatorcomment>CHECKIT</translatorcomment>
-        <translation>Pillanatkép készítése</translation>
+        <translatorcomment>CHECK</translatorcomment>
+        <translation>Élő pillanatkép készítése</translation>
     </message>
     <message>
         <source>Teleporting Paused VM</source>
         <comment>MachineState</comment>
-        <translatorcomment>CHECKIT</translatorcomment>
-        <translation>Megállított VM áthelyezése</translation>
+        <translatorcomment>CHECK</translatorcomment>
+        <translation>Megállított VM teleportálása</translation>
     </message>
     <message>
         <source>Restoring Snapshot</source>
@@ -3491,7 +3491,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Device %1</source>
         <comment>StorageBusDevice</comment>
-        <translatorcomment>CHECKIT</translatorcomment>
+        <translatorcomment>CHECK</translatorcomment>
         <translation>Eszköz %1</translation>
     </message>
     <message>
@@ -3688,7 +3688,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
-        <translation type="obsolete">&lt;i&gt;Válasszon egy kategóriát a bal oldali listából és vigye az egeret a beállítás fölé a bővebb információért&lt;i&gt;.</translation>
+        <translation type="obsolete">&lt;i&gt;Válassz egy kategóriát a bal oldali listából és vigye az egeret a beállítás fölé a bővebb információért&lt;i&gt;.</translation>
     </message>
     <message>
         <source> General </source>
@@ -4016,12 +4016,12 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>Reading Appliance ...</source>
-        <translatorcomment>CHECKIT</translatorcomment>
+        <translatorcomment>CHECK</translatorcomment>
         <translation>Virtuális gép olvasása...</translation>
     </message>
 </context>
 <context>
-    <name>UIImportApplianceWzd</name>
+    <name>VBoxImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
         <translation>Válaszd ki az importálandó gépet</translation>
@@ -4084,7 +4084,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIImportLicenseViewer</name>
+    <name>VBoxImportLicenseViewer</name>
     <message>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
         <translation>&lt;b&gt;A(z) &quot;%1&quot; virtuális gép használatához el kell fogadnod a mellékelt licencszerződést, mely lent olvasható.&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;Kattints az &lt;b&gt;Elfogad&lt;/b&gt; gombra a folytatáshoz, vagy az &lt;b&gt;Elutasít&lt;/b&gt; gombra az importálás megszakításához.</translation>
@@ -4270,7 +4270,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Select</source>
-        <translation>&amp;Válassz</translation>
+        <translation>&amp;Kiválaszt</translation>
     </message>
     <message>
         <source>All hard disk images (%1)</source>
@@ -4282,7 +4282,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select a hard disk image file</source>
-        <translation>Merevlemez képfájl kiválasztása</translation>
+        <translation>Válaszd ki az új merevlemezkép fájlját</translation>
     </message>
     <message>
         <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
@@ -4415,7 +4415,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UINewHDWzd</name>
+    <name>VBoxNewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
         <translation>Új virtuális lemez készítése</translation>
@@ -4439,7 +4439,7 @@ of space on your physical hard disk. It will grow dynamically (up to
 the size specified), as the Guest OS makes the usage of the disk space.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow up. It is stored in the file of approximately
 the same size as the size of the virtual hard disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Válassza ki az elkészítendő virtuális merevlemez típusát.&lt;/p&gt;
+        <translation type="obsolete">&lt;p&gt;Válaszd ki az elkészítendő virtuális merevlemez típusát.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;dinamikusan növekvő&lt;/b&gt; kezdetben kis helyet foglal, később
 a rámásolt adatok függvényében növekszik az általa elfoglalt hely - míg el nem éri az itt megadott méretet.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;fix méretű&lt;/b&gt; nem tud növekedni. Annyi helyet fog elfoglalni amennyit itt beállítasz.&lt;/p&gt;</translation>
@@ -4525,7 +4525,7 @@ lemezből&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation>Válassza ki az új merevlemezkép fájlját</translation>
+        <translation>Válaszd ki az új merevlemezkép fájlját</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
@@ -4645,7 +4645,7 @@ a rámásolt adatok függvényében növekszik az általa elfoglalt hely - míg 
     </message>
 </context>
 <context>
-    <name>UINewVMWzd</name>
+    <name>VBoxNewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
         <translation>Új virtuális gép készítése</translation>
@@ -5807,42 +5807,42 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <source>hard disk</source>
         <comment>failed to mount ...</comment>
-        <translation>merevlemezt</translation>
+        <translation>merevlemez</translation>
     </message>
     <message>
         <source>CD/DVD</source>
         <comment>failed to mount ... host-drive</comment>
-        <translation>CD/DVD-t</translation>
+        <translation>CD/DVD</translation>
     </message>
     <message>
         <source>CD/DVD image</source>
         <comment>failed to mount ...</comment>
-        <translation>CD/DVD képet</translation>
+        <translation>CD/DVD kép</translation>
     </message>
     <message>
         <source>floppy</source>
         <comment>failed to mount ... host-drive</comment>
-        <translation>floppy-t</translation>
+        <translation>floppy</translation>
     </message>
     <message>
         <source>floppy image</source>
         <comment>failed to mount ...</comment>
-        <translation>floppy képet</translation>
+        <translation>floppy kép</translation>
     </message>
     <message>
         <source>hard disk</source>
         <comment>failed to attach ...</comment>
-        <translation>merevlemezt</translation>
+        <translation>merevlemez</translation>
     </message>
     <message>
         <source>CD/DVD device</source>
         <comment>failed to attach ...</comment>
-        <translation>CD/DVD eszközt</translation>
+        <translation>CD/DVD eszköz</translation>
     </message>
     <message>
         <source>floppy device</source>
         <comment>failed to close ...</comment>
-        <translation>floppyt</translation>
+        <translation>floppy</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
@@ -6018,7 +6018,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <name>VBoxSFDialog</name>
     <message>
         <source>Shared Folders</source>
-        <translation>Osztott mappák</translation>
+        <translation>Megosztott mappák</translation>
     </message>
     <message>
         <source>OK</source>
@@ -6365,7 +6365,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation>%2 a &lt;b&gt;%1.&lt;/b&gt; lapon</translation>
+        <translation>A(z) &lt;b&gt;%1&lt;/b&gt; lapon, %2</translation>
     </message>
 </context>
 <context>
@@ -6385,7 +6385,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>Shared &amp;Folders</source>
-        <translation type="obsolete">&amp;Osztott mappák</translation>
+        <translation type="obsolete">&amp;Megosztott mappák</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Lists all shared folders accessible to this machine.
@@ -6394,7 +6394,7 @@ Use
 to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or
 &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt;
 to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Minden a gép számára elérhető osztott mappa listázása.
+        <translation type="obsolete">&lt;qt&gt;Minden a gép számára elérhető megosztott mappa listázása.
 Használja a
 &lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt;
 parancsot a &lt;i&gt;share&lt;/i&gt; nevű megosztás eléréséhez a DOS-szerű OS-ekból, vagy
@@ -6407,7 +6407,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     </message>
     <message>
         <source>Adds a new shared folder definition.</source>
-        <translation type="obsolete">Új osztott mappa hozzáadása.</translation>
+        <translation type="obsolete">Új megosztott mappa hozzáadása.</translation>
     </message>
     <message>
         <source>Edit</source>
@@ -6419,19 +6419,19 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     </message>
     <message>
         <source>Removes the selected shared folder definition.</source>
-        <translation type="obsolete">Osztott mappa törlése.</translation>
+        <translation type="obsolete">Megosztott mappa törlése.</translation>
     </message>
     <message>
         <source>Add a new shared folder</source>
-        <translation type="obsolete">Új osztott mappa hozzáadása</translation>
+        <translation type="obsolete">Új megosztott mappa hozzáadása</translation>
     </message>
     <message>
         <source>Edit the selected shared folder</source>
-        <translation type="obsolete">A kiválasztott osztott mappa szerkesztése</translation>
+        <translation type="obsolete">A kiválasztott megosztott mappa szerkesztése</translation>
     </message>
     <message>
         <source>Remove the selected shared folder</source>
-        <translation type="obsolete">A kiválasztott osztott mappa törlése</translation>
+        <translation type="obsolete">A kiválasztott megosztott mappa törlése</translation>
     </message>
     <message>
         <source> Machine Folders</source>
@@ -6447,7 +6447,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     </message>
     <message>
         <source>Edits the selected shared folder definition.</source>
-        <translation type="obsolete">A kiválasztott osztott mappa szerkesztése.</translation>
+        <translation type="obsolete">A kiválasztott megosztott mappa szerkesztése.</translation>
     </message>
     <message>
         <source>Ins</source>
@@ -6455,7 +6455,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     </message>
     <message>
         <source>Add a new shared folder (Ins)</source>
-        <translation type="obsolete">Új osztott mappa hozzáadása (Ins)</translation>
+        <translation type="obsolete">Új megosztott mappa hozzáadása (Ins)</translation>
     </message>
     <message>
         <source>Space</source>
@@ -6463,7 +6463,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     </message>
     <message>
         <source>Edit the selected shared folder (Space)</source>
-        <translation type="obsolete">A kiválasztott osztott mappa szerkesztése (Szóköz)</translation>
+        <translation type="obsolete">A kiválasztott megosztott mappa szerkesztése (Szóköz)</translation>
     </message>
     <message>
         <source>Del</source>
@@ -6471,7 +6471,7 @@ parancsot Linux-alapú OS-ekből. Guest Additions szükséges hozzá.&lt;/qt&gt;
     </message>
     <message>
         <source>Remove the selected shared folder (Del)</source>
-        <translation type="obsolete">A kiválasztott osztott mappa törlése (Del)</translation>
+        <translation type="obsolete">A kiválasztott megosztott mappa törlése (Del)</translation>
     </message>
 </context>
 <context>
@@ -7080,7 +7080,7 @@ value.&lt;/qt&gt;</source>
     </message>
 </context>
 <context>
-    <name>UIFirstRunWzd</name>
+    <name>VBoxVMFirstRunWzd</name>
     <message>
         <source>First Run Wizard</source>
         <translation>Első indítási varázsló</translation>
@@ -7223,7 +7223,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ha a fentiek megfelelőek, nyomd meg a &lt;b&gt;Befejezés&lt;/b&gt; gombot. Ha megnyomtad, a kiválasztott média ideiglenesen felcsatolódik a virtuális gépre és a gép el fogja indítani.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy mikor bezárod a virtuális gépet, a megadott média automatikusan le fog választódni és az első merevlemezről fog indulni a gép.&lt;/p&gt;&lt;p&gt;A telepítőprogram típusától függgően, talán neked kell kézzel leválasztani (kiadni) a médiát, miután a telepítő újraindította a virtuális gépet, hogy megelőzd a telepítési folyamat újbóli elindulását. Ezt megteheted a megfelelő &lt;b&gt;Lecsatolás...&lt;/b&gt; művelet használatával az &lt;b&gt;Eszközök&lt;/b&gt; menüben.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -7568,11 +7568,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select TAP setup application</source>
-        <translation type="obsolete">Válassza ki a TAP beállító alkalmazást</translation>
+        <translation type="obsolete">Válaszd ki a TAP beállító alkalmazást</translation>
     </message>
     <message>
         <source>Select TAP terminate application</source>
-        <translation type="obsolete">Válassza ki a TAP leállító alkalmazást</translation>
+        <translation type="obsolete">Válaszd ki a TAP leállító alkalmazást</translation>
     </message>
     <message>
         <source>VirtualBox Host Interface %1</source>
@@ -7791,7 +7791,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxVMSettingsDisplay</name>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation>kevesebb, mint &lt;b&gt;%1&lt;/b&gt; videó memóriát rendeltél a géphez, ami nem éri el a teljes képernyőhöz vagy az asztal-integráció engedélyezéséhez. </translation>
+        <translation>Kevesebb, mint &lt;b&gt;%1&lt;/b&gt; videó memóriát rendeltél a géphez, ami nem éri el a teljes képernyőhöz vagy az asztal-integráció engedélyezéséhez. </translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
@@ -7875,8 +7875,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
-        <translatorcomment>CHECKIT</translatorcomment>
-        <translation>A VRDP szerver portja. Adj meg &lt;tt&gt;0&lt;/tt&gt;-t (nulla) a standard RDP port (3389) kiválasztásához.</translation>
+        <translatorcomment>CHECK</translatorcomment>
+        <translation>A VRDP szerver portja. Adj meg &lt;tt&gt;0&lt;/tt&gt;-t (nulla) a szabványos RDP port (3389) kiválasztásához.</translation>
     </message>
 </context>
 <context>
@@ -7971,7 +7971,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> Shared Folders </source>
-        <translation type="obsolete"> Osztott mappák </translation>
+        <translation type="obsolete"> Megosztott mappák </translation>
     </message>
     <message>
         <source>8</source>
@@ -8035,7 +8035,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the snapshot folder path.</source>
-        <translation type="obsolete">Válassza ki a pillanatképek mappáját.</translation>
+        <translation type="obsolete">Válaszd ki a pillanatképek mappáját.</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -8345,7 +8345,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Shared Clipboard</source>
-        <translation type="obsolete">&amp;Osztott vágólap</translation>
+        <translation type="obsolete">&amp;Megosztott vágólap</translation>
     </message>
     <message>
         <source>S&amp;napshot Folder</source>
@@ -8674,7 +8674,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>Shared Folders</source>
-        <translation>Osztott mappák</translation>
+        <translation>Megosztott mappák</translation>
     </message>
     <message>
         <source>Remote Display</source>
@@ -9060,15 +9060,15 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>&lt;nobr&gt;Add&amp;nbsp;Hard&amp;nbsp;Disk&lt;/nobr&gt;</source>
-        <translation>&lt;nob&gt;Merevlemez&amp;nbsp;hozzáadása&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Merevlemez&amp;nbsp;hozzáadása&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Add&amp;nbsp;CD/DVD&amp;nbsp;Device&lt;/nobr&gt;</source>
-        <translation>&lt;nob&gt;CD/DVD&amp;nbsp;hozzáadása&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;CD/DVD&amp;nbsp;hozzáadása&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Device&lt;/nobr&gt;</source>
-        <translation>&lt;nob&gt;Floppy&amp;nbsp;hozzáadása&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Floppy&amp;nbsp;hozzáadása&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
@@ -9076,7 +9076,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;%1&lt;/i&gt; ugyanazt a médiumot használja, mint &lt;i&gt;%2&lt;/i&gt;.</translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt; ugyanazt a médiumot használja, mint a(z) &lt;i&gt;%2&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Add Controller</source>
@@ -9140,19 +9140,19 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>IDE Controller</source>
-        <translation type="unfinished">IDE vezérlő</translation>
+        <translation>IDE vezérlő</translation>
     </message>
     <message>
         <source>SATA Controller</source>
-        <translation type="unfinished">SATA vezérlő</translation>
+        <translation>SATA vezérlő</translation>
     </message>
     <message>
         <source>SCSI Controller</source>
-        <translation type="unfinished">SCSI vezérlő</translation>
+        <translation>SCSI vezérlő</translation>
     </message>
     <message>
         <source>Floppy Controller</source>
-        <translation type="unfinished">Floppy vezérlő</translation>
+        <translation>Floppy vezérlő</translation>
     </message>
     <message>
         <source>Hard &amp;Disk:</source>
@@ -9180,7 +9180,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
-        <translation type="unfinished"></translation>
+        <translation>A Tárolófa különböző típusú vezérlőket tartalmazhat. Ennek a gépnek jelenleg nincs vezérlője.</translation>
     </message>
     <message>
         <source>Attributes</source>
@@ -9200,7 +9200,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
-        <translatorcomment>CHECKIT</translatorcomment>
+        <translatorcomment>CHECK</translatorcomment>
         <translation>A kijelölt vezérlő altípusát választhatod ki.</translation>
     </message>
     <message>
@@ -9209,12 +9209,12 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
-        <translatorcomment>CHECKIT</translatorcomment>
-        <translation>Az eszköz csatlakozóját adhatod meg. Az elérhető csatlakozók száma függ a vezérlő típusától, és a többi eszköztől is.</translation>
+        <translatorcomment>CHECK</translatorcomment>
+        <translation>Az eszköz csatlakozóját adhatod meg. Az elérhető csatlakozók száma függ a vezérlő típusától, és a többi eszköztől.</translation>
     </message>
     <message>
         <source>Selects the virtual disk image or the host drive used by this attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Válaszd ki a használandó virtális lemezképet vagy gazda meghajtót.</translation>
     </message>
     <message>
         <source>Opens the Virtual Media Manager to select a virtual image for this attachment.</source>
@@ -9230,11 +9230,11 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha ez kiválasztod, a vendég ATAPI parancsokat küldhet közvetlenül a gazda meghanjtónak, mely által a gazda géphez csatlakozó CD/DVD írókat a virtuális gépen belül is lehet használni. Megjegyzendő, hogy a virtuális gépen belül nem támogatott még az audió CD írása.</translation>
     </message>
     <message>
         <source>&amp;Passthrough</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Átengedés</translation>
     </message>
     <message>
         <source>Virtual Size:</source>
@@ -9265,11 +9265,11 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <name>VBoxVMSettingsNetwork</name>
     <message>
         <source>Select TAP setup application</source>
-        <translation type="obsolete">Válassza ki a TAP beállító alkalmazást</translation>
+        <translation type="obsolete">Válaszd ki a TAP beállító alkalmazást</translation>
     </message>
     <message>
         <source>Select TAP terminate application</source>
-        <translation type="obsolete">Válassza ki a TAP leállító alkalmazást</translation>
+        <translation type="obsolete">Válaszd ki a TAP leállító alkalmazást</translation>
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
@@ -9540,27 +9540,27 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     <name>VBoxVMSettingsSF</name>
     <message>
         <source>&amp;Add New Shared Folder</source>
-        <translation type="obsolete">Osztott mappa hozzá&amp;adása</translation>
+        <translation type="obsolete">Megosztott mappa hozzá&amp;adása</translation>
     </message>
     <message>
         <source>&amp;Edit Selected Shared Folder</source>
-        <translation type="obsolete">A kiválasztott osztott mappa sz&amp;erkesztése</translation>
+        <translation type="obsolete">A kiválasztott megosztott mappa sz&amp;erkesztése</translation>
     </message>
     <message>
         <source>&amp;Remove Selected Shared Folder</source>
-        <translation type="obsolete">A kiválasztott osztott mappa tö&amp;rlése</translation>
+        <translation type="obsolete">A kiválasztott megosztott mappa tö&amp;rlése</translation>
     </message>
     <message>
         <source>Adds a new shared folder definition.</source>
-        <translation>Új osztott mappa hozzáadása.</translation>
+        <translation>Új megosztott mappa hozzáadása.</translation>
     </message>
     <message>
         <source>Edits the selected shared folder definition.</source>
-        <translation>A kiválasztott osztott mappa szerkesztése.</translation>
+        <translation>A kiválasztott megosztott mappa szerkesztése.</translation>
     </message>
     <message>
         <source>Removes the selected shared folder definition.</source>
-        <translation>Osztott mappa törlése.</translation>
+        <translation>Megosztott mappa törlése.</translation>
     </message>
     <message>
         <source> Machine Folders</source>
@@ -9580,7 +9580,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation>Minden a gép számára elérhető osztott mappa listázása. A &apos;net use x: \\vboxsvr\share&apos; parancs segítségével használható a &lt;i&gt;share&lt;/i&gt; nevű megosztás a DOS-szerű OS-ekból, a &apos;mount -t vboxsf share mount_point&apos; paranccsal pedig Linux-alapú OS-ekből. Az integrációs szolgáltatások telepítése szükséges hozzá.</translation>
+        <translation>Minden a gép számára elérhető megosztott mappa listázása. A &apos;net use x: \\vboxsvr\share&apos; parancs segítségével használható a &lt;i&gt;share&lt;/i&gt; nevű megosztás a DOS-szerű OS-ekból, a &apos;mount -t vboxsf share mount_point&apos; paranccsal pedig Linux-alapú OS-ekből. Az integrációs szolgáltatások telepítése szükséges hozzá.</translation>
     </message>
     <message>
         <source>Name</source>
@@ -9600,15 +9600,15 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>&amp;Add Shared Folder</source>
-        <translation>Osztott mappa hozzá&amp;adása</translation>
+        <translation>Megosztott mappa hozzá&amp;adása</translation>
     </message>
     <message>
         <source>&amp;Edit Shared Folder</source>
-        <translation>Osztott mappa sz&amp;erkesztése</translation>
+        <translation>Megosztott mappa sz&amp;erkesztése</translation>
     </message>
     <message>
         <source>&amp;Remove Shared Folder</source>
-        <translation>Osztott mappa tö&amp;rlése</translation>
+        <translation>Megosztott mappa tö&amp;rlése</translation>
     </message>
     <message>
         <source>&amp;Folders List</source>
@@ -9643,7 +9643,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation>Ha engedélyezed, a vendég rendszer nem lesz képes írni az osztott mappába.</translation>
+        <translation>Ha engedélyezed, a vendég rendszer nem lesz képes írni a megosztott mappába.</translation>
     </message>
     <message>
         <source>&amp;Read-only</source>
@@ -9753,7 +9753,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
-        <translation>több, mint &lt;b&gt;%1&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, ami problémákat okozhat.</translation>
+        <translation>több, mint &lt;b&gt;%1%&lt;/b&gt; memóriát rendeltél a virtuális géphez a rendelkezésre álló &lt;b&gt;%2&lt;/b&gt; memóriából. Így túl kevés marad a gazda operációs rendszernek, ami problémákat okozhat.</translation>
     </message>
     <message>
         <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
