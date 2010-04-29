@@ -510,11 +510,15 @@ class VirtualBoxManager:
 
     def openMachineSession(self, machineId):
          session = self.mgr.getSessionObject(self.vbox)
-         self.vbox.openSession(session, machineId)
+         try:
+             self.vbox.openExistingSession(session, machineId)
+         except:
+             self.vbox.openSession(session, machineId)
          return session
 
     def closeMachineSession(self, session):
-        session.close()
+        if session is not None:
+            session.close()
 
     def deinitPerThread(self):
         self.platform.deinitPerThread()
