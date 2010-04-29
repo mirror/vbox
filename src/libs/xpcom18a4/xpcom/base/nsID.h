@@ -44,6 +44,10 @@
 #include "nscore.h"
 #endif
 
+#ifdef VBOX
+#define NSID_LENGTH 39
+#endif
+
 /**
  * A "unique identifier". This is modeled after OSF DCE UUIDs.
  * @status FROZEN
@@ -97,6 +101,16 @@ struct nsID {
    * {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx} format. Caller should free string.
    */
   NS_COM char* ToString() const;
+
+#ifdef VBOX
+  /**
+   * nsID string encoder. Builds a string in 
+   * {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx} format, into a char[NSID_LENGTH]
+   * buffer provided by the caller (for instance, on the stack).
+   */
+  NS_COM void ToProvidedString(char (&dest)[NSID_LENGTH]) const;
+#endif
+
   //@}
 };
 
@@ -148,4 +162,5 @@ typedef nsID nsIID;
   static const nsID& GetCID() {static const nsID cid = the_cid; return cid;}
 
 #endif
+
 
