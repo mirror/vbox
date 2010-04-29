@@ -28,6 +28,8 @@
 #include <iprt/mem.h>
 #include <iprt/message.h>
 #include <iprt/sg.h>
+#include <iprt/time.h>
+#include <iprt/semaphore.h>
 
 #include "Builtins.h"
 
@@ -53,6 +55,8 @@ typedef struct DRVDISKAIOREQ
     unsigned  cSeg;
     /** User argument */
     void     *pvUser;
+    /** Slot in the array. */
+    unsigned  iSlot;
 } DRVDISKAIOREQ, *PDRVDISKAIOREQ;
 
 /**
@@ -86,6 +90,17 @@ typedef struct DRVDISKSEGMENT
 } DRVDISKSEGMENT, *PDRVDISKSEGMENT;
 
 /**
+ * Active requests list entry.
+ */
+typedef struct DRVDISKAIOREQACTIVE
+{
+    /** Pointer to the request. */
+    volatile PDRVDISKAIOREQ pIoReq;
+    /** Start timestamp. */
+    uint64_t  tsStart;
+} DRVDISKAIOREQACTIVE, *PDRVDISKAIOREQACTIVE;
+
+/**
  * Disk integrity driver instance data.
  *
  * @implements  PDMIMEDIA
@@ -111,8 +126,27 @@ typedef struct DRVDISKINTEGRITY
     /** Our media async port interface */
     PDMIMEDIAASYNCPORT      IMediaAsyncPort;
 
+    /** Flag whether consistency checks are enabled. */
+    bool                    fCheckConsistency;
     /** AVL tree containing the disk blocks to check. */
     PAVLRFOFFTREE           pTreeSegments;
+
+    /** Flag whether async request tracing is enabled. */
+    bool                    fTraceRequests;
+    /** Interval the thread should check for expired requests (milliseconds). */
+    uint32_t                uCheckIntervalMs;
+    /** Expire timeout for a request (milliseconds). */
+    uint32_t                uExpireIntervalMs;
+    /** Thread which checks for lost requests. */
+    RTTHREAD                hThread;
+    /** Event semaphore */
+    RTSEMEVENT              SemEvent;
+    /** Flag whether the thread should run. */
+    bool                    fRunning;
+    /** Array containing active requests. */
+    DRVDISKAIOREQACTIVE     apReqActive[128];
+    /** Next free slot in the array */
+    volatile unsigned       iNextFreeSlot;
 } DRVDISKINTEGRITY, *PDRVDISKINTEGRITY;
 
 
@@ -353,6 +387,86 @@ static int drvdiskintReadVerify(PDRVDISKINTEGRITY pThis, PCRTSGSEG paSeg, unsign
     return rc;
 }
 
+/**
+ * Adds a request to the active list.
+ *
+ * @returns nothing.
+ * @param   pThis    The driver instance data.
+ * @param   pIoReq   The request to add.
+ */
+static void drvdiskintIoReqAdd(PDRVDISKINTEGRITY pThis, PDRVDISKAIOREQ pIoReq)
+{
+    PDRVDISKAIOREQACTIVE pReqActive = &pThis->apReqActive[pThis->iNextFreeSlot];
+
+    Assert(!pReqActive->pIoReq);
+    pReqActive->tsStart = RTTimeSystemMilliTS();
+    pReqActive->pIoReq  = pIoReq;
+    pIoReq->iSlot = pThis->iNextFreeSlot;
+
+    /* Search for the next one. */
+    pThis->iNextFreeSlot++;
+    while (pThis->apReqActive[pThis->iNextFreeSlot].pIoReq)
+        pThis->iNextFreeSlot = pThis->iNextFreeSlot++ % RT_ELEMENTS(pThis->apReqActive);
+}
+
+/**
+ * Removes a request from the active list.
+ *
+ * @returns nothing.
+ * @param   pThis    The driver instance data.
+ * @param   pIoReq   The request to remove.
+ */
+static void drvdiskintIoReqRemove(PDRVDISKINTEGRITY pThis, PDRVDISKAIOREQ pIoReq)
+{
+    PDRVDISKAIOREQACTIVE pReqActive = &pThis->apReqActive[pIoReq->iSlot];
+
+    Assert(pReqActive->pIoReq == pIoReq);
+
+    ASMAtomicXchgPtr((void * volatile *)&pReqActive->pIoReq, NULL);
+}
+
+/**
+ * Thread checking for expired requests.
+ *
+ * @returns IPRT status code.
+ * @param   pThread    Thread handle.
+ * @param   pvUser     Opaque user data.
+ */
+static int drvdiskIntIoReqExpiredCheck(RTTHREAD pThread, void *pvUser)
+{
+    PDRVDISKINTEGRITY pThis = (PDRVDISKINTEGRITY)pvUser;
+
+    while (pThis->fRunning)
+    {
+        int rc = RTSemEventWait(pThis->SemEvent, pThis->uCheckIntervalMs);
+
+        if (!pThis->fRunning)
+            break;
+
+        Assert(rc == VERR_TIMEOUT);
+
+        /* Get current timestamp for comparison. */
+        uint64_t tsCurr = RTTimeSystemMilliTS();
+
+        /* Go through the array and check for expired requests. */
+        for (unsigned i = 0; i < RT_ELEMENTS(pThis->apReqActive); i++)
+        {
+            PDRVDISKAIOREQACTIVE pReqActive = &pThis->apReqActive[i];
+            PDRVDISKAIOREQ pIoReq = (PDRVDISKAIOREQ)ASMAtomicReadPtr((void * volatile *)&pReqActive->pIoReq);
+
+            if (   pIoReq
+                && (tsCurr - pReqActive->tsStart) >= pThis->uExpireIntervalMs)
+            {
+                RTMsgError("Request %#p expired (active for %llu ms already)\n",
+                           pIoReq, tsCurr - pReqActive->tsStart);
+                RTAssertDebugBreak();
+            }
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
 /* -=-=-=-=- IMedia -=-=-=-=- */
 
 /** Makes a PDRVDISKINTEGRITY out of a PPDMIMEDIA. */
@@ -373,11 +487,16 @@ static DECLCALLBACK(int) drvdiskintRead(PPDMIMEDIA pInterface,
     if (RT_FAILURE(rc))
         return rc;
 
-    /* Verify the read. */
-    RTSGSEG Seg;
-    Seg.cbSeg = cbRead;
-    Seg.pvSeg = pvBuf;
-    return drvdiskintReadVerify(pThis, &Seg, 1, off, cbRead);
+    if (pThis->fCheckConsistency)
+    {
+        /* Verify the read. */
+        RTSGSEG Seg;
+        Seg.cbSeg = cbRead;
+        Seg.pvSeg = pvBuf;
+        rc = drvdiskintReadVerify(pThis, &Seg, 1, off, cbRead);
+    }
+
+    return rc;
 }
 
 /** @copydoc PDMIMEDIA::pfnWrite */
@@ -390,11 +509,16 @@ static DECLCALLBACK(int) drvdiskintWrite(PPDMIMEDIA pInterface,
     if (RT_FAILURE(rc))
         return rc;
 
-    /* Record the write. */
-    RTSGSEG Seg;
-    Seg.cbSeg = cbWrite;
-    Seg.pvSeg = (void *)pvBuf;
-    return drvdiskintWriteRecord(pThis, &Seg, 1, off, cbWrite);
+    if (pThis->fCheckConsistency)
+    {
+        /* Record the write. */
+        RTSGSEG Seg;
+        Seg.cbSeg = cbWrite;
+        Seg.pvSeg = (void *)pvBuf;
+        rc = drvdiskintWriteRecord(pThis, &Seg, 1, off, cbWrite);
+    }
+
+    return rc;
 }
 
 static DECLCALLBACK(int) drvdiskintStartRead(PPDMIMEDIAASYNC pInterface, uint64_t uOffset,
@@ -407,13 +531,22 @@ static DECLCALLBACK(int) drvdiskintStartRead(PPDMIMEDIAASYNC pInterface, uint64_
     PDRVDISKAIOREQ pIoReq = drvdiskintIoReqAlloc(true, uOffset, paSeg, cSeg, cbRead, pvUser);
     AssertPtr(pIoReq);
 
+    if (pThis->fTraceRequests)
+        drvdiskintIoReqAdd(pThis, pIoReq);
+
     int rc = pThis->pDrvMediaAsync->pfnStartRead(pThis->pDrvMediaAsync, uOffset, paSeg, cSeg,
                                                  cbRead, pIoReq);
     if (rc == VINF_VD_ASYNC_IO_FINISHED)
     {
         /* Verify the read now. */
-        int rc2 = drvdiskintReadVerify(pThis, paSeg, cSeg, uOffset, cbRead);
-        AssertRC(rc2);
+        if (pThis->fCheckConsistency)
+        {
+            int rc2 = drvdiskintReadVerify(pThis, paSeg, cSeg, uOffset, cbRead);
+            AssertRC(rc2);
+        }
+
+        if (pThis->fTraceRequests)
+            drvdiskintIoReqRemove(pThis, pIoReq);
         RTMemFree(pIoReq);
     }
     else if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
@@ -433,13 +566,23 @@ static DECLCALLBACK(int) drvdiskintStartWrite(PPDMIMEDIAASYNC pInterface, uint64
     PDRVDISKAIOREQ pIoReq = drvdiskintIoReqAlloc(false, uOffset, paSeg, cSeg, cbWrite, pvUser);
     AssertPtr(pIoReq);
 
+    if (pThis->fTraceRequests)
+        drvdiskintIoReqAdd(pThis, pIoReq);
+
     int rc = pThis->pDrvMediaAsync->pfnStartWrite(pThis->pDrvMediaAsync, uOffset, paSeg, cSeg,
                                                   cbWrite, pIoReq);
     if (rc == VINF_VD_ASYNC_IO_FINISHED)
     {
         /* Verify the read now. */
-        int rc2 = drvdiskintWriteRecord(pThis, paSeg, cSeg, uOffset, cbWrite);
-        AssertRC(rc2);
+        if  (pThis->fCheckConsistency)
+        {
+            int rc2 = drvdiskintWriteRecord(pThis, paSeg, cSeg, uOffset, cbWrite);
+            AssertRC(rc2);
+        }
+
+        if (pThis->fTraceRequests)
+            drvdiskintIoReqRemove(pThis, pIoReq);
+
         RTMemFree(pIoReq);
     }
     else if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
@@ -522,7 +665,11 @@ static DECLCALLBACK(int) drvdiskintAsyncTransferCompleteNotify(PPDMIMEDIAASYNCPO
 
     LogFlowFunc(("pIoReq=%#p\n", pIoReq));
 
-    if (RT_SUCCESS(rcReq))
+    /* Remove from the active list. */
+    if (pThis->fTraceRequests)
+        drvdiskintIoReqRemove(pThis, pIoReq);
+
+    if (RT_SUCCESS(rcReq) && pThis->fCheckConsistency)
     {
         if (pIoReq->fRead)
             rc = drvdiskintReadVerify(pThis, pIoReq->paSeg, pIoReq->cSeg, pIoReq->off, pIoReq->cbTransfer);
@@ -579,6 +726,13 @@ static DECLCALLBACK(void) drvdiskintDestruct(PPDMDRVINS pDrvIns)
         RTAvlrFileOffsetDestroy(pThis->pTreeSegments, drvdiskintTreeDestroy, NULL);
         RTMemFree(pThis->pTreeSegments);
     }
+
+    if (pThis->fTraceRequests)
+    {
+        pThis->fRunning = false;
+        RTSemEventSignal(pThis->SemEvent);
+        RTSemEventDestroy(pThis->SemEvent);
+    }
 }
 
 /**
@@ -588,6 +742,7 @@ static DECLCALLBACK(void) drvdiskintDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    int rc = VINF_SUCCESS;
     PDRVDISKINTEGRITY pThis = PDMINS_2_DATA(pDrvIns, PDRVDISKINTEGRITY);
     LogFlow(("drvdiskintConstruct: iInstance=%d\n", pDrvIns->iInstance));
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
@@ -595,8 +750,20 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, ""))
+    if (!CFGMR3AreValuesValid(pCfg, "CheckConsistency\0"
+                                    "TraceRequests\0"
+                                    "CheckIntervalMs\0"
+                                    "ExpireIntervalMs\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
+
+    rc = CFGMR3QueryBoolDef(pCfg, "CheckConsistency", &pThis->fCheckConsistency, false);
+    AssertRC(rc);
+    rc = CFGMR3QueryBoolDef(pCfg, "TraceRequests", &pThis->fTraceRequests, false);
+    AssertRC(rc);
+    rc = CFGMR3QueryU32Def(pCfg, "CheckIntervalMs", &pThis->uCheckIntervalMs, 5000); /* 5 seconds */
+    AssertRC(rc);
+    rc = CFGMR3QueryU32Def(pCfg, "ExpireIntervalMs", &pThis->uExpireIntervalMs, 20000); /* 20 seconds */
+    AssertRC(rc);
 
     /*
      * Initialize most of the data members.
@@ -629,10 +796,10 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
      * Try attach driver below and query it's media interface.
      */
     PPDMIBASE pBase;
-    int rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pBase);
+    rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pBase);
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                   N_("Failed to attach driver below us! %Rrf"), rc);
+                                   N_("Failed to attach driver below us! %Rrc"), rc);
 
     pThis->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIA);
     if (!pThis->pDrvMedia)
@@ -644,10 +811,32 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     /* Try to attach async media port interface above.*/
     pThis->pDrvMediaAsyncPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAASYNCPORT);
 
-    /* Create the AVL tree. */
-    pThis->pTreeSegments = (PAVLRFOFFTREE)RTMemAllocZ(sizeof(AVLRFOFFTREE));
-    if (!pThis->pTreeSegments)
-        rc = VERR_NO_MEMORY;
+    if (pThis->fCheckConsistency)
+    {
+        /* Create the AVL tree. */
+        pThis->pTreeSegments = (PAVLRFOFFTREE)RTMemAllocZ(sizeof(AVLRFOFFTREE));
+        if (!pThis->pTreeSegments)
+            rc = VERR_NO_MEMORY;
+    }
+
+    if (pThis->fTraceRequests)
+    {
+        for (unsigned i = 0; i < RT_ELEMENTS(pThis->apReqActive); i++)
+        {
+            pThis->apReqActive[i].pIoReq  = NULL;
+            pThis->apReqActive[i].tsStart = 0;
+        }
+
+        pThis->iNextFreeSlot = 0;
+
+        /* Init event semaphore. */
+        rc = RTSemEventCreate(&pThis->SemEvent);
+        AssertRC(rc);
+        pThis->fRunning = true;
+        rc = RTThreadCreate(&pThis->hThread, drvdiskIntIoReqExpiredCheck, pThis,
+                            0, RTTHREADTYPE_INFREQUENT_POLLER, 0, "DiskIntegrity");
+        AssertRC(rc);
+    }
 
     return rc;
 }
