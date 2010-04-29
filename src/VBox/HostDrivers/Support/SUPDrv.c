@@ -44,7 +44,6 @@
 #include <iprt/thread.h>
 #include <iprt/uuid.h>
 #include <iprt/net.h>
-#include <iprt/avl.h>
 #include <iprt/crc32.h>
 #if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 # include <iprt/string.h>
