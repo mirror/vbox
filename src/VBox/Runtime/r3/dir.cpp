@@ -647,7 +647,7 @@ static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFi
     /*
      * Hand it over to the native part.
      */
-    rc = rtOpenDirNative(pDir, szRealPath);
+    rc = rtDirNativeOpen(pDir, szRealPath);
     if (RT_SUCCESS(rc))
         *ppDir = pDir;
     else

@@ -77,7 +77,7 @@ typedef struct RTDIR
 #ifndef RT_DONT_CONVERT_FILENAMES
     /** Pointer to the converted filename.
      * This can be NULL. */
-    char               *pszName;
+    char const         *pszName;
     /** The length of the converted filename. */
     size_t              cchName;
 #endif
@@ -130,6 +130,6 @@ DECLINLINE(bool) rtDirValidHandle(PRTDIR pDir)
  *                      Find-first style systems can use this to setup the
  *                      wildcard expression.
  */
-int rtOpenDirNative(PRTDIR pDir, char *pszPathBuf);
+int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf);
 
 #endif

@@ -36,41 +36,44 @@
 #include <iprt/string.h>
 
 
-int rtPathToNative(char **ppszNativePath, const char *pszPath)
+int rtPathToNative(char const **ppszNativePath, const char *pszPath, const char *pszBasePath)
 {
-    *ppszNativePath = (char *)pszPath;
+    *ppszNativePath = pszPath;
+    NOREF(pszBasePath); /* We don't query the FS for codeset preferences. */
     return VINF_SUCCESS;
 }
 
 
-int rtPathToNativeEx(char **ppszNativePath, const char *pszPath, const char *pszBasePath)
-{
-    /* We don't query the FS for codeset preferences yet, so nothing special to do here. */
-    NOREF(pszBasePath);
-    return rtPathToNative(ppszNativePath, pszPath);
-}
-
-
-void rtPathFreeNative(char *pszNativePath, const char *pszPath)
+void rtPathFreeNative(char const *pszNativePath, const char *pszPath)
 {
     Assert(pszNativePath == pszPath || !pszNativePath);
     NOREF(pszNativePath); NOREF(pszPath);
 }
 
 
-int rtPathFromNative(char **ppszPath, const char *pszNativePath)
+int rtPathFromNative(const char **ppszPath, const char *pszNativePath, const char *pszBasePath)
 {
     int rc = RTStrValidateEncodingEx(pszNativePath, RTSTR_MAX, 0 /*fFlags*/);
     if (RT_SUCCESS(rc))
-        rc = RTStrDupEx(ppszPath, pszNativePath);
+        *ppszPath = pszNativePath;
+    NOREF(pszBasePath); /* We don't query the FS for codeset preferences. */
     return rc;
 }
 
 
-int rtPathFromNativeEx(char **ppszPath, const char *pszNativePath, const char *pszBasePath)
+void rtPathFreeIprt(const char *pszPath, const char *pszNativePath)
 {
-    /* We don't query the FS for codeset preferences yet, so nothing special to do here. */
-    NOREF(pszBasePath);
-    return rtPathFromNative(ppszPath, pszNativePath);
+    Assert(pszPath == pszNativePath || !pszPath);
+    NOREF(pszPath); NOREF(pszNativePath);
+}
+
+
+int rtPathFromNativeCopy(char *pszPath, size_t cbPath, const char *pszNativePath, const char *pszBasePath)
+{
+    int rc = RTStrValidateEncodingEx(pszNativePath, RTSTR_MAX, 0 /*fFlags*/);
+    if (RT_SUCCESS(rc))
+        rc = RTStrCopyEx(pszPath, cbPath, pszNativePath, RTSTR_MAX);
+    NOREF(pszBasePath); /* We don't query the FS for codeset preferences. */
+    return rc;
 }
 

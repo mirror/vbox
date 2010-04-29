@@ -40,42 +40,53 @@
 #include "internal/path.h"
 
 
-int rtPathToNative(char **ppszNativePath, const char *pszPath)
+int rtPathToNative(const char **ppszNativePath, const char *pszPath, const char *pszBasePath)
 {
     /** @todo We should decompose the string here, but the file system will do
      *        that for us if we don't, so why bother. */
     *ppszNativePath = (char *)pszPath;
+    NOREF(pszBasePath); /* We don't query the FS for codeset preferences. */
     return VINF_SUCCESS;
 }
 
 
-int rtPathToNativeEx(char **ppszNativePath, const char *pszPath, const char *pszBasePath)
+void rtPathFreeNative(char const *pszNativePath, const char *pszPath)
 {
-    NOREF(pszBasePath);
-    return rtPathToNative(ppszNativePath, pszPath);
-}
-
-
-void rtPathFreeNative(char *pszNativePath, const char *pszPath)
-{
-    Assert((const char *)pszNativePath == pszPath || !pszNativePath);
+    Assert(pszNativePath == pszPath || !pszNativePath);
     NOREF(pszNativePath);
     NOREF(pszPath);
 }
 
 
-int rtPathFromNative(char **ppszPath, const char *pszNativePath)
+int rtPathFromNative(char const **ppszPath, const char *pszNativePath, const char *pszBasePath)
 {
     /** @todo We must compose the codepoints in the string here.  We get file names
      *        in normalization form D so we'll end up with normalization form C
      *        whatever approach we take. */
-    return RTStrDupEx(ppszPath, pszNativePath);
+    int rc = RTStrValidateEncodingEx(pszNativePath, RTSTR_MAX, 0 /*fFlags*/);
+    if (RT_SUCCESS(rc))
+        *ppszPath = pszNativePath;
+    NOREF(pszBasePath); /* We don't query the FS for codeset preferences. */
+    return rc;
 }
 
 
-int rtPathFromNativeEx(char **ppszPath, const char *pszNativePath, const char *pszBasePath)
+void rtPathFreeIprt(const char *pszPath, const char *pszNativePath)
 {
-    NOREF(pszBasePath);
-    return rtPathFromNative(ppszPath, pszNativePath);
+    Assert(pszPath == pszNativePath || !pszPath);
+    NOREF(pszPath); NOREF(pszNativePath);
+}
+
+
+int rtPathFromNativeCopy(char *pszPath, size_t cbPath, const char *pszNativePath, const char *pszBasePath)
+{
+    /** @todo We must compose the codepoints in the string here.  We get file names
+     *        in normalization form D so we'll end up with normalization form C
+     *        whatever approach we take. */
+    int rc = RTStrValidateEncodingEx(pszNativePath, RTSTR_MAX, 0 /*fFlags*/);
+    if (RT_SUCCESS(rc))
+        rc = RTStrCopyEx(pszPath, cbPath, pszNativePath, RTSTR_MAX);
+    NOREF(pszBasePath); /* We don't query the FS for codeset preferences. */
+    return rc;
 }
 

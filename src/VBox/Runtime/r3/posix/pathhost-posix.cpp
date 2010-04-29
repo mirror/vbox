@@ -176,7 +176,7 @@ static DECLCALLBACK(int32_t) rtPathConvInitOnce(void *pvUser1, void *pvUser2)
 }
 
 
-int rtPathToNative(char **ppszNativePath, const char *pszPath)
+int rtPathToNative(char const **ppszNativePath, const char *pszPath, const char *pszBasePath)
 {
     *ppszNativePath = NULL;
 
@@ -184,33 +184,26 @@ int rtPathToNative(char **ppszNativePath, const char *pszPath)
     if (RT_SUCCESS(rc))
     {
         if (g_fPassthruUtf8 || !*pszPath)
-            *ppszNativePath = (char *)pszPath;
+            *ppszNativePath = pszPath;
         else
             rc = rtStrConvert(pszPath, strlen(pszPath), "UTF-8",
-                              ppszNativePath, 0, g_szFsCodeset,
+                              (char **)ppszNativePath, 0, g_szFsCodeset,
                               2, g_enmUtf8ToFsIdx);
     }
+    NOREF(pszBasePath); /* We don't query the FS for codeset preferences. */
     return rc;
 }
 
 
-int rtPathToNativeEx(char **ppszNativePath, const char *pszPath, const char *pszBasePath)
-{
-    /* We don't query the FS for codeset preferences yet, so nothing special to do here. */
-    NOREF(pszBasePath);
-    return rtPathToNative(ppszNativePath, pszPath);
-}
-
-
-void rtPathFreeNative(char *pszNativePath, const char *pszPath)
+void rtPathFreeNative(char const *pszNativePath, const char *pszPath)
 {
     if (    pszNativePath != pszPath
         &&  pszNativePath)
-        RTStrFree(pszNativePath);
+        RTStrFree((char *)pszNativePath);
 }
 
 
-int rtPathFromNative(char **ppszPath, const char *pszNativePath)
+int rtPathFromNative(const char **ppszPath, const char *pszNativePath, const char *pszBasePath)
 {
     *ppszPath = NULL;
 
@@ -234,17 +227,38 @@ int rtPathFromNative(char **ppszPath, const char *pszNativePath)
         }
         else
             rc = rtStrConvert(pszNativePath, strlen(pszNativePath), g_szFsCodeset,
-                              ppszPath, 0, "UTF-8",
+                              (char **)ppszPath, 0, "UTF-8",
                               2, g_enmFsToUtf8Idx);
     }
+    NOREF(pszBasePath); /* We don't query the FS for codeset preferences. */
     return rc;
 }
 
 
-int rtPathFromNativeEx(char **ppszPath, const char *pszNativePath, const char *pszBasePath)
+void rtPathFreeIprt(const char *pszPath, const char *pszNativePath)
 {
-    /* We don't query the FS for codeset preferences yet, so nothing special to do here. */
-    NOREF(pszBasePath);
-    return rtPathFromNative(ppszPath, pszNativePath);
+    if (   pszPath != pszNativePath
+        && !pszPath)
+        RTStrFree((char *)pszPath);
+}
+
+
+int rtPathFromNativeCopy(char *pszPath, size_t cbPath, const char *pszNativePath, const char *pszBasePath)
+{
+    int rc = RTOnce(&g_OnceInitPathConv, rtPathConvInitOnce, NULL, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        if (g_fPassthruUtf8 || !*pszNativePath)
+            rc = RTStrCopyEx(pszPath, cbPath, pszNativePath, RTSTR_MAX);
+        else if (cbPath)
+            rc = rtStrConvert(pszNativePath, strlen(pszNativePath), g_szFsCodeset,
+                              &pszPath, cbPath, "UTF-8",
+                              2, g_enmFsToUtf8Idx);
+        else
+            rc = VERR_BUFFER_OVERFLOW;
+    }
+
+    NOREF(pszBasePath); /* We don't query the FS for codeset preferences. */
+    return rc;
 }
 
