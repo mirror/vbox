@@ -84,8 +84,8 @@ void rtStrIconvCacheDestroy(PRTTHREADINT pThread)
 {
     for (size_t i = 0; i < RT_ELEMENTS(pThread->ahIconvs); i++)
     {
-        iconv_t hIconv = pThread->ahIconvs[i];
-        pThread->ahIconvs[i] = NULL;
+        iconv_t hIconv = (iconv_t)pThread->ahIconvs[i];
+        pThread->ahIconvs[i] = (iconv_t)-1;
         if (hIconv != (iconv_t)-1)
             iconv_close(hIconv);
     }
@@ -368,7 +368,7 @@ DECLINLINE(int) rtStrConvertWrapper(const char *pchInput, size_t cchInput, const
             && (pThread->fIntFlags & (RTTHREADINT_FLAGS_ALIEN | RTTHREADINT_FLAGS_MAIN)) != RTTHREADINT_FLAGS_ALIEN)
             return rtstrConvertCached(pchInput, cchInput, pszInputCS,
                                       (void **)ppszOutput, cbOutput, pszOutputCS,
-                                      cFactor, &pThread->ahIconvs[enmCacheIdx]);
+                                      cFactor, (iconv_t *)&pThread->ahIconvs[enmCacheIdx]);
     }
 #endif
     return rtStrConvertUncached(pchInput, cchInput, pszInputCS,
