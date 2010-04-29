@@ -636,10 +636,8 @@ static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFi
     pDir->pszPath = (char *)memcpy(pb, szRealPath, cchRealPath + 1);
     Assert(pb - (uint8_t *)pDir + cchRealPath + 1 <= cbAllocated);
     pDir->fDataUnread = false;
-#ifndef RT_DONT_CONVERT_FILENAMES
     pDir->pszName = NULL;
     pDir->cchName = 0;
-#endif
 #ifndef RT_OS_WINDOWS
     pDir->cbMaxName = cbDir - RT_OFFSETOF(RTDIR, Data.d_name);
 #endif

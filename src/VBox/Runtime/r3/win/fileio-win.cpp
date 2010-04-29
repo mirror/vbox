@@ -45,11 +45,6 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** @def RT_DONT_CONVERT_FILENAMES
- * Define this to pass UTF-8 unconverted to the kernel. */
-#ifdef DOXYGEN_RUNNING
-# define RT_DONT_CONVERT_FILENAMES 1
-#endif
 
 
 /**
@@ -279,15 +274,6 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
     /*
      * Open/Create the file.
      */
-#ifdef RT_DONT_CONVERT_FILENAMES
-    HANDLE hFile = CreateFile(pszFilename,
-                              dwDesiredAccess,
-                              dwShareMode,
-                              pSecurityAttributes,
-                              dwCreationDisposition,
-                              dwFlagsAndAttributes,
-                              NULL);
-#else
     PRTUTF16 pwszFilename;
     rc = RTStrToUtf16(pszFilename, &pwszFilename);
     if (RT_FAILURE(rc))
@@ -300,7 +286,6 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
                                dwCreationDisposition,
                                dwFlagsAndAttributes,
                                NULL);
-#endif
     if (hFile != INVALID_HANDLE_VALUE)
     {
         bool fCreated = dwCreationDisposition == CREATE_ALWAYS
@@ -313,11 +298,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
         if (    fCreated
             &&  (fOpen & RTFILE_O_NOT_CONTENT_INDEXED))
         {
-#ifdef RT_DONT_CONVERT_FILENAMES
-            if (!SetFileAttributes(pszFilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
-#else
             if (!SetFileAttributesW(pwszFilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
-#endif
                 rc = RTErrConvertFromWin32(GetLastError());
         }
         /*
@@ -334,9 +315,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
         {
             *pFile = (RTFILE)hFile;
             Assert((HANDLE)*pFile == hFile);
-#ifndef RT_DONT_CONVERT_FILENAMES
             RTUtf16Free(pwszFilename);
-#endif
             return VINF_SUCCESS;
         }
 
@@ -344,9 +323,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
     }
     else
         rc = RTErrConvertFromWin32(GetLastError());
-#ifndef RT_DONT_CONVERT_FILENAMES
     RTUtf16Free(pwszFilename);
-#endif
     return rc;
 }
 
@@ -804,12 +781,6 @@ RTR3DECL(int) RTFileQueryFsSizes(RTFILE hFile, PRTFOFF pcbTotal, RTFOFF *pcbFree
 
 RTR3DECL(int)  RTFileDelete(const char *pszFilename)
 {
-#ifdef RT_DONT_CONVERT_FILENAMES
-    if (DeleteFile(pszFilename))
-        return VINF_SUCCESS;
-    return RTErrConvertFromWin32(GetLastError());
-
-#else
     PRTUTF16 pwszFilename;
     int rc = RTStrToUtf16(pszFilename, &pwszFilename);
     if (RT_SUCCESS(rc))
@@ -820,7 +791,6 @@ RTR3DECL(int)  RTFileDelete(const char *pszFilename)
     }
 
     return rc;
-#endif
 }
 
 

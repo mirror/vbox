@@ -74,12 +74,6 @@ extern int futimes(int __fd, __const struct timeval __tvp[2]) __THROW;
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** @def RT_DONT_CONVERT_FILENAMES
- * Define this to pass UTF-8 unconverted to the kernel. */
-#ifdef DOXYGEN_RUNNING
-#define RT_DONT_CONVERT_FILENAMES 1
-#endif
-
 /** Default file permissions for newly created files. */
 #if defined(S_IRUSR) && defined(S_IWUSR)
 # define RT_FILE_PERMISSION  (S_IRUSR | S_IWUSR)
@@ -200,10 +194,6 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
     /*
      * Open/create the file.
      */
-#ifdef RT_DONT_CONVERT_FILENAMES
-    int fh = open(pszFilename, fOpenMode, fMode);
-    int iErr = errno;
-#else
     char const *pszNativeFilename;
     rc = rtPathToNative(&pszNativeFilename, pszFilename, NULL);
     if (RT_FAILURE(rc))
@@ -212,7 +202,6 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
     int fh = open(pszNativeFilename, fOpenMode, fMode);
     int iErr = errno;
     rtPathFreeNative(pszNativeFilename, pszFilename);
-#endif
     if (fh >= 0)
     {
         iErr = 0;
