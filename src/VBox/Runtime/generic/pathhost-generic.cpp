@@ -184,7 +184,7 @@ int rtPathToNative(char **ppszNativePath, const char *pszPath)
     if (RT_SUCCESS(rc))
     {
         if (g_fPassthruUtf8 || !*pszPath)
-            *ppszNativePath = (char *)pszPath;
+            *ppszNativePath = RTStrDup(pszPath);
         else
             rc = rtStrConvert(pszPath, strlen(pszPath), "UTF-8",
                               ppszNativePath, 0, g_szFsCodeset,
