@@ -220,7 +220,7 @@ def autoCompletion(commands, ctx):
   readline.set_completer(completer.complete)
   delims = readline.get_completer_delims()
   readline.set_completer_delims(re.sub("[\\.]", "", delims)) # remove some of the delimiters
-  readline.parse_and_bind("set editing-mode emacs")  
+  readline.parse_and_bind("set editing-mode emacs")
   # OSX need it
   if platform.system() == 'Darwin':
       # see http://www.certif.com/spec_help/readline.html
@@ -264,6 +264,10 @@ def colCat(ctx,str):
 
 def colVm(ctx,vm):
     return colored(vm, 'blue')
+
+def colPath(ctx,vm):
+    return colored(vm, 'green')
+
 
 def createVm(ctx,name,kind,base):
     mgr = ctx['mgr']
@@ -519,24 +523,22 @@ def ginfo(ctx,console, args):
         printSf(ctx,sf)
 
 def cmdExistingVm(ctx,mach,cmd,args):
-    mgr=ctx['mgr']
-    vb=ctx['vb']
-    session = mgr.getSessionObject(vb)
-    uuid = mach.id
     try:
-        progress = vb.openExistingSession(session, uuid)
+        session = ctx['global'].openMachineSession(mach.id)
     except Exception,e:
         printErr(ctx, "Session to '%s' not open: %s" %(mach.name,str(e)))
         if g_verbose:
             traceback.print_exc()
         return
-    if str(session.state) != str(ctx['ifaces'].SessionState_Open):
+    if session.state != ctx['ifaces'].SessionState_Open:
         print "Session to '%s' in wrong state: %s" %(mach.name, session.state)
+        session.close()
         return
     # this could be an example how to handle local only (i.e. unavailable
     # in Webservices) functionality
     if ctx['remote'] and cmd == 'some_local_only_command':
         print 'Trying to use local only functionality, ignored'
+        session.close()
         return
     console=session.console
     ops={'pause':           lambda: console.pause(),
@@ -570,14 +572,30 @@ def cmdClosedVm(ctx,mach,cmd,args=[],save=True):
     session = ctx['global'].openMachineSession(mach.id)
     mach = session.machine
     try:
-         cmd(ctx, mach, args)
+        cmd(ctx, mach, args)
     except Exception, e:
+        save = False
         printErr(ctx,e)
         if g_verbose:
             traceback.print_exc()
     if save:
          mach.saveSettings()
-    session.close()
+    ctx['global'].closeMachineSession(session)
+
+
+def cmdAnyVm(ctx,mach,cmd, args=[],save=False):
+    session = ctx['global'].openMachineSession(mach.id)
+    mach = session.machine
+    try:
+         cmd(ctx, mach, session.console, args)
+    except Exception, e:
+        save = False;
+        printErr(ctx,e)
+        if g_verbose:
+            traceback.print_exc()
+    if save:
+         mach.saveSettings()
+    ctx['global'].closeMachineSession(session)
 
 def machById(ctx,id):
     mach = None
@@ -1113,7 +1131,11 @@ def colorsCmd(ctx, args):
 
 def hostCmd(ctx, args):
    vb = ctx['vb']
-   print "VirtualBox version %s" %(vb.version)
+   print "VirtualBox version %s" %(colored(vb.version, 'blue'))
+   props = vb.systemProperties
+   print "Machines: %s" %(colPath(ctx,props.defaultMachineFolder))
+   print "HDDs:     %s" %(colPath(ctx,props.defaultHardDiskFolder))
+
    #print "Global shared folders:"
    #for ud in ctx['global'].getArray(vb, 'sharedFolders'):
    #    printSf(ctx,sf)
@@ -2098,6 +2120,59 @@ def unshareFolderCmd(ctx,args):
         cmdExistingVm(ctx, mach, 'guestlambda', [lambda ctx,mach,console,args: console.removeSharedFolder(name)])
     return 0
 
+
+def snapshotCmd(ctx,args):
+    if (len(args) < 2 or args[1] == 'help'):
+        print "Take snapshot:    snapshot vm take name <description>"
+        print "Restore snapshot: snapshot vm restore name"
+        print "Merge snapshot:   snapshot vm merge name"
+        return 0
+
+    mach = argsToMach(ctx,args)
+    if mach is None:
+        return 0
+    cmd = args[2]
+    if cmd == 'take':
+        if (len(args) < 4):
+            print "usage: snapshot vm take name <description>"
+            return 0
+        name = args[3]
+        if (len(args) > 4):
+            desc = args[4]
+        else:
+            desc = ""
+        cmdAnyVm(ctx, mach, lambda ctx,mach,console,args: progressBar(ctx, console.takeSnapshot(name,desc)))
+
+    if cmd == 'restore':
+        if (len(args) < 4):
+            print "usage: snapshot vm restore name"
+            return 0
+        name = args[3]
+        snap = mach.findSnapshot(name)
+        cmdAnyVm(ctx, mach, lambda ctx,mach,console,args: progressBar(ctx, console.restoreSnapshot(snap)))
+        return 0
+
+    if cmd == 'restorecurrent':
+        if (len(args) < 4):
+            print "usage: snapshot vm restorecurrent"
+            return 0
+        snap = mach.currentSnapshot()
+        cmdAnyVm(ctx, mach, lambda ctx,mach,console,args: progressBar(ctx, console.restoreSnapshot(snap)))
+        return 0
+
+    if cmd == 'delete':
+        if (len(args) < 4):
+            print "usage: snapshot vm delete name"
+            return 0
+        name = args[3]
+        snap = mach.findSnapshot(name)
+        cmdAnyVm(ctx, mach, lambda ctx,mach,console,args: progressBar(ctx, console.deleteSnapshot(snap.id)))
+        return 0
+
+    print "Command '%s' is unknown" %(cmd)
+
+    return 0
+
 aliases = {'s':'start',
            'i':'info',
            'l':'list',
@@ -2171,6 +2246,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'unshareFolder': ['Remove folder sharing', unshareFolderCmd, 0],
             'gui': ['Start GUI frontend', guiCmd, 0],
             'colors':['Toggle colors', colorsCmd, 0],
+            'snapshot':['VM snapshot manipulation, snapshot help for more info', snapshotCmd, 0],
             }
 
 def runCommandArgs(ctx, args):
