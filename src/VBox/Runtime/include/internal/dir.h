@@ -74,7 +74,6 @@ typedef struct RTDIR
     size_t              cchPath;
     /** Set to indicate that the Data member contains unread data. */
     bool                fDataUnread;
-#ifndef RT_DONT_CONVERT_FILENAMES
     /** Pointer to the converted filename.
      * This can be NULL. */
 #ifdef RT_OS_WINDOWS
@@ -84,18 +83,13 @@ typedef struct RTDIR
 #endif
     /** The length of the converted filename. */
     size_t              cchName;
-#endif
 
 #ifdef RT_OS_WINDOWS
     /** Handle to the opened directory search. */
     HANDLE              hDir;
     /** Find data buffer.
      * fDataUnread indicates valid data. */
-# ifdef RT_DONT_CONVERT_FILENAMES
-    WIN32_FIND_DATAA    Data;
-# else
     WIN32_FIND_DATAW    Data;
-# endif
 
 #else /* 'POSIX': */
     /** What opendir() returned. */

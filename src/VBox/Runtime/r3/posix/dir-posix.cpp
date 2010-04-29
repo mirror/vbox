@@ -260,7 +260,6 @@ static int rtDirReadMore(PRTDIR pDir)
                 return VERR_NO_MORE_FILES;
         }
 
-#ifndef RT_DONT_CONVERT_FILENAMES
         /*
          * Convert the filename to UTF-8.
          */
@@ -278,12 +277,7 @@ static int rtDirReadMore(PRTDIR pDir)
             ||  pDir->pfnFilter(pDir, pDir->pszName))
             break;
         rtPathFreeIprt(pDir->pszName, pDir->Data.d_name);
-        pDir->pszName = NULL;
-#else
-        if (   !pDir->pfnFilter
-            || pDir->pfnFilter(pDir, pDir->Data.d_name))
-            break;
-#endif
+        pDir->pszName     = NULL;
         pDir->fDataUnread = false;
     }
 
@@ -348,13 +342,8 @@ RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry)
         /*
          * Check if we've got enough space to return the data.
          */
-#ifdef RT_DONT_CONVERT_FILENAMES
-        const char  *pszName    = pDir->Data.d_name;
-        const size_t cchName    = strlen(pszName);
-#else
         const char  *pszName    = pDir->pszName;
         const size_t cchName    = pDir->cchName;
-#endif
         const size_t cbRequired = RT_OFFSETOF(RTDIRENTRY, szName[1]) + cchName;
         if (pcbDirEntry)
             *pcbDirEntry = cbRequired;
@@ -375,10 +364,8 @@ RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry)
 
             /* free cached data */
             pDir->fDataUnread  = false;
-#ifndef RT_DONT_CONVERT_FILENAMES
             rtPathFreeIprt(pDir->pszName, pDir->Data.d_name);
             pDir->pszName = NULL;
-#endif
         }
         else
             rc = VERR_BUFFER_OVERFLOW;
@@ -456,13 +443,8 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
         /*
          * Check if we've got enough space to return the data.
          */
-#ifdef RT_DONT_CONVERT_FILENAMES
-        const char  *pszName    = pDir->Data.d_name;
-        const size_t cchName    = strlen(pszName);
-#else
         const char  *pszName    = pDir->pszName;
         const size_t cchName    = pDir->cchName;
-#endif
         const size_t cbRequired = RT_OFFSETOF(RTDIRENTRYEX, szName[1]) + cchName;
         if (pcbDirEntry)
             *pcbDirEntry = cbRequired;
@@ -500,10 +482,8 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
 
             /* free cached data */
             pDir->fDataUnread  = false;
-#ifndef RT_DONT_CONVERT_FILENAMES
             rtPathFreeIprt(pDir->pszName, pDir->Data.d_name);
             pDir->pszName = NULL;
-#endif
         }
         else
             rc = VERR_BUFFER_OVERFLOW;

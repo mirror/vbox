@@ -159,15 +159,11 @@ int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf)
      * Attempt opening the search.
      */
     int rc = VINF_SUCCESS;
-#ifndef RT_DONT_CONVERT_FILENAMES
     PRTUTF16 pwszName;
     rc = RTStrToUtf16(pszPathBuf, &pwszName);
     if (RT_SUCCESS(rc))
     {
         pDir->hDir    = FindFirstFileW((LPCWSTR)pwszName, &pDir->Data);
-#else
-        pDir->hDir    = FindFirstFileA(pszPathBuf, &pDir->Data);
-#endif
         if (pDir->hDir != INVALID_HANDLE_VALUE)
             pDir->fDataUnread = true;
         /* theoretical case of an empty directory. */
@@ -175,10 +171,8 @@ int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf)
             pDir->fDataUnread = false;
         else
             rc = RTErrConvertFromWin32(GetLastError());
-#ifndef RT_DONT_CONVERT_FILENAMES
         RTUtf16Free(pwszName);
     }
-#endif
 
     return rc;
 }
@@ -246,15 +240,10 @@ RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry)
      */
     if (!pDir->fDataUnread)
     {
-#ifdef RT_DONT_CONVERT_FILENAMES
-        BOOL fRc = FindNextFileA(pDir->hDir, &pDir->Data);
-
-#else
         RTStrFree(pDir->pszName);
         pDir->pszName = NULL;
 
         BOOL fRc = FindNextFileW(pDir->hDir, &pDir->Data);
-#endif
         if (!fRc)
         {
             int iErr = GetLastError();
@@ -264,7 +253,6 @@ RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry)
         }
     }
 
-#ifndef RT_DONT_CONVERT_FILENAMES
     /*
      * Convert the filename to UTF-8.
      */
@@ -278,18 +266,12 @@ RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry)
         }
         pDir->cchName = strlen(pDir->pszName);
     }
-#endif
 
     /*
      * Check if we've got enough space to return the data.
      */
-#ifdef RT_DONT_CONVERT_FILENAMES
-    const char  *pszName    = pDir->Data.cName;
-    const size_t cchName    = strlen(pszName);
-#else
     const char  *pszName    = pDir->pszName;
     const size_t cchName    = pDir->cchName;
-#endif
     const size_t cbRequired = RT_OFFSETOF(RTDIRENTRY, szName[1]) + cchName;
     if (pcbDirEntry)
         *pcbDirEntry = cbRequired;
@@ -351,15 +333,10 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
      */
     if (!pDir->fDataUnread)
     {
-#ifdef RT_DONT_CONVERT_FILENAMES
-        BOOL fRc = FindNextFileA(pDir->hDir, &pDir->Data);
-
-#else
         RTStrFree(pDir->pszName);
         pDir->pszName = NULL;
 
         BOOL fRc = FindNextFileW(pDir->hDir, &pDir->Data);
-#endif
         if (!fRc)
         {
             int iErr = GetLastError();
@@ -369,7 +346,6 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
         }
     }
 
-#ifndef RT_DONT_CONVERT_FILENAMES
     /*
      * Convert the filename to UTF-8.
      */
@@ -383,18 +359,12 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
         }
         pDir->cchName = strlen(pDir->pszName);
     }
-#endif
 
     /*
      * Check if we've got enough space to return the data.
      */
-#ifdef RT_DONT_CONVERT_FILENAMES
-    const char  *pszName    = pDir->Data.cName;
-    const size_t cchName    = strlen(pszName);
-#else
     const char  *pszName    = pDir->pszName;
     const size_t cchName    = pDir->cchName;
-#endif
     const size_t cbRequired = RT_OFFSETOF(RTDIRENTRYEX, szName[1]) + cchName;
     if (pcbDirEntry)
         *pcbDirEntry = cbRequired;
@@ -408,7 +378,6 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
     pDirEntry->cbName  = (uint16_t)cchName;
     Assert(pDirEntry->cbName == cchName);
     memcpy(pDirEntry->szName, pszName, cchName + 1);
-#ifndef RT_DONT_CONVERT_FILENAMES /* this ain't nice since the whole point of this define is not to drag in conversion... */
     if (pDir->Data.cAlternateFileName[0])
     {
         /* copy and calc length */
@@ -423,7 +392,6 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
             *pwszDst++ = '\0';
     }
     else
-#endif
     {
         memset(pDirEntry->wszShortName, 0, sizeof(pDirEntry->wszShortName));
         pDirEntry->cwcShortName = 0;

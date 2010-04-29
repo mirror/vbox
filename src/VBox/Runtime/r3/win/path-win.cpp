@@ -205,7 +205,6 @@ RTR3DECL(int) RTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFS
      * Query file info.
      */
     WIN32_FILE_ATTRIBUTE_DATA Data;
-#ifndef RT_DONT_CONVERT_FILENAMES
     PRTUTF16 pwszPath;
     int rc = RTStrToUtf16(pszPath, &pwszPath);
     if (RT_FAILURE(rc))
@@ -239,25 +238,6 @@ RTR3DECL(int) RTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFS
         }
     }
     RTUtf16Free(pwszPath);
-#else
-    if (!GetFileAttributesExA(pszPath, GetFileExInfoStandard, &Data))
-    {
-        /* Fallback to FindFileFirst in case of sharing violation. */
-        if (GetLastError() != ERROR_SHARING_VIOLATION)
-            return RTErrConvertFromWin32(GetLastError());
-        WIN32_FIND_DATAA FindData;
-        HANDLE hDir = FindFirstFileA(pszPath, &FindData);
-        if (hDir == INVALID_HANDLE_VALUE)
-            return RTErrConvertFromWin32(GetLastError());
-        FindClose(hDir);
-        Data.dwFileAttributes = FindData.dwFileAttributes;
-        Data.ftCreationTime = FindData.ftCreationTime;
-        Data.ftLastAccessTime = FindData.ftLastAccessTime;
-        Data.ftLastWriteTime = FindData.ftLastWriteTime;
-        Data.nFileSizeHigh = FindData.nFileSizeHigh;
-        Data.nFileSizeLow = FindData.nFileSizeLow;
-    }
-#endif
     if (   (fFlags & RTPATH_F_FOLLOW_LINK)
         && (Data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
     {
@@ -537,7 +517,6 @@ RTDECL(bool) RTPathExistsEx(const char *pszPath, uint32_t fFlags)
      * Try query file info.
      */
     DWORD dwAttr;
-#ifndef RT_DONT_CONVERT_FILENAMES
     PRTUTF16 pwszPath;
     int rc = RTStrToUtf16(pszPath, &pwszPath);
     if (RT_SUCCESS(rc))
@@ -547,10 +526,6 @@ RTDECL(bool) RTPathExistsEx(const char *pszPath, uint32_t fFlags)
     }
     else
         dwAttr = INVALID_FILE_ATTRIBUTES;
-#else
-    dwAttr = GetFileAttributesA(pszPath);
-#endif
-
     if (dwAttr == INVALID_FILE_ATTRIBUTES)
         return false;
 
@@ -576,7 +551,6 @@ RTDECL(int) RTPathGetCurrent(char *pszPath, size_t cchPath)
      * GetCurrentDirectory may in some cases omit the drive letter, according
      * to MSDN, thus the GetFullPathName call.
      */
-#ifndef RT_DONT_CONVERT_FILENAMES
     RTUTF16 wszCurPath[RTPATH_MAX];
     if (GetCurrentDirectoryW(RTPATH_MAX, wszCurPath))
     {
@@ -588,18 +562,6 @@ RTDECL(int) RTPathGetCurrent(char *pszPath, size_t cchPath)
     }
     else
         rc = RTErrConvertFromWin32(GetLastError());
-#else
-    char szCurPath[RTPATH_MAX];
-    if (GetCurrentDirectory(RTPATH_MAX, szCurPath))
-    {
-        if (GetFullPathName(szCurPath, cchPath, pszPath, NULL))
-            rc = VINF_SUCCESS;
-        else
-            rc = RTErrConvertFromWin32(GetLastError());
-    }
-    else
-        rc = RTErrConvertFromWin32(GetLastError());
-#endif
     return rc;
 }
 
@@ -615,12 +577,11 @@ RTDECL(int) RTPathSetCurrent(const char *pszPath)
     /*
      * This interface is almost identical to the Windows API.
      */
-#ifndef RT_DONT_CONVERT_FILENAMES
     PRTUTF16 pwszPath;
     int rc = RTStrToUtf16(pszPath, &pwszPath);
     if (RT_SUCCESS(rc))
     {
-        /** @todo improove the slash stripping a bit? */
+        /** @todo improve the slash stripping a bit? */
         size_t cwc = RTUtf16Len(pwszPath);
         if (    cwc >= 2
             &&  (   pwszPath[cwc - 1] == L'/'
@@ -633,34 +594,6 @@ RTDECL(int) RTPathSetCurrent(const char *pszPath)
 
         RTUtf16Free(pwszPath);
     }
-#else
-    int rc = VINF_SUCCESS;
-    /** @todo improove the slash stripping a bit? */
-    char const *pszEnd = strchr(pszPath, '\0');
-    size_t const cchPath = pszPath - pszEnd;
-    if (    cchPath >= 2
-        &&  (   pszEnd[-1] == '/'
-             || pszEnd[-1] == '\\')
-        &&  pszEnd[-2] == ':')
-    {
-        char *pszCopy = (char *)RTMemTmpAlloc(cchPath);
-        if (pszCopy)
-        {
-            memcpy(pszCopy, pszPath, cchPath - 1);
-            pszCopy[cchPath - 1] = '\0';
-            if (!SetCurrentDirectory(pszCopy))
-                rc = RTErrConvertFromWin32(GetLastError());
-            RTMemTmpFree(pszCopy);
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-    else
-    {
-        if (!SetCurrentDirectory(pszPath))
-            rc = RTErrConvertFromWin32(GetLastError());
-    }
-#endif
     return rc;
 }
 
