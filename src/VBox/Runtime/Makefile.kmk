@@ -186,16 +186,19 @@ ifdef IPRT_WITH_KSTUFF
  RuntimeR3_DEFS        += LDR_WITH_KLDR
 endif
 ifdef VBOX_MAIN_RELEASE_LOG ## @todo (dmik): temporary, until RTThreadSelf/RTThreadAdopt are properly updated
- RuntimeR3_DEFS         += RTCRITSECT_STRICT
+ RuntimeR3_DEFS        += RTCRITSECT_STRICT
 endif
 ifdef IPRT_WITH_LZJB
- RuntimeR3_DEFS         += RTZIP_USE_LZJB
+ RuntimeR3_DEFS        += RTZIP_USE_LZJB
 endif
 ifdef IPRT_WITH_LZO
- RuntimeR3_DEFS         += RTZIP_USE_LZO
+ RuntimeR3_DEFS        += RTZIP_USE_LZO
+endif
+ifn1of ($(KBUILD_TARGET), win)
+ RuntimeR3_DEFS        += RT_WITH_ICONV_CACHE
 endif
 ifdef IPRT_WITH_FUTEX_BASED_SEMS
- RuntimeR3_DEFS.linux   += IPRT_WITH_FUTEX_BASED_SEMS
+ RuntimeR3_DEFS.linux  += IPRT_WITH_FUTEX_BASED_SEMS
 endif
 RuntimeR3_INCS          = \
 	include \
