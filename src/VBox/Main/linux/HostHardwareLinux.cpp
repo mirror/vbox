@@ -1245,7 +1245,11 @@ public:
 
     ~inotifyWatch(void)
     {
-        close(mhInotify);
+        if (mhInotify != -1)
+        {
+            close(mhInotify);
+            mhInotify = -1;
+        }
     }
 
     int getStatus(void)
@@ -1437,10 +1441,16 @@ void hotplugInotifyImpl::term(void)
 {
     /** This would probably be a pending segfault, so die cleanly */
     AssertRelease(!mfWaiting);
-    close(mhWakeupPipeR);
-    mhWakeupPipeR = -1;
-    close(mhWakeupPipeW);
-    mhWakeupPipeW = -1;
+    if (mhWakeupPipeR != -1)
+    {
+        close(mhWakeupPipeR);
+        mhWakeupPipeR = -1;
+    }
+    if (mhWakeupPipeW != -1)
+    {
+        close(mhWakeupPipeW);
+        mhWakeupPipeW = -1;
+    }
 }
 
 int hotplugInotifyImpl::drainInotify()
