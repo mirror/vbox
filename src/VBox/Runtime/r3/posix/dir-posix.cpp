@@ -61,8 +61,8 @@
 RTDECL(bool) RTDirExists(const char *pszPath)
 {
     bool fRc = false;
-    char *pszNativePath;
-    int rc = rtPathToNative(&pszNativePath, pszPath);
+    char const *pszNativePath;
+    int rc = rtPathToNative(&pszNativePath, pszPath, NULL);
     if (RT_SUCCESS(rc))
     {
         struct stat s;
@@ -83,8 +83,8 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode)
     fMode = rtFsModeNormalize(fMode, pszPath, 0);
     if (rtFsModeIsValidPermissions(fMode))
     {
-        char *pszNativePath;
-        rc = rtPathToNative(&pszNativePath, pszPath);
+        char const *pszNativePath;
+        rc = rtPathToNative(&pszNativePath, pszPath, NULL);
         if (RT_SUCCESS(rc))
         {
             if (mkdir(pszNativePath, fMode & RTFS_UNIX_MASK))
@@ -123,8 +123,8 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode)
 
 RTDECL(int) RTDirRemove(const char *pszPath)
 {
-    char *pszNativePath;
-    int rc = rtPathToNative(&pszNativePath, pszPath);
+    char const *pszNativePath;
+    int rc = rtPathToNative(&pszNativePath, pszPath, NULL);
     if (RT_SUCCESS(rc))
     {
         if (rmdir(pszNativePath))
@@ -173,13 +173,13 @@ RTDECL(int) RTDirFlush(const char *pszPath)
 }
 
 
-int rtOpenDirNative(PRTDIR pDir, char *pszPathBuf)
+int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf)
 {
     /*
      * Convert to a native path and try opendir.
      */
-    char *pszNativePath;
-    int rc = rtPathToNative(&pszNativePath, pDir->pszPath);
+    char const *pszNativePath;
+    int rc = rtPathToNative(&pszNativePath, pDir->pszPath, NULL);
     if (RT_SUCCESS(rc))
     {
         pDir->pDir = opendir(pszNativePath);
@@ -266,7 +266,7 @@ static int rtDirReadMore(PRTDIR pDir)
          */
         if (!pDir->pszName)
         {
-            int rc = rtPathFromNativeEx(&pDir->pszName, pDir->Data.d_name, pDir->pszPath);
+            int rc = rtPathFromNative(&pDir->pszName, pDir->Data.d_name, pDir->pszPath);
             if (RT_FAILURE(rc))
             {
                 pDir->pszName = NULL;
@@ -277,7 +277,7 @@ static int rtDirReadMore(PRTDIR pDir)
         if (    !pDir->pfnFilter
             ||  pDir->pfnFilter(pDir, pDir->pszName))
             break;
-        RTStrFree(pDir->pszName);
+        rtPathFreeIprt(pDir->pszName, pDir->Data.d_name);
         pDir->pszName = NULL;
 #else
         if (   !pDir->pfnFilter
@@ -376,7 +376,7 @@ RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry)
             /* free cached data */
             pDir->fDataUnread  = false;
 #ifndef RT_DONT_CONVERT_FILENAMES
-            RTStrFree(pDir->pszName);
+            rtPathFreeIprt(pDir->pszName, pDir->Data.d_name);
             pDir->pszName = NULL;
 #endif
         }
@@ -501,7 +501,7 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
             /* free cached data */
             pDir->fDataUnread  = false;
 #ifndef RT_DONT_CONVERT_FILENAMES
-            RTStrFree(pDir->pszName);
+            rtPathFreeIprt(pDir->pszName, pDir->Data.d_name);
             pDir->pszName = NULL;
 #endif
         }

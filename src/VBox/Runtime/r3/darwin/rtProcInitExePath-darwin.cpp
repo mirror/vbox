@@ -48,15 +48,8 @@ DECLHIDDEN(int) rtProcInitExePath(char *pszPath, size_t cchPath)
     const char *pszImageName = _dyld_get_image_name(0);
     AssertReturn(pszImageName, VERR_INTERNAL_ERROR);
 
-    char *pszTmp;
-    int rc = rtPathFromNative(&pszTmp, pszImageName);
+    int rc = rtPathFromNativeCopy(pszPath, cchPath, pszImageName, NULL);
     AssertMsgRCReturn(rc, ("rc=%Rrc pszLink=\"%s\"\nhex: %.*Rhsx\n", rc, pszPath, strlen(pszImageName), pszPath), rc);
-
-    size_t cch = strlen(pszTmp);
-    AssertReturn(cch <= cchPath, VERR_BUFFER_OVERFLOW);
-
-    memcpy(pszPath, pszTmp, cch + 1);
-    RTStrFree(pszTmp);
 
     return VINF_SUCCESS;
 }

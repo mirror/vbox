@@ -47,16 +47,14 @@ DECLHIDDEN(int) rtProcInitExePath(char *pszPath, size_t cchPath)
      */
     _execname(pszPath, cchPath);
 
-    char *pszTmp;
-    int rc = rtPathFromNative(&pszTmp, pszPath);
+    char const *pszTmp;
+    int rc = rtPathFromNative(&pszTmp, pszPath, NULL);
     AssertMsgRCReturn(rc, ("rc=%Rrc pszLink=\"%s\"\nhex: %.*Rhsx\n", rc, pszPath, cchPath, pszPath), rc);
-
-    size_t cch = strlen(pszTmp);
-    AssertReturn(cch <= cchPath, VERR_BUFFER_OVERFLOW);
-
-    memcpy(pszPath, pszTmp, cch + 1);
-    RTStrFree(pszTmp);
-
-    return VINF_SUCCESS;
+    if (pszTmp != pszPath)
+    {
+        rc = RTStrCopy(pszPath, cchPath, pszTmp);
+        rtPathFreeIprt(pszTmp, pszPath);
+    }
+    return rc;
 }
 

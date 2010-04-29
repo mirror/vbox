@@ -55,8 +55,8 @@ RTR3DECL(int) RTFsQuerySizes(const char *pszFsPath, RTFOFF *pcbTotal, RTFOFF *pc
     /*
      * Convert the path and query the information.
      */
-    char *pszNativeFsPath;
-    int rc = rtPathToNative(&pszNativeFsPath, pszFsPath);
+    char const *pszNativeFsPath;
+    int rc = rtPathToNative(&pszNativeFsPath, pszFsPath, NULL);
     if (RT_SUCCESS(rc))
     {
         /** @todo I'm not quite sure if statvfs was properly specified by SuS, I have to check my own
@@ -102,8 +102,8 @@ RTR3DECL(int) RTFsQuerySerial(const char *pszFsPath, uint32_t *pu32Serial)
      * Conver the path and query the stats.
      * We're simply return the device id.
      */
-    char *pszNativeFsPath;
-    int rc = rtPathToNative(&pszNativeFsPath, pszFsPath);
+    char const *pszNativeFsPath;
+    int rc = rtPathToNative(&pszNativeFsPath, pszFsPath, NULL);
     if (RT_SUCCESS(rc))
     {
         struct stat Stat;
@@ -133,8 +133,8 @@ RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProper
     /*
      * Convert the path and query the information.
      */
-    char *pszNativeFsPath;
-    int rc = rtPathToNative(&pszNativeFsPath, pszFsPath);
+    char const *pszNativeFsPath;
+    int rc = rtPathToNative(&pszNativeFsPath, pszFsPath, NULL);
     if (RT_SUCCESS(rc))
     {
         struct statvfs StatVFS;
