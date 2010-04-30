@@ -52,8 +52,11 @@
 #include "CSAMInternal.h"
 #include "EMInternal.h"
 #include "REMInternal.h"
+#include "VMMR0/GMMR0Internal.h"
+#include "VMMR0/GVMMR0Internal.h"
 #include <VBox/vm.h>
 #include <VBox/uvm.h>
+#include <VBox/gvm.h>
 #include <VBox/param.h>
 #include <VBox/x86.h>
 
@@ -126,6 +129,32 @@ int main()
         UVMCPU *p; \
         if (sizeof(p->member.padding) >= (ssize_t)sizeof(p->member.s) + 128 + sizeof(p->member.s) / 20) \
             printf("warning: UVMCPU::%-8s: padding=%-5d s=%-5d -> %-4d  suggest=%-5u\n", \
+                   #member, (int)sizeof(p->member.padding), (int)sizeof(p->member.s), \
+                   (int)sizeof(p->member.padding) - (int)sizeof(p->member.s), \
+                   (int)RT_ALIGN_Z(sizeof(p->member.s), (align))); \
+    } while (0)
+
+#define CHECK_PADDING_GVM(align, member) \
+    do \
+    { \
+        CHECK_PADDING(GVM, member, align); \
+        CHECK_MEMBER_ALIGNMENT(GVM, member, align); \
+        GVM *p; \
+        if (sizeof(p->member.padding) >= (ssize_t)sizeof(p->member.s) + 128 + sizeof(p->member.s) / 20) \
+            printf("warning: GVM::%-8s: padding=%-5d s=%-5d -> %-4d  suggest=%-5u\n", \
+                   #member, (int)sizeof(p->member.padding), (int)sizeof(p->member.s), \
+                   (int)sizeof(p->member.padding) - (int)sizeof(p->member.s), \
+                   (int)RT_ALIGN_Z(sizeof(p->member.s), (align))); \
+    } while (0)
+
+#define CHECK_PADDING_GVMCPU(align, member) \
+    do \
+    { \
+        CHECK_PADDING(GVMCPU, member, align); \
+        CHECK_MEMBER_ALIGNMENT(GVMCPU, member, align); \
+        GVMCPU *p; \
+        if (sizeof(p->member.padding) >= (ssize_t)sizeof(p->member.s) + 128 + sizeof(p->member.s) / 20) \
+            printf("warning: GVMCPU::%-8s: padding=%-5d s=%-5d -> %-4d  suggest=%-5u\n", \
                    #member, (int)sizeof(p->member.padding), (int)sizeof(p->member.s), \
                    (int)sizeof(p->member.padding) - (int)sizeof(p->member.s), \
                    (int)RT_ALIGN_Z(sizeof(p->member.s), (align))); \
@@ -395,6 +424,10 @@ int main()
     printf("tstVMStructSize: Comparing HC and RC...\n");
 # include "tstVMStructRC.h"
 #endif /* VBOX_WITH_RAW_MODE */
+
+    CHECK_PADDING_GVM(4, gvmm);
+    CHECK_PADDING_GVM(4, gmm);
+    CHECK_PADDING_GVMCPU(4, gvmm);
 
     /*
      * Report result.
