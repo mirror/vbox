@@ -2060,7 +2060,7 @@ EOF
 [ $WITH_PULSE   -eq 1 ] && echo "  --disable-pulse          disable the PulseAudio backend"
 [ $WITH_DBUS    -eq 1 ] && echo "  --disable-dbus           don't use DBus and hal for hardware detection"
 [ $WITH_KMODS   -eq 1 ] && echo "  --disable-kmods          don't build Linux kernel modules (host and guest)"
-[ $WITH_OPENGL  -eq 1 ] && echo "  --disable-opengl         disable OpenGL support"
+[ $WITH_OPENGL  -eq 1 ] && echo "  --disable-opengl         disable OpenGL support (2D & 3D)"
 [ $WITH_GSOAP   -eq 0 ] && echo "  --enable-webservice      enable the webservice stuff"
 [ "$OS" = "linux" -o "$OS" = "freebsd" ] && echo "  --enable-vde             enable VDE networking"
 cat << EOF
@@ -2383,7 +2383,11 @@ if [ -n "$HEADLESS" ]; then
 fi
 
 # emit disable directives corresponding to any --disable-xxx options.
-[ $WITH_OPENGL -eq 0 ]    && cnf_append "VBOX_WITH_CROGL" ""
+if [ $WITH_OPENGL -eq 0 ]; then
+  cnf_append "VBOX_WITH_CROGL" ""
+  cnf_append "VBOX_WITH_VIDEOHWACCEL" ""
+  cnf_append "VBOX_GUI_USE_QGL" ""
+fi
 [ $WITH_XPCOM -eq 0 ]     && cnf_append "VBOX_WITH_MAIN" ""
 [ $WITH_QT4 -eq 0   ]     && cnf_append "VBOX_WITH_QTGUI" ""
 [ $WITH_SDL_TTF -eq 0 ]   && cnf_append "VBOX_WITH_SECURELABEL" ""
