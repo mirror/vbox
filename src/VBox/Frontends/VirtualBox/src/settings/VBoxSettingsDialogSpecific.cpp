@@ -577,8 +577,10 @@ bool VBoxVMSettingsDlg::correlate (QWidget *aPage, QString &aWarning)
             systemPage->isHIDEnabled() && !usbPage->isOHCIEnabled())
         {
             aWarning = tr (
-                "you have Absolute Pointing Devices feature enabled. As this feature "
-                "requires active USB controller it will be enabled automatically.");
+                "you have enabled a USB HID (Human Interface Device). "
+                "This will not work unless USB emulation is also enabled. "
+                "This will be done automatically when you accept the VM Settings "
+                "by pressing the OK button.");
             return true;
         }
     }
