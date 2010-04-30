@@ -49,7 +49,7 @@ DECLHIDDEN(int) rtProcInitExePath(char *pszPath, size_t cchPath)
 
     char const *pszTmp;
     int rc = rtPathFromNative(&pszTmp, pszPath, NULL);
-    AssertMsgRCReturn(rc, ("rc=%Rrc pszLink=\"%s\"\nhex: %.*Rhsx\n", rc, pszPath, cchPath, pszPath), rc);
+    AssertMsgRCReturn(rc, ("rc=%Rrc pszLink=\"%s\"\nhex: %.*Rhxs\n", rc, pszPath, cchPath, pszPath), rc);
     if (pszTmp != pszPath)
     {
         rc = RTStrCopy(pszPath, cchPath, pszTmp);

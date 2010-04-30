@@ -57,7 +57,7 @@ DECLHIDDEN(int) rtProcInitExePath(char *pszPath, size_t cchPath)
     {
         const char *pszTmp;
         int rc = rtPathFromNative(&pszTmp, pszPath, NULL);
-        AssertMsgRCReturn(rc, ("rc=%Rrc pszPath=\"%s\"\nhex: %.*Rhsx\n", rc, pszPath, cchExePath, pszPath), rc);
+        AssertMsgRCReturn(rc, ("rc=%Rrc pszPath=\"%s\"\nhex: %.*Rhxs\n", rc, pszPath, cchExePath, pszPath), rc);
         if (pszTmp != pszPath)
         {
             rc = RTStrCopy(pszPath, cchPath, pszTmp);
@@ -82,7 +82,7 @@ DECLHIDDEN(int) rtProcInitExePath(char *pszPath, size_t cchPath)
 
         char const *pszTmp;
         int rc = rtPathFromNative(&pszTmp, pszPath);
-        AssertMsgRCReturn(rc, ("rc=%Rrc pszLink=\"%s\"\nhex: %.*Rhsx\n", rc, pszPath, cchLink, pszPath), rc);
+        AssertMsgRCReturn(rc, ("rc=%Rrc pszLink=\"%s\"\nhex: %.*Rhxs\n", rc, pszPath, cchLink, pszPath), rc);
         if (pszTmp != pszPath)
         {
             rc = RTStrCopy(pszPath, cchPath, pszTmp);
