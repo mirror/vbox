@@ -40,6 +40,7 @@ class Host;
 class SystemProperties;
 class DHCPServer;
 class PerformanceCollector;
+class VirtualBoxCallbackRegistration; /* see VirtualBoxImpl.cpp */
 
 typedef std::list< ComObjPtr<SessionMachine> > SessionMachinesList;
 
@@ -66,7 +67,7 @@ class ATL_NO_VTABLE VirtualBox :
 
 public:
 
-    typedef std::list< ComPtr<IVirtualBoxCallback> > CallbackList;
+    typedef std::list< VirtualBoxCallbackRegistration > CallbackList;
     typedef std::list< ComPtr<IInternalSessionControl> > InternalControlList;
 
     class CallbackEvent;
@@ -320,4 +321,4 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#endif // ____H_VIRTUALBOXIMPL
+#endif // !____H_VIRTUALBOXIMPL
