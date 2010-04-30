@@ -175,14 +175,24 @@ static int VBoxServiceControlExecProcHandleOutputEvent(PVBOXSERVICECTRLTHREAD pT
         rc = VbglR3GuestCtrlExecSendOut(pThread->uClientID, pThread->uContextID,
                                         pData->uPID, uHandleId, 0 /* u32Flags */,
                                         abBuf, cbRead);
-#endif
-        rc = VBoxServiceControlExecWritePipeBuffer(&pData->stdOut, abBuf, cbRead);
-        if (RT_SUCCESS(rc))
+        if (RT_FAILURE(rc))
         {
-            /* Make sure we go another poll round in case there was too much data
-               for the buffer to hold. */
-            fPollEvt &= RTPOLL_EVT_ERROR;
+            VBoxServiceError("Control: Error while sending real-time output data, rc=%Rrc, cbRead=%u, CID=%u, PID=%u\n",
+                             rc, cbRead, pThread->uClientID, pData->uPID);
         }
+        else
+        {
+#endif
+            rc = VBoxServiceControlExecWritePipeBuffer(&pData->stdOut, abBuf, cbRead);
+            if (RT_SUCCESS(rc))
+            {
+                /* Make sure we go another poll round in case there was too much data
+                   for the buffer to hold. */
+                fPollEvt &= RTPOLL_EVT_ERROR;
+            }
+#if 0
+        }
+#endif
     }
     else if (RT_FAILURE(rc2))
     {

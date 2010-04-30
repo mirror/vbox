@@ -43,6 +43,8 @@
 # include <errno.h>
 #endif
 
+#include <signal.h>
+
 #ifdef RT_OS_DARWIN
 # include <CoreFoundation/CFRunLoop.h>
 #endif
@@ -55,6 +57,9 @@ using namespace com;
  */
 /** @todo */
 
+/** Set by the signal handler. */
+static volatile bool    g_fExecCanceled = false;
+
 void usageGuestControl(void)
 {
     RTPrintf("VBoxManage guestcontrol     execute <vmname>|<uuid>\n"
@@ -64,6 +69,19 @@ void usageGuestControl(void)
              "                            [--username <name> [--password <password>]]\n"
              "                            [--verbose] [--wait-for exit,stdout,stderr||]\n"
              "\n");
+}
+
+/**
+ * Signal handler that sets g_fCanceled.
+ *
+ * This can be executed on any thread in the process, on Windows it may even be
+ * a thread dedicated to delivering this signal.  Do not doing anything
+ * unnecessary here.
+ */
+static void execProcessSignalHandler(int iSignal)
+{
+    NOREF(iSignal);
+    ASMAtomicWriteBool(&g_fExecCanceled, true);
 }
 
 static int handleExecProgram(HandlerArg *a)
@@ -304,84 +322,112 @@ static int handleExecProgram(HandlerArg *a)
                 else if (verbose)
                     RTPrintf("Waiting for process to exit ...\n");                        
 
-                /* Wait for process to exit ... */
+                /* setup signal handling if cancelable */
                 ASSERT(progress);
-                rc = progress->WaitForCompletion(have_timeout ? 
-                                                 (u32TimeoutMS + 5000) :    /* Timeout value + safety counter */
-                                                  -1                        /* Wait forever */);
-                if (FAILED(rc))
+                bool fCanceledAlready = false;
+                BOOL fCancelable;
+                HRESULT hrc = progress->COMGETTER(Cancelable)(&fCancelable);
+                if (FAILED(hrc))
+                    fCancelable = FALSE;
+                if (fCancelable)
                 {
-                    if (u32TimeoutMS)
-                        RTPrintf("Process '%s' (PID: %u) did not end within %ums! Wait aborted.\n",
-                                 Utf8Cmd.raw(), uPID, u32TimeoutMS);
-                    break;
+                    signal(SIGINT,   execProcessSignalHandler);
+            #ifdef SIGBREAK
+                    signal(SIGBREAK, execProcessSignalHandler);
+            #endif
                 }
-                else
-                {
-                    BOOL completed;
-                    CHECK_ERROR_RET(progress, COMGETTER(Completed)(&completed), rc);
-                    ASSERT(completed);
 
-                    LONG iRc;
+                /* Wait for process to exit ... */
+                BOOL fCompleted = false;
+                ULONG cbOutputData = 0;
+                SafeArray<BYTE> aOutputData;
+                while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
+                {
+                    if (cbOutputData <= 0)
+                    {
+                        if (fCompleted)
+                            break;
+
+                        if (   have_timeout
+                            && RTTimeMilliTS() - u64StartMS > u32TimeoutMS + 5000)
+                        {
+                            progress->Cancel();
+                            break;
+                        }
+                    }
+
+                    CHECK_ERROR_BREAK(guest, GetProcessOutput(uPID, 0 /* aFlags */, 
+                                                              u32TimeoutMS, _64K, ComSafeArrayAsOutParam(aOutputData)));
+                    cbOutputData = aOutputData.size();
+                    if (cbOutputData > 0)
+                    {
+                        /* aOutputData has a platform dependent line ending, standardize on
+                         * Unix style, as RTStrmWrite does the LF -> CR/LF replacement on
+                         * Windows. Otherwise we end up with CR/CR/LF on Windows. */
+                        ULONG cbOutputDataPrint = cbOutputData;
+                        for (BYTE *s = aOutputData.raw(), *d = s;
+                             s - aOutputData.raw() < (ssize_t)cbOutputData;
+                             s++, d++)
+                        {
+                            if (*s == '\r')
+                            {
+                                /* skip over CR, adjust destination */
+                                d--;
+                                cbOutputDataPrint--;
+                            }
+                            else if (s != d)
+                                *d = *s;
+                        }
+                        RTStrmWrite(g_pStdOut, aOutputData.raw(), cbOutputDataPrint);
+                    }
+
+                    /* process async cancelation. */
+                    if (g_fExecCanceled && !fCanceledAlready)
+                    {
+                        hrc = progress->Cancel();
+                        if (SUCCEEDED(hrc))
+                            fCanceledAlready = true;
+                        else
+                            g_fExecCanceled = false;
+                    }
+
+                    progress->WaitForCompletion(100);
+                }
+
+                /* undo signal handling */
+                if (fCancelable)
+                {
+                    signal(SIGINT,   SIG_DFL);
+            #ifdef SIGBREAK
+                    signal(SIGBREAK, SIG_DFL);
+            #endif
+                }
+
+                /* Not completed yet? -> Timeout */
+                if (fCompleted)
+                {
+                    LONG iRc = false;
                     CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
                     if (FAILED(iRc))
                     {
                         ComPtr<IVirtualBoxErrorInfo> execError;
                         rc = progress->COMGETTER(ErrorInfo)(execError.asOutParam());
                         com::ErrorInfo info (execError);
-                        RTPrintf("Process error details:\n");
+                        RTPrintf("\n\nProcess error details:\n");
                         GluePrintErrorInfo(info);
                         RTPrintf("\n");
-                    }
-
+                    }         
+                }
+                else
+                {
+                    RTPrintf("Process timed out!\n");
+                }
+                
+                if (verbose)
+                {
                     ULONG uRetStatus, uRetExitCode, uRetFlags;
                     CHECK_ERROR_BREAK(guest, GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus));
-                    if (verbose)
-                        RTPrintf("Exit code=%u (Status=%u, Flags=%u)\n", uRetExitCode, uRetStatus, uRetFlags);
-
-                    /* Print output if wanted. */
-                    if (   waitForStdOut
-                        || waitForStdErr)
-                    {
-                        bool bFound = false;
-                        while (true)
-                        {
-                            SafeArray<BYTE> aOutputData;
-                            ULONG cbOutputData;
-                            CHECK_ERROR_BREAK(guest, GetProcessOutput(uPID, 0 /* aFlags */, 
-                                                                      u32TimeoutMS, _64K, ComSafeArrayAsOutParam(aOutputData)));
-                            cbOutputData = aOutputData.size();
-                            if (cbOutputData == 0)
-                                break;
-
-                            if (!bFound && verbose) 
-                            {
-                                RTPrintf("Retrieving output data ...\n");
-                                bFound = true;
-                            }
-
-                            /* aOutputData has a platform dependent line ending, standardize on
-                             * Unix style, as RTStrmWrite does the LF -> CR/LF replacement on
-                             * Windows. Otherwise we end up with CR/CR/LF on Windows. */
-                            ULONG cbOutputDataPrint = cbOutputData;
-                            for (BYTE *s = aOutputData.raw(), *d = s;
-                                 s - aOutputData.raw() < (ssize_t)cbOutputData;
-                                 s++, d++)
-                            {
-                                if (*s == '\r')
-                                {
-                                    /* skip over CR, adjust destination */
-                                    d--;
-                                    cbOutputDataPrint--;
-                                }
-                                else if (s != d)
-                                    *d = *s;
-                            }
-                            RTStrmWrite(g_pStdOut, aOutputData.raw(), cbOutputDataPrint);
-                        }
-                        if (!bFound && verbose) 
-                            RTPrintf("No output data available\n");
-                    }
+                    RTPrintf("Exit code=%u (Status=%u, Flags=%u)\n", uRetExitCode, uRetStatus, uRetFlags);
                 }
             }
             a->session->Close();
