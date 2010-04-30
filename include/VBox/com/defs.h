@@ -83,6 +83,10 @@
 /** Returns @c true if @a rc represents a warning result code */
 #define SUCCEEDED_WARNING(rc)   (SUCCEEDED (rc) && (rc) != S_OK)
 
+/** Tests is a COM result code indicates that the process implementing the
+ * interface is dead. */
+#define FAILED_DEAD_INTERFACE(rc) (false) /**< @todo */
+
 /** Immutable BSTR string */
 typedef const OLECHAR *CBSTR;
 
@@ -248,6 +252,8 @@ typedef const OLECHAR *CBSTR;
 #define FAILED      NS_FAILED
 
 #define SUCCEEDED_WARNING(rc)   (NS_SUCCEEDED (rc) && (rc) != NS_OK)
+
+#define FAILED_DEAD_INTERFACE(rc)    (false) /**< @todo */
 
 #define IUnknown nsISupports
 
