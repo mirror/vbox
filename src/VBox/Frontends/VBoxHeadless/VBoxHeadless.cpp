@@ -141,12 +141,12 @@ public:
 
     STDMETHOD(OnMachineStateChange)(IN_BSTR machineId, MachineState_T state)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnMachineDataChange)(IN_BSTR machineId)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnExtraDataCanChange)(IN_BSTR machineId, IN_BSTR key, IN_BSTR value,
@@ -156,43 +156,43 @@ public:
         if (!changeAllowed)
             return E_INVALIDARG;
         *changeAllowed = TRUE;
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnExtraDataChange)(IN_BSTR machineId, IN_BSTR key, IN_BSTR value)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnMediumRegistered)(IN_BSTR mediaId, DeviceType_T mediaType,
                                   BOOL registered)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnMachineRegistered)(IN_BSTR machineId, BOOL registered)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnSessionStateChange)(IN_BSTR machineId, SessionState_T state)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnSnapshotTaken)(IN_BSTR aMachineId, IN_BSTR aSnapshotId)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnSnapshotDeleted)(IN_BSTR aMachineId, IN_BSTR aSnapshotId)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnSnapshotChange)(IN_BSTR aMachineId, IN_BSTR aSnapshotId)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnGuestPropertyChange)(IN_BSTR machineId, IN_BSTR key, IN_BSTR value, IN_BSTR flags)
@@ -255,8 +255,10 @@ public:
                 }
             }
         }
-#endif /* VBOX_WITH_GUEST_PROPS */
         return S_OK;
+#else  /* !VBOX_WITH_GUEST_PROPS */
+        return VBOX_E_DONT_CALL_AGAIN;
+#endif /* !VBOX_WITH_GUEST_PROPS */
     }
 
 private:
