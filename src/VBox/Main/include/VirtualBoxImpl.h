@@ -216,6 +216,8 @@ public:
     void addProcessToReap (RTPROCESS pid);
     void updateClientWatcher();
 
+    void removeDeadCallback(const ComPtr<IVirtualBoxCallback> &aCallback);
+
     void onMachineStateChange(const Guid &aId, MachineState_T aState);
     void onMachineDataChange(const Guid &aId);
     BOOL onExtraDataCanChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aValue,

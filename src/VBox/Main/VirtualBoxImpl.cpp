@@ -2507,6 +2507,24 @@ void VirtualBox::addProcessToReap(RTPROCESS pid)
 #endif
 }
 
+/**
+ * Removes a dead callback.
+ * @param aCallback     The reference to the registered callback interface.
+ */
+void VirtualBox::removeDeadCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
+{
+    /* find and delete */
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    CallbackList::iterator it = std::find(m->llCallbacks.begin(),
+                                          m->llCallbacks.end(),
+                                          CallbackList::value_type(aCallback));
+    if (it != m->llCallbacks.end())
+    {
+        LogRel(("Removing dead callback: %p\n", &*it));
+        m->llCallbacks.erase(it);
+    }
+}
+
 /** Event for onMachineStateChange(), onMachineDataChange(), onMachineRegistered() */
 struct MachineEvent : public VirtualBox::CallbackEvent
 {
@@ -2609,6 +2627,9 @@ BOOL VirtualBox::onExtraDataCanChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aVa
                     if (itOrg != m->llCallbacks.end())
                         itOrg->setDontCallAgain(VirtualBoxCallbackRegistration::kOnExtraDataCanChange);
                 }
+                else if (FAILED_DEAD_INTERFACE(rc))
+                    removeDeadCallback(it->ptrICb);
+
                 /* if a call to this method fails for some reason (for ex., because
                  * the other side is dead), we ensure allowChange stays true
                  * (MS COM RPC implementation seems to zero all output vars before
@@ -4482,6 +4503,8 @@ void *VirtualBox::CallbackEvent::handler()
                 if (itOrg != mVirtualBox->m->llCallbacks.end())
                     itOrg->setDontCallAgain(mWhat);
             }
+            else if (FAILED_DEAD_INTERFACE(rc))
+                mVirtualBox->removeDeadCallback(it->ptrICb);
         }
     }
 
