@@ -23,8 +23,9 @@
 #include "VBoxTakeSnapshotDlg.gen.h"
 #include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
+#include "QIDialog.h"
 
-class VBoxTakeSnapshotDlg : public QIWithRetranslateUI<QDialog>, public Ui::VBoxTakeSnapshotDlg
+class VBoxTakeSnapshotDlg : public QIWithRetranslateUI<QIDialog>, public Ui::VBoxTakeSnapshotDlg
 {
     Q_OBJECT;
 
