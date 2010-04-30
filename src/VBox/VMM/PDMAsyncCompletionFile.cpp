@@ -20,7 +20,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PDM_ASYNC_COMPLETION
-//#define DEBUG
 #include "PDMInternal.h"
 #include <VBox/pdm.h>
 #include <VBox/mm.h>
@@ -258,6 +257,8 @@ void pdmacFileEpTaskCompleted(PPDMACTASKFILE pTask, void *pvUser, int rc)
 {
     PPDMASYNCCOMPLETIONTASKFILE pTaskFile = (PPDMASYNCCOMPLETIONTASKFILE)pvUser;
 
+    LogFlowFunc(("pTask=%#p pvUser=%#p rc=%Rrc\n", pTask, pvUser, rc));
+
     if (pTask->enmTransferType == PDMACTASKFILETRANSFER_FLUSH)
     {
         pdmR3AsyncCompletionCompleteTask(&pTaskFile->Core, rc, true);
@@ -277,6 +278,16 @@ void pdmacFileEpTaskCompleted(PPDMACTASKFILE pTask, void *pvUser, int rc)
     }
 }
 
+DECLINLINE(void) pdmacFileEpTaskInit(PPDMASYNCCOMPLETIONTASK pTask, size_t cbTransfer)
+{
+    PPDMASYNCCOMPLETIONTASKFILE pTaskFile = (PPDMASYNCCOMPLETIONTASKFILE)pTask;
+
+    Assert((uint32_t)cbTransfer == cbTransfer && (int32_t)cbTransfer >= 0);
+    ASMAtomicWriteS32(&pTaskFile->cbTransferLeft, (int32_t)cbTransfer);
+    ASMAtomicWriteBool(&pTaskFile->fCompleted, false);
+    ASMAtomicWriteS32(&pTaskFile->rc, VINF_SUCCESS);
+}
+
 int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
                             PPDMASYNCCOMPLETIONENDPOINT pEndpoint, RTFOFF off,
                             PCRTSGSEG paSegments, size_t cSegments,
@@ -289,11 +300,6 @@ int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
 
     Assert(   (enmTransfer == PDMACTASKFILETRANSFER_READ)
            || (enmTransfer == PDMACTASKFILETRANSFER_WRITE));
-
-    Assert((uint32_t)cbTransfer == cbTransfer && (int32_t)cbTransfer >= 0);
-    ASMAtomicWriteS32(&pTaskFile->cbTransferLeft, (int32_t)cbTransfer);
-    ASMAtomicWriteBool(&pTaskFile->fCompleted, false);
-    ASMAtomicWriteS32(&pTaskFile->rc, VINF_SUCCESS);
 
     for (unsigned i = 0; i < cSegments; i++)
     {
@@ -969,7 +975,12 @@ static int pdmacFileEpRead(PPDMASYNCCOMPLETIONTASK pTask,
     int rc = VINF_SUCCESS;
     PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
 
+    LogFlowFunc(("pTask=%#p pEndpoint=%#p off=%RTfoff paSegments=%#p cSegments=%zu cbRead=%zu\n",
+                 pTask, pEndpoint, off, paSegments, cSegments, cbRead));
+
     STAM_PROFILE_ADV_START(&pEpFile->StatRead, Read);
+
+    pdmacFileEpTaskInit(pTask, cbRead);
 
     if (pEpFile->fCaching)
         rc = pdmacFileEpCacheRead(pEpFile, (PPDMASYNCCOMPLETIONTASKFILE)pTask,
@@ -995,6 +1006,8 @@ static int pdmacFileEpWrite(PPDMASYNCCOMPLETIONTASK pTask,
         return VERR_NOT_SUPPORTED;
 
     STAM_PROFILE_ADV_START(&pEpFile->StatWrite, Write);
+
+    pdmacFileEpTaskInit(pTask, cbWrite);
 
     if (pEpFile->fCaching)
         rc = pdmacFileEpCacheWrite(pEpFile, (PPDMASYNCCOMPLETIONTASKFILE)pTask,

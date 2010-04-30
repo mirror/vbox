@@ -1721,8 +1721,6 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
     LogFlowFunc((": pEndpoint=%#p{%s} pTask=%#p off=%RTfoff paSegments=%#p cSegments=%u cbRead=%u\n",
                  pEndpoint, pEndpoint->Core.pszUri, pTask, off, paSegments, cSegments, cbRead));
 
-    pTask->cbTransferLeft = cbRead;
-    pTask->rc             = VINF_SUCCESS;
     /* Set to completed to make sure that the task is valid while we access it. */
     ASMAtomicWriteBool(&pTask->fCompleted, true);
 
@@ -1955,8 +1953,6 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
     LogFlowFunc((": pEndpoint=%#p{%s} pTask=%#p off=%RTfoff paSegments=%#p cSegments=%u cbWrite=%u\n",
                  pEndpoint, pEndpoint->Core.pszUri, pTask, off, paSegments, cSegments, cbWrite));
 
-    pTask->cbTransferLeft = cbWrite;
-    pTask->rc             = VINF_SUCCESS;
     /* Set to completed to make sure that the task is valid while we access it. */
     ASMAtomicWriteBool(&pTask->fCompleted, true);
 

@@ -445,6 +445,7 @@ DECLINLINE(void) pdmacFileAioMgrEpAddTaskList(PPDMASYNCCOMPLETIONENDPOINTFILE pE
         pTaskHead = pTaskHead->pNext;
 
     pEndpoint->AioMgr.pReqsPendingTail = pTaskHead;
+    pTaskHead->pNext = NULL;
 }
 
 /**
@@ -465,6 +466,7 @@ DECLINLINE(void) pdmacFileAioMgrEpAddTask(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpo
     }
 
     pEndpoint->AioMgr.pReqsPendingTail = pTask;
+    pTask->pNext = NULL;
 }
 
 /**
@@ -559,9 +561,10 @@ static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
                     pdmacFileAioMgrNormalRequestFree(pAioMgr, pahReqs[i]);
 
                     if (pTask->cbBounceBuffer)
-                        RTMemFree(pTask->pvBounceBuffer);
+                        RTMemPageFree(pTask->pvBounceBuffer, pTask->cbBounceBuffer);
 
                     pTask->fPrefetch = false;
+                    pTask->cbBounceBuffer = 0;
 
                     /* Free the lock and process pending tasks if neccessary */
                     pTasksWaiting = pdmacFileAioMgrNormalRangeLockFree(pAioMgr, pEndpoint, pTask->pRangeLock);
@@ -1390,6 +1393,7 @@ static void pdmacFileAioMgrNormalReqComplete(PPDMACEPFILEMGR pAioMgr, RTFILEAIOR
             AssertRC(rc);
 
             /* Call completion callback */
+            LogFlow(("Task=%#p completed with %Rrc\n", pTask, rcReq));
             pTask->pfnCompleted(pTask, pTask->pvUser, rcReq);
             pdmacFileTaskFree(pEndpoint, pTask);
 
@@ -1444,16 +1448,20 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
     uint64_t uMillisEnd     = RTTimeMilliTS() + PDMACEPFILEMGR_LOAD_UPDATE_PERIOD;
 
     while (   (pAioMgr->enmState == PDMACEPFILEMGRSTATE_RUNNING)
-           || (pAioMgr->enmState == PDMACEPFILEMGRSTATE_SUSPENDING))
+           || (pAioMgr->enmState == PDMACEPFILEMGRSTATE_SUSPENDING)
+           || (pAioMgr->enmState == PDMACEPFILEMGRSTATE_GROWING))
     {
-        ASMAtomicWriteBool(&pAioMgr->fWaitingEventSem, true);
-        if (!ASMAtomicReadBool(&pAioMgr->fWokenUp))
-            rc = RTSemEventWait(pAioMgr->EventSem, RT_INDEFINITE_WAIT);
-        ASMAtomicWriteBool(&pAioMgr->fWaitingEventSem, false);
-        AssertRC(rc);
+        if (!pAioMgr->cRequestsActive)
+        {
+            ASMAtomicWriteBool(&pAioMgr->fWaitingEventSem, true);
+            if (!ASMAtomicReadBool(&pAioMgr->fWokenUp))
+                rc = RTSemEventWait(pAioMgr->EventSem, RT_INDEFINITE_WAIT);
+            ASMAtomicWriteBool(&pAioMgr->fWaitingEventSem, false);
+            AssertRC(rc);
 
-        LogFlow(("Got woken up\n"));
-        ASMAtomicWriteBool(&pAioMgr->fWokenUp, false);
+            LogFlow(("Got woken up\n"));
+            ASMAtomicWriteBool(&pAioMgr->fWokenUp, false);
+        }
 
         /* Check for an external blocking event first. */
         if (pAioMgr->fBlockingEventPending)
@@ -1462,7 +1470,8 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
             CHECK_RC(pAioMgr, rc);
         }
 
-        if (RT_LIKELY(pAioMgr->enmState == PDMACEPFILEMGRSTATE_RUNNING))
+        if (RT_LIKELY(    pAioMgr->enmState == PDMACEPFILEMGRSTATE_RUNNING
+                      ||  pAioMgr->enmState == PDMACEPFILEMGRSTATE_GROWING))
         {
             /* We got woken up because an endpoint issued new requests. Queue them. */
             rc = pdmacFileAioMgrNormalCheckEndpoints(pAioMgr);
@@ -1545,10 +1554,14 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
                 rc = pdmacFileAioMgrNormalGrow(pAioMgr);
                 AssertRC(rc);
                 Assert(pAioMgr->enmState == PDMACEPFILEMGRSTATE_RUNNING);
+
+                rc = pdmacFileAioMgrNormalCheckEndpoints(pAioMgr);
+                CHECK_RC(pAioMgr, rc);
             }
         } /* if still running */
     } /* while running */
 
+    LogFlowFunc(("rc=%Rrc\n", rc));
     return rc;
 }
 
