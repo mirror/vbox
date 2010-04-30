@@ -27,11 +27,35 @@
 #include "VBoxTakeSnapshotDlg.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxUtils.h"
+# ifdef VBOX_WITH_NEW_RUNTIME_CORE
+#  include "UIMachineWindowNormal.h"
+#  include "VBoxSnapshotsWgt.h"
+# endif /* !VBOX_WITH_NEW_RUNTIME_CORE */
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 VBoxTakeSnapshotDlg::VBoxTakeSnapshotDlg(QWidget *pParent, const CMachine &machine)
-    : QIWithRetranslateUI<QDialog>(pParent)
+    : QIWithRetranslateUI<QIDialog>(pParent)
 {
+#ifdef Q_WS_MAC
+# ifdef VBOX_WITH_NEW_RUNTIME_CORE
+    /* No sheets in another mode than normal for now. Firstly it looks ugly and
+     * secondly in some cases it is broken. */
+    if (   qobject_cast<UIMachineWindowNormal*>(pParent)
+        || qobject_cast<VBoxSnapshotsWgt*>(pParent))
+        setWindowFlags (Qt::Sheet);
+# endif /* !VBOX_WITH_NEW_RUNTIME_CORE */
+# ifndef VBOX_FORCE_NEW_RUNTIME_CORE_ALWAYS
+    /* Sheets are broken if the window is in fullscreen mode. So make it a
+     * normal window in that case. */
+    VBoxConsoleWnd *cwnd = qobject_cast<VBoxConsoleWnd*> (pParent);
+    if (cwnd == NULL ||
+        (!cwnd->isTrueFullscreen() &&
+         !cwnd->isTrueSeamless()))
+        setWindowFlags (Qt::Sheet);
+# endif /* VBOX_FORCE_NEW_RUNTIME_CORE_ALWAYS */
+#endif /* Q_WS_MAC */
+
     /* Apply UI decorations */
     Ui::VBoxTakeSnapshotDlg::setupUi(this);
 
