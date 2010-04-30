@@ -36,6 +36,8 @@ public:
 
     UIFirstRunWzd(QWidget *pParent, const CMachine &machine);
 
+    static bool isDefaultHardDiskAttached(const CMachine &machine);
+
 protected:
 
     void retranslateUi();
