@@ -27,9 +27,11 @@
 #include "VBoxTakeSnapshotDlg.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxUtils.h"
-# ifdef VBOX_WITH_NEW_RUNTIME_CORE
-#  include "UIMachineWindowNormal.h"
-#  include "VBoxSnapshotsWgt.h"
+# ifdef Q_WS_MAC
+#  ifdef VBOX_WITH_NEW_RUNTIME_CORE
+#   include "UIMachineWindowNormal.h"
+#   include "VBoxSnapshotsWgt.h"
+#  endif /* !VBOX_WITH_NEW_RUNTIME_CORE */
 # endif /* !VBOX_WITH_NEW_RUNTIME_CORE */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
