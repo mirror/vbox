@@ -361,6 +361,13 @@
     </desc>
   </result>
 
+  <result name="VBOX_E_DONT_CALL_AGAIN" value="0x80BB000D">
+    <desc>
+      Returned by callback methods which does not need to be called again
+      because the client does not actually make use of them.
+    </desc>
+  </result>
+
   <!--
     Note that src/VBox/Runtime/common/err/errmsgvboxcom.xsl will ignore
     everything in <result>/<desc> after (and including) the first dot, so express
@@ -1262,6 +1269,9 @@
       <desc>
         The execution state of the given machine has changed.
         <see>IMachine::state</see>
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>ID of the machine this event relates to.</desc>
@@ -1274,6 +1284,9 @@
     <method name="onMachineDataChange">
       <desc>
         Any of the settings of the given machine has changed.
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>ID of the machine this event relates to.</desc>
@@ -1285,6 +1298,9 @@
         Notification when someone tries to change extra data for
         either the given machine or (if @c null) global extra data.
         This gives the chance to veto against changes.
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP. Change is allowed.
+        </result>
       </desc>
       <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>
@@ -1320,6 +1336,9 @@
       <desc>
         Notification when machine specific or global extra data
         has changed.
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>
@@ -1365,6 +1384,10 @@
         unregistered medium. It is supposed that the
         application will do required cleanup based on the
         @a mediumId value.
+
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="mediumId" type="uuid" mod="string" dir="in">
         <desc>ID of the medium this event relates to.</desc>
@@ -1384,6 +1407,9 @@
       <desc>
         The given machine was registered or unregistered
         within this VirtualBox installation.
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>ID of the machine this event relates to.</desc>
@@ -1400,6 +1426,9 @@
       <desc>
         The state of the session for the given machine was changed.
         <see>IMachine::sessionState</see>
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>ID of the machine this event relates to.</desc>
@@ -1413,6 +1442,9 @@
       <desc>
         A new snapshot of the machine has been taken.
         <see>ISnapshot</see>
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>ID of the machine this event relates to.</desc>
@@ -1433,6 +1465,10 @@
         </note>
 
         <see>ISnapshot</see>
+
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>ID of the machine this event relates to.</desc>
@@ -1449,6 +1485,9 @@
       <desc>
         Snapshot properties (name and/or description) have been changed.
         <see>ISnapshot</see>
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>ID of the machine this event relates to.</desc>
@@ -1461,6 +1500,9 @@
     <method name="onGuestPropertyChange">
       <desc>
         Notification when a guest property has changed.
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>
@@ -8706,7 +8748,7 @@
         <desc>
           The current process status.
         </desc>
-      </param>      
+      </param>
     </method>
 
   </interface>

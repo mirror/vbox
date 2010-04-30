@@ -16,6 +16,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include <iprt/asm.h>
 #include <iprt/buildconfig.h>
 #include <iprt/cpp/utils.h>
 #include <iprt/dir.h>
@@ -98,6 +99,81 @@ Bstr VirtualBox::sPackageType;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+// VirtualBoxCallbackRegistration
+//
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Registered IVirtualBoxCallback, used by VirtualBox::CallbackList and
+ * VirtualBox::Data::llCallbacks.
+ *
+ * In addition to keeping the interface pointer this also keeps track of the
+ * methods that asked to not be called again.  The latter is for reducing
+ * unnecessary IPC.
+ */
+class VirtualBoxCallbackRegistration
+{
+public:
+    ComPtr<IVirtualBoxCallback> ptrICb;
+    /** Bitmap of disabled callback methods, that is methods that has return
+     * VBOX_E_DONT_CALL_AGAIN. */
+    uint32_t                    bmDisabled;
+    /** Callback bit indexes (for bmDisabled). */
+    typedef enum
+    {
+        kOnMachineStateChange = 0,
+        kOnMachineDataChange,
+        kOnExtraDataCanChange,
+        kOnExtraDataChange,
+        kOnMediumRegistered,
+        kOnMachineRegistered,
+        kOnSessionStateChange,
+        kOnSnapshotTaken,
+        kOnSnapshotDeleted,
+        kOnSnapshotChange,
+        kOnGuestPropertyChange
+    } CallbackBit;
+
+    VirtualBoxCallbackRegistration(IVirtualBoxCallback *pIVirtualBoxCallback)
+        : ptrICb(pIVirtualBoxCallback), bmDisabled(0)
+    {
+        /* nothing */
+    }
+
+    ~VirtualBoxCallbackRegistration()
+    {
+       /* nothing */
+    }
+
+    /** Equal operator for std::find. */
+    bool operator==(const VirtualBoxCallbackRegistration &rThat) const
+    {
+        return this->ptrICb == rThat.ptrICb;
+    }
+
+    /**
+     * Checks if the callback is wanted, i.e. if the method hasn't yet returned
+     * VBOX_E_DONT_CALL_AGAIN.
+     * @returns @c true if it is wanted, @c false if not.
+     * @param   enmBit      The callback, be sure to get this one right!
+     */
+    inline bool isWanted(CallbackBit enmBit) const
+    {
+        return !ASMBitTest(&bmDisabled, enmBit);
+    }
+
+    /**
+     * Called in response to VBOX_E_DONT_CALL_AGAIN.
+     * @param   enmBit      The callback, be sure to get this one right!
+     */
+    inline void setDontCallAgain(CallbackBit enmBit)
+    {
+        ASMAtomicBitSet(&bmDisabled, enmBit);
+    }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+//
 // CallbackEvent class
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -116,22 +192,27 @@ class VirtualBox::CallbackEvent : public Event
 {
 public:
 
-    CallbackEvent(VirtualBox *aVirtualBox) : mVirtualBox(aVirtualBox)
+    CallbackEvent(VirtualBox *aVirtualBox, VirtualBoxCallbackRegistration::CallbackBit aWhat)
+        : mVirtualBox(aVirtualBox), mWhat(aWhat)
     {
         Assert(aVirtualBox);
     }
 
     void *handler();
 
-    virtual void handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback) = 0;
+    virtual HRESULT handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback) = 0;
 
 private:
 
-    /*
+    /**
      *  Note that this is a weak ref -- the CallbackEvent handler thread
      *  is bound to the lifetime of the VirtualBox instance, so it's safe.
      */
     VirtualBox        *mVirtualBox;
+
+protected:
+    /** The callback being called, used for handling VBOX_E_DONT_CALL_AGAIN. */
+    VirtualBoxCallbackRegistration::CallbackBit mWhat;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2429,46 +2510,42 @@ void VirtualBox::addProcessToReap(RTPROCESS pid)
 /** Event for onMachineStateChange(), onMachineDataChange(), onMachineRegistered() */
 struct MachineEvent : public VirtualBox::CallbackEvent
 {
-    enum What { DataChanged, StateChanged, Registered };
-
     MachineEvent(VirtualBox *aVB, const Guid &aId)
-        : CallbackEvent(aVB), what(DataChanged), id(aId)
+        : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnMachineDataChange), id(aId)
         {}
 
     MachineEvent(VirtualBox *aVB, const Guid &aId, MachineState_T aState)
-        : CallbackEvent(aVB), what(StateChanged), id(aId)
+        : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnMachineStateChange), id(aId)
         , state(aState)
         {}
 
     MachineEvent(VirtualBox *aVB, const Guid &aId, BOOL aRegistered)
-        : CallbackEvent(aVB), what(Registered), id(aId)
+        : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnMachineRegistered), id(aId)
         , registered(aRegistered)
         {}
 
-    void handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
+    HRESULT handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
     {
-        switch (what)
+        switch (mWhat)
         {
-            case DataChanged:
+            case VirtualBoxCallbackRegistration::kOnMachineDataChange:
                 LogFlow(("OnMachineDataChange: id={%RTuuid}\n", id.ptr()));
-                aCallback->OnMachineDataChange(id.toUtf16());
-                break;
+                return aCallback->OnMachineDataChange(id.toUtf16());
 
-            case StateChanged:
+            case VirtualBoxCallbackRegistration::kOnMachineStateChange:
                 LogFlow(("OnMachineStateChange: id={%RTuuid}, state=%d\n",
                           id.ptr(), state));
-                aCallback->OnMachineStateChange(id.toUtf16(), state);
-                break;
+                return aCallback->OnMachineStateChange(id.toUtf16(), state);
 
-            case Registered:
+            case VirtualBoxCallbackRegistration::kOnMachineRegistered:
                 LogFlow(("OnMachineRegistered: id={%RTuuid}, registered=%d\n",
                           id.ptr(), registered));
-                aCallback->OnMachineRegistered(id.toUtf16(), registered);
-                break;
+                return aCallback->OnMachineRegistered(id.toUtf16(), registered);
+
+            default:
+                AssertFailedReturn(S_OK);
         }
     }
-
-    const What what;
 
     Guid id;
     MachineState_T state;
@@ -2514,18 +2591,33 @@ BOOL VirtualBox::onExtraDataCanChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aVa
     Bstr id = aId.toUtf16();
     while ((it != list.end()) && allowChange)
     {
-        HRESULT rc = (*it++)->OnExtraDataCanChange(id, aKey, aValue,
-                                                   aError.asOutParam(),
-                                                   &allowChange);
-        if (FAILED(rc))
+        if (it->isWanted(VirtualBoxCallbackRegistration::kOnExtraDataCanChange))
         {
-            /* if a call to this method fails for some reason (for ex., because
-             * the other side is dead), we ensure allowChange stays true
-             * (MS COM RPC implementation seems to zero all output vars before
-             * issuing an IPC call or after a failure, so it's essential
-             * there) */
-            allowChange = TRUE;
+            HRESULT rc = it->ptrICb->OnExtraDataCanChange(id, aKey, aValue,
+                                                          aError.asOutParam(),
+                                                          &allowChange);
+            if (FAILED(rc))
+            {
+                if (rc == VBOX_E_DONT_CALL_AGAIN)
+                {
+                    /* Have to update the original. */
+                    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+                    CallbackList::iterator itOrg;
+                    itOrg = std::find(m->llCallbacks.begin(),
+                                      m->llCallbacks.end(),
+                                      CallbackList::value_type(it->ptrICb));
+                    if (itOrg != m->llCallbacks.end())
+                        itOrg->setDontCallAgain(VirtualBoxCallbackRegistration::kOnExtraDataCanChange);
+                }
+                /* if a call to this method fails for some reason (for ex., because
+                 * the other side is dead), we ensure allowChange stays true
+                 * (MS COM RPC implementation seems to zero all output vars before
+                 * issuing an IPC call or after a failure, so it's essential
+                 * there) */
+                allowChange = TRUE;
+            }
         }
+        ++it;
     }
 
     LogFlowThisFunc(("allowChange=%RTbool\n", allowChange));
@@ -2536,16 +2628,16 @@ BOOL VirtualBox::onExtraDataCanChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aVa
 struct ExtraDataEvent : public VirtualBox::CallbackEvent
 {
     ExtraDataEvent(VirtualBox *aVB, const Guid &aMachineId,
-                    IN_BSTR aKey, IN_BSTR aVal)
-        : CallbackEvent(aVB), machineId(aMachineId)
-        , key(aKey), val(aVal)
-        {}
+                   IN_BSTR aKey, IN_BSTR aVal)
+        : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnExtraDataChange)
+        , machineId(aMachineId), key(aKey), val(aVal)
+    {}
 
-    void handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
+    HRESULT handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
     {
         LogFlow(("OnExtraDataChange: machineId={%RTuuid}, key='%ls', val='%ls'\n",
                  machineId.ptr(), key.raw(), val.raw()));
-        aCallback->OnExtraDataChange(machineId.toUtf16(), key, val);
+        return aCallback->OnExtraDataChange(machineId.toUtf16(), key, val);
     }
 
     Guid machineId;
@@ -2572,14 +2664,15 @@ void VirtualBox::onMachineRegistered(const Guid &aId, BOOL aRegistered)
 struct SessionEvent : public VirtualBox::CallbackEvent
 {
     SessionEvent(VirtualBox *aVB, const Guid &aMachineId, SessionState_T aState)
-        : CallbackEvent(aVB), machineId(aMachineId), sessionState(aState)
-        {}
+        : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnSessionStateChange)
+        , machineId(aMachineId), sessionState(aState)
+    {}
 
-    void handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
+    HRESULT handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
     {
         LogFlow(("OnSessionStateChange: machineId={%RTuuid}, sessionState=%d\n",
                  machineId.ptr(), sessionState));
-        aCallback->OnSessionStateChange(machineId.toUtf16(), sessionState);
+        return aCallback->OnSessionStateChange(machineId.toUtf16(), sessionState);
     }
 
     Guid machineId;
@@ -2597,43 +2690,38 @@ void VirtualBox::onSessionStateChange(const Guid &aId, SessionState_T aState)
 /** Event for onSnapshotTaken(), onSnapshotDeleted() and onSnapshotChange() */
 struct SnapshotEvent : public VirtualBox::CallbackEvent
 {
-    enum What { Taken, Deleted, Changed };
-
     SnapshotEvent(VirtualBox *aVB, const Guid &aMachineId, const Guid &aSnapshotId,
-                   What aWhat)
-        : CallbackEvent(aVB)
-        , what(aWhat)
+                  VirtualBoxCallbackRegistration::CallbackBit aWhat)
+        : CallbackEvent(aVB, aWhat)
         , machineId(aMachineId), snapshotId(aSnapshotId)
         {}
 
-    void handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
+    HRESULT handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
     {
         Bstr mid = machineId.toUtf16();
         Bstr sid = snapshotId.toUtf16();
 
-        switch (what)
+        switch (mWhat)
         {
-            case Taken:
+            case VirtualBoxCallbackRegistration::kOnSnapshotTaken:
                 LogFlow(("OnSnapshotTaken: machineId={%RTuuid}, snapshotId={%RTuuid}\n",
                           machineId.ptr(), snapshotId.ptr()));
-                aCallback->OnSnapshotTaken(mid, sid);
-                break;
+                return aCallback->OnSnapshotTaken(mid, sid);
 
-            case Deleted:
+            case VirtualBoxCallbackRegistration::kOnSnapshotDeleted:
                 LogFlow(("OnSnapshotDeleted: machineId={%RTuuid}, snapshotId={%RTuuid}\n",
                           machineId.ptr(), snapshotId.ptr()));
-                aCallback->OnSnapshotDeleted(mid, sid);
-                break;
+                return aCallback->OnSnapshotDeleted(mid, sid);
 
-            case Changed:
+            case VirtualBoxCallbackRegistration::kOnSnapshotChange:
                 LogFlow(("OnSnapshotChange: machineId={%RTuuid}, snapshotId={%RTuuid}\n",
                           machineId.ptr(), snapshotId.ptr()));
-                aCallback->OnSnapshotChange(mid, sid);
-                break;
+                return aCallback->OnSnapshotChange(mid, sid);
+
+            default:
+                AssertFailedReturn(S_OK);
         }
     }
-
-    const What what;
 
     Guid machineId;
     Guid snapshotId;
@@ -2644,7 +2732,8 @@ struct SnapshotEvent : public VirtualBox::CallbackEvent
  */
 void VirtualBox::onSnapshotTaken(const Guid &aMachineId, const Guid &aSnapshotId)
 {
-    postEvent(new SnapshotEvent(this, aMachineId, aSnapshotId, SnapshotEvent::Taken));
+    postEvent(new SnapshotEvent(this, aMachineId, aSnapshotId,
+                                VirtualBoxCallbackRegistration::kOnSnapshotTaken));
 }
 
 /**
@@ -2652,7 +2741,8 @@ void VirtualBox::onSnapshotTaken(const Guid &aMachineId, const Guid &aSnapshotId
  */
 void VirtualBox::onSnapshotDeleted(const Guid &aMachineId, const Guid &aSnapshotId)
 {
-    postEvent(new SnapshotEvent(this, aMachineId, aSnapshotId, SnapshotEvent::Deleted));
+    postEvent(new SnapshotEvent(this, aMachineId, aSnapshotId,
+                                VirtualBoxCallbackRegistration::kOnSnapshotDeleted));
 }
 
 /**
@@ -2660,7 +2750,8 @@ void VirtualBox::onSnapshotDeleted(const Guid &aMachineId, const Guid &aSnapshot
  */
 void VirtualBox::onSnapshotChange(const Guid &aMachineId, const Guid &aSnapshotId)
 {
-    postEvent(new SnapshotEvent(this, aMachineId, aSnapshotId, SnapshotEvent::Changed));
+    postEvent(new SnapshotEvent(this, aMachineId, aSnapshotId,
+                                VirtualBoxCallbackRegistration::kOnSnapshotChange));
 }
 
 /** Event for onGuestPropertyChange() */
@@ -2668,18 +2759,18 @@ struct GuestPropertyEvent : public VirtualBox::CallbackEvent
 {
     GuestPropertyEvent(VirtualBox *aVBox, const Guid &aMachineId,
                        IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
-        : CallbackEvent(aVBox),
+        : CallbackEvent(aVBox, VirtualBoxCallbackRegistration::kOnGuestPropertyChange),
           machineId(aMachineId),
           name(aName),
           value(aValue),
           flags(aFlags)
     {}
 
-    void handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
+    HRESULT handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
     {
         LogFlow(("OnGuestPropertyChange: machineId={%RTuuid}, name='%ls', value='%ls', flags='%ls'\n",
                  machineId.ptr(), name.raw(), value.raw(), flags.raw()));
-        aCallback->OnGuestPropertyChange(machineId.toUtf16(), name, value, flags);
+        return aCallback->OnGuestPropertyChange(machineId.toUtf16(), name, value, flags);
     }
 
     Guid machineId;
@@ -4371,15 +4462,30 @@ void *VirtualBox::CallbackEvent::handler()
         /* Make a copy to release the lock before iterating */
         AutoReadLock alock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
         callbacks = mVirtualBox->m->llCallbacks;
-        /* We don't need mVirtualBox any more, so release it */
-        mVirtualBox = NULL;
     }
 
     for (CallbackList::const_iterator it = callbacks.begin();
          it != callbacks.end();
          ++it)
-        handleCallback(*it);
+    {
+        if (it->isWanted(mWhat))
+        {
+            HRESULT hrc = handleCallback(it->ptrICb);
+            if (hrc == VBOX_E_DONT_CALL_AGAIN)
+            {
+                /* Have to update the original. */
+                AutoReadLock alock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
+                CallbackList::iterator itOrg;
+                itOrg = std::find(mVirtualBox->m->llCallbacks.begin(),
+                                  mVirtualBox->m->llCallbacks.end(),
+                                  CallbackList::value_type(it->ptrICb));
+                if (itOrg != mVirtualBox->m->llCallbacks.end())
+                    itOrg->setDontCallAgain(mWhat);
+            }
+        }
+    }
 
+    mVirtualBox = NULL; /* Not needed any longer. Still make sense to do this? */
     return NULL;
 }
 
