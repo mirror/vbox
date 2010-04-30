@@ -343,6 +343,12 @@ static int handleExecProgram(HandlerArg *a)
                 SafeArray<BYTE> aOutputData;
                 while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
                 {
+                    /* 
+                     * because we want to get all the output data even if the process
+                     * already ended, we first need to check whether there is some data
+                     * left to output before checking the actual timeout and is-process-completed
+                     * stuff. 
+                     */
                     if (cbOutputData <= 0)
                     {
                         if (fCompleted)
@@ -381,7 +387,7 @@ static int handleExecProgram(HandlerArg *a)
                         RTStrmWrite(g_pStdOut, aOutputData.raw(), cbOutputDataPrint);
                     }
 
-                    /* process async cancelation. */
+                    /* process async cancelation */
                     if (g_fExecCanceled && !fCanceledAlready)
                     {
                         hrc = progress->Cancel();
@@ -403,31 +409,38 @@ static int handleExecProgram(HandlerArg *a)
             #endif
                 }
 
-                /* Not completed yet? -> Timeout */
-                if (fCompleted)
+                BOOL fCanceled;
+                CHECK_ERROR_RET(progress, COMGETTER(Canceled)(&fCanceled), rc);
+                if (fCanceled)
                 {
-                    LONG iRc = false;
-                    CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
-                    if (FAILED(iRc))
-                    {
-                        ComPtr<IVirtualBoxErrorInfo> execError;
-                        rc = progress->COMGETTER(ErrorInfo)(execError.asOutParam());
-                        com::ErrorInfo info (execError);
-                        RTPrintf("\n\nProcess error details:\n");
-                        GluePrintErrorInfo(info);
-                        RTPrintf("\n");
-                    }         
+                    RTPrintf("Process execution canceled!\n");
                 }
                 else
-                {
-                    RTPrintf("Process timed out!\n");
-                }
-                
-                if (verbose)
-                {
-                    ULONG uRetStatus, uRetExitCode, uRetFlags;
-                    CHECK_ERROR_BREAK(guest, GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus));
-                    RTPrintf("Exit code=%u (Status=%u, Flags=%u)\n", uRetExitCode, uRetStatus, uRetFlags);
+                {                   
+                    if (fCompleted)
+                    {
+                        LONG iRc = false;
+                        CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
+                        if (FAILED(iRc))
+                        {
+                            ComPtr<IVirtualBoxErrorInfo> execError;
+                            rc = progress->COMGETTER(ErrorInfo)(execError.asOutParam());
+                            com::ErrorInfo info (execError);
+                            RTPrintf("\n\nProcess error details:\n");
+                            GluePrintErrorInfo(info);
+                            RTPrintf("\n");
+                        }
+                        if (verbose)
+                        {
+                            ULONG uRetStatus, uRetExitCode, uRetFlags;
+                            CHECK_ERROR_BREAK(guest, GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus));
+                            RTPrintf("Exit code=%u (Status=%u, Flags=%u)\n", uRetExitCode, uRetStatus, uRetFlags);
+                        }       
+                    }
+                    else /* not completed yet? -> timeout */
+                    {
+                        RTPrintf("Process timed out!\n");
+                    }
                 }
             }
             a->session->Close();
