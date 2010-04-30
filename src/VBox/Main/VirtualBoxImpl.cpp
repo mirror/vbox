@@ -4503,7 +4503,7 @@ void *VirtualBox::CallbackEvent::handler()
                 if (itOrg != mVirtualBox->m->llCallbacks.end())
                     itOrg->setDontCallAgain(mWhat);
             }
-            else if (FAILED_DEAD_INTERFACE(rc))
+            else if (FAILED_DEAD_INTERFACE(hrc))
                 mVirtualBox->removeDeadCallback(it->ptrICb);
         }
     }
