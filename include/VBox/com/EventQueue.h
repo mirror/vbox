@@ -97,6 +97,13 @@ public:
     static int uninit();
     static EventQueue *getMainEventQueue();
 
+#ifdef VBOX_WITH_XPCOM
+    already_AddRefed<nsIEventQueue> getIEventQueue()
+    {
+        return mEventQ.get();
+    }
+#endif
+
 private:
     static EventQueue *mMainQueue;
 
@@ -144,4 +151,3 @@ private:
 } /* namespace com */
 
 #endif
-
