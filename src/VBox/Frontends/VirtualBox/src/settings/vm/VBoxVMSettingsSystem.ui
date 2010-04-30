@@ -354,7 +354,23 @@
          </property>
         </widget>
        </item>
-       <item row="7" column="0" colspan="3">
+       <item row="7" column="1" >
+        <widget class="QCheckBox" name="mCbUseAbsHID" >
+         <property name="sizePolicy" >
+          <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+           </sizepolicy>
+         </property>
+         <property name="whatsThis" >
+          <string>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</string>
+         </property>
+         <property name="text" >
+          <string>Enable &amp;absolute pointing device</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="0" colspan="3">
         <spacer name="mSpVer1">
          <property name="orientation">
           <enum>Qt::Vertical</enum>

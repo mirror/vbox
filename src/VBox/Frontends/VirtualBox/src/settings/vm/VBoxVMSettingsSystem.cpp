@@ -170,6 +170,10 @@ void VBoxVMSettingsSystem::getFrom (const CMachine &aMachine)
     bool rtcUseUTC = mMachine.GetRTCUseUTC ();
     mCbTCUseUTC->setChecked (rtcUseUTC);
 
+    /* USB tablet */
+    KPointingHidType pointingHid = mMachine.GetPointingHidType ();
+    mCbUseAbsHID->setChecked (pointingHid == KPointingHidType_USBTablet);
+
     /* CPU count */
     bool fVTxAMDVSupported = vboxGlobal().virtualBox().GetHost()
                              .GetProcessorFeature (KProcessorFeature_HWVirtEx);
@@ -240,6 +244,9 @@ void VBoxVMSettingsSystem::putBackTo()
 
     /* RTC */
     mMachine.SetRTCUseUTC (mCbTCUseUTC->isChecked());
+
+    /* USB tablet */
+    mMachine.SetPointingHidType (mCbUseAbsHID->isChecked() ? KPointingHidType_USBTablet : KPointingHidType_PS2Mouse );
 
     /* RAM size */
     mMachine.SetCPUCount (mSlCPU->value());
