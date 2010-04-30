@@ -758,7 +758,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="118"/>
         <source>Welcome to the Appliance Export Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ようこそ仮想アプライアンス エクスポート ウィザードへ！</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="120"/>
@@ -771,12 +771,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzdPage2.ui" line="39"/>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">選択した仮想マシンの構成を変更することができます。項目をダブルクリックして表示されているプロパティを変更できます。</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="218"/>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">仮想アプライアンスのエクスポート設定</translation>
     </message>
 </context>
 <context>
@@ -784,27 +784,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzdPage3.ui" line="39"/>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">OVFのエクスポートのためのターゲットを指定してください。 ローカル ファイルシステムへのエクスポートか、OVFのアップロード(Sun CloudまたはS3 ストレージ サーバー)を選択することができます。</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzdPage3.ui" line="49"/>
         <source>&amp;Local Filesystem </source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ローカル ファイルシステム(&amp;L)</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzdPage3.ui" line="56"/>
         <source>Sun &amp;Cloud</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sun Cloud(&amp;C)</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzdPage3.ui" line="63"/>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Simple Storage System (S3)(&amp;S)</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="335"/>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">仮想アプライアンスのエクスポート設定</translation>
     </message>
 </context>
 <context>
@@ -812,7 +812,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzdPage4.ui" line="48"/>
         <source>&amp;Username:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ユーザー名(&amp;U):</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzdPage4.ui" line="64"/>
@@ -822,42 +822,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzdPage4.ui" line="84"/>
         <source>&amp;Hostname:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ホスト名(&amp;H):</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzdPage4.ui" line="100"/>
         <source>&amp;Bucket:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">バケット名(&amp;B):</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzdPage4.ui" line="116"/>
         <source>&amp;File:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ファイル(&amp;F):</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzdPage4.ui" line="134"/>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">他の仮想化製品との互換性のため、古いOVF0.9形式で書き込みます。</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzdPage4.ui" line="137"/>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">OVF 0.9形式で書き込み(&amp;W)</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="394"/>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">仮想アプライアンスのエクスポート設定</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="397"/>
         <source>Appliance</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">仮想アプライアンス</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="400"/>
         <source>Select a file to export into</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">エクスポートするファイルを選択</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="401"/>
@@ -867,38 +867,38 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="414"/>
         <source>Please choose a filename to export the OVF to.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">エクスポートするファイル名を選択してください。</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="428"/>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ユーザ名、パスワードおよびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="444"/>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ユーザ名、パスワード、ホスト名およびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="541"/>
         <source>Checking files ...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ファイルを確認中...</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="562"/>
         <source>Removing files ...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ファイルを除去中...</translation>
     </message>
     <message>
         <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="598"/>
         <source>Exporting Appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">仮想アプライアンスのエクスポート...</translation>
     </message>
 </context>
 <context>
     <name>UIFirstRunWzd</name>
     <message>
-        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="64"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="80"/>
         <source>First Run Wizard</source>
         <translation>初回起動ウィザード</translation>
     </message>
@@ -1038,17 +1038,17 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIFirstRunWzdPage1</name>
     <message>
-        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="91"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="107"/>
         <source>Welcome to the First Run Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ようこそ初回起動ウィザードへ！</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="93"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="109"/>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="99"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="115"/>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1058,22 +1058,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/wizards/firstrun/UIFirstRunWzdPage2.ui" line="39"/>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;インストールするオペレーティングシステムのセットアップ プログラムを含むメディアを選択してください。このメディアは起動可能でなければなりません。そうでなければセットアップ プログラムは起動できません。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/firstrun/UIFirstRunWzdPage2.ui" line="49"/>
         <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;使用したいオペレーティングシステムを含むメディアを選択してください。 このメディアは起動可能でなければなりません。そうでなければオペレーティングシステムは起動できません。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/firstrun/UIFirstRunWzdPage2.ui" line="59"/>
         <source>Media Source</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">メディア ソース</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="159"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="175"/>
         <source>Select Installation Media</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">インストールメディアを選択</translation>
     </message>
 </context>
 <context>
@@ -1081,44 +1081,44 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/wizards/firstrun/UIFirstRunWzdPage3.ui" line="39"/>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;以下のメディアからの起動を選択しました:&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/firstrun/UIFirstRunWzdPage3.ui" line="49"/>
         <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;オペレーティングシステムの以下のメディアからの起動を選択しました::&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/firstrun/UIFirstRunWzdPage3.ui" line="81"/>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;上記の設定が正しければ、&lt;b&gt;[完了]&lt;/b&gt;ボタンをクリックしてください。 クリックすると、選択されたメディアが一時的に仮想マシンにマウントされ、仮想マシンが起動します。&lt;/p&gt;&lt;p&gt;仮想マシンを閉じると、指定されたメディアは自動的にマウント解除され、起動デバイスは最初のハードディスクに設定されます。&lt;/p&gt;&lt;p&gt;セットアップ プログラムの種類によっては、仮想マシンを再起動したときにインストール作業が再実行されることを防ぐため、手動でデバイスのマウント解除(取り出し)を行う必要があります。これを行うには&lt;b&gt;[デバイス]&lt;/b&gt;メニューから対応する&lt;b&gt;[マウント解除...]&lt;/b&gt;の動作を選択します。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/firstrun/UIFirstRunWzdPage3.ui" line="91"/>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;上記が正しいなら、&lt;b&gt;[完了]&lt;/b&gt;ボタンをクリックしてください。 選択されたメディアは仮想マシンに取り付けられ、仮想マシンは実行を開始します。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="233"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="249"/>
         <source>Summary</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">概要</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="238"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="254"/>
         <source>CD/DVD-ROM Device</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">CD/DVD-ROMデバイス</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="246"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="262"/>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">タイプ</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="247"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="263"/>
         <source>Source</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ソース</translation>
     </message>
 </context>
 <context>
@@ -1185,7 +1185,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/wizards/importappliance/UIImportApplianceWzd.cpp" line="163"/>
         <source>Select an appliance to import</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">インポートする仮想アプライアンスを選択</translation>
     </message>
     <message>
         <location filename="../src/wizards/importappliance/UIImportApplianceWzd.cpp" line="164"/>
@@ -1195,7 +1195,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/wizards/importappliance/UIImportApplianceWzd.cpp" line="167"/>
         <source>Welcome to the Appliance Import Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ようこそ仮想アプライアンス インポート ウィザードへ！</translation>
     </message>
     <message>
         <location filename="../src/wizards/importappliance/UIImportApplianceWzd.cpp" line="169"/>
@@ -1208,12 +1208,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/wizards/importappliance/UIImportApplianceWzdPage2.ui" line="39"/>
         <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">VirtualBoxへのインポートのために仮想アプライアンス情報で記載された仮想マシン構成です。項目をダブルクリックすると、表示されているプロパティの大部分を変更できます。また、以下のチェックボックスを使用して他のプロパティを無効化することができます。</translation>
     </message>
     <message>
         <location filename="../src/wizards/importappliance/UIImportApplianceWzd.cpp" line="226"/>
         <source>Appliance Import Settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">仮想アプライアンスのインポート設定</translation>
     </message>
 </context>
 <context>
@@ -1264,12 +1264,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/runtime/UIMachineWindow.cpp" line="116"/>
         <source>VirtualBox OSE</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">VirtualBox OSE</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIMachineWindow.cpp" line="121"/>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">試験的ビルド %1r%2 - %3</translation>
     </message>
 </context>
 <context>
@@ -1277,17 +1277,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/widgets/UIDownloaderAdditions.h" line="46"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">キャンセル</translation>
     </message>
     <message>
         <location filename="../src/widgets/UIDownloaderAdditions.h" line="47"/>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">VirtualBox Guest Additions CDイメージのダウンロードをキャンセル</translation>
     </message>
     <message>
         <location filename="../src/widgets/UIDownloaderAdditions.h" line="49"/>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">VirtualBox Guest Additions CDイメージを&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;からダウンロード...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -1295,7 +1295,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/widgets/UIDownloaderUserManual.h" line="53"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">キャンセル</translation>
     </message>
     <message>
         <location filename="../src/widgets/UIDownloaderUserManual.h" line="54"/>
@@ -1541,7 +1541,7 @@ time depending on the image size and the write performance of your harddisk.&lt;
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="110"/>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ようこそ新規仮想ディスク作成ウィザードへ！</translation>
     </message>
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="113"/>
@@ -1554,27 +1554,27 @@ time depending on the image size and the write performance of your harddisk.&lt;
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzdPage2.ui" line="39"/>
         <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;作成する仮想ハードディスクのタイプを選択してください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;可変サイズのイメージ&lt;/b&gt;は、最初に物理的なハードディスク上のごく小さな容量しか使用しません。ゲストOSが要求するディスク容量に応じてサイズが動的に増加(指定されたサイズまで)します。&lt;/p&gt;&lt;p&gt;&lt;b&gt;固定サイズのイメージ&lt;/b&gt;の容量は増加しません。仮想ハードディスクのサイズとほぼ同じサイズのファイルに保存されます。固定サイズのイメージの作成は、イメージのサイズとハードディスクの書き込み性能に依存して長い時間がかかるかもしれません。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzdPage2.ui" line="49"/>
         <source>Storage Type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ストレージ タイプ</translation>
     </message>
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzdPage2.ui" line="55"/>
         <source>&amp;Dynamically expanding storage</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">可変サイズのストレージ(&amp;D)</translation>
     </message>
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzdPage2.ui" line="62"/>
         <source>&amp;Fixed-size storage</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">固定サイズのストレージ(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="146"/>
         <source>Hard Disk Storage Type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ハードディスク ストレージ タイプ</translation>
     </message>
 </context>
 <context>
@@ -1582,37 +1582,37 @@ time depending on the image size and the write performance of your harddisk.&lt;
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzdPage3.ui" line="39"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリックし、ファイルの場所を選択してハードディスクデータを保存するか、入力フィールドにファイル名を入力してください 。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzdPage3.ui" line="49"/>
         <source>&amp;Location</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">場所(&amp;L)</translation>
     </message>
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzdPage3.ui" line="68"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;仮想ハードディスクのサイズをメガバイト単位で選択してください。このサイズは仮想ハードディスクの最大サイズとしてゲストOSに報告されます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzdPage3.ui" line="78"/>
         <source>&amp;Size</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">サイズ(&amp;S)</translation>
     </message>
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="248"/>
         <source>Virtual Disk Location and Size</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">仮想ディスクの場所とサイズ</translation>
     </message>
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="318"/>
         <source>Select a file for the new hard disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">新規ハードディスクのファイルを選択してください</translation>
     </message>
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="319"/>
         <source>Hard disk images (*.vdi)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ハードディスクイメージ(*.vdi)</translation>
     </message>
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="393"/>
@@ -1625,12 +1625,12 @@ time depending on the image size and the write performance of your harddisk.&lt;
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzdPage4.ui" line="39"/>
         <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">新規仮想ハードディスクは以下の設定で作成されます:</translation>
     </message>
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="421"/>
         <source>Summary</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">概要</translation>
     </message>
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="429"/>
@@ -1641,19 +1641,19 @@ time depending on the image size and the write performance of your harddisk.&lt;
         <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="437"/>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">タイプ</translation>
     </message>
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="438"/>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">場所</translation>
     </message>
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="439"/>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">サイズ</translation>
     </message>
     <message>
         <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="446"/>
@@ -1888,7 +1888,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="176"/>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ようこそ新規仮想マシン作成ウィザードへ！</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="178"/>
@@ -1901,22 +1901,22 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzdPage2.ui" line="45"/>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;新規仮想マシンの名前を入力し、仮想マシンにインストールしたいゲストOSのタイプを選択してください。&lt;/p&gt;&lt;p&gt;通常、仮想マシンの名前はソフトウェアとハードウェア構成を示します。VirtualBoxは作成された仮想マシンを特定するためにこの名前を使用します。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzdPage2.ui" line="55"/>
         <source>N&amp;ame</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">名前(&amp;N)</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzdPage2.ui" line="67"/>
         <source>OS &amp;Type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">OSタイプ(&amp;T)</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="213"/>
         <source>VM Name and OS Type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">仮想マシン名とOSタイプ</translation>
     </message>
 </context>
 <context>
@@ -1924,34 +1924,34 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzdPage3.ui" line="45"/>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;仮想マシンに割り当てるメインメモリ(RAM)のサイズをメガバイト単位で選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzdPage3.ui" line="62"/>
         <source>Base &amp;Memory Size</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">メインメモリのサイズ(&amp;M)</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzdPage3.ui" line="94"/>
         <source>MB</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MB</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="274"/>
         <source>Memory</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">メモリ</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="279"/>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">推奨されるメインメモリのサイズは&lt;b&gt;%1&lt;/b&gt;MBです。</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="282"/>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="283"/>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MB</translation>
     </message>
 </context>
 <context>
@@ -1959,32 +1959,32 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzdPage4.ui" line="45"/>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;仮想マシンで起動ディスクとして使用するハードディスクイメージを選択します。&lt;b&gt;[新規]&lt;/b&gt;ボタンをクリックして新規ハードディスクを作成するか、ドロップダウンリストまたは&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリック(仮想メディアマネージャを起動)して既存のハードディスクイメージを選択します。&lt;/p&gt;&lt;p&gt;より高度なハードディスク設定が必要であれば、このステップをスキップし、後で仮想マシン設定ダイアログを使用してハードディスクを割り当てることもできます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzdPage4.ui" line="62"/>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">起動ディスク (プライマリ マスター) (&amp;D)</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzdPage4.ui" line="71"/>
         <source>&amp;Create new hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">新規ハードディスクの作成(&amp;C)</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzdPage4.ui" line="81"/>
         <source>&amp;Use existing hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">既存のハードディスクを使用(&amp;U)</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="367"/>
         <source>Virtual Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">仮想ハードディスク</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="372"/>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">推奨される起動ディスクのサイズは&lt;b&gt;%1&lt;/b&gt;MBです。</translation>
     </message>
 </context>
 <context>
@@ -1992,42 +1992,42 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzdPage5.ui" line="45"/>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;新規仮想マシンは以下の設定で作成されます:&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="565"/>
         <source>Summary</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">概要</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="581"/>
         <source>Name</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">名前</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="582"/>
         <source>OS Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">OSタイプ</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="583"/>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">メインメモリ</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="583"/>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MB</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="593"/>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">起動 ハードディスク</translation>
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="600"/>
@@ -2269,7 +2269,7 @@ Version %1</source>
         <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="218"/>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MB</translation>
     </message>
     <message>
         <source>MB</source>
@@ -2284,7 +2284,7 @@ Version %1</source>
         <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="397"/>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MB</translation>
     </message>
     <message>
         <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="789"/>
@@ -3185,7 +3185,7 @@ Version %1</source>
     <message>
         <location filename="../src/runtime/UIMachineLogic.cpp" line="1306"/>
         <source>No supported devices connected to the host PC</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ホストPCに接続されたデバイスはサポートされていません</translation>
     </message>
 </context>
 <context>
@@ -4500,79 +4500,79 @@ Version %1</source>
         <translation type="obsolete">VMDKイメージ</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3067"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3068"/>
         <source>Null</source>
         <comment>VRDPAuthType</comment>
         <translation>Null</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3068"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3069"/>
         <source>External</source>
         <comment>VRDPAuthType</comment>
         <translation>外部</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3069"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3070"/>
         <source>Guest</source>
         <comment>VRDPAuthType</comment>
         <translation>ゲスト</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3077"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3078"/>
         <source>Ignore</source>
         <comment>USBFilterActionType</comment>
         <translation>無視</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3079"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3080"/>
         <source>Hold</source>
         <comment>USBFilterActionType</comment>
         <translation>保持</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3082"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3083"/>
         <source>Null Audio Driver</source>
         <comment>AudioDriverType</comment>
         <translation>Null Audio Driver</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3084"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3085"/>
         <source>Windows Multimedia</source>
         <comment>AudioDriverType</comment>
         <translation>Windows マルチメディア</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3088"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3089"/>
         <source>OSS Audio Driver</source>
         <comment>AudioDriverType</comment>
         <translation>OSS オーディオ ドライバ</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3090"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3091"/>
         <source>ALSA Audio Driver</source>
         <comment>AudioDriverType</comment>
         <translation>ALSA オーディオ ドライバ</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3092"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3093"/>
         <source>Windows DirectSound</source>
         <comment>AudioDriverType</comment>
         <translation>Windows DirectSound</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3094"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3095"/>
         <source>CoreAudio</source>
         <comment>AudioDriverType</comment>
         <translation>CoreAudio</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3119"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3120"/>
         <source>Not attached</source>
         <comment>NetworkAttachmentType</comment>
         <translation>未割り当て</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3121"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3122"/>
         <source>NAT</source>
         <comment>NetworkAttachmentType</comment>
         <translation>NAT</translation>
@@ -4583,49 +4583,49 @@ Version %1</source>
         <translation type="obsolete">ホスト インターフェース</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3125"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3126"/>
         <source>Internal Network</source>
         <comment>NetworkAttachmentType</comment>
         <translation>内部ネットワーク</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3157"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3158"/>
         <source>LsiLogic SAS</source>
         <comment>StorageControllerType</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3160"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3161"/>
         <source>Not supported</source>
         <comment>USBDeviceState</comment>
         <translation>未サポート</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3162"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3163"/>
         <source>Unavailable</source>
         <comment>USBDeviceState</comment>
         <translation>利用不可</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3164"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3165"/>
         <source>Busy</source>
         <comment>USBDeviceState</comment>
         <translation>ビジー</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3166"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3167"/>
         <source>Available</source>
         <comment>USBDeviceState</comment>
         <translation>利用可能</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3168"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3169"/>
         <source>Held</source>
         <comment>USBDeviceState</comment>
         <translation>保持</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3170"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3171"/>
         <source>Captured</source>
         <comment>USBDeviceState</comment>
         <translation>キャプチャ</translation>
@@ -4641,25 +4641,25 @@ Version %1</source>
         <translation type="obsolete">&lt;i&gt;アクセス不可&lt;/i&gt;</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3134"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3135"/>
         <source>Disabled</source>
         <comment>ClipboardType</comment>
         <translation>無効</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3136"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3137"/>
         <source>Host To Guest</source>
         <comment>ClipboardType</comment>
         <translation>ホストOSからゲストOSへ</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3138"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3139"/>
         <source>Guest To Host</source>
         <comment>ClipboardType</comment>
         <translation>ゲストOSからホストOSへ</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3140"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3141"/>
         <source>Bidirectional</source>
         <comment>ClipboardType</comment>
         <translation>双方向</translation>
@@ -4725,25 +4725,25 @@ Version %1</source>
         <translation type="obsolete">スタック</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3071"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3072"/>
         <source>Disconnected</source>
         <comment>PortMode</comment>
         <translation>切断</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3072"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3073"/>
         <source>Host Pipe</source>
         <comment>PortMode</comment>
         <translation>ホストにパイプ</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3073"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3074"/>
         <source>Host Device</source>
         <comment>PortMode</comment>
         <translation>ホスト デバイス</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3172"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3173"/>
         <source>User-defined</source>
         <comment>serial port</comment>
         <translation>ユーザー定義</translation>
@@ -4888,43 +4888,43 @@ Version %1</source>
         <translation type="obsolete">VHDイメージ</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3086"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3087"/>
         <source>Solaris Audio</source>
         <comment>AudioDriverType</comment>
         <translation>Solaris オーディオ</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3096"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3097"/>
         <source>PulseAudio</source>
         <comment>AudioDriverType</comment>
         <translation>PulseAudio</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3099"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3100"/>
         <source>ICH AC97</source>
         <comment>AudioControllerType</comment>
         <translation>ICH AC97</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3101"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3102"/>
         <source>SoundBlaster 16</source>
         <comment>AudioControllerType</comment>
         <translation>SoundBlaster 16</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3104"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3105"/>
         <source>PCnet-PCI II (Am79C970A)</source>
         <comment>NetworkAdapterType</comment>
         <translation>PCnet-PCI II (Am79C970A)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3106"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3107"/>
         <source>PCnet-FAST III (Am79C973)</source>
         <comment>NetworkAdapterType</comment>
         <translation>PCnet-FAST III (Am79C973)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3108"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3109"/>
         <source>Intel PRO/1000 MT Desktop (82540EM)</source>
         <comment>NetworkAdapterType</comment>
         <translation>Intel PRO/1000 MT Desktop (82540EM)</translation>
@@ -4940,7 +4940,7 @@ Version %1</source>
         <translation type="obsolete">PIIX4</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3110"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3111"/>
         <source>Intel PRO/1000 T Server (82543GC)</source>
         <comment>NetworkAdapterType</comment>
         <translation>Intel PRO/1000 T Server (82543GC)</translation>
@@ -5084,7 +5084,7 @@ Version %1</source>
         <translation>セットアップ</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3065"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3066"/>
         <source>Differencing</source>
         <comment>DiskType</comment>
         <translation>差分</translation>
@@ -5143,37 +5143,37 @@ Version %1</source>
         <translation type="obsolete">ホストオンリー ネットワーク</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3143"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3144"/>
         <source>PIIX3</source>
         <comment>StorageControllerType</comment>
         <translation>PIIX3</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3145"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3146"/>
         <source>PIIX4</source>
         <comment>StorageControllerType</comment>
         <translation>PIIX4</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3147"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3148"/>
         <source>ICH6</source>
         <comment>StorageControllerType</comment>
         <translation>ICH6</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3149"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3150"/>
         <source>AHCI</source>
         <comment>StorageControllerType</comment>
         <translation>AHCI</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3151"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3152"/>
         <source>Lsilogic</source>
         <comment>StorageControllerType</comment>
         <translation>Lsilogic</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3153"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3154"/>
         <source>BusLogic</source>
         <comment>StorageControllerType</comment>
         <translation>BusLogic</translation>
@@ -5191,19 +5191,19 @@ Version %1</source>
         <translation>ホストオンリー アダプタ, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3112"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3113"/>
         <source>Intel PRO/1000 MT Server (82545EM)</source>
         <comment>NetworkAdapterType</comment>
         <translation>Intel PRO/1000 MT Server (82545EM)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3123"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3124"/>
         <source>Bridged Adapter</source>
         <comment>NetworkAttachmentType</comment>
         <translation>ブリッジ アダプタ</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3127"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3128"/>
         <source>Host-only Adapter</source>
         <comment>NetworkAttachmentType</comment>
         <translation>ホストオンリー アダプタ</translation>
@@ -5261,7 +5261,7 @@ Version %1</source>
         <translation>ディスプレイ</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3074"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3075"/>
         <source>Raw File</source>
         <comment>PortMode</comment>
         <translation>Rawファイル</translation>
@@ -5419,67 +5419,73 @@ Version %1</source>
         <translation>フロッピー デバイス %1</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3115"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3065"/>
+        <source>Shareable</source>
+        <comment>DiskType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3116"/>
         <source>Paravirtualized Network (virtio-net)</source>
         <comment>NetworkAdapterType</comment>
         <translation>準仮想化ネットワーク (virtio-net)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3130"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3131"/>
         <source>VDE Adapter</source>
         <comment>NetworkAttachmentType</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3155"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3156"/>
         <source>I82078</source>
         <comment>StorageControllerType</comment>
         <translation>I82078</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3852"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3853"/>
         <source>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</source>
         <comment>regexp for matching ####[.##] B|KB|MB|GB|TB|PB, %1=decimal point</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3880"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3940"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3881"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3941"/>
         <source>B</source>
         <comment>size suffix Bytes</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3882"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3941"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3883"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3942"/>
         <source>KB</source>
         <comment>size suffix KBytes=1024 Bytes</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3884"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3942"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3885"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3943"/>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MB</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3886"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3943"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3887"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3944"/>
         <source>GB</source>
         <comment>size suffix GBytes=1024 MBytes</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3888"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3944"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3889"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3945"/>
         <source>TB</source>
         <comment>size suffix TBytes=1024 GBytes</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3890"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3945"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3891"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3946"/>
         <source>PB</source>
         <comment>size suffix PBytes=1024 TBytes</comment>
         <translation type="unfinished"></translation>
@@ -5618,18 +5624,18 @@ Version %1</source>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="531"/>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">有効</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="532"/>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">無効</translation>
     </message>
     <message>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="540"/>
         <source>Nested Paging</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">ネステッドページング</translation>
     </message>
 </context>
 <context>
@@ -7868,7 +7874,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
 <context>
     <name>VBoxProgressDialog</name>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="115"/>
+        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="116"/>
         <source>&amp;Cancel</source>
         <translation>キャンセル(&amp;C)</translation>
     </message>
@@ -7929,28 +7935,28 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation type="obsolete">残り時間 %1秒</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="243"/>
+        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="244"/>
         <source>A few seconds remaining</source>
         <translation>残り時間 数秒</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="112"/>
+        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="113"/>
         <source>Canceling...</source>
         <translation>キャンセル...</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="116"/>
+        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="117"/>
         <source>Cancel the current operation</source>
         <translation>現在の操作をキャンセル</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="213"/>
+        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="214"/>
         <source>%1, %2 remaining</source>
         <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
         <translation>残り時間:%1, %2</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="214"/>
+        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
         <source>%1 remaining</source>
         <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
         <translation>残り時間:%1</translation>
@@ -8687,7 +8693,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation type="obsolete">スナップショット作成</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="730"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="734"/>
         <source>Take &amp;Snapshot</source>
         <translation>スナップショット作成(&amp;S)</translation>
     </message>
@@ -8704,7 +8710,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation type="obsolete">詳細を表示</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="729"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="733"/>
         <source>S&amp;how Details</source>
         <translation>詳細を表示(&amp;H)</translation>
     </message>
@@ -8775,7 +8781,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation>%2からの状態 %1</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="619"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="622"/>
         <source>Snapshot %1</source>
         <translation>スナップショット %1</translation>
     </message>
@@ -8788,7 +8794,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation type="obsolete">Ctrl+Shift+S</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="735"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="739"/>
         <source>Take a snapshot of the current virtual machine state</source>
         <translation>現在の仮想マシンの状態のスナップショットを作成</translation>
     </message>
@@ -8817,7 +8823,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation type="obsolete">最新のスナップショットを破棄し、スナップショットを作成する前の状態に戻す</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="734"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="738"/>
         <source>Show the details of the selected snapshot</source>
         <translation>選択したスナップショットの詳細を表示</translation>
     </message>
@@ -8855,22 +8861,22 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         </translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="727"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="731"/>
         <source>&amp;Restore Snapshot</source>
         <translation>スナップショットに復元(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="728"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="732"/>
         <source>&amp;Delete Snapshot</source>
         <translation>スナップショットを削除(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="732"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="736"/>
         <source>Restore the selected snapshot of the virtual machine</source>
         <translation>選択した仮想マシンのスナップショットに復元</translation>
     </message>
     <message>
-        <location filename="../src/VBoxSnapshotsWgt.cpp" line="733"/>
+        <location filename="../src/VBoxSnapshotsWgt.cpp" line="737"/>
         <source>Delete the selected snapshot of the virtual machine</source>
         <translation>選択した仮想マシンのスナップショットを削除</translation>
     </message>
@@ -8878,12 +8884,12 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
 <context>
     <name>VBoxSwitchMenu</name>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="5525"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="5526"/>
         <source>Disable</source>
         <translation>無効</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="5525"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="5526"/>
         <source>Enable</source>
         <translation>有効</translation>
     </message>
@@ -8926,7 +8932,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation type="obsolete">キャンセル</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/VBoxTakeSnapshotDlg.cpp" line="61"/>
+        <location filename="../src/VBoxTakeSnapshotDlg.cpp" line="87"/>
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
         <translation>
             <numerusform>警告：%n 個の変更不可の仮想ディスクを割り当てた仮想マシンのスナップショットを作成しています。データ喪失を避けるため、このスナップショットから起動する限り、仮想ディスクはリセットされません。</numerusform>
@@ -9134,13 +9140,13 @@ value.&lt;/qt&gt;</source>
 <context>
     <name>VBoxUSBMenu</name>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="5455"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="5456"/>
         <source>&lt;no devices available&gt;</source>
         <comment>USB devices</comment>
         <translation>&lt;利用できるデバイスがありません&gt;</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="5457"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="5458"/>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
         <translation>ホストPCに接続されたデバイスはサポートされていません</translation>
@@ -10752,71 +10758,76 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation type="obsolete">USBActionGroup</translation>
     </message>
     <message>
-        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="433"/>
+        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="443"/>
         <source>General</source>
         <translation>一般</translation>
     </message>
     <message>
-        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="442"/>
+        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="452"/>
         <source>Storage</source>
         <translation>ストレージ</translation>
     </message>
     <message>
-        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="445"/>
+        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="455"/>
         <source>Hard Disks</source>
         <translation>ハードディスク</translation>
     </message>
     <message>
-        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="448"/>
+        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="458"/>
         <source>CD/DVD-ROM</source>
         <translation>CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="451"/>
+        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="461"/>
         <source>Floppy</source>
         <translation>フロッピー</translation>
     </message>
     <message>
-        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="454"/>
+        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="464"/>
         <source>Audio</source>
         <translation>オーディオ</translation>
     </message>
     <message>
-        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="457"/>
+        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="467"/>
         <source>Network</source>
         <translation>ネットワーク</translation>
     </message>
     <message>
-        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="462"/>
+        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="472"/>
         <source>Ports</source>
         <translation>ポート</translation>
     </message>
     <message>
-        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="465"/>
+        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="475"/>
         <source>Serial Ports</source>
         <translation>シリアルポート</translation>
     </message>
     <message>
-        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="470"/>
+        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="480"/>
         <source>Parallel Ports</source>
         <translation>パラレルポート</translation>
     </message>
     <message>
-        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="475"/>
+        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="485"/>
         <source>USB</source>
         <translation>USB</translation>
     </message>
     <message>
-        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="478"/>
+        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="488"/>
         <source>Shared Folders</source>
         <translation>共有フォルダ</translation>
+    </message>
+    <message>
+        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="579"/>
+        <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Remote Display</source>
         <translation type="obsolete">リモートディスプレイ</translation>
     </message>
     <message>
-        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="496"/>
+        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="506"/>
         <source>%1 - %2</source>
         <translation>%1 - %2</translation>
     </message>
@@ -10825,27 +10836,27 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt;ページの%2</translation>
     </message>
     <message>
-        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="436"/>
+        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="446"/>
         <source>System</source>
         <translation>システム</translation>
     </message>
     <message>
-        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="439"/>
+        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="449"/>
         <source>Display</source>
         <translation>ディスプレイ</translation>
     </message>
     <message>
-        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="518"/>
+        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="528"/>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
         <translation>64ビットのゲストOSタイプが選択されました。ゲストOSが仮想化支援機能(VT-x/AMD-V)を必要とするとき、この機能は自動的に有効化されます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="530"/>
+        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="540"/>
         <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
         <translation>64ビットのゲストOSタイプが選択されました。VirtualBoxは現在32ビットのホストOS上で実行される64ビットのゲストOSで2つ以上の仮想CPUをサポートしていません。</translation>
     </message>
     <message>
-        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="550"/>
+        <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="560"/>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
         <translation>2D ビデオ アクセラレーションが有効化されました。2D ビデオ アクセラレーションはWindowsゲストでのみサポートされるため、本機能は無効化されます。</translation>
     </message>
@@ -11247,155 +11258,152 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;バス:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;タイプ:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="949"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="935"/>
         <source>&lt;nobr&gt;Expand/Collapse&amp;nbsp;Item&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;項目を展開する/折り畳む&amp;nbsp;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="952"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="938"/>
         <source>&lt;nobr&gt;Add&amp;nbsp;Hard&amp;nbsp;Disk&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;ハードディスク&amp;nbsp;の追加&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="955"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="941"/>
         <source>&lt;nobr&gt;Add&amp;nbsp;CD/DVD&amp;nbsp;Device&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;CD/DVD&amp;nbsp;デバイス&amp;nbsp;の追加&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="958"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="944"/>
         <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Device&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;フロッピー&amp;nbsp;デバイス&amp;nbsp;の追加&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1831"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1817"/>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
         <translation> &lt;i&gt;%1&lt;/i&gt;のためのハードディスクが選択されていません。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1837"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1823"/>
         <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
         <translation>&lt;i&gt;%1&lt;/i&gt;が使用するメディアはすでに&lt;i&gt;%2&lt;/i&gt;に割り当てられています。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1857"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1843"/>
         <source>Add Controller</source>
         <translation>コントローラを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1858"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1844"/>
         <source>Add IDE Controller</source>
         <translation>IDE コントローラを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1859"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1845"/>
         <source>Add SATA Controller</source>
         <translation>SATA コントローラを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1860"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1846"/>
         <source>Add SCSI Controller</source>
         <translation>SCSI コントローラを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1861"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1847"/>
         <source>Add SAS Controller</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1862"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1848"/>
         <source>Add Floppy Controller</source>
         <translation>フロッピー コントローラを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1863"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1849"/>
         <source>Remove Controller</source>
         <translation>コントローラを除去</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1864"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1850"/>
         <source>Add Attachment</source>
         <translation>割り当ての追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1865"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1851"/>
         <source>Add Hard Disk</source>
         <translation>ハードディスクを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1866"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1852"/>
         <source>Add CD/DVD Device</source>
         <translation>CD/DVD デバイスを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1867"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1853"/>
         <source>Add Floppy Device</source>
         <translation>フロッピー デバイスを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1868"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1854"/>
         <source>Remove Attachment</source>
         <translation>割り当てを除去</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1870"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1856"/>
         <source>Adds a new controller to the end of the Storage Tree.</source>
         <translation>新しいコントローラをストレージ ツリーの最後に追加します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1871"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1857"/>
         <source>Removes the controller highlighted in the Storage Tree.</source>
         <translation>ハイライト表示されたストレージ ツリーのコントローラを除去します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1872"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1858"/>
         <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
         <translation>現在選択されているコントローラを親として新たな割り当てをストレージ ツリーに追加します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1874"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1860"/>
         <source>Removes the attachment highlighted in the Storage Tree.</source>
         <translation>ハイライト表示されたストレージ ツリーの割り当てを除去します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1970"/>
-        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="80"/>
-        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="143"/>
-        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="220"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1956"/>
         <source>IDE Controller</source>
         <translation>IDE コントローラ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1975"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1961"/>
         <source>SATA Controller</source>
         <translation>SATA コントローラ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1980"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1966"/>
         <source>SCSI Controller</source>
         <translation>SCSI コントローラ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1985"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1971"/>
         <source>Floppy Controller</source>
         <translation>フロッピー コントローラ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1990"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1976"/>
         <source>SAS Controller</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="2138"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="2124"/>
         <source>Hard &amp;Disk:</source>
         <translation>ハードディスク(&amp;D):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="2141"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="2127"/>
         <source>&amp;CD/DVD Device:</source>
         <translation>CD/DVD デバイス(&amp;C):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="2144"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="2130"/>
         <source>&amp;Floppy Device:</source>
         <translation>フロッピー デバイス(&amp;F):</translation>
     </message>
@@ -11528,11 +11536,14 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="669"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="73"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="296"/>
         <source>Storage Controller</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="689"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="685"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="72"/>
         <source>Storage Controller 1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -12198,43 +12209,43 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
 <context>
     <name>VBoxVMSettingsSystem</name>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="270"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="283"/>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
         <translation>実メモリ(&lt;b&gt;%2&lt;/b)の&lt;b&gt;%1％&lt;/b&gt;を超えるメモリが仮想マシンに割り当てられました。 ホストOSが十分なメモリを使用できません。割り当てメモリを減らしてください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="280"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="293"/>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation>実メモリ(&lt;b&gt;%2&lt;/b)の&lt;b&gt;%1％&lt;/b&gt;を超えるメモリが仮想マシンに割り当てられました。 ホストOSに十分なメモリが残されていません。自己の責任で続行してください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="293"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="306"/>
         <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
         <translation>性能上の理由から、仮想マシンに割り当てるCPU数はホストマシンの物理CPU数(&lt;b&gt;%1&lt;/b&gt;)の2倍を超えてはなりません。仮想CPUの数を減らしてください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="302"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="315"/>
         <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
         <translation>ホストマシンの物理CPU数 (&lt;b&gt;%1&lt;/b&gt;)より多いCPUが仮想マシンに割り当てられました。これは仮想マシンの性能を低下させます。仮想CPUの数を減らしてください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="314"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="327"/>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>2個以上のCPUが仮想マシンに割り当てられました。IO APICが無効な場合、これは動作しません。[OK]ボタンを押すと自動的にIO APICが有効化されます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="325"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="338"/>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>2個以上のCPUが仮想マシンに割り当てられました。仮想化支援機能(VT-x/AMD-V)が無効な場合、これは動作しません。[OK]ボタンを押すと自動的に仮想化支援機能が有効化されます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="379"/>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="380"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="392"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="393"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="383"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="396"/>
         <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
         <comment>%1 is 1 for now</comment>
         <translation>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</translation>
@@ -12286,8 +12297,18 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation>選択した起動デバイスを下に移動します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="404"/>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="477"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="366"/>
+        <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="369"/>
+        <source>Enable &amp;absolute pointing device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="420"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="493"/>
         <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -12303,7 +12324,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="302"/>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="484"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="500"/>
         <source>Extended Features:</source>
         <translation>拡張機能:</translation>
     </message>
@@ -12336,12 +12357,12 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="374"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="390"/>
         <source>&amp;Processor</source>
         <translation>プロセッサ(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="386"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="402"/>
         <source>&amp;Processor(s):</source>
         <translation>プロセッサ数(&amp;P):</translation>
     </message>
@@ -12350,47 +12371,47 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation type="obsolete">仮想マシンに割り当てるCPUの数を指定します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="500"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="516"/>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
         <translation>仮想マシンでホストCPUのPAE(物理アドレス拡張機能)を有効にします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="503"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="519"/>
         <source>Enable PA&amp;E/NX</source>
         <translation>PAE/NXを有効化(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="524"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="540"/>
         <source>Acce&amp;leration</source>
         <translation>アクセラレーション(&amp;L)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="530"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="546"/>
         <source>Hardware Virtualization:</source>
         <translation>仮想化支援機能:</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="543"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="559"/>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
         <translation>仮想マシンでホストCPUの仮想化支援機能(Intel VT-xまたはAMD-V)を有効にします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="546"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="562"/>
         <source>Enable &amp;VT-x/AMD-V</source>
         <translation>VT-x/AMD-Vを有効化(&amp;V)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="562"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="578"/>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
         <translation>仮想マシンでホストCPUのネステッドページング(Intel VT-xまたはAMD-V)を有効にします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="565"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="581"/>
         <source>Enable Nested Pa&amp;ging</source>
         <translation>ネステッドページングを有効化(&amp;G)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="384"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="397"/>
         <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
         <comment>%1 is host cpu count * 2 for now</comment>
         <translation>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</translation>
@@ -12409,67 +12430,67 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
 <context>
     <name>VBoxVMSettingsUSB</name>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="242"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="248"/>
         <source>&amp;Add Empty Filter</source>
         <translation>空のフィルタを追加(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="243"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="249"/>
         <source>A&amp;dd Filter From Device</source>
         <translation>デバイスからフィルタを追加する(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="244"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="250"/>
         <source>&amp;Edit Filter</source>
         <translation>フィルタを編集する(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="245"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="251"/>
         <source>&amp;Remove Filter</source>
         <translation>フィルタを除去する(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="246"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="252"/>
         <source>&amp;Move Filter Up</source>
         <translation>フィルタを上に移動する(&amp;M)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="247"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="253"/>
         <source>M&amp;ove Filter Down</source>
         <translation>フィルタを下に移動(&amp;O)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="262"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="268"/>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
         <translation>すべてのフィールドが空の新規USBフィルタを追加します。注：このフィルタはすべての接続されたUSB デバイスに適合します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="266"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="272"/>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation>ホストPCに接続された、選択したUSB デバイスの値をすべてのフィールドに設定した新規USBフィルタを追加します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="269"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="275"/>
         <source>Edits the selected USB filter.</source>
         <translation>選択したUSBフィルタを編集します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="270"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="276"/>
         <source>Removes the selected USB filter.</source>
         <translation>選択したUSBフィルタを除去します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="271"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="277"/>
         <source>Moves the selected USB filter up.</source>
         <translation>選択したUSBフィルタを上に移動します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="272"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="278"/>
         <source>Moves the selected USB filter down.</source>
         <translation>選択したUSBフィルタを下に移動します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="274"/>
+        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="280"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation>新規フィルタ %1</translation>
