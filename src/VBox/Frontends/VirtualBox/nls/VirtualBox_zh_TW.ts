@@ -546,7 +546,7 @@ p, li { white-space: pre-wrap; }
     <name>UIExportApplianceWzdPage1</name>
     <message>
         <source>Welcome to the Appliance Export Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">歡迎使用應用裝置匯出精靈!</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the process of exporting an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Please select the virtual machines that should be added to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</source>
@@ -557,105 +557,105 @@ p, li { white-space: pre-wrap; }
     <name>UIExportApplianceWzdPage2</name>
     <message>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">在此您可以變更選取虛擬機器的額外組態值。 您可以在項目連按兩下修改大多數顯示的內容。</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">應用裝置匯出設定值</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage3</name>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">請指定 OVF 匯出的目標。 您可以選擇本機檔案系統匯出，或上傳 OVF 至 Sun Cloud 伺服器或 S3 存放伺服器。</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">本機檔案系統(&amp;L)</translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sun &amp;Cloud</translation>
     </message>
     <message>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">簡單存放系統 (S3)(&amp;S)</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">應用裝置匯出設定值</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage4</name>
     <message>
         <source>&amp;Username:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">使用者名稱(&amp;U):</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">密碼(&amp;P):</translation>
     </message>
     <message>
         <source>&amp;Hostname:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">主機名稱(&amp;H):</translation>
     </message>
     <message>
         <source>&amp;Bucket:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">貯體(&amp;B):</translation>
     </message>
     <message>
         <source>&amp;File:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">檔案(&amp;F):</translation>
     </message>
     <message>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">以傳統 OVF 0.9 格式寫入與其它虛擬化產品相容。</translation>
     </message>
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">寫入舊版 OVF 0.9 (&amp;W)</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">應用裝置匯出設定值</translation>
     </message>
     <message>
         <source>Appliance</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">應用裝置</translation>
     </message>
     <message>
         <source>Select a file to export into</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">選取匯出的檔案</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">開放虛擬化格式 (%1)</translation>
     </message>
     <message>
         <source>Please choose a filename to export the OVF to.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">請選擇要匯出 OVF 的檔案名稱。</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">請完成額外欄位比如使用者名稱、密碼與貯體，並提供 OVF 目標的檔案名稱。</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">請完成額外欄位比如使用者名稱、密碼、主機名稱與貯體，並提供 OVF 目標的檔案名稱。</translation>
     </message>
     <message>
         <source>Checking files ...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">正在檢查檔案 ...</translation>
     </message>
     <message>
         <source>Removing files ...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">正在移除檔案 ...</translation>
     </message>
     <message>
         <source>Exporting Appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">匯出應用裝置 ...</translation>
     </message>
 </context>
 <context>
@@ -771,7 +771,7 @@ p, li { white-space: pre-wrap; }
     <name>UIFirstRunWzdPage1</name>
     <message>
         <source>Welcome to the First Run Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">歡迎使用「首次執行精靈」!</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
@@ -786,56 +786,56 @@ p, li { white-space: pre-wrap; }
     <name>UIFirstRunWzdPage2</name>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;選取您想要安裝包含作業系統安裝程式的媒體。 這個媒體必須是可開機，否則作業系統將無法啟動。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;選取您想要工作包含作業系統的媒體。 這個媒體必須是可開機，否則作業系統將無法啟動。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Source</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">媒體來源</translation>
     </message>
     <message>
         <source>Select Installation Media</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">選取安裝媒體</translation>
     </message>
 </context>
 <context>
     <name>UIFirstRunWzdPage3</name>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;您已選取以下媒體來開機: &lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;您已選取以下媒體來從作業系統開機: &lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;如果以上正確，請按下 [&lt;b&gt;結束&lt;/b&gt;] 鈕。一旦您按下它，選取的媒體將暫時掛載到虛擬機器且機器將會開始執行。&lt;/p&gt;&lt;p&gt;請注意，當您關閉虛擬機器，指定的媒體將自動卸載且開機裝只將回到第一個硬碟。&lt;/p&gt;&lt;p&gt;根據安裝程式類型，您可能需要手動掛載 (退出) 媒體在安裝程式重新啟動虛擬機器之後，以防止安裝程序再次啟動。 您可以在 &lt;b&gt;裝置&lt;/b&gt; 功能表選取相對的 &lt;b&gt;卸載...&lt;/b&gt; 來進行。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;如果上述正確，請按下 [&lt;b&gt;結束&lt;/b&gt;] 鈕。一旦您按下它，選取的媒體將掛載到虛擬機器，而機器將會開始執行。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">摘要</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Device</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">CD/DVD-ROM 裝置</translation>
     </message>
     <message>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">類型</translation>
     </message>
     <message>
         <source>Source</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">來源</translation>
     </message>
 </context>
 <context>
@@ -905,15 +905,15 @@ p, li { white-space: pre-wrap; }
     <name>UIImportApplianceWzdPage1</name>
     <message>
         <source>Select an appliance to import</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">選取匯入的應用裝置</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">開放虛擬化格式 (%1)</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Import Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">歡迎使用應用裝置匯入精靈!</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through importing an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;</source>
@@ -924,11 +924,11 @@ p, li { white-space: pre-wrap; }
     <name>UIImportApplianceWzdPage2</name>
     <message>
         <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">這些是應用裝置中包含的虛擬機器與匯入 VirtualBox 機器的建議設定值。 您可以連按兩下項目變更許多顯示的內容，並使用以下核取方塊停用其它。</translation>
     </message>
     <message>
         <source>Appliance Import Settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">應用裝置匯入設定值</translation>
     </message>
 </context>
 <context>
@@ -970,33 +970,33 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineLogic</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">VirtualBox 開放原始碼版本 (OSE)</translation>
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">EXPERIMENTAL 組建 %1r%2 - %3</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">取消</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">取消下載 VirtualBox Guest Additions CD 映像</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">正在從 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; 下載 VirtualBox Guest Additions CD 映像...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetUserManual</name>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">取消</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox User Manual download</source>
@@ -1141,7 +1141,7 @@ p, li { white-space: pre-wrap; }
     <name>UINewHDWzdPage1</name>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">歡迎使用「新建虛擬磁碟精靈」!</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
@@ -1152,54 +1152,54 @@ p, li { white-space: pre-wrap; }
     <name>UINewHDWzdPage2</name>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;選擇您要建立的虛擬硬碟類型。 &lt;/p&gt;&lt;p&gt;&lt;b&gt;動態延伸存放&lt;/b&gt;最初在您的實體硬碟佔用非常少的空間。 它將會動態成長 (直到指定的大小) 作為客體作業系統索取的磁碟空間。 &lt;/p&gt;&lt;p&gt;&lt;b&gt;固定大小存放&lt;/b&gt;不會成長。 它儲存在與虛擬硬碟大小大約相同的檔案大小。 固定大小存放可能需要長時間的建立，取決於存放大小與您硬碟的寫入性能。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Storage Type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">存放裝置類型</translation>
     </message>
     <message>
         <source>&amp;Dynamically expanding storage</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">動態延伸存放(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Fixed-size storage</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">固定大小存放(&amp;F)</translation>
     </message>
     <message>
         <source>Hard Disk Storage Type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">硬碟存放類型</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWzdPage3</name>
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;按下 [&lt;b&gt;選取&lt;/b&gt;] 按鈕選取儲存硬碟資料的檔案位置或在欄位中輸入檔案名稱。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Location</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">位置(&amp;L)</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;以 MB 為單位選取虛擬硬碟的大小。這個大小將回報至客體作業系統作為硬碟的最大容量。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">大小(&amp;S)</translation>
     </message>
     <message>
         <source>Virtual Disk Location and Size</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">虛擬磁碟位置與大小</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">選擇一個做為新硬碟映像檔的檔案</translation>
     </message>
     <message>
         <source>Hard disk images (*.vdi)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">硬碟映像 (*.vdi)</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
@@ -1210,11 +1210,11 @@ p, li { white-space: pre-wrap; }
     <name>UINewHDWzdPage4</name>
     <message>
         <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">您即將使用以下參數新建虛擬硬碟:</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">摘要</translation>
     </message>
     <message>
         <source>%1 B</source>
@@ -1223,17 +1223,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">類型</translation>
     </message>
     <message>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">位置</translation>
     </message>
     <message>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">大小</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
@@ -1372,7 +1372,7 @@ p, li { white-space: pre-wrap; }
     <name>UINewVMWzdPage1</name>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">歡迎使用「新增虛擬機器精靈」!</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
@@ -1383,110 +1383,110 @@ p, li { white-space: pre-wrap; }
     <name>UINewVMWzdPage2</name>
     <message>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;輸入新的虛擬機器名稱並選取您計畫安裝到虛擬機器的客體作業系統類型。 &lt;/p&gt;&lt;p&gt;虛擬機器的名稱通常指示它的軟體與硬體組態。 所有的 VirtualBox 元件將使用它來識別您的虛擬機器。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>N&amp;ame</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">名稱(&amp;A)</translation>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">作業系統類型(&amp;T)</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">虛擬機器名稱和作業系統類型</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage3</name>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;以 MB 為單位選取配置於虛擬機器的基本記憶體 (RAM) 數量&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">基本記憶體大小(&amp;M)</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MB</translation>
     </message>
     <message>
         <source>Memory</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">記憶體</translation>
     </message>
     <message>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">建議的基本記憶體大小為 &lt;b&gt;%1&lt;/b&gt; MB。</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MB</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;選取要作為虛擬機器開機硬碟的硬碟映像。 您可以使用 [&lt;b&gt;新增&lt;/b&gt;] 按鈕新建硬碟，或者從下拉清單選取現有的硬碟映像或者按下 [&lt;b&gt;現有&lt;/b&gt;] 按鈕 (使用虛擬媒體管理員對話方塊) 。&lt;/p&gt;&lt;p&gt;如果您需要更複雜的硬碟設定，您也可以略過這個步驟並使用 VM 設定值對話方塊稍後附加硬碟。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">開機硬碟 (第一個主)(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">建立新硬碟(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Use existing hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">使用現有硬碟(&amp;U)</translation>
     </message>
     <message>
         <source>Virtual Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">虛擬硬碟</translation>
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">建議的開機硬碟大小為 &lt;b&gt;%1&lt;/b&gt; MB。</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage5</name>
     <message>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;您即將使用以下參數新建虛擬機器:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">摘要</translation>
     </message>
     <message>
         <source>Name</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">名稱</translation>
     </message>
     <message>
         <source>OS Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">作業系統類型</translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">基本記憶體</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MB</translation>
     </message>
     <message>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">開機硬碟</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
@@ -1617,12 +1617,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MB</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MB</translation>
     </message>
 </context>
 <context>
@@ -2081,7 +2081,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">主機 PC 未連接支援的裝置</translation>
     </message>
 </context>
 <context>
@@ -3615,7 +3615,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MB</translation>
     </message>
     <message>
         <source>GB</source>
@@ -3635,15 +3635,20 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">啟用</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">停用</translation>
     </message>
     <message>
         <source>Nested Paging</source>
+        <translation type="unfinished">巢狀分頁</translation>
+    </message>
+    <message>
+        <source>Shareable</source>
+        <comment>DiskType</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5837,6 +5842,10 @@ p, li { white-space: pre-wrap; }
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
         <translation>您已啟用 2D 視訊加速。 由於 2D 視訊加速只支援 Windows 客體，這個功能將停用。</translation>
     </message>
+    <message>
+        <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMSettingsGeneral</name>
@@ -6634,6 +6643,14 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;absolute pointing device</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

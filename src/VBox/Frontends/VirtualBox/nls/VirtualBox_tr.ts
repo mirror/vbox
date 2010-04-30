@@ -780,7 +780,7 @@
     <name>UIFirstRunWzdPage1</name>
     <message>
         <source>Welcome to the First Run Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">İlk Çalıştırma Sihirbazına Hoşgeldiniz!</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
@@ -795,56 +795,56 @@
     <name>UIFirstRunWzdPage2</name>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Yüklemek istediğiniz işletim sisteminin kur uygulamasını içeren ortamı seçin. Bu ortam başlatılabilir (bootable) olmalıdır, aksi taktirde kur uygulaması başlatılamaz.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Çalışmak istediğiniz işletim sistemini içeren ortamı seçin. Bu ortam başlatılabilir (bootable) olmalıdır, aksi taktirde işletim sistemi başlatılamayacak.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Source</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Ortam Kaynağı</translation>
     </message>
     <message>
         <source>Select Installation Media</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Yükleme Ortamını Seç</translation>
     </message>
 </context>
 <context>
     <name>UIFirstRunWzdPage3</name>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Şu ortamdan başlatmayı (boot) seçtiniz:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Bir işletim sistemini başlatmak için şu ortam tipini seçtiniz:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Eğer yukarıdakiler doğru ise,&lt;b&gt;Bitir&lt;/b&gt; düğmesine basın. Düğmeye bastığınızda, seçilen ortam sanal makineye bağlanacak ve makine çalıştırılmaya başlanacak.&lt;/p&gt;&lt;p&gt;Sanal makineyi kapattığınızda belirtilen ortamın otomatik olarak ayrılacağını ve başlangıç aygıtının yeniden sabit disk olarak ayarlanacağını unutmayın.&lt;/p&gt;&lt;p&gt;Kur uygulamasına bağlı olarak değişmekle birlikte, kur işleminin yeniden başlamasını engellemek için kur bittikten sonra ortamı el ile ayırmanız (eject) gerekebilir. Bu işlemi &lt;b&gt;Aygıtlar&lt;/b&gt; menüsündeki &lt;b&gt;Ayır...&lt;/b&gt; ile yapabilirsiniz.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Eğer yukarıdakiler doğru ise,&lt;b&gt;Bitir&lt;/b&gt; düğmesine basın. Düğmeye bastığınızda, seçilen ortam sanal makineye bağlanacak ve makine çalıştırılmaya başlanacak.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Özet</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Device</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">CD/DVD-ROM Sürücü</translation>
     </message>
     <message>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Tip</translation>
     </message>
     <message>
         <source>Source</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Kaynak</translation>
     </message>
 </context>
 <context>
@@ -935,7 +935,7 @@
     <name>UIMachineLogic</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">VirtualBox OSE</translation>
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
@@ -950,11 +950,11 @@
     </message>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">VirtualBox Guest Additions CD kalıbı indirme işlemini iptal et</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">VirtualBox Guest Additions CD kalıbı &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; adresinden indiriliyor...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -1176,7 +1176,7 @@ sanal sabit disk boyutu olarak rapor edilecektir.&lt;/p&gt;  </translation>
     <name>UINewHDWzdPage1</name>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sanal Disk Oluşturma Sihirbazına Hoşgeldiniz!</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
@@ -1191,50 +1191,50 @@ sanal sabit disk boyutu olarak rapor edilecektir.&lt;/p&gt;  </translation>
     </message>
     <message>
         <source>Storage Type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Depolama Tipi</translation>
     </message>
     <message>
         <source>&amp;Dynamically expanding storage</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Dinamik olarak genişleyen kalıp</translation>
     </message>
     <message>
         <source>&amp;Fixed-size storage</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Sabit boyutlu depolama</translation>
     </message>
     <message>
         <source>Hard Disk Storage Type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sabit Disk Depolama Tipi</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWzdPage3</name>
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;&lt;b&gt;Seç&lt;/b&gt; simgesine basarak sanal sabit disk kalıbının saklanacağı konumu ve oluşturulacak dosyanın adını seçebilirsiniz ya da aşağıdaki alanına bir dosya ismi yazabilirsiniz.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Location</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Konum</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Sanal sabit disk kalıbının boyutunu megabayt cinsinden seçin. Bu boyut, misafir işletim sistemine sanal sabit disk boyutu olarak rapor edilecektir.&lt;/p&gt;  </translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Boyut</translation>
     </message>
     <message>
         <source>Virtual Disk Location and Size</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sanal Disk Konumu ve Boyutu</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Yeni sabit disk kalıbı dosyası için, bir dosya seçin</translation>
     </message>
     <message>
         <source>Hard disk images (*.vdi)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sabit disk kalıpları (*.vdi)</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
@@ -1245,11 +1245,11 @@ sanal sabit disk boyutu olarak rapor edilecektir.&lt;/p&gt;  </translation>
     <name>UINewHDWzdPage4</name>
     <message>
         <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Aşağıdaki ayarlara göre yeni bir sanal sabit disk kalıbı oluşturacaksınız:</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Özet</translation>
     </message>
     <message>
         <source>%1 B</source>
@@ -1258,17 +1258,17 @@ sanal sabit disk boyutu olarak rapor edilecektir.&lt;/p&gt;  </translation>
     <message>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Tip</translation>
     </message>
     <message>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Konum</translation>
     </message>
     <message>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Boyut</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
@@ -1500,7 +1500,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     <name>UINewVMWzdPage1</name>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sanal Makine Oluşturma Sihirbazına Hoşgeldiniz!</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
@@ -1511,26 +1511,26 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     <name>UINewVMWzdPage2</name>
     <message>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Yeni sanal makine için bir isim girin ve bu sanal makineye kurmayı düşündüğünüz misafir işletim sisteminin tipini seçin.&lt;/p&gt;&lt;p&gt;Sanal makinenin adı genellikle o makinenin yazılım ve donanım yapılandırması hakkında bilgiler içerir. Bu isim tüm VirtualBox bileşenleri tarafından sanal makinenizi tanımak için kullanılacaktır.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>N&amp;ame</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">İ&amp;sim</translation>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">İşletim Sistemi &amp;Tipi</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sanal Makine Adı ve İşletim Sistemi Tipi</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage3</name>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Sanal makine için kullanılacak olan temel bellek (RAM) boyutunu mb olarak seçin.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
@@ -1538,31 +1538,31 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MB</translation>
     </message>
     <message>
         <source>Memory</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Bellek</translation>
     </message>
     <message>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Önerilen temel bellek boyutu &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MB</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Sanal makineyi başlatmak için (boot)  kullanılacak bir sabit disk kalıbı seçin. &lt;b&gt;Yeni&lt;/b&gt; düğmesine tıklayarak Yeni bir sabit disk oluşturabilirsiniz ya da açılabilir listeden bir &lt;b&gt;Varolan sabit disk&lt;/b&gt; seçebilirsiniz.&lt;/p&gt;&lt;p&gt;Eğer daha karmaşık bir sabit disk ayarlamasına gereksinim duyuyorsanız bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekleyebilirsiniz.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Başlangıç (Boot) Sabit Diski (Primary Master)</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
@@ -1574,47 +1574,47 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     </message>
     <message>
         <source>Virtual Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sanal Sabit Disk Sürücü</translation>
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Önerilen başlangıç sabit diski boyutu &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage5</name>
     <message>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Aşağıdaki ayarlara göre yeni bir sanal makine oluşturacaksınız:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Özet</translation>
     </message>
     <message>
         <source>Name</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">İsim</translation>
     </message>
     <message>
         <source>OS Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">İşletim Sistemi Tipi</translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Temel Bellek</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MB</translation>
     </message>
     <message>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Başlangıç (Boot) Sabit Diski</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
@@ -1841,12 +1841,12 @@ Version %1</source>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MB</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MB</translation>
     </message>
 </context>
 <context>
@@ -2558,7 +2558,7 @@ Version %1</source>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sunucu makineye desteklenen bir cihaz bağlanmamış</translation>
     </message>
 </context>
 <context>
@@ -4264,7 +4264,7 @@ Version %1</source>
     <message>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;nobr&gt;%4 MB&lt;/nobr&gt; {1 ?}</translation>
     </message>
     <message>
         <source>Processor(s)</source>
@@ -4577,7 +4577,7 @@ Version %1</source>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">MB</translation>
     </message>
     <message>
         <source>GB</source>
@@ -4597,15 +4597,20 @@ Version %1</source>
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Etkin</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Pasifleştirilmiş</translation>
     </message>
     <message>
         <source>Nested Paging</source>
+        <translation type="unfinished">Yerleşik Sayfalama</translation>
+    </message>
+    <message>
+        <source>Shareable</source>
+        <comment>DiskType</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9127,6 +9132,10 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMSettingsFD</name>
@@ -10235,6 +10244,14 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;absolute pointing device</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

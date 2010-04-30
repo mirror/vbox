@@ -761,7 +761,7 @@ p, li { white-space: pre-wrap; }
     <name>UIExportApplianceWzdPage1</name>
     <message>
         <source>Welcome to the Appliance Export Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Bienvenue sur l&apos;assistant d&apos;exportation d&apos;applications virtuelles !</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the process of exporting an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Please select the virtual machines that should be added to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</source>
@@ -772,105 +772,105 @@ p, li { white-space: pre-wrap; }
     <name>UIExportApplianceWzdPage2</name>
     <message>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Vous pouvez éffectuer ici des modifications supplémentaires dans les configurations des machines virtuelles séléctionnées. Vous pouvez changer la plupart des propriétés affichées en cliquant dessus.</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Paramètres d&apos;exportation d&apos;applications virtuelles</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage3</name>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Veuillez spécifier un cible pour l&apos;export OVF. Vous pouvez choisir entre l&apos;export au système de fichiers local ou bien le téléchargement sur le service Sun Cloud ou un serveur de stockage S3.</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Système de fichiers &amp;local </translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sun &amp;Cloud</translation>
     </message>
     <message>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Simple Storage System (S3)</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Paramètres d&apos;exportation d&apos;applications virtuelles</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage4</name>
     <message>
         <source>&amp;Username:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Nom d&apos;&amp;utilisateur :</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mot de &amp;passe :</translation>
     </message>
     <message>
         <source>&amp;Hostname:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Nom d&apos;&amp;hôte :</translation>
     </message>
     <message>
         <source>&amp;Bucket:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Bucket :</translation>
     </message>
     <message>
         <source>&amp;File:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Fichier :</translation>
     </message>
     <message>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Créer le format ancien OVF 0.9 pour garder la compatibilité avec d&apos;autres produits de virtualisation.</translation>
     </message>
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Créer le format ancien OVF 0.9</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Paramètres d&apos;exportation d&apos;applications virtuelles</translation>
     </message>
     <message>
         <source>Appliance</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Application virtuelle</translation>
     </message>
     <message>
         <source>Select a file to export into</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Choisissez un fichier cible pour l&apos;exportation</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Open Virtualization Format (%1)</translation>
     </message>
     <message>
         <source>Please choose a filename to export the OVF to.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Veuillez choisir un nom de fichier pour l&apos;export OVF.</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Veuillez compléter les champs supplémentaires comme le nom d&apos;utilisateur, le mot de passe et le bucket, ainsi que de fournir un nom pour le fichier cible OVF.</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Veuillez compléter les champs supplémentaires comme le nom d&apos;utilisateur, le mot de passe, le nom d&apos;hôte et bucket, ainsi que de fournir un nom pour le fichier cible OVF.</translation>
     </message>
     <message>
         <source>Checking files ...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Vérification de fichiers...</translation>
     </message>
     <message>
         <source>Removing files ...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Suppression de fichiers...</translation>
     </message>
     <message>
         <source>Exporting Appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Exportation de l&apos;application virtuelle...</translation>
     </message>
 </context>
 <context>
@@ -1012,7 +1012,7 @@ p, li { white-space: pre-wrap; }
     <name>UIFirstRunWzdPage1</name>
     <message>
         <source>Welcome to the First Run Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Bienvenue sur l&apos;assistant du premier lancement !</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
@@ -1027,38 +1027,38 @@ p, li { white-space: pre-wrap; }
     <name>UIFirstRunWzdPage2</name>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Choisissez le média contenant le logiciel d&apos;installation du système d&apos;exploitation que vous désirer utiliser dans la machine virtuelle. Ce média doit permettre le démarage de l&apos;ordinateur.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Choisissez le média contenant le système d&apos;exploitation que vous voulez utiliser. Ce média doit être amorçable, sinon le système d&apos;exploitation ne pourra pas démarrer.&lt;/p&gt; </translation>
     </message>
     <message>
         <source>Media Source</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Source du média</translation>
     </message>
     <message>
         <source>Select Installation Media</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Choisissez le média d&apos;installation</translation>
     </message>
 </context>
 <context>
     <name>UIFirstRunWzdPage3</name>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Vous avez choisi le média de démarrage suivant : &lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Vous avez choisis le média suivant pour amorcer un système d&apos;exploitation : &lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Cliquez sur le bouton &lt;b&gt;Terminer&lt;/b&gt; si les données ci-dessus sont correctes. Le support de démarrage choisi sera inséré temporairement dans la machine virtuelle et cette dernière commencera l&apos;exécution.&lt;/p&gt;&gt;p&gt;Veuillez noter qu&apos;après l&apos;arrêt de la machine virtuelle, le support spécifié sera automatiquement éjecté et le support de démarrage remis sur le premier disque dur.&lt;/p&gt;&lt;p&gt;Selon le logiciel d&apos;installation choisi, vous pourrez éventuellement avoir à éjecter manuellement le support après le réamorçage de la machine virtuelle (&lt;b&gt;Éjecter...&lt;/b&gt; dans le menu &lt;b&gt;Périphériques&lt;/b&gt;) pourque l&apos;installation ne recommence pas depuis le début.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Si les données si dessus sont correctes, actionnez le bouton &lt;b&gt;Terminer&lt;/b&gt;. Le support sera inséré dans la machine virtuelle et celle-ci sera lancée.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
@@ -1066,17 +1066,17 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>CD/DVD-ROM Device</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Lecteur optique</translation>
     </message>
     <message>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Type</translation>
     </message>
     <message>
         <source>Source</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Source</translation>
     </message>
 </context>
 <context>
@@ -1166,15 +1166,15 @@ p, li { white-space: pre-wrap; }
     <name>UIImportApplianceWzdPage1</name>
     <message>
         <source>Select an appliance to import</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Choisissez une application virtuelle à importer</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Open Virtualization Format (%1)</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Import Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Bienvenue sur l&apos;assistant d&apos;importation d&apos;applications virtuelles !</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through importing an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;</source>
@@ -1185,11 +1185,11 @@ p, li { white-space: pre-wrap; }
     <name>UIImportApplianceWzdPage2</name>
     <message>
         <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Voici les machines virtuelles décrites dans l&apos;application virtuelle et les corréspondances proposées pour l&apos;importation dans VirtualBox. Vous pouvez en changer beaucoup d&apos;entre eux en double cliquant dessus, et en désactiver d&apos;autres en utilisant les cases à cocher ci-dessous.</translation>
     </message>
     <message>
         <source>Appliance Import Settings</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Paramètres d&apos;importation d&apos;applications virtuelles</translation>
     </message>
 </context>
 <context>
@@ -1231,18 +1231,18 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineLogic</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">VirtualBox OSE</translation>
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished"> Compilation EXPERIMENTAL %1r%2 - %3</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Annuler</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
@@ -1257,7 +1257,7 @@ p, li { white-space: pre-wrap; }
     <name>UIMiniProcessWidgetUserManual</name>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Annuler</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox User Manual download</source>
@@ -1445,7 +1445,7 @@ p, li { white-space: pre-wrap; }
     <name>UINewHDWzdPage1</name>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Bienvenue sur l&apos;assistant de création de disques virtuels !</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
@@ -1456,54 +1456,54 @@ p, li { white-space: pre-wrap; }
     <name>UINewHDWzdPage2</name>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Choisissez le type de disque dur virtuel que vous désirez créer.&lt;/p&gt;&lt;p&gt;Un &lt;b&gt;image disque à taille dynamique&lt;/b&gt; est de taille initiale réduite et est agrandie en fonction des besoins (jusqu&apos;à la taille spécifiée) du système d&apos;exploitation invité.&lt;/p&gt;&lt;p&gt;Un &lt;b&gt;image disque à taille fixe&lt;/b&gt; est de taille constante et est gérée dans un fichier dont la taille correspond approximativement à la taille du disque dur virtuel. La création d&apos;une image à taille fixe peut durer longtemps selon la taille de l&apos;image et la performance en écriture de votre disque dur.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Storage Type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Type du conteneur</translation>
     </message>
     <message>
         <source>&amp;Dynamically expanding storage</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Image disque à taille &amp;dynamique</translation>
     </message>
     <message>
         <source>&amp;Fixed-size storage</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Image disque à taille &amp;fixe</translation>
     </message>
     <message>
         <source>Hard Disk Storage Type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Type de conteneur disque dur</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWzdPage3</name>
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Activez le bouton &lt;b&gt;Selectionner&lt;/b&gt; pour choisir l&apos;emplacement d&apos;un fichier pour contenir les données du disque dur ou bien entrez un nom de fichier dans le champ de texte.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Location</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Emp&amp;lacement</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Choisissez la taille du disque dur virtuel en mégaoctets. Le système d&apos;exploitation invité verra cette taille comme taille maximale de ce disque dur.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Taille</translation>
     </message>
     <message>
         <source>Virtual Disk Location and Size</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Disque virtuel, emplacement et taille</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Choisissez un fichier pour la nouvelle image de disque dur</translation>
     </message>
     <message>
         <source>Hard disk images (*.vdi)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Images disque dur (*.vdi)</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
@@ -1514,7 +1514,7 @@ p, li { white-space: pre-wrap; }
     <name>UINewHDWzdPage4</name>
     <message>
         <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Vous êtes en train de créer un nouveau disque dur virtuel avec les paramètres suivants :</translation>
     </message>
     <message>
         <source>Summary</source>
@@ -1527,17 +1527,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Type</translation>
     </message>
     <message>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Emplacement </translation>
     </message>
     <message>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Taille</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
@@ -1692,7 +1692,7 @@ p, li { white-space: pre-wrap; }
     <name>UINewVMWzdPage1</name>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Bienvenue sur l&apos;assistant nouvelle machine virtuelle !</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
@@ -1703,26 +1703,26 @@ p, li { white-space: pre-wrap; }
     <name>UINewVMWzdPage2</name>
     <message>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Entrez un nom pour la nouvelle machine virtuelle et choisissez le type du système d&apos;exploitation que vous désirez installer sur cette machine.&lt;/p&gt;&lt;p&gt;Le nom de la machine virtuelle indique normalement la configuration matériel et logiciel. Il est utilisé par tous les composants de VirtualBox pour l&apos;identification de la machine virtuelle.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>N&amp;ame</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Nom</translation>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Sys&amp;tème</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Nom de la machine virtuelle et type du système d&apos;exploitation</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage3</name>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Choisissez la taille, en méga octets, de la mémoire vive (RAM) réservée à la machine virtuelle.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
@@ -1730,54 +1730,54 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mo</translation>
     </message>
     <message>
         <source>Memory</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mémoire</translation>
     </message>
     <message>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">La taille recommandée pour la mémoire vive de base est &lt;b&gt;%1&lt;/b&gt; Mo.</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mo</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Choisissez une image disque dur qui sera utilisée comme disque dur de démarrage de la machine virtuelle. Vous pouvez soit créer une nouvelle image en utilisant le bouton &lt;b&gt;Nouveau&lt;/b&gt; ou bien choisir une image existant dans la liste ou en activant le bouton &lt;b&gt;Existant&lt;/b&gt; (qui invoquera le Gestionnaire de supports virtuels).&lt;/p&gt;&lt;p&gt;Si vous nécéssitez une configuration disque plus complexe, vous pouvez sauter cette étape et connecter des disques dur plus tard en utilisant la boîte de dialogue Préférences.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Disque dur d&apos;amorçage (maître primaire)</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Créer un nouveau disque dur</translation>
     </message>
     <message>
         <source>&amp;Use existing hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Utiliser disque dur existant</translation>
     </message>
     <message>
         <source>Virtual Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Disque dur virtuel</translation>
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">La taille recommandée pour le disque dur d&apos;amorçage est &lt;b&gt;%1&lt;/b&gt; Mo.</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage5</name>
     <message>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Vous allez créer une nouvelle machine virtuelle avec les paramètres suivants :&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
@@ -1801,12 +1801,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mo</translation>
     </message>
     <message>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Disque dur d&apos;amorçage </translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
@@ -1977,12 +1977,12 @@ Version %1</source>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mo</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mo</translation>
     </message>
 </context>
 <context>
@@ -2610,7 +2610,7 @@ Version %1</source>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Aucun périphérique supporté n&apos;est connecté à l&apos;ordinateur</translation>
     </message>
 </context>
 <context>
@@ -4623,7 +4623,7 @@ Version %1</source>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mo</translation>
     </message>
     <message>
         <source>GB</source>
@@ -4652,6 +4652,11 @@ Version %1</source>
     </message>
     <message>
         <source>Nested Paging</source>
+        <translation type="unfinished">Pagination enchevêtrée</translation>
+    </message>
+    <message>
+        <source>Shareable</source>
+        <comment>DiskType</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7528,6 +7533,10 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
         <translation>vous avez activé l&apos;accélération vidéo 2D. Comme l&apos;accélération vidéo 2D n&apos;est supporté que par des invités Windows, cette fonctionnalité sera désactivée.</translation>
     </message>
+    <message>
+        <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMSettingsFD</name>
@@ -9037,6 +9046,14 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;absolute pointing device</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
