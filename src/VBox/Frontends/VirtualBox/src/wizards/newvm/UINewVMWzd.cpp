@@ -665,51 +665,47 @@ bool UINewVMWzdPage5::constructMachine()
         usbController.SetEnabledEhci(true);
     }
 
-    /* Create default storage controllers */
+    /* Create recommended DVD storage controller */
     QString ctrDvdName = VBoxVMSettingsHD::tr("Storage Controller");
     KStorageBus ctrDvdBus = type.GetRecommendedDvdStorageBus();
-
-    // Add IDE storage controller
     m_Machine.AddStorageController(ctrDvdName, ctrDvdBus);
 
-    // Set DVD storage controller type
+    /* Set recommended DVD storage controller type */
     CStorageController dvdCtr = m_Machine.GetStorageControllerByName(ctrDvdName);
     KStorageControllerType dvdStorageControllerType = type.GetRecommendedDvdStorageController();
     dvdCtr.SetControllerType(dvdStorageControllerType);
 
-    // Create a storage controller for harddisks if this is not the same as the DVD controller
+    /* Create recommended HD storage controller if it's not the same as the DVD controller */
     KStorageBus ctrHdBus = type.GetRecommendedHdStorageBus();
     KStorageControllerType hdStorageControllerType = type.GetRecommendedHdStorageController();
     CStorageController hdCtr;
     QString ctrHdName;
-
-    if (   ctrHdBus != ctrDvdBus
-        && hdStorageControllerType != dvdStorageControllerType)
+    if (ctrHdBus != ctrDvdBus || hdStorageControllerType != dvdStorageControllerType)
     {
         ctrHdName = VBoxVMSettingsHD::tr("Storage Controller 1");
         m_Machine.AddStorageController(ctrHdName, ctrHdBus);
         hdCtr = m_Machine.GetStorageControllerByName(ctrHdName);
         hdCtr.SetControllerType(hdStorageControllerType);
 
-        // Disable the I/O cache if this is not a IDE controller.
+        /* Disable the I/O cache if this is not a IDE controller */
         if (ctrHdBus != KStorageBus_IDE)
             hdCtr.SetIoBackend(KIoBackendType_Unbuffered);
     }
     else
     {
-        // The Hard disk controller is the same
+        /* The HD controller is the same as DVD */
         hdCtr = dvdCtr;
         ctrHdName = ctrDvdName;
     }
 
-    // Turn on PAE, if recommended
+    /* Turn on PAE, if recommended */
     m_Machine.SetCPUProperty(KCPUPropertyType_PAE, type.GetRecommendedPae());
 
-    // Set recommended firmware type
+    /* Set recommended firmware type */
     KFirmwareType fwType = type.GetRecommendedFirmware();
     m_Machine.SetFirmwareType(fwType);
 
-    // Set recommended human interface device types
+    /* Set recommended human interface device types */
     if (type.GetRecommendedUsbHid())
     {
         m_Machine.SetKeyboardHidType(KKeyboardHidType_USBKeyboard);
@@ -725,10 +721,10 @@ bool UINewVMWzdPage5::constructMachine()
             usbController.SetEnabled(true);
     }
 
-    // Set HPET flag
+    /* Set HPET flag */
     m_Machine.SetHpetEnabled(type.GetRecommendedHpet());
 
-    // Set UTC flags
+    /* Set UTC flags */
     m_Machine.SetRTCUseUTC(type.GetRecommendedRtcUseUtc());
 
     /* Register the VM prior to attaching hard disks */
