@@ -117,6 +117,11 @@ int VBoxVMSettingsSystem::cpuCount() const
     return mSlCPU->value();
 }
 
+bool VBoxVMSettingsSystem::isHIDEnabled() const
+{
+    return mCbUseAbsHID->isChecked();
+}
+
 void VBoxVMSettingsSystem::getFrom (const CMachine &aMachine)
 {
     mMachine = aMachine;
@@ -267,6 +272,7 @@ void VBoxVMSettingsSystem::setValidator (QIWidgetValidator *aVal)
     mValidator = aVal;
     connect (mCbApic, SIGNAL (stateChanged (int)), mValidator, SLOT (revalidate()));
     connect (mCbVirt, SIGNAL (stateChanged (int)), mValidator, SLOT (revalidate()));
+    connect (mCbUseAbsHID, SIGNAL (stateChanged (int)), mValidator, SLOT (revalidate()));
 }
 
 bool VBoxVMSettingsSystem::revalidate (QString &aWarning, QString & /* aTitle */)

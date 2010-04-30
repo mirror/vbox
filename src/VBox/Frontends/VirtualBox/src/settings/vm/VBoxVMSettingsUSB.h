@@ -48,6 +48,8 @@ public:
 
     VBoxVMSettingsUSB (FilterType aType);
 
+    bool isOHCIEnabled() const;
+
 protected:
 
     void getFrom (const CSystemProperties &aProps,

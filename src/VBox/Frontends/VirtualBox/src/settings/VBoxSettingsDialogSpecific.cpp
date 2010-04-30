@@ -412,6 +412,16 @@ void VBoxVMSettingsDlg::putBackTo()
     }
 #endif
 
+#ifndef VBOX_OSE
+    /* Enable OHCI controller if HID is enabled */
+    if (systemPage && systemPage->isHIDEnabled())
+    {
+        CUSBController ctl = mMachine.GetUSBController();
+        if (!ctl.isNull())
+            ctl.SetEnabled(true);
+    }
+#endif /* VBOX_OSE */
+
     /* Clear the "GUI_FirstRun" extra data key in case if the boot order
      * and/or disk configuration were changed */
     if (mResetFirstRunFlag)
@@ -554,6 +564,25 @@ bool VBoxVMSettingsDlg::correlate (QWidget *aPage, QString &aWarning)
         }
     }
 #endif
+
+#ifndef VBOX_OSE
+    if (aPage == mSelector->idToPage (SystemId) ||
+        aPage == mSelector->idToPage (USBId))
+    {
+        VBoxVMSettingsSystem *systemPage =
+            qobject_cast <VBoxVMSettingsSystem*> (mSelector->idToPage (SystemId));
+        VBoxVMSettingsUSB *usbPage =
+            qobject_cast <VBoxVMSettingsUSB*> (mSelector->idToPage (USBId));
+        if (systemPage && usbPage &&
+            systemPage->isHIDEnabled() && !usbPage->isOHCIEnabled())
+        {
+            aWarning = tr (
+                "you have Absolute Pointing Devices feature enabled. As this feature "
+                "requires active USB controller it will be enabled automatically.");
+            return true;
+        }
+    }
+#endif /* VBOX_OSE */
 
     return true;
 }
