@@ -477,6 +477,10 @@ int Guest::notifyCtrlExec(uint32_t              u32Function,
         pCBData->u32Flags = pData->u32Flags;
         /** @todo Copy void* buffer contents! */
 
+        /* Was progress canceled before? */
+        BOOL fCancelled;
+        it->pProgress->COMGETTER(Canceled)(&fCancelled);
+
         /* Do progress handling. */
         Utf8Str errMsg;
         HRESULT rc2 = S_OK;
@@ -486,8 +490,11 @@ int Guest::notifyCtrlExec(uint32_t              u32Function,
                 break;
 
             case PROC_STS_TEN: /* Terminated normally. */
-                if (!it->pProgress->getCompleted())
+                if (   !it->pProgress->getCompleted()
+                    && !fCancelled)
+                {
                     it->pProgress->notifyComplete(S_OK);
+                }
                 break;
 
             case PROC_STS_TEA: /* Terminated abnormally. */
@@ -541,7 +548,8 @@ int Guest::notifyCtrlExec(uint32_t              u32Function,
         if (   !it->pProgress.isNull()
             && errMsg.length())
         {
-            if (!it->pProgress->getCompleted())
+            if (   !it->pProgress->getCompleted()
+                && !fCancelled)
             {
                 it->pProgress->notifyComplete(E_FAIL /** @todo Find a better rc! */, COM_IIDOF(IGuest),
                                               (CBSTR)Guest::getComponentName(), errMsg.c_str());
@@ -718,7 +726,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
         {
             rc = progress->init(static_cast<IGuest*>(this),
                                 BstrFmt(tr("Executing process")),
-                                FALSE);
+                                TRUE);
         }
         if (FAILED(rc)) return rc;
 
