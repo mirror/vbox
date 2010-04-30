@@ -461,14 +461,14 @@ int Guest::notifyCtrlExec(uint32_t              u32Function,
     LogFlowFuncEnter();
     int rc = VINF_SUCCESS;
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     AssertPtr(pData);
     CallbackListIter it = getCtrlCallbackContextByID(pData->hdr.u32ContextID);
 
     /* Callback can be called several times. */
     if (it != mCallbackList.end())
     {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
         PHOSTEXECCALLBACKDATA pCBData = (HOSTEXECCALLBACKDATA*)it->pvData;
         AssertPtr(pCBData);
 
@@ -654,7 +654,10 @@ void Guest::removeCtrlCallbackContext(Guest::CallbackListIter it)
         if (   !it->pProgress.isNull()
             && !it->pProgress->getCompleted())
         {
-            it->pProgress->notifyComplete(S_OK);
+            /* Only notify as complete if not canceled! */
+            BOOL fCancelled;
+            if (SUCCEEDED(it->pProgress->COMGETTER(Canceled)(&fCancelled)) && !fCancelled)
+                it->pProgress->notifyComplete(S_OK);
             it->pProgress = NULL;
         }
     }

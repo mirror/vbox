@@ -26,6 +26,7 @@
 
 #ifdef VBOX_WITH_GUEST_CONTROL
 # include <iprt/list.h>
+# include <iprt/semaphore.h>
 #endif
 
 /**
@@ -133,10 +134,11 @@ enum VBOXSERVICECTRLTHREADDATATYPE
 
 typedef struct
 {
-    uint8_t  *pbData;
-    uint32_t  cbSize;
-    uint32_t  cbOffset;
-    uint32_t  cbRead;
+    uint8_t    *pbData;
+    uint32_t    cbSize;
+    uint32_t    cbOffset;
+    uint32_t    cbRead;
+    RTSEMMUTEX  mtx;
 } VBOXSERVICECTRLEXECPIPEBUF;
 /** Pointer to thread data. */
 typedef VBOXSERVICECTRLEXECPIPEBUF *PVBOXSERVICECTRLEXECPIPEBUF;

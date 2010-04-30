@@ -534,31 +534,62 @@ static int VBoxServiceControlExecSetupPipe(int fd, PRTHANDLE ph, PRTHANDLE *pph,
     return rc;
 }
 
+int VBoxServiceControlExecInitPipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf)
+{
+    AssertPtr(pBuf);
+
+    pBuf->pbData = (uint8_t*)RTMemAlloc(_64K); /* Start with a 64k buffer. */
+    AssertReturn(pBuf->pbData, VERR_NO_MEMORY);
+    pBuf->cbSize = 0;
+    pBuf->cbOffset = 0;
+    pBuf->cbRead = 0;
+
+    return RTSemMutexCreate(&pBuf->mtx);
+}
+
+int VBoxServiceControlExecDestroyPipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf)
+{
+    if (pBuf)
+    {
+        if (pBuf->pbData)
+            RTMemFree(pBuf->pbData);
+        pBuf->pbData = NULL;
+        pBuf->cbSize = 0;
+        pBuf->cbOffset = 0;
+        pBuf->cbRead = 0;
+    }
+    return RTSemMutexDestroy(pBuf->mtx);
+}
+
 int VBoxServiceControlExecReadPipeBufferContent(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
                                                 uint8_t *pbBuffer, uint32_t cbBuffer, uint32_t *pcbToRead)
 {
+    AssertPtr(pBuf);
     AssertPtr(pcbToRead);
 
-// LOCKING
-
-    Assert(pBuf->cbOffset >= pBuf->cbRead);
-    if (*pcbToRead > pBuf->cbOffset - pBuf->cbRead)
-        *pcbToRead = pBuf->cbOffset - pBuf->cbRead;
-
-    if (*pcbToRead > cbBuffer)
-        *pcbToRead = cbBuffer;
-
-    if (*pcbToRead > 0)
-    {
-        memcpy(pbBuffer, pBuf->pbData + pBuf->cbRead, *pcbToRead);
-        pBuf->cbRead += *pcbToRead;
+    int rc = RTSemMutexRequest(pBuf->mtx, RT_INDEFINITE_WAIT);
+    if (RT_SUCCESS(rc))
+    {    
+        Assert(pBuf->cbOffset >= pBuf->cbRead);
+        if (*pcbToRead > pBuf->cbOffset - pBuf->cbRead)
+            *pcbToRead = pBuf->cbOffset - pBuf->cbRead;
+    
+        if (*pcbToRead > cbBuffer)
+            *pcbToRead = cbBuffer;
+    
+        if (*pcbToRead > 0)
+        {
+            memcpy(pbBuffer, pBuf->pbData + pBuf->cbRead, *pcbToRead);
+            pBuf->cbRead += *pcbToRead;
+        }
+        else
+        {
+            pbBuffer = NULL;
+            *pcbToRead = 0;
+        }
+        rc = RTSemMutexRelease(pBuf->mtx);
     }
-    else
-    {
-        pbBuffer = NULL;
-        *pcbToRead = 0;
-    }
-    return VINF_SUCCESS;
+    return rc;
 }
 
 int VBoxServiceControlExecWritePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
@@ -566,28 +597,33 @@ int VBoxServiceControlExecWritePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
 {
     AssertPtr(pBuf);
 
-// LOCKING
-
-    /** @todo Use RTMemCache or RTMemObj here? */
-    uint8_t *pNewBuf;
-    while (pBuf->cbSize - pBuf->cbOffset < cbData)
-    {
-        pNewBuf = (uint8_t*)RTMemRealloc(pBuf->pbData, pBuf->cbSize + _4K);
-        if (pNewBuf == NULL)
-            break;
-        pBuf->cbSize += _4K;
-        pBuf->pbData = pNewBuf;
+    int rc = RTSemMutexRequest(pBuf->mtx, RT_INDEFINITE_WAIT);
+    if (RT_SUCCESS(rc))
+    {    
+        /** @todo Use RTMemCache or RTMemObj here? */
+        uint8_t *pNewBuf;
+        while (pBuf->cbSize - pBuf->cbOffset < cbData)
+        {
+            pNewBuf = (uint8_t*)RTMemRealloc(pBuf->pbData, pBuf->cbSize + _4K);
+            if (pNewBuf == NULL)
+                break;
+            pBuf->cbSize += _4K;
+            pBuf->pbData = pNewBuf;
+        }
+        
+        int rc = VINF_SUCCESS;
+        if (pBuf->pbData)
+        {
+            memcpy(pBuf->pbData + pBuf->cbOffset, pbData, cbData);
+            pBuf->cbOffset += cbData;
+            /** @todo Add offset clamping! */
+        }
+        else
+            rc = VERR_NO_MEMORY;
+        int rc2 = RTSemMutexRelease(pBuf->mtx);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
-
-    int rc = VINF_SUCCESS;
-    if (pBuf->pbData)
-    {
-        memcpy(pBuf->pbData + pBuf->cbOffset, pbData, cbData);
-        pBuf->cbOffset += cbData;
-        /** @todo Add offset clamping! */
-    }
-    else
-        rc = VERR_NO_MEMORY;
     return rc;
 }
 
@@ -667,15 +703,9 @@ int VBoxServiceControlExecAllocateThreadData(PVBOXSERVICECTRLTHREAD pThread,
                                RT_INDEFINITE_WAIT : uTimeLimitMS;
 
         /* Init buffers. */
-        pData->stdOut.pbData = NULL;
-        pData->stdOut.cbSize = 0;
-        pData->stdOut.cbOffset = 0;
-        pData->stdOut.cbRead = 0;
-
-        pData->stdErr.pbData = NULL;
-        pData->stdErr.cbSize = 0;
-        pData->stdErr.cbOffset = 0;
-        pData->stdErr.cbRead = 0;
+        rc = VBoxServiceControlExecInitPipeBuffer(&pData->stdOut);
+        if (RT_SUCCESS(rc))
+            rc = VBoxServiceControlExecInitPipeBuffer(&pData->stdErr);
     }
 
     if (RT_FAILURE(rc))
@@ -688,19 +718,6 @@ int VBoxServiceControlExecAllocateThreadData(PVBOXSERVICECTRLTHREAD pThread,
         pThread->pvData = pData;
     }
     return rc;
-}
-
-void VBoxServiceControlExecDestroyPipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf)
-{
-    if (pBuf)
-    {
-        if (pBuf->pbData)
-            RTMemFree(pBuf->pbData);
-        pBuf->pbData = NULL;
-        pBuf->cbSize = 0;
-        pBuf->cbOffset = 0;
-        pBuf->cbRead = 0;
-    }
 }
 
 /** Frees an allocated thread data structure along with all its allocated parameters. */
