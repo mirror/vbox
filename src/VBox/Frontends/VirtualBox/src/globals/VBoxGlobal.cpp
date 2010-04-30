@@ -422,7 +422,7 @@ public:
         Q_UNUSED (id);
         Q_UNUSED (type);
         Q_UNUSED (registered);
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnMachineRegistered) (IN_BSTR id, BOOL registered)
@@ -468,7 +468,7 @@ public:
                                       IN_BSTR /* value */,
                                       IN_BSTR /* flags */)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
 private:
