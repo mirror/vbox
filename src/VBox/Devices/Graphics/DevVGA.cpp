@@ -794,7 +794,7 @@ static uint32_t vbe_ioport_read_data(void *opaque, uint32_t addr)
     VGAState *s = (VGAState*)opaque;
     uint32_t val;
 
-    if (s->vbe_index <= VBE_DISPI_INDEX_NB) {
+    if (s->vbe_index < VBE_DISPI_INDEX_NB) {
       if (s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_GETCAPS) {
           switch(s->vbe_index) {
                 /* XXX: do not hardcode ? */
