@@ -33,6 +33,7 @@ class SharedFolder;
 class RemoteDisplayInfo;
 class AudioSniffer;
 class ConsoleVRDPServer;
+class ConsoleCallbackRegistration;      /* See ConsoleImpl.cpp. */
 class VMMDev;
 class Progress;
 
@@ -649,7 +650,7 @@ private:
      * operation before starting. */
     ComObjPtr<Progress> mptrCancelableProgress;
 
-    typedef std::list <ComPtr<IConsoleCallback> > CallbackList;
+    typedef std::list<ConsoleCallbackRegistration> CallbackList;
     CallbackList mCallbacks;
 
     struct
