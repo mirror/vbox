@@ -1258,10 +1258,11 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                 if (ulParent)
                     pItem->createChild("rasd:Parent")->addContent(Utf8StrFmt("%d", ulParent));
 
-                // <rasd:ResourceType>3</rasd:ResourceType>
-                pItem->createChild("rasd:ResourceType")->addContent(Utf8StrFmt("%d", type));
                 if (!strResourceSubType.isEmpty())
                     pItem->createChild("rasd:ResourceSubType")->addContent(strResourceSubType);
+
+                // <rasd:ResourceType>3</rasd:ResourceType>
+                pItem->createChild("rasd:ResourceType")->addContent(Utf8StrFmt("%d", type));
 
                 // <rasd:VirtualQuantity>1</rasd:VirtualQuantity>
                 if (lVirtualQuantity != -1)
