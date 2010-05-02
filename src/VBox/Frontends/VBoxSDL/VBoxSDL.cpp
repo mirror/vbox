@@ -485,63 +485,63 @@ public:
 
     STDMETHOD(OnAdditionsStateChange)()
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnNetworkAdapterChange)(INetworkAdapter *aNetworkAdapter)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnSerialPortChange)(ISerialPort *aSerialPort)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnParallelPortChange)(IParallelPort *aParallelPort)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnVRDPServerChange)()
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnRemoteDisplayInfoChange)()
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnUSBControllerChange)()
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnUSBDeviceStateChange)(IUSBDevice *aDevice, BOOL aAttached,
                                      IVirtualBoxErrorInfo *aError)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnSharedFolderChange)(Scope_T aScope)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnStorageControllerChange)()
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnMediumChange)(IMediumAttachment * /*aMediumAttachment*/)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnCPUChange)(ULONG /*aCPU*/, BOOL /* aRemove */)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnRuntimeError)(BOOL fFatal, IN_BSTR id, IN_BSTR message)
