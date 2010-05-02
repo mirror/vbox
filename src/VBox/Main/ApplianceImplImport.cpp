@@ -490,7 +490,9 @@ STDMETHODIMP Appliance::Interpret()
                     //  - figure out if there is a url specifier for vhd already
                     //  - we need a url specifier for the vdi format
                     if (   di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#sparse", Utf8Str::CaseInsensitive)
+                        || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized", Utf8Str::CaseInsensitive)
                         || di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
+                        || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
                        )
                     {
                         /* If the href is empty use the VM name as filename */
@@ -1285,8 +1287,10 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
             // which format to use?
             Bstr srcFormat = L"VDI";
             if (   di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#sparse", Utf8Str::CaseInsensitive)
+                || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized", Utf8Str::CaseInsensitive)
                 || di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
-            )
+                || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
+               )
                 srcFormat = L"VMDK";
             // create an empty hard disk
             rc = mVirtualBox->CreateHardDisk(srcFormat, Bstr(strTargetPath), pTargetHD.asOutParam());
