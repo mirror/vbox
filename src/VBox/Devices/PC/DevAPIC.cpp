@@ -895,11 +895,11 @@ PDMBOTHCBDECL(int) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Re
             val = 0;
             break;
         case 0x0d:
-            val = apic->log_dest << 24;
+            val = (uint64_t)apic->log_dest << 24;
             break;
         case 0x0e:
             /* Bottom 28 bits are always 1 */
-            val = (apic->dest_mode << 28) | 0xfffffff;
+            val = ((uint64_t)apic->dest_mode << 28) | 0xfffffff;
             break;
         case 0x0f:
             val = apic->spurious_vec;
