@@ -2064,17 +2064,18 @@ STDMETHODIMP VirtualBox::RegisterCallback(IVirtualBoxCallback *aCallback)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-#if 0 /** @todo r=bird,r=pritesh: must check that the interface id match correct or we might screw up with old code! */
-    void *dummy;
-    HRESULT hrc = aCallback->QueryInterface(NS_GET_IID(IVirtualBoxCallback), &dummy);
+    /* Query the interface we associate with IVirtualBoxCallback as the caller
+       might've been compiled against a different SDK. */
+    void *pvCallback;
+    HRESULT hrc = aCallback->QueryInterface(COM_IIDOF(IVirtualBoxCallback), &pvCallback);
     if (FAILED(hrc))
-        return hrc;
-    aCallback->Release();
-#endif
+        return setError(hrc, tr("Incompatible IVirtualBoxCallback interface - version mismatch?"));
+    aCallback = (IVirtualBoxCallback *)pvCallback;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     m->llCallbacks.push_back(CallbackList::value_type(aCallback));
 
+    aCallback->Release();
     return S_OK;
 }
 
