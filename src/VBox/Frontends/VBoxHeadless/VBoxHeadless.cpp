@@ -306,7 +306,7 @@ public:
     STDMETHOD(OnMousePointerShapeChange)(BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
                                          ULONG width, ULONG height, BYTE *shape)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnMouseCapabilityChange)(BOOL supportsAbsolute, BOOL supportsRelative, BOOL needsHostCursor)
@@ -326,7 +326,7 @@ public:
 
     STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnStateChange)(MachineState_T machineState)
@@ -337,32 +337,32 @@ public:
 
     STDMETHOD(OnExtraDataChange)(BSTR key)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnAdditionsStateChange)()
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnNetworkAdapterChange)(INetworkAdapter *aNetworkAdapter)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnSerialPortChange)(ISerialPort *aSerialPort)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnParallelPortChange)(IParallelPort *aParallelPort)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnVRDPServerChange)()
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnRemoteDisplayInfoChange)()
@@ -395,38 +395,38 @@ public:
 
     STDMETHOD(OnUSBControllerChange)()
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnStorageControllerChange)()
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnMediumChange)(IMediumAttachment * /* aMediumAttachment */)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnCPUChange)(ULONG /*aCPU*/, BOOL /* aRemove */)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnUSBDeviceStateChange)(IUSBDevice *aDevice, BOOL aAttached,
                                       IVirtualBoxErrorInfo *aError)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnSharedFolderChange)(Scope_T aScope)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnRuntimeError)(BOOL fatal, IN_BSTR id, IN_BSTR message)
     {
-        return S_OK;
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnCanShowWindow)(BOOL *canShow)
