@@ -6160,6 +6160,9 @@
       <desc>
         Notification when the guest mouse pointer shape has
         changed. The new shape data is given.
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="visible" type="boolean" dir="in">
         <desc>
@@ -6228,6 +6231,9 @@
       <desc>
         Notification when the mouse capabilities reported by the
         guest have changed. The new capabilities are passed.
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="supportsAbsolute" type="boolean" dir="in"/>
       <param name="supportsRelative" type="boolean" dir="in"/>
@@ -6238,6 +6244,9 @@
       <desc>
         Notification when the guest OS executes the KBD_CMD_SET_LEDS command
         to alter the state of the keyboard LEDs.
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="numLock" type="boolean" dir="in"/>
       <param name="capsLock" type="boolean" dir="in"/>
@@ -6248,6 +6257,9 @@
       <desc>
         Notification when the execution state of the machine has changed.
         The new state will be given.
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="state" type="MachineState" dir="in"/>
     </method>
@@ -6266,6 +6278,9 @@
         virtual <link to="IMachine::getNetworkAdapter">network adapters</link>
         changes.  Interested callees should use INetworkAdapter methods and
         attributes to find out what has changed.
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="networkAdapter" type="INetworkAdapter" dir="in">
         <desc>Network adapter that is subject to change.</desc>
@@ -6278,6 +6293,9 @@
         virtual <link to="IMachine::getSerialPort">serial ports</link> changes.
         Interested callees should use ISerialPort methods and attributes
         to find out what has changed.
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="serialPort" type="ISerialPort" dir="in">
         <desc>Serial port that is subject to change.</desc>
@@ -6290,6 +6308,9 @@
         virtual <link to="IMachine::getParallelPort">parallel ports</link>
         changes.  Interested callees should use ISerialPort methods and
         attributes to find out what has changed.
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="parallelPort" type="IParallelPort" dir="in">
         <desc>Parallel port that is subject to change.</desc>
@@ -6302,6 +6323,9 @@
         virtual <link to="IMachine::storageControllers">storage controllers</link>
         changes. Interested callees should query the corresponding collections
         to find out what has changed.
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
     </method>
 
@@ -6310,6 +6334,9 @@
         Notification when a
         <link to="IMachine::mediumAttachments">medium attachment</link>
         changes.
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="mediumAttachment" type="IMediumAttachment" dir="in">
         <desc>Medium attachment that is subject to change.</desc>
@@ -6319,6 +6346,9 @@
     <method name="onCPUChange">
       <desc>
         Notification when a CPU changes.
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="cpu" type="unsigned long" dir="in">
         <desc>The CPU which changed</desc>
@@ -6334,6 +6364,9 @@
         <link to="IMachine::VRDPServer">VRDP server</link> changes.
         Interested callees should use IVRDPServer methods and attributes to
         find out what has changed.
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
     </method>
 
@@ -6342,6 +6375,9 @@
         Notification when the status of the VRDP server changes. Interested callees
         should use <link to="IConsole::RemoteDisplayInfo">IRemoteDisplayInfo</link>
         attributes to find out what is the current status.
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
     </method>
 
@@ -6351,6 +6387,9 @@
         <link to="IMachine::USBController">USB controller</link> changes.
         Interested callees should use IUSBController methods and attributes to
         find out what has changed.
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
     </method>
 
@@ -6374,6 +6413,9 @@
         doesn't change and the @a error parameter represents the error
         message describing the failure.
 
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="device" type="IUSBDevice" dir="in">
         <desc>Device that is subject to state change.</desc>
@@ -6402,6 +6444,9 @@
         machine (<link to="Scope_Session">Session</link>). Interested callees
         should use query the corresponding collections to find out what has
         changed.
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="scope" type="Scope" dir="in">
         <desc>Scope of the notification.</desc>
@@ -6468,6 +6513,9 @@
           user notification and performs necessary actions.
         </note>
 
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="fatal" type="boolean" dir="in">
         <desc>Whether the error is fatal or not</desc>
@@ -6500,6 +6548,10 @@
           return @c true and @c S_OK from all but one of them that
           actually manages console window activation.
         </note>
+
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="canShow" type="boolean" dir="return">
         <desc>
@@ -6544,6 +6596,10 @@
           return @c S_OK from all but one of them that actually
           manages console window activation.
         </note>
+
+        <result name="VBOX_E_DONT_CALL_AGAIN">
+          Do not call again, this method is a NOP.
+        </result>
       </desc>
       <param name="winId" type="unsigned long long" dir="return">
         <desc>
