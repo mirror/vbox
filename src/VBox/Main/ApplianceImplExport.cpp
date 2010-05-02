@@ -1272,12 +1272,20 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
     // now that we're done with the official OVF <Item> tags under <VirtualSystem>, write out VirtualBox XML
     // under the vbox: namespace
     xml::ElementNode *pelmVBoxMachine = pelmVirtualSystem->createChild("vbox:Machine");
+    // ovf:required="false" tells other OVF parsers that they can ignore this thing
+    pelmVBoxMachine->setAttribute("ovf:required", "false");
+    // ovf:Info element is required or VMware will bail out on the vbox:Machine element
+    pelmVBoxMachine->createChild("ovf:Info")->addContent("Complete VirtualBox machine configuration in VirtualBox format");
+
+    // create an empty machine config
     settings::MachineConfigFile *pConfig = new settings::MachineConfigFile(NULL);
 
     try
     {
         AutoWriteLock machineLock(vsdescThis->m->pMachine COMMA_LOCKVAL_SRC_POS);
+        // fill the machine config
         vsdescThis->m->pMachine->copyMachineDataToSettings(*pConfig);
+        // write the machine config to the vbox:Machine element
         pConfig->buildMachineXML(*pelmVBoxMachine,
                                  settings::MachineConfigFile::BuildMachineXML_WriteVboxVersionAttribute);
                                         // but not BuildMachineXML_IncludeSnapshots
