@@ -65,7 +65,11 @@ PYXPCOM_EXPORT PyObject *PyXPCOMMethod_IID(PyObject *self, PyObject *args)
 			void *buf = NULL;
 			int size = (*pb->bf_getreadbuffer)(obBuf, 0, &buf);
 			if (size != sizeof(nsIID) || buf==NULL) {
+#ifdef VBOX
+                                PyErr_Format(PyExc_ValueError, "A buffer object to be converted to an IID must be exactly %u bytes long", sizeof(nsIID));
+#else
 				PyErr_Format(PyExc_ValueError, "A buffer object to be converted to an IID must be exactly %d bytes long", sizeof(nsIID));
+#endif
 				return NULL;
 			}
 			nsIID iid;
@@ -193,7 +197,7 @@ Py_nsIID::PyTypeMethod_compare(PyObject *self, PyObject *other)
 {
 	Py_nsIID *s_iid = (Py_nsIID *)self;
 	Py_nsIID *o_iid = (Py_nsIID *)other;
-	int rc = memcmp(&s_iid->m_iid, &o_iid->m_iid, sizeof(s_iid->m_iid)); 
+	int rc = memcmp(&s_iid->m_iid, &o_iid->m_iid, sizeof(s_iid->m_iid));
 	return rc == 0 ? 0 : (rc < 0 ? -1 : 1);
 }
 
