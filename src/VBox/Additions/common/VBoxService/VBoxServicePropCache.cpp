@@ -213,7 +213,7 @@ void VBoxServicePropCacheDestroy(PVBOXSERVICEVEPROPCACHE pCache)
     PVBOXSERVICEVEPROPCACHEENTRY pNode;
     RTListForEach(&pCache->Node, pNode, VBOXSERVICEVEPROPCACHEENTRY, Node)
     {
-        if (pNode->uFlags & VBOXSERVICEPROPCACHEFLAG_TEMPORARY == 0)
+        if ((pNode->uFlags & VBOXSERVICEPROPCACHEFLAG_TEMPORARY) == 0)
         {
             if (pNode->pszValueReset) /* Write reset value? */
             {
