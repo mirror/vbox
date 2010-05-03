@@ -2956,29 +2956,12 @@ endif
 # (Same transformation as for VBOXR3NPEXE.)
 #
 TEMPLATE_VBOXR3NP= VBox Ring 3 Non-pedantic
-if 1
 TEMPLATE_VBOXR3NP_EXTENDS = VBOXR3
 ifneq ($(KBUILD_TARGET),win) # (only gcc)
  TEMPLATE_VBOXR3NP_TOOL                  = $(VBOX_GCC_TOOL)
  TEMPLATE_VBOXR3NP_CXXFLAGS              = $(filter-out -pedantic -Wshadow,$(TEMPLATE_VBOXR3_CXXFLAGS)) -Wno-sign-compare
  TEMPLATE_VBOXR3NP_CFLAGS                = $(filter-out -pedantic -Wshadow -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations,$(TEMPLATE_VBOXR3_CFLAGS)) -Wno-sign-compare
 endif
-else #old, wrong LDFLAGS.darwin
-TEMPLATE_VBOXR3NP_EXTENDS = VBOXR3NPEXE
-TEMPLATE_VBOXR3NP_LDFLAGS.l4 = \
-	$(L4_LIBDIR)/../crt0.s.o \
-	-T$(L4_LIBDIR)/../main_rel.ld \
-	-nostdlib
-TEMPLATE_VBOXR3NP_DEFS.l4 = $(TEMPLATE_VBOXR3NPEXE_DEFS.l4) __PIC__
-ifeq ($(filter-out solaris.x86 %.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),)
- ifneq ($(KBUILD_TARGET),win)
-  TEMPLATE_VBOXR3NP_DEFS = $(TEMPLATE_VBOXR3NPEXE_DEFS) PIC
-  TEMPLATE_VBOXR3NP_CFLAGS = $(TEMPLATE_VBOXR3NPEXE_CFLAGS) -fPIC
-  TEMPLATE_VBOXR3NP_CXXFLAGS = $(TEMPLATE_VBOXR3NPEXE_CXXFLAGS) -fPIC
-  TEMPLATE_VBOXR3NP_LDFLAGS = $(TEMPLATE_VBOXR3NPEXE_LDFLAGS) -fPIC
- endif
-endif
-endif # old
 
 
 #
