@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -416,9 +416,9 @@ typedef struct ATACONTROLLER
     /** The request queue for the AIO thread. One element is always unused. */
     ATARequest          aAsyncIORequests[4];
     /** The position at which to insert a new request for the AIO thread. */
-    uint8_t             AsyncIOReqHead;
+    volatile uint8_t    AsyncIOReqHead;
     /** The position at which to get a new request for the AIO thread. */
-    uint8_t             AsyncIOReqTail;
+    volatile uint8_t    AsyncIOReqTail;
     /** Whether to call PDMDevHlpAsyncNotificationCompleted when idle. */
     bool volatile       fSignalIdle;
     uint8_t             Alignment3[1]; /**< Explicit padding of the 1 byte gap. */
@@ -1132,6 +1132,7 @@ static void ataCmdOK(ATADevState *s, uint8_t status)
 static void ataCmdError(ATADevState *s, uint8_t uErrorCode)
 {
     Log(("%s: code=%#x\n", __FUNCTION__, uErrorCode));
+    Assert(uErrorCode);
     s->uATARegError = uErrorCode;
     ataSetStatusValue(s, ATA_STAT_READY | ATA_STAT_ERR);
     s->cbTotalTransfer = 0;
@@ -5062,6 +5063,7 @@ static void ataBMDMACmdWriteB(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
         /* Check whether the guest OS wants to change DMA direction in
          * mid-flight. Not allowed, according to the PIIX3 specs. */
         Assert(!(pCtl->BmDma.u8Status & BM_STATUS_DMAING) || !((val ^ pCtl->BmDma.u8Cmd) & 0x04));
+        uint8_t uOldBmDmaStatus = pCtl->BmDma.u8Status;
         pCtl->BmDma.u8Status |= BM_STATUS_DMAING;
         pCtl->BmDma.u8Cmd = val & (BM_CMD_START | BM_CMD_WRITE);
 
@@ -5072,8 +5074,10 @@ static void ataBMDMACmdWriteB(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
             return;
         }
 
-        /* Do not start DMA transfers if there's a PIO transfer going on. */
-        if (!pCtl->aIfs[pCtl->iSelectedIf].fDMA)
+        /* Do not start DMA transfers if there's a PIO transfer going on,
+         * or if there is already a transfer started on this controller. */
+        if (   !pCtl->aIfs[pCtl->iSelectedIf].fDMA
+            || (uOldBmDmaStatus & BM_STATUS_DMAING))
             return;
 
         if (pCtl->aIfs[pCtl->iAIOIf].uATARegStatus & ATA_STAT_DRQ)
