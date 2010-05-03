@@ -54,8 +54,10 @@ private slots:
     /* Popup main menu: */
     void sltPopupMainMenu();
 
+#ifndef RT_OS_DARWIN /* Something is *really* broken in regards of the moc here */
     /* Update mini tool-bar mask: */
     void sltUpdateMiniToolBarMask();
+#endif /* RT_OS_DARWIN */
 
     /* Close window reimplementation: */
     void sltTryClose();
@@ -77,7 +79,9 @@ private:
     /* Prepare helpers: */
     void prepareSeamless();
     void prepareMenu();
+#ifndef Q_WS_MAC
     void prepareMiniToolBar();
+#endif /* Q_WS_MAC */
     void prepareMachineView();
 #ifdef Q_WS_MAC
     void loadWindowSettings();
@@ -86,7 +90,9 @@ private:
     /* Cleanup helpers: */
     void saveWindowSettings();
     void cleanupMachineView();
+#ifndef Q_WS_MAC
     //void cleanupMiniToolBar() {}
+#endif /* Q_WS_MAC */
     void cleanupMenu();
     //void cleanupSeamless() {}
 
@@ -99,7 +105,9 @@ private:
 
     /* Private variables: */
     QMenu *m_pMainMenu;
+#ifndef Q_WS_MAC
     VBoxMiniToolBar *m_pMiniToolBar;
+#endif /* Q_WS_MAC */
 #ifdef Q_WS_WIN
     QRegion m_prevRegion;
 #endif /* Q_WS_WIN */
