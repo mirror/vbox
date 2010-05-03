@@ -143,6 +143,9 @@ static PRStatus ExpandMonitorCache(PRUintn new_size_log2)
             PR_ASSERT(p != 0);
             return PR_FAILURE;
         }
+#ifdef VBOX
+        new_entries = p;
+#endif
     }
 
     /*
