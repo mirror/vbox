@@ -2990,13 +2990,13 @@ GMMR0DECL(int) GMMR0BalloonedPagesReq(PVM pVM, VMCPUID idCpu, PGMMBALLOONEDPAGES
 }
 
 /**
- * Return the total amount of free pages
+ * Return memory statistics for the hypervisor
  *
  * @returns VBox status code:
  * @param   pVM             Pointer to the shared VM structure.
  * @param   pReq            The request packet.
  */
-GMMR0DECL(int) GMMR0QueryVMMMemoryStatsReq(PVM pVM, PGMMMEMSTATSREQ pReq)
+GMMR0DECL(int) GMMR0QueryHypervisorMemoryStatsReq(PVM pVM, PGMMMEMSTATSREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -3015,9 +3015,59 @@ GMMR0DECL(int) GMMR0QueryVMMMemoryStatsReq(PVM pVM, PGMMMEMSTATSREQ pReq)
     pReq->cAllocPages     = pGMM->cAllocatedPages;
     pReq->cFreePages      = (pGMM->cChunks << (GMM_CHUNK_SHIFT- PAGE_SHIFT)) - pGMM->cAllocatedPages;
     pReq->cBalloonedPages = pGMM->cBalloonedPages;
+    pReq->cMaxPages       = pGMM->cMaxPages;
     GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
 
     return VINF_SUCCESS;
+}
+
+/**
+ * Return memory statistics for the VM
+ *
+ * @returns VBox status code:
+ * @param   pVM             Pointer to the shared VM structure.
+ * @parma   idCpu           Cpu id.
+ * @param   pReq            The request packet.
+ */
+GMMR0DECL(int)  GMMR0QueryMemoryStatsReq(PVM pVM, VMCPUID idCpu, PGMMMEMSTATSREQ pReq)
+{
+    /*
+     * Validate input and pass it on.
+     */
+    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq == sizeof(GMMMEMSTATSREQ),
+                    ("%#x < %#x\n", pReq->Hdr.cbReq, sizeof(GMMMEMSTATSREQ)),
+                    VERR_INVALID_PARAMETER);
+
+    /*
+     * Validate input and get the basics.
+     */
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    PGVM pGVM;
+    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Take the sempahore and do some more validations.
+     */
+    rc = RTSemFastMutexRequest(pGMM->Mtx);
+    AssertRC(rc);
+    if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
+    {
+        pReq->cAllocPages     = pGVM->gmm.s.Allocated.cBasePages;
+        pReq->cBalloonedPages = pGVM->gmm.s.cBalloonedPages;
+        pReq->cMaxPages       = pGVM->gmm.s.Reserved.cBasePages;
+        pReq->cFreePages      = pReq->cMaxPages - pReq->cAllocPages;
+    }
+    else
+        rc = VERR_INTERNAL_ERROR_5;
+
+    RTSemFastMutexRelease(pGMM->Mtx);
+    LogFlow(("GMMR3QueryVMMemoryStats: returns %Rrc\n", rc));
+    return rc;
 }
 
 /**
@@ -3415,7 +3465,11 @@ GMMR0DECL(int)  GMMR0RegisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMREGISTE
  */
 GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule)
 {
+#ifdef VBOX_WITH_PAGE_SHARING
     return VERR_NOT_IMPLEMENTED;
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 /**
@@ -3440,7 +3494,7 @@ GMMR0DECL(int)  GMMR0UnregisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMUNREG
 
 
 /**
- * Checks regsitered modules for shared pages
+ * Checks registered modules for shared pages
  *
  * @returns VBox status code.
  * @param   pVM                 VM handle
@@ -3448,5 +3502,9 @@ GMMR0DECL(int)  GMMR0UnregisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMUNREG
  */
 GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, VMCPUID idCpu)
 {
+#ifdef VBOX_WITH_PAGE_SHARING
     return VERR_NOT_IMPLEMENTED;
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }

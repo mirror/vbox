@@ -398,8 +398,8 @@ GMMR0DECL(int)  GMMR0BalloonedPagesReq(PVM pVM, VMCPUID idCpu, PGMMBALLOONEDPAGE
 
 
 /**
- * Request buffer for GMMR0QueryVMMMemoryStatsReq / VMMR0_DO_GMM_QUERY_VMM_MEM_STATS.
- * @see GMMR0QueryVMMMemoryStatsReq.
+ * Request buffer for GMMR0QueryHypervisorMemoryStatsReq / VMMR0_DO_GMM_QUERY_VMM_MEM_STATS.
+ * @see GMMR0QueryHypervisorMemoryStatsReq.
  */
 typedef struct GMMMEMSTATSREQ
 {
@@ -411,11 +411,14 @@ typedef struct GMMMEMSTATSREQ
     uint64_t            cFreePages;
     /** The number of ballooned pages (out). */
     uint64_t            cBalloonedPages;
+    /** Maximum nr of pages (out). */
+    uint64_t            cMaxPages;
 } GMMMEMSTATSREQ;
-/** Pointer to a GMMR0QueryVMMMemoryStatsReq / VMMR0_DO_GMM_QUERY_VMM_MEM_STATS request buffer. */
+/** Pointer to a GMMR0QueryHypervisorMemoryStatsReq / VMMR0_DO_GMM_QUERY_HYPERVISOR_MEM_STATS request buffer. */
 typedef GMMMEMSTATSREQ *PGMMMEMSTATSREQ;
 
-GMMR0DECL(int)  GMMR0QueryVMMMemoryStatsReq(PVM pVM, PGMMMEMSTATSREQ pReq);
+GMMR0DECL(int)  GMMR0QueryHypervisorMemoryStatsReq(PVM pVM, PGMMMEMSTATSREQ pReq);
+GMMR0DECL(int)  GMMR0QueryMemoryStatsReq(PVM pVM, VMCPUID idCpu, PGMMMEMSTATSREQ pReq);
 
 /**
  * Request buffer for GMMR0MapUnmapChunkReq / VMMR0_DO_GMM_MAP_UNMAP_CHUNK.
@@ -531,8 +534,9 @@ GMMR3DECL(int)  GMMR3AllocateLargePage(PVM pVM,  uint32_t cbPage);
 GMMR3DECL(int)  GMMR3FreeLargePage(PVM pVM,  uint32_t idPage);
 GMMR3DECL(int)  GMMR3MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
 GMMR3DECL(int)  GMMR3SeedChunk(PVM pVM, RTR3PTR pvR3);
+GMMR3DECL(int)  GMMR3QueryHypervisorMemoryStats(PVM pVM, uint64_t *pcTotalAllocPages, uint64_t *pcTotalFreePages, uint64_t *pcTotalBalloonPages);
+GMMR3DECL(int)  GMMR3QueryMemoryStats(PVM pVM, uint64_t *pcAllocPages, uint64_t *pcMaxPages, uint64_t *pcBalloonPages);
 GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages);
-GMMR3DECL(int)  GMMR3QueryVMMMemoryStats(PVM pVM, uint64_t *pcTotalAllocPages, uint64_t *pcTotalFreePages, uint64_t *pcTotalBalloonPages);
 GMMR3DECL(int)  GMMR3RegisterSharedModule(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule,
                                           unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions);
 GMMR3DECL(int)  GMMR3UnregisterSharedModule(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule);
