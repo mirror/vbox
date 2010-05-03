@@ -2945,17 +2945,25 @@ TEMPLATE_VBOXCPPUNITEXE_LIBS = \
 TEMPLATE_VBOXR3NPEXE                     = VBox Ring 3 Non-pedantic
 TEMPLATE_VBOXR3NPEXE_EXTENDS             = VBOXR3EXE
 ifneq ($(KBUILD_TARGET),win) # (only gcc)
- TEMPLATE_VBOXR3NPEXE_TOOL                = $(VBOX_GCC_TOOL)
- TEMPLATE_VBOXR3NPEXE_CXXFLAGS            = $(filter-out -pedantic -Wshadow,$(TEMPLATE_VBOXR3EXE_CXXFLAGS)) -Wno-sign-compare
- TEMPLATE_VBOXR3NPEXE_CFLAGS              = $(filter-out -pedantic -Wshadow -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations,$(TEMPLATE_VBOXR3EXE_CFLAGS)) -Wno-sign-compare
+ TEMPLATE_VBOXR3NPEXE_TOOL               = $(VBOX_GCC_TOOL)
+ TEMPLATE_VBOXR3NPEXE_CXXFLAGS           = $(filter-out -pedantic -Wshadow,$(TEMPLATE_VBOXR3EXE_CXXFLAGS)) -Wno-sign-compare
+ TEMPLATE_VBOXR3NPEXE_CFLAGS             = $(filter-out -pedantic -Wshadow -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations,$(TEMPLATE_VBOXR3EXE_CFLAGS)) -Wno-sign-compare
 endif
 
 
 #
 # Template for building bad C/C++ style R3 shared libraries / Dlls (no -pedantic).
-# This is mostly identical to the VBOXR3NPEXE template.
+# (Same transformation as for VBOXR3NPEXE.)
 #
 TEMPLATE_VBOXR3NP= VBox Ring 3 Non-pedantic
+if 1
+TEMPLATE_VBOXR3NP_EXTENDS = VBOXR3
+ifneq ($(KBUILD_TARGET),win) # (only gcc)
+ TEMPLATE_VBOXR3NP_TOOL                  = $(VBOX_GCC_TOOL)
+ TEMPLATE_VBOXR3NP_CXXFLAGS              = $(filter-out -pedantic -Wshadow,$(TEMPLATE_VBOXR3_CXXFLAGS)) -Wno-sign-compare
+ TEMPLATE_VBOXR3NP_CFLAGS                = $(filter-out -pedantic -Wshadow -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations,$(TEMPLATE_VBOXR3_CFLAGS)) -Wno-sign-compare
+endif
+else #old, wrong LDFLAGS.darwin
 TEMPLATE_VBOXR3NP_EXTENDS = VBOXR3NPEXE
 TEMPLATE_VBOXR3NP_LDFLAGS.l4 = \
 	$(L4_LIBDIR)/../crt0.s.o \
@@ -2970,6 +2978,7 @@ ifeq ($(filter-out solaris.x86 %.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),)
   TEMPLATE_VBOXR3NP_LDFLAGS = $(TEMPLATE_VBOXR3NPEXE_LDFLAGS) -fPIC
  endif
 endif
+endif # old
 
 
 #
