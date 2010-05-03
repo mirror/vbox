@@ -53,19 +53,22 @@
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
+#include "VBoxServicePropCache.h"
 
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 /** The vminfo interval (millseconds). */
-uint32_t                g_VMInfoInterval = 0;
+uint32_t                        g_VMInfoInterval = 0;
 /** The semaphore we're blocking on. */
-static RTSEMEVENTMULTI  g_VMInfoEvent = NIL_RTSEMEVENTMULTI;
+static RTSEMEVENTMULTI          g_VMInfoEvent = NIL_RTSEMEVENTMULTI;
 /** The guest property service client ID. */
-static uint32_t         g_VMInfoGuestPropSvcClientID = 0;
+static uint32_t                 g_VMInfoGuestPropSvcClientID = 0;
 /** Number of logged in users in OS. */
-static uint32_t         g_cVMInfoLoggedInUsers = UINT32_MAX;
+static uint32_t                 g_cVMInfoLoggedInUsers = UINT32_MAX;
+/** The guest property cache. */
+static VBOXSERVICEVEPROPCACHE   g_VMInfoPropCache;
 
 
 /** @copydoc VBOXSERVICE::pfnPreInit */
@@ -123,6 +126,19 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
         g_VMInfoEvent = NIL_RTSEMEVENTMULTI;
     }
 
+    if (RT_SUCCESS(rc))
+    {
+        VBoxServicePropCacheInit(&g_VMInfoPropCache, g_VMInfoGuestPropSvcClientID);
+
+        VBoxServicePropCacheUpdateEx(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/Net/Count", 
+                                     VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE, "0", "0");
+        VBoxServicePropCacheUpdateEx(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", 
+                                     VBOXSERVICEPROPCACHEFLAG_TEMPORARY, NULL, NULL);
+        VBoxServicePropCacheUpdateEx(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsers", 
+                                     VBOXSERVICEPROPCACHEFLAG_TEMPORARY, "0", "0");
+        VBoxServicePropCacheUpdateEx(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers", 
+                                     VBOXSERVICEPROPCACHEFLAG_TEMPORARY, "true", "true");
+    }
     return rc;
 }
 
@@ -305,21 +321,23 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
 #endif /* !RT_OS_WINDOWS */
 
         if (cUsersInList > 0)
-            VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", "%s", szUserList);
+            VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", "%s", szUserList);
         else
-            VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", NULL);
-        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/LoggedInUsers", "%u", cUsersInList);
+            VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", NULL);
+        VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsers", "%u", cUsersInList);
         if (   g_cVMInfoLoggedInUsers != cUsersInList
             || g_cVMInfoLoggedInUsers == UINT32_MAX)
         {
-            /* Update this property ONLY if there is a real change from no users to
+            /* 
+             * Update this property ONLY if there is a real change from no users to
              * users or vice versa. The only exception is that the initialization
              * forces an update, but only once. This ensures consistent property
-             * settings even if the VM aborted previously. */
+             * settings even if the VM aborted previously. 
+             */
             if (cUsersInList == 0)
-                VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers", "true");
+                VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers", "true");
             else if (g_cVMInfoLoggedInUsers == 0)
-                VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers", "false");
+                VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers", "false");
         }
         g_cVMInfoLoggedInUsers = cUsersInList;
 
@@ -382,8 +400,8 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
          * does not change. If this property is missing, the host assumes that all other GuestInfo
          * properties are no longer valid.
          */
-        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/Net/Count", "%d",
-                              nNumInterfaces > 1 ? nNumInterfaces-1 : 0);
+        VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/Net/Count", "%d",
+                                   nNumInterfaces > 1 ? nNumInterfaces-1 : 0);
 
         /** @todo Use GetAdaptersInfo() and GetAdapterAddresses (IPv4 + IPv6) for more information. */
         for (int i = 0; i < nNumInterfaces; ++i)
@@ -408,7 +426,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
 #endif
             Assert(pAddress);
             RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%d/V4/IP", iCurIface);
-            VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
+            VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
 
 #ifdef RT_OS_WINDOWS
             pAddress = (sockaddr_in *) & (InterfaceList[i].iiBroadcastAddress);
@@ -421,7 +439,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
             pAddress = (sockaddr_in *)&ifrequest[i].ifr_broadaddr;
 #endif
             RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%d/V4/Broadcast", iCurIface);
-            VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
+            VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
 
 #ifdef RT_OS_WINDOWS
             pAddress = (sockaddr_in *)&(InterfaceList[i].iiNetmask);
@@ -439,12 +457,11 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
 
 #endif
             RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%d/V4/Netmask", iCurIface);
-            VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
+            VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
 
             RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%d/Status", iCurIface);
-            VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, szPropPath,
-                                  nFlags & IFF_UP ? "Up" : "Down");
-
+            VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath,
+                                       nFlags & IFF_UP ? "Up" : "Down");
             iCurIface++;
         }
         if (sd >= 0)
@@ -495,30 +512,18 @@ static DECLCALLBACK(void) VBoxServiceVMInfoTerm(void)
 
     if (g_VMInfoEvent != NIL_RTSEMEVENTMULTI)
     {
-        /** @todo temporary solution: Zap all values which are not valid
-         *        anymore when VM goes down (reboot/shutdown ). Needs to
-         *        be replaced with "temporary properties" later.
-         *
-         *        One idea is to introduce a (HGCM-)session guest property
-         *        flag meaning that a guest property is only valid as long
-         *        as the HGCM session isn't closed (e.g. guest application
-         *        terminates).
-         */
-        rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", NULL);
-        rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/LoggedInUsers", "%d", 0);
-        if (g_cVMInfoLoggedInUsers > 0)
-            VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers", "true");
-
+        /* Delete the "../Net" branch. */
         const char *apszPat[1] = { "/VirtualBox/GuestInfo/Net/*" };
         rc = VbglR3GuestPropDelSet(g_VMInfoGuestPropSvcClientID, &apszPat[0], RT_ELEMENTS(apszPat));
-        rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/Net/Count", "%d", 0);
+
+        /* Destroy property cache. */
+        VBoxServicePropCacheDestroy(&g_VMInfoPropCache);
 
         /* Disconnect from guest properties service. */
         rc = VbglR3GuestPropDisconnect(g_VMInfoGuestPropSvcClientID);
         if (RT_FAILURE(rc))
             VBoxServiceError("Failed to disconnect from guest property service! Error: %Rrc\n", rc);
         g_VMInfoGuestPropSvcClientID = 0;
-
 
         RTSemEventMultiDestroy(g_VMInfoEvent);
         g_VMInfoEvent = NIL_RTSEMEVENTMULTI;

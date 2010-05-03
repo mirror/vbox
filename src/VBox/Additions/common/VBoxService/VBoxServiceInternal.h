@@ -212,7 +212,40 @@ typedef struct
 } VBOXSERVICECTRLSTDINBUF;
 /** Pointer to a standard input buffer. */
 typedef VBOXSERVICECTRLSTDINBUF *PVBOXSERVICECTRLSTDINBUF;
-#endif
+#endif /* VBOX_WITH_GUEST_CONTROL */
+
+#ifdef VBOX_WITH_GUEST_PROPS
+/**
+ * A guest propertiy cache.
+ */
+typedef struct
+{    
+    /** The client ID for HGCM communication. */
+    uint32_t uClientID;
+    RTLISTNODE Node;
+} VBOXSERVICEVEPROPCACHE;
+/** Pointer to a guest property cache. */
+typedef VBOXSERVICEVEPROPCACHE *PVBOXSERVICEVEPROPCACHE;
+
+/**
+ * Handling guest properties used by the VM information service.
+ */
+typedef struct
+{    
+    /** Node. */
+    RTLISTNODE Node;
+    /** Name (and full path) of guest property. */
+    char    *pszName;
+    /** The last value stored (for reference). */
+    char    *pszValue;
+    /** Reset value to write if property is temporary. */
+    char    *pszValueReset;
+    /** Flags. */
+    uint32_t uFlags;
+} VBOXSERVICEVEPROPCACHEENTRY;
+/** Pointer to a cached guest property. */
+typedef VBOXSERVICEVEPROPCACHEENTRY *PVBOXSERVICEVEPROPCACHEENTRY;
+#endif /* VBOX_WITH_GUEST_PROPS */
 
 RT_C_DECLS_BEGIN
 

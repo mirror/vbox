@@ -182,7 +182,6 @@ int VBoxServiceWritePropF(uint32_t u32ClientId, const char *pszName, const char 
     }
     return rc;
 }
-
 #endif /* VBOX_WITH_GUEST_PROPS */
 #ifdef RT_OS_WINDOWS
 
