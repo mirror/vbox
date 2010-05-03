@@ -216,7 +216,7 @@ typedef VBOXSERVICECTRLSTDINBUF *PVBOXSERVICECTRLSTDINBUF;
 
 #ifdef VBOX_WITH_GUEST_PROPS
 /**
- * A guest propertiy cache.
+ * A guest property cache.
  */
 typedef struct
 {    
