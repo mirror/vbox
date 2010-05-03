@@ -483,7 +483,7 @@ typedef struct GMM
     GMMCHUNKFREESET     Shared;
 
     /** Shared module tree (global). */
-    PAVLGCPTRNODECORE   pSharedModuleTree;
+    PAVLGCPTRNODECORE   pGlobalSharedModuleTree;
 
     /** The maximum number of pages we're allowed to allocate.
      * @gcfgm   64-bit GMM/MaxPages Direct.
@@ -3397,33 +3397,65 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModule
     AssertRC(rc);
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
-        /* Check if this module was already globally registered. */
-        PGMMSHAREDMODULE pRec = (PGMMSHAREDMODULE)RTAvlGCPtrGet(&pGMM->pSharedModuleTree, GCBaseAddr);
-        if (!pRec)
+        /* Check if this module is already locally registered. */
+        PGMMSHAREDMODULEPERVM pRecVM = (PGMMSHAREDMODULEPERVM)RTAvlGCPtrGet(&pGVM->gmm.s.pSharedModuleTree, GCBaseAddr);
+        if (!pRecVM)
         {
-            pRec = (PGMMSHAREDMODULE)RTMemAllocZ(RT_OFFSETOF(GMMSHAREDMODULE, aRegions[cRegions]));
-            pRec->Core.Key = GCBaseAddr;
-            pRec->cbModule = cbModule;
-            /* Input limit already safe; no need to check again. */
-            strcpy(pRec->szName, pszModuleName);
-            strcpy(pRec->szVersion, pszVersion);
+            pRecVM = (PGMMSHAREDMODULEPERVM)RTMemAllocZ(sizeof(*pRecVM));
+            if (!pRecVM)
+            {
+                AssertFailed();
+                rc = VERR_NO_MEMORY;
+                goto end;
+            }
 
-            pRec->cRegions = cRegions;
+            pRecVM->Core.Key = GCBaseAddr;
 
-            for (unsigned i = 0; i < cRegions; i++)
-                pRec->aRegions[i] = pRegions[i];
+            bool ret = RTAvlGCPtrInsert(&pGVM->gmm.s.pSharedModuleTree, &pRecVM->Core);
+            Assert(ret);
 
-            /** @todo references to pages */
+            /* Check if this module is already globally registered. */
+            PGMMSHAREDMODULE pRec = (PGMMSHAREDMODULE)RTAvlGCPtrGet(&pGMM->pGlobalSharedModuleTree, GCBaseAddr);
+            if (!pRec)
+            {
+                pRec = (PGMMSHAREDMODULE)RTMemAllocZ(RT_OFFSETOF(GMMSHAREDMODULE, aRegions[cRegions]));
+                if (!pRec)
+                {
+                    AssertFailed();
+                    rc = VERR_NO_MEMORY;
+                    goto end;
+                }
+
+                pRec->Core.Key = GCBaseAddr;
+                pRec->cbModule = cbModule;
+                /* Input limit already safe; no need to check again. */
+                strcpy(pRec->szName, pszModuleName);
+                strcpy(pRec->szVersion, pszVersion);
+
+                pRec->cRegions = cRegions;
+
+                for (unsigned i = 0; i < cRegions; i++)
+                    pRec->aRegions[i] = pRegions[i];
+
+                /* Save reference. */
+                pRecVM->pSharedModule = pRec;
+            }
+            else
+            {
+                Assert(pRecVM->pSharedModule == pRec);
+                Assert(pRec->cUsers > 0);
+            }
+            pRec->cUsers++;
         }
         else
-        {
-        }
+            rc = VINF_PGM_SHARED_MODULE_ALREADY_REGISTERED;
 
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
         rc = VERR_INTERNAL_ERROR_5;
 
+end:
     RTSemFastMutexRelease(pGMM->Mtx);
     return rc;
 #else
@@ -3466,7 +3498,49 @@ GMMR0DECL(int)  GMMR0RegisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMREGISTE
 GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Validate input and get the basics.
+     */
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    PGVM pGVM;
+    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Take the sempahore and do some more validations.
+     */
+    rc = RTSemFastMutexRequest(pGMM->Mtx);
+    AssertRC(rc);
+    if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
+    {
+        PGMMSHAREDMODULEPERVM pRecVM = (PGMMSHAREDMODULEPERVM)RTAvlGCPtrGet(&pGVM->gmm.s.pSharedModuleTree, GCBaseAddr);
+        if (!pRecVM)
+        {
+            rc = VERR_PGM_SHARED_MODULE_NOT_FOUND;
+            goto end;
+        }
+        PGMMSHAREDMODULE pRec = pRecVM->pSharedModule;
+        Assert(pRec);
+        Assert(pRec->cUsers);
+
+        pRec->cUsers--;
+        if (pRec->cUsers == 0)
+        {
+            /* @todo free shared pages. */
+            RTMemFree(pRec);
+        }
+        RTMemFree(pRecVM);
+
+        GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
+    }
+    else
+        rc = VERR_INTERNAL_ERROR_5;
+
+end:
+    RTSemFastMutexRelease(pGMM->Mtx);
+    return rc;
 #else
     return VERR_NOT_IMPLEMENTED;
 #endif
