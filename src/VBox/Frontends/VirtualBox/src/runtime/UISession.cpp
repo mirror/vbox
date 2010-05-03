@@ -168,6 +168,7 @@ private:
 };
 
 /* Serial port change event: */
+/* Not used:
 class UISerialPortChangeEvent : public QEvent
 {
 public:
@@ -182,8 +183,10 @@ private:
 
     const CSerialPort m_serialPort;
 };
+*/
 
 /* Parallel port change event: */
+/* Not used:
 class UIParallelPortChangeEvent : public QEvent
 {
 public:
@@ -198,8 +201,10 @@ private:
 
     const CParallelPort m_parallelPort;
 };
+*/
 
 /* Storage controller change event: */
+/* Not used:
 class UIStorageControllerChangeEvent : public QEvent
 {
 public:
@@ -207,6 +212,7 @@ public:
     UIStorageControllerChangeEvent()
         : QEvent((QEvent::Type)UIConsoleEventType_StorageControllerChange) {}
 };
+*/
 
 /* Storage medium change event: */
 class UIMediumChangeEvent : public QEvent
@@ -224,6 +230,7 @@ private:
 };
 
 /* CPU change event: */
+/* Noz used:
 class UICPUChangeEvent : public QEvent
 {
 public:
@@ -240,8 +247,10 @@ private:
     ulong m_uCPU;
     bool m_bRemove;
 };
+*/
 
 /* VRDP server change event: */
+/* Not used:
 class UIVRDPServerChangeEvent : public QEvent
 {
 public:
@@ -249,8 +258,10 @@ public:
     UIVRDPServerChangeEvent()
         : QEvent((QEvent::Type)UIConsoleEventType_VRDPServerChange) {}
 };
+*/
 
 /* Remote display info change event: */
+/* Not used:
 class UIRemoteDisplayInfoChangeEvent : public QEvent
 {
 public:
@@ -258,6 +269,7 @@ public:
     UIRemoteDisplayInfoChangeEvent()
         : QEvent((QEvent::Type)UIConsoleEventType_RemoteDisplayInfoChange) {}
 };
+*/
 
 /* USB controller change event: */
 class UIUSBControllerChangeEvent : public QEvent
@@ -405,22 +417,22 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnSerialPortChange)(ISerialPort *pSerialPort)
+    STDMETHOD(OnSerialPortChange)(ISerialPort * /* pSerialPort */)
     {
-        QApplication::postEvent(m_pEventHandler, new UISerialPortChangeEvent(CSerialPort(pSerialPort)));
-        return S_OK;
+        /* Not used: QApplication::postEvent(m_pEventHandler, new UISerialPortChangeEvent(CSerialPort(pSerialPort))); */
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
-    STDMETHOD(OnParallelPortChange)(IParallelPort *pParallelPort)
+    STDMETHOD(OnParallelPortChange)(IParallelPort * /* pParallelPort */)
     {
-        QApplication::postEvent(m_pEventHandler, new UIParallelPortChangeEvent(CParallelPort(pParallelPort)));
-        return S_OK;
+        /* Not used: QApplication::postEvent(m_pEventHandler, new UIParallelPortChangeEvent(CParallelPort(pParallelPort))); */
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnStorageControllerChange)()
     {
-        QApplication::postEvent(m_pEventHandler, new UIStorageControllerChangeEvent);
-        return S_OK;
+        /* Not used: QApplication::postEvent(m_pEventHandler, new UIStorageControllerChangeEvent); */
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnMediumChange)(IMediumAttachment *pMediumAttachment)
@@ -429,22 +441,22 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnCPUChange)(ULONG uCPU, BOOL bRemove)
+    STDMETHOD(OnCPUChange)(ULONG /* uCPU */, BOOL /* bRemove */)
     {
-        QApplication::postEvent(m_pEventHandler, new UICPUChangeEvent(uCPU, bRemove));
-        return S_OK;
+        /* Not used: QApplication::postEvent(m_pEventHandler, new UICPUChangeEvent(uCPU, bRemove)); */
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnVRDPServerChange)()
     {
-        QApplication::postEvent(m_pEventHandler, new UIVRDPServerChangeEvent);
-        return S_OK;
+        /* Not used: QApplication::postEvent(m_pEventHandler, new UIVRDPServerChangeEvent); */
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnRemoteDisplayInfoChange)()
     {
-        QApplication::postEvent(m_pEventHandler, new UIRemoteDisplayInfoChangeEvent);
-        return S_OK;
+        /* Not used: QApplication::postEvent(m_pEventHandler, new UIRemoteDisplayInfoChangeEvent); */
+        return VBOX_E_DONT_CALL_AGAIN;
     }
 
     STDMETHOD(OnUSBControllerChange)()
@@ -1040,25 +1052,31 @@ bool UISession::event(QEvent *pEvent)
             return true;
         }
 
+        /* Not used:
         case UIConsoleEventType_SerialPortChange:
         {
             UISerialPortChangeEvent *pConsoleEvent = static_cast<UISerialPortChangeEvent*>(pEvent);
             emit sigSerialPortChange(pConsoleEvent->serialPort());
             return true;
         }
+        */
 
+        /* Not used:
         case UIConsoleEventType_ParallelPortChange:
         {
             UIParallelPortChangeEvent *pConsoleEvent = static_cast<UIParallelPortChangeEvent*>(pEvent);
             emit sigParallelPortChange(pConsoleEvent->parallelPort());
             return true;
         }
+        */
 
+        /* Not used:
         case UIConsoleEventType_StorageControllerChange:
         {
             emit sigStorageControllerChange();
             return true;
         }
+        */
 
         case UIConsoleEventType_MediumChange:
         {
@@ -1067,24 +1085,30 @@ bool UISession::event(QEvent *pEvent)
             return true;
         }
 
+        /* Not used:
         case UIConsoleEventType_CPUChange:
         {
             UICPUChangeEvent *pConsoleEvent = static_cast<UICPUChangeEvent*>(pEvent);
             emit sigCPUChange(pConsoleEvent->cpu(), pConsoleEvent->remove());
             return true;
         }
+        */
 
+        /* Not used:
         case UIConsoleEventType_VRDPServerChange:
         {
             emit sigVRDPServerChange();
             return true;
         }
+        */
 
+        /* Not used:
         case UIConsoleEventType_RemoteDisplayInfoChange:
         {
             emit sigRemoteDisplayInfoChange();
             return true;
         }
+        */
 
         case UIConsoleEventType_USBControllerChange:
         {

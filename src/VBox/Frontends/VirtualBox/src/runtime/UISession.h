@@ -48,11 +48,11 @@ enum UIConsoleEventType
     UIConsoleEventType_StateChange,
     UIConsoleEventType_AdditionsStateChange,
     UIConsoleEventType_NetworkAdapterChange,
-    UIConsoleEventType_SerialPortChange,
-    UIConsoleEventType_ParallelPortChange,
-    UIConsoleEventType_StorageControllerChange,
+    /* Not used: UIConsoleEventType_SerialPortChange, */
+    /* Not used: UIConsoleEventType_ParallelPortChange, */
+    /* Not used: UIConsoleEventType_StorageControllerChange, */
     UIConsoleEventType_MediumChange,
-    UIConsoleEventType_CPUChange,
+    /* Not used: UIConsoleEventType_CPUChange, */
     UIConsoleEventType_VRDPServerChange,
     UIConsoleEventType_RemoteDisplayInfoChange,
     UIConsoleEventType_USBControllerChange,
@@ -156,13 +156,13 @@ signals:
     void sigMachineStateChange();
     void sigAdditionsStateChange();
     void sigNetworkAdapterChange(const CNetworkAdapter &networkAdapter);
-    void sigSerialPortChange(const CSerialPort &serialPort);
-    void sigParallelPortChange(const CParallelPort &parallelPort);
-    void sigStorageControllerChange();
+    /* Not used: void sigSerialPortChange(const CSerialPort &serialPort); */
+    /* Not used: void sigParallelPortChange(const CParallelPort &parallelPort); */
+    /* Not used: void sigStorageControllerChange(); */
     void sigMediumChange(const CMediumAttachment &mediumAttachment);
-    void sigCPUChange(ulong uCPU, bool bRemove);
-    void sigVRDPServerChange();
-    void sigRemoteDisplayInfoChange();
+    /* Not used: void sigCPUChange(ulong uCPU, bool bRemove); */
+    /* Not used: void sigVRDPServerChange(); */
+    /* Not used: void sigRemoteDisplayInfoChange(); */
     void sigUSBControllerChange();
     void sigUSBDeviceStateChange(const CUSBDevice &device, bool bIsAttached, const CVirtualBoxErrorInfo &error);
     void sigSharedFolderChange();
