@@ -110,6 +110,7 @@ public:
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IDisplay)
         COM_INTERFACE_ENTRY2(IDispatch,IDisplay)
+        COM_INTERFACE_ENTRY(IConsoleCallback)
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR (Display)
