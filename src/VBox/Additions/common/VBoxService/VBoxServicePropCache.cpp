@@ -94,7 +94,13 @@ int VBoxServicePropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszNa
 {
     va_list va;
     va_start(va, pszValueFormat);
-    int rc = VBoxServicePropCacheUpdate(pCache, pszName, 0 /* Not used */, NULL /* Not used */, pszValueFormat, va);
+    char *pszValue;
+    int rc = RTStrAPrintfV(&pszValue, pszValueFormat, va);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VBoxServicePropCacheUpdateEx(pCache, pszName, 0 /* Not used */, NULL /* Not used */, pszValue);
+        RTStrFree(pszValue);
+    }
     va_end(va);
     return rc;
 }
@@ -136,7 +142,7 @@ int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *psz
             bool fUpdate = false;
             if (pNode->uFlags & VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE)
                 fUpdate = true;
-            else if (strcmp(pNode->pszValue, pszValue) != 0)
+            else if (pNode->pszValue && strcmp(pNode->pszValue, pszValue) != 0)
                 fUpdate = true;
 
             if (fUpdate)
@@ -169,15 +175,15 @@ int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *psz
     else /* Node not found; add it and update HGCM service. */
     {
         PVBOXSERVICEVEPROPCACHEENTRY pNewNode = (PVBOXSERVICEVEPROPCACHEENTRY)RTMemAlloc(sizeof(VBOXSERVICEVEPROPCACHEENTRY));
-        pNode->pszName = RTStrDup(pszName);
+        pNewNode->pszName = RTStrDup(pszName);
         if (pszValue)
-            pNode->pszValue = RTStrDup(pszValue);
+            pNewNode->pszValue = RTStrDup(pszValue);
         else
-            pNode->pszValue = NULL;
+            pNewNode->pszValue = NULL;
          if (pszValueReset)
-            pNode->pszValueReset = RTStrDup(pszValueReset);
+            pNewNode->pszValueReset = RTStrDup(pszValueReset);
         else
-            pNode->pszValueReset = NULL;
+            pNewNode->pszValueReset = NULL;
         pNewNode->uFlags = u32Flags;
         /*rc =*/ RTListAppend(&pCache->Node, &pNewNode->Node);
         if (RT_SUCCESS(rc))
