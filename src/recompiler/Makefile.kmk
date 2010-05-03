@@ -266,6 +266,6 @@ testmath_DEFS           = MATHTEST_STANDALONE
 testmath_SOURCES        = Sun/testmath.c
 
 
-include $(KBUILD_PATH)/subfooter.kmk
 endif # new stuff
+include $(KBUILD_PATH)/subfooter.kmk
 
