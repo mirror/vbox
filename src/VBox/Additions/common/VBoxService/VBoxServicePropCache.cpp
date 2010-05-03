@@ -35,9 +35,10 @@
 int VBoxServicePropCacheInit(PVBOXSERVICEVEPROPCACHE pCache, uint32_t u32ClientId)
 {
     AssertPtr(pCache);
+    /** @todo Prevent init the cache twice! */
     RTListInit(&pCache->Node);
     pCache->uClientID = u32ClientId;
-    return VINF_SUCCESS;
+    return RTSemMutexCreate(&pCache->Mutex);
 }
 
 
@@ -47,13 +48,20 @@ PVBOXSERVICEVEPROPCACHEENTRY VBoxServicePropCacheFind(PVBOXSERVICEVEPROPCACHE pC
     AssertPtr(pCache);
     AssertPtr(pszName);
     /* This is a O(n) lookup, maybe improve this later to O(1) using a map. */
-    PVBOXSERVICEVEPROPCACHEENTRY pNode;
-    RTListForEach(&pCache->Node, pNode, VBOXSERVICEVEPROPCACHEENTRY, Node)
-    {
-        if (strcmp(pNode->pszName, pszName) == 0)
-            return pNode;
+    PVBOXSERVICEVEPROPCACHEENTRY pNodeIt, pNode = NULL;
+    if (RT_SUCCESS(RTSemMutexRequest(pCache->Mutex, RT_INDEFINITE_WAIT)))
+    {    
+        RTListForEach(&pCache->Node, pNodeIt, VBOXSERVICEVEPROPCACHEENTRY, Node)
+        {
+            if (strcmp(pNodeIt->pszName, pszName) == 0)
+            {
+                pNode = pNodeIt;
+                break;
+            }
+        }
+        RTSemMutexRelease(pCache->Mutex);
     }
-    return NULL;
+    return pNode;
 }
 
 
@@ -64,18 +72,25 @@ int VBoxServicePropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache,
     AssertPtr(pCache);
     AssertPtr(pszName);
     PVBOXSERVICEVEPROPCACHEENTRY pNode = VBoxServicePropCacheFind(pCache, pszName, 0);
+    int rc;
     if (pNode != NULL)
     {
-        pNode->uFlags = u32Flags;
-        if (pszValueReset)
+        rc = RTSemMutexRequest(pCache->Mutex, RT_INDEFINITE_WAIT);
+        if (RT_SUCCESS(rc))
         {
+            pNode->uFlags = u32Flags;
             if (pszValueReset)
-                RTStrFree(pNode->pszValueReset);
-            pNode->pszValueReset = RTStrDup(pszValueReset);
+            {
+                if (pszValueReset)
+                    RTStrFree(pNode->pszValueReset);
+                pNode->pszValueReset = RTStrDup(pszValueReset);
+            }
+            rc = RTSemMutexRelease(pCache->Mutex);
         }
-        return VINF_SUCCESS;
     }
-    return VERR_NOT_FOUND;
+    else
+        rc = VERR_NOT_FOUND;
+    return rc;
 }
 
 
@@ -135,72 +150,83 @@ int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *psz
     }
 
     PVBOXSERVICEVEPROPCACHEENTRY pNode = VBoxServicePropCacheFind(pCache, pszName, 0);
-    if (pNode == NULL)
-    {          
-        pNode = (PVBOXSERVICEVEPROPCACHEENTRY)RTMemAlloc(sizeof(VBOXSERVICEVEPROPCACHEENTRY));
-        AssertPtrReturn(pNode, VERR_NO_MEMORY);
 
-        pNode->pszName = RTStrDup(pszName);
-        pNode->pszValue = NULL; 
-        pNode->uFlags = 0;
-        pNode->pszValueReset = NULL;
-
-        /*rc =*/ RTListAppend(&pCache->Node, &pNode->Node);
-    }
-
-    int rc;
-    AssertPtr(pNode);
-    if (pszValue) /* Do we have a value to check for? */
+    /* Lock the cache. */
+    int rc = RTSemMutexRequest(pCache->Mutex, RT_INDEFINITE_WAIT);
+    if (RT_SUCCESS(rc))
     {
-        bool fUpdate = false;
-        /* Always update this property, no matter what? */
-        if (pNode->uFlags & VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE)
-            fUpdate = true;
-        /* Did the value change so we have to update? */
-        else if (pNode->pszValue && strcmp(pNode->pszValue, pszValue) != 0)
-            fUpdate = true;
-        /* No value stored at the moment but we have a value now? */
-        else if (pNode->pszValue == NULL) 
-            fUpdate = true;
-
-        if (fUpdate)
+    
+        if (pNode == NULL)
+        {          
+            pNode = (PVBOXSERVICEVEPROPCACHEENTRY)RTMemAlloc(sizeof(VBOXSERVICEVEPROPCACHEENTRY));
+            AssertPtrReturn(pNode, VERR_NO_MEMORY);
+    
+            pNode->pszName = RTStrDup(pszName);
+            pNode->pszValue = NULL; 
+            pNode->uFlags = 0;
+            pNode->pszValueReset = NULL;
+    
+            /*rc =*/ RTListAppend(&pCache->Node, &pNode->Node);
+        }
+    
+        AssertPtr(pNode);
+        if (pszValue) /* Do we have a value to check for? */
         {
-            /* Write the update. */
-            rc = VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, pszValue);
-            if (pNode->pszValue)
+            bool fUpdate = false;
+            /* Always update this property, no matter what? */
+            if (pNode->uFlags & VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE)
+                fUpdate = true;
+            /* Did the value change so we have to update? */
+            else if (pNode->pszValue && strcmp(pNode->pszValue, pszValue) != 0)
+                fUpdate = true;
+            /* No value stored at the moment but we have a value now? */
+            else if (pNode->pszValue == NULL) 
+                fUpdate = true;
+    
+            if (fUpdate)
+            {
+                /* Write the update. */
+                rc = VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, pszValue);
+                if (pNode->pszValue)
+                    RTStrFree(pNode->pszValue);
+                pNode->pszValue = RTStrDup(pszValue);
+            }
+            else
+                rc = VINF_ALREADY_INITIALIZED; /* No update needed. */
+        }
+        else 
+        {
+            /* No value specified. Deletion (or no action required). */
+            if (pNode->pszValue) /* Did we have a value before? Then the value needs to be deleted. */
+            {
+                /* Delete property (but do not remove from cache) if not deleted yet. */
+                rc = VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, NULL);
                 RTStrFree(pNode->pszValue);
-            pNode->pszValue = RTStrDup(pszValue);
+                pNode->pszValue = NULL;
+            }
+            else
+                rc = VINF_ALREADY_INITIALIZED; /* No update needed. */
         }
-        else
-            rc = VINF_ALREADY_INITIALIZED; /* No update needed. */
-    }
-    else 
-    {
-        /* No value specified. Deletion (or no action required). */
-        if (pNode->pszValue) /* Did we have a value before? Then the value needs to be deleted. */
+    
+        /* Update rest of the fields. */
+        if (pszValueReset)
         {
-            /* Delete property (but do not remove from cache) if not deleted yet. */
-            rc = VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, NULL);
-            RTStrFree(pNode->pszValue);
-            pNode->pszValue = NULL;
+            if (pNode->pszValueReset)
+                RTStrFree(pNode->pszValueReset);
+            pNode->pszValueReset = RTStrDup(pszValueReset);
         }
-        else
-            rc = VINF_ALREADY_INITIALIZED; /* No update needed. */
+        if (u32Flags)
+            pNode->uFlags = u32Flags;
+     
+        /* Delete temp stuff. */
+        if (pszValue)
+            RTStrFree(pszValue);   
+    
+        /* Release cache. */
+        int rc2 = RTSemMutexRelease(pCache->Mutex);
+        if (RT_SUCCESS(rc))
+            rc2 = rc;
     }
-
-    /* Update rest of the fields. */
-    if (pszValueReset)
-    {
-        if (pNode->pszValueReset)
-            RTStrFree(pNode->pszValueReset);
-        pNode->pszValueReset = RTStrDup(pszValueReset);
-    }
-    if (u32Flags)
-        pNode->uFlags = u32Flags;
- 
-    /* Delete temp stuff. */
-    if (pszValue)
-        RTStrFree(pszValue);   
     return rc;
 }
 
@@ -241,5 +267,7 @@ void VBoxServicePropCacheDestroy(PVBOXSERVICEVEPROPCACHE pCache)
             break;
         pNode = pNext;
     }
+    /* Destroy mutex. */
+    RTSemMutexDestroy(pCache->Mutex);
 }
 #endif /* VBOX_WITH_GUEST_PROPS */
