@@ -27,7 +27,7 @@
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
-#include "VboxServicePropCache.h"
+#include "VBoxServicePropCache.h"
 
 #ifdef VBOX_WITH_GUEST_PROPS
 
