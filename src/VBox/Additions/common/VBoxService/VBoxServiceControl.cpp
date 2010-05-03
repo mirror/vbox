@@ -338,7 +338,7 @@ static DECLCALLBACK(void) VBoxServiceControlTerm(void)
         RTMemFree(pNode);
 
         if (pNext && RTListNodeIsLast(&g_GuestControlExecThreads, &pNext->Node))
-              break;
+            break;
 
         pNode = pNext;
     }

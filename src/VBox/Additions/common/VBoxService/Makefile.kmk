@@ -54,7 +54,8 @@ VBoxService_SOURCES       = \
 	VBoxService.cpp \
 	VBoxServiceTimeSync.cpp \
 	VBoxServiceUtils.cpp \
-	VBoxServiceStats.cpp
+	VBoxServiceStats.cpp \
+	VBoxServicePropCache.cpp
 ifdef VBOX_WITH_GUEST_CONTROL
  VBoxService_SOURCES    += \
 	VBoxServiceControl.cpp \
