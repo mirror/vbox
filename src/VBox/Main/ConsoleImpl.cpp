@@ -4854,6 +4854,7 @@ HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
                 if (*aWinId == 0)
                     *aWinId = winId;
             }
+            ++it;
         }
     }
 
