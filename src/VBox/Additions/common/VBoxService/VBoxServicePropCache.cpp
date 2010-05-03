@@ -92,16 +92,18 @@ int VBoxServicePropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache,
  */
 int VBoxServicePropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, const char *pszValueFormat, ...)
 {
-    va_list va;
-    va_start(va, pszValueFormat);
-    char *pszValue;
-    int rc = RTStrAPrintfV(&pszValue, pszValueFormat, va);
-    if (RT_SUCCESS(rc))
+    char *pszValue = NULL;
+    int rc;
+    if (pszValueFormat)
     {
-        rc = VBoxServicePropCacheUpdateEx(pCache, pszName, 0 /* Not used */, NULL /* Not used */, pszValue);
-        RTStrFree(pszValue);
+        va_list va;
+        va_start(va, pszValueFormat);
+        RTStrAPrintfV(&pszValue, pszValueFormat, va);
+        va_end(va);
     }
-    va_end(va);
+    rc = VBoxServicePropCacheUpdateEx(pCache, pszName, 0 /* Not used */, NULL /* Not used */, pszValue);
+    if (pszValue)
+        RTStrFree(pszValue);
     return rc;
 }
 
@@ -122,74 +124,81 @@ int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *psz
     AssertPtr(pCache);
     Assert(pCache->uClientID);
     AssertPtr(pszName);
-    AssertPtr(pszValueFormat);
 
-    int rc = VINF_SUCCESS;
     char *pszValue = NULL;
     if (pszValueFormat)
     {
         va_list va;
         va_start(va, pszValueFormat);
-        rc = RTStrAPrintfV(&pszValue, pszValueFormat, va);
+        RTStrAPrintfV(&pszValue, pszValueFormat, va);
         va_end(va);
     }
 
     PVBOXSERVICEVEPROPCACHEENTRY pNode = VBoxServicePropCacheFind(pCache, pszName, 0);
-    if (pNode != NULL)
-    {            
-        if (pszValue)
-        {
-            bool fUpdate = false;
-            if (pNode->uFlags & VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE)
-                fUpdate = true;
-            else if (pNode->pszValue && strcmp(pNode->pszValue, pszValue) != 0)
-                fUpdate = true;
+    if (pNode == NULL)
+    {          
+        pNode = (PVBOXSERVICEVEPROPCACHEENTRY)RTMemAlloc(sizeof(VBOXSERVICEVEPROPCACHEENTRY));
+        AssertPtrReturn(pNode, VERR_NO_MEMORY);
 
-            if (fUpdate)
-            {
-                /* Write the update. */
-                rc = VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, pszValue);
-                if (pNode->pszValue)
-                    RTStrFree(pNode->pszValue);
-                pNode->pszValue = RTStrDup(pszValue);
-                if (pszValueReset)
-                {
-                    if (pNode->pszValueReset)
-                        RTStrFree(pNode->pszValueReset);
-                    pNode->pszValueReset = RTStrDup(pszValueReset);
-                }
-                if (u32Flags)
-                    pNode->uFlags = u32Flags;
-            }
-            else
-                rc = VINF_ALREADY_INITIALIZED; /* No update needed. */
+        pNode->pszName = RTStrDup(pszName);
+        pNode->pszValue = NULL; 
+        pNode->uFlags = 0;
+        pNode->pszValueReset = NULL;
+
+        /*rc =*/ RTListAppend(&pCache->Node, &pNode->Node);
+    }
+
+    int rc;
+    AssertPtr(pNode);
+    if (pszValue) /* Do we have a value to check for? */
+    {
+        bool fUpdate = false;
+        /* Always update this property, no matter what? */
+        if (pNode->uFlags & VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE)
+            fUpdate = true;
+        /* Did the value change so we have to update? */
+        else if (pNode->pszValue && strcmp(pNode->pszValue, pszValue) != 0)
+            fUpdate = true;
+        /* No value stored at the moment but we have a value now? */
+        else if (pNode->pszValue == NULL) 
+            fUpdate = true;
+
+        if (fUpdate)
+        {
+            /* Write the update. */
+            rc = VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, pszValue);
+            if (pNode->pszValue)
+                RTStrFree(pNode->pszValue);
+            pNode->pszValue = RTStrDup(pszValue);
         }
-        else if (pNode->pszValue)
+        else
+            rc = VINF_ALREADY_INITIALIZED; /* No update needed. */
+    }
+    else 
+    {
+        /* No value specified. Deletion (or no action required). */
+        if (pNode->pszValue) /* Did we have a value before? Then the value needs to be deleted. */
         {
             /* Delete property (but do not remove from cache) if not deleted yet. */
-            VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, NULL);
+            rc = VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, NULL);
             RTStrFree(pNode->pszValue);
             pNode->pszValue = NULL;
         }
-    }
-    else /* Node not found; add it and update HGCM service. */
-    {
-        PVBOXSERVICEVEPROPCACHEENTRY pNewNode = (PVBOXSERVICEVEPROPCACHEENTRY)RTMemAlloc(sizeof(VBOXSERVICEVEPROPCACHEENTRY));
-        pNewNode->pszName = RTStrDup(pszName);
-        if (pszValue)
-            pNewNode->pszValue = RTStrDup(pszValue);
         else
-            pNewNode->pszValue = NULL;
-         if (pszValueReset)
-            pNewNode->pszValueReset = RTStrDup(pszValueReset);
-        else
-            pNewNode->pszValueReset = NULL;
-        pNewNode->uFlags = u32Flags;
-        /*rc =*/ RTListAppend(&pCache->Node, &pNewNode->Node);
-        if (RT_SUCCESS(rc))
-            rc = VERR_NOT_FOUND;
+            rc = VINF_ALREADY_INITIALIZED; /* No update needed. */
     }
 
+    /* Update rest of the fields. */
+    if (pszValueReset)
+    {
+        if (pNode->pszValueReset)
+            RTStrFree(pNode->pszValueReset);
+        pNode->pszValueReset = RTStrDup(pszValueReset);
+    }
+    if (u32Flags)
+        pNode->uFlags = u32Flags;
+ 
+    /* Delete temp stuff. */
     if (pszValue)
         RTStrFree(pszValue);   
     return rc;
