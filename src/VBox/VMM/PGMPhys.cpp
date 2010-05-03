@@ -965,7 +965,7 @@ VMMR3DECL(int) PGMR3QueryVMMMemoryStats(PVM pVM, uint64_t *puTotalAllocSize, uin
     int rc;
 
     uint64_t cAllocPages = 0, cFreePages = 0, cBalloonPages = 0;
-    rc = GMMR3QueryVMMMemoryStats(pVM, &cAllocPages, &cFreePages, &cBalloonPages);
+    rc = GMMR3QueryHypervisorMemoryStats(pVM, &cAllocPages, &cFreePages, &cBalloonPages);
     AssertRCReturn(rc, rc);
 
     if (puTotalAllocSize)
@@ -3474,6 +3474,8 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
     }
     else
     {
+        uint64_t cAllocPages, cMaxPages, cBalloonPages;
+
         /*
          * We should never get here unless there is a genuine shortage of
          * memory (or some internal error). Flag the error so the VM can be
@@ -3489,6 +3491,15 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
                 pVM->pgm.s.cPrivatePages,
                 pVM->pgm.s.cSharedPages,
                 pVM->pgm.s.cZeroPages));
+
+        if (GMMR3QueryMemoryStats(pVM, &cAllocPages, &cMaxPages, &cBalloonPages) == VINF_SUCCESS)
+        {
+            LogRel(("GMM: Statistics:\n"
+                    "     Allocated pages: %RX64\n"
+                    "     Maximum   pages: %RX64\n"
+                    "     Ballooned pages: %RX64\n", cAllocPages, cMaxPages, cBalloonPages));
+        }
+
         if (    rc != VERR_NO_MEMORY
             &&  rc != VERR_LOCK_FAILED)
         {
