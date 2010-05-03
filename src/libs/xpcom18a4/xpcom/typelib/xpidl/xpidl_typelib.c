@@ -417,7 +417,9 @@ typelib_epilog(TreeState *state)
         annotation_len = strlen(annotation_format) + strlen(state->basename) +
             strlen(timestr);
 #ifdef VBOX
-        annotation_len++; /* terminating '\0' */
+        /* note that '%s' is contained two times in annotation_format and both
+         * format specifiers are replaced by a string. So in fact we reserve 4
+         * bytes minus one byte (for the terminating '\0') more than necessary. */
 #endif
         for (i = 0; i < HEADER(state)->num_interfaces; i++) {
             XPTInterfaceDirectoryEntry *ide;
