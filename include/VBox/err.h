@@ -466,6 +466,10 @@
 #define VERR_PGM_INVALID_LARGE_PAGE_RANGE       (-1645)
 /** Don't mess around with ballooned pages. */
 #define VERR_PGM_PHYS_PAGE_BALLOONED            (-1646)
+/** Shared module already registered. */
+#define VINF_PGM_SHARED_MODULE_ALREADY_REGISTERED   (1647)
+/** Shared module not found. */
+#define VERR_PGM_SHARED_MODULE_NOT_FOUND        (-1648)
 /** @} */
 
 
