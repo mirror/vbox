@@ -329,7 +329,6 @@ GMMR3DECL(int)  GMMR3QueryMemoryStats(PVM pVM, uint64_t *pcAllocPages, uint64_t 
     *pcMaxPages         = 0;
     *pcBalloonPages     = 0;
 
-    /* Must be callable from any thread, so can't use VMMR3CallR0. */
     int rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_QUERY_MEM_STATS, 0, &Req.Hdr);
     if (rc == VINF_SUCCESS)
     {
