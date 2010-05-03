@@ -587,6 +587,11 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     mVMCtxtMenu->addAction (mVmRefreshAction);
     mVMCtxtMenu->addAction (mVmShowLogsAction);
 
+    /* Make sure every status bar hint from the context menu is cleared when
+     * the menu is closed. */
+    connect (mVMCtxtMenu, SIGNAL(aboutToHide()),
+             statusBar(), SLOT(clearMessage()));
+
     mHelpMenu = menuBar()->addMenu (QString::null);
     mHelpActions.addTo (mHelpMenu);
 
@@ -1248,7 +1253,13 @@ bool VBoxSelectorWnd::event (QEvent *e)
                 mNormalGeo.moveTo (geometry().x(), geometry().y());
             break;
         }
-
+        case QEvent::WindowDeactivate:
+        {
+            /* Make sure every status bar hint is cleared when the window lost
+             * focus. */
+            statusBar()->clearMessage();
+            break;
+        }
         default:
             break;
     }
