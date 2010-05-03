@@ -24,10 +24,8 @@
 # include <process.h> /* Needed for file version information. */
 #endif
 
-#ifdef VBOX_WITH_GUEST_CONTROL
-# include <iprt/list.h>
-# include <iprt/semaphore.h>
-#endif
+#include <iprt/list.h>
+#include <iprt/semaphore.h>
 
 /**
  * A service descriptor.
@@ -221,8 +219,9 @@ typedef VBOXSERVICECTRLSTDINBUF *PVBOXSERVICECTRLSTDINBUF;
 typedef struct
 {    
     /** The client ID for HGCM communication. */
-    uint32_t uClientID;
+    uint32_t   uClientID;
     RTLISTNODE Node;
+    RTSEMMUTEX Mutex;
 } VBOXSERVICEVEPROPCACHE;
 /** Pointer to a guest property cache. */
 typedef VBOXSERVICEVEPROPCACHE *PVBOXSERVICEVEPROPCACHE;
