@@ -2,8 +2,9 @@
 ## @file
 # The Recompiler Sub-Makefile.
 #
+
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2006-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -18,120 +19,76 @@
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
+ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86)
+ include $(PATH_SUB_CURRENT)/Makefile-old.kmk
+else  # new stuff
+
 #
 # Globals
 #
-VBOX_PATH_RECOMPILER_SRC := $(PATH_SUB_CURRENT)
-
-# For 32-bit targets when enabled 64-bit guests we build 2 REM DLLs:
-#  with 64-bit support (slow and buggy at the moment) VBOXREM64
-#  only 32-bit support (faster, stable, but not suitable for 64-bit guests) VBOXREM32
-# During the runtime, we load appropriate library from VBOXREM, depending on guest settings.
-# 64-bit targets have 64-bit enabled REM by default, so is not part of this mess
-ifeq ($(KBUILD_TARGET_ARCH),x86)
- ifdef VBOX_WITH_64_BITS_GUESTS
-   VBOX_USE_REM64 := 1
- endif
-endif
-
+VBOX_PATH_RECOMPILER_SRC    := $(PATH_SUB_CURRENT)
 # Workaround for darwin hell.
 ifeq ($(KBUILD_TARGET),darwin)
- VBOX_WITHOUT_REM_LDR_CYCLE = 1
+ VBOX_WITHOUT_REM_LDR_CYCLE := 1
 endif
 
 
-TEMPLATE_DUMMY = dummy template (move to kBuild) ## @todo Will be there in the next update, remove this.
-
-if 0
- #
- # Template useful for forcing a specific gcc version in case it comes in handy.
- #
- TOOL_MYGCC = description
- TOOL_MYGCC_EXTENDS = GCC3
- TOOL_MYGCC_CC = $(firstword $(which gcc-4.2 gcc-4.1 gcc-3.4 gcc-3.4.6 gcc-3.3 gcc-3.3.6  gcc-3.2))
- TOOL_MYGCC_COMPILE_C_DEPEND =
- TOOL_MYGCC_COMPILE_C_DEPORD =
- TOOL_MYGCC_COMPILE_C_OUTPUT =
- define TOOL_MYGCC_COMPILE_C_CMDS
-	$(QUIET)$(TOOL_MYGCC_CC) -c\
-		$(flags) $(addprefix -I, $(incs)) $(addprefix -D, $(defs))\
-		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
-		-o $(obj)\
-		$(abspath $(source))
- endef
- #Usage: target-i386/op_helper.c_TOOL = MYGCC
-endif
-
-## @todo Note to self (bird): Convert this mess to use NAME (that property didn't exist when the REM_MOD hack was first made I think).
-
-# For 64-bit Windows we currently use gcc (due to MSVC unaware of such a novel
-# thing as C99, a lot of GCC extensions deployed by QEMU and calling convention
-# differences) to cross-compile code to Linux/ELF and dynamically generate invocation wrappers.
-if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.amd64)
- VBOX_USE_REM2 = 1
- REM_MOD := VBoxREM2
+#
+# The primary REM module definition.
+#
+# This is extended by one of the VBoxREM* modules below.  Currently, this
+# isn't done by inheritance because of some obscure bug wrt inherting from
+# unused targets that I'm not going to fix now.
+#
+ifneq ($(KBUILD_TARGET),win)
+ VBoxRemPrimary_TEMPLATE       = VBOXR3NP
+ # workaround the regparm bug in gcc <= 3.3
+ VBoxRemPrimary_DEFS           = $(if $(VBOX_GCC_BUGGY_REGPARM),GCC_WITH_BUGGY_REGPARM,)
 else
- REM_MOD := VBoxREM
-endif
-
-#
-# Target lists (some of them anyways).
-#
-ifdef VBOX_USE_REM2
- SYSMODS += VBoxREM2
-else ifndef VBOX_USE_REM64
- DLLS    += VBoxREM
-endif
-
-
-#
-# The VBoxREM.[dll|so|..] or VBoxREM2.rel.
-#
-ifeq ($(KBUILD_TARGET),win)
-$(REM_MOD)_TEMPLATE        = DUMMY
-$(REM_MOD)_TOOL.win.x86    = MINGW32
-$(REM_MOD)_TOOL.win.amd64  = XGCCAMD64LINUX
-$(REM_MOD)_SDKS.win.x86    = W32API
-$(REM_MOD)_ASFLAGS         = -x assembler-with-cpp
-$(REM_MOD)_CFLAGS          = -Wall -g -fno-omit-frame-pointer -fno-strict-aliasing -Wno-shadow
-$(REM_MOD)_CFLAGS.debug    = -O0
-$(REM_MOD)_CFLAGS.release += -fno-gcse -O2
-$(REM_MOD)_CFLAGS.profile  = $($(REM_MOD)_CFLAGS.release)
-$(REM_MOD)_DEFS           += IN_RING3 $(ARCH_BITS_DEFS)
-# workaround the regparm bug in gcc <= 3.3
-$(REM_MOD)_DEFS.win.x86   += GCC_WITH_BUGGY_REGPARM
-else  # !win
-$(REM_MOD)_TEMPLATE        = VBOXR3NP
-# workaround the regparm bug in gcc <= 3.3
-$(REM_MOD)_DEFS            = $(if $(VBOX_GCC_BUGGY_REGPARM),GCC_WITH_BUGGY_REGPARM,)
-endif # !win
-$(REM_MOD)_DEFS           += IN_REM_R3 REM_INCLUDE_CPU_H
-#$(REM_MOD)_DEFS           += REM_PHYS_ADDR_IN_TLB
-#$(REM_MOD)_DEFS           += DEBUG_ALL_LOGGING DEBUG_DISAS DEBUG_PCALL DEBUG_EXEC DEBUG_FLUSH DEBUG_IOPORT DEBUG_SIGNAL DEBUG_TLB_CHECK DEBUG_TB_INVALIDATE DEBUG_TLB  # Enables huge amounts of debug logging.
-#$(REM_MOD)_DEFS           += DEBUG_TMP_LOGGING # log qemu parts to "/tmp/vbox-qemu.log" - does not work with VBoxREM2.
-$(REM_MOD)_DEFS.linux      = _GNU_SOURCE
+ VBoxRemPrimary_TEMPLATE       = DUMMY
+ VBoxRemPrimary_TOOL.win.x86   = MINGW32
+ VBoxRemPrimary_TOOL.win.amd64 = XGCCAMD64LINUX
+ VBoxRemPrimary_SDKS.win.x86   = W32API
+ VBoxRemPrimary_ASFLAGS        = -x assembler-with-cpp
+ VBoxRemPrimary_CFLAGS         = -Wall -g -fno-omit-frame-pointer -fno-strict-aliasing -Wno-shadow
+ VBoxRemPrimary_CFLAGS.debug   = -O0
+ VBoxRemPrimary_CFLAGS.release += -fno-gcse -O2
+ VBoxRemPrimary_CFLAGS.profile = $(VBoxRemPrimary_CFLAGS.release)
+ VBoxRemPrimary_DEFS          += IN_RING3 $(ARCH_BITS_DEFS)
+ # workaround the regparm bug in gcc <= 3.3
+ VBoxRemPrimary_DEFS.win.x86  += GCC_WITH_BUGGY_REGPARM
+endif # win
+VBoxRemPrimary_DEFS           += IN_REM_R3 REM_INCLUDE_CPU_H
+#VBoxRemPrimary_DEFS           += REM_PHYS_ADDR_IN_TLB
+#VBoxRemPrimary_DEFS           += DEBUG_ALL_LOGGING DEBUG_DISAS DEBUG_PCALL DEBUG_EXEC DEBUG_FLUSH DEBUG_IOPORT DEBUG_SIGNAL DEBUG_TLB_CHECK DEBUG_TB_INVALIDATE DEBUG_TLB  # Enables huge amounts of debug logging.
+#VBoxRemPrimary_DEFS           += DEBUG_TMP_LOGGING # log qemu parts to "/tmp/vbox-qemu.log" - does not work with VBoxREM2.
+VBoxRemPrimary_DEFS.linux      = _GNU_SOURCE
 ifdef VBOX_SOLARIS_10
- $(REM_MOD)_DEFS.solaris   = HOST_SOLARIS=10
+ VBoxRemPrimary_DEFS.solaris   = HOST_SOLARIS=10
 else
- $(REM_MOD)_DEFS.solaris   = HOST_SOLARIS=11
+ VBoxRemPrimary_DEFS.solaris   = HOST_SOLARIS=11
 endif
-$(REM_MOD)_DEFS.freebsd   += _BSD
+VBoxRemPrimary_DEFS.freebsd   += _BSD
+VBoxRemPrimary_DEFS.amd64     += __x86_64__
+VBoxRemPrimary_DEFS.x86       += __i386__
 
-$(REM_MOD)_INCS            = \
+VBoxRemPrimary_INCS            = \
 	Sun \
 	target-i386 \
 	tcg \
 	fpu \
-	$(PATH_$(REM_MOD)) \
+	$(PATH_VBoxRemPrimary) \
 	$(PATH_ROOT)/src/VBox/VMM \
 	.
-ifn1of ($($(REM_MOD)_DEFS),DEBUG_TMP_LOGGING)
-$(REM_MOD)_DEFS           += LOG_USE_C99
-$(REM_MOD)_INCS           <= \
-	Sun/crt
+VBoxRemPrimary_INCS.amd64     += tcg/x86_64
+VBoxRemPrimary_INCS.x86       += tcg/i386
+ifn1of ($(VBoxRemPrimary_DEFS),DEBUG_TMP_LOGGING)
+ VBoxRemPrimary_DEFS          += LOG_USE_C99
+ VBoxRemPrimary_INCS          <= \
+ 	Sun/crt
 endif
 
-$(REM_MOD)_SOURCES         = \
+VBoxRemPrimary_SOURCES         = \
 	VBoxRecompiler.c \
 	cpu-exec.c \
 	exec.c \
@@ -145,106 +102,103 @@ $(REM_MOD)_SOURCES         = \
 	target-i386/op_helper.c \
 	target-i386/helper.c \
 	target-i386/translate.c
-
-ifeq ($(KBUILD_TARGET_ARCH),amd64)
- $(REM_MOD)_DEFS          += __x86_64__
- $(REM_MOD)_INCS          +=  tcg/x86_64
-else
- $(REM_MOD)_DEFS          += __i386__
- $(REM_MOD)_INCS          +=  tcg/i386
-endif
-
-ifneq ($(KBUILD_TARGET),freebsd)
-$(REM_MOD)_SOURCES.debug  += \
+VBoxRemPrimary_SOURCES.debug  += \
 	Sun/testmath.c
-endif
-$(REM_MOD)_SOURCES.win.x86 = $(PATH_VBoxREMImp)/VBoxREMWin.def
-ifndef VBOX_USE_REM2
- $(REM_MOD)_POST_CMDS      = $(VBOX_SIGN_IMAGE_CMDS)
-endif
-ifdef VBOX_USE_REM2
-## @todo spread out where it belongs.
-$(REM_MOD)_TEMPLATE        = VBOXNOCRTGAS
-$(REM_MOD)_DEFS           += LOG_USE_C99 $(ARCH_BITS_DEFS)
+VBoxRemPrimary_SOURCES.win.x86 = $(PATH_VBoxREMImp)/VBoxREMWin.def
 
-# This doesn't fit in IPRT because it requires GAS and is LGPL.
-$(REM_MOD)_SOURCES        += \
-	Sun/e_powl-$(KBUILD_TARGET_ARCH).S
-
-$(REM_MOD)_INCS           += \
-        Sun/crt
-$(REM_MOD)_SYSSUFF         = .rel
-endif
-ifdef VBOX_USE_REM2
-$(REM_MOD)_LIBS            = \
-	$(PATH_LIB)/RuntimeR3NoCRTGCC$(VBOX_SUFF_LIB)
-else
-$(REM_MOD)_LIBS            = \
+VBoxRemPrimary_LIBS            = \
 	$(LIB_VMM) \
 	$(LIB_RUNTIME)
-$(REM_MOD)_LIBS.darwin     = \
-	$(TARGET_VBoxREMImp)
+
+VBoxRemPrimary_LDFLAGS.solaris = -mimpure-text
+VBoxRemPrimary_POST_CMDS       = $(VBOX_SIGN_IMAGE_CMDS)
+
+
+if "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.amd64"
+ #
+ # VBoxREM2/VBoxRemPrimary - Currently only used by 64-bit Windows.
+ # (e_powl-xxx.S doesn't fit in IPRT because it requires GAS and is LGPL.)
+ #
+ SYSMODS += VBoxRemPrimary
+ VBoxRemPrimary_TEMPLATE  = VBOXNOCRTGAS
+ VBoxRemPrimary_NAME      = VBoxREM2
+ VBoxRemPrimary_DEFS     += LOG_USE_C99 $(ARCH_BITS_DEFS)
+ VBoxRemPrimary_SOURCES  += \
+ 	Sun/e_powl-$(KBUILD_TARGET_ARCH).S
+ VBoxRemPrimary_INCS     += \
+        Sun/crt
+ VBoxRemPrimary_SYSSUFF   = .rel
+ VBoxRemPrimary_LIBS      = \
+ 	$(PATH_LIB)/RuntimeR3NoCRTGCC$(VBOX_SUFF_LIB)
+ VBoxRemPrimary_POST_CMDS = $(NO_SUCH_VARIABLE)
+
+else if "$(KBUILD_TARGET_ARCH)" == "x86" && defined(VBOX_WITH_64_BITS_GUESTS)
+ #
+ # For 32-bit targets when enabled 64-bit guests we build 2 REM DLLs:
+ #  with 64-bit support (slow and buggy at the moment) VBOXREM64
+ #  only 32-bit support (faster, stable, but not suitable for 64-bit guests) VBOXREM32
+ # During the runtime, we load appropriate library from VBOXREM, depending on guest settings.
+ # 64-bit targets have 64-bit enabled REM by default, so is not part of this mess
+ #
+
+ #
+ # VBoxREM32/VBoxRemPrimary
+ #
+ DLLS += VBoxRemPrimary
+ VBoxRemPrimary_NAME       = VBoxREM32
+ VBoxRemPrimary_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM32.dylib
+
+ #
+ # VBoxREM64
+ #
+ DLLS += VBoxREM64
+ VBoxREM64_EXTENDS         = VBoxRemPrimary
+ VBoxREM64_EXTENDS_BY      = appending
+ VBoxREM64_NAME            = VBoxREM64
+ VBoxREM64_DEFS            = VBOX_ENABLE_VBOXREM64
+ VBoxREM64_LDFLAGS.darwin  = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM64.dylib
+
+## @todo else ifdef VBOX_WITHOUT_REM_LDR_CYCLE
+else
+ #
+ # VBoxREM/VBoxRemPrimary - Normal.
+ #
+ DLLS += VBoxRemPrimary
+ VBoxRemPrimary_NAME       = VBoxREM
+ VBoxRemPrimary_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM.dylib
 endif
 
-## @todo clean up this, there are some duplicates with the template here I think.
-$(REM_MOD)_LDFLAGS.darwin  = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/$(REM_MOD).dylib
-$(REM_MOD)_LDFLAGS.l4      = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib -Wl,--no-undefined
-$(REM_MOD)_LDFLAGS.linux   = $(VBOX_LD_as_needed)
-$(REM_MOD)_LDFLAGS.os2     = -Zomf
-$(REM_MOD)_LDFLAGS.debug   = -g
-$(REM_MOD)_LDFLAGS.solaris = -mimpure-text
 
-
-if defined(VBOX_USE_REM2) || defined(VBOX_USE_REM64)
-#
-# The VBoxREM2, VBoxREM32 and VBoxREM64 wrapper.
-#
-DLLS += VBoxREMWrapper
-VBoxREMWrapper_TEMPLATE    = VBOXR3
-VBoxREMWrapper_NAME        = VBoxREM
-VBoxREMWrapper_DEFS        = IN_REM_R3 $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)
- ifdef VBOX_USE_REM64
-VBoxREMWrapper_DEFS       += VBOX_USE_BITNESS_SELECTOR
+ifn1of ($(DLLS),VBoxREM)
+ #
+ # VBoxREM - Wrapper for loading VBoxREM2, VBoxREM32 or VBoxREM64.
+ #
+ DLLS += VBoxREMWrapper
+ VBoxREMWrapper_TEMPLATE   = VBOXR3
+ VBoxREMWrapper_NAME       = VBoxREM
+ VBoxREMWrapper_DEFS       = IN_REM_R3 $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)
+ if "$(KBUILD_TARGET_ARCH)" == "x86" && defined(VBOX_WITH_64_BITS_GUESTS)
+  VBoxREMWrapper_DEFS     += VBOX_USE_BITNESS_SELECTOR
  endif
  ifdef VBOX_WITHOUT_REM_LDR_CYCLE
-VBoxREMWrapper_DEFS       += VBOX_WITHOUT_REM_LDR_CYCLE
+  VBoxREMWrapper_DEFS     += VBOX_WITHOUT_REM_LDR_CYCLE
  endif
-VBoxREMWrapper_SOURCES     = \
-	VBoxREMWrapper.cpp
- ifdef VBOX_USE_REM2
-VBoxREMWrapper_SOURCES    += \
-	VBoxREMWrapperA.asm
+ VBoxREMWrapper_SOURCES    = \
+ 	VBoxREMWrapper.cpp
+ if "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.amd64"
+  VBoxREMWrapper_SOURCES  += \
+  	VBoxREMWrapperA.asm
  endif
-VBoxREMWrapper_LIBS        = \
+ VBoxREMWrapper_LIBS       = \
  	$(LIB_RUNTIME)
  ifndef VBOX_WITHOUT_REM_LDR_CYCLE
-VBoxREMWrapper_LIBS       += \
-	$(LIB_VMM)
-VBoxREMWrapper_LIBS.darwin += \
-	$(TARGET_VBoxREMImp)
- else
-VBoxREMWrapper_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM.dylib
+  VBoxREMWrapper_LIBS     += \
+  	$(LIB_VMM)
+  VBoxREMWrapper_LIBS.darwin += \
+  	$(TARGET_VBoxREMImp)
  endif
+ VBoxREMWrapper_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM.dylib
 endif
-
-
-ifdef VBOX_USE_REM64
- DLLS += VBoxREM32
- VBoxREM32_EXTENDS    = VBoxREM
- VBoxREM32_EXTENDS_BY = appending
- VBoxREM32_TEMPLATE   = $(VBoxREM_TEMPLATE)
- VBoxREM32_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM32.dylib
- VBoxREM32_LIBS.darwin = $(LIB_REM)
-
- DLLS += VBoxREM64
- VBoxREM64_EXTENDS    = VBoxREM
- VBoxREM64_EXTENDS_BY = appending
- VBoxREM64_TEMPLATE   = $(VBoxREM_TEMPLATE)
- VBoxREM64_DEFS       = VBOX_ENABLE_VBOXREM64
- VBoxREM64_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM64.dylib
- VBoxREM64_LIBS.darwin = $(LIB_REM)
-
-endif # USE_VBOXREM64
 
 
 #
@@ -272,11 +226,11 @@ VBoxREMImp_CLEAN           = $(PATH_VBoxREMImp)/VBoxREMImp.c
 VBoxREMImp_SONAME          = VBoxREM$(SUFF_DLL)
  endif
 ifdef VBOX_WITHOUT_REM_LDR_CYCLE
- VBoxREMImp_LDFLAGS.darwin  = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM.dylib
+ VBoxREMImp_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM.dylib
 else
- VBoxREMImp_LDFLAGS.darwin  = -install_name $(subst @rpath,@executable_path,$(VBOX_DYLD_EXECUTABLE_PATH))/VBoxREM.dylib
+ VBoxREMImp_LDFLAGS.darwin = -install_name $(subst @rpath,@executable_path,$(VBOX_DYLD_EXECUTABLE_PATH))/VBoxREM.dylib
 endif
-VBoxREMImp_LDFLAGS.l4       = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib
+VBoxREMImp_LDFLAGS.l4      = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib
 
 $$(PATH_VBoxREMImp)/VBoxREMImp.c: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(VBOX_PATH_RECOMPILER_SRC)/Sun/deftoimp.sed $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@)
@@ -313,4 +267,5 @@ testmath_SOURCES        = Sun/testmath.c
 
 
 include $(KBUILD_PATH)/subfooter.kmk
+endif # new stuff
 
