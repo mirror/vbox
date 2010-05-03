@@ -416,6 +416,9 @@ typelib_epilog(TreeState *state)
         /* How large should the annotation string be? */
         annotation_len = strlen(annotation_format) + strlen(state->basename) +
             strlen(timestr);
+#ifdef VBOX
+        annotation_len++; /* terminating '\0' */
+#endif
         for (i = 0; i < HEADER(state)->num_interfaces; i++) {
             XPTInterfaceDirectoryEntry *ide;
             ide = &HEADER(state)->interface_directory[i];
