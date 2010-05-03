@@ -3267,6 +3267,7 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
      * We need to manually strip these tags out or the guests might get confused.
      */
     bool fCopied = false;
+    bool fTagged = false;
     if (   pThis->u.s.fVLAN
         && pPromiscStream->fRawMode)
     {
@@ -3303,6 +3304,8 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
                     mblk_t *pStrippedMsg = allocb(cbEthPrefix, BPRI_MED);
                     if (RT_LIKELY(pStrippedMsg))
                     {
+                        fTagged = true;
+
                         /*
                          * Copy ethernet header excluding the ethertype.
                          */
@@ -3340,6 +3343,17 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
         pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, pSG, fSrc);
     else
         LogRel((DEVICE_NAME ":vboxNetFltSolarisMBlkToSG failed. rc=%d\n", rc));
+
+    /*
+     * If we've allocated the prefix before the VLAN tag in a new message, free that.
+     */
+    if (fTagged)
+    {
+        mblk_t *pTagMsg = pMsg->b_cont;
+        pMsg->b_cont = NULL; /* b_cont could be the message from the caller or a copy we made (fCopied) */
+        freemsg(pMsg);
+        pMsg = pTagMsg;
+    }
 
     /*
      * If we made an extra copy for VLAN stripping, we need to free that ourselves.
