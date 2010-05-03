@@ -38,7 +38,7 @@ typedef GMMVMSIZES *PGMMVMSIZES;
 
 
 /**
- * Shared module registration info
+ * Shared module registration info (global)
  */
 typedef struct GMMSHAREDMODULE
 {
@@ -48,6 +48,10 @@ typedef struct GMMSHAREDMODULE
     uint32_t                    cbModule;
     /** Number of included region descriptors */
     uint32_t                    cRegions;
+    /** Number of users (VMs). */
+    uint32_t                    cUsers;
+    /** Align. */
+    uint32_t                    u32Align;
     /** Module name */
     char                        szName[GMM_SHARED_MODULE_MAX_NAME_STRING];
     /** Module version */
@@ -55,8 +59,23 @@ typedef struct GMMSHAREDMODULE
     /** Shared region descriptor(s). */
     VMMDEVSHAREDREGIONDESC      aRegions[1];
 } GMMSHAREDMODULE;
-/** Pointer to a GMMMODULE. */
+/** Pointer to a GMMSHAREDMODULE. */
 typedef GMMSHAREDMODULE *PGMMSHAREDMODULE;
+
+/**
+ * Shared module registration info (per VM)
+ */
+typedef struct GMMSHAREDMODULEPERVM
+{
+    /* Tree node. */
+    AVLGCPTRNODECORE            Core;
+
+    /* Pointer to global shared module info. */
+    PGMMSHAREDMODULE            pSharedModule;
+
+} GMMSHAREDMODULEPERVM;
+/** Pointer to a GMMSHAREDMODULEPERVM. */
+typedef GMMSHAREDMODULEPERVM *PGMMSHAREDMODULEPERVM;
 
 /**
  * The per-VM GMM data.
@@ -91,6 +110,9 @@ typedef struct GMMPERVM
     uint64_t            cReqActuallyBalloonedPages;
     /** The number of pages we've currently requested the guest to take back. */
     uint64_t            cReqDeflatePages;
+
+    /** Shared module tree (per-vm). */
+    PAVLGCPTRNODECORE   pSharedModuleTree;
 
     /** Whether ballooning is enabled or not. */
     bool                fBallooningEnabled;
