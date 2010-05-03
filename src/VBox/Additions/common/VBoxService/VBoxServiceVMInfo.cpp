@@ -130,14 +130,23 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
     {
         VBoxServicePropCacheInit(&g_VMInfoPropCache, g_VMInfoGuestPropSvcClientID);
 
-        VBoxServicePropCacheUpdateEx(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/Net/Count", 
-                                     VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE, "0", "0");
+        /*
+         * Set flags and reset values for some guest proerties that need to have that.
+         * Passing NULL as an actual value does not write the properties yet.
+         */
         VBoxServicePropCacheUpdateEx(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", 
-                                     VBOXSERVICEPROPCACHEFLAG_TEMPORARY, NULL, NULL);
+                                     VBOXSERVICEPROPCACHEFLAG_TEMPORARY, NULL /* Delete on exit */, NULL);
         VBoxServicePropCacheUpdateEx(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsers", 
-                                     VBOXSERVICEPROPCACHEFLAG_TEMPORARY, "0", "0");
+                                     VBOXSERVICEPROPCACHEFLAG_TEMPORARY, "0", NULL);
         VBoxServicePropCacheUpdateEx(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers", 
-                                     VBOXSERVICEPROPCACHEFLAG_TEMPORARY, "true", "true");
+                                     VBOXSERVICEPROPCACHEFLAG_TEMPORARY, "true", NULL);
+        /*
+         * This property is a beacon which is _always_ written, even if the network configuration
+         * does not change. If this property is missing, the host assumes that all other GuestInfo
+         * properties are no longer valid.
+         */
+        VBoxServicePropCacheUpdateEx(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/Net/Count", 
+                                     VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE, "0", NULL);
     }
     return rc;
 }
@@ -395,11 +404,6 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         char szPropPath [FILENAME_MAX];
         int iCurIface = 0;
 
-        /*
-         * This property is a beacon which is _always_ written, even if the network configuration
-         * does not change. If this property is missing, the host assumes that all other GuestInfo
-         * properties are no longer valid.
-         */
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/Net/Count", "%d",
                                    nNumInterfaces > 1 ? nNumInterfaces-1 : 0);
 
