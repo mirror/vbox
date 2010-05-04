@@ -145,7 +145,7 @@ VBOX_ADD_KMOD = \
 	vboxguest
 
 VBOX_ADD_KMOD.linux = \
-	vboxvfs \
+	vboxsf \
 	vboxvideo
 
 VBOX_ADD_INIT.linux = \

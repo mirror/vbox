@@ -1,6 +1,6 @@
 /** @file
  *
- * vboxvfs -- VirtualBox Guest Additions for Linux:
+ * vboxsf -- VirtualBox Guest Additions for Linux:
  * Virtual File System for VirtualBox Shared Folders
  *
  * Module initialization/finalization
@@ -501,7 +501,7 @@ init (void)
         }
 
         printk(KERN_DEBUG
-               "vboxvfs: Successfully loaded version " VBOX_VERSION_STRING
+               "vboxsf: Successfully loaded version " VBOX_VERSION_STRING
                " (interface " RT_XSTR(VMMDEV_VERSION) ")\n");
 
         return 0;

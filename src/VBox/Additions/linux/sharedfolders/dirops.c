@@ -1,6 +1,6 @@
 /** @file
  *
- * vboxvfs -- VirtualBox Guest Additions for Linux:
+ * vboxsf -- VirtualBox Guest Additions for Linux:
  * Directory inode and file operations
  */
 

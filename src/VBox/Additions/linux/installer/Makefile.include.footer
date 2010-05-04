@@ -49,7 +49,7 @@
 # endif
 # 
 ## important: Don't remove Module.symvers! DKMS does 'make clean' before building ...
-#	rm -rf .vboxvfs* .tmp_ver* vboxvfs.* Modules.symvers modules.order
+#	rm -rf .vboxsf* .tmp_ver* vboxsf.* Modules.symvers modules.order
 # 
 
 

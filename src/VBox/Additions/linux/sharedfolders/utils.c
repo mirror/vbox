@@ -1,6 +1,6 @@
 /** @file
  *
- * vboxvfs -- VirtualBox Guest Additions for Linux:
+ * vboxsf -- VirtualBox Guest Additions for Linux:
  * Utility functions.
  * Mainly conversion from/to VirtualBox/Linux data structures
  */
@@ -812,7 +812,7 @@ int sf_init_backing_dev(struct sf_glob_info *sf_g, const char *name)
     rc = bdi_init(&sf_g->bdi);
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 26)
     if (!rc)
-        rc = bdi_register(&sf_g->bdi, NULL, "vboxvfs-%s", name);
+        rc = bdi_register(&sf_g->bdi, NULL, "vboxsf-%s", name);
 #  endif /* >= 2.6.26 */
 # endif /* >= 2.6.24 */
 #endif /* >= 2.6.0 */
