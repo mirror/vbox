@@ -433,6 +433,12 @@ void UIMachineLogic::prepareSessionConnections()
     /* Runtime errors notifier: */
     connect(uisession(), SIGNAL(sigRuntimeError(bool, const QString &, const QString &)),
             this, SLOT(sltRuntimeError(bool, const QString &, const QString &)));
+
+#ifdef Q_WS_MAC
+    /* Show windows: */
+    connect(uisession(), SIGNAL(sigShowWindows()),
+            this, SLOT(sltShowWindows()));
+#endif /* Q_WS_MAC */
 }
 
 void UIMachineLogic::prepareActionConnections()
@@ -824,6 +830,25 @@ void UIMachineLogic::sltRuntimeError(bool fIsFatal, const QString &strErrorId, c
 {
     vboxProblem().showRuntimeError(session().GetConsole(), fIsFatal, strErrorId, strMessage);
 }
+
+#ifdef Q_WS_MAC
+void UIMachineLogic::sltShowWindows()
+{
+    for (int i=0; i < m_machineWindowsList.size(); ++i)
+    {
+        UIMachineWindow *pMachineWindow = m_machineWindowsList.at(i);
+        /* Dunno what Qt thinks a window that has minimized to the dock
+         * should be - it is not hidden, neither is it minimized. OTOH it is
+         * marked shown and visible, but not activated. This latter isn't of
+         * much help though, since at this point nothing is marked activated.
+         * I might have overlooked something, but I'm buggered what if I know
+         * what. So, I'll just always show & activate the stupid window to
+         * make it get out of the dock when the user wishes to show a VM. */
+        pMachineWindow->machineWindow()->raise();
+        pMachineWindow->machineWindow()->activateWindow();
+    }
+}
+#endif /* Q_WS_MAC */
 
 void UIMachineLogic::sltCheckRequestedModes()
 {
