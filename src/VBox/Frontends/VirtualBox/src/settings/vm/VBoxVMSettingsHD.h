@@ -308,6 +308,8 @@ public:
     QStringList ctrAllMediumIds (bool aShowDiffs) const;
     QStringList ctrUsedMediumIds() const;
 
+    void setAttachments(const QList<AbstractItem*> &attachments) { mAttachments = attachments; }
+
 private:
 
     ItemType rtti() const;
@@ -484,6 +486,9 @@ public:
     void delAttachment (const QUuid &aCtrId, const QUuid &aAttId);
 
     void setMachineId (const QString &aMachineId);
+
+    void sort(int iColumn = 0, Qt::SortOrder order = Qt::AscendingOrder);
+    QModelIndex attachmentBySlot(QModelIndex controllerIndex, StorageSlot attachmentStorageSlot);
 
 private:
 

@@ -262,6 +262,12 @@ struct StorageSlot
     StorageSlot& operator= (const StorageSlot &aOther) { bus = aOther.bus; port = aOther.port; device = aOther.device; return *this; }
     bool operator== (const StorageSlot &aOther) const { return bus == aOther.bus && port == aOther.port && device == aOther.device; }
     bool operator!= (const StorageSlot &aOther) const { return bus != aOther.bus || port != aOther.port || device != aOther.device; }
+    bool operator< (const StorageSlot &aOther) const { return (bus < aOther.bus) ||
+                                                              (bus == aOther.bus && port < aOther.port) ||
+                                                              (bus == aOther.bus && port == aOther.port && device < aOther.device); }
+    bool operator> (const StorageSlot &aOther) const { return (bus > aOther.bus) ||
+                                                              (bus == aOther.bus && port > aOther.port) ||
+                                                              (bus == aOther.bus && port == aOther.port && device > aOther.device); }
     bool isNull() { return bus == KStorageBus_Null; }
     KStorageBus bus; LONG port; LONG device;
 };
