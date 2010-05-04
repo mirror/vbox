@@ -167,6 +167,9 @@ signals:
     void sigUSBDeviceStateChange(const CUSBDevice &device, bool bIsAttached, const CVirtualBoxErrorInfo &error);
     void sigSharedFolderChange();
     void sigRuntimeError(bool bIsFatal, const QString &strErrorId, const QString &strMessage);
+#ifdef RT_OS_DARWIN
+    void sigShowWindows();
+#endif /* RT_OS_DARWIN */
 
     /* Session signals: */
     void sigMachineStarted();

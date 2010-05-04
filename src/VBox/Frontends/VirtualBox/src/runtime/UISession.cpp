@@ -230,7 +230,7 @@ private:
 };
 
 /* CPU change event: */
-/* Noz used:
+/* Not used:
 class UICPUChangeEvent : public QEvent
 {
 public:
@@ -330,6 +330,7 @@ private:
 };
 
 /* Can show window event: */
+/* Not used:
 class UICanUIShowWindowEvent : public QEvent
 {
 public:
@@ -337,8 +338,10 @@ public:
     UICanUIShowWindowEvent()
         : QEvent((QEvent::Type)UIConsoleEventType_CanShowWindow) {}
 };
+*/
 
 /* Show window event: */
+#ifdef Q_WS_MAC
 class UIShowWindowEvent : public QEvent
 {
 public:
@@ -346,6 +349,7 @@ public:
     UIShowWindowEvent()
         : QEvent((QEvent::Type)UIConsoleEventType_ShowWindow) {}
 };
+#endif /* Q_WS_MAC */
 
 class UIConsoleCallback : VBOX_SCRIPTABLE_IMPL(IConsoleCallback)
 {
@@ -498,7 +502,7 @@ public:
         if (!puWinId)
             return E_POINTER;
 
-#if defined (Q_WS_MAC)
+#ifdef Q_WS_MAC
         /* Let's try the simple approach first - grab the focus.
          * Getting a window out of the dock (minimized or whatever it's called)
          * needs to be done on the GUI thread, so post it a note: */
@@ -515,10 +519,10 @@ public:
              * focus stealing restrictions that other window managers implement). */
             *puWinId = ::darwinGetCurrentProcessId();
         }
-#else
+#else /* Q_WS_MAC */
         /* Return the ID of the top-level console window. */
         *puWinId = (ULONG64)m_pEventHandler->winId();
-#endif
+#endif /* !Q_WS_MAC */
 
         return S_OK;
     }
@@ -1137,21 +1141,11 @@ bool UISession::event(QEvent *pEvent)
         }
 
 #ifdef Q_WS_MAC
-        /* posted OnShowWindow */
         case UIConsoleEventType_ShowWindow:
         {
-            /* Dunno what Qt3 thinks a window that has minimized to the dock
-             * should be - it is not hidden, neither is it minimized. OTOH it is
-             * marked shown and visible, but not activated. This latter isn't of
-             * much help though, since at this point nothing is marked activated.
-             * I might have overlooked something, but I'm buggered what if I know
-             * what. So, I'll just always show & activate the stupid window to
-             * make it get out of the dock when the user wishes to show a VM. */
-#if 0
-            // TODO_NEW_CORE
-            window()->show();
-            window()->activateWindow();
-#endif
+            emit sigShowWindows();
+            /* Accept event: */
+            pEvent->accept();
             return true;
         }
 #endif

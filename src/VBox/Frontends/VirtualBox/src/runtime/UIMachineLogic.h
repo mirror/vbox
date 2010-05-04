@@ -134,6 +134,9 @@ protected slots:
     virtual void sltMouseCapabilityChanged();
     virtual void sltUSBDeviceStateChange(const CUSBDevice &device, bool fIsAttached, const CVirtualBoxErrorInfo &error);
     virtual void sltRuntimeError(bool fIsFatal, const QString &strErrorId, const QString &strMessage);
+#ifdef RT_OS_DARWIN
+    virtual void sltShowWindows();
+#endif /* RT_OS_DARWIN */
 
     /* Mode request watch dog: */
     void sltCheckRequestedModes();
