@@ -1,4 +1,3 @@
-
 /* $Id$ */
 /** @file
  * VBoxServiceControl - Host-driven Guest Control.
