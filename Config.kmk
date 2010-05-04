@@ -4120,7 +4120,8 @@ $(VBOX_SVN_REV_KMK):
 endif
 
 # only needed for VBoxGuest for Linux/FreeBSD guests
-$(PATH_OUT)/revision-generated.h: $(VBOX_SVN_REV_KMK)
+VBOX_SVN_REV_HEADER = $(PATH_OUT)/revision-generated.h
+$(VBOX_SVN_REV_HEADER): $(VBOX_SVN_REV_KMK)
 	$(call MSG_GENERATE,,$@)
 	$(QUIET)$(RM) -f $@ $@.tmp
 	$(QUIET)$(MKDIR) -p $(@D)
