@@ -603,7 +603,11 @@ DECLINLINE(PVDIOCTX) vdIoCtxAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
         pIoCtx->pfnIoCtxTransferNext  = NULL;
         pIoCtx->rcReq                 = VINF_SUCCESS;
 
-        RTSgBufInit(&pIoCtx->SgBuf, pcaSeg, cSeg);
+        /* There is no S/G list for a flush request. */
+        if (enmTxDir != VDIOCTXTXDIR_FLUSH)
+            RTSgBufInit(&pIoCtx->SgBuf, pcaSeg, cSeg);
+        else
+            memset(&pIoCtx->SgBuf, 0, sizeof(RTSGBUF));
     }
 
     return pIoCtx;
