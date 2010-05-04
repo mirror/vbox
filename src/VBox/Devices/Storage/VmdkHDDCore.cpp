@@ -6209,8 +6209,59 @@ out:
 
 static int vmdkAsyncFlush(void *pvBackendData, PVDIOCTX pIoCtx)
 {
-    int rc = VERR_NOT_IMPLEMENTED;
-    LogFlowFunc(("returns %Rrc\n", rc));
+    PVMDKIMAGE pImage = (PVMDKIMAGE)pvBackendData;
+    PVMDKEXTENT pExtent;
+    int rc = VINF_SUCCESS;
+
+    for (unsigned i = 0; i < pImage->cExtents; i++)
+    {
+        pExtent = &pImage->pExtents[i];
+        if (pExtent->pFile != NULL && pExtent->fMetaDirty)
+        {
+            switch (pExtent->enmType)
+            {
+                case VMDKETYPE_HOSTED_SPARSE:
+#ifdef VBOX_WITH_VMDK_ESX
+                case VMDKETYPE_ESX_SPARSE:
+#endif /* VBOX_WITH_VMDK_ESX */
+                    /** Not supported atm. */
+                    AssertMsgFailed(("Async I/O not supported for sparse images\n"));
+                    break;
+                case VMDKETYPE_VMFS:
+                case VMDKETYPE_FLAT:
+                    /* Nothing to do. */
+                    break;
+                case VMDKETYPE_ZERO:
+                default:
+                    AssertMsgFailed(("extent with type %d marked as dirty\n",
+                                     pExtent->enmType));
+                    break;
+            }
+        }
+        switch (pExtent->enmType)
+        {
+            case VMDKETYPE_HOSTED_SPARSE:
+#ifdef VBOX_WITH_VMDK_ESX
+            case VMDKETYPE_ESX_SPARSE:
+#endif /* VBOX_WITH_VMDK_ESX */
+            case VMDKETYPE_VMFS:
+            case VMDKETYPE_FLAT:
+                /** @todo implement proper path absolute check. */
+                if (   pExtent->pFile != NULL
+                    && !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+                    && !(pExtent->pszBasename[0] == RTPATH_SLASH))
+                    rc = vmdkFileFlushAsync(pExtent->pFile, pIoCtx);
+                break;
+            case VMDKETYPE_ZERO:
+                /* No need to do anything for this extent. */
+                break;
+            default:
+                AssertMsgFailed(("unknown extent type %d\n", pExtent->enmType));
+                break;
+        }
+    }
+
+out:
     return rc;
 }
 
