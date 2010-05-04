@@ -22,7 +22,7 @@ extern "C" {
 #define CR_VENDOR "Humper"
 
 
-#define CR_MAX_TEXTURE_UNITS		16
+#define CR_MAX_TEXTURE_UNITS		8
 #define CR_MAX_GENERAL_COMBINERS	8
 #define CR_MAX_TEXTURE_SIZE		8192
 #define CR_MAX_3D_TEXTURE_SIZE		512
