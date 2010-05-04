@@ -1028,6 +1028,8 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
     {
         /*
          * Create progress object.
+         * Note that we need at least a local progress object here in order
+         * to get notified when someone cancels the operation.
          */
         ComObjPtr <Progress> progress;
         rc = progress.createObject();
