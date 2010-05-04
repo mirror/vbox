@@ -70,6 +70,7 @@
 #include "nsEventQueue.h"
 #ifdef VBOX
 # include "nsEventQueueUtils.h"
+# include "nsProxyRelease.h"
 #endif /* VBOX */
 
 #include "nsIProxyObjectManager.h"
@@ -229,9 +230,9 @@ RegisterGenericFactory(nsIComponentRegistrar* registrar,
     rv = NS_NewGenericFactory(&fact, info);
     if (NS_FAILED(rv)) return rv;
 
-    rv = registrar->RegisterFactory(info->mCID, 
+    rv = registrar->RegisterFactory(info->mCID,
                                     info->mDescription,
-                                    info->mContractID, 
+                                    info->mContractID,
                                     fact);
     NS_RELEASE(fact);
     return rv;
@@ -246,16 +247,16 @@ static PRBool CheckUpdateFile()
 {
     nsresult rv;
     nsCOMPtr<nsIProperties> directoryService;
-    nsDirectoryService::Create(nsnull, 
-                               NS_GET_IID(nsIProperties), 
-                               getter_AddRefs(directoryService));  
-    
-    if (!directoryService) 
+    nsDirectoryService::Create(nsnull,
+                               NS_GET_IID(nsIProperties),
+                               getter_AddRefs(directoryService));
+
+    if (!directoryService)
         return PR_FALSE;
 
     nsCOMPtr<nsIFile> file;
-    rv = directoryService->Get(NS_XPCOM_CURRENT_PROCESS_DIR, 
-                               NS_GET_IID(nsIFile), 
+    rv = directoryService->Get(NS_XPCOM_CURRENT_PROCESS_DIR,
+                               NS_GET_IID(nsIFile),
                                getter_AddRefs(file));
 
     if (NS_FAILED(rv)) {
@@ -264,7 +265,7 @@ static PRBool CheckUpdateFile()
     }
 
     file->AppendNative(nsDependentCString(".autoreg"));
-    
+
     PRBool exists;
     file->Exists(&exists);
     if (!exists)
@@ -275,7 +276,7 @@ static PRBool CheckUpdateFile()
                                NS_GET_IID(nsIFile),
                                getter_AddRefs(compregFile));
 
-    
+
     if (NS_FAILED(rv)) {
         NS_WARNING("Getting NS_XPCOM_COMPONENT_REGISTRY_FILE failed");
         return PR_FALSE;
@@ -326,7 +327,7 @@ ipcDConnectServiceUnregisterProc(nsIComponentManager *aCompMgr,
 {
     nsCOMPtr<nsICategoryManager> catman(do_GetService(NS_CATEGORYMANAGER_CONTRACTID));
     if (catman)
-        catman->DeleteCategoryEntry(NS_XPCOM_STARTUP_OBSERVER_ID, 
+        catman->DeleteCategoryEntry(NS_XPCOM_STARTUP_OBSERVER_ID,
                                     IPC_DCONNECTSERVICE_CONTRACTID, PR_TRUE);
     return NS_OK;
 }
@@ -481,8 +482,8 @@ nsresult NS_COM NS_GetDebug(nsIDebug** result)
     nsresult rv = NS_OK;
     if (!gDebug)
     {
-        rv = nsDebugImpl::Create(nsnull, 
-                                 NS_GET_IID(nsIDebug), 
+        rv = nsDebugImpl::Create(nsnull,
+                                 NS_GET_IID(nsIDebug),
                                  (void**)&gDebug);
     }
     NS_IF_ADDREF(*result = gDebug);
@@ -500,8 +501,8 @@ nsresult NS_COM NS_GetTraceRefcnt(nsITraceRefcnt** result)
     nsresult rv = NS_OK;
     if (!gTraceRefcnt)
     {
-        rv = nsTraceRefcntImpl::Create(nsnull, 
-                                       NS_GET_IID(nsITraceRefcnt), 
+        rv = nsTraceRefcntImpl::Create(nsnull,
+                                       NS_GET_IID(nsITraceRefcnt),
                                        (void**)&gTraceRefcnt);
     }
     NS_IF_ADDREF(*result = gTraceRefcnt);
@@ -543,7 +544,7 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
     if (NS_FAILED(rv)) return rv;
 
     // If the locale hasn't already been setup by our embedder,
-    // get us out of the "C" locale and into the system 
+    // get us out of the "C" locale and into the system
     if (strcmp(setlocale(LC_ALL, NULL), "C") == 0)
         setlocale(LC_ALL, "");
 
@@ -577,9 +578,9 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
         if (compMgr == NULL)
             return NS_ERROR_OUT_OF_MEMORY;
         NS_ADDREF(compMgr);
-        
+
         nsCOMPtr<nsIFile> xpcomLib;
-                
+
         PRBool value;
         if (binDirectory)
         {
@@ -591,8 +592,8 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
             }
         }
         else {
-            gDirectoryService->Get(NS_XPCOM_CURRENT_PROCESS_DIR, 
-                                   NS_GET_IID(nsIFile), 
+            gDirectoryService->Get(NS_XPCOM_CURRENT_PROCESS_DIR,
+                                   NS_GET_IID(nsIFile),
                                    getter_AddRefs(xpcomLib));
         }
 
@@ -600,7 +601,7 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
             xpcomLib->AppendNative(nsDependentCString(XPCOM_DLL));
             gDirectoryService->Set(NS_XPCOM_LIBRARY_FILE, xpcomLib);
         }
-        
+
         if (appFileLocationProvider) {
             rv = dirService->RegisterProvider(appFileLocationProvider);
             if (NS_FAILED(rv)) return rv;
@@ -665,9 +666,9 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
             RegisterGenericFactory(registrar, &components[i]);
     }
     rv = nsComponentManagerImpl::gComponentManager->ReadPersistentRegistry();
-#ifdef DEBUG    
+#ifdef DEBUG
     if (NS_FAILED(rv)) {
-        printf("No Persistent Registry Found.\n");        
+        printf("No Persistent Registry Found.\n");
     }
 #endif
 
@@ -682,7 +683,7 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
         // the default components directory.
         nsComponentManagerImpl::gComponentManager->AutoRegister(nsnull);
 
-        // If the application is using a GRE, then, 
+        // If the application is using a GRE, then,
         // auto register components in the GRE directory as well.
         //
         // The application indicates that it's using an GRE by
@@ -712,13 +713,13 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
                 // autoregistration of the applications component directory.
                 int loaderCount = nsComponentManagerImpl::gComponentManager->GetLoaderCount();
                 rv = nsComponentManagerImpl::gComponentManager->AutoRegister(greDir);
-                
-                if (loaderCount != nsComponentManagerImpl::gComponentManager->GetLoaderCount()) 
-                    nsComponentManagerImpl::gComponentManager->AutoRegisterNonNativeComponents(nsnull);        
+
+                if (loaderCount != nsComponentManagerImpl::gComponentManager->GetLoaderCount())
+                    nsComponentManagerImpl::gComponentManager->AutoRegisterNonNativeComponents(nsnull);
 
 #ifdef DEBUG_dougt
                 printf("end - Registering GRE components\n");
-#endif          
+#endif
                 if (NS_FAILED(rv)) {
                     NS_ERROR("Could not AutoRegister GRE components");
                     return rv;
@@ -759,7 +760,7 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
                                     getter_AddRefs(compregFile));
         compregFile->SetLastModifiedTime(PR_Now() / 1000);
     }
-    
+
     // Pay the cost at startup time of starting this singleton.
     nsIInterfaceInfoManager* iim = XPTI_GetInterfaceInfoManager();
     NS_IF_RELEASE(iim);
@@ -771,15 +772,18 @@ nsresult NS_COM NS_InitXPCOM2(nsIServiceManager* *result,
     rv = NS_GetMainEventQ(getter_AddRefs(eventQ));
     if (NS_FAILED(rv)) {
       NS_ERROR("Could not create event queue for main thread");
+      /* this is just a build-time hack, to reference NS_ProxyRelease */
+      if (rv == 666)
+          NS_ProxyRelease(nsnull, nsnull);
       return rv;
     }
 #endif /* VBOX */
 
     // Notify observers of xpcom autoregistration start
-    NS_CreateServicesFromCategory(NS_XPCOM_STARTUP_OBSERVER_ID, 
+    NS_CreateServicesFromCategory(NS_XPCOM_STARTUP_OBSERVER_ID,
                                   nsnull,
                                   NS_XPCOM_STARTUP_OBSERVER_ID);
-    
+
     return NS_OK;
 }
 
@@ -905,7 +909,7 @@ nsresult NS_COM NS_ShutdownXPCOM(nsIServiceManager* servMgr)
         currentQ->ProcessPendingEvents();
         currentQ = 0;
     }
-    
+
     nsProxyObjectManager::Shutdown();
 
     // Release the directory service
