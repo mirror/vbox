@@ -40,7 +40,6 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("DOS", Qt::CaseInsensitive), "DOS" },
 
     /* Windows */
-    { QRegExp("Wi.*3", Qt::CaseInsensitive), "Windows31" },
     { QRegExp("Wi.*98", Qt::CaseInsensitive), "Windows98" },
     { QRegExp("Wi.*95", Qt::CaseInsensitive), "Windows95" },
     { QRegExp("Wi.*Me", Qt::CaseInsensitive), "WindowsMe" },
@@ -56,6 +55,7 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("(Wi.*2)|(W2K)", Qt::CaseInsensitive), "Windows2000" },
     { QRegExp("Wi.*7.*64", Qt::CaseInsensitive), "Windows7_64" },
     { QRegExp("Wi.*7", Qt::CaseInsensitive), "Windows7" },
+    { QRegExp("Wi.*3", Qt::CaseInsensitive), "Windows31" },
     { QRegExp("Wi", Qt::CaseInsensitive), "WindowsXP" },
 
     /* Solaris */
