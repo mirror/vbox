@@ -54,6 +54,7 @@ clean:
 	rm -f vboxguest.*o vboxsf.*o
 
 load:
+	@/sbin/rmmod vboxvfs || true
 	@/sbin/rmmod vboxsf || true
 	@/sbin/rmmod vboxguest || true
 	@/sbin/insmod vboxguest.ko
