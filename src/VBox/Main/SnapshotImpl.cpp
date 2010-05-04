@@ -22,6 +22,7 @@
 
 #include "MachineImpl.h"
 #include "MediumImpl.h"
+#include "MediumFormatImpl.h"
 #include "Global.h"
 #include "ProgressImpl.h"
 
@@ -2473,9 +2474,11 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                     Assert(pMedium->getState() == MediumState_Deleting);
                     /* No need to hold the lock any longer. */
                     mLock.release();
+                    bool fNeedsSave = false;
                     rc = pMedium->deleteStorage(&aTask.pProgress,
                                                 true /* aWait */,
-                                                &fNeedsSaveSettings);
+                                                &fNeedsSave);
+                    fNeedsSaveSettings |= fNeedsSave;
                     if (FAILED(rc))
                         throw rc;
 
@@ -2485,6 +2488,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             }
             else
             {
+                bool fNeedsSave = false;
                 if (it->mfNeedsOnlineMerge)
                 {
 /// @todo VBoxHDD cannot handle backward merges where source==active disk yet
@@ -2503,7 +2507,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                                            it->mChildrenToReparent,
                                            it->mpMediumLockList,
                                            aTask.pProgress,
-                                           &fNeedsSaveSettings);
+                                           &fNeedsSave);
                 }
                 else
                 {
@@ -2515,11 +2519,36 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                                                it->mpMediumLockList,
                                                &aTask.pProgress,
                                                true /* aWait */,
-                                               &fNeedsSaveSettings);
+                                               &fNeedsSave);
                 }
+                fNeedsSaveSettings |= fNeedsSave;
 
+                // If the merge failed, we need to do our best to have a usable
+                // VM configuration afterwards. The return code doesn't tell
+                // whether the merge completed and so we have to check if the
+                // source medium (diff images are always file based at the
+                // moment) is still there or not. Be careful not to lose the
+                // error code below, before the "Delayed failure exit".
                 if (FAILED(rc))
-                    throw rc;
+                {
+                    AutoReadLock mlock(it->mpSource COMMA_LOCKVAL_SRC_POS);
+                    const ComObjPtr<MediumFormat> &sourceFormat = it->mpSource->getMediumFormat();
+                    // No medium format description? get out of here.
+                    if (sourceFormat.isNull())
+                        throw rc;
+                    // Diff medium not backed by a file - cannot get status so
+                    // be pessimistic.
+                    if (!(sourceFormat->capabilities() & MediumFormatCapabilities_File))
+                        throw rc;
+                    const Utf8Str &loc = it->mpSource->getLocationFull();
+                    // Source medium is still there, so merge failed early.
+                    if (RTFileExists(loc.raw()))
+                        throw rc;
+
+                    // Source medium is gone. Assume the merge succeeded and
+                    // thus it's safe to remove the attachment. We use the
+                    // "Delayed failure exit" below.
+                }
 
                 // need to change the medium attachment for backward merges
                 fReparentTarget = !it->mfMergeForward;
@@ -2582,8 +2611,13 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             // One attachment is merged, must save the settings
             fMachineSettingsChanged = true;
 
-            /* prevent from calling cancelDeleteSnapshotMedium() */
+            // prevent calling cancelDeleteSnapshotMedium() for this attachment
             it = toDelete.erase(it);
+
+            // Delayed failure exit when the merge cleanup failed but the
+            // merge actually succeeded.
+            if (FAILED(rc))
+                throw rc;
         }
 
         {
