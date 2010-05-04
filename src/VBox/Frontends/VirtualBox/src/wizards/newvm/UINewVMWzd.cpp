@@ -744,7 +744,7 @@ bool UINewVMWzdPage5::constructMachine()
         {
             CMachine m = session.GetMachine();
 
-            /* Boot hard disk (IDE Primary Master) */
+            /* Boot hard disk */
             if (!field("hardDiskId").toString().isNull())
             {
                 m.AttachDevice(ctrHdName, 0, 0, KDeviceType_HardDisk, field("hardDiskId").toString());
