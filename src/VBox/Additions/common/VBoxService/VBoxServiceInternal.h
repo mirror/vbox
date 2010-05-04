@@ -25,7 +25,7 @@
 #endif
 
 #include <iprt/list.h>
-#include <iprt/semaphore.h>
+#include <iprt/critsect.h>
 
 /**
  * A service descriptor.
@@ -138,7 +138,7 @@ typedef struct
     uint32_t    cbSize;
     uint32_t    cbOffset;
     uint32_t    cbRead;
-    RTSEMMUTEX  mtx;
+    RTCRITSECT  CritSect;
 } VBOXSERVICECTRLEXECPIPEBUF;
 /** Pointer to thread data. */
 typedef VBOXSERVICECTRLEXECPIPEBUF *PVBOXSERVICECTRLEXECPIPEBUF;
@@ -168,7 +168,7 @@ typedef struct
 typedef VBOXSERVICECTRLTHREADDATAEXEC *PVBOXSERVICECTRLTHREADDATAEXEC;
 
 /* Structure for holding thread relevant data. */
-typedef struct
+typedef struct VBOXSERVICECTRLTHREAD
 {
     /** Node. */
     RTLISTNODE                      Node;
@@ -223,12 +223,10 @@ typedef struct VBOXSERVICEVEPROPCACHE
 {
     /** The client ID for HGCM communication. */
     uint32_t    uClientID;
-    /** List of VBOXSERVICEVEPROPCACHEENTRY nodes.
-     * @todo r=bird: Node -> ListSomething, please.  "Node" is very nondescript and
-     *       makes the list-head vs. list-node confusion greater. */
-    RTLISTNODE  Node;
-    /** @todo Use a RTCRITSECT. RTSEMMUTEXes are deprecated in ring-3. */
-    RTSEMMUTEX  Mutex;
+    /** List of VBOXSERVICEVEPROPCACHEENTRY nodes. */
+    RTLISTNODE  ListEntries;
+    /** Critical section for thread-safe use. */
+    RTCRITSECT  CritSect;
 } VBOXSERVICEVEPROPCACHE;
 /** Pointer to a guest property cache. */
 typedef VBOXSERVICEVEPROPCACHE *PVBOXSERVICEVEPROPCACHE;

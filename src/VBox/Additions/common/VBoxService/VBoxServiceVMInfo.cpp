@@ -128,7 +128,7 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
 
     if (RT_SUCCESS(rc))
     {
-        VBoxServicePropCacheInit(&g_VMInfoPropCache, g_uVMInfoGuestPropSvcClientID);
+        VBoxServicePropCacheCreate(&g_VMInfoPropCache, g_uVMInfoGuestPropSvcClientID);
 
         /** @todo r=bird: Setting Net/Count to 0 here is wrong and will confuse users.
          *        Besides, because it is the beacon updating it implies that all the
@@ -138,22 +138,16 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
          *        "declarations" or moving them. */
 
         /*
-         * Set flags and reset values for some guest proerties that need to have that.
-         * Passing NULL as an actual value does not write the properties yet.
+         * Initialize some guest properties to have flags and reset values.
          */
-        VBoxServicePropCacheUpdateEx(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList",
-                                     VBOXSERVICEPROPCACHEFLAG_TEMPORARY, NULL /* Delete on exit */, NULL);
-        VBoxServicePropCacheUpdateEx(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsers",
-                                     VBOXSERVICEPROPCACHEFLAG_TEMPORARY, "0", NULL);
-        VBoxServicePropCacheUpdateEx(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers",
-                                     VBOXSERVICEPROPCACHEFLAG_TEMPORARY, "true", NULL);
-        /*
-         * This property is a beacon which is _always_ written, even if the network configuration
-         * does not change. If this property is missing, the host assumes that all other GuestInfo
-         * properties are no longer valid.
-         */
-        VBoxServicePropCacheUpdateEx(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/Net/Count",
-                                     VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE, "0", NULL);
+        VBoxServicePropCacheUpdateEntry(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList",
+                                        VBOXSERVICEPROPCACHEFLAG_TEMPORARY, NULL /* Delete on exit */);
+        VBoxServicePropCacheUpdateEntry(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsers",
+                                        VBOXSERVICEPROPCACHEFLAG_TEMPORARY, "0");
+        VBoxServicePropCacheUpdateEntry(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers",
+                                        VBOXSERVICEPROPCACHEFLAG_TEMPORARY, "true");
+        VBoxServicePropCacheUpdateEntry(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/Net/Count",
+                                        VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE, NULL /* Delete on exit */);
     }
     return rc;
 }
@@ -411,12 +405,6 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         char szPropPath [FILENAME_MAX];
         int iCurIface = 0;
 
-        /** @todo r=bird: As mentioned in the defect, this must be written after ALL
-         *        the other values since it indicates that they are up-to-date by its
-         *        timestamp. */
-        VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/Net/Count", "%d",
-                                   cInterfaces > 1 ? cInterfaces-1 : 0);
-
         /** @todo Use GetAdaptersInfo() and GetAdapterAddresses (IPv4 + IPv6) for more information. */
         for (int i = 0; i < cInterfaces; ++i)
         {
@@ -484,6 +472,17 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
 #else
             close(sd);
 #endif
+
+        /*
+         * This property is a beacon which is _always_ written, even if the network configuration
+         * does not change. If this property is missing, the host assumes that all other GuestInfo
+         * properties are no longer valid.
+         *
+         * cInterfaces also counts in local loopback, but we don't want to report that.
+         */
+        VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/Net/Count", "%d",
+                                   cInterfaces > 1 ? cInterfaces-1 : 0);
+
         /** @todo r=bird: if cInterfaces decreased compared to the previous run, zap
          *        the stale data. */
 
