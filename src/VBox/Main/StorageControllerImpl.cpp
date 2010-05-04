@@ -143,7 +143,10 @@ HRESULT StorageController::init(Machine *aParent,
     m->bd->strName = aName;
     m->bd->mInstance = aInstance;
     m->bd->mStorageBus = aStorageBus;
-    m->bd->mIoBackendType = IoBackendType_Buffered;
+    if (aStorageBus != StorageBus_IDE)
+        m->bd->mIoBackendType = IoBackendType_Unbuffered;
+    else
+        m->bd->mIoBackendType = IoBackendType_Buffered;
 
     switch (aStorageBus)
     {
