@@ -343,14 +343,13 @@ bool QIMainDialog::eventFilter (QObject *aObject, QEvent *aEvent)
 QPushButton* QIMainDialog::searchDefaultButton() const
 {
     /* Search for the first default button in the dialog. */
-    QPushButton *button = 0;
     QList<QPushButton*> list = qFindChildren<QPushButton*> (this);
-    foreach (button, list)
+    foreach (QPushButton *button, list)
         if (button->isDefault() &&
             (button->parent() == centralWidget() ||
              qobject_cast<QDialogButtonBox*> (button->parent())))
-            break;
-    return button;
+            return button;
+    return NULL;
 }
 
 
