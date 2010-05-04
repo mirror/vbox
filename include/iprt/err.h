@@ -502,8 +502,6 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_TRY_AGAIN                      (-52)
 /** Retry the operation. */
 #define VINF_TRY_AGAIN                      52
-/** No change done. */
-#define VINF_NO_CHANGE                      53
 /** Generic parse error. */
 #define VERR_PARSE_ERROR                    (-53)
 /** Value out of range. */
@@ -616,6 +614,10 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_CALLER_NO_REFERENCE            (-93)
 /** Invalid login data given. */
 #define VERR_LOGON_FAILURE                  (-94)
+/** Generic no change error. */
+#define VERR_NO_CHANGE                      (-95)
+/** Generic no change info. */
+#define VINF_NO_CHANGE                      95
 /** @} */
 
 
