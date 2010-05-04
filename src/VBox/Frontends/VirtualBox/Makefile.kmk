@@ -40,7 +40,9 @@ endif
 
 # Show the update notifier dialog during startup. If this setting is disabled
 # the user can still update using the menu if desired.
+ifndef VBOX_OSE
 VBOX_WITH_UPDATE_REQUEST := 1
+endif
 
 # Build new VirtualBox FE/Qt4 GUI runtime core.
 # Currently its not used, you can build it for developing purposes.
