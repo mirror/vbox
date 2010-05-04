@@ -333,6 +333,11 @@ ifdef VBOX_WITH_PYTHON
 	sdk/installer/vboxapi/VirtualBox_constants.py
 endif
 
+ifdef VBOX_WITH_JXPCOM
+   SOLARIS_COMMON += \
+         sdk/bindings/xpcom/java/vboxjxpcom.jar
+endif
+
 # VRDP
 ifdef VBOX_WITH_VRDP
  SOLARIS_STRIP_BINS += \
@@ -452,6 +457,8 @@ BLDDIRS += $(foreach d,\
 	 sdk/bindings/xpcom/python/xpcom \
 	 sdk/bindings/xpcom/python/xpcom/server \
 	 sdk/bindings/xpcom/python/xpcom/client,) \
+	$(if $(VBOX_WITH_JXPCOM), \
+	 sdk/bindings/xpcom/java,) \
 ,$(SOLARIS_VBOXINST_DIR)/$(d)/)
 
 BLDDIRS += $(foreach d,\

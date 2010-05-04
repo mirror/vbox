@@ -122,6 +122,7 @@ VBOX_LNX_STRIP_BIN = \
 		VBoxTestOGL \
 		VBoxSharedCrOpenGL.so,) \
 	$(if $(VBOX_WITH_PYTHON),$(notdir $(wildcard $(PATH_BIN)/VBoxPython*.so)),) \
+        $(if $(VBOX_WITH_JXPCOM),libvboxjxpcom.so,) \
 	VBoxTunctl
 
 # Do not remove relocation information of these binaries
@@ -210,6 +211,12 @@ ifdef VBOX_WITH_PYTHON
 	sdk/installer/vboxapisetup.py \
 	sdk/installer/vboxapi/__init__.py \
 	sdk/installer/vboxapi/VirtualBox_constants.py
+endif
+
+# Java XPCOM bridge
+ifdef VBOX_WITH_JXPCOM
+  VBOX_LNX_NO_STRIP += \
+	sdk/bindings/xpcom/java/vboxjxpcom.jar
 endif
 
 # Headless
@@ -380,6 +387,8 @@ BLDDIRS += $(foreach d,\
 	  archive/sdk/bindings/xpcom/python/xpcom \
 	  archive/sdk/bindings/xpcom/python/xpcom/client \
           archive/sdk/bindings/xpcom/python/xpcom/server,) \
+	$(if $(VBOX_WITH_JXPCOM),\
+	  archive/sdk/bindings/xpcom/java,) \
 	archive/additions \
 	install\
 ,$(VBOX_LNX_INST_OUT_DIR)/$(d)/)
