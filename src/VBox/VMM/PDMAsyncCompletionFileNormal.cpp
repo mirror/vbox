@@ -327,6 +327,7 @@ static int pdmacFileAioMgrNormalGrow(PPDMACEPFILEMGR pAioMgr)
               && !pAioMgr->cRequestsActive,
               ("Invalid state of the I/O manager\n"));
 
+#ifdef RT_OS_WINDOWS
     /*
      * Reopen the files of all assigned endpoints first so we can assign them to the new
      * I/O context.
@@ -341,6 +342,7 @@ static int pdmacFileAioMgrNormalGrow(PPDMACEPFILEMGR pAioMgr)
 
         pCurr = pCurr->AioMgr.pEndpointNext;
     }
+#endif
 
     /* Create the new bigger context. */
     pAioMgr->cRequestsActiveMax += PDMACEPFILEMGR_REQS_STEP;
@@ -377,6 +379,7 @@ static int pdmacFileAioMgrNormalGrow(PPDMACEPFILEMGR pAioMgr)
             rc = VERR_NO_MEMORY;
     }
 
+#ifdef RT_OS_WINDOWS
     /* Assign the file to the new context. */
     pCurr = pAioMgr->pEndpointsHead;
 
@@ -387,6 +390,7 @@ static int pdmacFileAioMgrNormalGrow(PPDMACEPFILEMGR pAioMgr)
 
         pCurr = pCurr->AioMgr.pEndpointNext;
     }
+#endif
 
     if (RT_FAILURE(rc))
     {
@@ -539,13 +543,6 @@ static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
              * Need to check which requests got queued
              * and put the rest on the pending list again.
              */
-            if (RT_UNLIKELY(!pEpClass->fOutOfResourcesWarningPrinted))
-            {
-                pEpClass->fOutOfResourcesWarningPrinted = true;
-                LogRel(("AIOMgr: The operating system doesn't have enough resources "
-                        "to handle the I/O load of the VM. Expect reduced I/O performance\n"));
-            }
-
             for (size_t i = 0; i < cReqs; i++)
             {
                 int rcReq = RTFileAioReqGetRC(pahReqs[i], NULL);
@@ -580,8 +577,17 @@ static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
                 pAioMgr->cRequestsActiveMax = pAioMgr->cRequestsActive;
             }
 
-            LogFlow(("Removed requests. I/O manager has a total of %d active requests now\n", pAioMgr->cRequestsActive));
-            LogFlow(("Endpoint has a total of %d active requests now\n", pEndpoint->AioMgr.cRequestsActive));
+            /* Print an entry in the release log */
+            if (RT_UNLIKELY(!pEpClass->fOutOfResourcesWarningPrinted))
+            {
+                pEpClass->fOutOfResourcesWarningPrinted = true;
+                LogRel(("AIOMgr: The host doesn't has enough resources "
+                        "to handle the I/O load of the VM. Expect reduced I/O performance\n"
+                        "The maximum number of async I/O requests is %u\n", pAioMgr->cRequestsActive));
+            }
+
+            LogFlow(("Removed requests. I/O manager has a total of %u active requests now\n", pAioMgr->cRequestsActive));
+            LogFlow(("Endpoint has a total of %u active requests now\n", pEndpoint->AioMgr.cRequestsActive));
         }
         else
             AssertMsgFailed(("Unexpected return code rc=%Rrc\n", rc));
