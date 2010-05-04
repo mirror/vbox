@@ -137,7 +137,8 @@ process_mount_opts (const char *s, struct opts *opts)
         HONOSUID,
         HOSUID,
         HOREMOUNT,
-        HONOAUTO
+        HONOAUTO,
+        HONIGNORE
     } handler_opt;
     struct
     {
@@ -168,6 +169,7 @@ process_mount_opts (const char *s, struct opts *opts)
         {"suid",      HOSUID,      0, 0 },
         {"remount",   HOREMOUNT,   0, 0 },
         {"noauto",    HONOAUTO,    0, 0 },
+        {"_netdev",   HONIGNORE,   0, 0 },
         {NULL, 0, 0, NULL}
     }, *handler;
 
@@ -295,6 +297,7 @@ process_mount_opts (const char *s, struct opts *opts)
                     opts->convertcp[val_len] = 0;
                     break;
                 case HONOAUTO:
+                case HONIGNORE:
                     break;
                 }
                 break;
