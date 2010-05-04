@@ -555,8 +555,10 @@ void UIMachineWindowNormal::loadWindowSettings()
     /* Load availability settings: */
     {
         /* USB Stuff: */
-        CUSBController usbController = machine.GetUSBController();
-        if (usbController.isNull())
+        const CUSBController &usbController = machine.GetUSBController();
+        if (    usbController.isNull()
+            || !usbController.GetEnabled()
+            || !usbController.GetProxyAvailable())
         {
             /* Hide USB Menu: */
             indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->setHidden(true);
