@@ -512,23 +512,22 @@ int Service::processHostCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM
         {
             GuestCall guest = mClientList.front();
             rc = sendHostCmdToGuest(&newCmd, 
-                             guest.mHandle, guest.mNumParms, guest.mParms);
+                                    guest.mHandle, guest.mNumParms, guest.mParms);
 
             /* In any case the client did something, so wake up and remove from list. */
             mpHelpers->pfnCallComplete(guest.mHandle, rc);
             mClientList.pop_front();                       
-
-            /* If command was understood by client, free and remove from host commands list. */
-            if (RT_SUCCESS(rc))
+            
+            /* If we got VERR_TOO_MUCH_DATA we buffer the host command in the next block
+             * and return success to the host. */            
+            if (rc == VERR_TOO_MUCH_DATA)
+            {
+                rc = VINF_SUCCESS;
+            }
+            else /* If command was understood by the client, free and remove from host commands list. */
             {
                 paramBufferFree(&newCmd.parmBuf);
                 fProcessed = true;
-            }
-            else if (rc == VERR_TOO_MUCH_DATA)
-            {
-                /* If we got VERR_TOO_MUCH_DATA we buffer the host command in the next block
-                 * and return success to the host. */
-                rc = VINF_SUCCESS;
             }
         }
 
