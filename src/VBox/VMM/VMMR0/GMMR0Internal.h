@@ -73,6 +73,9 @@ typedef struct GMMSHAREDMODULEPERVM
     /* Pointer to global shared module info. */
     PGMMSHAREDMODULE            pSharedModule;
 
+    /* Set if another VM registered a different shared module at the same base address. */
+    bool                        fCollision;
+
 } GMMSHAREDMODULEPERVM;
 /** Pointer to a GMMSHAREDMODULEPERVM. */
 typedef GMMSHAREDMODULEPERVM *PGMMSHAREDMODULEPERVM;

@@ -380,37 +380,11 @@ GMMR3DECL(int)  GMMR3SeedChunk(PVM pVM, RTR3PTR pvR3)
 /**
  * @see GMMR0RegisterSharedModule
  */
-GMMR3DECL(int) GMMR3RegisterSharedModule(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule,
-                                         unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions)
+GMMR3DECL(int) GMMR3RegisterSharedModule(PVM pVM, PGMMREGISTERSHAREDMODULEREQ pReq)
 {
-    PGMMREGISTERSHAREDMODULEREQ pReq;
-    int rc;
-
-    /* Sanity check. */
-    AssertReturn(cRegions < VMMDEVSHAREDREGIONDESC_MAX, VERR_INVALID_PARAMETER);
-
-    pReq = (PGMMREGISTERSHAREDMODULEREQ)RTMemAllocZ(RT_OFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[cRegions]));
-    AssertReturn(pReq, VERR_NO_MEMORY);
-
     pReq->Hdr.u32Magic  = SUPVMMR0REQHDR_MAGIC;
     pReq->Hdr.cbReq     = sizeof(*pReq);
-    pReq->GCBaseAddr    = GCBaseAddr;
-    pReq->cbModule      = cbModule;
-    pReq->cRegions      = cRegions;
-    for (unsigned i = 0; i < cRegions; i++)
-        pReq->aRegions[i] = pRegions[i];
-
-    if (    RTStrCopy(pReq->szName, sizeof(pReq->szName), pszModuleName) != VINF_SUCCESS
-        ||  RTStrCopy(pReq->szVersion, sizeof(pReq->szVersion), pszVersion) != VINF_SUCCESS)
-    {
-        rc = VERR_BUFFER_OVERFLOW;
-        goto end;
-    }
-
-    rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_REGISTER_SHARED_MODULE, 0, &pReq->Hdr);
-end:
-    RTMemFree(pReq);
-    return rc;
+    return VMMR3CallR0(pVM, VMMR0_DO_GMM_REGISTER_SHARED_MODULE, 0, &pReq->Hdr);
 }
 
 /**
