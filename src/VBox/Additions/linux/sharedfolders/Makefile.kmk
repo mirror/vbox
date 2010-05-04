@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Sub-Makefile for the vboxvfs (linux shared folders module).
+# Sub-Makefile for the vboxsf (linux shared folders module).
 #
 
 #
@@ -19,63 +19,63 @@ SUB_DEPTH = ../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS += mount.vboxsf
-INSTALLS += vboxvfs-mod vboxvfs-sh
+INSTALLS += vboxsf-mod vboxsf-sh
 ifdef VBOX_WITH_ADDITION_DRIVERS
- SYSMODS += vboxvfs
+ SYSMODS += vboxsf
 endif
 
 #
-# Populate FILES_VBOXVFS_NOBIN
+# Populate FILES_VBOXSF_NOBIN
 #
-include $(PATH_SUB_CURRENT)/files_vboxvfs
+include $(PATH_SUB_CURRENT)/files_vboxsf
 
-vboxvfs-mod_INST        = $(INST_ADDITIONS)src/vboxvfs/
-vboxvfs-mod_MODE        = a+r,u+w
-vboxvfs-mod_SOURCES     = $(subst ",,$(FILES_VBOXVFS_NOBIN))
-vboxvfs-mod_SOURCES    += $(if $(VBOX_OSE),,\
-			    $(PATH_vboxvfs-mod)/dkms.conf)
-vboxvfs-mod_CLEAN      += $(PATH_vboxvfs-mod)/dkms.conf
+vboxsf-mod_INST        = $(INST_ADDITIONS)src/vboxsf/
+vboxsf-mod_MODE        = a+r,u+w
+vboxsf-mod_SOURCES     = $(subst ",,$(FILES_VBOXSF_NOBIN))
+vboxsf-mod_SOURCES    += $(if $(VBOX_OSE),,\
+			    $(PATH_vboxsf-mod)/dkms.conf)
+vboxsf-mod_CLEAN      += $(PATH_vboxsf-mod)/dkms.conf
 
-vboxvfs-sh_INST        = $(INST_ADDITIONS)src/vboxvfs/
-vboxvfs-sh_MODE        = a+rx,u+w
-vboxvfs-sh_SOURCES     = $(subst ",,$(FILES_VBOXVFS_BIN))
-vboxvfs-sh_SOURCES    += \
-	$(PATH_vboxvfs-sh)/build_in_tmp \
+vboxsf-sh_INST        = $(INST_ADDITIONS)src/vboxsf/
+vboxsf-sh_MODE        = a+rx,u+w
+vboxsf-sh_SOURCES     = $(subst ",,$(FILES_VBOXSF_BIN))
+vboxsf-sh_SOURCES    += \
+	$(PATH_vboxsf-sh)/build_in_tmp \
 	$(if $(VBOX_OSE),,\
 	  $(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers)
-vboxvfs-sh_CLEAN      += $(PATH_vboxvfs-sh)/build_in_tmp
+vboxsf-sh_CLEAN      += $(PATH_vboxsf-sh)/build_in_tmp
 
 
 #
 # The module (for syntax checking).
 # The DEBUG_HASH* stuff is for CONFIG_DYNAMIC_DEBUG-enabled kernels
 #
-vboxvfs_TEMPLATE        = VBOXGUESTR0
-vboxvfs_NOINST          = 1
-vboxvfs_CFLAGS          = -fshort-wchar
-vboxvfs_DEFS            = \
+vboxsf_TEMPLATE        = VBOXGUESTR0
+vboxsf_NOINST          = 1
+vboxsf_CFLAGS          = -fshort-wchar
+vboxsf_DEFS            = \
 	MODULE IN_RT_R0 VBOXGUEST VBOX_WITH_HGCM \
-	KBUILD_MODNAME=KBUILD_STR\(vboxvfs\) \
-        KBUILD_BASENAME=KBUILD_STR\(vboxvfs\) \
+	KBUILD_MODNAME=KBUILD_STR\(vboxsf\) \
+        KBUILD_BASENAME=KBUILD_STR\(vboxsf\) \
 	DEBUG_HASH=2 DEBUG_HASH2=3
-vboxvfs_INCS            = \
+vboxsf_INCS            = \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib \
 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
-vboxvfs_SOURCES         = \
+vboxsf_SOURCES         = \
 	vfsmod.c \
 	utils.c \
 	dirops.c \
 	regops.c
-vboxvfs_LIBS            = \
+vboxsf_LIBS            = \
 	$(VBOX_LIB_VBGL_R0)
 
 # detect fc6 2.6.18
-vboxvfs_DEFS           += $(foreach inc,$(VBOX_LINUX_INCS),\
+vboxsf_DEFS           += $(foreach inc,$(VBOX_LINUX_INCS),\
                             $(if $(wildcard $(inc)/linux/utsrelease.h),\
                               $(if $(shell if grep -q '"2.6.18.*fc6.*"' $(inc)/linux/utsrelease.h;\
                                 then echo yes; fi),KERNEL_FC6,),))
 # detect rhel5 2.6.18
-vboxvfs_DEFS           += $(foreach inc,$(VBOX_LINUX_INCS),\
+vboxsf_DEFS           += $(foreach inc,$(VBOX_LINUX_INCS),\
                             $(if $(wildcard $(inc)/linux/utsrelease.h),\
                               $(if $(shell if grep -q '"2.6.18.*el5.*"' $(inc)/linux/utsrelease.h;\
                                 then echo yes; fi),KERNEL_FC6,),))
@@ -92,15 +92,15 @@ mount.vboxsf_SOURCES     = \
 
 ## Scripts needed for building kernel modules
 
-$$(PATH_vboxvfs-sh)/build_in_tmp: \
+$$(PATH_vboxsf-sh)/build_in_tmp: \
 		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
 		$(VBOX_VERSION_STAMP) \
 		| $$(dir $$@)
 	$(call MSG_TOOL,Creating,,$@)
-	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxvfs;g; s;_BUILDTYPE_;${KBUILD_TYPE};g" --output $@ $<
+	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxsf;g; s;_BUILDTYPE_;${KBUILD_TYPE};g" --output $@ $<
 	$(QUIET)chmod 0755 $@
 
-$$(PATH_vboxvfs-mod)/dkms.conf: \
+$$(PATH_vboxsf-mod)/dkms.conf: \
 		$(PATH_SUB_CURRENT)/dkms.conf \
 		$(VBOX_VERSION_STAMP) \
 		| $$(dir $$@)

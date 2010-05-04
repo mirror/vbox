@@ -26,14 +26,14 @@ PATH_OUT=$PATH_TMP
 FILE_OUT="`cd \`dirname $1\`; pwd`/`basename $1`"
 PATH_ROOT="`cd \`dirname $0\`/../../../..; pwd`"
 PATH_VBOXGUEST="$PATH_ROOT/src/VBox/Additions/common/VBoxGuest"
-PATH_VBOXVFS="$PATH_ROOT/src/VBox/Additions/linux/sharedfolders"
+PATH_VBOXSF="$PATH_ROOT/src/VBox/Additions/linux/sharedfolders"
 
 VBOX_VERSION_MAJOR=`sed -e "s/^ *VBOX_VERSION_MAJOR *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Config.kmk`
 VBOX_VERSION_MINOR=`sed -e "s/^ *VBOX_VERSION_MINOR *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Config.kmk`
 VBOX_VERSION_BUILD=`sed -e "s/^ *VBOX_VERSION_BUILD *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Config.kmk`
 
 . $PATH_VBOXGUEST/linux/files_vboxguest
-. $PATH_VBOXVFS/files_vboxvfs
+. $PATH_VBOXSF/files_vboxsf
 
 # Temporary path for creating the modules, will be removed later
 mkdir $PATH_TMP || exit 1
@@ -58,13 +58,13 @@ for f in $FILES_VBOXGUEST_BIN; do
     install -D -m 0755 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxguest/`echo $f|cut -d'>' -f2`"
 done
 
-# vboxvfs (VirtualBox guest kernel module for shared folders)
-mkdir $PATH_TMP/vboxvfs || exit 1
-for f in $FILES_VBOXVFS_NOBIN; do
-    install -D -m 0644 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxvfs/`echo $f|cut -d'>' -f2`"
+# vboxsf (VirtualBox guest kernel module for shared folders)
+mkdir $PATH_TMP/vboxsf || exit 1
+for f in $FILES_VBOXSF_NOBIN; do
+    install -D -m 0644 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxsf/`echo $f|cut -d'>' -f2`"
 done
-for f in $FILES_VBOXVFS_BIN; do
-    install -D -m 0755 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxvfs/`echo $f|cut -d'>' -f2`"
+for f in $FILES_VBOXSF_BIN; do
+    install -D -m 0755 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxsf/`echo $f|cut -d'>' -f2`"
 done
 
 # Only temporary, omit from archive

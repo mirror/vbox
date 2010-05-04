@@ -1,5 +1,5 @@
 /** @file
- * vboxvfs -- VirtualBox Guest Additions for Linux: mount(2) parameter structure.
+ * vboxsf -- VirtualBox Guest Additions for Linux: mount(2) parameter structure.
  */
 
 /*
