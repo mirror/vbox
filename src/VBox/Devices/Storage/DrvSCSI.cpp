@@ -199,7 +199,7 @@ static int drvscsiTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *p
     else if (enmTxDir == VSCSIIOREQTXDIR_WRITE)
         pThis->pLed->Actual.s.fWriting = 0;
     else
-        AssertMsgFailed(("Invalid transfer direction %u\n", enmTxDir));
+        AssertMsg(enmTxDir == VSCSIIOREQTXDIR_FLUSH, ("Invalid transfer direction %u\n", enmTxDir));
 
     ASMAtomicDecU32(&pThis->StatIoDepth);
     VSCSIIoReqCompleted(hVScsiIoReq, rc);
