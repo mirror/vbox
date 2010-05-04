@@ -59,7 +59,7 @@
    <item>
     <widget class="QGroupBox" name="m_pBootHDCnt">
      <property name="title">
-      <string>Boot Hard &amp;Disk (Primary Master)</string>
+      <string>Boot Hard &amp;Disk</string>
      </property>
      <property name="checkable">
       <bool>true</bool>
