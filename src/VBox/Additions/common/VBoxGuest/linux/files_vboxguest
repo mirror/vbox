@@ -141,6 +141,7 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/VBox/logbackdoor.cpp=>VBox/logbackdoor.c \
     ${PATH_OUT}/version-generated.h=>version-generated.h \
     ${PATH_OUT}/product-generated.h=>product-generated.h \
+    ${PATH_OUT}/revision-generated.h=>revision-generated.h \
 "
 
 FILES_VBOXGUEST_BIN=" \
