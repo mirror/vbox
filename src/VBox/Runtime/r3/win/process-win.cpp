@@ -261,7 +261,6 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                                &hToken);
     if (fRc)
     {
-        //pStartupInfo->lpDesktop = L"winsta0\\default";
         fRc = CreateProcessAsUserW(hToken,
                                    pwszExec,
                                    pwszCmdLine,
