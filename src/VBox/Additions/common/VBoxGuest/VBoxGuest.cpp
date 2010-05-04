@@ -288,7 +288,7 @@ static int vboxGuestInitReportGuestInfo(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enm
         pReq2->guestInfo.additionsFeatures = 0;
         RTStrCopy(pReq2->guestInfo.szName, sizeof(pReq2->guestInfo.szName), VBOX_VERSION_STRING);
         rc = VbglGRPerform(&pReq2->header);
-        if (rc == VERR_NOT_IMPLEMENTED) /* compatibility with older guests */
+        if (rc == VERR_NOT_IMPLEMENTED) /* compatibility with older hosts */
             rc = VINF_SUCCESS;
         if (    RT_FAILURE(rc)
             ||  RT_FAILURE(pReq2->header.rc))
