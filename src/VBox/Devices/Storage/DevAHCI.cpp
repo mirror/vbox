@@ -3884,10 +3884,9 @@ static void ahciSendD2HFis(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTask
  * @returns Nothing
  * @param   pAhciPort           The port for which the SDB Fis is send.
  * @param   uFinishedTasks      Bitmask of finished tasks.
- * @param   pAhciPortTaskState  The state of the last task.
  * @param   fInterrupt          If an interrupt should be asserted.
  */
-static void ahciSendSDBFis(PAHCIPort pAhciPort, uint32_t uFinishedTasks, PAHCIPORTTASKSTATE pAhciPortTaskState, bool fInterrupt)
+static void ahciSendSDBFis(PAHCIPort pAhciPort, uint32_t uFinishedTasks, bool fInterrupt)
 {
     uint32_t sdbFis[2];
     bool fAssertIntr = false;
@@ -4933,7 +4932,7 @@ static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPor
 #endif
 
         if (!cOutstandingTasks)
-            ahciSendSDBFis(pAhciPort, 0, pAhciPortTaskState, true);
+            ahciSendSDBFis(pAhciPort, 0, true);
     }
     else
     {
@@ -5202,7 +5201,13 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPor
                             for (unsigned i = 0; i < RT_ELEMENTS(aBuf)-1; i++)
                                 uChkSum += aBuf[i];
 
-                            aBuf[511] = ~uChkSum;
+                            aBuf[511] = (uint8_t)-(int8_t)uChkSum;
+
+                            /*
+                             * Reading this log page results in an abort of all outstanding commands
+                             * and clearing the SActive register and TaskFile register.
+                             */
+                            ahciSendSDBFis(pAhciPort, 0xffffffff, true);
                         }
                         break;
                     }
@@ -5466,7 +5471,7 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
         else
         {
 #ifdef RT_STRICT
-            bool fXchg = ASMAtomicCmpXchgBool(&pAhciPortTaskState->fActive, false, true);
+            fXchg = ASMAtomicCmpXchgBool(&pAhciPortTaskState->fActive, false, true);
             AssertMsg(fXchg, ("Task is not active\n"));
 #endif
 
@@ -5812,7 +5817,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             if (RT_FAILURE(rc))
             {
                 if (uQueuedTasksFinished && RT_LIKELY(!pAhciPort->fPortReset))
-                    ahciSendSDBFis(pAhciPort, uQueuedTasksFinished, pAhciPortTaskState, true);
+                    ahciSendSDBFis(pAhciPort, uQueuedTasksFinished, true);
 
                 uQueuedTasksFinished = 0;
             }
@@ -5821,7 +5826,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         }
 
         if (uQueuedTasksFinished && RT_LIKELY(!pAhciPort->fPortReset))
-            ahciSendSDBFis(pAhciPort, uQueuedTasksFinished, pAhciPortTaskState, true);
+            ahciSendSDBFis(pAhciPort, uQueuedTasksFinished, true);
 
         uQueuedTasksFinished = 0;
 
