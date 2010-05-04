@@ -24,6 +24,7 @@
 #include "MediumLock.h"
 
 class Progress;
+class MediumFormat;
 
 namespace settings
 {
@@ -104,6 +105,7 @@ public:
     STDMETHOD(COMGETTER(HostDrive))(BOOL *aHostDrive);
     STDMETHOD(COMGETTER(Size))(ULONG64 *aSize);
     STDMETHOD(COMGETTER(Format))(BSTR *aFormat);
+    STDMETHOD(COMGETTER(MediumFormat))(IMediumFormat **aMediumFormat);
     STDMETHOD(COMGETTER(Type))(MediumType_T *aType);
     STDMETHOD(COMSETTER(Type))(MediumType_T aType);
     STDMETHOD(COMGETTER(Parent))(IMedium **aParent);
@@ -157,6 +159,7 @@ public:
     const Utf8Str& getLocation() const;
     const Utf8Str& getLocationFull() const;
     const Utf8Str& getFormat() const;
+    const ComObjPtr<MediumFormat> & getMediumFormat() const;
     uint64_t getSize() const;
     MediumType_T getType() const;
     Utf8Str getName();

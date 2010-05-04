@@ -988,7 +988,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     /* remember device type for correct unregistering later */
     m->devType = aDeviceType;
 
-    LogFlowThisFunc(("m->locationFull='%s', m->format=%s, m->id={%RTuuid}\n",
+    LogFlowThisFunc(("m->strLocationFull='%s', m->strFormat=%s, m->id={%RTuuid}\n",
                      m->strLocationFull.raw(), m->strFormat.raw(), m->id.raw()));
 
     /* Don't call queryInfo() for registered media to prevent the calling
@@ -1345,8 +1345,21 @@ STDMETHODIMP Medium::COMGETTER(Format)(BSTR *aFormat)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* no need to lock, m->format is const */
+    /* no need to lock, m->strFormat is const */
     m->strFormat.cloneTo(aFormat);
+
+    return S_OK;
+}
+
+STDMETHODIMP Medium::COMGETTER(MediumFormat)(IMediumFormat **aMediumFormat)
+{
+    CheckComArgOutPointerValid(aMediumFormat);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* no need to lock, m->formatObj is const */
+    m->formatObj.queryInterfaceTo(aMediumFormat);
 
     return S_OK;
 }
@@ -2577,12 +2590,21 @@ const Utf8Str& Medium::getLocationFull() const
 }
 
 /**
- * Internal method to return the medium's format. Must have caller + locking!
+ * Internal method to return the medium's format string. Must have caller + locking!
  * @return
  */
 const Utf8Str& Medium::getFormat() const
 {
     return m->strFormat;
+}
+
+/**
+ * Internal method to return the medium's format object. Must have caller + locking!
+ * @return
+ */
+const ComObjPtr<MediumFormat> & Medium::getMediumFormat() const
+{
+    return m->formatObj;
 }
 
 /**
@@ -3158,7 +3180,7 @@ Bstr Medium::preferredDiffFormat()
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), strFormat);
 
-    /* m->format is const, no need to lock */
+    /* m->strFormat is const, no need to lock */
     strFormat = m->strFormat;
 
     /* check that our own format supports diffs */

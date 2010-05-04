@@ -9357,7 +9357,7 @@
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="d709160c-303f-4ead-b7ef-53ffa26aa861"
+    uuid="1d578f43-5ef1-4415-b556-7592d3ccdc8f"
     wsmap="managed"
   >
     <desc>
@@ -9819,6 +9819,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The list of all storage formats supported by this VirtualBox
         installation can be obtained using
         <link to="ISystemProperties::mediumFormats"/>.
+      </desc>
+    </attribute>
+
+    <attribute name="mediumFormat" type="IMediumFormat" readonly="yes">
+      <desc>
+        Storage medium format object corresponding to this medium.
+
+        The value of this attribute is a reference to the medium format object
+        that specifies the backend properties used to store medium data. The
+        storage format is defined when you create a new medium or automatically
+        detected when you open an existing medium, and cannot be changed later.
+
+        <note>@c null is returned if there is no associated medium format
+        object. This can e.g. happen for medium objects representing host
+        drives and other special medium objects.</note>
       </desc>
     </attribute>
 
