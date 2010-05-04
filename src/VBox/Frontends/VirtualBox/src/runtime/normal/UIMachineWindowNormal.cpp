@@ -175,6 +175,13 @@ void UIMachineWindowNormal::sltUpdateIndicators()
         if (pStateIndicator->state() != state)
             pStateIndicator->setState(state);
     }
+    pStateIndicator = indicatorsPool()->indicator(UIIndicatorIndex_FloppyDisks);
+    if (pStateIndicator->state() != KDeviceActivity_Null)
+    {
+        int state = console.GetDeviceActivity(KDeviceType_Floppy);
+        if (pStateIndicator->state() != state)
+            pStateIndicator->setState(state);
+    }
     pStateIndicator = indicatorsPool()->indicator(UIIndicatorIndex_USBDevices);
     if (pStateIndicator->state() != KDeviceActivity_Null)
     {
@@ -204,6 +211,11 @@ void UIMachineWindowNormal::sltShowIndicatorsContextMenu(QIStateIndicator *pIndi
     {
         if (machineLogic()->actionsPool()->action(UIActionIndex_Menu_OpticalDevices)->isEnabled())
             machineLogic()->actionsPool()->action(UIActionIndex_Menu_OpticalDevices)->menu()->exec(pEvent->globalPos());
+    }
+    else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_FloppyDisks))
+    {
+        if (machineLogic()->actionsPool()->action(UIActionIndex_Menu_FloppyDevices)->isEnabled())
+            machineLogic()->actionsPool()->action(UIActionIndex_Menu_FloppyDevices)->menu()->exec(pEvent->globalPos());
     }
     else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_USBDevices))
     {
@@ -255,6 +267,8 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
         indicatorsPool()->indicator(UIIndicatorIndex_HardDisks)->updateAppearance();
     if (iElement & UIVisualElement_CDStuff)
         indicatorsPool()->indicator(UIIndicatorIndex_OpticalDisks)->updateAppearance();
+    if (iElement & UIVisualElement_FDStuff)
+        indicatorsPool()->indicator(UIIndicatorIndex_FloppyDisks)->updateAppearance();
     if (iElement & UIVisualElement_USBStuff &&
         !indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->isHidden())
         indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->updateAppearance();
@@ -376,6 +390,12 @@ void UIMachineWindowNormal::prepareStatusBar()
     QIStateIndicator *pLedOpticalDisks = indicatorsPool()->indicator(UIIndicatorIndex_OpticalDisks);
     pIndicatorBoxHLayout->addWidget(pLedOpticalDisks);
     connect(pLedOpticalDisks, SIGNAL(contextMenuRequested(QIStateIndicator*, QContextMenuEvent*)),
+            this, SLOT(sltShowIndicatorsContextMenu(QIStateIndicator*, QContextMenuEvent*)));
+
+    /* Floppy Disks: */
+    QIStateIndicator *pLedFloppyDisks = indicatorsPool()->indicator(UIIndicatorIndex_FloppyDisks);
+    pIndicatorBoxHLayout->addWidget(pLedFloppyDisks);
+    connect(pLedFloppyDisks, SIGNAL(contextMenuRequested(QIStateIndicator*, QContextMenuEvent*)),
             this, SLOT(sltShowIndicatorsContextMenu(QIStateIndicator*, QContextMenuEvent*)));
 
     /* USB Devices: */
