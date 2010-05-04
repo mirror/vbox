@@ -25,8 +25,7 @@
 #define VBOXSERVICEPROPCACHEFLAG_TEMPORARY          RT_BIT(1)
 #define VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE      RT_BIT(2)
 
-int VBoxServicePropCacheInit(PVBOXSERVICEVEPROPCACHE pCache, uint32_t uClientId);
-PVBOXSERVICEVEPROPCACHEENTRY VBoxServicePropCacheFind(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, uint32_t uFlags);
+int VBoxServicePropCacheCreate(PVBOXSERVICEVEPROPCACHE pCache, uint32_t uClientId);
 int VBoxServicePropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, uint32_t fFlags, const char *pszValueReset);
 int VBoxServicePropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, const char *pszValueFormat, ...);
 int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, uint32_t fFlags, const char *pszValueReset, const char *pszValueFormat, ...);

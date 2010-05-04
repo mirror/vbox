@@ -30,29 +30,13 @@
 #include "VBoxServicePropCache.h"
 
 
-/**
- * Initializes the property cache.
- *
- * @returns IPRT status code.
- * @param   pCache          Pointer to the cache.
- * @param   uClientId       The HGCM handle of to the guest property service.
- */
-int VBoxServicePropCacheInit(PVBOXSERVICEVEPROPCACHE pCache, uint32_t uClientId)
-{
-    AssertPtr(pCache);
-    /** @todo Prevent init the cache twice!
-     *  r=bird: Use a magic, or/and abstract the whole cache by rename this function
-     *  VBoxServicePropCacheCreate(). */
-    RTListInit(&pCache->Node);
-    pCache->uClientID = uClientId;
-    return RTSemMutexCreate(&pCache->Mutex);
-}
+/** Internal functions, not for public use. */
+PVBOXSERVICEVEPROPCACHEENTRY vboxServicePropCacheFindInternal(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, uint32_t uFlags);
+PVBOXSERVICEVEPROPCACHEENTRY vboxServicePropCacheInsertEntryInternal(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName);
 
 
-/** @todo Docs
- * @todo this looks internal to me, nobody should need to access the
- *       structures directly here. */
-PVBOXSERVICEVEPROPCACHEENTRY VBoxServicePropCacheFind(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, uint32_t uFlags)
+/** @todo Docs */
+PVBOXSERVICEVEPROPCACHEENTRY vboxServicePropCacheFindInternal(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, uint32_t uFlags)
 {
     AssertPtr(pCache);
     AssertPtr(pszName);
@@ -62,9 +46,9 @@ PVBOXSERVICEVEPROPCACHEENTRY VBoxServicePropCacheFind(PVBOXSERVICEVEPROPCACHE pC
      *        implementation (AVL tree). However, this is not important at the
      *        moment. */
     PVBOXSERVICEVEPROPCACHEENTRY pNodeIt, pNode = NULL;
-    if (RT_SUCCESS(RTSemMutexRequest(pCache->Mutex, RT_INDEFINITE_WAIT)))
+    if (RT_SUCCESS(RTCritSectEnter(&pCache->CritSect)))
     {
-        RTListForEach(&pCache->Node, pNodeIt, VBOXSERVICEVEPROPCACHEENTRY, Node)
+        RTListForEach(&pCache->ListEntries, pNodeIt, VBOXSERVICEVEPROPCACHEENTRY, Node)
         {
             if (strcmp(pNodeIt->pszName, pszName) == 0)
             {
@@ -72,9 +56,50 @@ PVBOXSERVICEVEPROPCACHEENTRY VBoxServicePropCacheFind(PVBOXSERVICEVEPROPCACHE pC
                 break;
             }
         }
-        RTSemMutexRelease(pCache->Mutex);
+        RTCritSectLeave(&pCache->CritSect);
     }
     return pNode;
+}
+
+
+/** @todo Docs */
+PVBOXSERVICEVEPROPCACHEENTRY vboxServicePropCacheInsertEntryInternal(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName)
+{
+    AssertPtr(pszName);
+    PVBOXSERVICEVEPROPCACHEENTRY pNode = (PVBOXSERVICEVEPROPCACHEENTRY)RTMemAlloc(sizeof(VBOXSERVICEVEPROPCACHEENTRY));
+    if (pNode)
+    {
+        pNode->pszName = RTStrDup(pszName);
+        pNode->pszValue = NULL;
+        pNode->fFlags = 0;
+        pNode->pszValueReset = NULL;
+
+        int rc = RTCritSectEnter(&pCache->CritSect);
+        if (RT_SUCCESS(rc))
+        {
+            /*rc =*/ RTListAppend(&pCache->ListEntries, &pNode->Node);
+            rc = RTCritSectLeave(&pCache->CritSect);
+        }
+    }
+    return pNode;
+}
+
+
+/**
+ * Creates a property cache.
+ *
+ * @returns IPRT status code.
+ * @param   pCache          Pointer to the cache.
+ * @param   uClientId       The HGCM handle of to the guest property service.
+ */
+int VBoxServicePropCacheCreate(PVBOXSERVICEVEPROPCACHE pCache, uint32_t uClientId)
+{
+    AssertPtr(pCache);
+    /** @todo Prevent init the cache twice!
+     *  r=bird: Use a magic. */
+    RTListInit(&pCache->ListEntries);
+    pCache->uClientID = uClientId;
+    return RTCritSectInit(&pCache->CritSect);
 }
 
 
@@ -84,25 +109,28 @@ int VBoxServicePropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache,
 {
     AssertPtr(pCache);
     AssertPtr(pszName);
-    PVBOXSERVICEVEPROPCACHEENTRY pNode = VBoxServicePropCacheFind(pCache, pszName, 0);
+    PVBOXSERVICEVEPROPCACHEENTRY pNode = vboxServicePropCacheFindInternal(pCache, pszName, 0);
+    if (pNode == NULL)
+        pNode = vboxServicePropCacheInsertEntryInternal(pCache, pszName);
+
     int rc;
     if (pNode != NULL)
     {
-        rc = RTSemMutexRequest(pCache->Mutex, RT_INDEFINITE_WAIT);
+        rc = RTCritSectEnter(&pCache->CritSect);
         if (RT_SUCCESS(rc))
         {
             pNode->fFlags = fFlags;
             if (pszValueReset)
             {
-                if (pszValueReset)
+                if (pNode->pszValueReset)
                     RTStrFree(pNode->pszValueReset);
                 pNode->pszValueReset = RTStrDup(pszValueReset);
             }
-            rc = RTSemMutexRelease(pCache->Mutex);
+            rc = RTCritSectLeave(&pCache->CritSect);
         }
     }
     else
-        rc = VERR_NOT_FOUND;
+        rc = VERR_NO_MEMORY;
     return rc;
 }
 
@@ -168,29 +196,14 @@ int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *psz
             return VERR_NO_STR_MEMORY;
     }
 
-    PVBOXSERVICEVEPROPCACHEENTRY pNode = VBoxServicePropCacheFind(pCache, pszName, 0);
+    PVBOXSERVICEVEPROPCACHEENTRY pNode = vboxServicePropCacheFindInternal(pCache, pszName, 0);
 
     /* Lock the cache. */
-    int rc = RTSemMutexRequest(pCache->Mutex, RT_INDEFINITE_WAIT);
+    int rc = RTCritSectEnter(&pCache->CritSect);
     if (RT_SUCCESS(rc))
     {
-
         if (pNode == NULL)
-        {
-            pNode = (PVBOXSERVICEVEPROPCACHEENTRY)RTMemAlloc(sizeof(VBOXSERVICEVEPROPCACHEENTRY));
-            if (RT_UNLIKELY(!pNode))
-            {
-                RTSemMutexRelease(pCache->Mutex);
-                return VERR_NO_MEMORY;
-            }
-
-            pNode->pszName = RTStrDup(pszName);
-            pNode->pszValue = NULL;
-            pNode->fFlags = 0;
-            pNode->pszValueReset = NULL;
-
-            /*rc =*/ RTListAppend(&pCache->Node, &pNode->Node);
-        }
+            pNode = vboxServicePropCacheInsertEntryInternal(pCache, pszName);
 
         AssertPtr(pNode);
         if (pszValue) /* Do we have a value to check for? */
@@ -214,8 +227,7 @@ int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *psz
                 pNode->pszValue = RTStrDup(pszValue);
             }
             else
-                /** @todo r=bird: Add a VINF_NO_CHANGE status code to iprt/err.h and use it. */
-                rc = VINF_ALREADY_INITIALIZED; /* No update needed. */
+                rc = VINF_NO_CHANGE; /* No update needed. */
         }
         else
         {
@@ -228,8 +240,7 @@ int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *psz
                 rc = VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, NULL);
             }
             else
-                /** @todo r=bird: Use VINF_NO_CHANGE. */
-                rc = VINF_ALREADY_INITIALIZED; /* No update needed. */
+                rc = VINF_NO_CHANGE; /* No update needed. */
         }
 
         /* Update rest of the fields. */
@@ -243,7 +254,7 @@ int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *psz
             pNode->fFlags = fFlags;
 
         /* Release cache. */
-        int rc2 = RTSemMutexRelease(pCache->Mutex);
+        int rc2 = RTCritSectLeave(&pCache->CritSect);
         if (RT_SUCCESS(rc))
             rc2 = rc;
     }
@@ -264,33 +275,35 @@ void VBoxServicePropCacheDestroy(PVBOXSERVICEVEPROPCACHE pCache)
 {
     AssertPtr(pCache);
     Assert(pCache->uClientID);
-    PVBOXSERVICEVEPROPCACHEENTRY pNode;
-    RTListForEach(&pCache->Node, pNode, VBOXSERVICEVEPROPCACHEENTRY, Node)
-    {
-        if ((pNode->fFlags & VBOXSERVICEPROPCACHEFLAG_TEMPORARY) == 0)
-            VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, pNode->pszValueReset);
 
-        AssertPtr(pNode->pszName);
-        RTStrFree(pNode->pszName);
-        RTStrFree(pNode->pszValue);
-        RTStrFree(pNode->pszValueReset);
-        pNode->fFlags = 0;
+    /* Lock the cache. */
+    int rc = RTCritSectEnter(&pCache->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        PVBOXSERVICEVEPROPCACHEENTRY pNode = RTListNodeGetFirst(&pCache->ListEntries, VBOXSERVICEVEPROPCACHEENTRY, Node);
+        while (pNode)
+        {
+            if ((pNode->fFlags & VBOXSERVICEPROPCACHEFLAG_TEMPORARY) == 0)
+                VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, pNode->pszValueReset);
+    
+            AssertPtr(pNode->pszName);
+            RTStrFree(pNode->pszName);
+            RTStrFree(pNode->pszValue);
+            RTStrFree(pNode->pszValueReset);
+            pNode->fFlags = 0;
+    
+            PVBOXSERVICEVEPROPCACHEENTRY pNext = RTListNodeGetNext(&pNode->Node, VBOXSERVICEVEPROPCACHEENTRY, Node);
+            RTListNodeRemove(&pNode->Node);
+            RTMemFree(pNode);
+    
+            if (pNext && RTListNodeIsLast(&pCache->ListEntries, &pNext->Node))
+                break;
+            pNode = pNext;
+        }
+        RTCritSectLeave(&pCache->CritSect);
     }
 
-    pNode = RTListNodeGetFirst(&pCache->Node, VBOXSERVICEVEPROPCACHEENTRY, Node);
-    while (pNode)
-    {
-        PVBOXSERVICEVEPROPCACHEENTRY pNext = RTListNodeGetNext(&pNode->Node, VBOXSERVICEVEPROPCACHEENTRY, Node);
-        RTListNodeRemove(&pNode->Node);
-        /** @todo r=bird: hrm. missing RTMemFree(pNode)? Why don't you just combine the
-         *        two loops? */
-
-        if (pNext && RTListNodeIsLast(&pCache->Node, &pNext->Node))
-            break;
-        pNode = pNext;
-    }
-
-    /* Destroy mutex. */
-    RTSemMutexDestroy(pCache->Mutex);
+    /* Destroy critical section. */
+    RTCritSectDelete(&pCache->CritSect);
 }
 
