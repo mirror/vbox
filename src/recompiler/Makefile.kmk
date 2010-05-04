@@ -19,7 +19,7 @@
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
-ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86 darwin.amd64)
+ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86 darwin.amd64 linux.amd64)
  include $(PATH_SUB_CURRENT)/Makefile-old.kmk
 else  # new stuff
 
