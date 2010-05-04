@@ -581,9 +581,8 @@ static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
             if (RT_UNLIKELY(!pEpClass->fOutOfResourcesWarningPrinted))
             {
                 pEpClass->fOutOfResourcesWarningPrinted = true;
-                LogRel(("AIOMgr: The host doesn't has enough resources "
-                        "to handle the I/O load of the VM. Expect reduced I/O performance\n"
-                        "The maximum number of async I/O requests is %u\n", pAioMgr->cRequestsActive));
+                LogRel(("AIOMgr: Host limits number of active IO requests to %u. Expect a performance impact.\n",
+                        pAioMgr->cRequestsActive));
             }
 
             LogFlow(("Removed requests. I/O manager has a total of %u active requests now\n", pAioMgr->cRequestsActive));
