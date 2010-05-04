@@ -462,6 +462,8 @@ typedef struct AHCIPort
      * Only used with the async interface.
      */
     R3PTRTYPE(PAHCIPORTTASKSTATE)   aCachedTasks[AHCI_NR_COMMAND_SLOTS];
+    /** First task throwing an error. */
+    R3PTRTYPE(volatile PAHCIPORTTASKSTATE) pTaskErr;
 
     uint32_t                        u32Alignment5[4];
 
@@ -3890,6 +3892,7 @@ static void ahciSendSDBFis(PAHCIPort pAhciPort, uint32_t uFinishedTasks, PAHCIPO
     uint32_t sdbFis[2];
     bool fAssertIntr = false;
     PAHCI pAhci = pAhciPort->CTX_SUFF(pAhci);
+    PAHCIPORTTASKSTATE pTaskErr = (PAHCIPORTTASKSTATE)ASMAtomicReadPtr((void * volatile *)&pAhciPort->pTaskErr);
 
     ahciLog(("%s: Building SDB FIS\n", __FUNCTION__));
 
@@ -3898,13 +3901,26 @@ static void ahciSendSDBFis(PAHCIPort pAhciPort, uint32_t uFinishedTasks, PAHCIPO
         memset(&sdbFis[0], 0, sizeof(sdbFis));
         sdbFis[0] = AHCI_CMDFIS_TYPE_SETDEVBITS;
         sdbFis[0] |= (fInterrupt ? (1 << 14) : 0);
-        sdbFis[0] |= pAhciPortTaskState->uATARegError << 24;
-        sdbFis[0] |= (pAhciPortTaskState->uATARegStatus & 0x77) << 16; /* Some bits are marked as reserved and thus are masked out. */
-        sdbFis[1] = uFinishedTasks;
+        if (RT_UNLIKELY(pTaskErr))
+        {
+            sdbFis[0]  = pTaskErr->uATARegError;
+            sdbFis[0] |= (pTaskErr->uATARegStatus & 0x77) << 16; /* Some bits are marked as reserved and thus are masked out. */
 
-        ahciPostFisIntoMemory(pAhciPort, AHCI_CMDFIS_TYPE_SETDEVBITS, (uint8_t *)sdbFis);
+            /* Update registers. */
+            pAhciPort->regTFD = (pTaskErr->uATARegError << 8) | pTaskErr->uATARegStatus;
+        }
+        else
+        {
+            sdbFis[0]  = 0;
+            sdbFis[0] |= (ATA_STAT_READY | ATA_STAT_SEEK) << 16;
+            pAhciPort->regTFD = ATA_STAT_READY | ATA_STAT_SEEK;
+        }
 
-        if (pAhciPortTaskState->uATARegStatus & ATA_STAT_ERR)
+        sdbFis[1] = pAhciPort->u32QueuedTasksFinished | uFinishedTasks;
+
+         ahciPostFisIntoMemory(pAhciPort, AHCI_CMDFIS_TYPE_SETDEVBITS, (uint8_t *)sdbFis);
+
+        if (RT_UNLIKELY(pTaskErr))
         {
             /* Error bit is set. */
             ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_TFES);
@@ -3919,9 +3935,6 @@ static void ahciSendSDBFis(PAHCIPort pAhciPort, uint32_t uFinishedTasks, PAHCIPO
             if (pAhciPort->regIE & AHCI_PORT_IE_SDBE)
                 fAssertIntr = true;
         }
-
-        /* Update registers. */
-        pAhciPort->regTFD = (pAhciPortTaskState->uATARegError << 8) | pAhciPortTaskState->uATARegStatus;
 
         ASMAtomicOrU32(&pAhciPort->u32QueuedTasksFinished, uFinishedTasks);
 
@@ -4879,6 +4892,7 @@ static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPor
                         pAhciPortTaskState->uOffset,
                         pAhciPortTaskState->cbTransfer, rcReq));
         }
+        ASMAtomicCmpXchgPtr((void * volatile *)&pAhciPort->pTaskErr, pAhciPortTaskState, NULL);
     }
     else
     {
@@ -4910,14 +4924,15 @@ static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPor
         ahciLog(("%s: Before decrement uActTasksActive=%u\n", __FUNCTION__, pAhciPort->uActTasksActive));
         cOutstandingTasks = ASMAtomicDecU32(&pAhciPort->uActTasksActive);
         ahciLog(("%s: After decrement uActTasksActive=%u\n", __FUNCTION__, cOutstandingTasks));
-        ASMAtomicOrU32(&pAhciPort->u32QueuedTasksFinished, (1 << pAhciPortTaskState->uTag));
+        if (RT_SUCCESS(rcReq) && !ASMAtomicReadPtr((void * volatile *)&pAhciPort->pTaskErr))
+            ASMAtomicOrU32(&pAhciPort->u32QueuedTasksFinished, (1 << pAhciPortTaskState->uTag));
 
 #ifdef RT_STRICT
         bool fXchg = ASMAtomicCmpXchgBool(&pAhciPortTaskState->fActive, false, true);
         AssertMsg(fXchg, ("Task is not active\n"));
 #endif
 
-        if (!cOutstandingTasks || RT_FAILURE(rcReq))
+        if (!cOutstandingTasks)
             ahciSendSDBFis(pAhciPort, 0, pAhciPortTaskState, true);
     }
     else
@@ -5147,11 +5162,78 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPor
             rc = AHCITXDIR_WRITE;
             break;
         }
+        case ATA_READ_LOG_EXT:
+        {
+            size_t cbLogRead = ((pCmdFis[AHCI_CMDFIS_SECTCEXP] << 8) | pCmdFis[AHCI_CMDFIS_SECTC]) * 512;
+            unsigned offLogRead = ((pCmdFis[AHCI_CMDFIS_CYLLEXP] << 8) | pCmdFis[AHCI_CMDFIS_CYLL]) * 512;
+            unsigned iPage = pCmdFis[AHCI_CMDFIS_SECTN];
+
+            LogFlow(("Trying to read %zu bytes starting at offset %u from page %u\n", cbLogRead, offLogRead, iPage));
+
+            uint8_t aBuf[512];
+
+            memset(aBuf, 0, sizeof(aBuf));
+
+            if (offLogRead + cbLogRead <= sizeof(aBuf))
+            {
+                switch (iPage)
+                {
+                    case 0x10:
+                    {
+                        LogFlow(("Reading error page\n"));
+                        PAHCIPORTTASKSTATE pTaskErr = (PAHCIPORTTASKSTATE)ASMAtomicXchgPtr((void * volatile *)&pAhciPort->pTaskErr, NULL);
+                        if (pTaskErr)
+                        {
+                            aBuf[0] = pTaskErr->fQueued ? (1 << 7) | pTaskErr->uTag : 0;
+                            aBuf[2] = pTaskErr->uATARegStatus;
+                            aBuf[3] = pTaskErr->uATARegError;
+                            aBuf[4] = pTaskErr->cmdFis[AHCI_CMDFIS_SECTN];
+                            aBuf[5] = pTaskErr->cmdFis[AHCI_CMDFIS_CYLL];
+                            aBuf[6] = pTaskErr->cmdFis[AHCI_CMDFIS_CYLH];
+                            aBuf[7] = pTaskErr->cmdFis[AHCI_CMDFIS_HEAD];
+                            aBuf[8] = pTaskErr->cmdFis[AHCI_CMDFIS_SECTNEXP];
+                            aBuf[9] = pTaskErr->cmdFis[AHCI_CMDFIS_CYLLEXP];
+                            aBuf[10] = pTaskErr->cmdFis[AHCI_CMDFIS_CYLHEXP];
+                            aBuf[12] = pTaskErr->cmdFis[AHCI_CMDFIS_SECTC];
+                            aBuf[13] = pTaskErr->cmdFis[AHCI_CMDFIS_SECTCEXP];
+
+                            /* Calculate checksum */
+                            uint8_t uChkSum = 0;
+                            for (unsigned i = 0; i < RT_ELEMENTS(aBuf)-1; i++)
+                                uChkSum += aBuf[i];
+
+                            aBuf[511] = ~uChkSum;
+                        }
+                        break;
+                    }
+                }
+
+                /* Create scatter gather list. */
+                int rc2 = ahciScatterGatherListCreate(pAhciPort, pAhciPortTaskState, false);
+                if (RT_FAILURE(rc2))
+                    AssertMsgFailed(("Creating list failed rc=%Rrc\n", rc2));
+
+                /* Copy the buffer. */
+                pCmdHdr->u32PRDBC = ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, &aBuf[offLogRead], cbLogRead);
+
+                /* Destroy list. */
+                rc2 = ahciScatterGatherListDestroy(pAhciPort, pAhciPortTaskState);
+                if (RT_FAILURE(rc2))
+                    AssertMsgFailed(("Freeing list failed rc=%Rrc\n", rc2));
+
+                pAhciPortTaskState->uATARegError = 0;
+                pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
+
+                /* Write updated command header into memory of the guest. */
+                PDMDevHlpPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciPortTaskState->GCPhysCmdHdrAddr, pCmdHdr, sizeof(CmdHdr));
+            }
+
+            break;
+        }
         /* All not implemented commands go below. */
         case ATA_SECURITY_FREEZE_LOCK:
         case ATA_SMART:
         case ATA_NV_CACHE:
-        case ATA_READ_LOG_EXT:
             pAhciPortTaskState->uATARegError = ABRT_ERR;
             pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
             break;
