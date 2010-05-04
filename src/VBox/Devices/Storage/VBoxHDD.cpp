@@ -1815,6 +1815,7 @@ static int vdIOReqCompleted(void *pvUser, int rcReq)
                     pIoCtxParent->Type.Root.pfnComplete(pIoCtxParent->Type.Root.pvUser1,
                                                         pIoCtxParent->Type.Root.pvUser2,
                                                         pIoCtxParent->rcReq);
+                    vdThreadFinishWrite(pDisk);
                     vdIoCtxFree(pDisk, pIoCtxParent);
                 }
 
@@ -1854,6 +1855,7 @@ static int vdIOReqCompleted(void *pvUser, int rcReq)
                             && ASMAtomicCmpXchgBool(&pIoCtxWait->fComplete, true, false))
                         {
                             LogFlowFunc(("Waiting I/O context completed pIoCtxWait=%#p\n", pIoCtxWait));
+                            vdThreadFinishWrite(pDisk);
                             pIoCtxWait->Type.Root.pfnComplete(pIoCtxWait->Type.Root.pvUser1,
                                                               pIoCtxWait->Type.Root.pvUser2,
                                                               pIoCtxWait->rcReq);
@@ -1865,9 +1867,16 @@ static int vdIOReqCompleted(void *pvUser, int rcReq)
                     RTCritSectLeave(&pDisk->CritSect);
             }
             else
+            {
+                if (pIoCtx->enmTxDir == VDIOCTXTXDIR_WRITE)
+                    vdThreadFinishWrite(pDisk);
+                else
+                    vdThreadFinishRead(pDisk);
+
                 pIoCtx->Type.Root.pfnComplete(pIoCtx->Type.Root.pvUser1,
                                               pIoCtx->Type.Root.pvUser2,
                                               pIoCtx->rcReq);
+            }
 
             vdIoCtxFree(pDisk, pIoCtx);
         }
@@ -5966,7 +5975,8 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
 
     } while (0);
 
-    if (RT_UNLIKELY(fLockRead) && (rc != VINF_VD_ASYNC_IO_FINISHED))
+    if (RT_UNLIKELY(fLockRead) && (   rc == VINF_VD_ASYNC_IO_FINISHED
+                                   || rc != VERR_VD_ASYNC_IO_IN_PROGRESS))
     {
         rc2 = vdThreadFinishRead(pDisk);
         AssertRC(rc2);
@@ -6041,7 +6051,8 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
             vdIoCtxFree(pDisk, pIoCtx);
     } while (0);
 
-    if (RT_UNLIKELY(fLockWrite) && RT_FAILURE(rc))
+    if (RT_UNLIKELY(fLockWrite) && (   rc == VINF_VD_ASYNC_IO_FINISHED
+                                    || rc != VERR_VD_ASYNC_IO_IN_PROGRESS))
     {
         rc2 = vdThreadFinishWrite(pDisk);
         AssertRC(rc2);
@@ -6087,30 +6098,22 @@ VBOXDDU_DECL(int) VDAsyncFlush(PVBOXHDD pDisk, PFNVDASYNCTRANSFERCOMPLETE pfnCom
         pIoCtx->pImage = pImage;
 
         rc = vdIoCtxProcess(pIoCtx);
+        if (rc == VINF_VD_ASYNC_IO_FINISHED)
+        {
+            if (ASMAtomicCmpXchgBool(&pIoCtx->fComplete, true, false))
+                vdIoCtxFree(pDisk, pIoCtx);
+            else
+                rc = VERR_VD_ASYNC_IO_IN_PROGRESS; /* Let the other handler complete the request. */
+        }
+        else if (rc != VERR_VD_ASYNC_IO_IN_PROGRESS) /* Another error */
+            vdIoCtxFree(pDisk, pIoCtx);
     } while (0);
 
-    if (RT_UNLIKELY(fLockWrite) && RT_FAILURE(rc))
+    if (RT_UNLIKELY(fLockWrite) && (   rc == VINF_VD_ASYNC_IO_FINISHED
+                                    || rc != VERR_VD_ASYNC_IO_IN_PROGRESS))
     {
         rc2 = vdThreadFinishWrite(pDisk);
         AssertRC(rc2);
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        if (   !pIoCtx->cbTransferLeft
-            && !pIoCtx->cMetaTransfersPending
-            && ASMAtomicCmpXchgBool(&pIoCtx->fComplete, true, false))
-        {
-            vdIoCtxFree(pDisk, pIoCtx);
-            rc = VINF_VD_ASYNC_IO_FINISHED;
-        }
-        else
-        {
-            LogFlow(("cbTransferLeft=%u cMetaTransfersPending=%u fComplete=%RTbool\n",
-                     pIoCtx->cbTransferLeft, pIoCtx->cMetaTransfersPending,
-                     pIoCtx->fComplete));
-            rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
-        }
     }
 
     LogFlowFunc(("returns %Rrc\n", rc));
