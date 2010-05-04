@@ -19,7 +19,7 @@
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
-ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86)
+ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86 darwin.amd64)
  include $(PATH_SUB_CURRENT)/Makefile-old.kmk
 else  # new stuff
 
@@ -120,17 +120,18 @@ if "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.amd64"
  # (e_powl-xxx.S doesn't fit in IPRT because it requires GAS and is LGPL.)
  #
  SYSMODS += VBoxRemPrimary
- VBoxRemPrimary_TEMPLATE  = VBOXNOCRTGAS
- VBoxRemPrimary_NAME      = VBoxREM2
- VBoxRemPrimary_DEFS     += LOG_USE_C99 $(ARCH_BITS_DEFS)
- VBoxRemPrimary_SOURCES  += \
+ VBoxRemPrimary_TEMPLATE   = VBOXNOCRTGAS
+ VBoxRemPrimary_NAME       = VBoxREM2
+ VBoxRemPrimary_DEFS      += LOG_USE_C99 $(ARCH_BITS_DEFS)
+ VBoxRemPrimary_SOURCES   += \
  	Sun/e_powl-$(KBUILD_TARGET_ARCH).S
- VBoxRemPrimary_INCS     += \
+ VBoxRemPrimary_INCS      += \
         Sun/crt
- VBoxRemPrimary_SYSSUFF   = .rel
- VBoxRemPrimary_LIBS      = \
+ VBoxRemPrimary_SYSSUFF    = .rel
+ VBoxRemPrimary_LIBS       = \
  	$(PATH_LIB)/RuntimeR3NoCRTGCC$(VBOX_SUFF_LIB)
- VBoxRemPrimary_POST_CMDS = $(NO_SUCH_VARIABLE)
+ VBoxRemPrimary_POST_CMDS  = $(NO_SUCH_VARIABLE)
+ VBOX_REM_WRAPPER          = 2
 
 else if "$(KBUILD_TARGET_ARCH)" == "x86" && defined(VBOX_WITH_64_BITS_GUESTS)
  #
@@ -147,6 +148,7 @@ else if "$(KBUILD_TARGET_ARCH)" == "x86" && defined(VBOX_WITH_64_BITS_GUESTS)
  DLLS += VBoxRemPrimary
  VBoxRemPrimary_NAME       = VBoxREM32
  VBoxRemPrimary_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM32.dylib
+ VBOX_REM_WRAPPER          = 32
 
  #
  # VBoxREM64
@@ -158,18 +160,17 @@ else if "$(KBUILD_TARGET_ARCH)" == "x86" && defined(VBOX_WITH_64_BITS_GUESTS)
  VBoxREM64_DEFS            = VBOX_ENABLE_VBOXREM64
  VBoxREM64_LDFLAGS.darwin  = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM64.dylib
 
-## @todo else ifdef VBOX_WITHOUT_REM_LDR_CYCLE
 else
  #
  # VBoxREM/VBoxRemPrimary - Normal.
  #
  DLLS += VBoxRemPrimary
  VBoxRemPrimary_NAME       = VBoxREM
- VBoxRemPrimary_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM.dylib
+ VBoxRemPrimary_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM3.dylib
 endif
 
 
-ifn1of ($(DLLS),VBoxREM)
+ifdef VBOX_REM_WRAPPER
  #
  # VBoxREM - Wrapper for loading VBoxREM2, VBoxREM32 or VBoxREM64.
  #
