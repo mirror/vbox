@@ -444,7 +444,7 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
         }
         else if (pThread->fShutdown && (fProcessAlive || MsProcessKilled != UINT64_MAX))
         {
-            VBoxServiceVerbose(3, "ControlExec: Process got terminated because system/service is going stopping\n");
+            VBoxServiceVerbose(3, "ControlExec: Process got terminated because system/service is about to shutdown\n");
             uStatus = PROC_STS_DWN; /* Service is stopping, process was killed. */
         }
         else if (fProcessAlive)
