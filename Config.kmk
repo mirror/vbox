@@ -4119,6 +4119,14 @@ $(VBOX_SVN_REV_KMK):
 	$(QUIET)$(CAT) $(VBOX_SVN_REV_KMK)
 endif
 
+# only needed for VBoxGuest for Linux/FreeBSD guests
+$(PATH_OUT)/revision-generated.h: $(VBOX_SVN_REV_KMK)
+	$(call MSG_GENERATE,,$@)
+	$(QUIET)$(RM) -f $@ $@.tmp
+	$(QUIET)$(MKDIR) -p $(@D)
+	$(QUIET)$(APPEND) $@.tmp '#define VBOX_SVN_REV $(VBOX_SVN_REV)'
+	$(QUIET)$(MV) -f $@.tmp $@
+
 #
 # Shared definitions of the XIDL file to use as a source for
 # generating various other files (VBoxSVC, webservice, docs, front-ends, ...)

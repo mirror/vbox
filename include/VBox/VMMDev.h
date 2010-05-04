@@ -130,19 +130,20 @@ typedef enum
     VMMDevReq_GetHostTime                = 10,
     VMMDevReq_GetHypervisorInfo          = 20,
     VMMDevReq_SetHypervisorInfo          = 21,
-    VMMDevReq_RegisterPatchMemory             = 22,
-    VMMDevReq_DeregisterPatchMemory           = 23,
+    VMMDevReq_RegisterPatchMemory        = 22, /* since version 3.0.6 */
+    VMMDevReq_DeregisterPatchMemory      = 23, /* since version 3.0.6 */
     VMMDevReq_SetPowerStatus             = 30,
     VMMDevReq_AcknowledgeEvents          = 41,
     VMMDevReq_CtlGuestFilterMask         = 42,
     VMMDevReq_ReportGuestInfo            = 50,
+    VMMDevReq_ReportGuestInfo2           = 58, /* since version 3.2.0 */
     VMMDevReq_GetDisplayChangeRequest    = 51,
     VMMDevReq_VideoModeSupported         = 52,
     VMMDevReq_GetHeightReduction         = 53,
     VMMDevReq_GetDisplayChangeRequest2   = 54,
     VMMDevReq_ReportGuestCapabilities    = 55,
     VMMDevReq_SetGuestCapabilities       = 56,
-    VMMDevReq_VideoModeSupported2        = 57,
+    VMMDevReq_VideoModeSupported2        = 57, /* since version 3.2.0 */
 #ifdef VBOX_WITH_HGCM
     VMMDevReq_HGCMConnect                = 60,
     VMMDevReq_HGCMDisconnect             = 61,
@@ -624,6 +625,8 @@ typedef struct VBoxGuestInfo2
     uint32_t additionsRevision;
     /** Feature mask, currently unused. */
     uint32_t additionsFeatures;
+    /** some additional information, for example 'Beta 1' or something like that */
+    char     szName[128];
 } VBoxGuestInfo2;
 
 
@@ -639,7 +642,7 @@ typedef struct
     /** Guest information. */
     VBoxGuestInfo2 guestInfo;
 } VMMDevReportGuestInfo2;
-AssertCompileSize(VMMDevReportGuestInfo2, 24+16);
+AssertCompileSize(VMMDevReportGuestInfo2, 24+144);
 
 
 /**
@@ -1608,6 +1611,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevEvents);
         case VMMDevReq_ReportGuestInfo:
             return sizeof(VMMDevReportGuestInfo);
+        case VMMDevReq_ReportGuestInfo2:
+            return sizeof(VMMDevReportGuestInfo2);
         case VMMDevReq_GetDisplayChangeRequest:
             return sizeof(VMMDevDisplayChangeRequest);
         case VMMDevReq_GetDisplayChangeRequest2:
