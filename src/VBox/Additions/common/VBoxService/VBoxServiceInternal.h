@@ -92,6 +92,7 @@ typedef VBOXSERVICE *PVBOXSERVICE;
 typedef VBOXSERVICE const *PCVBOXSERVICE;
 
 #ifdef RT_OS_WINDOWS
+
 /** The service name (needed for mutex creation on Windows). */
 # define VBOXSERVICE_NAME           "VBoxService"
 /** The friendly service name. */
@@ -121,9 +122,10 @@ typedef struct
 } VBOXSERVICEVMINFOPROC, *PVBOXSERVICEVMINFOPROC;
 /** Function prototypes for dynamic loading. */
 typedef DWORD (WINAPI *PFNWTSGETACTIVECONSOLESESSIONID)(void);
-#endif /* RT_OS_WINDOWS */
 
+#endif /* RT_OS_WINDOWS */
 #ifdef VBOX_WITH_GUEST_CONTROL
+
 enum VBOXSERVICECTRLTHREADDATATYPE
 {
     VBoxServiceCtrlThreadDataUnknown = 0,
@@ -193,7 +195,7 @@ typedef VBOXSERVICECTRLTHREAD *PVBOXSERVICECTRLTHREAD;
 /**
  * For buffering process input supplied by the client.
  */
-typedef struct
+typedef struct VBOXSERVICECTRLSTDINBUF
 {
     /** The mount of buffered data. */
     size_t  cb;
@@ -210,40 +212,47 @@ typedef struct
 } VBOXSERVICECTRLSTDINBUF;
 /** Pointer to a standard input buffer. */
 typedef VBOXSERVICECTRLSTDINBUF *PVBOXSERVICECTRLSTDINBUF;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 
+#endif /* VBOX_WITH_GUEST_CONTROL */
 #ifdef VBOX_WITH_GUEST_PROPS
+
 /**
  * A guest property cache.
  */
-typedef struct
-{    
+typedef struct VBOXSERVICEVEPROPCACHE
+{
     /** The client ID for HGCM communication. */
-    uint32_t   uClientID;
-    RTLISTNODE Node;
-    RTSEMMUTEX Mutex;
+    uint32_t    uClientID;
+    /** List of VBOXSERVICEVEPROPCACHEENTRY nodes.
+     * @todo r=bird: Node -> ListSomething, please.  "Node" is very nondescript and
+     *       makes the list-head vs. list-node confusion greater. */
+    RTLISTNODE  Node;
+    /** @todo Use a RTCRITSECT. RTSEMMUTEXes are deprecated in ring-3. */
+    RTSEMMUTEX  Mutex;
 } VBOXSERVICEVEPROPCACHE;
 /** Pointer to a guest property cache. */
 typedef VBOXSERVICEVEPROPCACHE *PVBOXSERVICEVEPROPCACHE;
 
 /**
- * Handling guest properties used by the VM information service.
+ * An entry in the property cache (VBOXSERVICEVEPROPCACHE).
  */
-typedef struct
-{    
+typedef struct VBOXSERVICEVEPROPCACHEENTRY
+{
     /** Node. */
-    RTLISTNODE Node;
+    RTLISTNODE  Node;
     /** Name (and full path) of guest property. */
-    char    *pszName;
+    char       *pszName;
     /** The last value stored (for reference). */
-    char    *pszValue;
-    /** Reset value to write if property is temporary. */
-    char    *pszValueReset;
+    char       *pszValue;
+    /** Reset value to write if property is temporary.  If NULL, it will be
+     *  deleted. */
+    char       *pszValueReset;
     /** Flags. */
-    uint32_t uFlags;
+    uint32_t    fFlags;
 } VBOXSERVICEVEPROPCACHEENTRY;
 /** Pointer to a cached guest property. */
 typedef VBOXSERVICEVEPROPCACHEENTRY *PVBOXSERVICEVEPROPCACHEENTRY;
+
 #endif /* VBOX_WITH_GUEST_PROPS */
 
 RT_C_DECLS_BEGIN

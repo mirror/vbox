@@ -29,28 +29,41 @@
 #include "VBoxServiceUtils.h"
 #include "VBoxServicePropCache.h"
 
-#ifdef VBOX_WITH_GUEST_PROPS
 
-/** @todo Docs */
-int VBoxServicePropCacheInit(PVBOXSERVICEVEPROPCACHE pCache, uint32_t u32ClientId)
+/**
+ * Initializes the property cache.
+ *
+ * @returns IPRT status code.
+ * @param   pCache          Pointer to the cache.
+ * @param   uClientId       The HGCM handle of to the guest property service.
+ */
+int VBoxServicePropCacheInit(PVBOXSERVICEVEPROPCACHE pCache, uint32_t uClientId)
 {
     AssertPtr(pCache);
-    /** @todo Prevent init the cache twice! */
+    /** @todo Prevent init the cache twice!
+     *  r=bird: Use a magic, or/and abstract the whole cache by rename this function
+     *  VBoxServicePropCacheCreate(). */
     RTListInit(&pCache->Node);
-    pCache->uClientID = u32ClientId;
+    pCache->uClientID = uClientId;
     return RTSemMutexCreate(&pCache->Mutex);
 }
 
 
-/** @todo Docs */
+/** @todo Docs
+ * @todo this looks internal to me, nobody should need to access the
+ *       structures directly here. */
 PVBOXSERVICEVEPROPCACHEENTRY VBoxServicePropCacheFind(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, uint32_t uFlags)
 {
     AssertPtr(pCache);
     AssertPtr(pszName);
-    /* This is a O(n) lookup, maybe improve this later to O(1) using a map. */
+    /** @todo This is a O(n) lookup, maybe improve this later to O(1) using a
+     *        map.
+     *  r=bird: Use a string space (RTstrSpace*). That is O(log n) in its current
+     *        implementation (AVL tree). However, this is not important at the
+     *        moment. */
     PVBOXSERVICEVEPROPCACHEENTRY pNodeIt, pNode = NULL;
     if (RT_SUCCESS(RTSemMutexRequest(pCache->Mutex, RT_INDEFINITE_WAIT)))
-    {    
+    {
         RTListForEach(&pCache->Node, pNodeIt, VBOXSERVICEVEPROPCACHEENTRY, Node)
         {
             if (strcmp(pNodeIt->pszName, pszName) == 0)
@@ -66,8 +79,8 @@ PVBOXSERVICEVEPROPCACHEENTRY VBoxServicePropCacheFind(PVBOXSERVICEVEPROPCACHE pC
 
 
 /** @todo Docs */
-int VBoxServicePropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache, 
-                                    const char *pszName, uint32_t u32Flags, const char *pszValueReset)
+int VBoxServicePropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache,
+                                    const char *pszName, uint32_t fFlags, const char *pszValueReset)
 {
     AssertPtr(pCache);
     AssertPtr(pszName);
@@ -78,7 +91,7 @@ int VBoxServicePropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache,
         rc = RTSemMutexRequest(pCache->Mutex, RT_INDEFINITE_WAIT);
         if (RT_SUCCESS(rc))
         {
-            pNode->uFlags = u32Flags;
+            pNode->fFlags = fFlags;
             if (pszValueReset)
             {
                 if (pszValueReset)
@@ -99,7 +112,7 @@ int VBoxServicePropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache,
  *
  * @returns VBox status code. Errors will be logged.
  *
- * @param   u32ClientId     The HGCM client ID for the guest property session.
+ * @param   pCache          The property cache.
  * @param   pszName         The property name.
  * @param   pszValueFormat  The property format string.  If this is NULL then
  *                          the property will be deleted (if possible).
@@ -128,18 +141,22 @@ int VBoxServicePropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszNa
  *
  * @returns VBox status code. Errors will be logged.
  *
- * @param   u32ClientId     The HGCM client ID for the guest property session.
+ * @param   pCache          The property cache.
  * @param   pszName         The property name.
  * @param   pszValueFormat  The property format string.  If this is NULL then
  *                          the property will be deleted (if possible).
  * @param   ...             Format arguments.
  */
-int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, uint32_t u32Flags, const char *pszValueReset, const char *pszValueFormat, ...)
+int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, uint32_t fFlags,
+                                 const char *pszValueReset, const char *pszValueFormat, ...)
 {
     AssertPtr(pCache);
     Assert(pCache->uClientID);
     AssertPtr(pszName);
 
+    /*
+     * Format the value first.
+     */
     char *pszValue = NULL;
     if (pszValueFormat)
     {
@@ -147,6 +164,8 @@ int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *psz
         va_start(va, pszValueFormat);
         RTStrAPrintfV(&pszValue, pszValueFormat, va);
         va_end(va);
+        if (!pszValue)
+            return VERR_NO_STR_MEMORY;
     }
 
     PVBOXSERVICEVEPROPCACHEENTRY pNode = VBoxServicePropCacheFind(pCache, pszName, 0);
@@ -155,59 +174,64 @@ int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *psz
     int rc = RTSemMutexRequest(pCache->Mutex, RT_INDEFINITE_WAIT);
     if (RT_SUCCESS(rc))
     {
-    
+
         if (pNode == NULL)
-        {          
+        {
             pNode = (PVBOXSERVICEVEPROPCACHEENTRY)RTMemAlloc(sizeof(VBOXSERVICEVEPROPCACHEENTRY));
-            AssertPtrReturn(pNode, VERR_NO_MEMORY);
-    
+            if (RT_UNLIKELY(!pNode))
+            {
+                RTSemMutexRelease(pCache->Mutex);
+                return VERR_NO_MEMORY;
+            }
+
             pNode->pszName = RTStrDup(pszName);
-            pNode->pszValue = NULL; 
-            pNode->uFlags = 0;
+            pNode->pszValue = NULL;
+            pNode->fFlags = 0;
             pNode->pszValueReset = NULL;
-    
+
             /*rc =*/ RTListAppend(&pCache->Node, &pNode->Node);
         }
-    
+
         AssertPtr(pNode);
         if (pszValue) /* Do we have a value to check for? */
         {
             bool fUpdate = false;
             /* Always update this property, no matter what? */
-            if (pNode->uFlags & VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE)
+            if (pNode->fFlags & VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE)
                 fUpdate = true;
             /* Did the value change so we have to update? */
             else if (pNode->pszValue && strcmp(pNode->pszValue, pszValue) != 0)
                 fUpdate = true;
             /* No value stored at the moment but we have a value now? */
-            else if (pNode->pszValue == NULL) 
+            else if (pNode->pszValue == NULL)
                 fUpdate = true;
-    
+
             if (fUpdate)
             {
                 /* Write the update. */
                 rc = VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, pszValue);
-                if (pNode->pszValue)
-                    RTStrFree(pNode->pszValue);
+                RTStrFree(pNode->pszValue);
                 pNode->pszValue = RTStrDup(pszValue);
             }
             else
+                /** @todo r=bird: Add a VINF_NO_CHANGE status code to iprt/err.h and use it. */
                 rc = VINF_ALREADY_INITIALIZED; /* No update needed. */
         }
-        else 
+        else
         {
             /* No value specified. Deletion (or no action required). */
             if (pNode->pszValue) /* Did we have a value before? Then the value needs to be deleted. */
             {
                 /* Delete property (but do not remove from cache) if not deleted yet. */
-                rc = VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, NULL);
                 RTStrFree(pNode->pszValue);
                 pNode->pszValue = NULL;
+                rc = VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, NULL);
             }
             else
+                /** @todo r=bird: Use VINF_NO_CHANGE. */
                 rc = VINF_ALREADY_INITIALIZED; /* No update needed. */
         }
-    
+
         /* Update rest of the fields. */
         if (pszValueReset)
         {
@@ -215,23 +239,27 @@ int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *psz
                 RTStrFree(pNode->pszValueReset);
             pNode->pszValueReset = RTStrDup(pszValueReset);
         }
-        if (u32Flags)
-            pNode->uFlags = u32Flags;
-     
-        /* Delete temp stuff. */
-        if (pszValue)
-            RTStrFree(pszValue);   
-    
+        if (fFlags)
+            pNode->fFlags = fFlags;
+
         /* Release cache. */
         int rc2 = RTSemMutexRelease(pCache->Mutex);
         if (RT_SUCCESS(rc))
             rc2 = rc;
     }
+
+    /* Delete temp stuff. */
+    RTStrFree(pszValue);
+
     return rc;
 }
 
 
-/** @todo Docs */
+/**
+ * Reset all temporary properties and destroy the cache.
+ *
+ * @param   pCache          The property cache.
+ */
 void VBoxServicePropCacheDestroy(PVBOXSERVICEVEPROPCACHE pCache)
 {
     AssertPtr(pCache);
@@ -239,23 +267,14 @@ void VBoxServicePropCacheDestroy(PVBOXSERVICEVEPROPCACHE pCache)
     PVBOXSERVICEVEPROPCACHEENTRY pNode;
     RTListForEach(&pCache->Node, pNode, VBOXSERVICEVEPROPCACHEENTRY, Node)
     {
-        if ((pNode->uFlags & VBOXSERVICEPROPCACHEFLAG_TEMPORARY) == 0)
-        {
-            if (pNode->pszValueReset) /* Write reset value? */
-            {
-                /* rc = */VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, pNode->pszValueReset);
-            }
-            else /* Delete value. */
-                /* rc = */VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, NULL);
-        }
+        if ((pNode->fFlags & VBOXSERVICEPROPCACHEFLAG_TEMPORARY) == 0)
+            VBoxServiceWritePropF(pCache->uClientID, pNode->pszName, pNode->pszValueReset);
 
         AssertPtr(pNode->pszName);
         RTStrFree(pNode->pszName);
-        if (pNode->pszValue)
-            RTStrFree(pNode->pszValue);
-        if (pNode->pszValueReset)
-            RTStrFree(pNode->pszValueReset);
-        pNode->uFlags = 0;
+        RTStrFree(pNode->pszValue);
+        RTStrFree(pNode->pszValueReset);
+        pNode->fFlags = 0;
     }
 
     pNode = RTListNodeGetFirst(&pCache->Node, VBOXSERVICEVEPROPCACHEENTRY, Node);
@@ -263,11 +282,15 @@ void VBoxServicePropCacheDestroy(PVBOXSERVICEVEPROPCACHE pCache)
     {
         PVBOXSERVICEVEPROPCACHEENTRY pNext = RTListNodeGetNext(&pNode->Node, VBOXSERVICEVEPROPCACHEENTRY, Node);
         RTListNodeRemove(&pNode->Node);
+        /** @todo r=bird: hrm. missing RTMemFree(pNode)? Why don't you just combine the
+         *        two loops? */
+
         if (pNext && RTListNodeIsLast(&pCache->Node, &pNext->Node))
             break;
         pNode = pNext;
     }
+
     /* Destroy mutex. */
     RTSemMutexDestroy(pCache->Mutex);
 }
-#endif /* VBOX_WITH_GUEST_PROPS */
+
