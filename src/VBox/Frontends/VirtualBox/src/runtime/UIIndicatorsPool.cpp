@@ -271,6 +271,7 @@ public:
             if (machine.GetNetworkAdapter(uSlot).GetEnabled())
                 ++ uCount;
         setState(uCount > 0 ? KDeviceActivity_Idle : KDeviceActivity_Null);
+        setHidden(!uCount);
 
         QString strToolTip = QApplication::translate("VBoxConsoleWnd", "<p style='white-space:pre'><nobr>Indicates the activity of the "
                                 "network interfaces:</nobr>%1</p>", "Network adapters tooltip");
