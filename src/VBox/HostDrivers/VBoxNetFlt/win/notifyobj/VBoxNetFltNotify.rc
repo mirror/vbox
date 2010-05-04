@@ -13,6 +13,12 @@
 #include <VBox/version.h>
 
 #include "VBoxNetFltNotifyRc.h"
+/////////////////////////////////////////////////////////////////////////////
+//
+// REGISTRY
+//
+1 TYPELIB "VBoxNetFltNotifyn.tlb"
+IDR_REG_VBOXNETFLT_NOTIFY     REGISTRY   "VBoxNetFltNotify.rgs"
 
 VS_VERSION_INFO    VERSIONINFO
   FILEVERSION      VBOX_VERSION_MAJOR_NR,VBOX_VERSION_MINOR_NR,VBOX_VERSION_BUILD_NR,0
@@ -47,12 +53,5 @@ BEGIN
   END
 END
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// REGISTRY
-//
 
-IDR_REG_VBOXNETFLT_NOTIFY     REGISTRY   "VBoxNetFltNotify.rgs"
-
-1 TYPELIB "VBoxNetFltNotifyn.tlb"
 
