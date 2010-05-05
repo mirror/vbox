@@ -110,7 +110,8 @@ TEMPLATE_XPCOMEXEBLD_LDFLAGS.darwin    =   \
 
 ifeq ($(KBUILD_TARGET),darwin)
  define preprocess_exebld
-  $(shell echo install_name_tool -change /Applications/VirtualBox.app/Contents/MacOS/VBoxRT.dylib $(PATH_BIN)/VBoxRT$(VBOX_SUFF_DLL) $(1))
+  $(shell install_name_tool -change /Applications/VirtualBox.app/Contents/MacOS/VBoxRT.dylib $(PATH_BIN)/VBoxRT$(VBOX_SUFF_DLL) $(1))
+  $(shell install_name_tool -change $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxRT.dylib $(PATH_BIN)/VBoxRT$(VBOX_SUFF_DLL) $(1))
  endef
 else
  define preprocess_exebld
