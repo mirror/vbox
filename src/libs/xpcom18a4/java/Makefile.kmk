@@ -27,13 +27,13 @@ ifeq ($(KBUILD_TARGET), darwin)
  VBOX_JAR   = $(VBOX_JAVA_HOME)/Commands/jar
  VBOX_JAVA_INC = $(VBOX_JAVA_HOME)/Headers
 else
-ifeq ($(KBUILD_TARGET), linux)
- VBOX_JAVA_HOME ?= /usr/lib/jvm/java-1.5.0-sun
-endif
-ifeq ($(KBUILD_TARGET), solaris)
-# VBOX_JAVA_HOME ?= /usr/jdk/jdk1.5.0
-  VBOX_JAVA_HOME ?= /usr/java
-endif
+ ifeq ($(KBUILD_TARGET), linux)
+  VBOX_JAVA_HOME ?= /usr/lib/jvm/java-1.5.0-sun
+ endif
+ ifeq ($(KBUILD_TARGET), solaris)
+ # VBOX_JAVA_HOME ?= /usr/jdk/jdk1.5.0
+   VBOX_JAVA_HOME ?= /usr/java
+ endif
  VBOX_JAVAC = $(VBOX_JAVA_HOME)/bin/javac
  VBOX_JAVAH = $(VBOX_JAVA_HOME)/bin/javah
  VBOX_JAR   = $(VBOX_JAVA_HOME)/bin/jar
@@ -52,7 +52,7 @@ VBOX_JXPCOM_GENH = \
  $(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_internal_MozillaImpl.h      \
  $(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_internal_XPCOMJavaProxy.h   \
  $(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_internal_JavaXPCOMMethods.h \
- $(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_ProfileLock.h               
+ $(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_ProfileLock.h
 
 VBoxJXpcom_TEMPLATE = XPCOM
 VBoxJXpcom_CXXFLAGS = -Wno-write-strings
@@ -79,7 +79,7 @@ VBoxJXpcom_SOURCES  =                     \
         src/nsJavaInterfaces.cpp
 VBoxJXpcom_LIBS     =                         \
 	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)   \
-	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) 
+	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
 
 src/nsJavaInterfaces.cpp_DEPS = $(VBOX_JXPCOM_GENH)
 
