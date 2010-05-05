@@ -111,6 +111,9 @@ enum
     MODIFYVM_HOSTONLYADAPTER,
     MODIFYVM_INTNET,
     MODIFYVM_NATNET,
+#ifdef VBOX_WITH_VDE
+    MODIFYVM_VDENET,
+#endif
     MODIFYVM_NATBINDIP,
     MODIFYVM_NATSETTINGS,
     MODIFYVM_NATPF,
@@ -219,6 +222,9 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--hostonlyadapter",          MODIFYVM_HOSTONLYADAPTER,           RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--intnet",                   MODIFYVM_INTNET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--natnet",                   MODIFYVM_NATNET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+#ifdef VBOX_WITH_VDE
+    { "--vdenet",                   MODIFYVM_VDENET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+#endif
     { "--natbindip",                MODIFYVM_NATBINDIP,                 RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--natsettings",              MODIFYVM_NATSETTINGS,               RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--natpf",                    MODIFYVM_NATPF,                     RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
@@ -1190,6 +1196,14 @@ int handleModifyVM(HandlerArg *a)
                     CHECK_ERROR(nic, AttachToHostOnlyInterface());
                 }
 #endif
+#ifdef VBOX_WITH_VDE
+                else if (!strcmp(ValueUnion.psz, "vde"))
+                {
+
+                    CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
+                    CHECK_ERROR(nic, AttachToVDE());
+                }
+#endif
                 else
                 {
                     errorArgument("Invalid type '%s' specfied for NIC %u", ValueUnion.psz, GetOptState.uIndex);
@@ -1248,6 +1262,25 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
+#ifdef VBOX_WITH_VDE
+            case MODIFYVM_VDENET:
+            {
+                ComPtr<INetworkAdapter> nic;
+
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
+                ASSERT(nic);
+
+                if (!strcmp(ValueUnion.psz, "default"))
+                {
+                    CHECK_ERROR(nic, COMSETTER(VDENetwork)(NULL));
+                }
+                else
+                {
+                    CHECK_ERROR(nic, COMSETTER(VDENetwork)(Bstr(ValueUnion.psz)));
+                }
+                break;
+            }
+#endif
             case MODIFYVM_NATNET:
             {
                 ComPtr<INetworkAdapter> nic;

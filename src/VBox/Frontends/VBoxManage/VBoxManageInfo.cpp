@@ -892,6 +892,21 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                         break;
                     }
 #endif
+#ifdef VBOX_WITH_VDE
+                    case NetworkAttachmentType_VDE:
+                    {
+                        Bstr strVDEAdp;
+                        nic->COMGETTER(VDENetwork)(strVDEAdp.asOutParam());
+                        if (details == VMINFO_MACHINEREADABLE)
+                        {
+                            RTPrintf("vdenet%d=\"%lS\"\n", currentNIC + 1, strVDEAdp.raw());
+                            strAttachment = "VDE";
+                        }
+                        else
+                            strAttachment = Utf8StrFmt("VDE Network '%lS'", strVDEAdp.raw());
+                        break;
+                    }
+#endif
                     default:
                         strAttachment = "unknown";
                         break;
