@@ -246,9 +246,10 @@ typedef struct VBOXNETFLTINS
 
             volatile uint32_t cModeNetFltRefs;
             volatile uint32_t cModePassThruRefs;
-
+#ifndef VBOXNETFLT_NO_PACKET_QUEUE
             /** Packet worker thread info */
             PACKET_QUEUE_WORKER PacketQueueWorker;
+#endif
             /** The MAC address of the interface. Caching MAC for performance reasons. */
             RTMAC MacAddr;
             /** mutex used to synchronize ADAPT init/deinit */

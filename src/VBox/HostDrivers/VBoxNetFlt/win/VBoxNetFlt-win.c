@@ -423,7 +423,7 @@ static PINTNETSG vboxNetFltWinCreateSG(uint32_t cSegs)
 /************************************************************************************
  * packet queue functions
  ************************************************************************************/
-
+#ifndef VBOXNETFLT_NO_PACKET_QUEUE
 #if !defined(VBOX_NETFLT_ONDEMAND_BIND) && !defined(VBOXNETADP)
 static NDIS_STATUS vboxNetFltWinQuPostPacket(PADAPT pAdapt, PNDIS_PACKET pPacket, PINTNETSG pSG, uint32_t fFlags
 # ifdef DEBUG_NETFLT_PACKETS
@@ -548,24 +548,30 @@ static NDIS_STATUS vboxNetFltWinQuPostPacket(PADAPT pAdapt, PNDIS_PACKET pPacket
 }
 #endif
 
-static bool vboxNetFltWinQuProcessInfo(PVBOXNETFLTINS pNetFltIf, PPACKET_QUEUE_WORKER pWorker, PPACKET_INFO pInfo)
+static bool vboxNetFltWinQuProcessInfo(PVBOXNETFLTINS pNetFltIf, PPACKET_QUEUE_WORKER pWorker, PVOID pvPacket, const UINT fFlags)
+#else
+DECLHIDDEN(bool) vboxNetFltWinPostIntnet(PVBOXNETFLTINS pNetFltIf, PVOID pvPacket, const UINT fFlags)
+#endif
 {
     PNDIS_PACKET pPacket = NULL;
     PINTNETSG pSG = NULL;
     PADAPT pAdapt = PVBOXNETFLTINS_2_PADAPT(pNetFltIf);
-    UINT fFlags;
     NDIS_STATUS Status;
 #ifndef VBOXNETADP
     bool bSrcHost;
-    bool bPending;
     bool bDropIt;
+# ifndef VBOXNETFLT_NO_PACKET_QUEUE
+    bool bPending;
+# endif
+#endif
+#ifdef VBOXNETFLT_NO_PACKET_QUEUE
+    bool bDeleteSG = false;
 #endif
 #ifdef DEBUG_NETFLT_PACKETS
     /* packet used for matching */
     PNDIS_PACKET pTmpPacket = NULL;
 #endif
 
-    fFlags = GET_FLAGS_FROM_INFO(pInfo);
 #ifndef VBOXNETADP
     bSrcHost = (fFlags & PACKET_SRC_HOST) != 0;
 #endif
@@ -593,7 +599,8 @@ static bool vboxNetFltWinQuProcessInfo(PVBOXNETFLTINS pNetFltIf, PPACKET_QUEUE_W
         UINT           uBytesCopied = 0;
         UINT           cbPacketLength;
 
-        pPacket = (PNDIS_PACKET)GET_PACKET_FROM_INFO(pInfo);
+        pPacket = (PNDIS_PACKET)pvPacket;
+
         LogFlow(("ndis packet info, packet (%p)\n", pPacket));
 
         LogFlow(("preparing pSG"));
@@ -606,6 +613,9 @@ static bool vboxNetFltWinQuProcessInfo(PVBOXNETFLTINS pNetFltIf, PPACKET_QUEUE_W
 
         Assert(cBufferCount);
 
+#ifdef VBOXNETFLT_NO_PACKET_QUEUE
+        pSG = vboxNetFltWinCreateSG(cBufferCount);
+#else
         /* we can not allocate the INTNETSG on stack since in this case we may get stack overflow
          * somewhere outside of our driver (3 pages of system thread stack does not seem to be enough)
          *
@@ -626,9 +636,13 @@ static bool vboxNetFltWinQuProcessInfo(PVBOXNETFLTINS pNetFltIf, PPACKET_QUEUE_W
                 LogRel(("Failed to reallocate the pSG\n"));
             }
         }
+#endif
 
         if(pSG)
         {
+#ifdef VBOXNETFLT_NO_PACKET_QUEUE
+            bDeleteSG = true;
+#endif
             /* reinitialize */
             IntNetSgInitTempSegs(pSG, 0 /*cbTotal*/, pSG->cSegsAlloc, 0 /*cSegsUsed*/);
 
@@ -658,7 +672,7 @@ static bool vboxNetFltWinQuProcessInfo(PVBOXNETFLTINS pNetFltIf, PPACKET_QUEUE_W
 #else
         /* we have both host and wire in ProtocolReceive */
 #endif
-        pSG = (PINTNETSG)GET_PACKET_FROM_INFO(pInfo);
+        pSG = (PINTNETSG)pvPacket;
 
         LogFlow(("not ndis packet info, pSG (%p)\n", pSG));
     }
@@ -703,13 +717,15 @@ static bool vboxNetFltWinQuProcessInfo(PVBOXNETFLTINS pNetFltIf, PPACKET_QUEUE_W
         }
 #endif
 
-#if !defined(VBOX_NETFLT_ONDEMAND_BIND) && !defined(VBOXNETADP)
+#ifndef VBOXNETFLT_NO_PACKET_QUEUE
+
+# if !defined(VBOX_NETFLT_ONDEMAND_BIND) && !defined(VBOXNETADP)
         if(!bDropIt)
         {
             Status = vboxNetFltWinQuPostPacket(pAdapt, pPacket, pSG, fFlags
-# ifdef DEBUG_NETFLT_PACKETS
+#  ifdef DEBUG_NETFLT_PACKETS
                                , pTmpPacket
-# endif
+#  endif
             );
 
             if(Status == NDIS_STATUS_PENDING)
@@ -720,7 +736,7 @@ static bool vboxNetFltWinQuProcessInfo(PVBOXNETFLTINS pNetFltIf, PPACKET_QUEUE_W
             }
         }
         else
-#endif
+# endif
         {
             Status = NDIS_STATUS_SUCCESS;
         }
@@ -730,32 +746,32 @@ static bool vboxNetFltWinQuProcessInfo(PVBOXNETFLTINS pNetFltIf, PPACKET_QUEUE_W
         {
             if(!(fFlags & PACKET_MINE))
             {
-#if !defined(VBOX_NETFLT_ONDEMAND_BIND) && !defined(VBOXNETADP)
+# if !defined(VBOX_NETFLT_ONDEMAND_BIND) && !defined(VBOXNETADP)
                 /* complete the packets */
                 if(fFlags & PACKET_SRC_HOST)
                 {
-#endif
-#ifndef VBOX_NETFLT_ONDEMAND_BIND
+# endif
+# ifndef VBOX_NETFLT_ONDEMAND_BIND
 /*                    NDIS_SET_PACKET_STATUS(pPacket, Status); */
                     NdisMSendComplete(pAdapt->hMiniportHandle, pPacket, Status);
-#endif
-#if !defined(VBOX_NETFLT_ONDEMAND_BIND) && !defined(VBOXNETADP)
+# endif
+# if !defined(VBOX_NETFLT_ONDEMAND_BIND) && !defined(VBOXNETADP)
                 }
                 else
                 {
-#endif
-#ifndef VBOXNETADP
+# endif
+# ifndef VBOXNETADP
                     NdisReturnPackets(&pPacket, 1);
-#endif
-#if !defined(VBOX_NETFLT_ONDEMAND_BIND) && !defined(VBOXNETADP)
+# endif
+# if !defined(VBOX_NETFLT_ONDEMAND_BIND) && !defined(VBOXNETADP)
                 }
-#endif
+# endif
             }
             else
             {
-#ifndef VBOX_NETFLT_ONDEMAND_BIND
+# ifndef VBOX_NETFLT_ONDEMAND_BIND
                 Assert(!(fFlags & PACKET_SRC_HOST));
-#endif
+# endif
                 vboxNetFltWinFreeSGNdisPacket(pPacket, true);
             }
         }
@@ -764,9 +780,9 @@ static bool vboxNetFltWinQuProcessInfo(PVBOXNETFLTINS pNetFltIf, PPACKET_QUEUE_W
             Assert(pSG);
             vboxNetFltWinMemFree(pSG);
         }
-#ifndef VBOXNETADP
+# ifndef VBOXNETADP
         bPending = false;
-#endif
+# endif
     } while(0);
 
 #ifdef DEBUG_NETFLT_PACKETS
@@ -781,7 +797,17 @@ static bool vboxNetFltWinQuProcessInfo(PVBOXNETFLTINS pNetFltIf, PPACKET_QUEUE_W
 #else
     return false;
 #endif
+#else /* #ifdef VBOXNETFLT_NO_PACKET_QUEUE */
+    } while(0);
+# ifndef VBOXNETADP
+    return bDropIt;
+# else
+    return true;
+# endif
+#endif
 }
+
+#ifndef VBOXNETFLT_NO_PACKET_QUEUE
 /*
  * thread start function for the thread which processes the packets enqueued in our send and receive callbacks called by ndis
  *
@@ -845,7 +871,7 @@ static VOID vboxNetFltWinQuPacketQueueWorkerThreadProc(PVBOXNETFLTINS pNetFltIf)
 
             LogFlow(("==> found info (%p)\n", pInfo));
 
-            if(vboxNetFltWinQuProcessInfo(pNetFltIf, pWorker, pInfo))
+            if(vboxNetFltWinQuProcessInfo(pNetFltIf, pWorker, pInfo->pPacket, pInfo->fFlags))
             {
                 cNumPostedToHostWire++;
             }
@@ -870,7 +896,7 @@ static VOID vboxNetFltWinQuPacketQueueWorkerThreadProc(PVBOXNETFLTINS pNetFltIf)
 
     PsTerminateSystemThread(STATUS_SUCCESS);
 }
-
+#endif
 /**
  * thread start function for the job processing thread
  *
@@ -1052,6 +1078,8 @@ static void vboxNetFltWinJobFiniQueue(PJOB_QUEUE pQueue)
     }
 }
 
+#ifndef VBOXNETFLT_NO_PACKET_QUEUE
+
 /**
  * initializes the packet queue
  * */
@@ -1134,6 +1162,8 @@ DECLHIDDEN(void) vboxNetFltWinQuFiniPacketQueue(PVBOXNETFLTINS pInstance)
     }
 }
 
+#endif
+
 /*
  * creates the INTNETSG containing one segment pointing to the buffer of size cbBufSize
  * the INTNETSG created should be cleaned with vboxNetFltWinMemFree
@@ -1157,6 +1187,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinAllocSG(UINT cbPacket, PINTNETSG *ppSG)
     return Status;
 }
 
+#ifndef VBOXNETFLT_NO_PACKET_QUEUE
 /**
  * put the packet info to the queue
  */
@@ -1166,7 +1197,6 @@ DECLINLINE(void) vboxNetFltWinQuEnqueueInfo(PPACKET_QUEUE_WORKER pWorker, PPACKE
 
     KeSetEvent(&pWorker->NotifyEvent, IO_NETWORK_INCREMENT, FALSE);
 }
-
 
 /**
  * puts the packet to the queue
@@ -1265,6 +1295,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinQuEnqueuePacket(PVBOXNETFLTINS pInstance, P
 
     return fStatus;
 }
+#endif
 
 #ifndef VBOX_NETFLT_ONDEMAND_BIND
 /*
@@ -2274,7 +2305,9 @@ DECLHIDDEN(VOID) vboxNetFltWinPtFiniPADAPT(PADAPT pAdapt)
 #ifndef VBOX_NETFLT_ONDEMAND_BIND
     /* moved to vboxNetFltWinDetachFromInterfaceWorker */
 #else
+# ifndef VBOXNETFLT_NO_PACKET_QUEUE
     vboxNetFltWinQuFiniPacketQueue(pAdapt);
+# endif
 #endif
 
     vboxNetFltWinFiniBuffers(pAdapt);
@@ -3028,7 +3061,9 @@ static int vboxNetFltWinDeleteInstance(PVBOXNETFLTINS pThis)
     Assert(!pAdapt->hBindingHandle);
 #endif
     Assert(pAdapt->MPState.OpState == kVBoxNetDevOpState_Deinitialized);
+#ifndef VBOXNETFLT_NO_PACKET_QUEUE
     Assert(!pThis->u.s.PacketQueueWorker.pSG);
+#endif
 //    Assert(!pAdapt->hMiniportHandle);
 
 #ifndef VBOX_NETFLT_ONDEMAND_BIND
@@ -3050,7 +3085,9 @@ static int vboxNetFltWinDeleteInstance(PVBOXNETFLTINS pThis)
 
 static NDIS_STATUS vboxNetFltWinDisconnectIt(PVBOXNETFLTINS pInstance)
 {
+#ifndef VBOXNETFLT_NO_PACKET_QUEUE
     vboxNetFltWinQuFiniPacketQueue(pInstance);
+#endif
     return NDIS_STATUS_SUCCESS;
 }
 
@@ -3628,7 +3665,9 @@ int vboxNetFltOsDisconnectIt(PVBOXNETFLTINS pThis)
 
 static void vboxNetFltWinConnectItWorker(PWORKER_INFO pInfo)
 {
+#if !defined(VBOXNETADP) || !defined(VBOXNETFLT_NO_PACKET_QUEUE)
     NDIS_STATUS Status;
+#endif
     PVBOXNETFLTINS pInstance = pInfo->pNetFltIf;
     PADAPT pAdapt = PVBOXNETFLTINS_2_PADAPT(pInstance);
 
@@ -3642,6 +3681,9 @@ static void vboxNetFltWinConnectItWorker(PWORKER_INFO pInfo)
         if (Status == NDIS_STATUS_SUCCESS)
 #endif
         {
+#ifdef VBOXNETFLT_NO_PACKET_QUEUE
+            pInfo->Status = VINF_SUCCESS;
+#else
             Status = vboxNetFltWinQuInitPacketQueue(pInstance);
             if(Status == NDIS_STATUS_SUCCESS)
             {
@@ -3651,6 +3693,7 @@ static void vboxNetFltWinConnectItWorker(PWORKER_INFO pInfo)
             {
                 pInfo->Status = VERR_GENERAL_FAILURE;
             }
+#endif
         }
 #ifndef VBOXNETADP
         else
