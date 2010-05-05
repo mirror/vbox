@@ -460,6 +460,10 @@ VBOX_WITH_VBOXBFE = 1
 #VBOX_WITH_VBOXFB = 1
 # Enables the Python<->XPCOM and Python<->COM bindings.
 VBOX_WITH_PYTHON ?= 1
+if1of ($(KBUILD_TARGET), darwin solaris)
+ # Enable Java<->XPCOM bridge
+ VBOX_WITH_JXPCOM ?= 1
+endif 
 # Build against multiple Python versions present in the system
 VBOX_WITH_MULTIVERSION_PYTHON ?= 1
 # Enable the kchmviewer.
