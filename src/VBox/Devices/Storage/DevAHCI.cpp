@@ -467,7 +467,7 @@ typedef struct AHCIPort
 
     uint32_t                        u32Alignment5[4];
 
-#if HC_ARCH_BITS == 32
+#if 0 /*HC_ARCH_BITS == 32*/
     uint32_t                        u32Alignment6;
 #endif
 
