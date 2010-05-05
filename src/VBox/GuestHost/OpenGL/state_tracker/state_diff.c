@@ -277,6 +277,8 @@ void crStateSwitchContext( CRContext *from, CRContext *to )
         diff_api.PixelStorei(GL_UNPACK_SWAP_BYTES, unpack.swapBytes);
         diff_api.PixelStorei(GL_UNPACK_LSB_FIRST, unpack.psLSBFirst);
 
+        diff_api.Finish();
+
         crFree(to->pImage);
         to->pImage = NULL;
     }
