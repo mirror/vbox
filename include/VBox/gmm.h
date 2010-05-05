@@ -538,7 +538,7 @@ GMMR3DECL(int)  GMMR3QueryHypervisorMemoryStats(PVM pVM, uint64_t *pcTotalAllocP
 GMMR3DECL(int)  GMMR3QueryMemoryStats(PVM pVM, uint64_t *pcAllocPages, uint64_t *pcMaxPages, uint64_t *pcBalloonPages);
 GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages);
 GMMR3DECL(int)  GMMR3RegisterSharedModule(PVM pVM, PGMMREGISTERSHAREDMODULEREQ pReq);
-GMMR3DECL(int)  GMMR3UnregisterSharedModule(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule);
+GMMR3DECL(int)  GMMR3UnregisterSharedModule(PVM pVM, PGMMREGISTERSHAREDMODULEREQ pReq);
 GMMR3DECL(int)  GMMR3CheckSharedModules(PVM pVM);
 /** @} */
 #endif /* IN_RING3 */
