@@ -173,12 +173,9 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
         if (FAILED(rc)) throw rc;
 
         ComPtr<IStorageController> pIDEController;
-#ifdef VBOX_WITH_AHCI
         ComPtr<IStorageController> pSATAController;
-#endif /* VBOX_WITH_AHCI */
-#ifdef VBOX_WITH_LSILOGIC
         ComPtr<IStorageController> pSCSIController;
-#endif /* VBOX_WITH_LSILOGIC */
+        ComPtr<IStorageController> pSASController;
         for (size_t j = 0; j < nwControllers.size(); ++j)
         {
             StorageBus_T eType;
@@ -187,16 +184,15 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
             if (   eType == StorageBus_IDE
                 && pIDEController.isNull())
                 pIDEController = nwControllers[j];
-#ifdef VBOX_WITH_AHCI
             else if (   eType == StorageBus_SATA
                      && pSATAController.isNull())
                 pSATAController = nwControllers[j];
-#endif /* VBOX_WITH_AHCI */
-#ifdef VBOX_WITH_LSILOGIC
             else if (   eType == StorageBus_SCSI
                      && pSATAController.isNull())
                 pSCSIController = nwControllers[j];
-#endif /* VBOX_WITH_LSILOGIC */
+            else if (   eType == StorageBus_SAS
+                     && pSASController.isNull())
+                pSASController = nwControllers[j];
         }
 
 //     <const name="HardDiskControllerIDE" value="6" />
@@ -228,7 +224,6 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
             }
         }
 
-#ifdef VBOX_WITH_AHCI
 //     <const name="HardDiskControllerSATA" value="7" />
         if (!pSATAController.isNull())
         {
@@ -239,9 +234,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
                                strVbox,
                                strVbox);
         }
-#endif // VBOX_WITH_AHCI
 
-#ifdef VBOX_WITH_LSILOGIC
 //     <const name="HardDiskControllerSCSI" value="8" />
         if (!pSCSIController.isNull())
         {
@@ -264,7 +257,18 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
             else
                 throw rc;
         }
-#endif // VBOX_WITH_LSILOGIC
+
+        if (!pSASController.isNull())
+        {
+            // VirtualBox considers the SAS controller a class of its own but in OVF
+            // it should be a SCSI controller
+            Utf8Str strVbox = "LsiLogicSas";
+            lSCSIControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
+            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI,
+                               Utf8StrFmt("%d", lSCSIControllerIndex),
+                               strVbox,
+                               strVbox);
+        }
 
 //     <const name="HardDiskImage" value="9" />
 //     <const name="Floppy" value="18" />
