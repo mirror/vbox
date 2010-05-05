@@ -259,6 +259,7 @@ static void showHelp()
             "  --seamless                 switch to seamless mode during startup\n"
             "  --fullscreen               switch to fullscreen mode during startup\n"
             "  --rmode %-18s select different render mode (default is %s)\n"
+            "  --no-startvm-errormsgbox   do not show a message box for VM start errors\n"
 # ifdef VBOX_WITH_DEBUGGER_GUI
             "  --dbg                      enable the GUI debug menu\n"
             "  --debug                    like --dbg and show debug windows at VM startup\n"
@@ -267,7 +268,6 @@ static void showHelp()
             "  --no-debug                 disable the GUI debug menu and debug windows\n"
             "  --start-paused             start the VM in the paused state\n"
             "  --start-running            start the VM running (for overriding --debug*)\n"
-            "  --no-startvm-errormsgbox   do not show a message box for VM start errors\n"
             "\n"
             "The following environment variables are evaluated:\n"
             "  VBOX_GUI_DBG_ENABLED       enable the GUI debug menu if set\n"
