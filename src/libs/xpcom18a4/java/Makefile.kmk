@@ -86,7 +86,7 @@ DLLS += VBoxJXpcom
 
 BLDPROGS += genjifaces
 
-genjifaces_TEMPLATE = XPCOMEXE
+genjifaces_TEMPLATE = XPCOMBLDPROG
 genjifaces_INCS     =    \
         src
 genjifaces_DEFS     =    \
@@ -98,7 +98,8 @@ genjifaces_SOURCES  =    \
         src/nsFileStreams.cpp
 genjifaces_LIBS     =                        \
 	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)  \
-	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
+	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
+	$(PATH_BIN)/VBoxRT$(VBOX_SUFF_DLL)
 genjifaces_INST = $(INST_BIN)
 
 #
