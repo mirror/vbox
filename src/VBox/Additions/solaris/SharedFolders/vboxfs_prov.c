@@ -449,7 +449,7 @@ sfprov_get_mode(sfp_mount_t *mnt, char *path, mode_t *mode)
 		m |= S_IWOTH;
 	if (info.Attr.fMode & RTFS_UNIX_IXOTH)
 		m |= S_IXOTH;
-    if (info.Attr.fMode & RTFS_UNIX_ISUID)
+	if (info.Attr.fMode & RTFS_UNIX_ISUID)
 		m |= S_ISUID;
 	*mode = m;
 	return (0);
