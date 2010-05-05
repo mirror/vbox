@@ -130,6 +130,7 @@ genjifaces_SOURCES  =    \
         tools/genifaces/GenerateJavaInterfaces.cpp \
         src/nsFileStreams.cpp
 genjifaces_INST = $(INST_BIN)
+genjifaces_DEPS = $(PATH_TARGET)/VBox-xpcom-idl-timestamp
 GENJIFACES_BIN := $(PATH_BIN)/genjifaces$(HOSTSUFF_EXE)
 
 #
