@@ -36,10 +36,6 @@
 #include <security/_pam_macros.h>
 #endif
 
-#ifndef PAM_EXTERN
-# define PAM_EXTERN extern
-#endif
-
 #include <pwd.h>
 #include <syslog.h>
 
@@ -260,8 +256,8 @@ static int pam_vbox_do_check(pam_handle_t *h)
  *
  * @todo
  */
-PAM_EXTERN int pam_sm_authenticate(pam_handle_t *h, int flags,
-                                   int argc, const char **argv)
+DECLEXPORT(int) pam_sm_authenticate(pam_handle_t *h, int flags,
+                                    int argc, const char **argv)
 {
     /* Parse arguments. */
     int i;
@@ -284,21 +280,21 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *h, int flags,
  *
  * @todo
  */
-PAM_EXTERN int pam_sm_setcred(pam_handle_t *h, int flags, int argc, const char **argv)
+DECLEXPORT(int) pam_sm_setcred(pam_handle_t *h, int flags, int argc, const char **argv)
 {
     pam_vbox_log(h, "pam_vbox_setcred called.\n");
     return PAM_SUCCESS;
 }
 
 
-PAM_EXTERN int pam_sm_acct_mgmt(pam_handle_t *h, int flags, int argc, const char **argv)
+DECLEXPORT(int) pam_sm_acct_mgmt(pam_handle_t *h, int flags, int argc, const char **argv)
 {
     pam_vbox_log(h, "pam_vbox_acct_mgmt called.\n");
     return PAM_SUCCESS;
 }
 
 
-PAM_EXTERN int pam_sm_open_session(pam_handle_t *h, int flags, int argc, const char **argv)
+DECLEXPORT(int) pam_sm_open_session(pam_handle_t *h, int flags, int argc, const char **argv)
 {
     pam_vbox_log(h, "pam_vbox_open_session called.\n");
     RTPrintf("This session was provided by VirtualBox Guest Additions. Have a lot of fun!\n");
@@ -306,13 +302,13 @@ PAM_EXTERN int pam_sm_open_session(pam_handle_t *h, int flags, int argc, const c
 }
 
 
-PAM_EXTERN int pam_sm_close_session(pam_handle_t *h, int flags, int argc, const char **argv)
+DECLEXPORT(int) pam_sm_close_session(pam_handle_t *h, int flags, int argc, const char **argv)
 {
     pam_vbox_log(h, "pam_vbox_close_session called.\n");
     return PAM_SUCCESS;
 }
 
-PAM_EXTERN int pam_sm_chauthtok(pam_handle_t *h, int flags, int argc, const char **argv)
+DECLEXPORT(int) pam_sm_chauthtok(pam_handle_t *h, int flags, int argc, const char **argv)
 {
     pam_vbox_log(h, "pam_vbox_sm_chauthtok called.\n");
     return PAM_SUCCESS;
