@@ -88,9 +88,9 @@ static void pam_vbox_writesyslog(char *pszBuf)
 static void pam_vbox_error(pam_handle_t *h, const char *pszFormat, ...)
 {
     va_list va;
+    char *buf;
     va_start(va, pszFormat);
     /** @todo is this NULL terminated? */
-    char *buf;
     if (RT_SUCCESS(RTStrAPrintfV(&buf, pszFormat, va)))
     {
         LogRel(("%s: Error: %s", VBOX_MODULE_NAME, buf));
@@ -110,9 +110,9 @@ static void pam_vbox_error(pam_handle_t *h, const char *pszFormat, ...)
 static void pam_vbox_log(pam_handle_t *h, const char *pszFormat, ...)
 {
     va_list va;
+    char *buf;
     va_start(va, pszFormat);
     /** @todo is this NULL terminated? */
-    char *buf;
     if (RT_SUCCESS(RTStrAPrintfV(&buf, pszFormat, va)))
     {
         if (g_verbosity)
@@ -129,8 +129,11 @@ static void pam_vbox_log(pam_handle_t *h, const char *pszFormat, ...)
 }
 
 
-int pam_vbox_do_check(pam_handle_t *h)
+static int pam_vbox_do_check(pam_handle_t *h)
 {
+    int rc;
+    int pamrc;
+
 #ifdef _DEBUG
     g_pam_handle = h; /* hack for getting assertion text */
 #endif
@@ -140,7 +143,7 @@ int pam_vbox_do_check(pam_handle_t *h)
      * This could result in not able to log into the system anymore. */
     RTAssertSetMayPanic(false);
 
-    int rc = RTR3Init();
+    rc = RTR3Init();
     if (RT_FAILURE(rc))
     {
         pam_vbox_error(h, "pam_vbox_do_check: could not init runtime! rc=%Rrc. Aborting.\n", rc);
@@ -172,7 +175,7 @@ int pam_vbox_do_check(pam_handle_t *h)
         pam_vbox_log(h, "pam_vbox_do_check: guest lib initialized.\n");
     }
 
-    int pamrc = PAM_OPEN_ERR; /* The PAM return code; intentionally not used as an exit value below. */
+    pamrc = PAM_OPEN_ERR; /* The PAM return code; intentionally not used as an exit value below. */
     if (RT_SUCCESS(rc))
     {
         char *rhost = NULL;
