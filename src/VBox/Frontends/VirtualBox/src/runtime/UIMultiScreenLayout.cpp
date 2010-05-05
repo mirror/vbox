@@ -80,8 +80,11 @@ void UIMultiScreenLayout::update()
     /* Load all combinations stored in the settings file. We have to make sure
      * they are valid, which means there have to be unique combinations and all
      * guests screens need there own host screen. */
+    QDesktopWidget *pDW = QApplication::desktop();
     for (int i = 0; i < m_cGuestScreens; ++i)
     {
+        /* If the user ever selected a combination in the view menu, we have
+         * the following entry: */
         QString strTest = machine.GetExtraData(QString("%1%2").arg(VBoxDefs::GUI_VirtualScreenToHostScreen).arg(i));
         bool fOk;
         int cScreen = strTest.toInt(&fOk);
@@ -89,10 +92,38 @@ void UIMultiScreenLayout::update()
         if (!(   fOk /* Valid data */
               && cScreen >= 0 && cScreen < m_cHostScreens /* In the host screen bounds? */
               && m_pScreenMap->key(cScreen, -1) == -1)) /* Not taken already? */
-            /* If not, use one from the available screens */
-            cScreen = availableScreens.first();
+        {
+            /* If not, check the position of the guest window in normal mode.
+             * This makes sure that on first use the window opens on the same
+             * screen as the normal window was before. This even works with
+             * multi-screen. The user just have to move all the normal windows
+             * to the target screens and they will magically open there in
+             * seamless/fullscreen also. */
+            QString strTest1 = machine.GetExtraData(VBoxDefs::GUI_LastWindowPosition + (i > 0 ? QString::number(i): ""));
+            QRegExp posParser("(-?\\d+),(-?\\d+),(-?\\d+),(-?\\d+)");
+            if (   posParser.exactMatch(strTest1)
+                && posParser.captureCount() == 4)
+            {
+                /* If parsing was successfully, convert it to a position. */
+                bool fOk1, fOk2;
+                QPoint p(posParser.cap(1).toInt(&fOk1), posParser.cap(2).toInt(&fOk2));
+                /* Check to which screen the position belongs. */
+                cScreen = pDW->screenNumber(p);
+                if (!(   fOk1 /* Valid data */
+                      && fOk2 /* Valid data */
+                      && cScreen >= 0 && cScreen < m_cHostScreens /* In the host screen bounds? */
+                      && m_pScreenMap->key(cScreen, -1) == -1)) /* Not taken already? */
+                    /* If not, simply pick the next one of the still available
+                     * host screens. */
+                    cScreen = availableScreens.first();
+            }
+            else
+                /* If not, simply pick the next one of the still available host
+                 * screens. */
+                cScreen = availableScreens.first();
+        }
         m_pScreenMap->insert(i, cScreen);
-        /* Remove the current set screen from the list of available screens. */
+        /* Remove the just selected screen from the list of available screens. */
         availableScreens.removeOne(cScreen);
     }
 
