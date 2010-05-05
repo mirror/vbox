@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Some of the VGA-ROM fonts from ftp://ftp.simtel.net/pub/simtelnet/msdos/screen/fntcol16.zip
+ * Some of the VGA-ROM fonts from ftp://ftp.simtel.net/pub/simtelnet/msdos/screen/fntcol16.zip .
  * The package is (C) Joseph (Yossi) Gil.
  * The individual fonts are in the public domain.
  *
