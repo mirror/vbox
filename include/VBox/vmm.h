@@ -284,6 +284,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES,
     /** Call PGMR0AllocateLargePage(). */
     VMMR0_DO_PGM_ALLOCATE_LARGE_HANDY_PAGE,
+    /** Call PGMR0CheckSharedModule(). */
+    VMMR0_DO_PGM_CHECK_SHARED_MODULE,
 
     /** Call GMMR0InitialReservation(). */
     VMMR0_DO_GMM_INITIAL_RESERVATION,

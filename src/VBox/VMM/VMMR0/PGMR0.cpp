@@ -299,3 +299,59 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
     return rc;
 }
 
+#ifdef VBOX_WITH_PAGE_SHARING
+/**
+ * Check a registered module for shared page changes
+ *
+ * @returns The following VBox status codes.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
+ * @param   pReq        Module request packet
+ */
+VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PVMCPU pVCpu, PGMMREGISTERSHAREDMODULEREQ pReq)
+{
+    int rc = VINF_SUCCESS;
+
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq >= sizeof(*pReq) && pReq->Hdr.cbReq == RT_UOFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[pReq->cRegions]), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
+
+    pgmLock(pVM);
+
+    /* Check every region of the shared module. */
+    for (unsigned i = 0; i < pReq->cRegions; i++)
+    {
+        Assert((pReq->aRegions[i].cbRegion & 0xfff) == 0);
+        Assert((pReq->aRegions[i].GCRegionAddr & 0xfff) == 0);
+
+        RTGCPTR GCRegion  = pReq->aRegions[i].GCRegionAddr;
+        uint32_t cbRegion = pReq->aRegions[i].cbRegion & ~0xfff;
+
+        while (cbRegion)
+        {
+            RTGCPHYS GCPhys;
+            uint64_t fFlags;
+
+            rc = PGMGstGetPage(pVCpu, GCRegion, &GCPhys, &fFlags);
+            if (    rc == VINF_SUCCESS
+                &&  !(fFlags & X86_PTE_RW))
+            {
+                PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
+                if (    pPage
+                    &&  !PGM_PAGE_IS_SHARED(pPage))
+                {
+                }
+            }
+
+            GCRegion += PAGE_SIZE;
+            cbRegion -= PAGE_SIZE;
+        }
+    }
+
+    pgmUnlock(pVM);
+    return rc;
+}
+#endif

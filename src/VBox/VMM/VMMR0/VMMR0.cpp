@@ -876,6 +876,25 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
                 return VERR_INVALID_CPU_ID;
             return PGMR0PhysAllocateLargeHandyPage(pVM, &pVM->aCpus[idCpu]);
 
+#ifdef VBOX_WITH_PAGE_SHARING
+        case VMMR0_DO_PGM_CHECK_SHARED_MODULE:
+        {
+            if (idCpu == NIL_VMCPUID)
+                return VERR_INVALID_CPU_ID;
+
+            PVMCPU pVCpu = &pVM->aCpus[idCpu];
+
+            /* Select a valid VCPU context. */
+            ASMAtomicWriteU32(&pVCpu->idHostCpu, RTMpCpuId());
+
+            int rc = PGMR0SharedModuleCheck(pVM, pVCpu, (PGMMREGISTERSHAREDMODULEREQ)pReqHdr);
+
+            /* Clear the VCPU context. */
+            ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
+            return rc;
+        }
+#endif
+
         /*
          * GMM wrappers.
          */

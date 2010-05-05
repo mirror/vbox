@@ -37,6 +37,21 @@
 
 #ifdef VBOX_WITH_PAGE_SHARING
 /**
+ * Rendezvous callback that will be called once.
+ *
+ * @returns VBox strict status code.
+ * @param   pVM                 VM handle.
+ * @param   pVCpu               The VMCPU handle for the calling EMT.
+ * @param   pvUser              PGMMREGISTERSHAREDMODULEREQ
+ */
+static DECLCALLBACK(VBOXSTRICTRC) pgmR3SharedModuleRegRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    PGMMREGISTERSHAREDMODULEREQ pReq = (PGMMREGISTERSHAREDMODULEREQ)pvUser;
+
+    return VMMR3CallR0(pVM, VMMR0_DO_PGM_CHECK_SHARED_MODULE, 0, &pReq->Hdr);
+}
+
+/**
  * Shared module registration helper (called on the way out).
  *
  * @param   pVM         The VM handle.
@@ -92,7 +107,12 @@ static DECLCALLBACK(void) pgmR3SharedModuleRegisterHelper(PVM pVM, PGMMREGISTERS
     /* Full (re)check needed? */
     if (rc == VINF_SUCCESS)
     {
+        pReq->Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        pReq->Hdr.cbReq = sizeof(*pReq);
 
+        /* We must stall other VCPUs as we'd otherwise have to send IPI flush commands for every single change we make. */
+        rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3SharedModuleRegRendezvous, pReq);
+        AssertRC(rc);
     }
     RTMemFree(pReq);
     return;
