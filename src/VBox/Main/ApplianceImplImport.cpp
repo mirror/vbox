@@ -415,60 +415,48 @@ STDMETHODIMP Appliance::Interpret()
                     break;
 
                     case ovf::HardDiskController::SATA:
+                        /* Check for the constrains */
+                        if (cSATAused < 1)
                         {
-#ifdef VBOX_WITH_AHCI
-                            /* Check for the constrains */
-                            if (cSATAused < 1)
-                            {
-                                // @todo: figure out the SATA types
-                                /* We only support a plain AHCI controller, so use them always */
-                                pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA,
-                                                   strControllerID,
-                                                   hdc.strControllerType,
-                                                   "AHCI");
-                            }
-                            else
-                            {
-                                /* Warn only once */
-                                if (cSATAused == 1)
-                                    addWarning(tr("The virtual system \"%s\" requests support for more than one SATA controller, but VirtualBox has support for only one"),
-                                               vsysThis.strName.c_str());
-
-                            }
-                            ++cSATAused;
-                            break;
-#else /* !VBOX_WITH_AHCI */
-                            addWarning(tr("The virtual system \"%s\" requests at least one SATA controller but this version of VirtualBox does not provide a SATA controller emulation"),
-                                      vsysThis.strName.c_str());
-#endif /* !VBOX_WITH_AHCI */
+                            // @todo: figure out the SATA types
+                            /* We only support a plain AHCI controller, so use them always */
+                            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA,
+                                                strControllerID,
+                                                hdc.strControllerType,
+                                                "AHCI");
                         }
+                        else
+                        {
+                            /* Warn only once */
+                            if (cSATAused == 1)
+                                addWarning(tr("The virtual system \"%s\" requests support for more than one SATA controller, but VirtualBox has support for only one"),
+                                            vsysThis.strName.c_str());
+
+                        }
+                        ++cSATAused;
+                    break;
 
                     case ovf::HardDiskController::SCSI:
+                        /* Check for the constrains */
+                        if (cSCSIused < 1)
                         {
-#ifdef VBOX_WITH_LSILOGIC
-                            /* Check for the constrains */
-                            if (cSCSIused < 1)
-                            {
-                                Utf8Str hdcController = "LsiLogic";
-                                if (!hdc.strControllerType.compare("BusLogic", Utf8Str::CaseInsensitive))
-                                    hdcController = "BusLogic";
-                                pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI,
-                                                   strControllerID,
-                                                   hdc.strControllerType,
-                                                   hdcController);
-                            }
-                            else
-                                addWarning(tr("The virtual system \"%s\" requests support for an additional SCSI controller of type \"%s\" with ID %s, but VirtualBox presently supports only one SCSI controller."),
-                                           vsysThis.strName.c_str(),
-                                           hdc.strControllerType.c_str(),
-                                           strControllerID.c_str());
-                            ++cSCSIused;
-                            break;
-#else /* !VBOX_WITH_LSILOGIC */
-                            addWarning(tr("The virtual system \"%s\" requests at least one SATA controller but this version of VirtualBox does not provide a SCSI controller emulation"),
-                                       vsysThis.strName.c_str());
-#endif /* !VBOX_WITH_LSILOGIC */
+                            Utf8Str hdcController = "LsiLogic";
+                            if (!hdc.strControllerType.compare("lsilogicsas", Utf8Str::CaseInsensitive))
+                                hdcController = "LsiLogicSas";
+                            else if (!hdc.strControllerType.compare("BusLogic", Utf8Str::CaseInsensitive))
+                                hdcController = "BusLogic";
+                            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI,
+                                                strControllerID,
+                                                hdc.strControllerType,
+                                                hdcController);
                         }
+                        else
+                            addWarning(tr("The virtual system \"%s\" requests support for an additional SCSI controller of type \"%s\" with ID %s, but VirtualBox presently supports only one SCSI controller."),
+                                        vsysThis.strName.c_str(),
+                                        hdc.strControllerType.c_str(),
+                                        strControllerID.c_str());
+                        ++cSCSIused;
+                    break;
                 }
             }
 
@@ -1646,7 +1634,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                             pcszIDEType);
         if (FAILED(rc)) throw rc;
     }
-#ifdef VBOX_WITH_AHCI
+
     /* Hard disk controller SATA */
     std::list<VirtualSystemDescriptionEntry*> vsdeHDCSATA = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSATA);
     if (vsdeHDCSATA.size() > 1)
@@ -1666,9 +1654,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                            tr("Invalid SATA controller type \"%s\""),
                            hdcVBox.c_str());
     }
-#endif /* VBOX_WITH_AHCI */
 
-#ifdef VBOX_WITH_LSILOGIC
     /* Hard disk controller SCSI */
     std::list<VirtualSystemDescriptionEntry*> vsdeHDCSCSI = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSCSI);
     if (vsdeHDCSCSI.size() > 1)
@@ -1677,10 +1663,19 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     if (vsdeHDCSCSI.size() > 0)
     {
         ComPtr<IStorageController> pController;
+        Bstr bstrName(L"SCSI Controller");
+        StorageBus_T busType = StorageBus_SCSI;
         StorageControllerType_T controllerType;
         const Utf8Str &hdcVBox = vsdeHDCSCSI.front()->strVbox;
         if (hdcVBox == "LsiLogic")
             controllerType = StorageControllerType_LsiLogic;
+        else if (hdcVBox == "LsiLogicSas")
+        {
+            // OVF treats LsiLogicSas as a SCSI controller but VBox considers it a class of its own
+            bstrName = L"SAS Controller";
+            busType = StorageBus_SAS;
+            controllerType = StorageControllerType_LsiLogic;
+        }
         else if (hdcVBox == "BusLogic")
             controllerType = StorageControllerType_BusLogic;
         else
@@ -1688,12 +1683,11 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                            tr("Invalid SCSI controller type \"%s\""),
                            hdcVBox.c_str());
 
-        rc = pNewMachine->AddStorageController(Bstr("SCSI Controller"), StorageBus_SCSI, pController.asOutParam());
+        rc = pNewMachine->AddStorageController(bstrName, busType, pController.asOutParam());
         if (FAILED(rc)) throw rc;
         rc = pController->COMSETTER(ControllerType)(controllerType);
         if (FAILED(rc)) throw rc;
     }
-#endif /* VBOX_WITH_LSILOGIC */
 
     /* Now its time to register the machine before we add any hard disks */
     rc = mVirtualBox->RegisterMachine(pNewMachine);

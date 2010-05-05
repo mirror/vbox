@@ -256,7 +256,10 @@ struct HardDiskController
     enum ControllerSystemType { IDE, SATA, SCSI };
     ControllerSystemType    system;             // one of IDE, SATA, SCSI
 
-    iprt::MiniString        strControllerType;  // controller subtype (Item/ResourceSubType); e.g. "LsiLogic"; can be empty (esp. for IDE)
+    iprt::MiniString        strControllerType;
+            // controller subtype (Item/ResourceSubType); e.g. "LsiLogic"; can be empty (esp. for IDE)
+            // note that we treat LsiLogicSAS as a SCSI controller (system == SCSI) even though VirtualBox
+            // treats it as a fourth class besides IDE, SATA, SCSI
 
     uint32_t                ulAddress;          // controller index; this is determined heuristically by the OVF reader and will
                                                 // be 0 for the first controller of this type (e.g. IDE primary ctler), 1 for the
