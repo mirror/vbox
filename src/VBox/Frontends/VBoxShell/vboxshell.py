@@ -2207,9 +2207,9 @@ def natAlias(ctx, mach, nicnum, nat, args=[]):
                 if not alias.has_key(args[a]):
                     print 'Invalid alias mode: ' + args[a]
                     print natAlias.__doc__
-                    return (1, '')
+                    return (1, None)
                 nat.aliasMode = int(nat.aliasMode) | alias[args[a]];
-    return (0, '')
+    return (0, None)
 
 def natSettings(ctx, mach, nicnum, nat, args):
     """This command shows/alters NAT settings.
@@ -2230,11 +2230,11 @@ def natSettings(ctx, mach, nicnum, nat, args):
     else:
         if args[1] < 16000:
             print 'invalid mtu value ({0} no in range [65 - 16000])'.format(args[1])
-            return (1, '')
+            return (1, None)
         for i in range(2, len(args)):
             if not args[i].isdigit() or int(args[i]) < 8 or int(args[i]) > 1024:
                 print 'invalid {0} parameter ({1} not in range [8-1024])'.format(i, args[i])
-                return (1,'') 
+                return (1, None) 
         a = [args[1]]
         if len(args) < 6:
             for i in range(2, len(args)): a.append(args[i]) 
@@ -2243,7 +2243,7 @@ def natSettings(ctx, mach, nicnum, nat, args):
             for i in range(2, len(args)): a.append(args[i]) 
         #print a
         nat.setNetworkSettings(int(a[0]), int(a[1]), int(a[2]), int(a[3]), int(a[4]))
-    return (0,'')
+    return (0, None)
 
 def natDns(ctx, mach, nicnum, nat, args):
     """This command shows/alters DNS's NAT settings
@@ -2260,7 +2260,7 @@ def natDns(ctx, mach, nicnum, nat, args):
         nat.dnsPassDomain = 'passdomain' in args
         nat.dnsProxy =  'proxy' in args
         nat.dnsUseHostResolver =  'usehostresolver' in args
-    return (0, '')
+    return (0, None)
 
 def natTftp(ctx, mach, nicnum, nat, args):
     """This command shows/alters TFTP settings
@@ -2294,14 +2294,14 @@ def natTftp(ctx, mach, nicnum, nat, args):
         if len(args) != 3:
             print 'invalid args:', args
             print natTftp.__doc__
-            return (1,'')
+            return (1, None)
         if cmd == 'prefix': nat.tftpPrefix = args[2]
         elif cmd == 'bootfile': nat.tftpBootFile = args[2]
         elif cmd == 'server': nat.tftpNextServer = args[2]
         else:
             print "invalid cmd:", cmd
-            return (1, '')
-    return (0,'')
+            return (1, None)
+    return (0, None)
 
 def natPortForwarding(ctx, mach, nicnum, nat, args):
     """This command shows/manages port-forwarding settings
@@ -2344,10 +2344,10 @@ def natPortForwarding(ctx, mach, nicnum, nat, args):
         if not pfcmd[args[1]]['validate']():
             print 'invalid port-forwarding or args of sub command ', args[1]
             print natPortForwarding.__doc__
-            return (1, '')
+            return (1, None)
 
         a = pfcmd[args[1]]['func']()
-    return (0,'')
+    return (0, None)
 
 def natNetwork(ctx, mach, nicnum, nat, args):
     """This command shows/alters NAT network settings 
@@ -2363,9 +2363,9 @@ def natNetwork(ctx, mach, nicnum, nat, args):
         (addr, mask) = args[1].split('/')
         if addr.count('.') > 3 or int(mask) < 0 or int(mask) > 32:
             print 'Invalid arguments'
-            return (1,'')
+            return (1, None)
         nat.network = args[1]
-    return (0, '')
+    return (0, None)
 def natCmd(ctx, args):
     """This command is entry point to NAT settins management
     usage: nat <vm> <nicnum> <cmd> <cmd-args>
@@ -2421,7 +2421,7 @@ def natCmd(ctx, args):
         if rc == 0:
             mach.saveSettings()
         session.close()
-    else:
+    elif report is not None:
         for r in report:
             msg ='{0} nic{1} {2}: {3}'.format(mach.name, nicnum, func, r)
             print msg
