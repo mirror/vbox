@@ -76,8 +76,10 @@ typedef unsigned long LNXKAIOCONTEXT;
  */
 enum
 {
-    LNXKAIO_IOCB_CMD_READ = 0,
-    LNXKAIO_IOCB_CMD_WRITE
+    LNXKAIO_IOCB_CMD_READ   = 0,
+    LNXKAIO_IOCB_CMD_WRITE  = 1,
+    LNXKAIO_IOCB_CMD_FSYNC  = 2,
+    LNXKAIO_IOCB_CMD_FDSYNC = 3
 };
 
 /**
@@ -364,9 +366,13 @@ DECLINLINE(int) rtFileAioReqPrepareTransfer(RTFILEAIOREQ hReq, RTFILE hFile,
     RTFILEAIOREQ_VALID_RETURN(pReqInt);
     RTFILEAIOREQ_NOT_STATE_RETURN_RC(pReqInt, SUBMITTED, VERR_FILE_AIO_IN_PROGRESS);
     Assert(hFile != NIL_RTFILE);
-    AssertPtr(pvBuf);
-    Assert(off >= 0);
-    Assert(cbTransfer > 0);
+
+    if (uTransferDirection != LNXKAIO_IOCB_CMD_FSYNC)
+    {
+        AssertPtr(pvBuf);
+        Assert(off >= 0);
+        Assert(cbTransfer > 0);
+    }
 
     /*
      * Setup the control block and clear the finished flag.
@@ -408,16 +414,8 @@ RTDECL(int) RTFileAioReqPrepareFlush(RTFILEAIOREQ hReq, RTFILE hFile, void *pvUs
     AssertReturn(hFile != NIL_RTFILE, VERR_INVALID_HANDLE);
     RTFILEAIOREQ_NOT_STATE_RETURN_RC(pReqInt, SUBMITTED, VERR_FILE_AIO_IN_PROGRESS);
 
-    /** @todo: Flushing is not neccessary on Linux because O_DIRECT is mandatory
-     *         which disables caching.
-     *         We could setup a fake request which isn't really executed
-     *         to avoid platform dependent code in the caller.
-     */
-#if 0
-    return rtFileAsyncPrepareTransfer(pRequest, File, TRANSFERDIRECTION_FLUSH,
-                                      0, NULL, 0, pvUser);
-#endif
-    return VERR_NOT_IMPLEMENTED;
+    return rtFileAioReqPrepareTransfer(pReqInt, hFile, LNXKAIO_IOCB_CMD_FSYNC,
+                                       0, NULL, 0, pvUser);
 }
 
 
