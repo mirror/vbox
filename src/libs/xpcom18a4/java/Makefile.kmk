@@ -85,24 +85,67 @@ src/nsJavaInterfaces.cpp_DEPS = $(VBOX_JXPCOM_GENH)
 
 DLLS += VBoxJXpcom
 
+#
+# genjifaces
+#
 BLDPROGS += genjifaces
-
+if 1
 genjifaces_TEMPLATE = XPCOMEXE
-genjifaces_INCS     =    \
-        src
-genjifaces_DEFS     =    \
-	EXPORT_XPTI_API  \
-        EXPORT_XPT_API   \
+else
+genjifaces_TEMPLATE = XPCOMBLDPROG
+endif
+genjifaces_DEFS     = \
+	EXPORT_XPTI_API \
+	EXPORT_XPT_API \
 	VBOX_WITH_XPCOM
-genjifaces_SOURCES  =    \
-        tools/genifaces/GenerateJavaInterfaces.cpp \
-        src/nsFileStreams.cpp
+genjifaces_DEFPATH := $(abspath $(PATH_SUB_CURRENT)/..)
+genjifaces_INCS     = \
+	java/src
+genjifaces_SOURCES  = \
+	java/tools/genifaces/GenerateJavaInterfaces.cpp \
+	java/src/nsFileStreams.cpp
+if 1
 genjifaces_LIBS     =                         \
 	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)   \
 	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
 	$(PATH_BIN)/VBoxRT$(VBOX_SUFF_DLL)
-genjifaces_DEPS = $(PATH_TARGET)/VBox-xpcom-idl-timestamp
 genjifaces_INST = $(INST_BIN)
+else # ugly hack in progress...
+genjifaces_INCS += \
+	$(TEMPLATE_XPCOM_INCS) \
+	$(VBox-xpcom-nspr_INCS) \
+genjifaces_INCS.$(KBUILD_HOST) += \
+	$(TEMPLATE_XPCOM_INCS.$(KBUILD_HOST)) \
+	$(VBox-xpcom-nspr_INCS.$(KBUILD_HOST))
+genjifaces_DEFS += \
+	_IMPL_NS_COM \
+	$(VBox-xpcom-nspr_DEFS)
+genjifaces_DEFS.$(KBUILD_HOST) += \
+	$(VBox-xpcom-nspr_DEFS.$(KBUILD_HOST))
+genjifaces_DEFS.$(KBUILD_HOST).$(KBUILD_HOST_ARCH) += \
+	$(VBox-xpcom-nspr_DEFS.$(KBUILD_HOST).$(KBUILD_HOST_ARCH))
+genjifaces_SOURCES += \
+	$(VBox-xpcom-string_SOURCES) \
+	$(VBox-xpcom-base_SOURCES) \
+	$(VBox-xpcom-ds_SOURCES) \
+	$(VBox-xpcom-threads_SOURCES) \
+	xpcom/io/nsNativeCharsetUtils.cpp \
+	xpcom/io/nsUnicharInputStream.cpp \
+	\
+	$(VBox-xpcom-nspr_SOURCES) \
+	\
+	$(VBoxXPCOMGlue_COMMON_SOURCES) \
+	xpcom/glue/standalone/nsXPCOMGlue.cpp \
+	xpcom/glue/standalone/nsGREDirServiceProvider.cpp
+genjifaces_LDFLAGS.darwin = \
+	-framework CoreServices \
+	-framework CoreFoundation \
+	-framework Foundation \
+	-framework AppKit \
+	-framework Carbon
+endif
+genjifaces_DEPS = $(PATH_TARGET)/VBox-xpcom-idl-timestamp
+
 
 #
 # Install JAR files
@@ -158,10 +201,10 @@ $(VBOX_JXPCOM_GEN)/java:
 $(VBOX_JXPCOM_NSERROR): $(VBOX_PATH_XPCOM_SRC)/xpcom/base/nsError.h $(VBOX_JXPCOM_SRC)/tools/gen-nsError.pl $(VBOX_JXPCOM_GEN)/java
 	perl $(VBOX_JXPCOM_SRC)/tools/gen-nsError.pl < $< > $@
 
-$(VBOX_JXPCOM_GEN)/jxpcomgen.list: $(PATH_BIN)/genjifaces$(HOSTSUFF_EXE) $(PATH_TARGET)/VBox-xpcom-xpt-files/VBoxXPCOMBase.xpt $(VBOX_JXPCOM_GEN)
+$(VBOX_JXPCOM_GEN)/jxpcomgen.list: $$(genjifaces_1_INSTARGET) $(PATH_TARGET)/VBox-xpcom-xpt-files/VBoxXPCOMBase.xpt $(VBOX_JXPCOM_GEN)
 	$(QUIET)echo Generating Java interface files
 	$(QUIET)$(MKDIR) -p $(VBOX_JXPCOM_GEN)/java
-	$(PATH_BIN)/genjifaces$(HOSTSUFF_EXE) -d $(VBOX_JXPCOM_GEN)/java
+	$(genjifaces_1_INSTARGET) -d $(VBOX_JXPCOM_GEN)/java
 	$(QUIET)echo $$(ls $(VBOX_JXPCOM_GEN)/java/*.java) > $@
 
 $(VBOX_JXPCOM_JAR): $(JXPCOM_JAR_SRC) $(VBOX_JXPCOM_GEN)/jxpcomgen.list $(VBOX_JXPCOM_NSERROR) $(VBOX_JXPCOM_MGR)
