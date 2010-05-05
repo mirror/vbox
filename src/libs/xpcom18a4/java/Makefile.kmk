@@ -81,7 +81,7 @@ VBoxJXpcom_LIBS     =                         \
 	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)   \
 	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
 
-src/nsJavaInterfaces.cpp_DEPS = $(VBOX_JXPCOM_GENH)
+#VBoxJXpcom_ORDERDEPS = $(VBOX_JXPCOM_GENH)
 
 DLLS += VBoxJXpcom
 
