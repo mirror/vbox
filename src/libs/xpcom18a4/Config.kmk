@@ -127,7 +127,7 @@ TEMPLATE_XPCOM_LDFLAGS.l4          = $(L4_DIR)/lib/x86_586/crt0.o \
 TEMPLATE_XPCOM_LIBS.l4             = $(VBOX_GCC_LIBGCC)
 TEMPLATE_XPCOM_LIBS.solaris        = sendfile
 TEMPLATE_XPCOM_ORDERDEPS           = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $(TARGET_$(hdrinst))) \
-                                     $(if $(PATH_VBox-xpcom-string),$(PATH_VBox-xpcom-string)/idl_ts,)
+                                     $(PATH_TARGET)/VBox-xpcom-idl-timestamp
 ifeq ($(KBUILD_TARGET),os2)
  ifndef USE_OS2_TOOLKIT_HEADERS
   TEMPLATE_XPCOM_DEFS.os2         += OS2EMX_PLAIN_CHAR

@@ -1296,7 +1296,7 @@ XPCOM_IDLFILES = \
 
 
 OTHER_CLEAN += \
-	$(PATH_VBox-xpcom-string)/idl_ts \
+	$(PATH_TARGET)/VBox-xpcom-idl-timestamp \
 	$(addprefix $(VBOX_PATH_SDK)/bindings/xpcom/include,$(notdir $(subst .idl,.h,$(XPCOM_IDLFILES)))) \
 	$(addprefix $(VBOX_PATH_SDK)/bindings/xpcom/include,$(notdir $(subst .idl,.xpt,$(XPCOM_IDLFILES)))) \
 	$(addprefix $(VBOX_PATH_SDK)/bindings/xpcom/idl/,$(notdir $(XPCOM_IDLFILES))) \
@@ -1440,7 +1440,7 @@ endef
 $(foreach idl, $(XPCOM_IDLFILES), $(eval $(def_IDL)))
 
 # dummy target.
-$(PATH_VBox-xpcom-string)/idl_ts: $$(addprefix $$(VBOX_PATH_SDK)/bindings/xpcom/include/,$$(notdir $$(subst .idl,.h,$$(XPCOM_IDLFILES))))
+$(PATH_TARGET)/VBox-xpcom-idl-timestamp: $$(addprefix $$(VBOX_PATH_SDK)/bindings/xpcom/include/,$$(notdir $$(subst .idl,.h,$$(XPCOM_IDLFILES))))
 	$(call MSG_L1,IDL processing completed.)
 	$(QUIET)$(MKDIR) -p $(dir $@)
 	$(QUIET)$(APPEND) -t $@
@@ -1451,7 +1451,7 @@ $(PATH_VBox-xpcom-string)/idl_ts: $$(addprefix $$(VBOX_PATH_SDK)/bindings/xpcom/
 # i.e. the copy residing in obj/, while VBOX_XPIDL is pointing to
 # INSTARGET_xpidl which is the one in bin/.
 #
-$(VBOX_XPIDL): $$(PATH_VBox-xpcom-string)/idl_ts
+$(VBOX_XPIDL): $(PATH_TARGET)/VBox-xpcom-idl-timestamp
 
 
 #
