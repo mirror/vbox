@@ -799,7 +799,7 @@ vboxNetFltWinMpSendPackets(
     )
 {
     PADAPT pAdapt = (PADAPT)fMiniportAdapterContext;
-    NDIS_STATUS         fStatus;
+    NDIS_STATUS         fStatus = NDIS_STATUS_SUCCESS;
     UINT                i;
     PVBOXNETFLTINS pNetFlt = PADAPT_2_PVBOXNETFLTINS(pAdapt);
     bool bNetFltActive;
@@ -829,7 +829,12 @@ vboxNetFltWinMpSendPackets(
             pPacket = pPacketArray[i];
 
             if(!cNetFltRefs
-                    || (fStatus = vboxNetFltWinQuEnqueuePacket(pNetFlt, pPacket, PACKET_SRC_HOST)) != NDIS_STATUS_SUCCESS)
+#ifdef VBOXNETFLT_NO_PACKET_QUEUE
+                    || !vboxNetFltWinPostIntnet(pNetFlt, pPacket, PACKET_SRC_HOST)
+#else
+                    || (fStatus = vboxNetFltWinQuEnqueuePacket(pNetFlt, pPacket, PACKET_SRC_HOST)) != NDIS_STATUS_SUCCESS
+#endif
+                    )
             {
 #ifndef VBOXNETADP
                 fStatus = vboxNetFltWinSendPassThru(pAdapt, pPacket);
@@ -858,8 +863,14 @@ vboxNetFltWinMpSendPackets(
             }
             else
             {
+#ifdef VBOXNETFLT_NO_PACKET_QUEUE
+                NdisMSendComplete(pAdapt->hMiniportHandle,
+                                  pPacket,
+                                  NDIS_STATUS_SUCCESS);
+#else
                 cAdaptRefs--;
                 cNetFltRefs--;
+#endif
             }
         }
 

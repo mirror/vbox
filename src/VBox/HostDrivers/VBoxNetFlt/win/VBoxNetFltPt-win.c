@@ -983,6 +983,7 @@ static bool vboxNetFltWinPtTransferDataCompleteActive(IN PADAPT pAdapt,
                 /* 2. enqueue */
                 /* use the same packet info to put the packet in the processing packet queue */
 #ifdef VBOX_NETFLT_ONDEMAND_BIND
+# error "port me or remove VBOX_NETFLT_ONDEMAND_BIND"
                 PNDIS_BUFFER pBuffer;
                 PVOID pVA;
                 UINT cbLength;
@@ -1010,14 +1011,28 @@ static bool vboxNetFltWinPtTransferDataCompleteActive(IN PADAPT pAdapt,
                 pRecvRsvd->pBufToFree = NULL;
 
                 NdisSetPacketFlags(pPacket, 0);
-
+# ifdef VBOXNETFLT_NO_PACKET_QUEUE
+                if (vboxNetFltWinPostIntnet(pNetFltIf, pPacket, 0))
+                {
+                    /* drop it */
+                    vboxNetFltWinFreeSGNdisPacket(pPacket, true);
+                    vboxNetFltWinDereferenceAdapt(pAdapt);
+                }
+                else
+                {
+                    NdisMIndicateReceivePacket(pAdapt->hMiniportHandle, &pPacket, 1);
+                }
+                vboxNetFltWinDereferenceNetFlt(pNetFltIf);
+                break;
+# else
                 Status = vboxNetFltWinQuEnqueuePacket(pNetFltIf, pPacket, PACKET_MINE);
-#endif
-                if(Status == NDIS_STATUS_SUCCESS)
+                if (Status == NDIS_STATUS_SUCCESS)
                 {
                     break;
                 }
                 Assert(0);
+# endif
+#endif
             }
         }
         else
@@ -1375,20 +1390,56 @@ vboxNetFltWinPtReceiveActive(
 
                 /* enqueue SG */
 #ifdef VBOX_NETFLT_ONDEMAND_BIND
+# ifdef VBOXNETFLT_NO_PACKET_QUEUE
+#  error "port me or remove VBOX_NETFLT_ONDEMAND_BIND"
+# endif
                 {
                     uint32_t fFlags = MACS_EQUAL(((PRTNETETHERHDR)pRcvData)->SrcMac, pNetFlt->u.s.MacAddr) ?
                             PACKET_SG | PACKET_MINE | PACKET_SRC_HOST : PACKET_SG | PACKET_MINE;
                     Status = vboxNetFltWinQuEnqueuePacket(pNetFlt, pSG, fFlags);
                 }
 #else
+# ifdef VBOXNETFLT_NO_PACKET_QUEUE
+            if (vboxNetFltWinPostIntnet(pNetFlt, pSG, PACKET_SG))
+            {
+                /* drop it */
+                vboxNetFltWinMemFree(pSG);
+                vboxNetFltWinDereferenceAdapt(pAdapt);
+            }
+            else
+            {
+                PNDIS_PACKET pMyPacket = vboxNetFltWinNdisPacketFromSG(pAdapt, /* PADAPT */
+                        pSG, /* PINTNETSG */
+                        pSG, /* PVOID pBufToFree */
+                        false, /* bool bToWire */
+                        false); /* bool bCopyMemory */
+                Assert(pMyPacket);
+                if (pMyPacket)
+                {
+                    NDIS_SET_PACKET_STATUS(pMyPacket, NDIS_STATUS_SUCCESS);
+
+                    DBG_CHECK_PACKET_AND_SG(pMyPacket, pSG);
+
+                    LogFlow(("non-ndis packet info, packet created (%p)\n", pMyPacket));
+                    NdisMIndicateReceivePacket(pAdapt->hMiniportHandle, &pMyPacket, 1);
+                }
+                else
+                {
+                    vboxNetFltWinDereferenceAdapt(pAdapt);
+                    Status = NDIS_STATUS_RESOURCES;
+                }
+            }
+            vboxNetFltWinDereferenceNetFlt(pNetFlt);
+# else
             Status = vboxNetFltWinQuEnqueuePacket(pNetFlt, pSG, PACKET_SG | PACKET_MINE);
-#endif
             if(Status != NDIS_STATUS_SUCCESS)
             {
                 Assert(0);
                 vboxNetFltWinMemFree(pSG);
                 break;
             }
+# endif
+#endif
         }
         else
 #endif /* #ifndef DEBUG_NETFLT_RECV_TRANSFERDATA */
@@ -1656,6 +1707,13 @@ vboxNetFltWinPtReceive(
                         {
                             VBOXNETFLT_LBVERIFY(pNetFlt, pPacket);
 
+#ifdef VBOXNETFLT_NO_PACKET_QUEUE
+                            if (vboxNetFltWinPostIntnet(pNetFlt, pPacket, 0))
+                            {
+                                /* drop it */
+                                break;
+                            }
+#else
                             Status = vboxNetFltWinQuEnqueuePacket(pNetFlt, pPacket, PACKET_COPY);
                             Assert(Status == NDIS_STATUS_SUCCESS);
                             if(Status == NDIS_STATUS_SUCCESS)
@@ -1665,6 +1723,7 @@ vboxNetFltWinPtReceive(
                                 bNetFltActive = false;
                                 break;
                             }
+#endif
                         }
 #ifndef VBOX_LOOPBACK_USEFLAGS
                         else if(vboxNetFltWinLbIsFromIntNet(pLb))
@@ -1689,11 +1748,13 @@ vboxNetFltWinPtReceive(
                     Assert(fAdaptActive);
                 } while(FALSE);
 
+#ifdef VBOXNETFLT_NO_PACKET_QUEUE
                 if(Status == NDIS_STATUS_SUCCESS || Status == NDIS_STATUS_NOT_ACCEPTED
-#ifndef VBOX_LOOPBACK_USEFLAGS
+# ifndef VBOX_LOOPBACK_USEFLAGS
                         || pLb
-#endif
+# endif
                         )
+#endif
                 {
                     break;
                 }
@@ -1973,7 +2034,9 @@ vboxNetFltWinPtReceivePacket(
                 if(!pLb)
 #endif
                 {
+#ifndef VBOXNETFLT_NO_PACKET_QUEUE
                     NDIS_STATUS fStatus;
+#endif
                     bool bResources = NDIS_GET_PACKET_STATUS(pPacket) == NDIS_STATUS_RESOURCES;
 
                     VBOXNETFLT_LBVERIFY(pNetFlt, pPacket);
@@ -1983,6 +2046,15 @@ vboxNetFltWinPtReceivePacket(
                      * we're probably doing something wrong with the packets if the miniport reports NDIS_STATUS_RESOURCES */
                     Assert(!bResources);
 
+#ifdef VBOXNETFLT_NO_PACKET_QUEUE
+                    if (vboxNetFltWinPostIntnet(pNetFlt, pPacket, 0))
+                    {
+                        /* drop it */
+                        cRefCount = 0;
+                        break;
+                    }
+
+#else
                     fStatus = vboxNetFltWinQuEnqueuePacket(pNetFlt, pPacket, bResources ? PACKET_COPY : 0);
                     if(fStatus == NDIS_STATUS_SUCCESS)
                     {
@@ -2003,6 +2075,7 @@ vboxNetFltWinPtReceivePacket(
                     {
                         Assert(0);
                     }
+#endif
                 }
 #ifndef VBOX_LOOPBACK_USEFLAGS
                 else if(vboxNetFltWinLbIsFromIntNet(pLb))
