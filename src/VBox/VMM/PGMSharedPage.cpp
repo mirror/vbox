@@ -53,7 +53,7 @@ static DECLCALLBACK(void) pgmR3SharedModuleRegisterHelper(PVM pVM, PGMMREGISTERS
         PVMCPU   pVCpu = VMMGetCpu(pVM);
         unsigned cFlushedPages = 0;
 
-        /** todo count copy-on-write actions in the trap handler so we don't check everything all the time! */
+        /** todo count copy-on-write actions in the trap handler so we don't have to check everything all the time! */
 
         /* Count the number of shared pages that were changed (copy-on-write). */
         for (unsigned i = 0; i < pReq->cRegions; i++)
@@ -123,8 +123,6 @@ VMMR3DECL(int) PGMR3SharedModuleRegister(PVM pVM, char *pszModuleName, char *psz
     pReq = (PGMMREGISTERSHAREDMODULEREQ)RTMemAllocZ(RT_OFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[cRegions]));
     AssertReturn(pReq, VERR_NO_MEMORY);
 
-    pReq->Hdr.u32Magic  = SUPVMMR0REQHDR_MAGIC;
-    pReq->Hdr.cbReq     = sizeof(*pReq);
     pReq->GCBaseAddr    = GCBaseAddr;
     pReq->cbModule      = cbModule;
     pReq->cRegions      = cRegions;
@@ -146,6 +144,23 @@ VMMR3DECL(int) PGMR3SharedModuleRegister(PVM pVM, char *pszModuleName, char *psz
 }
 
 
+#ifdef VBOX_WITH_PAGE_SHARING
+/**
+ * Shared module unregistration helper (called on the way out).
+ *
+ * @param   pVM         The VM handle.
+ * @param   pReq        Unregistration request info
+ */
+static DECLCALLBACK(void) pgmR3SharedModuleUnregisterHelper(PVM pVM, PGMMREGISTERSHAREDMODULEREQ pReq)
+{
+    int rc;
+    
+    rc = GMMR3UnregisterSharedModule(pVM, pReq);
+    RTMemFree(pReq);
+    return;
+}
+#endif
+
 /**
  * Unregisters a shared module for the VM
  *
@@ -159,7 +174,21 @@ VMMR3DECL(int) PGMR3SharedModuleRegister(PVM pVM, char *pszModuleName, char *psz
 VMMR3DECL(int) PGMR3SharedModuleUnregister(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
-    return GMMR3UnregisterSharedModule(pVM, pszModuleName, pszVersion, GCBaseAddr, cbModule);
+    PGMMUNREGISTERSHAREDMODULEREQ pReq;
+
+    pReq = (PGMMUNREGISTERSHAREDMODULEREQ)RTMemAllocZ(sizeof(*pReq));
+    AssertReturn(pReq, VERR_NO_MEMORY);
+    
+    pReq->GCBaseAddr    = GCBaseAddr;
+    pReq->cbModule      = cbModule;
+
+    if (    RTStrCopy(pReq->szName, sizeof(pReq->szName), pszModuleName) != VINF_SUCCESS
+        ||  RTStrCopy(pReq->szVersion, sizeof(pReq->szVersion), pszVersion) != VINF_SUCCESS)
+    {
+        return VERR_BUFFER_OVERFLOW;
+    }
+    /* Queue the actual registration as we are under the IOM lock right now. Perform this operation on the way out. */
+    return VMR3ReqCallNoWait(pVM, VMMGetCpuId(pVM), (PFNRT)pgmR3SharedModuleUnregisterHelper, 2, pVM, pReq);
 #else 
     return VERR_NOT_IMPLEMENTED;
 #endif

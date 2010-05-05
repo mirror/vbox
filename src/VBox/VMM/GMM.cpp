@@ -390,22 +390,11 @@ GMMR3DECL(int) GMMR3RegisterSharedModule(PVM pVM, PGMMREGISTERSHAREDMODULEREQ pR
 /**
  * @see GMMR0RegisterSharedModule
  */
-GMMR3DECL(int) GMMR3UnregisterSharedModule(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule)
+GMMR3DECL(int) GMMR3UnregisterSharedModule(PVM pVM, PGMMREGISTERSHAREDMODULEREQ pReq)
 {
-    GMMUNREGISTERSHAREDMODULEREQ Req;
-    Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    Req.Hdr.cbReq = sizeof(Req);
-
-    Req.GCBaseAddr    = GCBaseAddr;
-    Req.cbModule      = cbModule;
-
-    if (    RTStrCopy(Req.szName, sizeof(Req.szName), pszModuleName) != VINF_SUCCESS
-        ||  RTStrCopy(Req.szVersion, sizeof(Req.szVersion), pszVersion) != VINF_SUCCESS)
-    {
-        return VERR_BUFFER_OVERFLOW;
-    }
-
-    return VMMR3CallR0(pVM, VMMR0_DO_GMM_UNREGISTER_SHARED_MODULE, 0, &Req.Hdr);
+    pReq->Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    pReq->Hdr.cbReq = sizeof(*pReq);
+    return VMMR3CallR0(pVM, VMMR0_DO_GMM_UNREGISTER_SHARED_MODULE, 0, &pReq->Hdr);
 }
 
 /**
