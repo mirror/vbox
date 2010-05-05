@@ -97,8 +97,8 @@ genjifaces_DEFS     =    \
 genjifaces_SOURCES  =    \
         tools/genifaces/GenerateJavaInterfaces.cpp \
         src/nsFileStreams.cpp
-genjifaces_LIBS     =                        \
-	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)  \
+genjifaces_LIBS     =                         \
+	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)   \
 	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
 	$(PATH_BIN)/VBoxRT$(VBOX_SUFF_DLL)
 genjifaces_DEPS = $(PATH_TARGET)/VBox-xpcom-idl-timestamp
