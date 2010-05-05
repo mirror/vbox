@@ -5222,6 +5222,10 @@ void VBoxGlobal::init()
             if (++i < argc)
                 vm_render_mode_str = qApp->argv() [i];
         }
+        else if (!::strcmp (arg, "--no-startvm-errormsgbox"))
+        {
+            mShowStartVMErrors = false;
+        }
 #ifdef VBOX_WITH_DEBUGGER_GUI
         else if (!::strcmp (arg, "-dbg") || !::strcmp (arg, "--dbg"))
         {
@@ -5260,10 +5264,6 @@ void VBoxGlobal::init()
         else if (!::strcmp (arg, "--start-running"))
         {
             mStartPaused = false;
-        }
-        else if (!::strcmp (arg, "--no-startvm-errormsgbox"))
-        {
-            mShowStartVMErrors = false;
         }
 #endif
         /** @todo add an else { msgbox(syntax error); exit(1); } here, pretty please... */
