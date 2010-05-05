@@ -21,6 +21,7 @@
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/VBoxGuestLib.h>
+#include <VBox/version.h>
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, VBoxScanPCIResourceList)
@@ -192,56 +193,76 @@ void hlpVBoxUnmapVMMDevMemory (PVBOXGUESTDEVEXT pDevExt)
  *        the running OS via VBoxService in ring 3 using guest properties since a while. */
 NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt)
 {
-    VMMDevReportGuestInfo *req = NULL;
-
-    int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReportGuestInfo), VMMDevReq_ReportGuestInfo);
-
+    VMMDevReportGuestInfo *pReq = NULL;
+    int rc = VbglGRAlloc ((VMMDevRequestHeader **)&pReq, sizeof (VMMDevReportGuestInfo), VMMDevReq_ReportGuestInfo);
     dprintf(("hlpVBoxReportGuestInfo: VbglGRAlloc rc = %d\n", rc));
-
     if (RT_SUCCESS(rc))
     {
-        req->guestInfo.additionsVersion = VMMDEV_VERSION;
+        pReq->guestInfo.additionsVersion = VMMDEV_VERSION;
 
         /* we've already determined the Windows product before */
         switch (winVersion)
         {
             case WINNT4:
-                req->guestInfo.osType = VBOXOSTYPE_WinNT4;
+                pReq->guestInfo.osType = VBOXOSTYPE_WinNT4;
                 break;
             case WIN2K:
-                req->guestInfo.osType = VBOXOSTYPE_Win2k;
+                pReq->guestInfo.osType = VBOXOSTYPE_Win2k;
                 break;
             case WINXP:
-                req->guestInfo.osType = VBOXOSTYPE_WinXP;
+                pReq->guestInfo.osType = VBOXOSTYPE_WinXP;
                 break;
             case WIN2K3:
-                req->guestInfo.osType = VBOXOSTYPE_Win2k3;
+                pReq->guestInfo.osType = VBOXOSTYPE_Win2k3;
                 break;
             case WINVISTA:
-                req->guestInfo.osType = VBOXOSTYPE_WinVista;
+                pReq->guestInfo.osType = VBOXOSTYPE_WinVista;
                 break;
             case WIN7:
-                req->guestInfo.osType = VBOXOSTYPE_Win7;
+                pReq->guestInfo.osType = VBOXOSTYPE_Win7;
                 break;
             default:
                 /* we don't know, therefore NT family */
-                req->guestInfo.osType = VBOXOSTYPE_WinNT;
+                pReq->guestInfo.osType = VBOXOSTYPE_WinNT;
                 break;
         }
 
         /** @todo registry lookup for additional information */
 
-        rc = VbglGRPerform (&req->header);
-
+        rc = VbglGRPerform (&pReq->header);
         if (RT_FAILURE(rc))
         {
             dprintf(("VBoxGuest::hlpVBoxReportGuestInfo: error reporting guest info to VMMDev. "
                      "rc = %Rrc\n", rc));
         }
+        rc = RT_SUCCESS(rc) ? pReq->header.rc : rc;
 
-        rc = RT_SUCCESS(rc) ? req->header.rc : rc;
+        VbglGRFree (&pReq2->header);
+    }
 
-        VbglGRFree (&req->header);
+    VMMDevReportGuestInfo *pReq2 = NULL;
+    if (RT_SUCCESS(rc))
+        rc = VbglGRAlloc ((VMMDevRequestHeader **)&pReq2, sizeof (VMMDevReportGuestInfo2), VMMDevReq_ReportGuestInfo2);
+    dprintf(("hlpVBoxReportGuestInfo2: VbglGRAlloc rc = %d\n", rc));
+
+    if (RT_SUCCESS(rc))
+    {
+        pReq2->guestInfo.additionsMajor = VBOX_VERSION_MAJOR;
+        pReq2->guestInfo.additionsMinor = VBOX_VERSION_MINOR;
+        pReq2->guestInfo.additionsBuild = VBOX_VERSION_BUILD;
+        pReq2->guestInfo.additionsRevision = VBOX_SVN_REV;
+        pReq2->guestInfo.additionsFeatures = 0;
+        RTStrCopy(pReq2->guestInfo.szName, sizeof(pReq2->guestInfo.szName), VBOX_VERSION_STRING);
+
+        rc = VbglGRPerform (&pReq2->header);
+        if (RT_FAILURE(rc))
+        {
+            dprintf(("VBoxGuest::hlpVBoxReportGuestInfo: error reporting guest info to VMMDev. "
+                     "rc = %Rrc\n", rc));
+        }
+        rc = RT_SUCCESS(rc) ? pReq2->header.rc : rc;
+
+        VbglGRFree (&pReq2->header);
     }
 
     return RT_FAILURE(rc) ? STATUS_UNSUCCESSFUL : STATUS_SUCCESS;
