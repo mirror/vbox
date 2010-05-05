@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,12 +19,13 @@
 #ifndef __VBoxMiniToolBar_h__
 #define __VBoxMiniToolBar_h__
 
-/* VBox includes */
-#include <VBoxToolBar.h>
-
-/* Qt includes */
+/* Global includes */
 #include <QBasicTimer>
 
+/* Local includes */
+#include "VBoxToolBar.h"
+
+/* Global forwards */
 class QLabel;
 class QMenu;
 
@@ -44,16 +45,16 @@ public:
         AlignBottom
     };
 
-    VBoxMiniToolBar (QWidget *aParent, Alignment aAlignment, bool aIsActive, bool aAutoHide);
+    VBoxMiniToolBar(QWidget *pParent, Alignment alignment, bool fActive, bool fAutoHide);
 
-    VBoxMiniToolBar& operator<< (QList <QMenu*> aMenus);
+    VBoxMiniToolBar& operator<<(QList<QMenu*> menus);
 
-    void setSeamlessMode (bool aIsSeamless);
-    void setDisplayText (const QString &aText);
+    void setSeamlessMode(bool fSeamless);
+    void setDisplayText(const QString &strText);
 
     bool isAutoHide() const;
 
-    void updateDisplay (bool aShow, bool aSetHideFlag);
+    void updateDisplay(bool fShow, bool fSetHideFlag);
 
 signals:
 
@@ -63,64 +64,66 @@ signals:
 
 protected:
 
-    void mouseMoveEvent (QMouseEvent *aEvent);
-    void timerEvent (QTimerEvent *aEvent);
-    void showEvent (QShowEvent *aEvent);
-    void paintEvent (QPaintEvent *aEvent);
     bool eventFilter(QObject *pObj, QEvent *pEvent);
+    void mouseMoveEvent(QMouseEvent *pEvent);
+    void timerEvent(QTimerEvent *pEvent);
+    void showEvent(QShowEvent *pEvent);
+    void paintEvent(QPaintEvent *pEvent);
 
 private slots:
 
-    void togglePushpin (bool aOn);
+    void togglePushpin(bool fOn);
 
 private:
 
     void initialize();
     void recreateMask();
     void moveToBase();
-    QPoint mapFromScreen (const QPoint &aPoint);
+    void setMouseTrackingEnabled(bool fEnabled);
 
-    QAction *mAutoHideAct;
-    QLabel *mDisplayLabel;
+    QAction *m_pAutoHideAction;
+    QLabel *m_pDisplayLabel;
+    QAction *m_pRestoreAction;
+    QAction *m_pCloseAction;
 
-    QBasicTimer mScrollTimer;
-    QBasicTimer mAutoScrollTimer;
+    QBasicTimer m_scrollTimer;
+    QBasicTimer m_autoScrollTimer;
 
-    bool mActive;
-    bool mPolished;
-    bool mSeamless;
-    bool mAutoHide;
-    bool mSlideToScreen;
-    bool mHideAfterSlide;
+    bool m_fActive;
+    bool m_fPolished;
+    bool m_fSeamless;
+    bool m_fAutoHide;
+    bool m_fSlideToScreen;
+    bool m_fHideAfterSlide;
 
-    int mAutoHideCounter;
-    int mPositionX;
-    int mPositionY;
+    int m_iAutoHideCounter;
+    int m_iPositionX;
+    int m_iPositionY;
 
     /* Lists of used spacers */
-    QList <QWidget*> mMargins;
-    QList <QWidget*> mSpacings;
-    QList <QWidget*> mLabelMargins;
+    QList<QWidget*> m_Margins;
+    QList<QWidget*> m_Spacings;
+    QList<QWidget*> m_LabelMargins;
 
     /* Menu insert position */
-    QAction *mInsertPosition;
+    QAction *m_pInsertPosition;
 
     /* Tool-bar alignment */
-    Alignment mAlignment;
+    Alignment m_alignment;
 
     /* Wether to animate showing/hiding the toolbar */
-    bool mAnimated;
+    bool m_fAnimated;
 
     /* Interval (in milli seconds) for scrolling the toolbar, default is 20 msec */
-    int mScrollDelay;
+    int m_iScrollDelay;
 
     /* The wait time while the cursor is not over the window after this amount of time (in msec),
      * the toolbar will auto hide if autohide is on. The default is 100msec. */
-    int mAutoScrollDelay;
+    int m_iAutoScrollDelay;
 
-    /* Number of total steps before hiding. If it is 10 then wait 10 (steps) * 100ms (mAutoScrollDelay) = 1000ms delay.
+    /* Number of total steps before hiding. If it is 10 then wait 10 (steps) * 100ms (m_iAutoScrollDelay) = 1000ms delay.
      * The default is 10. */
-    int mAutoHideTotalCounter;
+    int m_iAutoHideTotalCounter;
 };
 
 #endif // __VBoxMiniToolBar_h__

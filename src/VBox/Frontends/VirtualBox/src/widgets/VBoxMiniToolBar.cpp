@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,11 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* VBox includes */
-#include "VBoxGlobal.h"
-#include "VBoxMiniToolBar.h"
-
-/* Qt includes */
+/* Global includes */
 #include <QCursor>
 #include <QDesktopWidget>
 #include <QLabel>
@@ -34,393 +30,433 @@
 #include <QTimer>
 #include <QToolButton>
 
-VBoxMiniToolBar::VBoxMiniToolBar (QWidget *aParent, Alignment aAlignment, bool aActive, bool aAutoHide)
-    : VBoxToolBar (aParent)
-    , mActive (aActive)
-    , mPolished (false)
-    , mSeamless (false)
-    , mAutoHide (aAutoHide)
-    , mSlideToScreen (true)
-    , mHideAfterSlide (false)
-    , mAutoHideCounter (0)
-    , mAlignment (aAlignment)
-    , mAnimated (true)
-    , mScrollDelay (10)
-    , mAutoScrollDelay (100)
-    , mAutoHideTotalCounter (10)
+/* Local includes */
+#include "VBoxMiniToolBar.h"
+#include "VBoxGlobal.h"
+
+/* Mini-toolbar constructor */
+VBoxMiniToolBar::VBoxMiniToolBar(QWidget *pParent, Alignment alignment, bool fActive, bool fAutoHide)
+    : VBoxToolBar(pParent)
+    , m_pAutoHideAction(0)
+    , m_pDisplayLabel(0)
+    , m_pRestoreAction(0)
+    , m_pCloseAction(0)
+    , m_fActive(fActive)
+    , m_fPolished(false)
+    , m_fSeamless(false)
+    , m_fAutoHide(fAutoHide)
+    , m_fSlideToScreen(true)
+    , m_fHideAfterSlide(false)
+    , m_iAutoHideCounter(0)
+    , m_iPositionX(0)
+    , m_iPositionY(0)
+    , m_pInsertPosition(0)
+    , m_alignment(alignment)
+    , m_fAnimated(true)
+    , m_iScrollDelay(10)
+    , m_iAutoScrollDelay(100)
+    , m_iAutoHideTotalCounter(10)
 {
-    AssertMsg (parentWidget(), ("Parent widget must be set!!!\n"));
+    /* Check parent widget presence: */
+    AssertMsg(parentWidget(), ("Parent widget must be set!\n"));
 
-    /* Various options */
-    setIconSize (QSize (16, 16));
-    setMouseTracking (mAutoHide);
-    setVisible (false);
+    /* Toolbar options: */
+    setIconSize(QSize(16, 16));
+    setVisible(false);
 
-    /* Left margin of tool-bar */
-    mMargins << widgetForAction (addWidget (new QWidget (this)));
+    /* Left margin of tool-bar: */
+    m_Margins << widgetForAction(addWidget(new QWidget(this)));
 
-    /* Add pushpin */
-    mAutoHideAct = new QAction (this);
-    mAutoHideAct->setIcon (VBoxGlobal::iconSet (":/pin_16px.png"));
-    mAutoHideAct->setToolTip (tr ("Always show the toolbar"));
-    mAutoHideAct->setCheckable (true);
-    mAutoHideAct->setChecked (!mAutoHide);
-    connect (mAutoHideAct, SIGNAL (toggled (bool)), this, SLOT (togglePushpin (bool)));
-    addAction (mAutoHideAct);
+    /* Add pushpin: */
+    m_pAutoHideAction = new QAction(this);
+    m_pAutoHideAction->setIcon(VBoxGlobal::iconSet(":/pin_16px.png"));
+    m_pAutoHideAction->setToolTip(tr("Always show the toolbar"));
+    m_pAutoHideAction->setCheckable(true);
+    m_pAutoHideAction->setChecked(!m_fAutoHide);
+    connect(m_pAutoHideAction, SIGNAL(toggled(bool)), this, SLOT(togglePushpin(bool)));
+    addAction(m_pAutoHideAction);
 
-    /* Left menu margin */
-    mSpacings << widgetForAction (addWidget (new QWidget (this)));
+    /* Left menu margin: */
+    m_Spacings << widgetForAction(addWidget(new QWidget(this)));
 
-    /* Right menu margin */
-    mInsertPosition = addWidget (new QWidget (this));
-    mSpacings << widgetForAction (mInsertPosition);
+    /* Right menu margin: */
+    m_pInsertPosition = addWidget(new QWidget(this));
+    m_Spacings << widgetForAction(m_pInsertPosition);
 
-    /* Left label margin */
-    mLabelMargins << widgetForAction (addWidget (new QWidget (this)));
+    /* Left label margin: */
+    m_LabelMargins << widgetForAction(addWidget(new QWidget(this)));
 
-    /* Insert a label for VM Name */
-    mDisplayLabel = new QLabel (this);
-    mDisplayLabel->setAlignment (Qt::AlignCenter);
-    addWidget (mDisplayLabel);
+    /* Insert a label for VM Name: */
+    m_pDisplayLabel = new QLabel(this);
+    m_pDisplayLabel->setAlignment(Qt::AlignCenter);
+    addWidget(m_pDisplayLabel);
 
-    /* Right label margin */
-    mLabelMargins << widgetForAction (addWidget (new QWidget (this)));
+    /* Right label margin: */
+    m_LabelMargins << widgetForAction(addWidget(new QWidget(this)));
 
-    /* Exit action */
-    QAction *restoreAct = new QAction (this);
-    restoreAct->setIcon (VBoxGlobal::iconSet (":/restore_16px.png"));
-    restoreAct->setToolTip (tr ("Exit Full Screen or Seamless Mode"));
-    connect (restoreAct, SIGNAL (triggered()), this, SIGNAL (exitAction()));
-    addAction (restoreAct);
+    /* Exit action: */
+    m_pRestoreAction = new QAction(this);
+    m_pRestoreAction->setIcon(VBoxGlobal::iconSet(":/restore_16px.png"));
+    m_pRestoreAction->setToolTip(tr("Exit Full Screen or Seamless Mode"));
+    connect(m_pRestoreAction, SIGNAL(triggered()), this, SIGNAL(exitAction()));
+    addAction(m_pRestoreAction);
 
-    /* Close action */
-    QAction *closeAct = new QAction (this);
-    closeAct->setIcon (VBoxGlobal::iconSet (":/close_16px.png"));
-    closeAct->setToolTip (tr ("Close VM"));
-    connect (closeAct, SIGNAL (triggered()), this, SIGNAL (closeAction()));
-    addAction (closeAct);
+    /* Close action: */
+    m_pCloseAction = new QAction(this);
+    m_pCloseAction->setIcon(VBoxGlobal::iconSet(":/close_16px.png"));
+    m_pCloseAction->setToolTip(tr("Close VM"));
+    connect(m_pCloseAction, SIGNAL(triggered()), this, SIGNAL(closeAction()));
+    addAction(m_pCloseAction);
 
-    /* Right margin of tool-bar */
-    mMargins << widgetForAction (addWidget (new QWidget (this)));
+    /* Right margin of tool-bar: */
+    m_Margins << widgetForAction(addWidget(new QWidget(this)));
 
-    aParent->installEventFilter(this);
+    /* Event-filter for parent widget to control resize: */
+    pParent->installEventFilter(this);
+
+    /* Enable mouse-tracking for this & children allowing to get mouse-move events: */
+    setMouseTrackingEnabled(m_fAutoHide);
 }
 
-VBoxMiniToolBar& VBoxMiniToolBar::operator<< (QList <QMenu*> aMenus)
+/* Appends passed menus into internal menu-list */
+VBoxMiniToolBar& VBoxMiniToolBar::operator<<(QList<QMenu*> menus)
 {
-    for (int i = 0; i < aMenus.size(); ++ i)
+    for (int i = 0; i < menus.size(); ++i)
     {
-        QAction *action = aMenus [i]->menuAction();
-        insertAction (mInsertPosition, action);
-        if (QToolButton *button = qobject_cast <QToolButton*> (widgetForAction (action)))
+        QAction *pAction = menus[i]->menuAction();
+        insertAction(m_pInsertPosition, pAction);
+        if (QToolButton *pButton = qobject_cast<QToolButton*>(widgetForAction(pAction)))
         {
-            button->setPopupMode (QToolButton::InstantPopup);
-            button->setAutoRaise (true);
+            pButton->setPopupMode(QToolButton::InstantPopup);
+            pButton->setAutoRaise(true);
         }
-        if (i != aMenus.size() - 1)
-            mSpacings << widgetForAction (insertWidget (mInsertPosition, new QWidget (this)));
+        if (i != menus.size() - 1)
+            m_Spacings << widgetForAction(insertWidget(m_pInsertPosition, new QWidget(this)));
     }
     return *this;
 }
 
-void VBoxMiniToolBar::setSeamlessMode (bool aSeamless)
+/* Seamless mode setter */
+void VBoxMiniToolBar::setSeamlessMode(bool fSeamless)
 {
-    mSeamless = aSeamless;
+    m_fSeamless = fSeamless;
 }
 
 /* Update the display text, usually the VM Name */
-void VBoxMiniToolBar::setDisplayText (const QString &aText)
+void VBoxMiniToolBar::setDisplayText(const QString &strText)
 {
-    if (mDisplayLabel->text() != aText)
+    /* If text was really changed: */
+    if (m_pDisplayLabel->text() != strText)
     {
-        /* Update toolbar label */
-        mDisplayLabel->setText (aText);
+        /* Update toolbar label: */
+        m_pDisplayLabel->setText(strText);
 
-        /* Reinitialize */
+        /* Reinitialize: */
         initialize();
 
+        /* Update toolbar if its not hidden: */
         if (!isHidden())
-            updateDisplay (!mAutoHide, false);
+            updateDisplay(!m_fAutoHide, false);
     }
 }
 
+/* Is auto-hide feature enabled? */
 bool VBoxMiniToolBar::isAutoHide() const
 {
-    return mAutoHide;
+    return m_fAutoHide;
 }
 
-void VBoxMiniToolBar::updateDisplay (bool aShow, bool aSetHideFlag)
+void VBoxMiniToolBar::updateDisplay(bool fShow, bool fSetHideFlag)
 {
-    mAutoHideCounter = 0;
+    m_iAutoHideCounter = 0;
 
-    setMouseTracking (mAutoHide);
+    setMouseTrackingEnabled(m_fAutoHide);
 
-    if (aShow)
+    if (fShow)
     {
         if (isHidden())
             moveToBase();
 
-        if (mAnimated)
+        if (m_fAnimated)
         {
-            if (aSetHideFlag)
+            if (fSetHideFlag)
             {
-                mHideAfterSlide = false;
-                mSlideToScreen = true;
+                m_fHideAfterSlide = false;
+                m_fSlideToScreen = true;
             }
-            if (mActive) show();
-            mScrollTimer.start (mScrollDelay, this);
+            if (m_fActive)
+                show();
+            m_scrollTimer.start(m_iScrollDelay, this);
         }
-        else if (mActive) show();
+        else if (m_fActive)
+            show();
 
-        if (mAutoHide)
-            mAutoScrollTimer.start (mAutoScrollDelay, this);
+        if (m_fAutoHide)
+            m_autoScrollTimer.start(m_iAutoScrollDelay, this);
         else
-            mAutoScrollTimer.stop();
+            m_autoScrollTimer.stop();
     }
     else
     {
-        if (mAnimated)
+        if (m_fAnimated)
         {
-            if (aSetHideFlag)
+            if (fSetHideFlag)
             {
-                mHideAfterSlide = true;
-                mSlideToScreen = false;
+                m_fHideAfterSlide = true;
+                m_fSlideToScreen = false;
             }
-            mScrollTimer.start (mScrollDelay, this);
+            m_scrollTimer.start(m_iScrollDelay, this);
         }
         else
             hide();
 
-        if (mAutoHide)
-            mAutoScrollTimer.start (mAutoScrollDelay, this);
+        if (m_fAutoHide)
+            m_autoScrollTimer.start(m_iAutoScrollDelay, this);
         else
-            mAutoScrollTimer.stop();
+            m_autoScrollTimer.stop();
     }
 }
 
-void VBoxMiniToolBar::mouseMoveEvent (QMouseEvent *aEvent)
+/* Parent widget event-filter */
+bool VBoxMiniToolBar::eventFilter(QObject *pObject, QEvent *pEvent)
 {
-    if (!mHideAfterSlide)
+    /* If parent widget was resized: */
+    if (pObject == parent() && pEvent->type() == QEvent::Resize)
     {
-        mSlideToScreen = true;
-        mScrollTimer.start (mScrollDelay, this);
+        /* Update toolbar position: */
+        moveToBase();
+        return true;
     }
-
-    QToolBar::mouseMoveEvent (aEvent);
+    /* Base-class event-filter: */
+    return VBoxToolBar::eventFilter(pObject, pEvent);
 }
 
-/* Handles auto hide feature of the toolbar */
-void VBoxMiniToolBar::timerEvent (QTimerEvent *aEvent)
+/* Mouse-move event processor */
+void VBoxMiniToolBar::mouseMoveEvent(QMouseEvent *pEvent)
 {
-    if (aEvent->timerId() == mScrollTimer.timerId())
+    /* Activate sliding animation on mouse move: */
+    if (!m_fHideAfterSlide)
     {
-        QRect screen = mSeamless ? vboxGlobal().availableGeometry (QApplication::desktop()->screenNumber(window())) :
-                                   QApplication::desktop()->screenGeometry (window());
-        switch (mAlignment)
+        m_fSlideToScreen = true;
+        m_scrollTimer.start(m_iScrollDelay, this);
+    }
+    /* Base-class mouse-move event processing: */
+    VBoxToolBar::mouseMoveEvent(pEvent);
+}
+
+/* Timer event processor
+ * Handles auto hide feature of the toolbar */
+void VBoxMiniToolBar::timerEvent(QTimerEvent *pEvent)
+{
+    if (pEvent->timerId() == m_scrollTimer.timerId())
+    {
+        QRect screen = m_fSeamless ? vboxGlobal().availableGeometry(QApplication::desktop()->screenNumber(window())) :
+                                     QApplication::desktop()->screenGeometry(window());
+        switch (m_alignment)
         {
             case AlignTop:
             {
-                if (((mPositionY == screen.y()) && mSlideToScreen) ||
-                    ((mPositionY == screen.y() - height() + 1) && !mSlideToScreen))
+                if (((m_iPositionY == screen.y()) && m_fSlideToScreen) ||
+                    ((m_iPositionY == screen.y() - height() + 1) && !m_fSlideToScreen))
                 {
-                    mScrollTimer.stop();
-                    if (mHideAfterSlide)
+                    m_scrollTimer.stop();
+                    if (m_fHideAfterSlide)
                     {
-                        mHideAfterSlide = false;
+                        m_fHideAfterSlide = false;
                         hide();
                     }
                     return;
                 }
-                mSlideToScreen ? ++ mPositionY : -- mPositionY;
+                m_fSlideToScreen ? ++m_iPositionY : --m_iPositionY;
                 break;
             }
             case AlignBottom:
             {
-                if (((mPositionY == screen.y() + screen.height() - height()) && mSlideToScreen) ||
-                    ((mPositionY == screen.y() + screen.height() - 1) && !mSlideToScreen))
+                if (((m_iPositionY == screen.y() + screen.height() - height()) && m_fSlideToScreen) ||
+                    ((m_iPositionY == screen.y() + screen.height() - 1) && !m_fSlideToScreen))
                 {
-                    mScrollTimer.stop();
-                    if (mHideAfterSlide)
+                    m_scrollTimer.stop();
+                    if (m_fHideAfterSlide)
                     {
-                        mHideAfterSlide = false;
+                        m_fHideAfterSlide = false;
                         hide();
                     }
                     return;
                 }
-                mSlideToScreen ? -- mPositionY : ++ mPositionY;
+                m_fSlideToScreen ? --m_iPositionY : ++m_iPositionY;
                 break;
             }
             default:
                 break;
         }
-        move (mapFromScreen (QPoint (mPositionX, mPositionY)));
+        move(parentWidget()->mapFromGlobal(QPoint(m_iPositionX, m_iPositionY)));
         emit geometryUpdated();
     }
-    else if (aEvent->timerId() == mAutoScrollTimer.timerId())
+    else if (pEvent->timerId() == m_autoScrollTimer.timerId())
     {
         QRect rect = this->rect();
-        QPoint cursor_pos = QCursor::pos();
-        QPoint p = mapFromGlobal (cursor_pos);
-
-        if (!rect.contains (p))
+        QPoint p = mapFromGlobal(QCursor::pos());
+        if (!rect.contains(p))
         {
-            ++ mAutoHideCounter;
+            ++m_iAutoHideCounter;
 
-            if (mAutoHideCounter == mAutoHideTotalCounter)
+            if (m_iAutoHideCounter == m_iAutoHideTotalCounter)
             {
-                mSlideToScreen = false;
-                mScrollTimer.start (mScrollDelay, this);
+                m_fSlideToScreen = false;
+                m_scrollTimer.start(m_iScrollDelay, this);
             }
         }
         else
-            mAutoHideCounter = 0;
+            m_iAutoHideCounter = 0;
     }
     else
-        QWidget::timerEvent (aEvent);
+        QWidget::timerEvent(pEvent);
 }
 
-void VBoxMiniToolBar::showEvent (QShowEvent *aEvent)
+/* Show event processor */
+void VBoxMiniToolBar::showEvent(QShowEvent *pEvent)
 {
-    if (!mPolished)
+    if (!m_fPolished)
     {
-        /* Tool-bar margins */
-        foreach (QWidget *margin, mMargins)
-            margin->setMinimumWidth (height());
+        /* Tool-bar margins: */
+        foreach(QWidget *pMargin, m_Margins)
+            pMargin->setMinimumWidth(height());
 
-        /* Tool-bar spacings */
-        foreach (QWidget *spacing, mSpacings)
-            spacing->setMinimumWidth (5);
+        /* Tool-bar spacings: */
+        foreach(QWidget *pSpacing, m_Spacings)
+            pSpacing->setMinimumWidth(5);
 
-        /* Title spacings */
-        foreach (QWidget *lableMargin, mLabelMargins)
-            lableMargin->setMinimumWidth (15);
+        /* Title spacings: */
+        foreach(QWidget *pLableMargin, m_LabelMargins)
+            pLableMargin->setMinimumWidth(15);
 
-        /* Initialize */
+        /* Initialize: */
         initialize();
 
-        mPolished = true;
+        m_fPolished = true;
     }
-
-    VBoxToolBar::showEvent (aEvent);
+    /* Base-class show event processing: */
+    VBoxToolBar::showEvent(pEvent);
 }
 
-void VBoxMiniToolBar::paintEvent (QPaintEvent *aEvent)
+/* Show event processor */
+void VBoxMiniToolBar::paintEvent(QPaintEvent *pEvent)
 {
+    /* Paint background */
     QPainter painter;
-    painter.begin (this);
-    painter.fillRect (aEvent->rect(), palette().brush (QPalette::Window));
+    painter.begin(this);
+    painter.fillRect(pEvent->rect(), palette().brush(QPalette::Window));
     painter.end();
-    VBoxToolBar::paintEvent (aEvent);
+    /* Base-class paint event processing: */
+    VBoxToolBar::paintEvent(pEvent);
 }
 
-void VBoxMiniToolBar::togglePushpin (bool aOn)
+/* Toggle push-pin */
+void VBoxMiniToolBar::togglePushpin(bool fOn)
 {
-    mAutoHide = !aOn;
-    updateDisplay (!mAutoHide, false);
+    m_fAutoHide = !fOn;
+    updateDisplay(!m_fAutoHide, false);
 }
 
+/* Initialize mini-toolbar */
 void VBoxMiniToolBar::initialize()
 {
-    /* Resize to sizehint */
-    resize (sizeHint());
+    /* Resize to sizehint: */
+    resize(sizeHint());
 
-    /* Update geometry */
+    /* Update geometry: */
     recreateMask();
     moveToBase();
 }
 
+/* Recreate mini-toolbar mask */
 void VBoxMiniToolBar::recreateMask()
 {
-    int edgeShift = height();
-    int points [8];
-    switch (mAlignment)
+    int iEdgeShift = height();
+    int iPoints[8];
+    switch (m_alignment)
     {
         case AlignTop:
         {
-            points [0] = 0;
-            points [1] = 0;
+            iPoints[0] = 0;
+            iPoints[1] = 0;
 
-            points [2] = edgeShift;
-            points [3] = height();
+            iPoints[2] = iEdgeShift;
+            iPoints[3] = height();
 
-            points [4] = width() - edgeShift;
-            points [5] = height();
+            iPoints[4] = width() - iEdgeShift;
+            iPoints[5] = height();
 
-            points [6] = width();
-            points [7] = 0;
+            iPoints[6] = width();
+            iPoints[7] = 0;
 
             break;
         }
         case AlignBottom:
         {
-            points [0] = edgeShift;
-            points [1] = 0;
+            iPoints[0] = iEdgeShift;
+            iPoints[1] = 0;
 
-            points [2] = 0;
-            points [3] = height();
+            iPoints[2] = 0;
+            iPoints[3] = height();
 
-            points [4] = width();
-            points [5] = height();
+            iPoints[4] = width();
+            iPoints[5] = height();
 
-            points [6] = width() - edgeShift;
-            points [7] = 0;
+            iPoints[6] = width() - iEdgeShift;
+            iPoints[7] = 0;
 
             break;
         }
         default:
             break;
     }
-    /* Make sure any old mask is removed first */
+    /* Make sure any old mask is removed first: */
     clearMask();
     /* Set the new mask */
     QPolygon polygon;
-    polygon.setPoints (4, points);
-    setMask (polygon);
+    polygon.setPoints(4, iPoints);
+    setMask(polygon);
 }
 
+/* Move mini-toolbar to the base location */
 void VBoxMiniToolBar::moveToBase()
 {
-    QRect screen = mSeamless ? vboxGlobal().availableGeometry (QApplication::desktop()->screenNumber(window())) :
-                               QApplication::desktop()->screenGeometry (window());
-    mPositionX = screen.x() + screen.width() / 2 - width() / 2;
-    switch (mAlignment)
+    QRect screen = m_fSeamless ? vboxGlobal().availableGeometry(QApplication::desktop()->screenNumber(window())) :
+                                 QApplication::desktop()->screenGeometry(window());
+    m_iPositionX = screen.x() + (screen.width() / 2) - (width() / 2);
+    switch (m_alignment)
     {
         case AlignTop:
         {
-            mPositionY = screen.y() - height() + 1;
+            m_iPositionY = screen.y() - height() + 1;
             break;
         }
         case AlignBottom:
         {
-            mPositionY = screen.y() + screen.height() - 1;
+            m_iPositionY = screen.y() + screen.height() - 1;
             break;
         }
         default:
         {
-            mPositionY = 0;
+            m_iPositionY = 0;
             break;
         }
     }
-    move(mapFromScreen (QPoint (mPositionX, mPositionY)));
+    move(parentWidget()->mapFromGlobal(QPoint(m_iPositionX, m_iPositionY)));
 }
 
-QPoint VBoxMiniToolBar::mapFromScreen (const QPoint &aPoint)
+/* Enable/disable mouse-tracking for required widgets */
+void VBoxMiniToolBar::setMouseTrackingEnabled(bool fEnabled)
 {
-    QPoint globalPosition = parentWidget()->mapFromGlobal (aPoint);
-    QRect fullArea = QApplication::desktop()->screenGeometry (window());
-    QRect realArea = mSeamless ? vboxGlobal().availableGeometry (QApplication::desktop()->screenNumber(window())) :
-                                 QApplication::desktop()->screenGeometry (window());
-    QPoint shiftToReal (realArea.topLeft() - fullArea.topLeft());
-    return globalPosition + shiftToReal;
-}
-
-bool VBoxMiniToolBar::eventFilter(QObject *pObj, QEvent *pEvent)
-{
-    if (pEvent->type() == QEvent::Resize)
-    {
-        moveToBase();
-        return true;
-    }
-    return VBoxToolBar::eventFilter(pObj, pEvent);
+    setMouseTracking(fEnabled);
+    if (m_pDisplayLabel)
+        m_pDisplayLabel->setMouseTracking(fEnabled);
+    if (m_pAutoHideAction && widgetForAction(m_pAutoHideAction))
+        widgetForAction(m_pAutoHideAction)->setMouseTracking(fEnabled);
+    if (m_pRestoreAction && widgetForAction(m_pRestoreAction))
+        widgetForAction(m_pRestoreAction)->setMouseTracking(fEnabled);
+    if (m_pCloseAction && widgetForAction(m_pCloseAction))
+        widgetForAction(m_pCloseAction)->setMouseTracking(fEnabled);
 }
 
