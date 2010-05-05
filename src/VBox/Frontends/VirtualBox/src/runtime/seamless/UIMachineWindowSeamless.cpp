@@ -388,15 +388,8 @@ void UIMachineWindowSeamless::setMask(const QRegion &constRegion)
         /* Get mini-toolbar mask: */
         QRegion toolBarRegion(m_pMiniToolBar->mask());
 
-        /* Shift mask according global position: */
-        toolBarRegion.translate(m_pMiniToolBar->mapToGlobal(toolBarRegion.boundingRect().topLeft()) - QPoint(1, 0));
-
-        /* Shift mask according available geometry: */
-        int iScreen = static_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId);
-        QRect screenArea = QApplication::desktop()->screenGeometry(iScreen);
-        QRect workingArea = vboxGlobal().availableGeometry(iScreen);
-        QPoint workingAreaOffset(screenArea.topLeft() - workingArea.topLeft());
-        toolBarRegion.translate(workingAreaOffset);
+        /* Move mini-toolbar mask to mini-toolbar position: */
+        toolBarRegion.translate(QPoint(m_pMiniToolBar->x(), m_pMiniToolBar->y()));
 
         /* Including mini tool-bar mask: */
         region += toolBarRegion;
