@@ -100,6 +100,7 @@ genjifaces_LIBS     =                        \
 	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)  \
 	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
 	$(PATH_BIN)/VBoxRT$(VBOX_SUFF_DLL)
+genjifaces_DEPS = $(PATH_TARGET)/VBox-xpcom-idl-timestamp
 genjifaces_INST = $(INST_BIN)
 
 #
