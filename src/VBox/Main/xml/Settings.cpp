@@ -3425,9 +3425,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
 #if defined(VBOX_WITH_VDE)
                 case NetworkAttachmentType_VDE:
-                    pelmNAT = pelmAdapter->createChild("VDE");
-                    if (nic.strName.length())
-                        pelmNAT->setAttribute("network", nic.strName);
+                    pelmAdapter->createChild("VDE")->setAttribute("network", nic.strName);
                 break;
 #endif
 
@@ -3684,6 +3682,12 @@ void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode,
         case NetworkAttachmentType_HostOnly:
             elmParent.createChild("HostOnlyInterface")->setAttribute("name", nic.strName);
         break;
+
+#ifdef VBOX_WITH_VDE
+        case NetworkAttachmentType_VDE:
+            elmParent.createChild("VDE")->setAttribute("network", nic.strName);
+        break;
+#endif
 
         default: /*case NetworkAttachmentType_Null:*/
         break;
