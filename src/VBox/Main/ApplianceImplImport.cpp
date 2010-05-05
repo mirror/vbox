@@ -1674,7 +1674,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             // OVF treats LsiLogicSas as a SCSI controller but VBox considers it a class of its own
             bstrName = L"SAS Controller";
             busType = StorageBus_SAS;
-            controllerType = StorageControllerType_LsiLogic;
+            controllerType = StorageControllerType_LsiLogicSas;
         }
         else if (hdcVBox == "BusLogic")
             controllerType = StorageControllerType_BusLogic;
