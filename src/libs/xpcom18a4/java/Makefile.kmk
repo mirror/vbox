@@ -88,9 +88,9 @@ DLLS += VBoxJXpcom
 #
 # genjifaces
 #
-BLDPROGS += genjifaces
+PROGRAMS += genjifaces
 TEMPLATE_XPCOMEXEBLD                   = XPCOM Build executable
-TEMPLATE_XPCOMEXEBLD_EXTENDS           = XPCOMBLDPROG
+TEMPLATE_XPCOMEXEBLD_EXTENDS           = XPCOMEXE
 TEMPLATE_XPCOMEXEBLD_EXTENDS_BY        = appending
 TEMPLATE_XPCOMEXEBLD_CXXFLAGS          = $(TEMPLATE_XPCOM_CXXFLAGS)
 TEMPLATE_XPCOMEXEBLD_INCS              =               \
@@ -106,7 +106,7 @@ TEMPLATE_XPCOMEXEBLD_LDFLAGS.darwin    =   \
 		 -framework CoreFoundation \
 	         -framework Foundation     \
 		 -framework AppKit         \
-                 -framework Carbon
+                 -framework Carbon         
 
 ifeq ($(KBUILD_TARGET),darwin)
  define preprocess_exebld
