@@ -261,7 +261,8 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *h, int flags,
                                    int argc, const char **argv)
 {
     /* Parse arguments. */
-    for (int i=0; i<argc; i++)
+    int i;
+    for (i = 0; i < argc; i++)
     {
         if (!RTStrICmp(argv[i], "debug"))
             g_verbosity=1;
