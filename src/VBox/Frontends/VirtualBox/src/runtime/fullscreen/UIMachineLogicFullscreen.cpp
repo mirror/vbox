@@ -198,6 +198,10 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
                 static_cast<UIMachineWindowFullscreen*>(pMachineWindow), SLOT(sltPlaceOnScreen()));
 
 #ifdef Q_WS_MAC
+    /* If the user change the screen, we have to decide again if the
+     * presentation mode should be changed. */
+    connect(m_pScreenLayout, SIGNAL(screenLayoutChanged()),
+            this, SLOT(sltScreenLayoutChanged()));
     /* Note: Presentation mode has to be set *after* the windows are created. */
     setPresentationModeEnabled(true);
 #endif /* Q_WS_MAC */
@@ -236,25 +240,25 @@ void UIMachineLogicFullscreen::sltChangePresentationMode(const VBoxChangePresent
     setPresentationModeEnabled(true);
 }
 
+void UIMachineLogicFullscreen::sltScreenLayoutChanged()
+{
+    setPresentationModeEnabled(true);
+}
+
 void UIMachineLogicFullscreen::setPresentationModeEnabled(bool fEnabled)
 {
-    if (fEnabled)
+    /* First check if we are on a screen which contains the Dock or the
+     * Menubar (which hasn't to be the same), only than the
+     * presentation mode have to be changed. */
+    if (   fEnabled
+        && m_pScreenLayout->isHostTaskbarCovert())
     {
-        /* First check if we are on the primary screen, only than the
-         * presentation mode have to be changed. */
-        // TODO_NEW_CORE: we need some algorithm to decide which virtual screen
-        // is on which physical host display. Than we can decide on the
-        // presentation mode as well. */
-//        QDesktopWidget* pDesktop = QApplication::desktop();
-//        if (pDesktop->screenNumber(this) == pDesktop->primaryScreen())
-        {
-            QString testStr = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_PresentationModeEnabled).toLower();
-            /* Default to false if it is an empty value */
-            if (testStr.isEmpty() || testStr == "false")
-                SetSystemUIMode(kUIModeAllHidden, 0);
-            else
-                SetSystemUIMode(kUIModeAllSuppressed, 0);
-        }
+        QString testStr = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_PresentationModeEnabled).toLower();
+        /* Default to false if it is an empty value */
+        if (testStr.isEmpty() || testStr == "false")
+            SetSystemUIMode(kUIModeAllHidden, 0);
+        else
+            SetSystemUIMode(kUIModeAllSuppressed, 0);
     }
     else
         SetSystemUIMode(kUIModeNormal, 0);

@@ -42,6 +42,7 @@ public:
     int guestScreenCount() const;
     int hostScreenForGuestScreen(int screenId) const;
     quint64 memoryRequirements() const;
+    bool isHostTaskbarCovert() const;
 
 signals:
     void screenLayoutChanged();
