@@ -31,7 +31,8 @@ ifeq ($(KBUILD_TARGET), linux)
  VBOX_JAVA_HOME ?= /usr/lib/jvm/java-1.5.0-sun
 endif
 ifeq ($(KBUILD_TARGET), solaris)
- VBOX_JAVA_HOME ?= /usr/jdk/jdk1.5.0
+# VBOX_JAVA_HOME ?= /usr/jdk/jdk1.5.0
+  VBOX_JAVA_HOME ?= /usr/java
 endif
  VBOX_JAVAC = $(VBOX_JAVA_HOME)/bin/javac
  VBOX_JAVAH = $(VBOX_JAVA_HOME)/bin/javah
