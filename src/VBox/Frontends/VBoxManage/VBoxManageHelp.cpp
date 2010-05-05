@@ -184,11 +184,14 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--biossystemtimeoffset <msec>]\n"
                  "                            [--biospxedebug on|off]\n"
                  "                            [--boot<1-4> none|floppy|dvd|disk|net>]\n"
-#if defined(VBOX_WITH_NETFLT)
-                 "                            [--nic<1-N> none|null|nat|bridged|intnet|hostonly]\n"
-#else /* !RT_OS_LINUX && !RT_OS_DARWIN */
-                 "                            [--nic<1-N> none|null|nat|bridged|intnet]\n"
-#endif /* !RT_OS_LINUX && !RT_OS_DARWIN  */
+                 "                            [--nic<1-N> none|null|nat|bridged|intnet"
+#if defined(VBOX_WITH_NETFLT) /* RT_OS_LINUX || RT_OS_DARWIN */
+                 "|hostonly"
+#endif
+#ifdef VBOX_WITH_VDE
+                 "|vde"
+#endif
+                 "]\n"
                  "                            [--nictype<1-N> Am79C970A|Am79C973"
 #ifdef VBOX_WITH_E1000
               "|\n                                            82540EM|82543GC|82545EM"
@@ -208,6 +211,9 @@ void printUsage(USAGECATEGORY u64Cmd)
 #endif
                  "                            [--intnet<1-N> <network name>]\n"
                  "                            [--natnet<1-N> <network>|default]\n"
+#ifdef VBOX_WITH_VDE
+                 "                            [--vdenet<1-N> <network>|default]\n"
+#endif
                  "                            [--natsettings<1-N> \"[<mtu>],[<socksnd>],[<sockrcv>],\n"
                  "                                                         [<tcpsnd>],[<tcprcv>]\"]\n"
                  "                            [--natpf<1-N> \"[<rulename>],tcp|udp,\n"
