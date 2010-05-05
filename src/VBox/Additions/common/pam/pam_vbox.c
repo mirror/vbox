@@ -24,7 +24,7 @@
 #define PAM_SM_SESSION
 
 #ifdef _DEBUG
- #define PAM_DEBUG
+# define PAM_DEBUG
 #endif
 
 #ifdef RT_OS_SOLARIS
@@ -33,7 +33,7 @@
 #include <security/pam_modules.h>
 #include <security/pam_appl.h>
 #ifdef RT_OS_LINUX
-#include <security/_pam_macros.h>
+# include <security/_pam_macros.h>
 #endif
 
 #include <pwd.h>
@@ -52,10 +52,10 @@
 
 /** For debugging. */
 #ifdef _DEBUG
- static pam_handle_t *g_pam_handle;
- static int g_verbosity = 99;
+static pam_handle_t *g_pam_handle;
+static int g_verbosity = 99;
 #else
- static int g_verbosity = 0;
+static int g_verbosity = 0;
 #endif
 
 /**
@@ -66,11 +66,11 @@
 static void pam_vbox_writesyslog(char *pszBuf)
 {
 #ifdef RT_OS_LINUX
-        openlog("pam_vbox", LOG_PID, LOG_AUTHPRIV);
-        syslog(LOG_ERR, pszBuf);
-        closelog();
+    openlog("pam_vbox", LOG_PID, LOG_AUTHPRIV);
+    syslog(LOG_ERR, pszBuf);
+    closelog();
 #elif defined(RT_OS_SOLARIS)
-        syslog(LOG_ERR, "pam_vbox: %s\n", pszBuf);
+    syslog(LOG_ERR, "pam_vbox: %s\n", pszBuf);
 #endif
 }
 
@@ -86,7 +86,6 @@ static void pam_vbox_error(pam_handle_t *h, const char *pszFormat, ...)
     va_list va;
     char *buf;
     va_start(va, pszFormat);
-    /** @todo is this NULL terminated? */
     if (RT_SUCCESS(RTStrAPrintfV(&buf, pszFormat, va)))
     {
         LogRel(("%s: Error: %s", VBOX_MODULE_NAME, buf));
@@ -105,23 +104,22 @@ static void pam_vbox_error(pam_handle_t *h, const char *pszFormat, ...)
  */
 static void pam_vbox_log(pam_handle_t *h, const char *pszFormat, ...)
 {
-    va_list va;
-    char *buf;
-    va_start(va, pszFormat);
-    /** @todo is this NULL terminated? */
-    if (RT_SUCCESS(RTStrAPrintfV(&buf, pszFormat, va)))
+    if (g_verbosity)
     {
-        if (g_verbosity)
+        va_list va;
+        char *buf;
+        va_start(va, pszFormat);
+        if (RT_SUCCESS(RTStrAPrintfV(&buf, pszFormat, va)))
         {
             /* Only do normal logging in debug mode; could contain
              * sensitive data! */
             LogRel(("%s: %s", VBOX_MODULE_NAME, buf));
             /* Log to syslog */
             pam_vbox_writesyslog(buf);
+            RTStrFree(buf);
         }
-        RTStrFree(buf);
+        va_end(va);
     }
-    va_end(va);
 }
 
 
@@ -264,7 +262,7 @@ DECLEXPORT(int) pam_sm_authenticate(pam_handle_t *h, int flags,
     for (i = 0; i < argc; i++)
     {
         if (!RTStrICmp(argv[i], "debug"))
-            g_verbosity=1;
+            g_verbosity = 1;
         else
             pam_vbox_error(h, "pam_sm_authenticate: unknown command line argument \"%s\"\n", argv[i]);
     }
