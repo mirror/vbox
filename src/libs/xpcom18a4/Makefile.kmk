@@ -72,8 +72,8 @@ BLDDIRS  += \
 # We build several libraries so that any linker command line
 # length restrictions limit will be avoided. (Solaris, Mac?)
 #
-
 ifndef VBOX_ONLY_SDK
+
 LIBRARIES += \
 	VBox-xpcom-nspr \
 	VBox-xpcom-typelib \
@@ -98,7 +98,7 @@ DLLS += \
 	VBoxXPCOM \
 	VBoxXPCOMIPCC
 
-ifdef VBOX_WITH_TESTCASES
+ ifdef VBOX_WITH_TESTCASES
 PROGRAMS += \
 	tstnsIFileEnumerator \
 	tstnsIFileTest \
@@ -126,13 +126,8 @@ PROGRAMS += \
 	tstXptDump \
 	tstXptLink
 #   tstTestPermanentAtoms
-endif # VBOX_WITH_TESTCASES
+ endif # VBOX_WITH_TESTCASES
 PROGRAMS += VBoxXPCOMIPCD
-
-
-else
-
-PATH_VBox-xpcom-string=$(PATH_BIN)
 
 endif # !VBOX_ONLY_SDK
 
