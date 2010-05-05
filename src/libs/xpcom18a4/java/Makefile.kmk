@@ -86,7 +86,7 @@ DLLS += VBoxJXpcom
 
 BLDPROGS += genjifaces
 
-genjifaces_TEMPLATE = XPCOMBLDPROG
+genjifaces_TEMPLATE = XPCOMEXE
 genjifaces_INCS     =    \
         src
 genjifaces_DEFS     =    \
