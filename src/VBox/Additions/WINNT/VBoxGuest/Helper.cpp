@@ -18,6 +18,7 @@
 
 #include "VBoxGuest_Internal.h"
 #include "Helper.h"
+#include <iprt/string.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/VBoxGuestLib.h>
@@ -237,10 +238,10 @@ NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt)
         }
         rc = RT_SUCCESS(rc) ? pReq->header.rc : rc;
 
-        VbglGRFree (&pReq2->header);
+        VbglGRFree (&pReq->header);
     }
 
-    VMMDevReportGuestInfo *pReq2 = NULL;
+    VMMDevReportGuestInfo2 *pReq2 = NULL;
     if (RT_SUCCESS(rc))
         rc = VbglGRAlloc ((VMMDevRequestHeader **)&pReq2, sizeof (VMMDevReportGuestInfo2), VMMDevReq_ReportGuestInfo2);
     dprintf(("hlpVBoxReportGuestInfo2: VbglGRAlloc rc = %d\n", rc));
