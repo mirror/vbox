@@ -46,9 +46,10 @@ protected:
 
 private slots:
 
-#ifdef Q_WS_MAC
+#ifdef RT_OS_DARWIN
     void sltChangePresentationMode(const VBoxChangePresentationModeEvent &event);
-#endif /* Q_WS_MAC */
+    void sltScreenLayoutChanged();
+#endif /* RT_OS_DARWIN */
 
 private:
 
