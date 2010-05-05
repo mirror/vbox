@@ -18,6 +18,15 @@
 SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+# Make sure our Config.kmk is included.
+ifndef VBOX_PATH_XPCOM_SRC
+ include $(PATH_SUB_CURRENT)/Config.kmk
+endif
+
+#
+# Globals
+#
+
 # File for filtering out C symbols from the XPCOM library. Used to avoid
 # symbol namespace pollution, causing trouble with system libraries.
 XPCOM_C_NAMESPACE_MAP = $(VBOX_PATH_XPCOM_SRC)/xpcom-namespace-cleanup.map
