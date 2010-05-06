@@ -325,7 +325,6 @@ sfprov_trunc(sfp_mount_t *mnt, char *path)
 	SHFLCREATEPARMS parms;
 	SHFLSTRING *str;
 	int size;
-	sfp_file_t *newfp;
 
 	/*
 	 * open it read/write.
@@ -632,8 +631,6 @@ sfprov_readdir(
 	int mask_size;
 	sfp_file_t *fp;
 	void *buff_start = NULL;
-	char **curr_b;
-	char *buff_end;
 	size_t buff_size;
 	static char infobuff[2 * MAXNAMELEN];	/* not on stack!! */
 	SHFLDIRINFO *info = (SHFLDIRINFO *)&infobuff;
@@ -679,15 +676,15 @@ sfprov_readdir(
 		justone = 1;
 		numbytes = sizeof (infobuff);
 		error = vboxCallDirInfo(&vbox_client, &fp->map, fp->handle,
-		    mask_str, SHFL_LIST_RETURN_ONE, cnt, &numbytes, info,
+		    mask_str, SHFL_LIST_RETURN_ONE, 0, &numbytes, info,
 		    &justone);
 		if (error == VERR_NO_MORE_FILES) {
 			break;
 		}
-		if (error == VERR_NO_TRANSLATION) {
+		else if (error == VERR_NO_TRANSLATION) {
 			continue;	/* ?? just skip this one */
 		}
-		if (error != VINF_SUCCESS || justone != 1) {
+		else if (error != VINF_SUCCESS || justone != 1) {
 			error = EINVAL;
 	 		goto done;
 		}
