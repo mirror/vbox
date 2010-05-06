@@ -106,6 +106,7 @@ if 1
  TEMPLATE_XPCOMEXEBLD_LIBS              = $(VBoxXPCOM_LIBS) $(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
  # This is OK on Linux even with hardening
  TEMPLATE_XPCOMEXEBLD_LIBS.linux        = $(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
+ TEMPLATE_XPCOMEXEBLD_LIBS.solaris      = $(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) 
  TEMPLATE_XPCOMEXEBLD_INCS.darwin       = $(TEMPLATE_XPCOM_INCS.darwin)
  TEMPLATE_XPCOMEXEBLD_LDFLAGS.darwin    =  \
 	         -framework CoreServices   \
