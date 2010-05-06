@@ -865,13 +865,19 @@ static int vboxNetFltConnectIt(PVBOXNETFLTINS pThis, PINTNETTRUNKSWPORT pSwitchP
     /*
      * Validate state.
      */
-    Assert(pThis->enmTrunkState == INTNETTRUNKIFSTATE_INACTIVE);
     Assert(!pThis->fRediscoveryPending);
     Assert(!pThis->cBusy);
 #ifdef VBOXNETFLT_STATIC_CONFIG
     Assert(vboxNetFltGetState(pThis) == kVBoxNetFltInsState_Unconnected);
+    /* INTNETTRUNKIFSTATE_DISCONNECTING means "not connected" here
+     * we use the INTNETTRUNKIFSTATE_DISCONNECTING state for consistency of cases when trunk
+     * was never connected and was connected and disconnected.
+     * In the latter case we end up with INTNETTRUNKIFSTATE_DICONNECTING,
+     * so use the same state for the former */
+    Assert(pThis->enmTrunkState == INTNETTRUNKIFSTATE_DISCONNECTING);
 #else
     Assert(vboxNetFltGetState(pThis) == kVBoxNetFltInsState_Initializing);
+    Assert(pThis->enmTrunkState == INTNETTRUNKIFSTATE_INACTIVE);
 #endif
 
     /*
@@ -888,7 +894,16 @@ static int vboxNetFltConnectIt(PVBOXNETFLTINS pThis, PINTNETTRUNKSWPORT pSwitchP
     else
         pThis->pSwitchPort = NULL;
 
+#ifdef VBOXNETFLT_STATIC_CONFIG
+    /* INTNETTRUNKIFSTATE_DISCONNECTING means "not connected" here
+     * we use the INTNETTRUNKIFSTATE_DISCONNECTING state for consistency of cases when trunk
+     * was never connected and was connected and disconnected.
+     * In the latter case we end up with INTNETTRUNKIFSTATE_DISCONNECTING,
+     * so use the same state for the former */
+    Assert(pThis->enmTrunkState == INTNETTRUNKIFSTATE_DISCONNECTING);
+#else
     Assert(pThis->enmTrunkState == INTNETTRUNKIFSTATE_INACTIVE);
+#endif
     return rc;
 }
 
@@ -933,7 +948,14 @@ static int vboxNetFltNewInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszNam
     pNew->pGlobals                      = pGlobals;
     pNew->hSpinlock                     = NIL_RTSPINLOCK;
     pNew->enmState                      = kVBoxNetFltInsState_Initializing;
+#ifdef VBOXNETFLT_STATIC_CONFIG
+    /* for consistency of cases when trunk was never connected and was connected and disconnected.
+     * In the latter case we end up with INTNETTRUNKIFSTATE_DISCONNECTING,
+     * so use the same state for the former */
+    pNew->enmTrunkState                 = INTNETTRUNKIFSTATE_DISCONNECTING;
+#else
     pNew->enmTrunkState                 = INTNETTRUNKIFSTATE_INACTIVE;
+#endif
     pNew->fDisconnectedFromHost         = false;
     pNew->fRediscoveryPending           = false;
     pNew->fDisablePromiscuous           = fNoPromisc;
