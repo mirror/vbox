@@ -181,7 +181,7 @@ crServerDispatchDestroyContext( GLint ctx )
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
 {
-    CRMuralInfo *mural;
+    CRMuralInfo *mural, *oldMural;
     CRContext *ctx;
 
     if (context >= 0 && window >= 0) {
@@ -204,6 +204,14 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
         }
     }
     else {
+        oldMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, cr_server.currentWindow);
+        if (oldMural && oldMural->bUseFBO
+            && crServerSupportRedirMuralFBO()
+            && !crStateGetCurrent()->framebufferobject.drawFB)
+        {
+            cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+        }
+
         ctx = cr_server.DummyContext;
         window = -1;
         mural = NULL;
@@ -245,6 +253,8 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
                     cr_server.currentWindow, window);
     */
 
+    oldMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, cr_server.currentWindow);
+
     if (1/*cr_server.firstCallMakeCurrent ||
             cr_server.currentWindow != window ||
             cr_server.currentNativeWindow != nativeWindow*/) {
@@ -265,5 +275,13 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
 
     /* This used to be earlier, after crStateUpdateColorBits() call */
     crStateMakeCurrent( ctx );
+
+    if (oldMural != mural && crServerSupportRedirMuralFBO())
+    {
+        if (!crStateGetCurrent()->framebufferobject.drawFB)
+        {
+            cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_FRAMEBUFFER_EXT, mural->bUseFBO ? mural->idFBO:0);
+        }
+    }
 }
 
