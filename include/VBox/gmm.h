@@ -487,8 +487,25 @@ typedef struct GMMREGISTERSHAREDMODULEREQ
 typedef GMMREGISTERSHAREDMODULEREQ *PGMMREGISTERSHAREDMODULEREQ;
 
 GMMR0DECL(int) GMMR0RegisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMREGISTERSHAREDMODULEREQ pReq);
-GMMR0DECL(int) GMMR0SharedModuleCheckRange(PVM pVM, VMCPUID idCpu, PGMMREGISTERSHAREDMODULEREQ pReq, unsigned idxRegion, unsigned cPages, PRTHCPHYS paHCPhysAndPageID);
 
+/**
+ * Page descriptor for GMMR0SharedModuleCheckRange
+ */
+typedef struct GMMSHAREDPAGEDESC
+{
+    /** HC Physical address (in/out) */
+    RTHCPHYS                    HCPhys;
+    /** GC Physical address (in) */
+    RTGCPHYS                    GCPhys;
+    /** GMM page id. (in/out) */
+    uint32_t                    uPageId;
+    /** Align at 8 byte boundary. */
+    uint32_t                    uAlignment;
+} GMMSHAREDPAGEDESC;
+/** Pointer to a GMMSHAREDPAGEDESC. */
+typedef GMMSHAREDPAGEDESC *PGMMSHAREDPAGEDESC;
+
+GMMR0DECL(int) GMMR0SharedModuleCheckRange(PVM pVM, VMCPUID idCpu, PGMMREGISTERSHAREDMODULEREQ pReq, unsigned idxRegion, unsigned cPages, PGMMSHAREDPAGEDESC paPageDesc);
 
 /**
  * Request buffer for GMMR0UnregisterSharedModuleReq / VMMR0_DO_GMM_UNREGISTER_SHARED_MODULE.
