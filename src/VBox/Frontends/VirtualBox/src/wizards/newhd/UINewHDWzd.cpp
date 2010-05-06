@@ -237,6 +237,7 @@ UINewHDWzdPage3::UINewHDWzdPage3()
     connect(m_pLocationSelector, SIGNAL(clicked()), this, SLOT(onSelectLocationButtonClicked()));
     connect(m_pSizeSlider, SIGNAL(valueChanged(int)), this, SLOT(onSizeSliderValueChanged(int)));
     connect(m_pSizeEditor, SIGNAL(textChanged(const QString &)), this, SLOT(onSizeEditorTextChanged(const QString &)));
+    connect(this, SIGNAL(sigToUpdateSizeEditor(const QString &)), m_pSizeEditor, SLOT(setText(const QString &)));
 }
 
 void UINewHDWzdPage3::retranslateUi()
@@ -295,6 +296,9 @@ void UINewHDWzdPage3::onLocationEditorTextChanged(const QString &strText)
 
     /* Set current fileName */
     m_strLocation = toFileName(strText);
+
+    /* Notify wizard sub-system about complete status changed: */
+    emit completeChanged();
 }
 
 void UINewHDWzdPage3::onSelectLocationButtonClicked()
@@ -330,16 +334,26 @@ void UINewHDWzdPage3::onSelectLocationButtonClicked()
 
 void UINewHDWzdPage3::onSizeSliderValueChanged(int iValue)
 {
+    /* Update currently stored size: */
     m_uCurrentSize = sliderToSizeMB(iValue, m_iSliderScale);
-    m_pSizeEditor->setText(vboxGlobal().formatSize(m_uCurrentSize * _1M));
+    /* Update tooltip: */
     updateSizeToolTip(m_uCurrentSize * _1M);
+    /* Notify size-editor about size is changed: */
+    emit sigToUpdateSizeEditor(vboxGlobal().formatSize(m_uCurrentSize * _1M));
+    /* Notify wizard sub-system about complete status changed: */
+    emit completeChanged();
 }
 
 void UINewHDWzdPage3::onSizeEditorTextChanged(const QString &strValue)
 {
-    updateSizeToolTip(vboxGlobal().parseSize(strValue));
+    /* Update currently stored size: */
     m_uCurrentSize = vboxGlobal().parseSize(strValue) / _1M;
+    /* Update tooltip: */
+    updateSizeToolTip(m_uCurrentSize * _1M);
+    /* Notify size-slider about size is changed but prevent callback: */
+    blockSignals(true);
     m_pSizeSlider->setValue(sizeMBToSlider(m_uCurrentSize, m_iSliderScale));
+    blockSignals(false);
 }
 
 QString UINewHDWzdPage3::toFileName(const QString &strName)
