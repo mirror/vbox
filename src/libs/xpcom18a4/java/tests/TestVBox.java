@@ -16,24 +16,27 @@ import org.virtualbox.*;
 
 public class TestVBox
 {
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         VirtualBoxManager mgr = VirtualBoxManager.getInstance(null);
 
         System.out.println("\n--> initialized\n");
 
-        try {
-
+        try
+        {
             IVirtualBox vbox = mgr.getVBox();
+            System.out.println("VirtualBox version: " + vbox.getVersion() + "\n");
 
-            System.out.println("vers="+vbox.getVersion());
+            /* list all VMs and print some info for each */
             IMachine[] machs = vbox.getMachines(null);
-            //IMachine m = vbox.findMachine("SL");
             for (IMachine m : machs)
             {
-                System.out.println("mach="+m.getName()+" RAM="+m.getMemorySize()+"M");
+                System.out.println("VM name: " + m.getName() + ", RAM size: " + m.getMemorySize() + "MB");
             }
 
+            /* do something silly, start the first VM in the list */
             String m = machs[0].getName();
+            System.out.println("\nAttempting to start VM '" + m + "'");
             if (mgr.startVm(m, 7000))
             {
                 System.out.println("started, presss any key...");
@@ -43,7 +46,9 @@ public class TestVBox
             {
                 System.out.println("cannot start machine "+m);
             }
-        } catch (Throwable e) {
+        }
+        catch (Throwable e)
+        {
             e.printStackTrace();
         }
 
