@@ -18,6 +18,9 @@
  */
 
 /* VBox Includes */
+#include <iprt/ldr.h>
+#include <VBox/VDEPlug.h>
+
 #include "QIWidgetValidator.h"
 #include "QIArrowButtonSwitch.h"
 #include "VBoxGlobal.h"
@@ -582,12 +585,16 @@ void VBoxVMSettingsNetwork::populateComboboxes()
     mCbAttachmentType->setItemData (4,
         mCbAttachmentType->itemText (4), Qt::ToolTipRole);
 #ifdef VBOX_WITH_VDE
-    mCbAttachmentType->insertItem (5,
-        vboxGlobal().toString (KNetworkAttachmentType_VDE));
-    mCbAttachmentType->setItemData (5,
-        KNetworkAttachmentType_VDE);
-    mCbAttachmentType->setItemData (5,
-        mCbAttachmentType->itemText (5), Qt::ToolTipRole);
+    RTLDRMOD hLdrDummy;
+    if (RT_SUCCESS(RTLdrLoad(VBOX_LIB_VDE_PLUG_NAME, &hLdrDummy)))
+    {
+        mCbAttachmentType->insertItem (5,
+            vboxGlobal().toString (KNetworkAttachmentType_VDE));
+        mCbAttachmentType->setItemData (5,
+            KNetworkAttachmentType_VDE);
+        mCbAttachmentType->setItemData (5,
+            mCbAttachmentType->itemText (5), Qt::ToolTipRole);
+    }
 #endif
 
     /* Set the old value */

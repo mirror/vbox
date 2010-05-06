@@ -598,6 +598,9 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
   VBOX_WITH_NETADP = 1
  endif
 endif
+if1of ($(KBUILD_TARGET), freebsd linux)
+ VBOX_WITH_VDE = 1
+endif
 ## @}
 
 # Strip binaries of release and profile builds before packing them into the installer

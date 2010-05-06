@@ -24,6 +24,7 @@
 #include <VBox/pdmdrv.h>
 #include <VBox/pdmnetifs.h>
 #include <VBox/pdmnetinline.h>
+#include <VBox/VDEPlug.h>
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -44,7 +45,6 @@
 #include <unistd.h>
 
 #include "Builtins.h"
-#include "VDEPlug.h"
 
 
 /*******************************************************************************
