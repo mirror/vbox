@@ -6523,6 +6523,8 @@ static DECLCALLBACK(void) ahciR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
         if (RT_FAILURE(rc) || RT_FAILURE(rcThread))
             AssertMsgFailed(("%s Failed to destroy async IO thread rc=%Rrc rcThread=%Rrc\n", __FUNCTION__, rc, rcThread));
 
+        pAhciPort->pAsyncIOThread = NULL;
+
         rc = RTSemEventDestroy(pAhciPort->AsyncIORequestSem);
         if (RT_FAILURE(rc))
             AssertMsgFailed(("%s: Failed to destroy the event semaphore rc=%Rrc.\n", __FUNCTION__, rc));
