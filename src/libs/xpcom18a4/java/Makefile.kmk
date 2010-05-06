@@ -265,12 +265,12 @@ else  # VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
 ## @todo this doesn't work properly as a sub-makefile yet (XPIDL_INCS, XPCOM_IDLFILES).
 $(VBOX_JXPCOM_GEN)/jxpcomgen.list: \
 		$(VBOX_PATH_SDK)/bindings/xpcom/idl/VirtualBox_XPCOM.idl \
-		$$(XPCOM_IDLFILES) \
+		$$(addprefix $(VBOX_PATH_XPCOM_SRC)/,$$(XPCOM_IDLFILES)) \
 		$(VBOX_XPIDL) \
 		| $(VBOX_JXPCOM_GEN)/java
 	$(call MSG_L1,Generating Java interface files from IDL)
 	$(QUIET)$(RM) -f $(filter-out %/XPCOMError.java, $(wildcard $(VBOX_JXPCOM_GEN)/java/*.java))
-	$(foreach idl, $(VBOX_PATH_SDK)/bindings/xpcom/idl/VirtualBox_XPCOM.idl $(XPCOM_IDLFILES)\
+	$(foreach idl, $(VBOX_PATH_SDK)/bindings/xpcom/idl/VirtualBox_XPCOM.idl $(addprefix $(VBOX_PATH_XPCOM_SRC)/,$(XPCOM_IDLFILES))\
 		, $(NLTAB)$(TARGET_xpidl) -m java $(XPIDL_INCS) -e $(VBOX_JXPCOM_GEN)/java/$(basename $(notdir $(idl))).java $(idl) )
 	$(ECHO_EXT) $(VBOX_JXPCOM_GEN)/java/*.java > $@
 endif # VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
