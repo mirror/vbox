@@ -113,6 +113,7 @@ if 1
 	         -framework Foundation     \
 		 -framework AppKit         \
                  -framework Carbon
+ TEMPLATE_XPCOMEXEBLD_LDFLAGS.linux     = '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)'
 
  ifeq ($(KBUILD_TARGET),darwin)
   define preprocess_exebld
