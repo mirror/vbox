@@ -936,7 +936,8 @@ int main(int argc, char** argv)
   rv = gen.GenerateInterfaces();
 
 #ifdef VBOX
-  com::Shutdown();
+  // very short-living XPCOM processes trigger problem on shutdown - ignoring it not a big deal anyway
+  //com::Shutdown();
 #else
   NS_ShutdownXPCOM(nsnull);
 #endif
