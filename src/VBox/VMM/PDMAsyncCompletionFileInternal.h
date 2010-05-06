@@ -379,6 +379,9 @@ typedef struct PDMACFILECACHEGLOBAL
     STAMCOUNTER      StatBuffersReused;
 #endif
 } PDMACFILECACHEGLOBAL;
+#ifdef VBOX_WITH_STATISTICS
+AssertCompileMemberAlignment(PDMACFILECACHEGLOBAL, cHits, sizeof(uint64_t));
+#endif
 
 /**
  * Per endpoint cache data.
@@ -404,6 +407,9 @@ typedef struct PDMACFILEENDPOINTCACHE
     STAMCOUNTER                          StatWriteDeferred;
 #endif
 } PDMACFILEENDPOINTCACHE, *PPDMACFILEENDPOINTCACHE;
+#ifdef VBOX_WITH_STATISTICS
+AssertCompileMemberAlignment(PDMACFILEENDPOINTCACHE, StatWriteDeferred, sizeof(uint64_t));
+#endif
 
 /**
  * Backend type for the endpoint.
@@ -602,6 +608,9 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
 } PDMASYNCCOMPLETIONENDPOINTFILE;
 /** Pointer to the endpoint class data. */
 typedef PDMASYNCCOMPLETIONENDPOINTFILE *PPDMASYNCCOMPLETIONENDPOINTFILE;
+#ifdef VBOX_WITH_STATISTICS
+AssertCompileMemberAlignment(PDMASYNCCOMPLETIONENDPOINTFILE, StatRead, sizeof(uint64_t));
+#endif
 
 /** Request completion function */
 typedef DECLCALLBACK(void)   FNPDMACTASKCOMPLETED(PPDMACTASKFILE pTask, void *pvUser, int rc);
