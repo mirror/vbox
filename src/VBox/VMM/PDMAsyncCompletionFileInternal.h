@@ -359,6 +359,8 @@ typedef struct PDMACFILECACHEGLOBAL
     /** List of all endpoints using this cache. */
     RTLISTNODE        ListEndpoints;
 #ifdef VBOX_WITH_STATISTICS
+    /** Alignment */
+    uint32_t         u32Alignment;
     /** Hit counter. */
     STAMCOUNTER      cHits;
     /** Partial hit counter. */
@@ -401,8 +403,6 @@ typedef struct PDMACFILEENDPOINTCACHE
     /** Node of the cache endpoint list. */
     RTLISTNODE                           NodeCacheEndpoint;
 #ifdef VBOX_WITH_STATISTICS
-    /** Alignment */
-    bool                                 afAlignment[3];
     /** Number of times a write was deferred because the cache entry was still in progress */
     STAMCOUNTER                          StatWriteDeferred;
 #endif
@@ -544,6 +544,8 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
     PPDMACTASKFILE                         pFlushReq;
 
 #ifdef VBOX_WITH_STATISTICS
+    /** Alignment */
+    uint32_t                               u32Alignment;
     /** Time spend in a read. */
     STAMPROFILEADV                         StatRead;
     /** Time spend in a write. */
