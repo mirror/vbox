@@ -86,8 +86,8 @@
   SynchronizationLib|MdePkg/Library/BaseSynchronizationLib/BaseSynchronizationLib.inf
   CpuLib|MdePkg/Library/BaseCpuLib/BaseCpuLib.inf
   PerformanceLib|MdePkg/Library/BasePerformanceLibNull/BasePerformanceLibNull.inf
-  PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
-  #PeCoffLib|VBoxPkg/Library/VBoxPeCoffLib/VBoxPeCoffLib.inf
+  #PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
+  PeCoffLib|VBoxPkg/Library/VBoxPeCoffLib/VBoxPeCoffLib.inf
   PeCoffExtraActionLib|MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
   #PciIncompatibleDeviceSupportLib|IntelFrameworkModulePkg/Library/PciIncompatibleDeviceSupportLib/PciIncompatibleDeviceSupportLib.inf
   CacheMaintenanceLib|MdePkg/Library/BaseCacheMaintenanceLib/BaseCacheMaintenanceLib.inf
@@ -96,8 +96,8 @@
   HiiLib|MdeModulePkg/Library/UefiHiiLib/UefiHiiLib.inf
   S3Lib|MdeModulePkg/Library/PeiS3LibNull/PeiS3LibNull.inf
   RecoveryLib|MdeModulePkg/Library/PeiRecoveryLibNull/PeiRecoveryLibNull.inf
-  GenericBdsLib|IntelFrameworkModulePkg/Library/GenericBdsLib/GenericBdsLib.inf
-  #GenericBdsLib|VBoxPkg/Library/VBoxGenericBdsLib/VBoxGenericBdsLib.inf
+  #GenericBdsLib|IntelFrameworkModulePkg/Library/GenericBdsLib/GenericBdsLib.inf
+  GenericBdsLib|VBoxPkg/Library/VBoxGenericBdsLib/VBoxGenericBdsLib.inf
   CapsuleLib|MdeModulePkg/Library/DxeCapsuleLibNull/DxeCapsuleLibNull.inf
   DxeServicesLib|MdePkg/Library/DxeServicesLib/DxeServicesLib.inf
   PeCoffGetEntryPointLib|MdePkg/Library/BasePeCoffGetEntryPointLib/BasePeCoffGetEntryPointLib.inf
@@ -377,10 +377,12 @@
   MdeModulePkg/Universal/SetupBrowserDxe/SetupBrowserDxe.inf
 
   # VBOX
-  #VBoxPkg/VBoxFsDxe/VBoxIso9660.inf
+  VBoxPkg/VBoxFsDxe/VBoxIso9660.inf
+  VBoxPkg/VBoxFsDxe/VBoxHfs.inf
   VBoxPkg/VBoxVgaMiniPortDxe/VBoxVgaMiniPortDxe.inf
   VBoxPkg/VBoxVgaDxe/VBoxVgaDxe.inf
   VBoxPkg/VBoxSysTables/VBoxSysTables.inf
+  VBoxPkg/VBoxAppleSim/VBoxAppleSim.inf
   VBoxPkg/VBoxConsoleDxe/VBoxConsoleDxe.inf
   # VBOX end
   IntelFrameworkModulePkg/Universal/Console/VgaClassDxe/VgaClassDxe.inf
