@@ -26,6 +26,7 @@
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <iprt/assert.h>
+#include <iprt/mem.h>
 
 RT_C_DECLS_BEGIN
 #define PGM_BTH_NAME(name)          PGM_BTH_NAME_32BIT_PROT(name)
@@ -312,6 +313,8 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
 VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PVMCPU pVCpu, PGMMREGISTERSHAREDMODULEREQ pReq)
 {
     int rc = VINF_SUCCESS;
+    PRTHCPHYS paHCPhysAndPageID = NULL;
+    uint32_t  cbPreviousRegion  = 0;
 
     /*
      * Validate input.
@@ -327,8 +330,25 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PVMCPU pVCpu, PGMMREGISTERSHAREDM
         Assert((pReq->aRegions[i].cbRegion & 0xfff) == 0);
         Assert((pReq->aRegions[i].GCRegionAddr & 0xfff) == 0);
 
-        RTGCPTR GCRegion  = pReq->aRegions[i].GCRegionAddr;
-        uint32_t cbRegion = pReq->aRegions[i].cbRegion & ~0xfff;
+        RTGCPTR  GCRegion  = pReq->aRegions[i].GCRegionAddr;
+        unsigned cbRegion = pReq->aRegions[i].cbRegion & ~0xfff;
+        unsigned idxPage = 0;
+        bool     fValidChanges = false;
+
+        if (cbPreviousRegion < cbRegion)
+        {
+            if (paHCPhysAndPageID)
+                RTMemFree(paHCPhysAndPageID);
+
+            paHCPhysAndPageID = (PRTHCPHYS)RTMemAlloc((cbRegion << PAGE_SHIFT) * sizeof(*paHCPhysAndPageID));
+            if (!paHCPhysAndPageID)
+            {
+                AssertFailed();
+                rc = VERR_NO_MEMORY;
+                goto end;
+            }
+            cbPreviousRegion  = cbRegion;
+        }
 
         while (cbRegion)
         {
@@ -343,15 +363,34 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PVMCPU pVCpu, PGMMREGISTERSHAREDM
                 if (    pPage
                     &&  !PGM_PAGE_IS_SHARED(pPage))
                 {
+                    fValidChanges = true;
+                    paHCPhysAndPageID[idxPage] = pPage->HCPhysAndPageID;
                 }
+                else
+                    paHCPhysAndPageID[idxPage] = NIL_RTHCPHYS;
             }
+            else
+                paHCPhysAndPageID[idxPage] = NIL_RTHCPHYS;
 
+            idxPage++;
             GCRegion += PAGE_SIZE;
             cbRegion -= PAGE_SIZE;
         }
+
+        if (fValidChanges)
+        {
+            rc = GMMR0SharedModuleCheckRange(pVM, pVCpu->idCpu, pReq, i, idxPage, paHCPhysAndPageID);
+            AssertRC(rc);
+            if (RT_FAILURE(rc))
+                break;
+        }
     }
 
+end:
     pgmUnlock(pVM);
+    if (paHCPhysAndPageID)
+        RTMemFree(paHCPhysAndPageID);
+
     return rc;
 }
 #endif
