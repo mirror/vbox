@@ -619,6 +619,21 @@ static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
                 AssertRC(rc2);
                 cReqsResubmit = 0;
             }
+            else if (    pEndpoint->pFlushReq
+                     && !pAioMgr->cRequestsActive
+                     && !pEndpoint->fAsyncFlushSupported)
+            {
+                /*
+                 * Complete a pending flush if we don't have requests enqueued and the host doesn't support
+                 * the async flush API.
+                 * Happens only if this we just noticed that this is not supported
+                 * and the only active request was a flush.
+                 */
+                PPDMACTASKFILE pFlush = pEndpoint->pFlushReq;
+                pEndpoint->pFlushReq = NULL;
+                pFlush->pfnCompleted(pFlush, pFlush->pvUser, VINF_SUCCESS);
+                pdmacFileTaskFree(pEndpoint, pFlush);
+            }
         }
 
         if (rc == VERR_FILE_AIO_INSUFFICIENT_RESSOURCES)
@@ -1266,7 +1281,8 @@ static int pdmacFileAioMgrNormalCheckEndpoints(PPDMACEPFILEMGR pAioMgr)
             if (RT_FAILURE(rc))
                 return rc;
         }
-        else if (!pEndpoint->AioMgr.cRequestsActive)
+        else if (   !pEndpoint->AioMgr.cRequestsActive
+                 && pEndpoint->enmState != PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE)
         {
             /* Reopen the file so that the new endpoint can reassociate with the file */
             RTFileClose(pEndpoint->File);
