@@ -3237,7 +3237,7 @@ Version %1</source>
     </message>
     <message>
         <source>Use manual configuration for this host-only network adapter.</source>
-        <translation>Utiliser la configuration manuelle pour cette interface réseau privé hôte.</translation>
+        <translation>Utiliser la configuration manuelle pour cette interface à un réseau privé hôte.</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
@@ -3277,19 +3277,19 @@ Version %1</source>
     </message>
     <message>
         <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Affiche l&apos;adresse du serveur DHCP du réseau associé à cette interface réseau privé hôte.</translation>
+        <translation>Affiche l&apos;adresse du serveur DHCP du réseau associé à cette interface à un réseau privé hôte.</translation>
     </message>
     <message>
         <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Affiche le masque réseau du serveur DHCP du réseau associé à cette interface réseau privé hôte.</translation>
+        <translation>Affiche le masque réseau du serveur DHCP du réseau associé à cette interface à un réseau privé hôte.</translation>
     </message>
     <message>
         <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Affiche la limite inférieur de la plage d&apos;adresses offerts par le serveur DHCP du réseau associé avec cette interface réseau privé hôte.</translation>
+        <translation>Affiche la limite inférieur de la plage d&apos;adresses offerts par le serveur DHCP du réseau associé avec cette interface à un réseau privé hôte.</translation>
     </message>
     <message>
         <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Affiche la limite supérieur de la plage d&apos;adresses offerts par le serveur DHCP du réseau associé avec cette interface réseau privé hôte.</translation>
+        <translation>Affiche la limite supérieur de la plage d&apos;adresses offerts par le serveur DHCP du réseau associé avec cette interface à un réseau privé hôte.</translation>
     </message>
 </context>
 <context>
@@ -3855,7 +3855,7 @@ Version %1</source>
     <message>
         <source>None</source>
         <comment>details report (shared folders)</comment>
-        <translation>Rien</translation>
+        <translation>Aucun</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -4263,7 +4263,7 @@ Version %1</source>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Interface réseau privé hôte, &apos;%1&apos;</translation>
+        <translation>Réseau privé hôte, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Bridged Adapter</source>
@@ -4273,7 +4273,7 @@ Version %1</source>
     <message>
         <source>Host-only Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Accès privé hôte</translation>
+        <translation>Réseau privé hôte</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
@@ -4283,7 +4283,7 @@ Version %1</source>
     <message>
         <source>Processor(s)</source>
         <comment>details report</comment>
-        <translation>Processeur(s)</translation>
+        <translation>Nombre de processeurs</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
@@ -4598,7 +4598,7 @@ Version %1</source>
     <message>
         <source>VDE Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Interface réseau virtuel VDE</translation>
+        <translation>Réseau virtuel VDE</translation>
     </message>
     <message>
         <source>LsiLogic SAS</source>
@@ -4608,7 +4608,7 @@ Version %1</source>
     <message>
         <source>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</source>
         <comment>regexp for matching ####[.##] B|KB|MB|GB|TB|PB, %1=decimal point</comment>
-        <translation>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</translation>
+        <translation>^(?:(?:(\d+)(?:\s?(o|Ko|Mo|Go|To|Po))?)|(?:(\d*)%1(\d{1,2})(?:\s?(Ko|Mo|Go|To|Po))))$</translation>
     </message>
     <message>
         <source>B</source>
@@ -5896,7 +5896,7 @@ Version %1</source>
     </message>
     <message>
         <source>Failed to create the host-only network interface.</source>
-        <translation>Échec de création de l&apos;interface réseau pour accès privé hôte.</translation>
+        <translation>Échec de création de l&apos;interface pour un réseau privé hôte.</translation>
     </message>
     <message>
         <source>Failed to open appliance.</source>
@@ -5968,7 +5968,7 @@ Version %1</source>
     </message>
     <message>
         <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Si vous enlevez ce réseau privé hôte, l&apos;interface réseau privé hôte correspondant sera également enlevée.  Voulez vous enlever l&apos;interface privée &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note :&lt;/b&gt; cette interface pourrait également être utilisé par une ou plusieurs interfaces réseau de vos machines virtuelles.  Si vous l&apos;enlevez, ces interfaces ne serront plus utilisables jusqu&apos;à ce que vous corrigez leurs paramètres en choisissant une autre interface privé hôte ou un autre mode d&apos;accès.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Si vous enlevez ce réseau privé hôte, l&apos;interface correspondante sur la machine hôte (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;) sera également enlevée. Voulez vous vraiment enlever cette interface?&lt;/p&gt;&lt;p&gt;&lt;b&gt;À noter :&lt;/b&gt; cette interface hôte pourrait également être utilisé par d&apos;autres interfaces réseau de vos machines virtuelles. Si vous l&apos;enlevez, ces interfaces ne serront plus utilisables jusqu&apos;à ce que vous corrigez leurs paramètres en choisissant un autre réseau privé hôte ou un autre mode d&apos;accès.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
@@ -8365,7 +8365,7 @@ Version %1</source>
     </message>
     <message>
         <source>no host-only network adapter is selected</source>
-        <translation>aucune interface réseau privé hôte n&apos;a été sélectionnée</translation>
+        <translation>aucune interface à un réseau privé hôte n&apos;a été sélectionnée</translation>
     </message>
     <message>
         <source>Not selected</source>
@@ -8382,7 +8382,7 @@ Version %1</source>
     </message>
     <message>
         <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
-        <translation>Choisi le nom de l&apos;interface réseau pour le mode &lt;b&gt;accès en pont&lt;/b&gt; ou le mode &lt;b&gt;accès privé hôte&lt;/b&gt; et le nom du réseau interne pour le mode d&apos;accès &lt;b&gt;réseau interne&lt;/b&gt;.</translation>
+        <translation>Choisi le nom de l&apos;interface réseau pour le mode &lt;b&gt;accès en pont&lt;/b&gt; ou le mode &lt;b&gt;réseau privé hôte&lt;/b&gt; et le nom du réseau interne pour le mode d&apos;accès &lt;b&gt;réseau interne&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>A&amp;dvanced</source>
@@ -8630,7 +8630,7 @@ Version %1</source>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
-        <translation>Po&amp;rt I/O : </translation>
+        <translation>Po&amp;rt E/S :</translation>
     </message>
     <message>
         <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
@@ -8848,7 +8848,7 @@ Version %1</source>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
-        <translation>Po&amp;rt I/O : </translation>
+        <translation>Po&amp;rt E/S :</translation>
     </message>
     <message>
         <source>Port/File &amp;Path:</source>
@@ -8984,7 +8984,7 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Processor(s):</source>
-        <translation>&amp;Processeur(s):</translation>
+        <translation>Nombre de &amp;processeurs :</translation>
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine.</source>
