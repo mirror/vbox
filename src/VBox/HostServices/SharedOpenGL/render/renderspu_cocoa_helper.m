@@ -1352,12 +1352,20 @@ void cocoaViewReparent(NativeViewRef pView, NativeViewRef pParentView)
     if (pOView)
     {
         /* Make sure the window is removed from any previous parent window. */
-        [[[pOView overlayWin] parentWindow] removeChildWindow:[pOView overlayWin]];
+        if ([[pOView overlayWin] parentWindow] != nil)
+        {
+            [[[pOView overlayWin] parentWindow] removeChildWindow:[pOView overlayWin]];
+        }
+
         /* Set the new parent view */
         [pOView setParentView: pParentView];
+
         /* Add the overlay window as a child to the new parent window */
-        [[pParentView window] addChildWindow:[pOView overlayWin] ordered:NSWindowAbove];
-        [pOView createFBO];
+        if (pParentView != nil)
+        {
+            [[pParentView window] addChildWindow:[pOView overlayWin] ordered:NSWindowAbove];
+            [pOView createFBO];
+        }
     }
 
     [pPool release];
