@@ -118,7 +118,7 @@ tstCollector_LDFLAGS.win     += psapi.lib powrprof.lib
 #
 # tstHostHardwareLinux
 #
-tstHostHardwareLinux_TEMPLATE  = VBOXR3TSTEXE
+tstHostHardwareLinux_TEMPLATE  = VBOXR3TSTNPEXE
 tstHostHardwareLinux_SOURCES   = \
 	tstHostHardwareLinux.cpp \
 	../linux/HostHardwareLinux.cpp
