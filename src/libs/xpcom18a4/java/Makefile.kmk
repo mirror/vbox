@@ -20,6 +20,8 @@ include $(KBUILD_PATH)/subheader.kmk
 
 VBOX_JXPCOM_SRC    := $(PATH_SUB_CURRENT)
 
+ifndef VBOX_ONLY_SDK
+
 ifeq ($(KBUILD_TARGET), darwin)
  VBOX_JAVA_HOME = /System/Library/Frameworks/JavaVM.framework/Versions/1.5.0
  VBOX_JAVAC = $(VBOX_JAVA_HOME)/Commands/javac
@@ -102,13 +104,15 @@ if 1
                    $(VBOX_PATH_XPCOM_SRC)/xpcom/ds
  TEMPLATE_XPCOMEXEBLD_DEFS              = VBOX_WITH_XPCOM
  TEMPLATE_XPCOMEXEBLD_LIBS              = $(VBoxXPCOM_LIBS) $(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
+ # This is OK on Linux even with hardening
+ TEMPLATE_XPCOMEXEBLD_LIBS.linux        = $(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
  TEMPLATE_XPCOMEXEBLD_INCS.darwin       = $(TEMPLATE_XPCOM_INCS.darwin)
- TEMPLATE_XPCOMEXEBLD_LDFLAGS.darwin    =   \
- 	         -framework CoreServices   \
- 		 -framework CoreFoundation \
- 	         -framework Foundation     \
- 		 -framework AppKit         \
-                  -framework Carbon
+ TEMPLATE_XPCOMEXEBLD_LDFLAGS.darwin    =  \
+	         -framework CoreServices   \
+		 -framework CoreFoundation \
+	         -framework Foundation     \
+		 -framework AppKit         \
+                 -framework Carbon
 
  ifeq ($(KBUILD_TARGET),darwin)
   define preprocess_exebld
@@ -123,11 +127,11 @@ if 1
  genjifaces_INCS     =    \
          src
  genjifaces_DEFS     =    \
- 	EXPORT_XPTI_API  \
+	 EXPORT_XPTI_API  \
          EXPORT_XPT_API
 
  genjifaces_SOURCES  =    \
- 	../xpcom/build/nsStringAPI.cpp \
+	../xpcom/build/nsStringAPI.cpp  \
          ../xpcom/build/nsXPComInit.cpp \
          tools/genifaces/GenerateJavaInterfaces.cpp \
          src/nsFileStreams.cpp
@@ -247,10 +251,13 @@ $(VBOX_JXPCOM_NSERROR): $(VBOX_PATH_XPCOM_SRC)/xpcom/base/nsError.h $(VBOX_JXPCO
 	perl $(VBOX_JXPCOM_SRC)/tools/gen-nsError.pl < $< > $@
 
 ifndef VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
+VBOX_TEMP_HOME=$(shell echo /tmp/vboxhome$$$$)
 $(VBOX_JXPCOM_GEN)/jxpcomgen.list: $(GENJIFACES_BIN) $(PATH_TARGET)/VBox-xpcom-xpt-files/VBoxXPCOMBase.xpt | $(VBOX_JXPCOM_GEN)/java
 	$(QUIET)echo Generating Java interface files
 	$(call preprocess_exebld,$(GENJIFACES_BIN))
-	$(GENJIFACES_BIN) -d $(VBOX_JXPCOM_GEN)/java
+	$(QUIET) $(MKDIR) -p $(VBOX_TEMP_HOME)
+	VBOX_USER_HOME=$(VBOX_TEMP_HOME) $(GENJIFACES_BIN) -d $(VBOX_JXPCOM_GEN)/java
+	$(QUIET) rm -rf $(VBOX_TEMP_HOME)
 	$(QUIET)echo $$(ls $(VBOX_JXPCOM_GEN)/java/*.java) > $@
 else  # VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
 ## @todo this doesn't work properly as a sub-makefile yet (XPIDL_INCS, XPCOM_IDLFILES).
@@ -276,8 +283,7 @@ $(VBOX_JXPCOM_JAR): $(JXPCOM_JAR_SRC) $(VBOX_JXPCOM_GEN)/jxpcomgen.list $(VBOX_J
               -d $(VBOX_JXPCOM_JDEST) -classpath $(VBOX_JXPCOM_JDEST)
 	$(VBOX_JAR) cf $@ -C $(VBOX_JXPCOM_TARGET)/jdest .
 
-
-ifdef VBOX_ONLY_SDK
+else # VBOX_ONLY_SDK
  #
  # Install sample code.
  #
@@ -287,6 +293,6 @@ ifdef VBOX_ONLY_SDK
  jxpcomsample_SOURCES = \
 	tests/TestVBox.java=>samples/TestVBox.java \
 	tests/Makefile=>samples/Makefiles
-endif
+endif # VBOX_ONLY_SDK
 
 include $(KBUILD_PATH)/subfooter.kmk

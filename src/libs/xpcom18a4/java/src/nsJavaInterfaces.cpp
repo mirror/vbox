@@ -409,6 +409,7 @@ GRE_NATIVE(lockProfileDirectory) (JNIEnv* env, jobject, jobject aDirectory)
       nsISupports* lock;
 #ifdef VBOX
       rv = 0;
+      lock = 0;
 #else
       rv = XRE_LockProfileDirectory(profileDir, &lock);
 #endif
