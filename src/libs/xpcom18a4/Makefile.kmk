@@ -423,6 +423,9 @@ xpidl_INST = $(INST_BIN)
 # xpidl_CXXFLAGS.x86 = $(TEMPLATE_XPCOMBLDPROG_CXXFLAGS.x86)
 # xpidl_LDFLAGS.x86  = $(TEMPLATE_XPCOMBLDPROG_LDFLAGS.x86)
 #endif
+ifdef VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
+ xpidl_DEFS += VBOX_XPIDL_EMULATE_GENJIFACES
+endif
 xpidl_SOURCES = \
 	xpcom/typelib/xpidl/xpidl.c \
 	xpcom/typelib/xpidl/xpidl_idl.c \

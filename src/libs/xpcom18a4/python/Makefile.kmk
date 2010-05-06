@@ -28,7 +28,6 @@ endif
 # List of supported Python versions, defining a number of
 # VBOX_PYTHON[25|26|27|28|DEF]_[INC|LIB] variables which get picked up below.
 #
-#$(eval $(patsubst %|,%$(NL),$(shell $(VBOX_BLD_PYTHON) $(PATH_SUB_CURRENT)/gen_python_deps.py $(KBUILD_TARGET) $(KBUILD_TARGET_ARCH) $(VBOX_MULTIPYTHON))))
 $(eval $(subst |,$(NL),$(shell $(VBOX_BLD_PYTHON) $(PATH_SUB_CURRENT)/gen_python_deps.py $(KBUILD_TARGET) $(KBUILD_TARGET_ARCH) $(VBOX_MULTIPYTHON))))
 
 ifndef VBOX_ONLY_SDK

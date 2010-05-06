@@ -14,7 +14,7 @@
  *
  * The Original Code is mozilla.org code.
  *
- * The Initial Developer of the Original Code is 
+ * The Initial Developer of the Original Code is
  * Netscape Communications Corporation.
  * Portions created by the Initial Developer are Copyright (C) 1998
  * the Initial Developer. All Rights Reserved.
@@ -23,7 +23,7 @@
  *       Michael Ang <mang@subcarrier.org>
  *
  * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or 
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
  * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
@@ -116,7 +116,7 @@ typedef struct input_data {
  * include files.
  */
 typedef struct input_callback_state {
-    struct input_data *input_stack; /* linked list of input_data */   
+    struct input_data *input_stack; /* linked list of input_data */
     GHashTable *already_included;   /* to prevent redundant includes */
     IncludePathEntry *include_path; /* search path for included files */
     GSList *base_includes;          /* to accumulate #includes from *first* file;
@@ -265,9 +265,9 @@ NextIsRaw(input_data *data, char **startp, int *lenp)
      */
     if (!(data->point[0] == '%' && data->point[1] == '{'))
         return 0;
-        
+
     start = *startp = data->point;
-    
+
     end = NULL;
     while (start < data->max && (end = strstr(start, "%}"))) {
         if (end[-1] == '\r' ||
@@ -304,7 +304,7 @@ NextIsComment(input_data *data, char **startp, int *lenp)
     if (end) {
         int skippedLines = 0;
         char *tempPoint;
-        
+
         /* get current lineno */
         IDL_file_get(NULL,(int *)&data->lineno);
 
@@ -316,7 +316,7 @@ NextIsComment(input_data *data, char **startp, int *lenp)
 
         data->lineno += skippedLines;
         IDL_file_set(data->filename, (int)data->lineno);
-        
+
         *startp = end + 2;
 
         /* If it's a ** comment, tell libIDL about it. */
@@ -354,7 +354,7 @@ NextIsInclude(input_callback_state *callback_state, char **startp,
     if (strncmp(data->point, "#include \"", 10)) {
         return 0;
     }
-    
+
     filename = data->point + 10; /* skip #include " */
     XPT_ASSERT(filename < data->max);
     end = filename;
@@ -378,7 +378,7 @@ NextIsInclude(input_callback_state *callback_state, char **startp,
             end++;
         }
         *end = '\0';
-        
+
         /* make sure we have accurate line info */
         IDL_file_get(&scratch, (int *)&data->lineno);
         fprintf(stderr,
@@ -399,7 +399,7 @@ NextIsInclude(input_callback_state *callback_state, char **startp,
          * already been recursively included from some other file.
          */
         char *filename_cp = xpidl_strdup(filename);
-        
+
         /* note that g_slist_append accepts and likes null as list-start. */
         callback_state->base_includes =
             g_slist_append(callback_state->base_includes, filename_cp);
@@ -435,7 +435,7 @@ NextIsInclude(input_callback_state *callback_state, char **startp,
 
     *lenp = 0;               /* this is magic, see the comment below */
     return 1;
-}    
+}
 
 static void
 FindSpecial(input_data *data, char **startp, int *lenp)
@@ -453,7 +453,7 @@ FindSpecial(input_data *data, char **startp, int *lenp)
 #define LINE_START(data, point) (point == data->buf ||                       \
                                  (point > data->point &&                     \
                                   (point[-1] == '\r' || point[-1] == '\n')))
-                                                 
+
     while (point < data->max) {
         if (point[0] == '/' && point[1] == '*')
             break;
@@ -535,18 +535,18 @@ input_callback(IDL_input_reason reason, union IDL_input_data *cb_data,
             IDL_file_set(data->filename, (int)data->lineno);
             IDL_inhibit_pop();
         }
-        
+
         /*
          * Now we scan for sequences which require special attention:
          *   \n#include                   begins an include statement
          *   \n%{                         begins a raw-source block
          *   /\*                          begins a comment
-         * 
+         *
          * We used to be fancier here, so make sure that we sent the most
          * data possible at any given time.  To that end, we skipped over
          * \n%{ raw \n%} blocks and then _continued_ the search for special
          * sequences like \n#include or /\* comments .
-         * 
+         *
          * It was really ugly, though -- liberal use of goto!  lots of implicit
          * state!  what fun! -- so now we just do this:
          *
@@ -738,7 +738,7 @@ xpidl_process_idl(char *filename, IncludePathEntry *include_path,
         if (explicit_output_filename) {
             real_outname = g_strdup(outname);
         } else {
-/* 
+/*
  *This combination seems a little strange, what about OS/2?
  * Assume it's some build issue
  */
@@ -765,6 +765,9 @@ xpidl_process_idl(char *filename, IncludePathEntry *include_path,
         state.file = stdout;
     }
     state.tree = top;
+#ifdef VBOX_XPIDL_EMULATE_GENJIFACES
+    state.real_outname = real_outname;
+#endif
 
     if (emitter->emit_prolog)
         emitter->emit_prolog(&state);
