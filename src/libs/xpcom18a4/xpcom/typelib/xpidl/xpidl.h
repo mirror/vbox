@@ -14,7 +14,7 @@
  *
  * The Original Code is mozilla.org code.
  *
- * The Initial Developer of the Original Code is 
+ * The Initial Developer of the Original Code is
  * Netscape Communications Corporation.
  * Portions created by the Initial Developer are Copyright (C) 1998
  * the Initial Developer. All Rights Reserved.
@@ -22,7 +22,7 @@
  * Contributor(s):
  *
  * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or 
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
  * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
@@ -107,7 +107,7 @@ typedef struct backend {
 
 /* Function that produces a struct of output-generation functions */
 typedef backend *(*backendFactory)();
- 
+
 extern backend *xpidl_header_dispatch(void);
 extern backend *xpidl_typelib_dispatch(void);
 extern backend *xpidl_doc_dispatch(void);
@@ -134,6 +134,10 @@ struct TreeState {
     GSList           *base_includes;
     nodeHandler      *dispatch;
     void             *priv;     /* mode-private data */
+#ifdef VBOX_XPIDL_EMULATE_GENJIFACES
+    char             *real_outname;
+#endif
+
 };
 
 /*
@@ -256,7 +260,7 @@ verify_method_declaration(IDL_tree method_tree);
 
 /*
  * Verifies the interface declaration
- */ 
+ */
 gboolean
 verify_interface_declaration(IDL_tree method_tree);
 
