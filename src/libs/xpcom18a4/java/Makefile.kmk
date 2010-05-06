@@ -292,7 +292,7 @@ else # VBOX_ONLY_SDK
  jxpcomsample_MODE = a+rx,u+w
  jxpcomsample_SOURCES = \
 	tests/TestVBox.java=>samples/TestVBox.java \
-	tests/Makefile=>samples/Makefiles
+	tests/Makefile=>samples/Makefile
 endif # VBOX_ONLY_SDK
 
 include $(KBUILD_PATH)/subfooter.kmk
