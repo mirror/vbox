@@ -536,10 +536,6 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
 
     /** Flag whether a flush request is currently active */
     PPDMACTASKFILE                         pFlushReq;
-    /** Flag whether the host supports the async flush API. */
-    bool                                   fAsyncFlushSupported;
-
-    bool                                   afAlignment[3];
 
 #ifdef VBOX_WITH_STATISTICS
     /** Time spend in a read. */
@@ -556,6 +552,8 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
     bool                                   fCaching;
     /** Flag whether the file was opened readonly. */
     bool                                   fReadonly;
+    /** Flag whether the host supports the async flush API. */
+    bool                                   fAsyncFlushSupported;
     /** Flag whether a blocking event is pending and needs
      * processing by the I/O manager. */
     bool                                   fBlockingEventPending;
