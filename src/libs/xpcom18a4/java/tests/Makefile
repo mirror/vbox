@@ -13,8 +13,8 @@ OS=$(shell uname -s)
 ARCH=$(shell uname -p)
 
 ifeq ($(OS), Darwin)
- VBOX_SDK=/Users/nike/work/shared/ws/out/darwin.x86/debug/dist/sdk
- VBOX_BIN=/Users/nike/work/shared/ws/out/darwin.x86/debug/dist/VirtualBox.app/Contents/MacOS/
+ VBOX_BIN=/Applications/VirtualBox.app/Contents/MacOS
+ VBOX_SDK=$(VBOX_BIN)/sdk
  JAVA_OPT= -d32
 endif
 
