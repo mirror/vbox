@@ -263,7 +263,7 @@ $(VBOX_JXPCOM_GEN)/jxpcomgen.list: \
 	$(QUIET)$(RM) -f $(filter-out %/XPCOMError.java, $(wildcard $(VBOX_JXPCOM_GEN)/java/*.java))
 	$(foreach idl, $(VBOX_PATH_SDK)/bindings/xpcom/idl/VirtualBox_XPCOM.idl $(XPCOM_IDLFILES)\
 		, $(NLTAB)$(TARGET_xpidl) -m java $(XPIDL_INCS) -e $(VBOX_JXPCOM_GEN)/java/$(basename $(notdir $(idl))).java $(idl) )
-	$(QUIET)ls $(VBOX_JXPCOM_GEN)/java/*.java > $@
+	$(ECHO_EXT) $(VBOX_JXPCOM_GEN)/java/*.java > $@
 endif # VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
 
 $(VBOX_JXPCOM_JAR): $(JXPCOM_JAR_SRC) $(VBOX_JXPCOM_GEN)/jxpcomgen.list $(VBOX_JXPCOM_NSERROR) $(VBOX_JXPCOM_MGR)
