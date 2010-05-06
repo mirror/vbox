@@ -828,6 +828,7 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                 pEpFile->cTasksCached   = 0;
                 pEpFile->pBwMgr         = pEpClassFile->pBwMgr;
                 pEpFile->enmBackendType = enmEpBackend;
+                pEpFile->fAsyncFlushSupported = true;
                 pdmacFileBwRef(pEpFile->pBwMgr);
 
                 if (enmMgrType == PDMACEPFILEMGRTYPE_SIMPLE)
@@ -1029,32 +1030,31 @@ static int pdmacFileEpWrite(PPDMASYNCCOMPLETIONTASK pTask,
 static int pdmacFileEpFlush(PPDMASYNCCOMPLETIONTASK pTask,
                             PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
 {
-    int rc = VINF_SUCCESS;
     PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
     PPDMASYNCCOMPLETIONTASKFILE pTaskFile = (PPDMASYNCCOMPLETIONTASKFILE)pTask;
 
     if (RT_UNLIKELY(pEpFile->fReadonly))
         return VERR_NOT_SUPPORTED;
 
-    pTaskFile->cbTransferLeft = 0;
-    pTaskFile->rc             = VINF_SUCCESS;
+    pdmacFileEpTaskInit(pTask, 0);
 
     if (pEpFile->fCaching)
-        rc = pdmacFileEpCacheFlush(pEpFile, pTaskFile);
-    else
     {
-        PPDMACTASKFILE pIoTask = pdmacFileTaskAlloc(pEpFile);
-        AssertPtr(pIoTask);
-
-        pIoTask->pEndpoint       = pEpFile;
-        pIoTask->enmTransferType = PDMACTASKFILETRANSFER_FLUSH;
-        pIoTask->pvUser          = pTaskFile;
-        pIoTask->pfnCompleted    = pdmacFileEpTaskCompleted;
-        pdmacFileEpAddTask(pEpFile, pIoTask);
-        rc = VINF_AIO_TASK_PENDING;
+        int rc = pdmacFileEpCacheFlush(pEpFile, pTaskFile);
+        AssertRC(rc);
     }
 
-    return rc;
+    PPDMACTASKFILE pIoTask = pdmacFileTaskAlloc(pEpFile);
+    if (RT_UNLIKELY(!pIoTask))
+        return VERR_NO_MEMORY;
+
+    pIoTask->pEndpoint       = pEpFile;
+    pIoTask->enmTransferType = PDMACTASKFILETRANSFER_FLUSH;
+    pIoTask->pvUser          = pTaskFile;
+    pIoTask->pfnCompleted    = pdmacFileEpTaskCompleted;
+    pdmacFileEpAddTask(pEpFile, pIoTask);
+
+    return VINF_AIO_TASK_PENDING;
 }
 
 static int pdmacFileEpGetSize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, uint64_t *pcbSize)
