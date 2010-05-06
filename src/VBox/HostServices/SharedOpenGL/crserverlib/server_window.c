@@ -181,6 +181,8 @@ crServerDispatchWindowDestroy( GLint window )
     if (cr_server.currentWindow == window)
     {
         cr_server.currentWindow = -1;
+        crServerRedirMuralFBO(mural, GL_FALSE);
+        crServerDeleteMuralFBO(mural);
     }
 
     crHashtableDelete(cr_server.pWindowCreateInfoTable, window, crServerCreateInfoDeleteCB);
