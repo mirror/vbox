@@ -2930,7 +2930,7 @@ static INTNETSWDECISION intnetR0NetworkSharedMacFixAndSwitchBroadcast(PINTNETNET
  * Check context, snoop and switch a unicast frame using the network layer
  * address of the link layer one (when sharing MAC address on the wire).
  *
- * This function is only used for frames comming from the wire (trunk).
+ * This function is only used for frames coming from the wire (trunk).
  *
  * @returns true if it's addressed to someone on the network, otherwise false.
  * @param   pNetwork        The network the frame is being sent to.
@@ -2992,7 +2992,7 @@ static INTNETSWDECISION intnetR0NetworkSharedMacFixAndSwitchUnicast(PINTNETNETWO
         case RTNET_ETHERTYPE_ARP:
             Log6(("intnetshareduni: ARP\n"));
             /** @todo revisit this broadcasting of unicast ARP frames! */
-            return intnetR0NetworkSwitchBroadcast(pNetwork, INTNETTRUNKDIR_WIRE, NULL, pDstTab);
+            return intnetR0NetworkSharedMacFixAndSwitchBroadcast(pNetwork, INTNETTRUNKDIR_WIRE, NULL, pSG, pEthHdr, pDstTab);
 
         /*
          * Unknown packets are sent to the trunk and any promiscuous interfaces.
