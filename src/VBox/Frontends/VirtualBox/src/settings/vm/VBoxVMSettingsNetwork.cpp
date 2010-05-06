@@ -18,8 +18,10 @@
  */
 
 /* VBox Includes */
-#include <iprt/ldr.h>
-#include <VBox/VDEPlug.h>
+#ifdef VBOX_WITH_VDE
+# include <iprt/ldr.h>
+# include <VBox/VDEPlug.h>
+#endif
 
 #include "QIWidgetValidator.h"
 #include "QIArrowButtonSwitch.h"
