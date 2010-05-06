@@ -27,7 +27,7 @@
 /* Declarations of the functions that we need from the library */
 #define VDEPLUG_GENERATE_HEADER
 
-#include "VDEPlugSymDefs.h"
+#include <VBox/VDEPlugSymDefs.h>
 
 #undef VDEPLUG_GENERATE_HEADER
 

@@ -33,7 +33,8 @@ struct vde_open_args
 };
 
 /** The file name of the DBus library */
-#define RT_RUNTIME_LOADER_LIB_NAME "libvdeplug.so.2"
+#define VBOX_LIB_VDE_PLUG_NAME "libvdeplug.so.2"
+#define RT_RUNTIME_LOADER_LIB_NAME VBOX_LIB_VDE_PLUG_NAME
 
 /** The name of the loader function */
 #define RT_RUNTIME_LOADER_FUNCTION DrvVDELoadVDEPlug

@@ -19,4 +19,4 @@
 #define LOG_GROUP RTLOGGROUP_LDR
 /* Declarations of the functions that we need from libdbus-1 */
 #define VDEPLUG_GENERATE_BODY
-#include "VDEPlugSymDefs.h"
+#include <VBox/VDEPlugSymDefs.h>
