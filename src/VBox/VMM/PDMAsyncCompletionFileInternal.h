@@ -539,6 +539,8 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
     /** Flag whether the host supports the async flush API. */
     bool                                   fAsyncFlushSupported;
 
+    bool                                   afAlignment[3];
+
 #ifdef VBOX_WITH_STATISTICS
     /** Time spend in a read. */
     STAMPROFILEADV                         StatRead;
