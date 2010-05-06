@@ -58,18 +58,7 @@ public:
         if(isRunning())
             return VERR_INVALID_STATE;
 
-#ifdef RT_OS_WINDOWS
-        if (val && *val)
-        {
-            mOptions[opt] = "\"";
-            mOptions[opt].append(val);
-            mOptions[opt].append("\"");
-        }
-        else
-#endif
-        {
-            mOptions[opt] = val;
-        }
+        mOptions[opt] = val;
         mOptionEnabled[opt] = enabled;
         return VINF_SUCCESS;
     }
