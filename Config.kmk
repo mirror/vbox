@@ -2934,6 +2934,18 @@ ifeq ($(KBUILD_TARGET),win)
 endif
 
 #
+# Ring-3 testcase (no -pedantic)
+#
+TEMPLATE_VBOXR3TSTNPEXE  = VBox Ring 3 Testcase Exe Non-pedantic
+TEMPLATE_VBOXR3TSTNPEXE_EXTENDS = VBOXR3TSTEXE
+ifneq ($(KBUILD_TARGET),win) # (only gcc)
+ TEMPLATE_VBOXR3TSTNPEXE_TOOL             = $(VBOX_GCC_TOOL)
+ TEMPLATE_VBOXR3TSTNPEXE_CXXFLAGS         = $(filter-out -pedantic -Wshadow,$(TEMPLATE_VBOXR3TSTEXE_CXXFLAGS)) -Wno-sign-compare
+ TEMPLATE_VBOXR3TSTNPEXE_CFLAGS           = $(filter-out -pedantic -Wshadow -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations,$(TEMPLATE_VBOXR3TSTEXE_CFLAGS)) -Wno-sign-compare
+endif
+
+
+#
 # Template for the CppUnit kind of testcases.
 #
 TEMPLATE_VBOXCPPUNITEXE  = VBox CppUnit Testcase Exe
