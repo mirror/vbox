@@ -1415,6 +1415,12 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                 &pThis->pVDIfsDisk);
         }
 
+        /** @todo quick hack to work around problems in the async I/O
+         * implementation (rw semaphore thread ownership problem)
+         * while a merge is running. Remove once this is fixed. */
+        if (pThis->fMergePending)
+            fUseNewIo = false;
+
         if (RT_SUCCESS(rc) && fUseNewIo)
         {
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
