@@ -60,7 +60,7 @@ write_classname_iid_define(FILE *file, const char *className)
 static gboolean
 java_prolog(TreeState *state)
 {
-#ifdef VBOX_XPIDL_EMULATE_GENJIFACES
+#ifdef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
     const char *basename;
     const char *ext;
 #endif
@@ -80,7 +80,7 @@ java_prolog(TreeState *state)
      * First pass
      */
 
-#ifdef VBOX_XPIDL_EMULATE_GENJIFACES
+#ifdef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
     basename = xpidl_basename(state->real_outname ? state->real_outname : state->basename);
     ext = strrchr(basename, '.');
     if (!ext)
@@ -118,7 +118,7 @@ java_epilog(TreeState *state)
     free(state->priv);
     state->priv = NULL;
 
-#ifndef VBOX_XPIDL_EMULATE_GENJIFACES
+#ifndef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
     /*
      * Last pass
      */
@@ -159,7 +159,7 @@ interface_declaration(TreeState *state)
 
     if (!verify_interface_declaration(interface))
         return FALSE;
-#ifndef VBOX_XPIDL_EMULATE_GENJIFACES
+#ifndef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
     /*
      * Write out JavaDoc comment
      */
@@ -173,7 +173,7 @@ interface_declaration(TreeState *state)
     iid = IDL_tree_property_get(IDL_INTERFACE(interface).ident, "uuid");
 #endif
 
-#ifndef VBOX_XPIDL_EMULATE_GENJIFACES
+#ifndef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
     if (iid != NULL) {
         fprintf(state->file, " *\n * IID: 0x%s\n */\n\n", iid);
     } else {
@@ -214,7 +214,7 @@ interface_declaration(TreeState *state)
          * Write interface constants for IID
          */
 
-#ifdef VBOX_XPIDL_EMULATE_GENJIFACES
+#ifdef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
         fputs("  public static final String ", state->file);
 #else
         fputs("    public static final String ", state->file);
@@ -226,7 +226,11 @@ interface_declaration(TreeState *state)
         }
 
 #ifdef VBOX_XPIDL_EMULATE_GENJIFACES
-        fprintf(state->file, " =\n    \"{%s}\";\n", iid);
+        fputs(" =\n    \"{", state->file);
+        while (*iid) {
+            fputc(tolower(*iid++), state->file);
+        }
+        fputs("}\";\n", state->file);
 
 #else
         fprintf(state->file, "_STRING =\n        \"%s\";\n\n", iid);
@@ -261,7 +265,7 @@ interface_declaration(TreeState *state)
 static gboolean
 process_list(TreeState *state)
 {
-#ifdef VBOX_XPIDL_EMULATE_GENJIFACES
+#ifdef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
     /* To make the diffing simple, group the constants, methods and attributes. */
     IDL_tree list = state->tree;
     IDL_tree iter;
@@ -594,7 +598,7 @@ xpcom_to_java_type (TreeState *state)
 }
 
 static gboolean
-#ifdef VBOX_XPIDL_EMULATE_GENJIFACES
+#ifdef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
 xpcom_to_java_param(TreeState *state, unsigned nparam)
 #else
 xpcom_to_java_param(TreeState *state)
@@ -635,7 +639,7 @@ xpcom_to_java_param(TreeState *state)
 
     fputc(' ', state->file);
 
-#ifdef VBOX_XPIDL_EMULATE_GENJIFACES
+#ifdef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
     fprintf(state->file, "arg%u", nparam+1);
 #else
     fputs(IDL_IDENT(IDL_PARAM_DCL(param).simple_declarator).str, state->file);
@@ -705,7 +709,7 @@ method_declaration(TreeState *state)
     IDL_tree iterator = NULL;
     IDL_tree retval_param = NULL;
     const char *method_name = IDL_IDENT(method->ident).str;
-#ifdef VBOX_XPIDL_EMULATE_GENJIFACES
+#ifdef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
     unsigned nparam = 0;
 #endif
 
@@ -722,14 +726,14 @@ method_declaration(TreeState *state)
 #endif
 
     fputc('\n', state->file);
-#ifndef VBOX_XPIDL_EMULATE_GENJIFACES
+#ifndef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
     xpidl_write_comment(state, 4);
 #endif
 
     /*
      * Write beginning of method declaration
      */
-#ifdef VBOX_XPIDL_EMULATE_GENJIFACES
+#ifdef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
     fputs("  ", state->file);
 #else
     fputs("    ", state->file);
@@ -816,7 +820,7 @@ method_declaration(TreeState *state)
 
         state->tree = IDL_LIST(iterator).data;
 
-#ifdef VBOX_XPIDL_EMULATE_GENJIFACES
+#ifdef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
         if (!xpcom_to_java_param(state, nparam++)) {
 #else
         if (!xpcom_to_java_param(state)) {
@@ -855,9 +859,6 @@ constant_declaration(TreeState *state)
     struct _IDL_CONST_DCL *declaration = &IDL_CONST_DCL(state->tree);
     const char *name = IDL_IDENT(declaration->ident).str;
     IDL_tree real_type;
-#ifdef VBOX_XPIDL_EMULATE_GENJIFACES
-    IDL_tree saved_tree;
-#endif
 
     if (!verify_const_declaration(state->tree))
         return FALSE;
@@ -867,57 +868,31 @@ constant_declaration(TreeState *state)
     real_type = real_type ? real_type : declaration->const_type;
 
     fputc('\n', state->file);
-#ifndef VBOX_XPIDL_EMULATE_GENJIFACES
     xpidl_write_comment(state, 4);
-#endif
 
-#ifdef VBOX_XPIDL_EMULATE_GENJIFACES
-/* XXX: We get the WRONG signedness of stuff here. PRInt32 -> unsigned long and stuff like that. */
+#ifdef VBOX_XPIDL_EMULATE_GENJIFACES /* (from typelib_const_dcl)*/
+# ifdef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
     fputs("  public static final ", state->file);
-    switch(IDL_NODE_TYPE(real_type)) {
-
-    case IDLN_TYPE_INTEGER: {
-        switch(IDL_TYPE_INTEGER(real_type).f_type) {
-
-        case IDL_INTEGER_TYPE_SHORT:
-            if (IDL_TYPE_INTEGER(real_type).f_signed)
-                fprintf(state->file, "int %s = %d;\n", name, (int)IDL_INTEGER(declaration->const_exp).value);
-            else
-                fprintf(state->file, "int %s = %u;\n", name, (unsigned)IDL_INTEGER(declaration->const_exp).value);
-            break;
-
-        case IDL_INTEGER_TYPE_LONG:
-            if (IDL_TYPE_INTEGER(state->tree).f_signed)
-                fprintf(state->file, "int %s = %d;\n", name, (int)IDL_INTEGER(declaration->const_exp).value);
-            else
-                fprintf(state->file, "long %s = %uL;\n", name, (unsigned)IDL_INTEGER(declaration->const_exp).value);
-            break;
-
-        case IDL_INTEGER_TYPE_LONGLONG:
-            if (IDL_TYPE_INTEGER(state->tree).f_signed)
-                fprintf(state->file, "long %lldL;\n", name, (long long)IDL_INTEGER(declaration->const_exp).value);
-            else
-                fprintf(state->file, "double %lluL;\n", name, (unsigned long long)IDL_INTEGER(declaration->const_exp).value);
-            break;
-
-        default:
-            g_error("   Unknown integer type: %d\n",
-                    IDL_TYPE_INTEGER(state->tree).f_type);
-            return FALSE;
-
-        }
-        break;
+# else
+    fputs("    public static final ", state->file);
+# endif
+    if (IDL_TYPE_INTEGER(real_type).f_type == IDL_INTEGER_TYPE_LONG) {
+        if (IDL_TYPE_INTEGER(real_type).f_signed)
+            fprintf(state->file, "int %s = %"   IDL_LL "d;\n",  name, IDL_INTEGER(dcl->const_exp).value);
+        else
+            fprintf(state->file, "long %s = %"  IDL_LL "uL;\n", name, IDL_INTEGER(dcl->const_exp).value);
+    } else {
+        if (IDL_TYPE_INTEGER(real_type).f_signed)
+            fprintf(state->file, "short %s = %" IDL_LL "d;\n",  name, IDL_INTEGER(dcl->const_exp).value);
+        else
+            fprintf(state->file, "int %s = %"   IDL_LL "u;\n",  name, IDL_INTEGER(dcl->const_exp).value);
     }
-    default:
-        g_error("   Unknown constant type: %d\n", IDL_NODE_TYPE(real_type));
-        return FALSE;
-    }
-#else
+#else  /* !VBOX_XPIDL_EMULATE_GENJIFACES */
     fprintf(state->file, "    public static final %s %s = %d;\n",
             (IDL_TYPE_INTEGER(real_type).f_type == IDL_INTEGER_TYPE_LONG
              ? "long" : "short"),
             name, (int) IDL_INTEGER(declaration->const_exp).value);
-#endif
+#endif /* !VBOX_XPIDL_EMULATE_GENJIFACES */
 
     return TRUE;
 
@@ -957,7 +932,7 @@ attribute_declaration(TreeState *state)
 
     /* Comment */
     fputc('\n', state->file);
-#ifndef VBOX_XPIDL_EMULATE_GENJIFACES
+#ifndef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
     xpidl_write_comment(state, 4);
 #endif
 
@@ -966,7 +941,7 @@ attribute_declaration(TreeState *state)
     /*
      * Write access permission ("public" unless nonscriptable)
      */
-#ifdef VBOX_XPIDL_EMULATE_GENJIFACES
+#ifdef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
     fputs("  ", state->file);
 #else
     fputs("    ", state->file);
@@ -991,7 +966,7 @@ attribute_declaration(TreeState *state)
 
     if (!read_only) {
         /* Nonscriptable methods become package-protected */
-#ifdef VBOX_XPIDL_EMULATE_GENJIFACES
+#ifdef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
         fputs("\n  ", state->file);
 #else
         fputs("    ", state->file);
@@ -1017,7 +992,7 @@ attribute_declaration(TreeState *state)
         /*
          * Write the name of the formal parameter.
          */
-#ifdef VBOX_XPIDL_EMULATE_GENJIFACES
+#ifdef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
         fputs(" arg1);\n", state->file);
 #else
         fputs(" value);\n", state->file);
