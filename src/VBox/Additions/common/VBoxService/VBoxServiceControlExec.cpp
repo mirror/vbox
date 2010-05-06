@@ -620,7 +620,7 @@ int VBoxServiceControlExecWritePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
             pBuf->pbData = pNewBuf;
         }
         
-        int rc = VINF_SUCCESS;
+        rc = VINF_SUCCESS;
         if (pBuf->pbData)
         {
             memcpy(pBuf->pbData + pBuf->cbOffset, pbData, cbData);
