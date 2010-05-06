@@ -596,6 +596,9 @@ public:
     nsresult rv = aIInfo->GetMethodCount(&methodCount);
     NS_ENSURE_SUCCESS(rv, rv);
 
+#ifdef DEBUG_bird /* attributes first, then method. For making diffing easier. */
+    for (int pass = 0; pass < 2; pass++)
+#endif
     for (PRUint16 i = aParentMethodCount; i < methodCount; i++) {
       const nsXPTMethodInfo* methodInfo;
       rv = aIInfo->GetMethodInfo(i, &methodInfo);
@@ -621,6 +624,10 @@ public:
       // skip hidden ([noscript]) or [notxpcom] methods
       if (methodInfo->IsHidden() || methodInfo->IsNotXPCOM())
         continue;
+#endif
+#ifdef DEBUG_bird /* attributes first, then method. For making diffing easier. */
+      if ((methodInfo->IsSetter() || methodInfo->IsGetter()) == pass)
+          continue;
 #endif
 
       rv = WriteOneMethod(out, aIInfo, methodInfo, i);
