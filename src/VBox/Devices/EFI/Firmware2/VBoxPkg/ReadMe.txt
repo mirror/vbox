@@ -58,6 +58,13 @@ The binaries are available at:
 Some non-fatal warnings might appears while compiling on Linux machine so it
 is recommended to disable -Werror at Conf/tools_def.txt:*_UNIXGCC_X64_CC_FLAGS.
 
+While building some versions of wingw-w64/linker might complain that __ModuleEntryPoint wasn't found (and fills entry point field with some default value) 
+to fix that, just split the the definition (IA32 and X64),with removing leading underscore '_' for X64 at Conf/tools_def.txt:
+  *_UNIXGCC_*_DLINK_FLAGS=... -entry _$(IMAGE_ENTRY_POINT) ...
+  to 
+  *_UNIXGCC_IA32_DLINK_FLAGS=... -entry _$(IMAGE_ENTRY_POINT) ...
+  *_UNIXGCC_X64_DLINK_FLAGS=... -entry $(IMAGE_ENTRY_POINT) ...
+
 Setting up the environment
 ==========================
 
