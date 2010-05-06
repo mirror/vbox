@@ -1185,7 +1185,15 @@ sffs_rmdir(
 		VN_RELE(vp);
 		return (ENOTDIR);
 	}
-	if (vn_vfswlock(vp) || vn_mountedvfs(vp)) {
+
+#if 0
+	if (vn_vfswlock(vp)) {
+		VN_RELE(vp);
+		return (EBUSY);
+	}
+#endif
+
+	if (vn_mountedvfs(vp)) {
 		VN_RELE(vp);
 		return (EBUSY);
 	}
