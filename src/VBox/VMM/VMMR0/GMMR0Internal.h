@@ -34,8 +34,25 @@ typedef struct GMMVMSIZES
     /** The number of pages for fixed allocations like MMIO2 and the hyper heap. */
     uint32_t        cFixedPages;
 } GMMVMSIZES;
+/** Pointer to a GMMVMSIZES. */
 typedef GMMVMSIZES *PGMMVMSIZES;
 
+/**
+ * Shared region descriptor
+ */
+typedef struct GMMSHAREDREGIONDESC
+{
+    /** Region base address. */
+    RTGCPTR64           GCRegionAddr;
+    /** Region size. */
+    uint32_t            cbRegion;
+    /** Alignment. */
+    uint32_t            u32Alignment;
+    /** Pointer to physical page address array. */
+    PRTHCPHYS           paHCPhysAndPageID;
+} GMMSHAREDREGIONDESC;
+/** Pointer to a GMMSHAREDREGIONDESC. */
+typedef GMMSHAREDREGIONDESC *PGMMSHAREDREGIONDESC;
 
 /**
  * Shared module registration info (global)
@@ -57,7 +74,7 @@ typedef struct GMMSHAREDMODULE
     /** Module version */
     char                        szVersion[GMM_SHARED_MODULE_MAX_VERSION_STRING];
     /** Shared region descriptor(s). */
-    VMMDEVSHAREDREGIONDESC      aRegions[1];
+    GMMSHAREDREGIONDESC         aRegions[1];
 } GMMSHAREDMODULE;
 /** Pointer to a GMMSHAREDMODULE. */
 typedef GMMSHAREDMODULE *PGMMSHAREDMODULE;
@@ -75,7 +92,14 @@ typedef struct GMMSHAREDMODULEPERVM
 
     /* Set if another VM registered a different shared module at the same base address. */
     bool                        fCollision;
+    /** Align at 8 byte boundary */
+    bool                        abAlignment[7];
 
+    /** Number of regions in the aRegions array. */
+    unsigned                    cRegions;
+
+    /** Shared region descriptor(s). */
+    GMMSHAREDREGIONDESC         aRegions[1];
 } GMMSHAREDMODULEPERVM;
 /** Pointer to a GMMSHAREDMODULEPERVM. */
 typedef GMMSHAREDMODULEPERVM *PGMMSHAREDMODULEPERVM;

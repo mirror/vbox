@@ -3413,6 +3413,14 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModule
             }
 
             pRecVM->Core.Key = GCBaseAddr;
+            pRecVM->cRegions = cRegions;
+            for (unsigned i = 0; i < cRegions; i++)
+            {
+                pRecVM->aRegions[i].GCRegionAddr      = pRegions[i].GCRegionAddr;
+                pRecVM->aRegions[i].cbRegion          = pRegions[i].cbRegion;
+                pRecVM->aRegions[i].u32Alignment      = 0;
+                pRecVM->aRegions[i].paHCPhysAndPageID = 0; /* uninitialized. */
+            }
 
             bool ret = RTAvlGCPtrInsert(&pGVM->gmm.s.pSharedModuleTree, &pRecVM->Core);
             Assert(ret);
@@ -3447,7 +3455,12 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModule
             pRec->cRegions = cRegions;
 
             for (unsigned i = 0; i < cRegions; i++)
-                pRec->aRegions[i] = pRegions[i];
+            {
+                pRec->aRegions[i].GCRegionAddr      = pRegions[i].GCRegionAddr;
+                pRec->aRegions[i].cbRegion          = pRegions[i].cbRegion;
+                pRec->aRegions[i].u32Alignment      = 0;
+                pRec->aRegions[i].paHCPhysAndPageID = 0; /* uninitialized. */
+            }
 
             /* Save reference. */
             pRecVM->pSharedModule = pRec;
@@ -3552,16 +3565,27 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
             rc = VERR_PGM_SHARED_MODULE_NOT_FOUND;
             goto end;
         }
-        PGMMSHAREDMODULE pRec = pRecVM->pSharedModule;
-        Assert(pRec);
-        Assert(pRec->cUsers);
-
-        pRec->cUsers--;
-        if (pRec->cUsers == 0)
+        /* Force pRec to go out of scope after freeing it. */
         {
-            /* @todo free shared pages. */
-            RTMemFree(pRec);
+            PGMMSHAREDMODULE pRec = pRecVM->pSharedModule;
+            Assert(pRec);
+            Assert(pRec->cUsers);
+
+            pRec->cUsers--;
+            if (pRec->cUsers == 0)
+            {
+                /* @todo free shared pages. */
+                for (unsigned i = 0; i < pRec->cRegions; i++)
+                    if (pRec->aRegions[i].paHCPhysAndPageID)
+                        RTMemFree(pRec->aRegions[i].paHCPhysAndPageID);
+
+                RTMemFree(pRec);
+            }
         }
+
+        for (unsigned i = 0; i < pRecVM->cRegions; i++)
+            if (pRecVM->aRegions[i].paHCPhysAndPageID)
+                RTMemFree(pRecVM->aRegions[i].paHCPhysAndPageID);
         RTMemFree(pRecVM);
 
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
@@ -3597,6 +3621,62 @@ GMMR0DECL(int)  GMMR0UnregisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMUNREG
     return GMMR0UnregisterSharedModule(pVM, idCpu, pReq->szName, pReq->szVersion, pReq->GCBaseAddr, pReq->cbModule);
 }
 
+
+#ifdef VBOX_WITH_PAGE_SHARING
+/**
+ * Checks specified shared module range for changes
+ *
+ * @returns VBox status code.
+ * @param   pVM                 VM handle
+ * @param   idCpu               VCPU id
+ * @param   pReq                Module description
+ * @param   idxRegion           Region index
+ * @param   cPages              Number of entries in the paHCPhysAndPageID array
+ * @param   paHCPhysAndPageID   Host physical address and the Page ID array
+ */
+GMMR0DECL(int)  GMMR0SharedModuleCheckRange(PVM pVM, VMCPUID idCpu, PGMMREGISTERSHAREDMODULEREQ pReq, unsigned idxRegion, unsigned cPages, PRTHCPHYS paHCPhysAndPageID)
+{
+    AssertReturn(idxRegion < pReq->cRegions, VERR_INVALID_PARAMETER);
+    AssertReturn(cPages == (pReq->aRegions[idxRegion].cbRegion >> PAGE_SHIFT), VERR_INVALID_PARAMETER);
+
+    /*
+     * Validate input and get the basics.
+     */
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    PGVM pGVM;
+    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Take the sempahore and do some more validations.
+     */
+    rc = RTSemFastMutexRequest(pGMM->Mtx);
+    AssertRC(rc);
+    if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
+    {
+        PGMMSHAREDMODULEPERVM pRecVM = (PGMMSHAREDMODULEPERVM)RTAvlGCPtrGet(&pGVM->gmm.s.pSharedModuleTree, pReq->GCBaseAddr);
+        if (!pRecVM)
+        {
+            rc = VERR_PGM_SHARED_MODULE_NOT_FOUND;
+            goto end;
+        }
+
+        for (unsigned i = 0; i < cPages; i++)
+        {
+        }
+
+        GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
+    }
+    else
+        rc = VERR_INTERNAL_ERROR_5;
+
+end:
+    RTSemFastMutexRelease(pGMM->Mtx);
+    return rc;
+}
+#endif
 
 /**
  * Checks registered modules for shared pages
