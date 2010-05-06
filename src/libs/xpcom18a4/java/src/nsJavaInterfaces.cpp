@@ -68,6 +68,7 @@
 using namespace com;
 #include <iprt/initterm.h>
 #include <iprt/string.h>
+#include <alloca.h>
 #endif
 
 extern "C" NS_EXPORT void JNICALL
