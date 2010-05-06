@@ -248,8 +248,12 @@ void UIMachineWindowSeamless::prepareMiniToolBar()
         m_pMiniToolBar->setSeamlessMode(true);
         m_pMiniToolBar->updateDisplay(true, true);
         QList<QMenu*> menus;
-        menus << uisession()->actionsPool()->action(UIActionIndex_Menu_Machine)->menu();
-        menus << uisession()->actionsPool()->action(UIActionIndex_Menu_Devices)->menu();
+        UIMainMenuType fMenu = UIMainMenuType(UIMainMenuType_Machine | UIMainMenuType_Devices);
+        if (QApplication::desktop()->numScreens() > 1)
+            fMenu = UIMainMenuType(fMenu | UIMainMenuType_View);
+        QList<QAction*> actions = uisession()->newMenu(fMenu)->actions();
+        for (int i=0; i < actions.size(); ++i)
+            menus << actions.at(i)->menu();
         *m_pMiniToolBar << menus;
         connect(m_pMiniToolBar, SIGNAL(exitAction()),
                 uisession()->actionsPool()->action(UIActionIndex_Toggle_Seamless), SLOT(trigger()));
