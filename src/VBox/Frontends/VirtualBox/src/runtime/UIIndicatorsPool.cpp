@@ -80,7 +80,8 @@ public:
         }
 
         /* For now we will hide that LED at all if there are no attachments! */
-        setHidden(!fAttachmentsPresent);
+        if (!fAttachmentsPresent)
+            setHidden(true);
         //if (!fAttachmentsPresent)
         //    strFullData += QApplication::translate("VBoxConsoleWnd", "<br><nobr><b>No hard disks attached</b></nobr>", "HDD tooltip");
 
@@ -150,7 +151,8 @@ public:
         }
 
         /* For now we will hide that LED at all if there are no attachments! */
-        setHidden(!fAttachmentsPresent);
+        if (!fAttachmentsPresent)
+            setHidden(true);
         //if (!fAttachmentsPresent)
         //    strFullData = QApplication::translate("VBoxConsoleWnd", "<br><nobr><b>No CD/DVD devices attached</b></nobr>", "CD/DVD tooltip");
 
@@ -220,7 +222,8 @@ public:
         }
 
         /* For now we will hide that LED at all if there are no attachments! */
-        setHidden(!fAttachmentsPresent);
+        if (!fAttachmentsPresent)
+            setHidden(true);
         //if (!fAttachmentsPresent)
         //    strFullData = QApplication::translate("VBoxConsoleWnd", "<br><nobr><b>No floppy devices attached</b></nobr>", "FD tooltip");
 
@@ -271,7 +274,8 @@ public:
             if (machine.GetNetworkAdapter(uSlot).GetEnabled())
                 ++ uCount;
         setState(uCount > 0 ? KDeviceActivity_Idle : KDeviceActivity_Null);
-        setHidden(!uCount);
+        if (!uCount)
+            setHidden(true);
 
         QString strToolTip = QApplication::translate("VBoxConsoleWnd", "<p style='white-space:pre'><nobr>Indicates the activity of the "
                                 "network interfaces:</nobr>%1</p>", "Network adapters tooltip");
