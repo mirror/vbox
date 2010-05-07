@@ -212,10 +212,7 @@ crServerDispatchWindowSize( GLint window, GLint width, GLint height )
 
     crServerCheckMuralGeometry(mural);
 
-    if (!mural->bUseFBO)
-    {
-        cr_server.head_spu->dispatch_table.WindowSize(mural->spuWindow, width, height);
-    }
+    cr_server.head_spu->dispatch_table.WindowSize(mural->spuWindow, width, height);
 }
 
 
