@@ -237,6 +237,8 @@ NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt)
                      "rc = %Rrc\n", rc));
         }
         rc = RT_SUCCESS(rc) ? pReq->header.rc : rc;
+        if (rc == VERR_NOT_IMPLEMENTED)
+            rc = VINF_SUCCESS;
 
         VbglGRFree (&pReq->header);
     }
