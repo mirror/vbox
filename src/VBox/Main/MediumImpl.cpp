@@ -3154,6 +3154,8 @@ HRESULT Medium::createMediumLockList(bool fMediumWritable,
                 mrc = setError(E_FAIL,
                                "%ls",
                                error.raw());
+                    // error message will be something like
+                    // "Could not open the medium ... VD: error VERR_FILE_NOT_FOUND opening image file ... (VERR_FILE_NOT_FOUND).
                 eik.fetch();
             }
         }
