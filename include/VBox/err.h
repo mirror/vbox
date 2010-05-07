@@ -472,6 +472,8 @@
 #define VERR_PGM_SHARED_MODULE_NOT_FOUND        (-1648)
 /** Shared module different from previously registered module. */
 #define VINF_PGM_SHARED_MODULE_COLLISION        (1649)
+/** Inconsistent local and global registration records. */
+#define VERR_PGM_SHARED_MODULE_REGISTRATION_INCONSISTENCY (-1650)
 /** @} */
 
 
