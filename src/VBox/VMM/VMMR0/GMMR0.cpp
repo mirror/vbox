@@ -2619,6 +2619,7 @@ DECLINLINE(void) gmmR0FreeSharedPage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage)
     gmmR0FreePageWorker(pGMM, pChunk, idPage, pPage);
 }
 
+#ifdef VBOX_WITH_PAGE_SHARING
 /**
  * Converts a private page to a shared page, the page is known to exist and be valid and such.
  *
@@ -2664,6 +2665,7 @@ DECLINLINE(void) gmmR0UseSharedPage(PGMM pGMM, PGVM pGVM, PGMMPAGE pPage)
     pPage->Shared.cRefs++;
     pGVM->gmm.s.cSharedPages++;
 }
+#endif
 
 /**
  * Frees a private page, the page is known to exist and be valid and such.
