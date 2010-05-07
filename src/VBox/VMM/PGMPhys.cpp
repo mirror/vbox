@@ -1358,6 +1358,12 @@ int pgmR3PhysRamReset(PVM pVM)
     int rc = GMMR3BalloonedPages(pVM, GMMBALLOONACTION_RESET, 0);
     AssertRC(rc);
 
+#ifdef VBOX_WITH_PAGE_SHARING
+    /* Clear all registered shared modules. */
+    rc = GMMR3ResetSharedModules(pVM);
+    AssertRC(rc);
+#endif
+
     /*
      * We batch up pages that should be freed instead of calling GMM for
      * each and every one of them.

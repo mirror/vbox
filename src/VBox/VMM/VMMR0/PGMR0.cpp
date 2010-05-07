@@ -365,15 +365,15 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PVMCPU pVCpu, PGMMREGISTERSHAREDM
                     &&  !PGM_PAGE_IS_SHARED(pPage))
                 {
                     fValidChanges = true;
-                    paPageDesc[idxPage].uPageId = PGM_PAGE_GET_PAGEID(pPage);
-                    paPageDesc[idxPage].HCPhys  = PGM_PAGE_GET_HCPHYS(pPage);
-                    paPageDesc[idxPage].GCPhys  = GCPhys;
+                    paPageDesc[idxPage].uHCPhysPageId = PGM_PAGE_GET_PAGEID(pPage);
+                    paPageDesc[idxPage].HCPhys        = PGM_PAGE_GET_HCPHYS(pPage);
+                    paPageDesc[idxPage].GCPhys        = GCPhys;
                 }
                 else
-                    paPageDesc[idxPage].uPageId = NIL_GMM_PAGEID;
+                    paPageDesc[idxPage].uHCPhysPageId = NIL_GMM_PAGEID;
             }
             else
-                paPageDesc[idxPage].uPageId = NIL_GMM_PAGEID;
+                paPageDesc[idxPage].uHCPhysPageId = NIL_GMM_PAGEID;
 
             idxPage++;
             GCRegion += PAGE_SIZE;
@@ -390,7 +390,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PVMCPU pVCpu, PGMMREGISTERSHAREDM
             for (unsigned i = 0; i < idxPage; i++)
             {
                 /* Any change for this page? */
-                if (paPageDesc[i].uPageId != NIL_GMM_PAGEID)
+                if (paPageDesc[i].uHCPhysPageId != NIL_GMM_PAGEID)
                 {
                     /** todo: maybe cache these to prevent the nth lookup. */
                     PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, paPageDesc[idxPage].GCPhys);
@@ -420,7 +420,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PVMCPU pVCpu, PGMMREGISTERSHAREDM
 
                         /* Update the physical address and page id now. */
                         PGM_PAGE_SET_HCPHYS(pPage, paPageDesc[idxPage].HCPhys);
-                        PGM_PAGE_SET_PAGEID(pPage, paPageDesc[idxPage].uPageId);
+                        PGM_PAGE_SET_PAGEID(pPage, paPageDesc[idxPage].uHCPhysPageId);
                     }
                     /* else nothing changed (== this page is now a shared page), so no need to flush anything. */
 

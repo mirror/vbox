@@ -213,19 +213,3 @@ VMMR3DECL(int) PGMR3SharedModuleUnregister(PVM pVM, char *pszModuleName, char *p
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
-
-
-/**
- * Checks regsitered modules for shared pages
- *
- * @returns VBox status code.
- * @param   pVM                 VM handle
- */
-VMMR3DECL(int) PGMR3SharedModuleCheck(PVM pVM)
-{
-#ifdef VBOX_WITH_PAGE_SHARING
-    return GMMR3CheckSharedModules(pVM);
-#else 
-    return VERR_NOT_IMPLEMENTED;
-#endif
-}

@@ -54,6 +54,7 @@ typedef struct GMMSHAREDREGIONDESC
 /** Pointer to a GMMSHAREDREGIONDESC. */
 typedef GMMSHAREDREGIONDESC *PGMMSHAREDREGIONDESC;
 
+
 /**
  * Shared module registration info (global)
  */
@@ -93,12 +94,7 @@ typedef struct GMMSHAREDMODULEPERVM
     /** Set if another VM registered a different shared module at the same base address. */
     bool                        fCollision;
     /** Alignment. */
-    bool                        bAlignment;
-
-    /** Number of regions. */
-    unsigned                    cRegions;
-    /** Shared region descriptor(s). */
-    GMMSHAREDREGIONDESC         aRegions[1];
+    bool                        bAlignment[7];
 } GMMSHAREDMODULEPERVM;
 /** Pointer to a GMMSHAREDMODULEPERVM. */
 typedef GMMSHAREDMODULEPERVM *PGMMSHAREDMODULEPERVM;
