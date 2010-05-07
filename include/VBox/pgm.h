@@ -568,7 +568,6 @@ VMMR3DECL(int)      PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
  * @{ */
 VMMR3DECL(int)     PGMR3SharedModuleRegister(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule, unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions);
 VMMR3DECL(int)     PGMR3SharedModuleUnregister(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule);
-VMMR3DECL(int)     PGMR3SharedModuleCheck(PVM pVM);
 /** @} */
 
 /** @} */

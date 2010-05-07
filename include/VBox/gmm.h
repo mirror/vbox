@@ -295,7 +295,8 @@ GMMR0DECL(int)  GMMR0MapUnmapChunk(PVM pVM, VMCPUID idCpu, uint32_t idChunkMap, 
 GMMR0DECL(int)  GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3);
 GMMR0DECL(int)  GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule, unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions);
 GMMR0DECL(int)  GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule);
-GMMR0DECL(int)  GMMR0CheckSharedModules(PVM pVM, VMCPUID idCpu);
+GMMR0DECL(int)  GMMR0UnregisterAllSharedModules(PVM pVM, VMCPUID idCpu);
+GMMR0DECL(int)  GMMR0ResetSharedModules(PVM pVM, VMCPUID idCpu);
 
 
 
@@ -498,7 +499,7 @@ typedef struct GMMSHAREDPAGEDESC
     /** GC Physical address (in) */
     RTGCPHYS                    GCPhys;
     /** GMM page id. (in/out) */
-    uint32_t                    uPageId;
+    uint32_t                    uHCPhysPageId;
     /** Align at 8 byte boundary. */
     uint32_t                    uAlignment;
 } GMMSHAREDPAGEDESC;
@@ -557,7 +558,7 @@ GMMR3DECL(int)  GMMR3QueryMemoryStats(PVM pVM, uint64_t *pcAllocPages, uint64_t 
 GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages);
 GMMR3DECL(int)  GMMR3RegisterSharedModule(PVM pVM, PGMMREGISTERSHAREDMODULEREQ pReq);
 GMMR3DECL(int)  GMMR3UnregisterSharedModule(PVM pVM, PGMMREGISTERSHAREDMODULEREQ pReq);
-GMMR3DECL(int)  GMMR3CheckSharedModules(PVM pVM);
+GMMR3DECL(int)  GMMR3ResetSharedModules(PVM pVM);
 /** @} */
 #endif /* IN_RING3 */
 

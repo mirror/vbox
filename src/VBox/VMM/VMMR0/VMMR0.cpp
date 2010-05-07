@@ -951,20 +951,26 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
             return GMMR0SeedChunk(pVM, idCpu, (RTR3PTR)u64Arg);
 
         case VMMR0_DO_GMM_REGISTER_SHARED_MODULE:
+            if (idCpu == NIL_VMCPUID)
+                return VERR_INVALID_CPU_ID;
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
             return GMMR0RegisterSharedModuleReq(pVM, idCpu, (PGMMREGISTERSHAREDMODULEREQ)pReqHdr);
 
         case VMMR0_DO_GMM_UNREGISTER_SHARED_MODULE:
+            if (idCpu == NIL_VMCPUID)
+                return VERR_INVALID_CPU_ID;
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
             return GMMR0UnregisterSharedModuleReq(pVM, idCpu, (PGMMUNREGISTERSHAREDMODULEREQ)pReqHdr);
 
-        case VMMR0_DO_GMM_CHECK_SHARED_MODULES:
+        case VMMR0_DO_GMM_RESET_SHARED_MODULES:
+            if (idCpu == NIL_VMCPUID)
+                return VERR_INVALID_CPU_ID;
             if (    u64Arg
                 ||  pReqHdr)
                 return VERR_INVALID_PARAMETER;
-            return GMMR0CheckSharedModules(pVM, idCpu);
+            return GMMR0ResetSharedModules(pVM, idCpu);
 
         /*
          * A quick GCFGM mock-up.

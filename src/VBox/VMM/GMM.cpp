@@ -398,9 +398,9 @@ GMMR3DECL(int) GMMR3UnregisterSharedModule(PVM pVM, PGMMREGISTERSHAREDMODULEREQ 
 }
 
 /**
- * @see GMMR0CheckSharedModules
+ * @see GMMR0ResetSharedModules
  */
-GMMR3DECL(int) GMMR3CheckSharedModules(PVM pVM)
+GMMR3DECL(int) GMMR3ResetSharedModules(PVM pVM)
 {
-    return VMMR3CallR0(pVM, VMMR0_DO_GMM_CHECK_SHARED_MODULES, 0, NULL);
+    return VMMR3CallR0(pVM, VMMR0_DO_GMM_RESET_SHARED_MODULES, 0, NULL);
 }
