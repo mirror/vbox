@@ -116,7 +116,7 @@ void Guest::uninit()
     /* Clean up callback data. */
     CallbackListIter it;
     for (it = mCallbackList.begin(); it != mCallbackList.end(); it++)
-        removeCtrlCallbackContext(it);
+        destroyCtrlCallbackContext(it);
 
     /* Clear process list. */
     mGuestProcessList.clear();
@@ -466,14 +466,14 @@ int Guest::notifyCtrlExec(uint32_t              u32Function,
     LogFlowFuncEnter();
     int rc = VINF_SUCCESS;
 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     AssertPtr(pData);
     CallbackListIter it = getCtrlCallbackContextByID(pData->hdr.u32ContextID);
 
     /* Callback can be called several times. */
     if (it != mCallbackList.end())
     {
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
         PHOSTEXECCALLBACKDATA pCBData = (HOSTEXECCALLBACKDATA*)it->pvData;
         AssertPtr(pCBData);
 
@@ -580,6 +580,8 @@ int Guest::notifyCtrlExecOut(uint32_t                 u32Function,
     LogFlowFuncEnter();
     int rc = VINF_SUCCESS;
 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     AssertPtr(pData);
     CallbackListIter it = getCtrlCallbackContextByID(pData->hdr.u32ContextID);
     if (it != mCallbackList.end())
@@ -587,8 +589,6 @@ int Guest::notifyCtrlExecOut(uint32_t                 u32Function,
         Assert(!it->bCalled);
         PHOSTEXECOUTCALLBACKDATA pCBData = (HOSTEXECOUTCALLBACKDATA*)it->pvData;
         AssertPtr(pCBData);
-
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
         pCBData->u32PID = pData->u32PID;
         pCBData->u32HandleId = pData->u32HandleId;
@@ -600,9 +600,10 @@ int Guest::notifyCtrlExecOut(uint32_t                 u32Function,
         {
             /* Allocate data buffer and copy it */
             pCBData->pvData = RTMemAlloc(pData->cbData);
+            pCBData->cbData = pData->cbData;
+
             AssertReturn(pCBData->pvData, VERR_NO_MEMORY);
             memcpy(pCBData->pvData, pData->pvData, pData->cbData);
-            pCBData->cbData = pData->cbData;
         }
         else
         {
@@ -645,10 +646,10 @@ Guest::GuestProcessIter Guest::getProcessByPID(uint32_t u32PID)
     return it;
 }
 
-void Guest::removeCtrlCallbackContext(Guest::CallbackListIter it)
+/* No locking here; */
+void Guest::destroyCtrlCallbackContext(Guest::CallbackListIter it)
 {
     LogFlowFuncEnter();
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     if (it->pvData)
     {
         RTMemFree(it->pvData);
@@ -677,11 +678,11 @@ void Guest::removeCtrlCallbackContext(Guest::CallbackListIter it)
 uint32_t Guest::addCtrlCallbackContext(eVBoxGuestCtrlCallbackType enmType, void *pvData, uint32_t cbData, Progress *pProgress)
 {
     LogFlowFuncEnter();
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     uint32_t uNewContext = ASMAtomicIncU32(&mNextContextID);
     if (uNewContext == UINT32_MAX)
         ASMAtomicUoWriteU32(&mNextContextID, 1000);
 
+    /** @todo Put this stuff into a constructor! */
     CallbackContext context;
     context.mContextID = uNewContext;
     context.mType = enmType;
@@ -690,13 +691,24 @@ uint32_t Guest::addCtrlCallbackContext(eVBoxGuestCtrlCallbackType enmType, void 
     context.cbData = cbData;
     context.pProgress = pProgress;
 
-    mCallbackList.push_back(context);
-    if (mCallbackList.size() > 256) /* Don't let the container size get too big! */
+    uint32_t nCallbacks;
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        mCallbackList.push_back(context);
+        nCallbacks = mCallbackList.size();
+    }    
+
+#if 0
+    if (nCallbacks > 256) /* Don't let the container size get too big! */
     {
         Guest::CallbackListIter it = mCallbackList.begin();
-        removeCtrlCallbackContext(it);
-        mCallbackList.erase(it);
+        destroyCtrlCallbackContext(it);
+        {
+            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+            mCallbackList.erase(it);
+        }
     }
+#endif
 
     LogFlowFuncLeave();
     return uNewContext;
@@ -822,12 +834,18 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                     paParms[i++].setPointer((void*)Utf8Password.raw(), (uint32_t)strlen(Utf8Password.raw()) + 1);
                     paParms[i++].setUInt32(aTimeoutMS);
 
-                    /* Make sure mParent is valid, so set a read lock in this scope. */
-                    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+                    VMMDev *vmmDev;
+                    {
+                        /* Make sure mParent is valid, so set the read lock while using. 
+                         * Do not keep this lock while doing the actual call, because in the meanwhile
+                         * another thread could request a write lock which would be a bad idea ... */
+                        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    
+                        /* Forward the information to the VMM device. */
+                        AssertPtr(mParent);
+                        vmmDev = mParent->getVMMDev();
+                    }
 
-                    /* Forward the information to the VMM device. */
-                    AssertPtr(mParent);
-                    VMMDev *vmmDev = mParent->getVMMDev();
                     if (vmmDev)
                     {
                         LogFlowFunc(("hgcmHostCall numParms=%d\n", i));
@@ -1064,12 +1082,18 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
         int vrc = VINF_SUCCESS;
     
         {
-            /* Make sure mParent is valid, so set the read lock while using. */
-            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    
-            /* Forward the information to the VMM device. */
-            AssertPtr(mParent);
-            VMMDev *vmmDev = mParent->getVMMDev();
+            VMMDev *vmmDev;
+            {
+                /* Make sure mParent is valid, so set the read lock while using. 
+                 * Do not keep this lock while doing the actual call, because in the meanwhile
+                 * another thread could request a write lock which would be a bad idea ... */
+                AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        
+                /* Forward the information to the VMM device. */
+                AssertPtr(mParent);
+                vmmDev = mParent->getVMMDev();
+            }
+
             if (vmmDev)
             {
                 LogFlowFunc(("hgcmHostCall numParms=%d\n", i));
@@ -1169,6 +1193,11 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
                         rc = setError(E_UNEXPECTED,
                                       tr("The service call failed with error %Rrc"), vrc);
                     }
+                }
+
+                {
+                    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+                    destroyCtrlCallbackContext(it);
                 }
             }
             else /* PID lookup failed. */
