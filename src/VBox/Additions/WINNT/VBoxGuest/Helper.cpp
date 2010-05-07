@@ -237,8 +237,6 @@ NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt)
                      "rc = %Rrc\n", rc));
         }
         rc = RT_SUCCESS(rc) ? pReq->header.rc : rc;
-        if (rc == VERR_NOT_IMPLEMENTED)
-            rc = VINF_SUCCESS;
 
         VbglGRFree (&pReq->header);
     }
@@ -264,6 +262,8 @@ NTSTATUS hlpVBoxReportGuestInfo (PVBOXGUESTDEVEXT pDevExt)
                      "rc = %Rrc\n", rc));
         }
         rc = RT_SUCCESS(rc) ? pReq2->header.rc : rc;
+        if (rc == VERR_NOT_IMPLEMENTED)
+            rc = VINF_SUCCESS;
 
         VbglGRFree (&pReq2->header);
     }
