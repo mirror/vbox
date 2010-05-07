@@ -3501,13 +3501,13 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModule
             if (    !strcmp(pGlobalModule->szName, pszModuleName)
                 &&  !strcmp(pGlobalModule->szVersion, pszVersion))
             {
-                Assert(!pRecVM->fCollision);
-
                 /* Save reference. */
                 pRecVM->pGlobalModule = pGlobalModule;
-                pRecVM->fCollision    = false;
-                if (fNewModule)
+                if (    fNewModule
+                    ||  pRecVM->fCollision == true) /* colliding module unregistered and new one registerd since the last check */
                     pGlobalModule->cUsers++;
+
+                pRecVM->fCollision    = false;
                 rc = VINF_SUCCESS;
             }
             else
@@ -3589,22 +3589,32 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
             rc = VERR_PGM_SHARED_MODULE_NOT_FOUND;
             goto end;
         }
-        /* Force pRec to go out of scope after freeing it. */
+        /* Remove reference to global shared module. */
+        if (!pRecVM->fCollision)
         {
             PGMMSHAREDMODULE pRec = pRecVM->pGlobalModule;
             Assert(pRec);
-            Assert(pRec->cUsers);
 
-            pRec->cUsers--;
-            if (pRec->cUsers == 0)
+            if (pRec)   /* paranoia */
             {
-                for (unsigned i = 0; i < pRec->cRegions; i++)
-                    if (pRec->aRegions[i].paHCPhysPageID)
-                        RTMemFree(pRec->aRegions[i].paHCPhysPageID);
+                Assert(pRec->cUsers);
+                pRec->cUsers--;
+                if (pRec->cUsers == 0)
+                {
+                    /* Free the ranges, but leave the pages intact as there might still be references; they will be cleared by the COW mechanism. */
+                    for (unsigned i = 0; i < pRec->cRegions; i++)
+                        if (pRec->aRegions[i].paHCPhysPageID)
+                            RTMemFree(pRec->aRegions[i].paHCPhysPageID);
 
-                RTMemFree(pRec);
+                    RTMemFree(pRec);
+                }
             }
+            else
+                rc = VERR_PGM_SHARED_MODULE_REGISTRATION_INCONSISTENCY;
         }
+        else
+            Assert(!pRecVM->pGlobalModule);
+
         RTMemFree(pRecVM);
 
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
@@ -3737,9 +3747,14 @@ GMMR0DECL(int) GMMR0SharedModuleCheckRange(PVM pVM, VMCPUID idCpu, PGMMREGISTERS
                 }
                 else
                 {
+                    uint8_t  *pbLocalPage, *pbSharedPage;
+                    uint8_t  *pbChunk;
+                    PGMMCHUNK pChunk;
+
                     Assert(paPageDesc[i].uHCPhysPageId != pGlobalRegion->paHCPhysPageID[i]);
 
-                    PGMMPAGE pPage = gmmR0GetPage(pGMM, paPageDesc[i].uHCPhysPageId);
+                    /* Get the shared page source. */
+                    PGMMPAGE pPage = gmmR0GetPage(pGMM, pGlobalRegion->paHCPhysPageID[i]);
                     if (!pPage)
                     {
                         AssertFailed();
@@ -3750,21 +3765,47 @@ GMMR0DECL(int) GMMR0SharedModuleCheckRange(PVM pVM, VMCPUID idCpu, PGMMREGISTERS
 
                     Log(("Replace existing page guest %RGp host %RHp -> %RHp\n", paPageDesc[i].GCPhys, paPageDesc[i].HCPhys, (pPage->Private.pfn << 12)));
 
-                    PGMMCHUNK pChunk = gmmR0GetChunk(pGMM, paPageDesc[i].uHCPhysPageId >> GMM_CHUNKID_SHIFT);
+                    /* Calculate the virtual address of the local page. */
+                    pChunk = gmmR0GetChunk(pGMM, paPageDesc[i].uHCPhysPageId >> GMM_CHUNKID_SHIFT);
+                    if (pChunk)
+                    {
+                        if (!gmmR0IsChunkMapped(pGVM, pChunk, (PRTR3PTR)&pbChunk))
+                        {
+                            AssertFailed();
+                            rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
+                            goto end;
+                        }
+                        pbLocalPage = pbChunk + ((paPageDesc[i].uHCPhysPageId & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT);
+                    }
+                    else
+                    {
+                        AssertFailed();
+                        rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
+                        goto end;
+                    }
+                    
+                    /* Calculate the virtual address of the shared page. */
+                    pChunk = gmmR0GetChunk(pGMM, pGlobalRegion->paHCPhysPageID[i] >> GMM_CHUNKID_SHIFT);
                     Assert(pChunk); /* can't fail as gmmR0GetPage succeeded. */
-                    uint8_t *pbR3Page, *pbR3Chunk;
 
                     /* Get the virtual address of the physical page; map the chunk into the VM process if not already done. */
-                    if (!gmmR0IsChunkMapped(pGVM, pChunk, (PRTR3PTR)&pbR3Chunk))
+                    if (!gmmR0IsChunkMapped(pGVM, pChunk, (PRTR3PTR)&pbChunk))
                     {
-                        rc = gmmR0MapChunk(pGMM, pGVM, pChunk, (PRTR3PTR)&pbR3Chunk);
+                        rc = gmmR0MapChunk(pGMM, pGVM, pChunk, (PRTR3PTR)&pbChunk);
                         if (rc != VINF_SUCCESS)
                         {
                             AssertRC(rc);
                             goto end;
                         }
                     }
-                    pbR3Page = pbR3Chunk + ((paPageDesc[i].uHCPhysPageId & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT);
+                    pbSharedPage = pbChunk + ((pGlobalRegion->paHCPhysPageID[i] & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT);
+
+                    /** todo write ASMMemComparePage. */
+                    if (memcmp(pbSharedPage, pbLocalPage, PAGE_SIZE))
+                    {
+                        Log(("Unexpected differences found between local and shared page; skip\n"));
+                        continue;
+                    }
 
                     /* Free the old local page. */
                     GMMFREEPAGEDESC PageDesc;
@@ -3772,6 +3813,9 @@ GMMR0DECL(int) GMMR0SharedModuleCheckRange(PVM pVM, VMCPUID idCpu, PGMMREGISTERS
                     PageDesc.idPage = paPageDesc[i].uHCPhysPageId;
                     rc = gmmR0FreePages(pGMM, pGVM, 1, &PageDesc, GMMACCOUNT_BASE);
                     AssertRC(rc);
+
+                    /* Increase reference count. */
+                    pPage->Shared.cRefs++;
 
                     /* Pass along the new physical address & page id. */
                     paPageDesc[i].HCPhys        = (pPage->Private.pfn << 12);
