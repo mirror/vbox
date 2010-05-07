@@ -27,7 +27,7 @@
 #include <VBox/HostServices/GuestControlSvc.h>
 
 #include <VBox/log.h>
-#include <iprt/asm.h>
+#include <iprt/asm.h> /* For ASMBreakpoint(). */
 #include <iprt/assert.h>
 #include <iprt/cpp/autores.h>
 #include <iprt/cpp/utils.h>
@@ -64,6 +64,8 @@ typedef std::list< HostCmd >::const_iterator HostCmdListIterConst;
  */
 struct GuestCall
 {
+    /** Client ID; a client can have multiple handles! */
+    uint32_t mClientID;
     /** The call handle */
     VBOXHGCMCALLHANDLE mHandle;
     /** The call parameters */
@@ -72,13 +74,16 @@ struct GuestCall
     uint32_t mNumParms;
 
     /** The standard constructor */
-    GuestCall() : mHandle(0), mParms(NULL), mNumParms(0) {}
+    GuestCall() : mClientID(0), mHandle(0), mParms(NULL), mNumParms(0) {}
     /** The normal contructor */
-    GuestCall(VBOXHGCMCALLHANDLE aHandle, VBOXHGCMSVCPARM aParms[], int cParms)
-              : mHandle(aHandle), mParms(aParms), mNumParms(cParms) {}
+    GuestCall(uint32_t aClientID, VBOXHGCMCALLHANDLE aHandle, 
+              VBOXHGCMSVCPARM aParms[], uint32_t cParms)
+              : mClientID(aClientID), mHandle(aHandle), mParms(aParms), mNumParms(cParms) {}
 };
 /** The guest call list type */
-typedef std::list <GuestCall> CallList;
+typedef std::list< GuestCall > CallList;
+typedef std::list< GuestCall >::iterator CallListIter;
+typedef std::list< GuestCall >::const_iterator CallListIterConst;
 
 /**
  * Class containing the shared information service functionality.
@@ -90,15 +95,6 @@ private:
     typedef Service SELF;
     /** HGCM helper functions. */
     PVBOXHGCMSVCHELPERS mpHelpers;
-    /** @todo we should have classes for thread and request handler thread */
-    /** Queue of outstanding property change notifications */
-    RTREQQUEUE *mReqQueue;
-    /** Request that we've left pending in a call to flushNotifications. */
-    PRTREQ mPendingDummyReq;
-    /** Thread for processing the request queue */
-    RTTHREAD mReqThread;
-    /** Tell the thread that it should exit */
-    bool volatile mfExitThread;
     /** Callback function supplied by the host for notification of updates
      * to properties */
     PFNHGCMSVCEXT mpfnHostCallback;
@@ -112,20 +108,9 @@ private:
 public:
     explicit Service(PVBOXHGCMSVCHELPERS pHelpers)
         : mpHelpers(pHelpers)
-        , mPendingDummyReq(NULL)
-        , mfExitThread(false)
         , mpfnHostCallback(NULL)
         , mpvHostData(NULL)
     {
-        int rc = RTReqCreateQueue(&mReqQueue);
-#ifndef VBOX_GUEST_CTRL_TEST_NOTHREAD
-        if (RT_SUCCESS(rc))
-            rc = RTThreadCreate(&mReqThread, reqThreadFn, this, 0,
-                                RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
-                                "GuestCtrlReq");
-#endif
-        if (RT_FAILURE(rc))
-            throw rc;
     }
 
     /**
@@ -230,11 +215,10 @@ private:
     void paramBufferFree(PVBOXGUESTCTRPARAMBUFFER pBuf);
     int paramBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int prepareExecute(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    static DECLCALLBACK(int) reqThreadFn(RTTHREAD ThreadSelf, void *pvUser);
     int clientConnect(uint32_t u32ClientID, void *pvClient);
     int clientDisconnect(uint32_t u32ClientID, void *pvClient);
     int sendHostCmdToGuest(HostCmd *pCmd, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int retrieveNextHostCmd(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int retrieveNextHostCmd(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int notifyHost(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int processHostCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     void call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
@@ -245,25 +229,16 @@ private:
 };
 
 
-/**
- * Thread function for processing the request queue
- * @copydoc FNRTTHREAD
- */
-/* static */
-DECLCALLBACK(int) Service::reqThreadFn(RTTHREAD ThreadSelf, void *pvUser)
-{
-    SELF *pSelf = reinterpret_cast<SELF *>(pvUser);
-    while (!pSelf->mfExitThread)
-        RTReqProcess(pSelf->mReqQueue, RT_INDEFINITE_WAIT);
-    return VINF_SUCCESS;
-}
-
 /** @todo Write some nice doc headers! */
 /* Stores a HGCM request in an internal buffer (pEx). Needs to be freed later using execBufferFree(). */
 int Service::paramBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     AssertPtr(pBuf);
     int rc = VINF_SUCCESS;
+
+    /* Paranoia. */
+    if (cParms > 256)
+        cParms = 256;
 
     /*
      * Don't verify anything here (yet), because this function only buffers
@@ -391,6 +366,17 @@ int Service::clientConnect(uint32_t u32ClientID, void *pvClient)
 int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
 {
     LogFlowFunc(("Client (%ld) disconnected\n", u32ClientID));
+    /*
+     * Throw out all stale clients.
+     */
+    CallListIter it = mClientList.begin();
+    while (it != mClientList.end())
+    {
+        if (it->mClientID == u32ClientID)
+            it = mClientList.erase(it);
+        else
+            it++;
+    }
     return VINF_SUCCESS;
 }
 
@@ -423,7 +409,8 @@ int Service::sendHostCmdToGuest(HostCmd *pCmd, VBOXHGCMCALLHANDLE callHandle, ui
  * Either fills in parameters from a pending host command into our guest context or
  * defer the guest call until we have something from the host.
  */
-int Service::retrieveNextHostCmd(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::retrieveNextHostCmd(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, 
+                                 uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
 
@@ -434,7 +421,7 @@ int Service::retrieveNextHostCmd(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms,
      */
     if (mHostCmds.empty()) /* If command list is empty, defer ... */
     {
-        mClientList.push_back(GuestCall(callHandle, paParms, cParms));
+        mClientList.push_back(GuestCall(u32ClientID, callHandle, paParms, cParms));
         rc = VINF_HGCM_ASYNC_EXECUTE;
     }
     else
@@ -534,11 +521,12 @@ int Service::processHostCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM
         /* If not processed, buffer it ... */
         if (!fProcessed)
         {
-            mHostCmds.push_back(newCmd);
-    
+            mHostCmds.push_back(newCmd);    
+#if 0
             /* Limit list size by deleting oldest element. */
             if (mHostCmds.size() > 256) /** @todo Use a define! */
                 mHostCmds.pop_front();
+#endif
         }
     }
     return rc;
@@ -567,7 +555,7 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
             /* The guest asks the host for the next messsage to process. */
             case GUEST_GET_HOST_MSG:
                 LogFlowFunc(("GUEST_GET_HOST_MSG\n"));
-                rc = retrieveNextHostCmd(callHandle, cParms, paParms);
+                rc = retrieveNextHostCmd(u32ClientID, callHandle, cParms, paParms);
                 break;
 
             /* The guest notifies the host that some output at stdout/stderr is available. */

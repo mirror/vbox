@@ -150,7 +150,7 @@ private:
     int notifyCtrlExecOut(uint32_t u32Function, PHOSTEXECOUTCALLBACKDATA pData);
     CallbackListIter getCtrlCallbackContextByID(uint32_t u32ContextID);
     GuestProcessIter getProcessByPID(uint32_t u32PID);
-    void removeCtrlCallbackContext(CallbackListIter it);
+    void destroyCtrlCallbackContext(CallbackListIter it);
     uint32_t addCtrlCallbackContext(eVBoxGuestCtrlCallbackType enmType, void *pvData, uint32_t cbData, Progress* pProgress);
 # endif
 
