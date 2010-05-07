@@ -113,4 +113,31 @@ public class VirtualBoxManager
 
         return true;
     }
+
+    public Mozilla getMozilla()
+    {
+        return mozilla;
+    }
+
+    public void waitForEvents(long tmo)
+    {
+        mozilla.waitForEvents(tmo);
+    }
+
+    public ILocalOwner makeWrapper(nsISupports obj)
+    {
+
+       ILocalOwner lo = (ILocalOwner) this.componentManager
+               .createInstanceByContractID("@virtualbox.org/CallbackWrapper;1",
+                                           null,
+                                           ILocalOwner.ILOCALOWNER_IID);
+       lo.setLocalObject(obj);
+       return lo;
+    }
+
+    public IVirtualBoxCallback makeVirtualBoxCallback(IVirtualBoxCallback obj)
+    {
+       ILocalOwner lo = makeWrapper(obj);
+       return (IVirtualBoxCallback)lo.queryInterface(IVirtualBoxCallback.IVIRTUALBOXCALLBACK_IID);
+    }
 }

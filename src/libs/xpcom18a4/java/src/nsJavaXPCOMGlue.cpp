@@ -157,7 +157,13 @@ class nsXPTCJStub : public nsXPTCStubBase
    }
 };
 
-NS_IMPL_ISUPPORTS1(nsXPTCJStub, nsISupports);
+NS_IMPL_ADDREF(nsXPTCJStub)
+NS_IMPL_RELEASE(nsXPTCJStub)
+
+NS_IMETHODIMP nsXPTCJStub::QueryInterface(REFNSIID aIID, void** aInstancePtr)
+{
+    return mOuter->QueryInterface(aIID, aInstancePtr);
+}
 
 nsresult
 NS_GetXPTCallStub(REFNSIID aIID, nsIXPTCProxy* aOuter,

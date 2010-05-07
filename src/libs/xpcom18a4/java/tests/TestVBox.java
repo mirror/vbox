@@ -33,12 +33,12 @@ public class TestVBox
         public void onMachineDataChange(String machineId) {}
         /** @todo long -> MachineState */
         public void onMachineStateChange(String machineId, long state) { System.out.println("onMachineStateChange -- VM: " + machineId + ", state: " + state); };
-        
+
         /** @todo ugly reimplementation of queryInterface, should have base class to derive from */
         public nsISupports queryInterface(String iid) { return org.mozilla.xpcom.Mozilla.queryInterface(this, iid); }
     };
-	
-	
+
+
     public static void main(String[] args)
     {
         VirtualBoxManager mgr = VirtualBoxManager.getInstance(null);
@@ -67,23 +67,34 @@ public class TestVBox
                 }
             }
 
-//            VBoxCallbacks vboxCallbacks = new VBoxCallbacks();
-//            vbox.registerCallback(vboxCallbacks);
+            VBoxCallbacks vboxCallbacks = new VBoxCallbacks();
+            vbox.registerCallback(mgr.makeVirtualBoxCallback(vboxCallbacks));
 
             /* do something silly, start the first VM in the list */
             String m = machs[0].getName();
             System.out.println("\nAttempting to start VM '" + m + "'");
             if (mgr.startVm(m, 7000))
             {
-                System.out.println("started, presss any key...");
-                int ch = System.in.read();
+                VBoxCbImpl cb = new VBoxCbImpl();
+                vbox.registerCallback(mgr.makeVirtualBoxCallback(cb));
+
+                if (false)
+                {
+                    System.out.println("started, presss any key...");
+                    int ch = System.in.read();
+                } else {
+                    while (true)
+                    {
+                        mgr.waitForEvents(500);
+                    }
+                }
             }
             else
             {
                 System.out.println("cannot start machine "+m);
             }
-            
-//            vbox.unregisterCallback(vboxCallbacks);
+
+            vbox.unregisterCallback(vboxCallbacks);
         }
         catch (Throwable e)
         {
