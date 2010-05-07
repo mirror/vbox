@@ -213,12 +213,12 @@ typedef union GMMPAGE
     /** The view of a shared page. */
     struct GMMPAGESHARED
     {
-        /** The guest page frame number. (Max addressable: 2 ^ 44 - 16) */
+        /** The host page frame number. (Max addressable: 2 ^ 44 - 16) */
         uint32_t    pfn;
         /** The reference count (64K VMs). */
         uint32_t    cRefs : 16;
         /** Reserved. Checksum or something? Two hGVMs for forking? */
-        uint32_t    u30Reserved : 14;
+        uint32_t    u14Reserved : 14;
         /** The page state. */
         uint32_t    u2State : 2;
     } Shared;
@@ -2624,10 +2624,11 @@ DECLINLINE(void) gmmR0FreeSharedPage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage)
  *
  * @param   pGMM        Pointer to the GMM instance.
  * @param   pGVM        Pointer to the GVM instance.
+ * @param   HCPhys      Host physical address
  * @param   idPage      The Page ID
  * @param   pPage       The page structure.
  */
-DECLINLINE(void) gmmR0ConvertToSharedPage(PGMM pGMM, PGVM pGVM, uint32_t idPage, PGMMPAGE pPage)
+DECLINLINE(void) gmmR0ConvertToSharedPage(PGMM pGMM, PGVM pGVM, RTHCPHYS HCPhys, uint32_t idPage, PGMMPAGE pPage)
 {
     PGMMCHUNK pChunk = gmmR0GetChunk(pGMM, idPage >> GMM_CHUNKID_SHIFT);
     Assert(pChunk);
@@ -2643,7 +2644,7 @@ DECLINLINE(void) gmmR0ConvertToSharedPage(PGMM pGMM, PGVM pGVM, uint32_t idPage,
     pGVM->gmm.s.cPrivatePages--;
 
     /* Modify the page structure. */
-    pPage->Shared.pfn     = pPage->Private.pfn;     /* same location */
+    pPage->Shared.pfn     = (uint32_t)(HCPhys >> PAGE_SHIFT);
     pPage->Shared.cRefs   = 1;
     pPage->Common.u2State = GMM_PAGE_STATE_SHARED;
 }
@@ -3699,15 +3700,15 @@ GMMR0DECL(int)  GMMR0UnregisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMUNREG
  * Checks specified shared module range for changes
  *
  * Performs the following tasks:
- * - if a shared page is new, then it changes the GMM page type to shared and returns it in the paHCPhysPageID array
- * - if a shared page already exists, then it checks if the VM page is identical and if so frees the VM page and returns the shared page in the paHCPhysPageID array
+ * - if a shared page is new, then it changes the GMM page type to shared and returns it in the paPageDesc array
+ * - if a shared page already exists, then it checks if the VM page is identical and if so frees the VM page and returns the shared page in the paPageDesc array
  *
  * @returns VBox status code.
  * @param   pVM                 VM handle
  * @param   idCpu               VCPU id
  * @param   pReq                Module description
  * @param   idxRegion           Region index
- * @param   cPages              Number of entries in the paHCPhysAndPageID array
+ * @param   cPages              Number of entries in the paPageDesc array
  * @param   paPageDesc          Page descriptor array (in/out)
  */
 GMMR0DECL(int) GMMR0SharedModuleCheckRange(PVM pVM, VMCPUID idCpu, PGMMREGISTERSHAREDMODULEREQ pReq, unsigned idxRegion, unsigned cPages, PGMMSHAREDPAGEDESC paPageDesc)
@@ -3768,7 +3769,7 @@ GMMR0DECL(int) GMMR0SharedModuleCheckRange(PVM pVM, VMCPUID idCpu, PGMMREGISTERS
             if (paPageDesc[i].uHCPhysPageId != NIL_GMM_PAGEID)
             {
                 /* We've seen this shared page for the first time? */
-                if (pGlobalRegion->paHCPhysPageID[i] == NIL_GMM_PAGEID)
+                if (pGlobalRegion->paHCPhysPageID == NIL_GMM_PAGEID)
                 {
                     /* Easy case: just change the internal page type. */
                     PGMMPAGE pPage = gmmR0GetPage(pGMM, paPageDesc[i].uHCPhysPageId);
@@ -3778,11 +3779,11 @@ GMMR0DECL(int) GMMR0SharedModuleCheckRange(PVM pVM, VMCPUID idCpu, PGMMREGISTERS
                         rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
                         goto end;
                     }
-                    Log(("New shared page guest %RGp host %RHp\n", paPageDesc[i].GCPhys, (pPage->Private.pfn << 12)));
+                    Log(("New shared page guest %RGp host %RHp\n", paPageDesc[i].GCPhys, paPageDesc[i].HCPhys));
 
                     Assert(paPageDesc[i].HCPhys == (pPage->Private.pfn << 12));
 
-                    gmmR0ConvertToSharedPage(pGMM, pGVM, paPageDesc[i].uHCPhysPageId, pPage);
+                    gmmR0ConvertToSharedPage(pGMM, pGVM, paPageDesc[i].HCPhys, paPageDesc[i].uHCPhysPageId, pPage);
 
                     /* Keep track of these references. */
                     pGlobalRegion->paHCPhysPageID[i] = paPageDesc[i].uHCPhysPageId;
@@ -3805,7 +3806,7 @@ GMMR0DECL(int) GMMR0SharedModuleCheckRange(PVM pVM, VMCPUID idCpu, PGMMREGISTERS
                     }
                     Assert(pPage->Common.u2State == GMM_PAGE_STATE_SHARED);
 
-                    Log(("Replace existing page guest %RGp host %RHp -> %RHp\n", paPageDesc[i].GCPhys, paPageDesc[i].HCPhys, (pPage->Private.pfn << 12)));
+                    Log(("Replace existing page guest %RGp host %RHp -> %RHp\n", paPageDesc[i].GCPhys, paPageDesc[i].HCPhys, pPage->Shared.pfn << PAGE_SHIFT));
 
                     /* Calculate the virtual address of the local page. */
                     pChunk = gmmR0GetChunk(pGMM, paPageDesc[i].uHCPhysPageId >> GMM_CHUNKID_SHIFT);
@@ -3859,7 +3860,7 @@ GMMR0DECL(int) GMMR0SharedModuleCheckRange(PVM pVM, VMCPUID idCpu, PGMMREGISTERS
                     gmmR0UseSharedPage(pGMM, pGVM, pPage);
 
                     /* Pass along the new physical address & page id. */
-                    paPageDesc[i].HCPhys        = (pPage->Private.pfn << 12);
+                    paPageDesc[i].HCPhys        = pPage->Shared.pfn << PAGE_SHIFT;
                     paPageDesc[i].uHCPhysPageId = pGlobalRegion->paHCPhysPageID[i];
                 }
             }
