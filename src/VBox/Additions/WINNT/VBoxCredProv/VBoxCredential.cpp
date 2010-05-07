@@ -6,7 +6,7 @@
 //
 // Copyright (c) 2006 Microsoft Corporation. All rights reserved.
 //
-// Modifications (c) 2009 Sun Microsystems, Inc.
+// Modifications (c) 2009-2010 Oracle Corporation
 //
 
 #ifndef WIN32_NO_STATUS

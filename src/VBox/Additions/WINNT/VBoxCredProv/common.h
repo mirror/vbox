@@ -10,7 +10,7 @@
 // sample tile looks like.  For example, it defines what fields a tile has
 // and which fields show in which states of LogonUI.
 //
-// Modifications (c) 2009 Sun Microsystems, Inc.
+// Modifications (c) 2009-2010 Oracle Corporation
 //
 
 #ifndef ___common_h
