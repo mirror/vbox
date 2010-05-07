@@ -3150,14 +3150,10 @@ HRESULT Medium::createMediumLockList(bool fMediumWritable,
 
                 /* collect multiple errors */
                 eik.restore();
-
-                /* be in sync with MediumBase::setStateError() */
                 Assert(!error.isEmpty());
                 mrc = setError(E_FAIL,
-                               tr("Medium '%ls' is not accessible. %ls"),
-                               loc.raw(),
+                               "%ls",
                                error.raw());
-
                 eik.fetch();
             }
         }
