@@ -110,7 +110,6 @@ public class VirtualBoxManager
         IProgress p = vbox.openRemoteSession(session, mid, type, "");
         progressBar(p, timeout);
         session.close();
-
         return true;
     }
 
