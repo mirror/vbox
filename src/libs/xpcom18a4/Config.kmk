@@ -92,7 +92,7 @@ TEMPLATE_XPCOM_LDFLAGS.darwin      = $(TEMPLATE_VBOXR3NP_LDFLAGS.darwin) \
 	-framework Foundation \
 	-framework AppKit \
 	-framework Carbon
-## @todo wy is -fno-exceptions here.
+## @todo why is -fno-exceptions here.
 ifn1of ($(KBUILD_TARGET), os2 win)
  TEMPLATE_XPCOM_CXXFLAGS          += -fPIC
  TEMPLATE_XPCOM_CFLAGS            += -fPIC
@@ -209,7 +209,7 @@ TEMPLATE_XPCOMBLDPROG_ORDERDEPS          = $(foreach hdrinst, $(filter %-HEADERS
 
 ifeq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.4)
  #
- # Template for building VBoxPhython against the Mac OS X 10.4 SDK.
+ # Template for building VBoxPython against the Mac OS X 10.4 SDK.
  # ASSUMES that the SDK bits are in the .darwin properties we're overriding below.
  #
  TEMPLATE_XPCOMOSX104                    = XPCOM libraries (shared) built against the Mac OS X 10.4 SDK
@@ -222,7 +222,7 @@ ifeq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.4)
 endif
 
 #
-# Template for building VBoxPhython against the Mac OS X 10.5 SDK.
+# Template for building VBoxPython against the Mac OS X 10.5 SDK.
 # ASSUMES that the SDK bits are in the .darwin properties we're overriding below.
 #
 TEMPLATE_XPCOMOSX105                    = XPCOM libraries (shared) built against the Mac OS X 10.5 SDK
