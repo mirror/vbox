@@ -433,17 +433,22 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     const RTHCPHYS HCPhys = pVM->pgm.s.aHandyPages[iHandyPage].HCPhysGCPhys;
     pVM->pgm.s.aHandyPages[iHandyPage].HCPhysGCPhys = GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK;
 
+    const void *pvSharedPage = NULL;
+    
     if (PGM_PAGE_IS_SHARED(pPage))
     {
         pVM->pgm.s.aHandyPages[iHandyPage].idSharedPage = PGM_PAGE_GET_PAGEID(pPage);
         Assert(PGM_PAGE_GET_PAGEID(pPage) != NIL_GMM_PAGEID);
         VM_FF_SET(pVM, VM_FF_PGM_NEED_HANDY_PAGES);
 
-        Log2(("PGM: Replaced shared page %#x at %RGp with %#x / %RHp\n", PGM_PAGE_GET_PAGEID(pPage),
-              GCPhys, pVM->pgm.s.aHandyPages[iHandyPage].idPage, HCPhys));
+        Log(("PGM: Replaced shared page %#x at %RGp with %#x / %RHp\n", PGM_PAGE_GET_PAGEID(pPage),
+             GCPhys, pVM->pgm.s.aHandyPages[iHandyPage].idPage, HCPhys));
         STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,PageReplaceShared));
         pVM->pgm.s.cSharedPages--;
-        AssertMsgFailed(("TODO: copy shared page content")); /** @todo err.. what about copying the page content? */
+    
+        /* Grab the address of the page so we can make a copy later on. */
+        rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pPage, GCPhys, &pvSharedPage);
+        AssertRC(rc);
     }
     else
     {
@@ -462,6 +467,21 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ALLOCATED);
     PGM_PAGE_SET_PDE_TYPE(pPage, PGM_PAGE_PDE_TYPE_PT);
     PGMPhysInvalidatePageMapTLBEntry(pVM, GCPhys);
+
+    /* Copy the shared page contents to the replacement page. */
+    if (pvSharedPage)
+    {
+        void *pvNewPage;
+
+        /* Get the virtual address of the new page. */
+        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvNewPage);
+        AssertRC(rc);
+        if (rc == VINF_SUCCESS)
+        {
+            /** todo write ASMMemCopy */
+            memcpy(pvNewPage, pvSharedPage, PAGE_SIZE);
+        }
+    }
 
     if (    fFlushTLBs
         &&  rc != VINF_PGM_GCPHYS_ALIASED)

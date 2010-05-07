@@ -1438,6 +1438,9 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
 # ifdef VBOX_WITH_REAL_WRITE_MONITORED_PAGES
                          && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_WRITE_MONITORED
 # endif
+# ifdef VBOX_WITH_PAGE_SHARING
+                         && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_SHARED
+# endif
                         )
                      )
                )
@@ -1832,6 +1835,9 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
                                  && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
 #  ifdef VBOX_WITH_REAL_WRITE_MONITORED_PAGES
                                  && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_WRITE_MONITORED
+#  endif
+#  ifdef VBOX_WITH_PAGE_SHARING
+                                 && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_SHARED
 #  endif
                                  )
                              )
@@ -2866,6 +2872,9 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
                                      && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
 #  ifdef VBOX_WITH_REAL_WRITE_MONITORED_PAGES
                                      && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_WRITE_MONITORED
+#  endif
+#  ifdef VBOX_WITH_PAGE_SHARING
+                                     && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_SHARED
 #  endif
                                      && !PGM_PAGE_IS_BALLOONED(pPage))
                                  )

@@ -2619,6 +2619,50 @@ DECLINLINE(void) gmmR0FreeSharedPage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage)
     gmmR0FreePageWorker(pGMM, pChunk, idPage, pPage);
 }
 
+/**
+ * Converts a private page to a shared page, the page is known to exist and be valid and such.
+ *
+ * @param   pGMM        Pointer to the GMM instance.
+ * @param   pGVM        Pointer to the GVM instance.
+ * @param   idPage      The Page ID
+ * @param   pPage       The page structure.
+ */
+DECLINLINE(void) gmmR0ConvertToSharedPage(PGMM pGMM, PGVM pGVM, uint32_t idPage, PGMMPAGE pPage)
+{
+    PGMMCHUNK pChunk = gmmR0GetChunk(pGMM, idPage >> GMM_CHUNKID_SHIFT);
+    Assert(pChunk);
+    Assert(pChunk->cFree < GMM_CHUNK_NUM_PAGES);
+    Assert(GMM_PAGE_IS_PRIVATE(pPage));
+
+    pChunk->cPrivate--;
+    pChunk->cShared++;
+
+    pGMM->cSharedPages++;
+
+    pGVM->gmm.s.cSharedPages++;
+    pGVM->gmm.s.cPrivatePages--;
+
+    /* Modify the page structure. */
+    pPage->Shared.pfn     = pPage->Private.pfn;     /* same location */
+    pPage->Shared.cRefs   = 1;
+    pPage->Common.u2State = GMM_PAGE_STATE_SHARED;
+}
+
+/**
+ * Increase the use count of a shared page, the page is known to exist and be valid and such.
+ *
+ * @param   pGMM        Pointer to the GMM instance.
+ * @param   pGVM        Pointer to the GVM instance.
+ * @param   pPage       The page structure.
+ */
+DECLINLINE(void) gmmR0UseSharedPage(PGMM pGMM, PGVM pGVM, PGMMPAGE pPage)
+{
+    Assert(pGMM->cSharedPages > 0);
+    Assert(pGMM->cAllocatedPages > 0);
+
+    pPage->Shared.cRefs++;
+    pGVM->gmm.s.cSharedPages++;
+}
 
 /**
  * Frees a private page, the page is known to exist and be valid and such.
@@ -2639,7 +2683,6 @@ DECLINLINE(void) gmmR0FreePrivatePage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage
     pGMM->cAllocatedPages--;
     gmmR0FreePageWorker(pGMM, pChunk, idPage, pPage);
 }
-
 
 /**
  * Common worker for GMMR0FreePages and GMMR0BalloonedPages.
@@ -3738,9 +3781,8 @@ GMMR0DECL(int) GMMR0SharedModuleCheckRange(PVM pVM, VMCPUID idCpu, PGMMREGISTERS
                     Log(("New shared page guest %RGp host %RHp\n", paPageDesc[i].GCPhys, (pPage->Private.pfn << 12)));
 
                     Assert(paPageDesc[i].HCPhys == (pPage->Private.pfn << 12));
-                    pPage->Shared.pfn     = pPage->Private.pfn;     /* same location */
-                    pPage->Shared.cRefs   = 1;
-                    pPage->Common.u2State = GMM_PAGE_STATE_SHARED;
+
+                    gmmR0ConvertToSharedPage(pGMM, pGVM, paPageDesc[i].uHCPhysPageId, pPage);
 
                     /* Keep track of these references. */
                     pGlobalRegion->paHCPhysPageID[i] = paPageDesc[i].uHCPhysPageId;
@@ -3814,8 +3856,7 @@ GMMR0DECL(int) GMMR0SharedModuleCheckRange(PVM pVM, VMCPUID idCpu, PGMMREGISTERS
                     rc = gmmR0FreePages(pGMM, pGVM, 1, &PageDesc, GMMACCOUNT_BASE);
                     AssertRC(rc);
 
-                    /* Increase reference count. */
-                    pPage->Shared.cRefs++;
+                    gmmR0UseSharedPage(pGMM, pGVM, pPage);
 
                     /* Pass along the new physical address & page id. */
                     paPageDesc[i].HCPhys        = (pPage->Private.pfn << 12);
