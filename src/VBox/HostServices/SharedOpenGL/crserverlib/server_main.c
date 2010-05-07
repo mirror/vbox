@@ -25,7 +25,7 @@
 #include <iprt/assert.h>
 
 /**
- * \mainpage CrServerLib 
+ * \mainpage CrServerLib
  *
  * \section CrServerLibIntroduction Introduction
  *
@@ -90,7 +90,7 @@ static void crServerTearDown( void )
     /* Deallocate all semaphores */
     crFreeHashtable(cr_server.semaphores, crFree);
     cr_server.semaphores = NULL;
- 
+
     /* Deallocate all barriers */
     crFreeHashtable(cr_server.barriers, DeleteBarrierCallback);
     cr_server.barriers = NULL;
@@ -328,7 +328,7 @@ int32_t crVBoxServerAddClient(uint32_t u32ClientID)
         return VERR_MAX_THRDS_REACHED;
     }
 
-    newClient = (CRClient *) crCalloc(sizeof(CRClient));    
+    newClient = (CRClient *) crCalloc(sizeof(CRClient));
     crDebug("crServer: AddClient u32ClientID=%d", u32ClientID);
 
     newClient->spu_id = 0;
@@ -355,8 +355,8 @@ void crVBoxServerRemoveClient(uint32_t u32ClientID)
 
     for (i = 0; i < cr_server.numClients; i++)
     {
-        if (cr_server.clients[i] && cr_server.clients[i]->conn 
-            && cr_server.clients[i]->conn->u32ClientID==u32ClientID) 
+        if (cr_server.clients[i] && cr_server.clients[i]->conn
+            && cr_server.clients[i]->conn->u32ClientID==u32ClientID)
         {
             break;
         }
@@ -380,8 +380,8 @@ int32_t crVBoxServerClientWrite(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t
 
     for (i = 0; i < cr_server.numClients; i++)
     {
-        if (cr_server.clients[i] && cr_server.clients[i]->conn 
-            && cr_server.clients[i]->conn->u32ClientID==u32ClientID) 
+        if (cr_server.clients[i] && cr_server.clients[i]->conn
+            && cr_server.clients[i]->conn->u32ClientID==u32ClientID)
         {
             break;
         }
@@ -403,11 +403,11 @@ int32_t crVBoxServerClientWrite(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t
         crDebug("crServer: client %d blocked, allow_redir_ptr = 0", u32ClientID);
         pClient->conn->allow_redir_ptr = 0;
     }
-    else    
+    else
     {
         pClient->conn->allow_redir_ptr = 1;
     }
-    
+
     pClient->conn->pBuffer = pBuffer;
     pClient->conn->cbBuffer = cbBuffer;
 
@@ -459,8 +459,8 @@ int32_t crVBoxServerClientRead(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t 
 
     for (i = 0; i < cr_server.numClients; i++)
     {
-        if (cr_server.clients[i] && cr_server.clients[i]->conn 
-            && cr_server.clients[i]->conn->u32ClientID==u32ClientID) 
+        if (cr_server.clients[i] && cr_server.clients[i]->conn
+            && cr_server.clients[i]->conn->u32ClientID==u32ClientID)
         {
             break;
         }
@@ -490,7 +490,7 @@ int32_t crVBoxServerClientRead(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t 
         crMemcpy(pBuffer, pClient->conn->pHostBuffer, *pcbBuffer);
         pClient->conn->cbHostBuffer = 0;
     }
-    
+
     return VINF_SUCCESS;
 }
 
@@ -501,8 +501,8 @@ int32_t crVBoxServerClientSetVersion(uint32_t u32ClientID, uint32_t vMajor, uint
 
     for (i = 0; i < cr_server.numClients; i++)
     {
-        if (cr_server.clients[i] && cr_server.clients[i]->conn 
-            && cr_server.clients[i]->conn->u32ClientID==u32ClientID) 
+        if (cr_server.clients[i] && cr_server.clients[i]->conn
+            && cr_server.clients[i]->conn->u32ClientID==u32ClientID)
         {
             break;
         }
@@ -602,7 +602,7 @@ static void crVBoxServerSaveContextStateCB(unsigned long key, void *data1, void 
      */
     rc = SSMR3PutMem(pSSM, &key, sizeof(key));
     CRASSERT(rc == VINF_SUCCESS);
-    
+
 #ifdef CR_STATE_NO_TEXTURE_IMAGE_STORE
     if (cr_server.curClient)
     {
@@ -676,9 +676,9 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
 #endif
 
     /* Save contexts state tracker data */
-    /* @todo For now just some blind data dumps, 
+    /* @todo For now just some blind data dumps,
      * but I've a feeling those should be saved/restored in a very strict sequence to
-     * allow diff_api to work correctly. 
+     * allow diff_api to work correctly.
      * Should be tested more with multiply guest opengl apps working when saving VM snapshot.
      */
     crHashtableWalk(cr_server.contextTable, crVBoxServerSaveContextStateCB, pSSM);
@@ -699,7 +699,7 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
 
     /* Save cr_server.muralTable
      * @todo we don't need it all, just geometry info actually
-     * @todo store visible regions as well 
+     * @todo store visible regions as well
      */
     ui32 = crHashtableNumElements(cr_server.muralTable);
     /* There should be default mural always */
@@ -715,7 +715,7 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
     /* Save clients info */
     for (i = 0; i < cr_server.numClients; i++)
     {
-        if (cr_server.clients[i] && cr_server.clients[i]->conn) 
+        if (cr_server.clients[i] && cr_server.clients[i]->conn)
         {
             CRClient *pClient = cr_server.clients[i];
 
@@ -816,7 +816,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
 
         rc = crStateLoadContext(pContext, pSSM);
         AssertRCReturn(rc, rc);
-    }    
+    }
 
     /* Load windows */
     rc = SSMR3GetU32(pSSM, &uiNumElems);
@@ -891,7 +891,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
     /* Load clients info */
     for (i = 0; i < cr_server.numClients; i++)
     {
-        if (cr_server.clients[i] && cr_server.clients[i]->conn) 
+        if (cr_server.clients[i] && cr_server.clients[i]->conn)
         {
             CRClient *pClient = cr_server.clients[i];
             CRClient client;
@@ -982,7 +982,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
 
             cr_server.head_spu->dispatch_table.Enable(GL_CULL_FACE);
             cr_server.head_spu->dispatch_table.Enable(GL_TEXTURE_2D);*/
-            
+
             //crStateViewport( 0, 0, 600, 600 );
             //pClient->currentMural->viewportValidated = GL_FALSE;
             //cr_server.head_spu->dispatch_table.Viewport( 0, 0, 600, 600 );
@@ -1102,9 +1102,6 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
     if (sIndex<0 || sIndex>=cr_server.screenCount)
         return VERR_INVALID_PARAMETER;
 
-    if (winID==0)
-        return VERR_INVALID_PARAMETER;
-
     if (MAPPED(SCREEN(sIndex)) && SCREEN(sIndex).winID!=winID)
     {
         crWarning("Mapped screen[%i] is being remapped.", sIndex);
@@ -1133,7 +1130,7 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
             cr_server.curClient = cr_server.clients[i];
             if (cr_server.curClient->currentCtx
                 && cr_server.curClient->currentCtx->pImage
-                && cr_server.curClient->currentMural 
+                && cr_server.curClient->currentMural
                 && cr_server.curClient->currentMural->screenId == sIndex
                 && cr_server.curClient->currentCtx->viewport.viewportH == h
                 && cr_server.curClient->currentCtx->viewport.viewportW == w)
@@ -1152,7 +1149,7 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
         cr_server.curClient = NULL;
     }
 #endif
-    
+
     return VINF_SUCCESS;
 }
 
