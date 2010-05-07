@@ -80,16 +80,21 @@ static DECLCALLBACK(int) VBoxServiceControlInit(void)
 
     rc = VbglR3GuestCtrlConnect(&g_GuestControlSvcClientID);
     if (RT_SUCCESS(rc))
+    {
         VBoxServiceVerbose(3, "Control: Service Client ID: %#x\n", g_GuestControlSvcClientID);
+
+        /* Init thread list. */
+        RTListInit(&g_GuestControlExecThreads);
+    }
     else
     {
-        VBoxServiceError("Control: Failed to connect to the guest control service! Error: %Rrc\n", rc);
+        if (rc == VERR_HGCM_SERVICE_NOT_FOUND) /* Host service is not available; that's not fatal. */
+            VBoxServiceVerbose(0, "Guest control service is not available\n");
+        else
+            VBoxServiceError("Control: Failed to connect to the guest control service! Error: %Rrc\n", rc);
         RTSemEventMultiDestroy(g_hControlEvent);
         g_hControlEvent = NIL_RTSEMEVENTMULTI;
     }
-
-    /* Init thread list. */
-    RTListInit(&g_GuestControlExecThreads);
     return rc;
 }
 
@@ -146,7 +151,7 @@ static int VBoxServiceControlHandleCmdStartProcess(uint32_t u32ClientId, uint32_
                                            szUser, szPassword, uTimeLimitMS);
     }
 
-    VBoxServiceVerbose(4, "Control: VBoxServiceControlHandleCmdStartProcess returned with %Rrc\n", rc);
+    VBoxServiceVerbose(3, "Control: VBoxServiceControlHandleCmdStartProcess returned with %Rrc\n", rc);
     return rc;
 }
 
@@ -209,7 +214,7 @@ static int VBoxServiceControlHandleCmdGetOutput(uint32_t u32ClientId, uint32_t u
         else
             rc = VERR_NOT_FOUND; /* PID not found! */
     }
-    VBoxServiceVerbose(4, "Control: VBoxServiceControlHandleCmdGetOutput returned with %Rrc\n", rc);
+    VBoxServiceVerbose(3, "Control: VBoxServiceControlHandleCmdGetOutput returned with %Rrc\n", rc);
     return rc;
 }
 
@@ -235,7 +240,7 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
     {
         uint32_t uMsg;
         uint32_t uNumParms;
-        VBoxServiceVerbose(4, "Control: Waiting for host msg ...\n");
+        VBoxServiceVerbose(3, "Control: Waiting for host msg ...\n");
         rc = VbglR3GuestCtrlGetHostMsg(g_GuestControlSvcClientID, &uMsg, &uNumParms, 1000 /* 1s timeout */);
         if (RT_FAILURE(rc))
         {
