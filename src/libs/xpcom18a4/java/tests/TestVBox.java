@@ -75,9 +75,6 @@ public class TestVBox
             System.out.println("\nAttempting to start VM '" + m + "'");
             if (mgr.startVm(m, 7000))
             {
-                VBoxCbImpl cb = new VBoxCbImpl();
-                vbox.registerCallback(mgr.makeVirtualBoxCallback(cb));
-
                 if (false)
                 {
                     System.out.println("started, presss any key...");
