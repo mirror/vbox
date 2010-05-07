@@ -451,6 +451,9 @@ typedef struct PDMASYNCCOMPLETIONEPCLASSFILE
     uint32_t                            cReqsOutstandingMax;
     /** Bitmask for checking the alignment of a buffer. */
     RTR3UINTPTR                         uBitmaskAlignment;
+#ifdef VBOX_WITH_STATISTICS
+    uint32_t                            u32Alignment;
+#endif
     /** Global cache data. */
     PDMACFILECACHEGLOBAL                Cache;
     /** Flag whether the out of resources warning was printed already. */
@@ -460,6 +463,9 @@ typedef struct PDMASYNCCOMPLETIONEPCLASSFILE
 } PDMASYNCCOMPLETIONEPCLASSFILE;
 /** Pointer to the endpoint class data. */
 typedef PDMASYNCCOMPLETIONEPCLASSFILE *PPDMASYNCCOMPLETIONEPCLASSFILE;
+#ifdef VBOX_WITH_STATISTICS
+AssertCompileMemberAlignment(PDMASYNCCOMPLETIONEPCLASSFILE, Cache, sizeof(uint64_t));
+#endif
 
 typedef enum PDMACEPFILEBLOCKINGEVENT
 {
