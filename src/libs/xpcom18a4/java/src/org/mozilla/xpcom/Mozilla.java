@@ -223,14 +223,14 @@ public class Mozilla implements IMozilla, IGRE, IXPCOM, IJavaXPCOMUtils,XPCOMErr
 
       // Get the bundle for this app.  If this is not executing from
       // a bundle, this will return null.
-      Method mainBundleMethod = bundleClass.getMethod("mainBundle", (java.lang.Class)null);
-      Object bundle = mainBundleMethod.invoke(null, (java.lang.Object)null);
+      Method mainBundleMethod = bundleClass.getMethod("mainBundle", (java.lang.Class[])null);
+      Object bundle = mainBundleMethod.invoke(null, (java.lang.Object[])null);
 
       if (bundle != null) {
         // Get the path to the bundle's "Frameworks" directory
         Method fwPathMethod = bundleClass.getMethod("privateFrameworksPath",
-                                                    (java.lang.Class)null);
-        String path = (String) fwPathMethod.invoke(bundle, (java.lang.Object)null);
+                                                    (java.lang.Class[])null);
+        String path = (String) fwPathMethod.invoke(bundle, (java.lang.Object[])null);
 
         // look for libxpcom.dylib
         if (path.length() != 0) {
