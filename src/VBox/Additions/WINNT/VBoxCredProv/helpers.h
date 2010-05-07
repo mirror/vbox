@@ -9,7 +9,7 @@
 // Helper functions for copying parameters and packaging the buffer
 // for GetSerialization.
 //
-// Modifications (c) 2009 Sun Microsystems, Inc.
+// Modifications (c) 2009-2010 Oracle Corporation
 //
 
 #pragma once

@@ -1,59 +1,59 @@
 <?xml version="1.0" ?>
 
 <!--
- * :tabSize=2:indentSize=2:noTabs=true:
- * :folding=explicit:collapseFolds=1:
- *
- * Master declaration for VirtualBox's Main API, represented
- * by COM/XPCOM and web service interfaces.
- *
- * From this document, the build system generates several files
- * via XSLT that are then used during the build process.
- *
- * Below is the list of XSL templates that operate on this file and
- * output files they generate. These XSL templates must be updated
- * whenever the schema of this file changes:
- *
- * 1. src/VBox/Main/idl/midl.xsl =>
- *    out/<platform>/bin/sdk/idl/VirtualBox.idl
- *    (MS COM interface definition file for Main API)
- *
- * 2. src/VBox/Main/idl/xpidl.xsl =>
- *    out/<platform>/bin/sdk/idl/VirtualBox_XPCOM.idl
- *    (XPCOM interface definition file for Main API)
- *
- * 3. src/VBox/Main/idl/doxygen.xsl =>
- *    out/<platform>/obj/src/VBox/Main/VirtualBox.idl
- *    (pseudo-IDL for Doxygen to generate the official Main API
- *     documentation)
- *
- * 4. src/VBox/Main/webservice/*.xsl =>
- *    a bunch of WSDL and C++ files
- *    (VirtualBox web service sources and SOAP mappers;
- *     see src/VBox/Main/webservice/Makefile.kmk for details)
- *
- * 5. src/VBox/Frontends/VirtualBox/include/COMWrappers.xsl =>
- *    out/<platform>/obj/src/VBox/Frontends/VirtualBox/VirtualBox/include/COMWrappers.h
- *    (smart Qt-based C++ wrapper classes for COM interfaces
- *     of the Main API)
- *
- * 6. src/VBox/Installer/win32/VirtualBox_TypeLib.xsl =>
- *    out/<platform>/obj/src/VBox/Installer/win32/VirtualBox_TypeLib.wxi
- *    (Main API TypeLib block for the WiX installer)
- *
- * 7. src/VBox/Runtime/common/err/errmsgvboxcom.xsl =>
- *    out/<platform>/obj/Runtime/errmsgvboxcomdata.h
- *    (<result> extraction for the %Rhrc format specifier)
- *
-     Copyright (C) 2006-2010 Oracle Corporation
 
-     This file is part of VirtualBox Open Source Edition (OSE), as
-     available from http://www.virtualbox.org. This file is free software;
-     you can redistribute it and/or modify it under the terms of the GNU
-     General Public License (GPL) as published by the Free Software
-     Foundation, in version 2 as it comes in the "COPYING" file of the
-     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
-     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+    Copyright (C) 2006-2010 Oracle Corporation
+
+    This file is part of VirtualBox Open Source Edition (OSE), as
+    available from http://www.virtualbox.org. This file is free software;
+    you can redistribute it and/or modify it under the terms of the GNU
+    General Public License (GPL) as published by the Free Software
+    Foundation, in version 2 as it comes in the "COPYING" file of the
+    VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+    hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+-->
+
+<!--
+   This is the master declaration for VirtualBox's Main API,
+   represented by COM/XPCOM and web service interfaces.
+
+   From this document, the build system generates several files
+   via XSLT that are then used during the build process.
+
+   Below is the list of XSL templates that operate on this file and
+   output files they generate. These XSL templates must be updated
+   whenever the schema of this file changes:
+
+   1. src/VBox/Main/idl/midl.xsl =>
+      out/<platform>/bin/sdk/idl/VirtualBox.idl
+      (MS COM interface definition file for Main API)
+
+   2. src/VBox/Main/idl/xpidl.xsl =>
+      out/<platform>/bin/sdk/idl/VirtualBox_XPCOM.idl
+      (XPCOM interface definition file for Main API)
+
+   3. src/VBox/Main/idl/doxygen.xsl =>
+      out/<platform>/obj/src/VBox/Main/VirtualBox.idl
+      (pseudo-IDL for Doxygen to generate the official Main API
+       documentation)
+
+   4. src/VBox/Main/webservice/*.xsl =>
+      a bunch of WSDL and C++ files
+      (VirtualBox web service sources and SOAP mappers;
+       see src/VBox/Main/webservice/Makefile.kmk for details)
+
+   5. src/VBox/Frontends/VirtualBox/include/COMWrappers.xsl =>
+      out/<platform>/obj/src/VBox/Frontends/VirtualBox/VirtualBox/include/COMWrappers.h
+      (smart Qt-based C++ wrapper classes for COM interfaces
+       of the Main API)
+
+   6. src/VBox/Installer/win32/VirtualBox_TypeLib.xsl =>
+      out/<platform>/obj/src/VBox/Installer/win32/VirtualBox_TypeLib.wxi
+      (Main API TypeLib block for the WiX installer)
+
+   7. src/VBox/Runtime/common/err/errmsgvboxcom.xsl =>
+      out/<platform>/obj/Runtime/errmsgvboxcomdata.h
+      (<result> extraction for the %Rhrc format specifier)
 -->
 
 <idl>

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2009 Sun Microsystems, Inc.
+ * Copyright (C) 2009-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,10 +15,6 @@
  * Foundation, in version 2 as it comes in the "COPYING" file of the
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
- *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
- * Clara, CA 95054 USA or visit http://www.sun.com if you need
- * additional information or have any questions.
  */
 
 /* VBox includes */
@@ -67,7 +63,7 @@
 - (void)resizeMonitor:(NSSize)size;
 @end
 
-/* 
+/*
  * Helper class which allow us to access all members/methods of AbstractDockIconPreviewHelper
  * from any Cocoa class.
  */
@@ -75,7 +71,7 @@ class UICocoaDockIconPreviewPrivate: public UIAbstractDockIconPreviewHelper
 {
 public:
     inline UICocoaDockIconPreviewPrivate(UISession *pSession, const QPixmap& overlayImage)
-      :UIAbstractDockIconPreviewHelper(pSession, overlayImage) 
+      :UIAbstractDockIconPreviewHelper(pSession, overlayImage)
     {
         mUIDockTile = [[UIDockTile alloc] initWithParent:this];
     }
@@ -86,12 +82,12 @@ public:
         [mUIDockTile destroy];
         [mUIDockTile release];
     }
-      
+
     UIDockTile *mUIDockTile;
 };
 
-/* 
- * Cocoa wrapper for the abstract dock icon preview class 
+/*
+ * Cocoa wrapper for the abstract dock icon preview class
  */
 UICocoaDockIconPreview::UICocoaDockIconPreview(UISession *pSession, const QPixmap& overlayImage)
   : UIAbstractDockIconPreview(pSession, overlayImage)
@@ -136,7 +132,7 @@ void UICocoaDockIconPreview::setOriginalSize(int width, int height)
     [d->mUIDockTile resizeMonitor:NSMakeSize(width, height)];
 }
 
-/* 
+/*
  * Class for arranging/updating the layers for the glossy monitor preview.
  */
 @implementation UIDockTileMonitor;
@@ -200,7 +196,7 @@ void UICocoaDockIconPreview::setOriginalSize(int width, int height)
 }
 @end
 
-/* 
+/*
  * Simple implementation for the overlay of the OS & the state icon. Is used both
  * in the application icon & preview mode.
  */
@@ -223,7 +219,7 @@ void UICocoaDockIconPreview::setOriginalSize(int width, int height)
 }
 @end
 
-/* 
+/*
  * VirtualBox Dock Tile implementation. Manage the switching between the icon
  * and preview mode & forwards all update request to the appropriate methods.
  */

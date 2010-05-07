@@ -15,8 +15,6 @@ REM  General Public License (GPL) as published by the Free Software
 REM  Foundation, in version 2 as it comes in the "COPYING" file of the
 REM  VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 REM  hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
-REM  Oracle Corporation confidential
-REM  All rights reserved
 REM
 REM */
 

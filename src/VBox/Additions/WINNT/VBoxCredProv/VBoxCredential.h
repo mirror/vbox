@@ -4,7 +4,7 @@
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
 // PARTICULAR PURPOSE.
 //
-// Modifications (c) 2009 Sun Microsystems, Inc.
+// Modifications (c) 2009-2010 Oracle Corporation
 //
 
 #ifndef ___VBoxCredential_h

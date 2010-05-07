@@ -8,7 +8,7 @@
 //
 // Standard dll required functions and class factory implementation.
 //
-// Modifications (c) 2009 Sun Microsystems, Inc.
+// Modifications (c) 2009-2010 Oracle Corporation
 //
 
 /*******************************************************************************
