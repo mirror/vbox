@@ -868,9 +868,11 @@ constant_declaration(TreeState *state)
     real_type = real_type ? real_type : declaration->const_type;
 
     fputc('\n', state->file);
+#ifndef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
     xpidl_write_comment(state, 4);
+#endif
 
-#ifdef VBOX_XPIDL_EMULATE_GENJIFACES /* (from typelib_const_dcl)*/
+#ifdef VBOX_XPIDL_EMULATE_GENJIFACES
 # ifdef VBOX_XPIDL_EMULATE_GENJIFACES_DIFF
     fputs("  public static final ", state->file);
 # else
@@ -878,14 +880,14 @@ constant_declaration(TreeState *state)
 # endif
     if (IDL_TYPE_INTEGER(real_type).f_type == IDL_INTEGER_TYPE_LONG) {
         if (IDL_TYPE_INTEGER(real_type).f_signed)
-            fprintf(state->file, "int %s = %"   IDL_LL "d;\n",  name, IDL_INTEGER(dcl->const_exp).value);
+            fprintf(state->file, "int %s = %"   IDL_LL "d;\n",  name, IDL_INTEGER(declaration->const_exp).value);
         else
-            fprintf(state->file, "long %s = %"  IDL_LL "uL;\n", name, IDL_INTEGER(dcl->const_exp).value);
+            fprintf(state->file, "long %s = %"  IDL_LL "uL;\n", name, IDL_INTEGER(declaration->const_exp).value);
     } else {
         if (IDL_TYPE_INTEGER(real_type).f_signed)
-            fprintf(state->file, "short %s = %" IDL_LL "d;\n",  name, IDL_INTEGER(dcl->const_exp).value);
+            fprintf(state->file, "short %s = %" IDL_LL "d;\n",  name, IDL_INTEGER(declaration->const_exp).value);
         else
-            fprintf(state->file, "int %s = %"   IDL_LL "u;\n",  name, IDL_INTEGER(dcl->const_exp).value);
+            fprintf(state->file, "int %s = %"   IDL_LL "u;\n",  name, IDL_INTEGER(declaration->const_exp).value);
     }
 #else  /* !VBOX_XPIDL_EMULATE_GENJIFACES */
     fprintf(state->file, "    public static final %s %s = %d;\n",
