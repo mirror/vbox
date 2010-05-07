@@ -33,6 +33,9 @@
 
 #include "Builtins.h"
 
+/** The maximum number of release log entries per device. */
+#define MAX_LOG_REL_ERRORS  1024
+
 /**
  * SCSI driver instance data.
  *
@@ -97,6 +100,8 @@ typedef struct DRVSCSI
     STAMCOUNTER             StatBytesRead;
     /** Release statistics: Current I/O depth. */
     volatile uint32_t       StatIoDepth;
+    /** Errors printed in the release log. */
+    unsigned                cErrors;
 } DRVSCSI, *PDRVSCSI;
 
 /** Converts a pointer to DRVSCSI::ISCSIConnector to a PDRVSCSI. */
@@ -230,8 +235,11 @@ static int drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
             case VSCSIIOREQTXDIR_FLUSH:
             {
                 rc = pThis->pDrvBlockAsync->pfnStartFlush(pThis->pDrvBlockAsync, hVScsiIoReq);
-                if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
-                    AssertMsgFailed(("%s: Failed to flush data %Rrc\n", __FUNCTION__, rc));
+                if (   RT_FAILURE(rc)
+                    && rc != VERR_VD_ASYNC_IO_IN_PROGRESS
+                    && pThis->cErrors++ < MAX_LOG_REL_ERRORS)
+                    LogRel(("SCSI#%u: Flush returned rc=%Rrc\n",
+                            pThis->pDrvIns->iInstance, rc));
                 break;
             }
             case VSCSIIOREQTXDIR_READ:
@@ -253,8 +261,6 @@ static int drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
                     rc = pThis->pDrvBlockAsync->pfnStartRead(pThis->pDrvBlockAsync, uOffset,
                                                              paSeg, cSeg, cbTransfer,
                                                              hVScsiIoReq);
-                    if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
-                        AssertMsgFailed(("%s: Failed to read data %Rrc\n", __FUNCTION__, rc));
                     STAM_REL_COUNTER_ADD(&pThis->StatBytesRead, cbTransfer);
                 }
                 else
@@ -263,11 +269,19 @@ static int drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
                     rc = pThis->pDrvBlockAsync->pfnStartWrite(pThis->pDrvBlockAsync, uOffset,
                                                               paSeg, cSeg, cbTransfer,
                                                               hVScsiIoReq);
-                    if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
-                        AssertMsgFailed(("%s: Failed to write data %Rrc\n", __FUNCTION__, rc));
                     STAM_REL_COUNTER_ADD(&pThis->StatBytesWritten, cbTransfer);
                 }
 
+                if (   RT_FAILURE(rc)
+                    && rc != VERR_VD_ASYNC_IO_IN_PROGRESS
+                    && pThis->cErrors++ < MAX_LOG_REL_ERRORS)
+                    LogRel(("SCSI#%u: %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
+                            pThis->pDrvIns->iInstance,
+                            enmTxDir == VSCSIIOREQTXDIR_READ
+                            ? "Read"
+                            : "Write",
+                            uOffset,
+                            cbTransfer, rc));
                 break;
             }
             default:
@@ -299,6 +313,7 @@ static int drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
 
             ASMAtomicDecU32(&pThis->StatIoDepth);
             VSCSIIoReqCompleted(hVScsiIoReq, rc);
+            rc = VINF_SUCCESS;
         }
         else
             AssertMsgFailed(("Invalid return code rc=%Rrc\n", rc));
