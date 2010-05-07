@@ -1535,9 +1535,7 @@ void UISession::preparePowerUp()
 UIFrameBuffer* UISession::frameBuffer(ulong screenId) const
 {
     Assert(screenId < (ulong)m_FrameBufferVector.size());
-    if (screenId < (ulong)m_FrameBufferVector.size())
-        return m_FrameBufferVector.at((int)screenId);
-    return NULL;
+    return m_FrameBufferVector.value((int)screenId, NULL);
 }
 
 int UISession::setFrameBuffer(ulong screenId, UIFrameBuffer* pFrameBuffer)

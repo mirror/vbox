@@ -225,7 +225,7 @@ public:
 
     virtual void viewportScrolled(int /* iX */, int /* iY */) {}
 
-    virtual void setView(UIMachineView * pView) { m_pMachineView = pView; }
+    virtual void setView(UIMachineView * pView);
 #endif
 
 protected:
