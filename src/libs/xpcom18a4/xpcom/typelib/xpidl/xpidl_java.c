@@ -88,7 +88,7 @@ java_prolog(TreeState *state)
     fprintf(state->file,
             "/**\n"
             " * NOTE: THIS IS A GENERATED FILE. PLEASE CONSULT THE ORIGINAL IDL FILE\n"
-            " * FOR THE FULL DOCUMENTION AND LICENSE.\n"
+            " * FOR THE FULL DOCUMENTATION AND LICENSE.\n"
             " *\n"
             " * @see <a href=\"http://lxr.mozilla.org/mozilla/search?string=interface+%.*s\">\n"
             " **/\n"
