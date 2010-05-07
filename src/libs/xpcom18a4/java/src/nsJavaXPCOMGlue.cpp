@@ -132,20 +132,17 @@ class nsXPTCJStub : public nsXPTCStubBase
     nsXPTCJStub(REFNSIID aIID, nsIXPTCProxy* aOuter, nsIInterfaceInfo* ii)
     {
         mOuter = aOuter;
-        //if (mOuter)
-        //    mOuter->AddRef();
         mII = ii;
     }
 
     virtual ~nsXPTCJStub()
     {
-        //if (mOuter)
-        //  mOuter->Release();
     }
 
     NS_IMETHOD GetInterfaceInfo(nsIInterfaceInfo** info)
     {
         *info = mII;
+        (*info)->AddRef();
          return NS_OK;
     }
     // call this method and return result
@@ -171,7 +168,7 @@ nsXPTCJStub::Release()
 
 NS_IMETHODIMP nsXPTCJStub::QueryInterface(REFNSIID aIID, void** aInstancePtr)
 {
-    nsIID* mIID;
+    nsIID* mIID; 
     mII->GetInterfaceIID(&mIID);
 
     if (mIID->Equals(aIID)) {

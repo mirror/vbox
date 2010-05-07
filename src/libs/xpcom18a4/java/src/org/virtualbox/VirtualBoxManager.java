@@ -97,7 +97,7 @@ public class VirtualBoxManager
         return true;
     }
 
-    public boolean startVm(String name, int timeout)
+    public boolean startVm(String name, String type, int timeout)
     {
         IMachine m = vbox.findMachine(name);
         if (m == null)
@@ -106,7 +106,8 @@ public class VirtualBoxManager
 
 
         String mid = m.getId();
-        String type = "gui";
+        if (type == null)
+            type = "gui";
         IProgress p = vbox.openRemoteSession(session, mid, type, "");
         progressBar(p, timeout);
         session.close();
@@ -121,22 +122,5 @@ public class VirtualBoxManager
     public void waitForEvents(long tmo)
     {
         mozilla.waitForEvents(tmo);
-    }
-
-    public ILocalOwner makeWrapper(nsISupports obj)
-    {
-
-       ILocalOwner lo = (ILocalOwner) this.componentManager
-               .createInstanceByContractID("@virtualbox.org/CallbackWrapper;1",
-                                           null,
-                                           ILocalOwner.ILOCALOWNER_IID);
-       lo.setLocalObject(obj);
-       return lo;
-    }
-
-    public IVirtualBoxCallback makeVirtualBoxCallback(IVirtualBoxCallback obj)
-    {
-       ILocalOwner lo = makeWrapper(obj);
-       return (IVirtualBoxCallback)lo.queryInterface(IVirtualBoxCallback.IVIRTUALBOXCALLBACK_IID);
     }
 }
