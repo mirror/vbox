@@ -18,9 +18,12 @@
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-VBOX_JXPCOM_SRC    := $(PATH_SUB_CURRENT)
-
 ifndef VBOX_ONLY_SDK
+
+#
+# Globals
+#
+VBOX_JXPCOM_SRC := $(PATH_SUB_CURRENT)
 
 ifeq ($(KBUILD_TARGET), darwin)
  VBOX_JAVA_HOME = /System/Library/Frameworks/JavaVM.framework/Versions/1.5.0
@@ -45,16 +48,13 @@ else
                 $(VBOX_JAVA_HOME)/include/$(VBOX_MD_OS)
 endif
 
-VBOX_JXPCOM_TARGET = $(PATH_TARGET)/vboxjxpcom
+VBOX_JXPCOM_TARGET := $(PATH_TARGET)/vboxjxpcom-gen
 VBOX_JXPCOM_JDEST  := $(VBOX_JXPCOM_TARGET)/jdest
 
-VBOX_JXPCOM_GENH = \
- $(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_internal_XPCOMImpl.h        \
- $(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_internal_GREImpl.h          \
- $(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_internal_MozillaImpl.h      \
- $(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_internal_XPCOMJavaProxy.h   \
- $(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_internal_JavaXPCOMMethods.h \
- $(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_ProfileLock.h
+#
+# VBoxJXpcom - missing description.
+#
+DLLS += VBoxJXpcom
 
 VBoxJXpcom_TEMPLATE = XPCOM
 VBoxJXpcom_CXXFLAGS = -Wno-write-strings
@@ -62,33 +62,39 @@ VBoxJXpcom_DEFS     =    \
 	EXPORT_XPTI_API  \
         EXPORT_XPT_API   \
 	VBOX_WITH_XPCOM
-VBoxJXpcom_DEFS.darwin 	= XP_MACOSX
-VBoxJXpcom_NAME = libvboxjxpcom
+#VBoxJXpcom_DEFS.darwin = XP_MACOSX - already in TEMPLATE_XPCOM_DEFS.darwin ...
+VBoxJXpcom_NAME     = libvboxjxpcom
 VBoxJXpcom_DLLSUFF.darwin = .jnilib
-VBoxJXpcom_INCS     =                           \
-	src                                     \
-        $(VBOX_JAVA_INC)                        \
-        $(VBOX_PATH_XPCOM_SRC)/xpcom/glue       \
-	$(VBOX_PATH_XPCOM_SRC)/xpcom/build      \
+VBoxJXpcom_INCS     = \
+	src \
+        $(VBOX_JAVA_INC) \
+        $(VBOX_PATH_XPCOM_SRC)/xpcom/glue \
+	$(VBOX_PATH_XPCOM_SRC)/xpcom/build \
 	$(VBOX_JXPCOM_JDEST)
-VBoxJXpcom_SOURCES  =                     \
+VBoxJXpcom_SOURCES  = \
 	src/nsAppFileLocProviderProxy.cpp \
-	src/nsJavaWrapper.cpp             \
-	src/nsJavaXPCOMBindingUtils.cpp   \
-	src/nsJavaXPTCStub.cpp            \
-	src/nsJavaXPTCStubWeakRef.cpp     \
-        src/nsJavaXPCOMGlue.cpp           \
+	src/nsJavaWrapper.cpp \
+	src/nsJavaXPCOMBindingUtils.cpp \
+	src/nsJavaXPTCStub.cpp \
+	src/nsJavaXPTCStubWeakRef.cpp \
+        src/nsJavaXPCOMGlue.cpp \
         src/nsJavaInterfaces.cpp
-VBoxJXpcom_LIBS     =                         \
-	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)   \
+VBoxJXpcom_LIBS     = \
+	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
 	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
 
 #VBoxJXpcom_ORDERDEPS = $(VBOX_JXPCOM_GENH)
+#VBoxJXpcom_CLEAN     = $(VBOX_JXPCOM_GENH)
+VBOX_JXPCOM_GENH = \
+	$(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_internal_XPCOMImpl.h \
+	$(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_internal_GREImpl.h \
+	$(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_internal_MozillaImpl.h \
+	$(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_internal_XPCOMJavaProxy.h \
+	$(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_internal_JavaXPCOMMethods.h \
+	$(VBOX_JXPCOM_JDEST)/org_mozilla_xpcom_ProfileLock.h
 
-DLLS += VBoxJXpcom
 
 ifndef VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
-if 1
  #
  # genjifaces - using VBoxXPCOM and associates.
  #
@@ -97,23 +103,23 @@ if 1
  TEMPLATE_XPCOMEXEBLD_EXTENDS           = XPCOMBLDPROG
  TEMPLATE_XPCOMEXEBLD_EXTENDS_BY        = appending
  TEMPLATE_XPCOMEXEBLD_CXXFLAGS          = $(TEMPLATE_XPCOM_CXXFLAGS)
- TEMPLATE_XPCOMEXEBLD_INCS              =               \
-                   $(TEMPLATE_XPCOM_INCS)               \
-                   $(VBOX_PATH_XPCOM_SRC)               \
-                   $(VBOX_PATH_XPCOM_SRC)/xpcom/build   \
-                   $(VBOX_PATH_XPCOM_SRC)/xpcom/ds
+ TEMPLATE_XPCOMEXEBLD_INCS              = \
+ 	$(TEMPLATE_XPCOM_INCS) \
+ 	$(VBOX_PATH_XPCOM_SRC) \
+ 	$(VBOX_PATH_XPCOM_SRC)/xpcom/build \
+ 	$(VBOX_PATH_XPCOM_SRC)/xpcom/ds
  TEMPLATE_XPCOMEXEBLD_DEFS              = VBOX_WITH_XPCOM
  TEMPLATE_XPCOMEXEBLD_LIBS              = $(VBoxXPCOM_LIBS) $(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
  # This is OK on Linux even with hardening
  TEMPLATE_XPCOMEXEBLD_LIBS.linux        = $(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
- TEMPLATE_XPCOMEXEBLD_LIBS.solaris      = $(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) 
+ TEMPLATE_XPCOMEXEBLD_LIBS.solaris      = $(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
  TEMPLATE_XPCOMEXEBLD_INCS.darwin       = $(TEMPLATE_XPCOM_INCS.darwin)
  TEMPLATE_XPCOMEXEBLD_LDFLAGS.darwin    =  \
-	         -framework CoreServices   \
-		 -framework CoreFoundation \
-	         -framework Foundation     \
-		 -framework AppKit         \
-                 -framework Carbon
+	-framework CoreServices   \
+ 	-framework CoreFoundation \
+ 	-framework Foundation     \
+ 	-framework AppKit         \
+ 	-framework Carbon
  TEMPLATE_XPCOMEXEBLD_LDFLAGS.linux     = '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)'
 
  ifeq ($(KBUILD_TARGET),darwin)
@@ -129,72 +135,17 @@ if 1
  genjifaces_INCS     =    \
          src
  genjifaces_DEFS     =    \
-	 EXPORT_XPTI_API  \
+         EXPORT_XPTI_API  \
          EXPORT_XPT_API
 
  genjifaces_SOURCES  =    \
-	../xpcom/build/nsStringAPI.cpp  \
+        ../xpcom/build/nsStringAPI.cpp  \
          ../xpcom/build/nsXPComInit.cpp \
          tools/genifaces/GenerateJavaInterfaces.cpp \
          src/nsFileStreams.cpp
  genjifaces_INST = $(INST_BIN)
  genjifaces_DEPS = $(PATH_TARGET)/VBox-xpcom-idl-timestamp
  GENJIFACES_BIN := $(PATH_BIN)/genjifaces$(HOSTSUFF_EXE)
-
-else
- #
- # genjifaces - as a build program. Eventually we should probably do it this way,
- #              unless the xpidl hack is preferred instead.
- #
- BLDPROGS += genjifaces
- genjifaces_TEMPLATE = XPCOMBLDPROG
- genjifaces_DEFS     = \
- 	EXPORT_XPTI_API \
- 	EXPORT_XPT_API \
- 	VBOX_WITH_XPCOM \
- 	_IMPL_NS_COM \
-	XPCOM_GLUE \
-	XPCOM_GLUE_NO_DYNAMIC_LOADING \
- 	$(filter-out VBOX_USE_IPRT_IN_NSPR,$(VBox-xpcom-nspr_DEFS))
- genjifaces_DEFS.$(KBUILD_HOST) += \
- 	$(VBox-xpcom-nspr_DEFS.$(KBUILD_HOST))
- genjifaces_DEFS.$(KBUILD_HOST).$(KBUILD_HOST_ARCH) += \
- 	$(VBox-xpcom-nspr_DEFS.$(KBUILD_HOST).$(KBUILD_HOST_ARCH))
- genjifaces_DEFPATH := $(abspath $(PATH_SUB_CURRENT)/..)
- genjifaces_INCS     = \
- 	java/src
- genjifaces_INCS += \
- 	$(TEMPLATE_XPCOM_INCS) \
- 	$(VBox-xpcom-nspr_INCS) \
- genjifaces_INCS.$(KBUILD_HOST) += \
- 	$(TEMPLATE_XPCOM_INCS.$(KBUILD_HOST)) \
- 	$(VBox-xpcom-nspr_INCS.$(KBUILD_HOST))
- genjifaces_SOURCES  = \
- 	java/tools/genifaces/GenerateJavaInterfaces.cpp \
- 	java/src/nsFileStreams.cpp
- genjifaces_SOURCES += \
- 	xpcom/build/nsXPComInit.cpp \
-	xpcom/build/nsStringAPI.cpp \
- 	$(VBox-xpcom-string_SOURCES) \
- 	$(VBox-xpcom-base_SOURCES) \
- 	$(VBox-xpcom-ds_SOURCES) \
- 	$(VBox-xpcom-threads_SOURCES) \
- 	xpcom/io/nsNativeCharsetUtils.cpp \
- 	xpcom/io/nsUnicharInputStream.cpp \
- 	\
- 	$(VBox-xpcom-nspr_SOURCES) \
- 	\
- 	$(VBoxXPCOMGlue_COMMON_SOURCES) \
- 	xpcom/glue/standalone/nsXPCOMGlue.cpp \
- 	xpcom/glue/standalone/nsGREDirServiceProvider.cpp
- genjifaces_LDFLAGS.darwin = \
- 	-framework CoreServices \
- 	-framework CoreFoundation \
- 	-framework Foundation \
- 	-framework AppKit \
- 	-framework Carbon
- genjifaces_DEPS = $(PATH_TARGET)/VBox-xpcom-idl-timestamp
-endif
 endif # !VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
 
 #
@@ -202,88 +153,122 @@ endif # !VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
 #
 INSTALLS += VBoxJXpcom-inst-jar
 
-VBOX_JXPCOM_JAR    = $(VBOX_JXPCOM_TARGET)/vboxjxpcom.jar
-VBOX_JXPCOM_JSRC   = $(VBOX_JXPCOM_SRC)/src/org/mozilla/xpcom
-VBOX_JXPCOM_JGEN   = $(PATH_TARGET)/vboxjgen
-
-VBoxJXpcom-inst-jar_INST = $(INST_SDK)bindings/xpcom/java
-VBoxJXpcom-inst-jar_SOURCES = $(VBOX_JXPCOM_JAR)
-
-JXPCOM_JAR_SRC= $(VBOX_JXPCOM_JSRC)/IXPCOM.java                \
-		$(VBOX_JXPCOM_JSRC)/Mozilla.java               \
-		$(VBOX_JXPCOM_JSRC)/VersionComparator.java     \
-		$(VBOX_JXPCOM_JSRC)/GREVersionRange.java       \
-		$(VBOX_JXPCOM_JSRC)/IAppFileLocProvider.java   \
-		$(VBOX_JXPCOM_JSRC)/ProfileLock.java           \
-		$(VBOX_JXPCOM_JSRC)/IGRE.java                  \
-		$(VBOX_JXPCOM_JSRC)/IJavaXPCOMUtils.java       \
-		$(VBOX_JXPCOM_JSRC)/XPCOMException.java        \
-		$(VBOX_JXPCOM_JSRC)/IMozilla.java              \
-		$(VBOX_JXPCOM_JSRC)/XPCOMInitializationException.java \
-		$(VBOX_JXPCOM_JSRC)/INIParser.java                    \
-		$(VBOX_JXPCOM_JSRC)/internal/GREImpl.java             \
-		$(VBOX_JXPCOM_JSRC)/internal/JavaXPCOMMethods.java    \
-		$(VBOX_JXPCOM_JSRC)/internal/MozillaImpl.java         \
-		$(VBOX_JXPCOM_JSRC)/internal/XPCOMImpl.java           \
-		$(VBOX_JXPCOM_JSRC)/internal/XPCOMJavaProxyBase.java  \
-		$(VBOX_JXPCOM_JSRC)/internal/XPCOMJavaProxy.java
-
+VBOX_JXPCOM_JAR     = $(VBoxJXpcom-inst-jar_0_OUTDIR)/vboxjxpcom.jar
+VBOX_JXPCOM_NSERROR = $(VBOX_JXPCOM_GEN)/java/XPCOMError.java
 ifndef VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
-VBOX_JXPCOM_GEN   = $(VBOX_JXPCOM_TARGET)/jxpcomgen
+VBOX_JXPCOM_GEN     = $(VBOX_JXPCOM_TARGET)/jxpcomgen
 else
-VBOX_JXPCOM_GEN   = $(VBOX_JXPCOM_TARGET)/jxpcomgen-idl
+VBOX_JXPCOM_GEN     = $(VBOX_JXPCOM_TARGET)/jxpcomgen-idl
 endif
 
-VBOX_JXPCOM_NSERROR = $(VBOX_JXPCOM_GEN)/java/XPCOMError.java
-VBOX_JXPCOM_MGR     = $(VBOX_JXPCOM_SRC)/src/org/virtualbox/VirtualBoxManager.java
+VBoxJXpcom-inst-jar_INST = $(INST_SDK)bindings/xpcom/java/
+VBoxJXpcom-inst-jar_SOURCES = \
+	$(VBOX_JXPCOM_JAR)
+VBoxJXpcom-inst-jar_CLEAN = \
+	$(VBOX_JXPCOM_JAR) \
+	$(VBOX_JXPCOM_NSERROR) \
+	$(VBOX_JXPCOM_GEN)/jxpcomgen.list \
+	$(wildcard \
+		$(VBOX_JXPCOM_GEN)/java/*.java \
+		$(VBOX_JXPCOM_JDEST)/*.class \
+		$(VBOX_JXPCOM_JDEST)/*/*.class \
+		$(VBOX_JXPCOM_JDEST)/*/*/*.class \
+		$(VBOX_JXPCOM_JDEST)/*/*/*/*.class \
+		$(VBOX_JXPCOM_JDEST)/*/*/*/*/*.class \
+		$(VBOX_JXPCOM_JDEST)/*/*/*/*/*/*.class \
+	)
+VBoxJXpcom-inst-jar_BLDDIRS += $(VBOX_JXPCOM_GEN)/java
 
-$(VBOX_JXPCOM_GENH): $(VBOX_JXPCOM_JAR)
-	$(VBOX_JAVAH) -classpath $(VBOX_JXPCOM_JDEST) -d  $(VBOX_JXPCOM_JDEST) \
-          org.mozilla.xpcom.internal.XPCOMImpl                            \
-          org.mozilla.xpcom.internal.GREImpl                              \
-          org.mozilla.xpcom.internal.MozillaImpl                          \
-          org.mozilla.xpcom.internal.XPCOMJavaProxy                       \
-          org.mozilla.xpcom.ProfileLock                                   \
-          org.mozilla.xpcom.internal.JavaXPCOMMethods
 
-$(VBOX_JXPCOM_GEN)/java:
-	$(QUIET)$(MKDIR) -p $(VBOX_JXPCOM_GEN)/java
+#
+# For VBoxJXpcom, not currently used.
+#
+$(VBOX_JXPCOM_GENH): $$(VBOX_JXPCOM_JAR)
+	$(VBOX_JAVAH) -classpath $(VBOX_JXPCOM_JDEST) -d $(VBOX_JXPCOM_JDEST) \
+		org.mozilla.xpcom.internal.XPCOMImpl \
+		org.mozilla.xpcom.internal.GREImpl \
+		org.mozilla.xpcom.internal.MozillaImpl \
+		org.mozilla.xpcom.internal.XPCOMJavaProxy \
+		org.mozilla.xpcom.ProfileLock \
+		org.mozilla.xpcom.internal.JavaXPCOMMethods
 
-$(VBOX_JXPCOM_NSERROR): $(VBOX_PATH_XPCOM_SRC)/xpcom/base/nsError.h $(VBOX_JXPCOM_SRC)/tools/gen-nsError.pl | $(VBOX_JXPCOM_GEN)/java
+#
+# Generate error constants.
+#
+$(VBOX_JXPCOM_NSERROR): $(VBOX_PATH_XPCOM_SRC)/xpcom/base/nsError.h $(VBOX_JXPCOM_SRC)/tools/gen-nsError.pl | $(VBOX_JXPCOM_GEN)/java/
 	perl $(VBOX_JXPCOM_SRC)/tools/gen-nsError.pl < $< > $@
 
 ifndef VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
+#
+# Generate .java interface files from XPCOM's typelib.
+#
 VBOX_TEMP_HOME=$(shell echo /tmp/vboxhome$$$$)
-$(VBOX_JXPCOM_GEN)/jxpcomgen.list: $(GENJIFACES_BIN) $(PATH_TARGET)/VBox-xpcom-xpt-files/VBoxXPCOMBase.xpt | $(VBOX_JXPCOM_GEN)/java
+$(VBOX_JXPCOM_GEN)/jxpcomgen.list: $(GENJIFACES_BIN) $(PATH_TARGET)/VBox-xpcom-xpt-files/VBoxXPCOMBase.xpt | $(VBOX_JXPCOM_GEN)/java/
 	$(QUIET)echo Generating Java interface files
 	$(call preprocess_exebld,$(GENJIFACES_BIN))
 	$(QUIET) $(MKDIR) -p $(VBOX_TEMP_HOME)
 	VBOX_USER_HOME=$(VBOX_TEMP_HOME) $(GENJIFACES_BIN) -d $(VBOX_JXPCOM_GEN)/java
 	$(QUIET) rm -rf $(VBOX_TEMP_HOME)
 	$(QUIET)echo $$(ls $(VBOX_JXPCOM_GEN)/java/*.java) > $@
+
 else  # VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
-## @todo this doesn't work properly as a sub-makefile yet (XPIDL_INCS, XPCOM_IDLFILES).
+#
+# Generate .java interface files from the XPCOM and VirtualBox IDL files.
+#
+# Note! There is not a 1:1 relationship between input and output files here, unfortunately.
+# Note! VBOX_JXPCOM_NSERROR shares the output directory with us.
+#
 $(VBOX_JXPCOM_GEN)/jxpcomgen.list: \
 		$(VBOX_PATH_SDK)/bindings/xpcom/idl/VirtualBox_XPCOM.idl \
 		$$(addprefix $(VBOX_PATH_XPCOM_SRC)/,$$(XPCOM_IDLFILES)) \
 		$(VBOX_XPIDL) \
-		| $(VBOX_JXPCOM_GEN)/java
+		| $(VBOX_JXPCOM_GEN)/java/
 	$(call MSG_L1,Generating Java interface files from IDL)
 	$(QUIET)$(RM) -f $(filter-out %/XPCOMError.java, $(wildcard $(VBOX_JXPCOM_GEN)/java/*.java))
 	$(foreach idl, $(VBOX_PATH_SDK)/bindings/xpcom/idl/VirtualBox_XPCOM.idl $(addprefix $(VBOX_PATH_XPCOM_SRC)/,$(XPCOM_IDLFILES))\
-		, $(NLTAB)$(TARGET_xpidl) -m java $(XPIDL_INCS) -e $(VBOX_JXPCOM_GEN)/java/$(basename $(notdir $(idl))).java $(idl) )
-	$(ECHO_EXT) $(VBOX_JXPCOM_GEN)/java/*.java > $@
+		, $(NLTAB)$(QUIET)$(VBOX_XPIDL) -m java $(XPIDL_INCS) -e $(VBOX_JXPCOM_GEN)/java/$(basename $(notdir $(idl))).java $(idl) )
+	$(QUIET)echo $(VBOX_JXPCOM_GEN)/java/*.java > $@
 endif # VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
 
-$(VBOX_JXPCOM_JAR): $(JXPCOM_JAR_SRC) $(VBOX_JXPCOM_GEN)/jxpcomgen.list $(VBOX_JXPCOM_NSERROR) $(VBOX_JXPCOM_MGR)
+#
+# Compile the all java code into a JAR file.
+#
+VBOX_JXPCOM_JSRC = $(VBOX_JXPCOM_SRC)/src/org/mozilla/xpcom
+VBOX_JXPCOM_JAR_SRC = \
+	$(VBOX_JXPCOM_JSRC)/IXPCOM.java \
+	$(VBOX_JXPCOM_JSRC)/Mozilla.java \
+	$(VBOX_JXPCOM_JSRC)/VersionComparator.java \
+	$(VBOX_JXPCOM_JSRC)/GREVersionRange.java \
+	$(VBOX_JXPCOM_JSRC)/IAppFileLocProvider.java \
+	$(VBOX_JXPCOM_JSRC)/ProfileLock.java \
+	$(VBOX_JXPCOM_JSRC)/IGRE.java \
+	$(VBOX_JXPCOM_JSRC)/IJavaXPCOMUtils.java \
+	$(VBOX_JXPCOM_JSRC)/XPCOMException.java \
+	$(VBOX_JXPCOM_JSRC)/IMozilla.java \
+	$(VBOX_JXPCOM_JSRC)/XPCOMInitializationException.java \
+	$(VBOX_JXPCOM_JSRC)/INIParser.java \
+	$(VBOX_JXPCOM_JSRC)/internal/GREImpl.java \
+	$(VBOX_JXPCOM_JSRC)/internal/JavaXPCOMMethods.java \
+	$(VBOX_JXPCOM_JSRC)/internal/MozillaImpl.java \
+	$(VBOX_JXPCOM_JSRC)/internal/XPCOMImpl.java \
+	$(VBOX_JXPCOM_JSRC)/internal/XPCOMJavaProxyBase.java \
+	$(VBOX_JXPCOM_JSRC)/internal/XPCOMJavaProxy.java
+VBOX_JXPCOM_MGR = $(VBOX_JXPCOM_SRC)/src/org/virtualbox/VirtualBoxManager.java
+
+$$(VBOX_JXPCOM_JAR): $(VBOX_JXPCOM_JAR_SRC) $(VBOX_JXPCOM_GEN)/jxpcomgen.list $(VBOX_JXPCOM_NSERROR) $(VBOX_JXPCOM_MGR) | $$(dir $$@)
+	$(call MSG_TOOL,javac,$(notdir $@),jxpcomgen.list,)
 	$(QUIET)$(RM) -Rf $(VBOX_JXPCOM_JDEST)
 	$(QUIET)$(MKDIR) -p $(VBOX_JXPCOM_JDEST)
 	$(VBOX_JAVAC) @$ $(VBOX_JXPCOM_GEN)/jxpcomgen.list \
-              -d $(VBOX_JXPCOM_JDEST) -classpath $(VBOX_JXPCOM_JDEST)
-		$(VBOX_JAVAC) $(JXPCOM_JAR_SRC)                             \
-                      $(VBOX_JXPCOM_NSERROR) $(VBOX_JXPCOM_MGR)     \
-              -d $(VBOX_JXPCOM_JDEST) -classpath $(VBOX_JXPCOM_JDEST)
-	$(VBOX_JAR) cf $@ -C $(VBOX_JXPCOM_TARGET)/jdest .
+		-d $(VBOX_JXPCOM_JDEST) -classpath $(VBOX_JXPCOM_JDEST)
+	$(call MSG_TOOL,javac,$(notdir $@),...,)
+	$(VBOX_JAVAC) \
+		$(VBOX_JXPCOM_JAR_SRC) \
+		$(VBOX_JXPCOM_NSERROR) \
+		$(VBOX_JXPCOM_MGR) \
+		-d $(VBOX_JXPCOM_JDEST) -classpath $(VBOX_JXPCOM_JDEST)
+	$(call MSG_LINK,$(notdir $@),$@)
+	$(VBOX_JAR) cf $@ -C $(VBOX_JXPCOM_JDEST) .
 
 else # VBOX_ONLY_SDK
  #

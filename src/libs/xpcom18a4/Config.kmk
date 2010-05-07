@@ -246,3 +246,111 @@ TEMPLATE_XPCOMOSX106_DEFS.darwin        = $(filter-out $(VBOX_DARWIN_DEF_SDK_DEF
 TEMPLATE_XPCOMOSX106_INCS.darwin        = $(VBOX_PATH_MACOSX_SDK_10_6)/Developer/Headers/FlatCarbon
 
 
+#
+# The list of XPCOM's IDL files.
+# This is used by the java bindings as well as the XPCOM build.
+#
+XPCOM_IDLFILES = \
+	xpcom/base/nsIDebug.idl \
+	xpcom/base/nsIInterfaceRequestor.idl \
+	xpcom/base/nsIMemory.idl \
+	xpcom/base/nsIProgrammingLanguage.idl \
+	xpcom/base/nsISupports.idl \
+	xpcom/base/nsITraceRefcnt.idl \
+	xpcom/base/nsIWeakReference.idl \
+	xpcom/base/nsIConsoleMessage.idl \
+	xpcom/base/nsIConsoleService.idl \
+	xpcom/base/nsIConsoleListener.idl \
+	xpcom/base/nsIErrorService.idl \
+	xpcom/base/nsIException.idl \
+	xpcom/base/nsIExceptionService.idl \
+	xpcom/base/nsrootidl.idl \
+	xpcom/components/nsIClassInfo.idl \
+	xpcom/components/nsIComponentRegistrar.idl \
+	xpcom/components/nsIFactory.idl \
+	xpcom/components/nsIModule.idl \
+	xpcom/components/nsIServiceManager.idl \
+	xpcom/components/nsIComponentManager.idl \
+	xpcom/components/nsICategoryManager.idl \
+	xpcom/components/nsIComponentLoader.idl \
+	xpcom/components/nsINativeComponentLoader.idl \
+	xpcom/components/nsIComponentManagerObsolete.idl \
+	xpcom/components/nsIComponentLoaderManager.idl \
+	xpcom/ds/nsISupportsArray.idl \
+	xpcom/ds/nsICollection.idl \
+	xpcom/ds/nsISerializable.idl \
+	xpcom/ds/nsIEnumerator.idl \
+	xpcom/ds/nsISimpleEnumerator.idl \
+	xpcom/ds/nsIObserverService.idl \
+	xpcom/ds/nsIObserver.idl \
+	xpcom/ds/nsIAtom.idl \
+	xpcom/ds/nsIAtomService.idl \
+	xpcom/ds/nsIProperties.idl \
+	xpcom/ds/nsIPersistentProperties2.idl \
+	xpcom/ds/nsIRecyclingAllocator.idl \
+	xpcom/ds/nsIStringEnumerator.idl \
+	xpcom/ds/nsISupportsPrimitives.idl \
+	xpcom/ds/nsISupportsIterators.idl \
+	xpcom/ds/nsIVariant.idl \
+	xpcom/ds/nsITimelineService.idl \
+	xpcom/ds/nsIArray.idl \
+	xpcom/ds/nsIPropertyBag.idl \
+	xpcom/ds/nsIHashable.idl \
+	xpcom/io/nsIDirectoryService.idl \
+	xpcom/io/nsIDirectoryEnumerator.idl \
+	xpcom/io/nsIFile.idl \
+	xpcom/io/nsILocalFile.idl \
+	xpcom/io/nsILocalFileMac.idl \
+	xpcom/io/nsIInputStream.idl \
+	xpcom/io/nsIObjectInputStream.idl \
+	xpcom/io/nsIBinaryInputStream.idl \
+	xpcom/io/nsIObjectOutputStream.idl \
+	xpcom/io/nsIBinaryOutputStream.idl \
+	xpcom/io/nsIOutputStream.idl \
+	xpcom/io/nsIStreamBufferAccess.idl \
+	xpcom/io/nsIByteArrayInputStream.idl \
+	xpcom/io/nsISeekableStream.idl \
+	xpcom/io/nsIFastLoadFileControl.idl \
+	xpcom/io/nsIFastLoadService.idl \
+	xpcom/io/nsIInputStreamTee.idl \
+	xpcom/io/nsIMultiplexInputStream.idl \
+	xpcom/io/nsIPipe.idl \
+	xpcom/io/nsIAsyncInputStream.idl \
+	xpcom/io/nsIAsyncOutputStream.idl \
+	xpcom/io/nsIScriptableInputStream.idl \
+	xpcom/io/nsIStorageStream.idl \
+	xpcom/io/nsIStringStream.idl \
+	xpcom/io/nsILineInputStream.idl \
+	xpcom/proxy/public/nsIProxyObjectManager.idl \
+	xpcom/threads/nsIEventQueueService.idl \
+	xpcom/threads/nsIEventQueue.idl \
+	xpcom/threads/nsIEventTarget.idl \
+	xpcom/threads/nsIRunnable.idl \
+	xpcom/threads/nsIThread.idl \
+	xpcom/threads/nsITimer.idl \
+	xpcom/threads/nsIEnvironment.idl \
+	xpcom/threads/nsITimerInternal.idl \
+	xpcom/threads/nsITimerManager.idl \
+	xpcom/threads/nsIProcess.idl \
+	xpcom/reflect/xptinfo/public/nsIInterfaceInfo.idl \
+	xpcom/reflect/xptinfo/public/nsIInterfaceInfoManager.idl \
+	xpcom/reflect/xptinfo/public/nsIXPTLoader.idl \
+	ipc/ipcd/client/public/ipcIService.idl \
+	ipc/ipcd/client/public/ipcIMessageObserver.idl \
+	ipc/ipcd/client/public/ipcIClientObserver.idl \
+	ipc/ipcd/extensions/lock/public/ipcILockService.idl \
+	ipc/ipcd/extensions/transmngr/public/ipcITransactionService.idl \
+	ipc/ipcd/extensions/dconnect/public/ipcIDConnectService.idl \
+	ipc/ipcd/extensions/transmngr/public/ipcITransactionObserver.idl
+
+#
+# The include path for the XPCOM IDL files above.
+#
+XPIDL_INCS = \
+	-I $(VBOX_PATH_XPCOM_SRC)/xpcom/base/ \
+	-I $(VBOX_PATH_XPCOM_SRC)/xpcom/ds/ \
+	-I $(VBOX_PATH_XPCOM_SRC)/xpcom/components/ \
+	-I $(VBOX_PATH_XPCOM_SRC)/xpcom/io/ \
+	-I $(VBOX_PATH_XPCOM_SRC)/xpcom/threads/ \
+	-I $(VBOX_PATH_XPCOM_SRC)/xpcom/reflect/xptinfo/public/
+
