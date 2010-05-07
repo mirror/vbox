@@ -31,7 +31,17 @@ public class TestVBox
             IMachine[] machs = vbox.getMachines(null);
             for (IMachine m : machs)
             {
-                System.out.println("VM name: " + m.getName() + ", RAM size: " + m.getMemorySize() + "MB");
+                try
+                {
+                    System.out.println("VM name: " + m.getName() + ", RAM size: " + m.getMemorySize() + "MB");
+                    System.out.println(" HWVirt: " + m.getHWVirtExProperty(HWVirtExPropertyType.Enabled)
+                                       + ", Nested Paging: " + m.getHWVirtExProperty(HWVirtExPropertyType.NestedPaging)
+                                       + ", PAE: " + m.getCPUProperty(CPUPropertyType.PAE) );
+                }
+                catch (Throwable e)
+                {
+                    e.printStackTrace();
+                }
             }
 
             /* do something silly, start the first VM in the list */
