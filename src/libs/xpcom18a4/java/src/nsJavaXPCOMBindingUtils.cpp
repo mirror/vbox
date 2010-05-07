@@ -925,8 +925,15 @@ GetIIDForMethodParam(nsIInterfaceInfo *iinfo,
 JNIEnv*
 GetJNIEnv()
 {
-  JNIEnv* env;
+  JNIEnv* env = nsnull;
   jint rc = gCachedJVM->GetEnv((void**) &env, JNI_VERSION_1_2);
+#ifdef VBOX
+  if (env == nsnull)
+  {
+      rc = gCachedJVM->AttachCurrentThreadAsDaemon((void**)&env, nsnull);
+      printf("attaching\n");
+  }
+#endif
   NS_ASSERTION(rc == JNI_OK && env != nsnull,
                "Current thread not attached to given JVM instance");
   return env;

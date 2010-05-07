@@ -127,7 +127,7 @@ class nsXPTCJStub : public nsXPTCStubBase
     nsCOMPtr<nsIInterfaceInfo> mII;
     nsIXPTCProxy*              mOuter;
   public:
-    NS_DECL_ISUPPORTS
+    NS_DECL_ISUPPORTS_INHERITED
 
     nsXPTCJStub(REFNSIID aIID, nsIXPTCProxy* aOuter, nsIInterfaceInfo* ii)
     {
@@ -140,7 +140,7 @@ class nsXPTCJStub : public nsXPTCStubBase
     virtual ~nsXPTCJStub()
     {
         //if (mOuter)
-        //    mOuter->Release();
+        //  mOuter->Release();
     }
 
     NS_IMETHOD GetInterfaceInfo(nsIInterfaceInfo** info)
@@ -157,11 +157,29 @@ class nsXPTCJStub : public nsXPTCStubBase
    }
 };
 
-NS_IMPL_ADDREF(nsXPTCJStub)
-NS_IMPL_RELEASE(nsXPTCJStub)
+NS_IMETHODIMP_(nsrefcnt)
+nsXPTCJStub::AddRef()
+{
+    return mOuter->AddRef();
+}
+
+NS_IMETHODIMP_(nsrefcnt)
+nsXPTCJStub::Release()
+{
+    return mOuter->Release();
+}
 
 NS_IMETHODIMP nsXPTCJStub::QueryInterface(REFNSIID aIID, void** aInstancePtr)
 {
+    nsIID* mIID;
+    mII->GetInterfaceIID(&mIID);
+
+    if (mIID->Equals(aIID)) {
+        NS_ADDREF_THIS();
+        *aInstancePtr = static_cast<nsISupports*>(this);
+        return NS_OK;
+    }
+
     return mOuter->QueryInterface(aIID, aInstancePtr);
 }
 
@@ -196,7 +214,6 @@ NS_GetXPTCallStub(REFNSIID aIID, nsIXPTCProxy* aOuter,
     nsXPTCStubBase* newbase = new nsXPTCJStub(aIID, aOuter, ii);
     if (!newbase)
         return NS_ERROR_OUT_OF_MEMORY;
-
     *aResult = newbase;
 #endif
     return NS_OK;

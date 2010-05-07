@@ -67,15 +67,21 @@ public class TestVBox
                 }
             }
 
-            VBoxCallbacks vboxCallbacks = new VBoxCallbacks();
-            vbox.registerCallback(mgr.makeVirtualBoxCallback(vboxCallbacks));
+            boolean withCallbacks = false;
+            VBoxCallbacks vboxCallbacks = null;
+
+            if (withCallbacks)
+            {
+                vboxCallbacks = new VBoxCallbacks();
+                vbox.registerCallback(mgr.makeVirtualBoxCallback(vboxCallbacks));
+            }
 
             /* do something silly, start the first VM in the list */
             String m = machs[0].getName();
             System.out.println("\nAttempting to start VM '" + m + "'");
-            if (mgr.startVm(m, 7000))
+            if (false || mgr.startVm(m, 7000))
             {
-                if (false)
+                if (!withCallbacks)
                 {
                     System.out.println("started, presss any key...");
                     int ch = System.in.read();
@@ -91,7 +97,8 @@ public class TestVBox
                 System.out.println("cannot start machine "+m);
             }
 
-            vbox.unregisterCallback(vboxCallbacks);
+            if (withCallbacks)
+                vbox.unregisterCallback(vboxCallbacks);
         }
         catch (Throwable e)
         {
