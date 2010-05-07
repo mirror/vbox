@@ -3279,7 +3279,7 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
  *
  * @thread  EMT
  */
-DECLCALLBACK(int) Console::changeRemovableMedium(Console *pThis,
+DECLCALLBACK(int) Console::changeRemovableMedium(Console *pConsole,
                                                  const char *pcszDevice,
                                                  unsigned uInstance,
                                                  StorageBus_T enmBus,
@@ -3287,15 +3287,15 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pThis,
                                                  IMediumAttachment *aMediumAtt,
                                                  bool fForce)
 {
-    LogFlowFunc(("pThis=%p uInstance=%u pszDevice=%p:{%s} enmBus=%u, aMediumAtt=%p, fForce=%d\n",
-                 pThis, uInstance, pcszDevice, enmBus, fForce));
+    LogFlowFunc(("pConsole=%p uInstance=%u pszDevice=%p:{%s} enmBus=%u, aMediumAtt=%p, fForce=%d\n",
+                 pConsole, uInstance, pcszDevice, enmBus, fForce));
 
-    AssertReturn(pThis, VERR_INVALID_PARAMETER);
+    AssertReturn(pConsole, VERR_INVALID_PARAMETER);
 
-    AutoCaller autoCaller(pThis);
+    AutoCaller autoCaller(pConsole);
     AssertComRCReturn(autoCaller.rc(), VERR_ACCESS_DENIED);
 
-    PVM pVM = pThis->mpVM;
+    PVM pVM = pConsole->mpVM;
 
     /*
      * Suspend the VM first.
@@ -3312,9 +3312,9 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pThis,
         {
             LogFlowFunc(("Suspending the VM...\n"));
             /* disable the callback to prevent Console-level state change */
-            pThis->mVMStateChangeCallbackDisabled = true;
+            pConsole->mVMStateChangeCallbackDisabled = true;
             int rc = VMR3Suspend(pVM);
-            pThis->mVMStateChangeCallbackDisabled = false;
+            pConsole->mVMStateChangeCallbackDisabled = false;
             AssertRCReturn(rc, rc);
             fResume = true;
             break;
@@ -3342,16 +3342,21 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pThis,
     int rc = VINF_SUCCESS;
     int rcRet = VINF_SUCCESS;
 
-    rcRet = Console::configMediumAttachment(pCtlInst, pcszDevice, uInstance,
-                                            enmBus, enmIoBackend,
-                                            false /* fSetupMerge */,
-                                            0 /* uMergeSource */,
-                                            0 /* uMergeTarget */,
-                                            aMediumAtt, pThis->mMachineState,
-                                            NULL /* phrc */,
-                                            true /* fAttachDetach */,
-                                            fForce /* fForceUnmount */,
-                                            pVM, NULL /* paLedDevType */);
+    rcRet = pConsole->configMediumAttachment(pCtlInst,
+                                             pcszDevice,
+                                             uInstance,
+                                             enmBus,
+                                             enmIoBackend,
+                                             false /* fSetupMerge */,
+                                             0 /* uMergeSource */,
+                                             0 /* uMergeTarget */,
+                                             aMediumAtt,
+                                             pConsole->mMachineState,
+                                             NULL /* phrc */,
+                                             true /* fAttachDetach */,
+                                             fForce /* fForceUnmount */,
+                                             pVM,
+                                             NULL /* paLedDevType */);
     /** @todo this dumps everything attached to this device instance, which
      * is more than necessary. Dumping the changed LUN would be enough. */
     CFGMR3Dump(pCtlInst);
@@ -3363,14 +3368,14 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pThis,
     {
         LogFlowFunc(("Resuming the VM...\n"));
         /* disable the callback to prevent Console-level state change */
-        pThis->mVMStateChangeCallbackDisabled = true;
+        pConsole->mVMStateChangeCallbackDisabled = true;
         rc = VMR3Resume(pVM);
-        pThis->mVMStateChangeCallbackDisabled = false;
+        pConsole->mVMStateChangeCallbackDisabled = false;
         AssertRC(rc);
         if (RT_FAILURE(rc))
         {
             /* too bad, we failed. try to sync the console state with the VMM state */
-            vmstateChangeCallback(pVM, VMSTATE_SUSPENDED, enmVMState, pThis);
+            vmstateChangeCallback(pVM, VMSTATE_SUSPENDED, enmVMState, pConsole);
         }
         /// @todo (r=dmik) if we failed with drive mount, then the VMR3Resume
         // error (if any) will be hidden from the caller. For proper reporting
@@ -7547,7 +7552,8 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
  * @return  VBox status code.
  */
 /* static */
-DECLCALLBACK(int) Console::reconfigureMediumAttachment(PVM pVM,
+DECLCALLBACK(int) Console::reconfigureMediumAttachment(Console *pConsole,
+                                                       PVM pVM,
                                                        const char *pcszDevice,
                                                        unsigned uInstance,
                                                        StorageBus_T enmBus,
@@ -7581,13 +7587,20 @@ DECLCALLBACK(int) Console::reconfigureMediumAttachment(PVM pVM,
     AssertReturn(pCtlInst, VERR_INTERNAL_ERROR);
 
     /* Update the device instance configuration. */
-    rc = Console::configMediumAttachment(pCtlInst, pcszDevice, uInstance,
-                                         enmBus, enmIoBackend,
-                                         fSetupMerge, uMergeSource,
-                                         uMergeTarget, aMediumAtt,
-                                         aMachineState, phrc,
+    rc = pConsole->configMediumAttachment(pCtlInst,
+                                         pcszDevice,
+                                         uInstance,
+                                         enmBus,
+                                         enmIoBackend,
+                                         fSetupMerge,
+                                         uMergeSource,
+                                         uMergeTarget,
+                                         aMediumAtt,
+                                         aMachineState,
+                                         phrc,
                                          true /* fAttachDetach */,
-                                         false /* fForceUnmount */, pVM,
+                                         false /* fForceUnmount */,
+                                         pVM,
                                          NULL /* paLedDevType */);
     /** @todo this dumps everything attached to this device instance, which
      * is more than necessary. Dumping the changed LUN would be enough. */
