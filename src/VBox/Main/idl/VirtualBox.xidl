@@ -1120,14 +1120,18 @@
      </desc>
      <const name="Buffered" value="1">
        <desc>Image files will use the host cache if possible.
+       The storage controller emulation will use a dedicated I/O thread, enable the host I/O cache and
+       use synchronous file APIs on the host.
        This type does not work with the Async I/O manager on Linux hosts.
-       Default on all hosts except Linux.</desc>
+       This was the only option before VirtualBox 3.2 and is still the default for IDE controllers.</desc>
      </const>
      <const name="Unbuffered" value="2">
        <desc>Image files will not use the host cache.
+       The storage controller emulation will use asynchronous I/O APIs on the host. This makes it possible
+       to turn off the host I/O caches because it can handle unaligned access to the file.
        This should be used on OS X and Linux hosts if a high I/O load is expected
-       or many virtual machines are running to prevent I/O cache
-       related hangs. Default on Linux hosts.</desc>
+       or many virtual machines are running to prevent I/O cache related hangs.
+       This is new with version 3.2 and is now the default for non-IDE storage controllers.</desc>
      </const>
   </enum>
 
