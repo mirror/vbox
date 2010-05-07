@@ -4419,6 +4419,13 @@
       <desc>Memory balloon size in megabytes.</desc>
     </attribute>
 
+    <attribute name="SharedPagingEnabled" type="boolean">
+      <desc>
+        This setting determines whether VirtualBox allows page
+        sharing for this machine (64 bits host only).
+      </desc>
+    </attribute>
+
     <attribute name="VRAMSize" type="unsigned long">
       <desc>Video memory size in megabytes.</desc>
     </attribute>
@@ -8563,6 +8570,13 @@
       <desc>Guest system memory balloon size in megabytes (transient property).</desc>
     </attribute>
 
+    <attribute name="SharedPagingEnabled" type="boolean">
+      <desc>
+        Flag whether VirtualBox allows page sharing for this machine 
+        (64 bits host only; transient property).
+      </desc>
+    </attribute>
+
     <attribute name="statisticsUpdateInterval" type="unsigned long">
       <desc>Interval to update guest statistics in seconds.</desc>
     </attribute>
@@ -8589,6 +8603,9 @@
       <param name="memBalloon" type="unsigned long" dir="out">
          <desc>Amount of ballooned physical guest RAM</desc>
       </param>
+      <param name="memShared" type="unsigned long" dir="out">
+        <desc>Amount of shared physical guest RAM</desc>
+      </param>
       <param name="memCache" type="unsigned long" dir="out">
          <desc>Total amount of guest (disk) cache memory</desc>
       </param>
@@ -8603,6 +8620,9 @@
       </param>
       <param name="memBalloonTotal" type="unsigned long" dir="out">
          <desc>Total amount of memory ballooned by the hypervisor</desc>
+      </param>
+      <param name="memSharedTotal" type="unsigned long" dir="out">
+        <desc>Total amount of shared memory in the hypervisor</desc>
       </param>
     </method>
 

@@ -207,6 +207,16 @@ STDMETHODIMP Guest::COMGETTER(SupportsGraphics) (BOOL *aSupportsGraphics)
     return S_OK;
 }
 
+STDMETHODIMP Guest::COMGETTER(SharedPagingEnabled) (BOOL *enabled)
+{
+    return E_NOTIMPL;
+}
+
+STDMETHODIMP Guest::COMSETTER(SharedPagingEnabled) (BOOL enabled)
+{
+    return E_NOTIMPL;
+}
+
 STDMETHODIMP Guest::COMGETTER(MemoryBalloonSize) (ULONG *aMemoryBalloonSize)
 {
     CheckComArgOutPointerValid(aMemoryBalloonSize);
@@ -273,9 +283,9 @@ STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval)(ULONG aUpdateInterval)
 }
 
 STDMETHODIMP Guest::InternalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
-                                          ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon,
+                                          ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemShared,
                                           ULONG *aMemCache, ULONG *aPageTotal,
-                                          ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal)
+                                          ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal, ULONG *aMemSharedTotal)
 {
     CheckComArgOutPointerValid(aCpuUser);
     CheckComArgOutPointerValid(aCpuKernel);
@@ -283,22 +293,28 @@ STDMETHODIMP Guest::InternalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, UL
     CheckComArgOutPointerValid(aMemTotal);
     CheckComArgOutPointerValid(aMemFree);
     CheckComArgOutPointerValid(aMemBalloon);
+    CheckComArgOutPointerValid(aMemShared);
     CheckComArgOutPointerValid(aMemCache);
     CheckComArgOutPointerValid(aPageTotal);
+    CheckComArgOutPointerValid(aMemAllocTotal);
+    CheckComArgOutPointerValid(aMemFreeTotal);
+    CheckComArgOutPointerValid(aMemBalloonTotal);
+    CheckComArgOutPointerValid(aMemSharedTotal);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aCpuUser = mCurrentGuestStat[GUESTSTATTYPE_CPUUSER];
-    *aCpuKernel = mCurrentGuestStat[GUESTSTATTYPE_CPUKERNEL];
-    *aCpuIdle = mCurrentGuestStat[GUESTSTATTYPE_CPUIDLE];
-    *aMemTotal = mCurrentGuestStat[GUESTSTATTYPE_MEMTOTAL] * (_4K/_1K);     /* page (4K) -> 1KB units */
-    *aMemFree = mCurrentGuestStat[GUESTSTATTYPE_MEMFREE] * (_4K/_1K);       /* page (4K) -> 1KB units */
+    *aCpuUser    = mCurrentGuestStat[GUESTSTATTYPE_CPUUSER];
+    *aCpuKernel  = mCurrentGuestStat[GUESTSTATTYPE_CPUKERNEL];
+    *aCpuIdle    = mCurrentGuestStat[GUESTSTATTYPE_CPUIDLE];
+    *aMemTotal   = mCurrentGuestStat[GUESTSTATTYPE_MEMTOTAL] * (_4K/_1K);     /* page (4K) -> 1KB units */
+    *aMemFree    = mCurrentGuestStat[GUESTSTATTYPE_MEMFREE] * (_4K/_1K);       /* page (4K) -> 1KB units */
     *aMemBalloon = mCurrentGuestStat[GUESTSTATTYPE_MEMBALLOON] * (_4K/_1K); /* page (4K) -> 1KB units */
-    *aMemCache = mCurrentGuestStat[GUESTSTATTYPE_MEMCACHE] * (_4K/_1K);     /* page (4K) -> 1KB units */
-    *aPageTotal = mCurrentGuestStat[GUESTSTATTYPE_PAGETOTAL] * (_4K/_1K);   /* page (4K) -> 1KB units */
+    *aMemCache   = mCurrentGuestStat[GUESTSTATTYPE_MEMCACHE] * (_4K/_1K);     /* page (4K) -> 1KB units */
+    *aPageTotal  = mCurrentGuestStat[GUESTSTATTYPE_PAGETOTAL] * (_4K/_1K);   /* page (4K) -> 1KB units */
+    *aMemShared  = 0; /** todo */
 
     Console::SafeVMPtr pVM (mParent);
     if (pVM.isOk())
@@ -312,6 +328,7 @@ STDMETHODIMP Guest::InternalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, UL
             *aMemAllocTotal   = (ULONG)(uAllocTotal / _1K);  /* bytes -> KB */
             *aMemFreeTotal    = (ULONG)(uFreeTotal / _1K);
             *aMemBalloonTotal = (ULONG)(uBalloonedTotal / _1K);
+            *aMemSharedTotal  = 0; /** todo */
         }
     }
     else
