@@ -2161,10 +2161,18 @@ STDMETHODIMP Medium::DeleteStorage(IProgress **aProgress)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+    bool fNeedsSaveSettings = false;
     ComObjPtr <Progress> pProgress;
 
-    HRESULT rc = deleteStorage(&pProgress, false /* aWait */,
-                               NULL /* pfNeedsSaveSettings */);
+    HRESULT rc = deleteStorage(&pProgress,
+                               false /* aWait */,
+                               &fNeedsSaveSettings);
+    if (fNeedsSaveSettings)
+    {
+        AutoWriteLock vboxlock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
+        m->pVirtualBox->saveSettings();
+    }
+
     if (SUCCEEDED(rc))
         pProgress.queryInterfaceTo(aProgress);
 
@@ -3910,17 +3918,12 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
          * actual deletion (we favor the consistency of the media registry
          * which would have been broken if unregisterWithVirtualBox() failed
          * after we successfully deleted the storage) */
-        bool fNeedsSaveSettings = false;
-        rc = unregisterWithVirtualBox(&fNeedsSaveSettings);
+        rc = unregisterWithVirtualBox(pfNeedsSaveSettings);
         if (FAILED(rc))
             throw rc;
-        // no longer need lock, and below we might need the VirtualBox lock.
+        // no longer need lock
         multilock.release();
-        if (fNeedsSaveSettings)
-        {
-            AutoWriteLock vboxlock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-            m->pVirtualBox->saveSettings();
-        }
+
         // always set it to false because the medium registry is up to date
         if (pfNeedsSaveSettings)
             *pfNeedsSaveSettings = false;
