@@ -1463,6 +1463,16 @@ STDMETHODIMP Machine::COMSETTER(MemoryBalloonSize)(ULONG memoryBalloonSize)
 #endif
 }
 
+STDMETHODIMP Machine::COMGETTER(SharedPagingEnabled) (BOOL *enabled)
+{
+    return E_NOTIMPL;
+}
+
+STDMETHODIMP Machine::COMSETTER(SharedPagingEnabled) (BOOL enabled)
+{
+    return E_NOTIMPL;
+}
+
 STDMETHODIMP Machine::COMGETTER(Accelerate3DEnabled)(BOOL *enabled)
 {
     if (!enabled)
