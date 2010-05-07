@@ -190,6 +190,7 @@ DECLEXPORT(void) crStateSetExtensionString( CRContext *ctx, const GLubyte *exten
 
 DECLEXPORT(void) crStateDiffContext( CRContext *from, CRContext *to );
 DECLEXPORT(void) crStateSwitchContext( CRContext *from, CRContext *to );
+DECLEXPORT(void) crStateApplyFBImage(CRContext *to);
 
 #ifndef IN_GUEST
 DECLEXPORT(int32_t) crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM);

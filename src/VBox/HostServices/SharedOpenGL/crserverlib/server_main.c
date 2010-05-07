@@ -1122,6 +1122,36 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
     renderspuSetWindowId(SCREEN(0).winID);
 
     crHashtableWalk(cr_server.muralTable, crVBoxServerCheckMuralCB, NULL);
+
+#ifndef WINDOWS
+    /*Restore FB content for clients, which have current window on a screen being remapped*/
+    {
+        GLint i;
+
+        for (i = 0; i < cr_server.numClients; i++)
+        {
+            cr_server.curClient = cr_server.clients[i];
+            if (cr_server.curClient->currentCtx
+                && cr_server.curClient->currentCtx->pImage
+                && cr_server.curClient->currentMural 
+                && cr_server.curClient->currentMural->screenId == sIndex
+                && cr_server.curClient->currentCtx->viewport.viewportH == h
+                && cr_server.curClient->currentCtx->viewport.viewportW == w)
+            {
+                int clientWindow = cr_server.curClient->currentWindow;
+                int clientContext = cr_server.curClient->currentContextNumber;
+
+                if (clientWindow && clientWindow != cr_server.currentWindow)
+                {
+                    crServerDispatchMakeCurrent(clientWindow, 0, clientContext);
+                }
+
+                crStateApplyFBImage(cr_server.curClient->currentCtx);
+            }
+        }
+        cr_server.curClient = NULL;
+    }
+#endif
     
     return VINF_SUCCESS;
 }

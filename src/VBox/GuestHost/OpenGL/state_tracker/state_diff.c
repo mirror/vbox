@@ -120,6 +120,47 @@ void crStateDiffContext( CRContext *from, CRContext *to )
 	}
 }
 
+void crStateApplyFBImage(CRContext *to)
+{
+    if (to->pImage)
+    {
+        CRViewportState *pVP = &to->viewport;
+        CRPixelPackState unpack = to->client.unpack;
+
+        diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+        diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+        diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        diff_api.PixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+        diff_api.PixelStorei(GL_UNPACK_IMAGE_HEIGHT, 0);
+        diff_api.PixelStorei(GL_UNPACK_SKIP_IMAGES, 0);
+        diff_api.PixelStorei(GL_UNPACK_SWAP_BYTES, 0);
+        diff_api.PixelStorei(GL_UNPACK_LSB_FIRST, 0);
+
+        diff_api.DrawBuffer(GL_FRONT);
+        diff_api.WindowPos2iARB(0, 0);
+        diff_api.DrawPixels(pVP->viewportW, pVP->viewportH, GL_RGBA, GL_UNSIGNED_BYTE, to->pImage);
+
+        diff_api.WindowPos3fvARB(to->current.rasterAttrib[VERT_ATTRIB_POS]);
+        diff_api.DrawBuffer(to->framebufferobject.drawFB ? 
+                            to->framebufferobject.drawFB->drawbuffer[0] : to->buffer.drawBuffer);
+        diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, unpack.skipRows);
+        diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, unpack.skipPixels);
+        diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, unpack.alignment);
+        diff_api.PixelStorei(GL_UNPACK_ROW_LENGTH, unpack.rowLength);
+        diff_api.PixelStorei(GL_UNPACK_IMAGE_HEIGHT, unpack.imageHeight);
+        diff_api.PixelStorei(GL_UNPACK_SKIP_IMAGES, unpack.skipImages);
+        diff_api.PixelStorei(GL_UNPACK_SWAP_BYTES, unpack.swapBytes);
+        diff_api.PixelStorei(GL_UNPACK_LSB_FIRST, unpack.psLSBFirst);
+
+        diff_api.Finish();
+
+        crDebug("Applied %ix%i fb image", pVP->viewportW, pVP->viewportH);
+
+        crFree(to->pImage);
+        to->pImage = NULL;
+    }
+}
+
 void crStateSwitchContext( CRContext *from, CRContext *to )
 {
 	CRbitvalue *bitID = to->bitid;
@@ -247,39 +288,7 @@ void crStateSwitchContext( CRContext *from, CRContext *to )
 		crStateCurrentSwitch( &(sb->current), bitID, from, to );
 	}
 
-    if (to->pImage)
-    {
-        CRViewportState *pVP = &to->viewport;
-        CRPixelPackState unpack = to->client.unpack;
-
-        diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
-        diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
-        diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        diff_api.PixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-        diff_api.PixelStorei(GL_UNPACK_IMAGE_HEIGHT, 0);
-        diff_api.PixelStorei(GL_UNPACK_SKIP_IMAGES, 0);
-        diff_api.PixelStorei(GL_UNPACK_SWAP_BYTES, 0);
-        diff_api.PixelStorei(GL_UNPACK_LSB_FIRST, 0);
-
-        diff_api.DrawBuffer(GL_FRONT);
-        diff_api.WindowPos2iARB(0, 0);
-        diff_api.DrawPixels(pVP->viewportW, pVP->viewportH, GL_RGBA, GL_UNSIGNED_BYTE, to->pImage);
-
-        diff_api.WindowPos3fvARB(to->current.rasterAttrib[VERT_ATTRIB_POS]);
-        diff_api.DrawBuffer(to->framebufferobject.drawFB ? 
-                            to->framebufferobject.drawFB->drawbuffer[0] : to->buffer.drawBuffer);
-        diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, unpack.skipRows);
-        diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, unpack.skipPixels);
-        diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, unpack.alignment);
-        diff_api.PixelStorei(GL_UNPACK_ROW_LENGTH, unpack.rowLength);
-        diff_api.PixelStorei(GL_UNPACK_IMAGE_HEIGHT, unpack.imageHeight);
-        diff_api.PixelStorei(GL_UNPACK_SKIP_IMAGES, unpack.skipImages);
-        diff_api.PixelStorei(GL_UNPACK_SWAP_BYTES, unpack.swapBytes);
-        diff_api.PixelStorei(GL_UNPACK_LSB_FIRST, unpack.psLSBFirst);
-
-        diff_api.Finish();
-
-        crFree(to->pImage);
-        to->pImage = NULL;
-    }
+#ifdef WINDOWS
+    crStateApplyFBImage(to);
+#endif
 }
