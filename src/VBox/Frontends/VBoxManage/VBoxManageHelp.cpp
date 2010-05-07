@@ -302,8 +302,6 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--teleporteraddress <address|empty>\n"
                  "                            [--teleporterpassword <password>]\n"
 #if 0
-                 "                            [--iomgr simple|async]\n"
-                 "                            [--iobackend buffered|unbuffered]\n"
                  "                            [--iocache on|off]\n"
                  "                            [--iocachesize <I/O cache size in MB>]\n"
                  "                            [--iobandwidthmax <Maximum I/O bandwidth in MB/s>]\n"

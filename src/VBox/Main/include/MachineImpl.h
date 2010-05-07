@@ -295,8 +295,6 @@ public:
         KeyboardHidType_T    mKeyboardHidType;
         PointingHidType_T    mPointingHidType;
 
-        IoMgrType_T          mIoMgrType;
-        IoBackendType_T      mIoBackendType;
         BOOL                 mIoCacheEnabled;
         ULONG                mIoCacheSize;
         ULONG                mIoBandwidthMax;
@@ -443,10 +441,6 @@ public:
     STDMETHOD(COMSETTER(KeyboardHidType)) (KeyboardHidType_T  aKeyboardHidType);
     STDMETHOD(COMGETTER(PointingHidType)) (PointingHidType_T *aPointingHidType);
     STDMETHOD(COMSETTER(PointingHidType)) (PointingHidType_T  aPointingHidType);
-    STDMETHOD(COMGETTER(IoMgr)) (IoMgrType_T *aIoMgrType);
-    STDMETHOD(COMSETTER(IoMgr)) (IoMgrType_T  aIoMgrType);
-    STDMETHOD(COMGETTER(IoBackend)) (IoBackendType_T *aIoBackendType);
-    STDMETHOD(COMSETTER(IoBackend)) (IoBackendType_T  aIoBackendType);
     STDMETHOD(COMGETTER(IoCacheEnabled)) (BOOL *aEnabled);
     STDMETHOD(COMSETTER(IoCacheEnabled)) (BOOL  aEnabled);
     STDMETHOD(COMGETTER(IoCacheSize)) (ULONG *aIoCacheSize);

@@ -635,15 +635,11 @@ struct IoSettings
 
     bool operator==(const IoSettings &i) const
     {
-        return (   (ioMgrType        == i.ioMgrType)
-                && (ioBackendType    == i.ioBackendType)
-                && (fIoCacheEnabled  == i.fIoCacheEnabled)
+        return (   (fIoCacheEnabled  == i.fIoCacheEnabled)
                 && (ulIoCacheSize    == i.ulIoCacheSize)
                 && (ulIoBandwidthMax == i.ulIoBandwidthMax));
     }
 
-    IoMgrType_T     ioMgrType;
-    IoBackendType_T ioBackendType;
     bool            fIoCacheEnabled;
     uint32_t        ulIoCacheSize;
     uint32_t        ulIoBandwidthMax;
