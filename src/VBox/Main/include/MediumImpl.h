@@ -187,7 +187,10 @@ public:
 
     HRESULT compareLocationTo(const char *aLocation, int &aResult);
 
-    HRESULT createMediumLockList(bool fMediumWritable, Medium *pToBeParent, MediumLockList &mediumLockList);
+    HRESULT createMediumLockList(bool fFailIfInaccessible,
+                                 bool fMediumWritable,
+                                 Medium *pToBeParent,
+                                 MediumLockList &mediumLockList);
 
     HRESULT createDiffStorage(ComObjPtr<Medium> &aTarget,
                               MediumVariant_T aVariant,

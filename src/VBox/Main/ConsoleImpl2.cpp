@@ -1236,18 +1236,21 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         for (size_t j = 0; j < atts.size(); ++j)
         {
-            rc = Console::configMediumAttachment(pCtlInst, pszCtrlDev,
-                                                 ulInstance, enmBus, enmIoBackend,
-                                                 false /* fSetupMerge */,
-                                                 0 /* uMergeSource */,
-                                                 0 /* uMergeTarget */,
-                                                 atts[j],
-                                                 pConsole->mMachineState,
-                                                 NULL /* phrc */,
-                                                 false /* fAttachDetach */,
-                                                 false /* fForceUnmount */,
-                                                 NULL /* pVM */,
-                                                 paLedDevType);                                 RC_CHECK();
+            rc = pConsole->configMediumAttachment(pCtlInst,
+                                                  pszCtrlDev,
+                                                  ulInstance,
+                                                  enmBus,
+                                                  enmIoBackend,
+                                                  false /* fSetupMerge */,
+                                                  0 /* uMergeSource */,
+                                                  0 /* uMergeTarget */,
+                                                  atts[j],
+                                                  pConsole->mMachineState,
+                                                  NULL /* phrc */,
+                                                  false /* fAttachDetach */,
+                                                  false /* fForceUnmount */,
+                                                  NULL /* pVM */,
+                                                  paLedDevType);                                 RC_CHECK();
         }
         H();
     }
@@ -2248,15 +2251,20 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 }
 
 /* static */
-int Console::configMediumAttachment(PCFGMNODE pCtlInst, const char *pcszDevice,
-                                    unsigned uInstance, StorageBus_T enmBus,
+int Console::configMediumAttachment(PCFGMNODE pCtlInst,
+                                    const char *pcszDevice,
+                                    unsigned uInstance,
+                                    StorageBus_T enmBus,
                                     IoBackendType_T enmIoBackend,
-                                    bool fSetupMerge, unsigned uMergeSource,
+                                    bool fSetupMerge,
+                                    unsigned uMergeSource,
                                     unsigned uMergeTarget,
                                     IMediumAttachment *pMediumAtt,
                                     MachineState_T aMachineState,
-                                    HRESULT *phrc, bool fAttachDetach,
-                                    bool fForceUnmount, PVM pVM,
+                                    HRESULT *phrc,
+                                    bool fAttachDetach,
+                                    bool fForceUnmount,
+                                    PVM pVM,
                                     DeviceType_T *paLedDevType)
 {
     int rc = VINF_SUCCESS;
@@ -2334,9 +2342,15 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst, const char *pcszDevice,
     hrc = pMediumAtt->COMGETTER(Medium)(pMedium.asOutParam());          H();
     BOOL fPassthrough;
     hrc = pMediumAtt->COMGETTER(Passthrough)(&fPassthrough);            H();
-    rc = Console::configMedium(pLunL0, !!fPassthrough, lType,
-                               enmIoBackend, fSetupMerge, uMergeSource,
-                               uMergeTarget, pMedium, aMachineState,
+    rc = Console::configMedium(pLunL0,
+                               !!fPassthrough,
+                               lType,
+                               enmIoBackend,
+                               fSetupMerge,
+                               uMergeSource,
+                               uMergeTarget,
+                               pMedium,
+                               aMachineState,
                                phrc);                                   RC_CHECK();
 
     if (fAttachDetach)
@@ -2360,11 +2374,16 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst, const char *pcszDevice,
     return VINF_SUCCESS;;
 }
 
-int Console::configMedium(PCFGMNODE pLunL0, bool fPassthrough,
-                          DeviceType_T enmType, IoBackendType_T enmIoBackend,
-                          bool fSetupMerge, unsigned uMergeSource,
-                          unsigned uMergeTarget, IMedium *pMedium,
-                          MachineState_T aMachineState, HRESULT *phrc)
+int Console::configMedium(PCFGMNODE pLunL0,
+                          bool fPassthrough,
+                          DeviceType_T enmType,
+                          IoBackendType_T enmIoBackend,
+                          bool fSetupMerge,
+                          unsigned uMergeSource,
+                          unsigned uMergeTarget,
+                          IMedium *pMedium,
+                          MachineState_T aMachineState,
+                          HRESULT *phrc)
 {
     int rc = VINF_SUCCESS;
     HRESULT hrc;
@@ -2425,6 +2444,34 @@ int Console::configMedium(PCFGMNODE pLunL0, bool fPassthrough,
             default:
                 rc = CFGMR3InsertString(pCfg, "Type", "HardDisk");                      RC_CHECK();
                 rc = CFGMR3InsertInteger(pCfg, "Mountable", 0);                         RC_CHECK();
+        }
+
+        if (    pMedium
+             && enmType == DeviceType_DVD)
+        {
+            // if this medium represents an ISO image and this image is inaccessible,
+            // the ignore it instead of causing a failure; this can happen when we
+            // restore a VM state and the ISO has disappeared, e.g. because the Guest
+            // Additions were mounted and the user upgraded VirtualBox. Previously
+            // we failed on startup, but that's not good because the only way out then
+            // would be to discard the VM state...
+            MediumState_T mediumState;
+            rc = pMedium->RefreshState(&mediumState);
+            RC_CHECK();
+            if (mediumState == MediumState_Inaccessible)
+            {
+                Bstr loc;
+                rc = pMedium->COMGETTER(Location)(loc.asOutParam());
+                if (FAILED(rc)) return rc;
+
+                setVMRuntimeErrorCallbackF(mpVM,
+                                           this,
+                                           0,
+                                           "DvdOrFloppyImageInaccessible",
+                                           "The medium '%ls' is inaccessible and is being ignored. You may want to fix the media attachments in the virtual machine settings",
+                                           loc.raw());
+                pMedium = NULL;
+            }
         }
 
         if (pMedium)
