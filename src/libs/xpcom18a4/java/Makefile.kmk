@@ -255,7 +255,9 @@ VBOX_JXPCOM_JAR_SRC = \
 	$(VBOX_JXPCOM_JSRC)/internal/XPCOMImpl.java \
 	$(VBOX_JXPCOM_JSRC)/internal/XPCOMJavaProxyBase.java \
 	$(VBOX_JXPCOM_JSRC)/internal/XPCOMJavaProxy.java
-VBOX_JXPCOM_MGR = $(VBOX_JXPCOM_SRC)/src/org/virtualbox/VirtualBoxManager.java
+VBOX_JXPCOM_MGR = \
+     $(VBOX_JXPCOM_SRC)/src/org/virtualbox/VirtualBoxManager.java \
+     $(VBOX_JXPCOM_SRC)/src/org/virtualbox/VBoxObjectBase.java
 
 $$(VBOX_JXPCOM_JAR): $(VBOX_JXPCOM_JAR_SRC) $(VBOX_JXPCOM_GEN)/jxpcomgen.list $(VBOX_JXPCOM_NSERROR) $(VBOX_JXPCOM_MGR) | $$(dir $$@)
 	$(call MSG_TOOL,javac,$(notdir $@),jxpcomgen.list,)

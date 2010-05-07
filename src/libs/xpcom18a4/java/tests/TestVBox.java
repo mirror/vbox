@@ -14,30 +14,69 @@
 import org.mozilla.interfaces.*;
 import org.virtualbox.*;
 
+class VBoxCallbacks extends VBoxObjectBase implements IVirtualBoxCallback
+{
+    public void onGuestPropertyChange(String machineId, String name, String value, String flags)
+    {
+        System.out.println("onGuestPropertyChange -- VM: " + machineId + ", " + name + "->" + value);
+    }
+    public void onSnapshotChange(String machineId, String snapshotId)
+    {
+    }
+    public void onSnapshotDeleted(String machineId, String snapshotId)
+    {
+    }
+    public void onSnapshotTaken(String machineId, String snapshotId) {}
+    public void onSessionStateChange(String machineId, long state)
+    {
+        System.out.println("onSessionStateChange -- VM: " + machineId + ", state: " + state);
+    }
+    public void onMachineRegistered(String machineId, boolean registered) {}
+    public void onMediumRegistered(String mediumId, long mediumType, boolean registered) {}
+    public void onExtraDataChange(String machineId, String key, String value)
+    {
+        System.out.println("onExtraDataChange -- VM: " + machineId + ": " + key+"->"+value);
+    }
+    public boolean onExtraDataCanChange(String machineId, String key, String value, String[] error) { return true; }
+    public void onMachineDataChange(String machineId)
+    {}
+    public void onMachineStateChange(String machineId, long state)
+    {
+        System.out.println("onMachineStateChange -- VM: " + machineId + ", state: " + state);
+    }
+}
+
 public class TestVBox
 {
-
-    public static class VBoxCallbacks implements IVirtualBoxCallback
+    static void testCallbacks(VirtualBoxManager mgr, IVirtualBox vbox)
     {
-        public void onGuestPropertyChange(String machineId, String name, String value, String flags) {}
-        public void onSnapshotChange(String machineId, String snapshotId) {}
-        public void onSnapshotDeleted(String machineId, String snapshotId) {}
-        public void onSnapshotTaken(String machineId, String snapshotId) {}
-        /** @todo is there a type SessionState instead of long? */
-        public void onSessionStateChange(String machineId, long state) {}
-        public void onMachineRegistered(String machineId, boolean registered) {}
-        /** @todo long -> MediumType */
-        public void onMediumRegistered(String mediumId, long mediumType, boolean registered) {}
-        public void onExtraDataChange(String machineId, String key, String value) {}
-        public boolean onExtraDataCanChange(String machineId, String key, String value, String[] error) { return true; }
-        public void onMachineDataChange(String machineId) {}
-        /** @todo long -> MachineState */
-        public void onMachineStateChange(String machineId, long state) { System.out.println("onMachineStateChange -- VM: " + machineId + ", state: " + state); };
+        IVirtualBoxCallback cbs = new VBoxCallbacks();
+        vbox.registerCallback(cbs);
+        for (int i=0; i<100; i++)
+        {
+            mgr.waitForEvents(500);
+        }
+        vbox.unregisterCallback(cbs);
+    }
 
-        /** @todo ugly reimplementation of queryInterface, should have base class to derive from */
-        public nsISupports queryInterface(String iid) { return org.mozilla.xpcom.Mozilla.queryInterface(this, iid); }
-    };
+    static void testEnumeration(VirtualBoxManager mgr, IVirtualBox vbox)
+    {
+        IMachine[] machs = vbox.getMachines(null);
+        for (IMachine m : machs)
+        {
+            System.out.println("VM name: " + m.getName() + ", RAM size: " + m.getMemorySize() + "MB");
+            System.out.println(" HWVirt: " + m.getHWVirtExProperty(HWVirtExPropertyType.Enabled)
+                               + ", Nested Paging: " + m.getHWVirtExProperty(HWVirtExPropertyType.NestedPaging)
+                               + ", PAE: " + m.getCPUProperty(CPUPropertyType.PAE) );
+        }
+    }
 
+    static void testStart(VirtualBoxManager mgr, IVirtualBox vbox)
+    {
+        String m =  vbox.getMachines(null)[0].getName();
+        System.out.println("\nAttempting to start VM '" + m + "'");
+        mgr.startVm(m, null, 7000);
+    }
 
     public static void main(String[] args)
     {
@@ -49,56 +88,11 @@ public class TestVBox
         {
             IVirtualBox vbox = mgr.getVBox();
             System.out.println("VirtualBox version: " + vbox.getVersion() + "\n");
+            testEnumeration(mgr, vbox);
+            testCallbacks(mgr, vbox);
 
-            /* list all VMs and print some info for each */
-            IMachine[] machs = vbox.getMachines(null);
-            for (IMachine m : machs)
-            {
-                try
-                {
-                    System.out.println("VM name: " + m.getName() + ", RAM size: " + m.getMemorySize() + "MB");
-                    System.out.println(" HWVirt: " + m.getHWVirtExProperty(HWVirtExPropertyType.Enabled)
-                                       + ", Nested Paging: " + m.getHWVirtExProperty(HWVirtExPropertyType.NestedPaging)
-                                       + ", PAE: " + m.getCPUProperty(CPUPropertyType.PAE) );
-                }
-                catch (Throwable e)
-                {
-                    e.printStackTrace();
-                }
-            }
-
-            boolean withCallbacks = false;
-            VBoxCallbacks vboxCallbacks = null;
-
-            if (withCallbacks)
-            {
-                vboxCallbacks = new VBoxCallbacks();
-                vbox.registerCallback(mgr.makeVirtualBoxCallback(vboxCallbacks));
-            }
-
-            /* do something silly, start the first VM in the list */
-            String m = machs[0].getName();
-            System.out.println("\nAttempting to start VM '" + m + "'");
-            if (false || mgr.startVm(m, 7000))
-            {
-                if (!withCallbacks)
-                {
-                    System.out.println("started, presss any key...");
-                    int ch = System.in.read();
-                } else {
-                    while (true)
-                    {
-                        mgr.waitForEvents(500);
-                    }
-                }
-            }
-            else
-            {
-                System.out.println("cannot start machine "+m);
-            }
-
-            if (withCallbacks)
-                vbox.unregisterCallback(vboxCallbacks);
+            System.out.println("done, press Enter...");
+            int ch = System.in.read();
         }
         catch (Throwable e)
         {
