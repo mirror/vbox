@@ -243,5 +243,11 @@ void UIFrameBuffer::doProcessVHWACommand(QEvent *pEvent)
     /* should never be here */
     AssertBreakpoint();
 }
+
+void UIFrameBuffer::setView(UIMachineView * pView)
+{
+    m_pMachineView = pView;
+    m_uWinId = (m_pMachineView && m_pMachineView->viewport()) ? (ULONG64)m_pMachineView->viewport()->winId() : 0;
+}
 #endif
 
