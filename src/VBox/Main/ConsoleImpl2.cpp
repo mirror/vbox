@@ -2424,7 +2424,9 @@ int Console::configMedium(PCFGMNODE pLunL0,
         }
 
         if (    pMedium
-             && enmType == DeviceType_DVD)
+             && (    enmType == DeviceType_DVD
+                  || enmType == DeviceType_Floppy
+           ))
         {
             // if this medium represents an ISO image and this image is inaccessible,
             // the ignore it instead of causing a failure; this can happen when we
