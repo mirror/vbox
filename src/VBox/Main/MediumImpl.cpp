@@ -3924,10 +3924,6 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
         // no longer need lock
         multilock.release();
 
-        // always set it to false because the medium registry is up to date
-        if (pfNeedsSaveSettings)
-            *pfNeedsSaveSettings = false;
-
         if (aProgress != NULL)
         {
             /* use the existing progress object... */
