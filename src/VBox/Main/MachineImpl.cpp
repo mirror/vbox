@@ -7331,8 +7331,22 @@ HRESULT Machine::getMediumAttachmentsOfController(CBSTR aName,
          it != mMediaData->mAttachments.end();
          ++it)
     {
-        if ((*it)->getControllerName() == aName)
-            atts.push_back(*it);
+        const ComObjPtr<MediumAttachment> &pAtt = *it;
+
+        // should never happen, but deal with NULL pointers in the list.
+        AssertStmt(!pAtt.isNull(), continue);
+
+        // getControllerName() needs caller+read lock
+        AutoCaller autoAttCaller(pAtt);
+        if (FAILED(autoAttCaller.rc()))
+        {
+            atts.clear();
+            return autoAttCaller.rc();
+        }
+        AutoReadLock attLock(pAtt COMMA_LOCKVAL_SRC_POS);
+
+        if (pAtt->getControllerName() == aName)
+            atts.push_back(pAtt);
     }
 
     return S_OK;
