@@ -309,9 +309,24 @@ int VBoxServiceStartServices(unsigned iMain)
             rc = g_aServices[j].pDesc->pfnInit();
             if (RT_FAILURE(rc))
             {
-                VBoxServiceError("Service '%s' failed to initialize: %Rrc\n",
-                                 g_aServices[j].pDesc->pszName, rc);
-                return rc;
+                /*
+                 * If a service uses some sort of HGCM host service
+                 * which is not available on the host (maybe because the host
+                 * is using an older VBox version), just disable that service
+                 * here.
+                 */
+                if (rc == VERR_HGCM_SERVICE_NOT_FOUND)
+                {
+                    g_aServices[j].fEnabled = false;
+                    VBoxServiceVerbose(0, "Service '%s' was disabled (because %Rrc)\n", 
+                                       g_aServices[j].pDesc->pszName, rc);
+                }
+                else
+                {
+                    VBoxServiceError("Service '%s' failed to initialize: %Rrc\n",
+                                     g_aServices[j].pDesc->pszName, rc);
+                    return rc;
+                }
             }
         }
 
