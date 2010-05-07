@@ -2067,30 +2067,52 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 
         QString item;
 
+        /* Iterate over the all machine controllers: */
         CStorageControllerVector controllers = aMachine.GetStorageControllers();
-        foreach (const CStorageController &controller, controllers)
+        for (int i = 0; i < controllers.size(); ++i)
         {
-            item += QString (sSectionItemTpl3).arg (controller.GetName());
+            /* Get current controller: */
+            const CStorageController &controller = controllers[i];
+            /* Add controller information: */
+            item += QString(sSectionItemTpl3).arg(controller.GetName());
             ++ rows;
 
-            CMediumAttachmentVector attachments = aMachine.GetMediumAttachmentsOfController (controller.GetName());
-            foreach (const CMediumAttachment &attachment, attachments)
+            /* Populate sorted map with attachments information: */
+            QMap<StorageSlot,QString> attachmentsMap;
+            CMediumAttachmentVector attachments = aMachine.GetMediumAttachmentsOfController(controller.GetName());
+            for (int j = 0; j < attachments.size(); ++j)
             {
-                CMedium medium = attachment.GetMedium();
-                if (attachment.isOk())
-                {
-                    /* Append 'device slot name' with 'device type name' for CD/DVD devices only */
-                    QString strDeviceType = attachment.GetType() == KDeviceType_DVD ? tr("(CD/DVD)") : QString();
-                    if (!strDeviceType.isNull()) strDeviceType.prepend(' ');
-                    item += QString (sSectionItemTpl2)
-                            .arg (QString ("&nbsp;&nbsp;") +
-                                  toString (StorageSlot (controller.GetBus(),
-                                                         attachment.GetPort(),
-                                                         attachment.GetDevice())) +
-                                  strDeviceType)
-                            .arg (details (medium, false));
-                    ++ rows;
-                }
+                /* Get current attachment: */
+                const CMediumAttachment &attachment = attachments[j];
+                /* Prepare current storage slot: */
+                StorageSlot attachmentSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice());
+                /* Append 'device slot name' with 'device type name' for CD/DVD devices only: */
+                QString strDeviceType = attachment.GetType() == KDeviceType_DVD ? tr("(CD/DVD)") : QString();
+                if (!strDeviceType.isNull())
+                    strDeviceType.prepend(' ');
+                /* Prepare current medium object: */
+                const CMedium &medium = attachment.GetMedium();
+                /* Prepare information about current medium & attachment: */
+                QString strAttachmentInfo = !attachment.isOk() ? QString() :
+                                            QString(sSectionItemTpl2)
+                                            .arg(QString("&nbsp;&nbsp;") +
+                                                 toString(StorageSlot(controller.GetBus(),
+                                                                      attachment.GetPort(),
+                                                                      attachment.GetDevice())) + strDeviceType)
+                                            .arg(details(medium, false));
+                /* Insert that attachment into map: */
+                if (!strAttachmentInfo.isNull())
+                    attachmentsMap.insert(attachmentSlot, strAttachmentInfo);
+            }
+
+            /* Iterate over the sorted map with attachments information: */
+            QMapIterator<StorageSlot,QString> it(attachmentsMap);
+            while (it.hasNext())
+            {
+                /* Add controller information: */
+                it.next();
+                item += it.value();
+                ++rows;
             }
         }
 
