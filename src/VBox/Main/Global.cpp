@@ -183,7 +183,7 @@ const Global::OSType Global::sOSTypes[SchemaDefs::OSTypeId_COUNT] =
       VBOXOSTYPE_Turbolinux,      VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET,
        384,  12,  8 * _1K, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
         StorageControllerType_IntelAhci, StorageBus_SATA  },
-    { "Linux",   "Linux",             SchemaDefs_OSTypeId_Turbolinux,      "Turbolinux",
+    { "Linux",   "Linux",             SchemaDefs_OSTypeId_Turbolinux,      "Turbolinux (64 bit)",
       VBOXOSTYPE_Turbolinux_x64,  VBOXOSHINT_64BIT | VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC | VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET,
        384,  12,  8 * _1K, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
         StorageControllerType_IntelAhci, StorageBus_SATA  },
