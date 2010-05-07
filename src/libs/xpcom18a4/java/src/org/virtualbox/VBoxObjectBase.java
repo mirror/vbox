@@ -10,6 +10,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+import org.mozilla.interfaces.nsISupports;
 
 public abstract class VBoxObjectBase implements nsISupports
 {
