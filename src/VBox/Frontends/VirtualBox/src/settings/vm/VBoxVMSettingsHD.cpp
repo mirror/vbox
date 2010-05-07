@@ -2319,7 +2319,7 @@ void VBoxVMSettingsHD::updateActionsState()
     bool isAttachment = mStorageModel->data (index, StorageModel::R_IsAttachment).toBool();
     bool isAttachmentsPossible = mStorageModel->data (index, StorageModel::R_IsMoreAttachmentsPossible).toBool();
 
-    mAddCtrAction->setEnabled (isIDEPossible || isSATAPossible || isSCSIPossible || isFloppyPossible);
+    mAddCtrAction->setEnabled (isIDEPossible || isSATAPossible || isSCSIPossible || isFloppyPossible || isSASPossible);
     mAddIDECtrAction->setEnabled (isIDEPossible);
     mAddSATACtrAction->setEnabled (isSATAPossible);
     mAddSCSICtrAction->setEnabled (isSCSIPossible);
