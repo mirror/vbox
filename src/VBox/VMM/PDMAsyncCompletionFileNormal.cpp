@@ -1033,6 +1033,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                     {
                         pEndpoint->fAsyncFlushSupported = false;
                         pdmacFileAioMgrNormalRequestFree(pAioMgr, hReq);
+                        rc = VINF_SUCCESS; /* Fake success */
                     }
                     else
                     {
