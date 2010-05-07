@@ -206,8 +206,6 @@ Machine::HWData::HWData()
     for (size_t i = 0; i < RT_ELEMENTS(mCPUAttached); i++)
         mCPUAttached[i] = false;
 
-    mIoMgrType     = IoMgrType_Async;
-    mIoBackendType = IoBackendType_Unbuffered;
     mIoCacheEnabled = true;
     mIoCacheSize    = 5; /* 5MB */
     mIoBandwidthMax = 0; /* Unlimited */
@@ -2542,76 +2540,6 @@ STDMETHODIMP Machine::COMSETTER(RTCUseUTC)(BOOL aEnabled)
     setModified(IsModified_MachineData);
     mUserData.backup();
     mUserData->mRTCUseUTC = aEnabled;
-
-    return S_OK;
-}
-
-STDMETHODIMP Machine::COMGETTER(IoMgr)(IoMgrType_T *aIoMgrType)
-{
-    CheckComArgOutPointerValid(aIoMgrType);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aIoMgrType = mHWData->mIoMgrType;
-
-    return S_OK;
-}
-
-STDMETHODIMP Machine::COMSETTER(IoMgr)(IoMgrType_T aIoMgrType)
-{
-    if (   aIoMgrType != IoMgrType_Async
-        && aIoMgrType != IoMgrType_Simple)
-        return E_INVALIDARG;
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT rc = checkStateDependency(MutableStateDep);
-    if (FAILED(rc)) return rc;
-
-    setModified(IsModified_MachineData);
-    mHWData.backup();
-    mHWData->mIoMgrType = aIoMgrType;
-
-    return S_OK;
-}
-
-STDMETHODIMP Machine::COMGETTER(IoBackend)(IoBackendType_T *aIoBackendType)
-{
-    CheckComArgOutPointerValid(aIoBackendType);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aIoBackendType = mHWData->mIoBackendType;
-
-    return S_OK;
-}
-
-STDMETHODIMP Machine::COMSETTER(IoBackend)(IoBackendType_T aIoBackendType)
-{
-    if (   aIoBackendType != IoBackendType_Buffered
-        && aIoBackendType != IoBackendType_Unbuffered)
-        return E_INVALIDARG;
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT rc = checkStateDependency(MutableStateDep);
-    if (FAILED(rc)) return rc;
-
-    setModified(IsModified_MachineData);
-    mHWData.backup();
-    mHWData->mIoBackendType = aIoBackendType;
 
     return S_OK;
 }
@@ -6906,8 +6834,6 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         mHWData->mMemoryBalloonSize = data.ulMemoryBalloonSize;
 
         // IO settings
-        mHWData->mIoMgrType = data.ioSettings.ioMgrType;
-        mHWData->mIoBackendType = data.ioSettings.ioBackendType;
         mHWData->mIoCacheEnabled = data.ioSettings.fIoCacheEnabled;
         mHWData->mIoCacheSize = data.ioSettings.ulIoCacheSize;
         mHWData->mIoBandwidthMax = data.ioSettings.ulIoBandwidthMax;
@@ -7979,8 +7905,6 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         data.ulMemoryBalloonSize = mHWData->mMemoryBalloonSize;
 
         // IO settings
-        data.ioSettings.ioMgrType = mHWData->mIoMgrType;
-        data.ioSettings.ioBackendType = mHWData->mIoBackendType;
         data.ioSettings.fIoCacheEnabled = !!mHWData->mIoCacheEnabled;
         data.ioSettings.ulIoCacheSize = mHWData->mIoCacheSize;
         data.ioSettings.ulIoBandwidthMax = mHWData->mIoBandwidthMax;

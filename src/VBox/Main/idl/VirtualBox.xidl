@@ -1118,23 +1118,6 @@
     </const>
   </enum>
 
-  <enum
-   name="IoMgrType"
-   uuid="35567419-4d2a-4256-a74e-efcae33493a2"
-   >
-     <desc>
-       Type of the I/O manager used for the image files in a virtual machine if the backend is
-       set to the "Unbuffered" type.
-     </desc>
-     <const name="Simple" value="1">
-       <desc>Simple manager. Normally only used if the default one runs into an
-       error. </desc>
-     </const>
-     <const name="Async" value="2">
-       <desc>Asynchronous manager using the async I/O API on the host if present.
-       This is the default manager.</desc>
-     </const>
-   </enum>
 
   <!--
   // IVirtualBoxErrorInfo
@@ -4231,7 +4214,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="b8a9324a-1042-4c78-aff6-9d1c2bfd8cd0"
+     uuid="ebea94d0-7663-4dea-8052-00946dd63d11"
      wsmap="managed"
      >
     <desc>
@@ -4763,18 +4746,6 @@
         When set to @a true, the RTC device of the virtual machine will run
         in UTC time, otherwise in local time. Especially Unix guests prefer
         the time in UTC.
-      </desc>
-    </attribute>
-
-    <attribute name="ioMgr" type="IoMgrType">
-      <desc>
-        Selects the I/O manager to use for the virtual machine.
-      </desc>
-    </attribute>
-
-    <attribute name="ioBackend" type="IoBackendType">
-      <desc>
-        Selects the I/O backend to use for the virtual machine.
       </desc>
     </attribute>
 
