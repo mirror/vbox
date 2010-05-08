@@ -1974,7 +1974,7 @@ static int vhdCreate(const char *pszFilename, uint64_t cbSize,
 
 #ifdef VBOX_WITH_NEW_IO_CODE
     /* Try to get I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_IO);
+    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IO);
     AssertPtr(pImage->pInterfaceIO);
     pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
     AssertPtr(pImage->pInterfaceIOCallbacks);
