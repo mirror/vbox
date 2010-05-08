@@ -220,12 +220,7 @@ RTDECL(int) RTFileAioReqPrepareFlush(RTFILEAIOREQ hReq, RTFILE hFile, void *pvUs
     RTFILEAIOREQ_NOT_STATE_RETURN_RC(pReqInt, SUBMITTED, VERR_FILE_AIO_IN_PROGRESS);
     AssertReturn(hFile != NIL_RTFILE, VERR_INVALID_HANDLE);
 
-    /** @todo: Flushing is not available */
-#if 0
-    return rtFileAsyncPrepareTransfer(pRequest, File, TRANSFERDIRECTION_FLUSH,
-                                      0, NULL, 0, pvUser);
-#endif
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_NOT_SUPPORTED;
 }
 
 RTDECL(void *) RTFileAioReqGetUser(RTFILEAIOREQ hReq)
