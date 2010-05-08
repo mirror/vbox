@@ -791,7 +791,7 @@ static int vdIoCtxProcess(PVDIOCTX pIoCtx)
         rc = VINF_VD_ASYNC_IO_FINISHED;
     else if (RT_SUCCESS(rc))
         rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
-    else
+    else if (RT_FAILURE(rc) && (rc != VERR_VD_ASYNC_IO_IN_PROGRESS))
     {
         ASMAtomicCmpXchgS32(&pIoCtx->rcReq, rc, VINF_SUCCESS);
         /*
@@ -801,6 +801,8 @@ static int vdIoCtxProcess(PVDIOCTX pIoCtx)
         if (   !pIoCtx->cMetaTransfersPending
             && !pIoCtx->cDataTransfersPending)
             rc = VINF_VD_ASYNC_IO_FINISHED;
+        else
+            rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
     }
 
     LogFlowFunc(("pIoCtx=%#p rc=%Rrc cbTransferLeft=%u cMetaTransfersPending=%u fComplete=%RTbool\n",
