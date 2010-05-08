@@ -202,6 +202,7 @@ typedef struct MYARGS
     PINTNETBUF      pBuf;
     INTNETIFHANDLE  hIf;
     RTMAC           Mac;
+    uint32_t        cbFrame;
     uint64_t        u64Start;
     uint64_t        u64End;
 } MYARGS, *PMYARGS;
@@ -222,7 +223,7 @@ typedef struct MYFRAMEHDR
 
 /**
  * Send thread.
- * This is constantly broadcasting frames to the network.
+ * This is constantly sending frames to the other interface.
  */
 DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
 {
@@ -232,7 +233,7 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
     /*
      * Send g_cbTransfer of data.
      */
-    uint8_t         abBuf[4096] = {0};
+    uint8_t         abBuf[16384] = {0};
     MYFRAMEHDR     *pHdr    = (MYFRAMEHDR *)&abBuf[0];
     uint32_t        iFrame  = 0;
     uint32_t        cbSent  = 0;
@@ -245,8 +246,10 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
     pArgs->u64Start = RTTimeNanoTS();
     for (; cbSent < g_cbTransfer; iFrame++)
     {
-        const unsigned cb = iFrame % 1519 + sizeof(RTMAC) * 2 + sizeof(unsigned);
-         pHdr->iFrame = iFrame;
+        const unsigned cb = pArgs->cbFrame
+                          ? pArgs->cbFrame
+                          : iFrame % 1519 + sizeof(RTMAC) * 2 + sizeof(unsigned);
+        pHdr->iFrame = iFrame;
 
         INTNETSG Sg;
         IntNetSgInitTemp(&Sg, abBuf, cb);
@@ -298,7 +301,7 @@ DECLCALLBACK(int) ReceiveThread(RTTHREAD Thread, void *pvArg)
          */
         while (IntNetRingHasMoreToRead(&pArgs->pBuf->Recv))
         {
-            uint8_t     abBuf[16384];
+            uint8_t     abBuf[16384 + 1024];
             MYFRAMEHDR *pHdr = (MYFRAMEHDR *)&abBuf[0];
             uint32_t    cb   = IntNetRingReadAndSkipFrame(&pArgs->pBuf->Recv, abBuf);
 
@@ -448,7 +451,7 @@ static void tstCloseInterfaces(PTSTSTATE pThis)
 /**
  * Do the bi-directional transfer test.
  */
-static void tstBidirectionalTransfer(PTSTSTATE pThis)
+static void tstBidirectionalTransfer(PTSTSTATE pThis, uint32_t cbFrame)
 {
     MYARGS Args0;
     RT_ZERO(Args0);
@@ -457,6 +460,7 @@ static void tstBidirectionalTransfer(PTSTSTATE pThis)
     Args0.Mac.au16[0] = 0x8086;
     Args0.Mac.au16[1] = 0;
     Args0.Mac.au16[2] = 0;
+    Args0.cbFrame     = cbFrame;
 
     MYARGS Args1;
     RT_ZERO(Args1);
@@ -465,6 +469,7 @@ static void tstBidirectionalTransfer(PTSTSTATE pThis)
     Args1.Mac.au16[0] = 0x8086;
     Args1.Mac.au16[1] = 0;
     Args1.Mac.au16[2] = 1;
+    Args1.cbFrame     = cbFrame;
 
     RTTHREAD ThreadRecv0 = NIL_RTTHREAD;
     RTTHREAD ThreadRecv1 = NIL_RTTHREAD;
@@ -701,7 +706,14 @@ static void doTest(PTSTSTATE pThis, uint32_t cbRecv, uint32_t cbSend)
     {
         RTTestISubF("bi-directional benchmark, cbSend=%u, cbRecv=%u, cbTransfer=%u",
                     pThis->pBuf0->cbSend, pThis->pBuf0->cbRecv, g_cbTransfer);
-        tstBidirectionalTransfer(pThis);
+        tstBidirectionalTransfer(pThis, 256);
+
+        for (uint32_t cbFrame = 64; cbFrame < cbSend - 64; cbFrame += 8)
+        {
+            RTTestISubF("bi-directional benchmark, cbSend=%u, cbRecv=%u, cbTransfer=%u, cbFrame=%u",
+                        pThis->pBuf0->cbSend, pThis->pBuf0->cbRecv, g_cbTransfer, cbFrame);
+            tstBidirectionalTransfer(pThis, cbFrame);
+        }
     }
 
     /*
