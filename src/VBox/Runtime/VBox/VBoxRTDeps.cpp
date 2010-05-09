@@ -27,7 +27,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/sup.h>
+#ifndef RT_NO_GIP
+# include <VBox/sup.h>
+#endif
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/buildconfig.h>
@@ -47,9 +49,11 @@
 *******************************************************************************/
 PFNRT g_VBoxRTDeps[] =
 {
+#ifndef RT_NO_GIP
     (PFNRT)SUPR3Init,
     (PFNRT)SUPR3PageAllocEx,
     (PFNRT)SUPSemEventCreate,
+#endif
     (PFNRT)xmlModuleOpen,
     (PFNRT)MD5_Init,
     (PFNRT)RC4,
