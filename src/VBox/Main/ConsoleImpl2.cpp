@@ -121,7 +121,7 @@ static int DarwinSmcKey(char *aKey, uint32_t iKeySize)
         uint8_t    data[32];
     } AppleSMCBuffer;
 
-    AssertReturn(iKeySize >= 65, VERR_INTERNAL_ERROR;
+    AssertReturn(iKeySize >= 65, VERR_INTERNAL_ERROR);
 
     io_service_t service = IOServiceGetMatchingService(kIOMasterPortDefault,
                                                        IOServiceMatching("AppleSMC"));
