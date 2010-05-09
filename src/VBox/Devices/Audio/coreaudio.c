@@ -17,6 +17,7 @@
 
 #define LOG_GROUP LOG_GROUP_DEV_AUDIO
 #include <VBox/log.h>
+#include <iprt/asm.h>
 #include <iprt/mem.h>
 #include <iprt/cdefs.h>
 
