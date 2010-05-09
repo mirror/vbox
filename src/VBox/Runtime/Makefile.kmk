@@ -989,13 +989,16 @@ RuntimeLnxHostR3_INCS          = \
 VBoxRT_TEMPLATE                = VBoxR3Dll
 VBoxRT_SDKS                    = VBOX_OPENSSL VBOX_LIBXML2 VBOX_BOOST
 ifdef VBOX_WITH_LIBCURL
-VBoxRT_SDKS                   += VBOX_LIBCURL
+ VBoxRT_SDKS                  += VBOX_LIBCURL
 endif
 VBoxRT_SDKS.win                = WINPSDK W2K3DDK VBOX_NTDLL
 if1of ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING), darwin win)
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
 endif
 VBoxRT_DEFS                    = $(filter-out RT_NO_GIP,$(RuntimeR3_DEFS)) IN_SUP_R3 IN_SUP_R3
+ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
+ VBoxRT_DEFS                  += RT_NO_GIP
+endif
 VBoxRT_DEFS.$(KBUILD_TYPE)     = $(RuntimeR3_DEFS.$(KBUILD_TYPE))
 VBoxRT_SOURCES                 = \
 	VBox/VBoxRTDeps.cpp \
@@ -1033,18 +1036,21 @@ VBoxRT_INCS                    = $(RuntimeR3_INCS)
 VBoxRT_INCS.$(KBUILD_TARGET)   = $(RuntimeR3_INCS.$(KBUILD_TARGET))
 VBoxRT_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = $(RuntimeR3_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 VBoxRT_LIBS                    = \
-	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VBox-liblzf$(VBOX_SUFF_LIB) \
 	$(SDK_VBOX_ZLIB_LIBS)
+if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
+VBoxRT_LIBS                   += \
+	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB)
+endif
 ifdef IPRT_WITH_KSTUFF
  VBoxRT_LIBS                  += \
    	$(PATH_LIB)/VBox-kStuff$(VBOX_SUFF_LIB)
 endif
-ifndef	SDK_VBOX_LIBXML2_LIBS
+ifndef SDK_VBOX_LIBXML2_LIBS
  VBoxRT_LIBS                 += \
 	$(PATH_LIB)/VBox-libxml2$(VBOX_SUFF_LIB)
 endif
-ifndef	SDK_VBOX_OPENSSL_LIBS
+ifndef SDK_VBOX_OPENSSL_LIBS
  VBoxRT_LIBS                 += \
 	$(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
 endif
@@ -1058,7 +1064,7 @@ VBoxRT_LIBS.freebsd            = \
 	rt
 VBoxRT_LIBS.solaris            = \
 	kstat
-ifn1of ($(KBUILD_TARGET_ARCH),sparc32 sparc64)
+ifn1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
  # SMBIOS not available on Solaris SPARC.
  VBoxRT_LIBS.solaris += smbios
 endif

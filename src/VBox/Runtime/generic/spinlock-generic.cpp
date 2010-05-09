@@ -42,7 +42,9 @@
 
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
-#include <iprt/asm-amd64-x86.h>
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include <iprt/err.h>
 #include <iprt/assert.h>
 #if RT_CFG_SPINLOCK_GENERIC_DO_SLEEP
@@ -116,18 +118,26 @@ RTDECL(void) RTSpinlockAcquireNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
     AssertMsg(pSpinlockInt && pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC,
               ("pSpinlockInt=%p u32Magic=%08x\n", pSpinlockInt, pSpinlockInt ? (int)pSpinlockInt->u32Magic : 0));
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     pTmp->uFlags = ASMGetFlags();
+#else
+    pTmp->uFlags = 0;
+#endif
 #if RT_CFG_SPINLOCK_GENERIC_DO_SLEEP
     for (;;)
     {
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
         ASMIntDisable();
+# endif
         for (int c = RT_CFG_SPINLOCK_GENERIC_DO_SLEEP; c > 0; c--)
             if (ASMAtomicCmpXchgU32(&pSpinlockInt->fLocked, 1, 0))
                 return;
         RTThreadYield();
     }
 #else
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     ASMIntDisable();
+# endif
     while (!ASMAtomicCmpXchgU32(&pSpinlockInt->fLocked, 1, 0))
         /*nothing */;
 #endif
@@ -144,7 +154,9 @@ RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 
     if (!ASMAtomicCmpXchgU32(&pSpinlockInt->fLocked, 0, 1))
         AssertMsgFailed(("Spinlock %p was not locked!\n", pSpinlockInt));
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     ASMSetFlags(pTmp->uFlags);
+#endif
 }
 RT_EXPORT_SYMBOL(RTSpinlockReleaseNoInts);
 
