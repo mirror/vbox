@@ -256,7 +256,7 @@ DECLINLINE(int32_t) ASMModS64ByS32RetS32(int64_t i64, int32_t i32)
  *
  * @remarks Architecture specific.
  */
-#if RT_INLINE_ASM_EXTERNAL || !defined(__GNUC__) || (!defined(RT_ARCH_AMD64) && defined(RT_ARCH_X86))
+#if RT_INLINE_ASM_EXTERNAL || !defined(__GNUC__) || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
 DECLASM(uint64_t) ASMMultU64ByU32DivByU32(uint64_t u64A, uint32_t u32B, uint32_t u32C);
 #else
 DECLINLINE(uint64_t) ASMMultU64ByU32DivByU32(uint64_t u64A, uint32_t u32B, uint32_t u32C)
