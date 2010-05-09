@@ -33,6 +33,9 @@
 #include <iprt/spinlock.h>
 
 #include <iprt/asm.h>
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
@@ -116,10 +119,16 @@ RTDECL(void) RTSpinlockAcquireNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
     AssertPtr(pThis);
     Assert(pThis->u32Magic == RTSPINLOCK_MAGIC);
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     pTmp->uFlags = ASMIntDisableFlags();
+#else
+    pTmp->uFlags = 0;
+#endif
     mutex_enter(&pThis->Mtx);
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     Assert(!ASMIntAreEnabled());
+#endif
     RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED(pThis);
 }
 
@@ -135,7 +144,9 @@ RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
     NOREF(pTmp);
 
     mutex_exit(&pThis->Mtx);
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     ASMSetFlags(pTmp->uFlags);
+#endif
 
     RT_ASSERT_PREEMPT_CPUID();
 }
@@ -148,13 +159,15 @@ RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
     AssertPtr(pThis);
     Assert(pThis->u32Magic == RTSPINLOCK_MAGIC);
     NOREF(pTmp);
-#ifdef RT_STRICT
+#if defined(RT_STRICT) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     bool fIntsOn = ASMIntAreEnabled();
 #endif
 
     mutex_enter(&pThis->Mtx);
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     AssertMsg(fIntsOn == ASMIntAreEnabled(), ("fIntsOn=%RTbool\n", fIntsOn));
+#endif
 
     RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED(pThis);
 }
@@ -169,13 +182,15 @@ RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
     Assert(pThis->u32Magic == RTSPINLOCK_MAGIC);
     RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE(pThis);
     NOREF(pTmp);
-#ifdef RT_STRICT
+#if defined(RT_STRICT) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     bool fIntsOn = ASMIntAreEnabled();
 #endif
 
     mutex_exit(&pThis->Mtx);
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     AssertMsg(fIntsOn == ASMIntAreEnabled(), ("fIntsOn=%RTbool\n", fIntsOn));
+#endif
     RT_ASSERT_PREEMPT_CPUID();
 }
 
