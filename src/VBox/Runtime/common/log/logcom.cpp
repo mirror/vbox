@@ -48,7 +48,9 @@
 #include "internal/iprt.h"
 
 #include <iprt/asm.h>
-#include <iprt/asm-amd64-x86.h>
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) /** @todo consider fixing the config instead. */
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include <iprt/stdarg.h>
 #include <iprt/string.h>
 
@@ -113,6 +115,7 @@ static DECLCALLBACK(size_t) rtLogComOutput(void *pv, const char *pachChars, size
  */
 RTDECL(void) RTLogWriteCom(const char *pach, size_t cb)
 {
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     const uint8_t *pu8;
     for (pu8 = (const uint8_t *)pach; cb-- > 0; pu8++)
     {
@@ -134,6 +137,9 @@ RTDECL(void) RTLogWriteCom(const char *pach, size_t cb)
         /* write */
         ASMOutU8(IPRT_UART_BASE, *pu8);
     }
+#else
+    /* PORTME? */
+#endif
 }
 RT_EXPORT_SYMBOL(RTLogWriteCom);
 
