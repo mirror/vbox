@@ -26,6 +26,7 @@
 #include <VBox/sup.h>
 #include <VBox/err.h>
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/cpuset.h>
