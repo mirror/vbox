@@ -160,6 +160,7 @@ RuntimeWin32ASM_SOURCES = \
 #
 # NoCRT sources (minus math stuff).
 #
+if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
 RuntimeNoCrt_SOURCES = \
 	common/misc/setjmp.asm \
 	common/string/memchr.asm \
@@ -172,6 +173,7 @@ RuntimeNoCrt_SOURCES = \
 	common/string/strcpy.asm \
 	common/string/strcmp.asm \
 	common/string/strlen.asm
+endif
 
 
 #
@@ -398,13 +400,13 @@ RuntimeR3_SOURCES       = \
 #endif
 
 RuntimeR3_SOURCES.x86 += \
-	generic/RTMpGetDescription-generic-stub.cpp
+	generic/RTMpGetDescription-generic.cpp
 RuntimeR3_SOURCES.amd64 += \
-	generic/RTMpGetDescription-generic-stub.cpp
+	generic/RTMpGetDescription-generic.cpp
 RuntimeR3_SOURCES.sparc32 += \
-	generic/RTMpGetDescription-generic.cpp
+	generic/RTMpGetDescription-generic-stub.cpp
 RuntimeR3_SOURCES.sparc64 += \
-	generic/RTMpGetDescription-generic.cpp
+	generic/RTMpGetDescription-generic-stub.cpp
 
 ifdef IPRT_WITH_LZJB
  RuntimeR3_SOURCES += common/misc/lzjb.c
@@ -1126,6 +1128,10 @@ RuntimeR3NoCRTGCC_SOURCES  = \
 	common/misc/sanity-cpp.cpp \
 	common/misc/sanity-c.c \
 	\
+	$(RuntimeNoCrt_SOURCES)
+
+if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
+RuntimeR3NoCRTGCC_SOURCES += \
 	common/math/ceill.asm \
 	common/math/cosl.asm \
 	common/math/fabs.asm \
@@ -1151,8 +1157,6 @@ RuntimeR3NoCRTGCC_SOURCES  = \
 	common/math/truncf.asm \
 	common/math/truncl.asm \
 	\
-	$(RuntimeNoCrt_SOURCES) \
-	\
 	common/string/memchr_alias.c \
 	common/string/memcmp_alias.c \
 	common/string/memcpy_alias.c \
@@ -1161,6 +1165,7 @@ RuntimeR3NoCRTGCC_SOURCES  = \
 	common/string/strchr_alias.c \
 	common/string/strcmp_alias.c \
 	common/string/strlen_alias.c
+endif
 
 RuntimeR3NoCRTGCC_SOURCES.x86 = \
 	common/math/x86/fenv-x86.c \
