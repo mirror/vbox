@@ -40,8 +40,6 @@
 
 #include "internal/magics.h"
 
-#include <stdio.h>//debug
-
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
