@@ -27,6 +27,7 @@
 #include <iprt/time.h>
 #include <iprt/memobj.h>
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/string.h>
 #include <iprt/process.h>
 #include <iprt/assert.h>

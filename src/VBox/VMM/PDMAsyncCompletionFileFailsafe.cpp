@@ -15,12 +15,17 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PDM_ASYNC_COMPLETION
-#include <iprt/types.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <VBox/log.h>
 
 #include "PDMAsyncCompletionFileInternal.h"
+
 
 static int pdmacFileAioMgrFailsafeProcessEndpointTaskList(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
                                                           PPDMACTASKFILE pTasks)

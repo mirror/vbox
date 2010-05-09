@@ -153,10 +153,11 @@
 #include <VBox/log.h>
 #include <VBox/version.h>
 
-#include <iprt/alloc.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/crc32.h>
 #include <iprt/file.h>
+#include <iprt/mem.h>
 #include <iprt/param.h>
 #include <iprt/thread.h>
 #include <iprt/semaphore.h>

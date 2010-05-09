@@ -42,6 +42,7 @@
 
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/err.h>
 #include <iprt/assert.h>
 #if RT_CFG_SPINLOCK_GENERIC_DO_SLEEP

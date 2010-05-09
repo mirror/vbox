@@ -26,9 +26,9 @@
 #include "Builtins.h"
 #include "../../vl_vbox.h"
 #include "audio.h"
-#include <iprt/alloc.h>
 #ifdef VBOX
-#include <iprt/asm.h>
+# include <iprt/asm-math.h>
+# include <iprt/mem.h>
 #endif
 
 #define AUDIO_CAP "mixeng"

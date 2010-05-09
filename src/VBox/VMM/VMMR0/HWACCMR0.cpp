@@ -31,6 +31,7 @@
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/cpuset.h>
 #include <iprt/memobj.h>
 #include <iprt/param.h>

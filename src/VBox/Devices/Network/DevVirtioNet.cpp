@@ -21,6 +21,7 @@
 
 #include <VBox/pdmdev.h>
 #include <VBox/pdmnetifs.h>
+#include <iprt/asm.h>
 #include <iprt/semaphore.h>
 #ifdef IN_RING3
 # include <iprt/mem.h>

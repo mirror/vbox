@@ -28,9 +28,10 @@
 #include <VBox/param.h>
 #include <VBox/dbgf.h>
 
+#include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/alloc.h>
 #include <iprt/file.h>
+#include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
 #include <iprt/path.h>

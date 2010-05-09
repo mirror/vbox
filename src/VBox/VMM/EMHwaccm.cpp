@@ -61,6 +61,8 @@
 #include <VBox/disopcode.h>
 #include <VBox/dbgf.h>
 
+#include <iprt/asm.h>
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *

@@ -42,6 +42,7 @@
 #include <VBox/log.h>
 #include <VBox/tm.h>
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
 
 /*******************************************************************************

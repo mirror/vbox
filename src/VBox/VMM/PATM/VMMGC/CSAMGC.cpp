@@ -39,8 +39,9 @@
 #include <iprt/assert.h>
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
-#include <iprt/string.h>
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
+#include <iprt/string.h>
 
 /**
  * \#PF Handler callback for virtual access handler ranges. (CSAM self-modifying

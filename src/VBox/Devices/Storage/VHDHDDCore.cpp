@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VHD Disk image, Core Code.
  */
@@ -23,9 +24,9 @@
 
 #include <VBox/log.h>
 #include <VBox/version.h>
-#include <iprt/cdefs.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/alloc.h>
+#include <iprt/mem.h>
 #include <iprt/uuid.h>
 #include <iprt/file.h>
 #include <iprt/path.h>

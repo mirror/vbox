@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (C) 2007 Sun Microsystems, Inc.
+# Copyright (C) 2007-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -24,16 +24,13 @@
 # You may elect to license modified versions of this file under the
 # terms and conditions of either the GPL or the CDDL or both.
 #
-# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
-# Clara, CA 95054 USA or visit http://www.sun.com if you need
-# additional information or have any questions.
-#
 
 VBOX_VBOXNETFLT_SOURCES=" \
     ${PATH_ROOT}/include/iprt/alloc.h=>include/iprt/alloc.h \
     ${PATH_ROOT}/include/iprt/alloca.h=>include/iprt/alloca.h \
     ${PATH_ROOT}/include/iprt/asm.h=>include/iprt/asm.h \
     ${PATH_ROOT}/include/iprt/asm-amd64-x86.h=>include/iprt/asm-amd64-x86.h \
+    ${PATH_ROOT}/include/iprt/asm-math.h=>include/iprt/asm-math.h \
     ${PATH_ROOT}/include/iprt/assert.h=>include/iprt/assert.h \
     ${PATH_ROOT}/include/iprt/avl.h=>include/iprt/avl.h \
     ${PATH_ROOT}/include/iprt/cdefs.h=>include/iprt/cdefs.h \

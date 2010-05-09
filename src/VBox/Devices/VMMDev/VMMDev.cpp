@@ -31,6 +31,7 @@
 #include <VBox/err.h>
 #include <VBox/vm.h> /* for VM_IS_EMT */
 
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/buildconfig.h>
 #include <iprt/string.h>

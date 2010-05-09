@@ -20,12 +20,14 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/net.h>
+/** @todo r=bird: The inlined code below that drags in asm.h here. I doubt
+ *        speed is very important here, so move it into a .cpp file, please. */
 #include <iprt/asm.h>
 
 #ifndef RT_OS_WINDOWS
-#include <arpa/inet.h>
-#include <stdio.h>
-#endif /* RT_OS_WINDOWS */
+# include <arpa/inet.h>
+# include <stdio.h>
+#endif /* !RT_OS_WINDOWS */
 
 #define VBOXNET_IPV4ADDR_DEFAULT      0x0138A8C0  /* 192.168.56.1 */
 #define VBOXNET_IPV4MASK_DEFAULT      "255.255.255.0"
@@ -157,5 +159,5 @@ DECLINLINE(Bstr) getDefaultIPv4Address(Bstr bstrIfName)
     return Bstr(addr);
 }
 
-#endif  /* ___netif_h */
+#endif  /* !___netif_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

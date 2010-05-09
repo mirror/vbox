@@ -35,7 +35,7 @@
 
 #include <VBox/log.h>
 #include <iprt/assert.h>
-#include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/string.h>
 #include <VBox/param.h>
 #include <VBox/err.h>

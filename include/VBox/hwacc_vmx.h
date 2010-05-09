@@ -28,9 +28,8 @@
 
 #include <VBox/types.h>
 #include <VBox/err.h>
-#include <iprt/assert.h>
-#include <iprt/asm.h>
 #include <VBox/x86.h>
+#include <iprt/assert.h>
 
 /** @defgroup grp_vmx   vmx Types and Definitions
  * @ingroup grp_hwaccm

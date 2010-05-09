@@ -27,6 +27,7 @@
 #include <VBox/mm.h>
 
 #include <VBox/log.h>
+#include <iprt/asm-math.h>
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
 #include <iprt/string.h>

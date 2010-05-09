@@ -33,6 +33,8 @@
 #include "internal/iprt.h"
 
 #include <iprt/asm.h>
+#include <iprt/asm-math.h>
+#include <iprt/asm-amd64-x86.h>
 #include <VBox/sup.h>
 #include "internal/time.h"
 

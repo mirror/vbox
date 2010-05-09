@@ -39,6 +39,7 @@
 #include <VBox/version.h>
 #include <VBox/log.h>
 
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
 #include <iprt/crc32.h>
 #include <iprt/mp.h>

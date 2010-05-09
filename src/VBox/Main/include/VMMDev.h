@@ -19,6 +19,7 @@
 
 #include "VirtualBoxBase.h"
 #include <VBox/pdmdrv.h>
+#include <iprt/asm.h>
 
 class Console;
 
@@ -65,9 +66,9 @@ private:
     uint32_t mu32CredentialsFlags;
 
 #ifdef VBOX_WITH_HGCM
-    bool m_fHGCMActive;
+    bool volatile m_fHGCMActive;
 #endif /* VBOX_WITH_HGCM */
 };
 
-#endif // ____H_VMMDEV
+#endif // !____H_VMMDEV
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
