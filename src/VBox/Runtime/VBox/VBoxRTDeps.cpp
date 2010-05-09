@@ -35,13 +35,13 @@
 #include <iprt/buildconfig.h>
 #include <iprt/system.h>
 
-# include <libxml/xmlmodule.h>
-# include <libxml/globals.h>
-# include <openssl/md5.h>
-# include <openssl/rc4.h>
-# include <openssl/pem.h>
-# include <openssl/x509.h>
-# include <openssl/rsa.h>
+#include <libxml/xmlmodule.h>
+#include <libxml/globals.h>
+#include <openssl/md5.h>
+#include <openssl/rc4.h>
+#include <openssl/pem.h>
+#include <openssl/x509.h>
+#include <openssl/rsa.h>
 
 
 /*******************************************************************************
