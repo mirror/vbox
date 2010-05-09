@@ -2639,9 +2639,6 @@ DECLINLINE(bool) ASMMemIsZeroPage(void const *pvPage)
  *
  * @todo Fix name, it is a predicate function but it's not returning boolean!
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(void *) ASMMemIsAll8(void const *pv, size_t cb, uint8_t u8);
-#else
 DECLINLINE(void *) ASMMemIsAll8(void const *pv, size_t cb, uint8_t u8)
 {
 /** @todo rewrite this in inline assembly? */
@@ -2651,7 +2648,6 @@ DECLINLINE(void *) ASMMemIsAll8(void const *pv, size_t cb, uint8_t u8)
             return (void *)pb;
     return NULL;
 }
-#endif
 
 
 /**
@@ -2668,9 +2664,6 @@ DECLINLINE(void *) ASMMemIsAll8(void const *pv, size_t cb, uint8_t u8)
  *
  * @todo Fix name, it is a predicate function but it's not returning boolean!
  */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(uint32_t *) ASMMemIsAllU32(void const *pv, size_t cb, uint32_t u32);
-#else
 DECLINLINE(uint32_t *) ASMMemIsAllU32(void const *pv, size_t cb, uint32_t u32)
 {
 /** @todo rewrite this in inline assembly? */
@@ -2680,7 +2673,6 @@ DECLINLINE(uint32_t *) ASMMemIsAllU32(void const *pv, size_t cb, uint32_t u32)
             return (uint32_t *)pu32;
     return NULL;
 }
-#endif
 
 
 /**
