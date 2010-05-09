@@ -41,6 +41,7 @@
 
 #include "../SUPDrvInternal.h"
 #include <VBox/version.h>
+#include <iprt/asm.h>
 #include <iprt/initterm.h>
 #include <iprt/assert.h>
 #include <iprt/spinlock.h>
