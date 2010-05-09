@@ -33,6 +33,7 @@
 #include <VBox/vmm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>

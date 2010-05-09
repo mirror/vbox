@@ -28,7 +28,7 @@
 #include <VBox/log.h>
 #include <VBox/hwaccm.h>
 #include <iprt/assert.h>
-#include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 
 
 

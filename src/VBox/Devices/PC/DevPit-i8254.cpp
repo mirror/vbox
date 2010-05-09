@@ -48,7 +48,7 @@
 #include <VBox/log.h>
 #include <VBox/stam.h>
 #include <iprt/assert.h>
-#include <iprt/asm.h>
+#include <iprt/asm-math.h>
 
 #ifdef IN_RING3
 # include <iprt/alloc.h>

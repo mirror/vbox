@@ -32,11 +32,12 @@
 #include <iprt/time.h>
 #include "internal/iprt.h"
 
-#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/log.h>
 #ifndef IN_GUEST
+# include <iprt/asm.h>
+# include <iprt/asm-amd64-x86.h>
 # include <VBox/sup.h>
 # include <VBox/x86.h>
 #endif

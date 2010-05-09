@@ -44,6 +44,9 @@
 #include <iprt/log.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include <iprt/err.h>
 #include <iprt/string.h>
 #include "internal/thread.h"
@@ -328,7 +331,9 @@ RTDECL(int) RTThreadSleep(RTMSINTERVAL cMillies)
 
 RTDECL(bool) RTThreadYield(void)
 {
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     uint64_t u64TS = ASMReadTSC();
+#endif
 #ifdef RT_OS_DARWIN
     pthread_yield_np();
 #elif defined(RT_OS_SOLARIS)
@@ -336,9 +341,13 @@ RTDECL(bool) RTThreadYield(void)
 #else
     pthread_yield();
 #endif
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     u64TS = ASMReadTSC() - u64TS;
     bool fRc = u64TS > 1500;
     LogFlow(("RTThreadYield: returning %d (%llu ticks)\n", fRc, u64TS));
+#else
+    bool fRc = true; /* PORTME: Add heuristics for determining whether the cpus was yielded. */
+#endif
     return fRc;
 }
 

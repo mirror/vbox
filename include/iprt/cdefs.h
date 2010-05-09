@@ -1949,6 +1949,37 @@
 /** Applies NOREF() to the source position arguments. */
 #define RT_SRC_POS_NOREF() do { NOREF(pszFile); NOREF(iLine); NOREF(pszFunction); } while (0)
 
+
+/** @def RT_INLINE_ASM_EXTERNAL
+ * Defined as 1 if the compiler does not support inline assembly.
+ * The ASM* functions will then be implemented in external .asm files.
+ */
+#if defined(_MSC_VER) && defined(RT_ARCH_AMD64)
+# define RT_INLINE_ASM_EXTERNAL 1
+#else
+# define RT_INLINE_ASM_EXTERNAL 0
+#endif
+
+/** @def RT_INLINE_ASM_GNU_STYLE
+ * Defined as 1 if the compiler understands GNU style inline assembly.
+ */
+#if defined(_MSC_VER)
+# define RT_INLINE_ASM_GNU_STYLE 0
+#else
+# define RT_INLINE_ASM_GNU_STYLE 1
+#endif
+
+/** @def RT_INLINE_ASM_USES_INTRIN
+ * Defined as 1 if the compiler have and uses intrin.h. Otherwise it is 0. */
+#ifdef _MSC_VER
+# if _MSC_VER >= 1400
+#  define RT_INLINE_ASM_USES_INTRIN 1
+# endif
+#endif
+#ifndef RT_INLINE_ASM_USES_INTRIN
+# define RT_INLINE_ASM_USES_INTRIN 0
+#endif
+
 /** @} */
 
 
@@ -2099,7 +2130,7 @@
     inline static void *operator new (size_t); \
     inline static void operator delete (void *);
 
-#endif /* defined(__cplusplus) */
+#endif /* __cplusplus */
 
 /** @} */
 

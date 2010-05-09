@@ -28,6 +28,10 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/asm.h>
+#include <iprt/asm-math.h>
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/initterm.h>
@@ -62,7 +66,8 @@
     } while (0)
 
 
-#if !defined(PIC) || !defined(RT_ARCH_X86)
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+
 const char *getCacheAss(unsigned u)
 {
     if (u == 0)
@@ -429,8 +434,8 @@ void tstASMCpuId(void)
                   s.uEBX, s.uEBX);
      }
 }
-#endif /* !PIC || !X86 */
 
+#endif /* AMD64 || X86 */
 
 static void tstASMAtomicXchgU8(void)
 {
@@ -1177,13 +1182,27 @@ void tstASMBench(void)
 
     RTPrintf("tstInlineASM: Benchmarking:\n");
 
-#define BENCH(op, str)  \
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# define BENCH(op, str) \
+    do { \
         RTThreadYield(); \
         u64Elapsed = ASMReadTSC(); \
         for (i = cRounds; i > 0; i--) \
             op; \
         u64Elapsed = ASMReadTSC() - u64Elapsed; \
-        RTPrintf(" %-30s %3llu cycles\n", str, u64Elapsed / cRounds);
+        RTPrintf(" %-30s %3llu cycles\n", str, u64Elapsed / cRounds); \
+    } while (0)
+#else
+# define BENCH(op, str) \
+    do { \
+        RTThreadYield(); \
+        u64Elapsed = RTTimeNanoTS(); \
+        for (i = cRounds; i > 0; i--) \
+            op; \
+        u64Elapsed = RTTimeNanoTS() - u64Elapsed; \
+        RTPrintf(" %-30s %3llu ns\n", str, u64Elapsed / cRounds); \
+    } while (0)
+#endif
 
     BENCH(s_u32 = 0,                            "s_u32 = 0:");
     BENCH(ASMAtomicUoReadU8(&s_u8),             "ASMAtomicUoReadU8:");
@@ -1258,7 +1277,7 @@ int main(int argc, char *argv[])
     /*
      * Execute the tests.
      */
-#if !defined(PIC) || !defined(RT_ARCH_X86)
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     tstASMCpuId();
 #endif
     tstASMAtomicXchgU8();

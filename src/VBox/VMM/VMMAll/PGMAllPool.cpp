@@ -36,6 +36,7 @@
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/string.h>
 
 
@@ -373,7 +374,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                     Log4(("pgmPoolMonitorChainChanging pae: deref %016RX64 GCPhys %016RX64\n", uShw.pPTPae->a[iShw].u & X86_PTE_PAE_PG_MASK, GstPte.u & X86_PTE_PAE_PG_MASK));
                     pgmPoolTracDerefGCPhysHint(pPool, pPage,
                                                uShw.pPTPae->a[iShw].u & X86_PTE_PAE_PG_MASK,
-                                               GstPte.u & X86_PTE_PAE_PG_MASK, 
+                                               GstPte.u & X86_PTE_PAE_PG_MASK,
                                                iShw);
                     ASMAtomicWriteSize(&uShw.pPTPae->a[iShw].u, 0);
                 }

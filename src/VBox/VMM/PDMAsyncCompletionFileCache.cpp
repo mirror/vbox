@@ -24,7 +24,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PDM_ASYNC_COMPLETION
-#include <iprt/types.h>
+#include <iprt/asm.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
 #include <VBox/log.h>

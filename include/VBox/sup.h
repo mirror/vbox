@@ -30,7 +30,6 @@
 #include <VBox/types.h>
 #include <iprt/assert.h>
 #include <iprt/stdarg.h>
-#include <iprt/asm.h>
 
 RT_C_DECLS_BEGIN
 
@@ -246,6 +245,7 @@ extern DECLIMPORT(SUPGLOBALINFOPAGE)    g_SUPGlobalInfoPage;
  */
 SUPDECL(PSUPGLOBALINFOPAGE)             SUPGetGIP(void);
 
+#ifdef ___iprt_asm_amd64_x86_h
 /**
  * Gets the TSC frequency of the calling CPU.
  *
@@ -270,7 +270,7 @@ DECLINLINE(uint64_t) SUPGetCpuHzFromGIP(PSUPGLOBALINFOPAGE pGip)
 
     return pGip->aCPUs[iCpu].u64CpuHz;
 }
-
+#endif
 
 /**
  * Request for generic VMMR0Entry calls.

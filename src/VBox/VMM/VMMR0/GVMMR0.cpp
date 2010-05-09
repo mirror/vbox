@@ -42,7 +42,9 @@
 #include <VBox/vmm.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
-#include <iprt/alloc.h>
+#include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
+#include <iprt/mem.h>
 #include <iprt/semaphore.h>
 #include <iprt/time.h>
 #include <VBox/log.h>

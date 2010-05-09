@@ -137,6 +137,8 @@
 
 #include <VBox/log.h>
 #include <iprt/asm.h>
+#include <iprt/asm-math.h>
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>

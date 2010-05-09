@@ -24,10 +24,11 @@
 #include <VBox/pgm.h>
 
 #include <VBox/log.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/alloc.h>
 #include <iprt/buildconfig.h>
 #include <iprt/file.h>
+#include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
 #include <VBox/err.h>

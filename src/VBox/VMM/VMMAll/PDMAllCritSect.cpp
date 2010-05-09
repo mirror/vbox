@@ -30,6 +30,7 @@
 
 #include <VBox/log.h>
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
 #ifdef IN_RING3
 # include <iprt/lockvalidator.h>

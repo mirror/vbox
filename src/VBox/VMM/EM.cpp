@@ -63,6 +63,7 @@
 #include <VBox/disopcode.h>
 #include <VBox/dbgf.h>
 
+#include <iprt/asm.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
 

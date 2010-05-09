@@ -156,6 +156,7 @@
 #include <VBox/log.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
+#include <iprt/asm.h>
 #include <iprt/avl.h>
 #include <iprt/mem.h>
 #include <iprt/memobj.h>
@@ -3828,7 +3829,7 @@ GMMR0DECL(int) GMMR0SharedModuleCheckRange(PVM pVM, VMCPUID idCpu, PGMMREGISTERS
                         rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
                         goto end;
                     }
-                    
+
                     /* Calculate the virtual address of the shared page. */
                     pChunk = gmmR0GetChunk(pGMM, pGlobalRegion->paHCPhysPageID[i] >> GMM_CHUNKID_SHIFT);
                     Assert(pChunk); /* can't fail as gmmR0GetPage succeeded. */
@@ -3948,7 +3949,7 @@ GMMR0DECL(int) GMMR0ResetSharedModules(PVM pVM, VMCPUID idCpu)
         rc = VERR_INTERNAL_ERROR_5;
 
     RTSemFastMutexRelease(pGMM->Mtx);
-    return rc;      
+    return rc;
 #else
     return VERR_NOT_IMPLEMENTED;
 #endif

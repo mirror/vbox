@@ -89,6 +89,7 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/asm.h>
+#include <iprt/asm-math.h>
 #ifdef IN_RING3
 # include <iprt/alloca.h>
 # include <iprt/mem.h>

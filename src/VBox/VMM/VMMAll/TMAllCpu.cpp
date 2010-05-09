@@ -21,14 +21,15 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_TM
 #include <VBox/tm.h>
+#include <iprt/asm-amd64-x86.h> /* for SUPGetCpuHzFromGIP */
 #include "../TMInternal.h"
 #include <VBox/vm.h>
 #include <VBox/sup.h>
 
 #include <VBox/param.h>
 #include <VBox/err.h>
+#include <iprt/asm-math.h>
 #include <iprt/assert.h>
-#include <iprt/asm.h>
 #include <VBox/log.h>
 
 

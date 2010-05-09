@@ -32,7 +32,7 @@
 #include <VBox/err.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
-#include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #include <VBox/log.h>
 #ifdef IN_RING3
 # include <iprt/thread.h>
@@ -434,7 +434,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     pVM->pgm.s.aHandyPages[iHandyPage].HCPhysGCPhys = GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK;
 
     const void *pvSharedPage = NULL;
-    
+
     if (PGM_PAGE_IS_SHARED(pPage))
     {
         pVM->pgm.s.aHandyPages[iHandyPage].idSharedPage = PGM_PAGE_GET_PAGEID(pPage);
@@ -445,7 +445,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
              GCPhys, pVM->pgm.s.aHandyPages[iHandyPage].idPage, HCPhys));
         STAM_COUNTER_INC(&pVM->pgm.s.CTX_MID_Z(Stat,PageReplaceShared));
         pVM->pgm.s.cSharedPages--;
-    
+
         /* Grab the address of the page so we can make a copy later on. */
         rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pPage, GCPhys, &pvSharedPage);
         AssertRC(rc);

@@ -26,6 +26,7 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 
+#include <iprt/asm.h>
 #include <iprt/err.h>
 #include <iprt/rand.h>
 #include <iprt/socket.h>

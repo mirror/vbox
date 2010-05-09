@@ -169,7 +169,11 @@
 /** @def RT_ASSERT_INTS_ON
  * Asserts that interrupts are disabled when RT_MORE_STRICT is defined.   */
 #ifdef RT_MORE_STRICT
-# define RT_ASSERT_INTS_ON()            Assert(ASMIntAreEnabled())
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  define RT_ASSERT_INTS_ON()           Assert(ASMIntAreEnabled())
+# else /* PORTME: Add architecture/platform specific test. */
+#  define RT_ASSERT_INTS_ON()           Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+# endif
 #else
 # define RT_ASSERT_INTS_ON()            do { } while (0)
 #endif

@@ -1348,6 +1348,7 @@ void dump_exec_info(FILE *f,
 /* host CPU ticks (if available) */
 
 #ifdef VBOX
+# include <iprt/asm-amd64-x86.h>
 
 DECLINLINE(int64_t) cpu_get_real_ticks(void)
 {

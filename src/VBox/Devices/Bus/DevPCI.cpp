@@ -48,6 +48,7 @@
 #define PCI_INCLUDE_PRIVATE
 #include <VBox/pci.h>
 #include <VBox/pdmdev.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
 

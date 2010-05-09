@@ -37,46 +37,40 @@
 
 /* Solaris 10 header ugliness */
 #ifdef u
-#undef u
+# undef u
 #endif
 
-#ifdef _MSC_VER
-# if _MSC_VER >= 1400
-#  define RT_INLINE_ASM_USES_INTRIN 1
-#  include <intrin.h>
-   /* Emit the intrinsics at all optimization levels. */
-#  pragma intrinsic(_ReadWriteBarrier)
-#  pragma intrinsic(__cpuid)
-#  pragma intrinsic(__stosd)
-#  pragma intrinsic(__stosw)
-#  pragma intrinsic(__stosb)
-#  pragma intrinsic(_BitScanForward)
-#  pragma intrinsic(_BitScanReverse)
-#  pragma intrinsic(_bittest)
-#  pragma intrinsic(_bittestandset)
-#  pragma intrinsic(_bittestandreset)
-#  pragma intrinsic(_bittestandcomplement)
-#  pragma intrinsic(_byteswap_ushort)
-#  pragma intrinsic(_byteswap_ulong)
-#  pragma intrinsic(_interlockedbittestandset)
-#  pragma intrinsic(_interlockedbittestandreset)
-#  pragma intrinsic(_InterlockedAnd)
-#  pragma intrinsic(_InterlockedOr)
-#  pragma intrinsic(_InterlockedIncrement)
-#  pragma intrinsic(_InterlockedDecrement)
-#  pragma intrinsic(_InterlockedExchange)
-#  pragma intrinsic(_InterlockedExchangeAdd)
-#  pragma intrinsic(_InterlockedCompareExchange)
-#  pragma intrinsic(_InterlockedCompareExchange64)
-#  ifdef RT_ARCH_AMD64
-#   pragma intrinsic(__stosq)
-#   pragma intrinsic(_byteswap_uint64)
-#   pragma intrinsic(_InterlockedExchange64)
-#  endif
+#if defined(_MSC_VER) && RT_INLINE_ASM_USES_INTRIN
+# include <intrin.h>
+  /* Emit the intrinsics at all optimization levels. */
+# pragma intrinsic(_ReadWriteBarrier)
+# pragma intrinsic(__cpuid)
+# pragma intrinsic(__stosd)
+# pragma intrinsic(__stosw)
+# pragma intrinsic(__stosb)
+# pragma intrinsic(_BitScanForward)
+# pragma intrinsic(_BitScanReverse)
+# pragma intrinsic(_bittest)
+# pragma intrinsic(_bittestandset)
+# pragma intrinsic(_bittestandreset)
+# pragma intrinsic(_bittestandcomplement)
+# pragma intrinsic(_byteswap_ushort)
+# pragma intrinsic(_byteswap_ulong)
+# pragma intrinsic(_interlockedbittestandset)
+# pragma intrinsic(_interlockedbittestandreset)
+# pragma intrinsic(_InterlockedAnd)
+# pragma intrinsic(_InterlockedOr)
+# pragma intrinsic(_InterlockedIncrement)
+# pragma intrinsic(_InterlockedDecrement)
+# pragma intrinsic(_InterlockedExchange)
+# pragma intrinsic(_InterlockedExchangeAdd)
+# pragma intrinsic(_InterlockedCompareExchange)
+# pragma intrinsic(_InterlockedCompareExchange64)
+# ifdef RT_ARCH_AMD64
+#  pragma intrinsic(__stosq)
+#  pragma intrinsic(_byteswap_uint64)
+#  pragma intrinsic(_InterlockedExchange64)
 # endif
-#endif
-#ifndef RT_INLINE_ASM_USES_INTRIN
-# define RT_INLINE_ASM_USES_INTRIN 0
 #endif
 
 
@@ -119,6 +113,7 @@
  * @{
  */
 
+
 /** @def RT_INLINE_ASM_GCC_4_3_X_X86
  * Used to work around some 4.3.x register allocation issues in this version of
  * the compiler. So far this workaround is still required for 4.4 and 4.5. */
@@ -143,28 +138,6 @@
      && defined(RT_ARCH_X86) \
      && (   RT_INLINE_ASM_GCC_4_3_X_X86 \
          || defined(RT_OS_DARWIN)) )
-#endif
-
-/** @def RT_INLINE_ASM_EXTERNAL
- * Defined as 1 if the compiler does not support inline assembly.
- * The ASM* functions will then be implemented in an external .asm file.
- *
- * @remark  At the present time it's unconfirmed whether or not Microsoft skipped
- *          inline assembly in their AMD64 compiler.
- */
-#if defined(_MSC_VER) && defined(RT_ARCH_AMD64)
-# define RT_INLINE_ASM_EXTERNAL 1
-#else
-# define RT_INLINE_ASM_EXTERNAL 0
-#endif
-
-/** @def RT_INLINE_ASM_GNU_STYLE
- * Defined as 1 if the compiler understands GNU style inline assembly.
- */
-#if defined(_MSC_VER)
-# define RT_INLINE_ASM_GNU_STYLE 0
-#else
-# define RT_INLINE_ASM_GNU_STYLE 1
 #endif
 
 
@@ -2801,6 +2774,34 @@ DECLINLINE(void) ASMProbeReadBuffer(const void *pvBuf, size_t cbBuf)
 #endif
 
 
+/**
+ * Spinloop hint for platforms that have these, empty function on the other
+ * platforms.
+ *
+ * x86 & AMD64: The PAUSE variant of NOP for helping hyperthreaded CPUs detecing
+ * spin locks.
+ */
+#if RT_INLINE_ASM_EXTERNAL && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+DECLASM(void) ASMNopPause(void);
+#else
+DECLINLINE(void) ASMNopPause(void)
+{
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__(".byte 0xf3,0x90\n\t");
+#  else
+    __asm {
+        _emit 0f3h
+        _emit 090h
+    }
+#  endif
+# else
+    /* dummy */
+# endif
+}
+#endif
+
+
 
 /** @defgroup grp_inline_bits   Bit Operations
  * @{
@@ -3983,14 +3984,12 @@ DECLINLINE(uint64_t) ASMByteSwapU64(uint64_t u64)
 
 /** @} */
 
-/*
- * Include the architecture specific header.
- */
-/** @todo drop this bit and require the asm-x86.h to be included explicitly
- *        instead... */
+#if 0 /* fallback if stuff does not work right. */
 # if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 #  include <iprt/asm-amd64-x86.h>
 # endif
+# include <iprt/asm-math.h>
+#endif
 
 #endif
 

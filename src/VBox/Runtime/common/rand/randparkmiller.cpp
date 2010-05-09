@@ -30,7 +30,7 @@
 #include <iprt/rand.h>
 #include "internal/iprt.h"
 
-#include <iprt/asm.h>
+#include <iprt/asm-math.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/err.h>

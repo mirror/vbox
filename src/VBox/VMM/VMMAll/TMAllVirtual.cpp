@@ -35,6 +35,7 @@
 #include <iprt/time.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/asm-math.h>
 
 
 

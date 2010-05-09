@@ -29,7 +29,7 @@
 *******************************************************************************/
 #include <VBox/log.h>
 #include "internal/iprt.h"
-#include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/string.h>
 #ifdef IN_GUEST_R3
 # include <VBox/VBoxGuestLib.h>

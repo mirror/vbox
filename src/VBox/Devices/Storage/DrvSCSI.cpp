@@ -24,6 +24,7 @@
 #include <VBox/pdmifs.h>
 #include <VBox/pdmthread.h>
 #include <VBox/vscsi.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/req.h>

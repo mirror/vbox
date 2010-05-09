@@ -33,6 +33,7 @@
 #include <VBox/tm.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #ifdef IN_RING3
 #include <iprt/thread.h>
 #endif

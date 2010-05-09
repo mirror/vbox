@@ -33,9 +33,12 @@
 #ifndef PAGE_SHIFT
 # include <iprt/param.h>
 #endif
-#include <iprt/alloc.h>
+#include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
+#include <iprt/asm-math.h>
 #include <iprt/cpuset.h>
 #include <iprt/handletable.h>
+#include <iprt/mem.h>
 #include <iprt/mp.h>
 #include <iprt/power.h>
 #include <iprt/process.h>

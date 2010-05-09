@@ -28,6 +28,7 @@
 #include <VBox/err.h>
 #include <VBox/log.h>
 
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 
 

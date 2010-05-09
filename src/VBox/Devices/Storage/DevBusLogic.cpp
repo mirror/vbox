@@ -25,6 +25,7 @@
 #include <VBox/pdmdev.h>
 #include <VBox/pdmifs.h>
 #include <VBox/scsi.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/log.h>

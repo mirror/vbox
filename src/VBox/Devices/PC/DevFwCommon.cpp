@@ -25,6 +25,7 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/buildconfig.h>
 #include <iprt/file.h>
