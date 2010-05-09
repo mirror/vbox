@@ -718,8 +718,6 @@ def infoCmd(ctx,args):
 
     print
     print colCat(ctx,"  I/O subsystem info:")
-    print "   I/O manager [ioMgr]: %s" %(asEnumElem(ctx, "IoMgrType", mach.ioMgr))
-    print "   I/O backend [ioBackend]: %s" %(asEnumElem(ctx, "IoBackendType", mach.ioBackend))
     print "   Cache enabled [ioCacheEnabled]: %s" %(asState(mach.ioCacheEnabled))
     print "   Cache size [ioCacheSize]: %dM" %(mach.ioCacheSize)
     print "   Bandwidth limit [ioBandwidthMax]: %dM/s" %(mach.ioBandwidthMax)
