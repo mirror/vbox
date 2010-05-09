@@ -40,6 +40,14 @@
 #include <strings.h>
 
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+#if 0
+# define RT_USE_MMAP_PAGE
+#endif
+
+
 /**
  * Allocates memory which may contain code.
  *
@@ -101,7 +109,15 @@ RTDECL(void)    RTMemExecFree(void *pv) RT_NO_THROW
  */
 RTDECL(void *) RTMemPageAlloc(size_t cb) RT_NO_THROW
 {
+#ifdef RT_USE_MMAP_PAGE
+    size_t  cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
+    void   *pv = mmap(NULL, cbAligned, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    AssertMsgReturn(pv != MAP_FAILED, ("errno=%d cb=%#zx\n", errno, cb), NULL);
+    return pv;
+
+#else
     return valloc(RT_ALIGN_Z(cb, PAGE_SIZE));
+#endif
 }
 
 
@@ -114,11 +130,19 @@ RTDECL(void *) RTMemPageAlloc(size_t cb) RT_NO_THROW
  */
 RTDECL(void *) RTMemPageAllocZ(size_t cb) RT_NO_THROW
 {
+#ifdef RT_USE_MMAP_PAGE
+    size_t  cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
+    void   *pv = mmap(NULL, cbAligned, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    AssertMsgReturn(pv != MAP_FAILED, ("errno=%d cb=%#zx\n", errno, cb), NULL);
+    return pv;
+
+#else
     cb = RT_ALIGN_Z(cb, PAGE_SIZE);
     void *pv = valloc(cb);
     if (pv)
         bzero(pv, RT_ALIGN_Z(cb, PAGE_SIZE));
     return pv;
+#endif
 }
 
 
@@ -131,7 +155,15 @@ RTDECL(void *) RTMemPageAllocZ(size_t cb) RT_NO_THROW
 RTDECL(void) RTMemPageFree(void *pv, size_t cb) RT_NO_THROW
 {
     if (pv)
+    {
+#ifdef RT_USE_MMAP_PAGE
+        size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
+        int rc = munmap(pv, cbAligned);
+        AssertMsg(!rc, ("munmap(%p, %#zx) -> %d errno=%d\n", pv, cbAligned, rc, errno)); NOREF(rc);
+#else
         free(pv);
+#endif
+    }
 }
 
 
