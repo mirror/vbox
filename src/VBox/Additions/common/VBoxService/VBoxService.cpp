@@ -310,23 +310,25 @@ int VBoxServiceStartServices(unsigned iMain)
             if (RT_FAILURE(rc))
             {
                 /*
-                 * If a service uses some sort of HGCM host service
-                 * which is not available on the host (maybe because the host
-                 * is using an older VBox version), just disable that service
-                 * here.
+                 * HACK ALERT! If a service uses some sort of HGCM host service
+                 * which is not available on the host (maybe because the host is
+                 * using an older VBox version), just disable that service here.
                  */
+                /** @todo r=bird: This a generic thing that isn't necessarily restricted to
+                 *        HGCM.  Also, the service knows best whether a host service is required
+                 *        or optional.  So, there service should either have a way of signalling
+                 *        non-fatal init failure, or simply quietly pretend to work.  (Low
+                 *        prio.) */
                 if (rc == VERR_HGCM_SERVICE_NOT_FOUND)
-                {
-                    g_aServices[j].fEnabled = false;
-                    VBoxServiceVerbose(0, "Service '%s' was disabled (because %Rrc)\n", 
+                    VBoxServiceVerbose(0, "Service '%s' failed to find a HGCM service and was disabled\n",
                                        g_aServices[j].pDesc->pszName, rc);
-                }
                 else
                 {
                     VBoxServiceError("Service '%s' failed to initialize: %Rrc\n",
                                      g_aServices[j].pDesc->pszName, rc);
                     return rc;
                 }
+                g_aServices[j].fEnabled = false;
             }
         }
 
