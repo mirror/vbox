@@ -110,7 +110,7 @@
 #  define RT_ARCH_AMD64
 # elif defined(__i386__) || defined(_M_IX86) || defined(__X86__)
 #  define RT_ARCH_X86
-# elif defined(__sparc64__)
+# elif defined(__sparcv9)
 #  define RT_ARCH_SPARC64
 # elif defined(__sparc__)
 #  define RT_ARCH_SPARC
@@ -1670,7 +1670,7 @@
 #   define RT_BREAKPOINT()      __asm__ __volatile__("int3; jmp 1f; 1:\n\t")
 #  endif
 # elif defined(RT_ARCH_SPARC64)
-#  define RT_BREAKPOINT()       __asm__ __volatile__("illtrap $0\n\t")  /** @todo Sparc64: this is just a wild guess. */
+#  define RT_BREAKPOINT()       __asm__ __volatile__("illtrap 0\n\t")   /** @todo Sparc64: this is just a wild guess. */
 # elif defined(RT_ARCH_SPARC)
 #  define RT_BREAKPOINT()       __asm__ __volatile__("unimp 0\n\t")     /** @todo Sparc: this is just a wild guess (same as Sparc64, just different name). */
 # endif

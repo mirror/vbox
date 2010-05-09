@@ -2771,7 +2771,7 @@ DECLINLINE(void) ASMProbeReadBuffer(const void *pvBuf, size_t cbBuf)
 #   define ASMBreakpoint()      do { __asm__ __volatile__("int3; jmp 1f; 1:"); } while (0)
 #  endif
 # elif defined(RT_ARCH_SPARC64)
-#  define ASMBreakpoint()       do { __asm__ __volatile__("illtrap $0\n\t") } while (0) /** @todo Sparc64: this is just a wild guess. */
+#  define ASMBreakpoint()       do { __asm__ __volatile__("illtrap 0\n\t") } while (0)  /** @todo Sparc64: this is just a wild guess. */
 # elif defined(RT_ARCH_SPARC)
 #  define ASMBreakpoint()       do { __asm__ __volatile__("unimp 0\n\t"); } while (0)   /** @todo Sparc: this is just a wild guess (same as Sparc64, just different name). */
 # else
