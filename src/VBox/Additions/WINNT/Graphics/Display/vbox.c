@@ -21,6 +21,7 @@
 #include <VBox/VBoxGuest.h>
 #include <VBox/err.h>
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 
 /*
  * There is a hardware ring buffer in the VBox VMMDev PCI memory space.
