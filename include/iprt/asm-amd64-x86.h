@@ -27,6 +27,9 @@
 #define ___iprt_asm_amd64_x86_h
 
 #include <iprt/types.h>
+#if !defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86)
+# error "Not on AMD64 or x86"
+#endif
 
 #if defined(_MSC_VER) && RT_INLINE_ASM_USES_INTRIN
 # include <intrin.h>
