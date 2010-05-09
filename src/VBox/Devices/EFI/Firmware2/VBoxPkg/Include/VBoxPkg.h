@@ -38,6 +38,7 @@
 # pragma warning ( disable : 4244)
 #endif
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #ifdef _MSC_VER
 # pragma warning ( default : 4244)
 # pragma warning ( default : 4245)
