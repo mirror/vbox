@@ -49,7 +49,8 @@ ifdef IPRT_WITH_KSTUFF
 endif
 
 # OpenSSL for VRDP.
-if defined(VBOX_WITH_VRDP) && !defined(VBOX_ONLY_SDK) \
+#if defined(VBOX_WITH_VRDP) && !defined(VBOX_ONLY_SDK) - this isn't right, thus:
+if !defined(VBOX_ONLY_SDK) \
  && "$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)"
  include $(PATH_SUB_CURRENT)/openssl-0.9.8k/Makefile.kmk
 endif
@@ -61,13 +62,16 @@ endif
 
 # Main related things - XML and XSLT, XPCOM.
 if defined(VBOX_WITH_MAIN)
-
  if defined(VBOX_WITH_XPCOM) && !defined(VBOX_ONLY_DOCS)
   include $(PATH_SUB_CURRENT)/xpcom18a4/Makefile.kmk
  endif
+endif                                   # The above comment is wrong now, VBoxRT requires libxml.
+
  ifeq ($(SDK_VBOX_LIBXML2_INCS),$(PATH_ROOT)/src/libs/libxml2-2.6.30/include)
   include $(PATH_SUB_CURRENT)/libxml2-2.6.30/Makefile.kmk
  endif
+
+if defined(VBOX_WITH_MAIN)
  ifeq ($(SDK_VBOX_LIBXSLT_INCS),$(PATH_ROOT)/src/libs/libxslt-1.1.22)
   include $(PATH_SUB_CURRENT)/libxslt-1.1.22/Makefile.kmk
  endif
