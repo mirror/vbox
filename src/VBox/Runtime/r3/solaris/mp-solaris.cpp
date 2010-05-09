@@ -186,6 +186,15 @@ RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
 }
 
 
+#if defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
+RTDECL(RTCPUID) RTMpCpuId(void)
+{
+    /** @todo implement RTMpCpuId on solaris/r3! */
+    return NIL_RTCPUID;
+}
+#endif
+
+
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
     return idCpu < RTCPUSET_MAX_CPUS ? (int)idCpu : -1;
