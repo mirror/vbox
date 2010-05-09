@@ -270,7 +270,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
                 iErr = errno == EAGAIN ? ETXTBSY : 0;
         }
 #endif /* 0 && RT_OS_LINUX */
-#ifdef DEBUG_bird
+#if defined(DEBUG_bird) && !defined(RT_OS_SOLARIS)
         if (iErr == 0)
         {
             /* This emulation is incomplete but useful. */

@@ -1954,7 +1954,8 @@
  * Defined as 1 if the compiler does not support inline assembly.
  * The ASM* functions will then be implemented in external .asm files.
  */
-#if defined(_MSC_VER) && defined(RT_ARCH_AMD64)
+#if (defined(_MSC_VER) && defined(RT_ARCH_AMD64)) \
+ || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
 # define RT_INLINE_ASM_EXTERNAL 1
 #else
 # define RT_INLINE_ASM_EXTERNAL 0
