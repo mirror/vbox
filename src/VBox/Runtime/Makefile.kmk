@@ -404,9 +404,11 @@ RuntimeR3_SOURCES.x86 += \
 RuntimeR3_SOURCES.amd64 += \
 	generic/RTMpGetDescription-generic.cpp
 RuntimeR3_SOURCES.sparc32 += \
-	generic/RTMpGetDescription-generic-stub.cpp
+	generic/RTMpGetDescription-generic-stub.cpp \
+	common/asm/asm-fake.cpp
 RuntimeR3_SOURCES.sparc64 += \
-	generic/RTMpGetDescription-generic-stub.cpp
+	generic/RTMpGetDescription-generic-stub.cpp \
+	common/asm/asm-fake.cpp
 
 ifdef IPRT_WITH_LZJB
  RuntimeR3_SOURCES += common/misc/lzjb.c
@@ -1129,6 +1131,9 @@ endif # linux
 ## @todo the *_alias.c stuff is busted, remove and use RT_WITH_NOCRT_ALIASES instead.
 RuntimeR3NoCRTGCC_TEMPLATE = VBOXNOCRTGCC
 RuntimeR3NoCRTGCC_LIBSUFF = $(VBOX_SUFF_LIB)
+ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
+ RuntimeR3NoCRTGCC_DEFS  += RT_NO_GIP
+endif
 RuntimeR3NoCRTGCC_INCS  = include
 RuntimeR3NoCRTGCC_SOURCES  = \
 	common/misc/sanity-cpp.cpp \
@@ -1203,6 +1208,9 @@ RuntimeR3NoCRTGCC_SOURCES.x86 = \
 #
 RuntimeR0_TEMPLATE      = VBoxR0
 RuntimeR0_DEFS          = IN_RT_R0 RT_WITH_VBOX
+ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
+ RuntimeR0_DEFS        += RT_NO_GIP
+endif
 RuntimeR0_INCS          = include
 RuntimeR0_SOURCES       = \
 	common/log/logellipsis.cpp \
