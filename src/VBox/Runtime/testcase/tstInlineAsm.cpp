@@ -1037,6 +1037,7 @@ void tstASMMath(void)
     uint32_t u32 = ASMDivU64ByU32RetU32(UINT64_C(0x0800000000000000), UINT32_C(0x10000000));
     CHECKVAL(u32, UINT32_C(0x80000000), "%#010RX32");
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     u64 = ASMMultU64ByU32DivByU32(UINT64_C(0x0000000000000001), UINT32_C(0x00000001), UINT32_C(0x00000001));
     CHECKVAL(u64, UINT64_C(0x0000000000000001), "%#018RX64");
     u64 = ASMMultU64ByU32DivByU32(UINT64_C(0x0000000100000000), UINT32_C(0x80000000), UINT32_C(0x00000002));
@@ -1052,7 +1053,7 @@ void tstASMMath(void)
     u64 = ASMMultU64ByU32DivByU32(UINT64_C(0x3415934810359583), UINT32_C(0xf8694045), UINT32_C(0x58734981));
     CHECKVAL(u64, UINT64_C(0x924719355cd35a27), "%#018RX64");
 
-#if 0 /* bird: question is whether this should trap or not:
+# if 0 /* bird: question is whether this should trap or not:
        *
        * frank: Of course it must trap:
        *
@@ -1082,7 +1083,8 @@ void tstASMMath(void)
        */
     u64 = ASMMultU64ByU32DivByU32(UINT64_C(0xfffffff8c65d6731), UINT32_C(0x77d7daf8), UINT32_C(0x3b9aca00));
     CHECKVAL(u64, UINT64_C(0x02b8f9a2aa74e3dc), "%#018RX64");
-#endif
+# endif
+#endif /* AMD64 || X86 */
 
     u32 = ASMModU64ByU32RetU32(UINT64_C(0x0ffffff8c65d6731), UINT32_C(0x77d7daf8));
     CHECKVAL(u32, UINT32_C(0x3B642451), "%#010RX32");

@@ -75,7 +75,6 @@ PROGRAMS += \
 	tstRTMemEf \
 	tstRTMemCache \
 	tstRTMemPool \
-	tstRTR0MemUserKernelDriver \
 	tstMove \
 	tstMp-1 \
 	tstOnce \
@@ -86,8 +85,6 @@ PROGRAMS += \
 	tstPrfRT \
 	tstRand \
 	tstRTFsQueries \
-	tstRTR0SemMutexDriver \
-	tstR0ThreadPreemptionDriver \
 	tstSemEvent \
 	tstSemMutex \
 	tstSemPingPong \
@@ -113,7 +110,6 @@ PROGRAMS += \
 	tstTimer \
 	tstTimerLR \
 	tstRTTimeSpec \
-	tstTSC \
 	tstUtf8 \
 	tstRTUuid
 # tstSems
@@ -136,12 +132,16 @@ ifdef VBOX_WITH_LIBCURL
  PROGRAMS += \
 	tstRTS3
 endif
-ifn1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
+if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  PROGRAMS += \
  	tstLdr-2 \
  	tstLdr-3 \
  	tstLdr-4 \
- 	tstNoCrt-1
+ 	tstNoCrt-1 \
+	tstRTR0MemUserKernelDriver \
+	tstRTR0SemMutexDriver \
+	tstR0ThreadPreemptionDriver \
+	tstTSC
  SYSMODS += \
  	tstLdrObjR0 \
  	tstRTR0MemUserKernel \
