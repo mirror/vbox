@@ -36,7 +36,9 @@ else  # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS && !VBOX
  include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
  include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
- include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
+ if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
+  include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
+ endif
  ifneq ($(wildcard $(PATH_SUB_CURRENT)/apps),)
   include $(PATH_SUB_CURRENT)/apps/Makefile.kmk
  endif

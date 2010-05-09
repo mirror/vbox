@@ -2764,10 +2764,18 @@ DECLINLINE(void) ASMProbeReadBuffer(const void *pvBuf, size_t cbBuf)
  * @internal
  */
 #if RT_INLINE_ASM_GNU_STYLE
-# ifndef __L4ENV__
-#  define ASMBreakpoint()       do { __asm__ __volatile__("int3\n\tnop"); } while (0)
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  ifndef __L4ENV__
+#   define ASMBreakpoint()      do { __asm__ __volatile__("int3\n\tnop"); } while (0)
+#  else
+#   define ASMBreakpoint()      do { __asm__ __volatile__("int3; jmp 1f; 1:"); } while (0)
+#  endif
+# elif defined(RT_ARCH_SPARC64)
+#  define ASMBreakpoint()       do { __asm__ __volatile__("illtrap $0\n\t") } while (0) /** @todo Sparc64: this is just a wild guess. */
+# elif defined(RT_ARCH_SPARC)
+#  define ASMBreakpoint()       do { __asm__ __volatile__("unimp 0\n\t"); } while (0)   /** @todo Sparc: this is just a wild guess (same as Sparc64, just different name). */
 # else
-#  define ASMBreakpoint()       do { __asm__ __volatile__("int3; jmp 1f; 1:"); } while (0)
+#  error "PORTME"
 # endif
 #else
 # define ASMBreakpoint()        __debugbreak()
@@ -3266,7 +3274,7 @@ DECLINLINE(bool) ASMAtomicBitTestAndClear(volatile void *pvBitmap, int32_t iBit)
  *          traps accessing the last bits in the bitmap.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLINLINE(bool) ASMBitTestAndToggle(volatile void *pvBitmap, int32_t iBit);
+DECLASM(bool) ASMBitTestAndToggle(volatile void *pvBitmap, int32_t iBit);
 #else
 DECLINLINE(bool) ASMBitTestAndToggle(volatile void *pvBitmap, int32_t iBit)
 {
@@ -3802,6 +3810,9 @@ DECLINLINE(int) ASMBitNextSet(const volatile void *pvBitmap, uint32_t cBits, uin
  * @param   u32     Integer to search for set bits.
  * @remark  Similar to ffs() in BSD.
  */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(unsigned) ASMBitFirstSetU32(uint32_t u32);
+#else
 DECLINLINE(unsigned) ASMBitFirstSetU32(uint32_t u32)
 {
 # if RT_INLINE_ASM_USES_INTRIN
@@ -3837,6 +3848,7 @@ DECLINLINE(unsigned) ASMBitFirstSetU32(uint32_t u32)
 # endif
     return iBit;
 }
+#endif
 
 
 /**
@@ -3863,6 +3875,9 @@ DECLINLINE(unsigned) ASMBitFirstSetS32(int32_t i32)
  * @param   u32     Integer to search for set bits.
  * @remark  Similar to fls() in BSD.
  */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(unsigned) ASMBitLastSetU32(uint32_t u32);
+#else
 DECLINLINE(unsigned) ASMBitLastSetU32(uint32_t u32)
 {
 # if RT_INLINE_ASM_USES_INTRIN
@@ -3898,6 +3913,7 @@ DECLINLINE(unsigned) ASMBitLastSetU32(uint32_t u32)
 # endif
     return iBit;
 }
+#endif
 
 
 /**
@@ -3920,22 +3936,27 @@ DECLINLINE(unsigned) ASMBitLastSetS32(int32_t i32)
  * @returns Revert
  * @param   u16     16-bit integer value.
  */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(uint16_t) ASMByteSwapU16(uint16_t u16);
+#else
 DECLINLINE(uint16_t) ASMByteSwapU16(uint16_t u16)
 {
-#if RT_INLINE_ASM_USES_INTRIN
+# if RT_INLINE_ASM_USES_INTRIN
     u16 = _byteswap_ushort(u16);
-#elif RT_INLINE_ASM_GNU_STYLE
+# elif RT_INLINE_ASM_GNU_STYLE
     __asm__ ("rorw $8, %0" : "=r" (u16) : "0" (u16));
-#else
+# else
     _asm
     {
         mov     ax, [u16]
         ror     ax, 8
         mov     [u16], ax
     }
-#endif
+# endif
     return u16;
 }
+#endif
+
 
 /**
  * Reverse the byte order of the given 32-bit integer.
@@ -3943,22 +3964,26 @@ DECLINLINE(uint16_t) ASMByteSwapU16(uint16_t u16)
  * @returns Revert
  * @param   u32     32-bit integer value.
  */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(uint32_t) ASMByteSwapU32(uint32_t u32);
+#else
 DECLINLINE(uint32_t) ASMByteSwapU32(uint32_t u32)
 {
-#if RT_INLINE_ASM_USES_INTRIN
+# if RT_INLINE_ASM_USES_INTRIN
     u32 = _byteswap_ulong(u32);
-#elif RT_INLINE_ASM_GNU_STYLE
+# elif RT_INLINE_ASM_GNU_STYLE
     __asm__ ("bswapl %0" : "=r" (u32) : "0" (u32));
-#else
+# else
     _asm
     {
         mov     eax, [u32]
         bswap   eax
         mov     [u32], eax
     }
-#endif
+# endif
     return u32;
 }
+#endif
 
 
 /**
