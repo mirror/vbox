@@ -28,6 +28,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-nt-kernel.h"
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/mp.h>
