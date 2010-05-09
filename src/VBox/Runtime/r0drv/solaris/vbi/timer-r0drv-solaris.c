@@ -169,7 +169,7 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
      * Free the associated resources.
      */
     RTTimerStop(pTimer);
-    ASMAtomicWriteU32(pTimer, ~RTTIMER_MAGIC);
+    ASMAtomicWriteU32(&pTimer->u32Magic, ~RTTIMER_MAGIC);
     RTMemFree(pTimer);
     return VINF_SUCCESS;
 }

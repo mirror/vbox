@@ -33,6 +33,9 @@
 #include <iprt/log.h>
 
 #include <iprt/asm.h>
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include <iprt/assert.h>
 
 
@@ -42,7 +45,12 @@ RTDECL(void) RTLogWriteDebugger(const char *pch, size_t cb)
     if (pch[cb] != '\0')
         AssertBreakpoint();
     if (    !g_frtSolarisSplSetsEIF
-        ||  ASMIntAreEnabled())
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+        ||  ASMIntAreEnabled()
+#else
+/* PORTME: Check if interrupts are enabled, if applicable. */
+#endif
+        )
         cmn_err(CE_CONT, pch);
     return;
 }

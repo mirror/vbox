@@ -32,7 +32,9 @@
 #include "internal/iprt.h"
 
 #include <iprt/err.h>
-#include <iprt/asm.h>
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include "internal/initterm.h"
 
 
@@ -52,6 +54,7 @@ int rtR0InitNative(void)
     int rc = vbi_init();
     if (!rc)
     {
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
         /*
          * Detech whether spl*() is preserving the interrupt flag or not.
          * This is a problem on S10.
@@ -64,6 +67,9 @@ int rtR0InitNative(void)
         if (ASMIntAreEnabled())
             g_frtSolarisSplSetsEIF = true;
         ASMSetFlags(uOldFlags);
+#else
+        /* PORTME: See if the amd64/x86 problem applies to this architecture. */
+#endif
 
         return VINF_SUCCESS;
     }
