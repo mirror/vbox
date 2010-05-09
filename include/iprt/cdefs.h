@@ -1807,7 +1807,8 @@
 # ifdef IN_RING3
 #  if defined(RT_OS_SOLARIS)
 /** Sparc64 user mode: According to Figure 9.4 in solaris internals */
-#   define RT_VALID_PTR(ptr)    ( (uintptr_t)(ptr) + 0x80004000U >= 0x80004000U + 0x100000000ULL )
+/** @todo #   define RT_VALID_PTR(ptr)    ( (uintptr_t)(ptr) + 0x80004000U >= 0x80004000U + 0x100000000ULL ) - figure this. */
+#   define RT_VALID_PTR(ptr)    ( (uintptr_t)(ptr) + 0x80000000U >= 0x80000000U + 0x100000000ULL )
 #  else
 #   error "Port me"
 #  endif
