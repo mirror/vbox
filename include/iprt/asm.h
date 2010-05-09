@@ -29,7 +29,6 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/assert.h>
-/** @todo @code #include <iprt/param.h> @endcode for PAGE_SIZE. */
 /** @def RT_INLINE_ASM_USES_INTRIN
  * Defined as 1 if we're using a _MSC_VER 1400.
  * Otherwise defined as 0.
@@ -2408,9 +2407,23 @@ DECLINLINE(void) ASMAtomicUoWritePtr(void * volatile *ppv, const void *pv)
 
 
 
-#if defined(PAGE_SIZE) && !defined(NT_INCLUDED)
-# if PAGE_SIZE != 0x1000
-#  error "PAGE_SIZE is not 0x1000!"
+/** @def RT_ASM_PAGE_SIZE
+ * We try avoid dragging in iprt/param.h here.
+ * @internal
+ */
+#if defined(RT_ARCH_SPARC64)
+# define RT_ASM_PAGE_SIZE   0x2000
+# if defined(PAGE_SIZE) && !defined(NT_INCLUDED)
+#  if PAGE_SIZE != 0x2000
+#   error "PAGE_SIZE is not 0x2000!"
+#  endif
+# endif
+#else
+# define RT_ASM_PAGE_SIZE   0x1000
+# if defined(PAGE_SIZE) && !defined(NT_INCLUDED)
+#  if PAGE_SIZE != 0x1000
+#   error "PAGE_SIZE is not 0x1000!"
+#  endif
 # endif
 #endif
 
@@ -2426,9 +2439,9 @@ DECLINLINE(void) ASMMemZeroPage(volatile void *pv)
 {
 #  if RT_INLINE_ASM_USES_INTRIN
 #   ifdef RT_ARCH_AMD64
-    __stosq((unsigned __int64 *)pv, 0, /*PAGE_SIZE*/0x1000 / 8);
+    __stosq((unsigned __int64 *)pv, 0, RT_ASM_PAGE_SIZE / 8);
 #   else
-    __stosd((unsigned long *)pv, 0, /*PAGE_SIZE*/0x1000 / 4);
+    __stosd((unsigned long *)pv, 0, RT_ASM_PAGE_SIZE / 4);
 #   endif
 
 #  elif RT_INLINE_ASM_GNU_STYLE
@@ -2438,7 +2451,7 @@ DECLINLINE(void) ASMMemZeroPage(volatile void *pv)
                          : "=D" (pv),
                            "=c" (uDummy)
                          : "0" (pv),
-                           "c" (0x1000 >> 3),
+                           "c" (RT_ASM_PAGE_SIZE >> 3),
                            "a" (0)
                          : "memory");
 #   else
@@ -2446,7 +2459,7 @@ DECLINLINE(void) ASMMemZeroPage(volatile void *pv)
                          : "=D" (pv),
                            "=c" (uDummy)
                          : "0" (pv),
-                           "c" (0x1000 >> 2),
+                           "c" (RT_ASM_PAGE_SIZE >> 2),
                            "a" (0)
                          : "memory");
 #   endif
@@ -2591,16 +2604,16 @@ DECLINLINE(bool) ASMMemIsZeroPage(void const *pvPage)
                            "=&a" (uAX.r)
                          : "mr" (pvPage),
 #  ifdef RT_ARCH_AMD64
-                         "0" (0x1000/8),
+                         "0" (RT_ASM_PAGE_SIZE/8),
 #  else
-                         "0" (0x1000/4),
+                         "0" (RT_ASM_PAGE_SIZE/4),
 #  endif
                          "1" (pvPage),
                          "2" (0));
     return uAX.f;
 # else
    uintptr_t const *puPtr = (uintptr_t const *)pvPage;
-   int              cLeft = 0x1000 / sizeof(uintptr_t) / 8;
+   int              cLeft = RT_ASM_PAGE_SIZE / sizeof(uintptr_t) / 8;
    Assert(!((uintptr_t)pvPage & 15));
    for (;;)
    {
@@ -2736,11 +2749,11 @@ DECLINLINE(void) ASMProbeReadBuffer(const void *pvBuf, size_t cbBuf)
     ASMProbeReadByte(pu8);
 
     /* the pages in between pages. */
-    while (cbBuf > /*PAGE_SIZE*/0x1000)
+    while (cbBuf > RT_ASM_PAGE_SIZE)
     {
         ASMProbeReadByte(pu8);
-        cbBuf -= /*PAGE_SIZE*/0x1000;
-        pu8   += /*PAGE_SIZE*/0x1000;
+        cbBuf -= RT_ASM_PAGE_SIZE;
+        pu8   += RT_ASM_PAGE_SIZE;
     }
 
     /* the last byte */
