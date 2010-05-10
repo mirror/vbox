@@ -4214,7 +4214,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="ebea94d0-7663-4dea-8052-00946dd63d11"
+     uuid="b5d4457e-888f-46ef-b2db-644616db94fd"
      wsmap="managed"
      >
     <desc>
@@ -4419,10 +4419,10 @@
       <desc>Memory balloon size in megabytes.</desc>
     </attribute>
 
-    <attribute name="SharedPagingEnabled" type="boolean">
+    <attribute name="PageFusionEnabled" type="boolean">
       <desc>
         This setting determines whether VirtualBox allows page
-        sharing for this machine (64 bits host only).
+        fusion for this machine (64 bits host only).
       </desc>
     </attribute>
 
@@ -8505,7 +8505,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="d073545f-9635-489e-b36f-d468a10f8987"
+     uuid="27211d55-8b11-4f07-9519-b7563ea2dc29"
      wsmap="managed"
      >
     <desc>
@@ -8570,9 +8570,9 @@
       <desc>Guest system memory balloon size in megabytes (transient property).</desc>
     </attribute>
 
-    <attribute name="SharedPagingEnabled" type="boolean">
+    <attribute name="PageFusionEnabled" type="boolean">
       <desc>
-        Flag whether VirtualBox allows page sharing for this machine 
+        Flag whether VirtualBox allows page fusion for this machine 
         (64 bits host only; transient property).
       </desc>
     </attribute>
