@@ -6091,8 +6091,9 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
 
                 AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
 
-                /* sanity check */
-                Assert(pMedium->m->state == MediumState_LockedRead);
+                /* sanity check, "this" is checked above */
+                Assert(   pMedium == this
+                       || pMedium->m->state == MediumState_LockedRead);
 
                 /* Open all images in appropriate mode. */
                 vrc = VDOpen(hdd,
