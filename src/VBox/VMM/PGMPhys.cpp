@@ -2168,6 +2168,17 @@ VMMR3DECL(int) PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
             AssertLogRelRCReturn(rc, rc);
         }
         GMMR3FreePagesCleanup(pReq);
+
+        /* Force a PGM pool flush as guest ram references have been changed. */
+        /** todo; not entirely SMP safe; assuming for now the guest takes care of this internally (not touch mapped mmio while changing the mapping). */
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+        {
+            PVMCPU pVCpu = &pVM->aCpus[idCpu];
+
+            pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_CLEAR_PGM_POOL;
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+        }
+
         pgmUnlock(pVM);
     }
     else
@@ -2265,6 +2276,16 @@ VMMR3DECL(int) PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion
     pCur->RamRange.GCPhysLast = NIL_RTGCPHYS;
     pCur->fOverlapping = false;
     pCur->fMapped = false;
+
+    /* Force a PGM pool flush as guest ram references have been changed. */
+    /** todo; not entirely SMP safe; assuming for now the guest takes care of this internally (not touch mapped mmio while changing the mapping). */
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+
+        pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_CLEAR_PGM_POOL;
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+    }
 
     PGMPhysInvalidatePageMapTLB(pVM);
     pgmUnlock(pVM);
