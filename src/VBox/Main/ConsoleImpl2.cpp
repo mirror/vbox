@@ -2231,7 +2231,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     va_end(va);
 }
 
-/* static */
 int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                                     const char *pcszDevice,
                                     unsigned uInstance,
@@ -2322,16 +2321,16 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
     hrc = pMediumAtt->COMGETTER(Medium)(pMedium.asOutParam());          H();
     BOOL fPassthrough;
     hrc = pMediumAtt->COMGETTER(Passthrough)(&fPassthrough);            H();
-    rc = Console::configMedium(pLunL0,
-                               !!fPassthrough,
-                               lType,
-                               enmIoBackend,
-                               fSetupMerge,
-                               uMergeSource,
-                               uMergeTarget,
-                               pMedium,
-                               aMachineState,
-                               phrc);                                   RC_CHECK();
+    rc = configMedium(pLunL0,
+                      !!fPassthrough,
+                      lType,
+                      enmIoBackend,
+                      fSetupMerge,
+                      uMergeSource,
+                      uMergeTarget,
+                      pMedium,
+                      aMachineState,
+                      phrc);                                            RC_CHECK();
 
     if (fAttachDetach)
     {

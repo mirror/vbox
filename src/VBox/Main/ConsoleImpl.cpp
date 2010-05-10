@@ -4481,7 +4481,8 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
     vrc = VMR3ReqCallWait(pVM,
                           VMCPUID_ANY,
                           (PFNRT)reconfigureMediumAttachment,
-                          11,
+                          12,
+                          this,
                           pVM,
                           pcszDevice,
                           uInstance,
@@ -4555,7 +4556,8 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
     vrc = VMR3ReqCallWait(pVM,
                           VMCPUID_ANY,
                           (PFNRT)reconfigureMediumAttachment,
-                          11,
+                          12,
+                          this,
                           pVM,
                           pcszDevice,
                           uInstance,
@@ -7539,6 +7541,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
 /**
  * Reconfigures a medium attachment (part of taking or deleting an online snapshot).
  *
+ * @param   pConsole      Reference to the console object.
  * @param   pVM           The VM handle.
  * @param   lInstance     The instance of the controller.
  * @param   pcszDevice    The name of the controller type.
@@ -7588,20 +7591,20 @@ DECLCALLBACK(int) Console::reconfigureMediumAttachment(Console *pConsole,
 
     /* Update the device instance configuration. */
     rc = pConsole->configMediumAttachment(pCtlInst,
-                                         pcszDevice,
-                                         uInstance,
-                                         enmBus,
-                                         enmIoBackend,
-                                         fSetupMerge,
-                                         uMergeSource,
-                                         uMergeTarget,
-                                         aMediumAtt,
-                                         aMachineState,
-                                         phrc,
-                                         true /* fAttachDetach */,
-                                         false /* fForceUnmount */,
-                                         pVM,
-                                         NULL /* paLedDevType */);
+                                          pcszDevice,
+                                          uInstance,
+                                          enmBus,
+                                          enmIoBackend,
+                                          fSetupMerge,
+                                          uMergeSource,
+                                          uMergeTarget,
+                                          aMediumAtt,
+                                          aMachineState,
+                                          phrc,
+                                          true /* fAttachDetach */,
+                                          false /* fForceUnmount */,
+                                          pVM,
+                                          NULL /* paLedDevType */);
     /** @todo this dumps everything attached to this device instance, which
      * is more than necessary. Dumping the changed LUN would be enough. */
     CFGMR3Dump(pCtlInst);
@@ -7774,7 +7777,8 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 vrc = VMR3ReqCallWait(that->mpVM,
                                       VMCPUID_ANY,
                                       (PFNRT)reconfigureMediumAttachment,
-                                      11,
+                                      12,
+                                      that,
                                       that->mpVM,
                                       pcszDevice,
                                       lInstance,
