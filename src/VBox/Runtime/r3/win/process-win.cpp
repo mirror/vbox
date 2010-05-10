@@ -69,6 +69,12 @@ typedef WINADVAPI BOOL WINAPI FNCREATEPROCESSWITHLOGON(LPCWSTR,
                                                        LPPROCESS_INFORMATION);
 typedef FNCREATEPROCESSWITHLOGON *PFNCREATEPROCESSWITHLOGON;
 
+typedef DWORD WINAPI FNWTSGETACTIVECONSOLESESSIONID();
+typedef FNWTSGETACTIVECONSOLESESSIONID *PFNWTSGETACTIVECONSOLESESSIONID;
+
+typedef BOOL WINAPI FNWTSQUERYUSERTOKEN(ULONG, PHANDLE);
+typedef FNWTSQUERYUSERTOKEN *PFNWTSQUERYUSERTOKEN;
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -236,45 +242,170 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
 
 static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszExec, PRTUTF16 pwszCmdLine,
                                  PRTUTF16 pwszzBlock, DWORD dwCreationFlags,
-                                 STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo)
+                                 STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo, uint32_t fFlags)
 {
-    /** @todo On NT4 we need to enable the SeTcbPrivilege to act as part of the operating system. Otherwise
-      *       we will get error 1314 (priviledge not held) as a response. */
-
-    /*
-     * The following rights are needed in order to use LogonUserW and
-     * CreateProcessAsUserW, so the local policy has to be modified to:
-     *  - SE_TCB_NAME = Act as part of the operating system
-     *  - SE_ASSIGNPRIMARYTOKEN_NAME = Create/replace a token object
-     *  - SE_INCREASE_QUOTA_NAME
-     *
-     * We may fail here with ERROR_PRIVILEGE_NOT_HELD.
-     */
-    int    rc;
-    DWORD  dwErr  = NO_ERROR;
     HANDLE hToken = INVALID_HANDLE_VALUE;
-    BOOL   fRc    = LogonUserW(pwszUser,
-                               NULL,      /* lpDomain */
-                               pwszPassword,
-                               LOGON32_LOGON_INTERACTIVE,
-                               LOGON32_PROVIDER_DEFAULT,
-                               &hToken);
+    BOOL fRc = FALSE;
+#ifndef IPRT_TARGET_NT4
+    /*
+     * Get the session ID.
+     */
+    DWORD dwSessionID = 0; /* On W2K the session ID is always 0 (does not have fast user switching). */
+    RTLDRMOD hKernel32;
+    int rc = RTLdrLoad("Kernel32.dll", &hKernel32);
+    if (RT_SUCCESS(rc))
+    {
+        PFNWTSGETACTIVECONSOLESESSIONID pfnWTSGetActiveConsoleSessionId;
+        rc = RTLdrGetSymbol(hKernel32, "WTSGetActiveConsoleSessionId", (void **)&pfnWTSGetActiveConsoleSessionId);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Console session means the session which the physical keyboard and mouse
+             * is connected to. Due to FUS (fast user switching) starting with Windows XP
+             * this can be a different session than 0.
+             */
+            dwSessionID = pfnWTSGetActiveConsoleSessionId(); /* Get active console session ID. */
+        }
+        RTLdrClose(hKernel32);
+    }
+
+    if (fFlags & RTPROC_FLAGS_SERVICE)
+    {
+        /*
+         * Get the current user token.
+         */
+        RTLDRMOD hWtsAPI32;
+        rc = RTLdrLoad("Wtsapi32.dll", &hWtsAPI32);
+        if (RT_SUCCESS(rc))
+        {
+            /* Note that WTSQueryUserToken() only is available on Windows XP and up! */
+            PFNWTSQUERYUSERTOKEN pfnWTSQueryUserToken;
+            rc = RTLdrGetSymbol(hWtsAPI32, "WTSQueryUserToken", (void **)&pfnWTSQueryUserToken);
+            if (RT_SUCCESS(rc))
+                fRc = pfnWTSQueryUserToken(dwSessionID, &hToken);
+            RTLdrClose(hWtsAPI32);
+        }
+    }
+#endif /* !IPRT_TARGET_NT4 */
+
+    DWORD dwErr = NO_ERROR;
+    /*
+     * If not run by a service, use the normal LogonUserW function in order
+     * to run the child process with different credentials using the returned
+     * primary token.
+     */
+    if (!(fFlags & RTPROC_FLAGS_SERVICE))
+    {  
+        /*
+         * The following rights are needed in order to use LogonUserW and
+         * CreateProcessAsUserW, so the local policy has to be modified to:
+         *  - SE_TCB_NAME = Act as part of the operating system
+         *  - SE_ASSIGNPRIMARYTOKEN_NAME = Create/replace a token object
+         *  - SE_INCREASE_QUOTA_NAME
+         *
+         * We may fail here with ERROR_PRIVILEGE_NOT_HELD.
+         */
+        fRc = LogonUserW(pwszUser,
+                          NULL,      /* lpDomain */
+                          pwszPassword,
+                          LOGON32_LOGON_INTERACTIVE,
+                          LOGON32_PROVIDER_DEFAULT,
+                          &hToken);
+    }
+
     if (fRc)
     {
-        fRc = CreateProcessAsUserW(hToken,
-                                   pwszExec,
-                                   pwszCmdLine,
-                                   NULL,         /* pProcessAttributes */
-                                   NULL,         /* pThreadAttributes */
-                                   TRUE,         /* fInheritHandles */
-                                   dwCreationFlags,
-                                   pwszzBlock,
-                                   NULL,         /* pCurrentDirectory */
-                                   pStartupInfo,
-                                   pProcInfo);
-        if (!fRc)
-            dwErr = GetLastError();
+#ifndef IPRT_TARGET_NT4
+        HANDLE hDuplicatedToken = INVALID_HANDLE_VALUE;
+        HANDLE hProcessToken = INVALID_HANDLE_VALUE;
+
+        /*
+         * If used by a service, open this service process and adjust 
+         * privileges by enabling the SE_TCB_NAME right to act as part
+         * of the operating system. 
+         */
+        if (fFlags & RTPROC_FLAGS_SERVICE)
+        {           
+            TOKEN_PRIVILEGES privToken, privTokenOld;
+            DWORD dwTokenSize;
+        
+            fRc = OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hProcessToken);
+            if (   fRc
+                && LookupPrivilegeValue(NULL, SE_TCB_NAME, &privToken.Privileges[0].Luid))
+            {
+                privToken.PrivilegeCount = 1;
+                privToken.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+                fRc = AdjustTokenPrivileges(hProcessToken, FALSE, &privToken, sizeof(privToken), &privTokenOld, &dwTokenSize);
+                if (!fRc)
+                    dwErr = GetLastError();
+            }
+        }
+    
+        if (   dwErr == ERROR_SUCCESS
+            || dwErr == ERROR_NOT_ALL_ASSIGNED) /* The AdjustTokenPrivileges() did not succeed, but this isn't fatal. */
+        {            
+            fRc = DuplicateTokenEx(hToken, MAXIMUM_ALLOWED, NULL, SecurityIdentification, TokenPrimary, &hDuplicatedToken);
+#if 0
+            /*
+             * Assign the current session ID (> 0 on Windows Vista and up) to the primary token we just duplicated.
+             ** @todo This does not work yet, needs more investigation! */
+             */
+            if (fRc)
+            {
+                fRc = SetTokenInformation(hDuplicatedToken, TokenSessionId, &dwSessionID, sizeof(DWORD));
+                if (!fRc)
+                    dwErr = GetLastError();
+            }
+            else
+                dwErr = GetLastError();
+#endif
+        }
+
+#endif /* !IPRT_TARGET_NT4 */
+
+        /** @todo On NT4 we need to enable the SeTcbPrivilege to act as part of the operating system. Otherwise
+          *       we will get error 1314 (priviledge not held) as a response. */
+
+        /* Hopefully having a valid token now! */
+        if (   fRc
+#ifdef IPRT_TARGET_NT4
+            && hToken           != INVALID_HANDLE_VALUE
+#else
+            && hDuplicatedToken != INVALID_HANDLE_VALUE
+#endif /* IPRT_TARGET_NT4 */
+            )
+        {   
+            fRc = CreateProcessAsUserW(
+#ifdef IPRT_TARGET_NT4
+                                       hToken,
+#else
+                                       hDuplicatedToken,
+#endif /* !IPRT_TARGET_NT4 */
+                                       pwszExec,
+                                       pwszCmdLine,
+                                       NULL,         /* pProcessAttributes */
+                                       NULL,         /* pThreadAttributes */
+                                       TRUE,         /* fInheritHandles */
+                                       dwCreationFlags,
+                                       pwszzBlock,
+                                       NULL,         /* pCurrentDirectory */
+                                       pStartupInfo,
+                                       pProcInfo);
+            if (!fRc)
+                dwErr = GetLastError();
+#ifndef IPRT_TARGET_NT4
+            CloseHandle(hDuplicatedToken);
+#endif /* !IPRT_TARGET_NT4 */
+        }
         CloseHandle(hToken);
+#ifndef IPRT_TARGET_NT4
+        if (fFlags & RTPROC_FLAGS_SERVICE)
+        {
+            /** @todo Drop SE_TCB_NAME priviledge before closing the process handle! */
+            if (hProcessToken != INVALID_HANDLE_VALUE)
+                CloseHandle(hProcessToken);
+        }
+#endif /* !IPRT_TARGET_NT4 */
     }
     else
         dwErr = GetLastError();
@@ -316,7 +447,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
             RTLdrClose(hAdvAPI32);
         }
     }
-#endif
+#endif /* !IPRT_TARGET_NT4 */
 
     if (dwErr != NO_ERROR)
         rc = RTErrConvertFromWin32(dwErr);
@@ -334,7 +465,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
      */
     AssertPtrReturn(pszExec, VERR_INVALID_POINTER);
     AssertReturn(*pszExec, VERR_INVALID_PARAMETER);
-    AssertReturn(!(fFlags & ~(RTPROC_FLAGS_DAEMONIZE_DEPRECATED | RTPROC_FLAGS_DETACHED)), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(RTPROC_FLAGS_DAEMONIZE_DEPRECATED | RTPROC_FLAGS_DETACHED | RTPROC_FLAGS_SERVICE)), VERR_INVALID_PARAMETER);
     AssertReturn(!(fFlags & RTPROC_FLAGS_DETACHED) || !phProcess, VERR_INVALID_PARAMETER);
     AssertReturn(hEnv != NIL_RTENV, VERR_INVALID_PARAMETER);
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
@@ -486,7 +617,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                         {
                             rc = rtProcCreateAsUserHlp(pwszUser, pwszPassword,
                                                        pwszExec, pwszCmdLine, pwszzBlock, dwCreationFlags,
-                                                       &StartupInfo, &ProcInfo);
+                                                       &StartupInfo, &ProcInfo, fFlags);
 
                             RTUtf16Free(pwszPassword);
                         }

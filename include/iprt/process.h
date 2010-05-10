@@ -190,6 +190,12 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
  * @deprecated Dont use this for new code, it is not portable.  Use
  *             RTProcDaemonize instead. */
 #define RTPROC_FLAGS_DAEMONIZE_DEPRECATED   RT_BIT(1)
+
+/** Use special code path for starting child processes from
+ * a service (daemon). On Windows this is required for services
+ * because of the so called "Session 0" isolation which was
+ * introduced with Windows Vista. */
+#define RTPROC_FLAGS_SERVICE                RT_BIT(2)
 /** @}  */
 
 
