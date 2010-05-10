@@ -830,7 +830,7 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pTh
                             if (RT_SUCCESS(rc))
                             {
                                 RTPROCESS hProcess;
-                                rc = RTProcCreateEx(pData->pszCmd, pData->papszArgs, hEnv, pData->uFlags,
+                                rc = RTProcCreateEx(pData->pszCmd, pData->papszArgs, hEnv, RTPROC_FLAGS_SERVICE,
                                                     phStdIn, phStdOut, phStdErr,
                                                     strlen(pData->pszUser) ? pData->pszUser : NULL,
                                                     strlen(pData->pszUser) && strlen(pData->pszPassword) ? pData->pszPassword : NULL,
