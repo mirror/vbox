@@ -788,7 +788,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
             com::SafeArray<IN_BSTR> args(ComSafeArrayInArg(aArguments));
             uNumArgs = args.size();
             papszArgv = (char**)RTMemAlloc(sizeof(char*) * (uNumArgs + 1));
-            AssertReturn(papszArgv, VERR_NO_MEMORY);
+            AssertReturn(papszArgv, E_OUTOFMEMORY);
             for (unsigned i = 0; RT_SUCCESS(vrc) && i < uNumArgs; i++)
                 vrc = RTStrAPrintf(&papszArgv[i], "%s", Utf8Str(args[i]).raw());
             papszArgv[uNumArgs] = NULL;
