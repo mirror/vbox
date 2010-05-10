@@ -2146,6 +2146,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
             PGM_PAGE_SET_STATE(pPageDst, PGM_PAGE_STATE_ALLOCATED);
             PGM_PAGE_SET_PDE_TYPE(pPageDst, PGM_PAGE_PDE_TYPE_DONTCARE);
             PGM_PAGE_SET_PTE_INDEX(pPageDst, 0);
+            PGM_PAGE_SET_TRACKING(pPageDst, 0);
 
             pVM->pgm.s.cZeroPages--;
             GCPhys += PAGE_SIZE;
@@ -2594,6 +2595,7 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                     PGM_PAGE_SET_PAGEID(pPage, pReq->aPages[iPage].idPage);
                     PGM_PAGE_SET_PDE_TYPE(pPage, PGM_PAGE_PDE_TYPE_DONTCARE);
                     PGM_PAGE_SET_PTE_INDEX(pPage, 0);
+                    PGM_PAGE_SET_TRACKING(pPage, 0);
 
                     pRomPage->Virgin = *pPage;
                 }
@@ -3409,6 +3411,7 @@ VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
                 PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ALLOCATED);
                 PGM_PAGE_SET_PDE_TYPE(pPage, PGM_PAGE_PDE_TYPE_PDE);
                 PGM_PAGE_SET_PTE_INDEX(pPage, 0);
+                PGM_PAGE_SET_TRACKING(pPage, 0);
 
                 /* Somewhat dirty assumption that page ids are increasing. */
                 idPage++;
@@ -3628,6 +3631,7 @@ static int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPa
     PGM_PAGE_SET_PAGEID(pPage, NIL_GMM_PAGEID);
     PGM_PAGE_SET_PDE_TYPE(pPage, PGM_PAGE_PDE_TYPE_DONTCARE);
     PGM_PAGE_SET_PTE_INDEX(pPage, 0);
+    PGM_PAGE_SET_TRACKING(pPage, 0);
 
     /* Flush physical page map TLB entry. */
     PGMPhysInvalidatePageMapTLBEntry(pVM, GCPhys);
