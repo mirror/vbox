@@ -477,6 +477,10 @@ typedef struct GMMREGISTERSHAREDMODULEREQ
     uint32_t                    cRegions;
     /** Base address of the shared module. */
     RTGCPTR64                   GCBaseAddr;
+    /** Guest OS type. */
+    VBOXOSFAMILY                enmGuestOS;
+    /** Alignment. */
+    uint32_t                    u32Alignment;
     /** Module name */
     char                        szName[GMM_SHARED_MODULE_MAX_NAME_STRING];
     /** Module version */

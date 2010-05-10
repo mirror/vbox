@@ -1771,7 +1771,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             }
             else
             {
-                pRequestHeader->rc = PGMR3SharedModuleRegister(pVM, pReqModule->GCBaseAddr, pReqModule->cbModule,
+                pRequestHeader->rc = PGMR3SharedModuleRegister(pVM, pReqModule->enmGuestOS, pReqModule->GCBaseAddr, pReqModule->cbModule,
                                                                pReqModule->szName, pReqModule->szVersion,
                                                                pReqModule->cRegions, pReqModule->aRegions);
             }
@@ -1805,6 +1805,21 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             else
             {
                 pRequestHeader->rc = PGMR3SharedModuleCheck(pVM);
+            }
+            break;
+        }
+
+        case VMMDevReq_GetPageSharingStatus:
+        {
+            VMMDevPageSharingStatusRequest *pReqStatus = (VMMDevPageSharingStatusRequest *)pRequestHeader;
+
+            if (pRequestHeader->size != sizeof(VMMDevPageSharingStatusRequest)
+            {
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                pRequestHeader->rc = pThis->fPageSharingEnabled;
             }
             break;
         }
@@ -2183,6 +2198,17 @@ static DECLCALLBACK(int) vmmdevSetMemoryBalloon(PPDMIVMMDEVPORT pInterface, uint
         VMMDevNotifyGuest (pThis, VMMDEV_EVENT_BALLOON_CHANGE_REQUEST);
     }
 
+    PDMCritSectLeave(&pThis->CritSect);
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) vmmdevEnablePageSharing(PPDMIVMMDEVPORT pInterface, bool fEnabled)
+{
+    VMMDevState *pThis = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
+    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+
+    Log(("vmmdevEnablePageSharing: old=%d. new=%d\n", pThis->fPageSharingEnabled, fEnabled));
+    pThis->fPageSharingEnabled = fEnabled;
     PDMCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
 }
@@ -2737,6 +2763,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->IPort.pfnVBVAChange             = vmmdevVBVAChange;
     pThis->IPort.pfnRequestSeamlessChange  = vmmdevRequestSeamlessChange;
     pThis->IPort.pfnSetMemoryBalloon       = vmmdevSetMemoryBalloon;
+    pThis->IPort.pfnEnablePageSharing      = vmmdevEnablePageSharing;
     pThis->IPort.pfnSetStatisticsInterval  = vmmdevSetStatisticsInterval;
     pThis->IPort.pfnVRDPChange             = vmmdevVRDPChange;
     pThis->IPort.pfnCpuHotUnplug           = vmmdevCpuHotUnplug;
