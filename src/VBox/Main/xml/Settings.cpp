@@ -3522,7 +3522,6 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         xml::ElementNode *pelmIo = pelmHardware->createChild("IO");
         xml::ElementNode *pelmIoCache;
         xml::ElementNode *pelmIoBandwidth;
-        const char *pcszTemp;
 
         pelmIoCache = pelmIo->createChild("IoCache");
         pelmIoCache->setAttribute("enabled", hw.ioSettings.fIoCacheEnabled);
