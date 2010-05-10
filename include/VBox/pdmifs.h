@@ -2034,6 +2034,14 @@ typedef struct PDMIVMMDEVPORT
      */
     DECLR3CALLBACKMEMBER(int, pfnCpuHotPlug, (PPDMIVMMDEVPORT pInterface, uint32_t idCpuCore, uint32_t idCpuPackage));
 
+    /**
+     * Enable or disable page sharing
+     *
+     * @returns VBox status code
+     * @param   fEnabled     New setting
+     */
+    DECLR3CALLBACKMEMBER(int, pfnEnablePageSharing, (PPDMIVMMDEVPORT pInterface, bool fEnabled));
+
 } PDMIVMMDEVPORT;
 /** PDMIVMMDEVPORT interface ID. */
 #define PDMIVMMDEVPORT_IID                      "d7e52035-3b6c-422e-9215-2a75646a945d"

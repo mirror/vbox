@@ -336,7 +336,6 @@ static DECLCALLBACK(int) VBoxServicePageSharingInit(void)
     int rc = RTSemEventMultiCreate(&g_PageSharingEvent);
     AssertRCReturn(rc, rc);
 
-    /* @todo check if page sharing is active. */
     /* @todo report system name and version */
     /* Never fail here. */
     return VINF_SUCCESS;
@@ -357,7 +356,8 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
     for (;;)
     {
 
-        VBoxServicePageSharingInspectGuest();
+        if (VbglR3PageSharingIsEnabled())
+            VBoxServicePageSharingInspectGuest();
 
         /*
          * Block for a minute.

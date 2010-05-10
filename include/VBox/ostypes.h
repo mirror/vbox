@@ -115,6 +115,26 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_32BIT_HACK = 0x7fffffff
 } VBOXOSTYPE;
 
+/**
+ * Global list of guest OS families.
+ */
+typedef enum VBOXOSFAMILY
+{
+    VBOXOSFAMILY_Unknown          = 0,
+    VBOXOSFAMILY_Windows32        = 1,
+    VBOXOSFAMILY_Windows64        = 2,
+    VBOXOSFAMILY_Linux32          = 3,
+    VBOXOSFAMILY_Linux64          = 4,
+    VBOXOSFAMILY_FreeBSD32        = 5,
+    VBOXOSFAMILY_FreeBSD64        = 6,
+    VBOXOSFAMILY_Solaris32        = 7,
+    VBOXOSFAMILY_Solaris64        = 8,
+    VBOXOSFAMILY_MacOSX32         = 9,
+    VBOXOSFAMILY_MacOSX64         = 10,
+    /** The usual 32-bit hack. */
+    VBOXOSFAMILY_32BIT_HACK = 0x7fffffff
+} VBOXOSFAMILY;
+
 RT_C_DECLS_END
 
 #endif

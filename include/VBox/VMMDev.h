@@ -174,6 +174,7 @@ typedef enum
     VMMDevReq_RegisterSharedModule       = 212,
     VMMDevReq_UnregisterSharedModule     = 213,
     VMMDevReq_CheckSharedModules         = 214,
+    VMMDevReq_GetPageSharingStatus       = 215,
 #endif
     VMMDevReq_SizeHack                   = 0x7fffffff
 } VMMDevRequestType;
@@ -1127,6 +1128,10 @@ typedef struct
     uint32_t                    cRegions;
     /** Base address of the shared module. */
     RTGCPTR64                   GCBaseAddr;
+    /** Guest OS type. */
+    VBOXOSFAMILY                enmGuestOS;
+    /** Alignment. */
+    uint32_t                    u32Align;
     /** Module name */
     char                        szName[128];
     /** Module version */
@@ -1134,7 +1139,7 @@ typedef struct
     /** Shared region descriptor(s). */
     VMMDEVSHAREDREGIONDESC      aRegions[1];
 } VMMDevSharedModuleRegistrationRequest;
-AssertCompileSize(VMMDevSharedModuleRegistrationRequest, 24+4+4+8+128+16+16);
+AssertCompileSize(VMMDevSharedModuleRegistrationRequest, 24+4+4+8+4+4+128+16+16);
 
 
 /**
@@ -1167,6 +1172,20 @@ typedef struct
     VMMDevRequestHeader         header;
 } VMMDevSharedModuleCheckRequest;
 AssertCompileSize(VMMDevSharedModuleCheckRequest, 24);
+
+/**
+ * Paging sharing enabled query
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader         header;
+    /** Enabled flag (out) */
+    bool                        fEnabled;
+    /** Alignment */
+    bool                        fAlignment[3];
+} VMMDevPageSharingStatusRequest;
+AssertCompileSize(VMMDevPageSharingStatusRequest, 24+4);
 
 #pragma pack()
 
@@ -1677,6 +1696,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevSharedModuleUnregistrationRequest);
         case VMMDevReq_CheckSharedModules:
             return sizeof(VMMDevSharedModuleCheckRequest);
+        case VMMDevReq_GetPageSharingStatus:
+            return sizeof(VMMDevPageSharingStatusRequest);
 #endif
 
         default:
