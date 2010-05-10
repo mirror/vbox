@@ -63,7 +63,14 @@ VBGLR3DECL(int) VbglR3WaitEvent(uint32_t fMask, uint32_t cMillies, uint32_t *pfE
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent));
     if (RT_SUCCESS(rc))
     {
+        /*
+         * If a guest requests for an event which is not available on the host side
+         * (because of an older host version, a disabled feature or older Guest Additions),
+         * don't trigger an assertion here even in debug builds - would be annoying.
+         */
+#if 0
         AssertMsg(waitEvent.u32Result == VBOXGUEST_WAITEVENT_OK, ("%d rc=%Rrc\n", waitEvent.u32Result, rc));
+#endif
         if (pfEvents)
             *pfEvents = waitEvent.u32EventFlagsOut;
     }
