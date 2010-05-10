@@ -124,6 +124,7 @@ static DECLCALLBACK(void) pgmR3SharedModuleRegisterHelper(PVM pVM, PGMMREGISTERS
  *
  * @returns VBox status code.
  * @param   pVM                 VM handle
+ * @param   enmGuestOS          Guest OS type
  * @param   pszModuleName       Module name
  * @param   pszVersion          Module version
  * @param   GCBaseAddr          Module base address
@@ -131,7 +132,7 @@ static DECLCALLBACK(void) pgmR3SharedModuleRegisterHelper(PVM pVM, PGMMREGISTERS
  * @param   cRegions            Number of shared region descriptors
  * @param   pRegions            Shared region(s)
  */
-VMMR3DECL(int) PGMR3SharedModuleRegister(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule,
+VMMR3DECL(int) PGMR3SharedModuleRegister(PVM pVM, VBOXOSFAMILY enmGuestOS, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule,
                                          unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
@@ -143,6 +144,7 @@ VMMR3DECL(int) PGMR3SharedModuleRegister(PVM pVM, char *pszModuleName, char *psz
     pReq = (PGMMREGISTERSHAREDMODULEREQ)RTMemAllocZ(RT_OFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[cRegions]));
     AssertReturn(pReq, VERR_NO_MEMORY);
 
+    pReq->enmGuestOS    = enmGuestOS;
     pReq->GCBaseAddr    = GCBaseAddr;
     pReq->cbModule      = cbModule;
     pReq->cRegions      = cRegions;

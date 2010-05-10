@@ -68,8 +68,8 @@ typedef struct GMMSHAREDMODULE
     uint32_t                    cRegions;
     /** Number of users (VMs). */
     uint32_t                    cUsers;
-    /** Align. */
-    uint32_t                    u32Align;
+    /** Guest OS family type. */
+    VBOXOSFAMILY                enmGuestOS;
     /** Module name */
     char                        szName[GMM_SHARED_MODULE_MAX_NAME_STRING];
     /** Module version */
