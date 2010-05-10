@@ -38,3 +38,4 @@ void PACKSPU_APIENTRY packspu_DeleteTextures(GLsizei n, const GLuint * textures)
     crStateDeleteTextures(n, textures);
     crPackDeleteTextures(n, textures);
 }
+
