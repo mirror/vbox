@@ -2076,7 +2076,7 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
         case SCMOPT_FILTER_FILES:
         case SCMOPT_FILTER_OUT_FILES:
         {
-            char **ppsz;
+            char **ppsz = NULL;
             switch (rc)
             {
                 case SCMOPT_FILTER_OUT_DIRS:    ppsz = &pSettings->pszFilterOutDirs; break;
