@@ -3450,6 +3450,7 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
  * @returns VBox status code.
  * @param   pVM                 VM handle
  * @param   idCpu               VCPU id
+ * @param   enmGuestOS          Guest OS type
  * @param   pszModuleName       Module name
  * @param   pszVersion          Module version
  * @param   GCBaseAddr          Module base address
@@ -3457,7 +3458,7 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
  * @param   cRegions            Number of shared region descriptors
  * @param   pRegions            Shared region(s)
  */
-GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule,
+GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY enmGuestOS, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule,
                                          unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
@@ -3523,7 +3524,8 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModule
             strcpy(pGlobalModule->szName, pszModuleName);
             strcpy(pGlobalModule->szVersion, pszVersion);
 
-            pGlobalModule->cRegions = cRegions;
+            pGlobalModule->enmGuestOS = enmGuestOS;
+            pGlobalModule->cRegions   = cRegions;
 
             for (unsigned i = 0; i < cRegions; i++)
             {
@@ -3596,7 +3598,7 @@ GMMR0DECL(int)  GMMR0RegisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMREGISTE
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertMsgReturn(pReq->Hdr.cbReq >= sizeof(*pReq) && pReq->Hdr.cbReq == RT_UOFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[pReq->cRegions]), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
-    return GMMR0RegisterSharedModule(pVM, idCpu, pReq->szName, pReq->szVersion, pReq->GCBaseAddr, pReq->cbModule, pReq->cRegions, pReq->aRegions);
+    return GMMR0RegisterSharedModule(pVM, idCpu, pReq->enmGuestOS, pReq->szName, pReq->szVersion, pReq->GCBaseAddr, pReq->cbModule, pReq->cRegions, pReq->aRegions);
 }
 
 /**
