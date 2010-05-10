@@ -29,6 +29,7 @@
 *******************************************************************************/
 #include "SUPR0IdcClientInternal.h"
 #include <VBox/err.h>
+#include <iprt/asm.h>
 
 
 /**
