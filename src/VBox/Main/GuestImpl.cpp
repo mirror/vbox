@@ -207,12 +207,12 @@ STDMETHODIMP Guest::COMGETTER(SupportsGraphics) (BOOL *aSupportsGraphics)
     return S_OK;
 }
 
-STDMETHODIMP Guest::COMGETTER(SharedPagingEnabled) (BOOL *enabled)
+STDMETHODIMP Guest::COMGETTER(PageFusionEnabled) (BOOL *enabled)
 {
     return E_NOTIMPL;
 }
 
-STDMETHODIMP Guest::COMSETTER(SharedPagingEnabled) (BOOL enabled)
+STDMETHODIMP Guest::COMSETTER(PageFusionEnabled) (BOOL enabled)
 {
     return E_NOTIMPL;
 }

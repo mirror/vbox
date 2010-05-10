@@ -79,8 +79,8 @@ public:
     STDMETHOD(COMGETTER(AdditionsVersion)) (BSTR *aAdditionsVersion);
     STDMETHOD(COMGETTER(SupportsSeamless)) (BOOL *aSupportsSeamless);
     STDMETHOD(COMGETTER(SupportsGraphics)) (BOOL *aSupportsGraphics);
-    STDMETHOD(COMGETTER(SharedPagingEnabled)) (BOOL *enabled);
-    STDMETHOD(COMSETTER(SharedPagingEnabled)) (BOOL enabled);
+    STDMETHOD(COMGETTER(PageFusionEnabled)) (BOOL *enabled);
+    STDMETHOD(COMSETTER(PageFusionEnabled)) (BOOL enabled);
     STDMETHOD(COMGETTER(MemoryBalloonSize)) (ULONG *aMemoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize)) (ULONG aMemoryBalloonSize);
     STDMETHOD(COMGETTER(StatisticsUpdateInterval)) (ULONG *aUpdateInterval);
