@@ -30,6 +30,7 @@
 #include <iprt/sg.h>
 #include <iprt/time.h>
 #include <iprt/semaphore.h>
+#include <iprt/asm.h>
 
 #include "Builtins.h"
 
