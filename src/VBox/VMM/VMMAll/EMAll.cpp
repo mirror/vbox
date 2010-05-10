@@ -893,7 +893,7 @@ static int emInterpretLockOrXorAnd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCP
     void *pvParam1;
     OP_PARAMVAL param1, param2;
 
-#if HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0)
     Assert(pDis->param1.size <= 4);
 #endif
 
