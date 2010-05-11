@@ -239,13 +239,13 @@ void VBoxServicePageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppN
             }
             bool ret = RTAvlPVInsert(ppNewTree, pRec);
             Assert(ret); NOREF(ret);
-        }
 
-        VBoxServiceVerbose(3, "\n\n     MODULE NAME:     %s",           ModuleInfo.szModule );
-        VBoxServiceVerbose(3, "\n     executable     = %s",             ModuleInfo.szExePath );
-        VBoxServiceVerbose(3, "\n     process ID     = 0x%08X",         ModuleInfo.th32ProcessID );
-        VBoxServiceVerbose(3, "\n     base address   = 0x%08X", (DWORD) ModuleInfo.modBaseAddr );
-        VBoxServiceVerbose(3, "\n     base size      = %d",             ModuleInfo.modBaseSize );
+            VBoxServiceVerbose(3, "\n\n     MODULE NAME:     %s",           ModuleInfo.szModule );
+            VBoxServiceVerbose(3, "\n     executable     = %s",             ModuleInfo.szExePath );
+            VBoxServiceVerbose(3, "\n     process ID     = 0x%08X",         ModuleInfo.th32ProcessID );
+            VBoxServiceVerbose(3, "\n     base address   = 0x%08X", (DWORD) ModuleInfo.modBaseAddr );
+            VBoxServiceVerbose(3, "\n     base size      = %d",             ModuleInfo.modBaseSize );
+        }
     }
     while (Module32Next(hSnapshot, &ModuleInfo));
 
