@@ -188,9 +188,6 @@ endif
 ifdef VBOX_WITH_DRV_DISK_INTEGRITY
  VBoxDD_DEFS           += VBOX_WITH_DRV_DISK_INTEGRITY
 endif
-ifdef VBOX_WITH_PAGE_SHARING
-  VBoxDD_DEFS          += VBOX_WITH_PAGE_SHARING
-endif
 ifdef VBOX_WITH_VDE
  VBoxDD_DEFS           += VBOX_WITH_VDE
 endif
@@ -287,7 +284,8 @@ DevicesR3_TEMPLATE      = VBOXR3
 DevicesR3_SDKS.win      = WINPSDK W2K3DDK
 DevicesR3_DEFS.darwin.x86 = VBOX_WITH_2X_4GB_ADDR_SPACE
 DevicesR3_DEFS         += VBOX_HGCM_HOST_CODE \
-			  $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)
+			  $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,) \
+			  $(if $(VBOX_WITH_PAGE_SHARING),VBOX_WITH_PAGE_SHARING,)
 DevicesR3_DEFS         += VBOX_WITH_HGCM
 DevicesR3_DEFS.linux   += _GNU_SOURCE
 DevicesR3_DEFS.l4      += _GNU_SOURCE
