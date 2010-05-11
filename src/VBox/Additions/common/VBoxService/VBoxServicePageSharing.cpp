@@ -249,8 +249,8 @@ void VBoxServicePageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppN
     }
     while (Module32Next(hSnapshot, &ModuleInfo));
 
-    CloseHandle(hProcess);
     CloseHandle(hSnapshot);
+    CloseHandle(hProcess);
 }
 
 /**
