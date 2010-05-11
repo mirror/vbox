@@ -460,7 +460,7 @@ VBOX_WITH_VBOXBFE = 1
 #VBOX_WITH_VBOXFB = 1
 # Enables the Python<->XPCOM and Python<->COM bindings.
 VBOX_WITH_PYTHON ?= 1
-if1of ($(KBUILD_TARGET), darwin)
+if1of ($(KBUILD_TARGET), )
  # Enable Java<->XPCOM bridge
  VBOX_WITH_JXPCOM ?= 1
 endif
