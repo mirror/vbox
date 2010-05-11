@@ -875,7 +875,8 @@ public:
     enum
     {
         BuildMachineXML_IncludeSnapshots = 0x01,
-        BuildMachineXML_WriteVboxVersionAttribute = 0x02
+        BuildMachineXML_WriteVboxVersionAttribute = 0x02,
+        BuildMachineXML_SkipRemovableMedia = 0x02
     };
     void buildMachineXML(xml::ElementNode &elmMachine, uint32_t fl);
 
@@ -898,7 +899,7 @@ private:
 
     void buildHardwareXML(xml::ElementNode &elmParent, const Hardware &hw, const Storage &strg);
     void buildNetworkXML(NetworkAttachmentType_T mode, xml::ElementNode &elmParent, const NetworkAdapter &nic);
-    void buildStorageControllersXML(xml::ElementNode &elmParent, const Storage &st);
+    void buildStorageControllersXML(xml::ElementNode &elmParent, const Storage &st, bool fSkipRemovableMedia);
     void buildSnapshotXML(xml::ElementNode &elmParent, const Snapshot &snap);
 
     void bumpSettingsVersionIfNeeded();

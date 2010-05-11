@@ -3650,9 +3650,14 @@ void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode,
  * keys under that. Called for both the <Machine> node and for snapshots.
  * @param elmParent
  * @param st
+ * @param fSkipRemovableMedia If true, DVD and floppy attachments are skipped and
+ *   an empty drive is always written instead. This is for the OVF export case.
+ *   This parameter is ignored unless the settings version is at least v1.9, which
+ *   is always the case when this gets called for OVF export.
  */
 void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
-                                                   const Storage &st)
+                                                   const Storage &st,
+                                                   bool fSkipRemovableMedia)
 {
     xml::ElementNode *pelmStorageControllers = elmParent.createChild("StorageControllers");
 
@@ -3764,7 +3769,11 @@ void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
             pelmDevice->setAttribute("port", att.lPort);
             pelmDevice->setAttribute("device", att.lDevice);
 
-            if (!att.uuid.isEmpty())
+            if (    !att.uuid.isEmpty()
+                 && (    att.deviceType == DeviceType_HardDisk
+                      || !fSkipRemovableMedia
+                    )
+               )
                 pelmDevice->createChild("Image")->setAttribute("uuid", makeString(att.uuid));
             else if (    (m->sv >= SettingsVersion_v1_9)
                       && (att.strHostDriveSrc.length())
@@ -3797,7 +3806,11 @@ void MachineConfigFile::buildSnapshotXML(xml::ElementNode &elmParent,
         pelmSnapshot->createChild("Description")->addContent(snap.strDescription);
 
     buildHardwareXML(*pelmSnapshot, snap.hardware, snap.storage);
-    buildStorageControllersXML(*pelmSnapshot, snap.storage);
+    buildStorageControllersXML(*pelmSnapshot,
+                               snap.storage,
+                               false /* fSkipRemovableMedia */);
+                                    // we only skip removable media for OVF, but we never get here for OVF
+                                    // since snapshots never get written then
 
     if (snap.llChildSnapshots.size())
     {
@@ -3834,6 +3847,12 @@ void MachineConfigFile::buildSnapshotXML(xml::ElementNode &elmParent,
  *      attribute to the machine tag with the vbox settings version. This is for
  *      the OVF export case in which we don't have the settings version set in
  *      the root element.
+ *
+ *  --  BuildMachineXML_SkipRemovableMedia: If set, removable media attachments
+ *      (DVDs, floppies) are silently skipped. This is for the OVF export case
+ *      until we support copying ISO and RAW media as well.  This flas is ignored
+ *      unless the settings version is at least v1.9, which is always the case
+ *      when this gets called for OVF export.
  *
  * @param elmMachine XML <Machine> element to add attributes and elements to.
  * @param fl Flags.
@@ -3886,7 +3905,9 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
         buildSnapshotXML(elmMachine, llFirstSnapshot.front());
 
     buildHardwareXML(elmMachine, hardwareMachine, storageMachine);
-    buildStorageControllersXML(elmMachine, storageMachine);
+    buildStorageControllersXML(elmMachine,
+                               storageMachine,
+                               !!(fl & BuildMachineXML_SkipRemovableMedia));
 }
 
 /**
