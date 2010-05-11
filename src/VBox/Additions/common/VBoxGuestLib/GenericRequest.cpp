@@ -79,7 +79,8 @@ DECLVBGL(int) VbglGRVerify (const VMMDevRequestHeader *pReq, size_t cbReq)
 #else
         || pReq->requestType == VMMDevReq_HGCMCall
 #endif /* VBOX_WITH_64_BITS_GUESTS */
-        || pReq->requestType == VMMDevReq_ChangeMemBalloon)
+        || pReq->requestType == VMMDevReq_ChangeMemBalloon
+        || pReq->requestType == VMMDevReq_RegisterSharedModule)
     {
         if (cbReq > VMMDEV_MAX_VMMDEVREQ_SIZE)
         {
