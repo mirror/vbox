@@ -259,7 +259,7 @@ static DECLCALLBACK(int) VBoxServiceBalloonInit(void)
     rc = VbglR3MemBalloonRefresh(&cNewChunks, &fHandleInR3);
     if (RT_SUCCESS(rc))
     {
-        VBoxServiceVerbose(3, "VBoxMemBalloonInit: new balloon size %d MB (%s memory)\n",
+        VBoxServiceVerbose(3, "MemBalloon: New balloon size %d MB (%s memory)\n",
                            cNewChunks, fHandleInR3 ? "R3" : "R0");
         if (fHandleInR3)
             rc = VBoxServiceBalloonSetUser(cNewChunks);
@@ -267,11 +267,22 @@ static DECLCALLBACK(int) VBoxServiceBalloonInit(void)
             g_cMemBalloonChunks = cNewChunks;
     }
     else
-        VBoxServiceVerbose(3, "VBoxMemBalloonInit: VbglR3MemBalloonRefresh failed with %Rrc\n", rc);
+    {
+        if (rc == VERR_INVALID_PARAMETER) /* Host service is not available. */
+            VBoxServiceVerbose(0, "MemBalloon: Memory ballooning support is not available\n");
+        else
+            VBoxServiceVerbose(3, "MemBalloon: VbglR3MemBalloonRefresh failed with %Rrc\n", rc);
+        RTSemEventMultiDestroy(g_MemBalloonEvent);
+        g_MemBalloonEvent = NIL_RTSEMEVENTMULTI;
 
-    /* We shouldn't fail here if ballooning isn't available. This can have several reasons,
-     * for instance, host too old  (which is not that fatal). */
-    return VINF_SUCCESS;
+        /* 
+         * Not having the guest control service on the host renders this whole service
+         * unusable, so report that we are not able to continue. 
+         */
+        rc = VERR_NOT_SUPPORTED;
+    }
+
+    return rc;
 }
 
 
