@@ -302,30 +302,30 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     HRESULT         hrc;
     Bstr            bstr;
 
-#define RC_CHECK()  do { if (RT_FAILURE(rc)) { AssertMsgFailed(("rc=%Rrc\n", rc));  return rc;                   } } while (0)
-#define H()         do { if (FAILED(hrc))    { AssertMsgFailed(("hrc=%Rhrc\n", hrc)); return VERR_GENERAL_FAILURE; } } while (0)
+#define RC_CHECK()  AssertMsgReturn(RT_SUCCESS(rc), ("rc=%Rrc\n", rc), rc)
+#define H()         AssertMsgReturn(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), VERR_GENERAL_FAILURE)
 
     /*
      * Get necessary objects and frequently used parameters.
      */
     ComPtr<IVirtualBox> virtualBox;
-    hrc = pMachine->COMGETTER(Parent)(virtualBox.asOutParam());                     H();
+    hrc = pMachine->COMGETTER(Parent)(virtualBox.asOutParam());                         H();
 
     ComPtr<IHost> host;
-    hrc = virtualBox->COMGETTER(Host)(host.asOutParam());                           H();
+    hrc = virtualBox->COMGETTER(Host)(host.asOutParam());                               H();
 
     ComPtr<ISystemProperties> systemProperties;
-    hrc = virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());   H();
+    hrc = virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());       H();
 
     ComPtr<IBIOSSettings> biosSettings;
-    hrc = pMachine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());             H();
+    hrc = pMachine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());                 H();
 
-    hrc = pMachine->COMGETTER(HardwareUUID)(bstr.asOutParam());                                  H();
+    hrc = pMachine->COMGETTER(HardwareUUID)(bstr.asOutParam());                         H();
     RTUUID HardwareUuid;
-    rc = RTUuidFromUtf16(&HardwareUuid, bstr.raw());                                       RC_CHECK();
+    rc = RTUuidFromUtf16(&HardwareUuid, bstr.raw());                                    RC_CHECK();
 
     ULONG cRamMBs;
-    hrc = pMachine->COMGETTER(MemorySize)(&cRamMBs);                                H();
+    hrc = pMachine->COMGETTER(MemorySize)(&cRamMBs);                                    H();
 #if 0 /* enable to play with lots of memory. */
     if (RTEnvExist("VBOX_RAM_SIZE"))
         cRamMBs = RTStrToUInt64(RTEnvGet("VBOX_RAM_SIZE"));
@@ -334,19 +334,19 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     uint32_t const cbRamHole = MM_RAM_HOLE_SIZE_DEFAULT;
 
     ULONG cCpus = 1;
-    hrc = pMachine->COMGETTER(CPUCount)(&cCpus);                                    H();
+    hrc = pMachine->COMGETTER(CPUCount)(&cCpus);                                        H();
 
     Bstr osTypeId;
-    hrc = pMachine->COMGETTER(OSTypeId)(osTypeId.asOutParam());                     H();
+    hrc = pMachine->COMGETTER(OSTypeId)(osTypeId.asOutParam());                         H();
 
     BOOL fIOAPIC;
-    hrc = biosSettings->COMGETTER(IOAPICEnabled)(&fIOAPIC);                         H();
+    hrc = biosSettings->COMGETTER(IOAPICEnabled)(&fIOAPIC);                             H();
 
     ComPtr<IGuestOSType> guestOSType;
-    hrc = virtualBox->GetGuestOSType(osTypeId, guestOSType.asOutParam());           H();
+    hrc = virtualBox->GetGuestOSType(osTypeId, guestOSType.asOutParam());               H();
 
     Bstr guestTypeFamilyId;
-    hrc = guestOSType->COMGETTER(FamilyId)(guestTypeFamilyId.asOutParam());         H();
+    hrc = guestOSType->COMGETTER(FamilyId)(guestTypeFamilyId.asOutParam());             H();
     BOOL fOsXGuest = guestTypeFamilyId == Bstr("MacOS");
 
     /*
@@ -359,19 +359,19 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     /*
      * Set the root (and VMM) level values.
      */
-    hrc = pMachine->COMGETTER(Name)(bstr.asOutParam());                             H();
-    rc = CFGMR3InsertStringW(pRoot, "Name",                 bstr.raw());            RC_CHECK();
-    rc = CFGMR3InsertBytes(pRoot,   "UUID", &HardwareUuid, sizeof(HardwareUuid));   RC_CHECK();
-    rc = CFGMR3InsertInteger(pRoot, "RamSize",              cbRam);                 RC_CHECK();
-    rc = CFGMR3InsertInteger(pRoot, "RamHoleSize",          cbRamHole);             RC_CHECK();
-    rc = CFGMR3InsertInteger(pRoot, "NumCPUs",              cCpus);                 RC_CHECK();
-    rc = CFGMR3InsertInteger(pRoot, "TimerMillies",         10);                    RC_CHECK();
+    hrc = pMachine->COMGETTER(Name)(bstr.asOutParam());                                 H();
+    rc = CFGMR3InsertStringW(pRoot, "Name",                 bstr.raw());                RC_CHECK();
+    rc = CFGMR3InsertBytes(pRoot,   "UUID", &HardwareUuid, sizeof(HardwareUuid));       RC_CHECK();
+    rc = CFGMR3InsertInteger(pRoot, "RamSize",              cbRam);                     RC_CHECK();
+    rc = CFGMR3InsertInteger(pRoot, "RamHoleSize",          cbRamHole);                 RC_CHECK();
+    rc = CFGMR3InsertInteger(pRoot, "NumCPUs",              cCpus);                     RC_CHECK();
+    rc = CFGMR3InsertInteger(pRoot, "TimerMillies",         10);                        RC_CHECK();
 #ifdef VBOX_WITH_RAW_MODE
-    rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",         1);     /* boolean */   RC_CHECK();
-    rc = CFGMR3InsertInteger(pRoot, "RawR0Enabled",         1);     /* boolean */   RC_CHECK();
+    rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",         1);     /* boolean */       RC_CHECK();
+    rc = CFGMR3InsertInteger(pRoot, "RawR0Enabled",         1);     /* boolean */       RC_CHECK();
     /** @todo Config: RawR0, PATMEnabled and CSAMEnabled needs attention later. */
-    rc = CFGMR3InsertInteger(pRoot, "PATMEnabled",          1);     /* boolean */   RC_CHECK();
-    rc = CFGMR3InsertInteger(pRoot, "CSAMEnabled",          1);     /* boolean */   RC_CHECK();
+    rc = CFGMR3InsertInteger(pRoot, "PATMEnabled",          1);     /* boolean */       RC_CHECK();
+    rc = CFGMR3InsertInteger(pRoot, "CSAMEnabled",          1);     /* boolean */       RC_CHECK();
 #endif
 
     /* cpuid leaf overrides. */
@@ -406,8 +406,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          */
         LogRel(("Limiting CPUID leaf count for NT4 guests\n"));
         PCFGMNODE pCPUM;
-        rc = CFGMR3InsertNode(pRoot, "CPUM", &pCPUM);                               RC_CHECK();
-        rc = CFGMR3InsertInteger(pCPUM, "NT4LeafLimit", true);                      RC_CHECK();
+        rc = CFGMR3InsertNode(pRoot, "CPUM", &pCPUM);                                   RC_CHECK();
+        rc = CFGMR3InsertInteger(pCPUM, "NT4LeafLimit", true);                          RC_CHECK();
     }
 
     if (fOsXGuest)
@@ -417,8 +417,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          */
         LogRel(("Using MWAIT extensions\n"));
         PCFGMNODE pCPUM;
-        rc = CFGMR3InsertNode(pRoot, "CPUM", &pCPUM);                               RC_CHECK();
-        rc = CFGMR3InsertInteger(pCPUM, "MWaitExtensions", true);                   RC_CHECK();
+        rc = CFGMR3InsertNode(pRoot, "CPUM", &pCPUM);                                   RC_CHECK();
+        rc = CFGMR3InsertInteger(pCPUM, "MWaitExtensions", true);                       RC_CHECK();
     }
 
     /* hardware virtualization extensions */
@@ -441,13 +441,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #else  /* !VBOX_WITH_RAW_MODE */
     fHWVirtExEnabled = fHwVirtExtForced = TRUE;
 #endif /* !VBOX_WITH_RAW_MODE */
-    rc = CFGMR3InsertInteger(pRoot, "HwVirtExtForced",      fHwVirtExtForced);      RC_CHECK();
+    rc = CFGMR3InsertInteger(pRoot, "HwVirtExtForced",      fHwVirtExtForced);          RC_CHECK();
 
     PCFGMNODE pHWVirtExt;
-    rc = CFGMR3InsertNode(pRoot, "HWVirtExt", &pHWVirtExt);                         RC_CHECK();
+    rc = CFGMR3InsertNode(pRoot, "HWVirtExt", &pHWVirtExt);                             RC_CHECK();
     if (fHWVirtExEnabled)
     {
-        rc = CFGMR3InsertInteger(pHWVirtExt, "Enabled",     1);                     RC_CHECK();
+        rc = CFGMR3InsertInteger(pHWVirtExt, "Enabled",     1);                         RC_CHECK();
 
         /* Indicate whether 64-bit guests are supported or not. */
         /** @todo This is currently only forced off on 32-bit hosts only because it
@@ -455,22 +455,22 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          */
         BOOL fSupportsLongMode = false;
         hrc = host->GetProcessorFeature(ProcessorFeature_LongMode,
-                                        &fSupportsLongMode);                        H();
-        hrc = guestOSType->COMGETTER(Is64Bit)(&fIs64BitGuest);                      H();
+                                        &fSupportsLongMode);                            H();
+        hrc = guestOSType->COMGETTER(Is64Bit)(&fIs64BitGuest);                          H();
 
         if (fSupportsLongMode && fIs64BitGuest)
         {
-            rc = CFGMR3InsertInteger(pHWVirtExt, "64bitEnabled", 1);                RC_CHECK();
+            rc = CFGMR3InsertInteger(pHWVirtExt, "64bitEnabled", 1);                    RC_CHECK();
 #if ARCH_BITS == 32 /* The recompiler must use VBoxREM64 (32-bit host only). */
             PCFGMNODE pREM;
-            rc = CFGMR3InsertNode(pRoot, "REM", &pREM);                             RC_CHECK();
-            rc = CFGMR3InsertInteger(pREM, "64bitEnabled", 1);                      RC_CHECK();
+            rc = CFGMR3InsertNode(pRoot, "REM", &pREM);                                 RC_CHECK();
+            rc = CFGMR3InsertInteger(pREM, "64bitEnabled", 1);                          RC_CHECK();
 #endif
         }
 #if ARCH_BITS == 32 /* 32-bit guests only. */
         else
         {
-            rc = CFGMR3InsertInteger(pHWVirtExt, "64bitEnabled", 0);                RC_CHECK();
+            rc = CFGMR3InsertInteger(pHWVirtExt, "64bitEnabled", 0);                    RC_CHECK();
         }
 #endif
 
@@ -485,42 +485,42 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             /* Only allow TPR patching for NT, Win2k, XP and Windows Server 2003. (32 bits mode)
              * We may want to consider adding more guest OSes (Solaris) later on.
              */
-            rc = CFGMR3InsertInteger(pHWVirtExt, "TPRPatchingEnabled", 1);          RC_CHECK();
+            rc = CFGMR3InsertInteger(pHWVirtExt, "TPRPatchingEnabled", 1);              RC_CHECK();
         }
     }
 
     /* HWVirtEx exclusive mode */
     BOOL fHWVirtExExclusive = true;
     hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Exclusive, &fHWVirtExExclusive); H();
-    rc = CFGMR3InsertInteger(pHWVirtExt, "Exclusive", fHWVirtExExclusive);          RC_CHECK();
+    rc = CFGMR3InsertInteger(pHWVirtExt, "Exclusive", fHWVirtExExclusive);              RC_CHECK();
 
     /* Nested paging (VT-x/AMD-V) */
     BOOL fEnableNestedPaging = false;
     hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, &fEnableNestedPaging); H();
-    rc = CFGMR3InsertInteger(pHWVirtExt, "EnableNestedPaging", fEnableNestedPaging); RC_CHECK();
+    rc = CFGMR3InsertInteger(pHWVirtExt, "EnableNestedPaging", fEnableNestedPaging);    RC_CHECK();
 
     /* Large pages; requires nested paging */
     BOOL fEnableLargePages = false;
     hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_LargePages, &fEnableLargePages); H();
-    rc = CFGMR3InsertInteger(pHWVirtExt, "EnableLargePages", fEnableLargePages);    RC_CHECK();
+    rc = CFGMR3InsertInteger(pHWVirtExt, "EnableLargePages", fEnableLargePages);        RC_CHECK();
 
     /* VPID (VT-x) */
     BOOL fEnableVPID = false;
-    hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_VPID, &fEnableVPID);   H();
-    rc = CFGMR3InsertInteger(pHWVirtExt, "EnableVPID", fEnableVPID);                RC_CHECK();
+    hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_VPID, &fEnableVPID);       H();
+    rc = CFGMR3InsertInteger(pHWVirtExt, "EnableVPID", fEnableVPID);                    RC_CHECK();
 
     /* Physical Address Extension (PAE) */
     BOOL fEnablePAE = false;
-    hrc = pMachine->GetCPUProperty(CPUPropertyType_PAE, &fEnablePAE);               H();
-    rc = CFGMR3InsertInteger(pRoot, "EnablePAE", fEnablePAE);                       RC_CHECK();
+    hrc = pMachine->GetCPUProperty(CPUPropertyType_PAE, &fEnablePAE);                   H();
+    rc = CFGMR3InsertInteger(pRoot, "EnablePAE", fEnablePAE);                           RC_CHECK();
 
     /* Synthetic CPU */
     BOOL fSyntheticCpu = false;
-    hrc = pMachine->GetCPUProperty(CPUPropertyType_Synthetic, &fSyntheticCpu);      H();
-    rc = CFGMR3InsertInteger(pRoot, "SyntheticCpu", fSyntheticCpu);                 RC_CHECK();
+    hrc = pMachine->GetCPUProperty(CPUPropertyType_Synthetic, &fSyntheticCpu);          H();
+    rc = CFGMR3InsertInteger(pRoot, "SyntheticCpu", fSyntheticCpu);                     RC_CHECK();
 
     BOOL fPXEDebug;
-    hrc = biosSettings->COMGETTER(PXEDebugEnabled)(&fPXEDebug);                     H();
+    hrc = biosSettings->COMGETTER(PXEDebugEnabled)(&fPXEDebug);                         H();
 
     /*
      * PDM config.
@@ -529,17 +529,17 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     PCFGMNODE pPDM;
     PCFGMNODE pDrivers;
     PCFGMNODE pMod;
-    rc = CFGMR3InsertNode(pRoot,    "PDM", &pPDM);                                  RC_CHECK();
-    rc = CFGMR3InsertNode(pPDM,     "Drivers", &pDrivers);                          RC_CHECK();
-    rc = CFGMR3InsertNode(pDrivers, "VBoxC", &pMod);                                RC_CHECK();
+    rc = CFGMR3InsertNode(pRoot,    "PDM", &pPDM);                                      RC_CHECK();
+    rc = CFGMR3InsertNode(pPDM,     "Drivers", &pDrivers);                              RC_CHECK();
+    rc = CFGMR3InsertNode(pDrivers, "VBoxC", &pMod);                                    RC_CHECK();
 #ifdef VBOX_WITH_XPCOM
     // VBoxC is located in the components subdirectory
     char szPathVBoxC[RTPATH_MAX];
-    rc = RTPathAppPrivateArch(szPathVBoxC, RTPATH_MAX - sizeof("/components/VBoxC")); AssertRC(rc);
+    rc = RTPathAppPrivateArch(szPathVBoxC, RTPATH_MAX - sizeof("/components/VBoxC"));   AssertRC(rc);
     strcat(szPathVBoxC, "/components/VBoxC");
-    rc = CFGMR3InsertString(pMod,   "Path",  szPathVBoxC);                          RC_CHECK();
+    rc = CFGMR3InsertString(pMod,   "Path",  szPathVBoxC);                              RC_CHECK();
 #else
-    rc = CFGMR3InsertString(pMod,   "Path",  "VBoxC");                              RC_CHECK();
+    rc = CFGMR3InsertString(pMod,   "Path",  "VBoxC");                                  RC_CHECK();
 #endif
 
     /*
@@ -547,22 +547,22 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      */
     PCFGMNODE pPDMAc;
     PCFGMNODE pPDMAcFile;
-    rc = CFGMR3InsertNode(pPDM, "AsyncCompletion", &pPDMAc);                        RC_CHECK();
-    rc = CFGMR3InsertNode(pPDMAc, "File", &pPDMAcFile);                             RC_CHECK();
+    rc = CFGMR3InsertNode(pPDM, "AsyncCompletion", &pPDMAc);                            RC_CHECK();
+    rc = CFGMR3InsertNode(pPDMAc, "File", &pPDMAcFile);                                 RC_CHECK();
 
     /* Builtin I/O cache */
     BOOL fIoCache = true;
-    hrc = pMachine->COMGETTER(IoCacheEnabled)(&fIoCache);                           H();
-    rc = CFGMR3InsertInteger(pPDMAcFile, "CacheEnabled", fIoCache);                 RC_CHECK();
+    hrc = pMachine->COMGETTER(IoCacheEnabled)(&fIoCache);                               H();
+    rc = CFGMR3InsertInteger(pPDMAcFile, "CacheEnabled", fIoCache);                     RC_CHECK();
 
     /* I/O cache size */
     ULONG ioCacheSize = 5;
-    hrc = pMachine->COMGETTER(IoCacheSize)(&ioCacheSize);                           H();
-    rc = CFGMR3InsertInteger(pPDMAcFile, "CacheSize", ioCacheSize * _1M);           RC_CHECK();
+    hrc = pMachine->COMGETTER(IoCacheSize)(&ioCacheSize);                               H();
+    rc = CFGMR3InsertInteger(pPDMAcFile, "CacheSize", ioCacheSize * _1M);               RC_CHECK();
 
     /* Maximum I/O bandwidth */
     ULONG ioBandwidthMax = 0;
-    hrc = pMachine->COMGETTER(IoBandwidthMax)(&ioBandwidthMax);                     H();
+    hrc = pMachine->COMGETTER(IoBandwidthMax)(&ioBandwidthMax);                         H();
     if (ioBandwidthMax != 0)
     {
         rc = CFGMR3InsertInteger(pPDMAcFile, "VMTransferPerSecMax", ioBandwidthMax * _1M); RC_CHECK();
@@ -581,63 +581,63 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     PCFGMNODE pBiosCfg = NULL;      /* /Devices/pcbios/0/Config/ */
     PCFGMNODE pNetBootCfg = NULL;   /* /Devices/pcbios/0/Config/NetBoot/ */
 
-    rc = CFGMR3InsertNode(pRoot, "Devices", &pDevices);                             RC_CHECK();
+    rc = CFGMR3InsertNode(pRoot, "Devices", &pDevices);                                 RC_CHECK();
 
     /*
      * PC Arch.
      */
-    rc = CFGMR3InsertNode(pDevices, "pcarch", &pDev);                               RC_CHECK();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
+    rc = CFGMR3InsertNode(pDevices, "pcarch", &pDev);                                   RC_CHECK();
+    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                       RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */       RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                                   RC_CHECK();
 
     /*
      * The time offset
      */
     LONG64 timeOffset;
-    hrc = biosSettings->COMGETTER(TimeOffset)(&timeOffset);                         H();
+    hrc = biosSettings->COMGETTER(TimeOffset)(&timeOffset);                             H();
     PCFGMNODE pTMNode;
-    rc = CFGMR3InsertNode(pRoot, "TM", &pTMNode);                                   RC_CHECK();
-    rc = CFGMR3InsertInteger(pTMNode, "UTCOffset", timeOffset * 1000000);           RC_CHECK();
+    rc = CFGMR3InsertNode(pRoot, "TM", &pTMNode);                                       RC_CHECK();
+    rc = CFGMR3InsertInteger(pTMNode, "UTCOffset", timeOffset * 1000000);               RC_CHECK();
 
     /*
      * DMA
      */
-    rc = CFGMR3InsertNode(pDevices, "8237A", &pDev);                                RC_CHECK();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "Trusted", 1);                  /* boolean */   RC_CHECK();
+    rc = CFGMR3InsertNode(pDevices, "8237A", &pDev);                                    RC_CHECK();
+    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                       RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "Trusted", 1);                  /* boolean */       RC_CHECK();
 
     /*
      * PCI buses.
      */
-    rc = CFGMR3InsertNode(pDevices, "pci", &pDev); /* piix3 */                      RC_CHECK();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
-    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                             RC_CHECK();
+    rc = CFGMR3InsertNode(pDevices, "pci", &pDev); /* piix3 */                          RC_CHECK();
+    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                       RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */       RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                                   RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                                 RC_CHECK();
 
 #if 0 /* enable this to test PCI bridging */
-    rc = CFGMR3InsertNode(pDevices, "pcibridge", &pDev);                            RC_CHECK();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",         14);                     RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                     RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "PCIBusNo",             0);/* -> pci[0] */      RC_CHECK();
+    rc = CFGMR3InsertNode(pDevices, "pcibridge", &pDev);                                RC_CHECK();
+    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                       RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */       RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                                   RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",         14);                         RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                         RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "PCIBusNo",             0);/* -> pci[0] */          RC_CHECK();
 
-    rc = CFGMR3InsertNode(pDev,     "1", &pInst);                                   RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          1);                     RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                     RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "PCIBusNo",             1);/* ->pcibridge[0] */ RC_CHECK();
+    rc = CFGMR3InsertNode(pDev,     "1", &pInst);                                       RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */       RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                                   RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          1);                         RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                         RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "PCIBusNo",             1);/* ->pcibridge[0] */     RC_CHECK();
 
-    rc = CFGMR3InsertNode(pDev,     "2", &pInst);                                   RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          3);                     RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                     RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "PCIBusNo",             1);/* ->pcibridge[0] */ RC_CHECK();
+    rc = CFGMR3InsertNode(pDev,     "2", &pInst);                                       RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */       RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                                   RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          3);                         RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                         RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "PCIBusNo",             1);/* ->pcibridge[0] */     RC_CHECK();
 #endif
 
     /*
@@ -649,7 +649,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     BOOL fHpetEnabled;
 #ifdef VBOX_WITH_HPET
     /* Other guests may wish to use HPET too, but MacOS X not functional without it */
-    hrc = pMachine->COMGETTER(HpetEnabled)(&fHpetEnabled);                          H();
+    hrc = pMachine->COMGETTER(HpetEnabled)(&fHpetEnabled);                              H();
     /* so always enable HPET in extended profile */
     fHpetEnabled |= fOsXGuest;
 #else
@@ -657,9 +657,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #endif
     if (fHpetEnabled)
     {
-        rc = CFGMR3InsertNode(pDevices, "hpet", &pDev);                             RC_CHECK();
-        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
-        rc = CFGMR3InsertInteger(pInst, "Trusted",   1);     /* boolean */          RC_CHECK();
+        rc = CFGMR3InsertNode(pDevices, "hpet", &pDev);                                 RC_CHECK();
+        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "Trusted",   1);     /* boolean */              RC_CHECK();
     }
 
     /*
@@ -674,12 +674,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     if (fSmcEnabled)
     {
         Bstr tmpStr2;
-        rc = CFGMR3InsertNode(pDevices, "smc", &pDev);                              RC_CHECK();
-        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
-        rc = CFGMR3InsertInteger(pInst, "Trusted",   1);     /* boolean */          RC_CHECK();
-        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
-        rc = getSmcDeviceKey(pMachine,   tmpStr2.asOutParam());                     RC_CHECK();
-        rc = CFGMR3InsertString(pCfg,   "DeviceKey", Utf8Str(tmpStr2).raw());       RC_CHECK();
+        rc = CFGMR3InsertNode(pDevices, "smc", &pDev);                                  RC_CHECK();
+        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "Trusted",   1);     /* boolean */              RC_CHECK();
+        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
+        rc = getSmcDeviceKey(pMachine,   tmpStr2.asOutParam());                         RC_CHECK();
+        rc = CFGMR3InsertString(pCfg,   "DeviceKey", Utf8Str(tmpStr2).raw());           RC_CHECK();
     }
 
     /*
@@ -694,127 +694,127 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #endif
     if (fLpcEnabled)
     {
-        rc = CFGMR3InsertNode(pDevices, "lpc", &pDev);                              RC_CHECK();
-        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
-        rc = CFGMR3InsertInteger(pInst, "Trusted",   1);     /* boolean */          RC_CHECK();
+        rc = CFGMR3InsertNode(pDevices, "lpc", &pDev);                                  RC_CHECK();
+        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "Trusted",   1);     /* boolean */              RC_CHECK();
     }
 
     /*
      * PS/2 keyboard & mouse.
      */
-    rc = CFGMR3InsertNode(pDevices, "pckbd", &pDev);                                RC_CHECK();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
+    rc = CFGMR3InsertNode(pDevices, "pckbd", &pDev);                                    RC_CHECK();
+    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                       RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */       RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                                   RC_CHECK();
 
-    rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                              RC_CHECK();
-    rc = CFGMR3InsertString(pLunL0, "Driver",               "KeyboardQueue");       RC_CHECK();
-    rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
-    rc = CFGMR3InsertInteger(pCfg,  "QueueSize",            64);                    RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                                  RC_CHECK();
+    rc = CFGMR3InsertString(pLunL0, "Driver",               "KeyboardQueue");           RC_CHECK();
+    rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                                   RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "QueueSize",            64);                        RC_CHECK();
 
-    rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                     RC_CHECK();
-    rc = CFGMR3InsertString(pLunL1, "Driver",               "MainKeyboard");        RC_CHECK();
-    rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                               RC_CHECK();
+    rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                         RC_CHECK();
+    rc = CFGMR3InsertString(pLunL1, "Driver",               "MainKeyboard");            RC_CHECK();
+    rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                                   RC_CHECK();
     Keyboard *pKeyboard = pConsole->mKeyboard;
-    rc = CFGMR3InsertInteger(pCfg,  "Object",     (uintptr_t)pKeyboard);            RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "Object",     (uintptr_t)pKeyboard);                RC_CHECK();
 
-    rc = CFGMR3InsertNode(pInst,    "LUN#1", &pLunL0);                              RC_CHECK();
-    rc = CFGMR3InsertString(pLunL0, "Driver",               "MouseQueue");          RC_CHECK();
-    rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
-    rc = CFGMR3InsertInteger(pCfg,  "QueueSize",            128);                   RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "LUN#1", &pLunL0);                                  RC_CHECK();
+    rc = CFGMR3InsertString(pLunL0, "Driver",               "MouseQueue");              RC_CHECK();
+    rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                                   RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "QueueSize",            128);                       RC_CHECK();
 
-    rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                     RC_CHECK();
-    rc = CFGMR3InsertString(pLunL1, "Driver",               "MainMouse");           RC_CHECK();
-    rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                               RC_CHECK();
+    rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                         RC_CHECK();
+    rc = CFGMR3InsertString(pLunL1, "Driver",               "MainMouse");               RC_CHECK();
+    rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                                   RC_CHECK();
     Mouse *pMouse = pConsole->mMouse;
-    rc = CFGMR3InsertInteger(pCfg,  "Object",     (uintptr_t)pMouse);               RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "Object",     (uintptr_t)pMouse);                   RC_CHECK();
 
     /*
      * i8254 Programmable Interval Timer And Dummy Speaker
      */
-    rc = CFGMR3InsertNode(pDevices, "i8254", &pDev);                                RC_CHECK();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
+    rc = CFGMR3InsertNode(pDevices, "i8254", &pDev);                                    RC_CHECK();
+    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                       RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                                   RC_CHECK();
 #ifdef DEBUG
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */       RC_CHECK();
 #endif
 
     /*
      * i8259 Programmable Interrupt Controller.
      */
-    rc = CFGMR3InsertNode(pDevices, "i8259", &pDev);                                RC_CHECK();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
+    rc = CFGMR3InsertNode(pDevices, "i8259", &pDev);                                    RC_CHECK();
+    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                       RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */       RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                                   RC_CHECK();
 
     /*
      * Advanced Programmable Interrupt Controller.
      * SMP: Each CPU has a LAPIC, but we have a single device representing all LAPICs states,
      *      thus only single insert
      */
-    rc = CFGMR3InsertNode(pDevices, "apic", &pDev);                                 RC_CHECK();
-    rc = CFGMR3InsertNode(pDev, "0", &pInst);                                       RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
-    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                             RC_CHECK();
-    rc = CFGMR3InsertInteger(pCfg,  "NumCPUs", cCpus);                              RC_CHECK();
+    rc = CFGMR3InsertNode(pDevices, "apic", &pDev);                                     RC_CHECK();
+    rc = CFGMR3InsertNode(pDev, "0", &pInst);                                           RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */       RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                                   RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                                 RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "NumCPUs", cCpus);                                  RC_CHECK();
 
     if (fIOAPIC)
     {
         /*
          * I/O Advanced Programmable Interrupt Controller.
          */
-        rc = CFGMR3InsertNode(pDevices, "ioapic", &pDev);                           RC_CHECK();
-        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
-        rc = CFGMR3InsertInteger(pInst, "Trusted",          1);     /* boolean */   RC_CHECK();
-        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
+        rc = CFGMR3InsertNode(pDevices, "ioapic", &pDev);                               RC_CHECK();
+        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "Trusted",          1);     /* boolean */       RC_CHECK();
+        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
     }
 
     /*
      * RTC MC146818.
      */
-    rc = CFGMR3InsertNode(pDevices, "mc146818", &pDev);                             RC_CHECK();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
+    rc = CFGMR3InsertNode(pDevices, "mc146818", &pDev);                                 RC_CHECK();
+    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                       RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                                   RC_CHECK();
     BOOL fRTCUseUTC;
-    hrc = pMachine->COMGETTER(RTCUseUTC)(&fRTCUseUTC);                              H();
-    rc = CFGMR3InsertInteger(pCfg,  "UseUTC", fRTCUseUTC ? 1 : 0);                  RC_CHECK();
+    hrc = pMachine->COMGETTER(RTCUseUTC)(&fRTCUseUTC);                                  H();
+    rc = CFGMR3InsertInteger(pCfg,  "UseUTC", fRTCUseUTC ? 1 : 0);                      RC_CHECK();
 
     /*
      * VGA.
      */
-    rc = CFGMR3InsertNode(pDevices, "vga", &pDev);                                  RC_CHECK();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          2);                     RC_CHECK();
+    rc = CFGMR3InsertNode(pDevices, "vga", &pDev);                                      RC_CHECK();
+    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                       RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */       RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          2);                         RC_CHECK();
     Assert(!afPciDeviceNo[2]);
     afPciDeviceNo[2] = true;
-    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                     RC_CHECK();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                         RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                                   RC_CHECK();
     ULONG cVRamMBs;
-    hrc = pMachine->COMGETTER(VRAMSize)(&cVRamMBs);                                 H();
-    rc = CFGMR3InsertInteger(pCfg,  "VRamSize",             cVRamMBs * _1M);        RC_CHECK();
+    hrc = pMachine->COMGETTER(VRAMSize)(&cVRamMBs);                                     H();
+    rc = CFGMR3InsertInteger(pCfg,  "VRamSize",             cVRamMBs * _1M);            RC_CHECK();
     ULONG cMonitorCount;
-    hrc = pMachine->COMGETTER(MonitorCount)(&cMonitorCount);                        H();
-    rc = CFGMR3InsertInteger(pCfg,  "MonitorCount",         cMonitorCount);         RC_CHECK();
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE /* not safe here yet. */ /** @todo this needs fixing !!! No wonder VGA is slooooooooow on 32-bit darwin! */
-    rc = CFGMR3InsertInteger(pCfg,  "R0Enabled",            fHWVirtExEnabled);      RC_CHECK();
+    hrc = pMachine->COMGETTER(MonitorCount)(&cMonitorCount);                            H();
+    rc = CFGMR3InsertInteger(pCfg,  "MonitorCount",         cMonitorCount);             RC_CHECK();
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    rc = CFGMR3InsertInteger(pCfg,  "R0Enabled",            fHWVirtExEnabled);          RC_CHECK();
 #endif
 
     /*
      * BIOS logo
      */
     BOOL fFadeIn;
-    hrc = biosSettings->COMGETTER(LogoFadeIn)(&fFadeIn);                            H();
-    rc = CFGMR3InsertInteger(pCfg,  "FadeIn",  fFadeIn ? 1 : 0);                    RC_CHECK();
+    hrc = biosSettings->COMGETTER(LogoFadeIn)(&fFadeIn);                                H();
+    rc = CFGMR3InsertInteger(pCfg,  "FadeIn",  fFadeIn ? 1 : 0);                        RC_CHECK();
     BOOL fFadeOut;
-    hrc = biosSettings->COMGETTER(LogoFadeOut)(&fFadeOut);                          H();
-    rc = CFGMR3InsertInteger(pCfg,  "FadeOut", fFadeOut ? 1: 0);                    RC_CHECK();
+    hrc = biosSettings->COMGETTER(LogoFadeOut)(&fFadeOut);                              H();
+    rc = CFGMR3InsertInteger(pCfg,  "FadeOut", fFadeOut ? 1: 0);                        RC_CHECK();
     ULONG logoDisplayTime;
-    hrc = biosSettings->COMGETTER(LogoDisplayTime)(&logoDisplayTime);               H();
-    rc = CFGMR3InsertInteger(pCfg,  "LogoTime", logoDisplayTime);                   RC_CHECK();
+    hrc = biosSettings->COMGETTER(LogoDisplayTime)(&logoDisplayTime);                   H();
+    rc = CFGMR3InsertInteger(pCfg,  "LogoTime", logoDisplayTime);                       RC_CHECK();
     Bstr logoImagePath;
-    hrc = biosSettings->COMGETTER(LogoImagePath)(logoImagePath.asOutParam());       H();
+    hrc = biosSettings->COMGETTER(LogoImagePath)(logoImagePath.asOutParam());           H();
     rc = CFGMR3InsertString(pCfg,   "LogoFile", logoImagePath ? Utf8Str(logoImagePath).c_str() : ""); RC_CHECK();
 
     /*
@@ -829,7 +829,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         case BIOSBootMenuMode_MenuOnly: iShowBootMenu = 1;  break;
         default:                        iShowBootMenu = 2;  break;
     }
-    rc = CFGMR3InsertInteger(pCfg, "ShowBootMenu", iShowBootMenu);                  RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg, "ShowBootMenu", iShowBootMenu);                      RC_CHECK();
 
     /* Custom VESA mode list */
     unsigned cModes = 0;
@@ -837,41 +837,41 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     {
         char szExtraDataKey[sizeof("CustomVideoModeXX")];
         RTStrPrintf(szExtraDataKey, sizeof(szExtraDataKey), "CustomVideoMode%u", iMode);
-        hrc = pMachine->GetExtraData(Bstr(szExtraDataKey), bstr.asOutParam());     H();
+        hrc = pMachine->GetExtraData(Bstr(szExtraDataKey), bstr.asOutParam());          H();
         if (bstr.isEmpty())
             break;
-        rc = CFGMR3InsertStringW(pCfg, szExtraDataKey, bstr.raw());                RC_CHECK();
+        rc = CFGMR3InsertStringW(pCfg, szExtraDataKey, bstr.raw());                     RC_CHECK();
         ++cModes;
     }
-    rc = CFGMR3InsertInteger(pCfg,  "CustomVideoModes", cModes);                    RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "CustomVideoModes", cModes);                        RC_CHECK();
 
     /* VESA height reduction */
     ULONG ulHeightReduction;
     IFramebuffer *pFramebuffer = pConsole->getDisplay()->getFramebuffer();
     if (pFramebuffer)
     {
-        hrc = pFramebuffer->COMGETTER(HeightReduction)(&ulHeightReduction);         H();
+        hrc = pFramebuffer->COMGETTER(HeightReduction)(&ulHeightReduction);             H();
     }
     else
     {
         /* If framebuffer is not available, there is no height reduction. */
         ulHeightReduction = 0;
     }
-    rc = CFGMR3InsertInteger(pCfg,  "HeightReduction", ulHeightReduction);          RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "HeightReduction", ulHeightReduction);              RC_CHECK();
 
     /* Attach the display. */
-    rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                              RC_CHECK();
-    rc = CFGMR3InsertString(pLunL0, "Driver",               "MainDisplay");         RC_CHECK();
-    rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                                  RC_CHECK();
+    rc = CFGMR3InsertString(pLunL0, "Driver",               "MainDisplay");             RC_CHECK();
+    rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                                   RC_CHECK();
     Display *pDisplay = pConsole->mDisplay;
-    rc = CFGMR3InsertInteger(pCfg,  "Object", (uintptr_t)pDisplay);                 RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "Object", (uintptr_t)pDisplay);                     RC_CHECK();
 
 
     /*
      * Firmware.
      */
     FirmwareType_T eFwType =  FirmwareType_BIOS;
-    hrc = pMachine->COMGETTER(FirmwareType)(&eFwType);                                H();
+    hrc = pMachine->COMGETTER(FirmwareType)(&eFwType);                                  H();
 
 #ifdef VBOX_WITH_EFI
     BOOL fEfiEnabled = (eFwType >= FirmwareType_EFI) && (eFwType <= FirmwareType_EFIDUAL);
@@ -982,28 +982,28 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         /*
          * EFI subtree.
          */
-        rc = CFGMR3InsertNode(pDevices, "efi", &pDev);                                   RC_CHECK();
-        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                    RC_CHECK();
-        rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */        RC_CHECK();
-        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                                RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "RamSize",          cbRam);                      RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "RamHoleSize",      cbRamHole);                  RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "NumCPUs",          cCpus);                      RC_CHECK();
-        rc = CFGMR3InsertString(pCfg,   "EfiRom",           efiRomFile.raw());           RC_CHECK();
-        rc = CFGMR3InsertString(pCfg,   "BootArgs",         Utf8Str(bootArgs).raw());    RC_CHECK();
-        rc = CFGMR3InsertString(pCfg,   "DeviceProps",      Utf8Str(deviceProps).raw()); RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "IOAPIC",           fIOAPIC);                    RC_CHECK();
-        rc = CFGMR3InsertBytes(pCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));     RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "64BitEntry", f64BitEntry); /* boolean */        RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "GopMode", u32GopMode);                          RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "UgaHorizontalResolution", u32UgaHorisontal);    RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "UgaVerticalResolution", u32UgaVertical);        RC_CHECK();
+        rc = CFGMR3InsertNode(pDevices, "efi", &pDev);                                  RC_CHECK();
+        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */       RC_CHECK();
+        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "RamSize",          cbRam);                     RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "RamHoleSize",      cbRamHole);                 RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "NumCPUs",          cCpus);                     RC_CHECK();
+        rc = CFGMR3InsertString(pCfg,   "EfiRom",           efiRomFile.raw());          RC_CHECK();
+        rc = CFGMR3InsertString(pCfg,   "BootArgs",         Utf8Str(bootArgs).raw());   RC_CHECK();
+        rc = CFGMR3InsertString(pCfg,   "DeviceProps",      Utf8Str(deviceProps).raw());RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "IOAPIC",           fIOAPIC);                   RC_CHECK();
+        rc = CFGMR3InsertBytes(pCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));    RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "64BitEntry", f64BitEntry); /* boolean */       RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "GopMode", u32GopMode);                         RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "UgaHorizontalResolution", u32UgaHorisontal);   RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "UgaVerticalResolution", u32UgaVertical);       RC_CHECK();
 
         /* For OS X guests we'll force passing host's DMI info to the guest */
         if (fOsXGuest)
         {
-            rc = CFGMR3InsertInteger(pCfg,  "DmiUseHostInfo", 1);                        RC_CHECK();
-            rc = CFGMR3InsertInteger(pCfg,  "DmiExposeMemoryTable", 1);                  RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg,  "DmiUseHostInfo", 1);                       RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg,  "DmiExposeMemoryTable", 1);                 RC_CHECK();
         }
     }
 
@@ -1012,100 +1012,100 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      */
     com::SafeIfaceArray<IStorageController> ctrls;
     PCFGMNODE aCtrlNodes[StorageControllerType_LsiLogicSas + 1] = {};
-    hrc = pMachine->COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(ctrls));               H();
+    hrc = pMachine->COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(ctrls));       H();
 
     for (size_t i = 0; i < ctrls.size(); ++i)
     {
         DeviceType_T *paLedDevType = NULL;
 
         StorageControllerType_T enmCtrlType;
-        rc = ctrls[i]->COMGETTER(ControllerType)(&enmCtrlType);                                 H();
+        rc = ctrls[i]->COMGETTER(ControllerType)(&enmCtrlType);                         H();
         AssertRelease((unsigned)enmCtrlType < RT_ELEMENTS(aCtrlNodes));
 
         StorageBus_T enmBus;
-        rc = ctrls[i]->COMGETTER(Bus)(&enmBus);                                                 H();
+        rc = ctrls[i]->COMGETTER(Bus)(&enmBus);                                         H();
 
         Bstr controllerName;
-        rc = ctrls[i]->COMGETTER(Name)(controllerName.asOutParam());                            H();
+        rc = ctrls[i]->COMGETTER(Name)(controllerName.asOutParam());                    H();
 
         ULONG ulInstance = 999;
-        rc = ctrls[i]->COMGETTER(Instance)(&ulInstance);                                        H();
+        rc = ctrls[i]->COMGETTER(Instance)(&ulInstance);                                H();
 
         IoBackendType_T enmIoBackend;
-        rc = ctrls[i]->COMGETTER(IoBackend)(&enmIoBackend);                                     H();
+        rc = ctrls[i]->COMGETTER(IoBackend)(&enmIoBackend);                             H();
 
         /* /Devices/<ctrldev>/ */
         const char *pszCtrlDev = pConsole->convertControllerTypeToDev(enmCtrlType);
         pDev = aCtrlNodes[enmCtrlType];
         if (!pDev)
         {
-            rc = CFGMR3InsertNode(pDevices, pszCtrlDev, &pDev);                                 RC_CHECK();
+            rc = CFGMR3InsertNode(pDevices, pszCtrlDev, &pDev);                         RC_CHECK();
             aCtrlNodes[enmCtrlType] = pDev; /* IDE variants are handled in the switch */
         }
 
         /* /Devices/<ctrldev>/<instance>/ */
         PCFGMNODE pCtlInst = NULL;
-        rc = CFGMR3InsertNodeF(pDev, &pCtlInst, "%u", ulInstance);                              RC_CHECK();
+        rc = CFGMR3InsertNodeF(pDev, &pCtlInst, "%u", ulInstance);                      RC_CHECK();
 
         /* Device config: /Devices/<ctrldev>/<instance>/<values> & /ditto/Config/<values> */
-        rc = CFGMR3InsertInteger(pCtlInst, "Trusted",   1);                                     RC_CHECK();
-        rc = CFGMR3InsertNode(pCtlInst,    "Config",    &pCfg);                                 RC_CHECK();
+        rc = CFGMR3InsertInteger(pCtlInst, "Trusted",   1);                             RC_CHECK();
+        rc = CFGMR3InsertNode(pCtlInst,    "Config",    &pCfg);                         RC_CHECK();
 
         switch (enmCtrlType)
         {
             case StorageControllerType_LsiLogic:
             {
-                rc = CFGMR3InsertInteger(pCtlInst, "PCIDeviceNo",          20);                 RC_CHECK();
+                rc = CFGMR3InsertInteger(pCtlInst, "PCIDeviceNo",          20);         RC_CHECK();
                 Assert(!afPciDeviceNo[20]);
                 afPciDeviceNo[20] = true;
-                rc = CFGMR3InsertInteger(pCtlInst, "PCIFunctionNo",        0);                  RC_CHECK();
+                rc = CFGMR3InsertInteger(pCtlInst, "PCIFunctionNo",        0);          RC_CHECK();
 
                 /* Attach the status driver */
-                rc = CFGMR3InsertNode(pCtlInst, "LUN#999", &pLunL0);                            RC_CHECK();
-                rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");          RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
+                rc = CFGMR3InsertNode(pCtlInst, "LUN#999", &pLunL0);                    RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");  RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                       RC_CHECK();
                 rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapStorageLeds[iLedScsi]); RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg,  "First",    0);                                 RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "First",    0);                         RC_CHECK();
                 Assert(cLedScsi >= 16);
-                rc = CFGMR3InsertInteger(pCfg,  "Last",     15);                                RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "Last",     15);                        RC_CHECK();
                 paLedDevType = &pConsole->maStorageDevType[iLedScsi];
                 break;
             }
 
             case StorageControllerType_BusLogic:
             {
-                rc = CFGMR3InsertInteger(pCtlInst, "PCIDeviceNo",          21);                 RC_CHECK();
+                rc = CFGMR3InsertInteger(pCtlInst, "PCIDeviceNo",          21);         RC_CHECK();
                 Assert(!afPciDeviceNo[21]);
                 afPciDeviceNo[21] = true;
-                rc = CFGMR3InsertInteger(pCtlInst, "PCIFunctionNo",        0);                  RC_CHECK();
+                rc = CFGMR3InsertInteger(pCtlInst, "PCIFunctionNo",        0);          RC_CHECK();
 
                 /* Attach the status driver */
-                rc = CFGMR3InsertNode(pCtlInst, "LUN#999", &pLunL0);                            RC_CHECK();
-                rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");          RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
+                rc = CFGMR3InsertNode(pCtlInst, "LUN#999", &pLunL0);                    RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");  RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                       RC_CHECK();
                 rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapStorageLeds[iLedScsi]); RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg,  "First",    0);                                 RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "First",    0);                         RC_CHECK();
                 Assert(cLedScsi >= 16);
-                rc = CFGMR3InsertInteger(pCfg,  "Last",     15);                                RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "Last",     15);                        RC_CHECK();
                 paLedDevType = &pConsole->maStorageDevType[iLedScsi];
                 break;
             }
 
             case StorageControllerType_IntelAhci:
             {
-                rc = CFGMR3InsertInteger(pCtlInst, "PCIDeviceNo",          13);                 RC_CHECK();
+                rc = CFGMR3InsertInteger(pCtlInst, "PCIDeviceNo",          13);         RC_CHECK();
                 Assert(!afPciDeviceNo[13]);
                 afPciDeviceNo[13] = true;
-                rc = CFGMR3InsertInteger(pCtlInst, "PCIFunctionNo",        0);                  RC_CHECK();
+                rc = CFGMR3InsertInteger(pCtlInst, "PCIFunctionNo",        0);          RC_CHECK();
 
                 ULONG cPorts = 0;
-                hrc = ctrls[i]->COMGETTER(PortCount)(&cPorts);                                  H();
-                rc = CFGMR3InsertInteger(pCfg, "PortCount", cPorts);                            RC_CHECK();
+                hrc = ctrls[i]->COMGETTER(PortCount)(&cPorts);                          H();
+                rc = CFGMR3InsertInteger(pCfg, "PortCount", cPorts);                    RC_CHECK();
 
                 /* Needed configuration values for the bios. */
                 if (pBiosCfg)
                 {
-                    rc = CFGMR3InsertString(pBiosCfg, "SataHardDiskDevice", "ahci");            RC_CHECK();
+                    rc = CFGMR3InsertString(pBiosCfg, "SataHardDiskDevice", "ahci");    RC_CHECK();
                 }
 
                 for (uint32_t j = 0; j < 4; ++j)
@@ -1116,22 +1116,22 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     { "SataPrimaryMasterLUN", "SataPrimarySlaveLUN", "SataSecondaryMasterLUN", "SataSecondarySlaveLUN" };
 
                     LONG lPortNumber = -1;
-                    hrc = ctrls[i]->GetIDEEmulationPort(j, &lPortNumber);                       H();
-                    rc = CFGMR3InsertInteger(pCfg, s_apszConfig[j], lPortNumber);               RC_CHECK();
+                    hrc = ctrls[i]->GetIDEEmulationPort(j, &lPortNumber);               H();
+                    rc = CFGMR3InsertInteger(pCfg, s_apszConfig[j], lPortNumber);       RC_CHECK();
                     if (pBiosCfg)
                     {
-                        rc = CFGMR3InsertInteger(pBiosCfg, s_apszBiosConfig[j], lPortNumber);   RC_CHECK();
+                        rc = CFGMR3InsertInteger(pBiosCfg, s_apszBiosConfig[j], lPortNumber); RC_CHECK();
                     }
                 }
 
                 /* Attach the status driver */
-                rc = CFGMR3InsertNode(pCtlInst, "LUN#999", &pLunL0);                            RC_CHECK();
-                rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");          RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
+                rc = CFGMR3InsertNode(pCtlInst, "LUN#999", &pLunL0);                    RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");  RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                       RC_CHECK();
                 AssertRelease(cPorts <= cLedSata);
                 rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapStorageLeds[iLedSata]); RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg,  "First",    0);                                 RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg,  "Last",     cPorts - 1);                        RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "First",    0);                         RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "Last",     cPorts - 1);                RC_CHECK();
                 paLedDevType = &pConsole->maStorageDevType[iLedSata];
                 break;
             }
@@ -1143,20 +1143,20 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 /*
                  * IDE (update this when the main interface changes)
                  */
-                rc = CFGMR3InsertInteger(pCtlInst, "PCIDeviceNo",          1);                  RC_CHECK();
+                rc = CFGMR3InsertInteger(pCtlInst, "PCIDeviceNo",          1);          RC_CHECK();
                 Assert(!afPciDeviceNo[1]);
                 afPciDeviceNo[1] = true;
-                rc = CFGMR3InsertInteger(pCtlInst, "PCIFunctionNo",        1);                  RC_CHECK();
-                rc = CFGMR3InsertString(pCfg,  "Type", controllerString(enmCtrlType));          RC_CHECK();
+                rc = CFGMR3InsertInteger(pCtlInst, "PCIFunctionNo",        1);          RC_CHECK();
+                rc = CFGMR3InsertString(pCfg,  "Type", controllerString(enmCtrlType));  RC_CHECK();
 
                 /* Attach the status driver */
-                rc = CFGMR3InsertNode(pCtlInst,    "LUN#999", &pLunL0);                         RC_CHECK();
-                rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");          RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
+                rc = CFGMR3InsertNode(pCtlInst,    "LUN#999", &pLunL0);                 RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");  RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                       RC_CHECK();
                 rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapStorageLeds[iLedIde]); RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg,  "First",    0);                                 RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "First",    0);                         RC_CHECK();
                 Assert(cLedIde >= 4);
-                rc = CFGMR3InsertInteger(pCfg,  "Last",     3);                                 RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "Last",     3);                         RC_CHECK();
                 paLedDevType = &pConsole->maStorageDevType[iLedIde];
 
                 /* IDE flavors */
@@ -1172,40 +1172,40 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                  * i82078 Floppy drive controller
                  */
                 fFdcEnabled = true;
-                rc = CFGMR3InsertInteger(pCfg,  "IRQ",       6);                                RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg,  "DMA",       2);                                RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg,  "MemMapped", 0 );                               RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg,  "IOBase",    0x3f0);                            RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "IRQ",       6);                        RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "DMA",       2);                        RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "MemMapped", 0 );                       RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "IOBase",    0x3f0);                    RC_CHECK();
 
                 /* Attach the status driver */
-                rc = CFGMR3InsertNode(pCtlInst, "LUN#999", &pLunL0);                            RC_CHECK();
-                rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");          RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
+                rc = CFGMR3InsertNode(pCtlInst, "LUN#999", &pLunL0);                    RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");  RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                       RC_CHECK();
                 rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapStorageLeds[iLedFloppy]); RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg,  "First",    0);                                 RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "First",    0);                         RC_CHECK();
                 Assert(cLedFloppy >= 1);
-                rc = CFGMR3InsertInteger(pCfg,  "Last",     0);                                 RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "Last",     0);                         RC_CHECK();
                 paLedDevType = &pConsole->maStorageDevType[iLedFloppy];
                 break;
             }
 
             case StorageControllerType_LsiLogicSas:
             {
-                rc = CFGMR3InsertInteger(pCtlInst, "PCIDeviceNo",          22);                 RC_CHECK();
+                rc = CFGMR3InsertInteger(pCtlInst, "PCIDeviceNo",          22);         RC_CHECK();
                 Assert(!afPciDeviceNo[22]);
                 afPciDeviceNo[22] = true;
-                rc = CFGMR3InsertInteger(pCtlInst, "PCIFunctionNo",        0);                  RC_CHECK();
+                rc = CFGMR3InsertInteger(pCtlInst, "PCIFunctionNo",        0);          RC_CHECK();
 
-                rc = CFGMR3InsertString(pCfg,  "ControllerType", "SAS1068");                    RC_CHECK();
+                rc = CFGMR3InsertString(pCfg,  "ControllerType", "SAS1068");            RC_CHECK();
 
                 /* Attach the status driver */
-                rc = CFGMR3InsertNode(pCtlInst, "LUN#999", &pLunL0);                            RC_CHECK();
-                rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");          RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
+                rc = CFGMR3InsertNode(pCtlInst, "LUN#999", &pLunL0);                    RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");  RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                       RC_CHECK();
                 rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapStorageLeds[iLedScsi]); RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg,  "First",    0);                                 RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "First",    0);                         RC_CHECK();
                 Assert(cLedScsi >= 16);
-                rc = CFGMR3InsertInteger(pCfg,  "Last",     15)        ;                        RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "Last",     15)        ;                RC_CHECK();
                 paLedDevType = &pConsole->maStorageDevType[iLedScsi];
                 break;
             }
@@ -1217,7 +1217,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         /* Attach the media to the storage controllers. */
         com::SafeIfaceArray<IMediumAttachment> atts;
         hrc = pMachine->GetMediumAttachmentsOfController(controllerName,
-                                                         ComSafeArrayAsOutParam(atts));         H();
+                                                         ComSafeArrayAsOutParam(atts)); H();
 
         for (size_t j = 0; j < atts.size(); ++j)
         {
@@ -1235,7 +1235,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                                                   false /* fAttachDetach */,
                                                   false /* fForceUnmount */,
                                                   NULL /* pVM */,
-                                                  paLedDevType);                                 RC_CHECK();
+                                                  paLedDevType);                        RC_CHECK();
         }
         H();
     }
@@ -1248,22 +1248,22 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     bool fSwapSlots3and11 = false;
 #endif
     PCFGMNODE pDevPCNet = NULL;          /* PCNet-type devices */
-    rc = CFGMR3InsertNode(pDevices, "pcnet", &pDevPCNet);                           RC_CHECK();
+    rc = CFGMR3InsertNode(pDevices, "pcnet", &pDevPCNet);                               RC_CHECK();
 #ifdef VBOX_WITH_E1000
     PCFGMNODE pDevE1000 = NULL;          /* E1000-type devices */
-    rc = CFGMR3InsertNode(pDevices, "e1000", &pDevE1000);                           RC_CHECK();
+    rc = CFGMR3InsertNode(pDevices, "e1000", &pDevE1000);                               RC_CHECK();
 #endif
 #ifdef VBOX_WITH_VIRTIO
     PCFGMNODE pDevVirtioNet = NULL;          /* Virtio network devices */
-    rc = CFGMR3InsertNode(pDevices, "virtio-net", &pDevVirtioNet);                  RC_CHECK();
+    rc = CFGMR3InsertNode(pDevices, "virtio-net", &pDevVirtioNet);                      RC_CHECK();
 #endif /* VBOX_WITH_VIRTIO */
     std::list<BootNic> llBootNics;
     for (ULONG ulInstance = 0; ulInstance < SchemaDefs::NetworkAdapterCount; ++ulInstance)
     {
         ComPtr<INetworkAdapter> networkAdapter;
-        hrc = pMachine->GetNetworkAdapter(ulInstance, networkAdapter.asOutParam()); H();
+        hrc = pMachine->GetNetworkAdapter(ulInstance, networkAdapter.asOutParam());     H();
         BOOL fEnabled = FALSE;
-        hrc = networkAdapter->COMGETTER(Enabled)(&fEnabled);                        H();
+        hrc = networkAdapter->COMGETTER(Enabled)(&fEnabled);                            H();
         if (!fEnabled)
             continue;
 
@@ -1272,7 +1272,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          */
         const char *pszAdapterName = "pcnet";
         NetworkAdapterType_T adapterType;
-        hrc = networkAdapter->COMGETTER(AdapterType)(&adapterType);                 H();
+        hrc = networkAdapter->COMGETTER(AdapterType)(&adapterType);                     H();
         switch (adapterType)
         {
             case NetworkAdapterType_Am79C970A:
@@ -1301,8 +1301,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                                   adapterType, ulInstance);
         }
 
-        rc = CFGMR3InsertNodeF(pDev, &pInst, "%u", ulInstance);                     RC_CHECK();
-        rc = CFGMR3InsertInteger(pInst, "Trusted",              1); /* boolean */   RC_CHECK();
+        rc = CFGMR3InsertNodeF(pDev, &pInst, "%u", ulInstance);                         RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "Trusted",              1); /* boolean */       RC_CHECK();
         /* the first network card gets the PCI ID 3, the next 3 gets 8..10,
          * next 4 get 16..19. */
         unsigned iPciDeviceNo = 3;
@@ -1326,15 +1326,15 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         else if (iPciDeviceNo == 0x11 && fSwapSlots3and11)
             iPciDeviceNo = 3;
 #endif
-        rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo", iPciDeviceNo);               RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo", iPciDeviceNo);                   RC_CHECK();
         Assert(!afPciDeviceNo[iPciDeviceNo]);
         afPciDeviceNo[iPciDeviceNo] = true;
-        rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                 RC_CHECK();
-        rc = CFGMR3InsertNode(pInst, "Config", &pCfg);                              RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                     RC_CHECK();
+        rc = CFGMR3InsertNode(pInst, "Config", &pCfg);                                  RC_CHECK();
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE /* not safe here yet. */
         if (pDev == pDevPCNet)
         {
-            rc = CFGMR3InsertInteger(pCfg,  "R0Enabled",    false);                 RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg,  "R0Enabled",    false);                     RC_CHECK();
         }
 #endif
         /*
@@ -1346,7 +1346,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         nic.mPciDev   = iPciDeviceNo;
         nic.mPciFn    = 0;
 
-        hrc = networkAdapter->COMGETTER(BootPriority)(&nic.mBootPrio);              H();
+        hrc = networkAdapter->COMGETTER(BootPriority)(&nic.mBootPrio);                  H();
 
         llBootNics.push_back(nic);
 
@@ -1356,19 +1356,19 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         switch (adapterType)
         {
             case NetworkAdapterType_Am79C970A:
-                rc = CFGMR3InsertInteger(pCfg, "Am79C973", 0);                      RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg, "Am79C973", 0);                          RC_CHECK();
                 break;
             case NetworkAdapterType_Am79C973:
-                rc = CFGMR3InsertInteger(pCfg, "Am79C973", 1);                      RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg, "Am79C973", 1);                          RC_CHECK();
                 break;
             case NetworkAdapterType_I82540EM:
-                rc = CFGMR3InsertInteger(pCfg, "AdapterType", 0);                   RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg, "AdapterType", 0);                       RC_CHECK();
                 break;
             case NetworkAdapterType_I82543GC:
-                rc = CFGMR3InsertInteger(pCfg, "AdapterType", 1);                   RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg, "AdapterType", 1);                       RC_CHECK();
                 break;
             case NetworkAdapterType_I82545EM:
-                rc = CFGMR3InsertInteger(pCfg, "AdapterType", 2);                   RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg, "AdapterType", 2);                       RC_CHECK();
                 break;
         }
 
@@ -1376,7 +1376,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          * Get the MAC address and convert it to binary representation
          */
         Bstr macAddr;
-        hrc = networkAdapter->COMGETTER(MACAddress)(macAddr.asOutParam());          H();
+        hrc = networkAdapter->COMGETTER(MACAddress)(macAddr.asOutParam());              H();
         Assert(macAddr);
         Utf8Str macAddrUtf8 = macAddr;
         char *macStr = (char*)macAddrUtf8.raw();
@@ -1394,28 +1394,28 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 c2 -= 7;
             *pMac++ = ((c1 & 0x0f) << 4) | (c2 & 0x0f);
         }
-        rc = CFGMR3InsertBytes(pCfg, "MAC", &Mac, sizeof(Mac));                     RC_CHECK();
+        rc = CFGMR3InsertBytes(pCfg, "MAC", &Mac, sizeof(Mac));                         RC_CHECK();
 
         /*
          * Check if the cable is supposed to be unplugged
          */
         BOOL fCableConnected;
-        hrc = networkAdapter->COMGETTER(CableConnected)(&fCableConnected);          H();
-        rc = CFGMR3InsertInteger(pCfg, "CableConnected", fCableConnected ? 1 : 0);  RC_CHECK();
+        hrc = networkAdapter->COMGETTER(CableConnected)(&fCableConnected);              H();
+        rc = CFGMR3InsertInteger(pCfg, "CableConnected", fCableConnected ? 1 : 0);      RC_CHECK();
 
         /*
          * Line speed to report from custom drivers
          */
         ULONG ulLineSpeed;
-        hrc = networkAdapter->COMGETTER(LineSpeed)(&ulLineSpeed);                   H();
-        rc = CFGMR3InsertInteger(pCfg, "LineSpeed", ulLineSpeed);                   RC_CHECK();
+        hrc = networkAdapter->COMGETTER(LineSpeed)(&ulLineSpeed);                       H();
+        rc = CFGMR3InsertInteger(pCfg, "LineSpeed", ulLineSpeed);                       RC_CHECK();
 
         /*
          * Attach the status driver.
          */
-        rc = CFGMR3InsertNode(pInst,    "LUN#999", &pLunL0);                        RC_CHECK();
-        rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");      RC_CHECK();
-        rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
+        rc = CFGMR3InsertNode(pInst,    "LUN#999", &pLunL0);                            RC_CHECK();
+        rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");          RC_CHECK();
+        rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapNetworkLeds[ulInstance]); RC_CHECK();
 
         /*
@@ -1423,7 +1423,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          */
         rc = pConsole->configNetwork(pszAdapterName, ulInstance, 0,
                                      networkAdapter, pCfg, pLunL0, pInst,
-                                     false /*fAttachDetach*/);                      RC_CHECK();
+                                     false /*fAttachDetach*/);                          RC_CHECK();
     }
 
     /*
@@ -1444,66 +1444,66 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
             PCFGMNODE pNetBtDevCfg;
             achBootIdx[0] = '0' + uBootIdx++;   /* Boot device order. */
-            rc = CFGMR3InsertNode(pNetBootCfg, achBootIdx, &pNetBtDevCfg);          RC_CHECK();
-            rc = CFGMR3InsertInteger(pNetBtDevCfg, "NIC", it->mInstance);           RC_CHECK();
-            rc = CFGMR3InsertInteger(pNetBtDevCfg, "PCIDeviceNo", it->mPciDev);     RC_CHECK();
-            rc = CFGMR3InsertInteger(pNetBtDevCfg, "PCIFunctionNo", it->mPciFn);    RC_CHECK();
+            rc = CFGMR3InsertNode(pNetBootCfg, achBootIdx, &pNetBtDevCfg);              RC_CHECK();
+            rc = CFGMR3InsertInteger(pNetBtDevCfg, "NIC", it->mInstance);               RC_CHECK();
+            rc = CFGMR3InsertInteger(pNetBtDevCfg, "PCIDeviceNo", it->mPciDev);         RC_CHECK();
+            rc = CFGMR3InsertInteger(pNetBtDevCfg, "PCIFunctionNo", it->mPciFn);        RC_CHECK();
         }
     }
 
     /*
      * Serial (UART) Ports
      */
-    rc = CFGMR3InsertNode(pDevices, "serial", &pDev);                               RC_CHECK();
+    rc = CFGMR3InsertNode(pDevices, "serial", &pDev);                                   RC_CHECK();
     for (ULONG ulInstance = 0; ulInstance < SchemaDefs::SerialPortCount; ++ulInstance)
     {
         ComPtr<ISerialPort> serialPort;
-        hrc = pMachine->GetSerialPort(ulInstance, serialPort.asOutParam());        H();
+        hrc = pMachine->GetSerialPort(ulInstance, serialPort.asOutParam());             H();
         BOOL fEnabled = FALSE;
         if (serialPort)
-            hrc = serialPort->COMGETTER(Enabled)(&fEnabled);                        H();
+            hrc = serialPort->COMGETTER(Enabled)(&fEnabled);                            H();
         if (!fEnabled)
             continue;
 
-        rc = CFGMR3InsertNodeF(pDev, &pInst, "%u", ulInstance);                     RC_CHECK();
-        rc = CFGMR3InsertNode(pInst, "Config", &pCfg);                              RC_CHECK();
+        rc = CFGMR3InsertNodeF(pDev, &pInst, "%u", ulInstance);                         RC_CHECK();
+        rc = CFGMR3InsertNode(pInst, "Config", &pCfg);                                  RC_CHECK();
 
         ULONG ulIRQ;
-        hrc = serialPort->COMGETTER(IRQ)(&ulIRQ);                                   H();
-        rc = CFGMR3InsertInteger(pCfg,   "IRQ", ulIRQ);                             RC_CHECK();
+        hrc = serialPort->COMGETTER(IRQ)(&ulIRQ);                                       H();
+        rc = CFGMR3InsertInteger(pCfg,   "IRQ", ulIRQ);                                 RC_CHECK();
         ULONG ulIOBase;
-        hrc = serialPort->COMGETTER(IOBase)(&ulIOBase);                             H();
-        rc = CFGMR3InsertInteger(pCfg,   "IOBase", ulIOBase);                       RC_CHECK();
+        hrc = serialPort->COMGETTER(IOBase)(&ulIOBase);                                 H();
+        rc = CFGMR3InsertInteger(pCfg,   "IOBase", ulIOBase);                           RC_CHECK();
         BOOL  fServer;
-        hrc = serialPort->COMGETTER(Server)(&fServer);                              H();
-        hrc = serialPort->COMGETTER(Path)(bstr.asOutParam());                       H();
+        hrc = serialPort->COMGETTER(Server)(&fServer);                                  H();
+        hrc = serialPort->COMGETTER(Path)(bstr.asOutParam());                           H();
         PortMode_T eHostMode;
-        hrc = serialPort->COMGETTER(HostMode)(&eHostMode);                          H();
+        hrc = serialPort->COMGETTER(HostMode)(&eHostMode);                              H();
         if (eHostMode != PortMode_Disconnected)
         {
-            rc = CFGMR3InsertNode(pInst,     "LUN#0", &pLunL0);                     RC_CHECK();
+            rc = CFGMR3InsertNode(pInst,     "LUN#0", &pLunL0);                         RC_CHECK();
             if (eHostMode == PortMode_HostPipe)
             {
-                rc = CFGMR3InsertString(pLunL0,  "Driver", "Char");                 RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL0,    "AttachedDriver", &pLunL1);        RC_CHECK();
-                rc = CFGMR3InsertString(pLunL1,  "Driver", "NamedPipe");            RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL1,    "Config", &pLunL2);                RC_CHECK();
-                rc = CFGMR3InsertStringW(pLunL2, "Location", bstr.raw());           RC_CHECK();
-                rc = CFGMR3InsertInteger(pLunL2, "IsServer", fServer);              RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0,  "Driver", "Char");                     RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,    "AttachedDriver", &pLunL1);            RC_CHECK();
+                rc = CFGMR3InsertString(pLunL1,  "Driver", "NamedPipe");                RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL1,    "Config", &pLunL2);                    RC_CHECK();
+                rc = CFGMR3InsertStringW(pLunL2, "Location", bstr.raw());               RC_CHECK();
+                rc = CFGMR3InsertInteger(pLunL2, "IsServer", fServer);                  RC_CHECK();
             }
             else if (eHostMode == PortMode_HostDevice)
             {
-                rc = CFGMR3InsertString(pLunL0,  "Driver", "Host Serial");          RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL0,    "Config", &pLunL1);                RC_CHECK();
-                rc = CFGMR3InsertStringW(pLunL1, "DevicePath", bstr.raw());         RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0,  "Driver", "Host Serial");              RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,    "Config", &pLunL1);                    RC_CHECK();
+                rc = CFGMR3InsertStringW(pLunL1, "DevicePath", bstr.raw());             RC_CHECK();
             }
             else if (eHostMode == PortMode_RawFile)
             {
-                rc = CFGMR3InsertString(pLunL0,  "Driver", "Char");                 RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL0,    "AttachedDriver", &pLunL1);        RC_CHECK();
-                rc = CFGMR3InsertString(pLunL1,  "Driver", "RawFile");              RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL1,    "Config", &pLunL2);                RC_CHECK();
-                rc = CFGMR3InsertStringW(pLunL2, "Location", bstr.raw());           RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0,  "Driver", "Char");                     RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,    "AttachedDriver", &pLunL1);            RC_CHECK();
+                rc = CFGMR3InsertString(pLunL1,  "Driver", "RawFile");                  RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL1,    "Config", &pLunL2);                    RC_CHECK();
+                rc = CFGMR3InsertStringW(pLunL2, "Location", bstr.raw());               RC_CHECK();
             }
         }
     }
@@ -1511,160 +1511,160 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     /*
      * Parallel (LPT) Ports
      */
-    rc = CFGMR3InsertNode(pDevices, "parallel", &pDev);                             RC_CHECK();
+    rc = CFGMR3InsertNode(pDevices, "parallel", &pDev);                                 RC_CHECK();
     for (ULONG ulInstance = 0; ulInstance < SchemaDefs::ParallelPortCount; ++ulInstance)
     {
         ComPtr<IParallelPort> parallelPort;
-        hrc = pMachine->GetParallelPort(ulInstance, parallelPort.asOutParam());     H();
+        hrc = pMachine->GetParallelPort(ulInstance, parallelPort.asOutParam());         H();
         BOOL fEnabled = FALSE;
         if (parallelPort)
         {
-            hrc = parallelPort->COMGETTER(Enabled)(&fEnabled);                      H();
+            hrc = parallelPort->COMGETTER(Enabled)(&fEnabled);                          H();
         }
         if (!fEnabled)
             continue;
 
-        rc = CFGMR3InsertNodeF(pDev, &pInst, "%u", ulInstance);                     RC_CHECK();
-        rc = CFGMR3InsertNode(pInst, "Config", &pCfg);                              RC_CHECK();
+        rc = CFGMR3InsertNodeF(pDev, &pInst, "%u", ulInstance);                         RC_CHECK();
+        rc = CFGMR3InsertNode(pInst, "Config", &pCfg);                                  RC_CHECK();
 
         ULONG ulIRQ;
-        hrc = parallelPort->COMGETTER(IRQ)(&ulIRQ);                                 H();
-        rc = CFGMR3InsertInteger(pCfg,   "IRQ", ulIRQ);                             RC_CHECK();
+        hrc = parallelPort->COMGETTER(IRQ)(&ulIRQ);                                     H();
+        rc = CFGMR3InsertInteger(pCfg,   "IRQ", ulIRQ);                                 RC_CHECK();
         ULONG ulIOBase;
-        hrc = parallelPort->COMGETTER(IOBase)(&ulIOBase);                           H();
-        rc = CFGMR3InsertInteger(pCfg,   "IOBase", ulIOBase);                       RC_CHECK();
-        rc = CFGMR3InsertNode(pInst,     "LUN#0", &pLunL0);                         RC_CHECK();
-        rc = CFGMR3InsertString(pLunL0,  "Driver", "HostParallel");                 RC_CHECK();
-        rc = CFGMR3InsertNode(pLunL0,    "AttachedDriver", &pLunL1);                RC_CHECK();
-        hrc = parallelPort->COMGETTER(Path)(bstr.asOutParam());                     H();
-        rc = CFGMR3InsertStringW(pLunL1,  "DevicePath", bstr.raw());                RC_CHECK();
+        hrc = parallelPort->COMGETTER(IOBase)(&ulIOBase);                               H();
+        rc = CFGMR3InsertInteger(pCfg,   "IOBase", ulIOBase);                           RC_CHECK();
+        rc = CFGMR3InsertNode(pInst,     "LUN#0", &pLunL0);                             RC_CHECK();
+        rc = CFGMR3InsertString(pLunL0,  "Driver", "HostParallel");                     RC_CHECK();
+        rc = CFGMR3InsertNode(pLunL0,    "AttachedDriver", &pLunL1);                    RC_CHECK();
+        hrc = parallelPort->COMGETTER(Path)(bstr.asOutParam());                         H();
+        rc = CFGMR3InsertStringW(pLunL1,  "DevicePath", bstr.raw());                    RC_CHECK();
     }
 
     /*
      * VMM Device
      */
-    rc = CFGMR3InsertNode(pDevices, "VMMDev", &pDev);                               RC_CHECK();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */   RC_CHECK();
-    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          4);                     RC_CHECK();
+    rc = CFGMR3InsertNode(pDevices, "VMMDev", &pDev);                                   RC_CHECK();
+    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                       RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                                   RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "Trusted",              1);     /* boolean */       RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          4);                         RC_CHECK();
     Assert(!afPciDeviceNo[4]);
     afPciDeviceNo[4] = true;
-    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                     RC_CHECK();
+    rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                         RC_CHECK();
     Bstr hwVersion;
-    hrc = pMachine->COMGETTER(HardwareVersion)(hwVersion.asOutParam());             H();
+    hrc = pMachine->COMGETTER(HardwareVersion)(hwVersion.asOutParam());                 H();
     if (hwVersion.compare(Bstr("1")) == 0) /* <= 2.0.x */
     {
-        CFGMR3InsertInteger(pCfg, "HeapEnabled", 0);                                RC_CHECK();
+        CFGMR3InsertInteger(pCfg, "HeapEnabled", 0);                                    RC_CHECK();
     }
 
     /* the VMM device's Main driver */
-    rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                              RC_CHECK();
-    rc = CFGMR3InsertString(pLunL0, "Driver",               "HGCM");                RC_CHECK();
-    rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                                  RC_CHECK();
+    rc = CFGMR3InsertString(pLunL0, "Driver",               "HGCM");                    RC_CHECK();
+    rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                                   RC_CHECK();
     VMMDev *pVMMDev = pConsole->mVMMDev;
-    rc = CFGMR3InsertInteger(pCfg,  "Object", (uintptr_t)pVMMDev);                  RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "Object", (uintptr_t)pVMMDev);                      RC_CHECK();
 
     /*
      * Attach the status driver.
      */
-    rc = CFGMR3InsertNode(pInst,    "LUN#999", &pLunL0);                            RC_CHECK();
-    rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");          RC_CHECK();
-    rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "LUN#999", &pLunL0);                                RC_CHECK();
+    rc = CFGMR3InsertString(pLunL0, "Driver",               "MainStatus");              RC_CHECK();
+    rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                                   RC_CHECK();
     rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapSharedFolderLed); RC_CHECK();
-    rc = CFGMR3InsertInteger(pCfg,  "First",    0);                                 RC_CHECK();
-    rc = CFGMR3InsertInteger(pCfg,  "Last",     0);                                 RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "First",    0);                                     RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "Last",     0);                                     RC_CHECK();
 
     /*
      * Audio Sniffer Device
      */
-    rc = CFGMR3InsertNode(pDevices, "AudioSniffer", &pDev);                         RC_CHECK();
-    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
-    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
+    rc = CFGMR3InsertNode(pDevices, "AudioSniffer", &pDev);                             RC_CHECK();
+    rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                       RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                                   RC_CHECK();
 
     /* the Audio Sniffer device's Main driver */
-    rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                              RC_CHECK();
-    rc = CFGMR3InsertString(pLunL0, "Driver",               "MainAudioSniffer");    RC_CHECK();
-    rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
+    rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                                  RC_CHECK();
+    rc = CFGMR3InsertString(pLunL0, "Driver",               "MainAudioSniffer");        RC_CHECK();
+    rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                                   RC_CHECK();
     AudioSniffer *pAudioSniffer = pConsole->mAudioSniffer;
-    rc = CFGMR3InsertInteger(pCfg,  "Object", (uintptr_t)pAudioSniffer);            RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg,  "Object", (uintptr_t)pAudioSniffer);                RC_CHECK();
 
     /*
      * AC'97 ICH / SoundBlaster16 audio
      */
     BOOL enabled;
     ComPtr<IAudioAdapter> audioAdapter;
-    hrc = pMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());             H();
+    hrc = pMachine->COMGETTER(AudioAdapter)(audioAdapter.asOutParam());                 H();
     if (audioAdapter)
-        hrc = audioAdapter->COMGETTER(Enabled)(&enabled);                           H();
+        hrc = audioAdapter->COMGETTER(Enabled)(&enabled);                               H();
 
     if (enabled)
     {
         AudioControllerType_T audioController;
-        hrc = audioAdapter->COMGETTER(AudioController)(&audioController);           H();
+        hrc = audioAdapter->COMGETTER(AudioController)(&audioController);               H();
         switch (audioController)
         {
             case AudioControllerType_AC97:
             {
                 /* default: ICH AC97 */
-                rc = CFGMR3InsertNode(pDevices, "ichac97", &pDev);                  RC_CHECK();
+                rc = CFGMR3InsertNode(pDevices, "ichac97", &pDev);                      RC_CHECK();
                 rc = CFGMR3InsertNode(pDev,     "0", &pInst);
-                rc = CFGMR3InsertInteger(pInst, "Trusted",          1); /* bool */  RC_CHECK();
-                rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",      5);             RC_CHECK();
+                rc = CFGMR3InsertInteger(pInst, "Trusted",          1); /* bool */      RC_CHECK();
+                rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",      5);                 RC_CHECK();
                 Assert(!afPciDeviceNo[5]);
                 afPciDeviceNo[5] = true;
-                rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",    0);             RC_CHECK();
-                rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                   RC_CHECK();
+                rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",    0);                 RC_CHECK();
+                rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                       RC_CHECK();
                 break;
             }
             case AudioControllerType_SB16:
             {
                 /* legacy SoundBlaster16 */
-                rc = CFGMR3InsertNode(pDevices, "sb16", &pDev);                     RC_CHECK();
-                rc = CFGMR3InsertNode(pDev,     "0", &pInst);                       RC_CHECK();
-                rc = CFGMR3InsertInteger(pInst, "Trusted",          1); /* bool */  RC_CHECK();
-                rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                   RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg,  "IRQ", 5);                          RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg,  "DMA", 1);                          RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg,  "DMA16", 5);                        RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg,  "Port", 0x220);                     RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg,  "Version", 0x0405);                 RC_CHECK();
+                rc = CFGMR3InsertNode(pDevices, "sb16", &pDev);                         RC_CHECK();
+                rc = CFGMR3InsertNode(pDev,     "0", &pInst);                           RC_CHECK();
+                rc = CFGMR3InsertInteger(pInst, "Trusted",          1); /* bool */      RC_CHECK();
+                rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                       RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "IRQ", 5);                              RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "DMA", 1);                              RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "DMA16", 5);                            RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "Port", 0x220);                         RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "Version", 0x0405);                     RC_CHECK();
                 break;
             }
         }
 
         /* the Audio driver */
-        rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          RC_CHECK();
-        rc = CFGMR3InsertString(pLunL0, "Driver",               "AUDIO");           RC_CHECK();
-        rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
+        rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                              RC_CHECK();
+        rc = CFGMR3InsertString(pLunL0, "Driver",               "AUDIO");               RC_CHECK();
+        rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
 
         AudioDriverType_T audioDriver;
-        hrc = audioAdapter->COMGETTER(AudioDriver)(&audioDriver);                   H();
+        hrc = audioAdapter->COMGETTER(AudioDriver)(&audioDriver);                       H();
         switch (audioDriver)
         {
             case AudioDriverType_Null:
             {
-                rc = CFGMR3InsertString(pCfg, "AudioDriver", "null");               RC_CHECK();
+                rc = CFGMR3InsertString(pCfg, "AudioDriver", "null");                   RC_CHECK();
                 break;
             }
 #ifdef RT_OS_WINDOWS
 #ifdef VBOX_WITH_WINMM
             case AudioDriverType_WinMM:
             {
-                rc = CFGMR3InsertString(pCfg, "AudioDriver", "winmm");              RC_CHECK();
+                rc = CFGMR3InsertString(pCfg, "AudioDriver", "winmm");                  RC_CHECK();
                 break;
             }
 #endif
             case AudioDriverType_DirectSound:
             {
-                rc = CFGMR3InsertString(pCfg, "AudioDriver", "dsound");             RC_CHECK();
+                rc = CFGMR3InsertString(pCfg, "AudioDriver", "dsound");                 RC_CHECK();
                 break;
             }
 #endif /* RT_OS_WINDOWS */
 #ifdef RT_OS_SOLARIS
             case AudioDriverType_SolAudio:
             {
-                rc = CFGMR3InsertString(pCfg, "AudioDriver", "solaudio");           RC_CHECK();
+                rc = CFGMR3InsertString(pCfg, "AudioDriver", "solaudio");               RC_CHECK();
                 break;
             }
 #endif
@@ -1672,14 +1672,14 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 # ifdef VBOX_WITH_ALSA
             case AudioDriverType_ALSA:
             {
-                rc = CFGMR3InsertString(pCfg, "AudioDriver", "alsa");               RC_CHECK();
+                rc = CFGMR3InsertString(pCfg, "AudioDriver", "alsa");                   RC_CHECK();
                 break;
             }
 # endif
 # ifdef VBOX_WITH_PULSE
             case AudioDriverType_Pulse:
             {
-                rc = CFGMR3InsertString(pCfg, "AudioDriver", "pulse");              RC_CHECK();
+                rc = CFGMR3InsertString(pCfg, "AudioDriver", "pulse");                  RC_CHECK();
                 break;
             }
 # endif
@@ -1687,7 +1687,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(VBOX_WITH_SOLARIS_OSS)
             case AudioDriverType_OSS:
             {
-                rc = CFGMR3InsertString(pCfg, "AudioDriver", "oss");                RC_CHECK();
+                rc = CFGMR3InsertString(pCfg, "AudioDriver", "oss");                    RC_CHECK();
                 break;
             }
 #endif
@@ -1695,7 +1695,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 # ifdef VBOX_WITH_PULSE
             case AudioDriverType_Pulse:
             {
-                rc = CFGMR3InsertString(pCfg, "AudioDriver", "pulse");              RC_CHECK();
+                rc = CFGMR3InsertString(pCfg, "AudioDriver", "pulse");                  RC_CHECK();
                 break;
             }
 # endif
@@ -1703,13 +1703,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #ifdef RT_OS_DARWIN
             case AudioDriverType_CoreAudio:
             {
-                rc = CFGMR3InsertString(pCfg, "AudioDriver", "coreaudio");          RC_CHECK();
+                rc = CFGMR3InsertString(pCfg, "AudioDriver", "coreaudio");              RC_CHECK();
                 break;
             }
 #endif
         }
-        hrc = pMachine->COMGETTER(Name)(bstr.asOutParam());                         H();
-        rc = CFGMR3InsertStringW(pCfg, "StreamName", bstr.raw());                   RC_CHECK();
+        hrc = pMachine->COMGETTER(Name)(bstr.asOutParam());                             H();
+        rc = CFGMR3InsertStringW(pCfg, "StreamName", bstr.raw());                       RC_CHECK();
     }
 
     /*
@@ -2001,7 +2001,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      * ACPI
      */
     BOOL fACPI;
-    hrc = biosSettings->COMGETTER(ACPIEnabled)(&fACPI);                             H();
+    hrc = biosSettings->COMGETTER(ACPIEnabled)(&fACPI);                                 H();
     if (fACPI)
     {
         BOOL fCpuHotPlug = false;
@@ -2013,37 +2013,37 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         if ((cCpus > 1) || fIOAPIC)
             fShowCpu = true;
 
-        hrc = pMachine->COMGETTER(CPUHotPlugEnabled)(&fCpuHotPlug);                 H();
+        hrc = pMachine->COMGETTER(CPUHotPlugEnabled)(&fCpuHotPlug);                     H();
 
-        rc = CFGMR3InsertNode(pDevices, "acpi", &pDev);                             RC_CHECK();
-        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
-        rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */   RC_CHECK();
-        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "RamSize",          cbRam);                 RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "RamHoleSize",      cbRamHole);             RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "NumCPUs",          cCpus);                 RC_CHECK();
+        rc = CFGMR3InsertNode(pDevices, "acpi", &pDev);                                 RC_CHECK();
+        rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */       RC_CHECK();
+        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "RamSize",          cbRam);                     RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "RamHoleSize",      cbRamHole);                 RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "NumCPUs",          cCpus);                     RC_CHECK();
 
-        rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                         RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "FdcEnabled", fFdcEnabled);                 RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "HpetEnabled", fHpetEnabled);               RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "SmcEnabled", fSmcEnabled);                 RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "ShowRtc",    fOsXGuest);                   RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                             RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "FdcEnabled", fFdcEnabled);                     RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "HpetEnabled", fHpetEnabled);                   RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "SmcEnabled", fSmcEnabled);                     RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "ShowRtc",    fOsXGuest);                       RC_CHECK();
         if (fOsXGuest && !llBootNics.empty())
         {
             BootNic aNic = llBootNics.front();
             uint32_t u32NicPciAddr = (aNic.mPciDev << 16) | aNic.mPciFn;
-            rc = CFGMR3InsertInteger(pCfg,  "NicPciAddress",    u32NicPciAddr);     RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg,  "NicPciAddress",    u32NicPciAddr);         RC_CHECK();
         }
-        rc = CFGMR3InsertInteger(pCfg,  "ShowCpu", fShowCpu);                       RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "CpuHotPlug", fCpuHotPlug);                 RC_CHECK();
-        rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          7);                 RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "ShowCpu", fShowCpu);                           RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "CpuHotPlug", fCpuHotPlug);                     RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          7);                     RC_CHECK();
         Assert(!afPciDeviceNo[7]);
         afPciDeviceNo[7] = true;
-        rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                 RC_CHECK();
+        rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                     RC_CHECK();
 
-        rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          RC_CHECK();
-        rc = CFGMR3InsertString(pLunL0, "Driver",               "ACPIHost");        RC_CHECK();
-        rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
+        rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                              RC_CHECK();
+        rc = CFGMR3InsertString(pLunL0, "Driver",               "ACPIHost");            RC_CHECK();
+        rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
 
         /* Attach the dummy CPU drivers */
         for (ULONG iCpuCurr = 1; iCpuCurr < cCpus; iCpuCurr++)
@@ -2052,7 +2052,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
             if (fCpuHotPlug)
             {
-                hrc = pMachine->GetCPUStatus(iCpuCurr, &fCpuAttached);              H();
+                hrc = pMachine->GetCPUStatus(iCpuCurr, &fCpuAttached);                  H();
             }
 
             if (fCpuAttached)
@@ -2251,20 +2251,20 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
     HRESULT hrc;
     Bstr    bstr;
 
-#define RC_CHECK()  do { if (RT_FAILURE(rc)) { AssertMsgFailed(("rc=%Rrc\n", rc));  return rc;                   } } while (0)
-#define H()         do { if (FAILED(hrc))    { AssertMsgFailed(("hrc=%Rhrc\n", hrc)); return VERR_GENERAL_FAILURE; } } while (0)
+#define RC_CHECK()  AssertMsgReturn(RT_SUCCESS(rc), ("rc=%Rrc\n", rc), rc)
+#define H()         AssertMsgReturn(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), VERR_GENERAL_FAILURE)
 
     LONG lDev;
-    hrc = pMediumAtt->COMGETTER(Device)(&lDev);                         H();
+    hrc = pMediumAtt->COMGETTER(Device)(&lDev);                                         H();
     LONG lPort;
-    hrc = pMediumAtt->COMGETTER(Port)(&lPort);                          H();
+    hrc = pMediumAtt->COMGETTER(Port)(&lPort);                                          H();
     DeviceType_T lType;
-    hrc = pMediumAtt->COMGETTER(Type)(&lType);                          H();
+    hrc = pMediumAtt->COMGETTER(Type)(&lType);                                          H();
 
     unsigned uLUN;
     PCFGMNODE pLunL0 = NULL;
     PCFGMNODE pCfg = NULL;
-    hrc = Console::convertBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);    H();
+    hrc = Console::convertBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);                H();
 
     /* First check if the LUN already exists. */
     pLunL0 = CFGMR3GetChildF(pCtlInst, "LUN#%u", uLUN);
@@ -2306,21 +2306,21 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
             AssertFailedReturn(VERR_INTERNAL_ERROR);
     }
 
-    rc = CFGMR3InsertNodeF(pCtlInst, &pLunL0, "LUN#%u", uLUN);              RC_CHECK();
+    rc = CFGMR3InsertNodeF(pCtlInst, &pLunL0, "LUN#%u", uLUN);                          RC_CHECK();
 
     /* SCSI has a another driver between device and block. */
     if (enmBus == StorageBus_SCSI || enmBus == StorageBus_SAS)
     {
-        rc = CFGMR3InsertString(pLunL0, "Driver", "SCSI");              RC_CHECK();
-        rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
+        rc = CFGMR3InsertString(pLunL0, "Driver", "SCSI");                              RC_CHECK();
+        rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                                 RC_CHECK();
 
-        rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);       RC_CHECK();
+        rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);                       RC_CHECK();
     }
 
     ComPtr<IMedium> pMedium;
-    hrc = pMediumAtt->COMGETTER(Medium)(pMedium.asOutParam());          H();
+    hrc = pMediumAtt->COMGETTER(Medium)(pMedium.asOutParam());                          H();
     BOOL fPassthrough;
-    hrc = pMediumAtt->COMGETTER(Passthrough)(&fPassthrough);            H();
+    hrc = pMediumAtt->COMGETTER(Passthrough)(&fPassthrough);                            H();
     rc = configMedium(pLunL0,
                       !!fPassthrough,
                       lType,
@@ -2330,13 +2330,13 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                       uMergeTarget,
                       pMedium,
                       aMachineState,
-                      phrc);                                            RC_CHECK();
+                      phrc);                                                            RC_CHECK();
 
     if (fAttachDetach)
     {
         /* Attach the new driver. */
         rc = PDMR3DeviceAttach(pVM, pcszDevice, 0, uLUN,
-                               PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/);   RC_CHECK();
+                               PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/);           RC_CHECK();
 
         /* There is no need to handle removable medium mounting, as we
          * unconditionally replace everthing including the block driver level.
@@ -2367,8 +2367,8 @@ int Console::configMedium(PCFGMNODE pLunL0,
     HRESULT hrc;
     Bstr bstr;
 
-#define RC_CHECK()  do { if (RT_FAILURE(rc)) { AssertMsgFailed(("rc=%Rrc\n", rc));  return rc;                   } } while (0)
-#define H()         do { if (FAILED(hrc))    { AssertMsgFailed(("hrc=%Rhrc\n", hrc)); if (phrc) *phrc = hrc; return VERR_GENERAL_FAILURE; } } while (0)
+#define RC_CHECK()  AssertMsgReturn(RT_SUCCESS(rc), ("rc=%Rrc\n", rc), rc)
+#define H()         AssertMsgReturnStmt(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), if (phrc) *phrc = hrc, VERR_GENERAL_FAILURE)
 
     PCFGMNODE pLunL1 = NULL;
     PCFGMNODE pCfg = NULL;
@@ -2642,8 +2642,8 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
     HRESULT hrc;
     Bstr bstr;
 
-#define RC_CHECK()  do { if (RT_FAILURE(rc)) { AssertMsgFailed(("rc=%Rrc\n", rc));  return rc;                   } } while (0)
-#define H()         do { if (FAILED(hrc))    { AssertMsgFailed(("hrc=%Rhrc\n", hrc)); return VERR_GENERAL_FAILURE; } } while (0)
+#define RC_CHECK()  AssertMsgReturn(RT_SUCCESS(rc), ("rc=%Rrc\n", rc), rc)
+#define H()         AssertMsgReturn(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), VERR_GENERAL_FAILURE)
 
     /*
      * Locking the object before doing VMR3* calls is quite safe here, since
@@ -2692,13 +2692,13 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
         else
         {
             CFGMR3RemoveNode(pLunL0);
-            rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);                 RC_CHECK();
-            rc = CFGMR3InsertString(pLunL0, "Driver", "NetSniffer");        RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
-            hrc = aNetworkAdapter->COMGETTER(TraceFile)(bstr.asOutParam()); H();
+            rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);                             RC_CHECK();
+            rc = CFGMR3InsertString(pLunL0, "Driver", "NetSniffer");                    RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                             RC_CHECK();
+            hrc = aNetworkAdapter->COMGETTER(TraceFile)(bstr.asOutParam());             H();
             if (!bstr.isEmpty()) /* check convention for indicating default file. */
             {
-                rc = CFGMR3InsertStringW(pCfg, "File", bstr.raw());         RC_CHECK();
+                rc = CFGMR3InsertStringW(pCfg, "File", bstr.raw());                     RC_CHECK();
             }
         }
     }
@@ -2715,19 +2715,19 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
     else if (!fAttachDetach && fSniffer)
     {
         /* insert the sniffer filter driver. */
-        rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);                 RC_CHECK();
-        rc = CFGMR3InsertString(pLunL0, "Driver", "NetSniffer");        RC_CHECK();
-        rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
-        hrc = aNetworkAdapter->COMGETTER(TraceFile)(bstr.asOutParam()); H();
+        rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);                                 RC_CHECK();
+        rc = CFGMR3InsertString(pLunL0, "Driver", "NetSniffer");                        RC_CHECK();
+        rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                                 RC_CHECK();
+        hrc = aNetworkAdapter->COMGETTER(TraceFile)(bstr.asOutParam());                 H();
         if (!bstr.isEmpty()) /* check convention for indicating default file. */
         {
-            rc = CFGMR3InsertStringW(pCfg, "File", bstr.raw());         RC_CHECK();
+            rc = CFGMR3InsertStringW(pCfg, "File", bstr.raw());                         RC_CHECK();
         }
     }
 
     Bstr networkName, trunkName, trunkType;
     NetworkAttachmentType_T eAttachmentType;
-    hrc = aNetworkAdapter->COMGETTER(AttachmentType)(&eAttachmentType); H();
+    hrc = aNetworkAdapter->COMGETTER(AttachmentType)(&eAttachmentType);                 H();
     switch (eAttachmentType)
     {
         case NetworkAttachmentType_Null:
@@ -2736,42 +2736,42 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
         case NetworkAttachmentType_NAT:
         {
             ComPtr<INATEngine> natDriver;
-            hrc = aNetworkAdapter->COMGETTER(NatDriver)(natDriver.asOutParam());         H();
+            hrc = aNetworkAdapter->COMGETTER(NatDriver)(natDriver.asOutParam());        H();
             if (fSniffer)
             {
-                rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0); RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);               RC_CHECK();
             }
             else
             {
-                rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);         RC_CHECK();
+                rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);                         RC_CHECK();
             }
-            rc = CFGMR3InsertString(pLunL0, "Driver", "NAT");           RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);             RC_CHECK();
+            rc = CFGMR3InsertString(pLunL0, "Driver", "NAT");                           RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                             RC_CHECK();
 
             /* Configure TFTP prefix and boot filename. */
-            hrc = virtualBox->COMGETTER(HomeFolder)(bstr.asOutParam()); H();
+            hrc = virtualBox->COMGETTER(HomeFolder)(bstr.asOutParam());                 H();
             if (!bstr.isEmpty())
             {
                 rc = CFGMR3InsertStringF(pCfg, "TFTPPrefix", "%ls%c%s", bstr.raw(), RTPATH_DELIMITER, "TFTP"); RC_CHECK();
             }
-            hrc = pMachine->COMGETTER(Name)(bstr.asOutParam());         H();
-            rc = CFGMR3InsertStringF(pCfg, "BootFile", "%ls.pxe", bstr.raw()); RC_CHECK();
+            hrc = pMachine->COMGETTER(Name)(bstr.asOutParam());                         H();
+            rc = CFGMR3InsertStringF(pCfg, "BootFile", "%ls.pxe", bstr.raw());          RC_CHECK();
 
-            hrc = natDriver->COMGETTER(Network)(bstr.asOutParam());     H();
+            hrc = natDriver->COMGETTER(Network)(bstr.asOutParam());                     H();
             if (!bstr.isEmpty())
             {
-                rc = CFGMR3InsertStringW(pCfg, "Network", bstr.raw());  RC_CHECK();
+                rc = CFGMR3InsertStringW(pCfg, "Network", bstr.raw());                  RC_CHECK();
             }
             else
             {
                 ULONG uSlot;
-                hrc = aNetworkAdapter->COMGETTER(Slot)(&uSlot);         H();
-                rc = CFGMR3InsertStringF(pCfg, "Network", "10.0.%d.0/24", uSlot+2); RC_CHECK();
+                hrc = aNetworkAdapter->COMGETTER(Slot)(&uSlot);                         H();
+                rc = CFGMR3InsertStringF(pCfg, "Network", "10.0.%d.0/24", uSlot+2);     RC_CHECK();
             }
-            hrc = natDriver->COMGETTER(HostIP)(bstr.asOutParam());      H();
+            hrc = natDriver->COMGETTER(HostIP)(bstr.asOutParam());                      H();
             if (!bstr.isEmpty())
             {
-                rc = CFGMR3InsertStringW(pCfg, "BindIP", bstr.raw());   RC_CHECK();
+                rc = CFGMR3InsertStringW(pCfg, "BindIP", bstr.raw());                   RC_CHECK();
             }
             ULONG mtu = 0;
             ULONG sockSnd = 0;
@@ -2781,56 +2781,56 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
             hrc = natDriver->GetNetworkSettings(&mtu, &sockSnd, &sockRcv, &tcpSnd, &tcpRcv); H();
             if (mtu)
             {
-                rc = CFGMR3InsertInteger(pCfg, "SlirpMTU", mtu);         RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg, "SlirpMTU", mtu);                        RC_CHECK();
             }
             if (sockRcv)
             {
-                rc = CFGMR3InsertInteger(pCfg, "SockRcv", sockRcv);      RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg, "SockRcv", sockRcv);                     RC_CHECK();
             }
             if (sockSnd)
             {
-                rc = CFGMR3InsertInteger(pCfg, "SockSnd", sockSnd);      RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg, "SockSnd", sockSnd);                     RC_CHECK();
             }
             if (tcpRcv)
             {
-                rc = CFGMR3InsertInteger(pCfg, "TcpRcv", tcpRcv);        RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg, "TcpRcv", tcpRcv);                       RC_CHECK();
             }
             if (tcpSnd)
             {
-                rc = CFGMR3InsertInteger(pCfg, "TcpSnd", tcpSnd);        RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg, "TcpSnd", tcpSnd);                       RC_CHECK();
             }
-            hrc = natDriver->COMGETTER(TftpPrefix)(bstr.asOutParam());   H();
+            hrc = natDriver->COMGETTER(TftpPrefix)(bstr.asOutParam());                  H();
             if (!bstr.isEmpty())
             {
-                rc = CFGMR3RemoveValue(pCfg, "TFTPPrefix");              RC_CHECK();
-                rc = CFGMR3InsertStringW(pCfg, "TFTPPrefix", bstr);       RC_CHECK();
+                rc = CFGMR3RemoveValue(pCfg, "TFTPPrefix");                             RC_CHECK();
+                rc = CFGMR3InsertStringW(pCfg, "TFTPPrefix", bstr);                     RC_CHECK();
             }
-            hrc = natDriver->COMGETTER(TftpBootFile)(bstr.asOutParam());              H();
+            hrc = natDriver->COMGETTER(TftpBootFile)(bstr.asOutParam());                H();
             if (!bstr.isEmpty())
             {
-                rc = CFGMR3RemoveValue(pCfg, "BootFile");                RC_CHECK();
-                rc = CFGMR3InsertStringW(pCfg, "BootFile", bstr);         RC_CHECK();
+                rc = CFGMR3RemoveValue(pCfg, "BootFile");                               RC_CHECK();
+                rc = CFGMR3InsertStringW(pCfg, "BootFile", bstr);                       RC_CHECK();
             }
-            hrc = natDriver->COMGETTER(TftpNextServer)(bstr.asOutParam()); H();
+            hrc = natDriver->COMGETTER(TftpNextServer)(bstr.asOutParam());              H();
             if (!bstr.isEmpty())
             {
-                rc = CFGMR3InsertStringW(pCfg, "NextServer", bstr);       RC_CHECK();
+                rc = CFGMR3InsertStringW(pCfg, "NextServer", bstr);                     RC_CHECK();
             }
             BOOL fDnsFlag;
-            hrc = natDriver->COMGETTER(DnsPassDomain)(&fDnsFlag);        H();
-            rc = CFGMR3InsertInteger(pCfg, "PassDomain", fDnsFlag);      RC_CHECK();
-            hrc = natDriver->COMGETTER(DnsProxy)(&fDnsFlag);             H();
-            rc = CFGMR3InsertInteger(pCfg, "DNSProxy", fDnsFlag);        RC_CHECK();
-            hrc = natDriver->COMGETTER(DnsUseHostResolver)(&fDnsFlag);   H();
-            rc = CFGMR3InsertInteger(pCfg, "UseHostResolver", fDnsFlag); RC_CHECK();
+            hrc = natDriver->COMGETTER(DnsPassDomain)(&fDnsFlag);                       H();
+            rc = CFGMR3InsertInteger(pCfg, "PassDomain", fDnsFlag);                     RC_CHECK();
+            hrc = natDriver->COMGETTER(DnsProxy)(&fDnsFlag);                            H();
+            rc = CFGMR3InsertInteger(pCfg, "DNSProxy", fDnsFlag);                       RC_CHECK();
+            hrc = natDriver->COMGETTER(DnsUseHostResolver)(&fDnsFlag);                  H();
+            rc = CFGMR3InsertInteger(pCfg, "UseHostResolver", fDnsFlag);                RC_CHECK();
 
             ULONG aliasMode;
-            hrc = natDriver->COMGETTER(AliasMode)(&aliasMode);           H();
-            rc = CFGMR3InsertInteger(pCfg, "AliasMode", aliasMode);      RC_CHECK();
+            hrc = natDriver->COMGETTER(AliasMode)(&aliasMode);                          H();
+            rc = CFGMR3InsertInteger(pCfg, "AliasMode", aliasMode);                     RC_CHECK();
 
             /* port-forwarding */
             SafeArray<BSTR> pfs;
-            hrc = natDriver->COMGETTER(Redirects)(ComSafeArrayAsOutParam(pfs)); H();
+            hrc = natDriver->COMGETTER(Redirects)(ComSafeArrayAsOutParam(pfs));         H();
             PCFGMNODE pPF = NULL;          /* /Devices/Dev/.../Config/PF#0/ */
             for (unsigned int i = 0; i < pfs.size(); ++i)
             {
@@ -2845,25 +2845,25 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
                 Utf8Str strGuestIP;
                 size_t pos, ppos;
                 pos = ppos = 0;
-                #define ITERATE_TO_NEXT_TERM(res, str, pos, ppos)   \
-                do {                                                \
-                    pos = str.find(",", ppos);                      \
-                    if (pos == Utf8Str::npos)                       \
-                    {                                               \
-                        Log(( #res " extracting from %s is failed\n", str.raw())); \
-                        continue;                                   \
-                    }                                               \
-                    res = str.substr(ppos, pos - ppos);             \
-                    Log2((#res " %s pos:%d, ppos:%d\n", res.raw(), pos, ppos)); \
-                    ppos = pos + 1;                                 \
-                } while (0)
+#define ITERATE_TO_NEXT_TERM(res, str, pos, ppos) \
+    do { \
+        pos = str.find(",", ppos); \
+        if (pos == Utf8Str::npos) \
+        { \
+            Log(( #res " extracting from %s is failed\n", str.raw())); \
+            continue; \
+        } \
+        res = str.substr(ppos, pos - ppos); \
+        Log2((#res " %s pos:%d, ppos:%d\n", res.raw(), pos, ppos)); \
+        ppos = pos + 1; \
+    } while (0)
                 ITERATE_TO_NEXT_TERM(strName, utf, pos, ppos);
                 ITERATE_TO_NEXT_TERM(strProto, utf, pos, ppos);
                 ITERATE_TO_NEXT_TERM(strHostIP, utf, pos, ppos);
                 ITERATE_TO_NEXT_TERM(strHostPort, utf, pos, ppos);
                 ITERATE_TO_NEXT_TERM(strGuestIP, utf, pos, ppos);
                 strGuestPort = utf.substr(ppos, utf.length() - ppos);
-                #undef ITERATE_TO_NEXT_TERM
+#undef ITERATE_TO_NEXT_TERM
 
                 uint32_t proto = strProto.toUInt32();
                 bool fValid = true;
@@ -2871,10 +2871,10 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
                 {
                     case NATProtocol_UDP:
                         strProto = "UDP";
-                    break;
+                        break;
                     case NATProtocol_TCP:
                         strProto = "TCP";
-                    break;
+                        break;
                     default:
                         fValid = false;
                 }
@@ -2882,29 +2882,29 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
                 if (!fValid)
                     continue;
 
-                rc = CFGMR3InsertNode(pCfg, strName.raw(), &pPF);        RC_CHECK();
-                rc = CFGMR3InsertString(pPF, "Protocol", strProto.raw()); RC_CHECK();
+                rc = CFGMR3InsertNode(pCfg, strName.raw(), &pPF);                       RC_CHECK();
+                rc = CFGMR3InsertString(pPF, "Protocol", strProto.raw());               RC_CHECK();
 
                 if (!strHostIP.isEmpty())
                 {
-                    rc = CFGMR3InsertString(pPF, "BindIP", strHostIP.raw()); RC_CHECK();
+                    rc = CFGMR3InsertString(pPF, "BindIP", strHostIP.raw());            RC_CHECK();
                 }
 
                 if (!strGuestIP.isEmpty())
                 {
-                    rc = CFGMR3InsertString(pPF, "GuestIP", strGuestIP.raw()); RC_CHECK();
+                    rc = CFGMR3InsertString(pPF, "GuestIP", strGuestIP.raw());          RC_CHECK();
                 }
 
                 port = RTStrToUInt16(strHostPort.raw());
                 if (port)
                 {
-                    rc = CFGMR3InsertInteger(pPF, "HostPort", port);     RC_CHECK();
+                    rc = CFGMR3InsertInteger(pPF, "HostPort", port);                    RC_CHECK();
                 }
 
                 port = RTStrToUInt16(strGuestPort.raw());
                 if (port)
                 {
-                    rc = CFGMR3InsertInteger(pPF, "GuestPort", port);    RC_CHECK();
+                    rc = CFGMR3InsertInteger(pPF, "GuestPort", port);                   RC_CHECK();
                 }
             }
             break;
@@ -2920,15 +2920,15 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
                 {
                     case VERR_ACCESS_DENIED:
                         return VMSetError(pVM, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,  N_(
-                                         "Failed to open '/dev/net/tun' for read/write access. Please check the "
-                                         "permissions of that node. Either run 'chmod 0666 /dev/net/tun' or "
-                                         "change the group of that node and make yourself a member of that group. Make "
-                                         "sure that these changes are permanent, especially if you are "
-                                         "using udev"));
+                                          "Failed to open '/dev/net/tun' for read/write access. Please check the "
+                                          "permissions of that node. Either run 'chmod 0666 /dev/net/tun' or "
+                                          "change the group of that node and make yourself a member of that group. Make "
+                                          "sure that these changes are permanent, especially if you are "
+                                          "using udev"));
                     default:
                         AssertMsgFailed(("Could not attach to host interface! Bad!\n"));
                         return VMSetError(pVM, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS, N_(
-                                         "Failed to initialize Host Interface Networking"));
+                                          "Failed to initialize Host Interface Networking"));
                 }
             }
 
@@ -2937,15 +2937,15 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
             {
                 if (fSniffer)
                 {
-                    rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);               RC_CHECK();
+                    rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);           RC_CHECK();
                 }
                 else
                 {
-                    rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);                         RC_CHECK();
+                    rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);                     RC_CHECK();
                 }
-                rc = CFGMR3InsertString(pLunL0, "Driver", "HostInterface");                 RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                             RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg, "FileHandle", maTapFD[uInstance]);    RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0, "Driver", "HostInterface");             RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                         RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg, "FileHandle", maTapFD[uInstance]);       RC_CHECK();
             }
 
 #elif defined(VBOX_WITH_NETFLT)
@@ -2954,11 +2954,11 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
              */
             if (fSniffer)
             {
-                rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);                   RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);               RC_CHECK();
             }
             else
             {
-                rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);                             RC_CHECK();
+                rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);                         RC_CHECK();
             }
 
             Bstr HifName;
@@ -3133,24 +3133,24 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
                     {
                         case VERR_ACCESS_DENIED:
                             return VMSetError(pVM, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,  N_(
-                                             "Failed to open '/dev/%s' for read/write access.  Please check the "
-                                             "permissions of that node, and that the net.link.tap.user_open "
-                                             "sysctl is set.  Either run 'chmod 0666 /dev/%s' or "
-                                             "change the group of that node to vboxusers and make yourself "
-                                             "a member of that group.  Make sure that these changes are permanent."), pszHifName, pszHifName);
+                                              "Failed to open '/dev/%s' for read/write access.  Please check the "
+                                              "permissions of that node, and that the net.link.tap.user_open "
+                                              "sysctl is set.  Either run 'chmod 0666 /dev/%s' or "
+                                              "change the group of that node to vboxusers and make yourself "
+                                              "a member of that group.  Make sure that these changes are permanent."), pszHifName, pszHifName);
                         default:
                             AssertMsgFailed(("Could not attach to tap interface! Bad!\n"));
                             return VMSetError(pVM, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS, N_(
-                                             "Failed to initialize Host Interface Networking"));
+                                              "Failed to initialize Host Interface Networking"));
                     }
                 }
 
                 Assert((int)maTapFD[uInstance] >= 0);
                 if ((int)maTapFD[uInstance] >= 0)
                 {
-                    rc = CFGMR3InsertString(pLunL0, "Driver", "HostInterface");                 RC_CHECK();
-                    rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                             RC_CHECK();
-                    rc = CFGMR3InsertInteger(pCfg, "FileHandle", maTapFD[uInstance]);           RC_CHECK();
+                    rc = CFGMR3InsertString(pLunL0, "Driver", "HostInterface");         RC_CHECK();
+                    rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                     RC_CHECK();
+                    rc = CFGMR3InsertInteger(pCfg, "FileHandle", maTapFD[uInstance]);   RC_CHECK();
                 }
                 break;
             }
@@ -3181,14 +3181,14 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
 #  error "PORTME (VBOX_WITH_NETFLT)"
 # endif
 
-            rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");                    RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                         RC_CHECK();
-            rc = CFGMR3InsertString(pCfg, "Trunk", pszTrunk);                       RC_CHECK();
+            rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");                        RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                             RC_CHECK();
+            rc = CFGMR3InsertString(pCfg, "Trunk", pszTrunk);                           RC_CHECK();
             rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt);
             RC_CHECK();
             char szNetwork[INTNET_MAX_NETWORK_NAME];
             RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszHifName);
-            rc = CFGMR3InsertString(pCfg, "Network", szNetwork);                    RC_CHECK();
+            rc = CFGMR3InsertString(pCfg, "Network", szNetwork);                        RC_CHECK();
             networkName = Bstr(szNetwork);
             trunkName = Bstr(pszTrunk);
             trunkType = Bstr(TRUNKTYPE_NETFLT);
@@ -3198,7 +3198,7 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
             if (    strstr(pszHifName, "Wireless")
                 ||  strstr(pszHifName, "AirPort" ))
             {
-                rc = CFGMR3InsertInteger(pCfg, "SharedMacOnWire", true);            RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg, "SharedMacOnWire", true);                RC_CHECK();
             }
 # elif defined(RT_OS_LINUX)
             int iSock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -3304,7 +3304,7 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
                 if (fSharedMacOnWire)
                 {
                     Log(("this is a wireless adapter"));
-                    rc = CFGMR3InsertInteger(pCfg, "SharedMacOnWire", true); RC_CHECK();
+                    rc = CFGMR3InsertInteger(pCfg, "SharedMacOnWire", true);            RC_CHECK();
                     Log(("Set SharedMacOnWire\n"));
                 }
                 else
@@ -3331,7 +3331,7 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
             zoneid_t ZoneId = getzoneid();
             if (ZoneId != GLOBAL_ZONEID)
             {
-                rc = CFGMR3InsertInteger(pCfg, "IgnoreAllPromisc", true);   RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg, "IgnoreAllPromisc", true);               RC_CHECK();
             }
 #  endif
 # endif
@@ -3350,7 +3350,7 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
 
         case NetworkAttachmentType_Internal:
         {
-            hrc = aNetworkAdapter->COMGETTER(InternalNetwork)(bstr.asOutParam());    H();
+            hrc = aNetworkAdapter->COMGETTER(InternalNetwork)(bstr.asOutParam());       H();
             if (!bstr.isEmpty())
             {
                 if (fSniffer)
@@ -3363,9 +3363,9 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
                     rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);
                     RC_CHECK();
                 }
-                rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");    RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);         RC_CHECK();
-                rc = CFGMR3InsertStringW(pCfg, "Network", bstr);         RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");                    RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                         RC_CHECK();
+                rc = CFGMR3InsertStringW(pCfg, "Network", bstr);                        RC_CHECK();
                 rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_WhateverNone); RC_CHECK();
                 networkName = bstr;
                 trunkType = Bstr(TRUNKTYPE_WHATEVER);
@@ -3386,8 +3386,8 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
                 RC_CHECK();
             }
 
-            rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");            RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
+            rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");                        RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                             RC_CHECK();
 
             Bstr HifName;
             hrc = aNetworkAdapter->COMGETTER(HostInterface)(HifName.asOutParam());
@@ -3515,24 +3515,24 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
 
             const char *pszTrunk = szTrunkName;
 
-            rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);   RC_CHECK();
-            rc = CFGMR3InsertString(pCfg, "Trunk", pszTrunk);                       RC_CHECK();
-            rc = CFGMR3InsertString(pCfg, "Network", szNetwork);                    RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);       RC_CHECK();
+            rc = CFGMR3InsertString(pCfg, "Trunk", pszTrunk);                           RC_CHECK();
+            rc = CFGMR3InsertString(pCfg, "Network", szNetwork);                        RC_CHECK();
             networkName = Bstr(szNetwork);
             trunkName   = Bstr(pszTrunk);
             trunkType   = TRUNKTYPE_NETADP;
 # endif /* defined VBOX_WITH_NETFLT*/
 #elif defined(RT_OS_DARWIN)
-            rc = CFGMR3InsertString(pCfg, "Trunk", pszHifName);                     RC_CHECK();
-            rc = CFGMR3InsertString(pCfg, "Network", szNetwork);                    RC_CHECK();
-            rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);   RC_CHECK();
+            rc = CFGMR3InsertString(pCfg, "Trunk", pszHifName);                         RC_CHECK();
+            rc = CFGMR3InsertString(pCfg, "Network", szNetwork);                        RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);       RC_CHECK();
             networkName = Bstr(szNetwork);
             trunkName   = Bstr(pszHifName);
             trunkType   = TRUNKTYPE_NETADP;
 #else
-            rc = CFGMR3InsertString(pCfg, "Trunk", pszHifName);                     RC_CHECK();
-            rc = CFGMR3InsertString(pCfg, "Network", szNetwork);                    RC_CHECK();
-            rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt);   RC_CHECK();
+            rc = CFGMR3InsertString(pCfg, "Trunk", pszHifName);                         RC_CHECK();
+            rc = CFGMR3InsertString(pCfg, "Network", szNetwork);                        RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt);       RC_CHECK();
             networkName = Bstr(szNetwork);
             trunkName   = Bstr(pszHifName);
             trunkType   = TRUNKTYPE_NETFLT;
@@ -3575,13 +3575,13 @@ int Console::configNetwork(const char *pszDevice, unsigned uInstance,
 #if defined(VBOX_WITH_VDE)
         case NetworkAttachmentType_VDE:
         {
-            hrc = aNetworkAdapter->COMGETTER(VDENetwork)(bstr.asOutParam());    H();
-            rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);        RC_CHECK();
-            rc = CFGMR3InsertString(pLunL0, "Driver", "VDE");      RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);        RC_CHECK();
+            hrc = aNetworkAdapter->COMGETTER(VDENetwork)(bstr.asOutParam());            H();
+            rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);                             RC_CHECK();
+            rc = CFGMR3InsertString(pLunL0, "Driver", "VDE");                           RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                             RC_CHECK();
             if (!bstr.isEmpty())
             {
-                rc = CFGMR3InsertStringW(pCfg, "Network", bstr);    RC_CHECK();
+                rc = CFGMR3InsertStringW(pCfg, "Network", bstr);                        RC_CHECK();
                 networkName = bstr;
             }
             break;
