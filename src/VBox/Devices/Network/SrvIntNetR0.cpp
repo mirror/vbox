@@ -1180,33 +1180,21 @@ static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCR
     RTSPINLOCKTMP   Tmp      = RTSPINLOCKTMP_INITIALIZER;
     RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
 
-    if (!pCache->cEntriesAlloc)
+    if (RT_UNLIKELY(!pCache->cEntriesAlloc))
     {
-        /* Allocate the table - 64 entries. */
+        /* This shouldn't happen*/
         RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
-        uint8_t *pbEntries = (uint8_t *)RTMemAllocZ(pCache->cbEntry * 64);
-        if (!pbEntries)
-            return;
-        RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
-        if (!pCache->cEntriesAlloc)
-        {
-            pCache->pbEntries     = pbEntries;
-            pCache->cEntriesAlloc = 64;
-        }
-        else
-        {
-            RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
-            RTMemFree(pbEntries);
-            RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
-        }
+        return;
     }
-    else
+
+    /* When the table is full, drop the older entry (FIFO). Do proper ageing? */
+    if (pCache->cEntries >= pCache->cEntriesAlloc)
     {
-        /* simple FIFO, might consider usage/ageing here... */
         Log(("intnetR0IfAddrCacheAddIt: type=%d replacing %.*Rhxs\n",
              (int)(uintptr_t)(pCache - &pIf->aAddrCache[0]), pCache->cbAddress, pCache->pbEntries));
         memmove(pCache->pbEntries, pCache->pbEntries + pCache->cbEntry, pCache->cbEntry * (pCache->cEntries - 1));
         pCache->cEntries--;
+        Assert(pCache->cEntries < pCache->cEntriesAlloc);
     }
 
     /*
@@ -1294,6 +1282,52 @@ DECLINLINE(void) intnetR0IfAddrCacheAdd(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
                           && intnetR0AddrUIsEqualEx((PCRTNETADDRU)(pCache->pbEntries + pCache->cbEntry * i), pAddr, cbAddr))) ))
         return;
     intnetR0IfAddrCacheAddSlow(pIf, pCache, pAddr, cbAddr, pszMsg);
+}
+
+
+/**
+ * Destroys the specified address cache.
+ * @param   pCache              The address cache.
+ */
+static void intnetR0IfAddrCacheDestroy(PINTNETADDRCACHE pCache)
+{
+    void *pvFree = pCache->pbEntries;
+    pCache->pbEntries     = NULL;
+    pCache->cEntries      = 0;
+    pCache->cEntriesAlloc = 0;
+    RTMemFree(pvFree);
+}
+
+
+/**
+ * Initialize the address cache for the specified address type.
+ *
+ * The cache storage is preallocated and fixed size so that we can handle
+ * inserts from problematic contexts.
+ *
+ * @returns VINF_SUCCESS or VERR_NO_MEMORY.
+ * @param   pCache              The cache to initialize.
+ * @param   enmAddrType         The address type.
+ * @param   fEnabled            Whether the address cache is enabled or not.
+ */
+static int intnetR0IfAddrCacheInit(PINTNETADDRCACHE pCache, INTNETADDRTYPE enmAddrType, bool fEnabled)
+{
+    pCache->cEntries  = 0;
+    pCache->cbAddress = intnetR0AddrSize(enmAddrType);
+    pCache->cbEntry   = RT_ALIGN(pCache->cbAddress, 4);
+    if (fEnabled)
+    {
+        pCache->cEntriesAlloc = 32;
+        pCache->pbEntries     = (uint8_t *)RTMemAllocZ(pCache->cEntriesAlloc * pCache->cbEntry);
+        if (!pCache->pbEntries)
+            return VERR_NO_MEMORY;
+    }
+    else
+    {
+        pCache->cEntriesAlloc = 0;
+        pCache->pbEntries     = NULL;
+    }
+    return VINF_SUCCESS;
 }
 
 
@@ -4041,14 +4075,10 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
     RTMemFree(pIf->pDstTab);
     pIf->pDstTab = NULL;
 
-    for (unsigned i = 0; i < RT_ELEMENTS(pIf->aAddrCache); i++)
-        if (pIf->aAddrCache[i].pbEntries)
-        {
-            RTMemFree(pIf->aAddrCache[i].pbEntries);
-            pIf->aAddrCache[i].pbEntries = NULL;
-        }
+    for (int i = kIntNetAddrType_Invalid + 1; i < kIntNetAddrType_End; i++)
+        intnetR0IfAddrCacheDestroy(&pIf->aAddrCache[i]);
 
-    pIf->pvObj = NULL;
+     pIf->pvObj = NULL;
     RTMemFree(pIf);
 }
 
@@ -4110,27 +4140,16 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
     pIf->pNetwork           = pNetwork;
     pIf->pSession           = pSession;
     //pIf->pvObj            = NULL;
-    //pIf->aAddrCache[kIntNetAddrType_Invalid]            = {0};
-    //pIf->aAddrCache[kIntNetAddrType_IPv4].pbEntries     = NULL;
-    //pIf->aAddrCache[kIntNetAddrType_IPv4].cEntries      = 0;
-    //pIf->aAddrCache[kIntNetAddrType_IPv4].cEntriesAlloc = 0;
-    pIf->aAddrCache[kIntNetAddrType_IPv4].cbAddress       = intnetR0AddrSize(kIntNetAddrType_IPv4);
-    pIf->aAddrCache[kIntNetAddrType_IPv4].cbEntry         = intnetR0AddrSize(kIntNetAddrType_IPv4);
-    //pIf->aAddrCache[kIntNetAddrType_IPv6].pbEntries     = NULL;
-    //pIf->aAddrCache[kIntNetAddrType_IPv6].cEntries      = 0;
-    //pIf->aAddrCache[kIntNetAddrType_IPv6].cEntriesAlloc = 0;
-    pIf->aAddrCache[kIntNetAddrType_IPv6].cbAddress       = intnetR0AddrSize(kIntNetAddrType_IPv6);
-    pIf->aAddrCache[kIntNetAddrType_IPv6].cbEntry         = intnetR0AddrSize(kIntNetAddrType_IPv6);
-    //pIf->aAddrCache[kIntNetAddrType_IPX].pbEntries      = NULL;
-    //pIf->aAddrCache[kIntNetAddrType_IPX].cEntries       = 0;
-    //pIf->aAddrCache[kIntNetAddrType_IPX].cEntriesAlloc  = 0;
-    pIf->aAddrCache[kIntNetAddrType_IPX].cbAddress        = intnetR0AddrSize(kIntNetAddrType_IPX);
-    pIf->aAddrCache[kIntNetAddrType_IPX].cbEntry          = RT_ALIGN_32(intnetR0AddrSize(kIntNetAddrType_IPX), 16);
+    //pIf->aAddrCache       = {0};
     pIf->hRecvInSpinlock    = NIL_RTSPINLOCK;
     pIf->cBusy              = 0;
     //pIf->pDstTab          = NULL;
 
-    rc = intnetR0AllocDstTab(pNetwork->MacTab.cEntriesAllocated, (PINTNETDSTTAB *)&pIf->pDstTab);
+    for (int i = kIntNetAddrType_Invalid + 1; i < kIntNetAddrType_End && RT_SUCCESS(rc); i++)
+        rc = intnetR0IfAddrCacheInit(&pIf->aAddrCache[i], (INTNETADDRTYPE)i,
+                                     !!(pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE));
+    if (RT_SUCCESS(rc))
+        rc = intnetR0AllocDstTab(pNetwork->MacTab.cEntriesAllocated, (PINTNETDSTTAB *)&pIf->pDstTab);
     if (RT_SUCCESS(rc))
         rc = RTSemEventCreate((PRTSEMEVENT)&pIf->hRecvEvent);
     if (RT_SUCCESS(rc))
@@ -4206,6 +4225,8 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
     RTSemEventDestroy(pIf->hRecvEvent);
     pIf->hRecvEvent = NIL_RTSEMEVENT;
     RTMemFree(pIf->pDstTab);
+    for (int i = kIntNetAddrType_Invalid + 1; i < kIntNetAddrType_End; i++)
+        intnetR0IfAddrCacheDestroy(&pIf->aAddrCache[i]);
     RTMemFree(pIf);
     LogFlow(("intnetR0NetworkCreateIf: returns %Rrc\n", rc));
     return rc;
