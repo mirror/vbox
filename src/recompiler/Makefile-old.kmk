@@ -114,6 +114,8 @@ ifdef VBOX_SOLARIS_10
 else
  $(REM_MOD)_DEFS.solaris   = HOST_SOLARIS=11
 endif
+# Missing fpclassify. Is there a better define or flag for this?
+$(REM_MOD)_DEFS.solaris   += __C99FEATURES__
 $(REM_MOD)_DEFS.freebsd   += _BSD
 
 $(REM_MOD)_INCS            = \
