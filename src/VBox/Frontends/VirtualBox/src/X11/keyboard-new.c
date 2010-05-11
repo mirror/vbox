@@ -400,13 +400,109 @@ X11DRV_InitKeyboardByLayout(Display *display)
     return 1;
 }
 
+static int checkHostKeycode(unsigned hostCode, unsigned targetCode)
+{
+    if (!targetCode)
+        return 0;
+    if (hostCode && hostCode != targetCode)
+        return 0;
+    return 1;
+}
+
+static int compKBMaps(const keyboard_type *pHost, const keyboard_type *pTarget)
+{
+    if (   !pHost->lctrl && !pHost->capslock && !pHost->lshift && !pHost->tab
+        && !pHost->esc && !pHost->enter && !pHost->up && !pHost->down
+        && !pHost->left && !pHost->right && !pHost->f1 && !pHost->f2
+        && !pHost->f3 && !pHost->f4 && !pHost->f5 && !pHost->f6 && !pHost->f7
+        && !pHost->f8)
+        return 0;
+    /* This test is for the people who like to swap control and caps lock */
+    if (   (   !checkHostKeycode(pHost->lctrl, pTarget->lctrl)
+            || !checkHostKeycode(pHost->capslock, pTarget->capslock))
+        && (   !checkHostKeycode(pHost->lctrl, pTarget->capslock)
+            || !checkHostKeycode(pHost->capslock, pTarget->lctrl)))
+        return 0;
+    if (   !checkHostKeycode(pHost->lshift, pTarget->lshift)
+        || !checkHostKeycode(pHost->tab, pTarget->tab)
+        || !checkHostKeycode(pHost->esc, pTarget->esc)
+        || !checkHostKeycode(pHost->enter, pTarget->enter)
+        || !checkHostKeycode(pHost->up, pTarget->up)
+        || !checkHostKeycode(pHost->down, pTarget->down)
+        || !checkHostKeycode(pHost->left, pTarget->left)
+        || !checkHostKeycode(pHost->right, pTarget->right)
+        || !checkHostKeycode(pHost->f1, pTarget->f1)
+        || !checkHostKeycode(pHost->f2, pTarget->f2)
+        || !checkHostKeycode(pHost->f3, pTarget->f3)
+        || !checkHostKeycode(pHost->f4, pTarget->f4)
+        || !checkHostKeycode(pHost->f5, pTarget->f5)
+        || !checkHostKeycode(pHost->f6, pTarget->f6)
+        || !checkHostKeycode(pHost->f7, pTarget->f7)
+        || !checkHostKeycode(pHost->f8, pTarget->f8))
+        return 0;
+    return 1;
+}
+
+static int findHostKBInList(const keyboard_type *pHost,
+                            const keyboard_type *pList, int cList)
+{
+    int i = 0;
+    for (; i < cList; ++i)
+        if (compKBMaps(pHost, &pList[i]))
+            return i;
+    return -1;
+}
+
+#ifdef DEBUG
+static void testFindHostKB(void)
+{
+    keyboard_type hostBasic =
+    { NULL, 1 /* lctrl */, 2, 3, 4, 5, 6, 7 /* up */, 8, 9, 10, 11 /* F1 */,
+      12, 13, 14, 15, 16, 17, 18 };
+    keyboard_type hostSwapCtrlCaps =
+    { NULL, 3 /* lctrl */, 2, 1, 4, 5, 6, 7 /* up */, 8, 9, 10, 11 /* F1 */,
+      12, 13, 14, 15, 16, 17, 18 };
+    keyboard_type hostEmpty =
+    { NULL, 0 /* lctrl */, 0, 0, 0, 0, 0, 0 /* up */, 0, 0, 0, 0 /* F1 */,
+      0, 0, 0, 0, 0, 0, 0 };
+    keyboard_type hostNearlyEmpty =
+    { NULL, 1 /* lctrl */, 0, 0, 0, 0, 0, 0 /* up */, 0, 0, 0, 0 /* F1 */,
+      0, 0, 0, 0, 0, 0, 18 };
+    keyboard_type hostNearlyRight =
+    { NULL, 20 /* lctrl */, 2, 3, 4, 5, 6, 7 /* up */, 8, 9, 10, 11 /* F1 */,
+      12, 13, 14, 15, 16, 17, 18 };
+    keyboard_type targetList[] = {
+        { NULL, 18 /* lctrl */, 17, 16, 15, 14, 13, 12 /* up */, 11, 10, 9,
+          8 /* F1 */, 7, 6, 5, 4, 3, 2, 1 },
+        { NULL, 1 /* lctrl */, 2, 3, 4, 5, 6, 7 /* up */, 8, 9, 10,
+          11 /* F1 */, 12, 13, 14, 15, 16, 17, 18 }
+    };
+
+    /* As we don't have assertions here, just printf.  This should *really*
+     * never happen. */
+    if (   hostBasic.f8 != 18 || hostSwapCtrlCaps.f8 != 18
+        || hostNearlyEmpty.f8 != 18 || hostNearlyRight.f8 != 18
+        || targetList[0].f8 != 1 || targetList[1].f8 != 18)
+        printf("ERROR: testFindHostKB: bad structures\n");
+    if (findHostKBInList(&hostBasic, targetList, 2) != 1)
+        printf("ERROR: findHostKBInList failed to find a target in a list\n");
+    if (findHostKBInList(&hostSwapCtrlCaps, targetList, 2) != 1)
+        printf("ERROR: findHostKBInList failed on a ctrl-caps swapped map\n");
+    if (findHostKBInList(&hostEmpty, targetList, 2) != -1)
+        printf("ERROR: findHostKBInList accepted an empty host map\n");
+    if (findHostKBInList(&hostNearlyEmpty, targetList, 2) != 1)
+        printf("ERROR: findHostKBInList failed on a partly empty host map\n");
+    if (findHostKBInList(&hostNearlyRight, targetList, 2) != -1)
+        printf("ERROR: findHostKBInList failed to fail a wrong host map\n");
+}
+#endif
+
 static unsigned
 X11DRV_InitKeyboardByType(Display *display)
 {
-    unsigned i = 0, found = 0;
-
     keyboard_type hostKB;
-    memset(&hostKB, '\0', sizeof(hostKB));
+    int cMap;
+
     hostKB.lctrl    = XKeysymToKeycode(display, XK_Control_L);
     hostKB.capslock = XKeysymToKeycode(display, XK_Caps_Lock);
     hostKB.lshift   = XKeysymToKeycode(display, XK_Shift_L);
@@ -426,38 +522,18 @@ X11DRV_InitKeyboardByType(Display *display)
     hostKB.f7       = XKeysymToKeycode(display, XK_F7);
     hostKB.f8       = XKeysymToKeycode(display, XK_F8);
 
-    for (; (main_keyboard_type_list[i].comment != NULL) && (0 == found); ++i)
+#ifdef DEBUG
+    testFindHostKB();
+#endif
+    cMap = findHostKBInList(&hostKB, main_keyboard_type_list,
+                                  sizeof(main_keyboard_type_list)
+                                / sizeof(main_keyboard_type_list[0]));
+    if (cMap >= 0)
     {
-        keyboard_type *pType = &main_keyboard_type_list[i];
-        if (   (   (   (pType->lctrl    && (hostKB.lctrl    == pType->lctrl))
-                    && (pType->capslock && (hostKB.capslock == pType->capslock))
-                   )
-                || (   (pType->lctrl    && (hostKB.capslock == pType->lctrl))
-                    && (pType->capslock && (hostKB.lctrl    == pType->capslock))
-                   )
-               ) /* Some people like to switch Capslock and left Ctrl */
-            && (pType->lshift && (hostKB.lshift == pType->lshift))
-            && (pType->tab    && (hostKB.tab    == pType->tab))
-            && (pType->esc    && (hostKB.esc    == pType->esc))
-            && (pType->enter  && (hostKB.enter  == pType->enter))
-            && (pType->up     && (hostKB.up     == pType->up))
-            && (pType->down   && (hostKB.down   == pType->down))
-            && (pType->left   && (hostKB.left   == pType->left))
-            && (pType->right  && (hostKB.right  == pType->right))
-            && (pType->f1     && (hostKB.f1     == pType->f1))
-            && (pType->f2     && (hostKB.f2     == pType->f2))
-            && (pType->f3     && (hostKB.f3     == pType->f3))
-            && (pType->f4     && (hostKB.f4     == pType->f4))
-            && (pType->f5     && (hostKB.f5     == pType->f5))
-            && (pType->f6     && (hostKB.f6     == pType->f6))
-            && (pType->f7     && (hostKB.f7     == pType->f7))
-            && (pType->f8     && (hostKB.f8     == pType->f8))
-           )
-            found = 1;
+        memcpy(keyc2scan, main_keyboard_type_scans[cMap - 1], KEYC2SCAN_SIZE);
+        return 1;
     }
-    if (found != 0)
-    memcpy(keyc2scan, main_keyboard_type_scans[i - 1], KEYC2SCAN_SIZE);
-    return found;
+    return 0;
 }
 
 /**
