@@ -370,7 +370,8 @@ void printUsage(USAGECATEGORY u64Cmd)
         if (fVRDP)
         {
             RTPrintf("                            vrdp on|off |\n");
-            RTPrintf("                            vrdpport default|<ports> |\n");
+            RTPrintf("                            vrdpport default|<ports> |\n"
+                     "                            vrdpvideochannelquality <percent>\n");
         }
         RTPrintf("                            setvideomodehint <xres> <yres> <bpp> [display] |\n"
                  "                            setcredentials <username> <password> <domain>\n"
