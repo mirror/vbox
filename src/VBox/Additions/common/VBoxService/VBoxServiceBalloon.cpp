@@ -266,20 +266,27 @@ static DECLCALLBACK(int) VBoxServiceBalloonInit(void)
         else
             g_cMemBalloonChunks = cNewChunks;
     }
-    else
+    if (RT_FAILURE(rc))
     {
-        if (rc == VERR_INVALID_PARAMETER) /* Host service is not available. */
+        /* If the service was not found, we disable this service without
+           causing VBoxService to fail. */
+        if (   rc == VERR_NOT_IMPLEMENTED
+#ifdef RT_OS_WINDOWS /** @todo r=bird: Windows kernel driver should return VERR_NOT_IMPLEMENTED,
+                      *  VERR_INVALID_PARAMETER has too many other uses. */
+            || rc == VERR_INVALID_PARAMETER
+#endif
+            )
+        {
             VBoxServiceVerbose(0, "MemBalloon: Memory ballooning support is not available\n");
+            rc = VERR_SERVICE_DISABLED;
+        }
         else
+        {
             VBoxServiceVerbose(3, "MemBalloon: VbglR3MemBalloonRefresh failed with %Rrc\n", rc);
+            rc = VERR_SERVICE_DISABLED; /** @todo Playing safe for now, figure out the exact status codes here. */
+        }
         RTSemEventMultiDestroy(g_MemBalloonEvent);
         g_MemBalloonEvent = NIL_RTSEMEVENTMULTI;
-
-        /* 
-         * Not having the guest control service on the host renders this whole service
-         * unusable, so report that we are not able to continue. 
-         */
-        rc = VERR_NOT_SUPPORTED;
     }
 
     return rc;

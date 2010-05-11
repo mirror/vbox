@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -134,7 +134,7 @@ static DECLCALLBACK(int) VBoxServiceVMStatsInit(void)
         else
         {
             VBoxServiceVerbose(3, "VBoxStatsInit: NTDLL.NtQuerySystemInformation not found!\n");
-            return VERR_NOT_IMPLEMENTED;
+            return VERR_SERVICE_DISABLED;
         }
     }
 
@@ -149,7 +149,7 @@ static DECLCALLBACK(int) VBoxServiceVMStatsInit(void)
         {
             /** @todo Now fails in NT4; do we care? */
             VBoxServiceVerbose(3, "VBoxStatsInit: KERNEL32.GlobalMemoryStatusEx not found!\n");
-            return VERR_NOT_IMPLEMENTED;
+            return VERR_SERVICE_DISABLED;
         }
     }
     /* GetPerformanceInfo is xp and up, so load it dynamically */

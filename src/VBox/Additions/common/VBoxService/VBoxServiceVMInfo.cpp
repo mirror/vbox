@@ -107,8 +107,8 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
     AssertRCReturn(rc, rc);
 
 #ifdef RT_OS_WINDOWS
-    /** @todo Use RTLdr instead of LoadLibrary/GetProcAddress here! */
-
+    /** @todo r=bird: call a windows specific init function and move
+     *        g_pfnWTSGetActiveConsoleSessionId out of the global scope.  */
     /* Get function pointers. */
     HMODULE hKernel32 = LoadLibrary("kernel32");
     if (hKernel32 != NULL)
@@ -123,33 +123,25 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
         VBoxServiceVerbose(3, "VMInfo: Property Service Client ID: %#x\n", g_uVMInfoGuestPropSvcClientID);
     else
     {
+        /* If the service was not found, we disable this service without
+           causing VBoxService to fail. */
         if (rc == VERR_HGCM_SERVICE_NOT_FOUND) /* Host service is not available. */
-            VBoxServiceVerbose(0, "VMInfo: Guest property service is not available\n");
+        {
+            VBoxServiceVerbose(0, "VMInfo: Guest property service is not available, disabling the service\n");
+            rc = VERR_SERVICE_DISABLED;
+        }
         else
             VBoxServiceError("VMInfo: Failed to connect to the guest property service! Error: %Rrc\n", rc);
         RTSemEventMultiDestroy(g_hVMInfoEvent);
         g_hVMInfoEvent = NIL_RTSEMEVENTMULTI;
-
-        /* 
-         * Not having the guest property service on the host renders this whole service
-         * unusable, so report that we are not able to continue. 
-         */
-        rc = VERR_NOT_SUPPORTED;
     }
 
     if (RT_SUCCESS(rc))
     {
         VBoxServicePropCacheCreate(&g_VMInfoPropCache, g_uVMInfoGuestPropSvcClientID);
 
-        /** @todo r=bird: Setting Net/Count to 0 here is wrong and will confuse users.
-         *        Besides, because it is the beacon updating it implies that all the
-         *        other values are up to date too, but they aren't
-         *        (VBoxServiceVMInfoWriteFixedProperties hasn't been called yet for
-         *        instance).  I would suggest changing these statements to
-         *        "declarations" or moving them. */
-
         /*
-         * Initialize some guest properties to have flags and reset values.
+         * Declare some guest properties with flags and reset values.
          */
         VBoxServicePropCacheUpdateEntry(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList",
                                         VBOXSERVICEPROPCACHEFLAG_TEMPORARY, NULL /* Delete on exit */);
@@ -495,7 +487,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
                                    cInterfaces > 1 ? cInterfaces-1 : 0);
 
         /** @todo r=bird: if cInterfaces decreased compared to the previous run, zap
-         *        the stale data. */
+         *        the stale data.  This can probably be encorporated into the cache.  */
 
 
         /*
@@ -548,8 +540,8 @@ static DECLCALLBACK(void) VBoxServiceVMInfoTerm(void)
          *        as the HGCM session isn't closed (e.g. guest application
          *        terminates). [don't remove till implemented]
          */
-        /** @todo r=bird: Drop the VbglR3GuestPropDelSet call here and make the cache
-         *        remember what we've written. */
+        /** @todo r=bird: Drop the VbglR3GuestPropDelSet call here and use the cache
+         *        since it remembers what we've written. */
         /* Delete the "../Net" branch. */
         const char *apszPat[1] = { "/VirtualBox/GuestInfo/Net/*" };
         rc = VbglR3GuestPropDelSet(g_uVMInfoGuestPropSvcClientID, &apszPat[0], RT_ELEMENTS(apszPat));
