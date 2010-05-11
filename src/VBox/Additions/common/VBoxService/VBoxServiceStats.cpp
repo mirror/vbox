@@ -117,11 +117,13 @@ static DECLCALLBACK(int) VBoxServiceVMStatsInit(void)
 
     rc = VbglR3StatQueryInterval(&gCtx.cMsStatInterval);
     if (RT_SUCCESS(rc))
-        VBoxServiceVerbose(3, "VBoxStatsInit: new statistics interval %u seconds\n", gCtx.cMsStatInterval);
+        VBoxServiceVerbose(3, "VBoxStatsInit: New statistics interval %u seconds\n", gCtx.cMsStatInterval);
     else
         VBoxServiceVerbose(3, "VBoxStatsInit: DeviceIoControl failed with %d\n", rc);
 
 #ifdef RT_OS_WINDOWS
+    /** @todo Use RTLdr instead of LoadLibrary/GetProcAddress here! */
+
     /* NtQuerySystemInformation might be dropped in future releases, so load it dynamically as per Microsoft's recommendation */
     HMODULE hMod = LoadLibrary("NTDLL.DLL");
     if (hMod)
@@ -131,7 +133,7 @@ static DECLCALLBACK(int) VBoxServiceVMStatsInit(void)
             VBoxServiceVerbose(3, "VBoxStatsInit: gCtx.pfnNtQuerySystemInformation = %x\n", gCtx.pfnNtQuerySystemInformation);
         else
         {
-            VBoxServiceError("VBoxStatsInit: NTDLL.NtQuerySystemInformation not found!!\n");
+            VBoxServiceVerbose(3, "VBoxStatsInit: NTDLL.NtQuerySystemInformation not found!\n");
             return VERR_NOT_IMPLEMENTED;
         }
     }
@@ -145,8 +147,8 @@ static DECLCALLBACK(int) VBoxServiceVMStatsInit(void)
             VBoxServiceVerbose(3, "VBoxStatsInit: gCtx.GlobalMemoryStatusEx = %x\n", gCtx.pfnGlobalMemoryStatusEx);
         else
         {
-            /** @todo now fails in NT4; do we care? */
-            VBoxServiceError("VBoxStatsInit: KERNEL32.GlobalMemoryStatusEx not found!!\n");
+            /** @todo Now fails in NT4; do we care? */
+            VBoxServiceVerbose(3, "VBoxStatsInit: KERNEL32.GlobalMemoryStatusEx not found!\n");
             return VERR_NOT_IMPLEMENTED;
         }
     }

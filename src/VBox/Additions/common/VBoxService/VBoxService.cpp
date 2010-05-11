@@ -307,25 +307,33 @@ int VBoxServiceStartServices(unsigned iMain)
             if (RT_FAILURE(rc))
             {
                 /*
-                 * HACK ALERT! If a service uses some sort of HGCM host service
-                 * which is not available on the host (maybe because the host is
-                 * using an older VBox version), just disable that service here.
+                 * HACK ALERT! If a service uses some sort of functionality (like a
+                 * certain HGCM host service which is not available on the host or
+                 * some special OS feature which is not available on the current guest),
+                 * just disable that service here in case the service told us so.
+                 *
+                 * This prevents terminating the whole VBoxService if a (or some) sub service(s) is/are
+                 * not available.
                  */
+
                 /** @todo r=bird: This a generic thing that isn't necessarily restricted to
                  *        HGCM.  Also, the service knows best whether a host service is required
                  *        or optional.  So, there service should either have a way of signalling
                  *        non-fatal init failure, or simply quietly pretend to work.  (Low
                  *        prio.) */
-                if (rc == VERR_HGCM_SERVICE_NOT_FOUND)
-                    VBoxServiceVerbose(0, "Service '%s' failed to find a HGCM service and was disabled\n",
+                if (   rc == VERR_NOT_SUPPORTED
+                    || rc == VERR_NOT_IMPLEMENTED)
+                {
+                    VBoxServiceVerbose(0, "Service '%s' disabled because a certain functionality is not implemented or supported, rc=%Rrc\n",
                                        g_aServices[j].pDesc->pszName, rc);
+                    g_aServices[j].fEnabled = false;
+                }
                 else
                 {
                     VBoxServiceError("Service '%s' failed to initialize: %Rrc\n",
                                      g_aServices[j].pDesc->pszName, rc);
                     return rc;
                 }
-                g_aServices[j].fEnabled = false;
             }
         }
 
