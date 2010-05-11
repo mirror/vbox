@@ -192,7 +192,7 @@ void VBoxServicePageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppN
     VBoxServiceVerbose(3, "VBoxServicePageSharingInspectModules\n");
 
     /* Get a list of all the modules in this process. */
-    hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+    hProcess = OpenProcess(PROCESS_QUERY_INFORMATION,
                            FALSE /* no child process handle inheritance */, dwProcessId);
     if (hProcess == NULL)
     {
