@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * VBox Console VRDP Helper class
  */
 

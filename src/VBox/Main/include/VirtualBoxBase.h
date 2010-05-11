@@ -1,5 +1,4 @@
 /** @file
- *
  * VirtualBox COM base classes definition
  */
 

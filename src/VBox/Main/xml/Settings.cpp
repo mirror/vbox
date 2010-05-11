@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * Settings File Manipulation API.
  *
