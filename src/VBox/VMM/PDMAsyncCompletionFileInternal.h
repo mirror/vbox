@@ -541,6 +541,9 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
     /** Number of elements in the cache. */
     volatile uint32_t                      cTasksCached;
 
+#ifdef VBOX_WITH_STATISTICS
+    uint32_t                               u32Alignment;
+#endif
     /** Cache of endpoint data. */
     PDMACFILEENDPOINTCACHE                 DataCache;
     /** Pointer to the associated bandwidth control manager */
@@ -550,8 +553,6 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
     PPDMACTASKFILE                         pFlushReq;
 
 #ifdef VBOX_WITH_STATISTICS
-    /** Alignment */
-    uint32_t                               u32Alignment;
     /** Time spend in a read. */
     STAMPROFILEADV                         StatRead;
     /** Time spend in a write. */
@@ -618,6 +619,7 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
 typedef PDMASYNCCOMPLETIONENDPOINTFILE *PPDMASYNCCOMPLETIONENDPOINTFILE;
 #ifdef VBOX_WITH_STATISTICS
 AssertCompileMemberAlignment(PDMASYNCCOMPLETIONENDPOINTFILE, StatRead, sizeof(uint64_t));
+AssertCompileMemberAlignment(PDMASYNCCOMPLETIONENDPOINTFILE, DataCache, sizeof(uint64_t));
 #endif
 
 /** Request completion function */
