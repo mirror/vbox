@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * Implementation of IMachine in VBoxSVC.
  */
