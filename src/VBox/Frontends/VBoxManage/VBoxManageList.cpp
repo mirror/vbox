@@ -62,27 +62,28 @@ static const char *getHostIfStatusText(HostNetworkInterfaceStatus_T enmStatus)
 }
 #endif
 
-static void listHardDisks(const ComPtr<IVirtualBox> aVirtualBox,
-                          const com::SafeIfaceArray<IMedium> &aMedia,
-                          const char *pszParentUUIDStr)
+static void listMedia(const ComPtr<IVirtualBox> aVirtualBox,
+                      const com::SafeIfaceArray<IMedium> &aMedia,
+                      const char *pszParentUUIDStr)
 {
     HRESULT rc;
     for (size_t i = 0; i < aMedia.size(); ++i)
     {
-        ComPtr<IMedium> hdd = aMedia[i];
+        ComPtr<IMedium> pMedium = aMedia[i];
         Bstr uuid;
-        hdd->COMGETTER(Id)(uuid.asOutParam());
+        pMedium->COMGETTER(Id)(uuid.asOutParam());
         RTPrintf("UUID:        %s\n", Utf8Str(uuid).raw());
-        RTPrintf("Parent UUID: %s\n", pszParentUUIDStr);
+        if (pszParentUUIDStr)
+            RTPrintf("Parent UUID: %s\n", pszParentUUIDStr);
         Bstr format;
-        hdd->COMGETTER(Format)(format.asOutParam());
+        pMedium->COMGETTER(Format)(format.asOutParam());
         RTPrintf("Format:      %lS\n", format.raw());
         Bstr filepath;
-        hdd->COMGETTER(Location)(filepath.asOutParam());
+        pMedium->COMGETTER(Location)(filepath.asOutParam());
         RTPrintf("Location:    %lS\n", filepath.raw());
 
         MediumState_T enmState;
-        hdd->RefreshState(&enmState);
+        pMedium->RefreshState(&enmState);
         const char *stateStr = "unknown";
         switch (enmState)
         {
@@ -111,7 +112,7 @@ static void listHardDisks(const ComPtr<IVirtualBox> aVirtualBox,
         RTPrintf("State:       %s\n", stateStr);
 
         MediumType_T type;
-        hdd->COMGETTER(Type)(&type);
+        pMedium->COMGETTER(Type)(&type);
         const char *typeStr = "unknown";
         switch (type)
         {
@@ -131,7 +132,7 @@ static void listHardDisks(const ComPtr<IVirtualBox> aVirtualBox,
         RTPrintf("Type:        %s\n", typeStr);
 
         com::SafeArray<BSTR> machineIds;
-        hdd->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(machineIds));
+        pMedium->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(machineIds));
         for (size_t j = 0; j < machineIds.size(); ++j)
         {
             ComPtr<IMachine> machine;
@@ -143,8 +144,8 @@ static void listHardDisks(const ComPtr<IVirtualBox> aVirtualBox,
                     j == 0 ? "Usage:       " : "             ",
                     name.raw(), machineIds[j]);
             com::SafeArray<BSTR> snapshotIds;
-            hdd->GetSnapshotIds(machineIds[j],
-                                ComSafeArrayAsOutParam(snapshotIds));
+            pMedium->GetSnapshotIds(machineIds[j],
+                                    ComSafeArrayAsOutParam(snapshotIds));
             for (size_t k = 0; k < snapshotIds.size(); ++k)
             {
                 ComPtr<ISnapshot> snapshot;
@@ -161,11 +162,11 @@ static void listHardDisks(const ComPtr<IVirtualBox> aVirtualBox,
         RTPrintf("\n");
 
         com::SafeIfaceArray<IMedium> children;
-        CHECK_ERROR(hdd, COMGETTER(Children)(ComSafeArrayAsOutParam(children)));
+        CHECK_ERROR(pMedium, COMGETTER(Children)(ComSafeArrayAsOutParam(children)));
         if (children.size() > 0)
         {
             // depth first listing of child media
-            listHardDisks(aVirtualBox, children, Utf8Str(uuid).raw());
+            listMedia(aVirtualBox, children, Utf8Str(uuid).raw());
         }
     }
 }
@@ -650,7 +651,7 @@ int handleList(HandlerArg *a)
         {
             com::SafeIfaceArray<IMedium> hdds;
             CHECK_ERROR(a->virtualBox, COMGETTER(HardDisks)(ComSafeArrayAsOutParam(hdds)));
-            listHardDisks(a->virtualBox, hdds, "base");
+            listMedia(a->virtualBox, hdds, "base");
         }
         break;
 
@@ -658,35 +659,7 @@ int handleList(HandlerArg *a)
         {
             com::SafeIfaceArray<IMedium> dvds;
             CHECK_ERROR(a->virtualBox, COMGETTER(DVDImages)(ComSafeArrayAsOutParam(dvds)));
-            for (size_t i = 0; i < dvds.size(); ++i)
-            {
-                ComPtr<IMedium> dvdImage = dvds[i];
-                Bstr uuid;
-                dvdImage->COMGETTER(Id)(uuid.asOutParam());
-                RTPrintf("UUID:       %s\n", Utf8Str(uuid).raw());
-                Bstr filePath;
-                dvdImage->COMGETTER(Location)(filePath.asOutParam());
-                RTPrintf("Path:       %lS\n", filePath.raw());
-                MediumState_T enmState;
-                dvdImage->RefreshState(&enmState);
-                RTPrintf("Accessible: %s\n", enmState != MediumState_Inaccessible ? "yes" : "no");
-
-                com::SafeArray<BSTR> machineIds;
-                dvdImage->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(machineIds));
-                for (size_t j = 0; j < machineIds.size(); ++j)
-                {
-                    ComPtr<IMachine> machine;
-                    CHECK_ERROR(a->virtualBox, GetMachine(machineIds[j], machine.asOutParam()));
-                    ASSERT(machine);
-                    Bstr name;
-                    machine->COMGETTER(Name)(name.asOutParam());
-                    machine->COMGETTER(Id)(uuid.asOutParam());
-                    RTPrintf("%s%lS (UUID: %lS)\n",
-                            j == 0 ? "Usage:      " : "            ",
-                            name.raw(), machineIds[j]);
-                }
-                RTPrintf("\n");
-            }
+            listMedia(a->virtualBox, dvds, NULL);
         }
         break;
 
@@ -694,35 +667,7 @@ int handleList(HandlerArg *a)
         {
             com::SafeIfaceArray<IMedium> floppies;
             CHECK_ERROR(a->virtualBox, COMGETTER(FloppyImages)(ComSafeArrayAsOutParam(floppies)));
-            for (size_t i = 0; i < floppies.size(); ++i)
-            {
-                ComPtr<IMedium> floppyImage = floppies[i];
-                Bstr uuid;
-                floppyImage->COMGETTER(Id)(uuid.asOutParam());
-                RTPrintf("UUID:       %s\n", Utf8Str(uuid).raw());
-                Bstr filePath;
-                floppyImage->COMGETTER(Location)(filePath.asOutParam());
-                RTPrintf("Path:       %lS\n", filePath.raw());
-                MediumState_T enmState;
-                floppyImage->RefreshState(&enmState);
-                RTPrintf("Accessible: %s\n", enmState != MediumState_Inaccessible ? "yes" : "no");
-
-                com::SafeArray<BSTR> machineIds;
-                floppyImage->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(machineIds));
-                for (size_t j = 0; j < machineIds.size(); ++j)
-                {
-                    ComPtr<IMachine> machine;
-                    CHECK_ERROR(a->virtualBox, GetMachine(machineIds[j], machine.asOutParam()));
-                    ASSERT(machine);
-                    Bstr name;
-                    machine->COMGETTER(Name)(name.asOutParam());
-                    machine->COMGETTER(Id)(uuid.asOutParam());
-                    RTPrintf("%s%lS (UUID: %lS)\n",
-                            j == 0 ? "Usage:      " : "            ",
-                            name.raw(), machineIds[j]);
-                }
-                RTPrintf("\n");
-            }
+            listMedia(a->virtualBox, floppies, NULL);
         }
         break;
 
