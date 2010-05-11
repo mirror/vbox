@@ -96,6 +96,9 @@ static struct
 # endif
     { &g_VMStatistics, NIL_RTTHREAD, false, false, false, true },
 #endif
+#ifdef VBOX_WITH_PAGE_SHARING
+    { &g_PageSharing, NIL_RTTHREAD, false, false, false, true },
+#endif
 };
 
 
