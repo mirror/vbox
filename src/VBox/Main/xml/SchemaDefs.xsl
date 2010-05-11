@@ -101,14 +101,15 @@ namespace SchemaDefs
 
   <xsl:apply-templates select="xsd:schema" mode="declare.enum"/>
 
-<xsl:text>    };
+<xsl:text>        DummyTerminator
+    };
 </xsl:text>
 
 <xsl:apply-templates select="xsd:schema" mode="declare"/>
 
 <xsl:text>}
 
-#endif // ____H_SCHEMADEFS
+#endif // !____H_SCHEMADEFS
 </xsl:text>
 </xsl:template>
 
