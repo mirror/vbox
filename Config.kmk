@@ -2108,6 +2108,7 @@ if1of ($(KBUILD_TARGET), os2 win)
 else
  SDK_VBOX_ZLIB_INCS  ?=
  SDK_VBOX_ZLIB_LIBS  ?= z
+ SDK_VBOX_ZLIB_DEFS.linux ?= _LARGEFILE64_SOURCE
 endif
 
 SDK_VBOX_OPENSSL      = .
