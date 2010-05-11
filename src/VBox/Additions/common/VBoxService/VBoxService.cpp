@@ -87,9 +87,6 @@ static struct
 #ifdef VBOXSERVICE_VMINFO
     { &g_VMInfo,    NIL_RTTHREAD, false, false, false, true },
 #endif
-#ifdef VBOXSERVICE_EXEC
-    { &g_Exec,      NIL_RTTHREAD, false, false, false, true },
-#endif
 #ifdef VBOXSERVICE_CPUHOTPLUG
     { &g_CpuHotPlug, NIL_RTTHREAD, false, false, false, true },
 #endif
