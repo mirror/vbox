@@ -1471,8 +1471,8 @@ QString VBoxGlobal::toString (StorageSlot aSlot) const
         case KStorageBus_IDE:
         case KStorageBus_SATA:
         case KStorageBus_SCSI:
-        case KStorageBus_Floppy:
         case KStorageBus_SAS:
+        case KStorageBus_Floppy:
             break;
 
         default:
@@ -1507,14 +1507,15 @@ QString VBoxGlobal::toString (StorageSlot aSlot) const
             result = mSlotTemplates [5].arg (aSlot.port);
             break;
         }
-        case KStorageBus_Floppy:
-        {
-            result = mSlotTemplates [6].arg (aSlot.device);
-            break;
-        }
         case KStorageBus_SAS:
         {
+            /* TODO: change this index to 6 after 3.2 */
             result = mSlotTemplates [5].arg (aSlot.port);
+            break;
+        }
+        case KStorageBus_Floppy:
+        {
+            result = mSlotTemplates [7].arg (aSlot.device);
             break;
         }
         default:
@@ -1577,6 +1578,15 @@ StorageSlot VBoxGlobal::toStorageSlot (const QString &aSlot) const
             break;
         }
         case 6:
+        {
+            result.bus = KStorageBus_SAS;
+            int maxPort = virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus (result.bus);
+            result.port = regExp.cap (1).toInt();
+            if (result.port < 0 || result.port > maxPort)
+                AssertMsgFailed (("Invalid port %d\n", result.port));
+            break;
+        }
+        case 7:
         {
             result.bus = KStorageBus_Floppy;
             int maxDevice = virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus (result.bus);
@@ -3079,7 +3089,8 @@ void VBoxGlobal::retranslateUi()
     mSlotTemplates [3] = tr ("IDE Secondary Slave", "New Storage UI : Slot Name");
     mSlotTemplates [4] = tr ("SATA Port %1", "New Storage UI : Slot Name");
     mSlotTemplates [5] = tr ("SCSI Port %1", "New Storage UI : Slot Name");
-    mSlotTemplates [6] = tr ("Floppy Device %1", "New Storage UI : Slot Name");
+    mSlotTemplates [6] = tr ("SAS Port %1", "New Storage UI : Slot Name");
+    mSlotTemplates [7] = tr ("Floppy Device %1", "New Storage UI : Slot Name");
 
     mDiskTypes [KMediumType_Normal] =           tr ("Normal", "DiskType");
     mDiskTypes [KMediumType_Immutable] =        tr ("Immutable", "DiskType");
