@@ -13147,7 +13147,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IInternalSessionControl" extends="$unknown"
-     uuid="cc8d63a0-568e-45dd-9bf6-6354049ece1e"
+     uuid="ab161f72-e4b3-44e6-a919-2256474bda66"
      internal="yes"
      wsmap="suppress"
      >
@@ -13340,6 +13340,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
 
       </desc>
+      <param name="restart" type="boolean" dir="in">
+        <desc>Flag whether the server must be restarted</desc>
+      </param>
     </method>
 
     <method name="onUSBControllerChange">

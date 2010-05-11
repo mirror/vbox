@@ -581,7 +581,7 @@ STDMETHODIMP Session::OnCPUChange(ULONG aCPU, BOOL aRemove)
     return mConsole->onCPUChange(aCPU, aRemove);
 }
 
-STDMETHODIMP Session::OnVRDPServerChange()
+STDMETHODIMP Session::OnVRDPServerChange(BOOL aRestart)
 {
     LogFlowThisFunc(("\n"));
 
@@ -592,7 +592,7 @@ STDMETHODIMP Session::OnVRDPServerChange()
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onVRDPServerChange();
+    return mConsole->onVRDPServerChange(aRestart);
 }
 
 STDMETHODIMP Session::OnUSBControllerChange()
