@@ -68,6 +68,8 @@ void VBoxServicePageSharingRegisterModule(HANDLE hProcess, PKNOWN_MODULE pModule
     DWORD                    cbVersionSize, dummy;
     BYTE                    *pVersionInfo;
 
+    VBoxServiceVerbose(3, "VBoxServicePageSharingRegisterModule\n");
+
     cbVersionSize = GetFileVersionInfoSize(pModule->Info.szExePath, &dummy);
     if (!cbVersionSize)
     {
@@ -187,15 +189,21 @@ void VBoxServicePageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppN
 {
     HANDLE hProcess, hSnapshot;
 
+    VBoxServiceVerbose(3, "VBoxServicePageSharingInspectModules\n");
+
     /* Get a list of all the modules in this process. */
     hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
                            FALSE /* no child process handle inheritance */, dwProcessId);
     if (hProcess == NULL)
+    {
+        VBoxServiceVerbose(3, "OpenProcess failed with %d\n", GetLastError());
         return;
+    }
 
     hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, dwProcessId);
     if (hSnapshot == INVALID_HANDLE_VALUE)
     {
+        VBoxServiceVerbose(3, "CreateToolhelp32Snapshot failed with %d\n", GetLastError());
         CloseHandle(hProcess);
         return;
     }
@@ -233,11 +241,11 @@ void VBoxServicePageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppN
             Assert(ret); NOREF(ret);
         }
 
-        printf( "\n\n     MODULE NAME:     %s",           ModuleInfo.szModule );
-        printf( "\n     executable     = %s",             ModuleInfo.szExePath );
-        printf( "\n     process ID     = 0x%08X",         ModuleInfo.th32ProcessID );
-        printf( "\n     base address   = 0x%08X", (DWORD) ModuleInfo.modBaseAddr );
-        printf( "\n     base size      = %d",             ModuleInfo.modBaseSize );
+        VBoxServiceVerbose(3, "\n\n     MODULE NAME:     %s",           ModuleInfo.szModule );
+        VBoxServiceVerbose(3, "\n     executable     = %s",             ModuleInfo.szExePath );
+        VBoxServiceVerbose(3, "\n     process ID     = 0x%08X",         ModuleInfo.th32ProcessID );
+        VBoxServiceVerbose(3, "\n     base address   = 0x%08X", (DWORD) ModuleInfo.modBaseAddr );
+        VBoxServiceVerbose(3, "\n     base size      = %d",             ModuleInfo.modBaseSize );
     }
     while (Module32Next(hSnapshot, &ModuleInfo));
 
@@ -255,9 +263,14 @@ void VBoxServicePageSharingInspectGuest()
     HANDLE hSnapshot;
     PAVLPVNODECORE pNewTree = NULL;
 
+    VBoxServiceVerbose(3, "VBoxServicePageSharingInspectGuest\n");
+
     hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (hSnapshot == INVALID_HANDLE_VALUE)
+    {
+        VBoxServiceVerbose(3, "CreateToolhelp32Snapshot failed with %d\n", GetLastError());
         return;
+    }
 
     /* Check loaded modules for all running processes. */
     PROCESSENTRY32 ProcessInfo;
@@ -286,6 +299,8 @@ void VBoxServicePageSharingInspectGuest()
 static DECLCALLBACK(int) VBoxServicePageSharingEmptyTreeCallback(PAVLPVNODECORE pNode, void *)
 {
     PKNOWN_MODULE pModule = (PKNOWN_MODULE)pNode;
+
+    VBoxServiceVerbose(3, "VBoxServicePageSharingEmptyTreeCallback %s %s\n", pModule->Info.szModule, pModule->szFileVersion);
 
     /* Defererence module in the hypervisor. */
     int rc = VbglR3UnregisterSharedModule(pModule->Info.szModule, pModule->szFileVersion, (RTGCPTR64)pModule->Info.modBaseAddr, pModule->Info.modBaseSize);
