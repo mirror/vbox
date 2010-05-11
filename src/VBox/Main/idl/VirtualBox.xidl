@@ -4853,19 +4853,8 @@
         media (such as DVDs and floppies), you can also use <link to="IMedium::mountMedium"/>
         for changing the media while the machine is running.
 
-        For the IDE bus, the @a controllerPort parameter can be either
-        @c 0 or @c 1, to specify the primary or secondary IDE controller,
-        respectively. For each of these, @a device can then be either @c 0 or @c 1,
-        to specify the master or the slave device, respectively. (In the
-        default configuration of virtual machines, the secondary master is
-        used for a CD/DVD drive.)
-
-        For an SATA controller, @a controllerPort must be a number ranging
-        from @c 0 to @c 29. For a SCSI or SAS controller, @a controllerPort
-        must be a number ranging from @c 0 to @c 15.
-
-        For SCSI, SAS and SATA, the @a device parameter is unused and must
-        be @c 0.
+        In a VM's default configuration of virtual machines, the secondary
+        master of the IDE controller is used for a CD/DVD drive.
 
         For fixed media such as hard disks, the given medium identifier cannot
         be a zero UUID. It may be a zero UUID for removable media such as DVDs
@@ -4913,10 +4902,16 @@
         <desc>Name of the storage controller to attach the device to.</desc>
       </param>
       <param name="controllerPort" type="long" dir="in">
-        <desc>Port to attach the device to.</desc>
+        <desc>Port to attach the device to. For an IDE controller, 0 specifies
+        the primary controller and 1 specifies the secondary controller.
+        For a SCSI controller, this must range from 0 to 15; for a SATA controller,
+        from 0 to 29; for an SAS controller, from 0 to 7.</desc>
       </param>
       <param name="device" type="long" dir="in">
-        <desc>Device slot in the given port to attach the device to.</desc>
+        <desc>Device slot in the given port to attach the device to. This is only
+        relevant for IDE controllers, for which 0 specifies the master device and
+        1 specifies the slave device. For all other controller types, this must
+        be 0.</desc>
       </param>
       <param name="type" type="DeviceType" dir="in">
         <desc>Device type of the attached device.</desc>
