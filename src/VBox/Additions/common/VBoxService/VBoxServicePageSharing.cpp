@@ -172,9 +172,13 @@ void VBoxServicePageSharingRegisterModule(HANDLE hProcess, PKNOWN_MODULE pModule
     }
     while (dwModuleSize);
 
+    VBoxServiceVerbose(3, "VbglR3RegisterSharedModule %s %s base=%p size=%x cregions=%d\n", pModule->Info.szModule, pModule->szFileVersion, pModule->Info.modBaseAddr, pModule->Info.modBaseSize, idxRegion);
     int rc = VbglR3RegisterSharedModule(pModule->Info.szModule, pModule->szFileVersion, (RTGCPTR64)pModule->Info.modBaseAddr,
                                         pModule->Info.modBaseSize, idxRegion, aRegions);
-    AssertRC(rc);
+//    AssertRC(rc);
+    if (RT_FAILURE(rc))
+        VBoxServiceVerbose(3, "VbglR3RegisterSharedModule failed with %d\n", rc);
+    
 
 end:
     RTMemFree(pVersionInfo);
@@ -189,24 +193,24 @@ void VBoxServicePageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppN
 {
     HANDLE hProcess, hSnapshot;
 
-    VBoxServiceVerbose(3, "VBoxServicePageSharingInspectModules\n");
-
     /* Get a list of all the modules in this process. */
     hProcess = OpenProcess(PROCESS_QUERY_INFORMATION,
                            FALSE /* no child process handle inheritance */, dwProcessId);
     if (hProcess == NULL)
     {
-        VBoxServiceVerbose(3, "OpenProcess failed with %d\n", GetLastError());
+        VBoxServiceVerbose(3, "VBoxServicePageSharingInspectModules: OpenProcess %x failed with %d\n", dwProcessId, GetLastError());
         return;
     }
 
     hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, dwProcessId);
     if (hSnapshot == INVALID_HANDLE_VALUE)
     {
-        VBoxServiceVerbose(3, "CreateToolhelp32Snapshot failed with %d\n", GetLastError());
+        VBoxServiceVerbose(3, "VBoxServicePageSharingInspectModules: CreateToolhelp32Snapshot failed with %d\n", GetLastError());
         CloseHandle(hProcess);
         return;
     }
+
+    VBoxServiceVerbose(3, "VBoxServicePageSharingInspectModules\n");
 
     MODULEENTRY32 ModuleInfo;
     BOOL          bRet;
@@ -370,6 +374,7 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
      */
     for (;;)
     {
+        VBoxServiceVerbose(3, "VBoxServicePageSharingWorker: enabled=%d\n", VbglR3PageSharingIsEnabled());
 
         if (VbglR3PageSharingIsEnabled())
             VBoxServicePageSharingInspectGuest();
