@@ -55,8 +55,10 @@ else
  VBoxRemPrimary_CFLAGS.release += -fno-gcse -O2
  VBoxRemPrimary_CFLAGS.profile = $(VBoxRemPrimary_CFLAGS.release)
  VBoxRemPrimary_DEFS          += IN_RING3 $(ARCH_BITS_DEFS)
- # workaround the regparm bug in gcc <= 3.3
+ # Workaround the regparm bug in gcc <= 3.3.
  VBoxRemPrimary_DEFS.win.x86  += GCC_WITH_BUGGY_REGPARM
+ # Missing fpclassify. Is there a better define or flag for this?
+ VBoxRemPrimary_DEFS.solaris  += __C99FEATURES__
 endif # win
 VBoxRemPrimary_DEFS           += IN_REM_R3 REM_INCLUDE_CPU_H
 #VBoxRemPrimary_DEFS           += REM_PHYS_ADDR_IN_TLB
