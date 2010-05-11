@@ -8928,7 +8928,7 @@ void Machine::rollback(bool aNotify)
             that->onSharedFolderChange();
 
         if (flModifications & IsModified_VRDPServer)
-            that->onVRDPServerChange();
+            that->onVRDPServerChange(/* aRestart */ TRUE);
         if (flModifications & IsModified_USB)
             that->onUSBControllerChange();
 
@@ -10564,7 +10564,7 @@ HRESULT SessionMachine::onCPUChange(ULONG aCPU, BOOL aRemove)
 /**
  *  @note Locks this object for reading.
  */
-HRESULT SessionMachine::onVRDPServerChange()
+HRESULT SessionMachine::onVRDPServerChange(BOOL aRestart)
 {
     LogFlowThisFunc(("\n"));
 
@@ -10581,7 +10581,7 @@ HRESULT SessionMachine::onVRDPServerChange()
     if (!directControl)
         return S_OK;
 
-    return directControl->OnVRDPServerChange();
+    return directControl->OnVRDPServerChange(aRestart);
 }
 
 /**

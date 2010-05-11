@@ -3877,7 +3877,7 @@ HRESULT Console::onCPUChange(ULONG aCPU, BOOL aRemove)
  *
  * @note Locks this object for writing.
  */
-HRESULT Console::onVRDPServerChange()
+HRESULT Console::onVRDPServerChange(BOOL aRestart)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -3898,31 +3898,34 @@ HRESULT Console::onVRDPServerChange()
         rc = mVRDPServer->COMGETTER(Enabled)(&vrdpEnabled);
         ComAssertComRCRetRC(rc);
 
-        /* VRDP server may call this Console object back from other threads (VRDP INPUT or OUTPUT). */
-        alock.leave();
-
-        if (vrdpEnabled)
+        if (aRestart)
         {
-            // If there was no VRDP server started the 'stop' will do nothing.
-            // However if a server was started and this notification was called,
-            // we have to restart the server.
-            mConsoleVRDPServer->Stop();
+            /* VRDP server may call this Console object back from other threads (VRDP INPUT or OUTPUT). */
+            alock.leave();
 
-            if (RT_FAILURE(mConsoleVRDPServer->Launch()))
+            if (vrdpEnabled)
             {
-                rc = E_FAIL;
+                // If there was no VRDP server started the 'stop' will do nothing.
+                // However if a server was started and this notification was called,
+                // we have to restart the server.
+                mConsoleVRDPServer->Stop();
+
+                if (RT_FAILURE(mConsoleVRDPServer->Launch()))
+                {
+                    rc = E_FAIL;
+                }
+                else
+                {
+                    mConsoleVRDPServer->EnableConnections();
+                }
             }
             else
             {
-                mConsoleVRDPServer->EnableConnections();
+                mConsoleVRDPServer->Stop();
             }
-        }
-        else
-        {
-            mConsoleVRDPServer->Stop();
-        }
 
-        alock.enter();
+            alock.enter();
+        }
     }
 
     /* notify console callbacks on success */

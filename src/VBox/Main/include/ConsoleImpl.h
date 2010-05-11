@@ -174,7 +174,7 @@ public:
     HRESULT onStorageControllerChange();
     HRESULT onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForce);
     HRESULT onCPUChange(ULONG aCPU, BOOL aRemove);
-    HRESULT onVRDPServerChange();
+    HRESULT onVRDPServerChange(BOOL aRestart);
     HRESULT onUSBControllerChange();
     HRESULT onSharedFolderChange(BOOL aGlobal);
     HRESULT onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs);
