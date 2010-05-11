@@ -3110,7 +3110,9 @@ HRESULT Medium::compareLocationTo(const char *aLocation, int &aResult)
  *
  * @note Locks the medium tree for reading.
  *
- * @param fFailIfInaccessible Whether to refuse inaccessible media.
+ * @param fFailIfInaccessible If true, this fails with an error if a medium is inaccessible. If false,
+ *          inaccessible media are silently skipped and not locked (i.e. their state remains "Inaccessible");
+ *          this is necessary for a VM's removable images on VM startup for which we do not want to fail.
  * @param fMediumLockWrite  Whether to associate a write lock with this medium.
  * @param pToBeParent       Medium which will become the parent of this medium.
  * @param mediumLockList    Where to store the resulting list.
