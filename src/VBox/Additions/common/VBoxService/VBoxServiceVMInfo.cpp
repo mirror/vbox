@@ -107,6 +107,8 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
     AssertRCReturn(rc, rc);
 
 #ifdef RT_OS_WINDOWS
+    /** @todo Use RTLdr instead of LoadLibrary/GetProcAddress here! */
+
     /* Get function pointers. */
     HMODULE hKernel32 = LoadLibrary("kernel32");
     if (hKernel32 != NULL)
@@ -118,12 +120,21 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
 
     rc = VbglR3GuestPropConnect(&g_uVMInfoGuestPropSvcClientID);
     if (RT_SUCCESS(rc))
-        VBoxServiceVerbose(3, "Property Service Client ID: %#x\n", g_uVMInfoGuestPropSvcClientID);
+        VBoxServiceVerbose(3, "VMInfo: Property Service Client ID: %#x\n", g_uVMInfoGuestPropSvcClientID);
     else
     {
-        VBoxServiceError("Failed to connect to the guest property service! Error: %Rrc\n", rc);
+        if (rc == VERR_HGCM_SERVICE_NOT_FOUND) /* Host service is not available. */
+            VBoxServiceVerbose(0, "VMInfo: Guest property service is not available\n");
+        else
+            VBoxServiceError("VMInfo: Failed to connect to the guest property service! Error: %Rrc\n", rc);
         RTSemEventMultiDestroy(g_hVMInfoEvent);
         g_hVMInfoEvent = NIL_RTSEMEVENTMULTI;
+
+        /* 
+         * Not having the guest property service on the host renders this whole service
+         * unusable, so report that we are not able to continue. 
+         */
+        rc = VERR_NOT_SUPPORTED;
     }
 
     if (RT_SUCCESS(rc))
