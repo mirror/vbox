@@ -71,6 +71,9 @@
 #include "vgaHW.h"
 
 /* X.org 1.3+ mode setting */
+#ifdef NO_ANSIC
+char *strchr(const char *psz, int ch);  /* bits/string2.h, __strsep_1c. */
+#endif
 #include "xf86Crtc.h"
 #include "xf86Modes.h"
 
