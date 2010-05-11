@@ -32,7 +32,7 @@ ADD_COCOA_NATIVE_REF (NSSearchField);
 
 class VBoxCocoaButton: public QMacCocoaViewContainer
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
     enum CocoaButtonType
@@ -63,7 +63,7 @@ private:
 
 class VBoxCocoaSegmentedButton: public QMacCocoaViewContainer
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
     VBoxCocoaSegmentedButton (int aCount, QWidget *aParent = 0);
@@ -89,7 +89,7 @@ private:
 
 class VBoxCocoaSearchField: public QMacCocoaViewContainer
 {
-    Q_OBJECT;
+    Q_OBJECT
 
 public:
     VBoxCocoaSearchField (QWidget* aParent = 0);
