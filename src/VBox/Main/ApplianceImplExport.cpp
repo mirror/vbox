@@ -395,6 +395,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
                 break;
 
                 case StorageBus_SCSI:
+                case StorageBus_SAS:
                     lChannelVsys = lChannel;        // should be between 0 and 15
                     lControllerVsys = lSCSIControllerIndex;
                 break;
