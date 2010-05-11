@@ -867,6 +867,9 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pTh
                                 }
                                 else /* Something went wrong; report error! */
                                 {
+                                    VBoxServiceError("ControlExec: Could not start process '%s' (CID: %u)! Error: %Rrc\n",
+                                                     pData->pszCmd, pThread->uContextID, rc);
+
                                     int rc2 = VbglR3GuestCtrlExecReportStatus(pThread->uClientID, pThread->uContextID, pData->uPID,
                                                                               PROC_STS_ERROR, rc,
                                                                               NULL /* pvData */, 0 /* cbData */);
