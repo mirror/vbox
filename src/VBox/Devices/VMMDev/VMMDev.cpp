@@ -1771,8 +1771,8 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             }
             else
             {
-                pRequestHeader->rc = PGMR3SharedModuleRegister(pVM, pReqModule->enmGuestOS, pReqModule->GCBaseAddr, pReqModule->cbModule,
-                                                               pReqModule->szName, pReqModule->szVersion,
+                pRequestHeader->rc = PGMR3SharedModuleRegister(PDMDevHlpGetVM(pDevIns), pReqModule->enmGuestOS, pReqModule->szName, pReqModule->szVersion,
+                                                               pReqModule->GCBaseAddr, pReqModule->cbModule,                                                               
                                                                pReqModule->cRegions, pReqModule->aRegions);
             }
             break;
@@ -1782,14 +1782,14 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         {
             VMMDevSharedModuleUnregistrationRequest *pReqModule = (VMMDevSharedModuleUnregistrationRequest *)pRequestHeader;
 
-            if (pRequestHeader->size != sizeof(VMMDevSharedModuleUnregistrationRequest)
+            if (pRequestHeader->size != sizeof(VMMDevSharedModuleUnregistrationRequest))
             {
                 pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                pRequestHeader->rc = PGMR3SharedModuleUnregister(pVM, pReqModule->GCBaseAddr, pReqModule->cbModule,
-                                                                 pReqModule->szName, pReqModule->szVersion);
+                pRequestHeader->rc = PGMR3SharedModuleUnregister(PDMDevHlpGetVM(pDevIns), pReqModule->szName, pReqModule->szVersion, 
+                                                                 pReqModule->GCBaseAddr, pReqModule->cbModule);
             }
             break;
         }
@@ -1798,13 +1798,13 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         {
             VMMDevSharedModuleCheckRequest *pReqModule = (VMMDevSharedModuleCheckRequest *)pRequestHeader;
 
-            if (pRequestHeader->size != sizeof(VMMDevSharedModuleCheckRequest)
+            if (pRequestHeader->size != sizeof(VMMDevSharedModuleCheckRequest))
             {
                 pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
-                pRequestHeader->rc = PGMR3SharedModuleCheck(pVM);
+                pRequestHeader->rc = VERR_NOT_IMPLEMENTED;  /** todo remove case */
             }
             break;
         }
@@ -1813,7 +1813,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         {
             VMMDevPageSharingStatusRequest *pReqStatus = (VMMDevPageSharingStatusRequest *)pRequestHeader;
 
-            if (pRequestHeader->size != sizeof(VMMDevPageSharingStatusRequest)
+            if (pRequestHeader->size != sizeof(VMMDevPageSharingStatusRequest))
             {
                 pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
