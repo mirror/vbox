@@ -548,6 +548,25 @@ int handleControlVM(HandlerArg *a)
                 CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Ports)(vrdpports));
             }
         }
+        else if (!strcmp(a->argv[1], "vrdpvideochannelquality"))
+        {
+            if (a->argc <= 1 + 1)
+            {
+                errorArgument("Missing argument to '%s'", a->argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+            /* get the corresponding VRDP server */
+            ComPtr<IVRDPServer> vrdpServer;
+            sessionMachine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
+            ASSERT(vrdpServer);
+            if (vrdpServer)
+            {
+                unsigned n = parseNum(a->argv[2], 100, "VRDP video channel quality in percent");
+
+                CHECK_ERROR(vrdpServer, COMSETTER(VideoChannelQuality)(n));
+            }
+        }
 #endif /* VBOX_WITH_VRDP */
         else if (   !strcmp(a->argv[1], "usbattach")
                  || !strcmp(a->argv[1], "usbdetach"))
