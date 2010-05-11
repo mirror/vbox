@@ -1299,8 +1299,9 @@ int inotifyWatch::initInotify(void)
     return rc;
 }
 
-/** The flags we pass to inotify - modify, create, delete */
-#define IN_FLAGS 0x302
+/** The flags we pass to inotify - modify, create, delete, change permissions
+ */
+#define IN_FLAGS 0x306
 
 bool inotifyWatch::handle(const char *pcszPath)
 {
