@@ -1236,7 +1236,7 @@ int ConsoleVRDPServer::Launch (void)
                 remoteUSBThreadStart ();
 #endif /* VBOX_WITH_USB */
             }
-            else
+            else if (rc != VERR_NET_ADDRESS_IN_USE)
                 AssertMsgFailed(("Could not start VRDP server: rc = %Rrc\n", rc));
         }
         else
