@@ -1204,7 +1204,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                       RC_CHECK();
                 rc = CFGMR3InsertInteger(pCfg,  "papLeds", (uintptr_t)&pConsole->mapStorageLeds[iLedSas]); RC_CHECK();
                 rc = CFGMR3InsertInteger(pCfg,  "First",    0);                         RC_CHECK();
-                Assert(cLedScsi >= 8);
+                Assert(cLedSas >= 8);
                 rc = CFGMR3InsertInteger(pCfg,  "Last",     7);                         RC_CHECK();
                 paLedDevType = &pConsole->maStorageDevType[iLedSas];
                 break;
