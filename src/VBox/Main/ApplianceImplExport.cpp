@@ -1296,7 +1296,8 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
         vsdescThis->m->pMachine->copyMachineDataToSettings(*pConfig);
         // write the machine config to the vbox:Machine element
         pConfig->buildMachineXML(*pelmVBoxMachine,
-                                 settings::MachineConfigFile::BuildMachineXML_WriteVboxVersionAttribute);
+                                   settings::MachineConfigFile::BuildMachineXML_WriteVboxVersionAttribute
+                                 | settings::MachineConfigFile::BuildMachineXML_SkipRemovableMedia);
                                         // but not BuildMachineXML_IncludeSnapshots
         delete pConfig;
     }
