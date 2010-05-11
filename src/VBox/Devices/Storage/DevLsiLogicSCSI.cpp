@@ -3501,14 +3501,17 @@ static int  lsilogicIsaIOPortRead (PPDMDEVINS pDevIns, void *pvUser,
                                    RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     int rc;
-    PLSILOGICSCSI pLsiLogic = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
     Assert(cb == 1);
 
-    rc = vboxscsiReadRegister(&pLsiLogic->VBoxSCSI, (Port - LSILOGIC_ISA_IO_PORT), pu32);
+    uint8_t iRegister =   pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
+                        ? Port - LSILOGIC_ISA_IO_PORT
+                        : Port - LSILOGIC_SAS_ISA_IO_PORT;
+    rc = vboxscsiReadRegister(&pThis->VBoxSCSI, iRegister, pu32);
 
     Log2(("%s: pu32=%p:{%.*Rhxs} iRegister=%d rc=%Rrc\n",
-          __FUNCTION__, pu32, 1, pu32, (Port - LSILOGIC_ISA_IO_PORT), rc));
+          __FUNCTION__, pu32, 1, pu32, iRegister, rc));
 
     return rc;
 }
@@ -3584,17 +3587,20 @@ static int lsilogicIsaIOPortWrite (PPDMDEVINS pDevIns, void *pvUser,
                                    RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     int rc;
-    PLSILOGICSCSI pLsiLogic = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
     Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x Port=%#x\n",
           pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, Port));
 
     Assert(cb == 1);
 
-    rc = vboxscsiWriteRegister(&pLsiLogic->VBoxSCSI, (Port - LSILOGIC_ISA_IO_PORT), (uint8_t)u32);
+    uint8_t iRegister =   pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
+                        ? Port - LSILOGIC_ISA_IO_PORT
+                        : Port - LSILOGIC_SAS_ISA_IO_PORT;
+    rc = vboxscsiWriteRegister(&pThis->VBoxSCSI, iRegister, (uint8_t)u32);
     if (rc == VERR_MORE_DATA)
     {
-        rc = lsilogicPrepareBIOSSCSIRequest(pLsiLogic);
+        rc = lsilogicPrepareBIOSSCSIRequest(pThis);
         AssertRC(rc);
     }
     else if (RT_FAILURE(rc))
@@ -3609,17 +3615,20 @@ static int lsilogicIsaIOPortWrite (PPDMDEVINS pDevIns, void *pvUser,
  */
 static DECLCALLBACK(int) lsilogicIsaIOPortWriteStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfer, unsigned cb)
 {
-    PLSILOGICSCSI pLsiLogic = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
     int rc;
 
     Log2(("#%d %s: pvUser=%#p cb=%d Port=%#x\n",
           pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
 
-    rc = vboxscsiWriteString(pDevIns, &pLsiLogic->VBoxSCSI, (Port - LSILOGIC_ISA_IO_PORT),
+    uint8_t iRegister =   pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
+                        ? Port - LSILOGIC_ISA_IO_PORT
+                        : Port - LSILOGIC_SAS_ISA_IO_PORT;
+    rc = vboxscsiWriteString(pDevIns, &pThis->VBoxSCSI, iRegister,
                              pGCPtrSrc, pcTransfer, cb);
     if (rc == VERR_MORE_DATA)
     {
-        rc = lsilogicPrepareBIOSSCSIRequest(pLsiLogic);
+        rc = lsilogicPrepareBIOSSCSIRequest(pThis);
         AssertRC(rc);
     }
     else if (RT_FAILURE(rc))
@@ -3634,12 +3643,15 @@ static DECLCALLBACK(int) lsilogicIsaIOPortWriteStr(PPDMDEVINS pDevIns, void *pvU
  */
 static DECLCALLBACK(int) lsilogicIsaIOPortReadStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst, PRTGCUINTREG pcTransfer, unsigned cb)
 {
-    PLSILOGICSCSI pLsiLogic = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
     LogFlowFunc(("#%d %s: pvUser=%#p cb=%d Port=%#x\n",
                  pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
 
-    return vboxscsiReadString(pDevIns, &pLsiLogic->VBoxSCSI, (Port - LSILOGIC_ISA_IO_PORT),
+    uint8_t iRegister =   pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
+                        ? Port - LSILOGIC_ISA_IO_PORT
+                        : Port - LSILOGIC_SAS_ISA_IO_PORT;
+    return vboxscsiReadString(pDevIns, &pThis->VBoxSCSI, iRegister,
                               pGCPtrDst, pcTransfer, cb);
 }
 
@@ -3650,6 +3662,12 @@ static DECLCALLBACK(int) lsilogicMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegio
     PPDMDEVINS pDevIns = pPciDev->pDevIns;
     PLSILOGICSCSI  pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
     int   rc = VINF_SUCCESS;
+    const char *pcszCtrl = pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
+                           ? "LsiLogic"
+                           : "LsiLogicSas";
+    const char *pcszDiag = pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
+                           ? "LsiLogicDiag"
+                           : "LsiLogicSasDiag";
 
     Log2(("%s: registering area at GCPhysAddr=%RGp cb=%u\n", __FUNCTION__, GCPhysAddress, cb));
 
@@ -3661,7 +3679,7 @@ static DECLCALLBACK(int) lsilogicMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegio
     {
         /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
         rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL,
-                                   lsilogicMMIOWrite, lsilogicMMIORead, NULL, "LsiLogic");
+                                   lsilogicMMIOWrite, lsilogicMMIORead, NULL, pcszCtrl);
         if (RT_FAILURE(rc))
             return rc;
 
@@ -3687,7 +3705,7 @@ static DECLCALLBACK(int) lsilogicMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegio
     {
         /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
         rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL,
-                                   lsilogicDiagnosticWrite, lsilogicDiagnosticRead, NULL, "LsiLogicDiag");
+                                   lsilogicDiagnosticWrite, lsilogicDiagnosticRead, NULL, pcszDiag);
         if (RT_FAILURE(rc))
             return rc;
 
@@ -3710,14 +3728,14 @@ static DECLCALLBACK(int) lsilogicMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegio
     else if (enmType == PCI_ADDRESS_SPACE_IO)
     {
         rc = PDMDevHlpIOPortRegister(pDevIns, (RTIOPORT)GCPhysAddress, LSILOGIC_PCI_SPACE_IO_SIZE,
-                                     NULL, lsilogicIOPortWrite, lsilogicIOPortRead, NULL, NULL, "LsiLogic");
+                                     NULL, lsilogicIOPortWrite, lsilogicIOPortRead, NULL, NULL, pcszCtrl);
         if (RT_FAILURE(rc))
             return rc;
 
         if (pThis->fR0Enabled)
         {
             rc = PDMDevHlpIOPortRegisterR0(pDevIns, (RTIOPORT)GCPhysAddress, LSILOGIC_PCI_SPACE_IO_SIZE,
-                                           0, "lsilogicIOPortWrite", "lsilogicIOPortRead", NULL, NULL, "LsiLogic");
+                                           0, "lsilogicIOPortWrite", "lsilogicIOPortRead", NULL, NULL, pcszCtrl);
             if (RT_FAILURE(rc))
                 return rc;
         }
@@ -3725,7 +3743,7 @@ static DECLCALLBACK(int) lsilogicMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegio
         if (pThis->fGCEnabled)
         {
             rc = PDMDevHlpIOPortRegisterRC(pDevIns, (RTIOPORT)GCPhysAddress, LSILOGIC_PCI_SPACE_IO_SIZE,
-                                           0, "lsilogicIOPortWrite", "lsilogicIOPortRead", NULL, NULL, "LsiLogic");
+                                           0, "lsilogicIOPortWrite", "lsilogicIOPortRead", NULL, NULL, pcszCtrl);
             if (RT_FAILURE(rc))
                 return rc;
         }
@@ -4511,7 +4529,11 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
 
     /* Intialize task queue. */
     rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 2, 0,
-                              lsilogicNotifyQueueConsumer, true, "LsiLogic-Task", &pThis->pNotificationQueueR3);
+                              lsilogicNotifyQueueConsumer, true,
+                              pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
+                              ? "LsiLogic-Task"
+                              : "LsiLogicSAS-Task",
+                              &pThis->pNotificationQueueR3);
     if (RT_FAILURE(rc))
         return rc;
     pThis->pNotificationQueueR0 = PDMQueueR0Ptr(pThis->pNotificationQueueR3);
@@ -4548,12 +4570,18 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Create critical sections protecting the reply post and free queues.
      */
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyFreeQueueCritSect, RT_SRC_POS, "LsiLogicRFQ");
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyFreeQueueCritSect, RT_SRC_POS,
+                               pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
+                               ? "LsiLogicRFQ"
+                               : "LsiLogicSasRFQ");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic: cannot create critical section for reply free queue"));
 
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyPostQueueCritSect, RT_SRC_POS, "LsiLogicRPQ");
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyPostQueueCritSect, RT_SRC_POS,
+                               pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
+                               ? "LsiLogicRPQ"
+                               : "LsiLogicSasRPQ");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic: cannot create critical section for reply post queue"));
@@ -4636,10 +4664,19 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     AssertRC(rc);
 
     /* Register I/O port space in ISA region for BIOS access. */
-    rc = PDMDevHlpIOPortRegister(pDevIns, LSILOGIC_ISA_IO_PORT, 3, NULL,
-                                 lsilogicIsaIOPortWrite, lsilogicIsaIOPortRead,
-                                 lsilogicIsaIOPortWriteStr, lsilogicIsaIOPortReadStr,
-                                 "LsiLogic BIOS");
+    if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
+        rc = PDMDevHlpIOPortRegister(pDevIns, LSILOGIC_ISA_IO_PORT, 3, NULL,
+                                     lsilogicIsaIOPortWrite, lsilogicIsaIOPortRead,
+                                     lsilogicIsaIOPortWriteStr, lsilogicIsaIOPortReadStr,
+                                     "LsiLogic BIOS");
+    else if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
+        rc = PDMDevHlpIOPortRegister(pDevIns, LSILOGIC_SAS_ISA_IO_PORT, 3, NULL,
+                                     lsilogicIsaIOPortWrite, lsilogicIsaIOPortRead,
+                                     lsilogicIsaIOPortWriteStr, lsilogicIsaIOPortReadStr,
+                                     "LsiLogic SAS BIOS");
+    else
+        AssertMsgFailed(("Invalid controller type %d\n", pThis->enmCtrlType));
+
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic cannot register legacy I/O handlers"));
 
@@ -4659,7 +4696,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
 }
 
 /**
- * The device registration structure.
+ * The device registration structure - SPI SCSI controller.
  */
 const PDMDEVREG g_DeviceLsiLogicSCSI =
 {
@@ -4673,6 +4710,61 @@ const PDMDEVREG g_DeviceLsiLogicSCSI =
     "VBoxDDR0.r0",
     /* pszDescription */
     "LSI Logic 53c1030 SCSI controller.\n",
+    /* fFlags */
+    PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
+    /* fClass */
+    PDM_DEVREG_CLASS_STORAGE,
+    /* cMaxInstances */
+    ~0,
+    /* cbInstance */
+    sizeof(LSILOGICSCSI),
+    /* pfnConstruct */
+    lsilogicConstruct,
+    /* pfnDestruct */
+    lsilogicDestruct,
+    /* pfnRelocate */
+    lsilogicRelocate,
+    /* pfnIOCtl */
+    NULL,
+    /* pfnPowerOn */
+    NULL,
+    /* pfnReset */
+    lsilogicReset,
+    /* pfnSuspend */
+    NULL,
+    /* pfnResume */
+    NULL,
+    /* pfnAttach */
+    lsilogicAttach,
+    /* pfnDetach */
+    lsilogicDetach,
+    /* pfnQueryInterface. */
+    NULL,
+    /* pfnInitComplete */
+    NULL,
+    /* pfnPowerOff */
+    NULL,
+    /* pfnSoftReset */
+    NULL,
+    /* u32VersionEnd */
+    PDM_DEVREG_VERSION
+};
+
+/**
+ * The device registration structure - SAS controller.
+ */
+const PDMDEVREG g_DeviceLsiLogicSAS =
+{
+    /* u32Version */
+    PDM_DEVREG_VERSION,
+    /* szName */
+    "lsilogicsas",
+    /* szRCMod */
+    "VBoxDDGC.gc",
+    /* szR0Mod */
+    "VBoxDDR0.r0",
+    /* pszDescription */
+    "LSI Logic SAS1068 controller.\n",
     /* fFlags */
     PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
     /* fClass */
