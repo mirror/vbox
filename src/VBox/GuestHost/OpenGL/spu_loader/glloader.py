@@ -35,7 +35,7 @@ print """
 # endif
 #include <string.h> /* VBOX */
 #elif defined(IRIX) || defined(IRIX64) || defined(Linux) || defined(FreeBSD) || defined(AIX) || defined(SunOS) || defined(OSF1)
-#if defined(Linux)
+#if defined(Linux) || defined(SunOS) /* bird: why not all? */
 #include <string.h>
 #endif
 #if defined(AIX)
@@ -301,7 +301,7 @@ print """
 	const char *env_agl_syspath = crGetenv( "CR_SYSTEM_AGL_PATH" );
 # endif
 #endif
-	
+
 	crDebug( "Looking for the system's OpenGL library..." );
 #ifdef DARWIN
 	glDll = __findSystemGL( env_syspath, SYSTEM_GL_LIB_DIR, SYSTEM_GL );
@@ -313,7 +313,7 @@ print """
 		crError("Unable to find system OpenGL!");
 		return 0;
 	}
-	
+
 	crDebug( "Found it in %s.", !env_syspath ? "default path" : env_syspath );
 
 #ifdef DARWIN
@@ -489,7 +489,7 @@ print '#endif'
 print """
 	if (!entry)
 		return 1; /* token value */
-		
+
 	for (i = 0; coreFunctions[i]; i++) {
 		const char *name = coreFunctions[i];
 		if (fillin(entry, name + 2, crDLLGetNoError(glDll, name)))
@@ -572,15 +572,15 @@ print """
 print """
 
 #ifdef USE_OSMESA
-int crLoadOSMesa( OSMesaContext (**createContext)( GLenum format, OSMesaContext sharelist ), 
-		     GLboolean (**makeCurrent)( OSMesaContext ctx, GLubyte *buffer, 
+int crLoadOSMesa( OSMesaContext (**createContext)( GLenum format, OSMesaContext sharelist ),
+		     GLboolean (**makeCurrent)( OSMesaContext ctx, GLubyte *buffer,
 						GLenum type, GLsizei width, GLsizei height ),
 		     void (**destroyContext)( OSMesaContext ctx ))
 {
 	static CRDLL *osMesaDll = NULL;
 
 	const char *env_syspath = crGetenv( "CR_SYSTEM_GL_PATH" );
-	
+
 	crDebug( "Looking for the system's OSMesa library..." );
 	osMesaDll = __findSystemLib( env_syspath, "libOSMesa.so" );
 	if (!osMesaDll)
@@ -594,7 +594,7 @@ int crLoadOSMesa( OSMesaContext (**createContext)( GLenum format, OSMesaContext 
 	*createContext =  (OSMesaContext (*) ( GLenum format, OSMesaContext sharelist ))
 		crDLLGetNoError( osMesaDll, "OSMesaCreateContext" );
 
-	*makeCurrent =  (GLboolean (*) ( OSMesaContext ctx, GLubyte *buffer, 
+	*makeCurrent =  (GLboolean (*) ( OSMesaContext ctx, GLubyte *buffer,
 					  GLenum type, GLsizei width, GLsizei height ))
 		crDLLGetNoError( osMesaDll, "OSMesaMakeCurrent" );
 
@@ -603,7 +603,7 @@ int crLoadOSMesa( OSMesaContext (**createContext)( GLenum format, OSMesaContext 
 
 	return 1;
 }
-#endif 
+#endif
 
 """
 
