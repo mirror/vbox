@@ -1819,7 +1819,8 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             }
             else
             {
-                pRequestHeader->rc = pThis->fPageSharingEnabled;
+                pReqStatus->fEnabled = pThis->fPageSharingEnabled;
+                pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
         }
