@@ -74,10 +74,6 @@ ifdef VBOX_WITH_GUEST_PROPS
  VBoxService_SOURCES     += \
  	VBoxServiceVMInfo.cpp \
  	VBoxServicePropCache.cpp
- if1of ($(KBUILD_TARGET), win)
-  VBoxService_SOURCES    += \
-	VBoxServiceExec.cpp
- endif
 endif
 if1of ($(KBUILD_TARGET), linux)
  VBoxService_SOURCES     += \
