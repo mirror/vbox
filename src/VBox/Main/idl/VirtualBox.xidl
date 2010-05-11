@@ -4861,10 +4861,10 @@
         used for a CD/DVD drive.)
 
         For an SATA controller, @a controllerPort must be a number ranging
-        from @c 0 to @c 29. For a SCSI controller, @a controllerPort must
-        be a number ranging from @c 0 to @c 15.
+        from @c 0 to @c 29. For a SCSI or SAS controller, @a controllerPort
+        must be a number ranging from @c 0 to @c 15.
 
-        For both SCSI and SATA, the @a device parameter is unused and must
+        For SCSI, SAS and SATA, the @a device parameter is unused and must
         be @c 0.
 
         For fixed media such as hard disks, the given medium identifier cannot
@@ -5140,7 +5140,7 @@
 
     <method name="addStorageController">
       <desc>
-        Adds a new storage controller (SCSI or SATA controller) to the
+        Adds a new storage controller (SCSI, SAS or SATA controller) to the
         machine and returns it as an instance of
         <link to="IStorageController" />.
 
@@ -8572,7 +8572,7 @@
 
     <attribute name="PageFusionEnabled" type="boolean">
       <desc>
-        Flag whether VirtualBox allows page fusion for this machine 
+        Flag whether VirtualBox allows page fusion for this machine
         (64 bits host only; transient property).
       </desc>
     </attribute>
@@ -9337,11 +9337,15 @@
     </attribute>
 
     <attribute name="port" type="long" readonly="yes">
-      <desc>Port number of this attachment.</desc>
+      <desc>Port number of this attachment.
+        See <link to="IMachine::attachDevice" /> for the meaning of this value for the different controller types.
+      </desc>
     </attribute>
 
     <attribute name="device" type="long" readonly="yes">
-      <desc>Device slot number of this attachment.</desc>
+      <desc>Device slot number of this attachment.
+        See <link to="IMachine::attachDevice" /> for the meaning of this value for the different controller types.
+      </desc>
     </attribute>
 
     <attribute name="type" type="DeviceType" readonly="yes">
@@ -9376,7 +9380,7 @@
 
       <ul>
         <li><link to="IMachine::storageControllers"/> contains an array of
-          storage controllers (IDE, SATA, SCSI or a floppy controller;
+          storage controllers (IDE, SATA, SCSI, SAS or a floppy controller;
           these are instances of <link to="IStorageController"/>).</li>
         <li><link to="IMachine::mediumAttachments"/> contains an array of
           medium attachments (instances of <link to="IMediumAttachment"/>),
@@ -13685,7 +13689,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     uuid="eee67ab3-668d-4ef5-91e0-7025fe4a0d7a"
   >
     <desc>
-      The bus type of the storage controller (IDE, SATA, SCSI or Floppy);
+      The bus type of the storage controller (IDE, SATA, SCSI, SAS or Floppy);
       see <link to="IStorageController::bus" />.
     </desc>
     <const name="Null"         value="0">
@@ -13751,9 +13755,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         As opposed to physical hardware, VirtualBox has a very generic concept
         of a storage controller, and for purposes of the Main API, all virtual
         storage is attached to virtual machines via instances of this interface.
-        There are four types of such virtual storage controllers: IDE, SCSI, SATA
-        and Floppy (see <link to="#bus" />). Depending on which of these four is
-        used, certain sub-types may be available and can be selected in
+        There are five types of such virtual storage controllers: IDE, SCSI, SATA,
+        SAS and Floppy (see <link to="#bus" />). Depending on which of these four
+        is used, certain sub-types may be available and can be selected in
         <link to="#controllerType" />.
 
         Depending on these settings, the guest operating system might see
@@ -13804,7 +13808,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="bus" type="StorageBus" readonly="yes">
       <desc>
-        The bus type of the storage controller (IDE, SATA, SCSI or Floppy).
+        The bus type of the storage controller (IDE, SATA, SCSI, SAS or Floppy).
       </desc>
     </attribute>
 
@@ -13814,8 +13818,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         to the guest.
         Depending on this value, VirtualBox will provide a different
         virtual storage controller hardware to the guest.
-        For SATA and floppy controllers, only one variant is available,
-        but for IDE and SCSI, there are several.
+        For SATA, SAS and floppy controllers, only one variant is
+        available, but for IDE and SCSI, there are several.
 
         For SCSI controllers, the default type is LsiLogic.
       </desc>
