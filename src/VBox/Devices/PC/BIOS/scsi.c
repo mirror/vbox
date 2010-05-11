@@ -19,6 +19,8 @@
 #define BUSLOGIC_ISA_IO_PORT 0x330
 /* The I/O port of the LsiLogic SCSI adapter. */
 #define LSILOGIC_ISA_IO_PORT 0x340
+/* The I/O port of the LsiLogic SAS adapter. */
+#define LSILOGIC_SAS_ISA_IO_PORT 0x350
 
 #define VBOXSCSI_REGISTER_STATUS   0
 #define VBOXSCSI_REGISTER_COMMAND  0
@@ -284,8 +286,6 @@ void scsi_enumerate_attached_devices(io_base)
 
     ebda_seg = read_word(0x0040, 0x000E);
 
-    write_byte(ebda_seg, &EbdaData->scsi.hdcount, 0);
-
     /* Go through target devices. */
     for (i = 0; i < VBOXSCSI_MAX_DEVICES; i++)
     {
@@ -365,7 +365,7 @@ void scsi_enumerate_attached_devices(io_base)
                     }
                     cylinders = (uint32_t)(sectors / (heads * sectors_per_track));
                 }
-                else if (io_base == LSILOGIC_ISA_IO_PORT)
+                else if (io_base == LSILOGIC_ISA_IO_PORT || io_base == LSILOGIC_SAS_ISA_IO_PORT)
                 {
                     /* This is from the BusLogic driver in the Linux kernel. */
                     if (sectors >= 4 * 1024 * 1024)
@@ -441,6 +441,11 @@ void scsi_enumerate_attached_devices(io_base)
 void scsi_init( )
 {
     Bit8u identifier;
+    Bit16u ebda_seg;
+
+
+    ebda_seg = read_word(0x0040, 0x000E);
+    write_byte(ebda_seg, &EbdaData->scsi.hdcount, 0);
 
     identifier = 0;
 
@@ -474,6 +479,22 @@ void scsi_init( )
     else
     {
         VBOXSCSI_DEBUG("scsi_init: LsiLogic SCSI adapter not detected\n");
+    }
+
+    /* Detect LsiLogic SAS adapter. */
+    outb(LSILOGIC_SAS_ISA_IO_PORT+VBOXSCSI_REGISTER_IDENTIFY, 0x55);
+    identifier = inb(LSILOGIC_SAS_ISA_IO_PORT+VBOXSCSI_REGISTER_IDENTIFY);
+
+    if (identifier == 0x55)
+    {
+        /* Detected - Enumerate attached devices. */
+        VBOXSCSI_DEBUG("scsi_init: LsiLogic SAS adapter detected\n");
+        outb(LSILOGIC_SAS_ISA_IO_PORT+VBOXSCSI_REGISTER_RESET, 0);
+        scsi_enumerate_attached_devices(LSILOGIC_SAS_ISA_IO_PORT);
+    }
+    else
+    {
+        VBOXSCSI_DEBUG("scsi_init: LsiLogic SAS adapter not detected\n");
     }
 }
 

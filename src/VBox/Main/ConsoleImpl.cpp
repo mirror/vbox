@@ -3105,10 +3105,11 @@ const char *Console::convertControllerTypeToDev(StorageControllerType_T enmCtrlT
     switch (enmCtrlType)
     {
         case StorageControllerType_LsiLogic:
-        case StorageControllerType_LsiLogicSas:
             return "lsilogicscsi";
         case StorageControllerType_BusLogic:
             return "buslogic";
+        case StorageControllerType_LsiLogicSas:
+            return "lsilogicsas";
         case StorageControllerType_IntelAhci:
             return "ahci";
         case StorageControllerType_PIIX3:

@@ -77,6 +77,7 @@ extern const PDMDEVREG g_DeviceBusLogic;
 extern const PDMDEVREG g_DevicePCIBridge;
 #ifdef VBOX_WITH_LSILOGIC
 extern const PDMDEVREG g_DeviceLsiLogicSCSI;
+extern const PDMDEVREG g_DeviceLsiLogicSAS;
 #endif
 #ifdef VBOX_WITH_SMC
 extern const PDMDEVREG g_DeviceSMC;
