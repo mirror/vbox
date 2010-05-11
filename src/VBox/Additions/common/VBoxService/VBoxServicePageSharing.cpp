@@ -138,7 +138,7 @@ void VBoxServicePageSharingRegisterModule(HANDLE hProcess, PKNOWN_MODULE pModule
             break;
         }
 
-        unsigned cMemInfoBlocks = ret / sizeof(MemInfo);
+        unsigned cMemInfoBlocks = ret / sizeof(MemInfo[0]);
 
         for (unsigned i = 0; i < cMemInfoBlocks; i++)
         {
