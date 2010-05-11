@@ -1168,7 +1168,6 @@ REMR3DECL(int) REMR3Run(PVM pVM, PVMCPU pVCpu)
             rc = VINF_EM_RESCHEDULE_HWACC;
             break;
 
-        /** @todo missing VBOX_WITH_VMI/EXECP_PARAV_CALL   */
         /*
          * An EM RC was raised (VMR3Reset/Suspend/PowerOff/some-fatal-error).
          */

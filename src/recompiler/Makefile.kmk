@@ -177,7 +177,7 @@ ifdef VBOX_REM_WRAPPER
  DLLS += VBoxREMWrapper
  VBoxREMWrapper_TEMPLATE   = VBOXR3
  VBoxREMWrapper_NAME       = VBoxREM
- VBoxREMWrapper_DEFS       = IN_REM_R3 $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)
+ VBoxREMWrapper_DEFS       = IN_REM_R3
  if "$(KBUILD_TARGET_ARCH)" == "x86" && defined(VBOX_WITH_64_BITS_GUESTS)
   VBoxREMWrapper_DEFS     += VBOX_USE_BITNESS_SELECTOR
  endif

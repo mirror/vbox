@@ -201,7 +201,7 @@ if defined(VBOX_USE_REM2) || defined(VBOX_USE_REM64)
 DLLS += VBoxREMWrapper
 VBoxREMWrapper_TEMPLATE    = VBOXR3
 VBoxREMWrapper_NAME        = VBoxREM
-VBoxREMWrapper_DEFS        = IN_REM_R3 $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)
+VBoxREMWrapper_DEFS        = IN_REM_R3
  ifdef VBOX_USE_REM64
 VBoxREMWrapper_DEFS       += VBOX_USE_BITNESS_SELECTOR
  endif
