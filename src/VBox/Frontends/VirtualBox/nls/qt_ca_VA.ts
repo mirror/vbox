@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="ca-va">
+<TS version="2.0" language="ca_ES">
 <context>
     <name>AudioOutput</name>
     <message>
@@ -49,13 +49,13 @@
         <source>Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.
           Some video features have been disabled.</source>
         <translation>Avís: Pareix que no teniu instal·lat el paquet gstreamer0.10-plugins-good.
-          S&apos;han deshabilitat algunes característiques de vídeo.</translation>
+          S&apos;han inhabilitat algunes característiques de vídeo.</translation>
     </message>
     <message>
         <source>Warning: You do not seem to have the base GStreamer plugins installed.
           All audio and video support has been disabled</source>
         <translation>Avís: Pareix que no teniu instal·lat els connectors bàsics de GStreamer.
-          S&apos;ha deshabilitat el suport per a vídeo i àudio</translation>
+          S&apos;ha inhabilitat el suport per a vídeo i àudio</translation>
     </message>
 </context>
 <context>
@@ -236,7 +236,7 @@ que teniu instal·lat el connector libgstreamer-plugins-base.</translation>
     </message>
     <message>
         <source>Read-only</source>
-        <translation>Només-lectura</translation>
+        <translation>Només lectura</translation>
     </message>
     <message>
         <source>Write-only</source>
@@ -384,7 +384,7 @@ File not found.
 Check path and filename.</source>
         <translation>%1
 No s&apos;ha trobat el fitxer.
-Comproveu la ruta i el nom del fitxer.</translation>
+Comproveu el camí i el nom del fitxer.</translation>
     </message>
 </context>
 <context>
@@ -679,7 +679,7 @@ a
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
-        <translation>Error de biblioteca Qt incompatible</translation>
+        <translation>S&apos;ha produït un error de biblioteca Qt incompatible</translation>
     </message>
     <message>
         <source>QT_LAYOUT_DIRECTION</source>
@@ -1015,7 +1015,7 @@ a
     </message>
     <message>
         <source>Date Modified</source>
-        <translation>Data modificada</translation>
+        <translation>Data de modificació</translation>
     </message>
 </context>
 <context>
@@ -1116,7 +1116,7 @@ Comproveu que el nom del fitxer es correcte.</translation>
     </message>
     <message>
         <source>Show &amp;hidden files</source>
-        <translation>Mostra fitxers &amp;ocults</translation>
+        <translation>Mostra els fitxers &amp;ocults</translation>
     </message>
     <message>
         <source>Back</source>
@@ -1313,7 +1313,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Oblique</source>
-        <translation>Oblícua</translation>
+        <translation>Obliqua</translation>
     </message>
     <message>
         <source>Any</source>
@@ -1573,7 +1573,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Host %1 found</source>
-        <translation>Amfitrió %1 trobat</translation>
+        <translation>S&apos;ha trobat l&apos;amfitrió %1</translation>
     </message>
     <message>
         <source>Connection to %1 closed</source>
@@ -1581,7 +1581,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Host found</source>
-        <translation>Amfitrió trobat</translation>
+        <translation>S&apos;ha trobat l&apos;amfitrió</translation>
     </message>
     <message>
         <source>Connected to host</source>
@@ -1767,7 +1767,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Could not get query info</source>
-        <translation>No s&apos;ha pogut obtindre la informacio de la consulta</translation>
+        <translation>No s&apos;ha pogut obtindre la informació de la consulta</translation>
     </message>
     <message>
         <source>Could not start transaction</source>
@@ -1807,7 +1807,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Could not get statement info</source>
-        <translation>No s&apos;ha pogut obtindre la informacio de la declaració</translation>
+        <translation>No s&apos;ha pogut obtindre la informació de la declaració</translation>
     </message>
 </context>
 <context>
@@ -1876,7 +1876,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Could not unmap &apos;%1&apos;: %2</source>
-        <translation>No s&apos;ha pogut desmapejar &apos;%1&apos;: %2</translation>
+        <translation>No s&apos;ha pogut desmapar &apos;%1&apos;: %2</translation>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
@@ -1896,7 +1896,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>The file &apos;%1&apos; is not a valid Qt plugin.</source>
-        <translation>El fitxer &apos;%1&apos; no s'un connector Qt vàlid.</translation>
+        <translation>El fitxer &apos;%1&apos; no és un connector Qt vàlid.</translation>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
@@ -1965,7 +1965,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>%1: Invalid name</source>
-        <translation>%1: Nom invàlid</translation>
+        <translation>%1: Nom no vàlid</translation>
     </message>
     <message>
         <source>%1: Socket access error</source>
@@ -2051,7 +2051,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to bind outvalues</source>
-        <translation>No es poden vincular els valors d'eixida</translation>
+        <translation>No es poden vincular els valors d&apos;eixida</translation>
     </message>
     <message>
         <source>Unable to store statement results</source>
@@ -2339,7 +2339,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Cannot open %1: Path is a directory</source>
-        <translation>No es pot obrir %1: la ruta és un directori</translation>
+        <translation>No es pot obrir %1: el camí és un directori</translation>
     </message>
     <message>
         <source>Read error reading from %1: %2</source>
@@ -2450,11 +2450,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unable to connect - Driver doesn&apos;t support all needed functionality</source>
-        <translation>No es pot connectar - El controlador no permet tota la funcionalitat necessària</translation>
+        <translation>No es pot connectar - El programa de control no permet tota la funcionalitat necessària</translation>
     </message>
     <message>
         <source>Unable to disable autocommit</source>
-        <translation>No es pot deshabilitar l&apos;autovalidació</translation>
+        <translation>No es pot inhabilitar l&apos;autovalidació</translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
@@ -2473,7 +2473,7 @@ Do you want to delete it anyway?</source>
     <name>QODBCResult</name>
     <message>
         <source>QODBCResult::reset: Unable to set &apos;SQL_CURSOR_STATIC&apos; as statement attribute. Please check your ODBC driver configuration</source>
-        <translation>QODBCResult::reset: No es pot activar &apos;SQL_CURSOR_STATIC&apos; com a atribut de la declaració. Comproveu la configuració del controlador ODBC</translation>
+        <translation>QODBCResult::reset: No es pot activar &apos;SQL_CURSOR_STATIC&apos; com a atribut de la declaració. Comproveu la configuració del programa de control ODBC</translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
@@ -2520,11 +2520,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation>Error d&apos;escriptura a %1: %2</translation>
+        <translation>S&apos;ha produït un error d&apos;escriptura a %1: %2</translation>
     </message>
     <message>
         <source>Read error reading from %1: %2</source>
-        <translation>Error de lectura des de %1: %2</translation>
+        <translation>S&apos;ha produït un error a %1: %2</translation>
     </message>
     <message>
         <source>Socket error on %1: %2</source>
@@ -2993,7 +2993,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Output Settings</source>
-        <translation>Paràmetres d'eixida</translation>
+        <translation>Paràmetres d&apos;eixida</translation>
     </message>
     <message>
         <source>Copies:</source>
@@ -3029,7 +3029,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>None</source>
-        <translation>No</translation>
+        <translation>Cap</translation>
     </message>
     <message>
         <source>Long side</source>
@@ -3072,7 +3072,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Output &amp;file:</source>
-        <translation>&amp;Fitxer d'eixida:</translation>
+        <translation>&amp;Fitxer d&apos;eixida:</translation>
     </message>
     <message>
         <source>...</source>
@@ -3104,7 +3104,7 @@ Trieu un nom de fitxer diferent.</translation>
     <name>QRegExp</name>
     <message>
         <source>no error occurred</source>
-        <translation>cap error</translation>
+        <translation>no s&apos;ha produït cap error</translation>
     </message>
     <message>
         <source>disabled feature used</source>
@@ -3124,7 +3124,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>invalid octal value</source>
-        <translation>valor octal invàlid</translation>
+        <translation>valor octal no vàlid</translation>
     </message>
     <message>
         <source>missing left delim</source>
@@ -3212,7 +3212,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Parameter count mismatch</source>
-        <translation>El nombre dels paràmetres es discordant</translation>
+        <translation>El nombre dels paràmetres és discordant</translation>
     </message>
     <message>
         <source>No query</source>
@@ -3247,7 +3247,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation>Pàgina amunt</translation>
+        <translation>Re Pag</translation>
     </message>
     <message>
         <source>Page right</source>
@@ -3255,7 +3255,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Page down</source>
-        <translation>Pàgina avall</translation>
+        <translation>Av Pag</translation>
     </message>
     <message>
         <source>Scroll left</source>
@@ -3275,7 +3275,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Line up</source>
-        <translation>Línia amunt</translation>
+        <translation>Alinea</translation>
     </message>
     <message>
         <source>Position</source>
@@ -3346,7 +3346,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>%1: not attached</source>
-        <translation>%1: no connectat</translation>
+        <translation>%1: no està connectat</translation>
     </message>
 </context>
 <context>
@@ -3637,7 +3637,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Insert</source>
-        <translation>Insert</translation>
+        <translation>Insereix</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -3653,7 +3653,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation>Selec</translation>
+        <translation>Selecciona</translation>
     </message>
     <message>
         <source>Yes</source>
@@ -3697,7 +3697,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Shift</source>
-        <translation>Shift</translation>
+        <translation>Maj</translation>
     </message>
     <message>
         <source>Alt</source>
@@ -3728,7 +3728,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation>Pàgina amunt</translation>
+        <translation>Re Pag</translation>
     </message>
     <message>
         <source>Position</source>
@@ -3740,14 +3740,14 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Page down</source>
-        <translation>Pàgina avall</translation>
+        <translation>Av Pag</translation>
     </message>
 </context>
 <context>
     <name>QSocks5SocketEngine</name>
     <message>
         <source>Socks5 timeout error connecting to socks server</source>
-        <translation>error de temps excedit Socks5 mentre es connectava al servidor de sòcols</translation>
+        <translation>S&apos;ha produït un error de temps excedit Socks5 en connectar al servidor de sòcols</translation>
     </message>
     <message>
         <source>Network operation timed out</source>
@@ -3801,7 +3801,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Confirm</source>
-        <translation>Confirmació</translation>
+        <translation>Confirma</translation>
     </message>
     <message>
         <source>Cancel your edits?</source>
@@ -3971,11 +3971,11 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>ZWJ Zero width joiner</source>
-        <translation>ZWJ Zero width joiner</translation>
+        <translation>Ensamblador d&apos;amplada zero ZWJ</translation>
     </message>
     <message>
         <source>ZWNJ Zero width non-joiner</source>
-        <translation>ZWNJ Zero width non-joiner</translation>
+        <translation>No-ensamblador d&apos;amplada zero ZWNJ</translation>
     </message>
     <message>
         <source>ZWSP Zero width space</source>
@@ -3999,7 +3999,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>PDF Pop directional formatting</source>
-        <translation>PDF Pop directional formatting</translation>
+        <translation>Format direccional pop PDF</translation>
     </message>
     <message>
         <source>Insert Unicode control character</source>
@@ -4237,7 +4237,7 @@ Trieu un nom de fitxer diferent.</translation>
     <message>
         <source>Default</source>
         <comment>Default writing direction context menu item</comment>
-        <translation>Per defecte</translation>
+        <translation>Predeterminat</translation>
     </message>
     <message>
         <source>LTR</source>
@@ -4342,7 +4342,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation>Següe&amp;n</translation>
+        <translation>Següe&amp;nt</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
@@ -4381,7 +4381,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Sh&amp;ade</source>
-        <translation>&amp;Ombra</translation>
+        <translation>&amp;Enfosqueix</translation>
     </message>
     <message>
         <source>%1 - [%2]</source>
@@ -4401,7 +4401,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>&amp;Unshade</source>
-        <translation>&amp;Ombreja</translation>
+        <translation>&amp;Desenfosqueix</translation>
     </message>
 </context>
 <context>
@@ -4488,7 +4488,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>unparsed entity reference in wrong context</source>
-        <translation>referència a la entitat no analitzada en un context inadequat</translation>
+        <translation>referència a l&apos;entitat no analitzada en un context inadequat</translation>
     </message>
     <message>
         <source>recursive entities</source>
@@ -4507,7 +4507,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Invalid entity value.</source>
-        <translation>valor d&apos;entitat no vàlid.</translation>
+        <translation>Valor d&apos;entitat no vàlid.</translation>
     </message>
     <message>
         <source>Invalid XML character.</source>
@@ -4654,7 +4654,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Network timeout.</source>
-        <translation>La connexió ha excedit el temps.</translation>
+        <translation>S&apos;ha excedit el temps d&apos;espera de la connexió.</translation>
     </message>
     <message>
         <source>Element %1 can&apos;t be serialized because it appears outside the document element.</source>
@@ -4838,7 +4838,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>A library module cannot be evaluated directly. It must be imported from a main module.</source>
-        <translation>Un mòdul de biblioteca no pot evaluar-se directament. Ha de ser importat des d&apos;un mòdul principal.</translation>
+        <translation>Un mòdul de biblioteca no pot avaluar-se directament. Ha de ser importat des d&apos;un mòdul principal.</translation>
     </message>
     <message>
         <source>A value of type %1 cannot be a predicate. A predicate must have either a numeric type or an Effective Boolean Value type.</source>
@@ -4846,7 +4846,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>A positional predicate must evaluate to a single numeric value.</source>
-        <translation>Un predicat posicioanl ha d&apos;evaluar un únic valor numèric.</translation>
+        <translation>Un predicat posicioanl ha d&apos;avaluar un únic valor numèric.</translation>
     </message>
     <message>
         <source>The target name in a processing instruction cannot be %1 in any combination of upper and lower case. Therefore, is %2 invalid.</source>
@@ -4858,7 +4858,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>The last step in a path must contain either nodes or atomic values. It cannot be a mixture between the two.</source>
-        <translation>L&apos;últim pas a una ruta ha de contindre nodes o valors atòmics. No pot ser una barreja dels dos.</translation>
+        <translation>L&apos;últim pas a un camí ha de contindre nodes o valors atòmics. No pot ser una barreja dels dos.</translation>
     </message>
     <message>
         <source>The data of a processing instruction cannot contain the string %1</source>
@@ -4978,7 +4978,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>The normalization form %1 is unsupported. The supported forms are %2, %3, %4, and %5, and none, i.e. the empty string (no normalization).</source>
-        <translation>No està suportat el formulari de normalització %1. El formularis suportats són %2, %3, %4 i %5, i buit, i.e. una cadena buida (sense normalització).</translation>
+        <translation>No està suportat el formulari de normalització %1. Els formularis suportats són %2, %3, %4 i %5, i buit, i.e. una cadena buida (sense normalització).</translation>
     </message>
     <message>
         <source>A zone offset must be in the range %1..%2 inclusive. %3 is out of range.</source>
@@ -5062,7 +5062,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>The target namespace of a %1 cannot be empty.</source>
-        <translation>El nomespai objectiu d'un %1 no pot ser buit.</translation>
+        <translation>El nomespai objectiu d&apos;un %1 no pot ser buit.</translation>
     </message>
     <message>
         <source>The module import feature is not supported</source>
@@ -5102,7 +5102,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>The name of a variable bound in a for-expression must be different from the positional variable. Hence, the two variables named %1 collide.</source>
-        <translation>El nom d&apos;una variable lligada a una expressió for ha de ser diferent d&apos;una variableposicional. Per tant, les dues variables anomnades %1 xoquen.</translation>
+        <translation>El nom d&apos;una variable lligada a una expressió for ha de ser diferent d&apos;una variableposicional. Per tant, les dos variables anomnades %1 xoquen.</translation>
     </message>
     <message>
         <source>The Schema Validation Feature is not supported. Hence, %1-expressions may not be used.</source>
@@ -5110,7 +5110,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>None of the pragma expressions are supported. Therefore, a fallback expression must be present</source>
-        <translation>Cap de les expressions pragma no està suportada. A mes, una expressió fallback ha d&apos;estar present</translation>
+        <translation>Cap de les expressions pragma no està suportada. A més, una expressió fallback ha d&apos;estar present</translation>
     </message>
     <message>
         <source>The %1-axis is unsupported in XQuery</source>
@@ -5138,11 +5138,11 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Namespace %1 can only be bound to %2 (and it is, in either case, pre-declared).</source>
-        <translation>El nomespai %1 nomé pot vincular-se a %2 (i està, en qualsevol cas, predeclarat).</translation>
+        <translation>El nomespai %1 nomé pot vincular-s&apos;a %2 (i està, en qualsevol cas, predeclarat).</translation>
     </message>
     <message>
         <source>Prefix %1 can only be bound to %2 (and it is, in either case, pre-declared).</source>
-        <translation>El prefix %1 nomé pot vincular-se a %2 (i està, en qualsevol cas, predeclarat).</translation>
+        <translation>El prefix %1 nomé pot vincular-s&apos;a %2 (i està, en qualsevol cas, predeclarat).</translation>
     </message>
     <message>
         <source>Two namespace declaration attributes have the same name: %1.</source>
@@ -5226,7 +5226,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Only the Unicode Codepoint Collation is supported(%1). %2 is unsupported.</source>
-        <translation>Només està suportat l'Unicode Codepoint Collation (%1). %2 no està suportat.</translation>
+        <translation>Només està suportat l&apos;Unicode Codepoint Collation (%1). %2 no està suportat.</translation>
     </message>
 </context>
 <context>
@@ -5268,7 +5268,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation>Pàgina amunt</translation>
+        <translation>Re Pag</translation>
     </message>
     <message>
         <source>Page right</source>
@@ -5276,7 +5276,7 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Page down</source>
-        <translation>Pàgina avall</translation>
+        <translation>Av Pag</translation>
     </message>
     <message>
         <source>Scroll left</source>

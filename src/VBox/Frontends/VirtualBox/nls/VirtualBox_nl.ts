@@ -398,7 +398,7 @@
     <name>QIWizardPage</name>
     <message>
         <source>Use the &lt;b&gt;%1&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;%2&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;%3&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Gebruik de &lt;b&gt;%1&lt;/b&gt; knop om naar de volgende pagina van de assistent te gaan en de&lt;b&gt;%2&lt;/b&gt; knop om terug te keren naar de vorige. U kunt ook op &lt;b&gt;%3&lt;/b&gt; drukken als u de deze assistent wilt stoppen.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -409,7 +409,7 @@
     </message>
     <message>
         <source>The download process has been canceled by the user.</source>
-        <translation type="unfinished"></translation>
+        <translation>Het download proces is geannuleerd door de gebruiker.</translation>
     </message>
 </context>
 <context>
@@ -439,7 +439,7 @@
     <name>UIDownloaderUserManual</name>
     <message>
         <source>Select folder to save User Manual to</source>
-        <translation type="unfinished"></translation>
+        <translation>Selecteer map om de handleiding in op te slaan</translation>
     </message>
 </context>
 <context>
@@ -581,116 +581,116 @@ p, li { white-space: pre-wrap; }
     <name>UIExportApplianceWzdPage1</name>
     <message>
         <source>Welcome to the Appliance Export Wizard!</source>
-        <translation type="unfinished">Welkom bij de assistent voor het exporteren van Appliances!</translation>
+        <translation>Welkom bij de assistent voor het exporteren van Appliances!</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the process of exporting an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Please select the virtual machines that should be added to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Deze assistent help u bij het exporteren van een appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Selecteer aub de virtuale machines die toegevoegd zullen worden aan de appliance. U kun meer dan één selecteren. Let op deze machines moeten uit staan voordat deze geexporteerd kunnen worden.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage2</name>
     <message>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation type="unfinished">Hier kunt u aanvullende instellingen, van de geselecteerde virtuele machines, aanpassen. U kunt merendeel van de weergegeven eigenschappen aanpassen door daarop te dubbelklikken.</translation>
+        <translation>Hier kunt u aanvullende instellingen, van de geselecteerde virtuele machines, aanpassen. U kunt merendeel van de weergegeven eigenschappen aanpassen door daarop te dubbelklikken.</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished">Export instellingen voor Appliance</translation>
+        <translation>Export instellingen voor Appliance</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage3</name>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation type="unfinished">Geef een bestemming op voor de OVF export. U kunt kiezen tussen een lokaal bestandssysteem, het uploaden van de OVF naar de Sun Cloud server of een S3 opslagserver.</translation>
+        <translation>Geef een bestemming op voor de OVF export. U kunt kiezen tussen een lokaal bestandssysteem, het uploaden van de OVF naar de Sun Cloud server of een S3 opslagserver.</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation type="unfinished">&amp;Lokaal bestandssysteem</translation>
+        <translation>&amp;Lokaal bestandssysteem</translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
-        <translation type="unfinished">Sun &amp;Cloud</translation>
+        <translation>Sun &amp;Cloud</translation>
     </message>
     <message>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation type="unfinished">&amp;Eenvoudig opslag systeem (S3)</translation>
+        <translation>&amp;Eenvoudig opslag systeem (S3)</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished">Export instellingen voor Appliance</translation>
+        <translation>Export instellingen voor Appliance</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage4</name>
     <message>
         <source>&amp;Username:</source>
-        <translation type="unfinished">&amp;Gebruikersnaam:</translation>
+        <translation>&amp;Gebruikersnaam:</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation type="unfinished">&amp;Wachtwoord:</translation>
+        <translation>&amp;Wachtwoord:</translation>
     </message>
     <message>
         <source>&amp;Hostname:</source>
-        <translation type="unfinished">&amp;Hostnaam:</translation>
+        <translation>&amp;Hostnaam:</translation>
     </message>
     <message>
         <source>&amp;Bucket:</source>
-        <translation type="unfinished">&amp;Emmer:</translation>
+        <translation>&amp;Emmer:</translation>
     </message>
     <message>
         <source>&amp;File:</source>
-        <translation type="unfinished">&amp;Bestand:</translation>
+        <translation>&amp;Bestand:</translation>
     </message>
     <message>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation type="unfinished">Wegschrijven in het oudere OVF 0.9 formaat om compatibel te blijven met andere virtualisatie producten.</translation>
+        <translation>Wegschrijven in het oudere OVF 0.9 formaat om compatibel te blijven met andere virtualisatie producten.</translation>
     </message>
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation type="unfinished">&amp;Schrijf weg in OVF 0.9</translation>
+        <translation>&amp;Schrijf weg in OVF 0.9</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished">Export instellingen voor Appliance</translation>
+        <translation>Export instellingen voor Appliance</translation>
     </message>
     <message>
         <source>Appliance</source>
-        <translation type="unfinished">Appliance</translation>
+        <translation>Appliance</translation>
     </message>
     <message>
         <source>Select a file to export into</source>
-        <translation type="unfinished">Selecteer een bestand om naar te exporteren</translation>
+        <translation>Selecteer een bestand om naar te exporteren</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Open Virtualisatie Formaat (%1)</translation>
     </message>
     <message>
         <source>Please choose a filename to export the OVF to.</source>
-        <translation type="unfinished">Kies een bestandsnaam voor de export van OVF.</translation>
+        <translation>Kies een bestandsnaam voor de export van OVF.</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="unfinished">Vul de aanvullende velden, zoals gebruikersnaam, wachtwoord en de emmer, in. Ten slotte moet u een bestandsnaam opgeven voor de OVF bestemming.</translation>
+        <translation>Vul de aanvullende velden, zoals gebruikersnaam, wachtwoord en de emmer, in. Ten slotte moet u een bestandsnaam opgeven voor de OVF bestemming.</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="unfinished">Vul de aanvullende velden, zoals gebruikersnaam, wachtwoord, hostnaam en de emmer, in. Ten slotte moet u een bestandsnaam opgeven voor de OVF bestemming.</translation>
+        <translation>Vul de aanvullende velden, zoals gebruikersnaam, wachtwoord, hostnaam en de emmer, in. Ten slotte moet u een bestandsnaam opgeven voor de OVF bestemming.</translation>
     </message>
     <message>
         <source>Checking files ...</source>
-        <translation type="unfinished">Bestanden controleren ...</translation>
+        <translation>Bestanden controleren ...</translation>
     </message>
     <message>
         <source>Removing files ...</source>
-        <translation type="unfinished">Bestanden verwijderen ...</translation>
+        <translation>Bestanden verwijderen ...</translation>
     </message>
     <message>
         <source>Exporting Appliance ...</source>
-        <translation type="unfinished">Appliance wordt geëxporteerd...</translation>
+        <translation>Appliance wordt geëxporteerd...</translation>
     </message>
 </context>
 <context>
@@ -832,71 +832,71 @@ p, li {white-space: pre-wrap; }
     <name>UIFirstRunWzdPage1</name>
     <message>
         <source>Welcome to the First Run Wizard!</source>
-        <translation type="unfinished">Welkom bij de startassistent!</translation>
+        <translation>Welkom bij de startassistent!</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;U heeft een nieuw aangemaakte virtuale machine voor de eerste keer gestart. Deze assistent helpt u met noodzakelijke stappen om het besturingssyteem, van uw keuze, op deze virtuale machine te installeren.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;U hebt een nieuw aangemaakte virtuale machine voor de eerste keer gestart. Deze assistent helpt u met de noodzakeliljke stappen bij het inrichten van een besturingsysteem van uw keuze op de virtuale machine.&lt;/p&gt;&lt;p&gt;Let op, u kunt nu geen besturingsysteem installeren virtuale machine omdat u hieraan nog geen harde schijf hebt gekoppeld. Is dit niet wat u wilt, dan kunt u de uitvoering van deze assistent annuleren, selecteer &lt;b&gt;Instellingen&lt;/b&gt; uit het&lt;b&gt;Machine&lt;/b&gt; menu in het hoofdvenster van VirtualBox om de dialoog, voor instellingen van deze machine, te benaderen en de harde schijf configuratie te wijzigen.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIFirstRunWzdPage2</name>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Selecteer de media die het setup programma bevat met het besturingssysteem die u wilt installeren. Dit moet een opstartbaar medium zijn, anders kan het setup programma niet opstarten.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Selecteer de media die het setup programma bevat met het besturingssysteem die u wilt installeren. Dit moet een opstartbaar medium zijn, anders kan het setup programma niet opstarten.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Selecteer de media die het besturingssysteem bevat waarmee u wilt gaan werken. Deze media moet opstartbaar zijn, anders kan het besturingssysteem niet opstarten.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Selecteer de media die het besturingssysteem bevat waarmee u wilt gaan werken. Deze media moet opstartbaar zijn, anders kan het besturingssysteem niet opstarten.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Source</source>
-        <translation type="unfinished">Media bron</translation>
+        <translation>Media bron</translation>
     </message>
     <message>
         <source>Select Installation Media</source>
-        <translation type="unfinished">Selecteer installatie media</translation>
+        <translation>Selecteer installatie media</translation>
     </message>
 </context>
 <context>
     <name>UIFirstRunWzdPage3</name>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;U heeft de volgende media, om op te starten, geselecteerd:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;U heeft de volgende media, om op te starten, geselecteerd:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;U heeft de volgende media geselecteerd om het besturingssysteem te starten:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;U heeft de volgende media geselecteerd om het besturingssysteem te starten:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Is het bovenstaande correct, druk dan op de knop &lt;b&gt;Klaar&lt;/b&gt;. Zodra u die indrukt, wordt de geselecteerde media, tijdelijk, gekoppeld aan de virtuele machine en zal uitgevoerd worden.&lt;/p&gt;&lt;p&gt;Let op, sluit u de virtuele machine, dan wordt de geselecteerde media automatisch ontkoppeld en het opstarten zal vanaf de eerste harde schij plaatsvinden.&lt;/p&gt;&lt;p&gt;Afhankelijk van het soort setup programma kan het zijn dat u zelf de media moet ontkoppelen (uitwerpen) nadat het setup programma de virtuele machine opnieuw heeft gestart. Om te voorkomen dat het installatie proces opnieuw begint kunt u de overeenkomstige &lt;b&gt;Ontkoppel...&lt;/b&gt; actie selecteren in het menu &lt;b&gt;Apparaten&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Is het bovenstaande correct, druk dan op de knop &lt;b&gt;Klaar&lt;/b&gt;. Zodra u die indrukt, wordt de geselecteerde media, tijdelijk, gekoppeld aan de virtuele machine en zal uitgevoerd worden.&lt;/p&gt;&lt;p&gt;Let op, sluit u de virtuele machine, dan wordt de geselecteerde media automatisch ontkoppeld en het opstarten zal vanaf de eerste harde schij plaatsvinden.&lt;/p&gt;&lt;p&gt;Afhankelijk van het soort setup programma kan het zijn dat u zelf de media moet ontkoppelen (uitwerpen) nadat het setup programma de virtuele machine opnieuw heeft gestart. Om te voorkomen dat het installatie proces opnieuw begint kunt u de overeenkomstige &lt;b&gt;Ontkoppel...&lt;/b&gt; actie selecteren in het menu &lt;b&gt;Apparaten&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Is het bovenstaande correct? KLik op de knop &lt;b&gt;Klaar&lt;/b&gt;. Zodra u hierop klikt wordt de geselecteerde media gekoppeld aan de virtuele machine en machine zal starten met de uitvoering.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Is het bovenstaande correct? KLik op de knop &lt;b&gt;Klaar&lt;/b&gt;. Zodra u hierop klikt wordt de geselecteerde media gekoppeld aan de virtuele machine en machine zal starten met de uitvoering.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished">Samenvatting</translation>
+        <translation>Samenvatting</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Device</source>
-        <translation type="unfinished">CD/DVD-Rom station</translation>
+        <translation>CD/DVD-Rom station</translation>
     </message>
     <message>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Soort</translation>
     </message>
     <message>
         <source>Source</source>
         <comment>summary</comment>
-        <translation type="unfinished">Bron</translation>
+        <translation>Bron</translation>
     </message>
 </context>
 <context>
@@ -967,30 +967,30 @@ p, li { white-space: pre-wrap; }
     <name>UIImportApplianceWzdPage1</name>
     <message>
         <source>Select an appliance to import</source>
-        <translation type="unfinished">Selecteer een appliance om te importeren</translation>
+        <translation>Selecteer een appliance om te importeren</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Open Virtualisatie Formaat (%1)</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Import Wizard!</source>
-        <translation type="unfinished">Welkom bij de assistent voor het importeren van Appliances!</translation>
+        <translation>Welkom bij de assistent voor het importeren van Appliances!</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through importing an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Deze assistent helpt u bij het importeren van een appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;VirtualBox ondersteund, op dit moment, appliances opgeslagen het Open Virtualisatie Formaat (OVF). Om verder te gaan selecteer, hier onder, het bestand om te importeren:&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIImportApplianceWzdPage2</name>
     <message>
         <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation type="unfinished">Dit zijn de virtuele machines zoals beschreven in het hulpmiddel, met hun voorstellen voor mappings naar VirtuelBox. U kun veel van de weergegeven eigenschappen aanpassen door hierop te dubbelklikken of keuze, van de onderstaande keuzevakjes, te wijzigen.</translation>
+        <translation>Dit zijn de virtuele machines zoals beschreven in het hulpmiddel, met hun voorstellen voor mappings naar VirtuelBox. U kun veel van de weergegeven eigenschappen aanpassen door hierop te dubbelklikken of keuze, van de onderstaande keuzevakjes, te wijzigen.</translation>
     </message>
     <message>
         <source>Appliance Import Settings</source>
-        <translation type="unfinished">Import instellingen voor Appliance</translation>
+        <translation>Import instellingen voor Appliance</translation>
     </message>
 </context>
 <context>
@@ -1032,56 +1032,56 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineLogic</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation type="unfinished">VirtualBox OSE</translation>
+        <translation>VirtualBox OSE</translation>
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation type="unfinished"> PROEF constructie %1r%2 - %3</translation>
+        <translation> PROEF constructie %1r%2 - %3</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Annuleren</translation>
+        <translation>Annuleren</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished">Annuleer de download van de virtuele CD, met de VirtualBox gast uitbreidingen</translation>
+        <translation>Annuleer de download van de virtuele CD, met de VirtualBox gast uitbreidingen</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished">Download de virtuele CD, met de VirtualBox gast uitbreidingen bij &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation>Download de virtuele CD, met de VirtualBox gast uitbreidingen bij &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetUserManual</name>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Annuleren</translation>
+        <translation>Annuleren</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox User Manual download</source>
-        <translation type="unfinished"></translation>
+        <translation>Annuleer de download van het VirtualBox gebruikershandboek</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox User Manual</source>
-        <translation type="unfinished"></translation>
+        <translation>Download het VirtualBox gebruikershandboek</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Download het VirtualBox gebruikershandboek &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtual Scherm %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Gebruik scherm gastheer %1</translation>
     </message>
 </context>
 <context>
@@ -1203,103 +1203,103 @@ p, li { white-space: pre-wrap; }
     <name>UINewHDWzdPage1</name>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation type="unfinished">Welkom bij de assistent voor het aanmaken van een nieuwe virtuele schijf!</translation>
+        <translation>Welkom bij de assistent voor het aanmaken van een nieuwe virtuele schijf!</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Deze assistent help u bij het aanmaken van een nieuwe virtuele harde schijf voor uw virtuale machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWzdPage2</name>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Selecteer het soort opslag voor de harde schijf die wilt aanmaken.&lt;/p&gt;&lt;p&gt;Een &lt;b&gt;dynamisch uit te breiden opslag&lt;/b&gt; neemt in het begin een kleine hoeveelheid ruimte van uw fysieke harde schijf in beslag. Maar zal dynamisch groeien (tot aan de vastgestelde grote) zodra het gast besturingssysteem ruimte nodig heeft.&lt;/p&gt;&lt;p&gt;Een &lt;b&gt;opslag met een vaste omvang&lt;/b&gt; groeit niet. Deze is opgeslagen in een bestand met ongeveer dezelfde grote als de virtuele harde schijf. Het aanmaken van een opslag met vaste omvang kan lang duren, dit hangt af van de omvang van de opslag en de schrijfsnelheid van uw fysieke harde schijf.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Selecteer het soort opslag voor de harde schijf die wilt aanmaken.&lt;/p&gt;&lt;p&gt;Een &lt;b&gt;dynamisch uit te breiden opslag&lt;/b&gt; neemt in het begin een kleine hoeveelheid ruimte van uw fysieke harde schijf in beslag. Maar zal dynamisch groeien (tot aan de vastgestelde grote) zodra het gast besturingssysteem ruimte nodig heeft.&lt;/p&gt;&lt;p&gt;Een &lt;b&gt;opslag met een vaste omvang&lt;/b&gt; groeit niet. Deze is opgeslagen in een bestand met ongeveer dezelfde grote als de virtuele harde schijf. Het aanmaken van een opslag met vaste omvang kan lang duren, dit hangt af van de omvang van de opslag en de schrijfsnelheid van uw fysieke harde schijf.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Storage Type</source>
-        <translation type="unfinished">Soort opslag</translation>
+        <translation>Soort opslag</translation>
     </message>
     <message>
         <source>&amp;Dynamically expanding storage</source>
-        <translation type="unfinished">&amp;Dynamisch uit te breiden opslag</translation>
+        <translation>&amp;Dynamisch uit te breiden opslag</translation>
     </message>
     <message>
         <source>&amp;Fixed-size storage</source>
-        <translation type="unfinished">&amp;Opslag met een vaste omvang</translation>
+        <translation>&amp;Opslag met een vaste omvang</translation>
     </message>
     <message>
         <source>Hard Disk Storage Type</source>
-        <translation type="unfinished">Soort opslag voor de harde schijf</translation>
+        <translation>Soort opslag voor de harde schijf</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWzdPage3</name>
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Druk op de knop &lt;b&gt;Selecteer&lt;/b&gt;, om de locatie van een bestand te selecteren waarin de harde schijf gegevens worden opgeslagen of typ een bestandsnaam in het invoerveld.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Druk op de knop &lt;b&gt;Selecteer&lt;/b&gt;, om de locatie van een bestand te selecteren waarin de harde schijf gegevens worden opgeslagen of typ een bestandsnaam in het invoerveld.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Location</source>
-        <translation type="unfinished">&amp;Locatie</translation>
+        <translation>&amp;Locatie</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Selecteer de omvang van de virtuele harde schijf in megabytes. Deze omvang wordt gerapporteerd aan het gast besturingssysteem als de maximale omvang van deze harde schijf.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Selecteer de omvang van de virtuele harde schijf in megabytes. Deze omvang wordt gerapporteerd aan het gast besturingssysteem als de maximale omvang van deze harde schijf.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation type="unfinished">&amp;Omvang</translation>
+        <translation>&amp;Omvang</translation>
     </message>
     <message>
         <source>Virtual Disk Location and Size</source>
-        <translation type="unfinished">Locatie en omvang van de vrituele schijf</translation>
+        <translation>Locatie en omvang van de vrituele schijf</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation type="unfinished">Selecteer een bestand voor de nieuwe harde schijf image</translation>
+        <translation>Selecteer een bestand voor de nieuwe harde schijf image</translation>
     </message>
     <message>
         <source>Hard disk images (*.vdi)</source>
-        <translation type="unfinished">Harde schijf image (*.vdi)</translation>
+        <translation>Harde schijf image (*.vdi)</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWzdPage4</name>
     <message>
         <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation type="unfinished">U staat op het punt een nieuwe virtuele harde schijf aan te maken met de onderstaande parameters:</translation>
+        <translation>U staat op het punt een nieuwe virtuele harde schijf aan te maken met de onderstaande parameters:</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished">Samenvatting</translation>
+        <translation>Samenvatting</translation>
     </message>
     <message>
         <source>%1 B</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 B</translation>
     </message>
     <message>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Soort</translation>
     </message>
     <message>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="unfinished">Locatie</translation>
+        <translation>Locatie</translation>
     </message>
     <message>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="unfinished">Omvang</translation>
+        <translation>Omvang</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Druk op de &lt;b&gt;%1&lt;/b&gt; knop als de bovenstaande instellingen juist zijn. Zodra u de knop indrukt wordt de nieuwe harde schijf aangemaakt.</translation>
     </message>
 </context>
 <context>
@@ -1425,125 +1425,125 @@ p, li { white-space: pre-wrap; }
     <name>UINewVMWzdPage1</name>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation type="unfinished">Welkom bij de assistent voor het aanmaken van een nieuwe virtuele machine!</translation>
+        <translation>Welkom bij de assistent voor het aanmaken van een nieuwe virtuele machine!</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Deze assistent help u bij het aanmaken van een nieuwe virtuele machine in VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage2</name>
     <message>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Geef een naam op voor de nieuwe virtuele machine en selecteer het soort besturingssysteem die u van plan bent te installeren op de virtuele machine.&lt;/p&gt;&lt;p&gt;De naam van de virtuele machine geeft over het algemeen aan welke soft- en hardware wordt gebruikt. Deze naam wordt door alle VirtualBox componenten gebruikt om uw virtuele machine te identificeren.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Geef een naam op voor de nieuwe virtuele machine en selecteer het soort besturingssysteem die u van plan bent te installeren op de virtuele machine.&lt;/p&gt;&lt;p&gt;De naam van de virtuele machine geeft over het algemeen aan welke soft- en hardware wordt gebruikt. Deze naam wordt door alle VirtualBox componenten gebruikt om uw virtuele machine te identificeren.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>N&amp;ame</source>
-        <translation type="unfinished">N&amp;aam</translation>
+        <translation>N&amp;aam</translation>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation type="unfinished">&amp;Soort besturingssysteem</translation>
+        <translation>&amp;Soort besturingssysteem</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
-        <translation type="unfinished">VM naam en soort besturingssysteem</translation>
+        <translation>VM naam en soort besturingssysteem</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage3</name>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Selecteer de hoeveelheid hoofdgeheugen (RAM) in megabytes, die aan de virtuele machine wordt toegewezen.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Selecteer de hoeveelheid hoofdgeheugen (RAM) in megabytes, die aan de virtuele machine wordt toegewezen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation type="unfinished">Hoeveelheid &amp;Hoofdgeheugen</translation>
+        <translation>Hoeveelheid &amp;Hoofdgeheugen</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>Memory</source>
-        <translation type="unfinished">Geheugen</translation>
+        <translation>Geheugen</translation>
     </message>
     <message>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="unfinished">De aanbevolen hoeveelheid geheugen bedraagt &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+        <translation>De aanbevolen hoeveelheid geheugen bedraagt &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Selecteer een harde schijf image die als opstartschijf, voor uw virtuele machine, gebruikt gaat worden. U kunt nieuwe harde schijf aanmaken met behulp van de knop &lt;b&gt;Nieuw&lt;/b&gt; of een bestaande harde schijf image selecteren uit de keuzelijst of door op de knop &lt;b&gt;Bestaande&lt;/b&gt; drukken (dit start de manager virtuele media).&lt;/p&gt;&lt;p&gt;Heeft u een complexe opzet nodig van de harde schijf, dan kunt u deze stap overslaan en op een later tijdstip de harde schijf aankoppelen. Dit gaat dan via het VM instellingen dialoog.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Selecteer een harde schijf image die als opstartschijf, voor uw virtuele machine, gebruikt gaat worden. U kunt nieuwe harde schijf aanmaken met behulp van de knop &lt;b&gt;Nieuw&lt;/b&gt; of een bestaande harde schijf image selecteren uit de keuzelijst of door op de knop &lt;b&gt;Bestaande&lt;/b&gt; drukken (dit start de manager virtuele media).&lt;/p&gt;&lt;p&gt;Heeft u een complexe opzet nodig van de harde schijf, dan kunt u deze stap overslaan en op een later tijdstip de harde schijf aankoppelen. Dit gaat dan via het VM instellingen dialoog.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation type="unfinished">&amp;Opstartschijf (Primaire master)</translation>
+        <translation>&amp;Opstartschijf (Primaire master)</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
-        <translation type="unfinished">&amp;Maak een nieuwe harde schijf aan</translation>
+        <translation>&amp;Maak een nieuwe harde schijf aan</translation>
     </message>
     <message>
         <source>&amp;Use existing hard disk</source>
-        <translation type="unfinished">&amp;Gebruikt een bestaande harde schijf</translation>
+        <translation>&amp;Gebruikt een bestaande harde schijf</translation>
     </message>
     <message>
         <source>Virtual Hard Disk</source>
-        <translation type="unfinished">Virtuele harde schijf</translation>
+        <translation>Virtuele harde schijf</translation>
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="unfinished">De aanbevolen grote van de opstartschijf bedraagt &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+        <translation>De aanbevolen grote van de opstartschijf bedraagt &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage5</name>
     <message>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;U staat op het punt een nieuwe virtuele machine aan te maken met de onderstaande parameters::&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;U staat op het punt een nieuwe virtuele machine aan te maken met de onderstaande parameters::&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished">Samenvatting</translation>
+        <translation>Samenvatting</translation>
     </message>
     <message>
         <source>Name</source>
         <comment>summary</comment>
-        <translation type="unfinished">Naam</translation>
+        <translation>Naam</translation>
     </message>
     <message>
         <source>OS Type</source>
         <comment>summary</comment>
-        <translation type="unfinished">Soort besturingssystem</translation>
+        <translation>Soort besturingssystem</translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation type="unfinished">Hoofd geheugen</translation>
+        <translation>Hoofd geheugen</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished">Opstartschijf</translation>
+        <translation>Opstartschijf</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Is het bovenstaande juist? Druk op de &lt;b&gt;%1&lt;/b&gt; knop. Zodra u de knop indrukt wordt de nieuwe virtuale machine aangemaakt. &lt;/p&gt;&lt;p&gt;Let op, u kunt deze en andere instellingen, van deze virtule machine, op elk moment wijzigen via het dialoog &lt;b&gt;Instellingen&lt;/b&gt; uit het menu in het hoofdscherm.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -1671,12 +1671,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
 </context>
 <context>
@@ -2238,48 +2238,48 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Dock Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Dok Iioon</translation>
     </message>
     <message>
         <source>Show Application Icon</source>
-        <translation type="unfinished"></translation>
+        <translation>Geef applicatie icoon weer</translation>
     </message>
     <message>
         <source>Show Monitor Preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Geef monitor voorvertoning weer</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cabel %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>ACPI Sh&amp;utdown</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Uitzetten via ACPI</translation>
     </message>
     <message>
         <source>&amp;View</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Weergeven</translation>
     </message>
     <message>
         <source>Preview Monitor %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Voorvertoon monitor %1</translation>
     </message>
     <message>
         <source>No CD/DVD devices attached to that VM</source>
-        <translation type="unfinished"></translation>
+        <translation>Geen CD/DVD apparaten gekoppeld aan die VM</translation>
     </message>
     <message>
         <source>No floppy devices attached to that VM</source>
-        <translation type="unfinished"></translation>
+        <translation>Geen diskette apparaten gekoppeld aan die VM</translation>
     </message>
     <message>
         <source>No USB Devices Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Geen USB apparaten gekoppeld</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
-        <translation type="unfinished">Geen ondersteunde apparaten zijn aan de gastheer PC verbonden</translation>
+        <translation>Geen ondersteunde apparaten zijn aan de gastheer PC verbonden</translation>
     </message>
 </context>
 <context>
@@ -2443,11 +2443,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Reset Host Key</source>
-        <translation type="unfinished"></translation>
+        <translation>Zet gastheer toets terug</translation>
     </message>
     <message>
         <source>Resets the key used as a Host Key in the VM window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zet de toets terug die als gastheer toets wordt gebruikt in het VM scherm.</translation>
     </message>
 </context>
 <context>
@@ -3883,81 +3883,81 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Screens</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Schermen</translation>
     </message>
     <message>
         <source>VDE network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>VDE netwerk, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>SAS</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>SAS</translation>
     </message>
     <message>
         <source>VDE Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>VDE adapter</translation>
     </message>
     <message>
         <source>LsiLogic SAS</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>LsiLogic SAS</translation>
     </message>
     <message>
         <source>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</source>
         <comment>regexp for matching ####[.##] B|KB|MB|GB|TB|PB, %1=decimal point</comment>
-        <translation type="unfinished"></translation>
+        <translation>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</translation>
     </message>
     <message>
         <source>B</source>
         <comment>size suffix Bytes</comment>
-        <translation type="unfinished"></translation>
+        <translation>B</translation>
     </message>
     <message>
         <source>KB</source>
         <comment>size suffix KBytes=1024 Bytes</comment>
-        <translation type="unfinished"></translation>
+        <translation>KB</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>GB</source>
         <comment>size suffix GBytes=1024 MBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation>GB</translation>
     </message>
     <message>
         <source>TB</source>
         <comment>size suffix TBytes=1024 GBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation>TB</translation>
     </message>
     <message>
         <source>PB</source>
         <comment>size suffix PBytes=1024 TBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation>PB</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished"></translation>
+        <translation>Geactiveerd</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished">Gedeactiveerd</translation>
+        <translation>Gedeactiveerd</translation>
     </message>
     <message>
         <source>Nested Paging</source>
-        <translation type="unfinished"></translation>
+        <translation>Nested Paging</translation>
     </message>
     <message>
         <source>Shareable</source>
         <comment>DiskType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Te delen</translation>
     </message>
 </context>
 <context>
@@ -5167,51 +5167,51 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VT-x/AMD-V hardware versnelling is niet beschikbaar op uw systeem. Uw 64-bit gast will zal geen 64-bit CPU detecteren en kan niet opstareten.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VT-x/AMD-V hardware versnelling is niet beschikbaar op uw systeem. Bepaalde gastsystemen (bv. OS/2 en QNX) Hebben deze mogelijkheid nodig en kunnen anders niet opstarten.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Het verwijderen van momentopname %1 kost tijdelijk meer schijfruimte. In het ergste geval zal de omvang van image %2 groeien met %3, echter er is maar %4 vrij.&lt;/p&gt;&lt;p&gt;Door de schijfruimte heen raken tijdens een samenvoeg operatie kan resluteren in het corrupt raken van de de image en de VM configuratie, dus het verlies van de VM en zijn gegevens.&lt;/p&gt;&lt;p&gt;U mag op eigen risico doorgaan met het verwijderen van de momentopname.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kan het gastscherm niet veranderen in het gastheerscherm omdat er onvoldoende videogeheugen is voor gast.&lt;/p&gt;&lt;p&gt;U moet de virtuale machine zo configureren dat deze tenminste &lt;b&gt;%1&lt;/b&gt; aan video memory heeft.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kan het gastscherm niet veranderen in het gastheerscherm omdat er onvoldoende videogeheugen is voor gast.&lt;/p&gt;&lt;p&gt;U moet de virtuale machine zo configureren dat deze tenminste &lt;b&gt;%1&lt;/b&gt; aan video memory heeft.&lt;/p&gt;&lt;p&gt;Druk op &lt;b&gt;Negeren&lt;/b&gt; om toch te wisselen of druk op &lt;b&gt;Annuleren&lt;/b&gt; om de operatie te stoppen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kan het gastscherm niet omzetten naar volledigscherm. U hebt meer virtuale schermen geconfigureerd dan dat er fysieke schermen zijn aangesloten.&lt;/p&gt;&lt;p&gt;Verminder het aantal virtuale schermen in u VM configuratie of sluit meer schermen aan.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kan het gastscherm niet omzetten naar naadloze modus. U hebt meer virtuale schermen geconfigureerd dan dat er fysieke schermen zijn aangesloten.&lt;/p&gt;&lt;p&gt;Verminder het aantal virtuale schermen in u VM configuratie of sluit meer schermen aan.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kan de gebruikershandleiding &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; van VirtualBox niet vinden.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Wilt u deze van het internet downloaden?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Weet u het zeker dat u gebruikershandleiding van VirtualBox wilt downloaden bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (omvang %3 bytes)?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Het downloaden van de gebruikershandleiding van VirtualBox is mislukt bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;De gebruikershandleiding van VirtualBox is succesvol gedownload bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; en lokaal opgeslagen als &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;De gebruikershandleiding van VirtualBox is succesvol gedownload bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; maar kan lokaal niet worden opgeslagen als &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Kies aub een andere locatie voor dit bestand.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -6393,15 +6393,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Mo&amp;nitor Count:</source>
-        <translation type="unfinished"></translation>
+        <translation>Antal Mo&amp;nitoren:</translation>
     </message>
     <message>
         <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Controleert het aantal virtuale monitors van deze virtuale machine.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -6480,7 +6480,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>U hebt een USB HID (Human Interface Device) geactiveerd. Deze zal niet werken zolang de USB emulatie niet is geactiveerd. Dit wordt automatisch gedaan als u de VM instellingen accepteerd door op de Ok knop te klikken.</translation>
     </message>
 </context>
 <context>
@@ -6882,27 +6882,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Allows to use host I/O caching capabilities.</source>
-        <translation type="unfinished"></translation>
+        <translation>Staat toe om de gastheer I/O caching mogelijkheden te gebruiken.</translation>
     </message>
     <message>
         <source>Use host I/O cache</source>
-        <translation type="unfinished"></translation>
+        <translation>Gebruik gastheer I/O cache</translation>
     </message>
     <message>
         <source>Add SAS Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Voeg SAS controlertoe</translation>
     </message>
     <message>
         <source>SAS Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>SAS controler</translation>
     </message>
     <message>
         <source>Storage Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Opslag controler</translation>
     </message>
     <message>
         <source>Storage Controller 1</source>
-        <translation type="unfinished"></translation>
+        <translation>Opslag controler 1</translation>
     </message>
 </context>
 <context>
@@ -7451,23 +7451,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Is deze optie aangevinkt dan zal het RTC apparaat de tijd in UTC formaat rapporteren, anders in locale (gastheer) tijd. Unix verwachte normaal gesproken dat de klok op UTC staat.</translation>
     </message>
     <message>
         <source>Hardware clock in &amp;UTC time</source>
-        <translation type="unfinished"></translation>
+        <translation>Hardware klok in &amp;UTC tijd</translation>
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
-        <translation type="unfinished"></translation>
+        <translation>Controleert het aantal virtuale CPUs in de virtuale machine. U hebt hardware virtualisatie ondersteuningn nodig op uw gastheersysteem om meer dan één virtuale CPU te gebruiken.</translation>
     </message>
     <message>
         <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
-        <translation type="unfinished"></translation>
+        <translation>Is deze optie aangevinkt dan wordt een USB tablet ondersteund. Anders wordt alleen een standaard PS/2 muis geëmulateerd.</translation>
     </message>
     <message>
         <source>Enable &amp;absolute pointing device</source>
-        <translation type="unfinished"></translation>
+        <translation>Activeer een T&amp;ablet</translation>
     </message>
 </context>
 <context>

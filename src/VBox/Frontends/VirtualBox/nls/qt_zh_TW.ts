@@ -73,7 +73,7 @@ have libgstreamer-plugins-base installed.</source>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
         <translation>
-            <numerusform></numerusform>
+            <numerusform>遺失所需的轉碼器。 您需要安裝以下轉碼器以播放這個內容: %0</numerusform>
         </translation>
     </message>
     <message>
@@ -1826,7 +1826,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>No space left on device</source>
-        <translation>裝置沒有剩餘空間</translation>
+        <translation>裝置中沒有剩餘空間</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -3216,7 +3216,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>No query</source>
-        <translation>沒有疑問</translation>
+        <translation>沒有查詢</translation>
     </message>
 </context>
 <context>
@@ -4142,7 +4142,7 @@ Please choose a different file name.</source>
     <message>
         <source>No Guesses Found</source>
         <comment>No Guesses Found context menu item</comment>
-        <translation>找不到推測</translation>
+        <translation>找不到 Guesses</translation>
     </message>
     <message>
         <source>Ignore</source>
@@ -4227,7 +4227,7 @@ Please choose a different file name.</source>
     <message>
         <source>Outline</source>
         <comment>Outline context menu item</comment>
-        <translation>外形</translation>
+        <translation>大綱</translation>
     </message>
     <message>
         <source>Direction</source>
@@ -4257,7 +4257,7 @@ Please choose a different file name.</source>
     <message>
         <source>No recent searches</source>
         <comment>Label for only item in menu that appears when clicking on the search field image, when no searches have been performed</comment>
-        <translation>無最近的搜尋</translation>
+        <translation>沒有最近的搜尋</translation>
     </message>
     <message>
         <source>Recent searches</source>
@@ -4722,7 +4722,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Integer division (%1) by zero (%2) is undefined.</source>
-        <translation>是未定義的整數 (%1) 除數零 (%2)。</translation>
+        <translation>未定義的整數 (%1) 除數零 (%2)。</translation>
     </message>
     <message>
         <source>Division (%1) by zero (%2) is undefined.</source>
@@ -4822,7 +4822,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>No comparisons can be done involving the type %1.</source>
-        <translation>任何比較可以完成涉及類型 %1。</translation>
+        <translation>涉及類型 %1 沒有比較可以完成。</translation>
     </message>
     <message>
         <source>Operator %1 is not available between atomic values of type %2 and %3.</source>
@@ -4862,11 +4862,11 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>No namespace binding exists for the prefix %1</source>
-        <translation>沒有任何命名空間繫結現有的字首 %1</translation>
+        <translation>沒有命名空間繫結現有的字首 %1</translation>
     </message>
     <message>
         <source>No namespace binding exists for the prefix %1 in %2</source>
-        <translation>無命名空間繫結現有 %2 中字首 %1</translation>
+        <translation>沒有命名空間繫結現有 %2 中字首 %1</translation>
     </message>
     <message>
         <source>%1 is an invalid %2</source>
@@ -4875,13 +4875,13 @@ Please choose a different file name.</source>
     <message numerus="yes">
         <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
         <translation>
-            <numerusform></numerusform>
+            <numerusform>%1 取得最多 %n 個引數。 因此 %2 無效。</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%1 requires at least %n argument(s). %2 is therefore invalid.</source>
         <translation>
-            <numerusform></numerusform>
+            <numerusform>%1 需要至少 %n 個引數。 因此 %2 無效。</numerusform>
         </translation>
     </message>
     <message>
@@ -5002,11 +5002,11 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>No variable by name %1 exists</source>
-        <translation>不存在任何變數的名稱為 %1</translation>
+        <translation>不存在名稱為 %1 的變數</translation>
     </message>
     <message>
         <source>The variable %1 is unused</source>
-        <translation>%1 的變數是未使用</translation>
+        <translation>變數 %1 未使用</translation>
     </message>
     <message>
         <source>Version %1 is not supported. The supported XQuery version is 1.0.</source>
@@ -5018,7 +5018,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>No function with signature %1 is available</source>
-        <translation>沒有以 %1 簽署的函數可用</translation>
+        <translation>沒有 %1 簽署的函數可用</translation>
     </message>
     <message>
         <source>A default namespace declaration must occur before function, variable, and option declarations.</source>
@@ -5066,7 +5066,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>No value is available for the external variable by name %1.</source>
-        <translation>無值名稱 %1 可用的外部變數。</translation>
+        <translation>名稱 %1 的外部變數沒有可用的值。</translation>
     </message>
     <message>
         <source>The namespace %1 is reserved; therefore user defined functions may not use it. Try the predefined prefix %2, which exists for these cases.</source>
