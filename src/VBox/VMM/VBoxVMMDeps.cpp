@@ -53,5 +53,8 @@ PFNRT g_apfnDeps[] =
 #ifdef VBOX_WITH_DEBUGGER
     (PFNRT)DBGCCreate,
 #endif
+#ifdef VBOX_WITH_PAGE_SHARING
+    (PFNRT)PGMR3SharedModuleRegister,
+#endif
     NULL
 };
