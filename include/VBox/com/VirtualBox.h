@@ -41,11 +41,11 @@
 
 // generated VirtualBox COM library definition file
 #if !defined (VBOXCOM_NOINCLUDE)
-#if !defined (VBOX_WITH_XPCOM)
-#include <VirtualBox.h>
-#else
-#include <VirtualBox_XPCOM.h>
-#endif
+# if !defined (VBOX_WITH_XPCOM)
+#  include <VirtualBox.h>
+# else
+#  include <VirtualBox_XPCOM.h>
+# endif
 #endif // !defined (VBOXCOM_NOINCLUDE)
 
 // for convenience
@@ -58,7 +58,12 @@ inline HRESULT createCallbackWrapper(I* aInstance,
 {
     ComPtr<ILocalOwner> ptr;
 
+#ifdef VBOX_WITH_XPCOM /* very noisy in pedantic mode */
+    static const CLSID clsid = NS_CALLBACKWRAPPER_CID;
+    HRESULT rc = ptr.createInprocObject(clsid);
+#else
     HRESULT rc = ptr.createInprocObject(CLSID_CallbackWrapper);
+#endif
     if (FAILED(rc))
         return rc;
 
