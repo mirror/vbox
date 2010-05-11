@@ -22,6 +22,7 @@
 #include <iprt/thread.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
+#include <iprt/time.h>
 
 /* Debug macros */
 #define FBO 1 /* Disable this to see how the output is without the FBO in the middle of the processing chain. */
