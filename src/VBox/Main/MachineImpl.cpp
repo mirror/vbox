@@ -3071,8 +3071,8 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
         /* Apply the normal locking logic to the entire chain. */
         MediumLockList *pMediumLockList(new MediumLockList());
-        rc = diff->createMediumLockList(true, /* fFailIfInaccessible */
-                                        true /* fMediumWritable -- really? @todo r=dj*/ ,
+        rc = diff->createMediumLockList(true /* fFailIfInaccessible */,
+                                        true /* fMediumLockWrite */,
                                         medium,
                                         *pMediumLockList);
         if (FAILED(rc)) return rc;
@@ -8202,8 +8202,8 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
                     Assert(pMedium);
 
                     MediumLockList *pMediumLockList(new MediumLockList());
-                    rc = pMedium->createMediumLockList(true, /* fFailIfInaccessible */
-                                                       false,
+                    rc = pMedium->createMediumLockList(true /* fFailIfInaccessible */,
+                                                       false /* fMediumLockWrite */,
                                                        NULL,
                                                        *pMediumLockList);
                     if (FAILED(rc))
@@ -10818,10 +10818,10 @@ HRESULT SessionMachine::lockMedia()
         // attached later.
         if (pMedium != NULL)
         {
-            bool fIsReadOnlyImage = (   devType == DeviceType_DVD
-                                     || devType == DeviceType_Floppy);
-            mrc = pMedium->createMediumLockList(!fIsReadOnlyImage /* fFailIfInaccessible */,
-                                                fIsReadOnlyImage, /* fReadOnly */
+            bool fIsReadOnlyImage = (devType == DeviceType_DVD);
+            bool fIsVitalImage = (devType == DeviceType_HardDisk);
+            mrc = pMedium->createMediumLockList(fIsVitalImage /* fFailIfInaccessible */,
+                                                !fIsReadOnlyImage /* fMediumLockWrite */,
                                                 NULL,
                                                 *pMediumLockList);
             if (FAILED(mrc))

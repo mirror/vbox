@@ -188,7 +188,7 @@ public:
     HRESULT compareLocationTo(const char *aLocation, int &aResult);
 
     HRESULT createMediumLockList(bool fFailIfInaccessible,
-                                 bool fMediumWritable,
+                                 bool fMediumLockWrite,
                                  Medium *pToBeParent,
                                  MediumLockList &mediumLockList);
 
