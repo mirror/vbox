@@ -199,7 +199,7 @@ enum
 {
     /* Delay before shutting down the VirtualBox server after the last
      * VirtualBox instance is released, in ms */
-    VBoxSVC_ShutdownDelay = 5000,
+    VBoxSVC_ShutdownDelay = 5000
 };
 
 static bool gAutoShutdown = false;

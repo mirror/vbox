@@ -2316,6 +2316,7 @@ HRESULT Host::checkUSBProxyService()
 #endif /* VBOX_WITH_USB */
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
+
 void Host::registerMetrics(PerformanceCollector *aCollector)
 {
     pm::CollectorHAL *hal = aCollector->getHAL();
@@ -2434,13 +2435,14 @@ void Host::registerMetrics(PerformanceCollector *aCollector)
                                               new pm::AggregateMin()));
     aCollector->registerMetric(new pm::Metric(ramUsage, ramVMMBallooned,
                                               new pm::AggregateMax()));
-};
+}
 
 void Host::unregisterMetrics (PerformanceCollector *aCollector)
 {
     aCollector->unregisterMetricsFor(this);
     aCollector->unregisterBaseMetricsFor(this);
-};
+}
+
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

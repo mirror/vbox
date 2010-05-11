@@ -426,7 +426,8 @@ public:
  *  See DECLARE_EMPTY_CTOR_DTOR for more info.
  */
 #define DEFINE_EMPTY_CTOR_DTOR(cls) \
-    cls::cls () {}; cls::~cls () {};
+    cls::cls()  { /*empty*/ } \
+    cls::~cls() { /*empty*/ }
 
 ////////////////////////////////////////////////////////////////////////////////
 //

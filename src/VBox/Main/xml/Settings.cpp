@@ -1632,7 +1632,7 @@ IoSettings::IoSettings()
     fIoCacheEnabled  = true;
     ulIoCacheSize    = 5;
     ulIoBandwidthMax = 0;
-};
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 //

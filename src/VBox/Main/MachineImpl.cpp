@@ -9136,6 +9136,7 @@ void Machine::copyFrom(Machine *aThat)
 }
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
+
 void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachine, RTPROCESS pid)
 {
     pm::CollectorHAL *hal = aCollector->getHAL();
@@ -9244,7 +9245,7 @@ void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachin
     aCollector->registerMetric(new pm::Metric(guestCpuMem, guestPagedTotal, new pm::AggregateAvg()));
     aCollector->registerMetric(new pm::Metric(guestCpuMem, guestPagedTotal, new pm::AggregateMin()));
     aCollector->registerMetric(new pm::Metric(guestCpuMem, guestPagedTotal, new pm::AggregateMax()));
-};
+}
 
 void Machine::unregisterMetrics(PerformanceCollector *aCollector, Machine *aMachine)
 {
@@ -9253,7 +9254,8 @@ void Machine::unregisterMetrics(PerformanceCollector *aCollector, Machine *aMach
 
     if (mGuestHAL)
         delete mGuestHAL;
-};
+}
+
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 
