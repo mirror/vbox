@@ -84,6 +84,8 @@ typedef struct DRVBLOCK
 #ifdef VBOX_IGNORE_FLUSH
     /** HACK: Disable flushes for this drive. */
     bool                    fIgnoreFlush;
+    /** Disable async flushes for this drive. */
+    bool                    fIgnoreFlushAsync;
 #endif /* VBOX_IGNORE_FLUSH */
     /** Pointer to the media driver below us.
      * This is NULL if the media is not mounted. */
@@ -337,7 +339,7 @@ static DECLCALLBACK(int) drvblockAsyncFlushStart(PPDMIBLOCKASYNC pInterface, voi
     }
 
 #ifdef VBOX_IGNORE_FLUSH
-    if (pThis->fIgnoreFlush)
+    if (pThis->fIgnoreFlushAsync)
         return VINF_VD_ASYNC_IO_FINISHED;
 #endif /* VBOX_IGNORE_FLUSH */
 
@@ -751,7 +753,7 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
      * Validate configuration.
      */
 #if defined(VBOX_PERIODIC_FLUSH) || defined(VBOX_IGNORE_FLUSH)
-    if (!CFGMR3AreValuesValid(pCfg, "Type\0Locked\0BIOSVisible\0AttachFailError\0Cylinders\0Heads\0Sectors\0Mountable\0FlushInterval\0IgnoreFlush\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "Type\0Locked\0BIOSVisible\0AttachFailError\0Cylinders\0Heads\0Sectors\0Mountable\0FlushInterval\0IgnoreFlush\0IgnoreFlushAsync\0"))
 #else /* !(VBOX_PERIODIC_FLUSH || VBOX_IGNORE_FLUSH) */
     if (!CFGMR3AreValuesValid(pCfg, "Type\0Locked\0BIOSVisible\0AttachFailError\0Cylinders\0Heads\0Sectors\0Mountable\0"))
 #endif /* !(VBOX_PERIODIC_FLUSH || VBOX_IGNORE_FLUSH) */
@@ -911,6 +913,15 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
         LogRel(("DrvBlock: Flushes will be ignored\n"));
     else
         LogRel(("DrvBlock: Flushes will be passed to the disk\n"));
+
+    rc = CFGMR3QueryBoolDef(pCfg, "IgnoreFlushAsync", &pThis->fIgnoreFlushAsync, false);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"IgnoreFlushAsync\" from the config"));
+
+    if (pThis->fIgnoreFlushAsync)
+        LogRel(("DrvBlock: Async flushes will be ignored\n"));
+    else
+        LogRel(("DrvBlock: Async flushes will be passed to the disk\n"));
 #endif /* VBOX_IGNORE_FLUSH */
 
     /*
