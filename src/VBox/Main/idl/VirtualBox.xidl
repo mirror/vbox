@@ -4214,7 +4214,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="b5d4457e-888f-46ef-b2db-644616db94fd"
+     uuid="6d9212cb-a5c0-48b7-bbc1-3fa2ba2ee6d2"
      wsmap="managed"
      >
     <desc>
@@ -5939,6 +5939,11 @@
       <desc>
         Returns size in bytes and dimensions in pixels of a saved thumbnail bitmap from saved state.
       </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>
+          Saved guest screen to query info from.
+        </desc>
+      </param>
       <param name="size" type="unsigned long" dir="out">
         <desc>
           Size of buffer required to store the bitmap.
@@ -5960,6 +5965,11 @@
       <desc>
         Thumbnail is retrieved to an array of bytes in uncompressed 32-bit BGRA or RGBA format.
       </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>
+          Saved guest screen to read from.
+        </desc>
+      </param>
       <param name="BGR" type="boolean" dir="in">
         <desc>
           How to order bytes in the pixel. A pixel consists of 4 bytes. If this parameter is true, then
@@ -5987,6 +5997,11 @@
       <desc>
         Returns size in bytes and dimensions of a saved PNG image of screenshot from saved state.
       </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>
+          Saved guest screen to query info from.
+        </desc>
+      </param>
       <param name="size" type="unsigned long" dir="out">
         <desc>
           Size of buffer required to store the PNG binary data.
@@ -6008,6 +6023,11 @@
       <desc>
         Screenshot in PNG format is retrieved to an array of bytes.
       </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>
+          Saved guest screen to read from.
+        </desc>
+      </param>
       <param name="width" type="unsigned long" dir="out">
         <desc>
           Image width.
