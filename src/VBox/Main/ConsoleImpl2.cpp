@@ -2445,8 +2445,9 @@ int Console::configMedium(PCFGMNODE pLunL0,
                                            this,
                                            0,
                                            "DvdOrFloppyImageInaccessible",
-                                           "The medium '%ls' is inaccessible and is being ignored. You may want to fix the media attachments in the virtual machine settings",
-                                           loc.raw());
+                                           "The image file '%ls' is inaccessible and is being ignored. Please select a different image file for the virtual %s drive.",
+                                           loc.raw(),
+                                           (enmType == DeviceType_DVD) ? "DVD" : "floppy");
                 pMedium = NULL;
             }
         }
