@@ -1465,11 +1465,13 @@ STDMETHODIMP Machine::COMSETTER(MemoryBalloonSize)(ULONG memoryBalloonSize)
 
 STDMETHODIMP Machine::COMGETTER(PageFusionEnabled) (BOOL *enabled)
 {
+    NOREF(enabled);
     return E_NOTIMPL;
 }
 
 STDMETHODIMP Machine::COMSETTER(PageFusionEnabled) (BOOL enabled)
 {
+    NOREF(enabled);
     return E_NOTIMPL;
 }
 
