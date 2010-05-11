@@ -964,6 +964,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             VMMDevRequestHeader *requestHeader = (VMMDevRequestHeader *)pBuf;
             if (!vmmdevGetRequestSize(requestHeader->requestType))
             {
+                dprintf(("VBoxGuest::VBoxGuestDeviceControl: vmmdevGetRequestSize failed!\n")); \
                 Status = STATUS_INVALID_PARAMETER;
                 break;
             }
@@ -1007,6 +1008,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             }
             else
             {
+                dprintf(("VBoxGuest::VBoxGuestDeviceControl: VbglGRAlloc failed!\n")); \
                 Status = STATUS_UNSUCCESSFUL;
             }
 #undef CHECK_SIZE
