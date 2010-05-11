@@ -565,7 +565,7 @@ void UIMachineWindowNormal::loadWindowSettings()
            create even wrong resize events. So there we set the geometry
            immediately. */
         if (machineView())
-#ifdef Q_WS_MAC
+#if defined(Q_WS_MAC) || defined(Q_WS_WIN)
             machineView()->normalizeGeometry(true);
 #else /* Q_WS_MAC */
             QTimer::singleShot(0, machineView(), SLOT(sltNormalizeGeometry()));
