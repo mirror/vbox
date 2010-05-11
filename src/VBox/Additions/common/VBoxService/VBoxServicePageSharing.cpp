@@ -162,9 +162,14 @@ void VBoxServicePageSharingRegisterModule(HANDLE hProcess, PKNOWN_MODULE pModule
 
             pBaseAddress = (BYTE *)MemInfo[i].BaseAddress + MemInfo[i].RegionSize;
             if (dwModuleSize > MemInfo[i].RegionSize)
+            {
                 dwModuleSize -= MemInfo[i].RegionSize;
+            }
             else
+            {
                 dwModuleSize = 0;
+                break;
+            }
 
             if (idxRegion >= RT_ELEMENTS(aRegions))
                 break;  /* out of room */
