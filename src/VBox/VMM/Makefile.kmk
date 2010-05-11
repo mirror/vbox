@@ -43,10 +43,6 @@ endif
 ifdef VBOX_WITH_VUSB
  VMMR3_DEFS    += VBOX_WITH_USB
 endif
-ifdef VBOX_WITH_VMI
- VMMR3_DEFS    += \
- 	VBOX_WITH_VMI
-endif
 ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
  VMMR3_DEFS    += VBOX_WITH_PDM_ASYNC_COMPLETION
 endif
@@ -67,10 +63,6 @@ VMMR3_DEFS.darwin.x86 = \
 VMMR3_INCS     = \
 	. \
 	PATM
-ifdef VBOX_WITH_VMI
- VMMR3_INCS   += \
- 	PARAV
-endif
 
 VMMR3_SOURCES   = \
 	CFGM.cpp \
@@ -164,11 +156,6 @@ VMMR3_SOURCES   = \
 	PATM/PATMA.asm \
 	PATM/PATMSSM.cpp \
 	PATM/VMMAll/PATMAll.cpp
-ifdef VBOX_WITH_VMI
- VMMR3_SOURCES += \
- 	PARAV/PARAV.cpp \
- 	PARAV/PARAVAll.cpp
-endif
 ifdef VBOX_WITH_VUSB
  VMMR3_SOURCES += PDMUsb.cpp
 endif
@@ -337,9 +324,6 @@ ifdef VBOX_WITH_RAW_MODE
  ifdef VBOX_WITH_MULTI_CORE
   VMMGC_DEFS    += VBOX_WITH_MULTI_CORE
  endif
- ifdef VBOX_WITH_VMI
-  VMMGC_DEFS    += VBOX_WITH_VMI
- endif
  ifeq ($(KBUILD_TARGET_ARCH),x86)
   VMMGC_DEFS.darwin = VMM_R0_SWITCH_STACK
   VMMGC_DEFS.darwin = \
@@ -411,11 +395,6 @@ ifdef VBOX_WITH_RAW_MODE
  	PATM/VMMAll/CSAMAll.cpp \
  	PATM/VMMGC/PATMGC.cpp \
  	PATM/VMMAll/PATMAll.cpp
- ifdef VBOX_WITH_VMI
-  VMMGC_SOURCES += \
-  	PARAV/PARAV.cpp \
-  	PARAV/PARAVAll.cpp
- endif
  ifeq ($(VBOX_LDR_FMT32),pe)
   VMMGC_SOURCES += VMMGC/VMMGC.def
  endif

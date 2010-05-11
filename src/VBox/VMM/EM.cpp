@@ -37,9 +37,6 @@
 #define LOG_GROUP LOG_GROUP_EM
 #include <VBox/em.h>
 #include <VBox/vmm.h>
-#ifdef VBOX_WITH_VMI
-# include <VBox/parav.h>
-#endif
 #include <VBox/patm.h>
 #include <VBox/csam.h>
 #include <VBox/selm.h>
@@ -1766,16 +1763,6 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     pVCpu->em.s.enmState = EMSTATE_REM;
                     break;
 
-#ifdef VBOX_WITH_VMI
-                /*
-                 * Reschedule - parav call.
-                 */
-                case VINF_EM_RESCHEDULE_PARAV:
-                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_PARAV: %d -> %d (EMSTATE_PARAV)\n", pVCpu->em.s.enmState, EMSTATE_PARAV));
-                    pVCpu->em.s.enmState = EMSTATE_PARAV;
-                    break;
-#endif
-
                 /*
                  * Resume.
                  */
@@ -1975,16 +1962,6 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     rc = emR3RemExecute(pVM, pVCpu, &fFFDone);
                     Log2(("EMR3ExecuteVM: emR3RemExecute -> %Rrc\n", rc));
                     break;
-
-#ifdef VBOX_WITH_VMI
-                /*
-                 * Execute PARAV function.
-                 */
-                case EMSTATE_PARAV:
-                    rc = PARAVCallFunction(pVM);
-                    pVCpu->em.s.enmState = EMSTATE_REM;
-                    break;
-#endif
 
                 /*
                  * Application processor execution halted until SIPI.

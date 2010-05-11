@@ -37,9 +37,6 @@
 #define LOG_GROUP LOG_GROUP_EM
 #include <VBox/em.h>
 #include <VBox/vmm.h>
-#ifdef VBOX_WITH_VMI
-# include <VBox/parav.h>
-#endif
 #include <VBox/csam.h>
 #include <VBox/selm.h>
 #include <VBox/trpm.h>

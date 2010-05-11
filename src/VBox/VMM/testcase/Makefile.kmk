@@ -128,10 +128,6 @@ endif
 ifdef VBOX_WITH_R0_LOGGING
  tstVMStructSize_DEFS  += VBOX_WITH_R0_LOGGING
 endif
-ifdef VBOX_WITH_VMI
- tstVMStructSize_DEFS  += VBOX_WITH_VMI
- tstVMStructSize_INCS  += $(VBOX_PATH_VMM_SRC)/PARAV
-endif
 
 tstAsmStructs_TEMPLATE  = VBOXR3AUTOTST
 tstAsmStructs_DEFS      = IN_VMM_R3 IN_DIS
