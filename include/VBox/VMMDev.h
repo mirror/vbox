@@ -170,12 +170,10 @@ typedef enum
     VMMDevReq_LogString                  = 200,
     VMMDevReq_GetCpuHotPlugRequest       = 210,
     VMMDevReq_SetCpuHotPlugStatus        = 211,
-#ifdef VBOX_WITH_PAGE_SHARING
     VMMDevReq_RegisterSharedModule       = 212,
     VMMDevReq_UnregisterSharedModule     = 213,
     VMMDevReq_CheckSharedModules         = 214,
     VMMDevReq_GetPageSharingStatus       = 215,
-#endif
     VMMDevReq_SizeHack                   = 0x7fffffff
 } VMMDevRequestType;
 
@@ -1689,7 +1687,6 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevGetCpuHotPlugRequest);
         case VMMDevReq_SetCpuHotPlugStatus:
             return sizeof(VMMDevCpuHotPlugStatusRequest);
-#ifdef VBOX_WITH_PAGE_SHARING
         case VMMDevReq_RegisterSharedModule:
             return sizeof(VMMDevSharedModuleRegistrationRequest);
         case VMMDevReq_UnregisterSharedModule:
@@ -1698,7 +1695,6 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevSharedModuleCheckRequest);
         case VMMDevReq_GetPageSharingStatus:
             return sizeof(VMMDevPageSharingStatusRequest);
-#endif
 
         default:
             return 0;
