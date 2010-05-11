@@ -169,6 +169,8 @@ void VBoxServicePageSharingRegisterModule(HANDLE hProcess, PKNOWN_MODULE pModule
             if (idxRegion >= RT_ELEMENTS(aRegions))
                 break;  /* out of room */
         }
+        if (idxRegion >= RT_ELEMENTS(aRegions))
+            break;  /* out of room */
     }
     while (dwModuleSize);
 
