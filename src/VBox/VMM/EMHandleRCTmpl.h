@@ -105,15 +105,6 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
             break;
 #endif /* EMHANDLERC_WITH_PATM */
 
-#ifdef VBOX_WITH_VMI
-        /*
-         * PARAV function.
-         */
-        case VINF_EM_RESCHEDULE_PARAV:
-            rc = PARAVCallFunction(pVM);
-            break;
-#endif
-
 #ifdef EMHANDLERC_WITH_PATM
         /*
          * Memory mapped I/O access - attempt to patch the instruction
