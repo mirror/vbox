@@ -2479,7 +2479,7 @@ TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -mpreferred-stack-boundary=2 -msoft-flo
 TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow \
 	-fno-reorder-blocks -ffreestanding -fno-asynchronous-unwind-tables -funit-at-a-time \
 	-Wno-sign-compare -Wdeclaration-after-statement
-TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(filter-out -Wstrict-prototypes -Wno-pointer-sign -ffreestanding -Wdeclaration-after-statement,$(TEMPLATE_VBOXR0DRV_CFLAGS) $(TEMPLATE_VBOXR0DRV_CFLAGS.$(KBUILD_TARGET_ARCH))) -fno-exceptions -fno-rtti
+TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(filter-out -Wstrict-prototypes -Wno-pointer-sign -ffreestanding -Wdeclaration-after-statement -Werror-implicit-function-declaration,$(TEMPLATE_VBOXR0DRV_CFLAGS) $(TEMPLATE_VBOXR0DRV_CFLAGS.$(KBUILD_TARGET_ARCH))) -fno-exceptions -fno-rtti
   ifndef VBOX_LINUX_VERSION_2_4
 # 2.6
 TEMPLATE_VBOXR0DRV_SYSSUFF             = .ko
@@ -3173,16 +3173,21 @@ ifeq ($(KBUILD_TARGET),win)
 else # the GCC guys:
 
 TEMPLATE_VBOXMAINEXE_TOOL                = $(VBOX_GCC_TOOL)
-## @todo Why isn't this template using VBOX_GCC_PEDANTIC_CXX and VBOX_GCC_PEDANTIC_C?
+if 1 ## @todo Why isn't this template using VBOX_GCC_PEDANTIC_CXX?
+TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g -pipe \
+	$(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros) -Wno-long-long -Wno-non-virtual-dtor -Wshadow \
+	-fshort-wchar -fpermissive -fexceptions -frtti $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing \
+	$(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
+else
 TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g -pipe \
 	$(VBOX_GCC_WARN) -Wno-long-long -Wno-non-virtual-dtor -Wshadow \
 	-fshort-wchar -fpermissive -fexceptions -frtti $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing \
 	$(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
+endif
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.x86        = -m32
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.amd64      = -m64
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile   = -finstrument-functions
-TEMPLATE_VBOXMAINEXE_CFLAGS              = -g -pipe \
-	$(VBOX_GCC_WARN) -Wno-long-long	-Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -Werror-implicit-function-declaration -Wshadow \
+TEMPLATE_VBOXMAINEXE_CFLAGS              = -g -pipe $(VBOX_GCC_PEDANTIC_C) \
 	$(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_VBOXMAINEXE_CFLAGS.x86          = -m32
 TEMPLATE_VBOXMAINEXE_CFLAGS.amd64        = -m64
