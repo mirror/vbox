@@ -1527,7 +1527,7 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
             diskList.push_back(strTargetFilePath);
 
             // we need the following for the XML
-            uint64_t cbFile = 0;        // actual file size
+            ULONG64 cbFile = 0;        // actual file size
             rc = pTargetDisk->COMGETTER(Size)(&cbFile);
             if (FAILED(rc)) throw rc;
 
