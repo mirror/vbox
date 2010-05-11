@@ -2474,7 +2474,7 @@ TEMPLATE_VBOXR0DRV_DEFS                = __KERNEL__ MODULE IN_RING0 IN_RT_R0
 TEMPLATE_VBOXR0DRV_INCS                = $(VBOX_LINUX_INCS)
 TEMPLATE_VBOXR0DRV_CFLAGS              = -nostdinc -iwithprefix include $(VBOX_LINUX_INCLUDE) \
 	$(VBOX_GCC_WARN) -Wstrict-prototypes $(VBOX_GCC_Wno-pointer-sign) -Wno-sign-compare \
-	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fno-common
+	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fno-common -Werror-implicit-function-declaration
 TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -mpreferred-stack-boundary=2 -msoft-float
 TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow \
 	-fno-reorder-blocks -ffreestanding -fno-asynchronous-unwind-tables -funit-at-a-time \
@@ -2516,7 +2516,8 @@ TEMPLATE_VBOXR0DRV_CXXFLAGS.x86        = -m32 -static
 TEMPLATE_VBOXR0DRV_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS) \
 	-g -pipe $(VBOX_GCC_WARN) -Wno-long-long -fno-common -nostdinc -fno-builtin -finline \
 	-fno-keep-inline-functions -fno-exceptions -msoft-float \
-	-Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -force_cpusubtype_ALL \
+	-Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations \
+	-Werror-implicit-function-declaration -force_cpusubtype_ALL \
 	$(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fasm-blocks
 TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mkernel -mno-red-zone -gdwarf-2
 TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -static
@@ -2547,7 +2548,7 @@ TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -64
 TEMPLATE_VBOXR0DRV_CFLAGS              = -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) \
 	-Wmissing-prototypes -Wstrict-prototypes -Wnested-externs \
 	-Wshadow -Wuninitialized -Wunused-function -Wunused-label -Wunused-value -Wunused-variable \
-	-Wformat  -Wimplicit-int -Wimplicit-function-declaration -Wparentheses \
+	-Wformat  -Wimplicit-int -Wimplicit-function-declaration -Werror-implicit-function-declaration -Wparentheses \
 	-O2 -fno-omit-frame-pointer -ffreestanding -nodefaultlibs -fno-strict-aliasing -fno-common -std=c99
 TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow
 TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow $(if $(VBOX_SOLARIS_10),,-msave-args) -mno-red-zone -mcmodel=kernel \
@@ -2603,6 +2604,7 @@ TEMPLATE_VBOXR0DRV_INCS                = \
 TEMPLATE_VBOXR0DRV_CFLAGS              =  \
 	$(VBOX_GCC_WARN) -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) \
 	-Wstrict-prototypes -Wmissing-prototypes -Wstrict-prototypes -Wnested-externs \
+	-Wimplicit-function-declaration -Werror-implicit-function-declaration \
 	-O2 -fformat-extensions -ffreestanding -fno-strict-aliasing -fno-common -finline-limit=8000 \
 	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) \
 	-nostdinc -std=c99
@@ -2945,8 +2947,8 @@ TEMPLATE_VBOXR3HARDENEDLIB_LIBS = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXR3OSX105  = VBox Ring 3 SO/DLLs for OS X 10.5
 TEMPLATE_VBOXR3OSX105_EXTENDS = VBOXR3EXE
 TEMPLATE_VBOXR3OSX105_DEFS.darwin        = $(VBOX_DARWIN_DEF_SDK_10_5_DEFS) PIC
-TEMPLATE_VBOXR3OSX105_CFLAGS.darwin      = $(VBOX_DARWIN_DEF_SDK_10_5_CFLAGS) -fno-common 
-TEMPLATE_VBOXR3OSX105_CXXFLAGS.darwin    = $(VBOX_DARWIN_DEF_SDK_10_5_CXXFLAGS) 
+TEMPLATE_VBOXR3OSX105_CFLAGS.darwin      = $(VBOX_DARWIN_DEF_SDK_10_5_CFLAGS) -fno-common
+TEMPLATE_VBOXR3OSX105_CXXFLAGS.darwin    = $(VBOX_DARWIN_DEF_SDK_10_5_CXXFLAGS)
 TEMPLATE_VBOXR3OSX105_OBJCFLAGS.darwin   = $(VBOX_DARWIN_DEF_SDK_10_5_OBJCFLAGS)
 TEMPLATE_VBOXR3OSX105_OBJCXXFLAGS.darwin = $(VBOX_DARWIN_DEF_SDK_10_5_OBJCFLAGS)
 TEMPLATE_VBOXR3OSX105_LDFLAGS.darwin     = $(VBOX_DARWIN_DEF_SDK_10_5_LDFLAGS) \
@@ -3020,7 +3022,8 @@ TEMPLATE_VBOXR3NPEXE_EXTENDS             = VBOXR3EXE
 ifneq ($(KBUILD_TARGET),win) # (only gcc)
  TEMPLATE_VBOXR3NPEXE_TOOL               = $(VBOX_GCC_TOOL)
  TEMPLATE_VBOXR3NPEXE_CXXFLAGS           = $(filter-out -pedantic -Wshadow,$(TEMPLATE_VBOXR3EXE_CXXFLAGS)) -Wno-sign-compare
- TEMPLATE_VBOXR3NPEXE_CFLAGS             = $(filter-out -pedantic -Wshadow -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations,$(TEMPLATE_VBOXR3EXE_CFLAGS)) -Wno-sign-compare
+ TEMPLATE_VBOXR3NPEXE_CFLAGS             = $(filter-out -pedantic -Wshadow -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations,$(TEMPLATE_VBOXR3EXE_CFLAGS)) \
+	-Wno-sign-compare -Werror-implicit-function-declaration
 endif
 
 
@@ -3033,7 +3036,8 @@ TEMPLATE_VBOXR3NP_EXTENDS = VBOXR3
 ifneq ($(KBUILD_TARGET),win) # (only gcc)
  TEMPLATE_VBOXR3NP_TOOL                  = $(VBOX_GCC_TOOL)
  TEMPLATE_VBOXR3NP_CXXFLAGS              = $(filter-out -pedantic -Wshadow,$(TEMPLATE_VBOXR3_CXXFLAGS)) -Wno-sign-compare
- TEMPLATE_VBOXR3NP_CFLAGS                = $(filter-out -pedantic -Wshadow -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations,$(TEMPLATE_VBOXR3_CFLAGS)) -Wno-sign-compare
+ TEMPLATE_VBOXR3NP_CFLAGS                = $(filter-out -pedantic -Wshadow -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations,$(TEMPLATE_VBOXR3_CFLAGS)) \
+	-Wno-sign-compare -Werror-implicit-function-declaration
 endif
 
 
@@ -3044,7 +3048,7 @@ endif
 TEMPLATE_VBOXNOCRTGCC = VBox no-crt GCC libraries and modules, yasm/nasm.
 TEMPLATE_VBOXNOCRTGCC_DEFS              = IN_RING3 IPRT_NO_CRT $(ARCH_BITS_DEFS)
 TEMPLATE_VBOXNOCRTGCC_ASDEFS            = ASM_CALL64_GCC
-TEMPLATE_VBOXNOCRTGCC_CFLAGS            = -nostdinc -fno-strict-aliasing -fno-math-errno $(VBOX_GCC_WARN)
+TEMPLATE_VBOXNOCRTGCC_CFLAGS            = -nostdinc -fno-strict-aliasing -fno-math-errno $(VBOX_GCC_WARN) -Werror-implicit-function-declaration
 TEMPLATE_VBOXNOCRTGCC_CFLAGS.x86        = -m32
 TEMPLATE_VBOXNOCRTGCC_CFLAGS.amd64      = -m64 -mcmodel=medium -fno-common
 TEMPLATE_VBOXNOCRTGCC_CFLAGS.sparc32    = -m32
@@ -3169,11 +3173,17 @@ ifeq ($(KBUILD_TARGET),win)
 else # the GCC guys:
 
 TEMPLATE_VBOXMAINEXE_TOOL                = $(VBOX_GCC_TOOL)
-TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g -pipe $(VBOX_GCC_WARN) -Wno-long-long -Wno-non-virtual-dtor -fshort-wchar -fpermissive -fexceptions -frtti $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden) -Wshadow
+## @todo Why isn't this template using VBOX_GCC_PEDANTIC_CXX and VBOX_GCC_PEDANTIC_C?
+TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g -pipe \
+	$(VBOX_GCC_WARN) -Wno-long-long -Wno-non-virtual-dtor -Wshadow \
+	-fshort-wchar -fpermissive -fexceptions -frtti $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing \
+	$(VBOX_GCC_fvisibility-inlines-hidden) $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.x86        = -m32
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.amd64      = -m64
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile   = -finstrument-functions
-TEMPLATE_VBOXMAINEXE_CFLAGS              = -g -pipe $(VBOX_GCC_WARN) -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden) -Wshadow
+TEMPLATE_VBOXMAINEXE_CFLAGS              = -g -pipe \
+	$(VBOX_GCC_WARN) -Wno-long-long	-Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -Werror-implicit-function-declaration -Wshadow \
+	$(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_VBOXMAINEXE_CFLAGS.x86          = -m32
 TEMPLATE_VBOXMAINEXE_CFLAGS.amd64        = -m64
 TEMPLATE_VBOXMAINEXE_CFLAGS.kprofile     = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
@@ -3201,8 +3211,8 @@ TEMPLATE_VBOXMAINEXE_TOOL                = GXX4MACHO
 TEMPLATE_VBOXMAINEXE_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS)
 TEMPLATE_VBOXMAINEXE_CFLAGS             += $(VBOX_DARWIN_DEF_SDK_CFLAGS)
 TEMPLATE_VBOXMAINEXE_CXXFLAGS           += $(VBOX_DARWIN_DEF_SDK_CXXFLAGS)
-TEMPLATE_VBOXMAINEXE_OBJCFLAGS          += $(VBOX_DARWIN_DEF_SDK_OBJCFLAGS) 
-TEMPLATE_VBOXMAINEXE_OBJCXXFLAGS        += $(VBOX_DARWIN_DEF_SDK_OBJCXXFLAGS) 
+TEMPLATE_VBOXMAINEXE_OBJCFLAGS          += $(VBOX_DARWIN_DEF_SDK_OBJCFLAGS)
+TEMPLATE_VBOXMAINEXE_OBJCXXFLAGS        += $(VBOX_DARWIN_DEF_SDK_OBJCXXFLAGS)
 TEMPLATE_VBOXMAINEXE_LDFLAGS.darwin     += -bind_at_load
 TEMPLATE_VBOXMAINEXE_LDFLAGS            += $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -framework Carbon
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
@@ -3482,6 +3492,7 @@ ifdef VBOX_WITH_QTGUI
 
   TEMPLATE_VBOXQT4GUIEXE_INCS += \
  	$(LIB_SDL_INC)
+  ## @todo Use VBOX_GCC_PEDANTIC_CXX?
   TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS = \
  	-g -pipe $(filter-out -Wno-unused,$(VBOX_GCC_WARN)) -frtti -fno-exceptions -Wno-non-virtual-dtor \
  	-Wno-long-long -fshort-wchar -fno-strict-aliasing \
