@@ -71,7 +71,7 @@
 #include "vgaHW.h"
 
 /* X.org 1.3+ mode setting */
-char *strchr(const char *psz, int ch);  /* bits/string2.h, __strsep_1c. */
+#define _HAVE_STRING_ARCH_strsep /* bits/string2.h, __strsep_1c. */
 #include "xf86Crtc.h"
 #include "xf86Modes.h"
 
