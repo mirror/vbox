@@ -138,6 +138,8 @@ VMMR3DECL(int) PGMR3SharedModuleRegister(PVM pVM, VBOXOSFAMILY enmGuestOS, char 
 #ifdef VBOX_WITH_PAGE_SHARING
     PGMMREGISTERSHAREDMODULEREQ pReq;
 
+    Log(("PGMR3SharedModuleRegister family=%d name=%s version=%s base=%RGv size=%x cRegions=%d\n", enmGuestOS, pszModuleName, pszVersion, GCBaseAddr, cbModule, cRegions));
+          
     /* Sanity check. */
     AssertReturn(cRegions < VMMDEVSHAREDREGIONDESC_MAX, VERR_INVALID_PARAMETER);
 
@@ -197,6 +199,8 @@ VMMR3DECL(int) PGMR3SharedModuleUnregister(PVM pVM, char *pszModuleName, char *p
 {
 #ifdef VBOX_WITH_PAGE_SHARING
     PGMMUNREGISTERSHAREDMODULEREQ pReq;
+
+    Log(("PGMR3SharedModuleUnregister name=%s version=%s base=%RGv size=%x\n", pszModuleName, pszVersion, GCBaseAddr, cbModule));
 
     pReq = (PGMMUNREGISTERSHAREDMODULEREQ)RTMemAllocZ(sizeof(*pReq));
     AssertReturn(pReq, VERR_NO_MEMORY);
