@@ -265,7 +265,7 @@ static int vboxHwBufferWrite (PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO *pVbva, co
     pRecord = pVbva->pRecord;
     Assert (pRecord && (pRecord->cbRecord & VBVA_F_RECORD_PARTIAL));
 
-    dfprintf((__FUNCTION__": VW %d\n", cb));
+//    dfprintf((__FUNCTION__": VW %d\n", cb));
 
     cbHwBufferAvail = vboxHwBufferAvail (pVBVA);
 

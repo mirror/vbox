@@ -78,12 +78,14 @@ VBoxDispD3D_TEMPLATE = VBOXGUESTR3DLL
 VBoxDispD3D_DEFS     = UNICODE _UNICODE
 VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispD3D.cpp \
+    wddm/VBoxDispD3DIf.cpp \
 	wddm/VBoxDispD3D.def \
 	wddm/VBoxDispD3D.rc
 VBoxDispD3D_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3)
 VBoxDispD3D_SDKS     = WINDDKWLH
+# VBoxDispD3D_INCS    += ../Wine/include
 
  ifeq ($(KBUILD_TARGET_ARCH), amd64)
 DLLS += VBoxDispD3D64
