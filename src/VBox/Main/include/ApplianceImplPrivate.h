@@ -126,8 +126,8 @@ struct MyHardDiskAttachment
     Bstr                bstrUuid;
     ComPtr<IMachine>    pMachine;
     Bstr                controllerType;
-    int32_t             lChannel;
-    int32_t             lDevice;
+    int32_t             lControllerPort;        // 0-29 for SATA
+    int32_t             lDevice;                // IDE: 0 or 1, otherwise 0 always
 };
 
 ////////////////////////////////////////////////////////////////////////////////

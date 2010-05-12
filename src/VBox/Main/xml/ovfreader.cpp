@@ -400,7 +400,10 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                     else if (!strcmp(pcszItemChildName, "Connection"))
                         i.strConnection = pelmItemChild->getValue();
                     else if (!strcmp(pcszItemChildName, "Address"))
+                    {
                         i.strAddress = pelmItemChild->getValue();
+                        pelmItemChild->copyValue(i.lAddress);
+                    }
                     else if (!strcmp(pcszItemChildName, "AddressOnParent"))
                         i.strAddressOnParent = pelmItemChild->getValue();
                     else if (!strcmp(pcszItemChildName, "AllocationUnits"))
@@ -431,6 +434,8 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                 // store!
                 vsys.mapHardwareItems[i.ulInstanceID] = i;
             }
+
+            HardDiskController *pPrimaryIDEController = NULL;       // will be set once found
 
             // now go thru all hardware items and handle them according to their type;
             // in this first loop we handle all items _except_ hard disk images,
@@ -490,22 +495,38 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                         hdc.idController = i.ulInstanceID;
                         hdc.strControllerType = i.strResourceSubType;
 
-                        // if there is a numeric address tag for the IDE controller, use that;
-                        // VMware uses "0" and "1" to keep the two OVF IDE controllers apart;
-                        // otherwise use the "bus number" field which was specified in some old
-                        // OVF files (but not the standard)
-                        if (i.strAddress == "0")
-                            hdc.ulAddress = 0;
-                        else if (i.strAddress == "1")
-                            hdc.ulAddress = 1;
-                        else if (i.strAddress == "2")     // just to be sure, this doesn't seem to be used by VMware
-                            hdc.ulAddress = 2;
-                        else if (i.strAddress == "3")
-                            hdc.ulAddress = 3;
+                        hdc.lAddress = i.lAddress;
+
+                        if (!pPrimaryIDEController)
+                            // this is the first IDE controller found: then mark it as "primary"
+                            hdc.fPrimary = true;
                         else
-                            hdc.ulAddress = i.ulBusNumber;
+                        {
+                            // this is the second IDE controller found: If VMware exports two
+                            // IDE controllers, it seems that they are given an "Address" of 0
+                            // an 1, respectively, so assume address=0 means primary controller
+                            if (    pPrimaryIDEController->lAddress == 0
+                                 && hdc.lAddress == 1
+                               )
+                            {
+                                pPrimaryIDEController->fPrimary = true;
+                                hdc.fPrimary = false;
+                            }
+                            else if (    pPrimaryIDEController->lAddress == 1
+                                      && hdc.lAddress == 0
+                                    )
+                            {
+                                pPrimaryIDEController->fPrimary = false;
+                                hdc.fPrimary = false;
+                            }
+                            else
+                                // then we really can't tell, just hope for the best
+                                hdc.fPrimary = false;
+                        }
 
                         vsys.mapControllers[i.ulInstanceID] = hdc;
+                        if (!pPrimaryIDEController)
+                            pPrimaryIDEController = &vsys.mapControllers[i.ulInstanceID];
                     }
                     break;
 

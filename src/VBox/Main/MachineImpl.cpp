@@ -2765,16 +2765,16 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         {
             AutoReadLock mediumLock(pMedium COMMA_LOCKVAL_SRC_POS);
             return setError(VBOX_E_OBJECT_IN_USE,
-                            tr("Medium '%s' is already attached to device slot %d on port %d of controller '%ls' of this virtual machine"),
+                            tr("Medium '%s' is already attached to port %d, device %d of controller '%ls' of this virtual machine"),
                             pMedium->getLocationFull().raw(),
-                            aDevice,
                             aControllerPort,
+                            aDevice,
                             aControllerName);
         }
         else
             return setError(VBOX_E_OBJECT_IN_USE,
-                            tr("Device is already attached to slot %d on port %d of controller '%ls' of this virtual machine"),
-                            aDevice, aControllerPort, aControllerName);
+                            tr("Device is already attached to port %d, device %d of controller '%ls' of this virtual machine"),
+                            aControllerPort, aDevice, aControllerName);
     }
 
     Guid uuid(aId);
