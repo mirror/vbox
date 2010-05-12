@@ -2674,7 +2674,13 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             if (fMachineSettingsChanged)
             {
                 AutoWriteLock machineLock(this COMMA_LOCKVAL_SRC_POS);
-                saveSettings(&fNeedsSaveSettings, SaveS_InformCallbacksAnyway);
+                /// @todo r=klaus the SaveS_Force is right now a workaround,
+                // as something in saveSettings fails to detect deleted
+                // snapshots in some cases (2 child snapshots -> 1 child
+                // snapshot). Should be fixed, but don't drop SaveS_Force
+                // then, as it avoids a rather costly config equality check
+                // when we know that it is changed.
+                saveSettings(&fNeedsSaveSettings, SaveS_Force | SaveS_InformCallbacksAnyway);
             }
 
             if (fNeedsSaveSettings)
