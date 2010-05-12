@@ -430,6 +430,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PVMCPU pVCpu, PGMMREGISTERSHAREDM
                     }
                     /* else nothing changed (== this page is now a shared page), so no need to flush anything. */
 
+                    pVM->pgm.s.cSharedPages++;
                     PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_SHARED);
                 }
             }
