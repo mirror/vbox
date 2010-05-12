@@ -444,9 +444,9 @@ void UINewHDWzdPage4::retranslateUi()
 
     summary += QString
     (
-        "<tr><td><nobr>%1 </nobr></td><td><nobr>%2</nobr></td></tr>"
-        "<tr><td><nobr>%3 </nobr></td><td><nobr>%4</nobr></td></tr>"
-        "<tr><td><nobr>%5 </nobr></td><td><nobr>%6 (%7)</nobr></td></tr>"
+        "<tr><td><nobr>%1: </nobr></td><td><nobr>%2</nobr></td></tr>"
+        "<tr><td><nobr>%3: </nobr></td><td><nobr>%4</nobr></td></tr>"
+        "<tr><td><nobr>%5: </nobr></td><td><nobr>%6 (%7)</nobr></td></tr>"
     )
     .arg (tr("Type", "summary"), type)
     .arg (tr("Location", "summary"), location)
