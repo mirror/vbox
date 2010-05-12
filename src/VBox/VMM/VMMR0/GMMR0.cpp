@@ -3763,6 +3763,7 @@ GMMR0DECL(int) GMMR0SharedModuleCheckRange(PVM pVM, VMCPUID idCpu, PGMMREGISTERS
         if (!pGlobalRegion->paHCPhysPageID)
         {
             /* First time; create a page descriptor array. */
+            Log(("Allocate page descriptor array for %d pages\n", cPages));
             pGlobalRegion->paHCPhysPageID = (uint32_t *)RTMemAlloc(cPages * sizeof(*pGlobalRegion->paHCPhysPageID));
             if (!pGlobalRegion->paHCPhysPageID)
             {
@@ -3782,7 +3783,7 @@ GMMR0DECL(int) GMMR0SharedModuleCheckRange(PVM pVM, VMCPUID idCpu, PGMMREGISTERS
             if (paPageDesc[i].uHCPhysPageId != NIL_GMM_PAGEID)
             {
                 /* We've seen this shared page for the first time? */
-                if (pGlobalRegion->paHCPhysPageID == NIL_GMM_PAGEID)
+                if (pGlobalRegion->paHCPhysPageID[i] == NIL_GMM_PAGEID)
                 {
                     /* Easy case: just change the internal page type. */
                     PGMMPAGE pPage = gmmR0GetPage(pGMM, paPageDesc[i].uHCPhysPageId);
