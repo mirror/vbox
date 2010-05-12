@@ -1899,7 +1899,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
     static const char *sSectionItemTpl1 =
         "<tr><td width=40%><nobr><i>%1</i></nobr></td><td/><td/></tr>";
     static const char *sSectionItemTpl2 =
-        "<tr><td width=40%><nobr>%1</nobr></td><td/><td>%2</td></tr>";
+        "<tr><td width=40%><nobr>%1:</nobr></td><td/><td>%2</td></tr>";
     static const char *sSectionItemTpl3 =
         "<tr><td width=40%><nobr>%1</nobr></td><td/><td/></tr>";
 
