@@ -3861,6 +3861,8 @@ GMMR0DECL(int) GMMR0SharedModuleCheckRange(PVM pVM, VMCPUID idCpu, PGMMREGISTERS
                     if (memcmp(pbSharedPage, pbLocalPage, PAGE_SIZE))
                     {
                         Log(("Unexpected differences found between local and shared page; skip\n"));
+                        /* Signal to the caller that this one hasn't changed. */
+                        paPageDesc[i].uHCPhysPageId = NIL_GMM_PAGEID;
                         continue;
                     }
 
