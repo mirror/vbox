@@ -246,7 +246,7 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
         uint32_t uMsg;
         uint32_t uNumParms;
         VBoxServiceVerbose(3, "Control: Waiting for host msg ...\n");
-        rc = VbglR3GuestCtrlGetHostMsg(g_GuestControlSvcClientID, &uMsg, &uNumParms, 1000 /* 1s timeout */);
+        rc = VbglR3GuestCtrlGetHostMsg(g_GuestControlSvcClientID, &uMsg, &uNumParms);
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_TOO_MUCH_DATA)
@@ -263,6 +263,10 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
             VBoxServiceVerbose(3, "Control: Msg=%u (%u parms) retrieved\n", uMsg, uNumParms);
             switch(uMsg)
             {
+                case GETHOSTMSG_EXEC_HOST_CANCEL_WAIT:
+                    VBoxServiceVerbose(3, "Control: Host asked us to quit ...\n");
+                    break;
+
                 case GETHOSTMSG_EXEC_START_PROCESS:
                     rc = VBoxServiceControlHandleCmdStartProcess(g_GuestControlSvcClientID, uNumParms);
                     break;
@@ -282,9 +286,10 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
         }
 
         /* Do we need to shutdown? */
-        if (*pfShutdown)
+        if (   *pfShutdown
+            || uMsg == GETHOSTMSG_EXEC_HOST_CANCEL_WAIT)
         {
-            rc = 0;
+            rc = VINF_SUCCESS;
             break;
         }
 
@@ -301,15 +306,30 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
 /** @copydoc VBOXSERVICE::pfnStop */
 static DECLCALLBACK(void) VBoxServiceControlStop(void)
 {
+    VBoxServiceVerbose(3, "Control: Stopping ...\n");
+
     /** @todo Later, figure what to do if we're in RTProcWait(). it's a very
      *        annoying call since doesn't support timeouts in the posix world. */
     RTSemEventMultiSignal(g_hControlEvent);
+
+    /*
+     * Ask the host service to cancel all pending requests so that we can
+     * shutdown properly here. 
+     */
+    if (g_GuestControlSvcClientID)
+    {
+        int rc = VbglR3GuestCtrlCancelPendingWaits(g_GuestControlSvcClientID);
+        if (RT_FAILURE(rc))
+            VBoxServiceError("Control: Cancelling pending waits failed; rc=%Rrc\n", rc);
+    }
 }
 
 
 /** @copydoc VBOXSERVICE::pfnTerm */
 static DECLCALLBACK(void) VBoxServiceControlTerm(void)
 {
+    VBoxServiceVerbose(3, "Control: Terminating ...\n");
+
     /* Signal all threads that we want to shutdown. */
     PVBOXSERVICECTRLTHREAD pNode;
     RTListForEach(&g_GuestControlExecThreads, pNode, VBOXSERVICECTRLTHREAD, Node)
@@ -320,6 +340,7 @@ static DECLCALLBACK(void) VBoxServiceControlTerm(void)
     {
         if (pNode->Thread != NIL_RTTHREAD)
         {
+            /* Wait a bit ... */
             int rc2 = RTThreadWait(pNode->Thread, 30 * 1000 /* Wait 30 seconds max. */, NULL);
             if (RT_FAILURE(rc2))
                 VBoxServiceError("Control: Thread failed to stop; rc2=%Rrc\n", rc2);

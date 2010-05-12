@@ -357,10 +357,11 @@ int VBoxServiceStartServices(unsigned iMain)
         /* The final service runs in the main thread. */
         VBoxServiceVerbose(1, "Starting '%s' in the main thread\n", g_aServices[iMain].pDesc->pszName);
         rc = g_aServices[iMain].pDesc->pfnWorker(&g_fShutdown);
-        if (rc != VINF_SUCCESS) /* Only complain if service returned an error. Otherwise the service is a one-timer. */
-        {
-            VBoxServiceError("Service '%s' stopped unexpected; rc=%Rrc\n", g_aServices[iMain].pDesc->pszName, rc);
-        }
+        if (RT_SUCCESS(rc))
+            VBoxServiceVerbose(1, "Main service '%s' successfully stopped.\n", g_aServices[iMain].pDesc->pszName);
+        else /* Only complain if service returned an error. Otherwise the service is a one-timer. */
+            VBoxServiceError("Service '%s' stopped unexpected; rc=%Rrc\n", g_aServices[iMain].pDesc->pszName, rc);           
+        g_aServices[iMain].pDesc->pfnTerm();
     }
     return rc;
 }
@@ -375,14 +376,24 @@ int VBoxServiceStartServices(unsigned iMain)
 int VBoxServiceStopServices(void)
 {
     int rc = VINF_SUCCESS;
+    int iMain = VBoxServiceGetStartedServices();
 
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
         ASMAtomicXchgBool(&g_aServices[j].fShutdown, true);
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
         if (g_aServices[j].fStarted)
+        {
+            VBoxServiceVerbose(3, "Calling stop function for service '%s' ...\n", g_aServices[j].pDesc->pszName);
             g_aServices[j].pDesc->pfnStop();
+        }
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
-        if (g_aServices[j].fEnabled)
+
+        if (    !g_aServices[j].fEnabled /* Only stop services which were started before. */
+            ||  j == iMain)              /* Don't call the termination function for main service yet. */
+        {
+            continue;
+        }
+        else
         {
             if (g_aServices[j].Thread != NIL_RTTHREAD)
             {
@@ -404,6 +415,22 @@ int VBoxServiceStopServices(void)
             g_aServices[j].pDesc->pfnTerm();
         }
 
+#ifdef RT_OS_WINDOWS
+    /* 
+     * As we're now done terminating all service threads, 
+     * we have to stop the main thread as well (if defined). Note that the termination
+     * function will be called in a later context (when the main thread returns from the worker
+     * function).
+     */
+    if (iMain != ~0U)
+    {
+        VBoxServiceVerbose(3, "Stopping main service '%s' (%d) ...\n", g_aServices[iMain].pDesc->pszName, iMain);
+
+        ASMAtomicXchgBool(&g_fShutdown, true);
+        g_aServices[iMain].pDesc->pfnStop();                      
+    }
+#endif
+    
     VBoxServiceVerbose(2, "Stopping services returned: rc=%Rrc\n", rc);
     return rc;
 }

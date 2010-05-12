@@ -219,6 +219,7 @@ private:
     int clientDisconnect(uint32_t u32ClientID, void *pvClient);
     int sendHostCmdToGuest(HostCmd *pCmd, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int retrieveNextHostCmd(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int cancelPendingWaits(uint32_t u32ClientID);
     int notifyHost(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int processHostCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     void call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
@@ -442,6 +443,29 @@ int Service::retrieveNextHostCmd(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHa
     return rc;
 }
 
+int Service::cancelPendingWaits(uint32_t u32ClientID)
+{
+    int rc = VINF_SUCCESS;
+    CallListIter it = mClientList.begin();
+    while (it != mClientList.end())
+    {
+        if (it->mClientID == u32ClientID)
+        {       
+            if (it->mNumParms >= 2)
+            {
+                it->mParms[0].setUInt32(GETHOSTMSG_EXEC_HOST_CANCEL_WAIT); /* Message ID */
+                it->mParms[1].setUInt32(0);                                /* Required parameters for message */
+            }              
+            if (mpHelpers)
+                mpHelpers->pfnCallComplete(it->mHandle, rc);      
+            it = mClientList.erase(it);
+        }
+        else
+            it++;
+    }
+    return rc;
+}
+
 int Service::notifyHost(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     LogFlowFunc(("eFunction=%ld, cParms=%ld, paParms=%p\n",
@@ -502,6 +526,7 @@ int Service::processHostCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM
                                     guest.mHandle, guest.mNumParms, guest.mParms);
 
             /* In any case the client did something, so wake up and remove from list. */
+            AssertPtr(mpHelpers);
             mpHelpers->pfnCallComplete(guest.mHandle, rc);
             mClientList.pop_front();                       
             
@@ -558,6 +583,11 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                 rc = retrieveNextHostCmd(u32ClientID, callHandle, cParms, paParms);
                 break;
 
+            case GUEST_CANCEL_PENDING_WAITS:
+                LogFlowFunc(("GUEST_CANCEL_PENDING_WAITS\n"));
+                rc = cancelPendingWaits(u32ClientID);
+                break;
+
             /* The guest notifies the host that some output at stdout/stderr is available. */
             case GUEST_EXEC_SEND_OUTPUT:
                 LogFlowFunc(("GUEST_EXEC_SEND_OUTPUT\n"));
@@ -577,6 +607,7 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
         if (rc != VINF_HGCM_ASYNC_EXECUTE)
         {
             /* Tell the client that the call is complete (unblocks waiting). */
+            AssertPtr(mpHelpers);
             mpHelpers->pfnCallComplete(callHandle, rc);
         }
     }

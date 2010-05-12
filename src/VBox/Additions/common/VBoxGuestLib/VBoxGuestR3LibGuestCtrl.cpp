@@ -102,7 +102,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t u32ClientId)
  * @param   puNumParms      Where to store the number  of parameters which will be received
  *                          in a second call to the host.
  */
-VBGLR3DECL(int) VbglR3GuestCtrlGetHostMsg(uint32_t u32ClientId, uint32_t *puMsg, uint32_t *puNumParms, uint32_t u32Timeout)
+VBGLR3DECL(int) VbglR3GuestCtrlGetHostMsg(uint32_t u32ClientId, uint32_t *puMsg, uint32_t *puNumParms)
 {
     AssertPtr(puMsg);
     AssertPtr(puNumParms);
@@ -126,6 +126,32 @@ VBGLR3DECL(int) VbglR3GuestCtrlGetHostMsg(uint32_t u32ClientId, uint32_t *puMsg,
             if (RT_SUCCESS(rc))
                 rc = Msg.hdr.result;
                 /* Ok, so now we know what message type and how much parameters there are. */
+    }
+    return rc;
+}
+
+
+/**
+ * Asks the host to cancel (release) all pending waits which were deferred.
+ *
+ * @returns VBox status code.
+ * @param   u32ClientId     The client id returned by VbglR3GuestCtrlConnect().
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(uint32_t u32ClientId)
+{
+    VBoxGuestCtrlHGCMMsgCancelPendingWaits Msg;
+
+    Msg.hdr.result = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = u32ClientId;
+    Msg.hdr.u32Function = GUEST_CANCEL_PENDING_WAITS;
+    Msg.hdr.cParms = 0;
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+            rc = rc2;
     }
     return rc;
 }
