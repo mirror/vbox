@@ -96,13 +96,17 @@ struct Property
     }
 
     /** Are two properties equal? */
-    bool operator== (const Property &prop)
+    bool operator==(const Property &prop)
     {
-        return (   mName == prop.mName
-                && mValue == prop.mValue
-                && mTimestamp == prop.mTimestamp
-                && mFlags == prop.mFlags
-               );
+        if (mTimestamp != prop.mTimestamp)
+            return false;
+        if (mFlags != prop.mFlags)
+            return false;
+        if (mName != prop.mName)
+            return false;
+        if (mValue != prop.mValue)
+            return false;
+        return true;
     }
 
     /* Is the property nil? */
@@ -163,6 +167,14 @@ private:
     PFNHGCMSVCEXT mpfnHostCallback;
     /** User data pointer to be supplied to the host callback function */
     void *mpvHostData;
+    /** The previous timestamp.
+     * This is used by getCurrentTimestamp() to decrease the chance of
+     * generating duplicate timestamps.  */
+    uint64_t mPrevTimestamp;
+    /** The number of consecutive timestamp adjustments that we've made.
+     * Together with mPrevTimestamp, this defines a set of obsolete timestamp
+     * values: {(mPrevTimestamp - mcTimestampAdjustments), ..., mPrevTimestamp} */
+    uint64_t mcTimestampAdjustments;
 
     /**
      * Get the next property change notification from the queue of saved
@@ -192,9 +204,12 @@ private:
          *  - Appears later than u64Timestamp
          *  - Matches the pszPatterns
          */
+        /** @todo r=bird: This incorrectly ASSUMES that mTimestamp is unique.
+         *  The timestamp resolution can be very coarse on windows for instance. */
         PropertyList::const_iterator it = mGuestNotifications.begin();
         for (;    it != mGuestNotifications.end()
-               && it->mTimestamp != u64Timestamp; ++it) {}
+               && it->mTimestamp != u64Timestamp; ++it)
+            {}
         if (it == mGuestNotifications.end())  /* Not found */
             it = mGuestNotifications.begin();
         else
@@ -238,6 +253,8 @@ public:
         , meGlobalFlags(NILFLAG)
         , mpfnHostCallback(NULL)
         , mpvHostData(NULL)
+        , mPrevTimestamp(0)
+        , mcTimestampAdjustments(0)
     { }
 
     /**
@@ -318,6 +335,7 @@ public:
     }
 private:
     static DECLCALLBACK(int) reqThreadFn(RTTHREAD ThreadSelf, void *pvUser);
+    uint64_t getCurrentTimestamp(void);
     int validateName(const char *pszName, uint32_t cbName);
     int validateValue(const char *pszValue, uint32_t cbValue);
     int setPropertyBlock(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
@@ -341,6 +359,31 @@ private:
     int uninit ();
 };
 
+
+/**
+ * Gets the current timestamp.
+ *
+ * Since the RTTimeNow resolution can be very coarse, this method takes some
+ * simple steps to try avoid returning the same timestamp for two consecutive
+ * calls.  Code like getOldNotification() more or less assumes unique
+ * timestamps.
+ *
+ * @returns Nanosecond timestamp.
+ */
+uint64_t Service::getCurrentTimestamp(void)
+{
+    RTTIMESPEC time;
+    uint64_t u64NanoTS = RTTimeSpecGetNano(RTTimeNow(&time));
+    if (mPrevTimestamp - u64NanoTS > mcTimestampAdjustments)
+        mcTimestampAdjustments = 0;
+    else
+    {
+        mcTimestampAdjustments++;
+        u64NanoTS = mPrevTimestamp + 1;
+    }
+    this->mPrevTimestamp = u64NanoTS;
+    return u64NanoTS;
+}
 
 /**
  * Check that a string fits our criteria for a property name.
@@ -571,8 +614,7 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
     uint32_t cchValue = 0;              /* ditto */
     uint32_t cchFlags = 0;
     uint32_t fFlags = NILFLAG;
-    RTTIMESPEC time;
-    uint64_t u64TimeNano = RTTimeSpecGetNano(RTTimeNow(&time));
+    uint64_t u64TimeNano = getCurrentTimestamp();
 
     LogFlowThisFunc(("\n"));
     /*
@@ -701,8 +743,7 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
          */
         if (rc == VINF_SUCCESS && found)
         {
-            RTTIMESPEC time;
-            uint64_t u64Timestamp = RTTimeSpecGetNano(RTTimeNow(&time));
+            uint64_t u64Timestamp = getCurrentTimestamp();
             mProperties.erase(it);
             // if (isGuest)  /* Notify the host even for properties that the host
             //                * changed.  Less efficient, but ensures consistency. */
@@ -807,28 +848,27 @@ int Service::getOldNotificationInternal(const char *pszPatterns,
                                         uint64_t u64Timestamp,
                                         Property *pProp)
 {
-    int rc = VINF_SUCCESS;
-    bool warn = false;
-
     /* We count backwards, as the guest should normally be querying the
      * most recent events. */
+    int rc = VWRN_NOT_FOUND;
     PropertyList::reverse_iterator it = mGuestNotifications.rbegin();
-    for (; it->mTimestamp != u64Timestamp && it != mGuestNotifications.rend();
-         ++it) {}
-    /* Warn if the timestamp was not found. */
-    if (it->mTimestamp != u64Timestamp)
-        warn = true;
+    for (; it != mGuestNotifications.rend(); ++it)
+        if (it->mTimestamp == u64Timestamp)
+        {
+            rc = VINF_SUCCESS;
+            break;
+        }
+
     /* Now look for an event matching the patterns supplied.  The base()
      * member conveniently points to the following element. */
     PropertyList::iterator base = it.base();
-    for (; !base->Matches(pszPatterns) && base != mGuestNotifications.end();
-         ++base) {}
-    if (RT_SUCCESS(rc) && base != mGuestNotifications.end())
-        *pProp = *base;
-    else if (RT_SUCCESS(rc))
-        *pProp = Property();
-    if (warn)
-        rc = VWRN_NOT_FOUND;
+    for (; base != mGuestNotifications.end(); ++base)
+        if (base->Matches(pszPatterns))
+        {
+            *pProp = *base;
+            return rc;
+        }
+    *pProp = Property();
     return rc;
 }
 

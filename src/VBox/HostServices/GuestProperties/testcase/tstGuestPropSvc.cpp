@@ -726,7 +726,7 @@ int testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
 {
     int rc = VINF_SUCCESS;
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
-    char chBuffer[MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN];
+    char achBuffer[MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN];
     static char szPattern[] = "";
 
     RTPrintf("Testing the GET_NOTIFICATION call.\n");
@@ -738,7 +738,7 @@ int testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
     u64Timestamp = 1;
     paParms[0].setPointer ((void *) szPattern, sizeof(szPattern));
     paParms[1].setUInt64 (u64Timestamp);
-    paParms[2].setPointer ((void *) chBuffer, getNotifications[0].cchBuffer - 1);
+    paParms[2].setPointer ((void *) achBuffer, getNotifications[0].cchBuffer - 1);
     pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL,
                     GET_NOTIFICATION, 4, paParms);
     if (   callHandle.rc != VERR_BUFFER_OVERFLOW
@@ -759,7 +759,7 @@ int testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
     {
         paParms[0].setPointer ((void *) szPattern, sizeof(szPattern));
         paParms[1].setUInt64 (u64Timestamp);
-        paParms[2].setPointer ((void *) chBuffer, sizeof(chBuffer));
+        paParms[2].setPointer ((void *) achBuffer, sizeof(achBuffer));
         pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL,
                         GET_NOTIFICATION, 4, paParms);
         if (   RT_FAILURE(callHandle.rc)
@@ -767,11 +767,11 @@ int testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
             || RT_FAILURE(paParms[1].getUInt64 (&u64Timestamp))
             || RT_FAILURE(paParms[3].getUInt32 (&u32Size))
             || u32Size != getNotifications[i].cchBuffer
-            || memcmp(chBuffer, getNotifications[i].pchBuffer, u32Size) != 0
+            || memcmp(achBuffer, getNotifications[i].pchBuffer, u32Size) != 0
            )
         {
-            RTPrintf("Failed to get notification for property '%s'.\n",
-                     getNotifications[i].pchBuffer);
+            RTPrintf("Failed to get notification for property '%s' (rc=%Rrc).\n",
+                     getNotifications[i].pchBuffer, rc);
             rc = VERR_UNRESOLVED_ERROR;
         }
     }
