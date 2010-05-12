@@ -272,30 +272,30 @@ public:
         ulong uMaxCount = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
 
         QString strToolTip = QApplication::translate("VBoxConsoleWnd",
-                                "<p style='white-space:pre'><nobr>Indicates the activity of the "
-                                "network interfaces:</nobr>%1</p>", "Network adapters tooltip");
+                                 "<p style='white-space:pre'><nobr>Indicates the activity of the "
+                                 "network interfaces:</nobr>%1</p>", "Network adapters tooltip");
 
         RTTIMESPEC time;
         uint64_t u64Now = RTTimeSpecGetNano(RTTimeNow(&time));
 
         QString strFlags, strCount;
-        ULONG64 timestamp;
-        machine.GetGuestProperty("/VirtualBox/GuestInfo/Net/Count", strCount, timestamp, strFlags);
-        bool fPropsValid = (u64Now - timestamp < UINT64_C(60000000000)); /* timeout beacon */
+        ULONG64 uTimestamp;
+        machine.GetGuestProperty("/VirtualBox/GuestInfo/Net/Count", strCount, uTimestamp, strFlags);
+        bool fPropsValid = (u64Now - uTimestamp < UINT64_C(60000000000)); /* timeout beacon */
 
-        QStringList aIp, aMac;
+        QStringList ipList, macList;
         if (fPropsValid)
         {
-            int cAdapters = RT_MIN(strCount.toInt(), uMaxCount);
-            for (int i = 0; i < cAdapters; i++)
+            int cAdapters = RT_MIN(strCount.toInt(), (int)uMaxCount);
+            for (int i = 0; i < cAdapters; ++i)
             {
-                aIp << machine.GetGuestPropertyValue(QString("/VirtualBox/GuestInfo/Net/%1/V4/IP").arg(i));
-                aMac << machine.GetGuestPropertyValue(QString("/VirtualBox/GuestInfo/Net/%1/MAC").arg(i));
+                ipList << machine.GetGuestPropertyValue(QString("/VirtualBox/GuestInfo/Net/%1/V4/IP").arg(i));
+                macList << machine.GetGuestPropertyValue(QString("/VirtualBox/GuestInfo/Net/%1/MAC").arg(i));
             }
         }
 
         ulong uEnabled = 0;
-        for (ulong uSlot = 0; uSlot < uMaxCount; ++ uSlot)
+        for (ulong uSlot = 0; uSlot < uMaxCount; ++uSlot)
         {
             const CNetworkAdapter &adapter = machine.GetNetworkAdapter(uSlot);
             if (adapter.GetEnabled())
@@ -304,9 +304,9 @@ public:
                 if (fPropsValid)
                 {
                     QString strGuestMac = adapter.GetMACAddress();
-                    int iIp = aMac.indexOf(strGuestMac);
+                    int iIp = macList.indexOf(strGuestMac);
                     if (iIp >= 0)
-                        strGuestIp = aIp[iIp];
+                        strGuestIp = ipList[iIp];
                 }
                 strFullData += QApplication::translate("VBoxConsoleWnd",
                                "<br><nobr><b>Adapter %1 (%2)</b>: %3 cable %4</nobr>", "Network adapters tooltip")
@@ -314,9 +314,9 @@ public:
                     .arg(vboxGlobal().toString(adapter.GetAttachmentType()))
                     .arg(strGuestIp.isEmpty() ? "" : "IP " + strGuestIp + ", ")
                     .arg(adapter.GetCableConnected() ?
-                          QApplication::translate("VBoxConsoleWnd", "connected", "Network adapters tooltip") :
-                          QApplication::translate("VBoxConsoleWnd", "disconnected", "Network adapters tooltip"));
-                ++ uEnabled;
+                         QApplication::translate("VBoxConsoleWnd", "connected", "Network adapters tooltip") :
+                         QApplication::translate("VBoxConsoleWnd", "disconnected", "Network adapters tooltip"));
+                ++uEnabled;
             }
         }
 
@@ -326,7 +326,7 @@ public:
 
         if (strFullData.isNull())
             strFullData = QApplication::translate("VBoxConsoleWnd",
-                             "<br><nobr><b>All network adapters are disabled</b></nobr>", "Network adapters tooltip");
+                              "<br><nobr><b>All network adapters are disabled</b></nobr>", "Network adapters tooltip");
 
         setToolTip(strToolTip.arg(strFullData));
     }
