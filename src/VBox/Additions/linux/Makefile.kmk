@@ -307,6 +307,8 @@ ifndef VBOX_OSE
  lnx_add_inst-noexec_SOURCES = \
 	$(VBOX_REL_X11_ADD_INST)vboxclient.desktop \
 	$(VBOX_REL_X11_ADD_INST)vboxvideo.ids \
+	$(VBOX_REL_X11_ADD_INST)50-vboxmouse.conf \
+	$(VBOX_REL_LNX_ADD_INST)70-xorg-vboxmouse.rules \
 	$(VBOX_REL_LNX_ADD_INST)90-vboxguest.fdi \
 	selinux-fedora/vbox_x11.pp
 
