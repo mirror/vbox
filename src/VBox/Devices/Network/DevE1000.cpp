@@ -1043,16 +1043,16 @@ struct E1kState_st
     STAMCOUNTER                         StatReceiveBytes;
     STAMCOUNTER                         StatTransmitBytes;
 #if defined(VBOX_WITH_STATISTICS) || defined(E1K_REL_STATS)
-    STAMPROFILEADV                      StatMMIOReadGC;
-    STAMPROFILEADV                      StatMMIOReadHC;
-    STAMPROFILEADV                      StatMMIOWriteGC;
-    STAMPROFILEADV                      StatMMIOWriteHC;
+    STAMPROFILEADV                      StatMMIOReadRZ;
+    STAMPROFILEADV                      StatMMIOReadR3;
+    STAMPROFILEADV                      StatMMIOWriteRZ;
+    STAMPROFILEADV                      StatMMIOWriteR3;
     STAMPROFILEADV                      StatEEPROMRead;
     STAMPROFILEADV                      StatEEPROMWrite;
-    STAMPROFILEADV                      StatIOReadGC;
-    STAMPROFILEADV                      StatIOReadHC;
-    STAMPROFILEADV                      StatIOWriteGC;
-    STAMPROFILEADV                      StatIOWriteHC;
+    STAMPROFILEADV                      StatIOReadRZ;
+    STAMPROFILEADV                      StatIOReadR3;
+    STAMPROFILEADV                      StatIOWriteRZ;
+    STAMPROFILEADV                      StatIOWriteR3;
     STAMPROFILEADV                      StatLateIntTimer;
     STAMCOUNTER                         StatLateInts;
     STAMCOUNTER                         StatIntsRaised;
@@ -1060,8 +1060,10 @@ struct E1kState_st
     STAMPROFILEADV                      StatReceive;
     STAMPROFILEADV                      StatReceiveFilter;
     STAMPROFILEADV                      StatReceiveStore;
-    STAMPROFILEADV                      StatTransmit;
-    STAMPROFILE                         StatTransmitSend;
+    STAMPROFILEADV                      StatTransmitRZ;
+    STAMPROFILEADV                      StatTransmitR3;
+    STAMPROFILE                         StatTransmitSendRZ;
+    STAMPROFILE                         StatTransmitSendR3;
     STAMPROFILE                         StatRxOverflow;
     STAMCOUNTER                         StatRxOverflowWakeup;
     STAMCOUNTER                         StatTxDescCtxNormal;
@@ -3200,9 +3202,9 @@ static void e1kTransmitFrame(E1KSTATE* pState, bool fOnWorkerThread)
             /* Release critical section to avoid deadlock in CanReceive */
             //e1kCsLeave(pState);
             e1kMutexRelease(pState);
-            STAM_PROFILE_START(&pState->StatTransmitSend, a);
+            STAM_PROFILE_START(&pState->CTX_SUFF_Z(StatTransmitSend), a);
             rc = pDrv->pfnSendBuf(pDrv, pSg, fOnWorkerThread);
-            STAM_PROFILE_STOP(&pState->StatTransmitSend, a);
+            STAM_PROFILE_STOP(&pState->CTX_SUFF_Z(StatTransmitSend), a);
             e1kMutexAcquire(pState, VERR_SEM_BUSY, RT_SRC_POS);
             //e1kCsEnter(pState, RT_SRC_POS);
         }
@@ -3621,7 +3623,7 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr, bool 
             STAM_COUNTER_INC(pDesc->data.cmd.fTSE?
                              &pState->StatTxDescTSEData:
                              &pState->StatTxDescData);
-            STAM_PROFILE_ADV_START(&pState->StatTransmit, a);
+            STAM_PROFILE_ADV_START(&pState->CTX_SUFF_Z(StatTransmit), a);
             E1K_INC_ISTAT_CNT(pState->uStatDescDat);
 
             /*
@@ -3707,7 +3709,7 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr, bool 
             }
 
             e1kDescReport(pState, pDesc, addr);
-            STAM_PROFILE_ADV_STOP(&pState->StatTransmit, a);
+            STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF_Z(StatTransmit), a);
             break;
         }
 
@@ -3719,7 +3721,7 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr, bool 
                 break;
             }
             STAM_COUNTER_INC(&pState->StatTxDescLegacy);
-            STAM_PROFILE_ADV_START(&pState->StatTransmit, a);
+            STAM_PROFILE_ADV_START(&pState->CTX_SUFF_Z(StatTransmit), a);
 
             /* First fragment: allocate new buffer. */
             if (pState->u16TxPktLen == 0)
@@ -3749,7 +3751,7 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr, bool 
             }
 
             e1kDescReport(pState, pDesc, addr);
-            STAM_PROFILE_ADV_STOP(&pState->StatTransmit, a);
+            STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF_Z(StatTransmit), a);
             break;
 
         default:
@@ -3807,7 +3809,7 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
                 e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_TXD_LOW);
             }
 
-            STAM_PROFILE_ADV_STOP(&pState->StatTransmit, a);
+            STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF_Z(StatTransmit), a);
         }
 
         /// @todo: uncomment: pState->uStatIntTXQE++;
@@ -4357,12 +4359,12 @@ PDMBOTHCBDECL(int) e1kMMIORead(PPDMDEVINS pDevIns, void *pvUser,
     NOREF(pvUser);
     E1KSTATE  *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
     uint32_t  uOffset = GCPhysAddr - pState->addrMMReg;
-    STAM_PROFILE_ADV_START(&pState->CTXSUFF(StatMMIORead), a);
+    STAM_PROFILE_ADV_START(&pState->CTX_SUFF_Z(StatMMIORead), a);
 
     Assert(uOffset < E1K_MM_SIZE);
 
     int rc = e1kRegRead(pState, uOffset, pv, cb);
-    STAM_PROFILE_ADV_STOP(&pState->CTXSUFF(StatMMIORead), a);
+    STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF_Z(StatMMIORead), a);
     return rc;
 }
 
@@ -4385,7 +4387,7 @@ PDMBOTHCBDECL(int) e1kMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
     E1KSTATE  *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
     uint32_t  uOffset = GCPhysAddr - pState->addrMMReg;
     int       rc;
-    STAM_PROFILE_ADV_START(&pState->CTXSUFF(StatMMIOWrite), a);
+    STAM_PROFILE_ADV_START(&pState->CTX_SUFF_Z(StatMMIOWrite), a);
 
     Assert(uOffset < E1K_MM_SIZE);
     if (cb != 4)
@@ -4396,7 +4398,7 @@ PDMBOTHCBDECL(int) e1kMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
     else
         rc = e1kRegWrite(pState, uOffset, pv, cb);
 
-    STAM_PROFILE_ADV_STOP(&pState->CTXSUFF(StatMMIOWrite), a);
+    STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF_Z(StatMMIOWrite), a);
     return rc;
 }
 
@@ -4418,7 +4420,7 @@ PDMBOTHCBDECL(int) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser,
     E1KSTATE   *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
     int         rc     = VINF_SUCCESS;
     const char *szInst = INSTANCE(pState);
-    STAM_PROFILE_ADV_START(&pState->CTXSUFF(StatIORead), a);
+    STAM_PROFILE_ADV_START(&pState->CTX_SUFF_Z(StatIORead), a);
 
     port -= pState->addrIOPort;
     if (cb != 4)
@@ -4446,7 +4448,7 @@ PDMBOTHCBDECL(int) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser,
         //*pRC = VERR_IOM_IOPORT_UNUSED;
         }
 
-    STAM_PROFILE_ADV_STOP(&pState->CTXSUFF(StatIORead), a);
+    STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF_Z(StatIORead), a);
     return rc;
 }
 
@@ -4469,7 +4471,7 @@ PDMBOTHCBDECL(int) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
     E1KSTATE   *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);
     int         rc     = VINF_SUCCESS;
     const char *szInst = INSTANCE(pState);
-    STAM_PROFILE_ADV_START(&pState->CTXSUFF(StatIOWrite), a);
+    STAM_PROFILE_ADV_START(&pState->CTX_SUFF_Z(StatIOWrite), a);
 
     E1kLog2(("%s e1kIOPortOut: port=%RTiop value=%08x\n", szInst, port, u32));
     if (cb != 4)
@@ -4502,7 +4504,7 @@ PDMBOTHCBDECL(int) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
         }
     }
 
-    STAM_PROFILE_ADV_STOP(&pState->CTXSUFF(StatIOWrite), a);
+    STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF_Z(StatIOWrite), a);
     return rc;
 }
 
@@ -5845,16 +5847,16 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     e1kHardReset(pState);
 
 #if defined(VBOX_WITH_STATISTICS) || defined(E1K_REL_STATS)
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatMMIOReadGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in GC",         "/Devices/E1k%d/MMIO/ReadGC", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatMMIOReadHC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in HC",         "/Devices/E1k%d/MMIO/ReadHC", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatMMIOWriteGC,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO writes in GC",        "/Devices/E1k%d/MMIO/WriteGC", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatMMIOWriteHC,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO writes in HC",        "/Devices/E1k%d/MMIO/WriteHC", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatMMIOReadRZ,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in RZ",         "/Devices/E1k%d/MMIO/ReadRZ", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatMMIOReadR3,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in R3",         "/Devices/E1k%d/MMIO/ReadR3", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatMMIOWriteRZ,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO writes in RZ",        "/Devices/E1k%d/MMIO/WriteRZ", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatMMIOWriteR3,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO writes in R3",        "/Devices/E1k%d/MMIO/WriteR3", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatEEPROMRead,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling EEPROM reads",             "/Devices/E1k%d/EEPROM/Read", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatEEPROMWrite,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling EEPROM writes",            "/Devices/E1k%d/EEPROM/Write", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOReadGC,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in GC",           "/Devices/E1k%d/IO/ReadGC", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOReadHC,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in HC",           "/Devices/E1k%d/IO/ReadHC", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOWriteGC,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in GC",          "/Devices/E1k%d/IO/WriteGC", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOWriteHC,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in HC",          "/Devices/E1k%d/IO/WriteHC", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOReadRZ,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in RZ",           "/Devices/E1k%d/IO/ReadRZ", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOReadR3,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in R3",           "/Devices/E1k%d/IO/ReadR3", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOWriteRZ,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in RZ",          "/Devices/E1k%d/IO/WriteRZ", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOWriteR3,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in R3",          "/Devices/E1k%d/IO/WriteR3", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatLateIntTimer,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling late int timer",           "/Devices/E1k%d/LateInt/Timer", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatLateInts,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of late interrupts",          "/Devices/E1k%d/LateInt/Occured", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIntsRaised,         STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of raised interrupts",        "/Devices/E1k%d/Interrupts/Raised", iInstance);
@@ -5867,11 +5869,13 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 #endif /* VBOX_WITH_STATISTICS || E1K_REL_STATS */
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Devices/E1k%d/ReceiveBytes", iInstance);
 #if defined(VBOX_WITH_STATISTICS) || defined(E1K_REL_STATS)
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTransmit,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling transmits in HC",          "/Devices/E1k%d/Transmit/Total", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTransmitRZ,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling transmits in RZ",          "/Devices/E1k%d/Transmit/TotalRZ", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTransmitR3,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling transmits in R3",          "/Devices/E1k%d/Transmit/TotalR3", iInstance);
 #endif /* VBOX_WITH_STATISTICS || E1K_REL_STATS */
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "/Devices/E1k%d/TransmitBytes", iInstance);
 #if defined(VBOX_WITH_STATISTICS) || defined(E1K_REL_STATS)
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTransmitSend,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling send transmit in HC",      "/Devices/E1k%d/Transmit/Send", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTransmitSendRZ,     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling send transmit in RZ",      "/Devices/E1k%d/Transmit/SendRZ", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTransmitSendR3,     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling send transmit in R3",      "/Devices/E1k%d/Transmit/SendR3", iInstance);
 
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTxDescCtxNormal,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of normal context descriptors","/Devices/E1k%d/TxDesc/ContexNormal", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatTxDescCtxTSE,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of TSE context descriptors",  "/Devices/E1k%d/TxDesc/ContextTSE", iInstance);
