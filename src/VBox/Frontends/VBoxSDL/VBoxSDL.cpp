@@ -688,12 +688,6 @@ static void show_usage()
              "  --[no]hwvirtex           Permit or deny the usage of VT-x/AMD-V\n"
 #endif
              "\n"
-             "  --convertSettings        Allow to auto-convert settings files\n"
-             "  --convertSettingsBackup  Allow to auto-convert settings files\n"
-             "                           but create backup copies before\n"
-             "  --convertSettingsIgnore  Allow to auto-convert settings files\n"
-             "                           but don't explicitly save the results\n"
-             "\n"
              "Key bindings:\n"
              "  <hostkey> +  f           Switch to full screen / restore to previous view\n"
              "               h           Press ACPI power button\n"
