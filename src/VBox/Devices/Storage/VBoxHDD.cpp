@@ -1283,6 +1283,7 @@ static int vdWriteHelperOptimizedCmpAndWriteAsync(PVDIOCTX pIoCtx)
             /* Block is completely unchanged, so no need to write anything. */
             LogFlowFunc(("Block didn't changed\n"));
             ASMAtomicWriteU32(&pIoCtx->cbTransferLeft, 0);
+            RTSgBufAdvance(&pIoCtxParent->SgBuf, cbThisWrite);
             return VINF_VD_ASYNC_IO_FINISHED;
         }
     }
