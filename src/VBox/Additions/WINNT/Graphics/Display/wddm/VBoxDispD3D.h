@@ -15,15 +15,17 @@
 #ifndef ___VBoxDispD3D_h___
 #define ___VBoxDispD3D_h___
 
-#ifdef DEBUG
-# define VBOXWDDMDISP_DEBUG
-#endif
+#include "VBoxDispD3DIf.h"
+
+#include <iprt/cdefs.h>
 
 typedef struct VBOXWDDMDISP_ADAPTER
 {
     HANDLE hAdapter;
     UINT uIfVersion;
     UINT uRtVersion;
+    VBOXDISPD3D D3D;
+    IDirect3D9Ex * pD3D9If;
     D3DDDI_ADAPTERCALLBACKS RtCallbacks;
 } VBOXWDDMDISP_ADAPTER, *PVBOXWDDMDISP_ADAPTER;
 
@@ -39,21 +41,9 @@ typedef struct VBOXWDDMDISP_DEVICE
     D3DDDI_CREATEDEVICEFLAGS fFlags;
 } VBOXWDDMDISP_DEVICE, *PVBOXWDDMDISP_DEVICE;
 
-#ifdef VBOXWDDMDISP_DEBUG
-VOID vboxVDbgDoPrint(LPCSTR szString, ...);
-
-#define vboxVDbgBreak() AssertBreakpoint()
-#define vboxVDbgPrint(_m) \
-    do { \
-        vboxVDbgDoPrint _m ; \
-    } while (0)
-#define vboxVDbgPrintR vboxVDbgPrint
-#define vboxVDbgPrintF vboxVDbgPrint
-#else
-#define vboxVDbgBreak() do {} while (0)
-#define vboxVDbgPrint(_m)  do {} while (0)
-#define vboxVDbgPrintR vboxVDbgPrint
-#define vboxVDbgPrintF vboxVDbgPrint
-#endif
+DECLINLINE(bool) vboxDispD3DIs3DEnabled(VBOXWDDMDISP_ADAPTER * pAdapter)
+{
+    return pAdapter->pD3D9If;
+}
 
 #endif /* #ifndef ___VBoxDispD3D_h___ */

@@ -28,6 +28,7 @@
 #include <VBox/VBoxGuestLib.h>
 
 #include "VBoxDispD3D.h"
+#include "VBoxDispD3DCmn.h"
 
 #ifdef VBOXWDDMDISP_DEBUG
 # include <stdio.h>
@@ -44,33 +45,18 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
     {
         case DLL_PROCESS_ATTACH:
         {
-            /* there __try __except are just to ensure the library does not assertion fail in case VBoxGuest is not present
-             * and VbglR3Init / VbglR3Term assertion fail */
-            __try
-            {
-//                LogRel(("VBoxDispD3D: DLL loaded.\n"));
-                RTR3Init();
-//                VbglR3Init();
-            }
-            __except (EXCEPTION_CONTINUE_EXECUTION)
-            {
-            }
+            RTR3Init();
 
+            vboxVDbgPrint(("VBoxDispD3D: DLL loaded.\n"));
+
+//                VbglR3Init();
             break;
         }
 
         case DLL_PROCESS_DETACH:
         {
-            /* there __try __except are just to ensure the library does not assertion fail in case VBoxGuest is not present
-             * and VbglR3Init / VbglR3Term assertion fail */
-//            __try
-//            {
-//                LogRel(("VBoxDispD3D: DLL unloaded.\n"));
+            vboxVDbgPrint(("VBoxDispD3D: DLL unloaded.\n"));
 //                VbglR3Term();
-//            }
-//            __except (EXCEPTION_CONTINUE_EXECUTION)
-//            {
-//            }
             /// @todo RTR3Term();
             break;
         }
@@ -900,7 +886,7 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
 {
     vboxVDbgPrint(("==> "__FUNCTION__", hAdapter(0x%p)\n", hAdapter));
 
-//    AssertBreakpoint();
+    AssertBreakpoint();
 
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)RTMemAllocZ(sizeof (VBOXWDDMDISP_DEVICE));
     if (!pDevice)
@@ -1037,16 +1023,24 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
 
     vboxVDbgPrint(("<== "__FUNCTION__", hAdapter(0x%p)\n", hAdapter));
 
-    return E_FAIL;
+    return S_OK;
 }
 
 static HRESULT APIENTRY vboxWddmDispCloseAdapter (IN HANDLE hAdapter)
 {
     vboxVDbgPrint(("==> "__FUNCTION__", hAdapter(0x%p)\n", hAdapter));
 
-//    AssertBreakpoint();
+    AssertBreakpoint();
 
-    RTMemFree(hAdapter);
+    PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)hAdapter;
+    if (pAdapter->pD3D9If)
+    {
+        HRESULT hr = pAdapter->pD3D9If->Release();
+        Assert(hr == S_OK);
+        VBoxDispD3DClose(&pAdapter->D3D);
+    }
+
+    RTMemFree(pAdapter);
 
     vboxVDbgPrint(("<== "__FUNCTION__", hAdapter(0x%p)\n", hAdapter));
 
@@ -1057,30 +1051,55 @@ HRESULT APIENTRY OpenAdapter (__inout D3DDDIARG_OPENADAPTER*  pOpenData)
 {
     vboxVDbgPrint(("==> "__FUNCTION__"\n"));
 
-//    AssertBreakpoint();
+    AssertBreakpoint();
 
+    HRESULT hr = S_OK;
     PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)RTMemAllocZ(sizeof (VBOXWDDMDISP_ADAPTER));
     Assert(pAdapter);
-    if (!pAdapter)
+    if (pAdapter)
+    {
+        pAdapter->hAdapter = pOpenData->hAdapter;
+        pAdapter->uIfVersion = pOpenData->Interface;
+        pAdapter->uRtVersion= pOpenData->Version;
+        pAdapter->RtCallbacks = *pOpenData->pAdapterCallbacks;
+
+        pOpenData->hAdapter = pAdapter;
+        pOpenData->pAdapterFuncs->pfnGetCaps = vboxWddmDispGetCaps;
+        pOpenData->pAdapterFuncs->pfnCreateDevice = vboxWddmDispCreateDevice;
+        pOpenData->pAdapterFuncs->pfnCloseAdapter = vboxWddmDispCloseAdapter;
+        pOpenData->DriverVersion = D3D_UMD_INTERFACE_VERSION;
+
+        /* try enable the 3D */
+        hr = VBoxDispD3DOpen(&pAdapter->D3D);
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+        {
+            hr = pAdapter->D3D.pfnDirect3DCreate9Ex(D3D_SDK_VERSION, &pAdapter->pD3D9If);
+            Assert(hr == S_OK);
+            if (hr == S_OK)
+            {
+                vboxVDbgPrint(("<== "__FUNCTION__", SUCCESS 3D Enabled, pAdapter (0x%p)\n", pAdapter));
+                return S_OK;
+            }
+            else
+                vboxVDbgPrintR((__FUNCTION__": pfnDirect3DCreate9Ex failed, hr (%d)\n", hr));
+        }
+        else
+            vboxVDbgPrintR((__FUNCTION__": VBoxDispD3DOpen failed, hr (%d)\n", hr));
+
+        vboxVDbgPrint(("<== "__FUNCTION__", SUCCESS 3D DISABLED, pAdapter (0x%p)\n", pAdapter));
+        return S_OK;
+//        RTMemFree(pAdapter);
+    }
+    else
     {
         vboxVDbgPrintR((__FUNCTION__": RTMemAllocZ returned NULL\n"));
-        return E_OUTOFMEMORY;
+        hr = E_OUTOFMEMORY;
     }
 
-    pAdapter->hAdapter = pOpenData->hAdapter;
-    pAdapter->uIfVersion = pOpenData->Interface;
-    pAdapter->uRtVersion= pOpenData->Version;
-    pAdapter->RtCallbacks = *pOpenData->pAdapterCallbacks;
+    vboxVDbgPrint(("<== "__FUNCTION__", FAILURE, hr (%d)\n", hr));
 
-    pOpenData->hAdapter = pAdapter;
-    pOpenData->pAdapterFuncs->pfnGetCaps = vboxWddmDispGetCaps;
-    pOpenData->pAdapterFuncs->pfnCreateDevice = vboxWddmDispCreateDevice;
-    pOpenData->pAdapterFuncs->pfnCloseAdapter = vboxWddmDispCloseAdapter;
-    pOpenData->DriverVersion = D3D_UMD_INTERFACE_VERSION;
-
-    vboxVDbgPrint(("<== "__FUNCTION__", pAdapter(0x%p)\n", pAdapter));
-
-    return S_OK;
+    return hr;
 }
 
 #ifdef VBOXWDDMDISP_DEBUG
