@@ -3497,6 +3497,7 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
             bool ret = RTAvlGCPtrInsert(&pGVM->gmm.s.pSharedModuleTree, &pRecVM->Core);
             Assert(ret);
 
+            Log(("GMMR0RegisterSharedModule: new local module %s\n", pszModuleName));
             fNewModule = true;
         }
         else
@@ -3540,6 +3541,8 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
             pRecVM->fCollision    = false;
             pGlobalModule->cUsers++;
             rc = VINF_SUCCESS;
+
+            Log(("GMMR0RegisterSharedModule: new global module %s\n", pszModuleName));
         }
         else
         {
@@ -3554,13 +3557,16 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
                 pRecVM->pGlobalModule = pGlobalModule;
                 if (    fNewModule
                     ||  pRecVM->fCollision == true) /* colliding module unregistered and new one registerd since the last check */
+                {
                     pGlobalModule->cUsers++;
-
+                    Log(("GMMR0RegisterSharedModule: using existing module %s cUser=%d!\n", pszModuleName, pGlobalModule->cUsers));
+                }
                 pRecVM->fCollision    = false;
                 rc = VINF_SUCCESS;
             }
             else
             {
+                Log(("GMMR0RegisterSharedModule: module %s collision!\n", pszModuleName));
                 pRecVM->fCollision = true;
                 rc = VINF_PGM_SHARED_MODULE_COLLISION;
                 goto end;
@@ -3624,6 +3630,8 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
     int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
     if (RT_FAILURE(rc))
         return rc;
+
+    Log(("GMMR0UnregisterSharedModule %s %s base=%RGv size %x\n", pszModuleName, pszVersion, GCBaseAddr, cbModule));
 
     /*
      * Take the sempahore and do some more validations.
