@@ -38,49 +38,6 @@ typedef struct GMMVMSIZES
 typedef GMMVMSIZES *PGMMVMSIZES;
 
 /**
- * Shared region descriptor
- */
-typedef struct GMMSHAREDREGIONDESC
-{
-    /** Region base address. */
-    RTGCPTR64           GCRegionAddr;
-    /** Region size. */
-    uint32_t            cbRegion;
-    /** Alignment. */
-    uint32_t            u32Alignment;
-    /** Pointer to physical page id array. */
-    uint32_t           *paHCPhysPageID;
-} GMMSHAREDREGIONDESC;
-/** Pointer to a GMMSHAREDREGIONDESC. */
-typedef GMMSHAREDREGIONDESC *PGMMSHAREDREGIONDESC;
-
-
-/**
- * Shared module registration info (global)
- */
-typedef struct GMMSHAREDMODULE
-{
-    /* Tree node. */
-    AVLGCPTRNODECORE            Core;
-    /** Shared module size. */
-    uint32_t                    cbModule;
-    /** Number of included region descriptors */
-    uint32_t                    cRegions;
-    /** Number of users (VMs). */
-    uint32_t                    cUsers;
-    /** Guest OS family type. */
-    VBOXOSFAMILY                enmGuestOS;
-    /** Module name */
-    char                        szName[GMM_SHARED_MODULE_MAX_NAME_STRING];
-    /** Module version */
-    char                        szVersion[GMM_SHARED_MODULE_MAX_VERSION_STRING];
-    /** Shared region descriptor(s). */
-    GMMSHAREDREGIONDESC         aRegions[1];
-} GMMSHAREDMODULE;
-/** Pointer to a GMMSHAREDMODULE. */
-typedef GMMSHAREDMODULE *PGMMSHAREDMODULE;
-
-/**
  * Shared module registration info (per VM)
  */
 typedef struct GMMSHAREDMODULEPERVM

@@ -284,8 +284,6 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES,
     /** Call PGMR0AllocateLargePage(). */
     VMMR0_DO_PGM_ALLOCATE_LARGE_HANDY_PAGE,
-    /** Call PGMR0CheckSharedModule(). */
-    VMMR0_DO_PGM_CHECK_SHARED_MODULE,
 
     /** Call GMMR0InitialReservation(). */
     VMMR0_DO_GMM_INITIAL_RESERVATION,
@@ -313,6 +311,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_GMM_UNREGISTER_SHARED_MODULE,
     /** Call GMMR0ResetSharedModules. */
     VMMR0_DO_GMM_RESET_SHARED_MODULES,
+    /** Call GMMR0CheckSharedModules. */
+    VMMR0_DO_GMM_CHECK_SHARED_MODULES,
 
     /** Set a GVMM or GMM configuration value. */
     VMMR0_DO_GCFGM_SET_VALUE,

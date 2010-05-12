@@ -20,6 +20,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PGM
 #include <VBox/pgm.h>
+#include <VBox/gmm.h>
 #include "../PGMInternal.h"
 #include <VBox/vm.h>
 #include "../PGMInline.h"
@@ -307,34 +308,30 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
  * @returns The following VBox status codes.
  *
  * @param   pVM         The VM handle.
- * @param   pVCpu       The VMCPU handle.
- * @param   pReq        Module request packet
+ * @param   idCpu       VCPU id
+ * @param   pModule     Module description
+ * @param   pGVM        Pointer to the GVM instance data.
  */
-VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PVMCPU pVCpu, PGMMREGISTERSHAREDMODULEREQ pReq)
+VMMR0DECL(int) PGMR0SharedModuleCheckRegion(PVM pVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule, PGVM pGVM)
 {
     int                rc = VINF_SUCCESS;
     PGMMSHAREDPAGEDESC paPageDesc = NULL;
     uint32_t           cbPreviousRegion  = 0;
     bool               fFlushTLBs = false;
+    PVMCPU             pVCpu = &pVM->aCpus[idCpu];
 
-    /*
-     * Validate input.
-     */
-    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
-    AssertMsgReturn(pReq->Hdr.cbReq >= sizeof(*pReq) && pReq->Hdr.cbReq == RT_UOFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[pReq->cRegions]), ("%#x != %#x\n", pReq->Hdr.cbReq, RT_UOFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[pReq->cRegions])), VERR_INVALID_PARAMETER);
-
-    Log(("PGMR0SharedModuleCheck: check %s %s base=%RGv size=%x\n", pReq->szName, pReq->szVersion, pReq->GCBaseAddr, pReq->cbModule));
+    Log(("PGMR0SharedModuleCheck: check %s %s base=%RGv size=%x\n", pModule->szName, pModule->szVersion, pModule->Core.Key, pModule->cbModule));
 
     pgmLock(pVM);
 
     /* Check every region of the shared module. */
-    for (unsigned i = 0; i < pReq->cRegions; i++)
+    for (unsigned i = 0; i < pModule->cRegions; i++)
     {
-        Assert((pReq->aRegions[i].cbRegion & 0xfff) == 0);
-        Assert((pReq->aRegions[i].GCRegionAddr & 0xfff) == 0);
+        Assert((pModule->aRegions[i].cbRegion & 0xfff) == 0);
+        Assert((pModule->aRegions[i].GCRegionAddr & 0xfff) == 0);
 
-        RTGCPTR  GCRegion  = pReq->aRegions[i].GCRegionAddr;
-        unsigned cbRegion = pReq->aRegions[i].cbRegion & ~0xfff;
+        RTGCPTR  GCRegion  = pModule->aRegions[i].GCRegionAddr;
+        unsigned cbRegion = pModule->aRegions[i].cbRegion & ~0xfff;
         unsigned idxPage = 0;
         bool     fValidChanges = false;
 
@@ -384,7 +381,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PVMCPU pVCpu, PGMMREGISTERSHAREDM
 
         if (fValidChanges)
         {
-            rc = GMMR0SharedModuleCheckRange(pVM, pVCpu->idCpu, pReq, i, idxPage, paPageDesc);
+            rc = GMMR0SharedModuleCheckRange(pGVM, pModule, i, idxPage, paPageDesc);
             AssertRC(rc);
             if (RT_FAILURE(rc))
                 break;
@@ -449,5 +446,74 @@ end:
         RTMemFree(paPageDesc);
 
     return rc;
+}
+#endif
+
+#if 0
+/**
+ * Shared module registration helper (called on the way out).
+ *
+ * @param   pVM         The VM handle.
+ * @param   pReq        Registration request info
+ */
+static DECLCALLBACK(void) pgmR3SharedModuleRegisterHelper(PVM pVM, PGMMREGISTERSHAREDMODULEREQ pReq)
+{
+    int rc;
+    
+    rc = GMMR3RegisterSharedModule(pVM, pReq);
+    Assert(rc == VINF_SUCCESS || rc == VINF_PGM_SHARED_MODULE_COLLISION || rc == VINF_PGM_SHARED_MODULE_ALREADY_REGISTERED);
+    if (rc == VINF_PGM_SHARED_MODULE_ALREADY_REGISTERED)
+    {
+        PVMCPU   pVCpu = VMMGetCpu(pVM);
+        unsigned cFlushedPages = 0;
+
+        /** todo count copy-on-write actions in the trap handler so we don't have to check everything all the time! */
+
+        /* Count the number of shared pages that were changed (copy-on-write). */
+        for (unsigned i = 0; i < pReq->cRegions; i++)
+        {
+            Assert((pReq->aRegions[i].cbRegion & 0xfff) == 0);
+            Assert((pReq->aRegions[i].GCRegionAddr & 0xfff) == 0);
+
+            RTGCPTR GCRegion  = pReq->aRegions[i].GCRegionAddr;
+            uint32_t cbRegion = pReq->aRegions[i].cbRegion & ~0xfff;
+
+            while (cbRegion)
+            {
+                RTGCPHYS GCPhys;
+                uint64_t fFlags;
+
+                rc = PGMGstGetPage(pVCpu, GCRegion, &fFlags, &GCPhys);
+                if (    rc == VINF_SUCCESS
+                    &&  !(fFlags & X86_PTE_RW))
+                {
+                    PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
+                    if (    pPage
+                        &&  !PGM_PAGE_IS_SHARED(pPage))
+                    {
+                        cFlushedPages++;
+                    }
+                }
+
+                GCRegion += PAGE_SIZE;
+                cbRegion -= PAGE_SIZE;
+            }
+        }
+
+        if (cFlushedPages > 32)
+            rc = VINF_SUCCESS;  /* force recheck below */
+    }
+    /* Full (re)check needed? */
+    if (rc == VINF_SUCCESS)
+    {
+        pReq->Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        pReq->Hdr.cbReq = RT_OFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[pReq->cRegions]);
+
+        /* We must stall other VCPUs as we'd otherwise have to send IPI flush commands for every single change we make. */
+        rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3SharedModuleRegRendezvous, pReq);
+        AssertRC(rc);
+    }
+    RTMemFree(pReq);
+    return;
 }
 #endif

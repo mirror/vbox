@@ -30,7 +30,7 @@
 #include <VBox/gvmm.h>
 #include <VBox/sup.h>
 #include <VBox/VMMDev.h> /* for VMMDEVSHAREDREGIONDESC */
-
+#include <iprt/avl.h>
 RT_C_DECLS_BEGIN
 
 /** @defgroup   grp_gmm     GMM - The Global Memory Manager
@@ -278,6 +278,7 @@ typedef GMMPAGEDESC *PGMMPAGEDESC;
 # define GMM_GCPHYS_UNSHAREABLE     UINT64_C(0x0000000fffff1000)
 #endif
 
+
 GMMR0DECL(int)  GMMR0Init(void);
 GMMR0DECL(void) GMMR0Term(void);
 GMMR0DECL(void) GMMR0InitPerVMData(PGVM pGVM);
@@ -296,6 +297,7 @@ GMMR0DECL(int)  GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3);
 GMMR0DECL(int)  GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY enmGuestOS, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule, unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions);
 GMMR0DECL(int)  GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule);
 GMMR0DECL(int)  GMMR0UnregisterAllSharedModules(PVM pVM, VMCPUID idCpu);
+GMMR0DECL(int)  GMMR0CheckSharedModules(PVM pVM, VMCPUID idCpu);
 GMMR0DECL(int)  GMMR0ResetSharedModules(PVM pVM, VMCPUID idCpu);
 
 
@@ -494,6 +496,49 @@ typedef GMMREGISTERSHAREDMODULEREQ *PGMMREGISTERSHAREDMODULEREQ;
 GMMR0DECL(int) GMMR0RegisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMREGISTERSHAREDMODULEREQ pReq);
 
 /**
+ * Shared region descriptor
+ */
+typedef struct GMMSHAREDREGIONDESC
+{
+    /** Region base address. */
+    RTGCPTR64           GCRegionAddr;
+    /** Region size. */
+    uint32_t            cbRegion;
+    /** Alignment. */
+    uint32_t            u32Alignment;
+    /** Pointer to physical page id array. */
+    uint32_t           *paHCPhysPageID;
+} GMMSHAREDREGIONDESC;
+/** Pointer to a GMMSHAREDREGIONDESC. */
+typedef GMMSHAREDREGIONDESC *PGMMSHAREDREGIONDESC;
+
+
+/**
+ * Shared module registration info (global)
+ */
+typedef struct GMMSHAREDMODULE
+{
+    /* Tree node. */
+    AVLGCPTRNODECORE            Core;
+    /** Shared module size. */
+    uint32_t                    cbModule;
+    /** Number of included region descriptors */
+    uint32_t                    cRegions;
+    /** Number of users (VMs). */
+    uint32_t                    cUsers;
+    /** Guest OS family type. */
+    VBOXOSFAMILY                enmGuestOS;
+    /** Module name */
+    char                        szName[GMM_SHARED_MODULE_MAX_NAME_STRING];
+    /** Module version */
+    char                        szVersion[GMM_SHARED_MODULE_MAX_VERSION_STRING];
+    /** Shared region descriptor(s). */
+    GMMSHAREDREGIONDESC         aRegions[1];
+} GMMSHAREDMODULE;
+/** Pointer to a GMMSHAREDMODULE. */
+typedef GMMSHAREDMODULE *PGMMSHAREDMODULE;
+
+/**
  * Page descriptor for GMMR0SharedModuleCheckRange
  */
 typedef struct GMMSHAREDPAGEDESC
@@ -510,7 +555,7 @@ typedef struct GMMSHAREDPAGEDESC
 /** Pointer to a GMMSHAREDPAGEDESC. */
 typedef GMMSHAREDPAGEDESC *PGMMSHAREDPAGEDESC;
 
-GMMR0DECL(int) GMMR0SharedModuleCheckRange(PVM pVM, VMCPUID idCpu, PGMMREGISTERSHAREDMODULEREQ pReq, unsigned idxRegion, unsigned cPages, PGMMSHAREDPAGEDESC paPageDesc);
+GMMR0DECL(int) GMMR0SharedModuleCheckRange(PGVM pGVM, PGMMSHAREDMODULE pModule, unsigned idxRegion, unsigned cPages, PGMMSHAREDPAGEDESC paPageDesc);
 
 /**
  * Request buffer for GMMR0UnregisterSharedModuleReq / VMMR0_DO_GMM_UNREGISTER_SHARED_MODULE.
@@ -561,7 +606,8 @@ GMMR3DECL(int)  GMMR3QueryHypervisorMemoryStats(PVM pVM, uint64_t *pcTotalAllocP
 GMMR3DECL(int)  GMMR3QueryMemoryStats(PVM pVM, uint64_t *pcAllocPages, uint64_t *pcMaxPages, uint64_t *pcBalloonPages);
 GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages);
 GMMR3DECL(int)  GMMR3RegisterSharedModule(PVM pVM, PGMMREGISTERSHAREDMODULEREQ pReq);
-GMMR3DECL(int)  GMMR3UnregisterSharedModule(PVM pVM, PGMMREGISTERSHAREDMODULEREQ pReq);
+GMMR3DECL(int)  GMMR3UnregisterSharedModule(PVM pVM, PGMMUNREGISTERSHAREDMODULEREQ pReq);
+GMMR3DECL(int)  GMMR3CheckSharedModules(PVM pVM);
 GMMR3DECL(int)  GMMR3ResetSharedModules(PVM pVM);
 /** @} */
 #endif /* IN_RING3 */
