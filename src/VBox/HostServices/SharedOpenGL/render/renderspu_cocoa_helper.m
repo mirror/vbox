@@ -766,14 +766,23 @@ while(0);
 
 - (void)createFBO
 {
-    GLuint fboid = m_FBOId;
+    GLint oldTexId;
+    GLint oldFBId;
     
     DEBUG_MSG(("createFBO %p\n", self));
     [self deleteFBO];
 
-if (0&&!fboid)
-    GL_SAVE_STATE;
+    //GL_SAVE_STATE;
+#if 0
+    CHECK_GL_ERROR();
+    glPushAttrib(GL_ACCUM_BUFFER_BIT);
+    glPopAttrib();
+    CHECK_GL_ERROR();
+#endif
 
+    glGetIntegerv(GL_TEXTURE_BINDING_RECTANGLE_ARB, &oldTexId);
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING_EXT, &oldFBId);
+    
     /* If not previously setup generate IDs for FBO and its associated texture. */
     if (!m_FBOId)
     {
@@ -802,7 +811,7 @@ if (0&&!fboid)
     /* Bind to FBO */
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_FBOId);
 
-    glEnable(GL_TEXTURE_RECTANGLE_ARB);
+    /*glEnable(GL_TEXTURE_RECTANGLE_ARB);*/
     
     GLfloat imageAspectRatio = m_FBOTexSize.width / m_FBOTexSize.height;
 
@@ -850,9 +859,8 @@ if (0&&!fboid)
     if (GL_FRAMEBUFFER_COMPLETE_EXT != glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT))
         DEBUG_MSG(("Framebuffer Object creation or update failed!\n"));
 
-    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-    glDisable(GL_TEXTURE_RECTANGLE_ARB);
+    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, oldTexId);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, oldFBId ? oldFBId:0);
 
     /* Is there a dock tile preview enabled in the GUI? If so setup a
      * additional thumbnail view for the dock tile. */
@@ -884,8 +892,8 @@ if (0&&!fboid)
         if (GL_FRAMEBUFFER_COMPLETE_EXT != glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT))
             DEBUG_MSG(("Framebuffer Thumb Object creation or update failed!\n"));
 
-        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
-        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, oldTexId);
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, oldFBId ? oldFBId:0);
 
         m_DockTileView = [[DockOverlayView alloc] init];
         [self reshapeDockTile];
@@ -901,8 +909,7 @@ if (0&&!fboid)
     m_paClipRects[2] = m_FBOTexSize.width;
     m_paClipRects[3] = m_FBOTexSize.height;
     
-if (0&&!fboid)
-    GL_RESTORE_STATE;
+    //GL_RESTORE_STATE;
 }
 
 - (void)deleteFBO
@@ -930,8 +937,6 @@ if (0&&!fboid)
         }
         if (m_FBOTexId > 0)
         {
-            glEnable(GL_TEXTURE_RECTANGLE_ARB);
-            glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
             glDeleteTextures(1, &m_FBOTexId);
             m_FBOTexId = 0;
         }
