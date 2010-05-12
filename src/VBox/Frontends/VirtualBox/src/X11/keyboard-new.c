@@ -530,7 +530,7 @@ X11DRV_InitKeyboardByType(Display *display)
                                 / sizeof(main_keyboard_type_list[0]));
     if (cMap >= 0)
     {
-        memcpy(keyc2scan, main_keyboard_type_scans[cMap - 1], KEYC2SCAN_SIZE);
+        memcpy(keyc2scan, main_keyboard_type_scans[cMap], KEYC2SCAN_SIZE);
         return 1;
     }
     return 0;
