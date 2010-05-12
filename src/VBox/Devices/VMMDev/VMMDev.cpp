@@ -1799,13 +1799,9 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             VMMDevSharedModuleCheckRequest *pReqModule = (VMMDevSharedModuleCheckRequest *)pRequestHeader;
 
             if (pRequestHeader->size != sizeof(VMMDevSharedModuleCheckRequest))
-            {
                 pRequestHeader->rc = VERR_INVALID_PARAMETER;
-            }
             else
-            {
-                pRequestHeader->rc = VERR_NOT_IMPLEMENTED;  /** todo remove case */
-            }
+                pRequestHeader->rc = PGMR3SharedModuleCheckAll(PDMDevHlpGetVM(pDevIns));
             break;
         }
 
