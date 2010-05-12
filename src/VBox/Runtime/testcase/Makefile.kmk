@@ -56,8 +56,8 @@ PROGRAMS += \
 	tstEnv \
 	tstErrUnique \
 	tstFile \
-	tstFileAio \
-	tstFileAppend-1 \
+	tstRTFileAio \
+	tstRTFileAppend-1 \
 	tstFileLock \
 	tstFork \
 	tstRTGetOpt \
@@ -202,11 +202,13 @@ tstErrUnique.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgdata.h
 
 tstFile_SOURCES = tstFile.cpp
 
-tstFileAppend-1_SOURCES = tstFileAppend-1.cpp
+tstRTFileAio_SOURCES = VBOXR3TSTEXE
+tstRTFileAio_SOURCES = tstRTFileAio.cpp
+
+tstRTFileAppend-1_TEMPLATE = VBOXR3TSTEXE
+tstRTFileAppend-1_SOURCES = tstRTFileAppend-1.cpp
 
 tstFileAppendWin-1_SOURCES = tstFileAppendWin-1.cpp
-
-tstFileAio_SOURCES = tstFileAio.cpp
 
 tstFileLock_SOURCES = tstFileLock.cpp
 
