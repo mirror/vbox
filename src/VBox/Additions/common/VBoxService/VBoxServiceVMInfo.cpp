@@ -470,11 +470,11 @@ int VBoxServiceVMInfoWriteNetwork()
 
         char szMac[32];
  #if defined(RT_OS_SOLARIS)
-        char *pu8Mac = &ifrequest[i].ifr_enaddr[0];
+        uint8_t *pu8Mac = (uint8_t*)&ifrequest[i].ifr_enaddr[0];
  #else
-        char *pu8Mac = &ifrequest[i].ifr_hwaddr.sa_data[0];
+        uint8_t *pu8Mac = (uint8_t*)&ifrequest[i].ifr_hwaddr.sa_data[0];
  #endif
-        RTStrPrintf(szMac, sizeof(szMac), "%02x:%02x:%02x:%02x:%02x:%02x",
+        RTStrPrintf(szMac, sizeof(szMac), "%02X%02X%02X%02X%02X%02X",
                     pu8Mac[0], pu8Mac[1], pu8Mac[2], pu8Mac[3],  pu8Mac[4], pu8Mac[5]);
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%d/MAC", cIfacesReport);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", szMac);
