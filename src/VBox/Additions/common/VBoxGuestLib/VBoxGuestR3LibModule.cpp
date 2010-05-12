@@ -57,6 +57,7 @@ VBGLR3DECL(int) VbglR3RegisterSharedModule(char *pszModuleName, char *pszVersion
     AssertReturn(pReq, VERR_NO_MEMORY);
 
     vmmdevInitRequest(&pReq->header, VMMDevReq_RegisterSharedModule);
+    pReq->header.size   = RT_OFFSETOF(VMMDevSharedModuleRegistrationRequest, aRegions[cRegions]);
     pReq->GCBaseAddr    = GCBaseAddr;
     pReq->cbModule      = cbModule;
     pReq->cRegions      = cRegions;
