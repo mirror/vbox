@@ -43,7 +43,7 @@ typedef struct VBOXWDDMDISP_DEVICE
 
 DECLINLINE(bool) vboxDispD3DIs3DEnabled(VBOXWDDMDISP_ADAPTER * pAdapter)
 {
-    return pAdapter->pD3D9If;
+    return !!(pAdapter->pD3D9If);
 }
 
 #endif /* #ifndef ___VBoxDispD3D_h___ */
