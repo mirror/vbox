@@ -299,6 +299,9 @@ void VBoxServicePageSharingInspectGuest()
     /* Delete leftover modules in the old tree. */
     RTAvlPVDestroy(&pKnownModuleTree, VBoxServicePageSharingEmptyTreeCallback, NULL);
 
+    /* Check all registered modules. */
+    VbglR3CheckSharedModules();
+
     /* Activate new module tree. */
     pKnownModuleTree = pNewTree;
 }
