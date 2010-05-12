@@ -19,7 +19,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_GROUP LOG_GROUP_PGM
+#define LOG_GROUP LOG_GROUP_PGM_PHYS
 #include <VBox/pgm.h>
 #include <VBox/stam.h>
 #include "PGMInternal.h"
