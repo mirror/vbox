@@ -40,12 +40,25 @@
 *******************************************************************************/
 
 /**
+ * Transfer direction.
+ */
+typedef enum DRVDISKAIOTXDIR
+{
+    /** Read */
+    DRVDISKAIOTXDIR_READ = 0,
+    /** Write */
+    DRVDISKAIOTXDIR_WRITE,
+    /** Flush */
+    DRVDISKAIOTXDIR_FLUSH
+} DRVDISKAIOTXDIR;
+
+/**
  * async I/O request.
  */
 typedef struct DRVDISKAIOREQ
 {
-    /** Flag whether this is a read or write request. */
-    bool      fRead;
+    /** Transfer direction. */
+    DRVDISKAIOTXDIR enmTxDir;
     /** Start offset. */
     uint64_t  off;
     /** Transfer size. */
@@ -155,21 +168,21 @@ typedef struct DRVDISKINTEGRITY
  * Allocate a new I/O request.
  *
  * @returns New I/O request.
- * @param   fRead         Flag whether this is a read or a write.
+ * @param   enmTxDir      Transfer direction.
  * @param   off           Start offset.
  * @param   paSeg         Segment array.
  * @param   cSeg          Number of segments.
  * @param   cbTransfer    Number of bytes to transfer.
  * @param   pvUser        User argument.
  */
-static PDRVDISKAIOREQ drvdiskintIoReqAlloc(bool fRead, uint64_t off, PCRTSGSEG paSeg,
+static PDRVDISKAIOREQ drvdiskintIoReqAlloc(DRVDISKAIOTXDIR enmTxDir, uint64_t off, PCRTSGSEG paSeg,
                                            unsigned cSeg, size_t cbTransfer, void *pvUser)
 {
     PDRVDISKAIOREQ pIoReq = (PDRVDISKAIOREQ)RTMemAlloc(sizeof(DRVDISKAIOREQ));
 
     if (RT_LIKELY(pIoReq))
     {
-        pIoReq->fRead      = fRead;
+        pIoReq->enmTxDir   = enmTxDir;
         pIoReq->off        = off;
         pIoReq->cbTransfer = cbTransfer;
         pIoReq->paSeg      = paSeg;
@@ -528,7 +541,7 @@ static DECLCALLBACK(int) drvdiskintStartRead(PPDMIMEDIAASYNC pInterface, uint64_
      LogFlow(("%s: uOffset=%#llx paSeg=%#p cSeg=%u cbRead=%d pvUser=%#p\n", __FUNCTION__,
              uOffset, paSeg, cSeg, cbRead, pvUser));
     PDRVDISKINTEGRITY pThis = PDMIMEDIAASYNC_2_DRVDISKINTEGRITY(pInterface);
-    PDRVDISKAIOREQ pIoReq = drvdiskintIoReqAlloc(true, uOffset, paSeg, cSeg, cbRead, pvUser);
+    PDRVDISKAIOREQ pIoReq = drvdiskintIoReqAlloc(DRVDISKAIOTXDIR_READ, uOffset, paSeg, cSeg, cbRead, pvUser);
     AssertPtr(pIoReq);
 
     if (pThis->fTraceRequests)
@@ -563,7 +576,7 @@ static DECLCALLBACK(int) drvdiskintStartWrite(PPDMIMEDIAASYNC pInterface, uint64
      LogFlow(("%s: uOffset=%#llx paSeg=%#p cSeg=%u cbWrite=%d pvUser=%#p\n", __FUNCTION__,
              uOffset, paSeg, cSeg, cbWrite, pvUser));
     PDRVDISKINTEGRITY pThis = PDMIMEDIAASYNC_2_DRVDISKINTEGRITY(pInterface);
-    PDRVDISKAIOREQ pIoReq = drvdiskintIoReqAlloc(false, uOffset, paSeg, cSeg, cbWrite, pvUser);
+    PDRVDISKAIOREQ pIoReq = drvdiskintIoReqAlloc(DRVDISKAIOTXDIR_WRITE, uOffset, paSeg, cSeg, cbWrite, pvUser);
     AssertPtr(pIoReq);
 
     if (pThis->fTraceRequests)
@@ -590,6 +603,16 @@ static DECLCALLBACK(int) drvdiskintStartWrite(PPDMIMEDIAASYNC pInterface, uint64
 
     LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
+}
+
+/** @copydoc PDMIMEDIAASYNC::pfnStartFlush */
+static DECLCALLBACK(int) drvdiskintStartFlush(PPDMIMEDIAASYNC pInterface, void *pvUser)
+{
+    PDRVDISKINTEGRITY pThis = PDMIMEDIAASYNC_2_DRVDISKINTEGRITY(pInterface);
+    PDRVDISKAIOREQ pIoReq = drvdiskintIoReqAlloc(DRVDISKAIOTXDIR_FLUSH, 0, NULL, 0, 0, pvUser);
+    AssertPtr(pIoReq);
+
+    return pThis->pDrvMediaAsync->pfnStartFlush(pThis->pDrvMediaAsync, pIoReq);
 }
 
 /** @copydoc PDMIMEDIA::pfnFlush */
@@ -671,10 +694,12 @@ static DECLCALLBACK(int) drvdiskintAsyncTransferCompleteNotify(PPDMIMEDIAASYNCPO
 
     if (RT_SUCCESS(rcReq) && pThis->fCheckConsistency)
     {
-        if (pIoReq->fRead)
+        if (pIoReq->enmTxDir == DRVDISKAIOTXDIR_READ)
             rc = drvdiskintReadVerify(pThis, pIoReq->paSeg, pIoReq->cSeg, pIoReq->off, pIoReq->cbTransfer);
-        else
+        else if (pIoReq->enmTxDir == DRVDISKAIOTXDIR_WRITE)
             rc = drvdiskintWriteRecord(pThis, pIoReq->paSeg, pIoReq->cSeg, pIoReq->off, pIoReq->cbTransfer);
+        else
+            AssertMsg(pIoReq->enmTxDir == DRVDISKAIOTXDIR_FLUSH, ("Huh?\n"));
 
         AssertRC(rc);
     }
@@ -788,6 +813,7 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     /* IMediaAsync */
     pThis->IMediaAsync.pfnStartRead      = drvdiskintStartRead;
     pThis->IMediaAsync.pfnStartWrite     = drvdiskintStartWrite;
+    pThis->IMediaAsync.pfnStartFlush     = drvdiskintStartFlush;
 
     /* IMediaAsyncPort. */
     pThis->IMediaAsyncPort.pfnTransferCompleteNotify  = drvdiskintAsyncTransferCompleteNotify;
