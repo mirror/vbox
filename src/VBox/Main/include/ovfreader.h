@@ -216,6 +216,7 @@ struct VirtualHardwareItem
                                         // listed in the NetworkSection at the outermost envelope level." We ignore this and only set up
                                         // a network adapter depending on the network name.
     iprt::MiniString strAddress;                 // "Device-specific. For an Ethernet adapter, this specifies the MAC address."
+    int32_t lAddress;                   // strAddress as an integer, if applicable.
     iprt::MiniString strAddressOnParent;         // "For a device, this specifies its location on the controller."
     iprt::MiniString strAllocationUnits;         // "Specifies the units of allocation used. For example, “byte * 2^20”."
     uint64_t ullVirtualQuantity;        // "Specifies the quantity of resources presented. For example, “256”."
@@ -261,13 +262,15 @@ struct HardDiskController
             // note that we treat LsiLogicSAS as a SCSI controller (system == SCSI) even though VirtualBox
             // treats it as a fourth class besides IDE, SATA, SCSI
 
-    uint32_t                ulAddress;          // controller index; this is determined heuristically by the OVF reader and will
-                                                // be 0 for the first controller of this type (e.g. IDE primary ctler), 1 for the
-                                                // next (e.g. IDE secondary ctler)
+    int32_t                 lAddress;           // value from OVF "Address" element
+    bool                    fPrimary;           // controller index; this is determined heuristically by the OVF reader and will
+                                                // be true for the first controller of this type (e.g. IDE primary ctler) or
+                                                // false for the next (e.g. IDE secondary ctler)
 
     HardDiskController()
         : idController(0),
-          ulAddress(0)
+          lAddress(0),
+          fPrimary(true)
     { }
 };
 

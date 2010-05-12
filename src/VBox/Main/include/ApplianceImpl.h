@@ -140,7 +140,7 @@ private:
     void convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
                                      uint32_t ulAddressOnParent,
                                      Bstr &controllerType,
-                                     int32_t &lChannel,
+                                     int32_t &lControllerPort,
                                      int32_t &lDevice);
 
     HRESULT importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);

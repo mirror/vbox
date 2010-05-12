@@ -820,19 +820,21 @@ HRESULT Appliance::readS3(TaskOVF *pTask)
  * @param hdc in: the HardDiskController structure to attach to.
  * @param ulAddressOnParent in: the AddressOnParent parameter from OVF.
  * @param controllerType out: the name of the hard disk controller to attach to (e.g. "IDE Controller").
- * @param lChannel out: the channel (controller port) of the controller to attach to.
+ * @param lControllerPort out: the channel (controller port) of the controller to attach to.
  * @param lDevice out: the device number to attach to.
  */
 void Appliance::convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
                                             uint32_t ulAddressOnParent,
                                             Bstr &controllerType,
-                                            int32_t &lChannel,
+                                            int32_t &lControllerPort,
                                             int32_t &lDevice)
 {
+    Log(("Appliance::convertDiskAttachmentValues: hdc.system=%d, hdc.fPrimary=%d, ulAddressOnParent=%d\n", hdc.system, hdc.fPrimary, ulAddressOnParent));
+
     switch (hdc.system)
     {
         case ovf::HardDiskController::IDE:
-            // For the IDE bus, the channel parameter can be either 0 or 1, to specify the primary
+            // For the IDE bus, the port parameter can be either 0 or 1, to specify the primary
             // or secondary IDE controller, respectively. For the primary controller of the IDE bus,
             // the device number can be either 0 or 1, to specify the master or the slave device,
             // respectively. For the secondary IDE controller, the device number is always 1 because
@@ -841,42 +843,42 @@ void Appliance::convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
             switch (ulAddressOnParent)
             {
                 case 0: // master
-                    if (hdc.ulAddress == 1)
+                    if (!hdc.fPrimary)
                     {
-                        // IDE controller has address 1: then it was exported from VMware and is the secondary controller
-                        lChannel = (long)1;
+                        // secondary master
+                        lControllerPort = (long)1;
                         lDevice = (long)0;
                     }
-                    else // interpret this as primary master
+                    else // primary master
                     {
-                        lChannel = (long)0;
+                        lControllerPort = (long)0;
                         lDevice = (long)0;
                     }
                 break;
 
                 case 1: // slave
-                    if (hdc.ulAddress == 1)
+                    if (!hdc.fPrimary)
                     {
-                        // IDE controller has address 1: then it was exported from VMware and is the secondary controller
-                        lChannel = (long)1;
+                        // secondary slave
+                        lControllerPort = (long)1;
                         lDevice = (long)1;
                     }
-                    else // interpret this as primary slave
+                    else // primary slave
                     {
-                        lChannel = (long)0;
+                        lControllerPort = (long)0;
                         lDevice = (long)1;
                     }
                 break;
 
                 // used by older VBox exports
                 case 2:     // interpret this as secondary master
-                    lChannel = (long)1;
+                    lControllerPort = (long)1;
                     lDevice = (long)0;
                 break;
 
                 // used by older VBox exports
                 case 3:     // interpret this as secondary slave
-                    lChannel = (long)1;
+                    lControllerPort = (long)1;
                     lDevice = (long)1;
                 break;
 
@@ -889,18 +891,20 @@ void Appliance::convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
 
         case ovf::HardDiskController::SATA:
             controllerType = Bstr("SATA Controller");
-            lChannel = (long)ulAddressOnParent;
+            lControllerPort = (long)ulAddressOnParent;
             lDevice = (long)0;
         break;
 
         case ovf::HardDiskController::SCSI:
             controllerType = Bstr("SCSI Controller");
-            lChannel = (long)ulAddressOnParent;
+            lControllerPort = (long)ulAddressOnParent;
             lDevice = (long)0;
         break;
 
         default: break;
     }
+
+    Log(("=> lControllerPort=%d, lDevice=%d\n", lControllerPort, lDevice));
 }
 
 /**
@@ -1175,7 +1179,7 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
                 rc2 = stack.pSession->COMGETTER(Machine)(sMachine.asOutParam());
                 if (SUCCEEDED(rc2))
                 {
-                    rc2 = sMachine->DetachDevice(Bstr(mhda.controllerType), mhda.lChannel, mhda.lDevice);
+                    rc2 = sMachine->DetachDevice(Bstr(mhda.controllerType), mhda.lControllerPort, mhda.lDevice);
                     rc2 = sMachine->SaveSettings();
                 }
                 stack.pSession->Close();
@@ -1739,13 +1743,13 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 mhda.bstrUuid = bstrNewMachineId;
                 mhda.pMachine = pNewMachine;
                 mhda.controllerType = bstrName;
-                mhda.lChannel = 0;
+                mhda.lControllerPort = 0;
                 mhda.lDevice = 0;
 
                 Log(("Attaching floppy\n"));
 
                 rc = sMachine->AttachDevice(mhda.controllerType,
-                                            mhda.lChannel,
+                                            mhda.lControllerPort,
                                             mhda.lDevice,
                                             DeviceType_Floppy,
                                             NULL);
@@ -1788,13 +1792,13 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 convertDiskAttachmentValues(*pController,
                                             2,     // interpreted as secondary master
                                             mhda.controllerType,        // Bstr
-                                            mhda.lChannel,
+                                            mhda.lControllerPort,
                                             mhda.lDevice);
 
-                Log(("Attaching CD-ROM to channel %d on device %d\n", mhda.lChannel, mhda.lDevice));
+                Log(("Attaching CD-ROM to port %d on device %d\n", mhda.lControllerPort, mhda.lDevice));
 
                 rc = sMachine->AttachDevice(mhda.controllerType,
-                                            mhda.lChannel,
+                                            mhda.lControllerPort,
                                             mhda.lDevice,
                                             DeviceType_DVD,
                                             NULL);
@@ -1881,13 +1885,13 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 convertDiskAttachmentValues(hdc,
                                             ovfVdisk.ulAddressOnParent,
                                             mhda.controllerType,        // Bstr
-                                            mhda.lChannel,
+                                            mhda.lControllerPort,
                                             mhda.lDevice);
 
-                Log(("Attaching disk %s to channel %d on device %d\n", vsdeHD->strVbox.c_str(), mhda.lChannel, mhda.lDevice));
+                Log(("Attaching disk %s to port %d on device %d\n", vsdeHD->strVbox.c_str(), mhda.lControllerPort, mhda.lDevice));
 
                 rc = sMachine->AttachDevice(mhda.controllerType,    // wstring name
-                                            mhda.lChannel,          // long controllerPort
+                                            mhda.lControllerPort,          // long controllerPort
                                             mhda.lDevice,           // long device
                                             DeviceType_HardDisk,    // DeviceType_T type
                                             hdId);                  // uuid id
