@@ -102,31 +102,25 @@ typedef struct IOMMMIOSTATS
     /** Avl node core with the address as Key. */
     AVLOGCPHYSNODECORE          Core;
 
-    /** Number of reads to this address from R3. */
-    STAMCOUNTER                 ReadR3;
+    /** Number of accesses (subtract ReadRZToR3 and WriteRZToR3 to get the right
+     *  number). */
+    STAMCOUNTER                 Accesses;
+
     /** Profiling read handler overhead in R3. */
-    STAMPROFILEADV              ProfReadR3;
-
-    /** Number of writes to this address from R3. */
-    STAMCOUNTER                 WriteR3;
+    STAMPROFILE                 ProfReadR3;
     /** Profiling write handler overhead in R3. */
-    STAMPROFILEADV              ProfWriteR3;
+    STAMPROFILE                 ProfWriteR3;
+    /** Counting and profiling reads in R0/RC. */
+    STAMPROFILE                 ProfReadRZ;
+    /** Counting and profiling writes in R0/RC. */
+    STAMPROFILE                 ProfWriteRZ;
 
-    /** Number of reads to this address from R0/RC. */
-    STAMCOUNTER                 ReadRZ;
-    /** Profiling read handler overhead in R0/RC. */
-    STAMPROFILEADV              ProfReadRZ;
     /** Number of reads to this address from R0/RC which was serviced in R3. */
     STAMCOUNTER                 ReadRZToR3;
-
-    /** Number of writes to this address from R0/RC. */
-    STAMCOUNTER                 WriteRZ;
-    /** Profiling write handler overhead in R0/RC. */
-    STAMPROFILEADV              ProfWriteRZ;
     /** Number of writes to this address from R0/RC which was serviced in R3. */
     STAMCOUNTER                 WriteRZToR3;
 } IOMMMIOSTATS;
-AssertCompileMemberAlignment(IOMMMIOSTATS, ReadR3, 8);
+AssertCompileMemberAlignment(IOMMMIOSTATS, Accesses, 8);
 /** Pointer to I/O port statistics. */
 typedef IOMMMIOSTATS *PIOMMMIOSTATS;
 

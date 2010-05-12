@@ -81,13 +81,14 @@ DECLINLINE(int) iomMMIODoWrite(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFau
     Assert(pStats);
 #endif
 
+    STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfWrite), a);
     int rc;
     if (RT_LIKELY(pRange->CTX_SUFF(pfnWriteCallback)))
-        rc = pRange->CTX_SUFF(pfnWriteCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhysFault, (void *)pvData, cb); /* @todo fix const!! */
+        rc = pRange->CTX_SUFF(pfnWriteCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhysFault, (void *)pvData, cb); /** @todo fix const!! */
     else
         rc = VINF_SUCCESS;
-    if (rc != VINF_IOM_HC_MMIO_WRITE)
-        STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Write));
+    STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfWrite), a);
+    STAM_COUNTER_INC(&pStats->Accesses);
     return rc;
 }
 
@@ -102,6 +103,7 @@ DECLINLINE(int) iomMMIODoRead(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhys, vo
     Assert(pStats);
 #endif
 
+    STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfRead), a);
     int rc;
     if (RT_LIKELY(pRange->CTX_SUFF(pfnReadCallback)))
         rc = pRange->CTX_SUFF(pfnReadCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys, pvValue, cbValue);
@@ -136,8 +138,8 @@ DECLINLINE(int) iomMMIODoRead(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhys, vo
                 break;
         }
     }
-    if (rc != VINF_IOM_HC_MMIO_READ)
-        STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Read));
+    STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfRead), a);
+    STAM_COUNTER_INC(&pStats->Accesses);
     return rc;
 }
 
@@ -1088,12 +1090,10 @@ int iomMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS
         ? !pRange->CTX_SUFF(pfnWriteCallback) && pRange->pfnWriteCallbackR3
         : !pRange->CTX_SUFF(pfnReadCallback)  && pRange->pfnReadCallbackR3)
     {
-# ifdef VBOX_WITH_STATISTICS
         if (uErrorCode & X86_TRAP_PF_RW)
             STAM_COUNTER_INC(&pStats->CTX_MID_Z(Write,ToR3));
         else
             STAM_COUNTER_INC(&pStats->CTX_MID_Z(Read,ToR3));
-# endif
 
         STAM_PROFILE_STOP(&pVM->iom.s.StatRZMMIOHandler, a);
         STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIOFailures);
@@ -1368,24 +1368,28 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
         return VINF_IOM_HC_MMIO_READ;
 # endif
     }
+    STAM_COUNTER_INC(&pStats->Accesses);
 #endif /* VBOX_WITH_STATISTICS */
+
     if (pRange->CTX_SUFF(pfnReadCallback))
     {
         /*
          * Perform the read and deal with the result.
          */
-#ifdef VBOX_WITH_STATISTICS
-        STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfRead), a);
-#endif
+        STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfRead), a);
         rc = pRange->CTX_SUFF(pfnReadCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys, pu32Value, (unsigned)cbValue);
-#ifdef VBOX_WITH_STATISTICS
-        STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfRead), a);
-        if (rc != VINF_IOM_HC_MMIO_READ)
-            STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Read));
-#endif
+        STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfRead), a);
         switch (rc)
         {
             case VINF_SUCCESS:
+                Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=VINF_SUCCESS\n", GCPhys, *pu32Value, cbValue));
+                iomUnlock(pVM);
+                return rc;
+#ifndef IN_RING3
+            case VINF_IOM_HC_MMIO_READ:
+            case VINF_IOM_HC_MMIO_READ_WRITE:
+                STAM_COUNTER_INC(&pStats->CTX_MID_Z(Read,ToR3));
+#endif
             default:
                 Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, *pu32Value, cbValue, rc));
                 iomUnlock(pVM);
@@ -1430,9 +1434,8 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
     /*
      * Lookup the ring-3 range.
      */
-#ifdef VBOX_WITH_STATISTICS
-    STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Read));
-#endif
+    STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfRead), a); /** @todo STAM_PROFILE_ADD_ZERO_PERIOD */
+    STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfRead), a);
     /* Unassigned memory; this is actually not supposed to happen. */
     switch (cbValue)
     {
@@ -1491,6 +1494,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, 
         return VINF_IOM_HC_MMIO_WRITE;
 # endif
     }
+    STAM_COUNTER_INC(&pStats->Accesses);
 #endif /* VBOX_WITH_STATISTICS */
 
     /*
@@ -1499,14 +1503,13 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, 
      */
     if (pRange->CTX_SUFF(pfnWriteCallback))
     {
-#ifdef VBOX_WITH_STATISTICS
-        STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfWrite), a);
-#endif
+        STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfWrite), a);
         rc = pRange->CTX_SUFF(pfnWriteCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys, &u32Value, (unsigned)cbValue);
-#ifdef VBOX_WITH_STATISTICS
-        STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfWrite), a);
-        if (rc != VINF_IOM_HC_MMIO_WRITE)
-            STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Write));
+        STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfWrite), a);
+#ifndef IN_RING3
+        if (    rc == VINF_IOM_HC_MMIO_WRITE
+            ||  rc == VINF_IOM_HC_MMIO_READ_WRITE)
+            STAM_COUNTER_INC(&pStats->CTX_MID_Z(Write,ToR3));
 #endif
         Log4(("IOMMMIOWrite: GCPhys=%RGp u32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, u32Value, cbValue, rc));
         iomUnlock(pVM);
@@ -1524,9 +1527,8 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, 
     /*
      * No write handler, nothing to do.
      */
-#ifdef VBOX_WITH_STATISTICS
-    STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Write));
-#endif
+    STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfWrite), a);
+    STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfWrite), a);
     Log4(("IOMMMIOWrite: GCPhys=%RGp u32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, u32Value, cbValue, VINF_SUCCESS));
     iomUnlock(pVM);
     return VINF_SUCCESS;
@@ -1557,9 +1559,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, 
  */
 VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, uint32_t uPrefix, uint32_t cbTransfer)
 {
-#ifdef VBOX_WITH_STATISTICS
     STAM_COUNTER_INC(&pVM->iom.s.StatInstIns);
-#endif
 
     /*
      * We do not support REPNE or decrementing destination
@@ -1720,9 +1720,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUST
  */
 VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, uint32_t uPrefix, uint32_t cbTransfer)
 {
-#ifdef VBOX_WITH_STATISTICS
     STAM_COUNTER_INC(&pVM->iom.s.StatInstOuts);
-#endif
 
     /*
      * We do not support segment prefixes, REPNE or
