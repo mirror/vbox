@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,143 +29,86 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/file.h>
+
 #include <iprt/err.h>
-#include <iprt/initterm.h>
-#include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/test.h>
 
 
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
-static int g_cErrors = 0;
-
-
-static int MyFailure(const char *pszFormat, ...)
+void tstFileAppend1(RTTEST hTest)
 {
-    va_list va;
-
-    RTPrintf("tstFileAppend-1: FATAL: ");
-    va_start(va, pszFormat);
-    RTPrintfV(pszFormat, va);
-    va_end(va);
-    g_cErrors++;
-    return 1;
-}
-
-
-void MyError(const char *pszFormat, ...)
-{
-    va_list va;
-
-    RTPrintf("tstFileAppend-1: ERROR: ");
-    va_start(va, pszFormat);
-    RTPrintfV(pszFormat, va);
-    va_end(va);
-    g_cErrors++;
-}
-
-int main()
-{
-    int rc;
-    RTFILE File;
-    int64_t off;
-    uint64_t offActual;
-    size_t cb;
-    char szBuf[256];
-
-
-    RTPrintf("tstFileAppend-1: TESTING...\n");
-
-    RTR3Init();
-
     /*
      * Open it write only and do some appending.
      * Checking that read fails and that the file position changes after the write.
      */
+    RTTestSub(hTest, "Basic 1");
     RTFileDelete("tstFileAppend-1.tst");
-    rc = RTFileOpen(&File,
-                    "tstFileAppend-1.tst",
-                      RTFILE_O_WRITE
-                    | RTFILE_O_APPEND
-                    | RTFILE_O_OPEN_CREATE
-                    | RTFILE_O_DENY_NONE
-                    | (0644 << RTFILE_O_CREATE_MODE_SHIFT)
-                   );
-    if (RT_FAILURE(rc))
-        return MyFailure("1st RTFileOpen: %Rrc\n", rc);
+    RTFILE hFile = NIL_RTFILE;
+    int rc = RTFileOpen(&hFile,
+                        "tstFileAppend-1.tst",
+                        RTFILE_O_WRITE
+                        | RTFILE_O_APPEND
+                        | RTFILE_O_OPEN_CREATE
+                        | RTFILE_O_DENY_NONE
+                        | (0644 << RTFILE_O_CREATE_MODE_SHIFT)
+                        );
+    RTTESTI_CHECK_RC_RETV(rc, VINF_SUCCESS);
 
+    uint64_t offActual = 42;
+    uint64_t off       = 0;
+    RTTESTI_CHECK_RC(rc = RTFileSeek(hFile, off, RTFILE_SEEK_CURRENT, &offActual), VINF_SUCCESS);
+    RTTESTI_CHECK_MSG(offActual == 0 || RT_FAILURE(rc), ("offActual=%llu", offActual));
+
+    RTTESTI_CHECK_RC(RTFileWrite(hFile, "0123456789", 10, NULL), VINF_SUCCESS);
+
+    offActual = 99;
     off = 0;
-    rc = RTFileSeek(File, off, RTFILE_SEEK_CURRENT, &offActual);
-    if (RT_FAILURE(rc))
-        MyError("1st RTFileSeek failed: %Rrc\n", rc);
-    else if (offActual != 0)
-        MyError("unexpected position on 1st open: %llu - expected 0\n", offActual);
+    RTTESTI_CHECK_RC(rc = RTFileSeek(hFile, off, RTFILE_SEEK_CURRENT, &offActual), VINF_SUCCESS);
+    RTTESTI_CHECK_MSG(offActual == 10 || RT_FAILURE(rc), ("offActual=%llu", offActual));
+    RTTestIPrintf(RTTESTLVL_INFO, "off=%llu after first write\n", offActual);
 
-    rc = RTFileWrite(File, "0123456789", 10, &cb);
-    if (RT_FAILURE(rc))
-        MyError("1st write fail: %Rrc\n", rc);
+    size_t  cb = 4;
+    char    szBuf[256];
+    rc = RTFileRead(hFile, szBuf, 1, &cb);
+    RTTESTI_CHECK_MSG(rc == VERR_ACCESS_DENIED || rc == VERR_INVALID_HANDLE, ("rc=%Rrc\n", rc));
 
-    off = 0;
-    rc = RTFileSeek(File, off, RTFILE_SEEK_CURRENT, &offActual);
-    if (RT_FAILURE(rc))
-        MyError("2nd RTFileSeek failed: %Rrc\n", rc);
-    else if (offActual != 10)
-        MyError("unexpected position after 1st write: %llu - expected 10\n", offActual);
-    else
-        RTPrintf("tstFileAppend-1: off=%llu after first write\n", offActual);
-
-    rc = RTFileRead(File, szBuf, 1, &cb);
-    if (RT_SUCCESS(rc))
-        MyError("read didn't fail! cb=%#lx\n", (long)cb);
-
+    offActual = 999;
     off = 5;
-    rc = RTFileSeek(File, off, RTFILE_SEEK_BEGIN, &offActual);
-    if (RT_FAILURE(rc))
-        MyError("3rd RTFileSeek failed: %Rrc\n", rc);
-    else if (offActual != 5)
-        MyError("unexpected position after 3rd set file pointer: %llu - expected 5\n", offActual);
+    RTTESTI_CHECK_RC(rc = RTFileSeek(hFile, off, RTFILE_SEEK_BEGIN, &offActual), VINF_SUCCESS);
+    RTTESTI_CHECK_MSG(offActual == 5 || RT_FAILURE(rc), ("offActual=%llu", offActual));
 
-    RTFileClose(File);
+    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
 
 
     /*
      * Open it write only and do some more appending.
      * Checking the initial position and that it changes after the write.
      */
-    rc = RTFileOpen(&File,
+    RTTestSub(hTest, "Basic 2");
+    rc = RTFileOpen(&hFile,
                     "tstFileAppend-1.tst",
                       RTFILE_O_WRITE
                     | RTFILE_O_APPEND
                     | RTFILE_O_OPEN
                     | RTFILE_O_DENY_NONE
                    );
-    if (RT_FAILURE(rc))
-        return MyFailure("2nd RTFileOpen: %Rrc\n", rc);
+    RTTESTI_CHECK_RC_RETV(rc, VINF_SUCCESS);
 
+    offActual = 99;
     off = 0;
-    rc = RTFileSeek(File, off, RTFILE_SEEK_CURRENT, &offActual);
-    if (RT_FAILURE(rc))
-        MyError("4th RTFileSeek failed: %Rrc\n", rc);
-    else if (offActual != 0)
-        MyError("unexpected position on 2nd open: %llu - expected 0\n", offActual);
-    else
-        RTPrintf("tstFileAppend-1: off=%llu on 2nd open\n", offActual);
+    RTTESTI_CHECK_RC(rc = RTFileSeek(hFile, off, RTFILE_SEEK_CURRENT, &offActual), VINF_SUCCESS);
+    RTTESTI_CHECK_MSG(offActual == 0 || RT_FAILURE(rc), ("offActual=%llu", offActual));
+    RTTestIPrintf(RTTESTLVL_INFO, "off=%llu on 2nd open\n", offActual);
 
-    rc = RTFileWrite(File, "abcdefghij", 10, &cb);
-    if (RT_FAILURE(rc))
-        MyError("2nd write fail: %Rrc\n", rc);
+    RTTESTI_CHECK_RC(rc = RTFileWrite(hFile, "abcdefghij", 10, &cb), VINF_SUCCESS);
 
+    offActual = 999;
     off = 0;
-    rc = RTFileSeek(File, off, RTFILE_SEEK_CURRENT, &offActual);
-    if (RT_FAILURE(rc))
-        MyError("5th RTFileSeek failed: %Rrc\n", rc);
-    else if (offActual != 20)
-        MyError("unexpected position after 2nd write: %llu - expected 20\n", offActual);
-    else
-        RTPrintf("tstFileAppend-1: off=%llu after 2nd write\n", offActual);
+    RTTESTI_CHECK_RC(rc = RTFileSeek(hFile, off, RTFILE_SEEK_CURRENT, &offActual), VINF_SUCCESS);
+    RTTESTI_CHECK_MSG(offActual == 20 || RT_FAILURE(rc), ("offActual=%llu", offActual));
+    RTTestIPrintf(RTTESTLVL_INFO, "off=%llu after 2nd write\n", offActual);
 
-    RTFileClose(File);
+    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
 
     /*
      * Open it read/write.
@@ -173,107 +116,94 @@ int main()
      * check the new position and see that read returns 0/EOF. Finally,
      * do some seeking and read from a new position.
      */
-    rc = RTFileOpen(&File,
+    RTTestSub(hTest, "Basic 3");
+    rc = RTFileOpen(&hFile,
                     "tstFileAppend-1.tst",
                       RTFILE_O_READWRITE
                     | RTFILE_O_APPEND
                     | RTFILE_O_OPEN
                     | RTFILE_O_DENY_NONE
                    );
-    if (RT_FAILURE(rc))
-        return MyFailure("3rd RTFileOpen: %Rrc\n", rc);
+    RTTESTI_CHECK_RC_RETV(rc, VINF_SUCCESS);
 
+    offActual = 9;
     off = 0;
-    rc = RTFileSeek(File, off, RTFILE_SEEK_CURRENT, &offActual);
-    if (RT_FAILURE(rc))
-        MyError("6th RTFileSeek failed: %Rrc\n", rc);
-    else if (offActual != 0)
-        MyError("unexpected position on 3rd open: %llu - expected 0\n", offActual);
-    else
-        RTPrintf("tstFileAppend-1: off=%llu on 3rd open\n", offActual);
+    RTTESTI_CHECK_RC(rc = RTFileSeek(hFile, off, RTFILE_SEEK_CURRENT, &offActual), VINF_SUCCESS);
+    RTTESTI_CHECK_MSG(offActual == 0 || RT_FAILURE(rc), ("offActual=%llu", offActual));
+    RTTestIPrintf(RTTESTLVL_INFO, "off=%llu on 3rd open\n", offActual);
 
-    rc = RTFileRead(File, szBuf, 10, &cb);
-    if (RT_FAILURE(rc) || cb != 10)
-        MyError("1st RTFileRead failed: %Rrc\n", rc);
-    else if (memcmp(szBuf, "0123456789", 10))
-        MyError("read the wrong stuff: %.10s - expected 0123456789\n", szBuf);
+    cb = 99;
+    RTTESTI_CHECK_RC(rc = RTFileRead(hFile, szBuf, 10, &cb), VINF_SUCCESS);
+    RTTESTI_CHECK(RT_FAILURE(rc) || cb == 10);
+    RTTESTI_CHECK_MSG(RT_FAILURE(rc) || !memcmp(szBuf, "0123456789", 10), ("read the wrong stuff: %.10s - expected 0123456789\n", szBuf));
 
+    offActual = 999;
     off = 0;
-    rc = RTFileSeek(File, off, RTFILE_SEEK_CURRENT, &offActual);
-    if (RT_FAILURE(rc))
-        MyError("7th RTFileSeek failed: %Rrc\n", rc);
-    else if (offActual != 10)
-        MyError("unexpected position after 1st read: %llu - expected 10\n", offActual);
-    else
-        RTPrintf("tstFileAppend-1: off=%llu on 1st open\n", offActual);
+    RTTESTI_CHECK_RC(rc = RTFileSeek(hFile, off, RTFILE_SEEK_CURRENT, &offActual), VINF_SUCCESS);
+    RTTESTI_CHECK_MSG(offActual == 10 || RT_FAILURE(rc), ("offActual=%llu", offActual));
+    RTTestIPrintf(RTTESTLVL_INFO, "off=%llu on 1st open\n", offActual);
 
-    rc = RTFileWrite(File, "klmnopqrst", 10, &cb);
-    if (RT_FAILURE(rc))
-        MyError("3rd write fail: %Rrc\n", rc);
+    RTTESTI_CHECK_RC(RTFileWrite(hFile, "klmnopqrst", 10, NULL), VINF_SUCCESS);
 
+    offActual = 9999;
     off = 0;
-    rc = RTFileSeek(File, off, RTFILE_SEEK_CURRENT, &offActual);
-    if (RT_FAILURE(rc))
-        MyError("8th RTFileSeek failed: %Rrc\n", rc);
-    else if (offActual != 30)
-        MyError("unexpected position after 3rd write: %llu - expected 30\n", offActual);
-    else
-        RTPrintf("tstFileAppend-1: off=%llu after 3rd write\n", offActual);
+    RTTESTI_CHECK_RC(rc = RTFileSeek(hFile, off, RTFILE_SEEK_CURRENT, &offActual), VINF_SUCCESS);
+    RTTESTI_CHECK_MSG(offActual == 30 || RT_FAILURE(rc), ("offActual=%llu", offActual));
+    RTTestIPrintf(RTTESTLVL_INFO, "off=%llu after 3rd write\n", offActual);
 
-    rc = RTFileRead(File, szBuf, 1, &cb);
-    if (RT_SUCCESS(rc) && cb != 0)
-        MyError("read after write didn't fail! cb=%#lx\n", (long)cb);
+    RTTESTI_CHECK_RC(rc = RTFileRead(hFile, szBuf, 1, NULL), VERR_EOF);
+    cb = 99;
+    RTTESTI_CHECK_RC(rc = RTFileRead(hFile, szBuf, 1, &cb), VINF_SUCCESS);
+    RTTESTI_CHECK(cb == 0);
 
+
+    offActual = 99999;
     off = 15;
-    rc = RTFileSeek(File, off, RTFILE_SEEK_BEGIN, &offActual);
-    if (RT_FAILURE(rc))
-        MyError("9th RTFileSeek failed: %Rrc\n", rc);
-    else if (offActual != 15)
-        MyError("unexpected position after 9th seek: %llu - expected 15\n", offActual);
-    else
+    RTTESTI_CHECK_RC(rc = RTFileSeek(hFile, off, RTFILE_SEEK_BEGIN, &offActual), VINF_SUCCESS);
+    RTTESTI_CHECK_MSG(offActual == 15 || RT_FAILURE(rc), ("offActual=%llu", offActual));
+    if (RT_SUCCESS(rc) && offActual == 15)
     {
-        rc = RTFileRead(File, szBuf, 10, &cb);
-        if (RT_FAILURE(rc) || cb != 10)
-            MyError("2nd RTFileRead failed: %Rrc\n", rc);
-        else if (memcmp(szBuf, "fghijklmno", 10))
-            MyError("read the wrong stuff: %.10s - expected fghijklmno\n", szBuf);
+        RTTESTI_CHECK_RC(rc = RTFileRead(hFile, szBuf, 10, NULL), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(RT_FAILURE(rc) || !memcmp(szBuf, "fghijklmno", 10), ("read the wrong stuff: %.10s - expected fghijklmno\n", szBuf));
 
+        offActual = 9999999;
         off = 0;
-        rc = RTFileSeek(File, off, RTFILE_SEEK_CURRENT, &offActual);
-        if (RT_FAILURE(rc))
-            MyError("10th RTFileSeek failed: %Rrc\n", rc);
-        else if (offActual != 25)
-            MyError("unexpected position after 2nd read: %llu - expected 25\n", offActual);
-        else
-            RTPrintf("tstFileAppend-1: off=%llu after 2nd read\n", offActual);
+        RTTESTI_CHECK_RC(rc = RTFileSeek(hFile, off, RTFILE_SEEK_CURRENT, &offActual), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(offActual == 25 || RT_FAILURE(rc), ("offActual=%llu", offActual));
+        RTTestIPrintf(RTTESTLVL_INFO, "off=%llu after 2nd read\n", offActual);
     }
 
-    RTFileClose(File);
+    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
 
     /*
      * Open it read only + append and check that we cannot write to it.
      */
-    rc = RTFileOpen(&File,
+    RTTestSub(hTest, "Basic 4");
+    rc = RTFileOpen(&hFile,
                     "tstFileAppend-1.tst",
                       RTFILE_O_READ
                     | RTFILE_O_APPEND
                     | RTFILE_O_OPEN
-                    | RTFILE_O_DENY_NONE
-                   );
-    if (RT_FAILURE(rc))
-        return MyFailure("4th RTFileOpen: %Rrc\n", rc);
+                    | RTFILE_O_DENY_NONE);
+    RTTESTI_CHECK_RC_RETV(rc, VINF_SUCCESS);
 
-    rc = RTFileWrite(File, "pqrstuvwx", 10, &cb);
-    if (RT_SUCCESS(rc))
-        MyError("write didn't fail on read-only+append open: cb=%#lx\n", (long)cb);
+    rc = RTFileWrite(hFile, "pqrstuvwx", 10, &cb);
+    RTTESTI_CHECK_MSG(rc == VERR_ACCESS_DENIED || rc == VERR_INVALID_HANDLE, ("rc=%Rrc\n", rc));
 
-    RTFileClose(File);
+    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileDelete("tstFileAppend-1.tst"), VINF_SUCCESS);
+}
+
+
+int main()
+{
+    RTTEST hTest;
+    int rc = RTTestInitAndCreate("tstRTFileAppend-1", &hTest);
+    if (rc)
+        return rc;
+    RTTestBanner(hTest);
+    tstFileAppend1(hTest);
     RTFileDelete("tstFileAppend-1.tst");
-
-    if (g_cErrors)
-        RTPrintf("tstFileAppend-1: FAILED\n");
-    else
-        RTPrintf("tstFileAppend-1: SUCCESS\n");
-    return g_cErrors ? 1 : 0;
+    return RTTestSummaryAndDestroy(hTest);
 }
 
