@@ -242,9 +242,8 @@ void VBoxServicePageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppN
                 pModule->Info     = ModuleInfo;
                 pModule->Core.Key = ModuleInfo.modBaseAddr;
                 pModule->hModule  = LoadLibraryEx(ModuleInfo.szExePath, 0, DONT_RESOLVE_DLL_REFERENCES);
-                Assert(pModule->hModule);
-
-                VBoxServicePageSharingRegisterModule(hProcess, pModule);
+                if (pModule->hModule)
+                    VBoxServicePageSharingRegisterModule(hProcess, pModule);
 
                 pRec = &pModule->Core;
             }
