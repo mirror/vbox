@@ -84,7 +84,7 @@ static DECLCALLBACK(void) pgmR3SharedModuleRegisterHelper(PVM pVM, PGMMREGISTERS
                 RTGCPHYS GCPhys;
                 uint64_t fFlags;
 
-                rc = PGMGstGetPage(pVCpu, GCRegion, &GCPhys, &fFlags);
+                rc = PGMGstGetPage(pVCpu, GCRegion, &fFlags, &GCPhys);
                 if (    rc == VINF_SUCCESS
                     &&  !(fFlags & X86_PTE_RW))
                 {
