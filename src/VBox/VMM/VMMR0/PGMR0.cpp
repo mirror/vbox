@@ -431,6 +431,8 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PVMCPU pVCpu, PGMMREGISTERSHAREDM
                 }
             }
         }
+        else
+            rc = VINF_SUCCESS;  /* nothing to do. */
     }
 
 end:
