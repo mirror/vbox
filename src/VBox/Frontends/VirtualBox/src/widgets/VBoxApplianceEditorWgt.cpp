@@ -188,6 +188,7 @@ QVariant HardwareItem::data (int aColumn, int aRole) const
                         case KVirtualSystemDescriptionType_HardDiskControllerIDE: v = VBoxApplianceEditorWgt::tr ("Hard Disk Controller (IDE)"); break;
                         case KVirtualSystemDescriptionType_HardDiskControllerSATA: v = VBoxApplianceEditorWgt::tr ("Hard Disk Controller (SATA)"); break;
                         case KVirtualSystemDescriptionType_HardDiskControllerSCSI: v = VBoxApplianceEditorWgt::tr ("Hard Disk Controller (SCSI)"); break;
+                        case KVirtualSystemDescriptionType_HardDiskControllerSAS: v = VBoxApplianceEditorWgt::tr ("Hard Disk Controller (SAS)"); break;
                         case KVirtualSystemDescriptionType_CDROM: v = VBoxApplianceEditorWgt::tr ("DVD"); break;
                         case KVirtualSystemDescriptionType_Floppy: v = VBoxApplianceEditorWgt::tr ("Floppy"); break;
                         case KVirtualSystemDescriptionType_NetworkAdapter: v = VBoxApplianceEditorWgt::tr ("Network Adapter"); break;
@@ -252,6 +253,7 @@ QVariant HardwareItem::data (int aColumn, int aRole) const
                         case KVirtualSystemDescriptionType_HardDiskControllerIDE: v = QIcon (":/ide_16px.png"); break;
                         case KVirtualSystemDescriptionType_HardDiskControllerSATA: v = QIcon (":/sata_16px.png"); break;
                         case KVirtualSystemDescriptionType_HardDiskControllerSCSI: v = QIcon (":/scsi_16px.png"); break;
+                        case KVirtualSystemDescriptionType_HardDiskControllerSAS: v = QIcon (":/scsi_16px.png"); break;
                         case KVirtualSystemDescriptionType_HardDiskImage: v = QIcon (":/hd_16px.png"); break;
                         case KVirtualSystemDescriptionType_CDROM: v = QIcon (":/cd_16px.png"); break;
                         case KVirtualSystemDescriptionType_Floppy: v = QIcon (":/fd_16px.png"); break;
@@ -666,7 +668,8 @@ VirtualSystemModel::VirtualSystemModel (QVector<CVirtualSystemDescription>& aVSD
                 /* Save the hard disk controller types in an extra map */
                 if (types[i] == KVirtualSystemDescriptionType_HardDiskControllerIDE ||
                     types[i] == KVirtualSystemDescriptionType_HardDiskControllerSATA ||
-                    types[i] == KVirtualSystemDescriptionType_HardDiskControllerSCSI)
+                    types[i] == KVirtualSystemDescriptionType_HardDiskControllerSCSI ||
+                    types[i] == KVirtualSystemDescriptionType_HardDiskControllerSAS)
                     controllerMap[i] = hi;
             }
         }
@@ -939,7 +942,8 @@ KVirtualSystemDescriptionType VirtualSystemSortProxyModel::mSortList[] =
     KVirtualSystemDescriptionType_NetworkAdapter,
     KVirtualSystemDescriptionType_HardDiskControllerIDE,
     KVirtualSystemDescriptionType_HardDiskControllerSATA,
-    KVirtualSystemDescriptionType_HardDiskControllerSCSI
+    KVirtualSystemDescriptionType_HardDiskControllerSCSI,
+    KVirtualSystemDescriptionType_HardDiskControllerSAS
 };
 
 VirtualSystemSortProxyModel::VirtualSystemSortProxyModel (QObject *aParent)

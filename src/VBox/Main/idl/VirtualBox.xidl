@@ -3463,7 +3463,7 @@
 
   <enum
     name="VirtualSystemDescriptionType"
-    uuid="aacc58de-5b45-4f82-ae2e-dd9a824fc3b5"
+    uuid="c0f8f135-3a1d-417d-afa6-b38b95a91f90"
   >
     <desc>Used with <link to="IVirtualSystemDescription" /> to describe the type of
     a configuration value.</desc>
@@ -3484,12 +3484,13 @@
     <const name="HardDiskControllerIDE" value="14" />
     <const name="HardDiskControllerSATA" value="15" />
     <const name="HardDiskControllerSCSI" value="16" />
-    <const name="HardDiskImage" value="17" />
-    <const name="Floppy" value="18" />
-    <const name="CDROM" value="19" />
-    <const name="NetworkAdapter" value="20" />
-    <const name="USBController" value="21" />
-    <const name="SoundCard" value="22" />
+    <const name="HardDiskControllerSAS" value="17" />
+    <const name="HardDiskImage" value="18" />
+    <const name="Floppy" value="19" />
+    <const name="CDROM" value="20" />
+    <const name="NetworkAdapter" value="21" />
+    <const name="USBController" value="22" />
+    <const name="SoundCard" value="23" />
 
   </enum>
 
