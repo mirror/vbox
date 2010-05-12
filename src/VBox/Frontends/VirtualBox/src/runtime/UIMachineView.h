@@ -242,11 +242,14 @@ private:
     bool m_bIsHostkeyAlone : 1;
     bool m_bIsHostkeyInCapture : 1;
     bool m_bIsMachineWindowResizeIgnored : 1;
-    bool m_fPassCAD;
+    bool m_fPassCAD : 1;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool m_fAccelerate2DVideo;
 #endif
 
+#ifdef Q_WS_WIN
+    bool m_fItsMeWhoCapturedMouse;
+#endif /* Q_WS_WIN */
 #ifdef Q_WS_MAC
     /** The current modifier key mask. Used to figure out which modifier
      *  key was pressed when we get a kEventRawKeyModifiersChanged event. */
