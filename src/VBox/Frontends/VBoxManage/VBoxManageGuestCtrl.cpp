@@ -317,10 +317,10 @@ static int handleExecProgram(HandlerArg *a)
                     {
                         if (verbose)
                             RTPrintf("No time left to wait for process!\n");
-                    }                    
+                    }
                 }
                 else if (verbose)
-                    RTPrintf("Waiting for process to exit ...\n");                        
+                    RTPrintf("Waiting for process to exit ...\n");
 
                 /* setup signal handling if cancelable */
                 ASSERT(progress);
@@ -343,11 +343,11 @@ static int handleExecProgram(HandlerArg *a)
                 SafeArray<BYTE> aOutputData;
                 while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
                 {
-                    /* 
+                    /*
                      * because we want to get all the output data even if the process
                      * already ended, we first need to check whether there is some data
                      * left to output before checking the actual timeout and is-process-completed
-                     * stuff. 
+                     * stuff.
                      */
                     if (cbOutputData <= 0)
                     {
@@ -362,10 +362,10 @@ static int handleExecProgram(HandlerArg *a)
                         }
                     }
 
-                    if (   waitForStdOut 
+                    if (   waitForStdOut
                         || waitForStdErr)
                     {
-                        CHECK_ERROR_BREAK(guest, GetProcessOutput(uPID, 0 /* aFlags */, 
+                        CHECK_ERROR_BREAK(guest, GetProcessOutput(uPID, 0 /* aFlags */,
                                                                   u32TimeoutMS, _64K, ComSafeArrayAsOutParam(aOutputData)));
                         cbOutputData = aOutputData.size();
                         if (cbOutputData > 0)
@@ -420,7 +420,7 @@ static int handleExecProgram(HandlerArg *a)
                     RTPrintf("Process execution canceled!\n");
                 }
                 else
-                {                   
+                {
                     if (fCompleted)
                     {
                         LONG iRc = false;
@@ -439,11 +439,7 @@ static int handleExecProgram(HandlerArg *a)
                             ULONG uRetStatus, uRetExitCode, uRetFlags;
                             CHECK_ERROR_BREAK(guest, GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus));
                             RTPrintf("Exit code=%u (Status=%u, Flags=%u)\n", uRetExitCode, uRetStatus, uRetFlags);
-                        }       
-                    }
-                    else /* not completed yet? -> timeout */
-                    {
-                        RTPrintf("Process timed out!\n");
+                        }
                     }
                 }
             }

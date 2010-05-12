@@ -135,16 +135,16 @@ enum eHostFn
      * The host wants to execute something in the guest. This can be a command line
      * or starting a program.
      */
-    HOST_EXEC_CMD = 1,
+    HOST_EXEC_CMD = 100,
     /**
      * Sends input data for stdin to a running process executed by HOST_EXEC_CMD.
      */
-    HOST_EXEC_SET_INPUT = 2,
+    HOST_EXEC_SET_INPUT = 101,
     /**
      * Gets the current status of a running process, e.g.
      * new data on stdout/stderr, process terminated etc.
      */
-    HOST_EXEC_GET_OUTPUT = 3
+    HOST_EXEC_GET_OUTPUT = 102
 };
 
 /**
@@ -154,17 +154,24 @@ enum eHostFn
 enum eGuestFn
 {
     /**
-     * TODO
+     * Guest waits for a new message the host wants to process on the guest side.
+     * This is a blocking call and can be deferred.
      */
     GUEST_GET_HOST_MSG = 1,
     /**
-     * TODO
+     * Guest asks the host to cancel all pending waits the guest waits on.
+     * This becomes necessary when the guest wants to quit but still waits for
+     * commands from the host.
      */
-    GUEST_EXEC_SEND_OUTPUT = 2,
+    GUEST_CANCEL_PENDING_WAITS = 2,
     /**
      * TODO
      */
-    GUEST_EXEC_SEND_STATUS = 3
+    GUEST_EXEC_SEND_OUTPUT = 100,
+    /**
+     * TODO
+     */
+    GUEST_EXEC_SEND_STATUS = 101
 };
 
 /**
@@ -174,19 +181,23 @@ enum eGuestFn
 enum eGetHostMsgFn
 {
     /**
+     * Hosts wants the guest to stop waiting for new messages.
+     */
+    GETHOSTMSG_EXEC_HOST_CANCEL_WAIT = 0,
+    /**
      * The host wants to execute something in the guest. This can be a command line
      * or starting a program.
      */
-    GETHOSTMSG_EXEC_START_PROCESS = 1,
+    GETHOSTMSG_EXEC_START_PROCESS = 100,
     /**
      * Sends input data for stdin to a running process executed by HOST_EXEC_CMD.
      */
-    GETHOSTMSG_EXEC_SEND_INPUT = 2,
+    GETHOSTMSG_EXEC_SEND_INPUT = 101,
     /**
      * Host requests the so far collected stdout/stderr output
      * from a running process executed by HOST_EXEC_CMD.
      */
-    GETHOSTMSG_EXEC_GET_OUTPUT = 3
+    GETHOSTMSG_EXEC_GET_OUTPUT = 102
 };
 
 /*
@@ -199,13 +210,18 @@ typedef struct _VBoxGuestCtrlHGCMMsgType
 
     /**
      * The returned command the host wants to
-     * execute on the guest.
+     * run on the guest.
      */
     HGCMFunctionParameter msg;       /* OUT uint32_t */
-
+    /** Number of parameters the message needs. */
     HGCMFunctionParameter num_parms; /* OUT uint32_t */
 
 } VBoxGuestCtrlHGCMMsgType;
+
+typedef struct _VBoxGuestCtrlHGCMMsgCancelPendingWaits
+{
+    VBoxGuestHGCMCallInfo hdr;
+} VBoxGuestCtrlHGCMMsgCancelPendingWaits;
 
 typedef struct _VBoxGuestCtrlHGCMMsgExecCmd
 {
