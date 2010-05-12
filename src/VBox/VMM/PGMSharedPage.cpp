@@ -108,7 +108,7 @@ static DECLCALLBACK(void) pgmR3SharedModuleRegisterHelper(PVM pVM, PGMMREGISTERS
     if (rc == VINF_SUCCESS)
     {
         pReq->Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-        pReq->Hdr.cbReq = sizeof(*pReq);
+        pReq->Hdr.cbReq = RT_OFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[pReq->cRegions]);
 
         /* We must stall other VCPUs as we'd otherwise have to send IPI flush commands for every single change we make. */
         rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3SharedModuleRegRendezvous, pReq);

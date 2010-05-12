@@ -383,7 +383,7 @@ GMMR3DECL(int)  GMMR3SeedChunk(PVM pVM, RTR3PTR pvR3)
 GMMR3DECL(int) GMMR3RegisterSharedModule(PVM pVM, PGMMREGISTERSHAREDMODULEREQ pReq)
 {
     pReq->Hdr.u32Magic  = SUPVMMR0REQHDR_MAGIC;
-    pReq->Hdr.cbReq     = RT_OFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[pReq->cRegions]);;
+    pReq->Hdr.cbReq     = RT_OFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[pReq->cRegions]);
     return VMMR3CallR0(pVM, VMMR0_DO_GMM_REGISTER_SHARED_MODULE, 0, &pReq->Hdr);
 }
 
