@@ -323,6 +323,8 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PVMCPU pVCpu, PGMMREGISTERSHAREDM
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertMsgReturn(pReq->Hdr.cbReq >= sizeof(*pReq) && pReq->Hdr.cbReq == RT_UOFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[pReq->cRegions]), ("%#x != %#x\n", pReq->Hdr.cbReq, RT_UOFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[pReq->cRegions])), VERR_INVALID_PARAMETER);
 
+    Log(("PGMR0SharedModuleCheck: check %s %s base=%RGv size=%x\n", pReq->szName, pReq->szVersion, pReq->GCBaseAddr, pReq->cbModule));
+
     pgmLock(pVM);
 
     /* Check every region of the shared module. */
@@ -403,6 +405,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PVMCPU pVCpu, PGMMREGISTERSHAREDM
                     }
                     Assert(!PGM_PAGE_IS_SHARED(pPage));
 
+                    Log(("PGMR0SharedModuleCheck: shared page gc phys %RGp host %RHp->%RHp\n", paPageDesc[i].GCPhys, PGM_PAGE_GET_HCPHYS(pPage), paPageDesc[i].HCPhys));
                     if (paPageDesc[i].HCPhys != PGM_PAGE_GET_HCPHYS(pPage))
                     {
                         bool fFlush = false;
