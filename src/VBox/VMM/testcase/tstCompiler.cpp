@@ -28,6 +28,8 @@
 #include <iprt/err.h>
 #include <VBox/x86.h>
 #include <iprt/string.h>
+#include <iprt/message.h>
+#include <iprt/initterm.h>
 
 #if 1
 
@@ -222,6 +224,10 @@ static void DisasFunction(const char *pszName, PFNRT pv)
 
 int main()
 {
+    int rc = RTR3Init();
+    if (RT_FAILURE(rc))
+        return RTMsgInitFailure(rc);
+
     RTPrintf("tstBitFields: This testcase requires manual inspection of the output!\n"
              "\n"
              "tstBitFields: The compiler must be able to combine operations when\n"
