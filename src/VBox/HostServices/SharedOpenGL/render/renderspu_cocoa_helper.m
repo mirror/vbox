@@ -860,7 +860,7 @@ while(0);
         DEBUG_MSG(("Framebuffer Object creation or update failed!\n"));
 
     glBindTexture(GL_TEXTURE_RECTANGLE_ARB, oldTexId);
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, oldFBId ? oldFBId:0);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, oldFBId ? oldFBId:m_FBOId);
 
     /* Is there a dock tile preview enabled in the GUI? If so setup a
      * additional thumbnail view for the dock tile. */
@@ -893,7 +893,7 @@ while(0);
             DEBUG_MSG(("Framebuffer Thumb Object creation or update failed!\n"));
 
         glBindTexture(GL_TEXTURE_RECTANGLE_ARB, oldTexId);
-        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, oldFBId ? oldFBId:0);
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, oldFBId ? oldFBId:m_FBOId);
 
         m_DockTileView = [[DockOverlayView alloc] init];
         [self reshapeDockTile];
