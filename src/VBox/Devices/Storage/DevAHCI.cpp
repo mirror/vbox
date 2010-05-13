@@ -5405,12 +5405,20 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
                 pAhciPort->fResetDevice = true;
                 ahciSendD2HFis(pAhciPort, pAhciPortTaskState, pAhciPortTaskState->cmdFis, true);
                 pAhciPort->aCachedTasks[pNotifierItem->iTask] = pAhciPortTaskState;
+#ifdef RT_STRICT
+                fXchg = ASMAtomicCmpXchgBool(&pAhciPortTaskState->fActive, false, true);
+                AssertMsg(fXchg, ("Task is not active\n"));
+#endif
                 return true;
             }
             else if (pAhciPort->fResetDevice) /* The bit is not set and we are in a reset state. */
             {
                 ahciFinishStorageDeviceReset(pAhciPort, pAhciPortTaskState);
                 pAhciPort->aCachedTasks[pNotifierItem->iTask] = pAhciPortTaskState;
+#ifdef RT_STRICT
+                fXchg = ASMAtomicCmpXchgBool(&pAhciPortTaskState->fActive, false, true);
+                AssertMsg(fXchg, ("Task is not active\n"));
+#endif
                 return true;
             }
             else /* We are not in a reset state update the control registers. */
