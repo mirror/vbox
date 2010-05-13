@@ -97,6 +97,14 @@ typedef enum RTFILEAIOREQSTATE
             return rc; \
     } while (0)
 
+/** Checks if a request in the given states and sserts if not. */
+#define RTFIELAIOREQ_ASSERT_STATE(pReq, State) \
+    do { \
+        AssertPtr((pReq)); \
+        Assert((pReq)->u32Magic == RTFILEAIOREQ_MAGIC); \
+        Assert((pReq)->enmState == RTFILEAIOREQSTATE_##State); \
+    } while (0)
+
 /** Sets the request into a specific state. */
 #define RTFILEAIOREQ_SET_STATE(pReq, State) \
     do { \
