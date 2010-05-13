@@ -991,7 +991,12 @@ void UIMachineLogic::sltTakeSnapshot()
 
     /* Restore the running state if needed. */
     if (!fWasPaused)
+    {
+        /* Make sure machine-state-change callback is processed: */
+        QApplication::sendPostedEvents(uisession(), UIConsoleEventType_StateChange);
+        /* Unpause VM: */
         uisession()->unpause();
+    }
 }
 
 void UIMachineLogic::sltShowInformationDialog()
