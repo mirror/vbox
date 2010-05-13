@@ -1028,6 +1028,8 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                     RTFILEAIOREQ hReq = pdmacFileAioMgrNormalRequestAlloc(pAioMgr);
                     AssertMsg(hReq != NIL_RTFILEAIOREQ, ("Out of request handles\n"));
 
+                    LogFlow(("Flush request %#p\n", hReq));
+
                     rc = RTFileAioReqPrepareFlush(hReq, pEndpoint->File, pCurr);
                     if (RT_FAILURE(rc))
                     {
@@ -1069,6 +1071,8 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                     AssertMsgFailed(("Invalid backend type %d\n", pEndpoint->enmBackendType));
 
                 AssertRC(rc);
+
+                LogFlow(("Read/Write request %#p\n", hReq));
 
                 if (hReq != NIL_RTFILEAIOREQ)
                 {
@@ -1642,12 +1646,12 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
                     else
                         cReqsWait = pAioMgr->cRequestsActive;
 
-                    LogFlow(("Waiting for %d of %d tasks to complete\n", pAioMgr->cRequestsActive, cReqsWait));
+                    LogFlow(("Waiting for %d of %d tasks to complete\n", 1, cReqsWait));
 
                     rc = RTFileAioCtxWait(pAioMgr->hAioCtx,
-                                          cReqsWait,
+                                          1,
                                           RT_INDEFINITE_WAIT, apReqs,
-                                          RT_ELEMENTS(apReqs), &cReqsCompleted);
+                                          cReqsWait, &cReqsCompleted);
                     if (RT_FAILURE(rc) && (rc != VERR_INTERRUPTED))
                         CHECK_RC(pAioMgr, rc);
 
