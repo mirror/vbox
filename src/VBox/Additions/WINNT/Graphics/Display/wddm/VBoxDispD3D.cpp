@@ -886,7 +886,7 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
 {
     vboxVDbgPrint(("==> "__FUNCTION__", hAdapter(0x%p)\n", hAdapter));
 
-    AssertBreakpoint();
+//    AssertBreakpoint();
 
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)RTMemAllocZ(sizeof (VBOXWDDMDISP_DEVICE));
     if (!pDevice)
@@ -1030,7 +1030,7 @@ static HRESULT APIENTRY vboxWddmDispCloseAdapter (IN HANDLE hAdapter)
 {
     vboxVDbgPrint(("==> "__FUNCTION__", hAdapter(0x%p)\n", hAdapter));
 
-    AssertBreakpoint();
+//    AssertBreakpoint();
 
     PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)hAdapter;
     if (pAdapter->pD3D9If)
@@ -1051,7 +1051,7 @@ HRESULT APIENTRY OpenAdapter (__inout D3DDDIARG_OPENADAPTER*  pOpenData)
 {
     vboxVDbgPrint(("==> "__FUNCTION__"\n"));
 
-    AssertBreakpoint();
+//    AssertBreakpoint();
 
     HRESULT hr = S_OK;
     PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)RTMemAllocZ(sizeof (VBOXWDDMDISP_ADAPTER));

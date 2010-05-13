@@ -5074,11 +5074,28 @@ static BOOL InitAdapters(IWineD3DImpl *This)
     if(!mod_gl) {
 #ifdef USE_WIN32_OPENGL
 #define USE_GL_FUNC(pfn) pfn = (void*)GetProcAddress(mod_gl, #pfn);
+#ifdef VBOXWDDM
+        BOOL (APIENTRY *pDrvValidateVersion)(DWORD) DECLSPEC_HIDDEN;
+        mod_gl = LoadLibraryA("VBoxOGL.dll");
+#else
         mod_gl = LoadLibraryA("opengl32.dll");
+#endif
         if(!mod_gl) {
             ERR("Can't load opengl32.dll!\n");
             goto nogl_adapter;
         }
+#ifdef VBOXWDDM
+        /* init properly */
+        pDrvValidateVersion = (void*)GetProcAddress(mod_gl, "DrvValidateVersion");
+        if(!pDrvValidateVersion) {
+            ERR("Can't get DrvValidateVersion\n");
+            goto nogl_adapter;
+        }
+        if(!pDrvValidateVersion(1)) {
+            ERR("DrvValidateVersion FAILED\n");
+            goto nogl_adapter;
+        }
+#endif
 #else
 #define USE_GL_FUNC(pfn) pfn = (void*)pwglGetProcAddress(#pfn);
         /* To bypass the opengl32 thunks load wglGetProcAddress from gdi32 (glXGetProcAddress wrapper) instead of opengl32's */
