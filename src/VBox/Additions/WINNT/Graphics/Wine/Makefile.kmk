@@ -128,6 +128,9 @@ wined3d_DEFS         = __WINESRC__ WINE_UNICODE_API="" _REENTRANT WINE_NOWINSOCK
 ifneq ($(KBUILD_TYPE),debug)
  wined3d_DEFS        += WINE_NO_DEBUG_MSGS
 endif
+ifdef VBOXWDDM
+ wined3d_DEFS        += VBOXWDDM 
+endif
 wined3d_INCS         := $(PATH_SUB_CURRENT)/include
 wined3d_SOURCES      := \
     wined3d/arb_program_shader.c \
