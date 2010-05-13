@@ -28,7 +28,6 @@
 #define FBO 1 /* Disable this to see how the output is without the FBO in the middle of the processing chain. */
 //#define SHOW_WINDOW_BACKGROUND 1 /* Define this to see the window background even if the window is clipped */
 //#define DEBUG_VERBOSE /* Define this could get some debug info about the messages flow. */
-//#define DEBUG_poetzsch 1
 
 #ifdef DEBUG_poetzsch
 #define DEBUG_MSG(text) \
@@ -691,6 +690,9 @@ while(0);
         glLoadIdentity();
         glViewport(0, 0, r.size.width, r.size.height);
         glOrtho(0, r.size.width, 0, r.size.height, -1, 1);
+        DEBUG_MSG_1(("frame[%i, %i, %i, %i]\n", (int)r.origin.x, (int)r.origin.x, (int)r.size.width, (int)r.size.height));
+        DEBUG_MSG_1(("m_Pos(%i,%i) m_Size(%i,%i)\n", (int)m_Pos.x, (int)m_Pos.y, (int)m_Size.width, (int)m_Size.height));
+        DEBUG_MSG_1(("m_RootShift(%i, %i)\n", (int)m_RootShift.x, (int)m_RootShift.y));
         glMatrixMode(GL_TEXTURE);
         glLoadIdentity();
         glTranslatef(0.0f, m_RootShift.y, 0.0f);
@@ -782,7 +784,7 @@ while(0);
 
     glGetIntegerv(GL_TEXTURE_BINDING_RECTANGLE_ARB, &oldTexId);
     glGetIntegerv(GL_FRAMEBUFFER_BINDING_EXT, &oldFBId);
-    
+
     /* If not previously setup generate IDs for FBO and its associated texture. */
     if (!m_FBOId)
     {
@@ -846,7 +848,8 @@ while(0);
     /* The GPUs like the GL_BGRA / GL_UNSIGNED_INT_8_8_8_8_REV combination
      * others are also valid, but might incur a costly software translation. */
     glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGB, m_FBOTexSize.width, m_FBOTexSize.height, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, NULL);
-    
+    DEBUG_MSG(("m_FBOTexSize(%i,%i)\n", (int)m_FBOTexSize.width, (int)m_FBOTexSize.height));
+	
     /* Now attach texture to the FBO as its color destination */
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, m_FBOTexId, 0);
 
@@ -1022,6 +1025,7 @@ while(0);
 //    [m_pGLCtx flushBuffer];
     glFlush();
 //    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+    DEBUG_MSG_1(("swapFBO bound:%i, self:%i\n", tmpFB, m_FBOId));
     if (tmpFB == m_FBOId)
     {
         if ([self lockFocusIfCanDraw])
@@ -1098,6 +1102,7 @@ while(0);
     if (m_pSharedGLCtx)
     {
         NSRect r = [self frame];
+        DEBUG_MSG_1(("rF2V frame[%i, %i, %i, %i]\n", (int)r.origin.x, (int)r.origin.y, (int)r.size.width, (int)r.size.height));
 
         if (m_FBOTexId > 0)
         {
@@ -1478,6 +1483,7 @@ void cocoaViewDisplay(NativeViewRef pView)
 {    
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 
+    DEBUG_MSG_1(("cocoaViewDisplay %p\n", pView));
     [(OverlayView*)pView swapFBO];
 
     [pPool release];
