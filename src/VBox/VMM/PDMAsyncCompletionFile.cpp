@@ -631,11 +631,7 @@ static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNO
             LogRel(("AIOMgr: Default manager type is \"%s\"\n", pdmacFileMgrTypeToName(pEpClassFile->enmMgrTypeOverride)));
 
             /* Query default backend type */
-#ifndef RT_OS_LINUX
-            rc = CFGMR3QueryStringAllocDef(pCfgNode, "FileBackend", &pszVal, "Buffered");
-#else /* Linux can't use buffered with async */
             rc = CFGMR3QueryStringAllocDef(pCfgNode, "FileBackend", &pszVal, "NonBuffered");
-#endif
             AssertLogRelRCReturn(rc, rc);
 
             rc = pdmacFileBackendTypeFromName(pszVal, &pEpClassFile->enmEpBackendDefault);
@@ -657,12 +653,7 @@ static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNO
         else
         {
             /* No configuration supplied, set defaults */
-            pEpClassFile->enmMgrTypeOverride = PDMACEPFILEMGRTYPE_ASYNC;
-#ifdef RT_OS_LINUX
             pEpClassFile->enmEpBackendDefault = PDMACFILEEPBACKEND_NON_BUFFERED;
-#else
-            pEpClassFile->enmEpBackendDefault = PDMACFILEEPBACKEND_BUFFERED;
-#endif
         }
     }
 
