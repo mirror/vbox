@@ -60,17 +60,21 @@ typedef struct DRVDISKAIOREQ
     /** Transfer direction. */
     DRVDISKAIOTXDIR enmTxDir;
     /** Start offset. */
-    uint64_t  off;
+    uint64_t        off;
     /** Transfer size. */
-    size_t    cbTransfer;
+    size_t          cbTransfer;
     /** Segment array. */
-    PCRTSGSEG paSeg;
+    PCRTSGSEG       paSeg;
     /** Number of array entries. */
-    unsigned  cSeg;
+    unsigned        cSeg;
     /** User argument */
-    void     *pvUser;
+    void           *pvUser;
     /** Slot in the array. */
-    unsigned  iSlot;
+    unsigned        iSlot;
+    /** Start timestamp */
+    uint64_t        tsStart;
+    /** Completion timestamp. */
+    uint64_t        tsComplete;
 } DRVDISKAIOREQ, *PDRVDISKAIOREQ;
 
 /**
@@ -161,6 +165,15 @@ typedef struct DRVDISKINTEGRITY
     DRVDISKAIOREQACTIVE     apReqActive[128];
     /** Next free slot in the array */
     volatile unsigned       iNextFreeSlot;
+
+    /** Flag whether we check for requests completing twice. */
+    bool                    fCheckDoubleCompletion;
+    /** Number of requests we go back. */
+    unsigned                cEntries;
+    /** Array of completed but still observed requests. */
+    PDRVDISKAIOREQ          *papIoReq;
+    /** Current entry in the array. */
+    unsigned                iEntry;
 } DRVDISKINTEGRITY, *PDRVDISKINTEGRITY;
 
 
@@ -188,9 +201,50 @@ static PDRVDISKAIOREQ drvdiskintIoReqAlloc(DRVDISKAIOTXDIR enmTxDir, uint64_t of
         pIoReq->paSeg      = paSeg;
         pIoReq->cSeg       = cSeg;
         pIoReq->pvUser     = pvUser;
+        pIoReq->iSlot      = 0;
+        pIoReq->tsStart    = RTTimeSystemMilliTS();
+        pIoReq->tsComplete = 0;
     }
 
     return pIoReq;
+}
+
+/**
+ * Free a async I/O request.
+ *
+ * @returns nothing.
+ * @param   pThis     Disk driver.
+ * @param   pIoReq    The I/O request to free.
+ */
+static void drvdiskintIoReqFree(PDRVDISKINTEGRITY pThis, PDRVDISKAIOREQ pIoReq)
+{
+    if (pThis->fCheckDoubleCompletion)
+    {
+        /* Search if the I/O request completed already. */
+        for (unsigned i = 0; i < pThis->cEntries; i++)
+        {
+            if (RT_UNLIKELY(pThis->papIoReq[i] == pIoReq))
+            {
+                RTMsgError("Request %#p completed already!\n", pIoReq);
+                RTMsgError("Start timestamp %llu Completion timestamp %llu (completed after %llu ms)\n",
+                           pIoReq->tsStart, pIoReq->tsComplete, pIoReq->tsComplete - pIoReq->tsStart);
+                RTAssertDebugBreak();
+            }
+        }
+
+        pIoReq->tsComplete = RTTimeSystemMilliTS();
+        Assert(!pThis->papIoReq[pThis->iEntry]);
+        pThis->papIoReq[pThis->iEntry] = pIoReq;
+
+        pThis->iEntry = (pThis->iEntry+1) % pThis->cEntries;
+        if (pThis->papIoReq[pThis->iEntry])
+        {
+            RTMemFree(pThis->papIoReq[pThis->iEntry]);
+            pThis->papIoReq[pThis->iEntry] = NULL;
+        }
+    }
+    else
+        RTMemFree(pIoReq);
 }
 
 /**
@@ -413,7 +467,7 @@ static void drvdiskintIoReqAdd(PDRVDISKINTEGRITY pThis, PDRVDISKAIOREQ pIoReq)
     PDRVDISKAIOREQACTIVE pReqActive = &pThis->apReqActive[pThis->iNextFreeSlot];
 
     Assert(!pReqActive->pIoReq);
-    pReqActive->tsStart = RTTimeSystemMilliTS();
+    pReqActive->tsStart = pIoReq->tsStart;
     pReqActive->pIoReq  = pIoReq;
     pIoReq->iSlot = pThis->iNextFreeSlot;
 
@@ -704,8 +758,11 @@ static DECLCALLBACK(int) drvdiskintAsyncTransferCompleteNotify(PPDMIMEDIAASYNCPO
         AssertRC(rc);
     }
 
-    rc = pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort, pIoReq->pvUser, rcReq);
-    RTMemFree(pIoReq);
+    void *pvUserComplete = pIoReq->pvUser;
+
+    drvdiskintIoReqFree(pThis, pIoReq);
+
+    rc = pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort, pvUserComplete, rcReq);
 
     return rc;
 }
@@ -758,6 +815,17 @@ static DECLCALLBACK(void) drvdiskintDestruct(PPDMDRVINS pDrvIns)
         RTSemEventSignal(pThis->SemEvent);
         RTSemEventDestroy(pThis->SemEvent);
     }
+
+    if (pThis->fCheckDoubleCompletion)
+    {
+        /* Free all requests */
+        while (pThis->papIoReq[pThis->iEntry])
+        {
+            RTMemFree(pThis->papIoReq[pThis->iEntry]);
+            pThis->papIoReq[pThis->iEntry] = NULL;
+            pThis->iEntry = (pThis->iEntry+1) % pThis->cEntries;
+        }
+    }
 }
 
 /**
@@ -778,7 +846,9 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     if (!CFGMR3AreValuesValid(pCfg, "CheckConsistency\0"
                                     "TraceRequests\0"
                                     "CheckIntervalMs\0"
-                                    "ExpireIntervalMs\0"))
+                                    "ExpireIntervalMs\0"
+                                    "CheckDoubleCompletions\0"
+                                    "HistorySize\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
     rc = CFGMR3QueryBoolDef(pCfg, "CheckConsistency", &pThis->fCheckConsistency, false);
@@ -788,6 +858,10 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     rc = CFGMR3QueryU32Def(pCfg, "CheckIntervalMs", &pThis->uCheckIntervalMs, 5000); /* 5 seconds */
     AssertRC(rc);
     rc = CFGMR3QueryU32Def(pCfg, "ExpireIntervalMs", &pThis->uExpireIntervalMs, 20000); /* 20 seconds */
+    AssertRC(rc);
+    rc = CFGMR3QueryBoolDef(pCfg, "CheckDoubleCompletions", &pThis->fCheckDoubleCompletion, false);
+    AssertRC(rc);
+    rc = CFGMR3QueryU32Def(pCfg, "HistorySize", &pThis->cEntries, 512);
     AssertRC(rc);
 
     /*
@@ -862,6 +936,13 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
         rc = RTThreadCreate(&pThis->hThread, drvdiskIntIoReqExpiredCheck, pThis,
                             0, RTTHREADTYPE_INFREQUENT_POLLER, 0, "DiskIntegrity");
         AssertRC(rc);
+    }
+
+    if (pThis->fCheckDoubleCompletion)
+    {
+        pThis->iEntry = 0;
+        pThis->papIoReq = (PDRVDISKAIOREQ *)RTMemAllocZ(pThis->cEntries * sizeof(PDRVDISKAIOREQ));
+        AssertPtr(pThis->papIoReq);
     }
 
     return rc;
