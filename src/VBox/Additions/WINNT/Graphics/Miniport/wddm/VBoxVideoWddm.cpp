@@ -1279,9 +1279,61 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
             break;
         }
         case DXGKQAITYPE_UMDRIVERPRIVATE:
-            drprintf((__FUNCTION__ ": we do not support DXGKQAITYPE_UMDRIVERPRIVATE\n"));
             AssertBreakpoint();
-            Status = STATUS_NOT_SUPPORTED;
+            Assert(pQueryAdapterInfo->InputDataSize > sizeof (VBOXWDDM_QI));
+            if (pQueryAdapterInfo->InputDataSize > sizeof (VBOXWDDM_QI)
+                    && pQueryAdapterInfo->OutputDataSize > sizeof (VBOXWDDM_QI))
+            {
+                VBOXWDDM_QI * pQi = (VBOXWDDM_QI*)pQueryAdapterInfo->pInputData;
+                switch (pQi->enmType)
+                {
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                    case VBOXWDDM_QI_TYPE_2D_1:
+                    {
+                        if (pQueryAdapterInfo->InputDataSize >= sizeof (VBOXWDDM_QI_2D_1)
+                                && pQueryAdapterInfo->OutputDataSize >= sizeof (VBOXWDDM_QI_2D_1))
+                        {
+                            VBOXWDDM_QI_2D_1 * pQueryIn = (VBOXWDDM_QI_2D_1*)pQueryAdapterInfo->pInputData;
+                            VBOXWDDM_QI_2D_1 * pQueryOut = (VBOXWDDM_QI_2D_1*)pQueryAdapterInfo->pOutputData;
+                            /* @todo: submit to the host */
+#if 0
+                            VBOXVHWACMD *pCmd = create-cmd;
+                            VBOXVHWACMD_QUERYINFO1 *pQueryCmd = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_QUERYINFO1);
+                            pQueryCmd->u.in.guestVersion = pQueryIn->Info.in.guestVersion;
+                            int rc = submit-cmd;
+                            pQueryOut->hdr.rc = rc;
+                            if (RT_SUCCESS(rc))
+                            {
+                                memcpy(&pQueryOut->Info, pQueryCmd, sizeof(VBOXVHWACMD_QUERYINFO1));
+                            }
+#else
+                            pQueryOut->hdr.rc = VERR_NOT_SUPPORTED;
+#endif
+                        }
+                        else
+                        {
+                            drprintf((__FUNCTION__ ": in or out buffer for VBOXWDDM_QI_TYPE_2D_1 too small\n"));
+                            Status = STATUS_BUFFER_TOO_SMALL;
+                        }
+                        break;
+                    }
+                    case VBOXWDDM_QI_TYPE_2D_2:
+                    {
+                        /* @todo: submit to the host */
+                        break;
+                    }
+#endif
+                    default:
+                        drprintf((__FUNCTION__ ": unsupported qi (%d)\n", pQi->enmType));
+                        AssertBreakpoint();
+                        Status = STATUS_INVALID_PARAMETER;
+                }
+            }
+            else
+            {
+                drprintf((__FUNCTION__ ": in or out buffer too small\n"));
+                Status = STATUS_BUFFER_TOO_SMALL;
+            }
             break;
         default:
             drprintf((__FUNCTION__ ": unsupported Type (%d)\n", pQueryAdapterInfo->Type));
@@ -1789,7 +1841,7 @@ DxgkDdiPatch(
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
-    vboxVDbgBreakF();
+    vboxVDbgBreakFv();
 
     /* Value == 2 is Present
      * Value == 4 is RedirectedPresent
@@ -1896,7 +1948,7 @@ DxgkDdiSubmitCommand(
 
 //    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
-    vboxVDbgBreakF();
+    vboxVDbgBreakFv();
 
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
     Assert(!pSubmitCommand->DmaBufferSegmentId);
@@ -3751,7 +3803,7 @@ DriverEntry(
 {
     PAGED_CODE();
 
-    AssertBreakpoint();
+    vboxVDbgBreakFv();
 
     drprintf(("VBoxVideoWddm::DriverEntry. Built %s %s\n", __DATE__, __TIME__));
 

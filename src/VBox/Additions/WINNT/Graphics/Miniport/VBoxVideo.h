@@ -114,6 +114,7 @@ typedef PEVENT VBOXVCMNEVENT, *PVBOXVCMNEVENT;
 typedef struct _DEVICE_EXTENSION * VBOXCMNREG;
 #else
 #include <VBox/VBoxVideo.h>
+#include "wddm/VBoxVideoIf.h"
 #include "wddm/VBoxVideoWddm.h"
 #include "wddm/VBoxVideoShgsmi.h"
 #include "wddm/VBoxVideoVdma.h"
