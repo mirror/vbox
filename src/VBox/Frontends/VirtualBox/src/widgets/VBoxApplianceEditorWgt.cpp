@@ -396,7 +396,7 @@ QWidget * HardwareItem::createEditor (QWidget *aParent, const QStyleOptionViewIt
                 {
                     QSpinBox *e = new QSpinBox (aParent);
                     e->setRange (VBoxApplianceEditorWgt::minGuestRAM(), VBoxApplianceEditorWgt::maxGuestRAM());
-                    e->setSuffix (" " + VBoxApplianceEditorWgt::tr ("MB", "size suffix MBytes=1024KBytes"));
+                    e->setSuffix (" " + VBoxApplianceEditorWgt::tr ("MB", "size suffix MBytes=1024 KBytes"));
                     editor = e;
                     break;
                 }
