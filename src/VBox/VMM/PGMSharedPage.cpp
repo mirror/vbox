@@ -139,7 +139,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3SharedModuleRegRendezvous(PVM pVM, PVMCPU
 }
 
 /**
- * Shared module unregistration helper (called on the way out).
+ * Shared module check helper (called on the way out).
  *
  * @param   pVM         The VM handle.
  */
