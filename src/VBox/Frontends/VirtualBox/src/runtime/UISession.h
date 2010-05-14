@@ -98,7 +98,7 @@ public:
                                     machineState() == KMachineState_Teleporting ||
                                     machineState() == KMachineState_LiveSnapshotting; }
     bool isFirstTimeStarted() const { return m_fIsFirstTimeStarted; }
-    bool isIgnoreRuntimeMediumsChanging() const { return m_fIsIgnoreRutimeMediumsChanging; }
+    bool isIgnoreRuntimeMediumsChanging() const { return m_fIsIgnoreRuntimeMediumsChanging; }
     bool isGuestResizeIgnored() const { return m_fIsGuestResizeIgnored; }
     bool isSeamlessModeRequested() const { return m_fIsSeamlessModeRequested; }
 
@@ -230,7 +230,7 @@ private:
 
     /* Common flags: */
     bool m_fIsFirstTimeStarted : 1;
-    bool m_fIsIgnoreRutimeMediumsChanging : 1;
+    bool m_fIsIgnoreRuntimeMediumsChanging : 1;
     bool m_fIsGuestResizeIgnored : 1;
     bool m_fIsSeamlessModeRequested : 1;
 
