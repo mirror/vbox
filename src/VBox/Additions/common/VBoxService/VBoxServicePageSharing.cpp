@@ -58,9 +58,9 @@ static PAVLPVNODECORE   pKnownModuleTree = NULL;
 
 /**
  * Registers a new module with the VMM
- * @param   dwProcessId     Process id
+ * @param   pModule     Module ptr
  */
-void VBoxServicePageSharingRegisterModule(HANDLE hProcess, PKNOWN_MODULE pModule)
+void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule)
 {
     VMMDEVSHAREDREGIONDESC   aRegions[VMMDEVSHAREDREGIONDESC_MAX];
     DWORD                    dwModuleSize = pModule->Info.modBaseSize;
@@ -130,7 +130,7 @@ void VBoxServicePageSharingRegisterModule(HANDLE hProcess, PKNOWN_MODULE pModule
     {
         MEMORY_BASIC_INFORMATION MemInfo;
 
-        SIZE_T ret = VirtualQueryEx(hProcess, pBaseAddress, &MemInfo, sizeof(MemInfo));
+        SIZE_T ret = VirtualQuery(pBaseAddress, &MemInfo, sizeof(MemInfo));
         Assert(ret);
         if (!ret)
         {
@@ -146,10 +146,23 @@ void VBoxServicePageSharingRegisterModule(HANDLE hProcess, PKNOWN_MODULE pModule
             case PAGE_EXECUTE:
             case PAGE_EXECUTE_READ:
             case PAGE_READONLY:
+            {
+                char *pRegion = (char *)MemInfo.BaseAddress;
+
+                /* Touch all pages. */
+                while (pRegion < (char *)MemInfo.BaseAddress + MemInfo.RegionSize)
+                {
+                    char dummy;
+
+                    memcpy(&dummy, pRegion, 1);
+                    pRegion += PAGE_SIZE;
+                }
                 aRegions[idxRegion].GCRegionAddr = (RTGCPTR64)MemInfo.BaseAddress;
                 aRegions[idxRegion].cbRegion     = MemInfo.RegionSize;
                 idxRegion++;
+
                 break;
+            }
 
             default:
                 break; /* ignore */
@@ -219,6 +232,11 @@ void VBoxServicePageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppN
     bRet = Module32First(hSnapshot, &ModuleInfo);
     do
     {
+        char *pszDot = strrchr(ModuleInfo.szModule, '.');
+        if (    pszDot 
+            &&  (pszDot[1] == 'e' || pszDot[1] == 'E'))
+            continue;   /* ignore executables for now. */
+
         /* Found it before? */
         PAVLPVNODECORE pRec = RTAvlPVGet(ppNewTree, ModuleInfo.modBaseAddr);
         if (!pRec)
@@ -236,7 +254,7 @@ void VBoxServicePageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppN
                 pModule->Core.Key = ModuleInfo.modBaseAddr;
                 pModule->hModule  = LoadLibraryEx(ModuleInfo.szExePath, 0, DONT_RESOLVE_DLL_REFERENCES);
                 if (pModule->hModule)
-                    VBoxServicePageSharingRegisterModule(hProcess, pModule);
+                    VBoxServicePageSharingRegisterModule(pModule);
 
                 pRec = &pModule->Core;
             }
