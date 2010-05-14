@@ -3621,7 +3621,13 @@ INTNETR0DECL(int) IntNetR0IfSetMacAddress(INTNETIFHANDLE hIf, PSUPDRVSESSION pSe
             pIf->fMacSet        = true;
         }
 
+        PINTNETTRUNKIF pTrunk = pNetwork->MacTab.pTrunk;
         RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
+        if (pTrunk && pTrunk->pIfPort)
+        {
+            Log(("IntNetR0IfSetMacAddress: pfnNotifyMacAddress hIf=%RX32\n", hIf));
+            pTrunk->pIfPort->pfnNotifyMacAddress(pTrunk->pIfPort, hIf, pMac);
+        }
     }
     else
         rc = VERR_WRONG_ORDER;
@@ -3963,6 +3969,14 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
     RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
     ASMAtomicWriteBool(&pIf->fDestroying, true);
 
+    PINTNETNETWORK pNetwork = pIf->pNetwork;
+    PINTNETTRUNKIF pTrunk = pNetwork->MacTab.pTrunk;
+    if (pTrunk && pTrunk->pIfPort)
+    {
+        Log(("intnetR0IfDestruct: pfnDisconnectInterface hIf=%RX32\n", pIf->hIf));
+        pTrunk->pIfPort->pfnDisconnectInterface(pTrunk->pIfPort, pIf->hIf);
+    }
+
     /*
      * Delete the interface handle so the object no longer can be used.
      * (Can happen if the client didn't close its session.)
@@ -3978,7 +3992,6 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
      * If we've got a network deactivate and detach ourselves from it.  Because
      * of cleanup order we might have been orphaned by the network destructor.
      */
-    PINTNETNETWORK pNetwork = pIf->pNetwork;
     if (pNetwork)
     {
         /* set inactive. */
@@ -4078,7 +4091,7 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
     for (int i = kIntNetAddrType_Invalid + 1; i < kIntNetAddrType_End; i++)
         intnetR0IfAddrCacheDestroy(&pIf->aAddrCache[i]);
 
-     pIf->pvObj = NULL;
+    pIf->pvObj = NULL;
     RTMemFree(pIf);
 }
 
@@ -4199,6 +4212,14 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
 
                     pNetwork->MacTab.cEntries = iIf + 1;
                     pIf->pNetwork = pNetwork;
+
+                    /** @todo handle failure of pfnConnectInterface */
+                    PINTNETTRUNKIF pTrunk = pNetwork->MacTab.pTrunk;
+                    if (pTrunk && pTrunk->pIfPort)
+                    {
+                        Log(("intnetR0NetworkCreateIf: pfnConnectInterface hIf=%RX32\n", pIf->hIf));
+                        pTrunk->pIfPort->pfnConnectInterface(pTrunk->pIfPort, pIf->hIf);
+                    }
 
                     RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
 

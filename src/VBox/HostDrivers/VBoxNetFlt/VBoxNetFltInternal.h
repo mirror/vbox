@@ -379,6 +379,32 @@ DECLHIDDEN(int) vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32
 DECLHIDDEN(void) vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive);
 
 /**
+ * This is called when a network interface has obtained a new MAC address.
+ *
+ * @param   pThis           The instance.
+ * @param   hIf             The handle to the network.
+ * @param   pMac            Pointer to the new MAC address.
+ */
+DECLHIDDEN(void) vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf, PCRTMAC pMac);
+
+/**
+ * This is called when an interface is connected to the network.
+ *
+ * @return IPRT status code.
+ * @param   pThis           The instance.
+ * @param   hIf             The handle to the network.
+ */
+DECLHIDDEN(int) vboxNetFltPortOsConnectInterface(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf);
+
+/**
+ * This is called when a VM host disconnects from the network.
+ *
+ * @param   pThis           The instance.
+ * @param   hIf             The handle to the network.
+ */
+DECLHIDDEN(int) vboxNetFltPortOsDisconnectInterface(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf);
+
+/**
  * This is called to when disconnecting from a network.
  *
  * @return  IPRT status code.

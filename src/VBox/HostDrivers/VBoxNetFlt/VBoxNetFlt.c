@@ -534,6 +534,72 @@ static DECLCALLBACK(INTNETTRUNKIFSTATE) vboxNetFltPortSetState(PINTNETTRUNKIFPOR
 
 
 /**
+ * @copydoc INTNETTRUNKIFPORT::pfnNotifyMacAddress
+ */
+static DECLCALLBACK(void) vboxNetFltPortNotifyMacAddress(PINTNETTRUNKIFPORT pIfPort, INTNETIFHANDLE hIf, PCRTMAC pMac)
+{
+    PVBOXNETFLTINS pThis = IFPORT_2_VBOXNETFLTINS(pIfPort);
+
+    /*
+     * Input validation.
+     */
+    AssertPtr(pThis);
+    AssertPtr(pSG);
+    Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
+
+    vboxNetFltRetain(pThis, false /* fBusy */);
+    vboxNetFltPortOsNotifyMacAddress(pThis, hIf, pMac);
+    vboxNetFltRelease(pThis, false /* fBusy */);
+}
+
+
+/**
+ * @copydoc INTNETTRUNKIFPORT::pfnConnectInterface
+ */
+static DECLCALLBACK(int) vboxNetFltPortConnectInterface(PINTNETTRUNKIFPORT pIfPort,  INTNETIFHANDLE hIf)
+{
+    PVBOXNETFLTINS pThis = IFPORT_2_VBOXNETFLTINS(pIfPort);
+    int rc = VINF_SUCCESS;
+
+    /*
+     * Input validation.
+     */
+    AssertPtr(pThis);
+    AssertPtr(pSG);
+    Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
+
+    vboxNetFltRetain(pThis, false /* fBusy */);
+    rc = vboxNetFltPortOsConnectInterface(pThis, hIf);
+    vboxNetFltRelease(pThis, false /* fBusy */);
+
+    return rc;
+}
+
+
+/**
+ * @copydoc INTNETTRUNKIFPORT::pfnDisconnectInterface
+ */
+static DECLCALLBACK(int) vboxNetFltPortDisconnectInterface(PINTNETTRUNKIFPORT pIfPort, INTNETIFHANDLE hIf)
+{
+    PVBOXNETFLTINS pThis = IFPORT_2_VBOXNETFLTINS(pIfPort);
+    int rc = VINF_SUCCESS;
+
+    /*
+     * Input validation.
+     */
+    AssertPtr(pThis);
+    AssertPtr(pSG);
+    Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
+
+    vboxNetFltRetain(pThis, false /* fBusy */);
+    rc = vboxNetFltPortOsDisconnectInterface(pThis, hIf);
+    vboxNetFltRelease(pThis, false /* fBusy */);
+
+    return rc;
+}
+
+
+/**
  * @copydoc INTNETTRUNKIFPORT::pfnDisconnectAndRelease
  */
 static DECLCALLBACK(void) vboxNetFltPortDisconnectAndRelease(PINTNETTRUNKIFPORT pIfPort)
@@ -932,6 +998,9 @@ static int vboxNetFltNewInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszNam
     pNew->MyPort.pfnSetState            = vboxNetFltPortSetState;
     pNew->MyPort.pfnWaitForIdle         = vboxNetFltPortWaitForIdle;
     pNew->MyPort.pfnXmit                = vboxNetFltPortXmit;
+    pNew->MyPort.pfnNotifyMacAddress    = vboxNetFltPortNotifyMacAddress;
+    pNew->MyPort.pfnConnectInterface    = vboxNetFltPortConnectInterface;
+    pNew->MyPort.pfnDisconnectInterface = vboxNetFltPortDisconnectInterface;    
     pNew->MyPort.u32VersionEnd          = INTNETTRUNKIFPORT_VERSION;
     pNew->pSwitchPort                   = pSwitchPort;
     pNew->pGlobals                      = pGlobals;
