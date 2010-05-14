@@ -1190,3 +1190,25 @@ int  vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
     return VINF_SUCCESS;
 }
 
+
+void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf, PCRTMAC pMac)
+{
+    NOREF(pThis); NOREF(hIf); NOREF(pMac);
+}
+
+
+int vboxNetFltPortOsConnectInterface(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf)
+{
+    /* Nothing to do */
+    NOREF(pThis); NOREF(hIf);
+    return VINF_SUCCESS;
+}
+
+
+int vboxNetFltPortOsDisconnectInterface(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf)
+{
+    /* Nothing to do */
+    NOREF(pThis); NOREF(hIf);
+    return VINF_SUCCESS;
+}
+

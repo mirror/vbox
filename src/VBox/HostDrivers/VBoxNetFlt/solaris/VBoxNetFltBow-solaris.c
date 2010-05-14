@@ -1093,3 +1093,23 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
     return rc;
 }
 
+
+void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf, PCRTMAC pMac)
+{
+    LogRel((DEVICE_NAME ":vboxNetFltPortOSNotifyMacAddress %s %.6Rhxs\n", pThis->szName, pMac));
+}
+
+
+int vboxNetFltPortOsConnectInterface(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf)
+{
+    LogRel((DEVICE_NAME ":vboxNetFltPortOsConnectInterface\n"));
+    return VINF_SUCCESS;
+}
+
+
+int vboxNetFltPortOsDisconnectInterface(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf)
+{
+    LogRel((DEVICE_NAME ":vboxNetFltPortOsDisconnectInterface\n"));
+    return VINF_SUCCESS;
+}
+

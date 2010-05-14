@@ -647,6 +647,33 @@ typedef struct INTNETTRUNKIFPORT
     DECLR0CALLBACKMEMBER(INTNETTRUNKIFSTATE, pfnSetState,(PINTNETTRUNKIFPORT pIfPort, INTNETTRUNKIFSTATE enmState));
 
     /**
+     * Notifies when the MAC address of an interface is set or changes.
+     *
+     * @param   pIfPort     Pointer to this structure.
+     * @param   hIf         The handle of the network interface.
+     * @param   pMac        Pointer to the MAC address of the connecting VM NIC.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnNotifyMacAddress,(PINTNETTRUNKIFPORT pIfPort, INTNETIFHANDLE hIf, PCRTMAC pMac));
+
+    /**
+     * Called when an interface is connected to the network.
+     *
+     * @returns IPRT status code.
+     * @param   pIfPort     Pointer to this structure.
+     * @param   hIf         The handle of the network interface.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnConnectInterface,(PINTNETTRUNKIFPORT pIfPort, INTNETIFHANDLE hIf));
+
+    /**
+     * Called when an interface is disconnected from the network.
+     *
+     * @returns IPRT status code.
+     * @param   pIfPort     Pointer to this structure.
+     * @param   hIf         The handle of the network interface.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnDisconnectInterface,(PINTNETTRUNKIFPORT pIfPort, INTNETIFHANDLE hIf));
+
+    /**
      * Waits for the interface to become idle.
      *
      * This method must be called before disconnecting and releasing the object in
