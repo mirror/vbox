@@ -1031,8 +1031,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         ULONG ulInstance = 999;
         rc = ctrls[i]->COMGETTER(Instance)(&ulInstance);                                H();
 
-        IoBackendType_T enmIoBackend;
-        rc = ctrls[i]->COMGETTER(IoBackend)(&enmIoBackend);                             H();
+        BOOL fUseHostIOCache;
+        rc = ctrls[i]->COMGETTER(UseHostIOCache)(&fUseHostIOCache);                     H();
 
         /* /Devices/<ctrldev>/ */
         const char *pszCtrlDev = pConsole->convertControllerTypeToDev(enmCtrlType);
@@ -1225,7 +1225,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                                                   pszCtrlDev,
                                                   ulInstance,
                                                   enmBus,
-                                                  enmIoBackend,
+                                                  fUseHostIOCache,
                                                   false /* fSetupMerge */,
                                                   0 /* uMergeSource */,
                                                   0 /* uMergeTarget */,
@@ -2235,7 +2235,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                                     const char *pcszDevice,
                                     unsigned uInstance,
                                     StorageBus_T enmBus,
-                                    IoBackendType_T enmIoBackend,
+                                    bool fUseHostIOCache,
                                     bool fSetupMerge,
                                     unsigned uMergeSource,
                                     unsigned uMergeTarget,
@@ -2324,7 +2324,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
     rc = configMedium(pLunL0,
                       !!fPassthrough,
                       lType,
-                      enmIoBackend,
+                      fUseHostIOCache,
                       fSetupMerge,
                       uMergeSource,
                       uMergeTarget,
@@ -2355,7 +2355,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
 int Console::configMedium(PCFGMNODE pLunL0,
                           bool fPassthrough,
                           DeviceType_T enmType,
-                          IoBackendType_T enmIoBackend,
+                          bool fUseHostIOCache,
                           bool fSetupMerge,
                           unsigned uMergeSource,
                           unsigned uMergeTarget,
@@ -2503,7 +2503,7 @@ int Console::configMedium(PCFGMNODE pLunL0,
                 rc = CFGMR3InsertInteger(pCfg, "TempReadOnly", 1);                      RC_CHECK();
             }
 
-            if (enmIoBackend == IoBackendType_Unbuffered)
+            if (!fUseHostIOCache)
             {
                 rc = CFGMR3InsertInteger(pCfg, "UseNewIo", 1);                          RC_CHECK();
             }
