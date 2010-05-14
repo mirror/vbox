@@ -3216,6 +3216,32 @@ static bool vboxNetFltWinIsPromiscuous2(PVBOXNETFLTINS pThis)
 #endif
 }
 
+
+/**
+ * Report the MAC address, promiscuous mode setting, GSO capabilities and
+ * no-preempt destinations to the internal network.
+ *
+ * Does nothing if we're not currently connected to an internal network.
+ *
+ * @param   pThis           The instance data.
+ */
+static void vboxNetFltWinReportStuff(PVBOXNETFLTINS pThis)
+{
+    /** @todo Keep these up to date, esp. the promiscuous mode bit. */
+    if (   pThis->pSwitchPort
+        && vboxNetFltTryRetainBusyNotDisconnected(pThis))
+    {
+        pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
+        pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort,
+                                                     vboxNetFltWinIsPromiscuous2(pThis));
+        pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0,
+                                                     INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
+        /** @todo We should be able to do pfnXmit at DISPATCH_LEVEL... */
+        pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, 0 /* none */);
+        vboxNetFltRelease(pThis, true /*fBusy*/);
+    }
+}
+
 /**
  * Worker for vboxNetFltWinAttachToInterface.
  *
@@ -3305,19 +3331,8 @@ static void vboxNetFltWinAttachToInterfaceWorker(PATTACH_INFO pAttachInfo)
                             vboxNetFltRelease(pThis, false);
 
                             /* 5. Report MAC address, promiscuousness and GSO capabilities. */
-                            /** @todo Keep these up to date, esp. the promiscuous mode bit. */
-                            if (   pThis->pSwitchPort
-                                && vboxNetFltTryRetainBusyNotDisconnected(pThis))
-                            {
-                                pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
-                                pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort,
-                                                                             vboxNetFltWinIsPromiscuous2(pThis));
-                                pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0,
-                                                                             INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
-                                /** @todo We should be able to do pfnXmit at DISPATCH_LEVEL... */
-                                pThis->pSwitchPort->pfnReportNoPreemptDsts(pThis->pSwitchPort, 0 /* none */);
-                                vboxNetFltRelease(pThis, true /*fBusy*/);
-                            }
+                            vboxNetFltWinReportStuff(pThis);
+
                             return;
                         }
                         AssertBreakpoint();
@@ -3716,6 +3731,9 @@ static int vboxNetFltWinConnectIt(PVBOXNETFLTINS pThis)
     Info.pNetFltIf = pThis;
 
     vboxNetFltWinJobSynchExecAtPassive(vboxNetFltWinConnectItWorker, &Info);
+
+    if (RT_SUCCESS(Info.Status))
+        vboxNetFltWinReportStuff(pThis);
 
     return Info.Status;
 }
