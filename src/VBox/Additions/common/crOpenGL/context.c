@@ -190,7 +190,7 @@ stubGetWindowInfo( Display *dpy, GLXDrawable drawable )
 
     if (!hwnd)
     {
-        crError("Can't get HWND for given HDC(%x)", drawable);
+        return NULL;
     }
 
     winInfo = (WindowInfo *) crHashtableSearch(stub.windowTable, (unsigned int) hwnd);
