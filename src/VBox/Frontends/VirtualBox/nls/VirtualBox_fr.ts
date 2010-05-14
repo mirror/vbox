@@ -26,7 +26,7 @@
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation>Martin d'Allens, Jean-Jacques Sarton, Oracle Corporation</translation>
+        <translation>Martin d&apos;Allens, Jean-Jacques Sarton, Oracle Corporation</translation>
     </message>
 </context>
 <context>
@@ -1336,7 +1336,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
-        <translation>Utiliser le bureau	 intégré</translation>
+        <translation>Utiliser le bureau intégré</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
@@ -1407,7 +1407,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation>Affiche la touche hôte qui est configurée. &lt;br&gt;Appuyer sur cette touche inverse la capture du clavier et de la souris. En combinaison avec d&apos;autres touches elle peu aussi servir de raccourci pour les actions du menu principal.</translation>
+        <translation>Affiche la touche hôte qui est configurée. &lt;br&gt;Appuyer sur cette touche inverse la capture du clavier et de la souris. En combinaison avec d&apos;autres touches elle peut aussi servir de raccourci pour les actions du menu principal.</translation>
     </message>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
@@ -1958,7 +1958,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>Use manual configuration for this host-only network adapter.</source>
-        <translation>Utiliser la configuration manuelle pour cette interface du réseau privé hôte.</translation>
+        <translation>Utiliser la configuration manuelle pour cette interface de réseau privé hôte.</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
@@ -2090,17 +2090,17 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <source>Name</source>
         <comment>details report</comment>
         <translatorcomment>In French we need spaces at the end of many of these entries of &quot;details report&quot; because they are followed by a colon.</translatorcomment>
-        <translation>Nom</translation>
+        <translation>Nom </translation>
     </message>
     <message>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation>Type d&apos;OS</translation>
+        <translation>Type d&apos;OS </translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>details report</comment>
-        <translation>Mémoire vive</translation>
+        <translation>Mémoire vive </translation>
     </message>
     <message>
         <source>General</source>
@@ -2110,17 +2110,17 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Video Memory</source>
         <comment>details report</comment>
-        <translation>Mémoire vidéo</translation>
+        <translation>Mémoire vidéo </translation>
     </message>
     <message>
         <source>Boot Order</source>
         <comment>details report</comment>
-        <translation>Ordre d&apos;amorçage</translation>
+        <translation>Ordre d&apos;amorçage </translation>
     </message>
     <message>
         <source>ACPI</source>
         <comment>details report</comment>
-        <translation>ACPI</translation>
+        <translation>ACPI </translation>
     </message>
     <message>
         <source>IO APIC</source>
@@ -2160,7 +2160,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation>Carte %1</translation>
+        <translation>Carte %1 </translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -2175,7 +2175,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
-        <translation>Filtres</translation>
+        <translation>Filtres </translation>
     </message>
     <message>
         <source>%1 (%2 active)</source>
@@ -2416,7 +2416,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
-        <translation>Port série %1</translation>
+        <translation>Port série %1 </translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -2446,7 +2446,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation>Dossiers partagés</translation>
+        <translation>Dossiers partagés </translation>
     </message>
     <message>
         <source>Disconnected</source>
@@ -2471,12 +2471,12 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation>VT-x/AMD-V</translation>
+        <translation>VT-x/AMD-V </translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details report</comment>
-        <translation>PAE/NX</translation>
+        <translation>PAE/NX </translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -2501,17 +2501,17 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation>Pilote hôte</translation>
+        <translation>Pilote hôte </translation>
     </message>
     <message>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation>Contrôleur</translation>
+        <translation>Contrôleur </translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
-        <translation>Port %1</translation>
+        <translation>Port %1 </translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -2521,7 +2521,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation>Ports parallèles</translation>
+        <translation>Ports parallèles </translation>
     </message>
     <message>
         <source>USB</source>
@@ -2531,7 +2531,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Shared Folder</source>
         <comment>DeviceType</comment>
-        <translation>Dossier partagé</translation>
+        <translation>Dossier partagé </translation>
     </message>
     <message>
         <source>IDE</source>
@@ -2666,7 +2666,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>3D Acceleration</source>
         <comment>details report</comment>
-        <translation>Accélération 3D</translation>
+        <translation>Accélération 3D </translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -2691,7 +2691,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation>Pagination imbriquée</translation>
+        <translation>Pagination imbriquée </translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -2706,7 +2706,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Réseau interne, &apos;%1&apos;</translation>
+        <translation>Réseau interne, &apos;%1&apos; </translation>
     </message>
     <message>
         <source>SCSI</source>
@@ -2751,12 +2751,12 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation>Pont avec l&apos;interface %1</translation>
+        <translation>Pont avec l&apos;interface %1 </translation>
     </message>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Réseau privé hôte, &apos;%1&apos;</translation>
+        <translation>Réseau privé hôte, &apos;%1&apos; </translation>
     </message>
     <message>
         <source>Bridged Adapter</source>
@@ -2771,34 +2771,34 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation>&lt;nobr&gt;%1 Mo&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1 Mo&lt;/nobr&gt; </translation>
     </message>
     <message>
         <source>Processor(s)</source>
         <comment>details report</comment>
-        <translation>Nombre de processeurs</translation>
+        <translation>Nombre de processeurs </translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation>&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1&lt;/nobr&gt; </translation>
     </message>
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation>Système</translation>
+        <translation>Système </translation>
     </message>
     <message>
         <source>Remote Display Server Port</source>
         <comment>details report (VRDP Server)</comment>
         <translatorcomment>Again, Remote Desktop</translatorcomment>
-        <translation>Port du bureau à distance</translation>
+        <translation>Port du bureau à distance </translation>
     </message>
     <message>
         <source>Remote Display Server</source>
         <comment>details report (VRDP Server)</comment>
         <translatorcomment>Again, Remote Desktop</translatorcomment>
-        <translation>Serveur du bureau à distance (RDP)</translation>
+        <translation>Serveur du bureau à distance (RDP) </translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -2828,7 +2828,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>2D Video Acceleration</source>
         <comment>details report</comment>
-        <translation>Accélération 2D</translation>
+        <translation>Accélération 2D </translation>
     </message>
     <message>
         <source>Not Attached</source>
@@ -2863,17 +2863,17 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Device %1</source>
         <comment>StorageBusDevice</comment>
-        <translation>Périphérique %1</translation>
+        <translation>Périphérique %1 </translation>
     </message>
     <message>
         <source>IDE Primary Master</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>Maître primaire IDE</translation>
+        <translation>Maître primaire IDE </translation>
     </message>
     <message>
         <source>IDE Primary Slave</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>Esclave primaire IDE</translation>
+        <translation>Esclave primaire IDE </translation>
     </message>
     <message>
         <source>IDE Secondary Master</source>
@@ -2883,22 +2883,22 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>IDE Secondary Slave</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>Esclave secondaire IDE</translation>
+        <translation>Esclave secondaire IDE </translation>
     </message>
     <message>
         <source>SATA Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>Port SATA %1</translation>
+        <translation>Port SATA %1 </translation>
     </message>
     <message>
         <source>SCSI Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>Port SCSI %1</translation>
+        <translation>Port SCSI %1 </translation>
     </message>
     <message>
         <source>Floppy Device %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation>Lecteur disquette %1</translation>
+        <translation>Lecteur disquette %1 </translation>
     </message>
     <message>
         <source>I82078</source>
@@ -2913,12 +2913,12 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Host Drive &apos;%1&apos;</source>
         <comment>medium</comment>
-        <translation>Lecteur de l&apos;hôte « %1 »</translation>
+        <translation>Lecteur de l&apos;hôte « %1 » </translation>
     </message>
     <message>
         <source>Host Drive %1 (%2)</source>
         <comment>medium</comment>
-        <translation>Lecteur de l&apos;hôte %1 (%2)</translation>
+        <translation>Lecteur de l&apos;hôte %1 (%2) </translation>
     </message>
     <message>
         <source>Teleported</source>
@@ -3053,12 +3053,12 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Screens</source>
         <comment>details report</comment>
-        <translation>Écrans</translation>
+        <translation>Écrans </translation>
     </message>
     <message>
         <source>VDE network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Réseau VDE, &apos;%1&apos;</translation>
+        <translation>Réseau VDE, &apos;%1&apos; </translation>
     </message>
     <message>
         <source>SAS</source>
@@ -3078,7 +3078,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</source>
         <comment>regexp for matching ####[.##] B|KB|MB|GB|TB|PB, %1=decimal point</comment>
-        <translation>^(?:(?:(\d+)(?:\s?(o|Ko|Mo|Go|To|Po))?)|(?:(\d*)%1(\d{1,2})(?:\s?(Ko|Mo|Go|To|Po))))$</translation>
+        <translation>^(?:(?:(\d+)(?:\s?(octets|Kio|Mio|Gio|Tio|Pio))?)|(?:(\d*)%1(\d{1,2})(?:\s?(Kio|Mio|Gio|Tio|Pio))))$</translation>
     </message>
     <message>
         <source>B</source>
