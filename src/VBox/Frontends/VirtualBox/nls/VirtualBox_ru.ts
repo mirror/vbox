@@ -396,7 +396,7 @@
     <name>QIWizardPage</name>
     <message>
         <source>Use the &lt;b&gt;%1&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;%2&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;%3&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Используйте кнопку &lt;b&gt;%1&lt;/b&gt; чтобы перейти к следующей странице мастера, либо кнопку &lt;b&gt;%2&lt;/b&gt; чтобы вернуться к предыдущей. Вы также можете воспользоваться кнопкой &lt;b&gt;%3&lt;/b&gt; если хотите прервать работу мастера вовсе.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -407,7 +407,7 @@
     </message>
     <message>
         <source>The download process has been canceled by the user.</source>
-        <translation type="unfinished"></translation>
+        <translation>Процесс загрузки файла был прерван пользователем.</translation>
     </message>
 </context>
 <context>
@@ -437,7 +437,7 @@
     <name>UIDownloaderUserManual</name>
     <message>
         <source>Select folder to save User Manual to</source>
-        <translation type="unfinished"></translation>
+        <translation>Выберите каталог для размещения Руководства Пользователя</translation>
     </message>
 </context>
 <context>
@@ -460,7 +460,7 @@
     </message>
     <message>
         <source>Appliance Export Wizard</source>
-        <translation>Мастер экспорта конфигурации</translation>
+        <translation>Мастер экспорта конфигураций</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Export Wizard!</source>
@@ -583,116 +583,116 @@ p, li { white-space: pre-wrap; }
     <name>UIExportApplianceWzdPage1</name>
     <message>
         <source>Welcome to the Appliance Export Wizard!</source>
-        <translation type="unfinished">Добро пожаловать в мастер экспорта конфигурации!</translation>
+        <translation>Мастер экспорта конфигураций</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the process of exporting an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Please select the virtual machines that should be added to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Данный мастер поможет Вам осуществить процесс экспорта конфигураций виртуальных машин.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Пожалуйста выберете виртуальные машины, конфигурации которых должны быть экспортированы. Вы можете выбрать несколько виртуальных машин, но пожалуйста учтите, что выбранные машины должны быть выключены перед тем, как экспортирование станет возможным.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage2</name>
     <message>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation type="unfinished">Здесь Вы можете изменить дополнительные параметры конфигурации выбранных виртуальных машин. Большинство из указанных параметров можно поменять двойным щелчком мыши на выбранном элементе.</translation>
+        <translation>Здесь Вы можете изменить дополнительные параметры конфигураций выбранных виртуальных машин. Большинство из указанных параметров можно изменить дважды щёлкнув мышью на выбранном элементе.</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished">Опции экспорта конфигурации</translation>
+        <translation>Опции экспорта конфигураций</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage3</name>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation type="unfinished">Пожалуйста укажите точку экспорта OVF. Вы можете экспортировать OVF в локальную файловую систему, а также выгрузить OVF либо на сервер Sun Cloud либо на сервер хранилище S3.</translation>
+        <translation>Пожалуйста укажите точку экспорта OVF. Вы можете сохранить OVF в локальной файловой системе, а также выгрузить OVF используя сервис Sun Cloud либо на любой другой сервер-хранилище S3.</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation type="unfinished">&amp;Локальная файловая система</translation>
+        <translation>&amp;Локальная файловая система</translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
-        <translation type="unfinished">С&amp;ервис Sun Cloud</translation>
+        <translation>С&amp;ервис Sun Cloud</translation>
     </message>
     <message>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation type="unfinished">Сервер &amp;хранилище S3</translation>
+        <translation>Сервер &amp;хранилище S3</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished">Опции экспорта конфигурации</translation>
+        <translation>Опции экспорта конфигураций</translation>
     </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage4</name>
     <message>
         <source>&amp;Username:</source>
-        <translation type="unfinished">&amp;Имя пользователя:</translation>
+        <translation>&amp;Имя пользователя:</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation type="unfinished">&amp;Пароль:</translation>
+        <translation>&amp;Пароль:</translation>
     </message>
     <message>
         <source>&amp;Hostname:</source>
-        <translation type="unfinished">Имя х&amp;оста:</translation>
+        <translation>Имя х&amp;оста:</translation>
     </message>
     <message>
         <source>&amp;Bucket:</source>
-        <translation type="unfinished">Х&amp;ранилище:</translation>
+        <translation>Х&amp;ранилище:</translation>
     </message>
     <message>
         <source>&amp;File:</source>
-        <translation type="unfinished">&amp;Файл:</translation>
+        <translation>&amp;Файл:</translation>
     </message>
     <message>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation type="unfinished">Сохранить в формате OVF 0.9 для совместимости с остальными продуктами виртуализации.</translation>
+        <translation>Сохранить в формате OVF 0.9 для совместимости с остальными программными средствами виртуализации.</translation>
     </message>
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation type="unfinished">&amp;Сохранить в формате OVF 0.9</translation>
+        <translation>&amp;Сохранить в формате OVF 0.9</translation>
     </message>
     <message>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished">Опции экспорта конфигурации</translation>
+        <translation>Опции экспорта конфигураций</translation>
     </message>
     <message>
         <source>Appliance</source>
-        <translation type="unfinished">Конфигурация</translation>
+        <translation>Конфигурация</translation>
     </message>
     <message>
         <source>Select a file to export into</source>
-        <translation type="unfinished">Укажите имя файла для экспорта конфигурации</translation>
+        <translation>Укажите имя файла для экспорта конфигураций</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished">Открытый Формат Виртуализации (%1)</translation>
+        <translation>Открытый Формат Виртуализации (%1)</translation>
     </message>
     <message>
         <source>Please choose a filename to export the OVF to.</source>
-        <translation type="unfinished">Пожалуйста укажите имя файла для экспорта OVF.</translation>
+        <translation>Пожалуйста укажите имя файла для экспорта OVF.</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="unfinished">Пожалуйста заполните дополнительные поля такие как имя пользователя, пароль и имя хранилища. В конце укажите имя файла-цели для экспорта OVF.</translation>
+        <translation>Пожалуйста заполните дополнительные поля такие как имя пользователя, пароль и имя хранилища. В конце укажите имя файла-цели для экспорта OVF.</translation>
     </message>
     <message>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
-        <translation type="unfinished">Пожалуйста заполните дополнительные поля такие как имя пользователя, пароль, имя хоста и имя хранилища. В конце укажите имя файла-цели для экспорта OVF.</translation>
+        <translation>Пожалуйста заполните дополнительные поля такие как имя пользователя, пароль, имя хоста и имя хранилища. В конце укажите имя файла-цели для экспорта OVF.</translation>
     </message>
     <message>
         <source>Checking files ...</source>
-        <translation type="unfinished">Проверка файлов ...</translation>
+        <translation>Проверка файлов ...</translation>
     </message>
     <message>
         <source>Removing files ...</source>
-        <translation type="unfinished">Удаление файлов ...</translation>
+        <translation>Удаление файлов ...</translation>
     </message>
     <message>
         <source>Exporting Appliance ...</source>
-        <translation type="unfinished">Экспорт конфигурации ...</translation>
+        <translation>Экспорт конфигураций ...</translation>
     </message>
 </context>
 <context>
@@ -829,71 +829,71 @@ p, li { white-space: pre-wrap; }
     <name>UIFirstRunWzdPage1</name>
     <message>
         <source>Welcome to the First Run Wizard!</source>
-        <translation type="unfinished">Мастер первого запуска</translation>
+        <translation>Мастер первого запуска</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Вы запустили вновь созданную машину первый раз. Данный мастер поможет Вам осуществить установку выбранной Вами операционной системы на данную машину.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Вы запустили вновь созданную машину первый раз. Данный мастер поможет Вам осуществить загрузку выбранной Вами операционной системы на данной машине.&lt;/p&gt;&lt;p&gt;Учтите, что в данный момент Вы не имеете возможности установить операционную систему на данную машину, поскольку Вы не подсоединили к ней ни одного жёсткого диска. Если это не то, что Вы планировали, Вы можете прервать выполнение данного мастера, выбрать &lt;b&gt;Свойства&lt;/b&gt; из меню &lt;b&gt;Машина&lt;/b&gt; главного окна VirtualBox для доступа к настройкам данной машины и исправить конфигурацию жёстких дисков по Вашему усмотрению.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIFirstRunWzdPage2</name>
     <message>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Выберите носитель, который содержит программу установки операционной системы, которую Вы хотите установить. Этот носитель должен быть загрузочным, иначе программа установки не сможет начать работу.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Выберите носитель, который содержит программу установки операционной системы, которую Вы хотите установить. Этот носитель должен быть загрузочным, иначе программа установки не сможет начать работу.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Выберите носитель, который содержит операционную систему, с которой Вы хотите работать. Этот носитель должен быть загрузочным, иначе операционная система не сможет начать работу.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Выберите носитель, который содержит операционную систему, с которой Вы хотите работать. Этот носитель должен быть загрузочным, иначе операционная система не сможет начать работу.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Media Source</source>
-        <translation type="unfinished">Носитель</translation>
+        <translation>Носитель</translation>
     </message>
     <message>
         <source>Select Installation Media</source>
-        <translation type="unfinished">Выберите установочный носитель</translation>
+        <translation>Выберите установочный носитель</translation>
     </message>
 </context>
 <context>
     <name>UIFirstRunWzdPage3</name>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Вы выбрали следующий носитель для загрузки виртуальной машины:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы выбрали следующий носитель для загрузки виртуальной машины:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Вы выбрали следующий носитель для загрузки операционной системы:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы выбрали следующий носитель для загрузки операционной системы:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Если вышесказанное верно, нажмите кнопку &lt;b&gt;Готово&lt;/b&gt;. В результате этого действия, выбранное устройство будет временно подключено (диск вставлен) к виртуальной машине, после чего машина будет запущена.&lt;/p&gt;&lt;p&gt;Учтите, что как только Вы закроете виртуальную машину, данное устройство будет автоматически отключено (диск изъят) и машина в дальнейшем будет грузиться с первого из жестких дисков.&lt;/p&gt;&lt;p&gt;В зависимости от типа установочного приложения и для предотвращения его повторного запуска, Вам, возможно, придётся вручную отключить устройство (изъять диск) после того, как установочное приложение перезагрузит виртуальную машину. Вы можете выполнить данное действие выбрав соответствующий пункт &lt;b&gt;Извлечь...&lt;/b&gt; меню &lt;b&gt;Устройства&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Если вышесказанное верно, нажмите кнопку &lt;b&gt;Готово&lt;/b&gt;. В результате этого действия, выбранное устройство будет временно подключено (диск вставлен) к виртуальной машине, после чего машина будет запущена.&lt;/p&gt;&lt;p&gt;Учтите, что как только Вы закроете виртуальную машину, данное устройство будет автоматически отключено (диск изъят) и машина в дальнейшем будет грузиться с первого из жестких дисков.&lt;/p&gt;&lt;p&gt;В зависимости от типа установочного приложения и для предотвращения его повторного запуска, Вам, возможно, придётся вручную отключить устройство (изъять диск) после того, как установочное приложение перезагрузит виртуальную машину. Вы можете выполнить данное действие выбрав соответствующий пункт &lt;b&gt;Извлечь...&lt;/b&gt; меню &lt;b&gt;Устройства&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Если приведенная выше информация верна, нажмите кнопку &lt;b&gt;Готово&lt;/b&gt;. После этого, указанный носитель будет подключен к виртуальной машине, и машина начнет загрузку с этого носителя.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Если приведенная выше информация верна, нажмите кнопку &lt;b&gt;Готово&lt;/b&gt;. После этого, указанный носитель будет подключен к виртуальной машине, и машина начнет загрузку с этого носителя.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished">Итог</translation>
+        <translation>Итог</translation>
     </message>
     <message>
         <source>CD/DVD-ROM Device</source>
-        <translation type="unfinished">Привод оптических дисков</translation>
+        <translation>Привод оптических дисков</translation>
     </message>
     <message>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished">Тип</translation>
+        <translation>Тип</translation>
     </message>
     <message>
         <source>Source</source>
         <comment>summary</comment>
-        <translation type="unfinished">Носитель</translation>
+        <translation>Носитель</translation>
     </message>
 </context>
 <context>
@@ -908,7 +908,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Appliance Import Wizard</source>
-        <translation>Мастер импорта конфигурации</translation>
+        <translation>Мастер импорта конфигураций</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Import Wizard!</source>
@@ -963,30 +963,30 @@ p, li { white-space: pre-wrap; }
     <name>UIImportApplianceWzdPage1</name>
     <message>
         <source>Select an appliance to import</source>
-        <translation type="unfinished">Укажите файл конфигурации для импорта</translation>
+        <translation>Укажите файл конфигураций для импорта</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished">Открытый Формат Виртуализации (%1)</translation>
+        <translation>Открытый Формат Виртуализации (%1)</translation>
     </message>
     <message>
         <source>Welcome to the Appliance Import Wizard!</source>
-        <translation type="unfinished">Добро пожаловать в мастер импорта конфигурации!</translation>
+        <translation>Мастер импорта конфигураций</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through importing an appliance.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Данный мастер поможет Вам осуществить процесс импорта конфигураций.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;VirtualBox в настоящий момент поддерживает импорт конфигураций, сохранённых в Открытом Виртуализационном Формате (OVF). Для того чтобы продолжить, Вам необходимо выбрать файл для импорта:&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIImportApplianceWzdPage2</name>
     <message>
         <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation type="unfinished">Далее перечислены виртуальные машины и их устройства, описанные в конфигурации, для импорта в VirtualBox. Большинство из указанных параметров можно изменить двойным щелчком мыши на выбранном элементе, либо отключить используя соответствующие галочки.</translation>
+        <translation>Далее перечислены виртуальные машины и их устройства, описанные в конфигурации, для импорта в VirtualBox. Большинство из указанных параметров можно изменить дважды щёлкнув мышью на выбранном элементе, либо отключить используя соответствующие галочки.</translation>
     </message>
     <message>
         <source>Appliance Import Settings</source>
-        <translation type="unfinished">Опции импорта конфигурации</translation>
+        <translation>Опции импорта конфигураций</translation>
     </message>
 </context>
 <context>
@@ -1028,63 +1028,63 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineLogic</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation type="unfinished">VirtualBox OSE</translation>
+        <translation>VirtualBox OSE</translation>
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation type="unfinished">ЭКСПЕРИМЕНТАЛЬНАЯ версия %1r%2 - %3</translation>
+        <translation>ЭКСПЕРИМЕНТАЛЬНАЯ версия %1р%2 - %3</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Отмена</translation>
+        <translation>Отмена</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished">Отменить скачивание CD-образа пакета Дополнений гостевой ОС</translation>
+        <translation>Отменить скачивание CD-образа пакета Дополнений гостевой ОС</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished">Скачивается CD-образ пакета Дополнений гостевой ОС с &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation>Скачивается CD-образ пакета Дополнений гостевой ОС с &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetUserManual</name>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Отмена</translation>
+        <translation>Отмена</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox User Manual download</source>
-        <translation type="unfinished"></translation>
+        <translation>Отменить скачивание Руководства Пользователя</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox User Manual</source>
-        <translation type="unfinished"></translation>
+        <translation>Скачивается Руководство Пользователя</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Скачивается Руководство Пользователя &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIMultiScreenLayout</name>
     <message>
         <source>Virtual Screen %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальный экран %1</translation>
     </message>
     <message>
         <source>Use Host Screen %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Использовать дисплей хоста %1</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
-        <translation>Создать новый виртуальный диск</translation>
+        <translation>Создать новый виртуальный жёсткий диск</translation>
     </message>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
@@ -1199,103 +1199,103 @@ p, li { white-space: pre-wrap; }
     <name>UINewHDWzdPage1</name>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation type="unfinished">Мастер создания нового виртуального диска</translation>
+        <translation>Мастер создания нового виртуального жёсткого диска</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Данный мастер поможет Вам осуществить создание нового виртуального жёсткого диска для Вашей виртуальной машины.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWzdPage2</name>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Выберите тип виртуального жесткого диска, который Вы хотите создать.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Динамически расширяющийся образ&lt;/b&gt; первоначально занимает очень мало места на физическом жестком диске. Он будет динамически расти (до заданного размера) по мере того, как гостевая ОС использует дисковое пространство.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Образ фиксированного размера&lt;/b&gt; не увеличивается. Он хранится в файле примерно того же размера, что и размер виртуального жесткого диска. Создание жесткого диска фиксированного размера может занять длительное время, в зависимости от размера образа и производительности физического диска.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Выберите тип образа виртуального жёсткого диска, который Вы хотите создать.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Динамически расширяющийся образ&lt;/b&gt; первоначально занимает очень мало места на физическом жёстком диске. Он будет динамически расти (до заданного размера) по мере того, как гостевая ОС использует дисковое пространство.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Образ фиксированного размера&lt;/b&gt; не увеличивается. Он хранится в файле примерно того же размера, что и размер виртуального жёсткого диска. Создание жёсткого диска фиксированного размера может занять длительное время, в зависимости от размера образа и производительности физического диска.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Storage Type</source>
-        <translation type="unfinished">Тип файла</translation>
+        <translation>Тип образа виртуального жёсткого диска</translation>
     </message>
     <message>
         <source>&amp;Dynamically expanding storage</source>
-        <translation type="unfinished">Д&amp;инамически расширяющийся образ</translation>
+        <translation>Д&amp;инамически расширяющийся образ</translation>
     </message>
     <message>
         <source>&amp;Fixed-size storage</source>
-        <translation type="unfinished">Образ &amp;фиксированного размера</translation>
+        <translation>Образ &amp;фиксированного размера</translation>
     </message>
     <message>
         <source>Hard Disk Storage Type</source>
-        <translation type="unfinished">Тип виртуального диска</translation>
+        <translation>Тип образа виртуального жёсткого диска</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWzdPage3</name>
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Нажмите кнопку &lt;b&gt;Выбрать&lt;/b&gt; для выбора расположения и имени файла виртуального жесткого диска или введите имя файла в поле ввода.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Нажмите кнопку &lt;b&gt;Выбрать&lt;/b&gt; для выбора расположения и имени файла виртуального жёсткого диска или введите имя файла в поле ввода.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Location</source>
-        <translation type="unfinished">&amp;Расположение</translation>
+        <translation>&amp;Расположение</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Выберите размер виртуального жесткого диска в мегабайтах. Указанный размер будет фигурировать в гостевой ОС в качестве размера данного жесткого диска.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Выберите размер виртуального жёсткого диска в мегабайтах. Указанный размер будет фигурировать в гостевой ОС в качестве размера данного жёсткого диска.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation type="unfinished">Р&amp;азмер</translation>
+        <translation>Р&amp;азмер</translation>
     </message>
     <message>
         <source>Virtual Disk Location and Size</source>
-        <translation type="unfinished">Местоположение и размер виртуального диска</translation>
+        <translation>Местоположение и размер виртуального жёсткого диска</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation type="unfinished">Выберите файл для образа нового жесткого диска</translation>
+        <translation>Выберите файл для образа нового жёсткого диска</translation>
     </message>
     <message>
         <source>Hard disk images (*.vdi)</source>
-        <translation type="unfinished">Образы жестких дисков (*.vdi)</translation>
+        <translation>Образы жёстких дисков (*.vdi)</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1 (%2 Б)&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWzdPage4</name>
     <message>
         <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation type="unfinished">Вы собираетесь создать виртуальный жесткий диск со следующими параметрами:</translation>
+        <translation>Вы собираетесь создать виртуальный жёсткий диск со следующими параметрами:</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished">Итог</translation>
+        <translation>Итог</translation>
     </message>
     <message>
         <source>%1 B</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 Б</translation>
     </message>
     <message>
         <source>Type</source>
         <comment>summary</comment>
-        <translation type="unfinished">Тип</translation>
+        <translation>Тип</translation>
     </message>
     <message>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="unfinished">Расположение</translation>
+        <translation>Расположение</translation>
     </message>
     <message>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="unfinished">Размер</translation>
+        <translation>Размер</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если приведенная выше информация верна, нажмите кнопку &lt;b&gt;%1&lt;/b&gt;. После этого будет создан новый жёсткий диск.</translation>
     </message>
 </context>
 <context>
@@ -1438,125 +1438,125 @@ p, li { white-space: pre-wrap; }
     <name>UINewVMWzdPage1</name>
     <message>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation type="unfinished">Мастер создания новой виртуальной машины</translation>
+        <translation>Мастер создания новой виртуальной машины</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Данный мастер поможет Вам осуществить создание новой виртуальной машины VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage2</name>
     <message>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Введите имя для новой виртуальной машины и выберите тип гостевой операционной системы, которую Вы планируете установить на эту машину.&lt;/p&gt;&lt;p&gt;Имя виртуальной машины обычно отражает ее программную и аппаратную конфигурацию. Это имя будет использоваться всеми приложениями VirtualBox для обозначения созданной виртуальной машины.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Введите имя для новой виртуальной машины и выберите тип гостевой операционной системы, которую Вы планируете установить на эту машину.&lt;/p&gt;&lt;p&gt;Имя виртуальной машины обычно отражает ее программную и аппаратную конфигурацию. Это имя будет использоваться всеми компонентами VirtualBox для обозначения данной виртуальной машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>N&amp;ame</source>
-        <translation type="unfinished">&amp;Имя</translation>
+        <translation>&amp;Имя</translation>
     </message>
     <message>
         <source>OS &amp;Type</source>
-        <translation type="unfinished">&amp;Тип ОС</translation>
+        <translation>&amp;Тип ОС</translation>
     </message>
     <message>
         <source>VM Name and OS Type</source>
-        <translation type="unfinished">Имя машины и тип ОС</translation>
+        <translation>Имя машины и тип ОС</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage3</name>
     <message>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Выберите количество основной памяти (RAM) в мегабайтах, выделяемой виртуальной машине.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Выберите количество основной памяти (RAM или ОЗУ) в мегабайтах, выделяемой виртуальной машине.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Base &amp;Memory Size</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Размер основной памяти</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished">МБ</translation>
+        <translation>МБ</translation>
     </message>
     <message>
         <source>Memory</source>
-        <translation type="unfinished">Память</translation>
+        <translation>Память</translation>
     </message>
     <message>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="unfinished">Рекомендуемый размер основной памяти: &lt;b&gt;%1&lt;/b&gt; Мб.</translation>
+        <translation>Рекомендуемый размер основной памяти: &lt;b&gt;%1&lt;/b&gt; МБ.</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished">МБ</translation>
+        <translation>МБ</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Выберите жесткий диск, который будет загрузочным диском виртуальной машины. Вы можете создать новый жесткий диск, нажав кнопку &lt;b&gt;Создать&lt;/b&gt;, либо выбрать существующий из выпадающего списка или из Менеджера виртуальных носителей (который откроется при нажатии на кнопку &lt;b&gt;Существующий&lt;/b&gt;).&lt;/p&gt;&lt;p&gt;Если Вам требуется более сложная конфигурация жестких дисков, то можно пропустить этот шаг и подсоединить жесткие диски позднее с помощью диалога Свойств машины.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Выберите жёсткий диск, который будет загрузочным диском виртуальной машины. Вы можете создать новый жёсткий диск, выбрав опцию &lt;b&gt;Создать новый жёсткий диск&lt;/b&gt;, либо указать существующий, выбрав опцию &lt;b&gt;Использовать существующий жёсткий диск&lt;/b&gt;, а затем выбрать диск из выпадающего списка или из &lt;b&gt;Менеджера виртуальных носителей&lt;/b&gt; (который откроется при нажатии на кнопку справа от списка).&lt;/p&gt;&lt;p&gt;Если Вам требуется более сложная конфигурация жёстких дисков, то можно пропустить этот шаг и подсоединить жёсткие диски позднее с помощью диалога настроек машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation type="unfinished">&amp;Загрузочный жёсткий диск (первичный мастер)</translation>
+        <translation type="unfinished">&amp;Загрузочный жёсткий диск</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
-        <translation type="unfinished">&amp;Создать новый жёсткий диск</translation>
+        <translation>&amp;Создать новый жёсткий диск</translation>
     </message>
     <message>
         <source>&amp;Use existing hard disk</source>
-        <translation type="unfinished">&amp;Использовать существующий жёсткий диск</translation>
+        <translation>&amp;Использовать существующий жёсткий диск</translation>
     </message>
     <message>
         <source>Virtual Hard Disk</source>
-        <translation type="unfinished">Виртуальный жесткий диск</translation>
+        <translation>Виртуальный жёсткий диск</translation>
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
-        <translation type="unfinished">Рекомендуемый размер загрузочного жесткого диска: &lt;b&gt;%1&lt;/b&gt; Мб.</translation>
+        <translation>Рекомендуемый размер загрузочного жёсткого диска: &lt;b&gt;%1&lt;/b&gt; МБ.</translation>
     </message>
 </context>
 <context>
     <name>UINewVMWzdPage5</name>
     <message>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Вы собираетесь создать виртуальную машину со следующими параметрами:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы собираетесь создать виртуальную машину со следующими параметрами:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished">Итог</translation>
+        <translation>Итог</translation>
     </message>
     <message>
         <source>Name</source>
         <comment>summary</comment>
-        <translation type="unfinished">Имя</translation>
+        <translation>Имя</translation>
     </message>
     <message>
         <source>OS Type</source>
         <comment>summary</comment>
-        <translation type="unfinished">Тип ОС</translation>
+        <translation>Тип ОС</translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation type="unfinished">Основная память</translation>
+        <translation>Основная память</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="unfinished">МБ</translation>
+        <translation>МБ</translation>
     </message>
     <message>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished">Загрузочный жесткий диск</translation>
+        <translation>Загрузочный жёсткий диск</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Если приведенная выше информация верна, нажмите кнопку &lt;b&gt;%1&lt;/b&gt;. После этого будет создана новая виртуальная машина. &lt;/p&gt;&lt;p&gt;Обратите внимание, что эти и другие параметры созданной машины можно будет изменить в любое время с помощью диалога &lt;b&gt;Свойства&lt;/b&gt;, доступ к которому можно получить через меню главного окна VirtualBox.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -1706,12 +1706,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished">МБ</translation>
+        <translation>МБ</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="unfinished">МБ</translation>
+        <translation>МБ</translation>
     </message>
 </context>
 <context>
@@ -2276,48 +2276,48 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Dock Icon</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Иконка дока</translation>
     </message>
     <message>
         <source>Show Application Icon</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Показать иконку приложения</translation>
     </message>
     <message>
         <source>Show Monitor Preview</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Предпросмотр монитора</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Адаптер %1 (%2)&lt;/b&gt;: %3 кабель %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>ACPI Sh&amp;utdown</source>
-        <translation type="unfinished"></translation>
+        <translation>В&amp;ыключить через ACPI</translation>
     </message>
     <message>
         <source>&amp;View</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Вид</translation>
     </message>
     <message>
         <source>Preview Monitor %1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Предпросмотр монитора %1</translation>
     </message>
     <message>
         <source>No CD/DVD devices attached to that VM</source>
-        <translation type="unfinished"></translation>
+        <translation>Нет подсоединенных приводов оптических дисков</translation>
     </message>
     <message>
         <source>No floppy devices attached to that VM</source>
-        <translation type="unfinished"></translation>
+        <translation>Нет подсоединенных приводов гибких дисков</translation>
     </message>
     <message>
         <source>No USB Devices Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Нет подсоединенных USB устройств</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
-        <translation type="unfinished">Нет поддерживаемых устройств, подключенных к основному ПК</translation>
+        <translation>Нет поддерживаемых устройств, подключенных к хосту</translation>
     </message>
 </context>
 <context>
@@ -2480,11 +2480,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Reset Host Key</source>
-        <translation type="unfinished"></translation>
+        <translation>Сбросить</translation>
     </message>
     <message>
         <source>Resets the key used as a Host Key in the VM window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Сбрасывает назначенную хост-клавишу в значение &apos;не установлено&apos;.</translation>
     </message>
 </context>
 <context>
@@ -3768,7 +3768,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Disabled</source>
         <comment>details report (2D Video Acceleration)</comment>
-        <translation>Отключено</translation>
+        <translation>Выключено</translation>
     </message>
     <message>
         <source>2D Video Acceleration</source>
@@ -4003,81 +4003,81 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Screens</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Мониторы</translation>
     </message>
     <message>
         <source>VDE network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>VDE-сеть, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>SAS</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>SAS</translation>
     </message>
     <message>
         <source>VDE Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>VDE-Адаптер</translation>
     </message>
     <message>
         <source>LsiLogic SAS</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>LsiLogic SAS</translation>
     </message>
     <message>
         <source>^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</source>
         <comment>regexp for matching ####[.##] B|KB|MB|GB|TB|PB, %1=decimal point</comment>
-        <translation type="unfinished"></translation>
+        <translation>^(?:(?:(\d+)(?:\s?(Б|КБ|МБ|ГБ|ТБ|ПБ))?)|(?:(\d*)%1(\d{1,2})(?:\s?(КБ|МБ|ГБ|ТБ|ПБ))))$</translation>
     </message>
     <message>
         <source>B</source>
         <comment>size suffix Bytes</comment>
-        <translation type="unfinished"></translation>
+        <translation>Б</translation>
     </message>
     <message>
         <source>KB</source>
         <comment>size suffix KBytes=1024 Bytes</comment>
-        <translation type="unfinished"></translation>
+        <translation>КБ</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished">МБ</translation>
+        <translation>МБ</translation>
     </message>
     <message>
         <source>GB</source>
         <comment>size suffix GBytes=1024 MBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation>ГБ</translation>
     </message>
     <message>
         <source>TB</source>
         <comment>size suffix TBytes=1024 GBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation>ТБ</translation>
     </message>
     <message>
         <source>PB</source>
         <comment>size suffix PBytes=1024 TBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation>ПБ</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished"></translation>
+        <translation>Включено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished"></translation>
+        <translation>Выключено</translation>
     </message>
     <message>
         <source>Nested Paging</source>
-        <translation type="unfinished"></translation>
+        <translation>Nested Paging</translation>
     </message>
     <message>
         <source>Shareable</source>
         <comment>DiskType</comment>
-        <translation type="unfinished"></translation>
+        <translation>С общим доступом</translation>
     </message>
 </context>
 <context>
@@ -5344,51 +5344,51 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Аппаратное ускорение (VT-x/AMD-V) не доступно в Вашей системе. Ваша 64х-битная гостевая операционная система не сможет определить 64х-битный процессор и, таким образом, не сможет загрузиться.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Аппаратное ускорение (VT-x/AMD-V) не доступно в Вашей системе. Некоторым операционным системам (таким как OS/2 и QNX) данный функционал необходим, они не смогут загрузиться без него.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Для удаление снимка %1 временно понадобится некоторое количество свободного дискового пространства. В самом худшем случае размер образа %2 увеличится на %3, однако в данной системе доступно лишь %4.&lt;/p&gt;&lt;p&gt;В случае нехватки свободного места в процессе операции объединения образов, может произойти критическая ошибка, что приведёт к повреждению образа и конфигурации виртуальной машины, иными словами - к потере данной машины и её данных.&lt;/p&gt;&lt;p&gt;Однако, Вы все же можете попытаться удалить данный снимок на свой страх и риск.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Не удалось сопоставить монитор гостевой машины с данным монитором хоста из-за нехватки видео-памяти.&lt;/p&gt;&lt;p&gt;Вам следует настроить виртуальную машину таким образом, что бы она имела как минимум &lt;b&gt;%1&lt;/b&gt; видео-памяти.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Не удалось сопоставить монитор гостевой машины с данным монитором хоста из-за нехватки видео-памяти.&lt;/p&gt;&lt;p&gt;Вам следует настроить виртуальную машину таким образом, что бы она имела как минимум &lt;b&gt;%1&lt;/b&gt; видео-памяти.&lt;/p&gt;&lt;p&gt;Нажмите кнопку &lt;b&gt;Игнорировать&lt;/b&gt; чтобы попытаться это сделать в любом случае или &lt;b&gt;Отмена&lt;/b&gt; чтобы прервать данную операцию.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Не удалось переключить гостевую операционную систему в режим полного экрана. Данная машина настроена на поддержку большего количества виртуальных мониторов, чем реально имеется на Вашем хосте.&lt;/p&gt;&lt;p&gt;Пожалуйста уменьшите количество виртуальных мониторов в настройках Вашей машины, либо подключите дополнительные мониторы к Вашему хосту.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Не удалось переключить гостевую операционную систему в режим интеграции экрана. Данная машина настроена на поддержку большего количества виртуальных мониторов, чем реально имеется на Вашем хосте.&lt;/p&gt;&lt;p&gt;Пожалуйста уменьшите количество виртуальных мониторов в настройках Вашей машины, либо подключите дополнительные мониторы к Вашему хосту.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Не удалось обнаружить Руководство Пользователя VirtualBox &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Не желаете ли загрузить данный документ с сайта в сети Интернет?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Вы уверены, что хотите загрузить Руководство Пользователя VirtualBox, находящееся по адресу &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (размер %3 б)?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Не удалось загрузить Руководство Пользователя VirtualBox, находящееся по адресу &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Руководство Пользователя VirtualBox было успешно загружено с сетевого адреса &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; и сохранено локально по адресу &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Руководство Пользователя VirtualBox было успешно загружено с сетевого адреса &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;, но не может быть сохранено локально по адресу &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Пожалуйста укажите иное местоположение для данного файла.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -6585,15 +6585,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Mo&amp;nitor Count:</source>
-        <translation type="unfinished"></translation>
+        <translation>Количество &amp;мониторов:</translation>
     </message>
     <message>
         <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задаёт количество виртуальных мониторов, подключенных к данной виртуальной машине.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -6680,7 +6680,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вы включили поддержку USB HID (устройства пользовательского интерфейса). Данная опция не работает без активированной USB эмуляции, поэтому USB эмуляция будет активирована в момент сохранения настроек виртуальной машины при закрытии данного диалога.</translation>
     </message>
 </context>
 <context>
@@ -7245,27 +7245,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Allows to use host I/O caching capabilities.</source>
-        <translation type="unfinished"></translation>
+        <translation>Позволяет использовать функции кеширования операций ввода/вывода данного хоста.</translation>
     </message>
     <message>
         <source>Use host I/O cache</source>
-        <translation type="unfinished"></translation>
+        <translation>Кеширование операций ввода/вывода</translation>
     </message>
     <message>
         <source>Add SAS Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить SAS контроллер</translation>
     </message>
     <message>
         <source>SAS Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>SAS контроллер</translation>
     </message>
     <message>
         <source>Storage Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Контроллер</translation>
     </message>
     <message>
         <source>Storage Controller 1</source>
-        <translation type="unfinished"></translation>
+        <translation>Контроллер 1</translation>
     </message>
 </context>
 <context>
@@ -8008,23 +8008,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если стоит галочка, часы Вашего хоста отобразят время по шкале всемирного координированного времени (UTC), иначе будет отображено локальное время хоста. Unix-подобные системы обычно придерживаются системы UTC.</translation>
     </message>
     <message>
         <source>Hardware clock in &amp;UTC time</source>
-        <translation type="unfinished"></translation>
+        <translation>Часы в системе &amp;UTC</translation>
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
-        <translation type="unfinished"></translation>
+        <translation>Контролирует количество процессоров виртуальной машины. Вам необходима поддержка аппаратной виртуализации для задействования более одного процессора в виртуальной машине.</translation>
     </message>
     <message>
         <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если стоит галочка, будут поддерживаться абсолютные устройства позиционирования (такие как USB планшет). В противном случае, эмулированы будут лишь стандартные PS/2 мыши.</translation>
     </message>
     <message>
         <source>Enable &amp;absolute pointing device</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Абсолютные устройства позиционирования</translation>
     </message>
 </context>
 <context>
