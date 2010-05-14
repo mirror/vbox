@@ -8521,7 +8521,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="27211d55-8b11-4f07-9519-b7563ea2dc29"
+     uuid="909a8633-6e99-4d05-a305-dfe29ca1bc1c"
      wsmap="managed"
      >
     <desc>
@@ -8584,13 +8584,6 @@
 
     <attribute name="memoryBalloonSize" type="unsigned long">
       <desc>Guest system memory balloon size in megabytes (transient property).</desc>
-    </attribute>
-
-    <attribute name="PageFusionEnabled" type="boolean">
-      <desc>
-        Flag whether VirtualBox allows page fusion for this machine
-        (64 bits host only; transient property).
-      </desc>
     </attribute>
 
     <attribute name="statisticsUpdateInterval" type="unsigned long">
