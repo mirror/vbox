@@ -72,8 +72,8 @@ public:
     STDMETHOD(COMSETTER(PortCount)) (ULONG aPortCount);
     STDMETHOD(COMGETTER(Instance)) (ULONG *aInstance);
     STDMETHOD(COMSETTER(Instance)) (ULONG aInstance);
-    STDMETHOD(COMGETTER(IoBackend)) (IoBackendType_T *aIoBackend);
-    STDMETHOD(COMSETTER(IoBackend)) (IoBackendType_T aIoBackend);
+    STDMETHOD(COMGETTER(UseHostIOCache)) (BOOL *fUseHostIOCache);
+    STDMETHOD(COMSETTER(UseHostIOCache)) (BOOL fUseHostIOCache);
 
     // StorageController methods
     STDMETHOD(GetIDEEmulationPort) (LONG DevicePosition, LONG *aPortNumber);

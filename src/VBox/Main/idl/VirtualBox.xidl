@@ -1094,7 +1094,7 @@
     </const>
   </enum>
 
-  <enum
+<!--  <enum
        name="IoBackendType"
        uuid="2a7e16d1-4e6b-4d5d-b0c9-b9bbe6c5b2ad"
        >
@@ -1117,7 +1117,7 @@
         This is new with the API of version 3.2 and is now the default for non-IDE storage controllers.</desc>
     </const>
   </enum>
-
+-->
 
   <!--
   // IVirtualBoxErrorInfo
@@ -13754,7 +13754,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IStorageController" extends="$unknown"
-    uuid="7635f4ec-8a28-44b5-9223-315a87b710fb"
+    uuid="fd93adc0-bbaa-4256-9e6e-00e29f9151c9"
     wsmap="managed"
   >
     <desc>
@@ -13837,9 +13837,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="ioBackend" type="IoBackendType">
+    <attribute name="useHostIOCache" type="boolean">
       <desc>
-        The I/O backend to use for the given storage controller.
+        If true, the storage controller emulation will use a dedicated I/O thread, enable the host I/O
+        caches and use synchronous file APIs on the host. This was the only option in the API before
+        VirtualBox 3.2 and is still the default for IDE controllers.
+
+        If false, the host I/O cache will be disabled for image files attached to this storage controller.
+        Instead, the storage controller emulation will use asynchronous I/O APIs on the host. This makes
+        it possible to turn off the host I/O caches because the emulation can handle unaligned access to
+        the file. This should be used on OS X and Linux hosts if a high I/O load is expected or many
+        virtual machines are running at the same time to prevent I/O cache related hangs.
+        This option new with the API of VirtualBox 3.2 and is now the default for non-IDE storage controllers.
       </desc>
     </attribute>
 

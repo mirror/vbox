@@ -763,7 +763,7 @@ struct StorageController
           controllerType(StorageControllerType_PIIX3),
           ulPortCount(2),
           ulInstance(0),
-          ioBackendType(IoBackendType_Buffered),
+          fUseHostIOCache(true),
           lIDE0MasterEmulationPort(0),
           lIDE0SlaveEmulationPort(0),
           lIDE1MasterEmulationPort(0),
@@ -777,7 +777,7 @@ struct StorageController
     StorageControllerType_T controllerType;
     uint32_t                ulPortCount;
     uint32_t                ulInstance;
-    IoBackendType_T         ioBackendType;
+    bool                    fUseHostIOCache;
 
     // only for when controllerType == StorageControllerType_IntelAhci:
     int32_t                 lIDE0MasterEmulationPort,

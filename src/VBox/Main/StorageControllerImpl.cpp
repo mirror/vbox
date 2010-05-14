@@ -44,7 +44,7 @@ struct BackupableStorageControllerData
           mStorageControllerType(StorageControllerType_PIIX4),
           mInstance(0),
           mPortCount(2),
-          mIoBackendType(IoBackendType_Buffered),
+          fUseHostIOCache(true),
           mPortIde0Master(0),
           mPortIde0Slave(1),
           mPortIde1Master(2),
@@ -61,8 +61,8 @@ struct BackupableStorageControllerData
     ULONG mInstance;
     /** Number of usable ports. */
     ULONG mPortCount;
-    /** I/O backend type */
-    IoBackendType_T         mIoBackendType;
+    /** Whether to use the host IO caches. */
+    BOOL fUseHostIOCache;
 
     /** The following is only for the SATA controller atm. */
     /** Port which acts as primary master for ide emulation. */
@@ -144,9 +144,9 @@ HRESULT StorageController::init(Machine *aParent,
     m->bd->mInstance = aInstance;
     m->bd->mStorageBus = aStorageBus;
     if (aStorageBus != StorageBus_IDE)
-        m->bd->mIoBackendType = IoBackendType_Unbuffered;
+        m->bd->fUseHostIOCache = false;
     else
-        m->bd->mIoBackendType = IoBackendType_Buffered;
+        m->bd->fUseHostIOCache = true;
 
     switch (aStorageBus)
     {
@@ -607,7 +607,7 @@ STDMETHODIMP StorageController::COMSETTER(Instance) (ULONG aInstance)
     return S_OK;
 }
 
-STDMETHODIMP StorageController::COMGETTER(IoBackend) (IoBackendType_T *aIoBackend)
+STDMETHODIMP StorageController::COMGETTER(UseHostIOCache) (BOOL *fUseHostIOCache)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -616,12 +616,12 @@ STDMETHODIMP StorageController::COMGETTER(IoBackend) (IoBackendType_T *aIoBacken
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aIoBackend = m->bd->mIoBackendType;
+    *fUseHostIOCache = m->bd->fUseHostIOCache;
 
     return S_OK;
 }
 
-STDMETHODIMP StorageController::COMSETTER(IoBackend) (IoBackendType_T aIoBackend)
+STDMETHODIMP StorageController::COMSETTER(UseHostIOCache) (BOOL fUseHostIOCache)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -632,10 +632,10 @@ STDMETHODIMP StorageController::COMSETTER(IoBackend) (IoBackendType_T aIoBackend
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (m->bd->mIoBackendType != aIoBackend)
+    if (m->bd->fUseHostIOCache != !!fUseHostIOCache)
     {
         m->bd.backup();
-        m->bd->mIoBackendType = aIoBackend;
+        m->bd->fUseHostIOCache = !!fUseHostIOCache;
 
         alock.release();
         AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);        // m->pParent is const, needs no locking

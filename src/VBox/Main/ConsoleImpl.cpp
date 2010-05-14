@@ -3214,8 +3214,8 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
     ULONG uInstance;
     rc = ctrl->COMGETTER(Instance)(&uInstance);
     AssertComRC(rc);
-    IoBackendType_T enmIoBackend;
-    rc = ctrl->COMGETTER(IoBackend)(&enmIoBackend);
+    BOOL fUseHostIOCache;
+    rc = ctrl->COMGETTER(UseHostIOCache)(&fUseHostIOCache);
     AssertComRC(rc);
 
     /* protect mpVM */
@@ -3228,10 +3228,20 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
      * here to make requests from under the lock in order to serialize them.
      */
     PVMREQ pReq;
-    int vrc = VMR3ReqCall(mpVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                          (PFNRT)Console::changeRemovableMedium, 7,
-                          this, pszDevice, uInstance, enmBus, enmIoBackend,
-                          aMediumAttachment, fForce);
+    int vrc = VMR3ReqCall(mpVM,
+                          VMCPUID_ANY,
+                          &pReq,
+                          0 /* no wait! */,
+                          VMREQFLAGS_VBOX_STATUS,
+                          (PFNRT)Console::changeRemovableMedium,
+                          7,
+                          this,
+                          pszDevice,
+                          uInstance,
+                          enmBus,
+                          fUseHostIOCache,
+                          aMediumAttachment,
+                          fForce);
 
     /* leave the lock before waiting for a result (EMT will call us back!) */
     alock.leave();
@@ -3284,7 +3294,7 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pConsole,
                                                  const char *pcszDevice,
                                                  unsigned uInstance,
                                                  StorageBus_T enmBus,
-                                                 IoBackendType_T enmIoBackend,
+                                                 bool fUseHostIOCache,
                                                  IMediumAttachment *aMediumAtt,
                                                  bool fForce)
 {
@@ -3347,7 +3357,7 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pConsole,
                                              pcszDevice,
                                              uInstance,
                                              enmBus,
-                                             enmIoBackend,
+                                             fUseHostIOCache,
                                              false /* fSetupMerge */,
                                              0 /* uMergeSource */,
                                              0 /* uMergeTarget */,
@@ -4460,8 +4470,8 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
     ULONG uInstance;
     rc = ctrl->COMGETTER(Instance)(&uInstance);
     AssertComRC(rc);
-    IoBackendType_T enmIoBackend;
-    rc = ctrl->COMGETTER(IoBackend)(&enmIoBackend);
+    BOOL fUseHostIOCache;
+    rc = ctrl->COMGETTER(UseHostIOCache)(&fUseHostIOCache);
     AssertComRC(rc);
 
     unsigned uLUN;
@@ -4491,7 +4501,7 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
                           pcszDevice,
                           uInstance,
                           enmBus,
-                          enmIoBackend,
+                          fUseHostIOCache,
                           true /* fSetupMerge */,
                           aSourceIdx,
                           aTargetIdx,
@@ -4566,7 +4576,7 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
                           pcszDevice,
                           uInstance,
                           enmBus,
-                          enmIoBackend,
+                          fUseHostIOCache,
                           false /* fSetupMerge */,
                           0 /* uMergeSource */,
                           0 /* uMergeTarget */,
@@ -7564,7 +7574,7 @@ DECLCALLBACK(int) Console::reconfigureMediumAttachment(Console *pConsole,
                                                        const char *pcszDevice,
                                                        unsigned uInstance,
                                                        StorageBus_T enmBus,
-                                                       IoBackendType_T enmIoBackend,
+                                                       bool fUseHostIOCache,
                                                        bool fSetupMerge,
                                                        unsigned uMergeSource,
                                                        unsigned uMergeTarget,
@@ -7598,7 +7608,7 @@ DECLCALLBACK(int) Console::reconfigureMediumAttachment(Console *pConsole,
                                           pcszDevice,
                                           uInstance,
                                           enmBus,
-                                          enmIoBackend,
+                                          fUseHostIOCache,
                                           fSetupMerge,
                                           uMergeSource,
                                           uMergeTarget,
@@ -7744,7 +7754,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 ULONG lInstance;
                 StorageControllerType_T enmController;
                 StorageBus_T enmBus;
-                IoBackendType_T enmIoBackend;
+                BOOL fUseHostIOCache;
 
                 /*
                 * We can't pass a storage controller object directly
@@ -7768,7 +7778,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 rc = controller->COMGETTER(Bus)(&enmBus);
                 if (FAILED(rc))
                     throw rc;
-                rc = controller->COMGETTER(IoBackend)(&enmIoBackend);
+                rc = controller->COMGETTER(UseHostIOCache)(&fUseHostIOCache);
                 if (FAILED(rc))
                     throw rc;
 
@@ -7787,7 +7797,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                                       pcszDevice,
                                       lInstance,
                                       enmBus,
-                                      enmIoBackend,
+                                      fUseHostIOCache,
                                       false /* fSetupMerge */,
                                       0 /* uMergeSource */,
                                       0 /* uMergeTarget */,
