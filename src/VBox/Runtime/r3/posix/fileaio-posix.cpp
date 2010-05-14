@@ -748,12 +748,12 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
                     }
                 }
                 ASMAtomicAddS32(&pCtxInt->cRequests, cReqsSubmitted);
-                AssertMsg(pCtxInt->cRequests > 0, ("Adding requests resulted in overflow\n"));
+                AssertMsg(pCtxInt->cRequests >= 0, ("Adding requests resulted in overflow\n"));
                 break;
             }
 
             ASMAtomicAddS32(&pCtxInt->cRequests, cReqsSubmit);
-            AssertMsg(pCtxInt->cRequests > 0, ("Adding requests resulted in overflow\n"));
+            AssertMsg(pCtxInt->cRequests >= 0, ("Adding requests resulted in overflow\n"));
             cReqs   -= cReqsSubmit;
             pahReqs += cReqsSubmit;
         }
@@ -801,7 +801,7 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
                 RTFILEAIOREQ_SET_STATE(pReqInt, SUBMITTED);
 
                 ASMAtomicIncS32(&pCtxInt->cRequests);
-                AssertMsg(pCtxInt->cRequests > 0, ("Adding requests resulted in overflow\n"));
+                AssertMsg(pCtxInt->cRequests >= 0, ("Adding requests resulted in overflow\n"));
                 cReqs--;
                 pahReqs++;
             }
