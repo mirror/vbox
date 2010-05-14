@@ -2315,6 +2315,9 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     AssertRC(rc);
     fHostIPDef = !!uHostIPTmp;
 
+    if (uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO)
+        return VERR_NOT_SUPPORTED;
+
     pImage->uOpenFlags      = uOpenFlags;
 
     /* Get error signalling interface. */
