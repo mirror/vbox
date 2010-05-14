@@ -4988,7 +4988,10 @@ STDMETHODIMP Machine::ReadLog(ULONG aIdx, ULONG64 aOffset, ULONG64 aSize, ComSaf
      * not need the lock and potentially takes a long time. */
     alock.release();
 
-    size_t cbData = (size_t)RT_MIN(aSize, 2048);
+    /* Limit the chunk size to 32K for now, as that gives better performance
+     * over (XP)COM, and keeps the SOAP reply size under 1M for the webservice.
+     * One byte expands to approx. 25 bytes of breathtaking XML. */
+    size_t cbData = (size_t)RT_MIN(aSize, 32768);
     com::SafeArray<BYTE> logData(cbData);
 
     RTFILE LogFile;
