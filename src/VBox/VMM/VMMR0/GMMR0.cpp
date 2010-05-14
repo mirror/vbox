@@ -3664,6 +3664,8 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
                         if (pRec->aRegions[i].paHCPhysPageID)
                             RTMemFree(pRec->aRegions[i].paHCPhysPageID);
 
+                    /* Remove from the tree and free memory. */
+                    RTAvlGCPtrRemove(&pGMM->pGlobalSharedModuleTree, GCBaseAddr);
                     RTMemFree(pRec);
                 }
             }
@@ -3673,6 +3675,8 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
         else
             Assert(!pRecVM->pGlobalModule);
 
+        /* Remove from the tree and free memory. */
+        RTAvlGCPtrRemove(&pGVM->gmm.s.pSharedModuleTree, GCBaseAddr);
         RTMemFree(pRecVM);
 
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
