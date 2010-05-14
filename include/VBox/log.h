@@ -267,6 +267,8 @@ typedef enum LOGGROUP
     LOG_GROUP_PGM_PHYS_ACCESS,
     /** PGM shadow page pool group. */
     LOG_GROUP_PGM_POOL,
+    /** PGM shared paging group. */
+    LOG_GROUP_PGM_SHARED,
     /** REM group. */
     LOG_GROUP_REM,
     /** REM disassembly handler group. */
@@ -460,6 +462,7 @@ typedef enum LOGGROUP
     "PGM_PHYS",     \
     "PGM_PHYS_ACCESS",\
     "PGM_POOL",     \
+    "PGM_SHARED",   \
     "REM",          \
     "REM_DISAS",    \
     "REM_HANDLER",  \
