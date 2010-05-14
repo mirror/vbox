@@ -544,7 +544,6 @@ static DECLCALLBACK(void) vboxNetFltPortNotifyMacAddress(PINTNETTRUNKIFPORT pIfP
      * Input validation.
      */
     AssertPtr(pThis);
-    AssertPtr(pSG);
     Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
 
     vboxNetFltRetain(pThis, false /* fBusy */);
@@ -565,7 +564,6 @@ static DECLCALLBACK(int) vboxNetFltPortConnectInterface(PINTNETTRUNKIFPORT pIfPo
      * Input validation.
      */
     AssertPtr(pThis);
-    AssertPtr(pSG);
     Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
 
     vboxNetFltRetain(pThis, false /* fBusy */);
@@ -588,7 +586,6 @@ static DECLCALLBACK(int) vboxNetFltPortDisconnectInterface(PINTNETTRUNKIFPORT pI
      * Input validation.
      */
     AssertPtr(pThis);
-    AssertPtr(pSG);
     Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
 
     vboxNetFltRetain(pThis, false /* fBusy */);
