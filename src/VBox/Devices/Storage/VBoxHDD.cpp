@@ -1458,7 +1458,7 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
                                                          uOffset, pTmp->cbSeg,
                                                          pTmp, 1,
                                                          pIoCtx, cbThisWrite,
-                                                         pTmp, 
+                                                         pTmp,
                                                            (pImage->uOpenFlags & VD_OPEN_FLAGS_HONOR_SAME)
                                                          ? vdWriteHelperStandardAsync
                                                          : vdWriteHelperOptimizedAsync);
@@ -1839,7 +1839,7 @@ static int vdIOReqCompleted(void *pvUser, int rcReq)
 
                 if (RT_FAILURE(pIoCtx->rcReq))
                     ASMAtomicCmpXchgS32(&pIoCtxParent->rcReq, pIoCtx->rcReq, VINF_SUCCESS);
- 
+
                 /*
                  * A completed child write means that we finsihed growing the image.
                  * We have to process any pending writes now.
@@ -3936,7 +3936,6 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         pImageFrom->Backend->pfnGetLCHSGeometry(pImageFrom->pvBackendData, &LCHSGeometryFrom);
 
         RTUUID ImageUuid, ImageModificationUuid;
-        RTUUID ParentUuid, ParentModificationUuid;
         if (pDiskFrom != pDiskTo)
         {
             if (pDstUuid)
@@ -3953,12 +3952,6 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         rc = pImageFrom->Backend->pfnGetModificationUuid(pImageFrom->pvBackendData, &ImageModificationUuid);
         if (RT_FAILURE(rc))
             RTUuidClear(&ImageModificationUuid);
-        rc = pImageFrom->Backend->pfnGetParentUuid(pImageFrom->pvBackendData, &ParentUuid);
-        if (RT_FAILURE(rc))
-            RTUuidClear(&ParentUuid);
-        rc = pImageFrom->Backend->pfnGetParentModificationUuid(pImageFrom->pvBackendData, &ParentModificationUuid);
-        if (RT_FAILURE(rc))
-            RTUuidClear(&ParentModificationUuid);
 
         char szComment[1024];
         rc = pImageFrom->Backend->pfnGetComment(pImageFrom->pvBackendData, szComment, sizeof(szComment));
@@ -3974,19 +3967,28 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         AssertRC(rc2);
         fLockReadFrom = false;
 
+        rc2 = vdThreadStartRead(pDiskTo);
+        AssertRC(rc2);
+        unsigned cImagesTo = pDiskTo->cImages;
+        rc2 = vdThreadFinishRead(pDiskTo);
+        AssertRC(rc2);
+
         if (pszFilename)
         {
             if (cbSize == 0)
                 cbSize = cbSizeFrom;
 
-            /* Create destination image with the properties of the source image. */
+            /* Create destination image with the properties of source image. */
             /** @todo replace the VDCreateDiff/VDCreateBase calls by direct
              * calls to the backend. Unifies the code and reduces the API
              * dependencies. Would also make the synchronization explicit. */
-            if (uImageFlags & VD_IMAGE_FLAGS_DIFF)
+            if (cImagesTo > 0)
             {
-                rc = VDCreateDiff(pDiskTo, pszBackend, pszFilename, uImageFlags,
-                                  szComment, &ImageUuid, &ParentUuid, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
+                rc = VDCreateDiff(pDiskTo, pszBackend, pszFilename,
+                                  uImageFlags, szComment, &ImageUuid,
+                                  NULL /* pParentUuid */,
+                                  uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY,
+                                  NULL, NULL);
 
                 rc2 = vdThreadStartWrite(pDiskTo);
                 AssertRC(rc2);
@@ -4023,8 +4025,6 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
 
                 if (RT_SUCCESS(rc) && !RTUuidIsNull(&ImageUuid))
                      pDiskTo->pLast->Backend->pfnSetUuid(pDiskTo->pLast->pvBackendData, &ImageUuid);
-                if (RT_SUCCESS(rc) && !RTUuidIsNull(&ParentUuid))
-                     pDiskTo->pLast->Backend->pfnSetParentUuid(pDiskTo->pLast->pvBackendData, &ParentUuid);
             }
             if (RT_FAILURE(rc))
                 break;
@@ -4137,11 +4137,6 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
              * backend might not provide a valid modification UUID. */
             if (!RTUuidIsNull(&ImageModificationUuid))
                 pImageTo->Backend->pfnSetModificationUuid(pImageTo->pvBackendData, &ImageModificationUuid);
-            /** @todo double-check this - it makes little sense to copy over the parent modification uuid,
-             * as the destination image can have a totally different parent. */
-#if 0
-            pImageTo->Backend->pfnSetParentModificationUuid(pImageTo->pvBackendData, &ParentModificationUuid);
-#endif
         }
     } while (0);
 
