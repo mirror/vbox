@@ -55,6 +55,7 @@ enum
     MODIFYVM_NAME = 1000,
     MODIFYVM_OSTYPE,
     MODIFYVM_MEMORY,
+    MODIFYVM_PAGEFUSION,
     MODIFYVM_VRAM,
     MODIFYVM_FIRMWARE,
     MODIFYVM_ACPI,
@@ -163,6 +164,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--name",                     MODIFYVM_NAME,                      RTGETOPT_REQ_STRING },
     { "--ostype",                   MODIFYVM_OSTYPE,                    RTGETOPT_REQ_STRING },
     { "--memory",                   MODIFYVM_MEMORY,                    RTGETOPT_REQ_UINT32 },
+    { "--pagefusion",               MODIFYVM_PAGEFUSION,                RTGETOPT_REQ_BOOL_ONOFF },
     { "--vram",                     MODIFYVM_VRAM,                      RTGETOPT_REQ_UINT32 },
     { "--firmware",                 MODIFYVM_FIRMWARE,                  RTGETOPT_REQ_STRING },
     { "--acpi",                     MODIFYVM_ACPI,                      RTGETOPT_REQ_BOOL_ONOFF },
@@ -347,6 +349,12 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_MEMORY:
             {
                 CHECK_ERROR(machine, COMSETTER(MemorySize)(ValueUnion.u32));
+                break;
+            }
+
+            case MODIFYVM_PAGEFUSION:
+            {
+                CHECK_ERROR(machine, COMSETTER(PageFusionEnabled)(ValueUnion.f));
                 break;
             }
 
