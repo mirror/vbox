@@ -207,16 +207,6 @@ STDMETHODIMP Guest::COMGETTER(SupportsGraphics) (BOOL *aSupportsGraphics)
     return S_OK;
 }
 
-STDMETHODIMP Guest::COMGETTER(PageFusionEnabled) (BOOL *enabled)
-{
-    return E_NOTIMPL;
-}
-
-STDMETHODIMP Guest::COMSETTER(PageFusionEnabled) (BOOL enabled)
-{
-    return E_NOTIMPL;
-}
-
 STDMETHODIMP Guest::COMGETTER(MemoryBalloonSize) (ULONG *aMemoryBalloonSize)
 {
     CheckComArgOutPointerValid(aMemoryBalloonSize);
