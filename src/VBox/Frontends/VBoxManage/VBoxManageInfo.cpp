@@ -228,6 +228,13 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     else
         RTPrintf("Memory size:     %uMB\n", memorySize);
 
+    BOOL fPageFusionEnabled;
+    rc = machine->COMGETTER(PageFusionEnabled)(&fPageFusionEnabled);
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("pagefusion=\"%s\"\n", fPageFusionEnabled ? "on" : "off");
+    else
+        RTPrintf("Page Fusion:     %s\n", fPageFusionEnabled ? "on" : "off");
+
     ULONG vramSize;
     rc = machine->COMGETTER(VRAMSize)(&vramSize);
     if (details == VMINFO_MACHINEREADABLE)
