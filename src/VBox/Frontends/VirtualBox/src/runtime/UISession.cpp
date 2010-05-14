@@ -797,8 +797,10 @@ QMenuBar* UISession::newMenuBar(UIMainMenuType fOptions /* = UIMainMenuType_ALL 
 
 bool UISession::setPause(bool fOn)
 {
-    if (isPaused() == fOn)
-        return true;
+    /* Commenting it out as isPaused() could reflect
+     * quite obsolete state due to synchronization: */
+    //if (isPaused() == fOn)
+    //    return true;
 
     CConsole console = session().GetConsole();
 
