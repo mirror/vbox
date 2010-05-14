@@ -55,6 +55,7 @@
 #include <VBox/log.h>
 #include <iprt/alloc.h>
 #include <iprt/err.h>
+#include <iprt/asm.h>
 
 #ifdef VBOX_WITH_HARDENING
 # define VBOXDRV_PERM 0600
