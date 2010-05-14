@@ -1368,9 +1368,11 @@ vbi_pages_premap(page_t **pp_pages, size_t size, uint64_t *pphysaddrs)
 	{
 		/*
 		 * prepare pages for mapping into kernel/user space, we need to
-		 * downgrade the exclusive page lock to a shared lock.
+		 * downgrade the exclusive page lock to a shared lock if the
+		 * pages is locked exclusively.
 		 */
-		page_downgrade(pp_pages[i]);
+		if (page_tryupgrade(pp_pages[i]) == 1)
+    		page_downgrade(pp_pages[i]);
 		pphysaddrs[i] = vbi_page_to_pa(pp_pages, i);
 	}
 
