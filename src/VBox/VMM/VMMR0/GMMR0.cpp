@@ -157,7 +157,6 @@
 #include <VBox/log.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
-#include <VBox/vm.h>
 #include <iprt/asm.h>
 #include <iprt/avl.h>
 #include <iprt/mem.h>
@@ -3974,9 +3973,9 @@ DECLCALLBACK(int) gmmR0CheckSharedModule(PAVLGCPTRNODECORE pNode, void *pvUser)
  *
  * @returns VBox status code.
  * @param   pVM                 VM handle
- * @param   pVCpu               VMCPU handle
+ * @param   idCpu               VCPU id
  */
-GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
+GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, VMCPUID idCpu)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
     /*
@@ -3985,7 +3984,7 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
     PGVM pGVM;
-    int rc = GVMMR0ByVMAndEMT(pVM, pVCpu->idCpu, &pGVM);
+    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -4000,7 +3999,7 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
 
         Log(("GMMR0CheckSharedModules\n"));
         Info.pGVM = pGVM;
-        Info.idCpu = pVCpu->idCpu;
+        Info.idCpu = idCpu;
 
         RTAvlGCPtrDoWithAll(&pGVM->gmm.s.pSharedModuleTree, true /* fFromLeft */, gmmR0CheckSharedModule, &Info);
 

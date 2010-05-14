@@ -968,7 +968,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
             /* Select a valid VCPU context. */
             ASMAtomicWriteU32(&pVCpu->idHostCpu, RTMpCpuId());
 
-            int rc = vmmR0CallRing3SetJmp(&pVCpu->vmm.s.CallRing3JmpBufR0, GMMR0CheckSharedModules, pVM, pVCpu); /* this may resume code. */
+            int rc = GMMR0CheckSharedModules(pVM, idCpu);
 
             /* Clear the VCPU context. */
             ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
