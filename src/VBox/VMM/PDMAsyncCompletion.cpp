@@ -765,8 +765,8 @@ static PPDMASYNCCOMPLETIONTASK pdmR3AsyncCompletionGetTask(PPDMASYNCCOMPLETIONEN
         /* Clear list pointers for safety. */
         pTask->pPrev     = NULL;
         pTask->pNext     = NULL;
-#ifdef VBOX_WITH_STATISTICS
         pTask->tsNsStart = RTTimeNanoTS();
+#ifdef VBOX_WITH_STATISTICS
         STAM_COUNTER_INC(&pEndpoint->StatIoOpsStarted);
 #endif
     }
@@ -784,9 +784,14 @@ static PPDMASYNCCOMPLETIONTASK pdmR3AsyncCompletionGetTask(PPDMASYNCCOMPLETIONEN
 static void pdmR3AsyncCompletionPutTask(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, PPDMASYNCCOMPLETIONTASK pTask)
 {
     PPDMASYNCCOMPLETIONEPCLASS pEndpointClass = pEndpoint->pEpClass;
+    uint64_t tsRun  = RTTimeNanoTS() - pTask->tsNsStart;
+
+    if (RT_UNLIKELY(tsRun >= (uint64_t)10*1000*1000*1000))
+    {
+        LogRel(("AsyncCompletion: Task completed after %llu seconds\n", tsRun / ((uint64_t)1000*1000*1000)));
+    }
 
 #ifdef VBOX_WITH_STATISTICS
-    uint64_t tsRun  = RTTimeNanoTS() - pTask->tsNsStart;
     uint64_t iStatIdx;
 
     if (tsRun < 1000)
