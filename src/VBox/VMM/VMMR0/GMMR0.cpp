@@ -3545,6 +3545,9 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
             pGlobalModule->cUsers++;
             rc = VINF_SUCCESS;
 
+            bool ret = RTAvlGCPtrInsert(&pGMM->pGlobalSharedModuleTree, &pGlobalModule->Core);
+            Assert(ret);
+
             Log(("GMMR0RegisterSharedModule: new global module %s\n", pszModuleName));
         }
         else
