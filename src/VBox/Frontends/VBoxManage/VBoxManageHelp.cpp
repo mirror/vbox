@@ -47,6 +47,7 @@ void showLogo(void)
 
 void printUsage(USAGECATEGORY u64Cmd)
 {
+    bool fDumpOpts = false;
 #ifdef RT_OS_LINUX
     bool fLinux = true;
 #else
@@ -85,6 +86,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 
     if (u64Cmd == USAGE_DUMPOPTS)
     {
+        fDumpOpts = true;
         fLinux = true;
         fWin = true;
         fSolaris = true;
@@ -186,11 +188,12 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--biospxedebug on|off]\n"
                  "                            [--boot<1-4> none|floppy|dvd|disk|net>]\n"
                  "                            [--nic<1-N> none|null|nat|bridged|intnet"
-#if defined(VBOX_WITH_NETFLT) /* RT_OS_LINUX || RT_OS_DARWIN */
+#if defined(VBOX_WITH_NETFLT)
                  "|hostonly"
 #endif
 #ifdef VBOX_WITH_VDE
-                 "|vde"
+                 "|\n"
+                 "                                        vde"
 #endif
                  "]\n"
                  "                            [--nictype<1-N> Am79C970A|Am79C973"
@@ -215,11 +218,11 @@ void printUsage(USAGECATEGORY u64Cmd)
 #ifdef VBOX_WITH_VDE
                  "                            [--vdenet<1-N> <network>|default]\n"
 #endif
-                 "                            [--natsettings<1-N> \"[<mtu>],[<socksnd>],[<sockrcv>],\n"
-                 "                                                         [<tcpsnd>],[<tcprcv>]\"]\n"
-                 "                            [--natpf<1-N> \"[<rulename>],tcp|udp,\n"
-                 "                                                        [<hostip>],<hostport>,\n"
-                 "                                                        [<guestip>],<guestport>\"]\n"
+                 "                            [--natsettings<1-N> [<mtu>],[<socksnd>],\n"
+                 "                                                [<sockrcv>],[<tcpsnd>],\n"
+                 "                                                [<tcprcv>]]\n"
+                 "                            [--natpf<1-N> [<rulename>],tcp|udp,[<hostip>],\n"
+                 "                                          <hostport>,[<guestip>],<guestport>]\n"
                  "                            [--natpf<1-N> delete <rulename>]\n"
                  "                            [--nattftpprefix<1-N> <prefix>]\n"
                  "                            [--nattftpfile<1-N> <file>]\n"
@@ -227,7 +230,8 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--natdnspassdomain<1-N> on|off]\n"
                  "                            [--natdnsproxy<1-N> on|off]\n"
                  "                            [--natdnshostresolver<1-N> on|off]\n"
-                 "                            [--nataliasmode<1-N> default|[log],[proxyonly],[sameports]]\n"
+                 "                            [--nataliasmode<1-N> default|[log],[proxyonly],\n"
+                 "                                                         [sameports]]\n"
                  "                            [--macaddress<1-N> auto|<mac>]\n"
                  "                            [--mouse ps2|usb|usbtablet\n"
                  "                            [--keyboard ps2|usb\n"
@@ -270,11 +274,17 @@ void printUsage(USAGECATEGORY u64Cmd)
         }
         if (fFreeBSD)
         {
-            RTPrintf(                        "|oss"
+            /* Get the line break sorted when dumping all option variants. */
+            if (fDumpOpts)
+            {
+                RTPrintf(                    "|\n"
+                 "                                     oss");
+            }
+            else
+                RTPrintf(                    "|oss");
 #ifdef VBOX_WITH_PULSE
-                                             "|pulse"
+            RTPrintf(                        "|pulse");
 #endif
-                                             );
         }
         if (fDarwin)
         {
@@ -443,8 +453,8 @@ void printUsage(USAGECATEGORY u64Cmd)
         RTPrintf("VBoxManage storagectl       <uuid|vmname>\n"
                  "                            --name <name>\n"
                  "                            [--add ide|sata|scsi|floppy|sas]\n"
-                 "                            [--controller LSILogic|LSILogicSAS|BusLogic|IntelAHCI|\n"
-                 "                                          PIIX3|PIIX4|ICH6|I82078]\n"
+                 "                            [--controller LSILogic|LSILogicSAS|BusLogic|\n"
+                 "                                          IntelAHCI|PIIX3|PIIX4|ICH6|I82078]\n"
                  "                            [--sataideemulation<1-4> <1-30>]\n"
                  "                            [--sataportcount <1-30>]\n"
                  "                            [--hostiocache on|off]\n"
