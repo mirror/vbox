@@ -3265,7 +3265,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int aElement)
                          "<br><nobr><b>%3:</b>&nbsp;%4</nobr>",
                          "Virtualization Stuff LED")
                          .arg (VBoxGlobal::tr ("VT-x/AMD-V", "details report"), virtualization)
-                         .arg (VBoxVMInformationDlg::tr ("Nested Paging"), nestedPaging));
+                         .arg (VBoxVMInformationDlg::tr ("Nested Paging", "details report"), nestedPaging));
 
         int cpuCount = console.GetMachine().GetCPUCount();
         if (cpuCount > 1)
