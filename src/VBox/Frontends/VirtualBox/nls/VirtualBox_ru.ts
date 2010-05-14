@@ -1499,8 +1499,8 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Выберите жёсткий диск, который будет загрузочным диском виртуальной машины. Вы можете создать новый жёсткий диск, выбрав опцию &lt;b&gt;Создать новый жёсткий диск&lt;/b&gt;, либо указать существующий, выбрав опцию &lt;b&gt;Использовать существующий жёсткий диск&lt;/b&gt;, а затем выбрать диск из выпадающего списка или из &lt;b&gt;Менеджера виртуальных носителей&lt;/b&gt; (который откроется при нажатии на кнопку справа от списка).&lt;/p&gt;&lt;p&gt;Если Вам требуется более сложная конфигурация жёстких дисков, то можно пропустить этот шаг и подсоединить жёсткие диски позднее с помощью диалога настроек машины.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation type="unfinished">&amp;Загрузочный жёсткий диск</translation>
+        <source>Boot Hard &amp;Disk</source>
+        <translation>&amp;Загрузочный жёсткий диск</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
