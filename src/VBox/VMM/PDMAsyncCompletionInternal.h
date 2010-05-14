@@ -236,10 +236,8 @@ typedef struct PDMASYNCCOMPLETIONTASK
     void                                   *pvUser;
     /** Task id. */
     uint32_t                                uTaskId;
-#ifdef VBOX_WITH_STATISTICS
     /** Start timestamp. */
     uint64_t                                tsNsStart;
-#endif
 } PDMASYNCCOMPLETIONTASK;
 
 /**
