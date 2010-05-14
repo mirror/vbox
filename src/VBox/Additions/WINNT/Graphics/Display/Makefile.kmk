@@ -76,6 +76,9 @@ VBoxDispD3D_NOINST = true
  endif
 VBoxDispD3D_TEMPLATE = VBOXGUESTR3DLL
 VBoxDispD3D_DEFS     = UNICODE _UNICODE
+ifdef VBOX_WITH_VIDEOHWACCEL
+ VBoxDispD3D_DEFS   += VBOX_WITH_VIDEOHWACCEL
+endif
 VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispD3D.cpp \
     wddm/VBoxDispD3DIf.cpp \

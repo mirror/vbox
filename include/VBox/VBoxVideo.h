@@ -539,6 +539,13 @@ typedef struct _VBOXVHWA_VERSION
     uint32_t reserved;
 } VBOXVHWA_VERSION;
 
+#define VBOXVHWA_VERSION_INIT(_pv) do { \
+        (_pv)->maj = VBOXVHWA_VERSION_MAJ; \
+        (_pv)->min = VBOXVHWA_VERSION_MIN; \
+        (_pv)->bld = VBOXVHWA_VERSION_BLD; \
+        (_pv)->reserved = VBOXVHWA_VERSION_RSV; \
+        } while(0)
+
 typedef struct _VBOXVHWACMD_QUERYINFO1
 {
     union
