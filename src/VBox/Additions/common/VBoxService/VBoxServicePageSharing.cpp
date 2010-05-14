@@ -232,6 +232,7 @@ void VBoxServicePageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppN
     bRet = Module32First(hSnapshot, &ModuleInfo);
     do
     {
+        /** todo when changing this make sure VBoxService.exe is excluded! */
         char *pszDot = strrchr(ModuleInfo.szModule, '.');
         if (    pszDot 
             &&  (pszDot[1] == 'e' || pszDot[1] == 'E'))
