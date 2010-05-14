@@ -3717,6 +3717,8 @@ GMMR0DECL(int)  GMMR0UnregisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMUNREG
  * - if a shared page is new, then it changes the GMM page type to shared and returns it in the paPageDesc array
  * - if a shared page already exists, then it checks if the VM page is identical and if so frees the VM page and returns the shared page in the paPageDesc array
  *
+ * Note: assumes the caller has acquired the GMM semaphore!!
+ *
  * @returns VBox status code.
  * @param   pGMM                Pointer to the GMM instance data.
  * @param   pGVM                Pointer to the GVM instance data.
@@ -3882,6 +3884,7 @@ static DECLCALLBACK(int) gmmR0CleanupSharedModule(PAVLGCPTRNODECORE pNode, void 
         Assert(pRec);
         Assert(pRec->cUsers);
 
+        Log(("gmmR0CleanupSharedModule: %s %s cUsers=%d\n", pRec->szName, pRec->szVersion, pRec->cUsers));
         pRec->cUsers--;
         if (pRec->cUsers == 0)
         {
@@ -3924,6 +3927,7 @@ GMMR0DECL(int) GMMR0ResetSharedModules(PVM pVM, VMCPUID idCpu)
     AssertRC(rc);
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
+        Log(("GMMR0ResetSharedModules\n"));
         RTAvlGCPtrDestroy(&pGVM->gmm.s.pSharedModuleTree, gmmR0CleanupSharedModule, pGVM);
 
         rc = VINF_SUCCESS;
@@ -3993,6 +3997,7 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, VMCPUID idCpu)
     {
         GMMCHECKSHAREDMODULEINFO Info;
 
+        Log(("GMMR0CheckSharedModules\n"));
         Info.pGVM = pGVM;
         Info.idCpu = idCpu;
 
