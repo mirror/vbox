@@ -1538,8 +1538,11 @@ static void pdmacFileAioMgrNormalReqComplete(PPDMACEPFILEMGR pAioMgr, RTFILEAIOR
 
                 /* Free the lock and process pending tasks if neccessary */
                 pTasksWaiting = pdmacFileAioMgrNormalRangeLockFree(pAioMgr, pEndpoint, pTask->pRangeLock);
-                rc = pdmacFileAioMgrNormalProcessTaskList(pTasksWaiting, pAioMgr, pEndpoint);
-                AssertRC(rc);
+                if (pTasksWaiting)
+                {
+                    rc = pdmacFileAioMgrNormalProcessTaskList(pTasksWaiting, pAioMgr, pEndpoint);
+                    AssertRC(rc);
+                }
 
                 /* Call completion callback */
                 LogFlow(("Task=%#p completed with %Rrc\n", pTask, rcReq));
