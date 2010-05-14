@@ -161,6 +161,7 @@ Machine::HWData::HWData()
     mCPUCount = 1;
     mCPUHotPlugEnabled = false;
     mMemoryBalloonSize = 0;
+    mPageFusionEnabled = false;
     mVRAMSize = 8;
     mAccelerate3DEnabled = false;
     mAccelerate2DVideoEnabled = false;
@@ -1464,14 +1465,35 @@ STDMETHODIMP Machine::COMSETTER(MemoryBalloonSize)(ULONG memoryBalloonSize)
 
 STDMETHODIMP Machine::COMGETTER(PageFusionEnabled) (BOOL *enabled)
 {
-    NOREF(enabled);
-    return E_NOTIMPL;
+    if (!enabled)
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *enabled = mHWData->mPageFusionEnabled;
+    return S_OK;
 }
 
 STDMETHODIMP Machine::COMSETTER(PageFusionEnabled) (BOOL enabled)
 {
+    /* This must match GMMR0Init; currently we only support memory ballooning on all 64-bit hosts except Mac OS X */
+#if HC_ARCH_BITS == 64 && (defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD))
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    setModified(IsModified_MachineData);
+    mHWData.backup();
+    mHWData->mPageFusionEnabled = enabled;
+    return S_OK;
+#else
     NOREF(enabled);
-    return E_NOTIMPL;
+    return setError(E_NOTIMPL, tr("Page fusion is only supported on 64-bit hosts"));
+#endif
 }
 
 STDMETHODIMP Machine::COMGETTER(Accelerate3DEnabled)(BOOL *enabled)
@@ -6768,6 +6790,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         }
 
         mHWData->mMemorySize = data.ulMemorySizeMB;
+        mHWData->mPageFusionEnabled = data.fPageFusionEnabled;
 
         // boot order
         for (size_t i = 0;
@@ -7826,6 +7849,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
 
         // memory
         data.ulMemorySizeMB = mHWData->mMemorySize;
+        data.fPageFusionEnabled = mHWData->mPageFusionEnabled;
 
         // firmware
         data.firmwareType = mHWData->mFirmwareType;
