@@ -258,6 +258,7 @@ public:
         Guid                 mHardwareUUID;   /**< If Null, use mData.mUuid. */
         ULONG                mMemorySize;
         ULONG                mMemoryBalloonSize;
+        BOOL                 mPageFusionEnabled;
         ULONG                mVRAMSize;
         ULONG                mMonitorCount;
         BOOL                 mHWVirtExEnabled;

@@ -1490,7 +1490,8 @@ Hardware::Hardware()
           pointingHidType(PointingHidType_PS2Mouse),
           keyboardHidType(KeyboardHidType_PS2Keyboard),
           clipboardMode(ClipboardMode_Bidirectional),
-          ulMemoryBalloonSize(0)
+          ulMemoryBalloonSize(0),
+          fPageFusionEnabled(false)
 {
     mapBootOrder[0] = DeviceType_Floppy;
     mapBootOrder[1] = DeviceType_DVD;
@@ -1546,6 +1547,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (llSharedFolders           == h.llSharedFolders)
                   && (clipboardMode             == h.clipboardMode)
                   && (ulMemoryBalloonSize       == h.ulMemoryBalloonSize)
+                  && (fPageFusionEnabled        == h.fPageFusionEnabled)
                   && (llGuestProperties         == h.llGuestProperties)
                   && (strNotificationPatterns   == h.strNotificationPatterns)
                 )
@@ -2172,7 +2174,10 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 readCpuIdTree(*pelmCPUChild, hw.llCpuIdLeafs);
         }
         else if (pelmHwChild->nameEquals("Memory"))
+        {
             pelmHwChild->getAttributeValue("RAMSize", hw.ulMemorySizeMB);
+            pelmHwChild->getAttributeValue("PageFusion", hw.fPageFusionEnabled);
+        }
         else if (pelmHwChild->nameEquals("Firmware"))
         {
             Utf8Str strFirmwareType;
@@ -3128,6 +3133,10 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
     xml::ElementNode *pelmMemory = pelmHardware->createChild("Memory");
     pelmMemory->setAttribute("RAMSize", hw.ulMemorySizeMB);
+    if (m->sv >= SettingsVersion_v1_10)
+    {
+        pelmMemory->setAttribute("PageFusion", hw.fPageFusionEnabled);
+    }
 
     if (    (m->sv >= SettingsVersion_v1_9)
          && (hw.firmwareType >= FirmwareType_EFI)
