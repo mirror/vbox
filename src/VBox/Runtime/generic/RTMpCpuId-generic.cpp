@@ -32,6 +32,7 @@
 #include "internal/iprt.h"
 
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 
 
 RTDECL(RTCPUID) RTMpCpuId(void)

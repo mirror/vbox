@@ -32,6 +32,7 @@
 #include <iprt/thread.h>
 
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/mp.h>
