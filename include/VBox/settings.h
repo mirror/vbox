@@ -704,6 +704,7 @@ struct Hardware
     ClipboardMode_T     clipboardMode;
 
     uint32_t            ulMemoryBalloonSize;
+    bool                fPageFusionEnabled;
 
     GuestPropertiesList llGuestProperties;
     com::Utf8Str        strNotificationPatterns;
