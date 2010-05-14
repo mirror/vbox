@@ -869,16 +869,10 @@ static int vboxNetFltConnectIt(PVBOXNETFLTINS pThis, PINTNETTRUNKSWPORT pSwitchP
     Assert(!pThis->cBusy);
 #ifdef VBOXNETFLT_STATIC_CONFIG
     Assert(vboxNetFltGetState(pThis) == kVBoxNetFltInsState_Unconnected);
-    /* INTNETTRUNKIFSTATE_DISCONNECTING means "not connected" here
-     * we use the INTNETTRUNKIFSTATE_DISCONNECTING state for consistency of cases when trunk
-     * was never connected and was connected and disconnected.
-     * In the latter case we end up with INTNETTRUNKIFSTATE_DICONNECTING,
-     * so use the same state for the former */
-    Assert(pThis->enmTrunkState == INTNETTRUNKIFSTATE_DISCONNECTING);
 #else
     Assert(vboxNetFltGetState(pThis) == kVBoxNetFltInsState_Initializing);
-    Assert(pThis->enmTrunkState == INTNETTRUNKIFSTATE_INACTIVE);
 #endif
+    Assert(pThis->enmTrunkState == INTNETTRUNKIFSTATE_INACTIVE);
 
     /*
      * Do the job.
@@ -894,16 +888,7 @@ static int vboxNetFltConnectIt(PVBOXNETFLTINS pThis, PINTNETTRUNKSWPORT pSwitchP
     else
         pThis->pSwitchPort = NULL;
 
-#ifdef VBOXNETFLT_STATIC_CONFIG
-    /* INTNETTRUNKIFSTATE_DISCONNECTING means "not connected" here
-     * we use the INTNETTRUNKIFSTATE_DISCONNECTING state for consistency of cases when trunk
-     * was never connected and was connected and disconnected.
-     * In the latter case we end up with INTNETTRUNKIFSTATE_DISCONNECTING,
-     * so use the same state for the former */
-    Assert(pThis->enmTrunkState == INTNETTRUNKIFSTATE_DISCONNECTING);
-#else
     Assert(pThis->enmTrunkState == INTNETTRUNKIFSTATE_INACTIVE);
-#endif
     return rc;
 }
 
@@ -929,6 +914,10 @@ static int vboxNetFltNewInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszNam
 {
     /*
      * Allocate and initialize a new instance before requesting the mutex.
+     * Note! That in a static config we'll initialize the trunk state to
+     *       disconnecting and flip it in vboxNetFltFactoryCreateAndConnect
+     *       later on.  This better reflext the state and it works better with
+     *       assertions in the destruction path.
      */
     int             rc;
     size_t const    cchName = strlen(pszName);
@@ -949,9 +938,6 @@ static int vboxNetFltNewInstance(PVBOXNETFLTGLOBALS pGlobals, const char *pszNam
     pNew->hSpinlock                     = NIL_RTSPINLOCK;
     pNew->enmState                      = kVBoxNetFltInsState_Initializing;
 #ifdef VBOXNETFLT_STATIC_CONFIG
-    /* for consistency of cases when trunk was never connected and was connected and disconnected.
-     * In the latter case we end up with INTNETTRUNKIFSTATE_DISCONNECTING,
-     * so use the same state for the former */
     pNew->enmTrunkState                 = INTNETTRUNKIFSTATE_DISCONNECTING;
 #else
     pNew->enmTrunkState                 = INTNETTRUNKIFSTATE_INACTIVE;
@@ -1204,10 +1190,13 @@ static DECLCALLBACK(int) vboxNetFltFactoryCreateAndConnect(PINTNETTRUNKFACTORY p
         {
             if (vboxNetFltGetState(pCur) == kVBoxNetFltInsState_Unconnected)
             {
+                pCur->enmTrunkState = INTNETTRUNKIFSTATE_INACTIVE; /** @todo protect me? */
                 pCur->fDisablePromiscuous = !!(fFlags & INTNETTRUNKFACTORY_FLAG_NO_PROMISC);
                 rc = vboxNetFltConnectIt(pCur, pSwitchPort, ppIfPort);
                 if (RT_SUCCESS(rc))
                     pCur = NULL; /* Don't release it, reference given to the caller. */
+                else
+                    pCur->enmTrunkState = INTNETTRUNKIFSTATE_DISCONNECTING;
             }
             else
                 rc = VERR_INTNET_FLT_IF_BUSY;
