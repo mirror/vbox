@@ -128,9 +128,9 @@ void VBoxServicePageSharingRegisterModule(HANDLE hProcess, PKNOWN_MODULE pModule
     unsigned idxRegion = 0;
     do
     {
-        MEMORY_BASIC_INFORMATION MemInfo[16];
+        MEMORY_BASIC_INFORMATION MemInfo;
 
-        SIZE_T ret = VirtualQueryEx(hProcess, pBaseAddress, &MemInfo[0], sizeof(MemInfo));
+        SIZE_T ret = VirtualQueryEx(hProcess, pBaseAddress, &MemInfo, sizeof(MemInfo));
         Assert(ret);
         if (!ret)
         {
@@ -138,42 +138,35 @@ void VBoxServicePageSharingRegisterModule(HANDLE hProcess, PKNOWN_MODULE pModule
             break;
         }
 
-        unsigned cMemInfoBlocks = ret / sizeof(MemInfo[0]);
-
-        for (unsigned i = 0; i < cMemInfoBlocks; i++)
+        if (    MemInfo.State == MEM_COMMIT
+            &&  MemInfo.Type == MEM_IMAGE)
         {
-            if (    MemInfo[i].State == MEM_COMMIT
-                &&  MemInfo[i].Type == MEM_IMAGE)
+            switch (MemInfo.Protect)
             {
-                switch (MemInfo[i].Protect)
-                {
-                case PAGE_EXECUTE:
-                case PAGE_EXECUTE_READ:
-                case PAGE_READONLY:
-                    aRegions[idxRegion].GCRegionAddr = (RTGCPTR64)MemInfo[i].BaseAddress;
-                    aRegions[idxRegion].cbRegion     = MemInfo[i].RegionSize;
-                    idxRegion++;
-                    break;
-
-                default:
-                    break; /* ignore */
-                }
-            }
-
-            pBaseAddress = (BYTE *)MemInfo[i].BaseAddress + MemInfo[i].RegionSize;
-            if (dwModuleSize > MemInfo[i].RegionSize)
-            {
-                dwModuleSize -= MemInfo[i].RegionSize;
-            }
-            else
-            {
-                dwModuleSize = 0;
+            case PAGE_EXECUTE:
+            case PAGE_EXECUTE_READ:
+            case PAGE_READONLY:
+                aRegions[idxRegion].GCRegionAddr = (RTGCPTR64)MemInfo.BaseAddress;
+                aRegions[idxRegion].cbRegion     = MemInfo.RegionSize;
+                idxRegion++;
                 break;
-            }
 
-            if (idxRegion >= RT_ELEMENTS(aRegions))
-                break;  /* out of room */
+            default:
+                break; /* ignore */
+            }
         }
+
+        pBaseAddress = (BYTE *)MemInfo.BaseAddress + MemInfo.RegionSize;
+        if (dwModuleSize > MemInfo.RegionSize)
+        {
+            dwModuleSize -= MemInfo.RegionSize;
+        }
+        else
+        {
+            dwModuleSize = 0;
+            break;
+        }
+
         if (idxRegion >= RT_ELEMENTS(aRegions))
             break;  /* out of room */
     }
