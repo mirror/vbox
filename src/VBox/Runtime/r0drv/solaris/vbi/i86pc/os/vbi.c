@@ -1372,7 +1372,7 @@ vbi_pages_premap(page_t **pp_pages, size_t size, uint64_t *pphysaddrs)
 		 * pages is locked exclusively.
 		 */
 		if (page_tryupgrade(pp_pages[i]) == 1)
-    		page_downgrade(pp_pages[i]);
+			page_downgrade(pp_pages[i]);
 		pphysaddrs[i] = vbi_page_to_pa(pp_pages, i);
 	}
 
