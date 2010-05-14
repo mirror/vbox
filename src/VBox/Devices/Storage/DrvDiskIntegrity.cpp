@@ -522,6 +522,7 @@ static int drvdiskIntIoReqExpiredCheck(RTTHREAD pThread, void *pvUser)
             PDRVDISKAIOREQ pIoReq = (PDRVDISKAIOREQ)ASMAtomicReadPtr((void * volatile *)&pReqActive->pIoReq);
 
             if (   pIoReq
+                && (tsCurr > pReqActive->tsStart)
                 && (tsCurr - pReqActive->tsStart) >= pThis->uExpireIntervalMs)
             {
                 RTMsgError("Request %#p expired (active for %llu ms already)\n",
