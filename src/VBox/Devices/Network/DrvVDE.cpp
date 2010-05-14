@@ -230,6 +230,7 @@ static DECLCALLBACK(int) drvVDENetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
         uint8_t const  *pbFrame = (uint8_t const *)pSgBuf->aSegs[0].pvSeg;
         PCPDMNETWORKGSO pGso    = (PCPDMNETWORKGSO)pSgBuf->pvUser;
         uint32_t const  cSegs   = PDMNetGsoCalcSegmentCount(pGso, pSgBuf->cbUsed);  Assert(cSegs > 1);
+        rc = 0;
         for (size_t iSeg = 0; iSeg < cSegs; iSeg++)
         {
             uint32_t cbSegFrame;
@@ -497,6 +498,7 @@ static DECLCALLBACK(void) drvVDEDestruct(PPDMDRVINS pDrvIns)
     if (RTCritSectIsInitialized(&pThis->XmitLock))
         RTCritSectDelete(&pThis->XmitLock);
 
+    vde_close(pThis->vdeconn);
 #ifdef VBOX_WITH_STATISTICS
     /*
      * Deregister statistics.

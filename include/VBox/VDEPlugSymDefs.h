@@ -59,7 +59,8 @@ struct vde_open_args
  RT_PROXY_STUB(vde_send, size_t, \
                (VDECONN *conn,const void *buf,size_t len,int flags), \
                (conn, buf, len, flags)) \
- RT_PROXY_STUB(vde_datafd, int, (VDECONN *conn), (conn))
+ RT_PROXY_STUB(vde_datafd, int, (VDECONN *conn), (conn)) \
+ RT_PROXY_STUB(vde_close, void, (VDECONN *conn), (conn))
 
 #ifdef VDEPLUG_GENERATE_HEADER
 # define RT_RUNTIME_LOADER_GENERATE_HEADER
