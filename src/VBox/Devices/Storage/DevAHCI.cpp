@@ -4285,9 +4285,17 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
 
     /*
      * Create a safe mapping when doing post processing because the size of the
-     * data to transfer and the amount of guest memory reserved can differ
+     * data to transfer and the amount of guest memory reserved can differ.
+     *
+     * @fixme: Read performance is really bad on OS X hosts because there is no
+     *         S/G support and the I/O manager has to create a newrequest
+     *         for every segment. The default limit of active requests is 16 on OS X
+     *         which causes a the bad read performance (writes are not affected
+     *         because of the writeback cache).
+     *         For now we will always use an intermediate buffer until
+     *         there is support for host S/G operations.
      */
-    if (pAhciPortTaskState->pfnPostProcess)
+    if (pAhciPortTaskState->pfnPostProcess || true)
     {
         ahciLog(("%s: Request with post processing.\n", __FUNCTION__));
 
