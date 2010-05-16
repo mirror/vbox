@@ -40,13 +40,174 @@
 /** @name Paths to access the CPU device
  * @{
  */
-# define SYSFS_ACPI_CPU_PATH    "/sys/devices/LNXSYSTM:00/device:00"
+# define SYSFS_ACPI_CPU_PATH    "/sys/devices"
 # define SYSFS_CPU_PATH         "/sys/devices/system/cpu"
 /** @} */
+
+/** Path component for the ACPI CPU path. */
+typedef struct SYSFSCPUPATHCOMP
+{
+    /** Flag whether the name is suffixed with a number */
+    bool        fNumberedSuffix;
+    /** Name of the component */
+    const char *pcszName;
+} SYSFSCPUPATHCOMP, *PSYSFSCPUPATHCOMP;
+/** Pointer to a const component. */
+typedef const SYSFSCPUPATHCOMP *PCSYSFSCPUPATHCOMP;
+
+/**
+ * Structure which defines how the entries are assembled.
+ */
+typedef struct SYSFSCPUPATH
+{
+    /** Id when probing for the correct path. */
+    uint32_t           uId;
+    /** Array holding the possible components. */
+    PCSYSFSCPUPATHCOMP aComponentsPossible;
+    /** Number of entries in the array, excluding the terminator. */
+    unsigned           cComponents;
+    /** Directory handle */
+    PRTDIR             pDir;
+    /** Current directory to try. */
+    char              *pszPath;
+} SYSFSCPUPATH, *PSYSFSCPUPATH;
+
+/** Content of uId if the path wasn't probed yet. */
+#define ACPI_CPU_PATH_NOT_PROBED UINT32_MAX
+
+/** Possible combinations of all path components for level 1. */
+const SYSFSCPUPATHCOMP g_aAcpiCpuPathLvl1[] =
+{
+    /** LNXSYSTEM:<id> */
+    {true, "LNXSYSTM:"}
+};
+
+/** Possible combinations of all path components for level 2. */
+const SYSFSCPUPATHCOMP g_aAcpiCpuPathLvl2[] =
+{
+    /** device:<id> */
+    {true, "device:"},
+    /** LNXSYBUS:<id> */
+    {true, "LNXSYBUS:"}
+};
+
+/** Possible combinations of all path components for level 3 */
+const SYSFSCPUPATHCOMP g_aAcpiCpuPathLvl3[] =
+{
+    /** ACPI0004:<id> */
+    {true, "ACPI0004:"}
+};
+
+/** Possible combinations of all path components for level 4 */
+const SYSFSCPUPATHCOMP g_aAcpiCpuPathLvl4[] =
+{
+    /** LNXCPU:<id> */
+    {true, "LNXCPU:"},
+    /** ACPI_CPU:<id> */
+    {true, "ACPI_CPU:"}
+};
+
+/** All possible combinations. */
+SYSFSCPUPATH g_aAcpiCpuPath[] = 
+{
+    /** Level 1 */
+    {ACPI_CPU_PATH_NOT_PROBED, g_aAcpiCpuPathLvl1, RT_ELEMENTS(g_aAcpiCpuPathLvl1), NULL, NULL},
+    /** Level 2 */
+    {ACPI_CPU_PATH_NOT_PROBED, g_aAcpiCpuPathLvl2, RT_ELEMENTS(g_aAcpiCpuPathLvl2), NULL, NULL},
+    /** Level 3 */
+    {ACPI_CPU_PATH_NOT_PROBED, g_aAcpiCpuPathLvl3, RT_ELEMENTS(g_aAcpiCpuPathLvl3), NULL, NULL},
+    /** Level 4 */
+    {ACPI_CPU_PATH_NOT_PROBED, g_aAcpiCpuPathLvl4, RT_ELEMENTS(g_aAcpiCpuPathLvl4), NULL, NULL},
+};
 #endif
 
-
 #ifdef RT_OS_LINUX
+/**
+ * Probes for the correct path to the ACPI CPU object in sysfs for the
+ * various different kernel versions and distro's.
+ *
+ * @returns VBox status code.
+ */
+static int VBoxServiceCpuHotPlugProbePath(void)
+{
+    int rc = VINF_SUCCESS;
+
+    /* Probe for the correct path if we didn't already. */
+    if (RT_UNLIKELY(g_aAcpiCpuPath[0].uId == ACPI_CPU_PATH_NOT_PROBED))
+    {
+        char *pszPath = NULL;   /** < Current path, increasing while we dig deeper. */
+
+        pszPath = RTStrDup(SYSFS_ACPI_CPU_PATH);
+        if (!pszPath)
+            return VERR_NO_MEMORY;
+
+        /*
+         * Simple algorithm to find the path.
+         * Performance is not a real problem because it is
+         * only executed once.
+         */
+        for (unsigned iLvlCurr = 0; iLvlCurr < RT_ELEMENTS(g_aAcpiCpuPath); iLvlCurr++)
+        {
+            PSYSFSCPUPATH pAcpiCpuPathLvl = &g_aAcpiCpuPath[iLvlCurr];
+
+            for (unsigned iCompCurr = 0; iCompCurr < pAcpiCpuPathLvl->cComponents; iCompCurr++)
+            {
+                PCSYSFSCPUPATHCOMP pPathComponent = &pAcpiCpuPathLvl->aComponentsPossible[iCompCurr];
+                PRTDIR pDirCurr = NULL;
+                char *pszPathTmp = NULL;
+                bool fFound = false;
+
+                rc = RTStrAPrintf(&pszPathTmp, "%s/%s*", pszPath, pPathComponent->pcszName);
+                if (RT_FAILURE(rc))
+                    break;
+
+                /* Open the directory */
+                rc = RTDirOpenFiltered(&pDirCurr, pszPathTmp, RTDIRFILTER_WINNT);
+                if (RT_FAILURE(rc))
+                {
+                    RTStrFree(pszPathTmp);
+                    break;
+                }
+
+                /* Search if the current directory contains one of the possible parts. */
+                RTDIRENTRY DirFolderContent;
+                while (RT_SUCCESS(RTDirRead(pDirCurr, &DirFolderContent, NULL))) /* Assumption that szName has always enough space */
+                {
+                    if (!strncmp(DirFolderContent.szName, pPathComponent->pcszName, strlen(pPathComponent->pcszName)))
+                    {
+                        char *pszPathLvl = NULL;
+
+                        /* Found, use the complete name to dig deeper. */
+                        fFound = true;
+                        pAcpiCpuPathLvl->uId = iCompCurr;
+                        rc = RTStrAPrintf(&pszPathLvl, "%s/%s", pszPath, DirFolderContent.szName);
+
+                        if (RT_SUCCESS(rc))
+                        {
+                            RTStrFree(pszPath);
+                            pszPath = pszPathLvl;
+                        }
+                        break;
+                    }
+                }
+                RTDirClose(pDirCurr);
+
+                if (fFound)
+                    break;
+            } /* For every possible component. */
+
+            /* No matching component for this part, no need to continue */
+            if (RT_FAILURE(rc))
+                break;
+        } /* For every level */
+
+        VBoxServiceVerbose(1, "Final path after probing %s rc=%Rrc\n", pszPath, rc);
+        RTStrFree(pszPath);
+    }
+
+    return rc;
+}
+
 /**
  * Returns the path of the ACPI CPU device with the given core and package ID.
  *
@@ -57,61 +218,139 @@
  */
 static int VBoxServiceCpuHotPlugGetACPIDevicePath(char **ppszPath, uint32_t idCpuCore, uint32_t idCpuPackage)
 {
-    AssertPtr(ppszPath);
+    int rc = VINF_SUCCESS;
 
-    PRTDIR pDirDevices = NULL;
-    int rc = RTDirOpen(&pDirDevices, SYSFS_ACPI_CPU_PATH);  /* could use RTDirOpenFiltered */
+    AssertPtrReturn(ppszPath, VERR_INVALID_PARAMETER);
+
+    rc = VBoxServiceCpuHotPlugProbePath();
     if (RT_SUCCESS(rc))
     {
-        /* Search every ACPI0004 container device for LNXCPU devices. */
-        RTDIRENTRY DirFolderAcpiContainer;
+        /* Build the path from all components. */
         bool fFound = false;
+        unsigned iLvlCurr = 0;
+        char *pszPath = NULL;
+        char *pszPathDir = NULL;
+        PSYSFSCPUPATH pAcpiCpuPathLvl = &g_aAcpiCpuPath[iLvlCurr];
 
-        while (   RT_SUCCESS(RTDirRead(pDirDevices, &DirFolderAcpiContainer, NULL))
-               && !fFound) /* Assumption that szName has always enough space */
+        /* Init everything. */
+        Assert(pAcpiCpuPathLvl->uId != ACPI_CPU_PATH_NOT_PROBED);
+        rc = RTStrAPrintf(&pszPath,
+                          "%s/%s*", SYSFS_ACPI_CPU_PATH,
+                          pAcpiCpuPathLvl->aComponentsPossible[pAcpiCpuPathLvl->uId].pcszName);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        pAcpiCpuPathLvl->pszPath = RTStrDup(SYSFS_ACPI_CPU_PATH);
+        if (!pAcpiCpuPathLvl->pszPath)
+            return VERR_NO_MEMORY;
+
+        /* Open the directory */
+        rc = RTDirOpenFiltered(&pAcpiCpuPathLvl->pDir, pszPath, RTDIRFILTER_WINNT);
+        if (RT_SUCCESS(rc))
         {
-            if (!strncmp(DirFolderAcpiContainer.szName, "ACPI0004", 8))
+            RTStrFree(pszPath);
+
+            /* Search for CPU */
+            while (!fFound)
             {
-                char *pszAcpiContainerPath = NULL;
-                PRTDIR pDirAcpiContainer = NULL;
-
-                rc = RTStrAPrintf(&pszAcpiContainerPath, "%s/%s", SYSFS_ACPI_CPU_PATH, DirFolderAcpiContainer.szName);
-                if (RT_FAILURE(rc))
-                    break;
-
-                rc = RTDirOpen(&pDirAcpiContainer, pszAcpiContainerPath);
+                /* Get the next directory. */
+                RTDIRENTRY DirFolderContent;
+                rc = RTDirRead(pAcpiCpuPathLvl->pDir, &DirFolderContent, NULL);
                 if (RT_SUCCESS(rc))
                 {
-                    RTDIRENTRY DirFolderContent;
-                    while (RT_SUCCESS(RTDirRead(pDirAcpiContainer, &DirFolderContent, NULL))) /* Assumption that szName has always enough space */
+                    char *pszPathCurr;
+
+                    /* Create the new path. */
+                    rc = RTStrAPrintf(&pszPathCurr, "%s/%s", pAcpiCpuPathLvl->pszPath, DirFolderContent.szName);
+                    if (RT_FAILURE(rc))
+                        break;
+
+                    /* If this is the last level check for the given core and package id. */
+                    if (iLvlCurr == RT_ELEMENTS(g_aAcpiCpuPath) - 1)
                     {
-                        if (   !strncmp(DirFolderContent.szName, "LNXCPU", 6)
-                            || !strncmp(DirFolderContent.szName, "ACPI_CPU", 8))
+                        /* Get the sysdev */
+                        uint32_t idCore    = RTLinuxSysFsReadIntFile(10, "%s/sysdev/topology/core_id",
+                                                                     pszPathCurr);
+                        uint32_t idPackage = RTLinuxSysFsReadIntFile(10, "%s/sysdev/topology/physical_package_id",
+                                                                     pszPathCurr);
+                        if (   idCore    == idCpuCore
+                            && idPackage == idCpuPackage)
                         {
-                            /* Get the sysdev */
-                            uint32_t idCore    = RTLinuxSysFsReadIntFile(10, "%s/%s/sysdev/topology/core_id",
-                                                                         pszAcpiContainerPath, DirFolderContent.szName);
-                            uint32_t idPackage = RTLinuxSysFsReadIntFile(10, "%s/%s/sysdev/topology/physical_package_id",
-                                                                         pszAcpiContainerPath, DirFolderContent.szName);
-                            if (   idCore    == idCpuCore
-                                && idPackage == idCpuPackage)
-                            {
-                                /* Return the path */
-                                rc = RTStrAPrintf(ppszPath, "%s/%s", pszAcpiContainerPath, DirFolderContent.szName);
-                                fFound = true;
-                                break;
-                            }
+                            /* Return the path */
+                            pszPath = pszPathCurr;
+                            fFound = true;
+                            VBoxServiceVerbose(3, "CPU found\n");
+                            break;
+                        }
+                        else
+                        {
+                            /* Get the next directory. */
+                            RTStrFree(pszPathCurr);
+                            VBoxServiceVerbose(3, "CPU doesn't match, next directory\n");
                         }
                     }
+                    else
+                    {
+                        /* Go deeper */
+                        iLvlCurr++;
 
-                    RTDirClose(pDirAcpiContainer);
+                        VBoxServiceVerbose(3, "Going deeper (iLvlCurr=%u)\n", iLvlCurr);
+
+                        pAcpiCpuPathLvl = &g_aAcpiCpuPath[iLvlCurr];
+
+                        Assert(!pAcpiCpuPathLvl->pDir);
+                        Assert(!pAcpiCpuPathLvl->pszPath);
+                        pAcpiCpuPathLvl->pszPath = pszPathCurr;
+                        PCSYSFSCPUPATHCOMP pPathComponent = &pAcpiCpuPathLvl->aComponentsPossible[pAcpiCpuPathLvl->uId];
+
+                        Assert(pAcpiCpuPathLvl->uId != ACPI_CPU_PATH_NOT_PROBED);
+
+                        rc = RTStrAPrintf(&pszPathDir, "%s/%s*", pszPathCurr, pPathComponent->pcszName);
+                        if (RT_FAILURE(rc))
+                            break;
+
+                        VBoxServiceVerbose(3, "New path %s\n", pszPathDir);
+
+                        /* Open the directory */
+                        rc = RTDirOpenFiltered(&pAcpiCpuPathLvl->pDir, pszPathDir, RTDIRFILTER_WINNT);
+                        if (RT_FAILURE(rc))
+                            break;
+                    }
                 }
+                else
+                {
+                    /* Go back one level and try to get the next entry. */
+                    Assert(iLvlCurr > 0);
 
-                RTStrFree(pszAcpiContainerPath);
-            }
+                    RTDirClose(pAcpiCpuPathLvl->pDir);
+                    RTStrFree(pAcpiCpuPathLvl->pszPath);
+                    pAcpiCpuPathLvl->pDir = NULL;
+                    pAcpiCpuPathLvl->pszPath = NULL;
+
+                    iLvlCurr--;
+                    pAcpiCpuPathLvl = &g_aAcpiCpuPath[iLvlCurr];
+                    VBoxServiceVerbose(3, "Directory not found, going back (iLvlCurr=%u)\n", iLvlCurr);
+                }
+            } /* while not found */
+        } /* Successful init */
+
+        /* Cleanup */
+        for (unsigned i = 0; i < RT_ELEMENTS(g_aAcpiCpuPath); i++)
+        {
+            if (g_aAcpiCpuPath[i].pDir)
+                RTDirClose(g_aAcpiCpuPath[i].pDir);
+            if (g_aAcpiCpuPath[i].pszPath)
+                RTStrFree(g_aAcpiCpuPath[i].pszPath);
+            g_aAcpiCpuPath[i].pDir = NULL;
+            g_aAcpiCpuPath[i].pszPath = NULL;
         }
+        if (pszPathDir)
+            RTStrFree(pszPathDir);
+        if (RT_FAILURE(rc) && pszPath)
+            RTStrFree(pszPath);
 
-        RTDirClose(pDirDevices);
+        if (RT_SUCCESS(rc))
+            *ppszPath = pszPath;
     }
 
     return rc;
