@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -321,6 +321,8 @@ typedef enum VMMR0OPERATION
 
     /** Call PDMR0DriverCallReqHandler. */
     VMMR0_DO_PDM_DRIVER_CALL_REQ_HANDLER,
+    /** Call PDMR0DeviceCallReqHandler. */
+    VMMR0_DO_PDM_DEVICE_CALL_REQ_HANDLER,
 
     /** The start of the R0 service operations. */
     VMMR0_DO_SRV_START,

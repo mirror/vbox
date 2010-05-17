@@ -1161,7 +1161,7 @@ typedef struct PDMDRVHLPR3
      * works in both RC and R0 as well as R3.
      *
      * @returns VBox status code.
-     * @param   pDevIns             The device instance.
+     * @param   pDrvIns             The driver instance.
      * @param   pCritSect           Pointer to the critical section.
      * @param   RT_SRC_POS_DECL     Use RT_SRC_POS.
      * @param   pszName             The base name of the critical section.  Will be
@@ -1178,16 +1178,17 @@ typedef struct PDMDRVHLPR3
      *
      * For this to work, the driver must be ring-0 enabled and export a request
      * handler function.  The name of the function must be the driver name in the
-     * PDMDRVREG struct prefixed with 'drvR0' and suffixed with 'ReqHandler'.  It
-     * shall take the exact same arguments as this function and be declared using
-     * PDMBOTHCBDECL.  See FNPDMDRVREQHANDLERR0.
+     * PDMDRVREG struct prefixed with 'drvR0' and suffixed with 'ReqHandler'.
+     * The driver name will be capitalized.  It shall take the exact same
+     * arguments as this function and be declared using PDMBOTHCBDECL.  See
+     * FNPDMDRVREQHANDLERR0.
      *
      * @returns VBox status code.
      * @retval  VERR_SYMBOL_NOT_FOUND if the driver doesn't export the required
      *          handler function.
      * @retval  VERR_ACCESS_DENIED if the driver isn't ring-0 capable.
      *
-     * @param   pDevIns             The device instance.
+     * @param   pDrvIns             The driver instance.
      * @param   uOperation          The operation to perform.
      * @param   u64Arg              64-bit integer argument.
      * @thread  Any

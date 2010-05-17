@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1012,6 +1012,13 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
             if (!pVM || !pReqHdr || u64Arg || idCpu != NIL_VMCPUID)
                 return VERR_INVALID_PARAMETER;
             return PDMR0DriverCallReqHandler(pVM, (PPDMDRIVERCALLREQHANDLERREQ)pReqHdr);
+        }
+
+        case VMMR0_DO_PDM_DEVICE_CALL_REQ_HANDLER:
+        {
+            if (!pVM || !pReqHdr || u64Arg || idCpu != NIL_VMCPUID)
+                return VERR_INVALID_PARAMETER;
+            return PDMR0DeviceCallReqHandler(pVM, (PPDMDEVICECALLREQHANDLERREQ)pReqHdr);
         }
 
         /*

@@ -717,7 +717,7 @@ static DECLCALLBACK(bool) pdmR0DrvHlp_AssertOther(PPDMDRVINS pDrvIns, const char
 
 
 /**
- * The Raw-Mode Context Driver Helper Callbacks.
+ * The Ring-0 Context Driver Helper Callbacks.
  */
 extern DECLEXPORT(const PDMDRVHLPR0) g_pdmR0DrvHlp =
 {
@@ -808,3 +808,31 @@ static void pdmR0IoApicSetIrq(PVM pVM, int iIrq, int iLevel)
             AssertMsgFailed(("We're out of devhlp queue items!!!\n"));
     }
 }
+
+
+/**
+ * PDMDevHlpCallR0 helper.
+ *
+ * @returns See PFNPDMDEVREQHANDLERR0.
+ * @param   pVM                 The VM handle (for validation).
+ * @param   pReq                The request buffer.
+ */
+VMMR0_INT_DECL(int) PDMR0DeviceCallReqHandler(PVM pVM, PPDMDEVICECALLREQHANDLERREQ pReq)
+{
+    /*
+     * Validate input and make the call.
+     */
+    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
+
+    PPDMDEVINS pDevIns = pReq->pDevInsR0;
+    AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
+    AssertReturn(pDevIns->Internal.s.pVMR0 == pVM, VERR_INVALID_PARAMETER);
+
+    PFNPDMDEVREQHANDLERR0 pfnReqHandlerR0 = pReq->pfnReqHandlerR0;
+    AssertPtrReturn(pfnReqHandlerR0, VERR_INVALID_POINTER);
+
+    return pfnReqHandlerR0(pDevIns, pReq->uOperation, pReq->u64Arg);
+}
+

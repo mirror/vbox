@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,6 +32,7 @@
 
 #include <VBox/types.h>
 #include <VBox/sup.h>
+#include <VBox/pdmcommon.h>
 
 RT_C_DECLS_BEGIN
 
@@ -165,6 +166,31 @@ typedef struct PDMDRIVERCALLREQHANDLERREQ
 typedef PDMDRIVERCALLREQHANDLERREQ *PPDMDRIVERCALLREQHANDLERREQ;
 
 VMMR0_INT_DECL(int) PDMR0DriverCallReqHandler(PVM pVM, PPDMDRIVERCALLREQHANDLERREQ pReq);
+
+/**
+ * Request buffer for PDMR0DeviceCallReqHandler / VMMR0_DO_PDM_DEVICE_CALL_REQ_HANDLER.
+ * @see PDMR0DeviceCallReqHandler.
+ */
+typedef struct PDMDEVICECALLREQHANDLERREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR          Hdr;
+    /** The device instance. */
+    PPDMDEVINSR0            pDevInsR0;
+    /** The request handler for the device. */
+    PFNPDMDEVREQHANDLERR0   pfnReqHandlerR0;
+    /** The operation. */
+    uint32_t                uOperation;
+    /** Explicit alignment padding. */
+    uint32_t                u32Alignment;
+    /** Optional 64-bit integer argument. */
+    uint64_t                u64Arg;
+} PDMDEVICECALLREQHANDLERREQ;
+/** Pointer to a PDMR0DeviceCallReqHandler /
+ * VMMR0_DO_PDM_DEVICE_CALL_REQ_HANDLER request buffer. */
+typedef PDMDEVICECALLREQHANDLERREQ *PPDMDEVICECALLREQHANDLERREQ;
+
+VMMR0_INT_DECL(int) PDMR0DeviceCallReqHandler(PVM pVM, PPDMDEVICECALLREQHANDLERREQ pReq);
 
 /** @} */
 

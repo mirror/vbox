@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -131,8 +131,21 @@ typedef DECLCALLBACK(bool) FNPDMDRVASYNCNOTIFY(PPDMDRVINS pDrvIns);
 /** Pointer to a FNPDMDRVASYNCNOTIFY. */
 typedef FNPDMDRVASYNCNOTIFY *PFNPDMDRVASYNCNOTIFY;
 
+
 /**
- * The ring-0 driver request handle.
+ * The ring-0 driver request handler.
+ *
+ * @returns VBox status code. PDMDevHlpCallR0 will return this.
+ * @param   pDevIns     The device instance (the ring-0 mapping).
+ * @param   uOperation  The operation.
+ * @param   u64Arg      Optional integer argument for the operation.
+ */
+typedef DECLCALLBACK(int) FNPDMDEVREQHANDLERR0(PPDMDEVINS pDevIns, uint32_t uOperation, uint64_t u64Arg);
+/** Ring-0 pointer to a FNPDMDEVREQHANDLERR0. */
+typedef R0PTRTYPE(FNPDMDEVREQHANDLERR0 *) PFNPDMDEVREQHANDLERR0;
+
+/**
+ * The ring-0 driver request handler.
  *
  * @returns VBox status code. PDMDrvHlpCallR0 will return this.
  * @param   pDrvIns     The driver instance (the ring-0 mapping).
@@ -142,6 +155,7 @@ typedef FNPDMDRVASYNCNOTIFY *PFNPDMDRVASYNCNOTIFY;
 typedef DECLCALLBACK(int) FNPDMDRVREQHANDLERR0(PPDMDRVINS pDrvIns, uint32_t uOperation, uint64_t u64Arg);
 /** Ring-0 pointer to a FNPDMDRVREQHANDLERR0. */
 typedef R0PTRTYPE(FNPDMDRVREQHANDLERR0 *) PFNPDMDRVREQHANDLERR0;
+
 
 /** @} */
 
