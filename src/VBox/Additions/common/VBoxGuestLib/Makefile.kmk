@@ -88,9 +88,6 @@ VBoxGuestR3Lib_DEFS        = \
 	VBOX_WITH_HGCM \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,) \
 	$(if $(VBOX_WITH_GUEST_CONTROL),VBOX_WITH_GUEST_CONTROL,)
-ifdef VBOX_WITH_PAGE_SHARING
-  VBoxGuestR3Lib_DEFS     += VBOX_WITH_PAGE_SHARING
-endif
 VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3Lib.cpp \
 	VBoxGuestR3LibAdditions.cpp \
