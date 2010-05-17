@@ -243,12 +243,6 @@ typedef struct _VBoxGuestCtrlHGCMMsgExecCmd
 
     HGCMFunctionParameter env;
 
-    HGCMFunctionParameter std_in;
-
-    HGCMFunctionParameter std_out;
-
-    HGCMFunctionParameter std_err;
-
     HGCMFunctionParameter username;
 
     HGCMFunctionParameter password;
