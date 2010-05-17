@@ -339,28 +339,14 @@ static int handleExecProgram(HandlerArg *a)
 
                 /* Wait for process to exit ... */
                 BOOL fCompleted = false;
-                ULONG cbOutputData = 0;
-                SafeArray<BYTE> aOutputData;
                 while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
                 {
-                    /*
-                     * because we want to get all the output data even if the process
-                     * already ended, we first need to check whether there is some data
-                     * left to output before checking the actual timeout and is-process-completed
-                     * stuff.
-                     */
-                    if (cbOutputData <= 0)
-                    {
-                        if (fCompleted)
-                            break;
+                    SafeArray<BYTE> aOutputData;
+                    ULONG cbOutputData = 0;
 
-                        if (   have_timeout
-                            && RTTimeMilliTS() - u64StartMS > u32TimeoutMS + 5000)
-                        {
-                            progress->Cancel();
-                            break;
-                        }
-                    }
+                    /*
+                     * Some data left to output?
+                     */
 
                     if (   waitForStdOut
                         || waitForStdErr)
@@ -388,6 +374,19 @@ static int handleExecProgram(HandlerArg *a)
                                     *d = *s;
                             }
                             RTStrmWrite(g_pStdOut, aOutputData.raw(), cbOutputDataPrint);
+                        }
+                    }
+
+                    if (cbOutputData <= 0)
+                    {
+                        if (fCompleted)
+                            break;
+
+                        if (   have_timeout
+                            && RTTimeMilliTS() - u64StartMS > u32TimeoutMS + 5000)
+                        {
+                            progress->Cancel();
+                            break;
                         }
                     }
 
