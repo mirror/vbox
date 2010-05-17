@@ -82,16 +82,6 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     if (RT_FAILURE(rc))
         return rc;
 #endif
-#ifdef VBOX_WITH_SMC
-    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceSMC);
-    if (RT_FAILURE(rc))
-        return rc;
-#endif
-#ifdef VBOX_WITH_LPC
-    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceLPC);
-    if (RT_FAILURE(rc))
-        return rc;
-#endif
 #ifdef VBOX_WITH_EFI
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceEFI);
     if (RT_FAILURE(rc))

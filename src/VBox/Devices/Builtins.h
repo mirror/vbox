@@ -79,12 +79,6 @@ extern const PDMDEVREG g_DevicePCIBridge;
 extern const PDMDEVREG g_DeviceLsiLogicSCSI;
 extern const PDMDEVREG g_DeviceLsiLogicSAS;
 #endif
-#ifdef VBOX_WITH_SMC
-extern const PDMDEVREG g_DeviceSMC;
-#endif
-#ifdef VBOX_WITH_LPC
-extern const PDMDEVREG g_DeviceLPC;
-#endif
 #ifdef VBOX_WITH_EFI
 extern const PDMDEVREG g_DeviceEFI;
 #endif
