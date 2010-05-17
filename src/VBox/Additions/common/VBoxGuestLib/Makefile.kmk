@@ -100,7 +100,8 @@ VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3LibLog.cpp \
 	VBoxGuestR3LibMisc.cpp \
 	VBoxGuestR3LibStat.cpp \
-	VBoxGuestR3LibTime.cpp
+	VBoxGuestR3LibTime.cpp \
+ 	VBoxGuestR3LibModule.cpp
 ifneq ($(KBUILD_TARGET),win) ## @todo get rid of this hack (as soon as it's all implemented / #defined).
  VBoxGuestR3Lib_SOURCES   += \
  	VBoxGuestR3LibDaemonize.cpp \
@@ -116,10 +117,6 @@ endif
 ifdef VBOX_WITH_GUEST_CONTROL
  VBoxGuestR3Lib_SOURCES   += \
  	VBoxGuestR3LibGuestCtrl.cpp
-endif
-ifdef VBOX_WITH_PAGE_SHARING
- VBoxGuestR3Lib_SOURCES   += \
- 	VBoxGuestR3LibModule.cpp
 endif
 
 VBoxGuestR3LibAdditions.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
