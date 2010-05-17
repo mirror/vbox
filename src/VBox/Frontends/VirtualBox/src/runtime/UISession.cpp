@@ -59,9 +59,12 @@ public:
         , m_bIsVisible(bIsVisible), m_bIsAlpha(bIsAlpha), m_uXHot(uXHot), m_uYHot(uYHot), m_uWidth(uWidth), m_uHeight(uHeight)
     {
         com::SafeArray <BYTE> aShape(ComSafeArrayInArg (pShape));
-        size_t cbShapeSize = aShape.size();
-        m_shape.resize(cbShapeSize);
-        ::memcpy(m_shape.raw(), aShape.raw(), cbShapeSize);
+        size_t cbShapeSize = aShape.size();        
+        if (cbShapeSize > 0)
+        {
+            m_shape.resize(cbShapeSize);
+            ::memcpy(m_shape.raw(), aShape.raw(), cbShapeSize);
+        }
     }
 
     virtual ~UIMousePointerShapeChangeEvent()
@@ -74,7 +77,7 @@ public:
     uint yHot() const { return m_uYHot; }
     uint width() const { return m_uWidth; }
     uint height() const { return m_uHeight; }
-    const uchar *shapeData() const { return m_shape.raw(); }
+    const uchar *shapeData() const { return m_shape.size() > 0 ? m_shape.raw() : NULL; }
 
 private:
 
