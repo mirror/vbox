@@ -38,6 +38,10 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <signal.h>
+#if defined(RT_OS_LINUX)
+# include <pwd.h>
+# include <shadow.h>
+#endif
 #if defined(RT_OS_LINUX) || defined(RT_OS_OS2)
 # define HAVE_POSIX_SPAWN 1
 #endif
@@ -60,6 +64,45 @@
 #include <iprt/string.h>
 #include "internal/process.h"
 
+
+/**
+ * Check the credentials and return the gid/uid of user.
+ *
+ * @param    pszUser     username
+ * @param    pszPasswd   password
+ * @param    gid         where to store the GID of the user
+ * @param    uid         where to store the UID of the user
+ * @returns IPRT status code
+ */
+static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t *gid, uid_t *uid)
+{
+#if defined(RT_OS_LINUX)
+    struct passwd *pw;
+
+    pw = getpwnam(pszUser);
+    if (!pw)
+        return VERR_PERMISSION_DENIED;
+
+    if (!pszPasswd)
+        pszPasswd = "";
+
+    struct spwd *spwd;
+    /* works only if /etc/shadow is accessible */
+    spwd = getspnam(pszUser);
+    if (spwd)
+        pw->pw_passwd = spwd->sp_pwdp;
+
+    char *pszEncPasswd = crypt(pszPasswd, pw->pw_passwd);
+    if (strcmp(pszEncPasswd, pw->pw_passwd))
+        return VERR_PERMISSION_DENIED;
+
+    *gid = pw->pw_gid;
+    *uid = pw->pw_uid;
+    return VINF_SUCCESS;
+#else
+    return VERR_PERMISSION_DENIED;
+#endif
+}
 
 
 RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs, RTENV Env, unsigned fFlags, PRTPROCESS pProcess)
@@ -147,8 +190,9 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     gid_t gid = ~(gid_t)0;
     if (pszAsUser)
     {
-        AssertMsgFailed(("Implement get uid by name lookup\n"));
-        return VERR_NOT_IMPLEMENTED;
+        rc = rtCheckCredentials(pszAsUser, pszPassword, &gid, &uid);
+        if (RT_FAILURE(rc))
+            return rc;
     }
 
     /*

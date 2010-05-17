@@ -1059,6 +1059,8 @@ endif
 ifdef IPRT_WITH_LZO
  VBoxRT_LIBS                  += lzo2
 endif
+VBoxRT_LIBS.linux              = \
+	crypt
 VBoxRT_LIBS.darwin             = \
 	iconv
 VBoxRT_LIBS.freebsd            = \
