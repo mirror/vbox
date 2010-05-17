@@ -1822,7 +1822,7 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
     switch (enmAccount)
     {
         case GMMACCOUNT_BASE:
-            if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cBasePages + pGVM->gmm.s.cBalloonedPages + pGVM->gmm.s.cSharedPages + cPages > pGVM->gmm.s.Reserved.cBasePages))
+            if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cBasePages + pGVM->gmm.s.cBalloonedPages + cPages > pGVM->gmm.s.Reserved.cBasePages))
             {
                 Log(("gmmR0AllocatePages:Base: Reserved=%#llx Allocated+Ballooned+Requested=%#llx+%#llx+%#x!\n",
                      pGVM->gmm.s.Reserved.cBasePages, pGVM->gmm.s.Allocated.cBasePages, pGVM->gmm.s.cBalloonedPages, cPages));
@@ -2667,6 +2667,7 @@ DECLINLINE(void) gmmR0UseSharedPage(PGMM pGMM, PGVM pGVM, PGMMPAGE pPage)
 
     pPage->Shared.cRefs++;
     pGVM->gmm.s.cSharedPages++;
+    pGVM->gmm.s.Allocated.cBasePages++;
 }
 #endif
 
@@ -2710,7 +2711,7 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
     switch (enmAccount)
     {
         case GMMACCOUNT_BASE:
-            if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cBasePages + pGVM->gmm.s.cSharedPages < cPages))
+            if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cBasePages < cPages))
             {
                 Log(("gmmR0FreePages: allocated=%#llx cPages=%#x!\n", pGVM->gmm.s.Allocated.cBasePages, cPages));
                 return VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH;
@@ -2742,7 +2743,6 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
      */
     int rc = VINF_SUCCESS;
     uint32_t iPage;
-    uint32_t cSharedPages = 0;
     for (iPage = 0; iPage < cPages; iPage++)
     {
         uint32_t idPage = paPages[iPage].idPage;
@@ -2769,7 +2769,6 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
             {
                 Assert(pGVM->gmm.s.cSharedPages);
                 pGVM->gmm.s.cSharedPages--;
-                cSharedPages++;
                 Assert(pPage->Shared.cRefs);
                 if (!--pPage->Shared.cRefs)
                     gmmR0FreeSharedPage(pGMM, idPage, pPage);
@@ -2790,14 +2789,12 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
         paPages[iPage].idPage = NIL_GMM_PAGEID;
     }
 
-    Assert(iPage > cSharedPages);
-
     /*
      * Update the account.
      */
     switch (enmAccount)
     {
-        case GMMACCOUNT_BASE:   pGVM->gmm.s.Allocated.cBasePages   -= (iPage - cSharedPages); break;
+        case GMMACCOUNT_BASE:   pGVM->gmm.s.Allocated.cBasePages   -= iPage; break;
         case GMMACCOUNT_SHADOW: pGVM->gmm.s.Allocated.cShadowPages -= iPage; break;
         case GMMACCOUNT_FIXED:  pGVM->gmm.s.Allocated.cFixedPages  -= iPage; break;
         default:
