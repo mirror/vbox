@@ -281,9 +281,14 @@ def colCat(ctx,str):
 def colVm(ctx,vm):
     return colored(vm, 'blue')
 
-def colPath(ctx,vm):
-    return colored(vm, 'green')
+def colPath(ctx,p):
+    return colored(p, 'green')
 
+def colSize(ctx,m):
+    return colored(m, 'red')
+
+def colSizeM(ctx,m):
+    return colored(str(m)+'M', 'red')
 
 def createVm(ctx,name,kind,base):
     mgr = ctx['mgr']
@@ -1684,25 +1689,25 @@ def listMediaCmd(ctx,args):
    else:
       verbose = False
    hdds = ctx['global'].getArray(ctx['vb'], 'hardDisks')
-   print "Hard disks:"
+   print colCat(ctx,"Hard disks:")
    for hdd in hdds:
        if hdd.state != ctx['global'].constants.MediumState_Created:
            hdd.refreshState()
-       print "   %s (%s)%s %dM [logical %dM]" %(hdd.location, hdd.format, optId(verbose,hdd.id),asSize(hdd.size, True), asSize(hdd.logicalSize, False))
+       print "   %s (%s)%s %s [logical %s]" %(colPath(ctx,hdd.location), hdd.format, optId(verbose,hdd.id),colSizeM(ctx,asSize(hdd.size, True)), colSizeM(ctx,asSize(hdd.logicalSize, False)))
 
    dvds = ctx['global'].getArray(ctx['vb'], 'DVDImages')
-   print "CD/DVD disks:"
+   print colCat(ctx,"CD/DVD disks:")
    for dvd in dvds:
        if dvd.state != ctx['global'].constants.MediumState_Created:
            dvd.refreshState()
-       print "   %s (%s)%s %dM" %(dvd.location, dvd.format,optId(verbose,hdd.id),asSize(hdd.size, True))
+       print "   %s (%s)%s %s" %(colPath(ctx,dvd.location), dvd.format,optId(verbose,hdd.id),colSizeM(ctx,asSize(hdd.size, True)))
 
    floppys = ctx['global'].getArray(ctx['vb'], 'floppyImages')
-   print "Floopy disks:"
+   print colCat(ctx,"Floppy disks:")
    for floppy in floppys:
        if floppy.state != ctx['global'].constants.MediumState_Created:
            floppy.refreshState()
-       print "   %s (%s)%s %dM" %(floppy.location, floppy.format,optId(verbose,hdd.id), asSize(hdd.size, True))
+       print "   %s (%s)%s %s" %(colPath(ctx,floppy.location), floppy.format,optId(verbose,hdd.id), colSizeM(ctx,asSize(hdd.size, True)))
 
    return 0
 
