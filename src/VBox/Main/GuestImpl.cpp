@@ -734,11 +734,13 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
 
     CheckComArgStrNotEmptyOrNull(aCommand);
     CheckComArgOutPointerValid(aPID);
+    CheckComArgStrNotEmptyOrNull(aUserName); /* Do not allow anonymous executions (with system rights). */
+    CheckComArgStrNotEmptyOrNull(aPassword);
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc(); 
-    
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     if (aFlags != 0) /* Flags are not supported at the moment. */
         return E_INVALIDARG;
 
