@@ -28,6 +28,21 @@
 # define VBOXWDDM_RENDER_FROM_SHADOW
 #endif
 
+#ifndef DEBUG_misha
+# ifdef Assert
+#  undef Assert
+#  define Assert(_a) do{}while(0)
+# endif
+# ifdef AssertBreakpoint
+#  undef AssertBreakpoint
+#  define AssertBreakpoint() do{}while(0)
+# endif
+# ifdef AssertFailed
+#  undef AssertFailed
+#  define AssertFailed() do{}while(0)
+# endif
+#endif
+
 #define VBOXWDDM_ROUNDBOUND(_v, _b) (((_v) + ((_b) - 1)) & ~((_b) - 1))
 
 PVOID vboxWddmMemAlloc(IN SIZE_T cbSize);
