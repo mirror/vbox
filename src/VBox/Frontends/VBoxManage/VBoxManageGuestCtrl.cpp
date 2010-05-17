@@ -242,10 +242,6 @@ static int handleExecProgram(HandlerArg *a)
         return errorSyntax(USAGE_GUESTCONTROL,
                            "No user name specified!");
 
-    if (Utf8Password.isEmpty())
-        return errorSyntax(USAGE_GUESTCONTROL,
-                           "No password specified!");
-
     /* lookup VM. */
     ComPtr<IMachine> machine;
     /* assume it's an UUID */
