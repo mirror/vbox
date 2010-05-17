@@ -1483,7 +1483,10 @@
 
 
 /** @name VBox COM error codes
- * @remarks There
+ *
+ * @remarks Global::vboxStatusCodeToCOM and Global::vboxStatusCodeFromCOM uses
+ *          these for conversion that is lossless with respect to important COM
+ *          status codes.  These methods should be moved to the glue library.
  * @{  */
 /** Unexpected turn of events. */
 #define VERR_COM_UNEXPECTED                         (-4600)
