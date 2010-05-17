@@ -114,9 +114,6 @@ static int VBoxServiceControlHandleCmdStartProcess(uint32_t u32ClientId, uint32_
     char szEnv[_64K];
     uint32_t cbEnv = sizeof(szEnv);
     uint32_t uNumEnvVars;
-    char szStdIn[_1K];
-    char szStdOut[_1K];
-    char szStdErr[_1K];
     char szUser[128];
     char szPassword[128];
     uint32_t uTimeLimitMS;
@@ -173,7 +170,7 @@ static int VBoxServiceControlHandleCmdGetOutput(uint32_t u32ClientId, uint32_t u
     {
         /* Let's have a look if we have a running process with PID = uPID ... */
         PVBOXSERVICECTRLTHREAD pNode;
-        bool bFound = false;
+        bool fFound = false;
         RTListForEach(&g_GuestControlExecThreads, pNode, VBOXSERVICECTRLTHREAD, Node)
         {
             if (   pNode->fStarted
@@ -182,18 +179,18 @@ static int VBoxServiceControlHandleCmdGetOutput(uint32_t u32ClientId, uint32_t u
                 PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData;
                 if (pData && pData->uPID == uPID)
                 {
-                    bFound = true;
+                    fFound = true;
                     break;
                 }
             }
         }
 
-        if (bFound)
+        if (fFound)
         {
             PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData;
             AssertPtr(pData);
 
-            uint32_t cbSize = _4K;
+            const uint32_t cbSize = _4K;
             uint32_t cbRead = cbSize;
             uint8_t *pBuf = (uint8_t*)RTMemAlloc(cbSize);
             if (pBuf)
@@ -201,7 +198,6 @@ static int VBoxServiceControlHandleCmdGetOutput(uint32_t u32ClientId, uint32_t u
                 rc = VBoxServiceControlExecReadPipeBufferContent(&pData->stdOut, pBuf, cbSize, &cbRead);
                 if (RT_SUCCESS(rc))
                 {
-                    AssertPtr(pBuf);
                     /* cbRead now contains actual size. */
                     rc = VbglR3GuestCtrlExecSendOut(u32ClientId, uContextID, uPID, 0 /* handle ID */, 0 /* flags */,
                                                     pBuf, cbRead);
