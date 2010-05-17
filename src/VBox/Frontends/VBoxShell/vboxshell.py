@@ -190,7 +190,6 @@ if g_hasreadline:
                 if word[:n] == text:
                     matches.append(word)
 
-
         try:
             for m in getMachines(self.ctx, False, True):
                 # although it has autoconversion, we need to cast
@@ -524,8 +523,11 @@ def ginfo(ctx,console, args):
         printSf(ctx,sf)
 
 def cmdExistingVm(ctx,mach,cmd,args):
+    session = None
     try:
-        session = ctx['global'].openMachineSession(mach.id)
+        vb = ctx['vb']
+        session = ctx['mgr'].getSessionObject(vb)
+        vb.openExistingSession(session, mach.id)
     except Exception,e:
         printErr(ctx, "Session to '%s' not open: %s" %(mach.name,str(e)))
         if g_verbose:
