@@ -215,8 +215,11 @@ public:
     {
         com::SafeArray <BYTE> aShape(ComSafeArrayInArg (pShape));
         size_t cbShapeSize = aShape.size();
-        shape.resize(cbShapeSize);
-        ::memcpy(shape.raw(), aShape.raw(), cbShapeSize);
+        if (cbShapeSize > 0)
+        {
+            shape.resize(cbShapeSize);
+            ::memcpy(shape.raw(), aShape.raw(), cbShapeSize);
+        }
     }
     ~MousePointerChangeEvent()
     {
@@ -227,7 +230,7 @@ public:
     uint yHot() const { return yh; }
     uint width() const { return w; }
     uint height() const { return h; }
-    const uchar *shapeData() const { return shape.raw(); }
+    const uchar *shapeData() const { return shape.size() > 0 ? shape.raw() : NULL; }
 private:
     bool vis, alph;
     uint xh, yh, w, h;

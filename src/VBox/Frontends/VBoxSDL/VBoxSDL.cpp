@@ -106,8 +106,11 @@ struct PointerShapeChangeData
         // make a copy of the shape
         com::SafeArray <BYTE> aShape(ComSafeArrayInArg (pShape));
         size_t cbShapeSize = aShape.size();
-        shape.resize(cbShapeSize);
-        ::memcpy(shape.raw(), aShape.raw(), cbShapeSize);
+        if (cbShapeSize > 0)
+        {
+            shape.resize(cbShapeSize);
+            ::memcpy(shape.raw(), aShape.raw(), cbShapeSize);
+        }
     }
 
     ~PointerShapeChangeData()
