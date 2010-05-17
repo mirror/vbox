@@ -981,6 +981,11 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                             rc = setError(VBOX_E_IPRT_ERROR,
                                           tr("The guest reported an unknown process status (%u)"), pData->u32Status);
                         }
+                        else if (vrc == VERR_PERMISSION_DENIED)
+                        {
+                            rc = setError(VBOX_E_IPRT_ERROR,
+                                          tr("Invalid user/password credentials"));
+                        }
                         else
                         {
                             rc = setError(E_UNEXPECTED,
