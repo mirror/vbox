@@ -288,6 +288,7 @@ void VBoxServicePageSharingInspectGuest()
 {
     HANDLE hSnapshot;
     PAVLPVNODECORE pNewTree = NULL;
+    DWORD dwProcessId = GetCurrentProcessId();
 
     VBoxServiceVerbose(3, "VBoxServicePageSharingInspectGuest\n");
 
@@ -306,7 +307,9 @@ void VBoxServicePageSharingInspectGuest()
 
     do
     {
-        VBoxServicePageSharingInspectModules(ProcessInfo.th32ProcessID, &pNewTree);
+        /* Skip our own process. */
+        if (ProcessInfo.th32ProcessID != dwProcessId)
+            VBoxServicePageSharingInspectModules(ProcessInfo.th32ProcessID, &pNewTree);
     }
     while (Process32Next(hSnapshot, &ProcessInfo));
 
