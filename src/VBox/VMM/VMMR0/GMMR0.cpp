@@ -2097,7 +2097,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
                         }
                         else
                         {
-                            Log(("GMMR0AllocateHandyPages: #%#x/%#x: Not private! %.*Rhxs\n", iPage, paPages[iPage].idPage, sizeof(*pPage), pPage));
+                            Log(("GMMR0AllocateHandyPages: #%#x/%#x: Not private! %.*Rhxs (type %d)\n", iPage, paPages[iPage].idPage, sizeof(*pPage), pPage, pPage->Common.u2State));
                             rc = VERR_GMM_PAGE_NOT_PRIVATE;
                             break;
                         }
