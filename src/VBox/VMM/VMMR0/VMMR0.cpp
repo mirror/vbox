@@ -43,6 +43,7 @@
 #include <iprt/assert.h>
 #include <iprt/crc32.h>
 #include <iprt/mp.h>
+#include <iprt/once.h>
 #include <iprt/stdarg.h>
 #include <iprt/string.h>
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
@@ -70,7 +71,8 @@ RT_C_DECLS_END
  * The runtime lives here (in VMMR0.r0) and VBoxDD*R0.r0 links against us. */
 PFNRT g_VMMGCDeps[] =
 {
-    (PFNRT)RTCrc32
+    (PFNRT)RTCrc32,
+    (PFNRT)RTOnce
 };
 
 

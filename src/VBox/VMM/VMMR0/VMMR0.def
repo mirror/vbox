@@ -77,6 +77,7 @@ EXPORTS
     RTAssertMsg2Weak
     RTAssertShouldPanic
     RTCrc32
+    RTOnce
     RTTimeNanoTSLegacySync
     RTTimeNanoTSLegacyAsync
     RTTimeNanoTSLFenceSync
