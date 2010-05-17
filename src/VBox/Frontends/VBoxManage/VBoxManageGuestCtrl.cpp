@@ -63,10 +63,10 @@ static volatile bool    g_fExecCanceled = false;
 void usageGuestControl(void)
 {
     RTPrintf("VBoxManage guestcontrol     execute <vmname>|<uuid>\n"
-             "                            <path to program> [--arguments \"<arguments>\"]\n"
+             "                            <path to program> --username <name> --password <password>\n"
+             "                            [--arguments \"<arguments>\"]\n"
              "                            [--environment \"<NAME>=<VALUE> [<NAME>=<VALUE>]\"]\n"
-             "                            [--flags <flags>] [--timeout <msec>]\n"
-             "                            [--username <name> [--password <password>]]\n"
+             "                            [--flags <flags>] [--timeout <msec>]\n"             
              "                            [--verbose] [--wait-for exit,stdout,stderr||]\n"
              "\n");
 }
@@ -238,13 +238,13 @@ static int handleExecProgram(HandlerArg *a)
     if (!usageOK)
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
-    /* If a password was specified, check if we also got a user name. */
-    if (   !Utf8Password.isEmpty()
-        &&  Utf8UserName.isEmpty())
-    {
+    if (Utf8UserName.isEmpty())
         return errorSyntax(USAGE_GUESTCONTROL,
-                           "No user name for password specified!");
-    }
+                           "No user name specified!");
+
+    if (Utf8Password.isEmpty())
+        return errorSyntax(USAGE_GUESTCONTROL,
+                           "No password specified!");
 
     /* lookup VM. */
     ComPtr<IMachine> machine;
