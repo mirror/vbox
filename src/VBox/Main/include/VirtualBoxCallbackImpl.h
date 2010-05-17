@@ -73,7 +73,7 @@ public:
 
     // IConsoleCallback
     STDMETHOD(OnMousePointerShapeChange)(BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
-                                         ULONG width, ULONG height, BYTE *shape);
+                                         ULONG width, ULONG height, ComSafeArrayIn(BYTE, shape));
     STDMETHOD(OnMouseCapabilityChange)(BOOL supportsAbsolute, BOOL supportsRelative, BOOL needsHostCursor);
     STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock);
     STDMETHOD(OnStateChange)(MachineState_T machineState);
