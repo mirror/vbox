@@ -174,6 +174,7 @@ typedef struct NATState
     struct dns_domain_list_head pDomainList;
     struct in_addr tftp_server;
     struct in_addr loopback_addr;
+    uint32_t dnsLastUpdate;
     uint32_t netmask;
 #ifndef VBOX_WITH_NAT_SERVICE
     uint8_t client_ethaddr[6];
