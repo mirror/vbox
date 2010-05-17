@@ -54,11 +54,12 @@
 #include <VBox/log.h>
 #include <VBox/stam.h>
 #include <iprt/assert.h>
+#include <iprt/string.h>
 #ifdef IN_RING0
 # include <iprt/asm-amd64-x86.h>
 # include <iprt/once.h>
+# include <iprt/thread.h>
 #endif
-#include <iprt/string.h>
 
 #include "../Builtins2.h"
 
