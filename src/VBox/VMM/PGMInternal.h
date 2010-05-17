@@ -2804,6 +2804,7 @@ typedef struct PGM
     uint32_t                        cAllPages;          /**< The total number of pages. (Should be Private + Shared + Zero + Pure MMIO.) */
     uint32_t                        cPrivatePages;      /**< The number of private pages. */
     uint32_t                        cSharedPages;       /**< The number of shared pages. */
+    uint32_t                        cReusedSharedPages; /**< The number of reused shared pages. */
     uint32_t                        cZeroPages;         /**< The number of zero backed pages. */
     uint32_t                        cPureMmioPages;     /**< The number of pure MMIO pages. */
     uint32_t                        cMonitoredPages;    /**< The number of write monitored pages. */

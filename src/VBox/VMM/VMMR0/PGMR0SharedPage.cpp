@@ -153,6 +153,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheckRegion(PVM pVM, VMCPUID idCpu, PGMMSHAREDMO
 
                         /* Invalidate page map TLB entry for this page too. */
                         PGMPhysInvalidatePageMapTLBEntry(pVM, paPageDesc[i].GCPhys);
+                        pVM->pgm.s.cReusedSharedPages++;
                     }
                     /* else nothing changed (== this page is now a shared page), so no need to flush anything. */
 
