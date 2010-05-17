@@ -29,6 +29,7 @@
 # include "GuestImpl.h"
 #endif
 #include "VMMDev.h"
+#include "Global.h"
 
 // generated header
 #include "SchemaDefs.h"
@@ -37,14 +38,16 @@
 #include "Logging.h"
 
 #include <iprt/buildconfig.h>
-#include <iprt/string.h>
-#include <iprt/path.h>
+#include <iprt/ctype.h>
 #include <iprt/dir.h>
+#include <iprt/file.h>
 #include <iprt/param.h>
+#include <iprt/path.h>
+#include <iprt/string.h>
+#include <iprt/system.h>
 #if 0 /* enable to play with lots of memory. */
 # include <iprt/env.h>
 #endif
-#include <iprt/file.h>
 
 #include <VBox/vmapi.h>
 #include <VBox/err.h>
@@ -100,11 +103,11 @@
 
 #include "DHCPServerRunner.h"
 
-#if defined(RT_OS_DARWIN) && !defined(VBOX_OSE)
+#if defined(RT_OS_DARWIN)
 
 # include "IOKit/IOKitLib.h"
 
-static int DarwinSmcKey(char *aKey, uint32_t iKeySize)
+static int DarwinSmcKey(char *pabKey, uint32_t cbKey)
 {
     /*
      * Method as described in Amit Singh's article:
@@ -121,19 +124,19 @@ static int DarwinSmcKey(char *aKey, uint32_t iKeySize)
         uint8_t    data[32];
     } AppleSMCBuffer;
 
-    AssertReturn(iKeySize >= 65, VERR_INTERNAL_ERROR);
+    AssertReturn(cbKey >= 65, VERR_INTERNAL_ERROR);
 
     io_service_t service = IOServiceGetMatchingService(kIOMasterPortDefault,
                                                        IOServiceMatching("AppleSMC"));
     if (!service)
-        return VERR_INTERNAL_ERROR;
+        return VERR_NOT_FOUND;
 
     io_connect_t    port = (io_connect_t)0;
     kern_return_t   kr   = IOServiceOpen(service, mach_task_self(), 0, &port);
     IOObjectRelease(service);
 
     if (kr != kIOReturnSuccess)
-        return VERR_INTERNAL_ERROR;
+        return RTErrConvertFromDarwin(kr);
 
     AppleSMCBuffer  inputStruct    = { 0, {0}, 32, {0}, 5, };
     AppleSMCBuffer  outputStruct;
@@ -151,16 +154,16 @@ static int DarwinSmcKey(char *aKey, uint32_t iKeySize)
         if (kr != kIOReturnSuccess)
         {
             IOServiceClose(port);
-            return VERR_INTERNAL_ERROR;
+            return RTErrConvertFromDarwin(kr);
         }
 
         for (int j = 0; j < 32; j++)
-            aKey[j + i*32] = outputStruct.data[j];
+            pabKey[j + i*32] = outputStruct.data[j];
     }
 
     IOServiceClose(port);
 
-    aKey[64] = 0;
+    pabKey[64] = 0;
 
     return VINF_SUCCESS;
 }
@@ -235,21 +238,70 @@ static int findEfiRom(IVirtualBox* vbox, FirmwareType_T aFirmwareType, Utf8Str& 
     return S_OK;
 }
 
-static int getSmcDeviceKey(IMachine* pMachine, BSTR * aKey)
+static int getSmcDeviceKey(IMachine *pMachine, BSTR *aKey, bool *pfGetKeyFromRealSMC)
 {
-# if defined(RT_OS_DARWIN) && !defined(VBOX_OSE)
-    int rc;
-    char aKeyBuf[65];
+    *pfGetKeyFromRealSMC = false;
 
-    rc = DarwinSmcKey(aKeyBuf, sizeof aKeyBuf);
+    /*
+     * The extra data takes precedence (if non-zero).
+     */
+    HRESULT hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/SmcDeviceKey"), aKey);
+    if (FAILED(hrc))
+        return Global::vboxStatusCodeFromCOM(hrc);
+    if (   SUCCEEDED(hrc)
+        && *aKey
+        && **aKey)
+        return VINF_SUCCESS;
+
+#ifdef RT_OS_DARWIN
+    /*
+     * Query it here and now.
+     */
+    char abKeyBuf[65];
+    int rc = DarwinSmcKey(abKeyBuf, sizeof(abKeyBuf));
     if (SUCCEEDED(rc))
     {
-        Bstr(aKeyBuf).detachTo(aKey);
+        Bstr(abKeyBuf).detachTo(aKey);
         return rc;
     }
+    LogRel(("Warning: DarwinSmcKey failed with rc=%Rrc!\n", rc));
+
+#else
+    /*
+     * Is it apple hardware in bootcamp?
+     */
+    /** @todo implement + test RTSYSDMISTR_MANUFACTURER on all hosts.
+     *        Currently falling back on the product name. */
+    char szManufacturer[256];
+    szManufacturer[0] = '\0';
+    RTSystemQueryDmiString(RTSYSDMISTR_MANUFACTURER, szManufacturer, sizeof(szManufacturer));
+    if (szManufacturer[0] != '\0')
+    {
+        if (   !strcmp(szManufacturer, "Apple Computer, Inc.")
+            || !strcmp(szManufacturer, "Apple Inc.")
+            )
+            *pfGetKeyFromRealSMC = true;
+    }
+    else
+    {
+        char szProdName[256];
+        szProdName[0] = '\0';
+        RTSystemQueryDmiString(RTSYSDMISTR_PRODUCT_NAME, szProdName, sizeof(szProdName));
+        if (   (   !strncmp(szProdName, "Mac", 3)
+                || !strncmp(szProdName, "iMac", 4)
+                || !strncmp(szProdName, "iMac", 4)
+                || !strncmp(szProdName, "Xserve", 6)
+               )
+            && !strchr(szProdName, ' ')                             /* no spaces */
+            && RT_C_IS_DIGIT(szProdName[strlen(szProdName) - 1])    /* version number */
+           )
+            *pfGetKeyFromRealSMC = true;
+    }
+
+    int rc = VINF_SUCCESS;
 #endif
 
-    return pMachine->GetExtraData(Bstr("VBoxInternal2/SmcDeviceKey"), aKey);
+    return rc;
 }
 
 /**
@@ -673,13 +725,15 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #endif
     if (fSmcEnabled)
     {
-        Bstr tmpStr2;
         rc = CFGMR3InsertNode(pDevices, "smc", &pDev);                                  RC_CHECK();
         rc = CFGMR3InsertNode(pDev,     "0", &pInst);                                   RC_CHECK();
         rc = CFGMR3InsertInteger(pInst, "Trusted",   1);     /* boolean */              RC_CHECK();
         rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                               RC_CHECK();
-        rc = getSmcDeviceKey(pMachine,   tmpStr2.asOutParam());                         RC_CHECK();
-        rc = CFGMR3InsertString(pCfg,   "DeviceKey", Utf8Str(tmpStr2).raw());           RC_CHECK();
+        bool fGetKeyFromRealSMC;
+        Bstr bstrKey;
+        rc = getSmcDeviceKey(pMachine, bstrKey.asOutParam(), &fGetKeyFromRealSMC);      RC_CHECK();
+        rc = CFGMR3InsertString(pCfg,   "DeviceKey", Utf8Str(bstrKey).raw());           RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "GetKeyFromRealSMC", fGetKeyFromRealSMC);       RC_CHECK();
     }
 
     /*
