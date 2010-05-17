@@ -54,13 +54,13 @@ VMMR0DECL(int) PGMR0SharedModuleCheckRegion(PVM pVM, VMCPUID idCpu, PGMMSHAREDMO
     pgmLock(pVM);
 
     /* Check every region of the shared module. */
-    for (unsigned i = 0; i < pModule->cRegions; i++)
+    for (unsigned idxModule = 0; idxModule < pModule->cRegions; idxModule++)
     {
-        Assert((pModule->aRegions[i].cbRegion & 0xfff) == 0);
-        Assert((pModule->aRegions[i].GCRegionAddr & 0xfff) == 0);
+        Assert((pModule->aRegions[idxModule].cbRegion & 0xfff) == 0);
+        Assert((pModule->aRegions[idxModule].GCRegionAddr & 0xfff) == 0);
 
-        RTGCPTR  GCRegion  = pModule->aRegions[i].GCRegionAddr;
-        unsigned cbRegion = pModule->aRegions[i].cbRegion & ~0xfff;
+        RTGCPTR  GCRegion  = pModule->aRegions[idxModule].GCRegionAddr;
+        unsigned cbRegion = pModule->aRegions[idxModule].cbRegion & ~0xfff;
         unsigned idxPage = 0;
         bool     fValidChanges = false;
 
@@ -110,7 +110,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheckRegion(PVM pVM, VMCPUID idCpu, PGMMSHAREDMO
 
         if (fValidChanges)
         {
-            rc = GMMR0SharedModuleCheckRange(pGVM, pModule, i, idxPage, paPageDesc);
+            rc = GMMR0SharedModuleCheckRange(pGVM, pModule, idxModule, idxPage, paPageDesc);
             AssertRC(rc);
             if (RT_FAILURE(rc))
                 break;
@@ -131,7 +131,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheckRegion(PVM pVM, VMCPUID idCpu, PGMMSHAREDMO
                     }
                     Assert(!PGM_PAGE_IS_SHARED(pPage));
 
-                    Log(("PGMR0SharedModuleCheck: shared page gc phys %RGp host %RHp->%RHp\n", paPageDesc[i].GCPhys, PGM_PAGE_GET_HCPHYS(pPage), paPageDesc[i].HCPhys));
+                    Log(("PGMR0SharedModuleCheck: shared page gc virt=%RGv phys %RGp host %RHp->%RHp\n", pModule->aRegions[idxModule].GCRegionAddr + i * PAGE_SIZE, paPageDesc[i].GCPhys, PGM_PAGE_GET_HCPHYS(pPage), paPageDesc[i].HCPhys));
                     if (paPageDesc[i].HCPhys != PGM_PAGE_GET_HCPHYS(pPage))
                     {
                         bool fFlush = false;
