@@ -144,7 +144,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheckRegion(PVM pVM, VMCPUID idCpu, PGMMSHAREDMO
                             goto end;
                         }
                         Assert(rc == VINF_SUCCESS || (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3) && (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL)));
-                        if (rc = VINF_SUCCESS)
+                        if (rc == VINF_SUCCESS)
                             fFlushTLBs |= fFlush;
 
                         /* Update the physical address and page id now. */
