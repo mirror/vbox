@@ -968,7 +968,17 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
             /* Select a valid VCPU context. */
             ASMAtomicWriteU32(&pVCpu->idHostCpu, RTMpCpuId());
 
-            int rc = GMMR0CheckSharedModules(pVM, idCpu);
+# ifdef DEBUG_sandervl
+            /* Make sure that log flushes can jump back to ring-3; annoying to get an incomplete log (this is risky though as the code doesn't take this into account). */
+            int rc = GMMR0CheckSharedModulesStart(pVM);
+            if (rc == VINF_SUCCESS)
+            {
+                rc = vmmR0CallRing3SetJmp(&pVCpu->vmm.s.CallRing3JmpBufR0, GMMR0CheckSharedModules, pVM, pVCpu); /* this may resume code. */
+                GMMR0CheckSharedModulesEnd(pVM);
+            }
+# else
+            int rc = GMMR0CheckSharedModules(pVM, pVCpu);
+# endif
 
             /* Clear the VCPU context. */
             ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);

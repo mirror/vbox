@@ -150,6 +150,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_GMM
+#include <VBox/vm.h>
 #include <VBox/gmm.h>
 #include "GMMR0Internal.h"
 #include <VBox/gvm.h>
@@ -3992,14 +3993,61 @@ DECLCALLBACK(int) gmmR0CheckSharedModule(PAVLGCPTRNODECORE pNode, void *pvUser)
 }
 #endif
 
+#ifdef DEBUG_sandervl
+/**
+ * Setup for a GMMR0CheckSharedModules call (to allow log flush jumps back to ring 3)
+ *
+ * @returns VBox status code.
+ * @param   pVM                 VM handle
+ */
+GMMR0DECL(int) GMMR0CheckSharedModulesStart(PVM pVM)
+{
+    /*
+     * Validate input and get the basics.
+     */
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+
+    /*
+     * Take the sempahore and do some more validations.
+     */
+    int rc = RTSemFastMutexRequest(pGMM->Mtx);
+    AssertRC(rc);
+    if (!GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
+        rc = VERR_INTERNAL_ERROR_5;
+    else
+        rc = VINF_SUCCESS;
+
+    return rc;
+}
+
+/**
+ * Clean up after a GMMR0CheckSharedModules call (to allow log flush jumps back to ring 3)
+ *
+ * @returns VBox status code.
+ * @param   pVM                 VM handle
+ */
+GMMR0DECL(int) GMMR0CheckSharedModulesEnd(PVM pVM)
+{
+    /*
+     * Validate input and get the basics.
+     */
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+
+    RTSemFastMutexRelease(pGMM->Mtx);
+    return VINF_SUCCESS;
+}
+#endif
+
 /**
  * Check all shared modules for the specified VM
  *
  * @returns VBox status code.
  * @param   pVM                 VM handle
- * @param   idCpu               VCPU id
+ * @param   pVCpu               VMCPU handle
  */
-GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, VMCPUID idCpu)
+GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
     /*
@@ -4008,22 +4056,24 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, VMCPUID idCpu)
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
     PGVM pGVM;
-    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    int rc = GVMMR0ByVMAndEMT(pVM, pVCpu->idCpu, &pGVM);
     if (RT_FAILURE(rc))
         return rc;
 
+# ifndef DEBUG_sandervl
     /*
      * Take the sempahore and do some more validations.
      */
     rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
+# endif
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
         GMMCHECKSHAREDMODULEINFO Info;
 
         Log(("GMMR0CheckSharedModules\n"));
         Info.pGVM = pGVM;
-        Info.idCpu = idCpu;
+        Info.idCpu = pVCpu->idCpu;
 
         RTAvlGCPtrDoWithAll(&pGVM->gmm.s.pSharedModuleTree, true /* fFromLeft */, gmmR0CheckSharedModule, &Info);
 
@@ -4034,7 +4084,9 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, VMCPUID idCpu)
     else
         rc = VERR_INTERNAL_ERROR_5;
 
+# ifndef DEBUG_sandervl
     RTSemFastMutexRelease(pGMM->Mtx);
+# endif
     return rc;
 #else
     return VERR_NOT_IMPLEMENTED;
