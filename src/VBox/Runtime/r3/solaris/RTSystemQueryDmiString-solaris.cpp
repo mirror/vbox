@@ -84,6 +84,7 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
                     case RTSYSDMISTR_PRODUCT_NAME:      rc = RTStrCopy(pszBuf, cbBuf, hSMBInfo.smbi_product); break;
                     case RTSYSDMISTR_PRODUCT_VERSION:   rc = RTStrCopy(pszBuf, cbBuf, hSMBInfo.smbi_version); break;
                     case RTSYSDMISTR_PRODUCT_SERIAL:    rc = RTStrCopy(pszBuf, cbBuf, hSMBInfo.smbi_serial);  break;
+                    case RTSYSDMISTR_MANUFACTURER:      rc = RTStrCopy(pszBuf, cbBuf, hSMBInfo.smbi_manufacturer);  break;
 
                     default:  /* make gcc happy */
                         rc = VERR_NOT_SUPPORTED;

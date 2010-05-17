@@ -151,6 +151,8 @@ typedef enum RTSYSDMISTR
     RTSYSDMISTR_PRODUCT_UUID,
     /** The product serial. */
     RTSYSDMISTR_PRODUCT_SERIAL,
+    /** The system manufacturer. */
+    RTSYSDMISTR_MANUFACTURER,
     /** The end of the valid strings. */
     RTSYSDMISTR_END,
     /** The usual 32-bit hack.  */
