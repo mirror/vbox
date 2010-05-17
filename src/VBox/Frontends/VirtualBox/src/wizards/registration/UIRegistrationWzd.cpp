@@ -417,8 +417,9 @@ UIRegistrationWzd::UIRegistrationWzd(UIRegistrationWzd **ppSelf)
     assignWatermark(":/vmw_new_user.png");
 #endif /* Q_WS_MAC */
 
-    /* Setup connections */
-    connect(vboxGlobal().mainWindow(), SIGNAL(closing()), this, SLOT(reject()));
+    /* Setup 'closing' connection if main window is VBoxSelectorWnd: */
+    if (vboxGlobal().mainWindow() && vboxGlobal().mainWindow()->inherits("VBoxSelectorWnd"))
+        connect(vboxGlobal().mainWindow(), SIGNAL(closing()), this, SLOT(reject()));
 }
 
 UIRegistrationWzd::~UIRegistrationWzd()
