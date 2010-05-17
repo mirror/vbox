@@ -549,6 +549,9 @@ static void lsilogicConfigurationPagesFree(PLSILOGICSCSI pThis)
 static void lsilogicFinishContextReply(PLSILOGICSCSI pLsiLogic, uint32_t u32MessageContext)
 {
     int rc;
+
+    LogFlowFunc(("pLsiLogic=%#p u32MessageContext=%#x\n", pLsiLogic, u32MessageContext));
+
     AssertMsg(!pLsiLogic->fDoorbellInProgress, ("We are in a doorbell function\n"));
 
     /* Write message context ID into reply post queue. */
@@ -733,6 +736,9 @@ static int lsilogicProcessMessageRequest(PLSILOGICSCSI pLsiLogic, PMptMessageHdr
         case MPT_MESSAGE_HDR_FUNCTION_SCSI_TASK_MGMT:
         {
             PMptSCSITaskManagementRequest pTaskMgmtReq = (PMptSCSITaskManagementRequest)pMessageHdr;
+
+            LogFlow(("u8TaskType=%u\n", pTaskMgmtReq->u8TaskType));
+            LogFlow(("u32TaskMessageContext=%#x\n", pTaskMgmtReq->u32TaskMessageContext));
 
             pReply->SCSITaskManagement.u8MessageLength     = 6;     /* 6 32bit dwords. */
             pReply->SCSITaskManagement.u8TaskType          = pTaskMgmtReq->u8TaskType;
@@ -3756,6 +3762,62 @@ static DECLCALLBACK(int) lsilogicMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegio
     return rc;
 }
 
+/**
+ * Allocate the queues.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pThis     The LsiLogic device instance.
+ */
+static int lsilogicQueuesAlloc(PLSILOGICSCSI pThis)
+{
+    PVM pVM = PDMDevHlpGetVM(pThis->pDevInsR3);
+    uint32_t cbQueues;
+
+    Assert(!pThis->pReplyFreeQueueBaseR3);
+
+    cbQueues  = 2*pThis->cReplyQueueEntries * sizeof(uint32_t);
+    cbQueues += pThis->cRequestQueueEntries * sizeof(uint32_t);
+    int rc = MMHyperAlloc(pVM, cbQueues, 1, MM_TAG_PDM_DEVICE_USER,
+                          (void **)&pThis->pReplyFreeQueueBaseR3);
+    if (RT_FAILURE(rc))
+        return VERR_NO_MEMORY;
+    pThis->pReplyFreeQueueBaseR0 = MMHyperR3ToR0(pVM, (void *)pThis->pReplyFreeQueueBaseR3);
+    pThis->pReplyFreeQueueBaseRC = MMHyperR3ToRC(pVM, (void *)pThis->pReplyFreeQueueBaseR3);
+
+    pThis->pReplyPostQueueBaseR3 = pThis->pReplyFreeQueueBaseR3 + pThis->cReplyQueueEntries;
+    pThis->pReplyPostQueueBaseR0 = MMHyperR3ToR0(pVM, (void *)pThis->pReplyPostQueueBaseR3);
+    pThis->pReplyPostQueueBaseRC = MMHyperR3ToRC(pVM, (void *)pThis->pReplyPostQueueBaseR3);
+
+    pThis->pRequestQueueBaseR3   = pThis->pReplyPostQueueBaseR3 + pThis->cReplyQueueEntries;
+    pThis->pRequestQueueBaseR0   = MMHyperR3ToR0(pVM, (void *)pThis->pRequestQueueBaseR3);
+    pThis->pRequestQueueBaseRC   = MMHyperR3ToRC(pVM, (void *)pThis->pRequestQueueBaseR3);
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Free the hyper memory used or the queues.
+ *
+ * @returns nothing.
+ *
+ * @param   pThis     The LsiLogic device instance.
+ */
+static void lsilogicQueuesFree(PLSILOGICSCSI pThis)
+{
+    PVM pVM = PDMDevHlpGetVM(pThis->pDevInsR3);
+    int rc = VINF_SUCCESS;
+
+    AssertPtr(pThis->pReplyFreeQueueBaseR3);
+
+    rc = MMHyperFree(pVM, (void *)pThis->pReplyFreeQueueBaseR3);
+    AssertRC(rc);
+
+    pThis->pReplyFreeQueueBaseR3 = NULL;
+    pThis->pReplyPostQueueBaseR3 = NULL;
+    pThis->pRequestQueueBaseR3   = NULL;
+}
+
 static DECLCALLBACK(int) lsilogicLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
@@ -4006,8 +4068,24 @@ static DECLCALLBACK(int) lsilogicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     SSMR3GetU8    (pSSM, &pLsiLogic->cMaxBuses);
     SSMR3GetU16   (pSSM, &pLsiLogic->cbReplyFrame);
     SSMR3GetU32   (pSSM, &pLsiLogic->iDiagnosticAccess);
-    SSMR3GetU32   (pSSM, &pLsiLogic->cReplyQueueEntries);
-    SSMR3GetU32   (pSSM, &pLsiLogic->cRequestQueueEntries);
+
+    uint32_t cReplyQueueEntries, cRequestQueueEntries;
+    SSMR3GetU32   (pSSM, &cReplyQueueEntries);
+    SSMR3GetU32   (pSSM, &cRequestQueueEntries);
+
+    if (   cReplyQueueEntries != pLsiLogic->cReplyQueueEntries
+        || cRequestQueueEntries != pLsiLogic->cRequestQueueEntries)
+    {
+        LogFlow(("Reallocating queues cReplyQueueEntries=%u cRequestQueuEntries=%u\n",
+                 cReplyQueueEntries, cRequestQueueEntries));
+        lsilogicQueuesFree(pLsiLogic);
+        pLsiLogic->cReplyQueueEntries = cReplyQueueEntries;
+        pLsiLogic->cRequestQueueEntries = cRequestQueueEntries;
+        rc = lsilogicQueuesAlloc(pLsiLogic);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
     SSMR3GetU32   (pSSM, (uint32_t *)&pLsiLogic->uReplyFreeQueueNextEntryFreeWrite);
     SSMR3GetU32   (pSSM, (uint32_t *)&pLsiLogic->uReplyFreeQueueNextAddressRead);
     SSMR3GetU32   (pSSM, (uint32_t *)&pLsiLogic->uReplyPostQueueNextEntryFreeWrite);
@@ -4407,7 +4485,6 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
     int rc = VINF_SUCCESS;
     char *pszCtrlType = NULL;
-    PVM pVM = PDMDevHlpGetVM(pDevIns);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
@@ -4548,24 +4625,9 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Allocate memory for the queues.
      */
-    uint32_t cbQueues;
-
-    cbQueues  = 2*pThis->cReplyQueueEntries * sizeof(uint32_t);
-    cbQueues += pThis->cRequestQueueEntries * sizeof(uint32_t);
-    rc = MMHyperAlloc(pVM, cbQueues, 1, MM_TAG_PDM_DEVICE_USER,
-                      (void **)&pThis->pReplyFreeQueueBaseR3);
+    rc = lsilogicQueuesAlloc(pThis);
     if (RT_FAILURE(rc))
-        return VERR_NO_MEMORY;
-    pThis->pReplyFreeQueueBaseR0 = MMHyperR3ToR0(pVM, (void *)pThis->pReplyFreeQueueBaseR3);
-    pThis->pReplyFreeQueueBaseRC = MMHyperR3ToRC(pVM, (void *)pThis->pReplyFreeQueueBaseR3);
-
-    pThis->pReplyPostQueueBaseR3 = pThis->pReplyFreeQueueBaseR3 + pThis->cReplyQueueEntries;
-    pThis->pReplyPostQueueBaseR0 = MMHyperR3ToR0(pVM, (void *)pThis->pReplyPostQueueBaseR3);
-    pThis->pReplyPostQueueBaseRC = MMHyperR3ToRC(pVM, (void *)pThis->pReplyPostQueueBaseR3);
-
-    pThis->pRequestQueueBaseR3   = pThis->pReplyPostQueueBaseR3 + pThis->cReplyQueueEntries;
-    pThis->pRequestQueueBaseR0   = MMHyperR3ToR0(pVM, (void *)pThis->pRequestQueueBaseR3);
-    pThis->pRequestQueueBaseRC   = MMHyperR3ToRC(pVM, (void *)pThis->pRequestQueueBaseR3);
+        return rc;
 
     /*
      * Create critical sections protecting the reply post and free queues.
