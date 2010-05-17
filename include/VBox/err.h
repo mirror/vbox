@@ -1482,33 +1482,41 @@
 /** @} */
 
 
-/** @name VBox Webservice Status Codes
- * @{
- */
-/** Object not found. */
-#define VERR_COM_OBJECT_NOT_FOUND                  (-4601)
-/** Invalid machine state. */
-#define VERR_COM_INVALID_VM_STATE                  (-4602)
-/** VM error. */
-#define VERR_COM_VM_ERROR                          (-4603)
-/** File error. */
-#define VERR_COM_FILE_ERROR                        (-4604)
+/** @name VBox COM error codes
+ * @remarks There
+ * @{  */
+/** Unexpected turn of events. */
+#define VERR_COM_UNEXPECTED                         (-4600)
+/** The base of the VirtualBox COM status codes (the lower value)
+ * corresponding 1:1 to VBOX_E_XXX.  This is the lowest value. */
+#define VERR_COM_VBOX_LOWEST                        (-4699)
+/** Object corresponding to the supplied arguments does not exist. */
+#define VERR_COM_OBJECT_NOT_FOUND                   (VERR_COM_VBOX_LOWEST + 1)
+/** Current virtual machine state prevents the operation. */
+#define VERR_COM_INVALID_VM_STATE                   (VERR_COM_VBOX_LOWEST + 2)
+/** Virtual machine error occurred attempting the operation. */
+#define VERR_COM_VM_ERROR                           (VERR_COM_VBOX_LOWEST + 3)
+/** File not accessible or erroneous file contents. */
+#define VERR_COM_FILE_ERROR                         (VERR_COM_VBOX_LOWEST + 4)
 /** IPRT error. */
-#define VERR_COM_IPRT_ERROR                        (-4605)
-/** PDM error. */
-#define VERR_COM_PDM_ERROR                         (-4606)
-/** Invalid object state. */
-#define VERR_COM_INVALID_OBJECT_STATE              (-4607)
-/** Host error. */
-#define VERR_COM_HOST_ERROR                        (-4608)
-/** Not supported. */
-#define VERR_COM_NOT_SUPPORTED                     (-4609)
-/** XML error. */
-#define VERR_COM_XML_ERROR                         (-4610)
-/** Invalid session state. */
-#define VERR_COM_INVALID_SESSION_STATE             (-4611)
-/** Invalid session state. */
-#define VERR_COM_OBJECT_IN_USE                     (-4612)
+#define VERR_COM_IPRT_ERROR                         (VERR_COM_VBOX_LOWEST + 5)
+/** Pluggable Device Manager error. */
+#define VERR_COM_PDM_ERROR                          (VERR_COM_VBOX_LOWEST + 6)
+/** Current object state prohibits operation. */
+#define VERR_COM_INVALID_OBJECT_STATE               (VERR_COM_VBOX_LOWEST + 7)
+/** Host operating system related error. */
+#define VERR_COM_HOST_ERROR                         (VERR_COM_VBOX_LOWEST + 8)
+/** Requested operation is not supported. */
+#define VERR_COM_NOT_SUPPORTED                      (VERR_COM_VBOX_LOWEST + 9)
+/** Invalid XML found. */
+#define VERR_COM_XML_ERROR                          (VERR_COM_VBOX_LOWEST + 10)
+/** Current session state prohibits operation. */
+#define VERR_COM_INVALID_SESSION_STATE              (VERR_COM_VBOX_LOWEST + 11)
+/** Object being in use prohibits operation. */
+#define VERR_COM_OBJECT_IN_USE                      (VERR_COM_VBOX_LOWEST + 12)
+/** Returned by callback methods which does not need to be called
+ * again because the client does not actually make use of them. */
+#define VERR_COM_DONT_CALL_AGAIN                    (VERR_COM_VBOX_LOWEST + 13)
 /** @} */
 
 /** @name VBox CPU hotplug Status codes
