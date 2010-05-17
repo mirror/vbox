@@ -3211,7 +3211,12 @@ static int gmmR0MapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR ppvR3)
         {
             *ppvR3 = RTR0MemObjAddressR3(pChunk->paMappings[i].MapObj);
             Log(("gmmR0MapChunk: chunk %#x is already mapped at %p!\n", pChunk->Core.Key, *ppvR3));
+#ifdef VBOX_WITH_PAGE_SHARING
+            /* The ring-3 chunk cache can be out of sync; don't fail. */
+            return VINF_SUCCESS;
+#else
             return VERR_GMM_CHUNK_ALREADY_MAPPED;
+#endif
         }
     }
 
