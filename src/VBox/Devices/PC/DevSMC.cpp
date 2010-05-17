@@ -54,10 +54,18 @@
 #include <VBox/log.h>
 #include <VBox/stam.h>
 #include <iprt/assert.h>
+#ifdef IN_RING0
+# include <iprt/asm-amd64-x86.h>
+# include <iprt/once.h>
+#endif
 #include <iprt/string.h>
 
 #include "../Builtins2.h"
 
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 /* data port used by Apple SMC */
 #define APPLESMC_DATA_PORT      0x300
 /* command/status port used by Apple SMC */
@@ -70,11 +78,16 @@
 #define APPLESMC_GET_KEY_BY_INDEX_CMD   0x12
 #define APPLESMC_GET_KEY_TYPE_CMD       0x13
 
-static char osk[64];
-
 /** The version of the saved state. */
 #define SMC_SAVED_STATE_VERSION 1
 
+/** The ring-0 operation number that attempts to get OSK0 and OSK1 from the real
+ *  SMC. */
+#define SMC_CALLR0_READ_OSK     1
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 typedef struct AppleSMCData
 {
     uint8_t       len;
@@ -82,18 +95,6 @@ typedef struct AppleSMCData
     const char    *data;
 } AppleSMCData;
 
-/* See http://www.mactel-linux.org/wiki/AppleSMC */
-static struct AppleSMCData data[] =
-{
-    {6, "REV ", "\0x01\0x13\0x0f\0x00\0x00\0x03"},
-    {32,"OSK0", osk },
-    {32,"OSK1", osk+32 },
-    {1, "NATJ",  "\0" },
-    {1, "MSSP",  "\0" },
-    {1, "MSSD",  "\0x3" },
-    {1, "NTOK",  "\0"},
-    {0, NULL,    NULL }
-};
 
 typedef struct
 {
@@ -107,12 +108,171 @@ typedef struct
     uint8_t data_pos;
     uint8_t data[255];
 
-    char*    pszDeviceKey;
+    /** The OSK0 value. This is currently only used in the constructor. */
+    uint8_t abOsk0[32];
+    /** The OSK1 value. This is currently only used in the constructor */
+    uint8_t abOsk1[32];
 } SMCState;
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+#ifdef IN_RING3
+static char osk[64];
+
+/* See http://www.mactel-linux.org/wiki/AppleSMC */
+static struct AppleSMCData data[] =
+{
+    {6, "REV ", "\0x01\0x13\0x0f\0x00\0x00\0x03"},
+    {32,"OSK0", osk },
+    {32,"OSK1", osk+32 },
+    {1, "NATJ",  "\0" },
+    {1, "MSSP",  "\0" },
+    {1, "MSSD",  "\0x3" },
+    {1, "NTOK",  "\0"},
+    {0, NULL,    NULL }
+};
+#endif /* IN_RING3 */
+#ifdef IN_RING0
+/** Do once for the SMC ring-0 static data (g_abOsk0, g_abOsk1, g_fHaveOsk).  */
+static RTONCE   g_SmcR0Once = RTONCE_INITIALIZER;
+/** Indicates whether we've successfully queried the OSK* keys. */
+static bool     g_fHaveOsk = false;
+/** The OSK0 value.   */
+static uint8_t  g_abOsk0[32];
+/** The OSK1 value.  */
+static uint8_t  g_abOsk1[32];
+#endif /* IN_RING0 */
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
+#ifdef IN_RING0
+
+/**
+ * Waits for the specified status on the host SMC.
+ *
+ * @returns success indicator.
+ * @param   bStatus             The desired status.
+ * @param   pszWhat             What we're currently doing. For the log.
+ */
+static bool devR0SmcWaitHostStatus(uint8_t bStatus, const char *pszWhat)
+{
+    uint8_t bCurStatus;
+    for (uint32_t cMsSleep = 1; cMsSleep <= 64; cMsSleep <<= 1)
+    {
+        RTThreadSleep(cMsSleep);
+        bCurStatus = ASMInU8(APPLESMC_CMD_PORT);
+        if ((bCurStatus & 0xf) == bStatus)
+            return true;
+    }
+
+    LogRel(("devR0Smc: %s: bCurStatus=%#x, wanted %#x.\n", pszWhat, bCurStatus, bStatus));
+    return false;
+}
+
+/**
+ * Reads a key by name from the host SMC.
+ *
+ * @returns success indicator.
+ * @param   pszName             The key name, must be exactly 4 chars long.
+ * @param   pbBuf               The output buffer.
+ * @param   cbBuf               The buffer size. Max 32 bytes.
+ */
+static bool devR0SmcQueryHostKey(const char *pszName, uint8_t *pbBuf, size_t cbBuf)
+{
+    Assert(strlen(pszName) == 4);
+    Assert(cbBuf <= 32);
+    Assert(cbBuf > 0);
+
+    /*
+     * Issue the READ command.
+     */
+    uint32_t cMsSleep = 1;
+    for (;;)
+    {
+        ASMOutU8(APPLESMC_CMD_PORT, APPLESMC_READ_CMD);
+        RTThreadSleep(cMsSleep);
+        uint8_t bCurStatus = ASMInU8(APPLESMC_CMD_PORT);
+        if ((bCurStatus & 0xf) == 0xc)
+            break;
+        cMsSleep <<= 1;
+        if (cMsSleep > 64)
+        {
+            LogRel(("devR0Smc: %s: bCurStatus=%#x, wanted %#x.\n", "cmd", bCurStatus, 0xc));
+            return false;
+        }
+    }
+
+    /*
+     * Send it the key.
+     */
+    for (unsigned off = 0; off < 4; off++)
+    {
+        ASMOutU8(APPLESMC_DATA_PORT, pszName[off]);
+        if (!devR0SmcWaitHostStatus(4, "key"))
+            return false;
+    }
+
+    /*
+     * The desired amount of output.
+     */
+    ASMOutU8(APPLESMC_DATA_PORT, (uint8_t)cbBuf);
+
+    /*
+     * Read the output.
+     */
+    for (size_t off = 0; off < cbBuf; off++)
+    {
+        if (!devR0SmcWaitHostStatus(5, off ? "data" : "len"))
+            return false;
+        pbBuf[off] = ASMInU8(APPLESMC_DATA_PORT);
+    }
+
+    return true;
+}
+
+/**
+ * RTOnce callback that initializes g_fHaveOsk, g_abOsk0 and g_abOsk1.
+ *
+ * @returns VINF_SUCCESS.
+ * @param   pvUser1Ignored  Ignored.
+ * @param   pvUser2Ignored  Ignored.
+ */
+static DECLCALLBACK(int) devR0SmcInitOnce(void *pvUser1Ignored, void *pvUser2Ignored)
+{
+    g_fHaveOsk = devR0SmcQueryHostKey("OSK0", &g_abOsk0[0], sizeof(g_abOsk0))
+              && devR0SmcQueryHostKey("OSK1", &g_abOsk1[0], sizeof(g_abOsk1));
+
+    NOREF(pvUser1Ignored); NOREF(pvUser2Ignored);
+    return VINF_SUCCESS;
+}
+
+/**
+ * @interface_method_impl{FNPDMDEVREQHANDLERR0}
+ */
+PDMBOTHCBDECL(int) devR0SmcReqHandler(PPDMDEVINS pDevIns, uint32_t uOperation, uint64_t u64Arg)
+{
+    SMCState *pThis = PDMINS_2_DATA(pDevIns, SMCState *);
+    int       rc    = VERR_INVALID_FUNCTION;
+
+    if (uOperation == SMC_CALLR0_READ_OSK)
+    {
+        rc = RTOnce(&g_SmcR0Once, devR0SmcInitOnce, NULL, NULL);
+        if (   RT_SUCCESS(rc)
+            && g_fHaveOsk)
+        {
+            AssertCompile(sizeof(g_abOsk0) == sizeof(pThis->abOsk0));
+            AssertCompile(sizeof(g_abOsk1) == sizeof(pThis->abOsk1));
+            memcpy(pThis->abOsk0, g_abOsk0, sizeof(pThis->abOsk0));
+            memcpy(pThis->abOsk1, g_abOsk1, sizeof(pThis->abOsk1));
+        }
+    }
+    return rc;
+}
+
+#endif /* IN_RING0 */
 #ifdef IN_RING3
+
 /**
  * Saves a state of the SMC device.
  *
@@ -148,19 +308,6 @@ static DECLCALLBACK(int) smcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
 
     /** @todo: implement serialization */
     return VINF_SUCCESS;
-}
-
-/**
- * Relocation notification.
- *
- * @returns VBox status.
- * @param   pDevIns     The device instance data.
- * @param   offDelta    The delta relative to the old address.
- */
-static DECLCALLBACK(void) smcRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
-{
-    SMCState *pThis = PDMINS_2_DATA(pDevIns, SMCState *);
-    /* SMC device lives only in R3 now, thus nothing to relocate yet */
 }
 
 /**
@@ -334,7 +481,6 @@ PDMBOTHCBDECL(int) smcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
 static DECLCALLBACK(int) smcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     SMCState   *pThis = PDMINS_2_DATA(pDevIns, SMCState *);
-    int         rc;
     Assert(iInstance == 0);
 
     /*
@@ -345,42 +491,62 @@ static DECLCALLBACK(int) smcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg,
-                              "DeviceKey\0"
-                              ))
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("Configuration error: Invalid config value(s) for the SMC device"));
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "DeviceKey|GetKeyFromRealSMC", "");
 
     /*
-     * Query device key
+     * Read the DeviceKey config value.
      */
-    rc = CFGMR3QueryStringAlloc(pCfg, "DeviceKey", &pThis->pszDeviceKey);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-    {
-        pThis->pszDeviceKey = RTStrDup("Invalid");
-        LogRel(("Invalid SMC device key\n"));
-        if (!pThis->pszDeviceKey)
-            return VERR_NO_MEMORY;
-
-        rc = VINF_SUCCESS;
-    }
-    else if (RT_FAILURE(rc))
+    char *pszDeviceKey;
+    int rc = CFGMR3QueryStringAllocDef(pCfg, "DeviceKey", &pszDeviceKey, "");
+    if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Configuration error: Querying \"DeviceKey\" as a string failed"));
 
-    memcpy(osk, pThis->pszDeviceKey, RTStrNLen(pThis->pszDeviceKey, 64));
+    size_t cchDeviceKey = strlen(pszDeviceKey);
+    if (cchDeviceKey > 0)
+        memcpy(&pThis->abOsk0[0], pszDeviceKey, RT_MIN(cchDeviceKey, sizeof(pThis->abOsk0)));
+    if (cchDeviceKey > sizeof(pThis->abOsk0))
+        memcpy(&pThis->abOsk1[0], &pszDeviceKey[sizeof(pThis->abOsk0)],
+               RT_MIN(cchDeviceKey - sizeof(pThis->abOsk0), sizeof(pThis->abOsk1)));
+
+    MMR3HeapFree(pszDeviceKey);
+
+    /*
+     * Query the key from the real hardware if asked to do so.
+     */
+    bool fGetKeyFromRealSMC;
+    rc = CFGMR3QueryBoolDef(pCfg, "GetKeyFromRealSMC", &fGetKeyFromRealSMC, false);
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("Configuration error: Querying \"GetKeyFromRealSMC\" as a boolean failed"));
+    if (fGetKeyFromRealSMC)
+    {
+        rc = PDMDevHlpCallR0(pDevIns, SMC_CALLR0_READ_OSK, 0 /*u64Arg*/);
+        if (RT_FAILURE(rc))
+            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                       N_("Failed to query SMC value from the host"));
+    }
+
+    /*
+     * For practical/historical reasons, the OSK[0|1] data is stored in a
+     * global buffer in ring-3.
+     */
+    AssertCompile(sizeof(osk) == sizeof(pThis->abOsk0) + sizeof(pThis->abOsk1));
+    AssertCompile(sizeof(char) == sizeof(uint8_t));
+    memcpy(osk, pThis->abOsk0, sizeof(pThis->abOsk0));
+    memcpy(&osk[sizeof(pThis->abOsk0)], pThis->abOsk1, sizeof(pThis->abOsk1));
 
     /*
      * Register the IO ports.
      */
     rc = PDMDevHlpIOPortRegister(pDevIns, APPLESMC_DATA_PORT, 1, NULL,
-                                  smcIOPortWrite, smcIOPortRead,
-                                  NULL, NULL, "SMC Data");
+                                 smcIOPortWrite, smcIOPortRead,
+                                 NULL, NULL, "SMC Data");
     if (RT_FAILURE(rc))
         return rc;
     rc = PDMDevHlpIOPortRegister(pDevIns, APPLESMC_CMD_PORT, 1, NULL,
-                                  smcIOPortWrite, smcIOPortRead,
-                                  NULL, NULL, "SMC Commands");
+                                 smcIOPortWrite, smcIOPortRead,
+                                 NULL, NULL, "SMC Commands");
     if (RT_FAILURE(rc))
         return rc;
 
@@ -402,31 +568,6 @@ static DECLCALLBACK(int) smcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     return VINF_SUCCESS;
 }
 
-
-/**
- * Destruct a device instance.
- *
- * Most VM resources are freed by the VM. This callback is provided so that any non-VM
- * resources can be freed correctly.
- *
- * @param   pDevIns     The device instance data.
- */
-static DECLCALLBACK(int) smcDestruct(PPDMDEVINS pDevIns)
-{
-    SMCState*  pThis = PDMINS_2_DATA(pDevIns, SMCState*);
-
-    /*
-     * Free MM heap pointers.
-     */
-    if (pThis->pszDeviceKey)
-    {
-        MMR3HeapFree(pThis->pszDeviceKey);
-        pThis->pszDeviceKey = NULL;
-    }
-
-    return VINF_SUCCESS;
-}
-
 /**
  * The device registration structure.
  */
@@ -443,7 +584,7 @@ const PDMDEVREG g_DeviceSMC =
     /* pszDescription */
     "System Management Controller (SMC) Device",
     /* fFlags */
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32_64 | PDM_DEVREG_FLAGS_PAE36,
+    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32_64 | PDM_DEVREG_FLAGS_PAE36| PDM_DEVREG_FLAGS_R0,
     /* fClass */
     PDM_DEVREG_CLASS_MISC,
     /* cMaxInstances */
@@ -453,9 +594,9 @@ const PDMDEVREG g_DeviceSMC =
     /* pfnConstruct */
     smcConstruct,
     /* pfnDestruct */
-    smcDestruct,
+    NULL,
     /* pfnRelocate */
-    smcRelocate,
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
