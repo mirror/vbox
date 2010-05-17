@@ -1,6 +1,8 @@
 /* $Id$ */
 /** @file
  * Built-in drivers & devices part 2 header.
+ *
+ * These drivers and devices are in separate modules because of LGPL.
  */
 
 /*
