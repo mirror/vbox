@@ -1225,6 +1225,7 @@ RuntimeR0_SOURCES       = \
 	common/misc/RTAssertMsg2Weak.cpp \
 	common/misc/RTAssertMsg2WeakV.cpp \
 	common/misc/buildconfig.cpp \
+	common/misc/once.cpp \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
 	common/misc/term.cpp \
