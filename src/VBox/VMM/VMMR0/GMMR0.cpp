@@ -3896,6 +3896,8 @@ static DECLCALLBACK(int) gmmR0CleanupSharedModule(PAVLGCPTRNODECORE pNode, void 
 {
     PGVM pGVM = (PGVM)pvGVM;
     PGMMSHAREDMODULEPERVM pRecVM = (PGMMSHAREDMODULEPERVM)pNode;
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
 
     Assert(pRecVM->pGlobalModule);
     if (pRecVM->pGlobalModule)
@@ -3912,6 +3914,8 @@ static DECLCALLBACK(int) gmmR0CleanupSharedModule(PAVLGCPTRNODECORE pNode, void 
                 if (pRec->aRegions[i].paHCPhysPageID)
                     RTMemFree(pRec->aRegions[i].paHCPhysPageID);
 
+            /* Remove from the tree and free memory. */
+            RTAvlGCPtrRemove(&pGMM->pGlobalSharedModuleTree, pRec->Core.Key);
             RTMemFree(pRec);
         }
     }
