@@ -780,7 +780,12 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
             papszArgv = (char**)RTMemAlloc(sizeof(char*) * (uNumArgs + 1));
             AssertReturn(papszArgv, E_OUTOFMEMORY);
             for (unsigned i = 0; RT_SUCCESS(vrc) && i < uNumArgs; i++)
-                vrc = RTStrAPrintf(&papszArgv[i], "%s", Utf8Str(args[i]).raw());
+            {
+                int cbLen = RTStrAPrintf(&papszArgv[i], "%s", Utf8Str(args[i]).raw());
+                if (cbLen < 0)
+                    vrc = VERR_NO_MEMORY;
+
+            }
             papszArgv[uNumArgs] = NULL;
         }
 
