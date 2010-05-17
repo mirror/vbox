@@ -94,4 +94,5 @@ EXPORTS
     nocrt_strcpy
     nocrt_strcmp
     nocrt_strchr
+    nocrt_strlen
 
