@@ -3850,6 +3850,7 @@ new_shared_page:
                 /* Get the virtual address of the physical page; map the chunk into the VM process if not already done. */
                 if (!gmmR0IsChunkMapped(pGVM, pChunk, (PRTR3PTR)&pbChunk))
                 {
+                    Log(("Map chunk into process!\n"));
                     rc = gmmR0MapChunk(pGMM, pGVM, pChunk, (PRTR3PTR)&pbChunk);
                     if (rc != VINF_SUCCESS)
                     {
