@@ -1143,9 +1143,17 @@ static int pdmacFileEpCacheEntryDestroy(PAVLRFOFFNODECORE pNode, void *pvUser)
 
     while (ASMAtomicReadU32(&pEntry->fFlags) & (PDMACFILECACHE_ENTRY_IO_IN_PROGRESS | PDMACFILECACHE_ENTRY_IS_DIRTY))
     {
+        /* Leave the locks to let the I/O thread make progress but reference the entry to prevent eviction. */
+        pdmacFileEpCacheEntryRef(pEntry);
         RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
+        pdmacFileCacheLockLeave(pCache);
+
         RTThreadSleep(250);
+
+        /* Re-enter all locks */
+        pdmacFileCacheLockEnter(pCache);
         RTSemRWRequestWrite(pEndpointCache->SemRWEntries, RT_INDEFINITE_WAIT);
+        pdmacFileEpCacheEntryRelease(pEntry);
     }
 
     AssertMsg(!(pEntry->fFlags & (PDMACFILECACHE_ENTRY_IO_IN_PROGRESS | PDMACFILECACHE_ENTRY_IS_DIRTY)),
@@ -2174,12 +2182,11 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
     return rc;
 }
 
-int pdmacFileEpCacheFlush(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOMPLETIONTASKFILE pTask)
+int pdmacFileEpCacheFlush(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
 {
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc((": pEndpoint=%#p{%s} pTask=%#p\n",
-                 pEndpoint, pEndpoint->Core.pszUri, pTask));
+    LogFlowFunc((": pEndpoint=%#p{%s}\n", pEndpoint, pEndpoint->Core.pszUri));
 
     /* Commit dirty entries in the cache. */
     pdmacFileCacheEndpointCommit(&pEndpoint->DataCache);
