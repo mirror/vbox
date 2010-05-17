@@ -2994,6 +2994,32 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnLdrGetR0InterfaceSymbols,(PPDMDEVINS pDevIns, void *pvInterface, size_t cbInterface,
                                                            const char *pszSymPrefix, const char *pszSymList));
 
+    /**
+     * Call the ring-0 request handler routine of the device.
+     *
+     * For this to work, the device must be ring-0 enabled and export a request
+     * handler function.  The name of the function must be the device name in
+     * the PDMDRVREG struct prefixed with 'drvR0' and suffixed with
+     * 'ReqHandler'.  The device name will be captialized.  It shall take the
+     * exact same arguments as this function and be declared using
+     * PDMBOTHCBDECL. See FNPDMDEVREQHANDLERR0.
+     *
+     * Unlike PDMDrvHlpCallR0, this is current unsuitable for more than a call
+     * or two as the handler address will be resolved on each invocation.  This
+     * is the reason for the EMT only restriction as well.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_SYMBOL_NOT_FOUND if the device doesn't export the required
+     *          handler function.
+     * @retval  VERR_ACCESS_DENIED if the device isn't ring-0 capable.
+     *
+     * @param   pDevIns             The device instance.
+     * @param   uOperation          The operation to perform.
+     * @param   u64Arg              64-bit integer argument.
+     * @thread  EMT
+     */
+    DECLR3CALLBACKMEMBER(int, pfnCallR0,(PPDMDEVINS pDevIns, uint32_t uOperation, uint64_t u64Arg));
+
     /** Space reserved for future members.
      * @{ */
     DECLR3CALLBACKMEMBER(void, pfnReserved1,(void));
@@ -3563,6 +3589,30 @@ typedef struct PDMDEVINS
         if (RT_UNLIKELY(   !PDM_VERSION_ARE_COMPATIBLE((pDevIns)->u32Version, PDM_DEVINS_VERSION) \
                         || !PDM_VERSION_ARE_COMPATIBLE((pDevIns)->pHlpR3->u32Version, PDM_DEVHLPR3_VERSION) )) \
             return VERR_VERSION_MISMATCH; \
+    } while (0)
+
+/**
+ * Wrapper around CFGMR3ValidateConfig for the root config for use in the
+ * constructor - returns on failure.
+ *
+ * This should be invoked after having initialized the instance data
+ * sufficiently for the correct operation of the destructor.  The destructor is
+ * always called!
+ *
+ * @param   pDevIns             Pointer to the PDM device instance.
+ * @param   pszValidValues      Patterns describing the valid value names.  See
+ *                              RTStrSimplePatternMultiMatch for details on the
+ *                              pattern syntax.
+ * @param   pszValidNodes       Patterns describing the valid node (key) names.
+ *                              Pass empty string if no valid nodess.
+ */
+#define PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, pszValidValues, pszValidNodes) \
+    do \
+    { \
+        int rcValCfg = CFGMR3ValidateConfig((pDevIns)->pCfg, "/", pszValidValues, pszValidNodes, \
+                                            (pDevIns)->pReg->szName, (pDevIns)->iInstance); \
+        if (RT_FAILURE(rcValCfg)) \
+            return rcValCfg; \
     } while (0)
 
 /** @def PDMDEV_ASSERT_EMT
@@ -4286,6 +4336,14 @@ DECLINLINE(int) PDMDevHlpCMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t u8
 DECLINLINE(int) PDMDevHlpCMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value)
 {
     return pDevIns->pHlpR3->pfnCMOSRead(pDevIns, iReg, pu8Value);
+}
+
+/**
+ * @copydoc PDMDEVHLP::pfnCallR0
+ */
+DECLINLINE(int) PDMDevHlpCallR0(PPDMDEVINS pDevIns, uint32_t uOperation, uint64_t u64Arg)
+{
+    return pDevIns->pHlpR3->pfnCallR0(pDevIns, uOperation, u64Arg);
 }
 
 #endif /* IN_RING3 */

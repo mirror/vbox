@@ -35,6 +35,7 @@
 #include <VBox/err.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
 
@@ -1851,6 +1852,55 @@ static DECLCALLBACK(int) pdmR3DevHlp_LdrGetR0InterfaceSymbols(PPDMDEVINS pDevIns
 }
 
 
+/** @interface_method_impl{PDMDEVHLP,pfnCallR0} */
+static DECLCALLBACK(int) pdmR3DevHlp_CallR0(PPDMDEVINS pDevIns, uint32_t uOperation, uint64_t u64Arg)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    LogFlow(("pdmR3DevHlp_CallR0: caller='%s'/%d: uOperation=%#x u64Arg=%#RX64\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, uOperation, u64Arg));
+
+    /*
+     * Resolve the ring-0 entry point.  There is not need to remember this like
+     * we do for drivers since this is mainly for construction time hacks and
+     * other things that aren't performance critical.
+     */
+    int rc;
+    if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0)
+    {
+        char szSymbol[          sizeof("devR0") + sizeof(pDevIns->pReg->szName) + sizeof("ReqHandler")];
+        strcat(strcat(strcpy(szSymbol, "devR0"),         pDevIns->pReg->szName),         "ReqHandler");
+        szSymbol[sizeof("devR0") - 1] = RT_C_TO_UPPER(szSymbol[sizeof("devR0") - 1]);
+
+        PFNPDMDRVREQHANDLERR0 pfnReqHandlerR0;
+        rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDevIns->pReg->szR0Mod, szSymbol, &pfnReqHandlerR0);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Make the ring-0 call.
+             */
+            PDMDEVICECALLREQHANDLERREQ Req;
+            Req.Hdr.u32Magic    = SUPVMMR0REQHDR_MAGIC;
+            Req.Hdr.cbReq       = sizeof(Req);
+            Req.pDevInsR0       = PDMDEVINS_2_R0PTR(pDevIns);
+            Req.pfnReqHandlerR0 = pfnReqHandlerR0;
+            Req.uOperation      = uOperation;
+            Req.u32Alignment    = 0;
+            Req.u64Arg          = u64Arg;
+            rc = SUPR3CallVMMR0Ex(pVM->pVMR0, NIL_VMCPUID, VMMR0_DO_PDM_DEVICE_CALL_REQ_HANDLER, 0, &Req.Hdr);
+        }
+        else
+            pfnReqHandlerR0 = NIL_RTR0PTR;
+    }
+    else
+        rc = VERR_ACCESS_DENIED;
+    LogFlow(("pdmR3DevHlp_CallR0: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName,
+             pDevIns->iInstance, rc));
+    return rc;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnGetVM} */
 static DECLCALLBACK(PVM) pdmR3DevHlp_GetVM(PPDMDEVINS pDevIns)
 {
@@ -2927,6 +2977,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_AssertOther,
     pdmR3DevHlp_LdrGetRCInterfaceSymbols,
     pdmR3DevHlp_LdrGetR0InterfaceSymbols,
+    pdmR3DevHlp_CallR0,
     0,
     0,
     0,
@@ -3122,6 +3173,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_AssertOther,
     pdmR3DevHlp_LdrGetRCInterfaceSymbols,
     pdmR3DevHlp_LdrGetR0InterfaceSymbols,
+    pdmR3DevHlp_CallR0,
     0,
     0,
     0,
