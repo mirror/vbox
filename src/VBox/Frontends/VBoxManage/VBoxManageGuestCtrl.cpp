@@ -314,11 +314,19 @@ static int handleExecProgram(HandlerArg *a)
             uint64_t u64StartMS = RTTimeMilliTS();
 
             /* Execute the process. */
-            CHECK_ERROR_BREAK(guest, ExecuteProcess(Bstr(Utf8Cmd), uFlags,
-                                                    ComSafeArrayAsInParam(args), ComSafeArrayAsInParam(env),
-                                                    Bstr(Utf8UserName), Bstr(Utf8Password), u32TimeoutMS,
-                                                    &uPID, progress.asOutParam()));
-            if (fVerbose) RTPrintf("Process '%s' (PID: %u) started\n", Utf8Cmd.raw(), uPID);
+            rc = guest->ExecuteProcess(Bstr(Utf8Cmd), uFlags,
+                                       ComSafeArrayAsInParam(args), ComSafeArrayAsInParam(env),
+                                       Bstr(Utf8UserName), Bstr(Utf8Password), u32TimeoutMS,
+                                       &uPID, progress.asOutParam());
+            if (FAILED(rc))
+            {
+                ErrorInfo info(guest);
+                if (info.isFullAvailable())
+                    RTPrintf("ERROR: %ls (%Rhrc).\n", info.getText().raw(), info.getResultCode());
+                break;
+            }
+            if (fVerbose)
+                RTPrintf("Process '%s' (PID: %u) started\n", Utf8Cmd.raw(), uPID);
             if (fWaitForExit)
             {
                 if (fTimeout)
