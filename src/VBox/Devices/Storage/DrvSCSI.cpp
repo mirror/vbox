@@ -177,7 +177,6 @@ static int drvscsiProcessRequestOne(PDRVSCSI pThis, VSCSIIOREQ hVScsiIoReq)
             AssertMsgFailed(("Invalid transfer direction %d\n", enmTxDir));
     }
 
-    ASMAtomicDecU32(&pThis->StatIoDepth);
     VSCSIIoReqCompleted(hVScsiIoReq, rc);
 
     return VINF_SUCCESS;
@@ -207,7 +206,6 @@ static int drvscsiTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *p
     else
         AssertMsg(enmTxDir == VSCSIIOREQTXDIR_FLUSH, ("Invalid transfer direction %u\n", enmTxDir));
 
-    ASMAtomicDecU32(&pThis->StatIoDepth);
     VSCSIIoReqCompleted(hVScsiIoReq, rc);
 
     return VINF_SUCCESS;
@@ -219,8 +217,6 @@ static int drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
 {
     int rc = VINF_SUCCESS;
     PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
-
-    ASMAtomicIncU32(&pThis->StatIoDepth);
 
     if (pThis->pDrvBlockAsync)
     {
@@ -298,7 +294,6 @@ static int drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
             else
                 AssertMsg(enmTxDir == VSCSIIOREQTXDIR_FLUSH, ("Invalid transfer direction %u\n", enmTxDir));
 
-            ASMAtomicDecU32(&pThis->StatIoDepth);
             VSCSIIoReqCompleted(hVScsiIoReq, VINF_SUCCESS);
         }
         else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
@@ -312,7 +307,6 @@ static int drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
             else
                 AssertMsg(enmTxDir == VSCSIIOREQTXDIR_FLUSH, ("Invalid transfer direction %u\n", enmTxDir));
 
-            ASMAtomicDecU32(&pThis->StatIoDepth);
             VSCSIIoReqCompleted(hVScsiIoReq, rc);
             rc = VINF_SUCCESS;
         }
@@ -464,6 +458,7 @@ static DECLCALLBACK(int) drvscsiRequestSend(PPDMISCSICONNECTOR pInterface, PPDMS
     if (RT_FAILURE(rc))
         return rc;
 
+    ASMAtomicIncU32(&pThis->StatIoDepth);
     rc = VSCSIDeviceReqEnqueue(pThis->hVScsiDevice, hVScsiReq);
 
     return rc;
