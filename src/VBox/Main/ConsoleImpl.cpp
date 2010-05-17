@@ -4674,7 +4674,7 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
         ::memcpy( mCallbackData.mpsc.shape.raw(), aShape.raw(), aShape.size());
     }
     else
-        mCallbackData.mpsc.shape.setNull();
+        mCallbackData.mpsc.shape.resize(0);
     mCallbackData.mpsc.valid = true;
 
     CONSOLE_DO_CALLBACKS(OnMousePointerShapeChange,(fVisible, fAlpha, xHot, yHot, width, height, ComSafeArrayInArg(pShape)));
