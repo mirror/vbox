@@ -843,7 +843,7 @@ def execInGuest(ctx,console,args,env):
     # shall contain program name as argv[0]
     gargs = args
     print "executing %s with args %s" %(args[0], gargs)
-    (progress, pid) = guest.executeProcess(args[0], 0, gargs, env, "", "", "", user, passwd, tmo)
+    (progress, pid) = guest.executeProcess(args[0], 0, gargs, env, user, passwd, tmo)
     print "executed with pid %d" %(pid)
     if pid != 0:
         try:
