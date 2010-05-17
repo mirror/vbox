@@ -48,6 +48,7 @@
 #define PROP_PRODUCT_VERSION                 "version"
 #define PROP_PRODUCT_SERIAL                  "IOPlatformSerialNumber"
 #define PROP_PRODUCT_UUID                    "IOPlatformUUID"
+#define PROP_MANUFACTURER                    "manufacturer"
 
 
 RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t cbBuf)
@@ -64,6 +65,7 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
         case RTSYSDMISTR_PRODUCT_VERSION: PropStringRef = CFSTR(PROP_PRODUCT_VERSION); break;
         case RTSYSDMISTR_PRODUCT_SERIAL:  PropStringRef = CFSTR(PROP_PRODUCT_SERIAL);  break;
         case RTSYSDMISTR_PRODUCT_UUID:    PropStringRef = CFSTR(PROP_PRODUCT_UUID);    break;
+        case RTSYSDMISTR_MANUFACTURER:    PropStringRef = CFSTR(PROP_MANUFACTURER);    break;
         default:
             return VERR_NOT_SUPPORTED;
     }
@@ -92,7 +94,9 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
     while ((ServiceObject = IOIteratorNext(Iterator)))
     {
         if (   enmString == RTSYSDMISTR_PRODUCT_NAME
-            || enmString == RTSYSDMISTR_PRODUCT_VERSION)
+            || enmString == RTSYSDMISTR_PRODUCT_VERSION
+            || enmString == RTSYSDMISTR_MANUFACTURER
+           )
         {
             CFDataRef DataRef = (CFDataRef)IORegistryEntryCreateCFProperty(ServiceObject, PropStringRef,
                                                                            kCFAllocatorDefault, kNilOptions);

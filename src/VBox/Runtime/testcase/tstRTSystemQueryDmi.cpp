@@ -59,6 +59,9 @@ int main()
     rc = RTSystemQueryDmiString(RTSYSDMISTR_PRODUCT_SERIAL, szInfo, sizeof(szInfo));
     RTTestIPrintf(RTTESTLVL_ALWAYS, "PRODUCT_SERIAL: \"%s\", rc=%Rrc\n", szInfo, rc);
 
+    rc = RTSystemQueryDmiString(RTSYSDMISTR_MANUFACTURER, szInfo, sizeof(szInfo));
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "MANUFACTURER: \"%s\", rc=%Rrc\n", szInfo, rc);
+
     /*
      * Check that unsupported stuff is terminated correctly.
      */
