@@ -149,13 +149,17 @@ void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule)
             {
                 char *pRegion = (char *)MemInfo.BaseAddress;
 
-                /* Touch all pages. */
-                while (pRegion < (char *)MemInfo.BaseAddress + MemInfo.RegionSize)
+                /* Skip the first region as it only contains the image file header. */
+                if (pRegion != (char *)pModule->Info.modBaseAddr)
                 {
-                    char dummy;
+                    /* Touch all pages. */
+                    while (pRegion < (char *)MemInfo.BaseAddress + MemInfo.RegionSize)
+                    {
+                        char dummy;
 
-                    memcpy(&dummy, pRegion, 1);
-                    pRegion += PAGE_SIZE;
+                        memcpy(&dummy, pRegion, 1);
+                        pRegion += PAGE_SIZE;
+                    }
                 }
                 aRegions[idxRegion].GCRegionAddr = (RTGCPTR64)MemInfo.BaseAddress;
                 aRegions[idxRegion].cbRegion     = MemInfo.RegionSize;
