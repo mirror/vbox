@@ -43,7 +43,7 @@ endif
 ifdef VBOX_WITH_MEMBALLOON
  VBoxService_DEFS        += VBOX_WITH_MEMBALLOON
 endif
-ifdef VBOX_WITH_PAGE_SHARING
+if1of ($(KBUILD_TARGET), win)
  VBoxService_DEFS        += VBOX_WITH_PAGE_SHARING
 endif
 if1of ($(KBUILD_TARGET), linux)
@@ -64,7 +64,7 @@ ifdef VBOX_WITH_MEMBALLOON
  VBoxService_SOURCES    += \
  	VBoxServiceBalloon.cpp
 endif
-ifdef VBOX_WITH_PAGE_SHARING
+if1of ($(KBUILD_TARGET), win)
  VBoxService_SOURCES    += \
  	VBoxServicePageSharing.cpp
 endif
