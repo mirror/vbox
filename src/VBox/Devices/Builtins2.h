@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * Built-in drivers & devices (part 2) header.
+ * Built-in drivers & devices part 2 header.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -43,6 +43,12 @@ extern DECLIMPORT(const unsigned)       g_cbVmiBiosBinary;
 #endif /* !IN_VBOXDD2 */
 extern const PDMDEVREG g_DeviceAPIC;
 extern const PDMDEVREG g_DeviceIOAPIC;
+#ifdef VBOX_WITH_SMC
+extern const PDMDEVREG g_DeviceSMC;
+#endif
+#ifdef VBOX_WITH_LPC
+extern const PDMDEVREG g_DeviceLPC;
+#endif
 
 RT_C_DECLS_END
 
