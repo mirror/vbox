@@ -69,7 +69,7 @@ VBGLR3DECL(int) VbglR3RegisterSharedModule(char *pszModuleName, char *pszVersion
 # endif
 #else
     /** todo */
-    pReq->enmGuestOS    = VBOXOSFAMILY_unknown;
+    pReq->enmGuestOS    = VBOXOSFAMILY_Unknown;
 #endif
     for (unsigned i = 0; i < cRegions; i++)
         pReq->aRegions[i] = pRegions[i];
