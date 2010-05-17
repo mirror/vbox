@@ -30,6 +30,7 @@
 #include <VBox/gvmm.h>
 #include <VBox/sup.h>
 #include <VBox/VMMDev.h> /* for VMMDEVSHAREDREGIONDESC */
+#include <VBox/feature.h>
 #include <iprt/avl.h>
 RT_C_DECLS_BEGIN
 
