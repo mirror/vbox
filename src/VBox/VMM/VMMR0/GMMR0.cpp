@@ -3775,6 +3775,7 @@ GMMR0DECL(int) GMMR0SharedModuleCheckRange(PGVM pGVM, PGMMSHAREDMODULE pModule, 
             /* We've seen this shared page for the first time? */
             if (pGlobalRegion->paHCPhysPageID[i] == NIL_GMM_PAGEID)
             {
+new_shared_page:
                 /* Easy case: just change the internal page type. */
                 PGMMPAGE pPage = gmmR0GetPage(pGMM, paPageDesc[i].uHCPhysPageId);
                 if (!pPage)
@@ -3808,7 +3809,14 @@ GMMR0DECL(int) GMMR0SharedModuleCheckRange(PGVM pGVM, PGMMSHAREDMODULE pModule, 
                     rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
                     goto end;
                 }
-                Assert(pPage->Common.u2State == GMM_PAGE_STATE_SHARED);
+                if (pPage->Common.u2State != GMM_PAGE_STATE_SHARED)
+                {
+                    /* Page was freed at some point; invalidate this entry. */
+                    /** todo this isn't really bullet proof. */
+                    Log(("Old shared page was freed -> create a new one\n"));
+                    pGlobalRegion->paHCPhysPageID[i] = NIL_GMM_PAGEID;
+                    goto new_shared_page; /* ugly goto */
+                }
 
                 Log(("Replace existing page guest %RGp host %RHp -> %RHp\n", paPageDesc[i].GCPhys, paPageDesc[i].HCPhys, pPage->Shared.pfn << PAGE_SHIFT));
 
