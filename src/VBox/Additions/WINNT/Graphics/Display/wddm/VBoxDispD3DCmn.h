@@ -19,6 +19,21 @@
 # define VBOXWDDMDISP_DEBUG
 #endif
 
+#ifndef DEBUG_misha
+# ifdef Assert
+#  undef Assert
+#  define Assert(_a) do{}while(0)
+# endif
+# ifdef AssertBreakpoint
+#  undef AssertBreakpoint
+#  define AssertBreakpoint() do{}while(0)
+# endif
+# ifdef AssertFailed
+#  undef AssertFailed
+#  define AssertFailed() do{}while(0)
+# endif
+#endif
+
 #ifdef VBOXWDDMDISP_DEBUG
 VOID vboxVDbgDoPrint(LPCSTR szString, ...);
 
