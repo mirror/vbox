@@ -2121,6 +2121,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
                             Assert(pGVM->gmm.s.cSharedPages);
                             Assert(pGVM->gmm.s.Allocated.cBasePages);
 
+                            Log(("GMMR0AllocateHandyPages: free shared page %x cRefs=%d\n", paPages[iPage].idSharedPage, pPage->Shared.cRefs));
                             pGVM->gmm.s.cSharedPages--;
                             pGVM->gmm.s.Allocated.cBasePages--;
                             if (!--pPage->Shared.cRefs)
