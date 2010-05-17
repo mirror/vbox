@@ -617,7 +617,7 @@ void Console::uninit()
 
     /* dynamically allocated members of mCallbackData are uninitialized
      * at the end of powerDown() */
-    Assert(!mCallbackData.mpsc.valid && mCallbackData.mpsc.shape == NULL);
+    Assert(!mCallbackData.mpsc.valid && mCallbackData.mpsc.shape.isNull());
     Assert(!mCallbackData.mcc.valid);
     Assert(!mCallbackData.klc.valid);
 
@@ -3025,7 +3025,7 @@ STDMETHODIMP Console::RegisterCallback(IConsoleCallback *aCallback)
                                              mCallbackData.mpsc.yHot,
                                              mCallbackData.mpsc.width,
                                              mCallbackData.mpsc.height,
-                                             mCallbackData.mpsc.shape);
+                                             ComSafeArrayAsInParam(mCallbackData.mpsc.shape));
     if (mCallbackData.mcc.valid)
         aCallback->OnMouseCapabilityChange(mCallbackData.mcc.supportsAbsolute,
                                            mCallbackData.mcc.supportsRelative,
@@ -4641,7 +4641,7 @@ HRESULT Console::updateMachineState(MachineState_T aMachineState)
 void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
                                         uint32_t xHot, uint32_t yHot,
                                         uint32_t width, uint32_t height,
-                                        void *pShape)
+                                        ComSafeArrayIn(BYTE,pShape))
 {
 #if 0
     LogFlowThisFuncEnter();
@@ -4667,38 +4667,17 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
     bool wasValid = mCallbackData.mpsc.valid;
     mCallbackData.mpsc.valid = false;
 
-    if (pShape != NULL)
+    com::SafeArray <BYTE> aShape(ComSafeArrayInArg (pShape));
+    if (aShape.size() != 0)
     {
-        size_t cb = (width + 7) / 8 * height; /* size of the AND mask */
-        cb = ((cb + 3) & ~3) + width * 4 * height; /* + gap + size of the XOR mask */
-        /* try to reuse the old shape buffer if the size is the same */
-        if (!wasValid)
-            mCallbackData.mpsc.shape = NULL;
-        else
-        if (mCallbackData.mpsc.shape != NULL && mCallbackData.mpsc.shapeSize != cb)
-        {
-            RTMemFree(mCallbackData.mpsc.shape);
-            mCallbackData.mpsc.shape = NULL;
-        }
-        if (mCallbackData.mpsc.shape == NULL)
-        {
-            mCallbackData.mpsc.shape = (BYTE *) RTMemAllocZ(cb);
-            AssertReturnVoid(mCallbackData.mpsc.shape);
-        }
-        mCallbackData.mpsc.shapeSize = cb;
-        memcpy(mCallbackData.mpsc.shape, pShape, cb);
+        mCallbackData.mpsc.shape.resize(aShape.size());
+        ::memcpy( mCallbackData.mpsc.shape.raw(), aShape.raw(), aShape.size());
     }
     else
-    {
-        if (wasValid && mCallbackData.mpsc.shape != NULL)
-            RTMemFree(mCallbackData.mpsc.shape);
-        mCallbackData.mpsc.shape = NULL;
-        mCallbackData.mpsc.shapeSize = 0;
-    }
-
+        mCallbackData.mpsc.shape.setNull();
     mCallbackData.mpsc.valid = true;
 
-    CONSOLE_DO_CALLBACKS(OnMousePointerShapeChange,(fVisible, fAlpha, xHot, yHot, width, height, (BYTE *) pShape));
+    CONSOLE_DO_CALLBACKS(OnMousePointerShapeChange,(fVisible, fAlpha, xHot, yHot, width, height, ComSafeArrayInArg(pShape)));
 
 #if 0
     LogFlowThisFuncLeave();
@@ -5665,10 +5644,7 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
     {
         /* uninit dynamically allocated members of mCallbackData */
         if (mCallbackData.mpsc.valid)
-        {
-            if (mCallbackData.mpsc.shape != NULL)
-                RTMemFree(mCallbackData.mpsc.shape);
-        }
+            mCallbackData.mpsc.shape.setNull();
         memset(&mCallbackData, 0, sizeof(mCallbackData));
     }
 

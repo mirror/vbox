@@ -29,6 +29,7 @@
 #include "VBoxFrameBuffer.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
+#include "VBox/com/array.h"
 
 #ifdef Q_WS_PM
 #include "QIHotKeyEdit.h"
@@ -208,22 +209,17 @@ class MousePointerChangeEvent : public QEvent
 public:
     MousePointerChangeEvent (bool visible, bool alpha, uint xhot, uint yhot,
                              uint width, uint height,
-                             const uchar *shape) :
+                             ComSafeArrayIn(BYTE,pShape)) :
         QEvent ((QEvent::Type) VBoxDefs::MousePointerChangeEventType),
-        vis (visible), alph (alpha), xh (xhot), yh (yhot), w (width), h (height),
-        data (NULL)
+        vis (visible), alph (alpha), xh (xhot), yh (yhot), w (width), h (height)
     {
-        // make a copy of shape
-        uint dataSize = ((((width + 7) / 8 * height) + 3) & ~3) + width * 4 * height;
-
-        if (shape) {
-            data = new uchar [dataSize];
-            memcpy ((void *) data, (void *) shape, dataSize);
-        }
+        com::SafeArray <BYTE> aShape(ComSafeArrayInArg (pShape));
+        size_t cbShapeSize = aShape.size();
+        shape.resize(cbShapeSize);
+        ::memcpy(shape.raw(), aShape.raw(), cbShapeSize);
     }
     ~MousePointerChangeEvent()
     {
-        if (data) delete[] data;
     }
     bool isVisible() const { return vis; }
     bool hasAlpha() const { return alph; }
@@ -231,11 +227,11 @@ public:
     uint yHot() const { return yh; }
     uint width() const { return w; }
     uint height() const { return h; }
-    const uchar *shapeData() const { return data; }
+    const uchar *shapeData() const { return shape.raw(); }
 private:
     bool vis, alph;
     uint xh, yh, w, h;
-    const uchar *data;
+    com::SafeArray <uint8_t> shape;
 };
 
 /** Guest mouse absolute positioning capability change event. */
@@ -422,12 +418,12 @@ public:
     STDMETHOD(OnMousePointerShapeChange) (BOOL visible, BOOL alpha,
                                           ULONG xhot, ULONG yhot,
                                           ULONG width, ULONG height,
-                                          BYTE *shape)
+                                          ComSafeArrayIn(BYTE,shape))
     {
         QApplication::postEvent (mView,
                                  new MousePointerChangeEvent (visible, alpha,
                                                               xhot, yhot,
-                                                              width, height, shape));
+                                                              width, height, ComSafeArrayInArg(shape)));
         return S_OK;
     }
 

@@ -6171,9 +6171,9 @@
           Height of the pointer shape in pixels.
         </desc>
       </param>
-      <param name="shape" type="octet" mod="ptr" dir="in">
+      <param name="shape" type="octet" safearray="yes" dir="in">
         <desc>
-          Address of the shape buffer.
+          Shape buffer arrays.
 
           The @a shape buffer contains a 1-bpp (bits per pixel) AND mask
           followed by a 32-bpp XOR (color) mask.
