@@ -40,6 +40,10 @@ RT_C_DECLS_BEGIN
 /** @defgroup grp_pgm   The Page Monitor / Manager API
  * @{
  */
+/* This must match GMMR0Init; currently we only support page fusion on all 64-bit hosts except Mac OS X */
+#if HC_ARCH_BITS == 64 && (defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD))
+#define VBOX_WITH_PAGE_SHARING
+#endif
 
 /** Chunk size for dynamically allocated physical memory. */
 #define PGM_DYNAMIC_CHUNK_SIZE          (1*1024*1024)
