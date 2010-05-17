@@ -1479,7 +1479,7 @@ STDMETHODIMP Machine::COMGETTER(PageFusionEnabled) (BOOL *enabled)
 
 STDMETHODIMP Machine::COMSETTER(PageFusionEnabled) (BOOL enabled)
 {
-    /* This must match GMMR0Init; currently we only support memory ballooning on all 64-bit hosts except Mac OS X */
+    /* This must match GMMR0Init; currently we only support page fusion on all 64-bit hosts except Mac OS X */
 #if HC_ARCH_BITS == 64 && (defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD))
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
