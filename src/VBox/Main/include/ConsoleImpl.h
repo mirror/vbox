@@ -698,6 +698,16 @@ private:
             bool scrollLock;
         }
         klc;
+
+        void clear()
+        {
+            /* We cannot do memset() on mpsc to avoid cleaning shape's vtable */
+            mpsc.shape.setNull();
+            mpsc.valid = mpsc.visible = mpsc.alpha = false;
+            mpsc.xHot = mpsc.yHot = mpsc.width = mpsc.height = 0;
+            ::memset(&mcc, 0, sizeof mcc);
+            ::memset(&klc, 0, sizeof klc);
+        }
     }
     mCallbackData;
 
