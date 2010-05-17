@@ -1717,16 +1717,9 @@ DECLHIDDEN(PNDIS_PACKET) vboxNetFltWinNdisPacketFromSG(PADAPT pAdapt, PINTNETSG 
         if(bCopyMemory)
         {
             fStatus = vboxNetFltWinMemAlloc(&pvMemBuf, pSG->cbTotal);
+            Assert(fStatus == NDIS_STATUS_SUCCESS);
             if(fStatus == NDIS_STATUS_SUCCESS)
-            {
                 IntNetSgRead(pSG, pvMemBuf);
-            }
-            else
-            {
-                AssertFailed();
-                NdisFreePacket(pPacket);
-                pPacket = NULL;
-            }
         }
         else
         {
