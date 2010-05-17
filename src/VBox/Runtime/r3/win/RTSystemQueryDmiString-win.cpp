@@ -59,6 +59,8 @@ static HRESULT rtSystemDmiWinInitialize(void)
                                    NULL,                        /* Authentication info. */
                                    EOAC_NONE,                   /* Additional capabilities. */
                                    NULL);                       /* Reserved. */
+        if (hrc == RPC_E_TOO_LATE) 
+            hrc = S_OK;
     }
     return hrc;
 }
@@ -152,7 +154,7 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
         case RTSYSDMISTR_PRODUCT_VERSION:   pszPropName = "Version"; break;
         case RTSYSDMISTR_PRODUCT_UUID:      pszPropName = "UUID"; break;
         case RTSYSDMISTR_PRODUCT_SERIAL:    pszPropName = "IdentifyingNumber"; break;
-        /// @todo case RTSYSDMISTR_MANUFACTURER:      pszPropName = "Vendor"; break;
+        case RTSYSDMISTR_MANUFACTURER:      pszPropName = "Vendor"; break;
 
         default:
             return VERR_NOT_SUPPORTED;
