@@ -440,7 +440,7 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
     unconst(mMachine) = aMachine;
     unconst(mControl) = aControl;
 
-    memset(&mCallbackData, 0, sizeof(mCallbackData));
+    mCallbackData.clear();
 
     /* Cache essential properties and objects */
 
@@ -5641,12 +5641,7 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
         mVMDestroying = false;
 
     if (SUCCEEDED(rc))
-    {
-        /* uninit dynamically allocated members of mCallbackData */
-        if (mCallbackData.mpsc.valid)
-            mCallbackData.mpsc.shape.setNull();
-        memset(&mCallbackData, 0, sizeof(mCallbackData));
-    }
+        mCallbackData.clear();
 
     /* complete the progress */
     if (aProgress)
