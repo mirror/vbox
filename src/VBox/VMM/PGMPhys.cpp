@@ -1370,6 +1370,8 @@ int pgmR3PhysRamReset(PVM pVM)
     rc = GMMR3ResetSharedModules(pVM);
     AssertRC(rc);
 #endif
+    /* Reset counter. */
+    pVM->pgm.s.cReusedSharedPages = 0;
 
     /*
      * We batch up pages that should be freed instead of calling GMM for
