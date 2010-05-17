@@ -160,6 +160,7 @@ def colored(string,color):
         return string
 
 if g_hasreadline:
+  import string
   class CompleterNG(rlcompleter.Completer):
     def __init__(self, dic, ctx):
         self.ctx = ctx
@@ -170,10 +171,23 @@ if g_hasreadline:
         taken from:
         http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/496812
         """
-        if text == "":
+        if False and text == "":
             return ['\t',None][state]
         else:
             return rlcompleter.Completer.complete(self,text,state)
+
+    def canBeCommand(self, phrase, word):
+        spaceIdx = phrase.find(" ")
+        begIdx = readline.get_begidx()
+        firstWord = (spaceIdx == -1 or begIdx < spaceIdx)
+        if firstWord:
+            return True
+        if phrase.startswith('help'):
+            return True
+        return False
+
+    def canBeMachine(self,phrase,word):
+        return not self.canBeCommand(phrase, word)
 
     def global_matches(self, text):
         """
@@ -184,24 +198,26 @@ if g_hasreadline:
 
         matches = []
         n = len(text)
+        phrase = readline.get_line_buffer()
 
-        for list in [ self.namespace ]:
-            for word in list:
-                if word[:n] == text:
-                    matches.append(word)
-
+        if self.canBeCommand(phrase,text):
+            for list in [ self.namespace ]:
+                for word in list:
+                    if word[:n] == text:
+                        matches.append(word)
         try:
-            for m in getMachines(self.ctx, False, True):
-                # although it has autoconversion, we need to cast
-                # explicitly for subscripts to work
-                word = re.sub("(?<!\\\\) ", "\\ ", str(m.name))
-                if word[:n] == text:
-                    matches.append(word)
-                word = str(m.id)
-                if word[0] == '{':
-                    word = word[1:-1]
-                if word[:n] == text:
-                    matches.append(word)
+            if self.canBeMachine(phrase,text):
+                for m in getMachines(self.ctx, False, True):
+                    # although it has autoconversion, we need to cast
+                    # explicitly for subscripts to work
+                    word = re.sub("(?<!\\\\) ", "\\ ", str(m.name))
+                    if word[:n] == text:
+                        matches.append(word)
+                    word = str(m.id)
+                    if word[0] == '{':
+                        word = word[1:-1]
+                    if word[:n] == text:
+                        matches.append(word)
         except Exception,e:
             printErr(e)
             if g_verbose:
