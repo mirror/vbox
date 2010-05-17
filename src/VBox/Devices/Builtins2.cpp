@@ -1,10 +1,10 @@
 /* $Id $ */
 /** @file
- * Built-in drivers & devices (part 2).
+ * Built-in drivers & devices part 2.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -60,6 +60,16 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceIOAPIC);
     if (RT_FAILURE(rc))
         return rc;
+#ifdef VBOX_WITH_SMC
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceSMC);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
+#ifdef VBOX_WITH_LPC
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceLPC);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
 
     return VINF_SUCCESS;
 }

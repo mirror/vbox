@@ -1,8 +1,8 @@
 /* $Id$ */
-/**
- * @file
+/** @file
  * DevSMC - SMC device emulation.
  */
+
 /*
  * Copyright (C) 2006-2010 Oracle Corporation
  *
@@ -56,7 +56,7 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
-#include "../Builtins.h"
+#include "../Builtins2.h"
 
 /* data port used by Apple SMC */
 #define APPLESMC_DATA_PORT      0x300
@@ -437,11 +437,11 @@ const PDMDEVREG g_DeviceSMC =
     /* szName */
     "smc",
     /* szRCMod */
-    "VBoxDDGC.gc",
+    "VBoxDD2GC.gc",
     /* szR0Mod */
-    "VBoxDDR0.r0",
+    "VBoxDD2R0.r0",
     /* pszDescription */
-    " System Management Controller (SMC) Device",
+    "System Management Controller (SMC) Device",
     /* fFlags */
     PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32_64 | PDM_DEVREG_FLAGS_PAE36,
     /* fClass */

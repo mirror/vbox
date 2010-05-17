@@ -179,9 +179,6 @@ endif
 ifdef VBOX_WITH_SMC
  VBoxDD_DEFS           += VBOX_WITH_SMC
 endif
-ifdef VBOX_WITH_LPC
- VBoxDD_DEFS           += VBOX_WITH_LPC
-endif
 ifdef VBOX_WITH_EFI
  VBoxDD_DEFS           += VBOX_WITH_EFI
 endif
@@ -249,6 +246,7 @@ VBoxDD_LDFLAGS.darwin   = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDD.dyli
 VBoxDD_LDFLAGS.linux    = -Wl,--no-undefined
 VBoxDD_LDFLAGS.l4       = -Wl,--no-undefined
 
+
 #
 # VBoxDD2 (shared object)
 #
@@ -259,6 +257,14 @@ VBoxDD2_INCS           := \
 VBoxDD2_SOURCES         = \
 	Builtins2.cpp \
 	PC/DevAPIC.cpp
+ifdef VBOX_WITH_SMC
+ VBoxDD2_DEFS          += VBOX_WITH_SMC
+ VBoxDD2_SOURCES       += PC/DevSMC.cpp
+endif
+ifdef VBOX_WITH_LPC
+ VBoxDD2_DEFS          += VBOX_WITH_LPC
+ VBoxDD2_SOURCES       += PC/DevLPC.cpp
+endif
 VBoxDD2_LIBS            = \
 	$(PATH_LIB)/PcBiosBin$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VgaBiosBin$(VBOX_SUFF_LIB) \
@@ -422,16 +428,6 @@ endif
 ifdef VBOX_WITH_HPET
  DevicesR3_DEFS        += VBOX_WITH_HPET
  DevicesR3_SOURCES     += PC/DevHPET.cpp
-endif
-
-ifdef VBOX_WITH_SMC
- DevicesR3_DEFS        += VBOX_WITH_SMC
- DevicesR3_SOURCES     += PC/DevSMC.cpp
-endif
-
-ifdef VBOX_WITH_LPC
- DevicesR3_DEFS        += VBOX_WITH_LPC
- DevicesR3_SOURCES     += PC/DevLPC.cpp
 endif
 
 ifdef VBOX_WITH_EFI
@@ -795,6 +791,12 @@ VBoxDD2R0_INCS          := \
 	$(PATH_SUB_CURRENT)
 VBoxDD2R0_SOURCES        = \
         PC/DevAPIC.cpp
+
+ifdef VBOX_WITH_SMC
+ VBoxDD2R0_DEFS         += VBOX_WITH_SMC
+ VBoxDD2R0_SOURCES      += PC/DevSMC.cpp
+endif
+
 if1of ($(VBOX_LDR_FMT), pe lx)
 VBoxDD2R0_LIBS           = $(PATH_LIB)/VMMR0Imp$(VBOX_SUFF_LIB)
 endif
