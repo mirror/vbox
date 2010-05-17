@@ -405,10 +405,22 @@ Global::vboxStatusCodeFromCOM(HRESULT aComStatus)
     switch (aComStatus)
     {
         case S_OK:                              return VINF_SUCCESS;
-        case E_FAIL:                            return VERR_GENERAL_FAILURE;
-        case E_INVALIDARG:                      return VERR_INVALID_PARAMETER;
-        case E_POINTER:                         return VERR_INVALID_POINTER;
 
+        /* Standard COM status codes. See also RTErrConvertFromDarwinCOM */
+        case E_UNEXPECTED:                      return VERR_COM_UNEXPECTED;
+        case E_NOTIMPL:                         return VERR_NOT_IMPLEMENTED;
+        case E_OUTOFMEMORY:                     return VERR_NO_MEMORY;
+        case E_INVALIDARG:                      return VERR_INVALID_PARAMETER;
+        case E_NOINTERFACE:                     return VERR_NOT_SUPPORTED;
+        case E_POINTER:                         return VERR_INVALID_POINTER;
+#ifdef E_HANDLE
+        case E_HANDLE:                          return VERR_INVALID_HANDLE;
+#endif
+        case E_ABORT:                           return VERR_CANCELLED;
+        case E_FAIL:                            return VERR_GENERAL_FAILURE;
+        case E_ACCESSDENIED:                    return VERR_ACCESS_DENIED;
+
+        /* VirtualBox status codes */
         case VBOX_E_OBJECT_NOT_FOUND:           return VERR_COM_OBJECT_NOT_FOUND;
         case VBOX_E_INVALID_VM_STATE:           return VERR_COM_INVALID_VM_STATE;
         case VBOX_E_VM_ERROR:                   return VERR_COM_VM_ERROR;
@@ -421,10 +433,13 @@ Global::vboxStatusCodeFromCOM(HRESULT aComStatus)
         case VBOX_E_XML_ERROR:                  return VERR_COM_XML_ERROR;
         case VBOX_E_INVALID_SESSION_STATE:      return VERR_COM_INVALID_SESSION_STATE;
         case VBOX_E_OBJECT_IN_USE:              return VERR_COM_OBJECT_IN_USE;
+        case VBOX_E_DONT_CALL_AGAIN:            return VERR_COM_DONT_CALL_AGAIN;
 
         default:
             if (SUCCEEDED(aComStatus))
                 return VINF_SUCCESS;
+            /** @todo Check for the win32 facility and use the
+             *        RTErrConvertFromWin32 function on windows. */
             return VERR_UNRESOLVED_ERROR;
     }
 }
@@ -436,11 +451,22 @@ Global::vboxStatusCodeToCOM(int aVBoxStatus)
     switch (aVBoxStatus)
     {
         case VINF_SUCCESS:                      return S_OK;
-        case VERR_GENERAL_FAILURE:              return E_FAIL;
-        case VERR_UNRESOLVED_ERROR:             return E_FAIL;
-        case VERR_INVALID_PARAMETER:            return E_INVALIDARG;
-        case VERR_INVALID_POINTER:              return E_POINTER;
 
+        /* Standard COM status codes. */
+        case VERR_COM_UNEXPECTED:               return E_UNEXPECTED;
+        case VERR_NOT_IMPLEMENTED:              return E_NOTIMPL;
+        case VERR_NO_MEMORY:                    return E_OUTOFMEMORY;
+        case VERR_INVALID_PARAMETER:            return E_INVALIDARG;
+        case VERR_NOT_SUPPORTED:                return E_NOINTERFACE;
+        case VERR_INVALID_POINTER:              return E_POINTER;
+#ifdef E_HANDLE
+        case VERR_INVALID_HANDLE:               return E_HANDLE;
+#endif
+        case VERR_CANCELLED:                    return E_ABORT;
+        case VERR_GENERAL_FAILURE:              return E_FAIL;
+        case VERR_ACCESS_DENIED:                return E_ACCESSDENIED;
+
+        /* VirtualBox COM status codes */
         case VERR_COM_OBJECT_NOT_FOUND:         return VBOX_E_OBJECT_NOT_FOUND;
         case VERR_COM_INVALID_VM_STATE:         return VBOX_E_INVALID_VM_STATE;
         case VERR_COM_VM_ERROR:                 return VBOX_E_VM_ERROR;
@@ -453,6 +479,10 @@ Global::vboxStatusCodeToCOM(int aVBoxStatus)
         case VERR_COM_XML_ERROR:                return VBOX_E_XML_ERROR;
         case VERR_COM_INVALID_SESSION_STATE:    return VBOX_E_INVALID_SESSION_STATE;
         case VERR_COM_OBJECT_IN_USE:            return VBOX_E_OBJECT_IN_USE;
+        case VERR_COM_DONT_CALL_AGAIN:          return VBOX_E_DONT_CALL_AGAIN;
+
+        /* Other errors. */
+        case VERR_UNRESOLVED_ERROR:             return E_FAIL;
 
         default:
             AssertMsgFailed(("%Rrc\n", aVBoxStatus));
