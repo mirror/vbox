@@ -121,7 +121,7 @@ static int VBoxServiceControlHandleCmdStartProcess(uint32_t u32ClientId, uint32_
     char szPassword[128];
     uint32_t uTimeLimitMS;
 
-    if (uNumParms != 14)
+    if (uNumParms != 11)
         return VERR_INVALID_PARAMETER;
 
     int rc = VbglR3GuestCtrlExecGetHostCmd(u32ClientId,
