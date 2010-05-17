@@ -578,14 +578,14 @@ int VBoxServiceControlExecReadPipeBufferContent(PVBOXSERVICECTRLEXECPIPEBUF pBuf
 
     int rc = RTCritSectEnter(&pBuf->CritSect);
     if (RT_SUCCESS(rc))
-    {    
+    {
         Assert(pBuf->cbOffset >= pBuf->cbRead);
         if (*pcbToRead > pBuf->cbOffset - pBuf->cbRead)
             *pcbToRead = pBuf->cbOffset - pBuf->cbRead;
-    
+
         if (*pcbToRead > cbBuffer)
             *pcbToRead = cbBuffer;
-    
+
         if (*pcbToRead > 0)
         {
             memcpy(pbBuffer, pBuf->pbData + pBuf->cbRead, *pcbToRead);
@@ -608,7 +608,7 @@ int VBoxServiceControlExecWritePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
 
     int rc = RTCritSectEnter(&pBuf->CritSect);
     if (RT_SUCCESS(rc))
-    {    
+    {
         /** @todo Use RTMemCache or RTMemObj here? */
         uint8_t *pNewBuf;
         while (pBuf->cbSize - pBuf->cbOffset < cbData)
@@ -619,7 +619,7 @@ int VBoxServiceControlExecWritePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
             pBuf->cbSize += _4K;
             pBuf->pbData = pNewBuf;
         }
-        
+
         rc = VINF_SUCCESS;
         if (pBuf->pbData)
         {
@@ -646,7 +646,7 @@ int VBoxServiceControlExecAllocateThreadData(PVBOXSERVICECTRLTHREAD pThread,
 {
     AssertPtr(pThread);
 
-    /* General stuff. */    
+    /* General stuff. */
     pThread->Node.pPrev = NULL;
     pThread->Node.pNext = NULL;
 
@@ -729,7 +729,7 @@ int VBoxServiceControlExecAllocateThreadData(PVBOXSERVICECTRLTHREAD pThread,
 void VBoxServiceControlExecDestroyThreadData(PVBOXSERVICECTRLTHREADDATAEXEC pData)
 {
     if (pData)
-    {    
+    {
         RTStrFree(pData->pszCmd);
         if (pData->uNumEnvVars)
         {
@@ -740,7 +740,7 @@ void VBoxServiceControlExecDestroyThreadData(PVBOXSERVICECTRLTHREADDATAEXEC pDat
         RTGetOptArgvFree(pData->papszArgs);
         RTStrFree(pData->pszUser);
         RTStrFree(pData->pszPassword);
-    
+
         VBoxServiceControlExecDestroyPipeBuffer(&pData->stdOut);
         VBoxServiceControlExecDestroyPipeBuffer(&pData->stdErr);
 
@@ -825,8 +825,16 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pTh
                                 RTPROCESS hProcess;
                                 rc = RTProcCreateEx(pData->pszCmd, pData->papszArgs, hEnv, RTPROC_FLAGS_SERVICE,
                                                     phStdIn, phStdOut, phStdErr,
+                            #ifdef RT_OS_WINDOWS
                                                     strlen(pData->pszUser) ? pData->pszUser : NULL,
                                                     strlen(pData->pszUser) && strlen(pData->pszPassword) ? pData->pszPassword : NULL,
+                            #else
+                                                    /*
+                                                     * Never specify a user name and password until RTProcCreateEx supports
+                                                     * that for non-Windows (POSIX) platforms.
+                                                     */
+                                                    NULL, NULL,
+                            #endif
                                                     &hProcess);
                                 if (RT_SUCCESS(rc))
                                 {
