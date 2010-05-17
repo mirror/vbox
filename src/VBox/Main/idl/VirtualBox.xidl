@@ -8496,7 +8496,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="909a8633-6e99-4d05-a305-dfe29ca1bc1c"
+     uuid="25efde01-dd0b-43b0-9ceb-e4e6307107ac"
      wsmap="managed"
      >
     <desc>
@@ -8672,24 +8672,6 @@
           Environment variables that can be set while the command is being
           executed, in form of "NAME=VALUE"; one pair per entry. To unset a
           variable just set its name ("NAME") without a value.
-        </desc>
-      </param>
-      <param name="stdIn" type="wstring" dir="in">
-        <desc>
-          What to do with the standard input (stdin) of the command being
-          executed. Currently not used and has to be set to an empty value.
-        </desc>
-      </param>
-      <param name="stdOut" type="wstring" dir="in">
-        <desc>
-          What to do with the standard output (stdout) of the command being
-          executed. Currently not used and has to be set to an empty value.
-        </desc>
-      </param>
-      <param name="stdErr" type="wstring" dir="in">
-        <desc>
-          What to do with the standard error (stderr) of the command being
-          executed. Currently not used and has to be set to an empty value.
         </desc>
       </param>
       <param name="userName" type="wstring" dir="in">

@@ -173,9 +173,6 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmd(uint32_t  u32ClientId,    uint32_t
                                               uint32_t *puFlags,
                                               char     *pszArgs,        uint32_t  cbArgs,   uint32_t *puNumArgs,
                                               char     *pszEnv,         uint32_t *pcbEnv,   uint32_t *puNumEnvVars,
-                                              char     *pszStdIn,       uint32_t  cbStdIn,
-                                              char     *pszStdOut,      uint32_t  cbStdOut,
-                                              char     *pszStdErr,      uint32_t  cbStdErr,
                                               char     *pszUser,        uint32_t  cbUser,
                                               char     *pszPassword,    uint32_t  cbPassword,
                                               uint32_t *puTimeLimit)
@@ -188,10 +185,6 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmd(uint32_t  u32ClientId,    uint32_t
     AssertPtr(pszEnv);
     AssertPtr(pcbEnv);
     AssertPtr(puNumEnvVars);
-    AssertPtr(pszStdIn);
-    AssertPtr(pszStdOut);
-    AssertPtr(pszStdOut);
-    AssertPtr(pszStdErr);
     AssertPtr(pszUser);
     AssertPtr(pszPassword);
     AssertPtr(puTimeLimit);
@@ -211,9 +204,6 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmd(uint32_t  u32ClientId,    uint32_t
     VbglHGCMParmUInt32Set(&Msg.num_env, 0);
     VbglHGCMParmUInt32Set(&Msg.cb_env, 0);
     VbglHGCMParmPtrSet(&Msg.env, pszEnv, *pcbEnv);
-    VbglHGCMParmPtrSet(&Msg.std_in, pszStdIn, cbStdIn);
-    VbglHGCMParmPtrSet(&Msg.std_out, pszStdOut, cbStdOut);
-    VbglHGCMParmPtrSet(&Msg.std_err, pszStdErr, cbStdErr);
     VbglHGCMParmPtrSet(&Msg.username, pszUser, cbUser);
     VbglHGCMParmPtrSet(&Msg.password, pszPassword, cbPassword);
     VbglHGCMParmUInt32Set(&Msg.timeout, 0);

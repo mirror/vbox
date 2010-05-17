@@ -97,9 +97,6 @@ static int handleExecProgram(HandlerArg *a)
     uint32_t uFlags = 0;
     com::SafeArray <BSTR> args;
     com::SafeArray <BSTR> env;
-    Utf8Str Utf8StdIn;
-    Utf8Str Utf8StdOut;
-    Utf8Str Utf8StdErr;
     Utf8Str Utf8UserName;
     Utf8Str Utf8Password;
     uint32_t u32TimeoutMS = 0;
@@ -296,7 +293,6 @@ static int handleExecProgram(HandlerArg *a)
             /* Execute the process. */
             CHECK_ERROR_BREAK(guest, ExecuteProcess(Bstr(Utf8Cmd), uFlags,
                                                     ComSafeArrayAsInParam(args), ComSafeArrayAsInParam(env),
-                                                    Bstr(Utf8StdIn), Bstr(Utf8StdOut), Bstr(Utf8StdErr),
                                                     Bstr(Utf8UserName), Bstr(Utf8Password), u32TimeoutMS,
                                                     &uPID, progress.asOutParam()));
             if (verbose) RTPrintf("Process '%s' (PID: %u) started\n", Utf8Cmd.raw(), uPID);

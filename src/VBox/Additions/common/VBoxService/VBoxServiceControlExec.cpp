@@ -642,7 +642,6 @@ int VBoxServiceControlExecAllocateThreadData(PVBOXSERVICECTRLTHREAD pThread,
                                              const char *pszCmd, uint32_t uFlags,
                                              const char *pszArgs, uint32_t uNumArgs,
                                              const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
-                                             const char *pszStdIn, const char *pszStdOut, const char *pszStdErr,
                                              const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS)
 {
     AssertPtr(pThread);
@@ -699,9 +698,6 @@ int VBoxServiceControlExecAllocateThreadData(PVBOXSERVICECTRLTHREAD pThread,
             }
         }
 
-        pData->pszStdIn = RTStrDup(pszStdIn);
-        pData->pszStdOut = RTStrDup(pszStdOut);
-        pData->pszStdErr = RTStrDup(pszStdErr);
         pData->pszUser = RTStrDup(pszUser);
         pData->pszPassword = RTStrDup(pszPassword);
         pData->uTimeLimitMS = uTimeLimitMS;
@@ -742,9 +738,6 @@ void VBoxServiceControlExecDestroyThreadData(PVBOXSERVICECTRLTHREADDATAEXEC pDat
             RTMemFree(pData->papszEnv);
         }
         RTGetOptArgvFree(pData->papszArgs);
-        RTStrFree(pData->pszStdIn);
-        RTStrFree(pData->pszStdOut);
-        RTStrFree(pData->pszStdErr);
         RTStrFree(pData->pszUser);
         RTStrFree(pData->pszPassword);
     
@@ -908,7 +901,6 @@ static DECLCALLBACK(int) VBoxServiceControlExecThread(RTTHREAD ThreadSelf, void 
 int VBoxServiceControlExecProcess(uint32_t uContextID, const char *pszCmd, uint32_t uFlags,
                                   const char *pszArgs, uint32_t uNumArgs,
                                   const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
-                                  const char *pszStdIn, const char *pszStdOut, const char *pszStdErr,
                                   const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS)
 {
     PVBOXSERVICECTRLTHREAD pThread = (PVBOXSERVICECTRLTHREAD)RTMemAlloc(sizeof(VBOXSERVICECTRLTHREAD));
@@ -921,7 +913,6 @@ int VBoxServiceControlExecProcess(uint32_t uContextID, const char *pszCmd, uint3
                                                       pszCmd, uFlags,
                                                       pszArgs, uNumArgs,
                                                       pszEnv, cbEnv, uNumEnvVars,
-                                                      pszStdIn, pszStdOut, pszStdErr,
                                                       pszUser, pszPassword,
                                                       uTimeLimitMS);
         if (RT_SUCCESS(rc))
