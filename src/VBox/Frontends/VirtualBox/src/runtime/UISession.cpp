@@ -54,21 +54,18 @@ class UIMousePointerShapeChangeEvent : public QEvent
 {
 public:
 
-    UIMousePointerShapeChangeEvent(bool bIsVisible, bool bIsAlpha, uint uXHot, uint uYHot, uint uWidth, uint uHeight, const uchar *pShape)
+    UIMousePointerShapeChangeEvent(bool bIsVisible, bool bIsAlpha, uint uXHot, uint uYHot, uint uWidth, uint uHeight, ComSafeArrayIn(BYTE,pShape))
         : QEvent((QEvent::Type)UIConsoleEventType_MousePointerShapeChange)
-        , m_bIsVisible(bIsVisible), m_bIsAlpha(bIsAlpha), m_uXHot(uXHot), m_uYHot(uYHot), m_uWidth(uWidth), m_uHeight(uHeight), m_pData(0)
+        , m_bIsVisible(bIsVisible), m_bIsAlpha(bIsAlpha), m_uXHot(uXHot), m_uYHot(uYHot), m_uWidth(uWidth), m_uHeight(uHeight)
     {
-        uint dataSize = ((((m_uWidth + 7) / 8 * m_uHeight) + 3) & ~3) + m_uWidth * 4 * m_uHeight;
-        if (pShape)
-        {
-            m_pData = new uchar[dataSize];
-            memcpy((void*)m_pData, (void*)pShape, dataSize);
-        }
+        com::SafeArray <BYTE> aShape(ComSafeArrayInArg (pShape));
+        size_t cbShapeSize = aShape.size();
+        m_shape.resize(cbShapeSize);
+        ::memcpy(m_shape.raw(), aShape.raw(), cbShapeSize);
     }
 
     virtual ~UIMousePointerShapeChangeEvent()
     {
-        if (m_pData) delete[] m_pData;
     }
 
     bool isVisible() const { return m_bIsVisible; }
@@ -77,13 +74,13 @@ public:
     uint yHot() const { return m_uYHot; }
     uint width() const { return m_uWidth; }
     uint height() const { return m_uHeight; }
-    const uchar *shapeData() const { return m_pData; }
+    const uchar *shapeData() const { return m_shape.raw(); }
 
 private:
 
     bool m_bIsVisible, m_bIsAlpha;
     uint m_uXHot, m_uYHot, m_uWidth, m_uHeight;
-    const uchar *m_pData;
+    com::SafeArray <uint8_t> m_shape;
 };
 
 /* Guest mouse absolute positioning capability change event: */
@@ -385,9 +382,9 @@ public:
 
     VBOX_SCRIPTABLE_DISPATCH_IMPL(IConsoleCallback)
 
-    STDMETHOD(OnMousePointerShapeChange)(BOOL bIsVisible, BOOL bAlpha, ULONG uXHot, ULONG uYHot, ULONG uWidth, ULONG uHeight, BYTE *pShape)
+    STDMETHOD(OnMousePointerShapeChange)(BOOL bIsVisible, BOOL bAlpha, ULONG uXHot, ULONG uYHot, ULONG uWidth, ULONG uHeight, ComSafeArrayIn(BYTE,pShape))
     {
-        QApplication::postEvent(m_pEventHandler, new UIMousePointerShapeChangeEvent(bIsVisible, bAlpha, uXHot, uYHot, uWidth, uHeight, pShape));
+        QApplication::postEvent(m_pEventHandler, new UIMousePointerShapeChangeEvent(bIsVisible, bAlpha, uXHot, uYHot, uWidth, uHeight, ComSafeArrayInArg(pShape)));
         return S_OK;
     }
 

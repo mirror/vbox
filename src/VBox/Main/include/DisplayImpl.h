@@ -149,7 +149,7 @@ public:
 
     // IConsoleCallback methods
     STDMETHOD(OnMousePointerShapeChange)(BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
-                                         ULONG width, ULONG height, BYTE *shape)
+                                         ULONG width, ULONG height, ComSafeArrayIn(BYTE,shape))
     {
         return S_OK;
     }

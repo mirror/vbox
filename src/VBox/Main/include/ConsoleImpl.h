@@ -20,6 +20,7 @@
 
 #include "VirtualBoxBase.h"
 #include "SchemaDefs.h"
+#include "VBox/com/array.h"
 
 class Guest;
 class Keyboard;
@@ -205,7 +206,7 @@ public:
     void onMousePointerShapeChange(bool fVisible, bool fAlpha,
                                    uint32_t xHot, uint32_t yHot,
                                    uint32_t width, uint32_t height,
-                                   void *pShape);
+                                   ComSafeArrayIn(uint8_t, aShape));
     void onMouseCapabilityChange(BOOL supportsAbsolute, BOOL supportsRelative, BOOL needsHostCursor);
     void onStateChange(MachineState_T aMachineState);
     void onAdditionsStateChange();
@@ -674,8 +675,7 @@ private:
             uint32_t yHot;
             uint32_t width;
             uint32_t height;
-            BYTE *shape;
-            size_t shapeSize;
+            com::SafeArray<BYTE> shape;
         }
         mpsc;
 

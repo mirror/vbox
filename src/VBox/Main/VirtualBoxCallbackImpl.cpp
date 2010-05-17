@@ -161,21 +161,12 @@ STDMETHODIMP CallbackWrapper::OnGuestPropertyChange(IN_BSTR aMachineId, IN_BSTR 
 // IConsoleCallback methods
 /////////////////////////////////////////////////////////////////////////////
 STDMETHODIMP CallbackWrapper::OnMousePointerShapeChange(BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
-                                                        ULONG width, ULONG height, BYTE *shape)
+                                                        ULONG width, ULONG height, ComSafeArrayIn(BYTE, shape))
 {
     if (mConsoleCallback.isNull())
         return S_OK;
 
-#if defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)
-    /* Letting this thru crashes in VariantInit, probably because the last
-       parameter is a BYTE pointer.  For now, don't let it thru to python or
-       what other users this class might have. */
-    /** @todo Figure if this applies to 32-bit hosts as well. */
-    /** @todo Find better solution? */
-    return VBOX_E_DONT_CALL_AGAIN;
-#else
-    return mConsoleCallback->OnMousePointerShapeChange(visible, alpha, xHot, yHot, width, height, shape);
-#endif
+    return mConsoleCallback->OnMousePointerShapeChange(visible, alpha, xHot, yHot, width, height, ComSafeArrayInArg(shape));
 }
 
 

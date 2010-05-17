@@ -304,7 +304,7 @@ public:
     VBOX_SCRIPTABLE_DISPATCH_IMPL(IConsoleCallback)
 
     STDMETHOD(OnMousePointerShapeChange)(BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
-                                         ULONG width, ULONG height, BYTE *shape)
+                                         ULONG width, ULONG height, ComSafeArrayIn(BYTE,shape))
     {
         return VBOX_E_DONT_CALL_AGAIN;
     }
@@ -1242,4 +1242,3 @@ int main(int argc, char **argv, char **envp)
     return TrustedMain(argc, argv, envp);
 }
 #endif /* !VBOX_WITH_HARDENING */
-
