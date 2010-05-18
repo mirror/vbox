@@ -274,6 +274,11 @@ typedef struct LSILOGICSCSI
     R3PTRTYPE(PPDMILEDCONNECTORS)  pLedsConnector;
     /** Pointer to the configuration page area. */
     R3PTRTYPE(PMptConfigurationPagesSupported) pConfigurationPages;
+
+#if HC_ARCH_BITS == 64
+    uint32_t                       Alignment7;
+#endif
+
     /** Indicates that PDMDevHlpAsyncNotificationCompleted should be called when
      * a port is entering the idle state. */
     bool volatile                  fSignalIdle;
