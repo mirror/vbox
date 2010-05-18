@@ -1535,6 +1535,83 @@ int pgmR3PhysRamReset(PVM pVM)
     return VINF_SUCCESS;
 }
 
+/**
+ * Frees all RAM during VM termination
+ *
+ * ASSUMES that the caller owns the PGM lock.
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the shared VM structure.
+ */
+int pgmR3PhysRamTerm(PVM pVM)
+{
+    Assert(PGMIsLockOwner(pVM));
+
+    /* Reset the memory balloon. */
+    int rc = GMMR3BalloonedPages(pVM, GMMBALLOONACTION_RESET, 0);
+    AssertRC(rc);
+
+#ifdef VBOX_WITH_PAGE_SHARING
+    /* Clear all registered shared modules. */
+    rc = GMMR3ResetSharedModules(pVM);
+    AssertRC(rc);
+#endif
+
+    /*
+     * We batch up pages that should be freed instead of calling GMM for
+     * each and every one of them.
+     */
+    uint32_t            cPendingPages = 0;
+    PGMMFREEPAGESREQ    pReq;
+    rc = GMMR3FreePagesPrepare(pVM, &pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
+    AssertLogRelRCReturn(rc, rc);
+
+    /*
+     * Walk the ram ranges.
+     */
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3; pRam; pRam = pRam->pNextR3)
+    {
+        uint32_t iPage = pRam->cb >> PAGE_SHIFT;
+        AssertMsg(((RTGCPHYS)iPage << PAGE_SHIFT) == pRam->cb, ("%RGp %RGp\n", (RTGCPHYS)iPage << PAGE_SHIFT, pRam->cb));
+
+        /* Replace all RAM pages by ZERO pages. */
+        while (iPage-- > 0)
+        {
+            PPGMPAGE pPage = &pRam->aPages[iPage];
+            switch (PGM_PAGE_GET_TYPE(pPage))
+            {
+                case PGMPAGETYPE_RAM:
+                    /* Free all shared pages. Private pages are automatically freed during GMM VM cleanup. */
+                    if (PGM_PAGE_IS_SHARED(pPage))
+                    {
+                        rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
+                        AssertLogRelRCReturn(rc, rc);
+                    }
+                    break;
+
+                case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
+                case PGMPAGETYPE_MMIO2:
+                case PGMPAGETYPE_ROM_SHADOW: /* handled by pgmR3PhysRomReset. */
+                case PGMPAGETYPE_ROM:
+                case PGMPAGETYPE_MMIO:
+                    break;
+                default:
+                    AssertFailed();
+            }
+        } /* for each page */
+    }
+
+    /*
+     * Finish off any pages pending freeing.
+     */
+    if (cPendingPages)
+    {
+        rc = GMMR3FreePagesPerform(pVM, pReq, cPendingPages);
+        AssertLogRelRCReturn(rc, rc);
+    }
+    GMMR3FreePagesCleanup(pReq);
+    return VINF_SUCCESS;
+}
 
 /**
  * This is the interface IOM is using to register an MMIO region.
