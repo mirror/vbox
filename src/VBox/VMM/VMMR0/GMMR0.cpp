@@ -859,7 +859,7 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
 #endif
         {
             /*
-             * Walk the entire pool looking for pages that belongs to this VM
+             * Walk the entire pool looking for pages that belong to this VM
              * and left over mappings. (This'll only catch private pages, shared
              * pages will be 'left behind'.)
              */
@@ -2497,6 +2497,7 @@ static void gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
     {
         /** @todo R0 -> VM request */
         /* The chunk can be owned by more than one VM if fBoundMemoryMode is false! */
+        Log(("gmmR0FreeChunk: chunk still has %d mappings; don't free!\n", pChunk->cMappings));
     }
     else
     {
@@ -3168,7 +3169,7 @@ static int gmmR0UnmapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
     else if (pChunk->hGVM == pGVM->hSelf)
         return VINF_SUCCESS;
 
-    Log(("gmmR0MapChunk: Chunk %#x is not mapped into pGVM=%p/%#x\n", pChunk->Core.Key, pGVM, pGVM->hSelf));
+    Log(("gmmR0UnmapChunk: Chunk %#x is not mapped into pGVM=%p/%#x\n", pChunk->Core.Key, pGVM, pGVM->hSelf));
     return VERR_GMM_CHUNK_NOT_MAPPED;
 }
 
