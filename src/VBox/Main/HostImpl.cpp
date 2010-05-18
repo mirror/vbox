@@ -767,6 +767,20 @@ STDMETHODIMP Host::COMGETTER(ProcessorOnlineCount)(ULONG *aCount)
 }
 
 /**
+ * Returns the number of installed physical processor cores.
+ *
+ * @returns COM status code
+ * @param   count address of result variable
+ */
+STDMETHODIMP Host::COMGETTER(ProcessorCoreCount)(ULONG *aCount)
+{
+    CheckComArgOutPointerValid(aCount);
+    // no locking required
+
+    return E_NOTIMPL;
+}
+
+/**
  * Returns the (approximate) maximum speed of the given host CPU in MHz
  *
  * @returns COM status code

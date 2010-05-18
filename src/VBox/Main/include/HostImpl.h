@@ -66,6 +66,7 @@ public:
     STDMETHOD(COMGETTER(NetworkInterfaces))(ComSafeArrayOut (IHostNetworkInterface *, aNetworkInterfaces));
     STDMETHOD(COMGETTER(ProcessorCount))(ULONG *count);
     STDMETHOD(COMGETTER(ProcessorOnlineCount))(ULONG *count);
+    STDMETHOD(COMGETTER(ProcessorCoreCount))(ULONG *count);
     STDMETHOD(GetProcessorSpeed)(ULONG cpuId, ULONG *speed);
     STDMETHOD(GetProcessorDescription)(ULONG cpuId, BSTR *description);
     STDMETHOD(GetProcessorFeature) (ProcessorFeature_T feature, BOOL *supported);
