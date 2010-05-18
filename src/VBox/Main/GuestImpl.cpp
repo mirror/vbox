@@ -1244,7 +1244,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
                     else if (vrc == VERR_CANCELLED)
                     {
                         rc = setError(VBOX_E_IPRT_ERROR,
-                                      tr("The operation was canceled."));
+                                      tr("The operation was canceled"));
                     }
                     else
                     {
