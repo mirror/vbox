@@ -7595,7 +7595,7 @@
 
   <interface
      name="IHost" extends="$unknown"
-     uuid="e380cbfc-ae65-4fa6-899e-45ded6b3132a"
+     uuid="35b004f4-7806-4009-bfa8-d1308adba7e5"
      wsmap="managed"
      >
     <desc>
