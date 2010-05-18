@@ -134,7 +134,7 @@ namespace pm
     class CollectorHAL
     {
     public:
-                 CollectorHAL() : mMemAllocVMM(0), mMemFreeVMM(0), mMemBalloonedVMM(0) {};
+                 CollectorHAL() : mMemAllocVMM(0), mMemFreeVMM(0), mMemBalloonedVMM(0), mMemSharedVMM(0) {};
         virtual ~CollectorHAL() { };
         virtual int preCollect(const CollectorHints& /* hints */, uint64_t /* iTick */) { return VINF_SUCCESS; }
         /** Returns averaged CPU usage in 1/1000th per cent across all host's CPUs. */
