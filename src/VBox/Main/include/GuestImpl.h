@@ -82,6 +82,7 @@ public:
     STDMETHOD(COMGETTER(MemoryBalloonSize)) (ULONG *aMemoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize)) (ULONG aMemoryBalloonSize);
     STDMETHOD(COMGETTER(PageFusionEnabled)) (BOOL *aPageFusionEnabled);
+    STDMETHOD(COMSETTER(PageFusionEnabled)) (BOOL aPageFusionEnabled);
     STDMETHOD(COMGETTER(StatisticsUpdateInterval)) (ULONG *aUpdateInterval);
     STDMETHOD(COMSETTER(StatisticsUpdateInterval)) (ULONG aUpdateInterval);
 

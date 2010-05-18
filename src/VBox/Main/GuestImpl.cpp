@@ -228,6 +228,18 @@ STDMETHODIMP Guest::COMGETTER(PageFusionEnabled) (BOOL *aPageFusionEnabled)
     return S_OK;
 }
 
+STDMETHODIMP Guest::COMSETTER(PageFusionEnabled) (BOOL aPageFusionEnabled)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /** todo; API complete, but not implemented */
+
+    return E_NOTIMPL;
+}
+
 STDMETHODIMP Guest::COMGETTER(MemoryBalloonSize) (ULONG *aMemoryBalloonSize)
 {
     CheckComArgOutPointerValid(aMemoryBalloonSize);
