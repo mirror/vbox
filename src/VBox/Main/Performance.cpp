@@ -170,7 +170,7 @@ int CollectorGuestHAL::preCollect(const CollectorHints& /* hints */, uint64_t iT
                                       &mPageTotal, &ulMemAllocTotal, &ulMemFreeTotal, &ulMemBalloonTotal, &ulMemSharedTotal);
 
         if (mHostHAL)
-            mHostHAL->setMemHypervisorStats(ulMemAllocTotal, ulMemFreeTotal, ulMemBalloonTotal, ulMemShared);
+            mHostHAL->setMemHypervisorStats(ulMemAllocTotal, ulMemFreeTotal, ulMemBalloonTotal, ulMemSharedTotal);
 
         mLastTick = iTick;
     }
