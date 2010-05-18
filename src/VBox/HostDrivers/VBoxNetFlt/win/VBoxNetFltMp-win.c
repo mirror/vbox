@@ -445,6 +445,9 @@ static NDIS_STATUS
 vboxNetFltWinSendPassThru(
     IN PADAPT             pAdapt,
     IN PNDIS_PACKET           pPacket
+#ifdef VBOXNETFLT_NO_PACKET_QUEUE
+    , bool bNetFltActive
+#endif
     )
 {
     PNDIS_PACKET           pMyPacket;
@@ -456,7 +459,12 @@ vboxNetFltWinSendPassThru(
     if (fStatus == NDIS_STATUS_SUCCESS)
     {
 #if !defined(VBOX_LOOPBACK_USEFLAGS) /* || defined(DEBUG_NETFLT_PACKETS) */
+# ifdef VBOXNETFLT_NO_PACKET_QUEUE
+        if (bNetFltActive)
+            vboxNetFltWinLbPutSendPacket(pAdapt, pMyPacket, false /* bFromIntNet */);
+# else
         /* no need for the loop enqueue & check in a passthru mode , ndis will do everything for us */
+# endif
 #endif
         NdisSend(&fStatus,
                  pAdapt->hBindingHandle,
@@ -465,6 +473,10 @@ vboxNetFltWinSendPassThru(
         {
 #ifndef WIN9X
             NdisIMCopySendCompletePerPacketInfo (pPacket, pMyPacket);
+#endif
+#if defined(VBOXNETFLT_NO_PACKET_QUEUE) && !defined(VBOX_LOOPBACK_USEFLAGS)
+        if (bNetFltActive)
+            vboxNetFltWinLbRemoveSendPacket(pAdapt, pMyPacket);
 #endif
             NdisFreePacket(pMyPacket);
         }
@@ -837,7 +849,11 @@ vboxNetFltWinMpSendPackets(
                     )
             {
 #ifndef VBOXNETADP
-                fStatus = vboxNetFltWinSendPassThru(pAdapt, pPacket);
+                fStatus = vboxNetFltWinSendPassThru(pAdapt, pPacket
+#ifdef VBOXNETFLT_NO_PACKET_QUEUE
+                               , !!cNetFltRefs
+#endif
+                        );
 #else
                 if(!cNetFltRefs)
                 {
