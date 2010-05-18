@@ -380,6 +380,15 @@ typedef struct BUSLOGIC
     PDMILEDPORTS                   ILeds;
     /** Partner of ILeds. */
     R3PTRTYPE(PPDMILEDCONNECTORS)  pLedsConnector;
+
+#if HC_ARCH_BITS == 64
+    uint32_t                       Alignment3;
+#endif
+
+    /** Indicates that PDMDevHlpAsyncNotificationCompleted should be called when
+     * a port is entering the idle state. */
+    bool volatile                  fSignalIdle;
+
 } BUSLOGIC, *PBUSLOGIC;
 
 /** Register offsets in the I/O port space. */
@@ -1986,6 +1995,10 @@ static DECLCALLBACK(int) buslogicDeviceSCSIRequestCompleted(PPDMISCSIPORT pInter
 
     /* Add task to the cache. */
     RTMemCacheFree(pBusLogic->hTaskCache, pTaskState);
+
+    if (pBusLogicDevice->cOutstandingRequests == 0 && pBusLogic->fSignalIdle)
+        PDMDevHlpAsyncNotificationCompleted(pBusLogic->pDevInsR3);
+
     return VINF_SUCCESS;
 }
 
@@ -2385,6 +2398,74 @@ static DECLCALLBACK(void *) buslogicStatusQueryInterface(PPDMIBASE pInterface, c
     return NULL;
 }
 
+/* -=-=-=-=- Helper -=-=-=-=- */
+
+ /**
+ * Checks if all asynchronous I/O is finished.
+ *
+ * Used by lsilogicReset, lsilogicSuspend and lsilogicPowerOff.
+ *
+ * @returns true if quiesced, false if busy.
+ * @param   pDevIns         The device instance.
+ */
+static bool buslogicR3AllAsyncIOIsFinished(PPDMDEVINS pDevIns)
+{
+    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aDeviceStates); i++)
+    {
+        PBUSLOGICDEVICE pThisDevice = &pThis->aDeviceStates[i];
+        if (pThisDevice->pDrvBase)
+        {
+            if (pThisDevice->cOutstandingRequests != 0)
+                return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Callback employed by lsilogicR3Suspend and lsilogicR3PowerOff..
+ *
+ * @returns true if we've quiesced, false if we're still working.
+ * @param   pDevIns     The device instance.
+ */
+static DECLCALLBACK(bool) buslogicR3IsAsyncSuspendOrPowerOffDone(PPDMDEVINS pDevIns)
+{
+    if (!buslogicR3AllAsyncIOIsFinished(pDevIns))
+        return false;
+
+    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+    return true;
+}
+
+/**
+ * Common worker for ahciR3Suspend and ahciR3PowerOff.
+ */
+static void buslogicR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
+{
+    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+
+    ASMAtomicWriteBool(&pThis->fSignalIdle, true);
+    if (!buslogicR3AllAsyncIOIsFinished(pDevIns))
+        PDMDevHlpSetAsyncNotification(pDevIns, buslogicR3IsAsyncSuspendOrPowerOffDone);
+    else
+        ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+}
+
+/**
+ * Suspend notification.
+ *
+ * @param   pDevIns     The device instance data.
+ */
+static DECLCALLBACK(void) buslogicSuspend(PPDMDEVINS pDevIns)
+{
+    Log(("buslogicSuspend\n"));
+    buslogicR3SuspendOrPowerOff(pDevIns);
+}
+
 /**
  * Detach notification.
  *
@@ -2461,6 +2542,41 @@ static DECLCALLBACK(int)  buslogicAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint
     return rc;
 }
 
+/**
+ * Callback employed by buslogicR3Reset.
+ *
+ * @returns true if we've quiesced, false if we're still working.
+ * @param   pDevIns     The device instance.
+ */
+static DECLCALLBACK(bool) buslogicR3IsAsyncResetDone(PPDMDEVINS pDevIns)
+{
+    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+
+    if (!buslogicR3AllAsyncIOIsFinished(pDevIns))
+        return false;
+    ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+
+    buslogicHwReset(pThis);
+    return true;
+}
+
+/**
+ * @copydoc FNPDMDEVRESET
+ */
+static DECLCALLBACK(void) buslogicReset(PPDMDEVINS pDevIns)
+{
+    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+
+    ASMAtomicWriteBool(&pThis->fSignalIdle, true);
+    if (!buslogicR3AllAsyncIOIsFinished(pDevIns))
+        PDMDevHlpSetAsyncNotification(pDevIns, buslogicR3IsAsyncResetDone);
+    else
+    {
+        ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+        buslogicHwReset(pThis);
+    }
+}
+
 static DECLCALLBACK(void) buslogicRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     uint32_t i;
@@ -2479,16 +2595,14 @@ static DECLCALLBACK(void) buslogicRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDel
 }
 
 /**
- * Reset notification.
+ * Poweroff notification.
  *
- * @returns VBox status.
- * @param   pDevIns     The device instance data.
+ * @param   pDevIns Pointer to the device instance
  */
-static DECLCALLBACK(void)  buslogicReset(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) buslogicPowerOff(PPDMDEVINS pDevIns)
 {
-    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
-
-    buslogicHwReset(pThis);
+    Log(("buslogicPowerOff\n"));
+    buslogicR3SuspendOrPowerOff(pDevIns);
 }
 
 /**
@@ -2681,7 +2795,8 @@ const PDMDEVREG g_DeviceBusLogic =
     /* pszDescription */
     "BusLogic BT-958 SCSI host adapter.\n",
     /* fFlags */
-    PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
+    PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0 |
+    PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION | PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION,
     /* fClass */
     PDM_DEVREG_CLASS_STORAGE,
     /* cMaxInstances */
@@ -2701,7 +2816,7 @@ const PDMDEVREG g_DeviceBusLogic =
     /* pfnReset */
     buslogicReset,
     /* pfnSuspend */
-    NULL,
+    buslogicSuspend,
     /* pfnResume */
     NULL,
     /* pfnAttach */
@@ -2713,7 +2828,7 @@ const PDMDEVREG g_DeviceBusLogic =
     /* pfnInitComplete */
     NULL,
     /* pfnPowerOff */
-    NULL,
+    buslogicPowerOff,
     /* pfnSoftReset */
     NULL,
     /* u32VersionEnd */
