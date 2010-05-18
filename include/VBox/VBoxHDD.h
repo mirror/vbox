@@ -102,28 +102,29 @@ RT_C_DECLS_BEGIN
 
 
 /**
- * Auxiliary type for describing partitions on raw disks.
+ * Auxiliary type for describing partitions on raw disks. The entries must be
+ * in ascending order (as far as uStart is concerned), and must not overlap.
+ * Note that this does not correspond 1:1 to partitions, it is describing the
+ * general meaning of contiguous areas on the disk.
  */
-typedef struct VBOXHDDRAWPART
+typedef struct VBOXHDDRAWPARTDESC
 {
-    /** Device to use for this partition. Can be the disk device if the offset
-     * field is set appropriately. If this is NULL, then this partition will
-     * not be accessible to the guest. The size of the partition must still
-     * be set correctly. */
+    /** Device to use for this partition/data area. Can be the disk device if
+     * the offset field is set appropriately. If this is NULL, then this
+     * partition will not be accessible to the guest. The size of the data area
+     * must still be set correctly. */
     const char      *pszRawDevice;
-    /** Offset where the partition data starts in this device. */
-    uint64_t        uPartitionStartOffset;
-    /** Offset where the partition data starts in the disk. */
-    uint64_t        uPartitionStart;
-    /** Size of the partition. */
-    uint64_t        cbPartition;
-    /** Size of the partitioning info to prepend. */
-    uint64_t        cbPartitionData;
-    /** Offset where the partitioning info starts in the disk. */
-    uint64_t        uPartitionDataStart;
-    /** Pointer to the partitioning info to prepend. */
+    /** Pointer to the partitioning info. NULL means this is a regular data
+     * area on disk, non-NULL denotes data which should be copied to the
+     * partition data overlay. */
     const void      *pvPartitionData;
-} VBOXHDDRAWPART, *PVBOXHDDRAWPART;
+    /** Offset where the data starts in this device. */
+    uint64_t        uStartOffset;
+    /** Offset where the data starts in the disk. */
+    uint64_t        uStart;
+    /** Size of the data area. */
+    uint64_t        cbData;
+} VBOXHDDRAWPARTDESC, *PVBOXHDDRAWPARTDESC;
 
 /**
  * Auxiliary data structure for creating raw disks.
@@ -139,10 +140,10 @@ typedef struct VBOXHDDRAW
     /** Filename for the raw disk. Ignored for partitioned raw disks.
      * For Linux e.g. /dev/sda, and for Windows e.g. \\\\.\\PhysicalDisk0. */
     const char      *pszRawDisk;
-    /** Number of entries in the partitions array. */
-    unsigned        cPartitions;
-    /** Pointer to the partitions array. */
-    PVBOXHDDRAWPART pPartitions;
+    /** Number of entries in the partition descriptor array. */
+    unsigned        cPartDescs;
+    /** Pointer to the partition descriptor array. */
+    PVBOXHDDRAWPARTDESC pPartDescs;
 } VBOXHDDRAW, *PVBOXHDDRAW;
 
 /** @name VBox HDD container image open mode flags
