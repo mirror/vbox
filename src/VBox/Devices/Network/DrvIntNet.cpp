@@ -1521,7 +1521,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     GetBufferPtrsReq.pSession = NIL_RTR0PTR;
     GetBufferPtrsReq.hIf = pThis->hIf;
     GetBufferPtrsReq.pRing3Buf = NULL;
-    GetBufferPtrsReq.pRing0Buf = NULL;
+    GetBufferPtrsReq.pRing0Buf = NIL_RTR0PTR;
     rc = PDMDrvHlpSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS, &GetBufferPtrsReq, sizeof(GetBufferPtrsReq));
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
