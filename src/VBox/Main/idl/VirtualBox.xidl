@@ -7665,6 +7665,10 @@
       <desc>Number of (logical) CPUs online in the host system.</desc>
     </attribute>
 
+    <attribute name="processorCoreCount" type="unsigned long" readonly="yes">
+      <desc>Number of physical processor cores installed in the host system.</desc>
+    </attribute>
+
     <method name="getProcessorSpeed">
       <desc>Query the (approximate) maximum speed of a specified host CPU in
         Megahertz.
