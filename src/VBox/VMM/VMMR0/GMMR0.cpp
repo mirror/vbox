@@ -3783,6 +3783,8 @@ GMMR0DECL(int) GMMR0SharedModuleCheckRange(PGVM pGVM, PGMMSHAREDMODULE pModule, 
             if (pGlobalRegion->paHCPhysPageID[i] == NIL_GMM_PAGEID)
             {
 new_shared_page:
+                Log(("New shared page guest %RGp host %RHp\n", paPageDesc[i].GCPhys, paPageDesc[i].HCPhys));
+
                 /* Easy case: just change the internal page type. */
                 PGMMPAGE pPage = gmmR0GetPage(pGMM, paPageDesc[i].uHCPhysPageId);
                 if (!pPage)
@@ -3791,7 +3793,6 @@ new_shared_page:
                     rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
                     goto end;
                 }
-                Log(("New shared page guest %RGp host %RHp\n", paPageDesc[i].GCPhys, paPageDesc[i].HCPhys));
 
                 AssertMsg(paPageDesc[i].GCPhys == (pPage->Private.pfn << 12), ("desc %RGp gmm %RGp\n", paPageDesc[i].HCPhys, (pPage->Private.pfn << 12)));
 
@@ -3807,6 +3808,8 @@ new_shared_page:
                 PGMMCHUNK pChunk;
 
                 Assert(paPageDesc[i].uHCPhysPageId != pGlobalRegion->paHCPhysPageID[i]);
+
+                Log(("Replace existing page guest %RGp host %RHp id %x -> id %x\n", paPageDesc[i].GCPhys, paPageDesc[i].HCPhys, paPageDesc[i].uHCPhysPageId, pGlobalRegion->paHCPhysPageID[i]));
 
                 /* Get the shared page source. */
                 PGMMPAGE pPage = gmmR0GetPage(pGMM, pGlobalRegion->paHCPhysPageID[i]);
@@ -3825,7 +3828,7 @@ new_shared_page:
                     goto new_shared_page; /* ugly goto */
                 }
 
-                Log(("Replace existing page guest %RGp host %RHp -> %RHp\n", paPageDesc[i].GCPhys, paPageDesc[i].HCPhys, ((uint64_t)pPage->Shared.pfn) << PAGE_SHIFT));
+                Log(("Replace existing page guest host %RHp -> %RHp\n", paPageDesc[i].HCPhys, ((uint64_t)pPage->Shared.pfn) << PAGE_SHIFT));
 
                 /* Calculate the virtual address of the local page. */
                 pChunk = gmmR0GetChunk(pGMM, paPageDesc[i].uHCPhysPageId >> GMM_CHUNKID_SHIFT);
