@@ -109,31 +109,33 @@ static struct
  */
 static int VBoxServiceUsage(void)
 {
-    RTPrintf("usage: %s [-f|--foreground] [-v|--verbose] [-i|--interval <seconds>]\n"
-             "           [--disable-<service>] [--enable-<service>] [-h|-?|--help]\n", g_pszProgName);
+    RTPrintf("Usage:\n"
+             " %-12s [-f|--foreground] [-v|--verbose] [-i|--interval <seconds>]\n"
+             "              [--disable-<service>] [--enable-<service>] [-h|-?|--help]\n", g_pszProgName);
 #ifdef RT_OS_WINDOWS
-    RTPrintf("           [-r|--register] [-u|--unregister]\n");
+    RTPrintf("              [-r|--register] [-u|--unregister]\n");
 #endif
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
-        RTPrintf("           %s\n", g_aServices[j].pDesc->pszUsage);
+        if (g_aServices[j].pDesc->pszUsage)
+            RTPrintf("%s\n", g_aServices[j].pDesc->pszUsage);
     RTPrintf("\n"
              "Options:\n"
-             "    -i | --interval          The default interval.\n"
-             "    -f | --foreground        Don't daemonzie the program. For debugging.\n"
-             "    -v | --verbose           Increment the verbosity level. For debugging.\n"
-             "    -h | -? | --help         Show this message and exit with status 1.\n"
+             "    -i | --interval         The default interval.\n"
+             "    -f | --foreground       Don't daemonzie the program. For debugging.\n"
+             "    -v | --verbose          Increment the verbosity level. For debugging.\n"
+             "    -h | -? | --help        Show this message and exit with status 1.\n"
              );
 #ifdef RT_OS_WINDOWS
-    RTPrintf("    -r | --register          Installs the service.\n"
-             "    -u | --unregister        Uninstall service.\n");
+    RTPrintf("    -r | --register         Installs the service.\n"
+             "    -u | --unregister       Uninstall service.\n");
 #endif
 
     RTPrintf("\n"
-             "Service specific options:\n");
+             "Service-specific options:\n");
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
     {
-        RTPrintf("    --enable-%-10s Enables the %s service. (default)\n", g_aServices[j].pDesc->pszName, g_aServices[j].pDesc->pszName);
-        RTPrintf("    --disable-%-9s Disables the %s service.\n", g_aServices[j].pDesc->pszName, g_aServices[j].pDesc->pszName);
+        RTPrintf("    --enable-%-14s Enables the %s service. (default)\n", g_aServices[j].pDesc->pszName, g_aServices[j].pDesc->pszName);
+        RTPrintf("    --disable-%-13s Disables the %s service.\n", g_aServices[j].pDesc->pszName, g_aServices[j].pDesc->pszName);
         if (g_aServices[j].pDesc->pszOptions)
             RTPrintf("%s", g_aServices[j].pDesc->pszOptions);
     }
@@ -376,7 +378,7 @@ int VBoxServiceStartServices(unsigned iMain)
 int VBoxServiceStopServices(void)
 {
     int rc = VINF_SUCCESS;
-    int iMain = VBoxServiceGetStartedServices();
+    unsigned iMain = VBoxServiceGetStartedServices();
 
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
         ASMAtomicXchgBool(&g_aServices[j].fShutdown, true);

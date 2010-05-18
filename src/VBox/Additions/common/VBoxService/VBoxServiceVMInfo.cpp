@@ -620,11 +620,11 @@ VBOXSERVICE g_VMInfo =
     /* pszDescription. */
     "Virtual Machine Information",
     /* pszUsage. */
-    "[--vminfo-interval <ms>]"
+    "              [--vminfo-interval <ms>]"
     ,
     /* pszOptions. */
-    "    --vminfo-interval   Specifies the interval at which to retrieve the\n"
-    "                        VM information. The default is 10000 ms.\n"
+    "    --vminfo-interval       Specifies the interval at which to retrieve the\n"
+    "                            VM information. The default is 10000 ms.\n"
     ,
     /* methods */
     VBoxServiceVMInfoPreInit,
