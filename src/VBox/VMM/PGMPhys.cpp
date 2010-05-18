@@ -1005,16 +1005,16 @@ VMMR3DECL(int) PGMR3QueryVMMMemoryStats(PVM pVM, uint64_t *puTotalAllocSize, uin
 VMMR3DECL(int) PGMR3QueryMemoryStats(PVM pVM, uint64_t *pulTotalMem, uint64_t *pulPrivateMem, uint64_t *puTotalSharedMem, uint64_t *puTotalZeroMem)
 {
     if (pulTotalMem)
-        *pulTotalMem = pVM->pgm.s.cAllPages * _4K;
+        *pulTotalMem = (uint64_t)pVM->pgm.s.cAllPages * _4K;
 
     if (pulPrivateMem)
-        *pulPrivateMem = pVM->pgm.s.cPrivatePages * _4K;
+        *pulPrivateMem = (uint64_t)pVM->pgm.s.cPrivatePages * _4K;
 
     if (puTotalSharedMem)
-        *puTotalSharedMem = pVM->pgm.s.cReusedSharedPages * _4K;
+        *puTotalSharedMem = (uint64_t)pVM->pgm.s.cReusedSharedPages * _4K;
 
     if (puTotalZeroMem)
-        *puTotalZeroMem = pVM->pgm.s.cZeroPages * _4K;
+        *puTotalZeroMem = (uint64_t)pVM->pgm.s.cZeroPages * _4K;
 
     Log(("PGMR3QueryMemoryStats: all=%x private=%x reused=%x zero=%x\n", pVM->pgm.s.cAllPages, pVM->pgm.s.cPrivatePages, pVM->pgm.s.cReusedSharedPages, pVM->pgm.s.cZeroPages));
     return VINF_SUCCESS;
