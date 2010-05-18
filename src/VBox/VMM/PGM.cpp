@@ -2329,6 +2329,11 @@ static DECLCALLBACK(void) pgmR3ResetNoMorePhysWritesFlag(PVM pVM, VMSTATE enmSta
  */
 VMMR3DECL(int) PGMR3Term(PVM pVM)
 {
+    /* Must free shared pages here. */
+    pgmLock(pVM);
+    pgmR3PhysRamTerm(pVM);
+    pgmUnlock(pVM);
+
     PGMDeregisterStringFormatTypes();
     return PDMR3CritSectDelete(&pVM->pgm.s.CritSect);
 }
