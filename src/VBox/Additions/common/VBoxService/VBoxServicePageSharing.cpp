@@ -152,12 +152,11 @@ void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule)
                 /* Skip the first region as it only contains the image file header. */
                 if (pRegion != (char *)pModule->Info.modBaseAddr)
                 {
+                    char dummy = 0;
                     /* Touch all pages. */
                     while (pRegion < (char *)MemInfo.BaseAddress + MemInfo.RegionSize)
                     {
-                        char dummy;
-
-                        memcpy(&dummy, pRegion, 1);
+                        dummy += *(char *)pRegion;
                         pRegion += PAGE_SIZE;
                     }
                 }
