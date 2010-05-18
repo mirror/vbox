@@ -322,7 +322,8 @@ setup()
             vboxvideo_src=vboxvideo_drv_18.so
             vboxmouse_src=vboxmouse_drv_18.so
             doxorgconfd="true"
-            setupxorgconf=""
+            # Fedora 13 looks likely to ship without vboxvideo detection
+            test "$system" = "redhat" || setupxorgconf=""
             ;;
         1.6.99.* | 1.7.* )
             begin "Installing X.Org Server 1.7 modules"
