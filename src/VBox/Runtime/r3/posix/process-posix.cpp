@@ -63,6 +63,7 @@
 #include <iprt/pipe.h>
 #include <iprt/socket.h>
 #include <iprt/string.h>
+#include <iprt/mem.h>
 #include "internal/process.h"
 
 
@@ -93,14 +94,17 @@ static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t 
     if (spwd)
         pw->pw_passwd = spwd->sp_pwdp;
 
-    struct crypt_data data;
-    char *pszEncPasswd = crypt_r(pszPasswd, pw->pw_passwd, &data);
+    /* be reentrant */
+    struct crypt_data *data = (struct crypt_data*)RTMemTmpAllocZ(sizeof(*data));
+    char *pszEncPasswd = crypt_r(pszPasswd, pw->pw_passwd, data);
     if (strcmp(pszEncPasswd, pw->pw_passwd))
         return VERR_PERMISSION_DENIED;
+    RTMemTmpFree(data);
 
     *gid = pw->pw_gid;
     *uid = pw->pw_uid;
     return VINF_SUCCESS;
+
 #elif defined(RT_OS_SOLARIS)
     struct passwd *ppw, pw;
     char szBuf[1024];
@@ -124,6 +128,7 @@ static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t 
     *gid = ppw->pw_gid;
     *uid = ppw->pw_uid;
     return VINF_SUCCESS;
+
 #else
     return VERR_PERMISSION_DENIED;
 #endif
