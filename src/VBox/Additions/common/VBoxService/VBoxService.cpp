@@ -454,14 +454,16 @@ static void VBoxServiceWaitSignal(void)
     sigaddset(&signalMask, SIGTERM);
     pthread_sigmask(SIG_BLOCK, &signalMask, NULL);
 
+    int rc;
     do
+    {
         iSignal = -1;
-    while (   sigwait(&signalMask, &iSignal) == -1
-           && (   errno == EINTR
-               || errno == ERESTART
-               || errno == ENOENT));
+        rc = sigwait(&signalMask, &iSignal);
+    }
+    while (   rc == EINTR
+           || rc == ERESTART);
 
-    VBoxServiceVerbose(3, "VBoxServiceWaitSignal: Received signal %d (errno=%d)\n", iSignal, errno);
+    VBoxServiceVerbose(3, "VBoxServiceWaitSignal: Received signal %d (rc=%d)\n", iSignal, rc);
 }
 #endif /* !RT_OS_WINDOWS */
 
