@@ -337,25 +337,36 @@ STDMETHODIMP Guest::InternalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, UL
     *aMemBalloon = mCurrentGuestStat[GUESTSTATTYPE_MEMBALLOON] * (_4K/_1K); /* page (4K) -> 1KB units */
     *aMemCache   = mCurrentGuestStat[GUESTSTATTYPE_MEMCACHE] * (_4K/_1K);     /* page (4K) -> 1KB units */
     *aPageTotal  = mCurrentGuestStat[GUESTSTATTYPE_PAGETOTAL] * (_4K/_1K);   /* page (4K) -> 1KB units */
-    *aMemShared  = 0; /** todo */
 
     Console::SafeVMPtr pVM (mParent);
     if (pVM.isOk())
     {
-        uint64_t uFreeTotal, uAllocTotal, uBalloonedTotal;
+        uint64_t uFreeTotal, uAllocTotal, uBalloonedTotal, uSharedTotal;
         *aMemFreeTotal = 0;
-        int rc = PGMR3QueryVMMMemoryStats(pVM.raw(), &uAllocTotal, &uFreeTotal, &uBalloonedTotal);
+        int rc = PGMR3QueryVMMMemoryStats(pVM.raw(), &uAllocTotal, &uFreeTotal, &uBalloonedTotal, &uSharedTotal);
         AssertRC(rc);
         if (rc == VINF_SUCCESS)
         {
             *aMemAllocTotal   = (ULONG)(uAllocTotal / _1K);  /* bytes -> KB */
             *aMemFreeTotal    = (ULONG)(uFreeTotal / _1K);
             *aMemBalloonTotal = (ULONG)(uBalloonedTotal / _1K);
-            *aMemSharedTotal  = 0; /** todo */
+            *aMemSharedTotal  = (ULONG)(uSharedTotal / _1K);
+        }
+
+        /* Query the missing per-VM memory statistics. */
+        *aMemShared  = 0;
+        uint64_t uTotalMem, uPrivateMem, uSharedMem, uZeroMem;
+        rc = PGMR3QueryMemoryStats(pVM.raw(), &uTotalMem, &uPrivateMem, &uSharedMem, &uZeroMem);
+        if (rc == VINF_SUCCESS)
+        {
+            *aMemShared = (ULONG)(uSharedMem / _1K);
         }
     }
     else
+    {
         *aMemFreeTotal = 0;
+        *aMemShared  = 0;
+    }
 
     return S_OK;
 }

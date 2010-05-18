@@ -158,25 +158,28 @@ namespace pm
         /** Disable metrics collecting (if applicable) */
         virtual int disable();
 
-        virtual int setMemHypervisorStats(ULONG memAlloc, ULONG memFree, ULONG memBallooned)
+        virtual int setMemHypervisorStats(ULONG memAlloc, ULONG memFree, ULONG memBallooned, ULONG memShared)
         {
             mMemAllocVMM     = memAlloc;
             mMemFreeVMM      = memFree;
             mMemBalloonedVMM = memBallooned;
+            mMemSharedVMM    = memShared;
             return S_OK;
         }
 
-        virtual void getMemHypervisorStats(ULONG *pMemAlloc, ULONG *pMemFree, ULONG *pMemBallooned)
+        virtual void getMemHypervisorStats(ULONG *pMemAlloc, ULONG *pMemFree, ULONG *pMemBallooned, ULONG *pMemShared)
         {
             *pMemAlloc     = mMemAllocVMM;
             *pMemFree      = mMemFreeVMM;
             *pMemBallooned = mMemBalloonedVMM;
+            *pMemShared    = mMemSharedVMM;
         }
 
     private:
         ULONG       mMemAllocVMM;
         ULONG       mMemFreeVMM;
         ULONG       mMemBalloonedVMM;
+        ULONG       mMemSharedVMM;
     };
 
     class CollectorGuestHAL : public CollectorHAL
@@ -184,7 +187,7 @@ namespace pm
     public:
         CollectorGuestHAL(Machine *machine, CollectorHAL *hostHAL) : CollectorHAL(), cEnabled(0), mMachine(machine), mConsole(NULL), mGuest(NULL),
                                               mLastTick(0), mHostHAL(hostHAL), mCpuUser(0), mCpuKernel(0), mCpuIdle(0), mMemTotal(0), mMemFree(0),
-                                              mMemBalloon(0), mMemCache(0), mPageTotal(0) {};
+                                              mMemBalloon(0), mMemShared(0), mMemCache(0), mPageTotal(0) {};
         ~CollectorGuestHAL();
 
         virtual int preCollect(const CollectorHints& hints, uint64_t iTick);
@@ -203,11 +206,12 @@ namespace pm
         }
 
         /** Return guest memory information in KB. */
-        void getGuestMemLoad(ULONG *pulMemTotal, ULONG *pulMemFree, ULONG *pulMemBalloon, ULONG *pulMemCache, ULONG *pulPageTotal)
+        void getGuestMemLoad(ULONG *pulMemTotal, ULONG *pulMemFree, ULONG *pulMemBalloon, ULONG *pulMemShared, ULONG *pulMemCache, ULONG *pulPageTotal)
         {
             *pulMemTotal        = mMemTotal;
             *pulMemFree         = mMemFree;
             *pulMemBalloon      = mMemBalloon;
+            *pulMemShared       = mMemShared;
             *pulMemCache        = mMemCache;
             *pulPageTotal       = mPageTotal;
         }
@@ -228,6 +232,7 @@ namespace pm
         ULONG                mMemTotal;
         ULONG                mMemFree;
         ULONG                mMemBalloon;
+        ULONG                mMemShared;
         ULONG                mMemCache;
         ULONG                mPageTotal;
     };
@@ -336,9 +341,9 @@ namespace pm
     class HostRamUsage : public BaseMetric
     {
     public:
-        HostRamUsage(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *used, SubMetric *available, SubMetric *allocVMM, SubMetric *freeVMM, SubMetric *balloonVMM)
-        : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mUsed(used), mAvailable(available), mAllocVMM(allocVMM), mFreeVMM(freeVMM), mBalloonVMM(balloonVMM) {};
-        ~HostRamUsage() { delete mTotal; delete mUsed; delete mAvailable; delete mAllocVMM; delete mFreeVMM; delete mBalloonVMM; };
+        HostRamUsage(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *used, SubMetric *available, SubMetric *allocVMM, SubMetric *freeVMM, SubMetric *balloonVMM, SubMetric *sharedVMM)
+        : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mUsed(used), mAvailable(available), mAllocVMM(allocVMM), mFreeVMM(freeVMM), mBalloonVMM(balloonVMM), mSharedVMM(sharedVMM) {};
+        ~HostRamUsage() { delete mTotal; delete mUsed; delete mAvailable; delete mAllocVMM; delete mFreeVMM; delete mBalloonVMM; delete mSharedVMM; };
 
         void init(ULONG period, ULONG length);
         void preCollect(CollectorHints& hints, uint64_t iTick);
@@ -354,6 +359,7 @@ namespace pm
         SubMetric *mAllocVMM;
         SubMetric *mFreeVMM;
         SubMetric *mBalloonVMM;
+        SubMetric *mSharedVMM;
     };
 
     class MachineCpuLoad : public BaseMetric
@@ -433,9 +439,9 @@ namespace pm
     class GuestRamUsage : public BaseMetric
     {
     public:
-        GuestRamUsage(CollectorGuestHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *free, SubMetric *balloon, SubMetric *cache, SubMetric *pagedtotal)
-        : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mFree(free), mBallooned(balloon), mCache(cache), mPagedTotal(pagedtotal), mGuestHAL(hal) {};
-        ~GuestRamUsage() { delete mTotal; delete mFree; delete mBallooned; delete mCache; delete mPagedTotal; };
+        GuestRamUsage(CollectorGuestHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *free, SubMetric *balloon, SubMetric *shared, SubMetric *cache, SubMetric *pagedtotal)
+        : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mFree(free), mBallooned(balloon), mShared(shared), mCache(cache), mPagedTotal(pagedtotal), mGuestHAL(hal) {};
+        ~GuestRamUsage() { delete mTotal; delete mFree; delete mBallooned; delete mShared; delete mCache; delete mPagedTotal; };
 
         void init(ULONG period, ULONG length);
         void preCollect(CollectorHints& hints, uint64_t iTick);
@@ -445,7 +451,7 @@ namespace pm
         ULONG getMaxValue() { return INT32_MAX; };
         ULONG getScale() { return 1; }
     private:
-        SubMetric *mTotal, *mFree, *mBallooned, *mCache, *mPagedTotal;
+        SubMetric *mTotal, *mFree, *mBallooned, *mCache, *mPagedTotal, *mShared;
         CollectorGuestHAL *mGuestHAL;
     };
 

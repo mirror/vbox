@@ -289,7 +289,7 @@ GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, GMMBALLOONACTION enmAction, uint32_
 /**
  * @see GMMR0QueryVMMMemoryStatsReq
  */
-GMMR3DECL(int)  GMMR3QueryHypervisorMemoryStats(PVM pVM, uint64_t *pcTotalAllocPages, uint64_t *pcTotalFreePages, uint64_t *pcTotalBalloonPages)
+GMMR3DECL(int)  GMMR3QueryHypervisorMemoryStats(PVM pVM, uint64_t *pcTotalAllocPages, uint64_t *pcTotalFreePages, uint64_t *pcTotalBalloonPages, uint64_t *puTotalBalloonSize)
 {
     GMMMEMSTATSREQ Req;
     Req.Hdr.u32Magic     = SUPVMMR0REQHDR_MAGIC;
@@ -297,10 +297,12 @@ GMMR3DECL(int)  GMMR3QueryHypervisorMemoryStats(PVM pVM, uint64_t *pcTotalAllocP
     Req.cAllocPages      = 0;
     Req.cFreePages       = 0;
     Req.cBalloonedPages  = 0;
+    Req.cSharedPages     = 0;
 
     *pcTotalAllocPages   = 0;
     *pcTotalFreePages    = 0;
     *pcTotalBalloonPages = 0;
+    *puTotalBalloonSize  = 0;
 
     /* Must be callable from any thread, so can't use VMMR3CallR0. */
     int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0, VMMR0_DO_GMM_QUERY_HYPERVISOR_MEM_STATS, 0, &Req.Hdr);
@@ -309,6 +311,7 @@ GMMR3DECL(int)  GMMR3QueryHypervisorMemoryStats(PVM pVM, uint64_t *pcTotalAllocP
         *pcTotalAllocPages   = Req.cAllocPages;
         *pcTotalFreePages    = Req.cFreePages;
         *pcTotalBalloonPages = Req.cBalloonedPages;
+        *puTotalBalloonSize  = Req.cSharedPages;
     }
     return rc;
 }

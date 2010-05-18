@@ -504,6 +504,8 @@ typedef struct GMM
     uint64_t            cAllocatedPages;
     /** The number of pages that are shared. A subset of cAllocatedPages. */
     uint64_t            cSharedPages;
+    /** The number of pages that are actually shared between VMs. */
+    uint64_t            cDuplicatePages;
     /** The number of pages that are shared that has been left behind by
      * VMs not doing proper cleanups. */
     uint64_t            cLeftBehindSharedPages;
@@ -851,6 +853,7 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
             pGMM->cOverCommittedPages = 0;
             pGMM->cAllocatedPages = 0;
             pGMM->cSharedPages = 0;
+            pGMM->cDuplicatePages = 0;
             pGMM->cLeftBehindSharedPages = 0;
             pGMM->cChunks = 0;
             pGMM->cBalloonedPages = 0;
@@ -2126,7 +2129,14 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
                             pGVM->gmm.s.cSharedPages--;
                             pGVM->gmm.s.Allocated.cBasePages--;
                             if (!--pPage->Shared.cRefs)
+                            {
                                 gmmR0FreeSharedPage(pGMM, paPages[iPage].idSharedPage, pPage);
+                            }
+                            else
+                            {
+                                Assert(pGMM->cDuplicatePages);
+                                pGMM->cDuplicatePages--;
+                            }
 
                             paPages[iPage].idSharedPage = NIL_GMM_PAGEID;
                         }
@@ -2667,6 +2677,8 @@ DECLINLINE(void) gmmR0UseSharedPage(PGMM pGMM, PGVM pGVM, PGMMPAGE pPage)
     Assert(pGMM->cSharedPages > 0);
     Assert(pGMM->cAllocatedPages > 0);
 
+    pGMM->cDuplicatePages++;
+
     pPage->Shared.cRefs++;
     pGVM->gmm.s.cSharedPages++;
     pGVM->gmm.s.Allocated.cBasePages++;
@@ -3077,6 +3089,7 @@ GMMR0DECL(int) GMMR0QueryHypervisorMemoryStatsReq(PVM pVM, PGMMMEMSTATSREQ pReq)
     pReq->cFreePages      = (pGMM->cChunks << (GMM_CHUNK_SHIFT- PAGE_SHIFT)) - pGMM->cAllocatedPages;
     pReq->cBalloonedPages = pGMM->cBalloonedPages;
     pReq->cMaxPages       = pGMM->cMaxPages;
+    pReq->cSharedPages    = pGMM->cDuplicatePages;
     GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
 
     return VINF_SUCCESS;
