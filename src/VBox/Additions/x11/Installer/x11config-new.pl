@@ -22,7 +22,7 @@ my $old_mouse_dev = "/dev/psaux";
 
 foreach $arg (@ARGV)
 {
-    if (lc($arg) eq "--autoMouse")
+    if (lc($arg) eq "--automouse")
     {
         $auto_mouse = 1;
     }
