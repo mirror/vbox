@@ -988,6 +988,7 @@ VMMR3DECL(int) PGMR3QueryVMMMemoryStats(PVM pVM, uint64_t *puTotalAllocSize, uin
     if (puTotalSharedSize)
         *puTotalSharedSize = cSharedPages * _4K;
 
+    Log(("PGMR3QueryVMMMemoryStats: all=%x free=%x ballooned=%x shared=%x\n", cAllocPages, cFreePages, cBalloonPages, cSharedPages));
     return VINF_SUCCESS;
 }
 
