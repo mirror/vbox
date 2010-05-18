@@ -156,7 +156,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--name <name>]\n"
                  "                            [--ostype <ostype>]\n"
                  "                            [--memory <memorysize in MB>]\n"
-                 "                            [--pagefusion on|off\n"
+                 "                            [--pagefusion on|off]\n"
                  "                            [--vram <vramsize in MB>]\n"
                  "                            [--acpi on|off]\n"
                  "                            [--ioapic on|off]\n"
