@@ -95,7 +95,7 @@ struct Medium::Data
           autoReset(false),
           setImageId(false),
           setParentId(false),
-          hostDrive(FALSE),
+          hostDrive(false),
           implicit(false),
           numCreateDiffTasks(0),
           vdDiskIfaces(NULL)
@@ -133,15 +133,15 @@ struct Medium::Data
 
     HDDOpenMode hddOpenMode;
 
-    BOOL autoReset : 1;
+    bool autoReset : 1;
 
     /** the following members are invalid after changing UUID on open */
-    BOOL setImageId : 1;
-    BOOL setParentId : 1;
+    bool setImageId : 1;
+    bool setParentId : 1;
     const Guid imageId;
     const Guid parentId;
 
-    BOOL hostDrive : 1;
+    bool hostDrive : 1;
 
     typedef std::map <Bstr, Bstr> PropertyMap;
     PropertyMap properties;
@@ -746,7 +746,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     m->state = MediumState_NotCreated;
 
     /* cannot be a host drive */
-    m->hostDrive = FALSE;
+    m->hostDrive = false;
 
     /* No storage unit is created yet, no need to queryInfo() */
 
@@ -834,7 +834,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     m->devType = aDeviceType;
 
     /* cannot be a host drive */
-    m->hostDrive = FALSE;
+    m->hostDrive = false;
 
     /* remember the open mode (defaults to ReadWrite) */
     m->hddOpenMode = enOpenMode;
@@ -846,9 +846,9 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     if (FAILED(rc)) return rc;
 
     /* save the new uuid values, will be used by queryInfo() */
-    m->setImageId = aSetImageId;
+    m->setImageId = !!aSetImageId;
     unconst(m->imageId) = aImageId;
-    m->setParentId = aSetParentId;
+    m->setParentId = !!aSetParentId;
     unconst(m->parentId) = aParentId;
 
     /* get all the information about the medium from the storage unit */
@@ -927,7 +927,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     unconst(m->id) = data.uuid;
 
     /* assume not a host drive */
-    m->hostDrive = FALSE;
+    m->hostDrive = false;
 
     /* optional */
     m->strDescription = data.strDescription;
@@ -1547,8 +1547,8 @@ STDMETHODIMP Medium::COMGETTER(AutoReset)(BOOL *aAutoReset)
 
     if (m->pParent)
         *aAutoReset = FALSE;
-
-    *aAutoReset = m->autoReset;
+    else
+        *aAutoReset = m->autoReset;
 
     return S_OK;
 }
@@ -1566,9 +1566,9 @@ STDMETHODIMP Medium::COMSETTER(AutoReset)(BOOL aAutoReset)
                         tr("Hard disk '%s' is not differencing"),
                         m->strLocationFull.raw());
 
-    if (m->autoReset != aAutoReset)
+    if (m->autoReset != !!aAutoReset)
     {
-        m->autoReset = aAutoReset;
+        m->autoReset = !!aAutoReset;
 
         return m->pVirtualBox->saveSettings();
     }
@@ -3011,7 +3011,7 @@ HRESULT Medium::saveSettings(settings::Medium &data)
 
     /* optional, only for diffs, default is false */
     if (m->pParent)
-        data.fAutoReset = !!m->autoReset;
+        data.fAutoReset = m->autoReset;
     else
         data.fAutoReset = false;
 
@@ -5400,7 +5400,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
         /* back to NotCreated on failure */
         pTarget->m->state = MediumState_NotCreated;
 
-        pTarget->m->autoReset = FALSE;
+        pTarget->m->autoReset = false;
 
         /* reset UUID to prevent it from being reused next time */
         if (fGenerateUuid)
