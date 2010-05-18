@@ -3542,6 +3542,7 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
 
             for (unsigned i = 0; i < cRegions; i++)
             {
+                Log(("New region %d base=%RGv size %x\n", i, pRegions[i].GCRegionAddr, pRegions[i].cbRegion));
                 pGlobalModule->aRegions[i].GCRegionAddr      = pRegions[i].GCRegionAddr;
                 pGlobalModule->aRegions[i].cbRegion          = pRegions[i].cbRegion;
                 pGlobalModule->aRegions[i].u32Alignment      = 0;
