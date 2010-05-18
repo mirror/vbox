@@ -2626,7 +2626,7 @@ DECLHIDDEN(bool) vboxNetFltWinMatchPackets(PNDIS_PACKET pPacket1, PNDIS_PACKET p
             }
 
             ucbLength2Match = MIN(ucbMatch, cbLength1);
-            ucbLength2Match = MIN(ucbMatch, cbLength2);
+            ucbLength2Match = MIN(ucbLength2Match, cbLength2);
 
             if(memcmp((PVOID*)pMemBuf1, (PVOID*)pMemBuf2, ucbLength2Match))
             {
@@ -2728,7 +2728,7 @@ DECLHIDDEN(bool) vboxNetFltWinMatchPacketAndSG(PNDIS_PACKET pPacket, PINTNETSG p
             }
 
             ucbLength2Match = MIN(ucbMatch, cbLength1);
-            ucbLength2Match = MIN(ucbMatch, cbLength2);
+            ucbLength2Match = MIN(ucbLength2Match, cbLength2);
 
             if(memcmp((PVOID*)pMemBuf1, (PVOID*)pMemBuf2, ucbLength2Match))
             {
@@ -2817,7 +2817,7 @@ static bool vboxNetFltWinMatchSGs(PINTNETSG pSG1, PINTNETSG pSG2, const INT cbMa
             }
 
             ucbLength2Match = MIN(ucbMatch, cbLength1);
-            ucbLength2Match = MIN(ucbMatch, cbLength2);
+            ucbLength2Match = MIN(ucbLength2Match, cbLength2);
 
             if(memcmp(pMemBuf1, pMemBuf2, ucbLength2Match))
             {

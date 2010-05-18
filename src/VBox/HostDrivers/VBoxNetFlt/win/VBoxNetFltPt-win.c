@@ -1353,9 +1353,10 @@ vboxNetFltWinPtReceiveActive(
             pLb = vboxNetFltWinLbSearchLoopBackBySG(pAdapt, pSG, false);
             if(pLb)
             {
+#ifndef DEBUG_NETFLT_RECV_NOPACKET
                 /* should not be here */
                 Assert(0);
-
+#endif
                 if(!vboxNetFltWinLbIsFromIntNet(pLb))
                 {
                     PNDIS_PACKET pMyPacket;
@@ -1701,7 +1702,7 @@ vboxNetFltWinPtReceive(
                     if(bNetFltActive)
                     {
 #ifndef VBOX_LOOPBACK_USEFLAGS
-                        pLb = vboxNetFltWinLbSearchLoopBack(pAdapt, pPacket, true /* ??? no need to keep it, so remove */);
+                        pLb = vboxNetFltWinLbSearchLoopBack(pAdapt, pPacket, false);
                         if(!pLb)
 #endif
                         {
@@ -2030,7 +2031,7 @@ vboxNetFltWinPtReceivePacket(
             if(bNetFltActive)
             {
 #ifndef VBOX_LOOPBACK_USEFLAGS
-                PNDIS_PACKET pLb = vboxNetFltWinLbSearchLoopBack(pAdapt, pPacket, true /* ??? no need to keep it, so remove */);
+                PNDIS_PACKET pLb = vboxNetFltWinLbSearchLoopBack(pAdapt, pPacket, false);
                 if(!pLb)
 #endif
                 {
