@@ -3620,7 +3620,9 @@ GMMR0DECL(int)  GMMR0RegisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMREGISTE
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertMsgReturn(pReq->Hdr.cbReq >= sizeof(*pReq) && pReq->Hdr.cbReq == RT_UOFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[pReq->cRegions]), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
-    return GMMR0RegisterSharedModule(pVM, idCpu, pReq->enmGuestOS, pReq->szName, pReq->szVersion, pReq->GCBaseAddr, pReq->cbModule, pReq->cRegions, pReq->aRegions);
+    /* Pass back return code in the request packet to preserve informational codes. (VMMR3CallR0 chokes on them) */
+    pReq->rc = GMMR0RegisterSharedModule(pVM, idCpu, pReq->enmGuestOS, pReq->szName, pReq->szVersion, pReq->GCBaseAddr, pReq->cbModule, pReq->cRegions, pReq->aRegions);
+    return VINF_SUCCESS;
 }
 
 /**
