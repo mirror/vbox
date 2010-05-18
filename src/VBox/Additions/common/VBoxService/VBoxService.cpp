@@ -458,7 +458,8 @@ static void VBoxServiceWaitSignal(void)
         iSignal = -1;
     while (   sigwait(&signalMask, &iSignal) == -1
            && (   errno == EINTR
-               || errno == ERESTART));
+               || errno == ERESTART
+               || errno == ENOENT));
 
     VBoxServiceVerbose(3, "VBoxServiceWaitSignal: Received signal %d (errno=%d)\n", iSignal, errno);
 }
