@@ -114,10 +114,8 @@ static VBOXNETFLTGLOBALS g_VBoxNetFltGlobals;
 volatile static bool g_bIdcInitialized;
 INIT_IDC_INFO g_InitIdcInfo;
 
-#ifdef VBOX_LOOPBACK_USEFLAGS
 UINT g_fPacketDontLoopBack;
 UINT g_fPacketIsLoopedBack;
-#endif
 
 #define LIST_ENTRY_2_JOB(pListEntry) \
     ( (PJOB)((uint8_t *)(pListEntry) - RT_OFFSETOF(JOB, ListEntry)) )
@@ -1947,10 +1945,8 @@ DriverEntry(
 {
     NDIS_STATUS                        Status = NDIS_STATUS_SUCCESS;
     int rc;
-#ifdef VBOX_LOOPBACK_USEFLAGS
     ULONG MjVersion;
     ULONG MnVersion;
-#endif
 
     NdisAllocateSpinLock(&g_GlobalLock);
 
@@ -1966,7 +1962,6 @@ DriverEntry(
     AssertRC(rc);
     if(RT_SUCCESS(rc))
     {
-#ifdef VBOX_LOOPBACK_USEFLAGS
         PsGetVersion(&MjVersion, &MnVersion,
           NULL, /* PULONG  BuildNumber  OPTIONAL */
           NULL /* PUNICODE_STRING  CSDVersion  OPTIONAL */
@@ -1981,7 +1976,6 @@ DriverEntry(
         }
 
         g_fPacketIsLoopedBack = NDIS_FLAGS_IS_LOOPBACK_PACKET;
-#endif
 
         Status = vboxNetFltWinJobInitQueue(&g_JobQueue);
         Assert(Status == STATUS_SUCCESS);
@@ -3477,6 +3471,14 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
         if (pPacket)
         {
             NDIS_STATUS fStatus;
+
+#ifndef VBOX_LOOPBACK_USEFLAGS
+            /* force "don't loopback" flags to prevent loopback branch invocation in any case
+             * to avoid ndis misbehave */
+            NdisGetPacketFlags(pPacket) |= g_fPacketDontLoopBack;
+#else
+            /* this is done by default in vboxNetFltWinNdisPacketFromSG */
+#endif
 
 #if defined(DEBUG_NETFLT_PACKETS) || !defined(VBOX_LOOPBACK_USEFLAGS)
             vboxNetFltWinLbPutSendPacket(pAdapt, pPacket, true /* bFromIntNet */);
