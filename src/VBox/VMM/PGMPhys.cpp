@@ -966,13 +966,14 @@ VMMR3DECL(int) PGMR3PhysChangeMemBalloon(PVM pVM, bool fInflate, unsigned cPages
  * @param   puTotalAllocSize    Pointer to total allocated  memory inside VMMR0 (in bytes)
  * @param   puTotalFreeSize     Pointer to total free (allocated but not used yet) memory inside VMMR0 (in bytes)
  * @param   puTotalBalloonSize  Pointer to total ballooned memory inside VMMR0 (in bytes)
+ * @param   puTotalSharedSize   Pointer to total shared memory inside VMMR0 (in bytes)
  */
-VMMR3DECL(int) PGMR3QueryVMMMemoryStats(PVM pVM, uint64_t *puTotalAllocSize, uint64_t *puTotalFreeSize, uint64_t *puTotalBalloonSize)
+VMMR3DECL(int) PGMR3QueryVMMMemoryStats(PVM pVM, uint64_t *puTotalAllocSize, uint64_t *puTotalFreeSize, uint64_t *puTotalBalloonSize, uint64_t *puTotalSharedSize)
 {
     int rc;
 
-    uint64_t cAllocPages = 0, cFreePages = 0, cBalloonPages = 0;
-    rc = GMMR3QueryHypervisorMemoryStats(pVM, &cAllocPages, &cFreePages, &cBalloonPages);
+    uint64_t cAllocPages = 0, cFreePages = 0, cBalloonPages = 0, cSharedPages = 0;
+    rc = GMMR3QueryHypervisorMemoryStats(pVM, &cAllocPages, &cFreePages, &cBalloonPages, &cSharedPages);
     AssertRCReturn(rc, rc);
 
     if (puTotalAllocSize)
@@ -983,6 +984,36 @@ VMMR3DECL(int) PGMR3QueryVMMMemoryStats(PVM pVM, uint64_t *puTotalAllocSize, uin
 
     if (puTotalBalloonSize)
         *puTotalBalloonSize = cBalloonPages * _4K;
+
+    if (puTotalSharedSize)
+        *puTotalSharedSize = cSharedPages * _4K;
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Query memory stats for the VM
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   puTotalAllocSize    Pointer to total allocated  memory inside the VM (in bytes)
+ * @param   puTotalFreeSize     Pointer to total free (allocated but not used yet) memory inside the VM (in bytes)
+ * @param   puTotalBalloonSize  Pointer to total ballooned memory inside the VM (in bytes)
+ * @param   puTotalSharedSize   Pointer to total shared memory inside the VM (in bytes)
+ */
+VMMR3DECL(int) PGMR3QueryMemoryStats(PVM pVM, uint64_t *pulTotalMem, uint64_t *pulPrivateMem, uint64_t *puTotalSharedMem, uint64_t *puTotalZeroMem)
+{
+    if (pulTotalMem)
+        *pulTotalMem = pVM->pgm.s.cAllPages * _4K;
+
+    if (pulPrivateMem)
+        *pulPrivateMem = pVM->pgm.s.cPrivatePages * _4K;
+
+    if (puTotalSharedMem)
+        *puTotalSharedMem = pVM->pgm.s.cReusedSharedPages * _4K;
+
+    if (puTotalZeroMem)
+        *puTotalZeroMem = pVM->pgm.s.cZeroPages * _4K;
 
     return VINF_SUCCESS;
 }

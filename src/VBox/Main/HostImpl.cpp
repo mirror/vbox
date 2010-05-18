@@ -2355,6 +2355,8 @@ void Host::registerMetrics(PerformanceCollector *aCollector)
         "Total physical memory free inside the hypervisor.");
     pm::SubMetric *ramVMMBallooned  = new pm::SubMetric("RAM/VMM/Ballooned",
         "Total physical memory ballooned by the hypervisor.");
+    pm::SubMetric *ramVMMShared = new pm::SubMetric("RAM/VMM/Shared",
+        "Total physical memory shared between VMs.");
 
 
     /* Create and register base metrics */
@@ -2367,7 +2369,7 @@ void Host::registerMetrics(PerformanceCollector *aCollector)
     pm::BaseMetric *cpuMhz = new pm::HostCpuMhz(hal, objptr, cpuMhzSM);
     aCollector->registerBaseMetric (cpuMhz);
     pm::BaseMetric *ramUsage = new pm::HostRamUsage(hal, objptr, ramUsageTotal, ramUsageUsed,
-                                           ramUsageFree, ramVMMUsed, ramVMMFree, ramVMMBallooned);
+                                           ramUsageFree, ramVMMUsed, ramVMMFree, ramVMMBallooned, ramVMMShared);
     aCollector->registerBaseMetric (ramUsage);
 
     aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser, 0));
@@ -2448,6 +2450,14 @@ void Host::registerMetrics(PerformanceCollector *aCollector)
     aCollector->registerMetric(new pm::Metric(ramUsage, ramVMMBallooned,
                                               new pm::AggregateMin()));
     aCollector->registerMetric(new pm::Metric(ramUsage, ramVMMBallooned,
+                                              new pm::AggregateMax()));
+
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramVMMShared, 0));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramVMMShared,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramVMMShared,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramVMMShared,
                                               new pm::AggregateMax()));
 }
 
