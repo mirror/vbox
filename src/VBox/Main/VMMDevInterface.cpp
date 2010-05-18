@@ -493,6 +493,33 @@ DECLCALLBACK(int) vmmdevQueryBalloonSize(PPDMIVMMDEVCONNECTOR pInterface, uint32
 }
 
 /**
+ * Query the current page fusion setting
+ *
+ * @returns VBox status code.
+ * @param   pInterface          Pointer to this interface.
+ * @param   pfPageFusionEnabled Pointer to boolean
+ * @thread  The emulation thread.
+ */
+DECLCALLBACK(int) vmmdevIsPageFusionEnabled(PPDMIVMMDEVCONNECTOR pInterface, bool *pfPageFusionEnabled)
+{
+    PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
+    BOOL           val = 0;
+
+    if (!pfPageFusionEnabled)
+        return VERR_INVALID_POINTER;
+
+    /* store that information in IGuest */
+    Guest* guest = pDrv->pVMMDev->getParent()->getGuest();
+    Assert(guest);
+    if (!guest)
+        return VERR_INVALID_PARAMETER; /** @todo wrong error */
+
+    guest->COMGETTER(PageFusionEnabled)(&val);
+    *pfPageFusionEnabled = !!val;
+    return VINF_SUCCESS;
+}
+
+/**
  * Report new guest statistics
  *
  * @returns VBox status code.
@@ -748,6 +775,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
     pData->Connector.pfnReportStatistics              = vmmdevReportStatistics;
     pData->Connector.pfnQueryStatisticsInterval       = vmmdevQueryStatisticsInterval;
     pData->Connector.pfnQueryBalloonSize              = vmmdevQueryBalloonSize;
+    pData->Connector.pfnIsPageFusionEnabled           = vmmdevIsPageFusionEnabled;
 
 #ifdef VBOX_WITH_HGCM
     pData->HGCMConnector.pfnConnect                   = iface_hgcmConnect;

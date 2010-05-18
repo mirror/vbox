@@ -2257,9 +2257,19 @@ typedef struct PDMIVMMDEVCONNECTOR
      */
     DECLR3CALLBACKMEMBER(int, pfnQueryBalloonSize,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pcbBalloon));
 
+    /**
+     * Query the current page fusion setting
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to this interface.
+     * @param   pfPageFusionEnabled Pointer to boolean
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIsPageFusionEnabled,(PPDMIVMMDEVCONNECTOR pInterface, bool *pfPageFusionEnabled));
+
 } PDMIVMMDEVCONNECTOR;
 /** PDMIVMMDEVCONNECTOR interface ID. */
-#define PDMIVMMDEVCONNECTOR_IID                 "1c300d1b-5938-42bb-8acb-46ecfe483db7"
+#define PDMIVMMDEVCONNECTOR_IID                 "aff90240-a443-434e-9132-80c186ab97d4"
 
 
 /** Pointer to a network connector interface */

@@ -8402,7 +8402,7 @@
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="8aa950f6-668c-4388-b251-3809b404e862"
+    uuid="e3f6727e-a09b-41ea-a824-864a176472f3"
     wsmap="struct"
   >
     <desc>
@@ -8559,6 +8559,10 @@
 
     <attribute name="memoryBalloonSize" type="unsigned long">
       <desc>Guest system memory balloon size in megabytes (transient property).</desc>
+    </attribute>
+
+    <attribute name="pageFusionEnabled" type="boolean" readonly="yes">
+      <desc>Flag whether page fusion is enabled or not.</desc>
     </attribute>
 
     <attribute name="statisticsUpdateInterval" type="unsigned long">
