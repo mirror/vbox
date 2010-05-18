@@ -3480,34 +3480,21 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
          * file, write the partition information to a flat extent and
          * open all the (flat) raw disk partitions. */
 
-        /* First pass over the partitions to determine how many
-         * extents we need. One partition can require up to 4 extents.
-         * One to skip over unpartitioned space, one for the
-         * partitioning data, one to skip over unpartitioned space
-         * and one for the partition data. */
+        /* First pass over the partition data areas to determine how many
+         * extents we need. One data area can require up to 2 extents, as
+         * it might be necessary to skip over unpartitioned space. */
         unsigned cExtents = 0;
         uint64_t uStart = 0;
-        for (unsigned i = 0; i < pRaw->cPartitions; i++)
+        for (unsigned i = 0; i < pRaw->cPartDescs; i++)
         {
-            PVBOXHDDRAWPART pPart = &pRaw->pPartitions[i];
-            if (pPart->cbPartitionData)
-            {
-                if (uStart > pPart->uPartitionDataStart)
-                    return vmdkError(pImage, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("VMDK: cannot go backwards for partitioning information in '%s'"), pImage->pszFilename);
-                else if (uStart != pPart->uPartitionDataStart)
-                    cExtents++;
-                uStart = pPart->uPartitionDataStart + pPart->cbPartitionData;
+            PVBOXHDDRAWPARTDESC pPart = &pRaw->pPartDescs[i];
+            if (uStart > pPart->uStart)
+                return vmdkError(pImage, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("VMDK: incorrect partition data area ordering set up by the caller in '%s'"), pImage->pszFilename);
+
+            if (uStart < pPart->uStart)
                 cExtents++;
-            }
-            if (pPart->cbPartition)
-            {
-                if (uStart > pPart->uPartitionStart)
-                    return vmdkError(pImage, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("VMDK: cannot go backwards for partition data in '%s'"), pImage->pszFilename);
-                else if (uStart != pPart->uPartitionStart)
-                    cExtents++;
-                uStart = pPart->uPartitionStart + pPart->cbPartition;
-                cExtents++;
-            }
+            uStart = pPart->uStart + pPart->cbData;
+            cExtents++;
         }
         /* Another extent for filling up the rest of the image. */
         if (uStart != cbSize)
@@ -3543,24 +3530,27 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
         uint64_t uPartOffset = 0;
         cExtents = 0;
         uStart = 0;
-        for (unsigned i = 0; i < pRaw->cPartitions; i++)
+        for (unsigned i = 0; i < pRaw->cPartDescs; i++)
         {
-            PVBOXHDDRAWPART pPart = &pRaw->pPartitions[i];
-            if (pPart->cbPartitionData)
+            PVBOXHDDRAWPARTDESC pPart = &pRaw->pPartDescs[i];
+            pExtent = &pImage->pExtents[cExtents++];
+
+            if (uStart < pPart->uStart)
             {
-                if (uStart != pPart->uPartitionDataStart)
-                {
-                    pExtent = &pImage->pExtents[cExtents++];
-                    pExtent->pszBasename = NULL;
-                    pExtent->pszFullname = NULL;
-                    pExtent->enmType = VMDKETYPE_ZERO;
-                    pExtent->cNominalSectors = VMDK_BYTE2SECTOR(pPart->uPartitionDataStart - uStart);
-                    pExtent->uSectorOffset = 0;
-                    pExtent->enmAccess = VMDKACCESS_READWRITE;
-                    pExtent->fMetaDirty = false;
-                }
-                uStart = pPart->uPartitionDataStart + pPart->cbPartitionData;
+                pExtent->pszBasename = NULL;
+                pExtent->pszFullname = NULL;
+                pExtent->enmType = VMDKETYPE_ZERO;
+                pExtent->cNominalSectors = VMDK_BYTE2SECTOR(pPart->uStart - uStart);
+                pExtent->uSectorOffset = 0;
+                pExtent->enmAccess = VMDKACCESS_READWRITE;
+                pExtent->fMetaDirty = false;
+                /* go to next extent */
                 pExtent = &pImage->pExtents[cExtents++];
+            }
+            uStart = pPart->uStart + pPart->cbData;
+
+            if (pPart->pvPartitionData)
+            {
                 /* Set up basename for extent description. Can't use StrDup. */
                 size_t cbBasename = strlen(pszPartition) + 1;
                 char *pszBasename = (char *)RTMemTmpAlloc(cbBasename);
@@ -3584,7 +3574,7 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
                     return rc;
                 pExtent->pszFullname = pszFullname;
                 pExtent->enmType = VMDKETYPE_FLAT;
-                pExtent->cNominalSectors = VMDK_BYTE2SECTOR(pPart->cbPartitionData);
+                pExtent->cNominalSectors = VMDK_BYTE2SECTOR(pPart->cbData);
                 pExtent->uSectorOffset = uPartOffset;
                 pExtent->enmAccess = VMDKACCESS_READWRITE;
                 pExtent->fMetaDirty = false;
@@ -3598,26 +3588,13 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
                 rc = vmdkFileWriteAt(pExtent->pFile,
                                      VMDK_SECTOR2BYTE(uPartOffset),
                                      pPart->pvPartitionData,
-                                     pPart->cbPartitionData, NULL);
+                                     pPart->cbData, NULL);
                 if (RT_FAILURE(rc))
                     return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not write partition data to '%s'"), pExtent->pszFullname);
-                uPartOffset += VMDK_BYTE2SECTOR(pPart->cbPartitionData);
+                uPartOffset += VMDK_BYTE2SECTOR(pPart->cbData);
             }
-            if (pPart->cbPartition)
+            else
             {
-                if (uStart != pPart->uPartitionStart)
-                {
-                    pExtent = &pImage->pExtents[cExtents++];
-                    pExtent->pszBasename = NULL;
-                    pExtent->pszFullname = NULL;
-                    pExtent->enmType = VMDKETYPE_ZERO;
-                    pExtent->cNominalSectors = VMDK_BYTE2SECTOR(pPart->uPartitionStart - uStart);
-                    pExtent->uSectorOffset = 0;
-                    pExtent->enmAccess = VMDKACCESS_READWRITE;
-                    pExtent->fMetaDirty = false;
-                }
-                uStart = pPart->uPartitionStart + pPart->cbPartition;
-                pExtent = &pImage->pExtents[cExtents++];
                 if (pPart->pszRawDevice)
                 {
                     /* Set up basename for extent descr. Can't use StrDup. */
@@ -3632,8 +3609,8 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
                     if (!pExtent->pszFullname)
                         return VERR_NO_MEMORY;
                     pExtent->enmType = VMDKETYPE_FLAT;
-                    pExtent->cNominalSectors = VMDK_BYTE2SECTOR(pPart->cbPartition);
-                    pExtent->uSectorOffset = VMDK_BYTE2SECTOR(pPart->uPartitionStartOffset);
+                    pExtent->cNominalSectors = VMDK_BYTE2SECTOR(pPart->cbData);
+                    pExtent->uSectorOffset = VMDK_BYTE2SECTOR(pPart->uStartOffset);
                     pExtent->enmAccess = VMDKACCESS_READWRITE;
                     pExtent->fMetaDirty = false;
 
@@ -3649,7 +3626,7 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
                     pExtent->pszBasename = NULL;
                     pExtent->pszFullname = NULL;
                     pExtent->enmType = VMDKETYPE_ZERO;
-                    pExtent->cNominalSectors = VMDK_BYTE2SECTOR(pPart->cbPartition);
+                    pExtent->cNominalSectors = VMDK_BYTE2SECTOR(pPart->cbData);
                     pExtent->uSectorOffset = 0;
                     pExtent->enmAccess = VMDKACCESS_READWRITE;
                     pExtent->fMetaDirty = false;
