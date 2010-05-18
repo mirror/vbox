@@ -170,9 +170,6 @@ typedef struct VMMDevState
     /* seamless mode change request */
     bool fLastSeamlessEnabled, fSeamlessEnabled;
 
-    /* shared paging change request. */
-    bool fPageSharingEnabled;
-
     bool fVRDPEnabled;
     uint32_t u32VRDPExperienceLevel;
 
