@@ -1429,7 +1429,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
             if (RawDescriptor.pPartDescs[i].pszRawDevice)
                 RTStrFree((char *)(void *)RawDescriptor.pPartDescs[i].pszRawDevice);
             if (RawDescriptor.pPartDescs[i].pvPartitionData)
-                RTMemFree(RawDescriptor.pPartDescs[i].pvPartitionData);
+                RTMemFree((void *)RawDescriptor.pPartDescs[i].pvPartitionData);
         }
         if (RawDescriptor.pPartDescs)
             RTMemFree(RawDescriptor.pPartDescs);
