@@ -73,7 +73,7 @@ enum
     /** Amount of time to wait for the server to establish a connection, ms */
     VBoxSVC_Timeout = 30000,
     /** How often to perform a connection check, ms */
-    VBoxSVC_WaitSlice = 100,
+    VBoxSVC_WaitSlice = 100
 };
 
 /**
