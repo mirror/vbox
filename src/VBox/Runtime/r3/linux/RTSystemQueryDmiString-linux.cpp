@@ -52,7 +52,7 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
         case RTSYSDMISTR_PRODUCT_VERSION:   pszSysFsName = "id/product_version"; break;
         case RTSYSDMISTR_PRODUCT_UUID:      pszSysFsName = "id/product_uuid"; break;
         case RTSYSDMISTR_PRODUCT_SERIAL:    pszSysFsName = "id/product_serial"; break;
-        /// @todo case RTSYSDMISTR_MANUFACTURER:      pszSysFsName = "id/sys_vendor"; break;
+        case RTSYSDMISTR_MANUFACTURER:      pszSysFsName = "id/sys_vendor"; break;
         default:
             return VERR_NOT_SUPPORTED;
     }
