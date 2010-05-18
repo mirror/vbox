@@ -135,6 +135,10 @@ VMMR3DECL(int) PGMR3SharedModuleUnregister(PVM pVM, char *pszModuleName, char *p
  */
 static DECLCALLBACK(VBOXSTRICTRC) pgmR3SharedModuleRegRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
+    /* Flush all pending handy page operations before changing any shared page assignments. */
+    int rc = PGMR3PhysAllocateHandyPages(pVM);
+    AssertRC(rc);
+
     return GMMR3CheckSharedModules(pVM);
 }
 
