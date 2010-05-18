@@ -385,11 +385,11 @@ VBOXSERVICE g_Control =
     /* pszDescription. */
     "Host-driven Guest Control",
     /* pszUsage. */
-   "[--control-interval <ms>]"
+   "              [--control-interval <ms>]"
     ,
     /* pszOptions. */
-    "    --control-interval  Specifies the interval at which to check for\n"
-    "                        new control commands. The default is 1000 ms.\n"
+    "    --control-interval      Specifies the interval at which to check for\n"
+    "                            new control commands. The default is 1000 ms.\n"
     ,
     /* methods */
     VBoxServiceControlPreInit,

@@ -623,30 +623,27 @@ VBOXSERVICE g_TimeSync =
     /* pszDescription. */
     "Time synchronization",
     /* pszUsage. */
-    "[--timesync-interval <ms>] [--timesync-min-adjust <ms>] "
-    "[--timesync-latency-factor <x>] [--timesync-max-latency <ms>]"
-    "[--timesync-set-threshold <ms>] [--timesync-set-start]"
+    "              [--timesync-interval <ms>] [--timesync-min-adjust <ms>]\n"
+    "              [--timesync-latency-factor <x>] [--timesync-max-latency <ms>]\n"
+    "              [--timesync-set-threshold <ms>] [--timesync-set-start]"
     ,
     /* pszOptions. */
-    "    --timesync-interval Specifies the interval at which to synchronize the\n"
-    "                        time with the host. The default is 10000 ms.\n"
-    "    --timesync-min-adjust\n"
-    "                        The minimum absolute drift value measured in\n"
-    "                        milliseconds to make adjustments for.\n"
-    "                        The default is 1000 ms on OS/2 and 100 ms elsewhere.\n"
+    "    --timesync-interval     Specifies the interval at which to synchronize the\n"
+    "                            time with the host. The default is 10000 ms.\n"
+    "    --timesync-min-adjust   The minimum absolute drift value measured in\n"
+    "                            milliseconds to make adjustments for.\n"
+    "                            The default is 1000 ms on OS/2 and 100 ms elsewhere.\n"
     "    --timesync-latency-factor\n"
-    "                        The factor to multiply the time query latency with to\n"
-    "                        calculate the dynamic minimum adjust time.\n"
-    "                        The default is 8 times.\n"
-    "    --timesync-max-latency\n"
-    "                        The max host timer query latency to accept.\n"
-    "                        The default is 250 ms.\n"
+    "                            The factor to multiply the time query latency with\n"
+    "                            to calculate the dynamic minimum adjust time.\n"
+    "                            The default is 8 times.\n"
+    "    --timesync-max-latency  The max host timer query latency to accept.\n"
+    "                            The default is 250 ms.\n"
     "    --timesync-set-threshold\n"
-    "                        The absolute drift threshold, given as milliseconds,\n"
-    "                        where to start setting the time instead of trying to\n"
-    "                        adjust it. The default is 20 min.\n"
-    "    --timesync-set-start\n"
-    "                        Set the time when starting the time sync service.\n"
+    "                            The absolute drift threshold, given as milliseconds,\n"
+    "                            where to start setting the time instead of trying to\n"
+    "                            adjust it. The default is 20 min.\n"
+    "    --timesync-set-start    Set the time when starting the time sync service.\n"
     ,
     /* methods */
     VBoxServiceTimeSyncPreInit,
