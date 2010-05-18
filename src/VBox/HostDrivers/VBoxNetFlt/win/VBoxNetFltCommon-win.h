@@ -469,9 +469,7 @@ C_ASSERT(sizeof(TRANSFERDATA_RSVD) <= PROTOCOL_RESERVED_SIZE_IN_PACKET);
 C_ASSERT(sizeof(NDIS_DEVICE_POWER_STATE) == sizeof(uint32_t));
 C_ASSERT(sizeof(UINT) == sizeof(uint32_t));
 
-#ifdef VBOX_LOOPBACK_USEFLAGS
 #define NDIS_FLAGS_SKIP_LOOPBACK_W2K    0x400
-#endif
 
 #include "../VBoxNetFltInternal.h"
 #include "VBoxNetFlt-win.h"

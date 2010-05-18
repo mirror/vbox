@@ -29,10 +29,8 @@
 /** global lock */
 extern NDIS_SPIN_LOCK     g_GlobalLock;
 
-#ifdef VBOX_LOOPBACK_USEFLAGS
 extern UINT g_fPacketDontLoopBack;
 extern UINT g_fPacketIsLoopedBack;
-#endif
 
 /*
  * Debug Print API
