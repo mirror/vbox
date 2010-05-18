@@ -652,6 +652,8 @@ typedef struct INTNETTRUNKIFPORT
      * @param   pIfPort     Pointer to this structure.
      * @param   hIf         The handle of the network interface.
      * @param   pMac        Pointer to the MAC address of the connecting VM NIC.
+     *
+     * @remarks Only busy references to the trunk and the interface.
      */
     DECLR0CALLBACKMEMBER(void, pfnNotifyMacAddress,(PINTNETTRUNKIFPORT pIfPort, INTNETIFHANDLE hIf, PCRTMAC pMac));
 
@@ -661,17 +663,20 @@ typedef struct INTNETTRUNKIFPORT
      * @returns IPRT status code.
      * @param   pIfPort     Pointer to this structure.
      * @param   hIf         The handle of the network interface.
+     *
+     * @remarks Owns the big mutex.  No racing pfnDisconnectAndRelease.
      */
     DECLR0CALLBACKMEMBER(int, pfnConnectInterface,(PINTNETTRUNKIFPORT pIfPort, INTNETIFHANDLE hIf));
 
     /**
      * Called when an interface is disconnected from the network.
      *
-     * @returns IPRT status code.
      * @param   pIfPort     Pointer to this structure.
      * @param   hIf         The handle of the network interface.
+     *
+     * @remarks Owns the big mutex.  No racing pfnDisconnectAndRelease.
      */
-    DECLR0CALLBACKMEMBER(int, pfnDisconnectInterface,(PINTNETTRUNKIFPORT pIfPort, INTNETIFHANDLE hIf));
+    DECLR0CALLBACKMEMBER(void, pfnDisconnectInterface,(PINTNETTRUNKIFPORT pIfPort, INTNETIFHANDLE hIf));
 
     /**
      * Waits for the interface to become idle.

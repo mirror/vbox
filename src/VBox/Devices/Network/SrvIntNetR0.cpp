@@ -3188,6 +3188,9 @@ static INTNETSWDECISION intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF p
     /*
      * Learn the MAC address of the sender.  No re-learning as the interface
      * user will normally tell us the right MAC address.
+     *
+     * Note! We don't notify the trunk about these mainly because of the
+     *       problematic contexts we might be called in.
      */
     if (RT_UNLIKELY(    pIfSender
                     &&  !pIfSender->fMacSet
@@ -3606,7 +3609,9 @@ INTNETR0DECL(int) IntNetR0IfSetMacAddress(INTNETIFHANDLE hIf, PSUPDRVSESSION pSe
     PINTNETNETWORK pNetwork = pIf->pNetwork;
     if (pNetwork)
     {
-        RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
+        RTSPINLOCKTMP   Tmp    = RTSPINLOCKTMP_INITIALIZER;
+        PINTNETTRUNKIF  pTrunk = NULL;
+
         RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
 
         if (memcmp(&pIf->MacAddr, pMac, sizeof(pIf->MacAddr)))
@@ -3614,19 +3619,28 @@ INTNETR0DECL(int) IntNetR0IfSetMacAddress(INTNETIFHANDLE hIf, PSUPDRVSESSION pSe
             Log(("IntNetR0IfSetMacAddress: hIf=%RX32: Changed from %.6Rhxs -> %.6Rhxs\n",
                  hIf, &pIf->MacAddr, pMac));
 
+            /* Update the two copies. */
             PINTNETMACTABENTRY pEntry = intnetR0NetworkFindMacAddrEntry(pNetwork, pIf); Assert(pEntry);
             if (RT_LIKELY(pEntry))
                 pEntry->MacAddr = *pMac;
             pIf->MacAddr        = *pMac;
             pIf->fMacSet        = true;
+
+            /* Grab a busy reference to the trunk so we release the lock before notifying it. */
+            pTrunk = pNetwork->MacTab.pTrunk;
+            if (pTrunk)
+                intnetR0BusyIncTrunk(pTrunk);
         }
 
-        PINTNETTRUNKIF pTrunk = pNetwork->MacTab.pTrunk;
         RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
-        if (pTrunk && pTrunk->pIfPort)
+
+        if (pTrunk)
         {
             Log(("IntNetR0IfSetMacAddress: pfnNotifyMacAddress hIf=%RX32\n", hIf));
-            pTrunk->pIfPort->pfnNotifyMacAddress(pTrunk->pIfPort, hIf, pMac);
+            PINTNETTRUNKIFPORT pIfPort = pTrunk->pIfPort;
+            if (pIfPort)
+                pIfPort->pfnNotifyMacAddress(pIfPort, hIf, pMac);
+            intnetR0BusyDecTrunk(pTrunk);
         }
     }
     else
@@ -3897,22 +3911,37 @@ INTNETR0DECL(int) IntNetR0IfClose(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
 
     /*
      * Validate and free the handle.
+     *
+     * We grab the big mutex before we free the handle to avoid any handle
+     * confusion on the trunk.
      */
     PINTNET pIntNet = g_pIntNet;
     AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
     AssertReturn(pIntNet->u32Magic, VERR_INVALID_MAGIC);
 
+    RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
+
     PINTNETIF pIf = (PINTNETIF)RTHandleTableFreeWithCtx(pIntNet->hHtIfs, hIf, pSession);
     if (!pIf)
+    {
+        RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
         return VERR_INVALID_HANDLE;
+    }
 
-    /* mark the handle as freed so intnetR0IfDestruct won't free it again. */
+    /* Mark the handle as freed so intnetR0IfDestruct won't free it again. */
     ASMAtomicWriteU32(&pIf->hIf, INTNET_HANDLE_INVALID);
 
+    /* Notify the trunk that the interface has been disconnected. */
+    PINTNETNETWORK pNetwork = pIf->pNetwork;
+    PINTNETTRUNKIF pTrunk   = pNetwork ? pNetwork->MacTab.pTrunk : NULL;
+    if (pTrunk && pTrunk->pIfPort)
+        pTrunk->pIfPort->pfnDisconnectInterface(pTrunk->pIfPort, hIf);
+
+    RTSemMutexRelease(pIntNet->hMtxCreateOpenDestroy);
+
     /*
-     * Release the references to the interface object (handle + free lookup).
-     * But signal the event semaphore first so any waiter holding a reference
-     * will wake up too (he'll see hIf == invalid and return correctly).
+     * Signal the event semaphore to wake up any threads in IntNetR0IfWait
+     * and give them a moment to get out and release the interface.
      */
     uint32_t i = pIf->cSleepers;
     while (i-- > 0)
@@ -3922,6 +3951,9 @@ INTNETR0DECL(int) IntNetR0IfClose(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
     }
     RTSemEventSignal(pIf->hRecvEvent);
 
+    /*
+     * Release the references to the interface object (handle + free lookup).
+     */
     void *pvObj = pIf->pvObj;
     intnetR0IfRelease(pIf, pSession); /* (RTHandleTableFreeWithCtx) */
 
@@ -3969,14 +4001,6 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
     RTSemMutexRequest(pIntNet->hMtxCreateOpenDestroy, RT_INDEFINITE_WAIT);
     ASMAtomicWriteBool(&pIf->fDestroying, true);
 
-    PINTNETNETWORK pNetwork = pIf->pNetwork;
-    PINTNETTRUNKIF pTrunk = pNetwork->MacTab.pTrunk;
-    if (pTrunk && pTrunk->pIfPort)
-    {
-        Log(("intnetR0IfDestruct: pfnDisconnectInterface hIf=%RX32\n", pIf->hIf));
-        pTrunk->pIfPort->pfnDisconnectInterface(pTrunk->pIfPort, pIf->hIf);
-    }
-
     /*
      * Delete the interface handle so the object no longer can be used.
      * (Can happen if the client didn't close its session.)
@@ -3992,6 +4016,7 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
      * If we've got a network deactivate and detach ourselves from it.  Because
      * of cleanup order we might have been orphaned by the network destructor.
      */
+    PINTNETNETWORK pNetwork = pIf->pNetwork;
     if (pNetwork)
     {
         /* set inactive. */
@@ -4013,7 +4038,14 @@ static DECLCALLBACK(void) intnetR0IfDestruct(void *pvObj, void *pvUser1, void *p
                 break;
             }
 
+        PINTNETTRUNKIF pTrunk = pNetwork->MacTab.pTrunk;
+
         RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+        /* If we freed the handle just now, notify the trunk about the
+           interface being destroyed. */
+        if (hIf != INTNET_HANDLE_INVALID && pTrunk && pTrunk->pIfPort)
+            pTrunk->pIfPort->pfnDisconnectInterface(pTrunk->pIfPort, hIf);
 
         /* Wait for the interface to quiesce while we still can. */
         intnetR0BusyWait(pNetwork, &pIf->cBusy);
@@ -4213,20 +4245,33 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
                     pNetwork->MacTab.cEntries = iIf + 1;
                     pIf->pNetwork = pNetwork;
 
-                    /** @todo handle failure of pfnConnectInterface */
+                    /*
+                     * Grab a busy reference (paranoia) to the trunk before releaseing
+                     * the spinlock and then notify it about the new interface.
+                     */
                     PINTNETTRUNKIF pTrunk = pNetwork->MacTab.pTrunk;
-                    if (pTrunk && pTrunk->pIfPort)
-                    {
-                        Log(("intnetR0NetworkCreateIf: pfnConnectInterface hIf=%RX32\n", pIf->hIf));
-                        pTrunk->pIfPort->pfnConnectInterface(pTrunk->pIfPort, pIf->hIf);
-                    }
+                    if (pTrunk)
+                        intnetR0BusyIncTrunk(pTrunk);
 
                     RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
 
-                    *phIf = pIf->hIf;
-                    Log(("intnetR0NetworkCreateIf: returns VINF_SUCCESS *phIf=%RX32 cbSend=%u cbRecv=%u cbBuf=%u\n",
-                         *phIf, pIf->pIntBufDefault->cbSend, pIf->pIntBufDefault->cbRecv, pIf->pIntBufDefault->cbBuf));
-                    return VINF_SUCCESS;
+                    if (pTrunk)
+                    {
+                        Log(("intnetR0NetworkCreateIf: pfnConnectInterface hIf=%RX32\n", pIf->hIf));
+                        if (pTrunk->pIfPort)
+                            rc = pTrunk->pIfPort->pfnConnectInterface(pTrunk->pIfPort, pIf->hIf);
+                        intnetR0BusyDecTrunk(pTrunk);
+                    }
+                    if (RT_SUCCESS(rc))
+                    {
+                        /*
+                         * We're good!
+                         */
+                        *phIf = pIf->hIf;
+                        Log(("intnetR0NetworkCreateIf: returns VINF_SUCCESS *phIf=%RX32 cbSend=%u cbRecv=%u cbBuf=%u\n",
+                             *phIf, pIf->pIntBufDefault->cbSend, pIf->pIntBufDefault->cbRecv, pIf->pIntBufDefault->cbBuf));
+                        return VINF_SUCCESS;
+                    }
                 }
 
                 SUPR0ObjRelease(pIf->pvObj, pSession);
@@ -4851,7 +4896,8 @@ static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, vo
     while (iIf-- > 0)
         intnetR0BusyWait(pNetwork, &pNetwork->MacTab.paEntries[iIf].pIf->cBusy);
 
-    /* Orphan the interfaces (not trunk). */
+    /* Orphan the interfaces (not trunk).  Don't bother with calling
+       pfnDisconnectInterface here since the networking is going away. */
     RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
     while ((iIf = pNetwork->MacTab.cEntries) > 0)
     {
