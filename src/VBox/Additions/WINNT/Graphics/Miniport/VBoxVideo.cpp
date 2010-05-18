@@ -3371,11 +3371,6 @@ int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT 
             else
             {
                 dprintf(("VBoxVideo::vboxVbvaEnable: rc = %Rrc!\n", rc));
-
-                if (RT_SUCCESS(rc))
-                {
-                    rc = req->header.rc;
-                }
             }
 
             VbglGRFree (&req->header);

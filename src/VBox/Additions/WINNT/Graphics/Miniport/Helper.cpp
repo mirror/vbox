@@ -132,7 +132,7 @@ BOOLEAN vboxLikesVideoMode(uint32_t display, uint32_t width, uint32_t height, ui
         req2->height = height;
         req2->bpp    = bpp;
         rc = VbglGRPerform(&req2->header);
-        if (RT_SUCCESS(rc) && RT_SUCCESS(req2->header.rc))
+        if (RT_SUCCESS(rc))
         {
             bRC = req2->fSupported;
         }
@@ -152,7 +152,7 @@ BOOLEAN vboxLikesVideoMode(uint32_t display, uint32_t width, uint32_t height, ui
             req->bpp    = bpp;
 
             rc = VbglGRPerform(&req->header);
-            if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
+            if (RT_SUCCESS(rc))
             {
                 bRC = req->fSupported;
             }
@@ -378,7 +378,7 @@ BOOLEAN vboxUpdatePointerShape(PVIDEO_POINTER_ATTRIBUTES pointerAttr, uint32_t c
 
         rc = VbglGRPerform (&req->header);
 
-        if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
+        if (RT_SUCCESS(rc))
         {
             bRC = TRUE;
         }

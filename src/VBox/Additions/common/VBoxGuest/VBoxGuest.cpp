@@ -245,10 +245,8 @@ static int vboxGuestSetFilterMask(PVBOXGUESTDEVEXT pDevExt, uint32_t fMask)
         pReq->u32OrMask = fMask;
         pReq->u32NotMask = ~fMask;
         rc = VbglGRPerform(&pReq->header);
-        if (    RT_FAILURE(rc)
-            ||  RT_FAILURE(pReq->header.rc))
-            LogRel(("vboxGuestSetFilterMask: failed with rc=%Rrc and VMMDev rc=%Rrc\n",
-                    rc, pReq->header.rc));
+        if (RT_FAILURE(rc))
+            LogRel(("vboxGuestSetFilterMask: failed with rc=%Rrc\n", rc));
         VbglGRFree(&pReq->header);
     }
     return rc;
@@ -1142,12 +1140,7 @@ int VBoxGuestSetGuestCapabilities(uint32_t fOr, uint32_t fNot)
 
     rc = VbglGRPerform(&pReq->header);
     if (RT_FAILURE(rc))
-        Log(("VBoxGuestSetGuestCapabilities:VbglGRPerform failed, rc=%Rrc!\n", rc));
-    else if (RT_FAILURE(pReq->header.rc))
-    {
-        Log(("VBoxGuestSetGuestCapabilities: The request failed; VMMDev rc=%Rrc!\n", pReq->header.rc));
-        rc = pReq->header.rc;
-    }
+        Log(("VBoxGuestSetGuestCapabilities: VbglGRPerform failed, rc=%Rrc!\n", rc));
 
     VbglGRFree(&pReq->header);
     return rc;
@@ -1491,11 +1484,6 @@ static int VBoxGuestCommonIOCtl_CtlFilterMask(PVBOXGUESTDEVEXT pDevExt, VBoxGues
     rc = VbglGRPerform(&pReq->header);
     if (RT_FAILURE(rc))
         Log(("VBoxGuestCommonIOCtl: CTL_FILTER_MASK: VbglGRPerform failed, rc=%Rrc!\n", rc));
-    else if (RT_FAILURE(pReq->header.rc))
-    {
-        Log(("VBoxGuestCommonIOCtl: CTL_FILTER_MASK: The request failed; VMMDev rc=%Rrc!\n", pReq->header.rc));
-        rc = pReq->header.rc;
-    }
 
     VbglGRFree(&pReq->header);
     return rc;
