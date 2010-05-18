@@ -163,10 +163,10 @@ int CollectorGuestHAL::preCollect(const CollectorHints& /* hints */, uint64_t iT
     if (    mGuest
         &&  iTick != mLastTick)
     {
-        ULONG ulMemAllocTotal, ulMemFreeTotal, ulMemBalloonTotal, ulMemSharedTotal, ulMemShared;
+        ULONG ulMemAllocTotal, ulMemFreeTotal, ulMemBalloonTotal, ulMemSharedTotal;
 
         mGuest->InternalGetStatistics(&mCpuUser, &mCpuKernel, &mCpuIdle,
-                                      &mMemTotal, &mMemFree, &mMemBalloon, &ulMemShared, &mMemCache,
+                                      &mMemTotal, &mMemFree, &mMemBalloon, &mMemShared, &mMemCache,
                                       &mPageTotal, &ulMemAllocTotal, &ulMemFreeTotal, &ulMemBalloonTotal, &ulMemSharedTotal);
 
         if (mHostHAL)
