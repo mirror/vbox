@@ -485,8 +485,8 @@ typedef struct GMMREGISTERSHAREDMODULEREQ
     RTGCPTR64                   GCBaseAddr;
     /** Guest OS type. */
     VBOXOSFAMILY                enmGuestOS;
-    /** Alignment. */
-    uint32_t                    u32Alignment;
+    /** return code. */
+    uint32_t                    rc;
     /** Module name */
     char                        szName[GMM_SHARED_MODULE_MAX_NAME_STRING];
     /** Module version */

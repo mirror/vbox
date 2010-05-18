@@ -384,7 +384,10 @@ GMMR3DECL(int) GMMR3RegisterSharedModule(PVM pVM, PGMMREGISTERSHAREDMODULEREQ pR
 {
     pReq->Hdr.u32Magic  = SUPVMMR0REQHDR_MAGIC;
     pReq->Hdr.cbReq     = RT_OFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[pReq->cRegions]);
-    return VMMR3CallR0(pVM, VMMR0_DO_GMM_REGISTER_SHARED_MODULE, 0, &pReq->Hdr);
+    int rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_REGISTER_SHARED_MODULE, 0, &pReq->Hdr);
+    if (rc == VINF_SUCCESS)
+        rc = pReq->rc;
+    return rc;
 }
 
 /**
