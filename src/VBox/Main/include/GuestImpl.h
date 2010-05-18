@@ -81,6 +81,7 @@ public:
     STDMETHOD(COMGETTER(SupportsGraphics)) (BOOL *aSupportsGraphics);
     STDMETHOD(COMGETTER(MemoryBalloonSize)) (ULONG *aMemoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize)) (ULONG aMemoryBalloonSize);
+    STDMETHOD(COMGETTER(PageFusionEnabled)) (BOOL *aPageFusionEnabled);
     STDMETHOD(COMGETTER(StatisticsUpdateInterval)) (ULONG *aUpdateInterval);
     STDMETHOD(COMSETTER(StatisticsUpdateInterval)) (ULONG aUpdateInterval);
 
@@ -168,6 +169,7 @@ private:
     ULONG mMemoryBalloonSize;
     ULONG mStatUpdateInterval;
     ULONG mCurrentGuestStat[GUESTSTATTYPE_MAX];
+    BOOL  mfPageFusionEnabled;
 
     Console *mParent;
     Data mData;
