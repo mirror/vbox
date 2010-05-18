@@ -2785,7 +2785,14 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
                 pGVM->gmm.s.cSharedPages--;
                 Assert(pPage->Shared.cRefs);
                 if (!--pPage->Shared.cRefs)
+                {
                     gmmR0FreeSharedPage(pGMM, idPage, pPage);
+                }
+                else
+                {
+                    Assert(pGMM->cDuplicatePages);
+                    pGMM->cDuplicatePages--;
+                }
             }
             else
             {
