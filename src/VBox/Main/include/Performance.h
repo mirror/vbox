@@ -440,7 +440,7 @@ namespace pm
     {
     public:
         GuestRamUsage(CollectorGuestHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *free, SubMetric *balloon, SubMetric *shared, SubMetric *cache, SubMetric *pagedtotal)
-        : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mFree(free), mBallooned(balloon), mShared(shared), mCache(cache), mPagedTotal(pagedtotal), mGuestHAL(hal) {};
+        : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mFree(free), mBallooned(balloon), mCache(cache), mPagedTotal(pagedtotal), mShared(shared), mGuestHAL(hal) {};
         ~GuestRamUsage() { delete mTotal; delete mFree; delete mBallooned; delete mShared; delete mCache; delete mPagedTotal; };
 
         void init(ULONG period, ULONG length);
