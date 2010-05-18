@@ -778,8 +778,11 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
 
     CheckComArgStrNotEmptyOrNull(aCommand);
     CheckComArgOutPointerValid(aPID);
-    CheckComArgStrNotEmptyOrNull(aUserName); /* Do not allow anonymous executions (with system rights). */
     CheckComArgOutPointerValid(aProgress);
+
+    /* Do not allow anonymous executions (with system rights). */
+    if (RT_UNLIKELY((aUserName) == NULL || *(aUserName) == '\0'))
+        return setError(E_INVALIDARG, tr("No user name specified"));
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1045,7 +1048,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                 else /* Operation was canceled. */
                 {
                     rc = setError(VBOX_E_IPRT_ERROR,
-                                  tr("The operation was canceled."));
+                                  tr("The operation was canceled"));
                 }
             }
             else /* HGCM related error codes .*/
