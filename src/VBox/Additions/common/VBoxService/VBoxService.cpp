@@ -362,7 +362,7 @@ int VBoxServiceStartServices(unsigned iMain)
         if (RT_SUCCESS(rc))
             VBoxServiceVerbose(1, "Main service '%s' successfully stopped.\n", g_aServices[iMain].pDesc->pszName);
         else /* Only complain if service returned an error. Otherwise the service is a one-timer. */
-            VBoxServiceError("Service '%s' stopped unexpected; rc=%Rrc\n", g_aServices[iMain].pDesc->pszName, rc);           
+            VBoxServiceError("Service '%s' stopped unexpected; rc=%Rrc\n", g_aServices[iMain].pDesc->pszName, rc);
         g_aServices[iMain].pDesc->pfnTerm();
     }
     return rc;
@@ -418,8 +418,8 @@ int VBoxServiceStopServices(void)
         }
 
 #ifdef RT_OS_WINDOWS
-    /* 
-     * As we're now done terminating all service threads, 
+    /*
+     * As we're now done terminating all service threads,
      * we have to stop the main thread as well (if defined). Note that the termination
      * function will be called in a later context (when the main thread returns from the worker
      * function).
@@ -429,10 +429,10 @@ int VBoxServiceStopServices(void)
         VBoxServiceVerbose(3, "Stopping main service '%s' (%d) ...\n", g_aServices[iMain].pDesc->pszName, iMain);
 
         ASMAtomicXchgBool(&g_fShutdown, true);
-        g_aServices[iMain].pDesc->pfnStop();                      
+        g_aServices[iMain].pDesc->pfnStop();
     }
 #endif
-    
+
     VBoxServiceVerbose(2, "Stopping services returned: rc=%Rrc\n", rc);
     return rc;
 }
@@ -453,8 +453,14 @@ static void VBoxServiceWaitSignal(void)
     sigaddset(&signalMask, SIGABRT);
     sigaddset(&signalMask, SIGTERM);
     pthread_sigmask(SIG_BLOCK, &signalMask, NULL);
-    sigwait(&signalMask, &iSignal);
-    VBoxServiceVerbose(3, "VBoxServiceWaitSignal: Received signal %d\n", iSignal);
+
+    do
+        iSignal = -1;
+    while (   sigwait(&signalMask, &iSignal) == -1
+           && (   errno == EINTR
+               || errno == ERESTART));
+
+    VBoxServiceVerbose(3, "VBoxServiceWaitSignal: Received signal %d (errno=%d)\n", iSignal, errno);
 }
 #endif /* !RT_OS_WINDOWS */
 
