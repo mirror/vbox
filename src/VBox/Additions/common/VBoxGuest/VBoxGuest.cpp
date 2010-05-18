@@ -271,10 +271,8 @@ static int vboxGuestInitReportGuestInfo(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enm
         pReq->guestInfo.additionsVersion = VMMDEV_VERSION;
         pReq->guestInfo.osType = enmOSType;
         rc = VbglGRPerform(&pReq->header);
-        if (    RT_FAILURE(rc)
-            ||  RT_FAILURE(pReq->header.rc))
-            LogRel(("vboxGuestInitReportGuestInfo: failed with rc=%Rrc and VMMDev rc=%Rrc\n",
-                    rc, pReq->header.rc));
+        if (RT_FAILURE(rc))
+            LogRel(("vboxGuestInitReportGuestInfo: 1st part failed with rc=%Rrc\n", rc));
         VbglGRFree(&pReq->header);
     }
     VMMDevReportGuestInfo2 *pReq2;
@@ -291,10 +289,8 @@ static int vboxGuestInitReportGuestInfo(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enm
         rc = VbglGRPerform(&pReq2->header);
         if (rc == VERR_NOT_IMPLEMENTED) /* compatibility with older hosts */
             rc = VINF_SUCCESS;
-        if (    RT_FAILURE(rc)
-            ||  RT_FAILURE(pReq2->header.rc))
-            LogRel(("vboxGuestInitReportGuestInfo2: failed with rc=%Rrc and VMMDev rc=%Rrc\n",
-                    rc, pReq2->header.rc));
+        if (RT_FAILURE(rc))
+            LogRel(("vboxGuestInitReportGuestInfo: 2nd part failed with rc=%Rrc\n", rc));
         VbglGRFree(&pReq2->header);
     }
     return rc;
