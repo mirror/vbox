@@ -60,12 +60,6 @@ else
 PROGRAMS += VirtualBox
 endif
 
-ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(KBUILD_TARGET)),) # X11
- DLLS += VBoxKeyboard
- ## @todo convert to install target.
- OTHERS += $(PATH_BIN)/vboxkeyboard.tar.gz
- CLEAN += $(PATH_BIN)/vboxkeyboard.tar.gz
-endif
 INSTALLS += VirtualBox.nls
 
 
@@ -73,48 +67,6 @@ INSTALLS += VirtualBox.nls
 # Include the language lists.
 #
 include $(PATH_SUB_CURRENT)/nls/ApprovedLanguages.kmk
-
-
-#
-# VBoxKeyboard - keyboard library for X11.
-#
-VBoxKeyboard_TEMPLATE = VBOXR3
-VBoxKeyboard_SOURCES  = \
-	src/X11/keyboard-new.c
-VBoxKeyboard_LIBS     = X11
-VBoxKeyboard_LIBPATH  = $(VBOX_LIBPATH_X11)
-
-
-#
-# vboxkeyboard.tar.gz - the LGPLed keyboard library must always be
-# redistributed with usable sources.
-#
-# This rule will link create a temporary symlink to src/X11/ and tar
-# up the selected files into a tarball that is installed into the
-# bin directory (probably belongs in /usr/shared/somewhere really,
-# but wtf, it's not like we're even trying to be FHS compliant).
-#
-## @todo this should be tar'ed down into the output directory and installed using an install target.
-$(PATH_BIN)/vboxkeyboard.tar.gz: $(abspathex \
-		$(VBoxKeyboard_SOURCES) \
-		src/X11/COPYING.LIB \
-		src/X11/keyboard.h \
-		src/X11/keyboard-layouts.h \
-		src/X11/keyboard-list.h \
-		src/X11/keyboard-tables.h \
-		src/X11/keyboard-types.h \
-		src/X11/Makefile \
-		,$(PATH_SUB_CURRENT)) | $(PATH_TARGET)/VBoxKeyboard/
-	$(call MSG_TOOL,tar/gzip,,$@)
-	$(QUIET2)$(RM) -f $(PATH_TARGET)/VBoxKeyboard/vboxkeyboard $@
-	$(QUIET)$(LN_SYMLINK) $(VBOX_VIRTUALBOX4_SRC)/src/X11/ $(PATH_TARGET)/VBoxKeyboard/vboxkeyboard
-	$(QUIET)cd $(PATH_TARGET)/VBoxKeyboard \
-		&& tar -chvf - $(addprefix vboxkeyboard/,$(notdir $^)) \
-		   | gzip - > $@
-	$(QUIET2)$(RM) -f $(PATH_TARGET)/VBoxKeyboard/vboxkeyboard
-
-OTHER_CLEAN += \
-	$(PATH_BIN)/vboxkeyboard.tar.gz
 
 
 #
