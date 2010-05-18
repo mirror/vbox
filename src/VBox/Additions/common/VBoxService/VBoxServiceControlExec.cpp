@@ -825,16 +825,8 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pTh
                                 RTPROCESS hProcess;
                                 rc = RTProcCreateEx(pData->pszCmd, pData->papszArgs, hEnv, RTPROC_FLAGS_SERVICE,
                                                     phStdIn, phStdOut, phStdErr,
-                            #if defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX)
                                                     strlen(pData->pszUser) ? pData->pszUser : NULL,
                                                     strlen(pData->pszUser) && strlen(pData->pszPassword) ? pData->pszPassword : NULL,
-                            #else
-                                                    /*
-                                                     * Never specify a user name and password until RTProcCreateEx supports
-                                                     * that for non-Windows (POSIX) platforms.
-                                                     */
-                                                    NULL, NULL,
-                            #endif
                                                     &hProcess);
                                 if (RT_SUCCESS(rc))
                                 {
