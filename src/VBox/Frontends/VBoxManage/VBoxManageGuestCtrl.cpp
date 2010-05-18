@@ -441,32 +441,27 @@ static int handleExecProgram(HandlerArg *a)
                 }
 
                 BOOL fCanceled;
-                CHECK_ERROR_RET(progress, COMGETTER(Canceled)(&fCanceled), rc);
-                if (fCanceled)
+                if (SUCCEEDED(progress->COMGETTER(Canceled)(&fCanceled)) && fCanceled)
+                    if (fVerbose) RTPrintf("Process execution canceled!\n");
+
+                if (fCompleted)
                 {
-                    RTPrintf("Process execution canceled!\n");
-                }
-                else
-                {
-                    if (fCompleted)
+                    LONG iRc = false;
+                    CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
+                    if (FAILED(iRc))
                     {
-                        LONG iRc = false;
-                        CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
-                        if (FAILED(iRc))
-                        {
-                            ComPtr<IVirtualBoxErrorInfo> execError;
-                            rc = progress->COMGETTER(ErrorInfo)(execError.asOutParam());
-                            com::ErrorInfo info (execError);
-                            RTPrintf("\n\nProcess error details:\n");
-                            GluePrintErrorInfo(info);
-                            RTPrintf("\n");
-                        }
-                        if (fVerbose)
-                        {
-                            ULONG uRetStatus, uRetExitCode, uRetFlags;
-                            CHECK_ERROR_BREAK(guest, GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus));
-                            RTPrintf("Exit code=%u (Status=%u [%s], Flags=%u)\n", uRetExitCode, uRetStatus, getStatus(uRetStatus), uRetFlags);
-                        }
+                        ComPtr<IVirtualBoxErrorInfo> execError;
+                        rc = progress->COMGETTER(ErrorInfo)(execError.asOutParam());
+                        com::ErrorInfo info (execError);
+                        RTPrintf("\n\nProcess error details:\n");
+                        GluePrintErrorInfo(info);
+                        RTPrintf("\n");
+                    }
+                    if (fVerbose)
+                    {
+                        ULONG uRetStatus, uRetExitCode, uRetFlags;
+                        CHECK_ERROR_BREAK(guest, GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus));
+                        RTPrintf("Exit code=%u (Status=%u [%s], Flags=%u)\n", uRetExitCode, uRetStatus, getStatus(uRetStatus), uRetFlags);
                     }
                 }
             }

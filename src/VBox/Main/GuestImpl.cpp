@@ -706,19 +706,19 @@ void Guest::destroyCtrlCallbackContext(Guest::CallbackListIter it)
         RTMemFree(it->pvData);
         it->pvData = NULL;
         it->cbData = 0;
+    }
 
-        /* Notify outstanding waits for progress ... */
-        if (!it->pProgress.isNull())
-        {
-            /* Only cancel if not canceled before! */
-            BOOL fCancelled;
-            if (SUCCEEDED(it->pProgress->COMGETTER(Canceled)(&fCancelled)) && !fCancelled)
-                it->pProgress->Cancel();
-            /* 
-             * Do *not NULL pProgress here, because waiting function like executeProcess() 
-             * will still rely on this object for checking whether they have to give up! 
-             */
-        }
+    /* Notify outstanding waits for progress ... */
+    if (it->pProgress && !it->pProgress.isNull())
+    {
+        /* Only cancel if not canceled before! */
+        BOOL fCancelled;
+        if (SUCCEEDED(it->pProgress->COMGETTER(Canceled)(&fCancelled)) && !fCancelled)
+            it->pProgress->Cancel();
+        /* 
+         * Do *not NULL pProgress here, because waiting function like executeProcess() 
+         * will still rely on this object for checking whether they have to give up! 
+         */
     }
     LogFlowFuncLeave();
 }
