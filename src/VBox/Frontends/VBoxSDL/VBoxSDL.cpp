@@ -33,6 +33,8 @@
 using namespace com;
 
 #if defined(VBOXSDL_WITH_X11)
+# include <VBox/VBoxKeyboard.h>
+
 # include <X11/Xlib.h>
 # include <X11/cursorfont.h>      /* for XC_left_ptr */
 # if !defined(VBOX_WITHOUT_XCURSOR)
@@ -202,9 +204,6 @@ static VBoxSDLFB  *gpFramebuffer[64];
 static SDL_Cursor *gpDefaultCursor = NULL;
 #ifdef VBOXSDL_WITH_X11
 static Cursor      gpDefaultOrigX11Cursor;
-#ifdef RT_OS_LINUX
-static BOOL        guseEvdevKeymap = FALSE;
-#endif
 #endif
 static SDL_Cursor *gpCustomCursor = NULL;
 #ifndef VBOX_WITH_SDL13
@@ -664,9 +663,6 @@ static void show_usage()
              "  --detecthostkey          Get the hostkey identifier and modifier state\n"
              "  --hostkey <key> {<key2>} <mod> Set the host key to the values obtained using --detecthostkey\n"
              "  --termacpi               Send an ACPI power button event when closing the window\n"
-#if defined(RT_OS_LINUX)
-             "  --evdevkeymap            Use evdev keycode map\n"
-#endif
 #ifdef VBOX_WITH_VRDP
              "  --vrdp <ports>           Listen for VRDP connections on one of specified ports (default if not specified)\n"
 #endif
@@ -1203,13 +1199,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 return 1;
             }
         }
-#if defined(RT_OS_LINUX) && defined(VBOXSDL_WITH_X11)
-        else if (   !strcmp(argv[curArg], "--evdevkeymap")
-                 || !strcmp(argv[curArg], "-evdevkeymap"))
-        {
-            guseEvdevKeymap = TRUE;
-        }
-#endif /* RT_OS_LINUX  */
 #ifdef VBOX_WITH_VRDP
         else if (   !strcmp(argv[curArg], "--vrdp")
                  || !strcmp(argv[curArg], "-vrdp"))
@@ -2034,6 +2023,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         SDL_SetCursor(gpDefaultCursor);
     }
 #  endif
+    /* Initialise the keyboard */
+    X11DRV_InitKeyboard(gSdlInfo.info.x11.display, NULL, NULL, NULL);
 # endif /* VBOXSDL_WITH_X11 */
 
     /* create a fake empty cursor */
@@ -3225,187 +3216,8 @@ static uint16_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
         default:
                                     return 0;
     }
-    // workaround for SDL keyboard translation issues on Linux
-    // keycodes > 0x100 are sent as 0xe0 keycode
-    // Note that these are the keycodes used by XFree86/X.org
-    // servers on a Linux host, and will almost certainly not
-    // work on other hosts or on other servers on Linux hosts.
-    // For a more general approach, see the Wine code in the GUI.
-
 # else
-    static const uint16_t x_keycode_to_pc_keycode[61] =
-    {
-       0x47|0x100,  /*  97  Home   */
-       0x48|0x100,  /*  98  Up     */
-       0x49|0x100,  /*  99  PgUp   */
-       0x4b|0x100,  /* 100  Left   */
-       0x4c,        /* 101  KP-5   */
-       0x4d|0x100,  /* 102  Right  */
-       0x4f|0x100,  /* 103  End    */
-       0x50|0x100,  /* 104  Down   */
-       0x51|0x100,  /* 105  PgDn   */
-       0x52|0x100,  /* 106  Ins    */
-       0x53|0x100,  /* 107  Del    */
-       0x1c|0x100,  /* 108  Enter  */
-       0x1d|0x100,  /* 109  Ctrl-R */
-       0x0,         /* 110  Pause  */
-       0x37|0x100,  /* 111  Print  */
-       0x35|0x100,  /* 112  Divide */
-       0x38|0x100,  /* 113  Alt-R  */
-       0x46|0x100,  /* 114  Break  */
-       0x5b|0x100,  /* 115  Win Left */
-       0x5c|0x100,  /* 116  Win Right */
-       0x5d|0x100,  /* 117  Win Menu */
-       0x0,         /* 118 */
-       0x0,         /* 119 */
-       0x0,         /* 120 */
-       0xf1,        /* 121  Korean Hangul to Latin?? */
-       0xf2,        /* 122  Korean Hangul to Hanja?? */
-       0x0,         /* 123 */
-       0x0,         /* 124 */
-       0x0,         /* 125 */
-       0x0,         /* 126 */
-       0x0,         /* 127 */
-       0x0,         /* 128 */
-       0x79,        /* 129  Japanese Henkan */
-       0x0,         /* 130 */
-       0x7b,        /* 131  Japanese Muhenkan */
-       0x0,         /* 132 */
-       0x7d,        /* 133  Japanese Yen */
-       0x7e,        /* 134  Brazilian keypad */
-       0x0,         /* 135 */
-       0x47,        /* 136  KP_7 */
-       0x48,        /* 137  KP_8 */
-       0x49,        /* 138  KP_9 */
-       0x4b,        /* 139  KP_4 */
-       0x4c,        /* 140  KP_5 */
-       0x4d,        /* 141  KP_6 */
-       0x4f,        /* 142  KP_1 */
-       0x50,        /* 143  KP_2 */
-       0x51,        /* 144  KP_3 */
-       0x52,        /* 145  KP_0 */
-       0x53,        /* 146  KP_. */
-       0x47,        /* 147  KP_HOME */
-       0x48,        /* 148  KP_UP */
-       0x49,        /* 149  KP_PgUp */
-       0x4b,        /* 150  KP_Left */
-       0x4c,        /* 151  KP_ */
-       0x4d,        /* 152  KP_Right */
-       0x4f,        /* 153  KP_End */
-       0x50,        /* 154  KP_Down */
-       0x51,        /* 155  KP_PgDn */
-       0x52,        /* 156  KP_Ins */
-       0x53,        /* 157  KP_Del */
-    };
-
-    // workaround for SDL keyboard translation issues on EVDEV
-    // keycodes > 0x100 are sent as 0xe0 keycode
-    // these values are simply pulled from x_keycode_to_pc_keycode
-    // not a whole lot of testing of the 'weird' values has taken
-    // place (I don't own a Japanese or Korean keyboard)
-    static const uint16_t evdev_keycode_to_pc_keycode[61] =
-    {
-       0x0,         /*  97 EVDEV - RO   ("Internet" Keyboards) */
-       0x0,         /*  98 EVDEV - KATA (Katakana) */
-       0x0,         /*  99 EVDEV - HIRA (Hiragana) */
-       0x79,        /* 100 EVDEV - HENK (Henkan) */
-       0x70,        /* 101 EVDEV - HKTG (Hiragana/Katakana toggle) */
-       0x7b,        /* 102 EVDEV - MUHE (Muhenkan) */
-       0x0,         /* 103 EVDEV - JPCM (KPJPComma) */
-       0x1c|0x100,  /* 104 EVDEV - KPEN */
-       0x1d|0x100,  /* 105 EVDEV - RCTL */
-       0x35|0x100,  /* 106 EVDEV - KPDV */
-       0x37|0x100,  /* 107 EVDEV - PRSC ***FIXME*** */
-       0x38|0x100,  /* 108 EVDEV - RALT */
-       0x0,         /* 109 EVDEV - LNFD ("Internet" Keyboards) */
-       0x47|0x100,  /* 110 EVDEV - HOME ***FIXME*** */
-       0x48|0x100,  /* 111 EVDEV - UP   */
-       0x49|0x100,  /* 112 EVDEV - PGUP */
-       0x4b|0x100,  /* 113 EVDEV - LEFT */
-       0x4d|0x100,  /* 114 EVDEV - RGHT */
-       0x4f|0x100,  /* 115 EVDEV - END  */
-       0x50|0x100,  /* 116 EVDEV - DOWN */
-       0x51|0x100,  /* 117 EVDEV - PGDN */
-       0x52|0x100,  /* 118 EVDEV - INS  */
-       0x53|0x100,  /* 119 EVDEV - DELE */
-       0x0,         /* 120 EVDEV - I120 ("Internet" Keyboards) */
-       //121-124 Solaris Compatibilty Stuff
-       0x0,         /* 121 EVDEV - MUTE */
-       0x0,         /* 122 EVDEV - VOL- */
-       0x0,         /* 123 EVDEV - VOL+ */
-       0x0,         /* 124 EVDEV - POWR */
-       0x0,         /* 125 EVDEV - KPEQ */
-       0x0,         /* 126 EVDEV - I126 ("Internet" Keyboards) */
-       0x0,         /* 127 EVDEV - PAUS */
-       0x0,         /* 128 EVDEV - ???? */
-       0x0,         /* 129 EVDEV - I129 ("Internet" Keyboards) */
-       0xf1,        /* 130 EVDEV - HNGL (Korean Hangul Latin toggle) */
-       0xf2,        /* 131 EVDEV - HJCV (Korean Hangul Hanja toggle) */
-       0x7d,        /* 132 EVDEV - AE13 (Yen) */
-       0x5b|0x100,  /* 133 EVDEV - LWIN */
-       0x5c|0x100,  /* 134 EVDEV - RWIN */
-       0x5d|0x100,  /* 135 EVDEV - MENU */
-       //136-146 Solaris Stuff
-       0x0,         /* 136 EVDEV - STOP */
-       0x0,         /* 137 EVDEV - AGAI */
-       0x0,         /* 138 EVDEV - PROP */
-       0x0,         /* 139 EVDEV - UNDO */
-       0x0,         /* 140 EVDEV - FRNT */
-       0x0,         /* 141 EVDEV - COPY */
-       0x0,         /* 142 EVDEV - OPEN */
-       0x0,         /* 143 EVDEV - PAST */
-       0x0,         /* 144 EVDEV - FIND */
-       0x0,         /* 145 EVDEV - CUT  */
-       0x0,         /* 146 EVDEV - HELP */
-       //Extended Keys ("Internet" Keyboards)
-       0x0,         /* 147 EVDEV - I147 */
-       0x0,         /* 148 EVDEV - I148 */
-       0x0,         /* 149 EVDEV - I149 */
-       0x0,         /* 150 EVDEV - I150 */
-       0x0,         /* 151 EVDEV - I151 */
-       0x0,         /* 152 EVDEV - I152 */
-       0x0,         /* 153 EVDEV - I153 */
-       0x0,         /* 154 EVDEV - I154 */
-       0x0,         /* 155 EVDEV - I156 */
-       0x0,         /* 156 EVDEV - I157 */
-       0x0,         /* 157 EVDEV - I158 */
-    };
-
-    if (keycode < 9)
-    {
-        keycode = 0;
-    }
-    else if (keycode < 97)
-    {
-        // just an offset (Xorg MIN_KEYCODE)
-        keycode -= 8;
-    }
-# ifdef RT_OS_LINUX
-    else if (keycode < 158 && guseEvdevKeymap)
-    {
-        // apply EVDEV conversion table
-        keycode = evdev_keycode_to_pc_keycode[keycode - 97];
-    }
-# endif
-    else if (keycode < 158)
-    {
-        // apply conversion table
-        keycode = x_keycode_to_pc_keycode[keycode - 97];
-    }
-    else if (keycode == 208)
-    {
-        // Japanese Hiragana to Katakana
-        keycode = 0x70;
-    }
-    else if (keycode == 211)
-    {
-        // Japanese backslash/underscore and Brazilian backslash/question mark
-        keycode = 0x73;
-    }
-    else
-    {
-        keycode = 0;
-    }
+    keycode = X11DRV_KeyEvent(gSdlInfo.info.x11.display, keycode);
 # endif
 #elif defined(RT_OS_DARWIN)
     /* This is derived partially from SDL_QuartzKeys.h and partially from testing. */
