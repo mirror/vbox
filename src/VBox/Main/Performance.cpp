@@ -165,7 +165,6 @@ int CollectorGuestHAL::preCollect(const CollectorHints& /* hints */, uint64_t iT
     {
         ULONG ulMemAllocTotal, ulMemFreeTotal, ulMemBalloonTotal, ulMemSharedTotal, ulMemShared;
 
-        /** todo shared stats. */
         mGuest->InternalGetStatistics(&mCpuUser, &mCpuKernel, &mCpuIdle,
                                       &mMemTotal, &mMemFree, &mMemBalloon, &ulMemShared, &mMemCache,
                                       &mPageTotal, &ulMemAllocTotal, &ulMemFreeTotal, &ulMemBalloonTotal, &ulMemSharedTotal);
