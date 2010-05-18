@@ -272,8 +272,12 @@ typedef struct LSILOGICSCSI
     PDMILEDPORTS                   ILeds;
     /** Status LUN: Partner of ILeds. */
     R3PTRTYPE(PPDMILEDCONNECTORS)  pLedsConnector;
-
+    /** Pointer to the configuration page area. */
     R3PTRTYPE(PMptConfigurationPagesSupported) pConfigurationPages;
+    /** Indicates that PDMDevHlpAsyncNotificationCompleted should be called when
+     * a port is entering the idle state. */
+    bool volatile                  fSignalIdle;
+
 } LSILOGISCSI, *PLSILOGICSCSI;
 
 /**
@@ -2030,6 +2034,9 @@ static DECLCALLBACK(int) lsilogicDeviceSCSIRequestCompleted(PPDMISCSIPORT pInter
     }
 
     RTMemCacheFree(pLsiLogic->hTaskCache, pTaskState);
+
+    if (pLsiLogicDevice->cOutstandingRequests == 0 && pLsiLogic->fSignalIdle)
+        PDMDevHlpAsyncNotificationCompleted(pLsiLogic->pDevInsR3);
 
     return VINF_SUCCESS;
 }
@@ -4343,6 +4350,74 @@ static DECLCALLBACK(void *) lsilogicStatusQueryInterface(PPDMIBASE pInterface, c
     return NULL;
 }
 
+/* -=-=-=-=- Helper -=-=-=-=- */
+
+/**
+ * Checks if all asynchronous I/O is finished.
+ *
+ * Used by lsilogicReset, lsilogicSuspend and lsilogicPowerOff.
+ *
+ * @returns true if quiesced, false if busy.
+ * @param   pDevIns         The device instance.
+ */
+static bool lsilogicR3AllAsyncIOIsFinished(PPDMDEVINS pDevIns)
+{
+    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+
+    for (uint32_t i = 0; i < pThis->cDeviceStates; i++)
+    {
+        PLSILOGICDEVICE pThisDevice = &pThis->paDeviceStates[i];
+        if (pThisDevice->pDrvBase)
+        {
+            if (pThisDevice->cOutstandingRequests != 0)
+                return false;
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Callback employed by lsilogicR3Suspend and lsilogicR3PowerOff..
+ *
+ * @returns true if we've quiesced, false if we're still working.
+ * @param   pDevIns     The device instance.
+ */
+static DECLCALLBACK(bool) lsilogicR3IsAsyncSuspendOrPowerOffDone(PPDMDEVINS pDevIns)
+{
+    if (!lsilogicR3AllAsyncIOIsFinished(pDevIns))
+        return false;
+
+    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+    return true;
+}
+
+/**
+ * Common worker for ahciR3Suspend and ahciR3PowerOff.
+ */
+static void lsilogicR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
+{
+    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+
+    ASMAtomicWriteBool(&pThis->fSignalIdle, true);
+    if (!lsilogicR3AllAsyncIOIsFinished(pDevIns))
+        PDMDevHlpSetAsyncNotification(pDevIns, lsilogicR3IsAsyncSuspendOrPowerOffDone);
+    else
+        ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+}
+
+/**
+ * Suspend notification.
+ *
+ * @param   pDevIns     The device instance data.
+ */
+static DECLCALLBACK(void) lsilogicSuspend(PPDMDEVINS pDevIns)
+{
+    Log(("lsilogicSuspend\n"));
+    lsilogicR3SuspendOrPowerOff(pDevIns);
+}
+
 /**
  * Detach notification.
  *
@@ -4424,9 +4499,11 @@ static DECLCALLBACK(int)  lsilogicAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint
 }
 
 /**
- * @copydoc FNPDMDEVRESET
+ * Common reset worker.
+ *
+ * @param   pDevIns     The device instance data.
  */
-static DECLCALLBACK(void) lsilogicReset(PPDMDEVINS pDevIns)
+static void lsilogicR3ResetCommon(PPDMDEVINS pDevIns)
 {
     PLSILOGICSCSI pLsiLogic = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
     int rc;
@@ -4435,6 +4512,41 @@ static DECLCALLBACK(void) lsilogicReset(PPDMDEVINS pDevIns)
     AssertRC(rc);
 
     vboxscsiInitialize(&pLsiLogic->VBoxSCSI);
+}
+
+/**
+ * Callback employed by lsilogicR3Reset.
+ *
+ * @returns true if we've quiesced, false if we're still working.
+ * @param   pDevIns     The device instance.
+ */
+static DECLCALLBACK(bool) lsilogicR3IsAsyncResetDone(PPDMDEVINS pDevIns)
+{
+    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+
+    if (!lsilogicR3AllAsyncIOIsFinished(pDevIns))
+        return false;
+    ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+
+    lsilogicR3ResetCommon(pDevIns);
+    return true;
+}
+
+/**
+ * @copydoc FNPDMDEVRESET
+ */
+static DECLCALLBACK(void) lsilogicReset(PPDMDEVINS pDevIns)
+{
+    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+
+    ASMAtomicWriteBool(&pThis->fSignalIdle, true);
+    if (!lsilogicR3AllAsyncIOIsFinished(pDevIns))
+        PDMDevHlpSetAsyncNotification(pDevIns, lsilogicR3IsAsyncResetDone);
+    else
+    {
+        ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+        lsilogicR3ResetCommon(pDevIns);
+    }
 }
 
 /**
@@ -4475,6 +4587,17 @@ static DECLCALLBACK(int) lsilogicDestruct(PPDMDEVINS pDevIns)
     lsilogicConfigurationPagesFree(pThis);
 
     return rc;
+}
+
+/**
+ * Poweroff notification.
+ *
+ * @param   pDevIns Pointer to the device instance
+ */
+static DECLCALLBACK(void) lsilogicPowerOff(PPDMDEVINS pDevIns)
+{
+    Log(("lsilogicPowerOff\n"));
+    lsilogicR3SuspendOrPowerOff(pDevIns);
 }
 
 /**
@@ -4773,7 +4896,8 @@ const PDMDEVREG g_DeviceLsiLogicSCSI =
     /* pszDescription */
     "LSI Logic 53c1030 SCSI controller.\n",
     /* fFlags */
-    PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
+    PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0 |
+    PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION | PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION,
     /* fClass */
     PDM_DEVREG_CLASS_STORAGE,
     /* cMaxInstances */
@@ -4793,7 +4917,7 @@ const PDMDEVREG g_DeviceLsiLogicSCSI =
     /* pfnReset */
     lsilogicReset,
     /* pfnSuspend */
-    NULL,
+    lsilogicSuspend,
     /* pfnResume */
     NULL,
     /* pfnAttach */
@@ -4805,7 +4929,7 @@ const PDMDEVREG g_DeviceLsiLogicSCSI =
     /* pfnInitComplete */
     NULL,
     /* pfnPowerOff */
-    NULL,
+    lsilogicPowerOff,
     /* pfnSoftReset */
     NULL,
     /* u32VersionEnd */
@@ -4828,7 +4952,8 @@ const PDMDEVREG g_DeviceLsiLogicSAS =
     /* pszDescription */
     "LSI Logic SAS1068 controller.\n",
     /* fFlags */
-    PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
+    PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0 |
+    PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION | PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION,
     /* fClass */
     PDM_DEVREG_CLASS_STORAGE,
     /* cMaxInstances */
@@ -4848,7 +4973,7 @@ const PDMDEVREG g_DeviceLsiLogicSAS =
     /* pfnReset */
     lsilogicReset,
     /* pfnSuspend */
-    NULL,
+    lsilogicSuspend,
     /* pfnResume */
     NULL,
     /* pfnAttach */
@@ -4860,7 +4985,7 @@ const PDMDEVREG g_DeviceLsiLogicSAS =
     /* pfnInitComplete */
     NULL,
     /* pfnPowerOff */
-    NULL,
+    lsilogicPowerOff,
     /* pfnSoftReset */
     NULL,
     /* u32VersionEnd */
