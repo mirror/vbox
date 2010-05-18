@@ -35,9 +35,7 @@ print """
 # endif
 #include <string.h> /* VBOX */
 #elif defined(IRIX) || defined(IRIX64) || defined(Linux) || defined(FreeBSD) || defined(AIX) || defined(SunOS) || defined(OSF1)
-#if defined(Linux) || defined(SunOS) || defined(FreeBSD) /* bird: why not all? */
 #include <string.h>
-#endif
 #if defined(AIX)
 #define SYSTEM_GL "libGL.o"
 #else
