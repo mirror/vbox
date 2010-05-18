@@ -1426,7 +1426,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
         for (unsigned i = 0; i < RawDescriptor.cPartDescs; i++)
         {
             /* Free memory allocated for relative device name. */
-            if (RawDescriptor.pPartDescs[i].pszRawDevice)
+            if (fRelative && RawDescriptor.pPartDescs[i].pszRawDevice)
                 RTStrFree((char *)(void *)RawDescriptor.pPartDescs[i].pszRawDevice);
             if (RawDescriptor.pPartDescs[i].pvPartitionData)
                 RTMemFree((void *)RawDescriptor.pPartDescs[i].pvPartitionData);
