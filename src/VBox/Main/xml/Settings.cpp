@@ -4004,6 +4004,12 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
        )
         m->sv = SettingsVersion_v1_10;
 
+    // VirtualBox 3.2 adds support for page fusion
+    if (    m->sv < SettingsVersion_v1_10
+        &&  hardwareMachine.fPageFusionEnabled
+       )
+        m->sv = SettingsVersion_v1_10;
+
     // VirtualBox 3.2 adds NAT and boot priority to the NIC config in Main.
     if (m->sv < SettingsVersion_v1_10)
     {
