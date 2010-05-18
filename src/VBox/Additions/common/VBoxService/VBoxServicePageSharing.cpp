@@ -21,6 +21,7 @@
 *******************************************************************************/
 #include <iprt/assert.h>
 #include <iprt/avl.h>
+#include <iprt/asm.h>
 #include <iprt/mem.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
@@ -156,7 +157,7 @@ void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule)
                     while (pRegion < (char *)MemInfo.BaseAddress + MemInfo.RegionSize)
                     {
                         /* Try to trick the optimizer to leave the page touching code in place. */
-                        dummy += *(char *)pRegion;
+                        ASMProbeReadByte(pRegion);
                         pRegion += PAGE_SIZE;
                     }
                 }
