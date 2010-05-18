@@ -39,6 +39,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #if defined(RT_OS_LINUX)
+# include <crypt.h>
 # include <pwd.h>
 # include <shadow.h>
 #endif
@@ -92,7 +93,8 @@ static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t 
     if (spwd)
         pw->pw_passwd = spwd->sp_pwdp;
 
-    char *pszEncPasswd = crypt(pszPasswd, pw->pw_passwd);
+    struct crypt_data data;
+    char *pszEncPasswd = crypt_r(pszPasswd, pw->pw_passwd, &data);
     if (strcmp(pszEncPasswd, pw->pw_passwd))
         return VERR_PERMISSION_DENIED;
 
