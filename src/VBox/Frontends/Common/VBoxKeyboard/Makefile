@@ -17,5 +17,7 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-VBoxKeyboard.so : keyboard-new.o
-	gcc -shared -o VBoxKeyboard.so keyboard-new.o -lX11
+CFLAGS = -I. -fPIC
+
+VBoxKeyboard.so : keyboard.o
+	gcc -shared -o VBoxKeyboard.so keyboard.o -lX11

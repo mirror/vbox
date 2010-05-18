@@ -41,8 +41,6 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
-#include "keyboard.h"
-
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
 #include <X11/Xlib.h>
@@ -54,6 +52,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#include <VBox/VBoxKeyboard.h>
 
 #define KEYC2SCAN_SIZE 256
 
@@ -568,10 +568,12 @@ unsigned X11DRV_InitKeyboard(Display *display, unsigned *byLayoutOK, unsigned *b
     unsigned byType;
 
     byLayout = X11DRV_InitKeyboardByLayout(display);
-    *byLayoutOK = byLayout;
+    if (byLayoutOK)
+        *byLayoutOK = byLayout;
 
     byType = X11DRV_InitKeyboardByType(display);
-    *byTypeOK = byType;
+    if (byTypeOK)
+        *byTypeOK = byType;
 
     /* Remap keycodes after initialization. Remapping stops after an
        identity mapping is seen */

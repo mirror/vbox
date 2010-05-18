@@ -1,0 +1,75 @@
+# $Id$
+## @file
+# Makefile for the VirtualBox X11 keyboard library
+#
+
+#
+# Copyright (C) 2006-2010 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(KBUILD_TARGET)),) # X11
+ DLLS        += VBoxKeyboard
+ OTHERS      += $(PATH_BIN)/vboxkeyboard.tar.bz2
+ OTHER_CLEAN += $(PATH_BIN)/vboxkeyboard.tar.bz2
+endif
+
+
+#
+# VBoxKeyboard - keyboard library for X11.
+#
+VBoxKeyboard_TEMPLATE = VBOXR3
+VBoxKeyboard_SOURCES  = \
+	keyboard.c
+VBoxKeyboard_LIBS     = X11
+VBoxKeyboard_LIBPATH  = $(VBOX_LIBPATH_X11)
+
+
+#
+# vboxkeyboard.tar.gz - the LGPLed keyboard library must always be
+# redistributed with usable sources.
+#
+# This rule will link create a temporary symlink to src/X11/ and tar
+# up the selected files into a tarball that is installed into the
+# bin directory (probably belongs in /usr/shared/somewhere really,
+# but wtf, it's not like we're even trying to be FHS compliant).
+#
+## @todo this should be tar'ed down into the output directory and installed using an install target.
+VBOX_KEYBOARD_STAGE_DIR = $(PATH_TARGET)/VBoxKeyboard/install
+VBOX_KEYBOARD_DEST_DIR = $(VBOX_KEYBOARD_STAGE_DIR)/VBoxKeyboard/
+
+INSTALLS += VBoxKeyboard-Files
+
+VBoxKeyboard-Files_INST    = $(subst $(PATH_TARGET),obj,$(VBOX_KEYBOARD_DEST_DIR))
+VBoxKeyboard-Files_MODE    = a+rx,u+w
+VBoxKeyboard-Files_SOURCES = \
+		COPYING.LIB \
+		keyboard.c \
+		keyboard-layouts.h \
+		keyboard-list.h \
+		keyboard-tables.h \
+		keyboard-types.h \
+		Makefile \
+		../../../../../include/VBox/VBoxKeyboard.h=>VBox/VBoxKeyboard.h
+
+$(PATH_BIN)/vboxkeyboard.tar.bz2: \
+		$(INSTARGET_VBoxKeyboard-Files) \
+		$(MAKEFILE_CURRENT)
+	$(call MSG_L1,Packing $@)
+	$(QUIET)$(RM) -f -- $@ $(patsubst %.bz2,%,$@)
+	$(QUIET)$(MKDIR) -p $(@D)
+	$(QUIET)tar --owner 0 --group 0 --ignore-failed-read -cjRf $@ \
+ 		-C $(VBOX_KEYBOARD_STAGE_DIR) VBoxKeyboard
+	$(QUIET)$(CHMOD) 0644 $@
+
+include $(KBUILD_PATH)/subfooter.kmk

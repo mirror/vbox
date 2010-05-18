@@ -25,7 +25,7 @@
 #include <X11/keysym.h>
 #include <XKeyboard.h>
 #include <VBox/log.h>
-#include "keyboard.h"
+#include <VBox/VBoxKeyboard.h>
 
 static unsigned gfByLayoutOK = 1;
 static unsigned gfByTypeOK = 1;
