@@ -152,10 +152,10 @@ void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule)
                 /* Skip the first region as it only contains the image file header. */
                 if (pRegion != (char *)pModule->Info.modBaseAddr)
                 {
-                    char dummy = 0;
                     /* Touch all pages. */
                     while (pRegion < (char *)MemInfo.BaseAddress + MemInfo.RegionSize)
                     {
+                        /* Try to trick the optimizer to leave the page touching code in place. */
                         dummy += *(char *)pRegion;
                         pRegion += PAGE_SIZE;
                     }
@@ -195,7 +195,6 @@ void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule)
     if (RT_FAILURE(rc))
         VBoxServiceVerbose(3, "VbglR3RegisterSharedModule failed with %d\n", rc);
     
-
 end:
     RTMemFree(pVersionInfo);
     return;
