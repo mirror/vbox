@@ -141,9 +141,7 @@ static int rtSemEventWait(PRTSEMEVENTINTERNAL pThis, RTMSINTERVAL cMillies, bool
     DEFINE_WAIT(Wait);
     int     rc       = VINF_SUCCESS;
     long    lTimeout = cMillies == RT_INDEFINITE_WAIT ? MAX_SCHEDULE_TIMEOUT : msecs_to_jiffies(cMillies);
-#ifdef IPRT_DEBUG_SEMS
-    snprintf(current->comm, sizeof(current->comm), "e%lx", IPRT_DEBUG_SEMS_ADDRESS(pThis));
-#endif
+    IPRT_DEBUG_SEMS_STATE(pThis, 'e');
     for (;;)
     {
         /* make everything thru schedule_timeout() atomic scheduling wise. */
@@ -181,9 +179,7 @@ static int rtSemEventWait(PRTSEMEVENTINTERNAL pThis, RTMSINTERVAL cMillies, bool
     }
 
     finish_wait(&pThis->Head, &Wait);
-#ifdef IPRT_DEBUG_SEMS
-    snprintf(current->comm, sizeof(current->comm), "e%lx:%d", IPRT_DEBUG_SEMS_ADDRESS(pThis), rc);
-#endif
+    IPRT_DEBUG_SEMS_STATE_RC(pThis, 'e', rc);
     return rc;
 }
 
