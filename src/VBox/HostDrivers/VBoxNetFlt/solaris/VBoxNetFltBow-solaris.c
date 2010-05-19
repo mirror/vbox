@@ -650,7 +650,7 @@ LOCAL void vboxNetFltSolarisRecv(void *pvData, mac_resource_handle_t hResource, 
         PINTNETSG pSG = (PINTNETSG)alloca(RT_OFFSETOF(INTNETSG, aSegs[cSegs]));
         int rc = vboxNetFltSolarisMBlkToSG(pThis, pMsg, pSG, cSegs, fSrc);
         if (RT_SUCCESS(rc))
-            pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, pSG, fSrc);
+            pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, NULL, pSG, fSrc);
         else
             cFailed++;
     }
@@ -1060,7 +1060,7 @@ bool vboxNetFltOsMaybeRediscovered(PVBOXNETFLTINS pThis)
 }
 
 
-int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
+int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, uint32_t fDst)
 {
     /*
      * Xmit the packet down the interface (tx)
@@ -1094,20 +1094,20 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
 }
 
 
-void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf, PCRTMAC pMac)
+void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, void *pvIfData, PCRTMAC pMac)
 {
     LogRel((DEVICE_NAME ":vboxNetFltPortOSNotifyMacAddress %s %.6Rhxs\n", pThis->szName, pMac));
 }
 
 
-int vboxNetFltPortOsConnectInterface(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf)
+int vboxNetFltPortOsConnectInterface(PVBOXNETFLTINS pThis, void *pvIf, void **pvIfData)
 {
     LogRel((DEVICE_NAME ":vboxNetFltPortOsConnectInterface\n"));
     return VINF_SUCCESS;
 }
 
 
-int vboxNetFltPortOsDisconnectInterface(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf)
+int vboxNetFltPortOsDisconnectInterface(PVBOXNETFLTINS pThis, void *pvIfData)
 {
     LogRel((DEVICE_NAME ":vboxNetFltPortOsDisconnectInterface\n"));
     return VINF_SUCCESS;

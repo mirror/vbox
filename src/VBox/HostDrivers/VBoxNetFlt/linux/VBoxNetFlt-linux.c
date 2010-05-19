@@ -1062,7 +1062,7 @@ static int vboxNetFltLinuxForwardAsGso(PVBOXNETFLTINS pThis, struct sk_buff *pSk
             vboxNetFltLinuxSkBufToSG(pThis, pSkb, pSG, cSegs, fSrc, pGsoCtx);
 
             vboxNetFltDumpPacket(pSG, false, (fSrc & INTNETTRUNKDIR_HOST) ? "host" : "wire", 1);
-            pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, pSG, fSrc);
+            pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, NULL /* pvIf */, pSG, fSrc);
 
             vboxNetFltLinuxDestroySG(pSG);
             rc = VINF_SUCCESS;
@@ -1106,7 +1106,7 @@ static int vboxNetFltLinuxForwardSegment(PVBOXNETFLTINS pThis, struct sk_buff *p
             vboxNetFltLinuxSkBufToSG(pThis, pBuf, pSG, cSegs, fSrc, NULL /*pGsoCtx*/);
 
             vboxNetFltDumpPacket(pSG, false, (fSrc & INTNETTRUNKDIR_HOST) ? "host" : "wire", 1);
-            pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, pSG, fSrc);
+            pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, NULL /* pvIf */, pSG, fSrc);
 
             vboxNetFltLinuxDestroySG(pSG);
             rc = VINF_SUCCESS;
@@ -1539,8 +1539,10 @@ bool vboxNetFltOsMaybeRediscovered(PVBOXNETFLTINS pThis)
     return !ASMAtomicUoReadBool(&pThis->fDisconnectedFromHost);
 }
 
-int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
+int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, uint32_t fDst)
 {
+    NOREF(pvIfData);
+
     struct net_device * pDev;
     int err;
     int rc = VINF_SUCCESS;
@@ -1765,24 +1767,24 @@ int  vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
 }
 
 
-void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf, PCRTMAC pMac)
+void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, void *pvIfData, PCRTMAC pMac)
 {
-    NOREF(pThis); NOREF(hIf); NOREF(pMac);
+    NOREF(pThis); NOREF(pvIfData); NOREF(pMac);
 }
 
 
-int vboxNetFltPortOsConnectInterface(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf)
+int vboxNetFltPortOsConnectInterface(PVBOXNETFLTINS pThis, void *pvIf, void **pvIfData)
 {
     /* Nothing to do */
-    NOREF(pThis); NOREF(hIf);
+    NOREF(pThis); NOREF(pvIf); NOREF(pvIfData);
     return VINF_SUCCESS;
 }
 
 
-int vboxNetFltPortOsDisconnectInterface(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf)
+int vboxNetFltPortOsDisconnectInterface(PVBOXNETFLTINS pThis, void *pvIfData)
 {
     /* Nothing to do */
-    NOREF(pThis); NOREF(hIf);
+    NOREF(pThis); NOREF(pvIfData);
     return VINF_SUCCESS;
 }
 

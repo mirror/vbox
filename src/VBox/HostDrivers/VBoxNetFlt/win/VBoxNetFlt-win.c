@@ -699,14 +699,14 @@ DECLHIDDEN(bool) vboxNetFltWinPostIntnet(PVBOXNETFLTINS pNetFltIf, PVOID pvPacke
 #ifndef VBOX_NETFLT_ONDEMAND_BIND
         bDropIt =
 #endif
-        pSG ? pNetFltIf->pSwitchPort->pfnRecv(pNetFltIf->pSwitchPort, pSG,
+        pSG ? pNetFltIf->pSwitchPort->pfnRecv(pNetFltIf->pSwitchPort, NULL /* pvIf */, pSG,
                     bSrcHost ? INTNETTRUNKDIR_HOST : INTNETTRUNKDIR_WIRE
                             )
               : false;
 #else
         if(pSG)
         {
-            pNetFltIf->pSwitchPort->pfnRecv(pNetFltIf->pSwitchPort, pSG, INTNETTRUNKDIR_HOST);
+            pNetFltIf->pSwitchPort->pfnRecv(pNetFltIf->pSwitchPort, pSG, NULL /* pvIf */, INTNETTRUNKDIR_HOST);
             STATISTIC_INCREASE(pAdapt->cTxSuccess);
         }
         else
@@ -3427,8 +3427,10 @@ bool vboxNetFltOsMaybeRediscovered(PVBOXNETFLTINS pThis)
     return !ASMAtomicUoReadBool(&pThis->fDisconnectedFromHost);
 }
 
-int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
+int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, uint32_t fDst)
 {
+    NOREF(pvIfData);
+
     int rc = VINF_SUCCESS;
     uint32_t cRefs = 0;
     PADAPT pAdapt;
@@ -3771,22 +3773,22 @@ int vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
     return VINF_SUCCESS;
 }
 
-void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf, PCRTMAC pMac)
+void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, void *pvIfData, PCRTMAC pMac)
 {
-    NOREF(pThis); NOREF(hIf); NOREF(pMac);
+    NOREF(pThis); NOREF(pvIfData); NOREF(pMac);
 }
 
-int vboxNetFltPortOsConnectInterface(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf)
+int vboxNetFltPortOsConnectInterface(PVBOXNETFLTINS pThis, void *pvIf, void **ppvIfData)
 {
     /* Nothing to do */
-    NOREF(pThis); NOREF(hIf);
+    NOREF(pThis); NOREF(pvIf); NOREF(pvIfData);
     return VINF_SUCCESS;
 }
 
-int vboxNetFltPortOsDisconnectInterface(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf)
+int vboxNetFltPortOsDisconnectInterface(PVBOXNETFLTINS pThis, void *pvIfData)
 {
     /* Nothing to do */
-    NOREF(pThis); NOREF(hIf);
+    NOREF(pThis); NOREF(pvIfData);
     return VINF_SUCCESS;
 }
 
