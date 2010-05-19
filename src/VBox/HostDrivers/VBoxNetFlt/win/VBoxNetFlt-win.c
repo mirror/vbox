@@ -797,6 +797,10 @@ DECLHIDDEN(bool) vboxNetFltWinPostIntnet(PVBOXNETFLTINS pNetFltIf, PVOID pvPacke
 #endif
 #else /* #ifdef VBOXNETFLT_NO_PACKET_QUEUE */
     } while(0);
+
+    if (bDeleteSG)
+        vboxNetFltWinMemFree(pSG);
+
 # ifndef VBOXNETADP
     return bDropIt;
 # else
