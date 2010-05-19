@@ -1393,7 +1393,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation type="obsolete">Hoofd geheugen</translation>
+        <translation type="obsolete">Geheugen</translation>
     </message>
     <message>
         <source>Boot Hard Disk</source>
@@ -1529,7 +1529,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Base Memory</source>
         <comment>summary</comment>
-        <translation>Hoofd geheugen</translation>
+        <translation>Geheugen</translation>
     </message>
     <message>
         <source>MB</source>
@@ -2379,7 +2379,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxGLSettingsGeneral</name>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation>Geeft het pad weer naar de standaard map voor virtuele machines. Deze map wordt gebruikt voor het aanmaken van nieuwe virtuele machines, tenzij deze uitdrukkelijk wordt aangepast.</translation>
+        <translation>Geeft het pad weer naar de standaardmap voor virtuele machines. Deze map wordt gebruikt voor het aanmaken van nieuwe virtuele machines, tenzij deze uitdrukkelijk wordt aangepast.</translation>
     </message>
     <message>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
@@ -2387,11 +2387,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Default &amp;Hard Disk Folder:</source>
-        <translation>Standaard map voor de &amp;Harde schijf:</translation>
+        <translation>Standaardmap voor de &amp;Harde schijf:</translation>
     </message>
     <message>
         <source>Default &amp;Machine Folder:</source>
-        <translation>Standaard map voor Virtuele &amp;machines:</translation>
+        <translation>Standaardmap voor Virtuele &amp;machines:</translation>
     </message>
     <message>
         <source>V&amp;RDP Authentication Library:</source>
@@ -2399,7 +2399,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
-        <translation>Geeft het pad weer naar de standaard map voor harde schijven. Deze map wordt gebruikt bij het toeveogen of aanmaken van nieuwe harde schijven, tenzij deze uitdrukkelijk wordt aangepast.</translation>
+        <translation>Geeft het pad weer naar de standaardmap voor harde schijven. Deze map wordt gebruikt bij het toeveogen of aanmaken van nieuwe harde schijven, tenzij deze uitdrukkelijk wordt aangepast.</translation>
     </message>
     <message>
         <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
@@ -2831,7 +2831,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Base Memory</source>
         <comment>details report</comment>
-        <translation>Hoofd geheugen</translation>
+        <translation>Geheugen</translation>
     </message>
     <message>
         <source>General</source>
@@ -2988,7 +2988,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Powered Off</source>
         <comment>MachineState</comment>
-        <translation>Uit geschakeld</translation>
+        <translation>Uitgeschakeld</translation>
     </message>
     <message>
         <source>Saved</source>
@@ -3073,7 +3073,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Hard Disk</source>
         <comment>DeviceType</comment>
-        <translation>Harde schiijf</translation>
+        <translation>Harde schijf</translation>
     </message>
     <message>
         <source>Network</source>
@@ -3609,7 +3609,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Processor(s)</source>
         <comment>details report</comment>
-        <translation>Prosessoren</translation>
+        <translation>Processoren</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
@@ -5580,7 +5580,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxSettingsDialog</name>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;Selecteer een categorie instellingen uit de lijst, aan de linkerkant, en beweeg met de muis over de een instelling om meer informatie te verkrijgen&lt;/i&gt;.</translation>
+        <translation>&lt;i&gt;Selecteer een categorie instellingen uit de lijst aan de linkerkant, en beweeg met de muis over de een instelling om meer informatie te verkrijgen&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
