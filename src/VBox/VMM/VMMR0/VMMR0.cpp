@@ -1079,6 +1079,11 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
                 return VERR_INVALID_PARAMETER;
             return IntNetR0IfWaitReq(pSession, (PINTNETIFWAITREQ)pReqHdr);
 
+        case VMMR0_DO_INTNET_IF_ABORT_WAIT:
+            if (u64Arg || !pReqHdr || !vmmR0IsValidSession(pVM, ((PINTNETIFWAITREQ)pReqHdr)->pSession, pSession) || idCpu != NIL_VMCPUID)
+                return VERR_INVALID_PARAMETER;
+            return IntNetR0IfAbortWaitReq(pSession, (PINTNETIFABORTWAITREQ)pReqHdr);
+
         /*
          * For profiling.
          */

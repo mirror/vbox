@@ -1044,6 +1044,29 @@ typedef INTNETIFWAITREQ *PINTNETIFWAITREQ;
 INTNETR0DECL(int) IntNetR0IfWaitReq(PSUPDRVSESSION pSession, PINTNETIFWAITREQ pReq);
 
 
+/**
+ * Request buffer for IntNetR0IfAbortWaitReq / VMMR0_DO_INTNET_IF_ABORT_WAIT.
+ * @see IntNetR0IfAbortWait.
+ */
+typedef struct INTNETIFABORTWAITREQ
+{
+    /** The request header. */
+    SUPVMMR0REQHDR  Hdr;
+    /** Alternative to passing the taking the session from the VM handle.
+     * Either use this member or use the VM handle, don't do both. */
+    PSUPDRVSESSION  pSession;
+    /** Handle to the interface. */
+    INTNETIFHANDLE  hIf;
+    /** Set this to fend off all future IntNetR0Wait calls.  */
+    bool            fNoMoreWaits;
+} INTNETIFABORTWAITREQ;
+/** Pointer to an IntNetR0IfAbortWaitReq / VMMR0_DO_INTNET_IF_ABORT_WAIT
+ *  request buffer. */
+typedef INTNETIFABORTWAITREQ *PINTNETIFABORTWAITREQ;
+
+INTNETR0DECL(int) IntNetR0IfAbortWaitReq(PSUPDRVSESSION pSession, PINTNETIFABORTWAITREQ pReq);
+
+
 #if defined(IN_RING0) || defined(IN_INTNET_TESTCASE)
 /** @name
  * @{
@@ -1064,6 +1087,7 @@ INTNETR0DECL(int)       IntNetR0IfSetMacAddress(INTNETIFHANDLE hIf, PSUPDRVSESSI
 INTNETR0DECL(int)       IntNetR0IfSetActive(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fActive);
 INTNETR0DECL(int)       IntNetR0IfSend(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession);
 INTNETR0DECL(int)       IntNetR0IfWait(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, uint32_t cMillies);
+INTNETR0DECL(int)       IntNetR0IfAbortWait(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession);
 
 /** @} */
 #endif /* IN_RING0 */
