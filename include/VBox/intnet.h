@@ -421,8 +421,8 @@ typedef struct INTNETTRUNKSWPORT
      *          false if it should hit the wire/host.
      *
      * @param   pSwitchPort Pointer to this structure.
-     * @param   pvIf        Pointer to the interface which received this frame 
-     *                      if avilable.  Can be NULL.
+     * @param   pvIf        Pointer to the interface which received this frame
+     *                      if available.  Can be NULL.
      * @param   pSG         The (scatter /) gather structure for the frame.  This
      *                      will only be use during the call, so a temporary one can
      *                      be used.  The Phys member will not be used.
@@ -652,7 +652,7 @@ typedef struct INTNETTRUNKIFPORT
      * Notifies when the MAC address of an interface is set or changes.
      *
      * @param   pIfPort     Pointer to this structure.
-     * @param   pvIfData    Pointer to the trunk's interface data (see 
+     * @param   pvIfData    Pointer to the trunk's interface data (see
      *                      pfnConnectInterface).
      * @param   pMac        Pointer to the MAC address of the connecting VM NIC.
      *
@@ -665,14 +665,14 @@ typedef struct INTNETTRUNKIFPORT
      *
      * @returns IPRT status code.
      * @param   pIfPort     Pointer to this structure.
-     * @param   pvIf        Opaque pointer to the interface being connected. 
+     * @param   pvIf        Opaque pointer to the interface being connected.
      *                      For use INTNETTRUNKSWPORT::pfnRecv.
-     * @param   ppvIfData   Pointer  to a pointer variable that the trunk 
+     * @param   ppvIfData   Pointer  to a pointer variable that the trunk
      *                      implementation can use to associate data with the
      *                      interface.  This pointer will be passed to the
      *                      pfnXmit, pfnNotifyMacAddress and
      *                      pfnDisconnectInterface methods.
-     *  
+     *
      * @remarks Owns the big mutex.  No racing pfnDisconnectAndRelease.
      */
     DECLR0CALLBACKMEMBER(int, pfnConnectInterface,(PINTNETTRUNKIFPORT pIfPort, void *pvIf, void **ppvIfData));
@@ -681,7 +681,7 @@ typedef struct INTNETTRUNKIFPORT
      * Called when an interface is disconnected from the network.
      *
      * @param   pIfPort     Pointer to this structure.
-     * @param   pvIfData    Pointer to the trunk's interface data (see 
+     * @param   pvIfData    Pointer to the trunk's interface data (see
      *                      pfnConnectInterface).
      *
      * @remarks Owns the big mutex.  No racing pfnDisconnectAndRelease.
@@ -710,7 +710,7 @@ typedef struct INTNETTRUNKIFPORT
      *
      * @return  VBox status code. Error generally means we'll drop the frame.
      * @param   pIfPort     Pointer to this structure.
-     * @param   pvIfData    Pointer to the trunk's interface data (see 
+     * @param   pvIfData    Pointer to the trunk's interface data (see
      *                      pfnConnectInterface).
      * @param   pSG         Pointer to the (scatter /) gather structure for the frame.
      *                      This may or may not be a temporary buffer. If it's temporary
