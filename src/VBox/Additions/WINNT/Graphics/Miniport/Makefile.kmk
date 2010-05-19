@@ -106,6 +106,10 @@ ifdef VBOXWDDM
   VBoxVideoWddm_SOURCES   += \
     wddm/VBoxVideoVbva.cpp
  endif
+ ifdef VBOX_WITH_VIDEOHWACCEL
+  VBoxVideoWddm_SOURCES   += \
+    wddm/VBoxVideoVhwa.cpp
+ endif
  VBoxVideoWddm_LIBS.x86   = \
  	$(PATH_SDK_WINDDKWLH_LIB)/bufferoverflowk.lib
  #VBoxVideoWddm_LIBS.x86   += \

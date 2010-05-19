@@ -213,7 +213,7 @@ void vboxVdmaCBufDrFree (PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr)
 
 PVBOXVDMACBUF_DR vboxVdmaCBufDrCreate (PVBOXVDMAINFO pInfo, uint32_t cbTrailingData)
 {
-    uint32_t cbDr = sizeof (VBOXVDMACBUF_DR) + cbTrailingData;
+    uint32_t cbDr = VBOXVDMACBUF_DR_SIZE(cbTrailingData);
     PVBOXVDMACBUF_DR pDr = (PVBOXVDMACBUF_DR)VBoxSHGSMICommandAlloc (&pInfo->CmdHeap, cbDr, HGSMI_CH_VBVA, VBVA_VDMA_CMD);
     Assert(pDr);
     if (pDr)
