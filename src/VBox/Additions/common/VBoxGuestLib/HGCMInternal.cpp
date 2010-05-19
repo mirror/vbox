@@ -45,7 +45,7 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The max parameter buffer size for a user request. */
-#define VBGLR0_MAX_HGCM_USER_PARM       (16*_1M)
+#define VBGLR0_MAX_HGCM_USER_PARM       (24*_1M)
 /** The max parameter buffer size for a kernel request. */
 #define VBGLR0_MAX_HGCM_KERNEL_PARM     (16*_1M)
 #ifdef RT_OS_LINUX
