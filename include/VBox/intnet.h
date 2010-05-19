@@ -421,6 +421,8 @@ typedef struct INTNETTRUNKSWPORT
      *          false if it should hit the wire/host.
      *
      * @param   pSwitchPort Pointer to this structure.
+     * @param   pvIf        Pointer to the interface which received this frame 
+     *                      if avilable.  Can be NULL.
      * @param   pSG         The (scatter /) gather structure for the frame.  This
      *                      will only be use during the call, so a temporary one can
      *                      be used.  The Phys member will not be used.
@@ -436,7 +438,7 @@ typedef struct INTNETTRUNKSWPORT
      *          If so, we'll add a callback to INTNETTRUNKIFPORT for this
      *          (pfnSGModifying) and a SG flag.
      */
-    DECLR0CALLBACKMEMBER(bool, pfnRecv,(PINTNETTRUNKSWPORT pSwitchPort, PINTNETSG pSG, uint32_t fSrc));
+    DECLR0CALLBACKMEMBER(bool, pfnRecv,(PINTNETTRUNKSWPORT pSwitchPort, void *pvIf, PINTNETSG pSG, uint32_t fSrc));
 
     /**
      * Retain a SG.
@@ -650,33 +652,41 @@ typedef struct INTNETTRUNKIFPORT
      * Notifies when the MAC address of an interface is set or changes.
      *
      * @param   pIfPort     Pointer to this structure.
-     * @param   hIf         The handle of the network interface.
+     * @param   pvIfData    Pointer to the trunk's interface data (see 
+     *                      pfnConnectInterface).
      * @param   pMac        Pointer to the MAC address of the connecting VM NIC.
      *
      * @remarks Only busy references to the trunk and the interface.
      */
-    DECLR0CALLBACKMEMBER(void, pfnNotifyMacAddress,(PINTNETTRUNKIFPORT pIfPort, INTNETIFHANDLE hIf, PCRTMAC pMac));
+    DECLR0CALLBACKMEMBER(void, pfnNotifyMacAddress,(PINTNETTRUNKIFPORT pIfPort, void *pvIfData, PCRTMAC pMac));
 
     /**
      * Called when an interface is connected to the network.
      *
      * @returns IPRT status code.
      * @param   pIfPort     Pointer to this structure.
-     * @param   hIf         The handle of the network interface.
-     *
+     * @param   pvIf        Opaque pointer to the interface being connected. 
+     *                      For use INTNETTRUNKSWPORT::pfnRecv.
+     * @param   ppvIfData   Pointer  to a pointer variable that the trunk 
+     *                      implementation can use to associate data with the
+     *                      interface.  This pointer will be passed to the
+     *                      pfnXmit, pfnNotifyMacAddress and
+     *                      pfnDisconnectInterface methods.
+     *  
      * @remarks Owns the big mutex.  No racing pfnDisconnectAndRelease.
      */
-    DECLR0CALLBACKMEMBER(int, pfnConnectInterface,(PINTNETTRUNKIFPORT pIfPort, INTNETIFHANDLE hIf));
+    DECLR0CALLBACKMEMBER(int, pfnConnectInterface,(PINTNETTRUNKIFPORT pIfPort, void *pvIf, void **ppvIfData));
 
     /**
      * Called when an interface is disconnected from the network.
      *
      * @param   pIfPort     Pointer to this structure.
-     * @param   hIf         The handle of the network interface.
+     * @param   pvIfData    Pointer to the trunk's interface data (see 
+     *                      pfnConnectInterface).
      *
      * @remarks Owns the big mutex.  No racing pfnDisconnectAndRelease.
      */
-    DECLR0CALLBACKMEMBER(void, pfnDisconnectInterface,(PINTNETTRUNKIFPORT pIfPort, INTNETIFHANDLE hIf));
+    DECLR0CALLBACKMEMBER(void, pfnDisconnectInterface,(PINTNETTRUNKIFPORT pIfPort, void *pvIfData));
 
     /**
      * Waits for the interface to become idle.
@@ -700,6 +710,8 @@ typedef struct INTNETTRUNKIFPORT
      *
      * @return  VBox status code. Error generally means we'll drop the frame.
      * @param   pIfPort     Pointer to this structure.
+     * @param   pvIfData    Pointer to the trunk's interface data (see 
+     *                      pfnConnectInterface).
      * @param   pSG         Pointer to the (scatter /) gather structure for the frame.
      *                      This may or may not be a temporary buffer. If it's temporary
      *                      the transmit operation(s) then it's required to make a copy
@@ -708,7 +720,7 @@ typedef struct INTNETTRUNKIFPORT
      *
      * @remarks No locks.  May be called concurrently on several threads.
      */
-    DECLR0CALLBACKMEMBER(int, pfnXmit,(PINTNETTRUNKIFPORT pIfPort, PINTNETSG pSG, uint32_t fDst));
+    DECLR0CALLBACKMEMBER(int, pfnXmit,(PINTNETTRUNKIFPORT pIfPort, void *pvIfData, PINTNETSG pSG, uint32_t fDst));
 
     /** Structure version number. (INTNETTRUNKIFPORT_VERSION) */
     uint32_t u32VersionEnd;
@@ -766,7 +778,7 @@ typedef struct INTNETTRUNKFACTORY
 typedef INTNETTRUNKFACTORY *PINTNETTRUNKFACTORY;
 
 /** The UUID for the (current) trunk factory. (case sensitive) */
-#define INTNETTRUNKFACTORY_UUID_STR     "2dbd031b-ef53-4c11-a648-9a319da36aa6"
+#define INTNETTRUNKFACTORY_UUID_STR     "de504d93-1d1e-4781-8b73-6ea39a0e36a2"
 
 /** @name INTNETTRUNKFACTORY::pfnCreateAndConnect flags.
  * @{ */

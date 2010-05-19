@@ -841,7 +841,7 @@ static errno_t vboxNetFltDarwinIffInputOutputWorker(PVBOXNETFLTINS pThis, mbuf_t
         PINTNETSG pSG = (PINTNETSG)alloca(RT_OFFSETOF(INTNETSG, aSegs[cSegs]));
         vboxNetFltDarwinMBufToSG(pThis, pMBuf, pvFrame, pSG, cSegs, fSrc);
 
-        fDropIt = pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, pSG, fSrc);
+        fDropIt = pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, NULL /* pvIf */, pSG, fSrc);
         if (fDropIt)
             mbuf_freem(pMBuf);
     }
@@ -981,8 +981,10 @@ bool vboxNetFltOsMaybeRediscovered(PVBOXNETFLTINS pThis)
 }
 
 
-int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
+int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, uint32_t fDst)
 {
+    NOREF(pvIfData);
+
     int rc = VINF_SUCCESS;
     ifnet_t pIfNet = vboxNetFltDarwinRetainIfNet(pThis);
     if (pIfNet)
@@ -1191,24 +1193,24 @@ int  vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
 }
 
 
-void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf, PCRTMAC pMac)
+void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, void *pvIfData, PCRTMAC pMac)
 {
-    NOREF(pThis); NOREF(hIf); NOREF(pMac);
+    NOREF(pThis); NOREF(pvIfData); NOREF(pMac);
 }
 
 
-int vboxNetFltPortOsConnectInterface(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf)
+int vboxNetFltPortOsConnectInterface(PVBOXNETFLTINS pThis, void *pvIf, void **ppvIfData)
 {
     /* Nothing to do */
-    NOREF(pThis); NOREF(hIf);
+    NOREF(pThis); NOREF(pvIf); NOREF(ppvIfData);
     return VINF_SUCCESS;
 }
 
 
-int vboxNetFltPortOsDisconnectInterface(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf)
+int vboxNetFltPortOsDisconnectInterface(PVBOXNETFLTINS pThis, void *pvIfData)
 {
     /* Nothing to do */
-    NOREF(pThis); NOREF(hIf);
+    NOREF(pThis); NOREF(pvIfData);
     return VINF_SUCCESS;
 }
 

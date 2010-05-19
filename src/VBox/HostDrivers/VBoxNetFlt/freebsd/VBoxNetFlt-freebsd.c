@@ -423,7 +423,7 @@ static void vboxNetFltFreeBSDinput(void *arg, int pending)
         /* Create a copy and deliver to the virtual switch */
         pSG = RTMemTmpAlloc(RT_OFFSETOF(INTNETSG, aSegs[cSegs]));
         vboxNetFltFreeBSDMBufToSG(pThis, m, pSG, cSegs, 0);
-        fDropIt = pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, pSG, INTNETTRUNKDIR_WIRE);
+        fDropIt = pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, NULL /* pvIf */, pSG, INTNETTRUNKDIR_WIRE);
         RTMemTmpFree(pSG);
         if (fDropIt)
             m_freem(m);
@@ -479,8 +479,10 @@ static void vboxNetFltFreeBSDoutput(void *arg, int pending)
 /**
  * Called to deliver a frame to either the host, the wire or both.
  */
-int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
+int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, uint32_t fDst)
 {
+    NOREF(pvIfData);
+
     void (*input_f)(struct ifnet *, struct mbuf *);
     struct ifnet *ifp;
     struct mbuf *m;
@@ -745,22 +747,22 @@ int vboxNetFltOsConnectIt(PVBOXNETFLTINS pThis)
     return VINF_SUCCESS;
 }
 
-void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf, PCRTMAC pMac)
+void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, void *pvIfData, PCRTMAC pMac)
 {
-    NOREF(pThis); NOREF(hIf); NOREF(pMac);
+    NOREF(pThis); NOREF(pvIfData); NOREF(pMac);
 }
 
-int vboxNetFltPortOsConnectInterface(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf)
+int vboxNetFltPortOsConnectInterface(PVBOXNETFLTINS pThis, void *pvIf, void **ppvIfData)
 {
     /* Nothing to do */
-    NOREF(pThis); NOREF(hIf);
+    NOREF(pThis); NOREF(pvIf); NOREF(ppvIfData);
     return VINF_SUCCESS;
 }
 
-int vboxNetFltPortOsDisconnectInterface(PVBOXNETFLTINS pThis, INTNETIFHANDLE hIf)
+int vboxNetFltPortOsDisconnectInterface(PVBOXNETFLTINS pThis, void *pvIfData)
 {
     /* Nothing to do */
-    NOREF(pThis); NOREF(hIf);
+    NOREF(pThis); NOREF(pvIfData);
     return VINF_SUCCESS;
 }
 

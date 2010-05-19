@@ -432,7 +432,7 @@ static bool vboxNetFltMaybeRediscovered(PVBOXNETFLTINS pThis)
 /**
  * @copydoc INTNETTRUNKIFPORT::pfnXmit
  */
-static DECLCALLBACK(int) vboxNetFltPortXmit(PINTNETTRUNKIFPORT pIfPort, PINTNETSG pSG, uint32_t fDst)
+static DECLCALLBACK(int) vboxNetFltPortXmit(PINTNETTRUNKIFPORT pIfPort, void *pvIfData, PINTNETSG pSG, uint32_t fDst)
 {
     PVBOXNETFLTINS pThis = IFPORT_2_VBOXNETFLTINS(pIfPort);
     int rc = VINF_SUCCESS;
@@ -453,7 +453,7 @@ static DECLCALLBACK(int) vboxNetFltPortXmit(PINTNETTRUNKIFPORT pIfPort, PINTNETS
     {
         if (    !ASMAtomicUoReadBool(&pThis->fDisconnectedFromHost)
             ||  vboxNetFltMaybeRediscovered(pThis))
-            rc = vboxNetFltPortOsXmit(pThis, pSG, fDst);
+            rc = vboxNetFltPortOsXmit(pThis, pvIfData, pSG, fDst);
         vboxNetFltRelease(pThis, true /* fBusy */);
     }
 
@@ -536,7 +536,7 @@ static DECLCALLBACK(INTNETTRUNKIFSTATE) vboxNetFltPortSetState(PINTNETTRUNKIFPOR
 /**
  * @copydoc INTNETTRUNKIFPORT::pfnNotifyMacAddress
  */
-static DECLCALLBACK(void) vboxNetFltPortNotifyMacAddress(PINTNETTRUNKIFPORT pIfPort, INTNETIFHANDLE hIf, PCRTMAC pMac)
+static DECLCALLBACK(void) vboxNetFltPortNotifyMacAddress(PINTNETTRUNKIFPORT pIfPort, void *pvIfData, PCRTMAC pMac)
 {
     PVBOXNETFLTINS pThis = IFPORT_2_VBOXNETFLTINS(pIfPort);
 
@@ -547,7 +547,7 @@ static DECLCALLBACK(void) vboxNetFltPortNotifyMacAddress(PINTNETTRUNKIFPORT pIfP
     Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
 
     vboxNetFltRetain(pThis, false /* fBusy */);
-    vboxNetFltPortOsNotifyMacAddress(pThis, hIf, pMac);
+    vboxNetFltPortOsNotifyMacAddress(pThis, pvIfData, pMac);
     vboxNetFltRelease(pThis, false /* fBusy */);
 }
 
@@ -555,7 +555,7 @@ static DECLCALLBACK(void) vboxNetFltPortNotifyMacAddress(PINTNETTRUNKIFPORT pIfP
 /**
  * @copydoc INTNETTRUNKIFPORT::pfnConnectInterface
  */
-static DECLCALLBACK(int) vboxNetFltPortConnectInterface(PINTNETTRUNKIFPORT pIfPort,  INTNETIFHANDLE hIf)
+static DECLCALLBACK(int) vboxNetFltPortConnectInterface(PINTNETTRUNKIFPORT pIfPort, void *pvIf, void *ppvIfData, INTNETIFHANDLE hIf)
 {
     PVBOXNETFLTINS  pThis = IFPORT_2_VBOXNETFLTINS(pIfPort);
     int             rc;
@@ -567,7 +567,7 @@ static DECLCALLBACK(int) vboxNetFltPortConnectInterface(PINTNETTRUNKIFPORT pIfPo
     Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
 
     vboxNetFltRetain(pThis, false /* fBusy */);
-    rc = vboxNetFltPortOsConnectInterface(pThis, hIf);
+    rc = vboxNetFltPortOsConnectInterface(pThis, pvIf, ppvIfData);
     vboxNetFltRelease(pThis, false /* fBusy */);
 
     return rc;
@@ -577,7 +577,7 @@ static DECLCALLBACK(int) vboxNetFltPortConnectInterface(PINTNETTRUNKIFPORT pIfPo
 /**
  * @copydoc INTNETTRUNKIFPORT::pfnDisconnectInterface
  */
-static DECLCALLBACK(void) vboxNetFltPortDisconnectInterface(PINTNETTRUNKIFPORT pIfPort, INTNETIFHANDLE hIf)
+static DECLCALLBACK(void) vboxNetFltPortDisconnectInterface(PINTNETTRUNKIFPORT pIfPort, void *pvIfData)
 {
     PVBOXNETFLTINS  pThis = IFPORT_2_VBOXNETFLTINS(pIfPort);
     int             rc;
@@ -589,7 +589,7 @@ static DECLCALLBACK(void) vboxNetFltPortDisconnectInterface(PINTNETTRUNKIFPORT p
     Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
 
     vboxNetFltRetain(pThis, false /* fBusy */);
-    rc = vboxNetFltPortOsDisconnectInterface(pThis, hIf);
+    rc = vboxNetFltPortOsDisconnectInterface(pThis, pvIfData);
     vboxNetFltRelease(pThis, false /* fBusy */);
     AssertRC(rc); /** @todo fix vboxNetFltPortOsDisconnectInterface. */
 }
