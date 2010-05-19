@@ -199,7 +199,7 @@ int vboxVHWADisable(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID sr
 void vboxVHWAInit(PDEVICE_EXTENSION pDevExt)
 {
     VBOXVHWA_INFO *pSettings = &pDevExt->u.primary.Vhwa;
-    pSettings->bEnabled = false;
+    memset (pSettings, 0, sizeof (VBOXVHWA_INFO));
 
     VBOXVHWACMD_QUERYINFO1* pInfo1 = vboxVHWAQueryHostInfo1(pDevExt,
             0 /*D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId*/);
