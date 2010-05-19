@@ -220,7 +220,8 @@ typedef struct INTNETIF
     /** Whether the interface is active or not.
      * This is shadowed by INTNETMACTABENTRY::fActive. */
     bool                    fActive;
-    /** Whether someone is currently in the destructor. */
+    /** Whether someone is currently in the destructor or has indicated that
+     *  the end is nigh by means of IntNetR0IfAbortWait. */
     bool volatile           fDestroying;
     /** Number of yields done to try make the interface read pending data.
      * We will stop yielding when this reaches a threshold assuming that the VM is
@@ -3843,10 +3844,14 @@ INTNETR0DECL(int) IntNetR0IfWait(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, ui
         Log(("IntNetR0IfWait: returns VERR_INVALID_HANDLE\n"));
         return VERR_INVALID_HANDLE;
     }
-    const INTNETIFHANDLE    hIfSelf    = pIf->hIf;
-    const RTSEMEVENT        hRecvEvent = pIf->hRecvEvent;
+
+    const INTNETIFHANDLE    hIfSelf     = pIf->hIf;
+    const RTSEMEVENT        hRecvEvent  = pIf->hRecvEvent;
+    const bool              fDestroying = ASMAtomicReadBool(&pIf->fDestroying);
     if (    hIfSelf    != hIf           /* paranoia */
-        &&  hRecvEvent != NIL_RTSEMEVENT)
+        ||  hRecvEvent == NIL_RTSEMEVENT
+        ||  fDestroying
+       )
     {
         Log(("IntNetR0IfWait: returns VERR_SEM_DESTROYED\n"));
         return VERR_SEM_DESTROYED;
@@ -3897,6 +3902,79 @@ INTNETR0DECL(int) IntNetR0IfWaitReq(PSUPDRVSESSION pSession, PINTNETIFWAITREQ pR
     if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
         return VERR_INVALID_PARAMETER;
     return IntNetR0IfWait(pReq->hIf, pSession, pReq->cMillies);
+}
+
+
+/**
+ * Wake up any threads waiting on the interface.
+ *
+ * @returns VBox status code.
+ * @param   hIf             The interface handle.
+ * @param   pSession        The caller's session.
+ * @param   fNoMoreWaits    When set, no more waits are permitted.
+ */
+INTNETR0DECL(int) IntNetR0IfAbortWait(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, bool fNoMoreWaits)
+{
+    Log4(("IntNetR0IfAbortWait: hIf=%RX32 fNoMoreWaits=%RTbool\n", hIf, fNoMoreWaits));
+
+    /*
+     * Get and validate essential handles.
+     */
+    PINTNET pIntNet = g_pIntNet;
+    AssertPtrReturn(pIntNet, VERR_INVALID_PARAMETER);
+    AssertReturn(pIntNet->u32Magic, VERR_INVALID_MAGIC);
+
+    PINTNETIF pIf = (PINTNETIF)RTHandleTableLookupWithCtx(pIntNet->hHtIfs, hIf, pSession);
+    if (!pIf)
+    {
+        Log(("IntNetR0IfAbortWait: returns VERR_INVALID_HANDLE\n"));
+        return VERR_INVALID_HANDLE;
+    }
+
+    const INTNETIFHANDLE    hIfSelf     = pIf->hIf;
+    const RTSEMEVENT        hRecvEvent  = pIf->hRecvEvent;
+    const bool              fDestroying = ASMAtomicReadBool(&pIf->fDestroying);
+    if (    hIfSelf    != hIf           /* paranoia */
+        ||  hRecvEvent == NIL_RTSEMEVENT
+        ||  fDestroying
+       )
+    {
+        Log(("IntNetR0IfAbortWait: returns VERR_SEM_DESTROYED\n"));
+        return VERR_SEM_DESTROYED;
+    }
+
+    /*
+     * Set fDestroying if requested to do so and then wake up all the sleeping        
+     * threads (usually just one).   We leave the semaphore in the signalled 
+     * state so the next caller will return immediately.
+     */
+    if (fNoMoreWaits)
+        ASMAtomicWriteBool(&pIf->fDestroying, true);
+
+    uint32_t cSleepers = ASMAtomicReadU32(&pIf->cSleepers) + 1;
+    while (cSleepers-- > 0)
+    {
+        int rc = RTSemEventSignal(pIf->hRecvEvent);
+        AssertRC(rc);
+    }
+
+    Log4(("IntNetR0IfWait: returns %Rrc\n", VINF_SUCCESS));
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * VMMR0 request wrapper for IntNetR0IfAbortWait.
+ *
+ * @returns see IntNetR0IfWait.
+ * @param   pSession        The caller's session.
+ * @param   pReq            The request packet.
+ */
+INTNETR0DECL(int) IntNetR0IfAbortWaitReq(PSUPDRVSESSION pSession, PINTNETIFABORTWAITREQ pReq)
+{
+    if (RT_UNLIKELY(pReq->Hdr.cbReq != sizeof(*pReq)))
+        return VERR_INVALID_PARAMETER;
+    return IntNetR0IfAbortWait(pReq->hIf, pSession, pReq->fNoMoreWaits);
 }
 
 

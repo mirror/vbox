@@ -342,6 +342,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_INTNET_IF_SEND,
     /** Call IntNetR0IfWait(). */
     VMMR0_DO_INTNET_IF_WAIT,
+    /** Call IntNetR0IfAbortWait(). */
+    VMMR0_DO_INTNET_IF_ABORT_WAIT,
     /** The end of the R0 service operations. */
     VMMR0_DO_SRV_END,
 

@@ -1102,12 +1102,67 @@ static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
     /*
-     * Indicate to the thread that it's time to quit.
+     * Indicate to the receive thread that it's time to quit.
      */
     ASMAtomicXchgSize(&pThis->enmRecvState, RECVSTATE_TERMINATE);
     ASMAtomicXchgSize(&pThis->fLinkDown, true);
     RTSEMEVENT hRecvEvt = pThis->hRecvEvt;
     pThis->hRecvEvt = NIL_RTSEMEVENT;
+
+    if (hRecvEvt != NIL_RTSEMEVENT)
+        RTSemEventSignal(hRecvEvt);
+
+    if (pThis->hIf != INTNET_HANDLE_INVALID)
+    {
+        INTNETIFABORTWAITREQ AbortWaitReq;
+        AbortWaitReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        AbortWaitReq.Hdr.cbReq    = sizeof(AbortWaitReq);
+        AbortWaitReq.pSession     = NIL_RTR0PTR;
+        AbortWaitReq.hIf          = pThis->hIf;
+        AbortWaitReq.fNoMoreWaits = true;
+        int rc = PDMDrvHlpSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_ABORT_WAIT, &AbortWaitReq, sizeof(AbortWaitReq));
+        AssertRC(rc);
+    }
+
+    /*
+     * Wait for the threads to terminate.
+     */
+    if (pThis->pXmitThread)
+    {
+        int rc = PDMR3ThreadDestroy(pThis->pXmitThread, NULL);
+        AssertRC(rc);
+        pThis->pXmitThread = NULL;
+    }
+
+    if (pThis->hRecvThread != NIL_RTTHREAD)
+    {
+        int rc = RTThreadWait(pThis->hRecvThread, 5000, NULL);
+        AssertRC(rc);
+        pThis->hRecvThread = NIL_RTTHREAD;
+    }
+
+    /*
+     * Deregister statistics in case we're being detached.
+     */
+    if (pThis->pBufR3)
+    {
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Recv.cStatFrames);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Recv.cbStatWritten);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Recv.cOverflows);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Send.cStatFrames);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Send.cbStatWritten);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Send.cOverflows);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatYieldsOk);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatYieldsNok);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatLost);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatBadFrames);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReceivedGso);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatSentGso);
+#ifdef VBOX_WITH_STATISTICS
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReceive);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatTransmit);
+#endif
+    }
 
     /*
      * Close the interface
@@ -1122,26 +1177,6 @@ static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
         pThis->hIf = INTNET_HANDLE_INVALID;
         int rc = PDMDrvHlpSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_IF_CLOSE, &CloseReq, sizeof(CloseReq));
         AssertRC(rc);
-    }
-
-    /*
-     * Wait for the thread to terminate.
-     */
-    if (hRecvEvt != NIL_RTSEMEVENT)
-        RTSemEventSignal(hRecvEvt);
-
-    if (pThis->pXmitThread)
-    {
-        int rc = PDMR3ThreadDestroy(pThis->pXmitThread, NULL);
-        AssertRC(rc);
-        pThis->pXmitThread = NULL;
-    }
-
-    if (pThis->hRecvThread != NIL_RTTHREAD)
-    {
-        int rc = RTThreadWait(pThis->hRecvThread, 5000, NULL);
-        AssertRC(rc);
-        pThis->hRecvThread = NIL_RTTHREAD;
     }
 
 
@@ -1162,29 +1197,6 @@ static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
 
     if (PDMCritSectIsInitialized(&pThis->XmitLock))
         PDMR3CritSectDelete(&pThis->XmitLock);
-
-    if (pThis->pBufR3)
-    {
-        /*
-         * Deregister statistics in case we're being detached.
-         */
-        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Recv.cStatFrames);
-        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Recv.cbStatWritten);
-        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Recv.cOverflows);
-        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Send.cStatFrames);
-        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Send.cbStatWritten);
-        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Send.cOverflows);
-        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatYieldsOk);
-        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatYieldsNok);
-        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatLost);
-        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatBadFrames);
-        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReceivedGso);
-        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatSentGso);
-#ifdef VBOX_WITH_STATISTICS
-        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReceive);
-        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatTransmit);
-#endif
-    }
 }
 
 
