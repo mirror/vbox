@@ -635,6 +635,7 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
     int pmsg_type;
     struct in_addr req_ip;
     int fDhcpDiscover = 0;
+    uint8_t *parameter_list = NULL;
     struct mbuf *m = NULL;
 
     pmsg_type = 0;
@@ -650,6 +651,27 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
     Assert(p);
     if (p == NULL)
         return;
+    /*
+     * We're going update dns list at least once per DHCP transaction (!not on every operation
+     * within transaction), assuming that transaction can't be longer than 1 min.
+     */
+    if (   !pData->fUseHostResolver
+           && (   pData->dnsLastUpdate == 0 
+               || curtime - pData->dnsLastUpdate > 60 * 1000)) /* one minute*/
+    {
+        uint8_t i = 2; /* i = 0 - tag, i == 1 - length */
+        parameter_list = dhcp_find_option(&bp->bp_vend[0], RFC2132_PARAM_LIST);
+        for (;parameter_list && i < parameter_list[1]; ++i)
+        {
+            if (parameter_list[i] == RFC1533_DNS)
+            {
+                slirp_release_dns_list(pData);
+                slirp_init_dns_list(pData);
+                pData->dnsLastUpdate = curtime;
+                break;
+            }
+        }
+    }
 
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
     if ((m = m_get(pData)) == NULL)
