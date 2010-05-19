@@ -20,7 +20,7 @@ Depends: ${shlibs:Depends}, debconf (>= 0.5) | debconf-2.0, psmisc, adduser
 Recommends: ${alsa}, ${pulse}, ${sdlttf}, ${dkms},
   linux-headers, gcc, make, binutils,
   libhal1 (>= 0.5), python-central
-Description: Sun VirtualBox
+Description: Oracle VM VirtualBox
  VirtualBox is a powerful PC virtualization solution allowing you to run a
  wide range of PC operating systems on your Linux system. This includes
  Windows, Linux, FreeBSD, DOS, OpenBSD and others. VirtualBox comes with a broad
@@ -31,7 +31,7 @@ XB-Python-Version: ${python:Versions}
 Package: virtualbox-ose-dbg
 Architecture: i386 amd64
 Depends: virtualbox-ose (= ${Source-Version})
-Description: Sun VirtualBox debugging symbols
+Description: Oracle VM VirtualBox debugging symbols
  VirtualBox is a powerful PC virtualization solution allowing you to run a
  wide range of PC operating systems on your Linux system. This includes
  Windows, Linux, FreeBSD, DOS, OpenBSD and others. VirtualBox comes with a broad

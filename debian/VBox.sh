@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Sun VirtualBox
+# Oracle VM VirtualBox
 #
 # Copyright (C) 2006-2009 Oracle Corporation
 #
