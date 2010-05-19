@@ -686,6 +686,9 @@ NTSTATUS DxgkDdiStartDevice(
                     *NumberOfVideoPresentSources = pContext->cSources;
                     *NumberOfChildren = pContext->cSources;
                     dprintf(("VBoxVideoWddm: sources(%d), children(%d)\n", *NumberOfVideoPresentSources, *NumberOfChildren));
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                    vboxVHWAInit(pContext);
+#endif
                 }
                 else
                 {

@@ -113,6 +113,7 @@ typedef PEVENT VBOXVCMNEVENT, *PVBOXVCMNEVENT;
 
 typedef struct _DEVICE_EXTENSION * VBOXCMNREG;
 #else
+typedef struct _DEVICE_EXTENSION *PDEVICE_EXTENSION;
 #include <VBox/VBoxVideo.h>
 #include "wddm/VBoxVideoIf.h"
 #include "wddm/VBoxVideoWddm.h"
@@ -121,6 +122,9 @@ typedef struct _DEVICE_EXTENSION * VBOXCMNREG;
 #include "wddm/VBoxVideoVidPn.h"
 #ifdef VBOXWDDM_WITH_VBVA
 # include "wddm/VBoxVideoVbva.h"
+#endif
+#ifdef VBOX_WITH_VIDEOHWACCEL
+# include "wddm/VBoxVideoVhwa.h"
 #endif
 
 
@@ -209,6 +213,9 @@ typedef struct _DEVICE_EXTENSION
            VBOXVDMAINFO Vdma;
 # ifdef VBOXVDMA_WITH_VBVA
            VBOXVBVAINFO Vbva;
+# endif
+# ifdef VBOX_WITH_VIDEOHWACCEL
+           VBOXVHWA_INFO Vhwa;
 # endif
 #endif
 
