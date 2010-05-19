@@ -531,14 +531,14 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
 
 #endif /* !RT_OS_WINDOWS */
 
-static int slirp_init_dns_list(PNATState pData)
+int slirp_init_dns_list(PNATState pData)
 {
     TAILQ_INIT(&pData->pDnsList);
     LIST_INIT(&pData->pDomainList);
     return get_dns_addr_domain(pData, true, NULL, NULL);
 }
 
-static void slirp_release_dns_list(PNATState pData)
+void slirp_release_dns_list(PNATState pData)
 {
     struct dns_entry *pDns = NULL;
     struct dns_domain_entry *pDomain = NULL;
