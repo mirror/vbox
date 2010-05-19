@@ -272,7 +272,7 @@ static int rtStrFormatNumber(char *psz, KSIZE64 ullValue, unsigned int uiBase, s
      * precision
      */
     while (--cchPrecision >= cchValue)
-        *psz++ = '0';
+        *psz++ = ' ';
 
     /*
      * write number - not good enough but it works
