@@ -405,7 +405,6 @@ ControllerItem::ControllerItem (AbstractItem *aParent, const QString &aName,
     : AbstractItem (aParent)
     , mCtrName (aName)
     , mCtrType (0)
-    , mUseIoCache (true)
 {
     /* Check for proper parent type */
     AssertMsg (mParent->rtti() == AbstractItem::Type_RootItem, ("Incorrect parent type!\n"));
@@ -415,18 +414,23 @@ ControllerItem::ControllerItem (AbstractItem *aParent, const QString &aName,
     {
         case KStorageBus_IDE:
             mCtrType = new IDEControllerType (aControllerType);
+            mUseIoCache = true;
             break;
         case KStorageBus_SATA:
             mCtrType = new SATAControllerType (aControllerType);
+            mUseIoCache = false;
             break;
         case KStorageBus_SCSI:
             mCtrType = new SCSIControllerType (aControllerType);
+            mUseIoCache = false;
             break;
         case KStorageBus_Floppy:
             mCtrType = new FloppyControllerType (aControllerType);
+            mUseIoCache = true;
             break;
         case KStorageBus_SAS:
             mCtrType = new SASControllerType (aControllerType);
+            mUseIoCache = false;
             break;
         default:
             AssertMsgFailed (("Wrong Controller Type {%d}!\n", aBusType));
