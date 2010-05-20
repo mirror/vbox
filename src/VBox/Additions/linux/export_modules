@@ -28,6 +28,7 @@ PATH_ROOT="`cd \`dirname $0\`/../../../..; pwd`"
 PATH_LINUX="$PATH_ROOT/src/VBox/Additions/linux"
 PATH_VBOXGUEST="$PATH_ROOT/src/VBox/Additions/common/VBoxGuest"
 PATH_VBOXSF="$PATH_ROOT/src/VBox/Additions/linux/sharedfolders"
+PATH_VBOXVIDEO="$PATH_ROOT/src/VBox/Additions/linux/drm"
 
 VBOX_VERSION_MAJOR=`sed -e "s/^ *VBOX_VERSION_MAJOR *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Config.kmk`
 VBOX_VERSION_MINOR=`sed -e "s/^ *VBOX_VERSION_MINOR *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Config.kmk`
@@ -40,6 +41,7 @@ VBOX_C_YEAR=`date +%Y`
 
 . $PATH_VBOXGUEST/linux/files_vboxguest
 . $PATH_VBOXSF/files_vboxsf
+. $PATH_VBOXVIDEO/files_vboxvideo_drm
 
 # Temporary path for creating the modules, will be removed later
 mkdir $PATH_TMP || exit 1
@@ -91,6 +93,15 @@ for f in $FILES_VBOXSF_NOBIN; do
 done
 for f in $FILES_VBOXSF_BIN; do
     install -D -m 0755 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxsf/`echo $f|cut -d'>' -f2`"
+done
+
+# vboxvideo (VirtualBox guest kernel module for drm support)
+mkdir $PATH_TMP/vboxvideo || exit 1
+for f in $FILES_VBOXVIDEO_DRM_NOBIN; do
+    install -D -m 0644 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxvideo/`echo $f|cut -d'>' -f2`"
+done
+for f in $FILES_VBOXVIDEO_DRM_BIN; do
+    install -D -m 0755 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxvideo/`echo $f|cut -d'>' -f2`"
 done
 
 # convenience Makefile
