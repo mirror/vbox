@@ -152,6 +152,13 @@ typedef struct VBOXWDDM_POINTER_INFO
     } Attributes;
 } VBOXWDDM_POINTER_INFO, *PVBOXWDDM_POINTER_INFO;
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+typedef struct VBOXWDDM_VHWA
+{
+    VBOXVHWA_INFO Settings;
+} VBOXWDDM_VHWA;
+#endif
+
 typedef struct VBOXWDDM_SOURCE
 {
     struct VBOXWDDM_ALLOCATION * pPrimaryAllocation;
@@ -160,6 +167,11 @@ typedef struct VBOXWDDM_SOURCE
     VBOXVIDEOOFFSET offVram;
     VBOXWDDM_SURFACE_DESC SurfInfo;
     VBOXVBVAINFO Vbva;
+#endif
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /* @todo: in our case this seems more like a target property,
+     * but keep it here for now */
+    VBOXWDDM_VHWA Vhwa;
 #endif
     VBOXWDDM_POINTER_INFO PointerInfo;
 } VBOXWDDM_SOURCE, *PVBOXWDDM_SOURCE;
@@ -213,9 +225,6 @@ typedef struct _DEVICE_EXTENSION
            VBOXVDMAINFO Vdma;
 # ifdef VBOXVDMA_WITH_VBVA
            VBOXVBVAINFO Vbva;
-# endif
-# ifdef VBOX_WITH_VIDEOHWACCEL
-           VBOXVHWA_INFO Vhwa;
 # endif
 #endif
 
