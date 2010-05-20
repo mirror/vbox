@@ -4035,6 +4035,8 @@ static void pgmPoolTracDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS 
  */
 void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS HCPhys, RTGCPHYS GCPhysHint, uint16_t iPte)
 {
+    RTHCPHYS HCPhysExpected = 0;
+
     Log4(("pgmPoolTracDerefGCPhysHint %RHp %RGp\n", HCPhys, GCPhysHint));
 
     /*
@@ -4058,6 +4060,7 @@ void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS HCP
                 pgmTrackDerefGCPhys(pPool, pPage, &pRam->aPages[iPage], iPte);
                 return;
             }
+            HCPhysExpected = PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]);
             break;
         }
         pRam = pRam->CTX_SUFF(pNext);
@@ -4088,7 +4091,7 @@ void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS HCP
         pRam = pRam->CTX_SUFF(pNext);
     }
 
-    AssertFatalMsgFailed(("HCPhys=%RHp GCPhysHint=%RGp\n", HCPhys, GCPhysHint));
+    AssertFatalMsgFailed(("HCPhys=%RHp GCPhysHint=%RGp (Expected HCPhys with hint = %RHp\n", HCPhys, GCPhysHint, HCPhysExpected));
 }
 
 
