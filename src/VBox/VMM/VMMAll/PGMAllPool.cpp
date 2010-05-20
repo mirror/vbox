@@ -4091,7 +4091,7 @@ void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS HCP
         pRam = pRam->CTX_SUFF(pNext);
     }
 
-    AssertFatalMsgFailed(("HCPhys=%RHp GCPhysHint=%RGp (Expected HCPhys with hint = %RHp\n", HCPhys, GCPhysHint, HCPhysExpected));
+    AssertFatalMsgFailed(("HCPhys=%RHp GCPhysHint=%RGp (Expected HCPhys with hint = %RHp)\n", HCPhys, GCPhysHint, HCPhysExpected));
 }
 
 
