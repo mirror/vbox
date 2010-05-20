@@ -2643,7 +2643,12 @@ static int e1kRegWriteRDT(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
         e1kCsRxLeave(pState);
         if (RT_SUCCESS(rc))
         {
-#ifdef IN_RING3 /** @todo bird: Use SUPSem* for this so we can signal it in ring-0 as well. (reduces latency) */
+/** @todo bird: Use SUPSem* for this so we can signal it in ring-0 as well
+ *        without requiring any context switches.  We should also check the
+ *        wait condition before bothering to queue the item as we're currently
+ *        queuing thousands of items per second here in a normal transmit
+ *        scenario.  Expect performance changes when fixing this! */
+#ifdef IN_RING3 
             /* Signal that we have more receive descriptors avalable. */
             e1kWakeupReceive(pState->CTX_SUFF(pDevIns));
 #else
