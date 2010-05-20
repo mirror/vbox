@@ -555,7 +555,7 @@ static DECLCALLBACK(void) vboxNetFltPortNotifyMacAddress(PINTNETTRUNKIFPORT pIfP
 /**
  * @copydoc INTNETTRUNKIFPORT::pfnConnectInterface
  */
-static DECLCALLBACK(int) vboxNetFltPortConnectInterface(PINTNETTRUNKIFPORT pIfPort, void *pvIf, void *ppvIfData, INTNETIFHANDLE hIf)
+static DECLCALLBACK(int) vboxNetFltPortConnectInterface(PINTNETTRUNKIFPORT pIfPort, void *pvIf, void **ppvIfData, INTNETIFHANDLE hIf)
 {
     PVBOXNETFLTINS  pThis = IFPORT_2_VBOXNETFLTINS(pIfPort);
     int             rc;
