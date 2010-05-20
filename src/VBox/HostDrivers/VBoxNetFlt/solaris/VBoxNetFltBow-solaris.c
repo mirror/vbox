@@ -691,6 +691,12 @@ LOCAL void vboxNetFltSolarisRecv(void *pvData, mac_resource_handle_t hResource, 
 }
 
 
+/**
+ * Report capabilities and MAC address to IntNet.
+ *
+ * @param   pThis           The instance.
+ * @remarks Retains the instance while doing it's job.
+ */
 LOCAL void vboxNetFltSolarisReportInfo(PVBOXNETFLTINS pThis)
 {
     if (!pThis->u.s.fReportedInfo)
@@ -709,6 +715,14 @@ LOCAL void vboxNetFltSolarisReportInfo(PVBOXNETFLTINS pThis)
 }
 
 
+/**
+ * Initialize a VNIC.
+ *
+ * @param   pThis           The instance.
+ * @param   pVNIC           Pointer to the VNIC.
+ *
+ * @returns Solaris error code (errno).
+ */
 LOCAL int vboxNetFltSolarisInitVNIC(PVBOXNETFLTINS pThis, PVBOXNETFLTVNIC pVNIC)
 {
     /*
@@ -787,6 +801,11 @@ LOCAL int vboxNetFltSolarisInitVNIC(PVBOXNETFLTINS pThis, PVBOXNETFLTVNIC pVNIC)
 }
 
 
+/**
+ * Allocate a VNIC structure.
+ *
+ * @returns An allocated VNIC structure or NULL in case of errors.
+ */
 LOCAL PVBOXNETFLTVNIC vboxNetFltSolarisAllocVNIC(void)
 {
     PVBOXNETFLTVNIC pVNIC = RTMemAlloc(sizeof(VBOXNETFLTVNIC));
@@ -807,6 +826,11 @@ LOCAL PVBOXNETFLTVNIC vboxNetFltSolarisAllocVNIC(void)
 }
 
 
+/**
+ * Frees an allocated VNIC.
+ *
+ * @param   pVNIC           Pointer to the VNIC.
+ */
 LOCAL void vboxNetFltSolarisFreeVNIC(PVBOXNETFLTVNIC pVNIC)
 {
     if (pVNIC)
@@ -815,9 +839,10 @@ LOCAL void vboxNetFltSolarisFreeVNIC(PVBOXNETFLTVNIC pVNIC)
 
 
 /**
- * Destroy a created VNIC.
+ * Destroy a created VNIC if it was created by us, or just
+ * de-initializes the VNIC freeing up resources handles.
  *
- * @param   pThis           The VM connection instance.
+ * @param   pVNIC           Pointer to the VNIC.
  */
 LOCAL void vboxNetFltSolarisDestroyVNIC(PVBOXNETFLTVNIC pVNIC)
 {
@@ -931,17 +956,18 @@ LOCAL int vboxNetFltSolarisCreateVNIC(PVBOXNETFLTINS pThis, PVBOXNETFLTVNIC *ppV
         }
 
         vboxNetFltSolarisDestroyVNIC(pVNIC);
-        rc = VERR_INTNET_FLT_IF_FAILED;
+        rc = VERR_OPEN_FAILED;
     }
     else
     {
         LogRel((DEVICE_NAME ":vboxNetFltSolarisCreateVNIC failed to create VNIC '%s' over '%s' rc=%d Diag=%d\n", pVNIC->szName,
                     pThis->szName, rc, Diag));
+        rc = VERR_INTNET_FLT_VNIC_CREATE_FAILED;
     }
 
     vboxNetFltSolarisFreeVNIC(pVNIC);
 
-    return RTErrConvertFromErrno(rc);
+    return rc;
 }
 
 
@@ -1205,7 +1231,7 @@ int vboxNetFltPortOsConnectInterface(PVBOXNETFLTINS pThis, void *pvIf, void **pp
             return VINF_SUCCESS;
         }
         else
-            LogRel((DEVICE_NAME ":vboxNetFltPortOsConnectInterface failed to create VNIC\n"));
+            LogRel((DEVICE_NAME ":vboxNetFltPortOsConnectInterface failed to create VNIC rc=%d\n", rc));
     }
     else
     {
