@@ -160,8 +160,16 @@ protected:
 
     void retranslateUi()
     {
-        setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("VBoxConsoleWnd", "&Fullscreen Mode"), "F"));
-        setStatusTip(QApplication::translate("VBoxConsoleWnd", "Switch to fullscreen mode"));
+        if (!isChecked())
+        {
+            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("VBoxConsoleWnd", "Enter &Fullscreen Mode"), "F"));
+            setStatusTip(QApplication::translate("VBoxConsoleWnd", "Switch to fullscreen mode"));
+        }
+        else
+        {
+            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("VBoxConsoleWnd", "Exit &Fullscreen Mode"), "F"));
+            setStatusTip(QApplication::translate("VBoxConsoleWnd", "Switch to normal mode"));
+        }
     }
 };
 
@@ -183,8 +191,16 @@ protected:
 
     void retranslateUi()
     {
-        setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("VBoxConsoleWnd", "Seam&less Mode"), "L"));
-        setStatusTip(QApplication::translate("VBoxConsoleWnd", "Switch to seamless desktop integration mode"));
+        if (!isChecked())
+        {
+            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("VBoxConsoleWnd", "Enter Seam&less Mode"), "L"));
+            setStatusTip(QApplication::translate("VBoxConsoleWnd", "Switch to seamless desktop integration mode"));
+        }
+        else
+        {
+            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("VBoxConsoleWnd", "Exit Seam&less Mode"), "L"));
+            setStatusTip(QApplication::translate("VBoxConsoleWnd", "Switch to normal mode"));
+        }
     }
 };
 
@@ -206,8 +222,16 @@ protected:
 
     void retranslateUi()
     {
-        setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("VBoxConsoleWnd", "Auto-resize &Guest Display"), "G"));
-        setStatusTip(QApplication::translate("VBoxConsoleWnd", "Automatically resize the guest display when the window is resized (requires Guest Additions)"));
+        if (!isChecked())
+        {
+            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("VBoxConsoleWnd", "Enable &Guest Display Auto-resize"), "G"));
+            setStatusTip(QApplication::translate("VBoxConsoleWnd", "Automatically resize the guest display when the window is resized (requires Guest Additions)"));
+        }
+        else
+        {
+            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("VBoxConsoleWnd", "Disable &Guest Display Auto-resize"), "G"));
+            setStatusTip(QApplication::translate("VBoxConsoleWnd", "Disable automatic resize of the guest display when the window is resized"));
+        }
     }
 };
 
@@ -790,7 +814,14 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("VBoxConsoleWnd", "&Logging...", "debug action"));
+        if (!isChecked())
+        {
+            setText(QApplication::translate("VBoxConsoleWnd", "Enable &Logging...", "debug action"));
+        }
+        else
+        {
+            setText(QApplication::translate("VBoxConsoleWnd", "Disable &Logging...", "debug action"));
+        }
     }
 };
 #endif
