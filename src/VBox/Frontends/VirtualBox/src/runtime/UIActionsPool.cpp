@@ -115,7 +115,7 @@ private:
     void init()
     {
         setCheckable(true);
-        connect(this, SIGNAL(triggered(bool)), this, SLOT(sltUpdateAppearance()));
+        connect(this, SIGNAL(toggled(bool)), this, SLOT(sltUpdateAppearance()));
     }
 };
 
@@ -709,8 +709,16 @@ protected:
 
     void retranslateUi()
     {
-        setText(QApplication::translate("VBoxConsoleWnd", "&Remote Display"));
-        setStatusTip(QApplication::translate("VBoxConsoleWnd", "Enable or disable remote desktop (RDP) connections to this machine"));
+        if (!isChecked())
+        {
+            setText(QApplication::translate("VBoxConsoleWnd", "&Enable Remote Display"));
+            setStatusTip(QApplication::translate("VBoxConsoleWnd", "Enable remote desktop (RDP) connections to this machine"));
+        }
+        else
+        {
+            setText(QApplication::translate("VBoxConsoleWnd", "&Disable Remote Display"));
+            setStatusTip(QApplication::translate("VBoxConsoleWnd", "Disable remote desktop (RDP) connections to this machine"));
+        }
     }
 };
 
