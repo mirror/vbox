@@ -165,18 +165,32 @@ DECLHIDDEN(void) vboxNetFltWinWaitDereference(PADAPT_DEVICE pState)
 /* allocates and zeroes the nonpaged memory of a given size */
 DECLHIDDEN(NDIS_STATUS) vboxNetFltWinMemAlloc(PVOID* ppMemBuf, UINT cbLength)
 {
+#ifdef DEBUG_NETFLT_USE_EXALLOC
+    *ppMemBuf = ExAllocatePoolWithTag(NonPagedPool, cbLength, MEM_TAG);
+    if(*ppMemBuf)
+    {
+        NdisZeroMemory(*ppMemBuf, cbLength);
+        return NDIS_STATUS_SUCCESS;
+    }
+    return NDIS_STATUS_FAILURE;
+#else
     NDIS_STATUS fStatus = NdisAllocateMemoryWithTag(ppMemBuf, cbLength, MEM_TAG);
     if(fStatus == NDIS_STATUS_SUCCESS)
     {
         NdisZeroMemory(*ppMemBuf, cbLength);
     }
     return fStatus;
+#endif
 }
 
 /* frees memory allocated with vboxNetFltWinMemAlloc */
 DECLHIDDEN(void) vboxNetFltWinMemFree(PVOID pvMemBuf)
 {
+#ifdef DEBUG_NETFLT_USE_EXALLOC
+    ExFreePool(pvMemBuf);
+#else
     NdisFreeMemory(pvMemBuf, 0, 0);
+#endif
 }
 
 /* frees ndis buffers used on send/receive */
