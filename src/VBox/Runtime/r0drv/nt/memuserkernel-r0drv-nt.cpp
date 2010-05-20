@@ -66,7 +66,7 @@ RTR0DECL(int) RTR0MemUserCopyTo(RTR3PTR R3PtrDst, void const *pvSrc, size_t cb)
 
 RTR0DECL(bool) RTR0MemUserIsValidAddr(RTR3PTR R3Ptr)
 {
-#ifdef TARGET_NT4
+#ifdef IPRT_TARGET_NT4
     /* Play safe+wrong... it used to be a constant, but in w2k+ is a variable. */
     return R3Ptr < _2G;
 #else
@@ -77,7 +77,7 @@ RTR0DECL(bool) RTR0MemUserIsValidAddr(RTR3PTR R3Ptr)
 
 RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
 {
-#ifdef TARGET_NT4
+#ifdef IPRT_TARGET_NT4
     /* Play safe+wrong... it used to be a constant, but in w2k+ is a variable. */
     return (uintptr_t) >= _2G;
 #else

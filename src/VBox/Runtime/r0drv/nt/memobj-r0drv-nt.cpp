@@ -339,7 +339,7 @@ static int rtR0MemObjNativeAllocContEx(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bo
                                        size_t uAlignment)
 {
     AssertMsgReturn(cb <= _1G, ("%#x\n", cb), VERR_OUT_OF_RANGE); /* for safe size_t -> ULONG */
-#ifdef TARGET_NT4
+#ifdef IPRT_TARGET_NT4
     if (uAlignment != PAGE_SIZE)
         return VERR_NOT_SUPPORTED;
 #endif
@@ -349,7 +349,7 @@ static int rtR0MemObjNativeAllocContEx(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bo
      */
     PHYSICAL_ADDRESS PhysAddrHighest;
     PhysAddrHighest.QuadPart  = PhysHighest;
-#ifndef TARGET_NT4
+#ifndef IPRT_TARGET_NT4
     PHYSICAL_ADDRESS PhysAddrLowest, PhysAddrBoundary;
     PhysAddrLowest.QuadPart   = 0;
     PhysAddrBoundary.QuadPart = (uAlignment == PAGE_SIZE) ? 0 : uAlignment;
