@@ -4035,7 +4035,7 @@ static void pgmPoolTracDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS 
  */
 void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS HCPhys, RTGCPHYS GCPhysHint, uint16_t iPte)
 {
-    RTHCPHYS HCPhysExpected = 0xDEADBEEFDEADBEEF;
+    RTHCPHYS HCPhysExpected = 0xDEADBEEFDEADBEEFULL;
 
     Log4(("pgmPoolTracDerefGCPhysHint %RHp %RGp\n", HCPhys, GCPhysHint));
 
