@@ -214,8 +214,15 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             break;
         }
 
-        /* unused: */
+#if (__FreeBSD_version >= 900011) || (__FreeBSD_version >= 800505) || (__FreeBSD_version >= 703101)
         case RTR0MEMOBJTYPE_LOW:
+        {
+            kmem_free(kernel_map, (vm_offset_t)pMemFreeBSD->Core.pv, pMemFreeBSD->Core.cb);
+            break;
+        }
+#else
+        case RTR0MEMOBJTYPE_LOW: /* unused */
+#endif
         default:
             AssertMsgFailed(("enmType=%d\n", pMemFreeBSD->Core.enmType));
             return VERR_INTERNAL_ERROR;
@@ -223,7 +230,6 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
     return VINF_SUCCESS;
 }
-
 
 int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
@@ -313,9 +319,31 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
     return rc;
 }
 
-
 int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
+#if (__FreeBSD_version >= 900011) || (__FreeBSD_version >= 800505) || (__FreeBSD_version >= 703101)
+    /*
+     * Use kmem_alloc_attr, fExectuable is not needed because the
+     * memory will be executable by default
+     */
+    NOREF(fExecutable);
+
+    /* create the object. */
+    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(*pMemFreeBSD), RTR0MEMOBJTYPE_LOW, NULL, cb);
+    if (!pMemFreeBSD)
+        return VERR_NO_MEMORY;
+
+    pMemFreeBSD->Core.pv = (void *)kmem_alloc_attr(kernel_map,          /* Kernel */
+                                                   cb,                  /* Amount */
+                                                   M_ZERO,              /* Zero memory */
+                                                   0,                   /* Low physical address */
+                                                   _4G - PAGE_SIZE,     /* Highest physical address */
+                                                   VM_MEMATTR_DEFAULT); /* Default memory attributes */
+    if (!pMemFreeBSD->Core.pv)
+        return VERR_NO_MEMORY;
+
+    return VINF_SUCCESS;
+#else
     /*
      * Try a Alloc first and see if we get luck, if not try contigmalloc.
      * Might wish to try find our own pages or something later if this
@@ -337,6 +365,7 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
     if (RT_FAILURE(rc))
         rc = rtR0MemObjNativeAllocCont(ppMem, cb, fExecutable);
     return rc;
+#endif
 }
 
 
