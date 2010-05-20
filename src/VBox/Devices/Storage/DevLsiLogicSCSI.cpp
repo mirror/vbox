@@ -3775,6 +3775,87 @@ static DECLCALLBACK(int) lsilogicMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegio
 }
 
 /**
+ * LsiLogic status info callback.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pHlp        The output helpers.
+ * @param   pszArgs     The arguments.
+ */
+static DECLCALLBACK(void) lsilogicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    bool          fVerbose = false;
+
+    /*
+     * Parse args.
+     */
+    if (pszArgs)
+        fVerbose = strstr(pszArgs, "verbose");
+
+    /*
+     * Show info.
+     */
+    pHlp->pfnPrintf(pHlp,
+                    "%s#%d: port=%RTiop mmio=%RGp max-devices=%u GC=%RTbool R0=%RTbool\n",
+                    pDevIns->pReg->szName,
+                    pDevIns->iInstance,
+                    pThis->IOPortBase, pThis->GCPhysMMIOBase,
+                    pThis->cDeviceStates,
+                    pThis->fGCEnabled ? true : false,
+                    pThis->fR0Enabled ? true : false);
+
+    /*
+     * Show general state.
+     */
+    pHlp->pfnPrintf(pHlp, "enmState=%u\n", pThis->enmState);
+    pHlp->pfnPrintf(pHlp, "enmWhoInit=%u\n", pThis->enmWhoInit);
+    pHlp->pfnPrintf(pHlp, "fDoorbellInProgress=%RTbool\n", pThis->fDoorbellInProgress);
+    pHlp->pfnPrintf(pHlp, "fDiagnosticEnabled=%RTbool\n", pThis->fDiagnosticEnabled);
+    pHlp->pfnPrintf(pHlp, "fNotificationSend=%RTbool\n", pThis->fNotificationSend);
+    pHlp->pfnPrintf(pHlp, "fEventNotificationEnabled=%RTbool\n", pThis->fEventNotificationEnabled);
+    pHlp->pfnPrintf(pHlp, "uInterruptMask=%#x\n", pThis->uInterruptMask);
+    pHlp->pfnPrintf(pHlp, "uInterruptStatus=%#x\n", pThis->uInterruptStatus);
+    pHlp->pfnPrintf(pHlp, "u16IOCFaultCode=%#06x\n", pThis->u16IOCFaultCode);
+    pHlp->pfnPrintf(pHlp, "u32HostMFAHighAddr=%#x\n", pThis->u32HostMFAHighAddr);
+    pHlp->pfnPrintf(pHlp, "u32SenseBufferHighAddr=%#x\n", pThis->u32SenseBufferHighAddr);
+    pHlp->pfnPrintf(pHlp, "cMaxDevices=%u\n", pThis->cMaxDevices);
+    pHlp->pfnPrintf(pHlp, "cMaxBuses=%u\n", pThis->cMaxBuses);
+    pHlp->pfnPrintf(pHlp, "cbReplyFrame=%u\n", pThis->cbReplyFrame);
+    pHlp->pfnPrintf(pHlp, "cReplyQueueEntries=%u\n", pThis->cReplyQueueEntries);
+    pHlp->pfnPrintf(pHlp, "cRequestQueueEntries=%u\n", pThis->cRequestQueueEntries);
+    pHlp->pfnPrintf(pHlp, "cPorts=%u\n", pThis->cPorts);
+
+    /*
+     * Show queue status.
+     */
+    pHlp->pfnPrintf(pHlp, "uReplyFreeQueueNextEntryFreeWrite=%u\n", pThis->uReplyFreeQueueNextEntryFreeWrite);
+    pHlp->pfnPrintf(pHlp, "uReplyFreeQueueNextAddressRead=%u\n", pThis->uReplyFreeQueueNextAddressRead);
+    pHlp->pfnPrintf(pHlp, "uReplyPostQueueNextEntryFreeWrite=%u\n", pThis->uReplyPostQueueNextEntryFreeWrite);
+    pHlp->pfnPrintf(pHlp, "uReplyPostQueueNextAddressRead=%u\n", pThis->uReplyPostQueueNextAddressRead);
+    pHlp->pfnPrintf(pHlp, "uRequestQueueNextEntryFreeWrite=%u\n", pThis->uRequestQueueNextEntryFreeWrite);
+    pHlp->pfnPrintf(pHlp, "uRequestQueueNextAddressRead=%u\n", pThis->uRequestQueueNextAddressRead);
+
+    /*
+     * Show queue content if verbose
+     */
+    if (fVerbose)
+    {
+        for (unsigned i = 0; i < pThis->cReplyQueueEntries; i++)
+            pHlp->pfnPrintf(pHlp, "RFQ[%u]=%#x\n", i, pThis->pReplyFreeQueueBaseR3[i]);
+
+        pHlp->pfnPrintf(pHlp, "\n");
+
+        for (unsigned i = 0; i < pThis->cReplyQueueEntries; i++)
+            pHlp->pfnPrintf(pHlp, "RPQ[%u]=%#x\n", i, pThis->pReplyPostQueueBaseR3[i]);
+
+        pHlp->pfnPrintf(pHlp, "\n");
+
+        for (unsigned i = 0; i < pThis->cRequestQueueEntries; i++)
+            pHlp->pfnPrintf(pHlp, "ReqQ[%u]=%#x\n", i, pThis->pRequestQueueBaseR3[i]);
+    }
+}
+
+/**
  * Allocate the queues.
  *
  * @returns VBox status code.
@@ -4877,6 +4958,16 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic cannot register save state handlers"));
 
     pThis->enmWhoInit = LSILOGICWHOINIT_SYSTEM_BIOS;
+
+    /*
+     * Register the info item.
+     */
+    char szTmp[128];
+    RTStrPrintf(szTmp, sizeof(szTmp), "%s%d", pDevIns->pReg->szName, pDevIns->iInstance);
+    PDMDevHlpDBGFInfoRegister(pDevIns, szTmp,
+                              pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
+                              ? "LsiLogic SPI info."
+                              : "LsiLogic SAS info.", lsilogicInfo);
 
     /* Perform hard reset. */
     rc = lsilogicHardReset(pThis);
