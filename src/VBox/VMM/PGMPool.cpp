@@ -606,13 +606,9 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
     pgmLock(pVM);
     Log(("pgmR3PoolClearAllRendezvous: cUsedPages=%d\n", pPool->cUsedPages));
 
-#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
-    pgmPoolResetDirtyPages(pVM);
-#endif
-
     /*
      * Iterate all the pages until we've encountered all that are in use.
-     * This is simple but not quite optimal solution.
+     * This is a simple but not quite optimal solution.
      */
     unsigned cModifiedPages = 0; NOREF(cModifiedPages);
     unsigned cLeft = pPool->cUsedPages;
@@ -684,17 +680,10 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
                         pPage->cPresent = 0;
                         pPage->iFirstPresent = NIL_PGMPOOL_PRESENT_INDEX;
                     }
-#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
-                    else
-                        Assert(!pPage->fDirty);
-#endif
                 }
                 /* fall thru */
 
                 default:
-#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
-                    Assert(!pPage->fDirty);
-#endif
                     Assert(!pPage->cModifications || ++cModifiedPages);
                     Assert(pPage->iModifiedNext == NIL_PGMPOOL_IDX || pPage->cModifications);
                     Assert(pPage->iModifiedPrev == NIL_PGMPOOL_IDX || pPage->cModifications);
@@ -757,7 +746,14 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
     }
     paPhysExts[cMaxPhysExts - 1].iNext = NIL_PGMPOOL_PHYSEXT_INDEX;
 
+
 #ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    /* Reset all dirty pages to reactivate the page monitoring. */
+    /* Note: we must do this *after* clearing all page references and shadow page tables as there might be stale references to
+     *       recently removed MMIO ranges around that might otherwise end up asserting in pgmPoolTracDerefGCPhysHint
+     */
+    pgmPoolResetDirtyPages(pVM);
+
     /* Clear all dirty pages. */
     pPool->idxFreeDirtyPage = 0;
     pPool->cDirtyPages      = 0;
