@@ -17,6 +17,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Global includes */
+#include <QTimer>
+
 /* Local includes */
 #include "VBoxGlobal.h"
 #include "UIMachine.h"
@@ -164,6 +167,7 @@ public:
         {
             pActionFullscreen->blockSignals(true);
             pActionFullscreen->setChecked(true);
+            QTimer::singleShot(0, pActionFullscreen, SLOT(sltUpdateAppearance()));
             pActionFullscreen->blockSignals(false);
         }
     }
@@ -177,6 +181,7 @@ public:
         {
             pActionFullscreen->blockSignals(true);
             pActionFullscreen->setChecked(false);
+            QTimer::singleShot(0, pActionFullscreen, SLOT(sltUpdateAppearance()));
             pActionFullscreen->blockSignals(false);
         }
     }
@@ -226,6 +231,7 @@ public:
         {
             pActionSeamless->blockSignals(true);
             pActionSeamless->setChecked(true);
+            QTimer::singleShot(0, pActionSeamless, SLOT(sltUpdateAppearance()));
             pActionSeamless->blockSignals(false);
         }
     }
@@ -239,6 +245,7 @@ public:
         {
             pActionSeamless->blockSignals(true);
             pActionSeamless->setChecked(false);
+            QTimer::singleShot(0, pActionSeamless, SLOT(sltUpdateAppearance()));
             pActionSeamless->blockSignals(false);
         }
     }

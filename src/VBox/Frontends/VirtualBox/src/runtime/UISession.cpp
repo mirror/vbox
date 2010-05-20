@@ -1199,9 +1199,7 @@ void UISession::loadSessionSettings()
         /* Should guest autoresize? */
         strSettings = machine.GetExtraData(VBoxDefs::GUI_AutoresizeGuest);
         QAction *pGuestAutoresizeSwitch = uimachine()->actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize);
-        pGuestAutoresizeSwitch->blockSignals(true);
         pGuestAutoresizeSwitch->setChecked(strSettings != "off");
-        pGuestAutoresizeSwitch->blockSignals(false);
     }
 }
 
