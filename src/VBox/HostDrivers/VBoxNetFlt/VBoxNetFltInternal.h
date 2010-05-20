@@ -177,21 +177,23 @@ typedef struct VBOXNETFLTINS
             /** @name Solaris instance data.
              * @{ */
 #  ifdef VBOX_WITH_NETFLT_CROSSBOW
-            /** The link Id of the VNIC */
-            datalink_id_t VNICLinkId;
-            /** Instance number of VNIC */
+            /** Whether the underlying interface is a VNIC or not. */
+            bool fIsVNIC;
+            /** Handle to list of created VNICs. */
+            list_t hVNICs;
+            /** Instance number while creating VNICs. */
             uint16_t uInstance;
-            /** Whether we created the VNIC or not */
-            bool fCreatedVNIC;
-            /** The lower MAC handle */
+            /** The lower MAC handle. Valid only if this is a VNIC. */
             mac_handle_t hInterface;
-            /** The client MAC handle */
+            /** The link Id of this interface. Valid only if this is a VNIC. */
+            datalink_id_t hLinkId;
+            /** The client MAC handle. Valid only if this is a VNIC. */
             mac_client_handle_t hClient;
-            /** The unicast address handle */
+            /** The unicast address handle. Valid only if this is a VNIC. */
             mac_unicast_handle_t hUnicast;
-            /** The promiscuous handle */
+            /** The promiscuous handle. Valid only if this is a VNIC. */
             mac_promisc_handle_t hPromiscuous;
-            /** The MAC address of the interface */
+            /** The MAC address of the host interface. */
             RTMAC MacAddr;
 #  else
             /** Pointer to the bound IPv4 stream. */
