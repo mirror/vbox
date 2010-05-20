@@ -1,0 +1,39 @@
+# $Id$
+## @file
+# Sub-Makefile for svnsync-vbox.
+#
+
+#
+# Copyright (C) 2006-2007 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+PROGRAMS += svnsync-vbox
+
+svnsync-vbox_TEMPLATE = VBOXR3EXE
+svnsync-vbox_SOURCES = main.c
+svnsync-vbox_INCS = \
+	/usr/include/subversion-1 \
+	/usr/include/apr-0
+svnsync-vbox_LIBS = \
+	svn_ra-1 \
+	svn_ra_dav-1 \
+	svn_ra_svn-1 \
+	svn_ra_local-1 \
+	svn_repos-1 \
+	svn_fs-1 \
+	svn_fs_base-1 \
+	svn_fs_fs-1 \
+	svn_delta-1 \
+	svn_subr-1 \
+	neon \
+	apr-0 \
+	aprutil-0
+
+include $(KBUILD_PATH)/subfooter.kmk
+
