@@ -17,12 +17,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Global includes */
+#include <QtGlobal>
+
 /* Local includes */
 #include "UIActionsPool.h"
 #include "VBoxGlobal.h"
-
-/* Global includes */
-#include <QtGlobal>
 
 /* Action activation event */
 class ActivateActionEvent : public QEvent
@@ -49,19 +49,6 @@ UIActionType UIAction::type() const
 {
     return m_type;
 }
-
-class UISeparatorAction : public UIAction
-{
-    Q_OBJECT;
-
-public:
-
-    UISeparatorAction(QObject *pParent)
-        : UIAction(pParent, UIActionType_Separator)
-    {
-        setSeparator(true);
-    }
-};
 
 class UISimpleAction : public UIAction
 {
@@ -132,24 +119,6 @@ public:
         if (!strIcon.isNull())
             setIcon(VBoxGlobal::iconSet(strIcon, strIconDis));
         setMenu(new QMenu);
-    }
-};
-
-class SeparatorAction : public UISeparatorAction
-{
-    Q_OBJECT;
-
-public:
-
-    SeparatorAction(QObject *pParent)
-        : UISeparatorAction(pParent)
-    {
-    }
-
-protected:
-
-    void retranslateUi()
-    {
     }
 };
 
@@ -1068,9 +1037,6 @@ UIActionsPool::UIActionsPool(QObject *pParent)
     : QObject(pParent)
     , m_actionsPool(UIActionIndex_End, 0)
 {
-    /* Common actions: */
-    m_actionsPool[UIActionIndex_Separator] = new SeparatorAction(this);
-
     /* "Machine" menu actions: */
     m_actionsPool[UIActionIndex_Toggle_Fullscreen] = new ToggleFullscreenModeAction(this);
     m_actionsPool[UIActionIndex_Toggle_Seamless] = new ToggleSeamlessModeAction(this);
@@ -1200,7 +1166,7 @@ bool UIActionsPool::processHotKey(const QKeySequence &key)
     {
         UIAction *pAction = m_actionsPool.at(i);
         /* Skip menus/separators */
-        if (pAction->type() == UIActionType_Menu || pAction->type() == UIActionType_Separator)
+        if (pAction->type() == UIActionType_Menu)
             continue;
         QString hotkey = VBoxGlobal::extractKeyFromActionText(pAction->text());
         if (pAction->isEnabled() && pAction->isVisible() && !hotkey.isEmpty())

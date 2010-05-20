@@ -27,7 +27,6 @@
 
 enum UIActionType
 {
-    UIActionType_Separator,
     UIActionType_Simple,
     UIActionType_Toggle,
     UIActionType_Menu
@@ -50,9 +49,6 @@ private:
 
 enum UIActionIndex
 {
-    /* Common actions */
-    UIActionIndex_Separator,
-
     /* "Machine" menu actions: */
     UIActionIndex_Menu_Machine,
     UIActionIndex_Toggle_Fullscreen,
