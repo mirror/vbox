@@ -25,12 +25,18 @@ PATH_TMP="`cd \`dirname $1\`; pwd`/.vbox_modules"
 PATH_OUT=$PATH_TMP
 FILE_OUT="`cd \`dirname $1\`; pwd`/`basename $1`"
 PATH_ROOT="`cd \`dirname $0\`/../../../..; pwd`"
+PATH_LINUX="$PATH_ROOT/src/VBox/Additions/linux"
 PATH_VBOXGUEST="$PATH_ROOT/src/VBox/Additions/common/VBoxGuest"
 PATH_VBOXSF="$PATH_ROOT/src/VBox/Additions/linux/sharedfolders"
 
 VBOX_VERSION_MAJOR=`sed -e "s/^ *VBOX_VERSION_MAJOR *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Config.kmk`
 VBOX_VERSION_MINOR=`sed -e "s/^ *VBOX_VERSION_MINOR *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Config.kmk`
 VBOX_VERSION_BUILD=`sed -e "s/^ *VBOX_VERSION_BUILD *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Config.kmk`
+VBOX_SVN_REV=`sed -e 's/^ *VBOX_SVN_REV_FALLBACK *:= \+\$(patsubst *%:,, *\$Rev: *\([0-9]\+\) *\$ *) */\1/;t;d' $PATH_ROOT/Config.kmk`
+VBOX_VENDOR=`sed -e 's/^ *VBOX_VENDOR *= \+\(.\+\)/\1/;t;d' $PATH_ROOT/Config.kmk`
+VBOX_VENDOR_SHORT=`sed -e 's/^ *VBOX_VENDOR_SHORT *= \+\(.\+\)/\1/;t;d' $PATH_ROOT/Config.kmk`
+VBOX_PRODUCT=`sed -e 's/^ *VBOX_PRODUCT *= \+\(.\+\)/\1/;t;d' $PATH_ROOT/Config.kmk`
+VBOX_C_YEAR=`date +%Y`
 
 . $PATH_VBOXGUEST/linux/files_vboxguest
 . $PATH_VBOXSF/files_vboxsf
@@ -48,6 +54,26 @@ echo "#define VBOX_VERSION_BUILD $VBOX_VERSION_BUILD" >> $PATH_TMP/version-gener
 echo "#define VBOX_VERSION_STRING \"$VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD\"" >> $PATH_TMP/version-generated.h
 echo "" >> $PATH_TMP/version-generated.h
 echo "#endif" >> $PATH_TMP/version-generated.h
+
+# Create auto-generated revision file, needed by all modules
+echo "#ifndef __revision_generated_h__" > $PATH_TMP/revision-generated.h
+echo "#define __revision_generated_h__" >> $PATH_TMP/revision-generated.h
+echo "" >> $PATH_TMP/revision-generated.h
+echo "#define VBOX_SVN_REV $VBOX_SVN_REV" >> $PATH_TMP/revision-generated.h
+echo "" >> $PATH_TMP/revision-generated.h
+echo "#endif" >> $PATH_TMP/revision-generated.h
+
+# Create auto-generated product file, needed by all modules
+echo "#ifndef __product_generated_h__" > $PATH_TMP/product-generated.h
+echo "#define __product_generated_h__" >> $PATH_TMP/product-generated.h
+echo "" >> $PATH_TMP/product-generated.h
+echo "#define VBOX_VENDOR \"$VBOX_VENDOR\"" >> $PATH_TMP/product-generated.h
+echo "#define VBOX_VENDOR_SHORT \"$VBOX_VENDOR_SHORT\"" >> $PATH_TMP/product-generated.h
+echo "" >> $PATH_TMP/product-generated.h
+echo "#define VBOX_PRODUCT \"$VBOX_PRODUCT\"" >> $PATH_TMP/product-generated.h
+echo "#define VBOX_C_YEAR \"$VBOX_C_YEAR\"" >> $PATH_TMP/product-generated.h
+echo "" >> $PATH_TMP/product-generated.h
+echo "#endif" >> $PATH_TMP/product-generated.h
 
 # vboxguest (VirtualBox guest kernel module)
 mkdir $PATH_TMP/vboxguest || exit 1
@@ -67,8 +93,13 @@ for f in $FILES_VBOXSF_BIN; do
     install -D -m 0755 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxsf/`echo $f|cut -d'>' -f2`"
 done
 
+# convenience Makefile
+install -D -m 0644 $PATH_LINUX/Makefile "$PATH_TMP/Makefile"
+
 # Only temporary, omit from archive
 rm $PATH_TMP/version-generated.h
+rm $PATH_TMP/revision-generated.h
+rm $PATH_TMP/product-generated.h
 
 # Create the archive
 tar -czf $FILE_OUT -C $PATH_TMP . || exit 1
