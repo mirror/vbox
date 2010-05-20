@@ -32,14 +32,17 @@ PATH_ROOT="`cd \`dirname $0\`/../../../..; pwd`"
 PATH_LINUX="$PATH_ROOT/src/VBox/HostDrivers/linux"
 PATH_VBOXDRV="$PATH_ROOT/src/VBox/HostDrivers/Support"
 PATH_VBOXNET="$PATH_ROOT/src/VBox/HostDrivers/VBoxNetFlt"
+PATH_VBOXADP="$PATH_ROOT/src/VBox/HostDrivers/VBoxNetAdp"
 
 VBOX_VERSION_MAJOR=`sed -e "s/^ *VBOX_VERSION_MAJOR *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Config.kmk`
 VBOX_VERSION_MINOR=`sed -e "s/^ *VBOX_VERSION_MINOR *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Config.kmk`
 VBOX_VERSION_BUILD=`sed -e "s/^ *VBOX_VERSION_BUILD *= \+\([0-9]\+\)/\1/;t;d" $PATH_ROOT/Config.kmk`
 VBOX_VERSION_STRING=$VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD
+VBOX_SVN_REV=`sed -e 's/^ *VBOX_SVN_REV_FALLBACK *:= \+\$(patsubst *%:,, *\$Rev: *\([0-9]\+\) *\$ *) */\1/;t;d' $PATH_ROOT/Config.kmk`                                                                                                        VBOX_VENDOR=`sed -e 's/^ *VBOX_VENDOR *= \+\(.\+\)/\1/;t;d' $PATH_ROOT/Config.kmk`                                     VBOX_VENDOR_SHORT=`sed -e 's/^ *VBOX_VENDOR_SHORT *= \+\(.\+\)/\1/;t;d' $PATH_ROOT/Config.kmk`                         VBOX_PRODUCT=`sed -e 's/^ *VBOX_PRODUCT *= \+\(.\+\)/\1/;t;d' $PATH_ROOT/Config.kmk`                                   VBOX_C_YEAR=`date +%Y`                                                                                                 
 
 . $PATH_VBOXDRV/linux/files_vboxdrv
 . $PATH_VBOXNET/linux/files_vboxnetflt
+. $PATH_VBOXADP/linux/files_vboxnetadp
 
 # Temporary path for creating the modules, will be removed later
 mkdir $PATH_TMP || exit 1
@@ -54,6 +57,26 @@ echo "#define VBOX_VERSION_BUILD $VBOX_VERSION_BUILD" >> $PATH_TMP/version-gener
 echo "#define VBOX_VERSION_STRING \"$VBOX_VERSION_STRING\"" >> $PATH_TMP/version-generated.h
 echo "" >> $PATH_TMP/version-generated.h
 echo "#endif" >> $PATH_TMP/version-generated.h
+
+# Create auto-generated revision file, needed by all modules
+echo "#ifndef __revision_generated_h__" > $PATH_TMP/revision-generated.h
+echo "#define __revision_generated_h__" >> $PATH_TMP/revision-generated.h
+echo "" >> $PATH_TMP/revision-generated.h
+echo "#define VBOX_SVN_REV $VBOX_SVN_REV" >> $PATH_TMP/revision-generated.h
+echo "" >> $PATH_TMP/revision-generated.h
+echo "#endif" >> $PATH_TMP/revision-generated.h
+
+# Create auto-generated product file, needed by all modules
+echo "#ifndef __product_generated_h__" > $PATH_TMP/product-generated.h
+echo "#define __product_generated_h__" >> $PATH_TMP/product-generated.h
+echo "" >> $PATH_TMP/product-generated.h
+echo "#define VBOX_VENDOR \"$VBOX_VENDOR\"" >> $PATH_TMP/product-generated.h
+echo "#define VBOX_VENDOR_SHORT \"$VBOX_VENDOR_SHORT\"" >> $PATH_TMP/product-generated.h
+echo "" >> $PATH_TMP/product-generated.h
+echo "#define VBOX_PRODUCT \"$VBOX_PRODUCT\"" >> $PATH_TMP/product-generated.h
+echo "#define VBOX_C_YEAR \"$VBOX_C_YEAR\"" >> $PATH_TMP/product-generated.h
+echo "" >> $PATH_TMP/product-generated.h
+echo "#endif" >> $PATH_TMP/product-generated.h
 
 # vboxdrv (VirtualBox host kernel module)
 mkdir $PATH_TMP/vboxdrv || exit 1
@@ -86,10 +109,26 @@ else
     sed -e "s;-DVBOX_WITH_HARDENING;;g" < $PATH_VBOXNET/linux/Makefile > $PATH_TMP/vboxnetflt/Makefile
 fi
 
+# vboxnetadp (VirtualBox network adapter kernel module)
+mkdir $PATH_TMP/vboxnetadp || exit 1
+for f in $VBOX_VBOXNETADP_SOURCES; do
+    install -D -m 0644 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxnetadp/`echo $f|cut -d'>' -f2`"
+done
+sed -e "s;_VERSION_;$VBOX_VERSION_STRING;g" < $PATH_LINUX/build_in_tmp > $PATH_TMP/vboxnetadp/build_in_tmp
+chmod 0755 $PATH_TMP/vboxnetadp/build_in_tmp
+sed -e "s;_VERSION_;$VBOX_VERSION_STRING;g" < $PATH_VBOXADP/linux/dkms.conf > $PATH_TMP/vboxnetadp/dkms.conf
+if [ -n "$VBOX_WITH_HARDENING" ]; then
+    cat                                   $PATH_VBOXADP/linux/Makefile > $PATH_TMP/vboxnetadp/Makefile
+else
+    sed -e "s;-DVBOX_WITH_HARDENING;;g" < $PATH_VBOXADP/linux/Makefile > $PATH_TMP/vboxnetadp/Makefile
+fi
+
 install -D -m 0644 $PATH_LINUX/Makefile $PATH_TMP/Makefile
 
 # Only temporary, omit from archive
 rm $PATH_TMP/version-generated.h
+rm $PATH_TMP/revision-generated.h
+rm $PATH_TMP/product-generated.h
 
 # Create the archive
 tar -czf $FILE_OUT -C $PATH_TMP . || exit 1
