@@ -972,6 +972,7 @@ if $(VBOX_VERSION_BUILD) < 51
 else
   VBOX_API_SUFFIX              = _$(VBOX_VERSION_MAJOR)_$(expr $(VBOX_VERSION_MINOR) + 1)
 endif
+VBOX_JAVA_PACKAGE             = org.virtualbox$(VBOX_API_SUFFIX)
 
 #
 # Derived / helper config indicators.  Not configurable.
