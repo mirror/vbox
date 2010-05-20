@@ -1174,6 +1174,11 @@ void UISession::loadSessionSettings()
             /* Hide VRDP Action: */
             uimachine()->actionsPool()->action(UIActionIndex_Toggle_VRDP)->setVisible(false);
         }
+        else
+        {
+            /* Check/Uncheck VRDP action depending on VRDP server status: */
+            uimachine()->actionsPool()->action(UIActionIndex_Toggle_VRDP)->setChecked(vrdpServer.GetEnabled());
+        }
     }
 
     /* Load extra-data settings: */
