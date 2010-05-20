@@ -2516,7 +2516,7 @@ static int intnetR0TrunkIfSendGsoFallback(PINTNETTRUNKIF pThis, PINTNETIF pIfSen
         u.SG.aSegs[1].pv   = (uint8_t *)pSG->aSegs[0].pv + offSegPayload;
         u.SG.aSegs[1].cb   = (uint32_t)cbSegPayload;
 
-        int rc = pThis->pIfPort->pfnXmit(pThis->pIfPort, pIfSender, &u.SG, fDst);
+        int rc = pThis->pIfPort->pfnXmit(pThis->pIfPort, pIfSender->pvIfData, &u.SG, fDst);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -2639,7 +2639,7 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
     int rc;
     if (   pSG->GsoCtx.u8Type == PDMNETWORKGSOTYPE_INVALID
         || intnetR0TrunkIfCanHandleGsoFrame(pThis, pSG, fDst) )
-        rc = pThis->pIfPort->pfnXmit(pThis->pIfPort, pIfSender, pSG, fDst);
+        rc = pThis->pIfPort->pfnXmit(pThis->pIfPort, pIfSender->pvIfData, pSG, fDst);
     else
         rc = intnetR0TrunkIfSendGsoFallback(pThis, pIfSender, pSG, fDst);
 
