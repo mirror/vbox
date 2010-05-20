@@ -123,7 +123,14 @@ static struct ng_type ng_vboxnetflt_typestruct =
     .cmdlist =    ng_vboxnetflt_cmdlist,
 };
 NETGRAPH_INIT(vboxnetflt, &ng_vboxnetflt_typestruct);
-MODULE_VERSION(ng_vboxnetflt, 1);
+
+/*
+ * Use vboxnetflt because the kernel module is named vboxnetflt and vboxnetadp
+ * depends on this when loading dependencies.
+ * NETGRAP_INIT will prefix the given name with ng_ so MODULE_DEPEND needs the
+ * prefixed name.
+ */
+MODULE_VERSION(vboxnetflt, 1);
 MODULE_DEPEND(ng_vboxnetflt, vboxdrv, 1, 1, 1);
 
 /**

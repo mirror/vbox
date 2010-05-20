@@ -92,7 +92,7 @@ static moduledata_t g_VBoxNetAdpFreeBSDModule = {
 DECLARE_MODULE(vboxnetadp, g_VBoxNetAdpFreeBSDModule, SI_SUB_PSEUDO, SI_ORDER_ANY);
 MODULE_VERSION(vboxnetadp, 1);
 MODULE_DEPEND(vboxnetadp, vboxdrv, 1, 1, 1);
-MODULE_DEPEND(vboxnetadp, ng_vboxnetflt, 1, 1, 1);
+MODULE_DEPEND(vboxnetadp, vboxnetflt, 1, 1, 1);
 
 /**
  * Module event handler
