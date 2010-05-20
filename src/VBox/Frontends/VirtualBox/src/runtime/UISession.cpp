@@ -1214,9 +1214,6 @@ void UISession::saveSessionSettings()
         machine.SetExtraData(VBoxDefs::GUI_AutoresizeGuest,
                              uimachine()->actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->isChecked() ?
                              QString() : "off");
-
-        // TODO: Move to fullscreen/seamless logic:
-        //machine.SetExtraData(VBoxDefs::GUI_MiniToolBarAutoHide, mMiniToolBar->isAutoHide() ? "on" : "off");
     }
 }
 
