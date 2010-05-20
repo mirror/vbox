@@ -75,6 +75,9 @@
 
 #include <math.h>
 #include <string.h>
+#ifdef RT_OS_FREEBSD
+# include <strings.h>
+#endif
 #include <stdio.h>
 #define NEED_EVENTS
 #include <X11/X.h>
