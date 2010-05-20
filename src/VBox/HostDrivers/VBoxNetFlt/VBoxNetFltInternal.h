@@ -182,19 +182,13 @@ typedef struct VBOXNETFLTINS
             /** Handle to list of created VNICs. */
             list_t hVNICs;
             /** Instance number while creating VNICs. */
-            uint16_t uInstance;
-            /** The lower MAC handle. Valid only if this is a VNIC. */
-            mac_handle_t hInterface;
-            /** The link Id of this interface. Valid only if this is a VNIC. */
-            datalink_id_t hLinkId;
-            /** The client MAC handle. Valid only if this is a VNIC. */
-            mac_client_handle_t hClient;
-            /** The unicast address handle. Valid only if this is a VNIC. */
-            mac_unicast_handle_t hUnicast;
-            /** The promiscuous handle. Valid only if this is a VNIC. */
-            mac_promisc_handle_t hPromiscuous;
+            uint64_t uInstance;
+            /** Pointer to the VNIC instance data. */
+            void *pvVNIC;
             /** The MAC address of the host interface. */
             RTMAC MacAddr;
+            /** Whether required capabilities have been reported. */
+            bool fReportedInfo;
 #  else
             /** Pointer to the bound IPv4 stream. */
             void volatile *pvIp4Stream;
