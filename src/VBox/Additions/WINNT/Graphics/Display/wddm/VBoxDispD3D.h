@@ -16,8 +16,25 @@
 #define ___VBoxDispD3D_h___
 
 #include "VBoxDispD3DIf.h"
+#include "../../Miniport/wddm/VBoxVideoIf.h"
 
 #include <iprt/cdefs.h>
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+typedef struct VBOXDISPVHWA_INFO
+{
+    VBOXVHWA_INFO Settings;
+}VBOXDISPVHWA_INFO;
+
+/* represents settings secific to
+ * display device (head) on the multiple-head graphics card
+ * currently used for 2D (overlay) only since in theory its settings
+ * can differ per each frontend's framebuffer. */
+typedef struct VBOXWDDMDISP_HEAD
+{
+    VBOXDISPVHWA_INFO Vhwa;
+} VBOXWDDMDISP_HEAD;
+#endif
 
 typedef struct VBOXWDDMDISP_ADAPTER
 {
@@ -27,6 +44,10 @@ typedef struct VBOXWDDMDISP_ADAPTER
     VBOXDISPD3D D3D;
     IDirect3D9Ex * pD3D9If;
     D3DDDI_ADAPTERCALLBACKS RtCallbacks;
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    uint32_t cHeads;
+    VBOXWDDMDISP_HEAD aHeads[1];
+#endif
 } VBOXWDDMDISP_ADAPTER, *PVBOXWDDMDISP_ADAPTER;
 
 typedef struct VBOXWDDMDISP_DEVICE

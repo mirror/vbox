@@ -29,7 +29,6 @@
 
 #include "VBoxDispD3D.h"
 #include "VBoxDispD3DCmn.h"
-#include "../../Miniport/wddm/VBoxVideoIf.h"
 
 #ifdef VBOXWDDMDISP_DEBUG
 # include <stdio.h>
@@ -297,6 +296,34 @@ static FORMATOP gVBoxFormatOps[] = {
 
 #define VBOX_FORMATOP_COUNT() (sizeof(gVBoxFormatOps)/sizeof(gVBoxFormatOps[0]))
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+
+static bool vboxVhwaIsEnabled(PVBOXWDDMDISP_ADAPTER pAdapter)
+{
+    for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
+    {
+        if (pAdapter->aHeads[i].Vhwa.Settings.fFlags & VBOXVHWA_F_ENABLED)
+            return true;
+    }
+    return false;
+}
+
+static bool vboxVhwaHasCKeying(PVBOXWDDMDISP_ADAPTER pAdapter)
+{
+    for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
+    {
+        VBOXVHWA_INFO* pSettings = &pAdapter->aHeads[i].Vhwa.Settings;
+        if ((pSettings->fFlags & VBOXVHWA_F_ENABLED)
+                && ((pSettings->fFlags & VBOXVHWA_F_CKEY_DST)
+                        || (pSettings->fFlags & VBOXVHWA_F_CKEY_SRC))
+               )
+            return true;
+    }
+    return false;
+}
+
+#endif
+
 /**
  * DLL entry point.
  */
@@ -347,35 +374,10 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
             {
                 memset(pData->pData, 0, sizeof (DDRAW_CAPS));
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                VBOXWDDM_QI_2D_1 Query;
-                Query.hdr.enmType = VBOXWDDM_QI_TYPE_2D_1;
-                VBOXVHWA_VERSION_INIT(&Query.Info.u.in.guestVersion);
-                D3DDDICB_QUERYADAPTERINFO DdiQuery;
-                DdiQuery.PrivateDriverDataSize = sizeof(Query);
-                DdiQuery.pPrivateDriverData = &Query;
-                hr = pAdapter->RtCallbacks.pfnQueryAdapterInfoCb(pAdapter->hAdapter, &DdiQuery);
-                Assert(hr == S_OK);
-                if (hr == S_OK)
+                if (vboxVhwaHasCKeying(pAdapter))
                 {
-                    if (Query.hdr.rc == VINF_SUCCESS)
-                    {
-                        /* query succeeded, check the results */
-                        if (Query.Info.u.out.cfgFlags == VBOXVHWA_CFG_ENABLED)
-                        {
-                            /* 2D is enabled*/
-                            DDRAW_CAPS *pCaps = (DDRAW_CAPS*)pData->pData;
-                            /* overlay supported */
-                            if (Query.Info.u.out.surfaceCaps & VBOXVHWA_SCAPS_OVERLAY)
-                            {
-                                if (Query.Info.u.out.caps & VBOXVHWA_CAPS_COLORKEY)
-                                {
-                                    pCaps->Caps = DDRAW_CAPS_COLORKEY;
-                                }
-                            }
-
-                            /* @todo: feel the caps from here */
-                        }
-                    }
+                    DDRAW_CAPS *pCaps = (DDRAW_CAPS*)pData->pData;
+                    pCaps->Caps |= DDRAW_CAPS_COLORKEY;
                 }
 #endif
             }
@@ -394,46 +396,36 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
                                     zero starting with the one following "Head", i.e. Caps */,
                         0, sizeof (DDRAW_MODE_SPECIFIC_CAPS) - RT_OFFSETOF(DDRAW_MODE_SPECIFIC_CAPS, Caps));
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                VBOXWDDM_QI_2D_1 Query;
-                Query.hdr.enmType = VBOXWDDM_QI_TYPE_2D_1;
-                VBOXVHWA_VERSION_INIT(&Query.Info.u.in.guestVersion);
-                D3DDDICB_QUERYADAPTERINFO DdiQuery;
-                DdiQuery.PrivateDriverDataSize = sizeof(Query);
-                DdiQuery.pPrivateDriverData = &Query;
-                hr = pAdapter->RtCallbacks.pfnQueryAdapterInfoCb(pAdapter->hAdapter, &DdiQuery);
-                Assert(hr == S_OK);
-                if (hr == S_OK)
+                VBOXVHWA_INFO *pSettings = &pAdapter->aHeads[pCaps->Head].Vhwa.Settings;
+                if (pSettings->fFlags & VBOXVHWA_F_ENABLED)
                 {
-                    if (Query.hdr.rc == VINF_SUCCESS)
+                    pCaps->Caps |= MODE_CAPS_OVERLAY | MODE_CAPS_OVERLAYSTRETCH;
+
+                    if (pSettings->fFlags & VBOXVHWA_F_CKEY_DST)
                     {
-                        /* query succeeded, check the results */
-                        if (Query.Info.u.out.cfgFlags == VBOXVHWA_CFG_ENABLED)
-                        {
-                            /* 2D is enabled*/
-                            if (Query.Info.u.out.surfaceCaps & VBOXVHWA_SCAPS_OVERLAY)
-                            {
-                                /* overlay supported */
-                                pCaps->Caps = MODE_CAPS_OVERLAY | MODE_CAPS_OVERLAYSTRETCH;
-                                if (Query.Info.u.out.caps & VBOXVHWA_CAPS_COLORKEY)
-                                {
-                                    if (Query.Info.u.out.colorKeyCaps & VBOXVHWA_CKEYCAPS_DESTOVERLAY)
-                                    {
-                                        pCaps->CKeyCaps |= MODE_CKEYCAPS_DESTOVERLAY
-                                                | MODE_CKEYCAPS_DESTOVERLAYYUV /* ?? */;
-                                    }
-                                }
-
-                                pCaps->FxCaps = MODE_FXCAPS_OVERLAYSHRINKX
-                                        | MODE_FXCAPS_OVERLAYSHRINKY
-                                        | MODE_FXCAPS_OVERLAYSTRETCHX
-                                        | MODE_FXCAPS_OVERLAYSTRETCHY;
-
-                                pCaps->MaxVisibleOverlays = Query.Info.u.out.numOverlays;
-                                pCaps->MinOverlayStretch = 1;
-                                pCaps->MaxOverlayStretch = 32000;
-                            }
-                        }
+                        pCaps->CKeyCaps |= MODE_CKEYCAPS_DESTOVERLAY
+                                | MODE_CKEYCAPS_DESTOVERLAYYUV /* ?? */
+                                ;
                     }
+
+                    if (pSettings->fFlags & VBOXVHWA_F_CKEY_SRC)
+                    {
+                        pCaps->CKeyCaps |= MODE_CKEYCAPS_SRCOVERLAY
+                                | MODE_CKEYCAPS_SRCOVERLAYCLRSPACE /* ?? */
+                                | MODE_CKEYCAPS_SRCOVERLAYCLRSPACEYUV /* ?? */
+                                | MODE_CKEYCAPS_SRCOVERLAYYUV /* ?? */
+                                ;
+                    }
+
+                    pCaps->FxCaps = MODE_FXCAPS_OVERLAYSHRINKX
+                            | MODE_FXCAPS_OVERLAYSHRINKY
+                            | MODE_FXCAPS_OVERLAYSTRETCHX
+                            | MODE_FXCAPS_OVERLAYSTRETCHY;
+
+
+                    pCaps->MaxVisibleOverlays = pSettings->cOverlaysSupported;
+                    pCaps->MinOverlayStretch = 1;
+                    pCaps->MaxOverlayStretch = 32000;
                 }
 #endif
             }
@@ -1420,10 +1412,33 @@ HRESULT APIENTRY OpenAdapter (__inout D3DDDIARG_OPENADAPTER*  pOpenData)
 {
     vboxVDbgPrint(("==> "__FUNCTION__"\n"));
 
-//    AssertBreakpoint();
+    VBOXWDDM_QI Query;
+    D3DDDICB_QUERYADAPTERINFO DdiQuery;
+    DdiQuery.PrivateDriverDataSize = sizeof(Query);
+    DdiQuery.pPrivateDriverData = &Query;
+    HRESULT hr = pOpenData->pAdapterCallbacks->pfnQueryAdapterInfoCb(pOpenData->hAdapter, &DdiQuery);
+    Assert(hr == S_OK);
+    if (hr != S_OK)
+    {
+        vboxVDbgPrintR((__FUNCTION__": pfnQueryAdapterInfoCb failed, hr (%d)\n", hr));
+        return E_FAIL;
+    }
 
-    HRESULT hr = S_OK;
+    /* check the miniport version match display version */
+    if (Query.u32Version != VBOXVIDEOIF_VERSION)
+    {
+        vboxVDbgPrintR((__FUNCTION__": miniport version mismatch, expected (%d), but was (%d)\n",
+                VBOXVIDEOIF_VERSION,
+                Query.u32Version));
+        return E_FAIL;
+    }
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    Assert(Query.cInfos >= 1);
+    PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)RTMemAllocZ(RT_OFFSETOF(VBOXWDDMDISP_ADAPTER, aHeads[Query.cInfos]));
+#else
     PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)RTMemAllocZ(sizeof (VBOXWDDMDISP_ADAPTER));
+#endif
     Assert(pAdapter);
     if (pAdapter)
     {
@@ -1431,6 +1446,14 @@ HRESULT APIENTRY OpenAdapter (__inout D3DDDIARG_OPENADAPTER*  pOpenData)
         pAdapter->uIfVersion = pOpenData->Interface;
         pAdapter->uRtVersion= pOpenData->Version;
         pAdapter->RtCallbacks = *pOpenData->pAdapterCallbacks;
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        pAdapter->cHeads = Query.cInfos;
+        for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
+        {
+            pAdapter->aHeads[i].Vhwa.Settings = Query.aInfos[i];
+        }
+#endif
 
         pOpenData->hAdapter = pAdapter;
         pOpenData->pAdapterFuncs->pfnGetCaps = vboxWddmDispGetCaps;

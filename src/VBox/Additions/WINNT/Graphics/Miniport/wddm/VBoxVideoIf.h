@@ -23,6 +23,10 @@
 
 #include <VBox/VBoxVideo.h>
 
+/* @todo: implement a check to ensure display & miniport versions match
+ * one would increase this whenever defines in this file change */
+#define VBOXVIDEOIF_VERSION 1
+
 /* create allocation func */
 typedef enum
 {
@@ -59,35 +63,28 @@ typedef struct VBOXWDDM_ALLOCINFO
 #define VBOXWDDM_ALLOCINFO_BODY(_p, _t) ( (_t*)(((uint8_t*)(_p)) + VBOXWDDM_ALLOCINFO_HEADSIZE()) )
 #define VBOXWDDM_ALLOCINFO_HEAD(_pb) ((VBOXWDDM_ALLOCINFO*)((uint8_t *)(_pb) - VBOXWDDM_ALLOCATION_HEADSIZE()))
 
-/* query info func */
-typedef enum
-{
-    VBOXWDDM_QI_TYPE_UNEFINED = 0,
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /* VBOXVHWACMD_QUERYINFO1 */
-    VBOXWDDM_QI_TYPE_2D_1,
-    /* VBOXVHWACMD_QUERYINFO2 */
-    VBOXWDDM_QI_TYPE_2D_2
-#endif
-} VBOXWDDM_QI_TYPE;
 
+#define VBOXVHWA_F_ENABLED  0x00000001
+#define VBOXVHWA_F_CKEY_DST 0x00000002
+#define VBOXVHWA_F_CKEY_SRC 0x00000004
+
+#define VBOXVHWA_MAX_FORMATS 8
+
+typedef struct VBOXVHWA_INFO
+{
+    uint32_t fFlags;
+    uint32_t cOverlaysSupported;
+    uint32_t cFormats;
+    D3DDDIFORMAT aFormats[VBOXVHWA_MAX_FORMATS];
+} VBOXVHWA_INFO;
+
+/* query info func */
 typedef struct VBOXWDDM_QI
 {
-    VBOXWDDM_QI_TYPE enmType;
-    int rc;
+    uint32_t u32Version;
+    uint32_t cInfos;
+    VBOXVHWA_INFO aInfos[VBOX_VIDEO_MAX_SCREENS];
 } VBOXWDDM_QI;
-
-typedef struct VBOXWDDM_QI_2D_1
-{
-    VBOXWDDM_QI hdr;
-    VBOXVHWACMD_QUERYINFO1 Info;
-} VBOXWDDM_QI_2D_1;
-
-typedef struct VBOXWDDM_QI_2D_2
-{
-    VBOXWDDM_QI hdr;
-    VBOXVHWACMD_QUERYINFO2 Info;
-} VBOXWDDM_QI_2D_2;
 
 /* submit cmd func */
 
