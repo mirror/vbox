@@ -22,6 +22,8 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 
+#include <QDesktopWidget>
+
 /**
  *  Calculates a suitable page step size for the given max value. The returned
  *  size is so that there will be no more than 32 pages. The minimum returned
@@ -53,6 +55,11 @@ VBoxVMSettingsDisplay::VBoxVMSettingsDisplay()
     m_maxVRAM = sys.GetMaxGuestVRAM();
     m_maxVRAMVisible = m_maxVRAM;
     const uint MinMonitors = 1;
+#if (QT_VERSION >= 0x040600)
+    const uint cHostScreens = QApplication::desktop()->screenCount();
+#else /* (QT_VERSION >= 0x040600) */
+    const uint cHostScreens = QApplication::desktop()->numScreens();
+#endif /* !(QT_VERSION >= 0x040600) */
     const uint MaxMonitors = sys.GetMaxGuestMonitors();
 
     /* Setup validators */
@@ -84,7 +91,9 @@ VBoxVMSettingsDisplay::VBoxVMSettingsDisplay()
     mSlMemory->setOptimalHint (needMBytes, m_maxVRAMVisible);
     mSlMonitors->setMinimum (MinMonitors);
     mSlMonitors->setMaximum (MaxMonitors);
-    mSlMonitors->setSnappingEnabled (true);
+    mSlMonitors->setErrorHint (0, MinMonitors);
+    mSlMonitors->setOptimalHint (MinMonitors, cHostScreens);
+    mSlMonitors->setWarningHint (cHostScreens, MaxMonitors);
     /* Limit min/max. size of QLineEdit */
     mLeMemory->setFixedWidthByText (QString().fill ('8', 4));
     mLeMonitors->setFixedWidthByText (QString().fill ('8', 4));
