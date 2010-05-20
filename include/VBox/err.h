@@ -1297,6 +1297,8 @@
 #define VERR_INTNET_INCOMPATIBLE_TRUNK              (-3603)
 /** The network already exists with a different security profile (restricted / public). */
 #define VERR_INTNET_INCOMPATIBLE_FLAGS              (-3604)
+/** Failed to create a virtual network interface instance. */
+#define VERR_INTNET_FLT_VNIC_CREATE_FAILED          (-3605)
 /** @} */
 
 
