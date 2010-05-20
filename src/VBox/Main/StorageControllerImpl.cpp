@@ -143,7 +143,8 @@ HRESULT StorageController::init(Machine *aParent,
     m->bd->strName = aName;
     m->bd->mInstance = aInstance;
     m->bd->mStorageBus = aStorageBus;
-    if (aStorageBus != StorageBus_IDE)
+    if (   aStorageBus != StorageBus_IDE
+        && aStorageBus != StorageBus_Floppy)
         m->bd->fUseHostIOCache = false;
     else
         m->bd->fUseHostIOCache = true;
