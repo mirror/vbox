@@ -4748,7 +4748,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
-        <translation>Alle Waarschuwingen &amp;terugzetten</translation>
+        <translation>Alle waarschuwingen &amp;terugzetten</translation>
     </message>
     <message>
         <source>Go back to showing all suppressed warnings and messages</source>
@@ -4911,7 +4911,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Een fatale fout is opgetreden terwijl de virtuele machine draaide en de machine is gestopt.&lt;/p&gt;&lt;p&gt;Kijk voor ondersteuning op de community sectie van &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; of u contact voor ondersteuning. Lever aub de inhoud van het logbestand &lt;tt&gt;VBox.log&lt;/tt&gt; en het image bestand &lt;tt&gt;VBox.png&lt;/tt&gt; deze kunt u terugvinden in de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; folder, samen met een beschrijving van wat u deed op het moment dat de fout optrad. Let op; u kunt genoemde bestanden ook benaderen via &lt;b&gt;Geef Log weer&lt;/b&gt; in het &lt;b&gt;machine&lt;/b&gt; menu van de hoofdvenster van VirtualBox.&lt;/p&gt;&lt;p&gt;Klik op &lt;b&gt;Ok&lt;/b&gt; als u de machine uit wilt zetten of klik op &lt;b&gt;Negeren&lt;/b&gt; als u alles zo wilt laten staan voor nader onderzoek. Let op: nader onderzoek vereist specifieke kennis en hulpmiddelen, het is wenselijker om op &lt;b&gt;Ok&lt;/b&gt; te klikken.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Een fatale fout is opgetreden terwijl de virtuele machine draaide en de machine is gestopt.&lt;/p&gt;&lt;p&gt;Kijk voor ondersteuning op de community sectie van &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; of u contact voor ondersteuning. Lever aub de inhoud van het logbestand &lt;tt&gt;VBox.log&lt;/tt&gt; en het image bestand &lt;tt&gt;VBox.png&lt;/tt&gt; deze kunt u terugvinden in de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; folder, samen met een beschrijving van wat u deed op het moment dat de fout optrad. Let op; u kunt genoemde bestanden ook benaderen via &lt;b&gt;Toon Log&lt;/b&gt; in het &lt;b&gt;machine&lt;/b&gt; menu van de hoofdvenster van VirtualBox.&lt;/p&gt;&lt;p&gt;Klik op &lt;b&gt;Ok&lt;/b&gt; als u de machine uit wilt zetten of klik op &lt;b&gt;Negeren&lt;/b&gt; als u alles zo wilt laten staan voor nader onderzoek. Let op: nader onderzoek vereist specifieke kennis en hulpmiddelen, het is wenselijker om op &lt;b&gt;Ok&lt;/b&gt; te klikken.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -5039,7 +5039,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Door het verwijderen van een momentopname wordt de status informatie opgeslagen in de momentopname weg gegooid. En de schijf gegevens, verspreidt over verschillende image bestanden, die VirtualBox heeft aangemaakt tesamen met de momentopname, worden samengevoegd in één bestand. Dit kan een langdurig proces zijn en de informatie in de momentopname kan niet hersteld worden.&lt;/p&gt;&lt;/p&gt;Bent u er zeker van dat u de geselecteerde mometopname &lt;b&gt;%1&lt;/b&gt;wilt verwijderen?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Door het verwijderen van een momentopname wordt de status informatie opgeslagen in de momentopname weg gegooid. En de schijf gegevens, verspreidt over verschillende image bestanden, die VirtualBox heeft aangemaakt tesamen met de momentopname, worden samengevoegd in één bestand. Dit kan een langdurig proces zijn en de informatie in de momentopname kan niet hersteld worden.&lt;/p&gt;&lt;/p&gt;Bent u er zeker van dat u de geselecteerde momentopname &lt;b&gt;%1&lt;/b&gt;wilt verwijderen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete</source>
