@@ -54,6 +54,15 @@
     pmap_enter(pPhysMap, AddrR3, pPage, fProt, fWired)
 #endif
 
+/**
+ * Check whether we can use kmem_alloc_attr for low allocs.
+ */
+#if    (__FreeBSD_version >= 900000 && __FreeBSD_version >= 900011) \
+    || (__FreeBSD_version >= 800000 && __FreeBSD_version >= 800505) \
+    || (__FreeBSD_version >= 700000 && __FreeBSD_version >= 703101)
+# define USE_KMEM_ALLOC_ATTR
+#endif
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -214,7 +223,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             break;
         }
 
-#if (__FreeBSD_version >= 900011) || (__FreeBSD_version >= 800505) || (__FreeBSD_version >= 703101)
+#ifdef USE_KMEM_ALLOC_ATTR
         case RTR0MEMOBJTYPE_LOW:
         {
             kmem_free(kernel_map, (vm_offset_t)pMemFreeBSD->Core.pv, pMemFreeBSD->Core.cb);
@@ -321,7 +330,7 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
 
 int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
-#if (__FreeBSD_version >= 900011) || (__FreeBSD_version >= 800505) || (__FreeBSD_version >= 703101)
+#ifdef USE_KMEM_ALLOC_ATTR
     /*
      * Use kmem_alloc_attr, fExectuable is not needed because the
      * memory will be executable by default
