@@ -65,8 +65,8 @@ static volatile bool    g_fExecCanceled = false;
 void usageGuestControl(void)
 {
     RTPrintf("VBoxManage guestcontrol     execute <vmname>|<uuid>\n"
-             "                            <path to program> --username <name>\n"
-             "                            [--password <password>]\n"
+             "                            <path to program>\n"
+             "                            --username <name> --password <password>\n"
              "                            [--arguments \"<arguments>\"]\n"
              "                            [--environment \"<NAME>=<VALUE> [<NAME>=<VALUE>]\"]\n"
              "                            [--flags <flags>] [--timeout <msec>]\n"             
