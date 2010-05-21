@@ -41,7 +41,7 @@
  * @param   pModule     Module description
  * @param   pGVM        Pointer to the GVM instance data.
  */
-VMMR0DECL(int) PGMR0SharedModuleCheckRegion(PVM pVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule, PGVM pGVM)
+VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule, PGVM pGVM)
 {
     int                rc = VINF_SUCCESS;
     PGMMSHAREDPAGEDESC paPageDesc = NULL;
