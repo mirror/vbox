@@ -160,6 +160,13 @@ void QIWizard::resizeAccordingLabelWidth(int iLabelsWidth)
     resize(minimumSizeHint());
 }
 
+void QIWizard::retranslateAllPages()
+{
+    QList<int> idList = pageIds();
+    for(int i=0; i < idList.size(); ++i)
+        static_cast<QIWizardPage*>(page(idList.at(i)))->retranslateUi();
+}
+
 QIWizardPage::QIWizardPage()
 {
 }

@@ -42,6 +42,8 @@ protected:
     void assignWatermark(const QString &strWaterMark);
     void assignBackground(const QString &strBg);
 
+    void retranslateAllPages();
+
 private:
 
     void resizeAccordingLabelWidth(int iLabelWidth);
@@ -50,6 +52,8 @@ private:
 class QIWizardPage : public QIWithRetranslateUI<QWizardPage>
 {
     Q_OBJECT;
+
+    friend class QIWizard;
 
 public:
 

@@ -134,8 +134,11 @@ UINewVMWzd::UINewVMWzd(QWidget *pParent) : QIWizard(pParent)
     addPage(new UINewVMWzdPage4);
     addPage(new UINewVMWzdPage5);
 
-    /* Translate */
+    /* Initial translate */
     retranslateUi();
+
+    /* Initial translate all pages */
+    retranslateAllPages();
 
     /* Resize to 'golden ratio' */
     resizeToGoldenRatio();
@@ -182,8 +185,6 @@ void UINewVMWzdPage1::retranslateUi()
 
 void UINewVMWzdPage1::initializePage()
 {
-    /* Translate */
-    retranslateUi();
 }
 
 UINewVMWzdPage2::UINewVMWzdPage2()
@@ -215,9 +216,6 @@ void UINewVMWzdPage2::retranslateUi()
 
 void UINewVMWzdPage2::initializePage()
 {
-    /* Translate */
-    retranslateUi();
-
     /* 'Name' field should have focus initially */
     m_pNameEditor->setFocus();
 }
@@ -285,9 +283,6 @@ void UINewVMWzdPage3::retranslateUi()
 
 void UINewVMWzdPage3::initializePage()
 {
-    /* Translate */
-    retranslateUi();
-
     /* Assign recommended 'ram' field value */
     CGuestOSType type = field("type").value<CGuestOSType>();
     ramSliderValueChanged(type.GetRecommendedRAM());
@@ -374,9 +369,6 @@ void UINewVMWzdPage4::retranslateUi()
 
 void UINewVMWzdPage4::initializePage()
 {
-    /* Translate */
-    retranslateUi();
-
     /* Prepare initial choice */
     m_pBootHDCnt->setChecked(true);
     m_pDiskSelector->setCurrentIndex(0);
@@ -607,9 +599,6 @@ void UINewVMWzdPage5::retranslateUi()
 
 void UINewVMWzdPage5::initializePage()
 {
-    /* Translate */
-    retranslateUi();
-
     /* Summary should have focus initially */
     m_pSummaryText->setFocus();
 }

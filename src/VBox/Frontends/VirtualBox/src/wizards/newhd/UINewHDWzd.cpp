@@ -35,8 +35,11 @@ UINewHDWzd::UINewHDWzd(QWidget *pParent) : QIWizard(pParent)
     addPage(new UINewHDWzdPage3);
     addPage(new UINewHDWzdPage4);
 
-    /* Translate */
+    /* Initial translate */
     retranslateUi();
+
+    /* Initial translate all pages */
+    retranslateAllPages();
 
     /* Resize to 'golden ratio' */
     resizeToGoldenRatio();
@@ -117,8 +120,6 @@ void UINewHDWzdPage1::retranslateUi()
 
 void UINewHDWzdPage1::initializePage()
 {
-    /* Translate */
-    retranslateUi();
 }
 
 UINewHDWzdPage2::UINewHDWzdPage2()
@@ -148,9 +149,6 @@ void UINewHDWzdPage2::retranslateUi()
 
 void UINewHDWzdPage2::initializePage()
 {
-    /* Translate */
-    retranslateUi();
-
     /* Prepare initial choice */
     m_pTypeDynamic->click();
 
@@ -251,9 +249,6 @@ void UINewHDWzdPage3::retranslateUi()
 
 void UINewHDWzdPage3::initializePage()
 {
-    /* Translate */
-    retranslateUi();
-
     /* Initialise location */
     m_pLocationEditor->setText(m_strInitialName);
 
@@ -464,9 +459,6 @@ void UINewHDWzdPage4::retranslateUi()
 
 void UINewHDWzdPage4::initializePage()
 {
-    /* Translate */
-    retranslateUi();
-
     /* Summary should have focus initially */
     m_pSummaryText->setFocus();
 }
