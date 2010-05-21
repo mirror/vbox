@@ -57,9 +57,9 @@
 /**
  * Check whether we can use kmem_alloc_attr for low allocs.
  */
-#if    (__FreeBSD_version >= 900000 && __FreeBSD_version >= 900011) \
-    || (__FreeBSD_version >= 800000 && __FreeBSD_version >= 800505) \
-    || (__FreeBSD_version >= 700000 && __FreeBSD_version >= 703101)
+#if    (__FreeBSD_version >= 900011) \
+    || (__FreeBSD_version < 900000 && __FreeBSD_version >= 800505) \
+    || (__FreeBSD_version < 800000 && __FreeBSD_version >= 703101)
 # define USE_KMEM_ALLOC_ATTR
 #endif
 
