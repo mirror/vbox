@@ -48,7 +48,7 @@ VBoxTray_LIBS     = \
 
 ifdef VBOXWDDM
  VBoxTray_DEFS   += VBOXWDDM
- VBoxTray_DEFS   += LOG_ENABLED
+ # VBoxTray_DEFS   += LOG_ENABLED
  # we need only includes for PFND3DKMT stuff as all we link dynamicaly to it
  VBoxTray_INCS   += $(PATH_SDK_WINDDK_INC_API) $(PATH_SDK_WINDDK_INC_DDK)
 endif

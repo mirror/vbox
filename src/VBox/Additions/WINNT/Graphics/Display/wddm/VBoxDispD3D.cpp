@@ -457,7 +457,6 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
     {
         case D3DDDICAPS_DDRAW:
         {
-            AssertBreakpoint();
             Assert(pData->DataSize >= sizeof (DDRAW_CAPS));
             if (pData->DataSize >= sizeof (DDRAW_CAPS))
             {
@@ -476,7 +475,6 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
         }
         case D3DDDICAPS_DDRAW_MODE_SPECIFIC:
         {
-            AssertBreakpoint();
             Assert(pData->DataSize >= sizeof (DDRAW_MODE_SPECIFIC_CAPS));
             if (pData->DataSize >= sizeof (DDRAW_MODE_SPECIFIC_CAPS))
             {
