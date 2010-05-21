@@ -34,7 +34,6 @@
 #include <Windows.h>
 #include <tlhelp32.h>
 #include <process.h>
-#include <psapi.h>      /* For EnumProcesses(). */
 #include <errno.h>
 
 #include <iprt/process.h>
@@ -294,12 +293,12 @@ static int rtProcGetProcessHandle(DWORD dwPID, PSID pSID, PHANDLE phToken)
                     if (DuplicateTokenEx(hTokenProc, MAXIMUM_ALLOWED,
                                          NULL, SecurityIdentification, TokenPrimary, phToken))
                     {
-                        /* 
+                        /*
                          * So we found a VBoxTray instance which belongs to the user we want to
                          * to run our new process under. This duplicated token will be used for
-                         * the actual CreateProcessAsUserW() call then. 
+                         * the actual CreateProcessAsUserW() call then.
                          */
-                        fFound = TRUE;                                                        
+                        fFound = TRUE;
                     }
                     else
                         dwErr = GetLastError();
@@ -359,7 +358,7 @@ static BOOL rtProcFindProcessByName(const char *pszName, PSID pSID, PHANDLE phTo
                         PROCESSENTRY32 procEntry;
                         procEntry.dwSize = sizeof(PROCESSENTRY32);
                         if (pfnProcess32First(hSnap, &procEntry))
-                        {        
+                        {
                             do
                             {
                                 if (   _stricmp(procEntry.szExeFile, pszName) == 0
@@ -396,7 +395,7 @@ static BOOL rtProcFindProcessByName(const char *pszName, PSID pSID, PHANDLE phTo
                     PFNGETMODULEBASENAME pfnGetModuleBaseName;
                     rc = RTLdrGetSymbol(hPSAPI, "GetModuleBaseName", (void**)&pfnGetModuleBaseName);
                     if (RT_SUCCESS(rc))
-                    {            
+                    {
                         /** @todo Retry if pBytesReturned equals cbBytes! */
                         DWORD dwPIDs[4096]; /* Should be sufficient for now. */
                         DWORD cbBytes = 0;
@@ -404,7 +403,7 @@ static BOOL rtProcFindProcessByName(const char *pszName, PSID pSID, PHANDLE phTo
                         {
                             for (DWORD dwIdx = 0; dwIdx < cbBytes/sizeof(DWORD) && !fFound; dwIdx++)
                             {
-                                HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 
+                                HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
                                                            FALSE, dwPIDs[dwIdx]);
                                 if (hProc)
                                 {
@@ -416,7 +415,7 @@ static BOOL rtProcFindProcessByName(const char *pszName, PSID pSID, PHANDLE phTo
                                         if (pfnGetModuleBaseName(hProc, 0, pszProcName, dwSize) == dwSize)
                                             dwSize += 128;
                                     } while (GetLastError() == ERROR_INSUFFICIENT_BUFFER);
-                
+
                                     if (pszProcName)
                                     {
                                         if (   _stricmp(pszProcName, pszName) == 0
@@ -513,7 +512,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
          *   under is logged in (has a desktop).
          * - We do not want to display a process of user A run on the desktop
          *   of user B on multi session systems.
-         * 
+         *
          * The following rights are needed in order to use LogonUserW and
          * CreateProcessAsUserW, so the local policy has to be modified to:
          *  - SE_TCB_NAME = Act as part of the operating system
@@ -557,10 +556,10 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                     && cbName > 0)
                 {
                     dwErr = NO_ERROR;
-    
+
                     PSID pSID = (PSID)RTMemAlloc(cbName * sizeof(wchar_t));
                     AssertPtrReturn(pSID, VERR_NO_MEMORY);
-    
+
                     /** @todo No way to allocate a PRTUTF16 directly? */
                     PRTUTF16 pwszDomain = NULL;
                     if (cbDomain > 0)
@@ -568,7 +567,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                         pwszDomain = (PRTUTF16)RTMemAlloc(cbDomain * sizeof(RTUTF16));
                         AssertPtrReturn(pwszDomain, VERR_NO_MEMORY);
                     }
-    
+
                     /* Note: Also supports FQDNs! */
                     if (   LookupAccountNameW(NULL,            /* lpSystemName */
                                               pwszUser,
@@ -581,7 +580,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                     {
                         fFound = rtProcFindProcessByName(
 #ifdef VBOX
-                                                         "VBoxTray.exe", 
+                                                         "VBoxTray.exe",
 #else
                                                          "explorer.exe"
 #endif
@@ -599,7 +598,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                 /* Nothing to do here right now. */
             }
 
-            /* 
+            /*
              * If we didn't find a matching VBoxTray, just use the token we got
              * above from LogonUserW(). This enables us to at least run processes with
              * desktop interaction without UI.
