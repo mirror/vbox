@@ -403,8 +403,11 @@ UIRegistrationWzd::UIRegistrationWzd(UIRegistrationWzd **ppSelf)
     /* Create & add page */
     addPage(new UIRegistrationWzdPage1);
 
-    /* Translate */
+    /* Initial translate */
     retranslateUi();
+
+    /* Initial translate all pages */
+    retranslateAllPages();
 
     /* Resize to 'golden ratio' */
     resizeToGoldenRatio();
@@ -522,9 +525,6 @@ UIRegistrationWzdPage1::UIRegistrationWzdPage1()
     RegistrationData data(vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_RegistrationData), false);
     m_pLeOldEmail->setText(data.account());
     m_pLeOldEmail->setFocus();
-
-    /* Translate */
-    retranslateUi();
 }
 
 void UIRegistrationWzdPage1::retranslateUi()

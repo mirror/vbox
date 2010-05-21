@@ -107,8 +107,11 @@ UIImportApplianceWzd::UIImportApplianceWzd(QWidget *pParent) : QIWizard(pParent)
     addPage(new UIImportApplianceWzdPage1);
     addPage(new UIImportApplianceWzdPage2);
 
-    /* Translate */
+    /* Initial translate */
     retranslateUi();
+
+    /* Initial translate all pages */
+    retranslateAllPages();
 
     /* Resize to 'golden ratio' */
     resizeToGoldenRatio();
@@ -175,8 +178,6 @@ void UIImportApplianceWzdPage1::retranslateUi()
 
 void UIImportApplianceWzdPage1::initializePage()
 {
-    /* Translate */
-    retranslateUi();
 }
 
 bool UIImportApplianceWzdPage1::isComplete() const
@@ -212,9 +213,6 @@ UIImportApplianceWzdPage2::UIImportApplianceWzdPage2()
     /* Register 'applianceWidget' field! */
     registerField("applianceWidget", this, "applianceWidget");
     m_pApplianceWidget = m_pSettingsCnt;
-
-    /* Translate */
-    retranslateUi();
 }
 
 void UIImportApplianceWzdPage2::retranslateUi()

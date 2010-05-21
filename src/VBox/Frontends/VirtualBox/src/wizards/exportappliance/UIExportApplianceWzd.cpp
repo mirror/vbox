@@ -52,8 +52,11 @@ UIExportApplianceWzd::UIExportApplianceWzd(QWidget *pParent, const QString &strS
     /* Set 'selectedVMName' field for wizard page 1 */
     setField("selectedVMName", strSelectName);
 
-    /* Translate */
+    /* Initial translate */
     retranslateUi();
+
+    /* Initial translate all pages */
+    retranslateAllPages();
 
     /* Resize to 'golden ratio' */
     resizeToGoldenRatio();
@@ -128,9 +131,6 @@ void UIExportApplianceWzdPage1::retranslateUi()
 
 void UIExportApplianceWzdPage1::initializePage()
 {
-    /* Translate */
-    retranslateUi();
-
     /* Choose initially selected item (if passed) */
     QList<QListWidgetItem*> list = m_pVMSelector->findItems(m_strSelectedVMName, Qt::MatchExactly);
     if (list.size() > 0)
@@ -220,9 +220,6 @@ void UIExportApplianceWzdPage2::retranslateUi()
 
 void UIExportApplianceWzdPage2::initializePage()
 {
-    /* Translate */
-    retranslateUi();
-
     /* We propose a filename the first time the second page is displayed */
     prepareSettingsWidget();
 }
@@ -337,9 +334,6 @@ void UIExportApplianceWzdPage3::retranslateUi()
 
 void UIExportApplianceWzdPage3::initializePage()
 {
-    /* Translate */
-    retranslateUi();
-
     /* Revert to initial choice */
     m_pTypeLocalFilesystem->click();
 }
@@ -403,9 +397,6 @@ void UIExportApplianceWzdPage4::retranslateUi()
 
 void UIExportApplianceWzdPage4::initializePage()
 {
-    /* Translate */
-    retranslateUi();
-
     /* Setup components for chosen storage-type */
     StorageType storageType = field("storageType").value<StorageType>();
     switch (storageType)
