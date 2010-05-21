@@ -178,6 +178,8 @@ void UIImportApplianceWzdPage1::retranslateUi()
 
 void UIImportApplianceWzdPage1::initializePage()
 {
+    /* Fill and translate */
+    retranslateUi();
 }
 
 bool UIImportApplianceWzdPage1::isComplete() const
@@ -213,6 +215,9 @@ UIImportApplianceWzdPage2::UIImportApplianceWzdPage2()
     /* Register 'applianceWidget' field! */
     registerField("applianceWidget", this, "applianceWidget");
     m_pApplianceWidget = m_pSettingsCnt;
+
+    /* Fill and translate */
+    retranslateUi();
 }
 
 void UIImportApplianceWzdPage2::retranslateUi()

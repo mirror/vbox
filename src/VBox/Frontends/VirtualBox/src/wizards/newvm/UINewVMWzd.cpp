@@ -185,6 +185,8 @@ void UINewVMWzdPage1::retranslateUi()
 
 void UINewVMWzdPage1::initializePage()
 {
+    /* Fill and translate */
+    retranslateUi();
 }
 
 UINewVMWzdPage2::UINewVMWzdPage2()
@@ -216,6 +218,9 @@ void UINewVMWzdPage2::retranslateUi()
 
 void UINewVMWzdPage2::initializePage()
 {
+    /* Fill and translate */
+    retranslateUi();
+
     /* 'Name' field should have focus initially */
     m_pNameEditor->setFocus();
 }
@@ -283,6 +288,9 @@ void UINewVMWzdPage3::retranslateUi()
 
 void UINewVMWzdPage3::initializePage()
 {
+    /* Fill and translate */
+    retranslateUi();
+
     /* Assign recommended 'ram' field value */
     CGuestOSType type = field("type").value<CGuestOSType>();
     ramSliderValueChanged(type.GetRecommendedRAM());
@@ -369,6 +377,9 @@ void UINewVMWzdPage4::retranslateUi()
 
 void UINewVMWzdPage4::initializePage()
 {
+    /* Fill and translate */
+    retranslateUi();
+
     /* Prepare initial choice */
     m_pBootHDCnt->setChecked(true);
     m_pDiskSelector->setCurrentIndex(0);
@@ -599,6 +610,9 @@ void UINewVMWzdPage5::retranslateUi()
 
 void UINewVMWzdPage5::initializePage()
 {
+    /* Fill and translate */
+    retranslateUi();
+
     /* Summary should have focus initially */
     m_pSummaryText->setFocus();
 }

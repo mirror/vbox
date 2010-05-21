@@ -120,6 +120,8 @@ void UINewHDWzdPage1::retranslateUi()
 
 void UINewHDWzdPage1::initializePage()
 {
+    /* Fill and translate */
+    retranslateUi();
 }
 
 UINewHDWzdPage2::UINewHDWzdPage2()
@@ -149,6 +151,9 @@ void UINewHDWzdPage2::retranslateUi()
 
 void UINewHDWzdPage2::initializePage()
 {
+    /* Fill and translate */
+    retranslateUi();
+
     /* Prepare initial choice */
     m_pTypeDynamic->click();
 
@@ -249,6 +254,9 @@ void UINewHDWzdPage3::retranslateUi()
 
 void UINewHDWzdPage3::initializePage()
 {
+    /* Fill and translate */
+    retranslateUi();
+
     /* Initialise location */
     m_pLocationEditor->setText(m_strInitialName);
 
@@ -459,6 +467,9 @@ void UINewHDWzdPage4::retranslateUi()
 
 void UINewHDWzdPage4::initializePage()
 {
+    /* Fill and translate */
+    retranslateUi();
+
     /* Summary should have focus initially */
     m_pSummaryText->setFocus();
 }

@@ -525,6 +525,9 @@ UIRegistrationWzdPage1::UIRegistrationWzdPage1()
     RegistrationData data(vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_RegistrationData), false);
     m_pLeOldEmail->setText(data.account());
     m_pLeOldEmail->setFocus();
+
+    /* Fill and translate */
+    retranslateUi();
 }
 
 void UIRegistrationWzdPage1::retranslateUi()
