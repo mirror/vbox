@@ -34,7 +34,7 @@
 # include <stdio.h>
 #endif
 
-static FORMATOP gVBoxFormatOps[] = {
+static FORMATOP gVBoxFormatOps3D[] = {
     {D3DDDIFMT_A8R8G8B8,
         FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
         FORMATOP_SAME_FORMAT_RENDERTARGET|
@@ -107,7 +107,7 @@ static FORMATOP gVBoxFormatOps[] = {
         0|
         FORMATOP_VERTEXTEXTURE, 0, 0, 0},
 
-    {D3DDDIFMT_A8,         
+    {D3DDDIFMT_A8,
         FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|
         0|
         0|
@@ -174,7 +174,7 @@ static FORMATOP gVBoxFormatOps[] = {
         0|
         FORMATOP_BUMPMAP|
         FORMATOP_VERTEXTEXTURE, 0, 0, 0},
-        
+
     {D3DDDIFMT_A2W10V10U10,
         FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|
         0|
@@ -294,7 +294,24 @@ static FORMATOP gVBoxFormatOps[] = {
         FORMATOP_NOTEXCOORDWRAPNORMIP, 0, 0, 0},
 };
 
-#define VBOX_FORMATOP_COUNT() (sizeof(gVBoxFormatOps)/sizeof(gVBoxFormatOps[0]))
+static FORMATOP gVBoxFormatOpsBase[] = {
+    {D3DDDIFMT_X8R8G8B8, FORMATOP_DISPLAYMODE, 0, 0, 0},
+
+    {D3DDDIFMT_R8G8B8, FORMATOP_DISPLAYMODE, 0, 0, 0},
+
+    {D3DDDIFMT_R5G6B5, FORMATOP_DISPLAYMODE, 0, 0, 0},
+
+    {D3DDDIFMT_P8, FORMATOP_DISPLAYMODE, 0, 0, 0},
+};
+
+static FORMATOP gVBoxFormatOps[RT_ELEMENTS(gVBoxFormatOpsBase) /* some base formats we report ?? */
+                               + RT_ELEMENTS(gVBoxFormatOps3D)
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                               + VBOXVHWA_MAX_FORMATS
+#endif
+                               ];
+static uint32_t gcVBoxFormatOps;
+#define VBOX_FORMATOP_COUNT() (gcVBoxFormatOps)
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
 
@@ -323,6 +340,78 @@ static bool vboxVhwaHasCKeying(PVBOXWDDMDISP_ADAPTER pAdapter)
 }
 
 #endif
+
+int vboxFormatOpsMerge(FORMATOP *paOps, uint32_t *pcOps, uint32_t cMaxOps, FORMATOP *pOp)
+{
+    uint32_t cOps = *pcOps;
+
+    Assert(cMaxOps >= cOps);
+
+    for (uint32_t i = 0; i < cOps; ++i)
+    {
+        FORMATOP *pCur = &paOps[i];
+        if (pCur->Format == pOp->Format)
+        {
+            pCur->Operations |= pOp->Operations;
+            Assert(pCur->FlipMsTypes == pOp->FlipMsTypes);
+            Assert(pCur->BltMsTypes == pOp->BltMsTypes);
+            Assert(pCur->PrivateFormatBitCount == pOp->PrivateFormatBitCount);
+            return VINF_SUCCESS;
+        }
+    }
+
+    if (cMaxOps > cOps)
+    {
+        paOps[cOps] = *pOp;
+        ++cOps;
+        *pcOps = cOps;
+        return VINF_SUCCESS;
+    }
+    return VERR_BUFFER_OVERFLOW;
+}
+
+void vboxFormatOpsInit(PVBOXWDDMDISP_ADAPTER pAdapter)
+{
+    gcVBoxFormatOps = 0;
+    if (pAdapter->pD3D9If)
+    {
+        memcpy (gVBoxFormatOps, gVBoxFormatOps3D, sizeof (gVBoxFormatOps3D));
+        gcVBoxFormatOps = RT_ELEMENTS(gVBoxFormatOps3D);
+    }
+
+    if (gcVBoxFormatOps)
+    {
+        for (uint32_t i = 0; i < RT_ELEMENTS(gVBoxFormatOpsBase); ++i)
+        {
+            int rc = vboxFormatOpsMerge(gVBoxFormatOps, &gcVBoxFormatOps, RT_ELEMENTS(gVBoxFormatOps), &gVBoxFormatOpsBase[i]);
+            AssertRC(rc);
+        }
+    }
+    else
+    {
+        memcpy (gVBoxFormatOps, gVBoxFormatOpsBase, sizeof (gVBoxFormatOpsBase));
+        gcVBoxFormatOps = RT_ELEMENTS(gVBoxFormatOpsBase);
+    }
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    FORMATOP fo = {D3DDDIFMT_UNKNOWN, 0, 0, 0, 0};
+    for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
+    {
+        VBOXDISPVHWA_INFO *pVhwa = &pAdapter->aHeads[i].Vhwa;
+        if (pVhwa->Settings.fFlags & VBOXVHWA_F_ENABLED)
+        {
+            for (uint32_t j = 0; j < pVhwa->Settings.cFormats; ++j)
+            {
+                fo.Format = pVhwa->Settings.aFormats[j];
+                fo.Operations = FORMATOP_OVERLAY;
+                int rc = vboxFormatOpsMerge(gVBoxFormatOps, &gcVBoxFormatOps, RT_ELEMENTS(gVBoxFormatOps), &fo);
+                AssertRC(rc);
+            }
+        }
+    }
+#endif
+}
+
 
 /**
  * DLL entry point.
@@ -1461,26 +1550,29 @@ HRESULT APIENTRY OpenAdapter (__inout D3DDDIARG_OPENADAPTER*  pOpenData)
         pOpenData->pAdapterFuncs->pfnCloseAdapter = vboxWddmDispCloseAdapter;
         pOpenData->DriverVersion = D3D_UMD_INTERFACE_VERSION;
 
-        /* try enable the 3D */
-        hr = VBoxDispD3DOpen(&pAdapter->D3D);
-        Assert(hr == S_OK);
-        if (hr == S_OK)
+        do
         {
-            hr = pAdapter->D3D.pfnDirect3DCreate9Ex(D3D_SDK_VERSION, &pAdapter->pD3D9If);
+            /* try enable the 3D */
+            hr = VBoxDispD3DOpen(&pAdapter->D3D);
             Assert(hr == S_OK);
             if (hr == S_OK)
             {
-                vboxVDbgPrint(("<== "__FUNCTION__", SUCCESS 3D Enabled, pAdapter (0x%p)\n", pAdapter));
-                return S_OK;
+                hr = pAdapter->D3D.pfnDirect3DCreate9Ex(D3D_SDK_VERSION, &pAdapter->pD3D9If);
+                Assert(hr == S_OK);
+                if (hr == S_OK)
+                {
+                    vboxVDbgPrint((__FUNCTION__": SUCCESS 3D Enabled, pAdapter (0x%p)\n", pAdapter));
+                    break;
+                }
+                else
+                    vboxVDbgPrintR((__FUNCTION__": pfnDirect3DCreate9Ex failed, hr (%d)\n", hr));
             }
             else
-                vboxVDbgPrintR((__FUNCTION__": pfnDirect3DCreate9Ex failed, hr (%d)\n", hr));
-        }
-        else
-            vboxVDbgPrintR((__FUNCTION__": VBoxDispD3DOpen failed, hr (%d)\n", hr));
+                vboxVDbgPrintR((__FUNCTION__": VBoxDispD3DOpen failed, hr (%d)\n", hr));
+        } while (0);
 
-        vboxVDbgPrint(("<== "__FUNCTION__", SUCCESS 3D DISABLED, pAdapter (0x%p)\n", pAdapter));
-        return S_OK;
+        vboxFormatOpsInit(pAdapter);
+        hr = S_OK;
 //        RTMemFree(pAdapter);
     }
     else
@@ -1489,7 +1581,7 @@ HRESULT APIENTRY OpenAdapter (__inout D3DDDIARG_OPENADAPTER*  pOpenData)
         hr = E_OUTOFMEMORY;
     }
 
-    vboxVDbgPrint(("<== "__FUNCTION__", FAILURE, hr (%d)\n", hr));
+    vboxVDbgPrint(("<== "__FUNCTION__", hr (%d)\n", hr));
 
     return hr;
 }
