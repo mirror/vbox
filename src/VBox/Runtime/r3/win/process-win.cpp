@@ -316,11 +316,23 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
         || (fFlags & RTPROC_FLAGS_SERVICE))
     {
         /*
-         * First we have to validate the credentials. If they're valid we can
-         * proceed. This is important when running as a service which then looks up
-         * the current session the user is logged on in order to start the actual
-         * process there.
+         * So if we want to start a process from a service (RTPROC_FLAGS_SERVICE),
+         * we have to do the following:
+         * - Check the credentials supplied and get the user SID.
+         * - If valid get the correct VBoxTray instance corresponding to that
+         *   user. This of course is only possible if that user is logged in (over
+         *   physical console or terminal services).
+         * - We we found the user's VBoxTray app, use and modify the token to
+         *   use it in order to allow the newly started process acess the user's
+         *   desktop. If there's no VBoxTray app we cannot display the started
+         *   process (but run it without UI).
          *
+         * The following restrictions apply:
+         * - A process only can show its UI when the user the process should run
+         *   under is logged in (has a desktop).
+         * - We do not want to display a process of user A run on the desktop
+         *   of user B on multi session systems.
+         * 
          * The following rights are needed in order to use LogonUserW and
          * CreateProcessAsUserW, so the local policy has to be modified to:
          *  - SE_TCB_NAME = Act as part of the operating system
