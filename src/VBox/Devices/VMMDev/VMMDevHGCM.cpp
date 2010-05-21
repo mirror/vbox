@@ -1065,8 +1065,15 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, uint32
         /* Pass the function call to HGCM connector for actual processing */
         rc = pVMMDevState->pHGCMDrv->pfnCall (pVMMDevState->pHGCMDrv, pCmd, pHGCMCall->u32ClientID,
                                               pHGCMCall->u32Function, cParms, pCmd->paHostParms);
+
+        if (RT_FAILURE (rc))
+        {
+            Log(("vmmdevHGCMCall: pfnCall failed rc = %Rrc\n", rc));
+            vmmdevHGCMRemoveCommand (pVMMDevState, pCmd);
+        }
     }
-    else
+
+    if (RT_FAILURE (rc))
     {
         if (pCmd->paLinPtrs)
         {
