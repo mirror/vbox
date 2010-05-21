@@ -250,7 +250,7 @@ void UIMachineWindowNormal::retranslateUi()
     UIMachineWindow::retranslateUi();
 
     m_pNameHostkey->setToolTip(
-        QApplication::translate("VBoxConsoleWnd", "Shows the currently assigned Host key.<br>"
+        QApplication::translate("UIMachineWindowNormal", "Shows the currently assigned Host key.<br>"
            "This key, when pressed alone, toggles the keyboard and mouse "
            "capture state. It can also be used in combination with other keys "
            "to quickly perform actions from the main menu."));

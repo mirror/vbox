@@ -55,7 +55,7 @@ public:
     {
         const CMachine &machine = m_session.GetMachine();
 
-        QString strToolTip = QApplication::translate("VBoxConsoleWnd", "<p style='white-space:pre'><nobr>Indicates the activity "
+        QString strToolTip = QApplication::translate("UIIndicatorsPool", "<p style='white-space:pre'><nobr>Indicates the activity "
                                                      "of the virtual hard disks:</nobr>%1</p>", "HDD tooltip");
 
         QString strFullData;
@@ -83,7 +83,7 @@ public:
         if (!fAttachmentsPresent)
             setHidden(true);
         //if (!fAttachmentsPresent)
-        //    strFullData += QApplication::translate("VBoxConsoleWnd", "<br><nobr><b>No hard disks attached</b></nobr>", "HDD tooltip");
+        //    strFullData += QApplication::translate("UIIndicatorsPool", "<br><nobr><b>No hard disks attached</b></nobr>", "HDD tooltip");
 
         setToolTip(strToolTip.arg(strFullData));
         setState(fAttachmentsPresent ? KDeviceActivity_Idle : KDeviceActivity_Null);
@@ -122,7 +122,7 @@ public:
     {
         const CMachine &machine = m_session.GetMachine();
 
-        QString strToolTip = QApplication::translate("VBoxConsoleWnd", "<p style='white-space:pre'><nobr>Indicates the activity "
+        QString strToolTip = QApplication::translate("UIIndicatorsPool", "<p style='white-space:pre'><nobr>Indicates the activity "
                                                      "of the CD/DVD devices:</nobr>%1</p>", "CD/DVD tooltip");
 
         QString strFullData;
@@ -154,7 +154,7 @@ public:
         if (!fAttachmentsPresent)
             setHidden(true);
         //if (!fAttachmentsPresent)
-        //    strFullData = QApplication::translate("VBoxConsoleWnd", "<br><nobr><b>No CD/DVD devices attached</b></nobr>", "CD/DVD tooltip");
+        //    strFullData = QApplication::translate("UIIndicatorsPool", "<br><nobr><b>No CD/DVD devices attached</b></nobr>", "CD/DVD tooltip");
 
         setToolTip(strToolTip.arg(strFullData));
         setState(fAttachmentsMounted ? KDeviceActivity_Idle : KDeviceActivity_Null);
@@ -193,7 +193,7 @@ public:
     {
         const CMachine &machine = m_session.GetMachine();
 
-        QString strToolTip = QApplication::translate("VBoxConsoleWnd", "<p style='white-space:pre'><nobr>Indicates the activity "
+        QString strToolTip = QApplication::translate("UIIndicatorsPool", "<p style='white-space:pre'><nobr>Indicates the activity "
                                                      "of the floppy devices:</nobr>%1</p>", "FD tooltip");
 
         QString strFullData;
@@ -225,7 +225,7 @@ public:
         if (!fAttachmentsPresent)
             setHidden(true);
         //if (!fAttachmentsPresent)
-        //    strFullData = QApplication::translate("VBoxConsoleWnd", "<br><nobr><b>No floppy devices attached</b></nobr>", "FD tooltip");
+        //    strFullData = QApplication::translate("UIIndicatorsPool", "<br><nobr><b>No floppy devices attached</b></nobr>", "FD tooltip");
 
         setToolTip(strToolTip.arg(strFullData));
         setState(fAttachmentsMounted ? KDeviceActivity_Idle : KDeviceActivity_Null);
@@ -271,7 +271,7 @@ public:
 
         ulong uMaxCount = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
 
-        QString strToolTip = QApplication::translate("VBoxConsoleWnd",
+        QString strToolTip = QApplication::translate("UIIndicatorsPool",
                                  "<p style='white-space:pre'><nobr>Indicates the activity of the "
                                  "network interfaces:</nobr>%1</p>", "Network adapters tooltip");
 
@@ -308,14 +308,14 @@ public:
                     if (iIp >= 0)
                         strGuestIp = ipList[iIp];
                 }
-                strFullData += QApplication::translate("VBoxConsoleWnd",
+                strFullData += QApplication::translate("UIIndicatorsPool",
                                "<br><nobr><b>Adapter %1 (%2)</b>: %3 cable %4</nobr>", "Network adapters tooltip")
                     .arg(uSlot + 1)
                     .arg(vboxGlobal().toString(adapter.GetAttachmentType()))
                     .arg(strGuestIp.isEmpty() ? "" : "IP " + strGuestIp + ", ")
                     .arg(adapter.GetCableConnected() ?
-                         QApplication::translate("VBoxConsoleWnd", "connected", "Network adapters tooltip") :
-                         QApplication::translate("VBoxConsoleWnd", "disconnected", "Network adapters tooltip"));
+                         QApplication::translate("UIIndicatorsPool", "connected", "Network adapters tooltip") :
+                         QApplication::translate("UIIndicatorsPool", "disconnected", "Network adapters tooltip"));
                 ++uEnabled;
             }
         }
@@ -325,7 +325,7 @@ public:
             setHidden(true);
 
         if (strFullData.isNull())
-            strFullData = QApplication::translate("VBoxConsoleWnd",
+            strFullData = QApplication::translate("UIIndicatorsPool",
                               "<br><nobr><b>All network adapters are disabled</b></nobr>", "Network adapters tooltip");
 
         setToolTip(strToolTip.arg(strFullData));
@@ -371,7 +371,7 @@ public:
     {
         const CMachine &machine = m_session.GetMachine();
 
-        QString strToolTip = QApplication::translate("VBoxConsoleWnd", "<p style='white-space:pre'><nobr>Indicates the activity of "
+        QString strToolTip = QApplication::translate("UIIndicatorsPool", "<p style='white-space:pre'><nobr>Indicates the activity of "
                                 "the attached USB devices:</nobr>%1</p>", "USB device tooltip");
         QString strFullData;
 
@@ -388,10 +388,10 @@ public:
                 strFullData += QString("<br><b><nobr>%1</nobr></b>").arg(vboxGlobal().details(usb));
             }
             if (strFullData.isNull())
-                strFullData = QApplication::translate("VBoxConsoleWnd", "<br><nobr><b>No USB devices attached</b></nobr>", "USB device tooltip");
+                strFullData = QApplication::translate("UIIndicatorsPool", "<br><nobr><b>No USB devices attached</b></nobr>", "USB device tooltip");
         }
         else
-            strFullData = QApplication::translate("VBoxConsoleWnd", "<br><nobr><b>USB Controller is disabled</b></nobr>", "USB device tooltip");
+            strFullData = QApplication::translate("UIIndicatorsPool", "<br><nobr><b>USB Controller is disabled</b></nobr>", "USB device tooltip");
 
         setToolTip(strToolTip.arg(strFullData));
     }
@@ -430,7 +430,7 @@ public:
         const CMachine &machine = m_session.GetMachine();
         const CConsole &console = m_session.GetConsole();
 
-        QString strToolTip = QApplication::translate("VBoxConsoleWnd", "<p style='white-space:pre'><nobr>Indicates the activity of "
+        QString strToolTip = QApplication::translate("UIIndicatorsPool", "<p style='white-space:pre'><nobr>Indicates the activity of "
                                 "the machine's shared folders:</nobr>%1</p>", "Shared folders tooltip");
 
         QString strFullData;
@@ -466,7 +466,7 @@ public:
         }
 
         if (sfs.count() == 0)
-            strFullData = QApplication::translate("VBoxConsoleWnd", "<br><nobr><b>No shared folders</b></nobr>", "Shared folders tooltip");
+            strFullData = QApplication::translate("UIIndicatorsPool", "<br><nobr><b>No shared folders</b></nobr>", "Shared folders tooltip");
 
         setState(!sfs.isEmpty() ? KDeviceActivity_Idle : KDeviceActivity_Null);
         setToolTip(strToolTip.arg(strFullData));
@@ -509,11 +509,11 @@ public:
 
             setState(fVRDPEnabled ? KDeviceActivity_Idle : KDeviceActivity_Null);
 
-            QString tip = QApplication::translate("VBoxConsoleWnd", "Indicates whether the Remote Display (VRDP Server) "
+            QString tip = QApplication::translate("UIIndicatorsPool", "Indicates whether the Remote Display (VRDP Server) "
                              "is enabled (<img src=:/vrdp_16px.png/>) or not "
                              "(<img src=:/vrdp_disabled_16px.png/>).");
             if (vrdpsrv.GetEnabled())
-                tip += QApplication::translate("VBoxConsoleWnd", "<hr>The VRDP Server is listening on port %1").arg(vrdpsrv.GetPorts());
+                tip += QApplication::translate("UIIndicatorsPool", "<hr>The VRDP Server is listening on port %1").arg(vrdpsrv.GetPorts());
             setToolTip(tip);
         }
     }
@@ -565,7 +565,7 @@ public:
             VBoxGlobal::tr("Enabled", "nested paging") :
             VBoxGlobal::tr("Disabled", "nested paging");
 
-        QString tip(QApplication::translate("VBoxConsoleWnd", "Indicates the status of the hardware virtualization "
+        QString tip(QApplication::translate("UIIndicatorsPool", "Indicates the status of the hardware virtualization "
                        "features used by this virtual machine:"
                        "<br><nobr><b>%1:</b>&nbsp;%2</nobr>"
                        "<br><nobr><b>%3:</b>&nbsp;%4</nobr>",
@@ -575,7 +575,7 @@ public:
 
         int cpuCount = console.GetMachine().GetCPUCount();
         if (cpuCount > 1)
-            tip += QApplication::translate("VBoxConsoleWnd", "<br><nobr><b>%1:</b>&nbsp;%2</nobr>", "Virtualization Stuff LED")
+            tip += QApplication::translate("UIIndicatorsPool", "<br><nobr><b>%1:</b>&nbsp;%2</nobr>", "Virtualization Stuff LED")
                       .arg(VBoxGlobal::tr("Processor(s)", "details report")).arg(cpuCount);
 
         setToolTip(tip);
@@ -609,7 +609,7 @@ public:
 
     void retranslateUi()
     {
-        setToolTip(QApplication::translate("VBoxConsoleWnd", "Indicates whether the host mouse pointer is captured by the guest OS:<br>"
+        setToolTip(QApplication::translate("UIIndicatorsPool", "Indicates whether the host mouse pointer is captured by the guest OS:<br>"
                       "<nobr><img src=:/mouse_disabled_16px.png/>&nbsp;&nbsp;pointer is not captured</nobr><br>"
                       "<nobr><img src=:/mouse_16px.png/>&nbsp;&nbsp;pointer is captured</nobr><br>"
                       "<nobr><img src=:/mouse_seamless_16px.png/>&nbsp;&nbsp;mouse integration (MI) is On</nobr><br>"
@@ -660,7 +660,7 @@ public:
 
     void retranslateUi()
     {
-        setToolTip(QApplication::translate("VBoxConsoleWnd", "Indicates whether the keyboard is captured by the guest OS "
+        setToolTip(QApplication::translate("UIIndicatorsPool", "Indicates whether the keyboard is captured by the guest OS "
                       "(<img src=:/hostkey_captured_16px.png/>) or not (<img src=:/hostkey_16px.png/>)."));
     }
 
