@@ -123,6 +123,7 @@ void UIMachineWindow::retranslateUi()
                               .arg(RTBldCfgRevisionStr())
                               .arg(VBOX_BLEEDING_EDGE);
 #endif
+    updateAppearanceOf(UIVisualElement_WindowCaption);
 }
 
 void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
