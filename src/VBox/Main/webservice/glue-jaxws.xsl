@@ -957,7 +957,7 @@ public class IWebsessionManager {
               <xsl:call-template name="fatalError">
                 <xsl:with-param name="msg" select="concat('Interface generation: interface &quot;', $ifname, '&quot; has invalid &quot;extends&quot; value ', $extends, '.')" />
               </xsl:call-template>
-            </xsl:otherwise>>
+            </xsl:otherwise>
           </xsl:choose>
 
           <!-- interface (class) constructor -->

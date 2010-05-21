@@ -1517,6 +1517,9 @@ VBOX_BIN2C     ?= $(PATH_OBJ)/bin2c/bin2c$(HOSTSUFF_EXE)
 # biossums (set BIOS checksums)
 VBOX_BIOSSUMS  ?= $(PATH_OBJ)/biossums/biossums$(HOSTSUFF_EXE)
 
+# filesplitter (splits java files)
+VBOX_FILESPLIT ?= $(PATH_OBJ)/filesplitter/filesplitter$(HOSTSUFF_EXE)
+
 # mkisofs
 ifeq ($(KBUILD_HOST),win)
  VBOX_MKISOFS  ?= $(PATH_DEVTOOLS_BLD)/bin/mkisofs.exe

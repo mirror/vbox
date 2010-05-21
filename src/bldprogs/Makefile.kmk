@@ -18,13 +18,16 @@
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
-BLDPROGS += bin2c biossums
+BLDPROGS += bin2c biossums filesplitter
 
 bin2c_TEMPLATE = VBOXBLDPROG
 bin2c_SOURCES = bin2c.c
 
 biossums_TEMPLATE = VBOXBLDPROG
 biossums_SOURCES = biossums.c
+
+filesplitter_TEMPLATE = VBOXBLDPROG
+filesplitter_SOURCES = filesplitter.cpp
 
 if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_DOCS)
  PROGRAMS += scm
