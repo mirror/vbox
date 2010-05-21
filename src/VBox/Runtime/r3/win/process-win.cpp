@@ -34,6 +34,7 @@
 #include <Windows.h>
 #include <tlhelp32.h>
 #include <process.h>
+#include <psapi.h>      /* For EnumProcesses(). */
 #include <errno.h>
 
 #include <iprt/process.h>
@@ -73,8 +74,20 @@ typedef FNCREATEPROCESSWITHLOGON *PFNCREATEPROCESSWITHLOGON;
 typedef DWORD WINAPI FNWTSGETACTIVECONSOLESESSIONID();
 typedef FNWTSGETACTIVECONSOLESESSIONID *PFNWTSGETACTIVECONSOLESESSIONID;
 
-typedef BOOL WINAPI FNWTSQUERYUSERTOKEN(ULONG, PHANDLE);
-typedef FNWTSQUERYUSERTOKEN *PFNWTSQUERYUSERTOKEN;
+typedef HANDLE WINAPI FNCREATETOOLHELP32SNAPSHOT(DWORD, DWORD);
+typedef FNCREATETOOLHELP32SNAPSHOT *PFNCREATETOOLHELP32SNAPSHOT;
+
+typedef BOOL WINAPI FNPROCESS32FIRST(HANDLE, LPPROCESSENTRY32);
+typedef FNPROCESS32FIRST *PFNPROCESS32FIRST;
+
+typedef BOOL WINAPI FNPROCESS32NEXT(HANDLE, LPPROCESSENTRY32);
+typedef FNPROCESS32NEXT *PFNPROCESS32NEXT;
+
+typedef BOOL WINAPI FNENUMPROCESSES(DWORD*, DWORD, DWORD*);
+typedef FNENUMPROCESSES *PFNENUMPROCESSES;
+
+typedef DWORD FNGETMODULEBASENAME(HANDLE, HMODULE, LPTSTR, DWORD);
+typedef FNGETMODULEBASENAME *PFNGETMODULEBASENAME;
 
 
 /*******************************************************************************
@@ -241,6 +254,196 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
 }
 
 
+static int rtProcGetProcessHandle(DWORD dwPID, PSID pSID, PHANDLE phToken)
+{
+    AssertPtr(pSID);
+    AssertPtr(phToken);
+
+    DWORD dwErr;
+    BOOL fRc;
+    BOOL fFound = FALSE;
+    HANDLE hProc = OpenProcess(MAXIMUM_ALLOWED, TRUE, dwPID);
+    if (hProc != NULL)
+    {
+        HANDLE hTokenProc;
+        fRc = OpenProcessToken(hProc,
+                               TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY | TOKEN_DUPLICATE |
+                               TOKEN_ASSIGN_PRIMARY | TOKEN_ADJUST_SESSIONID | TOKEN_READ | TOKEN_WRITE,
+                               &hTokenProc);
+        if (fRc)
+        {
+            DWORD dwSize = 0;
+            fRc = GetTokenInformation(hTokenProc, TokenUser, NULL, 0, &dwSize);
+            if (!fRc)
+                dwErr = GetLastError();
+            if (   !fRc
+                && dwErr == ERROR_INSUFFICIENT_BUFFER
+                && dwSize > 0)
+            {
+                PTOKEN_USER pTokenUser = (PTOKEN_USER)RTMemAlloc(dwSize);
+                AssertPtrReturn(pTokenUser, VERR_NO_MEMORY);
+                RT_ZERO(*pTokenUser);
+                if (   GetTokenInformation(hTokenProc,
+                                           TokenUser,
+                                           (LPVOID)pTokenUser,
+                                           dwSize,
+                                           &dwSize)
+                    && IsValidSid(pTokenUser->User.Sid)
+                    && EqualSid(pTokenUser->User.Sid, pSID))
+                {
+                    if (DuplicateTokenEx(hTokenProc, MAXIMUM_ALLOWED,
+                                         NULL, SecurityIdentification, TokenPrimary, phToken))
+                    {
+                        /* 
+                         * So we found a VBoxTray instance which belongs to the user we want to
+                         * to run our new process under. This duplicated token will be used for
+                         * the actual CreateProcessAsUserW() call then. 
+                         */
+                        fFound = TRUE;                                                        
+                    }
+                    else
+                        dwErr = GetLastError();
+                }
+                else
+                    dwErr = GetLastError();
+                RTMemFree(pTokenUser);
+            }
+            else
+                dwErr = GetLastError();
+            CloseHandle(hTokenProc);
+        }
+        else
+            dwErr = GetLastError();
+        CloseHandle(hProc);
+    }
+    else
+        dwErr = GetLastError();
+    if (fFound)
+        return VINF_SUCCESS;
+    return RTErrConvertFromWin32(dwErr);
+}
+
+
+static BOOL rtProcFindProcessByName(const char *pszName, PSID pSID, PHANDLE phToken)
+{
+    AssertPtr(pszName);
+    AssertPtr(pSID);
+    AssertPtr(phToken);
+
+    DWORD dwErr = NO_ERROR;
+    BOOL fFound = FALSE;
+
+    /*
+     * On modern systems (W2K+) try the Toolhelp32 API first; this is more stable
+     * and reliable. Fallback to EnumProcess on NT4.
+     */
+    RTLDRMOD hKernel32;
+    int rc = RTLdrLoad("Kernel32.dll", &hKernel32);
+    if (RT_SUCCESS(rc))
+    {
+        PFNCREATETOOLHELP32SNAPSHOT pfnCreateToolhelp32Snapshot;
+        rc = RTLdrGetSymbol(hKernel32, "CreateToolhelp32Snapshot", (void**)&pfnCreateToolhelp32Snapshot);
+        if (RT_SUCCESS(rc))
+        {
+            PFNPROCESS32FIRST pfnProcess32First;
+            rc = RTLdrGetSymbol(hKernel32, "Process32First", (void**)&pfnProcess32First);
+            if (RT_SUCCESS(rc))
+            {
+                PFNPROCESS32NEXT pfnProcess32Next;
+                rc = RTLdrGetSymbol(hKernel32, "Process32Next", (void**)&pfnProcess32Next);
+                if (RT_SUCCESS(rc))
+                {
+                    HANDLE hSnap = pfnCreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+                    if (hSnap != INVALID_HANDLE_VALUE)
+                    {
+                        PROCESSENTRY32 procEntry;
+                        procEntry.dwSize = sizeof(PROCESSENTRY32);
+                        if (pfnProcess32First(hSnap, &procEntry))
+                        {        
+                            do
+                            {
+                                if (   _stricmp(procEntry.szExeFile, pszName) == 0
+                                    && RT_SUCCESS(rtProcGetProcessHandle(procEntry.th32ProcessID, pSID, phToken)))
+                                {
+                                    fFound = TRUE;
+                                }
+                            } while (pfnProcess32Next(hSnap, &procEntry) && !fFound);
+                        }
+                        else /* Process32First */
+                            dwErr = GetLastError();
+                        CloseHandle(hSnap);
+                    }
+                    else /* hSnap =! INVALID_HANDLE_VALUE */
+                        dwErr = GetLastError();
+                }
+            }
+        }
+        else /* CreateToolhelp32Snapshot / Toolhelp32 API not available. */
+        {
+            /*
+             * NT4 needs a copy of "PSAPI.dll" (redistributed by Microsoft and not
+             * part of the OS) in order to get a lookup. If we don't have this DLL
+             * we are not able to get a token and therefore no UI will be visible.
+             */
+            RTLDRMOD hPSAPI;
+            int rc = RTLdrLoad("PSAPI.dll", &hPSAPI);
+            if (RT_SUCCESS(rc))
+            {
+                PFNENUMPROCESSES pfnEnumProcesses;
+                rc = RTLdrGetSymbol(hPSAPI, "EnumProcesses", (void**)&pfnEnumProcesses);
+                if (RT_SUCCESS(rc))
+                {
+                    PFNGETMODULEBASENAME pfnGetModuleBaseName;
+                    rc = RTLdrGetSymbol(hPSAPI, "GetModuleBaseName", (void**)&pfnGetModuleBaseName);
+                    if (RT_SUCCESS(rc))
+                    {            
+                        /** @todo Retry if pBytesReturned equals cbBytes! */
+                        DWORD dwPIDs[4096]; /* Should be sufficient for now. */
+                        DWORD cbBytes = 0;
+                        if (pfnEnumProcesses(dwPIDs, sizeof(dwPIDs), &cbBytes))
+                        {
+                            for (DWORD dwIdx = 0; dwIdx < cbBytes/sizeof(DWORD) && !fFound; dwIdx++)
+                            {
+                                HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 
+                                                           FALSE, dwPIDs[dwIdx]);
+                                if (hProc)
+                                {
+                                    char *pszProcName = NULL;
+                                    DWORD dwSize = 128;
+                                    do
+                                    {
+                                        RTMemRealloc(pszProcName, dwSize);
+                                        if (pfnGetModuleBaseName(hProc, 0, pszProcName, dwSize) == dwSize)
+                                            dwSize += 128;
+                                    } while (GetLastError() == ERROR_INSUFFICIENT_BUFFER);
+                
+                                    if (pszProcName)
+                                    {
+                                        if (   _stricmp(pszProcName, pszName) == 0
+                                            && RT_SUCCESS(rtProcGetProcessHandle(dwPIDs[dwIdx], pSID, phToken)))
+                                        {
+                                            fFound = TRUE;
+                                        }
+                                    }
+                                    if (pszProcName)
+                                        RTStrFree(pszProcName);
+                                    CloseHandle(hProc);
+                                }
+                            }
+                        }
+                        else
+                            dwErr = GetLastError();
+                    }
+                }
+            }
+        }
+        RTLdrClose(hKernel32);
+    }
+    Assert(dwErr == NO_ERROR);
+    return fFound;
+}
+
+
 static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszExec, PRTUTF16 pwszCmdLine,
                                  PRTUTF16 pwszzBlock, DWORD dwCreationFlags,
                                  STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo, uint32_t fFlags)
@@ -287,28 +490,6 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
     }
 
     /*
-     * Get the session ID.
-     */
-    DWORD dwSessionID = 0; /* On W2K the session ID is always 0 (does not have fast user switching). */
-    RTLDRMOD hKernel32;
-    rc = RTLdrLoad("Kernel32.dll", &hKernel32);
-    if (RT_SUCCESS(rc))
-    {
-        PFNWTSGETACTIVECONSOLESESSIONID pfnWTSGetActiveConsoleSessionId;
-        rc = RTLdrGetSymbol(hKernel32, "WTSGetActiveConsoleSessionId", (void **)&pfnWTSGetActiveConsoleSessionId);
-        if (RT_SUCCESS(rc))
-        {
-            /*
-             * Console session means the session which the physical keyboard and mouse
-             * is connected to. Due to FUS (fast user switching) starting with Windows XP
-             * this can be a different session than 0.
-             */
-            dwSessionID = pfnWTSGetActiveConsoleSessionId(); /* Get active console session ID. */
-        }
-        RTLdrClose(hKernel32);
-    }
-
-    /*
      * Did the API call above fail because we're running on a too old OS (NT4) or
      * we're running as a Windows service?
      */
@@ -341,19 +522,19 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
          *
          * We may fail here with ERROR_PRIVILEGE_NOT_HELD.
          *
-         ** @todo Deal with http://support.microsoft.com/kb/245683 for NULL domain names
-         * on NT4 (ignored here by now). Passing FQDNs should work!
+         * Because we have to deal with http://support.microsoft.com/kb/245683 for NULL domain names
+         * on NT4 here, pass an empty string. However, passing FQDNs should work!
          */
         PHANDLE phToken = NULL;
         HANDLE hTokenLogon = INVALID_HANDLE_VALUE;
         fRc = LogonUserW(pwszUser,
-                         NULL,
+                         L"",
                          pwszPassword,
                          LOGON32_LOGON_INTERACTIVE,
                          LOGON32_PROVIDER_DEFAULT,
                          &hTokenLogon);
 
-        BOOL bFound = FALSE;
+        BOOL fFound = FALSE;
         HANDLE hTokenVBoxTray = INVALID_HANDLE_VALUE;
         if (fRc)
         {
@@ -381,14 +562,11 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                     AssertPtrReturn(pSID, VERR_NO_MEMORY);
     
                     /** @todo No way to allocate a PRTUTF16 directly? */
-                    char *pszDomainUtf8 = NULL;
                     PRTUTF16 pwszDomain = NULL;
                     if (cbDomain > 0)
                     {
-                        pszDomainUtf8 = RTStrAlloc(cbDomain);
-                        rc = RTStrToUtf16(pszDomainUtf8, &pwszDomain);
-                        AssertRCReturn(rc, rc);
-                        RTStrFree(pszDomainUtf8);
+                        pwszDomain = (PRTUTF16)RTMemAlloc(cbDomain * sizeof(RTUTF16));
+                        AssertPtrReturn(pwszDomain, VERR_NO_MEMORY);
                     }
     
                     /* Note: Also supports FQDNs! */
@@ -401,85 +579,13 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                                               &sidNameUse)
                         && IsValidSid(pSID))
                     {
-                        HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-                        if (hSnap != INVALID_HANDLE_VALUE)
-                        {
-                            PROCESSENTRY32 procEntry;
-                            procEntry.dwSize = sizeof(PROCESSENTRY32);
-                            if (Process32First(hSnap, &procEntry))
-                            {        
-                                DWORD dwVBoxTrayPID = 0;
-                                DWORD dwCurSession = 0;
-                                do
-                                {
-                                    if (   _stricmp(procEntry.szExeFile, "VBoxTray.exe") == 0
-                                        && ProcessIdToSessionId(procEntry.th32ProcessID, &dwCurSession))
-                                    {
-                                        HANDLE hProc = OpenProcess(MAXIMUM_ALLOWED, TRUE, procEntry.th32ProcessID);
-                                        if (hProc != NULL)
-                                        {
-                                            HANDLE hTokenProc;
-                                            fRc = OpenProcessToken(hProc,
-                                                                   TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY | TOKEN_DUPLICATE |
-                                                                   TOKEN_ASSIGN_PRIMARY | TOKEN_ADJUST_SESSIONID | TOKEN_READ | TOKEN_WRITE,
-                                                                   &hTokenProc);
-                                            if (fRc)
-                                            {
-                                                DWORD dwSize = 0;
-                                                fRc = GetTokenInformation(hTokenProc, TokenUser, NULL, 0, &dwSize);
-                                                if (!fRc)
-                                                    dwErr = GetLastError();
-                                                if (   !fRc
-                                                    && dwErr == ERROR_INSUFFICIENT_BUFFER
-                                                    && dwSize > 0)
-                                                {
-                                                    PTOKEN_USER pTokenUser = (PTOKEN_USER)RTMemAlloc(dwSize);
-                                                    AssertPtrBreak(pTokenUser);
-                                                    RT_ZERO(*pTokenUser);
-                                                    if (   GetTokenInformation(hTokenProc,
-                                                                               TokenUser,
-                                                                               (LPVOID)pTokenUser,
-                                                                               dwSize,
-                                                                               &dwSize)
-                                                        && IsValidSid(pTokenUser->User.Sid)
-                                                        && EqualSid(pTokenUser->User.Sid, pSID))
-                                                    {
-                                                        if (DuplicateTokenEx(hTokenProc, MAXIMUM_ALLOWED,
-                                                                             NULL, SecurityIdentification, TokenPrimary, &hTokenVBoxTray))
-                                                        {
-                                                            /* 
-                                                             * So we found a VBoxTray instance which belongs to the user we want to
-                                                             * to run our new process under. This duplicated token will be used for
-                                                             * the actual CreateProcessAsUserW() call then. 
-                                                             */
-                                                            bFound = TRUE;                                                        
-                                                        }
-                                                        else
-                                                            dwErr = GetLastError();
-                                                    }
-                                                    else
-                                                        dwErr = GetLastError();
-                                                    RTMemFree(pTokenUser);
-                                                }
-                                                else
-                                                    dwErr = GetLastError();
-                                                CloseHandle(hTokenProc);
-                                            }
-                                            else
-                                                dwErr = GetLastError();
-                                            CloseHandle(hProc);
-                                        }
-                                        else
-                                            dwErr = GetLastError();
-                                    }
-                                } while (Process32Next(hSnap, &procEntry) && !bFound);
-                            }
-                            else /* Process32First */
-                                dwErr = GetLastError();
-                            CloseHandle(hSnap);
-                        }
-                        else /* hSnap =! INVALID_HANDLE_VALUE */
-                            dwErr = GetLastError();
+                        fFound = rtProcFindProcessByName(
+#ifdef VBOX
+                                                         "VBoxTray.exe", 
+#else
+                                                         "explorer.exe"
+#endif
+                                                         pSID, &hTokenVBoxTray);
                     }
                     else
                         dwErr = GetLastError(); /* LookupAccountNameW() failed. */
@@ -498,7 +604,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
              * above from LogonUserW(). This enables us to at least run processes with
              * desktop interaction without UI.
              */
-            phToken = bFound ? &hTokenVBoxTray : &hTokenLogon;
+            phToken = fFound ? &hTokenVBoxTray : &hTokenLogon;
 
             /*
              * Useful KB articles:
