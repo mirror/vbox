@@ -131,6 +131,8 @@ void UIFirstRunWzdPage1::retranslateUi()
 
 void UIFirstRunWzdPage1::initializePage()
 {
+    /* Fill and translate */
+    retranslateUi();
 }
 
 UIFirstRunWzdPage2::UIFirstRunWzdPage2()
@@ -178,6 +180,9 @@ void UIFirstRunWzdPage2::retranslateUi()
 
 void UIFirstRunWzdPage2::initializePage()
 {
+    /* Fill and translate */
+    retranslateUi();
+
     /* Initial choice */
     m_pMediaSelector->setCurrentIndex(0);
     sltMediumChanged();
@@ -268,6 +273,9 @@ void UIFirstRunWzdPage3::retranslateUi()
 
 void UIFirstRunWzdPage3::initializePage()
 {
+    /* Fill and translate */
+    retranslateUi();
+
     /* Summary should initially have focus */
     m_pSummaryText->setFocus();
 }
