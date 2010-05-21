@@ -1810,7 +1810,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation type="unfinished">B&amp;ootolás merevlemezről (Primary Master)</translation>
+        <translation type="obsolete">B&amp;ootolás merevlemezről (Primary Master)</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
@@ -1827,6 +1827,10 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="unfinished">A merevlemez ajánlott mérete &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2095,7 +2099,11 @@ Verzió %1</translation>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5021,6 +5029,16 @@ Verzió %1</translation>
     <message>
         <source>Shareable</source>
         <comment>DiskType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknown device</source>
+        <comment>USB device details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Port %1</source>
+        <comment>New Storage UI : Slot Name</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8044,7 +8062,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Nested Paging</source>
-        <translation>Memóriavirtualizáció</translation>
+        <translation type="obsolete">Memóriavirtualizáció</translation>
     </message>
     <message>
         <source>VBoxVMInformationDlg</source>
@@ -8066,6 +8084,11 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Network Statistics</source>
         <translation>Hálózati statisztika</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Memóriavirtualizáció</translation>
     </message>
 </context>
 <context>

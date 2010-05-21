@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1" language="sk">
-<defaultcodec></defaultcodec>
+<!DOCTYPE TS>
+<TS version="2.0" language="sk">
 <context>
     <name>@@@</name>
     <message>
@@ -1670,7 +1670,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation>Boo&amp;tovací pevný disk (Primary Master)</translation>
+        <translation type="obsolete">Boo&amp;tovací pevný disk (Primary Master)</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
@@ -1687,6 +1687,10 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>Odporúčaná veľkosť bootovacieho pevného disku je &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1955,7 +1959,11 @@ verzia %1</translation>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4759,6 +4767,16 @@ verzia %1</translation>
     <message>
         <source>Shareable</source>
         <comment>DiskType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknown device</source>
+        <comment>USB device details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Port %1</source>
+        <comment>New Storage UI : Slot Name</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7760,7 +7778,7 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     </message>
     <message>
         <source>Nested Paging</source>
-        <translation>Priamy prístup k hardware</translation>
+        <translation type="obsolete">Priamy prístup k hardware</translation>
     </message>
     <message>
         <source>VBoxVMInformationDlg</source>
@@ -7782,6 +7800,11 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     <message>
         <source>Network Statistics</source>
         <translation>Sieťové štatistiky</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Priamy prístup k hardware</translation>
     </message>
 </context>
 <context>

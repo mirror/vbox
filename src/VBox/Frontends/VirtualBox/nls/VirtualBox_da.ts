@@ -1499,7 +1499,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation>Opstarts&amp;disk (Primær master)</translation>
+        <translation type="obsolete">Opstarts&amp;disk (Primær master)</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
@@ -1516,6 +1516,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>Anbefalet størrelse på opstartsharddisken er &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1687,7 +1691,11 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3971,6 +3979,16 @@ p, li { white-space: pre-wrap; }
         <translatorcomment>I tvivl om kontekst</translatorcomment>
         <translation>Delt</translation>
     </message>
+    <message>
+        <source>Unknown device</source>
+        <comment>USB device details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Port %1</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -6115,7 +6133,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Nested Paging</source>
-        <translation>Nested Paging</translation>
+        <translation type="obsolete">Nested Paging</translation>
     </message>
     <message>
         <source>VBoxVMInformationDlg</source>
@@ -6138,6 +6156,11 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Network Statistics</source>
         <translation>Netværksstatistik</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Nested Paging</translation>
     </message>
 </context>
 <context>

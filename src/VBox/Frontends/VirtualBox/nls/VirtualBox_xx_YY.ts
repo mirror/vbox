@@ -910,10 +910,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Create new hard disk</source>
         <translation type="unfinished"></translation>
     </message>
@@ -927,6 +923,10 @@
     </message>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1093,8 +1093,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>MB</source>
-        <comment>size suffix MBytes=1024KBytes</comment>
+        <source>Hard Disk Controller (SAS)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3107,6 +3106,16 @@
         <comment>DiskType</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Unknown device</source>
+        <comment>USB device details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Port %1</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -4897,10 +4906,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Nested Paging</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>VBoxVMInformationDlg</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4919,6 +4924,11 @@
     </message>
     <message>
         <source>Network Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

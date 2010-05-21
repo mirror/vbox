@@ -1434,7 +1434,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation type="unfinished">ថាសរឹង​ចាប់ផ្ដើម (Primary Master)</translation>
+        <translation type="obsolete">ថាសរឹង​ចាប់ផ្ដើម (Primary Master)</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
@@ -1451,6 +1451,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="unfinished">ទំហំ​ដែល​បានផ្ដល់​អនុសាសន៍​របស់​ថាសរឹង​ចាប់ផ្ដើម​គឺ &lt;b&gt;%1&lt;/b&gt; មេកាបៃ ។</translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1622,7 +1626,11 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="unfinished">មេកាបៃ</translation>
+        <translation type="obsolete">មេកាបៃ</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4364,6 +4372,16 @@ medium</comment>
         <comment>DiskType</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Unknown device</source>
+        <comment>USB device details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Port %1</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -6421,7 +6439,7 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     </message>
     <message>
         <source>Nested Paging</source>
-        <translation>ភេយីង​ខាង​ក្នុង</translation>
+        <translation type="obsolete">ភេយីង​ខាង​ក្នុង</translation>
     </message>
     <message>
         <source>VBoxVMInformationDlg</source>
@@ -6451,6 +6469,11 @@ details report (VRDP server port)</comment>
         <source>Not Available</source>
         <comment>details report (VRDP server port)</comment>
         <translation type="unfinished">មិនអាច​ប្រើបាន​</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

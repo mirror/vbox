@@ -1794,7 +1794,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation>Disc de P&amp;ornire (Primar Master)</translation>
+        <translation type="obsolete">Disc de P&amp;ornire (Primar Master)</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
@@ -1811,6 +1811,10 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>Dimensiunea discului de boot recomandată este &lt;b&gt;%1&lt;/b&gt; MO.</translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2099,7 +2103,11 @@ Versiunea %1</translation>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation>MO</translation>
+        <translation type="obsolete">MO</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5124,6 +5132,16 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <source>Shareable</source>
         <comment>DiskType</comment>
         <translation>Partajabil</translation>
+    </message>
+    <message>
+        <source>Unknown device</source>
+        <comment>USB device details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Port %1</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8161,6 +8179,8 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
         <translation type="unfinished">
             <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
 </context>
@@ -8762,10 +8782,6 @@ value.&lt;/qt&gt;</source>
         <translation>Dezactivat</translation>
     </message>
     <message>
-        <source>Nested Paging</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>VBoxVMInformationDlg</source>
         <translation>VBoxVMInformationDlg</translation>
     </message>
@@ -8785,6 +8801,11 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Network Statistics</source>
         <translation>Statistici rețea</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

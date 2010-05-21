@@ -1493,7 +1493,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation>부팅용 하드디스크 (프라이머리 마스터)(&amp;D)</translation>
+        <translation type="obsolete">부팅용 하드디스크 (프라이머리 마스터)(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
@@ -1510,6 +1510,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>권장하는 부팅 하드디스크 크기는 &lt;b&gt;%1&lt;/b&gt; 메가바이트입니다.</translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1704,7 +1708,11 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4027,6 +4035,16 @@ p, li { white-space: pre-wrap; }
         <comment>DiskType</comment>
         <translation>공유 가능</translation>
     </message>
+    <message>
+        <source>Unknown device</source>
+        <comment>USB device details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Port %1</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -6126,7 +6144,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Nested Paging</source>
-        <translation>네스티드 페이징</translation>
+        <translation type="obsolete">네스티드 페이징</translation>
     </message>
     <message>
         <source>VBoxVMInformationDlg</source>
@@ -6148,6 +6166,11 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Network Statistics</source>
         <translation>네트워크 통계</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation type="unfinished">네스티드 페이징</translation>
     </message>
 </context>
 <context>

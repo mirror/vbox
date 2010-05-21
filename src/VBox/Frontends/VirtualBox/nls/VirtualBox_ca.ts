@@ -1805,7 +1805,7 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation>D&amp;isc dur d&apos;arrencada (primari mestre)</translation>
+        <translation type="obsolete">D&amp;isc dur d&apos;arrencada (primari mestre)</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
@@ -1822,6 +1822,10 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>La mida del disc dur d&apos;arrencada recomanada és &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2094,7 +2098,11 @@ Versió %1</translation>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4949,6 +4957,16 @@ Versió %1</translation>
         <source>Shareable</source>
         <comment>DiskType</comment>
         <translation>Compartible</translation>
+    </message>
+    <message>
+        <source>Unknown device</source>
+        <comment>USB device details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Port %1</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8471,7 +8489,7 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Nested Paging</source>
-        <translation>Paginació imbricada</translation>
+        <translation type="obsolete">Paginació imbricada</translation>
     </message>
     <message>
         <source>VBoxVMInformationDlg</source>
@@ -8493,6 +8511,11 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     <message>
         <source>Network Statistics</source>
         <translation>Estadístiques de xarxa</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Paginació imbricada</translation>
     </message>
 </context>
 <context>

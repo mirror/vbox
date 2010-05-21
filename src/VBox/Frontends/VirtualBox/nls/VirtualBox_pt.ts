@@ -1565,10 +1565,6 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Create new hard disk</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1583,6 +1579,10 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="unfinished">O tamanho recomendado para o disco rígido de arranque é de &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1855,7 +1855,11 @@ Versão %1</translation>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4737,6 +4741,16 @@ Versão %1</translation>
     <message>
         <source>Shareable</source>
         <comment>DiskType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknown device</source>
+        <comment>USB device details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Port %1</source>
+        <comment>New Storage UI : Slot Name</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8129,10 +8143,6 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
         <translation>Desactivado</translation>
     </message>
     <message>
-        <source>Nested Paging</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>VBoxVMInformationDlg</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8151,6 +8161,11 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Network Statistics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
