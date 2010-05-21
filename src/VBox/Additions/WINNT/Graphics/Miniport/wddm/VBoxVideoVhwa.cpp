@@ -341,7 +341,8 @@ static void vboxVHWAInitSrc(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOUR
     VBOXVHWACMD_QUERYINFO1* pInfo1 = vboxVHWAQueryHostInfo1(pDevExt, srcId);
     if (pInfo1)
     {
-        if (pInfo1->u.out.cfgFlags & VBOXVHWA_CFG_ENABLED)
+        if ((pInfo1->u.out.cfgFlags & VBOXVHWA_CFG_ENABLED)
+                && pInfo1->u.out.numOverlays)
         {
             if ((pInfo1->u.out.caps & VBOXVHWA_CAPS_OVERLAY)
                     && (pInfo1->u.out.caps & VBOXVHWA_CAPS_OVERLAYSTRETCH)
@@ -366,6 +367,8 @@ static void vboxVHWAInitSrc(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOUR
                         /* todo: VBOXVHWA_CKEYCAPS_DESTOVERLAYONEACTIVE ? */
                     }
                 }
+
+                pSettings->cOverlaysSupported = pInfo1->u.out.numOverlays;
 
                 pSettings->cFormats = 0;
 
