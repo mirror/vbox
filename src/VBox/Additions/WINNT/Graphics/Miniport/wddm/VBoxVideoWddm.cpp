@@ -847,6 +847,11 @@ BOOLEAN DxgkDdiInterruptRoutine(
         vboxSHGSMIListInit(&CtlList);
         vboxSHGSMIListInit(&DmaCmdList);
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        VBOXSHGSMILIST VhwaCmdList;
+        vboxSHGSMIListInit(&VhwaCmdList);
+#endif
+
         uint32_t flags = pDevExt->u.primary.pHostFlags->u32HostFlags;
         bOur = (flags & HGSMIHOSTFLAGS_IRQ);
         do
@@ -877,8 +882,31 @@ BOOLEAN DxgkDdiInterruptRoutine(
 
                     if (pHeap)
                     {
-                        int rc = VBoxSHGSMICommandProcessCompletion (pHeap, offCmd, TRUE /*bool bIrq*/ , pList);
-                        AssertRC(rc);
+                        uint16_t chInfo;
+                        uint8_t *pvCmd = HGSMIBufferDataAndChInfoFromOffset (&pHeap->area, offCmd, &chInfo);
+                        Assert(pvCmd);
+                        if (pvCmd)
+                        {
+                            switch (chInfo)
+                            {
+                                case VBVA_VDMA_CMD:
+                                case VBVA_VDMA_CTL:
+                                {
+                                    int rc = VBoxSHGSMICommandProcessCompletion (pHeap, (VBOXSHGSMIHEADER*)pvCmd, TRUE /*bool bIrq*/ , pList);
+                                    AssertRC(rc);
+                                    break;
+                                }
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                                case VBVA_VHWA_CMD:
+                                {
+                                    vboxVhwaPutList(&VhwaCmdList, (VBOXVHWACMD*)pvCmd);
+                                    break;
+                                }
+#endif /* # ifdef VBOX_WITH_VIDEOHWACCEL */
+                                default:
+                                    AssertBreakpoint();
+                            }
+                        }
                     }
                 }
             }
@@ -903,6 +931,11 @@ BOOLEAN DxgkDdiInterruptRoutine(
         {
             vboxSHGSMIListCat(&pDevExt->DmaCmdList, &DmaCmdList);
             bNeedDpc = TRUE;
+        }
+
+        if (!vboxSHGSMIListIsEmpty(&VhwaCmdList))
+        {
+            vboxSHGSMIListCat(&pDevExt->VhwaCmdList, &VhwaCmdList);
         }
 
         if (pDevExt->bSetNotifyDxDpc)
@@ -938,6 +971,9 @@ typedef struct VBOXWDDM_DPCDATA
 {
     VBOXSHGSMILIST CtlList;
     VBOXSHGSMILIST DmaCmdList;
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    VBOXSHGSMILIST VhwaCmdList;
+#endif
     BOOL bNotifyDpc;
 } VBOXWDDM_DPCDATA, *PVBOXWDDM_DPCDATA;
 
@@ -953,6 +989,9 @@ BOOLEAN vboxWddmGetDPCDataCallback(PVOID Context)
 
     vboxSHGSMICmdListDetach2List(&pdc->pDevExt->CtlList, &pdc->data.CtlList);
     vboxSHGSMICmdListDetach2List(&pdc->pDevExt->DmaCmdList, &pdc->data.DmaCmdList);
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    vboxSHGSMICmdListDetach2List(&pdc->pDevExt->VhwaCmdList, &pdc->data.VhwaCmdList);
+#endif
     pdc->data.bNotifyDpc = pdc->pDevExt->bNotifyDxDpc;
     pdc->pDevExt->bNotifyDxDpc = FALSE;
     return TRUE;
@@ -993,6 +1032,13 @@ VOID DxgkDdiDpcRoutine(
         int rc = VBoxSHGSMICommandPostprocessCompletion (&pDevExt->u.primary.Vdma.CmdHeap, &context.data.DmaCmdList);
         AssertRC(rc);
     }
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    if (!vboxSHGSMIListIsEmpty(&context.data.VhwaCmdList))
+    {
+        vboxVhwaCompletionListProcess(pDevExt, &context.data.VhwaCmdList);
+    }
+#endif
 
     if (context.data.bNotifyDpc)
         pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);

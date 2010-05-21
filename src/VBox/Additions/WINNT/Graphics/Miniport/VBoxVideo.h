@@ -287,6 +287,9 @@ typedef struct _DEVICE_EXTENSION
 
    VBOXSHGSMILIST CtlList;
    VBOXSHGSMILIST DmaCmdList;
+#ifdef VBOX_WITH_VIDEOHWACCEL
+   VBOXSHGSMILIST VhwaCmdList;
+#endif
    BOOL bSetNotifyDxDpc;
    BOOL bNotifyDxDpc;
 

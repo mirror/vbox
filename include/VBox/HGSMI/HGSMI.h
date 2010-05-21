@@ -240,6 +240,18 @@ DECLINLINE(uint8_t *) HGSMIBufferDataFromOffset (const HGSMIAREA *pArea, HGSMIOF
     return NULL;
 }
 
+DECLINLINE(uint8_t *) HGSMIBufferDataAndChInfoFromOffset (const HGSMIAREA *pArea, HGSMIOFFSET offBuffer, uint16_t * pChInfo)
+{
+    HGSMIBUFFERHEADER *pHeader = HGSMIOffsetToPointer (pArea, offBuffer);
+    Assert(pHeader);
+    if(pHeader)
+    {
+        *pChInfo = pHeader->u16ChannelInfo;
+        return HGSMIBufferData(pHeader);
+    }
+    return NULL;
+}
+
 HGSMICHANNEL *HGSMIChannelFindById (HGSMICHANNELINFO * pChannelInfo, uint8_t u8Channel);
 
 uint32_t HGSMIChecksum (HGSMIOFFSET offBuffer,

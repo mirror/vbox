@@ -172,6 +172,21 @@ static DECLCALLBACK(void) vboxVhwaCompletionFreeCmd(PDEVICE_EXTENSION pDevExt, V
 {
     vboxVhwaCommandFree(pDevExt, pCmd);
 }
+
+void vboxVhwaCompletionListProcess(PDEVICE_EXTENSION pDevExt, VBOXSHGSMILIST *pList)
+{
+    PVBOXSHGSMILIST_ENTRY pNext, pCur;
+    for (pCur = pList->pFirst; pCur; pCur = pNext)
+    {
+        /* need to save next since the command may be released in a pfnCallback and thus its data might be invalid */
+        pNext = pCur->pNext;
+        VBOXVHWACMD *pCmd = VBOXVHWA_LISTENTRY2CMD(pCur);
+        PFNVBOXVHWACMDCOMPLETION pfnCallback = (PFNVBOXVHWACMDCOMPLETION)pCmd->GuestVBVAReserved1;
+        void *pvCallback = (void*)pCmd->GuestVBVAReserved2;
+        pfnCallback(pDevExt, pCmd, pvCallback);
+    }
+}
+
 #endif
 
 void vboxVhwaCommandSubmitAsynchAndComplete(PDEVICE_EXTENSION pDevExt, VBOXVHWACMD* pCmd)
@@ -215,7 +230,9 @@ VBOXVHWACMD_QUERYINFO1* vboxVHWAQueryHostInfo1(PDEVICE_EXTENSION pDevExt, D3DDDI
     pInfo1->u.in.guestVersion.bld = VBOXVHWA_VERSION_BLD;
     pInfo1->u.in.guestVersion.reserved = VBOXVHWA_VERSION_RSV;
 
-    if(vboxVhwaCommandSubmit(pDevExt, pCmd))
+    int rc = vboxVhwaCommandSubmit(pDevExt, pCmd);
+    AssertRC(rc);
+    if(RT_SUCCESS(rc))
     {
         if(RT_SUCCESS(pCmd->rc))
         {
@@ -241,8 +258,11 @@ VBOXVHWACMD_QUERYINFO2* vboxVHWAQueryHostInfo2(PDEVICE_EXTENSION pDevExt, D3DDDI
     pInfo2 = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_QUERYINFO2);
     pInfo2->numFourCC = numFourCC;
 
-    if(vboxVhwaCommandSubmit(pDevExt, pCmd))
+    int rc = vboxVhwaCommandSubmit(pDevExt, pCmd);
+    AssertRC(rc);
+    if(RT_SUCCESS(rc))
     {
+        AssertRC(pCmd->rc);
         if(RT_SUCCESS(pCmd->rc))
         {
             if(pInfo2->numFourCC == numFourCC)
@@ -269,12 +289,15 @@ int vboxVHWAEnable(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID src
         return rc;
     }
 
-    if(vboxVhwaCommandSubmit(pDevExt, pCmd))
+    rc = vboxVhwaCommandSubmit(pDevExt, pCmd);
+    AssertRC(rc);
+    if(RT_SUCCESS(rc))
     {
+        AssertRC(pCmd->rc);
         if(RT_SUCCESS(pCmd->rc))
-        {
             rc = VINF_SUCCESS;
-        }
+        else
+            rc = pCmd->rc;
     }
 
     vboxVhwaCommandFree(pDevExt, pCmd);
@@ -294,12 +317,15 @@ int vboxVHWADisable(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID sr
         return rc;
     }
 
-    if(vboxVhwaCommandSubmit(pDevExt, pCmd))
+    rc = vboxVhwaCommandSubmit(pDevExt, pCmd);
+    AssertRC(rc);
+    if(RT_SUCCESS(rc))
     {
+        AssertRC(pCmd->rc);
         if(RT_SUCCESS(pCmd->rc))
-        {
             rc = VINF_SUCCESS;
-        }
+        else
+            rc = pCmd->rc;
     }
 
     vboxVhwaCommandFree(pDevExt, pCmd);
@@ -344,8 +370,6 @@ static void vboxVHWAInitSrc(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOUR
                 pSettings->cFormats = 0;
 
                 pSettings->aFormats[pSettings->cFormats] = D3DDDIFMT_X8R8G8B8;
-                ++pSettings->cFormats;
-                pSettings->aFormats[pSettings->cFormats] = D3DDDIFMT_A8R8G8B8;
                 ++pSettings->cFormats;
 
                 if (pInfo1->u.out.numFourCC

@@ -101,7 +101,7 @@ DECLINLINE(HGSMIOFFSET) VBoxSHGSMICommandOffset(struct _HGSMIHEAP * pHeap, const
 
 void* VBoxSHGSMICommandAlloc(struct _HGSMIHEAP * pHeap, HGSMISIZE cbData, uint8_t u8Channel, uint16_t u16ChannelInfo);
 void VBoxSHGSMICommandFree(struct _HGSMIHEAP * pHeap, void *pvBuffer);
-int VBoxSHGSMICommandProcessCompletion(struct _HGSMIHEAP * pHeap, HGSMIOFFSET offCmd, bool bIrq, PVBOXSHGSMILIST pPostProcessList);
+int VBoxSHGSMICommandProcessCompletion(struct _HGSMIHEAP * pHeap, VBOXSHGSMIHEADER* pCmd, bool bIrq, PVBOXSHGSMILIST pPostProcessList);
 int VBoxSHGSMICommandPostprocessCompletion(struct _HGSMIHEAP * pHeap, PVBOXSHGSMILIST pPostProcessList);
 
 #endif /* #ifndef ___VBoxVideoShgsmi_h___ */
