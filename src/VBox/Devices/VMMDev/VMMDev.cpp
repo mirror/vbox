@@ -2096,7 +2096,8 @@ static DECLCALLBACK(int) vmmdevSetMouseCapabilities(PPDMIVMMDEVPORT pInterface, 
 
     Log(("vmmdevSetMouseCapabilities: bNotify %d\n", bNotify));
 
-    pThis->mouseCapabilities &= ~VMMDEV_MOUSE_HOST_MASK;
+    pThis->mouseCapabilities &=   ~VMMDEV_MOUSE_HOST_MASK
+                                | VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR;
     pThis->mouseCapabilities |= (capabilities & VMMDEV_MOUSE_HOST_MASK);
     if (bNotify)
         VMMDevNotifyGuest (pThis, VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED);
@@ -2883,7 +2884,8 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     AssertRCReturn(rc, rc);
     pThis->u32HGCMEnabled = 0;
 #endif /* VBOX_WITH_HGCM */
-    /* The GUI checks whether this changes in this version of VirtualBox. */
+    /* In this version of VirtualBox the GUI checks whether "needs host cursor"
+     * changes. */
     pThis->mouseCapabilities |= VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR;
 
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMemBalloonChunks, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "Memory balloon size", "/Devices/VMMDev/BalloonChunks");
