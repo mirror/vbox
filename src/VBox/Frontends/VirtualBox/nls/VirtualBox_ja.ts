@@ -546,6 +546,277 @@
     </message>
 </context>
 <context>
+    <name>UIActionsPool</name>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="141"/>
+        <source>&amp;Machine</source>
+        <translation>仮想マシン(&amp;M)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="163"/>
+        <source>&amp;Fullscreen Mode</source>
+        <translation>フルスクリーンモード(&amp;F)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="164"/>
+        <source>Switch to fullscreen mode</source>
+        <translation>フルスクリーンモードに切り替える</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="186"/>
+        <source>Seam&amp;less Mode</source>
+        <translation>シームレスモード(&amp;L)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="187"/>
+        <source>Switch to seamless desktop integration mode</source>
+        <translation>シームレスモードに切り替える</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="209"/>
+        <source>Auto-resize &amp;Guest Display</source>
+        <translation>ゲストOSの画面を自動リサイズ(&amp;G)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="210"/>
+        <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
+        <translation>ウィンドウをリサイズしたとき、ゲストOSの画面を自動的にリサイズする(Guest Additions のインストールが必要)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="231"/>
+        <source>&amp;Adjust Window Size</source>
+        <translation>ウィンドウのサイズを調整(&amp;A)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="232"/>
+        <source>Adjust window size and position to best fit the guest display</source>
+        <translation>ゲストOSの画面に合わせてウィンドウのサイズと位置を調整する</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="275"/>
+        <source>Disable &amp;Mouse Integration</source>
+        <translation>マウス統合を無効化(&amp;M)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="276"/>
+        <source>Temporarily disable host mouse pointer integration</source>
+        <translation>一時的にホスト マウスポインタの統合機能を無効化</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="280"/>
+        <source>Enable &amp;Mouse Integration</source>
+        <translation>マウス統合を有効化(&amp;M)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="281"/>
+        <source>Enable temporarily disabled host mouse pointer integration</source>
+        <translation>一時的に無効化したホスト マウスポインタの統合機能を有効化</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="303"/>
+        <source>&amp;Insert Ctrl-Alt-Del</source>
+        <translation>Ctrl-Alt-Delを送信(&amp;I)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="304"/>
+        <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
+        <translation>仮想マシンにCtrl-Alt-Delシーケンスを送信する</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="326"/>
+        <source>&amp;Insert Ctrl-Alt-Backspace</source>
+        <translation>Ctrl-Alt-Backspaceを送信(&amp;I)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="327"/>
+        <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
+        <translation>仮想マシンにCtrl-Alt-Backspaceシーケンスを送信する</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="349"/>
+        <source>Take &amp;Snapshot...</source>
+        <translation>スナップショット作成(&amp;S)...</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="350"/>
+        <source>Take a snapshot of the virtual machine</source>
+        <translation>仮想マシンのスナップショットを作成する</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="371"/>
+        <source>Session I&amp;nformation Dialog</source>
+        <translation>セッション情報ダイアログ(&amp;N)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="372"/>
+        <source>Show Session Information Dialog</source>
+        <translation>セッション情報ダイアログを表示</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="395"/>
+        <source>&amp;Pause</source>
+        <translation>一時停止(&amp;P)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="396"/>
+        <source>Suspend the execution of the virtual machine</source>
+        <translation>仮想マシンの実行を一時停止する</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="400"/>
+        <source>R&amp;esume</source>
+        <translation>再開(&amp;E)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="401"/>
+        <source>Resume the execution of the virtual machine</source>
+        <translation>仮想マシンの実行を再開する</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="423"/>
+        <source>&amp;Reset</source>
+        <translation>リセット(&amp;R)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="424"/>
+        <source>Reset the virtual machine</source>
+        <translation>仮想マシンをリセットする</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="447"/>
+        <source>ACPI Sh&amp;utdown</source>
+        <translation>ACPI シャットダウン(&amp;U)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="449"/>
+        <source>ACPI S&amp;hutdown</source>
+        <translation>ACPI シャットダウン(&amp;H)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="451"/>
+        <source>Send the ACPI Power Button press event to the virtual machine</source>
+        <translation>仮想マシンに電源ボタン オフのACPIイベントを送信する</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="473"/>
+        <source>&amp;Close...</source>
+        <translation>閉じる(&amp;C)...</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="474"/>
+        <source>Close the virtual machine</source>
+        <translation>仮想マシンを閉じる</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="494"/>
+        <source>&amp;View</source>
+        <translation>ビュー(&amp;V)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="514"/>
+        <source>&amp;Devices</source>
+        <translation>デバイス(&amp;D)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="535"/>
+        <source>&amp;CD/DVD Devices</source>
+        <translation>CD/DVD デバイス(&amp;C)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="556"/>
+        <source>&amp;Floppy Devices</source>
+        <translation>フロッピー デバイス(&amp;F)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="577"/>
+        <source>&amp;USB Devices</source>
+        <translation>USB デバイス(&amp;U)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="617"/>
+        <source>&amp;Network Adapters...</source>
+        <translation>ネットワーク アダプタ(&amp;N)...</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="618"/>
+        <source>Change the settings of network adapters</source>
+        <translation>ネットワーク アダプタの設定変更</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="658"/>
+        <source>&amp;Shared Folders...</source>
+        <translation>共有フォルダ(&amp;S)...</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="659"/>
+        <source>Create or modify shared folders</source>
+        <translation>共有フォルダ設定ダイアログを開く</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="681"/>
+        <source>&amp;Remote Display</source>
+        <translation>リモートディスプレイ(&amp;R)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="682"/>
+        <source>Enable or disable remote desktop (RDP) connections to this machine</source>
+        <translation>この仮想マシンへのリモートデスクトップ(RDP)接続を有効化または無効化</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="703"/>
+        <source>&amp;Install Guest Additions...</source>
+        <translation>Guest Additions のインストール(&amp;I)...</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="704"/>
+        <source>Mount the Guest Additions installation image</source>
+        <translation>Guest Additions インストールイメージをマウントする</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="725"/>
+        <source>De&amp;bug</source>
+        <translation>デバッグ(&amp;B)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="745"/>
+        <source>&amp;Statistics...</source>
+        <comment>debug action</comment>
+        <translation>統計(&amp;S)...</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="765"/>
+        <source>&amp;Command Line...</source>
+        <comment>debug action</comment>
+        <translation>コマンドライン(&amp;C)...</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="785"/>
+        <source>&amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation>ログ取得(&amp;L)...</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="806"/>
+        <source>&amp;Help</source>
+        <translation>ヘルプ(&amp;H)</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="983"/>
+        <source>Dock Icon</source>
+        <translation>ドック アイコン</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="1003"/>
+        <source>Show Monitor Preview</source>
+        <translation>ディスプレイのプレビューを表示</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIActionsPool.cpp" line="1023"/>
+        <source>Show Application Icon</source>
+        <translation>アプリケーション アイコンを表示</translation>
+    </message>
+</context>
+<context>
     <name>UIDownloader</name>
     <message>
         <source>Cancel</source>
@@ -1260,6 +1531,119 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIIndicatorsPool</name>
+    <message>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="58"/>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>HDD tooltip</comment>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブな仮想ハードディスクを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="125"/>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>CD/DVD tooltip</comment>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブなCD/DVD デバイスを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="196"/>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>FD tooltip</comment>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブなフロッピー デバイスを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="274"/>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>Network adapters tooltip</comment>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブなネットワーク デバイスを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="311"/>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
+        <comment>Network adapters tooltip</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;アダプタ %1 (%2)&lt;/b&gt;:%3 ケーブル %4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="317"/>
+        <source>connected</source>
+        <comment>Network adapters tooltip</comment>
+        <translation>接続</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="318"/>
+        <source>disconnected</source>
+        <comment>Network adapters tooltip</comment>
+        <translation>切断</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="328"/>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>Network adapters tooltip</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;すべてのネットワーク アダプタが無効&lt;/b&gt;&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="374"/>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>USB device tooltip</comment>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブなUSB デバイスを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="391"/>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>USB device tooltip</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB デバイスが割り当てられていない&lt;/b&gt;&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="394"/>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>USB device tooltip</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB コントローラが無効&lt;/b&gt;&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="433"/>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>Shared folders tooltip</comment>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブな共有フォルダを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="469"/>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>Shared folders tooltip</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;共有フォルダなし&lt;/b&gt;&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="512"/>
+        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
+        <translation>リモートディスプレイ(VRDPサーバー)機能が有効なとき(&lt;img src=:/vrdp_16px.png/&gt;) を、無効なとき (&lt;img src=:/vrdp_disabled_16px.png/&gt;)を表示します。</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="516"/>
+        <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
+        <translation>&lt;hr&gt;VRDPサーバーはポート %1 を待ち受けしています</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="568"/>
+        <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
+        <comment>Virtualization Stuff LED</comment>
+        <translation>仮想マシンで使用される仮想化支援機能の状態を表示:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="578"/>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
+        <comment>Virtualization Stuff LED</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="612"/>
+        <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
+        <translation>ホスト マウスポインタのキャプチャ状態を表示:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャされていません&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は有効です&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャされていません&lt;/nobr&gt;&lt;br&gt; 注：マウス統合機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="663"/>
+        <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
+        <translation>キーボードがゲストOSにキャプチャされているとき(&lt;img src=:/hostkey_captured_16px.png/&gt;を、無効なとき(&lt;img src=:/hostkey_16px.png/&gt;)を表示します。</translation>
+    </message>
+</context>
+<context>
     <name>UIMachineLogic</name>
     <message>
         <location filename="../src/runtime/UIMachineWindow.cpp" line="116"/>
@@ -1270,6 +1654,74 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/runtime/UIMachineWindow.cpp" line="121"/>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
         <translation>試験的ビルド %1r%2 - %3</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="385"/>
+        <source>Preview Monitor %1</source>
+        <translation>プレビュー ディスプレイ %1</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="970"/>
+        <source>Snapshot %1</source>
+        <translation>スナップショット %1</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="1198"/>
+        <source>More CD/DVD Images...</source>
+        <translation>CD/DVD イメージの追加...</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="1199"/>
+        <source>Unmount CD/DVD Device</source>
+        <translation>CD/DVD デバイスのマウント解除</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="1204"/>
+        <source>More Floppy Images...</source>
+        <translation>フロッピー イメージの追加...</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="1205"/>
+        <source>Unmount Floppy Device</source>
+        <translation>フロッピー デバイスのマウント解除</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="1224"/>
+        <source>No CD/DVD Devices Attached</source>
+        <translation>CD/DVD デバイス 未割り当て</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="1225"/>
+        <source>No CD/DVD devices attached to that VM</source>
+        <translation>CD/DVD デバイス 未割り当て</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="1228"/>
+        <source>No Floppy Devices Attached</source>
+        <translation>フロッピー デバイス 未割り当て</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="1229"/>
+        <source>No floppy devices attached to that VM</source>
+        <translation>フロッピー デバイス 未割り当て</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="1335"/>
+        <source>No USB Devices Connected</source>
+        <translation>USB デバイス 未接続</translation>
+    </message>
+    <message>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="1337"/>
+        <source>No supported devices connected to the host PC</source>
+        <translation>ホストマシンに接続されたデバイスはサポートされていません</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineWindowNormal</name>
+    <message>
+        <location filename="../src/runtime/normal/UIMachineWindowNormal.cpp" line="253"/>
+        <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
+        <translation>現在割り当てられているホストキーを表示します。&lt;br&gt;ホストキーを単独で押すと、キーボートとマウスの制御が切り替わります。また、他のキーと合わせてキーボード ショートカットの操作に使用することができます。</translation>
     </message>
 </context>
 <context>
@@ -2420,13 +2872,11 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1584"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="163"/>
         <source>&amp;Fullscreen Mode</source>
         <translation>フルスクリーンモード(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1585"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="164"/>
         <source>Switch to fullscreen mode</source>
         <translation>フルスクリーンモードに切り替える</translation>
     </message>
@@ -2444,98 +2894,82 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1590"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="209"/>
         <source>Auto-resize &amp;Guest Display</source>
         <translation>ゲストOSの画面を自動リサイズ(&amp;G)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1591"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="210"/>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
         <translation>ウィンドウをリサイズしたとき、ゲストOSの画面を自動的にリサイズする(Guest Additions のインストールが必要)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1594"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="231"/>
         <source>&amp;Adjust Window Size</source>
         <translation>ウィンドウのサイズを調整(&amp;A)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1595"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="232"/>
         <source>Adjust window size and position to best fit the guest display</source>
         <translation>ゲストOSの画面に合わせてウィンドウのサイズと位置を調整する</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1599"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="303"/>
         <source>&amp;Insert Ctrl-Alt-Del</source>
         <translation>Ctrl-Alt-Delを送信(&amp;I)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1600"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="304"/>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
         <translation>仮想マシンにCtrl-Alt-Delシーケンスを送信する</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1603"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="326"/>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
         <translation>Ctrl-Alt-Backspaceを送信(&amp;I)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1604"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="327"/>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
         <translation>仮想マシンにCtrl-Alt-Backspaceシーケンスを送信する</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1613"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="423"/>
         <source>&amp;Reset</source>
         <translation>リセット(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1614"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="424"/>
         <source>Reset the virtual machine</source>
         <translation>仮想マシンをリセットする</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1620"/>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1622"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="449"/>
         <source>ACPI S&amp;hutdown</source>
         <translation>ACPI シャットダウン(&amp;H)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1624"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="451"/>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
         <translation>仮想マシンに電源ボタン オフのACPIイベントを送信する</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1626"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="473"/>
         <source>&amp;Close...</source>
         <translation>閉じる(&amp;C)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1627"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="474"/>
         <source>Close the virtual machine</source>
         <translation>仮想マシンを閉じる</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1607"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="349"/>
         <source>Take &amp;Snapshot...</source>
         <translation>スナップショット作成(&amp;S)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1608"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="350"/>
         <source>Take a snapshot of the virtual machine</source>
         <translation>仮想マシンのスナップショットを作成する</translation>
     </message>
@@ -2583,31 +3017,26 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1641"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="682"/>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
         <translation>この仮想マシンへのリモートデスクトップ(RDP)接続を有効化または無効化</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1637"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="658"/>
         <source>&amp;Shared Folders...</source>
         <translation>共有フォルダ(&amp;S)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1638"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="659"/>
         <source>Create or modify shared folders</source>
         <translation>共有フォルダ設定ダイアログを開く</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1646"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="703"/>
         <source>&amp;Install Guest Additions...</source>
         <translation>Guest Additions のインストール(&amp;I)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1647"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="704"/>
         <source>Mount the Guest Additions installation image</source>
         <translation>Guest Additions インストールイメージをマウントする</translation>
     </message>
@@ -2645,25 +3074,21 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1649"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="577"/>
         <source>&amp;USB Devices</source>
         <translation>USB デバイス(&amp;U)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1670"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="514"/>
         <source>&amp;Devices</source>
         <translation>デバイス(&amp;D)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1675"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="725"/>
         <source>De&amp;bug</source>
         <translation>デバッグ(&amp;B)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1677"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="806"/>
         <source>&amp;Help</source>
         <translation>ヘルプ(&amp;H)</translation>
     </message>
@@ -2683,61 +3108,51 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3201"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="516"/>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
         <translation>&lt;hr&gt;VRDPサーバーはポート %1 を待ち受けしています</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3282"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="395"/>
         <source>&amp;Pause</source>
         <translation>一時停止(&amp;P)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3283"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="396"/>
         <source>Suspend the execution of the virtual machine</source>
         <translation>仮想マシンの実行を一時停止する</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3287"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="400"/>
         <source>R&amp;esume</source>
         <translation>再開(&amp;E)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3288"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="401"/>
         <source>Resume the execution of the virtual machine</source>
         <translation>仮想マシンの実行を再開する</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3296"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="275"/>
         <source>Disable &amp;Mouse Integration</source>
         <translation>マウス統合を無効化(&amp;M)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3297"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="276"/>
         <source>Temporarily disable host mouse pointer integration</source>
         <translation>一時的にホスト マウスポインタの統合機能を無効化</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3301"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="280"/>
         <source>Enable &amp;Mouse Integration</source>
         <translation>マウス統合を有効化(&amp;M)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3302"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="281"/>
         <source>Enable temporarily disabled host mouse pointer integration</source>
         <translation>一時的に無効化したホスト マウスポインタの統合機能を有効化</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1995"/>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="970"/>
         <source>Snapshot %1</source>
         <translation>スナップショット %1</translation>
     </message>
@@ -2748,7 +3163,6 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1665"/>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1668"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="141"/>
         <source>&amp;Machine</source>
         <translation>仮想マシン(&amp;M)</translation>
     </message>
@@ -2781,13 +3195,11 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1587"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="186"/>
         <source>Seam&amp;less Mode</source>
         <translation>シームレスモード(&amp;L)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1588"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="187"/>
         <source>Switch to seamless desktop integration mode</source>
         <translation>シームレスモードに切り替える</translation>
     </message>
@@ -2858,21 +3270,18 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3144"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="317"/>
         <source>connected</source>
         <comment>Network adapters tooltip</comment>
         <translation>接続</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3145"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="318"/>
         <source>disconnected</source>
         <comment>Network adapters tooltip</comment>
         <translation>切断</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3151"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="328"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;すべてのネットワーク アダプタが無効&lt;/b&gt;&lt;/nobr&gt;</translation>
@@ -2884,14 +3293,12 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3175"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="391"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB デバイスが割り当てられていない&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3180"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="394"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB コントローラが無効&lt;/b&gt;&lt;/nobr&gt;</translation>
@@ -2907,7 +3314,6 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3246"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="469"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;共有フォルダなし&lt;/b&gt;&lt;/nobr&gt;</translation>
@@ -2930,33 +3336,28 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1610"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="371"/>
         <source>Session I&amp;nformation Dialog</source>
         <translation>セッション情報ダイアログ(&amp;N)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1611"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="372"/>
         <source>Show Session Information Dialog</source>
         <translation>セッション情報ダイアログを表示</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1654"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="745"/>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
         <translation>統計(&amp;S)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1656"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="765"/>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
         <translation>コマンドライン(&amp;C)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1658"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="785"/>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
         <translation>ログ取得(&amp;L)...</translation>
@@ -2968,25 +3369,21 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1688"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="612"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>ホスト マウスポインタのキャプチャ状態を表示:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャされていません&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は有効です&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャされていません&lt;/nobr&gt;&lt;br&gt; 注：マウス統合機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1696"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="663"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
         <translation>キーボードがゲストOSにキャプチャされているとき(&lt;img src=:/hostkey_captured_16px.png/&gt;を、無効なとき(&lt;img src=:/hostkey_16px.png/&gt;)を表示します。</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3197"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="512"/>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
         <translation>リモートディスプレイ(VRDPサーバー)機能が有効なとき(&lt;img src=:/vrdp_16px.png/&gt;) を、無効なとき (&lt;img src=:/vrdp_disabled_16px.png/&gt;)を表示します。</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1699"/>
-        <location filename="../src/runtime/normal/UIMachineWindowNormal.cpp" line="253"/>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
         <translation>現在割り当てられているホストキーを表示します。&lt;br&gt;ホストキーを単独で押すと、キーボートとマウスの制御が切り替わります。また、他のキーと合わせてキーボード ショートカットの操作に使用することができます。</translation>
     </message>
@@ -2996,14 +3393,12 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3262"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="568"/>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation>仮想マシンで使用される仮想化支援機能の状態を表示:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3272"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="578"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
@@ -3015,98 +3410,82 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1631"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="535"/>
         <source>&amp;CD/DVD Devices</source>
         <translation>CD/DVD デバイス(&amp;C)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1632"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="556"/>
         <source>&amp;Floppy Devices</source>
         <translation>フロッピー デバイス(&amp;F)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1634"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="617"/>
         <source>&amp;Network Adapters...</source>
         <translation>ネットワーク アダプタ(&amp;N)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1635"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="618"/>
         <source>Change the settings of network adapters</source>
         <translation>ネットワーク アダプタの設定変更</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1640"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="681"/>
         <source>&amp;Remote Display</source>
         <translation>リモートディスプレイ(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1681"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="983"/>
         <source>Dock Icon</source>
         <translation>ドック アイコン</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1682"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="1023"/>
         <source>Show Application Icon</source>
         <translation>アプリケーション アイコンを表示</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1683"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="1003"/>
         <source>Show Monitor Preview</source>
         <translation>ディスプレイのプレビューを表示</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2284"/>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="1198"/>
         <source>More CD/DVD Images...</source>
         <translation>CD/DVD イメージの追加...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2285"/>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="1199"/>
         <source>Unmount CD/DVD Device</source>
         <translation>CD/DVD デバイスのマウント解除</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2290"/>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="1204"/>
         <source>More Floppy Images...</source>
         <translation>フロッピー イメージの追加...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2291"/>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="1205"/>
         <source>Unmount Floppy Device</source>
         <translation>フロッピー デバイスのマウント解除</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2310"/>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="1224"/>
         <source>No CD/DVD Devices Attached</source>
         <translation>CD/DVD デバイス 未割り当て</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2313"/>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="1228"/>
         <source>No Floppy Devices Attached</source>
         <translation>フロッピー デバイス 未割り当て</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3011"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="58"/>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>HDD tooltip</comment>
         <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブな仮想ハードディスクを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3042"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="125"/>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>CD/DVD tooltip</comment>
         <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブなCD/DVD デバイスを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
@@ -3119,7 +3498,6 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3076"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="196"/>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>FD tooltip</comment>
         <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブなフロッピー デバイスを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
@@ -3132,66 +3510,55 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3120"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="274"/>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Network adapters tooltip</comment>
         <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブなネットワーク デバイスを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3139"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="311"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;アダプタ %1 (%2)&lt;/b&gt;:%3 ケーブル %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3159"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="374"/>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>USB device tooltip</comment>
         <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブなUSB デバイスを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3208"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="433"/>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;アクティブな共有フォルダを表示:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="447"/>
         <source>ACPI Sh&amp;utdown</source>
-        <translation>ACPI シャットダウン(&amp;U)</translation>
+        <translation type="obsolete">ACPI シャットダウン(&amp;U)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="494"/>
         <source>&amp;View</source>
-        <translation>ビュー(&amp;V)</translation>
+        <translation type="obsolete">ビュー(&amp;V)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="385"/>
         <source>Preview Monitor %1</source>
-        <translation>プレビュー ディスプレイ %1</translation>
+        <translation type="obsolete">プレビュー ディスプレイ %1</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="1225"/>
         <source>No CD/DVD devices attached to that VM</source>
-        <translation>CD/DVD デバイス 未割り当て</translation>
+        <translation type="obsolete">CD/DVD デバイス 未割り当て</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="1229"/>
         <source>No floppy devices attached to that VM</source>
-        <translation>フロッピー デバイス 未割り当て</translation>
+        <translation type="obsolete">フロッピー デバイス 未割り当て</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="1335"/>
         <source>No USB Devices Connected</source>
-        <translation>USB デバイス 未接続</translation>
+        <translation type="obsolete">USB デバイス 未接続</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="1337"/>
         <source>No supported devices connected to the host PC</source>
-        <translation>ホストマシンに接続されたデバイスはサポートされていません</translation>
+        <translation type="obsolete">ホストマシンに接続されたデバイスはサポートされていません</translation>
     </message>
 </context>
 <context>
@@ -5282,7 +5649,7 @@ Version %1</source>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1774"/>
         <source>Unknown device</source>
         <comment>USB device details</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="2033"/>
@@ -5428,7 +5795,7 @@ Version %1</source>
         <location filename="../src/globals/VBoxGlobal.cpp" line="3098"/>
         <source>SAS Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="3099"/>

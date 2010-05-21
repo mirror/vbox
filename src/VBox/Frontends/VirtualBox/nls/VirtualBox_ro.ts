@@ -459,6 +459,224 @@
     </message>
 </context>
 <context>
+    <name>UIActionsPool</name>
+    <message>
+        <source>&amp;Machine</source>
+        <translation>&amp;Mașină</translation>
+    </message>
+    <message>
+        <source>&amp;Fullscreen Mode</source>
+        <translation>Ecran &amp;complet</translation>
+    </message>
+    <message>
+        <source>Switch to fullscreen mode</source>
+        <translation>Treci pe ecran complet</translation>
+    </message>
+    <message>
+        <source>Seam&amp;less Mode</source>
+        <translation>Mod trans*parent</translation>
+    </message>
+    <message>
+        <source>Switch to seamless desktop integration mode</source>
+        <translation>Schimbă în modul continuu de integrare cu spațiul de lucru</translation>
+    </message>
+    <message>
+        <source>Auto-resize &amp;Guest Display</source>
+        <translation>R&amp;edimensionează automat ecranul</translation>
+    </message>
+    <message>
+        <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
+        <translation>Redimensionează automat ecranul musafir atunci când fereastra este redimensionată (necesită Guest Additions)</translation>
+    </message>
+    <message>
+        <source>&amp;Adjust Window Size</source>
+        <translation>&amp;Ajustează dimensiunea fereastrei</translation>
+    </message>
+    <message>
+        <source>Adjust window size and position to best fit the guest display</source>
+        <translation>Ajustează dimensiunea și poziția ferestrei pentru cea mai bună potrivire pe ecranul musafir</translation>
+    </message>
+    <message>
+        <source>Disable &amp;Mouse Integration</source>
+        <translation>Dezactivează integrarea &amp;mouse</translation>
+    </message>
+    <message>
+        <source>Temporarily disable host mouse pointer integration</source>
+        <translation>Dezactivează temporar intergrarea mouse</translation>
+    </message>
+    <message>
+        <source>Enable &amp;Mouse Integration</source>
+        <translation>Activează integrare &amp;mouse</translation>
+    </message>
+    <message>
+        <source>Enable temporarily disabled host mouse pointer integration</source>
+        <translation>Activează integrarea mouse temporar dezactivată</translation>
+    </message>
+    <message>
+        <source>&amp;Insert Ctrl-Alt-Del</source>
+        <translation>&amp;Inserează Ctrl-Alt-Del</translation>
+    </message>
+    <message>
+        <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
+        <translation>Trimite secvența Ctrl-Alt-Del către mașina virtuală</translation>
+    </message>
+    <message>
+        <source>&amp;Insert Ctrl-Alt-Backspace</source>
+        <translation>&amp;Inserează Ctrl-Alt-Backspace</translation>
+    </message>
+    <message>
+        <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
+        <translation>Trimite secvența Ctrl-Alt-Backspace către mașina virtuală</translation>
+    </message>
+    <message>
+        <source>Take &amp;Snapshot...</source>
+        <translation>Salvează in&amp;stantaneu...</translation>
+    </message>
+    <message>
+        <source>Take a snapshot of the virtual machine</source>
+        <translation>Salvează un instantaneu al mașinii virtuale</translation>
+    </message>
+    <message>
+        <source>Session I&amp;nformation Dialog</source>
+        <translation>Dialog i&amp;nformații despre sesiune</translation>
+    </message>
+    <message>
+        <source>Show Session Information Dialog</source>
+        <translation>Arată dialogul de informații despre sesiune</translation>
+    </message>
+    <message>
+        <source>&amp;Pause</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Suspend the execution of the virtual machine</source>
+        <translation>Suspendă execuția mașinii virtuale</translation>
+    </message>
+    <message>
+        <source>R&amp;esume</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Resume the execution of the virtual machine</source>
+        <translation>Restabilește execuția mașinii virtuale</translation>
+    </message>
+    <message>
+        <source>&amp;Reset</source>
+        <translation>&amp;Resetează</translation>
+    </message>
+    <message>
+        <source>Reset the virtual machine</source>
+        <translation>Resetează mașina virtuală</translation>
+    </message>
+    <message>
+        <source>ACPI Sh&amp;utdown</source>
+        <translation>Înc&amp;hide ACPI</translation>
+    </message>
+    <message>
+        <source>ACPI S&amp;hutdown</source>
+        <translation>Înc&amp;hidere ACPI</translation>
+    </message>
+    <message>
+        <source>Send the ACPI Power Button press event to the virtual machine</source>
+        <translation>Trimite evenimentul apăsare buton ACPI către mașina virtuală</translation>
+    </message>
+    <message>
+        <source>&amp;Close...</source>
+        <translation>În&amp;chide...</translation>
+    </message>
+    <message>
+        <source>Close the virtual machine</source>
+        <translation>Închide mașina virtuală</translation>
+    </message>
+    <message>
+        <source>&amp;View</source>
+        <translation>&amp;Vizualizare</translation>
+    </message>
+    <message>
+        <source>&amp;Devices</source>
+        <translation>&amp;Dispozitive</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Devices</source>
+        <translation>Dispozitive &amp;CD/DVD</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Devices</source>
+        <translation>Unități de &amp;dischetă</translation>
+    </message>
+    <message>
+        <source>&amp;USB Devices</source>
+        <translation>Dispozitive &amp;USB</translation>
+    </message>
+    <message>
+        <source>&amp;Network Adapters...</source>
+        <translation>&amp;Plăci de rețea...</translation>
+    </message>
+    <message>
+        <source>Change the settings of network adapters</source>
+        <translation>Modifică setările plăcilor de rețea</translation>
+    </message>
+    <message>
+        <source>&amp;Shared Folders...</source>
+        <translation>Directoare &amp;partajate...</translation>
+    </message>
+    <message>
+        <source>Create or modify shared folders</source>
+        <translation>Deschide dialogul directoare partajate</translation>
+    </message>
+    <message>
+        <source>&amp;Remote Display</source>
+        <translation>Ecran la &amp;distanță</translation>
+    </message>
+    <message>
+        <source>Enable or disable remote desktop (RDP) connections to this machine</source>
+        <translation>Activează sau dezactivează conexiuni remote desktop (RDP) către această mașină</translation>
+    </message>
+    <message>
+        <source>&amp;Install Guest Additions...</source>
+        <translation>&amp;Instalare Guest Additions...</translation>
+    </message>
+    <message>
+        <source>Mount the Guest Additions installation image</source>
+        <translation>Montează imaginea de instalare Guest Additions</translation>
+    </message>
+    <message>
+        <source>De&amp;bug</source>
+        <translation>De&amp;bug</translation>
+    </message>
+    <message>
+        <source>&amp;Statistics...</source>
+        <comment>debug action</comment>
+        <translation>&amp;Statistici...</translation>
+    </message>
+    <message>
+        <source>&amp;Command Line...</source>
+        <comment>debug action</comment>
+        <translation>Linie de &amp;comandă...</translation>
+    </message>
+    <message>
+        <source>&amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation>Jurna&amp;lizare...</translation>
+    </message>
+    <message>
+        <source>&amp;Help</source>
+        <translation>&amp;Ajutor</translation>
+    </message>
+    <message>
+        <source>Dock Icon</source>
+        <translation>Icon în dock</translation>
+    </message>
+    <message>
+        <source>Show Monitor Preview</source>
+        <translation>Arată previzualizare monitor</translation>
+    </message>
+    <message>
+        <source>Show Application Icon</source>
+        <translation>Arată iconul aplicației</translation>
+    </message>
+</context>
+<context>
     <name>UIDownloader</name>
     <message>
         <source>Cancel</source>
@@ -1083,6 +1301,100 @@
     </message>
 </context>
 <context>
+    <name>UIIndicatorsPool</name>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>HDD tooltip</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>CD/DVD tooltip</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>FD tooltip</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>Network adapters tooltip</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
+        <comment>Network adapters tooltip</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Placa de rețea %1 (%2)&lt;/b&gt;: %3 cablu %4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>connected</source>
+        <comment>Network adapters tooltip</comment>
+        <translation>conectat</translation>
+    </message>
+    <message>
+        <source>disconnected</source>
+        <comment>Network adapters tooltip</comment>
+        <translation>deconectat</translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>Network adapters tooltip</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Toate plăcile de rețea sunt dezactivate&lt;/b&gt;&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>USB device tooltip</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>USB device tooltip</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nici un dispozitiv USB conectat&lt;/b&gt;&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>USB device tooltip</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Controlorul USB este dezactivat&lt;/b&gt;&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>Shared folders tooltip</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>Shared folders tooltip</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nici un dosar partajat&lt;/b&gt;&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
+        <translation>Indică dacă Remote Display (Server VRDP) este activat (&lt;img src=vrdp_16px.png/&gt;) sau nu (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
+    </message>
+    <message>
+        <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
+        <translation>&lt;hr&gt;Serverul VRDP ascultă pe portul %1</translation>
+    </message>
+    <message>
+        <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
+        <comment>Virtualization Stuff LED</comment>
+        <translation>Indică statusul funcțiilor de virtualizare hardware folosite de această mașină virtuală: &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
+        <comment>Virtualization Stuff LED</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
+        <translation>Inidică dacă cursorul mouse sistemului gazdă este capturat de către SO musafir:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;cursorul nu este capturat&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;cursorul este capturat&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integrare mouse (IM) este Activată&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM este Inactivă, cursorul este capturat&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM este Inactivă, cursorul nu este capturat.&lt;/nobr&gt;&lt;br&gt;Notă: funcția integrare mouse necesită instalarea pe SO musafir a Guest Additions.</translation>
+    </message>
+    <message>
+        <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
+        <translation>Indică dacă tastatura este capturată de SO musafir (&lt;img src=hostkey_captured_16px.png/&gt;) sau nu (&lt;img src=hostkey_16px.png/&gt;).</translation>
+    </message>
+</context>
+<context>
     <name>UIMachineLogic</name>
     <message>
         <source>VirtualBox OSE</source>
@@ -1091,6 +1403,61 @@
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
         <translation> versiune EXPERIMENTALĂ %1r%2 - %3</translation>
+    </message>
+    <message>
+        <source>Preview Monitor %1</source>
+        <translation>Previzualizare monitor %1</translation>
+    </message>
+    <message>
+        <source>Snapshot %1</source>
+        <translation>Instantaneu %1</translation>
+    </message>
+    <message>
+        <source>More CD/DVD Images...</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Unmount CD/DVD Device</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>More Floppy Images...</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Unmount Floppy Device</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>No CD/DVD Devices Attached</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>No CD/DVD devices attached to that VM</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>No Floppy Devices Attached</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>No floppy devices attached to that VM</source>
+        <translation>Nicio unitate de dischetă atașată la acea mașina virtuală</translation>
+    </message>
+    <message>
+        <source>No USB Devices Connected</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>No supported devices connected to the host PC</source>
+        <translation>Nici un dispozitiv suportat nu este conectat la PC gazdă</translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineWindowNormal</name>
+    <message>
+        <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
+        <translation>Arată tasta gazdă setată în prezent.&lt;br&gt;Această tastă, când este apăsată singură, schimbă starea de captură a mouseului și a tastaturii. Poate fi utilizată în combinație cu alte taste pentru a efectua rapid acțiuni din meniul principal.</translation>
     </message>
 </context>
 <context>
@@ -2941,31 +3308,23 @@ Versiunea %1</translation>
     </message>
     <message>
         <source>ACPI Sh&amp;utdown</source>
-        <translation>Înc&amp;hide ACPI</translation>
+        <translation type="obsolete">Înc&amp;hide ACPI</translation>
     </message>
     <message>
         <source>&amp;View</source>
-        <translation>&amp;Vizualizare</translation>
+        <translation type="obsolete">&amp;Vizualizare</translation>
     </message>
     <message>
         <source>Preview Monitor %1</source>
-        <translation>Previzualizare monitor %1</translation>
-    </message>
-    <message>
-        <source>No CD/DVD devices attached to that VM</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Previzualizare monitor %1</translation>
     </message>
     <message>
         <source>No floppy devices attached to that VM</source>
-        <translation>Nicio unitate de dischetă atașată la acea mașina virtuală</translation>
-    </message>
-    <message>
-        <source>No USB Devices Connected</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Nicio unitate de dischetă atașată la acea mașina virtuală</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
-        <translation type="unfinished">Nici un dispozitiv suportat nu este conectat la PC gazdă</translation>
+        <translation type="obsolete">Nici un dispozitiv suportat nu este conectat la PC gazdă</translation>
     </message>
 </context>
 <context>
