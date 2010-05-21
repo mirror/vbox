@@ -448,6 +448,224 @@
     </message>
 </context>
 <context>
+    <name>UIActionsPool</name>
+    <message>
+        <source>&amp;Machine</source>
+        <translation>&amp;Maszyna</translation>
+    </message>
+    <message>
+        <source>&amp;Fullscreen Mode</source>
+        <translation>&amp;Tryb pełnoekranowy</translation>
+    </message>
+    <message>
+        <source>Switch to fullscreen mode</source>
+        <translation>Przełącza do trybu pełnoekranowego</translation>
+    </message>
+    <message>
+        <source>Seam&amp;less Mode</source>
+        <translation>T&amp;ryb zintegrowany</translation>
+    </message>
+    <message>
+        <source>Switch to seamless desktop integration mode</source>
+        <translation>Przełącza w tryb zintegrowanego pulpitu</translation>
+    </message>
+    <message>
+        <source>Auto-resize &amp;Guest Display</source>
+        <translation>Automatyczne skalowanie ekranu &amp;gościa</translation>
+    </message>
+    <message>
+        <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
+        <translation>Skalowanie ekranu gościa przy zmianie rozmiaru okna (wymaga Dodatków Guest Additions)</translation>
+    </message>
+    <message>
+        <source>&amp;Adjust Window Size</source>
+        <translation>Dop&amp;asuj rozmiar okna</translation>
+    </message>
+    <message>
+        <source>Adjust window size and position to best fit the guest display</source>
+        <translation>Dopasowuje rozmiar i pozycję okna względem ekranu gościa</translation>
+    </message>
+    <message>
+        <source>Disable &amp;Mouse Integration</source>
+        <translation>Wyłącz &amp;integrację myszy</translation>
+    </message>
+    <message>
+        <source>Temporarily disable host mouse pointer integration</source>
+        <translation>Tymczasowo wyłącza integrację kursora myszy gospodarza</translation>
+    </message>
+    <message>
+        <source>Enable &amp;Mouse Integration</source>
+        <translation>Włącz &amp;integrację myszy</translation>
+    </message>
+    <message>
+        <source>Enable temporarily disabled host mouse pointer integration</source>
+        <translation>Włącza tymczasowo wyłączoną integrację kursora myszy gospodarza</translation>
+    </message>
+    <message>
+        <source>&amp;Insert Ctrl-Alt-Del</source>
+        <translation>&amp;Wyślij Ctrl-Alt-Del</translation>
+    </message>
+    <message>
+        <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
+        <translation>Wysyła sekwencję Ctrl-Alt-Del do maszyny wirtualnej</translation>
+    </message>
+    <message>
+        <source>&amp;Insert Ctrl-Alt-Backspace</source>
+        <translation>&amp;Wyślij Ctrl-Alt-Backspace</translation>
+    </message>
+    <message>
+        <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
+        <translation>Wysyła sekwencję Ctrl-Alt-Backspace do maszyny wirtualnej</translation>
+    </message>
+    <message>
+        <source>Take &amp;Snapshot...</source>
+        <translation>Zrób migawkę &amp;systemu...</translation>
+    </message>
+    <message>
+        <source>Take a snapshot of the virtual machine</source>
+        <translation>Tworzy migawkę maszyny wirtualnej</translation>
+    </message>
+    <message>
+        <source>Session I&amp;nformation Dialog</source>
+        <translation>I&amp;nformacje o sesji</translation>
+    </message>
+    <message>
+        <source>Show Session Information Dialog</source>
+        <translation>Wyświetla okno z informacjami o sesji</translation>
+    </message>
+    <message>
+        <source>&amp;Pause</source>
+        <translation>&amp;Pauza</translation>
+    </message>
+    <message>
+        <source>Suspend the execution of the virtual machine</source>
+        <translation>Wstrzymuje pracę maszyny wirtualnej</translation>
+    </message>
+    <message>
+        <source>R&amp;esume</source>
+        <translation>Wz&amp;nów</translation>
+    </message>
+    <message>
+        <source>Resume the execution of the virtual machine</source>
+        <translation>Wznawia pracę maszyny wirtualnej</translation>
+    </message>
+    <message>
+        <source>&amp;Reset</source>
+        <translation>Z&amp;resetuj</translation>
+    </message>
+    <message>
+        <source>Reset the virtual machine</source>
+        <translation>Resetuje maszynę wirtualną (&quot;twardy reset&quot;)</translation>
+    </message>
+    <message>
+        <source>ACPI Sh&amp;utdown</source>
+        <translation>Wyłąc&amp;z system (ACPI)</translation>
+    </message>
+    <message>
+        <source>ACPI S&amp;hutdown</source>
+        <translation>Wyłąc&amp;z system (ACPI)</translation>
+    </message>
+    <message>
+        <source>Send the ACPI Power Button press event to the virtual machine</source>
+        <translation>Wysyła sygnał wciśnięcia przycisku zasilania (ACPI) do maszyny wirtualnej</translation>
+    </message>
+    <message>
+        <source>&amp;Close...</source>
+        <translation>Zam&amp;knij...</translation>
+    </message>
+    <message>
+        <source>Close the virtual machine</source>
+        <translation>Zamyka maszynę wirtualną</translation>
+    </message>
+    <message>
+        <source>&amp;View</source>
+        <translation>&amp;Widok</translation>
+    </message>
+    <message>
+        <source>&amp;Devices</source>
+        <translation>&amp;Urządzenia</translation>
+    </message>
+    <message>
+        <source>&amp;CD/DVD Devices</source>
+        <translation>Płyty &amp;CD/DVD</translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Devices</source>
+        <translation>D&amp;yskietki</translation>
+    </message>
+    <message>
+        <source>&amp;USB Devices</source>
+        <translation>&amp;Urządzenia USB</translation>
+    </message>
+    <message>
+        <source>&amp;Network Adapters...</source>
+        <translation>&amp;Karty sieciowe...</translation>
+    </message>
+    <message>
+        <source>Change the settings of network adapters</source>
+        <translation>Pozwala zmieniać ustawienia kart sieciowych</translation>
+    </message>
+    <message>
+        <source>&amp;Shared Folders...</source>
+        <translation>W&amp;spółdzielone katalogi...</translation>
+    </message>
+    <message>
+        <source>Create or modify shared folders</source>
+        <translation>Otwiera okno ustawień współdzielonych katalogów</translation>
+    </message>
+    <message>
+        <source>&amp;Remote Display</source>
+        <translation>&amp;Zdalny pulpit</translation>
+    </message>
+    <message>
+        <source>Enable or disable remote desktop (RDP) connections to this machine</source>
+        <translation>Włącza lub wyłącza zdalne połączenia RDP do tej maszyny</translation>
+    </message>
+    <message>
+        <source>&amp;Install Guest Additions...</source>
+        <translation>Za&amp;instaluj Dodatki (Guest Additions)...</translation>
+    </message>
+    <message>
+        <source>Mount the Guest Additions installation image</source>
+        <translation>Montuje obraz z instalatorem Dodatków dla goszczonych systemów (Guest Additions)</translation>
+    </message>
+    <message>
+        <source>De&amp;bug</source>
+        <translation>De&amp;buguj</translation>
+    </message>
+    <message>
+        <source>&amp;Statistics...</source>
+        <comment>debug action</comment>
+        <translation>&amp;Statystyki...</translation>
+    </message>
+    <message>
+        <source>&amp;Command Line...</source>
+        <comment>debug action</comment>
+        <translation>Wiersz pole&amp;ceń...</translation>
+    </message>
+    <message>
+        <source>&amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation>&amp;Logowanie...</translation>
+    </message>
+    <message>
+        <source>&amp;Help</source>
+        <translation>Pomo&amp;c</translation>
+    </message>
+    <message>
+        <source>Dock Icon</source>
+        <translation>Ikona w obszarze Dock</translation>
+    </message>
+    <message>
+        <source>Show Monitor Preview</source>
+        <translation>Pokaż podgląd monitorów</translation>
+    </message>
+    <message>
+        <source>Show Application Icon</source>
+        <translation>Pokaż ikonę aplikacji</translation>
+    </message>
+</context>
+<context>
     <name>UIDownloader</name>
     <message>
         <source>Cancel</source>
@@ -1139,6 +1357,100 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIIndicatorsPool</name>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>HDD tooltip</comment>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Wskaźnik aktywności wirtualnych dysków twardych:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>CD/DVD tooltip</comment>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Wskaźnik aktywności nośników CD/DVD-ROM:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>FD tooltip</comment>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Wskaźnik aktywności dyskietek:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>Network adapters tooltip</comment>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Wskaźnik aktywności interfejsów sieciowych:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
+        <comment>Network adapters tooltip</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Karta %1 (%2)&lt;/b&gt;: kabel %3 %4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>connected</source>
+        <comment>Network adapters tooltip</comment>
+        <translation>podłączony</translation>
+    </message>
+    <message>
+        <source>disconnected</source>
+        <comment>Network adapters tooltip</comment>
+        <translation>odłączony</translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>Network adapters tooltip</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Wszystkie karty sieciowe są wyłączone&lt;/b&gt;&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>USB device tooltip</comment>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Wskaźnik aktywności podłączonych urządzeń USB:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>USB device tooltip</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Brak podłączonych urządzeń USB&lt;/b&gt;&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>USB device tooltip</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Kontroler USB jest wyłączony&lt;/b&gt;&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>Shared folders tooltip</comment>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Wskaźnik aktywności współdzielonych katalogów maszyny:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
+        <comment>Shared folders tooltip</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Brak współdzielonych katalogów&lt;/b&gt;&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
+        <translation>Wskazuje, czy serwer zdalnego pulpitu (VRDP) jest włączony (&lt;img src=:/vrdp_16px.png/&gt;) czy nie (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
+    </message>
+    <message>
+        <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
+        <translation>&lt;hr&gt;Serwer VRDP nasłuchuje na porcie %1</translation>
+    </message>
+    <message>
+        <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
+        <comment>Virtualization Stuff LED</comment>
+        <translation>Wskazuje status funkcji wirtualzacji sprzętowej używanych przez maszynę wirtualną:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
+        <comment>Virtualization Stuff LED</comment>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
+        <translation>Wskazuje, czy kursor myszy gospodarza jest przechwycony przez goszczony system operacyjny:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;kursor nie jest przechwycony&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;kursor jest przechwycony&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integracja myszy (IM) jest włączona&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM wyłączona, kursor przechwycony&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM wyłączona, kursor nie jest przechwycony&lt;/nobr&gt;&lt;br&gt;Uwaga:  funkcja integracji kursora myszy wymaga zainstalowania Dodatków (Guest Additions) w goszczonym systemie operacyjnym.</translation>
+    </message>
+    <message>
+        <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
+        <translation>Wskazuje, czy klawiatura jest przechwycona przez goszczony system operacyjny (&lt;img src=:/hostkey_captured_16px.png/&gt;) czy nie (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
+    </message>
+</context>
+<context>
     <name>UIMachineLogic</name>
     <message>
         <source>VirtualBox OSE</source>
@@ -1147,6 +1459,61 @@ p, li { white-space: pre-wrap; }
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
         <translation> EXPERIMENTAL build %1r%2 - %3</translation>
+    </message>
+    <message>
+        <source>Preview Monitor %1</source>
+        <translation>Pogląd monitora %1</translation>
+    </message>
+    <message>
+        <source>Snapshot %1</source>
+        <translation>Migawka %1</translation>
+    </message>
+    <message>
+        <source>More CD/DVD Images...</source>
+        <translation>Więcej obrazów CD/DVD...</translation>
+    </message>
+    <message>
+        <source>Unmount CD/DVD Device</source>
+        <translation>Odmontuj płytę CD/DVD</translation>
+    </message>
+    <message>
+        <source>More Floppy Images...</source>
+        <translation>Więcej obrazów dyskietek...</translation>
+    </message>
+    <message>
+        <source>Unmount Floppy Device</source>
+        <translation>Odmontuj dyskietkę</translation>
+    </message>
+    <message>
+        <source>No CD/DVD Devices Attached</source>
+        <translation>Brak podłączonych płyt CD/DVD</translation>
+    </message>
+    <message>
+        <source>No CD/DVD devices attached to that VM</source>
+        <translation>Brak podłączonych płyt CD/DVD do tej maszyny wirtualnej</translation>
+    </message>
+    <message>
+        <source>No Floppy Devices Attached</source>
+        <translation>Brak podłączonych dyskietek</translation>
+    </message>
+    <message>
+        <source>No floppy devices attached to that VM</source>
+        <translation>Brak podłączonych dyskietek do tej maszyny wirtualnej</translation>
+    </message>
+    <message>
+        <source>No USB Devices Connected</source>
+        <translation>Brak podłączonych urządzeń USB do tej maszyny wirtualnej</translation>
+    </message>
+    <message>
+        <source>No supported devices connected to the host PC</source>
+        <translation></translation>
+    </message>
+</context>
+<context>
+    <name>UIMachineWindowNormal</name>
+    <message>
+        <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
+        <translation>Określa aktualnie zdefiniowany klawisz gospodarza.&lt;br&gt;Klawisz ten, wciśnięty pojedynczo, przełącza przechwytywanie klawiatury i myszy. Użyty razem z innymi klawiszami pozwala na szybkie wywołanie akcji dostępnych w menu głównym.</translation>
     </message>
 </context>
 <context>
@@ -2931,31 +3298,31 @@ Wersja %1</translation>
     </message>
     <message>
         <source>ACPI Sh&amp;utdown</source>
-        <translation>Wyłąc&amp;z system (ACPI)</translation>
+        <translation type="obsolete">Wyłąc&amp;z system (ACPI)</translation>
     </message>
     <message>
         <source>&amp;View</source>
-        <translation>&amp;Widok</translation>
+        <translation type="obsolete">&amp;Widok</translation>
     </message>
     <message>
         <source>Preview Monitor %1</source>
-        <translation>Pogląd monitora %1</translation>
+        <translation type="obsolete">Pogląd monitora %1</translation>
     </message>
     <message>
         <source>No CD/DVD devices attached to that VM</source>
-        <translation>Brak podłączonych płyt CD/DVD do tej maszyny wirtualnej</translation>
+        <translation type="obsolete">Brak podłączonych płyt CD/DVD do tej maszyny wirtualnej</translation>
     </message>
     <message>
         <source>No floppy devices attached to that VM</source>
-        <translation>Brak podłączonych dyskietek do tej maszyny wirtualnej</translation>
+        <translation type="obsolete">Brak podłączonych dyskietek do tej maszyny wirtualnej</translation>
     </message>
     <message>
         <source>No USB Devices Connected</source>
-        <translation>Brak podłączonych urządzeń USB do tej maszyny wirtualnej</translation>
+        <translation type="obsolete">Brak podłączonych urządzeń USB do tej maszyny wirtualnej</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
-        <translation>Brak obsługiwanych urządzeń podłączonych do komputera gospodarza</translation>
+        <translation type="obsolete">Brak obsługiwanych urządzeń podłączonych do komputera gospodarza</translation>
     </message>
 </context>
 <context>
