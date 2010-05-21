@@ -380,6 +380,22 @@ static int vbvaInitInfoDisplay (PDEVICE_EXTENSION PrimaryExtension, void *pvCont
     AssertFailed ();
     return VERR_INTERNAL_ERROR;
 }
+#else
+int vbvaInitInfoCaps (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, void *pvData)
+{
+    VBVACAPS *pCaps = (VBVACAPS*)pvData;
+    pCaps->rc = VERR_NOT_IMPLEMENTED;
+    pCaps->fCaps = VBVACAPS_COMPLETEGCMD_BY_IOREAD | VBVACAPS_IRQ;
+    return VINF_SUCCESS;
+}
+
+
+int vbvaFinalizeInfoCaps (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, void *pvData)
+{
+    VBVACAPS *pCaps = (VBVACAPS*)pvData;
+    AssertRC(pCaps->rc);
+    return pCaps->rc;
+}
 #endif
 
 static int vbvaInitInfoHeap (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, void *pvData)
@@ -435,6 +451,16 @@ static int vboxSetupAdapterInfoHGSMI (PDEVICE_EXTENSION PrimaryExtension)
         /* in case of WDDM we do not control the framebuffer location,
          * i.e. it is assigned by Video Memory Manager,
          * The FB information should be passed to guest from our DxgkDdiSetVidPnSourceAddress callback */
+
+        /* Inform about caps */
+        rc = vboxCallVBVA (PrimaryExtension,
+                               VBVA_INFO_CAPS,
+                               sizeof (VBVACAPS),
+                               vbvaInitInfoCaps,
+                               vbvaFinalizeInfoCaps,
+                               NULL);
+        AssertRC(rc);
+        if (RT_SUCCESS (rc))
 #endif
         {
             /* Report the host heap location. */

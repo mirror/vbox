@@ -811,6 +811,7 @@ typedef struct _VBVABUFFER
 # define VBVA_VDMA_CTL   10 /* setup G<->H DMA channel info */
 # define VBVA_VDMA_CMD    11 /* G->H DMA command             */
 #endif
+#define VBVA_INFO_CAPS   12 /* informs host about HGSMI caps. see _VBVACAPS below */
 
 /* host->guest commands */
 # define VBVAHG_EVENT              1
@@ -1012,6 +1013,16 @@ typedef struct _VBVAMOUSEPOINTERSHAPE
     uint8_t au8Data[4];
 
 } VBVAMOUSEPOINTERSHAPE;
+
+/* the guest driver can handle asynch guest cmd completion by reading the command offset from io port */
+#define VBVACAPS_COMPLETEGCMD_BY_IOREAD 0x00000001
+/* the guest driver can handle video adapter IRQs */
+#define VBVACAPS_IRQ                    0x00000002
+typedef struct _VBVACAPS
+{
+    int32_t rc;
+    uint32_t fCaps;
+} VBVACAPS;
 
 #pragma pack()
 

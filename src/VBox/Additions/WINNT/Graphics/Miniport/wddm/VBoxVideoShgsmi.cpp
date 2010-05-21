@@ -187,53 +187,45 @@ void VBoxSHGSMICommandFree (struct _HGSMIHEAP * pHeap, void *pvBuffer)
 #define VBOXSHGSMI_CMD2LISTENTRY(_pCmd) ((PVBOXSHGSMILIST_ENTRY)&(_pCmd)->pvNext)
 #define VBOXSHGSMI_LISTENTRY2CMD(_pEntry) ( (PVBOXSHGSMIHEADER)((uint8_t *)(_pEntry) - RT_OFFSETOF(VBOXSHGSMIHEADER, pvNext)) )
 
-int VBoxSHGSMICommandProcessCompletion (struct _HGSMIHEAP * pHeap, HGSMIOFFSET offCmd, bool bIrq, PVBOXSHGSMILIST pPostProcessList)
+int VBoxSHGSMICommandProcessCompletion (struct _HGSMIHEAP * pHeap, VBOXSHGSMIHEADER* pCur, bool bIrq, PVBOXSHGSMILIST pPostProcessList)
 {
     int rc = VINF_SUCCESS;
 
-    PVBOXSHGSMIHEADER pCur = (PVBOXSHGSMIHEADER)HGSMIBufferDataFromOffset (&pHeap->area, offCmd);
-    Assert(pCur);
-    if (pCur)
+    do
     {
-        do
+        if (pCur->fFlags & VBOXSHGSMI_FLAG_GH_ASYNCH_CALLBACK_IRQ)
         {
-            if (pCur->fFlags & VBOXSHGSMI_FLAG_GH_ASYNCH_CALLBACK_IRQ)
+            Assert(bIrq);
+
+            PFNVBOXSHGSMICMDCOMPLETION pfnCompletion = NULL;
+            void *pvCompletion;
+            PFNVBOXSHGSMICMDCOMPLETION_IRQ pfnCallback = (PFNVBOXSHGSMICMDCOMPLETION_IRQ)pCur->u64Info1;
+            void *pvCallback = (void*)pCur->u64Info2;
+
+            pfnCallback(pHeap, VBoxSHGSMIBufferData(pCur), pvCallback, &pfnCompletion, &pvCompletion);
+            if (pfnCompletion)
             {
-                Assert(bIrq);
-
-                PFNVBOXSHGSMICMDCOMPLETION pfnCompletion = NULL;
-                void *pvCompletion;
-                PFNVBOXSHGSMICMDCOMPLETION_IRQ pfnCallback = (PFNVBOXSHGSMICMDCOMPLETION_IRQ)pCur->u64Info1;
-                void *pvCallback = (void*)pCur->u64Info2;
-
-                pfnCallback(pHeap, VBoxSHGSMIBufferData(pCur), pvCallback, &pfnCompletion, &pvCompletion);
-                if (pfnCompletion)
-                {
-                    pCur->u64Info1 = (uint64_t)pfnCompletion;
-                    pCur->u64Info2 = (uint64_t)pvCompletion;
-                    pCur->fFlags &= ~VBOXSHGSMI_FLAG_GH_ASYNCH_CALLBACK_IRQ;
-                }
-                else
-                {
-                    /* nothing to do with this command */
-                    break;
-                }
-            }
-
-            if (!bIrq)
-            {
-                PFNVBOXSHGSMICMDCOMPLETION pfnCallback = (PFNVBOXSHGSMICMDCOMPLETION)pCur->u64Info1;
-                void *pvCallback = (void*)pCur->u64Info2;
-                pfnCallback(pHeap, VBoxSHGSMIBufferData(pCur), pvCallback);
+                pCur->u64Info1 = (uint64_t)pfnCompletion;
+                pCur->u64Info2 = (uint64_t)pvCompletion;
+                pCur->fFlags &= ~VBOXSHGSMI_FLAG_GH_ASYNCH_CALLBACK_IRQ;
             }
             else
-                vboxSHGSMIListPut(pPostProcessList, VBOXSHGSMI_CMD2LISTENTRY(pCur), VBOXSHGSMI_CMD2LISTENTRY(pCur));
-        } while (0);
-    }
-    else
-    {
-        rc = VERR_INVALID_PARAMETER;
-    }
+            {
+                /* nothing to do with this command */
+                break;
+            }
+        }
+
+        if (!bIrq)
+        {
+            PFNVBOXSHGSMICMDCOMPLETION pfnCallback = (PFNVBOXSHGSMICMDCOMPLETION)pCur->u64Info1;
+            void *pvCallback = (void*)pCur->u64Info2;
+            pfnCallback(pHeap, VBoxSHGSMIBufferData(pCur), pvCallback);
+        }
+        else
+            vboxSHGSMIListPut(pPostProcessList, VBOXSHGSMI_CMD2LISTENTRY(pCur), VBOXSHGSMI_CMD2LISTENTRY(pCur));
+    } while (0);
+
 
     return rc;
 }
