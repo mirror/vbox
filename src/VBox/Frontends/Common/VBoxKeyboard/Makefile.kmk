@@ -68,8 +68,13 @@ $(PATH_BIN)/vboxkeyboard.tar.bz2: \
 	$(call MSG_L1,Packing $@)
 	$(QUIET)$(RM) -f -- $@ $(patsubst %.bz2,%,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
+ifeq ($(filter-out freebsd,$(KBUILD_TARGET)),)
+	$(QUIET)tar -cjf $@ \
+ 		-C $(VBOX_KEYBOARD_STAGE_DIR) VBoxKeyboard
+else
 	$(QUIET)tar --owner 0 --group 0 --ignore-failed-read -cjRf $@ \
  		-C $(VBOX_KEYBOARD_STAGE_DIR) VBoxKeyboard
+endif
 	$(QUIET)$(CHMOD) 0644 $@
 
 include $(KBUILD_PATH)/subfooter.kmk
