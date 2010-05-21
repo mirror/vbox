@@ -93,7 +93,8 @@ java_prolog(TreeState *state)
             " * @see <a href=\"http://lxr.mozilla.org/mozilla/search?string=interface+%.*s\">\n"
             " **/\n"
             "\n"
-            "package org.mozilla.interfaces;\n"
+            "package org.mozilla.interfaces;\n\n"
+            "import java.math.BigInteger;\n\n"
             "\n"
             , ext - basename >= 19 ? 19 : (int)(ext - basename), basename);
 #else
