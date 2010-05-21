@@ -754,7 +754,6 @@ static int VMXR0InjectEvent(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t intIn
     }
 #endif
 
-#ifdef HWACCM_VMX_EMULATE_REALMODE
     if (    CPUMIsGuestInRealModeEx(pCtx)
         &&  pVM->hwaccm.s.vmx.pRealModeTSS)
     {
@@ -825,7 +824,6 @@ static int VMXR0InjectEvent(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t intIn
         pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_SEGMENT_REGS;
         return VINF_SUCCESS;
     }
-#endif /* HWACCM_VMX_EMULATE_REALMODE */
 
     /* Set event injection state. */
     rc  = VMXWriteVMCS(VMX_VMCS_CTRL_ENTRY_IRQ_INFO, intInfo | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT));
@@ -1281,12 +1279,10 @@ static void vmxR0UpdateExceptionBitmap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(u32TrapMask & RT_BIT(X86_XCPT_GP));
 #endif
 
-# ifdef HWACCM_VMX_EMULATE_REALMODE
     /* Intercept all exceptions in real mode as none of them can be injected directly (#GP otherwise). */
     if (    CPUMIsGuestInRealModeEx(pCtx)
         &&  pVM->hwaccm.s.vmx.pRealModeTSS)
         u32TrapMask |= HWACCM_VMX_TRAP_MASK_REALMODE;
-# endif /* HWACCM_VMX_EMULATE_REALMODE */
 
     int rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXCEPTION_BITMAP, u32TrapMask);
     AssertRC(rc);
@@ -1350,7 +1346,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* Guest CPU context: ES, CS, SS, DS, FS, GS. */
     if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_SEGMENT_REGS)
     {
-#ifdef HWACCM_VMX_EMULATE_REALMODE
         if (pVM->hwaccm.s.vmx.pRealModeTSS)
         {
             PGMMODE enmGuestMode = PGMGetGuestMode(pVCpu);
@@ -1420,7 +1415,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 pCtx->cs = 0xf000;
             }
         }
-#endif /* HWACCM_VMX_EMULATE_REALMODE */
 
         VMX_WRITE_SELREG(ES, es);
         AssertRC(rc);
@@ -1464,7 +1458,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* Guest CPU context: TR. */
     if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_TR)
     {
-#ifdef HWACCM_VMX_EMULATE_REALMODE
         /* Real mode emulation using v86 mode with CR4.VME (interrupt redirection using the int bitmap in the TSS) */
         if (    CPUMIsGuestInRealModeEx(pCtx)
             &&  pVM->hwaccm.s.vmx.pRealModeTSS)
@@ -1487,7 +1480,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             val                 = attr.u;
         }
         else
-#endif /* HWACCM_VMX_EMULATE_REALMODE */
         {
             rc =  VMXWriteVMCS(VMX_VMCS16_GUEST_FIELD_TR,         pCtx->tr);
             rc |= VMXWriteVMCS(VMX_VMCS32_GUEST_TR_LIMIT,         pCtx->trHid.u32Limit);
@@ -1645,12 +1637,10 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             val &= ~X86_CR4_PAE;
         }
 
-#ifdef HWACCM_VMX_EMULATE_REALMODE
         /* Turn off VME if we're in emulated real mode. */
         if (    CPUMIsGuestInRealModeEx(pCtx)
             &&  pVM->hwaccm.s.vmx.pRealModeTSS)
             val &= ~X86_CR4_VME;
-#endif /* HWACCM_VMX_EMULATE_REALMODE */
 
         rc |= VMXWriteVMCS64(VMX_VMCS64_GUEST_CR4,            val);
         Log2(("Guest CR4 %08x\n", val));
@@ -1786,7 +1776,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     eflags.u32 &= VMX_EFLAGS_RESERVED_0;
     eflags.u32 |= VMX_EFLAGS_RESERVED_1;
 
-#ifdef HWACCM_VMX_EMULATE_REALMODE
     /* Real mode emulation using v86 mode. */
     if (    CPUMIsGuestInRealModeEx(pCtx)
         &&  pVM->hwaccm.s.vmx.pRealModeTSS)
@@ -1796,7 +1785,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         eflags.Bits.u1VM   = 1;
         eflags.Bits.u2IOPL = 0; /* must always be 0 or else certain instructions won't cause faults. */
     }
-#endif /* HWACCM_VMX_EMULATE_REALMODE */
     rc   = VMXWriteVMCS(VMX_VMCS_GUEST_RFLAGS,           eflags.u32);
     AssertRC(rc);
 
@@ -2017,7 +2005,6 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     VMXReadCachedVMCS(VMX_VMCS64_GUEST_IDTR_BASE,        &val);
     pCtx->idtr.pIdt         = val;
 
-#ifdef HWACCM_VMX_EMULATE_REALMODE
     /* Real mode emulation using v86 mode. */
     if (    CPUMIsGuestInRealModeEx(pCtx)
         &&  pVM->hwaccm.s.vmx.pRealModeTSS)
@@ -2032,7 +2019,6 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         pVCpu->hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_GUEST_TR;
     }
     else
-#endif /* HWACCM_VMX_EMULATE_REALMODE */
     {
         /* In real mode we have a fake TSS, so only sync it back when it's supposed to be valid. */
         VMX_READ_SELREG(TR, tr);
@@ -3319,7 +3305,6 @@ ResumeExecution:
             }
 #endif
             default:
-#ifdef HWACCM_VMX_EMULATE_REALMODE
                 if (    CPUMIsGuestInRealModeEx(pCtx)
                     &&  pVM->hwaccm.s.vmx.pRealModeTSS)
                 {
@@ -3335,7 +3320,6 @@ ResumeExecution:
                     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
                     goto ResumeExecution;
                 }
-#endif
                 AssertMsgFailed(("Unexpected vm-exit caused by exception %x\n", vector));
                 rc = VERR_VMX_UNEXPECTED_EXCEPTION;
                 break;

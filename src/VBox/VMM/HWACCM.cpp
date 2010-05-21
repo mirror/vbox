@@ -2191,95 +2191,95 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
     pVCpu->hwaccm.s.fActive = false;
 
     /* Note! The context supplied by REM is partial. If we add more checks here, be sure to verify that REM provides this info! */
-#ifdef HWACCM_VMX_EMULATE_REALMODE
-    bool fVMMDeviceHeapEnabled = PDMVMMDevHeapIsEnabled(pVM);
-
     Assert((pVM->hwaccm.s.vmx.fUnrestrictedGuest && !pVM->hwaccm.s.vmx.pRealModeTSS) || (!pVM->hwaccm.s.vmx.fUnrestrictedGuest && pVM->hwaccm.s.vmx.pRealModeTSS));
 
-    /** The VMM device heap is a requirement for emulating real mode or protected mode without paging when the unrestricted guest execution feature is missing. */
-    if (fVMMDeviceHeapEnabled)
+    bool fSupportsRealMode = pVM->hwaccm.s.vmx.fUnrestrictedGuest || PDMVMMDevHeapIsEnabled(pVM);
+    if (!pVM->hwaccm.s.vmx.fUnrestrictedGuest)
     {
-        if (CPUMIsGuestInRealModeEx(pCtx))
+        /** The VMM device heap is a requirement for emulating real mode or protected mode without paging when the unrestricted guest execution feature is missing. */
+        if (fSupportsRealMode)
         {
-            /* VT-x will not allow high selector bases in v86 mode; fall back to the recompiler in that case.
-             * The base must also be equal to (sel << 4).
-             */
-            if (   (   pCtx->cs != (pCtx->csHid.u64Base >> 4)
-                    && pCtx->csHid.u64Base != 0xffff0000 /* we can deal with the BIOS code as it's also mapped into the lower region. */)
-                || pCtx->ds != (pCtx->dsHid.u64Base >> 4)
-                || pCtx->es != (pCtx->esHid.u64Base >> 4)
-                || pCtx->fs != (pCtx->fsHid.u64Base >> 4)
-                || pCtx->gs != (pCtx->gsHid.u64Base >> 4)
-                || pCtx->ss != (pCtx->ssHid.u64Base >> 4))
+            if (CPUMIsGuestInRealModeEx(pCtx))
             {
-                return false;
-            }
-        }
-        else
-        {
-            PGMMODE enmGuestMode = PGMGetGuestMode(pVCpu);
-            /* Verify the requirements for executing code in protected mode. VT-x can't handle the CPU state right after a switch
-             * from real to protected mode. (all sorts of RPL & DPL assumptions)
-             */
-            if (    pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode == PGMMODE_REAL
-                &&  enmGuestMode >= PGMMODE_PROTECTED)
-            {
-                if (   (pCtx->cs & X86_SEL_RPL)
-                    || (pCtx->ds & X86_SEL_RPL)
-                    || (pCtx->es & X86_SEL_RPL)
-                    || (pCtx->fs & X86_SEL_RPL)
-                    || (pCtx->gs & X86_SEL_RPL)
-                    || (pCtx->ss & X86_SEL_RPL))
+                /* VT-x will not allow high selector bases in v86 mode; fall back to the recompiler in that case.
+                 * The base must also be equal to (sel << 4).
+                 */
+                if (   (   pCtx->cs != (pCtx->csHid.u64Base >> 4)
+                        && pCtx->csHid.u64Base != 0xffff0000 /* we can deal with the BIOS code as it's also mapped into the lower region. */)
+                    || pCtx->ds != (pCtx->dsHid.u64Base >> 4)
+                    || pCtx->es != (pCtx->esHid.u64Base >> 4)
+                    || pCtx->fs != (pCtx->fsHid.u64Base >> 4)
+                    || pCtx->gs != (pCtx->gsHid.u64Base >> 4)
+                    || pCtx->ss != (pCtx->ssHid.u64Base >> 4))
                 {
                     return false;
                 }
             }
+            else
+            {
+                PGMMODE enmGuestMode = PGMGetGuestMode(pVCpu);
+                /* Verify the requirements for executing code in protected mode. VT-x can't handle the CPU state right after a switch
+                 * from real to protected mode. (all sorts of RPL & DPL assumptions)
+                 */
+                if (    pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode == PGMMODE_REAL
+                    &&  enmGuestMode >= PGMMODE_PROTECTED)
+                {
+                    if (   (pCtx->cs & X86_SEL_RPL)
+                        || (pCtx->ds & X86_SEL_RPL)
+                        || (pCtx->es & X86_SEL_RPL)
+                        || (pCtx->fs & X86_SEL_RPL)
+                        || (pCtx->gs & X86_SEL_RPL)
+                        || (pCtx->ss & X86_SEL_RPL))
+                    {
+                        return false;
+                    }
+                }
+            }
         }
-    }
-    else
-#endif /* HWACCM_VMX_EMULATE_REALMODE */
-    {
-        if (    !CPUMIsGuestInLongModeEx(pCtx)
-            &&  !pVM->hwaccm.s.vmx.fUnrestrictedGuest)
+        else
         {
-            /** @todo   This should (probably) be set on every excursion to the REM,
-             *          however it's too risky right now. So, only apply it when we go
-             *          back to REM for real mode execution. (The XP hack below doesn't
-             *          work reliably without this.)
-             *  Update: Implemented in EM.cpp, see #ifdef EM_NOTIFY_HWACCM.  */
-            pVM->aCpus[0].hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL_GUEST;
+            if (    !CPUMIsGuestInLongModeEx(pCtx)
+                &&  !pVM->hwaccm.s.vmx.fUnrestrictedGuest)
+            {
+                /** @todo   This should (probably) be set on every excursion to the REM,
+                 *          however it's too risky right now. So, only apply it when we go
+                 *          back to REM for real mode execution. (The XP hack below doesn't
+                 *          work reliably without this.)
+                 *  Update: Implemented in EM.cpp, see #ifdef EM_NOTIFY_HWACCM.  */
+                pVM->aCpus[0].hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL_GUEST;
 
-            if (    !pVM->hwaccm.s.fNestedPaging        /* requires a fake PD for real *and* protected mode without paging - stored in the VMM device heap*/
-                ||  CPUMIsGuestInRealModeEx(pCtx))      /* requires a fake TSS for real mode - stored in the VMM device heap */
-                return false;
+                if (    !pVM->hwaccm.s.fNestedPaging        /* requires a fake PD for real *and* protected mode without paging - stored in the VMM device heap*/
+                    ||  CPUMIsGuestInRealModeEx(pCtx))      /* requires a fake TSS for real mode - stored in the VMM device heap */
+                    return false;
 
-            /* Too early for VT-x; Solaris guests will fail with a guru meditation otherwise; same for XP. */
-            if (pCtx->idtr.pIdt == 0 || pCtx->idtr.cbIdt == 0 || pCtx->tr == 0)
-                return false;
+                /* Too early for VT-x; Solaris guests will fail with a guru meditation otherwise; same for XP. */
+                if (pCtx->idtr.pIdt == 0 || pCtx->idtr.cbIdt == 0 || pCtx->tr == 0)
+                    return false;
 
-            /* The guest is about to complete the switch to protected mode. Wait a bit longer. */
-            /* Windows XP; switch to protected mode; all selectors are marked not present in the
-             * hidden registers (possible recompiler bug; see load_seg_vm) */
-            if (pCtx->csHid.Attr.n.u1Present == 0)
-                return false;
-            if (pCtx->ssHid.Attr.n.u1Present == 0)
-                return false;
+                /* The guest is about to complete the switch to protected mode. Wait a bit longer. */
+                /* Windows XP; switch to protected mode; all selectors are marked not present in the
+                 * hidden registers (possible recompiler bug; see load_seg_vm) */
+                if (pCtx->csHid.Attr.n.u1Present == 0)
+                    return false;
+                if (pCtx->ssHid.Attr.n.u1Present == 0)
+                    return false;
 
-            /* Windows XP: possible same as above, but new recompiler requires new heuristics?
-               VT-x doesn't seem to like something about the guest state and this stuff avoids it. */
-            /** @todo This check is actually wrong, it doesn't take the direction of the
-             *        stack segment into account. But, it does the job for now. */
-            if (pCtx->rsp >= pCtx->ssHid.u32Limit)
-                return false;
-#if 0
-            if (    pCtx->cs >= pCtx->gdtr.cbGdt
-                ||  pCtx->ss >= pCtx->gdtr.cbGdt
-                ||  pCtx->ds >= pCtx->gdtr.cbGdt
-                ||  pCtx->es >= pCtx->gdtr.cbGdt
-                ||  pCtx->fs >= pCtx->gdtr.cbGdt
-                ||  pCtx->gs >= pCtx->gdtr.cbGdt)
-                return false;
-#endif
+                /* Windows XP: possible same as above, but new recompiler requires new heuristics?
+                   VT-x doesn't seem to like something about the guest state and this stuff avoids it. */
+                /** @todo This check is actually wrong, it doesn't take the direction of the
+                 *        stack segment into account. But, it does the job for now. */
+                if (pCtx->rsp >= pCtx->ssHid.u32Limit)
+                    return false;
+    #if 0
+                if (    pCtx->cs >= pCtx->gdtr.cbGdt
+                    ||  pCtx->ss >= pCtx->gdtr.cbGdt
+                    ||  pCtx->ds >= pCtx->gdtr.cbGdt
+                    ||  pCtx->es >= pCtx->gdtr.cbGdt
+                    ||  pCtx->fs >= pCtx->gdtr.cbGdt
+                    ||  pCtx->gs >= pCtx->gdtr.cbGdt)
+                    return false;
+    #endif
+            }
         }
     }
 
@@ -2287,33 +2287,28 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
     {
         uint32_t mask;
 
-        if (!pVM->hwaccm.s.vmx.fUnrestrictedGuest)
+        /* if bit N is set in cr0_fixed0, then it must be set in the guest's cr0. */
+        mask = (uint32_t)pVM->hwaccm.s.vmx.msr.vmx_cr0_fixed0;
+        /* Note: We ignore the NE bit here on purpose; see vmmr0\hwaccmr0.cpp for details. */
+        mask &= ~X86_CR0_NE;
+
+        if (fSupportsRealMode)
         {
-            /* if bit N is set in cr0_fixed0, then it must be set in the guest's cr0. */
-            mask = (uint32_t)pVM->hwaccm.s.vmx.msr.vmx_cr0_fixed0;
-            /* Note: We ignore the NE bit here on purpose; see vmmr0\hwaccmr0.cpp for details. */
-            mask &= ~X86_CR0_NE;
-
-#ifdef HWACCM_VMX_EMULATE_REALMODE
-            if (fVMMDeviceHeapEnabled)
-            {
-                /* Note: We ignore the PE & PG bits here on purpose; we emulate real and protected mode without paging. */
-                mask &= ~(X86_CR0_PG|X86_CR0_PE);
-            }
-            else
-#endif
-            {
-                /* We support protected mode without paging using identity mapping. */
-                mask &= ~X86_CR0_PG;
-            }
-            if ((pCtx->cr0 & mask) != mask)
-                return false;
-
-            /* if bit N is cleared in cr0_fixed1, then it must be zero in the guest's cr0. */
-            mask = (uint32_t)~pVM->hwaccm.s.vmx.msr.vmx_cr0_fixed1;
-            if ((pCtx->cr0 & mask) != 0)
-                return false;
+            /* Note: We ignore the PE & PG bits here on purpose; we emulate real and protected mode without paging. */
+            mask &= ~(X86_CR0_PG|X86_CR0_PE);
         }
+        else
+        {
+            /* We support protected mode without paging using identity mapping. */
+            mask &= ~X86_CR0_PG;
+        }
+        if ((pCtx->cr0 & mask) != mask)
+            return false;
+
+        /* if bit N is cleared in cr0_fixed1, then it must be zero in the guest's cr0. */
+        mask = (uint32_t)~pVM->hwaccm.s.vmx.msr.vmx_cr0_fixed1;
+        if ((pCtx->cr0 & mask) != 0)
+            return false;
 
         /* if bit N is set in cr4_fixed0, then it must be set in the guest's cr4. */
         mask  = (uint32_t)pVM->hwaccm.s.vmx.msr.vmx_cr4_fixed0;
