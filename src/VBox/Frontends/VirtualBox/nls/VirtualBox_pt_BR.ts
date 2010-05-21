@@ -1851,7 +1851,7 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation>&amp;Disco Rígido de Boot (Primário Master)</translation>
+        <translation type="obsolete">&amp;Disco Rígido de Boot (Primário Master)</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
@@ -1868,6 +1868,10 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>O tamanho recomendado para o disco rígido de boot é de &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2144,7 +2148,11 @@ Versão %1</translation>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5128,6 +5136,16 @@ Versão %1</translation>
         <source>Shareable</source>
         <comment>DiskType</comment>
         <translation>Compartilhável</translation>
+    </message>
+    <message>
+        <source>Unknown device</source>
+        <comment>USB device details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Port %1</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8745,7 +8763,7 @@ qualquer valor.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Nested Paging</source>
-        <translation>Paginação Aninhada</translation>
+        <translation type="obsolete">Paginação Aninhada</translation>
     </message>
     <message>
         <source>VBoxVMInformationDlg</source>
@@ -8767,6 +8785,11 @@ qualquer valor.&lt;/qt&gt;</translation>
     <message>
         <source>Network Statistics</source>
         <translation>Estatísticas de Rede</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Paginação Aninhada</translation>
     </message>
 </context>
 <context>

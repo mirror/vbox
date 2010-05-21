@@ -1829,7 +1829,7 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation>&amp;Dysk startowy (Pierwszy nadrzędny)</translation>
+        <translation type="obsolete">&amp;Dysk startowy (Pierwszy nadrzędny)</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
@@ -1846,6 +1846,10 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>Zalecany rozmiar startowego dysku twardego to &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2118,7 +2122,11 @@ Wersja %1</translation>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5041,6 +5049,16 @@ Wersja %1</translation>
         <source>Shareable</source>
         <comment>DiskType</comment>
         <translation>Dostępne współdzielenie</translation>
+    </message>
+    <message>
+        <source>Unknown device</source>
+        <comment>USB device details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Port %1</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8371,7 +8389,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
     <message>
         <source>Nested Paging</source>
-        <translation>Zagnieżdżone stronicowanie</translation>
+        <translation type="obsolete">Zagnieżdżone stronicowanie</translation>
     </message>
     <message>
         <source>VBoxVMInformationDlg</source>
@@ -8393,6 +8411,11 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     <message>
         <source>Network Statistics</source>
         <translation>Statystyka sieci</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Zagnieżdżone stronicowanie</translation>
     </message>
 </context>
 <context>

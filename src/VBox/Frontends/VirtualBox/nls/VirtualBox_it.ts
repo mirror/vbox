@@ -1803,7 +1803,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation>&amp;Disco fisso di avvio (Master primario)</translation>
+        <translation type="obsolete">&amp;Disco fisso di avvio (Master primario)</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
@@ -1820,6 +1820,10 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>La dimensione consigliata per il disco fisso di avvio è &lt;b&gt;%1&lt;/b&gt; MB.</translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2090,9 +2094,8 @@ Versione %1</translation>
         <translation></translation>
     </message>
     <message>
-        <source>MB</source>
-        <comment>size suffix MBytes=1024KBytes</comment>
-        <translation></translation>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5026,6 +5029,21 @@ Versione %1</translation>
     <message>
         <source>Nested Paging</source>
         <translation>Paginazione nidificata</translation>
+    </message>
+    <message>
+        <source>Unknown device</source>
+        <comment>USB device details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Port %1</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shareable</source>
+        <comment>DiskType</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8630,7 +8648,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Nested Paging</source>
-        <translation>Paginazione nidificata</translation>
+        <translation type="obsolete">Paginazione nidificata</translation>
     </message>
     <message>
         <source>VBoxVMInformationDlg</source>
@@ -8652,6 +8670,11 @@ qualsiasi valore.&lt;/qt&gt;</translation>
     <message>
         <source>Network Statistics</source>
         <translation>Statistiche di rete</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Paginazione nidificata</translation>
     </message>
 </context>
 <context>

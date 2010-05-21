@@ -911,7 +911,7 @@
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation>開機硬碟 (第一個主)(&amp;D)</translation>
+        <translation type="obsolete">開機硬碟 (第一個主)(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Create new hard disk</source>
@@ -928,6 +928,10 @@
     <message>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>建議的開機硬碟大小為 &lt;b&gt;%1&lt;/b&gt; MB。</translation>
+    </message>
+    <message>
+        <source>Boot Hard &amp;Disk</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1095,7 +1099,11 @@
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation>MB</translation>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3107,6 +3115,16 @@
         <comment>DiskType</comment>
         <translation>可共用</translation>
     </message>
+    <message>
+        <source>Unknown device</source>
+        <comment>USB device details</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SAS Port %1</source>
+        <comment>New Storage UI : Slot Name</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -4898,7 +4916,7 @@
     </message>
     <message>
         <source>Nested Paging</source>
-        <translation>巢狀分頁</translation>
+        <translation type="obsolete">巢狀分頁</translation>
     </message>
     <message>
         <source>VBoxVMInformationDlg</source>
@@ -4920,6 +4938,11 @@
     <message>
         <source>Network Statistics</source>
         <translation>網路狀態</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation type="unfinished">巢狀分頁</translation>
     </message>
 </context>
 <context>
