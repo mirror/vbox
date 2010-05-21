@@ -1765,7 +1765,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             VMMDevSharedModuleRegistrationRequest *pReqModule = (VMMDevSharedModuleRegistrationRequest *)pRequestHeader;
 
             if (    pRequestHeader->size < sizeof(VMMDevSharedModuleRegistrationRequest)
-                ||  pRequestHeader->size != RT_OFFSETOF(VMMDevSharedModuleRegistrationRequest, aRegions[pReqModule->cRegions]))
+                ||  pRequestHeader->size != RT_UOFFSETOF(VMMDevSharedModuleRegistrationRequest, aRegions[pReqModule->cRegions]))
             {
                 pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
