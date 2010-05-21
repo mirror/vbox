@@ -1509,8 +1509,7 @@ QString VBoxGlobal::toString (StorageSlot aSlot) const
         }
         case KStorageBus_SAS:
         {
-            /* TODO: change this index to 6 after 3.2 */
-            result = mSlotTemplates [5].arg (aSlot.port);
+            result = mSlotTemplates [6].arg (aSlot.port);
             break;
         }
         case KStorageBus_Floppy:
