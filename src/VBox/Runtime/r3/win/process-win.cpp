@@ -294,7 +294,7 @@ static int rtProcGetProcessHandle(DWORD dwPID, PSID pSID, PHANDLE phToken)
                                          NULL, SecurityIdentification, TokenPrimary, phToken))
                     {
                         /*
-                         * So we found a VBoxTray instance which belongs to the user we want to
+                         * So we found the process instance which belongs to the user we want to
                          * to run our new process under. This duplicated token will be used for
                          * the actual CreateProcessAsUserW() call then.
                          */
@@ -499,12 +499,12 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
          * So if we want to start a process from a service (RTPROC_FLAGS_SERVICE),
          * we have to do the following:
          * - Check the credentials supplied and get the user SID.
-         * - If valid get the correct VBoxTray instance corresponding to that
+         * - If valid get the correct Explorer/VBoxTray instance corresponding to that
          *   user. This of course is only possible if that user is logged in (over
          *   physical console or terminal services).
-         * - If we found the user's VBoxTray app, use and modify the token to
+         * - If we found the user's Explorer/VBoxTray app, use and modify the token to
          *   use it in order to allow the newly started process acess the user's
-         *   desktop. If there's no VBoxTray app we cannot display the started
+         *   desktop. If there's no Explorer/VBoxTray app we cannot display the started
          *   process (but run it without UI).
          *
          * The following restrictions apply:
@@ -534,7 +534,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                          &hTokenLogon);
 
         BOOL fFound = FALSE;
-        HANDLE hTokenVBoxTray = INVALID_HANDLE_VALUE;
+        HANDLE hTokenUserDesktop = INVALID_HANDLE_VALUE;
         if (fRc)
         {
             if (fFlags & RTPROC_FLAGS_SERVICE)
@@ -584,7 +584,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
 #else
                                                          "explorer.exe"
 #endif
-                                                         pSID, &hTokenVBoxTray);
+                                                         pSID, &hTokenUserDesktop);
                     }
                     else
                         dwErr = GetLastError(); /* LookupAccountNameW() failed. */
@@ -603,7 +603,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
              * above from LogonUserW(). This enables us to at least run processes with
              * desktop interaction without UI.
              */
-            phToken = fFound ? &hTokenVBoxTray : &hTokenLogon;
+            phToken = fFound ? &hTokenUserDesktop : &hTokenLogon;
 
             /*
              * Useful KB articles:
@@ -627,8 +627,8 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
             else
                 dwErr = GetLastError(); /* CreateProcessAsUserW() failed. */
 
-            if (hTokenVBoxTray != INVALID_HANDLE_VALUE)
-                CloseHandle(hTokenVBoxTray);
+            if (hTokenUserDesktop != INVALID_HANDLE_VALUE)
+                CloseHandle(hTokenUserDesktop);
             CloseHandle(hTokenLogon);
         }
         else
