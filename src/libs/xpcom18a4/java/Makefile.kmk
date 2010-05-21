@@ -26,17 +26,17 @@ ifndef VBOX_ONLY_SDK
 VBOX_JXPCOM_SRC := $(PATH_SUB_CURRENT)
 
 ifeq ($(KBUILD_TARGET), darwin)
- VBOX_JAVA_HOME = /System/Library/Frameworks/JavaVM.framework/Versions/1.5.0
+ VBOX_JAVA_HOME = /System/Library/Frameworks/JavaVM.framework/Versions/1.6.0
  VBOX_JAVAC = $(VBOX_JAVA_HOME)/Commands/javac
  VBOX_JAVAH = $(VBOX_JAVA_HOME)/Commands/javah
  VBOX_JAR   = $(VBOX_JAVA_HOME)/Commands/jar
  VBOX_JAVA_INC = $(VBOX_JAVA_HOME)/Headers
 else
  ifeq ($(KBUILD_TARGET), linux)
-  VBOX_JAVA_HOME ?= /usr/lib/jvm/java-1.5.0-sun
+  VBOX_JAVA_HOME ?= /usr/lib/jvm/java-1.6.0-sun
  endif
  ifeq ($(KBUILD_TARGET), solaris)
- # VBOX_JAVA_HOME ?= /usr/jdk/jdk1.5.0
+ # VBOX_JAVA_HOME ?= /usr/jdk/jdk1.6.0
    VBOX_JAVA_HOME ?= /usr/java
  endif
  VBOX_JAVAC = $(VBOX_JAVA_HOME)/bin/javac
@@ -47,7 +47,7 @@ else
  VBOX_JAVA_INC = $(VBOX_JAVA_HOME)/include               \
                 $(VBOX_JAVA_HOME)/include/$(VBOX_MD_OS)
 endif
-JAVAC_OPTS = -source 1.4 -target 1.4
+JAVAC_OPTS = -source 1.5 -target 1.5
 
 VBOX_JXPCOM_TARGET := $(PATH_TARGET)/vboxjxpcom-gen
 VBOX_JXPCOM_JDEST  := $(VBOX_JXPCOM_TARGET)/jdest
@@ -65,7 +65,6 @@ VBoxJXpcom_DEFS     =    \
 	EXPORT_XPTI_API  \
         EXPORT_XPT_API   \
 	VBOX_WITH_XPCOM
-#VBoxJXpcom_DEFS.darwin = XP_MACOSX - already in TEMPLATE_XPCOM_DEFS.darwin ...
 VBoxJXpcom_NAME     = libvboxjxpcom
 VBoxJXpcom_DLLSUFF.darwin = .jnilib
 VBoxJXpcom_INCS     = \
@@ -180,7 +179,7 @@ VBoxJXpcom-inst-jar_CLEAN = \
 		$(VBOX_JXPCOM_JDEST)/*/*/*/*/*.class \
 		$(VBOX_JXPCOM_JDEST)/*/*/*/*/*/*.class \
 	)
-VBoxJXpcom-inst-jar_BLDDIRS += $(VBOX_JXPCOM_GEN)/java
+VBoxJXpcom-inst-jar_BLDDIRS += $(VBOX_JXPCOM_GEN)/java $(VBOX_JXPCOM_GEN)/java/glue
 
 
 #
@@ -235,7 +234,7 @@ endif # VBOX_WITH_JAVA_SUPPORT_IN_XPIDL
 
 $(VBOX_JXPCOM_GEN)/jxpcomglue.list:  \
 		$(VBOX_XIDL_FILE)    \
-                $(VBOX_XSLT_DIR)/glue_java.xls \
+                $(VBOX_XSLT_DIR)/glue-java.xsl \
                 $$(TARGET_filesplitter) \
 		| $(VBOX_JXPCOM_GEN)/java/glue/
 	$(call MSG_L1,Generating Java glue files from XIDL)
@@ -243,8 +242,8 @@ $(VBOX_JXPCOM_GEN)/jxpcomglue.list:  \
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE)   \
               --stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
               --stringparam G_vboxGlueStyle xpcom              \
-              -o $(VBOX_JXPCOM_GEN)/java/glue/merged.file $(VBOX_XSLT_DIR)/glue_java.xls $<
-	$(QUIET)$(TARGET_filesplitter) $(VBOX_JXPCOM_GEN)/java/glue/merged.file $(VBOX_JXPCOM_GEN)/java/glue/
+              -o $(VBOX_JXPCOM_GEN)/java/glue/merged.file $(VBOX_XSLT_DIR)/glue-java.xsl $<
+	$(QUIET)$(VBOX_FILESPLIT) $(VBOX_JXPCOM_GEN)/java/glue/merged.file $(VBOX_JXPCOM_GEN)/java/glue/
 	$(QUIET)echo $(VBOX_JXPCOM_GEN)/java/glue/*.java > $@
 
 #
@@ -278,14 +277,14 @@ $$(VBOX_JXPCOM_JAR): $(VBOX_JXPCOM_JAR_SRC) $(VBOX_JXPCOM_GEN)/jxpcomgen.list $(
 	$(call MSG_TOOL,javac,$(notdir $@),jxpcomgen.list,)
 	$(QUIET)$(RM) -Rf $(VBOX_JXPCOM_JDEST)
 	$(QUIET)$(MKDIR) -p $(VBOX_JXPCOM_JDEST)
-	$(VBOX_JAVAC) $(JAVAC_OPTS) @$ $(VBOX_JXPCOM_GEN)/jxpcomgen.list \
+	$(VBOX_JAVAC) $(JAVAC_OPTS) @$(VBOX_JXPCOM_GEN)/jxpcomgen.list \
 		-d $(VBOX_JXPCOM_JDEST) -classpath $(VBOX_JXPCOM_JDEST)
 	$(call MSG_TOOL,javac,$(notdir $@),...,)
 	$(VBOX_JAVAC) $(JAVAC_OPTS) \
 		$(VBOX_JXPCOM_JAR_SRC) \
 		$(VBOX_JXPCOM_NSERROR) \
 		$(VBOX_JXPCOM_MGR) \
-                $(VBOX_JXPCOM_GEN)/jxpcomglue.list \
+                @$(VBOX_JXPCOM_GEN)/jxpcomglue.list \
 		-d $(VBOX_JXPCOM_JDEST) -classpath $(VBOX_JXPCOM_JDEST)
 	$(call MSG_LINK,$(notdir $@),$@)
 	$(VBOX_JAR) cf $@ -C $(VBOX_JXPCOM_JDEST) .

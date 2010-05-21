@@ -368,8 +368,9 @@ endef
  # well, not really good
  VBOX_JAVA15                   = $(firstword $(wildcard \
 	/usr/lib/jvm/java-1.5.0-sun/bin/java \
-	/usr/jdk/jdk1.5*/bin/java \
-	/opt/sun-jdk-1.5*/bin/java))
+	/usr/jdk/jdk1.5*/bin/java  \
+	/opt/sun-jdk-1.5*/bin/java \
+        /System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Commands/java))
  ifndef VBOX_JAVA15
   $(error Failed to autodetect VBOX_JAVA15, please set it manually)
  endif
@@ -395,7 +396,7 @@ endef
 	$(VBOXWEB_PYTHONWSSAMPLE)\
 	$(VBOXWEB_JAXWSSAMPLE) \
 	$(VBOXWEB_METRICSAMPLE) \
-	$(VBOXWEB_JAVA15_JAR) \
+        $(VBOXWEB_JAVA15_JAR) \
 	$(VBOXWEB_JAVA16_JAR)
 
  #
@@ -412,13 +413,6 @@ endef
 	samples/php/clienttest.php=>php/samples/clienttest.php \
 	samples/python/Makefile=>python/samples/Makefile \
 	samples/python/Makefile.glue=>python/lib/Makefile
-
- #
- # filesplitter - build helper, splits up the java classes.
- #
- BLDPROGS += filesplitter
- filesplitter_TEMPLATE = VBOXBLDPROG
- filesplitter_SOURCES = filesplitter.cpp
 
 endif # VBOX_ONLY_SDK
 
@@ -610,7 +604,7 @@ $(VBOXWEB_METRICSAMPLE): $(VBOX_PATH_WEBSERVICE)/samples/java/jax-ws/metrictest.
 	$(QUIET)$(SED) -e 's/{VBOX_API_SUFFIX}/$(VBOX_API_SUFFIX)/' <  $< >  $@
 
 # generate jax-ws wrapper for java client code
-$(VBOXWEB_GLUE_JAVA_TMP): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/glue-jaxws.xsl $(VBOX_PATH_WEBSERVICE)/websrv-shared.inc.xsl $$(TARGET_filesplitter) $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
+$(VBOXWEB_GLUE_JAVA_TMP): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/glue-jaxws.xsl $(VBOX_PATH_WEBSERVICE)/websrv-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(call MSG_GENERATE,,$@,$(VBOXWEB_IDL_SRC) using glue-jaxws.xsl)
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) \
@@ -619,7 +613,7 @@ $(VBOXWEB_GLUE_JAVA_TMP): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/glue-jaxws.
 	$(call MSG_GENERATE,,java client glue files in $(VBOXWEB_PATH_SDK_GLUE_JAVA))
 	$(RM) -R -f $(VBOXWEB_PATH_SDK_GLUE_JAVA)
 	$(QUIET)$(MKDIR) -p $(VBOXWEB_PATH_SDK_GLUE_JAVA)
-	$(QUIET)$(TARGET_filesplitter) $@ $(VBOXWEB_PATH_SDK_GLUE_JAVA)
+	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBOXWEB_PATH_SDK_GLUE_JAVA)
 	$(QUIET)$(CP) -f $(VBOX_PATH_WEBSERVICE)/../../../../COPYING.LIB $(VBOXWEB_PATH_SDK_GLUE_JAVA)
 
 $(VBOXWEB_GLUE_JAVA_TMP).done: $(VBOXWEB_GLUE_JAVA_TMP)
@@ -631,7 +625,7 @@ $(VBOXWEB_JAVA15_JAR): $(VBOXWEB_GLUE_JAVA_TMP).done $(VBOXWEB_WSDL) $(VBOXWEBSE
 	$(call MSG_GENERATE,,$@,JAX-WS for Java 1.5 bindings using $(VBOXWEBSERVICE_WSDL))
 	$(QUIET)$(VBOX_WSIMPORT15) -p $(VBOX_JAVA_PACKAGE) -d $(VBOXWEB_JAVALIB)/gen15 $(VBOXWEBSERVICE_WSDL)
 	$(call MSG_L1,Compiling bridge code)
-	$(QUIET)$(VBOX_JAVAC15) -cp \
+	$(QUIET)$(VBOX_JAVAC15) -J-Xmx2g -cp \
 		$(VBOXWEB_JAVALIB)/gen15:$(VBOX_JAXWS_LIBDIR)/jaxws-api.jar:$(VBOX_JAXWS_LIBDIR)/lib/jaxb-api.jar:$(VBOX_JAXWS_LIBDIR)/jsr181-api.jar \
 		$(call find_java_files,$(VBOXWEB_PATH_SDK_GLUE_JAVA))  -d  $(VBOXWEB_JAVALIB)/gen15
 	$(QUIET)$(SED) -e "s/vboxweb.wsdl/vboxweb$(VBOX_API_SUFFIX).wsdl/" <  $(VBOXWEBSERVICE_WSDL) > $(VBOXWEB_JAVALIB)/gen15/vboxwebService$(VBOX_API_SUFFIX).wsdl
@@ -645,7 +639,7 @@ $(VBOXWEB_JAVA16_JAR): $(VBOXWEB_GLUE_JAVA_TMP).done $(VBOXWEB_WSDL) $(VBOXWEBSE
 	$(call MSG_GENERATE,,$@,JAX-WS for Java 1.6 bindings using $(VBOXWEBSERVICE_WSDL))
 	$(QUIET)$(VBOX_WSIMPORT16) -p $(VBOX_JAVA_PACKAGE)  -d $(VBOXWEB_JAVALIB)/gen16 $(VBOXWEBSERVICE_WSDL)
 	$(call MSG_L1,Compiling bridge code)
-	$(QUIET)$(VBOX_JAVAC16) -cp $(VBOXWEB_JAVALIB)/gen16 \
+	$(QUIET)$(VBOX_JAVAC16) -J-Xmx2g -cp $(VBOXWEB_JAVALIB)/gen16 \
 		$(VBOXWEB_PATH_SDK_GLUE_JAVA)/*.java  -d  $(VBOXWEB_JAVALIB)/gen16
 	$(QUIET)$(SED) -e "s/vboxweb.wsdl/vboxweb$(VBOX_API_SUFFIX).wsdl/" <  $(VBOXWEBSERVICE_WSDL) > $(VBOXWEB_JAVALIB)/gen16/vboxwebService$(VBOX_API_SUFFIX).wsdl
 	$(QUIET)$(CP) -f $(VBOXWEB_WSDL) $(VBOXWEB_JAVALIB)/gen16/vboxweb$(VBOX_API_SUFFIX).wsdl
