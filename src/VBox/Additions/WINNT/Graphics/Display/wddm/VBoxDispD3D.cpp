@@ -1566,6 +1566,8 @@ HRESULT APIENTRY OpenAdapter (__inout D3DDDIARG_OPENADAPTER*  pOpenData)
                 }
                 else
                     vboxVDbgPrintR((__FUNCTION__": pfnDirect3DCreate9Ex failed, hr (%d)\n", hr));
+
+                hr = VBoxDispD3DClose(&pAdapter->D3D);
             }
             else
                 vboxVDbgPrintR((__FUNCTION__": VBoxDispD3DOpen failed, hr (%d)\n", hr));
