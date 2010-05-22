@@ -533,7 +533,63 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
         case D3DDDICAPS_GETD3D3CAPS:
             Assert(pData->DataSize >= sizeof (D3DHAL_GLOBALDRIVERDATA));
             if (pData->DataSize >= sizeof (D3DHAL_GLOBALDRIVERDATA))
-                memset (pData->pData, 0, sizeof (D3DHAL_GLOBALDRIVERDATA));
+            {
+                D3DHAL_GLOBALDRIVERDATA *pCaps = (D3DHAL_GLOBALDRIVERDATA *)pData->pData;
+                memset (pCaps, 0, sizeof (D3DHAL_GLOBALDRIVERDATA));
+                pCaps->dwSize = sizeof (D3DHAL_GLOBALDRIVERDATA);
+                pCaps->hwCaps.dwSize = sizeof (D3DDEVICEDESC_V1);
+                pCaps->hwCaps.dwFlags = D3DDD_COLORMODEL
+                        | D3DDD_DEVCAPS;
+
+                pCaps->hwCaps.dcmColorModel = D3DCOLOR_RGB;
+                pCaps->hwCaps.dwDevCaps = 0;
+                pCaps->hwCaps.dtcTransformCaps.dwSize = sizeof (D3DTRANSFORMCAPS);
+                pCaps->hwCaps.dtcTransformCaps.dwCaps = 0;
+                pCaps->hwCaps.bClipping = FALSE;
+                pCaps->hwCaps.dlcLightingCaps.dwSize = sizeof (D3DLIGHTINGCAPS);
+                pCaps->hwCaps.dlcLightingCaps.dwCaps = 0;
+                pCaps->hwCaps.dlcLightingCaps.dwLightingModel = 0;
+                pCaps->hwCaps.dlcLightingCaps.dwNumLights = 0;
+                pCaps->hwCaps.dpcLineCaps.dwSize = sizeof (D3DPRIMCAPS);
+                pCaps->hwCaps.dpcLineCaps.dwMiscCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwRasterCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwZCmpCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwSrcBlendCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwDestBlendCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwAlphaCmpCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwShadeCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwTextureCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwTextureFilterCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwTextureBlendCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwTextureAddressCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwStippleWidth = 0;
+                pCaps->hwCaps.dpcLineCaps.dwStippleHeight = 0;
+
+                pCaps->hwCaps.dpcTriCaps.dwSize = sizeof (D3DPRIMCAPS);
+                pCaps->hwCaps.dpcTriCaps.dwMiscCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwRasterCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwZCmpCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwSrcBlendCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwDestBlendCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwAlphaCmpCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwShadeCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwTextureCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwTextureFilterCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwTextureBlendCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwTextureAddressCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwStippleWidth = 0;
+                pCaps->hwCaps.dpcTriCaps.dwStippleHeight = 0;
+                pCaps->hwCaps.dwDeviceRenderBitDepth = 0;
+                pCaps->hwCaps.dwDeviceZBufferBitDepth = 0;
+                pCaps->hwCaps.dwMaxBufferSize = 0;
+                pCaps->hwCaps.dwMaxVertexCount = 0;
+
+
+                pCaps->dwNumVertices = 0;
+                pCaps->dwNumClipVertices = 0;
+                pCaps->dwNumTextureFormats = 0;
+                pCaps->lpTextureFormats = NULL;
+            }
             else
                 hr = E_INVALIDARG;
             break;
@@ -1251,11 +1307,10 @@ static HRESULT APIENTRY vboxWddmDDevExtensionExecute(HANDLE hDevice, CONST D3DDD
 }
 static HRESULT APIENTRY vboxWddmDDevDestroyDevice(IN HANDLE hDevice)
 {
-    RTMemFree(hDevice);
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     AssertBreakpoint();
     RTMemFree(hDevice);
-    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return S_OK;
 }
 static HRESULT APIENTRY vboxWddmDDevCreateOverlay(HANDLE hDevice, D3DDDIARG_CREATEOVERLAY* pData)
@@ -1332,146 +1387,181 @@ static HRESULT APIENTRY vboxWddmDDevCaptureToSysMem(HANDLE hDevice, CONST D3DDDI
 
 static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIARG_CREATEDEVICE* pCreateData)
 {
-    vboxVDbgPrint(("==> "__FUNCTION__", hAdapter(0x%p)\n", hAdapter));
+    HRESULT hr = S_OK;
+    vboxVDbgPrint(("==> "__FUNCTION__", hAdapter(0x%p), Interface(%d), Version(%d)\n", hAdapter, pCreateData->Interface, pCreateData->Version));
 
 //    AssertBreakpoint();
 
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)RTMemAllocZ(sizeof (VBOXWDDMDISP_DEVICE));
-    if (!pDevice)
+    if (pDevice)
+    {
+        PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)hAdapter;
+
+        pDevice->hDevice = pCreateData->hDevice;
+        pDevice->pAdapter = pAdapter;
+        pDevice->u32IfVersion = pCreateData->Interface;
+        pDevice->uRtVersion = pCreateData->Version;
+        pDevice->RtCallbacks = *pCreateData->pCallbacks;
+        pDevice->pvCmdBuffer = pCreateData->pCommandBuffer;
+        pDevice->cbCmdBuffer = pCreateData->CommandBufferSize;
+        pDevice->fFlags = pCreateData->Flags;
+
+        Assert(!pCreateData->AllocationListSize);
+        Assert(!pCreateData->PatchLocationListSize);
+
+        pCreateData->hDevice = pDevice;
+
+        pCreateData->pDeviceFuncs->pfnSetRenderState = vboxWddmDDevSetRenderState;
+        pCreateData->pDeviceFuncs->pfnUpdateWInfo = vboxWddmDDevUpdateWInfo;
+        pCreateData->pDeviceFuncs->pfnValidateDevice = vboxWddmDDevValidateDevice;
+        pCreateData->pDeviceFuncs->pfnSetTextureStageState = vboxWddmDDevSetTextureStageState;
+        pCreateData->pDeviceFuncs->pfnSetTexture = vboxWddmDDevSetTexture;
+        pCreateData->pDeviceFuncs->pfnSetPixelShader = vboxWddmDDevSetPixelShader;
+        pCreateData->pDeviceFuncs->pfnSetPixelShaderConst = vboxWddmDDevSetPixelShaderConst;
+        pCreateData->pDeviceFuncs->pfnSetStreamSourceUm = vboxWddmDDevSetStreamSourceUm;
+        pCreateData->pDeviceFuncs->pfnSetIndices = vboxWddmDDevSetIndices;
+        pCreateData->pDeviceFuncs->pfnSetIndicesUm = vboxWddmDDevSetIndicesUm;
+        pCreateData->pDeviceFuncs->pfnDrawPrimitive = vboxWddmDDevDrawPrimitive;
+        pCreateData->pDeviceFuncs->pfnDrawIndexedPrimitive = vboxWddmDDevDrawIndexedPrimitive;
+        pCreateData->pDeviceFuncs->pfnDrawRectPatch = vboxWddmDDevDrawRectPatch;
+        pCreateData->pDeviceFuncs->pfnDrawTriPatch = vboxWddmDDevDrawTriPatch;
+        pCreateData->pDeviceFuncs->pfnDrawPrimitive2 = vboxWddmDDevDrawPrimitive2;
+        pCreateData->pDeviceFuncs->pfnDrawIndexedPrimitive2 = vboxWddmDDevDrawIndexedPrimitive2;
+        pCreateData->pDeviceFuncs->pfnVolBlt = vboxWddmDDevVolBlt;
+        pCreateData->pDeviceFuncs->pfnBufBlt = vboxWddmDDevBufBlt;
+        pCreateData->pDeviceFuncs->pfnTexBlt = vboxWddmDDevTexBlt;
+        pCreateData->pDeviceFuncs->pfnStateSet = vboxWddmDDevStateSet;
+        pCreateData->pDeviceFuncs->pfnSetPriority = vboxWddmDDevSetPriority;
+        pCreateData->pDeviceFuncs->pfnClear = vboxWddmDDevClear;
+        pCreateData->pDeviceFuncs->pfnUpdatePalette = vboxWddmDDevUpdatePalette;
+        pCreateData->pDeviceFuncs->pfnSetPalette = vboxWddmDDevSetPalette;
+        pCreateData->pDeviceFuncs->pfnSetVertexShaderConst = vboxWddmDDevSetVertexShaderConst;
+        pCreateData->pDeviceFuncs->pfnMultiplyTransform = vboxWddmDDevMultiplyTransform;
+        pCreateData->pDeviceFuncs->pfnSetTransform = vboxWddmDDevSetTransform;
+        pCreateData->pDeviceFuncs->pfnSetViewport = vboxWddmDDevSetViewport;
+        pCreateData->pDeviceFuncs->pfnSetZRange = vboxWddmDDevSetZRange;
+        pCreateData->pDeviceFuncs->pfnSetMaterial = vboxWddmDDevSetMaterial;
+        pCreateData->pDeviceFuncs->pfnSetLight = vboxWddmDDevSetLight;
+        pCreateData->pDeviceFuncs->pfnCreateLight = vboxWddmDDevCreateLight;
+        pCreateData->pDeviceFuncs->pfnDestroyLight = vboxWddmDDevDestroyLight;
+        pCreateData->pDeviceFuncs->pfnSetClipPlane = vboxWddmDDevSetClipPlane;
+        pCreateData->pDeviceFuncs->pfnGetInfo = vboxWddmDDevGetInfo;
+        pCreateData->pDeviceFuncs->pfnLock = vboxWddmDDevLock;
+        pCreateData->pDeviceFuncs->pfnUnlock = vboxWddmDDevUnlock;
+        pCreateData->pDeviceFuncs->pfnCreateResource = vboxWddmDDevCreateResource;
+        pCreateData->pDeviceFuncs->pfnDestroyResource = vboxWddmDDevDestroyResource;
+        pCreateData->pDeviceFuncs->pfnSetDisplayMode = vboxWddmDDevSetDisplayMode;
+        pCreateData->pDeviceFuncs->pfnPresent = vboxWddmDDevPresent;
+        pCreateData->pDeviceFuncs->pfnFlush = vboxWddmDDevFlush;
+        pCreateData->pDeviceFuncs->pfnCreateVertexShaderFunc = vboxWddmDDevCreateVertexShaderFunc;
+        pCreateData->pDeviceFuncs->pfnDeleteVertexShaderFunc = vboxWddmDDevDeleteVertexShaderFunc;
+        pCreateData->pDeviceFuncs->pfnSetVertexShaderFunc = vboxWddmDDevSetVertexShaderFunc;
+        pCreateData->pDeviceFuncs->pfnCreateVertexShaderDecl = vboxWddmDDevCreateVertexShaderDecl;
+        pCreateData->pDeviceFuncs->pfnDeleteVertexShaderDecl = vboxWddmDDevDeleteVertexShaderDecl;
+        pCreateData->pDeviceFuncs->pfnSetVertexShaderDecl = vboxWddmDDevSetVertexShaderDecl;
+        pCreateData->pDeviceFuncs->pfnSetVertexShaderConstI = vboxWddmDDevSetVertexShaderConstI;
+        pCreateData->pDeviceFuncs->pfnSetVertexShaderConstB = vboxWddmDDevSetVertexShaderConstB;
+        pCreateData->pDeviceFuncs->pfnSetScissorRect = vboxWddmDDevSetScissorRect;
+        pCreateData->pDeviceFuncs->pfnSetStreamSource = vboxWddmDDevSetStreamSource;
+        pCreateData->pDeviceFuncs->pfnSetStreamSourceFreq = vboxWddmDDevSetStreamSourceFreq;
+        pCreateData->pDeviceFuncs->pfnSetConvolutionKernelMono = vboxWddmDDevSetConvolutionKernelMono;
+        pCreateData->pDeviceFuncs->pfnComposeRects = vboxWddmDDevComposeRects;
+        pCreateData->pDeviceFuncs->pfnBlt = vboxWddmDDevBlt;
+        pCreateData->pDeviceFuncs->pfnColorFill = vboxWddmDDevColorFill;
+        pCreateData->pDeviceFuncs->pfnDepthFill = vboxWddmDDevDepthFill;
+        pCreateData->pDeviceFuncs->pfnCreateQuery = vboxWddmDDevCreateQuery;
+        pCreateData->pDeviceFuncs->pfnDestroyQuery = vboxWddmDDevDestroyQuery;
+        pCreateData->pDeviceFuncs->pfnIssueQuery = vboxWddmDDevIssueQuery;
+        pCreateData->pDeviceFuncs->pfnGetQueryData = vboxWddmDDevGetQueryData;
+        pCreateData->pDeviceFuncs->pfnSetRenderTarget = vboxWddmDDevSetRenderTarget;
+        pCreateData->pDeviceFuncs->pfnSetDepthStencil = vboxWddmDDevSetDepthStencil;
+        pCreateData->pDeviceFuncs->pfnGenerateMipSubLevels = vboxWddmDDevGenerateMipSubLevels;
+        pCreateData->pDeviceFuncs->pfnSetPixelShaderConstI = vboxWddmDDevSetPixelShaderConstI;
+        pCreateData->pDeviceFuncs->pfnSetPixelShaderConstB = vboxWddmDDevSetPixelShaderConstB;
+        pCreateData->pDeviceFuncs->pfnCreatePixelShader = vboxWddmDDevCreatePixelShader;
+        pCreateData->pDeviceFuncs->pfnDeletePixelShader = vboxWddmDDevDeletePixelShader;
+        pCreateData->pDeviceFuncs->pfnCreateDecodeDevice = vboxWddmDDevCreateDecodeDevice;
+        pCreateData->pDeviceFuncs->pfnDestroyDecodeDevice = vboxWddmDDevDestroyDecodeDevice;
+        pCreateData->pDeviceFuncs->pfnSetDecodeRenderTarget = vboxWddmDDevSetDecodeRenderTarget;
+        pCreateData->pDeviceFuncs->pfnDecodeBeginFrame = vboxWddmDDevDecodeBeginFrame;
+        pCreateData->pDeviceFuncs->pfnDecodeEndFrame = vboxWddmDDevDecodeEndFrame;
+        pCreateData->pDeviceFuncs->pfnDecodeExecute = vboxWddmDDevDecodeExecute;
+        pCreateData->pDeviceFuncs->pfnDecodeExtensionExecute = vboxWddmDDevDecodeExtensionExecute;
+        pCreateData->pDeviceFuncs->pfnCreateVideoProcessDevice = vboxWddmDDevCreateVideoProcessDevice;
+        pCreateData->pDeviceFuncs->pfnDestroyVideoProcessDevice = vboxWddmDDevDestroyVideoProcessDevice;
+        pCreateData->pDeviceFuncs->pfnVideoProcessBeginFrame = vboxWddmDDevVideoProcessBeginFrame;
+        pCreateData->pDeviceFuncs->pfnVideoProcessEndFrame = vboxWddmDDevVideoProcessEndFrame;
+        pCreateData->pDeviceFuncs->pfnSetVideoProcessRenderTarget = vboxWddmDDevSetVideoProcessRenderTarget;
+        pCreateData->pDeviceFuncs->pfnVideoProcessBlt = vboxWddmDDevVideoProcessBlt;
+        pCreateData->pDeviceFuncs->pfnCreateExtensionDevice = vboxWddmDDevCreateExtensionDevice;
+        pCreateData->pDeviceFuncs->pfnDestroyExtensionDevice = vboxWddmDDevDestroyExtensionDevice;
+        pCreateData->pDeviceFuncs->pfnExtensionExecute = vboxWddmDDevExtensionExecute;
+        pCreateData->pDeviceFuncs->pfnCreateOverlay = vboxWddmDDevCreateOverlay;
+        pCreateData->pDeviceFuncs->pfnUpdateOverlay = vboxWddmDDevUpdateOverlay;
+        pCreateData->pDeviceFuncs->pfnFlipOverlay = vboxWddmDDevFlipOverlay;
+        pCreateData->pDeviceFuncs->pfnGetOverlayColorControls = vboxWddmDDevGetOverlayColorControls;
+        pCreateData->pDeviceFuncs->pfnSetOverlayColorControls = vboxWddmDDevSetOverlayColorControls;
+        pCreateData->pDeviceFuncs->pfnDestroyOverlay = vboxWddmDDevDestroyOverlay;
+        pCreateData->pDeviceFuncs->pfnDestroyDevice = vboxWddmDDevDestroyDevice;
+        pCreateData->pDeviceFuncs->pfnQueryResourceResidency = vboxWddmDDevQueryResourceResidency;
+        pCreateData->pDeviceFuncs->pfnOpenResource = vboxWddmDDevOpenResource;
+        pCreateData->pDeviceFuncs->pfnGetCaptureAllocationHandle = vboxWddmDDevGetCaptureAllocationHandle;
+        pCreateData->pDeviceFuncs->pfnCaptureToSysMem = vboxWddmDDevCaptureToSysMem;
+        pCreateData->pDeviceFuncs->pfnLockAsync = NULL; //vboxWddmDDevLockAsync;
+        pCreateData->pDeviceFuncs->pfnUnlockAsync = NULL; //vboxWddmDDevUnlockAsync;
+        pCreateData->pDeviceFuncs->pfnRename = NULL; //vboxWddmDDevRename;
+
+
+        do
+        {
+            if (!pCreateData->AllocationListSize
+                    && !pCreateData->PatchLocationListSize)
+            {
+                /* check whether this is a D3D or DDraw, use wine lib only in the former (D3D) case */
+                /* TODO: is this a correct way to check this ? */
+                if (pDevice->RtCallbacks.pfnCreateOverlayCb)
+                {
+                    /* DDraw */
+                    vboxVDbgPrint((__FUNCTION__": DirectDraw Device Created\n"));
+                    break;
+                }
+                else
+                {
+                    /* D3D */
+                    if (pAdapter->pD3D9If)
+                    {
+                        /* */
+                        vboxVDbgPrint((__FUNCTION__": TODO: Implement D3D Device Creation\n"));
+                        break;
+                    }
+                    else
+                    {
+                        /* ballback */
+                        vboxVDbgPrint((__FUNCTION__": D3D Device Being Created, but D3D is unavailable\n"));
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                vboxVDbgPrintR((__FUNCTION__": Not implemented: PatchLocationListSize(%d), AllocationListSize(%d)\n",
+                        pCreateData->PatchLocationListSize, pCreateData->AllocationListSize));
+                //pCreateData->pAllocationList = ??
+                hr = E_FAIL;
+            }
+
+            RTMemFree(pDevice);
+        } while (0);
+    }
+    else
     {
         vboxVDbgPrintR((__FUNCTION__": RTMemAllocZ returned NULL\n"));
-        return E_OUTOFMEMORY;
+        hr = E_OUTOFMEMORY;
     }
-
-    PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)hAdapter;
-
-    pDevice->hDevice = pCreateData->hDevice;
-    pDevice->pAdapter = pAdapter;
-    pDevice->u32IfVersion = pCreateData->Interface;
-    pDevice->uRtVersion = pCreateData->Version;
-    pDevice->RtCallbacks = *pCreateData->pCallbacks;
-    pDevice->pvCmdBuffer = pCreateData->pCommandBuffer;
-    pDevice->cbCmdBuffer = pCreateData->CommandBufferSize;
-    pDevice->fFlags = pCreateData->Flags;
-    Assert(!pCreateData->AllocationListSize);
-    if (pCreateData->AllocationListSize)
-    {
-        vboxVDbgPrintR((__FUNCTION__": Not implemented: AllocationListSize(%d)\n", pCreateData->AllocationListSize));
-        //pCreateData->pAllocationList = ??
-        return E_FAIL;
-    }
-
-    Assert(!pCreateData->PatchLocationListSize);
-    if (pCreateData->PatchLocationListSize)
-    {
-        vboxVDbgPrintR((__FUNCTION__": Not implemented: PatchLocationListSize(%d)\n", pCreateData->PatchLocationListSize));
-        //pCreateData->pPatchLocationList = ??
-        return E_FAIL;
-    }
-
-    pCreateData->pDeviceFuncs->pfnSetRenderState = vboxWddmDDevSetRenderState;
-    pCreateData->pDeviceFuncs->pfnUpdateWInfo = vboxWddmDDevUpdateWInfo;
-    pCreateData->pDeviceFuncs->pfnValidateDevice = vboxWddmDDevValidateDevice;
-    pCreateData->pDeviceFuncs->pfnSetTextureStageState = vboxWddmDDevSetTextureStageState;
-    pCreateData->pDeviceFuncs->pfnSetTexture = vboxWddmDDevSetTexture;
-    pCreateData->pDeviceFuncs->pfnSetPixelShader = vboxWddmDDevSetPixelShader;
-    pCreateData->pDeviceFuncs->pfnSetPixelShaderConst = vboxWddmDDevSetPixelShaderConst;
-    pCreateData->pDeviceFuncs->pfnSetStreamSourceUm = vboxWddmDDevSetStreamSourceUm;
-    pCreateData->pDeviceFuncs->pfnSetIndices = vboxWddmDDevSetIndices;
-    pCreateData->pDeviceFuncs->pfnSetIndicesUm = vboxWddmDDevSetIndicesUm;
-    pCreateData->pDeviceFuncs->pfnDrawPrimitive = vboxWddmDDevDrawPrimitive;
-    pCreateData->pDeviceFuncs->pfnDrawIndexedPrimitive = vboxWddmDDevDrawIndexedPrimitive;
-    pCreateData->pDeviceFuncs->pfnDrawRectPatch = vboxWddmDDevDrawRectPatch;
-    pCreateData->pDeviceFuncs->pfnDrawTriPatch = vboxWddmDDevDrawTriPatch;
-    pCreateData->pDeviceFuncs->pfnDrawPrimitive2 = vboxWddmDDevDrawPrimitive2;
-    pCreateData->pDeviceFuncs->pfnDrawIndexedPrimitive2 = vboxWddmDDevDrawIndexedPrimitive2;
-    pCreateData->pDeviceFuncs->pfnVolBlt = vboxWddmDDevVolBlt;
-    pCreateData->pDeviceFuncs->pfnBufBlt = vboxWddmDDevBufBlt;
-    pCreateData->pDeviceFuncs->pfnTexBlt = vboxWddmDDevTexBlt;
-    pCreateData->pDeviceFuncs->pfnStateSet = vboxWddmDDevStateSet;
-    pCreateData->pDeviceFuncs->pfnSetPriority = vboxWddmDDevSetPriority;
-    pCreateData->pDeviceFuncs->pfnClear = vboxWddmDDevClear;
-    pCreateData->pDeviceFuncs->pfnUpdatePalette = vboxWddmDDevUpdatePalette;
-    pCreateData->pDeviceFuncs->pfnSetPalette = vboxWddmDDevSetPalette;
-    pCreateData->pDeviceFuncs->pfnSetVertexShaderConst = vboxWddmDDevSetVertexShaderConst;
-    pCreateData->pDeviceFuncs->pfnMultiplyTransform = vboxWddmDDevMultiplyTransform;
-    pCreateData->pDeviceFuncs->pfnSetTransform = vboxWddmDDevSetTransform;
-    pCreateData->pDeviceFuncs->pfnSetViewport = vboxWddmDDevSetViewport;
-    pCreateData->pDeviceFuncs->pfnSetZRange = vboxWddmDDevSetZRange;
-    pCreateData->pDeviceFuncs->pfnSetMaterial = vboxWddmDDevSetMaterial;
-    pCreateData->pDeviceFuncs->pfnSetLight = vboxWddmDDevSetLight;
-    pCreateData->pDeviceFuncs->pfnCreateLight = vboxWddmDDevCreateLight;
-    pCreateData->pDeviceFuncs->pfnDestroyLight = vboxWddmDDevDestroyLight;
-    pCreateData->pDeviceFuncs->pfnSetClipPlane = vboxWddmDDevSetClipPlane;
-    pCreateData->pDeviceFuncs->pfnGetInfo = vboxWddmDDevGetInfo;
-    pCreateData->pDeviceFuncs->pfnLock = vboxWddmDDevLock;
-    pCreateData->pDeviceFuncs->pfnUnlock = vboxWddmDDevUnlock;
-    pCreateData->pDeviceFuncs->pfnCreateResource = vboxWddmDDevCreateResource;
-    pCreateData->pDeviceFuncs->pfnDestroyResource = vboxWddmDDevDestroyResource;
-    pCreateData->pDeviceFuncs->pfnSetDisplayMode = vboxWddmDDevSetDisplayMode;
-    pCreateData->pDeviceFuncs->pfnPresent = vboxWddmDDevPresent;
-    pCreateData->pDeviceFuncs->pfnFlush = vboxWddmDDevFlush;
-    pCreateData->pDeviceFuncs->pfnCreateVertexShaderFunc = vboxWddmDDevCreateVertexShaderFunc;
-    pCreateData->pDeviceFuncs->pfnDeleteVertexShaderFunc = vboxWddmDDevDeleteVertexShaderFunc;
-    pCreateData->pDeviceFuncs->pfnSetVertexShaderFunc = vboxWddmDDevSetVertexShaderFunc;
-    pCreateData->pDeviceFuncs->pfnCreateVertexShaderDecl = vboxWddmDDevCreateVertexShaderDecl;
-    pCreateData->pDeviceFuncs->pfnDeleteVertexShaderDecl = vboxWddmDDevDeleteVertexShaderDecl;
-    pCreateData->pDeviceFuncs->pfnSetVertexShaderDecl = vboxWddmDDevSetVertexShaderDecl;
-    pCreateData->pDeviceFuncs->pfnSetVertexShaderConstI = vboxWddmDDevSetVertexShaderConstI;
-    pCreateData->pDeviceFuncs->pfnSetVertexShaderConstB = vboxWddmDDevSetVertexShaderConstB;
-    pCreateData->pDeviceFuncs->pfnSetScissorRect = vboxWddmDDevSetScissorRect;
-    pCreateData->pDeviceFuncs->pfnSetStreamSource = vboxWddmDDevSetStreamSource;
-    pCreateData->pDeviceFuncs->pfnSetStreamSourceFreq = vboxWddmDDevSetStreamSourceFreq;
-    pCreateData->pDeviceFuncs->pfnSetConvolutionKernelMono = vboxWddmDDevSetConvolutionKernelMono;
-    pCreateData->pDeviceFuncs->pfnComposeRects = vboxWddmDDevComposeRects;
-    pCreateData->pDeviceFuncs->pfnBlt = vboxWddmDDevBlt;
-    pCreateData->pDeviceFuncs->pfnColorFill = vboxWddmDDevColorFill;
-    pCreateData->pDeviceFuncs->pfnDepthFill = vboxWddmDDevDepthFill;
-    pCreateData->pDeviceFuncs->pfnCreateQuery = vboxWddmDDevCreateQuery;
-    pCreateData->pDeviceFuncs->pfnDestroyQuery = vboxWddmDDevDestroyQuery;
-    pCreateData->pDeviceFuncs->pfnIssueQuery = vboxWddmDDevIssueQuery;
-    pCreateData->pDeviceFuncs->pfnGetQueryData = vboxWddmDDevGetQueryData;
-    pCreateData->pDeviceFuncs->pfnSetRenderTarget = vboxWddmDDevSetRenderTarget;
-    pCreateData->pDeviceFuncs->pfnSetDepthStencil = vboxWddmDDevSetDepthStencil;
-    pCreateData->pDeviceFuncs->pfnGenerateMipSubLevels = vboxWddmDDevGenerateMipSubLevels;
-    pCreateData->pDeviceFuncs->pfnSetPixelShaderConstI = vboxWddmDDevSetPixelShaderConstI;
-    pCreateData->pDeviceFuncs->pfnSetPixelShaderConstB = vboxWddmDDevSetPixelShaderConstB;
-    pCreateData->pDeviceFuncs->pfnCreatePixelShader = vboxWddmDDevCreatePixelShader;
-    pCreateData->pDeviceFuncs->pfnDeletePixelShader = vboxWddmDDevDeletePixelShader;
-    pCreateData->pDeviceFuncs->pfnCreateDecodeDevice = vboxWddmDDevCreateDecodeDevice;
-    pCreateData->pDeviceFuncs->pfnDestroyDecodeDevice = vboxWddmDDevDestroyDecodeDevice;
-    pCreateData->pDeviceFuncs->pfnSetDecodeRenderTarget = vboxWddmDDevSetDecodeRenderTarget;
-    pCreateData->pDeviceFuncs->pfnDecodeBeginFrame = vboxWddmDDevDecodeBeginFrame;
-    pCreateData->pDeviceFuncs->pfnDecodeEndFrame = vboxWddmDDevDecodeEndFrame;
-    pCreateData->pDeviceFuncs->pfnDecodeExecute = vboxWddmDDevDecodeExecute;
-    pCreateData->pDeviceFuncs->pfnDecodeExtensionExecute = vboxWddmDDevDecodeExtensionExecute;
-    pCreateData->pDeviceFuncs->pfnCreateVideoProcessDevice = vboxWddmDDevCreateVideoProcessDevice;
-    pCreateData->pDeviceFuncs->pfnDestroyVideoProcessDevice = vboxWddmDDevDestroyVideoProcessDevice;
-    pCreateData->pDeviceFuncs->pfnVideoProcessBeginFrame = vboxWddmDDevVideoProcessBeginFrame;
-    pCreateData->pDeviceFuncs->pfnVideoProcessEndFrame = vboxWddmDDevVideoProcessEndFrame;
-    pCreateData->pDeviceFuncs->pfnSetVideoProcessRenderTarget = vboxWddmDDevSetVideoProcessRenderTarget;
-    pCreateData->pDeviceFuncs->pfnVideoProcessBlt = vboxWddmDDevVideoProcessBlt;
-    pCreateData->pDeviceFuncs->pfnCreateExtensionDevice = vboxWddmDDevCreateExtensionDevice;
-    pCreateData->pDeviceFuncs->pfnDestroyExtensionDevice = vboxWddmDDevDestroyExtensionDevice;
-    pCreateData->pDeviceFuncs->pfnExtensionExecute = vboxWddmDDevExtensionExecute;
-    pCreateData->pDeviceFuncs->pfnCreateOverlay = vboxWddmDDevCreateOverlay;
-    pCreateData->pDeviceFuncs->pfnUpdateOverlay = vboxWddmDDevUpdateOverlay;
-    pCreateData->pDeviceFuncs->pfnFlipOverlay = vboxWddmDDevFlipOverlay;
-    pCreateData->pDeviceFuncs->pfnGetOverlayColorControls = vboxWddmDDevGetOverlayColorControls;
-    pCreateData->pDeviceFuncs->pfnSetOverlayColorControls = vboxWddmDDevSetOverlayColorControls;
-    pCreateData->pDeviceFuncs->pfnDestroyOverlay = vboxWddmDDevDestroyOverlay;
-    pCreateData->pDeviceFuncs->pfnDestroyDevice = vboxWddmDDevDestroyDevice;
-    pCreateData->pDeviceFuncs->pfnQueryResourceResidency = vboxWddmDDevQueryResourceResidency;
-    pCreateData->pDeviceFuncs->pfnOpenResource = vboxWddmDDevOpenResource;
-    pCreateData->pDeviceFuncs->pfnGetCaptureAllocationHandle = vboxWddmDDevGetCaptureAllocationHandle;
-    pCreateData->pDeviceFuncs->pfnCaptureToSysMem = vboxWddmDDevCaptureToSysMem;
-    pCreateData->pDeviceFuncs->pfnLockAsync = NULL; //vboxWddmDDevLockAsync;
-    pCreateData->pDeviceFuncs->pfnUnlockAsync = NULL; //vboxWddmDDevUnlockAsync;
-    pCreateData->pDeviceFuncs->pfnRename = NULL; //vboxWddmDDevRename;
 
     vboxVDbgPrint(("<== "__FUNCTION__", hAdapter(0x%p)\n", hAdapter));
 
-    return S_OK;
+    return hr;
 }
 
 static HRESULT APIENTRY vboxWddmDispCloseAdapter (IN HANDLE hAdapter)
