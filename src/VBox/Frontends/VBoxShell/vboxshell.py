@@ -135,8 +135,9 @@ class VBoxMonitor:
 
 g_hasreadline = True
 try:
-    import readline
-    import rlcompleter
+    if g_hasreadline:
+        import readline
+        import rlcompleter
 except:
     g_hasreadline = False
 
@@ -2764,10 +2765,14 @@ def checkUserExtensions(ctx, cmds, folder):
         return
     exts = os.listdir(shextdir)
     for e in exts:
-        addExtsFromFile(ctx, cmds, os.path.join(shextdir,e))
+        # not editor temporary files, please.
+        if e.endswith('.py'):
+            addExtsFromFile(ctx, cmds, os.path.join(shextdir,e))
 
 def getHomeFolder(ctx):
     if ctx['remote'] or ctx['vb'] is None:
+        if 'VBOX_USER_HOME' is os.environ:
+            return os.path.join(os.environ['VBOX_USER_HOME'])
         return os.path.join(os.path.expanduser("~"), ".VirtualBox")
     else:
         return ctx['vb'].homeFolder
