@@ -2449,6 +2449,179 @@ def natCmd(ctx, args):
             print msg
     return 0
 
+def nicSwitchOnOff(adapter, attr, args):
+    if len(args) == 1:
+        yesno = {0: 'off', 1: 'on'}
+        r = yesno[int(adapter.__getattr__(attr))]
+        return (0, r)
+    else:
+        yesno = {'off' : 0, 'on' : 1}
+        if args[1] not in yesno:
+            print '%s isn\'t acceptable, please choose %s' % (args[1], yesno.keys())
+            return (1, None)
+        adapter.__setattr__(attr, yesno[args[1]])
+    return (0, None)
+
+def nicTraceSubCmd(ctx, vm, nicnum, adapter, args):
+    '''
+    usage: nic <vm> <nicnum> trace [on|off [file]]
+    '''
+    (rc, r) = nicSwitchOnOff(adapter, 'traceEnabled', args)
+    if len(args) == 1 and rc == 0:
+        r = '%s file:%s' % (r, adapter.traceFile) 
+        return (0, r)
+    elif len(args) == 3 and rc == 0:
+        adapter.traceFile = args[2]
+    return (0, None)
+
+def nicLineSpeedSubCmd(ctx, vm, nicnum, adapter, args):
+    if len(args) == 1:
+        r = '%d kbps'%(adapter.lineSpeed)
+        return (0, r)
+    else:
+        if not args[1].isdigit():
+            print '%s isn\'t a number'.format(args[1])
+            print (1, None)
+        adapter.lineSpeed = int(args[1])
+    return (0, None)
+
+def nicCableSubCmd(ctx, vm, nicnum, adapter, args):
+    '''
+    usage: nic <vm> <nicnum> cable [on|off]
+    '''
+    return nicSwitchOnOff(adapter, 'cableConnected', args)
+
+def nicEnableSubCmd(ctx, vm, nicnum, adapter, args):
+    '''
+    usage: nic <vm> <nicnum> enable [on|off]
+    '''
+    return nicSwitchOnOff(adapter, 'enabled', args)
+
+def nicTypeSubCmd(ctx, vm, nicnum, adapter, args):
+    '''
+    usage: nic <vm> <nicnum> type [Am79c970A|Am79c970A|I82540EM|I82545EM|I82543GC|Virtio]
+    '''
+    if len(args) == 1:
+        nictypes = ctx['ifaces'].all_values('NetworkAdapterType')
+        for n in nictypes.keys():
+            if str(adapter.adapterType) == str(nictypes[n]):
+                return (0, str(n))
+        return (1, None)
+    else:
+        nictypes = ctx['ifaces'].all_values('NetworkAdapterType')
+        if args[1] not in nictypes.keys():
+            print '%s not in acceptable values (%s)' % (args[1], nictypes.keys())
+            return (1, None)
+        adapter.adapterType = nictypes[args[1]]
+    return (0, None)
+
+def nicAttachmentSubCmd(ctx, vm, nicnum, adapter, args):
+    '''
+    usage: nic <vm> <nicnum> attachment [Null|NAT|Bridged <interface>|Internal <name>|HostOnly <interface>]
+    '''
+    if len(args) == 1:
+        nicAttachmentType = {
+            ctx['global'].constants.NetworkAttachmentType_Null: ('Null', ''),
+            ctx['global'].constants.NetworkAttachmentType_NAT: ('NAT', ''),
+            ctx['global'].constants.NetworkAttachmentType_Bridged: ('Bridged', adapter.hostInterface),
+            ctx['global'].constants.NetworkAttachmentType_Internal: ('Internal', adapter.internalNetwork),
+            ctx['global'].constants.NetworkAttachmentType_HostOnly: ('HostOnly', adapter.hostInterface),
+            #ctx['global'].constants.NetworkAttachmentType_VDE: ('VDE', adapter.VDENetwork)
+        } 
+        import types
+        if type(adapter.attachmentType) != types.IntType:
+            t = str(adapter.attachmentType)
+        else:
+            t = adapter.attachmentType
+        (r, p) = nicAttachmentType[t]
+        return (0, 'attachment:{0}, name:{1}'.format(r, p))
+    else:
+        nicAttachmentType = {
+            'Null': {
+                'v': lambda: len(args) == 2, 
+                'p': lambda: 'do nothing',
+                'f': lambda: adapter.detach()},
+            'NAT': {
+                'v': lambda: len(args) == 2, 
+                'p': lambda: 'do nothing',
+                'f': lambda: adapter.attachToNAT()},
+            'Bridged': {
+                'v': lambda: len(args) == 3,
+                'p': lambda: adapter.__setattr__('hostInterface', args[2]),
+                'f': lambda: adapter.attachToBridgedInterface()},
+            'Internal': {
+                'v': lambda: len(args) == 3,
+                'p': lambda: adapter.__setattr__('internalNetwork', args[2]),
+                'f': lambda: adapter.attachToInternalNetwork()},
+            'HostOnly': {
+                'v': lambda: len(args) == 2,
+                'p': lambda: adapter.__setattr__('hostInterface', args[2]),
+                'f': lambda: adapter.attachToHostOnlyInterface()},
+            'VDE': { 
+                'v': lambda: len(args) == 3,
+                'p': lambda: adapter.__setattr__('VDENetwork', args[2]),
+                'f': lambda: adapter.attachToVDE()}
+        } 
+        if args[1] not in nicAttachmentType.keys():
+            print '{0} not in acceptable values ({1})'.format(args[1], nicAttachmentType.keys())
+            return (1, None)
+        if not nicAttachmentType[args[1]]['v']():
+            print nicAttachmentType.__doc__ 
+            return (1, None)
+        nicAttachmentType[args[1]]['p']()
+        nicAttachmentType[args[1]]['f']()
+    return (0, None)
+
+def nicCmd(ctx, args):
+    '''
+    This command to manage network adapters 
+    usage: nic <vm> <nicnum> <cmd> <cmd-args>
+    where cmd : attachment, trace, linespeed, cable, enable, type
+    '''
+    # 'command name':{'runtime': is_callable_at_runtime, 'op': function_name}
+    niccomand = {
+        'attachment': nicAttachmentSubCmd,
+        'trace':  nicTraceSubCmd,
+        'linespeed': nicLineSpeedSubCmd,
+        'cable': nicCableSubCmd,
+        'enable': nicEnableSubCmd,
+        'type': nicTypeSubCmd
+    }
+    if     args[1] == 'help' \
+        or len(args) < 2 \
+        or (len(args) > 2 and args[3] not in niccomand):
+        if len(args) == 3 \
+           and args[2] in niccomand:
+            print niccomand[args[2]].__doc__ 
+        else:
+            print nicCmd.__doc__
+        return 0
+
+    vm = ctx['argsToMach'](args)
+    if vm is None:
+        print 'please specify vm'
+        return 0
+     
+    if    len(args) < 3 \
+       or not args[2].isdigit() \
+       or int(args[2]) not in range(0, ctx['vb'].systemProperties.networkAdapterCount):
+            print 'please specify adapter num %d isn\'t in range [0-%d]'%(args[2], ctx['vb'].systemProperties.networkAdapterCount)
+            return 0
+    nicnum = int(args[2])
+    cmdargs = args[3:]
+    func = args[3] 
+    session = None
+    session = ctx['global'].openMachineSession(vm.id) 
+    vm = session.machine
+    adapter = vm.getNetworkAdapter(nicnum)
+    (rc, report) = niccomand[func](ctx, vm, nicnum, adapter, cmdargs)
+    if rc == 0:
+            vm.saveSettings()
+    if report is not None:
+        print '%s nic %d %s: %s' % (vm.name, nicnum, args[3], report)
+    session.close()
+    return 0
+
 
 aliases = {'s':'start',
            'i':'info',
@@ -2525,6 +2698,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'colors':['Toggle colors', colorsCmd, 0],
             'snapshot':['VM snapshot manipulation, snapshot help for more info', snapshotCmd, 0],
             'nat':['NAT manipulation, nat help for more info', natCmd, 0],
+            'nic' : ['network adapter management', nicCmd, 0],
             }
 
 def runCommandArgs(ctx, args):
