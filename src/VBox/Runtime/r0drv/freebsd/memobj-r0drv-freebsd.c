@@ -556,7 +556,7 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
  */
 static int rtR0MemObjNativeLockInMap(PPRTR0MEMOBJINTERNAL ppMem, vm_map_t pVmMap,
                                      vm_offset_t AddrStart, size_t cb, uint32_t fAccess,
-                                     RTR0PROCESS R0Process)
+                                     RTR0PROCESS R0Process, int fFlags)
 {
     int rc;
     NOREF(fAccess);
@@ -573,7 +573,7 @@ static int rtR0MemObjNativeLockInMap(PPRTR0MEMOBJINTERNAL ppMem, vm_map_t pVmMap
     rc = vm_map_wire(pVmMap,                                         /* the map */
                      AddrStart,                                      /* start */
                      AddrStart + cb,                                 /* end */
-                     VM_MAP_WIRE_SYSTEM | VM_MAP_WIRE_NOHOLES);      /* flags */
+                     fFlags);                                        /* flags */
     if (rc == KERN_SUCCESS)
     {
         pMemFreeBSD->Core.u.Lock.R0Process = R0Process;
@@ -592,7 +592,8 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
                                      (vm_offset_t)R3Ptr,
                                      cb,
                                      fAccess,
-                                     R0Process);
+                                     R0Process,
+                                     VM_MAP_WIRE_USER | VM_MAP_WIRE_NOHOLES);
 }
 
 
@@ -603,7 +604,8 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, 
                                      (vm_offset_t)pv,
                                      cb,
                                      fAccess,
-                                     NIL_RTR0PROCESS);
+                                     NIL_RTR0PROCESS,
+                                     VM_MAP_WIRE_SYSTEM | VM_MAP_WIRE_NOHOLES);
 }
 
 
