@@ -252,9 +252,6 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
     bool                        fProcessAlive       = true;
     bool                        fProcessTimedOut    = false;
     uint64_t                    MsProcessKilled     = UINT64_MAX;
-    bool const                  fHavePipes          = hStdInW    != NIL_RTPIPE
-                                                      || hStdOutR   != NIL_RTPIPE
-                                                      || hStdErrR   != NIL_RTPIPE;
     RTMSINTERVAL const          cMsPollBase         = hStdInW != NIL_RTPIPE
                                                       ? 100   /* need to poll for input */
                                                       : 1000; /* need only poll for process exit and aborts */
