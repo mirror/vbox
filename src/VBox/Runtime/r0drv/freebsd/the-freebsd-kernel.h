@@ -69,10 +69,9 @@
 #include <sys/resourcevar.h>
 #include <machine/cpu.h>
 
-/*#ifdef __cplusplus
-# error "This header doesn't work for C++ code. Sorry, typical kernel crap."
-#endif*/
-
+/**
+ * Wrappers arount the sleepq_ KPI.
+ */
 #if __FreeBSD_version >= 800026
 # define SLEEPQ_TIMEDWAIT(EventInt) sleepq_timedwait(EventInt, 0)
 # define SLEEPQ_TIMEDWAIT_SIG(EventInt) sleepq_timedwait_sig(EventInt, 0)
@@ -83,6 +82,26 @@
 # define SLEEPQ_TIMEDWAIT_SIG(EventInt) sleepq_timedwait_sig(EventInt)
 # define SLEEPQ_WAIT(EventInt) sleepq_wait(EventInt)
 # define SLEEPQ_WAIT_SIG(EventInt) sleepq_wait_sig(EventInt)
+#endif
+
+/**
+ * Our pmap_enter version
+ */
+#if __FreeBSD_version >= 701105
+# define MY_PMAP_ENTER(pPhysMap, AddrR3, pPage, fProt, fWired) \
+    pmap_enter(pPhysMap, AddrR3, VM_PROT_NONE, pPage, fProt, fWired)
+#else
+# define MY_PMAP_ENTER(pPhysMap, AddrR3, pPage, fProt, fWired) \
+    pmap_enter(pPhysMap, AddrR3, pPage, fProt, fWired)
+#endif
+
+/**
+ * Check whether we can use kmem_alloc_attr for low allocs.
+ */
+#if    (__FreeBSD_version >= 900011) \
+    || (__FreeBSD_version < 900000 && __FreeBSD_version >= 800505) \
+    || (__FreeBSD_version < 800000 && __FreeBSD_version >= 703101)
+# define USE_KMEM_ALLOC_ATTR
 #endif
 
 #endif
