@@ -40,6 +40,11 @@
 # ifdef RT_OS_SOLARIS
 #  include <sys/sockio.h>
 # endif
+# ifdef RT_OS_FREEBSD
+#  include <ifaddrs.h> /* getifaddrs, freeifaddrs */
+#  include <net/if_dl.h> /* LLADDR */
+#  include <netdb.h> /* getnameinfo */
+# endif
 #endif
 
 #include <iprt/mem.h>
@@ -393,7 +398,79 @@ int VBoxServiceVMInfoWriteNetwork()
     }
     if (sd >= 0)
         closesocket(sd);
-#else /* !RT_OS_WINDOWS */
+#elif defined(RT_OS_FREEBSD)
+    int rc = 0;
+    struct ifaddrs *pIfHead = NULL;
+
+    /* Get all available interfaces */
+    rc = getifaddrs(&pIfHead);
+    if (rc < 0)
+    {
+        VBoxServiceError("Failed to get all interfaces: Error %d\n", errno);
+        return RTErrConvertFromErrno(errno);
+    }
+
+    /* Loop through all interfaces and set the data. */
+    for (struct ifaddrs *pIfCurr = pIfHead; pIfCurr; pIfCurr = pIfCurr->ifa_next)
+    {
+        /*
+         * Only AF_INET and no loopback interfaces
+         * @todo: IPv6 interfaces
+         */
+        if (   pIfCurr->ifa_addr->sa_family == AF_INET
+            && !(pIfCurr->ifa_flags & IFF_LOOPBACK))
+        {
+            char szInetAddr[NI_MAXHOST];
+
+            memset(szInetAddr, 0, NI_MAXHOST);
+            getnameinfo(pIfCurr->ifa_addr, sizeof(struct sockaddr_in),
+                        szInetAddr, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+            RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%d/V4/IP", cIfacesReport);
+            VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", szInetAddr);
+
+            memset(szInetAddr, 0, NI_MAXHOST);
+            getnameinfo(pIfCurr->ifa_broadaddr, sizeof(struct sockaddr_in),
+                        szInetAddr, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+            RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%d/V4/Broadcast", cIfacesReport);
+            VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", szInetAddr);
+
+            memset(szInetAddr, 0, NI_MAXHOST);
+            getnameinfo(pIfCurr->ifa_netmask, sizeof(struct sockaddr_in),
+                        szInetAddr, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+            RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%d/V4/Netmask", cIfacesReport);
+            VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", szInetAddr);
+
+            /* Search for the AF_LINK interface of the current AF_INET one and get the mac. */
+            for (struct ifaddrs *pIfLinkCurr = pIfHead; pIfLinkCurr; pIfLinkCurr = pIfLinkCurr->ifa_next)
+            {
+                if (   pIfLinkCurr->ifa_addr->sa_family == AF_LINK
+                    && !strcmp(pIfCurr->ifa_name, pIfLinkCurr->ifa_name))
+                {
+                    char szMac[32];
+                    uint8_t *pu8Mac = NULL;
+                    struct sockaddr_dl *pLinkAddress = (struct sockaddr_dl *)pIfLinkCurr->ifa_addr;
+
+                    AssertPtr(pLinkAddress);
+                    pu8Mac = (uint8_t *)LLADDR(pLinkAddress);
+                    RTStrPrintf(szMac, sizeof(szMac), "%02X%02X%02X%02X%02X%02X",
+                                pu8Mac[0], pu8Mac[1], pu8Mac[2], pu8Mac[3],  pu8Mac[4], pu8Mac[5]);
+                    RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%d/MAC", cIfacesReport);
+                    VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", szMac);
+                    break;
+                }
+            }
+
+            RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%d/Status", cIfacesReport);
+            VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, pIfCurr->ifa_flags & IFF_UP ? "Up" : "Down");
+
+            cIfacesReport++;
+        }
+    }
+
+    /* Free allocated resources. */
+    freeifaddrs(pIfHead);
+
+#else /* !RT_OS_WINDOWS && !RT_OS_FREEBSD */
     int sd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sd < 0)
     {
@@ -448,7 +525,7 @@ int VBoxServiceVMInfoWriteNetwork()
             close(sd);
             return RTErrConvertFromErrno(errno);
         }
- #if defined(RT_OS_FREEBSD) || defined(RT_OS_OS2) || defined(RT_OS_SOLARIS)
+ #if defined(RT_OS_OS2) || defined(RT_OS_SOLARIS)
         pAddress = (sockaddr_in *)&ifrequest[i].ifr_addr;
  #else
         pAddress = (sockaddr_in *)&ifrequest[i].ifr_netmask;
