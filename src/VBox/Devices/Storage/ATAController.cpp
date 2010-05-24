@@ -4964,32 +4964,23 @@ int ataControllerDestroy(PAHCIATACONTROLLER pCtl)
     return VINF_SUCCESS;
 }
 
-#if 0
 /**
  * Detach notification.
  *
  * The DVD drive has been unplugged.
  *
  * @param   pDevIns     The device instance.
- * @param   iLUN        The logical unit which is being detached.
+ * @param   fMaster     True if the master is detached
+ *                      false for the slave
  */
-static DECLCALLBACK(void) ataDetach(PPDMDEVINS pDevIns, unsigned iLUN)
+void ataControllerDetach(PAHCIATACONTROLLER pCtl, bool fMaster)
 {
-    PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
-    PAHCIATACONTROLLER  pCtl;
     AHCIATADevState    *pIf;
-    unsigned        iController;
-    unsigned        iInterface;
 
     /*
      * Locate the controller and stuff.
      */
-    iController = iLUN / RT_ELEMENTS(pThis->aCts[0].aIfs);
-    AssertReleaseMsg(iController < RT_ELEMENTS(pThis->aCts), ("iController=%d iLUN=%d\n", iController, iLUN));
-    pCtl = &pThis->aCts[iController];
-
-    iInterface  = iLUN % RT_ELEMENTS(pThis->aCts[0].aIfs);
-    pIf = &pCtl->aIfs[iInterface];
+    pIf = &pCtl->aIfs[fMaster ? 0 : 1];
 
     /*
      * Zero some important members.
@@ -4998,16 +4989,7 @@ static DECLCALLBACK(void) ataDetach(PPDMDEVINS pDevIns, unsigned iLUN)
     pIf->pDrvBlock = NULL;
     pIf->pDrvBlockBios = NULL;
     pIf->pDrvMount = NULL;
-
-    /*
-     * Just in case there was a medium inserted. Only required when attached to a physical drive
-     * in passthrough mode as in virtual ATAPI mode we've got an unmount notification.
-     */
-    if (pIf->fATAPIPassthrough)
-        ataMediumRemoved(pIf);
-
 }
-#endif
 
 /**
  * Configure a LUN.
@@ -5138,7 +5120,6 @@ static int ataConfigLun(PPDMDEVINS pDevIns, AHCIATADevState *pIf)
     return VINF_SUCCESS;
 }
 
-#if 0
 /**
  * Attach command.
  *
@@ -5148,45 +5129,30 @@ static int ataConfigLun(PPDMDEVINS pDevIns, AHCIATADevState *pIf)
  * @param   pDevIns     The device instance.
  * @param   iLUN        The logical unit which is being detached.
  */
-static DECLCALLBACK(int)  ataAttach(PPDMDEVINS pDevIns, unsigned iLUN)
+int  ataControllerAttach(PAHCIATACONTROLLER pCtl, PPDMIBASE pDrvBase, bool fMaster)
 {
-    PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
-    PAHCIATACONTROLLER  pCtl;
     AHCIATADevState    *pIf;
     int             rc;
-    unsigned        iController;
-    unsigned        iInterface;
 
     /*
      * Locate the controller and stuff.
      */
-    iController = iLUN / RT_ELEMENTS(pThis->aCts[0].aIfs);
-    AssertReleaseMsg(iController < RT_ELEMENTS(pThis->aCts), ("iController=%d iLUN=%d\n", iController, iLUN));
-    pCtl = &pThis->aCts[iController];
-
-    iInterface  = iLUN % RT_ELEMENTS(pThis->aCts[0].aIfs);
-    pIf = &pCtl->aIfs[iInterface];
+    pIf = &pCtl->aIfs[fMaster ? 0 : 1];
 
     /* the usual paranoia */
     AssertRelease(!pIf->pDrvBase);
     AssertRelease(!pIf->pDrvBlock);
     Assert(ATADEVSTATE_2_CONTROLLER(pIf) == pCtl);
-    Assert(pIf->iLUN == iLUN);
 
     /*
      * Try attach the block device and get the interfaces,
      * required as well as optional.
      */
-    rc = PDMDevHlpDriverAttach(pDevIns, pIf->iLUN, &pIf->IBase, &pIf->pDrvBase, NULL);
-    if (RT_SUCCESS(rc))
+    
+    pIf->pDrvBase = pDrvBase;
+    if (pDrvBase)
     {
-        rc = ataConfigLun(pDevIns, pIf);
-        /*
-         * In case there is a new medium inserted. In virtual ATAPI mode we get an mount
-         * notification.
-         */
-        if (pIf->fATAPIPassthrough)
-            ataMediumInserted(pIf);
+        rc = ataConfigLun(pCtl->pDevInsR3, pIf);
     }
     else
         AssertMsgFailed(("Failed to attach LUN#%d. rc=%Rrc\n", pIf->iLUN, rc));
@@ -5198,7 +5164,6 @@ static DECLCALLBACK(int)  ataAttach(PPDMDEVINS pDevIns, unsigned iLUN)
     }
     return rc;
 }
-#endif
 
 
 /**
@@ -5465,7 +5430,9 @@ int ataControllerLoadExec(PAHCIATACONTROLLER pCtl, PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) ataControllerInit(PPDMDEVINS pDevIns, PAHCIATACONTROLLER pCtl, PPDMIBASE pDrvBaseMaster, PPDMIBASE pDrvBaseSlave,
+DECLCALLBACK(int) ataControllerInit(PPDMDEVINS pDevIns, PAHCIATACONTROLLER pCtl,
+                                    unsigned iLUNMaster, PPDMIBASE pDrvBaseMaster,
+                                    unsigned iLUNSlave, PPDMIBASE pDrvBaseSlave,
                                     uint32_t *pcbSSMState, const char *szName, PPDMLED pLed,
                                     PSTAMCOUNTER pStatBytesRead, PSTAMCOUNTER pStatBytesWritten)
 {
@@ -5483,7 +5450,7 @@ DECLCALLBACK(int) ataControllerInit(PPDMDEVINS pDevIns, PAHCIATACONTROLLER pCtl,
 
     for (uint32_t j = 0; j < RT_ELEMENTS(pCtl->aIfs); j++)
     {
-        pCtl->aIfs[j].iLUN              = j;
+        pCtl->aIfs[j].iLUN              = j == 0 ? iLUNMaster : iLUNSlave;
         pCtl->aIfs[j].pDevInsR3         = pDevIns;
         pCtl->aIfs[j].pDevInsR0         = PDMDEVINS_2_R0PTR(pDevIns);
         pCtl->aIfs[j].pDevInsRC         = PDMDEVINS_2_RCPTR(pDevIns);

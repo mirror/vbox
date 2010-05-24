@@ -6544,6 +6544,24 @@ static DECLCALLBACK(void) ahciR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
             AssertMsgFailed(("%s: Failed to destroy the event semaphore rc=%Rrc.\n", __FUNCTION__, rc));
     }
 
+    /* Check if the changed port uses IDE emulation. */
+    bool fMaster = false;
+    PAHCIATACONTROLLER pCtl = NULL;
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
+        for (unsigned j = 0; j < RT_ELEMENTS(pAhci->aCts[0].aIfs); j++)
+        {
+            PAHCIATACONTROLLER pTmp = &pAhci->aCts[i];
+            if (pTmp->aIfs[j].iLUN == iLUN)
+            {
+                pCtl = pTmp;
+                fMaster = j == 0 ? true : false;
+            }
+        }
+
+    if (pCtl)
+        ataControllerDetach(pCtl, fMaster);
+
     /*
      * Zero some important members.
      */
@@ -6596,32 +6614,54 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
     }
     else
     {
-        char szName[24];
-        RTStrPrintf(szName, sizeof(szName), "Port%d", iLUN);
+        /* Check if the changed port uses IDE emulation. */
+        bool fMaster = false;
+        PAHCIATACONTROLLER pCtl = NULL;
 
-        if (pAhciPort->pDrvBlockAsync)
-        {
-            pAhciPort->fAsyncInterface = true;
-        }
-        else
-        {
-            pAhciPort->fAsyncInterface = false;
-
-            /* Create event semaphore. */
-            rc = RTSemEventCreate(&pAhciPort->AsyncIORequestSem);
-            if (RT_FAILURE(rc))
+        for (unsigned i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
+            for (unsigned j = 0; j < RT_ELEMENTS(pAhci->aCts[0].aIfs); j++)
             {
-                Log(("%s: Failed to create event semaphore for %s.\n", __FUNCTION__, szName));
-                return rc;
+                PAHCIATACONTROLLER pTmp = &pAhci->aCts[i];
+                if (pTmp->aIfs[j].iLUN == iLUN)
+                {
+                    pCtl = pTmp;
+                    fMaster = j == 0 ? true : false;
+                }
             }
 
-            /* Create the async IO thread. */
-            rc = PDMDevHlpThreadCreate(pDevIns, &pAhciPort->pAsyncIOThread, pAhciPort, ahciAsyncIOLoop, ahciAsyncIOLoopWakeUp, 0,
-                                       RTTHREADTYPE_IO, szName);
-            if (RT_FAILURE(rc))
+        /* Attach to the controller if available */
+        if (pCtl)
+            rc = ataControllerAttach(pCtl, pAhciPort->pDrvBase, fMaster);
+
+        if (RT_SUCCESS(rc))
+        {
+            if (pAhciPort->pDrvBlockAsync)
             {
-                AssertMsgFailed(("%s: Async IO Thread creation for %s failed rc=%d\n", __FUNCTION__, szName, rc));
-                return rc;
+                pAhciPort->fAsyncInterface = true;
+            }
+            else
+            {
+                char szName[24];
+                RTStrPrintf(szName, sizeof(szName), "Port%d", iLUN);
+
+                pAhciPort->fAsyncInterface = false;
+
+                /* Create event semaphore. */
+                rc = RTSemEventCreate(&pAhciPort->AsyncIORequestSem);
+                if (RT_FAILURE(rc))
+                {
+                    Log(("%s: Failed to create event semaphore for %s.\n", __FUNCTION__, szName));
+                    return rc;
+                }
+
+                /* Create the async IO thread. */
+                rc = PDMDevHlpThreadCreate(pDevIns, &pAhciPort->pAsyncIOThread, pAhciPort, ahciAsyncIOLoop, ahciAsyncIOLoopWakeUp, 0,
+                                           RTTHREADTYPE_IO, szName);
+                if (RT_FAILURE(rc))
+                {
+                    AssertMsgFailed(("%s: Async IO Thread creation for %s failed rc=%d\n", __FUNCTION__, szName, rc));
+                    return rc;
+                }
             }
         }
     }
@@ -7137,8 +7177,11 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
         char szName[24];
         RTStrPrintf(szName, sizeof(szName), "EmulatedATA%d", i);
-        rc = ataControllerInit(pDevIns, pCtl, pThis->ahciPort[iPortMaster].pDrvBase, pThis->ahciPort[iPortSlave].pDrvBase,
-                               &cbSSMState, szName, &pThis->ahciPort[iPortMaster].Led, &pThis->ahciPort[iPortMaster].StatBytesRead,
+        rc = ataControllerInit(pDevIns, pCtl,
+                               iPortMaster, pThis->ahciPort[iPortMaster].pDrvBase,
+                               iPortSlave, pThis->ahciPort[iPortSlave].pDrvBase,
+                               &cbSSMState, szName, &pThis->ahciPort[iPortMaster].Led,
+                               &pThis->ahciPort[iPortMaster].StatBytesRead,
                                &pThis->ahciPort[iPortMaster].StatBytesWritten);
         if (RT_FAILURE(rc))
             return rc;
