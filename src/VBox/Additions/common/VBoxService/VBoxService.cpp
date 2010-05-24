@@ -455,6 +455,7 @@ static void VBoxServiceWaitSignal(void)
     pthread_sigmask(SIG_BLOCK, &signalMask, NULL);
 
     int rc;
+#ifndef RT_OS_FREEBSD
     do
     {
         iSignal = -1;
@@ -462,6 +463,10 @@ static void VBoxServiceWaitSignal(void)
     }
     while (   rc == EINTR
            || rc == ERESTART);
+#else
+    iSignal = -1;
+    rc = sigwait(&signalMask, &iSignal);
+#endif
 
     VBoxServiceVerbose(3, "VBoxServiceWaitSignal: Received signal %d (rc=%d)\n", iSignal, rc);
 }
