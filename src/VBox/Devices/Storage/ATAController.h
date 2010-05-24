@@ -419,7 +419,9 @@ RT_C_DECLS_END
  * @param   pcbSSMState    Where to store the size of the device state for loading/saving.
  * @param   szName         Name of the controller (Used to initialize the critical section).
  */
-int ataControllerInit(PPDMDEVINS pDevIns, PAHCIATACONTROLLER pCtl, PPDMIBASE pDrvBaseMaster, PPDMIBASE pDrvBaseSlave,
+int ataControllerInit(PPDMDEVINS pDevIns, PAHCIATACONTROLLER pCtl,
+                      unsigned iLUNMaster, PPDMIBASE pDrvBaseMaster,
+                      unsigned iLUNSlave, PPDMIBASE pDrvBaseSlave,
                       uint32_t *pcbSSMState, const char *szName, PPDMLED pLed, PSTAMCOUNTER pStatBytesRead, PSTAMCOUNTER pStatBytesWritten);
 
 /**
@@ -481,6 +483,28 @@ int ataControllerSaveExec(PAHCIATACONTROLLER pCtl, PSSMHANDLE pSSM);
  * @param   pSSM    SSM operation handle.
  */
 int ataControllerLoadExec(PAHCIATACONTROLLER pCtl, PSSMHANDLE pSSM);
+
+/**
+ * Attach command.
+ *
+ * This is called when we change block driver for the DVD drive.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   iLUN        The logical unit which is being detached.
+ */
+int  ataControllerAttach(PAHCIATACONTROLLER pCtl, PPDMIBASE pDrvBase, bool fMaster);
+
+/**
+ * Detach notification.
+ *
+ * The DVD drive has been unplugged.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   fMaster     True if the master is detached
+ *                      false for the slave
+ */
+void ataControllerDetach(PAHCIATACONTROLLER pCtl, bool fMaster);
 
 #endif /* IN_RING3 */
 
