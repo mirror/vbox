@@ -30,6 +30,8 @@
 
 DWORD                 g_rcWinService = 0;
 SERVICE_STATUS_HANDLE g_hWinServiceStatus = NULL;
+/** The semaphore for the dummy Windows service. */
+static RTSEMEVENT     g_WindowsEvent = NIL_RTSEMEVENT;
 
 void WINAPI VBoxServiceWinMain (DWORD argc, LPTSTR *argv);
 
@@ -330,12 +332,7 @@ int VBoxServiceWinStart(void)
            service). */
         VBoxServiceWinSetStatus (SERVICE_RUNNING, 0);
 
-        /*
-         * Check that at least one service is enabled.
-         */
-        unsigned iMain = VBoxServiceGetStartedServices();
-        rc = VBoxServiceStartServices(iMain); /* Start all the services. */
-
+        rc = VBoxServiceStartServices();
         if (RT_FAILURE(rc))
             VBoxServiceWinSetStatus (SERVICE_STOPPED, 0);
     }

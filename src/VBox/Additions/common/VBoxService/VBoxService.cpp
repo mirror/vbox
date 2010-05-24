@@ -34,6 +34,7 @@
 #include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
 #include <iprt/path.h>
+#include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
 #include <iprt/thread.h>
@@ -53,8 +54,12 @@ char *g_pszProgName =  (char *)"";
 int g_cVerbosity = 0;
 /** The default service interval (the -i | --interval) option). */
 uint32_t g_DefaultInterval = 0;
-/** Shutdown the main thread. (later, for signals.) */
-bool volatile g_fShutdown;
+#ifdef RT_OS_WINDOWS
+/** Signal shutdown to the Windows service thread. */
+bool volatile g_WindowsServiceShutdown;
+/** Event the Windows service thread waits for shutdown. */
+RTSEMEVENT g_WindowsServiceEvent;
+#endif
 
 /**
  * The details of the services that has been compiled in.
@@ -275,17 +280,16 @@ static DECLCALLBACK(int) VBoxServiceThread(RTTHREAD ThreadSelf, void *pvUser)
 }
 
 
-unsigned VBoxServiceGetStartedServices(void)
+/**
+ * Check if at least one service should be started.
+ */
+static bool VBoxServiceCheckStartedServices(void)
 {
-    unsigned iMain = ~0U;
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
         if (g_aServices[j].fEnabled)
-        {
-            iMain = j;
-            break;
-        }
+            return true;
 
-   return iMain; /* Return the index of the main service (must always come last!). */
+   return false;
 }
 
 
@@ -293,11 +297,8 @@ unsigned VBoxServiceGetStartedServices(void)
  * Starts the service.
  *
  * @returns VBox status code, errors are fully bitched.
- *
- * @param   iMain           The index of the service that belongs to the main
- *                          thread. Pass ~0U if none does.
  */
-int VBoxServiceStartServices(unsigned iMain)
+int VBoxServiceStartServices(void)
 {
     int rc;
 
@@ -306,6 +307,7 @@ int VBoxServiceStartServices(unsigned iMain)
      */
     VBoxServiceVerbose(2, "Initializing services ...\n");
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
+    {
         if (g_aServices[j].fEnabled)
         {
             rc = g_aServices[j].pDesc->pfnInit();
@@ -323,6 +325,7 @@ int VBoxServiceStartServices(unsigned iMain)
 
             }
         }
+    }
 
     /*
      * Start the service(s).
@@ -331,8 +334,7 @@ int VBoxServiceStartServices(unsigned iMain)
     rc = VINF_SUCCESS;
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
     {
-        if (    !g_aServices[j].fEnabled
-            ||  j == iMain)
+        if (!g_aServices[j].fEnabled)
             continue;
 
         VBoxServiceVerbose(2, "Starting service     '%s' ...\n", g_aServices[j].pDesc->pszName);
@@ -353,18 +355,25 @@ int VBoxServiceStartServices(unsigned iMain)
             rc = VERR_GENERAL_FAILURE;
         }
     }
-    if (   RT_SUCCESS(rc)
-        && iMain != ~0U)
+
+#ifdef RT_OS_WINDOWS
+    if (RT_SUCCESS(rc))
     {
-        /* The final service runs in the main thread. */
-        VBoxServiceVerbose(1, "Starting '%s' in the main thread\n", g_aServices[iMain].pDesc->pszName);
-        rc = g_aServices[iMain].pDesc->pfnWorker(&g_fShutdown);
-        if (RT_SUCCESS(rc))
-            VBoxServiceVerbose(1, "Main service '%s' successfully stopped.\n", g_aServices[iMain].pDesc->pszName);
-        else /* Only complain if service returned an error. Otherwise the service is a one-timer. */
-            VBoxServiceError("Service '%s' stopped unexpected; rc=%Rrc\n", g_aServices[iMain].pDesc->pszName, rc);
-        g_aServices[iMain].pDesc->pfnTerm();
+        /* Block the main thread. */
+        VBoxServiceVerbose(1, "Waiting in main thread\n");
+        int rc = RTSemEventCreate(&g_WindowsServiceEvent);
+        AssertRC(rc);
+        for (;;)
+        {
+            if (g_WindowsServiceShutdown)
+                break;
+            rc = RTSemEventWait(g_WindowsServiceEvent, RT_INDEFINITE_WAIT);
+            AssertRC(rc);
+        }
+        RTSemEventDestroy(g_WindowsServiceEvent);
+        g_WindowsServiceEvent = NIL_RTSEMEVENT;
     }
+#endif
     return rc;
 }
 
@@ -378,7 +387,6 @@ int VBoxServiceStartServices(unsigned iMain)
 int VBoxServiceStopServices(void)
 {
     int rc = VINF_SUCCESS;
-    unsigned iMain = VBoxServiceGetStartedServices();
 
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
         ASMAtomicXchgBool(&g_aServices[j].fShutdown, true);
@@ -389,33 +397,28 @@ int VBoxServiceStopServices(void)
             g_aServices[j].pDesc->pfnStop();
         }
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
-
-        if (    !g_aServices[j].fEnabled /* Only stop services which were started before. */
-            ||  j == iMain)              /* Don't call the termination function for main service yet. */
-        {
+    {
+        if (!g_aServices[j].fEnabled) /* Only stop services which were started before. */
             continue;
-        }
-        else
+        if (g_aServices[j].Thread != NIL_RTTHREAD)
         {
-            if (g_aServices[j].Thread != NIL_RTTHREAD)
+            VBoxServiceVerbose(2, "Waiting for service '%s' to stop ...\n", g_aServices[j].pDesc->pszName);
+            for (int i = 0; i < 30; i++) /* Wait 30 seconds in total */
             {
-                VBoxServiceVerbose(2, "Waiting for service '%s' to stop ...\n", g_aServices[j].pDesc->pszName);
-                for (int i = 0; i < 30; i++) /* Wait 30 seconds in total */
-                {
-                    rc = RTThreadWait(g_aServices[j].Thread, 1000 /* Wait 1 second */, NULL);
-                    if (RT_SUCCESS(rc))
-                        break;
+                rc = RTThreadWait(g_aServices[j].Thread, 1000 /* Wait 1 second */, NULL);
+                if (RT_SUCCESS(rc))
+                    break;
 #ifdef RT_OS_WINDOWS
-                    /* Notify SCM that it takes a bit longer ... */
-                    VBoxServiceWinSetStatus(SERVICE_STOP_PENDING, i);
+                /* Notify SCM that it takes a bit longer ... */
+                VBoxServiceWinSetStatus(SERVICE_STOP_PENDING, i);
 #endif
-                }
-                if (RT_FAILURE(rc))
-                    VBoxServiceError("Service '%s' failed to stop. (%Rrc)\n", g_aServices[j].pDesc->pszName, rc);
             }
-            VBoxServiceVerbose(3, "Terminating service '%s' (%d) ...\n", g_aServices[j].pDesc->pszName, j);
-            g_aServices[j].pDesc->pfnTerm();
+            if (RT_FAILURE(rc))
+                VBoxServiceError("Service '%s' failed to stop. (%Rrc)\n", g_aServices[j].pDesc->pszName, rc);
         }
+        VBoxServiceVerbose(3, "Terminating service '%s' (%d) ...\n", g_aServices[j].pDesc->pszName, j);
+        g_aServices[j].pDesc->pfnTerm();
+    }
 
 #ifdef RT_OS_WINDOWS
     /*
@@ -424,12 +427,12 @@ int VBoxServiceStopServices(void)
      * function will be called in a later context (when the main thread returns from the worker
      * function).
      */
-    if (iMain != ~0U)
+    if (g_WindowsServiceEvent != NIL_RTSEMEVENT)
     {
-        VBoxServiceVerbose(3, "Stopping main service '%s' (%d) ...\n", g_aServices[iMain].pDesc->pszName, iMain);
-
-        ASMAtomicXchgBool(&g_fShutdown, true);
-        g_aServices[iMain].pDesc->pfnStop();
+        VBoxServiceVerbose(3, "Stopping the main thread...\n");
+        ASMAtomicXchgBool(&g_WindowsServiceShutdown, true);
+        rc = RTSemEventSignal(g_WindowsServiceEvent);
+        AssertRC(rc);
     }
 #endif
 
@@ -640,16 +643,8 @@ int main(int argc, char **argv)
     /*
      * Check that at least one service is enabled.
      */
-    unsigned iMain = VBoxServiceGetStartedServices();
-    if (iMain == ~0U)
+    if (!VBoxServiceCheckStartedServices())
         return VBoxServiceSyntax("At least one service must be enabled.\n");
-
-#ifndef RT_OS_WINDOWS
-    /*
-     * POSIX: No main service thread.
-     */
-    iMain = ~0U;
-#endif
 
     VBoxServiceVerbose(0, "%s r%s started. Verbose level = %d\n",
                        RTBldCfgVersion(), RTBldCfgRevisionStr(), g_cVerbosity);
@@ -697,7 +692,7 @@ int main(int argc, char **argv)
          * POSIX:   This is used for both daemons and console runs. Start all services
          *          and return immediately.
          */
-        rc = VBoxServiceStartServices(iMain);
+        rc = VBoxServiceStartServices();
 #ifndef RT_OS_WINDOWS
         if (RT_SUCCESS(rc))
             VBoxServiceWaitSignal();
@@ -719,4 +714,3 @@ int main(int argc, char **argv)
     VBoxServiceVerbose(0, "Ended.\n");
     return RT_SUCCESS(rc) ? 0 : 1;
 }
-
