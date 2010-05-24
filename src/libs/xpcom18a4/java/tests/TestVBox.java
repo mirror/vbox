@@ -10,9 +10,8 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-
-import org.mozilla.interfaces.*;
-import org.virtualbox.*;
+import org.virtualbox_3_2.*;
+import java.util.List;
 
 class VBoxCallbacks extends VBoxObjectBase implements IVirtualBoxCallback
 {
@@ -27,20 +26,20 @@ class VBoxCallbacks extends VBoxObjectBase implements IVirtualBoxCallback
     {
     }
     public void onSnapshotTaken(String machineId, String snapshotId) {}
-    public void onSessionStateChange(String machineId, long state)
+    public void onSessionStateChange(String machineId, SessionState state)
     {
         System.out.println("onSessionStateChange -- VM: " + machineId + ", state: " + state);
     }
-    public void onMachineRegistered(String machineId, boolean registered) {}
-    public void onMediumRegistered(String mediumId, long mediumType, boolean registered) {}
+    public void onMachineRegistered(String machineId, Boolean registered) {}
+    public void onMediumRegistered(String mediumId, DeviceType mediumType, Boolean registered) {}
     public void onExtraDataChange(String machineId, String key, String value)
     {
         System.out.println("onExtraDataChange -- VM: " + machineId + ": " + key+"->"+value);
     }
-    public boolean onExtraDataCanChange(String machineId, String key, String value, String[] error) { return true; }
+    public Boolean onExtraDataCanChange(String machineId, String key, String value, Holder<String> error) { return true; }
     public void onMachineDataChange(String machineId)
     {}
-    public void onMachineStateChange(String machineId, long state)
+    public void onMachineStateChange(String machineId, MachineState state)
     {
         System.out.println("onMachineStateChange -- VM: " + machineId + ", state: " + state);
     }
@@ -50,7 +49,7 @@ public class TestVBox
 {
     static void testCallbacks(VirtualBoxManager mgr, IVirtualBox vbox)
     {
-        IVirtualBoxCallback cbs = new VBoxCallbacks();
+        IVirtualBoxCallback cbs = mgr.createIVirtualBoxCallback(new VBoxCallbacks());
         vbox.registerCallback(cbs);
         for (int i=0; i<100; i++)
         {
@@ -61,7 +60,7 @@ public class TestVBox
 
     static void testEnumeration(VirtualBoxManager mgr, IVirtualBox vbox)
     {
-        IMachine[] machs = vbox.getMachines(null);
+        List<IMachine> machs = vbox.getMachines();
         for (IMachine m : machs)
         {
             System.out.println("VM name: " + m.getName() + ", RAM size: " + m.getMemorySize() + "MB");
@@ -73,7 +72,7 @@ public class TestVBox
 
     static void testStart(VirtualBoxManager mgr, IVirtualBox vbox)
     {
-        String m =  vbox.getMachines(null)[0].getName();
+        String m =  vbox.getMachines().get(0).getName();
         System.out.println("\nAttempting to start VM '" + m + "'");
         mgr.startVm(m, null, 7000);
     }
@@ -89,6 +88,7 @@ public class TestVBox
             IVirtualBox vbox = mgr.getVBox();
             System.out.println("VirtualBox version: " + vbox.getVersion() + "\n");
             testEnumeration(mgr, vbox);
+            //testStart(mgr, vbox);
             testCallbacks(mgr, vbox);
 
             System.out.println("done, press Enter...");
