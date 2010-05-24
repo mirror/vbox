@@ -420,6 +420,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     char buff2[256];
     RTFILE f;
     int fFoundNameserver = 0;
+    int fWarnTooManyDnsServers = 0;
     struct in_addr tmp_addr;
     int rc;
     size_t bytes;
@@ -471,7 +472,15 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
             && rc != VERR_EOF)
     {
         struct dns_entry *pDns = NULL;
-        if (sscanf(buff, "nameserver%*[ \t]%256s", buff2) == 1)
+        if (   fFoundNameserver == 4 
+            && fWarnTooManyDnsServers == 0
+            && sscanf(buff, "nameserver%*[ \t]%256s", buff2) == 1)
+        {
+            fWarnTooManyDnsServers = 1;
+            LogRel(("NAT: too many nameservers registered.\n"));
+        }
+        if (   sscanf(buff, "nameserver%*[ \t]%256s", buff2) == 1 
+            && fFoundNameserver < 4) /* Unix doesn't accept more than 4 name servers*/
         {
             if (!inet_aton(buff2, &tmp_addr))
                 continue;
