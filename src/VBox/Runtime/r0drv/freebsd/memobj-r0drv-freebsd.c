@@ -43,26 +43,6 @@
 #include <iprt/process.h>
 #include "internal/memobj.h"
 
-/**
- * Our pmap_enter version
- */
-#if __FreeBSD_version >= 701105
-# define MY_PMAP_ENTER(pPhysMap, AddrR3, pPage, fProt, fWired) \
-    pmap_enter(pPhysMap, AddrR3, VM_PROT_NONE, pPage, fProt, fWired)
-#else
-# define MY_PMAP_ENTER(pPhysMap, AddrR3, pPage, fProt, fWired) \
-    pmap_enter(pPhysMap, AddrR3, pPage, fProt, fWired)
-#endif
-
-/**
- * Check whether we can use kmem_alloc_attr for low allocs.
- */
-#if    (__FreeBSD_version >= 900011) \
-    || (__FreeBSD_version < 900000 && __FreeBSD_version >= 800505) \
-    || (__FreeBSD_version < 800000 && __FreeBSD_version >= 703101)
-# define USE_KMEM_ALLOC_ATTR
-#endif
-
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
