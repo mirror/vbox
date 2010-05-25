@@ -272,7 +272,7 @@ static int rtStrFormatNumber(char *psz, KSIZE64 ullValue, unsigned int uiBase, s
      * precision
      */
     while (--cchPrecision >= cchValue)
-        *psz++ = ' ';
+        *psz++ = '0';
 
     /*
      * write number - not good enough but it works
@@ -351,7 +351,7 @@ static int rtStrFormatNumber(char *psz, KSIZE64 ullValue, unsigned int uiBase, s
  * @param   pszFormat   Format string.
  * @param   InArgs      Argument list.
  */
-RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRFORMAT pfnFormat, void *pvArgFormat, 
+RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRFORMAT pfnFormat, void *pvArgFormat,
                             const char *pszFormat, va_list InArgs)
 {
     va_list     args;
