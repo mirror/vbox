@@ -830,8 +830,7 @@ VBoxC_VBOX_TRANSLATIONS = \
 	nls/VBoxC_de.ts
 
 ifdef VBOX_WITH_JMSCOM
- INSTALLS += VBoxJMscom-inst-jar
-endif
+INSTALLS += VBoxJMscom-inst-jar
 
 #
 # Java glue JAR files
@@ -872,7 +871,6 @@ $(VBOX_JMSCOM_GEN)/jmscomglue.list:  \
 	$(QUIET)$(VBOX_FILESPLIT) $(VBOX_JMSCOM_GEN)/java/merged.file $(VBOX_JMSCOM_GEN)/java/
 	$(QUIET)echo $(VBOX_JMSCOM_GEN)/java/*.java > $@
 
-CP_SEP=:
 $$(VBOX_JMSCOM_JAR): $(VBOX_JMSCOM_GEN)/jmscomglue.list | $$(dir $$@)
 	$(call MSG_TOOL,javac,$(notdir $@),jmscomgen.list,)
 	$(QUIET)$(RM) -Rf $(VBOX_JMSCOM_JDEST)
@@ -880,9 +878,11 @@ $$(VBOX_JMSCOM_JAR): $(VBOX_JMSCOM_GEN)/jmscomglue.list | $$(dir $$@)
 	$(call MSG_TOOL,javac,$(notdir $@),...,)
 	$(VBOX_JAVAC) $(VBOX_JAVAC_OPTS) \
                 @$(VBOX_JMSCOM_GEN)/jmscomglue.list \
-		-d $(VBOX_JMSCOM_JDEST) -classpath $(VBOX_JMSCOM_JDEST)$(CP_SEP)$(VBOX_JACOB_DIR)/jacob.jar
+		-d $(VBOX_JMSCOM_JDEST) -classpath $(VBOX_JMSCOM_JDEST)$(VBOX_SEP)$(VBOX_JACOB_DIR)/jacob.jar
 	$(call MSG_LINK,$(notdir $@),$@)
 	$(VBOX_JAR) cf $@ -C $(VBOX_JMSCOM_JDEST) .
+
+endif # VBOX_WITH_JMSCOM
 
 updatenls::
 	$(VBOX_LUPDATE) $(VBoxSVC_SOURCES) $(VBoxSVC_VBOX_HEADERS) -ts $(VBoxSVC_VBOX_TRANSLATIONS)
