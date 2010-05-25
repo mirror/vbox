@@ -21,12 +21,9 @@
 
 #include "VBoxGlobal.h"
 #include "VBoxSelectorWnd.h"
-#include "VBoxConsoleWnd.h"
 #include "VBoxProgressDialog.h"
 #include "UIDownloaderUserManual.h"
-#ifdef VBOX_WITH_NEW_RUNTIME_CORE
-# include "UIMachine.h"
-#endif
+#include "UIMachine.h"
 
 #include "VBoxAboutDlg.h"
 
@@ -2227,7 +2224,7 @@ void VBoxProblemReporter::cannotImportAppliance (CAppliance *aAppliance, QWidget
 
 void VBoxProblemReporter::cannotImportAppliance (const CProgress &aProgress, CAppliance* aAppliance, QWidget *aParent /* = NULL */) const
 {
-    AssertWrapperOk (aProgress);
+//    AssertWrapperOk (aProgress);
 
     message (aParent ? aParent : mainWindowShown(),
              Error,

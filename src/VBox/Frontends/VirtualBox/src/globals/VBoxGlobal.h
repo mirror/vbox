@@ -40,9 +40,7 @@
 class QAction;
 class QLabel;
 class QToolButton;
-#ifdef VBOX_WITH_NEW_RUNTIME_CORE
 class UIMachine;
-#endif
 
 // VirtualBox callback events
 ////////////////////////////////////////////////////////////////////////////////
@@ -277,7 +275,6 @@ Q_DECLARE_METATYPE (StorageSlot);
 ////////////////////////////////////////////////////////////////////////////////
 
 class VBoxSelectorWnd;
-class VBoxConsoleWnd;
 class UIRegistrationWzd;
 class VBoxUpdateDlg;
 
@@ -310,11 +307,8 @@ public:
 
     QWidget *vmWindow();
 
-    VBoxConsoleWnd &consoleWnd();
-#ifdef VBOX_WITH_NEW_RUNTIME_CORE
     bool createVirtualMachine(const CSession &session);
     UIMachine* virtualMachine();
-#endif
 
     /* main window handle storage */
     void setMainWindow (QWidget *aMainWindow) { mMainWindow = aMainWindow; }
@@ -912,10 +906,7 @@ private:
     VBoxGlobalSettings gset;
 
     VBoxSelectorWnd *mSelectorWnd;
-    VBoxConsoleWnd *mConsoleWnd;
-#ifdef VBOX_WITH_NEW_RUNTIME_CORE
     UIMachine *m_pVirtualMachine;
-#endif
     QWidget* mMainWindow;
 
 #ifdef VBOX_WITH_REGISTRATION

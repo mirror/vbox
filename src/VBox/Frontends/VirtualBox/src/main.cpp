@@ -26,7 +26,6 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxSelectorWnd.h"
-#include "VBoxConsoleWnd.h"
 #include "VBoxUtils.h"
 #ifdef QT_MAC_USE_COCOA
 # include "darwin/VBoxCocoaApplication.h"

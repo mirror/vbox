@@ -157,7 +157,6 @@ int darwinWindowToolBarHeight (NativeWindowRef aWindow)
  * Old carbon stuff. Have to converted soon!
  *
  ********************************************************************************/
-#include "VBoxConsoleView.h"
 
 bool darwinIsMenuOpen (void)
 {
@@ -262,108 +261,5 @@ void PostBoundsChanged (const QRect& rect)
     CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (PostUpdateContext): SetEventParameter Failed");
     status = PostEventToQueue(GetMainEventQueue(), evt, kEventPriorityStandard);
     CHECK_CARBON_RC_RETURN_VOID (status, "Render SPU (PostUpdateContext): PostEventToQueue Failed");
-}
-
-OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData)
-{
-    if (!aInUserData)
-        return ::CallNextEventHandler (aInHandlerCallRef, aInEvent);
-
-    UInt32 eventClass = ::GetEventClass (aInEvent);
-    UInt32 eventKind = ::GetEventKind (aInEvent);
-    /* For debugging events */
-    /*
-    if (!(eventClass == 'cute'))
-        ::darwinDebugPrintEvent ("view: ", aInEvent);
-    */
-    VBoxConsoleView *view = static_cast<VBoxConsoleView *> (aInUserData);
-
-    if (eventClass == kEventClassVBox)
-    {
-        if (eventKind == kEventVBoxShowWindow)
-        {
-            //printf ("ShowWindow requested\n");
-            WindowRef w;
-            if (GetEventParameter (aInEvent, kEventParamWindowRef, typeWindowRef, NULL, sizeof (w), NULL, &w) != noErr)
-                return noErr;
-            void *wp;
-            if (GetEventParameter (aInEvent, kEventParamUserData, typeVoidPtr, NULL, sizeof (wp), NULL, &wp) != noErr)
-                return noErr;
-            ShowWindow (w);
-            /* We have to make sure that newly created windows are on top of
-               all other windows. This fixes issues with compiz & additional
-               created OpenGL windows. */
-            ChangeWindowGroupAttributes (GetWindowGroup (w), 0, kWindowGroupAttrMoveTogether | kWindowGroupAttrLayerTogether);
-            BringToFront (w);
-            ChangeWindowGroupAttributes (GetWindowGroup (w), kWindowGroupAttrMoveTogether | kWindowGroupAttrLayerTogether, 0);
-            PostUpdateContext(w, wp);
-            return noErr;
-        }
-        if (eventKind == kEventVBoxHideWindow)
-        {
-            //printf ("HideWindow requested\n");
-            WindowPtr w;
-            if (GetEventParameter (aInEvent, kEventParamWindowRef, typeWindowRef, NULL, sizeof (w), NULL, &w) != noErr)
-                return noErr;
-            HideWindow (w);
-            return noErr;
-        }
-        if (eventKind == kEventVBoxMoveWindow)
-        {
-            //printf ("MoveWindow requested\n");
-            WindowPtr w;
-            if (GetEventParameter (aInEvent, kEventParamWindowRef, typeWindowRef, NULL, sizeof (w), NULL, &w) != noErr)
-                return noErr;
-            HIPoint p;
-            if (GetEventParameter (aInEvent, kEventParamOrigin, typeHIPoint, NULL, sizeof (p), NULL, &p) != noErr)
-                return noErr;
-            void *wp;
-            if (GetEventParameter (aInEvent, kEventParamUserData, typeVoidPtr, NULL, sizeof (wp), NULL, &wp) != noErr)
-                return noErr;
-            ChangeWindowGroupAttributes (GetWindowGroup (w), 0, kWindowGroupAttrMoveTogether);
-            QPoint p1 = view->mapToGlobal (QPoint (p.x, p.y));
-            //printf ("Pos: %d %d\n", p1.x(), p1.y());
-            MoveWindow (w, p1.x(), p1.y(), true);
-            ChangeWindowGroupAttributes (GetWindowGroup (w), kWindowGroupAttrMoveTogether, 0);
-            PostUpdateContext(w, wp);
-            return noErr;
-        }
-        if (eventKind == kEventVBoxResizeWindow)
-        {
-            //printf ("ResizeWindow requested\n");
-            WindowPtr w;
-            if (GetEventParameter (aInEvent, kEventParamWindowRef, typeWindowRef, NULL, sizeof (w), NULL, &w) != noErr)
-                return noErr;
-            HISize s;
-            if (GetEventParameter (aInEvent, kEventParamDimensions, typeHISize, NULL, sizeof (s), NULL, &s) != noErr)
-                return noErr;
-            void *wp;
-            if (GetEventParameter (aInEvent, kEventParamUserData, typeVoidPtr, NULL, sizeof (wp), NULL, &wp) != noErr)
-                return noErr;
-            ChangeWindowGroupAttributes (GetWindowGroup (w), 0, kWindowGroupAttrMoveTogether);
-            //printf ("Size: %f %f\n", s.width, s.height);
-            SizeWindow (w, s.width, s.height, true);
-            ChangeWindowGroupAttributes (GetWindowGroup (w), kWindowGroupAttrMoveTogether, 0);
-            PostUpdateContext(w, wp);
-            return noErr;
-        }
-        if (eventKind == kEventVBoxDisposeWindow)
-        {
-            //printf ("DisposeWindow requested\n");
-            WindowPtr w;
-            if (GetEventParameter (aInEvent, kEventParamWindowRef, typeWindowRef, NULL, sizeof (w), NULL, &w) != noErr)
-                return noErr;
-            DisposeWindow (w);
-            return noErr;
-        }
-        if (eventKind == kEventVBoxUpdateDock)
-        {
-            //printf ("UpdateDock requested\n");
-            view->updateDockIcon();
-            return noErr;
-        }
-    }
-
-    return ::CallNextEventHandler (aInHandlerCallRef, aInEvent);
 }
 
