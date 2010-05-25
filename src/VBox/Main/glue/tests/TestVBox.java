@@ -63,7 +63,7 @@ public class TestVBox
         List<IMachine> machs = vbox.getMachines();
         for (IMachine m : machs)
         {
-            System.out.println("VM name: " + m.getName() + ", RAM size: " + m.getMemorySize() + "MB");
+            System.out.println("VM name: " + m.getName());// + ", RAM size: " + m.getMemorySize() + "MB");
             System.out.println(" HWVirt: " + m.getHWVirtExProperty(HWVirtExPropertyType.Enabled)
                                + ", Nested Paging: " + m.getHWVirtExProperty(HWVirtExPropertyType.NestedPaging)
                                + ", PAE: " + m.getCPUProperty(CPUPropertyType.PAE) );
@@ -88,8 +88,8 @@ public class TestVBox
             IVirtualBox vbox = mgr.getVBox();
             System.out.println("VirtualBox version: " + vbox.getVersion() + "\n");
             testEnumeration(mgr, vbox);
-            //testStart(mgr, vbox);
-            testCallbacks(mgr, vbox);
+            testStart(mgr, vbox);
+            //testCallbacks(mgr, vbox);
 
             System.out.println("done, press Enter...");
             int ch = System.in.read();
