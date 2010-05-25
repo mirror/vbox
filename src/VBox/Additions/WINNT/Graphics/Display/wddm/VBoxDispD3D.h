@@ -44,6 +44,10 @@ typedef struct VBOXWDDMDISP_ADAPTER
     VBOXDISPD3D D3D;
     IDirect3D9Ex * pD3D9If;
     D3DDDI_ADAPTERCALLBACKS RtCallbacks;
+    uint32_t cFormstOps;
+    FORMATOP *paFormstOps;
+    uint32_t cSurfDescs;
+    DDSURFACEDESC *paSurfDescs;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     uint32_t cHeads;
     VBOXWDDMDISP_HEAD aHeads[1];
