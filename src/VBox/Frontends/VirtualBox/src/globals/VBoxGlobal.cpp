@@ -23,24 +23,20 @@
 
 #include "VBoxDefs.h"
 #include "VBoxSelectorWnd.h"
-#include "VBoxConsoleWnd.h"
 #include "VBoxProblemReporter.h"
 #include "QIHotKeyEdit.h"
 #include "QIMessageBox.h"
 #include "QIDialogButtonBox.h"
 
-#ifdef VBOX_WITH_NEW_RUNTIME_CORE
-# include "UIMachine.h"
-# include "UISession.h"
-#endif
+#include "UIMachine.h"
+#include "UISession.h"
 #ifdef VBOX_WITH_REGISTRATION
 # include "UIRegistrationWzd.h"
 #endif
 #include "VBoxUpdateDlg.h"
-
 #ifdef VBOX_WITH_VIDEOHWACCEL
-#include "VBoxFrameBuffer.h"
-#endif
+# include "VBoxFBOverlay.h"
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 /* Qt includes */
 #include <QProgressDialog>
@@ -596,10 +592,8 @@ static VBoxDefs::RenderMode vboxGetRenderMode (const char *aModeStr)
 
 VBoxGlobal::VBoxGlobal()
     : mValid (false)
-    , mSelectorWnd (NULL), mConsoleWnd (NULL)
-#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+    , mSelectorWnd (NULL)
     , m_pVirtualMachine(0)
-#endif
     , mMainWindow (NULL)
 #ifdef VBOX_WITH_REGISTRATION
     , mRegDlg (NULL)
@@ -760,48 +754,12 @@ QWidget *VBoxGlobal::vmWindow()
 {
     if (isVMConsoleProcess())
     {
-#ifdef VBOX_WITH_NEW_RUNTIME_CORE
         if (m_pVirtualMachine)
             return m_pVirtualMachine->mainWindow();
-        else
-#endif /* VBOX_WITH_NEW_RUNTIME_CORE */
-            return &consoleWnd();
     }
     return NULL;
 }
 
-/**
- *  Returns a reference to the main VBox VM Console window.
- *  The reference is valid until application termination.
- *
- *  There is only one such a window per VirtualBox application.
- */
-VBoxConsoleWnd &VBoxGlobal::consoleWnd()
-{
-#if defined (VBOX_GUI_SEPARATE_VM_PROCESS)
-    AssertMsg (vboxGlobal().isVMConsoleProcess(),
-               ("Must be a VM console process"));
-#endif
-
-    Assert (mValid);
-
-    if (!mConsoleWnd)
-    {
-        /*
-         *  We pass the address of mConsoleWnd to the constructor to let it be
-         *  initialized right after the constructor is called. It is necessary
-         *  to avoid recursion, since this method may be (and will be) called
-         *  from the below constructor or from constructors/methods it calls.
-         */
-        VBoxConsoleWnd *w = new VBoxConsoleWnd (&mConsoleWnd, 0);
-        Assert (w == mConsoleWnd);
-        NOREF(w);
-    }
-
-    return *mConsoleWnd;
-}
-
-#ifdef VBOX_WITH_NEW_RUNTIME_CORE
 bool VBoxGlobal::createVirtualMachine(const CSession &session)
 {
     if (!m_pVirtualMachine && !session.isNull())
@@ -818,7 +776,6 @@ UIMachine* VBoxGlobal::virtualMachine()
 {
     return m_pVirtualMachine;
 }
-#endif
 
 bool VBoxGlobal::brandingIsActive (bool aForce /* = false*/)
 {
@@ -2595,16 +2552,7 @@ bool VBoxGlobal::startMachine(const QString &strId)
     if (session.isNull())
         return false;
 
-#ifdef VBOX_WITH_NEW_RUNTIME_CORE
-# ifndef VBOX_FORCE_NEW_RUNTIME_CORE_ALWAYS
-    if (session.GetMachine().GetMonitorCount() > 1)
-# endif /* VBOX_FORCE_NEW_RUNTIME_CORE_ALWAYS */
-        return createVirtualMachine(session);
-# ifndef VBOX_FORCE_NEW_RUNTIME_CORE_ALWAYS
-    else
-# endif /* VBOX_FORCE_NEW_RUNTIME_CORE_ALWAYS */
-#endif /* VBOX_WITH_NEW_RUNTIME_CORE */
-        return consoleWnd().openView(session);
+    return createVirtualMachine(session);
 }
 
 /**
@@ -5419,14 +5367,10 @@ void VBoxGlobal::cleanup()
         mRegDlg->close();
 #endif
 
-    if (mConsoleWnd)
-        delete mConsoleWnd;
     if (mSelectorWnd)
         delete mSelectorWnd;
-#ifdef VBOX_WITH_NEW_RUNTIME_CORE
     if (m_pVirtualMachine)
         delete m_pVirtualMachine;
-#endif
 
     /* ensure CGuestOSType objects are no longer used */
     mFamilyIDs.clear();

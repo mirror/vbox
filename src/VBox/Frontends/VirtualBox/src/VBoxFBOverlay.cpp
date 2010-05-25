@@ -22,9 +22,7 @@
 #define LOG_GROUP LOG_GROUP_GUI
 
 #include "VBoxFBOverlay.h"
-#include "VBoxFrameBuffer.h"
 
-#include "VBoxConsoleView.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxGlobal.h"
 

@@ -22,7 +22,6 @@
 #include "VBoxProblemReporter.h"
 #include "VBoxSelectorWnd.h"
 #include "VBoxVMListView.h"
-#include "VBoxConsoleWnd.h"
 #include "VBoxToolBar.h"
 
 #include "VBoxSnapshotsWgt.h"

@@ -22,23 +22,20 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 /* Global Includes */
 #include <QTimer>
+#include <QScrollBar>
 
 /* Local Includes */
 #include <VBoxVMInformationDlg.h>
 #include <VBoxGlobal.h>
-#include <VBoxConsoleView.h>
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#ifdef VBOX_WITH_NEW_RUNTIME_CORE
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 #include "UIMachineView.h"
 #include "UISession.h"
-#endif /* VBOX_WITH_NEW_RUNTIME_CORE */
 
 VBoxVMInformationDlg::InfoDlgMap VBoxVMInformationDlg::mSelfArray = InfoDlgMap();
 
-#ifdef VBOX_WITH_NEW_RUNTIME_CORE
 void VBoxVMInformationDlg::createInformationDlg(UIMachineWindow *pMachineWindow)
 {
     CMachine machine = pMachineWindow->machineLogic()->uisession()->session().GetMachine();
@@ -102,102 +99,6 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (UIMachineWindow *pMachineWindow, Qt:
     /* TODO_NEW_CORE: this is ofc not really right in the mm sense. There are
      * more than one screens. */
     connect (pMachineWindow->machineView(), SIGNAL (resizeHintDone()), this, SLOT (processStatistics()));
-    connect (mInfoStack, SIGNAL (currentChanged (int)), this, SLOT (onPageChanged (int)));
-    connect (&vboxGlobal(), SIGNAL (mediumEnumFinished (const VBoxMediaList &)), this, SLOT (updateDetails()));
-    connect (mStatTimer, SIGNAL (timeout()), this, SLOT (processStatistics()));
-
-    /* Loading language constants */
-    retranslateUi();
-
-    /* Details page update */
-    updateDetails();
-
-    /* Statistics page update */
-    processStatistics();
-    mStatTimer->start (5000);
-
-    /* Preload dialog attributes for this vm */
-    QString dlgsize = mSession.GetMachine().GetExtraData (VBoxDefs::GUI_InfoDlgState);
-    if (dlgsize.isEmpty())
-    {
-        mWidth = 400;
-        mHeight = 450;
-        mMax = false;
-    }
-    else
-    {
-        QStringList list = dlgsize.split (',');
-        mWidth = list [0].toInt(), mHeight = list [1].toInt();
-        mMax = list [2] == "max";
-    }
-
-    /* Make statistics page the default one */
-    mInfoStack->setCurrentIndex (1);
-}
-#endif /* VBOX_WITH_NEW_RUNTIME_CORE */
-
-void VBoxVMInformationDlg::createInformationDlg (const CSession &aSession, VBoxConsoleView *aConsole)
-{
-    CMachine machine = aSession.GetMachine();
-    if (mSelfArray.find (machine.GetName()) == mSelfArray.end())
-    {
-        /* Creating new information dialog if there is no one existing */
-        VBoxVMInformationDlg *id = new VBoxVMInformationDlg (aConsole, aSession, Qt::Window);
-        id->centerAccording (aConsole);
-        id->setAttribute (Qt::WA_DeleteOnClose);
-        mSelfArray [machine.GetName()] = id;
-    }
-
-    VBoxVMInformationDlg *info = mSelfArray [machine.GetName()];
-    info->show();
-    info->raise();
-    info->setWindowState (info->windowState() & ~Qt::WindowMinimized);
-    info->activateWindow();
-}
-
-VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole, const CSession &aSession, Qt::WindowFlags aFlags)
-# ifdef Q_WS_MAC
-    : QIWithRetranslateUI2 <QIMainDialog> (aConsole, aFlags)
-# else /* Q_WS_MAC */
-    : QIWithRetranslateUI2 <QIMainDialog> (0, aFlags)
-# endif /* Q_WS_MAC */
-    , mConsole (aConsole)
-    , mSession (aSession)
-    , mIsPolished (false)
-    , mStatTimer (new QTimer (this))
-{
-    /* Apply UI decorations */
-    Ui::VBoxVMInformationDlg::setupUi (this);
-
-#ifdef Q_WS_MAC
-    /* No icon for this window on the mac, cause this would act as proxy icon which isn't necessary here. */
-    setWindowIcon (QIcon());
-#else
-    /* Apply window icons */
-    setWindowIcon (vboxGlobal().iconSetFull (QSize (32, 32), QSize (16, 16),
-                                             ":/session_info_32px.png", ":/session_info_16px.png"));
-#endif
-
-    /* Enable size grip without using a status bar. */
-    setSizeGripEnabled (true);
-
-    /* Setup focus-proxy for pages */
-    mPage1->setFocusProxy (mDetailsText);
-    mPage2->setFocusProxy (mStatisticText);
-
-    /* Setup browsers */
-    mDetailsText->viewport()->setAutoFillBackground (false);
-    mStatisticText->viewport()->setAutoFillBackground (false);
-
-    /* Setup margins */
-    mDetailsText->setViewportMargins (5, 5, 5, 5);
-    mStatisticText->setViewportMargins (5, 5, 5, 5);
-
-    /* Setup handlers */
-    /* Setup handlers */
-    connect (mConsole, SIGNAL (mediaDriveChanged (VBoxDefs::MediumType)), this, SLOT (updateDetails()));
-    connect (mConsole, SIGNAL (sharedFoldersChanged()), this, SLOT (updateDetails()));
-    connect (mConsole, SIGNAL (resizeHintDone()), this, SLOT (processStatistics()));
     connect (mInfoStack, SIGNAL (currentChanged (int)), this, SLOT (onPageChanged (int)));
     connect (&vboxGlobal(), SIGNAL (mediumEnumFinished (const VBoxMediaList &)), this, SLOT (updateDetails()));
     connect (mStatTimer, SIGNAL (timeout()), this, SLOT (processStatistics()));

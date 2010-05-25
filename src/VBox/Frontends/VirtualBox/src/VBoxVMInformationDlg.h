@@ -24,7 +24,6 @@
 #include "COMDefs.h"
 #include "QIWithRetranslateUI.h"
 
-class VBoxConsoleView;
 class UIMachineWindow;
 class QTimer;
 
@@ -39,17 +38,11 @@ public:
     struct CounterElementType { QString type; DataMapType list; };
     typedef QMap <QString, VBoxVMInformationDlg*> InfoDlgMap;
 
-#ifdef VBOX_WITH_NEW_RUNTIME_CORE
     static void createInformationDlg(UIMachineWindow *pMachineWindow);
-#endif /* VBOX_WITH_NEW_RUNTIME_CORE */
-    static void createInformationDlg (const CSession &aSession, VBoxConsoleView *aConsole);
 
 protected:
 
-#ifdef VBOX_WITH_NEW_RUNTIME_CORE
     VBoxVMInformationDlg (UIMachineWindow *pMachineWindow, Qt::WindowFlags aFlags);
-#endif /* VBOX_WITH_NEW_RUNTIME_CORE */
-    VBoxVMInformationDlg (VBoxConsoleView *aConsole, const CSession &aSession, Qt::WindowFlags aFlags);
    ~VBoxVMInformationDlg();
 
     void retranslateUi();
@@ -77,7 +70,6 @@ private:
 
     static InfoDlgMap  mSelfArray;
 
-    VBoxConsoleView   *mConsole;
     CSession           mSession;
     bool               mIsPolished;
     QTimer            *mStatTimer;

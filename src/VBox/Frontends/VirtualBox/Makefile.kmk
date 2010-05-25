@@ -44,12 +44,6 @@ ifndef VBOX_OSE
 VBOX_WITH_UPDATE_REQUEST := 1
 endif
 
-# Build new VirtualBox FE/Qt4 GUI runtime core.
-# Currently its not used, you can build it for developing purposes.
-VBOX_WITH_NEW_RUNTIME_CORE := 1
-# Force the usage of the new runtime core for the single monitor case also.
-VBOX_FORCE_NEW_RUNTIME_CORE_ALWAYS := 1
-
 #
 # The targets.
 #
@@ -121,12 +115,6 @@ VirtualBox_DEFS.win.amd64 = VBOX_WITHOUT_QHTTP
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_DEFS.darwin += VBOX_WITH_ICHAT_THEATER
 endif
-ifdef VBOX_WITH_NEW_RUNTIME_CORE
- VirtualBox_DEFS += VBOX_WITH_NEW_RUNTIME_CORE
- ifdef VBOX_FORCE_NEW_RUNTIME_CORE_ALWAYS
-  VirtualBox_DEFS += VBOX_FORCE_NEW_RUNTIME_CORE_ALWAYS
- endif
-endif
 ifneq ($(KBUILD_TYPE),release)
  # non-release builds has some extra features.
  VirtualBox_DEFS.win     += VBOX_GUI_USE_DDRAW
@@ -158,9 +146,9 @@ ifdef VBOX_WITH_VIRTIO
 endif
 
 ifdef VBOX_BLEEDING_EDGE
-VirtualBox_src/VBoxConsoleWnd.cpp_DEFS += \
-    VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\"
 VirtualBox_src/VBoxSelectorWnd.cpp_DEFS += \
+    VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\"
+VirtualBox_src/runtime/UIMachineWindow.cpp_DEFS += \
     VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\"
 VirtualBox_src/VBoxAboutDlg.cpp_DEFS += \
     VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\"
@@ -183,14 +171,11 @@ VBOX_GUI_INC_DIRS = \
 	./src/wizards/importappliance \
 	./src/widgets \
 	./src/X11 \
-	./src/darwin
-ifdef VBOX_WITH_NEW_RUNTIME_CORE
-VBOX_GUI_INC_DIRS += \
+	./src/darwin \
     ./src/runtime \
 	./src/runtime/normal \
 	./src/runtime/fullscreen \
 	./src/runtime/seamless
-endif
 
 ifdef VBOX_WITH_REGISTRATION
  VBOX_GUI_INC_DIRS += \
@@ -257,8 +242,6 @@ endif
 VirtualBox_QT_MOCHDRS = \
 	src/VBoxAboutDlg.h \
 	src/VBoxCloseVMDlg.h \
-	src/VBoxConsoleView.h \
-	src/VBoxConsoleWnd.h \
 	src/VBoxGlobalSettings.h \
 	src/VBoxMediaManagerDlg.h \
 	src/VBoxSelectorWnd.h \
@@ -336,9 +319,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/VBoxOSTypeSelectorWidget.h \
 	src/widgets/VBoxProgressDialog.h \
 	src/widgets/VBoxSpecialControls.h \
-	src/widgets/VBoxWarningPane.h
-ifdef VBOX_WITH_NEW_RUNTIME_CORE
-VirtualBox_QT_MOCHDRS += \
+	src/widgets/VBoxWarningPane.h \
 	src/runtime/UISession.h \
 	src/runtime/UIActionsPool.h \
 	src/runtime/UIIndicatorsPool.h \
@@ -355,7 +336,6 @@ VirtualBox_QT_MOCHDRS += \
 	src/runtime/seamless/UIMachineLogicSeamless.h \
 	src/runtime/seamless/UIMachineWindowSeamless.h \
 	src/runtime/seamless/UIMachineViewSeamless.h
-endif
 
 ifdef VBOX_WITH_REGISTRATION
  VirtualBox_QT_MOCHDRS += \
@@ -365,15 +345,12 @@ endif
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCSRCS = \
 	src/VBoxSelectorWnd.cpp \
-	src/VBoxMediaManagerDlg.cpp
-ifdef VBOX_WITH_NEW_RUNTIME_CORE
-VirtualBox_QT_MOCSRCS += \
+	src/VBoxMediaManagerDlg.cpp \
 	src/runtime/UIActionsPool.cpp \
 	src/runtime/UIMachineMenuBar.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIMachine.cpp \
 	src/runtime/UIMachineLogic.cpp
-endif
 ifdef VBOX_WITH_XPCOM
  VirtualBox_QT_MOCSRCS += \
 	src/globals/COMDefs.cpp
@@ -392,9 +369,6 @@ VirtualBox_SOURCES = \
 	src/main.cpp \
 	src/VBoxAboutDlg.cpp \
 	src/VBoxCloseVMDlg.cpp \
-	src/VBoxConsoleView.cpp \
-	src/VBoxConsoleWnd.cpp \
-	src/VBoxFrameBuffer.cpp \
 	src/VBoxGlobalSettings.cpp \
 	src/VBoxHelpActions.cpp \
 	src/VBoxMediaManagerDlg.cpp \
@@ -475,9 +449,7 @@ VirtualBox_SOURCES = \
 	src/widgets/VBoxOSTypeSelectorWidget.cpp \
 	src/widgets/VBoxProgressDialog.cpp \
 	src/widgets/VBoxSpecialControls.cpp \
-	src/widgets/VBoxWarningPane.cpp
-ifdef VBOX_WITH_NEW_RUNTIME_CORE
-VirtualBox_SOURCES += \
+	src/widgets/VBoxWarningPane.cpp \
 	src/runtime/UISession.cpp \
 	src/runtime/UIActionsPool.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
@@ -506,7 +478,6 @@ VirtualBox_SOURCES.darwin += \
 	src/runtime/UIFrameBufferQuartz2D.cpp \
 	src/darwin/UIAbstractDockIconPreview.cpp \
 	src/darwin/UICocoaDockIconPreview.mm
-endif
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
  ifndef VBOX_OSE
@@ -539,9 +510,7 @@ VirtualBox_SOURCES.win += \
 
 VirtualBox_SOURCES.darwin += \
 	src/darwin/DarwinKeyboard.cpp \
-	src/darwin/VBoxUtils-darwin.cpp \
-	src/darwin/AbstractDockIconPreview.cpp \
-	src/VBoxFBQuartz2D.cpp
+	src/darwin/VBoxUtils-darwin.cpp
 
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_SOURCES.darwin += \
@@ -553,14 +522,12 @@ ifdef VBOX_WITH_COCOA_QT
  VirtualBox_SOURCES.darwin += \
  	src/darwin/VBoxCocoaApplication.m \
  	src/darwin/VBoxUtils-darwin-cocoa.mm \
- 	src/darwin/VBoxCocoaSpecialControls.mm \
- 	src/darwin/CocoaDockIconPreview.mm
+ 	src/darwin/VBoxCocoaSpecialControls.mm
  VirtualBox_QT_MOCHDRS.darwin = \
  	src/darwin/VBoxCocoaSpecialControls.h
 else
  VirtualBox_SOURCES.darwin += \
- 	src/darwin/VBoxUtils-darwin-carbon.cpp \
- 	src/darwin/CarbonDockIconPreview.cpp
+ 	src/darwin/VBoxUtils-darwin-carbon.cpp
 endif
 
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
@@ -915,6 +882,7 @@ include $(KBUILD_PATH)/subfooter.kmk
 # For Qt >= 4.6.0 it maybe necessary to add -I $(VBOX_GUI_INC_DIRS) to the
 # lupdate call
 #
+#VirtualBox_QT_TRANSLATIONS = nls/VirtualBox_de.ts
 updatenls:: makeallnls nls/VirtualBox_en.ts
 
 makeallnls:: \
