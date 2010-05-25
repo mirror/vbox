@@ -35,6 +35,7 @@
 #include <iprt/err.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/mem.h>
 
 #include <openssl/sha.h>
 
@@ -88,13 +89,10 @@ RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest)
     if (!SHA1_Final(auchDig, &ctx))
         return VERR_INTERNAL_ERROR;
 
-    int cch = RTStrAPrintf(ppszDigest, "%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x",
-                           auchDig[0] , auchDig[1] , auchDig[2] , auchDig[3] , auchDig[4],
-                           auchDig[5] , auchDig[6] , auchDig[7] , auchDig[8] , auchDig[9],
-                           auchDig[10], auchDig[11], auchDig[12], auchDig[13], auchDig[14],
-                           auchDig[15], auchDig[16], auchDig[17], auchDig[18], auchDig[19]);
-    if (RT_UNLIKELY(cch == -1))
-        rc = VERR_INTERNAL_ERROR;
+    *ppszDigest = (char*)RTMemAlloc(41);
+    rc = RTSha1ToString(auchDig, *ppszDigest, 41);
+    if (RT_FAILURE(rc))
+        RTStrFree(*ppszDigest);
 
     return rc;
 }
