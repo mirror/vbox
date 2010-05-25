@@ -1412,7 +1412,11 @@ void VBoxSelectorWnd::retranslateUi()
 
     mHelpActions.retranslateUi();
 
-    mFileMenu->setTitle (tr("&File"));
+#ifdef Q_WS_MAC
+    mFileMenu->setTitle (tr("&File", "Mac OS X version"));
+#else /* Q_WS_MAC */
+    mFileMenu->setTitle (tr("&File", "Non Mac OS X version"));
+#endif /* !Q_WS_MAC */
     mVMMenu->setTitle (tr ("&Machine"));
     mHelpMenu->setTitle (tr ("&Help"));
 
