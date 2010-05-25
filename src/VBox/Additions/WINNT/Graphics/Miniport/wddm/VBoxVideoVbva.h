@@ -24,6 +24,7 @@ typedef struct VBOXVBVAINFO
 
 int vboxVbvaEnable (struct _DEVICE_EXTENSION* pDevExt, VBOXVBVAINFO *pVbva);
 int vboxVbvaDisable (struct _DEVICE_EXTENSION* pDevExt, VBOXVBVAINFO *pVbva);
+int vboxVbvaDestroy(PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO *pVbva);
 int vboxVbvaCreate(struct _DEVICE_EXTENSION* pDevExt, VBOXVBVAINFO *pVbva, ULONG offBuffer, ULONG cbBuffer, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId);
 int vboxVbvaReportCmdOffset (struct _DEVICE_EXTENSION* pDevExt, VBOXVBVAINFO *pVbva, uint32_t offCmd);
 int vboxVbvaReportDirtyRect (struct _DEVICE_EXTENSION* pDevExt, VBOXVBVAINFO *pVbva, RECT *pRectOrig);

@@ -38,7 +38,7 @@ static int vboxVBVAInformHost (PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO * pVbva, 
 
         VBVAENABLE *pEnable = &pEnableEx->Base;
         pEnable->u32Flags  = bEnable? VBVA_F_ENABLE: VBVA_F_DISABLE;
-        pEnable->u32Flags |= VBVA_F_EXTENDED;
+        pEnable->u32Flags |= VBVA_F_EXTENDED | VBVA_F_ABSOFFSET;
         pEnable->u32Offset = (uint32_t)pVbva->offVBVA;
         pEnable->i32Result = VERR_NOT_SUPPORTED;
 
@@ -115,6 +115,22 @@ int vboxVbvaCreate(PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO *pVbva, ULONG offBuff
         pVbva->srcId = srcId;
     }
 
+    return rc;
+}
+
+int vboxVbvaDestroy(PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO *pVbva)
+{
+    int rc = VINF_SUCCESS;
+    /*rc = */VBoxUnmapAdapterMemory(pDevExt, (void**)&pVbva->pVBVA, pVbva->cbVBVA);
+/*
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+*/
+        memset(pVbva, 0, sizeof(VBOXVBVAINFO));
+/*
+    else
+        drprintf((__FUNCTION__": VBoxUnmapAdapterMemory failed, rc (%d)\n", rc));
+*/
     return rc;
 }
 

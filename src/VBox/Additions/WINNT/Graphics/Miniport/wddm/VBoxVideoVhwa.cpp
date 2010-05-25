@@ -402,3 +402,13 @@ void vboxVHWAInit(PDEVICE_EXTENSION pDevExt)
         vboxVHWAInitSrc(pDevExt, i);
     }
 }
+
+void vboxVHWAFree(PDEVICE_EXTENSION pDevExt)
+{
+    /* we do not allocate/map anything, just issue a Disable command
+     * to ensure all pending commands are flushed */
+    for (uint32_t i = 0; i < pDevExt->cSources; ++i)
+    {
+        vboxVHWADisable(pDevExt, i);
+    }
+}

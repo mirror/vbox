@@ -1567,7 +1567,13 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
             if ((pEnable->u32Flags & (VBVA_F_ENABLE | VBVA_F_DISABLE)) == VBVA_F_ENABLE)
             {
                 /* Guest reported offset relative to view. */
-                uint32_t u32Offset = pEnable->u32Offset + pCtx->aViews[uScreenId].view.u32ViewOffset;
+                uint32_t u32Offset = pEnable->u32Offset;
+#ifdef VBOXWDDM_WITH_VBVA
+                if (!(pEnable->u32Flags & VBVA_F_ABSOFFSET))
+#endif
+                {
+                    u32Offset += pCtx->aViews[uScreenId].view.u32ViewOffset;
+                }
 
                 VBVABUFFER *pVBVA = (VBVABUFFER *)HGSMIOffsetToPointerHost (pIns, u32Offset);
 
