@@ -505,7 +505,6 @@ ifdef VBOX_WITH_REGISTRATION
 endif
 
 VirtualBox_SOURCES.win += \
-	src/VBoxFBDDRAW.cpp \
 	src/win/VirtualBox.rc
 
 VirtualBox_SOURCES.darwin += \
