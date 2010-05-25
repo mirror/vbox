@@ -10,26 +10,23 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-
-KBUILD_TARGET=linux
-
-ifeq ($(KBUILD_TARGET),darwin)
+ifeq ($(KBUILD_HOST),darwin)
  VBOX_BIN=/Applications/VirtualBox.app/Contents/MacOS
  VBOX_SDK=$(VBOX_BIN)/sdk
 # JAVA_OPT= -d32
 endif
 
-ifeq ($(KBUILD_TARGET),linux)
+ifeq ($(KBUILD_HOST),linux)
  VBOX_SDK=/home/nike/work/ws/out/linux.amd64/debug/bin/sdk
  VBOX_BIN=/home/nike/work/ws/out/linux.amd64/debug/bin
 endif
 
-ifeq ($(KBUILD_TARGET),win)
+ifeq ($(KBUILD_HOST),win)
  VBOX_SDK=e:/ws/out/win.amd64/debug/bin/sdk
  VBOX_BIN=e:/ws/out/win.amd64/debug/bin
 endif
 
-ifeq ($(KBUILD_TARGET),win)
+ifeq ($(KBUILD_HOST),win)
  VBOX_JAR=$(VBOX_SDK)/bindings/mscom/java/vboxjmscom.jar
 else
  VBOX_JAR=$(VBOX_SDK)/bindings/xpcom/java/vboxjxpcom.jar
