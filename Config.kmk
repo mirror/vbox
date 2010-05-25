@@ -4292,14 +4292,22 @@ ifeq ($(KBUILD_TARGET), darwin)
  VBOX_JAVAH = $(VBOX_JAVA_HOME)/Commands/javah
  VBOX_JAR   = $(VBOX_JAVA_HOME)/Commands/jar
  VBOX_JAVA_INC = $(VBOX_JAVA_HOME)/Headers
+
 else
- ifeq ($(KBUILD_TARGET), linux)
-  VBOX_JAVA_HOME ?= /usr/lib/jvm/java-6-sun
- endif
- ifeq ($(KBUILD_TARGET), solaris)
+
+ifeq ($(KBUILD_TARGET), linux)
+ VBOX_JAVA_HOME ?= /usr/lib/jvm/java-6-sun
+endif
+
+ifeq ($(KBUILD_TARGET), solaris)
  # VBOX_JAVA_HOME ?= /usr/jdk/jdk1.6.0
    VBOX_JAVA_HOME ?= /usr/java
- endif
+endif
+
+ifeq ($(KBUILD_TARGET), win)
+ VBOX_JAVA_HOME ?= c:/jdk
+endif
+
  VBOX_JAVAC = $(VBOX_JAVA_HOME)/bin/javac
  VBOX_JAVAH = $(VBOX_JAVA_HOME)/bin/javah
  VBOX_JAR   = $(VBOX_JAVA_HOME)/bin/jar

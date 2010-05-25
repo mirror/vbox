@@ -9,11 +9,10 @@
 # VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
-
 ifeq ($(KBUILD_HOST),darwin)
  VBOX_BIN=/Applications/VirtualBox.app/Contents/MacOS
  VBOX_SDK=$(VBOX_BIN)/sdk
-# JAVA_OPT= -d32
+# JAVA_ARGS += -d32
 endif
 
 ifeq ($(KBUILD_HOST),linux)
@@ -24,17 +23,26 @@ endif
 ifeq ($(KBUILD_HOST),win)
  VBOX_SDK=e:/ws/out/win.amd64/debug/bin/sdk
  VBOX_BIN=e:/ws/out/win.amd64/debug/bin
+ JACOB_DIR=e:/ws/src/libs/jacob-1.15-M3/
+ JACOB_JAR=$(JACOB_DIR)/jacob.jar
+ CLASSPATH += $(JACOB_JAR)$(SEP)
+ JAVA_ARGS += -Djava.library.path=$(JACOB_DIR) 
 endif
 
 ifeq ($(KBUILD_HOST),win)
  VBOX_JAR=$(VBOX_SDK)/bindings/mscom/java/vboxjmscom.jar
+ SEP=\;
 else
  VBOX_JAR=$(VBOX_SDK)/bindings/xpcom/java/vboxjxpcom.jar
+ SEP=:
 endif
+
+JAVA_ARGS += -Dvbox.home=$(VBOX_BIN) 
+CLASSPATH  := $(CLASSPATH)$(VBOX_JAR)$(SEP).
 
 all: testvb
 
 testvb:
 	javac -cp $(VBOX_JAR) TestVBox.java
-	java $(JAVA_OPT) -cp  $(VBOX_JAR):. -Dvbox.home=$(VBOX_BIN) TestVBox
+	java $(JAVA_ARGS) -cp $(CLASSPATH)  TestVBox
 
