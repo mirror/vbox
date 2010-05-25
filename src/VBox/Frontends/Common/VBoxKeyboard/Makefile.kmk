@@ -18,7 +18,7 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(KBUILD_TARGET)),) # X11
+if1of ($(KBUILD_TARGET), freebsd linux openbsd netbsd solaris) # X11
  DLLS        += VBoxKeyboard
  OTHERS      += $(PATH_BIN)/vboxkeyboard.tar.bz2
  OTHER_CLEAN += $(PATH_BIN)/vboxkeyboard.tar.bz2
@@ -68,7 +68,7 @@ $(PATH_BIN)/vboxkeyboard.tar.bz2: \
 	$(call MSG_L1,Packing $@)
 	$(QUIET)$(RM) -f -- $@ $(patsubst %.bz2,%,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
-ifeq ($(filter-out freebsd,$(KBUILD_TARGET)),)
+if1of ($(KBUILD_TARGET), freebsd)
 	$(QUIET)tar -cjf $@ \
  		-C $(VBOX_KEYBOARD_STAGE_DIR) VBoxKeyboard
 else
