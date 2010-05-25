@@ -643,10 +643,6 @@ void UIMachineView::prepareCommon()
     /* Setup focus policy: */
     setFocusPolicy(Qt::WheelFocus);
 
-#if defined Q_WS_WIN
-    gView = this;
-#endif
-
 #if defined Q_WS_PM
     bool ok = VBoxHlpInstallKbdHook(0, winId(), UM_PREACCEL_CHAR);
     Assert(ok);
@@ -1177,6 +1173,7 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
              * b) be always in front of any other possible hooks */
             case QEvent::WindowActivate:
             {
+                gView = this;
                 gKbdHook = SetWindowsHookEx(WH_KEYBOARD_LL, lowLevelKeyboardProc, GetModuleHandle(NULL), 0);
                 AssertMsg(gKbdHook, ("SetWindowsHookEx(): err=%d", GetLastError()));
                 break;
@@ -1187,6 +1184,8 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                 {
                     UnhookWindowsHookEx(gKbdHook);
                     gKbdHook = NULL;
+                    if (gView == this)
+                        gView = 0;
                 }
                 break;
             }
