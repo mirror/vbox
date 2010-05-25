@@ -2224,7 +2224,7 @@ void VBoxProblemReporter::cannotImportAppliance (CAppliance *aAppliance, QWidget
 
 void VBoxProblemReporter::cannotImportAppliance (const CProgress &aProgress, CAppliance* aAppliance, QWidget *aParent /* = NULL */) const
 {
-//    AssertWrapperOk (aProgress);
+    AssertWrapperOk (aProgress);
 
     message (aParent ? aParent : mainWindowShown(),
              Error,
