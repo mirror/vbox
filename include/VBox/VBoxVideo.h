@@ -947,6 +947,8 @@ typedef struct VBVAINFOSCREEN
 #ifdef VBOXWDDM_WITH_VBVA
 /* extended VBVA to be used with WDDM */
 #define VBVA_F_EXTENDED 0x00000004
+/* vbva offset is absolute VRAM offset */
+#define VBVA_F_ABSOFFSET 0x00000008
 #endif
 
 typedef struct _VBVAENABLE

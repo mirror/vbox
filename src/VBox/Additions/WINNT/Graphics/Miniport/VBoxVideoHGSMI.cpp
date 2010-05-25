@@ -1044,6 +1044,54 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
     dprintf(("VBoxVideo::VBoxSetupDisplays: finished\n"));
 }
 
+#ifdef VBOXWDDM
+int VBoxFreeDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension)
+{
+    int rc;
+    for (int i = PrimaryExtension->cSources-1; i >= 0; --i)
+    {
+        rc = vboxVbvaDisable(PrimaryExtension, &PrimaryExtension->aSources[i].Vbva);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            rc = vboxVbvaDestroy(PrimaryExtension, &PrimaryExtension->aSources[i].Vbva);
+            AssertRC(rc);
+            if (RT_SUCCESS(rc))
+            {
+                rc = vboxVdmaDisable(PrimaryExtension, &PrimaryExtension->u.primary.Vdma);
+                AssertRC(rc);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = vboxVdmaDestroy(PrimaryExtension, &PrimaryExtension->u.primary.Vdma);
+                    AssertRC(rc);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /*rc = */VBoxUnmapAdapterMemory(PrimaryExtension, &PrimaryExtension->u.primary.pvMiniportHeap, PrimaryExtension->u.primary.cbMiniportHeap);
+/*
+                        AssertRC(rc);
+                        if (RT_SUCCESS(rc))
+*/
+                        {
+                            HGSMIHeapDestroy(&PrimaryExtension->u.primary.hgsmiAdapterHeap);
+
+                            /* Map the adapter information. It will be needed for HGSMI IO. */
+                            /*rc = */VBoxUnmapAdapterMemory(PrimaryExtension, &PrimaryExtension->u.primary.pvAdapterInformation, VBVA_ADAPTER_INFORMATION_SIZE);
+/*
+                            AssertRC(rc);
+                            if (RT_FAILURE(rc))
+                                drprintf((__FUNCTION__"VBoxUnmapAdapterMemory PrimaryExtension->u.primary.pvAdapterInformation failed, rc(%d)\n", rc));
+*/
+
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return rc;
+}
+#endif
 
 /*
  * Send the pointer shape to the host.

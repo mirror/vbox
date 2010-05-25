@@ -594,6 +594,18 @@ NTSTATUS vboxWddmPickResources(PDEVICE_EXTENSION pContext, PDXGK_DEVICE_INFO pDe
     return Status;
 }
 
+static void vboxWddmDevExtZeroinit(PDEVICE_EXTENSION pDevExt, CONST PDEVICE_OBJECT pPDO)
+{
+    memset(pDevExt, 0, sizeof (DEVICE_EXTENSION));
+    pDevExt->pPDO = pPDO;
+#ifdef VBOXWDDM_RENDER_FROM_SHADOW
+    for (int i = 0; i < RT_ELEMENTS(pDevExt->aSources); ++i)
+    {
+        pDevExt->aSources[i].offVram = VBOXVIDEOOFFSET_VOID;
+    }
+#endif
+}
+
 /* driver callbacks */
 NTSTATUS DxgkDdiAddDevice(
     IN CONST PDEVICE_OBJECT PhysicalDeviceObject,
@@ -612,14 +624,8 @@ NTSTATUS DxgkDdiAddDevice(
     PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)vboxWddmMemAllocZero(sizeof (DEVICE_EXTENSION));
     if (pContext)
     {
-        pContext->pPDO = PhysicalDeviceObject;
+        vboxWddmDevExtZeroinit(pContext, PhysicalDeviceObject);
         *MiniportDeviceContext = pContext;
-#ifdef VBOXWDDM_RENDER_FROM_SHADOW
-        for (int i = 0; i < RT_ELEMENTS(pContext->aSources); ++i)
-        {
-            pContext->aSources[i].offVram = VBOXVIDEOOFFSET_VOID;
-        }
-#endif
     }
     else
     {
@@ -693,6 +699,8 @@ NTSTATUS DxgkDdiStartDevice(
                 else
                 {
                     drprintf(("VBoxVideoWddm: HGSMI failed to initialize, returning err\n"));
+
+                    VbglTerminate();
                     /* @todo: report a better status */
                     Status = STATUS_UNSUCCESSFUL;
                 }
@@ -728,12 +736,29 @@ NTSTATUS DxgkDdiStopDevice(
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%p)\n", MiniportDeviceContext));
 
-    AssertBreakpoint();
-    /* @todo: fixme: implement */
+    vboxVDbgBreakF();
 
-    dfprintf(("<== "__FUNCTION__ ", context(0x%p)\n", MiniportDeviceContext));
+    PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)MiniportDeviceContext;
+    NTSTATUS Status = STATUS_SUCCESS;
 
-    return STATUS_SUCCESS;
+    /* do everything we did on DxgkDdiStartDevice in the reverse order */
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    vboxVHWAFree(pDevExt);
+#endif
+
+    int rc = VBoxFreeDisplaysHGSMI(pDevExt);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        VbglTerminate();
+
+        /* revert back to the state we were right after the DxgkDdiAddDevice */
+        vboxWddmDevExtZeroinit(pDevExt, pDevExt->pPDO);
+    }
+    else
+        Status = STATUS_UNSUCCESSFUL;
+
+    return Status;
 }
 
 NTSTATUS DxgkDdiRemoveDevice(

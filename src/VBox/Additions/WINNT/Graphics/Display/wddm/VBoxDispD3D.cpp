@@ -1767,7 +1767,15 @@ static HRESULT APIENTRY vboxWddmDDevExtensionExecute(HANDLE hDevice, CONST D3DDD
 static HRESULT APIENTRY vboxWddmDDevDestroyDevice(IN HANDLE hDevice)
 {
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    if (pDevice->DefaultContext.ContextInfo.hContext)
+    {
+        D3DDDICB_DESTROYCONTEXT DestroyContext;
+        DestroyContext.hContext = pDevice->DefaultContext.ContextInfo.hContext;
+        HRESULT tmpHr = pDevice->RtCallbacks.pfnDestroyContextCb(pDevice->hDevice, &DestroyContext);
+        Assert(tmpHr == S_OK);
+    }
     RTMemFree(hDevice);
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return S_OK;
@@ -1973,33 +1981,59 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
 
         do
         {
+            Assert(!pCreateData->AllocationListSize
+                    && !pCreateData->PatchLocationListSize);
             if (!pCreateData->AllocationListSize
                     && !pCreateData->PatchLocationListSize)
             {
-                /* check whether this is a D3D or DDraw, use wine lib only in the former (D3D) case */
-                /* TODO: is this a correct way to check this ? */
-                if (pDevice->RtCallbacks.pfnCreateOverlayCb)
+                pDevice->DefaultContext.ContextInfo.NodeOrdinal = 0;
+                pDevice->DefaultContext.ContextInfo.EngineAffinity = 0;
+                pDevice->DefaultContext.ContextInfo.Flags.Value = 0;
+                pDevice->DefaultContext.ContextInfo.pPrivateDriverData = NULL;
+                pDevice->DefaultContext.ContextInfo.PrivateDriverDataSize = 0;
+                pDevice->DefaultContext.ContextInfo.hContext = 0;
+                pDevice->DefaultContext.ContextInfo.pCommandBuffer = NULL;
+                pDevice->DefaultContext.ContextInfo.CommandBufferSize = 0;
+                pDevice->DefaultContext.ContextInfo.pAllocationList = NULL;
+                pDevice->DefaultContext.ContextInfo.AllocationListSize = 0;
+                pDevice->DefaultContext.ContextInfo.pPatchLocationList = NULL;
+                pDevice->DefaultContext.ContextInfo.PatchLocationListSize = 0;
+
+                hr = pDevice->RtCallbacks.pfnCreateContextCb(pDevice->hDevice, &pDevice->DefaultContext.ContextInfo);
+                Assert(hr == S_OK);
+                if (hr == S_OK)
                 {
-                    /* DDraw */
-                    vboxVDbgPrint((__FUNCTION__": DirectDraw Device Created\n"));
-                    break;
-                }
-                else
-                {
-                    /* D3D */
-                    if (pAdapter->pD3D9If)
+                    if (pDevice->u32IfVersion > 7)
                     {
-                        /* */
-                        vboxVDbgPrint((__FUNCTION__": TODO: Implement D3D Device Creation\n"));
-                        break;
+                        /* D3D */
+                        if (pAdapter->pD3D9If)
+                        {
+                            /* */
+                            vboxVDbgPrint((__FUNCTION__": TODO: Implement D3D Device Creation\n"));
+                            break;
+                        }
+                        else
+                        {
+                            /* ballback */
+                            vboxVDbgPrint((__FUNCTION__": D3D Device Being Created, but D3D is unavailable\n"));
+                            break;
+                        }
                     }
                     else
                     {
-                        /* ballback */
-                        vboxVDbgPrint((__FUNCTION__": D3D Device Being Created, but D3D is unavailable\n"));
+                        /* DDraw */
+                        vboxVDbgPrint((__FUNCTION__": DirectDraw Device Created\n"));
                         break;
                     }
+
+                    D3DDDICB_DESTROYCONTEXT DestroyContext;
+                    DestroyContext.hContext = pDevice->DefaultContext.ContextInfo.hContext;
+
+                    HRESULT tmpHr = pDevice->RtCallbacks.pfnDestroyContextCb(pDevice->hDevice, &DestroyContext);
+                    Assert(tmpHr == S_OK);
                 }
+                else
+                    vboxVDbgPrintR((__FUNCTION__": pfnCreateContextCb failed, hr(%d)\n", hr));
             }
             else
             {

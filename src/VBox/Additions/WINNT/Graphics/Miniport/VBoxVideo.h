@@ -860,7 +860,10 @@ VOID VBoxSetupDisplaysHGSMI (PDEVICE_EXTENSION PrimaryExtension,
 BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
                                 PVIDEO_POINTER_ATTRIBUTES pointerAttr,
                                 uint32_t cbLength);
-#ifndef VBOXWDDM
+
+#ifdef VBOXWDDM
+int VBoxFreeDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension);
+#else
 DECLCALLBACK(void) hgsmiHostCmdComplete (HVBOXVIDEOHGSMI hHGSMI, struct _VBVAHOSTCMD * pCmd);
 DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel, struct _VBVAHOSTCMD ** ppCmd);
 #endif

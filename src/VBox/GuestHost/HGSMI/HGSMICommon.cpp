@@ -287,6 +287,7 @@ void HGSMIHeapDestroy (HGSMIHEAP *pHeap)
 {
     if (pHeap)
     {
+        Assert(!pHeap->cRefs);
         pHeap->u.hPtr = NIL_RTHEAPSIMPLE;
         HGSMIAreaClear (&pHeap->area);
         pHeap->cRefs = 0;
