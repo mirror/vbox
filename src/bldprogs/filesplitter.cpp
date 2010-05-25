@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 
         struct stat lStat;
         if (    stat(argv[2], &lStat) != 0
-             || (lStat.st_mode & S_IFMT) != S_IFDIR)
+                || ((lStat.st_mode & S_IFDIR) == 0))
         {
             fprintf(stderr, "filesplitter: Given argument \"%s\" is not a valid directory.\n", argv[2]);
             rc = 2;
