@@ -76,18 +76,18 @@ VBOX_IDL_HEADER.XPCOM  = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCO
 # The MS COM specific stuff.
 if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
  OTHERS         += \
- 	$(VBOX_IDL_FILE.MSCOM) \
- 	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
- 	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb \
- 	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c
+	$(VBOX_IDL_FILE.MSCOM) \
+	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
+	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb \
+	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c
  OTHER_CLEAN    += \
- 	$(VBOX_IDL_FILE.MSCOM) \
- 	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
- 	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb \
- 	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c \
- 	$(PATH_VBoxCOM)/VirtualBox.h   \
- 	$(PATH_VBoxCOM)/VirtualBox_i.c \
- 	$(PATH_VBoxCOM)/VirtualBox.tlb
+	$(VBOX_IDL_FILE.MSCOM) \
+	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
+	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb \
+	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c \
+	$(PATH_VBoxCOM)/VirtualBox.h   \
+	$(PATH_VBoxCOM)/VirtualBox_i.c \
+	$(PATH_VBoxCOM)/VirtualBox.tlb
 
  VBOX_MAIN_PREREQS += $(PATH_VBoxCOM)/VirtualBox_i.c
  BLDDIRS += $(VBOX_PATH_SDK)/bindings/mscom/idl
@@ -224,10 +224,10 @@ VBoxSVC_DEFS = \
 	$(if $(VBOX_WITH_VUSB),VBOX_WITH_VUSB,)
 ifdef VBOX_WITH_USB
  VBoxSVC_DEFS += \
- 	VBOX_WITH_USB \
- 	$(if $(VBOX_WITH_EHCI),VBOX_WITH_EHCI,) \
- 	$(if $(VBOX_WITH_NEW_USB_CODE_ON_DARWIN),VBOX_WITH_NEW_USB_CODE_ON_DARWIN,) \
- 	$(if $(VBOX_WITH_NEW_USB_CODE_ON_SOLARIS),VBOX_WITH_NEW_USB_CODE_ON_SOLARIS,)
+VBOX_WITH_USB \
+	$(if $(VBOX_WITH_EHCI),VBOX_WITH_EHCI,) \
+	$(if $(VBOX_WITH_NEW_USB_CODE_ON_DARWIN),VBOX_WITH_NEW_USB_CODE_ON_DARWIN,) \
+	$(if $(VBOX_WITH_NEW_USB_CODE_ON_SOLARIS),VBOX_WITH_NEW_USB_CODE_ON_SOLARIS,)
 endif
 VBoxSVC_DEFS.win += VBOX_COM_OUTOFPROC_MODULE
 VBoxSVC_DEFS.win.x86 += _WIN32_WINNT=0x0500
@@ -353,9 +353,9 @@ ifdef VBOX_WITH_USB
   linux/USBProxyServiceLinux.cpp_DEFS += VBOX_WITH_SYSFS_BY_DEFAULT
  endif
  VBoxSVC_SOURCES  += \
- 	USBDeviceFilterImpl.cpp \
- 	USBProxyService.cpp \
- 	HostUSBDeviceImpl.cpp
+	USBDeviceFilterImpl.cpp \
+	USBProxyService.cpp \
+	HostUSBDeviceImpl.cpp
  VBoxSVC_SOURCES.darwin  +=  darwin/USBProxyServiceDarwin.cpp
  VBoxSVC_SOURCES.linux   +=   linux/USBProxyServiceLinux.cpp
  VBoxSVC_SOURCES.os2     +=     os2/USBProxyServiceOs2.cpp
@@ -391,8 +391,8 @@ endif
 
 ifdef VBOX_WITH_RESOURCE_USAGE_API
  VBoxSVC_SOURCES += \
- 	PerformanceImpl.cpp \
- 	Performance.cpp
+	PerformanceImpl.cpp \
+	Performance.cpp
  VBoxSVC_SOURCES.darwin  +=  darwin/PerformanceDarwin.cpp
  VBoxSVC_SOURCES.freebsd += freebsd/PerformanceFreeBSD.cpp
  VBoxSVC_SOURCES.linux   +=   linux/PerformanceLinux.cpp
@@ -479,8 +479,8 @@ if (   defined(VBOX_WITH_QTGUI) \
   VBoxTestOGL_SOURCES = generic/OpenGLTestApp.cpp
   VBoxTestOGL_LIBS = \
 	$(if $(VBOX_WITH_CROGL), \
-  	  $(PATH_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
-  	  $(VBOX_LIB_OGL_HOSTCRUTIL),) \
+	  $(PATH_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
+	  $(VBOX_LIB_OGL_HOSTCRUTIL),) \
 	$(if $(VBOX_WITH_VIDEOHWACCEL), $(PATH_LIB)/VBoxOGL2D$(VBOX_SUFF_LIB),) \
 	$(LIB_RUNTIME)
   VBoxTestOGL_DEFS += \
@@ -609,7 +609,7 @@ VBoxC_LIBS += \
 
 ifdef VBOX_WITH_NETFLT
  VBoxC_LIBS.win += $(PATH_LIB)/WinNetConfig.lib \
- 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
+	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 endif
 
@@ -734,11 +734,11 @@ if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "linux"
  INSTALLS.linux += VBoxMain-hardening-inst
  VBoxMain-hardening-inst_INST = $(INST_BIN)components/
  VBoxMain-hardening-inst_SYMLINKS = \
- 	VBoxDDU.so=>../VBoxDDU.so \
- 	VBoxREM.so=>../VBoxREM.so \
- 	VBoxRT.so=>../VBoxRT.so \
- 	VBoxVMM.so=>../VBoxVMM.so \
- 	VBoxXPCOM.so=>../VBoxXPCOM.so
+	VBoxDDU.so=>../VBoxDDU.so \
+	VBoxREM.so=>../VBoxREM.so \
+	VBoxRT.so=>../VBoxRT.so \
+	VBoxVMM.so=>../VBoxVMM.so \
+	VBoxXPCOM.so=>../VBoxXPCOM.so
 endif
 
 
@@ -828,6 +828,61 @@ VBoxC_VBOX_HEADERS = \
 	include/ConsoleImpl.h
 VBoxC_VBOX_TRANSLATIONS = \
 	nls/VBoxC_de.ts
+
+ifdef VBOX_WITH_JMSCOM
+ INSTALLS += VBoxJMscom-inst-jar
+endif
+
+#
+# Java glue JAR files
+#
+VBOX_JMSCOM_JAR     = $(VBoxJMscom-inst-jar_0_OUTDIR)/vboxjmscom.jar
+VBOX_JMSCOM_TARGET := $(PATH_TARGET)/vboxjmscom-gen
+VBOX_JMSCOM_GEN     = $(VBOX_JMSCOM_TARGET)/jmscomgen
+VBOX_JMSCOM_JDEST  := $(VBOX_JMSCOM_TARGET)/jdest
+VBOX_GLUE_XSLT_DIR := $(PATH_ROOT)/src/VBox/Main/glue
+VBOX_JACOB_DIR     := $(PATH_ROOT)/src/libs/jacob-1.15-M3
+
+VBoxJMscom-inst-jar_INST = $(INST_SDK)bindings/mscom/java/
+VBoxJMscom-inst-jar_SOURCES = \
+	$(VBOX_JMSCOM_JAR)
+VBoxJMscom-inst-jar_CLEAN = \
+	$(VBOX_JMSCOM_JAR) \
+	$(VBOX_JMSCOM_GEN)/jmscomglue.list \
+	$(wildcard \
+		$(VBOX_JMSCOM_GEN)/java/*.java \
+		$(VBOX_JMSCOM_JDEST)/*.class \
+		$(VBOX_JMSCOM_JDEST)/*/*.class \
+		$(VBOX_JMSCOM_JDEST)/*/*/*.class \
+		$(VBOX_JMSCOM_JDEST)/*/*/*/*.class \
+	)
+VBoxJMscom-inst-jar_BLDDIRS += $(VBOX_JMSCOM_GEN)/java
+
+$(VBOX_JMSCOM_GEN)/jmscomglue.list:  \
+		$(VBOX_XIDL_FILE)    \
+                $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl \
+                $(VBOX_FILESPLIT)    \
+		| $(VBOX_JMSCOM_GEN)/java/
+	$(call MSG_L1,Generating Java glue files from XIDL)
+	$(QUIET)$(RM) -f $(wildcard $(VBOX_JMSCOM_GEN)/java/*.java)
+	$(QUIET)$(VBOX_XSLTPROC) \
+              --stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
+              --stringparam G_vboxGlueStyle mscom              \
+              -o $(VBOX_JMSCOM_GEN)/java/merged.file $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl $<
+	$(QUIET)$(VBOX_FILESPLIT) $(VBOX_JMSCOM_GEN)/java/merged.file $(VBOX_JMSCOM_GEN)/java/
+	$(QUIET)echo $(VBOX_JMSCOM_GEN)/java/*.java > $@
+
+CP_SEP=:
+$$(VBOX_JMSCOM_JAR): $(VBOX_JMSCOM_GEN)/jmscomglue.list | $$(dir $$@)
+	$(call MSG_TOOL,javac,$(notdir $@),jmscomgen.list,)
+	$(QUIET)$(RM) -Rf $(VBOX_JMSCOM_JDEST)
+	$(QUIET)$(MKDIR) -p $(VBOX_JMSCOM_JDEST)
+	$(call MSG_TOOL,javac,$(notdir $@),...,)
+	$(VBOX_JAVAC) $(VBOX_JAVAC_OPTS) \
+                @$(VBOX_JMSCOM_GEN)/jmscomglue.list \
+		-d $(VBOX_JMSCOM_JDEST) -classpath $(VBOX_JMSCOM_JDEST)$(CP_SEP)$(VBOX_JACOB_DIR)/jacob.jar
+	$(call MSG_LINK,$(notdir $@),$@)
+	$(VBOX_JAR) cf $@ -C $(VBOX_JMSCOM_JDEST) .
 
 updatenls::
 	$(VBOX_LUPDATE) $(VBoxSVC_SOURCES) $(VBoxSVC_VBOX_HEADERS) -ts $(VBoxSVC_VBOX_TRANSLATIONS)
