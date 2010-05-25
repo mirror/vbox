@@ -343,14 +343,281 @@ static FORMATOP gVBoxFormatOpsBase[] = {
     {D3DDDIFMT_P8, FORMATOP_DISPLAYMODE, 0, 0, 0},
 };
 
-static FORMATOP gVBoxFormatOps[RT_ELEMENTS(gVBoxFormatOpsBase) /* some base formats we report ?? */
-                               + RT_ELEMENTS(gVBoxFormatOps3D)
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                               + VBOXVHWA_MAX_FORMATS
-#endif
-                               ];
-static uint32_t gcVBoxFormatOps;
-#define VBOX_FORMATOP_COUNT() (gcVBoxFormatOps)
+static DDSURFACEDESC gVBoxSurfDescsBase[] = {
+        {
+            sizeof (DDSURFACEDESC), /*    DWORD   dwSize;  */
+            DDSD_CAPS | DDSD_PIXELFORMAT,    /* DWORD dwFlags;    */
+            0,    /* DWORD dwHeight;   */
+            0,    /* DWORD dwWidth;    */
+            {
+                0, /* Union             */
+                   /*   LONG lPitch; */
+                   /*   DWORD dwLinearSize; */
+            },
+            0,  /*    DWORD dwBackBufferCount; */
+            {
+                0, /* Union */
+                   /*  DWORD dwMipMapCount; */
+                   /*    DWORD dwZBufferBitDepth; */
+                   /*   DWORD dwRefreshRate; */
+            },
+            0, /*    DWORD dwAlphaBitDepth; */
+            0, /*   DWORD dwReserved; */
+            NULL, /*   LPVOID lpSurface; */
+            {
+                0, /* DWORD dwColorSpaceLowValue; */
+                0, /* DWORD dwColorSpaceHighValue; */
+            }, /* DDCOLORKEY  ddckCKDestOverlay; */
+            {
+                0, /* DWORD dwColorSpaceLowValue; */
+                0, /* DWORD dwColorSpaceHighValue; */
+            }, /* DDCOLORKEY  ddckCKDestBlt; */
+            {
+                0, /* DWORD dwColorSpaceLowValue; */
+                0, /* DWORD dwColorSpaceHighValue; */
+            }, /* DDCOLORKEY  ddckCKSrcOverlay; */
+            {
+                0, /* DWORD dwColorSpaceLowValue; */
+                0, /* DWORD dwColorSpaceHighValue; */
+            }, /* DDCOLORKEY ddckCKSrcBlt; */
+            {
+                sizeof (DDPIXELFORMAT), /* DWORD dwSize; */
+                DDPF_RGB, /* DWORD dwFlags; */
+                0, /* DWORD dwFourCC; */
+                {
+                    32, /* union */
+                       /* DWORD dwRGBBitCount; */
+                       /* DWORD dwYUVBitCount; */
+                       /* DWORD dwZBufferBitDepth; */
+                       /* DWORD dwAlphaBitDepth; */
+                       /* DWORD dwLuminanceBitCount; */
+                       /* DWORD dwBumpBitCount; */
+                },
+                {
+                    0xff0000, /* union */
+                       /* DWORD dwRBitMask; */
+                       /* DWORD dwYBitMask; */
+                        /* DWORD dwStencilBitDepth; */
+                        /* DWORD dwLuminanceBitMask; */
+                        /* DWORD dwBumpDuBitMask; */
+                },
+                {
+                    0xff00,
+                        /* DWORD dwGBitMask; */
+                        /* DWORD dwUBitMask; */
+                        /* DWORD dwZBitMask; */
+                        /* DWORD dwBumpDvBitMask; */
+                },
+                {
+                    0xff,
+                        /* DWORD dwBBitMask; */
+                        /* DWORD dwVBitMask; */
+                        /* DWORD dwStencilBitMask; */
+                        /* DWORD dwBumpLuminanceBitMask; */
+                },
+                {
+                    0,
+                        /* DWORD dwRGBAlphaBitMask; */
+                        /* DWORD dwYUVAlphaBitMask; */
+                        /* DWORD dwLuminanceAlphaBitMask; */
+                        /* DWORD dwRGBZBitMask; */
+                        /* DWORD dwYUVZBitMask; */
+                },
+            }, /* DDPIXELFORMAT ddpfPixelFormat; */
+            {
+                DDSCAPS_BACKBUFFER
+                | DDSCAPS_COMPLEX
+                | DDSCAPS_FLIP
+                | DDSCAPS_FRONTBUFFER
+                | DDSCAPS_LOCALVIDMEM
+                | DDSCAPS_PRIMARYSURFACE
+                | DDSCAPS_VIDEOMEMORY
+                | DDSCAPS_VISIBLE   /* DWORD dwCaps; */
+            } /* DDSCAPS ddsCaps; */
+        },
+        {
+            sizeof (DDSURFACEDESC), /*    DWORD   dwSize;  */
+            DDSD_CAPS | DDSD_PIXELFORMAT,    /* DWORD dwFlags;    */
+            0,    /* DWORD dwHeight;   */
+            0,    /* DWORD dwWidth;    */
+            {
+                0, /* Union             */
+                   /*   LONG lPitch; */
+                   /*   DWORD dwLinearSize; */
+            },
+            0,  /*    DWORD dwBackBufferCount; */
+            {
+                0, /* Union */
+                   /*  DWORD dwMipMapCount; */
+                   /*    DWORD dwZBufferBitDepth; */
+                   /*   DWORD dwRefreshRate; */
+            },
+            0, /*    DWORD dwAlphaBitDepth; */
+            0, /*   DWORD dwReserved; */
+            NULL, /*   LPVOID lpSurface; */
+            {
+                0, /* DWORD dwColorSpaceLowValue; */
+                0, /* DWORD dwColorSpaceHighValue; */
+            }, /* DDCOLORKEY  ddckCKDestOverlay; */
+            {
+                0, /* DWORD dwColorSpaceLowValue; */
+                0, /* DWORD dwColorSpaceHighValue; */
+            }, /* DDCOLORKEY  ddckCKDestBlt; */
+            {
+                0, /* DWORD dwColorSpaceLowValue; */
+                0, /* DWORD dwColorSpaceHighValue; */
+            }, /* DDCOLORKEY  ddckCKSrcOverlay; */
+            {
+                0, /* DWORD dwColorSpaceLowValue; */
+                0, /* DWORD dwColorSpaceHighValue; */
+            }, /* DDCOLORKEY ddckCKSrcBlt; */
+            {
+                sizeof (DDPIXELFORMAT), /* DWORD dwSize; */
+                DDPF_RGB, /* DWORD dwFlags; */
+                0, /* DWORD dwFourCC; */
+                {
+                    24, /* union */
+                       /* DWORD dwRGBBitCount; */
+                       /* DWORD dwYUVBitCount; */
+                       /* DWORD dwZBufferBitDepth; */
+                       /* DWORD dwAlphaBitDepth; */
+                       /* DWORD dwLuminanceBitCount; */
+                       /* DWORD dwBumpBitCount; */
+                },
+                {
+                    0xff0000, /* union */
+                       /* DWORD dwRBitMask; */
+                       /* DWORD dwYBitMask; */
+                        /* DWORD dwStencilBitDepth; */
+                        /* DWORD dwLuminanceBitMask; */
+                        /* DWORD dwBumpDuBitMask; */
+                },
+                {
+                    0xff00,
+                        /* DWORD dwGBitMask; */
+                        /* DWORD dwUBitMask; */
+                        /* DWORD dwZBitMask; */
+                        /* DWORD dwBumpDvBitMask; */
+                },
+                {
+                    0xff,
+                        /* DWORD dwBBitMask; */
+                        /* DWORD dwVBitMask; */
+                        /* DWORD dwStencilBitMask; */
+                        /* DWORD dwBumpLuminanceBitMask; */
+                },
+                {
+                    0,
+                        /* DWORD dwRGBAlphaBitMask; */
+                        /* DWORD dwYUVAlphaBitMask; */
+                        /* DWORD dwLuminanceAlphaBitMask; */
+                        /* DWORD dwRGBZBitMask; */
+                        /* DWORD dwYUVZBitMask; */
+                },
+            }, /* DDPIXELFORMAT ddpfPixelFormat; */
+            {
+                DDSCAPS_BACKBUFFER
+                | DDSCAPS_COMPLEX
+                | DDSCAPS_FLIP
+                | DDSCAPS_FRONTBUFFER
+                | DDSCAPS_LOCALVIDMEM
+                | DDSCAPS_PRIMARYSURFACE
+                | DDSCAPS_VIDEOMEMORY
+                | DDSCAPS_VISIBLE  /* DWORD dwCaps; */
+            } /* DDSCAPS ddsCaps; */
+        },
+        {
+            sizeof (DDSURFACEDESC), /*    DWORD   dwSize;  */
+            DDSD_CAPS | DDSD_PIXELFORMAT,    /* DWORD dwFlags;    */
+            0,    /* DWORD dwHeight;   */
+            0,    /* DWORD dwWidth;    */
+            {
+                0, /* Union             */
+                   /*   LONG lPitch; */
+                   /*   DWORD dwLinearSize; */
+            },
+            0,  /*    DWORD dwBackBufferCount; */
+            {
+                0, /* Union */
+                   /*  DWORD dwMipMapCount; */
+                   /*    DWORD dwZBufferBitDepth; */
+                   /*   DWORD dwRefreshRate; */
+            },
+            0, /*    DWORD dwAlphaBitDepth; */
+            0, /*   DWORD dwReserved; */
+            NULL, /*   LPVOID lpSurface; */
+            {
+                0, /* DWORD dwColorSpaceLowValue; */
+                0, /* DWORD dwColorSpaceHighValue; */
+            }, /* DDCOLORKEY  ddckCKDestOverlay; */
+            {
+                0, /* DWORD dwColorSpaceLowValue; */
+                0, /* DWORD dwColorSpaceHighValue; */
+            }, /* DDCOLORKEY  ddckCKDestBlt; */
+            {
+                0, /* DWORD dwColorSpaceLowValue; */
+                0, /* DWORD dwColorSpaceHighValue; */
+            }, /* DDCOLORKEY  ddckCKSrcOverlay; */
+            {
+                0, /* DWORD dwColorSpaceLowValue; */
+                0, /* DWORD dwColorSpaceHighValue; */
+            }, /* DDCOLORKEY ddckCKSrcBlt; */
+            {
+                sizeof (DDPIXELFORMAT), /* DWORD dwSize; */
+                DDPF_RGB, /* DWORD dwFlags; */
+                0, /* DWORD dwFourCC; */
+                {
+                    16, /* union */
+                       /* DWORD dwRGBBitCount; */
+                       /* DWORD dwYUVBitCount; */
+                       /* DWORD dwZBufferBitDepth; */
+                       /* DWORD dwAlphaBitDepth; */
+                       /* DWORD dwLuminanceBitCount; */
+                       /* DWORD dwBumpBitCount; */
+                },
+                {
+                    0xf800, /* union */
+                       /* DWORD dwRBitMask; */
+                       /* DWORD dwYBitMask; */
+                        /* DWORD dwStencilBitDepth; */
+                        /* DWORD dwLuminanceBitMask; */
+                        /* DWORD dwBumpDuBitMask; */
+                },
+                {
+                    0x7e0,
+                        /* DWORD dwGBitMask; */
+                        /* DWORD dwUBitMask; */
+                        /* DWORD dwZBitMask; */
+                        /* DWORD dwBumpDvBitMask; */
+                },
+                {
+                    0x1f,
+                        /* DWORD dwBBitMask; */
+                        /* DWORD dwVBitMask; */
+                        /* DWORD dwStencilBitMask; */
+                        /* DWORD dwBumpLuminanceBitMask; */
+                },
+                {
+                    0,
+                        /* DWORD dwRGBAlphaBitMask; */
+                        /* DWORD dwYUVAlphaBitMask; */
+                        /* DWORD dwLuminanceAlphaBitMask; */
+                        /* DWORD dwRGBZBitMask; */
+                        /* DWORD dwYUVZBitMask; */
+                },
+            }, /* DDPIXELFORMAT ddpfPixelFormat; */
+            {
+                DDSCAPS_BACKBUFFER
+                | DDSCAPS_COMPLEX
+                | DDSCAPS_FLIP
+                | DDSCAPS_FRONTBUFFER
+                | DDSCAPS_LOCALVIDMEM
+                | DDSCAPS_PRIMARYSURFACE
+                | DDSCAPS_VIDEOMEMORY
+                | DDSCAPS_VISIBLE /* DWORD dwCaps; */
+            } /* DDSCAPS ddsCaps; */
+        },
+};
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
 
@@ -378,7 +645,64 @@ static bool vboxVhwaHasCKeying(PVBOXWDDMDISP_ADAPTER pAdapter)
     return false;
 }
 
+static void vboxVhwaPopulateOverlayFourccSurfDesc(DDSURFACEDESC *pDesc, uint32_t fourcc)
+{
+    memset(pDesc, 0, sizeof (DDSURFACEDESC));
+
+    pDesc->dwSize = sizeof (DDSURFACEDESC);
+    pDesc->dwFlags = DDSD_CAPS | DDSD_PIXELFORMAT;
+    pDesc->ddpfPixelFormat.dwSize = sizeof (DDPIXELFORMAT);
+    pDesc->ddpfPixelFormat.dwFlags = DDPF_FOURCC;
+    pDesc->ddpfPixelFormat.dwFourCC = fourcc;
+    pDesc->ddsCaps.dwCaps = DDSCAPS_BACKBUFFER
+            | DDSCAPS_COMPLEX
+            | DDSCAPS_FLIP
+            | DDSCAPS_FRONTBUFFER
+            | DDSCAPS_LOCALVIDMEM
+            | DDSCAPS_OVERLAY
+            | DDSCAPS_VIDEOMEMORY
+            | DDSCAPS_VISIBLE;
+}
+
 #endif
+
+static bool vboxPixFormatMatch(DDPIXELFORMAT *pFormat1, DDPIXELFORMAT *pFormat2)
+{
+    return !memcmp(pFormat1, pFormat2, sizeof (DDPIXELFORMAT));
+}
+
+int vboxSurfDescMerge(DDSURFACEDESC *paDescs, uint32_t *pcDescs, uint32_t cMaxDescs, DDSURFACEDESC *pDesc)
+{
+    uint32_t cDescs = *pcDescs;
+
+    Assert(cMaxDescs >= cDescs);
+    Assert(pDesc->dwFlags == (DDSD_CAPS | DDSD_PIXELFORMAT));
+    if (pDesc->dwFlags != (DDSD_CAPS | DDSD_PIXELFORMAT))
+        return VERR_INVALID_PARAMETER;
+
+    for (uint32_t i = 0; i < cDescs; ++i)
+    {
+        DDSURFACEDESC *pCur = &paDescs[i];
+        if (vboxPixFormatMatch(&pCur->ddpfPixelFormat, &pDesc->ddpfPixelFormat))
+        {
+            if (pDesc->dwFlags & DDSD_CAPS)
+            {
+                pCur->dwFlags |= DDSD_CAPS;
+                pCur->ddsCaps.dwCaps |= pDesc->ddsCaps.dwCaps;
+            }
+            return VINF_SUCCESS;
+        }
+    }
+
+    if (cMaxDescs > cDescs)
+    {
+        paDescs[cDescs] = *pDesc;
+        ++cDescs;
+        *pcDescs = cDescs;
+        return VINF_SUCCESS;
+    }
+    return VERR_BUFFER_OVERFLOW;
+}
 
 int vboxFormatOpsMerge(FORMATOP *paOps, uint32_t *pcOps, uint32_t cMaxOps, FORMATOP *pOp)
 {
@@ -409,48 +733,128 @@ int vboxFormatOpsMerge(FORMATOP *paOps, uint32_t *pcOps, uint32_t cMaxOps, FORMA
     return VERR_BUFFER_OVERFLOW;
 }
 
-void vboxFormatOpsInit(PVBOXWDDMDISP_ADAPTER pAdapter)
+static uint32_t vboxFormatToFourcc(D3DDDIFORMAT format)
 {
-    gcVBoxFormatOps = 0;
-    if (pAdapter->pD3D9If)
-    {
-        memcpy (gVBoxFormatOps, gVBoxFormatOps3D, sizeof (gVBoxFormatOps3D));
-        gcVBoxFormatOps = RT_ELEMENTS(gVBoxFormatOps3D);
-    }
-
-    if (gcVBoxFormatOps)
-    {
-        for (uint32_t i = 0; i < RT_ELEMENTS(gVBoxFormatOpsBase); ++i)
-        {
-            int rc = vboxFormatOpsMerge(gVBoxFormatOps, &gcVBoxFormatOps, RT_ELEMENTS(gVBoxFormatOps), &gVBoxFormatOpsBase[i]);
-            AssertRC(rc);
-        }
-    }
-    else
-    {
-        memcpy (gVBoxFormatOps, gVBoxFormatOpsBase, sizeof (gVBoxFormatOpsBase));
-        gcVBoxFormatOps = RT_ELEMENTS(gVBoxFormatOpsBase);
-    }
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    FORMATOP fo = {D3DDDIFMT_UNKNOWN, 0, 0, 0, 0};
-    for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
-    {
-        VBOXDISPVHWA_INFO *pVhwa = &pAdapter->aHeads[i].Vhwa;
-        if (pVhwa->Settings.fFlags & VBOXVHWA_F_ENABLED)
-        {
-            for (uint32_t j = 0; j < pVhwa->Settings.cFormats; ++j)
-            {
-                fo.Format = pVhwa->Settings.aFormats[j];
-                fo.Operations = FORMATOP_OVERLAY;
-                int rc = vboxFormatOpsMerge(gVBoxFormatOps, &gcVBoxFormatOps, RT_ELEMENTS(gVBoxFormatOps), &fo);
-                AssertRC(rc);
-            }
-        }
-    }
-#endif
+    uint32_t uFormat = (uint32_t)format;
+    /* assume that in case both four bytes are non-zero, this is a fourcc */
+    if ((format & 0xff000000)
+            && (format & 0x00ff0000)
+            && (format & 0x0000ff00)
+            && (format & 0x000000ff)
+            )
+        return uFormat;
+    return 0;
 }
 
+int vboxCapsInit(PVBOXWDDMDISP_ADAPTER pAdapter)
+{
+    pAdapter->cFormstOps = 0;
+    pAdapter->paFormstOps = NULL;
+    pAdapter->cSurfDescs = 0;
+    pAdapter->paSurfDescs = NULL;
+
+    if (pAdapter->uIfVersion > 7)
+    {
+        if (pAdapter->pD3D9If)
+        {
+            pAdapter->paFormstOps = (FORMATOP*)RTMemAllocZ(sizeof (gVBoxFormatOps3D));
+            Assert(pAdapter->paFormstOps);
+            if (pAdapter->paFormstOps)
+            {
+                memcpy (pAdapter->paFormstOps , gVBoxFormatOps3D, sizeof (gVBoxFormatOps3D));
+                pAdapter->cFormstOps = RT_ELEMENTS(gVBoxFormatOps3D);
+            }
+            else
+                return VERR_OUT_OF_RESOURCES;
+
+            /* @todo: do we need surface caps here ? */
+        }
+    }
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    else
+    {
+        /* just calc the max number of formats */
+        uint32_t cFormats = RT_ELEMENTS(gVBoxFormatOpsBase);
+        uint32_t cSurfDescs = RT_ELEMENTS(gVBoxSurfDescsBase);
+        uint32_t cOverlayFormats = 0;
+        for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
+        {
+            VBOXDISPVHWA_INFO *pVhwa = &pAdapter->aHeads[i].Vhwa;
+            if (pVhwa->Settings.fFlags & VBOXVHWA_F_ENABLED)
+            {
+                cOverlayFormats += pVhwa->Settings.cFormats;
+            }
+        }
+
+        cFormats += cOverlayFormats;
+        cSurfDescs += cOverlayFormats;
+
+        uint32_t cbFormatOps = cFormats * sizeof (FORMATOP);
+        cbFormatOps = (cbFormatOps + 7) & ~3;
+        /* ensure the surf descs are 8 byte alligned */
+        uint32_t offSurfDescs = (cbFormatOps + 7) & ~3;
+        uint32_t cbSurfDescs = cSurfDescs * sizeof (DDSURFACEDESC);
+        uint32_t cbBuf = offSurfDescs + cbSurfDescs;
+        uint8_t* pvBuf = (uint8_t*)RTMemAllocZ(cbBuf);
+        Assert(pvBuf);
+        if (pvBuf)
+        {
+            pAdapter->paFormstOps = (FORMATOP*)pvBuf;
+            memcpy (pAdapter->paFormstOps , gVBoxFormatOpsBase, sizeof (gVBoxFormatOpsBase));
+            pAdapter->cFormstOps = RT_ELEMENTS(gVBoxFormatOpsBase);
+
+            FORMATOP fo = {D3DDDIFMT_UNKNOWN, 0, 0, 0, 0};
+            for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
+            {
+                VBOXDISPVHWA_INFO *pVhwa = &pAdapter->aHeads[i].Vhwa;
+                if (pVhwa->Settings.fFlags & VBOXVHWA_F_ENABLED)
+                {
+                    for (uint32_t j = 0; j < pVhwa->Settings.cFormats; ++j)
+                    {
+                        fo.Format = pVhwa->Settings.aFormats[j];
+                        fo.Operations = FORMATOP_OVERLAY;
+                        int rc = vboxFormatOpsMerge(pAdapter->paFormstOps, &pAdapter->cFormstOps, cFormats, &fo);
+                        AssertRC(rc);
+                    }
+                }
+            }
+
+            pAdapter->paSurfDescs = (DDSURFACEDESC*)(pvBuf + offSurfDescs);
+            memcpy (pAdapter->paSurfDescs , gVBoxSurfDescsBase, sizeof (gVBoxSurfDescsBase));
+            pAdapter->cSurfDescs = RT_ELEMENTS(gVBoxSurfDescsBase);
+
+            DDSURFACEDESC sd;
+            for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
+            {
+                VBOXDISPVHWA_INFO *pVhwa = &pAdapter->aHeads[i].Vhwa;
+                if (pVhwa->Settings.fFlags & VBOXVHWA_F_ENABLED)
+                {
+                    for (uint32_t j = 0; j < pVhwa->Settings.cFormats; ++j)
+                    {
+                        uint32_t fourcc = vboxFormatToFourcc(pVhwa->Settings.aFormats[j]);
+                        if (fourcc)
+                        {
+                            vboxVhwaPopulateOverlayFourccSurfDesc(&sd, fourcc);
+                            int rc = vboxSurfDescMerge(pAdapter->paSurfDescs, &pAdapter->cSurfDescs, cSurfDescs, &sd);
+                            AssertRC(rc);
+                        }
+                    }
+                }
+            }
+        }
+        else
+            return VERR_OUT_OF_RESOURCES;
+    }
+#endif
+
+    return VINF_SUCCESS;
+}
+
+void vboxCapsFree(PVBOXWDDMDISP_ADAPTER pAdapter)
+{
+    if (pAdapter->paFormstOps)
+        RTMemFree(pAdapter->paFormstOps);
+}
 
 /**
  * DLL entry point.
@@ -504,7 +908,10 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
                 if (vboxVhwaHasCKeying(pAdapter))
                 {
                     DDRAW_CAPS *pCaps = (DDRAW_CAPS*)pData->pData;
-                    pCaps->Caps |= DDRAW_CAPS_COLORKEY;
+                    pCaps->Caps |= DDRAW_CAPS_COLORKEY
+                            | DDRAW_CAPS2_DYNAMICTEXTURES
+                            | DDRAW_CAPS2_FLIPNOVSYNC
+                            ;
                 }
 #endif
             }
@@ -560,14 +967,20 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
             break;
         }
         case D3DDDICAPS_GETFORMATCOUNT:
-            *((uint32_t*)pData->pData) = VBOX_FORMATOP_COUNT();
+            *((uint32_t*)pData->pData) = pAdapter->cFormstOps;
             break;
         case D3DDDICAPS_GETFORMATDATA:
-            Assert(pData->DataSize >= VBOX_FORMATOP_COUNT() * sizeof(FORMATOP));
-            memcpy(pData->pData, gVBoxFormatOps, VBOX_FORMATOP_COUNT()*sizeof(FORMATOP));
+            Assert(pData->DataSize >= pAdapter->cFormstOps * sizeof (FORMATOP));
+            memcpy(pData->pData, pAdapter->paFormstOps, pAdapter->cFormstOps * sizeof (FORMATOP));
             break;
         case D3DDDICAPS_GETD3DQUERYCOUNT:
-            *((uint32_t*)pData->pData) = 0;
+            *((uint32_t*)pData->pData) = 0;//VBOX_QUERYTYPE_COUNT();
+            break;
+        case D3DDDICAPS_GETD3DQUERYDATA:
+            AssertBreakpoint();
+            memset(pData->pData, 0, pData->DataSize);
+//            Assert(pData->DataSize >= VBOX_QUERYTYPE_COUNT() * sizeof (D3DDDIQUERYTYPE));
+//            memcpy(pData->pData, gVBoxQueryTypes, VBOX_QUERYTYPE_COUNT() * sizeof (D3DDDIQUERYTYPE));
             break;
         case D3DDDICAPS_GETD3D3CAPS:
             Assert(pData->DataSize >= sizeof (D3DHAL_GLOBALDRIVERDATA));
@@ -578,10 +991,18 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
                 pCaps->dwSize = sizeof (D3DHAL_GLOBALDRIVERDATA);
                 pCaps->hwCaps.dwSize = sizeof (D3DDEVICEDESC_V1);
                 pCaps->hwCaps.dwFlags = D3DDD_COLORMODEL
-                        | D3DDD_DEVCAPS;
+                        | D3DDD_DEVCAPS
+                        | D3DDD_DEVICERENDERBITDEPTH;
 
                 pCaps->hwCaps.dcmColorModel = D3DCOLOR_RGB;
-                pCaps->hwCaps.dwDevCaps = 0;
+                pCaps->hwCaps.dwDevCaps = D3DDEVCAPS_CANRENDERAFTERFLIP
+                        | D3DDEVCAPS_DRAWPRIMTLVERTEX
+                        | D3DDEVCAPS_EXECUTESYSTEMMEMORY
+                        | D3DDEVCAPS_FLOATTLVERTEX
+                        | D3DDEVCAPS_HWRASTERIZATION
+                        | D3DDEVCAPS_HWTRANSFORMANDLIGHT
+                        | D3DDEVCAPS_TLVERTEXSYSTEMMEMORY
+                        | D3DDEVCAPS_TEXTUREVIDEOMEMORY;
                 pCaps->hwCaps.dtcTransformCaps.dwSize = sizeof (D3DTRANSFORMCAPS);
                 pCaps->hwCaps.dtcTransformCaps.dwCaps = 0;
                 pCaps->hwCaps.bClipping = FALSE;
@@ -619,15 +1040,15 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
                 pCaps->hwCaps.dpcTriCaps.dwStippleWidth = 0;
                 pCaps->hwCaps.dpcTriCaps.dwStippleHeight = 0;
                 pCaps->hwCaps.dwDeviceRenderBitDepth = 0;
-                pCaps->hwCaps.dwDeviceZBufferBitDepth = 0;
+                pCaps->hwCaps.dwDeviceZBufferBitDepth = DDBD_8 | DDBD_16 | DDBD_24 | DDBD_32;
                 pCaps->hwCaps.dwMaxBufferSize = 0;
                 pCaps->hwCaps.dwMaxVertexCount = 0;
 
 
                 pCaps->dwNumVertices = 0;
                 pCaps->dwNumClipVertices = 0;
-                pCaps->dwNumTextureFormats = 0;
-                pCaps->lpTextureFormats = NULL;
+                pCaps->dwNumTextureFormats = pAdapter->cSurfDescs;
+                pCaps->lpTextureFormats = pAdapter->paSurfDescs;
             }
             else
                 hr = E_INVALIDARG;
@@ -666,7 +1087,6 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
             *((uint32_t*)pData->pData) = 0;
             break;
         case D3DDDICAPS_GETMULTISAMPLEQUALITYLEVELS:
-        case D3DDDICAPS_GETD3DQUERYDATA:
         case D3DDDICAPS_GETD3D5CAPS:
         case D3DDDICAPS_GETD3D6CAPS:
         case D3DDDICAPS_GETD3D8CAPS:
@@ -1617,6 +2037,8 @@ static HRESULT APIENTRY vboxWddmDispCloseAdapter (IN HANDLE hAdapter)
         VBoxDispD3DClose(&pAdapter->D3D);
     }
 
+    vboxCapsFree(pAdapter);
+
     RTMemFree(pAdapter);
 
     vboxVDbgPrint(("<== "__FUNCTION__", hAdapter(0x%p)\n", hAdapter));
@@ -1663,44 +2085,57 @@ HRESULT APIENTRY OpenAdapter (__inout D3DDDIARG_OPENADAPTER*  pOpenData)
         pAdapter->uRtVersion= pOpenData->Version;
         pAdapter->RtCallbacks = *pOpenData->pAdapterCallbacks;
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
         pAdapter->cHeads = Query.cInfos;
-        for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
-        {
-            pAdapter->aHeads[i].Vhwa.Settings = Query.aInfos[i];
-        }
-#endif
+
 
         pOpenData->hAdapter = pAdapter;
         pOpenData->pAdapterFuncs->pfnGetCaps = vboxWddmDispGetCaps;
         pOpenData->pAdapterFuncs->pfnCreateDevice = vboxWddmDispCreateDevice;
         pOpenData->pAdapterFuncs->pfnCloseAdapter = vboxWddmDispCloseAdapter;
         pOpenData->DriverVersion = D3D_UMD_INTERFACE_VERSION;
+        /*
+         * here we detect whether we are called by the d3d or ddraw.
+         * in the d3d case we init our d3d environment
+         * in the ddraw case we init 2D acceleration
+         * if interface version is > 7, this is D3D, treat it as so
+         * otherwise treat it as ddraw
+         * @todo: need a more clean way of doing this */
 
-        do
+        if (pAdapter->uIfVersion > 7)
         {
-            /* try enable the 3D */
-            hr = VBoxDispD3DOpen(&pAdapter->D3D);
-            Assert(hr == S_OK);
-            if (hr == S_OK)
+            do
             {
-                hr = pAdapter->D3D.pfnDirect3DCreate9Ex(D3D_SDK_VERSION, &pAdapter->pD3D9If);
+                /* try enable the 3D */
+                hr = VBoxDispD3DOpen(&pAdapter->D3D);
                 Assert(hr == S_OK);
                 if (hr == S_OK)
                 {
-                    vboxVDbgPrint((__FUNCTION__": SUCCESS 3D Enabled, pAdapter (0x%p)\n", pAdapter));
-                    break;
+                    hr = pAdapter->D3D.pfnDirect3DCreate9Ex(D3D_SDK_VERSION, &pAdapter->pD3D9If);
+                    Assert(hr == S_OK);
+                    if (hr == S_OK)
+                    {
+                        vboxVDbgPrint((__FUNCTION__": SUCCESS 3D Enabled, pAdapter (0x%p)\n", pAdapter));
+                        break;
+                    }
+                    else
+                        vboxVDbgPrintR((__FUNCTION__": pfnDirect3DCreate9Ex failed, hr (%d)\n", hr));
+                    VBoxDispD3DClose(&pAdapter->D3D);
                 }
                 else
-                    vboxVDbgPrintR((__FUNCTION__": pfnDirect3DCreate9Ex failed, hr (%d)\n", hr));
-
-                VBoxDispD3DClose(&pAdapter->D3D);
+                    vboxVDbgPrintR((__FUNCTION__": VBoxDispD3DOpen failed, hr (%d)\n", hr));
+            } while (0);
+        }
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        else
+        {
+            for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
+            {
+                pAdapter->aHeads[i].Vhwa.Settings = Query.aInfos[i];
             }
-            else
-                vboxVDbgPrintR((__FUNCTION__": VBoxDispD3DOpen failed, hr (%d)\n", hr));
-        } while (0);
+        }
+#endif
 
-        vboxFormatOpsInit(pAdapter);
+        vboxCapsInit(pAdapter);
         hr = S_OK;
 //        RTMemFree(pAdapter);
     }
