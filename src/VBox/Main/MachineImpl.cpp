@@ -4965,8 +4965,9 @@ STDMETHODIMP Machine::QueryLogFilename(ULONG aIdx, BSTR *aName)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Utf8Str log = queryLogFilename(aIdx);
-    if (RTFileExists(log.c_str()))
-        log.cloneTo(aName);
+    if (!RTFileExists(log.c_str()))
+        log.setNull();
+    log.cloneTo(aName);
 
     return S_OK;
 }
