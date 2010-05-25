@@ -263,15 +263,7 @@ $$(VBOX_JXPCOM_JAR): $(VBOX_JXPCOM_JAR_SRC) $(VBOX_JXPCOM_GEN)/jxpcomgen.list $(
 	$(VBOX_JAR) cf $@ -C $(VBOX_JXPCOM_JDEST) .
 
 else # VBOX_ONLY_SDK
- #
- # Install sample code.
- #
- INSTALLS += jxpcomsample
- jxpcomsample_INST = $(INST_SDK)bindings/xpcom/java
- jxpcomsample_MODE = a+rx,u+w
- jxpcomsample_SOURCES = \
-	tests/TestVBox.java=>samples/TestVBox.java \
-	tests/Makefile=>samples/Makefile
+# Nothing yet
 endif # VBOX_ONLY_SDK
 
 include $(KBUILD_PATH)/subfooter.kmk
