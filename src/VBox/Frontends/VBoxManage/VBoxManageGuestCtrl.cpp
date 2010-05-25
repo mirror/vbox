@@ -448,10 +448,12 @@ static int handleExecProgram(HandlerArg *a)
             #endif
                 }
 
-                if (fCanceled && fVerbose)
-                    RTPrintf("Process execution canceled!\n");
-
-                if (fCompleted)
+                if (fCanceled)
+                {
+                    if (fVerbose)
+                        RTPrintf("Process execution canceled!\n");
+                }
+                else if (fCompleted)
                 {
                     LONG iRc = false;
                     CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
@@ -470,6 +472,11 @@ static int handleExecProgram(HandlerArg *a)
                         CHECK_ERROR_BREAK(guest, GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus));
                         RTPrintf("Exit code=%u (Status=%u [%s], Flags=%u)\n", uRetExitCode, uRetStatus, getStatus(uRetStatus), uRetFlags);
                     }
+                }
+                else /* If neither canceled nor completed we got a hard abort (shouldn't happen). */
+                {
+                    if (fVerbose)
+                        RTPrintf("Process execution aborted!\n");
                 }
             }
             a->session->Close();
