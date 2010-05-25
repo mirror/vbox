@@ -461,8 +461,12 @@ VBOX_WITH_VBOXBFE = 1
 # Enables the Python<->XPCOM and Python<->COM bindings.
 VBOX_WITH_PYTHON ?= 1
 if1of ($(KBUILD_TARGET), )
- # Enable Java<->XPCOM bridge
+ # Enable Java<->XPCOM bridge + glue code
  VBOX_WITH_JXPCOM ?= 1
+endif
+if1of ($(KBUILD_TARGET), )
+ # Enable Java<->MSCOM glue, bridge is provided by an external lib (Jacob)
+ VBOX_WITH_JMSCOM ?= 1
 endif
 # Use XPIDL instead of genjifaces.
 VBOX_WITH_JAVA_SUPPORT_IN_XPIDL ?= 1
@@ -4303,6 +4307,12 @@ else
  VBOX_MD_OS = $(KBUILD_TARGET)
  VBOX_JAVA_INC = $(VBOX_JAVA_HOME)/include               \
                 $(VBOX_JAVA_HOME)/include/$(VBOX_MD_OS)
+endif
+
+ifeq ($(KBUILD_TARGET), win)
+  VBOX_SEP=\;
+else
+  VBOX_SEP=:
 endif
 VBOX_JAVAC_OPTS = -source 1.5 -target 1.5
 
