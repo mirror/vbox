@@ -466,9 +466,9 @@ static void VBoxServiceWaitSignal(void)
         rc = sigwait(&signalMask, &iSignal);
     }
     while (   rc == EINTR
-#ifdef ERESTART
+# ifdef ERESTART
            || rc == ERESTART
-#endif
+# endif
           );
 
     VBoxServiceVerbose(3, "VBoxServiceWaitSignal: Received signal %d (rc=%d)\n", iSignal, rc);
