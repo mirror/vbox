@@ -126,7 +126,7 @@ private:
         void                       *pvData;
         uint32_t                    cbData;
         /** Atomic flag whether callback was called. */
-        volatile bool               bCalled;
+        volatile bool               fCalled;
         /** Pointer to user-supplied IProgress. */
         ComObjPtr<Progress>         pProgress;
     };
@@ -136,10 +136,10 @@ private:
 
     struct GuestProcess
     {
-        uint32_t                 mPID;
-        uint32_t                 mStatus;
-        uint32_t                 mFlags;
-        uint32_t                 mExitCode;
+        uint32_t                    mPID;
+        uint32_t                    mStatus;
+        uint32_t                    mFlags;
+        uint32_t                    mExitCode;
     };
     typedef std::list< GuestProcess > GuestProcessList;
     typedef std::list< GuestProcess >::iterator GuestProcessIter;
@@ -147,8 +147,9 @@ private:
 
     int prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);
     /** Handler for guest execution control notifications. */
-    int notifyCtrlExec(uint32_t u32Function, PHOSTEXECCALLBACKDATA pData);
-    int notifyCtrlExecOut(uint32_t u32Function, PHOSTEXECOUTCALLBACKDATA pData);
+    int notifyCtrlClientDisconnected(uint32_t u32Function, PCALLBACKDATACLIENTDISCONNECTED pData);
+    int notifyCtrlExecStatus(uint32_t u32Function, PCALLBACKDATAEXECSTATUS pData);
+    int notifyCtrlExecOut(uint32_t u32Function, PCALLBACKDATAEXECOUT pData);
     CallbackListIter getCtrlCallbackContextByID(uint32_t u32ContextID);
     GuestProcessIter getProcessByPID(uint32_t u32PID);
     void destroyCtrlCallbackContext(CallbackListIter it);

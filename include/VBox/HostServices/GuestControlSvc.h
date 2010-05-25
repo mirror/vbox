@@ -73,16 +73,16 @@ typedef struct _VBoxGuestCtrlCallbackHeader
     uint32_t u32Magic;
     /** Context ID to identify callback data. */
     uint32_t u32ContextID;
-} HOSTCCALLBACKHEADER, *PHOSTCCALLBACKHEADER;
+} CALLBACKHEADER, *PCALLBACKHEADER;
 
 /**
  * Data structure to pass to the service extension callback.  We use this to
  * notify the host of changes to properties.
  */
-typedef struct _VBoxGuestCtrlExecCallbackData
+typedef struct _VBoxGuestCtrlCallbackDataExecStatus
 {
     /** Callback data header. */
-    HOSTCCALLBACKHEADER hdr;
+    CALLBACKHEADER hdr;
     /** The process ID (PID). */
     uint32_t u32PID;
     /* The process status. */
@@ -93,12 +93,12 @@ typedef struct _VBoxGuestCtrlExecCallbackData
     void *pvData;
     /** Size of optional data buffer (not used atm). */
     uint32_t cbData;
-} HOSTEXECCALLBACKDATA, *PHOSTEXECCALLBACKDATA;
+} CALLBACKDATAEXECSTATUS, *PCALLBACKDATAEXECSTATUS;
 
-typedef struct _VBoxGuestCtrlExecOutCallbackData
+typedef struct _VBoxGuestCtrlCallbackDataExecOut
 {
     /** Callback data header. */
-    HOSTCCALLBACKHEADER hdr;
+    CALLBACKHEADER hdr;
     /** The process ID (PID). */
     uint32_t u32PID;
     /* The handle ID (stdout/stderr). */
@@ -109,14 +109,22 @@ typedef struct _VBoxGuestCtrlExecOutCallbackData
     void *pvData;
     /** Size of optional data buffer. */
     uint32_t cbData;
-} HOSTEXECOUTCALLBACKDATA, *PHOSTEXECOUTCALLBACKDATA;
+} CALLBACKDATAEXECOUT, *PCALLBACKDATAEXECOUT;
+
+typedef struct _VBoxGuestCtrlCallbackDataClientDisconnected
+{
+    /** Callback data header. */
+    CALLBACKHEADER hdr;
+} CALLBACKDATACLIENTDISCONNECTED, *PCALLBACKDATACLIENTDISCONNECTED;
 
 enum
 {
-    /** Magic number for sanity checking the HOSTEXECCALLBACKDATA structure. */
-    HOSTEXECCALLBACKDATAMAGIC = 0x26011982,
-    /** Magic number for sanity checking the HOSTEXECOUTCALLBACKDATA structure. */
-    HOSTEXECOUTCALLBACKDATAMAGIC = 0x11061949
+    /** Magic number for sanity checking the CALLBACKDATACLIENTDISCONNECTED structure. */
+    CALLBACKDATAMAGICCLIENTDISCONNECTED = 0x08041984,
+    /** Magic number for sanity checking the CALLBACKDATAEXECSTATUS structure. */
+    CALLBACKDATAMAGICEXECSTATUS = 0x26011982,
+    /** Magic number for sanity checking the CALLBACKDATAEXECOUT structure. */
+    CALLBACKDATAMAGICEXECOUT = 0x11061949
 };
 
 enum eVBoxGuestCtrlCallbackType
@@ -159,11 +167,16 @@ enum eGuestFn
      */
     GUEST_GET_HOST_MSG = 1,
     /**
-     * Guest asks the host to cancel all pending waits the guest waits on.
+     * Guest asks the host to cancel all pending waits the guest itself waits on.
      * This becomes necessary when the guest wants to quit but still waits for
      * commands from the host.
      */
     GUEST_CANCEL_PENDING_WAITS = 2,
+    /**
+     * Guest disconnected (terminated normally or due to a crash HGCM
+     * detected when calling service::clientDisconnect(). 
+     */
+    GUEST_DISCONNECTED = 3,
     /**
      * TODO
      */
