@@ -17,7 +17,38 @@
 
 /** @page pg_svc_guest_control   Guest Control HGCM Service
  *
- * @todo Write up some nice text here.
+ * This service acts as a proxy for handling and buffering host command requests
+ * and clients on the guest. It tries to be as transparent as possible to let
+ * the guest (client) and host side do their protocol handling as desired.
+ *
+ * The following terms are used:
+ * - Host:   A host process (e.g. VBoxManage or another tool utilizing the Main API)
+ *           which wants to control something on the guest.
+ * - Client: A client (e.g. VBoxService) running inside the guest OS waiting for
+ *           new host commands to perform. There can be multiple clients connected
+ *           to a service. A client is represented by its HGCM client ID.
+ * - Context ID: A (almost) unique ID automatically generated on the host (Main API) 
+ *               to not only distinguish clients but individual requests. Because
+ *               the host does not know anything about connected clients it needs
+ *               an indicator which it can refer to later. This context ID gets
+ *               internally bound by the service to a client which actually processes 
+ *               the command in order to have a relationship between client<->context ID(s).
+ *
+ * The host can trigger commands which get buffered by the service (with full HGCM
+ * parameter info). As soon as a client connects (or is ready to do some new work) 
+ * it gets a buffered host command to process it. This command then will be immediately 
+ * removed from the command list. If there are ready clients but no new commands to be
+ * processed, these clients will be set into a deferred state (that is being blocked
+ * to return until a new command is available).
+ *
+ * If a client needs to inform the host that something happend, it can send a 
+ * message to a low level HGCM callback registered in Main. This callback contains
+ * the actual data as well as the context ID to let the host do the next necessary 
+ * steps for this context. This context ID makes it possible to wait for an event
+ * inside the host's Main API function (like starting a process on the guest and
+ * wait for getting its PID returned by the client) as well as cancelling blocking
+ * host calls in order the client terminated/crashed (HGCM detects disconnected 
+ * clients and reports it to this service's callback).
  */
 
 /*******************************************************************************
