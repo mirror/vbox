@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,17 +28,25 @@
 #include <process.h>
 #include <aclapi.h>
 
-DWORD                 g_rcWinService = 0;
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static void WINAPI vboxServiceWinMain(DWORD argc, LPTSTR *argv);
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static DWORD          g_dwWinServiceLastStatus = 0;
 SERVICE_STATUS_HANDLE g_hWinServiceStatus = NULL;
 /** The semaphore for the dummy Windows service. */
 static RTSEMEVENT     g_WindowsEvent = NIL_RTSEMEVENT;
 
-void WINAPI VBoxServiceWinMain (DWORD argc, LPTSTR *argv);
-
-static SERVICE_TABLE_ENTRY const g_aServiceTable[]=
+static SERVICE_TABLE_ENTRY const g_aServiceTable[] =
 {
-    {VBOXSERVICE_NAME, VBoxServiceWinMain},
-    {NULL,NULL}
+    { VBOXSERVICE_NAME, vboxServiceWinMain },
+    { NULL,             NULL}
 };
 
 
@@ -47,13 +55,13 @@ static SERVICE_TABLE_ENTRY const g_aServiceTable[]=
  * @todo Add full unicode support.
  * @todo Add event log capabilities / check return values.
  */
-DWORD VBoxServiceWinAddAceToObjectsSecurityDescriptor(LPTSTR pszObjName,
-                                                      SE_OBJECT_TYPE ObjectType,
-                                                      LPTSTR pszTrustee,
-                                                      TRUSTEE_FORM TrusteeForm,
-                                                      DWORD dwAccessRights,
-                                                      ACCESS_MODE AccessMode,
-                                                      DWORD dwInheritance)
+static DWORD vboxServiceWinAddAceToObjectsSecurityDescriptor(LPTSTR pszObjName,
+                                                             SE_OBJECT_TYPE ObjectType,
+                                                             LPTSTR pszTrustee,
+                                                             TRUSTEE_FORM TrusteeForm,
+                                                             DWORD dwAccessRights,
+                                                             ACCESS_MODE AccessMode,
+                                                             DWORD dwInheritance)
 {
     DWORD dwRes = 0;
     PACL pOldDACL = NULL, pNewDACL = NULL;
@@ -73,7 +81,7 @@ DWORD VBoxServiceWinAddAceToObjectsSecurityDescriptor(LPTSTR pszObjName,
             VBoxServiceError("AddAceToObjectsSecurityDescriptor: Object not found/installed: %s\n", pszObjName);
         else
             VBoxServiceError("AddAceToObjectsSecurityDescriptor: GetNamedSecurityInfo: Error %u\n", dwRes);
-        goto Cleanup;
+        goto l_Cleanup;
     }
 
     /* Initialize an EXPLICIT_ACCESS structure for the new ACE. */
@@ -89,7 +97,7 @@ DWORD VBoxServiceWinAddAceToObjectsSecurityDescriptor(LPTSTR pszObjName,
     if (ERROR_SUCCESS != dwRes)
     {
         VBoxServiceError("AddAceToObjectsSecurityDescriptor: SetEntriesInAcl: Error %u\n", dwRes);
-        goto Cleanup;
+        goto l_Cleanup;
     }
 
     /* Attach the new ACL as the object's DACL. */
@@ -99,11 +107,11 @@ DWORD VBoxServiceWinAddAceToObjectsSecurityDescriptor(LPTSTR pszObjName,
     if (ERROR_SUCCESS != dwRes)
     {
         VBoxServiceError("AddAceToObjectsSecurityDescriptor: SetNamedSecurityInfo: Error %u\n", dwRes);
-        goto Cleanup;
+        goto l_Cleanup;
     }
 
     /** @todo get rid of that spaghetti jump ... */
-Cleanup:
+l_Cleanup:
 
     if(pSD != NULL)
         LocalFree((HLOCAL) pSD);
@@ -115,17 +123,17 @@ Cleanup:
 
 
 /** Reports our current status to the SCM. */
-BOOL VBoxServiceWinSetStatus(DWORD dwStatus, DWORD dwCheckPoint)
+static BOOL vboxServiceWinSetStatus(DWORD dwStatus, DWORD dwCheckPoint)
 {
-    if (NULL == g_hWinServiceStatus) /* Program could be in testing mode, so no service environment available. */
+    if (g_hWinServiceStatus == NULL) /* Program could be in testing mode, so no service environment available. */
         return FALSE;
 
     VBoxServiceVerbose(2, "Setting service status to: %ld\n", dwStatus);
-    g_rcWinService  = dwStatus;
+    g_dwWinServiceLastStatus = dwStatus;
 
     SERVICE_STATUS ss;
     ss.dwServiceType              = SERVICE_WIN32_OWN_PROCESS;
-    ss.dwCurrentState             = g_rcWinService;
+    ss.dwCurrentState             = dwStatus;
     ss.dwControlsAccepted         = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
     ss.dwWin32ExitCode            = NO_ERROR;
     ss.dwServiceSpecificExitCode  = 0; /* Not used */
@@ -136,157 +144,157 @@ BOOL VBoxServiceWinSetStatus(DWORD dwStatus, DWORD dwCheckPoint)
 }
 
 
-int VBoxServiceWinSetDesc(SC_HANDLE hService)
+/**
+ * Reports SERVICE_STOP_PENDING to SCM.
+ *
+ * @param   uCheckPoint         Some number.
+ */
+void VBoxServiceWinSetStopPendingStatus(uint32_t uCheckPoint)
 {
-    /* On W2K+ there's ChangeServiceConfig2() which lets us set some fields
-       like a longer service description. */
-#ifndef TARGET_NT4
-    SERVICE_DESCRIPTION desc;
-    /** @todo On Vista+ SERVICE_DESCRIPTION also supports localized strings! */
-    desc. lpDescription = VBOXSERVICE_DESCRIPTION;
-    if (FALSE == ChangeServiceConfig2(hService,
-                                      SERVICE_CONFIG_DESCRIPTION, /* Service info level */
-                                      &desc))
-    {
-        VBoxServiceError("Cannot set the service description! Error: %ld\n", GetLastError());
-        return 1;
-    }
-#endif
-    return VINF_SUCCESS;
+    vboxServiceWinSetStatus(SERVICE_STOP_PENDING, uCheckPoint);
 }
 
 
-/** Installs the service into the registry. */
-int VBoxServiceWinInstall(void)
+static RTEXITCODE vboxServiceWinSetDesc(SC_HANDLE hService)
 {
-    SC_HANDLE hService, hSCManager;
-    TCHAR imagePath[MAX_PATH] = { 0 };
+#ifndef TARGET_NT4
+    /* On W2K+ there's ChangeServiceConfig2() which lets us set some fields
+       like a longer service description. */
+    /** @todo On Vista+ SERVICE_DESCRIPTION also supports localized strings! */
+    SERVICE_DESCRIPTION desc;
+    desc.lpDescription = VBOXSERVICE_DESCRIPTION;
+    if (!ChangeServiceConfig2(hService,
+                              SERVICE_CONFIG_DESCRIPTION, /* Service info level */
+                              &desc))
+    {
+        VBoxServiceError("Cannot set the service description! Error: %ld\n", GetLastError());
+        return RTEXITCODE_FAILURE;
+    }
+#endif
+    return RTEXITCODE_SUCCESS;
+}
 
-    GetModuleFileName(NULL,imagePath,MAX_PATH);
+
+/**
+ * Installs the service.
+ */
+RTEXITCODE VBoxServiceWinInstall(void)
+{
     VBoxServiceVerbose(1, "Installing service ...\n");
 
-    hSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+    TCHAR imagePath[MAX_PATH] = { 0 };
+    GetModuleFileName(NULL, imagePath, sizeof(imagePath));
 
-    if (NULL == hSCManager)
+    SC_HANDLE hSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+    if (hSCManager == NULL)
     {
         VBoxServiceError("Could not open SCM! Error: %ld\n", GetLastError());
-        return 1;
+        return RTEXITCODE_FAILURE;
     }
 
-    hService = ::CreateService (hSCManager,
-                                VBOXSERVICE_NAME, VBOXSERVICE_FRIENDLY_NAME,
-                                SERVICE_ALL_ACCESS,
-                                SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS,
-                                SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL,
-                                imagePath, NULL, NULL, NULL, NULL, NULL);
-    int rc = VINF_SUCCESS;
-    if (NULL == hService)
+    RTEXITCODE rc       = RTEXITCODE_SUCCESS;
+    SC_HANDLE  hService = CreateService(hSCManager,
+                                        VBOXSERVICE_NAME, VBOXSERVICE_FRIENDLY_NAME,
+                                        SERVICE_ALL_ACCESS,
+                                        SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS,
+                                        SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL,
+                                        imagePath, NULL, NULL, NULL, NULL, NULL);
+    if (hService != NULL)
+        VBoxServiceVerbose(0, "Service successfully installed!\n");
+    else
     {
         DWORD dwErr = GetLastError();
         switch (dwErr)
         {
-
-        case ERROR_SERVICE_EXISTS:
-
-            VBoxServiceVerbose(1, "Service already exists, just updating the service config.\n");
-            hService = OpenService (hSCManager,
-                                    VBOXSERVICE_NAME,
-                                    SERVICE_ALL_ACCESS);
-            if (NULL == hService)
-            {
-                VBoxServiceError("Could not open service! Error: %ld\n", GetLastError());
-                rc = 1;
-            }
-            else
-            {
-                if (ChangeServiceConfig (hService,
-                                         SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS,
-                                         SERVICE_DEMAND_START,
-                                         SERVICE_ERROR_NORMAL,
-                                         imagePath,
-                                         NULL,
-                                         NULL,
-                                         NULL,
-                                         NULL,
-                                         NULL,
-                                         VBOXSERVICE_FRIENDLY_NAME))
+            case ERROR_SERVICE_EXISTS:
+                VBoxServiceVerbose(1, "Service already exists, just updating the service config.\n");
+                hService = OpenService(hSCManager, VBOXSERVICE_NAME, SERVICE_ALL_ACCESS);
+                if (hService)
                 {
-                    VBoxServiceVerbose(1, "The service config has been successfully updated.\n");
+                    if (ChangeServiceConfig (hService,
+                                             SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS,
+                                             SERVICE_DEMAND_START,
+                                             SERVICE_ERROR_NORMAL,
+                                             imagePath,
+                                             NULL,
+                                             NULL,
+                                             NULL,
+                                             NULL,
+                                             NULL,
+                                             VBOXSERVICE_FRIENDLY_NAME))
+                        VBoxServiceVerbose(1, "The service config has been successfully updated.\n");
+                    else
+                        rc = VBoxServiceError("Could not change service config! Error: %ld\n", GetLastError());
                 }
                 else
-                {
-                    VBoxServiceError("Could not change service config! Error: %ld\n", GetLastError());
-                    rc = 1;
-                }
-            }
-            break;
+                    rc = VBoxServiceError("Could not open service! Error: %ld\n", GetLastError());
+                break;
 
-        default:
-
-            VBoxServiceError("Could not create service! Error: %ld\n", dwErr);
-            rc = 1;
-            break;
+            default:
+                rc = VBoxServiceError("Could not create service! Error: %ld\n", dwErr);
+                break;
         }
     }
-    else
-    {
-        VBoxServiceVerbose(0, "Service successfully installed!\n");
-    }
 
-    if (RT_SUCCESS(rc))
-        rc = VBoxServiceWinSetDesc(hService);
+    if (rc == RTEXITCODE_SUCCESS)
+        rc = vboxServiceWinSetDesc(hService);
 
     CloseServiceHandle(hService);
     CloseServiceHandle(hSCManager);
     return rc;
 }
 
-/** Uninstalls the service from the registry. */
-int VBoxServiceWinUninstall(void)
+/**
+ * Uninstalls the service.
+ */
+RTEXITCODE VBoxServiceWinUninstall(void)
 {
-    SC_HANDLE hService, hSCManager;
-    hSCManager = OpenSCManager(NULL,NULL,SC_MANAGER_ALL_ACCESS);
-
     VBoxServiceVerbose(1, "Uninstalling service ...\n");
 
-    if (NULL == hSCManager) {
-        VBoxServiceError("Could not open SCM! Error: %d\n", GetLastError());
-        return 1;
-    }
-
-    hService = OpenService (hSCManager, VBOXSERVICE_NAME, SERVICE_ALL_ACCESS );
-    if (NULL == hService) {
-        VBoxServiceError("Could not open service! Error: %d\n", GetLastError());
-        CloseServiceHandle (hSCManager);
-        return 1;
-    }
-
-    if (FALSE == DeleteService (hService))
+    SC_HANDLE hSCManager = OpenSCManager(NULL,NULL,SC_MANAGER_ALL_ACCESS);
+    if (hSCManager == NULL)
     {
-        VBoxServiceError("Could not remove service! Error: %d\n", GetLastError());
-        CloseServiceHandle (hService);
-        CloseServiceHandle (hSCManager);
-        return 1;
+        VBoxServiceError("Could not open SCM! Error: %d\n", GetLastError());
+        return RTEXITCODE_FAILURE;
+    }
+
+    RTEXITCODE rcExit;
+    SC_HANDLE  hService = OpenService(hSCManager, VBOXSERVICE_NAME, SERVICE_ALL_ACCESS );
+    if (hService != NULL)
+    {
+        if (DeleteService(hService))
+        {
+            /*
+             * ???
+             */
+            HKEY hKey = NULL;
+            if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+                             "SYSTEM\\CurrentControlSet\\Services\\EventLog\\System",
+                             0,
+                             KEY_ALL_ACCESS,
+                             &hKey)
+                == ERROR_SUCCESS)
+            {
+                RegDeleteKey(hKey, VBOXSERVICE_NAME);
+                RegCloseKey(hKey);
+            }
+
+            VBoxServiceVerbose(0, "Service successfully uninstalled!\n");
+            rcExit = RTEXITCODE_SUCCESS;
+        }
+        else
+            rcExit = VBoxServiceError("Could not remove service! Error: %d\n", GetLastError());
+        CloseServiceHandle(hService);
     }
     else
-    {
-        HKEY hKey = NULL;
-        if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\EventLog\\System", 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS) {
-            RegDeleteKey(hKey, VBOXSERVICE_NAME);
-            RegCloseKey(hKey);
-        }
-
-        VBoxServiceVerbose(0, "Service successfully uninstalled!\n");
-    }
-
-    CloseServiceHandle(hService);
+        rcExit = VBoxServiceError("Could not open service! Error: %d\n", GetLastError());
     CloseServiceHandle(hSCManager);
 
-    return 0;
+    return rcExit;
 }
 
 
-int VBoxServiceWinStart(void)
+static int vboxServiceWinStart(void)
 {
     int rc = VINF_SUCCESS;
 
@@ -295,47 +303,50 @@ int VBoxServiceWinStart(void)
     PSID pBuiltinUsersSID = NULL;
     SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_LOCAL_SID_AUTHORITY;
 
-    if(!AllocateAndInitializeSid(&SIDAuthWorld, 1,
-                                 SECURITY_LOCAL_RID,
-                                 0, 0, 0, 0, 0, 0, 0,
-                                 &pBuiltinUsersSID))
+    if (!AllocateAndInitializeSid(&SIDAuthWorld, 1,
+                                  SECURITY_LOCAL_RID,
+                                  0, 0, 0, 0, 0, 0, 0,
+                                  &pBuiltinUsersSID))
     {
+        /**@todo r=bird: rc = RTErrConvertFromWin32(GetLastError()); ?*/
         VBoxServiceError("AllocateAndInitializeSid: Error %u\n", GetLastError());
     }
     else
     {
-        DWORD dwRes = VBoxServiceWinAddAceToObjectsSecurityDescriptor (TEXT("\\\\.\\VBoxMiniRdrDN"),
-                                                                       SE_FILE_OBJECT,
-                                                                       (LPTSTR)pBuiltinUsersSID,
-                                                                       TRUSTEE_IS_SID,
-                                                                       FILE_GENERIC_READ | FILE_GENERIC_WRITE,
-                                                                       SET_ACCESS,
-                                                                       NO_INHERITANCE);
+        DWORD dwRes = vboxServiceWinAddAceToObjectsSecurityDescriptor(TEXT("\\\\.\\VBoxMiniRdrDN"),
+                                                                      SE_FILE_OBJECT,
+                                                                      (LPTSTR)pBuiltinUsersSID,
+                                                                      TRUSTEE_IS_SID,
+                                                                      FILE_GENERIC_READ | FILE_GENERIC_WRITE,
+                                                                      SET_ACCESS,
+                                                                      NO_INHERITANCE);
         if (dwRes != ERROR_SUCCESS)
         {
             if (dwRes == ERROR_FILE_NOT_FOUND)
             {
                 /* If we don't find our "VBoxMiniRdrDN" (for Shared Folders) object above,
                    don't report an error; it just might be not installed. Otherwise this
-                   would cause the SCM to hang on starting up the service. */
+                  would cause the SCM to hang on starting up the service. */
                 rc = VINF_SUCCESS;
             }
-            else rc = RTErrConvertFromWin32(dwRes);
+            else
+                rc = RTErrConvertFromWin32(dwRes);
         }
     }
 #endif
 
     if (RT_SUCCESS(rc))
     {
-        /* Notify SCM *before* we're starting the services, because the last services
-           always starts in main thread (which causes the SCM to wait because of the non-responding
-           service). */
-        VBoxServiceWinSetStatus (SERVICE_RUNNING, 0);
-
         rc = VBoxServiceStartServices();
-        if (RT_FAILURE(rc))
-            VBoxServiceWinSetStatus (SERVICE_STOPPED, 0);
+        if (RT_SUCCESS(rc))
+        {
+            vboxServiceWinSetStatus(SERVICE_RUNNING, 0);
+            VBoxServiceMainWait();
+        }
+        else
+            vboxServiceWinSetStatus(SERVICE_STOPPED, 0);
     }
+    /**@todo r=bird: else vboxServiceWinSetStatus(SERVICE_STOPPED, 0); ? */
 
     if (RT_FAILURE(rc))
         VBoxServiceError("Service failed to start with rc=%Rrc!\n", rc);
@@ -344,103 +355,116 @@ int VBoxServiceWinStart(void)
 }
 
 
+/**
+ * Call StartServiceCtrlDispatcher.
+ *
+ * The main() thread invokes this when not started in foreground mode.  It
+ * won't return till the service is being shutdown (unless start up fails).
+ *
+ * @returns RTEXITCODE_SUCCESS on normal return after service shutdown.
+ *          Something else on failure, error will have been reported.
+ */
+RTEXITCODE VBoxServiceWinEnterCtrlDispatcher(void)
+{
+    if (!StartServiceCtrlDispatcher(&g_aServiceTable[0]))
+        return VBoxServiceError("StartServiceCtrlDispatcher: %u. Please start %s with option -f (foreground)!",
+                                GetLastError(), g_pszProgName);
+    return RTEXITCODE_SUCCESS;
+}
+
+
 #ifdef TARGET_NT4
-VOID WINAPI VBoxServiceWinCtrlHandler(DWORD dwControl)
+static VOID WINAPI vboxServiceWinCtrlHandler(DWORD dwControl)
 #else
-DWORD WINAPI VBoxServiceWinCtrlHandler(DWORD dwControl,
-                                       DWORD dwEventType,
-                                       LPVOID lpEventData,
-                                       LPVOID lpContext)
+static DWORD WINAPI vboxServiceWinCtrlHandler(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData, LPVOID lpContext)
 #endif
 {
-    DWORD rc = NO_ERROR;
+    DWORD rcRet = NO_ERROR;
 
-    VBoxServiceVerbose(2, "Control handler: Control=%ld\n", dwControl);
-#ifndef TARGET_NT4
-    VBoxServiceVerbose(2, "Control handler: EventType=%ld\n", dwEventType);
+#ifdef TARGET_NT4
+    VBoxServiceVerbose(2, "Control handler: Control=%#x\n", dwControl);
+#else
+    VBoxServiceVerbose(2, "Control handler: Control=%#x EventType=%#x\n", dwControl, dwEventType);
 #endif
 
     switch (dwControl)
     {
+        case SERVICE_CONTROL_INTERROGATE:
+            vboxServiceWinSetStatus(g_dwWinServiceLastStatus, 0);
+            break;
 
-    case SERVICE_CONTROL_INTERROGATE:
-        VBoxServiceWinSetStatus(g_rcWinService, 0);
-        break;
-
-    case SERVICE_CONTROL_STOP:
-    case SERVICE_CONTROL_SHUTDOWN:
+        case SERVICE_CONTROL_STOP:
+        case SERVICE_CONTROL_SHUTDOWN:
         {
-            VBoxServiceWinSetStatus(SERVICE_STOP_PENDING, 0);
+            vboxServiceWinSetStatus(SERVICE_STOP_PENDING, 0);
 
-            rc = VBoxServiceStopServices();
+            int rc2 = VBoxServiceStopServices();
+            if (RT_FAILURE(rc2))
+                rcRet = ERROR_GEN_FAILURE;
 
-            VBoxServiceWinSetStatus(SERVICE_STOPPED, 0);
+            vboxServiceWinSetStatus(SERVICE_STOPPED, 0);
+            break;
         }
-        break;
 
-    case SERVICE_CONTROL_SESSIONCHANGE:     /* Only Win XP and up. */
-
+        case SERVICE_CONTROL_SESSIONCHANGE:     /* Only Win XP and up. */
 #ifndef TARGET_NT4
-        switch (dwEventType)
-        {
-        /*case WTS_SESSION_LOGON:
-            VBoxServiceVerbose(2, "A user has logged on to the session.\n");
+# if 0
+            switch (dwEventType)
+            {
+                case WTS_SESSION_LOGON:
+                    VBoxServiceVerbose(2, "A user has logged on to the session.\n");
+                    break;
+
+                case WTS_SESSION_LOGOFF:
+                    VBoxServiceVerbose(2, "A user has logged off from the session.\n");
+                    break;
+                default:
+                    break;
+            }
+# endif
+#endif /* !TARGET_NT4 */
             break;
 
-        case WTS_SESSION_LOGOFF:
-            VBoxServiceVerbose(2, "A user has logged off from the session.\n");
-            break;*/
         default:
+            VBoxServiceVerbose(1, "Service control function not implemented: %#x\n", dwControl);
+            rcRet = ERROR_CALL_NOT_IMPLEMENTED;
             break;
-        }
-#endif /* TARGET_NT4 */
-        break;
-
-    default:
-
-        VBoxServiceVerbose(1, "Service control function not implemented: %ld\n", dwControl);
-        rc = ERROR_CALL_NOT_IMPLEMENTED;
-        break;
     }
 
 #ifndef TARGET_NT4
-    return rc;
+    return rcRet;
 #endif
 }
 
 
-void WINAPI VBoxServiceWinMain(DWORD argc, LPTSTR *argv)
+static void WINAPI vboxServiceWinMain(DWORD argc, LPTSTR *argv)
 {
-    int rc = VINF_SUCCESS;
-
     VBoxServiceVerbose(2, "Registering service control handler ...\n");
 #ifdef TARGET_NT4
-    g_hWinServiceStatus = RegisterServiceCtrlHandler (VBOXSERVICE_NAME, VBoxServiceWinCtrlHandler);
+    g_hWinServiceStatus = RegisterServiceCtrlHandler(VBOXSERVICE_NAME, vboxServiceWinCtrlHandler);
 #else
-    g_hWinServiceStatus = RegisterServiceCtrlHandlerEx (VBOXSERVICE_NAME, VBoxServiceWinCtrlHandler, NULL);
+    g_hWinServiceStatus = RegisterServiceCtrlHandlerEx(VBOXSERVICE_NAME, vboxServiceWinCtrlHandler, NULL);
 #endif
-
-    if (NULL == g_hWinServiceStatus)
+    if (g_hWinServiceStatus != NULL)
     {
-        DWORD dwErr = GetLastError();
-
-        switch (dwErr)
-        {
-        case ERROR_INVALID_NAME:
-            VBoxServiceError("Invalid service name!\n");
-            break;
-        case ERROR_SERVICE_DOES_NOT_EXIST:
-            VBoxServiceError("Service does not exist!\n");
-            break;
-        default:
-            VBoxServiceError("Could not register service control handle! Error: %ld\n", dwErr);
-            break;
-        }
+        VBoxServiceVerbose(2, "Service control handler registered.\n");
+        vboxServiceWinStart();
     }
     else
     {
-        VBoxServiceVerbose(2, "Service control handler registered.\n");
-
-        rc = VBoxServiceWinStart();
+        DWORD dwErr = GetLastError();
+        switch (dwErr)
+        {
+            case ERROR_INVALID_NAME:
+                VBoxServiceError("Invalid service name!\n");
+                break;
+            case ERROR_SERVICE_DOES_NOT_EXIST:
+                VBoxServiceError("Service does not exist!\n");
+                break;
+            default:
+                VBoxServiceError("Could not register service control handle! Error: %ld\n", dwErr);
+                break;
+        }
     }
 }
+
