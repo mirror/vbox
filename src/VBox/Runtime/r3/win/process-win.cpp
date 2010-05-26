@@ -286,22 +286,24 @@ static int rtProcGetProcessHandle(DWORD dwPID, PSID pSID, PHANDLE phToken)
                                            TokenUser,
                                            (LPVOID)pTokenUser,
                                            dwSize,
-                                           &dwSize)
-                    && IsValidSid(pTokenUser->User.Sid)
-                    && EqualSid(pTokenUser->User.Sid, pSID))
+                                           &dwSize))
                 {
-                    if (DuplicateTokenEx(hTokenProc, MAXIMUM_ALLOWED,
-                                         NULL, SecurityIdentification, TokenPrimary, phToken))
+                    if (   IsValidSid(pTokenUser->User.Sid)
+                        && EqualSid(pTokenUser->User.Sid, pSID))
                     {
-                        /*
-                         * So we found the process instance which belongs to the user we want to
-                         * to run our new process under. This duplicated token will be used for
-                         * the actual CreateProcessAsUserW() call then.
-                         */
-                        fFound = TRUE;
+                        if (DuplicateTokenEx(hTokenProc, MAXIMUM_ALLOWED,
+                                             NULL, SecurityIdentification, TokenPrimary, phToken))
+                        {
+                            /*
+                             * So we found the process instance which belongs to the user we want to
+                             * to run our new process under. This duplicated token will be used for
+                             * the actual CreateProcessAsUserW() call then.
+                             */
+                            fFound = TRUE;
+                        }
+                        else
+                            dwErr = GetLastError();
                     }
-                    else
-                        dwErr = GetLastError();
                 }
                 else
                     dwErr = GetLastError();
@@ -319,7 +321,9 @@ static int rtProcGetProcessHandle(DWORD dwPID, PSID pSID, PHANDLE phToken)
         dwErr = GetLastError();
     if (fFound)
         return VINF_SUCCESS;
-    return RTErrConvertFromWin32(dwErr);
+    if (dwErr != NO_ERROR)
+        return RTErrConvertFromWin32(dwErr);
+    return VERR_NOT_FOUND; /* No error occured, but we didn't find the right process. */
 }
 
 
@@ -648,8 +652,8 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                 rc = VERR_PERMISSION_DENIED;
                 break;
 
-            case ERROR_PASSWORD_EXPIRED:
-            case ERROR_ACCOUNT_RESTRICTION:
+            case ERROR_PASSWORD_EXPIRED:            
+            case ERROR_ACCOUNT_RESTRICTION: /* See: http://support.microsoft.com/kb/303846/ */
                 rc = VERR_LOGON_FAILURE;
                 break;
 
