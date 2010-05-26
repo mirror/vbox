@@ -61,7 +61,7 @@ PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
 #ifdef RT_ARCH_AMD64
     if (fFlags & RTMEMHDR_FLAG_EXEC)
     {
-# if USE_KMEM_ALLOC_PROT
+# ifdef USE_KMEM_ALLOC_PROT
         pHdr = (PRTMEMHDR)kmem_alloc_prot(kernel_map, cb + sizeof(*pHdr),
                                           VM_PROT_ALL, VM_PROT_ALL, KERNBASE);
 # else
@@ -121,7 +121,7 @@ void rtR0MemFree(PRTMEMHDR pHdr)
 
 #ifdef RT_ARCH_AMD64
     if (pHdr->fFlags & RTMEMHDR_FLAG_EXEC)
-# if USE_KMEM_ALLOC_PROT
+# ifdef USE_KMEM_ALLOC_PROT
         kmem_free(kernel_map, (vm_offset_t)pHdr, pHdr->cb);
 # else
         vm_map_remove(kernel_map, (vm_offset_t)pHdr, ((vm_offset_t)pHdr) + pHdr->cb);
