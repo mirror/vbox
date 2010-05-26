@@ -1617,6 +1617,9 @@ int __vbox__IWebsessionManager_USCOREgetSessionObject(
     WEBDEBUG(("\n-- entering %s\n", __FUNCTION__));
 
     do {
+        // findSessionFromRef needs read lock
+        util::AutoReadLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
+
         WebServiceSession* pSession;
         if ((pSession = WebServiceSession::findSessionFromRef(req->refIVirtualBox)))
         {
