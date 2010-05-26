@@ -142,6 +142,8 @@ except:
     g_hasreadline = False
 
 
+g_prompt = "vbox> "
+
 g_hascolors = True
 term_colors = {
     'red':'\033[31m',
@@ -2659,6 +2661,15 @@ def nicCmd(ctx, args):
     return 0
 
 
+def promptCmd(ctx, args):
+    if    len(args) < 2:
+        print "Current prompt: '%s'" %(ctx['prompt'])
+        return 0
+
+    ctx['prompt'] = args[1]
+    return 0
+    
+
 aliases = {'s':'start',
            'i':'info',
            'l':'list',
@@ -2733,8 +2744,9 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'gui': ['Start GUI frontend', guiCmd, 0],
             'colors':['Toggle colors', colorsCmd, 0],
             'snapshot':['VM snapshot manipulation, snapshot help for more info', snapshotCmd, 0],
-            'nat':['NAT manipulation, nat help for more info', natCmd, 0],
-            'nic' : ['network adapter management', nicCmd, 0],
+            'nat':['NAT (network address trasnlation engine) manipulation, nat help for more info', natCmd, 0],
+            'nic' : ['Network adapter management', nicCmd, 0],
+            'prompt' : ['Control prompt', promptCmd, 0],
             }
 
 def runCommandArgs(ctx, args):
@@ -2820,7 +2832,6 @@ def interpret(ctx):
         ctx['wsinfo'] = ["http://localhost:18083", "", ""]
 
     vbox = ctx['vb']
-
     if vbox is not None:
         print "Running VirtualBox version %s" %(vbox.version)
         ctx['perf'] = None # ctx['global'].getPerfCollector(vbox)
@@ -2848,7 +2859,7 @@ def interpret(ctx):
 
     while True:
         try:
-            cmd = raw_input("vbox> ")
+            cmd = raw_input(ctx['prompt'])
             done = runCommand(ctx, cmd)
             if done != 0: break
         except KeyboardInterrupt:
@@ -2915,7 +2926,8 @@ def main(argv):
            'argsToMach': lambda args: argsToMach(ctx,args),
            'progressBar': lambda p: progressBar(ctx,p),
            'typeInGuest': typeInGuest,
-           '_machlist':None
+           '_machlist': None,
+           'prompt': g_prompt
            }
     interpret(ctx)
     g_virtualBoxManager.deinit()
