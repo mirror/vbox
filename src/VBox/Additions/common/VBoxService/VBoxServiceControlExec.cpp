@@ -780,7 +780,7 @@ int VBoxServiceControlExecCreateProcess(const char *pszExec, const char * const 
     }
     else
     {
-#else
+#endif
         /* Do normal execution. */
         rc = RTProcCreateEx(pszExec, papszArgs, hEnv, fFlags,
                             phStdIn, phStdOut, phStdErr, pszAsUser,
