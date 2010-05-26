@@ -177,6 +177,9 @@ if g_hasreadline:
         else:
             return rlcompleter.Completer.complete(self,text,state)
 
+    def canBePath(self, phrase,word):
+        return word.startswith('/')
+
     def canBeCommand(self, phrase, word):
         spaceIdx = phrase.find(" ")
         begIdx = readline.get_begidx()
@@ -187,14 +190,8 @@ if g_hasreadline:
             return True
         return False
 
-    def canBePath(self,phrase,word):
-        return word.startswith('/')
-
     def canBeMachine(self,phrase,word):
         return not self.canBePath(phrase,word) and not self.canBeCommand(phrase, word)
-
-    def canBePath(self,phrase,word):
-        return word.startswith('/')
 
     def global_matches(self, text):
         """
@@ -207,6 +204,13 @@ if g_hasreadline:
         phrase = readline.get_line_buffer()
 
         try:
+            if self.canBePath(phrase,text):
+                (dir,rest) = os.path.split(text)
+                n = len(rest)
+                for word in os.listdir(dir):
+                    if n == 0 or word[:n] == rest:
+                        matches.append(os.path.join(dir,word))
+
             if self.canBeCommand(phrase,text):
                 n = len(text)
                 for list in [ self.namespace ]:
@@ -226,13 +230,6 @@ if g_hasreadline:
                     if word[:n] == text:
                         matches.append(word)
 
-            if self.canBePath(phrase,text):
-                (dir,rest) = os.path.split(text)
-                n = len(rest)
-                for word in os.listdir(dir):
-                    if n == 0 or word[:n] == rest:
-                        matches.append(os.path.join(dir,word))
-
         except Exception,e:
             printErr(e)
             if g_verbose:
@@ -250,7 +247,7 @@ def autoCompletion(commands, ctx):
   completer = CompleterNG(comps, ctx)
   readline.set_completer(completer.complete)
   delims = readline.get_completer_delims()
-  readline.set_completer_delims(re.sub("[\\.]", "", delims)) # remove some of the delimiters
+  readline.set_completer_delims(re.sub("[\\./-]", "", delims)) # remove some of the delimiters
   readline.parse_and_bind("set editing-mode emacs")
   # OSX need it
   if platform.system() == 'Darwin':
@@ -852,17 +849,14 @@ def ginfoCmd(ctx,args):
     cmdExistingVm(ctx, mach, 'ginfo', '')
     return 0
 
-def execInGuest(ctx,console,args,env):
+def execInGuest(ctx,console,args,env,user,passwd,tmo):
     if len(args) < 1:
         print "exec in guest needs at least program name"
         return
-    user = ""
-    passwd = ""
-    tmo = 0
     guest = console.guest
     # shall contain program name as argv[0]
     gargs = args
-    print "executing %s with args %s" %(args[0], gargs)
+    print "executing %s with args %s as %s" %(args[0], gargs, user)
     (progress, pid) = guest.executeProcess(args[0], 0, gargs, env, user, passwd, tmo)
     print "executed with pid %d" %(pid)
     if pid != 0:
@@ -881,9 +875,34 @@ def execInGuest(ctx,console,args,env):
             print "Interrupted."
             if progress.cancelable:
                 progress.cancel()
+        (reason, code, flags) = guest.getProcessStatus(pid)
+        print "Exit code: %d" %(code)
         return 0
     else:
         reportError(ctx, progress)
+
+def nh_raw_input(prompt=""):
+    stream = sys.stdout
+    prompt = str(prompt)
+    if prompt:
+        stream.write(prompt)
+    line = sys.stdin.readline()
+    if not line:
+        raise EOFError
+    if line[-1] == '\n':
+        line = line[:-1]
+    return line
+
+
+def getCred(ctx):
+    import getpass
+    user = getpass.getuser()
+    user_inp = raw_input("User (%s): " %(user))
+    if len (user_inp) > 0:
+        user = user_inp
+    passwd = getpass.getpass()
+
+    return (user,passwd)
 
 def gexecCmd(ctx,args):
     if (len(args) < 2):
@@ -894,7 +913,8 @@ def gexecCmd(ctx,args):
         return 0
     gargs = args[2:]
     env = [] # ["DISPLAY=:0"]
-    gargs.insert(0, lambda ctx,mach,console,args: execInGuest(ctx,console,args,env))
+    (user,passwd) = getCred(ctx)
+    gargs.insert(0, lambda ctx,mach,console,args: execInGuest(ctx,console,args,env,user,passwd,1000))
     cmdExistingVm(ctx, mach, 'guestlambda', gargs)
     return 0
 
@@ -907,7 +927,8 @@ def gcatCmd(ctx,args):
         return 0
     gargs = args[2:]
     env = []
-    gargs.insert(0, lambda ctx,mach,console,args: execInGuest(ctx,console,args,env))
+    (user,passwd) = getCred(ctx)
+    gargs.insert(0, lambda ctx,mach,console,args: execInGuest(ctx,console,args,env, user, passwd, 0))
     cmdExistingVm(ctx, mach, 'guestlambda', gargs)
     return 0
 
