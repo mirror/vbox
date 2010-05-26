@@ -89,10 +89,16 @@ RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest)
     if (!SHA1_Final(auchDig, &ctx))
         return VERR_INTERNAL_ERROR;
 
-    *ppszDigest = (char*)RTMemAlloc(41);
-    rc = RTSha1ToString(auchDig, *ppszDigest, 41);
-    if (RT_FAILURE(rc))
-        RTStrFree(*ppszDigest);
+    char *pszDigest;
+    rc = RTStrAllocEx(&pszDigest, RTSHA1_DIGEST_LEN + 1);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTSha1ToString(auchDig, pszDigest, RTSHA1_DIGEST_LEN + 1);
+        if (RT_SUCCESS(rc))
+            *ppszDigest = pszDigest;
+        else
+            RTStrFree(pszDigest);
+    }
 
     return rc;
 }
