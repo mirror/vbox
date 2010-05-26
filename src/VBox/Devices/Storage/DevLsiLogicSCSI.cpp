@@ -403,7 +403,7 @@ static void lsilogicUpdateInterrupt(PLSILOGICSCSI pThis)
     /* Mask out doorbell status so that it does not affect interrupt updating. */
     uIntSts = (ASMAtomicReadU32(&pThis->uInterruptStatus) & ~LSILOGIC_REG_HOST_INTR_STATUS_DOORBELL_STS);
     /* Check maskable interrupts. */
-    uIntSts &= ~(pThis->uInterruptMask & ~LSILOGIC_REG_HOST_INTR_MASK_IRQ_ROUTING);
+    uIntSts &= ~(ASMAtomicReadU32(&pThis->uInterruptMask) & ~LSILOGIC_REG_HOST_INTR_MASK_IRQ_ROUTING);
 
     if (uIntSts)
     {
@@ -583,10 +583,10 @@ static void lsilogicFinishContextReply(PLSILOGICSCSI pLsiLogic, uint32_t u32Mess
     ASMAtomicIncU32(&pLsiLogic->uReplyPostQueueNextEntryFreeWrite);
     pLsiLogic->uReplyPostQueueNextEntryFreeWrite %= pLsiLogic->cReplyQueueEntries;
 
-    PDMCritSectLeave(&pLsiLogic->ReplyPostQueueCritSect);
-
     /* Set interrupt. */
     lsilogicSetInterrupt(pLsiLogic, LSILOGIC_REG_HOST_INTR_STATUS_REPLY_INTR);
+
+    PDMCritSectLeave(&pLsiLogic->ReplyPostQueueCritSect);
 }
 
 static void lsilogicTaskStateClear(PLSILOGICTASKSTATE pTaskState)
@@ -701,8 +701,6 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pLsiLogic, PMptReplyUnion p
         ASMAtomicIncU32(&pLsiLogic->uReplyPostQueueNextEntryFreeWrite);
         pLsiLogic->uReplyPostQueueNextEntryFreeWrite %= pLsiLogic->cReplyQueueEntries;
 
-        PDMCritSectLeave(&pLsiLogic->ReplyPostQueueCritSect);
-
         if (fForceReplyFifo)
         {
             pLsiLogic->fDoorbellInProgress = false;
@@ -711,6 +709,8 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pLsiLogic, PMptReplyUnion p
 
         /* Set interrupt. */
         lsilogicSetInterrupt(pLsiLogic, LSILOGIC_REG_HOST_INTR_STATUS_REPLY_INTR);
+
+        PDMCritSectLeave(&pLsiLogic->ReplyPostQueueCritSect);
 #else
         AssertMsgFailed(("This is not allowed to happen.\n"));
 #endif
@@ -1059,7 +1059,7 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv
              * The former bit is always cleared no matter what the guest writes to the register and
              * the latter one is read only.
              */
-            pThis->uInterruptStatus = pThis->uInterruptStatus & ~LSILOGIC_REG_HOST_INTR_STATUS_SYSTEM_DOORBELL;
+            ASMAtomicAndU32(&pThis->uInterruptStatus, ~LSILOGIC_REG_HOST_INTR_STATUS_SYSTEM_DOORBELL);
 
             /*
              * Check if there is still a doorbell function in progress. Set the
@@ -1084,7 +1084,7 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv
         }
         case LSILOGIC_REG_HOST_INTR_MASK:
         {
-            pThis->uInterruptMask = (u32 & LSILOGIC_REG_HOST_INTR_MASK_W_MASK);
+            ASMAtomicWriteU32(&pThis->uInterruptMask, u32 & LSILOGIC_REG_HOST_INTR_MASK_W_MASK);
             lsilogicUpdateInterrupt(pThis);
             break;
         }
@@ -1146,6 +1146,7 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv
  */
 static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv, unsigned cb)
 {
+    int rc = VINF_SUCCESS;
     uint32_t u32 = 0;
 
     /* Align to a 4 byte offset. */
@@ -1160,11 +1161,19 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv,
             if (RT_UNLIKELY(cb != 4))
                 LogFlowFunc((": cb is not 4 (%u)\n", cb));
 
-            if (pThis->uReplyPostQueueNextEntryFreeWrite != pThis->uReplyPostQueueNextAddressRead)
+            rc = PDMCritSectEnter(&pThis->ReplyPostQueueCritSect, VINF_IOM_HC_MMIO_READ);
+            if (rc != VINF_SUCCESS)
+                break;
+
+            uint32_t idxReplyPostQueueWrite = ASMAtomicUoReadU32(&pThis->uReplyPostQueueNextEntryFreeWrite);
+            uint32_t idxReplyPostQueueRead  = ASMAtomicUoReadU32(&pThis->uReplyPostQueueNextAddressRead);
+
+            if (idxReplyPostQueueWrite != idxReplyPostQueueRead)
             {
-                u32 = pThis->CTX_SUFF(pReplyPostQueueBase)[pThis->uReplyPostQueueNextAddressRead];
-                pThis->uReplyPostQueueNextAddressRead++;
-                pThis->uReplyPostQueueNextAddressRead %= pThis->cReplyQueueEntries;
+                u32 = pThis->CTX_SUFF(pReplyPostQueueBase)[idxReplyPostQueueRead];
+                idxReplyPostQueueRead++;
+                idxReplyPostQueueRead %= pThis->cReplyQueueEntries;
+                ASMAtomicWriteU32(&pThis->uReplyPostQueueNextAddressRead, idxReplyPostQueueRead);
             }
             else
             {
@@ -1172,6 +1181,8 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv,
                 u32 = UINT32_C(0xffffffff);
                 lsilogicClearInterrupt(pThis, LSILOGIC_REG_HOST_INTR_STATUS_REPLY_INTR);
             }
+            PDMCritSectLeave(&pThis->ReplyPostQueueCritSect);
+
             Log(("%s: Returning address %#x\n", __FUNCTION__, u32));
             break;
         }
@@ -1199,12 +1210,12 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv,
         }
         case LSILOGIC_REG_HOST_INTR_STATUS:
         {
-            u32 = pThis->uInterruptStatus;
+            u32 = ASMAtomicReadU32(&pThis->uInterruptStatus);
             break;
         }
         case LSILOGIC_REG_HOST_INTR_MASK:
         {
-            u32 = pThis->uInterruptMask;
+            u32 = ASMAtomicReadU32(&pThis->uInterruptMask);
             break;
         }
         case LSILOGIC_REG_HOST_DIAGNOSTIC:
@@ -1254,7 +1265,7 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv,
 
     LogFlowFunc(("pThis=%#p uOffset=%#x pv=%#p{%.*Rhxs} cb=%u\n", pThis, uOffset, pv, cb, pv, cb));
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 PDMBOTHCBDECL(int) lsilogicIOPortWrite (PPDMDEVINS pDevIns, void *pvUser,
@@ -1280,7 +1291,11 @@ PDMBOTHCBDECL(int) lsilogicIOPortRead (PPDMDEVINS pDevIns, void *pvUser,
 
     Assert(cb <= 4);
 
-    return lsilogicRegisterRead(pThis, uOffset, pu32, cb);
+    int rc = lsilogicRegisterRead(pThis, uOffset, pu32, cb);
+    if (rc == VINF_IOM_HC_MMIO_READ)
+        rc = VINF_IOM_HC_IOPORT_READ;
+
+    return rc;
 }
 
 PDMBOTHCBDECL(int) lsilogicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
