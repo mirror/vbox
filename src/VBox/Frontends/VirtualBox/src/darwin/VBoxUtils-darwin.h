@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,7 +36,6 @@ typedef NSView *NativeViewRef;
 #else
 
 # include <qglobal.h> /* for QT_MAC_USE_COCOA */
-
 # include <ApplicationServices/ApplicationServices.h>
 
 class QWidget;
@@ -48,10 +47,6 @@ class QImage;
 /* Cast this to void, cause Cocoa classes aren't usable in the C++ context. */
 typedef void *NativeWindowRef;
 typedef void *NativeViewRef;
-# else /* QT_MAC_USE_COCOA */
-#  include <Carbon/Carbon.h>
-typedef WindowRef NativeWindowRef;
-typedef HIViewRef NativeViewRef;
 # endif /* QT_MAC_USE_COCOA */
 #endif /* __OBJC__ */
 
@@ -65,29 +60,29 @@ RT_C_DECLS_BEGIN
  * Window/View management (OS System native)
  *
  ********************************************************************************/
-NativeWindowRef darwinToNativeWindowImpl (NativeViewRef aView);
-NativeViewRef darwinToNativeViewImpl (NativeWindowRef aWindow);
+NativeWindowRef darwinToNativeWindowImpl(NativeViewRef aView);
+NativeViewRef darwinToNativeViewImpl(NativeWindowRef aWindow);
 
 /********************************************************************************
  *
  * Simple setter methods (OS System native)
  *
  ********************************************************************************/
-void darwinSetShowsToolbarButtonImpl (NativeWindowRef aWindow, bool aEnabled);
-void darwinSetShowsResizeIndicatorImpl (NativeWindowRef aWindow, bool aEnabled);
-void darwinSetHidesAllTitleButtonsImpl (NativeWindowRef aWindow);
-void darwinSetShowsWindowTransparentImpl (NativeWindowRef aWindow, bool aEnabled);
-void darwinSetMouseCoalescingEnabled (bool aEnabled);
+void darwinSetShowsToolbarButtonImpl(NativeWindowRef aWindow, bool aEnabled);
+void darwinSetShowsResizeIndicatorImpl(NativeWindowRef aWindow, bool aEnabled);
+void darwinSetHidesAllTitleButtonsImpl(NativeWindowRef aWindow);
+void darwinSetShowsWindowTransparentImpl(NativeWindowRef aWindow, bool aEnabled);
+void darwinSetMouseCoalescingEnabled(bool aEnabled);
 
 /********************************************************************************
  *
  * Simple helper methods (OS System native)
  *
  ********************************************************************************/
-void darwinWindowAnimateResizeImpl (NativeWindowRef aWindow, int x, int y, int width, int height);
-void darwinWindowInvalidateShapeImpl (NativeWindowRef aWindow);
-void darwinWindowInvalidateShadowImpl (NativeWindowRef aWindow);
-int  darwinWindowToolBarHeight (NativeWindowRef aWindow);
+void darwinWindowAnimateResizeImpl(NativeWindowRef aWindow, int x, int y, int width, int height);
+void darwinWindowInvalidateShapeImpl(NativeWindowRef aWindow);
+void darwinWindowInvalidateShadowImpl(NativeWindowRef aWindow);
+int  darwinWindowToolBarHeight(NativeWindowRef aWindow);
 bool darwinIsWindowMaximized(NativeWindowRef aWindow);
 
 float darwinSmallFontSize();
@@ -96,10 +91,10 @@ uint64_t darwinGetCurrentProcessId();
 
 RT_C_DECLS_END
 
-DECLINLINE(CGRect) darwinToCGRect (const QRect& aRect) { return CGRectMake (aRect.x(), aRect.y(), aRect.width(), aRect.height()); }
-DECLINLINE(CGRect) darwinFlipCGRect (CGRect aRect, int aTargetHeight) { aRect.origin.y = aTargetHeight - aRect.origin.y - aRect.size.height; return aRect; }
-DECLINLINE(CGRect) darwinFlipCGRect (CGRect aRect, const CGRect &aTarget) { return darwinFlipCGRect (aRect, aTarget.size.height); }
-DECLINLINE(CGRect) darwinCenterRectTo (CGRect aRect, const CGRect& aToRect)
+DECLINLINE(CGRect) darwinToCGRect(const QRect& aRect) { return CGRectMake(aRect.x(), aRect.y(), aRect.width(), aRect.height()); }
+DECLINLINE(CGRect) darwinFlipCGRect(CGRect aRect, int aTargetHeight) { aRect.origin.y = aTargetHeight - aRect.origin.y - aRect.size.height; return aRect; }
+DECLINLINE(CGRect) darwinFlipCGRect(CGRect aRect, const CGRect &aTarget) { return darwinFlipCGRect(aRect, aTarget.size.height); }
+DECLINLINE(CGRect) darwinCenterRectTo(CGRect aRect, const CGRect& aToRect)
 {
     aRect.origin.x = aToRect.origin.x + (aToRect.size.width  - aRect.size.width)  / 2.0;
     aRect.origin.y = aToRect.origin.y + (aToRect.size.height - aRect.size.height) / 2.0;
@@ -120,7 +115,7 @@ DECLINLINE(CGRect) darwinCenterRectTo (CGRect aRect, const CGRect& aToRect)
  * @returns either HIViewRef or NSView* of the QWidget.
  * @param   aWidget   Pointer to the QWidget
  */
-NativeViewRef darwinToNativeView (QWidget *aWidget);
+NativeViewRef darwinToNativeView(QWidget *aWidget);
 
 /**
  * Returns a reference to the native Window of the QWidget.
@@ -128,7 +123,7 @@ NativeViewRef darwinToNativeView (QWidget *aWidget);
  * @returns either WindowRef or NSWindow* of the QWidget.
  * @param   aWidget   Pointer to the QWidget
  */
-NativeWindowRef darwinToNativeWindow (QWidget *aWidget);
+NativeWindowRef darwinToNativeWindow(QWidget *aWidget);
 
 /* This is necessary because of the C calling convention. Its a simple wrapper
    for darwinToNativeWindowImpl to allow operator overloading which isn't
@@ -139,7 +134,7 @@ NativeWindowRef darwinToNativeWindow (QWidget *aWidget);
  * @returns either WindowRef or NSWindow* of the View.
  * @param   aWidget   Pointer to the native View
  */
-NativeWindowRef darwinToNativeWindow (NativeViewRef aView);
+NativeWindowRef darwinToNativeWindow(NativeViewRef aView);
 
 /**
  * Returns a reference to the native View of the Window.
@@ -147,31 +142,31 @@ NativeWindowRef darwinToNativeWindow (NativeViewRef aView);
  * @returns either HIViewRef or NSView* of the Window.
  * @param   aWidget   Pointer to the native Window
  */
-NativeViewRef darwinToNativeView (NativeWindowRef aWindow);
+NativeViewRef darwinToNativeView(NativeWindowRef aWindow);
 
 /********************************************************************************
  *
  * Simple setter methods (Qt Wrapper)
  *
  ********************************************************************************/
-void darwinSetShowsToolbarButton (QToolBar *aToolBar, bool aEnabled);
-void darwinSetShowsResizeIndicator (QWidget *aWidget, bool aEnabled);
-void darwinSetHidesAllTitleButtons (QWidget *aWidget);
-void darwinSetShowsWindowTransparent (QWidget *aWidget, bool aEnabled);
-void darwinDisableIconsInMenus (void);
+void darwinSetShowsToolbarButton(QToolBar *aToolBar, bool aEnabled);
+void darwinSetShowsResizeIndicator(QWidget *aWidget, bool aEnabled);
+void darwinSetHidesAllTitleButtons(QWidget *aWidget);
+void darwinSetShowsWindowTransparent(QWidget *aWidget, bool aEnabled);
+void darwinDisableIconsInMenus(void);
 
 /********************************************************************************
  *
  * Simple helper methods (Qt Wrapper)
  *
  ********************************************************************************/
-void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget);
-void darwinWindowInvalidateShape (QWidget *aWidget);
-void darwinWindowInvalidateShadow (QWidget *aWidget);
-int  darwinWindowToolBarHeight (QWidget *aWidget);
+void darwinWindowAnimateResize(QWidget *aWidget, const QRect &aTarget);
+void darwinWindowInvalidateShape(QWidget *aWidget);
+void darwinWindowInvalidateShadow(QWidget *aWidget);
+int  darwinWindowToolBarHeight(QWidget *aWidget);
 bool darwinIsWindowMaximized(QWidget *aWidget);
-QString darwinSystemLanguage (void);
-QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText);
+QString darwinSystemLanguage(void);
+QPixmap darwinCreateDragPixmap(const QPixmap& aPixmap, const QString &aText);
 
 
 /********************************************************************************
@@ -185,74 +180,11 @@ QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText);
  * @returns CGContextRef of the QWidget.
  * @param   aWidget      Pointer to the QWidget
  */
-CGContextRef darwinToCGContextRef (QWidget *aWidget);
+CGContextRef darwinToCGContextRef(QWidget *aWidget);
 
-CGImageRef darwinToCGImageRef (const QImage *aImage);
-CGImageRef darwinToCGImageRef (const QPixmap *aPixmap);
-CGImageRef darwinToCGImageRef (const char *aSource);
-
-
-
-
-
-/********************************************************************************
- *
- * Old carbon stuff. Have to be converted soon!
- *
- ********************************************************************************/
-
-#include <QWidget>
-
-# ifndef QT_MAC_USE_COCOA
-
-/* Asserts if a != noErr and prints the error code */
-#  ifdef RT_STRICT
-#   define AssertCarbonOSStatus(a) AssertMsg ((a) == noErr, ("Carbon OSStatus: %d\n", static_cast<int> (a)))
-#  else
-#   define AssertCarbonOSStatus(a) do { NOREF(a); } while (0)
-#  endif
-
-
-/**
- * Converts a QRect to a HIRect.
- *
- * @returns HIRect for the converted QRect.
- * @param   aRect  the QRect to convert
- */
-DECLINLINE(HIRect) darwinToHIRect (const QRect &aRect)
-{
-    return CGRectMake (aRect.x(), aRect.y(), aRect.width(), aRect.height());
-}
-
-/* Experimental region handler for the seamless mode */
-OSStatus darwinRegionHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData);
-
-/* Handler for the OpenGL overlay window stuff & the possible messages. */
-enum
-{
-    /* Event classes */
-    kEventClassVBox         = 'vbox',
-    /* Event kinds */
-    kEventVBoxShowWindow    = 'swin',
-    kEventVBoxHideWindow    = 'hwin',
-    kEventVBoxMoveWindow    = 'mwin',
-    kEventVBoxResizeWindow  = 'rwin',
-    kEventVBoxDisposeWindow = 'dwin',
-    kEventVBoxUpdateDock    = 'udck',
-    kEventVBoxUpdateContext = 'uctx',
-    kEventVBoxBoundsChanged = 'bchg'
-};
-
-void PostBoundsChanged (const QRect& rect);
-OSStatus darwinOverlayWindowHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData);
-
-bool darwinIsMenuOpen (void);
-
-# endif /* !QT_MAC_USE_COCOA */
-
-# ifdef DEBUG
-void darwinDebugPrintEvent (const char *aPrefix, EventRef aEvent);
-# endif
+CGImageRef darwinToCGImageRef(const QImage *aImage);
+CGImageRef darwinToCGImageRef(const QPixmap *aPixmap);
+CGImageRef darwinToCGImageRef(const char *aSource);
 
 #endif /* !__OBJC__ */
 

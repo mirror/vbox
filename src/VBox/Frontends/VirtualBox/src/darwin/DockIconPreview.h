@@ -2,11 +2,11 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * VBoxDockIconPreview class declaration
+ * UIDockIconPreview class declaration
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,8 +17,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VBoxDockIconPreview_h___
-#define ___VBoxDockIconPreview_h___
+#ifndef ___UIDockIconPreview_h___
+#define ___UIDockIconPreview_h___
 
 #ifdef QT_MAC_USE_COCOA
 
@@ -32,5 +32,5 @@ public:
 
 #endif /* QT_MAC_USE_COCOA */
 
-#endif /* !___VBoxDockIconPreview_h___ */
+#endif /* !___UIDockIconPreview_h___ */
 
