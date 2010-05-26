@@ -856,7 +856,7 @@ def execInGuest(ctx,console,args,env):
     if len(args) < 1:
         print "exec in guest needs at least program name"
         return
-    user = "nike"
+    user = ""
     passwd = ""
     tmo = 0
     guest = console.guest
