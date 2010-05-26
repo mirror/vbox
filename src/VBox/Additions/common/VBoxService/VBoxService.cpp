@@ -56,9 +56,9 @@ int g_cVerbosity = 0;
 uint32_t g_DefaultInterval = 0;
 #ifdef RT_OS_WINDOWS
 /** Signal shutdown to the Windows service thread. */
-bool volatile g_WindowsServiceShutdown;
+static bool volatile g_fWindowsServiceShutdown;
 /** Event the Windows service thread waits for shutdown. */
-RTSEMEVENT g_WindowsServiceEvent;
+static RTSEMEVENT g_hEvtWindowsService;
 #endif
 
 /**
@@ -154,11 +154,11 @@ static int VBoxServiceUsage(void)
 /**
  * Displays a syntax error message.
  *
- * @returns 1
+ * @returns RTEXITCODE_SYNTAX.
  * @param   pszFormat   The message text.
  * @param   ...         Format arguments.
  */
-int VBoxServiceSyntax(const char *pszFormat, ...)
+RTEXITCODE VBoxServiceSyntax(const char *pszFormat, ...)
 {
     RTStrmPrintf(g_pStdErr, "%s: syntax error: ", g_pszProgName);
 
@@ -167,18 +167,18 @@ int VBoxServiceSyntax(const char *pszFormat, ...)
     RTStrmPrintfV(g_pStdErr, pszFormat, va);
     va_end(va);
 
-    return 1;
+    return RTEXITCODE_SYNTAX;
 }
 
 
 /**
  * Displays an error message.
  *
- * @returns 1
+ * @returns RTEXITCODE_FAILURE.
  * @param   pszFormat   The message text.
  * @param   ...         Format arguments.
  */
-int VBoxServiceError(const char *pszFormat, ...)
+RTEXITCODE VBoxServiceError(const char *pszFormat, ...)
 {
     RTStrmPrintf(g_pStdErr, "%s: error: ", g_pszProgName);
 
@@ -191,7 +191,7 @@ int VBoxServiceError(const char *pszFormat, ...)
     LogRel(("%s: Error: %N", g_pszProgName, pszFormat, &va));
     va_end(va);
 
-    return 1;
+    return RTEXITCODE_FAILURE;
 }
 
 
@@ -307,7 +307,6 @@ int VBoxServiceStartServices(void)
      */
     VBoxServiceVerbose(2, "Initializing services ...\n");
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
-    {
         if (g_aServices[j].fEnabled)
         {
             rc = g_aServices[j].pDesc->pfnInit();
@@ -325,7 +324,6 @@ int VBoxServiceStartServices(void)
 
             }
         }
-    }
 
     /*
      * Start the service(s).
@@ -356,24 +354,6 @@ int VBoxServiceStartServices(void)
         }
     }
 
-#ifdef RT_OS_WINDOWS
-    if (RT_SUCCESS(rc))
-    {
-        /* Block the main thread. */
-        VBoxServiceVerbose(1, "Waiting in main thread\n");
-        int rc = RTSemEventCreate(&g_WindowsServiceEvent);
-        AssertRC(rc);
-        for (;;)
-        {
-            if (g_WindowsServiceShutdown)
-                break;
-            rc = RTSemEventWait(g_WindowsServiceEvent, RT_INDEFINITE_WAIT);
-            AssertRC(rc);
-        }
-        RTSemEventDestroy(g_WindowsServiceEvent);
-        g_WindowsServiceEvent = NIL_RTSEMEVENT;
-    }
-#endif
     return rc;
 }
 
@@ -388,14 +368,25 @@ int VBoxServiceStopServices(void)
 {
     int rc = VINF_SUCCESS;
 
+    /*
+     * Signal all the services.
+     */
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
-        ASMAtomicXchgBool(&g_aServices[j].fShutdown, true);
+        ASMAtomicWriteBool(&g_aServices[j].fShutdown, true);
+
+    /*
+     * Do the pfnStop callback on all running services.
+     */
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
         if (g_aServices[j].fStarted)
         {
             VBoxServiceVerbose(3, "Calling stop function for service '%s' ...\n", g_aServices[j].pDesc->pszName);
             g_aServices[j].pDesc->pfnStop();
         }
+
+    /*
+     * Wait for all the service threads to complete.
+     */
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
     {
         if (!g_aServices[j].fEnabled) /* Only stop services which were started before. */
@@ -410,7 +401,7 @@ int VBoxServiceStopServices(void)
                     break;
 #ifdef RT_OS_WINDOWS
                 /* Notify SCM that it takes a bit longer ... */
-                VBoxServiceWinSetStatus(SERVICE_STOP_PENDING, i);
+                VBoxServiceWinSetStopPendingStatus(i + j*32);
 #endif
             }
             if (RT_FAILURE(rc))
@@ -422,16 +413,14 @@ int VBoxServiceStopServices(void)
 
 #ifdef RT_OS_WINDOWS
     /*
-     * As we're now done terminating all service threads,
-     * we have to stop the main thread as well (if defined). Note that the termination
-     * function will be called in a later context (when the main thread returns from the worker
-     * function).
+     * Wake up and tell the main() thread that we're shutting down (it's
+     * sleeping in VBoxServiceMainWait).
      */
-    if (g_WindowsServiceEvent != NIL_RTSEMEVENT)
+    if (g_hEvtWindowsService != NIL_RTSEMEVENT)
     {
         VBoxServiceVerbose(3, "Stopping the main thread...\n");
-        ASMAtomicXchgBool(&g_WindowsServiceShutdown, true);
-        rc = RTSemEventSignal(g_WindowsServiceEvent);
+        ASMAtomicWriteBool(&g_fWindowsServiceShutdown, true);
+        rc = RTSemEventSignal(g_hEvtWindowsService);
         AssertRC(rc);
     }
 #endif
@@ -441,15 +430,37 @@ int VBoxServiceStopServices(void)
 }
 
 
-#ifndef RT_OS_WINDOWS
 /**
- * Block all important signals, then explicitly wait until one of these
- * signal arrives.
+ * Block the main thread until the service shuts down.
  */
-static void VBoxServiceWaitSignal(void)
+void VBoxServiceMainWait(void)
 {
+    int rc;
+
+#ifdef RT_OS_WINDOWS
+    /*
+     * Wait for the semaphore to be signalled.
+     */
+    VBoxServiceVerbose(1, "Waiting in main thread\n");
+    rc = RTSemEventCreate(&g_hEvtWindowsService);
+    AssertRC(rc);
+    while (!ASMAtomicReadBool(&g_fWindowsServiceShutdown))
+    {
+        rc = RTSemEventWait(g_hEvtWindowsService, RT_INDEFINITE_WAIT);
+        AssertRC(rc);
+    }
+    RTSemEventDestroy(g_hEvtWindowsService);
+    g_hEvtWindowsService = NIL_RTSEMEVENT;
+
+#else
+    /*
+     * Wait explicitly for a HUP, INT, QUIT, ABRT or TERM signal, blocking
+     * all important signals.
+     *
+     * The annoying EINTR/ERESTART loop is for the benefit of Solaris where
+     * sigwait returns when we receive a SIGCHLD.  Kind of makes sense since
+     */
     sigset_t signalMask;
-    int iSignal;
     sigemptyset(&signalMask);
     sigaddset(&signalMask, SIGHUP);
     sigaddset(&signalMask, SIGINT);
@@ -458,8 +469,7 @@ static void VBoxServiceWaitSignal(void)
     sigaddset(&signalMask, SIGTERM);
     pthread_sigmask(SIG_BLOCK, &signalMask, NULL);
 
-    /* This loop is required on Solaris at least. FreeBSD doesn't know ERESTART. */
-    int rc;
+    int iSignal;
     do
     {
         iSignal = -1;
@@ -471,9 +481,9 @@ static void VBoxServiceWaitSignal(void)
 # endif
           );
 
-    VBoxServiceVerbose(3, "VBoxServiceWaitSignal: Received signal %d (rc=%d)\n", iSignal, rc);
-}
+    VBoxServiceVerbose(3, "VBoxServiceMainWait: Received signal %d (rc=%d)\n", iSignal, rc);
 #endif /* !RT_OS_WINDOWS */
+}
 
 
 int main(int argc, char **argv)
@@ -652,26 +662,12 @@ int main(int argc, char **argv)
     /*
      * Daemonize if requested.
      */
+    RTEXITCODE rcExit;
     if (fDaemonize && !fDaemonized)
     {
 #ifdef RT_OS_WINDOWS
-        /** @todo Should do something like VBoxSVC here, OR automatically re-register
-         *        the service and start it. Involving VbglR3Daemonize isn't an option
-         *        here.
-         *
-         *        Also, the idea here, IIRC, was to map the sub service to windows
-         *        services. The todo below is for mimicking windows services on
-         *        non-windows systems. Not sure if this is doable or not, but in anycase
-         *        this code can be moved into -win.
-         *
-         *        You should return when StartServiceCtrlDispatcher, btw., not
-         *        continue.
-         */
         VBoxServiceVerbose(2, "Starting service dispatcher ...\n");
-        if (!StartServiceCtrlDispatcher(&g_aServiceTable[0]))
-            return VBoxServiceError("StartServiceCtrlDispatcher: %u. Please start %s with option -f (foreground)!",
-                                    GetLastError(), g_pszProgName);
-        /* Service now lives in the control dispatcher registered above. */
+        rcExit = VBoxServiceWinEnterCtrlDispatcher();
 #else
         VBoxServiceVerbose(1, "Daemonizing...\n");
         rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */);
@@ -693,10 +689,9 @@ int main(int argc, char **argv)
          *          and return immediately.
          */
         rc = VBoxServiceStartServices();
-#ifndef RT_OS_WINDOWS
+        rcExit = RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
         if (RT_SUCCESS(rc))
-            VBoxServiceWaitSignal();
-#endif
+            VBoxServiceMainWait();
         VBoxServiceStopServices();
     }
 
@@ -712,5 +707,6 @@ int main(int argc, char **argv)
 #endif
 
     VBoxServiceVerbose(0, "Ended.\n");
-    return RT_SUCCESS(rc) ? 0 : 1;
+    return rcExit;
 }
+
