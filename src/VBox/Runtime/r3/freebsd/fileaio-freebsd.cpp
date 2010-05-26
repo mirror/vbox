@@ -406,7 +406,7 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
             rcBSD = lio_listio(LIO_NOWAIT, (struct aiocb **)pahReqs, cReqsSubmit, NULL);
             if (RT_UNLIKELY(rcBSD < 0))
             {
-                if (rcBSD == EAGAIN)
+                if (errno == EAGAIN)
                     rc = VERR_FILE_AIO_INSUFFICIENT_RESSOURCES;
                 else
                     rc = RTErrConvertFromErrno(errno);
@@ -416,7 +416,7 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
                 {
                     pReqInt = pahReqs[i];
                     rcBSD = aio_error(&pReqInt->AioCB);
-                    if (rcBSD == EINVAL)
+                    if (rcBSD == EINVAL || rcBSD == EAGAIN)
                     {
                         /* Was not submitted. */
                         RTFILEAIOREQ_SET_STATE(pReqInt, PREPARED);
@@ -440,7 +440,7 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
         }
 
         /* Check if we have a flush request now. */
-        if (cReqs)
+        if (cReqs && RT_SUCCESS_NP(rc))
         {
             pReqInt = pahReqs[0];
             RTFILEAIOREQ_VALID_RETURN(pReqInt);
@@ -454,10 +454,20 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
                  rcBSD = aio_fsync(O_SYNC, &pReqInt->AioCB);
                  if (RT_UNLIKELY(rcBSD < 0))
                  {
-                    RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
-                    pReqInt->Rc = RTErrConvertFromErrno(errno);
-                    pReqInt->cbTransfered = 0;
-                    return pReqInt->Rc;
+                    if (rcBSD == EAGAIN)
+                    {
+                        /* Was not submitted. */
+                        RTFILEAIOREQ_SET_STATE(pReqInt, PREPARED);
+                        pReqInt->pCtxInt = NULL;
+                        return VERR_FILE_AIO_INSUFFICIENT_RESSOURCES;
+                    }
+                    else
+                    {
+                        RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
+                        pReqInt->Rc = RTErrConvertFromErrno(errno);
+                        pReqInt->cbTransfered = 0;
+                        return pReqInt->Rc;
+                    }
                  }
 
                 ASMAtomicIncS32(&pCtxInt->cRequests);
