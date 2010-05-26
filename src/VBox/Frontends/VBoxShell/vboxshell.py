@@ -187,8 +187,14 @@ if g_hasreadline:
             return True
         return False
 
+    def canBePath(self,phrase,word):
+        return word.startswith('/')
+
     def canBeMachine(self,phrase,word):
-        return not self.canBeCommand(phrase, word)
+        return not self.canBePath(phrase,word) and not self.canBeCommand(phrase, word)
+
+    def canBePath(self,phrase,word):
+        return word.startswith('/')
 
     def global_matches(self, text):
         """
@@ -198,16 +204,18 @@ if g_hasreadline:
         """
 
         matches = []
-        n = len(text)
         phrase = readline.get_line_buffer()
 
-        if self.canBeCommand(phrase,text):
-            for list in [ self.namespace ]:
-                for word in list:
-                    if word[:n] == text:
-                        matches.append(word)
         try:
+            if self.canBeCommand(phrase,text):
+                n = len(text)
+                for list in [ self.namespace ]:
+                    for word in list:
+                        if word[:n] == text:
+                            matches.append(word)
+
             if self.canBeMachine(phrase,text):
+                n = len(text)
                 for m in getMachines(self.ctx, False, True):
                     # although it has autoconversion, we need to cast
                     # explicitly for subscripts to work
@@ -215,10 +223,16 @@ if g_hasreadline:
                     if word[:n] == text:
                         matches.append(word)
                     word = str(m.id)
-                    if word[0] == '{':
-                        word = word[1:-1]
                     if word[:n] == text:
                         matches.append(word)
+
+            if self.canBePath(phrase,text):
+                (dir,rest) = os.path.split(text)
+                n = len(rest)
+                for word in os.listdir(dir):
+                    if n == 0 or word[:n] == rest:
+                        matches.append(os.path.join(dir,word))
+
         except Exception,e:
             printErr(e)
             if g_verbose:
