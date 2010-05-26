@@ -3416,106 +3416,108 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Don't do anything if the VM isn't running */
-    if (!mpVM)
-        return S_OK;
+    HRESULT rc = S_OK;
 
-    /* protect mpVM */
-    AutoVMCaller autoVMCaller(this);
-    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
+    /* don't trigger network change if the VM isn't running */
+    if (mpVM)
+    {
+        /* protect mpVM */
+        AutoVMCaller autoVMCaller(this);
+        if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
-    /* Get the properties we need from the adapter */
-    BOOL fCableConnected, fTraceEnabled;
-    HRESULT rc = aNetworkAdapter->COMGETTER(CableConnected)(&fCableConnected);
-    AssertComRC(rc);
-    if (SUCCEEDED(rc))
-    {
-        rc = aNetworkAdapter->COMGETTER(TraceEnabled)(&fTraceEnabled);
-        AssertComRC(rc);
-    }
-    if (SUCCEEDED(rc))
-    {
-        ULONG ulInstance;
-        rc = aNetworkAdapter->COMGETTER(Slot)(&ulInstance);
+        /* Get the properties we need from the adapter */
+        BOOL fCableConnected, fTraceEnabled;
+        rc = aNetworkAdapter->COMGETTER(CableConnected)(&fCableConnected);
         AssertComRC(rc);
         if (SUCCEEDED(rc))
         {
-            /*
-             * Find the pcnet instance, get the config interface and update
-             * the link state.
-             */
-            NetworkAdapterType_T adapterType;
-            rc = aNetworkAdapter->COMGETTER(AdapterType)(&adapterType);
+            rc = aNetworkAdapter->COMGETTER(TraceEnabled)(&fTraceEnabled);
             AssertComRC(rc);
-            const char *pszAdapterName = NULL;
-            switch (adapterType)
+        }
+        if (SUCCEEDED(rc))
+        {
+            ULONG ulInstance;
+            rc = aNetworkAdapter->COMGETTER(Slot)(&ulInstance);
+            AssertComRC(rc);
+            if (SUCCEEDED(rc))
             {
-                case NetworkAdapterType_Am79C970A:
-                case NetworkAdapterType_Am79C973:
-                    pszAdapterName = "pcnet";
-                    break;
+                /*
+                 * Find the pcnet instance, get the config interface and update
+                 * the link state.
+                 */
+                NetworkAdapterType_T adapterType;
+                rc = aNetworkAdapter->COMGETTER(AdapterType)(&adapterType);
+                AssertComRC(rc);
+                const char *pszAdapterName = NULL;
+                switch (adapterType)
+                {
+                    case NetworkAdapterType_Am79C970A:
+                    case NetworkAdapterType_Am79C973:
+                        pszAdapterName = "pcnet";
+                        break;
 #ifdef VBOX_WITH_E1000
-                case NetworkAdapterType_I82540EM:
-                case NetworkAdapterType_I82543GC:
-                case NetworkAdapterType_I82545EM:
-                    pszAdapterName = "e1000";
-                    break;
+                    case NetworkAdapterType_I82540EM:
+                    case NetworkAdapterType_I82543GC:
+                    case NetworkAdapterType_I82545EM:
+                        pszAdapterName = "e1000";
+                        break;
 #endif
 #ifdef VBOX_WITH_VIRTIO
-                case NetworkAdapterType_Virtio:
-                    pszAdapterName = "virtio-net";
-                    break;
+                    case NetworkAdapterType_Virtio:
+                        pszAdapterName = "virtio-net";
+                        break;
 #endif
-                default:
-                    AssertFailed();
-                    pszAdapterName = "unknown";
-                    break;
-            }
-
-            PPDMIBASE pBase;
-            int vrc = PDMR3QueryDeviceLun(mpVM, pszAdapterName, ulInstance, 0, &pBase);
-            ComAssertRC(vrc);
-            if (RT_SUCCESS(vrc))
-            {
-                Assert(pBase);
-                PPDMINETWORKCONFIG pINetCfg;
-                pINetCfg = PDMIBASE_QUERY_INTERFACE(pBase, PDMINETWORKCONFIG);
-                if (pINetCfg)
-                {
-                    Log(("Console::onNetworkAdapterChange: setting link state to %d\n",
-                          fCableConnected));
-                    vrc = pINetCfg->pfnSetLinkState(pINetCfg,
-                                                    fCableConnected ? PDMNETWORKLINKSTATE_UP
-                                                                    : PDMNETWORKLINKSTATE_DOWN);
-                    ComAssertRC(vrc);
+                    default:
+                        AssertFailed();
+                        pszAdapterName = "unknown";
+                        break;
                 }
-#ifdef VBOX_DYNAMIC_NET_ATTACH
-                if (RT_SUCCESS(vrc) && changeAdapter)
+
+                PPDMIBASE pBase;
+                int vrc = PDMR3QueryDeviceLun(mpVM, pszAdapterName, ulInstance, 0, &pBase);
+                ComAssertRC(vrc);
+                if (RT_SUCCESS(vrc))
                 {
-                    VMSTATE enmVMState = VMR3GetState(mpVM);
-                    if (    enmVMState == VMSTATE_RUNNING    /** @todo LiveMigration: Forbit or deal correctly with the _LS variants */
-                        ||  enmVMState == VMSTATE_SUSPENDED)
+                    Assert(pBase);
+                    PPDMINETWORKCONFIG pINetCfg;
+                    pINetCfg = PDMIBASE_QUERY_INTERFACE(pBase, PDMINETWORKCONFIG);
+                    if (pINetCfg)
                     {
-                        if (fTraceEnabled && fCableConnected && pINetCfg)
+                        Log(("Console::onNetworkAdapterChange: setting link state to %d\n",
+                              fCableConnected));
+                        vrc = pINetCfg->pfnSetLinkState(pINetCfg,
+                                                        fCableConnected ? PDMNETWORKLINKSTATE_UP
+                                                                        : PDMNETWORKLINKSTATE_DOWN);
+                        ComAssertRC(vrc);
+                    }
+#ifdef VBOX_DYNAMIC_NET_ATTACH
+                    if (RT_SUCCESS(vrc) && changeAdapter)
+                    {
+                        VMSTATE enmVMState = VMR3GetState(mpVM);
+                        if (    enmVMState == VMSTATE_RUNNING    /** @todo LiveMigration: Forbid or deal correctly with the _LS variants */
+                            ||  enmVMState == VMSTATE_SUSPENDED)
                         {
-                            vrc = pINetCfg->pfnSetLinkState(pINetCfg, PDMNETWORKLINKSTATE_DOWN);
-                            ComAssertRC(vrc);
-                        }
+                            if (fTraceEnabled && fCableConnected && pINetCfg)
+                            {
+                                vrc = pINetCfg->pfnSetLinkState(pINetCfg, PDMNETWORKLINKSTATE_DOWN);
+                                ComAssertRC(vrc);
+                            }
 
-                        rc = doNetworkAdapterChange(pszAdapterName, ulInstance, 0, aNetworkAdapter);
+                            rc = doNetworkAdapterChange(pszAdapterName, ulInstance, 0, aNetworkAdapter);
 
-                        if (fTraceEnabled && fCableConnected && pINetCfg)
-                        {
-                            vrc = pINetCfg->pfnSetLinkState(pINetCfg, PDMNETWORKLINKSTATE_UP);
-                            ComAssertRC(vrc);
+                            if (fTraceEnabled && fCableConnected && pINetCfg)
+                            {
+                                vrc = pINetCfg->pfnSetLinkState(pINetCfg, PDMNETWORKLINKSTATE_UP);
+                                ComAssertRC(vrc);
+                            }
                         }
                     }
-                }
 #endif /* VBOX_DYNAMIC_NET_ATTACH */
-            }
+                }
 
-            if (RT_FAILURE(vrc))
-                rc = E_FAIL;
+                if (RT_FAILURE(vrc))
+                    rc = E_FAIL;
+            }
         }
     }
 
@@ -3723,17 +3725,17 @@ HRESULT Console::onSerialPortChange(ISerialPort *aSerialPort)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Don't do anything if the VM isn't running */
-    if (!mpVM)
-        return S_OK;
-
     HRESULT rc = S_OK;
 
-    /* protect mpVM */
-    AutoVMCaller autoVMCaller(this);
-    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
+    /* don't trigger serial port change if the VM isn't running */
+    if (mpVM)
+    {
+        /* protect mpVM */
+        AutoVMCaller autoVMCaller(this);
+        if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
-    /* nothing to do so far */
+        /* nothing to do so far */
+    }
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
@@ -3757,17 +3759,17 @@ HRESULT Console::onParallelPortChange(IParallelPort *aParallelPort)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Don't do anything if the VM isn't running */
-    if (!mpVM)
-        return S_OK;
-
     HRESULT rc = S_OK;
 
-    /* protect mpVM */
-    AutoVMCaller autoVMCaller(this);
-    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
+    /* don't trigger parallel port change if the VM isn't running */
+    if (mpVM)
+    {
+        /* protect mpVM */
+        AutoVMCaller autoVMCaller(this);
+        if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
-    /* nothing to do so far */
+        /* nothing to do so far */
+    }
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
@@ -3791,17 +3793,17 @@ HRESULT Console::onStorageControllerChange()
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Don't do anything if the VM isn't running */
-    if (!mpVM)
-        return S_OK;
-
     HRESULT rc = S_OK;
 
-    /* protect mpVM */
-    AutoVMCaller autoVMCaller(this);
-    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
+    /* don't trigger storage controller change if the VM isn't running */
+    if (mpVM)
+    {
+        /* protect mpVM */
+        AutoVMCaller autoVMCaller(this);
+        if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
-    /* nothing to do so far */
+        /* nothing to do so far */
+    }
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
@@ -3825,17 +3827,17 @@ HRESULT Console::onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForc
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Don't do anything if the VM isn't running */
-    if (!mpVM)
-        return S_OK;
-
     HRESULT rc = S_OK;
 
-    /* protect mpVM */
-    AutoVMCaller autoVMCaller(this);
-    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
+    /* don't trigger medium change if the VM isn't running */
+    if (mpVM)
+    {
+        /* protect mpVM */
+        AutoVMCaller autoVMCaller(this);
+        if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
-    rc = doMediumChange(aMediumAttachment, !!aForce);
+        rc = doMediumChange(aMediumAttachment, !!aForce);
+    }
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
@@ -3859,20 +3861,20 @@ HRESULT Console::onCPUChange(ULONG aCPU, BOOL aRemove)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Don't do anything if the VM isn't running */
-    if (!mpVM)
-        return S_OK;
-
     HRESULT rc = S_OK;
 
-    /* protect mpVM */
-    AutoVMCaller autoVMCaller(this);
-    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
+    /* don't trigger CPU change if the VM isn't running */
+    if (mpVM)
+    {
+        /* protect mpVM */
+        AutoVMCaller autoVMCaller(this);
+        if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
-    if (aRemove)
-        rc = doCPURemove(aCPU);
-    else
-        rc = doCPUAdd(aCPU);
+        if (aRemove)
+            rc = doCPURemove(aCPU);
+        else
+            rc = doCPUAdd(aCPU);
+    }
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
@@ -3974,22 +3976,24 @@ HRESULT Console::onUSBControllerChange()
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Ignore if no VM is running yet. */
-    if (!mpVM)
-        return S_OK;
-
     HRESULT rc = S_OK;
 
-/// @todo (dmik)
-// check for the Enabled state and disable virtual USB controller??
-// Anyway, if we want to query the machine's USB Controller we need to cache
-// it to mUSBController in #init() (as it is done with mDVDDrive).
-//
-// bird: While the VM supports hot-plugging, I doubt any guest can handle it at this time... :-)
-//
-//    /* protect mpVM */
-//    AutoVMCaller autoVMCaller(this);
-//    if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
+    /* don't trigger USB controller change if the VM isn't running */
+    if (mpVM)
+    {
+        /// @todo implement one day.
+        // Anyway, if we want to query the machine's USB Controller we need
+        // to cache it to mUSBController in #init() (similar to mDVDDrive).
+        //
+        // bird: While the VM supports hot-plugging, I doubt any guest can
+        // handle it at this time... :-)
+
+        /* protect mpVM */
+        AutoVMCaller autoVMCaller(this);
+        if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
+
+        /* nothing to do so far */
+    }
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
