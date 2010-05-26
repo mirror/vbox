@@ -38,7 +38,7 @@ RT_C_DECLS_BEGIN
 /** The size of a SHA-1 hash. */
 #define RTSHA1_HASH_SIZE    20
 /** The length of a SHA-1 digest string. The terminator is not included. */
-#define RTSHA1_DIGEST_LEN  (40+1)
+#define RTSHA1_DIGEST_LEN  (40)
 
 /**
  * SHA-1 context.
