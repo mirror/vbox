@@ -726,11 +726,8 @@ bool VBoxGlobal::setSettings (const VBoxGlobalSettings &gs)
  */
 VBoxSelectorWnd &VBoxGlobal::selectorWnd()
 {
-#if defined (VBOX_GUI_SEPARATE_VM_PROCESS)
     AssertMsg (!vboxGlobal().isVMConsoleProcess(),
                ("Must NOT be a VM console process"));
-#endif
-
     Assert (mValid);
 
     if (!mSelectorWnd)
