@@ -23,6 +23,8 @@
 
 class VBoxExportApplianceWgt : public VBoxApplianceEditorWgt
 {
+    Q_OBJECT;
+
 public:
     VBoxExportApplianceWgt (QWidget *aParent = NULL);
 
