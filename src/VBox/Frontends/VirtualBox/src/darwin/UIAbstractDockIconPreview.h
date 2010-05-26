@@ -55,7 +55,7 @@ public:
 
     void* currentPreviewWindowId() const;
 
-    /* Flipping is necessary cause the drawing context in Carbon is flipped by 180 degree */
+    /* Flipping is necessary cause the drawing context in Mac OS X is flipped by 180 degree */
     inline CGRect flipRect(CGRect rect) const { return ::darwinFlipCGRect(rect, m_dockIconRect); }
     inline CGRect centerRect(CGRect rect) const { return ::darwinCenterRectTo(rect, m_dockIconRect); }
     inline CGRect centerRectTo(CGRect rect, const CGRect& toRect) const { return ::darwinCenterRectTo(rect, toRect); }
