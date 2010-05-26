@@ -22,7 +22,6 @@
 #ifdef __OBJC__
 # import <AppKit/NSApplication.h>
 #endif
-#include <Carbon/Carbon.h>
 
 RT_C_DECLS_BEGIN
 
