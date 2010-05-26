@@ -522,9 +522,6 @@ ifdef VBOX_WITH_COCOA_QT
  	src/darwin/VBoxCocoaSpecialControls.mm
  VirtualBox_QT_MOCHDRS.darwin = \
  	src/darwin/VBoxCocoaSpecialControls.h
-else
- VirtualBox_SOURCES.darwin += \
- 	src/darwin/VBoxUtils-darwin-carbon.cpp
 endif
 
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
