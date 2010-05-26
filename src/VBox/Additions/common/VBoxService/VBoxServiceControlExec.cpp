@@ -746,6 +746,47 @@ void VBoxServiceControlExecDestroyThreadData(PVBOXSERVICECTRLTHREADDATAEXEC pDat
     }
 }
 
+int VBoxServiceControlExecCreateProcess(const char *pszExec, const char * const *papszArgs, RTENV hEnv, uint32_t fFlags,
+                                        PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
+                                        const char *pszPassword, PRTPROCESS phProcess)
+{
+    /* Get the predefined path of sysprep.exe (depending on Windows OS). */
+    int  rc = VINF_SUCCESS;
+    char szSysprepCmd[RTPATH_MAX] = "C:\\sysprep\\sysprep.exe";
+    OSVERSIONINFOEX OSInfoEx;
+    RT_ZERO(OSInfoEx);
+    OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+    if (    GetVersionEx((LPOSVERSIONINFO) &OSInfoEx)
+        &&  OSInfoEx.dwPlatformId == VER_PLATFORM_WIN32_NT
+        &&  OSInfoEx.dwMajorVersion >= 6 /* Vista or later */)
+    {
+        rc = RTEnvGetEx(RTENV_DEFAULT, "windir", szSysprepCmd, sizeof(szSysprepCmd), NULL);
+        if (RT_SUCCESS(rc))
+            rc = RTPathAppend(szSysprepCmd, sizeof(szSysprepCmd), "system32\\sysprep\\sysprep.exe");
+    }
+
+    /* 
+     * If sysprep should be executed do this in the context of VBoxService, which
+     * (usually, if started by SCM) has administrator rights. Because of that a UI
+     * won't be shown (doesn't have a desktop).
+     */
+    if (   RT_SUCCESS(rc) 
+        && stricmp(pszExec, szSysprepCmd) == 0)
+    {
+         rc = RTProcCreateEx(pszExec, papszArgs, hEnv, 0 /* fFlags */,
+                             phStdIn, phStdOut, phStdErr, NULL /* pszAsUser */,
+                             NULL /* pszPassword */, phProcess);
+    }
+    else
+    {
+        /* Do normal execution. */
+        rc = RTProcCreateEx(pszExec, papszArgs, hEnv, fFlags,
+                            phStdIn, phStdOut, phStdErr, pszAsUser,
+                            pszPassword, phProcess);
+    }
+    return rc;
+}
+
 DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
 {
     AssertPtr(pThread);
@@ -820,10 +861,10 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pTh
                             if (RT_SUCCESS(rc))
                             {
                                 RTPROCESS hProcess;
-                                rc = RTProcCreateEx(pData->pszCmd, pData->papszArgs, hEnv, RTPROC_FLAGS_SERVICE,
-                                                    phStdIn, phStdOut, phStdErr,
-                                                    pData->pszUser, pData->pszPassword,
-                                                    &hProcess);
+                                rc = VBoxServiceControlExecCreateProcess(pData->pszCmd, pData->papszArgs, hEnv, RTPROC_FLAGS_SERVICE,
+                                                                         phStdIn, phStdOut, phStdErr,
+                                                                         pData->pszUser, pData->pszPassword,
+                                                                         &hProcess);
                                 if (RT_SUCCESS(rc))
                                 {
                                     /*
