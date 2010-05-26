@@ -61,45 +61,26 @@ PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
 #ifdef RT_ARCH_AMD64
     if (fFlags & RTMEMHDR_FLAG_EXEC)
     {
+# if USE_KMEM_ALLOC_PROT
+        pHdr = (PRTMEMHDR)kmem_alloc_prot(kernel_map, cb + sizeof(*pHdr),
+                                          VM_PROT_ALL, VM_PROT_ALL, KERNBASE);
+# else
+        vm_object_t pVmObject = NULL;
         vm_offset_t Addr = KERNBASE;
         cbAllocated = RT_ALIGN_Z(cb + sizeof(*pHdr), PAGE_SIZE);
 
+        pVmObject = vm_object_allocate(OBJT_DEFAULT, cbAllocated >> PAGE_SHIFT);
+        if (!pVmObject)
+            return NULL;
+
         /* Addr contains a start address vm_map_find will start searching for suitable space at. */
-        int rc = vm_map_find(kernel_map, NULL, 0, &Addr,
-                             cbAllocated,
-                             TRUE, VM_PROT_ALL, VM_PROT_ALL, 0);
+        int rc = vm_map_find(kernel_map, pVmObject, 0, &Addr,
+                             cbAllocated, TRUE, VM_PROT_ALL, VM_PROT_ALL, 0);
         if (rc == KERN_SUCCESS)
         {
-            /* Add the pages. */
-            vm_offset_t AddressDst = Addr;
-            bool fSuccess = true;
-
-            do
-            {
-                vm_page_t pPage;
-
-                pPage = vm_page_alloc(NULL, 0,
-                                      VM_ALLOC_NOBUSY | VM_ALLOC_SYSTEM |
-                                      VM_ALLOC_WIRED  | VM_ALLOC_NOOBJ);
-                if (pPage)
-                {
-                    /* Put the page into the page table now. */
-                    MY_PMAP_ENTER(kernel_map->pmap, AddressDst, pPage, VM_PROT_ALL,
-                                  TRUE);
-                }
-                else
-                {
-                    /*
-                     * Allocation failed. vm_map_remove will remove any
-                     * page already allocated.
-                     */
-                    fSuccess = false;
-                    break;
-                }
-                AddressDst += PAGE_SIZE;
-            } while(AddressDst < (Addr + cbAllocated));
-
-            if (fSuccess)
+            rc = vm_map_wire(kernel_map, Addr, Addr + cbAllocated,
+                             VM_MAP_WIRE_SYSTEM | VM_MAP_WIRE_NOHOLES);
+            if (rc == KERN_SUCCESS)
             {
                 pHdr = (PRTMEMHDR)Addr;
 
@@ -109,8 +90,11 @@ PRTMEMHDR rtR0MemAlloc(size_t cb, uint32_t fFlags)
             else
                 vm_map_remove(kernel_map,
                               Addr,
-                              Addr + cb);
+                              Addr + cbAllocated);
         }
+        else
+            vm_object_deallocate(pVmObject);
+# endif
     }
     else
 #endif
@@ -137,7 +121,11 @@ void rtR0MemFree(PRTMEMHDR pHdr)
 
 #ifdef RT_ARCH_AMD64
     if (pHdr->fFlags & RTMEMHDR_FLAG_EXEC)
+# if USE_KMEM_ALLOC_PROT
+        kmem_free(kernel_map, (vm_offset_t)pHdr, pHdr->cb);
+# else
         vm_map_remove(kernel_map, (vm_offset_t)pHdr, ((vm_offset_t)pHdr) + pHdr->cb);
+# endif
     else
 #endif
         free(pHdr, M_IPRTHEAP);
