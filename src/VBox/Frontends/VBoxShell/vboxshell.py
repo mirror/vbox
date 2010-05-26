@@ -870,6 +870,10 @@ def execInGuest(ctx,console,args,env,user,passwd,tmo):
                     continue
                 progress.waitForCompletion(100)
                 ctx['global'].waitForEvents(0)
+                data = guest.getProcessOutput(pid, 0, 0, 4096)
+                if data and len(data) > 0:
+                    sys.stdout.write(data)
+                    continue
                 if progress.completed:
                     break
 
@@ -2668,7 +2672,7 @@ def promptCmd(ctx, args):
 
     ctx['prompt'] = args[1]
     return 0
-    
+
 
 aliases = {'s':'start',
            'i':'info',
