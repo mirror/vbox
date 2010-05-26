@@ -750,8 +750,9 @@ int VBoxServiceControlExecCreateProcess(const char *pszExec, const char * const 
                                         PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
                                         const char *pszPassword, PRTPROCESS phProcess)
 {
-    /* Get the predefined path of sysprep.exe (depending on Windows OS). */
     int  rc = VINF_SUCCESS;
+#ifdef RT_OS_WINDOWS
+    /* Get the predefined path of sysprep.exe (depending on Windows OS). */
     char szSysprepCmd[RTPATH_MAX] = "C:\\sysprep\\sysprep.exe";
     OSVERSIONINFOEX OSInfoEx;
     RT_ZERO(OSInfoEx);
@@ -779,11 +780,14 @@ int VBoxServiceControlExecCreateProcess(const char *pszExec, const char * const 
     }
     else
     {
+#else
         /* Do normal execution. */
         rc = RTProcCreateEx(pszExec, papszArgs, hEnv, fFlags,
                             phStdIn, phStdOut, phStdErr, pszAsUser,
                             pszPassword, phProcess);
+#ifdef RT_OS_WINDOWS
     }
+#endif
     return rc;
 }
 
