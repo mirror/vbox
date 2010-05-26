@@ -20,26 +20,20 @@
 #define ___QIHotKeyEdit_h___
 
 #include <QLabel>
-#if defined (Q_WS_X11)
-#include <QMap>
-#endif
-#if defined (Q_WS_MAC)
-# include <Carbon/Carbon.h>
-/* Carbon.h includes AssertMacros.h which defines the macro "check". In
- * QItemDelegate a class method is called check also. As we not used the macro
- * undefine it here. */
-# undef check
+
+#ifdef Q_WS_X11
+# include <QMap>
 #endif
 
-#if defined (Q_WS_PM)
+#ifdef Q_WS_PM
 /* Extra virtual keys returned by QIHotKeyEdit::virtualKey() */
-#define VK_LSHIFT   VK_USERFIRST + 0
-#define VK_LCTRL    VK_USERFIRST + 1
-#define VK_LWIN     VK_USERFIRST + 2
-#define VK_RWIN     VK_USERFIRST + 3
-#define VK_WINMENU  VK_USERFIRST + 4
-#define VK_FORWARD  VK_USERFIRST + 5
-#define VK_BACKWARD VK_USERFIRST + 6
+# define VK_LSHIFT   VK_USERFIRST + 0
+# define VK_LCTRL    VK_USERFIRST + 1
+# define VK_LWIN     VK_USERFIRST + 2
+# define VK_RWIN     VK_USERFIRST + 3
+# define VK_WINMENU  VK_USERFIRST + 4
+# define VK_FORWARD  VK_USERFIRST + 5
+# define VK_BACKWARD VK_USERFIRST + 6
 #endif
 
 class QIHotKeyEdit : public QLabel
@@ -59,7 +53,7 @@ public:
     QSize sizeHint() const;
     QSize minimumSizeHint() const;
 
-#if defined (Q_WS_PM)
+#ifdef Q_WS_PM
     static int virtualKey (QMSG *aMsg);
 #endif
 
@@ -82,11 +76,7 @@ protected:
 #elif defined (Q_WS_X11)
     bool x11Event (XEvent *event);
 #elif defined (Q_WS_MAC)
-# ifdef QT_MAC_USE_COCOA
     static bool darwinEventHandlerProc (const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
-# else
-    static pascal OSStatus darwinEventHandlerProc (EventHandlerCallRef inHandlerCallRef, EventRef inEvent, void *inUserData);
-# endif
     bool darwinKeyboardEvent (const void *pvCocoaEvent, EventRef inEvent);
 #endif
 
@@ -108,14 +98,10 @@ private:
     static QMap <QString, QString> sKeyNames;
 #endif
 
-#if defined (Q_WS_MAC)
-# ifndef QT_MAC_USE_COCOA
-    /** Event handler reference. NULL if the handler isn't installed. */
-    EventHandlerRef mDarwinEventHandlerRef;
-# endif
+#ifdef Q_WS_MAC
     /** The current modifier key mask. Used to figure out which modifier
      *  key was pressed when we get a kEventRawKeyModifiersChanged event. */
-    UInt32 mDarwinKeyModifiers;
+    uint32_t mDarwinKeyModifiers;
 #endif
 
     static const char *kNoneSymbName;

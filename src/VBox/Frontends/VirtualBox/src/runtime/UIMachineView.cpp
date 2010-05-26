@@ -81,8 +81,9 @@ const int XKeyRelease = KeyRelease;
 #ifdef Q_WS_MAC
 # include "DockIconPreview.h"
 # include "DarwinKeyboard.h"
-# include "darwin/VBoxCocoaApplication.h"
+# include "VBoxCocoaApplication.h"
 # include <VBox/err.h>
+# include <Carbon/Carbon.h>
 #endif /* Q_WS_MAC */
 
 class VBoxViewport: public QWidget
@@ -1101,15 +1102,15 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                 }
                 if (mouseEvent(pWheelEvent->type(), pWheelEvent->pos(), pWheelEvent->globalPos(),
 #ifdef QT_MAC_USE_COCOA
-                                /* Qt Cocoa is buggy. It always reports a left button pressed when the
-                                 * mouse wheel event occurs. A workaround is to ask the application which
-                                 * buttons are pressed currently: */
-                                QApplication::mouseButtons(),
+                               /* Qt Cocoa is buggy. It always reports a left button pressed when the
+                                * mouse wheel event occurs. A workaround is to ask the application which
+                                * buttons are pressed currently: */
+                               QApplication::mouseButtons(),
 #else /* QT_MAC_USE_COCOA */
-                                pWheelEvent->buttons(),
-#endif /* QT_MAC_USE_COCOA */
-                                pWheelEvent->modifiers(),
-                                iDelta, pWheelEvent->orientation()))
+                               pWheelEvent->buttons(),
+#endif /* !QT_MAC_USE_COCOA */
+                               pWheelEvent->modifiers(),
+                               iDelta, pWheelEvent->orientation()))
                     return true;
                 break;
             }
@@ -2325,54 +2326,19 @@ void UIMachineView::darwinGrabKeyboardEvents(bool fGrab)
         setMouseCoalescingEnabled(false);
 
         /* Register the event callback/hook and grab the keyboard. */
-# ifdef QT_MAC_USE_COCOA
         ::VBoxCocoaApplication_setCallback (UINT32_MAX, /** @todo fix mask */
                                             UIMachineView::darwinEventHandlerProc, this);
-
-# else /* QT_MAC_USE_COCOA */
-        EventTypeSpec eventTypes[6];
-        eventTypes[0].eventClass = kEventClassKeyboard;
-        eventTypes[0].eventKind  = kEventRawKeyDown;
-        eventTypes[1].eventClass = kEventClassKeyboard;
-        eventTypes[1].eventKind  = kEventRawKeyUp;
-        eventTypes[2].eventClass = kEventClassKeyboard;
-        eventTypes[2].eventKind  = kEventRawKeyRepeat;
-        eventTypes[3].eventClass = kEventClassKeyboard;
-        eventTypes[3].eventKind  = kEventRawKeyModifiersChanged;
-        /* For ignorning Command-H and Command-Q which aren't affected by the
-         * global hotkey stuff (doesn't work well): */
-        eventTypes[4].eventClass = kEventClassCommand;
-        eventTypes[4].eventKind  = kEventCommandProcess;
-        eventTypes[5].eventClass = kEventClassCommand;
-        eventTypes[5].eventKind  = kEventCommandUpdateStatus;
-
-        EventHandlerUPP eventHandler = ::NewEventHandlerUPP(UIMachineView::darwinEventHandlerProc);
-
-        m_darwinEventHandlerRef = NULL;
-        ::InstallApplicationEventHandler(eventHandler, RT_ELEMENTS (eventTypes), &eventTypes[0],
-                                         this, &m_darwinEventHandlerRef);
-        ::DisposeEventHandlerUPP(eventHandler);
-# endif /* !QT_MAC_USE_COCOA */
 
         ::DarwinGrabKeyboard (false);
     }
     else
     {
         ::DarwinReleaseKeyboard();
-# ifdef QT_MAC_USE_COCOA
         ::VBoxCocoaApplication_unsetCallback(UINT32_MAX, /** @todo fix mask */
                                              UIMachineView::darwinEventHandlerProc, this);
-# else /* QT_MAC_USE_COCOA */
-        if (m_darwinEventHandlerRef)
-        {
-            ::RemoveEventHandler(m_darwinEventHandlerRef);
-            m_darwinEventHandlerRef = NULL;
-        }
-# endif /* !QT_MAC_USE_COCOA */
     }
 }
 
-# ifdef QT_MAC_USE_COCOA
 bool UIMachineView::darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
 {
     UIMachineView *view = (UIMachineView*)pvUser;
@@ -2393,39 +2359,6 @@ bool UIMachineView::darwinEventHandlerProc(const void *pvCocoaEvent, const void 
     /* Pass the event along. */
     return false;
 }
-# else /* QT_MAC_USE_COCOA */
-
-pascal OSStatus UIMachineView::darwinEventHandlerProc(EventHandlerCallRef inHandlerCallRef, EventRef inEvent, void *inUserData)
-{
-    UIMachineView *view = static_cast<UIMachineView *> (inUserData);
-    UInt32 eventClass = ::GetEventClass (inEvent);
-
-    /* Not sure but this seems an triggered event if the spotlight searchbar is
-     * displayed. So flag that the host key isn't pressed alone. */
-    if (eventClass == 'cgs ' && view->m_bIsHostkeyPressed && ::GetEventKind (inEvent) == 0x15)
-        view->m_bIsHostkeyAlone = false;
-
-    if (eventClass == kEventClassKeyboard)
-    {
-        if (view->darwinKeyboardEvent (NULL, inEvent))
-            return 0;
-    }
-
-    /*
-     * Command-H and Command-Q aren't properly disabled yet, and it's still
-     * possible to use the left command key to invoke them when the keyboard
-     * is captured. We discard the events these if the keyboard is captured
-     * as a half measure to prevent unexpected behaviour. However, we don't
-     * get any key down/up events, so these combinations are dead to the guest...
-     */
-    else if (eventClass == kEventClassCommand)
-    {
-        if (view->m_bIsKeyboardCaptured)
-            return 0;
-    }
-    return ::CallNextEventHandler(inHandlerCallRef, inEvent);
-}
-# endif /* !QT_MAC_USE_COCOA */
 
 #endif
 

@@ -25,7 +25,7 @@
 
 #include "UIFrameBuffer.h"
 
-#include <Carbon/Carbon.h>
+#include <ApplicationServices/ApplicationServices.h>
 
 /* Local forward declarations */
 class UIMachineLogic;

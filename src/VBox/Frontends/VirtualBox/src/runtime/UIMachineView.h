@@ -194,11 +194,7 @@ private:
 #elif defined(Q_WS_MAC)
     bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
     void darwinGrabKeyboardEvents(bool fGrab);
-# ifdef QT_MAC_USE_COCOA
     static bool darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
-# else /* QT_MAC_USE_COCOA */
-    static pascal OSStatus darwinEventHandlerProc(EventHandlerCallRef inHandlerCallRef, EventRef inEvent, void *inUserData);
-# endif /* !QT_MAC_USE_COCOA */
 #endif
 
     /* Private helpers: */

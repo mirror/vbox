@@ -20,6 +20,13 @@
 #define __VBoxVMSettingsHD_h__
 
 /* Global includes */
+#include <qglobal.h> /* for Q_WS_MAC */
+#ifdef Q_WS_MAC
+/* Somewhere Carbon.h includes AssertMacros.h which defines the macro "check".
+ * In QItemDelegate a class method is called "check" also. As we not used the
+ * macro undefine it here. */
+# undef check
+#endif /* Q_WS_MAC */
 #include <QItemDelegate>
 #include <QPointer>
 

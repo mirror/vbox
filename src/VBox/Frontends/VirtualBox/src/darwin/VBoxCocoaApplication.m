@@ -24,6 +24,8 @@
 #import <AppKit/NSWindow.h>
 #import <AppKit/NSEvent.h>
 
+#include <Carbon/Carbon.h>
+
 #include <stdio.h>
 
 
