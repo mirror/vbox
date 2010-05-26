@@ -1471,6 +1471,8 @@ int __vbox__IManagedObjectRef_USCOREgetInterfaceName(
     WEBDEBUG(("\n-- entering %s\n", __FUNCTION__));
 
     do {
+        util::AutoReadLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
+
         ManagedObjectRef *pRef;
         if (!ManagedObjectRef::findRefFromId(req->_USCOREthis, &pRef, false))
             resp->returnval = pRef->getInterfaceName();
@@ -1502,6 +1504,8 @@ int __vbox__IManagedObjectRef_USCORErelease(
     WEBDEBUG(("\n-- entering %s\n", __FUNCTION__));
 
     do {
+        util::AutoReadLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
+
         ManagedObjectRef *pRef;
         if ((rc = ManagedObjectRef::findRefFromId(req->_USCOREthis, &pRef, false)))
         {
@@ -1555,10 +1559,6 @@ int __vbox__IManagedObjectRef_USCORErelease(
  * a much better solution, both for performance and cleanliness, for the webservice
  * client to clean up itself.
  *
- * Preconditions: Caller must have locked g_mutexSessions.
- * Since this gets called from main() like other SOAP method
- * implementations, this is ensured.
- *
  * @param
  * @param vbox__IWebsessionManager_USCORElogon
  * @param vbox__IWebsessionManager_USCORElogonResponse
@@ -1584,8 +1584,8 @@ int __vbox__IWebsessionManager_USCORElogon(
         if (!(pSession->authenticate(req->username.c_str(),
                                      req->password.c_str())))
         {
-            // in the new session, create a managed object reference (moref) for the
-            // global VirtualBox object; this encodes the session ID in the moref so
+            // in the new session, create a managed object reference (MOR) for the
+            // global VirtualBox object; this encodes the session ID in the MOR so
             // that it will be implicitly be included in all future requests of this
             // webservice client
             ManagedObjectRef *pRef = new ManagedObjectRef(*pSession, g_pcszIVirtualBox, g_pVirtualBox);
@@ -1603,10 +1603,6 @@ int __vbox__IWebsessionManager_USCORElogon(
 /**
  * Returns the ISession object that was created for the webservice client
  * on logon.
- *
- * Preconditions: Caller must have locked g_mutexSessions.
- * Since this gets called from main() like other SOAP method
- * implementations, this is ensured.
  */
 int __vbox__IWebsessionManager_USCOREgetSessionObject(
         struct soap*,
@@ -1635,10 +1631,6 @@ int __vbox__IWebsessionManager_USCOREgetSessionObject(
 
 /**
  * hard-coded implementation for IWebsessionManager::logoff.
- *
- * Preconditions: Caller must have locked g_mutexSessions.
- * Since this gets called from main() like other SOAP method
- * implementations, this is ensured.
  *
  * @param
  * @param vbox__IWebsessionManager_USCORElogon
