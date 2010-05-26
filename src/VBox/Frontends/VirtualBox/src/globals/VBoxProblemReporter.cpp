@@ -285,7 +285,6 @@ QWidget* VBoxProblemReporter::mainWindowShown() const
     if (!vboxGlobal().isValid())
         return 0;
 
-#if defined (VBOX_GUI_SEPARATE_VM_PROCESS)
     if (vboxGlobal().isVMConsoleProcess())
     {
         if (vboxGlobal().vmWindow() && vboxGlobal().vmWindow()->isVisible()) /* VM window is visible */
@@ -296,12 +295,6 @@ QWidget* VBoxProblemReporter::mainWindowShown() const
         if (vboxGlobal().selectorWnd().isVisible()) /* VM selector is visible */
             return &vboxGlobal().selectorWnd(); /* return that window */
     }
-#else
-    if (vboxGlobal().vmWindow() && vboxGlobal().vmWindow().isVisible()) /* VM window is visible */
-        return &vboxGlobal().vmWindow(); /* return that window */
-    if (vboxGlobal().selectorWnd().isVisible()) /* VM selector is visible */
-        return &vboxGlobal().selectorWnd(); /* return that window */
-#endif
 
     return 0;
 }

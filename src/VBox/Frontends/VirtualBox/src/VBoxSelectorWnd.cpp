@@ -983,8 +983,6 @@ void VBoxSelectorWnd::vmStart (const QString &aUuid /*= QUuid_null*/)
             return;
     }
 
-#if defined (VBOX_GUI_SEPARATE_VM_PROCESS)
-
     AssertMsg (!vboxGlobal().isVMConsoleProcess(),
                ("Must NOT be a VM console process"));
 
@@ -1043,15 +1041,6 @@ void VBoxSelectorWnd::vmStart (const QString &aUuid /*= QUuid_null*/)
         vboxProblem().cannotOpenSession(vbox, item->machine(), progress);
 
     session.Close();
-
-#else // !VBOX_GUI_SEPARATE_VM_PROCESS
-
-    if (!vboxGlobal().startMachine (id))
-        return;
-
-    hide();
-
-#endif
 }
 
 void VBoxSelectorWnd::vmDiscard (const QString &aUuid /*= QUuid_null*/)
