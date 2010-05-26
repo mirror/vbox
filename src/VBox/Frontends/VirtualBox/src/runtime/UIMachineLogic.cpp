@@ -1043,7 +1043,6 @@ void UIMachineLogic::sltACPIShutdown()
 
 void UIMachineLogic::sltClose()
 {
-    printf("clvse called\n");
     /* Do not process if window(s) missed! */
     if (!isMachineWindowsCreated())
         return;
