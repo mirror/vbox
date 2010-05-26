@@ -44,7 +44,8 @@ int main(int argc, char *argv[])
     FILE *pFileIn = NULL;
     char *pBuffer = NULL;
 
-    do {
+    do
+    {
         if (argc != 3)
         {
             fprintf(stderr, "filesplitter: Must be started with exactly two arguments,\n"
@@ -55,7 +56,7 @@ int main(int argc, char *argv[])
 
         struct stat lStat;
         if (    stat(argv[2], &lStat) != 0
-                || ((lStat.st_mode & S_IFDIR) != S_IFDIR))
+            || (lStat.st_mode & S_IFDIR) != S_IFDIR)
         {
             fprintf(stderr, "filesplitter: Given argument \"%s\" is not a valid directory.\n", argv[2]);
             rc = 2;
@@ -63,7 +64,7 @@ int main(int argc, char *argv[])
         }
 
         if (    stat(argv[1], &lStat)
-             || !(pFileIn = fopen(argv[1], "r")))
+            || !(pFileIn = fopen(argv[1], "r")))
         {
             fprintf(stderr, "filesplitter: Cannot open file \"%s\" for reading.\n", argv[1]);
             rc = 2;
