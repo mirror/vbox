@@ -897,7 +897,7 @@ def nh_raw_input(prompt=""):
 def getCred(ctx):
     import getpass
     user = getpass.getuser()
-    user_inp = raw_input("User (%s): " %(user))
+    user_inp = nh_raw_input("User (%s): " %(user))
     if len (user_inp) > 0:
         user = user_inp
     passwd = getpass.getpass()
@@ -914,7 +914,7 @@ def gexecCmd(ctx,args):
     gargs = args[2:]
     env = [] # ["DISPLAY=:0"]
     (user,passwd) = getCred(ctx)
-    gargs.insert(0, lambda ctx,mach,console,args: execInGuest(ctx,console,args,env,user,passwd,1000))
+    gargs.insert(0, lambda ctx,mach,console,args: execInGuest(ctx,console,args,env,user,passwd,10000))
     cmdExistingVm(ctx, mach, 'guestlambda', gargs)
     return 0
 
