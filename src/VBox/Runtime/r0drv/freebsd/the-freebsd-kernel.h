@@ -104,4 +104,11 @@
 # define USE_KMEM_ALLOC_ATTR
 #endif
 
+/**
+ * Check whether we can use kmem_alloc_prot.
+ */
+#if 0 /** @todo Not available yet. */
+# define USE_KMEM_ALLOC_PROT
+#endif
+
 #endif
