@@ -22,6 +22,9 @@
 #include <QTimer>
 
 #include <VBox/version.h>
+#ifdef VBOX_BLEEDING_EDGE
+# include <iprt/buildconfig.h>
+#endif /* VBOX_BLEEDING_EDGE */
 
 /* Local includes */
 #include "COMDefs.h"
