@@ -842,7 +842,7 @@ def execInGuest(ctx,console,args,env):
     if len(args) < 1:
         print "exec in guest needs at least program name"
         return
-    user = ""
+    user = "nike"
     passwd = ""
     tmo = 0
     guest = console.guest
@@ -1701,14 +1701,14 @@ def listMediaCmd(ctx,args):
    for dvd in dvds:
        if dvd.state != ctx['global'].constants.MediumState_Created:
            dvd.refreshState()
-       print "   %s (%s)%s %s" %(colPath(ctx,dvd.location), dvd.format,optId(verbose,hdd.id),colSizeM(ctx,asSize(hdd.size, True)))
+       print "   %s (%s)%s %s" %(colPath(ctx,dvd.location), dvd.format,optId(verbose,dvd.id),colSizeM(ctx,asSize(dvd.size, True)))
 
    floppys = ctx['global'].getArray(ctx['vb'], 'floppyImages')
    print colCat(ctx,"Floppy disks:")
    for floppy in floppys:
        if floppy.state != ctx['global'].constants.MediumState_Created:
            floppy.refreshState()
-       print "   %s (%s)%s %s" %(colPath(ctx,floppy.location), floppy.format,optId(verbose,hdd.id), colSizeM(ctx,asSize(hdd.size, True)))
+       print "   %s (%s)%s %s" %(colPath(ctx,floppy.location), floppy.format,optId(verbose,floppy.id), colSizeM(ctx,asSize(floppy.size, True)))
 
    return 0
 
@@ -2406,7 +2406,7 @@ def natCmd(ctx, args):
         'network': natNetwork
     }
 
-    if args[1] == 'help':
+    if len(args) < 2 or args[1] == 'help':
         if len(args) > 2:
             print natcommands[args[2]].__doc__
         else:
@@ -2469,7 +2469,7 @@ def nicTraceSubCmd(ctx, vm, nicnum, adapter, args):
     '''
     (rc, r) = nicSwitchOnOff(adapter, 'traceEnabled', args)
     if len(args) == 1 and rc == 0:
-        r = '%s file:%s' % (r, adapter.traceFile) 
+        r = '%s file:%s' % (r, adapter.traceFile)
         return (0, r)
     elif len(args) == 3 and rc == 0:
         adapter.traceFile = args[2]
@@ -2528,7 +2528,7 @@ def nicAttachmentSubCmd(ctx, vm, nicnum, adapter, args):
             ctx['global'].constants.NetworkAttachmentType_Internal: ('Internal', adapter.internalNetwork),
             ctx['global'].constants.NetworkAttachmentType_HostOnly: ('HostOnly', adapter.hostInterface),
             #ctx['global'].constants.NetworkAttachmentType_VDE: ('VDE', adapter.VDENetwork)
-        } 
+        }
         import types
         if type(adapter.attachmentType) != types.IntType:
             t = str(adapter.attachmentType)
@@ -2539,11 +2539,11 @@ def nicAttachmentSubCmd(ctx, vm, nicnum, adapter, args):
     else:
         nicAttachmentType = {
             'Null': {
-                'v': lambda: len(args) == 2, 
+                'v': lambda: len(args) == 2,
                 'p': lambda: 'do nothing',
                 'f': lambda: adapter.detach()},
             'NAT': {
-                'v': lambda: len(args) == 2, 
+                'v': lambda: len(args) == 2,
                 'p': lambda: 'do nothing',
                 'f': lambda: adapter.attachToNAT()},
             'Bridged': {
@@ -2558,16 +2558,16 @@ def nicAttachmentSubCmd(ctx, vm, nicnum, adapter, args):
                 'v': lambda: len(args) == 2,
                 'p': lambda: adapter.__setattr__('hostInterface', args[2]),
                 'f': lambda: adapter.attachToHostOnlyInterface()},
-            'VDE': { 
+            'VDE': {
                 'v': lambda: len(args) == 3,
                 'p': lambda: adapter.__setattr__('VDENetwork', args[2]),
                 'f': lambda: adapter.attachToVDE()}
-        } 
+        }
         if args[1] not in nicAttachmentType.keys():
             print '{0} not in acceptable values ({1})'.format(args[1], nicAttachmentType.keys())
             return (1, None)
         if not nicAttachmentType[args[1]]['v']():
-            print nicAttachmentType.__doc__ 
+            print nicAttachmentType.__doc__
             return (1, None)
         nicAttachmentType[args[1]]['p']()
         nicAttachmentType[args[1]]['f']()
@@ -2575,7 +2575,7 @@ def nicAttachmentSubCmd(ctx, vm, nicnum, adapter, args):
 
 def nicCmd(ctx, args):
     '''
-    This command to manage network adapters 
+    This command to manage network adapters
     usage: nic <vm> <nicnum> <cmd> <cmd-args>
     where cmd : attachment, trace, linespeed, cable, enable, type
     '''
@@ -2588,12 +2588,12 @@ def nicCmd(ctx, args):
         'enable': nicEnableSubCmd,
         'type': nicTypeSubCmd
     }
-    if     args[1] == 'help' \
-        or len(args) < 2 \
+    if  len(args) < 2 \
+        or args[1] == 'help' \
         or (len(args) > 2 and args[3] not in niccomand):
         if len(args) == 3 \
            and args[2] in niccomand:
-            print niccomand[args[2]].__doc__ 
+            print niccomand[args[2]].__doc__
         else:
             print nicCmd.__doc__
         return 0
@@ -2602,7 +2602,7 @@ def nicCmd(ctx, args):
     if vm is None:
         print 'please specify vm'
         return 0
-     
+
     if    len(args) < 3 \
        or not args[2].isdigit() \
        or int(args[2]) not in range(0, ctx['vb'].systemProperties.networkAdapterCount):
@@ -2610,9 +2610,9 @@ def nicCmd(ctx, args):
             return 0
     nicnum = int(args[2])
     cmdargs = args[3:]
-    func = args[3] 
+    func = args[3]
     session = None
-    session = ctx['global'].openMachineSession(vm.id) 
+    session = ctx['global'].openMachineSession(vm.id)
     vm = session.machine
     adapter = vm.getNetworkAdapter(nicnum)
     (rc, report) = niccomand[func](ctx, vm, nicnum, adapter, cmdargs)
