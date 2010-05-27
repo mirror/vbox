@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2008 Oracle Corporation
+# Copyright (C) 2006-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -21,11 +21,7 @@ XNU_VERSION=`LC_ALL=C uname -r | LC_ALL=C cut -d . -f 1`
 DRVNAME="VBoxNetAdp.kext"
 BUNDLE="org.virtualbox.kext.VBoxNetAdp"
 
-if [ "$XNU_VERSION" -ge "9" ]; then
-    DEP_DRVNAME="VBoxDrv.kext"
-else
-    DEP_DRVNAME="VBoxDrvTiger.kext"
-fi
+DEP_DRVNAME="VBoxDrv.kext"
 DEP_BUNDLE="org.virtualbox.kext.VBoxDrv"
 
 
