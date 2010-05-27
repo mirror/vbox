@@ -62,6 +62,8 @@ class ATL_NO_VTABLE VirtualBox :
     VBOX_SCRIPTABLE_IMPL(IVirtualBox)
 #ifdef RT_OS_WINDOWS
     , public CComCoClass<VirtualBox, &CLSID_VirtualBox>
+    , public IConnectionPointContainerImpl<VirtualBox>
+    , public IConnectionPointImpl<VirtualBox, &IID_IVirtualBoxCallback, CComDynamicUnkArray>
 #endif
 {
 
@@ -83,10 +85,17 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(VirtualBox)
-        COM_INTERFACE_ENTRY(IDispatch)
+        COM_INTERFACE_ENTRY2(IDispatch, IVirtualBox)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IVirtualBox)
+        COM_INTERFACE_ENTRY(IConnectionPointContainer) 
     END_COM_MAP()
+
+#ifdef RT_OS_WINDOWS
+    BEGIN_CONNECTION_POINT_MAP(VirtualBox)
+         CONNECTION_POINT_ENTRY(IID_IVirtualBoxCallback)
+    END_CONNECTION_POINT_MAP()
+#endif
 
     // to postpone generation of the default ctor/dtor
     VirtualBox();
