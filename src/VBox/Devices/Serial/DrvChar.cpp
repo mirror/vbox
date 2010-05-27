@@ -4,6 +4,9 @@
  *
  * Converts synchronous calls (PDMICHARCONNECTOR::pfnWrite, PDMISTREAM::pfnRead)
  * into asynchronous ones.
+ *
+ * Note that we don't use a send buffer here to be able to handle
+ * dropping of bytes for xmit at device level.
  */
 
 /*
@@ -36,10 +39,6 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** Size of the send fifo queue (in bytes) */
-#define CHAR_MAX_SEND_QUEUE             0x80
-#define CHAR_MAX_SEND_QUEUE_MASK        0x7f
-
 /** Converts a pointer to DRVCHAR::ICharConnector to a PDRVCHAR. */
 #define PDMICHAR_2_DRVCHAR(pInterface)  RT_FROM_MEMBER(pInterface, DRVCHAR, ICharConnector)
 
@@ -72,10 +71,9 @@ typedef struct DRVCHAR
     RTSEMEVENT                  SendSem;
 
     /** Internal send FIFO queue */
-    uint8_t                     aSendQueue[CHAR_MAX_SEND_QUEUE];
-    uint32_t volatile           iSendQueueHead;
-    uint32_t                    iSendQueueTail;
-    uint32_t volatile           cEntries;
+    uint8_t volatile            u8SendByte;
+    bool volatile               fSending;
+    uint8_t                     Alignment[2];
 
     /** Read/write statistics */
     STAMCOUNTER                 StatBytesRead;
@@ -114,18 +112,13 @@ static DECLCALLBACK(int) drvCharWrite(PPDMICHARCONNECTOR pInterface, const void 
 
     for (uint32_t i = 0; i < cbWrite; i++)
     {
-        uint32_t iOld = pThis->iSendQueueHead;
-        uint32_t iNew = (iOld + 1) & CHAR_MAX_SEND_QUEUE_MASK;
+        if (ASMAtomicXchgBool(&pThis->fSending, true))
+            return VERR_BUFFER_OVERFLOW;
 
-        pThis->aSendQueue[iOld] = pbBuffer[i];
-
+        pThis->u8SendByte = pbBuffer[i];
+        RTSemEventSignal(pThis->SendSem);
         STAM_COUNTER_INC(&pThis->StatBytesWritten);
-        ASMAtomicXchgU32(&pThis->iSendQueueHead, iNew);
-        ASMAtomicIncU32(&pThis->cEntries);
-        if (pThis->cEntries > CHAR_MAX_SEND_QUEUE_MASK / 2)
-            pThis->pDrvCharPort->pfnNotifyBufferFull(pThis->pDrvCharPort, true /*fFull*/);
     }
-    RTSemEventSignal(pThis->SendSem);
     return VINF_SUCCESS;
 }
 
@@ -152,10 +145,13 @@ static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD ThreadSelf, void *pvUser)
 {
     PDRVCHAR pThis = (PDRVCHAR)pvUser;
 
+    int rc = VINF_SUCCESS;
     while (!pThis->fShutdown)
     {
-        int rc = RTSemEventWait(pThis->SendSem, RT_INDEFINITE_WAIT);
-        if (RT_FAILURE(rc))
+        RTMSINTERVAL cMillies = (rc == VERR_TIMEOUT) ? 50 : RT_INDEFINITE_WAIT;
+        rc = RTSemEventWait(pThis->SendSem, cMillies);
+        if (    RT_FAILURE(rc)
+             && rc != VERR_TIMEOUT)
             break;
 
         /*
@@ -165,31 +161,24 @@ static DECLCALLBACK(int) drvCharSendLoop(RTTHREAD ThreadSelf, void *pvUser)
             ||  !pThis->pDrvStream)
             break;
 
-        while (   pThis->iSendQueueTail != pThis->iSendQueueHead
-               && !pThis->fShutdown)
+        size_t cbProcessed = 1;
+        uint8_t ch = pThis->u8SendByte;
+        rc = pThis->pDrvStream->pfnWrite(pThis->pDrvStream, &ch, &cbProcessed);
+        if (RT_SUCCESS(rc))
         {
-            size_t cbProcessed = 1;
-
-            rc = pThis->pDrvStream->pfnWrite(pThis->pDrvStream, &pThis->aSendQueue[pThis->iSendQueueTail], &cbProcessed);
-            pThis->pDrvCharPort->pfnNotifyBufferFull(pThis->pDrvCharPort, false /*fFull*/);
-            if (RT_SUCCESS(rc))
-            {
-                Assert(cbProcessed);
-                pThis->iSendQueueTail++;
-                pThis->iSendQueueTail &= CHAR_MAX_SEND_QUEUE_MASK;
-                ASMAtomicDecU32(&pThis->cEntries);
-            }
-            else if (rc == VERR_TIMEOUT)
-            {
-                /* Normal case, just means that the stream didn't accept a new
-                 * character before the timeout elapsed. Just retry. */
-                rc = VINF_SUCCESS;
-            }
-            else
-            {
-                LogFlow(("Write failed with %Rrc; skipping\n", rc));
-                break;
-            }
+            ASMAtomicXchgBool(&pThis->fSending, false);
+            Assert(cbProcessed == 1);
+        }
+        else if (rc == VERR_TIMEOUT)
+        {
+            /* Normal case, just means that the stream didn't accept a new
+             * character before the timeout elapsed. Just retry. */
+            rc = VINF_SUCCESS;
+        }
+        else
+        {
+            LogRel(("Write failed with %Rrc; skipping\n", rc));
+            break;
         }
     }
 
@@ -461,4 +450,3 @@ const PDMDRVREG g_DrvChar =
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
-
