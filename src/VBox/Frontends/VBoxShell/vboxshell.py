@@ -494,7 +494,7 @@ def guestStats(ctx,console,args):
         except:
             # to allow sleep interruption
             pass
-    all_stats = ctx['ifaces'].all_values('GuestStatisticType')
+    all_stats = ctx['const'].all_values('GuestStatisticType')
     cpu = 0
     for s in all_stats.keys():
         try:
@@ -531,7 +531,7 @@ def printUsbDev(ctx,ud):
     print "  %s: %s (vendorId=%d productId=%d serial=%s)" %(ud.id,  colored(ud.product,'blue'), ud.vendorId, ud.productId, ud.serialNumber)
 
 def printSf(ctx,sf):
-    print "    name=%s host=%s %s %s" %(sf.name, sf.hostPath, cond(sf.accessible, "accessible", "not accessible"), cond(sf.writable, "writable", "read-only"))
+    print "    name=%s host=%s %s %s" %(sf.name, colPath(ctx,sf.hostPath), cond(sf.accessible, "accessible", "not accessible"), cond(sf.writable, "writable", "read-only"))
 
 def ginfo(ctx,console, args):
     guest = console.guest
@@ -568,7 +568,7 @@ def cmdExistingVm(ctx,mach,cmd,args):
         if g_verbose:
             traceback.print_exc()
         return
-    if session.state != ctx['ifaces'].SessionState_Open:
+    if session.state != ctx['const'].SessionState_Open:
         print "Session to '%s' in wrong state: %s" %(mach.name, session.state)
         session.close()
         return
@@ -683,14 +683,14 @@ def helpCmd(ctx, args):
     return 0
 
 def asEnumElem(ctx,enum,elem):
-    all = ctx['ifaces'].all_values(enum)
+    all = ctx['const'].all_values(enum)
     for e in all.keys():
         if str(elem) == str(all[e]):
             return colored(e, 'green')
     return colored("<unknown>", 'green')
 
 def enumFromString(ctx,enum,str):
-    all = ctx['ifaces'].all_values(enum)
+    all = ctx['const'].all_values(enum)
     return all.get(str, None)
 
 def listCmd(ctx, args):
@@ -732,11 +732,11 @@ def infoCmd(ctx,args):
     print "  ACPI [BIOSSettings.ACPIEnabled]: %s" %(asState(bios.ACPIEnabled))
     print "  APIC [BIOSSettings.IOAPICEnabled]: %s" %(asState(bios.IOAPICEnabled))
     hwVirtEnabled = mach.getHWVirtExProperty(ctx['global'].constants.HWVirtExPropertyType_Enabled)
-    print "  Hardware virtualization [mach.setHWVirtExProperty(ctx['global'].constants.HWVirtExPropertyType_Enabled,value)]: " + asState(hwVirtEnabled)
-    hwVirtVPID = mach.getHWVirtExProperty(ctx['global'].constants.HWVirtExPropertyType_VPID)
-    print "  VPID support [mach.setHWVirtExProperty(ctx['global'].constants.HWVirtExPropertyType_VPID,value)]: " + asState(hwVirtVPID)
-    hwVirtNestedPaging = mach.getHWVirtExProperty(ctx['global'].constants.HWVirtExPropertyType_NestedPaging)
-    print "  Nested paging [mach.setHWVirtExProperty(ctx['global'].constants.HWVirtExPropertyType_NestedPaging,value)]: " + asState(hwVirtNestedPaging)
+    print "  Hardware virtualization [guest win machine.setHWVirtExProperty(ctx[\\'const\\'].HWVirtExPropertyType_Enabled,value)]: " + asState(hwVirtEnabled)
+    hwVirtVPID = mach.getHWVirtExProperty(ctx['const'].HWVirtExPropertyType_VPID)
+    print "  VPID support [guest win machine.setHWVirtExProperty(ctx[\\'const\\'].HWVirtExPropertyType_VPID,value)]: " + asState(hwVirtVPID)
+    hwVirtNestedPaging = mach.getHWVirtExProperty(ctx['const'].HWVirtExPropertyType_NestedPaging)
+    print "  Nested paging [guest win machine.setHWVirtExProperty(ctx[\\'const\\'].HWVirtExPropertyType_NestedPaging,value)]: " + asState(hwVirtNestedPaging)
 
     print "  Hardware 3d acceleration [accelerate3DEnabled]: " + asState(mach.accelerate3DEnabled)
     print "  Hardware 2d video acceleration [accelerate2DVideoEnabled]: " + asState(mach.accelerate2DVideoEnabled)
@@ -777,7 +777,7 @@ def infoCmd(ctx,args):
         if a.type == ctx['global'].constants.DeviceType_HardDisk:
             print "   HDD:"
             print "    Id: %s" %(m.id)
-            print "    Location: %s" %(m.location)
+            print "    Location: %s" %(colPath(ctx,m.location))
             print "    Name: %s"  %(m.name)
             print "    Format: %s"  %(m.format)
 
@@ -787,11 +787,11 @@ def infoCmd(ctx,args):
                 print "    Id: %s" %(m.id)
                 print "    Name: %s" %(m.name)
                 if m.hostDrive:
-                    print "    Host DVD %s" %(m.location)
+                    print "    Host DVD %s" %(colPath(ctx,m.location))
                     if a.passthrough:
                          print "    [passthrough mode]"
                 else:
-                    print "    Virtual image at %s" %(m.location)
+                    print "    Virtual image at %s" %(colPath(ctx,m.location))
                     print "    Size: %s" %(m.size)
 
         if a.type == ctx['global'].constants.DeviceType_Floppy:
@@ -800,9 +800,9 @@ def infoCmd(ctx,args):
                 print "    Id: %s" %(m.id)
                 print "    Name: %s" %(m.name)
                 if m.hostDrive:
-                    print "    Host floppy %s" %(m.location)
+                    print "    Host floppy %s" %(colPath(ctx,m.location))
                 else:
-                    print "    Virtual image at %s" %(m.location)
+                    print "    Virtual image at %s" %(colPath(ctx,m.location))
                     print "    Size: %s" %(m.size)
 
     print
@@ -995,7 +995,10 @@ def guestCmd(ctx, args):
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
-    cmdExistingVm(ctx, mach, 'guest', ' '.join(args[2:]))
+    if str(mach.sessionState) != str(ctx['const'].SessionState_Open):
+        cmdClosedVm(ctx, mach, lambda ctx, mach, a: guestExec (ctx, mach, None, ' '.join(args[2:])))
+    else:
+        cmdExistingVm(ctx, mach, 'guest', ' '.join(args[2:]))
     return 0
 
 def screenshotCmd(ctx, args):
@@ -1082,7 +1085,7 @@ def plugcpuCmd(ctx, args):
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
-    if str(mach.sessionState) != str(ctx['ifaces'].SessionState_Open):
+    if str(mach.sessionState) != str(ctx['const'].SessionState_Open):
         if mach.CPUHotPlugEnabled:
             cmdClosedVm(ctx, mach, plugcpu, [True, int(args[2])])
     else:
@@ -1096,7 +1099,7 @@ def unplugcpuCmd(ctx, args):
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
-    if str(mach.sessionState) != str(ctx['ifaces'].SessionState_Open):
+    if str(mach.sessionState) != str(ctx['const'].SessionState_Open):
         if mach.CPUHotPlugEnabled:
             cmdClosedVm(ctx, mach, plugcpu, [False, int(args[2])])
     else:
@@ -1786,7 +1789,7 @@ def createHddCmd(ctx,args):
    hdd = ctx['vb'].createHardDisk(format, loc)
    progress = hdd.createBaseStorage(size, ctx['global'].constants.MediumVariant_Standard)
    if progressBar(ctx,progress) and hdd.id:
-       print "created HDD at %s as %s" %(hdd.location, hdd.id)
+       print "created HDD at %s as %s" %(colPath(ctx,hdd.location), hdd.id)
    else:
       print "cannot create disk (file %s exist?)" %(loc)
       reportError(ctx,progress)
@@ -1939,7 +1942,7 @@ def unregisterIsoCmd(ctx,args):
       return 0
 
    progress = dvd.close()
-   print "Unregistered ISO at %s" %(dvd.location)
+   print "Unregistered ISO at %s" %(colPath(ctx,dvd.location))
 
    return 0
 
@@ -1958,7 +1961,7 @@ def removeIsoCmd(ctx,args):
 
    progress = dvd.deleteStorage()
    if progressBar(ctx,progress):
-       print "Removed ISO at %s" %(dvd.location)
+       print "Removed ISO at %s" %(colPath(ctx,dvd.location))
    else:
        reportError(ctx,progress)
    return 0
@@ -2544,13 +2547,13 @@ def nicTypeSubCmd(ctx, vm, nicnum, adapter, args):
     usage: nic <vm> <nicnum> type [Am79c970A|Am79c970A|I82540EM|I82545EM|I82543GC|Virtio]
     '''
     if len(args) == 1:
-        nictypes = ctx['ifaces'].all_values('NetworkAdapterType')
+        nictypes = ctx['const'].all_values('NetworkAdapterType')
         for n in nictypes.keys():
             if str(adapter.adapterType) == str(nictypes[n]):
                 return (0, str(n))
         return (1, None)
     else:
-        nictypes = ctx['ifaces'].all_values('NetworkAdapterType')
+        nictypes = ctx['const'].all_values('NetworkAdapterType')
         if args[1] not in nictypes.keys():
             print '%s not in acceptable values (%s)' % (args[1], nictypes.keys())
             return (1, None)
@@ -2921,7 +2924,7 @@ def main(argv):
     ctx = {'global':g_virtualBoxManager,
            'mgr':g_virtualBoxManager.mgr,
            'vb':g_virtualBoxManager.vbox,
-           'ifaces':g_virtualBoxManager.constants,
+           'const':g_virtualBoxManager.constants,
            'remote':g_virtualBoxManager.remote,
            'type':g_virtualBoxManager.type,
            'run': lambda cmd,args: runCommandCb(ctx, cmd, args),
