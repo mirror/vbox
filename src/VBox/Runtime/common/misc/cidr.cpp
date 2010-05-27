@@ -89,6 +89,11 @@ RTDECL(int) RTCidrStrToIPv4(const char *pszAddress, PRTIPV4ADDR pNetwork, PRTIPV
             break;
         else 
             return VERR_INVALID_PARAMETER;
+
+        if(cDelimiter > 3)
+            /* no more than four octets */
+            return VERR_INVALID_PARAMETER;
+
         rc = RTStrToUInt8Ex(pszNext + 1, &pszNext, 10, &addr[cDelimiter]);
         if (rc == VWRN_NUMBER_TOO_BIG)
             break;
