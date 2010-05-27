@@ -96,6 +96,7 @@ int main()
     CHECKNETWORK("10.255.1/24",              VINF_SUCCESS, 0x0AFF0100, 0xFFFFFF00);
     CHECKNETWORK("10.255.1.1/24",  VERR_INVALID_PARAMETER,          0,          0);
     CHECKNETWORK("1.2",            VERR_INVALID_PARAMETER,          0,          0);
+    CHECKNETWORK("1.2.3.4.5",      VERR_INVALID_PARAMETER,          0,          0);
 
     return RTTestSummaryAndDestroy(hTest);
 }
