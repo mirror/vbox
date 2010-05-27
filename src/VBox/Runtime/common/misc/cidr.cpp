@@ -36,101 +36,76 @@
 #include <iprt/stream.h>
 
 
-/**
- * Scan a digit of an IPv4 address.
- *
- * @returns IPRT status code.
- *
- * @param   iDigit     The index of the IPv4 digit to scan.
- * @param   psz        Pointer to the begin of the string.
- * @param   ppszNext   Pointer to variable that should be set pointing to the first invalid character. (output)
- * @param   pu8        Pointer to the digit to write (output).
- */
-static int scanIPv4Digit(int iDigit, const char *psz, char **ppszNext, uint8_t *pu8)
-{
-    int rc = RTStrToUInt8Ex(psz, ppszNext, 10, pu8);
-    if (   (   rc != VINF_SUCCESS
-            && rc != VWRN_TRAILING_CHARS)
-        || *pu8 > 254)
-        return VERR_INVALID_PARAMETER;
-
-    /* first digit cannot be 0 */
-    if (   iDigit == 1
-        && *pu8 < 1)
-        return VERR_INVALID_PARAMETER;
-
-    if (**ppszNext == '/')
-        return VINF_SUCCESS;
-
-    if (   iDigit != 4
-        && (   **ppszNext == '\0'
-            || **ppszNext != '.'))
-        return VERR_INVALID_PARAMETER;
-
-    return VINF_SUCCESS;
-}
-
-
 RTDECL(int) RTCidrStrToIPv4(const char *pszAddress, PRTIPV4ADDR pNetwork, PRTIPV4ADDR pNetmask)
 {
     uint8_t cBits;
-    uint8_t a;
-    uint8_t b = 0;
-    uint8_t c = 0;
-    uint8_t d = 0;
+    uint8_t addr[4];
+    uint32_t u32Netmask;
+    uint32_t u32Network;
     const char *psz = pszAddress;
     char *pszNext;
-    int  rc;
-
-    do
-    {
-        /* 1st digit */
-        rc = scanIPv4Digit(1, psz, &pszNext, &a);
-        if (RT_FAILURE(rc))
-            return rc;
-        if (*pszNext == '/')
-            break;
-        psz = pszNext + 1;
-
-        /* 2nd digit */
-        rc = scanIPv4Digit(2, psz, &pszNext, &b);
-        if (RT_FAILURE(rc))
-            return rc;
-        if (*pszNext == '/')
-            break;
-        psz = pszNext + 1;
-
-        /* 3rd digit */
-        rc = scanIPv4Digit(3, psz, &pszNext, &c);
-        if (RT_FAILURE(rc))
-            return rc;
-        if (*pszNext == '/')
-            break;
-        psz = pszNext + 1;
-
-        /* 4th digit */
-        rc = scanIPv4Digit(4, psz, &pszNext, &d);
-        if (RT_FAILURE(rc))
-            return rc;
-    } while (0);
-
-    if (*pszNext == '/')
-    {
-        psz = pszNext + 1;
-        rc = RTStrToUInt8Ex(psz, &pszNext, 10, &cBits);
-        if (rc != VINF_SUCCESS || cBits < 8 || cBits > 28)
+    int  rc = VINF_SUCCESS;
+    int cDelimiter = 0;
+    int cDelimiterLimit = 0;
+    if (   pszAddress == NULL
+        || pNetwork == NULL
+        || pNetmask == NULL)
+        return VERR_INVALID_PARAMETER;
+    char *pszNetmask = RTStrStr(psz, "/");
+    *(uint32_t *)addr = 0;
+    if (pszNetmask == NULL)
+        cBits = 0; 
+    else 
+    { 
+        rc = RTStrToUInt8Ex(pszNetmask + 1, &pszNext, 10, &cBits);
+        if (   RT_FAILURE(rc) 
+            || cBits > 32 
+            || rc != 0) /* No trailing symbols are accptable after the digit */
             return VERR_INVALID_PARAMETER;
     }
-    else
-        cBits = 0;
+    u32Netmask = ~(uint32_t)((1<< (32 - cBits)) - 1);
 
-    for (psz = pszNext; RT_C_IS_SPACE(*psz); psz++)
-        /* nothing */;
-    if (*psz != '\0')
+    rc = RTStrToUInt8Ex(psz, &pszNext, 10, &addr[0]);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    if (cBits < 9)
+        cDelimiterLimit = 0;
+    else if (cBits < 16)
+        cDelimiterLimit = 1;
+    else if (cBits < 25)
+        cDelimiterLimit = 2;
+    else if (cBits <= 32)
+        cDelimiterLimit = 3;
+
+    rc = RTStrToUInt8Ex(psz, &pszNext, 10, &addr[cDelimiter]);
+    while (RT_SUCCESS(rc))
+    {
+        if (*pszNext == '.')
+            cDelimiter++;
+        else if(cDelimiter >= cDelimiterLimit)
+            break;
+        else 
+            return VERR_INVALID_PARAMETER;
+        rc = RTStrToUInt8Ex(pszNext + 1, &pszNext, 10, &addr[cDelimiter]);
+        if (rc == VWRN_NUMBER_TOO_BIG)
+            break;
+    }
+    if (   RT_FAILURE(rc) 
+        || rc == VWRN_NUMBER_TOO_BIG)
+        return VERR_INVALID_PARAMETER;
+    u32Network = RT_MAKE_U32_FROM_U8(addr[3], addr[2], addr[1], addr[0]);
+    /* corner case: see rfc 790 page 2 and rfc 4632 page 6*/
+    if (   addr[0] == 0 
+        && (   *(uint32_t *)addr != 0
+            || u32Netmask == (uint32_t)~0))
         return VERR_INVALID_PARAMETER;
 
-    *pNetwork = RT_MAKE_U32_FROM_U8(d, c, b, a);
-    *pNetmask = ~(((uint32_t)1 << (32 - cBits)) - 1);
+    if ((u32Network & ~u32Netmask) != 0)
+        return VERR_INVALID_PARAMETER;
+    
+    *pNetmask = u32Netmask;
+    *pNetwork = u32Network; 
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTCidrStrToIPv4);
