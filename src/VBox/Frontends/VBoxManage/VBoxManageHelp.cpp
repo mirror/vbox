@@ -172,7 +172,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--cpuidremoveall]\n"
                  "                            [--hardwareuuid <uuid>]\n"
                  "                            [--cpus <number>]\n"
-                 "                            [--rtcuseutc]\n"
+                 "                            [--rtcuseutc on|off]\n"
                  "                            [--monitorcount <number>]\n"
                  "                            [--accelerate3d on|off]\n"
 #ifdef VBOX_WITH_VIDEOHWACCEL
