@@ -4486,6 +4486,26 @@ void *VirtualBox::CallbackEvent::handler()
         callbacks = mVirtualBox->m->llCallbacks;
     }
 
+#ifdef RT_OS_WINDOWS
+#if 0
+    // WIP 
+    int nConnections = mVirtualBox->m_vec.GetSize();
+    for (int i=0; i<nConnections; i++)
+    {
+        CComPtr<IUnknown> sp = mVirtualBox->m_vec.GetAt(i);
+        IVirtualBoxCallback* cb = reinterpret_cast<IVirtualBoxCallback*>(sp.p);
+        if (cb != NULL)
+        {
+            HRESULT hrc = handleCallback(cb);
+            if (hrc == VBOX_E_DONT_CALL_AGAIN)
+            {
+                // need to handle that somehow, maybe just set element to 0
+            }
+        }
+    }
+#endif
+#endif
+
     for (CallbackList::const_iterator it = callbacks.begin();
          it != callbacks.end();
          ++it)
