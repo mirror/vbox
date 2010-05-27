@@ -85,8 +85,8 @@ int main()
     CHECKNETWORK("10.0.0/24.",     VERR_INVALID_PARAMETER,          0,          0);
     /* RFC 4632 s3.1: legacy "Class B" is n.n.0.0/16 */
     CHECKNETWORK("10.1.2/16",      VERR_INVALID_PARAMETER,          0,          0);
+    CHECKNETWORK("10.1/16",     VINF_SUCCESS,          0x0A010000,          0xFFFF0000);
     CHECKNETWORK("10.1.0.0/16",              VINF_SUCCESS, 0x0A010000, 0xFFFF0000);
-    CHECKNETWORK("10.1/16",                  VINF_SUCCESS, 0x0A010000, 0xFFFF0000);
     CHECKNETWORK("1.2.3.4",                  VINF_SUCCESS, 0x01020304, 0xFFFFFFFF);
     CHECKNETWORK("1.2.3.255",                VINF_SUCCESS, 0x010203FF, 0xFFFFFFFF);
     CHECKNETWORK("1.2.3.256",      VERR_INVALID_PARAMETER,          0,          0);
@@ -94,6 +94,7 @@ int main()
     CHECKNETWORK("10.1.254/24",              VINF_SUCCESS, 0x0A01FE00, 0xFFFFFF00);
     CHECKNETWORK("10.255.1/24",              VINF_SUCCESS, 0x0AFF0100, 0xFFFFFF00);
     CHECKNETWORK("10.255.1.1/24",  VERR_INVALID_PARAMETER,          0,          0);
+    CHECKNETWORK("1.2",            VERR_INVALID_PARAMETER,          0,          0);
 
     return RTTestSummaryAndDestroy(hTest);
 }
