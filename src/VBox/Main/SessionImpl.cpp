@@ -1,6 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox Client Session COM Class implementation
+ * VBox Client Session COM Class implementation in VBoxC.
  */
 
 /*
@@ -365,7 +365,7 @@ STDMETHODIMP Session::AssignRemoteMachine(IMachine *aMachine, IConsole *aConsole
 
     /* query IInternalMachineControl interface */
     mControl = aMachine;
-    AssertReturn(!!mControl, E_FAIL); // This test appears to be redundant --JS
+    AssertReturn(!!mControl, E_FAIL);
 
     /// @todo (dmik)
     //      currently, the remote session returns the same machine and
