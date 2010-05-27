@@ -966,20 +966,7 @@ int main()
 
     /* Serial/DevSerial.cpp */
     GEN_CHECK_SIZE(SerialState);
-    GEN_CHECK_OFF(SerialState, divider);
-    GEN_CHECK_OFF(SerialState, rbr);
-    GEN_CHECK_OFF(SerialState, ier);
-    GEN_CHECK_OFF(SerialState, iir);
-    GEN_CHECK_OFF(SerialState, lcr);
-    GEN_CHECK_OFF(SerialState, mcr);
-    GEN_CHECK_OFF(SerialState, lsr);
-    GEN_CHECK_OFF(SerialState, msr);
-    GEN_CHECK_OFF(SerialState, scr);
-    GEN_CHECK_OFF(SerialState, thr_ipending);
-    GEN_CHECK_OFF(SerialState, irq);
-    GEN_CHECK_OFF(SerialState, msr_changed);
-    GEN_CHECK_OFF(SerialState, fGCEnabled);
-    GEN_CHECK_OFF(SerialState, fR0Enabled);
+    GEN_CHECK_OFF(SerialState, CritSect);
     GEN_CHECK_OFF(SerialState, pDevInsR3);
     GEN_CHECK_OFF(SerialState, pDevInsR0);
     GEN_CHECK_OFF(SerialState, pDevInsRC);
@@ -987,10 +974,33 @@ int main()
     GEN_CHECK_OFF(SerialState, ICharPort);
     GEN_CHECK_OFF(SerialState, pDrvBase);
     GEN_CHECK_OFF(SerialState, pDrvChar);
-    GEN_CHECK_OFF(SerialState, CritSect);
     GEN_CHECK_OFF(SerialState, ReceiveSem);
-    GEN_CHECK_OFF(SerialState, last_break_enable);
     GEN_CHECK_OFF(SerialState, base);
+    GEN_CHECK_OFF(SerialState, divider);
+    GEN_CHECK_OFF(SerialState, recv_fifo);
+    GEN_CHECK_OFF(SerialState, xmit_fifo);
+    GEN_CHECK_OFF(SerialState, rbr);
+    GEN_CHECK_OFF(SerialState, thr);
+    GEN_CHECK_OFF(SerialState, tsr);
+    GEN_CHECK_OFF(SerialState, ier);
+    GEN_CHECK_OFF(SerialState, iir);
+    GEN_CHECK_OFF(SerialState, lcr);
+    GEN_CHECK_OFF(SerialState, mcr);
+    GEN_CHECK_OFF(SerialState, lsr);
+    GEN_CHECK_OFF(SerialState, msr);
+    GEN_CHECK_OFF(SerialState, scr);
+    GEN_CHECK_OFF(SerialState, fcr);
+    GEN_CHECK_OFF(SerialState, fcr_vmstate);
+    GEN_CHECK_OFF(SerialState, thr_ipending);
+    GEN_CHECK_OFF(SerialState, timeout_ipending);
+    GEN_CHECK_OFF(SerialState, irq);
+    GEN_CHECK_OFF(SerialState, last_break_enable);
+    GEN_CHECK_OFF(SerialState, tsr_retry);
+    GEN_CHECK_OFF(SerialState, msr_changed);
+    GEN_CHECK_OFF(SerialState, fGCEnabled);
+    GEN_CHECK_OFF(SerialState, fR0Enabled);
+    GEN_CHECK_OFF(SerialState, fYieldOnLSRRead);
+    GEN_CHECK_OFF(SerialState, char_transmit_time);
 
 #ifdef VBOX_WITH_AHCI
     /* Storage/ATAController.h */
