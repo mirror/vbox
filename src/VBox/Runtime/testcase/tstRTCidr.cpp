@@ -69,6 +69,9 @@ int main()
     CHECKNETWORK("10.0.0/45",      VERR_INVALID_PARAMETER,          0,          0);
     CHECKNETWORK("10.0.0/-45",     VERR_INVALID_PARAMETER,          0,          0);
     CHECKNETWORK("10.0.0/24",                VINF_SUCCESS, 0x0A000000, 0xFFFFFF00);
+    CHECKNETWORK("10..0.0/24",     VERR_INVALID_PARAMETER,          0,          0);
+    CHECKNETWORK(".10.0.0/24",     VERR_INVALID_PARAMETER,          0,          0);
+    CHECKNETWORK("10.0.0//24",     VERR_INVALID_PARAMETER,          0,          0);
     CHECKNETWORK("10.0.0/8",                 VINF_SUCCESS, 0x0A000000, 0xFF000000);
     CHECKNETWORK("10.0.0./24",     VERR_INVALID_PARAMETER,          0,          0);
     CHECKNETWORK("0.1.0/24",       VERR_INVALID_PARAMETER,          0,          0);
