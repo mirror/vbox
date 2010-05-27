@@ -54,7 +54,7 @@ RTDECL(int) RTCidrStrToIPv4(const char *pszAddress, PRTIPV4ADDR pNetwork, PRTIPV
     char *pszNetmask = RTStrStr(psz, "/");
     *(uint32_t *)addr = 0;
     if (pszNetmask == NULL)
-        cBits = 0; 
+        cBits = 32; 
     else 
     { 
         rc = RTStrToUInt8Ex(pszNetmask + 1, &pszNext, 10, &cBits);
@@ -71,9 +71,9 @@ RTDECL(int) RTCidrStrToIPv4(const char *pszAddress, PRTIPV4ADDR pNetwork, PRTIPV
 
     if (cBits < 9)
         cDelimiterLimit = 0;
-    else if (cBits < 16)
+    else if (cBits <= 16)
         cDelimiterLimit = 1;
-    else if (cBits < 25)
+    else if (cBits <= 24)
         cDelimiterLimit = 2;
     else if (cBits <= 32)
         cDelimiterLimit = 3;
@@ -83,7 +83,9 @@ RTDECL(int) RTCidrStrToIPv4(const char *pszAddress, PRTIPV4ADDR pNetwork, PRTIPV
     {
         if (*pszNext == '.')
             cDelimiter++;
-        else if(cDelimiter >= cDelimiterLimit)
+        else if(   cDelimiter >= cDelimiterLimit
+                && (   *pszNext == '\0'
+                    || *pszNext == '/'))
             break;
         else 
             return VERR_INVALID_PARAMETER;
