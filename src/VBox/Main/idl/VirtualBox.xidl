@@ -14528,6 +14528,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <class name="VirtualBox" uuid="B1A7A4F2-47B9-4A1E-82B2-07CCD5323C3F"
            namespace="virtualbox.org">
       <interface name="IVirtualBox" default="yes"/>
+      <eventsink name="IVirtualBoxCallback" default="yes"/>
     </class>
   </module>
 
@@ -14535,6 +14536,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <class name="Session" uuid="3C02F46D-C9D2-4F11-A384-53F0CF917214"
            namespace="virtualbox.org">
       <interface name="ISession" default="yes"/>
+      <eventsink name="IConsoleCallback" default="yes"/>
+
     </class>
     <class name="CallbackWrapper" uuid="49EE8561-5563-4715-B18C-A4B1A490DAFE"
            namespace="virtualbox.org">

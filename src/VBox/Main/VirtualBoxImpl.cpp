@@ -4462,6 +4462,7 @@ DECLCALLBACK(int) VirtualBox::AsyncEventHandler(RTTHREAD thread, void *pvUser)
     return 0;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -4497,18 +4498,62 @@ void *VirtualBox::CallbackEvent::handler()
 #ifdef RT_OS_WINDOWS
 #if 0
     // WIP
+
+    LPTYPEINFO       ptinfo;
+    HRESULT          hr;
+    LPTYPELIB        ptlib;
+    DISPID           dispid;
+
+    /* Real solution must cache all needed dispids once, ofc */
+    hr = ::LoadRegTypeLib(LIBID_VirtualBox, kTypeLibraryMajorVersion, kTypeLibraryMinorVersion, LOCALE_SYSTEM_DEFAULT, &ptlib);
+    hr = ptlib->GetTypeInfoOfGuid(IID_IVirtualBoxCallback, &ptinfo);
+    ptlib->Release();
+
+    OLECHAR FAR* szMember = L"OnMachineStateChange";
+
+    hr = ::DispGetIDsOfNames(ptinfo, &szMember, 1, &dispid);
+    ptinfo->Release();
+
     int nConnections = mVirtualBox->m_vec.GetSize();
     for (int i=0; i<nConnections; i++)
     {
-        CComPtr<IUnknown> sp = mVirtualBox->m_vec.GetAt(i);
-        IVirtualBoxCallback* cb = reinterpret_cast<IVirtualBoxCallback*>(sp.p);
-        if (cb != NULL)
-        {
-            HRESULT hrc = handleCallback(cb);
+        ComPtr<IUnknown> sp = mVirtualBox->m_vec.GetAt(i);
+        ComPtr<IVirtualBoxCallback> cbI;
+        ComPtr<IDispatch> cbD;
+    
+        cbI = sp;
+        cbD = sp;
+
+        /**
+         * Would be like this in ideal world, unfortunately our consumers want to be invoked via IDispatch, 
+         * thus going the hard way.
+         */
+#if 0	
+        if (cbI != NULL)
+        {    
+            HRESULT hrc = handleCallback(cbI);
             if (hrc == VBOX_E_DONT_CALL_AGAIN)
             {
                 // need to handle that somehow, maybe just set element to 0
             }
+        }
+#endif
+        if (cbI != NULL && cbD != NULL)
+        {
+             CComVariant varResult, arg1, arg2;
+
+             ::VariantClear(&varResult);
+             ::VariantClear(&arg1); 
+             ::VariantClear(&arg2);
+             
+             VARIANTARG args[] = {arg1, arg2};
+             DISPPARAMS disp = { args, NULL, sizeof(args)/sizeof(args[0]), 0};
+
+             cbD->Invoke(dispid, IID_NULL,
+                         LOCALE_USER_DEFAULT, 
+                         DISPATCH_METHOD, 
+                         &disp, &varResult, 
+                         NULL, NULL);
         }
     }
 #endif
