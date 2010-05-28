@@ -470,7 +470,7 @@
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
-        <translation>全屏模式(&amp;F)</translation>
+        <translation type="obsolete">全屏模式(&amp;F)</translation>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
@@ -478,7 +478,7 @@
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation>无缝模式(&amp;l)</translation>
+        <translation type="obsolete">无缝模式(&amp;l)</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
@@ -486,7 +486,7 @@
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>自动调整显示尺寸(&amp;G)</translation>
+        <translation type="obsolete">自动调整显示尺寸(&amp;G)</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -629,12 +629,8 @@
         <translation>打开数据空间对话框</translation>
     </message>
     <message>
-        <source>&amp;Remote Display</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>启用或禁用到当前虚拟电脑的远程桌面连接</translation>
+        <translation type="obsolete">启用或禁用到当前虚拟电脑的远程桌面连接</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
@@ -661,7 +657,7 @@
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>保存日志(&amp;L)...</translation>
+        <translation type="obsolete">保存日志(&amp;L)...</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -678,6 +674,64 @@
     <message>
         <source>Show Application Icon</source>
         <translation></translation>
+    </message>
+    <message>
+        <source>Enter &amp;Fullscreen Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit &amp;Fullscreen Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to normal mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;Guest Display Auto-resize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable &amp;Guest Display Auto-resize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable automatic resize of the guest display when the window is resized</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Enable Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable remote desktop (RDP) connections to this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Disable Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable remote desktop (RDP) connections to this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable &amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2649,7 +2703,7 @@ Version %1</translation>
     </message>
     <message>
         <source>VirtualBox OSE</source>
-        <translation>VirtualBox OSE</translation>
+        <translation type="obsolete">VirtualBox OSE</translation>
     </message>
     <message>
         <source>innotek VirtualBox</source>
@@ -2657,85 +2711,85 @@ Version %1</translation>
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
-        <translation>全屏模式(&amp;F)</translation>
+        <translation type="obsolete">全屏模式(&amp;F)</translation>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
-        <translation>切换到全屏模式</translation>
+        <translation type="obsolete">切换到全屏模式</translation>
     </message>
     <message>
         <source>Mouse Integration</source>
         <comment>enable/disable...</comment>
-        <translation>自动捕获鼠标</translation>
+        <translation type="obsolete">自动捕获鼠标</translation>
     </message>
     <message>
         <source>Auto-resize Guest Display</source>
         <comment>enable/disable...</comment>
-        <translation>自动调整显示尺寸</translation>
+        <translation type="obsolete">自动调整显示尺寸</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>自动调整显示尺寸(&amp;G)</translation>
+        <translation type="obsolete">自动调整显示尺寸(&amp;G)</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>当窗口大小变动时自动调整虚拟电脑内的显示尺寸(需要在虚拟电脑上安装增强功能包)</translation>
+        <translation type="obsolete">当窗口大小变动时自动调整虚拟电脑内的显示尺寸(需要在虚拟电脑上安装增强功能包)</translation>
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
-        <translation>自动调整窗口大小(&amp;A)</translation>
+        <translation type="obsolete">自动调整窗口大小(&amp;A)</translation>
     </message>
     <message>
         <source>Adjust window size and position to best fit the guest display</source>
-        <translation>自动调整窗口尺寸和位置以适应虚拟电脑内的显示尺寸</translation>
+        <translation type="obsolete">自动调整窗口尺寸和位置以适应虚拟电脑内的显示尺寸</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
-        <translation>发送 Ctrl-Alt-Del (&amp;E)</translation>
+        <translation type="obsolete">发送 Ctrl-Alt-Del (&amp;E)</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
-        <translation>发送 Ctrl-Alt-Del 键盘序列到虚拟电脑</translation>
+        <translation type="obsolete">发送 Ctrl-Alt-Del 键盘序列到虚拟电脑</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
-        <translation>发送 Ctrl-Alt-Backspace (&amp;B)</translation>
+        <translation type="obsolete">发送 Ctrl-Alt-Backspace (&amp;B)</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
-        <translation>发送 Ctrl-Alt-Backspace 键盘序列到虚拟电脑</translation>
+        <translation type="obsolete">发送 Ctrl-Alt-Backspace 键盘序列到虚拟电脑</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
-        <translation>重启 (&amp;R)</translation>
+        <translation type="obsolete">重启 (&amp;R)</translation>
     </message>
     <message>
         <source>Reset the virtual machine</source>
-        <translation>重新启动虚拟电脑</translation>
+        <translation type="obsolete">重新启动虚拟电脑</translation>
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
-        <translation>正常关闭 (&amp;H)</translation>
+        <translation type="obsolete">正常关闭 (&amp;H)</translation>
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
-        <translation>发送关闭信号到虚拟电脑</translation>
+        <translation type="obsolete">发送关闭信号到虚拟电脑</translation>
     </message>
     <message>
         <source>&amp;Close...</source>
-        <translation>退出(&amp;C)...</translation>
+        <translation type="obsolete">退出(&amp;C)...</translation>
     </message>
     <message>
         <source>Close the virtual machine</source>
-        <translation>关闭虚拟电脑</translation>
+        <translation type="obsolete">关闭虚拟电脑</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot...</source>
-        <translation>生成备份(&amp;S)...</translation>
+        <translation type="obsolete">生成备份(&amp;S)...</translation>
     </message>
     <message>
         <source>Take a snapshot of the virtual machine</source>
-        <translation>为当前虚拟电脑生成一个备份</translation>
+        <translation type="obsolete">为当前虚拟电脑生成一个备份</translation>
     </message>
     <message>
         <source>&amp;Floppy Image...</source>
@@ -2772,7 +2826,7 @@ Version %1</translation>
     <message>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
-        <translation>(RDP)远程桌面服务</translation>
+        <translation type="obsolete">(RDP)远程桌面服务</translation>
     </message>
     <message>
         <source>Remote Dis&amp;play</source>
@@ -2780,7 +2834,7 @@ Version %1</translation>
     </message>
     <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>启用或禁用到当前虚拟电脑的远程桌面连接</translation>
+        <translation type="obsolete">启用或禁用到当前虚拟电脑的远程桌面连接</translation>
     </message>
     <message>
         <source>Open</source>
@@ -2788,19 +2842,19 @@ Version %1</translation>
     </message>
     <message>
         <source>&amp;Shared Folders...</source>
-        <translation>分配数据空间(&amp;S)...</translation>
+        <translation type="obsolete">分配数据空间(&amp;S)...</translation>
     </message>
     <message>
         <source>Create or modify shared folders</source>
-        <translation>打开数据空间对话框</translation>
+        <translation type="obsolete">打开数据空间对话框</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
-        <translation>安装增强功能(&amp;I)...</translation>
+        <translation type="obsolete">安装增强功能(&amp;I)...</translation>
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
-        <translation>打开增强功能包所在虚拟光盘</translation>
+        <translation type="obsolete">打开增强功能包所在虚拟光盘</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
@@ -2844,7 +2898,7 @@ Version %1</translation>
     </message>
     <message>
         <source>&amp;USB Devices</source>
-        <translation>分配USB设备(&amp;U)</translation>
+        <translation type="obsolete">分配USB设备(&amp;U)</translation>
     </message>
     <message>
         <source>&amp;VM</source>
@@ -2852,15 +2906,15 @@ Version %1</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
-        <translation>设备(&amp;D)</translation>
+        <translation type="obsolete">设备(&amp;D)</translation>
     </message>
     <message>
         <source>De&amp;bug</source>
-        <translation>调试(&amp;b)</translation>
+        <translation type="obsolete">调试(&amp;b)</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>帮助(&amp;H)</translation>
+        <translation type="obsolete">帮助(&amp;H)</translation>
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
@@ -2893,43 +2947,43 @@ Version %1</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
-        <translation>&lt;hr&gt;VRDP 服务器监听端口 %1</translation>
+        <translation type="obsolete">&lt;hr&gt;VRDP 服务器监听端口 %1</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation>暂停(&amp;P)</translation>
+        <translation type="obsolete">暂停(&amp;P)</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation>将正在运行的虚拟电脑暂停</translation>
+        <translation type="obsolete">将正在运行的虚拟电脑暂停</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>唤醒(&amp;e)</translation>
+        <translation type="obsolete">唤醒(&amp;e)</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation>唤醒休眠的虚拟电脑</translation>
+        <translation type="obsolete">唤醒休眠的虚拟电脑</translation>
     </message>
     <message>
         <source>Disable &amp;Mouse Integration</source>
-        <translation>禁止自动独占鼠标(&amp;M)</translation>
+        <translation type="obsolete">禁止自动独占鼠标(&amp;M)</translation>
     </message>
     <message>
         <source>Temporarily disable host mouse pointer integration</source>
-        <translation>临时禁止自动独占鼠标</translation>
+        <translation type="obsolete">临时禁止自动独占鼠标</translation>
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
-        <translation>启用自动捕获鼠标(&amp;M)</translation>
+        <translation type="obsolete">启用自动捕获鼠标(&amp;M)</translation>
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation>可临时禁止自动独占鼠标</translation>
+        <translation type="obsolete">可临时禁止自动独占鼠标</translation>
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>备份 %1</translation>
+        <translation type="obsolete">备份 %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to find the VirtualBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
@@ -2941,7 +2995,7 @@ Version %1</translation>
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation>控制(&amp;M)</translation>
+        <translation type="obsolete">控制(&amp;M)</translation>
     </message>
     <message>
         <source>connected</source>
@@ -2987,11 +3041,11 @@ Version %1</translation>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation>无缝模式(&amp;l)</translation>
+        <translation type="obsolete">无缝模式(&amp;l)</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
-        <translation>切换到无缝模式</translation>
+        <translation type="obsolete">切换到无缝模式</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
@@ -3045,7 +3099,7 @@ Version %1</translation>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;未分配硬盘&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;未分配硬盘&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -3060,17 +3114,17 @@ Version %1</translation>
     <message>
         <source>connected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>已启用</translation>
+        <translation type="obsolete">已启用</translation>
     </message>
     <message>
         <source>disconnected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>已禁用</translation>
+        <translation type="obsolete">已禁用</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;禁用所有网络连接&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;禁用所有网络连接&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -3080,12 +3134,12 @@ Version %1</translation>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;未分配USB设备&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;未分配USB设备&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB控制器已被禁用&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB控制器已被禁用&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
@@ -3099,7 +3153,7 @@ Version %1</translation>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;未分配数据空间&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;未分配数据空间&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -3127,46 +3181,46 @@ Version %1</translation>
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
-        <translation>运行状态(&amp;n)</translation>
+        <translation type="obsolete">运行状态(&amp;n)</translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
-        <translation>显示当前运行状态信息</translation>
+        <translation type="obsolete">显示当前运行状态信息</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
-        <translation>统计信息(&amp;S)...</translation>
+        <translation type="obsolete">统计信息(&amp;S)...</translation>
     </message>
     <message>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
-        <translation>命令行(&amp;C)...</translation>
+        <translation type="obsolete">命令行(&amp;C)...</translation>
     </message>
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>保存日志(&amp;L)...</translation>
+        <translation type="obsolete">保存日志(&amp;L)...</translation>
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation>指示自动调整显示尺寸功能是否已 启用 (&lt;img src=:/auto_resize_on_16px.png/&gt;) 或 禁用 (&lt;img src=:/auto_resize_off_16px.png/&gt;).请注意该功能需要在虚拟电脑的操作系统内安装增强功能包.</translation>
+        <translation type="obsolete">指示自动调整显示尺寸功能是否已 启用 (&lt;img src=:/auto_resize_on_16px.png/&gt;) 或 禁用 (&lt;img src=:/auto_resize_off_16px.png/&gt;).请注意该功能需要在虚拟电脑的操作系统内安装增强功能包.</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>指示鼠标被操作系统捕获的情况:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标未被捕获&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标已被捕获&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标集成功能已启用&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标集成功能已关闭，鼠标已被捕获&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标集成功能已关闭，鼠标未被捕获&lt;/nobr&gt;&lt;br&gt;请注意要使用鼠标集成功能必须在虚拟电脑的操作系统内安装增强功能包.</translation>
+        <translation type="obsolete">指示鼠标被操作系统捕获的情况:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标未被捕获&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标已被捕获&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标集成功能已启用&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标集成功能已关闭，鼠标已被捕获&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;鼠标集成功能已关闭，鼠标未被捕获&lt;/nobr&gt;&lt;br&gt;请注意要使用鼠标集成功能必须在虚拟电脑的操作系统内安装增强功能包.</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation>指示键盘已被虚拟电脑捕获 (&lt;img src=:/hostkey_captured_16px.png/&gt;) 或未被捕获 (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
+        <translation type="obsolete">指示键盘已被虚拟电脑捕获 (&lt;img src=:/hostkey_captured_16px.png/&gt;) 或未被捕获 (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation>指示远程桌面服务 (VRDP Server) 已启用 (&lt;img src=:/vrdp_16px.png/&gt;) 或被禁用 (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
+        <translation type="obsolete">指示远程桌面服务 (VRDP Server) 已启用 (&lt;img src=:/vrdp_16px.png/&gt;) 或被禁用 (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation>显示当前分配的组合键.&lt;br&gt;单独使用该键，可用于切换虚拟电脑内键盘和鼠标的捕获状态. 与其它键联合使用，可快速执行一些常用操作.</translation>
+        <translation type="obsolete">显示当前分配的组合键.&lt;br&gt;单独使用该键，可用于切换虚拟电脑内键盘和鼠标的捕获状态. 与其它键联合使用，可快速执行一些常用操作.</translation>
     </message>
     <message>
         <source>Sun VirtualBox</source>
@@ -3175,117 +3229,100 @@ Version %1</translation>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>指示该虚拟电脑所用硬件虚拟指令的当前状态:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
+        <translation type="obsolete">指示该虚拟电脑所用硬件虚拟指令的当前状态:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation> 实验性编译包 %1r%2 - %3</translation>
+        <translation type="obsolete"> 实验性编译包 %1r%2 - %3</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Devices</source>
-        <translation>分配光驱(&amp;C)</translation>
+        <translation type="obsolete">分配光驱(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Floppy Devices</source>
-        <translation>分配软驱(&amp;F)</translation>
+        <translation type="obsolete">分配软驱(&amp;F)</translation>
     </message>
     <message>
         <source>&amp;Network Adapters...</source>
-        <translation>更改网络连接(&amp;N)...</translation>
+        <translation type="obsolete">更改网络连接(&amp;N)...</translation>
     </message>
     <message>
         <source>Change the settings of network adapters</source>
-        <translation>更改网络连接设置</translation>
+        <translation type="obsolete">更改网络连接设置</translation>
     </message>
     <message>
         <source>&amp;Remote Display</source>
-        <translation>开关远程桌面(&amp;R)</translation>
+        <translation type="obsolete">开关远程桌面(&amp;R)</translation>
     </message>
     <message>
         <source>More CD/DVD Images...</source>
-        <translation>更多虚拟光盘...</translation>
+        <translation type="obsolete">更多虚拟光盘...</translation>
     </message>
     <message>
         <source>Unmount CD/DVD Device</source>
-        <translation>释放光驱</translation>
+        <translation type="obsolete">释放光驱</translation>
     </message>
     <message>
         <source>More Floppy Images...</source>
-        <translation>更多虚拟软盘...</translation>
+        <translation type="obsolete">更多虚拟软盘...</translation>
     </message>
     <message>
         <source>Unmount Floppy Device</source>
-        <translation>释放软驱</translation>
+        <translation type="obsolete">释放软驱</translation>
     </message>
     <message>
         <source>No CD/DVD Devices Attached</source>
-        <translation>未分配光驱</translation>
+        <translation type="obsolete">未分配光驱</translation>
     </message>
     <message>
         <source>No Floppy Devices Attached</source>
-        <translation>未分配软驱</translation>
+        <translation type="obsolete">未分配软驱</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示虚拟硬盘活动状态:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示虚拟硬盘活动状态:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>CD/DVD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示光驱活动状态:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示光驱活动状态:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No CD/DVD devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>CD/DVD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;未分配光驱&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;未分配光驱&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>FD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示软驱活动状态:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示软驱活动状态:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No floppy devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>FD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;未分配软驱&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;未分配软驱&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示网络连接活动状态:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示网络连接活动状态:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示USB设备活动状态:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示USB设备活动状态:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示数据空间活动状态:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Dock Icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Application Icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Monitor Preview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
-        <comment>Network adapters tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示数据空间活动状态:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
@@ -7871,7 +7908,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&amp;File</source>
-        <translation>管理(&amp;F)</translation>
+        <translation type="obsolete">管理(&amp;F)</translation>
     </message>
     <message>
         <source>&amp;VM</source>
@@ -8025,6 +8062,16 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation>&lt;h3&gt;欢迎使用虚拟电脑控制台!&lt;/h3&gt;&lt;p&gt;窗口的左边用来显示已生成的虚拟电脑. 现在是空的，因为你还没有新建任何虚拟电脑.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;要新建一个虚拟电脑, 请按位于窗口顶部工具栏上的 &lt;b&gt;新建&lt;/b&gt; 按钮。&lt;/p&gt;&lt;p&gt;你可以按  &lt;b&gt;%1&lt;/b&gt; 键来查看帮助，或访问 &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; 查看最新信息和新闻.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="unfinished">管理(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="unfinished">管理(&amp;F)</translation>
     </message>
 </context>
 <context>
@@ -8975,12 +9022,12 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>启用</translation>
+        <translation type="obsolete">启用</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>禁用</translation>
+        <translation type="obsolete">禁用</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -9010,7 +9057,7 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="unfinished">Nested Paging</translation>
+        <translation type="obsolete">Nested Paging</translation>
     </message>
 </context>
 <context>

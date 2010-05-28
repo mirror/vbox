@@ -407,7 +407,7 @@
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
-        <translation>&amp;Цео екран</translation>
+        <translation type="obsolete">&amp;Цео екран</translation>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
@@ -415,7 +415,7 @@
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation>&amp;Интегрисан биро</translation>
+        <translation type="obsolete">&amp;Интегрисан биро</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
@@ -423,7 +423,7 @@
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>Ауто-величина дисплеја госта</translation>
+        <translation type="obsolete">Ауто-величина дисплеја госта</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -567,11 +567,11 @@
     </message>
     <message>
         <source>&amp;Remote Display</source>
-        <translation>удаљен дисплеј</translation>
+        <translation type="obsolete">удаљен дисплеј</translation>
     </message>
     <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>Омогучи или не привезивање удаљене површине (RDP) на ову машину</translation>
+        <translation type="obsolete">Омогучи или не привезивање удаљене површине (RDP) на ову машину</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
@@ -598,7 +598,7 @@
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>Журнал...</translation>
+        <translation type="obsolete">Журнал...</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -615,6 +615,64 @@
     <message>
         <source>Show Application Icon</source>
         <translation></translation>
+    </message>
+    <message>
+        <source>Enter &amp;Fullscreen Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit &amp;Fullscreen Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to normal mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;Guest Display Auto-resize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable &amp;Guest Display Auto-resize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable automatic resize of the guest display when the window is resized</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Enable Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable remote desktop (RDP) connections to this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Disable Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable remote desktop (RDP) connections to this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable &amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2152,89 +2210,89 @@ p, li { white-space: pre-wrap; }
     <name>VBoxConsoleWnd</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation>VirtualBox OSE</translation>
+        <translation type="obsolete">VirtualBox OSE</translation>
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
-        <translation>&amp;Цео екран</translation>
+        <translation type="obsolete">&amp;Цео екран</translation>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
-        <translation>Пређи на цео екран</translation>
+        <translation type="obsolete">Пређи на цео екран</translation>
     </message>
     <message>
         <source>Mouse Integration</source>
         <comment>enable/disable...</comment>
-        <translation>Интеграција миша</translation>
+        <translation type="obsolete">Интеграција миша</translation>
     </message>
     <message>
         <source>Auto-resize Guest Display</source>
         <comment>enable/disable...</comment>
-        <translation>Ауто-величина дисплеја госта</translation>
+        <translation type="obsolete">Ауто-величина дисплеја госта</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>Ауто-величина дисплеја госта</translation>
+        <translation type="obsolete">Ауто-величина дисплеја госта</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>Аутоматско мењати величину дисплеја госта на промену величине прозора (потрбни &apos;додатци госта&apos;)</translation>
+        <translation type="obsolete">Аутоматско мењати величину дисплеја госта на промену величине прозора (потрбни &apos;додатци госта&apos;)</translation>
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
-        <translation>&amp;Подеси величину прозора</translation>
+        <translation type="obsolete">&amp;Подеси величину прозора</translation>
     </message>
     <message>
         <source>Adjust window size and position to best fit the guest display</source>
-        <translation>Подеси величину и смештај прозора за најбоље пуњење дисплеја госта</translation>
+        <translation type="obsolete">Подеси величину и смештај прозора за најбоље пуњење дисплеја госта</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
-        <translation>&amp;Пошаљи Ctrl-Alt-Del</translation>
+        <translation type="obsolete">&amp;Пошаљи Ctrl-Alt-Del</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
-        <translation>Пошаљи Ctrl-Alt-Del виртуелној машини</translation>
+        <translation type="obsolete">Пошаљи Ctrl-Alt-Del виртуелној машини</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
-        <translation>&amp;Пошаљи Ctrl-Alt-Backspace</translation>
+        <translation type="obsolete">&amp;Пошаљи Ctrl-Alt-Backspace</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
-        <translation>Пошаљи Ctrl-Alt-Backspace виртуелној машини</translation>
+        <translation type="obsolete">Пошаљи Ctrl-Alt-Backspace виртуелној машини</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
-        <translation>&amp;Рисет</translation>
+        <translation type="obsolete">&amp;Рисет</translation>
     </message>
     <message>
         <source>Reset the virtual machine</source>
-        <translation>Рисетуј виртуелну машину</translation>
+        <translation type="obsolete">Рисетуј виртуелну машину</translation>
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
-        <translation>ACPI &amp;гашење</translation>
+        <translation type="obsolete">ACPI &amp;гашење</translation>
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
-        <translation>Пошаљи виртуелној машини ACPI стискање дугмета за гашење</translation>
+        <translation type="obsolete">Пошаљи виртуелној машини ACPI стискање дугмета за гашење</translation>
     </message>
     <message>
         <source>&amp;Close...</source>
-        <translation>&amp;Затвори...</translation>
+        <translation type="obsolete">&amp;Затвори...</translation>
     </message>
     <message>
         <source>Close the virtual machine</source>
-        <translation>Затвори виртуелну машину</translation>
+        <translation type="obsolete">Затвори виртуелну машину</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot...</source>
-        <translation>Узми &amp;Снимак</translation>
+        <translation type="obsolete">Узми &amp;Снимак</translation>
     </message>
     <message>
         <source>Take a snapshot of the virtual machine</source>
-        <translation>Узми снимак виртуелне машине</translation>
+        <translation type="obsolete">Узми снимак виртуелне машине</translation>
     </message>
     <message>
         <source>&amp;Floppy Image...</source>
@@ -2274,23 +2332,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>Омогучи или не привезивање удаљене површине (RDP) на ову машину</translation>
+        <translation type="obsolete">Омогучи или не привезивање удаљене површине (RDP) на ову машину</translation>
     </message>
     <message>
         <source>&amp;Shared Folders...</source>
-        <translation>&amp;Дељене фасцикле...</translation>
+        <translation type="obsolete">&amp;Дељене фасцикле...</translation>
     </message>
     <message>
         <source>Create or modify shared folders</source>
-        <translation>креирај или промени дељене фасцикле</translation>
+        <translation type="obsolete">креирај или промени дељене фасцикле</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
-        <translation>&amp;Инсталирај &apos;додатци госта&apos;...</translation>
+        <translation type="obsolete">&amp;Инсталирај &apos;додатци госта&apos;...</translation>
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
-        <translation>Монтирај слику &apos;додатака госта&apos;</translation>
+        <translation type="obsolete">Монтирај слику &apos;додатака госта&apos;</translation>
     </message>
     <message>
         <source>Mount &amp;Floppy</source>
@@ -2302,59 +2360,59 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;USB Devices</source>
-        <translation>USB уре&amp;ђаји</translation>
+        <translation type="obsolete">USB уре&amp;ђаји</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
-        <translation>&amp;Уређаји</translation>
+        <translation type="obsolete">&amp;Уређаји</translation>
     </message>
     <message>
         <source>De&amp;bug</source>
-        <translation>Де&amp;баг</translation>
+        <translation type="obsolete">Де&amp;баг</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Помоћ</translation>
+        <translation type="obsolete">&amp;Помоћ</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
-        <translation>&lt;hr&gt;VRDP сервер је слушан на порт %1</translation>
+        <translation type="obsolete">&lt;hr&gt;VRDP сервер је слушан на порт %1</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation>&amp;Пауза</translation>
+        <translation type="obsolete">&amp;Пауза</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation>Обустави рад виртуелне машине</translation>
+        <translation type="obsolete">Обустави рад виртуелне машине</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>&amp;Настави</translation>
+        <translation type="obsolete">&amp;Настави</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation>Настави рад виртуелне машине</translation>
+        <translation type="obsolete">Настави рад виртуелне машине</translation>
     </message>
     <message>
         <source>Disable &amp;Mouse Integration</source>
-        <translation>Онемогучи интегрисање ми&amp;ша</translation>
+        <translation type="obsolete">Онемогучи интегрисање ми&amp;ша</translation>
     </message>
     <message>
         <source>Temporarily disable host mouse pointer integration</source>
-        <translation>Привремено онемогучи хост интеграција миша</translation>
+        <translation type="obsolete">Привремено онемогучи хост интеграција миша</translation>
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
-        <translation>Омогучи инте&amp;грисање миша</translation>
+        <translation type="obsolete">Омогучи инте&amp;грисање миша</translation>
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation>Омогучи привремено онемогучена хост интеграција миша</translation>
+        <translation type="obsolete">Омогучи привремено онемогучена хост интеграција миша</translation>
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>Снимак %1</translation>
+        <translation type="obsolete">Снимак %1</translation>
     </message>
     <message>
         <source>Host Drive </source>
@@ -2362,7 +2420,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation>&amp;Машина</translation>
+        <translation type="obsolete">&amp;Машина</translation>
     </message>
     <message>
         <source>&amp;Network Adapters</source>
@@ -2393,11 +2451,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation>&amp;Интегрисан биро</translation>
+        <translation type="obsolete">&amp;Интегрисан биро</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
-        <translation>Прећи на моду интегрисаног бироа површине</translation>
+        <translation type="obsolete">Прећи на моду интегрисаног бироа површине</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -2447,7 +2505,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Нема везаних хард дисдкова&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Нема везаних хард дисдкова&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -2462,17 +2520,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>connected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>привезан</translation>
+        <translation type="obsolete">привезан</translation>
     </message>
     <message>
         <source>disconnected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>прекинут</translation>
+        <translation type="obsolete">прекинут</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Сви мрежни адаптери су угашени&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Сви мрежни адаптери су угашени&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -2482,12 +2540,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Нема везаних USB уређаја&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Нема везаних USB уређаја&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB контролер је угашен&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB контролер је угашен&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine&apos;sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -2497,50 +2555,50 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Нема дељене фасцикле&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Нема дељене фасцикле&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
-        <translation>Информација сесије</translation>
+        <translation type="obsolete">Информација сесије</translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
-        <translation>Покажи информације сесије</translation>
+        <translation type="obsolete">Покажи информације сесије</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
-        <translation>&amp;Статистике...</translation>
+        <translation type="obsolete">&amp;Статистике...</translation>
     </message>
     <message>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
-        <translation>&amp;Командна линије...</translation>
+        <translation type="obsolete">&amp;Командна линије...</translation>
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Показује да ли је ауто-величина госта On (&lt;img src=:/auto_resize_on_16px.png/&gt;) или Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Тој функцији је потребно „Guest Additions“.</translation>
+        <translation type="obsolete">Показује да ли је ауто-величина госта On (&lt;img src=:/auto_resize_on_16px.png/&gt;) или Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Тој функцији је потребно „Guest Additions“.</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Показује да ли је хост курсор интегрисан од стране госта:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;курсор није интегрисан&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;курсор је интегрисан&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;интеграција миша (ИМ) је On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ је Off, курсор је интегрисан&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ је Off, курсор није интегрисан&lt;/nobr&gt;&lt;br&gt;За интеграцији миша је потребно да &apos;додатци госта&apos; буду инсталирани.</translation>
+        <translation type="obsolete">Показује да ли је хост курсор интегрисан од стране госта:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;курсор није интегрисан&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;курсор је интегрисан&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;интеграција миша (ИМ) је On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ је Off, курсор је интегрисан&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ је Off, курсор није интегрисан&lt;/nobr&gt;&lt;br&gt;За интеграцији миша је потребно да &apos;додатци госта&apos; буду инсталирани.</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation>Показује да ли је тастатура каптирана (&lt;img src=:/hostkey_captured_16px.png/&gt;) или не (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
+        <translation type="obsolete">Показује да ли је тастатура каптирана (&lt;img src=:/hostkey_captured_16px.png/&gt;) или не (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation>Показује да ли је Удаљен дисплеј (VRDP Server) упдаљен (&lt;img src=:/vrdp_16px.png/&gt;) или не (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
+        <translation type="obsolete">Показује да ли је Удаљен дисплеј (VRDP Server) упдаљен (&lt;img src=:/vrdp_16px.png/&gt;) или не (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>Журнал...</translation>
+        <translation type="obsolete">Журнал...</translation>
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation>Показује актуелну пречицу.&lt;br&gt;Када је типак сам стиснут. пребацује статус тастатуре и миша. Моће се исто користити са другим типкама за брзе акције са менија.</translation>
+        <translation type="obsolete">Показује актуелну пречицу.&lt;br&gt;Када је типак сам стиснут. пребацује статус тастатуре и миша. Моће се исто користити са другим типкама за брзе акције са менија.</translation>
     </message>
     <message>
         <source>Sun VirtualBox</source>
@@ -2553,122 +2611,105 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>Показује статус виртуализације ове машине:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
+        <translation type="obsolete">Показује статус виртуализације ове машине:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation> ЕКСПЕРИМЕНТАЛНА ВЕРЗИЈА %1r%2 - %3</translation>
+        <translation type="obsolete"> ЕКСПЕРИМЕНТАЛНА ВЕРЗИЈА %1r%2 - %3</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Devices</source>
-        <translation>CD/DVD Уређаји</translation>
+        <translation type="obsolete">CD/DVD Уређаји</translation>
     </message>
     <message>
         <source>&amp;Floppy Devices</source>
-        <translation>Флопи уређаји</translation>
+        <translation type="obsolete">Флопи уређаји</translation>
     </message>
     <message>
         <source>&amp;Network Adapters...</source>
-        <translation>Мрежни адаптери...</translation>
+        <translation type="obsolete">Мрежни адаптери...</translation>
     </message>
     <message>
         <source>Change the settings of network adapters</source>
-        <translation>Промени поставке мрежних адаптера</translation>
+        <translation type="obsolete">Промени поставке мрежних адаптера</translation>
     </message>
     <message>
         <source>&amp;Remote Display</source>
-        <translation>удаљен дисплеј</translation>
+        <translation type="obsolete">удаљен дисплеј</translation>
     </message>
     <message>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
-        <translation>Remote Desktop (RDP) Server</translation>
+        <translation type="obsolete">Remote Desktop (RDP) Server</translation>
     </message>
     <message>
         <source>More CD/DVD Images...</source>
-        <translation>Више CD/DVD слике...</translation>
+        <translation type="obsolete">Више CD/DVD слике...</translation>
     </message>
     <message>
         <source>Unmount CD/DVD Device</source>
-        <translation>Демонтирај CD/DVD уређај</translation>
+        <translation type="obsolete">Демонтирај CD/DVD уређај</translation>
     </message>
     <message>
         <source>More Floppy Images...</source>
-        <translation>Више флопи слике...</translation>
+        <translation type="obsolete">Више флопи слике...</translation>
     </message>
     <message>
         <source>Unmount Floppy Device</source>
-        <translation>Демонтирај флопи уређај</translation>
+        <translation type="obsolete">Демонтирај флопи уређај</translation>
     </message>
     <message>
         <source>No CD/DVD Devices Attached</source>
-        <translation>Нема прикачена CD/DVD уређаја</translation>
+        <translation type="obsolete">Нема прикачена CD/DVD уређаја</translation>
     </message>
     <message>
         <source>No Floppy Devices Attached</source>
-        <translation>Нема прикачена флопи уређаја</translation>
+        <translation type="obsolete">Нема прикачена флопи уређаја</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Показује активност виртуелног хард диска:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Показује активност виртуелног хард диска:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>CD/DVD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Показује активност CD/DVD уређаја:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Показује активност CD/DVD уређаја:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No CD/DVD devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>CD/DVD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Нема прикачена CD/DVD уређаја&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Нема прикачена CD/DVD уређаја&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>FD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Показује активност флопи уређаја:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Показује активност флопи уређаја:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No floppy devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>FD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Нема прикачених флопи уређаја&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Нема прикачених флопи уређаја&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Показује активност мрежних интерфејса:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Показује активност мрежних интерфејса:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Показује активност прикачених USB уређаја:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Показује активност прикачених USB уређаја:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Показује активно дељених фасцикла машине:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Dock Icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Application Icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Monitor Preview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
-        <comment>Network adapters tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Показује активно дељених фасцикла машине:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
@@ -6030,7 +6071,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;File</source>
-        <translation>&amp;Датотека</translation>
+        <translation type="obsolete">&amp;Датотека</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -6132,6 +6173,16 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Re&amp;fresh</source>
         <translation>Ос&amp;вежи</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="unfinished">&amp;Датотека</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="unfinished">&amp;Датотека</translation>
     </message>
 </context>
 <context>
@@ -6626,12 +6677,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>Упаљено</translation>
+        <translation type="obsolete">Упаљено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>Угашено</translation>
+        <translation type="obsolete">Угашено</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -6661,7 +6712,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="unfinished">Подметнуто записивање</translation>
+        <translation type="obsolete">Подметнуто записивање</translation>
     </message>
 </context>
 <context>

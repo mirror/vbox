@@ -451,7 +451,7 @@
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
-        <translation>&amp;Tam Ekran Kipi</translation>
+        <translation type="obsolete">&amp;Tam Ekran Kipi</translation>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
@@ -459,7 +459,7 @@
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation>Tam U&amp;yum Kipi</translation>
+        <translation type="obsolete">Tam U&amp;yum Kipi</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
@@ -467,7 +467,7 @@
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>Misafir E&amp;kranı Otomatik olarak Yeniden Boyutlandır</translation>
+        <translation type="obsolete">Misafir E&amp;kranı Otomatik olarak Yeniden Boyutlandır</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -610,12 +610,8 @@
         <translation>Paylaşılan dizinler üzerinde işlem yapmak için pencereyi aç</translation>
     </message>
     <message>
-        <source>&amp;Remote Display</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>Bu makineye yapılan uzak masaüstü (RDP) bağlantılarını etkinleştir ya da pasifleştir</translation>
+        <translation type="obsolete">Bu makineye yapılan uzak masaüstü (RDP) bağlantılarını etkinleştir ya da pasifleştir</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
@@ -642,7 +638,7 @@
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>Gün&amp;lük Kayıtları...</translation>
+        <translation type="obsolete">Gün&amp;lük Kayıtları...</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -659,6 +655,64 @@
     <message>
         <source>Show Application Icon</source>
         <translation></translation>
+    </message>
+    <message>
+        <source>Enter &amp;Fullscreen Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit &amp;Fullscreen Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to normal mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;Guest Display Auto-resize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable &amp;Guest Display Auto-resize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable automatic resize of the guest display when the window is resized</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Enable Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable remote desktop (RDP) connections to this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Disable Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable remote desktop (RDP) connections to this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable &amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2321,7 +2375,7 @@ Version %1</source>
     <name>VBoxConsoleWnd</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation>VirtualBox OSE</translation>
+        <translation type="obsolete">VirtualBox OSE</translation>
     </message>
     <message>
         <source>innotek VirtualBox</source>
@@ -2329,85 +2383,85 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
-        <translation>&amp;Tam Ekran Kipi</translation>
+        <translation type="obsolete">&amp;Tam Ekran Kipi</translation>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
-        <translation>Tam ekran kipine geç</translation>
+        <translation type="obsolete">Tam ekran kipine geç</translation>
     </message>
     <message>
         <source>Mouse Integration</source>
         <comment>enable/disable...</comment>
-        <translation>Fare Uyumu</translation>
+        <translation type="obsolete">Fare Uyumu</translation>
     </message>
     <message>
         <source>Auto-resize Guest Display</source>
         <comment>enable/disable...</comment>
-        <translation>Misafir Ekranı Otomatik olarak Yeniden Boyutlandır</translation>
+        <translation type="obsolete">Misafir Ekranı Otomatik olarak Yeniden Boyutlandır</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>Misafir E&amp;kranı Otomatik olarak Yeniden Boyutlandır</translation>
+        <translation type="obsolete">Misafir E&amp;kranı Otomatik olarak Yeniden Boyutlandır</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>Pencere yeniden boyutlandırıldığında misafir ekranını otomatik olarak boyutlandır (Misafir Eklentilerini gerektirir)</translation>
+        <translation type="obsolete">Pencere yeniden boyutlandırıldığında misafir ekranını otomatik olarak boyutlandır (Misafir Eklentilerini gerektirir)</translation>
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
-        <translation>Pencere Boyutun&amp;u Ayarla</translation>
+        <translation type="obsolete">Pencere Boyutun&amp;u Ayarla</translation>
     </message>
     <message>
         <source>Adjust window size and position to best fit the guest display</source>
-        <translation>Pencere boyutunu ve konumunu misafir ekrana en uygun şekilde ayarla</translation>
+        <translation type="obsolete">Pencere boyutunu ve konumunu misafir ekrana en uygun şekilde ayarla</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
-        <translation>Ctrl-Alt-Del &amp;Ekle</translation>
+        <translation type="obsolete">Ctrl-Alt-Del &amp;Ekle</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
-        <translation>Sanal makineye Ctrl-Alt-Del sonucu gönder</translation>
+        <translation type="obsolete">Sanal makineye Ctrl-Alt-Del sonucu gönder</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
-        <translation>Ctrl-Alt-Backspace &amp;Ekle</translation>
+        <translation type="obsolete">Ctrl-Alt-Backspace &amp;Ekle</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
-        <translation>Sanal makineye Ctrl-Alt-Backspace sonucu gönder</translation>
+        <translation type="obsolete">Sanal makineye Ctrl-Alt-Backspace sonucu gönder</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
-        <translation>&amp;Sıfırla</translation>
+        <translation type="obsolete">&amp;Sıfırla</translation>
     </message>
     <message>
         <source>Reset the virtual machine</source>
-        <translation>Sanal makineyi sıfırlar, yeniden başlatır</translation>
+        <translation type="obsolete">Sanal makineyi sıfırlar, yeniden başlatır</translation>
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
-        <translation>ACPI ile &amp;Kapat</translation>
+        <translation type="obsolete">ACPI ile &amp;Kapat</translation>
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
-        <translation>ACPI güç butonuna basılmasının sonucunu sanal makineye gönder</translation>
+        <translation type="obsolete">ACPI güç butonuna basılmasının sonucunu sanal makineye gönder</translation>
     </message>
     <message>
         <source>&amp;Close...</source>
-        <translation>&amp;Kapat...</translation>
+        <translation type="obsolete">&amp;Kapat...</translation>
     </message>
     <message>
         <source>Close the virtual machine</source>
-        <translation>Sanal makineyi kapat</translation>
+        <translation type="obsolete">Sanal makineyi kapat</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot...</source>
-        <translation>Anlık Görünt&amp;ü Kaydet...</translation>
+        <translation type="obsolete">Anlık Görünt&amp;ü Kaydet...</translation>
     </message>
     <message>
         <source>Take a snapshot of the virtual machine</source>
-        <translation>Sanal makinenin bir anlık görüntüsünü al</translation>
+        <translation type="obsolete">Sanal makinenin bir anlık görüntüsünü al</translation>
     </message>
     <message>
         <source>&amp;Floppy Image...</source>
@@ -2444,7 +2498,7 @@ Version %1</source>
     <message>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
-        <translation type="unfinished">Uzak Masaüstü (RDP) Sunucusu</translation>
+        <translation type="obsolete">Uzak Masaüstü (RDP) Sunucusu</translation>
     </message>
     <message>
         <source>Remote Dis&amp;play</source>
@@ -2452,23 +2506,23 @@ Version %1</source>
     </message>
     <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>Bu makineye yapılan uzak masaüstü (RDP) bağlantılarını etkinleştir ya da pasifleştir</translation>
+        <translation type="obsolete">Bu makineye yapılan uzak masaüstü (RDP) bağlantılarını etkinleştir ya da pasifleştir</translation>
     </message>
     <message>
         <source>&amp;Shared Folders...</source>
-        <translation>&amp;Paylaşılan Dizinler...</translation>
+        <translation type="obsolete">&amp;Paylaşılan Dizinler...</translation>
     </message>
     <message>
         <source>Create or modify shared folders</source>
-        <translation>Paylaşılan dizinler üzerinde işlem yapmak için pencereyi aç</translation>
+        <translation type="obsolete">Paylaşılan dizinler üzerinde işlem yapmak için pencereyi aç</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
-        <translation>&amp;Misafir Eklentilerini (Guest Additions) Yükle...</translation>
+        <translation type="obsolete">&amp;Misafir Eklentilerini (Guest Additions) Yükle...</translation>
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
-        <translation>Misafir Eklentilerini yükleyici kalıbı bağla</translation>
+        <translation type="obsolete">Misafir Eklentilerini yükleyici kalıbı bağla</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
@@ -2512,19 +2566,19 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;USB Devices</source>
-        <translation>&amp;USB Aygıtları</translation>
+        <translation type="obsolete">&amp;USB Aygıtları</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
-        <translation>&amp;Aygıtlar</translation>
+        <translation type="obsolete">&amp;Aygıtlar</translation>
     </message>
     <message>
         <source>De&amp;bug</source>
-        <translation>&amp;Hata Ayıkla</translation>
+        <translation type="obsolete">&amp;Hata Ayıkla</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Yardım</translation>
+        <translation type="obsolete">&amp;Yardım</translation>
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
@@ -2540,43 +2594,43 @@ Version %1</source>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
-        <translation>&lt;hr&gt;VRDP Sunusu %1 portundan dinleniyor</translation>
+        <translation type="obsolete">&lt;hr&gt;VRDP Sunusu %1 portundan dinleniyor</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation>&amp;Duraklat</translation>
+        <translation type="obsolete">&amp;Duraklat</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation>Sanal makine uygulamasını geçici olarak durdur</translation>
+        <translation type="obsolete">Sanal makine uygulamasını geçici olarak durdur</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>D&amp;evam Et</translation>
+        <translation type="obsolete">D&amp;evam Et</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation>Sanal makine uygulamasını devam ettir</translation>
+        <translation type="obsolete">Sanal makine uygulamasını devam ettir</translation>
     </message>
     <message>
         <source>Disable &amp;Mouse Integration</source>
-        <translation>&amp;Fare Uyumunu Pasifleştir</translation>
+        <translation type="obsolete">&amp;Fare Uyumunu Pasifleştir</translation>
     </message>
     <message>
         <source>Temporarily disable host mouse pointer integration</source>
-        <translation>Sunucu fare işaretçisi uyumunu geçici olarak pasifleştir</translation>
+        <translation type="obsolete">Sunucu fare işaretçisi uyumunu geçici olarak pasifleştir</translation>
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
-        <translation>&amp;Fare Uyumu Etkin</translation>
+        <translation type="obsolete">&amp;Fare Uyumu Etkin</translation>
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation>Geçici olarak durdurulan fare işaretçisi uyumunu etkinleştir</translation>
+        <translation type="obsolete">Geçici olarak durdurulan fare işaretçisi uyumunu etkinleştir</translation>
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>Anlık Görüntü %1</translation>
+        <translation type="obsolete">Anlık Görüntü %1</translation>
     </message>
     <message>
         <source>Host Drive </source>
@@ -2584,7 +2638,7 @@ Version %1</source>
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation>&amp;Makine</translation>
+        <translation type="obsolete">&amp;Makine</translation>
     </message>
     <message>
         <source>&amp;Network Adapters</source>
@@ -2615,11 +2669,11 @@ Version %1</source>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation>Tam U&amp;yum Kipi</translation>
+        <translation type="obsolete">Tam U&amp;yum Kipi</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
-        <translation>Tam masaüstü uyumu kipine geç</translation>
+        <translation type="obsolete">Tam masaüstü uyumu kipine geç</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
@@ -2673,7 +2727,7 @@ Version %1</source>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Eklenmiş sabit disk yok&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Eklenmiş sabit disk yok&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -2688,17 +2742,17 @@ Version %1</source>
     <message>
         <source>connected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>bağlı</translation>
+        <translation type="obsolete">bağlı</translation>
     </message>
     <message>
         <source>disconnected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>bağlı değil</translation>
+        <translation type="obsolete">bağlı değil</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Tüm bağdaştırıcılar pasifleştirilmiş&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Tüm bağdaştırıcılar pasifleştirilmiş&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -2708,12 +2762,12 @@ Version %1</source>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Eklenmiş USB aygıtı yok&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Eklenmiş USB aygıtı yok&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Denetleyici pasifleştirilmiş&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Denetleyici pasifleştirilmiş&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
@@ -2727,7 +2781,7 @@ Version %1</source>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Paylaşılan dizin yok&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Paylaşılan dizin yok&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -2751,161 +2805,46 @@ Version %1</source>
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
-        <translation>Oturum &amp;Bilgileri Penceresi</translation>
+        <translation type="obsolete">Oturum &amp;Bilgileri Penceresi</translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
-        <translation>Oturum Bilgileri Penceresini Göster</translation>
+        <translation type="obsolete">Oturum Bilgileri Penceresini Göster</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
-        <translation>İ&amp;statistikler...</translation>
+        <translation type="obsolete">İ&amp;statistikler...</translation>
     </message>
     <message>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
-        <translation>&amp;Komut satırı...</translation>
+        <translation type="obsolete">&amp;Komut satırı...</translation>
     </message>
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>Gün&amp;lük Kayıtları...</translation>
+        <translation type="obsolete">Gün&amp;lük Kayıtları...</translation>
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Misafir ekranını otomatik olarak boyutlandırma fonksiyonunun Açık (&lt;img src=auto_resize_on_16px.png/&gt;) yada Kapalı (&lt;img src=auto_resize_off_16px.png/&gt;) olduğunu gösterir. Bu fonksiyonu kullanabilmeniz için Guest Additions yüklü olmalıdır.</translation>
+        <translation type="obsolete">Misafir ekranını otomatik olarak boyutlandırma fonksiyonunun Açık (&lt;img src=auto_resize_on_16px.png/&gt;) yada Kapalı (&lt;img src=auto_resize_off_16px.png/&gt;) olduğunu gösterir. Bu fonksiyonu kullanabilmeniz için Guest Additions yüklü olmalıdır.</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Misafir işletim sistemi tarafından sunucunun fare işaretçisinin yakalanıp yakalanmadığını gösterir: &lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;işaretçi yakalandı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;işaretçi yakalandı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) açık&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) kapalı, işaretçi yakalndı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) kapalı, işaretçi yakalanmadı&lt;/nobr&gt;&lt;br&gt; Bu fonksiyonu kullanabilmeniz için Guest Additions yüklü olmalıdır.</translation>
+        <translation type="obsolete">Misafir işletim sistemi tarafından sunucunun fare işaretçisinin yakalanıp yakalanmadığını gösterir: &lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;işaretçi yakalandı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;işaretçi yakalandı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) açık&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) kapalı, işaretçi yakalndı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) kapalı, işaretçi yakalanmadı&lt;/nobr&gt;&lt;br&gt; Bu fonksiyonu kullanabilmeniz için Guest Additions yüklü olmalıdır.</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation>Misafir işletim sistemi tarafından klavyenin yakalanıp yakalanmadığını gösterir (&lt;img src=hostkey_captured_16px.png/&gt;) ya da (&lt;img src=hostkey_16px.png/&gt;).</translation>
+        <translation type="obsolete">Misafir işletim sistemi tarafından klavyenin yakalanıp yakalanmadığını gösterir (&lt;img src=hostkey_captured_16px.png/&gt;) ya da (&lt;img src=hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation>Uzak Masaüstünün (VRDP Sunucu) etkin olup olmadığını gösterir (&lt;img src=vrdp_16px.png/&gt;) ya da (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
+        <translation type="obsolete">Uzak Masaüstünün (VRDP Sunucu) etkin olup olmadığını gösterir (&lt;img src=vrdp_16px.png/&gt;) ya da (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation>Atanmış sunucu anahtarını gösterir.&lt;br&gt; Sunucu anahtarına yanlız basıldığında klavye ve farenin yakalanma durumunu değiştirir. İşlemlerinizi daha hızlı yapmak için ana menüden diğer kullanılabilir tuş kombinasyonlarını görebilirsiniz.</translation>
-    </message>
-    <message>
-        <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
-        <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
-        <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Devices</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Devices</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Network Adapters...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Change the settings of network adapters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Remote Display</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>More CD/DVD Images...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unmount CD/DVD Device</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>More Floppy Images...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unmount Floppy Device</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No CD/DVD Devices Attached</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No Floppy Devices Attached</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <comment>HDD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <comment>CD/DVD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No CD/DVD devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
-        <comment>CD/DVD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <comment>FD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No floppy devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
-        <comment>FD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <comment>Network adapters tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <comment>USB device tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <comment>Shared folders tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Dock Icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Application Icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Monitor Preview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
-        <comment>Network adapters tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Atanmış sunucu anahtarını gösterir.&lt;br&gt; Sunucu anahtarına yanlız basıldığında klavye ve farenin yakalanma durumunu değiştirir. İşlemlerinizi daha hızlı yapmak için ana menüden diğer kullanılabilir tuş kombinasyonlarını görebilirsiniz.</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
@@ -7167,7 +7106,7 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
     </message>
     <message>
         <source>&amp;File</source>
-        <translation>&amp;Dosya</translation>
+        <translation type="obsolete">&amp;Dosya</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -7305,6 +7244,16 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
     <message>
         <source>Re&amp;fresh</source>
         <translation type="unfinished">&amp;Yenile</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="unfinished">&amp;Dosya</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="unfinished">&amp;Dosya</translation>
     </message>
 </context>
 <context>
@@ -8117,12 +8066,12 @@ eşleşebilir.&lt;/qt&gt;</translation>
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>Etkin</translation>
+        <translation type="obsolete">Etkin</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>Pasifleştirilmiş</translation>
+        <translation type="obsolete">Pasifleştirilmiş</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -8152,7 +8101,7 @@ eşleşebilir.&lt;/qt&gt;</translation>
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="unfinished">Yerleşik Sayfalama</translation>
+        <translation type="obsolete">Yerleşik Sayfalama</translation>
     </message>
 </context>
 <context>

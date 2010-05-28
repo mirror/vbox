@@ -407,7 +407,7 @@
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
-        <translation>&amp;Повноекранний Режим</translation>
+        <translation type="obsolete">&amp;Повноекранний Режим</translation>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
@@ -415,7 +415,7 @@
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation>&amp;Цілокроєний режим</translation>
+        <translation type="obsolete">&amp;Цілокроєний режим</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
@@ -423,7 +423,7 @@
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>Авторозмір &amp;гостьового екрану</translation>
+        <translation type="obsolete">Авторозмір &amp;гостьового екрану</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -566,12 +566,8 @@
         <translation>Відкрити діалог для керування спільними теками</translation>
     </message>
     <message>
-        <source>&amp;Remote Display</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>Дозволити або заборонити під&apos;єднання віддаленої стільниці (RDP) до цієї машини</translation>
+        <translation type="obsolete">Дозволити або заборонити під&apos;єднання віддаленої стільниці (RDP) до цієї машини</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
@@ -598,7 +594,7 @@
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>&amp;Реєстрування...</translation>
+        <translation type="obsolete">&amp;Реєстрування...</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -615,6 +611,64 @@
     <message>
         <source>Show Application Icon</source>
         <translation></translation>
+    </message>
+    <message>
+        <source>Enter &amp;Fullscreen Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit &amp;Fullscreen Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to normal mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;Guest Display Auto-resize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable &amp;Guest Display Auto-resize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable automatic resize of the guest display when the window is resized</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Enable Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable remote desktop (RDP) connections to this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Disable Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable remote desktop (RDP) connections to this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable &amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2144,89 +2198,89 @@ p, li { white-space: pre-wrap; }
     <name>VBoxConsoleWnd</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation>VirtualBox OSE</translation>
+        <translation type="obsolete">VirtualBox OSE</translation>
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
-        <translation>&amp;Повноекранний Режим</translation>
+        <translation type="obsolete">&amp;Повноекранний Режим</translation>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
-        <translation>Перемкнути у повноекранний режим</translation>
+        <translation type="obsolete">Перемкнути у повноекранний режим</translation>
     </message>
     <message>
         <source>Mouse Integration</source>
         <comment>enable/disable...</comment>
-        <translation>Інтеграція миші</translation>
+        <translation type="obsolete">Інтеграція миші</translation>
     </message>
     <message>
         <source>Auto-resize Guest Display</source>
         <comment>enable/disable...</comment>
-        <translation>Авторозмір гостьового екрану</translation>
+        <translation type="obsolete">Авторозмір гостьового екрану</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>Авторозмір &amp;гостьового екрану</translation>
+        <translation type="obsolete">Авторозмір &amp;гостьового екрану</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>Авторозмір гостьового екрану при зміненні розміру вікна (вимагається гостьові доповнення)</translation>
+        <translation type="obsolete">Авторозмір гостьового екрану при зміненні розміру вікна (вимагається гостьові доповнення)</translation>
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
-        <translation>В&amp;ирівняти розмір вікна</translation>
+        <translation type="obsolete">В&amp;ирівняти розмір вікна</translation>
     </message>
     <message>
         <source>Adjust window size and position to best fit the guest display</source>
-        <translation>Вирівняти розмір і положення вікна під розмір гостьового екрану</translation>
+        <translation type="obsolete">Вирівняти розмір і положення вікна під розмір гостьового екрану</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
-        <translation>&amp;Ввести Ctrl-Alt-Del</translation>
+        <translation type="obsolete">&amp;Ввести Ctrl-Alt-Del</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
-        <translation>Відправити послідовність клавіш Ctrl-Alt-Del у віртуальну машину</translation>
+        <translation type="obsolete">Відправити послідовність клавіш Ctrl-Alt-Del у віртуальну машину</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
-        <translation>Вве&amp;сти Ctrl-Alt-Backspace</translation>
+        <translation type="obsolete">Вве&amp;сти Ctrl-Alt-Backspace</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
-        <translation>Відправити послідовність клавіш Ctrl-Alt-Backspace у віртуальну машину</translation>
+        <translation type="obsolete">Відправити послідовність клавіш Ctrl-Alt-Backspace у віртуальну машину</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
-        <translation>П&amp;ерезавантажити</translation>
+        <translation type="obsolete">П&amp;ерезавантажити</translation>
     </message>
     <message>
         <source>Reset the virtual machine</source>
-        <translation>Перезавантажити віртуальну машину</translation>
+        <translation type="obsolete">Перезавантажити віртуальну машину</translation>
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
-        <translation>Ви&amp;мкнути ACPI</translation>
+        <translation type="obsolete">Ви&amp;мкнути ACPI</translation>
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
-        <translation>Відправити сигнал ACPI вимикання живлення віртуальній машині</translation>
+        <translation type="obsolete">Відправити сигнал ACPI вимикання живлення віртуальній машині</translation>
     </message>
     <message>
         <source>&amp;Close...</source>
-        <translation>&amp;Закрити...</translation>
+        <translation type="obsolete">&amp;Закрити...</translation>
     </message>
     <message>
         <source>Close the virtual machine</source>
-        <translation>Закрити віртуальну машину</translation>
+        <translation type="obsolete">Закрити віртуальну машину</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot...</source>
-        <translation>З&amp;робити зріз...</translation>
+        <translation type="obsolete">З&amp;робити зріз...</translation>
     </message>
     <message>
         <source>Take a snapshot of the virtual machine</source>
-        <translation>Зробити зріз віртуальної машини</translation>
+        <translation type="obsolete">Зробити зріз віртуальної машини</translation>
     </message>
     <message>
         <source>&amp;Floppy Image...</source>
@@ -2266,23 +2320,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>Дозволити або заборонити під&apos;єднання віддаленої стільниці (RDP) до цієї машини</translation>
+        <translation type="obsolete">Дозволити або заборонити під&apos;єднання віддаленої стільниці (RDP) до цієї машини</translation>
     </message>
     <message>
         <source>&amp;Shared Folders...</source>
-        <translation>Сп&amp;ільні теки...</translation>
+        <translation type="obsolete">Сп&amp;ільні теки...</translation>
     </message>
     <message>
         <source>Create or modify shared folders</source>
-        <translation>Відкрити діалог для керування спільними теками</translation>
+        <translation type="obsolete">Відкрити діалог для керування спільними теками</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
-        <translation>Вс&amp;тановити гостьові доповнення...</translation>
+        <translation type="obsolete">Вс&amp;тановити гостьові доповнення...</translation>
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
-        <translation>Змонтувати гостьові доповнення з установчого образа</translation>
+        <translation type="obsolete">Змонтувати гостьові доповнення з установчого образа</translation>
     </message>
     <message>
         <source>Mount &amp;Floppy</source>
@@ -2294,59 +2348,59 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;USB Devices</source>
-        <translation>Пристро&amp;ї USB</translation>
+        <translation type="obsolete">Пристро&amp;ї USB</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
-        <translation>Пристр&amp;ої</translation>
+        <translation type="obsolete">Пристр&amp;ої</translation>
     </message>
     <message>
         <source>De&amp;bug</source>
-        <translation>&amp;Зневадження</translation>
+        <translation type="obsolete">&amp;Зневадження</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Довідка</translation>
+        <translation type="obsolete">&amp;Довідка</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
-        <translation>&lt;hr&gt;Сервер VRDP очікує з&apos;єднання на порті %1</translation>
+        <translation type="obsolete">&lt;hr&gt;Сервер VRDP очікує з&apos;єднання на порті %1</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation>Па&amp;уза</translation>
+        <translation type="obsolete">Па&amp;уза</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation>Призупинити роботу віртуальної машини</translation>
+        <translation type="obsolete">Призупинити роботу віртуальної машини</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>Продо&amp;вжити</translation>
+        <translation type="obsolete">Продо&amp;вжити</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation>Відновити роботу віртуальної машини</translation>
+        <translation type="obsolete">Відновити роботу віртуальної машини</translation>
     </message>
     <message>
         <source>Disable &amp;Mouse Integration</source>
-        <translation>В&amp;имкнути інтеграцію миші</translation>
+        <translation type="obsolete">В&amp;имкнути інтеграцію миші</translation>
     </message>
     <message>
         <source>Temporarily disable host mouse pointer integration</source>
-        <translation>Тимчасово вимкнути інтеграцію головного курсора миші</translation>
+        <translation type="obsolete">Тимчасово вимкнути інтеграцію головного курсора миші</translation>
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
-        <translation>Вв&amp;імкнути інтеграцію миші</translation>
+        <translation type="obsolete">Вв&amp;імкнути інтеграцію миші</translation>
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation>Ввімкнути тимчасово вимкнену інтеграцію головного курсора миші</translation>
+        <translation type="obsolete">Ввімкнути тимчасово вимкнену інтеграцію головного курсора миші</translation>
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>Зріз %1</translation>
+        <translation type="obsolete">Зріз %1</translation>
     </message>
     <message>
         <source>Host Drive </source>
@@ -2354,7 +2408,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation>Ма&amp;шина</translation>
+        <translation type="obsolete">Ма&amp;шина</translation>
     </message>
     <message>
         <source>&amp;Network Adapters</source>
@@ -2385,11 +2439,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation>&amp;Цілокроєний режим</translation>
+        <translation type="obsolete">&amp;Цілокроєний режим</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
-        <translation>Перемкнутись в цілокроєний режим інтеграції стільниці</translation>
+        <translation type="obsolete">Перемкнутись в цілокроєний режим інтеграції стільниці</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -2439,7 +2493,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Жодного жорсткого диска не під&apos;єднано&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Жодного жорсткого диска не під&apos;єднано&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -2454,17 +2508,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>connected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>під&apos;єднаний</translation>
+        <translation type="obsolete">під&apos;єднаний</translation>
     </message>
     <message>
         <source>disconnected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>від&apos;єднаний</translation>
+        <translation type="obsolete">від&apos;єднаний</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Всі мережеві адаптери вимкнуті&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Всі мережеві адаптери вимкнуті&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -2474,12 +2528,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Жодного пристрою USB не під&apos;єднано&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Жодного пристрою USB не під&apos;єднано&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Контролер USB вимкнутий&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Контролер USB вимкнутий&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine&apos;sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -2489,7 +2543,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Немає спільних тек&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Немає спільних тек&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Sun xVM VirtualBox</source>
@@ -2497,46 +2551,46 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
-        <translation>&amp;Інформація про сеанс</translation>
+        <translation type="obsolete">&amp;Інформація про сеанс</translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
-        <translation>Показати інформацію про сеанс</translation>
+        <translation type="obsolete">Показати інформацію про сеанс</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
-        <translation>&amp;Статистика...</translation>
+        <translation type="obsolete">&amp;Статистика...</translation>
     </message>
     <message>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
-        <translation>&amp;Командний рядок...</translation>
+        <translation type="obsolete">&amp;Командний рядок...</translation>
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Показує, що функція авторозміру екрану гостьової операційної системи ввімкнута (&lt;img src=:/auto_resize_on_16px.png/&gt;) або вимкнута (&lt;img src=:/auto_resize_off_16px.png/&gt;). Майте на увазі, що для цієї функції потрібно встановити гостьове доповнення.</translation>
+        <translation type="obsolete">Показує, що функція авторозміру екрану гостьової операційної системи ввімкнута (&lt;img src=:/auto_resize_on_16px.png/&gt;) або вимкнута (&lt;img src=:/auto_resize_off_16px.png/&gt;). Майте на увазі, що для цієї функції потрібно встановити гостьове доповнення.</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Показує, чи захоплений курсор мишки головного комп&apos;ютера гостьовою операційною системою:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;курсор не захоплений&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;курсор захоплений&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;Інтеграція миші ввімкнена&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;Інтеграція миші вимкнута, курсор захоплений&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;;Інтеграція миші вимкнута, курсор не захоплений&lt;/nobr&gt;&lt;br&gt;Майте на увазі, що для інтеграції миші потрібно встановити гостьові доповнення.</translation>
+        <translation type="obsolete">Показує, чи захоплений курсор мишки головного комп&apos;ютера гостьовою операційною системою:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;курсор не захоплений&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;курсор захоплений&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;Інтеграція миші ввімкнена&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;Інтеграція миші вимкнута, курсор захоплений&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;;Інтеграція миші вимкнута, курсор не захоплений&lt;/nobr&gt;&lt;br&gt;Майте на увазі, що для інтеграції миші потрібно встановити гостьові доповнення.</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation>Показує, чи захоплена клавіатура гостьовою операційною системою (&lt;img src=:/hostkey_captured_16px.png/&gt;), чи ні (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
+        <translation type="obsolete">Показує, чи захоплена клавіатура гостьовою операційною системою (&lt;img src=:/hostkey_captured_16px.png/&gt;), чи ні (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation>Показує, чи ввімкнутий віддалений екран (Сервер VRDP) (&lt;img src=:/vrdp_16px.png/&gt;), чи ні  (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
+        <translation type="obsolete">Показує, чи ввімкнутий віддалений екран (Сервер VRDP) (&lt;img src=:/vrdp_16px.png/&gt;), чи ні  (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>&amp;Реєстрування...</translation>
+        <translation type="obsolete">&amp;Реєстрування...</translation>
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation>Показує призначену головну клавішу.&lt;br&gt;Ця клавіша, якщо її натиснути окремо, перемикає стан захоплення клавіатури і миші. Її можна також використовувати в сполученні з іншими клавішами для швидкого виконання дії з головного меню.</translation>
+        <translation type="obsolete">Показує призначену головну клавішу.&lt;br&gt;Ця клавіша, якщо її натиснути окремо, перемикає стан захоплення клавіатури і миші. Її можна також використовувати в сполученні з іншими клавішами для швидкого виконання дії з головного меню.</translation>
     </message>
     <message>
         <source>Sun VirtualBox</source>
@@ -2545,122 +2599,105 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>Описує стан властивостей віртулазації пристроїв, які використовуються віртуальною машиною:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
+        <translation type="obsolete">Описує стан властивостей віртулазації пристроїв, які використовуються віртуальною машиною:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation> ЕКСПЕРЕМЕНТАЛЬНА збірка %1r%2 — %3</translation>
+        <translation type="obsolete"> ЕКСПЕРЕМЕНТАЛЬНА збірка %1r%2 — %3</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Devices</source>
-        <translation>&amp;Пристрої CD/DVD</translation>
+        <translation type="obsolete">&amp;Пристрої CD/DVD</translation>
     </message>
     <message>
         <source>&amp;Floppy Devices</source>
-        <translation>Пристрої &amp;дискет</translation>
+        <translation type="obsolete">Пристрої &amp;дискет</translation>
     </message>
     <message>
         <source>&amp;Network Adapters...</source>
-        <translation>&amp;Мережевий адаптер...</translation>
+        <translation type="obsolete">&amp;Мережевий адаптер...</translation>
     </message>
     <message>
         <source>Change the settings of network adapters</source>
-        <translation>Змінити налаштування мережевих адаптерів</translation>
+        <translation type="obsolete">Змінити налаштування мережевих адаптерів</translation>
     </message>
     <message>
         <source>&amp;Remote Display</source>
-        <translation>Ві&amp;ддалений екран</translation>
+        <translation type="obsolete">Ві&amp;ддалений екран</translation>
     </message>
     <message>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
-        <translation>Сервер віддаленої стільниці (RDP)</translation>
+        <translation type="obsolete">Сервер віддаленої стільниці (RDP)</translation>
     </message>
     <message>
         <source>More CD/DVD Images...</source>
-        <translation>Більше образів CD/DVD…</translation>
+        <translation type="obsolete">Більше образів CD/DVD…</translation>
     </message>
     <message>
         <source>Unmount CD/DVD Device</source>
-        <translation>Демонтувати пристрій CD/DVD</translation>
+        <translation type="obsolete">Демонтувати пристрій CD/DVD</translation>
     </message>
     <message>
         <source>More Floppy Images...</source>
-        <translation>Більше образів дискет…</translation>
+        <translation type="obsolete">Більше образів дискет…</translation>
     </message>
     <message>
         <source>Unmount Floppy Device</source>
-        <translation>Демонтувати пристрій дискет</translation>
+        <translation type="obsolete">Демонтувати пристрій дискет</translation>
     </message>
     <message>
         <source>No CD/DVD Devices Attached</source>
-        <translation>Немає приєднаних пристроїв CD/DVD</translation>
+        <translation type="obsolete">Немає приєднаних пристроїв CD/DVD</translation>
     </message>
     <message>
         <source>No Floppy Devices Attached</source>
-        <translation>Немає приєднаних пристроїв CD/DVD</translation>
+        <translation type="obsolete">Немає приєднаних пристроїв CD/DVD</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Індикатори активності віртуальних жорстких дисків:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Індикатори активності віртуальних жорстких дисків:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>CD/DVD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Індикатори активності пристроїв CD/DVD:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Індикатори активності пристроїв CD/DVD:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No CD/DVD devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>CD/DVD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Немає приєднаних пристроїв CD/DVD&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Немає приєднаних пристроїв CD/DVD&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>FD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Індикатори активності пристроїв дискет:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Індикатори активності пристроїв дискет:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No floppy devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>FD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Немає приєднаних пристроїв дискет&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Немає приєднаних пристроїв дискет&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Індикатори активності мережевих інтерфейсів:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Індикатори активності мережевих інтерфейсів:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Індикатори активності приєднаних пристроїв USB:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Індикатори активності приєднаних пристроїв USB:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Індикатори активності спільних тек:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Dock Icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Application Icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Monitor Preview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
-        <comment>Network adapters tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Індикатори активності спільних тек:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
@@ -6017,7 +6054,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;File</source>
-        <translation>&amp;Файл</translation>
+        <translation type="obsolete">&amp;Файл</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -6127,6 +6164,16 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation>&lt;h3&gt;Ласкаво просимо до VirtualBox!&lt;/h3&gt;&lt;p&gt;У лівій частині цього вікна показується список віртуальних машин на вашому комп&apos;ютері. Зараз список порожній, оскільки, поки що, ви не маєте створених віртуальних машин.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Для того, щоб створити нову віртуальну машину, натисніть &lt;b&gt;Створити&lt;/b&gt; в головному меню панелі інструментів , які знаходяться вверху вікна.&lt;/p&gt;&lt;p&gt;Ви можете натиснути &lt;b&gt;%1&lt;/b&gt;, щоб отримати миттєву довідку, або відвідайте  &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; щодо останіх новин.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="unfinished">&amp;Файл</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="unfinished">&amp;Файл</translation>
     </message>
 </context>
 <context>
@@ -6653,12 +6700,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>Ввімкнуте</translation>
+        <translation type="obsolete">Ввімкнуте</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>Вимкнуте</translation>
+        <translation type="obsolete">Вимкнуте</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -6688,7 +6735,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="unfinished">Вкладене заміщення сторінок</translation>
+        <translation type="obsolete">Вкладене заміщення сторінок</translation>
     </message>
 </context>
 <context>
