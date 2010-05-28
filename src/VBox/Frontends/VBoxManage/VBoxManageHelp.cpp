@@ -172,6 +172,9 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--cpuidremoveall]\n"
                  "                            [--hardwareuuid <uuid>]\n"
                  "                            [--cpus <number>]\n"
+                 "                            [--cpuhotplug on|off]\n"
+                 "                            [--plugcpu <id>]\n"
+                 "                            [--unplugcpu <id>]\n"
                  "                            [--rtcuseutc on|off]\n"
                  "                            [--monitorcount <number>]\n"
                  "                            [--accelerate3d on|off]\n"
@@ -389,6 +392,8 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                                           [--allowlocallogon <yes|no>] |\n"
                  "                            teleport --host <name> --port <port>\n"
                  "                                   [--maxdowntime <msec>] [--password password]\n"
+                 "                            plugcpu <id>\n"
+                 "                            unplugcpu <id>\n"
                  "\n");
     }
 
