@@ -331,6 +331,8 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
     if (!pMemFreeBSD->Core.pv)
         return VERR_NO_MEMORY;
 
+    *ppMem = &pMemFreeBSD->Core;
+
     return VINF_SUCCESS;
 #else
     /*
@@ -882,8 +884,16 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
         case RTR0MEMOBJTYPE_PHYS_NC:
             return VM_PAGE_TO_PHYS(pMemFreeBSD->u.Phys.apPages[iPage]);
 
-        case RTR0MEMOBJTYPE_RES_VIRT:
+#ifdef USE_KMEM_ALLOC_ATTR
         case RTR0MEMOBJTYPE_LOW:
+        {
+            vm_offset_t pb = (vm_offset_t)pMemFreeBSD->Core.pv + (iPage << PAGE_SHIFT);
+            return vtophys(pb);
+        }
+#else
+        case RTR0MEMOBJTYPE_LOW:
+#endif
+        case RTR0MEMOBJTYPE_RES_VIRT:
         default:
             return NIL_RTHCPHYS;
     }
