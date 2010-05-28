@@ -248,10 +248,10 @@ int VBoxServiceVMInfoWriteUsers()
         {
             if (cUsersInList > 0)
             {
-                rc = RTStrAAppend(pszUserList, ",");
+                rc = RTStrAAppend(&pszUserList, ",");
                 AssertRCReturn(rc, rc);
             }
-            rc = RTStrAAppend(pszUserList, ut_user->ut_user);
+            rc = RTStrAAppend(&pszUserList, ut_user->ut_user);
             AssertRCReturn(rc, rc);
             cUsersInList++;
         }
