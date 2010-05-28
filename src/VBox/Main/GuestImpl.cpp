@@ -598,11 +598,11 @@ int Guest::notifyCtrlExecStatus(uint32_t                u32Function,
         {
             /* Not found, add to list. */
             GuestProcess p;
-            p.mPID = pCBData->u32PID;            
+            p.mPID = pCBData->u32PID;
             p.mStatus = pCBData->u32Status;
             p.mExitCode = pCBData->u32Flags; /* Contains exit code. */
             p.mFlags = 0;
-            
+
             mGuestProcessList.push_back(p);
         }
         else /* Update list. */
@@ -746,9 +746,9 @@ void Guest::destroyCtrlCallbackContext(Guest::CallbackListIter it)
         BOOL fCancelled;
         if (SUCCEEDED(it->pProgress->COMGETTER(Canceled)(&fCancelled)) && !fCancelled)
             it->pProgress->Cancel();
-        /* 
-         * Do *not NULL pProgress here, because waiting function like executeProcess() 
-         * will still rely on this object for checking whether they have to give up! 
+        /*
+         * Do *not NULL pProgress here, because waiting function like executeProcess()
+         * will still rely on this object for checking whether they have to give up!
          */
     }
     LogFlowFuncLeave();
@@ -776,9 +776,10 @@ uint32_t Guest::addCtrlCallbackContext(eVBoxGuestCtrlCallbackType enmType, void 
     uint32_t nCallbacks;
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        /// @todo r=bird: check if already in the list and find another one.
         mCallbackList.push_back(context);
         nCallbacks = mCallbackList.size();
-    }    
+    }
 
 #if 0
     if (nCallbacks > 256) /* Don't let the container size get too big! */
@@ -802,6 +803,8 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                                    IN_BSTR aUserName, IN_BSTR aPassword,
                                    ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress)
 {
+/** @todo r=bird: Eventually we should clean up all the timeout parameters
+ *        in the API and have the same way of specifying infinite waits!  */
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else  /* VBOX_WITH_GUEST_CONTROL */
@@ -859,6 +862,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
             AssertReturn(papszArgv, E_OUTOFMEMORY);
             for (unsigned i = 0; RT_SUCCESS(vrc) && i < uNumArgs; i++)
             {
+                /// @todo r=bird: RTUtf16ToUtf8().
                 int cbLen = RTStrAPrintf(&papszArgv[i], "%s", Utf8Str(args[i]).raw());
                 if (cbLen < 0)
                     vrc = VERR_NO_MEMORY;
@@ -900,7 +904,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                 {
                     PCALLBACKDATAEXECSTATUS pData = (PCALLBACKDATAEXECSTATUS)RTMemAlloc(sizeof(CALLBACKDATAEXECSTATUS));
                     AssertReturn(pData, VBOX_E_IPRT_ERROR);
-                    uContextID = addCtrlCallbackContext(VBOXGUESTCTRLCALLBACKTYPE_EXEC_START, 
+                    uContextID = addCtrlCallbackContext(VBOXGUESTCTRLCALLBACKTYPE_EXEC_START,
                                                         pData, sizeof(CALLBACKDATAEXECSTATUS), progress);
                     Assert(uContextID > 0);
 
@@ -920,11 +924,11 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
 
                     VMMDev *vmmDev;
                     {
-                        /* Make sure mParent is valid, so set the read lock while using. 
+                        /* Make sure mParent is valid, so set the read lock while using.
                          * Do not keep this lock while doing the actual call, because in the meanwhile
                          * another thread could request a write lock which would be a bad idea ... */
                         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    
+
                         /* Forward the information to the VMM device. */
                         AssertPtr(mParent);
                         vmmDev = mParent->getVMMDev();
@@ -972,12 +976,15 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
 
                         /* Check for manual stop. */
                         if (!it->pProgress.isNull())
-                        {                            
+                        {
                             rc = it->pProgress->COMGETTER(Canceled)(&fCanceled);
                             if (FAILED(rc)) throw rc;
                             if (fCanceled)
-                                break; /* Client wants to abort. */
+                                break; /* HGCM/guest wants to abort because of status change. */
+
                         }
+                        /// @todo r=bird: two operation progress object and wait first operation.
+                        /// IProgress::WaitForOperationCompletion.
                         RTThreadSleep(cMsWait);
                     }
                 }
@@ -985,7 +992,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                 /* Was the whole thing canceled? */
                 if (!fCanceled)
                 {
-                    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS); 
+                    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
                     PCALLBACKDATAEXECSTATUS pData = (PCALLBACKDATAEXECSTATUS)it->pvData;
                     Assert(it->cbData == sizeof(CALLBACKDATAEXECSTATUS));
@@ -1000,7 +1007,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                                 /* Process is (still) running; get PID. */
                                 *aPID = pData->u32PID;
                                 break;
-    
+
                             /* In any other case the process either already
                              * terminated or something else went wrong, so no PID ... */
                             case PROC_STS_TEN: /* Terminated normally. */
@@ -1009,17 +1016,17 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                             case PROC_STS_TOK:
                             case PROC_STS_TOA:
                             case PROC_STS_DWN:
-                                /* 
+                                /*
                                  * Process (already) ended, but we want to get the
-                                 * PID anyway to retrieve the output in a later call. 
+                                 * PID anyway to retrieve the output in a later call.
                                  */
                                 *aPID = pData->u32PID;
                                 break;
-    
+
                             case PROC_STS_ERROR:
                                 vrc = pData->u32Flags; /* u32Flags member contains IPRT error code. */
                                 break;
-    
+
                             default:
                                 vrc = VERR_INVALID_PARAMETER; /* Unknown status, should never happen! */
                                 break;
@@ -1072,7 +1079,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                             else
                                 rc = setError(E_UNEXPECTED,
                                               tr("The service call failed with error %Rrc"), vrc);
-                        }               
+                        }
                     }
                     else /* Execution went fine. */
                     {
@@ -1120,6 +1127,8 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
 
 STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, ULONG64 aSize, ComSafeArrayOut(BYTE, aData))
 {
+/** @todo r=bird: Eventually we should clean up all the timeout parameters
+ *        in the API and have the same way of specifying infinite waits!  */
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else  /* VBOX_WITH_GUEST_CONTROL */
@@ -1131,7 +1140,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
         return E_INVALIDARG;
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc(); 
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT rc = S_OK;
 
@@ -1162,26 +1171,26 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
         uint32_t uContextID = addCtrlCallbackContext(VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT,
                                                      pData, sizeof(CALLBACKDATAEXECOUT), progress);
         Assert(uContextID > 0);
-    
+
         size_t cbData = (size_t)RT_MIN(aSize, _64K);
         com::SafeArray<BYTE> outputData(cbData);
-    
+
         VBOXHGCMSVCPARM paParms[5];
         int i = 0;
         paParms[i++].setUInt32(uContextID);
         paParms[i++].setUInt32(aPID);
         paParms[i++].setUInt32(aFlags); /** @todo Should represent stdout and/or stderr. */
-    
+
         int vrc = VINF_SUCCESS;
-    
+
         {
             VMMDev *vmmDev;
             {
-                /* Make sure mParent is valid, so set the read lock while using. 
+                /* Make sure mParent is valid, so set the read lock while using.
                  * Do not keep this lock while doing the actual call, because in the meanwhile
                  * another thread could request a write lock which would be a bad idea ... */
                 AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        
+
                 /* Forward the information to the VMM device. */
                 AssertPtr(mParent);
                 vmmDev = mParent->getVMMDev();
@@ -1194,11 +1203,11 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
                                            i, paParms);
             }
         }
-    
+
         if (RT_SUCCESS(vrc))
         {
             LogFlowFunc(("Waiting for HGCM callback (timeout=%ldms) ...\n", aTimeoutMS));
-    
+
             /*
              * Wait for the HGCM low level callback until the process
              * has been started (or something went wrong). This is necessary to
@@ -1232,26 +1241,26 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
                             break; /* Client wants to abort. */
                     }
                     RTThreadSleep(cMsWait);
-                } 
-    
+                }
+
                 /* Was the whole thing canceled? */
                 if (!fCanceled)
                 {
                     if (it->fCalled)
                     {
                         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-            
+
                         /* Did we get some output? */
                         pData = (PCALLBACKDATAEXECOUT)it->pvData;
                         Assert(it->cbData == sizeof(CALLBACKDATAEXECOUT));
                         AssertPtr(pData);
-            
+
                         if (pData->cbData)
                         {
                             /* Do we need to resize the array? */
                             if (pData->cbData > cbData)
                                 outputData.resize(pData->cbData);
-            
+
                             /* Fill output in supplied out buffer. */
                             memcpy(outputData.raw(), pData->pvData, pData->cbData);
                             outputData.resize(pData->cbData); /* Shrink to fit actual buffer size. */
@@ -1295,12 +1304,12 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
             }
             else /* PID lookup failed. */
                 rc = setError(VBOX_E_IPRT_ERROR,
-                              tr("Process (PID %u) not found!"), aPID);    
+                              tr("Process (PID %u) not found!"), aPID);
         }
         else /* HGCM operation failed. */
             rc = setError(E_UNEXPECTED,
                           tr("The HGCM call failed with error %Rrc"), vrc);
-    
+
         /* Cleanup. */
         progress->uninit();
         progress.setNull();
@@ -1327,21 +1336,21 @@ STDMETHODIMP Guest::GetProcessStatus(ULONG aPID, ULONG *aExitCode, ULONG *aFlags
     using namespace guestControl;
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc(); 
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT rc = S_OK;
 
     try
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    
+
         GuestProcessIterConst it;
         for (it = mGuestProcessList.begin(); it != mGuestProcessList.end(); it++)
         {
             if (it->mPID == aPID)
                 break;
         }
-    
+
         if (it != mGuestProcessList.end())
         {
             *aExitCode = it->mExitCode;
