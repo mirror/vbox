@@ -65,26 +65,26 @@
 
 #define CR_FUNC_SUBIMAGE(name, def, call, ptrname)          \
 void SERVER_DISPATCH_APIENTRY                               \
-crServerDispatch##name##def                                 \
+crServerDispatch##name def                                  \
 {                                                           \
     const GLvoid *realptr = ptrname;                        \
     CR_CHECKBUFFER(name, CR_CHECKPTR(name))                 \
-    crState##name##call;                                    \
+    crState##name call;                                     \
     CR_FINISHBUFFER()                                       \
     realptr = ptrname;                                      \
-    cr_server.head_spu->dispatch_table.##name##call;        \
+    cr_server.head_spu->dispatch_table.name call;           \
 }
 
 #define CR_FUNC_IMAGE(name, def, call, ptrname)             \
 void SERVER_DISPATCH_APIENTRY                               \
-crServerDispatch##name##def                                 \
+crServerDispatch##name def                                  \
 {                                                           \
     const GLvoid *realptr = ptrname;                        \
     CR_CHECKBUFFER(name, CR_NOTHING())                      \
-    crState##name##call;                                    \
+    crState##name call;                                     \
     CR_FINISHBUFFER()                                       \
     realptr = ptrname;                                      \
-    cr_server.head_spu->dispatch_table.##name##call;        \
+    cr_server.head_spu->dispatch_table.name call;           \
 }
 
 #if defined(CR_ARB_texture_compression)
