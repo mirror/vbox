@@ -672,6 +672,15 @@ void Appliance::disksWeight()
 
 }
 
+/**
+ * Called from Appliance::importImpl() and Appliance::writeImpl() to set up a
+ * progress object with the proper weights and maximum progress values.
+ *
+ * @param pProgress
+ * @param bstrDescription
+ * @param mode
+ * @return
+ */
 HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress,
                                  const Bstr &bstrDescription,
                                  SetUpProgressMode mode)
@@ -684,6 +693,8 @@ HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress,
     // compute the disks weight (this sets ulTotalDisksMB and cDisks in the instance data)
     disksWeight();
 
+    m->ulWeightForManifestOperation = 0;
+
     ULONG cOperations;
     ULONG ulTotalOperationsWeight;
 
@@ -691,19 +702,28 @@ HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress,
                   + m->cDisks;      // plus one per disk
     if (m->ulTotalDisksMB)
     {
-        m->ulWeightPerOperation = (ULONG)((double)m->ulTotalDisksMB * 1 / 100);    // use 1% of the progress for the XML
-        ulTotalOperationsWeight = m->ulTotalDisksMB + m->ulWeightPerOperation;
+        m->ulWeightForXmlOperation = (ULONG)((double)m->ulTotalDisksMB * 1 / 100);    // use 1% of the progress for the XML
+        ulTotalOperationsWeight = m->ulTotalDisksMB + m->ulWeightForXmlOperation;
     }
     else
     {
         // no disks to export:
-        m->ulWeightPerOperation = 1;
+        m->ulWeightForXmlOperation = 1;
         ulTotalOperationsWeight = 1;
     }
 
     switch (mode)
     {
-        case Regular:
+        case ImportFileNoManifest:
+        break;
+
+        case ImportFileWithManifest:
+        case WriteFile:
+            ++cOperations;          // another one for creating the manifest
+
+            // assume that checking or creating the manifest will take 10% of the time it takes to export the disks
+            m->ulWeightForManifestOperation = m->ulTotalDisksMB / 10;
+            ulTotalOperationsWeight += m->ulWeightForManifestOperation;
         break;
 
         case ImportS3:
@@ -717,7 +737,7 @@ HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress,
             ULONG ulImportWeight = (ULONG)((double)ulTotalOperationsWeight * 50  / 100);  // use 50% for import
             ulTotalOperationsWeight += ulImportWeight;
 
-            m->ulWeightPerOperation = ulImportWeight; /* save for using later */
+            m->ulWeightForXmlOperation = ulImportWeight; /* save for using later */
 
             ULONG ulInitWeight = (ULONG)((double)ulTotalOperationsWeight * 0.1  / 100);  // use 0.1% for init
             ulTotalOperationsWeight += ulInitWeight;
@@ -730,14 +750,14 @@ HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress,
 
             if (m->ulTotalDisksMB)
             {
-                m->ulWeightPerOperation = (ULONG)((double)m->ulTotalDisksMB * 1  / 100);    // use 1% of the progress for OVF file upload (we didn't know the size at this point)
-                ulTotalOperationsWeight = m->ulTotalDisksMB + m->ulWeightPerOperation;
+                m->ulWeightForXmlOperation = (ULONG)((double)m->ulTotalDisksMB * 1  / 100);    // use 1% of the progress for OVF file upload (we didn't know the size at this point)
+                ulTotalOperationsWeight = m->ulTotalDisksMB + m->ulWeightForXmlOperation;
             }
             else
             {
                 // no disks to export:
                 ulTotalOperationsWeight = 1;
-                m->ulWeightPerOperation = 1;
+                m->ulWeightForXmlOperation = 1;
             }
             ULONG ulOVFCreationWeight = (ULONG)((double)ulTotalOperationsWeight * 50.0 / 100.0); /* Use 50% for the creation of the OVF & the disks */
             ulTotalOperationsWeight += ulOVFCreationWeight;
@@ -745,8 +765,8 @@ HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress,
         break;
     }
 
-    Log(("Setting up progress object: ulTotalMB = %d, cDisks = %d, => cOperations = %d, ulTotalOperationsWeight = %d, m->ulWeightPerOperation = %d\n",
-         m->ulTotalDisksMB, m->cDisks, cOperations, ulTotalOperationsWeight, m->ulWeightPerOperation));
+    Log(("Setting up progress object: ulTotalMB = %d, cDisks = %d, => cOperations = %d, ulTotalOperationsWeight = %d, m->ulWeightForXmlOperation = %d\n",
+         m->ulTotalDisksMB, m->cDisks, cOperations, ulTotalOperationsWeight, m->ulWeightForXmlOperation));
 
     rc = pProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
                          bstrDescription,
@@ -754,7 +774,7 @@ HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress,
                          cOperations, // ULONG cOperations,
                          ulTotalOperationsWeight, // ULONG ulTotalOperationsWeight,
                          bstrDescription, // CBSTR bstrFirstOperationDescription,
-                         m->ulWeightPerOperation); // ULONG ulFirstOperationWeight,
+                         m->ulWeightForXmlOperation); // ULONG ulFirstOperationWeight,
     return rc;
 }
 

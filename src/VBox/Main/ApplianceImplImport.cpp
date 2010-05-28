@@ -769,8 +769,7 @@ HRESULT Appliance::readS3(TaskOVF *pTask)
         RTS3Destroy(hS3);
         hS3 = NIL_RTS3;
 
-        if (!pTask->pProgress.isNull())
-            pTask->pProgress->SetNextOperation(Bstr(tr("Reading")), 1);
+        pTask->pProgress->SetNextOperation(Bstr(tr("Reading")), 1);
 
         /* Prepare the temporary reading of the OVF */
         ComObjPtr<Progress> progress;
@@ -931,15 +930,30 @@ void Appliance::convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
  * @param aProgress
  * @return
  */
-HRESULT Appliance::importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
+HRESULT Appliance::importImpl(const LocationInfo &aLocInfo,
+                              ComObjPtr<Progress> &aProgress)
 {
-    Bstr progressDesc = BstrFmt(tr("Importing appliance '%s'"),
-                                aLocInfo.strPath.c_str());
     HRESULT rc = S_OK;
 
+    SetUpProgressMode mode;
+    m->strManifestFile.setNull();
+    if (aLocInfo.storageType == VFSType_File)
+    {
+        Utf8Str strMfFile = manifestFileName(aLocInfo.strPath);
+        if (RTPathExists(strMfFile.c_str()))
+        {
+            m->strManifestFile = strMfFile;
+            mode = ImportFileWithManifest;
+        }
+        else
+            mode = ImportFileNoManifest;
+    }
+    else
+         mode = ImportS3;
+
     rc = setUpProgress(aProgress,
-                       progressDesc,
-                       (aLocInfo.storageType == VFSType_File) ? Regular : ImportS3);
+                       BstrFmt(tr("Importing appliance '%s'"), aLocInfo.strPath.c_str()),
+                       mode);
     if (FAILED(rc)) throw rc;
 
     /* Initialize our worker task */
@@ -1002,13 +1016,17 @@ struct Appliance::ImportStack
  * @return
  */
 HRESULT Appliance::manifestVerify(const LocationInfo &locInfo,
-                                  const ovf::OVFReader &reader)
+                                  const ovf::OVFReader &reader,
+                                  ComObjPtr<Progress> &pProgress)
 {
     HRESULT rc = S_OK;
 
-    Utf8Str strMfFile = manifestFileName(locInfo.strPath);
-    if (RTPathExists(strMfFile.c_str()))
+    if (!m->strManifestFile.isEmpty())
     {
+        const char *pcszManifestFileOnly = RTPathFilename(m->strManifestFile.c_str());
+        pProgress->SetNextOperation(BstrFmt(tr("Verifying manifest file '%s'"), pcszManifestFileOnly),
+                                    m->ulWeightForManifestOperation);     // operation's weight, as set up with the IProgress originally
+
         list<Utf8Str> filesList;
         Utf8Str strSrcDir(locInfo.strPath);
         strSrcDir.stripFilename();
@@ -1053,7 +1071,7 @@ HRESULT Appliance::manifestVerify(const LocationInfo &locInfo,
 
         // this call can take a very long time
         size_t cIndexOnError;
-        vrc = RTManifestVerify(strMfFile.c_str(),
+        vrc = RTManifestVerify(m->strManifestFile.c_str(),
                                pTestList,
                                filesList.size() + 1,
                                &cIndexOnError);
@@ -1062,11 +1080,11 @@ HRESULT Appliance::manifestVerify(const LocationInfo &locInfo,
             rc = setError(VBOX_E_FILE_ERROR,
                           tr("The SHA1 digest of '%s' does not match the one in '%s'"),
                           RTPathFilename(pTestList[cIndexOnError].pszTestFile),
-                          RTPathFilename(strMfFile.c_str()));
+                          pcszManifestFileOnly);
         else if (RT_FAILURE(vrc))
             rc = setError(VBOX_E_FILE_ERROR,
                           tr("Could not verify the content of '%s' against the available files (%Rrc)"),
-                          RTPathFilename(strMfFile.c_str()),
+                          pcszManifestFileOnly,
                           vrc);
 
         // clean up
@@ -1129,7 +1147,7 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
     try
     {
         // if a manifest file exists, verify the content; we then need all files which are referenced by the OVF & the OVF itself
-        rc = manifestVerify(locInfo, reader);
+        rc = manifestVerify(locInfo, reader, pProgress);
         if (FAILED(rc)) throw rc;
 
         // create a session for the machine + disks we manipulate below
@@ -1307,7 +1325,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
             if (FAILED(rc)) throw rc;
 
             // advance to the next operation
-            stack.pProgress->SetNextOperation(BstrFmt(tr("Creating virtual disk image '%s'"), strTargetPath.c_str()),
+            stack.pProgress->SetNextOperation(BstrFmt(tr("Creating disk image '%s'"), strTargetPath.c_str()),
                                               di.ulSuggestedSizeMB);     // operation's weight, as set up with the IProgress originally
         }
         else
@@ -2199,8 +2217,7 @@ HRESULT Appliance::importS3(TaskOVF *pTask)
         RTS3Destroy(hS3);
         hS3 = NIL_RTS3;
 
-        if (!pTask->pProgress.isNull())
-            pTask->pProgress->SetNextOperation(BstrFmt(tr("Importing appliance")), m->ulWeightPerOperation);
+        pTask->pProgress->SetNextOperation(BstrFmt(tr("Importing appliance")), m->ulWeightForXmlOperation);
 
         ComObjPtr<Progress> progress;
         /* Import the whole temporary OVF & the disk images */
