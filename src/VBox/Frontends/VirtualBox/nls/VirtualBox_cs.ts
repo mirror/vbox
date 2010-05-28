@@ -455,7 +455,7 @@
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
-        <translation>Celá &amp;obrazovka</translation>
+        <translation type="obsolete">Celá &amp;obrazovka</translation>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
@@ -463,7 +463,7 @@
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation>&amp;Bezešvý režim</translation>
+        <translation type="obsolete">&amp;Bezešvý režim</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
@@ -471,7 +471,7 @@
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>Automaticky přizpůsobit &amp;hostovanou obrazovku</translation>
+        <translation type="obsolete">Automaticky přizpůsobit &amp;hostovanou obrazovku</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -615,11 +615,11 @@
     </message>
     <message>
         <source>&amp;Remote Display</source>
-        <translation>V&amp;zdálená obrazovka</translation>
+        <translation type="obsolete">V&amp;zdálená obrazovka</translation>
     </message>
     <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>Povolí či zakáže připojení vzdálené plochy (RDP) na tento počítač</translation>
+        <translation type="obsolete">Povolí či zakáže připojení vzdálené plochy (RDP) na tento počítač</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
@@ -646,7 +646,7 @@
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>&amp;Logování...</translation>
+        <translation type="obsolete">&amp;Logování...</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -663,6 +663,64 @@
     <message>
         <source>Show Application Icon</source>
         <translation>Zobrazit ikonu aplikace</translation>
+    </message>
+    <message>
+        <source>Enter &amp;Fullscreen Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit &amp;Fullscreen Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to normal mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;Guest Display Auto-resize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable &amp;Guest Display Auto-resize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable automatic resize of the guest display when the window is resized</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Enable Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable remote desktop (RDP) connections to this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Disable Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable remote desktop (RDP) connections to this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable &amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2512,90 +2570,86 @@ Verze %1</translation>
         <translation type="obsolete">&lt;nobr&gt;[&lt;b&gt;USB ovladač je zakázaný&lt;/b&gt;]&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>VirtualBox OSE</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>&amp;Fullscreen Mode</source>
-        <translation>Celá &amp;obrazovka</translation>
+        <translation type="obsolete">Celá &amp;obrazovka</translation>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
-        <translation>Přepne do režimu celé obrazovky</translation>
+        <translation type="obsolete">Přepne do režimu celé obrazovky</translation>
     </message>
     <message>
         <source>Mouse Integration</source>
         <comment>enable/disable...</comment>
-        <translation>Integrace myši</translation>
+        <translation type="obsolete">Integrace myši</translation>
     </message>
     <message>
         <source>Auto-resize Guest Display</source>
         <comment>enable/disable...</comment>
-        <translation>Automaticky přizpůsobit hostovanou obrazovku</translation>
+        <translation type="obsolete">Automaticky přizpůsobit hostovanou obrazovku</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>Automaticky přizpůsobit &amp;hostovanou obrazovku</translation>
+        <translation type="obsolete">Automaticky přizpůsobit &amp;hostovanou obrazovku</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>Automaticky přizpůsobuje velikost hostované obrazovky podle velikosti okna (vyžaduje Přídavky pro hosta)</translation>
+        <translation type="obsolete">Automaticky přizpůsobuje velikost hostované obrazovky podle velikosti okna (vyžaduje Přídavky pro hosta)</translation>
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
-        <translation>Přizpůsobit velikost okn&amp;a</translation>
+        <translation type="obsolete">Přizpůsobit velikost okn&amp;a</translation>
     </message>
     <message>
         <source>Adjust window size and position to best fit the guest display</source>
-        <translation>Přizpůsobí velikost a polohu okna, aby nejlépe odpovídala hostované obrazovce</translation>
+        <translation type="obsolete">Přizpůsobí velikost a polohu okna, aby nejlépe odpovídala hostované obrazovce</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
-        <translation>Vložit Ctrl-Alt-&amp;Del</translation>
+        <translation type="obsolete">Vložit Ctrl-Alt-&amp;Del</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
-        <translation>Pošle sekvenci Ctrl-Alt-Del virtuálnímu počítači</translation>
+        <translation type="obsolete">Pošle sekvenci Ctrl-Alt-Del virtuálnímu počítači</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
-        <translation>Vlož&amp;it Ctrl-Alt-Backspace</translation>
+        <translation type="obsolete">Vlož&amp;it Ctrl-Alt-Backspace</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
-        <translation>Pošle sekvenci Ctrl-Alt-Backspace virtuálnímu počítači</translation>
+        <translation type="obsolete">Pošle sekvenci Ctrl-Alt-Backspace virtuálnímu počítači</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
-        <translation>&amp;Reset</translation>
+        <translation type="obsolete">&amp;Reset</translation>
     </message>
     <message>
         <source>Reset the virtual machine</source>
-        <translation>Resetuje virtuální počítač</translation>
+        <translation type="obsolete">Resetuje virtuální počítač</translation>
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
-        <translation>ACPI &amp;vypnutí</translation>
+        <translation type="obsolete">ACPI &amp;vypnutí</translation>
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
-        <translation>Pošle ACPI událost stisku tlačítka vypnutí virtuálnímu počítači</translation>
+        <translation type="obsolete">Pošle ACPI událost stisku tlačítka vypnutí virtuálnímu počítači</translation>
     </message>
     <message>
         <source>&amp;Close...</source>
-        <translation>&amp;Zavřít...</translation>
+        <translation type="obsolete">&amp;Zavřít...</translation>
     </message>
     <message>
         <source>Close the virtual machine</source>
-        <translation>Zavře virtuální počítač</translation>
+        <translation type="obsolete">Zavře virtuální počítač</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot...</source>
-        <translation>Sejmout &amp;snímek...</translation>
+        <translation type="obsolete">Sejmout &amp;snímek...</translation>
     </message>
     <message>
         <source>Take a snapshot of the virtual machine</source>
-        <translation>Sejme snímek virtuálního počítače</translation>
+        <translation type="obsolete">Sejme snímek virtuálního počítače</translation>
     </message>
     <message>
         <source>&amp;Floppy Image...</source>
@@ -2632,7 +2686,7 @@ Verze %1</translation>
     <message>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
-        <translation>Server vzdálené plochy (RDP)</translation>
+        <translation type="obsolete">Server vzdálené plochy (RDP)</translation>
     </message>
     <message>
         <source>Remote Dis&amp;play</source>
@@ -2640,7 +2694,7 @@ Verze %1</translation>
     </message>
     <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>Povolí či zakáže připojení vzdálené plochy (RDP) na tento počítač</translation>
+        <translation type="obsolete">Povolí či zakáže připojení vzdálené plochy (RDP) na tento počítač</translation>
     </message>
     <message>
         <source>Open</source>
@@ -2648,19 +2702,19 @@ Verze %1</translation>
     </message>
     <message>
         <source>&amp;Shared Folders...</source>
-        <translation>Sdílené &amp;složky...</translation>
+        <translation type="obsolete">Sdílené &amp;složky...</translation>
     </message>
     <message>
         <source>Create or modify shared folders</source>
-        <translation>Otevře dialog pro správu sdílených složek</translation>
+        <translation type="obsolete">Otevře dialog pro správu sdílených složek</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
-        <translation>&amp;Instalovat Přídavky pro hosta...</translation>
+        <translation type="obsolete">&amp;Instalovat Přídavky pro hosta...</translation>
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
-        <translation>Připojí obraz s instalací Přídavků pro hosta</translation>
+        <translation type="obsolete">Připojí obraz s instalací Přídavků pro hosta</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
@@ -2704,19 +2758,19 @@ Verze %1</translation>
     </message>
     <message>
         <source>&amp;USB Devices</source>
-        <translation>&amp;USB zařízení</translation>
+        <translation type="obsolete">&amp;USB zařízení</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
-        <translation>&amp;Zařízení</translation>
+        <translation type="obsolete">&amp;Zařízení</translation>
     </message>
     <message>
         <source>De&amp;bug</source>
-        <translation>De&amp;bug</translation>
+        <translation type="obsolete">De&amp;bug</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Nápověda</translation>
+        <translation type="obsolete">&amp;Nápověda</translation>
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
@@ -2781,7 +2835,7 @@ Verze %1</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
-        <translation>&lt;hr&gt;VRDP server poslouchá na portu  %1</translation>
+        <translation type="obsolete">&lt;hr&gt;VRDP server poslouchá na portu  %1</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</source>
@@ -2789,39 +2843,39 @@ Verze %1</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation>&amp;Pauza</translation>
+        <translation type="obsolete">&amp;Pauza</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation>Pozastaví chod virtuálního počítače</translation>
+        <translation type="obsolete">Pozastaví chod virtuálního počítače</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>Ob&amp;novit</translation>
+        <translation type="obsolete">Ob&amp;novit</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation>Obnoví chod virtuálního počítače</translation>
+        <translation type="obsolete">Obnoví chod virtuálního počítače</translation>
     </message>
     <message>
         <source>Disable &amp;Mouse Integration</source>
-        <translation>Zákazat integraci &amp;myši</translation>
+        <translation type="obsolete">Zákazat integraci &amp;myši</translation>
     </message>
     <message>
         <source>Temporarily disable host mouse pointer integration</source>
-        <translation>Dočasně zakáže integraci hostitelské myši</translation>
+        <translation type="obsolete">Dočasně zakáže integraci hostitelské myši</translation>
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
-        <translation>Povolit integraci &amp;myši</translation>
+        <translation type="obsolete">Povolit integraci &amp;myši</translation>
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation>Povolí dočasně zakázanou integraci hostitelské myši</translation>
+        <translation type="obsolete">Povolí dočasně zakázanou integraci hostitelské myši</translation>
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>Snímek %1</translation>
+        <translation type="obsolete">Snímek %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to find the VirtualBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
@@ -2833,7 +2887,7 @@ Verze %1</translation>
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation>&amp;Počítač</translation>
+        <translation type="obsolete">&amp;Počítač</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces</source>
@@ -2889,11 +2943,11 @@ Verze %1</translation>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation>&amp;Bezešvý režim</translation>
+        <translation type="obsolete">&amp;Bezešvý režim</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
-        <translation>Přepne do bezešvého režimu integrace plochy</translation>
+        <translation type="obsolete">Přepne do bezešvého režimu integrace plochy</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
@@ -2947,7 +3001,7 @@ Verze %1</translation>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nepřipojeny žádné pevné disky&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nepřipojeny žádné pevné disky&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -2962,17 +3016,17 @@ Verze %1</translation>
     <message>
         <source>connected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>připojen</translation>
+        <translation type="obsolete">připojen</translation>
     </message>
     <message>
         <source>disconnected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>odpojen</translation>
+        <translation type="obsolete">odpojen</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Všechny síťové karty jsou zakázány&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Všechny síťové karty jsou zakázány&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -2982,12 +3036,12 @@ Verze %1</translation>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nepřipojena žádná USB zařízení&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nepřipojena žádná USB zařízení&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Ovladač USB je zakázán&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Ovladač USB je zakázán&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
@@ -3001,7 +3055,7 @@ Verze %1</translation>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Žádné sdílené složky&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Žádné sdílené složky&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -3021,161 +3075,161 @@ Verze %1</translation>
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
-        <translation>I&amp;nformace o sezení</translation>
+        <translation type="obsolete">I&amp;nformace o sezení</translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
-        <translation>Zobrazí dialog s informacemi o sezení</translation>
+        <translation type="obsolete">Zobrazí dialog s informacemi o sezení</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
-        <translation>&amp;Statistiky...</translation>
+        <translation type="obsolete">&amp;Statistiky...</translation>
     </message>
     <message>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
-        <translation>Příka&amp;zový řádek...</translation>
+        <translation type="obsolete">Příka&amp;zový řádek...</translation>
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Indikuje, zda je funkce přizpůsobení hostované obrazovky zapnuta (&lt;img src=:/auto_resize_on_16px.png/&gt;) nebo vypnuta (&lt;img src=:/auto_resize_off_16px.png/&gt;). Tato funkce vyžaduje nainstalované Přídavky pro hosta na hostovaném OS.</translation>
+        <translation type="obsolete">Indikuje, zda je funkce přizpůsobení hostované obrazovky zapnuta (&lt;img src=:/auto_resize_on_16px.png/&gt;) nebo vypnuta (&lt;img src=:/auto_resize_off_16px.png/&gt;). Tato funkce vyžaduje nainstalované Přídavky pro hosta na hostovaném OS.</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Indikuje, zda je kurzor myši odchycen hostovaným OS: &lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;kurzor není odchycen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;kurzor je odchycen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integrace myši (IM) je zapnuta&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM je vypnuta, kurzor je odchycen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM je vypnuta, kurzor není odchycen&lt;/nobr&gt;&lt;br&gt;Funkce integrace myši vyžaduje nainstalované Přídavky pro hosta na hostovaném OS.</translation>
+        <translation type="obsolete">Indikuje, zda je kurzor myši odchycen hostovaným OS: &lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;kurzor není odchycen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;kurzor je odchycen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integrace myši (IM) je zapnuta&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM je vypnuta, kurzor je odchycen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM je vypnuta, kurzor není odchycen&lt;/nobr&gt;&lt;br&gt;Funkce integrace myši vyžaduje nainstalované Přídavky pro hosta na hostovaném OS.</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation>Indikuje, zda je klávesnice odchytávána hostovaným OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) či nikoliv (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
+        <translation type="obsolete">Indikuje, zda je klávesnice odchytávána hostovaným OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) či nikoliv (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation>Indikuje, zda je Vzdálená plocha (VRDP server) povolena (&lt;img src=:/vrdp_16px.png/&gt;) či nikoliv (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
+        <translation type="obsolete">Indikuje, zda je Vzdálená plocha (VRDP server) povolena (&lt;img src=:/vrdp_16px.png/&gt;) či nikoliv (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>&amp;Logování...</translation>
+        <translation type="obsolete">&amp;Logování...</translation>
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation>Zobrazuje přiřazenou Klávesu hostitele.&lt;br&gt;Pokud je tato klávesa stlačena samostatně, přepíná stav odchycení klávesnice a myši. Může být také použita v kombinaci s dalšími klávesami pro urychlení akcí z hlavní nabídky.</translation>
+        <translation type="obsolete">Zobrazuje přiřazenou Klávesu hostitele.&lt;br&gt;Pokud je tato klávesa stlačena samostatně, přepíná stav odchycení klávesnice a myši. Může být také použita v kombinaci s dalšími klávesami pro urychlení akcí z hlavní nabídky.</translation>
     </message>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>Indikuje stav virtualizačních rozšíření použitých tímto virtuálním počítačem:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
+        <translation type="obsolete">Indikuje stav virtualizačních rozšíření použitých tímto virtuálním počítačem:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation>EXPERIMENTÁLNÍ verze %1r%2 - %3</translation>
+        <translation type="obsolete">EXPERIMENTÁLNÍ verze %1r%2 - %3</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Devices</source>
-        <translation>&amp;CD/DVD zařízení</translation>
+        <translation type="obsolete">&amp;CD/DVD zařízení</translation>
     </message>
     <message>
         <source>&amp;Floppy Devices</source>
-        <translation>&amp;Disketové mechaniky</translation>
+        <translation type="obsolete">&amp;Disketové mechaniky</translation>
     </message>
     <message>
         <source>&amp;Network Adapters...</source>
-        <translation>&amp;Síťové karty...</translation>
+        <translation type="obsolete">&amp;Síťové karty...</translation>
     </message>
     <message>
         <source>Change the settings of network adapters</source>
-        <translation>Změní nastavení síťových karet</translation>
+        <translation type="obsolete">Změní nastavení síťových karet</translation>
     </message>
     <message>
         <source>&amp;Remote Display</source>
-        <translation>V&amp;zdálená obrazovka</translation>
+        <translation type="obsolete">V&amp;zdálená obrazovka</translation>
     </message>
     <message>
         <source>More CD/DVD Images...</source>
-        <translation>Další CD/DVD obrazy...</translation>
+        <translation type="obsolete">Další CD/DVD obrazy...</translation>
     </message>
     <message>
         <source>Unmount CD/DVD Device</source>
-        <translation>Odpojit CD/DVD zařízení</translation>
+        <translation type="obsolete">Odpojit CD/DVD zařízení</translation>
     </message>
     <message>
         <source>More Floppy Images...</source>
-        <translation>Další obrazy disket...</translation>
+        <translation type="obsolete">Další obrazy disket...</translation>
     </message>
     <message>
         <source>Unmount Floppy Device</source>
-        <translation>Odpojit disketovou mechaniku</translation>
+        <translation type="obsolete">Odpojit disketovou mechaniku</translation>
     </message>
     <message>
         <source>No CD/DVD Devices Attached</source>
-        <translation>Není připojeno žádné CD/DVD zařízení</translation>
+        <translation type="obsolete">Není připojeno žádné CD/DVD zařízení</translation>
     </message>
     <message>
         <source>No Floppy Devices Attached</source>
-        <translation>Není připojena žádná disketová mechanika</translation>
+        <translation type="obsolete">Není připojena žádná disketová mechanika</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indikuje aktivitu virtuálních pevných disků:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indikuje aktivitu virtuálních pevných disků:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>CD/DVD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indikuje aktivitu CD/DVD zařízení:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indikuje aktivitu CD/DVD zařízení:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No CD/DVD devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>CD/DVD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nepřipojeno žádné CD/DVD zařízení&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nepřipojeno žádné CD/DVD zařízení&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>FD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indikuje aktivitu disketových mechanik:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indikuje aktivitu disketových mechanik:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No floppy devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>FD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nepřipojena žádná disketová mechanika&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nepřipojena žádná disketová mechanika&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indikuje aktivitu síťových rozhraní:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indikuje aktivitu síťových rozhraní:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indikuje aktivitu připojených USB zařízení:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indikuje aktivitu připojených USB zařízení:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indikuje aktivitu na sdílených složkách počítače:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indikuje aktivitu na sdílených složkách počítače:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Dock Icon</source>
-        <translation>Dokovací ikona</translation>
+        <translation type="obsolete">Dokovací ikona</translation>
     </message>
     <message>
         <source>Show Application Icon</source>
-        <translation>Zobrazit ikonu aplikace</translation>
+        <translation type="obsolete">Zobrazit ikonu aplikace</translation>
     </message>
     <message>
         <source>Show Monitor Preview</source>
-        <translation>Zobrazit náhled monitoru</translation>
+        <translation type="obsolete">Zobrazit náhled monitoru</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adaptér %1 (%2)&lt;/b&gt;: %3 kabel %4&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adaptér %1 (%2)&lt;/b&gt;: %3 kabel %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>ACPI Sh&amp;utdown</source>
@@ -7379,7 +7433,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
     <message>
         <source>&amp;File</source>
-        <translation>&amp;Soubor</translation>
+        <translation type="obsolete">&amp;Soubor</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -7501,6 +7555,16 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <source>Log</source>
         <comment>icon text</comment>
         <translation>Log</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="unfinished">&amp;Soubor</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="unfinished">&amp;Soubor</translation>
     </message>
 </context>
 <context>
@@ -8338,12 +8402,12 @@ hodnotu.&lt;/qt&gt;</translation>
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>Povoleno</translation>
+        <translation type="obsolete">Povoleno</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>Zakázáno</translation>
+        <translation type="obsolete">Zakázáno</translation>
     </message>
     <message>
         <source>VBoxVMInformationDlg</source>
@@ -8369,7 +8433,7 @@ hodnotu.&lt;/qt&gt;</translation>
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="unfinished">Přímý přístup k hardware</translation>
+        <translation type="obsolete">Přímý přístup k hardware</translation>
     </message>
 </context>
 <context>

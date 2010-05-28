@@ -444,7 +444,7 @@
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
-        <translation>Mode &amp;Fullscreen</translation>
+        <translation type="obsolete">Mode &amp;Fullscreen</translation>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
@@ -452,7 +452,7 @@
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation>Mode Seam&amp;less</translation>
+        <translation type="obsolete">Mode Seam&amp;less</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
@@ -460,7 +460,7 @@
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>Auto-resize Tampilan &amp;Guest</translation>
+        <translation type="obsolete">Auto-resize Tampilan &amp;Guest</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -603,12 +603,8 @@
         <translation>Buka dialog untuk beroperasi pada folder yang di share</translation>
     </message>
     <message>
-        <source>&amp;Remote Display</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>Menyalakan atau mematikan koneksi remote desktop (RDP) pada mesin ini</translation>
+        <translation type="obsolete">Menyalakan atau mematikan koneksi remote desktop (RDP) pada mesin ini</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
@@ -635,7 +631,7 @@
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>Pencatatan &amp;Log...</translation>
+        <translation type="obsolete">Pencatatan &amp;Log...</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -652,6 +648,64 @@
     <message>
         <source>Show Application Icon</source>
         <translation></translation>
+    </message>
+    <message>
+        <source>Enter &amp;Fullscreen Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit &amp;Fullscreen Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to normal mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;Guest Display Auto-resize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable &amp;Guest Display Auto-resize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable automatic resize of the guest display when the window is resized</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Enable Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable remote desktop (RDP) connections to this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Disable Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable remote desktop (RDP) connections to this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable &amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2206,7 +2260,7 @@ Versi %1</translation>
     <name>VBoxConsoleWnd</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation>OSE VirtualBox</translation>
+        <translation type="obsolete">OSE VirtualBox</translation>
     </message>
     <message>
         <source>innotek VirtualBox</source>
@@ -2214,85 +2268,85 @@ Versi %1</translation>
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
-        <translation>Mode &amp;Fullscreen</translation>
+        <translation type="obsolete">Mode &amp;Fullscreen</translation>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
-        <translation>Beralih ke mode fullscreen</translation>
+        <translation type="obsolete">Beralih ke mode fullscreen</translation>
     </message>
     <message>
         <source>Mouse Integration</source>
         <comment>enable/disable...</comment>
-        <translation>Integrasi Mouse</translation>
+        <translation type="obsolete">Integrasi Mouse</translation>
     </message>
     <message>
         <source>Auto-resize Guest Display</source>
         <comment>enable/disable...</comment>
-        <translation>Auto-resize Tampilan Guest</translation>
+        <translation type="obsolete">Auto-resize Tampilan Guest</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>Auto-resize Tampilan &amp;Guest</translation>
+        <translation type="obsolete">Auto-resize Tampilan &amp;Guest</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>Resize tampilan guest secara otomatis saat window diresize (membutuhkan Guest Additions)</translation>
+        <translation type="obsolete">Resize tampilan guest secara otomatis saat window diresize (membutuhkan Guest Additions)</translation>
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
-        <translation>Sesu&amp;aikan Ukuran Window</translation>
+        <translation type="obsolete">Sesu&amp;aikan Ukuran Window</translation>
     </message>
     <message>
         <source>Adjust window size and position to best fit the guest display</source>
-        <translation>Sesuaikan ukuran dan posisi windows untuk tampilan terbaik pada display guest</translation>
+        <translation type="obsolete">Sesuaikan ukuran dan posisi windows untuk tampilan terbaik pada display guest</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
-        <translation>&amp;Insert Ctrl+Alt+Del</translation>
+        <translation type="obsolete">&amp;Insert Ctrl+Alt+Del</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
-        <translation>Kirim sekuens Ctrl+Alt+Del pada mesin virtual</translation>
+        <translation type="obsolete">Kirim sekuens Ctrl+Alt+Del pada mesin virtual</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
-        <translation>&amp;Insert Ctrl+Alt+Backspace</translation>
+        <translation type="obsolete">&amp;Insert Ctrl+Alt+Backspace</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
-        <translation>Kirim sekuens Ctrl+Alt+Backspace pada mesin virtual</translation>
+        <translation type="obsolete">Kirim sekuens Ctrl+Alt+Backspace pada mesin virtual</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
-        <translation>&amp;Reset</translation>
+        <translation type="obsolete">&amp;Reset</translation>
     </message>
     <message>
         <source>Reset the virtual machine</source>
-        <translation>Reset mesin virtual</translation>
+        <translation type="obsolete">Reset mesin virtual</translation>
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
-        <translation>ACPI S&amp;hutdown</translation>
+        <translation type="obsolete">ACPI S&amp;hutdown</translation>
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
-        <translation>Kirim Tombol Power ACPI event pada mesin virtual </translation>
+        <translation type="obsolete">Kirim Tombol Power ACPI event pada mesin virtual </translation>
     </message>
     <message>
         <source>&amp;Close...</source>
-        <translation>&amp;Tutup...</translation>
+        <translation type="obsolete">&amp;Tutup...</translation>
     </message>
     <message>
         <source>Close the virtual machine</source>
-        <translation>Tutup Mesin Virtual</translation>
+        <translation type="obsolete">Tutup Mesin Virtual</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot...</source>
-        <translation>Ambil &amp;Snapshot...</translation>
+        <translation type="obsolete">Ambil &amp;Snapshot...</translation>
     </message>
     <message>
         <source>Take a snapshot of the virtual machine</source>
-        <translation>Ambil Snapshot mesin virtual</translation>
+        <translation type="obsolete">Ambil Snapshot mesin virtual</translation>
     </message>
     <message>
         <source>&amp;Floppy Image...</source>
@@ -2329,7 +2383,7 @@ Versi %1</translation>
     <message>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
-        <translation type="unfinished">Remote Desktop (RDP) Server</translation>
+        <translation type="obsolete">Remote Desktop (RDP) Server</translation>
     </message>
     <message>
         <source>Remote Dis&amp;play</source>
@@ -2337,23 +2391,23 @@ Versi %1</translation>
     </message>
     <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>Menyalakan atau mematikan koneksi remote desktop (RDP) pada mesin ini</translation>
+        <translation type="obsolete">Menyalakan atau mematikan koneksi remote desktop (RDP) pada mesin ini</translation>
     </message>
     <message>
         <source>&amp;Shared Folders...</source>
-        <translation>Folder yang di &amp;Share...</translation>
+        <translation type="obsolete">Folder yang di &amp;Share...</translation>
     </message>
     <message>
         <source>Create or modify shared folders</source>
-        <translation>Buka dialog untuk beroperasi pada folder yang di share</translation>
+        <translation type="obsolete">Buka dialog untuk beroperasi pada folder yang di share</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
-        <translation>&amp;Install Guest Additions...</translation>
+        <translation type="obsolete">&amp;Install Guest Additions...</translation>
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
-        <translation>Pasang Guest Additions pada image instalasi</translation>
+        <translation type="obsolete">Pasang Guest Additions pada image instalasi</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
@@ -2397,19 +2451,19 @@ Versi %1</translation>
     </message>
     <message>
         <source>&amp;USB Devices</source>
-        <translation>Device &amp;USB</translation>
+        <translation type="obsolete">Device &amp;USB</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
-        <translation>&amp;Device</translation>
+        <translation type="obsolete">&amp;Device</translation>
     </message>
     <message>
         <source>De&amp;bug</source>
-        <translation>De&amp;bug</translation>
+        <translation type="obsolete">De&amp;bug</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Bantuan</translation>
+        <translation type="obsolete">&amp;Bantuan</translation>
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
@@ -2425,43 +2479,43 @@ Versi %1</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
-        <translation>&lt;hr&gt;VRDP Server mendengarkan pada port %1</translation>
+        <translation type="obsolete">&lt;hr&gt;VRDP Server mendengarkan pada port %1</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation>&amp;Pause</translation>
+        <translation type="obsolete">&amp;Pause</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation>Tahan eksekusi mesin virtual</translation>
+        <translation type="obsolete">Tahan eksekusi mesin virtual</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>&amp;Lanjutkan</translation>
+        <translation type="obsolete">&amp;Lanjutkan</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation>Lanjutkan eksekusi mesin virtual</translation>
+        <translation type="obsolete">Lanjutkan eksekusi mesin virtual</translation>
     </message>
     <message>
         <source>Disable &amp;Mouse Integration</source>
-        <translation>Matikan Integrasi &amp;Mouse</translation>
+        <translation type="obsolete">Matikan Integrasi &amp;Mouse</translation>
     </message>
     <message>
         <source>Temporarily disable host mouse pointer integration</source>
-        <translation>Mematikan sementara integrasi mouse pointer pada host</translation>
+        <translation type="obsolete">Mematikan sementara integrasi mouse pointer pada host</translation>
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
-        <translation>Nyalakan Integrasi &amp;Mouse</translation>
+        <translation type="obsolete">Nyalakan Integrasi &amp;Mouse</translation>
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation>Nyalakan integrasi mouse pointer pada host yang telah dimatikan sementara</translation>
+        <translation type="obsolete">Nyalakan integrasi mouse pointer pada host yang telah dimatikan sementara</translation>
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>Snapshot %1</translation>
+        <translation type="obsolete">Snapshot %1</translation>
     </message>
     <message>
         <source>Host Drive </source>
@@ -2469,7 +2523,7 @@ Versi %1</translation>
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation>&amp;Mesin</translation>
+        <translation type="obsolete">&amp;Mesin</translation>
     </message>
     <message>
         <source>&amp;Network Adapters</source>
@@ -2500,11 +2554,11 @@ Versi %1</translation>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation>Mode Seam&amp;less</translation>
+        <translation type="obsolete">Mode Seam&amp;less</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
-        <translation>Beralih pada mode integrasi desktop seamless</translation>
+        <translation type="obsolete">Beralih pada mode integrasi desktop seamless</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
@@ -2558,7 +2612,7 @@ Versi %1</translation>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Tidak ada hard disk terpasang&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Tidak ada hard disk terpasang&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -2573,17 +2627,17 @@ Versi %1</translation>
     <message>
         <source>connected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>terhubung</translation>
+        <translation type="obsolete">terhubung</translation>
     </message>
     <message>
         <source>disconnected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>terputus</translation>
+        <translation type="obsolete">terputus</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Semua adapter jaringan dimatikan&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Semua adapter jaringan dimatikan&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -2593,12 +2647,12 @@ Versi %1</translation>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Tidak ada device USB terpasang&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Tidak ada device USB terpasang&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Kontroler USB dimatikan&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Kontroler USB dimatikan&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
@@ -2612,7 +2666,7 @@ Versi %1</translation>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Tidak ada folder yang dishare&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Tidak ada folder yang dishare&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -2636,161 +2690,26 @@ Versi %1</translation>
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
-        <translation>Dialog I&amp;nformasi Sesi </translation>
+        <translation type="obsolete">Dialog I&amp;nformasi Sesi </translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
-        <translation>Tampilkan Dialog Informasi Sesi </translation>
+        <translation type="obsolete">Tampilkan Dialog Informasi Sesi </translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
-        <translation>&amp;Statistik...</translation>
+        <translation type="obsolete">&amp;Statistik...</translation>
     </message>
     <message>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
-        <translation>&amp;Command Line...</translation>
+        <translation type="obsolete">&amp;Command Line...</translation>
     </message>
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished">Pencatatan &amp;Log...</translation>
-    </message>
-    <message>
-        <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
-        <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
-        <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Devices</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Devices</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Network Adapters...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Change the settings of network adapters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Remote Display</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>More CD/DVD Images...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unmount CD/DVD Device</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>More Floppy Images...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unmount Floppy Device</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No CD/DVD Devices Attached</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No Floppy Devices Attached</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <comment>HDD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <comment>CD/DVD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No CD/DVD devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
-        <comment>CD/DVD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <comment>FD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No floppy devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
-        <comment>FD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <comment>Network adapters tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <comment>USB device tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <comment>Shared folders tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Dock Icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Application Icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Monitor Preview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
-        <comment>Network adapters tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Pencatatan &amp;Log...</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
@@ -7084,7 +7003,7 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
     </message>
     <message>
         <source>&amp;File</source>
-        <translation>&amp;File</translation>
+        <translation type="obsolete">&amp;File</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -7222,6 +7141,16 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
     <message>
         <source>Re&amp;fresh</source>
         <translation type="unfinished">Re&amp;fresh</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="unfinished">&amp;File</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="unfinished">&amp;File</translation>
     </message>
 </context>
 <context>
@@ -8083,12 +8012,12 @@ dengan nilai apapun.&lt;/qt&gt;</translation>
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished">Menyala</translation>
+        <translation type="obsolete">Menyala</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished">Mati</translation>
+        <translation type="obsolete">Mati</translation>
     </message>
     <message>
         <source>VBoxVMInformationDlg</source>
@@ -8109,11 +8038,6 @@ dengan nilai apapun.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Network Statistics</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Nested Paging</source>
-        <comment>details report</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

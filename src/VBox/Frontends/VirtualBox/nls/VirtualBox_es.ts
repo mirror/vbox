@@ -470,7 +470,7 @@
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
-        <translation>Modo pantalla &amp;completa</translation>
+        <translation type="obsolete">Modo pantalla &amp;completa</translation>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
@@ -478,7 +478,7 @@
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation>Modo f&amp;luído</translation>
+        <translation type="obsolete">Modo f&amp;luído</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
@@ -486,7 +486,7 @@
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>Au&amp;todimensionar pantalla del huésped</translation>
+        <translation type="obsolete">Au&amp;todimensionar pantalla del huésped</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -630,11 +630,11 @@
     </message>
     <message>
         <source>&amp;Remote Display</source>
-        <translation>Pantalla &amp;remota</translation>
+        <translation type="obsolete">Pantalla &amp;remota</translation>
     </message>
     <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>Habilitar o inhabilitar conexiones de escritorio remoto (RDP) a esta máquina</translation>
+        <translation type="obsolete">Habilitar o inhabilitar conexiones de escritorio remoto (RDP) a esta máquina</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
@@ -661,7 +661,7 @@
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>Generando historia&amp;l...</translation>
+        <translation type="obsolete">Generando historia&amp;l...</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -678,6 +678,64 @@
     <message>
         <source>Show Application Icon</source>
         <translation>Mostrar icono aplicación</translation>
+    </message>
+    <message>
+        <source>Enter &amp;Fullscreen Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit &amp;Fullscreen Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to normal mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;Guest Display Auto-resize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable &amp;Guest Display Auto-resize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable automatic resize of the guest display when the window is resized</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Enable Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable remote desktop (RDP) connections to this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Disable Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable remote desktop (RDP) connections to this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable &amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2648,7 +2706,7 @@ Versión %1</translation>
     </message>
     <message>
         <source>VirtualBox OSE</source>
-        <translation>VirtualBox OSE</translation>
+        <translation type="obsolete">VirtualBox OSE</translation>
     </message>
     <message>
         <source>innotek VirtualBox</source>
@@ -2656,85 +2714,85 @@ Versión %1</translation>
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
-        <translation>Modo pantalla &amp;completa</translation>
+        <translation type="obsolete">Modo pantalla &amp;completa</translation>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
-        <translation>Cambiar a modo pantalla completa</translation>
+        <translation type="obsolete">Cambiar a modo pantalla completa</translation>
     </message>
     <message>
         <source>Mouse Integration</source>
         <comment>enable/disable...</comment>
-        <translation>Integración del ratón</translation>
+        <translation type="obsolete">Integración del ratón</translation>
     </message>
     <message>
         <source>Auto-resize Guest Display</source>
         <comment>enable/disable...</comment>
-        <translation>Autodimensionar pantalla del huésped</translation>
+        <translation type="obsolete">Autodimensionar pantalla del huésped</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>Au&amp;todimensionar pantalla del huésped</translation>
+        <translation type="obsolete">Au&amp;todimensionar pantalla del huésped</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>Redimensiona la pantalla del huésped cuando se redimensiona la ventana (requiere instalar las «Guest Additions»)</translation>
+        <translation type="obsolete">Redimensiona la pantalla del huésped cuando se redimensiona la ventana (requiere instalar las «Guest Additions»)</translation>
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
-        <translation>&amp;Ajustar tamaño de ventana</translation>
+        <translation type="obsolete">&amp;Ajustar tamaño de ventana</translation>
     </message>
     <message>
         <source>Adjust window size and position to best fit the guest display</source>
-        <translation>Ajustar el tamaño y posición de la ventana al tamaño de la pantalla del huésped</translation>
+        <translation type="obsolete">Ajustar el tamaño y posición de la ventana al tamaño de la pantalla del huésped</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
-        <translation>&amp;Insertar Ctrl-Alt-Supr</translation>
+        <translation type="obsolete">&amp;Insertar Ctrl-Alt-Supr</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
-        <translation>Enviar la secuencia Ctrl-Alt-Supr a la máquina virtual</translation>
+        <translation type="obsolete">Enviar la secuencia Ctrl-Alt-Supr a la máquina virtual</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
-        <translation>&amp;Insertar Ctrl-Alt-Retroceso</translation>
+        <translation type="obsolete">&amp;Insertar Ctrl-Alt-Retroceso</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
-        <translation>Enviar la secuencia Ctrl-Alt-Retroceso a la máquina virtual</translation>
+        <translation type="obsolete">Enviar la secuencia Ctrl-Alt-Retroceso a la máquina virtual</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
-        <translation>&amp;Reiniciar</translation>
+        <translation type="obsolete">&amp;Reiniciar</translation>
     </message>
     <message>
         <source>Reset the virtual machine</source>
-        <translation>Reiniciar la máquina virtual</translation>
+        <translation type="obsolete">Reiniciar la máquina virtual</translation>
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
-        <translation>A&amp;pagado ACPI</translation>
+        <translation type="obsolete">A&amp;pagado ACPI</translation>
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
-        <translation>Enviar el evento ACPI de presión del botón de energía a la máquina virtual</translation>
+        <translation type="obsolete">Enviar el evento ACPI de presión del botón de energía a la máquina virtual</translation>
     </message>
     <message>
         <source>&amp;Close...</source>
-        <translation>&amp;Cerrar...</translation>
+        <translation type="obsolete">&amp;Cerrar...</translation>
     </message>
     <message>
         <source>Close the virtual machine</source>
-        <translation>Cerrar la máquina virtual</translation>
+        <translation type="obsolete">Cerrar la máquina virtual</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot...</source>
-        <translation>Tomar &amp;instantánea...</translation>
+        <translation type="obsolete">Tomar &amp;instantánea...</translation>
     </message>
     <message>
         <source>Take a snapshot of the virtual machine</source>
-        <translation>Tomar una instantánea de la máquina virtual</translation>
+        <translation type="obsolete">Tomar una instantánea de la máquina virtual</translation>
     </message>
     <message>
         <source>&amp;Floppy Image...</source>
@@ -2771,7 +2829,7 @@ Versión %1</translation>
     <message>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
-        <translation>Servidor Escritorio Remoto (RDP)</translation>
+        <translation type="obsolete">Servidor Escritorio Remoto (RDP)</translation>
     </message>
     <message>
         <source>Remote Dis&amp;play</source>
@@ -2779,7 +2837,7 @@ Versión %1</translation>
     </message>
     <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>Habilitar o inhabilitar conexiones de escritorio remoto (RDP) a esta máquina</translation>
+        <translation type="obsolete">Habilitar o inhabilitar conexiones de escritorio remoto (RDP) a esta máquina</translation>
     </message>
     <message>
         <source>Open</source>
@@ -2787,19 +2845,19 @@ Versión %1</translation>
     </message>
     <message>
         <source>&amp;Shared Folders...</source>
-        <translation>Car&amp;petas compartidas...</translation>
+        <translation type="obsolete">Car&amp;petas compartidas...</translation>
     </message>
     <message>
         <source>Create or modify shared folders</source>
-        <translation>Crear o modificar las carpetas compartidas</translation>
+        <translation type="obsolete">Crear o modificar las carpetas compartidas</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
-        <translation>&amp;Instalar «Guest Additions»...</translation>
+        <translation type="obsolete">&amp;Instalar «Guest Additions»...</translation>
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
-        <translation>Montar la imagen de las «Guest Additions»</translation>
+        <translation type="obsolete">Montar la imagen de las «Guest Additions»</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
@@ -2843,7 +2901,7 @@ Versión %1</translation>
     </message>
     <message>
         <source>&amp;USB Devices</source>
-        <translation>Dispositivos &amp;USB</translation>
+        <translation type="obsolete">Dispositivos &amp;USB</translation>
     </message>
     <message>
         <source>&amp;VM</source>
@@ -2851,15 +2909,15 @@ Versión %1</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
-        <translation>&amp;Dispositivos</translation>
+        <translation type="obsolete">&amp;Dispositivos</translation>
     </message>
     <message>
         <source>De&amp;bug</source>
-        <translation>De&amp;purar</translation>
+        <translation type="obsolete">De&amp;purar</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>Ay&amp;uda</translation>
+        <translation type="obsolete">Ay&amp;uda</translation>
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
@@ -2928,7 +2986,7 @@ Versión %1</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
-        <translation>&lt;hr&gt;Servidor VRDP escuchando en el puerto %1</translation>
+        <translation type="obsolete">&lt;hr&gt;Servidor VRDP escuchando en el puerto %1</translation>
     </message>
     <message>
         <source>&lt;qt&gt;Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;/qt&gt;</source>
@@ -2936,39 +2994,39 @@ Versión %1</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation>&amp;Pausar</translation>
+        <translation type="obsolete">&amp;Pausar</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation>Suspender la ejecución de la máquina virtual</translation>
+        <translation type="obsolete">Suspender la ejecución de la máquina virtual</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>R&amp;eanudar</translation>
+        <translation type="obsolete">R&amp;eanudar</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation>Reanudar la ejecución de la máquina virtual</translation>
+        <translation type="obsolete">Reanudar la ejecución de la máquina virtual</translation>
     </message>
     <message>
         <source>Disable &amp;Mouse Integration</source>
-        <translation>Inhabilitar integración del &amp;ratón</translation>
+        <translation type="obsolete">Inhabilitar integración del &amp;ratón</translation>
     </message>
     <message>
         <source>Temporarily disable host mouse pointer integration</source>
-        <translation>Inhabilita temporalmente la integración el ratón del sistema anfitrión</translation>
+        <translation type="obsolete">Inhabilita temporalmente la integración el ratón del sistema anfitrión</translation>
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
-        <translation>Habilitar integración del &amp;ratón</translation>
+        <translation type="obsolete">Habilitar integración del &amp;ratón</translation>
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation>Habilitar temporalmente la integración del ratón del sistema anfitrión</translation>
+        <translation type="obsolete">Habilitar temporalmente la integración del ratón del sistema anfitrión</translation>
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>Instantánea %1</translation>
+        <translation type="obsolete">Instantánea %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to find the VirtualBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
@@ -3009,7 +3067,7 @@ Versión %1</translation>
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation>&amp;Máquina</translation>
+        <translation type="obsolete">&amp;Máquina</translation>
     </message>
     <message>
         <source>Adapter %1</source>
@@ -3040,11 +3098,11 @@ Versión %1</translation>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation>Modo f&amp;luído</translation>
+        <translation type="obsolete">Modo f&amp;luído</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
-        <translation>Cambiar a modo de integración de escritorio fluído</translation>
+        <translation type="obsolete">Cambiar a modo de integración de escritorio fluído</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
@@ -3098,7 +3156,7 @@ Versión %1</translation>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hay discos duros conectados&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hay discos duros conectados&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -3113,17 +3171,17 @@ Versión %1</translation>
     <message>
         <source>connected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>conectado</translation>
+        <translation type="obsolete">conectado</translation>
     </message>
     <message>
         <source>disconnected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>desconectado</translation>
+        <translation type="obsolete">desconectado</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Todos los adaptadores de red se encuentra inhabilitados&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Todos los adaptadores de red se encuentra inhabilitados&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -3133,12 +3191,12 @@ Versión %1</translation>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hay dispositivos USB conectados&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hay dispositivos USB conectados&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;El controlador USB se encuentra inhabilitado&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;El controlador USB se encuentra inhabilitado&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
@@ -3152,7 +3210,7 @@ Versión %1</translation>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hay carpetas compartidas&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hay carpetas compartidas&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -3176,161 +3234,161 @@ Versión %1</translation>
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
-        <translation>Diálogo i&amp;nformación de sesión</translation>
+        <translation type="obsolete">Diálogo i&amp;nformación de sesión</translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
-        <translation>Mostrar el diálogo de información de sesión</translation>
+        <translation type="obsolete">Mostrar el diálogo de información de sesión</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
-        <translation>E&amp;stadísticas...</translation>
+        <translation type="obsolete">E&amp;stadísticas...</translation>
     </message>
     <message>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
-        <translation>Línea de &amp;comandos...</translation>
+        <translation type="obsolete">Línea de &amp;comandos...</translation>
     </message>
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>Generando historia&amp;l...</translation>
+        <translation type="obsolete">Generando historia&amp;l...</translation>
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Indica si la función de autodimensionar está habilitada (&lt;img src=:/auto_resize_on_16px.png/&gt;) or inhabilitada (&lt;img src=:/auto_resize_off_16px.png/&gt;). Esta función requiere instalar las «Guest Additions» en el SO huésped.</translation>
+        <translation type="obsolete">Indica si la función de autodimensionar está habilitada (&lt;img src=:/auto_resize_on_16px.png/&gt;) or inhabilitada (&lt;img src=:/auto_resize_off_16px.png/&gt;). Esta función requiere instalar las «Guest Additions» en el SO huésped.</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Indica si el puntero del ratón es capturado por el SO huésped:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;puntero no es capturado&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;puntero es capturado&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;Int. del ratón habilitada&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;Int. ratón deshabilitada, el ratón es capturado&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;Int. ratón deshabilitada, el ratón no es capturado&lt;/nobr&gt;&lt;br&gt; La integración del ratón requiere instalar las «Guest Additions» en el SO huésped.</translation>
+        <translation type="obsolete">Indica si el puntero del ratón es capturado por el SO huésped:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;puntero no es capturado&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;puntero es capturado&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;Int. del ratón habilitada&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;Int. ratón deshabilitada, el ratón es capturado&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;Int. ratón deshabilitada, el ratón no es capturado&lt;/nobr&gt;&lt;br&gt; La integración del ratón requiere instalar las «Guest Additions» en el SO huésped.</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation>Indica si el teclado está capturado por el SO huésped (&lt;img src=:/hostkey_captured_16px.png/&gt;) o no (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
+        <translation type="obsolete">Indica si el teclado está capturado por el SO huésped (&lt;img src=:/hostkey_captured_16px.png/&gt;) o no (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation>Indica si la pantalla remota (servidor VRDP) está habilitado (&lt;img src=:/vrdp_16px.png/&gt;) o no (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
+        <translation type="obsolete">Indica si la pantalla remota (servidor VRDP) está habilitado (&lt;img src=:/vrdp_16px.png/&gt;) o no (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation>Muestra la tecla anfitrión asignada.&lt;br&gt; Cuando se presiona solamente esta tecla, alterna el estado de captura del teclado y el ratón. También puede ser combinada con otras teclas para efectuar acciones del menú principal rápidamente.</translation>
+        <translation type="obsolete">Muestra la tecla anfitrión asignada.&lt;br&gt; Cuando se presiona solamente esta tecla, alterna el estado de captura del teclado y el ratón. También puede ser combinada con otras teclas para efectuar acciones del menú principal rápidamente.</translation>
     </message>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>Indica el estado de las características del hardware de virtualización usadas por esta máquina virtual: &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
+        <translation type="obsolete">Indica el estado de las características del hardware de virtualización usadas por esta máquina virtual: &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation>compilación EXPERIMENTAL %1r%2 - %3</translation>
+        <translation type="obsolete">compilación EXPERIMENTAL %1r%2 - %3</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Devices</source>
-        <translation>Dispositivos &amp;CD/DVD</translation>
+        <translation type="obsolete">Dispositivos &amp;CD/DVD</translation>
     </message>
     <message>
         <source>&amp;Floppy Devices</source>
-        <translation>Dispositivos de &amp;disquete</translation>
+        <translation type="obsolete">Dispositivos de &amp;disquete</translation>
     </message>
     <message>
         <source>&amp;Network Adapters...</source>
-        <translation>Adaptadores de &amp;red...</translation>
+        <translation type="obsolete">Adaptadores de &amp;red...</translation>
     </message>
     <message>
         <source>Change the settings of network adapters</source>
-        <translation>Cambiar la configuración de los adaptadores de red</translation>
+        <translation type="obsolete">Cambiar la configuración de los adaptadores de red</translation>
     </message>
     <message>
         <source>&amp;Remote Display</source>
-        <translation>Pantalla &amp;remota</translation>
+        <translation type="obsolete">Pantalla &amp;remota</translation>
     </message>
     <message>
         <source>More CD/DVD Images...</source>
-        <translation>Más imágenes de CD/DVD...</translation>
+        <translation type="obsolete">Más imágenes de CD/DVD...</translation>
     </message>
     <message>
         <source>Unmount CD/DVD Device</source>
-        <translation>Desmontar dispositivo CD/DVD</translation>
+        <translation type="obsolete">Desmontar dispositivo CD/DVD</translation>
     </message>
     <message>
         <source>More Floppy Images...</source>
-        <translation>Más imágenes de disquete...</translation>
+        <translation type="obsolete">Más imágenes de disquete...</translation>
     </message>
     <message>
         <source>Unmount Floppy Device</source>
-        <translation>Desmontar dispositivo de disquete</translation>
+        <translation type="obsolete">Desmontar dispositivo de disquete</translation>
     </message>
     <message>
         <source>No CD/DVD Devices Attached</source>
-        <translation>No hay dispositivos de CD/DVD conectados</translation>
+        <translation type="obsolete">No hay dispositivos de CD/DVD conectados</translation>
     </message>
     <message>
         <source>No Floppy Devices Attached</source>
-        <translation>No hay dispositivos de disquete conectados</translation>
+        <translation type="obsolete">No hay dispositivos de disquete conectados</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indica la actividad de los discos duros virtuales:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indica la actividad de los discos duros virtuales:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>CD/DVD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indica la actividad de los dispositivos de CD/DVD:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indica la actividad de los dispositivos de CD/DVD:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No CD/DVD devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>CD/DVD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hay dispositivos CD/DVD conectados&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hay dispositivos CD/DVD conectados&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>FD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indica la actividad de los dispositivos de disquete:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indica la actividad de los dispositivos de disquete:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No floppy devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>FD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hay dispositivos de disquete conectados&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hay dispositivos de disquete conectados&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indica la actividad de las interfaces de red:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indica la actividad de las interfaces de red:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indica la actividad de los dispositivos USB conectados:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indica la actividad de los dispositivos USB conectados:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indica la actividad de las carpetas compartidas de la máquina:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indica la actividad de las carpetas compartidas de la máquina:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Dock Icon</source>
-        <translation>Icono dock</translation>
+        <translation type="obsolete">Icono dock</translation>
     </message>
     <message>
         <source>Show Application Icon</source>
-        <translation>Mostrar icono aplicación</translation>
+        <translation type="obsolete">Mostrar icono aplicación</translation>
     </message>
     <message>
         <source>Show Monitor Preview</source>
-        <translation>Mostrar previsualización monitor</translation>
+        <translation type="obsolete">Mostrar previsualización monitor</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adaptador %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adaptador %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>ACPI Sh&amp;utdown</source>
@@ -7927,7 +7985,7 @@ volver al idioma por omisión del sistema.&lt;/qt&gt;
     </message>
     <message>
         <source>&amp;File</source>
-        <translation>&amp;Archivo</translation>
+        <translation type="obsolete">&amp;Archivo</translation>
     </message>
     <message>
         <source>&amp;VM</source>
@@ -8073,6 +8131,16 @@ volver al idioma por omisión del sistema.&lt;/qt&gt;
         <source>Log</source>
         <comment>icon text</comment>
         <translation>Historial</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="unfinished">&amp;Archivo</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="unfinished">&amp;Archivo</translation>
     </message>
 </context>
 <context>
@@ -9018,12 +9086,12 @@ cualquier valor.&lt;/qt&gt;</translation>
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>Habilitado</translation>
+        <translation type="obsolete">Habilitado</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>Inhabilitado</translation>
+        <translation type="obsolete">Inhabilitado</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -9053,7 +9121,7 @@ cualquier valor.&lt;/qt&gt;</translation>
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="unfinished">Paginación anidada</translation>
+        <translation type="obsolete">Paginación anidada</translation>
     </message>
 </context>
 <context>

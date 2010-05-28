@@ -374,7 +374,7 @@
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
-        <translation>របៀប​ពេញអេក្រង់</translation>
+        <translation type="obsolete">របៀប​ពេញអេក្រង់</translation>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
@@ -382,7 +382,7 @@
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation>របៀប​គ្មាន​ថ្នេរ</translation>
+        <translation type="obsolete">របៀប​គ្មាន​ថ្នេរ</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
@@ -390,7 +390,7 @@
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>បង្ហាញ​ភ្ញៀវ​ផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ</translation>
+        <translation type="obsolete">បង្ហាញ​ភ្ញៀវ​ផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -533,12 +533,8 @@
         <translation>បើក​ប្រអប់​ដើម្បី​ប្រតិបត្តិ​លើ​ថត​ដែល​បានចែករំលែក</translation>
     </message>
     <message>
-        <source>&amp;Remote Display</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>បើក ឬ​បិទ​ការ​តភ្ជាប់​ផ្ទៃតុ​ពី​ចម្ងាយ (RDP) ទៅ​កាន់​ម៉ាស៊ីន​នេះ</translation>
+        <translation type="obsolete">បើក ឬ​បិទ​ការ​តភ្ជាប់​ផ្ទៃតុ​ពី​ចម្ងាយ (RDP) ទៅ​កាន់​ម៉ាស៊ីន​នេះ</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
@@ -565,7 +561,7 @@
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>កំពុង​ធ្វើ​កំណត់​ហេតុ...</translation>
+        <translation type="obsolete">កំពុង​ធ្វើ​កំណត់​ហេតុ...</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -582,6 +578,64 @@
     <message>
         <source>Show Application Icon</source>
         <translation></translation>
+    </message>
+    <message>
+        <source>Enter &amp;Fullscreen Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit &amp;Fullscreen Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch to normal mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exit Seam&amp;less Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;Guest Display Auto-resize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable &amp;Guest Display Auto-resize</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable automatic resize of the guest display when the window is resized</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Enable Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable remote desktop (RDP) connections to this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Disable Remote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable remote desktop (RDP) connections to this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable &amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable &amp;Logging...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2051,182 +2105,182 @@ p, li { white-space: pre-wrap; }
     <name>VBoxConsoleWnd</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation>VirtualBox OSE</translation>
+        <translation type="obsolete">VirtualBox OSE</translation>
     </message>
     <message>
         <source>&amp;Fullscreen Mode</source>
-        <translation>របៀប​ពេញអេក្រង់</translation>
+        <translation type="obsolete">របៀប​ពេញអេក្រង់</translation>
     </message>
     <message>
         <source>Switch to fullscreen mode</source>
-        <translation>ប្ដូរ​ទៅ​របៀប​ពេញអេក្រង់</translation>
+        <translation type="obsolete">ប្ដូរ​ទៅ​របៀប​ពេញអេក្រង់</translation>
     </message>
     <message>
         <source>Mouse Integration</source>
         <comment>enable/disable...</comment>
-        <translation>ការ​បញ្ចូល​កណ្ដុរ</translation>
+        <translation type="obsolete">ការ​បញ្ចូល​កណ្ដុរ</translation>
     </message>
     <message>
         <source>Auto-resize Guest Display</source>
         <comment>enable/disable...</comment>
-        <translation>បង្ហាញ​ភ្ញៀវ​ផ្លាស់ប្ដូរ​ទំហំ​​​ដោយស្វ័យ​ប្រវត្តិ</translation>
+        <translation type="obsolete">បង្ហាញ​ភ្ញៀវ​ផ្លាស់ប្ដូរ​ទំហំ​​​ដោយស្វ័យ​ប្រវត្តិ</translation>
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation>បង្ហាញ​ភ្ញៀវ​ផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ</translation>
+        <translation type="obsolete">បង្ហាញ​ភ្ញៀវ​ផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>បង្ហាញ​ភ្ញៀវ​​​ផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ នៅពេល​បង្អួច​ត្រូវ​បាន​ផ្លាស់ប្ដូរ​ (ត្រូវការ​ភ្ញៀវ​បន្ថែម)</translation>
+        <translation type="obsolete">បង្ហាញ​ភ្ញៀវ​​​ផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ នៅពេល​បង្អួច​ត្រូវ​បាន​ផ្លាស់ប្ដូរ​ (ត្រូវការ​ភ្ញៀវ​បន្ថែម)</translation>
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
-        <translation>លៃតម្រូវ​ទំហំ​បង្អួច</translation>
+        <translation type="obsolete">លៃតម្រូវ​ទំហំ​បង្អួច</translation>
     </message>
     <message>
         <source>Adjust window size and position to best fit the guest display</source>
-        <translation>លៃតម្រូវ​ទំហំ​បង្អួច និងទីតាំង​ទៅ​សម​បំផុត​​នឹង​ការ​បង្ហាញ​ភ្ញៀវ</translation>
+        <translation type="obsolete">លៃតម្រូវ​ទំហំ​បង្អួច និងទីតាំង​ទៅ​សម​បំផុត​​នឹង​ការ​បង្ហាញ​ភ្ញៀវ</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
-        <translation>បញ្ជាន់ (Insert) បញ្ជា(Ctrl)-ជំនួស(Alt)-លុប(Del)</translation>
+        <translation type="obsolete">បញ្ជាន់ (Insert) បញ្ជា(Ctrl)-ជំនួស(Alt)-លុប(Del)</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
-        <translation>ផ្ញើ​លំដាប់​បញ្ជា(Ctrl)-ជំនួស(Alt)-លុប(Del) ទៅ​កាន់​ម៉ាស៊ីន​និម្មិត</translation>
+        <translation type="obsolete">ផ្ញើ​លំដាប់​បញ្ជា(Ctrl)-ជំនួស(Alt)-លុប(Del) ទៅ​កាន់​ម៉ាស៊ីន​និម្មិត</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
-        <translation>បញ្ជាន់(Insert) បញ្ជា(Ctrl)-ជំនួស(Alt)-លុបថយក្រោយ(Backspace)</translation>
+        <translation type="obsolete">បញ្ជាន់(Insert) បញ្ជា(Ctrl)-ជំនួស(Alt)-លុបថយក្រោយ(Backspace)</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
-        <translation>ផ្ញើ​លំដាប់​បញ្ជា(Ctrl)-ជំនួស(Alt)-លុបថយក្រោយ(Backspace) ទៅ​កាន់​ម៉ាស៊ីន​និម្មិត</translation>
+        <translation type="obsolete">ផ្ញើ​លំដាប់​បញ្ជា(Ctrl)-ជំនួស(Alt)-លុបថយក្រោយ(Backspace) ទៅ​កាន់​ម៉ាស៊ីន​និម្មិត</translation>
     </message>
     <message>
         <source>&amp;Reset</source>
-        <translation>កំណត់​ឡើង​វិញ</translation>
+        <translation type="obsolete">កំណត់​ឡើង​វិញ</translation>
     </message>
     <message>
         <source>Reset the virtual machine</source>
-        <translation>កំណត់​ម៉ាស៊ីន​និម្មិត​ឡើង​វិញ</translation>
+        <translation type="obsolete">កំណត់​ម៉ាស៊ីន​និម្មិត​ឡើង​វិញ</translation>
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
-        <translation>បិទ ACPI</translation>
+        <translation type="obsolete">បិទ ACPI</translation>
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
-        <translation>ផ្ញើព្រឹត្តិការណ៍​ចុច​ប៊ូតុង​ថាមពល ACPI ទៅ​កាន់​ម៉ាស៊ីន​និម្មិត</translation>
+        <translation type="obsolete">ផ្ញើព្រឹត្តិការណ៍​ចុច​ប៊ូតុង​ថាមពល ACPI ទៅ​កាន់​ម៉ាស៊ីន​និម្មិត</translation>
     </message>
     <message>
         <source>&amp;Close...</source>
-        <translation>បិទ...</translation>
+        <translation type="obsolete">បិទ...</translation>
     </message>
     <message>
         <source>Close the virtual machine</source>
-        <translation>បិទ​ម៉ាស៊ីន​និម្មិត</translation>
+        <translation type="obsolete">បិទ​ម៉ាស៊ីន​និម្មិត</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot...</source>
-        <translation>យក​រូបថត...</translation>
+        <translation type="obsolete">យក​រូបថត...</translation>
     </message>
     <message>
         <source>Take a snapshot of the virtual machine</source>
-        <translation>យក​រូបថត​របស់​ម៉ាស៊ីន​និម្មិត</translation>
+        <translation type="obsolete">យក​រូបថត​របស់​ម៉ាស៊ីន​និម្មិត</translation>
     </message>
     <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>បើក ឬ​បិទ​ការ​តភ្ជាប់​ផ្ទៃតុ​ពី​ចម្ងាយ (RDP) ទៅ​កាន់​ម៉ាស៊ីន​នេះ</translation>
+        <translation type="obsolete">បើក ឬ​បិទ​ការ​តភ្ជាប់​ផ្ទៃតុ​ពី​ចម្ងាយ (RDP) ទៅ​កាន់​ម៉ាស៊ីន​នេះ</translation>
     </message>
     <message>
         <source>&amp;Shared Folders...</source>
-        <translation>ថត​ដែល​បានចែករំលែក...</translation>
+        <translation type="obsolete">ថត​ដែល​បានចែករំលែក...</translation>
     </message>
     <message>
         <source>Create or modify shared folders</source>
-        <translation>បើក​ប្រអប់​ដើម្បី​ប្រតិបត្តិ​លើ​ថត​ដែល​បានចែករំលែក</translation>
+        <translation type="obsolete">បើក​ប្រអប់​ដើម្បី​ប្រតិបត្តិ​លើ​ថត​ដែល​បានចែករំលែក</translation>
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
-        <translation>ដំឡើង​ការ​បន្ថែម​ភ្ញៀវ...</translation>
+        <translation type="obsolete">ដំឡើង​ការ​បន្ថែម​ភ្ញៀវ...</translation>
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
-        <translation>ម៉ោន​រូបភាព​ដំឡើង​បន្ថែម​ភ្ញៀវ</translation>
+        <translation type="obsolete">ម៉ោន​រូបភាព​ដំឡើង​បន្ថែម​ភ្ញៀវ</translation>
     </message>
     <message>
         <source>&amp;USB Devices</source>
-        <translation>ឧបករណ៍​ USB</translation>
+        <translation type="obsolete">ឧបករណ៍​ USB</translation>
     </message>
     <message>
         <source>&amp;Devices</source>
-        <translation>ឧបករណ៍</translation>
+        <translation type="obsolete">ឧបករណ៍</translation>
     </message>
     <message>
         <source>De&amp;bug</source>
-        <translation>បំបាត់​កំហុស</translation>
+        <translation type="obsolete">បំបាត់​កំហុស</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>ជំនួយ</translation>
+        <translation type="obsolete">ជំនួយ</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
-        <translation>&lt;hr&gt;ម៉ាស៊ីន​បម្រើ VRDP កំពុង​ស្ដាប់​ច្រក %1</translation>
+        <translation type="obsolete">&lt;hr&gt;ម៉ាស៊ីន​បម្រើ VRDP កំពុង​ស្ដាប់​ច្រក %1</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation>ផ្អាក</translation>
+        <translation type="obsolete">ផ្អាក</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation>ផ្អាក​កា​រប្រតិបត្តិ​របស់​ម៉ាស៊ីន​និម្មិត</translation>
+        <translation type="obsolete">ផ្អាក​កា​រប្រតិបត្តិ​របស់​ម៉ាស៊ីន​និម្មិត</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>បន្ត</translation>
+        <translation type="obsolete">បន្ត</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation>បន្ត​ប្រតិបត្តិ​របស់​ម៉ាស៊ីន​និម្មិត</translation>
+        <translation type="obsolete">បន្ត​ប្រតិបត្តិ​របស់​ម៉ាស៊ីន​និម្មិត</translation>
     </message>
     <message>
         <source>Disable &amp;Mouse Integration</source>
-        <translation>បិទការ​រួម​បញ្ចូល​កណ្ដុរ</translation>
+        <translation type="obsolete">បិទការ​រួម​បញ្ចូល​កណ្ដុរ</translation>
     </message>
     <message>
         <source>Temporarily disable host mouse pointer integration</source>
-        <translation>បិទ​ការ​រួមបញ្ចូល​ព្រួញ​កណ្ដុរ​របស់ម៉ាស៊ីន​ជា​បណ្ដោះអាសន្ន</translation>
+        <translation type="obsolete">បិទ​ការ​រួមបញ្ចូល​ព្រួញ​កណ្ដុរ​របស់ម៉ាស៊ីន​ជា​បណ្ដោះអាសន្ន</translation>
     </message>
     <message>
         <source>Enable &amp;Mouse Integration</source>
-        <translation>បើក​ការ​រួម​បញ្ចូល​កណ្ដុរ</translation>
+        <translation type="obsolete">បើក​ការ​រួម​បញ្ចូល​កណ្ដុរ</translation>
     </message>
     <message>
         <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation>បើក​​ការ​រួម​បញ្ចូល​ព្រួញកណ្ដុរ​របស់​ម៉ាស៊ីន​ដែលបាន​បិទ​ជា​បណ្ដោះអាសន្ន</translation>
+        <translation type="obsolete">បើក​​ការ​រួម​បញ្ចូល​ព្រួញកណ្ដុរ​របស់​ម៉ាស៊ីន​ដែលបាន​បិទ​ជា​បណ្ដោះអាសន្ន</translation>
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>រូបថត %1</translation>
+        <translation type="obsolete">រូបថត %1</translation>
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation>ម៉ាស៊ីន</translation>
+        <translation type="obsolete">ម៉ាស៊ីន</translation>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation>របៀប​គ្មាន​ថ្នេរ</translation>
+        <translation type="obsolete">របៀប​គ្មាន​ថ្នេរ</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
-        <translation>ប្ដូរ​ទៅ​របៀប​បញ្ចូល​ផ្ទៃតុ​គ្មាន​ថ្នេរ</translation>
+        <translation type="obsolete">ប្ដូរ​ទៅ​របៀប​បញ្ចូល​ផ្ទៃតុ​គ្មាន​ថ្នេរ</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;គ្មាន​ថាស​រឹង​បាន​ភ្ជាប់​ទេ&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;គ្មាន​ថាស​រឹង​បាន​ភ្ជាប់​ទេ&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: cable %3&lt;/nobr&gt;</source>
@@ -2236,75 +2290,75 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>connected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>បាន​តភ្ជាប់</translation>
+        <translation type="obsolete">បាន​តភ្ជាប់</translation>
     </message>
     <message>
         <source>disconnected</source>
         <comment>Network adapters tooltip</comment>
-        <translation>បានផ្ដាច់</translation>
+        <translation type="obsolete">បានផ្ដាច់</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;អាដាប់ទ័រ​បណ្ដាញ​ទាំង​អស់​ត្រូវ​បានបិទ&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;អាដាប់ទ័រ​បណ្ដាញ​ទាំង​អស់​ត្រូវ​បានបិទ&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;គ្មាន​ឧបករណ៍ USB បាន​ផ្ដាច់&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;គ្មាន​ឧបករណ៍ USB បាន​ផ្ដាច់&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;វត្ថុ​បញ្ជា USB ត្រូវ​បាន​បិទ&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;វត្ថុ​បញ្ជា USB ត្រូវ​បាន​បិទ&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;គ្មាន​ថត​បាន​ចែករំលែក​ទេ&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;គ្មាន​ថត​បាន​ចែករំលែក​ទេ&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
-        <translation>ប្រអប់​ព័ត៌មាន​សម័យ</translation>
+        <translation type="obsolete">ប្រអប់​ព័ត៌មាន​សម័យ</translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
-        <translation>បង្ហាញ​ប្រអប់​ព័ត៌មាន​សម័យ</translation>
+        <translation type="obsolete">បង្ហាញ​ប្រអប់​ព័ត៌មាន​សម័យ</translation>
     </message>
     <message>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
-        <translation>ស្ថិតិ...</translation>
+        <translation type="obsolete">ស្ថិតិ...</translation>
     </message>
     <message>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
-        <translation>បន្ទាត់​ពាក្យ​បញ្ជា...</translation>
+        <translation type="obsolete">បន្ទាត់​ពាក្យ​បញ្ជា...</translation>
     </message>
     <message>
         <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation>បង្ហាញ​ថាតើ​ការបង្ហាញ​ម៉ាស៊ីន​​ភ្ញៀវ​មុខងារ​ផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ​បើក (&lt;img src=:/auto_resize_on_16px.png/&gt;) ឬ​បិទ (&lt;img src=:/auto_resize_off_16px.png/&gt;) ។ ចំណាំ​ថា មុខងារ​នេះ​ត្រូវការ​ការ​បន្ថែម​ភ្ញៀវ​ដើម្បី​ដំឡើង​នៅក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់ម៉ាស៊ីន​ភ្ញៀវ ។</translation>
+        <translation type="obsolete">បង្ហាញ​ថាតើ​ការបង្ហាញ​ម៉ាស៊ីន​​ភ្ញៀវ​មុខងារ​ផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ​បើក (&lt;img src=:/auto_resize_on_16px.png/&gt;) ឬ​បិទ (&lt;img src=:/auto_resize_off_16px.png/&gt;) ។ ចំណាំ​ថា មុខងារ​នេះ​ត្រូវការ​ការ​បន្ថែម​ភ្ញៀវ​ដើម្បី​ដំឡើង​នៅក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់ម៉ាស៊ីន​ភ្ញៀវ ។</translation>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>បង្ហាញថា​តើ​ទស្សន៍​ទ្រនិច​កណ្ដុរ​របស់​ម៉ាស៊ីន​ត្រូ​វបាន​ចាប់យក​ដោយ​ប្រព័ន្ធ​ប្រតបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ដែរឬទេ ៖&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;ទស្សន៍​ទ្រនិច​មិន​ត្រូ​វបាន​ចាប់យក​ទេ&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;ទស្សន៍​ទ្រនិច​ត្រូវ​បាន​ចាប់យក&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;ការ​រួម​បញ្ចូល​កណ្ដុរ (MI) គឺ​បាន​បើក&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI បានបិទ, ទស្សន៍​ទ្រនិច​ត្រូវ​បាន​ចាប់យក&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI បាន​បិទ, ទស្សន៍ទ្រនិច​មិន​ត្រូ​វបាន​ចាប់យក​ទេ​&lt;/nobr&gt;&lt;br&gt;ចំណាំ​ថា លក្ខណៈពិសេស​រួម​បញ្ចូល​កណ្ដុរតម្រូវ​ឲ្យ​ដំឡើង​​ផ្នែកបន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ​នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ ។</translation>
+        <translation type="obsolete">បង្ហាញថា​តើ​ទស្សន៍​ទ្រនិច​កណ្ដុរ​របស់​ម៉ាស៊ីន​ត្រូ​វបាន​ចាប់យក​ដោយ​ប្រព័ន្ធ​ប្រតបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ដែរឬទេ ៖&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;ទស្សន៍​ទ្រនិច​មិន​ត្រូ​វបាន​ចាប់យក​ទេ&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;ទស្សន៍​ទ្រនិច​ត្រូវ​បាន​ចាប់យក&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;ការ​រួម​បញ្ចូល​កណ្ដុរ (MI) គឺ​បាន​បើក&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI បានបិទ, ទស្សន៍​ទ្រនិច​ត្រូវ​បាន​ចាប់យក&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI បាន​បិទ, ទស្សន៍ទ្រនិច​មិន​ត្រូ​វបាន​ចាប់យក​ទេ​&lt;/nobr&gt;&lt;br&gt;ចំណាំ​ថា លក្ខណៈពិសេស​រួម​បញ្ចូល​កណ្ដុរតម្រូវ​ឲ្យ​ដំឡើង​​ផ្នែកបន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ​នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ ។</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation>បង្ហាញ​ថាតើ​ក្ដារចុច​ត្រូវ​បានចាប់យក​ដោយ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ (&lt;img src=:/hostkey_captured_16px.png/&gt;) ឬ​មិនមែន (&lt;img src=:/hostkey_16px.png/&gt;) ។</translation>
+        <translation type="obsolete">បង្ហាញ​ថាតើ​ក្ដារចុច​ត្រូវ​បានចាប់យក​ដោយ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ (&lt;img src=:/hostkey_captured_16px.png/&gt;) ឬ​មិនមែន (&lt;img src=:/hostkey_16px.png/&gt;) ។</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation>បង្ហាញ​ថាតើ​ការ​បង្ហាញ​ពី​ចម្ងាយ (ម៉ាស៊ីន​បម្រើ VRDP) ត្រូវ​បានបើក (&lt;img src=:/vrdp_16px.png/&gt;) ឬ​អត់ (&lt;img src=:/vrdp_disabled_16px.png/&gt;) ។</translation>
+        <translation type="obsolete">បង្ហាញ​ថាតើ​ការ​បង្ហាញ​ពី​ចម្ងាយ (ម៉ាស៊ីន​បម្រើ VRDP) ត្រូវ​បានបើក (&lt;img src=:/vrdp_16px.png/&gt;) ឬ​អត់ (&lt;img src=:/vrdp_disabled_16px.png/&gt;) ។</translation>
     </message>
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>កំពុង​ធ្វើ​កំណត់​ហេតុ...</translation>
+        <translation type="obsolete">កំពុង​ធ្វើ​កំណត់​ហេតុ...</translation>
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation>បង្ហាញ​គ្រាប់ចុច​ម៉ាស៊ីន​ដែលបានផ្ដល់​បច្ចុប្បន្ន ។&lt;br&gt;គ្រាប់ចុច​នេះ នៅពេល​ចុច​យូរ បិទ/បើក​ក្ដារចុច ហើយ​ស្ថានភាព​ចាប់យក​កណ្ដុរ ។ វា​អាច​ត្រូវ​បាន​ប្រើ​ក្នុង​បន្សំ​ជា​មួយ​គ្រាប់ចុច​ផ្សេង ដើម្បី​អនុវត្ត​សកម្មភាព​យ៉ាង​លឿន ពី​ម៉ឺនុយ​ចម្បង ។</translation>
+        <translation type="obsolete">បង្ហាញ​គ្រាប់ចុច​ម៉ាស៊ីន​ដែលបានផ្ដល់​បច្ចុប្បន្ន ។&lt;br&gt;គ្រាប់ចុច​នេះ នៅពេល​ចុច​យូរ បិទ/បើក​ក្ដារចុច ហើយ​ស្ថានភាព​ចាប់យក​កណ្ដុរ ។ វា​អាច​ត្រូវ​បាន​ប្រើ​ក្នុង​បន្សំ​ជា​មួយ​គ្រាប់ចុច​ផ្សេង ដើម្បី​អនុវត្ត​សកម្មភាព​យ៉ាង​លឿន ពី​ម៉ឺនុយ​ចម្បង ។</translation>
     </message>
     <message>
         <source>Sun VirtualBox</source>
@@ -2312,27 +2366,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation> ស្ថាបនា​ពិសោធ %1r%2 - %3</translation>
+        <translation type="obsolete"> ស្ថាបនា​ពិសោធ %1r%2 - %3</translation>
     </message>
     <message>
         <source>&amp;CD/DVD Devices</source>
-        <translation>ឧបករណ៍​ស៊ី​ឌី​/ឌីវីឌី</translation>
+        <translation type="obsolete">ឧបករណ៍​ស៊ី​ឌី​/ឌីវីឌី</translation>
     </message>
     <message>
         <source>&amp;Floppy Devices</source>
-        <translation>ឧបករណ៍​ថាសទន់​</translation>
+        <translation type="obsolete">ឧបករណ៍​ថាសទន់​</translation>
     </message>
     <message>
         <source>&amp;Network Adapters...</source>
-        <translation>អាដាប់ទ័រ​​​បណ្តាញ​...</translation>
+        <translation type="obsolete">អាដាប់ទ័រ​​​បណ្តាញ​...</translation>
     </message>
     <message>
         <source>Change the settings of network adapters</source>
-        <translation>ផ្លាស់​ប្តូរ​ការ​កំណត់​របស់​​អាដាប់ទ័រ​​បណ្តាញ</translation>
+        <translation type="obsolete">ផ្លាស់​ប្តូរ​ការ​កំណត់​របស់​​អាដាប់ទ័រ​​បណ្តាញ</translation>
     </message>
     <message>
         <source>&amp;Remote Display</source>
-        <translation>ការ​បង្ហាញ​ពី​ចម្ងាយ</translation>
+        <translation type="obsolete">ការ​បង្ហាញ​ពី​ចម្ងាយ</translation>
     </message>
     <message>
         <source>Remote Desktop (RDP) Server</source>
@@ -2342,27 +2396,27 @@ enable/disable...</comment>
     </message>
     <message>
         <source>More CD/DVD Images...</source>
-        <translation>រូបភាព​ស៊ីឌី/ឌីវីឌី​ផ្សេង​ទៀត...</translation>
+        <translation type="obsolete">រូបភាព​ស៊ីឌី/ឌីវីឌី​ផ្សេង​ទៀត...</translation>
     </message>
     <message>
         <source>Unmount CD/DVD Device</source>
-        <translation>អាន់ម៉ោន​ឧបករណ៍​ស៊ីឌី/ឌីវីឌី</translation>
+        <translation type="obsolete">អាន់ម៉ោន​ឧបករណ៍​ស៊ីឌី/ឌីវីឌី</translation>
     </message>
     <message>
         <source>More Floppy Images...</source>
-        <translation>រូបភាព​ថាសទន់​ផ្សេង​ទៀត...</translation>
+        <translation type="obsolete">រូបភាព​ថាសទន់​ផ្សេង​ទៀត...</translation>
     </message>
     <message>
         <source>Unmount Floppy Device</source>
-        <translation>អាន់ម៉ោន​ឧបករណ៍​ថាស​ទន់​</translation>
+        <translation type="obsolete">អាន់ម៉ោន​ឧបករណ៍​ថាស​ទន់​</translation>
     </message>
     <message>
         <source>No CD/DVD Devices Attached</source>
-        <translation>គ្មាន​ឧបករណ៍​ស៊ីឌី/ឌីវីឌី​បាន​ភ្ជាប់​ទេ</translation>
+        <translation type="obsolete">គ្មាន​ឧបករណ៍​ស៊ីឌី/ឌីវីឌី​បាន​ភ្ជាប់​ទេ</translation>
     </message>
     <message>
         <source>No Floppy Devices Attached</source>
-        <translation>គ្មាន​ឧបករណ៍​ថាស​ទន់​បាន​ភ្ជាប់​ទេ</translation>
+        <translation type="obsolete">គ្មាន​ឧបករណ៍​ថាស​ទន់​បាន​ភ្ជាប់​ទេ</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
@@ -2432,74 +2486,57 @@ Virtualization Stuff LED</comment>
     <message>
         <source>Remote Desktop (RDP) Server</source>
         <comment>enable/disable...</comment>
-        <translation type="unfinished">ម៉ាស៊ីន​បម្រើ​ផ្ទៃតុ​ពី​ចម្ងាយ (RDP)​</translation>
-    </message>
-    <message>
-        <source>Dock Icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Application Icon</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Monitor Preview</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">ម៉ាស៊ីន​បម្រើ​ផ្ទៃតុ​ពី​ចម្ងាយ (RDP)​</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation type="unfinished">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;បង្ហាញ​សកម្មភាព​របស់​ថាសរឹង​និម្មិត ៖&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;បង្ហាញ​សកម្មភាព​របស់​ថាសរឹង​និម្មិត ៖&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>CD/DVD tooltip</comment>
-        <translation type="unfinished">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;បង្ហាញ​​សកម្ម​ភាព​​​របស់​ឧបករណ៍​​ស៊ី​ឌី​​/ឌីវីឌី ៖&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;បង្ហាញ​​សកម្ម​ភាព​​​របស់​ឧបករណ៍​​ស៊ី​ឌី​​/ឌីវីឌី ៖&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No CD/DVD devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>CD/DVD tooltip</comment>
-        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;គ្មាន​ឧបករណ៍​ស៊ីឌី/ឌីវីឌី​បានភ្ជាប់​ទេ&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;គ្មាន​ឧបករណ៍​ស៊ីឌី/ឌីវីឌី​បានភ្ជាប់​ទេ&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>FD tooltip</comment>
-        <translation type="unfinished">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;បង្ហាញ​សកម្មភាព​របស់​ឧបករណ៍​ថាស​ទន់ ៖&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;បង្ហាញ​សកម្មភាព​របស់​ឧបករណ៍​ថាស​ទន់ ៖&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No floppy devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>FD tooltip</comment>
-        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;គ្មាន​ឧបករណ៍​ថាស​ទន់​បានភ្ជាប់​ទេ&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;គ្មាន​ឧបករណ៍​ថាស​ទន់​បានភ្ជាប់​ទេ&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation type="unfinished">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;បង្ហាញ​សកម្មភាព​របស់​ចំណុច​ប្រទាក់​បណ្ដាញ ៖&lt;/nobr&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
-        <comment>Network adapters tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;បង្ហាញ​សកម្មភាព​របស់​ចំណុច​ប្រទាក់​បណ្ដាញ ៖&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation type="unfinished">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;បង្ហាញ​សកម្មភាព​របស់​ឧបករណ៍ USB ដែល​បាន​ភ្ជាប់ ៖&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;បង្ហាញ​សកម្មភាព​របស់​ឧបករណ៍ USB ដែល​បាន​ភ្ជាប់ ៖&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation type="unfinished">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;បង្ហាញ​សកម្មភាព​របស់​ថត​ដែល​បានចែករំលែក​របស់​ម៉ាស៊ីន ៖&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;បង្ហាញ​សកម្មភាព​របស់​ថត​ដែល​បានចែករំលែក​របស់​ម៉ាស៊ីន ៖&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished">បង្ហាញថា ​ស្ថាន​ភាព​របស់​លក្ខណៈពិសេស​និម្មិត​ផ្នែក​រឹង​ត្រូ​វបាន​ប្រើ​ដោយ​ម៉ាស៊ីន​និម្មិត​នេះ ៖​&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
+        <translation type="obsolete">បង្ហាញថា ​ស្ថាន​ភាព​របស់​លក្ខណៈពិសេស​និម្មិត​ផ្នែក​រឹង​ត្រូ​វបាន​ប្រើ​ដោយ​ម៉ាស៊ីន​និម្មិត​នេះ ៖​&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
@@ -6243,7 +6280,7 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     </message>
     <message>
         <source>&amp;File</source>
-        <translation>ឯកសារ</translation>
+        <translation type="obsolete">ឯកសារ</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -6345,6 +6382,16 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation>&lt;h3&gt;សូមស្វាគមន៍​​មក​កាន់ VirtualBox !&lt;/h3&gt;&lt;p&gt;ផ្នែកដែល​នៅ​សល់​របស់​បង្អួច​នេះ គឺជា​បញ្ជី​ម៉ាស៊ីន​និម្មិត​នៅ​ក្នុង​កុំព្យូទ័រ​របស់​អ្នក ។ បញ្ជី​ទទេ​ឥឡូវ​នេះ ពីព្រោះ​អ្នកមិនបានបង្កើត​ម៉ាស៊ីននិម្មិត​នៅ​ឡើយ​ទេ ។&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;ដើម្បី​បង្កើត​ម៉ាស៊ីន​និម្មិត ចុច​ប៊ូតុង &lt;b&gt;ថ្មី&lt;/b&gt; ក្នុង​របារ​ឧបករណ៍​ដែល​មាននៅ​​ផ្នែក​ខាង​លើ​នៃ​បង្អួច ។&lt;/p&gt;&lt;p&gt;អ្នក​អាច​ចុច​គ្រាប់ចុច &lt;b&gt;%1&lt;/b&gt; ដើម្បីទទួល​បាន​ជំនួយ​ភ្លាមៗ ឬ​ចំពោះ​ព័ត៌មាន​បន្ថែម ​សូម​មើល &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="unfinished">ឯកសារ</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="unfinished">ឯកសារ</translation>
     </message>
 </context>
 <context>
@@ -6773,12 +6820,12 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>បានបើក</translation>
+        <translation type="obsolete">បានបើក</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>បានបិទ</translation>
+        <translation type="obsolete">បានបិទ</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -6812,11 +6859,6 @@ details report (VRDP server port)</comment>
         <source>Not Available</source>
         <comment>details report (VRDP server port)</comment>
         <translation type="unfinished">មិនអាច​ប្រើបាន​</translation>
-    </message>
-    <message>
-        <source>Nested Paging</source>
-        <comment>details report</comment>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
