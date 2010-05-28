@@ -222,3 +222,15 @@ GetUniformsLocations
 GetPolygonStipple
 Flush
 Finish
+CompressedTexSubImage1DARB
+CompressedTexSubImage2DARB
+CompressedTexSubImage3DARB
+TexSubImage1D
+TexSubImage2D
+TexSubImage3D
+CompressedTexImage1DARB
+CompressedTexImage2DARB
+CompressedTexImage3DARB
+TexImage1D
+TexImage2D
+TexImage3D
