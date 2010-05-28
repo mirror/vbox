@@ -5232,7 +5232,27 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     rc = powerupProgress->init(static_cast<IConsole *>(this),
                                progressDesc,
                                fTeleporterEnabled /* aCancelable */);
-    if (FAILED(rc)) return rc;
+    if (FAILED(rc))
+        return rc;
+
+    /* Tell VBoxSVC and Machine about the progress object so they can combine
+       proxy it to any openRemoteSession caller. */
+    rc = mControl->BeginPowerUp(powerupProgress);
+    if (FAILED(rc))
+    {
+        LogFlowThisFunc(("BeginPowerUp failed\n"));
+        return rc;
+    }
+
+    BOOL fCanceled;
+    rc = powerupProgress->COMGETTER(Canceled)(&fCanceled);
+    if (FAILED(rc))
+        return rc;
+    if (fCanceled)
+    {
+        LogFlowThisFunc(("Canceled in BeginPowerUp\n"));
+        return setError(E_FAIL, tr("Powerup was canceled"));
+    }
 
     /* setup task object and thread to carry out the operation
      * asynchronously */
@@ -7488,33 +7508,16 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
     {
         /* Notify the progress object of the success */
         task->mProgress->notifyComplete(S_OK);
-        console->mControl->SetPowerUpInfo(NULL);
     }
     else
     {
         /* The progress object will fetch the current error info */
         task->mProgress->notifyComplete(rc);
-        ProgressErrorInfo info(task->mProgress);
-        ComObjPtr<VirtualBoxErrorInfo> errorInfo;
-        rc = errorInfo.createObject();
-        if (SUCCEEDED(rc))
-        {
-            errorInfo->init(info.getResultCode(),
-                            info.getInterfaceID(),
-                            info.getComponent(),
-                            info.getText());
-            console->mControl->SetPowerUpInfo(errorInfo);
-        }
-        else
-        {
-            /* If it's not possible to create an IVirtualBoxErrorInfo object
-             * signal success, as not signalling anything will cause a stuck
-             * progress object in VBoxSVC. */
-            console->mControl->SetPowerUpInfo(NULL);
-        }
-
         LogRel(("Power up failed (vrc=%Rrc, rc=%Rhrc (%#08X))\n", vrc, rc, rc));
     }
+
+    /* Notify VBoxSVC and any waiting openRemoteSession progress object. */
+    console->mControl->EndPowerUp(rc);
 
 #if defined(RT_OS_WINDOWS)
     /* uninitialize COM */

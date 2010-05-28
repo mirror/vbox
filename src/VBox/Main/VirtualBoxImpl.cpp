@@ -56,6 +56,7 @@
 #include "MediumImpl.h"
 #include "SharedFolderImpl.h"
 #include "ProgressImpl.h"
+#include "ProgressProxyImpl.h"
 #include "HostImpl.h"
 #include "USBControllerImpl.h"
 #include "SystemPropertiesImpl.h"
@@ -1994,23 +1995,30 @@ STDMETHODIMP VirtualBox::OpenRemoteSession(ISession *aSession,
                     E_INVALIDARG);
 
     /* create a progress object */
-    ComObjPtr<Progress> progress;
+    ComObjPtr<ProgressProxy> progress;
     progress.createObject();
-    progress->init(this, static_cast <IMachine *>(machine),
-                   Bstr(tr("Spawning session")),
-                   FALSE /* aCancelable */);
-
-    rc = machine->openRemoteSession(control, aType, aEnvironment, progress);
-
+    rc = progress->init(this,
+                        static_cast <IMachine *>(machine),
+                        Bstr(tr("Spawning session")),
+                        TRUE /* aCancelable */,
+                        1 /* cOtherProgressObjects */,
+                        10 /* uTotalOperationsWeight */,
+                        Bstr(tr("Spawning session")),
+                        3 /* uFirstOperationWeight */,
+                        NULL /* pId */);
     if (SUCCEEDED(rc))
     {
-        progress.queryInterfaceTo(aProgress);
+        rc = machine->openRemoteSession(control, aType, aEnvironment, progress);
+        if (SUCCEEDED(rc))
+        {
+            progress.queryInterfaceTo(aProgress);
 
-        /* signal the client watcher thread */
-        updateClientWatcher();
+            /* signal the client watcher thread */
+            updateClientWatcher();
 
-        /* fire an event */
-        onSessionStateChange(id, SessionState_Spawning);
+            /* fire an event */
+            onSessionStateChange(id, SessionState_Spawning);
+        }
     }
 
     return rc;
@@ -4488,7 +4496,7 @@ void *VirtualBox::CallbackEvent::handler()
 
 #ifdef RT_OS_WINDOWS
 #if 0
-    // WIP 
+    // WIP
     int nConnections = mVirtualBox->m_vec.GetSize();
     for (int i=0; i<nConnections; i++)
     {

@@ -66,6 +66,7 @@
 #include <MediumImpl.h>
 #include <MediumFormatImpl.h>
 #include <ProgressCombinedImpl.h>
+#include <ProgressProxyImpl.h>
 #include <VRDPServerImpl.h>
 #include <SharedFolderImpl.h>
 #include <HostImpl.h>
@@ -126,6 +127,9 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Progress, IProgress)
 
 NS_DECL_CLASSINFO(CombinedProgress)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(CombinedProgress, IProgress)
+
+NS_DECL_CLASSINFO(ProgressProxy)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ProgressProxy, IProgress)
 
 NS_DECL_CLASSINFO(SharedFolder)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SharedFolder, ISharedFolder)

@@ -3749,7 +3749,7 @@
 
   <interface
      name="IInternalMachineControl" extends="$unknown"
-     uuid="57e9a280-8d57-4331-aa31-f009f5194f52"
+     uuid="26604a54-8628-491b-a0ea-e1392a16d13b"
      internal="yes"
      wsmap="suppress"
      >
@@ -3777,15 +3777,28 @@
       <param name="id" type="wstring" dir="return"/>
     </method>
 
-    <method name="setPowerUpInfo">
+    <method name="beginPowerUp">
       <desc>
-        Transfers success (@c null) or error information for this session.
-        This method updates the progress object to signal completion of the
-        <link to="IVirtualBox::openRemoteSession"/> method if appropriate,
-        which means that the progress object returned by
-        <link to="IConsole::powerUp"/>.
+        Tells VBoxSVC that <link to="IConsole::powerUp"/> is under ways and
+	gives it the progress object that should be part of any pending
+	<link to="IVirtualBox::openRemoteSession"/> operations.  The progress
+	object may be called back to reflect an early cancelation, so some care
+	have to be taken with respect to any cancelation callbacks. The console
+	object will call <link to="IInternalMachineControl::endPowerUp"/>
+	to signal the completion of the progress object.
       </desc>
-      <param name="error" type="IVirtualBoxErrorInfo" dir="in"/>
+      <param name="progress" type="IProgress" dir="in"/>
+    </method>
+
+    <method name="endPowerUp">
+      <desc>
+        Tells VBoxSVC that <link to="IConsole::powerUp"/> has completed.
+	This method may query status information from the progress object it
+	received in <link to="IInternalMachineControl::beginPowerUp"/> and copy
+	it over to any in progress <link to="IVirtualBox::openRemoteSession"/>
+	call in order to complete that progress object.
+      </desc>
+      <param name="result" type="long" dir="in"/>
     </method>
 
     <method name="runUSBDeviceFilters">
