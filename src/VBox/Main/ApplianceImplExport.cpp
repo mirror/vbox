@@ -660,6 +660,7 @@ HRESULT Appliance::writeImpl(OVFFormat aFormat, const LocationInfo &aLocInfo, Co
  * @param stack Structure for temporary private data shared with caller.
  */
 void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSystemsTo,
+                                            std::list<xml::ElementNode*> *pllElementsWithUuidAttributes,
                                             ComObjPtr<VirtualSystemDescription> &vsdescThis,
                                             OVFFormat enFormat,
                                             XMLStack &stack)
@@ -1297,8 +1298,9 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
         // write the machine config to the vbox:Machine element
         pConfig->buildMachineXML(*pelmVBoxMachine,
                                    settings::MachineConfigFile::BuildMachineXML_WriteVboxVersionAttribute
-                                 | settings::MachineConfigFile::BuildMachineXML_SkipRemovableMedia);
+                                 | settings::MachineConfigFile::BuildMachineXML_SkipRemovableMedia,
                                         // but not BuildMachineXML_IncludeSnapshots
+                                 pllElementsWithUuidAttributes);
         delete pConfig;
     }
     catch (...)
@@ -1424,6 +1426,10 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
         else
             pelmToAddVirtualSystemsTo = pelmRoot;       // add virtual system directly under root element
 
+        // this list receives pointers to the XML elements in the machine XML which
+        // might have UUIDs that need fixing after we know the UUIDs of the exported images
+        std::list<xml::ElementNode*> llElementsWithUuidAttributes;
+
         list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
         /* Iterate throughs all virtual systems of that appliance */
         for (it = m->virtualSystemDescriptions.begin();
@@ -1432,6 +1438,7 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
         {
             ComObjPtr<VirtualSystemDescription> vsdescThis = *it;
             buildXMLForOneVirtualSystem(*pelmToAddVirtualSystemsTo,
+                                        &llElementsWithUuidAttributes,
                                         vsdescThis,
                                         enFormat,
                                         stack);         // disks and networks stack
@@ -1537,6 +1544,11 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
             // capacity is reported in megabytes, so...
             cbCapacity *= _1M;
 
+            Bstr uuidTarget;
+            rc = pTargetDisk->COMGETTER(Id)(uuidTarget.asOutParam());
+            if (FAILED(rc)) throw rc;
+            Guid guidTarget(uuidTarget);
+
             // upon success, close the disk as well
             rc = pTargetDisk->Close();
             if (FAILED(rc)) throw rc;
@@ -1561,7 +1573,22 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
                         :  "http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized"
                                                                                     // correct string as communicated to us by VMware (public bug #6612)
                                   );
-            pelmDisk->setAttribute("vbox:uuid", Utf8StrFmt("%RTuuid", guidSource.raw()).c_str());
+
+            // add the UUID of the newly created target image to the OVF disk element, but in the
+            // vbox: namespace since it's not part of the standard
+            pelmDisk->setAttribute("vbox:uuid", Utf8StrFmt("%RTuuid", guidTarget.raw()).c_str());
+
+            // now, we might have other XML elements from vbox:Machine pointing to this image,
+            // but those would refer to the UUID of the _source_ image (which we created the
+            // export image from); those UUIDs need to be fixed to the export image
+            for (std::list<xml::ElementNode*>::iterator eit = llElementsWithUuidAttributes.begin();
+                 eit != llElementsWithUuidAttributes.end();
+                 ++eit)
+            {
+                xml::ElementNode *pelmImage = *eit;
+                // overwrite existing uuid attribute
+                pelmImage->setAttribute("uuid", guidTarget.toStringCurly());
+            }
         }
 
         // now go write the XML

@@ -49,7 +49,9 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Public method implementation.
+ * Public method implementation. This opens the OVF with ovfreader.cpp.
+ * Thread implementation is in Appliance::readImpl().
+ *
  * @param path
  * @return
  */
@@ -99,7 +101,8 @@ STDMETHODIMP Appliance::Read(IN_BSTR path, IProgress **aProgress)
 }
 
 /**
- * Public method implementation.
+ * Public method implementation. This looks at the output of ovfreader.cpp and creates
+ * VirtualSystemDescription instances.
  * @return
  */
 STDMETHODIMP Appliance::Interpret()
@@ -538,7 +541,9 @@ STDMETHODIMP Appliance::Interpret()
 }
 
 /**
- * Public method implementation.
+ * Public method implementation. This creates one or more new machines according to the
+ * VirtualSystemScription instances created by Appliance::Interpret().
+ * Thread implementation is in Appliance::importImpl().
  * @param aProgress
  * @return
  */
@@ -586,6 +591,7 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
 /**
  * Implementation for reading an OVF. This starts a new thread which will call
  * Appliance::taskThreadImportOrExport() which will then call readFS() or readS3().
+ * This will then open the OVF with ovfreader.cpp.
  *
  * This is in a separate private method because it is used from two locations:
  *
@@ -634,7 +640,9 @@ HRESULT Appliance::readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &a
 
 /**
  * Actual worker code for reading an OVF from disk. This is called from Appliance::taskThreadImportOrExport()
- * and therefore runs on the OVF read worker thread. This runs in two contexts:
+ * and therefore runs on the OVF read worker thread. This opens the OVF with ovfreader.cpp.
+ *
+ * This runs in two contexts:
  *
  * 1) in a first worker thread; in that case, Appliance::Read() called Appliance::readImpl();
  *
@@ -911,6 +919,9 @@ void Appliance::convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
  * Implementation for importing OVF data into VirtualBox. This starts a new thread which will call
  * Appliance::taskThreadImportOrExport().
  *
+ * This creates one or more new machines according to the VirtualSystemScription instances created by
+ * Appliance::Interpret().
+ *
  * This is in a separate private method because it is used from two locations:
  *
  * 1) from the public Appliance::ImportMachines().
@@ -1071,7 +1082,10 @@ HRESULT Appliance::manifestVerify(const LocationInfo &locInfo,
 
 /**
  * Actual worker code for importing OVF data into VirtualBox. This is called from Appliance::taskThreadImportOrExport()
- * and therefore runs on the OVF import worker thread. This runs in two contexts:
+ * and therefore runs on the OVF import worker thread. This creates one or more new machines according to the
+ * VirtualSystemScription instances created by Appliance::Interpret().
+ *
+ * This runs in two contexts:
  *
  * 1) in a first worker thread; in that case, Appliance::ImportMachines() called Appliance::importImpl();
  *
@@ -1312,12 +1326,12 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
 
             // First open the existing disk image
             rc = mVirtualBox->OpenHardDisk(Bstr(strSrcFilePath),
-                                        AccessMode_ReadOnly,
-                                        false,
-                                        NULL,
-                                        false,
-                                        NULL,
-                                        pSourceHD.asOutParam());
+                                           AccessMode_ReadOnly,
+                                           false,
+                                           NULL,
+                                           false,
+                                           NULL,
+                                           pSourceHD.asOutParam());
             if (FAILED(rc)) throw rc;
             fSourceHdNeedsClosing = true;
 
@@ -1366,11 +1380,10 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
  * up any leftovers from this function. For this, the given ImportStack instance has received information
  * about what needs cleaning up (to support rollback).
  *
- * @param locInfo
- * @param vsysThis
- * @param vsdescThis
- * @param pNewMachine
- * @param stack
+ * @param vsysThis OVF virtual system (machine) to import.
+ * @param vsdescThis  Matching virtual system description (machine) to import.
+ * @param pNewMachine out: Newly created machine.
+ * @param stack Cleanup stack for when this throws.
  */
 void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                      ComObjPtr<VirtualSystemDescription> &vsdescThis,

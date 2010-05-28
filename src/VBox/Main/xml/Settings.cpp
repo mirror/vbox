@@ -429,19 +429,6 @@ com::Utf8Str ConfigFileBase::makeString(const RTTIMESPEC &stamp)
 }
 
 /**
- * Helper to create a string for a GUID.
- * @param guid
- * @return
- */
-com::Utf8Str ConfigFileBase::makeString(const Guid &guid)
-{
-    Utf8Str str("{");
-    str.append(guid.toString());
-    str.append("}");
-    return str;
-}
-
-/**
  * Helper method to read in an ExtraData subtree and stores its contents
  * in the given map of extradata items. Used for both main and machine
  * extradata (MainConfigFile and MachineConfigFile).
@@ -1161,7 +1148,7 @@ void MainConfigFile::writeHardDisk(xml::ElementNode &elmMedium,
                                    uint32_t level)          // 0 for "root" call, incremented with each recursion
 {
     xml::ElementNode *pelmHardDisk = elmMedium.createChild("HardDisk");
-    pelmHardDisk->setAttribute("uuid", makeString(mdm.uuid));
+    pelmHardDisk->setAttribute("uuid", mdm.uuid.toStringCurly());
     pelmHardDisk->setAttribute("location", mdm.strLocation);
     pelmHardDisk->setAttribute("format", mdm.strFormat);
     if (mdm.fAutoReset)
@@ -1221,7 +1208,7 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
         // <MachineEntry uuid="{5f102a55-a51b-48e3-b45a-b28d33469488}" src="/mnt/innotek-unix/vbox-machines/Windows 5.1 XP 1 (Office 2003)/Windows 5.1 XP 1 (Office 2003).xml"/>
         const MachineRegistryEntry &mre = *it;
         xml::ElementNode *pelmMachineEntry = pelmMachineRegistry->createChild("MachineEntry");
-        pelmMachineEntry->setAttribute("uuid", makeString(mre.uuid));
+        pelmMachineEntry->setAttribute("uuid", mre.uuid.toStringCurly());
         pelmMachineEntry->setAttribute("src", mre.strSettingsFile);
     }
 
@@ -1242,7 +1229,7 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
     {
         const Medium &mdm = *it;
         xml::ElementNode *pelmMedium = pelmDVDImages->createChild("Image");
-        pelmMedium->setAttribute("uuid", makeString(mdm.uuid));
+        pelmMedium->setAttribute("uuid", mdm.uuid.toStringCurly());
         pelmMedium->setAttribute("location", mdm.strLocation);
         if (mdm.strDescription.length())
             pelmMedium->setAttribute("Description", mdm.strDescription);
@@ -1255,7 +1242,7 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
     {
         const Medium &mdm = *it;
         xml::ElementNode *pelmMedium = pelmFloppyImages->createChild("Image");
-        pelmMedium->setAttribute("uuid", makeString(mdm.uuid));
+        pelmMedium->setAttribute("uuid", mdm.uuid.toStringCurly());
         pelmMedium->setAttribute("location", mdm.strLocation);
         if (mdm.strDescription.length())
             pelmMedium->setAttribute("Description", mdm.strDescription);
@@ -3062,7 +3049,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     if (    (m->sv >= SettingsVersion_v1_9)
          && (!hw.uuid.isEmpty())
        )
-        pelmHardware->setAttribute("uuid", makeString(hw.uuid));
+        pelmHardware->setAttribute("uuid", hw.uuid.toStringCurly());
 
     xml::ElementNode *pelmCPU      = pelmHardware->createChild("CPU");
 
@@ -3296,7 +3283,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
                         pelmDVD->setAttribute("passthrough", att.fPassThrough);
                         if (!att.uuid.isEmpty())
-                            pelmDVD->createChild("Image")->setAttribute("uuid", makeString(att.uuid));
+                            pelmDVD->createChild("Image")->setAttribute("uuid", att.uuid.toStringCurly());
                         else if (att.strHostDriveSrc.length())
                             pelmDVD->createChild("HostDrive")->setAttribute("src", att.strHostDriveSrc);
                     }
@@ -3312,7 +3299,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                     const AttachedDevice &att = sctl.llAttachedDevices.front();
                     pelmFloppy->setAttribute("enabled", true);
                     if (!att.uuid.isEmpty())
-                        pelmFloppy->createChild("Image")->setAttribute("uuid", makeString(att.uuid));
+                        pelmFloppy->createChild("Image")->setAttribute("uuid", att.uuid.toStringCurly());
                     else if (att.strHostDriveSrc.length())
                         pelmFloppy->createChild("HostDrive")->setAttribute("src", att.strHostDriveSrc);
                 }
@@ -3652,10 +3639,15 @@ void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode,
  *   an empty drive is always written instead. This is for the OVF export case.
  *   This parameter is ignored unless the settings version is at least v1.9, which
  *   is always the case when this gets called for OVF export.
+ * @param pllElementsWithUuidAttributes If not NULL, must point to a list of element node
+ *   pointers to which we will append all allements that we created here that contain
+ *   UUID attributes. This allows the OVF export code to quickly replace the internal
+ *   media UUIDs with the UUIDs of the media that were exported.
  */
 void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
                                                    const Storage &st,
-                                                   bool fSkipRemovableMedia)
+                                                   bool fSkipRemovableMedia,
+                                                   std::list<xml::ElementNode*> *pllElementsWithUuidAttributes)
 {
     xml::ElementNode *pelmStorageControllers = elmParent.createChild("StorageControllers");
 
@@ -3758,12 +3750,20 @@ void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
             pelmDevice->setAttribute("port", att.lPort);
             pelmDevice->setAttribute("device", att.lDevice);
 
+            // attached image, if any
             if (    !att.uuid.isEmpty()
                  && (    att.deviceType == DeviceType_HardDisk
                       || !fSkipRemovableMedia
                     )
                )
-                pelmDevice->createChild("Image")->setAttribute("uuid", makeString(att.uuid));
+            {
+                xml::ElementNode *pelmImage = pelmDevice->createChild("Image");
+                pelmImage->setAttribute("uuid", att.uuid.toStringCurly());
+
+                // if caller wants a list of UUID elements, give it to them
+                if (pllElementsWithUuidAttributes)
+                    pllElementsWithUuidAttributes->push_back(pelmImage);
+            }
             else if (    (m->sv >= SettingsVersion_v1_9)
                       && (att.strHostDriveSrc.length())
                     )
@@ -3784,7 +3784,7 @@ void MachineConfigFile::buildSnapshotXML(xml::ElementNode &elmParent,
 {
     xml::ElementNode *pelmSnapshot = elmParent.createChild("Snapshot");
 
-    pelmSnapshot->setAttribute("uuid", makeString(snap.uuid));
+    pelmSnapshot->setAttribute("uuid", snap.uuid.toStringCurly());
     pelmSnapshot->setAttribute("name", snap.strName);
     pelmSnapshot->setAttribute("timeStamp", makeString(snap.timestamp));
 
@@ -3797,7 +3797,8 @@ void MachineConfigFile::buildSnapshotXML(xml::ElementNode &elmParent,
     buildHardwareXML(*pelmSnapshot, snap.hardware, snap.storage);
     buildStorageControllersXML(*pelmSnapshot,
                                snap.storage,
-                               false /* fSkipRemovableMedia */);
+                               false /* fSkipRemovableMedia */,
+                               NULL); /* pllElementsWithUuidAttributes */
                                     // we only skip removable media for OVF, but we never get here for OVF
                                     // since snapshots never get written then
 
@@ -3845,15 +3846,18 @@ void MachineConfigFile::buildSnapshotXML(xml::ElementNode &elmParent,
  *
  * @param elmMachine XML <Machine> element to add attributes and elements to.
  * @param fl Flags.
+ * @param pllElementsWithUuidAttributes pointer to list that should receive UUID elements or NULL;
+ *        see buildStorageControllersXML() for details.
  */
 void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
-                                        uint32_t fl)
+                                        uint32_t fl,
+                                        std::list<xml::ElementNode*> *pllElementsWithUuidAttributes)
 {
     if (fl & BuildMachineXML_WriteVboxVersionAttribute)
         // add settings version attribute to machine element
         setVersionAttribute(elmMachine);
 
-    elmMachine.setAttribute("uuid", makeString(uuid));
+    elmMachine.setAttribute("uuid", uuid.toStringCurly());
     elmMachine.setAttribute("name", strName);
     if (!fNameSync)
         elmMachine.setAttribute("nameSync", fNameSync);
@@ -3864,7 +3868,7 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
         elmMachine.setAttribute("stateFile", strStateFile);
     if (    (fl & BuildMachineXML_IncludeSnapshots)
          && !uuidCurrentSnapshot.isEmpty())
-        elmMachine.setAttribute("currentSnapshot", makeString(uuidCurrentSnapshot));
+        elmMachine.setAttribute("currentSnapshot", uuidCurrentSnapshot.toStringCurly());
     if (strSnapshotFolder.length())
         elmMachine.setAttribute("snapshotFolder", strSnapshotFolder);
     if (!fCurrentStateModified)
@@ -3896,7 +3900,8 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
     buildHardwareXML(elmMachine, hardwareMachine, storageMachine);
     buildStorageControllersXML(elmMachine,
                                storageMachine,
-                               !!(fl & BuildMachineXML_SkipRemovableMedia));
+                               !!(fl & BuildMachineXML_SkipRemovableMedia),
+                               pllElementsWithUuidAttributes);
 }
 
 /**
@@ -4084,8 +4089,9 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
 
         xml::ElementNode *pelmMachine = m->pelmRoot->createChild("Machine");
         buildMachineXML(*pelmMachine,
-                        MachineConfigFile::BuildMachineXML_IncludeSnapshots);
+                        MachineConfigFile::BuildMachineXML_IncludeSnapshots,
                             // but not BuildMachineXML_WriteVboxVersionAttribute
+                        NULL); /* pllElementsWithUuidAttributes */
 
         // now go write the XML
         xml::XmlFileWriter writer(*m->pDoc);

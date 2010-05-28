@@ -140,6 +140,19 @@ public:
         return Utf8Str(buf);
     }
 
+    /**
+     * Like toString, but encloses the returned string in curly brackets.
+     * @return
+     */
+    Utf8Str toStringCurly() const
+    {
+        char buf[RTUUID_STR_LENGTH + 2] = "{";
+        ::RTUuidToStr(&uuid, buf + 1, RTUUID_STR_LENGTH);
+        buf[sizeof(buf) - 2] = '}';
+        buf[sizeof(buf) - 1] = '\0';
+        return Utf8Str(buf);
+    }
+
     Bstr toUtf16() const
     {
         if (isEmpty())

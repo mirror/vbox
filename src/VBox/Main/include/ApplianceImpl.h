@@ -167,6 +167,7 @@ private:
 
     struct XMLStack;
     void buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSystemsTo,
+                                     std::list<xml::ElementNode*> *pllElementsWithUuidAttributes,
                                      ComObjPtr<VirtualSystemDescription> &vsdescThis,
                                      OVFFormat enFormat,
                                      XMLStack &stack);

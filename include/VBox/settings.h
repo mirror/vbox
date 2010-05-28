@@ -92,7 +92,6 @@ protected:
                         const com::Utf8Str &str) const;
 
     com::Utf8Str makeString(const RTTIMESPEC &tm);
-    com::Utf8Str makeString(const com::Guid &guid);
 
     void readExtraData(const xml::ElementNode &elmExtraData,
                        ExtraDataItemsMap &map);
@@ -879,7 +878,9 @@ public:
         BuildMachineXML_WriteVboxVersionAttribute = 0x02,
         BuildMachineXML_SkipRemovableMedia = 0x02
     };
-    void buildMachineXML(xml::ElementNode &elmMachine, uint32_t fl);
+    void buildMachineXML(xml::ElementNode &elmMachine,
+                         uint32_t fl,
+                         std::list<xml::ElementNode*> *pllElementsWithUuidAttributes);
 
 private:
     void readNetworkAdapters(const xml::ElementNode &elmHardware, NetworkAdaptersList &ll);
@@ -900,7 +901,10 @@ private:
 
     void buildHardwareXML(xml::ElementNode &elmParent, const Hardware &hw, const Storage &strg);
     void buildNetworkXML(NetworkAttachmentType_T mode, xml::ElementNode &elmParent, const NetworkAdapter &nic);
-    void buildStorageControllersXML(xml::ElementNode &elmParent, const Storage &st, bool fSkipRemovableMedia);
+    void buildStorageControllersXML(xml::ElementNode &elmParent,
+                                    const Storage &st,
+                                    bool fSkipRemovableMedia,
+                                    std::list<xml::ElementNode*> *pllElementsWithUuidAttributes);
     void buildSnapshotXML(xml::ElementNode &elmParent, const Snapshot &snap);
 
     void bumpSettingsVersionIfNeeded();
