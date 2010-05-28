@@ -27,7 +27,8 @@
  * attributes to a different IProgress object for a period of time.
  */
 class ATL_NO_VTABLE ProgressProxy :
-    public com::SupportErrorInfoDerived<Progress, ProgressProxy, IProgress>,
+    //public com::SupportErrorInfoDerived<Progress, ProgressProxy, IProgress>,
+    public Progress,
     public VirtualBoxSupportTranslation<ProgressProxy>
 {
 public:
