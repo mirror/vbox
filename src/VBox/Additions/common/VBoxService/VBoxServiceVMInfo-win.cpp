@@ -569,7 +569,7 @@ int VBoxServiceWinGetComponentVersions(uint32_t uClientID)
         { szSysDir, "VBoxControl.exe" },
         { szSysDir, "VBoxHook.dll" },
         { szSysDir, "VBoxDisp.dll" },
-        { szSysDir, "VBoxService.exe" },
+        { szSysDir, "VBoxServiceNT.exe" },
         { szSysDir, "VBoxTray.exe" },
 
         { szDriversDir, "VBoxGuestNT.sys" },
