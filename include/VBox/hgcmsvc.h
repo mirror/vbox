@@ -245,7 +245,7 @@ typedef struct VBOXHGCMSVCPARM
     {
         type = VBOX_HGCM_SVC_PARM_PTR;
         u.pointer.addr = (void *)psz;
-        u.pointer.size = strlen(psz) + 1;
+        u.pointer.size = (uint32_t)strlen(psz) + 1;
     }
 
 #ifdef VBOX_TEST_HGCM_PARMS
