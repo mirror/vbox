@@ -632,6 +632,16 @@
     <xsl:value-of select="@name"/>
     <xsl:text>;&#x0A;</xsl:text>
   </xsl:for-each>
+  <xsl:for-each select="eventsink">
+    <xsl:text>    </xsl:text>
+    <xsl:choose>
+      <xsl:when test="@default='yes'"><xsl:text>[default,source]</xsl:text></xsl:when>
+      <xsl:otherwise><xsl:text>[source]</xsl:text></xsl:otherwise>
+    </xsl:choose>
+    <xsl:text> interface </xsl:text>
+    <xsl:value-of select="@name"/>
+    <xsl:text>;&#x0A;</xsl:text>
+  </xsl:for-each>
   <xsl:text>&#x0A;}; /* coclass </xsl:text>
   <xsl:value-of select="@name"/>
   <xsl:text> */&#x0A;&#x0A;</xsl:text>
