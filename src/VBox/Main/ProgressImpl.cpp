@@ -1148,6 +1148,22 @@ HRESULT Progress::notifyComplete(HRESULT aResultCode)
 }
 
 /**
+ * Wrapper around Progress:notifyCompleteV.
+ */
+HRESULT Progress::notifyComplete(HRESULT aResultCode,
+                                 const GUID &aIID,
+                                 const Bstr &aComponent,
+                                 const char *aText,
+                                 ...)
+{
+    va_list va;
+    va_start(va, aText);
+    HRESULT hrc = notifyCompleteV(aResultCode, aIID, aComponent, aText, va);
+    va_end(va);
+    return hrc;
+}
+
+/**
  * Marks the operation as complete and attaches full error info.
  *
  * See com::SupportErrorInfoImpl::setError(HRESULT, const GUID &, const wchar_t
@@ -1158,18 +1174,15 @@ HRESULT Progress::notifyComplete(HRESULT aResultCode)
  * @param aComponent    Name of the component that generates the error.
  * @param aText         Error message (must not be null), an RTStrPrintf-like
  *                      format string in UTF-8 encoding.
- * @param  ...          List of arguments for the format string.
+ * @param va            List of arguments for the format string.
  */
-HRESULT Progress::notifyComplete(HRESULT aResultCode,
-                                 const GUID &aIID,
-                                 const Bstr &aComponent,
-                                 const char *aText,
-                                 ...)
+HRESULT Progress::notifyCompleteV(HRESULT aResultCode,
+                                  const GUID &aIID,
+                                  const Bstr &aComponent,
+                                  const char *aText,
+                                  va_list va)
 {
-    va_list args;
-    va_start(args, aText);
-    Utf8Str text = Utf8StrFmtVA(aText, args);
-    va_end (args);
+    Utf8Str text = Utf8StrFmtVA(aText, va);
 
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());

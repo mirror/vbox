@@ -260,7 +260,13 @@ public:
     HRESULT notifyComplete(HRESULT aResultCode,
                            const GUID &aIID,
                            const Bstr &aComponent,
-                           const char *aText, ...);
+                           const char *aText,
+                           ...);
+    HRESULT notifyCompleteV(HRESULT aResultCode,
+                            const GUID &aIID,
+                            const Bstr &aComponent,
+                            const char *aText,
+                            va_list va);
     bool notifyPointOfNoReturn(void);
 
     /** For com::SupportErrorInfoImpl. */
