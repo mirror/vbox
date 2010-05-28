@@ -1117,15 +1117,10 @@ void VBoxSelectorWnd::vmRefresh (const QString &aUuid /*= QUuid_null*/)
 
     AssertMsgReturnVoid (item, ("Item must be always selected here"));
 
-    bool oldAccessible = item->accessible();
-
     refreshVMItem (item->id(),
                    true /* aDetails */,
                    true /* aSnapshot */,
                    true /* aDescription */);
-
-    if (!oldAccessible && item->accessible())
-        fileExit();
 }
 
 void VBoxSelectorWnd::vmShowLogs (const QString &aUuid /*= QUuid_null*/)
