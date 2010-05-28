@@ -301,6 +301,7 @@ VBoxSVC_SOURCES = \
 	MediumAttachmentImpl.cpp \
 	MediumFormatImpl.cpp \
 	ProgressImpl.cpp \
+	ProgressProxyImpl.cpp \
 	HostImpl.cpp \
 	HostNetworkInterfaceImpl.cpp \
 	DHCPServerImpl.cpp \
@@ -868,7 +869,7 @@ $(VBOX_JMSCOM_GEN)/jmscomglue.list:  \
               --stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
               --stringparam G_vboxGlueStyle mscom              \
               -o $(VBOX_JMSCOM_GEN)/java/merged.file $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl $<
-	$(QUIET)$(VBOX_FILESPLIT) $(VBOX_JMSCOM_GEN)/java/merged.file $(VBOX_JMSCOM_GEN)/java	
+	$(QUIET)$(VBOX_FILESPLIT) $(VBOX_JMSCOM_GEN)/java/merged.file $(VBOX_JMSCOM_GEN)/java
 	$(QUIET)echo $(VBOX_JMSCOM_GEN)/java/*.java > $@
 
 $$(VBOX_JMSCOM_JAR): $(VBOX_JMSCOM_GEN)/jmscomglue.list | $$(dir $$@)
