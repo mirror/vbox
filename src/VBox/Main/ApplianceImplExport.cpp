@@ -627,10 +627,9 @@ HRESULT Appliance::writeImpl(OVFFormat aFormat, const LocationInfo &aLocInfo, Co
     HRESULT rc = S_OK;
     try
     {
-        Bstr progressDesc = BstrFmt(tr("Export appliance '%s'"),
-                                    aLocInfo.strPath.c_str());
-
-        rc = setUpProgress(aProgress, progressDesc, (aLocInfo.storageType == VFSType_File) ? Regular : WriteS3);
+        rc = setUpProgress(aProgress,
+                           BstrFmt(tr("Export appliance '%s'"), aLocInfo.strPath.c_str()),
+                           (aLocInfo.storageType == VFSType_File) ? WriteFile : WriteS3);
 
         /* Initialize our worker task */
         std::auto_ptr<TaskOVF> task(new TaskOVF(this, TaskOVF::Write, aLocInfo, aProgress));
@@ -1517,9 +1516,8 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
                 if (FAILED(rc)) throw rc;
 
                 // advance to the next operation
-                if (!pProgress.isNull())
-                    pProgress->SetNextOperation(BstrFmt(tr("Exporting to disk image '%s'"), strTargetFilePath.c_str()),
-                                                pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
+                pProgress->SetNextOperation(BstrFmt(tr("Exporting to disk image '%s'"), strTargetFilePath.c_str()),
+                                            pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
 
                 // now wait for the background disk operation to complete; this throws HRESULTs on error
                 waitForAsyncProgress(pProgress, pProgress2);
@@ -1595,7 +1593,12 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
         xml::XmlFileWriter writer(doc);
         writer.write(locInfo.strPath.c_str(), false /*fSafe*/);
 
-        /* Create & write the manifest file */
+        // Create & write the manifest file
+        Utf8Str strMfFile = manifestFileName(locInfo.strPath.c_str());
+        const char *pcszManifestFileOnly = RTPathFilename(strMfFile.c_str());
+        pProgress->SetNextOperation(BstrFmt(tr("Creating manifest file '%s'"), pcszManifestFileOnly),
+                                    m->ulWeightForManifestOperation);     // operation's weight, as set up with the IProgress originally);
+
         const char** ppManifestFiles = (const char**)RTMemAlloc(sizeof(char*)*diskList.size() + 1);
         ppManifestFiles[0] = locInfo.strPath.c_str();
         list<Utf8Str>::const_iterator it1;
@@ -1604,13 +1607,12 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
              it1 != diskList.end();
              ++it1, ++i)
             ppManifestFiles[i] = (*it1).c_str();
-        Utf8Str strMfFile = manifestFileName(locInfo.strPath.c_str());
         int vrc = RTManifestWriteFiles(strMfFile.c_str(), ppManifestFiles, diskList.size()+1);
         RTMemFree(ppManifestFiles);
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_FILE_ERROR,
-                           tr("Couldn't create manifest file '%s' (%Rrc)"),
-                           RTPathFilename(strMfFile.c_str()), vrc);
+                           tr("Could not create manifest file '%s' (%Rrc)"),
+                           pcszManifestFileOnly, vrc);
     }
     catch(xml::Error &x)
     {
@@ -1704,9 +1706,9 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
             throw setError(VBOX_E_FILE_ERROR,
                            tr("Cannot find source file '%s'"), strTmpOvf.c_str());
         /* Add the OVF file */
-        filesList.push_back(pair<Utf8Str, ULONG>(strTmpOvf, m->ulWeightPerOperation)); /* Use 1% of the total for the OVF file upload */
+        filesList.push_back(pair<Utf8Str, ULONG>(strTmpOvf, m->ulWeightForXmlOperation)); /* Use 1% of the total for the OVF file upload */
         Utf8Str strMfFile = manifestFileName(strTmpOvf);
-        filesList.push_back(pair<Utf8Str, ULONG>(strMfFile , m->ulWeightPerOperation)); /* Use 1% of the total for the manifest file upload */
+        filesList.push_back(pair<Utf8Str, ULONG>(strMfFile , m->ulWeightForXmlOperation)); /* Use 1% of the total for the manifest file upload */
 
         /* Now add every disks of every virtual system */
         list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
@@ -1747,8 +1749,7 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
             const pair<Utf8Str, ULONG> &s = (*it1);
             char *pszFilename = RTPathFilename(s.first.c_str());
             /* Advance to the next operation */
-            if (!pTask->pProgress.isNull())
-                pTask->pProgress->SetNextOperation(BstrFmt(tr("Uploading file '%s'"), pszFilename), s.second);
+            pTask->pProgress->SetNextOperation(BstrFmt(tr("Uploading file '%s'"), pszFilename), s.second);
             vrc = RTS3PutKey(hS3, bucket.c_str(), pszFilename, s.first.c_str());
             if (RT_FAILURE(vrc))
             {

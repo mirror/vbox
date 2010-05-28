@@ -61,23 +61,24 @@ struct Appliance::Data
         }
     }
 
-    ApplianceState  state;
+    ApplianceState      state;
 
-    LocationInfo    locInfo;       // location info for the currently processed OVF
+    LocationInfo        locInfo;        // location info for the currently processed OVF
 
-    ovf::OVFReader  *pReader;
-
-    bool            fBusyWriting;          // state protection; while this is true nobody else can call methods
+    ovf::OVFReader      *pReader;
 
     std::list< ComObjPtr<VirtualSystemDescription> >
-                    virtualSystemDescriptions;
+                        virtualSystemDescriptions;
 
-    std::list<Utf8Str>   llWarnings;
+    std::list<Utf8Str>  llWarnings;
 
-    ULONG           ulWeightPerOperation;
-    ULONG           ulTotalDisksMB;
-    ULONG           cDisks;
-    Utf8Str         strOVFSHA1Digest;
+    Utf8Str             strManifestFile;    // on import, contains path of manifest file if it exists
+
+    ULONG               ulWeightForXmlOperation;
+    ULONG               ulWeightForManifestOperation;
+    ULONG               ulTotalDisksMB;
+    ULONG               cDisks;
+    Utf8Str             strOVFSHA1Digest;
 };
 
 struct Appliance::XMLStack

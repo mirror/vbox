@@ -119,7 +119,7 @@ private:
     void addWarning(const char* aWarning, ...);
 
     void disksWeight();
-    enum SetUpProgressMode { Regular, ImportS3, WriteS3 };
+    enum SetUpProgressMode { ImportFileWithManifest, ImportFileNoManifest, ImportS3, WriteFile, WriteS3 };
     HRESULT setUpProgress(ComObjPtr<Progress> &pProgress,
                           const Bstr &bstrDescription,
                           SetUpProgressMode mode);
@@ -144,7 +144,7 @@ private:
                                      int32_t &lDevice);
 
     HRESULT importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
-    HRESULT manifestVerify(const LocationInfo &locInfo, const ovf::OVFReader &reader);
+    HRESULT manifestVerify(const LocationInfo &locInfo, const ovf::OVFReader &reader, ComObjPtr<Progress> &pProgress);
 
     HRESULT importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &aProgress);
 
