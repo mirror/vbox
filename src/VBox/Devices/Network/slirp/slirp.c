@@ -419,7 +419,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     char buff[512];
     char buff2[256];
     RTFILE f;
-    int fFoundNameserver = 0;
+    int cNameserversFound = 0;
     int fWarnTooManyDnsServers = 0;
     struct in_addr tmp_addr;
     int rc;
@@ -468,19 +468,19 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
         *ppszDomain = NULL;
 
     Log(("NAT: DNS Servers:\n"));
-    while (    RT_SUCCESS(rc = RTFileGets(f, buff, 512, &bytes))
+    while (    RT_SUCCESS(rc = RTFileGets(f, buff, sizeof(buff), &bytes))
             && rc != VERR_EOF)
     {
         struct dns_entry *pDns = NULL;
-        if (   fFoundNameserver == 4 
+        if (   cNameserversFound == 4 
             && fWarnTooManyDnsServers == 0
-            && sscanf(buff, "nameserver%*[ \t]%256s", buff2) == 1)
+            && sscanf(buff, "nameserver%*[ \t]%255s", buff2) == 1)
         {
             fWarnTooManyDnsServers = 1;
             LogRel(("NAT: too many nameservers registered.\n"));
         }
-        if (   sscanf(buff, "nameserver%*[ \t]%256s", buff2) == 1 
-            && fFoundNameserver < 4) /* Unix doesn't accept more than 4 name servers*/
+        if (   sscanf(buff, "nameserver%*[ \t]%255s", buff2) == 1 
+            && cNameserversFound < 4) /* Unix doesn't accept more than 4 name servers*/
         {
             if (!inet_aton(buff2, &tmp_addr))
                 continue;
@@ -500,7 +500,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
                 pDns->de_addr.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
             }
             TAILQ_INSERT_HEAD(&pData->pDnsList, pDns, de_list);
-            fFoundNameserver++;
+            cNameserversFound++;
         }
         if ((!strncmp(buff, "domain", 6) || !strncmp(buff, "search", 6)))
         {
@@ -533,7 +533,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
         }
     }
     RTFileClose(f);
-    if (!fFoundNameserver)
+    if (!cNameserversFound)
         return -1;
     return 0;
 }
