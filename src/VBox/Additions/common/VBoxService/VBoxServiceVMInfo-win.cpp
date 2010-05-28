@@ -503,6 +503,7 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
         VBoxServiceVMInfoWinProcessesFree(paProcs);
     }
     LsaFreeReturnBuffer(paSessions);
+    return rc;
 }
 
 #endif /* TARGET_NT4 */
