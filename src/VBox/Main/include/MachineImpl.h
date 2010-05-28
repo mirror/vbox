@@ -53,6 +53,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 class Progress;
+class ProgressProxy;
 class Keyboard;
 class Mouse;
 class Display;
@@ -124,7 +125,7 @@ public:
             RemoteControlList mRemoteControls;
 
             /** openRemoteSession() and OnSessionEnd() progress indicator */
-            ComObjPtr<Progress> mProgress;
+            ComObjPtr<ProgressProxy> mProgress;
 
             /**
              * PID of the session object that must be passed to openSession() to
@@ -621,7 +622,7 @@ public:
     HRESULT openSession(IInternalSessionControl *aControl);
     HRESULT openRemoteSession(IInternalSessionControl *aControl,
                               IN_BSTR aType, IN_BSTR aEnvironment,
-                              Progress *aProgress);
+                              ProgressProxy *aProgress);
     HRESULT openExistingSession(IInternalSessionControl *aControl);
 
     HRESULT getDirectControl(ComPtr<IInternalSessionControl> *directControl)
@@ -886,7 +887,8 @@ public:
     STDMETHOD(SetRemoveSavedState)(BOOL aRemove);
     STDMETHOD(UpdateState)(MachineState_T machineState);
     STDMETHOD(GetIPCId)(BSTR *id);
-    STDMETHOD(SetPowerUpInfo)(IVirtualBoxErrorInfo *aError);
+    STDMETHOD(BeginPowerUp)(IProgress *aProgress);
+    STDMETHOD(EndPowerUp)(LONG iResult);
     STDMETHOD(RunUSBDeviceFilters)(IUSBDevice *aUSBDevice, BOOL *aMatched, ULONG *aMaskedIfs);
     STDMETHOD(CaptureUSBDevice)(IN_BSTR aId);
     STDMETHOD(DetachUSBDevice)(IN_BSTR aId, BOOL aDone);
