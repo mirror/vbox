@@ -1132,8 +1132,8 @@ vslick.h: include/VBox/cdefs.h include/iprt/cdefs.h $(MAKEFILE)
 	@$(APPEND) $@.tmp '#define END_COM_MAP(a) '
 
 	@$(APPEND) $@.tmp '#define COM_DECL_READONLY_ENUM_AND_COLLECTION(a) '
-	@$(APPEND) $@.tmp '#define COMGETTER(n)                    Get##n '
-	@$(APPEND) $@.tmp '#define COMSETTER(n)                    Set##n '
+	@$(APPEND) $@.tmp '#define COMGETTER(n)                    n '
+	@$(APPEND) $@.tmp '#define COMSETTER(n)                    n '
 	@$(APPEND) $@.tmp '#define ComSafeArrayIn(t,a)             t a[] '
 	@$(APPEND) $@.tmp '#define ComSafeArrayOut(t,a)            t * a[] '
 	@$(APPEND) $@.tmp '#define DECLARE_CLASSFACTORY(a) '
