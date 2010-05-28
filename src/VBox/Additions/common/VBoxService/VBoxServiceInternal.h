@@ -102,32 +102,6 @@ typedef VBOXSERVICE const *PCVBOXSERVICE;
 /** The following constant may be defined by including NtStatus.h. */
 # define STATUS_SUCCESS             ((NTSTATUS)0x00000000L)
 
-/** @todo Move these Windows stuff into VBoxServiceVMInfo-win.cpp and hide all
- *        the windows details using behind function calls!
- * @{  */
-/** Structure for storing the looked up user information. */
-typedef struct
-{
-    WCHAR wszUser[_MAX_PATH];
-    WCHAR wszAuthenticationPackage[_MAX_PATH];
-    WCHAR wszLogonDomain[_MAX_PATH];
-} VBOXSERVICEVMINFOUSER, *PVBOXSERVICEVMINFOUSER;
-/** Structure for the file information lookup. */
-typedef struct
-{
-    char *pszFilePath;
-    char *pszFileName;
-} VBOXSERVICEVMINFOFILE, *PVBOXSERVICEVMINFOFILE;
-/** Structure for process information lookup. */
-typedef struct
-{
-    DWORD id;
-    LUID luid;
-} VBOXSERVICEVMINFOPROC, *PVBOXSERVICEVMINFOPROC;
-/** Function prototypes for dynamic loading. */
-typedef DWORD (WINAPI *PFNWTSGETACTIVECONSOLESESSIONID)(void);
-/** @} */
-
 #endif /* RT_OS_WINDOWS */
 #ifdef VBOX_WITH_GUEST_CONTROL
 
@@ -289,13 +263,9 @@ extern void         VBoxServiceWinSetStopPendingStatus(uint32_t uCheckPoint);
 #endif
 
 #ifdef RT_OS_WINDOWS
-extern PFNWTSGETACTIVECONSOLESESSIONID g_pfnWTSGetActiveConsoleSessionId; /* VBoxServiceVMInfo-win.cpp */
 # ifdef VBOX_WITH_GUEST_PROPS
-extern bool VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, VBOXSERVICEVMINFOPROC const *paProcs, DWORD cProcs);
-extern bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_pSession);
-extern int  VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD *pdwCount);
-extern void VBoxServiceVMInfoWinProcessesFree(PVBOXSERVICEVMINFOPROC paProcs);
-extern int  VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
+extern int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList);
+extern int VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
 # endif /* VBOX_WITH_GUEST_PROPS */
 #endif /* RT_OS_WINDOWS */
 

@@ -112,18 +112,6 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
     int rc = RTSemEventMultiCreate(&g_hVMInfoEvent);
     AssertRCReturn(rc, rc);
 
-#ifdef RT_OS_WINDOWS
-    /** @todo r=bird: call a windows specific init function and move
-     *        g_pfnWTSGetActiveConsoleSessionId out of the global scope.  */
-    /* Get function pointers. */
-    HMODULE hKernel32 = LoadLibrary("kernel32");
-    if (hKernel32 != NULL)
-    {
-        g_pfnWTSGetActiveConsoleSessionId = (PFNWTSGETACTIVECONSOLESESSIONID)GetProcAddress(hKernel32, "WTSGetActiveConsoleSessionId");
-        FreeLibrary(hKernel32);
-    }
-#endif
-
     rc = VbglR3GuestPropConnect(&g_uVMInfoGuestPropSvcClientID);
     if (RT_SUCCESS(rc))
         VBoxServiceVerbose(3, "VMInfo: Property Service Client ID: %#x\n", g_uVMInfoGuestPropSvcClientID);
@@ -227,56 +215,12 @@ static void VBoxServiceVMInfoWriteFixedProperties(void)
 int VBoxServiceVMInfoWriteUsers()
 {
     int rc;
-    char szUserList[4096] = {0};
+    char *pszUserList = NULL;
     uint32_t cUsersInList = 0;
 
 #ifdef RT_OS_WINDOWS
 # ifndef TARGET_NT4
-    PLUID       paSessions = NULL;
-    ULONG       cSession = 0;
-    NTSTATUS    r = 0;
-
-    /* This function can report stale or orphaned interactive logon sessions
-       of already logged off users (especially in Windows 2000). */
-    r = ::LsaEnumerateLogonSessions(&cSession, &paSessions);
-    VBoxServiceVerbose(3, "Users: Found %ld users.\n", cSession);
-    if (r != STATUS_SUCCESS)
-    {
-        VBoxServiceError("VMInfo/Users: LsaEnumerate failed %lu\n", LsaNtStatusToWinError(r));
-        return RTErrConvertFromWin32(LsaNtStatusToWinError(r));
-    }
-
-    PVBOXSERVICEVMINFOPROC  paProcs;
-    DWORD                   cProcs;
-    rc = VBoxServiceVMInfoWinProcessesEnumerate(&paProcs, &cProcs);
-    if (RT_SUCCESS(rc))
-    {
-        for (ULONG i = 0; i < cSession; i++)
-        {
-            VBOXSERVICEVMINFOUSER UserInfo;
-            if (   VBoxServiceVMInfoWinIsLoggedIn(&UserInfo, &paSessions[i])
-                && VBoxServiceVMInfoWinSessionHasProcesses(&paSessions[i], paProcs, cProcs))
-            {
-                if (cUsersInList > 0)
-                    strcat(szUserList, ",");
-
-                cUsersInList++;
-
-                char *pszTemp;
-                int rc2 = RTUtf16ToUtf8(UserInfo.wszUser, &pszTemp);
-                if (RT_SUCCESS(rc2))
-                {
-                    strcat(szUserList, pszTemp);
-                    RTMemFree(pszTemp);
-                }
-                else
-                    strcat(szUserList, "<string-convertion-error>");
-            }
-        }
-        VBoxServiceVMInfoWinProcessesFree(paProcs);
-    }
-
-    ::LsaFreeReturnBuffer(paSessions);
+    rc = VBoxServiceVMInfoWinWriteUsers(&pszUserList, &cUsersInList);
 # endif /* TARGET_NT4 */
 #elif defined(RT_OS_FREEBSD)
         /** @todo FreeBSD: Port logged on user info retrival. */
@@ -297,44 +241,36 @@ int VBoxServiceVMInfoWriteUsers()
     while ((ut_user = getutent()))
     {
         /* Make sure we don't add user names which are not
-         * part of type USER_PROCESS and don't add same users twice. */
-        if (   ut_user->ut_type == USER_PROCESS
-            && strstr(szUserList, ut_user->ut_user) == NULL)
+         * part of type USER_PROCESS. */
+
+        /** @todo Do we want to filter out user names? What if a user is logged in twice? */
+        if (ut_user->ut_type == USER_PROCESS)
         {
-            /** @todo Do we really want to filter out double user names? (Same user logged in twice)
-             *  bird: If we do, then we must add checks for buffer overflows here!  */
-            /** @todo r=bird: strstr will filtering out users with similar names. For
-             *        example: smith, smithson, joesmith and bobsmith */
             if (cUsersInList > 0)
-                strcat(szUserList, ",");
-            strcat(szUserList, ut_user->ut_user);
+            {
+                rc = RTStrAAppend(pszUserList, ",");
+                AssertRCReturn(rc, rc);
+            }
+            rc = RTStrAAppend(pszUserList, ut_user->ut_user);
+            AssertRCReturn(rc, rc);
             cUsersInList++;
         }
     }
     endutent();
 #endif /* !RT_OS_WINDOWS */
 
-    if (cUsersInList > 0)
-        VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", "%s", szUserList);
+    if (pszUserList && cUsersInList > 0)
+        VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", "%s", pszUserList);
     else
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", NULL);
     VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsers", "%u", cUsersInList);
-    if (   g_cVMInfoLoggedInUsers != cUsersInList
-        || g_cVMInfoLoggedInUsers == UINT32_MAX)
+    if (g_cVMInfoLoggedInUsers != cUsersInList)
     {
-        /*
-         * Update this property ONLY if there is a real change from no users to
-         * users or vice versa. The only exception is that the initialization
-         * forces an update, but only once. This ensures consistent property
-         * settings even if the VM aborted previously.
-         */
-        if (cUsersInList == 0)
-            VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers", "true");
-        else if (g_cVMInfoLoggedInUsers == 0)
-            VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers", "false");
-    }
-    g_cVMInfoLoggedInUsers = cUsersInList;
-
+        VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers", cUsersInList == 0 ? "true" : "false");
+        g_cVMInfoLoggedInUsers = cUsersInList;
+    }    
+    if (pszUserList)
+        RTStrFree(pszUserList);
     return VINF_SUCCESS;
 }
 
@@ -654,7 +590,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
     /* Required for network information (must be called per thread). */
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData))
-        VBoxServiceError("VMInfo: WSAStartup failed! Error: %Rrc\n", RTErrConvertFromWin32(WSAGetLastError()));
+        VBoxServiceError("VMInfo/Users: WSAStartup failed! Error: %Rrc\n", RTErrConvertFromWin32(WSAGetLastError()));
 #endif /* RT_OS_WINDOWS */
 
     /*

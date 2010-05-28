@@ -36,11 +36,39 @@
 #include "VBoxServiceUtils.h"
 
 
+/** Structure for storing the looked up user information. */
+typedef struct
+{
+    WCHAR wszUser[_MAX_PATH];
+    WCHAR wszAuthenticationPackage[_MAX_PATH];
+    WCHAR wszLogonDomain[_MAX_PATH];
+} VBOXSERVICEVMINFOUSER, *PVBOXSERVICEVMINFOUSER;
+/** Structure for the file information lookup. */
+typedef struct
+{
+    char *pszFilePath;
+    char *pszFileName;
+} VBOXSERVICEVMINFOFILE, *PVBOXSERVICEVMINFOFILE;
+/** Structure for process information lookup. */
+typedef struct
+{
+    DWORD id;
+    LUID luid;
+} VBOXSERVICEVMINFOPROC, *PVBOXSERVICEVMINFOPROC;
+
+
+/*******************************************************************************
+*   Prototypes
+*******************************************************************************/
+bool VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, VBOXSERVICEVMINFOPROC const *paProcs, DWORD cProcs);
+bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_pSession);
+int  VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD *pdwCount);
+void VBoxServiceVMInfoWinProcessesFree(PVBOXSERVICEVMINFOPROC paProcs);
+
+
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** Function prototypes for dynamic loading. */
-PFNWTSGETACTIVECONSOLESESSIONID g_pfnWTSGetActiveConsoleSessionId = NULL;
 
 
 #ifndef TARGET_NT4
@@ -287,7 +315,7 @@ static void VBoxServiceVMInfoWinSafeCopy(PWCHAR pwszDst, size_t cbDst, LSA_UNICO
 
 
 /**
- * Detects whether a user is logged on based on the enumerated processes.
+ * Detects whether a user is logged on.
  *
  * @returns true if logged in, false if not (or error).
  * @param   a_pUserInfo     Where to return the user information.
@@ -295,6 +323,7 @@ static void VBoxServiceVMInfoWinSafeCopy(PWCHAR pwszDst, size_t cbDst, LSA_UNICO
  */
 bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_pSession)
 {
+    AssertPtr(a_pUserInfo);
     if (!a_pSession)
         return false;
 
@@ -302,29 +331,37 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_
     NTSTATUS rcNt = LsaGetLogonSessionData(a_pSession, &pSessionData);
     if (rcNt != STATUS_SUCCESS)
     {
-        VBoxServiceError("LsaGetLogonSessionData failed, LSA error %#x\n", LsaNtStatusToWinError(rcNt));
+        VBoxServiceError("VMInfo/Users: LsaGetLogonSessionData failed, LSA error %#x\n", LsaNtStatusToWinError(rcNt));
         if (pSessionData)
             LsaFreeReturnBuffer(pSessionData);
         return false;
     }
     if (!pSessionData)
     {
-        VBoxServiceError("Invalid logon session data.\n");
+        VBoxServiceError("VMInfo/Users: Invalid logon session data!\n");
         return false;
     }
-    VBoxServiceVerbose(3, "Users: Session data: Name = %ls, Len = %d, SID = %s, LogonID = %d,%d\n",
-                       pSessionData->UserName.Buffer,
-                       pSessionData->UserName.Length,
-                       pSessionData->Sid != NULL ? "1" : "0",
-                       pSessionData->LogonId.HighPart, pSessionData->LogonId.LowPart);
 
+    /*
+     * Only handle users which can login interactively or logged in
+     * remotely over native RDP.
+     */
     bool fFoundUser = false;
-    if (   pSessionData->UserName.Buffer != NULL
-        && pSessionData->Sid != NULL
-        && pSessionData->LogonId.LowPart != 0)
+    DWORD dwErr = NO_ERROR;
+    if (   IsValidSid(pSessionData->Sid)
+        && (   (SECURITY_LOGON_TYPE)pSessionData->LogonType == Interactive
+            || (SECURITY_LOGON_TYPE)pSessionData->LogonType == RemoteInteractive
+            || (SECURITY_LOGON_TYPE)pSessionData->LogonType == CachedInteractive
+            || (SECURITY_LOGON_TYPE)pSessionData->LogonType == CachedRemoteInteractive))
     {
+        VBoxServiceVerbose(3, "VMInfo/Users: Session data: Name=%ls, Len=%d, SID=%s, LogonID=%ld,%ld\n",
+                           pSessionData->UserName.Buffer,
+                           pSessionData->UserName.Length,
+                           pSessionData->Sid != NULL ? "1" : "0",
+                           pSessionData->LogonId.HighPart, pSessionData->LogonId.LowPart);
+
         /*
-         * Copy out the data.
+         * Copy out relevant data.
          */
         VBoxServiceVMInfoWinSafeCopy(a_pUserInfo->wszUser, sizeof(a_pUserInfo->wszUser),
                                      &pSessionData->UserName, "User name");
@@ -333,89 +370,139 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_
         VBoxServiceVMInfoWinSafeCopy(a_pUserInfo->wszLogonDomain, sizeof(a_pUserInfo->wszLogonDomain),
                                      &pSessionData->LogonDomain, "Logon domain name");
 
-
-        /*
-         * Only handle users which can login interactively or logged in
-         * remotely over native RDP.
-         */
-        /** @todo r=bird: Whey don't we check this before copying the data? */
-        if (   (   (SECURITY_LOGON_TYPE)pSessionData->LogonType == Interactive
-                || (SECURITY_LOGON_TYPE)pSessionData->LogonType == RemoteInteractive)
-            &&  pSessionData->Sid != NULL)
+        TCHAR           szOwnerName[_MAX_PATH]  = { 0 };
+        DWORD           dwOwnerNameSize         = sizeof(szOwnerName);
+        TCHAR           szDomainName[_MAX_PATH] = { 0 };
+        DWORD           dwDomainNameSize        = sizeof(szDomainName);
+        SID_NAME_USE    enmOwnerType            = SidTypeInvalid;
+        if (!LookupAccountSid(NULL,
+                              pSessionData->Sid,
+                              szOwnerName,
+                              &dwOwnerNameSize,
+                              szDomainName,
+                              &dwDomainNameSize,
+                              &enmOwnerType))
         {
-            TCHAR           szOwnerName[_MAX_PATH]  = { 0 };
-            DWORD           dwOwnerNameSize         = sizeof(szOwnerName);
-            TCHAR           szDomainName[_MAX_PATH] = { 0 };
-            DWORD           dwDomainNameSize        = sizeof(szDomainName);
-            SID_NAME_USE    enmOwnerType            = SidTypeInvalid;
-            if (LookupAccountSid(NULL,
-                                 pSessionData->Sid,
-                                 szOwnerName,
-                                 &dwOwnerNameSize,
-                                 szDomainName,
-                                 &dwDomainNameSize,
-                                 &enmOwnerType))
+            VBoxServiceError("VMInfo/Users: Failed looking up account info for user '%ls': %ld!\n", 
+                             a_pUserInfo->wszUser, GetLastError());
+        }
+        else
+        {
+            if (enmOwnerType == SidTypeUser) /* Only recognize users; we don't care about the rest! */
             {
-                VBoxServiceVerbose(3, "Account User=%ls, Session=%ld, LUID=%ld,%ld, AuthPkg=%ls, Domain=%ls\n",
+                VBoxServiceVerbose(3, "VMInfo/Users: Account User=%ls, Session=%ld, LUID=%ld,%ld, AuthPkg=%ls, Domain=%ls\n",
                                    a_pUserInfo->wszUser, pSessionData->Session, pSessionData->LogonId.HighPart,
                                    pSessionData->LogonId.LowPart, a_pUserInfo->wszAuthenticationPackage,
                                    a_pUserInfo->wszLogonDomain);
 
-#if 1 /** @todo If we don't use this, drop it? */
-                /* The session ID increments/decrements on Vista often! So don't compare
-                   the session data SID with the current SID here. */
-                DWORD dwActiveSession = 0;
-                if (g_pfnWTSGetActiveConsoleSessionId != NULL)            /* Check terminal session ID. */
-                    dwActiveSession = g_pfnWTSGetActiveConsoleSessionId();
-                /*VBoxServiceVerbose(3, ("Users: Current active session ID: %ld\n", dwActiveSession));*/
-#endif
-
-                if (enmOwnerType == SidTypeUser)
+                /* Detect RDP sessions as well. */
+                LPTSTR  pBuffer = NULL;
+                DWORD   cbRet   = 0;
+                int     iState  = 0;
+                if (WTSQuerySessionInformation(WTS_CURRENT_SERVER_HANDLE,
+                                               pSessionData->Session,
+                                               WTSConnectState,
+                                               &pBuffer,
+                                               &cbRet))
                 {
-                    /* Detect RDP sessions as well. */
-                    LPTSTR  pBuffer = NULL;
-                    DWORD   cbRet   = 0;
-                    int     iState  = 0;
-                    if (WTSQuerySessionInformation(WTS_CURRENT_SERVER_HANDLE,
-                                                   WTS_CURRENT_SESSION,
-                                                   WTSConnectState,
-                                                   &pBuffer,
-                                                   &cbRet))
+                    if(cbRet)
+                        iState = *pBuffer;
+                    VBoxServiceVerbose(3, "VMInfo/Users:  Account User=%ls, WTSConnectState=%d\n",
+                                       a_pUserInfo->wszUser, iState);
+                    if (    iState == WTSActive           /* User logged on to WinStation. */
+                         || iState == WTSShadow           /* Shadowing another WinStation. */
+                         || iState == WTSDisconnected)    /* WinStation logged on without client. */
                     {
-                        /*VBoxServiceVerbose(3, ("Users: WTSQuerySessionInformation returned %ld bytes, p=%p, state=%d\n", cbRet, pBuffer, pBuffer != NULL ? (INT)*pBuffer : -1));*/
-                        if(cbRet)
-                            iState = *pBuffer;
-
-                        if (    iState == WTSActive           /* User logged on to WinStation. */
-                             || iState == WTSShadow           /* Shadowing another WinStation. */
-                             || iState == WTSDisconnected)    /* WinStation logged on without client. */
-                        {
-                            /** @todo On Vista and W2K, always "old" user name are still
-                             *        there. Filter out the old one! */
-                            VBoxServiceVerbose(3, "Users: Account User=%ls is logged in via TCS/RDP. State=%d\n",
-                                               a_pUserInfo->wszUser, iState);
-                            fFoundUser = true;
-                        }
-
-                        if (pBuffer)
-                            WTSFreeMemory(pBuffer);
-                    }
-                    else
-                    {
-                        /*
-                         * Terminal services don't run (for example in W2K,
-                         * nothing to worry about ...).  ... or is on the Vista
-                         * fast user switching page!
-                         */
+                        /** @todo On Vista and W2K, always "old" user name are still
+                         *        there. Filter out the old one! */
+                        VBoxServiceVerbose(3, "VMInfo/Users: Account User=%ls is logged in via TCS/RDP. State=%d\n",
+                                           a_pUserInfo->wszUser, iState);
                         fFoundUser = true;
                     }
+                    if (pBuffer)
+                        WTSFreeMemory(pBuffer);
+                }
+                else
+                {
+                    VBoxServiceVerbose(3, "VMInfo/Users:  Account User=%ls, WTSConnectState returnd %ld\n",
+                                       a_pUserInfo->wszUser, GetLastError());
+
+                    /*
+                     * Terminal services don't run (for example in W2K,
+                     * nothing to worry about ...).  ... or is on the Vista
+                     * fast user switching page!
+                     */
+                    fFoundUser = true;
                 }
             }
         }
-    }
+    }   
 
     LsaFreeReturnBuffer(pSessionData);
     return fFoundUser;
+}
+
+
+/**
+ * Retrieves the currently logged in users and stores their names along with the
+ * user count.
+ *
+ * @returns VBox status code.
+ * @param   ppszUserList    Where to store the user list (separated by commas).  Must be
+ *                          freed with RTStrFree().
+ * @param   pcUsersInList   Where to store the number of users in the list.
+ */
+int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
+{
+    PLUID       paSessions = NULL;
+    ULONG       cSession = 0;
+    NTSTATUS    r = 0;
+
+    /* This function can report stale or orphaned interactive logon sessions
+       of already logged off users (especially in Windows 2000). */
+    r = LsaEnumerateLogonSessions(&cSession, &paSessions);
+    VBoxServiceVerbose(3, "VMInfo/Users: Found %ld users\n", cSession);
+    if (r != STATUS_SUCCESS)
+    {
+        VBoxServiceError("VMInfo/Users: LsaEnumerate failed with %lu\n", LsaNtStatusToWinError(r));
+        return RTErrConvertFromWin32(LsaNtStatusToWinError(r));
+    }
+
+    PVBOXSERVICEVMINFOPROC  paProcs;
+    DWORD                   cProcs;
+    int rc = VBoxServiceVMInfoWinProcessesEnumerate(&paProcs, &cProcs);
+    if (RT_SUCCESS(rc))
+    {
+        *pcUsersInList = 0;
+        for (ULONG i = 0; i < cSession; i++)
+        {
+            VBOXSERVICEVMINFOUSER UserInfo;
+            if (   VBoxServiceVMInfoWinIsLoggedIn(&UserInfo, &paSessions[i])
+                && VBoxServiceVMInfoWinSessionHasProcesses(&paSessions[i], paProcs, cProcs))
+            {
+                if (*pcUsersInList > 0)
+                {
+                    rc = RTStrAAppend(ppszUserList, ",");
+                    AssertRCReturn(rc, rc);
+                }
+
+                *pcUsersInList += 1;
+
+                char *pszTemp;
+                int rc2 = RTUtf16ToUtf8(UserInfo.wszUser, &pszTemp);
+                if (RT_SUCCESS(rc2))
+                {
+                    rc = RTStrAAppend(ppszUserList, pszTemp);
+                    RTMemFree(pszTemp);
+                    AssertRCReturn(rc, rc);
+                }
+                else
+                    RTStrAAppend(ppszUserList, "<string-convertion-error>");
+            }
+        }
+        VBoxServiceVMInfoWinProcessesFree(paProcs);
+    }
+    LsaFreeReturnBuffer(paSessions);
 }
 
 #endif /* TARGET_NT4 */
