@@ -984,11 +984,11 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         if (DeviceExtension->cSources && DeviceExtension->aSources[0].pPrimaryAllocation)
         {
             if (!xres)
-                xres = DeviceExtension->aSources[0].pPrimaryAllocation->u.SurfInfo.width;
+                xres = DeviceExtension->aSources[0].pPrimaryAllocation->SurfDesc.width;
             if (!yres)
-                yres = DeviceExtension->aSources[0].pPrimaryAllocation->u.SurfInfo.height;
+                yres = DeviceExtension->aSources[0].pPrimaryAllocation->SurfDesc.height;
             if (!bpp)
-                bpp  = DeviceExtension->aSources[0].pPrimaryAllocation->u.SurfInfo.bpp;
+                bpp  = DeviceExtension->aSources[0].pPrimaryAllocation->SurfDesc.bpp;
         }
 #endif
 
