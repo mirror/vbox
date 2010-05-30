@@ -988,6 +988,8 @@ Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, ULONG aMaxD
 int
 Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress *pProgress)
 {
+    LogThisFunc(("pVM=%p pMachine=%p fStartPaused=%RTbool pProgress=%p\n", pVM, pMachine, fStartPaused, pProgress));
+
     /*
      * Get the config.
      */
@@ -1057,6 +1059,7 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
             theState.mstrPassword      = strPassword;
             theState.mhServer          = hServer;
 
+            bool fPowerOff;
             void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(&theState));
             if (pProgress->setCancelCallback(teleporterProgressCancelCallback, pvUser))
             {
@@ -1064,7 +1067,7 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
                 vrc = RTTcpServerListen(hServer, Console::teleporterTrgServeConnection, &theState);
                 pProgress->setCancelCallback(NULL, NULL);
 
-                bool fPowerOff = false;
+                fPowerOff = false;
                 if (vrc == VERR_TCP_SERVER_STOP)
                 {
                     vrc = theState.mRc;
@@ -1101,15 +1104,19 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
                     vrc = VERR_IPE_UNEXPECTED_STATUS;
                     fPowerOff = true;
                 }
-
-                if (fPowerOff)
-                {
-                    int vrc2 = VMR3PowerOff(pVM);
-                    AssertRC(vrc2);
-                }
             }
             else
+            {
+                LogThisFunc(("Canceled - check point #1\n"));
                 vrc = VERR_SSM_CANCELLED;
+                fPowerOff = true;
+            }
+
+            if (fPowerOff)
+            {
+                int vrc2 = VMR3PowerOff(pVM);
+                AssertRC(vrc2);
+            }
         }
 
         RTTimerLRDestroy(hTimerLR);
