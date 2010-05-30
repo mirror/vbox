@@ -165,7 +165,7 @@ typedef struct VBOXWDDM_SOURCE
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
     struct VBOXWDDM_ALLOCATION * pShadowAllocation;
     VBOXVIDEOOFFSET offVram;
-    VBOXWDDM_SURFACE_DESC SurfInfo;
+    VBOXWDDM_SURFACE_DESC SurfDesc;
     VBOXVBVAINFO Vbva;
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -635,7 +635,6 @@ NTSTATUS VBoxWddmGetModesForResolution(PDEVICE_EXTENSION DeviceExtension, bool b
         VIDEO_MODE_INFORMATION * pModes, uint32_t cModes, uint32_t *pcModes, int32_t * piPreferrableMode);
 
 D3DDDIFORMAT vboxWddmCalcPixelFormat(VIDEO_MODE_INFORMATION *pInfo);
-UINT vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format);
 
 DECLINLINE(ULONG) vboxWddmVramCpuVisibleSize(PDEVICE_EXTENSION pDevExt)
 {
@@ -667,7 +666,7 @@ DECLINLINE(ULONG) vboxWddmVramCpuInvisibleSegmentSize(PDEVICE_EXTENSION pDevExt)
     return vboxWddmVramCpuVisibleSegmentSize(pDevExt);
 }
 
-DECLINLINE(bool) vboxWddmCmpSurfDescs(VBOXWDDM_SURFACE_DESC *pDesc1, VBOXWDDM_SURFACE_DESC *pDesc2)
+DECLINLINE(bool) vboxWddmCmpSurfDescsBase(VBOXWDDM_SURFACE_DESC *pDesc1, VBOXWDDM_SURFACE_DESC *pDesc2)
 {
     if (pDesc1->width != pDesc2->width)
         return false;
@@ -690,26 +689,24 @@ DECLINLINE(void) vboxWddmAssignShadow(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURC
     if (pSource->pShadowAllocation)
     {
         PVBOXWDDM_ALLOCATION pOldAlloc = pSource->pShadowAllocation;
-        PVBOXWDDM_ALLOCATION_SHADOWSURFACE pOldShadowInfo = VBOXWDDM_ALLOCATION_BODY(pOldAlloc, VBOXWDDM_ALLOCATION_SHADOWSURFACE);
         /* clear the visibility info fo the current primary */
-        pOldShadowInfo->bVisible = FALSE;
-        pOldShadowInfo->bAssigned = FALSE;
-        Assert(pOldShadowInfo->VidPnSourceId == srcId);
+        pOldAlloc->bVisible = FALSE;
+        pOldAlloc->bAssigned = FALSE;
+        Assert(pOldAlloc->SurfDesc.VidPnSourceId == srcId);
         /* release the shadow surface */
-        pOldShadowInfo->VidPnSourceId = D3DDDI_ID_UNINITIALIZED;
+        pOldAlloc->SurfDesc.VidPnSourceId = D3DDDI_ID_UNINITIALIZED;
     }
 
     if (pAllocation)
     {
-        PVBOXWDDM_ALLOCATION_SHADOWSURFACE pShadowInfo = VBOXWDDM_ALLOCATION_BODY(pAllocation, VBOXWDDM_ALLOCATION_SHADOWSURFACE);
-        pShadowInfo->bVisible = FALSE;
+        pAllocation->bVisible = FALSE;
         /* this check ensures the shadow is not used for other source simultaneously */
-        Assert(pShadowInfo->VidPnSourceId == D3DDDI_ID_UNINITIALIZED);
-        pShadowInfo->VidPnSourceId = srcId;
-        pShadowInfo->bAssigned = TRUE;
-        if (!vboxWddmCmpSurfDescs(&pSource->SurfInfo, &pAllocation->u.SurfInfo))
+        Assert(pAllocation->SurfDesc.VidPnSourceId == D3DDDI_ID_UNINITIALIZED);
+        pAllocation->SurfDesc.VidPnSourceId = srcId;
+        pAllocation->bAssigned = TRUE;
+        if (!vboxWddmCmpSurfDescsBase(&pSource->SurfDesc, &pAllocation->SurfDesc))
             pSource->offVram = VBOXVIDEOOFFSET_VOID; /* force guest->host notification */
-        pSource->SurfInfo = pAllocation->u.SurfInfo;
+        pSource->SurfDesc = pAllocation->SurfDesc;
     }
 
     pSource->pShadowAllocation = pAllocation;
@@ -724,20 +721,18 @@ DECLINLINE(VOID) vboxWddmAssignPrimary(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOUR
     if (pSource->pPrimaryAllocation)
     {
         PVBOXWDDM_ALLOCATION pOldAlloc = pSource->pPrimaryAllocation;
-        PVBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE pOldPrimaryInfo = VBOXWDDM_ALLOCATION_BODY(pOldAlloc, VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE);
         /* clear the visibility info fo the current primary */
-        pOldPrimaryInfo->bVisible = FALSE;
-        pOldPrimaryInfo->bAssigned = FALSE;
-        Assert(pOldPrimaryInfo->VidPnSourceId == srcId);
+        pOldAlloc->bVisible = FALSE;
+        pOldAlloc->bAssigned = FALSE;
+        Assert(pOldAlloc->SurfDesc.VidPnSourceId == srcId);
     }
 
     if (pAllocation)
     {
-        PVBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE pPrimaryInfo = VBOXWDDM_ALLOCATION_BODY(pAllocation, VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE);
-        pPrimaryInfo->bVisible = FALSE;
-        Assert(pPrimaryInfo->VidPnSourceId == srcId);
-        pPrimaryInfo->VidPnSourceId = srcId;
-        pPrimaryInfo->bAssigned = TRUE;
+        pAllocation->bVisible = FALSE;
+        Assert(pAllocation->SurfDesc.VidPnSourceId == srcId);
+        pAllocation->SurfDesc.VidPnSourceId = srcId;
+        pAllocation->bAssigned = TRUE;
     }
 
     pSource->pPrimaryAllocation = pAllocation;
