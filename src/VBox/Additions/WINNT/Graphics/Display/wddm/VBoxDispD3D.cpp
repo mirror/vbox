@@ -1621,7 +1621,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                 pRc->cAllocations = pRcInfo->cAllocInfos;
                 for (UINT i = 0; i < pRcInfo->cAllocInfos; ++i)
                 {
-                    PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[1];
+                    PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
                     D3DDDI_ALLOCATIONINFO* pDdiAllocInfo = &pDdiAllocInfos[i];
                     PVBOXWDDM_ALLOCINFO pAllocInfo = &pAllocInfos[i];
                     CONST D3DDDI_SURFACEINFO* pSurf = &pResource->pSurfList[i];
