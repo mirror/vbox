@@ -6893,6 +6893,9 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     }
 
     /* Create the timer for command completion coalescing feature. */
+    /** @todo r=bird: Using the virtual sync clock needs some justification.
+     *        Currently not an issue as this feature isn't used by any guest
+     *        yet. */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, ahciCccTimer, pThis,
                                 TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "AHCI CCC Timer", &pThis->pHbaCccTimerR3);
     if (RT_FAILURE(rc))
