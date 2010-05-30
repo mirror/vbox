@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -51,17 +51,20 @@ typedef enum TMCLOCK
      * This clock ticks all the time, so use with care. */
     TMCLOCK_REAL = 0,
     /** Virtual guest time.
-     * This clock only ticks when the guest is running. It's implemented
-     * as an offset to real time. */
+     * This clock only ticks when the guest is running.  It's implemented
+     * as an offset to monotonic real time (GIP). */
     TMCLOCK_VIRTUAL,
     /** Virtual guest synchronized timer time.
-     * This is a special clock and timer queue for synchronizing virtual timers and
-     * virtual time sources. This clock is trying to keep up with TMCLOCK_VIRTUAL,
-     * but will wait for timers to be executed. If it lags too far behind TMCLOCK_VIRTUAL,
-     * it will try speed up to close the distance.
-     * @remarks Do not use this unless you *must*. */
+     * This is a special clock and timer queue for synchronizing virtual timers
+     * and virtual time sources.  This clock is trying to keep up with
+     * TMCLOCK_VIRTUAL, but will wait for timers to be executed.  If it lags
+     * too far behind TMCLOCK_VIRTUAL, it will try speed up to close the
+     * distance.
+     * @remarks Do not use this unless you really *must*. */
     TMCLOCK_VIRTUAL_SYNC,
-    /** Virtual CPU timestamp. (Running only when we're executing guest code.) */
+    /** Virtual CPU timestamp.
+     * By default this is a function of TMCLOCK_VIRTUAL_SYNC and the virtual
+     * CPU frequency. */
     TMCLOCK_TSC,
     /** Number of clocks. */
     TMCLOCK_MAX
