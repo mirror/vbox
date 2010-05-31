@@ -99,6 +99,32 @@ typedef std::list< ClientContexts >::iterator ClientContextsListIter;
 typedef std::list< ClientContexts >::const_iterator ClientContextsListIterConst;
 
 /**
+ * Structure for holding an uncompleted guest call.
+ */
+struct ClientWaiter
+{
+    /** Client ID; a client can have multiple handles! */
+    uint32_t mClientID;
+    /** The call handle */
+    VBOXHGCMCALLHANDLE mHandle;
+    /** The call parameters */
+    VBOXHGCMSVCPARM *mParms;
+    /** Number of parameters */
+    uint32_t mNumParms;
+
+    /** The standard contructor. */
+    ClientWaiter() : mClientID(0), mHandle(0), mParms(NULL), mNumParms(0) {}
+    /** The normal contructor. */
+    ClientWaiter(uint32_t aClientID, VBOXHGCMCALLHANDLE aHandle,
+              VBOXHGCMSVCPARM aParms[], uint32_t cParms)
+              : mClientID(aClientID), mHandle(aHandle), mParms(aParms), mNumParms(cParms) {}
+};
+/** The guest call list type */
+typedef std::list< ClientWaiter > ClientWaiterList;
+typedef std::list< ClientWaiter >::iterator CallListIter;
+typedef std::list< ClientWaiter >::const_iterator CallListIterConst;
+
+/**
  * Structure for holding a buffered host command.
  */
 struct HostCmd
@@ -118,32 +144,6 @@ typedef std::list< HostCmd >::iterator HostCmdListIter;
 typedef std::list< HostCmd >::const_iterator HostCmdListIterConst;
 
 /**
- * Structure for holding an uncompleted guest call.
- */
-struct GuestCall
-{
-    /** Client ID; a client can have multiple handles! */
-    uint32_t mClientID;
-    /** The call handle */
-    VBOXHGCMCALLHANDLE mHandle;
-    /** The call parameters */
-    VBOXHGCMSVCPARM *mParms;
-    /** Number of parameters */
-    uint32_t mNumParms;
-
-    /** The standard contructor. */
-    GuestCall() : mClientID(0), mHandle(0), mParms(NULL), mNumParms(0) {}
-    /** The normal contructor. */
-    GuestCall(uint32_t aClientID, VBOXHGCMCALLHANDLE aHandle,
-              VBOXHGCMSVCPARM aParms[], uint32_t cParms)
-              : mClientID(aClientID), mHandle(aHandle), mParms(aParms), mNumParms(cParms) {}
-};
-/** The guest call list type */
-typedef std::list< GuestCall > CallList;
-typedef std::list< GuestCall >::iterator CallListIter;
-typedef std::list< GuestCall >::const_iterator CallListIterConst;
-
-/**
  * Class containing the shared information service functionality.
  */
 class Service : public stdx::non_copyable
@@ -161,7 +161,7 @@ private:
     /** User data pointer to be supplied to the host callback function. */
     void *mpvHostData;
     /** The deferred calls list. */
-    CallList mClientList;
+    ClientWaiterList mClientWaiterList;
     /** The host command list. */
     HostCmdList mHostCmds;
     /** Client contexts list. */
@@ -435,12 +435,12 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
      */
     int rc = VINF_SUCCESS;
 
-    CallListIter itCall = mClientList.begin();
-    while (itCall != mClientList.end())
+    CallListIter itCall = mClientWaiterList.begin();
+    while (itCall != mClientWaiterList.end())
     {
         if (itCall->mClientID == u32ClientID)
         {       
-            itCall = mClientList.erase(itCall);
+            itCall = mClientWaiterList.erase(itCall);
         }
         else
             itCall++;
@@ -542,7 +542,7 @@ int Service::retrieveNextHostCmd(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHa
      */
     if (mHostCmds.empty()) /* If command list is empty, defer ... */
     {
-        mClientList.push_back(GuestCall(u32ClientID, callHandle, paParms, cParms));
+        mClientWaiterList.push_back(ClientWaiter(u32ClientID, callHandle, paParms, cParms));
         rc = VINF_HGCM_ASYNC_EXECUTE;
     }
     else
@@ -575,8 +575,8 @@ int Service::retrieveNextHostCmd(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHa
 int Service::cancelPendingWaits(uint32_t u32ClientID)
 {
     int rc = VINF_SUCCESS;
-    CallListIter it = mClientList.begin();
-    while (it != mClientList.end())
+    CallListIter it = mClientWaiterList.begin();
+    while (it != mClientWaiterList.end())
     {
         if (it->mClientID == u32ClientID)
         {
@@ -587,7 +587,7 @@ int Service::cancelPendingWaits(uint32_t u32ClientID)
             }
             if (mpHelpers)
                 mpHelpers->pfnCallComplete(it->mHandle, rc);
-            it = mClientList.erase(it);
+            it = mClientWaiterList.erase(it);
         }
         else
             it++;
@@ -659,16 +659,16 @@ int Service::processHostCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM
     if (RT_SUCCESS(rc))
     {
         /* Can we wake up a waiting client on guest? */
-        if (!mClientList.empty())
+        if (!mClientWaiterList.empty())
         {
-            GuestCall guest = mClientList.front();
+            ClientWaiter guest = mClientWaiterList.front();
             rc = sendHostCmdToGuest(&newCmd,
                                     guest.mHandle, guest.mNumParms, guest.mParms);
 
             /* In any case the client did something, so wake up and remove from list. */
             AssertPtr(mpHelpers);
             mpHelpers->pfnCallComplete(guest.mHandle, rc);
-            mClientList.pop_front();
+            mClientWaiterList.pop_front();
 
             /* If we got VERR_TOO_MUCH_DATA we buffer the host command in the next block
              * and return success to the host. */
