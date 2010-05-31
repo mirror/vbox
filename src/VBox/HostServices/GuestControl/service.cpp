@@ -435,6 +435,17 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
      */
     int rc = VINF_SUCCESS;
 
+    CallListIter itCall = mClientList.begin();
+    while (itCall != mClientList.end())
+    {
+        if (itCall->mClientID == u32ClientID)
+        {       
+            itCall = mClientList.erase(itCall);
+        }
+        else
+            itCall++;
+    }
+
     ClientContextsListIter it = mClientContextsList.begin();
     while (   it != mClientContextsList.end()
            && RT_SUCCESS(rc))
