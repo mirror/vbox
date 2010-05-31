@@ -754,26 +754,26 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
      */
     for (unsigned i = 0; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
 	{
-		PPGMPOOLPAGE pPage;
-	    unsigned     idxPage;
+        PPGMPOOLPAGE pPage;
+        unsigned     idxPage;
 
-	    if (pPool->aIdxDirtyPages[i] == NIL_PGMPOOL_IDX)
-			continue;
+        if (pPool->aIdxDirtyPages[i] == NIL_PGMPOOL_IDX)
+            continue;
 
-	    idxPage = pPool->aIdxDirtyPages[i];
-		AssertRelease(idxPage != NIL_PGMPOOL_IDX);
-		pPage = &pPool->aPages[idxPage];
-		Assert(pPage->idx == idxPage);
-		Assert(pPage->iMonitoredNext == NIL_PGMPOOL_IDX && pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
+        idxPage = pPool->aIdxDirtyPages[i];
+        AssertRelease(idxPage != NIL_PGMPOOL_IDX);
+        pPage = &pPool->aPages[idxPage];
+        Assert(pPage->idx == idxPage);
+        Assert(pPage->iMonitoredNext == NIL_PGMPOOL_IDX && pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
 
-	    AssertMsg(pPage->fDirty, ("Page %RGp (slot=%d) not marked dirty!", pPage->GCPhys, i));
+        AssertMsg(pPage->fDirty, ("Page %RGp (slot=%d) not marked dirty!", pPage->GCPhys, i));
 
-		Log(("Reactivate dirty page %RGp\n", pPage->GCPhys));
+        Log(("Reactivate dirty page %RGp\n", pPage->GCPhys));
 
-		/* First write protect the page again to catch all write accesses. (before checking for changes -> SMP) */
-	    int rc = PGMHandlerPhysicalReset(pVM, pPage->GCPhys);
-		Assert(rc == VINF_SUCCESS);
-		pPage->fDirty = false;
+        /* First write protect the page again to catch all write accesses. (before checking for changes -> SMP) */
+        int rc = PGMHandlerPhysicalReset(pVM, pPage->GCPhys);
+        Assert(rc == VINF_SUCCESS);
+        pPage->fDirty = false;
 
         pPool->aIdxDirtyPages[i] = NIL_PGMPOOL_IDX;
 	}
