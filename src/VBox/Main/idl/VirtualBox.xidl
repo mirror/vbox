@@ -3238,13 +3238,13 @@
               VirtualBox front-end such as the GUI, and the suggestions can be displayed to the
               user. In particular, the <link to="#virtualSystemDescriptions" /> array contains
               instances of <link to="IVirtualSystemDescription" /> which represent the virtual
-              systems in the OVF, which in turn describe the virtual hardware prescribed by the
-              OVF (network and hardware adapters, virtual disk images, memory size and so on).
+              systems (machines) in the OVF, which in turn describe the virtual hardware prescribed
+              by the OVF (network and hardware adapters, virtual disk images, memory size and so on).
               The GUI can then give the user the option to confirm and/or change these suggestions.
           </li>
 
           <li>If desired, call <link to="IVirtualSystemDescription::setFinalValues" /> for each
-              virtual system to override the suggestions made by the interpret() routine.
+              virtual system (machine) to override the suggestions made by the interpret() routine.
           </li>
 
           <li>Finally, call <link to="#importMachines" /> to  create virtual machines in
@@ -3261,12 +3261,12 @@
             </li>
 
             <li>For each machine you would like to export, call <link to="IMachine::export" />
-                with the IAppliance object you just created. This creates an instance of
+                with the IAppliance object you just created. Each such call creates one instance of
                 <link to="IVirtualSystemDescription" /> inside the appliance.
             </li>
 
             <li>If desired, call <link to="IVirtualSystemDescription::setFinalValues" /> for each
-                virtual system to override the suggestions made by the export() routine.
+                virtual system (machine) to override the suggestions made by the export() routine.
             </li>
 
             <li>Finally, call <link to="#write" /> with a path specification to have the OVF
@@ -3324,7 +3324,7 @@
 
     <attribute name="virtualSystemDescriptions" type="IVirtualSystemDescription" readonly="yes" safearray="yes">
       <desc> Array of virtual system descriptions. One such description is created
-      for each virtual system found in the OVF.
+      for each virtual system (machine) found in the OVF.
       This array is empty until either <link to="#interpret" /> (for import) or <link to="IMachine::export" />
       (for export) has been called.
       </desc>
@@ -3489,11 +3489,12 @@
      wsmap="managed"
      >
 
-    <desc>This interface is used in the <link to="IAppliance::virtualSystemDescriptions" /> array.
-    After <link to="IAppliance::interpret" /> has been called, that array contains
-    information about how the virtual systems described in the OVF should best be imported into VirtualBox
-    virtual machines. See <link to="IAppliance" /> for the steps required to import an OVF
-    into VirtualBox.
+    <desc>Represents one virtual system (machine) in an appliance. This interface is used in
+      the <link to="IAppliance::virtualSystemDescriptions" /> array. After
+      <link to="IAppliance::interpret" /> has been called, that array contains information
+      about how the virtual systems described in the OVF should best be imported into
+      VirtualBox virtual machines. See <link to="IAppliance" /> for the steps required to
+      import an OVF into VirtualBox.
     </desc>
 
     <attribute name="count" type="unsigned long" readonly="yes">
