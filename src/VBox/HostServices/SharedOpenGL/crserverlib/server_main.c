@@ -1104,7 +1104,7 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
 
     if (MAPPED(SCREEN(sIndex)) && SCREEN(sIndex).winID!=winID)
     {
-        crWarning("Mapped screen[%i] is being remapped.", sIndex);
+        crDebug("Mapped screen[%i] is being remapped.", sIndex);
         crVBoxServerUnmapScreen(sIndex);
     }
 
