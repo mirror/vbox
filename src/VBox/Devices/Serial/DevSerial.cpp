@@ -66,7 +66,8 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#define SERIAL_SAVED_STATE_VERSION  3
+#define SERIAL_SAVED_STATE_VERSION_16450        3
+#define SERIAL_SAVED_STATE_VERSION              4
 
 #define UART_LCR_DLAB       0x80        /* Divisor latch access bit */
 
@@ -215,6 +216,7 @@ struct SerialState
     bool                            fR0Enabled;
     bool                            fYieldOnLSRRead;
     bool volatile                   fRecvWaiting;
+    bool                            f16550AEnabled;
     bool                            Alignment3[3];
     /** Time it takes to transmit a character */
     uint64_t                        char_transmit_time;
@@ -458,6 +460,9 @@ static int serial_ioport_write(SerialState *s, uint32_t addr, uint32_t val)
         }
         break;
     case 2:
+        if (!s->f16550AEnabled)
+            break;
+
         val = val & 0xFF;
 
         if (s->fcr == val)
@@ -940,11 +945,18 @@ static DECLCALLBACK(int) serialSaveExec(PPDMDEVINS pDevIns,
     SSMR3PutU8(pSSM, pThis->lsr);
     SSMR3PutU8(pSSM, pThis->msr);
     SSMR3PutU8(pSSM, pThis->scr);
+    SSMR3PutU8(pSSM, pThis->fcr); /* 16550A */
     SSMR3PutS32(pSSM, pThis->thr_ipending);
     SSMR3PutS32(pSSM, pThis->irq);
     SSMR3PutS32(pSSM, pThis->last_break_enable);
     SSMR3PutU32(pSSM, pThis->base);
     SSMR3PutBool(pSSM, pThis->msr_changed);
+
+    /* Don't store:
+     *  - the content of the FIFO
+     *  - tsr_retry
+     */
+
     return SSMR3PutU32(pSSM, ~0); /* sanity/terminator */
 }
 
@@ -958,7 +970,12 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
 {
     SerialState *pThis = PDMINS_2_DATA(pDevIns, SerialState *);
 
-    AssertMsgReturn(uVersion == SERIAL_SAVED_STATE_VERSION, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+    if (uVersion == SERIAL_SAVED_STATE_VERSION_16450)
+    {
+        pThis->f16550AEnabled = false;
+    }
+    else
+        AssertMsgReturn(uVersion == SERIAL_SAVED_STATE_VERSION, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
 
     if (uPass == SSM_PASS_FINAL)
     {
@@ -970,6 +987,10 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
         SSMR3GetU8(pSSM, &pThis->lsr);
         SSMR3GetU8(pSSM, &pThis->msr);
         SSMR3GetU8(pSSM, &pThis->scr);
+        if (uVersion > SERIAL_SAVED_STATE_VERSION_16450)
+        {
+            SSMR3GetU8(pSSM, &pThis->fcr);
+        }
         SSMR3GetS32(pSSM, &pThis->thr_ipending);
     }
 
@@ -999,8 +1020,10 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
             return rc;
         AssertMsgReturn(u32 == ~0U, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
-        if (pThis->lsr & UART_LSR_DR)
+        if (   (pThis->lsr & UART_LSR_DR)
+            || pThis->fRecvWaiting)
         {
+            pThis->fRecvWaiting = false;
             rc = RTSemEventSignal(pThis->ReceiveSem);
             AssertRC(rc);
         }
@@ -1191,6 +1214,8 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->base = io_base;
 #endif
 
+    pThis->f16550AEnabled = true;
+
     /*
      * Initialize critical section and the semaphore.
      * This must of course be done before attaching drivers or anything else which can call us back..
@@ -1245,7 +1270,6 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
         if (RT_FAILURE(rc))
             return rc;
     }
-
 
     if (pThis->fR0Enabled)
     {
