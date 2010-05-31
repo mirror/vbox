@@ -682,7 +682,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
     if (llName.size() != 1)
         throw setError(VBOX_E_NOT_SUPPORTED,
                         tr("Missing VM name"));
-    Utf8Str &strVMName = llName.front()->strVbox;
+    Utf8Str &strVMName = llName.front()->strVboxCurrent;
     pelmVirtualSystem->setAttribute("ovf:id", strVMName);
 
     // product info
@@ -691,11 +691,11 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
     std::list<VirtualSystemDescriptionEntry*> llVendor = vsdescThis->findByType(VirtualSystemDescriptionType_Vendor);
     std::list<VirtualSystemDescriptionEntry*> llVendorUrl = vsdescThis->findByType(VirtualSystemDescriptionType_VendorUrl);
     std::list<VirtualSystemDescriptionEntry*> llVersion = vsdescThis->findByType(VirtualSystemDescriptionType_Version);
-    bool fProduct = llProduct.size() && !llProduct.front()->strVbox.isEmpty();
-    bool fProductUrl = llProductUrl.size() && !llProductUrl.front()->strVbox.isEmpty();
-    bool fVendor = llVendor.size() && !llVendor.front()->strVbox.isEmpty();
-    bool fVendorUrl = llVendorUrl.size() && !llVendorUrl.front()->strVbox.isEmpty();
-    bool fVersion = llVersion.size() && !llVersion.front()->strVbox.isEmpty();
+    bool fProduct = llProduct.size() && !llProduct.front()->strVboxCurrent.isEmpty();
+    bool fProductUrl = llProductUrl.size() && !llProductUrl.front()->strVboxCurrent.isEmpty();
+    bool fVendor = llVendor.size() && !llVendor.front()->strVboxCurrent.isEmpty();
+    bool fVendorUrl = llVendorUrl.size() && !llVendorUrl.front()->strVboxCurrent.isEmpty();
+    bool fVersion = llVersion.size() && !llVersion.front()->strVboxCurrent.isEmpty();
     if (fProduct ||
         fProductUrl ||
         fVersion ||
@@ -722,21 +722,21 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
 
         pelmAnnotationSection->createChild("Info")->addContent("Meta-information about the installed software");
         if (fProduct)
-            pelmAnnotationSection->createChild("Product")->addContent(llProduct.front()->strVbox);
+            pelmAnnotationSection->createChild("Product")->addContent(llProduct.front()->strVboxCurrent);
         if (fVendor)
-            pelmAnnotationSection->createChild("Vendor")->addContent(llVendor.front()->strVbox);
+            pelmAnnotationSection->createChild("Vendor")->addContent(llVendor.front()->strVboxCurrent);
         if (fVersion)
-            pelmAnnotationSection->createChild("Version")->addContent(llVersion.front()->strVbox);
+            pelmAnnotationSection->createChild("Version")->addContent(llVersion.front()->strVboxCurrent);
         if (fProductUrl)
-            pelmAnnotationSection->createChild("ProductUrl")->addContent(llProductUrl.front()->strVbox);
+            pelmAnnotationSection->createChild("ProductUrl")->addContent(llProductUrl.front()->strVboxCurrent);
         if (fVendorUrl)
-            pelmAnnotationSection->createChild("VendorUrl")->addContent(llVendorUrl.front()->strVbox);
+            pelmAnnotationSection->createChild("VendorUrl")->addContent(llVendorUrl.front()->strVboxCurrent);
     }
 
     // description
     std::list<VirtualSystemDescriptionEntry*> llDescription = vsdescThis->findByType(VirtualSystemDescriptionType_Description);
     if (llDescription.size() &&
-        !llDescription.front()->strVbox.isEmpty())
+        !llDescription.front()->strVboxCurrent.isEmpty())
     {
         /*  <Section ovf:required="false" xsi:type="ovf:AnnotationSection_Type">
                 <Info>A human-readable annotation</Info>
@@ -753,13 +753,13 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
             pelmAnnotationSection = pelmVirtualSystem->createChild("AnnotationSection");
 
         pelmAnnotationSection->createChild("Info")->addContent("A human-readable annotation");
-        pelmAnnotationSection->createChild("Annotation")->addContent(llDescription.front()->strVbox);
+        pelmAnnotationSection->createChild("Annotation")->addContent(llDescription.front()->strVboxCurrent);
     }
 
     // license
     std::list<VirtualSystemDescriptionEntry*> llLicense = vsdescThis->findByType(VirtualSystemDescriptionType_License);
     if (llLicense.size() &&
-        !llLicense.front()->strVbox.isEmpty())
+        !llLicense.front()->strVboxCurrent.isEmpty())
     {
         /* <EulaSection>
             <Info ovf:msgid="6">License agreement for the Virtual System.</Info>
@@ -775,7 +775,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
             pelmEulaSection = pelmVirtualSystem->createChild("EulaSection");
 
         pelmEulaSection->createChild("Info")->addContent("License agreement for the virtual system");
-        pelmEulaSection->createChild("License")->addContent(llLicense.front()->strVbox);
+        pelmEulaSection->createChild("License")->addContent(llLicense.front()->strVboxCurrent);
     }
 
     // operating system
@@ -878,8 +878,8 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                           : Utf8StrFmt("%d", desc.type).c_str()),
                          desc.strRef.c_str(),
                          desc.strOvf.c_str(),
-                         desc.strVbox.c_str(),
-                         desc.strExtraConfig.c_str()));
+                         desc.strVboxCurrent.c_str(),
+                         desc.strExtraConfigCurrent.c_str()));
 
             ovf::ResourceType_T type = (ovf::ResourceType_T)0;      // if this becomes != 0 then we do stuff
             Utf8Str strResourceSubType;
@@ -917,7 +917,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                     {
                         strDescription = "Number of virtual CPUs";
                         type = ovf::ResourceType_Processor; // 3
-                        desc.strVbox.toInt(uTemp);
+                        desc.strVboxCurrent.toInt(uTemp);
                         lVirtualQuantity = (int32_t)uTemp;
                         strCaption = Utf8StrFmt("%d virtual CPU", lVirtualQuantity);     // without this ovftool won't eat the item
                     }
@@ -937,7 +937,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                     {
                         strDescription = "Memory Size";
                         type = ovf::ResourceType_Memory; // 4
-                        desc.strVbox.toInt(uTemp);
+                        desc.strVboxCurrent.toInt(uTemp);
                         lVirtualQuantity = (int32_t)(uTemp / _1M);
                         strAllocationUnits = "MegaBytes";
                         strCaption = Utf8StrFmt("%d MB of memory", lVirtualQuantity);     // without this ovftool won't eat the item
@@ -957,7 +957,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                     {
                         strDescription = "IDE Controller";
                         type = ovf::ResourceType_IDEController; // 5
-                        strResourceSubType = desc.strVbox;
+                        strResourceSubType = desc.strVboxCurrent;
 
                         if (!lIDEPrimaryControllerIndex)
                         {
@@ -1003,13 +1003,13 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                         lAddress = 0;
                         lBusNumber = 0;
 
-                        if (    desc.strVbox.isEmpty()      // AHCI is the default in VirtualBox
-                                || (!desc.strVbox.compare("ahci", Utf8Str::CaseInsensitive))
-                            )
+                        if (    desc.strVboxCurrent.isEmpty()      // AHCI is the default in VirtualBox
+                             || (!desc.strVboxCurrent.compare("ahci", Utf8Str::CaseInsensitive))
+                           )
                             strResourceSubType = "AHCI";
                         else
                             throw setError(VBOX_E_NOT_SUPPORTED,
-                                            tr("Invalid config string \"%s\" in SATA controller"), desc.strVbox.c_str());
+                                            tr("Invalid config string \"%s\" in SATA controller"), desc.strVboxCurrent.c_str());
 
                         // remember this ID
                         idSATAController = ulInstanceID;
@@ -1038,17 +1038,17 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                         lAddress = 0;
                         lBusNumber = 0;
 
-                        if (    desc.strVbox.isEmpty()      // LsiLogic is the default in VirtualBox
-                             || (!desc.strVbox.compare("lsilogic", Utf8Str::CaseInsensitive))
+                        if (    desc.strVboxCurrent.isEmpty()      // LsiLogic is the default in VirtualBox
+                             || (!desc.strVboxCurrent.compare("lsilogic", Utf8Str::CaseInsensitive))
                             )
                             strResourceSubType = "lsilogic";
-                        else if (!desc.strVbox.compare("buslogic", Utf8Str::CaseInsensitive))
+                        else if (!desc.strVboxCurrent.compare("buslogic", Utf8Str::CaseInsensitive))
                             strResourceSubType = "buslogic";
-                        else if (!desc.strVbox.compare("lsilogicsas", Utf8Str::CaseInsensitive))
+                        else if (!desc.strVboxCurrent.compare("lsilogicsas", Utf8Str::CaseInsensitive))
                             strResourceSubType = "lsilogicsas";
                         else
                             throw setError(VBOX_E_NOT_SUPPORTED,
-                                            tr("Invalid config string \"%s\" in SCSI controller"), desc.strVbox.c_str());
+                                            tr("Invalid config string \"%s\" in SCSI controller"), desc.strVboxCurrent.c_str());
 
                         // remember this ID
                         idSCSIController = ulInstanceID;
@@ -1078,12 +1078,12 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                         strHostResource = Utf8StrFmt("/disk/%s", strDiskID.c_str());
 
                         // controller=<index>;channel=<c>
-                        size_t pos1 = desc.strExtraConfig.find("controller=");
-                        size_t pos2 = desc.strExtraConfig.find("channel=");
+                        size_t pos1 = desc.strExtraConfigCurrent.find("controller=");
+                        size_t pos2 = desc.strExtraConfigCurrent.find("channel=");
                         int32_t lControllerIndex = -1;
                         if (pos1 != Utf8Str::npos)
                         {
-                            RTStrToInt32Ex(desc.strExtraConfig.c_str() + pos1 + 11, NULL, 0, &lControllerIndex);
+                            RTStrToInt32Ex(desc.strExtraConfigCurrent.c_str() + pos1 + 11, NULL, 0, &lControllerIndex);
                             if (lControllerIndex == lIDEPrimaryControllerIndex)
                                 ulParent = idIDEPrimaryController;
                             else if (lControllerIndex == lIDESecondaryControllerIndex)
@@ -1094,7 +1094,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                                 ulParent = idSATAController;
                         }
                         if (pos2 != Utf8Str::npos)
-                            RTStrToInt32Ex(desc.strExtraConfig.c_str() + pos2 + 8, NULL, 0, &lAddressOnParent);
+                            RTStrToInt32Ex(desc.strExtraConfigCurrent.c_str() + pos2 + 8, NULL, 0, &lAddressOnParent);
 
                         LogFlowFunc(("HardDiskImage details: pos1=%d, pos2=%d, lControllerIndex=%d, lIDEPrimaryControllerIndex=%d, lIDESecondaryControllerIndex=%d, ulParent=%d, lAddressOnParent=%d\n",
                                      pos1, pos2, lControllerIndex, lIDEPrimaryControllerIndex, lIDESecondaryControllerIndex, ulParent, lAddressOnParent));
@@ -1103,7 +1103,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                              || lAddressOnParent == -1
                            )
                             throw setError(VBOX_E_NOT_SUPPORTED,
-                                            tr("Missing or bad extra config string in hard disk image: \"%s\""), desc.strExtraConfig.c_str());
+                                            tr("Missing or bad extra config string in hard disk image: \"%s\""), desc.strExtraConfigCurrent.c_str());
 
                         stack.mapDisks[strDiskID] = &desc;
                     }
@@ -1155,7 +1155,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                             * To be compatible with vmware & others we set
                             * PCNet32 for our PCNet types & E1000 for the
                             * E1000 cards. */
-                        switch (desc.strVbox.toInt32())
+                        switch (desc.strVboxCurrent.toInt32())
                         {
                             case NetworkAdapterType_Am79C970A:
                             case NetworkAdapterType_Am79C973: strResourceSubType = "PCNet32"; break;
@@ -1469,7 +1469,7 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
             const VirtualSystemDescriptionEntry *pDiskEntry = itS->second;
 
             // source path: where the VBox image is
-            const Utf8Str &strSrcFilePath = pDiskEntry->strVbox;
+            const Utf8Str &strSrcFilePath = pDiskEntry->strVboxCurrent;
             Bstr bstrSrcFilePath(strSrcFilePath);
             if (!RTPathExists(strSrcFilePath.c_str()))
                 /* This isn't allowed */

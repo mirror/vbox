@@ -1056,10 +1056,10 @@ STDMETHODIMP VirtualSystemDescription::GetDescription(ComSafeArrayOut(VirtualSys
         bstr = vsde.strOvf;
         bstr.cloneTo(&sfaOrigValues[i]);
 
-        bstr = vsde.strVbox;
+        bstr = vsde.strVboxCurrent;
         bstr.cloneTo(&sfaVboxValues[i]);
 
-        bstr = vsde.strExtraConfig;
+        bstr = vsde.strExtraConfigCurrent;
         bstr.cloneTo(&sfaExtraConfigValues[i]);
     }
 
@@ -1119,10 +1119,10 @@ STDMETHODIMP VirtualSystemDescription::GetDescriptionByType(VirtualSystemDescrip
         bstr = vsde->strOvf;
         bstr.cloneTo(&sfaOrigValues[i]);
 
-        bstr = vsde->strVbox;
+        bstr = vsde->strVboxCurrent;
         bstr.cloneTo(&sfaVboxValues[i]);
 
-        bstr = vsde->strExtraConfig;
+        bstr = vsde->strExtraConfigCurrent;
         bstr.cloneTo(&sfaExtraConfigValues[i]);
     }
 
@@ -1167,8 +1167,8 @@ STDMETHODIMP VirtualSystemDescription::GetValuesByType(VirtualSystemDescriptionT
         {
             case VirtualSystemDescriptionValueType_Reference: bstr = vsde->strRef; break;
             case VirtualSystemDescriptionValueType_Original: bstr = vsde->strOvf; break;
-            case VirtualSystemDescriptionValueType_Auto: bstr = vsde->strVbox; break;
-            case VirtualSystemDescriptionValueType_ExtraConfig: bstr = vsde->strExtraConfig; break;
+            case VirtualSystemDescriptionValueType_Auto: bstr = vsde->strVboxCurrent; break;
+            case VirtualSystemDescriptionValueType_ExtraConfig: bstr = vsde->strExtraConfigCurrent; break;
         }
 
         bstr.cloneTo(&sfaValues[i]);
@@ -1220,8 +1220,8 @@ STDMETHODIMP VirtualSystemDescription::SetFinalValues(ComSafeArrayIn(BOOL, aEnab
 
         if (sfaEnabled[i])
         {
-            vsde.strVbox = sfaVboxValues[i];
-            vsde.strExtraConfig = sfaExtraConfigValues[i];
+            vsde.strVboxCurrent = sfaVboxValues[i];
+            vsde.strExtraConfigCurrent = sfaExtraConfigValues[i];
         }
         else
             vsde.type = VirtualSystemDescriptionType_Ignore;
@@ -1269,8 +1269,12 @@ void VirtualSystemDescription::addEntry(VirtualSystemDescriptionType_T aType,
     vsde.type = aType;
     vsde.strRef = strRef;
     vsde.strOvf = aOvfValue;
-    vsde.strVbox = aVboxValue;
-    vsde.strExtraConfig = strExtraConfig;
+    vsde.strVboxSuggested           // remember original value
+        = vsde.strVboxCurrent       // and set current value which can be overridden by setFinalValues()
+        = aVboxValue;
+    vsde.strExtraConfigSuggested
+        = vsde.strExtraConfigCurrent
+        = strExtraConfig;
     vsde.ulSizeMB = ulSizeMB;
 
     m->llDescriptions.push_back(vsde);

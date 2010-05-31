@@ -88,7 +88,7 @@ public:
         COM_INTERFACE_ENTRY2(IDispatch, IVirtualBox)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IVirtualBox)
-        COM_INTERFACE_ENTRY(IConnectionPointContainer) 
+        COM_INTERFACE_ENTRY(IConnectionPointContainer)
     END_COM_MAP()
 
 #ifdef RT_OS_WINDOWS
