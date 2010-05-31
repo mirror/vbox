@@ -524,14 +524,18 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
          *  - SE_INCREASE_QUOTA_NAME
          *
          * We may fail here with ERROR_PRIVILEGE_NOT_HELD.
-         *
-         * Because we have to deal with http://support.microsoft.com/kb/245683 for NULL domain names
-         * on NT4 here, pass an empty string. However, passing FQDNs should work!
          */
         PHANDLE phToken = NULL;
         HANDLE hTokenLogon = INVALID_HANDLE_VALUE;
         fRc = LogonUserW(pwszUser,
-                         L"",
+                         /* 
+                          * Because we have to deal with http://support.microsoft.com/kb/245683
+                          * for NULL domain names when running on NT4 here, pass an empty string if so.
+                          * However, passing FQDNs should work! 
+                          */
+                         ((DWORD)(LOBYTE(LOWORD(GetVersion()))) < 5)  /* < Windows 2000. */
+                         ? L""   /* NT4 and older. */
+                         : NULL, /* Windows 2000 and up. */
                          pwszPassword,
                          LOGON32_LOGON_INTERACTIVE,
                          LOGON32_PROVIDER_DEFAULT,
