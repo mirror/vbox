@@ -68,10 +68,8 @@ QMap<QString, QString> QIHotKeyEdit::sKeyNames;
 #ifdef Q_WS_MAC
 # include "DarwinKeyboard.h"
 # include <Carbon/Carbon.h>
-# ifdef QT_MAC_USE_COCOA
-#  include "darwin/VBoxCocoaApplication.h"
-#  include "VBoxUtils.h"
-# endif
+# include "darwin/VBoxCocoaApplication.h"
+# include "VBoxUtils.h"
 #endif
 
 
@@ -652,7 +650,6 @@ bool QIHotKeyEdit::x11Event (XEvent *event)
 }
 
 #elif defined (Q_WS_MAC)
-# ifdef QT_MAC_USE_COCOA
 /* static */
 bool QIHotKeyEdit::darwinEventHandlerProc (const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
 {
@@ -664,21 +661,6 @@ bool QIHotKeyEdit::darwinEventHandlerProc (const void *pvCocoaEvent, const void 
     return false;
 }
 
-# else  /* !QT_MAC_USE_COCOA */
-/* static */
-pascal OSStatus QIHotKeyEdit::darwinEventHandlerProc (EventHandlerCallRef inHandlerCallRef,
-                                                      EventRef inEvent, void *inUserData)
-{
-    QIHotKeyEdit *edit = (QIHotKeyEdit *) inUserData;
-    UInt32 EventClass = ::GetEventClass (inEvent);
-    if (EventClass == kEventClassKeyboard)
-    {
-        if (edit->darwinKeyboardEvent (NULL, inEvent))
-            return 0;
-    }
-    return CallNextEventHandler (inHandlerCallRef, inEvent);
-}
-# endif /* !QT_MAC_USE_COCOA */
 
 bool QIHotKeyEdit::darwinKeyboardEvent (const void *pvCocoaEvent, EventRef inEvent)
 {

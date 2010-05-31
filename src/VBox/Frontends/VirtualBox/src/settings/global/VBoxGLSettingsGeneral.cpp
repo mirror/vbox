@@ -30,9 +30,6 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
 #ifndef VBOX_GUI_WITH_SYSTRAY
     mCbCheckTrayIcon->hide();
 #endif /* VBOX_GUI_WITH_SYSTRAY */
-#ifndef QT_MAC_USE_COCOA
-    mCbCheckPresentationMode->hide();
-#endif /* QT_MAC_USE_COCOA */
     if (   mCbCheckTrayIcon->isHidden()
         && mCbCheckPresentationMode->isHidden())
         mLnSeparator2->hide();
