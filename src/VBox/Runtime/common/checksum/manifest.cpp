@@ -61,8 +61,8 @@ typedef struct RTMANIFESTCALLBACKDATA
 {
     PFNRTMANIFESTPROGRESS pfnProgressCallback;
     void *pvUser;
-    uint32_t cMaxFiles;
-    uint32_t cCurrentFile;
+    size_t cMaxFiles;
+    size_t cCurrentFile;
 } RTMANIFESTCALLBACKDATA;
 typedef RTMANIFESTCALLBACKDATA* PRTMANIFESTCALLBACKDATA;
 
