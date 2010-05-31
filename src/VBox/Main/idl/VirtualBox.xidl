@@ -6850,6 +6850,16 @@
         it will continue its execution the point where the state has
         been saved.
 
+        If the machine <link to="IMachine::teleporterEnabled"/> property is
+        enabled on the machine being powered up, the machine will wait for an
+        incoming teleportation in the <link to="MachineState_TeleportingIn"/>
+        state. The returned progress object will have at least three
+        operations where the last three are defined as: (1) powering up and
+        starting TCP server, (2) waiting for incoming teleportations, and
+        (3) perform teleportation. These operations will be reflected as the
+        last three operations of the progress objected returned by
+        <link to="IVirtualBox::openRemoteSession"/> as well.
+
         <note>
           Unless you are trying to write a new VirtualBox front-end that
           performs direct machine execution (like the VirtualBox or VBoxSDL
