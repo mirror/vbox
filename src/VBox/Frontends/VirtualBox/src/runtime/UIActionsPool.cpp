@@ -19,6 +19,7 @@
 
 /* Global includes */
 #include <QtGlobal>
+#include <QToolTip>
 
 /* Local includes */
 #include "UIActionsPool.h"
@@ -599,6 +600,14 @@ protected:
     void retranslateUi()
     {
         menu()->setTitle(QApplication::translate("UIActionsPool", "&USB Devices"));
+        connect(menu(), SIGNAL(hovered(QAction*)), this, SLOT(sltPopupToolTip(QAction*)));
+    }
+
+private slots:
+
+    void sltPopupToolTip(QAction *pAction)
+    {
+        QToolTip::showText(QCursor::pos(), pAction->toolTip());
     }
 };
 

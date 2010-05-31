@@ -1356,6 +1356,7 @@ void UIMachineLogic::sltPrepareUSBMenu()
 
             /* Set USB attach data: */
             attachUSBAction->setData(QVariant::fromValue(USBTarget(!attachUSBAction->isChecked(), device.GetId())));
+            attachUSBAction->setToolTip(vboxGlobal().toolTip(device));
         }
     }
 }
