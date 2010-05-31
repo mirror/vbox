@@ -670,25 +670,27 @@ VMMR3DECL(void) PDMR3QueueFlushAll(PVM pVM)
      * only used to get someones attention. Queue inserts occuring during the
      * flush are caught using the pending bit.
      *
-     * Note! The order in which the FF and pending bit are set and cleared is
-     *       important.
+     * Note! We must check the force action and pending flags after clearing
+     *       the active bit!
      */
     VM_FF_CLEAR(pVM, VM_FF_PDM_QUEUES);
-    if (!ASMAtomicBitTestAndSet(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_ACTIVE_BIT))
+    while (!ASMAtomicBitTestAndSet(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_ACTIVE_BIT))
     {
         ASMAtomicBitClear(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_PENDING_BIT);
-        do
-        {
-            VM_FF_CLEAR(pVM, VM_FF_PDM_QUEUES);
-            for (PPDMQUEUE pCur = pVM->pUVM->pdm.s.pQueuesForced; pCur; pCur = pCur->pNext)
-                if (    pCur->pPendingR3
-                    ||  pCur->pPendingR0
-                    ||  pCur->pPendingRC)
-                    pdmR3QueueFlush(pCur);
-        } while (   ASMAtomicBitTestAndClear(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_PENDING_BIT)
-                 || VM_FF_ISPENDING(pVM, VM_FF_PDM_QUEUES));
+
+        for (PPDMQUEUE pCur = pVM->pUVM->pdm.s.pQueuesForced; pCur; pCur = pCur->pNext)
+            if (    pCur->pPendingR3
+                ||  pCur->pPendingR0
+                ||  pCur->pPendingRC)
+                pdmR3QueueFlush(pCur);
 
         ASMAtomicBitClear(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_ACTIVE_BIT);
+
+        /* We're done if there were no inserts while we were busy. */
+        if (   !ASMBitTest(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_PENDING_BIT)
+            && !VM_FF_ISPENDING(pVM, VM_FF_PDM_QUEUES))
+            break;
+        VM_FF_CLEAR(pVM, VM_FF_PDM_QUEUES);
     }
 }
 
@@ -707,7 +709,7 @@ static bool pdmR3QueueFlush(PPDMQUEUE pQueue)
     /*
      * Get the lists.
      */
-    PPDMQUEUEITEMCORE pItems = (PPDMQUEUEITEMCORE)ASMAtomicXchgPtr((void * volatile *)&pQueue->pPendingR3, NULL);
+    PPDMQUEUEITEMCORE pItems   = (PPDMQUEUEITEMCORE)ASMAtomicXchgPtr((void * volatile *)&pQueue->pPendingR3, NULL);
     RTRCPTR           pItemsRC = ASMAtomicXchgRCPtr(&pQueue->pPendingRC, NIL_RTRCPTR);
     RTR0PTR           pItemsR0 = ASMAtomicXchgR0Ptr(&pQueue->pPendingR0, NIL_RTR0PTR);
 
