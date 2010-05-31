@@ -217,7 +217,7 @@ struct SerialState
     bool                            fYieldOnLSRRead;
     bool volatile                   fRecvWaiting;
     bool                            f16550AEnabled;
-    bool                            Alignment3[3];
+    bool                            Alignment3[2];
     /** Time it takes to transmit a character */
     uint64_t                        char_transmit_time;
 
