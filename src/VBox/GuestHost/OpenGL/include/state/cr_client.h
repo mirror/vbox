@@ -126,6 +126,7 @@ typedef struct {
 extern const CRPixelPackState crStateNativePixelPacking;
 
 DECLEXPORT(void) crStateClientInitBits(CRClientBits *c);
+DECLEXPORT(void) crStateClientDestroyBits(CRClientBits *c);
 DECLEXPORT(void) crStateClientInit(CRClientState *c);
 DECLEXPORT(void) crStateClientDestroy(CRClientState *c);
 

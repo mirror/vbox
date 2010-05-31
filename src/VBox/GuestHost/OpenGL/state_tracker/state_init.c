@@ -248,7 +248,20 @@ void crStateInit(void)
 #endif
 }
 
+void crStateDestroy(void)
+{
+    if (__currentBits)
+    {
+        crStateClientDestroyBits(&(__currentBits->client));
+        crStateLightingDestroyBits(&(__currentBits->lighting));
+        crFree(__currentBits);
+        __currentBits = NULL;
+    }
 
+#ifdef CHROMIUM_THREADSAFE
+    crFreeTSD(&__contextTSD);
+#endif
+}
 
 /*
  * Notes on context switching and the "default context".

@@ -171,6 +171,7 @@ struct CRContext {
 
 
 DECLEXPORT(void) crStateInit(void);
+DECLEXPORT(void) crStateDestroy(void);
 DECLEXPORT(CRContext *) crStateCreateContext(const CRLimitsState *limits, GLint visBits, CRContext *share);
 DECLEXPORT(CRContext *) crStateCreateContextEx(const CRLimitsState *limits, GLint visBits, CRContext *share, GLint presetID);
 DECLEXPORT(void) crStateMakeCurrent(CRContext *ctx);

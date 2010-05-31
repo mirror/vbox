@@ -50,6 +50,28 @@ void crStateClientInitBits (CRClientBits *c)
 #endif
 }
 
+void crStateClientDestroyBits (CRClientBits *c) 
+{
+    int i;
+
+    crFree(c->v);
+    crFree(c->n);
+    crFree(c->c);
+    crFree(c->s);
+    crFree(c->i);
+
+    for ( i = 0; i < CR_MAX_TEXTURE_UNITS; i++ )
+        crFree(c->t[i]);
+
+    crFree(c->e);
+    crFree(c->f);
+
+#ifdef CR_NV_vertex_program
+    for ( i = 0; i < CR_MAX_VERTEX_ATTRIBS; i++ )
+        crFree(c->a[i]);
+#endif
+}
+
 static void crStateUnlockClientPointer(CRClientPointer* cp)
 {
     if (cp->locked)
