@@ -4841,7 +4841,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     if (RT_FAILURE(rc))
         return rc;
 
-    /* Intialize task queue. */
+    /* Intialize task queue. (Need two items to handle SMP guest concurrency.) */
     rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 2, 0,
                               lsilogicNotifyQueueConsumer, true,
                               pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
