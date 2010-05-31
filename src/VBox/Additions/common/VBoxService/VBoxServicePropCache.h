@@ -29,6 +29,7 @@ int VBoxServicePropCacheCreate(PVBOXSERVICEVEPROPCACHE pCache, uint32_t uClientI
 int VBoxServicePropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, uint32_t fFlags, const char *pszValueReset);
 int VBoxServicePropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, const char *pszValueFormat, ...);
 int VBoxServicePropCacheUpdateEx(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, uint32_t fFlags, const char *pszValueReset, const char *pszValueFormat, ...);
+int VBoxServicePropCacheFlush(PVBOXSERVICEVEPROPCACHE pCache);
 void VBoxServicePropCacheDestroy(PVBOXSERVICEVEPROPCACHE pCache);
 #endif
 
