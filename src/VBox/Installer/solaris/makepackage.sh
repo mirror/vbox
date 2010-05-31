@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (C) 2007-2009 Oracle Corporation
+# Copyright (C) 2007-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -49,6 +49,9 @@ VBOX_ARCHIVE=$2.tar.gz
 # VBOX_PKG_ARCH is currently unused.
 VBOX_PKG_ARCH=$3
 VBOX_SVN_REV=$4
+if [ -f LICENSE ]; then
+    VBOX_LICENSEFILE=LICENSE
+fi
 
 VBOX_PKGNAME=SUNWvbox
 VBOX_GGREP=/usr/sfw/bin/ggrep
@@ -208,9 +211,9 @@ pkgtrans -s -o /var/spool/pkg "`pwd`/$VBOX_PKGFILE" "$VBOX_PKGNAME"
 
 # $5 if exist would contain the path to the VBI package to include in the .tar.gz
 if test -f "$5"; then
-    $VBOX_GTAR zcvf "$VBOX_ARCHIVE" "$VBOX_PKGFILE" "$5" autoresponse ReadMe.txt
+    $VBOX_GTAR zcvf "$VBOX_ARCHIVE" $VBOX_LICENSEFILE "$VBOX_PKGFILE" "$5" autoresponse ReadMe.txt
 else
-    $VBOX_GTAR zcvf "$VBOX_ARCHIVE" "$VBOX_PKGFILE" autoresponse ReadMe.txt
+    $VBOX_GTAR zcvf "$VBOX_ARCHIVE" $VBOX_LICENSEFILE "$VBOX_PKGFILE" autoresponse ReadMe.txt
 fi
 
 echo "## Packaging and transfer completed successfully!"
