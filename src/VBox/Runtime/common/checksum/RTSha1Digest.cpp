@@ -32,59 +32,82 @@
 #include <iprt/sha.h>
 
 #include <iprt/assert.h>
-#include <iprt/err.h>
-#include <iprt/stream.h>
+#include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/file.h>
 
 #include <openssl/sha.h>
 
-
-
-RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest)
+RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest, PFNRTSHAPROGRESS pfnProgressCallback, void *pvUser)
 {
     /* Validate input */
     AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
     AssertPtrReturn(ppszDigest, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfnProgressCallback, VERR_INVALID_PARAMETER);
 
     *ppszDigest = NULL;
+    int rc = VINF_SUCCESS;
 
     /* Initialize OpenSSL */
     SHA_CTX ctx;
     if (!SHA1_Init(&ctx))
         return VERR_INTERNAL_ERROR;
 
-    /** @todo r=bird: Using a stream here doesn't really serve much purpose as
-     *        few stream implementations uses a buffer much larger than 4KB. (The
-     *        only I'm aware of is libc on OS/2, which uses 8KB.) */
+    /* Fetch the file size. Only needed if there is a progress callback. */
+    float multi = 0;
+    if (pfnProgressCallback)
+    {
+        uint64_t cbFile;
+        rc = RTFileQuerySize(pszFile, &cbFile);
+        if (RT_FAILURE(rc))
+            return rc;
+        multi = 100.0 / cbFile;
+    }
 
     /* Open the file to calculate a SHA1 sum of */
-    PRTSTREAM pStream;
-    int rc = RTStrmOpen(pszFile, "rb", &pStream);
+    RTFILE file;
+    rc = RTFileOpen(&file, pszFile, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
         return rc;
 
     /* Read that file in blocks */
-    void *pvBuf[4096];
+    void *pvBuf = RTMemTmpAlloc(_1M);
+    if (!pvBuf)
+    {
+        RTFileClose(file);
+        rc = VERR_NO_MEMORY;
+    }
     size_t cbRead;
-    do
+    size_t cbReadFull = 0;
+    for (;;)
     {
         cbRead = 0;
-        rc = RTStrmReadEx(pStream, pvBuf, 4096, &cbRead);
-        if (RT_FAILURE(rc))
+        rc = RTFileRead(file, pvBuf, _1M, &cbRead);
+        if (RT_FAILURE(rc) || !cbRead)
             break;
         if(!SHA1_Update(&ctx, pvBuf, cbRead))
         {
             rc = VERR_INTERNAL_ERROR;
             break;
         }
-    } while (cbRead > 0);
-    RTStrmClose(pStream);
+        cbReadFull += cbRead;
+        /* Call progress callback if some is defined */
+        if (   pfnProgressCallback
+            && RT_FAILURE(pfnProgressCallback((unsigned)(cbReadFull * multi), pvUser)))
+        {
+            /* Cancel support */
+            rc = VERR_CANCELLED;
+            break;
+        }
+    }
+    RTMemTmpFree(pvBuf);
+    RTFileClose(file);
 
     if (RT_FAILURE(rc))
         return rc;
 
     /* Finally calculate & format the SHA1 sum */
-    unsigned char auchDig[20];
+    unsigned char auchDig[RTSHA1_HASH_SIZE];
     if (!SHA1_Final(auchDig, &ctx))
         return VERR_INTERNAL_ERROR;
 

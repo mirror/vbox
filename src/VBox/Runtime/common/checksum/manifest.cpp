@@ -54,7 +54,23 @@ typedef struct RTMANIFESTFILEENTRY
 } RTMANIFESTFILEENTRY;
 typedef RTMANIFESTFILEENTRY* PRTMANIFESTFILEENTRY;
 
+/**
+ * Internal structure used for the progress callback
+ */
+typedef struct RTMANIFESTCALLBACKDATA
+{
+    PFNRTMANIFESTPROGRESS pfnProgressCallback;
+    void *pvUser;
+    uint32_t cMaxFiles;
+    uint32_t cCurrentFile;
+} RTMANIFESTCALLBACKDATA;
+typedef RTMANIFESTCALLBACKDATA* PRTMANIFESTCALLBACKDATA;
 
+int rtSHAProgressCallback(unsigned uPercent, void *pvUser)
+{
+    PRTMANIFESTCALLBACKDATA pData = (PRTMANIFESTCALLBACKDATA)pvUser;
+    return pData->pfnProgressCallback((unsigned)((uPercent + (float)pData->cCurrentFile * 100.0) / (float)pData->cMaxFiles), pData->pvUser);
+}
 
 RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST paTests, size_t cTests, size_t *piFailed)
 {
@@ -210,23 +226,32 @@ RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST paTe
 }
 
 
-RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles, size_t *piFailed)
+RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles, size_t *piFailed, PFNRTMANIFESTPROGRESS pfnProgressCallback, void *pvUser)
 {
     /* Validate input */
     AssertPtrReturn(pszManifestFile, VERR_INVALID_POINTER);
     AssertPtrReturn(papszFiles, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfnProgressCallback, VERR_INVALID_PARAMETER);
+
+    int rc = VINF_SUCCESS;
 
     /* Create our compare list */
     PRTMANIFESTTEST paFiles = (PRTMANIFESTTEST)RTMemTmpAllocZ(sizeof(RTMANIFESTTEST) * cFiles);
     if (!paFiles)
         return VERR_NO_MEMORY;
 
+    RTMANIFESTCALLBACKDATA callback = { pfnProgressCallback, pvUser, cFiles, 0 };
     /* Fill our compare list */
-    int rc = VINF_SUCCESS;
     for (size_t i = 0; i < cFiles; ++i)
     {
         char *pszDigest;
-        rc = RTSha1Digest(papszFiles[i], &pszDigest);
+        if (pfnProgressCallback)
+        {
+            callback.cCurrentFile = i;
+            rc = RTSha1Digest(papszFiles[i], &pszDigest, rtSHAProgressCallback, &callback);
+        }
+        else
+            rc = RTSha1Digest(papszFiles[i], &pszDigest, NULL, NULL);
         if (RT_FAILURE(rc))
             break;
         paFiles[i].pszTestFile = (char*)papszFiles[i];
@@ -249,11 +274,12 @@ RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * co
 }
 
 
-RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles)
+RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles, PFNRTMANIFESTPROGRESS pfnProgressCallback, void *pvUser)
 {
     /* Validate input */
     AssertPtrReturn(pszManifestFile, VERR_INVALID_POINTER);
     AssertPtrReturn(papszFiles, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfnProgressCallback, VERR_INVALID_PARAMETER);
 
     /* Open a file to stream in */
     PRTSTREAM pStream;
@@ -261,11 +287,18 @@ RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * con
     if (RT_FAILURE(rc))
         return rc;
 
+    RTMANIFESTCALLBACKDATA callback = { pfnProgressCallback, pvUser, cFiles, 0 };
     for (size_t i = 0; i < cFiles; ++i)
     {
         /* Calculate the SHA1 digest of every file */
         char *pszDigest;
-        rc = RTSha1Digest(papszFiles[i], &pszDigest);
+        if (pfnProgressCallback)
+        {
+            callback.cCurrentFile = i;
+            rc = RTSha1Digest(papszFiles[i], &pszDigest, rtSHAProgressCallback, &callback);
+        }
+        else
+            rc = RTSha1Digest(papszFiles[i], &pszDigest, NULL, NULL);
         if (RT_FAILURE(rc))
             break;
 
