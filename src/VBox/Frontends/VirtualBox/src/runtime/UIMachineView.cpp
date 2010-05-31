@@ -617,10 +617,14 @@ void UIMachineView::prepareFrameBuffer()
     }
 
 #ifdef Q_WS_X11
-    /* Processing pseudo resize-event to synchronize frame-buffer with stored framebuffer size: */
-    QSize size = guestSizeHint();
-    UIResizeEvent event(FramebufferPixelFormat_Opaque, NULL, 0, 0, size.width(), size.height());
-    frameBuffer()->resizeEvent(&event);
+    /* Processing pseudo resize-event to synchronize frame-buffer
+     * with stored framebuffer size in case of machine state was 'saved': */
+    if (session().GetMachine().GetState() == KMachineState_Saved)
+    {
+        QSize size = guestSizeHint();
+        UIResizeEvent event(FramebufferPixelFormat_Opaque, NULL, 0, 0, size.width(), size.height());
+        frameBuffer()->resizeEvent(&event);
+    }
 #endif /* Q_WS_X11 */
 }
 
