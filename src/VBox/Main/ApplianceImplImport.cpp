@@ -1247,6 +1247,7 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
     // restore the appliance state
     appLock.acquire();
     m->state = Data::ApplianceIdle;
+    appLock.release();
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
