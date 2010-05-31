@@ -54,5 +54,7 @@ void vboxVHWAInit(PDEVICE_EXTENSION pDevExt);
 void vboxVHWAFree(PDEVICE_EXTENSION pDevExt);
 
 int vboxVhwaHlpCreateOverlay(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSurf, uint32_t cBackBuffers, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId);
+int vboxVhwaHlpDestroyOverlay(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSurf, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId);
+int vboxVhwaHlpGetSurfInfo(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSurf);
 
 #endif /* #ifndef ___VBoxVideoVhwa_h___ */

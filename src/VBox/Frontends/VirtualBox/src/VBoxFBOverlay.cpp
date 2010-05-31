@@ -2421,6 +2421,35 @@ int VBoxVHWAImage::vhwaSurfaceCreate (struct _VBOXVHWACMD_SURF_CREATE *pCmd)
     return VINF_SUCCESS;
 }
 
+#ifdef VBOXWDDM
+int VBoxVHWAImage::vhwaSurfaceGetInfo(struct _VBOXVHWACMD_SURF_GETINFO *pCmd)
+{
+    VBoxVHWAColorFormat format;
+    Assert(!format.isValid());
+    if (pCmd->SurfInfo.PixelFormat.flags & VBOXVHWA_PF_RGB)
+        format = VBoxVHWAColorFormat(pCmd->SurfInfo.PixelFormat.c.rgbBitCount,
+                                        pCmd->SurfInfo.PixelFormat.m1.rgbRBitMask,
+                                        pCmd->SurfInfo.PixelFormat.m2.rgbGBitMask,
+                                        pCmd->SurfInfo.PixelFormat.m3.rgbBBitMask);
+    else if (pCmd->SurfInfo.PixelFormat.flags & VBOXVHWA_PF_FOURCC)
+        format = VBoxVHWAColorFormat(pCmd->SurfInfo.PixelFormat.fourCC);
+    else
+        AssertBreakpoint();
+
+    Assert(format.isValid());
+    if (format.isValid())
+    {
+        pCmd->SurfInfo.pitch = format.bitsPerPixel() * pCmd->SurfInfo.width / 8;
+//        pCmd->SurfInfo.pitch = ((pCmd->SurfInfo.pitch + 3) & (~3));
+        pCmd->SurfInfo.sizeX = format.bitsPerPixelMem() * pCmd->SurfInfo.width / 8;
+//        pCmd->SurfInfo.sizeX = ((pCmd->SurfInfo.sizeX + 3) & (~3));
+        pCmd->SurfInfo.sizeX *= pCmd->SurfInfo.height;
+        pCmd->SurfInfo.sizeY = 1;
+        return VINF_SUCCESS;
+    }
+    return VERR_INVALID_PARAMETER;
+}
+#endif
 int VBoxVHWAImage::vhwaSurfaceDestroy(struct _VBOXVHWACMD_SURF_DESTROY *pCmd)
 {
     VBoxVHWASurfaceBase *pSurf = handle2Surface(pCmd->u.in.hSurf);
@@ -3882,21 +3911,33 @@ void VBoxVHWAColorFormat::init (uint32_t fourcc)
     {
         case FOURCC_AYUV:
             mBitsPerPixel = 32;
+#ifdef VBOXWDDM
+            mBitsPerPixelMem = 32;
+#endif
             mWidthCompression = 1;
             break;
         case FOURCC_UYVY:
         case FOURCC_YUY2:
             mBitsPerPixel = 16;
+#ifdef VBOXWDDM
+            mBitsPerPixelMem = 16;
+#endif
             mWidthCompression = 2;
             break;
         case FOURCC_YV12:
             mBitsPerPixel = 8;
+#ifdef VBOXWDDM
+            mBitsPerPixelMem = 12;
+#endif
             mWidthCompression = 4;
             break;
         default:
             Assert(0);
             mBitsPerPixel = 0;
             mBitsPerPixelTex = 0;
+#ifdef VBOXWDDM
+            mBitsPerPixelMem = 0;
+#endif
             mWidthCompression = 0;
             break;
     }
@@ -3906,6 +3947,9 @@ void VBoxVHWAColorFormat::init (uint32_t bitsPerPixel, uint32_t r, uint32_t g, u
 {
     mBitsPerPixel = bitsPerPixel;
     mBitsPerPixelTex = bitsPerPixel;
+#ifdef VBOXWDDM
+    mBitsPerPixelMem = bitsPerPixel;
+#endif
     mDataFormat = 0;
     switch (bitsPerPixel)
     {
@@ -3963,6 +4007,9 @@ void VBoxVHWAColorFormat::init (uint32_t bitsPerPixel, uint32_t r, uint32_t g, u
 #endif
             mBitsPerPixel = 0;
             mBitsPerPixelTex = 0;
+#ifdef VBOXWDDM
+            mBitsPerPixelMem = 0;
+#endif
             break;
     }
 }
@@ -4593,6 +4640,13 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
             VBOXVHWACMD_HH_CONSTRUCT * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_HH_CONSTRUCT);
             pCmd->rc = vhwaConstruct(pBody);
         } break;
+#ifdef VBOXWDDM
+        case VBOXVHWACMD_TYPE_SURF_GETINFO:
+        {
+            VBOXVHWACMD_SURF_GETINFO * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_GETINFO);
+            pCmd->rc = mOverlayImage.vhwaSurfaceGetInfo(pBody);
+        } break;
+#endif
         default:
             Assert(0);
             pCmd->rc = VERR_NOT_IMPLEMENTED;

@@ -281,6 +281,9 @@ typedef enum
     VBOXVHWACMD_TYPE_DISABLE,
     VBOXVHWACMD_TYPE_HH_CONSTRUCT,
     VBOXVHWACMD_TYPE_HH_RESET
+#ifdef VBOXWDDM
+    , VBOXVHWACMD_TYPE_SURF_GETINFO
+#endif
 } VBOXVHWACMD_TYPE;
 
 /* the command processing was asynch, set by the host to indicate asynch command completion
@@ -323,7 +326,7 @@ typedef struct _VBOXVHWACMD
 #define VBOXVHWACMD_SIZE(_tCmd) (VBOXVHWACMD_SIZE_FROMBODYSIZE(sizeof(_tCmd)))
 typedef unsigned int VBOXVHWACMD_LENGTH;
 typedef uint64_t VBOXVHWA_SURFHANDLE;
-#define VBOXVHWA_SURFHANDLE_INVALID 0
+#define VBOXVHWA_SURFHANDLE_INVALID 0ULL
 #define VBOXVHWACMD_BODY(_p, _t) ((_t*)(_p)->body)
 #define VBOXVHWACMD_HEAD(_pb) ((VBOXVHWACMD*)((uint8_t *)(_pb) - RT_OFFSETOF(VBOXVHWACMD, body)))
 
@@ -605,6 +608,13 @@ typedef struct _VBOXVHWACMD_SURF_CREATE
 {
     VBOXVHWA_SURFACEDESC SurfInfo;
 } VBOXVHWACMD_SURF_CREATE;
+
+#ifdef VBOXWDDM
+typedef struct _VBOXVHWACMD_SURF_GETINFO
+{
+    VBOXVHWA_SURFACEDESC SurfInfo;
+} VBOXVHWACMD_SURF_GETINFO;
+#endif
 
 typedef struct _VBOXVHWACMD_SURF_DESTROY
 {
