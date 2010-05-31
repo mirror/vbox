@@ -2704,8 +2704,7 @@ QString VBoxVMSettingsHD::generateUniqueName (const QString &aTemplate) const
             QString stringNumber (ctrName.right (ctrName.size() - aTemplate.size()));
             bool isConverted = false;
             int number = stringNumber.toInt (&isConverted);
-            if (isConverted && number > maxNumber)
-                maxNumber = number;
+            maxNumber = isConverted && (number > maxNumber) ? number : 1;
         }
     }
     return maxNumber ? QString ("%1 %2").arg (aTemplate).arg (++ maxNumber) : aTemplate;
