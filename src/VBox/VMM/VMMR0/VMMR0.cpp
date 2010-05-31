@@ -424,9 +424,6 @@ static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
                 case VMMCALLRING3_PDM_LOCK:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPDMLock);
                     break;
-                case VMMCALLRING3_PDM_QUEUE_FLUSH:
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPDMQueueFlush);
-                    break;
                 case VMMCALLRING3_PGM_POOL_GROW:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPGMPoolGrow);
                     break;
