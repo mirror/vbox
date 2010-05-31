@@ -555,7 +555,7 @@ int vboxVhwaHlpCheckApplySurfInfo(PVBOXWDDM_ALLOCATION pSurf, VBOXVHWA_SURFACEDE
     if (!(fFlags & VBOXVHWA_SD_PITCH))
     {
         /* should be set by host */
-        Assert(pInfo->flags & VBOXVHWA_SD_PITCH);
+//        Assert(pInfo->flags & VBOXVHWA_SD_PITCH);
         pSurf->SurfDesc.cbSize = pInfo->sizeX * pInfo->sizeY;
         Assert(pSurf->SurfDesc.cbSize);
         pSurf->SurfDesc.pitch = pInfo->pitch;
