@@ -130,9 +130,7 @@ VMMR3DECL(int)  PDMR3QueueDestroy(PPDMQUEUE pQueue);
 VMMR3DECL(int)  PDMR3QueueDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
 VMMR3DECL(int)  PDMR3QueueDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);
 VMMR3DECL(void) PDMR3QueueFlushAll(PVM pVM);
-VMMR3DECL(void) PDMR3QueueFlushWorker(PVM pVM, PPDMQUEUE pQueue);
 
-VMMDECL(void)                 PDMQueueFlush(PPDMQUEUE pQueue);
 VMMDECL(PPDMQUEUEITEMCORE)    PDMQueueAlloc(PPDMQUEUE pQueue);
 VMMDECL(void)                 PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem);
 VMMDECL(void)                 PDMQueueInsertEx(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem, uint64_t NanoMaxDelay);
