@@ -101,6 +101,21 @@ UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId)
 
 UIMachineWindow::~UIMachineWindow()
 {
+    /* Close any opened modal & popup widgets: */
+    while (QWidget *pWidget = QApplication::activeModalWidget() ? QApplication::activeModalWidget() :
+                              QApplication::activePopupWidget() ? QApplication::activePopupWidget() : 0)
+    {
+        /* Set modal/popup window's parent to null early,
+         * because deleteLater() is synchronous
+         * and will be called later than this destructor: */
+        pWidget->setParent(0);
+        /* Close modal/popup window early to hide it
+         * because deleteLater() is synchronous
+         * and will be called later than this destructor: */
+        pWidget->close();
+        /* Delete modal/popup window synchronously (safe): */
+        pWidget->deleteLater();
+    }
 }
 
 UISession* UIMachineWindow::uisession() const
