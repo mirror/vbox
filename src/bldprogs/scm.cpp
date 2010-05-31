@@ -2411,6 +2411,8 @@ static int scmSettingsCreateFromFile(PSCMSETTINGS *ppSettings, const char *pszFi
  */
 static int scmSettingsCreateForPath(PSCMSETTINGS *ppSettings, PCSCMSETTINGSBASE pBaseSettings, const char *pszPath)
 {
+    *ppSettings = NULL;                 /* try shut up gcc. */
+
     /*
      * We'll be working with a stack copy of the path.
      */
