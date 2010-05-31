@@ -15,6 +15,11 @@ void crStateLightingInitBits (CRLightingBits *l)
 	l->light = (CRLightBits *) crCalloc (sizeof(*(l->light)) * CR_MAX_LIGHTS );
 }
 
+void crStateLightingDestroyBits (CRLightingBits *l)
+{
+	crFree(l->light);
+}
+
 void crStateLightingDestroy (CRContext *ctx)
 {
 	crFree( ctx->lighting.light );

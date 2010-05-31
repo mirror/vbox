@@ -415,6 +415,10 @@ static int renderSPUCleanup(void)
 
     crUnloadOpenGL();
 
+#ifdef CHROMIUM_THREADSAFE
+    crFreeTSD(&_RenderTSD);
+#endif
+
     return 1;
 }
 

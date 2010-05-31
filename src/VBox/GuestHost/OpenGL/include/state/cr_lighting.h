@@ -74,6 +74,7 @@ typedef struct {
 } CRLightingState;
 
 DECLEXPORT(void) crStateLightingInitBits (CRLightingBits *l);
+DECLEXPORT(void) crStateLightingDestroyBits (CRLightingBits *l);
 DECLEXPORT(void) crStateLightingInit (CRContext *ctx);
 DECLEXPORT(void) crStateLightingDestroy (CRContext *ctx);
 

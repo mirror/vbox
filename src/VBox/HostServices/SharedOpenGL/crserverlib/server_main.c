@@ -119,6 +119,10 @@ static void crServerTearDown( void )
     crSPUUnloadChain(cr_server.head_spu);
     cr_server.head_spu = NULL;
 #endif
+
+    crStateDestroy();
+
+    crNetTearDown();
 }
 
 static void crServerClose( unsigned int id )
