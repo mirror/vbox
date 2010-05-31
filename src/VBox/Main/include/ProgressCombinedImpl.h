@@ -31,6 +31,11 @@
  * that follow each other in the same order as progress objects are passed to
  * the #init() method.
  *
+ * @note CombinedProgress is legacy code and deprecated. It does not support
+ *       weighted operations, all suboperations are assumed to take the same
+ *       amount of time. For new code, please use IProgress directly which
+ *       has supported multiple weighted suboperations since VirtualBox 3.0.
+ *
  * Individual progress objects are sequentially combined so that this progress
  * object:
  *
