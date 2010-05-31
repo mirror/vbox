@@ -1059,57 +1059,63 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
             theState.mstrPassword      = strPassword;
             theState.mhServer          = hServer;
 
-            bool fPowerOff;
+            bool fPowerOff = true;
             void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(&theState));
             if (pProgress->setCancelCallback(teleporterProgressCancelCallback, pvUser))
             {
                 LogRel(("Teleporter: Waiting for incoming VM...\n"));
-                vrc = RTTcpServerListen(hServer, Console::teleporterTrgServeConnection, &theState);
-                pProgress->setCancelCallback(NULL, NULL);
+                hrc = pProgress->SetNextOperation(Bstr(tr("Waiting for incoming VM")), 1);
+                if (SUCCEEDED(hrc))
+                {
+                    vrc = RTTcpServerListen(hServer, Console::teleporterTrgServeConnection, &theState);
+                    pProgress->setCancelCallback(NULL, NULL);
 
-                fPowerOff = false;
-                if (vrc == VERR_TCP_SERVER_STOP)
-                {
-                    vrc = theState.mRc;
-                    /* Power off the VM on failure unless the state callback
-                       already did that. */
-                    if (RT_FAILURE(vrc))
+                    if (vrc == VERR_TCP_SERVER_STOP)
                     {
-                        VMSTATE enmVMState = VMR3GetState(pVM);
-                        if (    enmVMState != VMSTATE_OFF
-                            &&  enmVMState != VMSTATE_POWERING_OFF)
-                            fPowerOff = true;
+                        vrc = theState.mRc;
+                        /* Power off the VM on failure unless the state callback
+                           already did that. */
+                        fPowerOff = false;
+                        if (RT_FAILURE(vrc))
+                        {
+                            VMSTATE enmVMState = VMR3GetState(pVM);
+                            if (    enmVMState != VMSTATE_OFF
+                                &&  enmVMState != VMSTATE_POWERING_OFF)
+                                fPowerOff = true;
+                        }
                     }
-                }
-                else if (vrc == VERR_TCP_SERVER_SHUTDOWN)
-                {
-                    BOOL fCancelled = TRUE;
-                    hrc = pProgress->COMGETTER(Canceled)(&fCancelled);
-                    if (FAILED(hrc) || fCancelled)
+                    else if (vrc == VERR_TCP_SERVER_SHUTDOWN)
                     {
-                        setError(E_FAIL, tr("Teleporting canceled"));
-                        vrc = VERR_SSM_CANCELLED;
+                        BOOL fCancelled = TRUE;
+                        hrc = pProgress->COMGETTER(Canceled)(&fCancelled);
+                        if (FAILED(hrc) || fCancelled)
+                        {
+                            setError(E_FAIL, tr("Teleporting canceled"));
+                            vrc = VERR_SSM_CANCELLED;
+                        }
+                        else
+                        {
+                            setError(E_FAIL, tr("Teleporter timed out waiting for incoming connection"));
+                            vrc = VERR_TIMEOUT;
+                        }
+                        LogRel(("Teleporter: RTTcpServerListen aborted - %Rrc\n", vrc));
                     }
                     else
                     {
-                        setError(E_FAIL, tr("Teleporter timed out waiting for incoming connection"));
-                        vrc = VERR_TIMEOUT;
+                        LogRel(("Teleporter: Unexpected RTTcpServerListen rc: %Rrc\n", vrc));
+                        vrc = VERR_IPE_UNEXPECTED_STATUS;
                     }
-                    LogRel(("Teleporter: RTTcpServerListen aborted - %Rrc\n", vrc));
-                    fPowerOff = true;
                 }
                 else
                 {
-                    LogRel(("Teleporter: Unexpected RTTcpServerListen rc: %Rrc\n", vrc));
-                    vrc = VERR_IPE_UNEXPECTED_STATUS;
-                    fPowerOff = true;
+                    LogThisFunc(("SetNextOperation failed, %Rhrc\n", hrc));
+                    vrc = Global::vboxStatusCodeFromCOM(hrc);
                 }
             }
             else
             {
                 LogThisFunc(("Canceled - check point #1\n"));
                 vrc = VERR_SSM_CANCELLED;
-                fPowerOff = true;
             }
 
             if (fPowerOff)
@@ -1228,7 +1234,24 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
     vrc = teleporterTcpWriteACK(pState);
     if (RT_FAILURE(vrc))
         return VINF_SUCCESS;
-    LogRel(("Teleporter: Incoming VM!\n"));
+
+    /*
+     * Update the progress bar, with peer name if available.
+     */
+    HRESULT     hrc;
+    RTNETADDR   Addr;
+    vrc = RTTcpGetPeerAddress(Sock, &Addr);
+    if (RT_SUCCESS(vrc))
+    {
+        LogRel(("Teleporter: Incoming VM from %RTnaddr!\n", &Addr));
+        hrc = pState->mptrProgress->SetNextOperation(Bstr(Utf8StrFmt(tr("Teleporting VM from %RTnaddr"), &Addr)), 8);
+    }
+    else
+    {
+        LogRel(("Teleporter: Incoming VM!\n"));
+        hrc = pState->mptrProgress->SetNextOperation(Bstr(tr("Teleporting VM")), 8);
+    }
+    AssertMsg(SUCCEEDED(hrc) || hrc == E_FAIL, ("%Rhrc\n", hrc));
 
     /*
      * Stop the server and cancel the timeout timer.
@@ -1291,7 +1314,7 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
         }
         else if (!strcmp(szCmd, "lock-media"))
         {
-            HRESULT hrc = pState->mpControl->LockMedia();
+            hrc = pState->mpControl->LockMedia();
             if (SUCCEEDED(hrc))
             {
                 pState->mfLockedMedia = true;
