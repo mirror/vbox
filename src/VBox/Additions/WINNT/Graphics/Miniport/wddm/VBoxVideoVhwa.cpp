@@ -476,6 +476,112 @@ int vboxVhwaHlpTranslateFormat(VBOXVHWA_PIXELFORMAT *pFormat, D3DDDIFORMAT enmFo
     }
 }
 
+int vboxVhwaHlpDestroySurface(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSurf,
+        D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+{
+    Assert(pSurf->hHostHandle);
+    if (!pSurf->hHostHandle)
+        return VERR_INVALID_STATE;
+
+    VBOXVHWACMD* pCmd = vboxVhwaCommandCreate(pDevExt, VidPnSourceId,
+            VBOXVHWACMD_TYPE_SURF_DESTROY, sizeof(VBOXVHWACMD_SURF_DESTROY));
+    Assert(pCmd);
+    if(pCmd)
+    {
+        VBOXVHWACMD_SURF_DESTROY * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_DESTROY);
+
+        memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_DESTROY));
+
+        pBody->u.in.hSurf = pSurf->hHostHandle;
+
+        /* we're not interested in completion, just send the command */
+        vboxVhwaCommandSubmitAsynchAndComplete(pDevExt, pCmd);
+
+        pSurf->hHostHandle = VBOXVHWA_SURFHANDLE_INVALID;
+
+        return VINF_SUCCESS;
+    }
+
+    return VERR_OUT_OF_RESOURCES;
+}
+
+int vboxVhwaHlpPopulateSurInfo(VBOXVHWA_SURFACEDESC *pInfo, PVBOXWDDM_ALLOCATION pSurf,
+        uint32_t fFlags, uint32_t cBackBuffers, uint32_t fSCaps,
+        D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+{
+    memset(pInfo, 0, sizeof(VBOXVHWA_SURFACEDESC));
+
+    pInfo->height = pSurf->SurfDesc.height;
+    pInfo->width = pSurf->SurfDesc.width;
+    pInfo->flags |= VBOXVHWA_SD_HEIGHT | VBOXVHWA_SD_WIDTH;
+    if (fFlags & VBOXVHWA_SD_PITCH)
+    {
+        pInfo->pitch = pSurf->SurfDesc.pitch;
+        pInfo->flags |= VBOXVHWA_SD_PITCH;
+        pInfo->sizeX = pSurf->SurfDesc.cbSize;
+        pInfo->sizeY = 1;
+    }
+
+    if (cBackBuffers)
+    {
+        pInfo->cBackBuffers = cBackBuffers;
+        pInfo->flags |= VBOXVHWA_SD_BACKBUFFERCOUNT;
+    }
+    else
+        pInfo->cBackBuffers = 0;
+    pInfo->Reserved = 0;
+        /* @todo: color keys */
+//                        pInfo->DstOverlayCK;
+//                        pInfo->DstBltCK;
+//                        pInfo->SrcOverlayCK;
+//                        pInfo->SrcBltCK;
+    int rc = vboxVhwaHlpTranslateFormat(&pInfo->PixelFormat, pSurf->SurfDesc.format);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        pInfo->flags |= VBOXVHWA_SD_PIXELFORMAT;
+        pInfo->surfCaps = fSCaps;
+        pInfo->flags |= VBOXVHWA_SD_CAPS;
+        pInfo->offSurface = pSurf->offVram;
+    }
+
+    return rc;
+}
+
+int vboxVhwaHlpCheckApplySurfInfo(PVBOXWDDM_ALLOCATION pSurf, VBOXVHWA_SURFACEDESC *pInfo,
+        uint32_t fFlags, bool bApplyHostHandle)
+{
+    int rc = VINF_SUCCESS;
+    if (!(fFlags & VBOXVHWA_SD_PITCH))
+    {
+        /* should be set by host */
+        Assert(pInfo->flags & VBOXVHWA_SD_PITCH);
+        pSurf->SurfDesc.cbSize = pInfo->sizeX * pInfo->sizeY;
+        Assert(pSurf->SurfDesc.cbSize);
+        pSurf->SurfDesc.pitch = pInfo->pitch;
+        Assert(pSurf->SurfDesc.pitch);
+    }
+    else
+    {
+        Assert(pSurf->SurfDesc.cbSize ==  pInfo->sizeX);
+        Assert(pInfo->sizeY == 1);
+        Assert(pInfo->pitch == pSurf->SurfDesc.pitch);
+        if (pSurf->SurfDesc.cbSize !=  pInfo->sizeX
+                || pInfo->sizeY != 1
+                || pInfo->pitch != pSurf->SurfDesc.pitch)
+        {
+            rc = VERR_INVALID_PARAMETER;
+        }
+    }
+
+    if (bApplyHostHandle && RT_SUCCESS(rc))
+    {
+        pSurf->hHostHandle = pInfo->hSurf;
+    }
+
+    return rc;
+}
+
 int vboxVhwaHlpCreateSurface(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSurf,
         uint32_t fFlags, uint32_t cBackBuffers, uint32_t fSCaps,
         D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
@@ -484,75 +590,24 @@ int vboxVhwaHlpCreateSurface(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSu
     VBOXVHWACMD* pCmd = vboxVhwaCommandCreate(pDevExt, VidPnSourceId,
                 VBOXVHWACMD_TYPE_SURF_CREATE, sizeof(VBOXVHWACMD_SURF_CREATE));
     Assert(pCmd);
-    if(pCmd)
+    if (pCmd)
     {
         VBOXVHWACMD_SURF_CREATE * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_CREATE);
         int rc = VINF_SUCCESS;
 
         memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_CREATE));
 
-        pBody->SurfInfo.height = pSurf->SurfDesc.height;
-        pBody->SurfInfo.width = pSurf->SurfDesc.width;
-        pBody->SurfInfo.flags |= VBOXVHWA_SD_HEIGHT | VBOXVHWA_SD_WIDTH;
-        if (fFlags & VBOXVHWA_SD_PITCH)
-        {
-            pBody->SurfInfo.pitch = pSurf->SurfDesc.pitch;
-            pBody->SurfInfo.flags |= VBOXVHWA_SD_PITCH;
-            pBody->SurfInfo.sizeX = pSurf->SurfDesc.cbSize;
-            pBody->SurfInfo.sizeY = 1;
-        }
-        if (cBackBuffers)
-        {
-            pBody->SurfInfo.cBackBuffers = cBackBuffers;
-            pBody->SurfInfo.flags |= VBOXVHWA_SD_BACKBUFFERCOUNT;
-        }
-        else
-            pBody->SurfInfo.cBackBuffers = 0;
-        pBody->SurfInfo.Reserved = 0;
-        /* @todo: color keys */
-//                        pBody->SurfInfo.DstOverlayCK;
-//                        pBody->SurfInfo.DstBltCK;
-//                        pBody->SurfInfo.SrcOverlayCK;
-//                        pBody->SurfInfo.SrcBltCK;
-        rc = vboxVhwaHlpTranslateFormat(&pBody->SurfInfo.PixelFormat, pSurf->SurfDesc.format);
+        rc = vboxVhwaHlpPopulateSurInfo(&pBody->SurfInfo, pSurf,
+                fFlags, cBackBuffers, fSCaps,
+                VidPnSourceId);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
-            pBody->SurfInfo.flags |= VBOXVHWA_SD_PIXELFORMAT;
-            pBody->SurfInfo.surfCaps = fSCaps;
-            pBody->SurfInfo.flags |= VBOXVHWA_SD_CAPS;
-            pBody->SurfInfo.offSurface = pSurf->offVram;
-
             vboxVhwaCommandSubmit(pDevExt, pCmd);
             Assert(pCmd->rc == VINF_SUCCESS);
             if(pCmd->rc == VINF_SUCCESS)
             {
-                if (!(fFlags & VBOXVHWA_SD_PITCH))
-                {
-                    /* should be set by host */
-                    Assert(pBody->SurfInfo.flags & VBOXVHWA_SD_PITCH);
-                    pSurf->SurfDesc.cbSize = pBody->SurfInfo.sizeX * pBody->SurfInfo.sizeY;
-                    Assert(pSurf->SurfDesc.cbSize);
-                    pSurf->SurfDesc.pitch = pBody->SurfInfo.pitch;
-                    Assert(pSurf->SurfDesc.pitch);
-                }
-                else
-                {
-                    Assert(pSurf->SurfDesc.cbSize ==  pBody->SurfInfo.sizeX);
-                    Assert(pBody->SurfInfo.sizeY == 1);
-                    Assert(pBody->SurfInfo.pitch == pSurf->SurfDesc.pitch);
-                    if (pSurf->SurfDesc.cbSize !=  pBody->SurfInfo.sizeX
-                            || pBody->SurfInfo.sizeY != 1
-                            || pBody->SurfInfo.pitch != pSurf->SurfDesc.pitch)
-                    {
-                        rc = VERR_INVALID_PARAMETER;
-                    }
-                }
-
-                if (RT_SUCCESS(rc))
-                {
-                        pSurf->hHostHandle = pBody->SurfInfo.hSurf;
-                }
+                rc = vboxVhwaHlpCheckApplySurfInfo(pSurf, &pBody->SurfInfo, fFlags, true);
             }
             else
                 rc = pCmd->rc;
@@ -564,26 +619,81 @@ int vboxVhwaHlpCreateSurface(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSu
     return VERR_OUT_OF_RESOURCES;
 }
 
-int vboxVhwaHlpCreatePriary(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+int vboxVhwaHlpGetSurfInfoForSource(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSurf, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
 {
-    Assert(!!(pSource->Vhwa.Settings.fFlags & VBOXVHWA_F_ENABLED));
-    if (!(pSource->Vhwa.Settings.fFlags & VBOXVHWA_F_ENABLED))
-        return VERR_NOT_SUPPORTED;
+    /* the first thing we need is to post create primary */
+    VBOXVHWACMD* pCmd = vboxVhwaCommandCreate(pDevExt, VidPnSourceId,
+            VBOXVHWACMD_TYPE_SURF_GETINFO, sizeof(VBOXVHWACMD_SURF_GETINFO));
+    Assert(pCmd);
+    if (pCmd)
+    {
+        VBOXVHWACMD_SURF_GETINFO * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_GETINFO);
+        int rc = VINF_SUCCESS;
 
+        memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_GETINFO));
+
+        rc = vboxVhwaHlpPopulateSurInfo(&pBody->SurfInfo, pSurf,
+                0, 0, VBOXVHWA_SCAPS_OVERLAY | VBOXVHWA_SCAPS_VIDEOMEMORY | VBOXVHWA_SCAPS_LOCALVIDMEM | VBOXVHWA_SCAPS_COMPLEX,
+                VidPnSourceId);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            vboxVhwaCommandSubmit(pDevExt, pCmd);
+            Assert(pCmd->rc == VINF_SUCCESS);
+            if(pCmd->rc == VINF_SUCCESS)
+            {
+                rc = vboxVhwaHlpCheckApplySurfInfo(pSurf, &pBody->SurfInfo, 0, true);
+            }
+            else
+                rc = pCmd->rc;
+        }
+        vboxVhwaCommandFree(pDevExt, pCmd);
+        return rc;
+    }
+
+    return VERR_OUT_OF_RESOURCES;
+}
+
+int vboxVhwaHlpGetSurfInfo(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSurf)
+{
+    for (uint32_t i = 0; i < pDevExt->cSources; ++i)
+    {
+        PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[i];
+        if (pSource->Vhwa.Settings.fFlags & VBOXVHWA_F_ENABLED)
+        {
+            int rc = vboxVhwaHlpGetSurfInfoForSource(pDevExt, pSurf, i);
+            AssertRC(rc);
+            return rc;
+        }
+    }
+    AssertBreakpoint();
+    return VERR_NOT_SUPPORTED;
+}
+
+int vboxVhwaHlpDestroyPrimary(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+{
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
     PVBOXWDDM_ALLOCATION pFbSurf = pSource->pShadowAllocation;
 #else
     PVBOXWDDM_ALLOCATION pFbSurf = pSource->pPrimaryAllocation;
 #endif
 
-    Assert(!pSource->Vhwa.cOverlaysCreated);
-    if (pSource->Vhwa.cOverlaysCreated)
-    {
-        Assert(pFbSurf->hHostHandle);
-        if (pFbSurf->hHostHandle)
-            return VINF_ALREADY_INITIALIZED;
+    int rc = vboxVhwaHlpDestroySurface(pDevExt, pFbSurf, VidPnSourceId);
+    AssertRC(rc);
+    return rc;
+}
+
+int vboxVhwaHlpCreatePrimary(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+{
+#ifdef VBOXWDDM_RENDER_FROM_SHADOW
+    PVBOXWDDM_ALLOCATION pFbSurf = pSource->pShadowAllocation;
+#else
+    PVBOXWDDM_ALLOCATION pFbSurf = pSource->pPrimaryAllocation;
+#endif
+    Assert(pSource->Vhwa.cOverlaysCreated == 1);
+    Assert(pFbSurf->hHostHandle == VBOXVHWA_SURFHANDLE_INVALID);
+    if (pFbSurf->hHostHandle != VBOXVHWA_SURFHANDLE_INVALID)
         return VERR_INVALID_STATE;
-    }
 
     int rc = vboxVhwaHlpCreateSurface(pDevExt, pFbSurf,
             VBOXVHWA_SD_PITCH, 0, VBOXVHWA_SCAPS_PRIMARYSURFACE | VBOXVHWA_SCAPS_VIDEOMEMORY | VBOXVHWA_SCAPS_LOCALVIDMEM,
@@ -592,7 +702,7 @@ int vboxVhwaHlpCreatePriary(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource,
     return rc;
 }
 
-int vboxVhwaHlpCreateOverlay(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSurf, uint32_t cBackBuffers, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+int vboxVhwaHlpCheckInit(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
 {
     Assert(VidPnSourceId < pDevExt->cSources);
     if (VidPnSourceId >= pDevExt->cSources)
@@ -600,7 +710,67 @@ int vboxVhwaHlpCreateOverlay(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSu
 
     PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[VidPnSourceId];
 
-    int rc = vboxVhwaHlpCreatePriary(pDevExt, pSource, VidPnSourceId);
+    Assert(!!(pSource->Vhwa.Settings.fFlags & VBOXVHWA_F_ENABLED));
+    if (!(pSource->Vhwa.Settings.fFlags & VBOXVHWA_F_ENABLED))
+        return VERR_NOT_SUPPORTED;
+
+    int rc = VINF_SUCCESS;
+    /* @todo: need a better synch */
+    uint32_t cNew = ASMAtomicIncU32(&pSource->Vhwa.cOverlaysCreated);
+    if (cNew == 1)
+    {
+        rc = vboxVhwaHlpCreatePrimary(pDevExt, pSource, VidPnSourceId);
+        AssertRC(rc);
+    }
+    else
+    {
+#ifdef VBOXWDDM_RENDER_FROM_SHADOW
+        PVBOXWDDM_ALLOCATION pFbSurf = pSource->pShadowAllocation;
+#else
+        PVBOXWDDM_ALLOCATION pFbSurf = pSource->pPrimaryAllocation;
+#endif
+        Assert(pFbSurf->hHostHandle);
+        if (pFbSurf->hHostHandle)
+            rc = VINF_ALREADY_INITIALIZED;
+        else
+            rc = VERR_INVALID_STATE;
+    }
+
+    if (RT_FAILURE(rc))
+        ASMAtomicDecU32(&pSource->Vhwa.cOverlaysCreated);
+
+    return rc;
+}
+
+int vboxVhwaHlpCheckTerm(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+{
+    Assert(VidPnSourceId < pDevExt->cSources);
+    if (VidPnSourceId >= pDevExt->cSources)
+        return VERR_INVALID_PARAMETER;
+
+    PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[VidPnSourceId];
+
+    Assert(!!(pSource->Vhwa.Settings.fFlags & VBOXVHWA_F_ENABLED));
+
+    /* @todo: need a better synch */
+    uint32_t cNew = ASMAtomicDecU32(&pSource->Vhwa.cOverlaysCreated);
+    int rc = VINF_SUCCESS;
+    if (!cNew)
+    {
+        rc = vboxVhwaHlpDestroyPrimary(pDevExt, pSource, VidPnSourceId);
+        AssertRC(rc);
+    }
+    else
+    {
+        Assert(cNew < UINT32_MAX / 2);
+    }
+
+    return rc;
+}
+
+int vboxVhwaHlpCreateOverlay(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSurf, uint32_t cBackBuffers, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+{
+    int rc = vboxVhwaHlpCheckInit(pDevExt, VidPnSourceId);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
@@ -608,8 +778,19 @@ int vboxVhwaHlpCreateOverlay(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSu
                     0, cBackBuffers, VBOXVHWA_SCAPS_OVERLAY | VBOXVHWA_SCAPS_VIDEOMEMORY | VBOXVHWA_SCAPS_LOCALVIDMEM | VBOXVHWA_SCAPS_COMPLEX,
                     VidPnSourceId);
         AssertRC(rc);
-        if (RT_SUCCESS(rc))
-            ++pSource->Vhwa.cOverlaysCreated;
+    }
+
+    return rc;
+}
+
+int vboxVhwaHlpDestroyOverlay(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSurf, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+{
+    int rc = vboxVhwaHlpDestroySurface(pDevExt, pSurf, VidPnSourceId);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        rc = vboxVhwaHlpCheckTerm(pDevExt, VidPnSourceId);
+        AssertRC(rc);
     }
 
     return rc;

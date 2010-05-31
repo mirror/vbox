@@ -51,6 +51,7 @@ VOID vboxWddmMemFree(PVOID pvMem);
 typedef struct VBOXWDDM_ALLOCATION
 {
     VBOXWDDM_ALLOC_TYPE enmType;
+//    D3DDDI_RESOURCEFLAGS fRcFlags;
     UINT SegmentId;
     VBOXVIDEOOFFSET offVram;
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -59,19 +60,16 @@ typedef struct VBOXWDDM_ALLOCATION
     BOOLEAN bVisible;
     BOOLEAN bAssigned;
     VBOXWDDM_SURFACE_DESC SurfDesc;
+    struct VBOXWDDM_RESOURCE *pResource;
+    uint32_t iIndex;
 } VBOXWDDM_ALLOCATION, *PVBOXWDDM_ALLOCATION;
 
 typedef struct VBOXWDDM_RESOURCE
 {
-    VBOXWDDM_ALLOC_TYPE enmType;
-    UINT SegmentId;
-    VBOXVIDEOOFFSET offVram;
-    D3DDDI_RATIONAL RefreshRate;
-    D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId;
-    BOOLEAN bVisible;
-    BOOLEAN bAssigned;
-    VBOXWDDM_SURFACE_DESC SurfDesc;
+    uint32_t fFlags;
+    VBOXWDDM_RC_DESC RcDesc;
     uint32_t cAllocations;
+    VBOXWDDM_ALLOCATION aAllocations[1];
 } VBOXWDDM_RESOURCE, *PVBOXWDDM_RESOURCE;
 
 

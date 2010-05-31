@@ -231,6 +231,9 @@ public:
     uint32_t fourcc() const {return mDataFormat;}
     uint32_t bitsPerPixel() const { return mBitsPerPixel; }
     uint32_t bitsPerPixelTex() const { return mBitsPerPixelTex; }
+#ifdef VBOXWDDM
+    uint32_t bitsPerPixelMem() const { return mBitsPerPixelMem; }
+#endif
     void pixel2Normalized(uint32_t pix, float *r, float *g, float *b) const;
     uint32_t widthCompression() const {return mWidthCompression;}
     uint32_t heightCompression() const {return mHeightCompression;}
@@ -266,6 +269,9 @@ private:
 
     uint32_t mBitsPerPixel;
     uint32_t mBitsPerPixelTex;
+#ifdef VBOXWDDM
+    uint32_t mBitsPerPixelMem;
+#endif
     uint32_t mWidthCompression;
     uint32_t mHeightCompression;
     VBoxVHWAColorComponent mR;
@@ -1478,6 +1484,9 @@ public:
 
     int vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd);
     int vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd);
+#ifdef VBOXWDDM
+    int vhwaSurfaceGetInfo(struct _VBOXVHWACMD_SURF_GETINFO *pCmd);
+#endif
     int vhwaSurfaceDestroy(struct _VBOXVHWACMD_SURF_DESTROY *pCmd);
     int vhwaSurfaceLock(struct _VBOXVHWACMD_SURF_LOCK *pCmd);
     int vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd);

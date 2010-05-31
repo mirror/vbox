@@ -1371,6 +1371,47 @@ NTSTATUS APIENTRY DxgkDdiCreateDevice(
 
     return Status;
 }
+
+PVBOXWDDM_ALLOCATION vboxWddmAllocationCreateFromResource(PVBOXWDDM_RESOURCE pResource, uint32_t iIndex)
+{
+    PVBOXWDDM_ALLOCATION pAllocation = NULL;
+    if (pResource)
+    {
+        Assert(iIndex < pResource->cAllocations);
+        if (iIndex < pResource->cAllocations)
+        {
+            pAllocation = &pResource->aAllocations[iIndex];
+            memset(pAllocation, 0, sizeof (VBOXWDDM_ALLOCATION));
+        }
+    }
+    else
+        pAllocation = (PVBOXWDDM_ALLOCATION)vboxWddmMemAllocZero(sizeof (VBOXWDDM_ALLOCATION));
+
+    if (pAllocation)
+    {
+        if (pResource)
+        {
+            pAllocation->pResource = pResource;
+            pAllocation->iIndex = iIndex;
+        }
+    }
+
+    return pAllocation;
+}
+
+void vboxWddmAllocationDeleteFromResource(PVBOXWDDM_RESOURCE pResource, PVBOXWDDM_ALLOCATION pAllocation)
+{
+    Assert(pAllocation->pResource == pResource);
+    if (pResource)
+    {
+        Assert(&pResource->aAllocations[pAllocation->iIndex] == pAllocation);
+    }
+    else
+    {
+        vboxWddmMemFree(pAllocation);
+    }
+}
+
 NTSTATUS vboxWddmDestroyAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pAllocation)
 {
     PAGED_CODE();
@@ -1398,14 +1439,26 @@ NTSTATUS vboxWddmDestroyAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATI
             break;
         }
 #endif
+//#ifdef VBOX_WITH_VIDEOHWACCEL
+//        case VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC:
+//        {
+//            if (pAllocation->fRcFlags.Overlay)
+//            {
+//                vboxVhwaHlpDestroyOverlay(pDevExt, pAllocation);
+//            }
+//            break;
+//        }
+//#endif
         default:
             break;
     }
-    vboxWddmMemFree(pAllocation);
+
+    vboxWddmAllocationDeleteFromResource(pAllocation->pResource, pAllocation);
+
     return STATUS_SUCCESS;
 }
 
-NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_RCINFO pRcInfo, DXGK_ALLOCATIONINFO* pAllocationInfo)
+NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_RESOURCE pResource, uint32_t iIndex, DXGK_ALLOCATIONINFO* pAllocationInfo)
 {
     PAGED_CODE();
 
@@ -1415,7 +1468,7 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_RCINFO pR
     if (pAllocationInfo->PrivateDriverDataSize >= sizeof (VBOXWDDM_ALLOCINFO))
     {
         PVBOXWDDM_ALLOCINFO pAllocInfo = (PVBOXWDDM_ALLOCINFO)pAllocationInfo->pPrivateDriverData;
-        PVBOXWDDM_ALLOCATION pAllocation = (PVBOXWDDM_ALLOCATION)vboxWddmMemAllocZero(sizeof (VBOXWDDM_ALLOCATION));
+        PVBOXWDDM_ALLOCATION pAllocation = vboxWddmAllocationCreateFromResource(pResource, iIndex);
         Assert(pAllocation);
         if (pAllocation)
         {
@@ -1453,25 +1506,33 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_RCINFO pR
 #endif
                     break;
                 case VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC:
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                    Assert(pRcInfo);
-                    if (pRcInfo)
+                    Assert(pResource);
+                    if (pResource)
                     {
-                        Assert(pRcInfo->cAllocInfos);
-                        if (pRcInfo->cAllocInfos)
+                        Assert(pResource->cAllocations);
+                        if (pResource->cAllocations)
                         {
-                            if (pRcInfo->RcDesc.fFlags.Overlay)
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                            if (pResource->RcDesc.fFlags.Overlay)
                             {
-                                int rc = vboxVhwaHlpCreateOverlay(pDevExt, pAllocation, pRcInfo->cAllocInfos - 1, pRcInfo->RcDesc.VidPnSourceId);
+                                /* actually we can not "properly" issue create overlay commands to the host here
+                                 * because we do not know source VidPn id here, i.e.
+                                 * the primary which is supposed to be overlayed,
+                                 * however we need to get some info like pitch & size from the host here */
+                                int rc = vboxVhwaHlpGetSurfInfo(pDevExt, pAllocation);
                                 AssertRC(rc);
-                                if (RT_FAILURE(rc))
+                                if (RT_SUCCESS(rc))
+                                {
+                                    pAllocInfo->SurfDesc = pAllocation->SurfDesc;
+                                }
+                                else
                                     Status = STATUS_UNSUCCESSFUL;
                             }
+#endif
                         }
                         else
                             Status = STATUS_INVALID_PARAMETER;
                     }
-#endif
                     /* do not break to set CPU visibility flag */
                 case VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE:
                 case VBOXWDDM_ALLOC_TYPE_STD_STAGINGSURFACE:
@@ -1486,7 +1547,7 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_RCINFO pR
             }
 
             if (Status != STATUS_SUCCESS)
-                vboxWddmMemFree(pAllocation);
+                vboxWddmAllocationDeleteFromResource(pResource, pAllocation);
         }
         else
         {
@@ -1517,7 +1578,7 @@ NTSTATUS APIENTRY DxgkDdiCreateAllocation(
 
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
     NTSTATUS Status = STATUS_SUCCESS;
-    PVBOXWDDM_RCINFO pRcInfo = NULL;
+    PVBOXWDDM_RESOURCE pResource = NULL;
 
     if (pCreateAllocation->PrivateDriverDataSize)
     {
@@ -1525,9 +1586,19 @@ NTSTATUS APIENTRY DxgkDdiCreateAllocation(
         Assert(pCreateAllocation->pPrivateDriverData);
         if (pCreateAllocation->PrivateDriverDataSize >= sizeof (VBOXWDDM_RCINFO))
         {
-            pRcInfo = (PVBOXWDDM_RCINFO)pCreateAllocation->pPrivateDriverData;
-            Assert(pRcInfo->RcDesc.VidPnSourceId < pDevExt->cSources);
+            PVBOXWDDM_RCINFO pRcInfo = (PVBOXWDDM_RCINFO)pCreateAllocation->pPrivateDriverData;
+//            Assert(pRcInfo->RcDesc.VidPnSourceId < pDevExt->cSources);
             Assert(pRcInfo->cAllocInfos == pCreateAllocation->NumAllocations);
+            pResource = (PVBOXWDDM_RESOURCE)vboxWddmMemAllocZero(RT_OFFSETOF(VBOXWDDM_RESOURCE, aAllocations[pRcInfo->cAllocInfos]));
+            Assert(pResource);
+            if (pResource)
+            {
+                pResource->cAllocations = pRcInfo->cAllocInfos;
+                pResource->fFlags = pRcInfo->fFlags;
+                pResource->RcDesc = pRcInfo->RcDesc;
+            }
+            else
+                Status = STATUS_NO_MEMORY;
         }
         else
             Status = STATUS_INVALID_PARAMETER;
@@ -1539,7 +1610,7 @@ NTSTATUS APIENTRY DxgkDdiCreateAllocation(
     {
         for (UINT i = 0; i < pCreateAllocation->NumAllocations; ++i)
         {
-            Status = vboxWddmCreateAllocation(pDevExt, pRcInfo, &pCreateAllocation->pAllocationInfo[i]);
+            Status = vboxWddmCreateAllocation(pDevExt, pResource, i, &pCreateAllocation->pAllocationInfo[i]);
             Assert(Status == STATUS_SUCCESS);
             if (Status != STATUS_SUCCESS)
             {
@@ -1551,6 +1622,10 @@ NTSTATUS APIENTRY DxgkDdiCreateAllocation(
                 }
             }
         }
+
+        pCreateAllocation->hResource = pResource;
+        if (pResource && Status != STATUS_SUCCESS)
+            vboxWddmMemFree(pResource);
     }
     dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
 
@@ -1572,9 +1647,23 @@ DxgkDdiDestroyAllocation(
 
     NTSTATUS Status = STATUS_SUCCESS;
 
+    PVBOXWDDM_RESOURCE pRc = (PVBOXWDDM_RESOURCE)pDestroyAllocation->hResource;
+
+    if (pRc)
+    {
+        Assert(pRc->cAllocations == pDestroyAllocation->NumAllocations);
+    }
+
     for (UINT i = 0; i < pDestroyAllocation->NumAllocations; ++i)
     {
-        vboxWddmDestroyAllocation((PDEVICE_EXTENSION)hAdapter, (PVBOXWDDM_ALLOCATION)pDestroyAllocation->pAllocationList[i]);
+        PVBOXWDDM_ALLOCATION pAlloc = (PVBOXWDDM_ALLOCATION)pDestroyAllocation->pAllocationList[i];
+        Assert(pAlloc->pResource == pRc);
+        vboxWddmDestroyAllocation((PDEVICE_EXTENSION)hAdapter, pAlloc);
+    }
+
+    if (pRc)
+    {
+        vboxWddmMemFree(pRc);
     }
 
     dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
