@@ -1607,7 +1607,7 @@ HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat
              it1 != diskList.end();
              ++it1, ++i)
             ppManifestFiles[i] = (*it1).c_str();
-        int vrc = RTManifestWriteFiles(strMfFile.c_str(), ppManifestFiles, diskList.size()+1);
+        int vrc = RTManifestWriteFiles(strMfFile.c_str(), ppManifestFiles, diskList.size()+1, NULL, NULL);
         RTMemFree(ppManifestFiles);
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_FILE_ERROR,

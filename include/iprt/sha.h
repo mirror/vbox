@@ -35,6 +35,18 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+/**
+ * SHA progress callback.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   uPercent    The progress completion percentage.
+ * @param   pvUser      The user defined parameter.
+ */
+typedef DECLCALLBACK(int) FNRTSHAPROGRESS(unsigned uPercent, void *pvUser);
+/** Pointer to a SHA progress callback. */
+typedef FNRTSHAPROGRESS *PFNRTSHAPROGRESS;
+
 /** The size of a SHA-1 hash. */
 #define RTSHA1_HASH_SIZE    20
 /** The length of a SHA-1 digest string. The terminator is not included. */
@@ -89,7 +101,7 @@ RTDECL(void) RTSha1Update(PRTSHA1CONTEXT pCtx, const void *pvBuf, size_t cbBuf);
 RTDECL(void) RTSha1Final(PRTSHA1CONTEXT pCtx, uint8_t pabDigest[RTSHA1_HASH_SIZE]);
 
 /**
- * Converts a SHA-512 hash to a digest string.
+ * Converts a SHA-1 hash to a digest string.
  *
  * @returns IPRT status code.
  *
@@ -117,10 +129,12 @@ RTDECL(int) RTSha1FromString(char const *pszDigest, uint8_t pabDigest[RTSHA1_HAS
  *
  * @returns iprt status code.
  *
- * @param   pszFile      Filename to create a SHA1 digest for.
- * @param   ppszDigest   On success the SHA1 digest.
+ * @param   pszFile               Filename to create a SHA1 digest for.
+ * @param   ppszDigest            On success the SHA1 digest.
+ * @param   pfnProgressCallback   optional callback for the progress indication
+ * @param   pvUser                user defined pointer for the callback
  */
-RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest);
+RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest, PFNRTSHAPROGRESS pfnProgressCallback, void *pvUser);
 
 
 
