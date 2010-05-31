@@ -834,20 +834,17 @@ STDMETHODIMP Progress::WaitForCompletion (LONG aTimeout)
     /* if we're already completed, take a shortcut */
     if (!mCompleted)
     {
-        RTTIMESPEC time;
-        RTTimeNow(&time); /** @todo r=bird: Use monotonic time (RTTimeMilliTS()) here because of daylight saving and things like that. */
-
         int vrc = VINF_SUCCESS;
         bool fForever = aTimeout < 0;
         int64_t timeLeft = aTimeout;
-        int64_t lastTime = RTTimeSpecGetMilli(&time);
+        int64_t lastTime = RTTimeMilliTS();
 
         while (!mCompleted && (fForever || timeLeft > 0))
         {
             mWaitersCount++;
             alock.leave();
             vrc = RTSemEventMultiWait(mCompletedSem,
-                                      fForever ? RT_INDEFINITE_WAIT : (unsigned)timeLeft);
+                                      fForever ? RT_INDEFINITE_WAIT : (RTMSINTERVAL)timeLeft);
             alock.enter();
             mWaitersCount--;
 
@@ -860,9 +857,9 @@ STDMETHODIMP Progress::WaitForCompletion (LONG aTimeout)
 
             if (!fForever)
             {
-                RTTimeNow (&time);
-                timeLeft -= RTTimeSpecGetMilli(&time) - lastTime;
-                lastTime = RTTimeSpecGetMilli(&time);
+                int64_t now = RTTimeMilliTS();
+                timeLeft -= now - lastTime;
+                lastTime = now;
             }
         }
 
@@ -900,13 +897,10 @@ STDMETHODIMP Progress::WaitForOperationCompletion(ULONG aOperation, LONG aTimeou
     if (    !mCompleted
          && aOperation >= m_ulCurrentOperation)
     {
-        RTTIMESPEC time;
-        RTTimeNow (&time);
-
         int vrc = VINF_SUCCESS;
         bool fForever = aTimeout < 0;
         int64_t timeLeft = aTimeout;
-        int64_t lastTime = RTTimeSpecGetMilli (&time);
+        int64_t lastTime = RTTimeMilliTS();
 
         while (    !mCompleted && aOperation >= m_ulCurrentOperation
                 && (fForever || timeLeft > 0))
@@ -927,9 +921,9 @@ STDMETHODIMP Progress::WaitForOperationCompletion(ULONG aOperation, LONG aTimeou
 
             if (!fForever)
             {
-                RTTimeNow(&time);
-                timeLeft -= RTTimeSpecGetMilli(&time) - lastTime;
-                lastTime = RTTimeSpecGetMilli(&time);
+                int64_t now = RTTimeMilliTS();
+                timeLeft -= now - lastTime;
+                lastTime = now;
             }
         }
 
@@ -1591,13 +1585,10 @@ STDMETHODIMP CombinedProgress::WaitForCompletion (LONG aTimeout)
     /* if we're already completed, take a shortcut */
     if (!mCompleted)
     {
-        RTTIMESPEC time;
-        RTTimeNow(&time);
-
         HRESULT rc = S_OK;
         bool forever = aTimeout < 0;
         int64_t timeLeft = aTimeout;
-        int64_t lastTime = RTTimeSpecGetMilli(&time);
+        int64_t lastTime = RTTimeMilliTS();
 
         while (!mCompleted && (forever || timeLeft > 0))
         {
@@ -1612,9 +1603,9 @@ STDMETHODIMP CombinedProgress::WaitForCompletion (LONG aTimeout)
 
             if (!forever)
             {
-                RTTimeNow(&time);
-                timeLeft -= RTTimeSpecGetMilli(&time) - lastTime;
-                lastTime = RTTimeSpecGetMilli(&time);
+                int64_t now = RTTimeMilliTS();
+                timeLeft -= now - lastTime;
+                lastTime = now;
             }
         }
 
@@ -1678,12 +1669,9 @@ STDMETHODIMP CombinedProgress::WaitForOperationCompletion (ULONG aOperation, LON
         LogFlowThisFunc(("will wait for mProgresses [%d] (%d)\n",
                           progress, operation));
 
-        RTTIMESPEC time;
-        RTTimeNow (&time);
-
         bool forever = aTimeout < 0;
         int64_t timeLeft = aTimeout;
-        int64_t lastTime = RTTimeSpecGetMilli (&time);
+        int64_t lastTime = RTTimeMilliTS();
 
         while (!mCompleted && aOperation >= m_ulCurrentOperation &&
                (forever || timeLeft > 0))
@@ -1701,9 +1689,9 @@ STDMETHODIMP CombinedProgress::WaitForOperationCompletion (ULONG aOperation, LON
 
             if (!forever)
             {
-                RTTimeNow(&time);
-                timeLeft -= RTTimeSpecGetMilli(&time) - lastTime;
-                lastTime = RTTimeSpecGetMilli(&time);
+                int64_t now = RTTimeMilliTS();
+                timeLeft -= now - lastTime;
+                lastTime = now;
             }
         }
 
