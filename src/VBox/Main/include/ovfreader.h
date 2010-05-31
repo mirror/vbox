@@ -310,7 +310,7 @@ struct VirtualSystem
 {
     iprt::MiniString    strName;                // copy of VirtualSystem/@id
 
-    iprt::MiniString    strDescription;         // copy of VirtualSystem/Info content
+    iprt::MiniString    strDescription;         // copy of VirtualSystem/AnnotationSection content, if any
 
     CIMOSType_T         cimos;
     iprt::MiniString    strCimosDesc;           // readable description of the cimos type in the case of cimos = 0/1/102

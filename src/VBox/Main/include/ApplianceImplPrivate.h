@@ -131,6 +131,60 @@ struct MyHardDiskAttachment
     int32_t             lDevice;                // IDE: 0 or 1, otherwise 0 always
 };
 
+/**
+ * Used by Appliance::importMachineGeneric() to store
+ * input parameters and rollback information.
+ */
+struct Appliance::ImportStack
+{
+    // input pointers
+    const LocationInfo              &locInfo;           // ptr to location info from Appliance::importFS()
+    Utf8Str                         strSourceDir;       // directory where source files reside
+    const ovf::DiskImagesMap        &mapDisks;          // ptr to disks map in OVF
+    ComObjPtr<Progress>             &pProgress;         // progress object passed into Appliance::importFS()
+
+    // input parameters from VirtualSystemDescriptions
+    Utf8Str                         strNameVBox;        // VM name
+    Utf8Str                         strOsTypeVBox;      // VirtualBox guest OS type as string
+    uint32_t                        cCPUs;              // CPU count
+    bool                            fForceHWVirt;       // if true, we force enabling hardware virtualization
+    bool                            fForceIOAPIC;       // if true, we force enabling the IOAPIC
+    uint32_t                        ulMemorySizeMB;     // virtual machien RAM in megabytes
+#ifdef VBOX_WITH_USB
+    bool                            fUSBEnabled;
+#endif
+    Utf8Str                         strAudioAdapter;    // if not empty, then the guest has audio enabled, and this is the decimal
+                                                        // representation of the audio adapter (should always be "0" for AC97 presently)
+
+    // session (not initially created)
+    ComPtr<ISession>                pSession;           // session opened in Appliance::importFS() for machine manipulation
+    bool                            fSessionOpen;       // true if the pSession is currently open and needs closing
+
+    // a list of images that we created/imported; this is initially empty
+    // and will be cleaned up on errors
+    std::list<MyHardDiskAttachment> llHardDiskAttachments;      // disks that were attached
+    std::list< ComPtr<IMedium> >    llHardDisksCreated;         // media that were created
+    std::list<Bstr>                 llMachinesRegistered;       // machines that were registered; list of string UUIDs
+
+    ImportStack(const LocationInfo &aLocInfo,
+                const ovf::DiskImagesMap &aMapDisks,
+                ComObjPtr<Progress> &aProgress)
+        : locInfo(aLocInfo),
+          mapDisks(aMapDisks),
+          pProgress(aProgress),
+          cCPUs(1),
+          fForceHWVirt(false),
+          fForceIOAPIC(false),
+          ulMemorySizeMB(0),
+          fSessionOpen(false)
+    {
+        // disk images have to be on the same place as the OVF file. So
+        // strip the filename out of the full file path
+        strSourceDir = aLocInfo.strPath;
+        strSourceDir.stripFilename();
+    }
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // VirtualSystemDescription data definition
