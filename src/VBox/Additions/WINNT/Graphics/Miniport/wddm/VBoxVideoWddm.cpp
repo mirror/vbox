@@ -1405,7 +1405,7 @@ NTSTATUS vboxWddmDestroyAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATI
     return STATUS_SUCCESS;
 }
 
-NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, DXGK_ALLOCATIONINFO* pAllocationInfo)
+NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_RCINFO pRcInfo, DXGK_ALLOCATIONINFO* pAllocationInfo)
 {
     PAGED_CODE();
 
@@ -1428,7 +1428,7 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, DXGK_ALLOCATIONINFO
             pAllocationInfo->pPrivateDriverData = NULL;
             pAllocationInfo->PrivateDriverDataSize = 0;
             pAllocationInfo->Alignment = 0;
-            pAllocationInfo->Size = pAllocInfo->SurfDesc.pitch * pAllocInfo->SurfDesc.height;
+            pAllocationInfo->Size = pAllocInfo->SurfDesc.cbSize;
             pAllocationInfo->PitchAlignedSize = 0;
             pAllocationInfo->HintedBank.Value = 0;
             pAllocationInfo->PreferredSegment.Value = 0;
@@ -1452,9 +1452,29 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, DXGK_ALLOCATIONINFO
                     pAllocationInfo->Flags.CpuVisible = 1;
 #endif
                     break;
+                case VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC:
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                    Assert(pRcInfo);
+                    if (pRcInfo)
+                    {
+                        Assert(pRcInfo->cAllocInfos);
+                        if (pRcInfo->cAllocInfos)
+                        {
+                            if (pRcInfo->RcDesc.fFlags.Overlay)
+                            {
+                                int rc = vboxVhwaHlpCreateOverlay(pDevExt, pAllocation, pRcInfo->cAllocInfos - 1, pRcInfo->RcDesc.VidPnSourceId);
+                                AssertRC(rc);
+                                if (RT_FAILURE(rc))
+                                    Status = STATUS_UNSUCCESSFUL;
+                            }
+                        }
+                        else
+                            Status = STATUS_INVALID_PARAMETER;
+                    }
+#endif
+                    /* do not break to set CPU visibility flag */
                 case VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE:
                 case VBOXWDDM_ALLOC_TYPE_STD_STAGINGSURFACE:
-                case VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC:
                     pAllocationInfo->Flags.Value = 0;
                     pAllocationInfo->Flags.CpuVisible = 1;
                     break;
@@ -1495,29 +1515,43 @@ NTSTATUS APIENTRY DxgkDdiCreateAllocation(
 
     vboxVDbgBreakFv();
 
+    PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
     NTSTATUS Status = STATUS_SUCCESS;
+    PVBOXWDDM_RCINFO pRcInfo = NULL;
 
     if (pCreateAllocation->PrivateDriverDataSize)
     {
+        Assert(pCreateAllocation->PrivateDriverDataSize == sizeof (VBOXWDDM_RCINFO));
+        Assert(pCreateAllocation->pPrivateDriverData);
+        if (pCreateAllocation->PrivateDriverDataSize >= sizeof (VBOXWDDM_RCINFO))
+        {
+            pRcInfo = (PVBOXWDDM_RCINFO)pCreateAllocation->pPrivateDriverData;
+            Assert(pRcInfo->RcDesc.VidPnSourceId < pDevExt->cSources);
+            Assert(pRcInfo->cAllocInfos == pCreateAllocation->NumAllocations);
+        }
+        else
+            Status = STATUS_INVALID_PARAMETER;
         /* @todo: Implement Resource Data Handling */
         drprintf((__FUNCTION__ ": WARNING: Implement Resource Data Handling\n"));
     }
 
-    for (UINT i = 0; i < pCreateAllocation->NumAllocations; ++i)
+    if (Status == STATUS_SUCCESS)
     {
-        Status = vboxWddmCreateAllocation((PDEVICE_EXTENSION)hAdapter, &pCreateAllocation->pAllocationInfo[i]);
-        Assert(Status == STATUS_SUCCESS);
-        if (Status != STATUS_SUCCESS)
+        for (UINT i = 0; i < pCreateAllocation->NumAllocations; ++i)
         {
-            drprintf((__FUNCTION__ ": ERROR: vboxWddmCreateAllocation error (0x%x)\n", Status));
-            /* note: i-th allocation is expected to be cleared in a fail handling code above */
-            for (UINT j = 0; j < i; ++j)
+            Status = vboxWddmCreateAllocation(pDevExt, pRcInfo, &pCreateAllocation->pAllocationInfo[i]);
+            Assert(Status == STATUS_SUCCESS);
+            if (Status != STATUS_SUCCESS)
             {
-                vboxWddmDestroyAllocation((PDEVICE_EXTENSION)hAdapter, (PVBOXWDDM_ALLOCATION)pCreateAllocation->pAllocationInfo[j].hAllocation);
+                drprintf((__FUNCTION__ ": ERROR: vboxWddmCreateAllocation error (0x%x)\n", Status));
+                /* note: i-th allocation is expected to be cleared in a fail handling code above */
+                for (UINT j = 0; j < i; ++j)
+                {
+                    vboxWddmDestroyAllocation(pDevExt, (PVBOXWDDM_ALLOCATION)pCreateAllocation->pAllocationInfo[j].hAllocation);
+                }
             }
         }
     }
-
     dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
 
     return Status;
@@ -1609,6 +1643,7 @@ DxgkDdiGetStandardAllocationDriverData(
                 pAllocInfo->SurfDesc.format = pGetStandardAllocationDriverData->pCreateSharedPrimarySurfaceData->Format;
                 pAllocInfo->SurfDesc.bpp = vboxWddmCalcBitsPerPixel(pAllocInfo->SurfDesc.format);
                 pAllocInfo->SurfDesc.pitch = vboxWddmCalcPitch(pGetStandardAllocationDriverData->pCreateSharedPrimarySurfaceData->Width, pAllocInfo->SurfDesc.bpp);
+                pAllocInfo->SurfDesc.cbSize = pAllocInfo->SurfDesc.pitch * pAllocInfo->SurfDesc.height;
                 pAllocInfo->SurfDesc.depth = 0;
                 pAllocInfo->SurfDesc.slicePitch = 0;
                 pAllocInfo->SurfDesc.RefreshRate = pGetStandardAllocationDriverData->pCreateSharedPrimarySurfaceData->RefreshRate;
@@ -1640,6 +1675,7 @@ DxgkDdiGetStandardAllocationDriverData(
                     pAllocInfo->SurfDesc.format = pGetStandardAllocationDriverData->pCreateShadowSurfaceData->Format;
                     pAllocInfo->SurfDesc.bpp = vboxWddmCalcBitsPerPixel(pAllocInfo->SurfDesc.format);
                     pAllocInfo->SurfDesc.pitch = vboxWddmCalcPitch(pGetStandardAllocationDriverData->pCreateShadowSurfaceData->Width, pAllocInfo->SurfDesc.bpp);
+                    pAllocInfo->SurfDesc.cbSize = pAllocInfo->SurfDesc.pitch * pAllocInfo->SurfDesc.height;
                     pAllocInfo->SurfDesc.depth = 0;
                     pAllocInfo->SurfDesc.slicePitch = 0;
                     pAllocInfo->SurfDesc.RefreshRate.Numerator = 0;
@@ -1671,6 +1707,7 @@ DxgkDdiGetStandardAllocationDriverData(
                 pAllocInfo->SurfDesc.format = D3DDDIFMT_X8R8G8B8; /* staging has always always D3DDDIFMT_X8R8G8B8 */
                 pAllocInfo->SurfDesc.bpp = vboxWddmCalcBitsPerPixel(pAllocInfo->SurfDesc.format);
                 pAllocInfo->SurfDesc.pitch = vboxWddmCalcPitch(pGetStandardAllocationDriverData->pCreateStagingSurfaceData->Width, pAllocInfo->SurfDesc.bpp);
+                pAllocInfo->SurfDesc.cbSize = pAllocInfo->SurfDesc.pitch * pAllocInfo->SurfDesc.height;
                 pAllocInfo->SurfDesc.depth = 0;
                 pAllocInfo->SurfDesc.slicePitch = 0;
                 pAllocInfo->SurfDesc.RefreshRate.Numerator = 0;

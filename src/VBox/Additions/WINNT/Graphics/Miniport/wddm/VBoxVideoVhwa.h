@@ -53,4 +53,6 @@ int vboxVHWADisable(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID sr
 void vboxVHWAInit(PDEVICE_EXTENSION pDevExt);
 void vboxVHWAFree(PDEVICE_EXTENSION pDevExt);
 
+int vboxVhwaHlpCreateOverlay(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSurf, uint32_t cBackBuffers, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId);
+
 #endif /* #ifndef ___VBoxVideoVhwa_h___ */

@@ -49,6 +49,7 @@ typedef struct VBOXWDDM_SURFACE_DESC
     UINT pitch;
     UINT depth;
     UINT slicePitch;
+    UINT cbSize;
     D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId;
     D3DDDI_RATIONAL RefreshRate;
 } VBOXWDDM_SURFACE_DESC, *PVBOXWDDM_SURFACE_DESC;
@@ -156,6 +157,19 @@ DECLINLINE(UINT) vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format)
             AssertBreakpoint();
             return 0;
     }
+}
+
+DECLINLINE(uint32_t) vboxWddmFormatToFourcc(D3DDDIFORMAT format)
+{
+    uint32_t uFormat = (uint32_t)format;
+    /* assume that in case both four bytes are non-zero, this is a fourcc */
+    if ((format & 0xff000000)
+            && (format & 0x00ff0000)
+            && (format & 0x0000ff00)
+            && (format & 0x000000ff)
+            )
+        return uFormat;
+    return 0;
 }
 
 #define VBOXWDDM_ROUNDBOUND(_v, _b) (((_v) + ((_b) - 1)) & ~((_b) - 1))

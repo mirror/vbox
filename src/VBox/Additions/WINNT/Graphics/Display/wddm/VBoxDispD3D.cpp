@@ -733,19 +733,6 @@ int vboxFormatOpsMerge(FORMATOP *paOps, uint32_t *pcOps, uint32_t cMaxOps, FORMA
     return VERR_BUFFER_OVERFLOW;
 }
 
-static uint32_t vboxFormatToFourcc(D3DDDIFORMAT format)
-{
-    uint32_t uFormat = (uint32_t)format;
-    /* assume that in case both four bytes are non-zero, this is a fourcc */
-    if ((format & 0xff000000)
-            && (format & 0x00ff0000)
-            && (format & 0x0000ff00)
-            && (format & 0x000000ff)
-            )
-        return uFormat;
-    return 0;
-}
-
 int vboxCapsInit(PVBOXWDDMDISP_ADAPTER pAdapter)
 {
     pAdapter->cFormstOps = 0;
@@ -831,7 +818,7 @@ int vboxCapsInit(PVBOXWDDMDISP_ADAPTER pAdapter)
                 {
                     for (uint32_t j = 0; j < pVhwa->Settings.cFormats; ++j)
                     {
-                        uint32_t fourcc = vboxFormatToFourcc(pVhwa->Settings.aFormats[j]);
+                        uint32_t fourcc = vboxWddmFormatToFourcc(pVhwa->Settings.aFormats[j]);
                         if (fourcc)
                         {
                             vboxVhwaPopulateOverlayFourccSurfDesc(&sd, fourcc);
@@ -1599,6 +1586,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
             else
                 pAllocInfo->SurfDesc.pitch = vboxWddmCalcPitch(pSurf->Width, pAllocInfo->SurfDesc.bpp);
 
+            pAllocInfo->SurfDesc.cbSize = pAllocInfo->SurfDesc.pitch * pAllocInfo->SurfDesc.height;
             pAllocInfo->SurfDesc.depth = pSurf->Depth;
             pAllocInfo->SurfDesc.slicePitch = pSurf->SysMemSlicePitch;
             pAllocInfo->SurfDesc.VidPnSourceId = pResource->VidPnSourceId;
