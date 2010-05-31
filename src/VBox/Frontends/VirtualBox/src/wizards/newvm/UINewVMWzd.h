@@ -177,6 +177,13 @@ private:
     CMachine machine() const;
     void setMachine(const CMachine &machine);
     CMachine m_Machine;
+
+    QString getNextControllerName(KStorageBus type);
+    int m_iIDECount;
+    int m_iSATACount;
+    int m_iSCSICount;
+    int m_iFloppyCount;
+    int m_iSASCount;
 };
 
 Q_DECLARE_METATYPE(CMachine);
