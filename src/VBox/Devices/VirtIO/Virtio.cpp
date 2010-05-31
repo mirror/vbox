@@ -50,7 +50,7 @@ static void vqueueReset(PVQUEUE pQueue)
 
 static void vqueueInit(PVQUEUE pQueue, uint32_t uPageNumber)
 {
-    pQueue->VRing.addrDescriptors = uPageNumber << PAGE_SHIFT;
+    pQueue->VRing.addrDescriptors = (uint64_t)uPageNumber << PAGE_SHIFT;
     pQueue->VRing.addrAvail       = pQueue->VRing.addrDescriptors
         + sizeof(VRINGDESC) * pQueue->VRing.uSize;
     pQueue->VRing.addrUsed        = RT_ALIGN(
