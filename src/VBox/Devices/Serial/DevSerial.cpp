@@ -973,6 +973,7 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
     if (uVersion == SERIAL_SAVED_STATE_VERSION_16450)
     {
         pThis->f16550AEnabled = false;
+        LogRel(("Serial#%d: falling back to 16450 mode from load state\n", pDevIns->iInstance));
     }
     else
         AssertMsgReturn(uVersion == SERIAL_SAVED_STATE_VERSION, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
@@ -1155,7 +1156,13 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "IRQ\0" "IOBase\0" "GCEnabled\0" "R0Enabled\0" "YieldOnLSRRead\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "IRQ\0"
+                                    "IOBase\0"
+                                    "GCEnabled\0"
+                                    "R0Enabled\0"
+                                    "YieldOnLSRRead\0"
+                                    "Enable16550A\0"
+                                    ))
     {
         AssertMsgFailed(("serialConstruct Invalid configuration values\n"));
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
@@ -1207,6 +1214,11 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     Log(("DevSerial: instance %d iobase=%04x irq=%d\n", iInstance, io_base, irq_lvl));
 
+    rc = CFGMR3QueryBoolDef(pCfg, "Enable16550A", &pThis->f16550AEnabled, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the \"Enable16550A\" value"));
+
     pThis->irq = irq_lvl;
 #ifdef VBOX_SERIAL_PCI
     pThis->base = -1;
@@ -1214,7 +1226,7 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->base = io_base;
 #endif
 
-    pThis->f16550AEnabled = true;
+    LogRel(("Serial#%d: emulating %s\n", pDevIns->iInstance, pThis->f16550AEnabled ? "16550A" : "16450"));
 
     /*
      * Initialize critical section and the semaphore.
