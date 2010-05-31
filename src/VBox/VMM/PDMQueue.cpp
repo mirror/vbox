@@ -711,11 +711,11 @@ static bool pdmR3QueueFlush(PPDMQUEUE pQueue)
     RTRCPTR           pItemsRC = ASMAtomicXchgRCPtr(&pQueue->pPendingRC, NIL_RTRCPTR);
     RTR0PTR           pItemsR0 = ASMAtomicXchgR0Ptr(&pQueue->pPendingR0, NIL_RTR0PTR);
 
-    if (    !pItems
-        &&  !pItemsRC
-        &&  !pItemsR0)
-        /* Somebody may be racing us ... never mind. */
-        return true;
+    AssertMsgReturn(   pItemsR0
+                    || pItemsRC
+                    || pItems,
+                    ("Someone is racing us? This shouldn't happen!\n"),
+                    true);
 
     /*
      * Reverse the list (it's inserted in LIFO order to avoid semaphores, remember).
@@ -894,9 +894,9 @@ static DECLCALLBACK(void) pdmR3QueueTimer(PVM pVM, PTMTIMER pTimer, void *pvUser
     PPDMQUEUE pQueue = (PPDMQUEUE)pvUser;
     Assert(pTimer == pQueue->pTimer); NOREF(pTimer);
 
-    if (    pQueue->pPendingR3
-        ||  pQueue->pPendingR0
-        ||  pQueue->pPendingRC)
+    if (   pQueue->pPendingR3
+        || pQueue->pPendingR0
+        || pQueue->pPendingRC)
         pdmR3QueueFlush(pQueue);
     int rc = TMTimerSetMillies(pQueue->pTimer, pQueue->cMilliesInterval);
     AssertRC(rc);
