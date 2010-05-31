@@ -665,12 +665,13 @@ VMMR3DECL(void) PDMR3QueueFlushAll(PVM pVM)
     LogFlow(("PDMR3QueuesFlush:\n"));
 
     /*
-     * Only let one EMT flushing queues at any one time to queue preserve order
+     * Only let one EMT flushing queues at any one time to preserve the order
      * and to avoid wasting time. The FF is always cleared here, because it's
      * only used to get someones attention. Queue inserts occuring during the
      * flush are caught using the pending bit.
      *
-     * Note. The order in which the FF and pending bit are set and cleared is important.
+     * Note! The order in which the FF and pending bit are set and cleared is
+     *       important.
      */
     VM_FF_CLEAR(pVM, VM_FF_PDM_QUEUES);
     if (!ASMAtomicBitTestAndSet(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_ACTIVE_BIT))
@@ -851,59 +852,6 @@ static bool pdmR3QueueFlush(PPDMQUEUE pQueue)
 
     STAM_PROFILE_STOP(&pQueue->StatFlushPrf,p);
     return true;
-}
-
-
-/**
- * This is a worker function used by PDMQueueFlush to perform the
- * flush in ring-3.
- *
- * The queue which should be flushed is pointed to by either pQueueFlushRC,
- * pQueueFlushR0, or pQueue. This function will flush that queue and recalc
- * the queue FF.
- *
- * @param   pVM     The VM handle.
- * @param   pQueue  The queue to flush. Only used in Ring-3.
- */
-VMMR3DECL(void) PDMR3QueueFlushWorker(PVM pVM, PPDMQUEUE pQueue)
-{
-    Assert(pVM->pdm.s.pQueueFlushR0 || pVM->pdm.s.pQueueFlushRC || pQueue);
-    VM_ASSERT_EMT(pVM);
-
-    /** @todo This will clash with PDMR3QueueFlushAll (guest SMP)! */
-    Assert(!(pVM->pdm.s.fQueueFlushing & PDM_QUEUE_FLUSH_FLAG_ACTIVE));
-
-    /*
-     * Flush the queue.
-     */
-    if (!pQueue && pVM->pdm.s.pQueueFlushRC)
-    {
-        pQueue = (PPDMQUEUE)MMHyperRCToR3(pVM, pVM->pdm.s.pQueueFlushRC);
-        pVM->pdm.s.pQueueFlushRC = NIL_RTRCPTR;
-    }
-    else if (!pQueue && pVM->pdm.s.pQueueFlushR0)
-    {
-        pQueue = (PPDMQUEUE)MMHyperR0ToR3(pVM, pVM->pdm.s.pQueueFlushR0);
-        pVM->pdm.s.pQueueFlushR0 = NIL_RTR0PTR;
-    }
-    Assert(!pVM->pdm.s.pQueueFlushR0 && !pVM->pdm.s.pQueueFlushRC);
-
-    if (    !pQueue
-        ||  pdmR3QueueFlush(pQueue))
-    {
-        /*
-         * Recalc the FF (for the queues using force action).
-         */
-        VM_FF_CLEAR(pVM, VM_FF_PDM_QUEUES);
-        for (pQueue = pVM->pUVM->pdm.s.pQueuesForced; pQueue; pQueue = pQueue->pNext)
-            if (    pQueue->pPendingRC
-                ||  pQueue->pPendingR0
-                ||  pQueue->pPendingR3)
-            {
-                VM_FF_SET(pVM, VM_FF_PDM_QUEUES);
-                break;
-            }
-    }
 }
 
 

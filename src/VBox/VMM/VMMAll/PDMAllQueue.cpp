@@ -78,12 +78,21 @@ VMMDECL(void) PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
     Assert(VALID_PTR(pQueue) && pQueue->CTX_SUFF(pVM));
     Assert(VALID_PTR(pItem));
 
+#if 0 /* the paranoid android version: */
+    void *pvNext;
+    do
+    {
+        pvNext = ASMAtomicUoReadPtr((void * volatile *)&pQueue->CTX_SUFF(pPending));
+        ASMAtomicUoWritePtr((void * volatile *)&pItem->CTX_SUFF(pNext), pvNext);
+    } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pQueue->CTX_SUFF(pPending), pItem, pvNext));
+#else
     PPDMQUEUEITEMCORE pNext;
     do
     {
         pNext = pQueue->CTX_SUFF(pPending);
         pItem->CTX_SUFF(pNext) = pNext;
     } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pQueue->CTX_SUFF(pPending), pItem, pNext));
+#endif
 
     if (!pQueue->pTimer)
     {
@@ -169,24 +178,3 @@ VMMDECL(R0PTRTYPE(PPDMQUEUE)) PDMQueueR0Ptr(PPDMQUEUE pQueue)
 #endif
 }
 
-
-/**
- * Flushes a PDM queue.
- *
- * @param   pQueue          The queue handle.
- */
-VMMDECL(void) PDMQueueFlush(PPDMQUEUE pQueue)
-{
-    Assert(VALID_PTR(pQueue));
-    Assert(pQueue->pVMR3);
-    PVM pVM = pQueue->CTX_SUFF(pVM);
-
-#if defined(IN_RC) || defined(IN_RING0)
-    Assert(pQueue->CTX_SUFF(pVM));
-    pVM->pdm.s.CTX_SUFF(pQueueFlush) = pQueue;
-    VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PDM_QUEUE_FLUSH, (uintptr_t)pQueue);
-
-#else /* IN_RING3: */
-    VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)PDMR3QueueFlushWorker, 2, pVM, pQueue);
-#endif
-}

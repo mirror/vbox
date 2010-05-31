@@ -26,7 +26,6 @@ EXPORTS
     PDMCritSectTryEnter
     PDMCritSectTryEnterDebug
     PDMQueueAlloc
-    PDMQueueFlush
     PDMQueueInsert
     PGMHandlerPhysicalPageTempOff
     PGMShwModifyPage
