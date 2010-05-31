@@ -21,7 +21,7 @@
 
 #include <QGlobalStatic> /* for Q_WS_MAC */
 #ifdef Q_WS_MAC
-#include "VBoxUtils.h"
+# include "VBoxUtils.h"
 #endif
 
 /* Qt includes */
@@ -65,46 +65,8 @@ public:
     void setMacToolbar()
     {
         if (mMainWindow)
-        {
             mMainWindow->setUnifiedTitleAndToolBarOnMac (true);
-#ifndef QT_MAC_USE_COCOA
-            WindowRef window = ::darwinToNativeWindow (this);
-            EventHandlerUPP eventHandler = ::NewEventHandlerUPP (VBoxToolBar::macEventFilter);
-            EventTypeSpec eventTypes[2];
-            eventTypes[0].eventClass = kEventClassMouse;
-            eventTypes[0].eventKind  = kEventMouseDown;
-            eventTypes[1].eventClass = kEventClassMouse;
-            eventTypes[1].eventKind  = kEventMouseUp;
-            InstallWindowEventHandler (window, eventHandler,
-                                       RT_ELEMENTS (eventTypes), eventTypes,
-                                       NULL, NULL);
-#endif /* !QT_MAC_USE_COCOA */
-        }
     }
-
-#ifndef QT_MAC_USE_COCOA
-    static pascal OSStatus macEventFilter (EventHandlerCallRef aNextHandler,
-                                           EventRef aEvent, void * /* aUserData */)
-    {
-        UInt32 eclass = GetEventClass (aEvent);
-        if (eclass == kEventClassMouse)
-        {
-            WindowPartCode partCode;
-            GetEventParameter (aEvent, kEventParamWindowPartCode, typeWindowPartCode, NULL, sizeof (WindowPartCode), NULL, &partCode);
-            UInt32 ekind = GetEventKind (aEvent);
-            if (partCode == 15 ||
-                partCode == 4)
-                if(ekind == kEventMouseDown || ekind == kEventMouseUp)
-                {
-                    EventMouseButton button = 0;
-                    GetEventParameter (aEvent, kEventParamMouseButton, typeMouseButton, NULL, sizeof (button), NULL, &button);
-                    if (button != kEventMouseButtonPrimary)
-                        return noErr;
-                }
-        }
-        return CallNextEventHandler (aNextHandler, aEvent);
-    }
-#endif /* !QT_MAC_USE_COCOA */
 
     void setShowToolBarButton (bool aShow)
     {
