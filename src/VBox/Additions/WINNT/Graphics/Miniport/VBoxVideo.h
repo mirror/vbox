@@ -156,6 +156,7 @@ typedef struct VBOXWDDM_POINTER_INFO
 typedef struct VBOXWDDM_VHWA
 {
     VBOXVHWA_INFO Settings;
+    bool cOverlaysCreated;
 } VBOXWDDM_VHWA;
 #endif
 

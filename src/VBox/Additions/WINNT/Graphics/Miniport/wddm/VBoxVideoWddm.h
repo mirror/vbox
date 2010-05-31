@@ -53,6 +53,9 @@ typedef struct VBOXWDDM_ALLOCATION
     VBOXWDDM_ALLOC_TYPE enmType;
     UINT SegmentId;
     VBOXVIDEOOFFSET offVram;
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    VBOXVHWA_SURFHANDLE hHostHandle;
+#endif
     BOOLEAN bVisible;
     BOOLEAN bAssigned;
     VBOXWDDM_SURFACE_DESC SurfDesc;
