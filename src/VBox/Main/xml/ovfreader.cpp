@@ -296,8 +296,19 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
     while ((pelmThis = loop.forAllNodes()))
     {
         const char *pcszElemName = pelmThis->getName();
-        const xml::AttributeNode *pTypeAttr = pelmThis->findAttribute("type");
-        const char *pcszTypeAttr = (pTypeAttr) ? pTypeAttr->getValue() : "";
+        const char *pcszTypeAttr = "";
+        if (!strcmp(pcszElemName, "Section"))       // OVF 0.9 used "Section" element always with a varying "type" attribute
+        {
+            const xml::AttributeNode *pTypeAttr;
+            if (    ((pTypeAttr = pelmThis->findAttribute("type")))
+                 || ((pTypeAttr = pelmThis->findAttribute("xsi:type")))
+               )
+                pcszTypeAttr = pTypeAttr->getValue();
+            else
+                throw OVFLogicError(N_("Error reading \"%s\": element \"Section\" has no \"type\" attribute, line %d"),
+                                    m_strPath.c_str(),
+                                    pelmThis->getLineNumber());
+        }
 
         if (    (!strcmp(pcszElemName, "EulaSection"))
              || (!strcmp(pcszTypeAttr, "ovf:EulaSection_Type"))
