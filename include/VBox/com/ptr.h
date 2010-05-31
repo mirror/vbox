@@ -225,11 +225,15 @@ public:
      *  Dereferences the instance (redirects the -> operator to the managed
      *  pointer).
      */
+#ifndef IN_SLICKEDIT
     NoAddRefRelease<C>* operator->() const
     {
         AssertMsg(p, ("Managed pointer must not be null\n"));
         return (NoAddRefRelease<C>*)p;
     }
+#else  /* IN_SLICKEDIT - The editor doesn't quite grok the above magic, sorry about the mess. */
+    C *operator->() const { return this->p; }
+#endif
 
     template <class I>
     HRESULT queryInterfaceTo(I **pp) const
@@ -490,6 +494,10 @@ public:
         Base::operator=(that_p);
         return *this;
     }
+
+#ifdef IN_SLICKEDIT /* Doesn't fully grok the stuff otherwise, sorry for the bloat. */
+    C *operator->() const { return this->p; }
+#endif
 
     /**
      *  Creates a new server-side object of the given component class and
