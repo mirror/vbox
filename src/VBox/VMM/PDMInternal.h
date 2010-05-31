@@ -809,16 +809,13 @@ typedef struct PDMQUEUE
 
 /** @name PDM::fQueueFlushing
  * @{ */
-/** Indicating that an queue insert has been performed. */
-#define PDM_QUEUE_FLUSH_FLAG_ACTIVE         RT_BIT_32(PDM_QUEUE_FLUSH_FLAG_ACTIVE_BIT)
-/** The bit number for PDM_QUEUE_FLUSH_FLAG_ACTIVE_BIT.  */
+/** Used to make sure only one EMT will flush the queues.
+ * Set when an EMT is flushing queues, clear otherwise.  */
 #define PDM_QUEUE_FLUSH_FLAG_ACTIVE_BIT     0
-/** Indicating there are pending items.
- * This is make sure we don't miss inserts happening during flushing. The FF
+/** Indicating there are queues with items pending.
+ * This is make sure we don't miss inserts happening during flushing.  The FF
  * cannot be used for this since it has to be cleared immediately to prevent
  * other EMTs from spinning. */
-#define PDM_QUEUE_FLUSH_FLAG_PENDING        RT_BIT_32(PDM_QUEUE_FLUSH_FLAG_PENDING_BIT)
-/** The bit number for PDM_QUEUE_FLUSH_FLAG_PENDING.  */
 #define PDM_QUEUE_FLUSH_FLAG_PENDING_BIT    1
 /** }@  */
 
