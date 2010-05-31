@@ -80,8 +80,6 @@ typedef enum VMMCALLRING3
     VMMCALLRING3_INVALID = 0,
     /** Acquire the PDM lock. */
     VMMCALLRING3_PDM_LOCK,
-    /** Call PDMR3QueueFlushWorker. */
-    VMMCALLRING3_PDM_QUEUE_FLUSH,
     /** Acquire the PGM lock. */
     VMMCALLRING3_PGM_LOCK,
     /** Grow the PGM shadow page pool. */
