@@ -355,82 +355,90 @@ void VBoxServicePageSharingInspectGuest()
 
 #if 0
     /* Check all loaded kernel modules. */
-    ULONG                cbBuffer;
-    PVOID                pBuffer = NULL;
-    PRTL_PROCESS_MODULES pSystemModules;
-    
-    NTSTATUS ret = ZwQuerySystemInformation(SystemModuleInformation, (PVOID)&cbBuffer, 0, &cbBuffer);
-    if (ret != STATUS_SUCCESS)
-        goto skipkernelmodules;
-        
-    pBuffer = malloc(cbBuffer);
-    if (!pBuffer)
-        goto skipkernelmodules;
-
-    ret = ZwQuerySystemInformation(SystemModuleInformation, pBuffer, cbBuffer, &cbBuffer);
-    if (ret != STATUS_SUCCESS)
-        goto skipkernelmodules;
-    
-    pSystemModules = (PRTL_PROCESS_MODULES)pBuffer;
-    for (unsigned i = 0; i < pSystemModules->NumberOfModules; i++)
+    if (ZwQuerySystemInformation)
     {
-        /* Found it before? */
-        PAVLPVNODECORE pRec = RTAvlPVGet(&pNewTree, pSystemModules->Modules[i].ImageBase);
-        if (!pRec)
+        ULONG                cbBuffer;
+        PVOID                pBuffer = NULL;
+        PRTL_PROCESS_MODULES pSystemModules;
+    
+        NTSTATUS ret = ZwQuerySystemInformation(SystemModuleInformation, (PVOID)&cbBuffer, 0, &cbBuffer);
+        if (ret != STATUS_SUCCESS)
         {
-            pRec = RTAvlPVRemove(&pKnownModuleTree, pSystemModules->Modules[i].ImageBase);
+            VBoxServiceVerbose(1, "ZwQuerySystemInformation returned %x (1)\n", ret);
+            goto skipkernelmodules;
+        }
+        
+        pBuffer = RTMemAllocZ(cbBuffer);
+        if (!pBuffer)
+            goto skipkernelmodules;
+
+        ret = ZwQuerySystemInformation(SystemModuleInformation, pBuffer, cbBuffer, &cbBuffer);
+        if (ret != STATUS_SUCCESS)
+        {
+            VBoxServiceVerbose(1, "ZwQuerySystemInformation returned %x (1)\n", ret);
+            goto skipkernelmodules;
+        }
+    
+        pSystemModules = (PRTL_PROCESS_MODULES)pBuffer;
+        for (unsigned i = 0; i < pSystemModules->NumberOfModules; i++)
+        {
+            /* Found it before? */
+            PAVLPVNODECORE pRec = RTAvlPVGet(&pNewTree, pSystemModules->Modules[i].ImageBase);
             if (!pRec)
             {
-                /* New module; register it. */
-                char          szFullFilePath[512];
-                PKNOWN_MODULE pModule = (PKNOWN_MODULE)RTMemAllocZ(sizeof(*pModule));
-                Assert(pModule);
-                if (!pModule)
-                    break;
-
-                strcpy(pModule->Info.szModule, &pSystemModules->Modules[i].FullPathName[pSystemModules->Modules[i].OffsetToFileName]);
-                GetSystemDirectoryA(szFullFilePath, sizeof(szFullFilePath));
-
-                /* skip \Systemroot\system32 */
-                char *lpPath = strstr(pSystemModules->Modules[i].FullPathName, "\\system32");
-                if (!lpPath)
+                pRec = RTAvlPVRemove(&pKnownModuleTree, pSystemModules->Modules[i].ImageBase);
+                if (!pRec)
                 {
-                    VBoxServiceVerbose(1, "Unexpected kernel module name %s\n", pSystemModules->Modules[i].FullPathName);
-                    RTMemFree(pModule);
-                    break;
+                    /* New module; register it. */
+                    char          szFullFilePath[512];
+                    PKNOWN_MODULE pModule = (PKNOWN_MODULE)RTMemAllocZ(sizeof(*pModule));
+                    Assert(pModule);
+                    if (!pModule)
+                        break;
+
+                    strcpy(pModule->Info.szModule, &pSystemModules->Modules[i].FullPathName[pSystemModules->Modules[i].OffsetToFileName]);
+                    GetSystemDirectoryA(szFullFilePath, sizeof(szFullFilePath));
+
+                    /* skip \Systemroot\system32 */
+                    char *lpPath = strstr(pSystemModules->Modules[i].FullPathName, "\\system32");
+                    if (!lpPath)
+                    {
+                        VBoxServiceVerbose(1, "Unexpected kernel module name %s\n", pSystemModules->Modules[i].FullPathName);
+                        RTMemFree(pModule);
+                        break;
+                    }
+
+                    lpPath = strchr(lpPath+1, '\\');
+                    if (!lpPath)
+                    {
+                        VBoxServiceVerbose(1, "Unexpected kernel module name %s\n", pSystemModules->Modules[i].FullPathName);
+                        RTMemFree(pModule);
+                        break;
+                    }
+
+                    strcat(szFullFilePath, lpPath);
+                    strcpy(pModule->Info.szExePath, szFullFilePath);
+                    pModule->Info.modBaseAddr = (BYTE *)pSystemModules->Modules[i].ImageBase;
+                    pModule->Info.modBaseSize = pSystemModules->Modules[i].ImageSize;
+
+                    pModule->Core.Key = pSystemModules->Modules[i].ImageBase;
+                    VBoxServicePageSharingRegisterModule(pModule, false /* don't check memory pages */);
+
+                    VBoxServiceVerbose(3, "\n\n   KERNEL  MODULE NAME:     %s",     pModule->Info.szModule );
+                    VBoxServiceVerbose(3, "\n     executable     = %s",             pModule->Info.szExePath );
+                    VBoxServiceVerbose(3, "\n     base address   = 0x%08X", (DWORD) pModule->Info.modBaseAddr );
+                    VBoxServiceVerbose(3, "\n     base size      = %d",             pModule->Info.modBaseSize );
+
+                    pRec = &pModule->Core;
                 }
-
-                lpPath = strchr(lpPath+1, '\\');
-                if (!lpPath)
-                {
-                    VBoxServiceVerbose(1, "Unexpected kernel module name %s\n", pSystemModules->Modules[i].FullPathName);
-                    RTMemFree(pModule);
-                    break;
-                }
-
-                strcat(szFullFilePath, lpPath);
-                strcpy(pModule->Info.szExePath, szFullFilePath);
-                pModule->Info.modBaseAddr = (BYTE *)pSystemModules->Modules[i].ImageBase;
-                pModule->Info.modBaseSize = pSystemModules->Modules[i].ImageSize;
-
-                pModule->Core.Key = pSystemModules->Modules[i].ImageBase;
-                VBoxServicePageSharingRegisterModule(pModule, false /* don't check memory pages */);
-
-                VBoxServiceVerbose(3, "\n\n   KERNEL  MODULE NAME:     %s",     pModule->Info.szModule );
-                VBoxServiceVerbose(3, "\n     executable     = %s",             pModule->Info.szExePath );
-                VBoxServiceVerbose(3, "\n     base address   = 0x%08X", (DWORD) pModule->Info.modBaseAddr );
-                VBoxServiceVerbose(3, "\n     base size      = %d",             pModule->Info.modBaseSize );
-
-                pRec = &pModule->Core;
+                bool ret = RTAvlPVInsert(&pNewTree, pRec);
+                Assert(ret); NOREF(ret);
             }
-            bool ret = RTAvlPVInsert(&pNewTree, pRec);
-            Assert(ret); NOREF(ret);
         }
-    }
-
 skipkernelmodules:
-    if (pBuffer)
-        free(pBuffer);
+        if (pBuffer)
+            RTMemFree(pBuffer);
+    }
 #endif
 
     /* Delete leftover modules in the old tree. */
