@@ -58,23 +58,19 @@ public:
                  IUnknown *pInitiator,
                  CBSTR bstrDescription,
                  BOOL fCancelable,
+                 ULONG cOtherProgressObjects,
                  ULONG uTotalOperationsWeight,
                  CBSTR bstrFirstOperationDescription,
                  ULONG uFirstOperationWeight,
-                 ULONG cOtherProgressObjectOperations);
+                 OUT_GUID pId = NULL);
     void    uninit();
 
     // IProgress properties
-    STDMETHOD(COMGETTER(Cancelable))(BOOL *aCancelable);
     STDMETHOD(COMGETTER(Percent))(ULONG *aPercent);
-    STDMETHOD(COMGETTER(TimeRemaining))(LONG *aTimeRemaining);
     STDMETHOD(COMGETTER(Completed))(BOOL *aCompleted);
     STDMETHOD(COMGETTER(Canceled))(BOOL *aCanceled);
     STDMETHOD(COMGETTER(ResultCode))(LONG *aResultCode);
     STDMETHOD(COMGETTER(ErrorInfo))(IVirtualBoxErrorInfo **aErrorInfo);
-    //STDMETHOD(COMGETTER(OperationCount))(ULONG *aOperationCount); - not necessary
-    STDMETHOD(COMGETTER(Operation))(ULONG *aOperation);
-    STDMETHOD(COMGETTER(OperationDescription))(BSTR *aOperationDescription);
     STDMETHOD(COMGETTER(OperationPercent))(ULONG *aOperationPercent);
     STDMETHOD(COMSETTER(Timeout))(ULONG aTimeout);
     STDMETHOD(COMGETTER(Timeout))(ULONG *aTimeout);
@@ -95,7 +91,8 @@ public:
                            const Bstr &aComponent,
                            const char *aText, ...);
     bool    notifyPointOfNoReturn(void);
-    bool    setOtherProgressObject(IProgress *pOtherProgress);
+    bool    setOtherProgressObject(IProgress *pOtherProgress, ULONG uOperationWeight);
+    bool    clearOtherProgressObject(const char *pszLastOperationDescription, ULONG uLastOperationWeight);
 
     /** For com::SupportErrorInfoImpl. */
     static const char *ComponentName() { return "ProgressProxy"; }
@@ -107,14 +104,10 @@ protected:
 private:
     /** The other progress object.  This can be NULL. */
     ComPtr<IProgress> mptrOtherProgress;
-    /** Set if the other progress object has multiple operations. */
-    bool mfMultiOperation;
-    /** The weight the other progress object started at. */
-    ULONG muOtherProgressStartWeight;
-    /** The weight of other progress object. */
-    ULONG muOtherProgressWeight;
-    /** The operation number the other progress object started at. */
-    ULONG muOtherProgressStartOperation;
+    /** The number of other progress objects expected. */
+    ULONG mcOtherProgressObjects;
+    /** The current other progress object. */
+    ULONG miCurOtherProgressObject;
 
 };
 
