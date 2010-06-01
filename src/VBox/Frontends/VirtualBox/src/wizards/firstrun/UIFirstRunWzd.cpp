@@ -61,20 +61,37 @@ UIFirstRunWzd::UIFirstRunWzd(QWidget *pParent, const CMachine &machine) : QIWiza
 #endif /* Q_WS_MAC */
 }
 
-bool UIFirstRunWzd::isDefaultHardDiskAttached(const CMachine &machine)
+bool UIFirstRunWzd::isBootHardDiskAttached(const CMachine &machine)
 {
-    LONG iPort = 0;
-    LONG iDevice = 0;
+    /* Result is 'false' initially: */
+    bool fIsBootHardDiskAttached = false;
+    /* Get 'vbox' global object: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    CGuestOSType type = vbox.GetGuestOSType(machine.GetOSTypeId());
-    KStorageBus ctrDvdBus = type.GetRecommendedDvdStorageBus();
-    KStorageBus ctrHdBus = type.GetRecommendedHdStorageBus();
-    KStorageControllerType dvdStorageControllerType = type.GetRecommendedDvdStorageController();
-    KStorageControllerType hdStorageControllerType = type.GetRecommendedHdStorageController();
-    CMediumAttachment hda = ctrHdBus != ctrDvdBus || hdStorageControllerType != dvdStorageControllerType ?
-                            machine.GetMediumAttachment(VBoxVMSettingsHD::tr("Storage Controller 1"), iPort, iDevice) :
-                            machine.GetMediumAttachment(VBoxVMSettingsHD::tr("Storage Controller"), iPort, iDevice);
-    return !hda.isNull() && hda.GetType() == KDeviceType_HardDisk;
+    /* Determine machine 'OS type': */
+    const CGuestOSType &osType = vbox.GetGuestOSType(machine.GetOSTypeId());
+    /* Determine recommended controller's 'bus' & 'type': */
+    KStorageBus hdCtrBus = osType.GetRecommendedHdStorageBus();
+    KStorageControllerType hdCtrType = osType.GetRecommendedHdStorageController();
+    /* Enumerate attachments vector: */
+    const CMediumAttachmentVector &attachments = machine.GetMediumAttachments();
+    for (int i = 0; i < attachments.size(); ++i)
+    {
+        /* Get current attachment: */
+        const CMediumAttachment &attachment = attachments[i];
+        /* Determine attachment's controller: */
+        const CStorageController &controller = machine.GetStorageControllerByName(attachment.GetController());
+        /* If controller's 'bus' & 'type' are recommended and attachment's 'type' is 'hard disk': */
+        if (controller.GetBus() == hdCtrBus &&
+            controller.GetControllerType() == hdCtrType &&
+            attachment.GetType() == KDeviceType_HardDisk)
+        {
+            /* Set the result to 'true': */
+            fIsBootHardDiskAttached = true;
+            break;
+        }
+    }
+    /* Return result: */
+    return fIsBootHardDiskAttached;
 }
 
 void UIFirstRunWzd::retranslateUi()
@@ -96,9 +113,9 @@ void UIFirstRunWzdPage1::init()
     AssertMsg(!machine.isNull(), ("Field 'machine' must be set!\n"));
 
     /* Hide unnecessary text labels */
-    bool fIsDefaultHDAttached = UIFirstRunWzd::isDefaultHardDiskAttached(machine);
-    m_pPage1Text1Var1->setHidden(!fIsDefaultHDAttached);
-    m_pPage1Text1Var2->setHidden(fIsDefaultHDAttached);
+    bool fIsBootHDAttached = UIFirstRunWzd::isBootHardDiskAttached(machine);
+    m_pPage1Text1Var1->setHidden(!fIsBootHDAttached);
+    m_pPage1Text1Var2->setHidden(fIsBootHDAttached);
 }
 
 void UIFirstRunWzdPage1::retranslateUi()
@@ -159,9 +176,9 @@ void UIFirstRunWzdPage2::init()
     AssertMsg(!machine.isNull(), ("Field 'machine' must be set!\n"));
 
     /* Hide unnecessary text labels */
-    bool fIsDefaultHDAttached = UIFirstRunWzd::isDefaultHardDiskAttached(machine);
-    m_pPage2Text1Var1->setHidden(!fIsDefaultHDAttached);
-    m_pPage2Text1Var2->setHidden(fIsDefaultHDAttached);
+    bool fIsBootHDAttached = UIFirstRunWzd::isBootHardDiskAttached(machine);
+    m_pPage2Text1Var1->setHidden(!fIsBootHDAttached);
+    m_pPage2Text1Var2->setHidden(fIsBootHDAttached);
 
     /* Assign media selector attributes */
     m_pMediaSelector->setMachineId(machine.GetId());
@@ -236,11 +253,11 @@ void UIFirstRunWzdPage3::init()
     AssertMsg(!machine.isNull(), ("Field 'machine' must be set!\n"));
 
     /* Hide unnecessary text labels */
-    bool fIsDefaultHDAttached = UIFirstRunWzd::isDefaultHardDiskAttached(machine);
-    m_pPage3Text1Var1->setHidden(!fIsDefaultHDAttached);
-    m_pPage3Text1Var2->setHidden(fIsDefaultHDAttached);
-    m_pPage3Text2Var1->setHidden(!fIsDefaultHDAttached);
-    m_pPage3Text2Var2->setHidden(fIsDefaultHDAttached);
+    bool fIsBootHDAttached = UIFirstRunWzd::isBootHardDiskAttached(machine);
+    m_pPage3Text1Var1->setHidden(!fIsBootHDAttached);
+    m_pPage3Text1Var2->setHidden(fIsBootHDAttached);
+    m_pPage3Text2Var1->setHidden(!fIsBootHDAttached);
+    m_pPage3Text2Var2->setHidden(fIsBootHDAttached);
 }
 
 void UIFirstRunWzdPage3::retranslateUi()
@@ -292,16 +309,38 @@ bool UIFirstRunWzdPage3::validatePage()
 
 bool UIFirstRunWzdPage3::insertDevice()
 {
-    /* Composing default controller name */
+    /* Get 'vbox' global object: */
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    /* Determine machine 'OS type': */
+    const CGuestOSType &osType = vbox.GetGuestOSType(m_Machine.GetOSTypeId());
+    /* Determine recommended controller's 'bus' & 'type': */
+    KStorageBus dvdCtrBus = osType.GetRecommendedDvdStorageBus();
+    KStorageControllerType dvdCtrType = osType.GetRecommendedDvdStorageController();
+    /* Declare null 'dvd' attachment: */
+    CMediumAttachment cda;
+    /* Enumerate attachments vector: */
+    const CMediumAttachmentVector &attachments = m_Machine.GetMediumAttachments();
+    for (int i = 0; i < attachments.size(); ++i)
+    {
+        /* Get current attachment: */
+        const CMediumAttachment &attachment = attachments[i];
+        /* Determine attachment's controller: */
+        const CStorageController &controller = m_Machine.GetStorageControllerByName(attachment.GetController());
+        /* If controller's 'bus' & 'type' are recommended and attachment's 'type' is 'dvd': */
+        if (controller.GetBus() == dvdCtrBus &&
+            controller.GetControllerType() == dvdCtrType &&
+            attachment.GetType() == KDeviceType_DVD)
+        {
+            /* Remember attachment: */
+            cda = attachment;
+            break;
+        }
+    }
+    AssertMsg(!cda.isNull(), ("Storage Controller is NOT properly configured!\n"));
+    /* Get chosen 'dvd' medium to mount: */
     QString mediumId = field("id").toString();
-    LONG iPort = 1;
-    LONG iDevice = 0;
-    QString strCtnName = VBoxVMSettingsHD::tr("Storage Controller");
-    CMediumAttachment cda = m_Machine.GetMediumAttachment(strCtnName, iPort, iDevice);
-    AssertMsg(!cda.isNull() && cda.GetType() == KDeviceType_DVD,
-              ("Storage Controller is NOT properly configured!\n"));
-    /* Mount medium to the predefined port/device */
-    m_Machine.MountMedium(strCtnName, iPort, iDevice, mediumId, false /* force */);
+    /* Mount medium to the predefined port/device: */
+    m_Machine.MountMedium(cda.GetController(), cda.GetPort(), cda.GetDevice(), mediumId, false /* force */);
     if (m_Machine.isOk())
         return true;
     else
