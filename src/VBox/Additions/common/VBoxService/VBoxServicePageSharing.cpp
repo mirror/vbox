@@ -44,6 +44,7 @@ static RTSEMEVENTMULTI  g_PageSharingEvent = NIL_RTSEMEVENTMULTI;
 #if defined(RT_OS_WINDOWS) && !defined(TARGET_NT4)
 #include <tlhelp32.h>
 #include <psapi.h>
+#include <winternl.h>
 
 typedef struct
 {
@@ -53,15 +54,43 @@ typedef struct
     MODULEENTRY32   Info;
 } KNOWN_MODULE, *PKNOWN_MODULE;
 
+#define SystemModuleInformation     11
+
+typedef struct _RTL_PROCESS_MODULE_INFORMATION
+{
+    ULONG Section;
+    PVOID MappedBase;
+    PVOID ImageBase;
+    ULONG ImageSize;
+    ULONG Flags;
+    USHORT LoadOrderIndex;
+    USHORT InitOrderIndex;
+    USHORT LoadCount;
+    USHORT OffsetToFileName;
+    CHAR FullPathName[256];
+} RTL_PROCESS_MODULE_INFORMATION, *PRTL_PROCESS_MODULE_INFORMATION;
+
+typedef struct _RTL_PROCESS_MODULES
+{
+    ULONG NumberOfModules;
+    RTL_PROCESS_MODULE_INFORMATION Modules[1];
+} RTL_PROCESS_MODULES, *PRTL_PROCESS_MODULES;
+
+typedef NTSTATUS (WINAPI *PFNZWQUERYSYSTEMINFORMATION)(ULONG, PVOID, ULONG, PULONG);
+static PFNZWQUERYSYSTEMINFORMATION ZwQuerySystemInformation = NULL;
+static HMODULE hNtdll = 0;
+
+
 static DECLCALLBACK(int) VBoxServicePageSharingEmptyTreeCallback(PAVLPVNODECORE pNode, void *);
 
 static PAVLPVNODECORE   pKnownModuleTree = NULL;
 
 /**
  * Registers a new module with the VMM
- * @param   pModule     Module ptr
+ * @param   pModule         Module ptr
+ * @param   fValidateMemory Validate/touch memory pages or not
  */
-void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule)
+void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule, bool fValidateMemory)
 {
     VMMDEVSHAREDREGIONDESC   aRegions[VMMDEVSHAREDREGIONDESC_MAX];
     DWORD                    dwModuleSize = pModule->Info.modBaseSize;
@@ -127,68 +156,78 @@ void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule)
     pModule->szFileVersion[RT_ELEMENTS(pModule->szFileVersion) - 1] = 0;
 
     unsigned idxRegion = 0;
-    do
+
+    if (fValidateMemory)
     {
-        MEMORY_BASIC_INFORMATION MemInfo;
-
-        SIZE_T ret = VirtualQuery(pBaseAddress, &MemInfo, sizeof(MemInfo));
-        Assert(ret);
-        if (!ret)
+        do
         {
-            VBoxServiceVerbose(3, "VBoxServicePageSharingRegisterModule: VirtualQueryEx failed with %d\n", GetLastError());
-            break;
-        }
+            MEMORY_BASIC_INFORMATION MemInfo;
 
-        if (    MemInfo.State == MEM_COMMIT
-            &&  MemInfo.Type == MEM_IMAGE)
-        {
-            switch (MemInfo.Protect)
+            SIZE_T ret = VirtualQuery(pBaseAddress, &MemInfo, sizeof(MemInfo));
+            Assert(ret);
+            if (!ret)
             {
-            case PAGE_EXECUTE:
-            case PAGE_EXECUTE_READ:
-            case PAGE_READONLY:
-            {
-                char *pRegion = (char *)MemInfo.BaseAddress;
-
-                /* Skip the first region as it only contains the image file header. */
-                if (pRegion != (char *)pModule->Info.modBaseAddr)
-                {
-                    /* Touch all pages. */
-                    while (pRegion < (char *)MemInfo.BaseAddress + MemInfo.RegionSize)
-                    {
-                        /* Try to trick the optimizer to leave the page touching code in place. */
-                        ASMProbeReadByte(pRegion);
-                        pRegion += PAGE_SIZE;
-                    }
-                }
-                aRegions[idxRegion].GCRegionAddr = (RTGCPTR64)MemInfo.BaseAddress;
-                aRegions[idxRegion].cbRegion     = MemInfo.RegionSize;
-                idxRegion++;
-
+                VBoxServiceVerbose(3, "VBoxServicePageSharingRegisterModule: VirtualQueryEx failed with %d\n", GetLastError());
                 break;
             }
 
-            default:
-                break; /* ignore */
+            if (    MemInfo.State == MEM_COMMIT
+                &&  MemInfo.Type == MEM_IMAGE)
+            {
+                switch (MemInfo.Protect)
+                {
+                case PAGE_EXECUTE:
+                case PAGE_EXECUTE_READ:
+                case PAGE_READONLY:
+                {
+                    char *pRegion = (char *)MemInfo.BaseAddress;
+
+                    /* Skip the first region as it only contains the image file header. */
+                    if (pRegion != (char *)pModule->Info.modBaseAddr)
+                    {
+                        /* Touch all pages. */
+                        while (pRegion < (char *)MemInfo.BaseAddress + MemInfo.RegionSize)
+                        {
+                            /* Try to trick the optimizer to leave the page touching code in place. */
+                            ASMProbeReadByte(pRegion);
+                            pRegion += PAGE_SIZE;
+                        }
+                    }
+                    aRegions[idxRegion].GCRegionAddr = (RTGCPTR64)MemInfo.BaseAddress;
+                    aRegions[idxRegion].cbRegion     = MemInfo.RegionSize;
+                    idxRegion++;
+
+                    break;
+                }
+
+                default:
+                    break; /* ignore */
+                }
             }
-        }
 
-        pBaseAddress = (BYTE *)MemInfo.BaseAddress + MemInfo.RegionSize;
-        if (dwModuleSize > MemInfo.RegionSize)
-        {
-            dwModuleSize -= MemInfo.RegionSize;
-        }
-        else
-        {
-            dwModuleSize = 0;
-            break;
-        }
+            pBaseAddress = (BYTE *)MemInfo.BaseAddress + MemInfo.RegionSize;
+            if (dwModuleSize > MemInfo.RegionSize)
+            {
+                dwModuleSize -= MemInfo.RegionSize;
+            }
+            else
+            {
+                dwModuleSize = 0;
+                break;
+            }
 
-        if (idxRegion >= RT_ELEMENTS(aRegions))
-            break;  /* out of room */
+            if (idxRegion >= RT_ELEMENTS(aRegions))
+                break;  /* out of room */
+        }
+        while (dwModuleSize);
     }
-    while (dwModuleSize);
-
+    else
+    {
+        /* We can't probe kernel memory ranges, so pretend it's one big region. */
+        aRegions[idxRegion].GCRegionAddr = (RTGCPTR64)pBaseAddress;
+        aRegions[idxRegion].cbRegion     = dwModuleSize;
+        idxRegion++;
+    }
     VBoxServiceVerbose(3, "VbglR3RegisterSharedModule %s %s base=%p size=%x cregions=%d\n", pModule->Info.szModule, pModule->szFileVersion, pModule->Info.modBaseAddr, pModule->Info.modBaseSize, idxRegion);
     int rc = VbglR3RegisterSharedModule(pModule->Info.szModule, pModule->szFileVersion, (RTGCPTR64)pModule->Info.modBaseAddr,
                                         pModule->Info.modBaseSize, idxRegion, aRegions);
@@ -258,18 +297,18 @@ void VBoxServicePageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppN
                 pModule->Core.Key = ModuleInfo.modBaseAddr;
                 pModule->hModule  = LoadLibraryEx(ModuleInfo.szExePath, 0, DONT_RESOLVE_DLL_REFERENCES);
                 if (pModule->hModule)
-                    VBoxServicePageSharingRegisterModule(pModule);
+                    VBoxServicePageSharingRegisterModule(pModule, true /* validate pages */);
+
+                VBoxServiceVerbose(3, "\n\n     MODULE NAME:     %s",           ModuleInfo.szModule );
+                VBoxServiceVerbose(3, "\n     executable     = %s",             ModuleInfo.szExePath );
+                VBoxServiceVerbose(3, "\n     process ID     = 0x%08X",         ModuleInfo.th32ProcessID );
+                VBoxServiceVerbose(3, "\n     base address   = 0x%08X", (DWORD) ModuleInfo.modBaseAddr );
+                VBoxServiceVerbose(3, "\n     base size      = %d",             ModuleInfo.modBaseSize );
 
                 pRec = &pModule->Core;
             }
             bool ret = RTAvlPVInsert(ppNewTree, pRec);
             Assert(ret); NOREF(ret);
-
-            VBoxServiceVerbose(3, "\n\n     MODULE NAME:     %s",           ModuleInfo.szModule );
-            VBoxServiceVerbose(3, "\n     executable     = %s",             ModuleInfo.szExePath );
-            VBoxServiceVerbose(3, "\n     process ID     = 0x%08X",         ModuleInfo.th32ProcessID );
-            VBoxServiceVerbose(3, "\n     base address   = 0x%08X", (DWORD) ModuleInfo.modBaseAddr );
-            VBoxServiceVerbose(3, "\n     base size      = %d",             ModuleInfo.modBaseSize );
         }
     }
     while (Module32Next(hSnapshot, &ModuleInfo));
@@ -313,6 +352,86 @@ void VBoxServicePageSharingInspectGuest()
     while (Process32Next(hSnapshot, &ProcessInfo));
 
     CloseHandle(hSnapshot);
+
+#if 0
+    /* Check all loaded kernel modules. */
+    ULONG                cbBuffer;
+    PVOID                pBuffer = NULL;
+    PRTL_PROCESS_MODULES pSystemModules;
+    
+    NTSTATUS ret = ZwQuerySystemInformation(SystemModuleInformation, (PVOID)&cbBuffer, 0, &cbBuffer);
+    if (ret != STATUS_SUCCESS)
+        goto skipkernelmodules;
+        
+    pBuffer = malloc(cbBuffer);
+    if (!pBuffer)
+        goto skipkernelmodules;
+
+    ret = ZwQuerySystemInformation(SystemModuleInformation, pBuffer, cbBuffer, &cbBuffer);
+    if (ret != STATUS_SUCCESS)
+        goto skipkernelmodules;
+    
+    pSystemModules = (PRTL_PROCESS_MODULES)pBuffer;
+    for (unsigned i = 0; i < pSystemModules->NumberOfModules; i++)
+    {
+        /* Found it before? */
+        PAVLPVNODECORE pRec = RTAvlPVGet(&pNewTree, pSystemModules->Modules[i].ImageBase);
+        if (!pRec)
+        {
+            pRec = RTAvlPVRemove(&pKnownModuleTree, pSystemModules->Modules[i].ImageBase);
+            if (!pRec)
+            {
+                /* New module; register it. */
+                char          szFullFilePath[512];
+                PKNOWN_MODULE pModule = (PKNOWN_MODULE)RTMemAllocZ(sizeof(*pModule));
+                Assert(pModule);
+                if (!pModule)
+                    break;
+
+                strcpy(pModule->Info.szModule, &pSystemModules->Modules[i].FullPathName[pSystemModules->Modules[i].OffsetToFileName]);
+                GetSystemDirectoryA(szFullFilePath, sizeof(szFullFilePath));
+
+                /* skip \Systemroot\system32 */
+                char *lpPath = strstr(pSystemModules->Modules[i].FullPathName, "\\system32");
+                if (!lpPath)
+                {
+                    VBoxServiceVerbose(1, "Unexpected kernel module name %s\n", pSystemModules->Modules[i].FullPathName);
+                    RTMemFree(pModule);
+                    break;
+                }
+
+                lpPath = strchr(lpPath+1, '\\');
+                if (!lpPath)
+                {
+                    VBoxServiceVerbose(1, "Unexpected kernel module name %s\n", pSystemModules->Modules[i].FullPathName);
+                    RTMemFree(pModule);
+                    break;
+                }
+
+                strcat(szFullFilePath, lpPath);
+                strcpy(pModule->Info.szExePath, szFullFilePath);
+                pModule->Info.modBaseAddr = (BYTE *)pSystemModules->Modules[i].ImageBase;
+                pModule->Info.modBaseSize = pSystemModules->Modules[i].ImageSize;
+
+                pModule->Core.Key = pSystemModules->Modules[i].ImageBase;
+                VBoxServicePageSharingRegisterModule(pModule, false /* don't check memory pages */);
+
+                VBoxServiceVerbose(3, "\n\n   KERNEL  MODULE NAME:     %s",     pModule->Info.szModule );
+                VBoxServiceVerbose(3, "\n     executable     = %s",             pModule->Info.szExePath );
+                VBoxServiceVerbose(3, "\n     base address   = 0x%08X", (DWORD) pModule->Info.modBaseAddr );
+                VBoxServiceVerbose(3, "\n     base size      = %d",             pModule->Info.modBaseSize );
+
+                pRec = &pModule->Core;
+            }
+            bool ret = RTAvlPVInsert(&pNewTree, pRec);
+            Assert(ret); NOREF(ret);
+        }
+    }
+
+skipkernelmodules:
+    if (pBuffer)
+        free(pBuffer);
+#endif
 
     /* Delete leftover modules in the old tree. */
     RTAvlPVDestroy(&pKnownModuleTree, VBoxServicePageSharingEmptyTreeCallback, NULL);
@@ -381,6 +500,13 @@ static DECLCALLBACK(int) VBoxServicePageSharingInit(void)
 
     int rc = RTSemEventMultiCreate(&g_PageSharingEvent);
     AssertRCReturn(rc, rc);
+
+#if defined(RT_OS_WINDOWS) && !defined(TARGET_NT4)
+    hNtdll = LoadLibrary("ntdll.dll");
+    
+    if (hNtdll)
+        ZwQuerySystemInformation = (PFNZWQUERYSYSTEMINFORMATION)GetProcAddress(hNtdll, "ZwQuerySystemInformation");
+#endif
 
     /* @todo report system name and version */
     /* Never fail here. */
@@ -453,6 +579,11 @@ end:
 static DECLCALLBACK(void) VBoxServicePageSharingTerm(void)
 {
     VBoxServiceVerbose(3, "VBoxServicePageSharingTerm\n");
+
+#if defined(RT_OS_WINDOWS) && !defined(TARGET_NT4)
+    if (hNtdll)
+        FreeLibrary(hNtdll);
+#endif
     return;
 }
 
