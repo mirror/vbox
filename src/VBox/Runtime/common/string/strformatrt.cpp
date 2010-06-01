@@ -96,11 +96,12 @@
  *
  * Group 3, hex dumpers and other complex stuff which requires more than simple formatting.
  *      - \%Rhxd            - Takes a pointer to the memory which is to be dumped in typical
- *                            hex format. Use the width to specify the length, and the precision to
+ *                            hex format. Use the precision to specify the length, and the width to
  *                            set the number of bytes per line. Default width and precision is 16.
  *      - \%Rhxs            - Takes a pointer to the memory to be displayed as a hex string,
  *                            i.e. a series of space separated bytes formatted as two digit hex value.
- *                            Use the width to specify the length. Default length is 16 bytes.
+ *                            Use the precision to specify the length. Default length is 16 bytes.
+ *                            The width, if specified, is ignored.
  *      - \%Rrc             - Takes an integer iprt status code as argument. Will insert the
  *                            status code define corresponding to the iprt status code.
  *      - \%Rrs             - Takes an integer iprt status code as argument. Will insert the
@@ -755,8 +756,8 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                     case 'x':
                     {
                         uint8_t *pu8 = va_arg(*pArgs, uint8_t *);
-                        if (cchWidth <= 0)
-                            cchWidth = 16;
+                        if (cchPrecision <= 0)
+                            cchPrecision = 16;
                         if (pu8)
                         {
                             switch (*(*ppszFormat)++)
@@ -769,30 +770,30 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                                     size_t cch = 0;
                                     int off = 0;
 
-                                    if (cchPrecision <= 0)
-                                        cchPrecision = 16;
+                                    if (cchWidth <= 0)
+                                        cchWidth = 16;
 
-                                    while (off < cchWidth)
+                                    while (off < cchPrecision)
                                     {
                                         int i;
                                         cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s%0*x %04x:", off ? "\n" : "", sizeof(pu8) * 2, (uintptr_t)pu8, off);
-                                        for (i = 0; i < cchPrecision && off + i < cchWidth ; i++)
+                                        for (i = 0; i < cchWidth && off + i < cchPrecision ; i++)
                                             cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                                                               off + i < cchWidth ? !(i & 7) && i ? "-%02x" : " %02x" : "   ", pu8[i]);
-                                        while (i++ < cchPrecision)
+                                                               off + i < cchPrecision ? !(i & 7) && i ? "-%02x" : " %02x" : "   ", pu8[i]);
+                                        while (i++ < cchWidth)
                                             cch += pfnOutput(pvArgOutput, "   ", 3);
 
                                         cch += pfnOutput(pvArgOutput, " ", 1);
 
-                                        for (i = 0; i < cchPrecision && off + i < cchWidth; i++)
+                                        for (i = 0; i < cchWidth && off + i < cchPrecision; i++)
                                         {
                                             uint8_t u8 = pu8[i];
                                             cch += pfnOutput(pvArgOutput, u8 < 127 && u8 >= 32 ? (const char *)&u8 : ".", 1);
                                         }
 
                                         /* next */
-                                        pu8 += cchPrecision;
-                                        off += cchPrecision;
+                                        pu8 += cchWidth;
+                                        off += cchWidth;
                                     }
                                     return cch;
                                 }
@@ -802,10 +803,10 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                                  */
                                 case 's':
                                 {
-                                    if (cchWidth-- > 0)
+                                    if (cchPrecision-- > 0)
                                     {
                                         size_t cch = RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%02x", *pu8++);
-                                        for (; cchWidth > 0; cchWidth--, pu8++)
+                                        for (; cchPrecision > 0; cchPrecision--, pu8++)
                                             cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, " %02x", *pu8);
                                         return cch;
                                     }
