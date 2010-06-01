@@ -225,7 +225,7 @@ VBOX_SINGLE_MAKEFILE = 1
 # This indicates that additions (of some kind or another) is being _built_.
 # VBOX_WITHOUT_ADDITIONS overrides it.
 #if1of ($(KBUILD_TARGET), freebsd linux os2 solaris win)
-if1of ($(KBUILD_TARGET), linux solaris win freebsd)
+if1of ($(KBUILD_TARGET), freebsd linux solaris win)
  VBOX_WITH_ADDITIONS = 1
 endif
 # Build the optional ring-0 part of the additions for syntax checking.
@@ -1784,7 +1784,7 @@ ifdef VBOX_WITH_CROGL
   VBOX_LIB_OGL_HOSTCRUTIL = $(PATH_BIN)/VBoxOGLhostcrutil$(VBOX_SUFF_DLL)
  endif
 
- if1of ($(KBUILD_TARGET), linux solaris freebsd)
+ if1of ($(KBUILD_TARGET), freebsd linux solaris)
  # VBOX_PATH_MESA_SOURCE = $(PATH_ROOT)/src/libs/mesa-7.2
   VBOX_PATH_MESA_SOURCE = $(VBOX_PATH_X11_ROOT)/mesa-7.2
   VBOX_MESA_INCS = \
