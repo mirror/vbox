@@ -663,11 +663,13 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
     if (FAILED(hrc))
         return hrc;
 
+    RTSocketRetain(pState->mhSocket);
     void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(pState));
     vrc = VMR3Teleport(pState->mpVM, pState->mcMsMaxDowntime,
                        &g_teleporterTcpOps, pvUser,
                        teleporterProgressCallback, pvUser,
                        &pState->mfSuspendedByUs);
+    RTSocketRelease(pState->mhSocket);
     if (RT_FAILURE(vrc))
         return setError(E_FAIL, tr("VMR3Teleport -> %Rrc"), vrc);
 
@@ -978,17 +980,23 @@ Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, ULONG aMaxD
  * @returns VBox status code.
  * @param   pVM                 The VM handle
  * @param   pMachine            The IMachine for the virtual machine.
+ * @param   pErrorMsg           Pointer to the error string for VMSetError.
  * @param   fStartPaused        Whether to start it in the Paused (true) or
  *                              Running (false) state,
  * @param   pProgress           Pointer to the progress object.
+ * @param   pfPowerOffOnFailure Whether the caller should power off
+ *                              the VM on failure.
  *
  * @remarks The caller expects error information to be set on failure.
  * @todo    Check that all the possible failure paths sets error info...
  */
-int
-Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress *pProgress)
+HRESULT
+Console::teleporterTrg(PVM pVM, IMachine *pMachine, Utf8Str *pErrorMsg, bool fStartPaused,
+                       Progress *pProgress, bool *pfPowerOffOnFailure)
 {
     LogThisFunc(("pVM=%p pMachine=%p fStartPaused=%RTbool pProgress=%p\n", pVM, pMachine, fStartPaused, pProgress));
+
+    *pfPowerOffOnFailure = true;
 
     /*
      * Get the config.
@@ -996,20 +1004,20 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
     ULONG uPort;
     HRESULT hrc = pMachine->COMGETTER(TeleporterPort)(&uPort);
     if (FAILED(hrc))
-        return VERR_GENERAL_FAILURE;
+        return hrc;
     ULONG const uPortOrg = uPort;
 
     Bstr bstrAddress;
     hrc = pMachine->COMGETTER(TeleporterAddress)(bstrAddress.asOutParam());
     if (FAILED(hrc))
-        return VERR_GENERAL_FAILURE;
+        return hrc;
     Utf8Str strAddress(bstrAddress);
     const char *pszAddress = strAddress.isEmpty() ? NULL : strAddress.c_str();
 
     Bstr bstrPassword;
     hrc = pMachine->COMGETTER(TeleporterPassword)(bstrPassword.asOutParam());
     if (FAILED(hrc))
-        return VERR_GENERAL_FAILURE;
+        return hrc;
     Utf8Str strPassword(bstrPassword);
     strPassword.append('\n');           /* To simplify password checking. */
 
@@ -1035,12 +1043,12 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
             if (FAILED(hrc))
             {
                 RTTcpServerDestroy(hServer);
-                return VERR_GENERAL_FAILURE;
+                return hrc;
             }
         }
     }
     if (RT_FAILURE(vrc))
-        return vrc;
+        return setError(E_FAIL, tr("RTTcpServerCreateEx failed with status %Rrc"), vrc);
 
     /*
      * Create a one-shot timer for timing out after 5 mins.
@@ -1059,7 +1067,6 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
             theState.mstrPassword      = strPassword;
             theState.mhServer          = hServer;
 
-            bool fPowerOff = true;
             void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(&theState));
             if (pProgress->setCancelCallback(teleporterProgressCancelCallback, pvUser))
             {
@@ -1075,13 +1082,21 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
                         vrc = theState.mRc;
                         /* Power off the VM on failure unless the state callback
                            already did that. */
-                        fPowerOff = false;
-                        if (RT_FAILURE(vrc))
+                        *pfPowerOffOnFailure = false;
+                        if (RT_SUCCESS(vrc))
+                            hrc = S_OK;
+                        else
                         {
                             VMSTATE enmVMState = VMR3GetState(pVM);
                             if (    enmVMState != VMSTATE_OFF
                                 &&  enmVMState != VMSTATE_POWERING_OFF)
-                                fPowerOff = true;
+                                *pfPowerOffOnFailure = true;
+
+                            /* Set error. */
+                            if (pErrorMsg->length())
+                                hrc = setError(E_FAIL, "%s", pErrorMsg->c_str());
+                            else
+                                hrc = setError(E_FAIL, tr("Teleporation failed (%Rrc)"), vrc);
                         }
                     }
                     else if (vrc == VERR_TCP_SERVER_SHUTDOWN)
@@ -1089,44 +1104,33 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
                         BOOL fCancelled = TRUE;
                         hrc = pProgress->COMGETTER(Canceled)(&fCancelled);
                         if (FAILED(hrc) || fCancelled)
-                        {
-                            setError(E_FAIL, tr("Teleporting canceled"));
-                            vrc = VERR_SSM_CANCELLED;
-                        }
+                            hrc = setError(E_FAIL, tr("Teleporting canceled"));
                         else
-                        {
-                            setError(E_FAIL, tr("Teleporter timed out waiting for incoming connection"));
-                            vrc = VERR_TIMEOUT;
-                        }
+                            hrc = setError(E_FAIL, tr("Teleporter timed out waiting for incoming connection"));
                         LogRel(("Teleporter: RTTcpServerListen aborted - %Rrc\n", vrc));
                     }
                     else
                     {
+                        hrc = setError(E_FAIL, tr("Unexpected RTTcpServerListen status code %Rrc"), vrc);
                         LogRel(("Teleporter: Unexpected RTTcpServerListen rc: %Rrc\n", vrc));
-                        vrc = VERR_IPE_UNEXPECTED_STATUS;
                     }
                 }
                 else
-                {
                     LogThisFunc(("SetNextOperation failed, %Rhrc\n", hrc));
-                    vrc = Global::vboxStatusCodeFromCOM(hrc);
-                }
             }
             else
             {
                 LogThisFunc(("Canceled - check point #1\n"));
-                vrc = VERR_SSM_CANCELLED;
-            }
-
-            if (fPowerOff)
-            {
-                int vrc2 = VMR3PowerOff(pVM);
-                AssertRC(vrc2);
+                hrc = setError(E_FAIL, tr("Teleporting canceled"));
             }
         }
+        else
+            hrc = setError(E_FAIL, "RTTimerLRStart -> %Rrc", vrc);
 
         RTTimerLRDestroy(hTimerLR);
     }
+    else
+        hrc = setError(E_FAIL, "RTTimerLRCreate -> %Rrc", vrc);
     RTTcpServerDestroy(hServer);
 
     /*
@@ -1134,9 +1138,12 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
      * value before returning.
      */
     if (uPortOrg != uPort)
+    {
+        ErrorInfoKeeper Eik;
         pMachine->COMSETTER(TeleporterPort)(uPortOrg);
+    }
 
-    return vrc;
+    return hrc;
 }
 
 
