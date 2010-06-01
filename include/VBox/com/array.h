@@ -711,6 +711,11 @@ public:
     bool isNull() const { return m.arr == NULL; }
 
     /**
+     * Returns @c true if this instance does not represents a null array.
+     */
+    bool isNotNull() const { return m.arr != NULL; }
+
+    /**
      * Resets this instance to null and, if this instance is not a weak one,
      * releases any resources occupied by the array data.
      *
