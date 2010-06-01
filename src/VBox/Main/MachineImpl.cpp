@@ -9840,7 +9840,7 @@ STDMETHODIMP SessionMachine::BeginPowerUp(IProgress *aProgress)
         return VBOX_E_INVALID_OBJECT_STATE;
 
     if (!mData->mSession.mProgress.isNull())
-        mData->mSession.mProgress->setOtherProgressObject(aProgress, 7);
+        mData->mSession.mProgress->setOtherProgressObject(aProgress);
 
     return S_OK;
 }
@@ -9862,7 +9862,6 @@ STDMETHODIMP SessionMachine::EndPowerUp(LONG iResult)
     /* Finalize the openRemoteSession progress object. */
     if (mData->mSession.mProgress)
     {
-        mData->mSession.mProgress->clearOtherProgressObject(tr("Finalizing"), 1);
         mData->mSession.mProgress->notifyComplete((HRESULT)iResult);
         mData->mSession.mProgress.setNull();
     }
