@@ -1067,14 +1067,41 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
         case D3DDDICAPS_GETD3D9CAPS:
         {
             Assert(pData->DataSize >= sizeof (D3DCAPS9));
+//            AssertBreakpoint();
             if (pData->DataSize >= sizeof (D3DCAPS9))
             {
                 if (pAdapter->pD3D9If)
                 {
-                    hr = pAdapter->pD3D9If->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, (D3DCAPS9*)pData->pData);
+                    D3DCAPS9* pCaps = (D3DCAPS9*)pData->pData;
+                    hr = pAdapter->pD3D9If->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, pCaps);
                     Assert(hr == S_OK);
                     if (hr == S_OK)
+                    {
+                        pCaps->Caps2 |= D3DCAPS2_CANSHARERESOURCE | 0x00080000 /*D3DCAPS2_CANRENDERWINDOWED*/;
+                        pCaps->DevCaps |= D3DDEVCAPS_FLOATTLVERTEX /* <- must be set according to the docs */
+                                /*| D3DDEVCAPS_HWVERTEXBUFFER | D3DDEVCAPS_HWINDEXBUFFER |  D3DDEVCAPS_SUBVOLUMELOCK */;
+                        pCaps->PrimitiveMiscCaps |= D3DPMISCCAPS_INDEPENDENTWRITEMASKS
+                                | D3DPMISCCAPS_FOGINFVF
+                                | D3DPMISCCAPS_SEPARATEALPHABLEND | D3DPMISCCAPS_MRTINDEPENDENTBITDEPTHS;
+                        pCaps->RasterCaps |= D3DPRASTERCAPS_SUBPIXEL | D3DPRASTERCAPS_STIPPLE | D3DPRASTERCAPS_ZBIAS | D3DPRASTERCAPS_COLORPERSPECTIVE /* keep */;
+                        pCaps->TextureCaps |= D3DPTEXTURECAPS_TRANSPARENCY | D3DPTEXTURECAPS_TEXREPEATNOTSCALEDBYSIZE;
+                        pCaps->TextureAddressCaps |= D3DPTADDRESSCAPS_MIRRORONCE;
+                        pCaps->VolumeTextureAddressCaps |= D3DPTADDRESSCAPS_MIRRORONCE;
+                        pCaps->GuardBandLeft = -8192.;
+                        pCaps->GuardBandTop = -8192.;
+                        pCaps->GuardBandRight = 8192.;
+                        pCaps->GuardBandBottom = 8192.;
+                        pCaps->StencilCaps |= D3DSTENCILCAPS_TWOSIDED;
+                        pCaps->DeclTypes |= D3DDTCAPS_FLOAT16_2 | D3DDTCAPS_FLOAT16_4;
+                        pCaps->VS20Caps.DynamicFlowControlDepth = 24;
+                        pCaps->VS20Caps.NumTemps = D3DVS20_MAX_NUMTEMPS;
+                        pCaps->PS20Caps.DynamicFlowControlDepth = 24;
+                        pCaps->PS20Caps.NumTemps = D3DVS20_MAX_NUMTEMPS;
+                        pCaps->VertexTextureFilterCaps |= D3DPTFILTERCAPS_MINFPOINT | D3DPTFILTERCAPS_MAGFPOINT;
+                        pCaps->MaxVertexShader30InstructionSlots = 512;
+                        pCaps->MaxPixelShader30InstructionSlots = 512;
                         break;
+                    }
 
                     vboxVDbgPrintR((__FUNCTION__": GetDeviceCaps hr(%d)\n", hr));
                     /* let's fall back to the 3D disabled case */
