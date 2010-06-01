@@ -353,7 +353,6 @@ void VBoxServicePageSharingInspectGuest()
 
     CloseHandle(hSnapshot);
 
-#if 0
     /* Check all loaded kernel modules. */
     if (ZwQuerySystemInformation)
     {
@@ -449,7 +448,6 @@ skipkernelmodules:
         if (pBuffer)
             RTMemFree(pBuffer);
     }
-#endif
 
     /* Delete leftover modules in the old tree. */
     RTAvlPVDestroy(&pKnownModuleTree, VBoxServicePageSharingEmptyTreeCallback, NULL);
