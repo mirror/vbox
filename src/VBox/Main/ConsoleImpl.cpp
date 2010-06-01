@@ -211,13 +211,11 @@ struct VMPowerUpTask : public VMProgressTask
     VMPowerUpTask(Console *aConsole,
                   Progress *aProgress)
         : VMProgressTask(aConsole, aProgress, false /* aUsesVMPtr */),
-          mSetVMErrorCallback(NULL),
           mConfigConstructor(NULL),
           mStartPaused(false),
           mTeleporterEnabled(FALSE)
     {}
 
-    PFNVMATERROR mSetVMErrorCallback;
     PFNCFGMCONSTRUCTOR mConfigConstructor;
     Utf8Str mSavedStateFile;
     Console::SharedFolderDataMap mSharedFolders;
@@ -5270,7 +5268,6 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     std::auto_ptr<VMPowerUpTask> task(new VMPowerUpTask(this, powerupProgress));
     ComAssertComRCRetRC(task->rc());
 
-    task->mSetVMErrorCallback = setVMErrorCallback;
     task->mConfigConstructor = configConstructor;
     task->mSharedFolders = sharedFolders;
     task->mStartPaused = aPaused;
@@ -6870,40 +6867,30 @@ DECLCALLBACK(int) Console::stateProgressCallback(PVM pVM, unsigned uPercent, voi
 }
 
 /**
- * VM error callback function. Called by the various VM components.
+ * @copydoc FNVMATERROR
  *
- * @param   pVM         VM handle. Can be NULL if an error occurred before
- *                      successfully creating a VM.
- * @param   pvUser      Pointer to the VMProgressTask structure.
- * @param   rc          VBox status code.
- * @param   pszFormat   Printf-like error message.
- * @param   args        Various number of arguments for the error message.
- *
- * @thread EMT, VMPowerUp...
- *
- * @note The VMProgressTask structure modified by this callback is not thread
- *       safe.
+ * @remarks Might be some tiny serialization concerns with access to the string
+ *          object here...
  */
-/* static */ DECLCALLBACK(void)
-Console::setVMErrorCallback(PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL,
-                            const char *pszFormat, va_list args)
+/*static*/ DECLCALLBACK(void)
+Console::genericVMSetErrorCallback(PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL,
+                                   const char *pszErrorFmt, va_list va)
 {
-    VMProgressTask *task = static_cast<VMProgressTask *>(pvUser);
-    AssertReturnVoid(task);
+    Utf8Str *pErrorText = (Utf8Str *)pvUser;
+    AssertPtr(pErrorText);
 
-    /* we ignore RT_SRC_POS_DECL arguments to avoid confusion of end-users */
+    /* We ignore RT_SRC_POS_DECL arguments to avoid confusion of end-users. */
     va_list va2;
-    va_copy(va2, args); /* Have to make a copy here or GCC will break. */
+    va_copy(va2, va);
 
-    /* append to the existing error message if any */
-    if (task->mErrorMsg.length())
-        task->mErrorMsg = Utf8StrFmt("%s.\n%N (%Rrc)", task->mErrorMsg.raw(),
-                                     pszFormat, &va2, rc, rc);
+    /* Append to any the existing error message. */
+    if (pErrorText->length())
+        *pErrorText = Utf8StrFmt("%s.\n%N (%Rrc)", pErrorText->c_str(),
+                                 pszErrorFmt, &va2, rc, rc);
     else
-        task->mErrorMsg = Utf8StrFmt("%N (%Rrc)",
-                                     pszFormat, &va2, rc, rc);
+        *pErrorText = Utf8StrFmt("%N (%Rrc)", pszErrorFmt, &va2, rc, rc);
 
-    va_end (va2);
+    va_end(va2);
 }
 
 /**
@@ -7301,7 +7288,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
          */
         alock.leave();
 
-        vrc = VMR3Create(cCpus, task->mSetVMErrorCallback, task.get(),
+        vrc = VMR3Create(cCpus, Console::genericVMSetErrorCallback, &task->mErrorMsg,
                          task->mConfigConstructor, static_cast<Console *>(console),
                          &pVM);
 
@@ -7450,7 +7437,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                  * be sticky but our error callback isn't.
                  */
                 alock.leave();
-                VMR3AtErrorDeregister(pVM, task->mSetVMErrorCallback, task.get());
+                VMR3AtErrorDeregister(pVM, Console::genericVMSetErrorCallback, &task->mErrorMsg);
                 /** @todo register another VMSetError callback? */
                 alock.enter();
             }

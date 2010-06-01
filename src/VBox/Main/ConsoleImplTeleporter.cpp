@@ -120,6 +120,7 @@ public:
     PRTTIMERLR                  mphTimerLR;
     bool                        mfLockedMedia;
     int                         mRc;
+    Utf8Str                     mErrorText;
 
     TeleporterStateTrg(Console *pConsole, PVM pVM, Progress *pProgress,
                        IMachine *pMachine, IInternalMachineControl *pControl,
@@ -131,6 +132,7 @@ public:
         , mphTimerLR(phTimerLR)
         , mfLockedMedia(false)
         , mRc(VINF_SUCCESS)
+        , mErrorText()
     {
     }
 };
@@ -218,31 +220,55 @@ static int teleporterTcpReadLine(TeleporterState *pState, char *pszBuf, size_t c
  */
 HRESULT
 Console::teleporterSrcReadACK(TeleporterStateSrc *pState, const char *pszWhich,
-                             const char *pszNAckMsg /*= NULL*/)
+                              const char *pszNAckMsg /*= NULL*/)
 {
-    char szMsg[128];
+    char szMsg[256];
     int vrc = teleporterTcpReadLine(pState, szMsg, sizeof(szMsg));
     if (RT_FAILURE(vrc))
         return setError(E_FAIL, tr("Failed reading ACK(%s): %Rrc"), pszWhich, vrc);
-    if (strcmp(szMsg, "ACK"))
+
+    if (!strcmp(szMsg, "ACK"))
+        return S_OK;
+
+    if (!strncmp(szMsg, "NACK=", sizeof("NACK=") - 1))
     {
-        if (!strncmp(szMsg, "NACK=", sizeof("NACK=") - 1))
+        char *pszMsgText = strchr(szMsg, ';');
+        if (pszMsgText)
+            *pszMsgText++ = '\0';
+
+        int32_t vrc2;
+        vrc = RTStrToInt32Full(&szMsg[sizeof("NACK=") - 1], 10, &vrc2);
+        if (vrc == VINF_SUCCESS)
         {
-            int32_t vrc2;
-            vrc = RTStrToInt32Full(&szMsg[sizeof("NACK=") - 1], 10, &vrc2);
-            if (vrc == VINF_SUCCESS)
+            /*
+             * Well formed NACK, transform it into an error.
+             */
+            if (pszNAckMsg)
             {
-                if (pszNAckMsg)
-                {
-                    LogRel(("Teleporter: %s: NACK=%Rrc (%d)\n", pszWhich, vrc2, vrc2));
-                    return setError(E_FAIL, pszNAckMsg);
-                }
-                return setError(E_FAIL, "NACK(%s) - %Rrc (%d)", pszWhich, vrc2, vrc2);
+                LogRel(("Teleporter: %s: NACK=%Rrc (%d)\n", pszWhich, vrc2, vrc2));
+                return setError(E_FAIL, pszNAckMsg);
             }
+
+            if (pszMsgText)
+            {
+                pszMsgText = RTStrStrip(pszMsgText);
+                for (size_t off = 0; pszMsgText[off]; off++)
+                    if (pszMsgText[off] == '\r')
+                        pszMsgText[off] = '\n';
+
+                LogRel(("Teleporter: %s: NACK=%Rrc (%d) - '%s'\n", pszWhich, vrc2, vrc2, pszMsgText));
+                if (strlen(pszMsgText) > 4)
+                    return setError(E_FAIL, "%s", pszMsgText);
+                return setError(E_FAIL, "NACK(%s) - %Rrc (%d) '%s'", pszWhich, vrc2, vrc2, pszMsgText);
+            }
+
+            return setError(E_FAIL, "NACK(%s) - %Rrc (%d)", pszWhich, vrc2, vrc2);
         }
-        return setError(E_FAIL, tr("%s: Expected ACK or NACK, got '%s'"), pszWhich, szMsg);
+
+        if (pszMsgText)
+            pszMsgText[-1] = ';';
     }
-    return S_OK;
+    return setError(E_FAIL, tr("%s: Expected ACK or NACK, got '%s'"), pszWhich, szMsg);
 }
 
 
@@ -671,7 +697,16 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
                        &pState->mfSuspendedByUs);
     RTSocketRelease(pState->mhSocket);
     if (RT_FAILURE(vrc))
+    {
+        if (   vrc == VERR_SSM_CANCELLED
+            && RT_SUCCESS(RTTcpSelectOne(pState->mhSocket, 1)))
+        {
+            hrc = teleporterSrcReadACK(pState, "load-complete");
+            if (FAILED(hrc))
+                return hrc;
+        }
         return setError(E_FAIL, tr("VMR3Teleport -> %Rrc"), vrc);
+    }
 
     hrc = teleporterSrcReadACK(pState, "load-complete");
     if (FAILED(hrc))
@@ -1178,7 +1213,7 @@ static int teleporterTcpWriteACK(TeleporterStateTrg *pState, bool fAutomaticUnlo
 }
 
 
-static int teleporterTcpWriteNACK(TeleporterStateTrg *pState, int32_t rc2)
+static int teleporterTcpWriteNACK(TeleporterStateTrg *pState, int32_t rc2, const char *pszMsgText = NULL)
 {
     /*
      * Unlock media sending the NACK. That way the other doesn't have to spin
@@ -1186,8 +1221,17 @@ static int teleporterTcpWriteNACK(TeleporterStateTrg *pState, int32_t rc2)
      */
     teleporterTrgUnlockMedia(pState);
 
-    char    szMsg[64];
-    size_t  cch = RTStrPrintf(szMsg, sizeof(szMsg), "NACK=%d\n", rc2);
+    char    szMsg[256];
+    size_t  cch;
+    if (pszMsgText && *pszMsgText)
+    {
+        cch = RTStrPrintf(szMsg, sizeof(szMsg), "NACK=%d;%s\n", rc2, pszMsgText);
+        for (size_t off = 6; off + 1 < cch; off++)
+            if (szMsg[off] == '\n')
+                szMsg[off] = '\r';
+    }
+    else
+        cch = RTStrPrintf(szMsg, sizeof(szMsg), "NACK=%d\n", rc2);
     int rc = RTTcpWrite(pState->mhSocket, szMsg, cch);
     if (RT_FAILURE(rc))
         LogRel(("Teleporter: RTTcpWrite(,%s,%zu) -> %Rrc\n", szMsg, cch, rc));
@@ -1287,16 +1331,21 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
             if (RT_FAILURE(vrc))
                 break;
 
+            int vrc2 = VMR3AtErrorRegister(pState->mpVM, Console::genericVMSetErrorCallback, &pState->mErrorText); AssertRC(vrc2);
             RTSocketRetain(pState->mhSocket); /* For concurrent access by I/O thread and EMT. */
             pState->moffStream = 0;
+
             void *pvUser2 = static_cast<void *>(static_cast<TeleporterState *>(pState));
             vrc = VMR3LoadFromStream(pState->mpVM, &g_teleporterTcpOps, pvUser2,
                                      teleporterProgressCallback, pvUser2);
+
             RTSocketRelease(pState->mhSocket);
+            vrc2 = VMR3AtErrorDeregister(pState->mpVM, Console::genericVMSetErrorCallback, &pState->mErrorText); AssertRC(vrc2);
+
             if (RT_FAILURE(vrc))
             {
                 LogRel(("Teleporter: VMR3LoadFromStream -> %Rrc\n", vrc));
-                teleporterTcpWriteNACK(pState, vrc);
+                teleporterTcpWriteNACK(pState, vrc, pState->mErrorText.c_str());
                 break;
             }
 
