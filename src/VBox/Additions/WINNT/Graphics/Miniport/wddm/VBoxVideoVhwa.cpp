@@ -560,6 +560,9 @@ int vboxVhwaHlpCheckApplySurfInfo(PVBOXWDDM_ALLOCATION pSurf, VBOXVHWA_SURFACEDE
         Assert(pSurf->SurfDesc.cbSize);
         pSurf->SurfDesc.pitch = pInfo->pitch;
         Assert(pSurf->SurfDesc.pitch);
+        /* @todo: make this properly */
+        pSurf->SurfDesc.bpp = (pSurf->SurfDesc.cbSize * 8) / pSurf->SurfDesc.height / pSurf->SurfDesc.pitch;
+        Assert(pSurf->SurfDesc.bpp);
     }
     else
     {
