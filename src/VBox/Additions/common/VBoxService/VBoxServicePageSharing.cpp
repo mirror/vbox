@@ -362,9 +362,9 @@ void VBoxServicePageSharingInspectGuest()
         PRTL_PROCESS_MODULES pSystemModules;
     
         NTSTATUS ret = ZwQuerySystemInformation(SystemModuleInformation, (PVOID)&cbBuffer, 0, &cbBuffer);
-        if (ret != STATUS_INFO_LENGTH_MISMATCH)
+        if (!cbBuffer)
         {
-            VBoxServiceVerbose(1, "ZwQuerySystemInformation returned %x (1)\n", ret);
+            VBoxServiceVerbose(1, "ZwQuerySystemInformation returned length 0\n");
             goto skipkernelmodules;
         }
         
@@ -382,6 +382,15 @@ void VBoxServicePageSharingInspectGuest()
         pSystemModules = (PRTL_PROCESS_MODULES)pBuffer;
         for (unsigned i = 0; i < pSystemModules->NumberOfModules; i++)
         {
+            /* User-mode modules seem to have no flags set; skip them as we detected them above. */
+            if (pSystemModules->Modules[i].flags == 0)
+                continue;
+
+            char *pszDot = strrchr(pSystemModules->Modules[i].FullPathName, '.');
+            if (    pszDot 
+                &&  (pszDot[1] == 'e' || pszDot[1] == 'E'))
+                continue;   /* ignore executables for now. */
+
             /* Found it before? */
             PAVLPVNODECORE pRec = RTAvlPVGet(&pNewTree, pSystemModules->Modules[i].ImageBase);
             if (!pRec)
@@ -400,7 +409,7 @@ void VBoxServicePageSharingInspectGuest()
                     GetSystemDirectoryA(szFullFilePath, sizeof(szFullFilePath));
 
                     /* skip \Systemroot\system32 */
-                    char *lpPath = strstr(pSystemModules->Modules[i].FullPathName, "\\system32");
+                    char *lpPath = strchr(&pSystemModules->Modules[i].FullPathName[1], '\\');
                     if (!lpPath)
                     {
                         VBoxServiceVerbose(1, "Unexpected kernel module name %s\n", pSystemModules->Modules[i].FullPathName);
@@ -427,6 +436,7 @@ void VBoxServicePageSharingInspectGuest()
                     VBoxServiceVerbose(3, "\n\n   KERNEL  MODULE NAME:     %s",     pModule->Info.szModule );
                     VBoxServiceVerbose(3, "\n     executable     = %s",             pModule->Info.szExePath );
                     VBoxServiceVerbose(3, "\n     base address   = 0x%08X", (DWORD) pModule->Info.modBaseAddr );
+                    VBoxServiceVerbose(3, "\n     flags          = 0x%08X",         pSystemModules->Modules[i].flags);
                     VBoxServiceVerbose(3, "\n     base size      = %d",             pModule->Info.modBaseSize );
 
                     pRec = &pModule->Core;
