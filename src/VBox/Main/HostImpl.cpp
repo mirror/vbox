@@ -500,12 +500,6 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces)(ComSafeArrayOut(IHostNetworkInte
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* The code is so hideously complicated that I can't tell whether the
-     * host object lock is really needed. It was taken here, and as the
-     * VirtualBox (mParent) is taken as well below nested deep down that
-     * would be a lock order violation. */
-    AutoMultiWriteLock2 alock(m->pParent, this COMMA_LOCKVAL_SRC_POS);
-
     std::list <ComObjPtr<HostNetworkInterface> > list;
 
 # ifdef VBOX_WITH_HOSTNETIF_API
