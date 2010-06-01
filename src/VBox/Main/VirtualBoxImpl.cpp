@@ -1994,18 +1994,23 @@ STDMETHODIMP VirtualBox::OpenRemoteSession(ISession *aSession,
     ComAssertMsgRet(!!control, ("No IInternalSessionControl interface"),
                     E_INVALIDARG);
 
+    /* get the teleporter enable state for the progress object init. */
+    BOOL fTeleporterEnabled;
+    rc = machine->COMGETTER(TeleporterEnabled)(&fTeleporterEnabled);
+    if (FAILED(rc))
+        return rc;
+
     /* create a progress object */
     ComObjPtr<ProgressProxy> progress;
     progress.createObject();
     rc = progress->init(this,
-                        static_cast <IMachine *>(machine),
+                        static_cast<IMachine *>(machine),
                         Bstr(tr("Spawning session")),
                         TRUE /* aCancelable */,
-                        1 /* cOtherProgressObjects */,
-                        10 /* uTotalOperationsWeight */,
+                        fTeleporterEnabled ? 20 : 10 /* uTotalOperationsWeight */,
                         Bstr(tr("Spawning session")),
-                        3 /* uFirstOperationWeight */,
-                        NULL /* pId */);
+                        2 /* uFirstOperationWeight */,
+                        fTeleporterEnabled ? 3 : 1 /* cOtherProgressObjectOperations */);
     if (SUCCEEDED(rc))
     {
         rc = machine->openRemoteSession(control, aType, aEnvironment, progress);
@@ -4520,17 +4525,17 @@ void *VirtualBox::CallbackEvent::handler()
         ComPtr<IUnknown> sp = mVirtualBox->m_vec.GetAt(i);
         ComPtr<IVirtualBoxCallback> cbI;
         ComPtr<IDispatch> cbD;
-    
+
         cbI = sp;
         cbD = sp;
 
         /**
-         * Would be like this in ideal world, unfortunately our consumers want to be invoked via IDispatch, 
+         * Would be like this in ideal world, unfortunately our consumers want to be invoked via IDispatch,
          * thus going the hard way.
          */
-#if 0	
+#if 0
         if (cbI != NULL)
-        {    
+        {
             HRESULT hrc = handleCallback(cbI);
             if (hrc == VBOX_E_DONT_CALL_AGAIN)
             {
@@ -4543,16 +4548,16 @@ void *VirtualBox::CallbackEvent::handler()
              CComVariant varResult, arg1, arg2;
 
              ::VariantClear(&varResult);
-             ::VariantClear(&arg1); 
+             ::VariantClear(&arg1);
              ::VariantClear(&arg2);
-             
+
              VARIANTARG args[] = {arg1, arg2};
              DISPPARAMS disp = { args, NULL, sizeof(args)/sizeof(args[0]), 0};
 
              cbD->Invoke(dispid, IID_NULL,
-                         LOCALE_USER_DEFAULT, 
-                         DISPATCH_METHOD, 
-                         &disp, &varResult, 
+                         LOCALE_USER_DEFAULT,
+                         DISPATCH_METHOD,
+                         &disp, &varResult,
                          NULL, NULL);
         }
     }
