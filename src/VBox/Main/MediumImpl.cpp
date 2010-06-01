@@ -1440,12 +1440,12 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
 
     m->type = aType;
 
+    mlock.release();
+
     // saveSettings needs vbox lock
-    ComObjPtr<VirtualBox> pVirtualBox(m->pVirtualBox);
-    mlock.leave();
     AutoWriteLock alock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = pVirtualBox->saveSettings();
+    HRESULT rc = m->pVirtualBox->saveSettings();
 
     return rc;
 }
@@ -1558,8 +1558,7 @@ STDMETHODIMP Medium::COMSETTER(AutoReset)(BOOL aAutoReset)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(m->pVirtualBox, this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock mlock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->pParent.isNull())
         return setError(VBOX_E_NOT_SUPPORTED,
@@ -1569,6 +1568,11 @@ STDMETHODIMP Medium::COMSETTER(AutoReset)(BOOL aAutoReset)
     if (m->autoReset != !!aAutoReset)
     {
         m->autoReset = !!aAutoReset;
+
+        mlock.release();
+
+        // saveSettings needs vbox lock
+        AutoWriteLock alock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
 
         return m->pVirtualBox->saveSettings();
     }
@@ -1979,8 +1983,7 @@ STDMETHODIMP Medium::SetProperty(IN_BSTR aName, IN_BSTR aValue)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(m->pVirtualBox, this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock mlock(this COMMA_LOCKVAL_SRC_POS);
 
     switch (m->state)
     {
@@ -2002,6 +2005,10 @@ STDMETHODIMP Medium::SetProperty(IN_BSTR aName, IN_BSTR aValue)
     else
         it->second = aValue;
 
+    mlock.release();
+
+    // saveSettings needs vbox lock
+    AutoWriteLock alock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = m->pVirtualBox->saveSettings();
 
     return rc;
@@ -2050,8 +2057,7 @@ STDMETHODIMP Medium::SetProperties(ComSafeArrayIn(IN_BSTR, aNames),
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(m->pVirtualBox, this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock mlock(this COMMA_LOCKVAL_SRC_POS);
 
     com::SafeArray<IN_BSTR> names(ComSafeArrayInArg(aNames));
     com::SafeArray<IN_BSTR> values(ComSafeArrayInArg(aValues));
@@ -2080,6 +2086,10 @@ STDMETHODIMP Medium::SetProperties(ComSafeArrayIn(IN_BSTR, aNames),
             it->second = values[i];
     }
 
+    mlock.release();
+
+    // saveSettings needs vbox lock
+    AutoWriteLock alock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = m->pVirtualBox->saveSettings();
 
     return rc;
@@ -3448,9 +3458,7 @@ HRESULT Medium::queryInfo()
                || m->state == MediumState_LockedWrite);
 
         alock.leave();
-
         vrc = RTSemEventMultiWait(m->queryInfoSem, RT_INDEFINITE_WAIT);
-
         alock.enter();
 
         AssertRC(vrc);
@@ -5160,7 +5168,7 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
         ComAssertRCThrow(vrc, E_FAIL);
 
         /* unlock before the potentially lengthy operation */
-        thisLock.leave();
+        thisLock.release();
 
         try
         {
@@ -5294,7 +5302,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
 
         /* the two media are now protected by their non-default states;
          * unlock the media before the potentially lengthy operation */
-        mediaLock.leave();
+        mediaLock.release();
 
         try
         {
@@ -5411,7 +5419,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
     {
         if (fNeedsSaveSettings)
         {
-            mediaLock.leave();
+            mediaLock.release();
             AutoWriteLock vboxlock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
             m->pVirtualBox->saveSettings();
         }
@@ -5816,7 +5824,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
             Assert(pParent.isNull() || pParent->m->state == MediumState_LockedRead);
 
             /* unlock before the potentially lengthy operation */
-            thisLock.leave();
+            thisLock.release();
 
             /* ensure the target directory exists */
             rc = VirtualBox::ensureFilePathExists(targetLocation);
@@ -6237,7 +6245,7 @@ HRESULT Medium::taskCompactHandler(Medium::CompactTask &task)
             Utf8Str location(m->strLocationFull);
 
             /* unlock before the potentially lengthy operation */
-            thisLock.leave();
+            thisLock.release();
 
             vrc = VDCompact(hdd, VD_LAST_IMAGE, task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
