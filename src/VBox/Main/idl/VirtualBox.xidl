@@ -2729,6 +2729,16 @@
         If the environment string is @c null or empty, the server environment
         is inherited by the started process as is.
 
+        The progress object will have at least 2 operation. The first operation
+        covers the period up to the new VM process calls powerUp. The
+        subsequent operations mirrors the <link to="IConsole::powerUp"/>
+        progress object. Because <link to="IConsole::powerUp"/> may require
+        some extra operation, the <link to="IProgress::operationCount"/> may
+        change at the completion of operation1.
+
+        For details on the teleportation progress operation, see
+        <link to="IConsole::powerUp"/>.
+
         <see>openExistingSession</see>
 
         <result name="E_UNEXPECTED">
