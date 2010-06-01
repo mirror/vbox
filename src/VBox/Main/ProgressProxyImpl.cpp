@@ -175,7 +175,7 @@ HRESULT ProgressProxy::notifyComplete(HRESULT aResultCode,
     {
         va_list va;
         va_start(va, aText);
-        HRESULT hrc = Progress::notifyCompleteV(aResultCode, aIID, aComponent, aText, va);
+        hrc = Progress::notifyCompleteV(aResultCode, aIID, aComponent, aText, va);
         va_end(va);
     }
     return hrc;
@@ -320,7 +320,7 @@ void ProgressProxy::copyProgressInfo(IProgress *pOtherProgress, bool fEarly)
     {
         /* Detect if the other progress object was canceled. */
         BOOL fCanceled;
-        hrc = pOtherProgress->COMGETTER(Canceled)(&fCanceled); AssertComRC(hrc);
+        hrc = pOtherProgress->COMGETTER(Canceled)(&fCanceled);
         if (FAILED(hrc))
             fCanceled = FALSE;
         if (fCanceled)
@@ -334,7 +334,7 @@ void ProgressProxy::copyProgressInfo(IProgress *pOtherProgress, bool fEarly)
         {
             /* Has it completed? */
             BOOL fCompleted;
-            hrc = pOtherProgress->COMGETTER(Completed)(&fCompleted); AssertComRC(hrc);
+            hrc = pOtherProgress->COMGETTER(Completed)(&fCompleted);
             if (FAILED(hrc))
                 fCompleted = TRUE;
             Assert(fCompleted || fEarly);
@@ -342,7 +342,7 @@ void ProgressProxy::copyProgressInfo(IProgress *pOtherProgress, bool fEarly)
             {
                 /* Check the result. */
                 LONG hrcResult;
-                hrc = pOtherProgress->COMGETTER(ResultCode)(&hrcResult); AssertComRC(hrc);
+                hrc = pOtherProgress->COMGETTER(ResultCode)(&hrcResult);
                 if (FAILED(hrc))
                     hrcResult = hrc;
                 if (SUCCEEDED((HRESULT)hrcResult))
@@ -355,17 +355,17 @@ void ProgressProxy::copyProgressInfo(IProgress *pOtherProgress, bool fEarly)
                     if (SUCCEEDED(hrc))
                     {
                         Bstr bstrIID;
-                        hrc = ptrErrorInfo->COMGETTER(InterfaceID)(bstrIID.asOutParam());
+                        hrc = ptrErrorInfo->COMGETTER(InterfaceID)(bstrIID.asOutParam()); AssertComRC(hrc);
                         if (FAILED(hrc))
                             bstrIID.setNull();
 
                         Bstr bstrComponent;
-                        hrc = ptrErrorInfo->COMGETTER(Component)(bstrComponent.asOutParam());
+                        hrc = ptrErrorInfo->COMGETTER(Component)(bstrComponent.asOutParam()); AssertComRC(hrc);
                         if (FAILED(hrc))
                             bstrComponent = "failed";
 
                         Bstr bstrText;
-                        hrc = ptrErrorInfo->COMGETTER(Text)(bstrText.asOutParam());
+                        hrc = ptrErrorInfo->COMGETTER(Text)(bstrText.asOutParam()); AssertComRC(hrc);
                         if (FAILED(hrc))
                             bstrText = "<failed>";
 
@@ -376,7 +376,8 @@ void ProgressProxy::copyProgressInfo(IProgress *pOtherProgress, bool fEarly)
                     else
                     {
                         LogFlowThisFunc(("ErrorInfo failed with hrc=%Rhrc; hrcResult=%Rhrc\n", hrc, hrcResult));
-                        Progress::notifyComplete((HRESULT)hrcResult);
+                        Progress::notifyComplete((HRESULT)hrcResult, COM_IIDOF(IProgress), Bstr("ProgressProxy"),
+                                                 tr("No error info"));
                     }
                 }
             }
@@ -390,7 +391,7 @@ void ProgressProxy::copyProgressInfo(IProgress *pOtherProgress, bool fEarly)
     /*
      * Did cancelable state change (point of no return)?
      */
-    if (mCancelable)
+    if (mCancelable && !mCompleted && !mCanceled)
     {
         BOOL fCancelable;
         hrc = pOtherProgress->COMGETTER(Cancelable)(&fCancelable); AssertComRC(hrc);
