@@ -36,7 +36,7 @@ public:
 
     UIFirstRunWzd(QWidget *pParent, const CMachine &machine);
 
-    static bool isDefaultHardDiskAttached(const CMachine &machine);
+    static bool isBootHardDiskAttached(const CMachine &machine);
 
 protected:
 
