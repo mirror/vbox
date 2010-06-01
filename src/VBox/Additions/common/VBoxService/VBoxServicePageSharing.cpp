@@ -382,7 +382,7 @@ void VBoxServicePageSharingInspectGuest()
         for (unsigned i = 0; i < pSystemModules->NumberOfModules; i++)
         {
             /* User-mode modules seem to have no flags set; skip them as we detected them above. */
-            if (pSystemModules->Modules[i].flags == 0)
+            if (pSystemModules->Modules[i].Flags == 0)
                 continue;
 
             char *pszDot = strrchr(pSystemModules->Modules[i].FullPathName, '.');
@@ -435,7 +435,7 @@ void VBoxServicePageSharingInspectGuest()
                     VBoxServiceVerbose(3, "\n\n   KERNEL  MODULE NAME:     %s",     pModule->Info.szModule );
                     VBoxServiceVerbose(3, "\n     executable     = %s",             pModule->Info.szExePath );
                     VBoxServiceVerbose(3, "\n     base address   = 0x%08X", (DWORD) pModule->Info.modBaseAddr );
-                    VBoxServiceVerbose(3, "\n     flags          = 0x%08X",         pSystemModules->Modules[i].flags);
+                    VBoxServiceVerbose(3, "\n     flags          = 0x%08X",         pSystemModules->Modules[i].Flags);
                     VBoxServiceVerbose(3, "\n     base size      = %d",             pModule->Info.modBaseSize );
 
                     pRec = &pModule->Core;
