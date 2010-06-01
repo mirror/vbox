@@ -45,8 +45,10 @@
 
 HRESULT ProgressProxy::FinalConstruct()
 {
-    mcOtherProgressObjects = 1;
-    miCurOtherProgressObject = 0;
+    mfMultiOperation = false;
+    muOtherProgressStartWeight = 0;
+    muOtherProgressWeight = 0;
+    muOtherProgressStartOperation = 0;
 
     HRESULT rc = Progress::FinalConstruct();
     return rc;
@@ -65,8 +67,10 @@ HRESULT ProgressProxy::init(
                             CBSTR bstrDescription,
                             BOOL fCancelable)
 {
-    miCurOtherProgressObject = 0;
-    mcOtherProgressObjects = 0;
+    mfMultiOperation = false;
+    muOtherProgressStartWeight = 1;
+    muOtherProgressWeight = 1;
+    muOtherProgressStartOperation = 1;
 
     return Progress::init(
 #if !defined (VBOX_COM_INPROC)
@@ -83,11 +87,14 @@ HRESULT ProgressProxy::init(
 }
 
 /**
- * Initialize for proxying one or more other objects, assuming we start out and
- * end without proxying anyone.
+ * Initialize for proxying one other progress object.
  *
- * The user must call clearOtherProgressObject when there are no more progress
- * objects to be proxied or we'll leave threads waiting forever.
+ * This is tailored explicitly for the openRemoteSession code, so we start out
+ * with one operation where we don't have any remote object (powerUp).  Then a
+ * remote object is added and stays with us till the end.
+ *
+ * The user must do normal completion notification or risk leave the threads
+ * waiting forever!
  */
 HRESULT ProgressProxy::init(
 #if !defined (VBOX_COM_INPROC)
@@ -96,14 +103,15 @@ HRESULT ProgressProxy::init(
                             IUnknown *pInitiator,
                             CBSTR bstrDescription,
                             BOOL fCancelable,
-                            ULONG cOtherProgressObjects,
                             ULONG uTotalOperationsWeight,
                             CBSTR bstrFirstOperationDescription,
                             ULONG uFirstOperationWeight,
-                            OUT_GUID pId)
+                            ULONG cOtherProgressObjectOperations)
 {
-    miCurOtherProgressObject = 0;
-    mcOtherProgressObjects = cOtherProgressObjects;
+    mfMultiOperation = false;
+    muOtherProgressStartWeight    = uFirstOperationWeight;
+    muOtherProgressWeight         = uTotalOperationsWeight - uFirstOperationWeight;
+    muOtherProgressStartOperation = 1;
 
     return Progress::init(
 #if !defined (VBOX_COM_INPROC)
@@ -112,17 +120,20 @@ HRESULT ProgressProxy::init(
                           pInitiator,
                           bstrDescription,
                           fCancelable,
-                          1 + cOtherProgressObjects + 1 /* cOperations */,
+                          1 + cOtherProgressObjectOperations /* cOperations */,
                           uTotalOperationsWeight,
                           bstrFirstOperationDescription,
                           uFirstOperationWeight,
-                          pId);
+                          NULL);
 }
 
 void ProgressProxy::FinalRelease()
 {
     uninit();
-    miCurOtherProgressObject = 0;
+    mfMultiOperation = false;
+    muOtherProgressStartWeight    = 0;
+    muOtherProgressWeight         = 0;
+    muOtherProgressStartOperation = 0;
 }
 
 void ProgressProxy::uninit()
@@ -174,7 +185,7 @@ HRESULT ProgressProxy::notifyComplete(HRESULT aResultCode,
 
 /** Just a wrapper so we can automatically do the handover before setting
  *  the result locally. */
-bool    ProgressProxy::notifyPointOfNoReturn(void)
+bool ProgressProxy::notifyPointOfNoReturn(void)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     clearOtherProgressObjectInternal(true /* fEarly */);
@@ -187,34 +198,53 @@ bool    ProgressProxy::notifyPointOfNoReturn(void)
  *
  * @returns false if failed/canceled, true if not.
  * @param   pOtherProgress      The other progress object. Must not be NULL.
- * @param   uOperationWeight    The weight of this operation.  (The description
- *                              is taken from the other progress object.)
  */
-bool ProgressProxy::setOtherProgressObject(IProgress *pOtherProgress, ULONG uOperationWeight)
+bool ProgressProxy::setOtherProgressObject(IProgress *pOtherProgress)
 {
-    LogFlowThisFunc(("setOtherProgressObject: %p %u\n", pOtherProgress, uOperationWeight));
+    LogFlowThisFunc(("setOtherProgressObject: %p\n", pOtherProgress));
     ComPtr<IProgress> ptrOtherProgress = pOtherProgress;
 
-    /* Get the description first. */
-    Bstr    bstrOperationDescription;
-    HRESULT hrc = pOtherProgress->COMGETTER(Description)(bstrOperationDescription.asOutParam());
+    /*
+     * Query information from the other progress object before we grab the
+     * lock.
+     */
+    ULONG cOperations;
+    HRESULT hrc = pOtherProgress->COMGETTER(OperationCount)(&cOperations);
+    if (FAILED(hrc))
+        cOperations = 1;
+
+    Bstr bstrOperationDescription;
+    hrc = pOtherProgress->COMGETTER(Description)(bstrOperationDescription.asOutParam());
     if (FAILED(hrc))
         bstrOperationDescription = "oops";
 
+
+    /*
+     * Take the lock and check for cancelation, cancel the other object if
+     * we've been canceled already.
+     */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Do the hand over from any previous progress object. */
-    clearOtherProgressObjectInternal(false /*fEarly*/);
     BOOL fCompletedOrCanceled = mCompleted || mCanceled;
     if (!fCompletedOrCanceled)
     {
-        /* Advance to the next object and operation, checking for cancelation
-           and completion right away to be on the safe side. */
-        Assert(miCurOtherProgressObject < mcOtherProgressObjects);
+        /*
+         * Advance to the next object and operation. If the other object has
+         * more operations than anticipated, adjust our internal count.
+         */
         mptrOtherProgress = ptrOtherProgress;
+        mfMultiOperation  = cOperations > 1;
 
-        Progress::SetNextOperation(bstrOperationDescription, uOperationWeight);
+        muOtherProgressStartWeight = m_ulOperationsCompletedWeight + m_ulCurrentOperationWeight;
+        muOtherProgressWeight      = m_ulTotalOperationsWeight - muOtherProgressStartWeight;
+        Progress::SetNextOperation(bstrOperationDescription, muOtherProgressWeight);
 
+        muOtherProgressStartOperation = m_ulCurrentOperation;
+        m_cOperations = cOperations + m_ulCurrentOperation;
+
+        /*
+         * Check for cancelation and completion.
+         */
         BOOL f;
         hrc = ptrOtherProgress->COMGETTER(Completed)(&f);
         fCompletedOrCanceled = FAILED(hrc) || f;
@@ -232,7 +262,10 @@ bool ProgressProxy::setOtherProgressObject(IProgress *pOtherProgress, ULONG uOpe
         }
         else
         {
-            /* Mirror the cancelable property. */
+            /*
+             * Finally, mirror the cancelable property.
+             * Note! Note necessary if we do passthru!
+             */
             if (mCancelable)
             {
                 hrc = ptrOtherProgress->COMGETTER(Cancelable)(&f);
@@ -256,52 +289,24 @@ bool ProgressProxy::setOtherProgressObject(IProgress *pOtherProgress, ULONG uOpe
     return !fCompletedOrCanceled;
 }
 
-/**
- * Clears the last other progress objects.
- *
- * @returns false if failed/canceled, true if not.
- * @param   pszLastOperationDescription     The description of the final bit.
- * @param   uLastOperationWeight            The weight of the final bit.
- */
-bool ProgressProxy::clearOtherProgressObject(const char *pszLastOperationDescription, ULONG uLastOperationWeight)
-{
-    LogFlowThisFunc(("%p %u\n", pszLastOperationDescription, uLastOperationWeight));
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    clearOtherProgressObjectInternal(false /* fEarly */);
-
-    /* Advance to the next operation if applicable. */
-    bool fCompletedOrCanceled = mCompleted || mCanceled;
-    if (!fCompletedOrCanceled)
-        Progress::SetNextOperation(Bstr(pszLastOperationDescription), uLastOperationWeight);
-
-    LogFlowThisFunc(("Returns %RTbool\n", !fCompletedOrCanceled));
-    return !fCompletedOrCanceled;
-}
-
 // Internal methods.
 ////////////////////////////////////////////////////////////////////////////////
 
 
 /**
- * Internal version of clearOtherProgressObject that doesn't advance to the next
- * operation.
+ * Clear the other progress object reference, first copying over its state.
  *
- * This is used both by clearOtherProgressObject as well as a number of places
- * where we automatically do the hand over because of failure/completion.
+ * This is used internally when completion is signalled one way or another.
  *
  * @param   fEarly          Early clearing or not.
  */
 void ProgressProxy::clearOtherProgressObjectInternal(bool fEarly)
 {
-    if (!mptrOtherProgress.isNull())
+    if (mptrOtherProgress.isNotNull())
     {
         ComPtr<IProgress> ptrOtherProgress = mptrOtherProgress;
         mptrOtherProgress.setNull();
         copyProgressInfo(ptrOtherProgress, fEarly);
-
-        miCurOtherProgressObject++;
-        Assert(miCurOtherProgressObject <= mcOtherProgressObjects);
     }
 }
 
@@ -412,35 +417,84 @@ void ProgressProxy::copyProgressInfo(IProgress *pOtherProgress, bool fEarly)
 // IProgress properties
 ////////////////////////////////////////////////////////////////////////////////
 
+STDMETHODIMP ProgressProxy::COMGETTER(Cancelable)(BOOL *aCancelable)
+{
+    CheckComArgOutPointerValid(aCancelable);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+        /* ASSUME: The cancelable property can only change to FALSE. */
+        if (!mCancelable || mptrOtherProgress.isNull())
+            *aCancelable = mCancelable;
+        else
+        {
+            hrc = mptrOtherProgress->COMGETTER(Cancelable)(aCancelable);
+            if (SUCCEEDED(hrc) && !*aCancelable)
+            {
+                LogFlowThisFunc(("point-of-no-return reached\n"));
+                mCancelable = FALSE;
+            }
+        }
+    }
+    return hrc;
+}
+
 STDMETHODIMP ProgressProxy::COMGETTER(Percent)(ULONG *aPercent)
 {
-#if 0
     CheckComArgOutPointerValid(aPercent);
 
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(hrc))
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-        if (mptrOtherProgress.isNull())
+        if (mptrOtherProgress.isNotNull())
             hrc = Progress::COMGETTER(Percent)(aPercent);
         else
         {
+            /*
+             * Get the overall percent of the other object and adjust it with
+             * the weighting given to the period before proxying started.
+             */
             ULONG uPct;
             hrc = mptrOtherProgress->COMGETTER(Percent)(&uPct);
-            ....
+            if (SUCCEEDED(hrc))
+            {
+                double rdPercent = ((double)uPct / 100 * muOtherProgressWeight + muOtherProgressStartWeight)
+                                 / m_ulTotalOperationsWeight * 100;
+                *aPercent = RT_MIN((ULONG)rdPercent, 99); /* mptrOtherProgress is cleared when its completed, so we can never return 100%. */
+            }
         }
     }
     return hrc;
-#else
-    return Progress::COMGETTER(Percent)(aPercent);
-#endif
+}
+
+STDMETHODIMP ProgressProxy::COMGETTER(TimeRemaining)(LONG *aTimeRemaining)
+{
+    CheckComArgOutPointerValid(aTimeRemaining);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+        if (mptrOtherProgress.isNotNull())
+            hrc = Progress::COMGETTER(TimeRemaining)(aTimeRemaining);
+        else
+            hrc = mptrOtherProgress->COMGETTER(TimeRemaining)(aTimeRemaining);
+    }
+    return hrc;
 }
 
 STDMETHODIMP ProgressProxy::COMGETTER(Completed)(BOOL *aCompleted)
 {
-    /* Not proxied since we EXPECT a hand back call. */
+    /* Not proxied since we EXPECT a normal completion notification call. */
     return Progress::COMGETTER(Completed)(aCompleted);
 }
 
@@ -457,11 +511,13 @@ STDMETHODIMP ProgressProxy::COMGETTER(Canceled)(BOOL *aCanceled)
         hrc = Progress::COMGETTER(Canceled)(aCanceled);
         if (   SUCCEEDED(hrc)
             && !*aCanceled
-            && !mptrOtherProgress.isNull())
+            && mptrOtherProgress.isNotNull()
+            && mCancelable)
         {
             hrc = mptrOtherProgress->COMGETTER(Canceled)(aCanceled);
             if (SUCCEEDED(hrc) && *aCanceled)
-                clearOtherProgressObjectInternal(true /*fEarly*/);
+                /* This will not complete the object, only mark it as canceled. */
+                clearOtherProgressObjectInternal(false /*fEarly*/);
         }
     }
     return hrc;
@@ -469,20 +525,70 @@ STDMETHODIMP ProgressProxy::COMGETTER(Canceled)(BOOL *aCanceled)
 
 STDMETHODIMP ProgressProxy::COMGETTER(ResultCode)(LONG *aResultCode)
 {
-    /* Not proxied yet since we EXPECT a hand back call. */
+    /* Not proxied since we EXPECT a normal completion notification call. */
     return Progress::COMGETTER(ResultCode)(aResultCode);
 }
 
 STDMETHODIMP ProgressProxy::COMGETTER(ErrorInfo)(IVirtualBoxErrorInfo **aErrorInfo)
 {
-    /* Not proxied yet since we EXPECT a hand back call. */
+    /* Not proxied since we EXPECT a normal completion notification call. */
     return Progress::COMGETTER(ErrorInfo)(aErrorInfo);
+}
+
+STDMETHODIMP ProgressProxy::COMGETTER(Operation)(ULONG *aOperation)
+{
+    CheckComArgOutPointerValid(aOperation);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (mptrOtherProgress.isNull())
+            hrc =  Progress::COMGETTER(Operation)(aOperation);
+        else
+        {
+            ULONG uCurOtherOperation;
+            hrc = mptrOtherProgress->COMGETTER(Operation)(&uCurOtherOperation);
+            if (SUCCEEDED(hrc))
+                *aOperation = uCurOtherOperation + muOtherProgressStartOperation;
+        }
+    }
+    return hrc;
+}
+
+STDMETHODIMP ProgressProxy::COMGETTER(OperationDescription)(BSTR *aOperationDescription)
+{
+    CheckComArgOutPointerValid(aOperationDescription);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (mptrOtherProgress.isNull() || !mfMultiOperation)
+            hrc = Progress::COMGETTER(OperationDescription)(aOperationDescription);
+        else
+            hrc = mptrOtherProgress->COMGETTER(OperationDescription)(aOperationDescription);
+    }
+    return hrc;
 }
 
 STDMETHODIMP ProgressProxy::COMGETTER(OperationPercent)(ULONG *aOperationPercent)
 {
-    /* Not proxied, should be proxied later on. */
-    return Progress::COMGETTER(OperationPercent)(aOperationPercent);
+    CheckComArgOutPointerValid(aOperationPercent);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (mptrOtherProgress.isNull() || !mfMultiOperation)
+            hrc = Progress::COMGETTER(OperationPercent)(aOperationPercent);
+        else
+            hrc = mptrOtherProgress->COMGETTER(OperationPercent)(aOperationPercent);
+    }
+    return hrc;
 }
 
 STDMETHODIMP ProgressProxy::COMSETTER(Timeout)(ULONG aTimeout)
@@ -511,7 +617,8 @@ STDMETHODIMP ProgressProxy::WaitForCompletion(LONG aTimeout)
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aTimeout=%d\n", aTimeout));
 
-    /* For now we'll always block locally. */
+    /* No need to wait on the proxied object for these since we'll get the
+       normal completion notifications. */
     hrc = Progress::WaitForCompletion(aTimeout);
 
     LogFlowThisFuncLeave();
@@ -520,13 +627,36 @@ STDMETHODIMP ProgressProxy::WaitForCompletion(LONG aTimeout)
 
 STDMETHODIMP ProgressProxy::WaitForOperationCompletion(ULONG aOperation, LONG aTimeout)
 {
-    HRESULT hrc;
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aOperation=%d aTimeout=%d\n", aOperation, aTimeout));
 
-    /* For now we'll always block locally. Later though, we could consider
-       blocking remotely when we can. */
-    hrc = Progress::WaitForOperationCompletion(aOperation, aTimeout);
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+        CheckComArgExpr(aOperation, aOperation < m_cOperations);
+
+        /*
+         * Check if we can wait locally.
+         */
+        if (   aOperation + 1 == m_cOperations /* final operation */
+            || mptrOtherProgress.isNull())
+        {
+            /* ASSUMES that Progress::WaitForOperationCompletion is using
+               AutoWriteLock::leave() as it saves us from duplicating the code! */
+            hrc = Progress::WaitForOperationCompletion(aOperation, aTimeout);
+        }
+        else
+        {
+            LogFlowThisFunc(("calling the other object...\n"));
+            ComPtr<IProgress> ptrOtherProgress = mptrOtherProgress;
+            alock.release();
+
+            hrc = ptrOtherProgress->WaitForOperationCompletion(aOperation, aTimeout);
+        }
+    }
 
     LogFlowThisFuncLeave();
     return hrc;
@@ -540,23 +670,14 @@ STDMETHODIMP ProgressProxy::Cancel()
     if (SUCCEEDED(hrc))
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-        if (mCancelable)
-        {
-            if (!mptrOtherProgress.isNull())
-            {
-                hrc = mptrOtherProgress->Cancel();
-                if (SUCCEEDED(hrc))
-                {
-                    if (m_pfnCancelCallback)
-                        m_pfnCancelCallback(m_pvCancelUserArg);
-                    clearOtherProgressObjectInternal(true /*fEarly*/);
-                }
-            }
-            else
-                hrc = Progress::Cancel();
-        }
+        if (mptrOtherProgress.isNull() || !mCancelable)
+            hrc = Progress::Cancel();
         else
-            hrc = setError(E_FAIL, tr("Operation cannot be canceled"));
+        {
+            hrc = mptrOtherProgress->Cancel();
+            if (SUCCEEDED(hrc))
+                clearOtherProgressObjectInternal(false /*fEarly*/);
+        }
     }
 
     LogFlowThisFunc(("returns %Rhrc\n", hrc));
