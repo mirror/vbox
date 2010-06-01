@@ -337,7 +337,6 @@ RTR3DECL(int) RTTcpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTTC
             if (!pHostEnt)
             {
                 rc = rtSocketResolverError();
-                AssertMsgFailed(("Could not get host address rc=%Rrc\n", rc));
                 return rc;
             }
         }
