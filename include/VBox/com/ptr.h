@@ -201,6 +201,11 @@ public:
         return (p == NULL);
     }
 
+    bool isNotNull() const
+    {
+        return (p != NULL);
+    }
+
     bool operator!() const { return isNull(); }
 
     bool operator<(C* that_p) const { return p < that_p; }
