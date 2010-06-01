@@ -490,7 +490,7 @@ VBOX_WITH_GUEST_PROPS = 1
 # Enable this to prevent the guest from writing guest properties.
 VBOX_WITH_GUEST_PROPS_RDONLY_GUEST =
 # Enable the guest control service.
-if1of ($(KBUILD_TARGET), linux solaris win darwin)
+if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_GUEST_CONTROL = 1
 endif
 # Enable ballooning
