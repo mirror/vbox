@@ -19,11 +19,57 @@
 
 /* Global includes */
 #include <QtGlobal>
+#include <QHelpEvent>
 #include <QToolTip>
 
 /* Local includes */
 #include "UIActionsPool.h"
 #include "VBoxGlobal.h"
+
+/* Extended QMenu class used in UIActions */
+class QIMenu : public QMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /* QIMenu constructor: */
+    QIMenu(QWidget *pParent = 0) : QMenu(pParent), m_fShowToolTips(false) {}
+
+    /* Setter/getter for 'show-tool-tips' feature: */
+    void setShowToolTips(bool fShowToolTips) { m_fShowToolTips = fShowToolTips; }
+    bool isToolTipsShown() const { return m_fShowToolTips; }
+
+private:
+
+    /* Event handler reimplementation: */
+    bool event(QEvent *pEvent)
+    {
+        /* Handle particular event-types: */
+        switch (pEvent->type())
+        {
+            /* Tool-tip request handler: */
+            case QEvent::ToolTip:
+            {
+                /* Get current help-event: */
+                QHelpEvent *pHelpEvent = static_cast<QHelpEvent*>(pEvent);
+                /* Get action which caused help-event: */
+                QAction *pAction = actionAt(pHelpEvent->pos());
+                /* If action present => show action's tool-tip if needed: */
+                if (pAction && m_fShowToolTips)
+                    QToolTip::showText(pHelpEvent->globalPos(), pAction->toolTip());
+                break;
+            }
+            default:
+                break;
+        }
+        /* Base-class event-handler: */
+        return QMenu::event(pEvent);
+    }
+
+    /* Reflects 'show-tool-tip' feature activity: */
+    bool m_fShowToolTips;
+};
 
 /* Action activation event */
 class ActivateActionEvent : public QEvent
@@ -119,7 +165,7 @@ public:
     {
         if (!strIcon.isNull())
             setIcon(VBoxGlobal::iconSet(strIcon, strIconDis));
-        setMenu(new QMenu);
+        setMenu(new QIMenu);
     }
 };
 
@@ -592,6 +638,7 @@ public:
         : UIMenuAction(pParent,
                        ":/usb_16px.png", ":/usb_disabled_16px.png")
     {
+        qobject_cast<QIMenu*>(menu())->setShowToolTips(true);
         retranslateUi();
     }
 
@@ -600,14 +647,6 @@ protected:
     void retranslateUi()
     {
         menu()->setTitle(QApplication::translate("UIActionsPool", "&USB Devices"));
-        connect(menu(), SIGNAL(hovered(QAction*)), this, SLOT(sltPopupToolTip(QAction*)));
-    }
-
-private slots:
-
-    void sltPopupToolTip(QAction *pAction)
-    {
-        QToolTip::showText(QCursor::pos(), pAction->toolTip());
     }
 };
 
