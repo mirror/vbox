@@ -5131,8 +5131,8 @@ static int ataConfigLun(PPDMDEVINS pDevIns, AHCIATADevState *pIf)
  */
 int  ataControllerAttach(PAHCIATACONTROLLER pCtl, PPDMIBASE pDrvBase, bool fMaster)
 {
-    AHCIATADevState    *pIf;
-    int             rc;
+    AHCIATADevState *pIf;
+    int              rc = VINF_SUCCESS;
 
     /*
      * Locate the controller and stuff.
@@ -5153,15 +5153,15 @@ int  ataControllerAttach(PAHCIATACONTROLLER pCtl, PPDMIBASE pDrvBase, bool fMast
     if (pDrvBase)
     {
         rc = ataConfigLun(pCtl->pDevInsR3, pIf);
-    }
-    else
-        AssertMsgFailed(("Failed to attach LUN#%d. rc=%Rrc\n", pIf->iLUN, rc));
+        AssertRC(rc);
 
-    if (RT_FAILURE(rc))
-    {
-        pIf->pDrvBase = NULL;
-        pIf->pDrvBlock = NULL;
+        if (RT_FAILURE(rc))
+        {
+            pIf->pDrvBase = NULL;
+            pIf->pDrvBlock = NULL;
+        }
     }
+
     return rc;
 }
 
