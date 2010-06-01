@@ -397,11 +397,11 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
     RTThreadUserSignal(RTThreadSelf());
 
     /*
- 	 * Block here first for a minute as using DONT_RESOLVE_DLL_REFERENCES is kind of risky; other code that uses LoadLibrary on a dll loaded like this
-	 * before will end up crashing the process as the dll's init routine was never called.
-	 *
-	 * We have to use this feature as we can't simply execute all init code in our service process.
-	 *
+     * Block here first for a minute as using DONT_RESOLVE_DLL_REFERENCES is kind of risky; other code that uses LoadLibrary on a dll loaded like this
+     * before will end up crashing the process as the dll's init routine was never called.
+     *
+     * We have to use this feature as we can't simply execute all init code in our service process.
+     *
 	 */
     int rc = RTSemEventMultiWait(g_PageSharingEvent, 60000);
     if (*pfShutdown)
