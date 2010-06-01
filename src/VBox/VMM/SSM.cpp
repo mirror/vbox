@@ -2835,6 +2835,9 @@ static DECLCALLBACK(int) ssmR3StrmIoThread(RTTHREAD hSelf, void *pvStrm)
                 AssertLogRelRC(rc);
             }
         }
+
+        if (!ASMAtomicReadBool(&pStrm->fTerminating))
+            RTSemEventSignal(pStrm->hEvtFree);
     }
     else
     {
@@ -2862,6 +2865,9 @@ static DECLCALLBACK(int) ssmR3StrmIoThread(RTTHREAD hSelf, void *pvStrm)
                 break;
             }
         }
+
+        if (!ASMAtomicReadBool(&pStrm->fTerminating))
+            RTSemEventSignal(pStrm->hEvtHead);
     }
 
     return VINF_SUCCESS;
@@ -5415,9 +5421,9 @@ DECLINLINE(int) ssmR3DataReadV2Raw(PSSMHANDLE pSSM, void *pvBuf, size_t cbToRead
     if (rc == VERR_SSM_CANCELLED)
         return rc;
 
-    if (pSSM->enmAfter != SSMAFTER_DEBUG_IT)
-        AssertMsgFailed(("SSM: attempted reading more than the unit!\n"));
-    return VERR_SSM_LOADED_TOO_MUCH;
+    if (pSSM->enmAfter != SSMAFTER_DEBUG_IT && rc == VERR_EOF)
+        AssertMsgFailedReturn(("SSM: attempted reading more than the unit! rc=%Rrc\n", rc), VERR_SSM_LOADED_TOO_MUCH);
+    return VERR_SSM_STREAM_ERROR;
 }
 
 
