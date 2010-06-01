@@ -472,14 +472,14 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
             && rc != VERR_EOF)
     {
         struct dns_entry *pDns = NULL;
-        if (   cNameserversFound == 4 
+        if (   cNameserversFound == 4
             && fWarnTooManyDnsServers == 0
             && sscanf(buff, "nameserver%*[ \t]%255s", buff2) == 1)
         {
             fWarnTooManyDnsServers = 1;
             LogRel(("NAT: too many nameservers registered.\n"));
         }
-        if (   sscanf(buff, "nameserver%*[ \t]%255s", buff2) == 1 
+        if (   sscanf(buff, "nameserver%*[ \t]%255s", buff2) == 1
             && cNameserversFound < 4) /* Unix doesn't accept more than 4 name servers*/
         {
             if (!inet_aton(buff2, &tmp_addr))
@@ -1720,10 +1720,10 @@ static uint32_t find_guest_ip(PNATState pData, const uint8_t *eth_addr)
  */
 static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
 {
-    struct port_forward_rule *rule;
+    struct port_forward_rule *rule, *tmp;
 
     /* check mac here */
-    LIST_FOREACH(rule, &pData->port_forward_rule_head, list)
+    LIST_FOREACH_SAFE(rule, &pData->port_forward_rule_head, list, tmp)
     {
         struct socket *so;
         struct alias_link *alias_link;
@@ -1789,7 +1789,7 @@ static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
 
         lib = LibAliasInit(pData, NULL);
         flags = LibAliasSetMode(lib, 0, 0);
-        flags |= pData->i32AliasMode; 
+        flags |= pData->i32AliasMode;
         flags |= PKT_ALIAS_REVERSE; /* set reverse  */
         flags = LibAliasSetMode(lib, flags, ~0);
 
