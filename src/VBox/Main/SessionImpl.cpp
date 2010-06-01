@@ -180,13 +180,21 @@ STDMETHODIMP Session::COMGETTER(Machine)(IMachine **aMachine)
 
     CHECK_OPEN();
 
-    HRESULT rc = E_FAIL;
-
+    HRESULT rc;
     if (mConsole)
         rc = mConsole->machine().queryInterfaceTo(aMachine);
     else
         rc = mRemoteMachine.queryInterfaceTo(aMachine);
-    ComAssertComRC(rc);
+    if (FAILED(rc))
+    {
+        /** @todo VBox 3.3: replace E_FAIL with rc here. */
+        if (mConsole)
+            setError(E_FAIL, tr("Failed to query the session machine (%Rhrc)"), rc);
+        else if (FAILED_DEAD_INTERFACE(rc))
+            setError(E_FAIL, tr("Peer process crashed"));
+        else
+            setError(E_FAIL, tr("Failed to query the remote session machine (%Rhrc)"), rc);
+    }
 
     return rc;
 }
@@ -202,13 +210,21 @@ STDMETHODIMP Session::COMGETTER(Console)(IConsole **aConsole)
 
     CHECK_OPEN();
 
-    HRESULT rc = E_FAIL;
-
+    HRESULT rc;
     if (mConsole)
         rc = mConsole.queryInterfaceTo(aConsole);
     else
         rc = mRemoteConsole.queryInterfaceTo(aConsole);
-    ComAssertComRC(rc);
+    if (FAILED(rc))
+    {
+        /** @todo VBox 3.3: replace E_FAIL with rc here. */
+        if (mConsole)
+            setError(E_FAIL, tr("Failed to query the console (%Rhrc)"), rc);
+        else if (FAILED_DEAD_INTERFACE(rc))
+            setError(E_FAIL, tr("Peer process crashed"));
+        else
+            setError(E_FAIL, tr("Failed to query the remote console (%Rhrc)"), rc);
+    }
 
     return rc;
 }
