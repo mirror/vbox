@@ -357,7 +357,7 @@ void VBoxServicePageSharingInspectGuest()
     /* Check all loaded kernel modules. */
     if (ZwQuerySystemInformation)
     {
-        ULONG                cbBuffer;
+        ULONG                cbBuffer = 0;
         PVOID                pBuffer = NULL;
         PRTL_PROCESS_MODULES pSystemModules;
     
