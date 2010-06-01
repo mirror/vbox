@@ -1264,6 +1264,8 @@ endif
 	$(RM) -f $@.tmp $@.tmp2 $@.tmp3
 ifeq ($(KBUILD_HOST),win)
 	@$(ECHO) 'TODO: Merge vslick.h with your "$(HOMEDRIVE)$(HOMEPATH)\Documents\My SlickEdit Config\x.y.z\usercpp.h" file.'
+else ifeq ($(KBUILD_HOST),darwin)
+	@$(ECHO) "TODO: Merge ./vslick.h with your ~/Library/Application\ Support/SlickEdit/x.y.z/unxcpp.h file."
 else
 	@$(ECHO) "TODO: Merge ./vslick.h with your ~/.slickedit/x.y.z/unxcpp.h file."
 endif
