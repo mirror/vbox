@@ -148,7 +148,8 @@ void VBoxVMSettingsDisplay::getFrom (const CMachine &aMachine)
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     mCb2DVideo->setEnabled (VBoxGlobal::isAcceleration2DVideoAvailable());
-    mCb2DVideo->setChecked (mMachine.GetAccelerate2DVideoEnabled());
+    mCb2DVideo->setChecked (   mMachine.GetAccelerate2DVideoEnabled()
+                            && VBoxGlobal::isAcceleration2DVideoAvailable());
 #endif
 
     /* VRDP Settings */
