@@ -5843,7 +5843,7 @@ bool Machine::checkForSpawnFailure()
     /* the process was already unexpectedly terminated, we just need to set an
      * error and finalize session spawning */
     rc = setError(E_FAIL,
-                  tr("Virtual machine '%ls' has terminated unexpectedly during startup"),
+                  tr("The virtual machine '%ls' has terminated unexpectedly during startup"),
                   getName().raw());
 #else
 
@@ -5859,19 +5859,19 @@ bool Machine::checkForSpawnFailure()
     {
         if (RT_SUCCESS(vrc) && status.enmReason == RTPROCEXITREASON_NORMAL)
             rc = setError(E_FAIL,
-                          tr("Virtual machine '%ls' has terminated unexpectedly during startup with exit code %d"),
+                          tr("The virtual machine '%ls' has terminated unexpectedly during startup with exit code %d"),
                           getName().raw(), status.iStatus);
         else if (RT_SUCCESS(vrc) && status.enmReason == RTPROCEXITREASON_SIGNAL)
             rc = setError(E_FAIL,
-                          tr("Virtual machine '%ls' has terminated unexpectedly during startup because of signal %d"),
+                          tr("The virtual machine '%ls' has terminated unexpectedly during startup because of signal %d"),
                           getName().raw(), status.iStatus);
         else if (RT_SUCCESS(vrc) && status.enmReason == RTPROCEXITREASON_ABEND)
             rc = setError(E_FAIL,
-                          tr("Virtual machine '%ls' has terminated abnormally"),
+                          tr("The virtual machine '%ls' has terminated abnormally"),
                           getName().raw(), status.iStatus);
         else
             rc = setError(E_FAIL,
-                          tr("Virtual machine '%ls' has terminated unexpectedly during startup (%Rrc)"),
+                          tr("The virtual machine '%ls' has terminated unexpectedly during startup (%Rrc)"),
                           getName().raw(), rc);
     }
 
