@@ -25,7 +25,7 @@
   </property>
   <layout class="QVBoxLayout" name="mLtMain">
    <item>
-    <widget class="QTabWidget" name="mTwSystem">
+    <widget class="QITabWidget" name="mTwSystem">
      <property name="currentIndex">
       <number>0</number>
      </property>
@@ -629,6 +629,11 @@
    <class>QIToolButton</class>
    <extends>QToolButton</extends>
    <header>QIToolButton.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QITabWidget</class>
+   <extends>QTabWidget</extends>
+   <header>QITabWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

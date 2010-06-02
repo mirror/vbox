@@ -23,6 +23,8 @@
 #include "VBoxVMSettingsParallel.gen.h"
 #include "COMDefs.h"
 
+class QITabWidget;
+
 class VBoxVMSettingsParallel : public QIWithRetranslateUI<QWidget>,
                                public Ui::VBoxVMSettingsParallel
 {
@@ -78,7 +80,7 @@ protected:
 private:
 
     QIWidgetValidator *mValidator;
-    QTabWidget *mTabWidget;
+    QITabWidget *mTabWidget;
 };
 
 #endif // __VBoxVMSettingsParallel_h__

@@ -28,7 +28,7 @@
   <widget class="QWidget" name="centralwidget" >
    <layout class="QVBoxLayout" >
     <item>
-     <widget class="QTabWidget" name="mInfoStack" >
+     <widget class="QITabWidget" name="mInfoStack" >
       <property name="currentIndex" >
        <number>0</number>
       </property>
@@ -124,6 +124,11 @@
    <class>QRichTextEdit</class>
    <extends>QTextEdit</extends>
    <header>VBoxUtils.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QITabWidget</class>
+   <extends>QTabWidget</extends>
+   <header>QITabWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources>

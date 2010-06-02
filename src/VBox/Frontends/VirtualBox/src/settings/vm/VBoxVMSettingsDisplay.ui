@@ -25,7 +25,7 @@
   </property>
   <layout class="QVBoxLayout" name="mLtMain">
    <item>
-    <widget class="QTabWidget" name="mTwDisplay">
+    <widget class="QITabWidget" name="mTwDisplay">
      <widget class="QWidget" name="mTabVideo">
       <attribute name="title">
        <string>&amp;Video</string>
@@ -464,6 +464,11 @@
    <class>QIAdvancedSlider</class>
    <extends>QSlider</extends>
    <header>QIAdvancedSlider.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QITabWidget</class>
+   <extends>QTabWidget</extends>
+   <header>QITabWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

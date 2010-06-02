@@ -42,8 +42,8 @@ class VBoxVMModel;
 class VBoxVMItem;
 class VBoxTrayIcon;
 class VBoxToolBar;
+class QITabWidget;
 
-class QTabWidget;
 class QListView;
 class QEvent;
 
@@ -178,7 +178,7 @@ private:
     VBoxVMModel *mVMModel;
 
     /* The right information widgets */
-    QTabWidget *mVmTabWidget;
+    QITabWidget *mVmTabWidget;
     VBoxVMDetailsView *mVmDetailsView;
     VBoxSnapshotsWgt *mVmSnapshotsWgt;
     VBoxVMDescriptionPage *mVmDescriptionPage;

@@ -34,7 +34,7 @@
   <widget class="QWidget" name="mCentralWidget" >
    <layout class="QVBoxLayout" >
     <item>
-     <widget class="QTabWidget" name="mTabWidget" >
+     <widget class="QITabWidget" name="mTabWidget" >
       <property name="sizePolicy" >
        <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
         <horstretch>0</horstretch>
@@ -358,6 +358,11 @@
    <class>QILabel</class>
    <extends>QLabel</extends>
    <header>QILabel.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QITabWidget</class>
+   <extends>QTabWidget</extends>
+   <header>QITabWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

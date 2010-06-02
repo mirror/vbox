@@ -23,6 +23,8 @@
 #include "VBoxVMSettingsSerial.gen.h"
 #include "COMDefs.h"
 
+class QITabWidget;
+
 class VBoxVMSettingsSerial : public QIWithRetranslateUI<QWidget>,
                              public Ui::VBoxVMSettingsSerial
 {
@@ -79,7 +81,7 @@ protected:
 private:
 
     QIWidgetValidator *mValidator;
-    QTabWidget *mTabWidget;
+    QITabWidget *mTabWidget;
 };
 
 #endif // __VBoxVMSettingsSerial_h__

@@ -27,6 +27,7 @@
 #include "QIArrowButtonSwitch.h"
 #include "VBoxGlobal.h"
 #include "VBoxVMSettingsNetwork.h"
+#include "QITabWidget.h"
 
 /* Qt Includes */
 #include <QTimer>
@@ -613,7 +614,7 @@ VBoxVMSettingsNetworkPage::VBoxVMSettingsNetworkPage(bool aDisableStaticControls
     mainLayout->setContentsMargins (0, 5, 0, 5);
 
     /* Creating Tab Widget */
-    mTwAdapters = new QTabWidget (this);
+    mTwAdapters = new QITabWidget (this);
     mainLayout->addWidget (mTwAdapters);
 
     /* If some controls should be disabled or not when the
