@@ -182,6 +182,7 @@ int CollectorLinux::getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uin
     long long unsigned int u64Tmp;
     unsigned uTmp;
     unsigned long ulTmp;
+    signed long ilTmp;
     ULONG u32user, u32kernel;
     char buf[80]; /* @todo: this should be tied to max allowed proc name. */
 
@@ -196,7 +197,7 @@ int CollectorLinux::getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uin
                       "%ld %ld %ld %ld %ld %ld %llu %lu %u",
                    &pid2, buf, &c, &iTmp, &iTmp, &iTmp, &iTmp, &iTmp, &uTmp,
                    &ulTmp, &ulTmp, &ulTmp, &ulTmp, &u32user, &u32kernel,
-                   &ulTmp, &ulTmp, &ulTmp, &ulTmp, &ulTmp, &ulTmp, &u64Tmp,
+                   &ilTmp, &ilTmp, &ilTmp, &ilTmp, &ilTmp, &ilTmp, &u64Tmp,
                    &ulTmp, memPagesUsed) == 24)
         {
             Assert((pid_t)process == pid2);
