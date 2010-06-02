@@ -3644,7 +3644,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     {
         supdrvLdrUnlock(pDevExt);
         Log(("supdrvIOCtl_LdrOpen: RTMemAlloc() failed\n"));
-        return VERR_NO_MEMORY;
+        return /*VERR_NO_MEMORY*/ VERR_INTERNAL_ERROR_2;
     }
 
     /*
@@ -3677,7 +3677,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         pImage->pvImageAlloc = RTMemExecAlloc(pImage->cbImageBits + 31);
         pImage->pvImage     = RT_ALIGN_P(pImage->pvImageAlloc, 32);
         pImage->fNative     = false;
-        rc = pImage->pvImageAlloc ? VINF_SUCCESS : VERR_NO_MEMORY;
+        rc = pImage->pvImageAlloc ? VINF_SUCCESS : VERR_NO_EXEC_MEMORY;
     }
     if (RT_FAILURE(rc))
     {
@@ -3860,7 +3860,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         if (pImage->pachStrTab)
             memcpy(pImage->pachStrTab, &pReq->u.In.abImage[pReq->u.In.offStrTab], pImage->cbStrTab);
         else
-            rc = VERR_NO_MEMORY;
+            rc = /*VERR_NO_MEMORY*/ VERR_INTERNAL_ERROR_3;
     }
 
     pImage->cSymbols = pReq->u.In.cSymbols;
@@ -3871,7 +3871,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         if (pImage->paSymbols)
             memcpy(pImage->paSymbols, &pReq->u.In.abImage[pReq->u.In.offSymbols], cbSymbols);
         else
-            rc = VERR_NO_MEMORY;
+            rc = /*VERR_NO_MEMORY*/ VERR_INTERNAL_ERROR_4;
     }
 
     /*
@@ -4299,7 +4299,7 @@ static int supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImage)
      * Allocate new usage record.
      */
     pUsage = (PSUPDRVLDRUSAGE)RTMemAlloc(sizeof(*pUsage));
-    AssertReturn(pUsage, VERR_NO_MEMORY);
+    AssertReturn(pUsage, /*VERR_NO_MEMORY*/ VERR_INTERNAL_ERROR_5);
     pUsage->cUsage = 1;
     pUsage->pImage = pImage;
     pUsage->pNext  = pSession->pLdrUsage;
