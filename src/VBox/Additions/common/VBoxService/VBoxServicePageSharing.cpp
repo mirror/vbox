@@ -193,10 +193,10 @@ void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule, bool fValidateM
                             pRegion += PAGE_SIZE;
                         }
                     }
-#ifdef GC_ARCH_BITS == 64
-                    aRegions[idxRegion].GCRegionAddr = (RTGCPTR64)MemInfo.BaseAddress;
-#else
+#ifdef RT_ARCH_X86
                     aRegions[idxRegion].GCRegionAddr = (RTGCPTR32)MemInfo.BaseAddress;
+#else
+                    aRegions[idxRegion].GCRegionAddr = (RTGCPTR64)MemInfo.BaseAddress;
 #endif
                     aRegions[idxRegion].cbRegion     = MemInfo.RegionSize;
                     idxRegion++;
@@ -228,10 +228,10 @@ void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule, bool fValidateM
     else
     {
         /* We can't probe kernel memory ranges, so pretend it's one big region. */
-#ifdef GC_ARCH_BITS == 64
-        aRegions[idxRegion].GCRegionAddr = (RTGCPTR64)pBaseAddress;
-#else
+#ifdef RT_ARCH_X86
         aRegions[idxRegion].GCRegionAddr = (RTGCPTR32)pBaseAddress;
+#else
+        aRegions[idxRegion].GCRegionAddr = (RTGCPTR64)pBaseAddress;
 #endif
         aRegions[idxRegion].cbRegion     = dwModuleSize;
         idxRegion++;
