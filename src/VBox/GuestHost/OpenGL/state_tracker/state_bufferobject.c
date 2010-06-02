@@ -75,6 +75,10 @@ void crStateBufferObjectInit (CRContext *ctx)
     RESET(bb->dirty, ctx->bitid);
     RESET(bb->arrayBinding, ctx->bitid);
     RESET(bb->elementsBinding, ctx->bitid);
+#ifdef CR_ARB_pixel_buffer_object
+    RESET(bb->unpackBinding, ctx->bitid);
+    RESET(bb->packBinding, ctx->bitid);
+#endif
 
 #ifdef IN_GUEST
     b->retainBufferData = GL_TRUE;
@@ -90,7 +94,7 @@ void crStateBufferObjectInit (CRContext *ctx)
     b->packBuffer = b->nullBuffer;
     b->unpackBuffer = b->nullBuffer;
     b->nullBuffer->refCount += 2;
-#endif    
+#endif
 
     b->buffers = crAllocHashtable();
 
