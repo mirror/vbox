@@ -268,9 +268,13 @@ STDMETHODIMP Guest::COMSETTER(MemoryBalloonSize) (ULONG aMemoryBalloonSize)
     {
         mMemoryBalloonSize = aMemoryBalloonSize;
         /* forward the information to the VMM device */
-        VMMDev *vmmDev = mParent->getVMMDev();
-        if (vmmDev)
-            vmmDev->getVMMDevPort()->pfnSetMemoryBalloon(vmmDev->getVMMDevPort(), aMemoryBalloonSize);
+        VMMDev *pVMMDev = mParent->getVMMDev();
+        if (pVMMDev)
+        {
+            PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
+            ComAssertRet(pVMMDevPort, E_FAIL);
+            pVMMDevPort->pfnSetMemoryBalloon(pVMMDevPort, aMemoryBalloonSize);
+        }
     }
 
     return ret;
@@ -298,9 +302,13 @@ STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval)(ULONG aUpdateInterval)
 
     mStatUpdateInterval = aUpdateInterval;
     /* forward the information to the VMM device */
-    VMMDev *vmmDev = mParent->getVMMDev();
-    if (vmmDev)
-        vmmDev->getVMMDevPort()->pfnSetStatisticsInterval(vmmDev->getVMMDevPort(), aUpdateInterval);
+    VMMDev *pVMMDev = mParent->getVMMDev();
+    if (pVMMDev)
+    {
+        PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
+        ComAssertRet(pVMMDevPort, E_FAIL);
+        pVMMDevPort->pfnSetStatisticsInterval(pVMMDevPort, aUpdateInterval);
+    }
 
     return S_OK;
 }
@@ -392,14 +400,17 @@ STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* forward the information to the VMM device */
-    VMMDev *vmmDev = mParent->getVMMDev();
-    if (vmmDev)
+    VMMDev *pVMMDev = mParent->getVMMDev();
+    if (pVMMDev)
     {
+        PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
+        ComAssertRet(pVMMDevPort, E_FAIL);
+
         uint32_t u32Flags = VMMDEV_SETCREDENTIALS_GUESTLOGON;
         if (!aAllowInteractiveLogon)
             u32Flags = VMMDEV_SETCREDENTIALS_NOLOCALLOGON;
 
-        vmmDev->getVMMDevPort()->pfnSetCredentials(vmmDev->getVMMDevPort(),
+        pVMMDevPort->pfnSetCredentials(pVMMDevPort,
             Utf8Str(aUserName).raw(), Utf8Str(aPassword).raw(),
             Utf8Str(aDomain).raw(), u32Flags);
         return S_OK;
