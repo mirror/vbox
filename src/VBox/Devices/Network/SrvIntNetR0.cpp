@@ -3105,7 +3105,22 @@ static void intnetR0NetworkReleaseDstTab(PINTNETNETWORK pNetwork, PINTNETDSTTAB 
 static void intnetR0NetworkDeliver(PINTNETNETWORK pNetwork, PINTNETDSTTAB pDstTab, PINTNETSG pSG, PINTNETIF pIfSender)
 {
     /*
-     * Trunk first so we don't wast any more time before hitting the wire.
+     * Do the interfaces first before sending it to the wire and risk having to
+     * modify it.
+     */
+    uint32_t iIf = pDstTab->cIfs;
+    while (iIf-- > 0)
+    {
+        PINTNETIF pIf = pDstTab->aIfs[iIf].pIf;
+        intnetR0IfSend(pIf, pIfSender, pSG,
+                       pDstTab->aIfs[iIf].fReplaceDstMac ? &pIf->MacAddr: NULL);
+        intnetR0BusyDecIf(pIf);
+        pDstTab->aIfs[iIf].pIf = NULL;
+    }
+    pDstTab->cIfs = 0;
+
+    /*
+     * Send to the trunk.
      *
      * Note! The switching functions will include the trunk even when the frame
      *       source is the trunk.  This is because we need it to figure out
@@ -3124,20 +3139,6 @@ static void intnetR0NetworkDeliver(PINTNETNETWORK pNetwork, PINTNETDSTTAB pDstTa
         pDstTab->pTrunk    = NULL;
         pDstTab->fTrunkDst = 0;
     }
-
-    /*
-     * Do the interfaces.
-     */
-    uint32_t iIf = pDstTab->cIfs;
-    while (iIf-- > 0)
-    {
-        PINTNETIF pIf = pDstTab->aIfs[iIf].pIf;
-        intnetR0IfSend(pIf, pIfSender, pSG,
-                       pDstTab->aIfs[iIf].fReplaceDstMac ? &pIf->MacAddr: NULL);
-        intnetR0BusyDecIf(pIf);
-        pDstTab->aIfs[iIf].pIf = NULL;
-    }
-    pDstTab->cIfs = 0;
 }
 
 
@@ -3944,8 +3945,8 @@ INTNETR0DECL(int) IntNetR0IfAbortWait(INTNETIFHANDLE hIf, PSUPDRVSESSION pSessio
     }
 
     /*
-     * Set fDestroying if requested to do so and then wake up all the sleeping        
-     * threads (usually just one).   We leave the semaphore in the signalled 
+     * Set fDestroying if requested to do so and then wake up all the sleeping
+     * threads (usually just one).   We leave the semaphore in the signalled
      * state so the next caller will return immediately.
      */
     if (fNoMoreWaits)
