@@ -612,10 +612,11 @@ void VBoxMediaManagerDlg::retranslateUi()
     mButtonBox->setMinimumHeight (h + 12);
 #endif
 #ifdef QT_MAC_USE_COCOA
-    /* There is a bug in Qt Cocoa which result in showing a "more
-     * arrow" when the necessary size of the toolbar is increased. So
-     * manually adjust the size after changing the text. */
-    mToolBar->adjustSize();
+    /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
+       the necessary size of the toolbar is increased. Also for some languages
+       the with doesn't match if the text increase. So manually adjust the size
+       after changing the text. */
+    mToolBar->updateLayout();
 #endif /* QT_MAC_USE_COCOA */
 
     if (mDoSelect)
