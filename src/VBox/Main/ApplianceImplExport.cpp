@@ -874,6 +874,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                          (  desc.type == VirtualSystemDescriptionType_HardDiskControllerIDE ? "HardDiskControllerIDE"
                           : desc.type == VirtualSystemDescriptionType_HardDiskControllerSATA ? "HardDiskControllerSATA"
                           : desc.type == VirtualSystemDescriptionType_HardDiskControllerSCSI ? "HardDiskControllerSCSI"
+                          : desc.type == VirtualSystemDescriptionType_HardDiskControllerSAS ? "HardDiskControllerSAS"
                           : desc.type == VirtualSystemDescriptionType_HardDiskImage ? "HardDiskImage"
                           : Utf8StrFmt("%d", desc.type).c_str()),
                          desc.strRef.c_str(),
