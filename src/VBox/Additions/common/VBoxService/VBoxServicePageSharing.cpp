@@ -224,7 +224,7 @@ void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule, bool fValidateM
     else
     {
         /* We can't probe kernel memory ranges, so pretend it's one big region. */
-        aRegions[idxRegion].GCRegionAddr = (RTGCPTR64)(PVOID)pBaseAddress;  /* stupid cast to avoid sign extension */
+        aRegions[idxRegion].GCRegionAddr = (RTGCPTR64)(PVOID)pBaseAddress;  /* stupid cast to prevent sign extension */
         aRegions[idxRegion].cbRegion     = dwModuleSize;
         idxRegion++;
     }
