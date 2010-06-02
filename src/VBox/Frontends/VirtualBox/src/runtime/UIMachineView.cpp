@@ -1081,7 +1081,15 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
 
                 /* Check if we should activate window under cursor: */
                 if (machineWindowWrapper()->machineWindow() != QApplication::activeWindow())
+                {
+                    /* Activating hovered machine window: */
                     machineWindowWrapper()->machineWindow()->activateWindow();
+#ifdef Q_WS_X11
+                    /* On X11 its not enough to just activate window if you
+                     * want to raise it also, so we will make it separately: */
+                    machineWindowWrapper()->machineWindow()->raise();
+#endif /* Q_WS_X11 */
+                }
 
                 /* This event should be also processed using next 'case': */
             }
