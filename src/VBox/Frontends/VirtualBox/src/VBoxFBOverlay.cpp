@@ -4075,6 +4075,7 @@ VBoxQGLOverlay::VBoxQGLOverlay (QWidget *pViewport,QObject *pPostEventObject,  C
       mCmdPipe (pPostEventObject),
       mSettings (*aSession),
       mpSession(aSession),
+      mpShareWgt (NULL),
       m_id(id)
 {
     /* postpone the gl widget initialization to avoid conflict with 3D on Mac */
