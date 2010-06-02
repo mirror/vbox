@@ -158,6 +158,9 @@ int handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "savestate"))
         {
+            /* first pause so we don't trigger a live save which needs more time/resources */
+            CHECK_ERROR_BREAK(console, Pause());
+
             ComPtr<IProgress> progress;
             CHECK_ERROR_BREAK(console, SaveState(progress.asOutParam()));
 
