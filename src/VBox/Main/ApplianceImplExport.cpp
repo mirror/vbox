@@ -264,7 +264,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
             // it should be a SCSI controller
             Utf8Str strVbox = "LsiLogicSas";
             lSCSIControllerIndex = (int32_t)pNewDesc->m->llDescriptions.size();
-            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI,
+            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSAS,
                                Utf8StrFmt("%d", lSCSIControllerIndex),
                                strVbox,
                                strVbox);
@@ -1018,6 +1018,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                 break;
 
                 case VirtualSystemDescriptionType_HardDiskControllerSCSI:
+                case VirtualSystemDescriptionType_HardDiskControllerSAS:
                     /*  <Item>
                             <rasd:Caption>scsiController0</rasd:Caption>
                             <rasd:Description>SCSI Controller</rasd:Description>
@@ -1048,7 +1049,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                             strResourceSubType = "lsilogicsas";
                         else
                             throw setError(VBOX_E_NOT_SUPPORTED,
-                                            tr("Invalid config string \"%s\" in SCSI controller"), desc.strVboxCurrent.c_str());
+                                            tr("Invalid config string \"%s\" in SCSI/SAS controller"), desc.strVboxCurrent.c_str());
 
                         // remember this ID
                         idSCSIController = ulInstanceID;
