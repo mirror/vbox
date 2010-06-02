@@ -1682,7 +1682,7 @@ STDMETHODIMP Console::PowerDown(IProgress **aProgress)
         case MachineState_Saved:
             return setError(VBOX_E_INVALID_VM_STATE, tr("Cannot power down a saved virtual machine"));
         case MachineState_Stopping:
-            return setError(VBOX_E_INVALID_VM_STATE, tr("Virtual machine is being powered down"));
+            return setError(VBOX_E_INVALID_VM_STATE, tr("The virtual machine is being powered down"));
         default:
             return setError(VBOX_E_INVALID_VM_STATE,
                             tr("Invalid machine state: %s (must be Running, Paused or Stuck)"),
@@ -4901,7 +4901,7 @@ HRESULT Console::addVMCaller(bool aQuiet /* = false */,
     {
         /* powerDown() is waiting for all callers to finish */
         return aQuiet ? E_ACCESSDENIED : setError(E_ACCESSDENIED,
-            tr("Virtual machine is being powered down"));
+            tr("The virtual machine is being powered down"));
     }
 
     if (mpVM == NULL)
@@ -4910,7 +4910,7 @@ HRESULT Console::addVMCaller(bool aQuiet /* = false */,
 
         /* The machine is not powered up */
         return aQuiet ? E_ACCESSDENIED : setError(E_ACCESSDENIED,
-            tr("Virtual machine is not powered up"));
+            tr("The virtual machine is not powered up"));
     }
 
     ++ mVMCallers;
@@ -5114,7 +5114,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
 
     if (Global::IsOnlineOrTransient(mMachineState))
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Virtual machine is already running or busy (machine state: %s)"),
+            tr("The virtual machine is already running or busy (machine state: %s)"),
             Global::stringifyMachineState(mMachineState));
 
     HRESULT rc = S_OK;
