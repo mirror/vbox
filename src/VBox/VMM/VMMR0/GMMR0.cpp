@@ -3473,6 +3473,34 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
     return rc;
 }
 
+typedef struct
+{
+    PAVLGCPTRNODECORE    pNode;
+    char                *pszModuleName;
+    char                *pszVersion;
+    VBOXOSFAMILY         enmGuestOS;
+} GMMFINDMODULEBYNAME, *PGMMFINDMODULEBYNAME;
+
+/**
+ * Tree enumeration callback for finding identical modules by name and version
+ */
+DECLCALLBACK(int) gmmR0CheckForIdenticalModule(PAVLGCPTRNODECORE pNode, void *pvUser)
+{
+    PGMMFINDMODULEBYNAME pInfo = (PGMMFINDMODULEBYNAME)pvUser;
+    PGMMSHAREDMODULE     pModule = (PGMMSHAREDMODULE)pNode;
+
+    if (    pInfo
+        &&  pInfo->enmGuestOS == pModule->enmGuestOS
+        /** todo replace with RTStrNCmp */
+        &&  !strcmp(pModule->szName, pInfo->pszModuleName)
+        &&  !strcmp(pModule->szVersion, pInfo->pszVersion))
+    {
+        pInfo->pNode = pNode;
+        return 1;   /* stop search */
+    }
+    return 0;
+}
+
 
 /**
  * Registers a new shared module for the VM
@@ -3537,6 +3565,27 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
 
         /* Check if this module is already globally registered. */
         PGMMSHAREDMODULE pGlobalModule = (PGMMSHAREDMODULE)RTAvlGCPtrGet(&pGMM->pGlobalSharedModuleTree, GCBaseAddr);
+        if (    !pGlobalModule
+            &&  enmGuestOS == VBOXOSFAMILY_Windows64)
+        {
+            /* Two identical copies of e.g. Win7 x64 will typically not have a similar virtual address space layout for dlls or kernel modules.
+             * Try to find identical binaries based on name and version.
+             */
+            GMMFINDMODULEBYNAME Info;
+
+            Info.pNode         = NULL;
+            Info.pszVersion    = pszVersion;
+            Info.pszModuleName = pszModuleName;
+            Info.enmGuestOS    = enmGuestOS;
+
+            int ret = RTAvlGCPtrDoWithAll(&pGMM->pGlobalSharedModuleTree, true /* fFromLeft */, gmmR0CheckForIdenticalModule, &Info);
+            if (ret == 1)
+            {
+                Assert(Info.pNode);
+                pGlobalModule = (PGMMSHAREDMODULE)Info.pNode;
+            }
+        }
+
         if (!pGlobalModule)
         {
             Assert(fNewModule);
