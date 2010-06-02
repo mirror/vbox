@@ -237,8 +237,14 @@ void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule, bool fValidateM
         idxRegion++;
     }
     VBoxServiceVerbose(3, "VbglR3RegisterSharedModule %s %s base=%p size=%x cregions=%d\n", pModule->Info.szModule, pModule->szFileVersion, pModule->Info.modBaseAddr, pModule->Info.modBaseSize, idxRegion);
+#ifdef RT_ARCH_X86
+    int rc = VbglR3RegisterSharedModule(pModule->Info.szModule, pModule->szFileVersion, (RTGCPTR32)pModule->Info.modBaseAddr,
+                                        pModule->Info.modBaseSize, idxRegion, aRegions);
+#else
     int rc = VbglR3RegisterSharedModule(pModule->Info.szModule, pModule->szFileVersion, (RTGCPTR64)pModule->Info.modBaseAddr,
                                         pModule->Info.modBaseSize, idxRegion, aRegions);
+#endif
+
 //    AssertRC(rc);
     if (RT_FAILURE(rc))
         VBoxServiceVerbose(3, "VbglR3RegisterSharedModule failed with %d\n", rc);
