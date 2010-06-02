@@ -1413,10 +1413,11 @@ void VBoxSelectorWnd::retranslateUi()
 #endif
 
 #ifdef QT_MAC_USE_COCOA
-    /* There is a bug in Qt Cocoa which result in showing a "more
-     * arrow" when the necessary size of the toolbar is increased. So
-     * manually adjust the size after changing the text. */
-    mVMToolBar->adjustSize();
+    /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
+       the necessary size of the toolbar is increased. Also for some languages
+       the with doesn't match if the text increase. So manually adjust the size
+       after changing the text. */
+    mVMToolBar->updateLayout();
 #endif /* QT_MAC_USE_COCOA */
 }
 
@@ -1492,13 +1493,14 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
         {
             mVmStartAction->setText (tr ("S&tart"));
 #ifdef QT_MAC_USE_COCOA
-            /* There is a bug in Qt Cocoa which result in showing a "more
-             * arrow" when the necessary size of the toolbar is increased. So
-             * manually adjust the size after changing the text. */
-            mVMToolBar->adjustSize();
+            /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
+               the necessary size of the toolbar is increased. Also for some languages
+               the with doesn't match if the text increase. So manually adjust the size
+               after changing the text. */
+            mVMToolBar->updateLayout();
 #endif /* QT_MAC_USE_COCOA */
             mVmStartAction->setStatusTip (
-                tr ("Start the selected virtual machine"));
+                                          tr ("Start the selected virtual machine"));
 
             mVmStartAction->setEnabled (!running);
         }
@@ -1506,10 +1508,11 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
         {
             mVmStartAction->setText (tr ("S&how"));
 #ifdef QT_MAC_USE_COCOA
-            /* There is a bug in Qt Cocoa which result in showing a "more
-             * arrow" when the necessary size of the toolbar is increased. So
-             * manually adjust the size after changing the text. */
-            mVMToolBar->adjustSize();
+            /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
+               the necessary size of the toolbar is increased. Also for some languages
+               the with doesn't match if the text increase. So manually adjust the size
+               after changing the text. */
+            mVMToolBar->updateLayout();
 #endif /* QT_MAC_USE_COCOA */
             mVmStartAction->setStatusTip (
                 tr ("Switch to the window of the selected virtual machine"));
