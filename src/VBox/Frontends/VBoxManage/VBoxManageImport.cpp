@@ -534,6 +534,22 @@ int handleImportAppliance(HandlerArg *arg)
                                         i, a);
                         break;
 
+                        case VirtualSystemDescriptionType_HardDiskControllerSAS:
+                            if (fIgnoreThis)
+                            {
+                                RTPrintf("%2u: SAS controller, type %ls -- disabled\n",
+                                         a,
+                                         aVboxValues[a]);
+                                aEnabled[a] = false;
+                            }
+                            else
+                                RTPrintf("%2u: SAS controller, type %ls"
+                                        "\n    (disable with \"--vsys %u --unit %u --ignore\")\n",
+                                        a,
+                                        aVboxValues[a],
+                                        i, a);
+                        break;
+
                         case VirtualSystemDescriptionType_HardDiskControllerSCSI:
                             if (fIgnoreThis)
                             {
