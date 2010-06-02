@@ -162,7 +162,12 @@ int handleControlVM(HandlerArg *a)
             CHECK_ERROR_BREAK(console, Pause());
 
             ComPtr<IProgress> progress;
-            CHECK_ERROR_BREAK(console, SaveState(progress.asOutParam()));
+            CHECK_ERROR(console, SaveState(progress.asOutParam()));
+            if (FAILED(rc))
+            {
+                console->Resume();
+                break;
+            }
 
             rc = showProgress(progress);
             if (FAILED(rc))
@@ -176,6 +181,7 @@ int handleControlVM(HandlerArg *a)
                 {
                     RTPrintf("Error: failed to save machine state. No error message available!\n");
                 }
+                console->Resume();
             }
         }
         else if (!strcmp(a->argv[1], "acpipowerbutton"))
