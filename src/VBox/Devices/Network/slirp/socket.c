@@ -728,7 +728,8 @@ sorecvfrom(PNATState pData, struct socket *so)
              *  last argument should be changed if Slirp will inject IP attributes
              *  Note: Here we can't check if dnsproxy's sent initial request
              */
-            if (so->so_fport == RT_H2N_U16_C(53))
+            if (   pData->fUseDnsProxy 
+                && so->so_fport == RT_H2N_U16_C(53))
                 dnsproxy_answer(pData, so, m);
 
 #if 0
