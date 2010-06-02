@@ -42,7 +42,8 @@ public:
             << KVirtualSystemDescriptionType_NetworkAdapter
             << KVirtualSystemDescriptionType_HardDiskControllerIDE
             << KVirtualSystemDescriptionType_HardDiskControllerSATA
-            << KVirtualSystemDescriptionType_HardDiskControllerSCSI;
+            << KVirtualSystemDescriptionType_HardDiskControllerSCSI
+            << KVirtualSystemDescriptionType_HardDiskControllerSAS;
     }
 };
 
