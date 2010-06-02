@@ -1098,8 +1098,31 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
                         pCaps->PS20Caps.DynamicFlowControlDepth = 24;
                         pCaps->PS20Caps.NumTemps = D3DVS20_MAX_NUMTEMPS;
                         pCaps->VertexTextureFilterCaps |= D3DPTFILTERCAPS_MINFPOINT | D3DPTFILTERCAPS_MAGFPOINT;
-                        pCaps->MaxVertexShader30InstructionSlots = 512;
-                        pCaps->MaxPixelShader30InstructionSlots = 512;
+#if 1 /* workaround for wine not returning InstructionSlots correctly for  shaders v3.0 */
+                        if ((pCaps->VertexShaderVersion & 0xff00) == 0x0300)
+                        {
+                            pCaps->MaxVertexShader30InstructionSlots = RT_MIN(32768, pCaps->MaxVertexShader30InstructionSlots);
+                            pCaps->MaxPixelShader30InstructionSlots = RT_MIN(32768, pCaps->MaxPixelShader30InstructionSlots);
+                        }
+#endif
+#ifdef DEBUG
+                        if ((pCaps->VertexShaderVersion & 0xff00) == 0x0300)
+                        {
+                            Assert(pCaps->MaxVertexShader30InstructionSlots >= 512);
+                            Assert(pCaps->MaxVertexShader30InstructionSlots <= 32768);
+                            Assert(pCaps->MaxPixelShader30InstructionSlots >= 512);
+                            Assert(pCaps->MaxPixelShader30InstructionSlots <= 32768);
+                        }
+                        else if ((pCaps->VertexShaderVersion & 0xff00) == 0x0200)
+                        {
+                            Assert(pCaps->MaxVertexShader30InstructionSlots == 0);
+                            Assert(pCaps->MaxPixelShader30InstructionSlots == 0);
+                        }
+                        else
+                        {
+                            AssertBreakpoint();
+                        }
+#endif
                         break;
                     }
 
