@@ -618,6 +618,9 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_NO_CHANGE                      (-95)
 /** Generic no change info. */
 #define VINF_NO_CHANGE                      95
+/** Out of memory condition when allocating executable memory. */
+#define VERR_NO_EXEC_MEMORY                 (-96)
+
 /** @} */
 
 
