@@ -20,6 +20,7 @@
 #include "VBoxVMSettingsParallel.h"
 #include "QIWidgetValidator.h"
 #include "VBoxGlobal.h"
+#include "QITabWidget.h"
 
 #include <QDir>
 
@@ -154,7 +155,7 @@ VBoxVMSettingsParallelPage::VBoxVMSettingsParallelPage()
     : mValidator (0)
 {
     /* TabWidget creation */
-    mTabWidget = new QTabWidget (this);
+    mTabWidget = new QITabWidget (this);
     QVBoxLayout *layout = new QVBoxLayout (this);
     layout->setContentsMargins (0, 5, 0, 5);
     layout->addWidget (mTabWidget);

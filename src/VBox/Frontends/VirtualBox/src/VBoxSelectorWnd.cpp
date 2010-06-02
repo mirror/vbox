@@ -33,6 +33,7 @@
 #include "VBoxVMLogViewer.h"
 #include "VBoxGlobal.h"
 #include "VBoxUtils.h"
+#include "QITabWidget.h"
 
 #include "UIDownloaderUserManual.h"
 
@@ -509,7 +510,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     leftVLayout->addWidget (mVMListView);
 
     /* VM tab widget containing details and snapshots tabs */
-    mVmTabWidget = new QTabWidget();
+    mVmTabWidget = new QITabWidget();
     rightVLayout->addWidget (mVmTabWidget);
 
     /* VM details view */

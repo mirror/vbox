@@ -24,7 +24,7 @@
   </property>
   <layout class="QHBoxLayout" name="mLtMain" >
    <item>
-    <widget class="QTabWidget" name="mTwGeneral" >
+    <widget class="QITabWidget" name="mTwGeneral" >
      <property name="currentIndex" >
       <number>0</number>
      </property>
@@ -289,6 +289,11 @@
    <extends>QComboBox</extends>
    <header>VBoxFilePathSelectorWidget.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>QITabWidget</class>
+   <extends>QTabWidget</extends>
+   <header>QITabWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

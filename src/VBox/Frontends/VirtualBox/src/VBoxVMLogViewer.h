@@ -25,7 +25,7 @@
 #include "QIWithRetranslateUI.h"
 
 class VBoxLogSearchPanel;
-class QTabWidget;
+class QITabWidget;
 class QTextEdit;
 class VBoxSearchField;
 class QLabel;
@@ -75,7 +75,7 @@ private:
     bool                  mIsPolished;
     bool                  mFirstRun;
     CMachine              mMachine;
-    QTabWidget           *mLogList;
+    QITabWidget           *mLogList;
     VBoxLogSearchPanel   *mSearchPanel;
     QList< QPair<QString, QTextEdit*> > mLogFiles;
 

@@ -26,6 +26,7 @@
 
 /* VBox Forwardes */
 class VBoxVMSettingsNetworkPage;
+class QITabWidget;
 
 class VBoxVMSettingsNetwork : public QIWithRetranslateUI <QWidget>,
                               public Ui::VBoxVMSettingsNetwork
@@ -112,7 +113,7 @@ private slots:
 private:
 
     QIWidgetValidator *mValidator;
-    QTabWidget *mTwAdapters;
+    QITabWidget *mTwAdapters;
 
     QStringList mBrgList;
     QStringList mIntList;

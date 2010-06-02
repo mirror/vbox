@@ -25,10 +25,10 @@
 #include "VBoxProblemReporter.h"
 #include "VBoxSpecialControls.h"
 #include "VBoxUtils.h"
+#include "QITabWidget.h"
 
 /* Qt includes */
 #include <QStyle>
-#include <QTabWidget>
 #include <QTextEdit>
 #include <QLineEdit>
 #include <QLabel>
@@ -87,7 +87,7 @@ VBoxVMLogViewer::VBoxVMLogViewer (QWidget *aParent,
     setSizeGripEnabled (true);
 
     /* Logs list creation */
-    mLogList = new QTabWidget (mLogsFrame);
+    mLogList = new QITabWidget (mLogsFrame);
     QVBoxLayout *logsFrameLayout = new QVBoxLayout (mLogsFrame);
     logsFrameLayout->setContentsMargins (0, 0, 0, 0);
     logsFrameLayout->addWidget (mLogList);

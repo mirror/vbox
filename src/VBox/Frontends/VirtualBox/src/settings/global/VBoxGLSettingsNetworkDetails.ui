@@ -27,7 +27,7 @@
   </property>
   <layout class="QVBoxLayout" >
    <item>
-    <widget class="QTabWidget" name="mTwDetails" >
+    <widget class="QITabWidget" name="mTwDetails" >
      <property name="sizePolicy" >
       <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
        <horstretch>0</horstretch>
@@ -329,6 +329,11 @@
    <class>QIDialogButtonBox</class>
    <extends>QDialogButtonBox</extends>
    <header>QIDialogButtonBox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QITabWidget</class>
+   <extends>QTabWidget</extends>
+   <header>QITabWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

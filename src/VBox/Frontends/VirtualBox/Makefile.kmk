@@ -272,6 +272,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QISplitter.h \
 	src/extensions/QIStateIndicator.h \
 	src/extensions/QIStatusBar.h \
+	src/extensions/QITabWidget.h \
 	src/extensions/QIToolButton.h \
 	src/extensions/QITreeView.h \
 	src/extensions/QITreeWidget.h \
