@@ -666,61 +666,61 @@
     </message>
     <message>
         <source>Enter &amp;Fullscreen Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Ativar Modo de Tela Cheia (&amp;F)</translation>
     </message>
     <message>
         <source>Exit &amp;Fullscreen Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Desativar Modo de Tela de Cheia (&amp;F)</translation>
     </message>
     <message>
         <source>Switch to normal mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Trocar para modo normal</translation>
     </message>
     <message>
         <source>Enter Seam&amp;less Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Entrar no modo Seam&amp;less</translation>
     </message>
     <message>
         <source>Exit Seam&amp;less Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Sair do Modo Seam&amp;less</translation>
     </message>
     <message>
         <source>Enable &amp;Guest Display Auto-resize</source>
-        <translation type="unfinished"></translation>
+        <translation>Habilitar Redimensionamento Automático de Tela  (&amp;G)</translation>
     </message>
     <message>
         <source>Disable &amp;Guest Display Auto-resize</source>
-        <translation type="unfinished"></translation>
+        <translation>Desabilitar Auto-Redimensionamento de Tela (&amp;G)</translation>
     </message>
     <message>
         <source>Disable automatic resize of the guest display when the window is resized</source>
-        <translation type="unfinished"></translation>
+        <translation>Desabilitar redimensionamento automático da tela quando a janela for redimensionada</translation>
     </message>
     <message>
         <source>&amp;Enable Remote Display</source>
-        <translation type="unfinished"></translation>
+        <translation>Habilitar T&amp;ela Remota</translation>
     </message>
     <message>
         <source>Enable remote desktop (RDP) connections to this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Habilitar conexões de desktop remoto (RDP) para esta máquina</translation>
     </message>
     <message>
         <source>&amp;Disable Remote Display</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Desabilitar Tela Remota</translation>
     </message>
     <message>
         <source>Disable remote desktop (RDP) connections to this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Impede conexões de desktop remoto (RDP) para esta máquina</translation>
     </message>
     <message>
         <source>Enable &amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>Desabilita &amp;Logs...</translation>
     </message>
     <message>
         <source>Disable &amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>Habilita &amp;Logs...</translation>
     </message>
 </context>
 <context>
@@ -2296,7 +2296,7 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Disco Rígido de Boot</translation>
     </message>
 </context>
 <context>
@@ -2511,15 +2511,15 @@ Versão %1</translation>
     </message>
     <message>
         <source>Hard Disk Controller (IDE)</source>
-        <translation>Controladora de Disco Rígido IDE</translation>
+        <translation>Controladora de Disco Rígido (IDE)</translation>
     </message>
     <message>
         <source>Hard Disk Controller (SATA)</source>
-        <translation>Controladora de Disco Rígido SATA</translation>
+        <translation>Controladora de Disco Rígido (SATA)</translation>
     </message>
     <message>
         <source>Hard Disk Controller (SCSI)</source>
-        <translation>Controladora de Disco Rígido SCSI</translation>
+        <translation>Controladora de Disco Rígido (SCSI)</translation>
     </message>
     <message>
         <source>DVD</source>
@@ -2577,7 +2577,7 @@ Versão %1</translation>
     </message>
     <message>
         <source>Hard Disk Controller (SAS)</source>
-        <translation type="unfinished"></translation>
+        <translation>Controladora de Disco Rígido (SAS)</translation>
     </message>
 </context>
 <context>
@@ -5565,12 +5565,12 @@ Versão %1</translation>
     <message>
         <source>Unknown device</source>
         <comment>USB device details</comment>
-        <translation type="unfinished"></translation>
+        <translation>Dispositivo desconhecido</translation>
     </message>
     <message>
         <source>SAS Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>Porta SAS %1</translation>
     </message>
 </context>
 <context>
@@ -8180,12 +8180,12 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>&amp;File</source>
         <comment>Mac OS X version</comment>
-        <translation type="unfinished">Arquivo (&amp;F)</translation>
+        <translation>Arquivo (&amp;F)</translation>
     </message>
     <message>
         <source>&amp;File</source>
         <comment>Non Mac OS X version</comment>
-        <translation type="unfinished">Arquivo (&amp;F)</translation>
+        <translation>Arquivo (&amp;F)</translation>
     </message>
 </context>
 <context>

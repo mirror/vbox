@@ -666,61 +666,61 @@
     </message>
     <message>
         <source>Enter &amp;Fullscreen Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Entra nella modalità a sc&amp;hermo intero</translation>
     </message>
     <message>
         <source>Exit &amp;Fullscreen Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Esci dalla modalità a sc&amp;hermo intero</translation>
     </message>
     <message>
         <source>Switch to normal mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Passa alla modalità normale</translation>
     </message>
     <message>
         <source>Enter Seam&amp;less Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Entra nella moda&amp;lità trasparente</translation>
     </message>
     <message>
         <source>Exit Seam&amp;less Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Esci dalla moda&amp;lità trasparente</translation>
     </message>
     <message>
         <source>Enable &amp;Guest Display Auto-resize</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita il ridimensionamento automatico dello schermo del &amp;guest</translation>
     </message>
     <message>
         <source>Disable &amp;Guest Display Auto-resize</source>
-        <translation type="unfinished"></translation>
+        <translation>Disabilita il ridimensionamento automatico dello schermo del &amp;guest</translation>
     </message>
     <message>
         <source>Disable automatic resize of the guest display when the window is resized</source>
-        <translation type="unfinished"></translation>
+        <translation>Disabilita il ridimensionamento automatico dello schermo del guest quando si ridimensiona la finestra</translation>
     </message>
     <message>
         <source>&amp;Enable Remote Display</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita lo sch&amp;ermo remoto</translation>
     </message>
     <message>
         <source>Enable remote desktop (RDP) connections to this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita le connessioni di desktop remoto (RDP) a questa macchina</translation>
     </message>
     <message>
         <source>&amp;Disable Remote Display</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Disabilita lo schermo remoto</translation>
     </message>
     <message>
         <source>Disable remote desktop (RDP) connections to this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Disabilita le connessioni di desktop remoto (RDP) a questa macchina</translation>
     </message>
     <message>
         <source>Enable &amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>Abilita &amp;la registrazione...</translation>
     </message>
     <message>
         <source>Disable &amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disabilita &amp;la registrazione...</translation>
     </message>
 </context>
 <context>
@@ -2248,7 +2248,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>Boot Hard &amp;Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Disco fisso d&apos;avvio</translation>
     </message>
 </context>
 <context>
@@ -2520,7 +2520,7 @@ Versione %1</translation>
     </message>
     <message>
         <source>Hard Disk Controller (SAS)</source>
-        <translation type="unfinished"></translation>
+        <translation>Controller del disco fisso (SAS)</translation>
     </message>
 </context>
 <context>
@@ -5453,17 +5453,17 @@ Versione %1</translation>
     <message>
         <source>Unknown device</source>
         <comment>USB device details</comment>
-        <translation type="unfinished"></translation>
+        <translation>Dispositivo sconosciuto</translation>
     </message>
     <message>
         <source>SAS Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>Porta SAS %1</translation>
     </message>
     <message>
         <source>Shareable</source>
         <comment>DiskType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Condivisibile</translation>
     </message>
 </context>
 <context>
@@ -8065,12 +8065,14 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
     <message>
         <source>&amp;File</source>
         <comment>Mac OS X version</comment>
-        <translation type="unfinished">&amp;File</translation>
+        <translatorcomment>&amp;File</translatorcomment>
+        <translation>&amp;File</translation>
     </message>
     <message>
         <source>&amp;File</source>
         <comment>Non Mac OS X version</comment>
-        <translation type="unfinished">&amp;File</translation>
+        <translatorcomment>&amp;File</translatorcomment>
+        <translation>&amp;File</translation>
     </message>
 </context>
 <context>
