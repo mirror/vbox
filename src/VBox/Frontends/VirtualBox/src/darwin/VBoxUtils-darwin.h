@@ -42,6 +42,7 @@ class QWidget;
 class QToolBar;
 class QPixmap;
 class QImage;
+class QMenu;
 
 # ifdef QT_MAC_USE_COCOA
 /* Cast this to void, cause Cocoa classes aren't usable in the C++ context. */
@@ -153,6 +154,7 @@ void darwinSetShowsToolbarButton(QToolBar *aToolBar, bool aEnabled);
 void darwinSetShowsResizeIndicator(QWidget *aWidget, bool aEnabled);
 void darwinSetHidesAllTitleButtons(QWidget *aWidget);
 void darwinSetShowsWindowTransparent(QWidget *aWidget, bool aEnabled);
+void darwinSetDockIconMenu(QMenu *pMenu);
 void darwinDisableIconsInMenus(void);
 
 /********************************************************************************
