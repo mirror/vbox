@@ -89,6 +89,7 @@ class HGCMThread: public HGCMObject
 
         /* A caller thread waits for completion of a SENT message on this event. */
         RTSEMEVENTMULTI m_eventSend;
+        int32_t volatile m_i32MessagesProcessed;
 
         /* Critical section for accessing the thread data, mostly for message queues. */
         RTCRITSECT m_critsect;
@@ -212,6 +213,7 @@ HGCMThread::HGCMThread ()
     m_thread (NIL_RTTHREAD),
     m_eventThread (0),
     m_eventSend (0),
+    m_i32MessagesProcessed (0),
     m_fu32ThreadFlags (0),
     m_pMsgInputQueueHead (NULL),
     m_pMsgInputQueueTail (NULL),
@@ -432,12 +434,30 @@ int HGCMThread::MsgPost (HGCMMsgCore *pMsg, PHGCMMSGCALLBACK pfnCallback, bool f
 
         if (fWait)
         {
+            /* Immediately check if the message has been processed. */
             while ((pMsg->m_fu32Flags & HGCM_MSG_F_PROCESSED) == 0)
             {
-                RTSemEventMultiWait (m_eventSend, RT_INDEFINITE_WAIT);
-                RTSemEventMultiReset (m_eventSend);
+                /* Poll infrequently to make sure no completed message has been missed. */
+                RTSemEventMultiWait (m_eventSend, 1000);
 
                 LogFlow(("HGCMThread::MsgPost: wait completed flags = %08X\n", pMsg->m_fu32Flags));
+
+                if ((pMsg->m_fu32Flags & HGCM_MSG_F_PROCESSED) == 0)
+                {
+                    RTThreadYield();
+                }
+            }
+
+            /* 'Our' message has been processed, so should reset the semaphore.
+             * There is still possible that another message has been processed
+             * and the semaphore has been signalled again.
+             * Reset only if there are no other messages completed.
+             */
+            int32_t c = ASMAtomicDecS32(&m_i32MessagesProcessed);
+            Assert(c >= 0);
+            if (c == 0)
+            {
+                RTSemEventMultiReset (m_eventSend);
             }
 
             rc = pMsg->m_rcSend;
@@ -580,6 +600,14 @@ void HGCMThread::MsgComplete (HGCMMsgCore *pMsg, int32_t result)
 
         bool fWaited = ((pMsg->m_fu32Flags & HGCM_MSG_F_WAIT) != 0);
 
+        if (fWaited)
+        {
+            ASMAtomicIncS32(&m_i32MessagesProcessed);
+
+            /* This should be done before setting the HGCM_MSG_F_PROCESSED flag. */
+            pMsg->m_rcSend = result;
+        }
+
         /* The message is now completed. */
         pMsg->m_fu32Flags &= ~HGCM_MSG_F_IN_PROCESS;
         pMsg->m_fu32Flags &= ~HGCM_MSG_F_WAIT;
@@ -591,11 +619,6 @@ void HGCMThread::MsgComplete (HGCMMsgCore *pMsg, int32_t result)
 
         if (fWaited)
         {
-            /* If message is being waited, then it is referenced by the waiter and the pointer
-             * if valid even after hgcmObjDeleteHandle.
-             */
-            pMsg->m_rcSend = result;
-
             /* Wake up all waiters. so they can decide if their message has been processed. */
             RTSemEventMultiSignal (m_eventSend);
         }
