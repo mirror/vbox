@@ -443,15 +443,20 @@ STDMETHODIMP Appliance::Interpret()
                         /* Check for the constrains */
                         if (cSCSIused < 1)
                         {
+                            VirtualSystemDescriptionType_T vsdet = VirtualSystemDescriptionType_HardDiskControllerSCSI;
                             Utf8Str hdcController = "LsiLogic";
                             if (!hdc.strControllerType.compare("lsilogicsas", Utf8Str::CaseInsensitive))
+                            {
+                                // OVF considers SAS a variant of SCSI but VirtualBox considers it a class of its own
+                                vsdet = VirtualSystemDescriptionType_HardDiskControllerSAS;
                                 hdcController = "LsiLogicSas";
+                            }
                             else if (!hdc.strControllerType.compare("BusLogic", Utf8Str::CaseInsensitive))
                                 hdcController = "BusLogic";
-                            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskControllerSCSI,
-                                                strControllerID,
-                                                hdc.strControllerType,
-                                                hdcController);
+                            pNewDesc->addEntry(vsdet,
+                                               strControllerID,
+                                               hdc.strControllerType,
+                                               hdcController);
                         }
                         else
                             addWarning(tr("The virtual system \"%s\" requests support for an additional SCSI controller of type \"%s\" with ID %s, but VirtualBox presently supports only one SCSI controller."),
@@ -1713,6 +1718,20 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         if (FAILED(rc)) throw rc;
     }
 
+    /* Hard disk controller SAS */
+    std::list<VirtualSystemDescriptionEntry*> vsdeHDCSAS = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerSAS);
+    if (vsdeHDCSAS.size() > 1)
+        throw setError(VBOX_E_FILE_ERROR,
+                       tr("Too many SAS controllers in OVF; import facility only supports one"));
+    if (vsdeHDCSAS.size() > 0)
+    {
+        ComPtr<IStorageController> pController;
+        rc = pNewMachine->AddStorageController(Bstr(L"SAS Controller"), StorageBus_SAS, pController.asOutParam());
+        if (FAILED(rc)) throw rc;
+        rc = pController->COMSETTER(ControllerType)(StorageControllerType_LsiLogicSas);
+        if (FAILED(rc)) throw rc;
+    }
+
     /* Now its time to register the machine before we add any hard disks */
     rc = mVirtualBox->RegisterMachine(pNewMachine);
     if (FAILED(rc)) throw rc;
@@ -2021,12 +2040,30 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
      *
      */
 
+    // for each storage controller...
     for (settings::StorageControllersList::iterator sit = config.storageMachine.llStorageControllers.begin();
          sit != config.storageMachine.llStorageControllers.end();
          ++sit)
     {
         settings::StorageController &sc = *sit;
 
+        // find the OVF virtual system description entry for this storage controller
+        switch (sc.storageBus)
+        {
+            case StorageBus_SATA:
+            break;
+
+            case StorageBus_SCSI:
+            break;
+
+            case StorageBus_IDE:
+            break;
+
+            case StorageBus_SAS:
+            break;
+        }
+
+        // for each medium attachment to this controller...
         for (settings::AttachedDevicesList::iterator dit = sc.llAttachedDevices.begin();
              dit != sc.llAttachedDevices.end();
              ++dit)
