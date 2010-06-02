@@ -272,8 +272,8 @@ STDMETHODIMP Guest::COMSETTER(MemoryBalloonSize) (ULONG aMemoryBalloonSize)
         if (pVMMDev)
         {
             PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
-            ComAssertRet(pVMMDevPort, E_FAIL);
-            pVMMDevPort->pfnSetMemoryBalloon(pVMMDevPort, aMemoryBalloonSize);
+            if (pVMMDevPort)
+                pVMMDevPort->pfnSetMemoryBalloon(pVMMDevPort, aMemoryBalloonSize);
         }
     }
 
@@ -306,8 +306,8 @@ STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval)(ULONG aUpdateInterval)
     if (pVMMDev)
     {
         PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
-        ComAssertRet(pVMMDevPort, E_FAIL);
-        pVMMDevPort->pfnSetStatisticsInterval(pVMMDevPort, aUpdateInterval);
+        if (pVMMDevPort)
+            pVMMDevPort->pfnSetStatisticsInterval(pVMMDevPort, aUpdateInterval);
     }
 
     return S_OK;
@@ -404,16 +404,19 @@ STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
     if (pVMMDev)
     {
         PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
-        ComAssertRet(pVMMDevPort, E_FAIL);
+        if (pVMMDevPort)
+        {
+            uint32_t u32Flags = VMMDEV_SETCREDENTIALS_GUESTLOGON;
+            if (!aAllowInteractiveLogon)
+                u32Flags = VMMDEV_SETCREDENTIALS_NOLOCALLOGON;
 
-        uint32_t u32Flags = VMMDEV_SETCREDENTIALS_GUESTLOGON;
-        if (!aAllowInteractiveLogon)
-            u32Flags = VMMDEV_SETCREDENTIALS_NOLOCALLOGON;
-
-        pVMMDevPort->pfnSetCredentials(pVMMDevPort,
-            Utf8Str(aUserName).raw(), Utf8Str(aPassword).raw(),
-            Utf8Str(aDomain).raw(), u32Flags);
-        return S_OK;
+            pVMMDevPort->pfnSetCredentials(pVMMDevPort,
+                                           Utf8Str(aUserName).raw(),
+                                           Utf8Str(aPassword).raw(),
+                                           Utf8Str(aDomain).raw(),
+                                           u32Flags);
+            return S_OK;
+        }
     }
 
     return setError(VBOX_E_VM_ERROR,
