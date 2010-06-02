@@ -597,8 +597,7 @@ void UIMachineLogic::prepareDock()
     pDockMenu->addMenu(pDockSettingsMenu);
 
     /* Add it to the dock. */
-    extern void qt_mac_set_dock_menu(QMenu *);
-    qt_mac_set_dock_menu(pDockMenu);
+    ::darwinSetDockIconMenu(pDockMenu);
 
     /* Now the dock icon preview */
     QString osTypeId = session().GetConsole().GetGuest().GetOSTypeId();
