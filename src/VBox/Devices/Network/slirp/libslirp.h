@@ -87,9 +87,7 @@ void slirp_set_tcp_rcvspace(PNATState pData, int kilobytes);
 void slirp_set_tcp_sndspace(PNATState pData, int kilobytes);
 
 int slirp_set_binding_address(PNATState, char *addr);
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
 void slirp_set_mtu(PNATState, int);
-#endif
 
 #if defined(RT_OS_WINDOWS)
 
@@ -129,9 +127,6 @@ void *slirp_get_queue(PNATState pData);
 
 struct mbuf *slirp_ext_m_get(PNATState pData, size_t cbMin, void **ppvBuf, size_t *pcbBuf);
 void slirp_ext_m_free(PNATState pData, struct mbuf *);
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-void slirp_push_recv_thread(void *pvUser);
-#endif
 
 /*
  * Returns the timeout.

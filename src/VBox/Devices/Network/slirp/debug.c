@@ -178,33 +178,10 @@ icmpstats(PNATState pData)
 void
 mbufstats(PNATState pData)
 {
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     /*
      * (vvl) this static code can't work with mbuf zone anymore
      * @todo: make statistic correct
      */
-#if 0
-    struct mbuf *m;
-    int i;
-
-    lprint(" \n");
-
-    lprint("Mbuf stats:\n");
-
-    lprint("  %6d mbufs allocated (%d max)\n", mbuf_alloced, mbuf_max);
-
-    i = 0;
-    for (m = m_freelist.m_next; m != &m_freelist; m = m->m_next)
-        i++;
-    lprint("  %6d mbufs on free list\n",  i);
-
-    i = 0;
-    for (m = m_usedlist.m_next; m != &m_usedlist; m = m->m_next)
-        i++;
-    lprint("  %6d mbufs on used list\n",  i);
-    lprint("  %6d mbufs queued as packets\n\n", if_queued);
-#endif
-#endif
 }
 
 void

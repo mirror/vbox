@@ -122,16 +122,8 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
     DEBUG_ARG("so = %lx", (long)so);
     DEBUG_ARG("m0 = %lx", (long)m0);
 
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-    if(m->m_data != (MBUF_HEAD(m) + if_maxlinkhdr))
-    {
-        LogRel(("NAT: ethernet detects corruption of the packet"));
-        AssertMsgFailed(("!!Ethernet frame corrupted!!"));
-    }
-#else
     M_ASSERTPKTHDR(m);
     Assert(m->m_pkthdr.header);
-#endif
 
 #if 0 /* We do no options */
     if (opt)
@@ -150,44 +142,14 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
     ip->ip_hl = hlen >> 2;
     ipstat.ips_localout++;
 
-    /*
-     * Verify that we have any chance at all of being able to queue
-     *      the packet or packet fragments
-     */
-#if 0 /* XXX Hmmm... */
-    if (if_queued > if_thresh && towrite <= 0)
-    {
-        error = ENOBUFS;
-        goto exit_drop_package;
-    }
-#endif
     /* Current TCP/IP stack hasn't routing information at
      * all so we need to calculate destination ethernet address
-     */
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-    eh = (struct ethhdr *)MBUF_HEAD(m);
-    if (memcmp(eh->h_source, zerro_ethaddr, ETH_ALEN) == 0)
-    {
-       rc = rt_lookup_in_cache(pData, ip->ip_dst.s_addr, eth_dst);
-       if (RT_FAILURE(rc))
-           goto exit_drop_package;
-    }
-    else
-    {
-       memcpy(eth_dst, eh->h_source, ETH_ALEN);
-       rc = 0; /*some times we've already know where to send packet*/
-    }
-#else
-    /*
-     * (vvl) Assumption is that m_data points at the IP header and only
-     * in case of dhcp we know and have header before IP.
      */
     rc = rt_lookup_in_cache(pData, ip->ip_dst.s_addr, eth_dst);
     if (RT_FAILURE(rc))
         goto exit_drop_package;
 
     eh = (struct ethhdr *)(m->m_data - ETH_HLEN);
-#endif
     /*
      * If small enough for interface, can just send directly.
      */
@@ -199,12 +161,6 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
         ip->ip_sum = cksum(m, hlen);
 
         {
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-            STAM_PROFILE_START(&pData->StatALIAS_output, b);
-            rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias),
-                mtod(m, char *), m->m_len);
-            Log2(("NAT: LibAlias return %d\n", rc));
-#else
             struct m_tag *t;
             STAM_PROFILE_START(&pData->StatALIAS_output, b);
             if ((t = m_tag_find(m, PACKET_TAG_ALIAS, NULL)) != 0)
@@ -219,7 +175,6 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
                 Log(("NAT: packet was droppped\n"));
                 goto exit_drop_package;
             }
-#endif
             STAM_PROFILE_STOP(&pData->StatALIAS_output, b);
         }
 
@@ -250,24 +205,16 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
     {
         int mhlen, firstlen = len;
         struct mbuf **mnext = &m->m_nextpkt;
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
         char *buf; /* intermediate buffer we'll use for copy from orriginal packet */
-#endif
         {
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
             struct m_tag *t;
             char *tmpbuf = NULL;
             int tmplen = 0;
-#endif
             int rcLa;
             HTONS(ip->ip_len);
             HTONS(ip->ip_off);
             ip->ip_sum = 0;
             ip->ip_sum = cksum(m, hlen);
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-            rcLa = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias),
-                                mtod(m, char *), m->m_len);
-#else
             if (m->m_next != NULL)
             {
                 /*we've receives packet in fragments*/
@@ -303,7 +250,6 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
                 Log(("NAT: packet was droppped\n"));
                 goto exit_drop_package;
             }
-#endif
             NTOHS(ip->ip_len);
             NTOHS(ip->ip_off);
             Log2(("NAT: LibAlias return %d\n", rcLa));
@@ -318,11 +264,7 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
         for (off = hlen + len; off < (u_int16_t)ip->ip_len; off += len)
         {
             register struct ip *mhip;
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-            m = m_get(pData);
-#else
             m = m_getcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR);
-#endif
             if (m == 0)
             {
                 error = -1;
@@ -333,9 +275,7 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
             mhip = mtod(m, struct ip *);
             *mhip = *ip;
             m->m_len += ip->ip_hl << 2;
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
             m->m_pkthdr.header = mtod(m, void *);
-#endif
             /* we've calculated eth_dst for first packet */
 #if 0 /* No options */
             if (hlen > sizeof (struct ip))
@@ -353,13 +293,6 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
                 mhip->ip_off |= IP_MF;
             mhip->ip_len = RT_H2N_U16((u_int16_t)(len + mhlen));
 
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-            if (m_copy(m, m0, off, len) < 0)
-            {
-                error = -1;
-                goto sendorfree;
-            }
-#else
             buf = RTMemAlloc(len);
             m_copydata(m0, off, len, buf); /* copy to buffer */
             m->m_data += mhlen;
@@ -368,7 +301,6 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
             m->m_len += mhlen;
             RTMemFree(buf);
             m->m_len += RT_N2H_U16(mhip->ip_len);
-#endif
 
             mhip->ip_off = RT_H2N_U16((u_int16_t)mhip->ip_off);
             mhip->ip_sum = 0;
@@ -395,13 +327,9 @@ sendorfree:
             m->m_nextpkt = 0;
             if (error == 0)
             {
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-                eh = (struct ethhdr *)MBUF_HEAD(m);
-#else
                 m->m_data -= ETH_HLEN;
                 eh = mtod(m, struct ethhdr *);
                 m->m_data += ETH_HLEN;
-#endif
                 memcpy(eh->h_source, eth_dst, ETH_ALEN);
 
                 if_encap(pData, ETH_P_IP, m, 0);

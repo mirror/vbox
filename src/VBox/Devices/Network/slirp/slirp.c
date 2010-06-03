@@ -625,11 +625,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     icmp_init(pData);
 
     /* Initialise mbufs *after* setting the MTU */
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-    m_init(pData);
-#else
     mbuf_init(pData);
-#endif
 
     pData->special_addr.s_addr = u32NetAddr;
     pData->slirp_ethaddr = &special_ethaddr[0];
@@ -898,20 +894,6 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
 #if !defined(RT_OS_WINDOWS)
         so->so_poll_index = -1;
 #endif
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-        if (pData->fmbuf_water_line == 1)
-        {
-            if (mbuf_alloced < pData->mbuf_water_line_limit/2)
-            {
-                pData->fmbuf_water_warn_sent = 0;
-                pData->fmbuf_water_line = 0;
-            }
-# ifndef RT_OS_WINDOWS
-            poll_index = 0;
-# endif
-            goto done;
-        }
-#endif /* !VBOX_WITH_SLIRP_BSD_MBUF */
         STAM_COUNTER_INC(&pData->StatTCP);
 
         /*
@@ -982,20 +964,6 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
     QSOCKET_FOREACH(so, so_next, udp)
     /* { */
 
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-        if (pData->fmbuf_water_line == 1)
-        {
-            if (mbuf_alloced < pData->mbuf_water_line_limit/2)
-            {
-                pData->fmbuf_water_line = 0;
-                pData->fmbuf_water_warn_sent = 0;
-            }
-# ifndef RT_OS_WINDOWS
-            poll_index = 0;
-# endif
-            goto done;
-        }
-#endif /* !VBOX_WITH_SLIRP_BSD_MBUF */
         STAM_COUNTER_INC(&pData->StatUDP);
 #if !defined(RT_OS_WINDOWS)
         so->so_poll_index = -1;
@@ -1123,17 +1091,6 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
      */
     QSOCKET_FOREACH(so, so_next, tcp)
     /* { */
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-        if (pData->fmbuf_water_line == 1)
-        {
-            if (mbuf_alloced < pData->mbuf_water_line_limit/2)
-            {
-                pData->fmbuf_water_line = 0;
-                pData->fmbuf_water_warn_sent = 0;
-            }
-            goto done;
-        }
-#endif
 
 #ifdef VBOX_WITH_SLIRP_MT
         if (   so->so_state & SS_NOFDREF
@@ -1354,17 +1311,6 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
      */
      QSOCKET_FOREACH(so, so_next, udp)
      /* { */
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-        if (pData->fmbuf_water_line == 1)
-        {
-            if (mbuf_alloced < pData->mbuf_water_line_limit/2)
-            {
-                pData->fmbuf_water_line = 0;
-                pData->fmbuf_water_warn_sent = 0;
-            }
-            goto done;
-        }
-#endif
 #ifdef VBOX_WITH_SLIRP_MT
         if (   so->so_state & SS_NOFDREF
             && so->so_deleted == 1)
@@ -1407,13 +1353,6 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
     }
 
 done:
-#if 0
-    /*
-     * See if we can start outputting
-     */
-    if (if_queued && link_up)
-        if_start(pData);
-#endif
 
     STAM_PROFILE_STOP(&pData->StatPoll, a);
 }
@@ -1457,19 +1396,6 @@ static void arp_input(PNATState pData, struct mbuf *m)
     switch (ar_op)
     {
         case ARPOP_REQUEST:
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-            mr = m_get(pData);
-
-            reh = mtod(mr, struct ethhdr *);
-            memcpy(reh->h_source, eh->h_source, ETH_ALEN); /* XXX: if_encap will swap src and dst*/
-            Log4(("NAT: arp:%R[ether]->%R[ether]\n",
-                reh->h_source, reh->h_dest));
-            Log4(("NAT: arp: %R[IP4]\n", &tip));
-
-            mr->m_data += if_maxlinkhdr;
-            mr->m_len = sizeof(struct arphdr);
-            rah = mtod(mr, struct arphdr *);
-#else
             mr = m_getcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR);
             if (mr == NULL)
                 return;
@@ -1479,7 +1405,6 @@ static void arp_input(PNATState pData, struct mbuf *m)
             mr->m_len = sizeof(struct arphdr);
             Assert(mr);
             memcpy(reh->h_source, eh->h_source, ETH_ALEN); /* XXX: if_encap will swap src and dst*/
-#endif
 #ifdef VBOX_WITH_NAT_SERVICE
             if (tip == pData->special_addr.s_addr)
                 goto arp_ok;
@@ -1586,19 +1511,8 @@ void slirp_input(PNATState pData, struct mbuf *m, size_t cbBuf)
              * the first outgoing connection gets an incorrect timestamp. */
             updtime(pData);
             m_adj(m, ETH_HLEN);
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
             M_ASSERTPKTHDR(m);
             m->m_pkthdr.header = mtod(m, void *);
-#else /* !VBOX_WITH_SLIRP_BSD_MBUF */
-            if (   pData->fmbuf_water_line
-                && pData->fmbuf_water_warn_sent == 0
-                && (curtime - pData->tsmbuf_water_warn_sent) > 500)
-            {
-                icmp_error(pData, m, ICMP_SOURCEQUENCH, 0, 0, "Out of resources!!!");
-                pData->fmbuf_water_warn_sent = 1;
-                pData->tsmbuf_water_warn_sent = curtime;
-            }
-#endif /* !VBOX_WITH_SLIRP_BSD_MBUF */
             ip_input(pData, m);
             break;
 
@@ -1629,22 +1543,10 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
     size_t mlen = 0;
     STAM_PROFILE_START(&pData->StatIF_encap, a);
 
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-    m->m_data -= if_maxlinkhdr;
-    m->m_len += ETH_HLEN;
-    eh = mtod(m, struct ethhdr *);
-
-    if (MBUF_HEAD(m) != m->m_data)
-    {
-        LogRel(("NAT: ethernet detects corruption of the packet"));
-        AssertMsgFailed(("!!Ethernet frame corrupted!!"));
-    }
-#else
     M_ASSERTPKTHDR(m);
     m->m_data -= ETH_HLEN;
     m->m_len += ETH_HLEN;
     eh = mtod(m, struct ethhdr *);
-#endif
 
     if (memcmp(eh->h_source, special_ethaddr, ETH_ALEN) != 0)
     {
@@ -1658,9 +1560,6 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
             goto done;
         }
     }
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-    mlen = m->m_len;
-#else
     mlen = m_length(m, NULL);
     buf = RTMemAlloc(mlen);
     if (buf == NULL)
@@ -1669,20 +1568,12 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
         m_freem(pData, m);
         goto done;
     }
-#endif
     eh->h_proto = RT_H2N_U16(eth_proto);
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
     m_copydata(m, 0, mlen, (char *)buf);
     if (flags & ETH_ENCAP_URG)
         slirp_urg_output(pData->pvUser, m, buf, mlen);
     else
         slirp_output(pData->pvUser, m, buf, mlen);
-#else
-    if (flags & ETH_ENCAP_URG)
-        slirp_urg_output(pData->pvUser, m, mtod(m, const uint8_t *), mlen);
-    else
-        slirp_output(pData->pvUser, m, mtod(m, const uint8_t *), mlen);
-#endif
 done:
     STAM_PROFILE_STOP(&pData->StatIF_encap, a);
 }
@@ -2047,11 +1938,7 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     struct ethhdr *ehdr;
     struct arphdr *ahdr;
 
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-    m = m_get(pData);
-#else
     m = m_getcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR);
-#endif
     if (m == NULL)
     {
         LogRel(("NAT: Can't alloc mbuf for ARP request\n"));
@@ -2069,15 +1956,10 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     *(uint32_t *)ahdr->ar_sip = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
     memset(ahdr->ar_tha, 0xff, ETH_ALEN); /*broadcast*/
     *(uint32_t *)ahdr->ar_tip = dst;
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-    m->m_data += if_maxlinkhdr;
-    m->m_len = sizeof(struct arphdr);
-#else
     /* warn!!! should falls in mbuf minimal size */
     m->m_len = sizeof(struct arphdr) + ETH_HLEN;
     m->m_data += ETH_HLEN;
     m->m_len -= ETH_HLEN;
-#endif
     if_encap(pData, ETH_P_ARP, m, ETH_ENCAP_URG);
 }
 
@@ -2121,7 +2003,6 @@ void slirp_arp_cache_add(PNATState pData, uint32_t ip, const uint8_t *ether)
     LIST_INSERT_HEAD(&pData->arp_cache, ac, list);
 }
 
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
 void slirp_set_mtu(PNATState pData, int mtu)
 {
     if (mtu < 20 || mtu >= 16000)
@@ -2132,4 +2013,3 @@ void slirp_set_mtu(PNATState pData, int mtu)
     if_mtu =
     if_mru = mtu;
 }
-#endif

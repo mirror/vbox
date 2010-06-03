@@ -33,7 +33,6 @@ void slirp_insque  (PNATState, void *, void *);
 void slirp_remque  (PNATState, void *);
 void fd_nonblock (int);
 
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
 /* UVM interface */
 #define UMA_ALIGN_PTR       (1 << 0)
 #define UMA_ZONE_REFCNT     (1 << 1)
@@ -67,6 +66,5 @@ void zone_drain(uma_zone_t);
 
 void slirp_null_arg_free(void *, void *);
 void m_fini(PNATState pData);
-#endif /* VBOX_WITH_SLIRP_BSD_MBUF */
 
 #endif

@@ -96,7 +96,6 @@ fd_nonblock(int fd)
 }
 
 
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
 #define ITEM_MAGIC 0xdead0001
 struct item
 {
@@ -444,4 +443,13 @@ void m_fini(PNATState pData)
     zone_destroy(pData->zone_jumbo16);
     /*@todo do finalize here.*/
 }
-#endif /* VBOX_WITH_SLIRP_BSD_MBUF */
+
+void
+if_init(PNATState pData)
+{
+    /* 14 for ethernet */
+    if_maxlinkhdr = 14;
+    if_comp = IF_AUTOCOMP;
+    if_mtu = 1500;
+    if_mru = 1500;
+}
