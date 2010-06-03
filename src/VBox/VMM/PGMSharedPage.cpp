@@ -139,7 +139,12 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3SharedModuleRegRendezvous(PVM pVM, PVMCPU
     int rc = PGMR3PhysAllocateHandyPages(pVM);
     AssertRC(rc);
 
-    return GMMR3CheckSharedModules(pVM);
+    /* Lock it here as we can't deal with busy locks in this ring-0 path. */
+    pgmLock(pVM);
+    rc = GMMR3CheckSharedModules(pVM);
+    pgmUnlock(pVM);
+
+    return rc;
 }
 
 /**
