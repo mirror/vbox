@@ -367,7 +367,7 @@ DECLEXPORT(void) crDebug( char *format, ... )
 #if defined(IN_GUEST)
     outputChromiumMessage( output, txt );
 #else
-# if defined(DEBUG) && defined(DEBUG_leo)
+# if defined(DEBUG) && (defined(DEBUG_leo) || defined(DEBUG_ll158262))
     outputChromiumMessage( output, txt );
 # endif
     if (output==stderr)
