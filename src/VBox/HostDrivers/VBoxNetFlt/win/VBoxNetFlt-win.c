@@ -720,7 +720,7 @@ DECLHIDDEN(bool) vboxNetFltWinPostIntnet(PVBOXNETFLTINS pNetFltIf, PVOID pvPacke
 #else
         if(pSG)
         {
-            pNetFltIf->pSwitchPort->pfnRecv(pNetFltIf->pSwitchPort, pSG, NULL /* pvIf */, INTNETTRUNKDIR_HOST);
+            pNetFltIf->pSwitchPort->pfnRecv(pNetFltIf->pSwitchPort, NULL /* pvIf */, pSG, INTNETTRUNKDIR_HOST);
             STATISTIC_INCREASE(pAdapt->cTxSuccess);
         }
         else
