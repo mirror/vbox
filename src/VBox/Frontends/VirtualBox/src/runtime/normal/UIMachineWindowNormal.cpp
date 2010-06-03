@@ -540,8 +540,20 @@ void UIMachineWindowNormal::loadWindowSettings()
 
         if (ok /* if previous parameters were read correctly */)
         {
-            m_normalGeometry = QRect(x, y, w, h);
-            setGeometry(m_normalGeometry);
+            if (machine.GetState() == KMachineState_Saved)
+            {
+                /* restore from a saved state: restore window size and position */
+                m_normalGeometry = QRect(x, y, w, h);
+                setGeometry(m_normalGeometry);
+            }
+            else
+            {
+                /* not restored from a saved state: restore only the last position */
+                move(x, y);
+                if (machineView())
+                    machineView()->normalizeGeometry(false /* adjust position? */);
+
+            }
 
             /* Maximize if needed: */
             if (max)
