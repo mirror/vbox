@@ -1193,6 +1193,11 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
             if (vsdeAudioAdapter.size() > 0)
                 stack.strAudioAdapter = vsdeAudioAdapter.front()->strVboxCurrent;
 
+            // for the description of the new machine, always use the OVF entry, the user may have changed it in the import config
+            std::list<VirtualSystemDescriptionEntry*> vsdeDescription = vsdescThis->findByType(VirtualSystemDescriptionType_Description);
+            if (vsdeDescription.size())
+                stack.strDescription = vsdeDescription.front()->strVboxCurrent;
+
             // import vbox:machine or OVF now
             if (vsdescThis->m->pConfig)
                 // vbox:Machine config
@@ -1201,14 +1206,6 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo,
                 // generic OVF config
                 importMachineGeneric(vsysThis, vsdescThis, pNewMachine, stack);
 
-            // for the description of the new machine, always use the OVF entry, the user may have changed it in the import config
-            std::list<VirtualSystemDescriptionEntry*> vsdeDescription = vsdescThis->findByType(VirtualSystemDescriptionType_Description);
-            if (vsdeDescription.size())
-            {
-                const Utf8Str &strDescription = vsdeDescription.front()->strVboxCurrent;
-                rc = pNewMachine->COMSETTER(Description)(Bstr(strDescription));
-                if (FAILED(rc)) throw rc;
-            }
         } // for (it = pAppliance->m->llVirtualSystems.begin() ...
     }
     catch (HRESULT rc2)
@@ -1453,11 +1450,9 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     if (FAILED(rc)) throw rc;
 
     // set the description
-    std::list<VirtualSystemDescriptionEntry*> vsdeDescription = vsdescThis->findByType(VirtualSystemDescriptionType_Description);
-    if (vsdeDescription.size())
+    if (!stack.strDescription.isEmpty())
     {
-        const Utf8Str &strDescription = vsdeDescription.front()->strVboxCurrent;
-        rc = pNewMachine->COMSETTER(Description)(Bstr(strDescription));
+        rc = pNewMachine->COMSETTER(Description)(Bstr(stack.strDescription));
         if (FAILED(rc)) throw rc;
     }
 
@@ -2005,7 +2000,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
      *
      */
 
-//     std::list<VirtualSystemDescriptionEntry*> llVSDEs;
+    config.strDescription = stack.strDescription;
 
     config.hardwareMachine.cCPUs = stack.cCPUs;
     config.hardwareMachine.ulMemorySizeMB = stack.ulMemorySizeMB;
