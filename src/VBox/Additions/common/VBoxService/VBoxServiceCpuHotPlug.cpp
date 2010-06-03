@@ -108,7 +108,7 @@ const SYSFSCPUPATHCOMP g_aAcpiCpuPathLvl4[] =
 };
 
 /** All possible combinations. */
-SYSFSCPUPATH g_aAcpiCpuPath[] = 
+SYSFSCPUPATH g_aAcpiCpuPath[] =
 {
     /** Level 1 */
     {ACPI_CPU_PATH_NOT_PROBED, g_aAcpiCpuPathLvl1, RT_ELEMENTS(g_aAcpiCpuPathLvl1), NULL, NULL},

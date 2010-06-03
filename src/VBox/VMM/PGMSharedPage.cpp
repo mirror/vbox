@@ -55,7 +55,7 @@ VMMR3DECL(int) PGMR3SharedModuleRegister(PVM pVM, VBOXOSFAMILY enmGuestOS, char 
     PGMMREGISTERSHAREDMODULEREQ pReq;
 
     Log(("PGMR3SharedModuleRegister family=%d name=%s version=%s base=%RGv size=%x cRegions=%d\n", enmGuestOS, pszModuleName, pszVersion, GCBaseAddr, cbModule, cRegions));
-          
+
     /* Sanity check. */
     AssertReturn(cRegions < VMMDEVSHAREDREGIONDESC_MAX, VERR_INVALID_PARAMETER);
 
@@ -106,7 +106,7 @@ VMMR3DECL(int) PGMR3SharedModuleUnregister(PVM pVM, char *pszModuleName, char *p
 
     pReq = (PGMMUNREGISTERSHAREDMODULEREQ)RTMemAllocZ(sizeof(*pReq));
     AssertReturn(pReq, VERR_NO_MEMORY);
-    
+
     pReq->GCBaseAddr    = GCBaseAddr;
     pReq->cbModule      = cbModule;
 
@@ -119,7 +119,7 @@ VMMR3DECL(int) PGMR3SharedModuleUnregister(PVM pVM, char *pszModuleName, char *p
     int rc = GMMR3UnregisterSharedModule(pVM, pReq);
     RTMemFree(pReq);
     return rc;
-#else 
+#else
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
@@ -153,7 +153,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3SharedModuleRegRendezvous(PVM pVM, PVMCPU
  * @param   pVM         The VM handle.
  */
 static DECLCALLBACK(void) pgmR3CheckSharedModulesHelper(PVM pVM)
-{   
+{
     /* We must stall other VCPUs as we'd otherwise have to send IPI flush commands for every single change we make. */
     int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3SharedModuleRegRendezvous, NULL);
     AssertRC(rc);
@@ -171,7 +171,7 @@ VMMR3DECL(int) PGMR3SharedModuleCheckAll(PVM pVM)
 #ifdef VBOX_WITH_PAGE_SHARING
     /* Queue the actual registration as we are under the IOM lock right now. Perform this operation on the way out. */
     return VMR3ReqCallNoWait(pVM, VMMGetCpuId(pVM), (PFNRT)pgmR3CheckSharedModulesHelper, 1, pVM);
-#else 
+#else
     return VERR_NOT_IMPLEMENTED;
 #endif
 }

@@ -174,7 +174,7 @@ enum eGuestFn
     GUEST_CANCEL_PENDING_WAITS = 2,
     /**
      * Guest disconnected (terminated normally or due to a crash HGCM
-     * detected when calling service::clientDisconnect(). 
+     * detected when calling service::clientDisconnect().
      */
     GUEST_DISCONNECTED = 3,
     /**

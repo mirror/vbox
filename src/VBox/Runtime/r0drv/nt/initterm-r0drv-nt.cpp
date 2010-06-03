@@ -184,7 +184,7 @@ int rtR0InitNative(void)
             g_offrtNtPbQuantumEnd    = 0x1a41;
             g_cbrtNtPbQuantumEnd     = 1;
             g_offrtNtPbDpcQueueDepth = 0x19e0 + 0xc;
-        }        
+        }
         else if (   BuildNumber == 3790                         /* Server 2003 SP2 */
                  && !memcmp(&pbPrcb[0xb60], &u.szVendor[0], 4*3))
         {

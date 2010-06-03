@@ -292,7 +292,7 @@ static void kbd_update_irq(KBDState *s)
 
     irq1_level = 0;
     irq12_level = 0;
-    
+
     /* Determine new OBF state, but only if OBF is clear. If OBF was already
      * set, we cannot risk changing the event type after an ISR potentially
      * started executing! Only kbd_read_data() clears the OBF bits.
@@ -315,8 +315,8 @@ static void kbd_update_irq(KBDState *s)
         {
             if (s->mode & KBD_MODE_MOUSE_INT)
                 irq12_level = 1;
-        } 
-        else 
+        }
+        else
         {   /* KBD_STAT_OBF set but KBD_STAT_MOUSE_OBF isn't. */
             if ((s->mode & KBD_MODE_KBD_INT) && !(s->mode & KBD_MODE_DISABLE_KBD))
                 irq1_level = 1;

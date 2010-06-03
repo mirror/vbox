@@ -306,7 +306,7 @@ static void serial_update_irq(SerialState *s)
          * this is not in the specification but is observed on existing
          * hardware. */
         tmp_iir = UART_IIR_CTI;
-    } else if (   (s->ier & UART_IER_RDI) 
+    } else if (   (s->ier & UART_IER_RDI)
                && (s->lsr & UART_LSR_DR)
                && (   !(s->fcr & UART_FCR_FE)
                    || s->recv_fifo.count >= s->recv_fifo.itl)) {

@@ -1,4 +1,4 @@
-/* $Id: PGMR0.cpp 61539 2010-05-12 15:11:09Z sandervl $ */
+/* $Id$ */
 /** @file
  * PGM - Page Manager and Monitor, Ring-0.
  */
@@ -114,7 +114,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, VMCPUID idCpu, PGMMSHAREDMODULE p
             AssertRC(rc);
             if (RT_FAILURE(rc))
                 break;
-                
+
             for (unsigned i = 0; i < idxPage; i++)
             {
                 /* Any change for this page? */

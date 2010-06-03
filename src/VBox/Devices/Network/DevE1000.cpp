@@ -2648,7 +2648,7 @@ static int e1kRegWriteRDT(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
  *        wait condition before bothering to queue the item as we're currently
  *        queuing thousands of items per second here in a normal transmit
  *        scenario.  Expect performance changes when fixing this! */
-#ifdef IN_RING3 
+#ifdef IN_RING3
             /* Signal that we have more receive descriptors avalable. */
             e1kWakeupReceive(pState->CTX_SUFF(pDevIns));
 #else
