@@ -13,7 +13,6 @@ VBoxNetNAT_INCS = ../../Devices/Network/slirp
 VBoxNetNAT_DEFS = VBOX_WITH_NAT_SERVICE
 VBoxNetNAT_SOURCES += VBoxNetNAT.cpp
 VBoxNetNAT_DEFS += VBOX_WITH_NAT_SERVICE
-VBoxNetNAT_DEFS += VBOX_WITH_SLIRP_BSD_MBUF
 
 #define def_vbox_slirp_service_cflags
 #  $(file)_DEFS += VBOX_WITH_NAT_SERVICE
