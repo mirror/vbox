@@ -146,6 +146,7 @@ struct Appliance::ImportStack
     // input parameters from VirtualSystemDescriptions
     Utf8Str                         strNameVBox;        // VM name
     Utf8Str                         strOsTypeVBox;      // VirtualBox guest OS type as string
+    Utf8Str                         strDescription;
     uint32_t                        cCPUs;              // CPU count
     bool                            fForceHWVirt;       // if true, we force enabling hardware virtualization
     bool                            fForceIOAPIC;       // if true, we force enabling the IOAPIC
