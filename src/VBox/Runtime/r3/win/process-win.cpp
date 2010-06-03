@@ -528,10 +528,10 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
         PHANDLE phToken = NULL;
         HANDLE hTokenLogon = INVALID_HANDLE_VALUE;
         fRc = LogonUserW(pwszUser,
-                         /* 
+                         /*
                           * Because we have to deal with http://support.microsoft.com/kb/245683
                           * for NULL domain names when running on NT4 here, pass an empty string if so.
-                          * However, passing FQDNs should work! 
+                          * However, passing FQDNs should work!
                           */
                          ((DWORD)(LOBYTE(LOWORD(GetVersion()))) < 5)  /* < Windows 2000. */
                          ? L""   /* NT4 and older. */
@@ -656,7 +656,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                 rc = VERR_PERMISSION_DENIED;
                 break;
 
-            case ERROR_PASSWORD_EXPIRED:            
+            case ERROR_PASSWORD_EXPIRED:
             case ERROR_ACCOUNT_RESTRICTION: /* See: http://support.microsoft.com/kb/303846/ */
                 rc = VERR_LOGON_FAILURE;
                 break;

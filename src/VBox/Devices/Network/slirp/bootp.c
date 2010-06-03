@@ -656,7 +656,7 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
      * within transaction), assuming that transaction can't be longer than 1 min.
      */
     if (   !pData->fUseHostResolver
-           && (   pData->dnsLastUpdate == 0 
+           && (   pData->dnsLastUpdate == 0
                || curtime - pData->dnsLastUpdate > 60 * 1000)) /* one minute*/
     {
         uint8_t i = 2; /* i = 0 - tag, i == 1 - length */

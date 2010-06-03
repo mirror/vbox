@@ -248,7 +248,7 @@ void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule, bool fValidateM
 //    AssertRC(rc);
     if (RT_FAILURE(rc))
         VBoxServiceVerbose(3, "VbglR3RegisterSharedModule failed with %d\n", rc);
-    
+
 end:
     RTMemFree(pVersionInfo);
     return;
@@ -290,7 +290,7 @@ void VBoxServicePageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppN
     {
         /** todo when changing this make sure VBoxService.exe is excluded! */
         char *pszDot = strrchr(ModuleInfo.szModule, '.');
-        if (    pszDot 
+        if (    pszDot
             &&  (pszDot[1] == 'e' || pszDot[1] == 'E'))
             continue;   /* ignore executables for now. */
 
@@ -373,14 +373,14 @@ void VBoxServicePageSharingInspectGuest()
         ULONG                cbBuffer = 0;
         PVOID                pBuffer = NULL;
         PRTL_PROCESS_MODULES pSystemModules;
-    
+
         NTSTATUS ret = ZwQuerySystemInformation(SystemModuleInformation, (PVOID)&cbBuffer, 0, &cbBuffer);
         if (!cbBuffer)
         {
             VBoxServiceVerbose(1, "ZwQuerySystemInformation returned length 0\n");
             goto skipkernelmodules;
         }
-        
+
         pBuffer = RTMemAllocZ(cbBuffer);
         if (!pBuffer)
             goto skipkernelmodules;
@@ -391,7 +391,7 @@ void VBoxServicePageSharingInspectGuest()
             VBoxServiceVerbose(1, "ZwQuerySystemInformation returned %x (1)\n", ret);
             goto skipkernelmodules;
         }
-    
+
         pSystemModules = (PRTL_PROCESS_MODULES)pBuffer;
         for (unsigned i = 0; i < pSystemModules->NumberOfModules; i++)
         {
@@ -400,7 +400,7 @@ void VBoxServicePageSharingInspectGuest()
                 continue;
 
             char *pszDot = strrchr(pSystemModules->Modules[i].FullPathName, '.');
-            if (    pszDot 
+            if (    pszDot
                 &&  (pszDot[1] == 'e' || pszDot[1] == 'E'))
                 continue;   /* ignore executables for now. */
 
@@ -533,7 +533,7 @@ static DECLCALLBACK(int) VBoxServicePageSharingInit(void)
 
 #if defined(RT_OS_WINDOWS) && !defined(TARGET_NT4)
     hNtdll = LoadLibrary("ntdll.dll");
-    
+
     if (hNtdll)
         ZwQuerySystemInformation = (PFNZWQUERYSYSTEMINFORMATION)GetProcAddress(hNtdll, "ZwQuerySystemInformation");
 #endif
@@ -558,7 +558,7 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
      *
      * We have to use this feature as we can't simply execute all init code in our service process.
      *
-	 */
+     */
     int rc = RTSemEventMultiWait(g_PageSharingEvent, 60000);
     if (*pfShutdown)
         goto end;

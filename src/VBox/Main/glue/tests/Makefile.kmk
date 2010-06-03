@@ -26,7 +26,7 @@ ifeq ($(KBUILD_HOST),win)
  JACOB_DIR=e:/ws/src/libs/jacob-1.15-M3/
  JACOB_JAR=$(JACOB_DIR)/jacob.jar
  CLASSPATH += $(JACOB_JAR)$(SEP)
- JAVA_ARGS += -Djava.library.path=$(JACOB_DIR) 
+ JAVA_ARGS += -Djava.library.path=$(JACOB_DIR)
 endif
 
 ifeq ($(KBUILD_HOST),win)
@@ -37,7 +37,7 @@ else
  SEP=:
 endif
 
-JAVA_ARGS += -Dvbox.home=$(VBOX_BIN) 
+JAVA_ARGS += -Dvbox.home=$(VBOX_BIN)
 CLASSPATH  := $(CLASSPATH)$(VBOX_JAR)$(SEP).
 
 all: testvb

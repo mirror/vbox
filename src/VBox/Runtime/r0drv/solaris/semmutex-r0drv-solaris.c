@@ -386,4 +386,3 @@ RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem)
     return fOwned;
 }
 
-

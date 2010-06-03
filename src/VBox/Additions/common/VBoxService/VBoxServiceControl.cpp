@@ -305,7 +305,7 @@ static DECLCALLBACK(void) VBoxServiceControlStop(void)
 
     /*
      * Ask the host service to cancel all pending requests so that we can
-     * shutdown properly here. 
+     * shutdown properly here.
      */
     if (g_GuestControlSvcClientID)
     {

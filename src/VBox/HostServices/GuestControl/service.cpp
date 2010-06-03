@@ -439,7 +439,7 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
     while (itCall != mClientWaiterList.end())
     {
         if (itCall->mClientID == u32ClientID)
-        {       
+        {
             itCall = mClientWaiterList.erase(itCall);
         }
         else

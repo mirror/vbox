@@ -753,7 +753,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
      *       recently removed MMIO ranges around that might otherwise end up asserting in pgmPoolTracDerefGCPhysHint
      */
     for (unsigned i = 0; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
-	{
+    {
         PPGMPOOLPAGE pPage;
         unsigned     idxPage;
 
@@ -776,7 +776,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
         pPage->fDirty = false;
 
         pPool->aIdxDirtyPages[i] = NIL_PGMPOOL_IDX;
-	}
+    }
 
     /* Clear all dirty pages. */
     pPool->idxFreeDirtyPage = 0;

@@ -383,7 +383,7 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_
                               &dwDomainNameSize,
                               &enmOwnerType))
         {
-            VBoxServiceError("VMInfo/Users: Failed looking up account info for user '%ls': %ld!\n", 
+            VBoxServiceError("VMInfo/Users: Failed looking up account info for user '%ls': %ld!\n",
                              a_pUserInfo->wszUser, GetLastError());
         }
         else
@@ -436,7 +436,7 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_
                 }
             }
         }
-    }   
+    }
 
     LsaFreeReturnBuffer(pSessionData);
     return fFoundUser;

@@ -1772,7 +1772,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             else
             {
                 pRequestHeader->rc = PGMR3SharedModuleRegister(PDMDevHlpGetVM(pDevIns), pReqModule->enmGuestOS, pReqModule->szName, pReqModule->szVersion,
-                                                               pReqModule->GCBaseAddr, pReqModule->cbModule,                                                               
+                                                               pReqModule->GCBaseAddr, pReqModule->cbModule,
                                                                pReqModule->cRegions, pReqModule->aRegions);
             }
             break;
@@ -1788,7 +1788,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             }
             else
             {
-                pRequestHeader->rc = PGMR3SharedModuleUnregister(PDMDevHlpGetVM(pDevIns), pReqModule->szName, pReqModule->szVersion, 
+                pRequestHeader->rc = PGMR3SharedModuleUnregister(PDMDevHlpGetVM(pDevIns), pReqModule->szName, pReqModule->szVersion,
                                                                  pReqModule->GCBaseAddr, pReqModule->cbModule);
             }
             break;

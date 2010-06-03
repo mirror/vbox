@@ -256,7 +256,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdOutput(uint32_t  u32ClientId,    ui
 
     VbglHGCMParmUInt32Set(&Msg.context, 0); /** @todo Put this some header struct! */
     VbglHGCMParmUInt32Set(&Msg.pid, 0);
-    VbglHGCMParmUInt32Set(&Msg.handle, 0);    
+    VbglHGCMParmUInt32Set(&Msg.handle, 0);
     VbglHGCMParmUInt32Set(&Msg.flags, 0);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
@@ -272,7 +272,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdOutput(uint32_t  u32ClientId,    ui
             Msg.context.GetUInt32(puContext);
             Msg.pid.GetUInt32(puPID);
             Msg.handle.GetUInt32(puHandle);
-            Msg.flags.GetUInt32(puFlags);            
+            Msg.flags.GetUInt32(puFlags);
         }
     }
     return rc;

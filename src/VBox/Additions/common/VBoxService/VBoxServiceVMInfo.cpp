@@ -268,7 +268,7 @@ int VBoxServiceVMInfoWriteUsers()
     {
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers", cUsersInList == 0 ? "true" : "false");
         g_cVMInfoLoggedInUsers = cUsersInList;
-    }    
+    }
     if (pszUserList)
         RTStrFree(pszUserList);
     return VINF_SUCCESS;

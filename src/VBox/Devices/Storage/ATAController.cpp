@@ -5148,7 +5148,7 @@ int  ataControllerAttach(PAHCIATACONTROLLER pCtl, PPDMIBASE pDrvBase, bool fMast
      * Try attach the block device and get the interfaces,
      * required as well as optional.
      */
-    
+
     pIf->pDrvBase = pDrvBase;
     if (pDrvBase)
     {

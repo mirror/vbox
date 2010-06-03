@@ -351,7 +351,7 @@ int uma_zone_exhausted_nolock(uma_zone_t zone)
 {
     int fExhausted;
     RTCritSectEnter(&zone->csZone);
-    fExhausted = (zone->cur_items == zone->max_items); 
+    fExhausted = (zone->cur_items == zone->max_items);
     RTCritSectLeave(&zone->csZone);
     return fExhausted;
 }

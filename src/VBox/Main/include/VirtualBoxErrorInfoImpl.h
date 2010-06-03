@@ -59,20 +59,20 @@ public:
     }
 
     STDMETHOD(GetTypeInfo)(UINT iInfo, LCID Lcid, ITypeInfo **ppTypeInfo)
-	{
+    {
         return idi::GetTypeInfo(iInfo, Lcid, ppTypeInfo);
-	}
+    }
 
-	STDMETHOD(GetIDsOfNames)(REFIID rIID, LPOLESTR *papwszNames, UINT cNames, LCID Lcid, DISPID *paDispIDs)
-	{
+    STDMETHOD(GetIDsOfNames)(REFIID rIID, LPOLESTR *papwszNames, UINT cNames, LCID Lcid, DISPID *paDispIDs)
+    {
         return idi::GetIDsOfNames(rIID, papwszNames, cNames, Lcid, paDispIDs);
-	}
+    }
 
-	STDMETHOD(Invoke)(DISPID idDispMember, REFIID rIID, LCID Lcid, WORD fw, DISPPARAMS *pDispParams,
+    STDMETHOD(Invoke)(DISPID idDispMember, REFIID rIID, LCID Lcid, WORD fw, DISPPARAMS *pDispParams,
                       VARIANT *pVarResult, EXCEPINFO *pExcepInfo, UINT *piErrArg)
-	{
-		return idi::Invoke(idDispMember, rIID, Lcid, fw, pDispParams, pVarResult, pExcepInfo, piErrArg);
-	}
+    {
+        return idi::Invoke(idDispMember, rIID, Lcid, fw, pDispParams, pVarResult, pExcepInfo, piErrArg);
+    }
 
 #else // defined(VBOX_WITH_XPCOM)
 

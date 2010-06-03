@@ -169,7 +169,7 @@ STDMETHODIMP Keyboard::PutScancode (LONG scancode)
     /* No enabled keyboard - throw the input away. */
     if (!pUpPort)
         return rc;
-    
+
     int vrc = pUpPort->pfnPutEvent(pUpPort, (uint8_t)scancode);
 
     if (RT_FAILURE(vrc))
