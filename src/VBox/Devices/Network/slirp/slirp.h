@@ -247,9 +247,9 @@ int inet_aton (const char *cp, struct in_addr *ia);
 #include "udp.h"
 #include "icmp_var.h"
 #include "mbuf.h"
+#include "if.h"
 #include "sbuf.h"
 #include "socket.h"
-#include "if.h"
 #include "main.h"
 #include "misc.h"
 #include "ctl.h"
@@ -285,13 +285,9 @@ void if_start (PNATState);
 int get_dns_addr(PNATState pData, struct in_addr *pdns_addr);
 
 /* cksum.c */
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-int cksum(struct mbuf *m, int len);
-#else
 typedef uint16_t u_short;
 typedef unsigned int u_int;
 #include "in_cksum.h"
-#endif
 
 /* if.c */
 void if_init (PNATState);
@@ -418,7 +414,6 @@ int sscanf(const char *s, const char *format, ...);
 # include "ext.h"
 #endif /*VBOX_SLIRP_ALIAS*/
 
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
 /**
  * @todo might be useful to make it configurable, especially in terms of Intnet behind NAT
  */
@@ -445,7 +440,6 @@ struct dummy_req
 
 void mbuf_init(void *);
 # define cksum(m, len) in_cksum_skip((m), (len), 0)
-#endif
 
 int ftp_alias_load(PNATState);
 int ftp_alias_unload(PNATState);

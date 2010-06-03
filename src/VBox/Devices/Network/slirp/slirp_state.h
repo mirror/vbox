@@ -71,9 +71,7 @@ struct dns_entry
     TAILQ_ENTRY(dns_entry) de_list;
 };
 TAILQ_HEAD(dns_list_head, dns_entry);
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
 TAILQ_HEAD(if_queue, mbuf);
-#endif
 
 struct port_forward_rule
 {
@@ -90,14 +88,6 @@ struct port_forward_rule
 };
 LIST_HEAD(port_forward_rule_list, port_forward_rule);
 
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-struct mbuf_zone
-{
-    LIST_ENTRY(mbuf_zone) list;
-    uint8_t *mbuf_zone_base_addr;
-};
-LIST_HEAD(mbuf_zone_list, mbuf_zone);
-#endif
 
 
 /* forward declaration */
@@ -118,14 +108,6 @@ typedef struct NATState
     int if_maxlinkhdr;
     int if_queued;
     int if_thresh;
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-    struct mbuf if_fastq;
-    struct mbuf if_batchq;
-#else
-    struct if_queue if_fastq;
-    struct if_queue if_batchq;
-#endif
-    struct mbuf *next_m;
     /* Stuff from icmp.c */
     struct icmpstat_t icmpstat;
     /* Stuff from ip_input.c */
@@ -136,18 +118,6 @@ typedef struct NATState
     int nipq; /* total number of reass queues */
     uint16_t ip_currid;
     /* Stuff from mbuf.c */
-    int mbuf_alloced, mbuf_max;
-    int msize;
-    struct mbuf m_freelist, m_usedlist;
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-    struct mbuf_zone_list mbuf_zone_head;
-    RTCRITSECT cs_mbuf_zone;
-    int fmbuf_water_line;
-    int mbuf_water_line_limit;
-    int mbuf_zone_count;
-    int fmbuf_water_warn_sent;
-    uint32_t tsmbuf_water_warn_sent;
-#endif
     /* Stuff from slirp.c */
     void *pvUser;
     uint32_t curtime;
@@ -241,41 +211,39 @@ typedef struct NATState
 # define VBOX_SOCKET_EVENT (pData->phEvents[VBOX_SOCKET_EVENT_INDEX])
     HANDLE phEvents[VBOX_EVENT_COUNT];
 #endif
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
-# ifdef zone_mbuf
-#  undef zone_mbuf
-# endif
+#ifdef zone_mbuf
+# undef zone_mbuf
+#endif
     uma_zone_t zone_mbuf;
-# ifdef zone_clust
-#  undef zone_clust
-# endif
+#ifdef zone_clust
+# undef zone_clust
+#endif
     uma_zone_t zone_clust;
-# ifdef zone_pack
-#  undef zone_pack
-# endif
+#ifdef zone_pack
+# undef zone_pack
+#endif
     uma_zone_t zone_pack;
-# ifdef zone_jumbop
-#  undef zone_jumbop
-# endif
+#ifdef zone_jumbop
+# undef zone_jumbop
+#endif
     uma_zone_t zone_jumbop;
-# ifdef zone_jumbo9
-#  undef zone_jumbo9
-# endif
+#ifdef zone_jumbo9
+# undef zone_jumbo9
+#endif
     uma_zone_t zone_jumbo9;
-# ifdef zone_jumbo16
-#  undef zone_jumbo16
-# endif
+#ifdef zone_jumbo16
+# undef zone_jumbo16
+#endif
     uma_zone_t zone_jumbo16;
-# ifdef zone_ext_refcnt
-#  undef zone_ext_refcnt
+#ifdef zone_ext_refcnt
+# undef zone_ext_refcnt
     int nmbclusters;                    /* limits number of mbuf clusters */
     int nmbjumbop;                      /* limits number of page size jumbo clusters */
     int nmbjumbo9;                      /* limits number of 9k jumbo clusters */
     int nmbjumbo16;                     /* limits number of 16k jumbo clusters */
     struct mbstat mbstat;
-# endif
-    uma_zone_t zone_ext_refcnt;
 #endif
+    uma_zone_t zone_ext_refcnt;
     bool fUseHostResolver;
     /* from dnsproxy/dnsproxy.h*/
     unsigned int authoritative_port;
@@ -371,9 +339,6 @@ typedef struct NATState
 #define if_maxlinkhdr pData->if_maxlinkhdr
 #define if_queued pData->if_queued
 #define if_thresh pData->if_thresh
-#define if_fastq pData->if_fastq
-#define if_batchq pData->if_batchq
-#define next_m pData->next_m
 
 #define icmpstat pData->icmpstat
 
@@ -708,20 +673,19 @@ typedef struct NATState
 
 #define instancehead pData->instancehead
 
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
-# define nmbclusters    pData->nmbclusters
-# define nmbjumbop  pData->nmbjumbop
-# define nmbjumbo9  pData->nmbjumbo9
-# define nmbjumbo16 pData->nmbjumbo16
-# define mbstat pData->mbstat
-# include "ext.h"
-# undef zone_mbuf
-# undef zone_clust
-# undef zone_pack
-# undef zone_jumbop
-# undef zone_jumbo9
-# undef zone_jumbo16
-# undef zone_ext_refcnt
+#define nmbclusters    pData->nmbclusters
+#define nmbjumbop  pData->nmbjumbop
+#define nmbjumbo9  pData->nmbjumbo9
+#define nmbjumbo16 pData->nmbjumbo16
+#define mbstat pData->mbstat
+#include "ext.h"
+#undef zone_mbuf
+#undef zone_clust
+#undef zone_pack
+#undef zone_jumbop
+#undef zone_jumbo9
+#undef zone_jumbo16
+#undef zone_ext_refcnt
 static inline uma_zone_t slirp_zone_pack(PNATState pData)
 {
     return pData->zone_pack;
@@ -752,7 +716,6 @@ static inline uma_zone_t slirp_zone_clust(PNATState pData)
 }
 #ifndef VBOX_SLIRP_BSD
 # define m_adj(m, len) m_adj(pData, (m), (len))
-#endif
 #endif
 
 #endif /* !___slirp_state_h */

@@ -90,14 +90,9 @@ static struct libalias *select_alias(PNATState pData, struct mbuf* m)
     struct udphdr *udp = NULL;
     struct ip *pip = NULL;
 
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-    if (m->m_la)
-        return m->m_la;
-#else
     struct m_tag *t;
     if ((t = m_tag_find(m, PACKET_TAG_ALIAS, NULL)) != 0)
         return (struct libalias *)&t[1];
-#endif
 
     return la;
 }
@@ -390,12 +385,7 @@ found:
         fp->ipq_nfrags++;
     }
 
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-#define GETIP(m)    ((struct ip*)(MBUF_IP_HEADER(m)))
-#else
 #define GETIP(m)    ((struct ip*)((m)->m_pkthdr.header))
-#endif
-
 
     /*
      * Find a segment which begins after this one does.

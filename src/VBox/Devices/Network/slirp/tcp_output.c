@@ -99,9 +99,7 @@ tcp_output(PNATState pData, register struct tcpcb *tp)
     u_char opt[MAX_TCPOPTLEN];
     unsigned optlen, hdrlen;
     int idle, sendalot;
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
     int size;
-#endif
 
     DEBUG_CALL("tcp_output");
     DEBUG_ARG("tp = %lx", (long )tp);
@@ -392,9 +390,6 @@ send:
             tcpstat.tcps_sndbyte += len;
         }
 
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-        m = m_get(pData);
-#else
         size = MCLBYTES;
         if ((len + hdrlen + ETH_HLEN) < MSIZE)
             size = MCLBYTES;
@@ -407,7 +402,6 @@ send:
         else
             AssertMsgFailed(("Unsupported size"));
         m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
-#endif
         if (m == NULL)
         {
 /*          error = ENOBUFS; */
@@ -415,9 +409,7 @@ send:
             goto out;
         }
         m->m_data += if_maxlinkhdr;
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
         m->m_pkthdr.header = mtod(m, void *);
-#endif
         m->m_len = hdrlen;
 
         /*
@@ -459,15 +451,6 @@ send:
         else
             tcpstat.tcps_sndwinup++;
 
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-        m = m_get(pData);
-        if (m == NULL)
-        {
-/*          error = ENOBUFS; */
-            error = 1;
-            goto out;
-        }
-#else
         if ((hdrlen + ETH_HLEN) < MSIZE)
         {
             size = MCLBYTES;
@@ -489,7 +472,6 @@ send:
             AssertMsgFailed(("Unsupported size"));
         }
         m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
-#endif
         if (m == NULL)
         {
 /*          error = ENOBUFS; */
@@ -497,9 +479,7 @@ send:
             goto out;
         }
         m->m_data += if_maxlinkhdr;
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
         m->m_pkthdr.header = mtod(m, void *);
-#endif
         m->m_len = hdrlen;
     }
 
@@ -647,12 +627,8 @@ send:
      * to handle ttl and tos; we could keep them in
      * the template, but need a way to checksum without them.
      */
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-    Assert(m->m_len == (hdrlen + len));
-#else
     M_ASSERTPKTHDR(m);
     m->m_pkthdr.header = mtod(m, void *);
-#endif
     m->m_len = hdrlen + len; /* XXX Needed? m_len should be correct */
 
     {
@@ -665,10 +641,6 @@ send:
 #if 0
         error = ip_output(m, tp->t_inpcb->inp_options, &tp->t_inpcb->inp_route,
                          so->so_options & SO_DONTROUTE, 0);
-#endif
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-        if(so->so_la != NULL)
-            m->m_la = so->so_la;
 #endif
         error = ip_output(pData, so, m);
 

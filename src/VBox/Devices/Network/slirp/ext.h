@@ -15,15 +15,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
 # ifndef IN_BSD
-#  define zone_mbuf slirp_zone_mbuf(pData)
-#  define zone_clust slirp_zone_clust(pData)
-#  define zone_pack slirp_zone_pack(pData)
-#  define zone_jumbop slirp_zone_jumbop(pData)
-#  define zone_jumbo9 slirp_zone_jumbo9(pData)
-#  define zone_jumbo16 slirp_zone_jumbo16(pData)
-#  define zone_ext_refcnt slirp_zone_ext_refcnt(pData)
+# define zone_mbuf slirp_zone_mbuf(pData)
+# define zone_clust slirp_zone_clust(pData)
+# define zone_pack slirp_zone_pack(pData)
+# define zone_jumbop slirp_zone_jumbop(pData)
+# define zone_jumbo9 slirp_zone_jumbo9(pData)
+# define zone_jumbo16 slirp_zone_jumbo16(pData)
+# define zone_ext_refcnt slirp_zone_ext_refcnt(pData)
 static inline uma_zone_t slirp_zone_mbuf(PNATState);
 static inline uma_zone_t slirp_zone_clust(PNATState);
 static inline uma_zone_t slirp_zone_pack(PNATState);
@@ -31,23 +30,22 @@ static inline uma_zone_t slirp_zone_jumbop(PNATState);
 static inline uma_zone_t slirp_zone_jumbo9(PNATState);
 static inline uma_zone_t slirp_zone_jumbo16(PNATState);
 static inline uma_zone_t slirp_zone_ext_refcnt(PNATState);
-# else
-#  undef zone_mbuf
-#  undef zone_clust
-#  undef zone_pack
-#  undef zone_jumbop
-#  undef zone_jumbo9
-#  undef zone_jumbo16
-#  undef zone_ext_refcnt
+#else
+# undef zone_mbuf
+# undef zone_clust
+# undef zone_pack
+# undef zone_jumbop
+# undef zone_jumbo9
+# undef zone_jumbo16
+# undef zone_ext_refcnt
 
-#  define zone_mbuf pData->zone_mbuf
-#  define zone_clust pData->zone_clust
-#  define zone_pack pData->zone_pack
-#  define zone_jumbop pData->zone_jumbop
-#  define zone_jumbo9 pData->zone_jumbo9
-#  define zone_jumbo16 pData->zone_jumbo16
-#  define zone_ext_refcnt pData->zone_ext_refcnt
-# endif
+# define zone_mbuf pData->zone_mbuf
+# define zone_clust pData->zone_clust
+# define zone_pack pData->zone_pack
+# define zone_jumbop pData->zone_jumbop
+# define zone_jumbo9 pData->zone_jumbo9
+# define zone_jumbo16 pData->zone_jumbo16
+# define zone_ext_refcnt pData->zone_ext_refcnt
 #endif
 
 #ifndef _EXT_H_

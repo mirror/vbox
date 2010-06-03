@@ -1665,7 +1665,7 @@ LibAliasUnLoadAllModule(void)
 
 #endif
 
-#if defined(_KERNEL) || (defined(VBOX) && defined(VBOX_WITH_SLIRP_BSD_MBUF))
+#if defined(_KERNEL) || defined(VBOX)
 /*
  * m_megapullup() - this function is a big hack.
  * Thankfully, it's only used in ng_nat and ipfw+nat.

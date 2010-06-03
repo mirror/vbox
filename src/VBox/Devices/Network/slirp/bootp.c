@@ -673,11 +673,7 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
         }
     }
 
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-    if ((m = m_get(pData)) == NULL)
-#else
     if ((m = m_getcl(pData, M_DONTWAIT, MT_HEADER, M_PKTHDR)) == NULL)
-#endif
     {
         LogRel(("NAT: can't alocate memory for response!\n"));
         return;
@@ -758,9 +754,7 @@ static void bootp_reply(PNATState pData, struct mbuf *m, int offReply, uint16_t 
 
     *q++ = RFC1533_END; /* end of message */
 
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
     m->m_pkthdr.header = mtod(m, void *);
-#endif
     m->m_len = sizeof(struct bootp_t)
              - sizeof(struct ip)
              - sizeof(struct udphdr);

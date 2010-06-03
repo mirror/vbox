@@ -283,9 +283,7 @@ static DECLCALLBACK(void) drvNATUrgRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, in
     AssertRC(rc);
 
     slirp_ext_m_free(pThis->pNATState, m);
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
     RTMemFree(pu8Buf);
-#endif
     if (ASMAtomicDecU32(&pThis->cUrgPkts) == 0)
     {
         drvNATRecvWakeup(pThis->pDrvIns, pThis->pRecvThread);
@@ -330,9 +328,7 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int c
 
 done_unlocked:
     slirp_ext_m_free(pThis->pNATState, m);
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
     RTMemFree(pu8Buf);
-#endif
     ASMAtomicDecU32(&pThis->cPkts);
 
     drvNATNotifyNATThread(pThis, "drvNATRecvWorker");
@@ -1122,10 +1118,8 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     GET_S32(rc, pThis, pCfg, "DNSProxy", fDNSProxy);
     int fUseHostResolver = 0;
     GET_S32(rc, pThis, pCfg, "UseHostResolver", fUseHostResolver);
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
     int MTU = 1500;
     GET_S32(rc, pThis, pCfg, "SlirpMTU", MTU);
-#endif
     int i32AliasMode = 0;
     int i32MainAliasMode = 0;
     GET_S32(rc, pThis, pCfg, "AliasMode", i32MainAliasMode);
@@ -1174,9 +1168,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
         slirp_set_dhcp_TFTP_bootfile(pThis->pNATState, pThis->pszBootFile);
         slirp_set_dhcp_next_server(pThis->pNATState, pThis->pszNextServer);
         slirp_set_dhcp_dns_proxy(pThis->pNATState, !!fDNSProxy);
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
         slirp_set_mtu(pThis->pNATState, MTU);
-#endif
         char *pszBindIP = NULL;
         GET_STRING_ALLOC(rc, pThis, pCfg, "BindIP", pszBindIP);
         rc = slirp_set_binding_address(pThis->pNATState, pszBindIP);
