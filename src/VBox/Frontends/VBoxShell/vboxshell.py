@@ -2825,7 +2825,7 @@ def checkUserExtensions(ctx, cmds, folder):
 
 def getHomeFolder(ctx):
     if ctx['remote'] or ctx['vb'] is None:
-        if 'VBOX_USER_HOME' is os.environ:
+        if 'VBOX_USER_HOME' in os.environ:
             return os.path.join(os.environ['VBOX_USER_HOME'])
         return os.path.join(os.path.expanduser("~"), ".VirtualBox")
     else:
