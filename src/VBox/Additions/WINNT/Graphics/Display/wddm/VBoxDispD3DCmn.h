@@ -15,6 +15,25 @@
 #ifndef ___VBoxDispD3DCmn_h___
 #define ___VBoxDispD3DCmn_h___
 
+#include <windows.h>
+#include <d3d9types.h>
+//#include <d3dtypes.h>
+#include <D3dumddi.h>
+#include <d3dhal.h>
+
+
+#include <iprt/initterm.h>
+#include <iprt/log.h>
+#include <iprt/mem.h>
+
+#include <VBox/Log.h>
+
+#include <VBox/VBoxGuestLib.h>
+
+#include "VBoxDispD3DIf.h"
+#include "../../Miniport/wddm/VBoxVideoIf.h"
+#include "VBoxDispD3D.h"
+
 #ifdef DEBUG
 # define VBOXWDDMDISP_DEBUG
 #endif

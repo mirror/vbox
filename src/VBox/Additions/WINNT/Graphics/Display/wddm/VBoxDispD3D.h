@@ -42,6 +42,7 @@ typedef struct VBOXWDDMDISP_ADAPTER
     UINT uIfVersion;
     UINT uRtVersion;
     VBOXDISPD3D D3D;
+    VBOXDISPWORKER WndWorker;
     IDirect3D9Ex * pD3D9If;
     D3DDDI_ADAPTERCALLBACKS RtCallbacks;
     uint32_t cFormstOps;
@@ -70,6 +71,8 @@ typedef struct VBOXWDDMDISP_DEVICE
     VOID *pvCmdBuffer;
     UINT cbCmdBuffer;
     D3DDDI_CREATEDEVICEFLAGS fFlags;
+    HWND hWnd;
+    IDirect3DDevice9 *pDevice9If;
     VBOXWDDMDISP_CONTEXT DefaultContext;
 } VBOXWDDMDISP_DEVICE, *PVBOXWDDMDISP_DEVICE;
 
@@ -92,9 +95,6 @@ typedef struct VBOXWDDMDISP_RESOURCE
     VBOXWDDMDISP_ALLOCATION aAllocations[1];
 } VBOXWDDMDISP_RESOURCE, *PVBOXWDDMDISP_RESOURCE;
 
-DECLINLINE(bool) vboxDispD3DIs3DEnabled(VBOXWDDMDISP_ADAPTER * pAdapter)
-{
-    return !!(pAdapter->pD3D9If);
-}
+#define VBOXDISPMODE_IS_3D(_p) (!!((_p)->pD3D9If))
 
 #endif /* #ifndef ___VBoxDispD3D_h___ */
