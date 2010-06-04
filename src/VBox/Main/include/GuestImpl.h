@@ -121,12 +121,13 @@ private:
 # ifdef VBOX_WITH_GUEST_CONTROL
     struct CallbackContext
     {
+        /** Associated context ID. */
         uint32_t                    mContextID;
         eVBoxGuestCtrlCallbackType  mType;
+        /** Pointer to user-supplied data. */        
         void                       *pvData;
+        /** Size of user-supplied data. */
         uint32_t                    cbData;
-        /** Atomic flag whether callback was called. */
-        volatile bool               fCalled;
         /** Pointer to user-supplied IProgress. */
         ComObjPtr<Progress>         pProgress;
     };
