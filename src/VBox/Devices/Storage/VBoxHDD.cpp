@@ -268,6 +268,8 @@ typedef struct VDIOCTX
             size_t                       cbPreRead;
             /** Number of bytes to post read. */
             size_t                       cbPostRead;
+            /** Number of bytes to write left in the parent. */
+            size_t                       cbWriteParent;
             /** Write type dependent data. */
             union
             {
@@ -280,8 +282,6 @@ typedef struct VDIOCTX
                     size_t               cbWriteCopy;
                     /** Bytes to read from the image. */
                     size_t               cbReadImage;
-                    /** Number of bytes to wite left. */
-                    size_t               cbWrite;
                 } Optimized;
             } Write;
         } Child;
@@ -642,7 +642,7 @@ DECLINLINE(PVDIOCTX) vdIoCtxChildAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
                                        uint64_t uOffset, size_t cbTransfer,
                                        PCRTSGSEG paSeg, unsigned cSeg,
                                        PVDIOCTX pIoCtxParent, size_t cbTransferParent,
-                                       void *pvAllocation,
+                                       size_t cbWriteParent, void *pvAllocation,
                                        PFNVDIOCTXTRANSFER pfnIoCtxTransfer)
 {
     PVDIOCTX pIoCtx = vdIoCtxAlloc(pDisk, enmTxDir, uOffset, cbTransfer,
@@ -654,6 +654,7 @@ DECLINLINE(PVDIOCTX) vdIoCtxChildAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
         pIoCtx->Type.Child.uOffsetSaved        = uOffset;
         pIoCtx->Type.Child.cbTransferLeftSaved = cbTransfer;
         pIoCtx->Type.Child.cbTransferParent    = cbTransferParent;
+        pIoCtx->Type.Child.cbWriteParent       = cbWriteParent;
     }
 
     return pIoCtx;
@@ -1298,7 +1299,17 @@ static int vdWriteHelperOptimizedCmpAndWriteAsync(PVDIOCTX pIoCtx)
     {
         /* Now assemble the remaining data. */
         if (cbWriteCopy)
-            vdIoCtxCopy(pIoCtx, pIoCtxParent, cbWriteCopy);
+        {
+            /*
+             * The S/G buffer of the parent needs to be cloned because
+             * it is not allowed to modify the state.
+             */
+            RTSGBUF SgBufParentTmp;
+
+            RTSgBufClone(&SgBufParentTmp, &pIoCtxParent->SgBuf);
+            RTSgBufCopy(&pIoCtx->SgBuf, &SgBufParentTmp, cbWriteCopy);
+        }
+
         /* Zero out the remainder of this block. Will never be visible, as this
          * is beyond the limit of the image. */
         if (cbFill)
@@ -1312,7 +1323,7 @@ static int vdWriteHelperOptimizedCmpAndWriteAsync(PVDIOCTX pIoCtx)
     RTSgBufReset(&pIoCtx->SgBuf);
     rc = pImage->Backend->pfnAsyncWrite(pImage->pvBackendData,
                                         pIoCtx->uOffset - cbPreRead,
-                                        cbPreRead + pIoCtx->cbTransferLeft + cbPostRead,
+                                        cbPreRead + cbThisWrite + cbPostRead,
                                         pIoCtx, NULL, &cbPreRead, &cbPostRead, 0);
     Assert(rc != VERR_VD_BLOCK_FREE);
     Assert(cbPreRead == 0);
@@ -1353,7 +1364,7 @@ static int vdWriteHelperOptimizedAsync(PVDIOCTX pIoCtx)
     size_t cbThisWrite = pIoCtx->Type.Child.cbTransferParent;
     size_t cbPreRead   = pIoCtx->Type.Child.cbPreRead;
     size_t cbPostRead  = pIoCtx->Type.Child.cbPostRead;
-    size_t cbWrite     = pIoCtx->Type.Child.Write.Optimized.cbWrite;
+    size_t cbWrite     = pIoCtx->Type.Child.cbWriteParent;
     size_t cbFill = 0;
     size_t cbWriteCopy = 0;
     size_t cbReadImage = 0;
@@ -1388,7 +1399,7 @@ static int vdWriteHelperOptimizedAsync(PVDIOCTX pIoCtx)
      * be modified by the write or not. */
     pIoCtx->cbTransferLeft = cbPreRead + cbThisWrite + cbPostRead - cbFill;
     pIoCtx->cbTransfer     = pIoCtx->cbTransferLeft;
-    pIoCtx->uOffset -= cbPreRead;
+    pIoCtx->uOffset       -= cbPreRead;
 
     /* Next step */
     pIoCtx->pfnIoCtxTransferNext = vdWriteHelperOptimizedPreReadAsync;
@@ -1438,7 +1449,7 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
                 RTListAppend(&pDisk->ListWriteGrowing, &pIoCtx->NodeWriteGrowing);
                 pIoCtx->fBlocked = true;
                 Assert(pIoCtx->NodeWriteGrowing.pNext == &pDisk->ListWriteGrowing);
-                Assert(pDisk->ListWriteGrowing.pPrev == & pIoCtx->NodeWriteGrowing);
+                Assert(pDisk->ListWriteGrowing.pPrev == &pIoCtx->NodeWriteGrowing);
                 rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
                 break;
             }
@@ -1458,6 +1469,7 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
                                                          uOffset, pTmp->cbSeg,
                                                          pTmp, 1,
                                                          pIoCtx, cbThisWrite,
+                                                         cbWrite,
                                                          pTmp,
                                                            (pImage->uOpenFlags & VD_OPEN_FLAGS_HONOR_SAME)
                                                          ? vdWriteHelperStandardAsync
