@@ -1840,6 +1840,21 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             break;
         }
 
+        case VMMDevReq_DebugIsPageShared:
+        {
+# ifdef DEBUG
+            VMMDevPageIsSharedRequest *pReq = (VMMDevPageIsSharedRequest *)pRequestHeader;
+
+            if (pRequestHeader->size != sizeof(VMMDevPageIsSharedRequest))
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
+            else
+                pRequestHeader->rc = PGMR3SharedModuleGetPageState(PDMDevHlpGetVM(pDevIns), pReq->GCPtrPage, &pReq->fShared, &pReq->fReadWrite);
+# else
+            pRequestHeader->rc = VERR_NOT_IMPLEMENTED;
+# endif
+            break;
+        }
+
 #endif
 
 #ifdef DEBUG
