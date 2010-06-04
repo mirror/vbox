@@ -24,6 +24,7 @@
 #include <iprt/asm.h>
 #include <iprt/mem.h>
 #include <iprt/stream.h>
+#include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/semaphore.h>
 #include <iprt/system.h>
@@ -403,12 +404,6 @@ void VBoxServicePageSharingInspectGuest()
             if (pSystemModules->Modules[i].Flags == 0)
                 continue;
 
-            char *pszDot = strrchr(pSystemModules->Modules[i].FullPathName, '.');
-            if (    pszDot
-                &&  (pszDot[1] == 'e' || pszDot[1] == 'E')
-                &&  strcmp(&pSystemModules->Modules[i].FullPathName[pSystemModules->Modules[i].OffsetToFileName], "ntoskrnl.exe"))
-                continue;   /* ignore executables for now. */
-
             /* Found it before? */
             PAVLPVNODECORE pRec = RTAvlPVGet(&pNewTree, pSystemModules->Modules[i].ImageBase);
             if (!pRec)
@@ -431,19 +426,38 @@ void VBoxServicePageSharingInspectGuest()
                     if (!lpPath)
                     {
                         VBoxServiceVerbose(1, "Unexpected kernel module name %s\n", pSystemModules->Modules[i].FullPathName);
-                        RTMemFree(pModule);
-                        continue;
-                    }
 
-                    lpPath = strchr(lpPath+1, '\\');
-                    if (!lpPath)
+                        /* Seen just file names in XP; try to locate the file in the system32 and system32\drivers directories. */
+                        strcat(szFullFilePath, "\\");
+                        strcat(szFullFilePath, pSystemModules->Modules[i].FullPathName);
+                        VBoxServiceVerbose(3, "Unexpected kernel module name try %s\n", szFullFilePath);
+                        if (RTFileExists(szFullFilePath) == false)
+                        {
+                            GetSystemDirectoryA(szFullFilePath, sizeof(szFullFilePath));
+                            strcat(szFullFilePath, "\\drivers\\");
+                            strcat(szFullFilePath, pSystemModules->Modules[i].FullPathName);
+                            VBoxServiceVerbose(3, "Unexpected kernel module name try %s\n", szFullFilePath);
+                            if (RTFileExists(szFullFilePath) == false)
+                            {
+                                VBoxServiceVerbose(1, "Unexpected kernel module name %s\n", pSystemModules->Modules[i].FullPathName);
+                                RTMemFree(pModule);
+                                continue;
+                            }
+                        }
+                    }
+                    else
                     {
-                        VBoxServiceVerbose(1, "Unexpected kernel module name %s (2)\n", pSystemModules->Modules[i].FullPathName);
-                        RTMemFree(pModule);
-                        continue;
+                        lpPath = strchr(lpPath+1, '\\');
+                        if (!lpPath)
+                        {
+                            VBoxServiceVerbose(1, "Unexpected kernel module name %s (2)\n", pSystemModules->Modules[i].FullPathName);
+                            RTMemFree(pModule);
+                            continue;
+                        }
+
+                        strcat(szFullFilePath, lpPath);
                     }
 
-                    strcat(szFullFilePath, lpPath);
                     strcpy(pModule->Info.szExePath, szFullFilePath);
                     pModule->Info.modBaseAddr = (BYTE *)pSystemModules->Modules[i].ImageBase;
                     pModule->Info.modBaseSize = pSystemModules->Modules[i].ImageSize;
