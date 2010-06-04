@@ -3636,7 +3636,7 @@ DECLCALLBACK(void) Display::displayVBVAUpdateBegin(PPDMIDISPLAYCONNECTOR pInterf
 
 DECLCALLBACK(void) Display::displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, const PVBVACMDHDR pCmd, size_t cbCmd)
 {
-    LogFlowFunc(("uScreenId %d pCmd %p cbCmd %d\n", uScreenId, pCmd, cbCmd));
+    LogFlowFunc(("uScreenId %d pCmd %p cbCmd %d, @%d,%d %dx%d\n", uScreenId, pCmd, cbCmd, pCmd->x, pCmd->y, pCmd->w, pCmd->h));
 
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
@@ -3646,6 +3646,7 @@ DECLCALLBACK(void) Display::displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInte
     {
         if (pFBInfo->fDefaultFormat)
         {
+            /* Make sure that framebuffer contains the same image as the guest VRAM. */
             if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
             {
                 pDrv->pUpPort->pfnUpdateDisplayRect (pDrv->pUpPort, pCmd->x, pCmd->y, pCmd->w, pCmd->h);
@@ -3688,11 +3689,19 @@ DECLCALLBACK(void) Display::displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInte
                                                u32DstLineSize, u32DstBitsPerPixel);
                 }
             }
-            pThis->handleDisplayUpdate (pCmd->x + pFBInfo->xOrigin,
-                                        pCmd->y + pFBInfo->yOrigin, pCmd->w, pCmd->h);
         }
 
+        VBVACMDHDR hdrSaved = *pCmd;
+
+        VBVACMDHDR *pHdrUnconst = (VBVACMDHDR *)pCmd;
+
+        pHdrUnconst->x -= (int16_t)pFBInfo->xOrigin;
+        pHdrUnconst->y -= (int16_t)pFBInfo->yOrigin;
+
+        /* @todo new SendUpdate entry which can get a separate cmd header or coords. */
         pThis->mParent->consoleVRDPServer()->SendUpdate (uScreenId, pCmd, cbCmd);
+
+        *pHdrUnconst = hdrSaved;
     }
 }
 
@@ -3809,7 +3818,13 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
 
     if (!fResize)
     {
-        /* No paramaters of the framebuffer have actually changed. */
+        /* No parameters of the framebuffer have actually changed. */
+        if (fNewOrigin)
+        {
+            /* VRDP server still need this notification. */
+            LogFlowFunc (("Calling VRDP\n"));
+            pThis->mParent->consoleVRDPServer()->SendResize();
+        }
         return VINF_SUCCESS;
     }
 
