@@ -3545,7 +3545,7 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
         PGMMSHAREDMODULEPERVM pRecVM = (PGMMSHAREDMODULEPERVM)RTAvlGCPtrGet(&pGVM->gmm.s.pSharedModuleTree, GCBaseAddr);
         if (!pRecVM)
         {
-            pRecVM = (PGMMSHAREDMODULEPERVM)RTMemAllocZ(sizeof(*pRecVM));
+            pRecVM = (PGMMSHAREDMODULEPERVM)RTMemAllocZ(RT_OFFSETOF(GMMSHAREDMODULEPERVM, aRegions[cRegions]));
             if (!pRecVM)
             {
                 AssertFailed();
@@ -3553,6 +3553,16 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
                 goto end;
             }
             pRecVM->Core.Key = GCBaseAddr;
+            pRecVM->cRegions = cRegions;
+
+            /* Save the region data as they can differ between VMs (address space scrambling or simply different loading order) */
+            for (unsigned i = 0; i < cRegions; i++)
+            {
+                pRecVM->aRegions[i].GCRegionAddr      = pRegions[i].GCRegionAddr;
+                pRecVM->aRegions[i].cbRegion          = RT_ALIGN_T(pRegions[i].cbRegion, PAGE_SIZE, uint32_t);
+                pRecVM->aRegions[i].u32Alignment      = 0;
+                pRecVM->aRegions[i].paHCPhysPageID    = NULL; /* unused */
+            }
 
             bool ret = RTAvlGCPtrInsert(&pGVM->gmm.s.pSharedModuleTree, &pRecVM->Core);
             Assert(ret);
@@ -4052,8 +4062,8 @@ GMMR0DECL(int) GMMR0ResetSharedModules(PVM pVM, VMCPUID idCpu)
 #ifdef VBOX_WITH_PAGE_SHARING
 typedef struct
 {
-    PGVM    pGVM;
-    VMCPUID idCpu;
+    PGVM                    pGVM;
+    VMCPUID                 idCpu;
 } GMMCHECKSHAREDMODULEINFO, *PGMMCHECKSHAREDMODULEINFO;
 
 /**
@@ -4069,7 +4079,7 @@ DECLCALLBACK(int) gmmR0CheckSharedModule(PAVLGCPTRNODECORE pNode, void *pvUser)
         &&  pGlobalModule)
     {
         Log(("gmmR0CheckSharedModule: check %s %s base=%RGv size=%x collision=%d\n", pGlobalModule->szName, pGlobalModule->szVersion, pGlobalModule->Core.Key, pGlobalModule->cbModule, pLocalModule->fCollision));
-        PGMR0SharedModuleCheck(pInfo->pGVM->pVM, pInfo->idCpu, pGlobalModule, pInfo->pGVM);
+        PGMR0SharedModuleCheck(pInfo->pGVM->pVM, pInfo->pGVM, pInfo->idCpu, pGlobalModule, pLocalModule->cRegions, pLocalModule->aRegions);
     }
     return 0;
 }
@@ -4154,8 +4164,8 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
         GMMCHECKSHAREDMODULEINFO Info;
 
         Log(("GMMR0CheckSharedModules\n"));
-        Info.pGVM = pGVM;
-        Info.idCpu = pVCpu->idCpu;
+        Info.pGVM     = pGVM;
+        Info.idCpu    = pVCpu->idCpu;
 
         RTAvlGCPtrDoWithAll(&pGVM->gmm.s.pSharedModuleTree, true /* fFromLeft */, gmmR0CheckSharedModule, &Info);
 
