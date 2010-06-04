@@ -4465,7 +4465,7 @@ static DECLCALLBACK(INTNETSWDECISION) intnetR0TrunkIfPortPreRecv(PINTNETTRUNKSWP
     AssertPtrReturn(pNetwork, INTNETSWDECISION_TRUNK);
     AssertReturn(pNetwork->hEvtBusyIf != NIL_RTSEMEVENT, INTNETSWDECISION_TRUNK);
     AssertPtr(pvSrc);
-    AssertPtr(cbSrc >= 6);
+    Assert(cbSrc >= 6);
     Assert(fSrc);
 
     /** @todo implement the switch table. */
