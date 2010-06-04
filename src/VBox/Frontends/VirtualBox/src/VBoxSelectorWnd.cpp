@@ -517,8 +517,9 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     pSplitter->addWidget (mVmTabWidget);
 
     /* Set the initial distribution. The right site is bigger. */
-    pSplitter->setStretchFactor(1, 3);
     pSplitter->setStretchFactor(0, 2);
+    pSplitter->setStretchFactor(1, 3);
+
 
     /* VM details view */
     mVmDetailsView = new VBoxVMDetailsView (NULL, mVmRefreshAction);
@@ -672,11 +673,13 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     {
         QString sliderPos = vbox.GetExtraData(VBoxDefs::GUI_SplitterSizes);
         QStringList strSizes = sliderPos.split(",");
-        QList<int> sizes;
-        for (int i=0; i <  strSizes.size(); ++i)
-            sizes << strSizes.at(i).toInt();
-        if (!sizes.isEmpty())
+        if (strSizes.size() == 2)
+        {
+            QList<int> sizes;
+            for (int i=0; i <  strSizes.size(); ++i)
+                sizes << strSizes.at(i).toInt();
             pSplitter->setSizes(sizes);
+        }
     }
 
     /* Restore toolbar and statusbar visibility */
