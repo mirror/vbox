@@ -143,3 +143,26 @@ VBGLR3DECL(bool) VbglR3PageSharingIsEnabled()
     return false;
 }
 
+/**
+ * Checks if page sharing is enabled.
+ *
+ * @returns true/false enabled/disabled
+ */
+VBGLR3DECL(int) VbglR3PageIsShared(RTGCPTR pPage, bool *pfShared, bool *pfReadWrite)
+{
+#ifdef DEBUG
+    VMMDevPageIsSharedRequest Req;
+
+    vmmdevInitRequest(&Req.header, VMMDevReq_DebugIsPageShared);
+    Req.GCPtrPage = pPage;
+    int rc = vbglR3GRPerform(&Req.header);
+    if (RT_SUCCESS(rc))
+    {
+        *pfShared    = Req.fShared;
+        *pfReadWrite = Req.fReadWrite;
+    }
+    return rc;
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
+}

@@ -174,6 +174,7 @@ typedef enum
     VMMDevReq_UnregisterSharedModule     = 213,
     VMMDevReq_CheckSharedModules         = 214,
     VMMDevReq_GetPageSharingStatus       = 215,
+    VMMDevReq_DebugIsPageShared          = 216,
     VMMDevReq_SizeHack                   = 0x7fffffff
 } VMMDevRequestType;
 
@@ -1185,6 +1186,24 @@ typedef struct
 } VMMDevPageSharingStatusRequest;
 AssertCompileSize(VMMDevPageSharingStatusRequest, 24+4);
 
+
+/**
+ * Page sharing status query (debug build only)
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader         header;
+    /** Page address. */
+    RTGCPTR                     GCPtrPage;
+    /** Shared flag (out) */
+    bool                        fShared;
+    /** Read/write flag (out) */
+    bool                        fReadWrite;
+    /** Alignment */
+    bool                        fAlignment[2];
+} VMMDevPageIsSharedRequest;
+
 #pragma pack()
 
 
@@ -1695,7 +1714,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevSharedModuleCheckRequest);
         case VMMDevReq_GetPageSharingStatus:
             return sizeof(VMMDevPageSharingStatusRequest);
-
+        case VMMDevReq_DebugIsPageShared:
+            return sizeof(VMMDevPageIsSharedRequest);
         default:
             return 0;
     }
