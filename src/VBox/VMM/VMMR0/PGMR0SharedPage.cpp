@@ -39,9 +39,11 @@
  * @param   pVM         The VM handle.
  * @param   idCpu       VCPU id
  * @param   pModule     Module description
+ * @param   cRegions    Number of regions
+ * @param   pRegions    Region array
  * @param   pGVM        Pointer to the GVM instance data.
  */
-VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule, PGVM pGVM)
+VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule, uint32_t cRegions, PGMMSHAREDREGIONDESC pRegions)
 {
     int                rc = VINF_SUCCESS;
     PGMMSHAREDPAGEDESC paPageDesc = NULL;
@@ -54,13 +56,13 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, VMCPUID idCpu, PGMMSHAREDMODULE p
     pgmLock(pVM);
 
     /* Check every region of the shared module. */
-    for (unsigned idxModule = 0; idxModule < pModule->cRegions; idxModule++)
+    for (unsigned idxRegion = 0; idxRegion < cRegions; idxRegion++)
     {
-        Assert((pModule->aRegions[idxModule].cbRegion & 0xfff) == 0);
-        Assert((pModule->aRegions[idxModule].GCRegionAddr & 0xfff) == 0);
+        Assert((pRegions[idxRegion].cbRegion & 0xfff) == 0);
+        Assert((pRegions[idxRegion].GCRegionAddr & 0xfff) == 0);
 
-        RTGCPTR  GCRegion  = pModule->aRegions[idxModule].GCRegionAddr;
-        unsigned cbRegion = pModule->aRegions[idxModule].cbRegion & ~0xfff;
+        RTGCPTR  GCRegion  = pRegions[idxRegion].GCRegionAddr;
+        unsigned cbRegion = pRegions[idxRegion].cbRegion & ~0xfff;
         unsigned idxPage = 0;
         bool     fValidChanges = false;
 
@@ -110,7 +112,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, VMCPUID idCpu, PGMMSHAREDMODULE p
 
         if (fValidChanges)
         {
-            rc = GMMR0SharedModuleCheckRange(pGVM, pModule, idxModule, idxPage, paPageDesc);
+            rc = GMMR0SharedModuleCheckRange(pGVM, pModule, idxRegion, idxPage, paPageDesc);
             AssertRC(rc);
             if (RT_FAILURE(rc))
                 break;
@@ -131,7 +133,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, VMCPUID idCpu, PGMMSHAREDMODULE p
                     }
                     Assert(!PGM_PAGE_IS_SHARED(pPage));
 
-                    Log(("PGMR0SharedModuleCheck: shared page gc virt=%RGv phys %RGp host %RHp->%RHp\n", pModule->aRegions[idxModule].GCRegionAddr + i * PAGE_SIZE, paPageDesc[i].GCPhys, PGM_PAGE_GET_HCPHYS(pPage), paPageDesc[i].HCPhys));
+                    Log(("PGMR0SharedModuleCheck: shared page gc virt=%RGv phys %RGp host %RHp->%RHp\n", pRegions[idxRegion].GCRegionAddr + i * PAGE_SIZE, paPageDesc[i].GCPhys, PGM_PAGE_GET_HCPHYS(pPage), paPageDesc[i].HCPhys));
                     if (paPageDesc[i].HCPhys != PGM_PAGE_GET_HCPHYS(pPage))
                     {
                         bool fFlush = false;
