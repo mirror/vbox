@@ -174,6 +174,15 @@ int darwinWindowToolBarHeight (NativeWindowRef aWindow)
     return toolbarHeight;
 }
 
+bool darwinIsToolbarVisible(NativeWindowRef pWindow)
+{
+    CocoaAutoreleasePool pool;
+
+    NSToolbar *pToolbar = [pWindow toolbar];
+
+    return [pToolbar isVisible] == YES;
+}
+
 bool darwinIsWindowMaximized(NativeWindowRef aWindow)
 {
     CocoaAutoreleasePool pool;
@@ -190,5 +199,34 @@ float darwinSmallFontSize()
     float size = [NSFont systemFontSizeForControlSize: NSSmallControlSize];
 
     return size;
+}
+
+/* Cocoa event handler which checks if the user right clicked at the unified
+   toolbar or the title area. */
+bool darwinUnifiedToolbarEvents(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
+{
+    NSEvent *pEvent = (NSEvent*)pvCocoaEvent;
+    NSEventType EvtType = [pEvent type];
+    NSWindow *pWin = ::darwinToNativeWindow((QWidget*)pvUser);
+    /* First check for the right event type and that we are processing events
+       from the window which was registered by the user. */
+    if (   EvtType == NSRightMouseDown
+        && pWin == [pEvent window])
+    {
+        /* Get the mouse position of the event (screen coordinates) */
+        NSPoint point = [NSEvent mouseLocation];
+        /* Get the frame rectangle of the window (screen coordinates) */
+        NSRect winFrame = [pWin frame];
+        /* Calculate the height of the title and the toolbar */
+        int i = NSHeight(winFrame) - NSHeight([[pWin contentView] frame]);
+        /* Based on that height create a rectangle of the unified toolbar + title */
+        winFrame.origin.y += winFrame.size.height - i;
+        winFrame.size.height = i;
+        /* Check if the mouse press event was on the unified toolbar or title */
+        if (NSMouseInRect(point, winFrame, NO))
+            /* Create a Qt context menu event, with flipped screen coordinates */
+            ::darwinCreateContextMenuEvent(pvUser, point.x, NSHeight([[pWin screen] frame]) - point.y);
+    }
+    return false;
 }
 

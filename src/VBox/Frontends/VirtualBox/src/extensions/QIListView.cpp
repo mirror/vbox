@@ -28,7 +28,7 @@
 #endif /* MAC_LEOPARD_STYLE */
 
 
-/* VBoxVMListView class */
+/* QIListView class */
 
 QIListView::QIListView (QWidget *aParent /* = 0 */)
     :QListView (aParent)
@@ -63,7 +63,7 @@ void QIListView::focusChanged (QWidget * /* aOld */, QWidget *aNow)
 #endif /* MAC_LEOPARD_STYLE */
 }
 
-/* VBoxVMItemPainter class */
+/* QIItemDelegate class */
 
 void QIItemDelegate::drawBackground (QPainter *aPainter, const QStyleOptionViewItem &aOption,
                                         const QModelIndex &aIndex) const

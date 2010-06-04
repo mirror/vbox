@@ -1068,7 +1068,7 @@ bool VBoxProblemReporter::confirmMachineDeletion (const CMachine &machine)
     }
     else
     {
-        /* this should be in sync with VBoxVMListBoxItem::recache() */
+        /* this should be in sync with UIVMListBoxItem::recache() */
         QFileInfo fi (machine.GetSettingsFilePath());
         name = fi.suffix().toLower() == "xml" ?
                fi.completeBaseName() : fi.fileName();

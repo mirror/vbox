@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,40 +22,30 @@
 /* Global includes */
 #include <QSplitter>
 
-/* Global forwardes */
-class SplitterHandle;
-
 class QISplitter : public QSplitter
 {
     Q_OBJECT;
 
 public:
 
-    QISplitter (QWidget *aParent);
+    enum Type { Native, Shade };
 
+    QISplitter(QWidget *aParent = 0);
+    QISplitter(Qt::Orientation orientation = Qt::Horizontal, QWidget *pParent = 0);
+
+    void setHandleType(Type type) { m_type = type; }
+    Type handleType() const { return m_type; }
 private:
 
-    bool eventFilter (QObject *aWatched, QEvent *aEvent);
-    void showEvent (QShowEvent *aEvent);
+    bool eventFilter(QObject *aWatched, QEvent *aEvent);
+    void showEvent(QShowEvent *aEvent);
 
     QSplitterHandle* createHandle();
 
     QByteArray mBaseState;
 
     bool mPolished;
-};
-
-class QISplitterHandle : public QSplitterHandle
-{
-    Q_OBJECT;
-
-public:
-
-    QISplitterHandle (Qt::Orientation aOrientation, QISplitter *aParent);
-
-private:
-
-    void paintEvent (QPaintEvent *aEvent);
+    Type m_type;
 };
 
 #endif /* _QISplitter_h_ */
