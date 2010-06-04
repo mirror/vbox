@@ -250,7 +250,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/VBoxTakeSnapshotDlg.h \
 	src/VBoxUpdateDlg.h \
 	src/VBoxVMInformationDlg.h \
-	src/VBoxVMListView.h \
+	src/UIVMListView.h \
 	src/VBoxVMLogViewer.h \
 	src/globals/VBoxGlobal.h \
 	src/globals/VBoxProblemReporter.h \
@@ -351,7 +351,9 @@ VirtualBox_QT_MOCSRCS = \
 	src/runtime/UIMachineMenuBar.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIMachine.cpp \
-	src/runtime/UIMachineLogic.cpp
+	src/runtime/UIMachineLogic.cpp \
+	src/extensions/QISplitter.cpp \
+
 ifdef VBOX_WITH_XPCOM
  VirtualBox_QT_MOCSRCS += \
 	src/globals/COMDefs.cpp
@@ -380,7 +382,7 @@ VirtualBox_SOURCES = \
 	src/VBoxTakeSnapshotDlg.cpp \
 	src/VBoxUpdateDlg.cpp \
 	src/VBoxVMInformationDlg.cpp \
-	src/VBoxVMListView.cpp \
+	src/UIVMListView.cpp \
 	src/VBoxVMLogViewer.cpp \
 	src/globals/COMDefs.cpp \
 	src/globals/VBoxDefs.cpp \
