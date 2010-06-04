@@ -1307,7 +1307,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
                     if (vrc == VERR_NO_DATA)
                     {
                         /* This is not an error we want to report to COM. */
-                        rc = NO_ERROR;
+                        rc = S_OK;
                     }
                     else if (vrc == VERR_TIMEOUT)
                     {
