@@ -79,8 +79,6 @@ static DWORD WINAPI vboxDispWorkerThread(void *pvUser)
             0 /*UINT wMsgFilterMax*/
             );
 
-        Assert(0);
-
         if(!bResult) /* WM_QUIT was posted */
             break;
 
@@ -159,7 +157,6 @@ HRESULT VBoxDispWorkerCreate(VBOXDISPWORKER *pWorker)
             Assert(pWorker->hThread);
             if (pWorker->hThread)
             {
-                Assert(0);
                 rc = RTSemEventWait(pWorker->hEvent, RT_INDEFINITE_WAIT);
                 AssertRC(rc);
                 if (RT_SUCCESS(rc))
@@ -264,7 +261,12 @@ HRESULT vboxDispWndDoCreate(DWORD w, DWORD h, HWND *phWnd)
         HWND hWnd = CreateWindowEx (WS_EX_NOACTIVATE | WS_EX_NOPARENTNOTIFY,
                                         VBOXDISPWND_NAME, VBOXDISPWND_NAME,
                                         WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_DISABLED,
-                                        0, 0, w, h,
+#ifdef DEBUG_misha
+                                        -1024, -1024,
+#else
+                                        0, 0,
+#endif
+                                        w, h,
                                         GetDesktopWindow() /* hWndParent */,
                                         NULL /* hMenu */,
                                         hInstance,
