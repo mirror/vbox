@@ -855,10 +855,16 @@ static PVBOXWDDMDISP_RESOURCE vboxResourceAlloc(UINT cAllocs)
     return NULL;
 }
 
-static D3DFORMAT vboxFormatDDI2D3D(D3DDDIFORMAT format)
+static D3DFORMAT vboxDDI2D3DFormat(D3DDDIFORMAT format)
 {
     /* @todo: check they are all equal */
     return (D3DFORMAT)format;
+}
+
+D3DMULTISAMPLE_TYPE vboxDDI2D3DMultiSampleType(D3DDDIMULTISAMPLE_TYPE enmType)
+{
+    /* @todo: check they are all equal */
+    return (D3DMULTISAMPLE_TYPE)enmType;
 }
 
 static void vboxResourcePopulateRcDesc(VBOXWDDM_RC_DESC *pDesc, D3DDDIARG_CREATERESOURCE* pResource)
@@ -1591,92 +1597,124 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
 
     if (VBOXDISPMODE_IS_3D(pAdapter))
     {
-        if (pResource->Flags.RenderTarget)
+        PVBOXWDDMDISP_RESOURCE pRc = vboxResourceAlloc(pResource->SurfCount);
+        Assert(pRc);
+        if (pRc)
         {
-            HWND hWnd = NULL;
-            Assert(pResource->SurfCount);
-            Assert(!pDevice->pDevice9If);
-            Assert(!pDevice->hWnd);
-            hr = VBoxDispWndCreate(pAdapter, pResource->pSurfList[0].Width, pResource->pSurfList[0].Height, &hWnd);
-            Assert(hr == S_OK);
-            if (hr == S_OK)
+            pRc->hResource = pResource->hResource;
+            pRc->pDevice = pDevice;
+            pRc->fFlags = VBOXWDDM_RESOURCE_F_TYPE_GENERIC;
+            vboxResourcePopulateRcDesc(&pRc->RcDesc, pResource);
+            pRc->cAllocations = pResource->SurfCount;
+            for (UINT i = 0; i < pResource->SurfCount; ++i)
             {
-                DWORD fFlags = D3DCREATE_HARDWARE_VERTEXPROCESSING;
-                if (pDevice->fFlags.AllowMultithreading)
-                    fFlags |= D3DCREATE_MULTITHREADED;
+                PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
+                CONST D3DDDI_SURFACEINFO* pSurf = &pResource->pSurfList[i];
+                pAllocation->hAllocation = NULL;
+                pAllocation->enmType = VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC;
+                pAllocation->pvMem = pSurf->pSysMem;
+                pAllocation->SurfDesc.pitch = pSurf->SysMemPitch;
+                pAllocation->SurfDesc.slicePitch = pSurf->SysMemSlicePitch;
+                pAllocation->SurfDesc.depth = pSurf->Depth;
+                pAllocation->SurfDesc.width = pSurf->Width;
+                pAllocation->SurfDesc.height = pSurf->Height;
+                pAllocation->SurfDesc.format = pResource->Format;
+            }
 
-                IDirect3DDevice9 *pDevice9If = NULL;
-                D3DPRESENT_PARAMETERS params;
-                memset(&params, 0, sizeof (params));
-    //            params.BackBufferWidth = 0;
-    //            params.BackBufferHeight = 0;
-                params.BackBufferFormat = vboxFormatDDI2D3D(pResource->Format);
+            if (pResource->Flags.RenderTarget)
+            {
+                HWND hWnd = NULL;
                 Assert(pResource->SurfCount);
-                params.BackBufferCount = pResource->SurfCount - 1;
-                params.MultiSampleType = D3DMULTISAMPLE_NONE;
-                if (pResource->Flags.DiscardRenderTarget)
-                    params.SwapEffect = D3DSWAPEFFECT_DISCARD;
-                params.hDeviceWindow = hWnd;
-                /* @todo: it seems there should be a way to detect this correctly since
-                 * our vboxWddmDDevSetDisplayMode will be called in case we are using full-screen */
-                params.Windowed = TRUE;
-    //            params.EnableAutoDepthStencil = FALSE;
-    //            params.AutoDepthStencilFormat = D3DFMT_UNKNOWN;
-    //            params.Flags;
-    //            params.FullScreen_RefreshRateInHz;
-    //            params.FullScreen_PresentationInterval;
-                hr = pAdapter->pD3D9If->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWnd, fFlags, &params, &pDevice9If);
+                Assert(!pDevice->pDevice9If);
+                Assert(!pDevice->hWnd);
+                hr = VBoxDispWndCreate(pAdapter, pResource->pSurfList[0].Width, pResource->pSurfList[0].Height, &hWnd);
                 Assert(hr == S_OK);
                 if (hr == S_OK)
                 {
-                    pDevice->pDevice9If = pDevice9If;
-                    pDevice->hWnd = hWnd;
-                }
-                else
-                {
-                    VBoxDispWndDestroy(pAdapter, hWnd);
+                    DWORD fFlags = D3DCREATE_HARDWARE_VERTEXPROCESSING;
+                    if (pDevice->fFlags.AllowMultithreading)
+                        fFlags |= D3DCREATE_MULTITHREADED;
+
+                    IDirect3DDevice9 *pDevice9If = NULL;
+                    D3DPRESENT_PARAMETERS params;
+                    memset(&params, 0, sizeof (params));
+        //            params.BackBufferWidth = 0;
+        //            params.BackBufferHeight = 0;
+                    params.BackBufferFormat = vboxDDI2D3DFormat(pResource->Format);
+                    Assert(pResource->SurfCount);
+                    params.BackBufferCount = pResource->SurfCount - 1;
+                    params.MultiSampleType = vboxDDI2D3DMultiSampleType(pResource->MultisampleType);
+                    if (pResource->Flags.DiscardRenderTarget)
+                        params.SwapEffect = D3DSWAPEFFECT_DISCARD;
+                    params.hDeviceWindow = hWnd;
+                    /* @todo: it seems there should be a way to detect this correctly since
+                     * our vboxWddmDDevSetDisplayMode will be called in case we are using full-screen */
+                    params.Windowed = TRUE;
+        //            params.EnableAutoDepthStencil = FALSE;
+        //            params.AutoDepthStencilFormat = D3DFMT_UNKNOWN;
+        //            params.Flags;
+        //            params.FullScreen_RefreshRateInHz;
+        //            params.FullScreen_PresentationInterval;
+                    hr = pAdapter->pD3D9If->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWnd, fFlags, &params, &pDevice9If);
+                    Assert(hr == S_OK);
+                    if (hr == S_OK)
+                    {
+                        pDevice->pDevice9If = pDevice9If;
+                        pDevice->hWnd = hWnd;
+                    }
+                    else
+                    {
+                        VBoxDispWndDestroy(pAdapter, hWnd);
+                    }
                 }
             }
-        }
-        else
-        {
-            Assert(pDevice->pDevice9If);
-        }
-
-        if (hr == S_OK)
-        {
-            PVBOXWDDMDISP_RESOURCE pRc = vboxResourceAlloc(pResource->SurfCount);
-            Assert(pRc);
-            if (pRc)
+            else if (pResource->Flags.ZBuffer)
             {
-                pRc->hResource = pResource->hResource;
-                pRc->pDevice = pDevice;
-                pRc->fFlags = VBOXWDDM_RESOURCE_F_TYPE_GENERIC;
-                vboxResourcePopulateRcDesc(&pRc->RcDesc, pResource);
-                pRc->cAllocations = pResource->SurfCount;
+                Assert(pDevice->pDevice9If);
                 for (UINT i = 0; i < pResource->SurfCount; ++i)
                 {
                     PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
                     CONST D3DDDI_SURFACEINFO* pSurf = &pResource->pSurfList[i];
-                    pAllocation->hAllocation = NULL;
-                    pAllocation->enmType = VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC;
-                    pAllocation->pvMem = pSurf->pSysMem;
-                    pAllocation->SurfDesc.pitch = pSurf->SysMemPitch;
-                    pAllocation->SurfDesc.slicePitch = pSurf->SysMemSlicePitch;
-                    pAllocation->SurfDesc.depth = pSurf->Depth;
-                    pAllocation->SurfDesc.width = pSurf->Width;
-                    pAllocation->SurfDesc.height = pSurf->Height;
-                    pAllocation->SurfDesc.format = pResource->Format;
+                    IDirect3DSurface9 *pD3D9Surf;
+                    hr = pDevice->pDevice9If->CreateDepthStencilSurface(pSurf->Width,
+                            pSurf->Height,
+                            vboxDDI2D3DFormat(pResource->Format),
+                            vboxDDI2D3DMultiSampleType(pResource->MultisampleType),
+                            pResource->MultisampleQuality,
+                            TRUE /* @todo: BOOL Discard */,
+                            &pD3D9Surf,
+                            NULL /*HANDLE* pSharedHandle*/);
+                    Assert(hr == S_OK);
+                    if (hr == S_OK)
+                    {
+                        Assert(pD3D9Surf);
+                        pAllocation->pD3DIf = pD3D9Surf;
+                    }
+                    else
+                    {
+                        for (UINT j = 0; j < i; ++j)
+                        {
+                            pRc->aAllocations[j].pD3DIf->Release();
+                        }
+                        break;
+                    }
                 }
-
-                pResource->hResource = pRc;
-//                vboxResourceFree(pRc);
             }
             else
             {
-                hr = E_OUTOFMEMORY;
+                Assert(pDevice->pDevice9If);
             }
+
+            if (hr == S_OK)
+                pResource->hResource = pRc;
+            else
+                vboxResourceFree(pRc);
         }
+        else
+        {
+            hr = E_OUTOFMEMORY;
+        }
+
     }
     else
     {
@@ -1826,6 +1864,13 @@ static HRESULT APIENTRY vboxWddmDDevDestroyResource(HANDLE hDevice, HANDLE hReso
             pDevice->pDevice9If->Release();
             HRESULT tmpHr = VBoxDispWndDestroy(pAdapter, pDevice->hWnd);
             Assert(tmpHr == S_OK);
+        }
+
+        for (UINT i = 0; i < pRc->cAllocations; ++i)
+        {
+            PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[i];
+            if (pAlloc->pD3DIf)
+                pAlloc->pD3DIf->Release();
         }
     }
     else

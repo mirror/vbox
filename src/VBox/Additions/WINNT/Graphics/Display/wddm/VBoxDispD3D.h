@@ -81,6 +81,8 @@ typedef struct VBOXWDDMDISP_ALLOCATION
     D3DKMT_HANDLE hAllocation;
     VBOXWDDM_ALLOC_TYPE enmType;
     CONST VOID* pvMem;
+    /* object type depends on resource type */
+    IUnknown *pD3DIf;
     VBOXWDDM_SURFACE_DESC SurfDesc;
 } VBOXWDDMDISP_ALLOCATION, *PVBOXWDDMDISP_ALLOCATION;
 
