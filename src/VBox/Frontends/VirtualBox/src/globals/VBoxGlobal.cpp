@@ -2481,14 +2481,15 @@ bool VBoxGlobal::showVirtualBoxLicense()
     QString latestFilePath = docDir.absoluteFilePath (licenseFile);
 
     /* check for the agreed license version */
-    QString licenseAgreed = virtualBox().GetExtraData (VBoxDefs::GUI_LicenseKey);
-    if (licenseAgreed == latestVersion)
-        return true;
+    QStringList strList =  virtualBox().GetExtraData (VBoxDefs::GUI_LicenseKey).split(",");
+    for (int i=0; i < strList.size(); ++i)
+        if (strList.at(i) == latestVersion)
+            return true;
 
     VBoxLicenseViewer licenseDialog (latestFilePath);
     bool result = licenseDialog.exec() == QDialog::Accepted;
     if (result)
-        virtualBox().SetExtraData (VBoxDefs::GUI_LicenseKey, latestVersion);
+        virtualBox().SetExtraData (VBoxDefs::GUI_LicenseKey, (strList << latestVersion).join(","));
     return result;
 }
 #endif /* defined(Q_WS_X11) && !defined(VBOX_OSE) */
