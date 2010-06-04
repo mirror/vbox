@@ -206,7 +206,7 @@ sockstats(PNATState pData)
                buff, so->s, inet_ntoa(so->so_laddr), RT_N2H_U16(so->so_lport));
         lprint("%15s %5d %5d %5d\n",
                 inet_ntoa(so->so_faddr), RT_N2H_U16(so->so_fport),
-                so->so_rcv.sb_cc, so->so_snd.sb_cc);
+                SBUF_LEN(&so->so_rcv), SBUF_LEN(&so->so_snd));
     LOOP_LABEL(tcp, so, so_next);
     }
 
@@ -220,7 +220,7 @@ sockstats(PNATState pData)
                 buff, so->s, inet_ntoa(so->so_laddr), RT_N2H_U16(so->so_lport));
         lprint("%15s %5d %5d %5d\n",
                 inet_ntoa(so->so_faddr), RT_N2H_U16(so->so_fport),
-                so->so_rcv.sb_cc, so->so_snd.sb_cc);
+                SBUF_LEN(&so->so_rcv), SBUF_LEN(&so->so_snd));
     LOOP_LABEL(udp, so, so_next);
     }
 }
