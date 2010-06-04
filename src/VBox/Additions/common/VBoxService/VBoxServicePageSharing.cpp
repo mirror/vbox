@@ -395,6 +395,10 @@ void VBoxServicePageSharingInspectGuest()
         pSystemModules = (PRTL_PROCESS_MODULES)pBuffer;
         for (unsigned i = 0; i < pSystemModules->NumberOfModules; i++)
         {
+            VBoxServiceVerbose(4, "\n\n   KERNEL  MODULE NAME:     %s",     pSystemModules->Modules[i].FullPathName[pSystemModules->Modules[i].OffsetToFileName] );
+            VBoxServiceVerbose(4, "\n     executable     = %s",             pSystemModules->Modules[i].FullPathName );
+            VBoxServiceVerbose(4, "\n     flags          = 0x%08X\n",       pSystemModules->Modules[i].Flags);
+
             /* User-mode modules seem to have no flags set; skip them as we detected them above. */
             if (pSystemModules->Modules[i].Flags == 0)
                 continue;
