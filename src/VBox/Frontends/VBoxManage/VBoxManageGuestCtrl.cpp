@@ -387,37 +387,58 @@ static int handleExecProgram(HandlerArg *a)
                     /*
                      * Some data left to output?
                      */
-
                     if (   fWaitForStdOut
                         || fWaitForStdErr)
                     {
-                        CHECK_ERROR_BREAK(guest, GetProcessOutput(uPID, 0 /* aFlags */,
-                                                                  u32TimeoutMS, _64K, ComSafeArrayAsOutParam(aOutputData)));
-                        cbOutputData = aOutputData.size();
-                        if (cbOutputData > 0)
+
+                        rc = guest->GetProcessOutput(uPID, 0 /* aFlags */,
+                                                     u32TimeoutMS, _64K, ComSafeArrayAsOutParam(aOutputData));
+                        if (FAILED(rc))
                         {
-                            /* aOutputData has a platform dependent line ending, standardize on
-                             * Unix style, as RTStrmWrite does the LF -> CR/LF replacement on
-                             * Windows. Otherwise we end up with CR/CR/LF on Windows. */
-                            ULONG cbOutputDataPrint = cbOutputData;
-                            for (BYTE *s = aOutputData.raw(), *d = s;
-                                 s - aOutputData.raw() < (ssize_t)cbOutputData;
-                                 s++, d++)
+                            /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
+                             * because it contains more accurate info about what went wrong. */
+                            ErrorInfo info(guest);
+                            if (info.isFullAvailable())
                             {
-                                if (*s == '\r')
+                                if (rc == VBOX_E_IPRT_ERROR)
                                 {
-                                    /* skip over CR, adjust destination */
-                                    d--;
-                                    cbOutputDataPrint--;
+                                    RTPrintf("%ls.\n", info.getText().raw());
                                 }
-                                else if (s != d)
-                                    *d = *s;
+                                else
+                                {
+                                    RTPrintf("ERROR: %ls (%Rhrc).\n", info.getText().raw(), info.getResultCode());
+                                }
                             }
-                            RTStrmWrite(g_pStdOut, aOutputData.raw(), cbOutputDataPrint);
+                            cbOutputData = 0;
+                        }
+                        else
+                        {
+                            cbOutputData = aOutputData.size();
+                            if (cbOutputData > 0)
+                            {
+                                /* aOutputData has a platform dependent line ending, standardize on
+                                 * Unix style, as RTStrmWrite does the LF -> CR/LF replacement on
+                                 * Windows. Otherwise we end up with CR/CR/LF on Windows. */
+                                ULONG cbOutputDataPrint = cbOutputData;
+                                for (BYTE *s = aOutputData.raw(), *d = s;
+                                     s - aOutputData.raw() < (ssize_t)cbOutputData;
+                                     s++, d++)
+                                {
+                                    if (*s == '\r')
+                                    {
+                                        /* skip over CR, adjust destination */
+                                        d--;
+                                        cbOutputDataPrint--;
+                                    }
+                                    else if (s != d)
+                                        *d = *s;
+                                }
+                                RTStrmWrite(g_pStdOut, aOutputData.raw(), cbOutputDataPrint);
+                            }
                         }
                     }
 
-                    if (cbOutputData <= 0)
+                    if (cbOutputData <= 0) /* No more output data left? */
                     {
                         if (fCompleted)
                             break;
@@ -430,7 +451,7 @@ static int handleExecProgram(HandlerArg *a)
                         }
                     }
 
-                    /* process async cancelation */
+                    /* Process async cancelation */
                     if (g_fExecCanceled && !fCanceledAlready)
                     {
                         hrc = progress->Cancel();
@@ -440,17 +461,15 @@ static int handleExecProgram(HandlerArg *a)
                             g_fExecCanceled = false;
                     }
 
-                    /* progress canceled by Main API? */
+                    /* Progress canceled by Main API? */
                     if (   SUCCEEDED(progress->COMGETTER(Canceled(&fCanceled)))
                         && fCanceled)
                     {
                         break;
                     }
-
-                    progress->WaitForCompletion(100);
                 }
 
-                /* undo signal handling */
+                /* Undo signal handling */
                 if (fCancelable)
                 {
                     signal(SIGINT,   SIG_DFL);
@@ -464,7 +483,8 @@ static int handleExecProgram(HandlerArg *a)
                     if (fVerbose)
                         RTPrintf("Process execution canceled!\n");
                 }
-                else if (fCompleted)
+                else if (   fCompleted
+                         && SUCCEEDED(rc))
                 {
                     LONG iRc = false;
                     CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
@@ -473,18 +493,33 @@ static int handleExecProgram(HandlerArg *a)
                         ComPtr<IVirtualBoxErrorInfo> execError;
                         rc = progress->COMGETTER(ErrorInfo)(execError.asOutParam());
                         com::ErrorInfo info (execError);
-                        RTPrintf("\n\nProcess error details:\n");
-                        GluePrintErrorInfo(info);
-                        RTPrintf("\n");
+                        if (SUCCEEDED(rc) && info.isFullAvailable())
+                        {
+                            /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
+                             * because it contains more accurate info about what went wrong. */
+                            if (info.getResultCode() == VBOX_E_IPRT_ERROR)
+                            {
+                                RTPrintf("%ls.\n", info.getText().raw());
+                            }
+                            else
+                            {
+                                RTPrintf("\n\nProcess error details:\n");
+                                GluePrintErrorInfo(info);
+                                RTPrintf("\n");
+                            }
+                        }
+                        else
+                            AssertMsgFailed(("Full error description is missing!\n"));
                     }
-                    if (fVerbose)
+                    else if (fVerbose)
                     {
                         ULONG uRetStatus, uRetExitCode, uRetFlags;
-                        CHECK_ERROR_BREAK(guest, GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus));
-                        RTPrintf("Exit code=%u (Status=%u [%s], Flags=%u)\n", uRetExitCode, uRetStatus, getStatus(uRetStatus), uRetFlags);
+                        rc = guest->GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus);
+                        if (SUCCEEDED(rc))
+                            RTPrintf("Exit code=%u (Status=%u [%s], Flags=%u)\n", uRetExitCode, uRetStatus, getStatus(uRetStatus), uRetFlags);
                     }
                 }
-                else /* If neither canceled nor completed we got a hard abort (shouldn't happen). */
+                else
                 {
                     if (fVerbose)
                         RTPrintf("Process execution aborted!\n");
