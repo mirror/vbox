@@ -7598,7 +7598,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMListView</name>
+    <name>UIVMListView</name>
     <message>
         <source>Inaccessible</source>
         <translation type="unfinished">Eskuraezina</translation>

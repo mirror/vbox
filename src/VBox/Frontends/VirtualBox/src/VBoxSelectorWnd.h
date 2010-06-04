@@ -37,11 +37,12 @@ class VBoxSnapshotsWgt;
 class VBoxVMDetailsView;
 class VBoxVMDescriptionPage;
 class VBoxVMLogViewer;
-class VBoxVMListView;
-class VBoxVMModel;
-class VBoxVMItem;
+class UIVMListView;
+class UIVMItemModel;
+class UIVMItem;
 class VBoxTrayIcon;
 class VBoxToolBar;
+class UIOSDMenu;
 class QITabWidget;
 
 class QListView;
@@ -107,9 +108,9 @@ protected:
     /* Events */
     bool event (QEvent *aEvent);
     void closeEvent (QCloseEvent *aEvent);
-#if defined (Q_WS_MAC) && (QT_VERSION < 0x040402)
-    bool eventFilter (QObject *aObject, QEvent *aEvent);
-#endif /* defined (Q_WS_MAC) && (QT_VERSION < 0x040402) */
+//#if defined (Q_WS_MAC) && (QT_VERSION < 0x040402)
+//    bool eventFilter (QObject *aObject, QEvent *aEvent);
+//#endif /* defined (Q_WS_MAC) && (QT_VERSION < 0x040402) */
 
     void retranslateUi();
 
@@ -138,6 +139,8 @@ private slots:
 
     void sltDownloaderUserManualEmbed();
 
+    void showViewContextMenu(const QPoint &pos);
+
 private:
 
     /* Main menus */
@@ -150,6 +153,7 @@ private:
 
     /* VM list context menu */
     QMenu *mVMCtxtMenu;
+//    UIOSDMenu *mVMCtxtMenu;
 
     /* Actions */
     QAction *mFileMediaMgrAction;
@@ -174,8 +178,8 @@ private:
 #endif
 
     /* The vm list view/model */
-    VBoxVMListView *mVMListView;
-    VBoxVMModel *mVMModel;
+    UIVMListView *mVMListView;
+    UIVMItemModel *mVMModel;
 
     /* The right information widgets */
     QITabWidget *mVmTabWidget;
@@ -198,7 +202,7 @@ class VBoxTrayIcon : public QSystemTrayIcon
 
 public:
 
-    VBoxTrayIcon (VBoxSelectorWnd* aParent, VBoxVMModel* aVMModel);
+    VBoxTrayIcon (VBoxSelectorWnd* aParent, UIVMItemModel* aVMModel);
     virtual ~VBoxTrayIcon ();
 
     void refresh ();
@@ -206,7 +210,7 @@ public:
 
 protected:
 
-    VBoxVMItem* GetItem (QObject* aObject);
+    UIVMItem* GetItem (QObject* aObject);
 
 signals:
 
@@ -232,7 +236,7 @@ private:
     bool mActive;           /* Is systray menu active/available? */
 
     /* The vm list model */
-    VBoxVMModel *mVMModel;
+    UIVMItemModel *mVMModel;
 
     VBoxSelectorWnd* mParent;
     QMenu *mTrayIconMenu;
@@ -251,3 +255,4 @@ private:
 #endif // VBOX_GUI_WITH_SYSTRAY
 
 #endif // __VBoxSelectorWnd_h__
+

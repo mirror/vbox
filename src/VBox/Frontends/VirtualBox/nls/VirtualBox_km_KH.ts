@@ -6862,7 +6862,7 @@ details report (VRDP server port)</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMListView</name>
+    <name>UIVMListView</name>
     <message>
         <source>Inaccessible</source>
         <translation>មិនអាច​ចូលដំណើរការ​បាន</translation>

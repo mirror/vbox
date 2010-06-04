@@ -8871,7 +8871,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
 </context>
 <context>
-    <name>VBoxVMListView</name>
+    <name>UIVMListView</name>
     <message>
         <source>Inaccessible</source>
         <translation>Niedostępna</translation>

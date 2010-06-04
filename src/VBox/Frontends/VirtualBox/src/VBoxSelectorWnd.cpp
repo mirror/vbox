@@ -21,7 +21,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include "VBoxProblemReporter.h"
 #include "VBoxSelectorWnd.h"
-#include "VBoxVMListView.h"
+#include "UIVMListView.h"
 #include "VBoxToolBar.h"
 
 #include "VBoxSnapshotsWgt.h"
@@ -33,6 +33,7 @@
 #include "VBoxVMLogViewer.h"
 #include "VBoxGlobal.h"
 #include "VBoxUtils.h"
+#include "QISplitter.h"
 #include "QITabWidget.h"
 
 #include "UIDownloaderUserManual.h"
@@ -220,7 +221,7 @@ public:
     VBoxVMDescriptionPage (VBoxSelectorWnd *);
     ~VBoxVMDescriptionPage() {}
 
-    void setMachineItem (VBoxVMItem *aItem);
+    void setMachineItem (UIVMItem *aItem);
 
     void updateState();
 
@@ -234,7 +235,7 @@ private slots:
 
 private:
 
-    VBoxVMItem *mItem;
+    UIVMItem *mItem;
 
     VBoxSelectorWnd *mParent;
     QToolButton *mBtnEdit;
@@ -302,7 +303,7 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent)
  * The machine list @a aItem is used to access cached machine data w/o making
  * unnecessary RPC calls.
  */
-void VBoxVMDescriptionPage::setMachineItem (VBoxVMItem *aItem)
+void VBoxVMDescriptionPage::setMachineItem (UIVMItem *aItem)
 {
     mItem = aItem;
 
@@ -339,7 +340,7 @@ void VBoxVMDescriptionPage::retranslateUi()
 /**
  * Called by the parent from machineStateChanged() and sessionStateChanged()
  * signal handlers. We cannot connect to these signals ourselves because we
- * use the VBoxVMListBoxItem which needs to be properly updated by the parent
+ * use the UIVMListBoxItem which needs to be properly updated by the parent
  * first.
  */
 void VBoxVMDescriptionPage::updateState()
@@ -394,7 +395,9 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     if (aSelf)
         *aSelf = this;
 
-    statusBar();
+    statusBar()->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(statusBar(), SIGNAL(customContextMenuRequested(const QPoint&)),
+            this, SLOT(showViewContextMenu(const QPoint&)));
 
 #if defined (Q_WS_MAC) && (QT_VERSION < 0x040402)
     qApp->installEventFilter (this);
@@ -467,51 +470,55 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     mHelpActions.setup (this);
 
+    QISplitter *pSplitter = new QISplitter(this);
+    pSplitter->setHandleType(QISplitter::Native);
     /* Central widget @ horizontal layout */
-    setCentralWidget (new QWidget (this));
-    QHBoxLayout *centralLayout = new QHBoxLayout (centralWidget());
-
-    /* Left vertical box */
-    QVBoxLayout *leftVLayout = new QVBoxLayout();
-    /* Right vertical box */
-    QVBoxLayout *rightVLayout = new QVBoxLayout();
-    centralLayout->addLayout (leftVLayout, 1);
-    centralLayout->addLayout (rightVLayout, 2);
+    setCentralWidget(pSplitter);
 
     /* VM list toolbar */
-    mVMToolBar = new VBoxToolBar (this);
-#if MAC_LEOPARD_STYLE
-    /* Enable unified toolbars on Mac OS X. Available on Qt >= 4.3 */
-    addToolBar (mVMToolBar);
-    mVMToolBar->setMacToolbar();
-    /* No spacing/margin on the mac */
-    VBoxGlobal::setLayoutMargin (centralLayout, 0);
-    leftVLayout->setSpacing (0);
-    rightVLayout->setSpacing (0);
-    rightVLayout->insertSpacing (0, 10);
-#else /* MAC_LEOPARD_STYLE */
-    leftVLayout->addWidget (mVMToolBar);
-    centralLayout->setSpacing (9);
-    VBoxGlobal::setLayoutMargin (centralLayout, 5);
-    leftVLayout->setSpacing (5);
-    rightVLayout->setSpacing (5);
-#endif /* MAC_LEOPARD_STYLE */
+    mVMToolBar = new VBoxToolBar(this);
+    mVMToolBar->setContextMenuPolicy(Qt::CustomContextMenu);
+#ifndef Q_WS_MAC
+    connect(mVMToolBar, SIGNAL(customContextMenuRequested(const QPoint&)),
+            this, SLOT(showViewContextMenu(const QPoint&)));
+#else /* !Q_WS_MAC */
+    /* A simple connect doesn't work on the Mac, also we want receive right
+     * click notifications on the title bar. So register our own handler. */
+    ::darwinRegisterForUnifiedToolbarContextMenuEvents(this);
+#endif /* Q_WS_MAC */
 
     /* VM list view */
-    mVMListView = new VBoxVMListView();
-    mVMModel = new VBoxVMModel (mVMListView);
-    mVMListView->setModel (mVMModel);
+    mVMListView = new UIVMListView();
+    mVMModel = new UIVMItemModel(mVMListView);
+    mVMListView->setModel(mVMModel);
+    mVMListView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     /* Make non-possible to activate list elements by single click,
      * this hack should disable the current possibility to do it if present */
     if (mVMListView->style()->styleHint (QStyle::SH_ItemView_ActivateItemOnSingleClick, 0, mVMListView))
         mVMListView->setStyleSheet ("activate-on-singleclick : 0");
 
-    leftVLayout->addWidget (mVMListView);
+#if MAC_LEOPARD_STYLE
+    /* Enable unified toolbars on Mac OS X. Available on Qt >= 4.3 */
+    addToolBar (mVMToolBar);
+    mVMToolBar->setMacToolbar();
+    pSplitter->addWidget (mVMListView);
+#else /* MAC_LEOPARD_STYLE */
+    QWidget *pLeftWidget = new QWidget(this);
+    QVBoxLayout *pLeftVLayout = new QVBoxLayout(pLeftWidget);
+    pLeftVLayout->setContentsMargins(5, 5, 0, 0);
+    pLeftVLayout->addWidget(mVMToolBar);
+    pLeftVLayout->addWidget(mVMListView);
+    pSplitter->addWidget(pLeftWidget);
+#endif /* MAC_LEOPARD_STYLE */
 
     /* VM tab widget containing details and snapshots tabs */
     mVmTabWidget = new QITabWidget();
-    rightVLayout->addWidget (mVmTabWidget);
+    pSplitter->addWidget (mVmTabWidget);
+
+    /* Set the initial distribution. The right site is bigger. */
+    pSplitter->setStretchFactor(1, 3);
+    pSplitter->setStretchFactor(0, 2);
 
     /* VM details view */
     mVmDetailsView = new VBoxVMDetailsView (NULL, mVmRefreshAction);
@@ -549,8 +556,12 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     mVMToolBar->addAction (mVmStartAction);
     mVMToolBar->addAction (mVmDiscardAction);
 
-    /* add actions to menubar */
+    /* Configure menubar */
+    menuBar()->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(menuBar(), SIGNAL(customContextMenuRequested(const QPoint&)),
+            this, SLOT(showViewContextMenu(const QPoint&)));
 
+    /* add actions to menubar */
     mFileMenu = menuBar()->addMenu (QString::null);
     mFileMenu->addAction (mFileMediaMgrAction);
     mFileMenu->addAction (mFileApplianceImportAction);
@@ -604,9 +615,9 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     retranslateUi();
 
+    CVirtualBox vbox = vboxGlobal().virtualBox();
     /* Restore the position of the window */
     {
-        CVirtualBox vbox = vboxGlobal().virtualBox();
         QString winPos = vbox.GetExtraData (VBoxDefs::GUI_LastWindowPosition);
 
         bool ok = false, max = false;
@@ -652,10 +663,29 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* restore the position of vm selector */
     {
-        CVirtualBox vbox = vboxGlobal().virtualBox();
         QString prevVMId = vbox.GetExtraData (VBoxDefs::GUI_LastVMSelected);
 
         mVMListView->selectItemById (prevVMId);
+    }
+
+    /* Read the splitter handle position */
+    {
+        QString sliderPos = vbox.GetExtraData(VBoxDefs::GUI_SplitterSizes);
+        QStringList strSizes = sliderPos.split(",");
+        QList<int> sizes;
+        for (int i=0; i <  strSizes.size(); ++i)
+            sizes << strSizes.at(i).toInt();
+        if (!sizes.isEmpty())
+            pSplitter->setSizes(sizes);
+    }
+
+    /* Restore toolbar and statusbar visibility */
+    {
+        QString strToolbar = vbox.GetExtraData(VBoxDefs::GUI_Toolbar);
+        QString strStatusbar = vbox.GetExtraData(VBoxDefs::GUI_Statusbar);
+
+        mVMToolBar->setVisible(strToolbar.isEmpty() || strToolbar == "true");
+        statusBar()->setVisible(strStatusbar.isEmpty() || strStatusbar == "true");
     }
 
     /* refresh the details et all (necessary for the case when the stored
@@ -730,17 +760,11 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
     /* Save the position of the window */
     {
         int y = mNormalGeo.y();
-#if defined (Q_WS_MAC) && !defined (QT_MAC_USE_COCOA)
-        /* The toolbar counts to the content not to the frame. Unfortunately
-         * the toolbar isn't fully initialized when this window will be moved
-         * to the last position after VBox starting. As a workaround just do
-         * remove the toolbar height part when save the last position. */
-        y -= ::darwinWindowToolBarHeight (this);
-#endif /* Q_WS_MAC && !QT_MAC_USE_COCOA */
         QString winPos = QString ("%1,%2,%3,%4")
             .arg (mNormalGeo.x()).arg (y)
             .arg (mNormalGeo.width()).arg (mNormalGeo.height());
 #ifdef Q_WS_MAC
+        ::darwinUnregisterForUnifiedToolbarContextMenuEvents(this);
         if (::darwinIsWindowMaximized(this))
 #else /* Q_WS_MAC */
         if (isMaximized())
@@ -750,13 +774,23 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
         vbox.SetExtraData (VBoxDefs::GUI_LastWindowPosition, winPos);
     }
 
-    /* Save vm selector position */
+    /* Save VM selector position */
     {
-        VBoxVMItem *item = mVMListView->selectedItem();
+        UIVMItem *item = mVMListView->selectedItem();
         QString curVMId = item ?
             QString (item->id()) :
             QString::null;
         vbox.SetExtraData (VBoxDefs::GUI_LastVMSelected, curVMId);
+    }
+
+    /* Save the splitter handle position */
+    {
+        QSplitter *pSplitter = static_cast<QSplitter*>(centralWidget());
+        QList<int> sizes = pSplitter->sizes();
+        QStringList strSizes;
+        for (int i=0; i < sizes.size(); ++i)
+            strSizes << QString::number(sizes.at(i));
+        vbox.SetExtraData(VBoxDefs::GUI_SplitterSizes, strSizes.join(","));
     }
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
@@ -789,7 +823,7 @@ void VBoxSelectorWnd::fileExportAppliance()
 {
     QString name;
 
-    VBoxVMItem *item = mVMListView->selectedItem();
+    UIVMItem *item = mVMListView->selectedItem();
     if (item)
         name = item->name();
 
@@ -859,7 +893,7 @@ void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aCont
         return;
     }
 
-    VBoxVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
+    UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
                        mVMModel->itemById (aUuid);
 
     AssertMsgReturnVoid (item, ("Item must be always selected here"));
@@ -903,7 +937,7 @@ void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aCont
 
 void VBoxSelectorWnd::vmDelete (const QString &aUuid /*= QUuid_null*/)
 {
-    VBoxVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
+    UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
                        mVMModel->itemById (aUuid);
 
     AssertMsgReturnVoid (item, ("Item must be always selected here"));
@@ -970,7 +1004,7 @@ void VBoxSelectorWnd::vmDelete (const QString &aUuid /*= QUuid_null*/)
 void VBoxSelectorWnd::vmStart (const QString &aUuid /*= QUuid_null*/)
 {
     QUuid uuid (aUuid);
-    VBoxVMItem *item = uuid.isNull() ? mVMListView->selectedItem() :
+    UIVMItem *item = uuid.isNull() ? mVMListView->selectedItem() :
                        mVMModel->itemById (aUuid);
 
     AssertMsgReturnVoid (item, ("Item must be always selected here"));
@@ -1046,7 +1080,7 @@ void VBoxSelectorWnd::vmStart (const QString &aUuid /*= QUuid_null*/)
 
 void VBoxSelectorWnd::vmDiscard (const QString &aUuid /*= QUuid_null*/)
 {
-    VBoxVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
+    UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
                        mVMModel->itemById (aUuid);
 
     AssertMsgReturnVoid (item, ("Item must be always selected here"));
@@ -1081,7 +1115,7 @@ void VBoxSelectorWnd::vmDiscard (const QString &aUuid /*= QUuid_null*/)
 
 void VBoxSelectorWnd::vmPause (bool aPause, const QString &aUuid /*= QUuid_null*/)
 {
-    VBoxVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
+    UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
                        mVMModel->itemById (aUuid);
 
     AssertMsgReturnVoid (item, ("Item must be always selected here"));
@@ -1113,7 +1147,7 @@ void VBoxSelectorWnd::vmPause (bool aPause, const QString &aUuid /*= QUuid_null*
 
 void VBoxSelectorWnd::vmRefresh (const QString &aUuid /*= QUuid_null*/)
 {
-    VBoxVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
+    UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
                        mVMModel->itemById (aUuid);
 
     AssertMsgReturnVoid (item, ("Item must be always selected here"));
@@ -1126,7 +1160,7 @@ void VBoxSelectorWnd::vmRefresh (const QString &aUuid /*= QUuid_null*/)
 
 void VBoxSelectorWnd::vmShowLogs (const QString &aUuid /*= QUuid_null*/)
 {
-    VBoxVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
+    UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
                        mVMModel->itemById (aUuid);
 
     AssertMsgReturnVoid (item, ("Item must be always selected here"));
@@ -1141,7 +1175,7 @@ void VBoxSelectorWnd::refreshVMList()
     CMachineVector vec = vbox.GetMachines();
     for (CMachineVector::ConstIterator m = vec.begin();
          m != vec.end(); ++ m)
-        mVMModel->addItem (new VBoxVMItem (*m));
+        mVMModel->addItem (new UIVMItem (*m));
     mVMModel->sort();
 
     vmListViewCurrentChanged();
@@ -1156,7 +1190,7 @@ void VBoxSelectorWnd::refreshVMItem (const QString &aID, bool aDetails,
                                                        bool aSnapshots,
                                                        bool aDescription)
 {
-    VBoxVMItem *item = mVMModel->itemById (aID);
+    UIVMItem *item = mVMModel->itemById (aID);
     if (item)
     {
         mVMModel->refreshItem (item);
@@ -1171,7 +1205,7 @@ void VBoxSelectorWnd::showContextMenu (const QPoint &aPoint)
     const QModelIndex &index = mVMListView->indexAt (aPoint);
     if (index.isValid())
         if (mVMListView->model()->data (index,
-            VBoxVMModel::VBoxVMItemPtrRole).value <VBoxVMItem*>())
+            UIVMItemModel::UIVMItemPtrRole).value <UIVMItem*>())
                 mVMCtxtMenu->exec (mVMListView->mapToGlobal (aPoint));
 }
 
@@ -1244,6 +1278,28 @@ bool VBoxSelectorWnd::event (QEvent *e)
             statusBar()->clearMessage();
             break;
         }
+#ifdef Q_WS_MAC
+        case QEvent::ContextMenu:
+        {
+            /* This is the unified context menu event. Lets show the context
+             * menu. */
+            QContextMenuEvent *pCE = static_cast<QContextMenuEvent*>(e);
+            showViewContextMenu(pCE->globalPos());
+            /* Accept it to interrupt the chain. */
+            pCE->accept();
+            return false;
+            break;
+        }
+        case QEvent::ToolBarChange:
+        {
+            CVirtualBox vbox = vboxGlobal().virtualBox();
+            /* We have to invert the isVisible check one time, cause this event
+             * is sent *before* the real toggle is done. Really intuitive
+             * Trolls. */
+            vbox.SetExtraData(VBoxDefs::GUI_Toolbar, !::darwinIsToolbarVisible(mVMToolBar) ? "true" : "false");
+            break;
+        }
+#endif /* Q_WS_MAC */
         default:
             break;
     }
@@ -1433,7 +1489,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
                                                 bool aRefreshSnapshots,
                                                 bool aRefreshDescription)
 {
-    VBoxVMItem *item = mVMListView->selectedItem();
+    UIVMItem *item = mVMListView->selectedItem();
 
     if (item && item->accessible())
     {
@@ -1500,7 +1556,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged (bool aRefreshDetails,
             mVMToolBar->updateLayout();
 #endif /* QT_MAC_USE_COCOA */
             mVmStartAction->setStatusTip (
-                                          tr ("Start the selected virtual machine"));
+                tr ("Start the selected virtual machine"));
 
             mVmStartAction->setEnabled (!running);
         }
@@ -1702,7 +1758,7 @@ void VBoxSelectorWnd::machineRegistered (const VBoxMachineRegisteredEvent &e)
         CMachine m = vbox.GetMachine (e.id);
         if (!m.isNull())
         {
-            mVMModel->addItem (new VBoxVMItem (m));
+            mVMModel->addItem (new UIVMItem (m));
             mVMModel->sort();
             /* Make sure the description, ... pages are properly updated.
              * Actualy we haven't call the next method, but unfortunately Qt
@@ -1715,7 +1771,7 @@ void VBoxSelectorWnd::machineRegistered (const VBoxMachineRegisteredEvent &e)
     }
     else
     {
-        VBoxVMItem *item = mVMModel->itemById (e.id);
+        UIVMItem *item = mVMModel->itemById (e.id);
         if (item)
         {
             int row = mVMModel->rowById (item->id());
@@ -1772,7 +1828,7 @@ void VBoxSelectorWnd::trayIconChanged (const VBoxChangeTrayIconEvent &aEvent)
     /* Not used yet. */
 }
 
-VBoxTrayIcon::VBoxTrayIcon (VBoxSelectorWnd* aParent, VBoxVMModel* aVMModel)
+VBoxTrayIcon::VBoxTrayIcon (VBoxSelectorWnd* aParent, UIVMItemModel* aVMModel)
 {
     mParent = aParent;
     mVMModel = aVMModel;
@@ -1875,7 +1931,7 @@ void VBoxTrayIcon::showSubMenu ()
     if (!mActive)
         return;
 
-    VBoxVMItem* pItem = NULL;
+    UIVMItem* pItem = NULL;
     QMenu *pMenu = NULL;
     QVariant vID;
 
@@ -1917,16 +1973,16 @@ void VBoxTrayIcon::showSubMenu ()
             || s == KMachineState_Aborted
            )
         {
-            mVmStartAction->setText (VBoxVMListView::tr ("S&tart"));
+            mVmStartAction->setText (UIVMListView::tr ("S&tart"));
             mVmStartAction->setStatusTip (
-                  VBoxVMListView::tr ("Start the selected virtual machine"));
+                  UIVMListView::tr ("Start the selected virtual machine"));
             mVmStartAction->setEnabled (!running);
         }
         else
         {
-            mVmStartAction->setText (VBoxVMListView::tr ("S&how"));
+            mVmStartAction->setText (UIVMListView::tr ("S&how"));
             mVmStartAction->setStatusTip (
-                  VBoxVMListView::tr ("Switch to the window of the selected virtual machine"));
+                  UIVMListView::tr ("Switch to the window of the selected virtual machine"));
             mVmStartAction->setEnabled (pItem->canSwitchTo());
         }
 
@@ -1942,18 +1998,18 @@ void VBoxTrayIcon::showSubMenu ()
             || s == KMachineState_TeleportingPausedVM /*?*/
            )
         {
-            mVmPauseAction->setText (VBoxVMListView::tr ("R&esume"));
+            mVmPauseAction->setText (UIVMListView::tr ("R&esume"));
             mVmPauseAction->setStatusTip (
-                  VBoxVMListView::tr ("Resume the execution of the virtual machine"));
+                  UIVMListView::tr ("Resume the execution of the virtual machine"));
             mVmPauseAction->blockSignals (true);
             mVmPauseAction->setChecked (true);
             mVmPauseAction->blockSignals (false);
         }
         else
         {
-            mVmPauseAction->setText (VBoxVMListView::tr ("&Pause"));
+            mVmPauseAction->setText (UIVMListView::tr ("&Pause"));
             mVmPauseAction->setStatusTip (
-                  VBoxVMListView::tr ("Suspend the execution of the virtual machine"));
+                  UIVMListView::tr ("Suspend the execution of the virtual machine"));
             mVmPauseAction->blockSignals (true);
             mVmPauseAction->setChecked (false);
             mVmPauseAction->blockSignals (false);
@@ -1985,9 +2041,9 @@ void VBoxTrayIcon::showSubMenu ()
         mVmPauseAction->setEnabled (false);
 
         /* Set the Start button text accordingly. */
-        mVmStartAction->setText (VBoxVMListView::tr ("S&tart"));
+        mVmStartAction->setText (UIVMListView::tr ("S&tart"));
         mVmStartAction->setStatusTip (
-              VBoxVMListView::tr ("Start the selected virtual machine"));
+              UIVMListView::tr ("Start the selected virtual machine"));
         mVmStartAction->setEnabled (false);
 
         /* Disable the show log item for the selected vm. */
@@ -2004,7 +2060,7 @@ void VBoxTrayIcon::hideSubMenu ()
     if (!mActive)
         return;
 
-    VBoxVMItem* pItem = NULL;
+    UIVMItem* pItem = NULL;
     QVariant vID;
 
     if (QMenu *pMenu = qobject_cast<QMenu*>(sender()))
@@ -2029,7 +2085,7 @@ void VBoxTrayIcon::refresh ()
 
     mTrayIconMenu->clear();
 
-    VBoxVMItem* pItem = NULL;
+    UIVMItem* pItem = NULL;
     QMenu* pCurMenu = mTrayIconMenu;
     QMenu* pSubMenu = NULL;
 
@@ -2079,9 +2135,9 @@ void VBoxTrayIcon::refresh ()
     setVisible (true);
 }
 
-VBoxVMItem* VBoxTrayIcon::GetItem (QObject* aObject)
+UIVMItem* VBoxTrayIcon::GetItem (QObject* aObject)
 {
-    VBoxVMItem* pItem = NULL;
+    UIVMItem* pItem = NULL;
     if (QAction *pAction = qobject_cast<QAction*>(sender()))
     {
         QVariant v = pAction->data();
@@ -2112,43 +2168,43 @@ void VBoxTrayIcon::trayIconShow (bool aShow)
 
 void VBoxTrayIcon::vmSettings()
 {
-    VBoxVMItem* pItem = GetItem (sender());
+    UIVMItem* pItem = GetItem (sender());
     mParent->vmSettings (NULL, NULL, pItem->id());
 }
 
 void VBoxTrayIcon::vmDelete()
 {
-    VBoxVMItem* pItem = GetItem (sender());
+    UIVMItem* pItem = GetItem (sender());
     mParent->vmDelete (pItem->id());
 }
 
 void VBoxTrayIcon::vmStart()
 {
-    VBoxVMItem* pItem = GetItem (sender());
+    UIVMItem* pItem = GetItem (sender());
     mParent->vmStart (pItem->id());
 }
 
 void VBoxTrayIcon::vmDiscard()
 {
-    VBoxVMItem* pItem = GetItem (sender());
+    UIVMItem* pItem = GetItem (sender());
     mParent->vmDiscard (pItem->id());
 }
 
 void VBoxTrayIcon::vmPause(bool aPause)
 {
-    VBoxVMItem* pItem = GetItem (sender());
+    UIVMItem* pItem = GetItem (sender());
     mParent->vmPause (aPause, pItem->id());
 }
 
 void VBoxTrayIcon::vmRefresh()
 {
-    VBoxVMItem* pItem = GetItem (sender());
+    UIVMItem* pItem = GetItem (sender());
     mParent->vmRefresh (pItem->id());
 }
 
 void VBoxTrayIcon::vmShowLogs()
 {
-    VBoxVMItem* pItem = GetItem (sender());
+    UIVMItem* pItem = GetItem (sender());
     mParent->vmShowLogs (pItem->id());
 }
 
@@ -2159,6 +2215,56 @@ void VBoxSelectorWnd::sltDownloaderUserManualEmbed()
     /* If there is User Manual downloader created => show the process bar: */
     if (UIDownloaderUserManual *pDl = UIDownloaderUserManual::current())
         statusBar()->addWidget(pDl->processWidget(this), 0);
+}
+
+void VBoxSelectorWnd::showViewContextMenu(const QPoint &pos)
+{
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    QString strToolbar = vbox.GetExtraData(VBoxDefs::GUI_Toolbar);
+    QString strStatusbar = vbox.GetExtraData(VBoxDefs::GUI_Statusbar);
+    bool fToolbar = strToolbar.isEmpty() || strToolbar == "true";
+    bool fStatusbar = strStatusbar.isEmpty() || strStatusbar == "true";
+
+    QList<QAction*> actions;
+    QAction *pShowToolBar = new QAction(tr("Show Toolbar"), 0);
+    pShowToolBar->setCheckable(true);
+    pShowToolBar->setChecked(fToolbar);
+    actions << pShowToolBar;
+    QAction *pShowStatusBar = new QAction(tr("Show Statusbar"), 0);
+    pShowStatusBar->setCheckable(true);
+    pShowStatusBar->setChecked(fStatusbar);
+    actions << pShowStatusBar;
+
+    QPoint gpos = pos;
+    QWidget *pSender = static_cast<QWidget*>(sender());
+    if (pSender)
+        gpos = pSender->mapToGlobal(pos);
+    QAction *pResult = QMenu::exec(actions, gpos);
+    if (pResult == pShowToolBar)
+    {
+        if (pResult->isChecked())
+        {
+            mVMToolBar->show();
+            vbox.SetExtraData(VBoxDefs::GUI_Toolbar, "true");
+        }
+        else
+        {
+            mVMToolBar->hide();
+            vbox.SetExtraData(VBoxDefs::GUI_Toolbar, "false");
+        }
+    }else if (pResult == pShowStatusBar)
+    {
+        if (pResult->isChecked())
+        {
+            statusBar()->show();
+            vbox.SetExtraData(VBoxDefs::GUI_Statusbar, "true");
+        }
+        else
+        {
+            statusBar()->hide();
+            vbox.SetExtraData(VBoxDefs::GUI_Statusbar, "false");
+        }
+    }
 }
 
 #include "VBoxSelectorWnd.moc"

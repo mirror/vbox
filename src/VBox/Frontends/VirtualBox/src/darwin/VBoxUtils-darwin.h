@@ -38,7 +38,7 @@ typedef NSView *NativeViewRef;
 # include <qglobal.h> /* for QT_MAC_USE_COCOA */
 # include <ApplicationServices/ApplicationServices.h>
 
-class QWidget;
+class QMainWindow;
 class QToolBar;
 class QPixmap;
 class QImage;
@@ -53,6 +53,8 @@ typedef void *NativeViewRef;
 
 #include <iprt/cdefs.h> /* for RT_C_DECLS_BEGIN/RT_C_DECLS_END & stuff */
 #include <QRect>
+
+class QWidget;
 
 RT_C_DECLS_BEGIN
 
@@ -84,11 +86,15 @@ void darwinWindowAnimateResizeImpl(NativeWindowRef aWindow, int x, int y, int wi
 void darwinWindowInvalidateShapeImpl(NativeWindowRef aWindow);
 void darwinWindowInvalidateShadowImpl(NativeWindowRef aWindow);
 int  darwinWindowToolBarHeight(NativeWindowRef aWindow);
+bool darwinIsToolbarVisible(NativeWindowRef pWindow);
 bool darwinIsWindowMaximized(NativeWindowRef aWindow);
 
 float darwinSmallFontSize();
 bool darwinSetFrontMostProcess();
 uint64_t darwinGetCurrentProcessId();
+
+bool darwinUnifiedToolbarEvents(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
+void darwinCreateContextMenuEvent(void *pvWin, int x, int y);
 
 RT_C_DECLS_END
 
@@ -103,7 +109,6 @@ DECLINLINE(CGRect) darwinCenterRectTo(CGRect aRect, const CGRect& aToRect)
 }
 
 
-#ifndef __OBJC__
 /********************************************************************************
  *
  * Window/View management (Qt Wrapper)
@@ -145,6 +150,7 @@ NativeWindowRef darwinToNativeWindow(NativeViewRef aView);
  */
 NativeViewRef darwinToNativeView(NativeWindowRef aWindow);
 
+#ifndef __OBJC__
 /********************************************************************************
  *
  * Simple setter methods (Qt Wrapper)
@@ -166,10 +172,13 @@ void darwinWindowAnimateResize(QWidget *aWidget, const QRect &aTarget);
 void darwinWindowInvalidateShape(QWidget *aWidget);
 void darwinWindowInvalidateShadow(QWidget *aWidget);
 int  darwinWindowToolBarHeight(QWidget *aWidget);
+bool darwinIsToolbarVisible(QToolBar *pToolBar);
 bool darwinIsWindowMaximized(QWidget *aWidget);
 QString darwinSystemLanguage(void);
 QPixmap darwinCreateDragPixmap(const QPixmap& aPixmap, const QString &aText);
 
+void darwinRegisterForUnifiedToolbarContextMenuEvents(QMainWindow *pWindow);
+void darwinUnregisterForUnifiedToolbarContextMenuEvents(QMainWindow *pWindow);
 
 /********************************************************************************
  *

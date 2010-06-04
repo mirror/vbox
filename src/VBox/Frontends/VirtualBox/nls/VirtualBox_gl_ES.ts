@@ -6366,7 +6366,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMListView</name>
+    <name>UIVMListView</name>
     <message>
         <source>Inaccessible</source>
         <translation>Inaccesíbel</translation>
