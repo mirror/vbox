@@ -26,6 +26,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef VBOX
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD: src/sys/kern/subr_sbuf.c,v 1.30.8.1 2009/04/15 03:14:26 kensmith Exp $");
 
@@ -58,6 +59,13 @@ static MALLOC_DEFINE(M_SBUF, "sbuf", "string buffers");
 #define	SBFREE(buf)		free(buf)
 #define	min(x,y)		MIN(x,y)
 #endif /* _KERNEL */
+#else /* VBOX */
+# include <iprt/param.h>
+# include <iprt/ctype.h>
+# include <slirp.h>
+# define SBMALLOC(size) RTMemAlloc((size))
+# define SBFREE(buf) RTMemFree((buf))
+#endif
 
 /*
  * Predicates
@@ -416,8 +424,13 @@ sbuf_vprintf(struct sbuf *s, const char *fmt, va_list ap)
 
 	do {
 		va_copy(ap_copy, ap);
+#ifndef VBOX
 		len = vsnprintf(&s->s_buf[s->s_len], SBUF_FREESPACE(s) + 1,
 		    fmt, ap_copy);
+#else
+		len = RTStrPrintfV(&s->s_buf[s->s_len], SBUF_FREESPACE(s) + 1,
+		    fmt, ap_copy);
+#endif
 		va_end(ap_copy);
 	} while (len > SBUF_FREESPACE(s) &&
 	    sbuf_extend(s, len - SBUF_FREESPACE(s)) == 0);
@@ -491,8 +504,13 @@ sbuf_trim(struct sbuf *s)
 	if (SBUF_HASOVERFLOWED(s))
 		return (-1);
 
+#ifndef VBOX
 	while (s->s_len && isspace(s->s_buf[s->s_len-1]))
 		--s->s_len;
+#else
+	while (s->s_len && RT_C_IS_SPACE(s->s_buf[s->s_len-1]))
+		--s->s_len;
+#endif
 
 	return (0);
 }

@@ -790,6 +790,7 @@ void slirp_term(PNATState pData)
 #ifdef RT_OS_WINDOWS
     WSACleanup();
 #endif
+#ifndef VBOX_WITH_SLIRP_BSD_SBUF
 #ifdef LOG_ENABLED
     Log(("\n"
          "NAT statistics\n"
@@ -804,6 +805,7 @@ void slirp_term(PNATState pData)
     Log(("\n"
          "\n"
          "\n"));
+#endif
 #endif
     RTMemFree(pData);
 }
@@ -937,7 +939,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
          * Set for writing if we are connected, can send more, and
          * we have something to send
          */
-        if (CONN_CANFSEND(so) && so->so_rcv.sb_cc)
+        if (CONN_CANFSEND(so) && SBUF_LEN(&so->so_rcv))
         {
             STAM_COUNTER_INC(&pData->StatTCPHot);
             TCP_ENGAGE_EVENT1(so, writefds);
@@ -947,7 +949,8 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
          * Set for reading (and urgent data) if we are connected, can
          * receive more, and we have room for it XXX /2 ?
          */
-        if (CONN_CANFRCV(so) && (so->so_snd.sb_cc < (so->so_snd.sb_datalen/2)))
+        /* @todo: vvl - check which predicat here will be more useful here in rerm of new sbufs. */
+        if (CONN_CANFRCV(so) && (SBUF_LEN(&so->so_snd) < (SBUF_SIZE(&so->so_snd)/2)))
         {
             STAM_COUNTER_INC(&pData->StatTCPHot);
             TCP_ENGAGE_EVENT2(so, readfds, xfds);

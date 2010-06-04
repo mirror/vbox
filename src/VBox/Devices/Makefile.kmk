@@ -853,12 +853,12 @@ Drivers_SOURCES    = \
 VBOX_SLIRP_SOURCES = \
 	Network/DrvNAT.cpp \
 	Network/slirp/bootp.c \
-	Network/slirp/debug.c \
+ 	Network/slirp/debug.c \
 	Network/slirp/ip_icmp.c \
 	Network/slirp/ip_input.c \
 	Network/slirp/ip_output.c \
 	Network/slirp/misc.c \
-	Network/slirp/sbuf.c \
+    Network/slirp/sbuf.c \
 	Network/slirp/slirp.c \
 	Network/slirp/socket.c \
 	Network/slirp/tcp_input.c \
@@ -869,6 +869,10 @@ VBOX_SLIRP_SOURCES = \
 	Network/slirp/dnsproxy/hash.c \
 	Network/slirp/tftp.c \
 	Network/slirp/dnsproxy/dnsproxy.c
+
+ifdef VBOX_WITH_SLIRP_BSD_SBUF
+VBOX_SLIRP_SOURCES += Network/slirp/bsd/kern/subr_sbuf.c
+endif
 
 VBOX_SLIRP_BSD_ARCH = $(subst x86,i386,$(KBUILD_TARGET_ARCH))
 VBOX_SLIRP_BSD_SOURCES += \
@@ -892,6 +896,7 @@ VBOX_SLIRP_ALIAS_SOURCES = \
 Drivers_SOURCES += $(VBOX_SLIRP_SOURCES)
 define def_vbox_slirp_cflags
   $(file)_DEFS += \
+      $(if $(VBOX_WITH_SLIRP_BSD_SBUF),VBOX_WITH_SLIRP_BSD_SBUF,) \
       $(if $(VBOX_WITH_SLIRP_MEMORY_CHECK),RTMEM_WRAP_TO_EF_APIS,) \
       $(if $(VBOX_WITH_DEBUG_NAT_SOCKETS),VBOX_WITH_DEBUG_NAT_SOCKETS,)	\
       $(if $(VBOX_WITH_SLIRP_MT),VBOX_WITH_SLIRP_MT,)

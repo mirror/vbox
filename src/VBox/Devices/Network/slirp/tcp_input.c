@@ -510,8 +510,13 @@ findso:
             goto dropwithreset;
         }
         SOCKET_LOCK(so);
+#ifndef VBOX_WITH_SLIRP_BSD_SBUF
         sbreserve(pData, &so->so_snd, tcp_sndspace);
         sbreserve(pData, &so->so_rcv, tcp_rcvspace);
+#else
+        sbuf_new(&so->so_snd, NULL, tcp_sndspace, SBUF_AUTOEXTEND);
+        sbuf_new(&so->so_rcv, NULL, tcp_rcvspace, SBUF_AUTOEXTEND);
+#endif
 
 /*      tcp_last_so = so; */  /* XXX ? */
 /*      tp = sototcpcb(so);    */
@@ -632,7 +637,15 @@ findso:
               acked = ti->ti_ack - tp->snd_una;
               tcpstat.tcps_rcvackpack++;
               tcpstat.tcps_rcvackbyte += acked;
+#ifndef VBOX_WITH_SLIRP_BSD_SBUF
               sbdrop(&so->so_snd, acked);
+#else
+              if (sbuf_len(&so->so_snd) < acked)
+                /* drop all what sbuf have */
+                sbuf_setpos(&so->so_snd, 0);
+              else
+                sbuf_setpos(&so->so_snd, sbuf_len(&so->so_snd) - acked);
+#endif
               tp->snd_una = ti->ti_ack;
               m_freem(pData, m);
 
@@ -663,7 +676,7 @@ findso:
                * put data into so_snd.  Since we don't so sowwakeup,
                * we don't need this.. XXX???
                */
-              if (so->so_snd.sb_cc)
+              if (SBUF_LEN(&so->so_snd))
                   (void) tcp_output(pData, tp);
 
               SOCKET_UNLOCK(so);
@@ -1323,15 +1336,23 @@ synrx_to_est:
                     incr = incr * incr / cw;
                 tp->snd_cwnd = min(cw + incr, TCP_MAXWIN<<tp->snd_scale);
             }
-            if (acked > so->so_snd.sb_cc)
+            if (acked > SBUF_LEN(&so->so_snd))
             {
-                tp->snd_wnd -= so->so_snd.sb_cc;
+                tp->snd_wnd -= SBUF_LEN(&so->so_snd);
+#ifndef VBOX_WITH_SLIRP_BSD_SBUF
                 sbdrop(&so->so_snd, (int )so->so_snd.sb_cc);
+#else
+                sbuf_clear(&so->so_snd);
+#endif
                 ourfinisacked = 1;
             }
             else
             {
+#ifndef VBOX_WITH_SLIRP_BSD_SBUF
                 sbdrop(&so->so_snd, acked);
+#else
+                sbuf_setpos(&so->so_snd, sbuf_len(&so->so_snd) - acked);
+#endif
                 tp->snd_wnd -= acked;
                 ourfinisacked = 0;
             }
@@ -1445,6 +1466,8 @@ step6:
     if ((tiflags & TH_URG) && ti->ti_urp &&
             TCPS_HAVERCVDFIN(tp->t_state) == 0)
     {
+    /* BSD's sbufs are auto extent so we shouldn't worry here */
+#ifndef VBOX_WITH_SLIRP_BSD_SBUF
         /*
          * This is a kludge, but if we receive and accept
          * random urgent pointers, we'll crash in
@@ -1457,6 +1480,7 @@ step6:
             tiflags &= ~TH_URG;
             goto dodata;
         }
+#endif
         /*
          * If this segment advances the known urgent pointer,
          * then mark the data stream.  This should not happen
@@ -1474,7 +1498,7 @@ step6:
         if (SEQ_GT(ti->ti_seq+ti->ti_urp, tp->rcv_up))
         {
             tp->rcv_up = ti->ti_seq + ti->ti_urp;
-            so->so_urgc =  so->so_rcv.sb_cc +
+            so->so_urgc =  SBUF_LEN(&so->so_rcv) +
                 (tp->rcv_up - tp->rcv_nxt); /* -1; */
             tp->rcv_up = ti->ti_seq + ti->ti_urp;
         }
@@ -1538,7 +1562,7 @@ dodata:
          * our window, in order to estimate the sender's
          * buffer size.
          */
-        len = so->so_rcv.sb_datalen - (tp->rcv_adv - tp->rcv_nxt);
+        len = SBUF_SIZE(&so->so_rcv) - (tp->rcv_adv - tp->rcv_nxt);
     }
     else
     {
@@ -1890,8 +1914,13 @@ tcp_mss(PNATState pData, register struct tcpcb *tp, u_int offer)
 
     tp->snd_cwnd = mss;
 
+#ifndef VBOX_WITH_SLIRP_BSD_SBUF
     sbreserve(pData, &so->so_snd, tcp_sndspace+((tcp_sndspace%mss)?(mss-(tcp_sndspace%mss)):0));
     sbreserve(pData, &so->so_rcv, tcp_rcvspace+((tcp_rcvspace%mss)?(mss-(tcp_rcvspace%mss)):0));
+#else
+    sbuf_new(&so->so_snd, NULL, tcp_sndspace+((tcp_sndspace%mss)?(mss-(tcp_sndspace%mss)):0), SBUF_AUTOEXTEND);
+    sbuf_new(&so->so_rcv, NULL, tcp_rcvspace+((tcp_rcvspace%mss)?(mss-(tcp_rcvspace%mss)):0), SBUF_AUTOEXTEND);
+#endif
 
     DEBUG_MISC((dfd, " returning mss = %d\n", mss));
 

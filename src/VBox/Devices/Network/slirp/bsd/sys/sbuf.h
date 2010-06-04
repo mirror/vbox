@@ -31,7 +31,11 @@
 #ifndef _SYS_SBUF_H_
 #define	_SYS_SBUF_H_
 
+#ifndef VBOX
 #include <sys/_types.h>
+#else
+# include <iprt/types.h>
+#endif
 
 /*
  * Structure definition
@@ -64,8 +68,13 @@ int		 sbuf_bcat(struct sbuf *, const void *, size_t);
 int		 sbuf_bcpy(struct sbuf *, const void *, size_t);
 int		 sbuf_cat(struct sbuf *, const char *);
 int		 sbuf_cpy(struct sbuf *, const char *);
+#ifndef VBOX
 int		 sbuf_printf(struct sbuf *, const char *, ...) __printflike(2, 3);
 int		 sbuf_vprintf(struct sbuf *, const char *, __va_list) __printflike(2, 0);
+#else
+int		 sbuf_printf(struct sbuf *, const char *, ...);
+int		 sbuf_vprintf(struct sbuf *, const char *, va_list);
+#endif
 int		 sbuf_putc(struct sbuf *, int);
 int		 sbuf_trim(struct sbuf *);
 int		 sbuf_overflowed(struct sbuf *);
