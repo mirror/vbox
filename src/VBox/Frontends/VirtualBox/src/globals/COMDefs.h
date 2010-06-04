@@ -77,8 +77,10 @@
 
 /* Qt includes */
 #include <QString>
+#include <QRect>
 #include <QUuid>
 #include <QVector>
+#include <QList>
 #include <QMetaType>
 
 #include <iprt/memory> // for auto_copy_ptr
