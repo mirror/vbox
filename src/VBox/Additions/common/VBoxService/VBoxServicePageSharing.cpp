@@ -432,15 +432,15 @@ void VBoxServicePageSharingInspectGuest()
                     {
                         VBoxServiceVerbose(1, "Unexpected kernel module name %s\n", pSystemModules->Modules[i].FullPathName);
                         RTMemFree(pModule);
-                        break;
+                        continue;
                     }
 
                     lpPath = strchr(lpPath+1, '\\');
                     if (!lpPath)
                     {
-                        VBoxServiceVerbose(1, "Unexpected kernel module name %s\n", pSystemModules->Modules[i].FullPathName);
+                        VBoxServiceVerbose(1, "Unexpected kernel module name %s (2)\n", pSystemModules->Modules[i].FullPathName);
                         RTMemFree(pModule);
-                        break;
+                        continue;
                     }
 
                     strcat(szFullFilePath, lpPath);
