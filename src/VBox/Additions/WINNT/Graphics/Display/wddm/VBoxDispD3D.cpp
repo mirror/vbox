@@ -867,6 +867,55 @@ D3DMULTISAMPLE_TYPE vboxDDI2D3DMultiSampleType(D3DDDIMULTISAMPLE_TYPE enmType)
     return (D3DMULTISAMPLE_TYPE)enmType;
 }
 
+D3DPOOL vboxDDI2D3DPool(D3DDDI_POOL enmPool)
+{
+    /* @todo: check they are all equal */
+    switch (enmPool)
+    {
+    case D3DDDIPOOL_SYSTEMMEM:
+        return D3DPOOL_SYSTEMMEM;
+    case D3DDDIPOOL_VIDEOMEMORY:
+    case D3DDDIPOOL_LOCALVIDMEM:
+    case D3DDDIPOOL_NONLOCALVIDMEM:
+        /* @todo: what would be propper here? */
+        return D3DPOOL_DEFAULT;
+    default:
+        AssertBreakpoint();
+    }
+    return D3DPOOL_DEFAULT;
+}
+
+DWORD vboxDDI2D3DUsage(D3DDDI_RESOURCEFLAGS fFlags)
+{
+    DWORD fUsage = 0;
+    if (fFlags.Dynamic)
+        fUsage |= D3DUSAGE_DYNAMIC;
+    if (fFlags.AutogenMipmap)
+        fUsage |= D3DUSAGE_AUTOGENMIPMAP;
+    if (fFlags.DMap)
+        fUsage |= D3DUSAGE_DMAP;
+    if (fFlags.WriteOnly)
+        fUsage |= D3DUSAGE_WRITEONLY;
+    if (fFlags.NPatches)
+        fUsage |= D3DUSAGE_NPATCHES;
+    if (fFlags.Points)
+        fUsage |= D3DUSAGE_POINTS;
+    if (fFlags.RenderTarget)
+        fUsage |= D3DUSAGE_RENDERTARGET;
+    if (fFlags.RtPatches)
+        fUsage |= D3DUSAGE_RTPATCHES;
+    if (fFlags.TextApi)
+        fUsage |= D3DUSAGE_TEXTAPI;
+    if (fFlags.WriteOnly)
+        fUsage |= D3DUSAGE_WRITEONLY;
+    //below are wddm 1.1-specific
+//    if (fFlags.RestrictedContent)
+//        fUsage |= D3DUSAGE_RESTRICTED_CONTENT;
+//    if (fFlags.RestrictSharedAccess)
+//        fUsage |= D3DUSAGE_RESTRICT_SHARED_RESOURCE;
+    return fUsage;
+}
+
 static void vboxResourcePopulateRcDesc(VBOXWDDM_RC_DESC *pDesc, D3DDDIARG_CREATERESOURCE* pResource)
 {
     pDesc->fFlags = pResource->Flags;
@@ -1689,6 +1738,67 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                     {
                         Assert(pD3D9Surf);
                         pAllocation->pD3DIf = pD3D9Surf;
+                    }
+                    else
+                    {
+                        for (UINT j = 0; j < i; ++j)
+                        {
+                            pRc->aAllocations[j].pD3DIf->Release();
+                        }
+                        break;
+                    }
+                }
+            }
+            else if (pResource->Flags.VertexBuffer)
+            {
+                Assert(pDevice->pDevice9If);
+                for (UINT i = 0; i < pResource->SurfCount; ++i)
+                {
+                    PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
+                    CONST D3DDDI_SURFACEINFO* pSurf = &pResource->pSurfList[i];
+                    IDirect3DVertexBuffer9  *pD3D9VBuf;
+                    hr = pDevice->pDevice9If->CreateVertexBuffer(pSurf->Width,
+                            vboxDDI2D3DUsage(pResource->Flags),
+                            pResource->Fvf,
+                            vboxDDI2D3DPool(pResource->Pool),
+                            &pD3D9VBuf,
+                            NULL /*HANDLE* pSharedHandle*/);
+                    Assert(hr == S_OK);
+                    if (hr == S_OK)
+                    {
+                        Assert(pD3D9VBuf);
+                        pAllocation->pD3DIf = pD3D9VBuf;
+                    }
+                    else
+                    {
+                        for (UINT j = 0; j < i; ++j)
+                        {
+                            pRc->aAllocations[j].pD3DIf->Release();
+                        }
+                        break;
+                    }
+                }
+            }
+            else if (pResource->Flags.IndexBuffer)
+            {
+                Assert(pDevice->pDevice9If);
+                for (UINT i = 0; i < pResource->SurfCount; ++i)
+                {
+                    PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
+                    CONST D3DDDI_SURFACEINFO* pSurf = &pResource->pSurfList[i];
+                    IDirect3DIndexBuffer9  *pD3D9IBuf;
+                    hr = pDevice->pDevice9If->CreateIndexBuffer(pSurf->Width,
+                            vboxDDI2D3DUsage(pResource->Flags),
+                            vboxDDI2D3DFormat(pResource->Format),
+                            vboxDDI2D3DPool(pResource->Pool),
+                            &pD3D9IBuf,
+                            NULL /*HANDLE* pSharedHandle*/
+                          );
+                    Assert(hr == S_OK);
+                    if (hr == S_OK)
+                    {
+                        Assert(pD3D9IBuf);
+                        pAllocation->pD3DIf = pD3D9IBuf;
                     }
                     else
                     {
