@@ -739,6 +739,7 @@ static void crStateBufferObjectIntCmp(CRBufferObjectBits *bb, CRbitvalue *bitID,
             if (bSwitch)
             {
                 FILLDIRTY(bb->arrayBinding);
+                FILLDIRTY(bb->dirty);
             }
             else
             {
@@ -781,6 +782,7 @@ static void crStateBufferObjectIntCmp(CRBufferObjectBits *bb, CRbitvalue *bitID,
             if (bSwitch)
             {
                 FILLDIRTY(bb->elementsBinding);
+                FILLDIRTY(bb->dirty);
             }
             else
             {
@@ -824,6 +826,7 @@ static void crStateBufferObjectIntCmp(CRBufferObjectBits *bb, CRbitvalue *bitID,
             if (bSwitch)
             {
                 FILLDIRTY(bb->packBinding);
+                FILLDIRTY(bb->dirty);
             }
             else
             {
@@ -866,6 +869,7 @@ static void crStateBufferObjectIntCmp(CRBufferObjectBits *bb, CRbitvalue *bitID,
             if (bSwitch)
             {
                 FILLDIRTY(bb->unpackBinding);
+                FILLDIRTY(bb->dirty);
             }
             else
             {
