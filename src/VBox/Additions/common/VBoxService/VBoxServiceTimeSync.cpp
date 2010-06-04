@@ -187,7 +187,7 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncPreInit(void)
             || rc == VERR_NOT_FOUND)
         {
             rc = VBoxServiceReadPropUInt32(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold",
-                                           &g_TimeSyncSetThreshold, 0, 7*24*60*1000 /* a week */);
+                                           &g_TimeSyncSetThreshold, 0, 7*24*60*60*1000 /* a week */);
         }
         if (   RT_SUCCESS(rc)
             || rc == VERR_NOT_FOUND)
@@ -235,7 +235,7 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncOption(const char **ppszShort, int a
                                   &g_TimeSyncMaxLatency, 1, 3600000);
     else if (!strcmp(argv[*pi], "--timesync-set-threshold"))
         rc = VBoxServiceArgUInt32(argc, argv, "", pi,
-                                  &g_TimeSyncSetThreshold, 0, 7*24*60*1000); /* a week */
+                                  &g_TimeSyncSetThreshold, 0, 7*24*60*60*1000); /* a week */
     else if (!strcmp(argv[*pi], "--timesync-set-start"))
     {
         g_fTimeSyncSetNext = true;
