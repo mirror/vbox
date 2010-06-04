@@ -401,7 +401,8 @@ void VBoxServicePageSharingInspectGuest()
 
             char *pszDot = strrchr(pSystemModules->Modules[i].FullPathName, '.');
             if (    pszDot
-                &&  (pszDot[1] == 'e' || pszDot[1] == 'E'))
+                &&  (pszDot[1] == 'e' || pszDot[1] == 'E')
+                &&  strcmp(&pSystemModules->Modules[i].FullPathName[pSystemModules->Modules[i].OffsetToFileName], "ntoskrnl.exe"))
                 continue;   /* ignore executables for now. */
 
             /* Found it before? */
