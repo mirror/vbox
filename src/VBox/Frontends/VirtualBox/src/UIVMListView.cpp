@@ -28,6 +28,7 @@
 #include <QPainter>
 #include <QFileInfo>
 #include <QLinearGradient>
+#include <QPixmapCache>
 
 #if defined (Q_WS_MAC)
 # include "VBoxUtils.h"
@@ -580,9 +581,15 @@ QVariant UIVMItemModel::data(const QModelIndex &aIndex, int aRole) const
             v = f;
             break;
         }
+        case OSTypeIdRole:
+        {
+            v = m_VMItemList.at(aIndex.row())->osTypeId();
+            break;
+        }
         case UIVMItemPtrRole:
         {
             v = qVariantFromValue(m_VMItemList.at(aIndex.row()));
+            break;
         }
     }
     return v;
@@ -742,7 +749,7 @@ public:
 };
 
 QSize UIVMItemPainter::sizeHint(const QStyleOptionViewItem &aOption,
-                                   const QModelIndex &aIndex) const
+                                const QModelIndex &aIndex) const
 {
     /* Get the size of every item */
     QRect osTypeRT = rect(aOption, aIndex, Qt::DecorationRole);
@@ -758,22 +765,57 @@ QSize UIVMItemPainter::sizeHint(const QStyleOptionViewItem &aOption,
     return (boundingRect.size() + QSize(2 * m_Margin, 2 * m_Margin));
 }
 
-void UIVMItemPainter::paint(QPainter *aPainter, const QStyleOptionViewItem &aOption,
-                               const QModelIndex &aIndex) const
+void UIVMItemPainter::paint(QPainter *pPainter, const QStyleOptionViewItem &option,
+                            const QModelIndex &index) const
 {
-    QStyleOptionViewItem option(aOption);
-    /* Highlight background if an item is selected in any case.
-     * (Fix for selector in the windows style.) */
-    option.showDecorationSelected = true;
+    /* Generate the key used in the pixmap cache. Needs to be composed with all
+     * values which might be changed. */
+    QString key = QString("vbox:%1:%2:%3:%4:%5:%6")
+        .arg(index.data(Qt::DisplayRole).toString())
+        .arg(index.data(UIVMItemModel::OSTypeIdRole).toString())
+        .arg(index.data(UIVMItemModel::SnapShotDisplayRole).toString())
+        .arg(index.data(UIVMItemModel::SessionStateDisplayRole).toString())
+        .arg(option.state)
+        .arg(option.rect.width());
 
-    /* Start drawing with the background */
-    drawBackground(aPainter, option, aIndex);
+    /* Check if the pixmap already exists in the cache. */
+    QPixmap pixmap;
+    if (!QPixmapCache::find(key, pixmap))
+    {
+        /* If not, generate a new one */
+        QStyleOptionViewItem tmpOption(option);
+        /* Highlight background if an item is selected in any case.
+         * (Fix for selector in the windows style.) */
+        tmpOption.showDecorationSelected = true;
 
-    /* Blend the content */
-    blendContent(aPainter, option, aIndex);
+        /* Create a temporary pixmap and painter to work on.*/
+        QPixmap tmpPixmap(option.rect.size());
+        tmpPixmap.fill(Qt::transparent);
+        QPainter tmpPainter(&tmpPixmap);
 
-    /* Draw a focus rectangle when necessary */
-    drawFocus(aPainter, option, option.rect);
+        /* Normally we operate on a painter which is in the size of the list
+         * view widget. Here we process one item only, so shift all the stuff
+         * out of the view. It will be translated back in the following
+         * methods. */
+        tmpPainter.translate(-option.rect.x(), -option.rect.y());
+
+        /* Start drawing with the background */
+        drawBackground(&tmpPainter, tmpOption, index);
+
+        /* Blend the content */
+        blendContent(&tmpPainter, tmpOption, index);
+
+        /* Draw a focus rectangle when necessary */
+        drawFocus(&tmpPainter, tmpOption, tmpOption.rect);
+
+        /* Finish drawing */
+        tmpPainter.end();
+
+        pixmap = tmpPixmap;
+        /* Fill the  cache */
+        QPixmapCache::insert(key, tmpPixmap);
+    }
+    pPainter->drawPixmap(option.rect, pixmap);
 }
 
 void UIVMItemPainter::paintContent(QPainter *pPainter, const QStyleOptionViewItem &option,
