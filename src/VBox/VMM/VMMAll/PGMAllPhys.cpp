@@ -1244,12 +1244,8 @@ int pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
  */
 VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock)
 {
-#if !(defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)) // for provoking guru - DO NOT COMMIT THIS!
     int rc = pgmLock(pVM);
     AssertRCReturn(rc, rc);
-#else
-    int rc;
-#endif
 
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     /*
@@ -1328,9 +1324,7 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
     }
 
 #endif /* IN_RING3 || IN_RING0 */
-#if !(defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)) // for provoking guru - DO NOT COMMIT THIS!
     pgmUnlock(pVM);
-#endif
     return rc;
 }
 
