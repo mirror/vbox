@@ -1349,18 +1349,16 @@ STDMETHODIMP VirtualBox::FindMachine(IN_BSTR aName, IMachine **aMachine)
          ++it)
     {
         ComObjPtr<Machine> &pMachine2 = *it;
-        AutoLimitedCaller machCaller(pMachine2);
-        AssertComRC(machCaller.rc());
-
+        AutoCaller machCaller(pMachine2);
         /* skip inaccessible machines */
-        if (machCaller.state() == Machine::Ready)
+        if (FAILED(machCaller.rc()))
+            continue;
+
+        AutoReadLock machLock(pMachine2 COMMA_LOCKVAL_SRC_POS);
+        if (pMachine2->getName() == aName)
         {
-            AutoReadLock machLock(pMachine2 COMMA_LOCKVAL_SRC_POS);
-            if (pMachine2->getName() == aName)
-            {
-                pMachineFound = pMachine2;
-                break;
-            }
+            pMachineFound = pMachine2;
+            break;
         }
     }
 
@@ -2921,9 +2919,10 @@ HRESULT VirtualBox::findMachine(const Guid &aId,
              ++it)
         {
             ComObjPtr<Machine> pMachine2 = *it;
-            /* sanity */
-            AutoLimitedCaller machCaller(pMachine2);
-            AssertComRC(machCaller.rc());
+            AutoCaller machCaller(pMachine2);
+            /* skip inaccessible machines */
+            if (FAILED(machCaller.rc()))
+                continue;
 
             if (pMachine2->getId() == aId)
             {
@@ -2936,9 +2935,9 @@ HRESULT VirtualBox::findMachine(const Guid &aId,
     }
 
     if (aSetError && FAILED(rc))
-        setError(VBOX_E_OBJECT_NOT_FOUND,
-                 tr("Could not find a registered machine with UUID {%RTuuid}"),
-                 aId.raw());
+        rc = setError(rc,
+                      tr("Could not find a registered machine with UUID {%RTuuid}"),
+                      aId.raw());
 
     return rc;
 }
