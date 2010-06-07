@@ -50,17 +50,6 @@ typedef struct RTMANIFESTTEST
 /** Pointer to the input structure. */
 typedef RTMANIFESTTEST* PRTMANIFESTTEST;
 
-/**
- * Manifest progress callback.
- *
- * @returns IPRT status code.
- *
- * @param   uPercent    The progress completion percentage.
- * @param   pvUser      The user defined parameter.
- */
-typedef DECLCALLBACK(int) FNRTMANIFESTPROGRESS(unsigned uPercent, void *pvUser);
-/** Pointer to a manifest progress callback. */
-typedef FNRTMANIFESTPROGRESS *PFNRTMANIFESTPROGRESS;
 
 /**
  * Verify the given SHA1 digests against the entries in the manifest file.
@@ -96,7 +85,8 @@ RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST paTe
  * @param   pfnProgressCallback  optional callback for the progress indication
  * @param   pvUser               user defined pointer for the callback
  */
-RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles, size_t *piFailed, PFNRTMANIFESTPROGRESS pfnProgressCallback, void *pvUser);
+RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles, size_t *piFailed,
+                                    PFNRTPROGRESS pfnProgressCallback, void *pvUser);
 
 /**
  * Creates a manifest file for a set of files. The manifest file contains SHA1
@@ -111,11 +101,12 @@ RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * co
  * @param   pfnProgressCallback  optional callback for the progress indication
  * @param   pvUser               user defined pointer for the callback
  */
-RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles, PFNRTMANIFESTPROGRESS pfnProgressCallback, void *pvUser);
+RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles,
+                                   PFNRTPROGRESS pfnProgressCallback, void *pvUser);
 
 /** @} */
 
 RT_C_DECLS_END
 
-#endif /* ___iprt_manifest_h */
+#endif
 

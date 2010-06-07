@@ -35,18 +35,6 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-/**
- * SHA progress callback.
- *
- * @returns IPRT status code.
- *
- * @param   uPercent    The progress completion percentage.
- * @param   pvUser      The user defined parameter.
- */
-typedef DECLCALLBACK(int) FNRTSHAPROGRESS(unsigned uPercent, void *pvUser);
-/** Pointer to a SHA progress callback. */
-typedef FNRTSHAPROGRESS *PFNRTSHAPROGRESS;
-
 /** The size of a SHA-1 hash. */
 #define RTSHA1_HASH_SIZE    20
 /** The length of a SHA-1 digest string. The terminator is not included. */
@@ -134,7 +122,7 @@ RTDECL(int) RTSha1FromString(char const *pszDigest, uint8_t pabDigest[RTSHA1_HAS
  * @param   pfnProgressCallback   optional callback for the progress indication
  * @param   pvUser                user defined pointer for the callback
  */
-RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest, PFNRTSHAPROGRESS pfnProgressCallback, void *pvUser);
+RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest, FNRTPROGRESS pfnProgressCallback, void *pvUser);
 
 
 
