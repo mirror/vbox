@@ -1699,18 +1699,6 @@ VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
 
 
 /**
- * Release the IOM lock if owned by the current VCPU
- *
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(void) IOMR3ReleaseOwnedLocks(PVM pVM)
-{
-    while (PDMCritSectIsOwner(&pVM->iom.s.EmtLock))
-        PDMCritSectLeave(&pVM->iom.s.EmtLock);
-}
-
-
-/**
  * For TM only!
  *
  * @returns Pointer to the critical section.
