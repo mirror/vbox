@@ -811,6 +811,101 @@ VMMR3DECL(int) DBGFR3InfoStdErr(PVM pVM, const char *pszName, const char *pszArg
 
 
 /**
+ * Display several info items.
+ *
+ * This is intended used by the fatal error dump only.
+ *
+ * @returns
+ * @param   pVM             The VM handle.
+ * @param   pszIncludePat   Simple string pattern of info items to include.
+ * @param   pszExcludePat   Simple string pattern of info items to exclude.
+ * @param   pszSepFmt       Item separator format string.  The item name will be
+ *                          given as parameter.
+ * @param   pHlp            The output helper functions.  If NULL the logger
+ *                          will be used.
+ *
+ * @threads EMT
+ */
+VMMR3DECL(int) DBGFR3InfoMulti(PVM pVM, const char *pszIncludePat, const char *pszExcludePat, const char *pszSepFmt,
+                               PCDBGFINFOHLP pHlp)
+{
+    /*
+     * Validate input.
+     */
+    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+    AssertPtrReturn(pszIncludePat, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszExcludePat, VERR_INVALID_POINTER);
+    if (pHlp)
+    {
+        AssertPtrReturn(pHlp->pfnPrintf, VERR_INVALID_POINTER);
+        AssertPtrReturn(pHlp->pfnPrintfV, VERR_INVALID_POINTER);
+    }
+    else
+        pHlp = &g_dbgfR3InfoLogHlp;
+
+    size_t const cchIncludePat = strlen(pszIncludePat);
+    size_t const cchExcludePat = strlen(pszExcludePat);
+    const char *pszArgs = "";
+
+    /*
+     * Enumerate the info handlers and call the ones matching.
+     * Note! We won't leave the critical section here...
+     */
+    int rc = RTCritSectEnter(&pVM->dbgf.s.InfoCritSect);
+    AssertRC(rc);
+    rc = VWRN_NOT_FOUND;
+    for (PDBGFINFO pInfo = pVM->dbgf.s.pInfoFirst; pInfo; pInfo = pInfo->pNext)
+    {
+        if (   RTStrSimplePatternMultiMatch(pszIncludePat, cchIncludePat, pInfo->szName, pInfo->cchName, NULL)
+            && !RTStrSimplePatternMultiMatch(pszExcludePat, cchExcludePat, pInfo->szName, pInfo->cchName, NULL))
+        {
+            pHlp->pfnPrintf(pHlp, pszSepFmt, pInfo->szName);
+            rc = VINF_SUCCESS;
+            switch (pInfo->enmType)
+            {
+                case DBGFINFOTYPE_DEV:
+                    if (pInfo->fFlags & DBGFINFO_FLAGS_RUN_ON_EMT)
+                        rc = VMR3ReqCallVoidWait(pVM, VMCPUID_ANY, (PFNRT)pInfo->u.Dev.pfnHandler, 3, pInfo->u.Dev.pDevIns, pHlp, pszArgs);
+                    else
+                        pInfo->u.Dev.pfnHandler(pInfo->u.Dev.pDevIns, pHlp, pszArgs);
+                    break;
+
+                case DBGFINFOTYPE_DRV:
+                    if (pInfo->fFlags & DBGFINFO_FLAGS_RUN_ON_EMT)
+                        rc = VMR3ReqCallVoidWait(pVM, VMCPUID_ANY, (PFNRT)pInfo->u.Drv.pfnHandler, 3, pInfo->u.Drv.pDrvIns, pHlp, pszArgs);
+                    else
+                        pInfo->u.Drv.pfnHandler(pInfo->u.Drv.pDrvIns, pHlp, pszArgs);
+                    break;
+
+                case DBGFINFOTYPE_INT:
+                    if (pInfo->fFlags & DBGFINFO_FLAGS_RUN_ON_EMT)
+                        rc = VMR3ReqCallVoidWait(pVM, VMCPUID_ANY, (PFNRT)pInfo->u.Int.pfnHandler, 3, pVM, pHlp, pszArgs);
+                    else
+                        pInfo->u.Int.pfnHandler(pVM, pHlp, pszArgs);
+                    break;
+
+                case DBGFINFOTYPE_EXT:
+                    if (pInfo->fFlags & DBGFINFO_FLAGS_RUN_ON_EMT)
+                        rc = VMR3ReqCallVoidWait(pVM, VMCPUID_ANY, (PFNRT)pInfo->u.Ext.pfnHandler, 3, pInfo->u.Ext.pvUser, pHlp, pszArgs);
+                    else
+                        pInfo->u.Ext.pfnHandler(pInfo->u.Ext.pvUser, pHlp, pszArgs);
+                    break;
+
+                default:
+                    AssertMsgFailed(("Invalid info type enmType=%d\n", pInfo->enmType));
+                    rc = VERR_INTERNAL_ERROR;
+                    break;
+            }
+        }
+    }
+    int rc2 = RTCritSectLeave(&pVM->dbgf.s.InfoCritSect);
+    AssertRC(rc2);
+
+    return rc;
+}
+
+
+/**
  * Enumerate all the register info handlers.
  *
  * @returns VBox status code.
