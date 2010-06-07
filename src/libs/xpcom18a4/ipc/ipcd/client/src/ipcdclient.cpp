@@ -383,7 +383,7 @@ WaitTarget(const nsID           &aTarget,
 
         if (acceptedRV != IPC_WAIT_NEXT_MESSAGE)
         {
-          if (acceptedRV == S_OK)
+          if (acceptedRV == NS_OK)
           {
             // remove from pending queue
             if (beforeLastChecked)
@@ -401,9 +401,9 @@ WaitTarget(const nsID           &aTarget,
 
             // discard from pending queue
             if (beforeLastChecked)
-              td->pendingQ.RemoveAfter(beforeLastChecked);
+              td->pendingQ.DeleteAfter(beforeLastChecked);
             else
-              td->pendingQ.RemoveFirst();
+              td->pendingQ.DeleteFirst();
 
             lastChecked = nextToCheck;
 
