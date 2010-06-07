@@ -181,6 +181,7 @@ unsigned dev_get_flags(const struct net_device *dev)
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
+#define qdisc_pkt_len(skb) (skb->len)
 #define QDISC_GET(dev) (dev->qdisc_sleeping)
 #else
 #define QDISC_GET(dev) (netdev_get_tx_queue(dev, 0)->qdisc_sleeping)
@@ -335,6 +336,23 @@ static struct sk_buff *vboxNetFltQdiscDequeue(struct Qdisc *sch)
 #endif /*  VBOXNETFLT_QDISC_ENQUEUE */
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29)
+static int vboxNetFltQdiscRequeue(struct sk_buff *skb, struct Qdisc *sch)
+{
+    int rc;
+    PVBOXNETQDISCPRIV pPriv = qdisc_priv(sch);
+
+    rc = pPriv->pChild->ops->requeue(skb, pPriv->pChild);
+    if (rc == 0)
+    {
+        sch->q.qlen++;
+        sch->qstats.requeues++;
+    }
+
+    return rc;
+}
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29) */
+
 static unsigned int vboxNetFltQdiscDrop(struct Qdisc *sch)
 {
     PVBOXNETQDISCPRIV pPriv = qdisc_priv(sch);
@@ -412,7 +430,11 @@ static int vboxNetFltClassGraft(struct Qdisc *sch, unsigned long arg, struct Qdi
     sch_tree_lock(sch);
     *ppOld = pPriv->pChild;
     pPriv->pChild = pNew;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 20)
     qdisc_tree_decrease_qlen(*ppOld, (*ppOld)->q.qlen);
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20) */
+    sch->q.qlen = 0;
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20) */
     qdisc_reset(*ppOld);
     sch_tree_unlock(sch);
 
@@ -497,7 +519,11 @@ struct Qdisc_ops g_VBoxNetFltQDiscOps = {
     .priv_size = sizeof(struct VBoxNetQDiscPriv),
     .enqueue   = vboxNetFltQdiscEnqueue,
     .dequeue   = vboxNetFltQdiscDequeue,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29)
+    .requeue   = vboxNetFltQdiscRequeue,
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29) */
     .peek      = qdisc_peek_dequeued,
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29) */
     .drop      = vboxNetFltQdiscDrop,
     .init      = vboxNetFltQdiscInit,
     .reset     = vboxNetFltQdiscReset,
