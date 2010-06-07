@@ -227,6 +227,17 @@ void VBoxServicePageSharingInspectGuest()
 {
     VBoxServicePageSharingInspectModules(GetCurrentProcessId());
 
+    printf("\n\nUSER RESULTS\n");
+    printf("cNotPresentPages = %d\n", cNotPresentPages);
+    printf("cWritablePages   = %d\n", cWritablePages);
+    printf("cPrivatePages    = %d\n", cPrivatePages);
+    printf("cSharedPages     = %d\n", cSharedPages);
+
+    cNotPresentPages = 0;
+    cWritablePages   = 0;
+    cPrivatePages    = 0;
+    cSharedPages     = 0;
+
     /* Check all loaded kernel modules. */
     if (ZwQuerySystemInformation)
     {
@@ -292,6 +303,11 @@ skipkernelmodules:
         if (pBuffer)
             RTMemFree(pBuffer);
     }
+    printf("\n\nKERNEL RESULTS\n");
+    printf("cNotPresentPages = %d\n", cNotPresentPages);
+    printf("cWritablePages   = %d\n", cWritablePages);
+    printf("cPrivatePages    = %d\n", cPrivatePages);
+    printf("cSharedPages     = %d\n", cSharedPages);
 }
 #else
 void VBoxServicePageSharingInspectGuest()
@@ -321,12 +337,6 @@ static DECLCALLBACK(int) VBoxServicePageSharingInit(void)
 static DECLCALLBACK(void) VBoxServicePageSharingTerm(void)
 {
     printf("VBoxServicePageSharingTerm\n");
-
-    printf("\n\nRESULT\n");
-    printf("cNotPresentPages = %d\n", cNotPresentPages);
-    printf("cWritablePages   = %d\n", cWritablePages);
-    printf("cPrivatePages    = %d\n", cPrivatePages);
-    printf("cSharedPages     = %d\n", cSharedPages);
 
 #ifdef RT_OS_WINDOWS
     if (hNtdll)
