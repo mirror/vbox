@@ -38,6 +38,13 @@ ALIASES                += \
 \
 Implements \1 method \link \1::\2 \2 \endlink @copydoc \1::\2 "
 
+# Callback method implementation macros.
+ALIASES                += \
+    callback_method_impl{1}="Implements the callback \link \1 \1  \endlink @copydoc \1 "
+    callback_method_impl{2}="\2. \
+\
+Implements the callback \link \1 \1 "
+
 # The following is for Global Configuration options.
 ALIASES                += \
 	gcfgm{6}="\xrefitem lst_gcfgm \"Global VM Config: \1\" \"Global Configuration Values\" \
