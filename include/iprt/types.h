@@ -463,6 +463,22 @@ typedef int64_t         RTINTPTR;
 typedef RTINTPTR       *PRTINTPTR;
 /** Pointer const to signed integer which can contain both GC and HC pointers. */
 typedef const RTINTPTR *PCRTINTPTR;
+/** The maximum value the RTINTPTR type can hold. */
+#if (HC_ARCH_BITS == 32 && GC_ARCH_BITS == 32)
+# define RTINTPTR_MAX   INT32_MAX
+#elif (HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64)
+# define RTINTPTR_MAX   INT64_MAX
+#else
+#  error Unsupported HC_ARCH_BITS and/or GC_ARCH_BITS values.
+#endif
+/** The minimum value the RTINTPTR type can hold. */
+#if (HC_ARCH_BITS == 32 && GC_ARCH_BITS == 32)
+# define RTINTPTR_MIN   INT32_MIN
+#elif (HC_ARCH_BITS == 64 || GC_ARCH_BITS == 64)
+# define RTINTPTR_MIN   INT64_MIN
+#else
+#  error Unsupported HC_ARCH_BITS and/or GC_ARCH_BITS values.
+#endif
 
 /** Unsigned integer which can contain both GC and HC pointers. */
 #if (HC_ARCH_BITS == 32 && GC_ARCH_BITS == 32)
