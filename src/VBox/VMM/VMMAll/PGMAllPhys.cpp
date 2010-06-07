@@ -1244,13 +1244,15 @@ int pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
  */
 VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock)
 {
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+    int rc = pgmLock(pVM);
+    AssertRCReturn(rc, rc);
 
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     /*
      * Find the page and make sure it's writable.
      */
     PPGMPAGE pPage;
-    int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
+    rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
     if (RT_SUCCESS(rc))
     {
         if (RT_UNLIKELY(PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED))
@@ -1270,9 +1272,6 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
     }
 
 #else  /* IN_RING3 || IN_RING0 */
-    int rc = pgmLock(pVM);
-    AssertRCReturn(rc, rc);
-
     /*
      * Query the Physical TLB entry for the page (may fail).
      */
@@ -1324,8 +1323,8 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
         }
     }
 
-    pgmUnlock(pVM);
 #endif /* IN_RING3 || IN_RING0 */
+    pgmUnlock(pVM);
     return rc;
 }
 
@@ -1356,13 +1355,15 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
  */
 VMMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **ppv, PPGMPAGEMAPLOCK pLock)
 {
-#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+    int rc = pgmLock(pVM);
+    AssertRCReturn(rc, rc);
 
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     /*
      * Find the page and make sure it's readable.
      */
     PPGMPAGE pPage;
-    int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
+    rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
     if (RT_SUCCESS(rc))
     {
         if (RT_UNLIKELY(PGM_PAGE_IS_MMIO(pPage)))
@@ -1382,9 +1383,6 @@ VMMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **
     }
 
 #else  /* IN_RING3 || IN_RING0 */
-    int rc = pgmLock(pVM);
-    AssertRCReturn(rc, rc);
-
     /*
      * Query the Physical TLB entry for the page (may fail).
      */
@@ -1426,8 +1424,8 @@ VMMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **
         }
     }
 
-    pgmUnlock(pVM);
 #endif /* IN_RING3 || IN_RING0 */
+    pgmUnlock(pVM);
     return rc;
 }
 
