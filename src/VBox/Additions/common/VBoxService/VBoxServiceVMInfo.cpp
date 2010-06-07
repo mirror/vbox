@@ -155,7 +155,7 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
  *
  * Errors are ignored.
  */
-static void VBoxServiceVMInfoWriteFixedProperties(void)
+static void vboxserviceVMInfoWriteFixedProperties(void)
 {
     /*
      * First get OS information that won't change.
@@ -212,7 +212,7 @@ static void VBoxServiceVMInfoWriteFixedProperties(void)
 /**
  * Provide information about active users.
  */
-int VBoxServiceVMInfoWriteUsers()
+static int vboxserviceVMInfoWriteUsers(void)
 {
     int rc;
     char *pszUserList = NULL;
@@ -221,11 +221,15 @@ int VBoxServiceVMInfoWriteUsers()
 #ifdef RT_OS_WINDOWS
 # ifndef TARGET_NT4
     rc = VBoxServiceVMInfoWinWriteUsers(&pszUserList, &cUsersInList);
-# endif /* TARGET_NT4 */
+# else
+    rc = VERR_NOT_IMPLEMENTED;
+# endif
 #elif defined(RT_OS_FREEBSD)
-        /** @todo FreeBSD: Port logged on user info retrival. */
+    /** @todo FreeBSD: Port logged on user info retrival. */
+    rc = VERR_NOT_IMPLEMENTED;
 #elif defined(RT_OS_OS2)
-        /** @todo OS/2: Port logged on (LAN/local/whatever) user info retrival. */
+    /** @todo OS/2: Port logged on (LAN/local/whatever) user info retrival. */
+    rc = VERR_NOT_IMPLEMENTED;
 #else
     rc = utmpname(UTMP_FILE);
 # ifdef RT_OS_SOLARIS
@@ -235,7 +239,10 @@ int VBoxServiceVMInfoWriteUsers()
 # endif
     {
         VBoxServiceError("VMInfo/Users: Could not set UTMP file! Error: %ld\n", errno);
+        rc = VERR_GENERAL_FAILURE;
     }
+    else
+        rc = VINF_SUCCESS;
     setutent();
     utmp *ut_user;
     while ((ut_user = getutent()))
@@ -249,15 +256,18 @@ int VBoxServiceVMInfoWriteUsers()
             if (cUsersInList > 0)
             {
                 rc = RTStrAAppend(&pszUserList, ",");
-                AssertRCReturn(rc, rc);
+                AssertRCBreakStmt(rc, RTStrFree(pszUserList));
             }
             rc = RTStrAAppend(&pszUserList, ut_user->ut_user);
-            AssertRCReturn(rc, rc);
+            AssertRCBreakStmt(rc, RTStrFree(pszUserList));
             cUsersInList++;
         }
     }
     endutent();
-#endif /* !RT_OS_WINDOWS */
+#endif
+    Assert(RT_FAILURE(rc) || cUsersInList == 0 || (pszUserList && *pszUserList));
+    if (RT_FAILURE(rc))
+        cUsersInList = 0;
 
     if (pszUserList && cUsersInList > 0)
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", "%s", pszUserList);
@@ -266,10 +276,11 @@ int VBoxServiceVMInfoWriteUsers()
     VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsers", "%u", cUsersInList);
     if (g_cVMInfoLoggedInUsers != cUsersInList)
     {
-        VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers", cUsersInList == 0 ? "true" : "false");
+        VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers",
+                                   cUsersInList == 0 ? "true" : "false");
         g_cVMInfoLoggedInUsers = cUsersInList;
     }
-    if (pszUserList)
+    if (RT_SUCCESS(rc) && pszUserList)
         RTStrFree(pszUserList);
     return VINF_SUCCESS;
 }
@@ -278,17 +289,17 @@ int VBoxServiceVMInfoWriteUsers()
 /**
  * Provide information about the guest network.
  */
-int VBoxServiceVMInfoWriteNetwork()
+static int vboxserviceVMInfoWriteNetwork(void)
 {
-    int cIfacesReport = 0;
-    char szPropPath [FILENAME_MAX];
+    int  cIfacesReport = 0;
+    char szPropPath[256];
 
 #ifdef RT_OS_WINDOWS
     IP_ADAPTER_INFO *pAdpInfo = NULL;
 
 # ifndef TARGET_NT4
     ULONG cbAdpInfo = sizeof(*pAdpInfo);
-    pAdpInfo = (IP_ADAPTER_INFO*)RTMemAlloc(cbAdpInfo);
+    pAdpInfo = (IP_ADAPTER_INFO *)RTMemAlloc(cbAdpInfo);
     if (!pAdpInfo)
     {
         VBoxServiceError("VMInfo/Network: Failed to allocate IP_ADAPTER_INFO\n");
@@ -520,20 +531,20 @@ int VBoxServiceVMInfoWriteNetwork()
             close(sd);
             return RTErrConvertFromErrno(errno);
         }
- #if defined(RT_OS_OS2) || defined(RT_OS_SOLARIS)
+# if defined(RT_OS_OS2) || defined(RT_OS_SOLARIS)
         pAddress = (sockaddr_in *)&ifrequest[i].ifr_addr;
- #else
+# else
         pAddress = (sockaddr_in *)&ifrequest[i].ifr_netmask;
- #endif
+# endif
 
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%d/V4/Netmask", cIfacesReport);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
 
- #if defined(RT_OS_SOLARIS)
+# if defined(RT_OS_SOLARIS)
         if (ioctl(sd, SIOCGENADDR, &ifrequest[i]) < 0)
- #else
+# else
         if (ioctl(sd, SIOCGIFHWADDR, &ifrequest[i]) < 0)
- #endif
+# endif
         {
             VBoxServiceError("VMInfo/Network: Failed to ioctl(SIOCGIFHWADDR) on socket: Error %d\n", errno);
             close(sd);
@@ -541,11 +552,11 @@ int VBoxServiceVMInfoWriteNetwork()
         }
 
         char szMac[32];
- #if defined(RT_OS_SOLARIS)
+# if defined(RT_OS_SOLARIS)
         uint8_t *pu8Mac = (uint8_t*)&ifrequest[i].ifr_enaddr[0];
- #else
+# else
         uint8_t *pu8Mac = (uint8_t*)&ifrequest[i].ifr_hwaddr.sa_data[0];
- #endif
+# endif
         RTStrPrintf(szMac, sizeof(szMac), "%02X%02X%02X%02X%02X%02X",
                     pu8Mac[0], pu8Mac[1], pu8Mac[2], pu8Mac[3],  pu8Mac[4], pu8Mac[5]);
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%d/MAC", cIfacesReport);
@@ -590,24 +601,24 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
     /* Required for network information (must be called per thread). */
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData))
-        VBoxServiceError("VMInfo/Users: WSAStartup failed! Error: %Rrc\n", RTErrConvertFromWin32(WSAGetLastError()));
+        VBoxServiceError("VMInfo/Network: WSAStartup failed! Error: %Rrc\n", RTErrConvertFromWin32(WSAGetLastError()));
 #endif /* RT_OS_WINDOWS */
 
     /*
      * Write the fixed properties first.
      */
-    VBoxServiceVMInfoWriteFixedProperties();
+    vboxserviceVMInfoWriteFixedProperties();
 
     /*
      * Now enter the loop retrieving runtime data continuously.
      */
     for (;;)
     {
-        rc = VBoxServiceVMInfoWriteUsers();
+        rc = vboxserviceVMInfoWriteUsers();
         if (RT_FAILURE(rc))
             break;
 
-        rc = VBoxServiceVMInfoWriteNetwork();
+        rc = vboxserviceVMInfoWriteNetwork();
         if (RT_FAILURE(rc))
             break;
 
