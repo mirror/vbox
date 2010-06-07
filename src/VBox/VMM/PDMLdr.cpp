@@ -64,7 +64,6 @@ static int      pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *psz
 static char *   pdmR3FileRC(const char *pszFile);
 static char *   pdmR3FileR0(const char *pszFile);
 static char *   pdmR3File(const char *pszFile, const char *pszDefaultExt, bool fShared);
-static DECLCALLBACK(int) pdmR3QueryModFromEIPEnumSymbols(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol, RTUINTPTR Value, void *pvUser);
 
 
 
@@ -1037,91 +1036,16 @@ static char *pdmR3File(const char *pszFile, const char *pszDefaultExt, bool fSha
 /** @internal */
 typedef struct QMFEIPARG
 {
-    RTRCUINTPTR uPC;
+    RTINTPTR    uPC;
 
     char       *pszNearSym1;
-    size_t     cchNearSym1;
-    RTRCINTPTR  offNearSym1;
+    size_t      cchNearSym1;
+    RTINTPTR    offNearSym1;
 
     char       *pszNearSym2;
     size_t      cchNearSym2;
-    RTRCINTPTR  offNearSym2;
+    RTINTPTR    offNearSym2;
 } QMFEIPARG, *PQMFEIPARG;
-
-/**
- * Queries module information from an PC (eip/rip).
- *
- * This is typically used to locate a crash address.
- *
- * @returns VBox status code.
- *
- * @param   pVM         VM handle
- * @param   uPC         The program counter (eip/rip) to locate the module for.
- * @param   pszModName  Where to store the module name.
- * @param   cchModName  Size of the module name buffer.
- * @param   pMod        Base address of the module.
- * @param   pszNearSym1 Name of the closes symbol from below.
- * @param   cchNearSym1 Size of the buffer pointed to by pszNearSym1.
- * @param   pNearSym1   The address of pszNearSym1.
- * @param   pszNearSym2 Name of the closes symbol from below.
- * @param   cchNearSym2 Size of the buffer pointed to by pszNearSym2.
- * @param   pNearSym2   The address of pszNearSym2.
- */
-VMMR3DECL(int) PDMR3LdrQueryRCModFromPC(PVM pVM, RTRCPTR uPC,
-                                        char *pszModName,  size_t cchModName,  PRTRCPTR pMod,
-                                        char *pszNearSym1, size_t cchNearSym1, PRTRCPTR pNearSym1,
-                                        char *pszNearSym2, size_t cchNearSym2, PRTRCPTR pNearSym2)
-{
-    PUVM    pUVM = pVM->pUVM;
-    int     rc   = VERR_MODULE_NOT_FOUND;
-    RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
-    for (PPDMMOD pCur= pUVM->pdm.s.pModules; pCur; pCur = pCur->pNext)
-    {
-        /* Skip anything which isn't in GC. */
-        if (pCur->eType != PDMMOD_TYPE_RC)
-            continue;
-        if (uPC - pCur->ImageBase < RTLdrSize(pCur->hLdrMod))
-        {
-            if (pMod)
-                *pMod = pCur->ImageBase;
-            if (pszModName && cchModName)
-            {
-                *pszModName = '\0';
-                strncat(pszModName, pCur->szName, cchModName);
-            }
-            if (pNearSym1)   *pNearSym1   = 0;
-            if (pNearSym2)   *pNearSym2   = 0;
-            if (pszNearSym1) *pszNearSym1 = '\0';
-            if (pszNearSym2) *pszNearSym2 = '\0';
-
-            /*
-             * Locate the nearest symbols.
-             */
-            QMFEIPARG   Args;
-            Args.uPC         = uPC;
-            Args.pszNearSym1 = pszNearSym1;
-            Args.cchNearSym1 = cchNearSym1;
-            Args.offNearSym1 = RTRCINTPTR_MIN;
-            Args.pszNearSym2 = pszNearSym2;
-            Args.cchNearSym2 = cchNearSym2;
-            Args.offNearSym2 = RTRCINTPTR_MAX;
-
-            rc = RTLdrEnumSymbols(pCur->hLdrMod, RTLDR_ENUM_SYMBOL_FLAGS_ALL, pCur->pvBits, pCur->ImageBase,
-                                  pdmR3QueryModFromEIPEnumSymbols, &Args);
-            if (pNearSym1 && Args.offNearSym1 != INT_MIN)
-                *pNearSym1 = Args.offNearSym1 + uPC;
-            if (pNearSym2 && Args.offNearSym2 != INT_MAX)
-                *pNearSym2 = Args.offNearSym2 + uPC;
-
-            rc = VINF_SUCCESS;
-            if (pCur->eType == PDMMOD_TYPE_RC)
-                break;
-        }
-
-    }
-    RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
-    return rc;
-}
 
 
 /**
@@ -1179,6 +1103,182 @@ static DECLCALLBACK(int) pdmR3QueryModFromEIPEnumSymbols(RTLDRMOD hLdrMod, const
     }
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Internal worker for PDMR3LdrQueryRCModFromPC and PDMR3LdrQueryR0ModFromPC.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         VM handle
+ * @param   uPC         The program counter (eip/rip) to locate the module for.
+ * @param   enmType     The module type.
+ * @param   pszModName  Where to store the module name.
+ * @param   cchModName  Size of the module name buffer.
+ * @param   pMod        Base address of the module.
+ * @param   pszNearSym1 Name of the closes symbol from below.
+ * @param   cchNearSym1 Size of the buffer pointed to by pszNearSym1.
+ * @param   pNearSym1   The address of pszNearSym1.
+ * @param   pszNearSym2 Name of the closes symbol from below.
+ * @param   cchNearSym2 Size of the buffer pointed to by pszNearSym2.
+ * @param   pNearSym2   The address of pszNearSym2.
+ */
+static int pdmR3LdrQueryModFromPC(PVM pVM, RTUINTPTR uPC, PDMMODTYPE enmType,
+                                  char *pszModName,  size_t cchModName,  PRTUINTPTR pMod,
+                                  char *pszNearSym1, size_t cchNearSym1, PRTUINTPTR pNearSym1,
+                                  char *pszNearSym2, size_t cchNearSym2, PRTUINTPTR pNearSym2)
+{
+    PUVM    pUVM = pVM->pUVM;
+    int     rc   = VERR_MODULE_NOT_FOUND;
+    RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
+    for (PPDMMOD pCur= pUVM->pdm.s.pModules; pCur; pCur = pCur->pNext)
+    {
+        if (pCur->eType != enmType)
+            continue;
+
+        /* The following RTLdrOpen call is a dirty hack to get ring-0 module information. */
+        RTLDRMOD hLdrMod = pCur->hLdrMod;
+        if (hLdrMod == NIL_RTLDRMOD && uPC >= pCur->ImageBase)
+        {
+            int rc2 = RTLdrOpen(pCur->szFilename, 0 /*fFlags*/, RTLDRARCH_HOST, &hLdrMod);
+            if (RT_FAILURE(rc2))
+                hLdrMod = NIL_RTLDRMOD;
+        }
+
+        if (   hLdrMod != NIL_RTLDRMOD
+            && uPC - pCur->ImageBase < RTLdrSize(hLdrMod))
+        {
+            if (pMod)
+                *pMod = pCur->ImageBase;
+            if (pszModName && cchModName)
+            {
+                *pszModName = '\0';
+                strncat(pszModName, pCur->szName, cchModName);
+            }
+            if (pNearSym1)   *pNearSym1   = 0;
+            if (pNearSym2)   *pNearSym2   = 0;
+            if (pszNearSym1) *pszNearSym1 = '\0';
+            if (pszNearSym2) *pszNearSym2 = '\0';
+
+            /*
+             * Locate the nearest symbols.
+             */
+            QMFEIPARG   Args;
+            Args.uPC         = uPC;
+            Args.pszNearSym1 = pszNearSym1;
+            Args.cchNearSym1 = cchNearSym1;
+            Args.offNearSym1 = RTINTPTR_MIN;
+            Args.pszNearSym2 = pszNearSym2;
+            Args.cchNearSym2 = cchNearSym2;
+            Args.offNearSym2 = RTINTPTR_MAX;
+
+            rc = RTLdrEnumSymbols(hLdrMod, RTLDR_ENUM_SYMBOL_FLAGS_ALL, pCur->pvBits, pCur->ImageBase,
+                                  pdmR3QueryModFromEIPEnumSymbols, &Args);
+            if (pNearSym1 && Args.offNearSym1 != RTINTPTR_MIN)
+                *pNearSym1 = Args.offNearSym1 + uPC;
+            if (pNearSym2 && Args.offNearSym2 != RTINTPTR_MAX)
+                *pNearSym2 = Args.offNearSym2 + uPC;
+
+            rc = VINF_SUCCESS;
+        }
+
+        if (hLdrMod != pCur->hLdrMod && hLdrMod != NIL_RTLDRMOD)
+            RTLdrClose(hLdrMod);
+
+        if (RT_SUCCESS(rc))
+            break;
+    }
+    RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
+    return rc;
+}
+
+
+/**
+ * Queries raw-mode context module information from an PC (eip/rip).
+ *
+ * This is typically used to locate a crash address.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         VM handle
+ * @param   uPC         The program counter (eip/rip) to locate the module for.
+ * @param   pszModName  Where to store the module name.
+ * @param   cchModName  Size of the module name buffer.
+ * @param   pMod        Base address of the module.
+ * @param   pszNearSym1 Name of the closes symbol from below.
+ * @param   cchNearSym1 Size of the buffer pointed to by pszNearSym1.
+ * @param   pNearSym1   The address of pszNearSym1.
+ * @param   pszNearSym2 Name of the closes symbol from below.
+ * @param   cchNearSym2 Size of the buffer pointed to by pszNearSym2.
+ * @param   pNearSym2   The address of pszNearSym2.
+ */
+VMMR3DECL(int) PDMR3LdrQueryRCModFromPC(PVM pVM, RTRCPTR uPC,
+                                        char *pszModName,  size_t cchModName,  PRTRCPTR pMod,
+                                        char *pszNearSym1, size_t cchNearSym1, PRTRCPTR pNearSym1,
+                                        char *pszNearSym2, size_t cchNearSym2, PRTRCPTR pNearSym2)
+{
+    RTUINTPTR AddrMod   = 0;
+    RTUINTPTR AddrNear1 = 0;
+    RTUINTPTR AddrNear2 = 0;
+    int rc = pdmR3LdrQueryModFromPC(pVM, uPC, PDMMOD_TYPE_RC,
+                                    pszModName,  cchModName,  &AddrMod,
+                                    pszNearSym1, cchNearSym1, &AddrNear1,
+                                    pszNearSym2, cchNearSym2, &AddrNear2);
+    if (RT_SUCCESS(rc))
+    {
+        if (pMod)
+            *pMod      = (RTRCPTR)AddrMod;
+        if (pNearSym1)
+            *pNearSym1 = (RTRCPTR)AddrNear1;
+        if (pNearSym2)
+            *pNearSym2 = (RTRCPTR)AddrNear2;
+    }
+    return rc;
+}
+
+
+/**
+ * Queries ring-0 context module information from an PC (eip/rip).
+ *
+ * This is typically used to locate a crash address.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         VM handle
+ * @param   uPC         The program counter (eip/rip) to locate the module for.
+ * @param   pszModName  Where to store the module name.
+ * @param   cchModName  Size of the module name buffer.
+ * @param   pMod        Base address of the module.
+ * @param   pszNearSym1 Name of the closes symbol from below.
+ * @param   cchNearSym1 Size of the buffer pointed to by pszNearSym1.
+ * @param   pNearSym1   The address of pszNearSym1.
+ * @param   pszNearSym2 Name of the closes symbol from below.
+ * @param   cchNearSym2 Size of the buffer pointed to by pszNearSym2. Optional.
+ * @param   pNearSym2   The address of pszNearSym2. Optional.
+ */
+VMMR3DECL(int) PDMR3LdrQueryR0ModFromPC(PVM pVM, RTR0PTR uPC,
+                                        char *pszModName,  size_t cchModName,  PRTR0PTR pMod,
+                                        char *pszNearSym1, size_t cchNearSym1, PRTR0PTR pNearSym1,
+                                        char *pszNearSym2, size_t cchNearSym2, PRTR0PTR pNearSym2)
+{
+    RTUINTPTR AddrMod   = 0;
+    RTUINTPTR AddrNear1 = 0;
+    RTUINTPTR AddrNear2 = 0;
+    int rc = pdmR3LdrQueryModFromPC(pVM, uPC, PDMMOD_TYPE_R0,
+                                    pszModName,  cchModName,  &AddrMod,
+                                    pszNearSym1, cchNearSym1, &AddrNear1,
+                                    pszNearSym2, cchNearSym2, &AddrNear2);
+    if (RT_SUCCESS(rc))
+    {
+        if (pMod)
+            *pMod      = (RTR0PTR)AddrMod;
+        if (pNearSym1)
+            *pNearSym1 = (RTR0PTR)AddrNear1;
+        if (pNearSym2)
+            *pNearSym2 = (RTR0PTR)AddrNear2;
+    }
+    return rc;
 }
 
 

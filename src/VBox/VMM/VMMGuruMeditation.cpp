@@ -249,7 +249,6 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                 ||  !*pszMsg2
                 ||  strchr(pszMsg2, '\0')[-1] != '\n')
                 pHlp->pfnPrintf(pHlp, "\n");
-            pHlp->pfnPrintf(pHlp, "!!\n");
             /* fall thru */
         }
         case VERR_TRPM_DONT_PANIC:
@@ -287,71 +286,163 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                                 u8TrapNo, uErrorCode, uCR2, CPUMGetGuestRIP(pVCpu), enmType);
 
             /*
-             * The hypervisor dump is not relevant when we're in VT-x/AMD-V mode.
+             * Dump the relevant hypervisor registers and stack.
              */
             if (HWACCMIsEnabled(pVM))
             {
-                pHlp->pfnPrintf(pHlp, "\n");
-#if defined(RT_OS_WINDOWS) && HC_ARCH_BITS == 32
-                /* Callstack. */
-                PCDBGFSTACKFRAME pFirstFrame;
-                DBGFADDRESS eip, ebp, esp;
-
-                eip.fFlags   = DBGFADDRESS_FLAGS_RING0 | DBGFADDRESS_FLAGS_VALID;
-#if HC_ARCH_BITS == 64
-                eip.FlatPtr = eip.off = pVCpu->vmm.s.CallRing3JmpBufR0.rip;
-#else
-                eip.FlatPtr = eip.off = pVCpu->vmm.s.CallRing3JmpBufR0.eip;
-#endif
-                eip.Sel      = DBGF_SEL_FLAT;
-                ebp.fFlags   = DBGFADDRESS_FLAGS_RING0 | DBGFADDRESS_FLAGS_VALID;
-                ebp.FlatPtr  = ebp.off = pVCpu->vmm.s.CallRing3JmpBufR0.SavedEbp;
-                ebp.Sel      = DBGF_SEL_FLAT;
-                esp.fFlags   = DBGFADDRESS_FLAGS_RING0 | DBGFADDRESS_FLAGS_VALID;
-                esp.Sel      = DBGF_SEL_FLAT;
-                esp.FlatPtr  = esp.off = pVCpu->vmm.s.CallRing3JmpBufR0.SavedEsp;
-
-                rc2 = DBGFR3StackWalkBeginEx(pVM, pVCpu->idCpu, DBGFCODETYPE_RING0, &ebp, &esp, &eip,
-                                             DBGFRETURNTYPE_INVALID, &pFirstFrame);
-                if (RT_SUCCESS(rc2))
+                if (   rcErr == VERR_VMM_RING0_ASSERTION /* fInRing3Call has already been cleared here. */
+                    || pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call)
                 {
+                    /* Dump the jmpbuf.  */
                     pHlp->pfnPrintf(pHlp,
                                     "!!\n"
-                                    "!! Call Stack:\n"
-                                    "!!\n"
-                                    "EBP      Ret EBP  Ret CS:EIP    Arg0     Arg1     Arg2     Arg3     CS:EIP        Symbol [line]\n");
-                    for (PCDBGFSTACKFRAME pFrame = pFirstFrame;
-                         pFrame;
-                         pFrame = DBGFR3StackWalkNext(pFrame))
+                                    "!! CallRing3JmpBuf:\n"
+                                    "!!\n");
+                    pHlp->pfnPrintf(pHlp,
+                                    "SavedEsp=%RHv SavedEbp=%RHv SpResume=%RHv SpCheck=%RHv fInRing3Call=%RTbool\n",
+                                    pVCpu->vmm.s.CallRing3JmpBufR0.SavedEsp,
+                                    pVCpu->vmm.s.CallRing3JmpBufR0.SavedEbp,
+                                    pVCpu->vmm.s.CallRing3JmpBufR0.SpResume,
+                                    pVCpu->vmm.s.CallRing3JmpBufR0.SpCheck,
+                                    pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call);
+                    pHlp->pfnPrintf(pHlp,
+                                    "pvSavedStack=%RHv SavedEbp=%RX32 SpResume=%RHv SpCheck=%RHv\n",
+                                    pVCpu->vmm.s.CallRing3JmpBufR0.pvSavedStack,
+                                    pVCpu->vmm.s.CallRing3JmpBufR0.cbSavedStack);
+                    pHlp->pfnPrintf(pHlp,
+                                    "cbUsedMax=%#4x cbUsedAvg=%#4x cbUsedTotal=%#llx cUsedTotal=%#llx\n",
+                                    pVCpu->vmm.s.CallRing3JmpBufR0.cbUsedMax,
+                                    pVCpu->vmm.s.CallRing3JmpBufR0.cbUsedAvg,
+                                    pVCpu->vmm.s.CallRing3JmpBufR0.cbUsedTotal,
+                                    pVCpu->vmm.s.CallRing3JmpBufR0.cUsedTotal);
+
+                    /* Dump the resume register frame on the stack. */
+                    PRTHCUINTPTR pBP;
+#ifdef VMM_R0_SWITCH_STACK
+                    pBP = (PRTHCUINTPTR)&pVCpu->vmm.s.pbEMTStackR3[  pVCpu->vmm.s.CallRing3JmpBufR0.SavedEbp
+                                                                   - MMHyperCCToR0(pVM, pVCpu->vmm.s.pbEMTStackR3)];
+#else
+                    pBP = (PRTHCUINTPTR)&pVCpu->vmm.s.pbEMTStackR3[  pVCpu->vmm.s.CallRing3JmpBufR0.cbSavedStack
+                                                                   - pVCpu->vmm.s.CallRing3JmpBufR0.SpCheck
+                                                                   + pVCpu->vmm.s.CallRing3JmpBufR0.SavedEbp];
+#endif
+#if HC_ARCH_BITS == 32
+                    pHlp->pfnPrintf(pHlp,
+                                    "eax=volatile ebx=%08x ecx=volatile edx=volatile esi=%08x edi=%08x\n"
+                                    "eip=%08x esp=%08x ebp=%08x efl=%08x\n"
+                                    ,
+                                    pBP[-3], pBP[-2], pBP[-1],
+                                    pBP[1], pVCpu->vmm.s.CallRing3JmpBufR0.SavedEbp - 8, pBP[0], pBP[-4]);
+#else
+# ifdef RT_OS_WINDOWS
+                    pHlp->pfnPrintf(pHlp,
+                                    "rax=volatile         rbx=%016RX64 rcx=volatile         rdx=volatile\n"
+                                    "rsi=%016RX64 rdi=%016RX64  r8=volatile          r9=volatile        \n"
+                                    "r10=volatile         r11=volatile         r12=%016RX64 r13=%016RX64\n"
+                                    "r14=%016RX64 r15=%016RX64\n"
+                                    "rip=%016RX64 rsp=%016RX64 rbp=%016RX64 rfl=%08RX64\n"
+                                    ,
+                                    pBP[-7],
+                                    pBP[-6], pBP[-5],
+                                    pBP[-4], pBP[-3],
+                                    pBP[-2], pBP[-1],
+                                    pBP[1], pVCpu->vmm.s.CallRing3JmpBufR0.SavedEbp - 16, pBP[0], pBP[-8]);
+# else
+                    pHlp->pfnPrintf(pHlp,
+                                    "rax=volatile         rbx=%016RX64 rcx=volatile         rdx=volatile\n"
+                                    "rsi=volatile         rdi=volatile          r8=volatile          r9=volatile        \n"
+                                    "r10=volatile         r11=volatile         r12=%016RX64 r13=%016RX64\n"
+                                    "r14=%016RX64 r15=%016RX64\n"
+                                    "rip=%016RX64 rsp=%016RX64 rbp=%016RX64 rflags=%08RX64\n"
+                                    ,
+                                    pBP[-5],
+                                    pBP[-4], pBP[-3],
+                                    pBP[-2], pBP[-1],
+                                    pBP[1], pVCpu->vmm.s.CallRing3JmpBufR0.SavedEbp - 16, pBP[0], pBP[-6]);
+# endif
+#endif
+
+#if HC_ARCH_BITS == 32
+                    /* Callstack. */
+                    DBGFADDRESS pc;
+                    pc.fFlags    = DBGFADDRESS_FLAGS_RING0 | DBGFADDRESS_FLAGS_VALID;
+# if HC_ARCH_BITS == 64
+                    pc.FlatPtr   = pc.off = pVCpu->vmm.s.CallRing3JmpBufR0.rip;
+# else
+                    pc.FlatPtr   = pc.off = pVCpu->vmm.s.CallRing3JmpBufR0.eip;
+# endif
+                    pc.Sel       = DBGF_SEL_FLAT;
+
+                    DBGFADDRESS ebp;
+                    ebp.fFlags   = DBGFADDRESS_FLAGS_RING0 | DBGFADDRESS_FLAGS_VALID;
+                    ebp.FlatPtr  = ebp.off = pVCpu->vmm.s.CallRing3JmpBufR0.SavedEbp;
+                    ebp.Sel      = DBGF_SEL_FLAT;
+
+                    DBGFADDRESS esp;
+                    esp.fFlags   = DBGFADDRESS_FLAGS_RING0 | DBGFADDRESS_FLAGS_VALID;
+                    esp.Sel      = DBGF_SEL_FLAT;
+                    esp.FlatPtr  = esp.off = pVCpu->vmm.s.CallRing3JmpBufR0.SavedEsp;
+
+                    PCDBGFSTACKFRAME pFirstFrame;
+                    rc2 = DBGFR3StackWalkBeginEx(pVM, pVCpu->idCpu, DBGFCODETYPE_RING0, &ebp, &esp, &pc,
+                                                 DBGFRETURNTYPE_INVALID, &pFirstFrame);
+                    if (RT_SUCCESS(rc2))
                     {
                         pHlp->pfnPrintf(pHlp,
-                                        "%08RX32 %08RX32 %04RX32:%08RX32 %08RX32 %08RX32 %08RX32 %08RX32",
-                                        (uint32_t)pFrame->AddrFrame.off,
-                                        (uint32_t)pFrame->AddrReturnFrame.off,
-                                        (uint32_t)pFrame->AddrReturnPC.Sel,
-                                        (uint32_t)pFrame->AddrReturnPC.off,
-                                        pFrame->Args.au32[0],
-                                        pFrame->Args.au32[1],
-                                        pFrame->Args.au32[2],
-                                        pFrame->Args.au32[3]);
-                        pHlp->pfnPrintf(pHlp, " %RTsel:%08RGv", pFrame->AddrPC.Sel, pFrame->AddrPC.off);
-                        if (pFrame->pSymPC)
+                                        "!!\n"
+                                        "!! Call Stack:\n"
+                                        "!!\n"
+                                        "EBP      Ret EBP  Ret CS:EIP    Arg0     Arg1     Arg2     Arg3     CS:EIP        Symbol [line]\n");
+                        for (PCDBGFSTACKFRAME pFrame = pFirstFrame;
+                             pFrame;
+                             pFrame = DBGFR3StackWalkNext(pFrame))
                         {
-                            RTGCINTPTR offDisp = pFrame->AddrPC.FlatPtr - pFrame->pSymPC->Value;
-                            if (offDisp > 0)
-                                pHlp->pfnPrintf(pHlp, " %s+%llx", pFrame->pSymPC->szName, (int64_t)offDisp);
-                            else if (offDisp < 0)
-                                pHlp->pfnPrintf(pHlp, " %s-%llx", pFrame->pSymPC->szName, -(int64_t)offDisp);
-                            else
-                                pHlp->pfnPrintf(pHlp, " %s", pFrame->pSymPC->szName);
+                            pHlp->pfnPrintf(pHlp,
+                                            "%08RX32 %08RX32 %04RX32:%08RX32 %08RX32 %08RX32 %08RX32 %08RX32",
+                                            (uint32_t)pFrame->AddrFrame.off,
+                                            (uint32_t)pFrame->AddrReturnFrame.off,
+                                            (uint32_t)pFrame->AddrReturnPC.Sel,
+                                            (uint32_t)pFrame->AddrReturnPC.off,
+                                            pFrame->Args.au32[0],
+                                            pFrame->Args.au32[1],
+                                            pFrame->Args.au32[2],
+                                            pFrame->Args.au32[3]);
+                            pHlp->pfnPrintf(pHlp, " %RTsel:%08RGv", pFrame->AddrPC.Sel, pFrame->AddrPC.off);
+                            if (pFrame->pSymPC)
+                            {
+                                RTGCINTPTR offDisp = pFrame->AddrPC.FlatPtr - pFrame->pSymPC->Value;
+                                if (offDisp > 0)
+                                    pHlp->pfnPrintf(pHlp, " %s+%llx", pFrame->pSymPC->szName, (int64_t)offDisp);
+                                else if (offDisp < 0)
+                                    pHlp->pfnPrintf(pHlp, " %s-%llx", pFrame->pSymPC->szName, -(int64_t)offDisp);
+                                else
+                                    pHlp->pfnPrintf(pHlp, " %s", pFrame->pSymPC->szName);
+                            }
+                            if (pFrame->pLinePC)
+                                pHlp->pfnPrintf(pHlp, " [%s @ 0i%d]", pFrame->pLinePC->szFilename, pFrame->pLinePC->uLineNo);
+                            pHlp->pfnPrintf(pHlp, "\n");
                         }
-                        if (pFrame->pLinePC)
-                            pHlp->pfnPrintf(pHlp, " [%s @ 0i%d]", pFrame->pLinePC->szFilename, pFrame->pLinePC->uLineNo);
-                        pHlp->pfnPrintf(pHlp, "\n");
+                        DBGFR3StackWalkEnd(pFirstFrame);
                     }
-                    DBGFR3StackWalkEnd(pFirstFrame);
-                }
 #endif /* defined(RT_OS_WINDOWS) && HC_ARCH_BITS == 32 */
+
+                    /* raw stack */
+                    pHlp->pfnPrintf(pHlp,
+                                    "!!\n"
+                                    "!! Raw stack (mind the direction). \n"
+                                    "!! pbEMTStackR0=%RHv pbEMTStackBottomR0=%RHv VMM_STACK_SIZE=%#x\n"
+                                    "!!\n"
+                                    "%.*Rhxd\n",
+                                    MMHyperCCToR0(pVM, pVCpu->vmm.s.pbEMTStackR3),
+                                    MMHyperCCToR0(pVM, pVCpu->vmm.s.pbEMTStackR3) + VMM_STACK_SIZE,
+                                    VMM_STACK_SIZE,
+                                    VMM_STACK_SIZE, pVCpu->vmm.s.pbEMTStackR3);
+                }
+                else
+                {
+                    pHlp->pfnPrintf(pHlp,
+                                    "!! Skipping ring-0 registers and stack, rcErr=%Rrc\n", rcErr);
+                }
             }
             else
             {
@@ -518,16 +609,5 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
      * Delete the output instance (flushing and restoring of flags).
      */
     vmmR3FatalDumpInfoHlpDelete(&Hlp);
-
-    /*
-     * Reset the ring-0 long jump buffer and stack.
-     */
-    pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call = 0;
-#ifdef RT_ARCH_X86
-    pVCpu->vmm.s.CallRing3JmpBufR0.eip          = 0;
-#else
-    pVCpu->vmm.s.CallRing3JmpBufR0.rip          = 0;
-#endif
-    *(uint64_t *)pVCpu->vmm.s.pbEMTStackR3      = 0; /* clear marker  */
 }
 

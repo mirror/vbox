@@ -218,7 +218,7 @@ VMMR3DECL(int)      VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZ
 #define VMMEMTRENDEZVOUS_FLAGS_VALID_MASK           UINT32_C(0x0000000f)
 /** @} */
 VMMR3DECL(int)      VMMR3EmtRendezvousFF(PVM pVM, PVMCPU pVCpu);
-VMMR3DECL(int)      VMMR3ReadR0Stack(PVM pVM, VMCPUID idCpu, RTHCUINTPTR pAddress, void *pvBuf, size_t cbRead);
+VMMR3DECL(int)      VMMR3ReadR0Stack(PVM pVM, VMCPUID idCpu, RTHCUINTPTR R0Addr, void *pvBuf, size_t cbRead);
 /** @} */
 #endif /* IN_RING3 */
 
