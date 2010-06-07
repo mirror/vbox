@@ -519,7 +519,12 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
     /*
      * Reset the ring-0 long jump buffer and stack.
      */
-    /** @todo reset the R0 for the calling virtual cpu. We'll assert (luckily) in
-     *        PGMPhys.cpp otherwise. */
+    pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call = 0;
+#ifdef RT_ARCH_X86
+    pVCpu->vmm.s.CallRing3JmpBufR0.eip          = 0;
+#else
+    pVCpu->vmm.s.CallRing3JmpBufR0.rip          = 0;
+#endif
+    *(uint64_t *)pVCpu->vmm.s.pbEMTStackR3      = 0; /* clear marker  */
 }
 
