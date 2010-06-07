@@ -38,6 +38,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DBGF
 #include <VBox/dbgf.h>
+#include <VBox/pdmapi.h>
 #include <VBox/mm.h>
 #include "DBGFInternal.h"
 #include <VBox/vm.h>
@@ -405,6 +406,55 @@ VMMR3DECL(int) DBGFR3AsSetAlias(PVM pVM, RTDBGAS hAlias, RTDBGAS hAliasFor)
 
 
 /**
+ * @callback_method_impl{FNPDMR3ENUM}
+ */
+static DECLCALLBACK(int) dbgfR3AsLazyPopulateR0Callback(PVM pVM, const char *pszFilename, const char *pszName,
+                                                        RTUINTPTR ImageBase, size_t cbImage, bool fRC, void *pvArg)
+{
+    /* Only ring-0 modules. */
+    if (!fRC)
+    {
+        RTDBGMOD hDbgMod;
+        int rc = RTDbgModCreateFromImage(&hDbgMod, pszFilename, pszName, 0 /*fFlags*/);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTDbgAsModuleLink((RTDBGAS)pvArg, hDbgMod, ImageBase, 0 /*fFlags*/);
+            if (RT_FAILURE(rc))
+                LogRel(("DBGF: Failed to link module \"%s\" into DBGF_AS_R0 at %RTptr: %Rrc\n",
+                        pszName, ImageBase, rc));
+        }
+        else
+            LogRel(("DBGF: RTDbgModCreateFromImage failed with rc=%Rrc for module \"%s\" (%s)\n",
+                    rc, pszName, pszFilename));
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Lazily populates the specified address space.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   hAlias              The alias.
+ */
+static void dbgfR3AsLazyPopulate(PVM pVM, RTDBGAS hAlias)
+{
+    DBGF_AS_DB_LOCK_WRITE(pVM);
+    uintptr_t iAlias = DBGF_AS_ALIAS_2_INDEX(hAlias);
+    if (!pVM->dbgf.s.afAsAliasPopuplated[iAlias])
+    {
+        RTDBGAS hAs = pVM->dbgf.s.ahAsAliases[iAlias];
+        if (hAlias == DBGF_AS_R0)
+            PDMR3LdrEnumModules(pVM, dbgfR3AsLazyPopulateR0Callback, hAs);
+        /** @todo what do we do about DBGF_AS_RC?  */
+
+        pVM->dbgf.s.afAsAliasPopuplated[iAlias] = true;
+    }
+    DBGF_AS_DB_UNLOCK_WRITE(pVM);
+}
+
+
+/**
  * Resolves the address space handle into a real handle if it's an alias.
  *
  * @returns Real address space handle. NIL_RTDBGAS if invalid handle.
@@ -446,6 +496,10 @@ VMMR3DECL(RTDBGAS) DBGFR3AsResolveAndRetain(PVM pVM, RTDBGAS hAlias)
     {
         if (DBGF_AS_IS_FIXED_ALIAS(hAlias))
         {
+            /* Perform lazy address space population. */
+            if (!pVM->dbgf.s.afAsAliasPopuplated[iAlias])
+                dbgfR3AsLazyPopulate(pVM, hAlias);
+
             /* Won't ever change, no need to grab the lock. */
             hAlias = pVM->dbgf.s.ahAsAliases[iAlias];
             cRefs = RTDbgAsRetain(hAlias);
@@ -926,13 +980,41 @@ VMMR3DECL(int) DBGFR3AsSymbolByAddr(PVM pVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddr
         if (!phMod)
             RTDbgModRelease(hMod);
     }
-    /* Temporary conversion. */
+    /* Temporary conversions. */
     else if (hDbgAs == DBGF_AS_GLOBAL)
     {
         DBGFSYMBOL DbgfSym;
         rc = DBGFR3SymbolByAddr(pVM, pAddress->FlatPtr, poffDisp, &DbgfSym);
         if (RT_SUCCESS(rc))
             dbgfR3AsSymbolConvert(pSymbol, &DbgfSym);
+    }
+    else if (hDbgAs == DBGF_AS_R0)
+    {
+        RTR0PTR     R0PtrMod;
+        char        szNearSym[260];
+        RTR0PTR     R0PtrNearSym;
+        RTR0PTR     R0PtrNearSym2;
+        rc = PDMR3LdrQueryR0ModFromPC(pVM, pAddress->FlatPtr,
+                                      pSymbol->szName, sizeof(pSymbol->szName) / 2, &R0PtrMod,
+                                      &szNearSym[0],   sizeof(szNearSym),           &R0PtrNearSym,
+                                      NULL,            0,                           &R0PtrNearSym2);
+        if (RT_SUCCESS(rc))
+        {
+            pSymbol->offSeg     = pSymbol->Value = R0PtrNearSym;
+            pSymbol->cb         = R0PtrNearSym2 > R0PtrNearSym ? R0PtrNearSym2 - R0PtrNearSym : 0;
+            pSymbol->iSeg       = 0;
+            pSymbol->fFlags     = 0;
+            pSymbol->iOrdinal   = UINT32_MAX;
+            size_t offName = strlen(pSymbol->szName);
+            pSymbol->szName[offName++] = '!';
+            size_t cchNearSym = strlen(szNearSym);
+            if (cchNearSym + offName >= sizeof(pSymbol->szName))
+                cchNearSym = sizeof(pSymbol->szName) - offName - 1;
+            strncpy(&pSymbol->szName[offName], szNearSym, cchNearSym);
+            pSymbol->szName[offName + cchNearSym] = '\0';
+            if (poffDisp)
+                *poffDisp = pAddress->FlatPtr - pSymbol->Value;
+        }
     }
 
     return rc;
