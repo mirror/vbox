@@ -559,7 +559,7 @@ VBGLR3DECL(int)     VbglR3RegisterSharedModule(char *pszModuleName, char *pszVer
 VBGLR3DECL(int)     VbglR3UnregisterSharedModule(char *pszModuleName, char *pszVersion, RTGCPTR64  GCBaseAddr, uint32_t cbModule);
 VBGLR3DECL(int)     VbglR3CheckSharedModules(void);
 VBGLR3DECL(bool)    VbglR3PageSharingIsEnabled(void);
-VBGLR3DECL(int)     VbglR3PageIsShared(RTGCPTR pPage, bool *pfShared, bool *pfReadWrite);
+VBGLR3DECL(int)     VbglR3PageIsShared(RTGCPTR pPage, bool *pfShared, uint64_t *puPageFlags);
 /** @} */
 
 #endif /* IN_RING3 */
