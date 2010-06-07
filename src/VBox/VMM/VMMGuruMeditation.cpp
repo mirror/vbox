@@ -299,18 +299,18 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                                     "!! CallRing3JmpBuf:\n"
                                     "!!\n");
                     pHlp->pfnPrintf(pHlp,
-                                    "SavedEsp=%RHv SavedEbp=%RHv SpResume=%RHv SpCheck=%RHv fInRing3Call=%RTbool\n",
+                                    "SavedEsp=%RHv SavedEbp=%RHv SpResume=%RHv SpCheck=%RHv\n",
                                     pVCpu->vmm.s.CallRing3JmpBufR0.SavedEsp,
                                     pVCpu->vmm.s.CallRing3JmpBufR0.SavedEbp,
                                     pVCpu->vmm.s.CallRing3JmpBufR0.SpResume,
-                                    pVCpu->vmm.s.CallRing3JmpBufR0.SpCheck,
+                                    pVCpu->vmm.s.CallRing3JmpBufR0.SpCheck);
+                    pHlp->pfnPrintf(pHlp,
+                                    "pvSavedStack=%RHv cbSavedStack=%#x  fInRing3Call=%RTbool\n",
+                                    pVCpu->vmm.s.CallRing3JmpBufR0.pvSavedStack,
+                                    pVCpu->vmm.s.CallRing3JmpBufR0.cbSavedStack,
                                     pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call);
                     pHlp->pfnPrintf(pHlp,
-                                    "pvSavedStack=%RHv SavedEbp=%RX32 SpResume=%RHv SpCheck=%RHv\n",
-                                    pVCpu->vmm.s.CallRing3JmpBufR0.pvSavedStack,
-                                    pVCpu->vmm.s.CallRing3JmpBufR0.cbSavedStack);
-                    pHlp->pfnPrintf(pHlp,
-                                    "cbUsedMax=%#4x cbUsedAvg=%#4x cbUsedTotal=%#llx cUsedTotal=%#llx\n",
+                                    "cbUsedMax=%#x cbUsedAvg=%#x cbUsedTotal=%#llx cUsedTotal=%#llx\n",
                                     pVCpu->vmm.s.CallRing3JmpBufR0.cbUsedMax,
                                     pVCpu->vmm.s.CallRing3JmpBufR0.cbUsedAvg,
                                     pVCpu->vmm.s.CallRing3JmpBufR0.cbUsedTotal,
@@ -442,11 +442,13 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                                     "!!\n"
                                     "!! Raw stack (mind the direction). \n"
                                     "!! pbEMTStackR0=%RHv pbEMTStackBottomR0=%RHv VMM_STACK_SIZE=%#x\n"
+                                    "!! pbEmtStackR3=%p\n"
                                     "!!\n"
                                     "%.*Rhxd\n",
                                     MMHyperCCToR0(pVM, pVCpu->vmm.s.pbEMTStackR3),
                                     MMHyperCCToR0(pVM, pVCpu->vmm.s.pbEMTStackR3) + VMM_STACK_SIZE,
                                     VMM_STACK_SIZE,
+                                    pVCpu->vmm.s.pbEMTStackR3,
                                     VMM_STACK_SIZE, pVCpu->vmm.s.pbEMTStackR3);
                 }
                 else
