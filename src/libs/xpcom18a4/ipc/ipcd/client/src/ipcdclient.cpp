@@ -288,17 +288,17 @@ ProcessPendingQ(const nsID &aTarget)
 // WaitTarget enables support for multiple threads blocking on the same
 // message target.  the selector is called while inside the target's monitor.
 
-typedef PRBool (* ipcMessageSelector)(
+typedef nsresult (* ipcMessageSelector)(
   void *arg,
   ipcTargetData *td,
   const ipcMessage *msg
 );
 
 // selects any
-static PRBool
+static nsresult
 DefaultSelector(void *arg, ipcTargetData *td, const ipcMessage *msg)
 {
-  return PR_TRUE;
+  return NS_OK;
 }
 
 static nsresult
@@ -378,20 +378,23 @@ WaitTarget(const nsID           &aTarget,
       if (!lastChecked->TestFlag(IPC_MSG_FLAG_IN_PROCESS))
       {
         lastChecked->SetFlag(IPC_MSG_FLAG_IN_PROCESS);
-        PRBool accepted = (aSelector)(aArg, td, lastChecked);
+        nsresult acceptedRV = (aSelector)(aArg, td, lastChecked);
         lastChecked->ClearFlag(IPC_MSG_FLAG_IN_PROCESS);
 
-        if (accepted)
+        if (acceptedRV != IPC_WAIT_NEXT_MESSAGE)
         {
           // remove from pending queue
           if (beforeLastChecked)
             td->pendingQ.RemoveAfter(beforeLastChecked);
           else
             td->pendingQ.RemoveFirst();
-          lastChecked->mNext = nsnull;
 
-          *aMsg = lastChecked;
-          break;
+          if (acceptedRV != IPC_DISCARD_MESSAGE)
+          {
+            lastChecked->mNext = nsnull;
+            *aMsg = lastChecked;
+            break;
+          }
         }
       }
 
@@ -410,8 +413,8 @@ WaitTarget(const nsID           &aTarget,
       /* Special client liveness check if there is no message to process.
        * This is necessary as there might be several threads waiting for
        * a message from a single client, and only one gets the DOWN msg. */
-      PRBool alive = (aSelector)(aArg, td, NULL);
-      if (!alive)
+      nsresult aliveRV = (aSelector)(aArg, td, NULL);
+      if (aliveRV != IPC_WAIT_NEXT_MESSAGE)
       {
         *aMsg = NULL;
         break;
@@ -597,15 +600,15 @@ static nsresult nsresult_from_ipcm_result(PRInt32 status)
 /* ------------------------------------------------------------------------- */
 
 // selects the next IPCM message with matching request index
-static PRBool
+static nsresult
 WaitIPCMResponseSelector(void *arg, ipcTargetData *td, const ipcMessage *msg)
 {
 #ifdef VBOX
   if (!msg)
-    return PR_TRUE;
+    return IPC_WAIT_NEXT_MESSAGE;
 #endif /* VBOX */
   PRUint32 requestIndex = *(PRUint32 *) arg;
-  return IPCM_GetRequestIndex(msg) == requestIndex;
+  return IPCM_GetRequestIndex(msg) == requestIndex ? NS_OK : IPC_WAIT_NEXT_MESSAGE;
 }
 
 // wait for an IPCM response message.  if responseMsg is null, then it is
@@ -928,7 +931,7 @@ struct WaitMessageSelectorData
   PRBool               senderDead;
 };
 
-static PRBool WaitMessageSelector(void *arg, ipcTargetData *td, const ipcMessage *msg)
+static nsresult WaitMessageSelector(void *arg, ipcTargetData *td, const ipcMessage *msg)
 {
   WaitMessageSelectorData *data = (WaitMessageSelectorData *) arg;
 #ifdef VBOX
@@ -943,11 +946,9 @@ static PRBool WaitMessageSelector(void *arg, ipcTargetData *td, const ipcMessage
 
     nsresult rv = obs->OnMessageAvailable(IPC_SENDER_ANY, nsID(), 0, 0);
     if (rv != IPC_WAIT_NEXT_MESSAGE)
-    {
       data->senderDead = PR_TRUE;
-      return PR_FALSE;
-    }
-    return PR_TRUE;
+
+    return rv;
   }
 #endif /* VBOX */
 
@@ -974,7 +975,7 @@ static PRBool WaitMessageSelector(void *arg, ipcTargetData *td, const ipcMessage
             // definitely fail with the NS_ERROR_xxx result.
 
             data->senderDead = PR_TRUE;
-            return PR_TRUE; // consume the message
+            return IPC_DISCARD_MESSAGE; // consume the message
           }
           else
           {
@@ -989,10 +990,9 @@ static PRBool WaitMessageSelector(void *arg, ipcTargetData *td, const ipcMessage
 
             nsresult rv = obs->OnMessageAvailable(status->ClientID(), nsID(), 0, 0);
             if (rv != IPC_WAIT_NEXT_MESSAGE)
-            {
               data->senderDead = PR_TRUE;
-              return PR_TRUE; // consume the message
-            }
+
+            return IPC_DISCARD_MESSAGE; // consume the message
           }
         }
 #ifdef VBOX
@@ -1018,10 +1018,10 @@ static PRBool WaitMessageSelector(void *arg, ipcTargetData *td, const ipcMessage
              * from this client. Don't declare the connection as dead in
              * this case. A client ID wraparound can't falsely trigger
              * this, since the waiting thread would have hit the liveness
-             * check in the mean time. Also, DO NOT consume the message,
-             * otherwise it gets passed to the DConnect message handling
-             * without any further checks. IPCM messages are automatically
-             * discarded if they are left unclaimed. */
+             * check in the mean time. We MUST consume the message, otherwise
+             * IPCM messages pile up as long as there is a pending call, which
+             * can lead to severe processing overhead. */
+            return IPC_DISCARD_MESSAGE; // consume the message
           }
         }
 #endif /* VBOX */
@@ -1030,7 +1030,7 @@ static PRBool WaitMessageSelector(void *arg, ipcTargetData *td, const ipcMessage
       default:
         NS_NOTREACHED("unexpected message");
     }
-    return PR_FALSE; // continue iterating
+    return IPC_WAIT_NEXT_MESSAGE; // continue iterating
   }
 
   nsresult rv = IPC_WAIT_NEXT_MESSAGE;
@@ -1050,7 +1050,7 @@ static PRBool WaitMessageSelector(void *arg, ipcTargetData *td, const ipcMessage
   }
 
   // stop iterating if we got a match that the observer accepted.
-  return rv != IPC_WAIT_NEXT_MESSAGE;
+  return rv != IPC_WAIT_NEXT_MESSAGE ? NS_OK : IPC_WAIT_NEXT_MESSAGE;
 }
 
 nsresult
