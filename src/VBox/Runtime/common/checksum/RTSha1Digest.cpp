@@ -40,7 +40,7 @@
 #include <openssl/sha.h>
 
 
-RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest, FNRTPROGRESS pfnProgressCallback, void *pvUser)
+RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest, PFNRTPROGRESS pfnProgressCallback, void *pvUser)
 {
     /* Validate input */
     AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
