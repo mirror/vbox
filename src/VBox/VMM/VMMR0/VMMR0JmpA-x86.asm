@@ -97,11 +97,11 @@ GLOBALNAME vmmR0CallRing3SetJmpEx
     mov     edx, [esp + 10h]            ; pvArg2
     mov     ecx, [esp + 0ch]            ; pvArg1
     mov     eax, [esp + 08h]            ; pfn
-%if 1                                   ; Use this to eat of some extra stack - handy for finding paths using lots of stack.
- %define FRAME_OFFSET 0
-%else
- %define FRAME_OFFSET 1024
-%endif
+ %if 1                                  ; Use this to eat of some extra stack - handy for finding paths using lots of stack.
+  %define FRAME_OFFSET 0
+ %else
+  %define FRAME_OFFSET 1024
+ %endif
     mov     [esi - FRAME_OFFSET + 04h], edx
     mov     [esi - FRAME_OFFSET      ], ecx
     lea     esp, [esi - FRAME_OFFSET]   ; Switch stack!
