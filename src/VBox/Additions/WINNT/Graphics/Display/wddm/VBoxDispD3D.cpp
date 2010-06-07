@@ -1952,7 +1952,10 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                             pD3DIfTex->UnlockRect(i);
                         }
                         else
+                        {
                             pD3DIfTex->Release();
+                            break;
+                        }
                     }
                 }
             }
