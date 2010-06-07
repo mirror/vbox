@@ -327,9 +327,9 @@ static int rtProcGetProcessHandle(DWORD dwPID, PSID pSID, PHANDLE phToken)
 }
 
 
-static BOOL rtProcFindProcessByName(const char *pszName, PSID pSID, PHANDLE phToken)
+static BOOL rtProcFindProcessByName(const char * const *papszNames, PSID pSID, PHANDLE phToken)
 {
-    AssertPtr(pszName);
+    AssertPtr(papszNames);
     AssertPtr(pSID);
     AssertPtr(phToken);
 
@@ -359,24 +359,29 @@ static BOOL rtProcFindProcessByName(const char *pszName, PSID pSID, PHANDLE phTo
                     HANDLE hSnap = pfnCreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
                     if (hSnap != INVALID_HANDLE_VALUE)
                     {
-                        PROCESSENTRY32 procEntry;
-                        procEntry.dwSize = sizeof(PROCESSENTRY32);
-                        if (pfnProcess32First(hSnap, &procEntry))
+                        for (size_t i = 0; papszNames[i] && !fFound; i++)
                         {
-                            do
-                            {
-                                if (   _stricmp(procEntry.szExeFile, pszName) == 0
-                                    && RT_SUCCESS(rtProcGetProcessHandle(procEntry.th32ProcessID, pSID, phToken)))
+                            PROCESSENTRY32 procEntry;
+                            procEntry.dwSize = sizeof(PROCESSENTRY32);
+                            if (pfnProcess32First(hSnap, &procEntry))
+                            {   
+                                do
                                 {
-                                    fFound = TRUE;
-                                }
-                            } while (pfnProcess32Next(hSnap, &procEntry) && !fFound);
+                                    if (   _stricmp(procEntry.szExeFile, papszNames[i]) == 0
+                                        && RT_SUCCESS(rtProcGetProcessHandle(procEntry.th32ProcessID, pSID, phToken)))
+                                    {
+                                        fFound = TRUE;
+                                    }
+                                } while (pfnProcess32Next(hSnap, &procEntry) && !fFound);
+                            }
+                            else /* Process32First */
+                                dwErr = GetLastError();
+                            if (FAILED(dwErr))
+                                break;
                         }
-                        else /* Process32First */
-                            dwErr = GetLastError();
                         CloseHandle(hSnap);
                     }
-                    else /* hSnap =! INVALID_HANDLE_VALUE */
+                    else /* hSnap == INVALID_HANDLE_VALUE */
                         dwErr = GetLastError();
                 }
             }
@@ -405,32 +410,37 @@ static BOOL rtProcFindProcessByName(const char *pszName, PSID pSID, PHANDLE phTo
                         DWORD cbBytes = 0;
                         if (pfnEnumProcesses(dwPIDs, sizeof(dwPIDs), &cbBytes))
                         {
-                            for (DWORD dwIdx = 0; dwIdx < cbBytes/sizeof(DWORD) && !fFound; dwIdx++)
+                            for (size_t i = 0; papszNames[i] && !fFound; i++)
                             {
-                                HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
-                                                           FALSE, dwPIDs[dwIdx]);
-                                if (hProc)
+                                for (DWORD dwIdx = 0; dwIdx < cbBytes/sizeof(DWORD) && !fFound; dwIdx++)
                                 {
-                                    char *pszProcName = NULL;
-                                    DWORD dwSize = 128;
-                                    do
+                                    HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+                                                               FALSE, dwPIDs[dwIdx]);
+                                    if (hProc)
                                     {
-                                        RTMemRealloc(pszProcName, dwSize);
-                                        if (pfnGetModuleBaseName(hProc, 0, pszProcName, dwSize) == dwSize)
-                                            dwSize += 128;
-                                    } while (GetLastError() == ERROR_INSUFFICIENT_BUFFER);
-
-                                    if (pszProcName)
-                                    {
-                                        if (   _stricmp(pszProcName, pszName) == 0
-                                            && RT_SUCCESS(rtProcGetProcessHandle(dwPIDs[dwIdx], pSID, phToken)))
+                                        char *pszProcName = NULL;
+                                        DWORD dwSize = 128;
+                                        do
                                         {
-                                            fFound = TRUE;
+                                            RTMemRealloc(pszProcName, dwSize);
+                                            if (pfnGetModuleBaseName(hProc, 0, pszProcName, dwSize) == dwSize)
+                                                dwSize += 128;
+                                            if (dwSize > _4K) /* Play safe. */
+                                                break;
+                                        } while (GetLastError() == ERROR_INSUFFICIENT_BUFFER);
+    
+                                        if (pszProcName)
+                                        {
+                                            if (   _stricmp(pszProcName, papszNames[i]) == 0
+                                                && RT_SUCCESS(rtProcGetProcessHandle(dwPIDs[dwIdx], pSID, phToken)))
+                                            {
+                                                fFound = TRUE;
+                                            }
                                         }
+                                        if (pszProcName)
+                                            RTStrFree(pszProcName);
+                                        CloseHandle(hProc);
                                     }
-                                    if (pszProcName)
-                                        RTStrFree(pszProcName);
-                                    CloseHandle(hProc);
                                 }
                             }
                         }
@@ -586,12 +596,24 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                                               &sidNameUse)
                         && IsValidSid(pSID))
                     {
-                        fFound = rtProcFindProcessByName(
+                        /* Array of process names we want to look for. */
+                        char *papszProcNames[] = 
 #ifdef VBOX
-                                                         "VBoxTray.exe",
+                        /*
+                         * Add lookup for "explorer.exe" as a fallback in case the VBox
+                         * Guest Additions are not (yet) installed, but prefer looking
+                         * up "VBoxTray.exe" in the first place.
+                         */
+                            { { "VBoxTray.exe" },
+                              { "explorer.exe" },
+                              NULL 
+                            };
 #else
-                                                         "explorer.exe"
-#endif
+                            { { "explorer.exe" },
+                              NULL 
+                            };
+#endif                        
+                        fFound = rtProcFindProcessByName(papszProcNames,
                                                          pSID, &hTokenUserDesktop);
                     }
                     else
