@@ -804,24 +804,45 @@ void Guest::destroyCtrlCallbackContext(Guest::CallbackListIter it)
 uint32_t Guest::addCtrlCallbackContext(eVBoxGuestCtrlCallbackType enmType, void *pvData, uint32_t cbData, Progress *pProgress)
 {
     AssertPtr(pProgress);
-    uint32_t uNewContext = ASMAtomicIncU32(&mNextContextID);
-    if (uNewContext == UINT32_MAX)
-        ASMAtomicUoWriteU32(&mNextContextID, 1000);
 
     /** @todo Put this stuff into a constructor! */
     CallbackContext context;
-    context.mContextID = uNewContext;
     context.mType = enmType;
     context.pvData = pvData;
     context.cbData = cbData;
     context.pProgress = pProgress;
 
-    uint32_t nCallbacks;
+    /* Create a new context ID and assign it. */
+    CallbackListIter it;
+    uint32_t uNewContext = 0;
+    do
+    {    
+        /* Create a new context ID ... */
+        uNewContext = ASMAtomicIncU32(&mNextContextID);
+        if (uNewContext == UINT32_MAX)
+            ASMAtomicUoWriteU32(&mNextContextID, 1000);
+        /* Is the context ID already used? */
+        it = getCtrlCallbackContextByID(uNewContext);       
+    } while(it != mCallbackList.end());
+
+    uint32_t nCallbacks = 0;
+    if (   it == mCallbackList.end()
+        && uNewContext > 0)
     {
+        /* We apparently got an unused context ID, let's use it! */
+        context.mContextID = uNewContext;
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-        /// @todo r=bird: check if already in the list and find another one.
         mCallbackList.push_back(context);
         nCallbacks = mCallbackList.size();
+    }
+    else
+    {
+        /* Should never happen ... */
+        {
+            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+            nCallbacks = mCallbackList.size();
+        }
+        AssertReleaseMsg(uNewContext, ("No free context ID found! uNewContext=%u, nCallbacks=%u", uNewContext, nCallbacks));
     }
 
 #if 0
@@ -910,13 +931,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
             papszArgv = (char**)RTMemAlloc(sizeof(char*) * (uNumArgs + 1));
             AssertReturn(papszArgv, E_OUTOFMEMORY);
             for (unsigned i = 0; RT_SUCCESS(vrc) && i < uNumArgs; i++)
-            {
-                /// @todo r=bird: RTUtf16ToUtf8().
-                int cbLen = RTStrAPrintf(&papszArgv[i], "%s", Utf8Str(args[i]).raw());
-                if (cbLen < 0)
-                    vrc = VERR_NO_MEMORY;
-
-            }
+                vrc = RTUtf16ToUtf8(args[i], &papszArgv[i]);
             papszArgv[uNumArgs] = NULL;
         }
 
