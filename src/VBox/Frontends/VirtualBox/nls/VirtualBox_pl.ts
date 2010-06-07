@@ -666,61 +666,61 @@
     </message>
     <message>
         <source>Enter &amp;Fullscreen Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Włącz &amp;tryb pełnoekranowy</translation>
     </message>
     <message>
         <source>Exit &amp;Fullscreen Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Opuść &amp;tryb pełnoekranowy</translation>
     </message>
     <message>
         <source>Switch to normal mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Przełącza do trybu normalnego</translation>
     </message>
     <message>
         <source>Enter Seam&amp;less Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Włącz t&amp;ryb zintegrowany</translation>
     </message>
     <message>
         <source>Exit Seam&amp;less Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Opuść t&amp;ryb zintegrowany</translation>
     </message>
     <message>
         <source>Enable &amp;Guest Display Auto-resize</source>
-        <translation type="unfinished"></translation>
+        <translation>Włącz automatyczne skalowanie ekranu &amp;gościa</translation>
     </message>
     <message>
         <source>Disable &amp;Guest Display Auto-resize</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyłącz automatyczne skalowanie ekranu &amp;gościa</translation>
     </message>
     <message>
         <source>Disable automatic resize of the guest display when the window is resized</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyłącza skalowanie ekranu gościa przy zmianie rozmiaru okna</translation>
     </message>
     <message>
         <source>&amp;Enable Remote Display</source>
-        <translation type="unfinished"></translation>
+        <translation>Włącz &amp;zdalny pulpit</translation>
     </message>
     <message>
         <source>Enable remote desktop (RDP) connections to this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Włącza zdalne połączenia RDP do tej maszyny</translation>
     </message>
     <message>
         <source>&amp;Disable Remote Display</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyłącz &amp;zdalny pulpit</translation>
     </message>
     <message>
         <source>Disable remote desktop (RDP) connections to this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyłącza zdalne połączenia RDP do tej maszyny</translation>
     </message>
     <message>
         <source>Enable &amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>Włącz &amp;logowanie...</translation>
     </message>
     <message>
         <source>Disable &amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>Wyłącz &amp;logowanie...</translation>
     </message>
 </context>
 <context>
@@ -2274,7 +2274,7 @@ Będzie ona używana przez wszystkie moduły VirtualBox, aby móc rozróżnić t
     </message>
     <message>
         <source>Boot Hard &amp;Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Startowy &amp;dysk twardy</translation>
     </message>
 </context>
 <context>
@@ -2551,7 +2551,7 @@ Wersja %1</translation>
     </message>
     <message>
         <source>Hard Disk Controller (SAS)</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontroler dysków SAS</translation>
     </message>
 </context>
 <context>
@@ -5478,12 +5478,12 @@ Wersja %1</translation>
     <message>
         <source>Unknown device</source>
         <comment>USB device details</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nieznane urządzenie</translation>
     </message>
     <message>
         <source>SAS Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>Port SAS %1</translation>
     </message>
 </context>
 <context>
@@ -7922,12 +7922,12 @@ języka ustawiony jako domyślny dla systemu.&lt;/qt&gt;
     <message>
         <source>&amp;File</source>
         <comment>Mac OS X version</comment>
-        <translation type="unfinished">&amp;Plik</translation>
+        <translation>&amp;Plik</translation>
     </message>
     <message>
         <source>&amp;File</source>
         <comment>Non Mac OS X version</comment>
-        <translation type="unfinished">&amp;Plik</translation>
+        <translation>&amp;Plik</translation>
     </message>
 </context>
 <context>

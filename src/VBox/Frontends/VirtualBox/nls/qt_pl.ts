@@ -9,7 +9,7 @@
     </message>
     <message>
         <source>&lt;html&gt;Switching to the audio playback device &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;which just became available and has higher preference.&lt;/html&gt;</source>
-        <translation>&lt;html&gt;Przełączanie na urządzenie dźwiękowe &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;które właśnie stało się dostępne i ma większy priorytet.&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;Przełączanie na urządzenie dźwiękowe &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;które właśnie stało się dostępne i ma wyższy priorytet.&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Revert back to device &apos;%1&apos;</source>
@@ -48,13 +48,13 @@
     <message>
         <source>Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.
           Some video features have been disabled.</source>
-        <translation>Ostrzeżenie: Pakietu gstreamer0.10-plugins-good nie został zainstalowany.
-Niektóre cechy wideo stały się niedostępne.</translation>
+        <translation>Ostrzeżenie: Wygląda na to, że pakiet gstreamer0.10-plugins-good nie jest zainstalowany w tym systemie.
+Niektóre możliwości wideo zostały wyłączone.</translation>
     </message>
     <message>
         <source>Warning: You do not seem to have the base GStreamer plugins installed.
           All audio and video support has been disabled</source>
-        <translation>Ostrzeżenie: Podstawowe wtyczki GStreamer nie zostały zainstalowane.
+        <translation>Ostrzeżenie: Wygląda na to, że podstawowe wtyczki GStreamer nie są zainstalowane w tym systemie.
 Obsługa dźwięku i wideo została wyłączona</translation>
     </message>
 </context>
@@ -73,9 +73,9 @@ zainstalowałeś libgstreamer-plugins-base.</translation>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
         <translation>
-            <numerusform>Brak wymaganego kodera. Aby odtworzyć zawartość musisz zainstalować poniższy koder: %0</numerusform>
-            <numerusform>Brak wymaganego kodera. Aby odtworzyć zawartość musisz zainstalować poniższe kodery: %0</numerusform>
-            <numerusform>Brak wymaganego kodera. Aby odtworzyć zawartość musisz zainstalować poniższe kodery: %0</numerusform>
+            <numerusform>Brak wymaganego kodeka. Aby odtworzyć zawartość musisz zainstalować poniższy kodek: %0</numerusform>
+            <numerusform>Brak wymaganego kodeka. Aby odtworzyć zawartość musisz zainstalować poniższe kodeki: %0</numerusform>
+            <numerusform>Brak wymaganego kodeka. Aby odtworzyć zawartość musisz zainstalować poniższe kodeki: %0</numerusform>
         </translation>
     </message>
     <message>
@@ -352,7 +352,7 @@ Sprawdź ścieżkę i nazwę pliku.</translation>
     </message>
     <message>
         <source>Symlink to Special</source>
-        <translation>Specjalny dowiązanie symboliczne</translation>
+        <translation>Dowiązanie symboliczne do pliku specjalnego</translation>
     </message>
     <message>
         <source>the directory</source>
@@ -545,7 +545,7 @@ na
     </message>
     <message>
         <source>Puts a maximized window back to normal</source>
-        <translation>Przywraca normalny rozmiar poprzednio zmaksymalizowanego okna</translation>
+        <translation>Przywraca normalny rozmiar uprzednio zmaksymalizowanego okna</translation>
     </message>
     <message>
         <source>Puts a minimized back to normal</source>
@@ -777,7 +777,7 @@ na
     <message>
         <source>%1: permission denied</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: brak dostępu</translation>
+        <translation>%1: brak uprawnień</translation>
     </message>
     <message>
         <source>%1: already exists</source>
@@ -827,7 +827,7 @@ na
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>Nie można cofnąć transakcji</translation>
+        <translation>Nie można wycofać transakcji</translation>
     </message>
     <message>
         <source>Unable to set autocommit</source>
@@ -903,7 +903,7 @@ na
     </message>
     <message>
         <source>Done</source>
-        <translation>Wykonano</translation>
+        <translation>Zrobione</translation>
     </message>
 </context>
 <context>
@@ -1242,7 +1242,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>%1 bytes</source>
-        <translation>%1 b</translation>
+        <translation>%1 bajtów</translation>
     </message>
     <message>
         <source>Invalid filename</source>
@@ -1299,7 +1299,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Black</source>
-        <translation>Czarny</translation>
+        <translation>Bardzo gruby</translation>
     </message>
     <message>
         <source>Demi</source>
@@ -1307,7 +1307,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation>Jasny</translation>
+        <translation>Cienki</translation>
     </message>
     <message>
         <source>Italic</source>
@@ -1499,11 +1499,11 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Connected to host</source>
-        <translation>Podłączony do host&apos;a</translation>
+        <translation>Podłączony do hosta</translation>
     </message>
     <message>
         <source>Connected to host %1</source>
-        <translation>Podłączony do host&apos;a %1</translation>
+        <translation>Podłączony do hosta %1</translation>
     </message>
     <message>
         <source>Connecting to host failed:
@@ -1560,7 +1560,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     <message>
         <source>Login failed:
 %1</source>
-        <translation>Logowanie nie powiodło się:
+        <translation>Logowanie zakończone błędem:
 %1</translation>
     </message>
     <message>
@@ -1616,15 +1616,15 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     <name>QHttp</name>
     <message>
         <source>Connected to host</source>
-        <translation>Podłączony do host&apos;a</translation>
+        <translation>Podłączony do hosta</translation>
     </message>
     <message>
         <source>Connected to host %1</source>
-        <translation>Podłączony do host&apos;a %1</translation>
+        <translation>Podłączony do hosta %1</translation>
     </message>
     <message>
         <source>Connection closed</source>
-        <translation>Połączenie zakończone</translation>
+        <translation>Połączenie zamknięte</translation>
     </message>
     <message>
         <source>Connection refused</source>
@@ -1632,7 +1632,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Connection to %1 closed</source>
-        <translation>Połączenie do %1 zamknięte</translation>
+        <translation>Połączenie do %1 zakończone</translation>
     </message>
     <message>
         <source>Host %1 found</source>
@@ -1668,7 +1668,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Server closed connection unexpectedly</source>
-        <translation>Serwer niespodziewanie zakończył połączenie</translation>
+        <translation>Serwer nieoczekiwanie zakończył połączenie</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -1684,7 +1684,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Authentication required</source>
-        <translation>Autoryzacja wymagana</translation>
+        <translation>Wymagana autoryzacja</translation>
     </message>
     <message>
         <source>Proxy requires authentication</source>
@@ -1704,7 +1704,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>SSL handshake failed</source>
-        <translation>Nawiązanie sesji SSL nie powiodło się</translation>
+        <translation>Nawiązanie sesji SSL zakończone błędem</translation>
     </message>
     <message>
         <source>Connection refused (or timed out)</source>
@@ -1712,14 +1712,14 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>HTTPS connection requested but SSL support not compiled in</source>
-        <translation type="unfinished"></translation>
+        <translation>Zażądano połączenia HTTPS lecz obsługa SSL nie jest wkompilowana</translation>
     </message>
 </context>
 <context>
     <name>QHttpSocketEngine</name>
     <message>
         <source>Authentication required</source>
-        <translation>Autoryzacja wymagana</translation>
+        <translation>Wymagana autoryzacja</translation>
     </message>
 </context>
 <context>
@@ -1738,7 +1738,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>Nie można cofnąć transakcji</translation>
+        <translation>Nie można wycofać transakcji</translation>
     </message>
 </context>
 <context>
@@ -1824,7 +1824,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Permission denied</source>
-        <translation>Brak dostępu</translation>
+        <translation>Brak uprawnień</translation>
     </message>
     <message>
         <source>Too many open files</source>
@@ -1866,7 +1866,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Plugin verification data mismatch in &apos;%1&apos;</source>
-        <translation>Błąd podczas weryfikacji danych we wtyczce &apos;%1&apos;</translation>
+        <translation>Niezgodność podczas weryfikacji danych we wtyczce &quot;%1&quot;</translation>
     </message>
     <message>
         <source>QLibrary::load_sys: Cannot load %1 (%2)</source>
@@ -1917,7 +1917,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>Usuń</translation>
+        <translation>Skasuj</translation>
     </message>
     <message>
         <source>&amp;Paste</source>
@@ -1944,7 +1944,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>%1: Permission denied</source>
-        <translation>%1: Brak dostępu</translation>
+        <translation>%1: Brak uprawnień</translation>
     </message>
     <message>
         <source>%1: Address in use</source>
@@ -1963,7 +1963,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>%1: Remote closed</source>
-        <translation>%1: Zdalny odłączony</translation>
+        <translation>%1: Drugi koniec odłączony</translation>
     </message>
     <message>
         <source>%1: Invalid name</source>
@@ -1983,7 +1983,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>%1: Datagram too large</source>
-        <translation>%1: Za duży pakiet</translation>
+        <translation>%1: Za duży datagram</translation>
     </message>
     <message>
         <source>%1: Connection error</source>
@@ -2006,7 +2006,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>Nie można potwierdzić transakcji</translation>
+        <translation>Nie można dokonać transakcji</translation>
     </message>
     <message>
         <source>Unable to connect</source>
@@ -2018,7 +2018,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>Nie można cofnąć transakcji</translation>
+        <translation>Nie można wycofać transakcji</translation>
     </message>
 </context>
 <context>
@@ -2197,7 +2197,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;Informacje o Qt&lt;/h3&gt;%1&lt;p&gt;Qt jest to toolkit C++ przeznaczony do tworzenia aplikacji wieloplatformowych.&lt;/p&gt;&lt;p&gt;Qt zapewnia przenośność jednego kodu źródłowego pomiędzy MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux i głównymi komercyjnymi wariantami systemów Unix. Qt jest również dostępny dla urządzeń wbudowanych jako Qt for Embedded Linux oraz Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt jest produktem firmy Nokia. Więcej informacji można znaleźć pod adresem: &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2215,7 +2215,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Multiple input method switcher that uses the context menu of the text widgets</source>
-        <translation>Przełącznik metody wprowadzania, który używa podręcznego menu w widżetach tekstowych</translation>
+        <translation>Przełącznik metody wprowadzania, który w widżetach tekstowych używa podręcznego menu</translation>
     </message>
 </context>
 <context>
@@ -2238,7 +2238,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Datagram was too large to send</source>
-        <translation>Pakiet za długi do wysłania</translation>
+        <translation>Datagram za długi do wysłania</translation>
     </message>
     <message>
         <source>Host unreachable</source>
@@ -2270,7 +2270,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Permission denied</source>
-        <translation>Brak dostępu</translation>
+        <translation>Brak uprawnień</translation>
     </message>
     <message>
         <source>Protocol type not supported</source>
@@ -2406,7 +2406,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>Nie można cofnąć transakcji</translation>
+        <translation>Nie można wycofać transakcji</translation>
     </message>
 </context>
 <context>
@@ -2448,7 +2448,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     <name>QODBCDriver</name>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>Nie można potwierdzić transakcji</translation>
+        <translation>Nie można dokonać transakcji</translation>
     </message>
     <message>
         <source>Unable to connect</source>
@@ -2468,7 +2468,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>Nie można cofnąć transakcji</translation>
+        <translation>Nie można wycofać transakcji</translation>
     </message>
 </context>
 <context>
@@ -2487,7 +2487,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Unable to fetch next</source>
-        <translation>Nie można pobrać kolejnych danych</translation>
+        <translation>Nie można pobrać kolejnego wiersza danych</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
@@ -2503,7 +2503,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Unable to fetch first</source>
-        <translation>Nie można pobrać pierwszych danych</translation>
+        <translation>Nie można pobrać pierwszego wiersza danych</translation>
     </message>
     <message>
         <source>Unable to fetch previous</source>
@@ -2564,7 +2564,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Could not rollback transaction</source>
-        <translation>Nie można cofnąć transakcji</translation>
+        <translation>Nie można wycofać transakcji</translation>
     </message>
     <message>
         <source>Unable to connect</source>
@@ -2587,7 +2587,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
-        <translation>Nie można przygotować wyrażenia</translation>
+        <translation>Nie można przygotować polecenia</translation>
     </message>
 </context>
 <context>
@@ -2700,7 +2700,7 @@ Proszę o sprawdzenie podanej nazwy pliku.</translation>
     </message>
     <message>
         <source>Print To File ...</source>
-        <translation>Wydrukuj do pliku ...</translation>
+        <translation>Drukuj do pliku ...</translation>
     </message>
     <message>
         <source>File %1 is not writable.
@@ -2858,11 +2858,11 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>Print to File (PDF)</source>
-        <translation>Wydrukuj do pliku (PDF)</translation>
+        <translation>Drukuj do pliku (PDF)</translation>
     </message>
     <message>
         <source>Print to File (Postscript)</source>
-        <translation>Wydrukuj do pliku (Postscript)</translation>
+        <translation>Drukuj do pliku (Postscript)</translation>
     </message>
     <message>
         <source>Local file</source>
@@ -2877,7 +2877,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     <name>QPrintPreviewDialog</name>
     <message>
         <source>Print Preview</source>
-        <translation>Wydrukuj podgląd</translation>
+        <translation>Podgląd wydruku</translation>
     </message>
     <message>
         <source>Next page</source>
@@ -2933,7 +2933,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation>Wydrukuj</translation>
+        <translation>Drukowanie</translation>
     </message>
     <message>
         <source>Page setup</source>
@@ -2952,7 +2952,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     <name>QPrintPropertiesWidget</name>
     <message>
         <source>Form</source>
-        <translation>Forma</translation>
+        <translation>Formularz</translation>
     </message>
     <message>
         <source>Page</source>
@@ -2967,7 +2967,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     <name>QPrintSettingsOutput</name>
     <message>
         <source>Form</source>
-        <translation>Forma</translation>
+        <translation>Formularz</translation>
     </message>
     <message>
         <source>Copies</source>
@@ -2975,11 +2975,11 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>Print range</source>
-        <translation>Wydrukuj zakres</translation>
+        <translation>Drukuj zakres</translation>
     </message>
     <message>
         <source>Print all</source>
-        <translation>Wydrukuj wszystko</translation>
+        <translation>Drukuj wszystko</translation>
     </message>
     <message>
         <source>Pages from</source>
@@ -2991,7 +2991,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>Selection</source>
-        <translation>Wybór</translation>
+        <translation>Wybrane strony</translation>
     </message>
     <message>
         <source>Output Settings</source>
@@ -3046,7 +3046,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     <name>QPrintWidget</name>
     <message>
         <source>Form</source>
-        <translation>Forma</translation>
+        <translation>Formularz</translation>
     </message>
     <message>
         <source>Printer</source>
@@ -3062,7 +3062,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>Location:</source>
-        <translation>Lokalizacja:</translation>
+        <translation>Położenie:</translation>
     </message>
     <message>
         <source>Preview</source>
@@ -3191,7 +3191,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>Nie można cofnąć transakcji</translation>
+        <translation>Nie można wycofać transakcji</translation>
     </message>
 </context>
 <context>
@@ -3237,7 +3237,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>Line up</source>
-        <translation>Linia w górę</translation>
+        <translation>Wyrównaj położenie</translation>
     </message>
     <message>
         <source>Page down</source>
@@ -3304,7 +3304,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>%1: permission denied</source>
-        <translation>%1: brak dostępu</translation>
+        <translation>%1: brak uprawnień</translation>
     </message>
     <message>
         <source>%1: already exists</source>
@@ -3348,7 +3348,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>%1: unable to set key on lock</source>
-        <translation>%1: nie można ustawić klucza na blokadzie</translation>
+        <translation>%1: nie można ustawić klucza na zablokowanym segmencie pamięci współdzielonej</translation>
     </message>
 </context>
 <context>
@@ -3363,7 +3363,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation>Back</translation>
+        <translation>Powrót</translation>
     </message>
     <message>
         <source>Backspace</source>
@@ -3423,7 +3423,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>Delete</translation>
+        <translation>Skasuj</translation>
     </message>
     <message>
         <source>Down</source>
@@ -3483,7 +3483,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>Insert</source>
-        <translation>Insert</translation>
+        <translation>Wstaw</translation>
     </message>
     <message>
         <source>Launch (0)</source>
@@ -3563,7 +3563,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>Media Next</source>
-        <translation>Następna ścieżka </translation>
+        <translation>Następna ścieżka</translation>
     </message>
     <message>
         <source>Media Play</source>
@@ -3631,7 +3631,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation>Print</translation>
+        <translation>Drukowanie</translation>
     </message>
     <message>
         <source>Print Screen</source>
@@ -3742,7 +3742,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>Position</source>
-        <translation>Położenie</translation>
+        <translation>Pozycja</translation>
     </message>
 </context>
 <context>
@@ -3891,7 +3891,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>Cu&amp;t</source>
-        <translation>&amp;Wytnij</translation>
+        <translation>W&amp;ytnij</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -3965,7 +3965,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     <name>QUnicodeControlCharacterMenu</name>
     <message>
         <source>Insert Unicode control character</source>
-        <translation>Wstaw znak </translation>
+        <translation>Wstaw znak kontrolny Unicode</translation>
     </message>
     <message>
         <source>LRE Start of left-to-right embedding</source>
@@ -4050,7 +4050,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     <message>
         <source>Reset</source>
         <comment>default label for Reset buttons in forms on web pages</comment>
-        <translation>Wyczyść</translation>
+        <translation>Resetuj</translation>
     </message>
     <message>
         <source>Choose File</source>
@@ -4110,7 +4110,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     <message>
         <source>Go Forward</source>
         <comment>Forward context menu item</comment>
-        <translation>Idź dalej</translation>
+        <translation>Przejdź dalej</translation>
     </message>
     <message>
         <source>Stop</source>
@@ -4135,7 +4135,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     <message>
         <source>No Guesses Found</source>
         <comment>No Guesses Found context menu item</comment>
-        <translation>Nie znaleziono podpowiedzi</translation>
+        <translation>Nie odnaleziono podpowiedzi</translation>
     </message>
     <message>
         <source>Ignore</source>
@@ -4316,7 +4316,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>Done</source>
-        <translation>Wykonano</translation>
+        <translation>Zrobione</translation>
     </message>
     <message>
         <source>Quit</source>
@@ -4379,7 +4379,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>&amp;Move</source>
-        <translation>&amp;Przenieś</translation>
+        <translation>Prze&amp;nieś</translation>
     </message>
     <message>
         <source>&amp;Restore</source>
@@ -4478,7 +4478,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>tag mismatch</source>
-        <translation>niepoprawny tag</translation>
+        <translation>niezgodny tag</translation>
     </message>
     <message>
         <source>unexpected character</source>
@@ -4494,7 +4494,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>version expected while reading the XML declaration</source>
-        <translation>oczekiwana wersja podczas czytania deklaracji XML</translation>
+        <translation>oczekiwano wersji podczas czytania deklaracji XML</translation>
     </message>
     <message>
         <source>wrong value for standalone declaration</source>
@@ -4585,7 +4585,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>Start tag expected.</source>
-        <translation>Oczekiwano tagu start.</translation>
+        <translation>Oczekiwano rozpoczęcia tagu.</translation>
     </message>
     <message>
         <source>XML declaration not at start of document.</source>
@@ -4637,7 +4637,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>The standalone pseudo attribute must appear after the encoding.</source>
-        <translation>Pseudo atrybut &quot;standalone&quot; musi pojawić sie po &quot;encoding&quot;.</translation>
+        <translation>Pseudo atrybut &quot;standalone&quot; musi pojawić się po &quot;encoding&quot;.</translation>
     </message>
     <message>
         <source>%1 is an invalid PUBLIC identifier.</source>
@@ -4756,15 +4756,15 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>The name for a computed attribute cannot have the namespace URI %1 with the local name %2.</source>
-        <translation>Nazwa dla wyliczonego atrybutu nie może mieć przestrzeni nazw URI %1 z lokalną nazwą %2.</translation>
+        <translation>Nazwa dla wyliczonego atrybutu nie może zawierać przestrzeni nazw URI %1 z lokalną nazwą %2.</translation>
     </message>
     <message>
         <source>Type error in cast, expected %1, received %2.</source>
-        <translation>Błąd typów w rzutowaniu: spodziewano się %1, otrzymano %2.</translation>
+        <translation>Błąd typów w rzutowaniu: oczekiwano %1, otrzymano %2.</translation>
     </message>
     <message>
         <source>When casting to %1 or types derived from it, the source value must be of the same type, or it must be a string literal. Type %2 is not allowed.</source>
-        <translation>Podczas rzutowania na %1 lub na typ pochodny, wartość źródłowa musi być tego samego typu lub musi być zapisem tekstowym. Typ %2 nie jest dozwolony.</translation>
+        <translation>Podczas rzutowania na %1 lub na typ pochodny, wartość źródłowa musi być tego samego typu lub musi być stałą znakową. Typ %2 nie jest dozwolony.</translation>
     </message>
     <message>
         <source>It is not possible to cast from %1 to %2.</source>
@@ -4800,7 +4800,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>An attribute node cannot be a child of a document node. Therefore, the attribute %1 is out of place.</source>
-        <translation>Węzeł &quot;attribute&quot; nie może być dzieckiem węzła &quot;document&quot;. Dlatego atrybut %1 jest w złym miejscu.</translation>
+        <translation>Węzeł &quot;attribute&quot; nie może być podelementem węzła &quot;document&quot;. Dlatego atrybut %1 jest w złym miejscu.</translation>
     </message>
     <message>
         <source>A library module cannot be evaluated directly. It must be imported from a main module.</source>
@@ -4808,11 +4808,11 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>A value of type %1 cannot be a predicate. A predicate must have either a numeric type or an Effective Boolean Value type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wartość typu %1 nie może być predykatem. Predykat musi być typu liczbowego lub Efektywną Wartość Logiczną.</translation>
     </message>
     <message>
         <source>A positional predicate must evaluate to a single numeric value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wynikiem predykatu pozycyjnego musi być pojedyncza wartość liczbowa.</translation>
     </message>
     <message>
         <source>%1 is not a valid target name in a processing instruction. It must be a %2 value, e.g. %3.</source>
@@ -4820,7 +4820,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>The last step in a path must contain either nodes or atomic values. It cannot be a mixture between the two.</source>
-        <translation>Ostatni krok w ścieżce musi zawierać albo wezły albo wartości atomowe. Nie może zawierać obu jednocześnie.</translation>
+        <translation>Ostatni krok w ścieżce musi zawierać albo węzły albo wartości atomowe. Nie może zawierać obu jednocześnie.</translation>
     </message>
     <message>
         <source>The data of a processing instruction cannot contain the string %1</source>
@@ -4868,15 +4868,15 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>%1 must be followed by %2 or %3, not at the end of the replacement string.</source>
-        <translation type="unfinished"></translation>
+        <translation>Po %1 musi następować %2 lub %3, lecz nie na końcu zastępczego ciągu.</translation>
     </message>
     <message>
         <source>In the replacement string, %1 must be followed by at least one digit when not escaped.</source>
-        <translation type="unfinished"></translation>
+        <translation>W ciągu zastępczym, po %1 musi następować przynajmniej jedna cyfra</translation>
     </message>
     <message>
         <source>In the replacement string, %1 can only be used to escape itself or %2, not %3</source>
-        <translation type="unfinished"></translation>
+        <translation>W ciągu zastępczym, %1 może być użyte tylko do zabezpieczenia samej siebie lub %2, nigdy %3</translation>
     </message>
     <message>
         <source>%1 matches newline characters</source>
@@ -4904,7 +4904,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>If the first argument is the empty sequence or a zero-length string (no namespace), a prefix cannot be specified. Prefix %1 was specified.</source>
-        <translation>Jeśli pierwszy argument jest pustą sekwencją lub zerowej długości ciągiem (przy braku przestrzeni nazw), przedrostek nie może wystąpić. Wystąpił przedrostek %1.</translation>
+        <translation>Jeśli pierwszy argument jest pustą sekwencją lub zerowej długości ciągiem (przy braku przestrzeni nazw), przedrostek nie może wystąpić. Podano przedrostek %1.</translation>
     </message>
     <message>
         <source>It will not be possible to retrieve %1.</source>
@@ -4920,7 +4920,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>The normalization form %1 is unsupported. The supported forms are %2, %3, %4, and %5, and none, i.e. the empty string (no normalization).</source>
-        <translation type="unfinished"></translation>
+        <translation>Znormalizowana forma %1 nie jest obsługiwana. Obsługiwanymi formami są: %2, %3, %4 i %5 oraz pusta forma (brak normalizacji).</translation>
     </message>
     <message>
         <source>A zone offset must be in the range %1..%2 inclusive. %3 is out of range.</source>
@@ -5024,7 +5024,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>None of the pragma expressions are supported. Therefore, a fallback expression must be present</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyrażenia &quot;pragma&quot; nie są obsługiwane. Dlatego musi wystąpić wyrażenie zastępcze</translation>
     </message>
     <message>
         <source>The %1-axis is unsupported in XQuery</source>
@@ -5032,7 +5032,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>%1 is not a valid numeric literal.</source>
-        <translation>%1 nie jest poprawnym zapisem liczbowym.</translation>
+        <translation>%1 nie jest poprawną stałą liczbową.</translation>
     </message>
     <message>
         <source>No variable by name %1 exists</source>
@@ -5096,7 +5096,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>%1 is not in the in-scope attribute declarations. Note that the schema import feature is not supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 nie jest wewnątrz zakresu deklaracji atrybutów. Zwróć uwagę że importowanie schematów nie jest obsługiwane.</translation>
     </message>
     <message>
         <source>The name of an extension expression must be in a namespace.</source>
@@ -5124,7 +5124,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>Required type is %1, but %2 was found.</source>
-        <translation>Znaleziono typ %2, lecz wymaganym typem jest %1.</translation>
+        <translation>Odnaleziono typ %2, lecz wymaganym typem jest %1.</translation>
     </message>
     <message>
         <source>Promoting %1 to %2 may cause loss of precision.</source>
@@ -5132,7 +5132,7 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>The focus is undefined.</source>
-        <translation>Focus jest niezdefiniowany.</translation>
+        <translation>Fokus jest niezdefiniowany.</translation>
     </message>
     <message>
         <source>It&apos;s not possible to add attributes after any other kind of node.</source>
@@ -5224,11 +5224,11 @@ Proszę wybrać inną nazwę pliku.</translation>
     </message>
     <message>
         <source>Attribute %1 can&apos;t be serialized because it appears at the top level.</source>
-        <translation type="unfinished"></translation>
+        <translation>Atrybut %1 nie może być zserializowany ponieważ pojawił się na najwyższym poziomie.</translation>
     </message>
     <message>
         <source>The namespace for a user defined function cannot be empty (try the predefined prefix %1 which exists for cases like this)</source>
-        <translation type="unfinished"></translation>
+        <translation>Przestrzeń nazw dla funkcji zdefiniowanej przez użytkownika nie może być pusta (spróbuj predefiniowany przedrostek %1, który stworzono specjalnie do takich sytuacji)</translation>
     </message>
 </context>
 <context>
@@ -5246,55 +5246,55 @@ Proszę wybrać inną nazwę pliku.</translation>
     <name>WebCore::PlatformScrollbar</name>
     <message>
         <source>Scroll here</source>
-        <translation type="unfinished">Przewiń tutaj</translation>
+        <translation>Przewiń tutaj</translation>
     </message>
     <message>
         <source>Left edge</source>
-        <translation type="unfinished">Lewa krawędź</translation>
+        <translation>Lewa krawędź</translation>
     </message>
     <message>
         <source>Top</source>
-        <translation type="unfinished">Do góry</translation>
+        <translation>Do góry</translation>
     </message>
     <message>
         <source>Right edge</source>
-        <translation type="unfinished">Prawa krawędź</translation>
+        <translation>Prawa krawędź</translation>
     </message>
     <message>
         <source>Bottom</source>
-        <translation type="unfinished">W dół</translation>
+        <translation>W dół</translation>
     </message>
     <message>
         <source>Page left</source>
-        <translation type="unfinished">Strona w lewo</translation>
+        <translation>Strona w lewo</translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation type="unfinished">Strona do góry</translation>
+        <translation>Strona do góry</translation>
     </message>
     <message>
         <source>Page right</source>
-        <translation type="unfinished">Strona w prawo</translation>
+        <translation>Strona w prawo</translation>
     </message>
     <message>
         <source>Page down</source>
-        <translation type="unfinished">Strona w dół</translation>
+        <translation>Strona w dół</translation>
     </message>
     <message>
         <source>Scroll left</source>
-        <translation type="unfinished">Przewiń w lewo</translation>
+        <translation>Przewiń w lewo</translation>
     </message>
     <message>
         <source>Scroll up</source>
-        <translation type="unfinished">Przewiń do góry</translation>
+        <translation>Przewiń do góry</translation>
     </message>
     <message>
         <source>Scroll right</source>
-        <translation type="unfinished">Przewiń w prawo</translation>
+        <translation>Przewiń w prawo</translation>
     </message>
     <message>
         <source>Scroll down</source>
-        <translation type="unfinished">Przewiń w dół</translation>
+        <translation>Przewiń w dół</translation>
     </message>
 </context>
 </TS>
