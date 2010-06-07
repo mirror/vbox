@@ -383,17 +383,31 @@ WaitTarget(const nsID           &aTarget,
 
         if (acceptedRV != IPC_WAIT_NEXT_MESSAGE)
         {
-          // remove from pending queue
-          if (beforeLastChecked)
-            td->pendingQ.RemoveAfter(beforeLastChecked);
-          else
-            td->pendingQ.RemoveFirst();
-
-          if (acceptedRV != IPC_DISCARD_MESSAGE)
+          if (acceptedRV == S_OK)
           {
+            // remove from pending queue
+            if (beforeLastChecked)
+              td->pendingQ.RemoveAfter(beforeLastChecked);
+            else
+              td->pendingQ.RemoveFirst();
+
             lastChecked->mNext = nsnull;
             *aMsg = lastChecked;
             break;
+          }
+          else /* acceptedRV == IPC_DISCARD_MESSAGE */
+          {
+            ipcMessage *nextToCheck = lastChecked->mNext;
+
+            // discard from pending queue
+            if (beforeLastChecked)
+              td->pendingQ.RemoveAfter(beforeLastChecked);
+            else
+              td->pendingQ.RemoveFirst();
+
+            lastChecked = nextToCheck;
+
+            continue;
           }
         }
       }
