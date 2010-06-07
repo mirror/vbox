@@ -67,6 +67,13 @@
 #define IPC_WAIT_NEXT_MESSAGE \
   NS_ERROR_GENERATE_FAILURE(NS_ERROR_MODULE_GENERAL, 10)
 
+#ifdef VBOX
+/* This error code can only be returned by the selector functions called by
+ * WaitTarget. The message should be dropped without processing. */
+#define IPC_DISCARD_MESSAGE \
+  NS_ERROR_GENERATE_FAILURE(NS_ERROR_MODULE_GENERAL, 12)
+#endif /* VBOX */
+
 /* This error code is returned by IPC_WaitMessage under certain conditions. */
 #define IPC_ERROR_WOULD_BLOCK NS_BASE_STREAM_WOULD_BLOCK
 
@@ -98,7 +105,7 @@ IPC_METHOD IPC_Init();
  * All IPC methods are still available inside OnClientStateChange call except
  * the IPC_WaitMessage function, that will immediately fail with an error.
  * OnClientStateChange is called on the same thread where this function is
- * called.  
+ * called.
  *
  * @returns NS_ERROR_NOT_INITIALIZED if IPC_Init has not been called or if
  * IPC_Init did not return a success code.
