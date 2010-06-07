@@ -181,6 +181,7 @@ unsigned dev_get_flags(const struct net_device *dev)
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
+#define qdisc_dev(qdisc) (qdisc->dev)
 #define qdisc_pkt_len(skb) (skb->len)
 #define QDISC_GET(dev) (dev->qdisc_sleeping)
 #else
@@ -196,7 +197,7 @@ unsigned dev_get_flags(const struct net_device *dev)
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
-#define QDISC_IS_BUSY(dev, qdisc)  test_bit(__LINK_STATE_SCHED, &dev->state))
+#define QDISC_IS_BUSY(dev, qdisc)  test_bit(__LINK_STATE_SCHED, &dev->state)
 #else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
 #define QDISC_IS_BUSY(dev, qdisc) (test_bit(__QDISC_STATE_RUNNING, &qdisc->state) || \
                                    test_bit(__QDISC_STATE_SCHED, &qdisc->state))
@@ -365,7 +366,11 @@ static unsigned int vboxNetFltQdiscDrop(struct Qdisc *sch)
     return 0;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 25)
+static int vboxNetFltQdiscInit(struct Qdisc *sch, struct rtattr *opt)
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25) */
 static int vboxNetFltQdiscInit(struct Qdisc *sch, struct nlattr *opt)
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25) */
 {
     PVBOXNETQDISCPRIV pPriv = qdisc_priv(sch);
     struct net_device *pDev = qdisc_dev(sch);
@@ -431,9 +436,9 @@ static int vboxNetFltClassGraft(struct Qdisc *sch, unsigned long arg, struct Qdi
     *ppOld = pPriv->pChild;
     pPriv->pChild = pNew;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 20)
-    qdisc_tree_decrease_qlen(*ppOld, (*ppOld)->q.qlen);
-#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20) */
     sch->q.qlen = 0;
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20) */
+    qdisc_tree_decrease_qlen(*ppOld, (*ppOld)->q.qlen);
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20) */
     qdisc_reset(*ppOld);
     sch_tree_unlock(sch);
@@ -456,8 +461,13 @@ static void vboxNetFltClassPut(struct Qdisc *sch, unsigned long arg)
 {
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 25)
+static int vboxNetFltClassChange(struct Qdisc *sch, u32 classid, u32 parentid,
+                                 struct rtattr **tca, unsigned long *arg)
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25) */
 static int vboxNetFltClassChange(struct Qdisc *sch, u32 classid, u32 parentid,
                                  struct nlattr **tca, unsigned long *arg)
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25) */
 {
     return -ENOSYS;
 }
@@ -499,7 +509,7 @@ static int vboxNetFltClassDump(struct Qdisc *sch, unsigned long cl,
 }
 
 
-static const struct Qdisc_class_ops g_VBoxNetFltClassOps =
+static struct Qdisc_class_ops g_VBoxNetFltClassOps =
 {
     .graft     = vboxNetFltClassGraft,
     .leaf      = vboxNetFltClassLeaf,
@@ -513,7 +523,7 @@ static const struct Qdisc_class_ops g_VBoxNetFltClassOps =
 };
 
 
-struct Qdisc_ops g_VBoxNetFltQDiscOps = {
+static struct Qdisc_ops g_VBoxNetFltQDiscOps = {
     .cl_ops    = &g_VBoxNetFltClassOps,
     .id        = "vboxnetflt",
     .priv_size = sizeof(struct VBoxNetQDiscPriv),
@@ -543,7 +553,9 @@ struct Qdisc_ops g_VBoxNetFltQDiscOps = {
  */
 static void vboxNetFltLinuxQdiscInstall(PVBOXNETFLTINS pThis, struct net_device *pDev)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
     int i;
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
     PVBOXNETQDISCPRIV pPriv;
 
     struct Qdisc *pExisting = QDISC_GET(pDev);
@@ -612,7 +624,9 @@ static void vboxNetFltLinuxQdiscInstall(PVBOXNETFLTINS pThis, struct net_device 
 
 static void vboxNetFltLinuxQdiscRemove(PVBOXNETFLTINS pThis, struct net_device *pDev)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
     int i;
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
     PVBOXNETQDISCPRIV pPriv;
     struct Qdisc *pQdisc;
     if (!pDev)
