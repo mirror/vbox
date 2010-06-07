@@ -1196,12 +1196,12 @@ typedef struct
     VMMDevRequestHeader         header;
     /** Page address. */
     RTGCPTR                     GCPtrPage;
+    /** Page flags. */
+    uint64_t                    uPageFlags;
     /** Shared flag (out) */
     bool                        fShared;
-    /** Read/write flag (out) */
-    bool                        fReadWrite;
     /** Alignment */
-    bool                        fAlignment[2];
+    bool                        fAlignment[3];
 } VMMDevPageIsSharedRequest;
 
 #pragma pack()

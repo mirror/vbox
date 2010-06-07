@@ -183,9 +183,9 @@ VMMR3DECL(int) PGMR3SharedModuleCheckAll(PVM pVM)
  * @param   pVM                 VM handle
  * @param   GCPtrPage           Page address
  * @param   pfShared            Shared status (out)
- * @param   pfReadWrite         Read/write status (out)
+ * @param   puPageFlags         Page flags (out)
  */
-VMMR3DECL(int) PGMR3SharedModuleGetPageState(PVM pVM, RTGCPTR GCPtrPage, bool *pfShared, bool *pfReadWrite)
+VMMR3DECL(int) PGMR3SharedModuleGetPageState(PVM pVM, RTGCPTR GCPtrPage, bool *pfShared, uint64_t *puPageFlags)
 {
 #if defined(VBOX_WITH_PAGE_SHARING) && defined(DEBUG)
     /* Debug only API for the page fusion testcase. */
@@ -195,16 +195,31 @@ VMMR3DECL(int) PGMR3SharedModuleGetPageState(PVM pVM, RTGCPTR GCPtrPage, bool *p
     pgmLock(pVM);
 
     int rc = PGMGstGetPage(VMMGetCpu(pVM), GCPtrPage, &fFlags, &GCPhys);
-    if (rc == VINF_SUCCESS)
+    switch (rc)
+    {
+    case VINF_SUCCESS:
     {
         PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
         if (pPage)
         {
             *pfShared    = PGM_PAGE_IS_SHARED(pPage);
-            *pfReadWrite = !!(fFlags & X86_PTE_RW);
+            *puPageFlags = fFlags;
         }
         else
             rc = VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
+        break;
+    }
+    case VERR_PAGE_NOT_PRESENT:
+    case VERR_PAGE_TABLE_NOT_PRESENT:
+    case VERR_PAGE_MAP_LEVEL4_NOT_PRESENT:
+    case VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT:
+        *pfShared = false;
+        *puPageFlags = 0;
+        rc = VINF_SUCCESS;
+        break;
+
+    default:
+        break;
     }
 
     pgmUnlock(pVM);

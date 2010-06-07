@@ -148,7 +148,7 @@ VBGLR3DECL(bool) VbglR3PageSharingIsEnabled()
  *
  * @returns true/false enabled/disabled
  */
-VBGLR3DECL(int) VbglR3PageIsShared(RTGCPTR pPage, bool *pfShared, bool *pfReadWrite)
+VBGLR3DECL(int) VbglR3PageIsShared(RTGCPTR pPage, bool *pfShared, uint64_t *puPageFlags)
 {
 #ifdef DEBUG
     VMMDevPageIsSharedRequest Req;
@@ -159,7 +159,7 @@ VBGLR3DECL(int) VbglR3PageIsShared(RTGCPTR pPage, bool *pfShared, bool *pfReadWr
     if (RT_SUCCESS(rc))
     {
         *pfShared    = Req.fShared;
-        *pfReadWrite = Req.fReadWrite;
+        *puPageFlags = Req.uPageFlags;
     }
     return rc;
 #else
