@@ -48,7 +48,7 @@ PVBOXSERVICEVEPROPCACHEENTRY vboxServicePropCacheFindInternal(PVBOXSERVICEVEPROP
     PVBOXSERVICEVEPROPCACHEENTRY pNodeIt, pNode = NULL;
     if (RT_SUCCESS(RTCritSectEnter(&pCache->CritSect)))
     {
-        RTListForEach(&pCache->ListEntries, pNodeIt, VBOXSERVICEVEPROPCACHEENTRY, Node)
+        RTListForEach(&pCache->NodeHead, pNodeIt, VBOXSERVICEVEPROPCACHEENTRY, NodeSucc)
         {
             if (strcmp(pNodeIt->pszName, pszName) == 0)
             {
@@ -77,7 +77,7 @@ PVBOXSERVICEVEPROPCACHEENTRY vboxServicePropCacheInsertEntryInternal(PVBOXSERVIC
         int rc = RTCritSectEnter(&pCache->CritSect);
         if (RT_SUCCESS(rc))
         {
-            /*rc =*/ RTListAppend(&pCache->ListEntries, &pNode->Node);
+            /*rc =*/ RTListAppend(&pCache->NodeHead, &pNode->NodeSucc);
             rc = RTCritSectLeave(&pCache->CritSect);
         }
     }
@@ -97,7 +97,7 @@ int VBoxServicePropCacheCreate(PVBOXSERVICEVEPROPCACHE pCache, uint32_t uClientI
     AssertPtr(pCache);
     /** @todo Prevent init the cache twice!
      *  r=bird: Use a magic. */
-    RTListInit(&pCache->ListEntries);
+    RTListInit(&pCache->NodeHead);
     pCache->uClientID = uClientId;
     return RTCritSectInit(&pCache->CritSect);
 }
@@ -278,7 +278,7 @@ int VBoxServicePropCacheFlush(PVBOXSERVICEVEPROPCACHE pCache)
     PVBOXSERVICEVEPROPCACHEENTRY pNodeIt = NULL;
     if (RT_SUCCESS(RTCritSectEnter(&pCache->CritSect)))
     {
-        RTListForEach(&pCache->ListEntries, pNodeIt, VBOXSERVICEVEPROPCACHEENTRY, Node)
+        RTListForEach(&pCache->NodeHead, pNodeIt, VBOXSERVICEVEPROPCACHEENTRY, NodeSucc)
         {
             rc = VBoxServiceWritePropF(pCache->uClientID, pNodeIt->pszName, pNodeIt->pszValue);
             if (RT_FAILURE(rc))
@@ -304,7 +304,7 @@ void VBoxServicePropCacheDestroy(PVBOXSERVICEVEPROPCACHE pCache)
     int rc = RTCritSectEnter(&pCache->CritSect);
     if (RT_SUCCESS(rc))
     {
-        PVBOXSERVICEVEPROPCACHEENTRY pNode = RTListNodeGetFirst(&pCache->ListEntries, VBOXSERVICEVEPROPCACHEENTRY, Node);
+        PVBOXSERVICEVEPROPCACHEENTRY pNode = RTListNodeGetFirst(&pCache->NodeHead, VBOXSERVICEVEPROPCACHEENTRY, NodeSucc);
         while (pNode)
         {
             if ((pNode->fFlags & VBOXSERVICEPROPCACHEFLAG_TEMPORARY) == 0)
@@ -316,11 +316,11 @@ void VBoxServicePropCacheDestroy(PVBOXSERVICEVEPROPCACHE pCache)
             RTStrFree(pNode->pszValueReset);
             pNode->fFlags = 0;
 
-            PVBOXSERVICEVEPROPCACHEENTRY pNext = RTListNodeGetNext(&pNode->Node, VBOXSERVICEVEPROPCACHEENTRY, Node);
-            RTListNodeRemove(&pNode->Node);
+            PVBOXSERVICEVEPROPCACHEENTRY pNext = RTListNodeGetNext(&pNode->NodeSucc, VBOXSERVICEVEPROPCACHEENTRY, NodeSucc);
+            RTListNodeRemove(&pNode->NodeSucc);
             RTMemFree(pNode);
 
-            if (pNext && RTListNodeIsLast(&pCache->ListEntries, &pNext->Node))
+            if (pNext && RTListNodeIsLast(&pCache->NodeHead, &pNext->NodeSucc))
                 break;
             pNode = pNext;
         }
