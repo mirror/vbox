@@ -134,6 +134,9 @@ void ErrorInfo::init (bool aKeepObj /* = false */)
             }
         }
     }
+    /* Ignore failure when called after nsComponentManagerImpl::Shutdown(). */
+    else if (rc == NS_ERROR_UNEXPECTED)
+        rc = NS_OK;
 
     AssertComRC (rc);
 

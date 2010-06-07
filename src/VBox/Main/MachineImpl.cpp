@@ -9753,8 +9753,13 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     /* free the essential data structure last */
     mData.free();
 
+#if 1 /** @todo Please review this change! (bird) */
+    /* drop the exclusive lock before setting the below two to NULL */
+    multilock.release();
+#else
     /* leave the exclusive lock before setting the below two to NULL */
     multilock.leave();
+#endif
 
     unconst(mParent) = NULL;
     unconst(mPeer) = NULL;
