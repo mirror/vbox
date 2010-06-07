@@ -59,17 +59,20 @@ typedef RTMANIFESTFILEENTRY* PRTMANIFESTFILEENTRY;
  */
 typedef struct RTMANIFESTCALLBACKDATA
 {
-    PFNRTMANIFESTPROGRESS pfnProgressCallback;
+    PFNRTPROGRESS pfnProgressCallback;
     void *pvUser;
     size_t cMaxFiles;
     size_t cCurrentFile;
 } RTMANIFESTCALLBACKDATA;
 typedef RTMANIFESTCALLBACKDATA* PRTMANIFESTCALLBACKDATA;
 
+
 int rtSHAProgressCallback(unsigned uPercent, void *pvUser)
 {
     PRTMANIFESTCALLBACKDATA pData = (PRTMANIFESTCALLBACKDATA)pvUser;
-    return pData->pfnProgressCallback((unsigned)((uPercent + (float)pData->cCurrentFile * 100.0) / (float)pData->cMaxFiles), pData->pvUser);
+    return pData->pfnProgressCallback((unsigned)(  (uPercent + (float)pData->cCurrentFile * 100.0)
+                                                 / (float)pData->cMaxFiles),
+                                      pData->pvUser);
 }
 
 RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST paTests, size_t cTests, size_t *piFailed)
@@ -226,7 +229,8 @@ RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST paTe
 }
 
 
-RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles, size_t *piFailed, PFNRTMANIFESTPROGRESS pfnProgressCallback, void *pvUser)
+RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles, size_t *piFailed,
+                                    PFNRTPROGRESS pfnProgressCallback, void *pvUser)
 {
     /* Validate input */
     AssertPtrReturn(pszManifestFile, VERR_INVALID_POINTER);
@@ -274,7 +278,8 @@ RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * co
 }
 
 
-RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles, PFNRTMANIFESTPROGRESS pfnProgressCallback, void *pvUser)
+RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles,
+                                   PFNRTPROGRESS pfnProgressCallback, void *pvUser)
 {
     /* Validate input */
     AssertPtrReturn(pszManifestFile, VERR_INVALID_POINTER);

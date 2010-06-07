@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,6 +31,7 @@
 #include "internal/iprt.h"
 #include <iprt/sha.h>
 
+#include <iprt/alloca.h>
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
@@ -38,7 +39,8 @@
 
 #include <openssl/sha.h>
 
-RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest, PFNRTSHAPROGRESS pfnProgressCallback, void *pvUser)
+
+RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest, FNRTPROGRESS pfnProgressCallback, void *pvUser)
 {
     /* Validate input */
     AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
@@ -46,43 +48,48 @@ RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest, PFNRTSHAPROGR
     AssertPtrNullReturn(pfnProgressCallback, VERR_INVALID_PARAMETER);
 
     *ppszDigest = NULL;
-    int rc = VINF_SUCCESS;
 
-    /* Initialize OpenSSL */
+    /* Initialize OpenSSL. */
     SHA_CTX ctx;
     if (!SHA1_Init(&ctx))
         return VERR_INTERNAL_ERROR;
 
-    /* Fetch the file size. Only needed if there is a progress callback. */
-    float multi = 0;
-    if (pfnProgressCallback)
-    {
-        uint64_t cbFile;
-        rc = RTFileQuerySize(pszFile, &cbFile);
-        if (RT_FAILURE(rc))
-            return rc;
-        multi = 100.0 / cbFile;
-    }
-
     /* Open the file to calculate a SHA1 sum of */
-    RTFILE file;
-    rc = RTFileOpen(&file, pszFile, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+    RTFILE hFile;
+    int rc = RTFileOpen(&hFile, pszFile, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
         return rc;
 
-    /* Read that file in blocks */
-    void *pvBuf = RTMemTmpAlloc(_1M);
+    /* Fetch the file size. Only needed if there is a progress callback. */
+    double rdMulti = 0;
+    if (pfnProgressCallback)
+    {
+        uint64_t cbFile;
+        rc = RTFileGetSize(hFile, &cbFile);
+        if (RT_FAILURE(rc))
+        {
+            RTFileClose(hFile);
+            return rc;
+        }
+        rdMulti = 100.0 / cbFile;
+    }
+
+    /* Allocate a reasonably large buffer, fall back on a tiny one. */
+    void  *pvBufFree;
+    size_t cbBuf = _1M;
+    void  *pvBuf = pvBufFree = RTMemTmpAlloc(cbBuf);
     if (!pvBuf)
     {
-        RTFileClose(file);
-        rc = VERR_NO_MEMORY;
+        cbBuf = 0x1000;
+        pvBuf = alloca(cbBuf);
     }
+
+    /* Read that file in blocks */
     size_t cbRead;
-    size_t cbReadFull = 0;
+    size_t cbReadTotal = 0;
     for (;;)
     {
-        cbRead = 0;
-        rc = RTFileRead(file, pvBuf, _1M, &cbRead);
+        rc = RTFileRead(hFile, pvBuf, cbBuf, &cbRead);
         if (RT_FAILURE(rc) || !cbRead)
             break;
         if(!SHA1_Update(&ctx, pvBuf, cbRead))
@@ -90,18 +97,18 @@ RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest, PFNRTSHAPROGR
             rc = VERR_INTERNAL_ERROR;
             break;
         }
-        cbReadFull += cbRead;
-        /* Call progress callback if some is defined */
-        if (   pfnProgressCallback
-            && RT_FAILURE(pfnProgressCallback((unsigned)(cbReadFull * multi), pvUser)))
+        cbReadTotal += cbRead;
+
+        /* Call the progress callback if one is defined */
+        if (pfnProgressCallback)
         {
-            /* Cancel support */
-            rc = VERR_CANCELLED;
-            break;
+            rc = pfnProgressCallback((unsigned)(cbReadTotal * rdMulti), pvUser);
+            if (RT_FAILURE(rc))
+                break; /* canceled */
         }
     }
-    RTMemTmpFree(pvBuf);
-    RTFileClose(file);
+    RTMemTmpFree(pvBufFree);
+    RTFileClose(hFile);
 
     if (RT_FAILURE(rc))
         return rc;
