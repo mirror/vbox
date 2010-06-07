@@ -73,6 +73,9 @@ typedef struct VBOXWDDMDISP_DEVICE
     D3DDDI_CREATEDEVICEFLAGS fFlags;
     HWND hWnd;
     IDirect3DDevice9 *pDevice9If;
+    /* need to cache the ViewPort data because IDirect3DDevice9::SetViewport
+     * is split into two calls : SetViewport & SetZRange */
+    D3DVIEWPORT9 ViewPort;
     VBOXWDDMDISP_CONTEXT DefaultContext;
 } VBOXWDDMDISP_DEVICE, *PVBOXWDDMDISP_DEVICE;
 
