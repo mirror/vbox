@@ -2515,20 +2515,42 @@ void UIMachineView::captureKbd(bool fCapture, bool fEmitSignal /* = true */)
     if (m_bIsKeyboardCaptured == fCapture)
         return;
 
-    /* On Win32, keyboard grabbing is ineffective, a low-level keyboard hook is used instead.
-     * On X11, we use XGrabKey instead of XGrabKeyboard (called by QWidget::grabKeyboard())
-     * because the latter causes problems under metacity 2.16 (in particular, due to a bug,
-     * a window cannot be moved using the mouse if it is currently grabing the keyboard).
-     * On Mac OS X, we use the Qt methods + disabling global hot keys + watching modifiers
-     * (for right/left separation). */
 #if defined(Q_WS_WIN32)
-    /**/
+    /* On Win32, keyboard grabbing is ineffective, a low-level keyboard hook is used instead. */
 #elif defined(Q_WS_X11)
-        if (fCapture)
-            XGrabKey(QX11Info::display(), AnyKey, AnyModifier, winId(), False, GrabModeAsync, GrabModeAsync);
-        else
-            XUngrabKey(QX11Info::display(), AnyKey, AnyModifier, winId());
+    /* On X11, we are using passive XGrabKey for normal (windowed) mode
+     * instead of XGrabKeyboard (called by QWidget::grabKeyboard())
+     * because XGrabKeyboard causes a problem under metacity - a window cannot be moved
+     * using the mouse if it is currently actively grabing the keyboard;
+     * For static modes we are using usual (active) keyboard grabbing. */
+    switch (machineLogic()->visualStateType())
+    {
+        /* If window is moveable we are making passive keyboard grab: */
+        case UIVisualStateType_Normal:
+        {
+            if (fCapture)
+                XGrabKey(QX11Info::display(), AnyKey, AnyModifier, machineWindowWrapper()->machineWindow()->winId(), False, GrabModeAsync, GrabModeAsync);
+            else
+                XUngrabKey(QX11Info::display(), AnyKey, AnyModifier, machineWindowWrapper()->machineWindow()->winId());
+            break;
+        }
+        /* If window is NOT moveable we are making active keyboard grab: */
+        case UIVisualStateType_Fullscreen:
+        case UIVisualStateType_Seamless:
+        {
+            if (fCapture)
+                XGrabKeyboard(QX11Info::display(), machineWindowWrapper()->machineWindow()->winId(), False, GrabModeAsync, GrabModeAsync, CurrentTime);
+            else
+                XUngrabKeyboard(QX11Info::display(), CurrentTime);
+            break;
+        }
+        /* Should we try to grab keyboard in default case? I think - NO. */
+        default:
+            break;
+    }
 #elif defined(Q_WS_MAC)
+    /* On Mac OS X, we use the Qt methods + disabling global hot keys + watching modifiers
+     * (for right/left separation). */
     if (fCapture)
     {
         ::DarwinDisableGlobalHotKeys(true);
