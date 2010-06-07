@@ -689,7 +689,7 @@ sosendoob(struct socket *so)
 int
 sowrite(PNATState pData, struct socket *so)
 {
-    return do_sosend(so, 1);
+    return do_sosend(so, 0);
 }
 #endif
 
