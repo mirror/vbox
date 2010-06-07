@@ -19,8 +19,10 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 # Include Sub-Makefiles
-ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(KBUILD_TARGET)),) # X11
- include $(PATH_SUB_CURRENT)/VBoxKeyboard/Makefile.kmk
+ifneq ($(VBOX_WITH_QTGUI)$(VBOX_WITH_VBOXSDL),)
+ ifeq ($(filter-out freebsd linux openbsd netbsd solaris,$(KBUILD_TARGET)),) # X11
+  include $(PATH_SUB_CURRENT)/VBoxKeyboard/Makefile.kmk
+ endif
 endif
 
 include $(KBUILD_PATH)/subfooter.kmk
