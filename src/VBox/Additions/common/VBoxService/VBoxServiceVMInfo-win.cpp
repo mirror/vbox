@@ -36,6 +36,9 @@
 #include "VBoxServiceUtils.h"
 
 
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 /** Structure for storing the looked up user information. */
 typedef struct
 {
@@ -43,12 +46,14 @@ typedef struct
     WCHAR wszAuthenticationPackage[_MAX_PATH];
     WCHAR wszLogonDomain[_MAX_PATH];
 } VBOXSERVICEVMINFOUSER, *PVBOXSERVICEVMINFOUSER;
+
 /** Structure for the file information lookup. */
 typedef struct
 {
     char *pszFilePath;
     char *pszFileName;
 } VBOXSERVICEVMINFOFILE, *PVBOXSERVICEVMINFOFILE;
+
 /** Structure for process information lookup. */
 typedef struct
 {
@@ -65,10 +70,6 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_
 int  VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD *pdwCount);
 void VBoxServiceVMInfoWinProcessesFree(PVBOXSERVICEVMINFOPROC paProcs);
 
-
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
 
 
 #ifndef TARGET_NT4
@@ -405,7 +406,7 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_
                                                &pBuffer,
                                                &cbRet))
                 {
-                    if(cbRet)
+                    if (cbRet)
                         iState = *pBuffer;
                     VBoxServiceVerbose(3, "VMInfo/Users:  Account User=%ls, WTSConnectState=%d\n",
                                        a_pUserInfo->wszUser, iState);
@@ -448,24 +449,23 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_
  * user count.
  *
  * @returns VBox status code.
- * @param   ppszUserList    Where to store the user list (separated by commas).  Must be
- *                          freed with RTStrFree().
+ * @param   ppszUserList    Where to store the user list (separated by commas).
+ *                          Must be freed with RTStrFree().
  * @param   pcUsersInList   Where to store the number of users in the list.
  */
 int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
 {
     PLUID       paSessions = NULL;
     ULONG       cSession = 0;
-    NTSTATUS    r = 0;
 
     /* This function can report stale or orphaned interactive logon sessions
        of already logged off users (especially in Windows 2000). */
-    r = LsaEnumerateLogonSessions(&cSession, &paSessions);
+    NTSTATUS rcNt = LsaEnumerateLogonSessions(&cSession, &paSessions);
     VBoxServiceVerbose(3, "VMInfo/Users: Found %ld users\n", cSession);
-    if (r != STATUS_SUCCESS)
+    if (rcNt != STATUS_SUCCESS)
     {
-        VBoxServiceError("VMInfo/Users: LsaEnumerate failed with %lu\n", LsaNtStatusToWinError(r));
-        return RTErrConvertFromWin32(LsaNtStatusToWinError(r));
+        VBoxServiceError("VMInfo/Users: LsaEnumerate failed with %lu\n", LsaNtStatusToWinError(rcNt));
+        return RTErrConvertFromWin32(LsaNtStatusToWinError(rcNt));
     }
 
     PVBOXSERVICEVMINFOPROC  paProcs;
@@ -483,7 +483,7 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
                 if (*pcUsersInList > 0)
                 {
                     rc = RTStrAAppend(ppszUserList, ",");
-                    AssertRCReturn(rc, rc);
+                    AssertRCBreakStmt(rc, RTStrFree(*ppszUserList));
                 }
 
                 *pcUsersInList += 1;
@@ -494,10 +494,10 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
                 {
                     rc = RTStrAAppend(ppszUserList, pszTemp);
                     RTMemFree(pszTemp);
-                    AssertRCReturn(rc, rc);
                 }
                 else
-                    RTStrAAppend(ppszUserList, "<string-convertion-error>");
+                    rc = RTStrAAppend(ppszUserList, "<string-convertion-error>");
+                AssertRCBreakStmt(rc, RTStrFree(*ppszUserList));
             }
         }
         VBoxServiceVMInfoWinProcessesFree(paProcs);
