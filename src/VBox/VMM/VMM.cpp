@@ -1778,20 +1778,25 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
  *
  * @param   pVM             Pointer to the shared VM structure.
  * @param   idCpu           The ID of the source CPU context (for the address).
- * @param   pAddress        Where to start reading.
+ * @param   R0Addr          Where to start reading.
  * @param   pvBuf           Where to store the data we've read.
  * @param   cbRead          The number of bytes to read.
  */
-VMMR3DECL(int) VMMR3ReadR0Stack(PVM pVM, VMCPUID idCpu, RTHCUINTPTR pAddress, void *pvBuf, size_t cbRead)
+VMMR3DECL(int) VMMR3ReadR0Stack(PVM pVM, VMCPUID idCpu, RTHCUINTPTR R0Addr, void *pvBuf, size_t cbRead)
 {
-    PVMCPU  pVCpu   = VMMGetCpuById(pVM, idCpu);
+    PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
     AssertReturn(pVCpu, VERR_INVALID_PARAMETER);
 
-    RTHCUINTPTR offset = pVCpu->vmm.s.CallRing3JmpBufR0.SpCheck - pAddress;
-    if (offset >= pVCpu->vmm.s.CallRing3JmpBufR0.cbSavedStack)
+#ifdef VMM_R0_SWITCH_STACK
+    RTHCUINTPTR off = R0Addr - MMHyperCCToR0(pVM, pVCpu->vmm.s.pbEMTStackR3);
+#else
+    RTHCUINTPTR off = pVCpu->vmm.s.CallRing3JmpBufR0.cbSavedStack - (pVCpu->vmm.s.CallRing3JmpBufR0.SpCheck - R0Addr);
+#endif
+    if (   off          >  VMM_STACK_SIZE
+        || off + cbRead >= VMM_STACK_SIZE)
         return VERR_INVALID_POINTER;
 
-    memcpy(pvBuf, pVCpu->vmm.s.pbEMTStackR3 + pVCpu->vmm.s.CallRing3JmpBufR0.cbSavedStack - offset, cbRead);
+    memcpy(pvBuf, &pVCpu->vmm.s.pbEMTStackR3[off], cbRead);
     return VINF_SUCCESS;
 }
 
@@ -2126,6 +2131,9 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
             pVCpu->vmm.s.CallRing3JmpBufR0.eip = 0;
 #else
             pVCpu->vmm.s.CallRing3JmpBufR0.rip = 0;
+#endif
+#ifdef VMM_R0_SWITCH_STACK
+            *(uint64_t *)pVCpu->vmm.s.pbEMTStackR3 = 0; /* clear marker  */
 #endif
             LogRel((pVM->vmm.s.szRing0AssertMsg1));
             LogRel((pVM->vmm.s.szRing0AssertMsg2));

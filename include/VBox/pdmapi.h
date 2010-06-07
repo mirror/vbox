@@ -103,6 +103,10 @@ VMMR3DECL(int)  PDMR3LdrQueryRCModFromPC(PVM pVM, RTRCPTR uPC,
                                          char *pszModName,  size_t cchModName,  PRTRCPTR pMod,
                                          char *pszNearSym1, size_t cchNearSym1, PRTRCPTR pNearSym1,
                                          char *pszNearSym2, size_t cchNearSym2, PRTRCPTR pNearSym2);
+VMMR3DECL(int)  PDMR3LdrQueryR0ModFromPC(PVM pVM, RTR0PTR uPC,
+                                         char *pszModName,  size_t cchModName,  PRTR0PTR pMod,
+                                         char *pszNearSym1, size_t cchNearSym1, PRTR0PTR pNearSym1,
+                                         char *pszNearSym2, size_t cchNearSym2, PRTR0PTR pNearSym2);
 VMMR3DECL(int)  PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size_t cbInterface,
                                             const char *pszModule, const char *pszSymPrefix,
                                             const char *pszSymList, bool fRing0OrRC);

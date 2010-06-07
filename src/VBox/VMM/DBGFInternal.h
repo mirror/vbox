@@ -267,6 +267,10 @@ typedef struct DBGF
     R3PTRTYPE(RTSTRSPACE)   AsNameSpace;
     /** Special address space aliases.          (Protected by hAsDbLock.) */
     RTDBGAS volatile        ahAsAliases[DBGF_AS_COUNT];
+    /** For lazily populating the aliased address spaces. */
+    bool volatile           afAsAliasPopuplated[DBGF_AS_COUNT];
+    /** Alignment padding. */
+    bool                    afAlignment[2];
 
     /** The current Guest OS digger. */
     R3PTRTYPE(PDBGFOS)      pCurOS;
