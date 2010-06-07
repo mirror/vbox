@@ -390,23 +390,36 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                         pHlp->pfnPrintf(pHlp,
                                         "!!\n"
                                         "!! Call Stack:\n"
-                                        "!!\n"
-                                        "EBP      Ret EBP  Ret CS:EIP    Arg0     Arg1     Arg2     Arg3     CS:EIP        Symbol [line]\n");
+                                        "!!\n");
+#if HC_ARCH_BITS == 32
+                        pHlp->pfnPrintf(pHlp, "EBP      Ret EBP  Ret CS:EIP    Arg0     Arg1     Arg2     Arg3     CS:EIP        Symbol [line]\n");
+#else
+                        pHlp->pfnPrintf(pHlp, "RBP              Ret RBP          Ret RIP          RIP              Symbol [line]\n");
+#endif
                         for (PCDBGFSTACKFRAME pFrame = pFirstFrame;
                              pFrame;
                              pFrame = DBGFR3StackWalkNext(pFrame))
                         {
+#if HC_ARCH_BITS == 32
                             pHlp->pfnPrintf(pHlp,
-                                            "%08RX32 %08RX32 %04RX32:%08RX32 %08RX32 %08RX32 %08RX32 %08RX32",
-                                            (uint32_t)pFrame->AddrFrame.off,
-                                            (uint32_t)pFrame->AddrReturnFrame.off,
-                                            (uint32_t)pFrame->AddrReturnPC.Sel,
-                                            (uint32_t)pFrame->AddrReturnPC.off,
+                                            "%RHv %RHv %04RX32:%RHv %RHv %RHv %RHv %RHv",
+                                            (RTHCUINTPTR)pFrame->AddrFrame.off,
+                                            (RTHCUINTPTR)pFrame->AddrReturnFrame.off,
+                                            (RTHCUINTPTR)pFrame->AddrReturnPC.Sel,
+                                            (RTHCUINTPTR)pFrame->AddrReturnPC.off,
                                             pFrame->Args.au32[0],
                                             pFrame->Args.au32[1],
                                             pFrame->Args.au32[2],
                                             pFrame->Args.au32[3]);
-                            pHlp->pfnPrintf(pHlp, " %RTsel:%08RGv", pFrame->AddrPC.Sel, pFrame->AddrPC.off);
+                            pHlp->pfnPrintf(pHlp, " %RTsel:%08RHv", pFrame->AddrPC.Sel, pFrame->AddrPC.off);
+#else
+                            pHlp->pfnPrintf(pHlp,
+                                            "%RHv %RHv %RHv %RHv",
+                                            (RTHCUINTPTR)pFrame->AddrFrame.off,
+                                            (RTHCUINTPTR)pFrame->AddrReturnFrame.off,
+                                            (RTHCUINTPTR)pFrame->AddrReturnPC.off,
+                                            (RTHCUINTPTR)pFrame->AddrPC.off);
+#endif
                             if (pFrame->pSymPC)
                             {
                                 RTGCINTPTR offDisp = pFrame->AddrPC.FlatPtr - pFrame->pSymPC->Value;

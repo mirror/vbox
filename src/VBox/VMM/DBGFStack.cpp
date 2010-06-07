@@ -417,12 +417,6 @@ static int dbgfR3StackWalkBeginCommon(PVM pVM,
                                       DBGFRETURNTYPE enmReturnType,
                                       PCDBGFSTACKFRAME *ppFirstFrame)
 {
-#if HC_ARCH_BITS == 64
-    /** @todo Not implemented for 64 bits hosts yet */
-    if (enmCodeType == DBGFCODETYPE_RING0)
-        return VINF_SUCCESS;
-#endif
-
     /*
      * Validate parameters.
      */
