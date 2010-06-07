@@ -39,6 +39,7 @@ public:
 
     QString name() const { return m_strName; }
     QIcon osIcon() const { return m_fAccessible ? vboxGlobal().vmGuestOSTypeIcon(m_strOSTypeId) : QPixmap(":/os_other.png"); }
+    QString osTypeId() const { return m_strOSTypeId; }
     QString id() const { return m_strId; }
 
     QString sessionStateName() const;
@@ -95,6 +96,7 @@ public:
            SessionStateDisplayRole,
            SessionStateDecorationRole,
            SessionStateFontRole,
+           OSTypeIdRole,
            UIVMItemPtrRole };
 
     UIVMItemModel(QObject *aParent = 0)
