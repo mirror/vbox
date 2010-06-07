@@ -324,9 +324,9 @@ static DECLCALLBACK(void) VBoxServicePageSharingTerm(void)
 
     printf("\n\nRESULT\n");
     printf("cNotPresentPages = %d\n", cNotPresentPages);
-    printf("cWritablePages   = %d\n", cNotPresentPages);
-    printf("cPrivatePages    = %d\n", cNotPresentPages);
-    printf("cSharedPages     = %d\n", cNotPresentPages);
+    printf("cWritablePages   = %d\n", cWritablePages);
+    printf("cPrivatePages    = %d\n", cPrivatePages);
+    printf("cSharedPages     = %d\n", cSharedPages);
 
 #ifdef RT_OS_WINDOWS
     if (hNtdll)
