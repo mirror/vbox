@@ -261,11 +261,7 @@ HRESULT vboxDispWndDoCreate(DWORD w, DWORD h, HWND *phWnd)
         HWND hWnd = CreateWindowEx (WS_EX_NOACTIVATE | WS_EX_NOPARENTNOTIFY,
                                         VBOXDISPWND_NAME, VBOXDISPWND_NAME,
                                         WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_DISABLED,
-#ifdef DEBUG_misha
-                                        -1024, -1024,
-#else
                                         0, 0,
-#endif
                                         w, h,
                                         GetDesktopWindow() /* hWndParent */,
                                         NULL /* hMenu */,
