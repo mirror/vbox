@@ -2117,13 +2117,3 @@ VMMR3DECL(int) PDMR3VMMDevHeapFree(PVM pVM, RTR3PTR pv)
     return VINF_SUCCESS;
 }
 
-/**
- * Release the PDM lock if owned by the current VCPU
- *
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(void) PDMR3ReleaseOwnedLocks(PVM pVM)
-{
-    while (PDMCritSectIsOwner(&pVM->pdm.s.CritSect))
-        PDMCritSectLeave(&pVM->pdm.s.CritSect);
-}

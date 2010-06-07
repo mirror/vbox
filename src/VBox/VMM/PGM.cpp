@@ -3349,16 +3349,6 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
     return rc;
 }
 
-/**
- * Release the pgm lock if owned by the current VCPU
- *
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(void) PGMR3ReleaseOwnedLocks(PVM pVM)
-{
-    while (PDMCritSectIsOwner(&pVM->pgm.s.CritSect))
-        PDMCritSectLeave(&pVM->pgm.s.CritSect);
-}
 
 /**
  * Called by pgmPoolFlushAllInt prior to flushing the pool.

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -209,15 +209,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
     vmmR3FatalDumpInfoHlpInit(&Hlp);
 
     /* Release owned locks to make sure other VCPUs can continue in case they were waiting for one. */
-#if 1
     PDMR3CritSectLeaveAll(pVM);
-#else
-    MMR3ReleaseOwnedLocks(pVM);
-    PGMR3ReleaseOwnedLocks(pVM);
-    PDMR3ReleaseOwnedLocks(pVM);
-    IOMR3ReleaseOwnedLocks(pVM);
-    EMR3ReleaseOwnedLocks(pVM);
-#endif
 
     /*
      * Header.
