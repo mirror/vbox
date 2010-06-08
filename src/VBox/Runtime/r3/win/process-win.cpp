@@ -253,6 +253,17 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
 }
 
 
+/**
+ * Get the process token (not the process handle like the name might indicate)
+ * of the process indicated by @a dwPID if the @a pSID matches.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   dwPID           The process identifier.
+ * @param   pSID            The secure identifier of the user.
+ * @param   phToken         Where to return the token handle - duplicate,
+ *                          caller closes it on success.
+ */
 static int rtProcGetProcessHandle(DWORD dwPID, PSID pSID, PHANDLE phToken)
 {
     AssertPtr(pSID);
@@ -260,14 +271,14 @@ static int rtProcGetProcessHandle(DWORD dwPID, PSID pSID, PHANDLE phToken)
 
     DWORD dwErr;
     BOOL fRc;
-    BOOL fFound = FALSE;
+    bool fFound = false;
     HANDLE hProc = OpenProcess(MAXIMUM_ALLOWED, TRUE, dwPID);
     if (hProc != NULL)
     {
         HANDLE hTokenProc;
         fRc = OpenProcessToken(hProc,
-                               TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY | TOKEN_DUPLICATE |
-                               TOKEN_ASSIGN_PRIMARY | TOKEN_ADJUST_SESSIONID | TOKEN_READ | TOKEN_WRITE,
+                               TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY | TOKEN_DUPLICATE
+                               | TOKEN_ASSIGN_PRIMARY | TOKEN_ADJUST_SESSIONID | TOKEN_READ | TOKEN_WRITE,
                                &hTokenProc);
         if (fRc)
         {
@@ -299,7 +310,7 @@ static int rtProcGetProcessHandle(DWORD dwPID, PSID pSID, PHANDLE phToken)
                              * to run our new process under. This duplicated token will be used for
                              * the actual CreateProcessAsUserW() call then.
                              */
-                            fFound = TRUE;
+                            fFound = true;
                         }
                         else
                             dwErr = GetLastError();
@@ -327,14 +338,24 @@ static int rtProcGetProcessHandle(DWORD dwPID, PSID pSID, PHANDLE phToken)
 }
 
 
-static BOOL rtProcFindProcessByName(const char * const *papszNames, PSID pSID, PHANDLE phToken)
+/**
+ * Finds a one of the processes in @a papszNames running with user @a pSID and
+ * returns a duplicate handle to its token.
+ *
+ * @returns Success indicator.
+ * @param   papszNames      The process candidates, in prioritized order.
+ * @param   pSID            The secure identifier of the user.
+ * @param   phToken         Where to return the token handle - duplicate,
+ *                          caller closes it on success.
+ */
+static bool rtProcFindProcessByName(const char * const *papszNames, PSID pSID, PHANDLE phToken)
 {
     AssertPtr(papszNames);
     AssertPtr(pSID);
     AssertPtr(phToken);
 
     DWORD dwErr = NO_ERROR;
-    BOOL fFound = FALSE;
+    bool fFound = false;
 
     /*
      * On modern systems (W2K+) try the Toolhelp32 API first; this is more stable
@@ -364,15 +385,16 @@ static BOOL rtProcFindProcessByName(const char * const *papszNames, PSID pSID, P
                             PROCESSENTRY32 procEntry;
                             procEntry.dwSize = sizeof(PROCESSENTRY32);
                             if (pfnProcess32First(hSnap, &procEntry))
-                            {   
+                            {
                                 do
                                 {
                                     if (   _stricmp(procEntry.szExeFile, papszNames[i]) == 0
                                         && RT_SUCCESS(rtProcGetProcessHandle(procEntry.th32ProcessID, pSID, phToken)))
                                     {
-                                        fFound = TRUE;
+                                        fFound = true;
+                                        break;
                                     }
-                                } while (pfnProcess32Next(hSnap, &procEntry) && !fFound);
+                                } while (pfnProcess32Next(hSnap, &procEntry));
                             }
                             else /* Process32First */
                                 dwErr = GetLastError();
@@ -406,16 +428,16 @@ static BOOL rtProcFindProcessByName(const char * const *papszNames, PSID pSID, P
                     if (RT_SUCCESS(rc))
                     {
                         /** @todo Retry if pBytesReturned equals cbBytes! */
-                        DWORD dwPIDs[4096]; /* Should be sufficient for now. */
+                        DWORD adwPIDs[4096]; /* Should be sufficient for now. */
                         DWORD cbBytes = 0;
-                        if (pfnEnumProcesses(dwPIDs, sizeof(dwPIDs), &cbBytes))
+                        if (pfnEnumProcesses(adwPIDs, sizeof(adwPIDs), &cbBytes))
                         {
                             for (size_t i = 0; papszNames[i] && !fFound; i++)
                             {
                                 for (DWORD dwIdx = 0; dwIdx < cbBytes/sizeof(DWORD) && !fFound; dwIdx++)
                                 {
                                     HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
-                                                               FALSE, dwPIDs[dwIdx]);
+                                                               FALSE, adwPIDs[dwIdx]);
                                     if (hProc)
                                     {
                                         char *pszProcName = NULL;
@@ -428,13 +450,13 @@ static BOOL rtProcFindProcessByName(const char * const *papszNames, PSID pSID, P
                                             if (dwSize > _4K) /* Play safe. */
                                                 break;
                                         } while (GetLastError() == ERROR_INSUFFICIENT_BUFFER);
-    
+
                                         if (pszProcName)
                                         {
                                             if (   _stricmp(pszProcName, papszNames[i]) == 0
-                                                && RT_SUCCESS(rtProcGetProcessHandle(dwPIDs[dwIdx], pSID, phToken)))
+                                                && RT_SUCCESS(rtProcGetProcessHandle(adwPIDs[dwIdx], pSID, phToken)))
                                             {
-                                                fFound = TRUE;
+                                                fFound = true;
                                             }
                                         }
                                         if (pszProcName)
@@ -551,7 +573,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                          LOGON32_PROVIDER_DEFAULT,
                          &hTokenLogon);
 
-        BOOL fFound = FALSE;
+        bool fFound = false;
         HANDLE hTokenUserDesktop = INVALID_HANDLE_VALUE;
         if (fRc)
         {
@@ -597,24 +619,15 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                         && IsValidSid(pSID))
                     {
                         /* Array of process names we want to look for. */
-                        char *papszProcNames[] = 
-#ifdef VBOX
-                        /*
-                         * Add lookup for "explorer.exe" as a fallback in case the VBox
-                         * Guest Additions are not (yet) installed, but prefer looking
-                         * up "VBoxTray.exe" in the first place.
-                         */
-                            { { "VBoxTray.exe" },
-                              { "explorer.exe" },
-                              NULL 
-                            };
-#else
-                            { { "explorer.exe" },
-                              NULL 
-                            };
-#endif                        
-                        fFound = rtProcFindProcessByName(papszProcNames,
-                                                         pSID, &hTokenUserDesktop);
+                        static const char * const s_papszProcNames[] =
+                        {
+#ifdef VBOX                 /* The explorer entry is a fallback in case GA aren't installed. */
+                            { "VBoxTray.exe" },
+#endif
+                            { "explorer.exe" },
+                            NULL
+                        };
+                        fFound = rtProcFindProcessByName(s_papszProcNames, pSID, &hTokenUserDesktop);
                     }
                     else
                         dwErr = GetLastError(); /* LookupAccountNameW() failed. */
@@ -637,9 +650,9 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
 
             /*
              * Useful KB articles:
-             * http://support.microsoft.com/kb/165194/
-             * http://support.microsoft.com/kb/184802/
-             * http://support.microsoft.com/kb/327618/
+             *      http://support.microsoft.com/kb/165194/
+             *      http://support.microsoft.com/kb/184802/
+             *      http://support.microsoft.com/kb/327618/
              */
             fRc = CreateProcessAsUserW(*phToken,
                                        pwszExec,
@@ -680,7 +693,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
 
             case ERROR_PASSWORD_EXPIRED:
             case ERROR_ACCOUNT_RESTRICTION: /* See: http://support.microsoft.com/kb/303846/ */
-                rc = VERR_LOGON_FAILURE;
+                rc = VERR_AUTHENTICATION_FAILURE;
                 break;
 
             default:
@@ -817,12 +830,11 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                 /*
                  * Get going...
                  */
+                PROCESS_INFORMATION ProcInfo;
+                RT_ZERO(ProcInfo);
                 DWORD               dwCreationFlags = CREATE_UNICODE_ENVIRONMENT;
                 if (fFlags & RTPROC_FLAGS_DETACHED)
                     dwCreationFlags |= DETACHED_PROCESS;
-
-                PROCESS_INFORMATION ProcInfo;
-                RT_ZERO(ProcInfo);
 
                 /*
                  * Only use the normal CreateProcess stuff if we have no user name

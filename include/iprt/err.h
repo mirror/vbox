@@ -612,8 +612,6 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
  * This status is used when two threads is caught sharing the same object
  * reference. */
 #define VERR_CALLER_NO_REFERENCE            (-93)
-/** Invalid login data given. */
-#define VERR_LOGON_FAILURE                  (-94)
 /** Generic no change error. */
 #define VERR_NO_CHANGE                      (-95)
 /** Generic no change info. */
