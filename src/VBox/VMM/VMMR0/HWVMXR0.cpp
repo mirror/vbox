@@ -147,6 +147,10 @@ VMMR0DECL(int) VMXR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS p
     AssertReturn(pPageCpuPhys, VERR_INVALID_PARAMETER);
     AssertReturn(pvPageCpu, VERR_INVALID_PARAMETER);
 
+    /* If we're somehow not in VMX root mode, then we shouldn't dare leaving it. */
+    if (!(ASMGetCR4() & X86_CR4_VMXE))
+        return VERR_VMX_NOT_IN_VMX_ROOT_MODE;
+
     /* Leave VMX Root Mode. */
     VMXDisable();
 
