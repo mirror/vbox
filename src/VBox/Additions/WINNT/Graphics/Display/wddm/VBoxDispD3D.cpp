@@ -1710,10 +1710,8 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
             PVBOXWDDMDISP_ALLOCATION pTexAlloc = &pRc->aAllocations[0];
             Assert(pData->SubResourceIndex < pRc->cAllocations);
             PVBOXWDDMDISP_ALLOCATION pLockAlloc = &pRc->aAllocations[pData->SubResourceIndex];
-            Assert(!pLockAlloc->LockInfo.cLocks);
             IDirect3DTexture9 *pD3DIfTex = (IDirect3DTexture9*)pTexAlloc->pD3DIf;
             Assert(pD3DIfTex);
-            D3DLOCKED_RECT LockInfo;
             RECT *pRect = NULL;
             if (pData->Flags.AreaValid)
             {
@@ -1728,40 +1726,18 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
                 AssertBreakpoint();
             }
             /* else - we lock the entire texture, pRect == NULL */
-            hr = pD3DIfTex->LockRect(pData->SubResourceIndex,
-                    &LockInfo,
-                    pRect,
-                    vboxDDI2D3DLockFlags(pData->Flags));
-            Assert(hr == S_OK);
-            if (hr == S_OK)
+
+//            Assert(!pLockAlloc->LockInfo.cLocks);
+            if (!pLockAlloc->LockInfo.cLocks)
             {
-                Assert(!pLockAlloc->LockInfo.cLocks);
-                if (pLockAlloc->LockInfo.cLocks)
+                hr = pD3DIfTex->LockRect(pData->SubResourceIndex,
+                        &pLockAlloc->LockInfo.LockedRect,
+                        pRect,
+                        vboxDDI2D3DLockFlags(pData->Flags));
+                Assert(hr == S_OK);
+                if (hr == S_OK)
                 {
-//                    Assert(pLockAlloc->LockInfo.fFlags.AreaValid || pLockAlloc->LockInfo.fFlags.Value == 0);
-                    /* else the entire texture is locked already - nothing to be done */
 
-                    AssertBreakpoint();
-                    /* @todo: merge flags */
-                    pLockAlloc->LockInfo.fFlags.Value &= pData->Flags.Value;
-
-                    if (pLockAlloc->LockInfo.fFlags.AreaValid)
-                    {
-                        Assert(pRect);
-                        vboxWddmRectUnited(&pLockAlloc->LockInfo.Area, pRect);
-                    }
-
-                    Assert(pLockAlloc->LockInfo.LockedRect.pBits);
-                    if (pLockAlloc->LockInfo.LockedRect.pBits)
-                    {
-                        Assert(pLockAlloc->LockInfo.LockedRect.Pitch == LockInfo.Pitch);
-                        pLockAlloc->LockInfo.LockedRect.pBits = RT_MIN(pLockAlloc->LockInfo.LockedRect.pBits, LockInfo.pBits);
-                    }
-                    else
-                        pLockAlloc->LockInfo.LockedRect = LockInfo;
-                }
-                else
-                {
 //                    Assert(pLockAlloc->LockInfo.fFlags.Value == 0);
                     pLockAlloc->LockInfo.fFlags = pData->Flags;
                     if (pRect)
@@ -1776,25 +1752,43 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
 //                        pLockAlloc->LockInfo.fFlags.AreaValid = 0;
                     }
 
-                    pLockAlloc->LockInfo.LockedRect = LockInfo;
+                    ++pLockAlloc->LockInfo.cLocks;
                 }
-                ++pLockAlloc->LockInfo.cLocks;
+            }
+            else
+            {
+                Assert(pLockAlloc->LockInfo.fFlags.Value == pData->Flags.Value);
+//                if (pLockAlloc->LockInfo.fFlags.Value != pData->Flags.Value)
+//                {
+//                }
+                Assert(pLockAlloc->LockInfo.fFlags.AreaValid == pData->Flags.AreaValid);
+                if (pLockAlloc->LockInfo.fFlags.AreaValid && pData->Flags.AreaValid)
+                {
+                    Assert(pLockAlloc->LockInfo.Area.left == pData->Area.left);
+                    Assert(pLockAlloc->LockInfo.Area.top == pData->Area.top);
+                    Assert(pLockAlloc->LockInfo.Area.right == pData->Area.right);
+                    Assert(pLockAlloc->LockInfo.Area.bottom == pData->Area.bottom);
+                }
+                Assert(pLockAlloc->LockInfo.LockedRect.pBits);
+            }
 
-                if (!pData->Flags.NotifyOnly)
-                {
-                    pData->pSurfData = LockInfo.pBits;
-                    pData->Pitch = LockInfo.Pitch;
-                    pData->SlicePitch = 0;
-                    Assert(pLockAlloc->SurfDesc.slicePitch == 0);
-                    Assert(!pLockAlloc->pvMem);
-                }
-                else
-                {
-                    Assert(pLockAlloc->pvMem);
-                    Assert(pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM);
-                    if (/* !pData->Flags.WriteOnly && */ !pData->Flags.Discard)
-                        vboxWddmLockUnlockMemSynch(pLockAlloc, &LockInfo, pRect, false /*bool bToLockInfo*/);
-                }
+
+            ++pLockAlloc->LockInfo.cLocks;
+
+            if (!pData->Flags.NotifyOnly)
+            {
+                pData->pSurfData = pLockAlloc->LockInfo.LockedRect.pBits;
+                pData->Pitch = pLockAlloc->LockInfo.LockedRect.Pitch;
+                pData->SlicePitch = 0;
+                Assert(pLockAlloc->SurfDesc.slicePitch == 0);
+                Assert(!pLockAlloc->pvMem);
+            }
+            else
+            {
+                Assert(pLockAlloc->pvMem);
+                Assert(pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM);
+                if (/* !pData->Flags.WriteOnly && */ !pData->Flags.Discard)
+                    vboxWddmLockUnlockMemSynch(pLockAlloc, &pLockAlloc->LockInfo.LockedRect, pRect, false /*bool bToLockInfo*/);
             }
         }
         else
@@ -1853,7 +1847,7 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
         }
     }
 
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(%d)\n", hDevice, hr));
     return hr;
 }
 static HRESULT APIENTRY vboxWddmDDevUnlock(HANDLE hDevice, CONST D3DDDIARG_UNLOCK* pData)
@@ -1871,24 +1865,28 @@ static HRESULT APIENTRY vboxWddmDDevUnlock(HANDLE hDevice, CONST D3DDDIARG_UNLOC
     {
         if (pRc->RcDesc.fFlags.Texture)
         {
-            PVBOXWDDMDISP_ALLOCATION pTexAlloc = &pRc->aAllocations[0];
             Assert(pData->SubResourceIndex < pRc->cAllocations);
             PVBOXWDDMDISP_ALLOCATION pLockAlloc = &pRc->aAllocations[pData->SubResourceIndex];
-            Assert(pLockAlloc->LockInfo.cLocks);
-            IDirect3DTexture9 *pD3DIfTex = (IDirect3DTexture9*)pTexAlloc->pD3DIf;
-            Assert(pD3DIfTex);
-            /* this is a sysmem texture, update  */
-            if (pLockAlloc->pvMem && !pLockAlloc->LockInfo.fFlags.ReadOnly)
+
+            --pLockAlloc->LockInfo.cLocks;
+            if (!pLockAlloc->LockInfo.cLocks)
             {
-                vboxWddmLockUnlockMemSynch(pLockAlloc, &pLockAlloc->LockInfo.LockedRect,
-                        pLockAlloc->LockInfo.fFlags.AreaValid ? &pLockAlloc->LockInfo.Area : NULL,
-                        true /*bool bToLockInfo*/);
+                PVBOXWDDMDISP_ALLOCATION pTexAlloc = &pRc->aAllocations[0];
+                Assert(pLockAlloc->LockInfo.cLocks);
+                IDirect3DTexture9 *pD3DIfTex = (IDirect3DTexture9*)pTexAlloc->pD3DIf;
+                Assert(pD3DIfTex);
+                /* this is a sysmem texture, update  */
+                if (pLockAlloc->pvMem && !pLockAlloc->LockInfo.fFlags.ReadOnly)
+                {
+                    vboxWddmLockUnlockMemSynch(pLockAlloc, &pLockAlloc->LockInfo.LockedRect,
+                            pLockAlloc->LockInfo.fFlags.AreaValid ? &pLockAlloc->LockInfo.Area : NULL,
+                            true /*bool bToLockInfo*/);
+                }
+                hr = pD3DIfTex->UnlockRect(pData->SubResourceIndex);
+                Assert(hr == S_OK);
             }
-            hr = pD3DIfTex->UnlockRect(pData->SubResourceIndex);
-            Assert(hr == S_OK);
-            if (hr == S_OK)
+            else
             {
-                --pLockAlloc->LockInfo.cLocks;
                 Assert(pLockAlloc->LockInfo.cLocks < UINT32_MAX);
             }
         }
