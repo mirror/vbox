@@ -79,13 +79,26 @@ typedef struct VBOXWDDMDISP_DEVICE
     VBOXWDDMDISP_CONTEXT DefaultContext;
 } VBOXWDDMDISP_DEVICE, *PVBOXWDDMDISP_DEVICE;
 
+typedef struct VBOXWDDMDISP_LOCKINFO
+{
+    uint32_t cLocks;
+    union {
+        D3DDDIRANGE  Range;
+        RECT  Area;
+        D3DDDIBOX  Box;
+    };
+    D3DDDI_LOCKFLAGS fFlags;
+    D3DLOCKED_RECT LockedRect;
+} VBOXWDDMDISP_LOCKINFO;
+
 typedef struct VBOXWDDMDISP_ALLOCATION
 {
     D3DKMT_HANDLE hAllocation;
     VBOXWDDM_ALLOC_TYPE enmType;
-    CONST VOID* pvMem;
+    void* pvMem;
     /* object type depends on resource type */
     IUnknown *pD3DIf;
+    VBOXWDDMDISP_LOCKINFO LockInfo;
     VBOXWDDM_SURFACE_DESC SurfDesc;
 } VBOXWDDMDISP_ALLOCATION, *PVBOXWDDMDISP_ALLOCATION;
 
