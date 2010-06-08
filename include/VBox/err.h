@@ -1411,6 +1411,8 @@
 #define VERR_VMX_UNEXPECTED_EXCEPTION               (-4016)
 /** Unexpected interruption exit code. */
 #define VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_CODE  (-4017)
+/** CPU is not in VMX root mode; unexpected when leaving VMX root mode */
+#define VERR_VMX_NOT_IN_VMX_ROOT_MODE               (-4018)
 /** @} */
 
 
