@@ -30,22 +30,28 @@ public:
 
     enum Type { Native, Shade };
 
-    QISplitter(QWidget *aParent = 0);
+    QISplitter(QWidget *pParent = 0);
     QISplitter(Qt::Orientation orientation = Qt::Horizontal, QWidget *pParent = 0);
 
     void setHandleType(Type type) { m_type = type; }
     Type handleType() const { return m_type; }
-private:
 
-    bool eventFilter(QObject *aWatched, QEvent *aEvent);
-    void showEvent(QShowEvent *aEvent);
+protected:
+
+    bool eventFilter(QObject *pWatched, QEvent *pEvent);
+    void showEvent(QShowEvent *pEvent);
 
     QSplitterHandle* createHandle();
 
-    QByteArray mBaseState;
+private:
 
-    bool mPolished;
+    QByteArray m_baseState;
+
+    bool m_fPolished;
     Type m_type;
+#ifdef Q_WS_MAC
+    bool m_fHandleGrabbed;
+#endif /* Q_WS_MAC */
 };
 
 #endif /* _QISplitter_h_ */
