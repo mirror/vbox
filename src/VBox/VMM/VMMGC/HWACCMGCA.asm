@@ -170,9 +170,9 @@ ALIGN(16)
     mov     dword [rbx + VMCSCACHE.Write.cValidEntries], 0
 .no_cached_writes:
 
-%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+ %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov     qword [rbx + VMCSCACHE.uPos], 3
-%endif
+ %endif
     ; Save the pCache pointer
     push    xBX
 %endif
@@ -316,15 +316,15 @@ ALIGNCODE(16)
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     pop     rdi         ; saved pCache
 
-%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+ %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov     dword [rdi + VMCSCACHE.uPos], 7
-%endif
-%ifdef DEBUG
+ %endif
+ %ifdef DEBUG
     mov     [rdi + VMCSCACHE.TestOut.pCache], rdi
     mov     [rdi + VMCSCACHE.TestOut.pCtx], rsi
     mov     rax, cr8
     mov     [rdi + VMCSCACHE.TestOut.cr8], rax
-%endif
+ %endif
     
     mov     ecx, [rdi + VMCSCACHE.Read.cValidEntries]
     cmp     ecx, 0  ; can't happen
@@ -343,9 +343,9 @@ ALIGN(16)
     ; Save CR2 for EPT
     mov     rax, cr2
     mov     [rdi + VMCSCACHE.cr2], rax
-%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+ %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov     dword [rdi + VMCSCACHE.uPos], 8
-%endif
+ %endif
 %endif
 
     ; Restore segment registers
@@ -359,10 +359,10 @@ ALIGN(16)
 .vmstart64_end:
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
-%ifdef DEBUG
+ %ifdef DEBUG
     mov     rdx, [rsp]                             ; pVMCSPhys
     mov     [rdi + VMCSCACHE.TestOut.pVMCSPhys], rdx
-%endif
+ %endif
 %endif
 
     ; Write back the data and disable the VMCS
@@ -374,18 +374,18 @@ ALIGN(16)
     vmxoff
 .vmstart64_vmxon_failed:
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
-%ifdef DEBUG
+ %ifdef DEBUG
     cmp     eax, VINF_SUCCESS
     jne     .skip_flags_save
 
     pushf
     pop     rdx
     mov     [rdi + VMCSCACHE.TestOut.eflags], rdx
-%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+  %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov     dword [rdi + VMCSCACHE.uPos], 12
-%endif
+  %endif
 .skip_flags_save:
-%endif
+ %endif
 %endif
     pop     rbp
     ret
@@ -396,15 +396,14 @@ ALIGN(16)
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     pop     rdi         ; pCache
-%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+ %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov     dword [rdi + VMCSCACHE.uPos], 10
-%endif
+ %endif
 
-%ifdef DEBUG
+ %ifdef DEBUG
     mov     [rdi + VMCSCACHE.TestOut.pCache], rdi
     mov     [rdi + VMCSCACHE.TestOut.pCtx], rsi
-%endif
-
+ %endif
 %endif
 
     ; Restore segment registers
@@ -420,14 +419,13 @@ ALIGN(16)
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     pop     rdi         ; pCache
 
-%ifdef DEBUG
+ %ifdef DEBUG
     mov     [rdi + VMCSCACHE.TestOut.pCache], rdi
     mov     [rdi + VMCSCACHE.TestOut.pCtx], rsi
-%endif
-%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+ %endif
+ %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov     dword [rdi + VMCSCACHE.uPos], 11
-%endif
-
+ %endif
 %endif
 
     ; Restore segment registers
