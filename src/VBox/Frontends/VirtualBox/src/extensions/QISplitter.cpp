@@ -109,48 +109,133 @@ protected:
 };
 #endif /* RT_OS_DARWIN */
 
-QISplitter::QISplitter(QWidget *aParent /* = 0 */)
-    : QSplitter(aParent)
-    , mPolished(false)
+QISplitter::QISplitter(QWidget *pParent /* = 0 */)
+    : QSplitter(pParent)
+    , m_fPolished(false)
     , m_type(Shade)
+#ifdef Q_WS_MAC
+    , m_fHandleGrabbed(false)
+#endif /* Q_WS_MAC */
 {
-    qApp->installEventFilter (this);
+    qApp->installEventFilter(this);
 }
 
 QISplitter::QISplitter(Qt::Orientation orientation /* = Qt::Horizontal */, QWidget *pParent /* = 0 */)
     : QSplitter(orientation, pParent)
-    , mPolished(false)
+    , m_fPolished(false)
     , m_type(Shade)
+#ifdef Q_WS_MAC
+    , m_fHandleGrabbed(false)
+#endif /* Q_WS_MAC */
 {
     qApp->installEventFilter (this);
 }
 
-bool QISplitter::eventFilter(QObject *aWatched, QEvent *aEvent)
+bool QISplitter::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
-    if (aWatched == handle(1))
+    if (pWatched == handle(1))
     {
-        switch (aEvent->type())
+        switch (pEvent->type())
         {
             case QEvent::MouseButtonDblClick:
-                restoreState (mBaseState);
+                restoreState(m_baseState);
                 break;
             default:
                 break;
         }
     }
+#ifdef Q_WS_MAC
+    /* Special handling on the Mac. Cause there the horizontal handle is only 1
+     * pixel wide, its hard to catch. Therefor we make some invisible area
+     * around the handle and forwarding the mouse events to the handle, if the
+     * user presses the left mouse button. */
+    else if (   m_type == Native
+             && orientation() == Qt::Horizontal
+             && count() > 1
+             && qApp->activeWindow() == window())
+    {
+        switch (pEvent->type())
+        {
+            case QEvent::MouseButtonPress:
+            case QEvent::MouseMove:
+            {
+                const int margin = 3;
+                QMouseEvent *pMouseEvent = static_cast<QMouseEvent*>(pEvent);
+                for (int i=1; i < count(); ++i)
+                {
+                    QWidget *pHandle = handle(i);
+                    if (   pHandle
+                        && pHandle != pWatched)
+                    {
+                        /* Create new mouse event with translated mouse positions. */
+                        QMouseEvent newME(pMouseEvent->type(),
+                                          pHandle->mapFromGlobal(pMouseEvent->globalPos()),
+                                          pMouseEvent->button(),
+                                          pMouseEvent->buttons(),
+                                          pMouseEvent->modifiers());
+                        /* Check if we hit the handle */
+                        bool fMarginHit = QRect(pHandle->mapToGlobal(QPoint(0, 0)), pHandle->size()).adjusted(-margin, 0, margin, 0).contains(pMouseEvent->globalPos());
+                        if (pEvent->type() == QEvent::MouseButtonPress)
+                        {
+                            /* If we have a handle position hit and the left
+                             * button is pressed, start the grabbing. */
+                            if (   fMarginHit
+                                && pMouseEvent->buttons().testFlag(Qt::LeftButton))
+                            {
+                                m_fHandleGrabbed = true;
+                                setCursor(Qt::SplitHCursor);
+                                qApp->postEvent(pHandle, new QMouseEvent(newME));
+                                return true;
+                            }
+                        }
+                        else if(pEvent->type() == QEvent::MouseMove)
+                        {
+                            /* If we are in the near of the handle or currently
+                             * dragging, forward the mouse event. */
+                            if (   fMarginHit
+                                || (   m_fHandleGrabbed
+                                    && pMouseEvent->buttons().testFlag(Qt::LeftButton)))
+                            {
+                                setCursor(Qt::SplitHCursor);
+                                qApp->postEvent(pHandle, new QMouseEvent(newME));
+                                return true;
+                            }
+                            else
+                            {
+                                /* If not, reset the state. */
+                                m_fHandleGrabbed = false;
+                                setCursor(Qt::ArrowCursor);
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+            case QEvent::WindowDeactivate:
+            case QEvent::MouseButtonRelease:
+            {
+                m_fHandleGrabbed = false;
+                setCursor(Qt::ArrowCursor);
+                break;
+            }
+            default:
+                break;
+        }
+    }
+#endif /* Q_WS_MAC */
 
-    return QSplitter::eventFilter(aWatched, aEvent);
+    return QSplitter::eventFilter(pWatched, pEvent);
 }
 
-void QISplitter::showEvent(QShowEvent *aEvent)
+void QISplitter::showEvent(QShowEvent *pEvent)
 {
-    if (!mPolished)
+    if (!m_fPolished)
     {
-        mPolished = true;
-        mBaseState = saveState();
+        m_fPolished = true;
+        m_baseState = saveState();
     }
 
-    return QSplitter::showEvent(aEvent);
+    return QSplitter::showEvent(pEvent);
 }
 
 QSplitterHandle* QISplitter::createHandle()
