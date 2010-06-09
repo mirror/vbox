@@ -766,11 +766,12 @@ LOCAL int vboxNetFltSolarisInitVNIC(PVBOXNETFLTINS pThis, PVBOXNETFLTVNIC pVNIC)
                 if (RT_LIKELY(hLowerMac))
                 {
                     mac_unicast_primary_get(hLowerMac, (uint8_t *)pThis->u.s.MacAddr.au8);
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisInitVNIC phys mac %.6Rhxs\n", &pThis->u.s.MacAddr));
                     vboxNetFltSolarisReportInfo(pThis);
                 }
                 else
                 {
-                    LogRel((DEVICE_NAME ":vboxNetFltOsInitInstance failed to get lower MAC handle for '%s'\n", pThis->szName));
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisInitVNIC failed to get lower MAC handle for '%s'\n", pThis->szName));
                     rc = ENODEV;
                 }
             }
@@ -780,7 +781,7 @@ LOCAL int vboxNetFltSolarisInitVNIC(PVBOXNETFLTINS pThis, PVBOXNETFLTVNIC pVNIC)
                 Assert(pVNIC->hClient);
                 Assert(pVNIC->hInterface);
                 Assert(pVNIC->hLinkId);
-                LogFlow((DEVICE_NAME ":vboxNetFltOsInitInstance successfully initialized VNIC '%s'\n", pVNIC->szName));
+                LogFlow((DEVICE_NAME ":vboxNetFltSolarisInitVNIC successfully initialized VNIC '%s'\n", pVNIC->szName));
                 return 0;
             }
 
@@ -789,13 +790,13 @@ LOCAL int vboxNetFltSolarisInitVNIC(PVBOXNETFLTINS pThis, PVBOXNETFLTVNIC pVNIC)
             pVNIC->hUnicast = NULL;
         }
         else
-            LogRel((DEVICE_NAME ":vboxNetFltOsInitInstance failed to set RX callback. rc=%d Diag=%d\n", rc, Diag));
+            LogRel((DEVICE_NAME ":vboxNetFltSolarisInitVNIC failed to set RX callback. rc=%d Diag=%d\n", rc, Diag));
 
         mac_client_close(pVNIC->hClient, 0 /* flags */);
         pVNIC->hClient = NULL;
     }
     else
-        LogRel((DEVICE_NAME ":vboxNetFltOsInitInstance failed to open mac client for '%s' rc=%d\n", pThis->szName, rc));
+        LogRel((DEVICE_NAME ":vboxNetFltSolarisInitVNIC failed to open mac client for '%s' rc=%d\n", pThis->szName, rc));
 
     return RTErrConvertFromErrno(rc);
 }
@@ -907,7 +908,8 @@ LOCAL int vboxNetFltSolarisCreateVNIC(PVBOXNETFLTINS pThis, PVBOXNETFLTVNIC *ppV
     RTStrPrintf(pVNIC->szName, sizeof(pVNIC->szName), "%s%RU64", VBOXFLT_VNIC_NAME, pThis->u.s.uInstance);
 
     /*
-     * Set a random MAC address.
+     * Set a random MAC address for now. It will be changed to the VM interface's
+     * MAC address later, see vboxNetFltPortOsNotifyMacAddress().
      */
     RTMAC GuestMac;
     GuestMac.au8[0] = 0x08;
@@ -921,7 +923,7 @@ LOCAL int vboxNetFltSolarisCreateVNIC(PVBOXNETFLTINS pThis, PVBOXNETFLTVNIC *ppV
     vnic_ioc_diag_t Diag          = VNIC_IOC_DIAG_NONE;
     int MacSlot                   = 0;
     int MacLen                    = sizeof(GuestMac);
-    uint32_t fFlags               = 0; /* @todo it should be VNIC_IOC_CREATE_NODUPCHECK */
+    uint32_t fFlags               = 0;
 
     int rc = vnic_create(pVNIC->szName, pThis->szName, &AddrType, &MacLen, GuestMac.au8, &MacSlot, 0 /* Mac-Prefix Length */, 0 /* VLAN-ID */,
                         fFlags, &pVNIC->hLinkId, &Diag, NULL /* Reserved */);
@@ -1057,7 +1059,7 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
         {
             /*
              * This is NOT a VNIC. Just pretend success for now.
-             * We will create a VNIC per guest interface later (see vboxNetFltPortOsConnectInterface).
+             * We will create a VNIC per VM interface later, see vboxNetFltPortOsConnectInterface().
              */
             pThis->u.s.fIsVNIC = false;
             mac_unicast_primary_get(hInterface, pThis->u.s.MacAddr.au8);
