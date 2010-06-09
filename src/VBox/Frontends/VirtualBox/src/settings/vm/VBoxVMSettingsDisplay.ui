@@ -242,7 +242,7 @@
             </item>
            </layout>
           </item>
-		  <item row="4" column="0">
+          <item row="4" column="0">
            <widget class="QLabel" name="mLbOptions">
             <property name="text">
              <string>Extended Features:</string>
@@ -426,6 +426,32 @@
               <widget class="QLineEdit" name="mLeVRDPTimeout">
                <property name="whatsThis">
                 <string>Specifies the timeout for guest authentication, in milliseconds.</string>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="1">
+              <widget class="QLabel" name="mLbOptions2">
+               <property name="text">
+                <string>Extended Features:</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="2">
+              <widget class="QCheckBox" name="mCbMultipleConn">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="whatsThis">
+                <string>Specifies whether multiple simultaneous connections to the VM are permitted.</string>
+               </property>
+               <property name="text">
+                <string>Allow Multiple Connections</string>
                </property>
               </widget>
              </item>
