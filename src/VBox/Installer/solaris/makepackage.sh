@@ -53,7 +53,7 @@ VBOX_SVN_REV=$4
 VBOX_PKGNAME=SUNWvbox
 VBOX_GGREP=/usr/sfw/bin/ggrep
 VBOX_AWK=/usr/bin/awk
-VBOX_GTAR=/usr/sfw/bin/gtar
+#VBOX_GTAR=/usr/sfw/bin/gtar
 
 # check for GNU grep we use which might not ship with all Solaris
 if test ! -f "$VBOX_GGREP" && test ! -h "$VBOX_GGREP"; then
@@ -62,10 +62,10 @@ if test ! -f "$VBOX_GGREP" && test ! -h "$VBOX_GGREP"; then
 fi
 
 # check for GNU tar we use which might not ship with all Solaris
-if test ! -f "$VBOX_GTAR" && test ! -h "$VBOX_GTAR"; then
-    echo "## GNU tar not found in $VBOX_GTAR."
-    exit 1
-fi
+#if test ! -f "$VBOX_GTAR" && test ! -h "$VBOX_GTAR"; then
+#    echo "## GNU tar not found in $VBOX_GTAR."
+#    exit 1
+#fi
 
 # bail out on non-zero exit status
 set -e
@@ -210,16 +210,16 @@ pkgmk -p $VBOXPKG_TIMESTAMP -o -r .
 pkgtrans -s -o /var/spool/pkg "`pwd`/$VBOX_PKGFILE" "$VBOX_PKGNAME"
 
 # $5 if exist would contain the path to the VBI package to include in the .tar.gz
-if [ -f LICENSE ]; then
-    VBOX_LICENSEFILE=LICENSE
-fi
-if test -f "$5"; then
-    $VBOX_GTAR zcvf "$VBOX_ARCHIVE" $VBOX_LICENSEFILE "$VBOX_PKGFILE" "$5" autoresponse ReadMe.txt
-else
-    $VBOX_GTAR zcvf "$VBOX_ARCHIVE" $VBOX_LICENSEFILE "$VBOX_PKGFILE" autoresponse ReadMe.txt
-fi
+#if [ -f LICENSE ]; then
+#    VBOX_LICENSEFILE=LICENSE
+#fi
+#if test -f "$5"; then
+#    $VBOX_GTAR zcvf "$VBOX_ARCHIVE" $VBOX_LICENSEFILE "$VBOX_PKGFILE" "$5" autoresponse ReadMe.txt
+#else
+#    $VBOX_GTAR zcvf "$VBOX_ARCHIVE" $VBOX_LICENSEFILE "$VBOX_PKGFILE" autoresponse ReadMe.txt
+#fi
 
-echo "## Packaging and transfer completed successfully!"
+echo "## Package file created successfully!"
 rm -rf "/var/spool/pkg/$VBOX_PKGNAME"
 
 exit $?

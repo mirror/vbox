@@ -72,6 +72,7 @@ else
  SOL_DBG_OBJCOPY             := $(CP) -p    # Solaris ld/gobjcopy(2.15) don't get along on x86, works only on amd64. So just using cp for now.
 endif
 SOL_OBJCOPY                  := /usr/sfw/bin/gobjcopy --strip-unneeded -R .comment
+SOL_GTAR                     := /usr/sfw/bin/gtar
 
 
 # Figure out the paths to the two platform specific Qt4 directories
@@ -480,6 +481,14 @@ BLDDIRS += $(foreach d,\
 	$(SOLARIS_DIR_NAME_32)/accessible \
 ,$(SOLARIS_DBG_DIR)/$(d))
 
+# List of files to be tar.gz'd, the files will be
+# installed in $(SOLARIS_BASEINST_DIR) and .gz'd from there.
+SOLARIS_TAR_GZ_FILES := \
+	$(PKG_FILENAME).pkg \
+	$(if $(VBOX_WITH_SOLARIS_VBI),$(VBIPKG_FILENAME).pkg,) \
+	LICENSE \
+	autoresponse \
+	ReadMe.txt
 
 include $(KBUILD_PATH)/subfooter.kmk
 
@@ -621,11 +630,14 @@ endif
 		$(if-expr defined(VBOX_WITH_COMBINED_PACKAGE),neutral,$(KBUILD_TARGET_ARCH)) \
 		$(VBOX_SVN_REV) \
 		$(if $(VBOX_WITH_SOLARIS_VBI),$(VBIPKG_FILENAME).pkg,)
+	$(call MSG_L1,Creating final tar.gz package)
+	$(QUIET)$(SOL_GTAR) -C $(SOLARIS_BASEINST_DIR) -zcvf $(SOLARIS_BASEINST_DIR)/$(PKG_FILENAME).tar.gz $(SOLARIS_TAR_GZ_FILES)
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_BASEINST_DIR)/$(PKG_FILENAME).tar.gz $(SOLARIS_OUT_BIN)
 	@# Clean up files emitted as side-effect or result of packing
 	$(QUIET)$(RM) -f $(SOLARIS_BASEINST_DIR)/$(PKG_FILENAME).tar.gz
 	$(QUIET)$(RM) -f $(SOLARIS_BASEINST_DIR)/$(PKG_FILENAME).pkg
 	$(QUIET)$(if $(VBOX_WITH_SOLARIS_VBI),$(RM) -f $(SOLARIS_BASEINST_DIR)/$(VBIPKG_FILENAME).pkg,)
+	$(call MSG_L1,Packaging completed.)
 
 
 #
