@@ -657,7 +657,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         OPT_NO_PATM,
         OPT_CSAM,
         OPT_NO_CSAM,
-        OPT_COMMENT,
+        OPT_COMMENT
     };
 
     static const RTGETOPTDEF s_aOptions[] =
