@@ -81,7 +81,7 @@ const int XKeyRelease = KeyRelease;
 #ifdef Q_WS_MAC
 # include "DockIconPreview.h"
 # include "DarwinKeyboard.h"
-# include "VBoxCocoaApplication.h"
+# include "UICocoaApplication.h"
 # include <VBox/err.h>
 # include <Carbon/Carbon.h>
 #endif /* Q_WS_MAC */
@@ -2345,16 +2345,16 @@ void UIMachineView::darwinGrabKeyboardEvents(bool fGrab)
         setMouseCoalescingEnabled(false);
 
         /* Register the event callback/hook and grab the keyboard. */
-        ::VBoxCocoaApplication_setCallback (UINT32_MAX, /** @todo fix mask */
-                                            UIMachineView::darwinEventHandlerProc, this);
+        UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */,
+                                                                UIMachineView::darwinEventHandlerProc, this);
 
         ::DarwinGrabKeyboard (false);
     }
     else
     {
         ::DarwinReleaseKeyboard();
-        ::VBoxCocoaApplication_unsetCallback(UINT32_MAX, /** @todo fix mask */
-                                             UIMachineView::darwinEventHandlerProc, this);
+        UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */,
+                                                                  UIMachineView::darwinEventHandlerProc, this);
     }
 }
 
@@ -2366,7 +2366,7 @@ bool UIMachineView::darwinEventHandlerProc(const void *pvCocoaEvent, const void 
 
     /* Check if this is an application key combo. In that case we will not pass
      * the event to the guest, but let the host process it. */
-    if (VBoxCocoaApplication_isApplicationCommand(pvCocoaEvent))
+    if (::darwinIsApplicationCommand(pvCocoaEvent))
         return false;
 
     /* All keyboard class events needs to be handled. */

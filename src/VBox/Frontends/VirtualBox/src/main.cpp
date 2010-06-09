@@ -18,17 +18,17 @@
  */
 
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include "precomp.h"
-# ifdef QT_MAC_USE_COCOA
-#  include "darwin/VBoxCocoaApplication.h"
-# endif
+#include "precomp.h"
+#ifdef Q_WS_MAC
+# include "UICocoaApplication.h"
+#endif /* Q_WS_MAC */
 #else /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxSelectorWnd.h"
 #include "VBoxUtils.h"
-#ifdef QT_MAC_USE_COCOA
-# include "darwin/VBoxCocoaApplication.h"
+#ifdef Q_WS_MAC
+# include "UICocoaApplication.h"
 #endif
 
 #ifdef Q_WS_X11
@@ -324,7 +324,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 #ifdef QT_MAC_USE_COCOA
     /* Instantiate our NSApplication derivative before QApplication
      * forces NSApplication to be instantiated. */
-    VBoxCocoaApplication_sharedApplication();
+    UICocoaApplication::instance();
 #endif
 
     qInstallMsgHandler (QtMessageOutput);

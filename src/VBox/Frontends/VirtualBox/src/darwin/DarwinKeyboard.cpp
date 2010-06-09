@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * Common GUI Library - Darwin Keyboard routines.
  *
@@ -43,7 +44,7 @@
 #include <Carbon/Carbon.h>
 
 #ifndef USE_HID_FOR_MODIFIERS
-# include "VBoxCocoaApplication.h"
+# include "VBoxUtils-darwin.h"
 #endif
 
 
@@ -985,8 +986,8 @@ UInt32 DarwinAdjustModifierMask(UInt32 fModifiers, const void *pvCocoaEvent)
          *         based setup and get rid of all this HID mess.
          */
         AssertPtr(pvCocoaEvent);
-        //VBoxCocoaApplication_printEvent("dbg-adjMods: ", pvCocoaEvent);
-        uint32_t fAltModifiers = VBoxCocoaApplication_getEventModifierFlagsXlated(pvCocoaEvent);
+        //::darwinPrintEvent("dbg-adjMods: ", pvCocoaEvent);
+        uint32_t fAltModifiers = ::darwinEventModifierFlagsXlated(pvCocoaEvent);
 
 #else  /* USE_HID_FOR_MODIFIERS */
         /*

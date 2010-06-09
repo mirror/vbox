@@ -66,10 +66,10 @@ QMap<QString, QString> QIHotKeyEdit::sKeyNames;
 #endif
 
 #ifdef Q_WS_MAC
+# include "UICocoaApplication.h"
 # include "DarwinKeyboard.h"
-# include <Carbon/Carbon.h>
-# include "darwin/VBoxCocoaApplication.h"
 # include "VBoxUtils.h"
+# include <Carbon/Carbon.h>
 #endif
 
 
@@ -140,7 +140,7 @@ QIHotKeyEdit::QIHotKeyEdit (QWidget *aParent) :
 
 #ifdef Q_WS_MAC
     mDarwinKeyModifiers = GetCurrentEventKeyModifiers();
-    ::VBoxCocoaApplication_setCallback (UINT32_MAX, QIHotKeyEdit::darwinEventHandlerProc, this);
+    UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, QIHotKeyEdit::darwinEventHandlerProc, this);
     ::DarwinGrabKeyboard (false /* just modifiers */);
 #endif
 }
@@ -149,7 +149,7 @@ QIHotKeyEdit::~QIHotKeyEdit()
 {
 #ifdef Q_WS_MAC
     ::DarwinReleaseKeyboard();
-    ::VBoxCocoaApplication_unsetCallback (UINT32_MAX, QIHotKeyEdit::darwinEventHandlerProc, this);
+    UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */, QIHotKeyEdit::darwinEventHandlerProc, this);
 #endif
 }
 
