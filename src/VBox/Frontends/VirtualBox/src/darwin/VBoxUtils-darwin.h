@@ -51,7 +51,7 @@ typedef void *NativeViewRef;
 # endif /* QT_MAC_USE_COCOA */
 #endif /* __OBJC__ */
 
-#include "VBoxCocoaHelper.h"
+#include <VBox/VBoxCocoa.h>
 #include <iprt/cdefs.h> /* for RT_C_DECLS_BEGIN/RT_C_DECLS_END & stuff */
 #include <QRect>
 
@@ -99,16 +99,7 @@ uint64_t darwinGetCurrentProcessId();
 bool darwinUnifiedToolbarEvents(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
 void darwinCreateContextMenuEvent(void *pvWin, int x, int y);
 
-/********************************************************************************
- *
- * Event/Keyboard helpers (OS System native)
- *
- ********************************************************************************/
-unsigned long darwinEventModifierFlags(ConstNativeNSEventRef pEvent);
-uint32_t darwinEventModifierFlagsXlated(ConstNativeNSEventRef pEvent);
 bool darwinIsApplicationCommand(ConstNativeNSEventRef pEvent);
-const char *darwinEventTypeName(unsigned long eEvtType);
-void darwinPrintEvent(const char *pszPrefix, ConstNativeNSEventRef pEvent);
 
 RT_C_DECLS_END
 

@@ -44,7 +44,7 @@
 #include <Carbon/Carbon.h>
 
 #ifndef USE_HID_FOR_MODIFIERS
-# include "VBoxUtils-darwin.h"
+# include "CocoaEventHelper.h"
 #endif
 
 
