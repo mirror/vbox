@@ -704,6 +704,7 @@ LOCAL void vboxNetFltSolarisReportInfo(PVBOXNETFLTINS pThis)
         if (vboxNetFltTryRetainBusyNotDisconnected(pThis))
         {
             Assert(pThis->pSwitchPort);
+            LogFlow((DEVICE_NAME ":vboxNetFltSolarisInitVNIC phys mac %.6Rhxs\n", &pThis->u.s.MacAddr));
             pThis->pSwitchPort->pfnReportMacAddress(pThis->pSwitchPort, &pThis->u.s.MacAddr);
             pThis->pSwitchPort->pfnReportPromiscuousMode(pThis->pSwitchPort, false); /** @todo Promisc */
             pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, 0, INTNETTRUNKDIR_WIRE | INTNETTRUNKDIR_HOST);
@@ -766,7 +767,6 @@ LOCAL int vboxNetFltSolarisInitVNIC(PVBOXNETFLTINS pThis, PVBOXNETFLTVNIC pVNIC)
                 if (RT_LIKELY(hLowerMac))
                 {
                     mac_unicast_primary_get(hLowerMac, (uint8_t *)pThis->u.s.MacAddr.au8);
-                    LogRel((DEVICE_NAME ":vboxNetFltSolarisInitVNIC phys mac %.6Rhxs\n", &pThis->u.s.MacAddr));
                     vboxNetFltSolarisReportInfo(pThis);
                 }
                 else
