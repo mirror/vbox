@@ -18,40 +18,35 @@
 #ifndef __renderspu_cocoa_helper_h
 #define __renderspu_cocoa_helper_h
 
-#ifdef __OBJC__
-# import <Cocoa/Cocoa.h>
-typedef NSView *NativeViewRef;
-typedef NSOpenGLContext *NativeGLCtxRef;
-#else /* __OBJC__ */
-typedef void *NativeViewRef;
-typedef void *NativeGLCtxRef;
-#endif /* __OBJC__ */
-
+#include <VBox/VBoxCocoa.h>
 #include <iprt/cdefs.h>
 #include <OpenGL/OpenGL.h>
 
 RT_C_DECLS_BEGIN
 
+ADD_COCOA_NATIVE_REF(NSView);
+ADD_COCOA_NATIVE_REF(NSOpenGLContext);
+
 /* OpenGL context management */
-void cocoaGLCtxCreate(NativeGLCtxRef *ppCtx, GLbitfield fVisParams);
-void cocoaGLCtxDestroy(NativeGLCtxRef pCtx);
+void cocoaGLCtxCreate(NativeNSOpenGLContextRef *ppCtx, GLbitfield fVisParams);
+void cocoaGLCtxDestroy(NativeNSOpenGLContextRef pCtx);
 
 /* View management */
-void cocoaViewCreate(NativeViewRef *ppView, NativeViewRef pParentView, GLbitfield fVisParams);
-void cocoaViewReparent(NativeViewRef pView, NativeViewRef pParentView);
-void cocoaViewDestroy(NativeViewRef pView);
-void cocoaViewDisplay(NativeViewRef pView);
-void cocoaViewShow(NativeViewRef pView, GLboolean fShowIt);
-void cocoaViewSetPosition(NativeViewRef pView, NativeViewRef pParentView, int x, int y);
-void cocoaViewSetSize(NativeViewRef pView, int w, int h);
-void cocoaViewGetGeometry(NativeViewRef pView, int *pX, int *pY, int *pW, int *pH);
+void cocoaViewCreate(NativeNSViewRef *ppView, NativeNSViewRef pParentView, GLbitfield fVisParams);
+void cocoaViewReparent(NativeNSViewRef pView, NativeNSViewRef pParentView);
+void cocoaViewDestroy(NativeNSViewRef pView);
+void cocoaViewDisplay(NativeNSViewRef pView);
+void cocoaViewShow(NativeNSViewRef pView, GLboolean fShowIt);
+void cocoaViewSetPosition(NativeNSViewRef pView, NativeNSViewRef pParentView, int x, int y);
+void cocoaViewSetSize(NativeNSViewRef pView, int w, int h);
+void cocoaViewGetGeometry(NativeNSViewRef pView, int *pX, int *pY, int *pW, int *pH);
 
-void cocoaViewMakeCurrentContext(NativeViewRef pView, NativeGLCtxRef pCtx);
-void cocoaViewSetVisibleRegion(NativeViewRef pView, GLint cRects, GLint* paRects);
+void cocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx);
+void cocoaViewSetVisibleRegion(NativeNSViewRef pView, GLint cRects, GLint* paRects);
 
 /* OpenGL wrapper */
-void cocoaFlush();
-void cocoaFinish();
+void cocoaFlush(void);
+void cocoaFinish(void);
 void cocoaBindFramebufferEXT(GLenum target, GLuint framebuffer);
 
 RT_C_DECLS_END

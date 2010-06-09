@@ -35,7 +35,8 @@ typedef void *Native##CocoaClass##Ref; \
 typedef const void *ConstNative##CocoaClass##Ref
 #endif /* __OBJC__ */
 
-#ifdef __OBJC__
+/* Check for OBJC++ */
+#if defined(__OBJC__) && defined (__cplusplus)
 
 /* Global includes */
 #import <Foundation/NSAutoreleasePool.h>

@@ -99,9 +99,9 @@ typedef struct {
     RgnHandle hVisibleRegion;
     /* unsigned long context_ptr; */
 # else
-    NativeViewRef window;
-    NativeViewRef nativeWindow; /**< for render_to_app_window */
-    NativeGLCtxRef *currentCtx;
+    NativeNSViewRef window;
+    NativeNSViewRef nativeWindow; /**< for render_to_app_window */
+    NativeNSOpenGLContextRef *currentCtx;
 # endif
 #elif defined(GLX)
     Window window;
@@ -133,7 +133,7 @@ typedef struct _ContextInfo {
 # ifndef VBOX_WITH_COCOA_QT
     AGLContext context;
 # else
-    NativeGLCtxRef context;
+    NativeNSOpenGLContextRef context;
 # endif
 #elif defined(GLX)
     GLXContext context;
