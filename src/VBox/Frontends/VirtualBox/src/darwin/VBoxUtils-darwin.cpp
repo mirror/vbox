@@ -16,7 +16,7 @@
  */
 
 #include "VBoxUtils-darwin.h"
-#include "VBoxCocoaApplication.h"
+#include "UICocoaApplication.h"
 
 #include <iprt/mem.h>
 
@@ -303,12 +303,12 @@ CGImageRef darwinToCGImageRef (const char *aSource)
 
 void darwinRegisterForUnifiedToolbarContextMenuEvents(QMainWindow *pWindow)
 {
-    ::VBoxCocoaApplication_setCallback(UINT32_MAX, ::darwinUnifiedToolbarEvents, pWindow);
+    UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(3) /* NSRightMouseDown */, ::darwinUnifiedToolbarEvents, pWindow);
 }
 
 void darwinUnregisterForUnifiedToolbarContextMenuEvents(QMainWindow *pWindow)
 {
-    ::VBoxCocoaApplication_unsetCallback(UINT32_MAX, ::darwinUnifiedToolbarEvents, pWindow);
+    UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(3) /* NSRightMouseDown */, ::darwinUnifiedToolbarEvents, pWindow);
 }
 
 void darwinCreateContextMenuEvent(void *pvUser, int x, int y)

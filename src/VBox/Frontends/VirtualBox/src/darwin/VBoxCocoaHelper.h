@@ -21,15 +21,19 @@
 
 /* Macro which add a typedef of the given Cocoa class in an appropriate form
  * for the current context. This means void* in the C/CPP context and
- * NSWhatever* in the ObjC/ObjCPP context. Use NativeNSWhateverRef when you
- * reference the Cocoa type somewhere. The use of this prevents extensive
- * casting of void* to the right type in the Cocoa context. */
+ * NSWhatever* in the ObjC/ObjCPP context. Use
+ * NativeNSWhateverRef/ConstNativeNSWhateverRef when you reference the Cocoa
+ * type somewhere. The use of this prevents extensive casting of void* to the
+ * right type in the Cocoa context. */
 #ifdef __OBJC__
 #define ADD_COCOA_NATIVE_REF(CocoaClass) \
 @class CocoaClass; \
-typedef CocoaClass *Native##CocoaClass##Ref
+typedef CocoaClass *Native##CocoaClass##Ref; \
+typedef const CocoaClass *ConstNative##CocoaClass##Ref
 #else /* __OBJC__ */
-#define ADD_COCOA_NATIVE_REF(CocoaClass) typedef void *Native##CocoaClass##Ref
+#define ADD_COCOA_NATIVE_REF(CocoaClass) \
+typedef void *Native##CocoaClass##Ref; \
+typedef const void *ConstNative##CocoaClass##Ref
 #endif /* __OBJC__ */
 
 #ifdef __OBJC__
