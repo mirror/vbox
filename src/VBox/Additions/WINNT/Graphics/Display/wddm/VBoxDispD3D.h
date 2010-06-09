@@ -61,6 +61,12 @@ typedef struct VBOXWDDMDISP_CONTEXT
     D3DDDICB_CREATECONTEXT ContextInfo;
 } VBOXWDDMDISP_CONTEXT, *PVBOXWDDMDISP_CONTEXT;
 
+typedef struct VBOXWDDMDISP_STREAMSOURCEUM
+{
+    CONST VOID* pvBuffer;
+    UINT cbStride;
+} VBOXWDDMDISP_STREAMSOURCEUM, *PVBOXWDDMDISP_STREAMSOURCEUM;
+
 typedef struct VBOXWDDMDISP_DEVICE
 {
     HANDLE hDevice;
@@ -72,6 +78,7 @@ typedef struct VBOXWDDMDISP_DEVICE
     UINT cbCmdBuffer;
     D3DDDI_CREATEDEVICEFLAGS fFlags;
     HWND hWnd;
+    VBOXWDDMDISP_STREAMSOURCEUM aStreamSourceUm[16];
     IDirect3DDevice9 *pDevice9If;
     /* need to cache the ViewPort data because IDirect3DDevice9::SetViewport
      * is split into two calls : SetViewport & SetZRange */

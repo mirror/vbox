@@ -38,7 +38,7 @@
 # define VBOXWDDMDISP_DEBUG
 #endif
 
-#ifndef DEBUG_misha
+#if 0
 # ifdef Assert
 #  undef Assert
 #  define Assert(_a) do{}while(0)
