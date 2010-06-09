@@ -486,7 +486,7 @@ BLDDIRS += $(foreach d,\
 SOLARIS_TAR_GZ_FILES := \
 	$(PKG_FILENAME).pkg \
 	$(if $(VBOX_WITH_SOLARIS_VBI),$(VBIPKG_FILENAME).pkg,) \
-	LICENSE \
+	$(if $(VBOX_OSE),,LICENSE) \
 	autoresponse \
 	ReadMe.txt
 
