@@ -320,7 +320,7 @@ endif # real linux
 ifeq ($(KBUILD_TARGET),darwin)
 # Leopard (x86) and Snow Leopard (x86/amd64)
 SYSMODS += VBoxDrv
-VBoxDrv_TEMPLATE    = VBOXR0DRV$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86",OSX105,)
+VBoxDrv_TEMPLATE    = VBOXR0DRV
 VBoxDrv_INST        = $(INST_VBOXDRV)Contents/MacOS/
 VBoxDrv_DEFS       := VBOX_WITH_HOST_VMX IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxDrv_DEFS.debug  = DEBUG_DARWIN_GIP
