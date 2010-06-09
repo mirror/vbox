@@ -1233,7 +1233,7 @@ VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
  */
 VMMR0DECL(int)   HWACCMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    STAM_COUNTER_INC(&pVCpu->StatFpu64SwitchBack);
+    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFpu64SwitchBack);
     if (pVM->hwaccm.s.vmx.fSupported)
         return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnSaveGuestFPU64, 0, NULL);
 
@@ -1250,7 +1250,7 @@ VMMR0DECL(int)   HWACCMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 VMMR0DECL(int)   HWACCMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    STAM_COUNTER_INC(&pVCpu->StatDebug64SwitchBack);
+    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatDebug64SwitchBack);
     if (pVM->hwaccm.s.vmx.fSupported)
         return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hwaccm.s.pfnSaveGuestDebug64, 0, NULL);
 
