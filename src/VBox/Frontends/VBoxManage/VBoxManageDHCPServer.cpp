@@ -51,7 +51,7 @@ typedef enum enMainOpCodes
 {
     OP_ADD = 1000,
     OP_REMOVE,
-    OP_MODIFY,
+    OP_MODIFY
 } OPCODE;
 
 static const RTGETOPTDEF g_aDHCPIPOptions[]
