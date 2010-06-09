@@ -191,7 +191,7 @@ typedef struct VBOXNETFLTINS
             bool fReportedInfo;
 #  else
             /** Pointer to the bound IPv4 stream. */
-            struct vboxnetflt_stream_t * volatile pvIp4Stream;
+            struct vboxnetflt_stream_t * volatile pIp4Stream;
             /** Pointer to the bound IPv6 stream. */
             struct vboxnetflt_stream_t * volatile pIp6Stream;
             /** Pointer to the bound ARP stream. */
