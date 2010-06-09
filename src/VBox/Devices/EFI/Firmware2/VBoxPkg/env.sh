@@ -104,20 +104,14 @@ echo "BUILD_RULE_CONF = Conf/build_rule.txt" >> $TARGET_FILE
 
 export IASL_BIN=$PATH_DEVTOOLS/$BUILD_PLATFORM.$BUILD_PLATFORM_ARCH/bin/iasl
 
-SVN_TOOL_URL=https://edk2-buildtools.svn.sourceforge.net/svnroot/edk2-buildtools/trunk/BaseTools
-
-if [ ! -d Conf/BaseToolsSource ]
-then
-    svn co --username=guest --password=guest $SVN_TOOL_URL Conf/BaseToolsSource
-    pushd Conf/BaseToolsSource
-    make
-    popd
-fi
 [ ! -d VBoxPkg/Include/VBox ] && ln -s $PATH_DEVTOOLS/../include/VBox VBoxPkg/Include/VBox
 [ ! -d VBoxPkg/Include/iprt ] && ln -s $PATH_DEVTOOLS/../include/iprt VBoxPkg/Include/iprt
 [ ! -f VBoxPkg/Include/version-generated.h ] && ln -s $PATH_DEVTOOLS/../out/$BUILD_PLATFORM.$BUILD_PLATFORM_ARCH/$BUILD_TYPE/version-generated.h VBoxPkg/Include/version-generated.h
 [ ! -f VBoxPkg/Include/product-generated.h ] && ln -s $PATH_DEVTOOLS/../out/$BUILD_PLATFORM.$BUILD_PLATFORM_ARCH/$BUILD_TYPE/product-generated.h VBoxPkg/Include/product-generated.h
 [ ! -f VBoxPkg/VBoxPUELLogo/puel_logo.bmp ] && ln -s $PATH_DEVTOOLS/../src/VBox/Devices/Graphics/BIOS/puel_logo.bmp VBoxPkg/VBoxPUELLogo/puel_logo.bmp
+
+# Tools should be ready at this point.
+export EDK_TOOLS_PATH=$WORKSPACE/BaseTools
 . BaseTools/BuildEnv
 
 if [ -z "$VBOXPKG_ENV_NON_INTERECTIVE" ]
