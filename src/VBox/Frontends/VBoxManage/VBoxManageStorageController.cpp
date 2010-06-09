@@ -147,15 +147,16 @@ int handleStorageAttach(HandlerArg *a)
             }
         }
     }
-
-    if (   FAILED(rc)
-        || !pszCtl
-        || port == ~0U
-        || device == ~0U)
-    {
-        errorGetOpt(USAGE_STORAGEATTACH, c, &ValueUnion);
+    
+    if (FAILED(rc))
         return 1;
-    }
+
+    if (!pszCtl)
+        return errorSyntax(USAGE_STORAGEATTACH, "Storage controller name not specified");
+    if (port == ~0U)
+        return errorSyntax(USAGE_STORAGEATTACH, "Port not specified");
+    if (device == ~0U)
+        return errorSyntax(USAGE_STORAGEATTACH, "Device not specified");
 
     /* get the virtualbox system properties */
     CHECK_ERROR_RET(a->virtualBox, COMGETTER(SystemProperties)(systemProperties.asOutParam()), 1);
@@ -768,7 +769,7 @@ int handleStorageController(HandlerArg *a)
     {
         /* it's important to always close sessions */
         a->session->Close();
-        errorSyntax(USAGE_STORAGECONTROLLER, "Storage Controller Name not specified\n");
+        errorSyntax(USAGE_STORAGECONTROLLER, "Storage controller name not specified\n");
         return 1;
     }
 
