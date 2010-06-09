@@ -191,7 +191,7 @@ int pdmacFileAioMgrAddEndpoint(PPDMACEPFILEMGR pAioMgr, PPDMASYNCCOMPLETIONENDPO
 
     ASMAtomicWritePtr(&pAioMgr->BlockingEventData.AddEndpoint.pEndpoint, pEndpoint);
     rc = pdmacFileAioMgrWaitForBlockingEvent(pAioMgr, PDMACEPFILEAIOMGRBLOCKINGEVENT_ADD_ENDPOINT);
-    ASMAtomicWritePtr(&pAioMgr->BlockingEventData.AddEndpoint.pEndpoint, NULL);
+    ASMAtomicWritePtrVoid((void * volatile *)&pAioMgr->BlockingEventData.AddEndpoint.pEndpoint, NULL);
 
     RTCritSectLeave(&pAioMgr->CritSectBlockingEvent);
 
@@ -207,7 +207,7 @@ static int pdmacFileAioMgrRemoveEndpoint(PPDMACEPFILEMGR pAioMgr, PPDMASYNCCOMPL
 
     ASMAtomicWritePtr(&pAioMgr->BlockingEventData.RemoveEndpoint.pEndpoint, pEndpoint);
     rc = pdmacFileAioMgrWaitForBlockingEvent(pAioMgr, PDMACEPFILEAIOMGRBLOCKINGEVENT_REMOVE_ENDPOINT);
-    ASMAtomicWritePtr(&pAioMgr->BlockingEventData.RemoveEndpoint.pEndpoint, NULL);
+    ASMAtomicWritePtrVoid((void * volatile *)&pAioMgr->BlockingEventData.RemoveEndpoint.pEndpoint, NULL);
 
     RTCritSectLeave(&pAioMgr->CritSectBlockingEvent);
 
@@ -223,7 +223,7 @@ static int pdmacFileAioMgrCloseEndpoint(PPDMACEPFILEMGR pAioMgr, PPDMASYNCCOMPLE
 
     ASMAtomicWritePtr(&pAioMgr->BlockingEventData.CloseEndpoint.pEndpoint, pEndpoint);
     rc = pdmacFileAioMgrWaitForBlockingEvent(pAioMgr, PDMACEPFILEAIOMGRBLOCKINGEVENT_CLOSE_ENDPOINT);
-    ASMAtomicWritePtr(&pAioMgr->BlockingEventData.CloseEndpoint.pEndpoint, NULL);
+    ASMAtomicWritePtrVoid((void * volatile *)&pAioMgr->BlockingEventData.CloseEndpoint.pEndpoint, NULL);
 
     RTCritSectLeave(&pAioMgr->CritSectBlockingEvent);
 
