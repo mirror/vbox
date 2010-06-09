@@ -1898,9 +1898,9 @@ static void ssmR3StrmPutFreeBuf(PSSMSTRM pStrm, PSSMSTRMBUF pBuf)
 {
     for (;;)
     {
-        PSSMSTRMBUF pCurFreeHead = (PSSMSTRMBUF)ASMAtomicUoReadPtr((void * volatile *)&pStrm->pFree);
-        ASMAtomicUoWritePtr((void * volatile *)&pBuf->pNext, pCurFreeHead);
-        if (ASMAtomicCmpXchgPtr((void * volatile *)&pStrm->pFree, pBuf, pCurFreeHead))
+        PSSMSTRMBUF pCurFreeHead = ASMAtomicUoReadPtrT(&pStrm->pFree, PSSMSTRMBUF);
+        ASMAtomicUoWritePtr(&pBuf->pNext, pCurFreeHead);
+        if (ASMAtomicCmpXchgPtr(&pStrm->pFree, pBuf, pCurFreeHead))
         {
             int rc = RTSemEventSignal(pStrm->hEvtFree);
             AssertRC(rc);
@@ -1922,7 +1922,7 @@ static PSSMSTRMBUF ssmR3StrmGetFreeBuf(PSSMSTRM pStrm)
 {
     for (;;)
     {
-        PSSMSTRMBUF pMine = (PSSMSTRMBUF)ASMAtomicUoReadPtr((void * volatile *)&pStrm->pFree);
+        PSSMSTRMBUF pMine = ASMAtomicUoReadPtrT(&pStrm->pFree, PSSMSTRMBUF);
         if (!pMine)
         {
             if (pStrm->fTerminating)
@@ -1943,7 +1943,7 @@ static PSSMSTRMBUF ssmR3StrmGetFreeBuf(PSSMSTRM pStrm)
             continue;
         }
 
-        if (ASMAtomicCmpXchgPtr((void * volatile *)&pStrm->pFree, pMine->pNext, pMine))
+        if (ASMAtomicCmpXchgPtr(&pStrm->pFree, pMine->pNext, pMine))
         {
             pMine->offStream    = UINT64_MAX;
             pMine->cb           = 0;
@@ -1967,9 +1967,9 @@ static void ssmR3StrmPutBuf(PSSMSTRM pStrm, PSSMSTRMBUF pBuf)
 {
     for (;;)
     {
-        PSSMSTRMBUF pCurHead = (PSSMSTRMBUF)ASMAtomicUoReadPtr((void * volatile *)&pStrm->pHead);
-        ASMAtomicUoWritePtr((void * volatile *)&pBuf->pNext, pCurHead);
-        if (ASMAtomicCmpXchgPtr((void * volatile *)&pStrm->pHead, pBuf, pCurHead))
+        PSSMSTRMBUF pCurHead = ASMAtomicUoReadPtrT(&pStrm->pHead, PSSMSTRMBUF);
+        ASMAtomicUoWritePtr(&pBuf->pNext, pCurHead);
+        if (ASMAtomicCmpXchgPtr(&pStrm->pHead, pBuf, pCurHead))
         {
             int rc = RTSemEventSignal(pStrm->hEvtHead);
             AssertRC(rc);
@@ -2020,7 +2020,7 @@ static PSSMSTRMBUF ssmR3StrmGetBuf(PSSMSTRM pStrm)
             return pMine;
         }
 
-        pMine = (PSSMSTRMBUF)ASMAtomicXchgPtr((void * volatile *)&pStrm->pHead, NULL);
+        pMine = ASMAtomicXchgPtrT(&pStrm->pHead, NULL, PSSMSTRMBUF);
         if (pMine)
             pStrm->pPending = ssmR3StrmReverseList(pMine);
         else
@@ -2116,7 +2116,7 @@ static int ssmR3StrmWriteBuffers(PSSMSTRM pStrm)
     /*
      * Grab the pending list and write it out.
      */
-    PSSMSTRMBUF pHead = (PSSMSTRMBUF)ASMAtomicXchgPtr((void * volatile *)&pStrm->pHead, NULL);
+    PSSMSTRMBUF pHead = ASMAtomicXchgPtrT(&pStrm->pHead, NULL, PSSMSTRMBUF);
     if (!pHead)
         return VINF_SUCCESS;
     pHead = ssmR3StrmReverseList(pHead);
@@ -2822,14 +2822,14 @@ static DECLCALLBACK(int) ssmR3StrmIoThread(RTTHREAD hSelf, void *pvStrm)
 
             if (ASMAtomicReadBool(&pStrm->fTerminating))
             {
-                if (!ASMAtomicReadPtr((void * volatile *)&pStrm->pHead))
+                if (!ASMAtomicReadPtrT(&pStrm->pHead, PSSMSTRMBUF))
                 {
                     Log(("ssmR3StrmIoThread: quitting writing because of pending termination.\n"));
                     break;
                 }
                 Log(("ssmR3StrmIoThread: postponing termination because of pending buffers.\n"));
             }
-            else if (!ASMAtomicReadPtr((void * volatile *)&pStrm->pHead))
+            else if (!ASMAtomicReadPtrT(&pStrm->pHead, PSSMSTRMBUF))
             {
                 rc = RTSemEventWait(pStrm->hEvtHead, RT_INDEFINITE_WAIT);
                 AssertLogRelRC(rc);

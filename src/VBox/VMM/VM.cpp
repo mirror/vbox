@@ -2423,7 +2423,7 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
      */
     for (unsigned i = 0; i < 10; i++)
     {
-        PVMREQ pReqHead = (PVMREQ)ASMAtomicXchgPtr((void * volatile *)&pUVM->vm.s.pReqs, NULL);
+        PVMREQ pReqHead = ASMAtomicXchgPtrT(&pUVM->vm.s.pReqs, NULL, PVMREQ);
         AssertMsg(!pReqHead, ("This isn't supposed to happen! VMR3Destroy caller has to serialize this.\n"));
         if (!pReqHead)
             break;
@@ -2448,7 +2448,7 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
 
         for (unsigned i = 0; i < 10; i++)
         {
-            PVMREQ pReqHead = (PVMREQ)ASMAtomicXchgPtr((void * volatile *)&pUVCpu->vm.s.pReqs, NULL);
+            PVMREQ pReqHead = ASMAtomicXchgPtrT(&pUVCpu->vm.s.pReqs, NULL, PVMREQ);
             AssertMsg(!pReqHead, ("This isn't supposed to happen! VMR3Destroy caller has to serialize this.\n"));
             if (!pReqHead)
                 break;

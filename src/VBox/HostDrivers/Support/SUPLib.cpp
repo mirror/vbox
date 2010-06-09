@@ -507,9 +507,9 @@ SUPR3DECL(int) SUPR3Term(bool fForced)
          */
         if (g_pSUPGlobalInfoPage)
         {
-            ASMAtomicXchgPtr((void * volatile *)&g_pSUPGlobalInfoPage, NULL);
-            ASMAtomicXchgPtr((void * volatile *)&g_pSUPGlobalInfoPageR0, NULL);
-            ASMAtomicXchgSize(&g_HCPhysSUPGlobalInfoPage, NIL_RTHCPHYS);
+            ASMAtomicWritePtr((void * volatile *)&g_pSUPGlobalInfoPage, NULL);
+            ASMAtomicWritePtr((void * volatile *)&g_pSUPGlobalInfoPageR0, NULL);
+            ASMAtomicWriteSize(&g_HCPhysSUPGlobalInfoPage, NIL_RTHCPHYS);
             /* just a little safe guard against threads using the page. */
             RTThreadSleep(50);
         }

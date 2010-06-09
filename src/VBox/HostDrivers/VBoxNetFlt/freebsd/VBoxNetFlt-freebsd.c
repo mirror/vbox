@@ -497,7 +497,7 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, ui
     bool fActive;
     int error;
 
-    ifp = (void *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.ifp);
+    ifp = ASMAtomicUoReadPtrT(&pThis->u.s.ifp, struct ifnet *);
 
     if (fDst & INTNETTRUNKDIR_WIRE)
     {
@@ -567,7 +567,7 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
 
     RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
 
-    ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.ifp, ifp);
+    ASMAtomicUoWritePtr(&pThis->u.s.ifp, ifp);
     pThis->u.s.node = node;
     bcopy(IF_LLADDR(ifp), &pThis->u.s.MacAddr, ETHER_ADDR_LEN);
     ASMAtomicUoWriteBool(&pThis->fDisconnectedFromHost, false);
@@ -610,7 +610,7 @@ bool vboxNetFltOsMaybeRediscovered(PVBOXNETFLTINS pThis)
 {
     struct ifnet *ifp, *ifp0;
 
-    ifp = (struct ifnet *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.ifp);
+    ifp = ASMAtomicUoReadPtrT(&pThis->u.s.ifp, struct ifnet *);
     /*
      * Attempt to check if the interface is still there and re-initialize if
      * something has changed.
@@ -668,8 +668,8 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
 
     Log(("%s: fActive:%d\n", __func__, fActive));
 
-    ifp = (struct ifnet *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.ifp);
-    node = (node_p)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.node);
+    ifp = ASMAtomicUoReadPtrT(&pThis->u.s.ifp, struct ifnet *);
+    node = ASMAtomicUoReadPtrT(&pThis->u.s.node, node_p);
 
     memset(&ifreq, 0, sizeof(struct ifreq));
     /* Activate interface */

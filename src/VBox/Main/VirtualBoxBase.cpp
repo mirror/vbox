@@ -90,10 +90,10 @@ RWLockHandle *VirtualBoxBase::lockHandle() const
         // getLockingClass() is overridden by many subclasses to return
         // one of the locking classes listed at the top of AutoLock.h
         RWLockHandle *objLock = new RWLockHandle(getLockingClass());
-        if (!ASMAtomicCmpXchgPtr ((void * volatile *) &mObjectLock, objLock, NULL))
+        if (!ASMAtomicCmpXchgPtr(&mObjectLock, objLock, NULL))
         {
             delete objLock;
-            objLock = (RWLockHandle *) ASMAtomicReadPtr ((void * volatile *) &mObjectLock);
+            objLock = ASMAtomicReadPtrT(&mObjectLock, RWLockHandle *);
         }
         return objLock;
     }

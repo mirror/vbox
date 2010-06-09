@@ -8087,7 +8087,7 @@ DECLCALLBACK(void) Console::drvStatus_UnitChanged(PPDMILEDCONNECTORS pInterface,
         int rc = pData->pLedPorts->pfnQueryStatusLed(pData->pLedPorts, iLUN, &pLed);
         if (RT_FAILURE(rc))
             pLed = NULL;
-        ASMAtomicXchgPtr((void * volatile *)&pData->papLeds[iLUN - pData->iFirstLUN], pLed);
+        ASMAtomicWritePtr(&pData->papLeds[iLUN - pData->iFirstLUN], pLed);
         Log(("drvStatus_UnitChanged: iLUN=%d pLed=%p\n", iLUN, pLed));
     }
 }
@@ -8122,7 +8122,7 @@ DECLCALLBACK(void) Console::drvStatus_Destruct(PPDMDRVINS pDrvIns)
     {
         unsigned iLed = pData->iLastLUN - pData->iFirstLUN + 1;
         while (iLed-- > 0)
-            ASMAtomicXchgPtr((void * volatile *)&pData->papLeds[iLed], NULL);
+            ASMAtomicWritePtr(&pData->papLeds[iLed], NULL);
     }
 }
 

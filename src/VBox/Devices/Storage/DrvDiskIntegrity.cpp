@@ -489,7 +489,7 @@ static void drvdiskintIoReqRemove(PDRVDISKINTEGRITY pThis, PDRVDISKAIOREQ pIoReq
 
     Assert(pReqActive->pIoReq == pIoReq);
 
-    ASMAtomicXchgPtr((void * volatile *)&pReqActive->pIoReq, NULL);
+    ASMAtomicWritePtr(&pReqActive->pIoReq, NULL);
 }
 
 /**
@@ -519,7 +519,7 @@ static int drvdiskIntIoReqExpiredCheck(RTTHREAD pThread, void *pvUser)
         for (unsigned i = 0; i < RT_ELEMENTS(pThis->apReqActive); i++)
         {
             PDRVDISKAIOREQACTIVE pReqActive = &pThis->apReqActive[i];
-            PDRVDISKAIOREQ pIoReq = (PDRVDISKAIOREQ)ASMAtomicReadPtr((void * volatile *)&pReqActive->pIoReq);
+            PDRVDISKAIOREQ pIoReq = ASMAtomicReadPtrT(&pReqActive->pIoReq, PDRVDISKAIOREQ);
 
             if (   pIoReq
                 && (tsCurr > pReqActive->tsStart)

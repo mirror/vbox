@@ -197,7 +197,8 @@ VMMR0DECL(int) PGMR0PhysAllocateLargeHandyPage(PVM pVM, PVMCPU pVCpu)
  * @param   pRegFrame           Trap register frame.
  * @param   pvFault             The fault address.
  */
-VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault)
+VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr,
+                                              PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault)
 {
     int rc;
 

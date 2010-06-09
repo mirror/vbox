@@ -119,7 +119,7 @@ PPDMACTASKFILE pdmacFileEpGetNewTasks(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
     /*
      * Get pending tasks.
      */
-    pTasks = (PPDMACTASKFILE)ASMAtomicXchgPtr((void * volatile *)&pEndpoint->pTasksNewHead, NULL);
+    pTasks = ASMAtomicXchgPtrT(&pEndpoint->pTasksNewHead, NULL, PPDMACTASKFILE);
 
     /* Reverse the list to process in FIFO order. */
     if (pTasks)
@@ -184,13 +184,13 @@ int pdmacFileAioMgrAddEndpoint(PPDMACEPFILEMGR pAioMgr, PPDMASYNCCOMPLETIONENDPO
     rc = RTCritSectEnter(&pAioMgr->CritSectBlockingEvent);
     AssertRCReturn(rc, rc);
 
-    ASMAtomicWritePtr((void * volatile *)&pAioMgr->BlockingEventData.AddEndpoint.pEndpoint, pEndpoint);
+    ASMAtomicWritePtr(&pAioMgr->BlockingEventData.AddEndpoint.pEndpoint, pEndpoint);
     rc = pdmacFileAioMgrWaitForBlockingEvent(pAioMgr, PDMACEPFILEAIOMGRBLOCKINGEVENT_ADD_ENDPOINT);
 
     RTCritSectLeave(&pAioMgr->CritSectBlockingEvent);
 
     if (RT_SUCCESS(rc))
-        ASMAtomicWritePtr((void * volatile *)&pEndpoint->pAioMgr, pAioMgr);
+        ASMAtomicWritePtr(&pEndpoint->pAioMgr, pAioMgr);
 
     return rc;
 }
@@ -202,7 +202,7 @@ static int pdmacFileAioMgrRemoveEndpoint(PPDMACEPFILEMGR pAioMgr, PPDMASYNCCOMPL
     rc = RTCritSectEnter(&pAioMgr->CritSectBlockingEvent);
     AssertRCReturn(rc, rc);
 
-    ASMAtomicWritePtr((void * volatile *)&pAioMgr->BlockingEventData.RemoveEndpoint.pEndpoint, pEndpoint);
+    ASMAtomicWritePtr(&pAioMgr->BlockingEventData.RemoveEndpoint.pEndpoint, pEndpoint);
     rc = pdmacFileAioMgrWaitForBlockingEvent(pAioMgr, PDMACEPFILEAIOMGRBLOCKINGEVENT_REMOVE_ENDPOINT);
 
     RTCritSectLeave(&pAioMgr->CritSectBlockingEvent);
@@ -217,7 +217,7 @@ static int pdmacFileAioMgrCloseEndpoint(PPDMACEPFILEMGR pAioMgr, PPDMASYNCCOMPLE
     rc = RTCritSectEnter(&pAioMgr->CritSectBlockingEvent);
     AssertRCReturn(rc, rc);
 
-    ASMAtomicWritePtr((void * volatile *)&pAioMgr->BlockingEventData.CloseEndpoint.pEndpoint, pEndpoint);
+    ASMAtomicWritePtr(&pAioMgr->BlockingEventData.CloseEndpoint.pEndpoint, pEndpoint);
     rc = pdmacFileAioMgrWaitForBlockingEvent(pAioMgr, PDMACEPFILEAIOMGRBLOCKINGEVENT_CLOSE_ENDPOINT);
 
     RTCritSectLeave(&pAioMgr->CritSectBlockingEvent);
@@ -246,9 +246,9 @@ int pdmacFileEpAddTask(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMACTASKFILE
     {
         pNext = pEndpoint->pTasksNewHead;
         pTask->pNext = pNext;
-    } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pEndpoint->pTasksNewHead, (void *)pTask, (void *)pNext));
+    } while (!ASMAtomicCmpXchgPtr(&pEndpoint->pTasksNewHead, pTask, pNext));
 
-    pdmacFileAioMgrWakeup((PPDMACEPFILEMGR)ASMAtomicReadPtr((void * volatile *)&pEndpoint->pAioMgr));
+    pdmacFileAioMgrWakeup(ASMAtomicReadPtrT(&pEndpoint->pAioMgr, PPDMACEPFILEMGR));
 
     return VINF_SUCCESS;
 }

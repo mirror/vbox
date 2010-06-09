@@ -307,17 +307,17 @@ static int rtMemCacheGrow(RTMEMCACHEINT *pThis)
                 ASMBitSet(pPage->pbmAlloc, iBit);
 
             /* Make it the hint. */
-            ASMAtomicWritePtr((void * volatile *)&pThis->pPageHint, pPage);
+            ASMAtomicWritePtr(&pThis->pPageHint, pPage);
 
             /* Link the page. */
             PRTMEMCACHEPAGE pPrevPage = pThis->pPageHead;
             if (!pPrevPage)
-                ASMAtomicWritePtr((void * volatile *)&pThis->pPageHead, pPage);
+                ASMAtomicWritePtr(&pThis->pPageHead, pPage);
             else
             {
                 while (pPrevPage->pNext)
                     pPrevPage = pPrevPage->pNext;
-                ASMAtomicWritePtr((void * volatile *)&pPrevPage->pNext, pPage);
+                ASMAtomicWritePtr(&pPrevPage->pNext, pPage);
             }
 
             /* Add it to the page counts. */
@@ -358,19 +358,19 @@ RTDECL(int) RTMemCacheAllocEx(RTMEMCACHE hMemCache, void **ppvObj)
     /*
      * Try grab a free object from the stack.
      */
-    PRTMEMCACHEFREEOBJ pObj = (PRTMEMCACHEFREEOBJ)ASMAtomicUoReadPtr((void * volatile *)&pThis->pFreeTop);
+    PRTMEMCACHEFREEOBJ pObj = ASMAtomicUoReadPtrT(&pThis->pFreeTop, PRTMEMCACHEFREEOBJ);
     if (pObj)
     {
         PRTMEMCACHEFREEOBJ pNext;
         do
         {
-            pNext = (PRTMEMCACHEFREEOBJ)ASMAtomicUoReadPtr((void * volatile *)&pObj->pNext);
-            if (ASMAtomicCmpXchgPtr((void * volatile *)&pThis->pFreeTop, pNext, pObj))
+            pNext = ASMAtomicUoReadPtrT(&pObj->pNext, PRTMEMCACHEFREEOBJ);
+            if (ASMAtomicCmpXchgPtr(&pThis->pFreeTop, pNext, pObj))
             {
                 *ppvObj = pObj;
                 return VINF_SUCCESS;
             }
-            pObj = (PRTMEMCACHEFREEOBJ)ASMAtomicUoReadPtr((void * volatile *)&pThis->pFreeTop);
+            pObj = ASMAtomicUoReadPtrT(&pThis->pFreeTop, PRTMEMCACHEFREEOBJ);
         } while (pObj);
     }
 
@@ -399,7 +399,7 @@ RTDECL(int) RTMemCacheAllocEx(RTMEMCACHE hMemCache, void **ppvObj)
     /*
      * Grab a free object at the page level.
      */
-    PRTMEMCACHEPAGE pPage = (PRTMEMCACHEPAGE)ASMAtomicReadPtr((void * volatile *)&pThis->pPageHint);
+    PRTMEMCACHEPAGE pPage = ASMAtomicReadPtrT(&pThis->pPageHint, PRTMEMCACHEPAGE);
     int32_t iObj = pPage ? rtMemCacheGrabObj(pPage) : -1;
     if (iObj < 0)
     {
@@ -411,7 +411,7 @@ RTDECL(int) RTMemCacheAllocEx(RTMEMCACHE hMemCache, void **ppvObj)
                 if (iObj >= 0)
                 {
                     if (iObj > 0)
-                        ASMAtomicWritePtr((void * volatile *)&pThis->pPageHint, pPage);
+                        ASMAtomicWritePtr(&pThis->pPageHint, pPage);
                     break;
                 }
             }
@@ -510,9 +510,9 @@ RTDECL(void) RTMemCacheFree(RTMEMCACHE hMemCache, void *pvObj)
         PRTMEMCACHEFREEOBJ pNext;
         do
         {
-            pNext = (PRTMEMCACHEFREEOBJ)ASMAtomicUoReadPtr((void * volatile *)&pThis->pFreeTop);
+            pNext = ASMAtomicUoReadPtrT(&pThis->pFreeTop, PRTMEMCACHEFREEOBJ);
             pObj->pNext = pNext;
-        } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pThis->pFreeTop, pObj, pNext));
+        } while (!ASMAtomicCmpXchgPtr(&pThis->pFreeTop, pObj, pNext));
     }
     else
     {

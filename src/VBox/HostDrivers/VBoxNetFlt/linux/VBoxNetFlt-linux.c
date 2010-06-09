@@ -170,7 +170,7 @@ unsigned dev_get_flags(const struct net_device *dev)
 
 #ifdef VBOXNETFLT_WITH_QDISC
 //#define QDISC_LOG(x) printk x
-#define QDISC_LOG(x)
+#define QDISC_LOG(x) do { } while (0)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 20)
 #define QDISC_CREATE(dev, queue, ops, parent) qdisc_create_dflt(dev, ops)
@@ -592,23 +592,23 @@ static void vboxNetFltLinuxQdiscInstall(PVBOXNETFLTINS pThis, struct net_device 
          */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
         pPriv->ppSaved[0] = pDev->qdisc_sleeping;
-        ASMAtomicWritePtr((void * volatile *)&pDev->qdisc_sleeping, pNew);
-        ASMAtomicWritePtr((void * volatile *)&pDev->qdisc, pNew);
+        ASMAtomicWritePtr(&pDev->qdisc_sleeping, pNew);
+        ASMAtomicWritePtr(&pDev->qdisc, pNew);
 #else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
         for (i = 0; i < pDev->num_tx_queues; i++)
         {
             struct netdev_queue *pQueue = netdev_get_tx_queue(pDev, i);
 
             pPriv->ppSaved[i] = pQueue->qdisc_sleeping;
-            ASMAtomicWritePtr((void * volatile *)&pQueue->qdisc_sleeping, pNew);
-            ASMAtomicWritePtr((void * volatile *)&pQueue->qdisc, pNew);
+            ASMAtomicWritePtr(&pQueue->qdisc_sleeping, pNew);
+            ASMAtomicWritePtr(&pQueue->qdisc, pNew);
             if (i)
                 atomic_inc(&pNew->refcnt);
         }
         /* Newer kernels store root qdisc in netdev structure as well. */
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
         pPriv->ppSaved[pDev->num_tx_queues] = pDev->qdisc;
-        ASMAtomicWritePtr((void * volatile *)&pDev->qdisc, pNew);
+        ASMAtomicWritePtr(&pDev->qdisc, pNew);
         atomic_inc(&pNew->refcnt);
 # endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32) */
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
@@ -618,7 +618,7 @@ static void vboxNetFltLinuxQdiscInstall(PVBOXNETFLTINS pThis, struct net_device 
         /* We already have vboxnetflt qdisc, let's use it. */
         pPriv = qdisc_priv(pExisting);
     }
-    ASMAtomicWritePtr((void * volatile *)&pPriv->pVBoxNetFlt, pThis);
+    ASMAtomicWritePtr(&pPriv->pVBoxNetFlt, pThis);
     QDISC_LOG(("vboxNetFltLinuxInstallQdisc: pThis=%p\n", pPriv->pVBoxNetFlt));
 }
 
@@ -630,7 +630,7 @@ static void vboxNetFltLinuxQdiscRemove(PVBOXNETFLTINS pThis, struct net_device *
     PVBOXNETQDISCPRIV pPriv;
     struct Qdisc *pQdisc;
     if (!pDev)
-        pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
+        pDev = ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *);
     if (!VALID_PTR(pDev))
     {
         printk("VBoxNetFlt: Failed to detach qdisc, invalid device pointer: %p\n",
@@ -650,18 +650,16 @@ static void vboxNetFltLinuxQdiscRemove(PVBOXNETFLTINS pThis, struct net_device *
 
     pPriv = qdisc_priv(pQdisc);
     Assert(pPriv->pVBoxNetFlt == pThis);
-    ASMAtomicWritePtr((void * volatile *)&pPriv->pVBoxNetFlt, NULL);
+    ASMAtomicWritePtr(&pPriv->pVBoxNetFlt, NULL);
 
-    QDISC_LOG(("vboxNetFltLinuxQdiscRemove: refcnt=%d num_tx_queues=%d\n", 
+    QDISC_LOG(("vboxNetFltLinuxQdiscRemove: refcnt=%d num_tx_queues=%d\n",
                atomic_read(&pQdisc->refcnt), pDev->num_tx_queues));
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
     /* Play it safe, make sure the qdisc is not being used. */
     if (pPriv->ppSaved[0])
     {
-        ASMAtomicWritePtr((void * volatile *)&pDev->qdisc_sleeping,
-                          pPriv->ppSaved[0]);
-        ASMAtomicWritePtr((void * volatile *)&pDev->qdisc,
-                          pPriv->ppSaved[0]);
+        ASMAtomicWritePtr(&pDev->qdisc_sleeping, pPriv->ppSaved[0]);
+        ASMAtomicWritePtr(&pDev->qdisc, pPriv->ppSaved[0]);
         pPriv->ppSaved[0] = NULL;
         while (QDISC_IS_BUSY(pDev, pQdisc))
             yield();
@@ -674,10 +672,8 @@ static void vboxNetFltLinuxQdiscRemove(PVBOXNETFLTINS pThis, struct net_device *
         if (pPriv->ppSaved[i])
         {
             Assert(pQueue->qdisc_sleeping == pQdisc);
-            ASMAtomicWritePtr((void * volatile *)&pQueue->qdisc_sleeping,
-                              pPriv->ppSaved[i]);
-            ASMAtomicWritePtr((void * volatile *)&pQueue->qdisc, 
-                              pPriv->ppSaved[i]);
+            ASMAtomicWritePtr(&pQueue->qdisc_sleeping, pPriv->ppSaved[i]);
+            ASMAtomicWritePtr(&pQueue->qdisc, pPriv->ppSaved[i]);
             pPriv->ppSaved[i] = NULL;
             while (QDISC_IS_BUSY(pDev, pQdisc))
                 yield();
@@ -686,8 +682,7 @@ static void vboxNetFltLinuxQdiscRemove(PVBOXNETFLTINS pThis, struct net_device *
     }
     /* Newer kernels store root qdisc in netdev structure as well. */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
-    ASMAtomicWritePtr((void * volatile *)&pDev->qdisc, 
-                      pPriv->ppSaved[pDev->num_tx_queues]);
+    ASMAtomicWritePtr(&pDev->qdisc, pPriv->ppSaved[pDev->num_tx_queues]);
     pPriv->ppSaved[pDev->num_tx_queues] = NULL;
     while (QDISC_IS_BUSY(pDev, pQdisc))
         yield();
@@ -911,7 +906,7 @@ static void vboxNetFltLinuxHookDev(PVBOXNETFLTINS pThis, struct net_device *pDev
     pOverride->pVBoxNetFlt          = pThis;
 
     RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp); /* (this isn't necessary, but so what) */
-    ASMAtomicXchgPtr((void * volatile *)&pDev->netdev_ops, pOverride);
+    ASMAtomicWritePtr((void * volatile *)&pDev->netdev_ops, pOverride);
     RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 }
 
@@ -929,7 +924,7 @@ static void vboxNetFltLinuxUnhookDev(PVBOXNETFLTINS pThis, struct net_device *pD
 
     RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     if (!pDev)
-        pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
+        pDev = ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *);
     if (VALID_PTR(pDev))
     {
         pOverride = (PVBOXNETDEVICEOPSOVERRIDE)pDev->netdev_ops;
@@ -938,7 +933,7 @@ static void vboxNetFltLinuxUnhookDev(PVBOXNETFLTINS pThis, struct net_device *pD
             &&  VALID_PTR(pOverride->pOrgOps)
            )
         {
-            ASMAtomicXchgPtr((void * volatile *)&pDev->netdev_ops, pOverride->pOrgOps);
+            ASMAtomicWritePtr((void * volatile *)&pDev->netdev_ops, pOverride->pOrgOps);
             ASMAtomicWriteU32(&pOverride->u32Magic, 0);
         }
         else
@@ -989,7 +984,7 @@ DECLINLINE(struct net_device *) vboxNetFltLinuxRetainNetDev(PVBOXNETFLTINS pThis
     Log(("vboxNetFltLinuxRetainNetDev - done\n"));
     return pDev;
 #else
-    return (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
+    return ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *);
 #endif
 }
 
@@ -1059,7 +1054,7 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
     /*
      * Allocate a packet and copy over the data.
      */
-    pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
+    pDev = ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *);
     pPkt = dev_alloc_skb(pSG->cbTotal + NET_IP_ALIGN);
     if (RT_UNLIKELY(!pPkt))
     {
@@ -1281,7 +1276,7 @@ static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
         return 0;
 
     pThis = VBOX_FLT_PT_TO_INST(pPacketType);
-    pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
+    pDev = ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *);
     if (pThis->u.s.pDev != pSkbDev)
     {
         Log(("vboxNetFltLinuxPacketHandler: Devices do not match, pThis may be wrong! pThis=%p\n", pThis));
@@ -1819,7 +1814,7 @@ static void vboxNetFltLinuxReportNicGsoCapabilities(PVBOXNETFLTINS pThis)
         RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
 
         pSwitchPort = pThis->pSwitchPort; /* this doesn't need to be here, but it doesn't harm. */
-        pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
+        pDev = ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *);
         if (pDev)
             fFeatures = pDev->features;
         else
@@ -1886,11 +1881,11 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
     dev_hold(pDev);
 
     RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
-    ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pDev, pDev);
+    ASMAtomicUoWritePtr(&pThis->u.s.pDev, pDev);
     RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     Log(("vboxNetFltLinuxAttachToInterface: Device %p(%s) retained. ref=%d\n", pDev, pDev->name, atomic_read(&pDev->refcnt)));
-    Log(("vboxNetFltLinuxAttachToInterface: Got pDev=%p pThis=%p pThis->u.s.pDev=%p\n", pDev, pThis, ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev)));
+    Log(("vboxNetFltLinuxAttachToInterface: Got pDev=%p pThis=%p pThis->u.s.pDev=%p\n", pDev, pThis, ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *)));
 
     /* Get the mac address while we still have a valid net_device reference. */
     memcpy(&pThis->u.s.MacAddr, pDev->dev_addr, sizeof(pThis->u.s.MacAddr));
@@ -1915,7 +1910,7 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
      * the device notification handle.
      */
     RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
-    pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
+    pDev = ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *);
     if (pDev)
     {
         ASMAtomicUoWriteBool(&pThis->fDisconnectedFromHost, false);
@@ -1950,7 +1945,7 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
         vboxNetFltLinuxQdiscRemove(pThis, pDev);
 #endif /* VBOXNETFLT_WITH_QDISC */
         RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
-        ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pDev, NULL);
+        ASMAtomicUoWritePtr(&pThis->u.s.pDev, NULL);
         RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
         dev_put(pDev);
         Log(("vboxNetFltLinuxAttachToInterface: Device %p(%s) released. ref=%d\n", pDev, pDev->name, atomic_read(&pDev->refcnt)));
@@ -1977,7 +1972,7 @@ static int vboxNetFltLinuxUnregisterDevice(PVBOXNETFLTINS pThis, struct net_devi
     RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     ASMAtomicWriteBool(&pThis->u.s.fRegistered, false);
     ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, true);
-    ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pDev, NULL);
+    ASMAtomicUoWritePtr(&pThis->u.s.pDev, NULL);
     RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     dev_remove_pack(&pThis->u.s.PacketType);
@@ -2067,7 +2062,7 @@ static int vboxNetFltLinuxNotifierCallback(struct notifier_block *self, unsigned
     int                 rc    = NOTIFY_OK;
 
     Log(("VBoxNetFlt: got event %s(0x%lx) on %s, pDev=%p pThis=%p pThis->u.s.pDev=%p\n",
-         vboxNetFltLinuxGetNetDevEventName(ulEventType), ulEventType, pDev->name, pDev, pThis, ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev)));
+         vboxNetFltLinuxGetNetDevEventName(ulEventType), ulEventType, pDev->name, pDev, pThis, ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *)));
     if (    ulEventType == NETDEV_REGISTER
         && !strcmp(pDev->name, pThis->szName))
     {
@@ -2075,7 +2070,7 @@ static int vboxNetFltLinuxNotifierCallback(struct notifier_block *self, unsigned
     }
     else
     {
-        pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
+        pDev = ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *);
         if (pDev == ptr)
         {
             switch (ulEventType)
@@ -2110,11 +2105,10 @@ bool vboxNetFltOsMaybeRediscovered(PVBOXNETFLTINS pThis)
 
 int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, uint32_t fDst)
 {
-    NOREF(pvIfData);
-
     struct net_device * pDev;
     int err;
     int rc = VINF_SUCCESS;
+    NOREF(pvIfData);
 
     LogFlow(("vboxNetFltPortOsXmit: pThis=%p (%s)\n", pThis, pThis->szName));
 
@@ -2273,7 +2267,7 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
      *        ways. */
 
     RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
-    pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
+    pDev = ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *);
     fRegistered = ASMAtomicUoReadBool(&pThis->u.s.fRegistered);
     RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
