@@ -1543,12 +1543,17 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
 #endif
         hr = pDevice->pDevice9If->DrawPrimitiveUP(pData->PrimitiveType,
                                   pData->PrimitiveCount,
-                                  pDevice->aStreamSourceUm[0].pvBuffer,
+                                  ((uint8_t*)pDevice->aStreamSourceUm[0].pvBuffer) + pData->VStart * pDevice->aStreamSourceUm[0].cbStride,
                                   pDevice->aStreamSourceUm[0].cbStride);
         Assert(hr == S_OK);
     }
     else
     {
+        AssertBreakpoint();
+        hr = pDevice->pDevice9If->DrawPrimitive(pData->PrimitiveType,
+                                                pData->VStart,
+                                                pData->PrimitiveCount);
+#if 0
         IDirect3DVertexDeclaration9* pDecl;
         hr = pDevice->pDevice9If->GetVertexDeclaration(&pDecl);
         Assert(hr == S_OK);
@@ -1754,6 +1759,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
                 Assert(hr == S_OK);
             }
         }
+#endif
     }
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
