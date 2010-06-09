@@ -985,8 +985,7 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv
                     {
                         pThis->enmState = LSILOGICSTATE_RESET;
 
-                        /* Reset interrupt states. */
-                        pThis->uInterruptMask   = 0;
+                        /* Reset interrupt status. */
                         pThis->uInterruptStatus = 0;
                         lsilogicUpdateInterrupt(pThis);
 
