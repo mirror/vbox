@@ -158,7 +158,7 @@ typedef struct VBOXNETFLTINS
             /** @name Linux instance data
              * @{ */
             /** Pointer to the device. */
-            struct net_device volatile *pDev;
+            struct net_device * volatile pDev;
             /** Whether we've successfully put the interface into to promiscuous mode.
              * This is for dealing with the ENETDOWN case. */
             bool volatile fPromiscuousSet;
