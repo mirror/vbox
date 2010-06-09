@@ -1530,209 +1530,229 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
     Assert(pDevice);
     Assert(pDevice->pDevice9If);
     Assert(!pFlagBuffer);
-    IDirect3DVertexDeclaration9* pDecl;
-    HRESULT hr = pDevice->pDevice9If->GetVertexDeclaration(&pDecl);
-    Assert(hr == S_OK);
-    if (hr == S_OK)
+    HRESULT hr = S_OK;
+
+    if (!pDevice->cStreamSources)
     {
-        Assert(pDecl);
-        D3DVERTEXELEMENT9 aDecls9[MAXD3DDECLLENGTH];
-        UINT cDecls9 = 0;
-        hr = pDecl->GetDeclaration(aDecls9, &cDecls9);
+        Assert(pDevice->aStreamSourceUm[0].pvBuffer);
+#ifdef DEBUG
+        for (UINT i = 1; i < RT_ELEMENTS(pDevice->aStreamSourceUm); ++i)
+        {
+            Assert(!pDevice->aStreamSourceUm[i].pvBuffer);
+        }
+#endif
+        hr = pDevice->pDevice9If->DrawPrimitiveUP(pData->PrimitiveType,
+                                  pData->PrimitiveCount,
+                                  pDevice->aStreamSourceUm[0].pvBuffer,
+                                  pDevice->aStreamSourceUm[0].cbStride);
+        Assert(hr == S_OK);
+    }
+    else
+    {
+        IDirect3DVertexDeclaration9* pDecl;
+        hr = pDevice->pDevice9If->GetVertexDeclaration(&pDecl);
         Assert(hr == S_OK);
         if (hr == S_OK)
         {
-            Assert(cDecls9);
-            for (UINT i = 0; i < cDecls9 - 1 /* the last one is D3DDECL_END */; ++i)
+            Assert(pDecl);
+            D3DVERTEXELEMENT9 aDecls9[MAXD3DDECLLENGTH];
+            UINT cDecls9 = 0;
+            hr = pDecl->GetDeclaration(aDecls9, &cDecls9);
+            Assert(hr == S_OK);
+            if (hr == S_OK)
             {
-                D3DVERTEXELEMENT9 *pDecl9 = &aDecls9[i];
-                Assert(pDecl9->Stream < RT_ELEMENTS(pDevice->aStreamSourceUm) || pDecl9->Stream == 0xff);
-                if (pDecl9->Stream != 0xff)
+                Assert(cDecls9);
+                for (UINT i = 0; i < cDecls9 - 1 /* the last one is D3DDECL_END */; ++i)
                 {
-                    PVBOXWDDMDISP_STREAMSOURCEUM pStrSrc = &pDevice->aStreamSourceUm[pDecl9->Stream];
-                    if (pStrSrc->pvBuffer)
+                    D3DVERTEXELEMENT9 *pDecl9 = &aDecls9[i];
+                    Assert(pDecl9->Stream < RT_ELEMENTS(pDevice->aStreamSourceUm) || pDecl9->Stream == 0xff);
+                    if (pDecl9->Stream != 0xff)
                     {
-                        WORD iStream = pDecl9->Stream;
-                        D3DVERTEXELEMENT9 *pLastCDecl9 = pDecl9;
-                        for (UINT j = i+1; j < cDecls9 - 1 /* the last one is D3DDECL_END */; ++j)
+                        PVBOXWDDMDISP_STREAMSOURCEUM pStrSrc = &pDevice->aStreamSourceUm[pDecl9->Stream];
+                        if (pStrSrc->pvBuffer)
                         {
-                            pDecl9 = &aDecls9[j];
-                            if (iStream == pDecl9->Stream)
+                            WORD iStream = pDecl9->Stream;
+                            D3DVERTEXELEMENT9 *pLastCDecl9 = pDecl9;
+                            for (UINT j = i+1; j < cDecls9 - 1 /* the last one is D3DDECL_END */; ++j)
                             {
-                                pDecl9->Stream = 0xff; /* mark as done */
-                                Assert(pDecl9->Offset != pLastCDecl9->Offset);
-                                if (pDecl9->Offset > pLastCDecl9->Offset)
-                                    pLastCDecl9 = pDecl9;
-                            }
-                        }
-                        /* vertex size is MAX(all Offset's) + sizeof (data_type with MAX offset) + stride*/
-                        UINT cbVertex = pLastCDecl9->Offset + pStrSrc->cbStride;
-                        UINT cbType;
-                        switch (pLastCDecl9->Type)
-                        {
-                            case D3DDECLTYPE_FLOAT1:
-                                cbType = sizeof (float);
-                                break;
-                            case D3DDECLTYPE_FLOAT2:
-                                cbType = sizeof (float) * 2;
-                                break;
-                            case D3DDECLTYPE_FLOAT3:
-                                cbType = sizeof (float) * 3;
-                                break;
-                            case D3DDECLTYPE_FLOAT4:
-                                cbType = sizeof (float) * 4;
-                                break;
-                            case D3DDECLTYPE_D3DCOLOR:
-                                cbType = 4;
-                                break;
-                            case D3DDECLTYPE_UBYTE4:
-                                cbType = 4;
-                                break;
-                            case D3DDECLTYPE_SHORT2:
-                                cbType = sizeof (short) * 2;
-                                break;
-                            case D3DDECLTYPE_SHORT4:
-                                cbType = sizeof (short) * 4;
-                                break;
-                            case D3DDECLTYPE_UBYTE4N:
-                                cbType = 4;
-                                break;
-                            case D3DDECLTYPE_SHORT2N:
-                                cbType = sizeof (short) * 2;
-                                break;
-                            case D3DDECLTYPE_SHORT4N:
-                                cbType = sizeof (short) * 4;
-                                break;
-                            case D3DDECLTYPE_USHORT2N:
-                                cbType = sizeof (short) * 2;
-                                break;
-                            case D3DDECLTYPE_USHORT4N:
-                                cbType = sizeof (short) * 4;
-                                break;
-                            case D3DDECLTYPE_UDEC3:
-                                cbType = sizeof (signed) * 3;
-                                break;
-                            case D3DDECLTYPE_DEC3N:
-                                cbType = sizeof (unsigned) * 3;
-                                break;
-                            case D3DDECLTYPE_FLOAT16_2:
-                                cbType = 2 * 2;
-                                break;
-                            case D3DDECLTYPE_FLOAT16_4:
-                                cbType = 2 * 4;
-                                break;
-                            default:
-                                AssertBreakpoint();
-                                cbType = 1;
-                        }
-                        cbVertex += cbType;
-
-                        UINT cVertexes;
-                        switch (pData->PrimitiveType)
-                        {
-                            case D3DPT_POINTLIST:
-                                cVertexes = pData->PrimitiveCount;
-                                break;
-                            case D3DPT_LINELIST:
-                                cVertexes = pData->PrimitiveCount * 2;
-                                break;
-                            case D3DPT_LINESTRIP:
-                                cVertexes = pData->PrimitiveCount + 1;
-                                break;
-                            case D3DPT_TRIANGLELIST:
-                                cVertexes = pData->PrimitiveCount * 3;
-                                break;
-                            case D3DPT_TRIANGLESTRIP:
-                                cVertexes = pData->PrimitiveCount + 2;
-                                break;
-                            case D3DPT_TRIANGLEFAN:
-                                cVertexes = pData->PrimitiveCount + 2;
-                                break;
-                            default:
-                                AssertBreakpoint();
-                                cVertexes = pData->PrimitiveCount;
-                        }
-                        UINT cbVertexes = cVertexes * cbVertex;
-                        IDirect3DVertexBuffer9 *pCurVb = NULL, *pVb = NULL;
-                        UINT cbOffset;
-                        UINT cbStride;
-                        hr = pDevice->pDevice9If->GetStreamSource(iStream, &pCurVb, &cbOffset, &cbStride);
-                        Assert(hr == S_OK);
-                        if (hr == S_OK)
-                        {
-                            if (pCurVb)
-                            {
-                                if (cbStride == pStrSrc->cbStride)
+                                pDecl9 = &aDecls9[j];
+                                if (iStream == pDecl9->Stream)
                                 {
-                                    /* ensure our data feets in the buffer */
-                                    D3DVERTEXBUFFER_DESC Desc;
-                                    hr = pCurVb->GetDesc(&Desc);
-                                    Assert(hr == S_OK);
-                                    if (hr == S_OK)
+                                    pDecl9->Stream = 0xff; /* mark as done */
+                                    Assert(pDecl9->Offset != pLastCDecl9->Offset);
+                                    if (pDecl9->Offset > pLastCDecl9->Offset)
+                                        pLastCDecl9 = pDecl9;
+                                }
+                            }
+                            /* vertex size is MAX(all Offset's) + sizeof (data_type with MAX offset) + stride*/
+                            UINT cbVertex = pLastCDecl9->Offset + pStrSrc->cbStride;
+                            UINT cbType;
+                            switch (pLastCDecl9->Type)
+                            {
+                                case D3DDECLTYPE_FLOAT1:
+                                    cbType = sizeof (float);
+                                    break;
+                                case D3DDECLTYPE_FLOAT2:
+                                    cbType = sizeof (float) * 2;
+                                    break;
+                                case D3DDECLTYPE_FLOAT3:
+                                    cbType = sizeof (float) * 3;
+                                    break;
+                                case D3DDECLTYPE_FLOAT4:
+                                    cbType = sizeof (float) * 4;
+                                    break;
+                                case D3DDECLTYPE_D3DCOLOR:
+                                    cbType = 4;
+                                    break;
+                                case D3DDECLTYPE_UBYTE4:
+                                    cbType = 4;
+                                    break;
+                                case D3DDECLTYPE_SHORT2:
+                                    cbType = sizeof (short) * 2;
+                                    break;
+                                case D3DDECLTYPE_SHORT4:
+                                    cbType = sizeof (short) * 4;
+                                    break;
+                                case D3DDECLTYPE_UBYTE4N:
+                                    cbType = 4;
+                                    break;
+                                case D3DDECLTYPE_SHORT2N:
+                                    cbType = sizeof (short) * 2;
+                                    break;
+                                case D3DDECLTYPE_SHORT4N:
+                                    cbType = sizeof (short) * 4;
+                                    break;
+                                case D3DDECLTYPE_USHORT2N:
+                                    cbType = sizeof (short) * 2;
+                                    break;
+                                case D3DDECLTYPE_USHORT4N:
+                                    cbType = sizeof (short) * 4;
+                                    break;
+                                case D3DDECLTYPE_UDEC3:
+                                    cbType = sizeof (signed) * 3;
+                                    break;
+                                case D3DDECLTYPE_DEC3N:
+                                    cbType = sizeof (unsigned) * 3;
+                                    break;
+                                case D3DDECLTYPE_FLOAT16_2:
+                                    cbType = 2 * 2;
+                                    break;
+                                case D3DDECLTYPE_FLOAT16_4:
+                                    cbType = 2 * 4;
+                                    break;
+                                default:
+                                    AssertBreakpoint();
+                                    cbType = 1;
+                            }
+                            cbVertex += cbType;
+
+                            UINT cVertexes;
+                            switch (pData->PrimitiveType)
+                            {
+                                case D3DPT_POINTLIST:
+                                    cVertexes = pData->PrimitiveCount;
+                                    break;
+                                case D3DPT_LINELIST:
+                                    cVertexes = pData->PrimitiveCount * 2;
+                                    break;
+                                case D3DPT_LINESTRIP:
+                                    cVertexes = pData->PrimitiveCount + 1;
+                                    break;
+                                case D3DPT_TRIANGLELIST:
+                                    cVertexes = pData->PrimitiveCount * 3;
+                                    break;
+                                case D3DPT_TRIANGLESTRIP:
+                                    cVertexes = pData->PrimitiveCount + 2;
+                                    break;
+                                case D3DPT_TRIANGLEFAN:
+                                    cVertexes = pData->PrimitiveCount + 2;
+                                    break;
+                                default:
+                                    AssertBreakpoint();
+                                    cVertexes = pData->PrimitiveCount;
+                            }
+                            UINT cbVertexes = cVertexes * cbVertex;
+                            IDirect3DVertexBuffer9 *pCurVb = NULL, *pVb = NULL;
+                            UINT cbOffset;
+                            UINT cbStride;
+                            hr = pDevice->pDevice9If->GetStreamSource(iStream, &pCurVb, &cbOffset, &cbStride);
+                            Assert(hr == S_OK);
+                            if (hr == S_OK)
+                            {
+                                if (pCurVb)
+                                {
+                                    if (cbStride == pStrSrc->cbStride)
                                     {
-                                        if (Desc.Size >= cbVertexes)
-                                            pVb = pCurVb;
+                                        /* ensure our data feets in the buffer */
+                                        D3DVERTEXBUFFER_DESC Desc;
+                                        hr = pCurVb->GetDesc(&Desc);
+                                        Assert(hr == S_OK);
+                                        if (hr == S_OK)
+                                        {
+                                            if (Desc.Size >= cbVertexes)
+                                                pVb = pCurVb;
+                                        }
                                     }
                                 }
                             }
-                        }
-                        else
-                        {
-                            pCurVb = NULL;
-                        }
-
-                        if (!pVb)
-                        {
-                            hr = pDevice->pDevice9If->CreateVertexBuffer(cbVertexes,
-                                    0, /* DWORD Usage */
-                                    0, /* DWORD FVF */
-                                    D3DPOOL_DEFAULT, /* D3DPOOL Pool */
-                                    &pVb,
-                                    NULL /*HANDLE* pSharedHandle*/);
-                            Assert(hr == S_OK);
-                            if (hr == S_OK)
+                            else
                             {
-                                hr = pDevice->pDevice9If->SetStreamSource(iStream, pVb, 0, pStrSrc->cbStride);
+                                pCurVb = NULL;
+                            }
+
+                            if (!pVb)
+                            {
+                                hr = pDevice->pDevice9If->CreateVertexBuffer(cbVertexes,
+                                        0, /* DWORD Usage */
+                                        0, /* DWORD FVF */
+                                        D3DPOOL_DEFAULT, /* D3DPOOL Pool */
+                                        &pVb,
+                                        NULL /*HANDLE* pSharedHandle*/);
                                 Assert(hr == S_OK);
                                 if (hr == S_OK)
                                 {
-                                    if (pCurVb)
-                                        pCurVb->Release();
-                                }
-                                else
-                                {
-                                    pVb->Release();
-                                    pVb = NULL;
+                                    hr = pDevice->pDevice9If->SetStreamSource(iStream, pVb, 0, pStrSrc->cbStride);
+                                    Assert(hr == S_OK);
+                                    if (hr == S_OK)
+                                    {
+                                        if (pCurVb)
+                                            pCurVb->Release();
+                                    }
+                                    else
+                                    {
+                                        pVb->Release();
+                                        pVb = NULL;
+                                    }
                                 }
                             }
-                        }
 
-                        if (pVb)
-                        {
-                            Assert(hr == S_OK);
-                            VOID *pvData;
-                            hr = pVb->Lock(0, /* UINT OffsetToLock */
-                                    cbVertexes,
-                                    &pvData,
-                                    D3DLOCK_DISCARD);
-                            Assert(hr == S_OK);
-                            if (hr == S_OK)
+                            if (pVb)
                             {
-                                memcpy (pvData, ((uint8_t*)pStrSrc->pvBuffer) + pData->VStart * cbVertex, cbVertexes);
-                                HRESULT tmpHr = pVb->Unlock();
-                                Assert(tmpHr == S_OK);
+                                Assert(hr == S_OK);
+                                VOID *pvData;
+                                hr = pVb->Lock(0, /* UINT OffsetToLock */
+                                        cbVertexes,
+                                        &pvData,
+                                        D3DLOCK_DISCARD);
+                                Assert(hr == S_OK);
+                                if (hr == S_OK)
+                                {
+                                    memcpy (pvData, ((uint8_t*)pStrSrc->pvBuffer) + pData->VStart * cbVertex, cbVertexes);
+                                    HRESULT tmpHr = pVb->Unlock();
+                                    Assert(tmpHr == S_OK);
+                                }
                             }
                         }
                     }
                 }
             }
-        }
-        if (hr == S_OK)
-        {
-            hr = pDevice->pDevice9If->DrawPrimitive(pData->PrimitiveType,
-                    0 /* <- since we use our owne StreamSource buffer which has data at the very beginning*/,
-                    pData->PrimitiveCount);
-            Assert(hr == S_OK);
+            if (hr == S_OK)
+            {
+                hr = pDevice->pDevice9If->DrawPrimitive(pData->PrimitiveType,
+                        0 /* <- since we use our owne StreamSource buffer which has data at the very beginning*/,
+                        pData->PrimitiveCount);
+                Assert(hr == S_OK);
+            }
         }
     }
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));

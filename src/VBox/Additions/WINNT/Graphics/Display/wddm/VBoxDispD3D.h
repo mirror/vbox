@@ -78,6 +78,8 @@ typedef struct VBOXWDDMDISP_DEVICE
     UINT cbCmdBuffer;
     D3DDDI_CREATEDEVICEFLAGS fFlags;
     HWND hWnd;
+    /* number of StreamSources set */
+    UINT cStreamSources;
     VBOXWDDMDISP_STREAMSOURCEUM aStreamSourceUm[16];
     IDirect3DDevice9 *pDevice9If;
     /* need to cache the ViewPort data because IDirect3DDevice9::SetViewport
