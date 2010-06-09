@@ -181,16 +181,19 @@ int pdmacFileAioMgrAddEndpoint(PPDMACEPFILEMGR pAioMgr, PPDMASYNCCOMPLETIONENDPO
 {
     int rc;
 
+    LogFlowFunc(("pAioMgr=%#p pEndpoint=%#p{%s}\n", pAioMgr, pEndpoint, pEndpoint->Core.pszUri));
+
+    /* Update the assigned I/O manager. */
+    ASMAtomicWritePtr(&pEndpoint->pAioMgr, pAioMgr);
+
     rc = RTCritSectEnter(&pAioMgr->CritSectBlockingEvent);
     AssertRCReturn(rc, rc);
 
     ASMAtomicWritePtr(&pAioMgr->BlockingEventData.AddEndpoint.pEndpoint, pEndpoint);
     rc = pdmacFileAioMgrWaitForBlockingEvent(pAioMgr, PDMACEPFILEAIOMGRBLOCKINGEVENT_ADD_ENDPOINT);
+    ASMAtomicWritePtr(&pAioMgr->BlockingEventData.AddEndpoint.pEndpoint, NULL);
 
     RTCritSectLeave(&pAioMgr->CritSectBlockingEvent);
-
-    if (RT_SUCCESS(rc))
-        ASMAtomicWritePtr(&pEndpoint->pAioMgr, pAioMgr);
 
     return rc;
 }
@@ -204,6 +207,7 @@ static int pdmacFileAioMgrRemoveEndpoint(PPDMACEPFILEMGR pAioMgr, PPDMASYNCCOMPL
 
     ASMAtomicWritePtr(&pAioMgr->BlockingEventData.RemoveEndpoint.pEndpoint, pEndpoint);
     rc = pdmacFileAioMgrWaitForBlockingEvent(pAioMgr, PDMACEPFILEAIOMGRBLOCKINGEVENT_REMOVE_ENDPOINT);
+    ASMAtomicWritePtr(&pAioMgr->BlockingEventData.RemoveEndpoint.pEndpoint, NULL);
 
     RTCritSectLeave(&pAioMgr->CritSectBlockingEvent);
 
@@ -219,6 +223,7 @@ static int pdmacFileAioMgrCloseEndpoint(PPDMACEPFILEMGR pAioMgr, PPDMASYNCCOMPLE
 
     ASMAtomicWritePtr(&pAioMgr->BlockingEventData.CloseEndpoint.pEndpoint, pEndpoint);
     rc = pdmacFileAioMgrWaitForBlockingEvent(pAioMgr, PDMACEPFILEAIOMGRBLOCKINGEVENT_CLOSE_ENDPOINT);
+    ASMAtomicWritePtr(&pAioMgr->BlockingEventData.CloseEndpoint.pEndpoint, NULL);
 
     RTCritSectLeave(&pAioMgr->CritSectBlockingEvent);
 
@@ -654,6 +659,7 @@ static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNO
         {
             /* No configuration supplied, set defaults */
             pEpClassFile->enmEpBackendDefault = PDMACFILEEPBACKEND_NON_BUFFERED;
+            pEpClassFile->enmMgrTypeOverride  = PDMACEPFILEMGRTYPE_ASYNC;
         }
     }
 
@@ -920,7 +926,6 @@ static int pdmacFileEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
     {
         rc = pdmacFileEpCacheFlush(pEpFile);
         AssertRC(rc);
-        pdmacFileEpCacheDestroy(pEpFile);
     }
 
     /* Make sure that all tasks finished for this endpoint. */
@@ -930,6 +935,10 @@ static int pdmacFileEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
     /* endpoint and real file size should better be equal now. */
     AssertMsg(pEpFile->cbFile == pEpFile->cbEndpoint,
               ("Endpoint and real file size should match now!\n"));
+
+    /* Destroy any per endpoint cache data */
+    if (pEpFile->fCaching)
+        pdmacFileEpCacheDestroy(pEpFile);
 
     /*
      * If the async I/O manager is in failsafe mode this is the only endpoint

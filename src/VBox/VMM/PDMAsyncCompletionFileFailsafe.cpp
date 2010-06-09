@@ -209,6 +209,9 @@ int pdmacFileAioMgrFailsafe(RTTHREAD ThreadSelf, void *pvUser)
                     AssertMsgFailed(("Invalid event type %d\n", pAioMgr->enmBlockingEvent));
             }
 
+            ASMAtomicWriteBool(&pAioMgr->fBlockingEventPending, false);
+            pAioMgr->enmBlockingEvent = PDMACEPFILEAIOMGRBLOCKINGEVENT_INVALID;
+
             /* Release the waiting thread. */
             rc = RTSemEventSignal(pAioMgr->EventSemBlock);
             AssertRC(rc);
