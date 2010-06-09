@@ -170,6 +170,7 @@ struct PLEventQueue {
 #if defined(MAC_USE_CFRUNLOOPSOURCE)
     CFRunLoopSourceRef  mRunLoopSource;
     CFRunLoopRef        mMainRunLoop;
+    CFStringRef         mRunLoopModeStr;                                                                /* vbox */
 #elif defined(MAC_USE_CARBON_EVENT)
     EventHandlerUPP     eventHandlerUPP;
     EventHandlerRef     eventHandlerRef;
@@ -945,8 +946,10 @@ _pl_CleanupNativeNotifier(PLEventQueue* self)
 #elif defined(MAC_USE_CFRUNLOOPSOURCE)
 
     CFRunLoopRemoveSource(self->mMainRunLoop, self->mRunLoopSource, kCFRunLoopCommonModes);
+    CFRunLoopRemoveSource(self->mMainRunLoop, self->mRunLoopSource, self->mRunLoopModeStr);             /* vbox */
     CFRelease(self->mRunLoopSource);
     CFRelease(self->mMainRunLoop);
+    CFRelease(self->mRunLoopModeStr);                                                                   /* vbox */
 
 #elif defined(MAC_USE_CARBON_EVENT)
     EventComparatorUPP comparator = NewEventComparatorUPP(_md_CarbonEventComparator);
@@ -1334,6 +1337,10 @@ _pl_AcknowledgeNativeNotify(PLEventQueue* self)
     if ((count == -1) && ((errno == EAGAIN) || (errno == EWOULDBLOCK)))
         return PR_SUCCESS;
     return PR_FAILURE;
+#elif defined(MAC_USE_CFRUNLOOPSOURCE)                                                                  /* vbox */
+                                                                                                        /* vbox */
+    CFRunLoopRunInMode(self->mRunLoopModeStr, 0.0, 1);                                                  /* vbox */
+    return PR_SUCCESS;                                                                                  /* vbox */
 #else
 
     /* nothing to do on the other platforms */
@@ -1635,6 +1642,17 @@ static void _md_CreateEventQueue( PLEventQueue *eventQueue )
 
     /* and add it to the run loop */
     CFRunLoopAddSource(eventQueue->mMainRunLoop, eventQueue->mRunLoopSource, kCFRunLoopCommonModes);
+
+    /* Add it again but with a unique mode name so we can acknowledge it
+       without processing any other message sources. */
+    {                                                                                                   /* vbox */
+        char szModeName[80];                                                                            /* vbox */
+        snprintf(szModeName, sizeof(szModeName), "VBoxXPCOMQueueMode-%p", eventQueue);                  /* vbox */
+        eventQueue->mRunLoopModeStr = CFStringCreateWithCString(kCFAllocatorDefault,                    /* vbox */
+                                                                szModeName, kCFStringEncodingASCII);    /* vbox */
+        CFRunLoopAddSource(eventQueue->mMainRunLoop,                                                    /* vbox */
+                           eventQueue->mRunLoopSource, eventQueue->mRunLoopModeStr);                    /* vbox */
+    }                                                                                                   /* vbox */
 
 #elif defined(MAC_USE_CARBON_EVENT)
     eventQueue->eventHandlerUPP = NewEventHandlerUPP(_md_EventReceiverProc);
