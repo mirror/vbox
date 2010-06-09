@@ -2415,7 +2415,6 @@ DECLINLINE(void) ASMAtomicUoWriteBool(volatile bool *pf, bool f)
 /**
  * Atomically writes a pointer value, ordered.
  *
- * @returns Current *pv value
  * @param   ppv     Pointer to the pointer variable.
  * @param   pv      The pointer value to assign to *ppv.
  */
@@ -2432,12 +2431,11 @@ DECLINLINE(void) ASMAtomicWritePtrVoid(void * volatile *ppv, const void *pv)
 
 
 /**
- * Convenience macro for avoiding the annoying casting with ASMAtomicWritePtr.
+ * Atomically writes a pointer value, ordered.
  *
- * @returns Current *pv value
  * @param   ppv     Pointer to the pointer variable.
- * @param   pv      The pointer value to assign to *ppv. If NULL, you may have
- *                  to cast it to the right pointer type for GCC to be happy.
+ * @param   pv      The pointer value to assign to *ppv. If NULL use
+ *                  ASMAtomicWriteNullPtr or you'll land in trouble.
  *
  * @remarks This is relatively type safe on GCC platforms when @a pv isn't
  *          NULL.
@@ -2469,12 +2467,39 @@ DECLINLINE(void) ASMAtomicWritePtrVoid(void * volatile *ppv, const void *pv)
 
 
 /**
- * Convenience macro for avoiding the annoying casting involved when using
- * ASMAtomicWritePtr.
+ * Atomically sets a pointer to NULL, ordered.
+ *
+ * @param   ppv     Pointer to the pointer variable that should be set to NULL.
+ *
+ * @remarks This is relatively type safe on GCC platforms.
+ */
+#ifdef __GNUC__
+# define ASMAtomicWriteNullPtr(ppv) \
+    do \
+    { \
+        __typeof__(*(ppv)) volatile * const ppvTypeChecked = (ppv); \
+        AssertCompile(sizeof(*ppv) == sizeof(void *)); \
+        Assert(!( (uintptr_t)ppv & ((ARCH_BITS / 8) - 1) )); \
+        ASMAtomicWritePtrVoid((void * volatile *)(ppvTypeChecked), NULL); \
+    } while (0)
+#else
+# define ASMAtomicWriteNullPtr(ppv) \
+    do \
+    { \
+        AssertCompile(sizeof(*ppv) == sizeof(void *)); \
+        Assert(!( (uintptr_t)ppv & ((ARCH_BITS / 8) - 1) )); \
+        ASMAtomicWritePtrVoid((void * volatile *)(ppv), NULL); \
+    } while (0)
+#endif
+
+
+/**
+ * Atomically writes a pointer value, unordered.
  *
  * @returns Current *pv value
  * @param   ppv     Pointer to the pointer variable.
- * @param   pv      The pointer value to assign to *ppv.
+ * @param   pv      The pointer value to assign to *ppv. If NULL use
+ *                  ASMAtomicUoWriteNullPtr or you'll land in trouble.
  *
  * @remarks This is relatively type safe on GCC platforms when @a pv isn't
  *          NULL.
@@ -2500,6 +2525,33 @@ DECLINLINE(void) ASMAtomicWritePtrVoid(void * volatile *ppv, const void *pv)
         AssertCompile(sizeof(pv) == sizeof(void *)); \
         Assert(!( (uintptr_t)ppv & ((ARCH_BITS / 8) - 1) )); \
         *(ppv) = pv; \
+    } while (0)
+#endif
+
+
+/**
+ * Atomically sets a pointer to NULL, unordered.
+ *
+ * @param   ppv     Pointer to the pointer variable that should be set to NULL.
+ *
+ * @remarks This is relatively type safe on GCC platforms.
+ */
+#ifdef __GNUC__
+# define ASMAtomicUoWriteNullPtr(ppv) \
+    do \
+    { \
+        __typeof__(*(ppv)) volatile * const ppvTypeChecked = (ppv); \
+        AssertCompile(sizeof(*ppv) == sizeof(void *)); \
+        Assert(!( (uintptr_t)ppv & ((ARCH_BITS / 8) - 1) )); \
+        *(ppvTypeChecked) = NULL; \
+    } while (0)
+#else
+# define ASMAtomicUoWriteNullPtr(ppv) \
+    do \
+    { \
+        AssertCompile(sizeof(*ppv) == sizeof(void *)); \
+        Assert(!( (uintptr_t)ppv & ((ARCH_BITS / 8) - 1) )); \
+        *(ppv) = NULL; \
     } while (0)
 #endif
 

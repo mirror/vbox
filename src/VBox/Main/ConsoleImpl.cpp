@@ -8122,7 +8122,7 @@ DECLCALLBACK(void) Console::drvStatus_Destruct(PPDMDRVINS pDrvIns)
     {
         unsigned iLed = pData->iLastLUN - pData->iFirstLUN + 1;
         while (iLed-- > 0)
-            ASMAtomicWritePtr(&pData->papLeds[iLed], NULL);
+            ASMAtomicWriteNullPtr(&pData->papLeds[iLed]);
     }
 }
 

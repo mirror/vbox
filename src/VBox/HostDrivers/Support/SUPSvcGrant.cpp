@@ -974,7 +974,7 @@ DECLCALLBACK(void) supSvcGrantStopAndDestroy(void *pvInstance, bool fRunning)
     supSvcGrantCleanUpSessionsLocked(pThis);
     unsigned cSessions = 0;
     for (PSUPSVCGRANTSESSION pCur = pThis->pSessionHead; pCur; pCur = pCur->pNext)
-        ASMAtomicWritePtr(&pCur->pParent, NULL);
+        ASMAtomicWriteNullPtr(&pCur->pParent);
 
     RTCritSectLeave(&pThis->CritSect);
     if (cSessions)

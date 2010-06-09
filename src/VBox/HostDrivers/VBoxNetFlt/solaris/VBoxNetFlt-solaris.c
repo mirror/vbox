@@ -923,7 +923,7 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
         {
             RTTimerStop(pPromiscStream->pIp6Timer);
             RTTimerDestroy(pPromiscStream->pIp6Timer);
-            ASMAtomicUoWritePtr(&pPromiscStream->pIp6Timer, NULL);
+            ASMAtomicUoWriteNullPtr(&pPromiscStream->pIp6Timer);
         }
 #endif
 
@@ -943,10 +943,10 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
      */
     switch (pStream->Type)
     {
-        case kIp4Stream:        ASMAtomicUoWritePtr(pStream->pThis->u.s.pvIp4Stream, NULL);     break;
-        case kIp6Stream:        ASMAtomicUoWritePtr(pStream->pThis->u.s.pvIp6Stream, NULL);     break;
-        case kArpStream:        ASMAtomicUoWritePtr(pStream->pThis->u.s.pvArpStream, NULL);     break;
-        case kPromiscStream:    ASMAtomicUoWritePtr(pStream->pThis->u.s.pvPromiscStream, NULL); break;
+        case kIp4Stream:        ASMAtomicUoWriteNullPtr(pStream->pThis->u.s.pvIp4Stream);     break;
+        case kIp6Stream:        ASMAtomicUoWriteNullPtr(pStream->pThis->u.s.pvIp6Stream);     break;
+        case kArpStream:        ASMAtomicUoWriteNullPtr(pStream->pThis->u.s.pvArpStream);     break;
+        case kPromiscStream:    ASMAtomicUoWriteNullPtr(pStream->pThis->u.s.pvPromiscStream); break;
         default:    /* Heh. */
         {
             AssertRelease(pStream->Type);
@@ -2577,7 +2577,7 @@ static int vboxNetFltSolarisDetachFromInterface(PVBOXNETFLTINS pThis)
     {
         RTTimerStop(pPromiscStream->pIp6Timer);
         RTTimerDestroy(pPromiscStream->pIp6Timer);
-        ASMAtomicUoWritePtr(&pPromiscStream->pIp6Timer, NULL);
+        ASMAtomicUoWriteNullPtr(&pPromiscStream->pIp6Timer);
     }
 #endif
 

@@ -1904,8 +1904,8 @@ RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
             if (    g_aPerThreadLoggers[i].NativeThread == Self
                 ||  g_aPerThreadLoggers[i].uKey == uKey)
             {
-                ASMAtomicWritePtr((void * volatile *)&g_aPerThreadLoggers[i].uKey, (void *)NULL);
-                ASMAtomicWritePtr(&g_aPerThreadLoggers[i].pLogger, (PRTLOGGER)NULL);
+                ASMAtomicWriteNullPtr((void * volatile *)&g_aPerThreadLoggers[i].uKey);
+                ASMAtomicWriteNullPtr(&g_aPerThreadLoggers[i].pLogger);
                 ASMAtomicWriteHandle(&g_aPerThreadLoggers[i].NativeThread, NIL_RTNATIVETHREAD);
                 ASMAtomicDecS32(&g_cPerThreadLoggers);
             }

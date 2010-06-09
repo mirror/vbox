@@ -492,7 +492,7 @@ RTDECL(int) RTFileAioReqCancel(RTFILEAIOREQ hReq)
         int rc = RTSemEventWait(pCtxInt->SemEventCancel, RT_INDEFINITE_WAIT);
         AssertRC(rc);
 
-        ASMAtomicWritePtr(&pCtxInt->pReqToCancel, NULL);
+        ASMAtomicWriteNullPtr(&pCtxInt->pReqToCancel);
         pReqInt->Rc = VERR_FILE_AIO_CANCELED;
         RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
         return VINF_SUCCESS;
