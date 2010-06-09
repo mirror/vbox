@@ -100,14 +100,14 @@ VBoxPython2_4_INCS       = $(VBOX_PYTHON24_INC)
 VBoxPython2_4_LIBS       = $(VBOX_PYTHON24_LIB)
 endif
 
-if defined(VBOX_PYTHON25_INC) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" != "darwin.amd64"
+if defined(VBOX_PYTHON25_INC) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "darwin.x86" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" == "10.5"
 #
 # Python 2.5 version
 #
 DLLS += VBoxPython2_5
 VBoxPython2_5_EXTENDS    = VBoxPythonBase
 VBoxPython2_5_EXTENDS_BY = appending
-VBoxPython2_5_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin",OSX105,)
+VBoxPython2_5_TEMPLATE   = XPCOM
 VBoxPython2_5_INCS       = $(VBOX_PYTHON25_INC)
 VBoxPython2_5_LIBS       = $(VBOX_PYTHON25_LIB)
 endif
