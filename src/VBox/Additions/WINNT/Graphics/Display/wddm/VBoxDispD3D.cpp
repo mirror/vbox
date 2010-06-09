@@ -1436,18 +1436,32 @@ static HRESULT APIENTRY vboxWddmDDevSetTextureStageState(HANDLE hDevice, CONST D
 
 static HRESULT APIENTRY vboxWddmDDevSetTexture(HANDLE hDevice, UINT Stage, HANDLE hTexture)
 {
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    Assert(pDevice);
+    Assert(pDevice->pDevice9If);
+    PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)hTexture;
+//    Assert(pRc);
+    IDirect3DTexture9 *pD3DIfTex = pRc ? (IDirect3DTexture9*)pRc->aAllocations[0].pD3DIf : NULL;
+//    Assert(pD3DIfTex);
+    HRESULT hr = pDevice->pDevice9If->SetTexture(Stage, pD3DIfTex);
+    Assert(hr == S_OK);
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
 }
 
 static HRESULT APIENTRY vboxWddmDDevSetPixelShader(HANDLE hDevice, HANDLE hShaderHandle)
 {
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    Assert(pDevice);
+    Assert(pDevice->pDevice9If);
+    IDirect3DPixelShader9 *pShader = (IDirect3DPixelShader9*)hShaderHandle;
+    Assert(pShader);
+    HRESULT hr = pDevice->pDevice9If->SetPixelShader(pShader);
+    Assert(hr == S_OK);
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
 }
 
 static HRESULT APIENTRY vboxWddmDDevSetPixelShaderConst(HANDLE hDevice, CONST D3DDDIARG_SETPIXELSHADERCONST* pData, CONST FLOAT* pRegisters)
@@ -1552,10 +1566,45 @@ static HRESULT APIENTRY vboxWddmDDevBufBlt(HANDLE hDevice, CONST D3DDDIARG_BUFFE
 
 static HRESULT APIENTRY vboxWddmDDevTexBlt(HANDLE hDevice, CONST D3DDDIARG_TEXBLT* pData)
 {
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    Assert(pDevice);
+    Assert(pDevice->pDevice9If);
+    PVBOXWDDMDISP_RESOURCE pDstRc = (PVBOXWDDMDISP_RESOURCE)pData->hDstResource;
+    PVBOXWDDMDISP_RESOURCE pSrcRc = (PVBOXWDDMDISP_RESOURCE)pData->hSrcResource;
+    IDirect3DTexture9 *pD3DIfSrcTex = (IDirect3DTexture9*)pSrcRc->aAllocations[0].pD3DIf;
+    IDirect3DTexture9 *pD3DIfDstTex = (IDirect3DTexture9*)pDstRc->aAllocations[0].pD3DIf;
+    Assert(pD3DIfSrcTex);
+    Assert(pD3DIfDstTex);
+    HRESULT hr = S_OK;
+
+    if (pSrcRc->aAllocations[0].SurfDesc.width == pDstRc->aAllocations[0].SurfDesc.width
+            && pSrcRc->aAllocations[0].SurfDesc.height == pDstRc->aAllocations[0].SurfDesc.height
+            && pSrcRc->RcDesc.enmFormat == pDstRc->RcDesc.enmFormat)
+    {
+        /* first check if we can do IDirect3DDevice9::UpdateTexture */
+        if (pData->DstPoint.x == 0 && pData->DstPoint.y == 0
+                && pData->SrcRect.left == 0 && pData->SrcRect.top == 0
+                && pData->SrcRect.right - pData->SrcRect.left == pSrcRc->aAllocations[0].SurfDesc.width
+                && pData->SrcRect.bottom - pData->SrcRect.top == pSrcRc->aAllocations[0].SurfDesc.height)
+        {
+            hr = pDevice->pDevice9If->UpdateTexture(pD3DIfSrcTex, pD3DIfDstTex);
+            Assert(hr == S_OK);
+        }
+        else
+        {
+            AssertBreakpoint();
+            /* @todo: impl */
+        }
+    }
+    else
+    {
+        AssertBreakpoint();
+        /* @todo: impl */
+    }
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
 }
 
 static HRESULT APIENTRY vboxWddmDDevStateSet(HANDLE hDevice, D3DDDIARG_STATESET* pData)
@@ -1573,6 +1622,10 @@ static HRESULT APIENTRY vboxWddmDDevSetPriority(HANDLE hDevice, CONST D3DDDIARG_
     return E_FAIL;
 }
 AssertCompile(sizeof (RECT) == sizeof (D3DRECT));
+AssertCompile(RT_SIZEOFMEMB(RECT, left) == RT_SIZEOFMEMB(D3DRECT, x1));
+AssertCompile(RT_SIZEOFMEMB(RECT, right) == RT_SIZEOFMEMB(D3DRECT, x2));
+AssertCompile(RT_SIZEOFMEMB(RECT, top) == RT_SIZEOFMEMB(D3DRECT, y1));
+AssertCompile(RT_SIZEOFMEMB(RECT, bottom) == RT_SIZEOFMEMB(D3DRECT, y2));
 AssertCompile(RT_OFFSETOF(RECT, left) == RT_OFFSETOF(D3DRECT, x1));
 AssertCompile(RT_OFFSETOF(RECT, right) == RT_OFFSETOF(D3DRECT, x2));
 AssertCompile(RT_OFFSETOF(RECT, top) == RT_OFFSETOF(D3DRECT, y1));
@@ -2513,26 +2566,68 @@ static HRESULT APIENTRY vboxWddmDDevFlush(HANDLE hDevice)
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
+
+AssertCompile(sizeof (D3DDDIVERTEXELEMENT) == sizeof (D3DVERTEXELEMENT9));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIVERTEXELEMENT, Stream) == RT_SIZEOFMEMB(D3DVERTEXELEMENT9, Stream));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIVERTEXELEMENT, Offset) == RT_SIZEOFMEMB(D3DVERTEXELEMENT9, Offset));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIVERTEXELEMENT, Type) == RT_SIZEOFMEMB(D3DVERTEXELEMENT9, Type));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIVERTEXELEMENT, Method) == RT_SIZEOFMEMB(D3DVERTEXELEMENT9, Method));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIVERTEXELEMENT, Usage) == RT_SIZEOFMEMB(D3DVERTEXELEMENT9, Usage));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIVERTEXELEMENT, UsageIndex) == RT_SIZEOFMEMB(D3DVERTEXELEMENT9, UsageIndex));
+
+AssertCompile(RT_OFFSETOF(D3DDDIVERTEXELEMENT, Stream) == RT_OFFSETOF(D3DVERTEXELEMENT9, Stream));
+AssertCompile(RT_OFFSETOF(D3DDDIVERTEXELEMENT, Offset) == RT_OFFSETOF(D3DVERTEXELEMENT9, Offset));
+AssertCompile(RT_OFFSETOF(D3DDDIVERTEXELEMENT, Type) == RT_OFFSETOF(D3DVERTEXELEMENT9, Type));
+AssertCompile(RT_OFFSETOF(D3DDDIVERTEXELEMENT, Method) == RT_OFFSETOF(D3DVERTEXELEMENT9, Method));
+AssertCompile(RT_OFFSETOF(D3DDDIVERTEXELEMENT, Usage) == RT_OFFSETOF(D3DVERTEXELEMENT9, Usage));
+AssertCompile(RT_OFFSETOF(D3DDDIVERTEXELEMENT, UsageIndex) == RT_OFFSETOF(D3DVERTEXELEMENT9, UsageIndex));
+
 static HRESULT APIENTRY vboxWddmDDevCreateVertexShaderDecl(HANDLE hDevice, D3DDDIARG_CREATEVERTEXSHADERDECL* pData, CONST D3DDDIVERTEXELEMENT* pVertexElements)
 {
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    Assert(pDevice);
+    Assert(pDevice->pDevice9If);
+    IDirect3DVertexDeclaration9 *pDecl;
+    static D3DVERTEXELEMENT9 DeclEnd = D3DDECL_END();
+    Assert(!memcmp(&DeclEnd, &pVertexElements[pData->NumVertexElements], sizeof (DeclEnd)));
+    HRESULT hr = pDevice->pDevice9If->CreateVertexDeclaration(
+            (CONST D3DVERTEXELEMENT9*)pVertexElements,
+            &pDecl
+          );
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        Assert(pDecl);
+        pData->ShaderHandle = pDecl;
+    }
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
 }
 static HRESULT APIENTRY vboxWddmDDevSetVertexShaderDecl(HANDLE hDevice, HANDLE hShaderHandle)
 {
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    Assert(pDevice);
+    Assert(pDevice->pDevice9If);
+    IDirect3DVertexDeclaration9 *pDecl = (IDirect3DVertexDeclaration9*)hShaderHandle;
+    Assert(pDecl);
+    HRESULT hr = pDevice->pDevice9If->SetVertexDeclaration(pDecl);
+    Assert(hr == S_OK);
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
 }
 static HRESULT APIENTRY vboxWddmDDevDeleteVertexShaderDecl(HANDLE hDevice, HANDLE hShaderHandle)
 {
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    Assert(pDevice);
+    Assert(pDevice->pDevice9If);
+    IDirect3DVertexDeclaration9 *pDecl = (IDirect3DVertexDeclaration9*)hShaderHandle;
+    HRESULT hr = pDecl->Release();
+    Assert(hr == S_OK);
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
 }
 static HRESULT APIENTRY vboxWddmDDevCreateVertexShaderFunc(HANDLE hDevice, D3DDDIARG_CREATEVERTEXSHADERFUNC* pData, CONST UINT* pCode)
 {
