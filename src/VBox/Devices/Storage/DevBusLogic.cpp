@@ -24,6 +24,7 @@
 #define LOG_GROUP LOG_GROUP_DEV_BUSLOGIC
 #include <VBox/pdmdev.h>
 #include <VBox/pdmifs.h>
+#include <VBox/pdmcritsect.h>
 #include <VBox/scsi.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -363,6 +364,9 @@ typedef struct BUSLOGIC
 #if HC_ARCH_BITS == 64
     uint32_t                        Alignment2;
 #endif
+
+    /** Critical section protecting access to the interrupt status register. */
+    PDMCRITSECT                     CritSectIntr;
 
     /** Cache for task states. */
     R3PTRTYPE(RTMEMCACHE)           hTaskCache;
@@ -919,6 +923,8 @@ static void buslogicSendIncomingMailbox(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTATE 
     pTaskState->MailboxGuest.u.in.uTargetDeviceStatus = uDeviceStatus;
     pTaskState->MailboxGuest.u.in.uCompletionCode = uMailboxCompletionCode;
 
+    int rc = PDMCritSectEnter(&pBusLogic->CritSectIntr, VINF_SUCCESS);
+    AssertRC(rc);
     RTGCPHYS GCPhysAddrMailboxIncoming = pBusLogic->GCPhysAddrMailboxIncomingBase + (pBusLogic->uMailboxIncomingPositionCurrent * sizeof(Mailbox));
     RTGCPHYS GCPhysAddrCCB = (RTGCPHYS)pTaskState->MailboxGuest.u32PhysAddrCCB;
 
@@ -938,6 +944,8 @@ static void buslogicSendIncomingMailbox(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTATE 
     pBusLogic->regInterrupt |= BUSLOGIC_REGISTER_INTERRUPT_INCOMING_MAILBOX_LOADED;
     if (pBusLogic->fIRQEnabled)
         buslogicSetInterrupt(pBusLogic);
+
+    PDMCritSectLeave(&pBusLogic->CritSectIntr);
 }
 
 #if defined(DEBUG)
@@ -1543,8 +1551,14 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
     {
         case BUSLOGIC_REGISTER_CONTROL:
         {
+            rc = PDMCritSectEnter(&pBusLogic->CritSectIntr, VINF_IOM_HC_IOPORT_WRITE);
+            if (rc != VINF_SUCCESS)
+                return rc;
+
             if (uVal & BUSLOGIC_REGISTER_CONTROL_INTERRUPT_RESET)
                 buslogicClearInterrupt(pBusLogic);
+
+            PDMCritSectLeave(&pBusLogic->CritSectIntr);
 
             if ((uVal & BUSLOGIC_REGISTER_CONTROL_HARD_RESET) || (uVal & BUSLOGIC_REGISTER_CONTROL_SOFT_RESET))
             {
@@ -2618,6 +2632,8 @@ static DECLCALLBACK(int) buslogicDestruct(PPDMDEVINS pDevIns)
     PBUSLOGIC  pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
+    PDMR3CritSectDelete(&pThis->CritSectIntr);
+
     int rc = RTMemCacheDestroy(pThis->hTaskCache);
     AssertMsgRC(rc, ("Destroying task cache failed rc=%Rrc\n", rc));
 
@@ -2712,6 +2728,11 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         return rc;
     pThis->pNotifierQueueR0 = PDMQueueR0Ptr(pThis->pNotifierQueueR3);
     pThis->pNotifierQueueRC = PDMQueueRCPtr(pThis->pNotifierQueueR3);
+
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSectIntr, RT_SRC_POS, "BusLogic-Intr");
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("BusLogic: cannot create critical section"));
 
     /* Initialize per device state. */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aDeviceStates); i++)

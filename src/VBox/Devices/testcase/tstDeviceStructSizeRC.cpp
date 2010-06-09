@@ -1461,6 +1461,7 @@ int main()
     GEN_CHECK_OFF(BUSLOGIC, pNotifierQueueR3);
     GEN_CHECK_OFF(BUSLOGIC, pNotifierQueueR0);
     GEN_CHECK_OFF(BUSLOGIC, pNotifierQueueRC);
+    GEN_CHECK_OFF(BUSLOGIC, CritSectIntr);
     GEN_CHECK_OFF(BUSLOGIC, hTaskCache);
     GEN_CHECK_OFF(BUSLOGIC, VBoxSCSI);
     GEN_CHECK_OFF(BUSLOGIC, aDeviceStates);
