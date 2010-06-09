@@ -79,10 +79,10 @@ private:
      * done try restore it by cmpxchg. If the producer has already put a new
      * region there, it will be discarded (see mRegionUnused).
      */
-    RegionRects volatile *mRegion;
+    RegionRects * volatile mRegion;
     /** For keeping the unused region and thus avoid some RTMemAlloc/RTMemFree calls.
      * This is operated with atomic cmpxchg and atomic xchg. */
-    RegionRects volatile *mRegionUnused;
+    RegionRects * volatile mRegionUnused;
 
 };
 #endif /* Q_WS_MAC && VBOX_GUI_USE_QUARTZ2D */
