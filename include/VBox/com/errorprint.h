@@ -61,6 +61,7 @@ void GlueHandleComError(ComPtr<IUnknown> iface, const char *pcszContext, HRESULT
  */
 #ifdef __GNUC__
 # define CHECK_ERROR_BREAK(iface, method) \
+    __extension__ \
     ({ \
         rc = iface->method; \
         if (FAILED(rc)) \
