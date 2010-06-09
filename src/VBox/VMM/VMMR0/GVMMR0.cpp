@@ -1066,10 +1066,10 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
      */
     pHandle->iNext = pGVMM->iFreeHead;
     pGVMM->iFreeHead = iHandle;
-    ASMAtomicWritePtr(&pHandle->pGVM,               (PGVM)NULL);
-    ASMAtomicWritePtr(&pHandle->pVM,                 (PVM)NULL);
-    ASMAtomicWritePtr(&pHandle->pvObj,            (void *)NULL);
-    ASMAtomicWritePtr(&pHandle->pSession, (PSUPDRVSESSION)NULL);
+    ASMAtomicWriteNullPtr(&pHandle->pGVM);
+    ASMAtomicWriteNullPtr(&pHandle->pVM);
+    ASMAtomicWriteNullPtr(&pHandle->pvObj);
+    ASMAtomicWriteNullPtr(&pHandle->pSession);
     ASMAtomicWriteSize(&pHandle->hEMT0,     NIL_RTNATIVETHREAD);
     ASMAtomicWriteSize(&pHandle->ProcId,         NIL_RTPROCESS);
 

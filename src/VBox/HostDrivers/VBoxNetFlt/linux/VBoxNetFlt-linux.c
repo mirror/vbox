@@ -650,7 +650,7 @@ static void vboxNetFltLinuxQdiscRemove(PVBOXNETFLTINS pThis, struct net_device *
 
     pPriv = qdisc_priv(pQdisc);
     Assert(pPriv->pVBoxNetFlt == pThis);
-    ASMAtomicWritePtr(&pPriv->pVBoxNetFlt, NULL);
+    ASMAtomicWriteNullPtr(&pPriv->pVBoxNetFlt);
 
     QDISC_LOG(("vboxNetFltLinuxQdiscRemove: refcnt=%d num_tx_queues=%d\n",
                atomic_read(&pQdisc->refcnt), pDev->num_tx_queues));
@@ -1945,7 +1945,7 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
         vboxNetFltLinuxQdiscRemove(pThis, pDev);
 #endif /* VBOXNETFLT_WITH_QDISC */
         RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
-        ASMAtomicUoWritePtr(&pThis->u.s.pDev, NULL);
+        ASMAtomicUoWriteNullPtr(&pThis->u.s.pDev);
         RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
         dev_put(pDev);
         Log(("vboxNetFltLinuxAttachToInterface: Device %p(%s) released. ref=%d\n", pDev, pDev->name, atomic_read(&pDev->refcnt)));
@@ -1972,7 +1972,7 @@ static int vboxNetFltLinuxUnregisterDevice(PVBOXNETFLTINS pThis, struct net_devi
     RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     ASMAtomicWriteBool(&pThis->u.s.fRegistered, false);
     ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, true);
-    ASMAtomicUoWritePtr(&pThis->u.s.pDev, NULL);
+    ASMAtomicUoWriteNullPtr(&pThis->u.s.pDev);
     RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     dev_remove_pack(&pThis->u.s.PacketType);

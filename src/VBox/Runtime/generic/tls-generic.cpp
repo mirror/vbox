@@ -88,7 +88,7 @@ RTR3DECL(int) RTTlsFree(RTTLS iTls)
         ||  !ASMBitTest(&g_au32AllocatedBitmap[0], iTls))
         return VERR_INVALID_PARAMETER;
 
-    ASMAtomicWritePtr(&g_apfnDestructors[iTls], NULL);
+    ASMAtomicWriteNullPtr(&g_apfnDestructors[iTls]);
     rtThreadClearTlsEntry(iTls);
     ASMAtomicBitClear(&g_au32AllocatedBitmap[0], iTls);
     return VINF_SUCCESS;

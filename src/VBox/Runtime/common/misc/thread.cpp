@@ -1348,13 +1348,13 @@ RTDECL(void) RTThreadUnblocked(RTTHREAD hThread, RTTHREADSTATE enmCurState)
             rtThreadSetState(pThread, RTTHREADSTATE_RUNNING);
             if (   pThread->LockValidator.pRec
                 && pThread->LockValidator.enmRecState == enmCurState)
-                ASMAtomicWritePtr(&pThread->LockValidator.pRec, NULL);
+                ASMAtomicWriteNullPtr(&pThread->LockValidator.pRec);
         }
         /* This is a bit ugly... :-/ */
         else if (   (   enmActualState == RTTHREADSTATE_TERMINATED
                      || enmActualState == RTTHREADSTATE_INITIALIZING)
                  && pThread->LockValidator.pRec)
-            ASMAtomicWritePtr(&pThread->LockValidator.pRec, NULL);
+            ASMAtomicWriteNullPtr(&pThread->LockValidator.pRec);
         Assert(   pThread->LockValidator.pRec == NULL
                || RTTHREAD_IS_SLEEPING(enmActualState));
     }
@@ -1440,7 +1440,7 @@ static DECLCALLBACK(int) rtThreadClearTlsEntryCallback(PAVLPVNODECORE pNode, voi
 {
     PRTTHREADINT pThread = (PRTTHREADINT)pNode;
     RTTLS iTls = (RTTLS)(uintptr_t)pvUser;
-    ASMAtomicWritePtr(&pThread->apvTlsEntries[iTls], NULL);
+    ASMAtomicWriteNullPtr(&pThread->apvTlsEntries[iTls]);
     return 0;
 }
 

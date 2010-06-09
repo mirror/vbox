@@ -668,8 +668,8 @@ static void vboxNetFltDarwinIffDetached(void *pvThis, ifnet_t pIfNet)
     pIfNet = ASMAtomicUoReadPtrT(&pThis->u.s.pIfNet, ifnet_t);
     int cPromisc = VALID_PTR(pIfNet) ? VBOX_GET_PCOUNT(pIfNet) : - 1;
 
-    ASMAtomicUoWritePtr(&pThis->u.s.pIfNet, NULL);
-    ASMAtomicUoWritePtr(&pThis->u.s.pIfFilter, NULL);
+    ASMAtomicUoWriteNullPtr(&pThis->u.s.pIfNet);
+    ASMAtomicUoWriteNullPtr(&pThis->u.s.pIfFilter);
     ASMAtomicWriteBool(&pThis->u.s.fNeedSetPromiscuous, false);
     pThis->u.s.fSetPromiscuous = false;
     ASMAtomicUoWriteU64(&pThis->NanoTSLastRediscovery, NanoTS);
@@ -1163,7 +1163,7 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
     RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
     pIfFilter = ASMAtomicUoReadPtrT(&pThis->u.s.pIfFilter, interface_filter_t);
     if (pIfFilter)
-        ASMAtomicUoWritePtr(&pThis->u.s.pIfFilter, NULL);
+        ASMAtomicUoWriteNullPtr(&pThis->u.s.pIfFilter);
     RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
 
     if (pIfFilter)

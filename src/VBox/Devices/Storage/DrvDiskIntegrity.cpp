@@ -489,7 +489,7 @@ static void drvdiskintIoReqRemove(PDRVDISKINTEGRITY pThis, PDRVDISKAIOREQ pIoReq
 
     Assert(pReqActive->pIoReq == pIoReq);
 
-    ASMAtomicWritePtr(&pReqActive->pIoReq, NULL);
+    ASMAtomicWriteNullPtr(&pReqActive->pIoReq);
 }
 
 /**
