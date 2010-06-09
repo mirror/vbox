@@ -840,7 +840,7 @@ endif
 # Testcase for the darwin keyboard routines.
 #
 ifdef VBOX_WITH_TESTCASES
-PROGRAMS.darwin += tstDarwinKeyboard
+#PROGRAMS.darwin += tstDarwinKeyboard
 tstDarwinKeyboard_NAME = tstDarwinKeyboard
 tstDarwinKeyboard_TEMPLATE = VBOXR3TSTEXE
 tstDarwinKeyboard_DEFS.x86 = USE_HID_FOR_MODIFIERS
