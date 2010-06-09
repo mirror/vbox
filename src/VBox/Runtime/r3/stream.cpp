@@ -142,7 +142,7 @@ static int rtStrmAllocLock(PRTSTREAM pStream)
         rc = RTCritSectEnter(pCritSect);
         if (RT_SUCCESS(rc))
         {
-            if (RT_LIKELY(ASMAtomicCmpXchgPtr((void * volatile *)&pStream->pCritSect, pCritSect, NULL)))
+            if (RT_LIKELY(ASMAtomicCmpXchgPtr(&pStream->pCritSect, pCritSect, NULL)))
                 return VINF_SUCCESS;
 
             RTCritSectLeave(pCritSect);
@@ -152,7 +152,7 @@ static int rtStrmAllocLock(PRTSTREAM pStream)
     RTMemFree(pCritSect);
 
     /* Handle the lost race case... */
-    pCritSect = (PRTCRITSECT)ASMAtomicReadPtr((void * volatile *)&pStream->pCritSect);
+    pCritSect = ASMAtomicReadPtrT(&pStream->pCritSect, PRTCRITSECT);
     if (pCritSect)
         return RTCritSectEnter(pCritSect);
 

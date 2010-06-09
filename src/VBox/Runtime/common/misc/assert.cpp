@@ -106,9 +106,9 @@ RTDECL(void) RTAssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFi
     /*
      * Fill in the globals.
      */
-    ASMAtomicUoWritePtr((void * volatile *)&g_pszRTAssertExpr, (void *)pszExpr);
-    ASMAtomicUoWritePtr((void * volatile *)&g_pszRTAssertFile, (void *)pszFile);
-    ASMAtomicUoWritePtr((void * volatile *)&g_pszRTAssertFunction, (void *)pszFunction);
+    ASMAtomicUoWritePtr(&g_pszRTAssertExpr, pszExpr);
+    ASMAtomicUoWritePtr(&g_pszRTAssertFile, pszFile);
+    ASMAtomicUoWritePtr(&g_pszRTAssertFunction, pszFunction);
     ASMAtomicUoWriteU32(&g_u32RTAssertLine, uLine);
     RTStrPrintf(g_szRTAssertMsg1, sizeof(g_szRTAssertMsg1),
                 "\n!!Assertion Failed!!\n"

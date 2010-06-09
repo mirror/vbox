@@ -479,19 +479,19 @@ static void vmr3ReqJoinFreeSub(volatile PVMREQ *ppHead, PVMREQ pList)
 {
     for (unsigned cIterations = 0;; cIterations++)
     {
-        PVMREQ pHead = (PVMREQ)ASMAtomicXchgPtr((void * volatile *)ppHead, pList);
+        PVMREQ pHead = ASMAtomicXchgPtrT(ppHead, pList, PVMREQ);
         if (!pHead)
             return;
         PVMREQ pTail = pHead;
         while (pTail->pNext)
             pTail = pTail->pNext;
-        ASMAtomicWritePtr((void * volatile *)&pTail->pNext, pList);
+        ASMAtomicWritePtr(&pTail->pNext, pList);
         ASMCompilerBarrier();
-        if (ASMAtomicCmpXchgPtr((void * volatile *)ppHead, (void *)pHead, pList))
+        if (ASMAtomicCmpXchgPtr(ppHead, pHead, pList))
             return;
-        ASMAtomicWritePtr((void * volatile *)&pTail->pNext, NULL);
+        ASMAtomicWritePtr(&pTail->pNext, NULL);
         ASMCompilerBarrier();
-        if (ASMAtomicCmpXchgPtr((void * volatile *)ppHead, (void *)pHead, NULL))
+        if (ASMAtomicCmpXchgPtr(ppHead, pHead, NULL))
             return;
         pList = pHead;
         Assert(cIterations != 32);
@@ -593,20 +593,20 @@ VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMCPUI
         PVMREQ pNext = NULL;
         PVMREQ pReq = *ppHead;
         if (    pReq
-            &&  !ASMAtomicCmpXchgPtr((void * volatile *)ppHead, (pNext = pReq->pNext), pReq)
+            &&  !ASMAtomicCmpXchgPtr(ppHead, (pNext = pReq->pNext), pReq)
             &&  (pReq = *ppHead)
-            &&  !ASMAtomicCmpXchgPtr((void * volatile *)ppHead, (pNext = pReq->pNext), pReq))
+            &&  !ASMAtomicCmpXchgPtr(ppHead, (pNext = pReq->pNext), pReq))
             pReq = NULL;
         if (pReq)
         {
             Assert(pReq->pNext == pNext); NOREF(pReq);
 #else
-        PVMREQ pReq = (PVMREQ)ASMAtomicXchgPtr((void * volatile *)ppHead, NULL);
+        PVMREQ pReq = ASMAtomicXchgPtrT(ppHead, NULL, PVMREQ);
         if (pReq)
         {
             PVMREQ pNext = pReq->pNext;
             if (    pNext
-                &&  !ASMAtomicCmpXchgPtr((void * volatile *)ppHead, pNext, NULL))
+                &&  !ASMAtomicCmpXchgPtr(ppHead, pNext, NULL))
             {
                 STAM_COUNTER_INC(&pUVM->vm.s.StatReqAllocRaces);
                 vmr3ReqJoinFree(&pUVM->vm.s, pReq->pNext);
@@ -749,10 +749,10 @@ VMMR3DECL(int) VMR3ReqFree(PVMREQ pReq)
         PVMREQ pNext;
         do
         {
-            pNext = (PVMREQ)ASMAtomicUoReadPtr((void * volatile *)ppHead);
-            ASMAtomicWritePtr((void * volatile *)&pReq->pNext, pNext);
+            pNext = ASMAtomicUoReadPtrT(ppHead, PVMREQ);
+            ASMAtomicWritePtr(&pReq->pNext, pNext);
             ASMCompilerBarrier();
-        } while (!ASMAtomicCmpXchgPtr((void * volatile *)ppHead, (void *)pReq, (void *)pNext));
+        } while (!ASMAtomicCmpXchgPtr(ppHead, pReq, pNext));
     }
     else
     {
@@ -856,10 +856,10 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, RTMSINTERVAL cMillies)
         PVMREQ pNext;
         do
         {
-            pNext = (PVMREQ)ASMAtomicUoReadPtr((void * volatile *)&pUVCpu->vm.s.pReqs);
-            ASMAtomicWritePtr((void * volatile *)&pReq->pNext, pNext);
+            pNext = ASMAtomicUoReadPtrT(&pUVCpu->vm.s.pReqs, PVMREQ);
+            ASMAtomicWritePtr(&pReq->pNext, pNext);
             ASMCompilerBarrier();
-        } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pUVCpu->vm.s.pReqs, (void *)pReq, (void *)pNext));
+        } while (!ASMAtomicCmpXchgPtr(&pUVCpu->vm.s.pReqs, pReq, pNext));
 
         /*
          * Notify EMT.
@@ -890,10 +890,10 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, RTMSINTERVAL cMillies)
         PVMREQ pNext;
         do
         {
-            pNext = (PVMREQ)ASMAtomicUoReadPtr((void * volatile *)&pUVM->vm.s.pReqs);
-            ASMAtomicWritePtr((void * volatile *)&pReq->pNext, pNext);
+            pNext = ASMAtomicUoReadPtrT(&pUVM->vm.s.pReqs, PVMREQ);
+            ASMAtomicWritePtr(&pReq->pNext, pNext);
             ASMCompilerBarrier();
-        } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pUVM->vm.s.pReqs, (void *)pReq, (void *)pNext));
+        } while (!ASMAtomicCmpXchgPtr(&pUVM->vm.s.pReqs, pReq, pNext));
 
         /*
          * Notify EMT.
@@ -995,9 +995,9 @@ VMMR3DECL(int) VMR3ReqWait(PVMREQ pReq, RTMSINTERVAL cMillies)
  * @param   pUVM                Pointer to the user mode VM structure
  * @param   idDstCpu            VMCPUID_ANY or virtual CPU ID.
  * @param   pReqList            The list of requests.
- * @param   ppvReqs             Pointer to the list head.
+ * @param   ppReqs              Pointer to the list head.
  */
-static PVMREQ vmR3ReqProcessUTooManyHelper(PUVM pUVM, VMCPUID idDstCpu, PVMREQ pReqList, void * volatile *ppvReqs)
+static PVMREQ vmR3ReqProcessUTooManyHelper(PUVM pUVM, VMCPUID idDstCpu, PVMREQ pReqList, PVMREQ volatile *ppReqs)
 {
     STAM_COUNTER_INC(&pUVM->vm.s.StatReqMoreThan1);
     /* Chop off the last one (pReq). */
@@ -1008,26 +1008,26 @@ static PVMREQ vmR3ReqProcessUTooManyHelper(PUVM pUVM, VMCPUID idDstCpu, PVMREQ p
         pPrev = pReqRet;
         pReqRet = pReqRet->pNext;
     } while (pReqRet->pNext);
-    ASMAtomicWritePtr((void * volatile *)&pPrev->pNext, NULL);
+    ASMAtomicWritePtr(&pPrev->pNext, NULL);
 
     /* Push the others back onto the list (end of it). */
     Log2(("VMR3ReqProcess: Pushing back %p %p...\n", pReqList, pReqList->pNext));
-    if (RT_UNLIKELY(!ASMAtomicCmpXchgPtr(ppvReqs, pReqList, NULL)))
+    if (RT_UNLIKELY(!ASMAtomicCmpXchgPtr(ppReqs, pReqList, NULL)))
     {
         STAM_COUNTER_INC(&pUVM->vm.s.StatReqPushBackRaces);
         do
         {
             ASMNopPause();
-            PVMREQ pReqList2 = (PVMREQ)ASMAtomicXchgPtr(ppvReqs, NULL);
+            PVMREQ pReqList2 = ASMAtomicXchgPtrT(ppReqs, NULL, PVMREQ);
             if (pReqList2)
             {
                 PVMREQ pLast = pReqList2;
                 while (pLast->pNext)
                     pLast = pLast->pNext;
-                ASMAtomicWritePtr((void * volatile *)&pLast->pNext, pReqList);
+                ASMAtomicWritePtr(&pLast->pNext, pReqList);
                 pReqList = pReqList2;
             }
-        } while (!ASMAtomicCmpXchgPtr(ppvReqs, pReqList, NULL));
+        } while (!ASMAtomicCmpXchgPtr(ppReqs, pReqList, NULL));
     }
 
     if (RT_LIKELY(pUVM->pVM))
@@ -1077,10 +1077,10 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu)
          * If there are more than one request, unlink the oldest and put the
          * rest back so that we're reentrant.
          */
-        void * volatile *ppvReqs;
+        PVMREQ volatile *ppReqs;
         if (idDstCpu == VMCPUID_ANY)
         {
-            ppvReqs = (void * volatile *)&pUVM->vm.s.pReqs;
+            ppReqs = &pUVM->vm.s.pReqs;
             if (RT_LIKELY(pUVM->pVM))
                 VM_FF_CLEAR(pUVM->pVM, VM_FF_REQUEST);
         }
@@ -1088,16 +1088,16 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu)
         {
             Assert(idDstCpu < pUVM->cCpus);
             Assert(pUVM->aCpus[idDstCpu].vm.s.NativeThreadEMT == RTThreadNativeSelf());
-            ppvReqs = (void * volatile *)&pUVM->aCpus[idDstCpu].vm.s.pReqs;
+            ppReqs = &pUVM->aCpus[idDstCpu].vm.s.pReqs;
             if (RT_LIKELY(pUVM->pVM))
                 VMCPU_FF_CLEAR(&pUVM->pVM->aCpus[idDstCpu], VMCPU_FF_REQUEST);
         }
 
-        PVMREQ pReq = (PVMREQ)ASMAtomicXchgPtr(ppvReqs, NULL);
+        PVMREQ pReq = ASMAtomicXchgPtrT(ppReqs, NULL, PVMREQ);
         if (!pReq)
             break;
         if (RT_UNLIKELY(pReq->pNext))
-            pReq = vmR3ReqProcessUTooManyHelper(pUVM, idDstCpu, pReq, ppvReqs);
+            pReq = vmR3ReqProcessUTooManyHelper(pUVM, idDstCpu, pReq, ppReqs);
 
         /*
          * Process the request.

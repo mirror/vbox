@@ -128,7 +128,7 @@ RTDECL(int) RTReqProcess(PRTREQQUEUE pQueue, RTMSINTERVAL cMillies)
         /*
          * Get pending requests.
          */
-        PRTREQ pReqs = (PRTREQ)ASMAtomicXchgPtr((void * volatile *)&pQueue->pReqs, NULL);
+        PRTREQ pReqs = ASMAtomicXchgPtrT(&pQueue->pReqs, NULL, PRTREQ);
         if (!pReqs)
         {
             ASMAtomicWriteBool(&pQueue->fBusy, false); /* this aint 100% perfect, but it's good enough for now... */
@@ -392,17 +392,17 @@ static void vmr3ReqJoinFreeSub(volatile PRTREQ *ppHead, PRTREQ pList)
 {
     for (unsigned cIterations = 0;; cIterations++)
     {
-        PRTREQ pHead = (PRTREQ)ASMAtomicXchgPtr((void * volatile *)ppHead, pList);
+        PRTREQ pHead = ASMAtomicXchgPtrT(ppHead, pList, PRTREQ);
         if (!pHead)
             return;
         PRTREQ pTail = pHead;
         while (pTail->pNext)
             pTail = pTail->pNext;
         pTail->pNext = pList;
-        if (ASMAtomicCmpXchgPtr((void * volatile *)ppHead, (void *)pHead, pList))
+        if (ASMAtomicCmpXchgPtr(ppHead, pHead, pList))
             return;
         pTail->pNext = NULL;
-        if (ASMAtomicCmpXchgPtr((void * volatile *)ppHead, (void *)pHead, NULL))
+        if (ASMAtomicCmpXchgPtr(ppHead, pHead, NULL))
             return;
         pList = pHead;
         Assert(cIterations != 32);
@@ -477,20 +477,20 @@ RTDECL(int) RTReqAlloc(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTREQTYPE enmType)
         PRTREQ pNext = NULL;
         PRTREQ pReq = *ppHead;
         if (    pReq
-            &&  !ASMAtomicCmpXchgPtr((void * volatile *)ppHead, (pNext = pReq->pNext), pReq)
+            &&  !ASMAtomicCmpXchgPtr(ppHead, (pNext = pReq->pNext), pReq)
             &&  (pReq = *ppHead)
-            &&  !ASMAtomicCmpXchgPtr((void * volatile *)ppHead, (pNext = pReq->pNext), pReq))
+            &&  !ASMAtomicCmpXchgPtr(ppHead, (pNext = pReq->pNext), pReq))
             pReq = NULL;
         if (pReq)
         {
             Assert(pReq->pNext == pNext); NOREF(pReq);
 #else
-        PRTREQ pReq = (PRTREQ)ASMAtomicXchgPtr((void * volatile *)ppHead, NULL);
+        PRTREQ pReq = ASMAtomicXchgPtrT(ppHead, NULL, PRTREQ);
         if (pReq)
         {
             PRTREQ pNext = pReq->pNext;
             if (    pNext
-                &&  !ASMAtomicCmpXchgPtr((void * volatile *)ppHead, pNext, NULL))
+                &&  !ASMAtomicCmpXchgPtr(ppHead, pNext, NULL))
             {
                 vmr3ReqJoinFree(pQueue, pReq->pNext);
             }
@@ -620,8 +620,8 @@ RTDECL(int) RTReqFree(PRTREQ pReq)
         do
         {
             pNext = *ppHead;
-            ASMAtomicXchgPtr((void * volatile *)&pReq->pNext, pNext);
-        } while (!ASMAtomicCmpXchgPtr((void * volatile *)ppHead, (void *)pReq, (void *)pNext));
+            ASMAtomicWritePtr(&pReq->pNext, pNext);
+        } while (!ASMAtomicCmpXchgPtr(ppHead, pReq, pNext));
     }
     else
     {
@@ -690,7 +690,7 @@ RTDECL(int) RTReqQueue(PRTREQ pReq, RTMSINTERVAL cMillies)
         pNext = pQueue->pReqs;
         pReq->pNext = pNext;
         ASMAtomicWriteBool(&pQueue->fBusy, true);
-    } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pQueue->pReqs, (void *)pReq, (void *)pNext));
+    } while (!ASMAtomicCmpXchgPtr(&pQueue->pReqs, pReq, pNext));
 
     /*
      * Notify queue thread.
@@ -930,7 +930,7 @@ RTDECL(bool) RTReqIsBusy(PRTREQQUEUE pQueue)
 
     if (ASMAtomicReadBool(&pQueue->fBusy))
         return true;
-    if (ASMAtomicReadPtr((void * volatile *)&pQueue->pReqs) != NULL)
+    if (ASMAtomicReadPtrT(&pQueue->pReqs, PRTREQ) != NULL)
         return true;
     if (ASMAtomicReadBool(&pQueue->fBusy))
         return true;

@@ -472,6 +472,29 @@ DECLINLINE(void *) ASMAtomicXchgPtr(void * volatile *ppv, const void *pv)
 
 
 /**
+ * Convenience macro for avoiding the annoying casting with ASMAtomicXchgPtr.
+ *
+ * @returns Current *pv value
+ * @param   ppv     Pointer to the pointer variable to update.
+ * @param   pv      The pointer value to assign to *ppv.
+ * @param   Type    The type of *ppv, sans volatile.
+ */
+#ifdef __GNUC__
+# define ASMAtomicXchgPtrT(ppv, pv, Type) \
+    __extension__ \
+    ({\
+        __typeof__(*(ppv)) volatile * const ppvTypeChecked = (ppv); \
+        Type                          const pvTypeChecked  = (pv); \
+        Type pvTypeCheckedRet = (__typeof__(*(ppv))) ASMAtomicXchgPtr((void * volatile *)ppvTypeChecked, (void *)pvTypeChecked); \
+        pvTypeCheckedRet; \
+     })
+#else
+# define ASMAtomicXchgPtrT(ppv, pv, Type) \
+    (Type)ASMAtomicXchgPtr((void * volatile *)(ppv), (void *)(pv))
+#endif
+
+
+/**
  * Atomically Exchange a raw-mode context pointer value, ordered.
  *
  * @returns Current *ppv value
@@ -848,7 +871,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgS64(volatile int64_t *pi64, const int64_t i64, 
  * @param   pvNew       The new value to assigned to *ppv.
  * @param   pvOld       The old value to *ppv compare with.
  */
-DECLINLINE(bool) ASMAtomicCmpXchgPtr(void * volatile *ppv, const void *pvNew, const void *pvOld)
+DECLINLINE(bool) ASMAtomicCmpXchgPtrVoid(void * volatile *ppv, const void *pvNew, const void *pvOld)
 {
 #if ARCH_BITS == 32
     return ASMAtomicCmpXchgU32((volatile uint32_t *)(void *)ppv, (uint32_t)pvNew, (uint32_t)pvOld);
@@ -858,6 +881,35 @@ DECLINLINE(bool) ASMAtomicCmpXchgPtr(void * volatile *ppv, const void *pvNew, co
 # error "ARCH_BITS is bogus"
 #endif
 }
+
+
+/**
+ * Atomically Compare and Exchange a pointer value, ordered.
+ *
+ * @returns true if xchg was done.
+ * @returns false if xchg wasn't done.
+ *
+ * @param   ppv         Pointer to the value to update.
+ * @param   pvNew       The new value to assigned to *ppv.
+ * @param   pvOld       The old value to *ppv compare with.
+ *
+ * @remarks This is relatively type safe on GCC platforms.
+ */
+#ifdef __GNUC__
+# define ASMAtomicCmpXchgPtr(ppv, pvNew, pvOld) \
+    __extension__ \
+    ({\
+        __typeof__(*(ppv)) volatile * const ppvTypeChecked   = (ppv); \
+        __typeof__(*(ppv))            const pvNewTypeChecked = (pvNew); \
+        __typeof__(*(ppv))            const pvOldTypeChecked = (pvOld); \
+        bool fMacroRet = ASMAtomicCmpXchgPtrVoid((void * volatile *)ppvTypeChecked, \
+                                                 (void *)pvNewTypeChecked, (void *)pvOldTypeChecked); \
+        fMacroRet; \
+     })
+#else
+# define ASMAtomicCmpXchgPtr(ppv, pvNew, pvOld) \
+    ASMAtomicCmpXchgPtrVoid((void * volatile *)(ppv), (void *)(pvNew), (void *)(pvOld))
+#endif
 
 
 /** @def ASMAtomicCmpXchgHandle
@@ -1175,7 +1227,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExS64(volatile int64_t *pi64, const int64_t i64
  * @param   pvOld       The old value to *ppv compare with.
  * @param   ppvOld      Pointer store the old value at.
  */
-DECLINLINE(bool) ASMAtomicCmpXchgExPtr(void * volatile *ppv, const void *pvNew, const void *pvOld, void **ppvOld)
+DECLINLINE(bool) ASMAtomicCmpXchgExPtrVoid(void * volatile *ppv, const void *pvNew, const void *pvOld, void **ppvOld)
 {
 #if ARCH_BITS == 32
     return ASMAtomicCmpXchgExU32((volatile uint32_t *)(void *)ppv, (uint32_t)pvNew, (uint32_t)pvOld, (uint32_t *)ppvOld);
@@ -1185,6 +1237,39 @@ DECLINLINE(bool) ASMAtomicCmpXchgExPtr(void * volatile *ppv, const void *pvNew, 
 # error "ARCH_BITS is bogus"
 #endif
 }
+
+
+/**
+ * Atomically Compare and Exchange a pointer value, additionally
+ * passing back old value, ordered.
+ *
+ * @returns true if xchg was done.
+ * @returns false if xchg wasn't done.
+ *
+ * @param   ppv         Pointer to the value to update.
+ * @param   pvNew       The new value to assigned to *ppv.
+ * @param   pvOld       The old value to *ppv compare with.
+ * @param   ppvOld      Pointer store the old value at.
+ *
+ * @remarks This is relatively type safe on GCC platforms.
+ */
+#ifdef __GNUC__
+# define ASMAtomicCmpXchgExPtr(ppv, pvNew, pvOld, ppvOld) \
+    __extension__ \
+    ({\
+        __typeof__(*(ppv)) volatile * const ppvTypeChecked    = (ppv); \
+        __typeof__(*(ppv))            const pvNewTypeChecked  = (pvNew); \
+        __typeof__(*(ppv))            const pvOldTypeChecked  = (pvOld); \
+        __typeof__(*(ppv)) *          const ppvOldTypeChecked = (ppvOld); \
+        bool fMacroRet = ASMAtomicCmpXchgExPtrVoid((void * volatile *)ppvTypeChecked, \
+                                                   (void *)pvNewTypeChecked, (void *)pvOldTypeChecked, \
+                                                   (void **)ppvOld); \
+        fMacroRet; \
+     })
+#else
+# define ASMAtomicCmpXchgExPtr(ppv, pvNew, pvOld, ppvOld) \
+    ASMAtomicCmpXchgExPtrVoid((void * volatile *)(ppv), (void *)(pvNew), (void *)pvOld, (void **)ppvOld)
+#endif
 
 
 /**
@@ -1902,6 +1987,9 @@ DECLINLINE(int64_t) ASMAtomicUoReadS64(volatile int64_t *pi64)
  *
  * @returns Current *pv value
  * @param   ppv     Pointer to the pointer variable to read.
+ *
+ * @remarks Please use ASMAtomicReadPtrT, it provides better type safety and
+ *          requires less typing (no casts).
  */
 DECLINLINE(void *) ASMAtomicReadPtr(void * volatile *ppv)
 {
@@ -1914,12 +2002,35 @@ DECLINLINE(void *) ASMAtomicReadPtr(void * volatile *ppv)
 #endif
 }
 
+/**
+ * Convenience macro for avoiding the annoying casting with ASMAtomicReadPtr.
+ *
+ * @returns Current *pv value
+ * @param   ppv     Pointer to the pointer variable to read.
+ * @param   Type    The type of *ppv, sans volatile.
+ */
+#ifdef __GNUC__
+# define ASMAtomicReadPtrT(ppv, Type) \
+    __extension__ \
+    ({\
+        __typeof__(*(ppv)) volatile *ppvTypeChecked = (ppv); \
+        Type pvTypeChecked = (__typeof__(*(ppv))) ASMAtomicReadPtr((void * volatile *)ppvTypeChecked); \
+        pvTypeChecked; \
+     })
+#else
+# define ASMAtomicReadPtrT(ppv, Type) \
+    (Type)ASMAtomicReadPtr((void * volatile *)(ppv))
+#endif
+
 
 /**
  * Atomically reads a pointer value, unordered.
  *
  * @returns Current *pv value
  * @param   ppv     Pointer to the pointer variable to read.
+ *
+ * @remarks Please use ASMAtomicUoReadPtrT, it provides better type safety and
+ *          requires less typing (no casts).
  */
 DECLINLINE(void *) ASMAtomicUoReadPtr(void * volatile *ppv)
 {
@@ -1931,6 +2042,27 @@ DECLINLINE(void *) ASMAtomicUoReadPtr(void * volatile *ppv)
 # error "ARCH_BITS is bogus"
 #endif
 }
+
+
+/**
+ * Convenience macro for avoiding the annoying casting with ASMAtomicUoReadPtr.
+ *
+ * @returns Current *pv value
+ * @param   ppv     Pointer to the pointer variable to read.
+ * @param   Type    The type of *ppv, sans volatile.
+ */
+#ifdef __GNUC__
+# define ASMAtomicUoReadPtrT(ppv, Type) \
+    __extension__ \
+    ({\
+        __typeof__(*(ppv)) volatile * const ppvTypeChecked = (ppv); \
+        Type pvTypeChecked = (__typeof__(*(ppv))) ASMAtomicUoReadPtr((void * volatile *)ppvTypeChecked); \
+        pvTypeChecked; \
+     })
+#else
+# define ASMAtomicUoReadPtrT(ppv, Type) \
+    (Type)ASMAtomicUoReadPtr((void * volatile *)(ppv))
+#endif
 
 
 /**
@@ -2285,9 +2417,9 @@ DECLINLINE(void) ASMAtomicUoWriteBool(volatile bool *pf, bool f)
  *
  * @returns Current *pv value
  * @param   ppv     Pointer to the pointer variable.
- * @param   pv      The pointer value to assigne to *ppv.
+ * @param   pv      The pointer value to assign to *ppv.
  */
-DECLINLINE(void) ASMAtomicWritePtr(void * volatile *ppv, const void *pv)
+DECLINLINE(void) ASMAtomicWritePtrVoid(void * volatile *ppv, const void *pv)
 {
 #if ARCH_BITS == 32
     ASMAtomicWriteU32((volatile uint32_t *)(void *)ppv, (uint32_t)pv);
@@ -2300,22 +2432,76 @@ DECLINLINE(void) ASMAtomicWritePtr(void * volatile *ppv, const void *pv)
 
 
 /**
- * Atomically writes a pointer value, unordered.
+ * Convenience macro for avoiding the annoying casting with ASMAtomicWritePtr.
  *
  * @returns Current *pv value
  * @param   ppv     Pointer to the pointer variable.
- * @param   pv      The pointer value to assigne to *ppv.
+ * @param   pv      The pointer value to assign to *ppv. If NULL, you may have
+ *                  to cast it to the right pointer type for GCC to be happy.
+ *
+ * @remarks This is relatively type safe on GCC platforms when @a pv isn't
+ *          NULL.
  */
-DECLINLINE(void) ASMAtomicUoWritePtr(void * volatile *ppv, const void *pv)
-{
-#if ARCH_BITS == 32
-    ASMAtomicUoWriteU32((volatile uint32_t *)(void *)ppv, (uint32_t)pv);
-#elif ARCH_BITS == 64
-    ASMAtomicUoWriteU64((volatile uint64_t *)(void *)ppv, (uint64_t)pv);
+#ifdef __GNUC__
+# define ASMAtomicWritePtr(ppv, pv) \
+    do \
+    { \
+        __typeof__(*(ppv)) volatile * const ppvTypeChecked = (ppv); \
+        __typeof__(*(ppv))            const pvTypeChecked  = (pv); \
+        \
+        AssertCompile(sizeof(*ppv) == sizeof(void *)); \
+        AssertCompile(sizeof(pv) == sizeof(void *)); \
+        Assert(!( (uintptr_t)ppv & ((ARCH_BITS / 8) - 1) )); \
+        \
+        ASMAtomicWritePtrVoid((void * volatile *)(ppvTypeChecked), (void *)(pvTypeChecked)); \
+    } while (0)
 #else
-# error "ARCH_BITS is bogus"
+# define ASMAtomicWritePtr(ppv, pv) \
+    do \
+    { \
+        AssertCompile(sizeof(*ppv) == sizeof(void *)); \
+        AssertCompile(sizeof(pv) == sizeof(void *)); \
+        Assert(!( (uintptr_t)ppv & ((ARCH_BITS / 8) - 1) )); \
+        \
+        ASMAtomicWritePtrVoid((void * volatile *)(ppv), (void *)(pv)); \
+    } while (0)
 #endif
-}
+
+
+/**
+ * Convenience macro for avoiding the annoying casting involved when using
+ * ASMAtomicWritePtr.
+ *
+ * @returns Current *pv value
+ * @param   ppv     Pointer to the pointer variable.
+ * @param   pv      The pointer value to assign to *ppv.
+ *
+ * @remarks This is relatively type safe on GCC platforms when @a pv isn't
+ *          NULL.
+ */
+#ifdef __GNUC__
+# define ASMAtomicUoWritePtr(ppv, pv) \
+    do \
+    { \
+        __typeof__(*(ppv)) volatile * const ppvTypeChecked = (ppv); \
+        __typeof__(*(ppv))            const pvTypeChecked  = (pv); \
+        \
+        AssertCompile(sizeof(*ppv) == sizeof(void *)); \
+        AssertCompile(sizeof(pv) == sizeof(void *)); \
+        Assert(!( (uintptr_t)ppv & ((ARCH_BITS / 8) - 1) )); \
+        \
+        *(ppvTypeChecked) = pvTypeChecked; \
+    } while (0)
+#else
+# define ASMAtomicUoWritePtr(ppv, pv) \
+    do \
+    { \
+        AssertCompile(sizeof(*ppv) == sizeof(void *)); \
+        AssertCompile(sizeof(pv) == sizeof(void *)); \
+        Assert(!( (uintptr_t)ppv & ((ARCH_BITS / 8) - 1) )); \
+        *(ppv) = pv; \
+    } while (0)
+#endif
 
 
 /**

@@ -84,14 +84,14 @@ VMMDECL(void) PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
     {
         pvNext = ASMAtomicUoReadPtr((void * volatile *)&pQueue->CTX_SUFF(pPending));
         ASMAtomicUoWritePtr((void * volatile *)&pItem->CTX_SUFF(pNext), pvNext);
-    } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pQueue->CTX_SUFF(pPending), pItem, pvNext));
+    } while (!ASMAtomicCmpXchgPtr(&pQueue->CTX_SUFF(pPending), pItem, pvNext));
 #else
     PPDMQUEUEITEMCORE pNext;
     do
     {
         pNext = pQueue->CTX_SUFF(pPending);
         pItem->CTX_SUFF(pNext) = pNext;
-    } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pQueue->CTX_SUFF(pPending), pItem, pNext));
+    } while (!ASMAtomicCmpXchgPtr(&pQueue->CTX_SUFF(pPending), pItem, pNext));
 #endif
 
     if (!pQueue->pTimer)

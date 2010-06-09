@@ -124,7 +124,7 @@ SUPR0DECL(int) SUPR0IdcOpen(PSUPDRVIDCHANDLE pHandle, uint32_t uReqVersion, uint
             &&  Req.u.Out.uSessionVersion >= uMinVersion
             &&  (Req.u.Out.uSessionVersion & UINT32_C(0xffff0000)) == (SUPDRV_IDC_VERSION & UINT32_C(0xffff0000)))
         {
-            ASMAtomicCmpXchgPtr((void * volatile *)&g_pMainHandle, pHandle, NULL);
+            ASMAtomicCmpXchgPtr(&g_pMainHandle, pHandle, NULL);
             return rc;
         }
 
@@ -166,7 +166,7 @@ SUPR0DECL(int) SUPR0IdcClose(PSUPDRVIDCHANDLE pHandle)
     if (RT_SUCCESS(rc))
     {
         pHandle->s.pSession = NULL;
-        ASMAtomicCmpXchgPtr((void * volatile *)&g_pMainHandle, NULL, pHandle);
+        ASMAtomicCmpXchgPtr(&g_pMainHandle, NULL, pHandle);
     }
     return rc;
 }
@@ -202,7 +202,7 @@ SUPR0DECL(PSUPDRVSESSION) SUPR0IdcGetSession(PSUPDRVIDCHANDLE pHandle)
  */
 PSUPDRVIDCHANDLE supR0IdcGetHandleFromSession(PSUPDRVSESSION pSession)
 {
-    PSUPDRVIDCHANDLE pHandle = (PSUPDRVIDCHANDLE)ASMAtomicUoReadPtr((void * volatile *)&g_pMainHandle);
+    PSUPDRVIDCHANDLE pHandle = ASMAtomicUoReadPtrT(&g_pMainHandle, PSUPDRVIDCHANDLE);
     if (    VALID_PTR(pHandle)
         &&  pHandle->s.pSession == pSession)
         return pHandle;

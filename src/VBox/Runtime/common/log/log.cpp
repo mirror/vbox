@@ -1825,7 +1825,7 @@ RT_EXPORT_SYMBOL(RTLogGetDefaultInstance);
  */
 RTDECL(PRTLOGGER) RTLogSetDefaultInstance(PRTLOGGER pLogger)
 {
-    return (PRTLOGGER)ASMAtomicXchgPtr((void * volatile *)&g_pLogger, pLogger);
+    return ASMAtomicXchgPtrT(&g_pLogger, pLogger, PRTLOGGER);
 }
 RT_EXPORT_SYMBOL(RTLogSetDefaultInstance);
 #endif /* !IN_RC */
@@ -1860,7 +1860,7 @@ RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
         while (i-- > 0)
             if (g_aPerThreadLoggers[i].NativeThread == Self)
             {
-                ASMAtomicXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].uKey, (void *)uKey);
+                ASMAtomicWritePtr((void * volatile *)&g_aPerThreadLoggers[i].uKey, (void *)uKey);
                 g_aPerThreadLoggers[i].pLogger = pLogger;
                 return VINF_SUCCESS;
             }
@@ -1884,8 +1884,8 @@ RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
                 if (    g_aPerThreadLoggers[i].NativeThread == NIL_RTNATIVETHREAD
                     &&  ASMAtomicCmpXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].NativeThread, (void *)Self, (void *)NIL_RTNATIVETHREAD))
                 {
-                    ASMAtomicXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].uKey, (void *)uKey);
-                    ASMAtomicXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].pLogger, pLogger);
+                    ASMAtomicWritePtr((void * volatile *)&g_aPerThreadLoggers[i].uKey, (void *)uKey);
+                    ASMAtomicWritePtr(&g_aPerThreadLoggers[i].pLogger, pLogger);
                     return VINF_SUCCESS;
                 }
             }
@@ -1904,9 +1904,9 @@ RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey)
             if (    g_aPerThreadLoggers[i].NativeThread == Self
                 ||  g_aPerThreadLoggers[i].uKey == uKey)
             {
-                ASMAtomicXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].uKey, NULL);
-                ASMAtomicXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].pLogger, NULL);
-                ASMAtomicXchgPtr((void * volatile *)&g_aPerThreadLoggers[i].NativeThread, (void *)NIL_RTNATIVETHREAD);
+                ASMAtomicWritePtr((void * volatile *)&g_aPerThreadLoggers[i].uKey, (void *)NULL);
+                ASMAtomicWritePtr(&g_aPerThreadLoggers[i].pLogger, (PRTLOGGER)NULL);
+                ASMAtomicWriteHandle(&g_aPerThreadLoggers[i].NativeThread, NIL_RTNATIVETHREAD);
                 ASMAtomicDecS32(&g_cPerThreadLoggers);
             }
 

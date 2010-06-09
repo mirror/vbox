@@ -51,12 +51,12 @@
 *******************************************************************************/
 /** @todo move this to r3/posix/something.h. */
 #ifdef RT_OS_SOLARIS
-# define ATOMIC_GET_PTHREAD_T(pvVar, pThread) ASMAtomicReadSize(pvVar, pThread)
-# define ATOMIC_SET_PTHREAD_T(pvVar, pThread) ASMAtomicWriteSize(pvVar, pThread)
+# define ATOMIC_GET_PTHREAD_T(ppvVar, pThread) ASMAtomicReadSize(ppvVar, pThread)
+# define ATOMIC_SET_PTHREAD_T(ppvVar, pThread) ASMAtomicWriteSize(ppvVar, pThread)
 #else
 AssertCompileSize(pthread_t, sizeof(void *));
-# define ATOMIC_GET_PTHREAD_T(pvVar, pThread) do { *(pThread) = (pthread_t)ASMAtomicReadPtr((void *volatile *)pvVar); } while (0)
-# define ATOMIC_SET_PTHREAD_T(pvVar, pThread) ASMAtomicWritePtr((void *volatile *)pvVar, (void *)pThread)
+# define ATOMIC_GET_PTHREAD_T(ppvVar, pThread) do { *(pThread) = (pthread_t)ASMAtomicReadPtr((void * volatile *)ppvVar); } while (0)
+# define ATOMIC_SET_PTHREAD_T(ppvVar, pThread) ASMAtomicWritePtr((void * volatile *)ppvVar, (void *)pThread)
 #endif
 
 

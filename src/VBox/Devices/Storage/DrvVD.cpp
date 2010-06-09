@@ -1158,8 +1158,8 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
     LogFlow(("%s:\n", __FUNCTION__));
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
-    RTSEMFASTMUTEX mutex = (RTSEMFASTMUTEX)ASMAtomicXchgPtr((void **)&pThis->MergeCompleteMutex,
-                                                            (void *)NIL_RTSEMFASTMUTEX);
+    RTSEMFASTMUTEX mutex;
+    ASMAtomicXchgHandle(&pThis->MergeCompleteMutex, NIL_RTSEMFASTMUTEX, &mutex);
     if (mutex != NIL_RTSEMFASTMUTEX)
     {
         /* Request the semaphore to wait until a potentially running merge

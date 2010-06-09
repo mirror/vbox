@@ -91,7 +91,7 @@ STDMETHODIMP UIFrameBufferQuartz2D::SetVisibleRegion(BYTE *aRectangles, ULONG aC
      * execution waiting for a lock is out of the question. A quick solution using
      * ASMAtomic(Cmp)XchgPtr and a struct { cAllocated; cRects; aRects[1]; }
      * *mRegion, *mUnusedRegion; should suffice (and permit you to reuse allocations). */
-    RegionRects *rgnRcts = (RegionRects *)ASMAtomicXchgPtr((void * volatile *) &mRegionUnused, NULL);
+    RegionRects *rgnRcts = ASMAtomicXchgPtrT(&mRegionUnused, NULL, RegionRects *);
     if (rgnRcts && rgnRcts->allocated < aCount)
     {
         RTMemFree (rgnRcts);
@@ -142,10 +142,10 @@ STDMETHODIMP UIFrameBufferQuartz2D::SetVisibleRegion(BYTE *aRectangles, ULONG aC
     }
 //    printf ("..................................\n");
 
-    void *pvOld = ASMAtomicXchgPtr((void * volatile *)&mRegion, rgnRcts);
-    if (    pvOld
-        &&  !ASMAtomicCmpXchgPtr((void * volatile *)&mRegionUnused, pvOld, NULL))
-        RTMemFree (pvOld);
+    RegionRects *pOld = ASMAtomicXchgPtrT(&mRegion, rgnRcts, RegionRects *);
+    if (    pOld
+        &&  !ASMAtomicCmpXchgPtr(&mRegionUnused, pOld, NULL))
+        RTMemFree(pOld);
 
     QApplication::postEvent(m_pMachineView, new UISetRegionEvent (reg));
 
@@ -202,7 +202,7 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
         CGContextBeginTransparencyLayer(ctx, NULL);
 #endif
         /* Grab the current visible region. */
-        RegionRects *rgnRcts = (RegionRects *)ASMAtomicXchgPtr((void * volatile *)&mRegion, NULL);
+        RegionRects *rgnRcts = ASMAtomicXchgPtrT(&mRegion, NULL, RegionRects *);
         if (rgnRcts)
         {
             if (rgnRcts->used > 0)
@@ -215,8 +215,8 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
                 CGContextClip(ctx);
             }
             /* Put back the visible region, free if we cannot (2+ SetVisibleRegion calls). */
-            if (    !ASMAtomicCmpXchgPtr((void * volatile *)&mRegion, rgnRcts, NULL)
-                &&  !ASMAtomicCmpXchgPtr((void * volatile *)&mRegionUnused, rgnRcts, NULL))
+            if (    !ASMAtomicCmpXchgPtr(&mRegion, rgnRcts, NULL)
+                &&  !ASMAtomicCmpXchgPtr(&mRegionUnused, rgnRcts, NULL))
                 RTMemFree(rgnRcts);
         }
         /* In any case clip the drawing to the view window */

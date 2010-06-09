@@ -269,7 +269,7 @@ int rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
             break;
         }
     Assert(pProcessPriority != &g_aDefaultPriority);
-    ASMAtomicUoWritePtr((void **)&g_pProcessPriority, pProcessPriority);
+    ASMAtomicUoWritePtr(&g_pProcessPriority, pProcessPriority);
 
     return VINF_SUCCESS;
 }

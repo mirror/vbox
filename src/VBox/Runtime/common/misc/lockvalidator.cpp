@@ -340,7 +340,7 @@ static void rtLockValidatorLazyInit(void)
 /** Wrapper around ASMAtomicReadPtr. */
 DECL_FORCE_INLINE(PRTLOCKVALRECUNION) rtLockValidatorReadRecUnionPtr(PRTLOCKVALRECUNION volatile *ppRec)
 {
-    PRTLOCKVALRECUNION p = (PRTLOCKVALRECUNION)ASMAtomicReadPtr((void * volatile *)ppRec);
+    PRTLOCKVALRECUNION p = ASMAtomicReadPtrT(ppRec, PRTLOCKVALRECUNION);
     RTLOCKVAL_ASSERT_PTR_ALIGN(p);
     return p;
 }
@@ -350,14 +350,14 @@ DECL_FORCE_INLINE(PRTLOCKVALRECUNION) rtLockValidatorReadRecUnionPtr(PRTLOCKVALR
 DECL_FORCE_INLINE(void) rtLockValidatorWriteRecUnionPtr(PRTLOCKVALRECUNION volatile *ppRec, PRTLOCKVALRECUNION pRecNew)
 {
     RTLOCKVAL_ASSERT_PTR_ALIGN(pRecNew);
-    ASMAtomicWritePtr((void * volatile *)ppRec, pRecNew);
+    ASMAtomicWritePtr(ppRec, pRecNew);
 }
 
 
 /** Wrapper around ASMAtomicReadPtr. */
 DECL_FORCE_INLINE(PRTTHREADINT) rtLockValidatorReadThreadHandle(RTTHREAD volatile *phThread)
 {
-    PRTTHREADINT p = (PRTTHREADINT)ASMAtomicReadPtr((void * volatile *)phThread);
+    PRTTHREADINT p = ASMAtomicReadPtrT(phThread, PRTTHREADINT);
     RTLOCKVAL_ASSERT_PTR_ALIGN(p);
     return p;
 }
@@ -366,7 +366,7 @@ DECL_FORCE_INLINE(PRTTHREADINT) rtLockValidatorReadThreadHandle(RTTHREAD volatil
 /** Wrapper around ASMAtomicUoReadPtr. */
 DECL_FORCE_INLINE(PRTLOCKVALRECSHRDOWN) rtLockValidatorUoReadSharedOwner(PRTLOCKVALRECSHRDOWN volatile *ppOwner)
 {
-    PRTLOCKVALRECSHRDOWN p = (PRTLOCKVALRECSHRDOWN)ASMAtomicUoReadPtr((void * volatile *)ppOwner);
+    PRTLOCKVALRECSHRDOWN p = ASMAtomicUoReadPtrT(ppOwner, PRTLOCKVALRECSHRDOWN);
     RTLOCKVAL_ASSERT_PTR_ALIGN(p);
     return p;
 }
@@ -818,17 +818,17 @@ DECL_FORCE_INLINE(void) rtLockValidatorSrcPosCopy(PRTLOCKVALSRCPOS pDst, PCRTLOC
 {
     if (pSrc)
     {
-        ASMAtomicUoWriteU32(&pDst->uLine,                           pSrc->uLine);
-        ASMAtomicUoWritePtr((void * volatile *)&pDst->pszFile,      pSrc->pszFile);
-        ASMAtomicUoWritePtr((void * volatile *)&pDst->pszFunction,  pSrc->pszFunction);
-        ASMAtomicUoWritePtr((void * volatile *)&pDst->uId,          (void *)pSrc->uId);
+        ASMAtomicUoWriteU32(&pDst->uLine,        pSrc->uLine);
+        ASMAtomicUoWritePtr(&pDst->pszFile,      pSrc->pszFile);
+        ASMAtomicUoWritePtr(&pDst->pszFunction,  pSrc->pszFunction);
+        ASMAtomicUoWritePtr((void * volatile *)&pDst->uId, (void *)pSrc->uId);
     }
     else
     {
-        ASMAtomicUoWriteU32(&pDst->uLine,                           0);
-        ASMAtomicUoWritePtr((void * volatile *)&pDst->pszFile,      NULL);
-        ASMAtomicUoWritePtr((void * volatile *)&pDst->pszFunction,  NULL);
-        ASMAtomicUoWritePtr((void * volatile *)&pDst->uId,          0);
+        ASMAtomicUoWriteU32(&pDst->uLine,        0);
+        ASMAtomicUoWritePtr(&pDst->pszFile,      NULL);
+        ASMAtomicUoWritePtr(&pDst->pszFunction,  NULL);
+        ASMAtomicUoWritePtr(&pDst->uId, (RTHCUINTPTR)0);
     }
 }
 
@@ -1358,7 +1358,7 @@ static bool rtLockValidatorClassIsPriorClassByLinearSearch(RTLOCKVALCLASSINT *pC
                 PRTLOCKVALCLASSREF *ppHashEntry = &pClass->apPriorLocksHash[RTLOCKVALCLASS_HASH(pPriorClass)];
                 if (    !(*ppHashEntry)
                     ||  (*ppHashEntry)->cLookups + 128 < cLookups)
-                    ASMAtomicWritePtr((void * volatile *)ppHashEntry, &pChunk->aRefs[i]);
+                    ASMAtomicWritePtr(ppHashEntry, &pChunk->aRefs[i]);
 
 #ifdef RTLOCKVAL_WITH_CLASS_HASH_STATS
                 ASMAtomicIncU32(&pClass->cHashMisses);
@@ -1468,7 +1468,7 @@ static int rtLockValidatorClassAddPriorClass(RTLOCKVALCLASSINT *pClass, RTLOCKVA
                     pNew->aRefs[0].hClass           = pPriorClass;
                     pNew->aRefs[0].fAutodidacticism = fAutodidacticism;
 
-                    ASMAtomicWritePtr((void * volatile *)&pChunk->pNext, pNew);
+                    ASMAtomicWritePtr(&pChunk->pNext, pNew);
                     rtLockValidatorClassRetain(pPriorClass);
                     rc = VINF_SUCCESS;
                     break;
@@ -1546,7 +1546,7 @@ static void rtLockValidatorUnlinkAllSiblings(PRTLOCKVALRECCORE pCore)
         }
         if (RT_UNLIKELY(ppCoreNext))
             break;
-        pSibling = (PRTLOCKVALRECUNION)ASMAtomicXchgPtr((void * volatile *)ppCoreNext, NULL);
+        pSibling = ASMAtomicXchgPtrT(ppCoreNext, NULL, PRTLOCKVALRECUNION);
     }
 }
 
@@ -3471,7 +3471,7 @@ RTDECL(void) RTLockValidatorRecSharedDelete(PRTLOCKVALRECSHRD pRec)
     if (pRec->papOwners)
     {
         PRTLOCKVALRECSHRDOWN volatile *papOwners = pRec->papOwners;
-        ASMAtomicUoWritePtr((void * volatile *)&pRec->papOwners, NULL);
+        ASMAtomicUoWritePtr(&pRec->papOwners, NULL);
         ASMAtomicUoWriteU32(&pRec->cAllocated, 0);
 
         RTMemFree((void *)pRec->papOwners);
@@ -3814,7 +3814,7 @@ static bool rtLockValidatorRecSharedMakeRoom(PRTLOCKVALRECSHRD pShared)
                     cAllocated++;
                 }
 
-                ASMAtomicWritePtr((void * volatile *)&pShared->papOwners, papOwners);
+                ASMAtomicWritePtr(&pShared->papOwners, papOwners);
                 ASMAtomicWriteU32(&pShared->cAllocated, cAllocated);
             }
             ASMAtomicWriteBool(&pShared->fReallocating, false);
@@ -3857,7 +3857,7 @@ DECLINLINE(bool) rtLockValidatorRecSharedAddOwner(PRTLOCKVALRECSHRD pShared, PRT
         {
             for (uint32_t iEntry = 0; iEntry < cMax; iEntry++)
             {
-                if (ASMAtomicCmpXchgPtr((void * volatile *)&papOwners[iEntry], pEntry, NULL))
+                if (ASMAtomicCmpXchgPtr(&papOwners[iEntry], pEntry, NULL))
                 {
                     rtLockValidatorSerializeDetectionLeave();
                     return true;
@@ -3888,14 +3888,14 @@ DECLINLINE(void) rtLockValidatorRecSharedRemoveAndFreeOwner(PRTLOCKVALRECSHRD pS
     rtLockValidatorSerializeDetectionEnter();
     AssertReturnVoidStmt(pShared->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC, rtLockValidatorSerializeDetectionLeave());
     if (RT_UNLIKELY(   iEntry >= pShared->cAllocated
-                    || !ASMAtomicCmpXchgPtr((void * volatile *)&pShared->papOwners[iEntry], NULL, pEntry)))
+                    || !ASMAtomicCmpXchgPtr(&pShared->papOwners[iEntry], NULL, pEntry)))
     {
         /* this shouldn't happen yet... */
         AssertFailed();
         PRTLOCKVALRECSHRDOWN volatile  *papOwners = pShared->papOwners;
         uint32_t const                  cMax      = pShared->cAllocated;
         for (iEntry = 0; iEntry < cMax; iEntry++)
-            if (ASMAtomicCmpXchgPtr((void * volatile *)&papOwners[iEntry], NULL, pEntry))
+            if (ASMAtomicCmpXchgPtr(&papOwners[iEntry], NULL, pEntry))
                break;
         AssertReturnVoidStmt(iEntry < cMax, rtLockValidatorSerializeDetectionLeave());
     }
@@ -3930,7 +3930,7 @@ RTDECL(void) RTLockValidatorRecSharedResetOwner(PRTLOCKVALRECSHRD pRec, RTTHREAD
         PRTLOCKVALRECSHRDOWN volatile  *papEntries = pRec->papOwners;
         while (iEntry < cEntries)
         {
-            PRTLOCKVALRECSHRDOWN pEntry = (PRTLOCKVALRECSHRDOWN)ASMAtomicXchgPtr((void * volatile *)&papEntries[iEntry], NULL);
+            PRTLOCKVALRECSHRDOWN pEntry = ASMAtomicXchgPtrT(&papEntries[iEntry], NULL, PRTLOCKVALRECSHRDOWN);
             if (pEntry)
             {
                 ASMAtomicDecU32(&pRec->cEntries);

@@ -3891,7 +3891,7 @@ static void ahciSendSDBFis(PAHCIPort pAhciPort, uint32_t uFinishedTasks, bool fI
     uint32_t sdbFis[2];
     bool fAssertIntr = false;
     PAHCI pAhci = pAhciPort->CTX_SUFF(pAhci);
-    PAHCIPORTTASKSTATE pTaskErr = (PAHCIPORTTASKSTATE)ASMAtomicReadPtr((void * volatile *)&pAhciPort->pTaskErr);
+    PAHCIPORTTASKSTATE pTaskErr = ASMAtomicReadPtrT(&pAhciPort->pTaskErr, PAHCIPORTTASKSTATE);
 
     ahciLog(("%s: Building SDB FIS\n", __FUNCTION__));
 
@@ -4899,7 +4899,7 @@ static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPor
                         pAhciPortTaskState->uOffset,
                         pAhciPortTaskState->cbTransfer, rcReq));
         }
-        ASMAtomicCmpXchgPtr((void * volatile *)&pAhciPort->pTaskErr, pAhciPortTaskState, NULL);
+        ASMAtomicCmpXchgPtr(&pAhciPort->pTaskErr, pAhciPortTaskState, NULL);
     }
     else
     {
@@ -4931,7 +4931,7 @@ static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPor
         ahciLog(("%s: Before decrement uActTasksActive=%u\n", __FUNCTION__, pAhciPort->uActTasksActive));
         cOutstandingTasks = ASMAtomicDecU32(&pAhciPort->uActTasksActive);
         ahciLog(("%s: After decrement uActTasksActive=%u\n", __FUNCTION__, cOutstandingTasks));
-        if (RT_SUCCESS(rcReq) && !ASMAtomicReadPtr((void * volatile *)&pAhciPort->pTaskErr))
+        if (RT_SUCCESS(rcReq) && !ASMAtomicReadPtrT(&pAhciPort->pTaskErr, PAHCIPORTTASKSTATE))
             ASMAtomicOrU32(&pAhciPort->u32QueuedTasksFinished, (1 << pAhciPortTaskState->uTag));
 
 #ifdef RT_STRICT
@@ -5189,7 +5189,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPor
                     case 0x10:
                     {
                         LogFlow(("Reading error page\n"));
-                        PAHCIPORTTASKSTATE pTaskErr = (PAHCIPORTTASKSTATE)ASMAtomicXchgPtr((void * volatile *)&pAhciPort->pTaskErr, NULL);
+                        PAHCIPORTTASKSTATE pTaskErr = ASMAtomicXchgPtrT(&pAhciPort->pTaskErr, NULL, PAHCIPORTTASKSTATE);
                         if (pTaskErr)
                         {
                             aBuf[0] = pTaskErr->fQueued ? pTaskErr->uTag : (1 << 7);

@@ -95,7 +95,7 @@ RT_EXPORT_SYMBOL(RTLogRelDefaultInstance);
  */
 RTDECL(PRTLOGGER) RTLogRelSetDefaultInstance(PRTLOGGER pLogger)
 {
-    return (PRTLOGGER)ASMAtomicXchgPtr((void * volatile *)&g_pRelLogger, pLogger);
+    return ASMAtomicXchgPtrT(&g_pRelLogger, pLogger, PRTLOGGER);
 }
 RT_EXPORT_SYMBOL(RTLogRelSetDefaultInstance);
 #endif /* !IN_RC */
