@@ -3803,7 +3803,7 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, ui
             rc = VERR_NO_MEMORY;
         }
 #else
-        vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtrT(&pThis->u.s.pvPromiscStream, vboxnetflt_promisc_stream_t *);
+        vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtrT(&pThis->u.s.pPromiscStream, vboxnetflt_promisc_stream_t *);
         if (RT_LIKELY(pPromiscStream))
         {
             mblk_t *pMsg = vboxNetFltSolarisMBlkFromSG(pThis, pSG, fDst);
