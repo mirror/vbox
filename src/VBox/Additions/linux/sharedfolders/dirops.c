@@ -121,15 +121,67 @@ sf_getdent (struct file *dir, char d_name[NAME_MAX])
         loff_t cur;
         struct sf_glob_info *sf_g;
         struct sf_dir_info *sf_d;
+        struct sf_inode_info *sf_i;
+        struct inode *inode;
         struct list_head *pos, *list;
 
         TRACE ();
+
         sf_g = GET_GLOB_INFO (dir->f_dentry->d_inode->i_sb);
         sf_d = dir->private_data;
 
         BUG_ON (!sf_g);
         BUG_ON (!sf_d);
 
+        inode = dir->f_dentry->d_inode;
+        sf_i = GET_INODE_INFO(inode);
+
+        BUG_ON (!sf_i);
+
+        if (sf_i->force_reread)
+        {
+                int rc;
+                int err;
+                SHFLCREATEPARMS params;
+ 
+                RT_ZERO(params);
+ 
+                params.CreateFlags = 0
+                                   | SHFL_CF_DIRECTORY
+                                   | SHFL_CF_ACT_OPEN_IF_EXISTS
+                                   | SHFL_CF_ACT_FAIL_IF_NEW
+                                   | SHFL_CF_ACCESS_READ
+                                   ;
+ 
+                LogFunc(("sf_getdent: calling vboxCallCreate, folder %s, flags %#x\n",
+                            sf_i->path->String.utf8, params.CreateFlags));
+                rc = vboxCallCreate (&client_handle, &sf_g->map, sf_i->path, &params);
+                if (RT_FAILURE (rc)) {
+                    LogRel(("open failed %d\n", rc));
+                    LogFunc(("vboxCallCreate(%s) failed rc=%Rrc\n",
+                                sf_i->path->String.utf8, rc));
+                    return -EPERM;
+                }
+ 
+                if (params.Result != SHFL_FILE_EXISTS) {
+                    LogRel(("not exist %x\n", params.Result));
+                    LogFunc(("directory %s does not exist\n", sf_i->path->String.utf8));
+                    sf_dir_info_free (sf_d);
+                    return -ENOENT;
+                }
+ 
+                sf_dir_info_empty (sf_d);
+                err = sf_dir_read_all (sf_g, sf_i, sf_d, params.Handle);
+                rc = vboxCallClose (&client_handle, &sf_g->map, params.Handle);
+                if (RT_FAILURE (rc)) {
+                    LogFunc(("vboxCallClose(%s) failed rc=%Rrc\n",
+                             sf_i->path->String.utf8, rc));
+                }
+                if (err)
+                    return err;
+                sf_i->force_reread = 0;
+        }
+ 
         cur = 0;
         list = &sf_d->info_list;
         list_for_each (pos, list) {
@@ -530,6 +582,10 @@ sf_unlink_aux (struct inode *parent, struct dentry *dentry, int fDirectory)
                 goto fail1;
         }
 
+        /* directory access/change time changed */
+        sf_i->force_restat = 1;
+        /* directory content changed */
+        sf_i->force_reread = 1;
         kfree (path);
         return 0;
 
