@@ -513,9 +513,9 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             else
             {
                 VBoxGuestInfo2 *guestInfo2 = &((VMMDevReportGuestInfo2*)pRequestHeader)->guestInfo;
-                LogRel(("Guest Additions information report: Version %d.%d.%d r%d %.*s\n",
+                LogRel(("Guest Additions information report: Version %d.%d.%d r%d '%.*s'\n",
                         guestInfo2->additionsMajor, guestInfo2->additionsMinor, guestInfo2->additionsBuild,
-                        guestInfo2->additionsRevision, guestInfo2->szName, sizeof(guestInfo2->szName)));
+                        guestInfo2->additionsRevision, sizeof(guestInfo2->szName), guestInfo2->szName));
                 pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
