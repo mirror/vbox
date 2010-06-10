@@ -49,15 +49,19 @@ g_osTypes[] =
 {
     { ovf::CIMOSType_CIMOS_Unknown,                              SchemaDefs_OSTypeId_Other },
     { ovf::CIMOSType_CIMOS_OS2,                                  SchemaDefs_OSTypeId_OS2 },
+    { ovf::CIMOSType_CIMOS_OS2,                                  SchemaDefs_OSTypeId_OS2Warp3 },
+    { ovf::CIMOSType_CIMOS_OS2,                                  SchemaDefs_OSTypeId_OS2Warp4 },
+    { ovf::CIMOSType_CIMOS_OS2,                                  SchemaDefs_OSTypeId_OS2Warp45 },
     { ovf::CIMOSType_CIMOS_MSDOS,                                SchemaDefs_OSTypeId_DOS },
     { ovf::CIMOSType_CIMOS_WIN3x,                                SchemaDefs_OSTypeId_Windows31 },
     { ovf::CIMOSType_CIMOS_WIN95,                                SchemaDefs_OSTypeId_Windows95 },
     { ovf::CIMOSType_CIMOS_WIN98,                                SchemaDefs_OSTypeId_Windows98 },
+    { ovf::CIMOSType_CIMOS_WINNT,                                SchemaDefs_OSTypeId_WindowsNT },
     { ovf::CIMOSType_CIMOS_WINNT,                                SchemaDefs_OSTypeId_WindowsNT4 },
     { ovf::CIMOSType_CIMOS_NetWare,                              SchemaDefs_OSTypeId_Netware },
     { ovf::CIMOSType_CIMOS_NovellOES,                            SchemaDefs_OSTypeId_Netware },
-    { ovf::CIMOSType_CIMOS_Solaris,                              SchemaDefs_OSTypeId_OpenSolaris },
-    { ovf::CIMOSType_CIMOS_SunOS,                                SchemaDefs_OSTypeId_OpenSolaris },
+    { ovf::CIMOSType_CIMOS_Solaris,                              SchemaDefs_OSTypeId_Solaris },
+    { ovf::CIMOSType_CIMOS_SunOS,                                SchemaDefs_OSTypeId_Solaris },
     { ovf::CIMOSType_CIMOS_FreeBSD,                              SchemaDefs_OSTypeId_FreeBSD },
     { ovf::CIMOSType_CIMOS_NetBSD,                               SchemaDefs_OSTypeId_NetBSD },
     { ovf::CIMOSType_CIMOS_QNX,                                  SchemaDefs_OSTypeId_QNX },
@@ -75,20 +79,23 @@ g_osTypes[] =
     { ovf::CIMOSType_CIMOS_MicrosoftWindowsServer2008,           SchemaDefs_OSTypeId_Windows2008 },
     { ovf::CIMOSType_CIMOS_MicrosoftWindowsServer2008_64,        SchemaDefs_OSTypeId_Windows2008_64 },
     { ovf::CIMOSType_CIMOS_FreeBSD_64,                           SchemaDefs_OSTypeId_FreeBSD_64 },
+    { ovf::CIMOSType_CIMOS_MACOS,                                SchemaDefs_OSTypeId_MacOS },
+    { ovf::CIMOSType_CIMOS_MACOS,                                SchemaDefs_OSTypeId_MacOS_64 },            // there is no CIM 64-bit type for this
+
+    // Linuxes
     { ovf::CIMOSType_CIMOS_RedHatEnterpriseLinux,                SchemaDefs_OSTypeId_RedHat },
     { ovf::CIMOSType_CIMOS_RedHatEnterpriseLinux_64,             SchemaDefs_OSTypeId_RedHat_64 },
-    { ovf::CIMOSType_CIMOS_Solaris_64,                           SchemaDefs_OSTypeId_OpenSolaris_64 },
+    { ovf::CIMOSType_CIMOS_Solaris_64,                           SchemaDefs_OSTypeId_Solaris_64 },
     { ovf::CIMOSType_CIMOS_SUSE,                                 SchemaDefs_OSTypeId_OpenSUSE },
     { ovf::CIMOSType_CIMOS_SLES,                                 SchemaDefs_OSTypeId_OpenSUSE },
     { ovf::CIMOSType_CIMOS_NovellLinuxDesktop,                   SchemaDefs_OSTypeId_OpenSUSE },
     { ovf::CIMOSType_CIMOS_SUSE_64,                              SchemaDefs_OSTypeId_OpenSUSE_64 },
     { ovf::CIMOSType_CIMOS_SLES_64,                              SchemaDefs_OSTypeId_OpenSUSE_64 },
     { ovf::CIMOSType_CIMOS_LINUX,                                SchemaDefs_OSTypeId_Linux },
+    { ovf::CIMOSType_CIMOS_LINUX,                                SchemaDefs_OSTypeId_Linux22 },
     { ovf::CIMOSType_CIMOS_SunJavaDesktopSystem,                 SchemaDefs_OSTypeId_Linux },
-    { ovf::CIMOSType_CIMOS_TurboLinux,                           SchemaDefs_OSTypeId_Linux},
-
-    //                { ovf::CIMOSType_CIMOS_TurboLinux_64, },
-
+    { ovf::CIMOSType_CIMOS_TurboLinux,                           SchemaDefs_OSTypeId_Turbolinux },
+    { ovf::CIMOSType_CIMOS_TurboLinux_64,                        SchemaDefs_OSTypeId_Turbolinux_64 },
     { ovf::CIMOSType_CIMOS_Mandriva,                             SchemaDefs_OSTypeId_Mandriva },
     { ovf::CIMOSType_CIMOS_Mandriva_64,                          SchemaDefs_OSTypeId_Mandriva_64 },
     { ovf::CIMOSType_CIMOS_Ubuntu,                               SchemaDefs_OSTypeId_Ubuntu },
@@ -99,7 +106,37 @@ g_osTypes[] =
     { ovf::CIMOSType_CIMOS_Linux_2_4_x_64,                       SchemaDefs_OSTypeId_Linux24_64 },
     { ovf::CIMOSType_CIMOS_Linux_2_6_x,                          SchemaDefs_OSTypeId_Linux26 },
     { ovf::CIMOSType_CIMOS_Linux_2_6_x_64,                       SchemaDefs_OSTypeId_Linux26_64 },
-    { ovf::CIMOSType_CIMOS_Linux_64,                             SchemaDefs_OSTypeId_Linux26_64 }
+    { ovf::CIMOSType_CIMOS_Linux_64,                             SchemaDefs_OSTypeId_Linux26_64 },
+
+    // types that we have support for but CIM doesnt
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x,                          SchemaDefs_OSTypeId_ArchLinux },
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x_64,                       SchemaDefs_OSTypeId_ArchLinux_64 },
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x,                          SchemaDefs_OSTypeId_Fedora },
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x_64,                       SchemaDefs_OSTypeId_Fedora_64 },
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x,                          SchemaDefs_OSTypeId_Gentoo },
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x_64,                       SchemaDefs_OSTypeId_Gentoo_64 },
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x,                          SchemaDefs_OSTypeId_Xandros },
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x_64,                       SchemaDefs_OSTypeId_Xandros_64 },
+    { ovf::CIMOSType_CIMOS_Solaris,                              SchemaDefs_OSTypeId_OpenSolaris },
+    { ovf::CIMOSType_CIMOS_Solaris_64,                           SchemaDefs_OSTypeId_OpenSolaris_64 },
+
+    // types added with CIM 2.25.0 follow:
+    { ovf::CIMOSType_CIMOS_WindowsServer2008R2,                  SchemaDefs_OSTypeId_Windows2008 },         // duplicate, see above
+//     { ovf::CIMOSType_CIMOS_VMwareESXi = 104,                                                             // we can't run ESX in a VM
+    { ovf::CIMOSType_CIMOS_Windows7,                             SchemaDefs_OSTypeId_Windows7 },
+    { ovf::CIMOSType_CIMOS_Windows7,                             SchemaDefs_OSTypeId_Windows7_64 },         // there is no CIM 64-bit type for this
+    { ovf::CIMOSType_CIMOS_CentOS,                               SchemaDefs_OSTypeId_RedHat },
+    { ovf::CIMOSType_CIMOS_CentOS_64,                            SchemaDefs_OSTypeId_RedHat_64 },
+    { ovf::CIMOSType_CIMOS_OracleEnterpriseLinux,                SchemaDefs_OSTypeId_Oracle },
+    { ovf::CIMOSType_CIMOS_OracleEnterpriseLinux_64,             SchemaDefs_OSTypeId_Oracle_64 },
+    { ovf::CIMOSType_CIMOS_eComStation,                          SchemaDefs_OSTypeId_OS2eCS }
+
+    // there are no CIM types for these, so these turn to "other" on export:
+    //      SchemaDefs_OSTypeId_OpenBSD
+    //      SchemaDefs_OSTypeId_OpenBSD_64
+    //      SchemaDefs_OSTypeId_NetBSD
+    //      SchemaDefs_OSTypeId_NetBSD_64
+
 };
 
 /* Pattern structure for matching the OS type description field */
