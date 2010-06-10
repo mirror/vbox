@@ -33,7 +33,8 @@ namespace ovf
 ////////////////////////////////////////////////////////////////////////////////
 
 enum CIMOSType_T
-{   CIMOSType_CIMOS_Unknown = 0,
+{
+    CIMOSType_CIMOS_Unknown = 0,
     CIMOSType_CIMOS_Other   = 1,
     CIMOSType_CIMOS_MACOS   = 2,
     CIMOSType_CIMOS_ATTUNIX = 3,
@@ -135,7 +136,16 @@ enum CIMOSType_T
     CIMOSType_CIMOS_Linux_2_6_x = 99,
     CIMOSType_CIMOS_Linux_2_6_x_64  = 100,
     CIMOSType_CIMOS_Linux_64    = 101,
-    CIMOSType_CIMOS_Other_64    = 102
+    CIMOSType_CIMOS_Other_64    = 102,
+    // types added with CIM 2.25.0 follow:
+    CIMOSType_CIMOS_WindowsServer2008R2 = 103,
+    CIMOSType_CIMOS_VMwareESXi = 104,
+    CIMOSType_CIMOS_Windows7 = 105,
+    CIMOSType_CIMOS_CentOS = 106,
+    CIMOSType_CIMOS_CentOS_64 = 107,
+    CIMOSType_CIMOS_OracleEnterpriseLinux = 108,
+    CIMOSType_CIMOS_OracleEnterpriseLinux_64 = 109,
+    CIMOSType_CIMOS_eComStation = 110
 };
 
 
@@ -215,7 +225,7 @@ struct VirtualHardwareItem
                                         // package shall be deployed on the same network. The abstract network connection name shall be
                                         // listed in the NetworkSection at the outermost envelope level." We ignore this and only set up
                                         // a network adapter depending on the network name.
-    iprt::MiniString strAddress;                 // "Device-specific. For an Ethernet adapter, this specifies the MAC address."
+    iprt::MiniString strAddress;        // "Device-specific. For an Ethernet adapter, this specifies the MAC address."
     int32_t lAddress;                   // strAddress as an integer, if applicable.
     iprt::MiniString strAddressOnParent;         // "For a device, this specifies its location on the controller."
     iprt::MiniString strAllocationUnits;         // "Specifies the units of allocation used. For example, “byte * 2^20”."
