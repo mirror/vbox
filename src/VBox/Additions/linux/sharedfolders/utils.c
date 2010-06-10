@@ -641,6 +641,21 @@ sf_dir_info_free (struct sf_dir_info *p)
         kfree (p);
 }
 
+void
+sf_dir_info_empty(struct sf_dir_info *p)
+{
+        struct list_head *list, *pos, *tmp;
+        TRACE ();
+        list = &p->info_list;
+        list_for_each_safe (pos, tmp, list) {
+                struct sf_dir_buf *b;
+                b = list_entry (pos, struct sf_dir_buf, head);
+                b->nb_entries = 0;
+                b->used_bytes = 0;
+                b->free_bytes = 16384;
+        }
+}
+
 struct sf_dir_info *
 sf_dir_info_alloc (void)
 {
@@ -658,7 +673,7 @@ sf_dir_info_alloc (void)
 }
 
 static struct sf_dir_buf *
-sf_get_non_empty_dir_buf (struct sf_dir_info *sf_d)
+sf_get_empty_dir_buf (struct sf_dir_info *sf_d)
 {
         struct list_head *list, *pos;
 
@@ -671,7 +686,7 @@ sf_get_non_empty_dir_buf (struct sf_dir_info *sf_d)
                         return NULL;
                 }
                 else {
-                        if (b->free_bytes > 0) {
+                        if (b->used_bytes == 0) {
                                 return b;
                         }
                 }
@@ -694,13 +709,13 @@ sf_dir_read_all (struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
                 goto fail0;
         }
 
-        b = sf_get_non_empty_dir_buf (sf_d);
         for (;;) {
                 int rc;
                 void *buf;
                 uint32_t buf_size;
                 uint32_t nb_ents;
 
+                b = sf_get_empty_dir_buf (sf_d);
                 if (!b) {
                         b = sf_dir_buf_alloc ();
                         if (!b) {
@@ -708,9 +723,8 @@ sf_dir_read_all (struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
                                 LogRelFunc(("could not alloc directory buffer\n"));
                                 goto fail1;
                         }
+                        list_add (&b->head, &sf_d->info_list);
                 }
-
-                list_add (&b->head, &sf_d->info_list);
 
                 buf = b->buf;
                 buf_size = b->free_bytes;
@@ -746,11 +760,9 @@ sf_dir_read_all (struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
                 b->nb_entries += nb_ents;
                 b->free_bytes -= buf_size;
                 b->used_bytes += buf_size;
-                b = NULL;
 
-                if (RT_FAILURE (rc)) {
+                if (RT_FAILURE (rc))
                         break;
-                }
         }
         return 0;
 
