@@ -23,6 +23,7 @@
 #import <AppKit/NSEvent.h>
 #import <AppKit/NSApplication.h>
 #import <Foundation/NSArray.h>
+#import <AppKit/NSWindow.h>
 
 #include <iprt/assert.h>
 
