@@ -73,6 +73,7 @@
 
 #ifdef RT_OS_WINDOWS
 # include "win/svchlp.h"
+# include "win/VBoxComEvents.h"
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -202,6 +203,9 @@ public:
     void *handler();
 
     virtual HRESULT handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback) = 0;
+#ifdef RT_OS_WINDOWS
+    virtual HRESULT prepareEventDesc(ComEventDesc& aEvDesc) = 0;
+#endif
 
 private:
 
@@ -347,6 +351,9 @@ struct VirtualBox::Data
     const RTTHREAD                      threadAsyncEvent;
     EventQueue * const                  pAsyncEventQ;
 
+#ifdef RT_OS_WINDOWS
+    ComEventsHelper                     aComEvHelper;
+#endif
 };
 
 // constructor / destructor
@@ -582,6 +589,11 @@ HRESULT VirtualBox::init()
             rc = aRC;
         }
     }
+
+#ifdef RT_OS_WINDOWS
+    if (SUCCEEDED(rc))
+        rc = m->aComEvHelper.init(IID_IVirtualBoxCallback);
+#endif
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
@@ -2584,6 +2596,32 @@ struct MachineEvent : public VirtualBox::CallbackEvent
                 AssertFailedReturn(S_OK);
         }
     }
+#ifdef RT_OS_WINDOWS
+    HRESULT prepareEventDesc(ComEventDesc& aEvDesc)
+    {
+        switch (mWhat)
+        {
+            case VirtualBoxCallbackRegistration::kOnMachineDataChange:
+                aEvDesc.init("OnMachineDataChange", 1);
+                aEvDesc.add(id.toUtf16());
+                break;
+               
+            case VirtualBoxCallbackRegistration::kOnMachineStateChange:
+                aEvDesc.init("OnMachineStateChange", 2);
+                aEvDesc.add(id.toUtf16()).add((int)state);
+                break;
+
+            case VirtualBoxCallbackRegistration::kOnMachineRegistered:
+                aEvDesc.init("OnMachineRegistered", 2);
+                aEvDesc.add(id.toUtf16()).add((BOOL)registered);
+                break;
+
+            default:
+                AssertFailedReturn(S_OK);
+         }
+         return S_OK;         
+    }
+#endif
 
     Guid id;
     MachineState_T state;
@@ -2680,6 +2718,14 @@ struct ExtraDataEvent : public VirtualBox::CallbackEvent
                  machineId.ptr(), key.raw(), val.raw()));
         return aCallback->OnExtraDataChange(machineId.toUtf16(), key, val);
     }
+#ifdef RT_OS_WINDOWS
+    HRESULT prepareEventDesc(ComEventDesc& aEvDesc)
+    {
+       aEvDesc.init("OnExtraDataChange", 3);
+       aEvDesc.add(machineId.toUtf16()).add(key).add(val);
+       return S_OK;         
+    }
+#endif
 
     Guid machineId;
     Bstr key, val;
@@ -2715,6 +2761,15 @@ struct SessionEvent : public VirtualBox::CallbackEvent
                  machineId.ptr(), sessionState));
         return aCallback->OnSessionStateChange(machineId.toUtf16(), sessionState);
     }
+
+#ifdef RT_OS_WINDOWS
+    HRESULT prepareEventDesc(ComEventDesc& aEvDesc)
+    {
+       aEvDesc.init("OnSessionStateChange", 2);
+       aEvDesc.add(machineId.toUtf16()).add((int)sessionState);
+       return S_OK;
+    }
+#endif
 
     Guid machineId;
     SessionState_T sessionState;
@@ -2763,6 +2818,16 @@ struct SnapshotEvent : public VirtualBox::CallbackEvent
                 AssertFailedReturn(S_OK);
         }
     }
+
+#ifdef RT_OS_WINDOWS
+    HRESULT prepareEventDesc(ComEventDesc& aEvDesc)
+    {
+       aEvDesc.init("OnSnapshotTaken", 2);
+       aEvDesc.add(machineId.toUtf16()).add(snapshotId.toUtf16());
+       return S_OK;
+    }
+#endif
+
 
     Guid machineId;
     Guid snapshotId;
@@ -2813,6 +2878,15 @@ struct GuestPropertyEvent : public VirtualBox::CallbackEvent
                  machineId.ptr(), name.raw(), value.raw(), flags.raw()));
         return aCallback->OnGuestPropertyChange(machineId.toUtf16(), name, value, flags);
     }
+
+#ifdef RT_OS_WINDOWS
+    HRESULT prepareEventDesc(ComEventDesc& aEvDesc)
+    {
+       aEvDesc.init("OnGuestPropertyChange", 4);
+       aEvDesc.add(machineId.toUtf16()).add(name).add(value).add(flags);
+       return S_OK;         
+    }
+#endif
 
     Guid machineId;
     Bstr name, value, flags;
@@ -4507,28 +4581,20 @@ void *VirtualBox::CallbackEvent::handler()
         callbacks = mVirtualBox->m->llCallbacks;
     }
 
-#ifdef RT_OS_WINDOWS
+
+#ifdef RT_OS_WINDOWS       
 #if 0
     // WIP
-
-    LPTYPEINFO       ptinfo;
-    HRESULT          hr;
-    LPTYPELIB        ptlib;
-    DISPID           dispid;
-
-    /* Real solution must cache all needed dispids once, ofc */
-    hr = ::LoadRegTypeLib(LIBID_VirtualBox, kTypeLibraryMajorVersion, kTypeLibraryMinorVersion, LOCALE_SYSTEM_DEFAULT, &ptlib);
-    hr = ptlib->GetTypeInfoOfGuid(IID_IVirtualBoxCallback, &ptinfo);
-    ptlib->Release();
-
-    OLECHAR FAR* szMember = L"OnMachineStateChange";
-
-    hr = ::DispGetIDsOfNames(ptinfo, &szMember, 1, &dispid);
-    ptinfo->Release();
-
-    int nConnections = mVirtualBox->m_vec.GetSize();
-    for (int i=0; i<nConnections; i++)
     {
+     ComEventDesc evDesc;
+
+     int nConnections = mVirtualBox->m_vec.GetSize();
+     /* Only prepare args if someone needs them */
+     if (nConnections)
+        prepareEventDesc(evDesc);
+
+     for (int i=0; i<nConnections; i++)
+     {
         ComPtr<IUnknown> sp = mVirtualBox->m_vec.GetAt(i);
         ComPtr<IVirtualBoxCallback> cbI;
         ComPtr<IDispatch> cbD;
@@ -4537,36 +4603,16 @@ void *VirtualBox::CallbackEvent::handler()
         cbD = sp;
 
         /**
-         * Would be like this in ideal world, unfortunately our consumers want to be invoked via IDispatch,
+         * Would be just handleCallback(cbI) in ideal world, unfortunately our consumers want to be invoked via IDispatch,
          * thus going the hard way.
          */
-#if 0
-        if (cbI != NULL)
-        {
-            HRESULT hrc = handleCallback(cbI);
-            if (hrc == VBOX_E_DONT_CALL_AGAIN)
-            {
-                // need to handle that somehow, maybe just set element to 0
-            }
-        }
-#endif
         if (cbI != NULL && cbD != NULL)
         {
-             CComVariant varResult, arg1, arg2;
-
-             ::VariantClear(&varResult);
-             ::VariantClear(&arg1);
-             ::VariantClear(&arg2);
-
-             VARIANTARG args[] = {arg1, arg2};
-             DISPPARAMS disp = { args, NULL, sizeof(args)/sizeof(args[0]), 0};
-
-             cbD->Invoke(dispid, IID_NULL,
-                         LOCALE_USER_DEFAULT,
-                         DISPATCH_METHOD,
-                         &disp, &varResult,
-                         NULL, NULL);
+             CComVariant varResult;
+             mVirtualBox->m->aComEvHelper.fire(cbD, evDesc, &varResult);
+             // what we gonna do with the result?
         }
+     }
     }
 #endif
 #endif
