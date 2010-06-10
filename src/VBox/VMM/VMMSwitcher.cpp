@@ -34,6 +34,7 @@
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/string.h>
 #include <iprt/ctype.h>
 
@@ -532,7 +533,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
             case FIX_EFER_OR_MASK:
             {
                 uint32_t u32OrMask = MSR_K6_EFER_LME | MSR_K6_EFER_SCE;
-                if (CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NXE))
+                if (!!(ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_NX))
                     u32OrMask |= MSR_K6_EFER_NXE;
 
                 *uSrc.pu32 = u32OrMask;
