@@ -253,6 +253,12 @@ VBoxCocoaButton::VBoxCocoaButton (CocoaButtonType aType, QWidget *aParent /* = 0
     setCocoaView (mNativeRef);
 }
 
+VBoxCocoaButton::~VBoxCocoaButton()
+{
+    [[mNativeRef target] release];
+    [mNativeRef release];
+}
+
 QSize VBoxCocoaButton::sizeHint() const
 {
     NSRect frame = [mNativeRef frame];
@@ -306,6 +312,12 @@ VBoxCocoaSegmentedButton::VBoxCocoaSegmentedButton (int aCount, QWidget *aParent
 
     setCocoaView (mNativeRef);
 
+}
+
+VBoxCocoaSegmentedButton::~VBoxCocoaSegmentedButton()
+{
+    [[mNativeRef target] release];
+    [mNativeRef release];
 }
 
 QSize VBoxCocoaSegmentedButton::sizeHint() const
@@ -375,6 +387,12 @@ VBoxCocoaSearchField::VBoxCocoaSearchField (QWidget *aParent /* = 0 */)
 
     setSizePolicy (QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
 
+}
+
+VBoxCocoaSearchField::~VBoxCocoaSearchField()
+{
+    [[mNativeRef delegate] release];
+    [mNativeRef release];
 }
 
 QSize VBoxCocoaSearchField::sizeHint() const

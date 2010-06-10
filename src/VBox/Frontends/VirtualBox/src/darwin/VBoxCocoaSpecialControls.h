@@ -43,6 +43,8 @@ public:
     };
 
     VBoxCocoaButton (CocoaButtonType aType, QWidget *aParent = 0);
+    ~VBoxCocoaButton();
+
     QSize sizeHint() const;
 
     void setText (const QString& aText);
@@ -67,6 +69,8 @@ class VBoxCocoaSegmentedButton: public QMacCocoaViewContainer
 
 public:
     VBoxCocoaSegmentedButton (int aCount, QWidget *aParent = 0);
+    ~VBoxCocoaSegmentedButton();
+
     QSize sizeHint() const;
 
     void setTitle (int aSegment, const QString &aTitle);
@@ -93,6 +97,8 @@ class VBoxCocoaSearchField: public QMacCocoaViewContainer
 
 public:
     VBoxCocoaSearchField (QWidget* aParent = 0);
+    ~VBoxCocoaSearchField();
+
     QSize sizeHint() const;
 
     QString text() const;
