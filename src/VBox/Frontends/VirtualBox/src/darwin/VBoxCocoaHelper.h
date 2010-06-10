@@ -54,17 +54,6 @@ inline QString darwinNSStringToQString (const NSString *aString)
     return QString (reinterpret_cast<const QChar *> (buffer.constData()), length);
 }
 
-inline NSImage *darwinCGImageToNSImage (const CGImageRef aImage)
-{
-    /* Create a bitmap rep from the image. */
-    NSBitmapImageRep *bitmapRep = [[NSBitmapImageRep alloc] initWithCGImage:aImage];
-    /* Create an NSImage and add the bitmap rep to it */
-    NSImage *image = [[NSImage alloc] init];
-    [image addRepresentation:bitmapRep];
-    [bitmapRep release];
-    return image;
-}
-
 #endif /* __OBJC__ */
 
 #endif /* ___darwin_VBoxCocoaHelper_h */

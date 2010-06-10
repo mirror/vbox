@@ -20,44 +20,23 @@
 #ifndef ___VBoxUtils_darwin_h
 #define ___VBoxUtils_darwin_h
 
-/*
- * Here is some really magic in. The "OS System native" methods are implemented
- * in the current OS specific way. This means either Carbon
- * (VBoxUtils-darwin-carbon.cpp) or Cocoa (VBoxUtils-darwin-cocoa.m). The Qt
- * wrapper methods handle the conversion from Q* data types to the native one
- * (VBoxUtils-darwin.cpp).
- */
-
-#ifdef __OBJC__
-#import <AppKit/NSWindow.h>
-
-typedef NSWindow *NativeWindowRef;
-typedef NSView *NativeViewRef;
-#else
-
-# include <qglobal.h> /* for QT_MAC_USE_COCOA */
-# include <ApplicationServices/ApplicationServices.h>
-
-class QMainWindow;
-class QToolBar;
-class QPixmap;
-class QImage;
-class QMenu;
-
-# ifdef QT_MAC_USE_COCOA
-/* Cast this to void, cause Cocoa classes aren't usable in the C++ context. */
-typedef void *NativeWindowRef;
-typedef void *NativeViewRef;
-# endif /* QT_MAC_USE_COCOA */
-#endif /* __OBJC__ */
-
 #include <VBox/VBoxCocoa.h>
 #include <iprt/cdefs.h> /* for RT_C_DECLS_BEGIN/RT_C_DECLS_END & stuff */
+
+#include <ApplicationServices/ApplicationServices.h>
 #include <QRect>
 
-class QWidget;
-
 ADD_COCOA_NATIVE_REF(NSEvent);
+ADD_COCOA_NATIVE_REF(NSImage);
+ADD_COCOA_NATIVE_REF(NSView);
+ADD_COCOA_NATIVE_REF(NSWindow);
+
+class QImage;
+class QMainWindow;
+class QMenu;
+class QPixmap;
+class QToolBar;
+class QWidget;
 
 RT_C_DECLS_BEGIN
 
@@ -66,31 +45,31 @@ RT_C_DECLS_BEGIN
  * Window/View management (OS System native)
  *
  ********************************************************************************/
-NativeWindowRef darwinToNativeWindowImpl(NativeViewRef aView);
-NativeViewRef darwinToNativeViewImpl(NativeWindowRef aWindow);
+NativeNSWindowRef darwinToNativeWindowImpl(NativeNSViewRef pView);
+NativeNSViewRef darwinToNativeViewImpl(NativeNSWindowRef pWindow);
 
 /********************************************************************************
  *
  * Simple setter methods (OS System native)
  *
  ********************************************************************************/
-void darwinSetShowsToolbarButtonImpl(NativeWindowRef aWindow, bool aEnabled);
-void darwinSetShowsResizeIndicatorImpl(NativeWindowRef aWindow, bool aEnabled);
-void darwinSetHidesAllTitleButtonsImpl(NativeWindowRef aWindow);
-void darwinSetShowsWindowTransparentImpl(NativeWindowRef aWindow, bool aEnabled);
-void darwinSetMouseCoalescingEnabled(bool aEnabled);
+void darwinSetShowsToolbarButtonImpl(NativeNSWindowRef pWindow, bool fEnabled);
+void darwinSetShowsResizeIndicatorImpl(NativeNSWindowRef pWindow, bool fEnabled);
+void darwinSetHidesAllTitleButtonsImpl(NativeNSWindowRef pWindow);
+void darwinSetShowsWindowTransparentImpl(NativeNSWindowRef pWindow, bool fEnabled);
+void darwinSetMouseCoalescingEnabled(bool fEnabled);
 
 /********************************************************************************
  *
  * Simple helper methods (OS System native)
  *
  ********************************************************************************/
-void darwinWindowAnimateResizeImpl(NativeWindowRef aWindow, int x, int y, int width, int height);
-void darwinWindowInvalidateShapeImpl(NativeWindowRef aWindow);
-void darwinWindowInvalidateShadowImpl(NativeWindowRef aWindow);
-int  darwinWindowToolBarHeight(NativeWindowRef aWindow);
-bool darwinIsToolbarVisible(NativeWindowRef pWindow);
-bool darwinIsWindowMaximized(NativeWindowRef aWindow);
+void darwinWindowAnimateResizeImpl(NativeNSWindowRef pWindow, int x, int y, int width, int height);
+void darwinWindowInvalidateShapeImpl(NativeNSWindowRef pWindow);
+void darwinWindowInvalidateShadowImpl(NativeNSWindowRef pWindow);
+int  darwinWindowToolBarHeight(NativeNSWindowRef pWindow);
+bool darwinIsToolbarVisible(NativeNSWindowRef pWindow);
+bool darwinIsWindowMaximized(NativeNSWindowRef pWindow);
 
 float darwinSmallFontSize();
 bool darwinSetFrontMostProcess();
@@ -113,7 +92,6 @@ DECLINLINE(CGRect) darwinCenterRectTo(CGRect aRect, const CGRect& aToRect)
     return aRect;
 }
 
-
 /********************************************************************************
  *
  * Window/View management (Qt Wrapper)
@@ -124,17 +102,17 @@ DECLINLINE(CGRect) darwinCenterRectTo(CGRect aRect, const CGRect& aToRect)
  * Returns a reference to the native View of the QWidget.
  *
  * @returns either HIViewRef or NSView* of the QWidget.
- * @param   aWidget   Pointer to the QWidget
+ * @param   pWidget   Pointer to the QWidget
  */
-NativeViewRef darwinToNativeView(QWidget *aWidget);
+NativeNSViewRef darwinToNativeView(QWidget *pWidget);
 
 /**
  * Returns a reference to the native Window of the QWidget.
  *
  * @returns either WindowRef or NSWindow* of the QWidget.
- * @param   aWidget   Pointer to the QWidget
+ * @param   pWidget   Pointer to the QWidget
  */
-NativeWindowRef darwinToNativeWindow(QWidget *aWidget);
+NativeNSWindowRef darwinToNativeWindow(QWidget *pWidget);
 
 /* This is necessary because of the C calling convention. Its a simple wrapper
    for darwinToNativeWindowImpl to allow operator overloading which isn't
@@ -143,47 +121,17 @@ NativeWindowRef darwinToNativeWindow(QWidget *aWidget);
  * Returns a reference to the native Window of the View..
  *
  * @returns either WindowRef or NSWindow* of the View.
- * @param   aWidget   Pointer to the native View
+ * @param   pWidget   Pointer to the native View
  */
-NativeWindowRef darwinToNativeWindow(NativeViewRef aView);
+NativeNSWindowRef darwinToNativeWindow(NativeNSViewRef pView);
 
 /**
  * Returns a reference to the native View of the Window.
  *
  * @returns either HIViewRef or NSView* of the Window.
- * @param   aWidget   Pointer to the native Window
+ * @param   pWidget   Pointer to the native Window
  */
-NativeViewRef darwinToNativeView(NativeWindowRef aWindow);
-
-#ifndef __OBJC__
-/********************************************************************************
- *
- * Simple setter methods (Qt Wrapper)
- *
- ********************************************************************************/
-void darwinSetShowsToolbarButton(QToolBar *aToolBar, bool aEnabled);
-void darwinSetShowsResizeIndicator(QWidget *aWidget, bool aEnabled);
-void darwinSetHidesAllTitleButtons(QWidget *aWidget);
-void darwinSetShowsWindowTransparent(QWidget *aWidget, bool aEnabled);
-void darwinSetDockIconMenu(QMenu *pMenu);
-void darwinDisableIconsInMenus(void);
-
-/********************************************************************************
- *
- * Simple helper methods (Qt Wrapper)
- *
- ********************************************************************************/
-void darwinWindowAnimateResize(QWidget *aWidget, const QRect &aTarget);
-void darwinWindowInvalidateShape(QWidget *aWidget);
-void darwinWindowInvalidateShadow(QWidget *aWidget);
-int  darwinWindowToolBarHeight(QWidget *aWidget);
-bool darwinIsToolbarVisible(QToolBar *pToolBar);
-bool darwinIsWindowMaximized(QWidget *aWidget);
-QString darwinSystemLanguage(void);
-QPixmap darwinCreateDragPixmap(const QPixmap& aPixmap, const QString &aText);
-
-void darwinRegisterForUnifiedToolbarContextMenuEvents(QMainWindow *pWindow);
-void darwinUnregisterForUnifiedToolbarContextMenuEvents(QMainWindow *pWindow);
+NativeNSViewRef darwinToNativeView(NativeNSWindowRef pWindow);
 
 /********************************************************************************
  *
@@ -194,14 +142,47 @@ void darwinUnregisterForUnifiedToolbarContextMenuEvents(QMainWindow *pWindow);
  * Returns a reference to the CGContext of the QWidget.
  *
  * @returns CGContextRef of the QWidget.
- * @param   aWidget      Pointer to the QWidget
+ * @param   pWidget      Pointer to the QWidget
  */
-CGContextRef darwinToCGContextRef(QWidget *aWidget);
+CGContextRef darwinToCGContextRef(QWidget *pWidget);
+CGImageRef darwinToCGImageRef(const QImage *pImage);
+CGImageRef darwinToCGImageRef(const QPixmap *pPixmap);
+CGImageRef darwinToCGImageRef(const char *pczSource);
 
-CGImageRef darwinToCGImageRef(const QImage *aImage);
-CGImageRef darwinToCGImageRef(const QPixmap *aPixmap);
-CGImageRef darwinToCGImageRef(const char *aSource);
+NativeNSImageRef darwinToNSImageRef(const CGImageRef pImage);
+NativeNSImageRef darwinToNSImageRef(const QImage *pImage);
+NativeNSImageRef darwinToNSImageRef(const QPixmap *pPixmap);
+NativeNSImageRef darwinToNSImageRef(const char *pczSource);
 
+#ifndef __OBJC__
+/********************************************************************************
+ *
+ * Simple setter methods (Qt Wrapper)
+ *
+ ********************************************************************************/
+void darwinSetShowsToolbarButton(QToolBar *aToolBar, bool fEnabled);
+void darwinSetShowsResizeIndicator(QWidget *pWidget, bool fEnabled);
+void darwinSetHidesAllTitleButtons(QWidget *pWidget);
+void darwinSetShowsWindowTransparent(QWidget *pWidget, bool fEnabled);
+void darwinSetDockIconMenu(QMenu *pMenu);
+void darwinDisableIconsInMenus(void);
+
+/********************************************************************************
+ *
+ * Simple helper methods (Qt Wrapper)
+ *
+ ********************************************************************************/
+void darwinWindowAnimateResize(QWidget *pWidget, const QRect &aTarget);
+void darwinWindowInvalidateShape(QWidget *pWidget);
+void darwinWindowInvalidateShadow(QWidget *pWidget);
+int  darwinWindowToolBarHeight(QWidget *pWidget);
+bool darwinIsToolbarVisible(QToolBar *pToolBar);
+bool darwinIsWindowMaximized(QWidget *pWidget);
+QString darwinSystemLanguage(void);
+QPixmap darwinCreateDragPixmap(const QPixmap& aPixmap, const QString &aText);
+
+void darwinRegisterForUnifiedToolbarContextMenuEvents(QMainWindow *pWindow);
+void darwinUnregisterForUnifiedToolbarContextMenuEvents(QMainWindow *pWindow);
 #endif /* !__OBJC__ */
 
 #endif /* !___VBoxUtils_darwin_h */
