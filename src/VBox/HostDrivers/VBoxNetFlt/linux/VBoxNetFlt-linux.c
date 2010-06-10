@@ -1102,7 +1102,10 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
         pShInfo->gso_size = pSG->GsoCtx.cbMaxSeg;
         pShInfo->gso_segs = PDMNetGsoCalcSegmentCount(&pSG->GsoCtx, pSG->cbTotal);
 
-        if (fDstWire)
+        /*
+         * We need to set checksum fields even if the packet goes to the host
+         * directly as it may be immediately forwared by IP layer.
+         */
         {
             Assert(skb_headlen(pPkt) >= pSG->GsoCtx.cbHdrs);
             pPkt->ip_summed  = CHECKSUM_PARTIAL;
@@ -1120,12 +1123,8 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
                 pPkt->csum = RT_OFFSETOF(RTNETUDP, uh_sum);
 # endif
         }
-        else
-        {
-            pPkt->ip_summed = CHECKSUM_UNNECESSARY;
-            pPkt->csum      = 0;
+        if (!fDstWire)
             PDMNetGsoPrepForDirectUse(&pSG->GsoCtx, pPkt->data, pSG->cbTotal, false /*fPayloadChecksum*/);
-        }
     }
 #endif /* VBOXNETFLT_WITH_GSO_XMIT_WIRE || VBOXNETFLT_WITH_GSO_XMIT_HOST */
 
