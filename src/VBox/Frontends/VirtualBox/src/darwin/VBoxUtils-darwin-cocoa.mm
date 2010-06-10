@@ -54,9 +54,9 @@ NativeNSViewRef darwinToNativeViewImpl(NativeNSWindowRef pWindow)
 NativeNSImageRef darwinToNSImageRef(const CGImageRef pImage)
 {
     /* Create a bitmap rep from the image. */
-    NSBitmapImageRep *bitmapRep = [[NSBitmapImageRep alloc] initWithCGImage:pImage];
+    NSBitmapImageRep *bitmapRep = [[[NSBitmapImageRep alloc] initWithCGImage:pImage] autorelease];
     /* Create an NSImage and add the bitmap rep to it */
-    NSImage *image = [[[NSImage alloc] init] autorelease];
+    NSImage *image = [[NSImage alloc] init];
     [image addRepresentation:bitmapRep];
     return image;
 }
