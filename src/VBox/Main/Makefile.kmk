@@ -337,7 +337,8 @@ VBoxSVC_SOURCES.win = \
 	win/svcmain.cpp \
 	win/svchlp.cpp \
 	win/HostPowerWin.cpp \
-	win/VBoxSVC.rc
+	win/VBoxSVC.rc \
+        win/VBoxComEvents.cpp
 
 VBoxSVC_SOURCES.linux = \
 	linux/HostHardwareLinux.cpp
