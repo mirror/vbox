@@ -937,7 +937,7 @@ static void vboxWddmLockUnlockMemSynch(PVBOXWDDMDISP_ALLOCATION pAlloc, D3DLOCKE
             srcPitch = (uint32_t)pLockInfo->Pitch;
         }
 
-        uint32_t cPixCopyLine = pRect->left - pRect->right;
+        uint32_t cPixCopyLine = pRect->right - pRect->left;
 
         if (cPixCopyLine == pAlloc->SurfDesc.width && srcPitch == dstPitch)
         {
@@ -1791,10 +1791,14 @@ static HRESULT APIENTRY vboxWddmDDevDrawTriPatch(HANDLE hDevice, CONST D3DDDIARG
 
 static HRESULT APIENTRY vboxWddmDDevDrawPrimitive2(HANDLE hDevice, CONST D3DDDIARG_DRAWPRIMITIVE2* pData)
 {
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    Assert(pDevice);
+    Assert(pDevice->pDevice9If);
+    HRESULT hr = pDevice->pDevice9If->DrawPrimitive(pData->PrimitiveType, pData->FirstVertexOffset, pData->PrimitiveCount);
+    Assert(hr == S_OK);
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
 }
 
 static HRESULT APIENTRY vboxWddmDDevDrawIndexedPrimitive2(HANDLE hDevice, CONST D3DDDIARG_DRAWINDEXEDPRIMITIVE2* pData, UINT dwIndicesSize, CONST VOID* pIndexBuffer, CONST UINT* pFlagBuffer)
@@ -2044,18 +2048,13 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
             IDirect3DTexture9 *pD3DIfTex = (IDirect3DTexture9*)pTexAlloc->pD3DIf;
             Assert(pD3DIfTex);
             RECT *pRect = NULL;
+            Assert(!pData->Flags.RangeValid);
+            Assert(!pData->Flags.BoxValid);
             if (pData->Flags.AreaValid)
             {
                 pRect = &pData->Area;
             }
-            else if (pData->Flags.RangeValid)
-            {
-                AssertBreakpoint();
-            }
-            else if (pData->Flags.BoxValid)
-            {
-                AssertBreakpoint();
-            }
+
             /* else - we lock the entire texture, pRect == NULL */
 
 //            Assert(!pLockAlloc->LockInfo.cLocks);
@@ -2120,6 +2119,97 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
                 Assert(pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM);
                 if (/* !pData->Flags.WriteOnly && */ !pData->Flags.Discard)
                     vboxWddmLockUnlockMemSynch(pLockAlloc, &pLockAlloc->LockInfo.LockedRect, pRect, false /*bool bToLockInfo*/);
+            }
+        }
+        else if (pRc->RcDesc.fFlags.VertexBuffer)
+        {
+            Assert(pData->SubResourceIndex < pRc->cAllocations);
+            PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->SubResourceIndex];
+            IDirect3DVertexBuffer9 *pD3D9VBuf = (IDirect3DVertexBuffer9*)pAlloc->pD3DIf;
+            Assert(pD3D9VBuf);
+            Assert(!pData->Flags.AreaValid);
+            Assert(!pData->Flags.BoxValid);
+            D3DDDIRANGE *pRange = NULL;
+            if (pData->Flags.RangeValid)
+            {
+                pRange = &pData->Range;
+            }
+
+            /* else - we lock the entire texture, pRect == NULL */
+
+//            Assert(!pLockAlloc->LockInfo.cLocks);
+            if (!pAlloc->LockInfo.cLocks)
+            {
+                hr = pD3D9VBuf->Lock(pRange ? pRange->Offset : 0,
+                                      pRange ? pRange->Size : 0,
+                                      &pAlloc->LockInfo.LockedRect.pBits,
+                                      vboxDDI2D3DLockFlags(pData->Flags));
+                Assert(hr == S_OK);
+                if (hr == S_OK)
+                {
+                    pAlloc->LockInfo.LockedRect.Pitch = pAlloc->SurfDesc.width;
+//                    Assert(pLockAlloc->LockInfo.fFlags.Value == 0);
+                    pAlloc->LockInfo.fFlags = pData->Flags;
+                    if (pRange)
+                    {
+                        pAlloc->LockInfo.Range = *pRange;
+                        Assert(pAlloc->LockInfo.fFlags.RangeValid == 1);
+//                        pAlloc->LockInfo.fFlags.RangeValid = 1;
+                    }
+                    else
+                    {
+                        Assert(pAlloc->LockInfo.fFlags.RangeValid == 0);
+//                        pAlloc->LockInfo.fFlags.RangeValid = 0;
+                    }
+
+                    ++pAlloc->LockInfo.cLocks;
+                }
+            }
+            else
+            {
+//                Assert(pAlloc->LockInfo.fFlags.Value == pData->Flags.Value);
+//                if (pAlloc->LockInfo.fFlags.Value != pData->Flags.Value)
+//                {
+//                }
+                Assert(pAlloc->LockInfo.fFlags.RangeValid == pData->Flags.RangeValid);
+                if (pAlloc->LockInfo.fFlags.RangeValid && pData->Flags.RangeValid)
+                {
+                    Assert(pAlloc->LockInfo.Range.Offset == pData->Range.Offset);
+                    Assert(pAlloc->LockInfo.Range.Size == pData->Range.Size);
+                }
+                Assert(pAlloc->LockInfo.LockedRect.pBits);
+            }
+
+
+            ++pAlloc->LockInfo.cLocks;
+
+            if (!pData->Flags.NotifyOnly)
+            {
+                pData->pSurfData = pAlloc->LockInfo.LockedRect.pBits;
+                pData->Pitch = pAlloc->LockInfo.LockedRect.Pitch;
+                pData->SlicePitch = 0;
+                Assert(pAlloc->SurfDesc.slicePitch == 0);
+                Assert(!pAlloc->pvMem);
+            }
+            else
+            {
+                Assert(pAlloc->pvMem);
+                Assert(pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM);
+                if (/* !pData->Flags.WriteOnly && */ !pData->Flags.Discard)
+                {
+                    RECT r, *pr;
+                    if (pRange)
+                    {
+                        r.top = 0;
+                        r.left = pRange->Offset;
+                        r.bottom = 1;
+                        r.right = pRange->Offset + pRange->Size;
+                        pr = &r;
+                    }
+                    else
+                        pr = NULL;
+                    vboxWddmLockUnlockMemSynch(pAlloc, &pAlloc->LockInfo.LockedRect, pr, false /*bool bToLockInfo*/);
+                }
             }
         }
         else
@@ -2200,10 +2290,12 @@ static HRESULT APIENTRY vboxWddmDDevUnlock(HANDLE hDevice, CONST D3DDDIARG_UNLOC
             PVBOXWDDMDISP_ALLOCATION pLockAlloc = &pRc->aAllocations[pData->SubResourceIndex];
 
             --pLockAlloc->LockInfo.cLocks;
+            Assert(pLockAlloc->LockInfo.cLocks < UINT32_MAX);
+//            pLockAlloc->LockInfo.cLocks = 0;
             if (!pLockAlloc->LockInfo.cLocks)
             {
                 PVBOXWDDMDISP_ALLOCATION pTexAlloc = &pRc->aAllocations[0];
-                Assert(pLockAlloc->LockInfo.cLocks);
+//                Assert(!pLockAlloc->LockInfo.cLocks);
                 IDirect3DTexture9 *pD3DIfTex = (IDirect3DTexture9*)pTexAlloc->pD3DIf;
                 Assert(pD3DIfTex);
                 /* this is a sysmem texture, update  */
@@ -2219,6 +2311,45 @@ static HRESULT APIENTRY vboxWddmDDevUnlock(HANDLE hDevice, CONST D3DDDIARG_UNLOC
             else
             {
                 Assert(pLockAlloc->LockInfo.cLocks < UINT32_MAX);
+            }
+        }
+        else if (pRc->RcDesc.fFlags.VertexBuffer)
+        {
+            Assert(pData->SubResourceIndex < pRc->cAllocations);
+            PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->SubResourceIndex];
+
+            --pAlloc->LockInfo.cLocks;
+            Assert(pAlloc->LockInfo.cLocks < UINT32_MAX);
+//            pAlloc->LockInfo.cLocks = 0;
+            if (!pAlloc->LockInfo.cLocks)
+            {
+//                Assert(!pAlloc->LockInfo.cLocks);
+                IDirect3DVertexBuffer9 *pD3D9VBuf = (IDirect3DVertexBuffer9*)pAlloc->pD3DIf;
+                Assert(pD3D9VBuf);
+                /* this is a sysmem texture, update  */
+                if (pAlloc->pvMem && !pAlloc->LockInfo.fFlags.ReadOnly)
+                {
+                    RECT r, *pr;
+                    if (pAlloc->LockInfo.fFlags.RangeValid)
+                    {
+                        r.top = 0;
+                        r.left = pAlloc->LockInfo.Range.Offset;
+                        r.bottom = 1;
+                        r.right = pAlloc->LockInfo.Range.Offset + pAlloc->LockInfo.Range.Size;
+                        pr = &r;
+                    }
+                    else
+                        pr = NULL;
+                    vboxWddmLockUnlockMemSynch(pAlloc, &pAlloc->LockInfo.LockedRect,
+                            pr,
+                            true /*bool bToLockInfo*/);
+                }
+                hr = pD3D9VBuf->Unlock();
+                Assert(hr == S_OK);
+            }
+            else
+            {
+                Assert(pAlloc->LockInfo.cLocks < UINT32_MAX);
             }
         }
         else
@@ -2972,10 +3103,20 @@ static HRESULT APIENTRY vboxWddmDDevSetScissorRect(HANDLE hDevice, CONST RECT* p
 }
 static HRESULT APIENTRY vboxWddmDDevSetStreamSource(HANDLE hDevice, CONST D3DDDIARG_SETSTREAMSOURCE* pData)
 {
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    Assert(pDevice);
+    Assert(pDevice->pDevice9If);
+    PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hVertexBuffer;
+    Assert(pRc);
+    Assert(pRc->cAllocations == 1);
+    PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[0];
+    Assert(pAlloc->pD3DIf);
+    IDirect3DVertexBuffer9 *pStreamData = (IDirect3DVertexBuffer9*)pAlloc->pD3DIf;
+    HRESULT hr = pDevice->pDevice9If->SetStreamSource(pData->Stream, pStreamData, pData->Offset, pData->Stride);
+    Assert(hr == S_OK);
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
 }
 static HRESULT APIENTRY vboxWddmDDevSetStreamSourceFreq(HANDLE hDevice, CONST D3DDDIARG_SETSTREAMSOURCEFREQ* pData)
 {
