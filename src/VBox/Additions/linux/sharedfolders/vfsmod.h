@@ -87,9 +87,8 @@ extern struct file_operations          sf_reg_fops;
 extern struct dentry_operations        sf_dentry_ops;
 extern struct address_space_operations sf_reg_aops;
 
-extern void
-sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
-              RTFSOBJINFO *info);
+extern void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
+                          RTFSOBJINFO *info);
 extern int sf_stat(const char *caller, struct sf_glob_info *sf_g,
                    SHFLSTRING *path, RTFSOBJINFO *result, int ok_to_fail);
 extern int sf_inode_revalidate(struct dentry *dentry);
@@ -113,9 +112,9 @@ extern int sf_init_backing_dev(struct sf_glob_info *sf_g, const char *name);
 extern void sf_done_backing_dev(struct sf_glob_info *sf_g);
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-#define STRUCT_STATFS  struct statfs
+# define STRUCT_STATFS  struct statfs
 #else
-#define STRUCT_STATFS  struct kstatfs
+# define STRUCT_STATFS  struct kstatfs
 #endif
 int sf_get_volume_info(struct super_block *sb,STRUCT_STATFS *stat);
 
@@ -125,26 +124,26 @@ int sf_get_volume_info(struct super_block *sb,STRUCT_STATFS *stat);
 # define CMC_API __attribute__ ((regparm (0)))
 #endif
 
-#define TRACE() LogFunc (("tracepoint\n"))
+#define TRACE() LogFunc(("tracepoint\n"))
 
 /* Following casts are here to prevent assignment of void * to
    pointers of arbitrary type */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-#define GET_GLOB_INFO(sb) ((struct sf_glob_info *) (sb)->u.generic_sbp)
-#define SET_GLOB_INFO(sb, sf_g) (sb)->u.generic_sbp = sf_g
+# define GET_GLOB_INFO(sb)       ((struct sf_glob_info *) (sb)->u.generic_sbp)
+# define SET_GLOB_INFO(sb, sf_g) (sb)->u.generic_sbp = sf_g
 #else
-#define GET_GLOB_INFO(sb) ((struct sf_glob_info *) (sb)->s_fs_info)
-#define SET_GLOB_INFO(sb, sf_g) (sb)->s_fs_info = sf_g
+# define GET_GLOB_INFO(sb)       ((struct sf_glob_info *) (sb)->s_fs_info)
+# define SET_GLOB_INFO(sb, sf_g) (sb)->s_fs_info = sf_g
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 19) || defined(KERNEL_FC6)
 /* FC6 kernel 2.6.18, vanilla kernel 2.6.19+ */
-#define GET_INODE_INFO(i) ((struct sf_inode_info *) (i)->i_private)
-#define SET_INODE_INFO(i, sf_i) (i)->i_private = sf_i
+# define GET_INODE_INFO(i)       ((struct sf_inode_info *) (i)->i_private)
+# define SET_INODE_INFO(i, sf_i) (i)->i_private = sf_i
 #else
 /* vanilla kernel up to 2.6.18 */
-#define GET_INODE_INFO(i) ((struct sf_inode_info *) (i)->u.generic_ip)
-#define SET_INODE_INFO(i, sf_i) (i)->u.generic_ip = sf_i
+# define GET_INODE_INFO(i)       ((struct sf_inode_info *) (i)->u.generic_ip)
+# define SET_INODE_INFO(i, sf_i) (i)->u.generic_ip = sf_i
 #endif
 
 #endif /* vfsmod.h */
