@@ -33,73 +33,107 @@
 #include <Carbon/Carbon.h>
 #include "DarwinKeyboard.h"
 
-NativeWindowRef darwinToNativeWindowImpl(NativeViewRef aView)
+NativeNSWindowRef darwinToNativeWindowImpl(NativeNSViewRef pView)
 {
-    NativeWindowRef window = NULL;
-    if (aView)
-        window = [aView window];
+    NativeNSWindowRef window = NULL;
+    if (pView)
+        window = [pView window];
 
     return window;
 }
 
-NativeViewRef darwinToNativeViewImpl(NativeWindowRef aWindow)
+NativeNSViewRef darwinToNativeViewImpl(NativeNSWindowRef pWindow)
 {
-    NativeViewRef view = NULL;
-    if (aWindow)
-        view = [aWindow contentView];
+    NativeNSViewRef view = NULL;
+    if (pWindow)
+        view = [pWindow contentView];
 
     return view;
 }
 
-void darwinSetShowsToolbarButtonImpl(NativeWindowRef aWindow, bool aEnabled)
+NativeNSImageRef darwinToNSImageRef(const CGImageRef pImage)
 {
-    [aWindow setShowsToolbarButton:aEnabled];
+    /* Create a bitmap rep from the image. */
+    NSBitmapImageRep *bitmapRep = [[NSBitmapImageRep alloc] initWithCGImage:pImage];
+    /* Create an NSImage and add the bitmap rep to it */
+    NSImage *image = [[[NSImage alloc] init] autorelease];
+    [image addRepresentation:bitmapRep];
+    return image;
 }
 
-void darwinSetShowsResizeIndicatorImpl(NativeWindowRef aWindow, bool aEnabled)
+NativeNSImageRef darwinToNSImageRef(const QImage *pImage)
 {
-    [aWindow setShowsResizeIndicator:aEnabled];
+   CGImageRef pCGImage = ::darwinToCGImageRef(pImage);
+   NativeNSImageRef pNSImage = ::darwinToNSImageRef(pCGImage);
+   CGImageRelease(pCGImage);
+   return pNSImage;
 }
 
-void darwinSetHidesAllTitleButtonsImpl(NativeWindowRef aWindow)
+NativeNSImageRef darwinToNSImageRef(const QPixmap *pPixmap)
+{
+   CGImageRef pCGImage = ::darwinToCGImageRef(pPixmap);
+   NativeNSImageRef pNSImage = ::darwinToNSImageRef(pCGImage);
+   CGImageRelease(pCGImage);
+   return pNSImage;
+}
+
+NativeNSImageRef darwinToNSImageRef(const char *pczSource)
+{
+   CGImageRef pCGImage = ::darwinToCGImageRef(pczSource);
+   NativeNSImageRef pNSImage = ::darwinToNSImageRef(pCGImage);
+   CGImageRelease(pCGImage);
+   return pNSImage;
+}
+
+void darwinSetShowsToolbarButtonImpl(NativeNSWindowRef pWindow, bool fEnabled)
+{
+    [pWindow setShowsToolbarButton:fEnabled];
+}
+
+void darwinSetShowsResizeIndicatorImpl(NativeNSWindowRef pWindow, bool fEnabled)
+{
+    [pWindow setShowsResizeIndicator:fEnabled];
+}
+
+void darwinSetHidesAllTitleButtonsImpl(NativeNSWindowRef pWindow)
 {
     /* Remove all title buttons by changing the style mask. This method is
        available from 10.6 on only. */
-    if ([aWindow respondsToSelector: @selector(setStyleMask:)])
-        [aWindow performSelector: @selector(setStyleMask:) withObject: (id)NSTitledWindowMask];
+    if ([pWindow respondsToSelector: @selector(setStyleMask:)])
+        [pWindow performSelector: @selector(setStyleMask:) withObject: (id)NSTitledWindowMask];
     else
     {
         /* On pre 10.6 disable all the buttons currently displayed. Don't use
            setHidden cause this remove the buttons, but didn't release the
            place used for the buttons. */
-        NSButton *pButton = [aWindow standardWindowButton:NSWindowCloseButton];
+        NSButton *pButton = [pWindow standardWindowButton:NSWindowCloseButton];
         if (pButton != Nil)
             [pButton setEnabled: NO];
-        pButton = [aWindow standardWindowButton:NSWindowMiniaturizeButton];
+        pButton = [pWindow standardWindowButton:NSWindowMiniaturizeButton];
         if (pButton != Nil)
             [pButton setEnabled: NO];
-        pButton = [aWindow standardWindowButton:NSWindowZoomButton];
+        pButton = [pWindow standardWindowButton:NSWindowZoomButton];
         if (pButton != Nil)
             [pButton setEnabled: NO];
-        pButton = [aWindow standardWindowButton:NSWindowDocumentIconButton];
+        pButton = [pWindow standardWindowButton:NSWindowDocumentIconButton];
         if (pButton != Nil)
             [pButton setEnabled: NO];
     }
 }
 
-void darwinSetShowsWindowTransparentImpl(NativeWindowRef aWindow, bool aEnabled)
+void darwinSetShowsWindowTransparentImpl(NativeNSWindowRef pWindow, bool fEnabled)
 {
-    if (aEnabled)
+    if (fEnabled)
     {
-        [aWindow setOpaque:NO];
-        [aWindow setBackgroundColor:[NSColor clearColor]];
-        [aWindow setHasShadow:NO];
+        [pWindow setOpaque:NO];
+        [pWindow setBackgroundColor:[NSColor clearColor]];
+        [pWindow setHasShadow:NO];
     }
     else
     {
-        [aWindow setOpaque:YES];
-        [aWindow setBackgroundColor:[NSColor windowBackgroundColor]];
-        [aWindow setHasShadow:YES];
+        [pWindow setOpaque:YES];
+        [pWindow setBackgroundColor:[NSColor windowBackgroundColor]];
+        [pWindow setHasShadow:YES];
     }
 }
 
@@ -114,58 +148,58 @@ void darwinSetDockIconMenu(QMenu* pMenu)
  *
  * @param   fEnabled    Whether to enable or disable coalescing.
  */
-void darwinSetMouseCoalescingEnabled(bool aEnabled)
+void darwinSetMouseCoalescingEnabled(bool fEnabled)
 {
-    [NSEvent setMouseCoalescingEnabled:aEnabled];
+    [NSEvent setMouseCoalescingEnabled:fEnabled];
 }
 
-void darwinWindowAnimateResizeImpl(NativeWindowRef aWindow, int x, int y, int width, int height)
+void darwinWindowAnimateResizeImpl(NativeNSWindowRef pWindow, int x, int y, int width, int height)
 {
     /* It seems that Qt doesn't return the height of the window with the
      * toolbar height included. So add this size manually. Could easily be that
      * the Trolls fix this in the final release. */
-    NSToolbar *toolbar = [aWindow toolbar];
-    NSRect windowFrame = [aWindow frame];
+    NSToolbar *toolbar = [pWindow toolbar];
+    NSRect windowFrame = [pWindow frame];
     int toolbarHeight = 0;
     if(toolbar && [toolbar isVisible])
-        toolbarHeight = NSHeight(windowFrame) - NSHeight([[aWindow contentView] frame]);
+        toolbarHeight = NSHeight(windowFrame) - NSHeight([[pWindow contentView] frame]);
     int h = height + toolbarHeight;
     int h1 = h - NSHeight(windowFrame);
     windowFrame.size.height = h;
     windowFrame.origin.y -= h1;
 
-    [aWindow setFrame:windowFrame display:YES animate:YES];
+    [pWindow setFrame:windowFrame display:YES animate:YES];
 }
 
-void darwinWindowInvalidateShadowImpl(NativeWindowRef aWindow)
+void darwinWindowInvalidateShadowImpl(NativeNSWindowRef pWindow)
 {
-    [aWindow invalidateShadow];
+    [pWindow invalidateShadow];
 }
 
-int darwinWindowToolBarHeight(NativeWindowRef aWindow)
+int darwinWindowToolBarHeight(NativeNSWindowRef pWindow)
 {
-    NSToolbar *toolbar = [aWindow toolbar];
-    NSRect windowFrame = [aWindow frame];
+    NSToolbar *toolbar = [pWindow toolbar];
+    NSRect windowFrame = [pWindow frame];
     int toolbarHeight = 0;
-    int theight = (NSHeight([NSWindow contentRectForFrameRect:[aWindow frame] styleMask:[aWindow styleMask]]) - NSHeight([[aWindow contentView] frame]));
+    int theight = (NSHeight([NSWindow contentRectForFrameRect:[pWindow frame] styleMask:[pWindow styleMask]]) - NSHeight([[pWindow contentView] frame]));
     /* toolbar height: */
     if(toolbar && [toolbar isVisible])
         /* title bar height: */
-        toolbarHeight = NSHeight(windowFrame) - NSHeight([[aWindow contentView] frame]) - theight;
+        toolbarHeight = NSHeight(windowFrame) - NSHeight([[pWindow contentView] frame]) - theight;
 
     return toolbarHeight;
 }
 
-bool darwinIsToolbarVisible(NativeWindowRef pWindow)
+bool darwinIsToolbarVisible(NativeNSWindowRef pWindow)
 {
     NSToolbar *pToolbar = [pWindow toolbar];
 
     return [pToolbar isVisible] == YES;
 }
 
-bool darwinIsWindowMaximized(NativeWindowRef aWindow)
+bool darwinIsWindowMaximized(NativeNSWindowRef pWindow)
 {
-    bool fResult = [aWindow isZoomed];
+    bool fResult = [pWindow isZoomed];
 
     return fResult;
 }
@@ -207,99 +241,6 @@ bool darwinUnifiedToolbarEvents(const void *pvCocoaEvent, const void *pvCarbonEv
 }
 
 /**
- * Calls the -(NSUInteger)modifierFlags method on a NSEvent object.
- *
- * @return  The Cocoa event modifier mask.
- * @param   pEvent          The Cocoa event.
- */
-unsigned long darwinEventModifierFlags(ConstNativeNSEventRef pEvent)
-{
-    return [pEvent modifierFlags];
-}
-
-/**
- * Calls the -(NSUInteger)modifierFlags method on a NSEvent object and
- * converts the flags to carbon style.
- *
- * @return  The Carbon modifier mask.
- * @param   pEvent          The Cocoa event.
- */
-uint32_t darwinEventModifierFlagsXlated(ConstNativeNSEventRef pEvent)
-{
-    NSUInteger  fCocoa  = [pEvent modifierFlags];
-    uint32_t    fCarbon = 0;
-    if (fCocoa)
-    {
-        if (fCocoa & NSAlphaShiftKeyMask)
-            fCarbon |= alphaLock;
-        if (fCocoa & (NSShiftKeyMask | NX_DEVICELSHIFTKEYMASK | NX_DEVICERSHIFTKEYMASK))
-        {
-            if (fCocoa & (NX_DEVICERSHIFTKEYMASK | NX_DEVICERSHIFTKEYMASK))
-            {
-                if (fCocoa & NX_DEVICERSHIFTKEYMASK)
-                    fCarbon |= rightShiftKey;
-                if (fCocoa & NX_DEVICELSHIFTKEYMASK)
-                    fCarbon |= shiftKey;
-            }
-            else
-                fCarbon |= shiftKey;
-        }
-
-        if (fCocoa & (NSControlKeyMask | NX_DEVICELCTLKEYMASK | NX_DEVICERCTLKEYMASK))
-        {
-            if (fCocoa & (NX_DEVICELCTLKEYMASK | NX_DEVICERCTLKEYMASK))
-            {
-                if (fCocoa & NX_DEVICERCTLKEYMASK)
-                    fCarbon |= rightControlKey;
-                if (fCocoa & NX_DEVICELCTLKEYMASK)
-                    fCarbon |= controlKey;
-            }
-            else
-                fCarbon |= controlKey;
-        }
-
-        if (fCocoa & (NSAlternateKeyMask | NX_DEVICELALTKEYMASK | NX_DEVICERALTKEYMASK))
-        {
-            if (fCocoa & (NX_DEVICELALTKEYMASK | NX_DEVICERALTKEYMASK))
-            {
-                if (fCocoa & NX_DEVICERALTKEYMASK)
-                    fCarbon |= rightOptionKey;
-                if (fCocoa & NX_DEVICELALTKEYMASK)
-                    fCarbon |= optionKey;
-            }
-            else
-                fCarbon |= optionKey;
-        }
-
-        if (fCocoa & (NSCommandKeyMask | NX_DEVICELCMDKEYMASK | NX_DEVICERCMDKEYMASK))
-        {
-            if (fCocoa & (NX_DEVICELCMDKEYMASK | NX_DEVICERCMDKEYMASK))
-            {
-                if (fCocoa & NX_DEVICERCMDKEYMASK)
-                    fCarbon |= kEventKeyModifierRightCmdKeyMask;
-                if (fCocoa & NX_DEVICELCMDKEYMASK)
-                    fCarbon |= cmdKey;
-            }
-            else
-                fCarbon |= cmdKey;
-        }
-
-        /*
-        if (fCocoa & NSNumericPadKeyMask)
-            fCarbon |= ???;
-
-        if (fCocoa & NSHelpKeyMask)
-            fCarbon |= ???;
-
-        if (fCocoa & NSFunctionKeyMask)
-            fCarbon |= ???;
-        */
-    }
-
-    return fCarbon;
-}
-
-/**
  * Check for some default application key combinations a Mac user expect, like
  * CMD+Q or CMD+H.
  *
@@ -336,181 +277,5 @@ bool darwinIsApplicationCommand(ConstNativeNSEventRef pEvent)
         default: break;
     }
     return fGlobalHotkey;
-}
-
-/**
- * Get the name for a Cocoa event type.
- *
- * @returns Read-only name string.
- * @param   eEvtType        The Cocoa event type.
- */
-const char *darwinEventTypeName(unsigned long eEvtType)
-{
-    switch (eEvtType)
-    {
-#define EVT_CASE(nm) case nm: return #nm
-        EVT_CASE(NSLeftMouseDown);
-        EVT_CASE(NSLeftMouseUp);
-        EVT_CASE(NSRightMouseDown);
-        EVT_CASE(NSRightMouseUp);
-        EVT_CASE(NSMouseMoved);
-        EVT_CASE(NSLeftMouseDragged);
-        EVT_CASE(NSRightMouseDragged);
-        EVT_CASE(NSMouseEntered);
-        EVT_CASE(NSMouseExited);
-        EVT_CASE(NSKeyDown);
-        EVT_CASE(NSKeyUp);
-        EVT_CASE(NSFlagsChanged);
-        EVT_CASE(NSAppKitDefined);
-        EVT_CASE(NSSystemDefined);
-        EVT_CASE(NSApplicationDefined);
-        EVT_CASE(NSPeriodic);
-        EVT_CASE(NSCursorUpdate);
-        EVT_CASE(NSScrollWheel);
-        EVT_CASE(NSTabletPoint);
-        EVT_CASE(NSTabletProximity);
-        EVT_CASE(NSOtherMouseDown);
-        EVT_CASE(NSOtherMouseUp);
-        EVT_CASE(NSOtherMouseDragged);
-#if MAC_OS_X_VERSION_MAX_ALLOWED > MAC_OS_X_VERSION_10_5
-        EVT_CASE(NSEventTypeGesture);
-        EVT_CASE(NSEventTypeMagnify);
-        EVT_CASE(NSEventTypeSwipe);
-        EVT_CASE(NSEventTypeRotate);
-        EVT_CASE(NSEventTypeBeginGesture);
-        EVT_CASE(NSEventTypeEndGesture);
-#endif
-#undef EVT_CASE
-        default:
-            return "Unknown!";
-    }
-}
-
-/**
- * Debug helper function for dumping a Cocoa event to stdout.
- *
- * @param   pszPrefix       Message prefix.
- * @param   pEvent          The Cocoa event.
- */
-void darwinPrintEvent(const char *pszPrefix, ConstNativeNSEventRef pEvent)
-{
-    NSEventType         eEvtType = [pEvent type];
-    NSUInteger          fEvtMask = [pEvent modifierFlags];
-    NSWindow           *pEvtWindow = [pEvent window];
-    NSInteger           iEvtWindow = [pEvent windowNumber];
-    NSGraphicsContext  *pEvtGraphCtx = [pEvent context];
-
-    printf("%s%p: Type=%lu Modifiers=%08lx pWindow=%p #Wnd=%ld pGraphCtx=%p %s\n",
-           pszPrefix, (void*)pEvent, (unsigned long)eEvtType, (unsigned long)fEvtMask, (void*)pEvtWindow,
-           (long)iEvtWindow, (void*)pEvtGraphCtx, darwinEventTypeName(eEvtType));
-
-    /* dump type specific into. */
-    switch (eEvtType)
-    {
-        case NSLeftMouseDown:
-        case NSLeftMouseUp:
-        case NSRightMouseDown:
-        case NSRightMouseUp:
-        case NSMouseMoved:
-
-        case NSLeftMouseDragged:
-        case NSRightMouseDragged:
-        case NSMouseEntered:
-        case NSMouseExited:
-            break;
-
-        case NSKeyDown:
-        case NSKeyUp:
-        {
-            NSUInteger i;
-            NSUInteger cch;
-            NSString *pChars = [pEvent characters];
-            NSString *pCharsIgnMod = [pEvent charactersIgnoringModifiers];
-            BOOL fIsARepeat = [pEvent isARepeat];
-            unsigned short KeyCode = [pEvent keyCode];
-
-            printf("    KeyCode=%04x isARepeat=%d", KeyCode, fIsARepeat);
-            if (pChars)
-            {
-                cch = [pChars length];
-                printf(" characters={");
-                for (i = 0; i < cch; i++)
-                    printf(i == 0 ? "%02x" : ",%02x", [pChars characterAtIndex: i]);
-                printf("}");
-            }
-
-            if (pCharsIgnMod)
-            {
-                cch = [pCharsIgnMod length];
-                printf(" charactersIgnoringModifiers={");
-                for (i = 0; i < cch; i++)
-                    printf(i == 0 ? "%02x" : ",%02x", [pCharsIgnMod characterAtIndex: i]);
-                printf("}");
-            }
-            printf("\n");
-            break;
-        }
-
-        case NSFlagsChanged:
-        {
-            NSUInteger fOddBits = NSAlphaShiftKeyMask | NSShiftKeyMask | NSControlKeyMask | NSAlternateKeyMask
-                                | NSCommandKeyMask | NSNumericPadKeyMask | NSHelpKeyMask | NSFunctionKeyMask
-                                | NX_DEVICELCTLKEYMASK | NX_DEVICELSHIFTKEYMASK | NX_DEVICERSHIFTKEYMASK
-                                | NX_DEVICELCMDKEYMASK | NX_DEVICERCMDKEYMASK | NX_DEVICELALTKEYMASK
-                                | NX_DEVICERALTKEYMASK | NX_DEVICERCTLKEYMASK;
-
-            printf("    KeyCode=%04x", (int)[pEvent keyCode]);
-#define PRINT_MOD(cnst, nm) do { if (fEvtMask & (cnst)) printf(" %s", #nm); } while (0)
-            /* device-independent: */
-            PRINT_MOD(NSAlphaShiftKeyMask, "AlphaShift");
-            PRINT_MOD(NSShiftKeyMask, "Shift");
-            PRINT_MOD(NSControlKeyMask, "Ctrl");
-            PRINT_MOD(NSAlternateKeyMask, "Alt");
-            PRINT_MOD(NSCommandKeyMask, "Cmd");
-            PRINT_MOD(NSNumericPadKeyMask, "NumLock");
-            PRINT_MOD(NSHelpKeyMask, "Help");
-            PRINT_MOD(NSFunctionKeyMask, "Fn");
-            /* device-dependent (sort of): */
-            PRINT_MOD(NX_DEVICELCTLKEYMASK,   "$L-Ctrl");
-            PRINT_MOD(NX_DEVICELSHIFTKEYMASK, "$L-Shift");
-            PRINT_MOD(NX_DEVICERSHIFTKEYMASK, "$R-Shift");
-            PRINT_MOD(NX_DEVICELCMDKEYMASK,   "$L-Cmd");
-            PRINT_MOD(NX_DEVICERCMDKEYMASK,   "$R-Cmd");
-            PRINT_MOD(NX_DEVICELALTKEYMASK,   "$L-Alt");
-            PRINT_MOD(NX_DEVICERALTKEYMASK,   "$R-Alt");
-            PRINT_MOD(NX_DEVICERCTLKEYMASK,   "$R-Ctrl");
-#undef  PRINT_MOD
-
-            fOddBits = fEvtMask & ~fOddBits;
-            if (fOddBits)
-                printf(" fOddBits=%#08lx", (unsigned long)fOddBits);
-#undef  KNOWN_BITS
-            printf("\n");
-            break;
-        }
-
-        case NSAppKitDefined:
-        case NSSystemDefined:
-        case NSApplicationDefined:
-        case NSPeriodic:
-        case NSCursorUpdate:
-        case NSScrollWheel:
-        case NSTabletPoint:
-        case NSTabletProximity:
-        case NSOtherMouseDown:
-        case NSOtherMouseUp:
-        case NSOtherMouseDragged:
-#if MAC_OS_X_VERSION_MAX_ALLOWED > MAC_OS_X_VERSION_10_5
-        case NSEventTypeGesture:
-        case NSEventTypeMagnify:
-        case NSEventTypeSwipe:
-        case NSEventTypeRotate:
-        case NSEventTypeBeginGesture:
-        case NSEventTypeEndGesture:
-#endif
-        default:
-            printf(" Unknown!\n");
-            break;
-    }
 }
 

@@ -151,7 +151,7 @@ void UICocoaDockIconPreview::setOriginalSize(int width, int height)
         [self addSubview: mScreenContent];
         /* The state view */
         mMonitorGlossy = [[NSImageView alloc] initWithFrame:NSRectFromCGRect(p->flipRect(p->m_monitorRect))];
-        [mMonitorGlossy setImage: darwinCGImageToNSImage (p->m_dockMonitorGlossy)];
+        [mMonitorGlossy setImage: ::darwinToNSImageRef(p->m_dockMonitorGlossy)];
         [self addSubview: mMonitorGlossy];
     }
 
@@ -160,7 +160,7 @@ void UICocoaDockIconPreview::setOriginalSize(int width, int height)
 
 - (void)drawRect:(NSRect)aRect;
 {
-    NSImage *dockMonitor = darwinCGImageToNSImage(p->m_dockMonitor);
+    NSImage *dockMonitor = ::darwinToNSImageRef(p->m_dockMonitor);
     [dockMonitor drawInRect:NSRectFromCGRect(p->flipRect(p->m_monitorRect)) fromRect:aRect operation:NSCompositeSourceOver fraction:1.0];
     [dockMonitor release];
 }
@@ -314,7 +314,7 @@ void UICocoaDockIconPreview::setOriginalSize(int width, int height)
 - (void)updateMonitorWithImage:(CGImageRef)image
 {
     [self restoreMonitor];
-    NSImage *nsimage = darwinCGImageToNSImage (image);
+    NSImage *nsimage = ::darwinToNSImageRef(image);
     [[mMonitor screenContent] setImage: nsimage];
     [nsimage release];
     [[[NSApplication sharedApplication] dockTile] display];
