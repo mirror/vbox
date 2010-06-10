@@ -227,6 +227,10 @@ GLOBALNAME IDEnterTarget
     mov     ecx, MSR_K6_EFER
     rdmsr
     or      eax, MSR_K6_EFER_LME | MSR_K6_EFER_SCE | MSR_K6_EFER_NXE
+;    FIXUP FIX_EFER_OR_MASK
+;    or      eax, 0
+    or      eax, 0
+    and     eax, ~(MSR_K6_EFER_FFXSR) ; turn off fast fxsave/fxrstor (skipping xmm regs)
     wrmsr
     mov     edx, ebp
     DEBUG_CHAR('4')

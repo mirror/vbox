@@ -42,8 +42,6 @@
 #define FIX_HYPER_DS            19
 #define FIX_HYPER_TSS           20
 #define FIX_GC_TSS_GDTE_DW2     21
-#define FIX_CR4_MASK            22
-#define FIX_CR4_OSFSXR          23
 #define FIX_NO_FXSAVE_JMP       24
 #define FIX_NO_SYSENTER_JMP     25
 #define FIX_NO_SYSCALL_JMP      26
@@ -58,6 +56,7 @@
 #define FIX_HC_64BIT_NOCHECK    35
 #define FIX_GC_64_BIT_CPUM_OFF  36
 #define FIX_GC_CPUMCPU_OFF      37
+#define FIX_EFER_OR_MASK        38
 #define FIX_THE_END             255
 /** @} */
 

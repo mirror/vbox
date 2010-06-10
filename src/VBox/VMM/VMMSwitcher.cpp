@@ -526,9 +526,18 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
                 break;
             }
 
+            /*
+             * Store the EFER or mask for the 32->64 bit switcher.
+             */
+            case FIX_EFER_OR_MASK:
+            {
+                uint32_t u32OrMask = MSR_K6_EFER_LME | MSR_K6_EFER_SCE;
+                if (CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NXE))
+                    u32OrMask |= MSR_K6_EFER_NXE;
 
-            ///@todo case FIX_CR4_MASK:
-            ///@todo case FIX_CR4_OSFSXR:
+                *uSrc.pu32 = u32OrMask;
+                break;
+            }
 
             /*
              * Insert relative jump to specified target it FXSAVE/FXRSTOR isn't supported by the cpu.

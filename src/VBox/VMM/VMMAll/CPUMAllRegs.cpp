@@ -1421,6 +1421,12 @@ VMMDECL(bool) CPUMGetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             break;
         }
 
+        case CPUMCPUIDFEATURE_NXE:
+        {
+            if (pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001)
+                return !!(pVM->cpum.s.aGuestCpuIdExt[1].edx & X86_CPUID_AMD_FEATURE_EDX_NX);
+        }
+
         case CPUMCPUIDFEATURE_RDTSCP:
         {
             if (pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001)
