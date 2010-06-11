@@ -82,7 +82,8 @@ public class clienttest
             IMachine machine =  vbox.createMachine(baseFolder,
                                                    "linux",
                                                    desktop.getName(),
-                                                   desktop.getId());
+                                                   desktop.getId(),
+                                                   true);
             machine.saveSettings();
             mgr.cleanupUnused();
         }
