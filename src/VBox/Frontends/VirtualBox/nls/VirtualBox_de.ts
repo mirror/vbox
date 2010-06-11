@@ -5145,7 +5145,7 @@
     </message>
     <message>
         <source>Storage</source>
-        <translation>Plattenspeicher</translation>
+        <translation>Massenspeicher</translation>
     </message>
     <message>
         <source>Hard Disks</source>
