@@ -1465,6 +1465,37 @@ NTSTATUS vboxVidPnEnumTargetModes(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDP
     return Status;
 }
 
+NTSTATUS vboxVidPnEnumTargetsForSource(PDEVICE_EXTENSION pDevExt, D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface,
+        CONST D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId,
+        PFNVBOXVIDPNENUMTARGETSFORSOURCE pfnCallback, PVOID pContext)
+{
+    SIZE_T cTgtPaths;
+    NTSTATUS Status = pVidPnTopologyInterface->pfnGetNumPathsFromSource(hVidPnTopology, VidPnSourceId, &cTgtPaths);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        for (SIZE_T i = 0; i < cTgtPaths; ++i)
+        {
+            D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId;
+            Status = pVidPnTopologyInterface->pfnEnumPathTargetsFromSource(hVidPnTopology, VidPnSourceId, i, &VidPnTargetId);
+            Assert(Status == STATUS_SUCCESS);
+            if (Status == STATUS_SUCCESS)
+            {
+                if (!pfnCallback(pDevExt, hVidPnTopology, pVidPnTopologyInterface, VidPnSourceId, VidPnTargetId, cTgtPaths, pContext))
+                    break;
+            }
+            else
+            {
+                drprintf((__FUNCTION__": pfnEnumPathTargetsFromSource failed Status(0x%x)\n", Status));
+                break;
+            }
+        }
+    }
+    else
+        drprintf((__FUNCTION__": pfnGetNumPathsFromSource failed Status(0x%x)\n", Status));
+
+    return Status;
+}
 
 NTSTATUS vboxVidPnEnumPaths(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
         D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface,
@@ -1526,15 +1557,58 @@ NTSTATUS vboxVidPnSetupSourceInfo(struct _DEVICE_EXTENSION* pDevExt, D3DDDI_VIDE
 
 NTSTATUS vboxVidPnCommitSourceMode(struct _DEVICE_EXTENSION* pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, CONST D3DKMDT_VIDPN_SOURCE_MODE* pVidPnSourceModeInfo, PVBOXWDDM_ALLOCATION pAllocation)
 {
-    Assert(srcId < pDevExt->cSources);
-    if (srcId < pDevExt->cSources)
+    Assert(srcId < (UINT)pDevExt->u.primary.cDisplays);
+    if (srcId < (UINT)pDevExt->u.primary.cDisplays)
     {
         PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[srcId];
         return vboxVidPnSetupSourceInfo(pDevExt, srcId, pSource, pVidPnSourceModeInfo, pAllocation);
     }
 
-    drprintf((__FUNCTION__": invalid srcId (%d), cSources(%d)\n", srcId, pDevExt->cSources));
+    drprintf((__FUNCTION__": invalid srcId (%d), cSources(%d)\n", srcId, pDevExt->u.primary.cDisplays));
     return STATUS_INVALID_PARAMETER;
+}
+
+typedef struct VBOXVIDPNCOMMITTARGETMODE
+{
+    NTSTATUS Status;
+    D3DKMDT_HVIDPN hVidPn;
+    const DXGK_VIDPN_INTERFACE* pVidPnInterface;
+} VBOXVIDPNCOMMITTARGETMODE;
+
+DECLCALLBACK(BOOLEAN) vboxVidPnCommitTargetModeEnum(PDEVICE_EXTENSION pDevExt, D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface,
+        CONST D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId, SIZE_T cTgtPaths, PVOID pContext)
+{
+    VBOXVIDPNCOMMITTARGETMODE *pInfo = (VBOXVIDPNCOMMITTARGETMODE*)pContext;
+    Assert(cTgtPaths <= (SIZE_T)pDevExt->u.primary.cDisplays);
+    D3DKMDT_HVIDPNTARGETMODESET hVidPnTargetModeSet;
+    CONST DXGK_VIDPNTARGETMODESET_INTERFACE* pVidPnTargetModeSetInterface;
+    NTSTATUS Status = pInfo->pVidPnInterface->pfnAcquireTargetModeSet(pInfo->hVidPn, VidPnTargetId, &hVidPnTargetModeSet, &pVidPnTargetModeSetInterface);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        CONST D3DKMDT_VIDPN_TARGET_MODE* pPinnedVidPnTargetModeInfo;
+        Status = pVidPnTargetModeSetInterface->pfnAcquirePinnedModeInfo(hVidPnTargetModeSet, &pPinnedVidPnTargetModeInfo);
+        Assert(Status == STATUS_SUCCESS);
+        if (Status == STATUS_SUCCESS)
+        {
+            VBOXWDDM_TARGET *pTarget = &pDevExt->aTargets[VidPnTargetId];
+            if (pTarget->HeightVisible != pPinnedVidPnTargetModeInfo->VideoSignalInfo.ActiveSize.cy
+                    || pTarget->HeightTotal != pPinnedVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cy)
+            {
+                pTarget->HeightVisible = pPinnedVidPnTargetModeInfo->VideoSignalInfo.ActiveSize.cy;
+                pTarget->HeightTotal = pPinnedVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cy;
+                pTarget->ScanLineState = 0;
+            }
+            pVidPnTargetModeSetInterface->pfnReleaseModeInfo(hVidPnTargetModeSet, pPinnedVidPnTargetModeInfo);
+        }
+
+        pInfo->pVidPnInterface->pfnReleaseTargetModeSet(pInfo->hVidPn, hVidPnTargetModeSet);
+    }
+    else
+        drprintf((__FUNCTION__": pfnAcquireTargetModeSet failed Status(0x%x)\n", Status));
+
+    pInfo->Status = Status;
+    return Status == STATUS_SUCCESS;
 }
 
 NTSTATUS vboxVidPnCommitSourceModeForSrcId(struct _DEVICE_EXTENSION* pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, PVBOXWDDM_ALLOCATION pAllocation)
@@ -1557,7 +1631,34 @@ NTSTATUS vboxVidPnCommitSourceModeForSrcId(struct _DEVICE_EXTENSION* pDevExt, co
             Assert(pPinnedVidPnSourceModeInfo);
             Status = vboxVidPnCommitSourceMode(pDevExt, srcId, pPinnedVidPnSourceModeInfo, pAllocation);
             Assert(Status == STATUS_SUCCESS);
-            if (Status != STATUS_SUCCESS)
+            if (Status == STATUS_SUCCESS)
+            {
+                D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
+                CONST DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
+                Status = pVidPnInterface->pfnGetTopology(hDesiredVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
+                Assert(Status == STATUS_SUCCESS);
+                if (Status == STATUS_SUCCESS)
+                {
+                    VBOXVIDPNCOMMITTARGETMODE TgtModeInfo = {0};
+                    TgtModeInfo.Status = STATUS_SUCCESS; /* <- to ensure we're succeeded if no targets are set */
+                    TgtModeInfo.hVidPn = hDesiredVidPn;
+                    TgtModeInfo.pVidPnInterface = pVidPnInterface;
+                    Status = vboxVidPnEnumTargetsForSource(pDevExt, hVidPnTopology, pVidPnTopologyInterface,
+                            srcId,
+                            vboxVidPnCommitTargetModeEnum, &TgtModeInfo);
+                    Assert(Status == STATUS_SUCCESS);
+                    if (Status == STATUS_SUCCESS)
+                    {
+                        Status = TgtModeInfo.Status;
+                        Assert(Status == STATUS_SUCCESS);
+                    }
+                    else
+                        drprintf((__FUNCTION__": vboxVidPnEnumTargetsForSource failed Status(0x%x)\n", Status));
+                }
+                else
+                    drprintf((__FUNCTION__": pfnGetTopology failed Status(0x%x)\n", Status));
+            }
+            else
                 drprintf((__FUNCTION__": vboxVidPnCommitSourceMode failed Status(0x%x)\n", Status));
             /* release */
             pCurVidPnSourceModeSetInterface->pfnReleaseModeInfo(hCurVidPnSourceModeSet, pPinnedVidPnSourceModeInfo);

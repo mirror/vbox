@@ -941,7 +941,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         /* handle the startup case */
         if (DeviceExtension->CurrentMode == 0)
 #else
-        if (!DeviceExtension->cSources || !DeviceExtension->aSources[0].pPrimaryAllocation)
+        if (!DeviceExtension->u.primary.cDisplays || !DeviceExtension->aSources[0].pPrimaryAllocation)
 #endif
         {
             /* Use the stored custom resolution values only if nothing was read from host.
@@ -981,7 +981,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 bpp  = DeviceExtension->CurrentModeBPP;
         }
 #else
-        if (DeviceExtension->cSources && DeviceExtension->aSources[0].pPrimaryAllocation)
+        if (DeviceExtension->u.primary.cDisplays && DeviceExtension->aSources[0].pPrimaryAllocation)
         {
             if (!xres)
                 xres = DeviceExtension->aSources[0].pPrimaryAllocation->SurfDesc.width;
@@ -1040,7 +1040,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
 #ifndef VBOXWDDM
                 if (DeviceExtension->CurrentMode != 0)
 #else
-                if (DeviceExtension->cSources && DeviceExtension->aSources[0].pPrimaryAllocation)
+                if (DeviceExtension->u.primary.cDisplays && DeviceExtension->aSources[0].pPrimaryAllocation)
 #endif
 #ifndef VBOX_WITH_MULTIMONITOR_FIX
                 {
@@ -1146,7 +1146,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
 #ifndef VBOXWDDM
                 if (DeviceExtension->CurrentMode == 0)
 #else
-                if (!DeviceExtension->cSources || !DeviceExtension->aSources[0].pPrimaryAllocation)
+                if (!DeviceExtension->u.primary.cDisplays || !DeviceExtension->aSources[0].pPrimaryAllocation)
 #endif
                 {
                     dprintf(("VBoxVideo: making a copy of the custom mode as #%d\n", gNumVideoModes + 1));
