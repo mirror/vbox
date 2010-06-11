@@ -2605,7 +2605,7 @@ struct MachineEvent : public VirtualBox::CallbackEvent
                 aEvDesc.init("OnMachineDataChange", 1);
                 aEvDesc.add(id.toUtf16());
                 break;
-               
+
             case VirtualBoxCallbackRegistration::kOnMachineStateChange:
                 aEvDesc.init("OnMachineStateChange", 2);
                 aEvDesc.add(id.toUtf16()).add((int)state);
@@ -2619,7 +2619,7 @@ struct MachineEvent : public VirtualBox::CallbackEvent
             default:
                 AssertFailedReturn(S_OK);
          }
-         return S_OK;         
+         return S_OK;
     }
 #endif
 
@@ -2723,7 +2723,7 @@ struct ExtraDataEvent : public VirtualBox::CallbackEvent
     {
        aEvDesc.init("OnExtraDataChange", 3);
        aEvDesc.add(machineId.toUtf16()).add(key).add(val);
-       return S_OK;         
+       return S_OK;
     }
 #endif
 
@@ -2884,7 +2884,7 @@ struct GuestPropertyEvent : public VirtualBox::CallbackEvent
     {
        aEvDesc.init("OnGuestPropertyChange", 4);
        aEvDesc.add(machineId.toUtf16()).add(name).add(value).add(flags);
-       return S_OK;         
+       return S_OK;
     }
 #endif
 
@@ -4582,8 +4582,8 @@ void *VirtualBox::CallbackEvent::handler()
     }
 
 
-#ifdef RT_OS_WINDOWS       
-#if 0
+#ifdef RT_OS_WINDOWS
+#if 1
     // WIP
     {
      ComEventDesc evDesc;
