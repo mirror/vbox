@@ -4611,7 +4611,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 
     ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
 
-    CPUMSetHyperESP(pVCpu, VMMGetStackRC(pVM));
+    CPUMSetHyperESP(pVCpu, VMMGetStackRC(pVCpu));
     CPUMSetHyperEIP(pVCpu, pfnHandler);
     for (int i=(int)cbParam-1;i>=0;i--)
         CPUMPushHyper(pVCpu, paParam[i]);
