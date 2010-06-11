@@ -10,7 +10,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-import org.virtualbox_3_2.*;
+import org.virtualbox_3_3.*;
 import java.util.List;
 
 class VBoxCallbacks extends VBoxObjectBase implements IVirtualBoxCallback
@@ -21,24 +21,41 @@ class VBoxCallbacks extends VBoxObjectBase implements IVirtualBoxCallback
     }
     public void onSnapshotChange(String machineId, String snapshotId)
     {
+        System.out.println("onSnapshotChange -- VM: " + machineId + ", snap: " + snapshotId);
+
     }
     public void onSnapshotDeleted(String machineId, String snapshotId)
     {
+        System.out.println("onSnapshotDeleted -- VM: " + machineId + ", snap: " + snapshotId);
     }
-    public void onSnapshotTaken(String machineId, String snapshotId) {}
+    public void onSnapshotTaken(String machineId, String snapshotId)
+    {
+        System.out.println("onSnapshotTaken -- VM: " + machineId + ", snap: " + snapshotId);
+    }
     public void onSessionStateChange(String machineId, SessionState state)
     {
         System.out.println("onSessionStateChange -- VM: " + machineId + ", state: " + state);
     }
-    public void onMachineRegistered(String machineId, Boolean registered) {}
-    public void onMediumRegistered(String mediumId, DeviceType mediumType, Boolean registered) {}
+    public void onMachineRegistered(String machineId, Boolean registered)
+    {
+        System.out.println("onMachineRegistered -- VM: " + machineId + ", registered: " + registered);
+    }
+    public void onMediumRegistered(String mediumId, DeviceType mediumType, Boolean registered)
+    {
+        System.out.println("onMediumRegistered -- ID: " + mediumId + ", type=" + mediumType + ", registered: " + registered);
+    }
     public void onExtraDataChange(String machineId, String key, String value)
     {
         System.out.println("onExtraDataChange -- VM: " + machineId + ": " + key+"->"+value);
     }
-    public Boolean onExtraDataCanChange(String machineId, String key, String value, Holder<String> error) { return true; }
+    public Boolean onExtraDataCanChange(String machineId, String key, String value, Holder<String> error)
+    {
+        return true;
+    }
     public void onMachineDataChange(String machineId)
-    {}
+    {
+        System.out.println("onMachineDataChange -- VM: " + machineId);
+    }
     public void onMachineStateChange(String machineId, MachineState state)
     {
         System.out.println("onMachineStateChange -- VM: " + machineId + ", state: " + state);
@@ -49,13 +66,14 @@ public class TestVBox
 {
     static void testCallbacks(VirtualBoxManager mgr, IVirtualBox vbox)
     {
-        IVirtualBoxCallback cbs = mgr.createIVirtualBoxCallback(new VBoxCallbacks());
-        vbox.registerCallback(cbs);
+
+        IVirtualBoxCallback cbs = new VBoxCallbacks();
+        mgr.registerGlobalCallback(vbox, cbs);
         for (int i=0; i<100; i++)
         {
             mgr.waitForEvents(500);
         }
-        vbox.unregisterCallback(cbs);
+        mgr.unregisterGlobalCallback(vbox, cbs);
     }
 
     static void testEnumeration(VirtualBoxManager mgr, IVirtualBox vbox)
@@ -89,7 +107,7 @@ public class TestVBox
             System.out.println("VirtualBox version: " + vbox.getVersion() + "\n");
             testEnumeration(mgr, vbox);
             testStart(mgr, vbox);
-            //testCallbacks(mgr, vbox);
+            testCallbacks(mgr, vbox);
 
             System.out.println("done, press Enter...");
             int ch = System.in.read();

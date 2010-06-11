@@ -55,11 +55,11 @@ HRESULT ComEventsHelper::init(const com::Guid &aGuid)
         CComFuncDesc  pfuncdesc(ptinfo);
         DWORD         hContext; // help context
         BSTR          fName;
-        
+
         hr = ptinfo->GetFuncDesc(i, &pfuncdesc);
         if (FAILED(hr))
            break;
-         
+
         hr = ptinfo->GetDocumentation(pfuncdesc->memid, &fName, NULL, &hContext, NULL);
         if (FAILED(hr))
            break;
@@ -73,7 +73,7 @@ HRESULT ComEventsHelper::init(const com::Guid &aGuid)
             evMap.insert(ComEventsMap::value_type(com::Utf8Str(fName), did));
 
         }
-        SysFreeString(fName);  
+        SysFreeString(fName);
 
         pfuncdesc.Release();
     }
@@ -104,7 +104,7 @@ HRESULT ComEventsHelper::fire(IDispatch* aObj, ComEventDesc& event, CComVariant*
      CComVariant* args = event.mArgs;
      DISPPARAMS disp = { args, NULL, argc, 0};
      DISPID           dispid;
- 
+
      HRESULT          hr = lookup(event.mName, &dispid);
 
      if (FAILED(hr))

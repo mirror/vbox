@@ -21,9 +21,9 @@ ifeq ($(KBUILD_HOST),linux)
 endif
 
 ifeq ($(KBUILD_HOST),win)
- VBOX_SDK=e:/ws/out/win.amd64/debug/bin/sdk
- VBOX_BIN=e:/ws/out/win.amd64/debug/bin
- JACOB_DIR=e:/ws/src/libs/jacob-1.15-M3/
+ VBOX_SDK=c:/out/bin/sdk
+ VBOX_BIN=c:/out/bin
+ JACOB_DIR=s:/jacob-1.15-M3/
  JACOB_JAR=$(JACOB_DIR)/jacob.jar
  CLASSPATH += $(JACOB_JAR)$(SEP)
  JAVA_ARGS += -Djava.library.path=$(JACOB_DIR)

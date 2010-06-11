@@ -29,13 +29,13 @@
 
 
 class ComEventDesc
-{   	
+{
 public:
- ComEventDesc() 
-   : mArgc(0), mArgs(0), mPos(0) 
+ ComEventDesc()
+   : mArgc(0), mArgs(0), mPos(0)
  {}
- ~ComEventDesc() 
- { 
+ ~ComEventDesc()
+ {
    if (mArgs)
       delete [] mArgs;
  }
@@ -49,7 +49,7 @@ public:
      delete [] mArgs;
    mArgs = new CComVariant[mArgc];
    mPos = argc - 1;
- } 
+ }
 
  template <class T>
  ComEventDesc& add(T v)
@@ -59,7 +59,7 @@ public:
    mPos--;
    return *this;
  }
- 
+
 private:
  com::Utf8Str mName;
  int          mArgc;
@@ -78,7 +78,7 @@ public:
     HRESULT init(const com::Guid &aGuid);
     HRESULT lookup(com::Utf8Str &aName, DISPID *did);
     HRESULT fire(IDispatch* aObj, ComEventDesc& desc, CComVariant *pResult);
-    
+
 private:
     typedef std::map<com::Utf8Str, DISPID> ComEventsMap;
 
@@ -86,4 +86,3 @@ private:
 };
 
 #endif /* __VBOXCOMEVENTS_h__ */
-
