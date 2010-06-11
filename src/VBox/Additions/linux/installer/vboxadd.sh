@@ -167,6 +167,26 @@ userdev=/dev/vboxuser
 owner=vboxadd
 group=1
 
+test_sane_kernel_dir()
+{
+    KERN_VER=`uname -r`
+    KERN_DIR="/lib/modules/$KERN_VER/build"
+    if [ -d "$KERN_DIR" ]; then
+        KERN_REL=`make -sC $KERN_DIR --no-print-directory kernelrelease || true`
+        if [ "x$KERN_REL" == "x$KERN_VER" ]; then
+            return 0
+        fi
+    fi
+    printf "\nThe headers for the current running kernel are not found. If the following\nmodule compilation fails then this could be the reason.\n"
+    if [ "$system" = "redhat" ]; then
+        printf "The missing package can be probably installed with\nyum install kernel-devel-$KERN_VER\n"
+    elif [ "$system" = "suse" ]; then
+        printf "The missing package can be probably installed with\nzypper install kernel-$KERN_VER\n"
+    elif [ "$system" = "debian" ]; then
+        printf "The missing package can be probably installed with\napt-get install linux-headers-$KERN_VER\n"
+    fi
+}
+
 fail()
 {
     if [ "$system" = "gentoo" ]; then
@@ -324,6 +344,7 @@ setup()
         succ_msg
     fi
     begin "Building the VirtualBox Guest Additions kernel modules"
+    test_sane_kernel_dir
     if ! sh /usr/share/$PACKAGE/test/build_in_tmp \
         --no-dkms --no-print-directory > $LOG 2>&1; then
         fail "`printf "Your system does not seem to be set up to build kernel modules.\nLook at $LOG to find out what went wrong"`"
