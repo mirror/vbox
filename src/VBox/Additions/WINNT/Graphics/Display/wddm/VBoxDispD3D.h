@@ -122,6 +122,12 @@ typedef struct VBOXWDDMDISP_RESOURCE
     VBOXWDDMDISP_ALLOCATION aAllocations[1];
 } VBOXWDDMDISP_RESOURCE, *PVBOXWDDMDISP_RESOURCE;
 
+typedef struct VBOXWDDMDISP_TSS_LOOKUP
+{
+    BOOL  bSamplerState;
+    DWORD dType;
+} VBOXWDDMDISP_TSS_LOOKUP;
+
 #define VBOXDISPMODE_IS_3D(_p) (!!((_p)->pD3D9If))
 
 #endif /* #ifndef ___VBoxDispD3D_h___ */
