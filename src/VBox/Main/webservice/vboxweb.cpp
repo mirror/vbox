@@ -914,7 +914,10 @@ void RaiseSoapRuntimeFault(struct soap *soap,
 
     // allocated our own soap fault struct
     _vbox__RuntimeFault *ex = soap_new__vbox__RuntimeFault(soap, 1);
-    ex->resultCode = info.getResultCode();
+    // some old vbox methods return errors without setting an error in the error info,
+    // so use the error info code if it's set and the HRESULT from the method otherwise
+    if (S_OK == (ex->resultCode = info.getResultCode()))
+        ex->resultCode = apirc;
     ex->text = ConvertComString(info.getText());
     ex->component = ConvertComString(info.getComponent());
     ex->interfaceID = ConvertComString(info.getInterfaceID());
