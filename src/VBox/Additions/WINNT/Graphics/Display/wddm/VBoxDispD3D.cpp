@@ -34,6 +34,8 @@
 # include <stdio.h>
 #endif
 
+/*#define VBOXWDDMDISP_WITH_TMPWORKAROUND 1*/
+
 static FORMATOP gVBoxFormatOps3D[] = {
     {D3DDDIFMT_A8R8G8B8,
         FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
@@ -994,10 +996,48 @@ D3DRENDERSTATETYPE vboxDDI2D3DRenderStateType(D3DDDIRENDERSTATETYPE enmType)
     return (D3DRENDERSTATETYPE)enmType;
 }
 
-D3DTEXTURESTAGESTATETYPE vboxDDI2D3DTestureStageStateType(D3DDDITEXTURESTAGESTATETYPE enmType)
+VBOXWDDMDISP_TSS_LOOKUP vboxDDI2D3DTestureStageStateType(D3DDDITEXTURESTAGESTATETYPE enmType)
 {
-    /* @todo: @fixme: not entirely correct, need to check */
-    return (D3DTEXTURESTAGESTATETYPE)enmType;
+    static const VBOXWDDMDISP_TSS_LOOKUP lookup[] =
+    {
+        {FALSE, D3DTSS_FORCE_DWORD},             /*  0, D3DDDITSS_TEXTUREMAP */
+        {FALSE, D3DTSS_COLOROP},                 /*  1, D3DDDITSS_COLOROP */
+        {FALSE, D3DTSS_COLORARG1},               /*  2, D3DDDITSS_COLORARG1 */
+        {FALSE, D3DTSS_COLORARG2},               /*  3, D3DDDITSS_COLORARG2 */
+        {FALSE, D3DTSS_ALPHAOP},                 /*  4, D3DDDITSS_ALPHAOP */
+        {FALSE, D3DTSS_ALPHAARG1},               /*  5, D3DDDITSS_ALPHAARG1 */
+        {FALSE, D3DTSS_ALPHAARG2},               /*  6, D3DDDITSS_ALPHAARG2 */
+        {FALSE, D3DTSS_BUMPENVMAT00},            /*  7, D3DDDITSS_BUMPENVMAT00 */
+        {FALSE, D3DTSS_BUMPENVMAT01},            /*  8, D3DDDITSS_BUMPENVMAT01 */
+        {FALSE, D3DTSS_BUMPENVMAT10},            /*  9, D3DDDITSS_BUMPENVMAT10 */
+        {FALSE, D3DTSS_BUMPENVMAT11},            /* 10, D3DDDITSS_BUMPENVMAT11 */
+        {FALSE, D3DTSS_TEXCOORDINDEX},           /* 11, D3DDDITSS_TEXCOORDINDEX */
+        {FALSE, D3DTSS_FORCE_DWORD},             /* 12, unused */
+        {TRUE, D3DSAMP_ADDRESSU},                /* 13, D3DDDITSS_ADDRESSU */
+        {TRUE, D3DSAMP_ADDRESSV},                /* 14, D3DDDITSS_ADDRESSV */
+        {TRUE, D3DSAMP_BORDERCOLOR},             /* 15, D3DDDITSS_BORDERCOLOR */
+        {TRUE, D3DSAMP_MAGFILTER},               /* 16, D3DDDITSS_MAGFILTER */
+        {TRUE, D3DSAMP_MINFILTER},               /* 17, D3DDDITSS_MINFILTER */
+        {TRUE, D3DSAMP_MIPFILTER},               /* 18, D3DDDITSS_MIPFILTER */
+        {TRUE, D3DSAMP_MIPMAPLODBIAS},           /* 19, D3DDDITSS_MIPMAPLODBIAS */
+        {TRUE, D3DSAMP_MAXMIPLEVEL},             /* 20, D3DDDITSS_MAXMIPLEVEL */
+        {TRUE, D3DSAMP_MAXANISOTROPY},           /* 21, D3DDDITSS_MAXANISOTROPY */
+        {FALSE, D3DTSS_BUMPENVLSCALE},           /* 22, D3DDDITSS_BUMPENVLSCALE */
+        {FALSE, D3DTSS_BUMPENVLOFFSET},          /* 23, D3DDDITSS_BUMPENVLOFFSET */
+        {FALSE, D3DTSS_TEXTURETRANSFORMFLAGS},   /* 24, D3DDDITSS_TEXTURETRANSFORMFLAGS */
+        {TRUE, D3DSAMP_ADDRESSW},                /* 25, D3DDDITSS_ADDRESSW */
+        {FALSE, D3DTSS_COLORARG0},               /* 26, D3DDDITSS_COLORARG0 */
+        {FALSE, D3DTSS_ALPHAARG0},               /* 27, D3DDDITSS_ALPHAARG0 */
+        {FALSE, D3DTSS_RESULTARG},               /* 28, D3DDDITSS_RESULTARG */
+        {FALSE, D3DTSS_FORCE_DWORD},             /* 29, D3DDDITSS_SRGBTEXTURE */
+        {FALSE, D3DTSS_FORCE_DWORD},             /* 30, D3DDDITSS_ELEMENTINDEX */
+        {FALSE, D3DTSS_FORCE_DWORD},             /* 31, D3DDDITSS_DMAPOFFSET */
+        {FALSE, D3DTSS_CONSTANT},                /* 32, D3DDDITSS_CONSTANT */
+        {FALSE, D3DTSS_FORCE_DWORD},             /* 33, D3DDDITSS_DISABLETEXTURECOLORKEY */
+        {FALSE, D3DTSS_FORCE_DWORD},             /* 34, D3DDDITSS_TEXTURECOLORKEYVAL */
+    };
+
+    return lookup[enmType];
 }
 
 DWORD vboxDDI2D3DUsage(D3DDDI_RESOURCEFLAGS fFlags)
@@ -1428,7 +1468,19 @@ static HRESULT APIENTRY vboxWddmDDevSetTextureStageState(HANDLE hDevice, CONST D
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
     Assert(pDevice);
     Assert(pDevice->pDevice9If);
-    HRESULT hr = pDevice->pDevice9If->SetTextureStageState(pData->Stage, vboxDDI2D3DTestureStageStateType(pData->State), pData->Value);
+
+    VBOXWDDMDISP_TSS_LOOKUP lookup = vboxDDI2D3DTestureStageStateType(pData->State);
+    HRESULT hr;
+
+    if (!lookup.bSamplerState)
+    {
+        hr = pDevice->pDevice9If->SetTextureStageState(pData->Stage, D3DTEXTURESTAGESTATETYPE(lookup.dType), pData->Value);
+    } 
+    else
+    {
+        hr = pDevice->pDevice9If->SetSamplerState(pData->Stage, D3DSAMPLERSTATETYPE(lookup.dType), pData->Value);
+    }
+
     Assert(hr == S_OK);
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
