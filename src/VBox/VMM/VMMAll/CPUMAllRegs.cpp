@@ -1379,9 +1379,11 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         case CPUMCPUIDFEATURE_RDTSCP:
         {
             if (    pVM->cpum.s.aGuestCpuIdExt[0].eax < 0x80000001
-                ||  !(ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_RDTSCP))
+                ||  !(ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_RDTSCP)
+                ||  pVM->cpum.s.u8PortableCpuIdLevel > 0)
             {
-                LogRel(("WARNING: Can't turn on RDTSCP when the host doesn't support it!!\n"));
+                if (!pVM->cpum.s.u8PortableCpuIdLevel)
+                    LogRel(("WARNING: Can't turn on RDTSCP when the host doesn't support it!!\n"));
                 return;
             }
 

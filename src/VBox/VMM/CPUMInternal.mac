@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2007 Oracle Corporation
+; Copyright (C) 2006-2010 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -48,7 +48,7 @@
 
 struc CPUM
     ;...
-    .ulOffCPUMCPU         resd    1
+    .offCPUMCPU0          resd    1
     .fHostUseFlags        resd    1
 
     ; CPUID eax=1
@@ -68,11 +68,12 @@ struc CPUM
     ; entered rawmode?
     .fRawEntered          resb    1
     .fSyntheticCpu        resb    1
+    .u8PortableCpuIdLevel resb    1
     .fPendingRestore      resb    1
 %if RTHCPTR_CB == 8
-    .abPadding            resb    5
+    .abPadding            resb    4
 %else
-    .abPadding            resb    1
+;    .abPadding            resb    0
 %endif
 
     ; CPUID leafs
@@ -414,7 +415,7 @@ struc CPUMCPU
 
     .fUseFlags            resd    1
     .fChanged             resd    1
-    .ulOffCPUM            resd    1
+    .offCPUM              resd    1
     .u32RetCode           resd    1
 
 %if RTHCPTR_CB == 8
@@ -430,12 +431,12 @@ endstruc
 ; Converts the CPUM pointer to CPUMCPU (for the first VMCPU)
 ; @param   %1   register name
 %macro CPUMCPU_FROM_CPUM 1
-    add     %1, dword [%1 + CPUM.ulOffCPUMCPU]
+    add     %1, dword [%1 + CPUM.offCPUMCPU0]
 %endmacro
 
 ;;
 ; Converts the CPUMCPU pointer to CPUM (for the first VMCPU)
 ; @param   %1   register name
 %macro CPUM_FROM_CPUMCPU 1
-    sub     %1, dword [%1 + CPUMCPU.ulOffCPUM]
+    sub     %1, dword [%1 + CPUMCPU.offCPUM]
 %endmacro
