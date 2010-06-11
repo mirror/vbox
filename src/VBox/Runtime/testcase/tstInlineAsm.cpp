@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -180,10 +180,12 @@ void tstASMCpuId(void)
      */
     if (cFunctions >= 1)
     {
+        static const char * const s_apszTypes[4] = { "primary", "overdrive", "MP", "reserved" };
         ASMCpuId(1, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
         RTPrintf("Family:                          %#x \tExtended: %#x \tEffective: %#x\n"
                  "Model:                           %#x \tExtended: %#x \tEffective: %#x\n"
                  "Stepping:                        %d\n"
+                 "Type:                            %d (%s)\n"
                  "APIC ID:                         %#04x\n"
                  "Logical CPUs:                    %d\n"
                  "CLFLUSH Size:                    %d\n"
@@ -191,6 +193,7 @@ void tstASMCpuId(void)
                  (s.uEAX >> 8) & 0xf, (s.uEAX >> 20) & 0x7f, ASMGetCpuFamily(s.uEAX),
                  (s.uEAX >> 4) & 0xf, (s.uEAX >> 16) & 0x0f, ASMGetCpuModel(s.uEAX, fIntel),
                  ASMGetCpuStepping(s.uEAX),
+                 (s.uEAX >> 12) & 0x3, s_apszTypes[(s.uEAX >> 12) & 0x3],
                  (s.uEBX >> 24) & 0xff,
                  (s.uEBX >> 16) & 0xff,
                  (s.uEBX >>  8) & 0xff,
@@ -419,8 +422,10 @@ void tstASMCpuId(void)
          ASMCpuId(0x80000008, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
          RTPrintf("Physical Address Width:          %d bits\n"
                   "Virtual Address Width:           %d bits\n",
+                  "Guest Physical Address Width:    %d bits\n",
                   (s.uEAX >> 0) & 0xff,
-                  (s.uEAX >> 8) & 0xff);
+                  (s.uEAX >> 8) & 0xff,
+                  (s.uEAX >> 16) & 0xff);
          RTPrintf("Physical Core Count:             %d\n",
                   ((s.uECX >> 0) & 0xff) + 1);
          if ((s.uECX >> 12) & 0xf)
