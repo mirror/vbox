@@ -20,6 +20,8 @@
 
 #include <iprt/cdefs.h>
 
+#define VBOXWDDMDISP_MAX_VERTEX_STREAMS 16
+
 #ifdef VBOX_WITH_VIDEOHWACCEL
 typedef struct VBOXDISPVHWA_INFO
 {
@@ -67,6 +69,14 @@ typedef struct VBOXWDDMDISP_STREAMSOURCEUM
     UINT cbStride;
 } VBOXWDDMDISP_STREAMSOURCEUM, *PVBOXWDDMDISP_STREAMSOURCEUM;
 
+struct VBOXWDDMDISP_ALLOCATION;
+
+typedef struct VBOXWDDMDISP_STREAM_SOURCE_INFO
+{
+  UINT   uiOffset;
+  UINT   uiStride;
+} VBOXWDDMDISP_STREAM_SOURCE_INFO;
+
 typedef struct VBOXWDDMDISP_DEVICE
 {
     HANDLE hDevice;
@@ -80,7 +90,9 @@ typedef struct VBOXWDDMDISP_DEVICE
     HWND hWnd;
     /* number of StreamSources set */
     UINT cStreamSources;
-    VBOXWDDMDISP_STREAMSOURCEUM aStreamSourceUm[16];
+    VBOXWDDMDISP_STREAMSOURCEUM aStreamSourceUm[VBOXWDDMDISP_MAX_VERTEX_STREAMS];
+    VBOXWDDMDISP_ALLOCATION *aStreamSource[VBOXWDDMDISP_MAX_VERTEX_STREAMS];
+    VBOXWDDMDISP_STREAM_SOURCE_INFO StreamSourceInfo[VBOXWDDMDISP_MAX_VERTEX_STREAMS];
     IDirect3DDevice9 *pDevice9If;
     /* need to cache the ViewPort data because IDirect3DDevice9::SetViewport
      * is split into two calls : SetViewport & SetZRange */
