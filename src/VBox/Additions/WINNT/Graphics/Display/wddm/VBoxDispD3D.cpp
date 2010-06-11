@@ -34,7 +34,7 @@
 # include <stdio.h>
 #endif
 
-/*#define VBOXWDDMDISP_WITH_TMPWORKAROUND 1*/
+#define VBOXWDDMDISP_WITH_TMPWORKAROUND 1
 
 static FORMATOP gVBoxFormatOps3D[] = {
     {D3DDDIFMT_A8R8G8B8,
@@ -1847,7 +1847,63 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive2(HANDLE hDevice, CONST D3DDDIA
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
     Assert(pDevice);
     Assert(pDevice->pDevice9If);
-    HRESULT hr = pDevice->pDevice9If->DrawPrimitive(pData->PrimitiveType, pData->FirstVertexOffset, pData->PrimitiveCount);
+    HRESULT hr;
+
+#if 0
+    int stream;
+    for (stream=0; stream<VBOXWDDMDISP_MAX_VERTEX_STREAMS; ++stream)
+    {
+        if (pDevice->aStreamSource[stream] && pDevice->aStreamSource[stream]->LockInfo.cLocks)
+        {
+            VBOXWDDMDISP_LOCKINFO *pLock = &pDevice->aStreamSource[stream]->LockInfo;
+            if (pLock->fFlags.MightDrawFromLocked && (pLock->fFlags.Discard || pLock->fFlags.NoOverwrite))
+            {
+                IDirect3DVertexBuffer9 *pD3D9VBuf = (IDirect3DVertexBuffer9*)pDevice->aStreamSource[stream]->pD3DIf;
+                Assert(pLock->fFlags.RangeValid);
+                pD3D9VBuf->Lock(pLock->Range.Offset, pLock->Range.Size,
+                                &pLock->LockedRect.pBits,
+                                vboxDDI2D3DLockFlags(pLock->fFlags));
+                RECT r;
+                r.top = 0;
+                r.left = pLock->Range.Offset;
+                r.bottom = 1;
+                r.right = pLock->Range.Offset + pLock->Range.Size;
+
+                vboxWddmLockUnlockMemSynch(pDevice->aStreamSource[stream], &pLock->LockedRect, &r, true /*bool bToLockInfo*/);
+
+                pD3D9VBuf->Unlock();
+            }
+        }
+    }
+
+    hr = pDevice->pDevice9If->DrawPrimitive(pData->PrimitiveType, pData->FirstVertexOffset, pData->PrimitiveCount);
+#else
+    int stream;
+    for (stream=0; stream<VBOXWDDMDISP_MAX_VERTEX_STREAMS; ++stream)
+    {
+        if (pDevice->aStreamSource[stream])
+        {
+            Assert(stream==0); /*only stream 0 should be accessed here*/
+            Assert(pDevice->StreamSourceInfo[stream].uiStride!=0);
+            VBOXWDDMDISP_LOCKINFO *pLock = &pDevice->aStreamSource[stream]->LockInfo;
+
+            if (pDevice->aStreamSource[stream]->LockInfo.cLocks)
+            {
+                Assert(pLock->fFlags.MightDrawFromLocked && (pLock->fFlags.Discard || pLock->fFlags.NoOverwrite));
+                hr = pDevice->pDevice9If->DrawPrimitiveUP(pData->PrimitiveType, pData->PrimitiveCount,
+                        (void*)((uintptr_t)pDevice->aStreamSource[stream]->pvMem+pDevice->StreamSourceInfo[stream].uiOffset+pData->FirstVertexOffset),
+                         pDevice->StreamSourceInfo[stream].uiStride);
+                Assert(hr == S_OK);
+                hr = pDevice->pDevice9If->SetStreamSource(stream, (IDirect3DVertexBuffer9*)pDevice->aStreamSource[stream]->pD3DIf, pDevice->StreamSourceInfo[stream].uiOffset, pDevice->StreamSourceInfo[stream].uiStride);
+            }
+            else
+            {
+                hr = pDevice->pDevice9If->DrawPrimitive(pData->PrimitiveType, pData->FirstVertexOffset/pDevice->StreamSourceInfo[stream].uiStride, pData->PrimitiveCount);
+            }
+        }
+    }
+#endif
+
     Assert(hr == S_OK);
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
@@ -2203,6 +2259,7 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
             Assert(pData->SubResourceIndex < pRc->cAllocations);
             PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->SubResourceIndex];
             IDirect3DVertexBuffer9 *pD3D9VBuf = (IDirect3DVertexBuffer9*)pAlloc->pD3DIf;
+            BOOL bLocked = false;
             Assert(pD3D9VBuf);
             Assert(!pData->Flags.AreaValid);
             Assert(!pData->Flags.BoxValid);
@@ -2217,31 +2274,15 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
             Assert(!pAlloc->LockInfo.cLocks);
             if (!pAlloc->LockInfo.cLocks)
             {
-                hr = pD3D9VBuf->Lock(pRange ? pRange->Offset : 0,
-                                      pRange ? pRange->Size : 0,
-                                      &pAlloc->LockInfo.LockedRect.pBits,
-                                      vboxDDI2D3DLockFlags(pData->Flags));
-#ifdef VBOXWDDMDISP_WITH_TMPWORKAROUND
-                if (pData->Flags.MightDrawFromLocked)
+                if (!pData->Flags.MightDrawFromLocked || (!pData->Flags.Discard && !pData->Flags.NoOverwrite))
                 {
-                        RECT r, *pr;
-                        if (pRange)
-                        {
-                            r.top = 0;
-                            r.left = pRange->Offset;
-                            r.bottom = 1;
-                            r.right = pRange->Offset + pRange->Size;
-                            pr = &r;
-                        }
-                        else
-                            pr = NULL;
-
-                        pAlloc->LockInfo.LockedRect.Pitch = pAlloc->SurfDesc.width;
-
-                        vboxWddmLockUnlockMemSynch(pAlloc, &pAlloc->LockInfo.LockedRect, pr, true /*bool bToLockInfo*/);
-                    pD3D9VBuf->Unlock();
+                    hr = pD3D9VBuf->Lock(pRange ? pRange->Offset : 0,
+                                          pRange ? pRange->Size : 0,
+                                          &pAlloc->LockInfo.LockedRect.pBits,
+                                          vboxDDI2D3DLockFlags(pData->Flags));
+                    bLocked = true;
                 }
-#endif
+
                 Assert(hr == S_OK);
                 if (hr == S_OK)
                 {
@@ -2292,7 +2333,7 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
                 {
                     Assert(pAlloc->pvMem);
                     Assert(pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM);
-                    if (/* !pData->Flags.WriteOnly && */ !pData->Flags.Discard)
+                    if (bLocked && !pData->Flags.Discard)
                     {
                         RECT r, *pr;
                         if (pRange)
@@ -2418,12 +2459,9 @@ static HRESULT APIENTRY vboxWddmDDevUnlock(HANDLE hDevice, CONST D3DDDIARG_UNLOC
 
             --pAlloc->LockInfo.cLocks;
             Assert(pAlloc->LockInfo.cLocks < UINT32_MAX);
-//            pAlloc->LockInfo.cLocks = 0;
-#ifdef VBOXWDDMDISP_WITH_TMPWORKAROUND
-            if (!pAlloc->LockInfo.cLocks && !pAlloc->LockInfo.fFlags.MightDrawFromLocked)
-#else
-            if (!pAlloc->LockInfo.cLocks)
-#endif
+            if (!pAlloc->LockInfo.cLocks 
+                && (!pAlloc->LockInfo.fFlags.MightDrawFromLocked
+                    || (!pAlloc->LockInfo.fFlags.Discard && !pAlloc->LockInfo.fFlags.NoOverwrite)))
             {
 //                Assert(!pAlloc->LockInfo.cLocks);
                 IDirect3DVertexBuffer9 *pD3D9VBuf = (IDirect3DVertexBuffer9*)pAlloc->pD3DIf;
@@ -3048,12 +3086,16 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
     Assert(pDevice);
     Assert(pDevice->pDevice9If);
+#if 0
     HRESULT hr = pDevice->pDevice9If->Present(NULL, /* CONST RECT * pSourceRect */
             NULL, /* CONST RECT * pDestRect */
             NULL, /* HWND hDestWindowOverride */
             NULL /*CONST RGNDATA * pDirtyRegion */
             );
     Assert(hr == S_OK);
+#else
+    HRESULT hr = S_OK;
+#endif
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
 }
@@ -3216,6 +3258,10 @@ static HRESULT APIENTRY vboxWddmDDevSetStreamSource(HANDLE hDevice, CONST D3DDDI
     Assert(pAlloc->pD3DIf);
     IDirect3DVertexBuffer9 *pStreamData = (IDirect3DVertexBuffer9*)pAlloc->pD3DIf;
     HRESULT hr = pDevice->pDevice9If->SetStreamSource(pData->Stream, pStreamData, pData->Offset, pData->Stride);
+    Assert(pData->Stream<VBOXWDDMDISP_MAX_VERTEX_STREAMS);
+    pDevice->aStreamSource[pData->Stream] = pAlloc;
+    pDevice->StreamSourceInfo[pData->Stream].uiOffset = pData->Offset;
+    pDevice->StreamSourceInfo[pData->Stream].uiStride = pData->Stride;
     Assert(hr == S_OK);
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
