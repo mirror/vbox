@@ -922,7 +922,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
             }
 #else
             /* simply store the number of monitors, we will deal with VidPN stuff later */
-            PrimaryExtension->cSources = cDisplays;
+            PrimaryExtension->u.primary.cDisplays = cDisplays;
 #endif
         }
 
@@ -983,7 +983,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
         {
             ulAvailable = offset;
             ulSize = ulAvailable / 2;
-            ulSize /= PrimaryExtension->cSources;
+            ulSize /= PrimaryExtension->u.primary.cDisplays;
             Assert(ulSize > VBVA_MIN_BUFFER_SIZE);
             if (ulSize > VBVA_MIN_BUFFER_SIZE)
             {
@@ -1002,9 +1002,9 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
             ulSize &= ~0xFFF;
             Assert(ulSize);
 
-            Assert(ulSize * PrimaryExtension->cSources < ulAvailable);
+            Assert(ulSize * PrimaryExtension->u.primary.cDisplays < ulAvailable);
 
-            for (int i = PrimaryExtension->cSources-1; i >= 0; --i)
+            for (int i = PrimaryExtension->u.primary.cDisplays-1; i >= 0; --i)
             {
                 offset -= ulSize;
                 rc = vboxVbvaCreate(PrimaryExtension, &PrimaryExtension->aSources[i].Vbva, offset, ulSize, i);
@@ -1048,7 +1048,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
 int VBoxFreeDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension)
 {
     int rc = VINF_SUCCESS;
-    for (int i = PrimaryExtension->cSources-1; i >= 0; --i)
+    for (int i = PrimaryExtension->u.primary.cDisplays-1; i >= 0; --i)
     {
         rc = vboxVbvaDisable(PrimaryExtension, &PrimaryExtension->aSources[i].Vbva);
         AssertRC(rc);
@@ -1299,7 +1299,7 @@ static int vboxVBVACreateChannelContexts(PDEVICE_EXTENSION PrimaryExtension, VBV
 #ifndef VBOXWDDM
     uint32_t cDisplays = (uint32_t)PrimaryExtension->u.primary.cDisplays;
 #else
-    uint32_t cDisplays = (uint32_t)PrimaryExtension->cSources;
+    uint32_t cDisplays = (uint32_t)PrimaryExtension->u.primary.cDisplays;
 #endif
     const size_t size = RT_OFFSETOF(VBVA_CHANNELCONTEXTS, aContexts[cDisplays]);
     VBVA_CHANNELCONTEXTS * pContext = (VBVA_CHANNELCONTEXTS*)VBoxVideoCmnMemAllocNonPaged(PrimaryExtension, size, MEM_TAG);

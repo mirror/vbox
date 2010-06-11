@@ -177,6 +177,13 @@ typedef struct VBOXWDDM_SOURCE
     VBOXWDDM_POINTER_INFO PointerInfo;
 } VBOXWDDM_SOURCE, *PVBOXWDDM_SOURCE;
 
+typedef struct VBOXWDDM_TARGET
+{
+    uint32_t ScanLineState;
+    uint32_t HeightVisible;
+    uint32_t HeightTotal;
+} VBOXWDDM_TARGET, *PVBOXWDDM_TARGET;
+
 #endif
 
 typedef struct _DEVICE_EXTENSION
@@ -210,9 +217,9 @@ typedef struct _DEVICE_EXTENSION
            ULONG ulVbvaEnabled;                /* Indicates that VBVA mode is enabled. */
 
            BOOLEAN bVBoxVideoSupported;        /* TRUE if VBoxVideo extensions, including DualView, are supported by the host. */
-#ifndef VBOXWDDM
+
            int cDisplays;                      /* Number of displays. */
-#endif
+
            ULONG cbVRAM;                       /* The VRAM size. */
 
            ULONG cbMiniportHeap;               /* The size of reserved VRAM for miniport driver heap.
@@ -267,6 +274,8 @@ typedef struct _DEVICE_EXTENSION
            /* Video Port API dynamically picked up at runtime for binary backwards compatibility with older NT versions */
            VBOXVIDEOPORTPROCS VideoPortProcs;
 # else
+           /* committed VidPn handle */
+           D3DKMDT_HVIDPN hCommittedVidPn;
            /* Display Port handle and callbacks */
            DXGKRNL_INTERFACE DxgkInterface;
 # endif
@@ -294,14 +303,8 @@ typedef struct _DEVICE_EXTENSION
    BOOL bSetNotifyDxDpc;
    BOOL bNotifyDxDpc;
 
-   ULONG cSources;
-   /* currently we define the array for the max possible size since we do not know
-    * the monitor count at the DxgkDdiAddDevice,
-    * i.e. we obtain the monitor count in DxgkDdiStartDevice due to implementation of the currently re-used XPDM functionality
-    *
-    * @todo: use the dynamic array size calculated at DxgkDdiAddDevice
-    * */
    VBOXWDDM_SOURCE aSources[VBOX_VIDEO_MAX_SCREENS];
+   VBOXWDDM_TARGET aTargets[VBOX_VIDEO_MAX_SCREENS];
 #endif
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
