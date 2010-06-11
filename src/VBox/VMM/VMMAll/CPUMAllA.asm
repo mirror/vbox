@@ -152,7 +152,7 @@ hlfpua_switch_fpu_ctx:
 %endif
 %ifndef RT_ARCH_AMD64
     mov     eax, edx                            ; Calculate the PCPUM pointer
-    sub     eax, [edx + CPUMCPU.ulOffCPUM]
+    sub     eax, [edx + CPUMCPU.offCPUM]
     test    dword [eax + CPUM.CPUFeatures.edx], X86_CPUID_FEATURE_EDX_FXSR
     jz short hlfpua_no_fxsave
 %endif

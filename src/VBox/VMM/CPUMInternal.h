@@ -256,8 +256,8 @@ typedef CPUMHOSTCTX *PCPUMHOSTCTX;
  */
 typedef struct CPUM
 {
-    /* Offset from CPUM to CPUMCPU for the first CPU. */
-    uint32_t                ulOffCPUMCPU;
+    /** Offset from CPUM to CPUMCPU for the first CPU. */
+    uint32_t                offCPUMCPU0;
 
     /** Use flags.
      * These flags indicates which CPU features the host uses.
@@ -281,9 +281,9 @@ typedef struct CPUM
         uint32_t            ecx;
     } CPUFeaturesExt;
 
-    /* Host CPU manufacturer. */
+    /** Host CPU manufacturer. */
     CPUMCPUVENDOR           enmHostCpuVendor;
-    /* Guest CPU manufacturer. */
+    /** Guest CPU manufacturer. */
     CPUMCPUVENDOR           enmGuestCpuVendor;
 
     /** CR4 mask */
@@ -297,10 +297,14 @@ typedef struct CPUM
     bool                    fRawEntered;
     /** Synthetic CPU type? */
     bool                    fSyntheticCpu;
+    /** The (more) portable CPUID level.  */
+    uint8_t                 u8PortableCpuIdLevel;
     /** Indiciates that a state restore is pending.
      * This is used to verify load order dependencies (PGM). */
     bool                    fPendingRestore;
-    uint8_t                 abPadding[1 + (HC_ARCH_BITS == 64) * 4];
+#if HC_ARCH_BITS == 64
+    uint8_t                 abPadding[4];
+#endif
 
     /** The standard set of CpuId leafs. */
     CPUMCPUID               aGuestCpuIdStd[6];
@@ -378,13 +382,14 @@ typedef struct CPUMCPU
      */
     uint32_t                fChanged;
 
-    /* Offset to CPUM. (subtract from the pointer to get to CPUM) */
-    uint32_t                ulOffCPUM;
+    /** Offset from CPUM to CPUMCPU. */
+    uint32_t                offCPUM;
 
-    /* Temporary storage for the return code of the function called in the 32-64 switcher. */
+    /** Temporary storage for the return code of the function called in the
+     * 32-64 switcher. */
     uint32_t                u32RetCode;
 
-    /** Align the next member, and thereby the structure, on a 64-byte boundrary. */
+    /** Align the structure on a 64-byte boundrary. */
     uint8_t                 abPadding2[HC_ARCH_BITS == 32 ? 36 : 28];
 } CPUMCPU, *PCPUMCPU;
 /** Pointer to the CPUMCPU instance data residing in the shared VMCPU structure. */
