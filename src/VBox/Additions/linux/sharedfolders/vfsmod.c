@@ -10,7 +10,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,19 +28,7 @@
  * writing filesystem drivers for Linux.
  */
 
-/*
- * Suppress the definition of wchar_t from stddef.h that occurs below.
- * This makes (at least) RHEL3U5 happy.
- */
-#if 0
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 0)
-# define _WCHAR_T
-#endif
-#endif
-
 #include "vfsmod.h"
-
-// #define wchar_t linux_wchar_t
 
 MODULE_DESCRIPTION(VBOX_PRODUCT " VFS Module for Host File System Access");
 MODULE_AUTHOR(VBOX_VENDOR);
@@ -53,307 +41,317 @@ MODULE_VERSION(VBOX_VERSION_STRING " (interface " RT_XSTR(VMMDEV_VERSION) ")");
 VBSFCLIENT client_handle;
 
 /* forward declarations */
-static struct super_operations  sf_super_ops;
-
-// #include "utils.c"
-// #include "dirops.c"
-// #include "regops.c"
+static struct super_operations sf_super_ops;
 
 /* allocate global info, try to map host share */
-static int
-sf_glob_alloc(struct vbsf_mount_info_new *info, struct sf_glob_info **sf_gp)
+static int sf_glob_alloc(struct vbsf_mount_info_new *info, struct sf_glob_info **sf_gp)
 {
-        int err, rc;
-        SHFLSTRING *str_name;
-        size_t name_len, str_len;
-        struct sf_glob_info *sf_g;
+    int err, rc;
+    SHFLSTRING *str_name;
+    size_t name_len, str_len;
+    struct sf_glob_info *sf_g;
 
-        TRACE();
-        sf_g = kmalloc(sizeof(*sf_g), GFP_KERNEL);
-        if (!sf_g) {
-                err = -ENOMEM;
-                LogRelFunc(("could not allocate memory for global info\n"));
-                goto fail0;
-        }
+    TRACE();
+    sf_g = kmalloc(sizeof(*sf_g), GFP_KERNEL);
+    if (!sf_g)
+    {
+        err = -ENOMEM;
+        LogRelFunc(("could not allocate memory for global info\n"));
+        goto fail0;
+    }
 
-        RT_ZERO(*sf_g);
+    RT_ZERO(*sf_g);
 
-        if (   info->nullchar     != '\0'
-            || info->signature[0] != VBSF_MOUNT_SIGNATURE_BYTE_0
-            || info->signature[1] != VBSF_MOUNT_SIGNATURE_BYTE_1
-            || info->signature[2] != VBSF_MOUNT_SIGNATURE_BYTE_2)
+    if (   info->nullchar     != '\0'
+        || info->signature[0] != VBSF_MOUNT_SIGNATURE_BYTE_0
+        || info->signature[1] != VBSF_MOUNT_SIGNATURE_BYTE_1
+        || info->signature[2] != VBSF_MOUNT_SIGNATURE_BYTE_2)
+    {
+        /* An old version of mount.vboxsf made the syscall. Translate the
+         * old parameters to the new structure. */
+        struct vbsf_mount_info_old *info_old = (struct vbsf_mount_info_old *)info;
+        static struct vbsf_mount_info_new info_compat;
+
+        info = &info_compat;
+        memset(info, 0, sizeof(*info));
+        memcpy(&info->name, &info_old->name, MAX_HOST_NAME);
+        memcpy(&info->nls_name, &info_old->nls_name, MAX_NLS_NAME);
+        info->length = offsetof(struct vbsf_mount_info_new, dmode);
+        info->uid    = info_old->uid;
+        info->gid    = info_old->gid;
+        info->ttl    = info_old->ttl;
+    }
+
+    info->name[sizeof(info->name) - 1] = 0;
+    info->nls_name[sizeof(info->nls_name) - 1] = 0;
+
+    name_len = strlen(info->name);
+    if (name_len > 0xfffe)
+    {
+        err = -ENAMETOOLONG;
+        LogFunc(("map name too big\n"));
+        goto fail1;
+    }
+
+    str_len = offsetof(SHFLSTRING, String.utf8) + name_len + 1;
+    str_name = kmalloc(str_len, GFP_KERNEL);
+    if (!str_name)
+    {
+        err = -ENOMEM;
+        LogRelFunc(("could not allocate memory for host name\n"));
+        goto fail1;
+    }
+
+    str_name->u16Length = name_len;
+    str_name->u16Size = name_len + 1;
+    memcpy(str_name->String.utf8, info->name, name_len + 1);
+
+    if (info->nls_name[0] && strcmp(info->nls_name, "utf8"))
+    {
+        sf_g->nls = load_nls(info->nls_name);
+        if (!sf_g->nls)
         {
-            /* An old version of mount.vboxsf made the syscall. Translate the
-             * old parameters to the new structure. */
-            struct vbsf_mount_info_old *info_old = (struct vbsf_mount_info_old *)info;
-            static struct vbsf_mount_info_new info_compat;
-
-            info = &info_compat;
-            memset(info, 0, sizeof(*info));
-            memcpy(&info->name, &info_old->name, MAX_HOST_NAME);
-            memcpy(&info->nls_name, &info_old->nls_name, MAX_NLS_NAME);
-            info->length = offsetof(struct vbsf_mount_info_new, dmode);
-            info->uid    = info_old->uid;
-            info->gid    = info_old->gid;
-            info->ttl    = info_old->ttl;
+            err = -EINVAL;
+            LogFunc(("failed to load nls %s\n", info->nls_name));
+            goto fail1;
         }
+    }
+    else
+        sf_g->nls = NULL;
 
-        info->name[sizeof(info->name) - 1] = 0;
-        info->nls_name[sizeof(info->nls_name) - 1] = 0;
+    rc = vboxCallMapFolder(&client_handle, str_name, &sf_g->map);
+    kfree(str_name);
 
-        name_len = strlen(info->name);
-        if (name_len > 0xfffe) {
-                err = -ENAMETOOLONG;
-                LogFunc(("map name too big\n"));
-                goto fail1;
-        }
+    if (RT_FAILURE(rc))
+    {
+        err = -EPROTO;
+        LogFunc(("vboxCallMapFolder failed rc=%d\n", rc));
+        goto fail2;
+    }
 
-        str_len = offsetof(SHFLSTRING, String.utf8) + name_len + 1;
-        str_name = kmalloc(str_len, GFP_KERNEL);
-        if (!str_name) {
-                err = -ENOMEM;
-                LogRelFunc(("could not allocate memory for host name\n"));
-                goto fail1;
-        }
+    sf_g->ttl = info->ttl;
+    sf_g->uid = info->uid;
+    sf_g->gid = info->gid;
 
-        str_name->u16Length = name_len;
-        str_name->u16Size = name_len + 1;
-        memcpy(str_name->String.utf8, info->name, name_len + 1);
+    if ((unsigned)info->length >= sizeof(struct vbsf_mount_info_new))
+    {
+        /* new fields */
+        sf_g->dmode = info->dmode;
+        sf_g->fmode = info->fmode;
+        sf_g->dmask = info->dmask;
+        sf_g->fmask = info->fmask;
+    }
+    else
+    {
+        sf_g->dmode = ~0;
+        sf_g->fmode = ~0;
+    }
 
-        if (info->nls_name[0] && strcmp(info->nls_name, "utf8")) {
-                sf_g->nls = load_nls(info->nls_name);
-                if (!sf_g->nls) {
-                        err = -EINVAL;
-                        LogFunc(("failed to load nls %s\n", info->nls_name));
-                        goto fail1;
-                }
-        }
-        else {
-                sf_g->nls = NULL;
-        }
+    *sf_gp = sf_g;
+    return 0;
 
-        rc = vboxCallMapFolder(&client_handle, str_name, &sf_g->map);
-        kfree(str_name);
+fail2:
+    if (sf_g->nls)
+        unload_nls(sf_g->nls);
 
-        if (RT_FAILURE(rc)) {
-                err = -EPROTO;
-                LogFunc(("vboxCallMapFolder failed rc=%d\n", rc));
-                goto fail2;
-        }
+fail1:
+    kfree(sf_g);
 
-        sf_g->ttl   = info->ttl;
-        sf_g->uid   = info->uid;
-        sf_g->gid   = info->gid;
-
-        if ((unsigned)info->length >= sizeof(struct vbsf_mount_info_new))
-        {
-            /* new fields */
-            sf_g->dmode = info->dmode;
-            sf_g->fmode = info->fmode;
-            sf_g->dmask = info->dmask;
-            sf_g->fmask = info->fmask;
-        }
-        else
-        {
-            sf_g->dmode = ~0;
-            sf_g->fmode = ~0;
-        }
-
-        *sf_gp = sf_g;
-        return 0;
-
- fail2:
-        if (sf_g->nls) {
-                unload_nls(sf_g->nls);
-        }
- fail1:
-        kfree(sf_g);
- fail0:
-        return err;
+fail0:
+    return err;
 }
 
 /* unmap the share and free global info [sf_g] */
 static void
 sf_glob_free(struct sf_glob_info *sf_g)
 {
-        int rc;
+    int rc;
 
-        TRACE();
-        rc = vboxCallUnmapFolder(&client_handle, &sf_g->map);
-        if (RT_FAILURE(rc)) {
-                LogFunc(("vboxCallUnmapFolder failed rc=%d\n", rc));
-        }
+    TRACE();
+    rc = vboxCallUnmapFolder(&client_handle, &sf_g->map);
+    if (RT_FAILURE(rc))
+        LogFunc(("vboxCallUnmapFolder failed rc=%d\n", rc));
 
-        if (sf_g->nls) {
-                unload_nls(sf_g->nls);
-        }
-        kfree(sf_g);
+    if (sf_g->nls)
+        unload_nls(sf_g->nls);
+
+    kfree(sf_g);
 }
 
-/* this is called (by sf_read_super_[24|26] when vfs mounts the fs and
-   wants to read super_block.
-
-   calls [sf_glob_alloc] to map the folder and allocate global
-   information structure.
-
-   initializes [sb], initializes root inode and dentry.
-
-   should respect [flags] */
-static int
-sf_read_super_aux(struct super_block *sb, void *data, int flags)
+/**
+ * This is called (by sf_read_super_[24|26] when vfs mounts the fs and
+ * wants to read super_block.
+ *
+ * calls [sf_glob_alloc] to map the folder and allocate global
+ * information structure.
+ *
+ * initializes [sb], initializes root inode and dentry.
+ *
+ * should respect [flags]
+ */
+static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
 {
-        int err;
-        struct dentry *droot;
-        struct inode *iroot;
-        struct sf_inode_info *sf_i;
-        struct sf_glob_info *sf_g;
-        RTFSOBJINFO fsinfo;
-        struct vbsf_mount_info_new *info;
+    int err;
+    struct dentry *droot;
+    struct inode *iroot;
+    struct sf_inode_info *sf_i;
+    struct sf_glob_info *sf_g;
+    RTFSOBJINFO fsinfo;
+    struct vbsf_mount_info_new *info;
 
-        TRACE();
-        if (!data) {
-                LogFunc(("no mount info specified\n"));
-                return -EINVAL;
-        }
+    TRACE();
+    if (!data)
+    {
+        LogFunc(("no mount info specified\n"));
+        return -EINVAL;
+    }
 
-        info = data;
+    info = data;
 
-        if (flags & MS_REMOUNT) {
-                LogFunc(("remounting is not supported\n"));
-                return -ENOSYS;
-        }
+    if (flags & MS_REMOUNT)
+    {
+        LogFunc(("remounting is not supported\n"));
+        return -ENOSYS;
+    }
 
-        err = sf_glob_alloc(info, &sf_g);
-        if (err) {
-                goto fail0;
-        }
+    err = sf_glob_alloc(info, &sf_g);
+    if (err)
+        goto fail0;
 
-        sf_i = kmalloc(sizeof (*sf_i), GFP_KERNEL);
-        if (!sf_i) {
-                err = -ENOMEM;
-                LogRelFunc(("could not allocate memory for root inode info\n"));
-                goto fail1;
-        }
+    sf_i = kmalloc(sizeof (*sf_i), GFP_KERNEL);
+    if (!sf_i)
+    {
+        err = -ENOMEM;
+        LogRelFunc(("could not allocate memory for root inode info\n"));
+        goto fail1;
+    }
 
-        sf_i->handle = SHFL_HANDLE_NIL;
-        sf_i->path = kmalloc(sizeof(SHFLSTRING) + 1, GFP_KERNEL);
-        if (!sf_i->path) {
-                err = -ENOMEM;
-                LogRelFunc(("could not allocate memory for root inode path\n"));
-                goto fail2;
-        }
+    sf_i->handle = SHFL_HANDLE_NIL;
+    sf_i->path = kmalloc(sizeof(SHFLSTRING) + 1, GFP_KERNEL);
+    if (!sf_i->path)
+    {
+        err = -ENOMEM;
+        LogRelFunc(("could not allocate memory for root inode path\n"));
+        goto fail2;
+    }
 
-        sf_i->path->u16Length = 1;
-        sf_i->path->u16Size = 2;
-        sf_i->path->String.utf8[0] = '/';
-        sf_i->path->String.utf8[1] = 0;
+    sf_i->path->u16Length = 1;
+    sf_i->path->u16Size = 2;
+    sf_i->path->String.utf8[0] = '/';
+    sf_i->path->String.utf8[1] = 0;
 
-        err = sf_stat(__func__, sf_g, sf_i->path, &fsinfo, 0);
-        if (err) {
-                LogFunc(("could not stat root of share\n"));
-                goto fail3;
-        }
+    err = sf_stat(__func__, sf_g, sf_i->path, &fsinfo, 0);
+    if (err)
+    {
+        LogFunc(("could not stat root of share\n"));
+        goto fail3;
+    }
 
-        sb->s_magic = 0xface;
-        sb->s_blocksize = 1024;
+    sb->s_magic = 0xface;
+    sb->s_blocksize = 1024;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 3)
-        /* Required for seek/sendfile.
-         *
-         * Must by less than or equal to INT64_MAX despite the fact that the
-         * declaration of this variable is unsigned long long. See determination
-         * of 'loff_t max' in fs/read_write.c / do_sendfile(). I don't know the
-         * correct limit but MAX_LFS_FILESIZE (8TB-1 on 32-bit boxes) takes the
-         * page cache into account and is the suggested limit. */
+    /* Required for seek/sendfile.
+     *
+     * Must by less than or equal to INT64_MAX despite the fact that the
+     * declaration of this variable is unsigned long long. See determination
+     * of 'loff_t max' in fs/read_write.c / do_sendfile(). I don't know the
+     * correct limit but MAX_LFS_FILESIZE (8TB-1 on 32-bit boxes) takes the
+     * page cache into account and is the suggested limit. */
 # if defined MAX_LFS_FILESIZE
-        sb->s_maxbytes = MAX_LFS_FILESIZE;
+    sb->s_maxbytes = MAX_LFS_FILESIZE;
 # else
-        sb->s_maxbytes = 0x7fffffffffffffffULL;
+    sb->s_maxbytes = 0x7fffffffffffffffULL;
 # endif
 #endif
-        sb->s_op = &sf_super_ops;
+    sb->s_op = &sf_super_ops;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
-        iroot = iget_locked(sb, 0);
+    iroot = iget_locked(sb, 0);
 #else
-        iroot = iget(sb, 0);
+    iroot = iget(sb, 0);
 #endif
-        if (!iroot) {
-                err = -ENOMEM;  /* XXX */
-                LogFunc(("could not get root inode\n"));
-                goto fail3;
-        }
+    if (!iroot)
+    {
+        err = -ENOMEM;  /* XXX */
+        LogFunc(("could not get root inode\n"));
+        goto fail3;
+    }
 
-        if (sf_init_backing_dev(sf_g, info->name)) {
-                err = -EINVAL;
-                LogFunc(("could not init bdi\n"));
-                goto fail4;
-        }
+    if (sf_init_backing_dev(sf_g, info->name))
+    {
+        err = -EINVAL;
+        LogFunc(("could not init bdi\n"));
+        goto fail4;
+    }
 
-        sf_init_inode(sf_g, iroot, &fsinfo);
-        SET_INODE_INFO(iroot, sf_i);
+    sf_init_inode(sf_g, iroot, &fsinfo);
+    SET_INODE_INFO(iroot, sf_i);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
-        unlock_new_inode(iroot);
+    unlock_new_inode(iroot);
 #endif
 
-        droot = d_alloc_root(iroot);
-        if (!droot) {
-                err = -ENOMEM;  /* XXX */
-                LogFunc(("d_alloc_root failed\n"));
-                goto fail5;
-        }
+    droot = d_alloc_root(iroot);
+    if (!droot)
+    {
+        err = -ENOMEM;  /* XXX */
+        LogFunc(("d_alloc_root failed\n"));
+        goto fail5;
+    }
 
-        sb->s_root = droot;
-        SET_GLOB_INFO(sb, sf_g);
-        return 0;
+    sb->s_root = droot;
+    SET_GLOB_INFO(sb, sf_g);
+    return 0;
 
- fail5:
-        sf_done_backing_dev(sf_g);
- fail4:
-        iput(iroot);
- fail3:
-        kfree(sf_i->path);
- fail2:
-        kfree(sf_i);
- fail1:
-        sf_glob_free(sf_g);
- fail0:
-        return err;
+fail5:
+    sf_done_backing_dev(sf_g);
+
+fail4:
+    iput(iroot);
+
+fail3:
+    kfree(sf_i->path);
+
+fail2:
+    kfree(sf_i);
+
+fail1:
+    sf_glob_free(sf_g);
+
+fail0:
+    return err;
 }
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 static struct super_block *
 sf_read_super_24(struct super_block *sb, void *data, int flags)
 {
-        int err;
+    int err;
 
-        TRACE();
-        err = sf_read_super_aux(sb, data, flags);
-        if (err) {
-                return NULL;
-        }
+    TRACE();
+    err = sf_read_super_aux(sb, data, flags);
+    if (err)
+        return NULL;
 
-        return sb;
+    return sb;
 }
 #endif
 
 /* this is called when vfs is about to destroy the [inode]. all
    resources associated with this [inode] must be cleared here */
-static void
-sf_clear_inode(struct inode *inode)
+static void sf_clear_inode(struct inode *inode)
 {
-        struct sf_inode_info *sf_i;
+    struct sf_inode_info *sf_i;
 
-        TRACE();
-        sf_i = GET_INODE_INFO(inode);
-        if (!sf_i) {
-                return;
-        }
+    TRACE();
+    sf_i = GET_INODE_INFO(inode);
+    if (!sf_i)
+        return;
 
-        BUG_ON(!sf_i->path);
-        kfree(sf_i->path);
-        kfree(sf_i);
-        SET_INODE_INFO(inode, NULL);
+    BUG_ON(!sf_i->path);
+    kfree(sf_i->path);
+    kfree(sf_i);
+    SET_INODE_INFO(inode, NULL);
 }
 
 /* this is called by vfs when it wants to populate [inode] with data.
@@ -361,55 +359,51 @@ sf_clear_inode(struct inode *inode)
    hence we can't do anything here, and let lookup/whatever with the
    job to properly fill then [inode] */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 25)
-static void
-sf_read_inode(struct inode *inode)
+static void sf_read_inode(struct inode *inode)
 {
 }
 #endif
 
 /* vfs is done with [sb] (umount called) call [sf_glob_free] to unmap
    the folder and free [sf_g] */
-static void
-sf_put_super(struct super_block *sb)
+static void sf_put_super(struct super_block *sb)
 {
-        struct sf_glob_info *sf_g;
+    struct sf_glob_info *sf_g;
 
-        sf_g = GET_GLOB_INFO(sb);
-        BUG_ON(!sf_g);
-        sf_done_backing_dev(sf_g);
-        sf_glob_free(sf_g);
+    sf_g = GET_GLOB_INFO(sb);
+    BUG_ON(!sf_g);
+    sf_done_backing_dev(sf_g);
+    sf_glob_free(sf_g);
 }
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
-static int
-sf_statfs(struct super_block *sb, STRUCT_STATFS *stat)
+static int sf_statfs(struct super_block *sb, STRUCT_STATFS *stat)
 {
-        return sf_get_volume_info(sb, stat);
+    return sf_get_volume_info(sb, stat);
 }
 #else
-static int
-sf_statfs(struct dentry *dentry, STRUCT_STATFS *stat)
+static int sf_statfs(struct dentry *dentry, STRUCT_STATFS *stat)
 {
-        struct super_block *sb = dentry->d_inode->i_sb;
-        return sf_get_volume_info(sb, stat);
+    struct super_block *sb = dentry->d_inode->i_sb;
+    return sf_get_volume_info(sb, stat);
 }
 #endif
 
-static int
-sf_remount_fs(struct super_block *sb, int *flags, char *data)
+static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
 {
-        TRACE();
-        return -ENOSYS;
+    TRACE();
+    return -ENOSYS;
 }
 
-static struct super_operations sf_super_ops = {
-        .clear_inode = sf_clear_inode,
+static struct super_operations sf_super_ops =
+{
+    .clear_inode = sf_clear_inode,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 25)
-        .read_inode  = sf_read_inode,
+    .read_inode  = sf_read_inode,
 #endif
-        .put_super   = sf_put_super,
-        .statfs      = sf_statfs,
-        .remount_fs  = sf_remount_fs
+    .put_super   = sf_put_super,
+    .statfs      = sf_statfs,
+    .remount_fs  = sf_remount_fs
 };
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
@@ -418,111 +412,114 @@ static DECLARE_FSTYPE(vboxsf_fs_type, "vboxsf", sf_read_super_24, 0);
 static int
 sf_read_super_26(struct super_block *sb, void *data, int flags)
 {
-        int err;
+    int err;
 
-        TRACE();
-        err = sf_read_super_aux(sb, data, flags);
-        if (err) {
-                printk(KERN_DEBUG "sf_read_super_aux err=%d\n", err);
-        }
-        return err;
+    TRACE();
+    err = sf_read_super_aux(sb, data, flags);
+    if (err)
+        printk(KERN_DEBUG "sf_read_super_aux err=%d\n", err);
+
+    return err;
 }
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
-static struct super_block *
-sf_get_sb(struct file_system_type *fs_type, int flags,
-           const char *dev_name, void *data)
+static struct super_block *sf_get_sb(struct file_system_type *fs_type, int flags,
+        const char *dev_name, void *data)
 {
-        TRACE();
-        return get_sb_nodev(fs_type, flags, data, sf_read_super_26);
+    TRACE();
+    return get_sb_nodev(fs_type, flags, data, sf_read_super_26);
 }
 #else
-static int
-sf_get_sb(struct file_system_type *fs_type, int flags,
-           const char *dev_name, void *data, struct vfsmount *mnt)
+static int sf_get_sb(struct file_system_type *fs_type, int flags,
+                     const char *dev_name, void *data, struct vfsmount *mnt)
 {
-        TRACE();
-        return get_sb_nodev(fs_type, flags, data, sf_read_super_26, mnt);
+    TRACE();
+    return get_sb_nodev(fs_type, flags, data, sf_read_super_26, mnt);
 }
 #endif
 
-static struct file_system_type vboxsf_fs_type = {
-        .owner   = THIS_MODULE,
-        .name    = "vboxsf",
-        .get_sb  = sf_get_sb,
-        .kill_sb = kill_anon_super
+static struct file_system_type vboxsf_fs_type =
+{
+    .owner   = THIS_MODULE,
+    .name    = "vboxsf",
+    .get_sb  = sf_get_sb,
+    .kill_sb = kill_anon_super
 };
 #endif
 
 /* Module initialization/finalization handlers */
-static int __init
-init(void)
+static int __init init(void)
 {
-        int rcVBox;
-        int rcRet = 0;
-        int err;
+    int rcVBox;
+    int rcRet = 0;
+    int err;
 
-        TRACE();
+    TRACE();
 
-        if (sizeof(struct vbsf_mount_info_new) > PAGE_SIZE) {
-                printk(KERN_ERR
-                       "Mount information structure is too large %lu\n"
-                       "Must be less than or equal to %lu\n",
-                       (unsigned long)sizeof (struct vbsf_mount_info_new),
-                       (unsigned long)PAGE_SIZE);
-                return -EINVAL;
-        }
+    if (sizeof(struct vbsf_mount_info_new) > PAGE_SIZE)
+    {
+        printk(KERN_ERR
+                "Mount information structure is too large %lu\n"
+                "Must be less than or equal to %lu\n",
+                (unsigned long)sizeof (struct vbsf_mount_info_new),
+                (unsigned long)PAGE_SIZE);
+        return -EINVAL;
+    }
 
-        err = register_filesystem(&vboxsf_fs_type);
-        if (err) {
-                LogFunc(("register_filesystem err=%d\n", err));
-                return err;
-        }
+    err = register_filesystem(&vboxsf_fs_type);
+    if (err)
+    {
+        LogFunc(("register_filesystem err=%d\n", err));
+        return err;
+    }
 
-        rcVBox = vboxInit();
-        if (RT_FAILURE(rcVBox)) {
-                LogRelFunc(("vboxInit failed, rc=%d\n", rcVBox));
-                rcRet = -EPROTO;
-                goto fail0;
-        }
+    rcVBox = vboxInit();
+    if (RT_FAILURE(rcVBox))
+    {
+        LogRelFunc(("vboxInit failed, rc=%d\n", rcVBox));
+        rcRet = -EPROTO;
+        goto fail0;
+    }
 
-        rcVBox = vboxConnect(&client_handle);
-        if (RT_FAILURE(rcVBox)) {
-                LogRelFunc(("vboxConnect failed, rc=%d\n", rcVBox));
-                rcRet = -EPROTO;
-                goto fail1;
-        }
+    rcVBox = vboxConnect(&client_handle);
+    if (RT_FAILURE(rcVBox))
+    {
+        LogRelFunc(("vboxConnect failed, rc=%d\n", rcVBox));
+        rcRet = -EPROTO;
+        goto fail1;
+    }
 
-        rcVBox = vboxCallSetUtf8(&client_handle);
-        if (RT_FAILURE(rcVBox)) {
-                LogRelFunc(("vboxCallSetUtf8 failed, rc=%d\n", rcVBox));
-                rcRet = -EPROTO;
-                goto fail2;
-        }
+    rcVBox = vboxCallSetUtf8(&client_handle);
+    if (RT_FAILURE(rcVBox)) {
+        LogRelFunc(("vboxCallSetUtf8 failed, rc=%d\n", rcVBox));
+        rcRet = -EPROTO;
+        goto fail2;
+    }
 
-        printk(KERN_DEBUG
-               "vboxsf: Successfully loaded version " VBOX_VERSION_STRING
-               " (interface " RT_XSTR(VMMDEV_VERSION) ")\n");
+    printk(KERN_DEBUG
+            "vboxsf: Successfully loaded version " VBOX_VERSION_STRING
+            " (interface " RT_XSTR(VMMDEV_VERSION) ")\n");
 
-        return 0;
+    return 0;
 
- fail2:
-        vboxDisconnect(&client_handle);
- fail1:
-        vboxUninit();
- fail0:
-        unregister_filesystem(&vboxsf_fs_type);
-        return rcRet;
+fail2:
+    vboxDisconnect(&client_handle);
+
+fail1:
+    vboxUninit();
+
+fail0:
+    unregister_filesystem(&vboxsf_fs_type);
+    return rcRet;
 }
 
-static void __exit
-fini(void)
+static void __exit fini(void)
 {
-        TRACE();
+    TRACE();
 
-        vboxDisconnect(&client_handle);
-        vboxUninit();
-        unregister_filesystem(&vboxsf_fs_type);
+    vboxDisconnect(&client_handle);
+    vboxUninit();
+    unregister_filesystem(&vboxsf_fs_type);
 }
 
 module_init(init);
@@ -530,11 +527,3 @@ module_exit(fini);
 
 /* C++ hack */
 int __gxx_personality_v0 = 0xdeadbeef;
-
-/*
- * Local Variables:
- * c-mode: linux
- * indent-tabs-mode: nil
- * c-basic-offset: 8
- * End:
- */
