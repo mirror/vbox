@@ -232,6 +232,7 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
             }
             break;
         }
+        case SCSI_VERIFY_10:
         case SCSI_START_STOP_UNIT:
         {
             rcReq = vscsiReqSenseOkSet(pVScsiReq);
