@@ -179,3 +179,6 @@ vgaHWMapMem
 vgaHWFreeHWRec
 vgaHWSaveScreen
 vgaHWDPMSSet
+DRIUnlock
+DRILock
+screenInfo
