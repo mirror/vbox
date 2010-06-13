@@ -983,7 +983,7 @@ DECLINLINE(int) VDCFGQueryBytesAlloc(PVDINTERFACECONFIG pCfgIf,
             if (RT_SUCCESS(rc))
             {
                 *ppvData = pvData;
-                *pcbData = cb;
+                *pcbData = cb - 1; /* Exclude terminator of the queried string. */
             }
             else
                 RTMemFree(pvData);
