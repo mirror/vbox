@@ -526,6 +526,12 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     if (!xf86LoadSubModule(pScrn, "vgahw"))
         return FALSE;
 
+#ifdef VBOX_DRI
+    /* Load the dri module. */
+    if (!xf86LoadSubModule(pScrn, "dri"))
+        return FALSE;
+#endif
+
 #ifndef PCIACCESS
     if (pVBox->pEnt->location.type != BUS_PCI)
         return FALSE;
@@ -702,6 +708,14 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     if (!miSetPixmapDepths())
         return (FALSE);
 
+    /* Needed before we initialise DRI. */
+    pScrn->virtualX = (pScrn->virtualX + 7) & ~7;
+    pScrn->displayWidth = pScrn->virtualX;
+
+#ifdef VBOX_DRI
+    pVBox->useDRI = VBOXDRIScreenInit(scrnIndex, pScreen, pVBox);
+#endif
+
     /* I checked in the sources, and XFree86 4.2 does seem to support
        this function for 32bpp. */
     if (!fbScreenInit(pScreen, pVBox->base,
@@ -779,6 +793,11 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
                       "The VBox video extensions are now enabled.\n");
         vboxEnableGraphicsCap(pVBox);
     }
+
+#ifdef VBOX_DRI
+    if (pVBox->useDRI)
+        pVBox->useDRI = VBOXDRIFinishScreenInit(pScreen);
+#endif
     TRACE_EXIT();
     return (TRUE);
 }
@@ -791,6 +810,10 @@ VBOXEnterVT(int scrnIndex, int flags)
 
     TRACE_ENTRY();
     pVBox->vtSwitch = FALSE;
+#ifdef VBOX_DRI
+    if (pVBox->useDRI)
+        DRIUnlock(screenInfo.screens[scrnIndex]);
+#endif
     if (!VBOXSetMode(pScrn, pScrn->currentMode))
         return FALSE;
     VBOXAdjustFrame(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
@@ -811,6 +834,10 @@ VBOXLeaveVT(int scrnIndex, int flags)
         vboxDisableVbva(pScrn);
     vboxDisableGraphicsCap(pVBox);
     pVBox->vtSwitch = TRUE;
+#ifdef VBOX_DRI
+    if (pVBox->useDRI)
+        DRILock(screenInfo.screens[scrnIndex], 0);
+#endif
 }
 
 static Bool
@@ -818,6 +845,12 @@ VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
 {
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     VBOXPtr pVBox = VBOXGetRec(pScrn);
+
+#ifdef VBOX_DRI
+    if (pVBox->useDRI)
+        VBOXDRICloseScreen(pScreen, pVBox);
+    pVBox->useDRI = false;
+#endif
 
     if (pVBox->useVbva == TRUE)
         vboxDisableVbva(pScrn);
@@ -939,6 +972,10 @@ static bool VBOXAdjustScreenPixmap(ScrnInfoPtr pScrn, DisplayModePtr pMode)
     pScreen->ModifyPixmapHeader(pPixmap, pMode->HDisplay, pMode->VDisplay,
                                 pScrn->depth, bpp, pMode->HDisplay * bpp / 8,
                                 pVBox->base);
+#ifdef VBOX_DRI
+    if (pVBox->useDRI)
+        VBOXDRIUpdateStride(pScrn, pVBox);
+#endif
     pScrn->EnableDisableFBAccess(pScrn->scrnIndex, FALSE);
     pScrn->EnableDisableFBAccess(pScrn->scrnIndex, TRUE);
     return TRUE;
