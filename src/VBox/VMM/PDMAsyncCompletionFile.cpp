@@ -38,6 +38,12 @@
 #include <iprt/thread.h>
 #include <iprt/path.h>
 
+#ifdef RT_OS_WINDOWS
+# define _WIN32_WINNT 0x0500
+# include <windows.h>
+# include <winioctl.h>
+#endif
+
 #include "PDMAsyncCompletionFileInternal.h"
 
 /**
@@ -597,6 +603,74 @@ static const char *pdmacFileBackendTypeToName(PDMACFILEEPBACKEND enmBackendType)
     return NULL;
 }
 
+/**
+ * Get the size of the given file.
+ * Works for block devices too.
+ *
+ * @returns VBox status code.
+ * @param   hFile    The file handle.
+ * @param   pcbSize  Where to store the size of the file on success.
+ */
+static int pdmacFileEpNativeGetSize(RTFILE hFile, uint64_t *pcbSize)
+{
+    int rc = VINF_SUCCESS;
+    uint64_t cbSize = 0;
+
+    rc = RTFileGetSize(hFile, &cbSize);
+    if (RT_SUCCESS(rc) && (cbSize != 0))
+        *pcbSize = cbSize;
+    else
+    {
+#ifdef RT_OS_WINDOWS
+        DISK_GEOMETRY DriveGeo;
+        DWORD cbDriveGeo;
+        if (DeviceIoControl((HANDLE)hFile,
+                            IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0,
+                            &DriveGeo, sizeof(DriveGeo), &cbDriveGeo, NULL))
+        {
+            if (   DriveGeo.MediaType == FixedMedia
+                || DriveGeo.MediaType == RemovableMedia)
+            {
+                cbSize =     DriveGeo.Cylinders.QuadPart
+                         *   DriveGeo.TracksPerCylinder
+                         *   DriveGeo.SectorsPerTrack
+                         *   DriveGeo.BytesPerSector;
+
+                GET_LENGTH_INFORMATION DiskLenInfo;
+                DWORD junk;
+                if (DeviceIoControl((HANDLE)hFile,
+                                    IOCTL_DISK_GET_LENGTH_INFO, NULL, 0,
+                                    &DiskLenInfo, sizeof(DiskLenInfo), &junk, (LPOVERLAPPED)NULL))
+                {
+                    /* IOCTL_DISK_GET_LENGTH_INFO is supported -- override cbSize. */
+                    cbSize = DiskLenInfo.Length.QuadPart;
+                }
+
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+        }
+        else
+        {
+            rc = RTErrConvertFromWin32(GetLastError());
+        }
+#else
+        /* Could be a block device */
+        rc = RTFileSeek(hFile, 0, RTFILE_SEEK_END, &cbSize);
+
+#endif
+        if (RT_SUCCESS(rc) && (cbSize != 0))
+            *pcbSize = cbSize;
+        else if (RT_SUCCESS(rc))
+            rc = VERR_NOT_SUPPORTED;
+    }
+
+    return rc;
+}
+
 static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNODE pCfgNode)
 {
     int rc = VINF_SUCCESS;
@@ -747,7 +821,9 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
         {
             uint64_t cbSize;
 
-            rc = RTFileGetSize(File, &cbSize);
+            rc = pdmacFileEpNativeGetSize(File, &cbSize);
+            Assert(RT_FAILURE(rc) || cbSize != 0);
+
             if (RT_SUCCESS(rc) && ((cbSize % 512) == 0))
                 fFileFlags |= RTFILE_O_NO_CACHE;
             else
@@ -803,12 +879,8 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
     {
         pEpFile->fFlags = fFileFlags;
 
-        rc = RTFileGetSize(pEpFile->File, (uint64_t *)&pEpFile->cbFile);
-        if (RT_SUCCESS(rc) && (pEpFile->cbFile == 0))
-        {
-            /* Could be a block device */
-            rc = RTFileSeek(pEpFile->File, 0, RTFILE_SEEK_END, (uint64_t *)&pEpFile->cbFile);
-        }
+        rc = pdmacFileEpNativeGetSize(pEpFile->File, (uint64_t *)&pEpFile->cbFile);
+        Assert(RT_FAILURE(rc) || pEpFile->cbFile != 0);
 
         if (RT_SUCCESS(rc))
         {
