@@ -234,7 +234,7 @@ typedef HWACCMTPRPATCH *PHWACCMTPRPATCH;
  * @param   uOffsetVMCPU    VMCPU offset from pVM
  * @returns Return code indicating the action to take.
  */
-typedef VMMDECL(int) FNHWACCMSWITCHERHC(PVM pVM, uint32_t uOffsetVMCPU);
+typedef DECLCALLBACK (int) FNHWACCMSWITCHERHC(PVM pVM, uint32_t uOffsetVMCPU);
 /** Pointer to switcher function. */
 typedef FNHWACCMSWITCHERHC *PFNHWACCMSWITCHERHC;
 
