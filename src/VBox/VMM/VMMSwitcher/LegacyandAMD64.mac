@@ -51,6 +51,8 @@ BITS 32
 
 ;;
 ; The C interface.
+; @param    [esp + 04h]  Param 1 - VM handle
+; @param    [esp + 08h]  Param 2 - VMCPU offset
 ;
 BEGINPROC vmmR0HostToGuest
  %ifdef DEBUG_STUFF
@@ -67,6 +69,9 @@ BEGINPROC vmmR0HostToGuest
     STAM_PROFILE_ADV_START edx
  %endif
 
+    push    ebp
+    mov     ebp, [esp + 12]             ; VMCPU offset
+
     ; turn off interrupts
     pushf
     cli
@@ -81,6 +86,7 @@ BEGINPROC vmmR0HostToGuest
 
     ; restore original flags
     popf
+    pop     ebp
 
 %ifdef VBOX_WITH_STATISTICS
     ;
@@ -102,6 +108,7 @@ ENDPROC vmmR0HostToGuest
 ;
 ; INPUT:
 ;       - edx       virtual address of CPUM structure (valid in host context)
+;       - ebp       offset of the CPUMCPU structure
 ;
 ; USES/DESTROYS:
 ;       - eax, ecx, edx, esi
@@ -116,7 +123,7 @@ BEGINPROC vmmR0HostToGuestAsm
     ;; Save CPU host context
     ;;      Skip eax, edx and ecx as these are not preserved over calls.
     ;;
-    CPUMCPU_FROM_CPUM(edx)
+    CPUMCPU_FROM_CPUM_WITH_OFFSET edx, ebp
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     ; phys address of scratch page
     mov     eax, dword [edx + CPUMCPU.Guest.dr + 4*8]
@@ -223,14 +230,14 @@ GLOBALNAME IDEnterTarget
 %endif
 
     ; 4. Enable long mode.
-    mov     ebp, edx
+    mov     esi, edx
     mov     ecx, MSR_K6_EFER
     rdmsr
     FIXUP FIX_EFER_OR_MASK, 1
     or      eax, 0ffffffffh
     and     eax, ~(MSR_K6_EFER_FFXSR) ; turn off fast fxsave/fxrstor (skipping xmm regs)
     wrmsr
-    mov     edx, ebp
+    mov     edx, esi
     DEBUG_CHAR('4')
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
@@ -279,7 +286,7 @@ ALIGNCODE(16)
 GLOBALNAME ICEnterTarget
     ; Load CPUM pointer into rdx
     mov     rdx, [NAME(pCpumIC) wrt rip]
-    CPUMCPU_FROM_CPUM(edx)
+    CPUMCPU_FROM_CPUM_WITH_OFFSET    edx, ebp
 
     mov     rax, cs
     mov     ds, rax
@@ -361,7 +368,7 @@ gth_debug_no:
 
     ; Load CPUM pointer into rdx
     mov     rdx, [NAME(pCpumIC) wrt rip]
-    CPUMCPU_FROM_CPUM(edx)
+    CPUMCPU_FROM_CPUM_WITH_OFFSET    edx, ebp
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov dword [rdx + CPUMCPU.Guest.dr + 4*8], 10
@@ -506,15 +513,16 @@ GLOBALNAME ICExitTarget
     mov     ds, eax
     mov     es, eax
 
-    FIXUP FIX_GC_CPUMCPU_OFF, 1, 0
+    FIXUP FIX_GC_CPUM_OFF, 1, 0
     mov     edx, 0ffffffffh
+    CPUMCPU_FROM_CPUM_WITH_OFFSET    edx, ebp
     mov     esi, [edx + CPUMCPU.Host.cr3]
     mov     cr3, esi
 
     ;; now we're in host memory context, let's restore regs
     FIXUP FIX_HC_CPUM_OFF, 1, 0
     mov     edx, 0ffffffffh
-    CPUMCPU_FROM_CPUM(edx)
+    CPUMCPU_FROM_CPUM_WITH_OFFSET    edx, ebp
 
     ; restore the host EFER
     mov     ebx, edx

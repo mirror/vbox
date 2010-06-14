@@ -230,10 +230,11 @@ typedef HWACCMTPRPATCH *PHWACCMTPRPATCH;
 /**
  * Switcher function, HC to RC.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM             The VM handle.
+ * @param   uOffsetVMCPU    VMCPU offset from pVM
  * @returns Return code indicating the action to take.
  */
-typedef DECLASMTYPE(int) FNHWACCMSWITCHERHC(PVM pVM);
+typedef VMMDECL(int) FNHWACCMSWITCHERHC(PVM pVM, uint32_t uOffsetVMCPU);
 /** Pointer to switcher function. */
 typedef FNHWACCMSWITCHERHC *PFNHWACCMSWITCHERHC;
 
