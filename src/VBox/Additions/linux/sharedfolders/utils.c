@@ -386,7 +386,7 @@ static int sf_make_path(const char *caller, struct sf_inode_info *sf_i,
     uint16_t p_len;
     uint8_t *p_name;
     uint8_t *dst;
-    int is_root = 0;
+    int fRoot = 0;
 
     TRACE();
     p_len = sf_i->path->u16Length;
@@ -395,7 +395,7 @@ static int sf_make_path(const char *caller, struct sf_inode_info *sf_i,
     if (p_len == 1 && *p_name == '/')
     {
         path_len = d_len + 1;
-        is_root = 1;
+        fRoot = 1;
     }
     else
     {
@@ -418,15 +418,14 @@ static int sf_make_path(const char *caller, struct sf_inode_info *sf_i,
     tmp->u16Length = path_len - 1;
     tmp->u16Size = path_len;
 
-    if (is_root)
-        memcpy(tmp->String.utf8, d_name, d_len + 1);
+    if (fRoot)
+        memcpy(&tmp->String.utf8[0], d_name, d_len + 1);
     else
     {
-        dst = tmp->String.utf8;
-        memcpy(dst, p_name, p_len);
-        dst += p_len; *dst++ = '/';
-        memcpy(dst, d_name, d_len);
-        dst[d_len] = 0;
+        memcpy(&tmp->String.utf8[0], p_name, p_len);
+        tmp->String.utf8[p_len] = '/';
+        memcpy(&tmp->String[plen + 1], d_name, d_len);
+        tmp->String.utf8[p_len + 1 + d_len] = '\0';
     }
 
     *result = tmp;
@@ -773,7 +772,7 @@ int sf_dir_read_all(struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
         if (RT_FAILURE(rc))
             break;
     }
-    return 0;
+    err = 0;
 
 fail1:
     kfree(mask);
