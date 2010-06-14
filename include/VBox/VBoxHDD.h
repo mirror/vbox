@@ -976,6 +976,8 @@ DECLINLINE(int) VDCFGQueryBytesAlloc(PVDINTERFACECONFIG pCfgIf,
     int rc = pCfgIf->pfnQuerySize(pvUser, pszName, &cb);
     if (RT_SUCCESS(rc))
     {
+        Assert(cb);
+
         char *pvData = (char *)RTMemAlloc(cb);
         if (pvData)
         {
