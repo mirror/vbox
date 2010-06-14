@@ -694,6 +694,10 @@ bool UINewVMWzdPage5::constructMachine()
         m_Machine.AddStorageController(ctrHdName, ctrHdBus);
         hdCtr = m_Machine.GetStorageControllerByName(ctrHdName);
         hdCtr.SetControllerType(hdStorageControllerType);
+
+        /* Set the port count to 1 if SATA is used. */
+        if (hdStorageControllerType == KStorageControllerType_IntelAhci)
+            hdCtr.SetPortCount(1);
     }
     else
     {
