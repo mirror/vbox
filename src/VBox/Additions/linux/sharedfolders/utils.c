@@ -424,7 +424,7 @@ static int sf_make_path(const char *caller, struct sf_inode_info *sf_i,
     {
         memcpy(&tmp->String.utf8[0], p_name, p_len);
         tmp->String.utf8[p_len] = '/';
-        memcpy(&tmp->String[plen + 1], d_name, d_len);
+        memcpy(&tmp->String.utf8[p_len + 1], d_name, d_len);
         tmp->String.utf8[p_len + 1 + d_len] = '\0';
     }
 
