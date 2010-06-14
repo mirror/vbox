@@ -631,8 +631,8 @@ static int sf_unlink_aux(struct inode *parent, struct dentry *dentry, int fDirec
     sf_i->force_restat = 1;
     /* directory content changed */
     sf_i->force_reread = 1;
-    kfree(path);
-    return 0;
+
+    err = 0;
 
 fail1:
     kfree(path);
