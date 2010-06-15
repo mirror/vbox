@@ -91,8 +91,9 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHA
                 &&  !(fFlags & X86_PTE_RW)) /* important as we make assumptions about this below! */
             {
                 PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
+                Assert(!pPage || !PGM_PAGE_IS_BALLOONED(pPage));
                 if (    pPage
-                    &&  !PGM_PAGE_IS_SHARED(pPage))
+                    &&  pPage->uStateY == PGM_PAGE_STATE_ALLOCATED)
                 {
                     fValidChanges = true;
                     paPageDesc[idxPage].uHCPhysPageId = PGM_PAGE_GET_PAGEID(pPage);
@@ -131,7 +132,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHA
                         rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
                         goto end;
                     }
-                    Assert(!PGM_PAGE_IS_SHARED(pPage));
+                    Assert(pPage->uStateY == PGM_PAGE_STATE_ALLOCATED);
 
                     Log(("PGMR0SharedModuleCheck: shared page gc virt=%RGv phys %RGp host %RHp->%RHp\n", pRegions[idxRegion].GCRegionAddr + i * PAGE_SIZE, paPageDesc[i].GCPhys, PGM_PAGE_GET_HCPHYS(pPage), paPageDesc[i].HCPhys));
                     if (paPageDesc[i].HCPhys != PGM_PAGE_GET_HCPHYS(pPage))
