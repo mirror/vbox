@@ -21,8 +21,9 @@
 #define __QIWithRetranslateUI_h
 
 /* Global includes */
-#include <QObject>
+#include <QApplication>
 #include <QEvent>
+#include <QObject>
 
 template <class Base>
 class QIWithRetranslateUI: public Base
@@ -85,26 +86,27 @@ class QIWithRetranslateUI3: public Base
 {
 public:
 
-    QIWithRetranslateUI3(QObject *pParent = 0) : Base(pParent) {}
+    QIWithRetranslateUI3(QObject *pParent = 0)
+        : Base(pParent)
+    {
+        qApp->installEventFilter(this);
+    }
 
 protected:
 
-    virtual bool event(QEvent *pEvent)
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent)
     {
-        bool bResult = Base::event(pEvent);
         switch (pEvent->type())
         {
             case QEvent::LanguageChange:
             {
                 retranslateUi();
-                pEvent->accept();
-                bResult = true;
                 break;
             }
             default:
                 break;
         }
-        return bResult;
+        return Base::eventFilter(pObject, pEvent);
     }
 
     virtual void retranslateUi() = 0;
