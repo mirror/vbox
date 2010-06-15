@@ -1157,10 +1157,8 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
                 if (vboxVhwaHasCKeying(pAdapter))
                 {
                     DDRAW_CAPS *pCaps = (DDRAW_CAPS*)pData->pData;
-                    pCaps->Caps |= DDRAW_CAPS_COLORKEY
-                            | DDRAW_CAPS2_DYNAMICTEXTURES
-                            | DDRAW_CAPS2_FLIPNOVSYNC
-                            ;
+                    pCaps->Caps |= DDRAW_CAPS_COLORKEY;
+                    pCaps->Caps2 |= DDRAW_CAPS2_FLIPNOVSYNC;
                 }
 #endif
             }
@@ -1241,7 +1239,7 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
             break;
         case D3DDDICAPS_GETD3D3CAPS:
             Assert(!VBOXDISPMODE_IS_3D(pAdapter));
-            Assert(pData->DataSize >= sizeof (D3DHAL_GLOBALDRIVERDATA));
+            Assert(pData->DataSize == sizeof (D3DHAL_GLOBALDRIVERDATA));
             if (pData->DataSize >= sizeof (D3DHAL_GLOBALDRIVERDATA))
             {
                 D3DHAL_GLOBALDRIVERDATA *pCaps = (D3DHAL_GLOBALDRIVERDATA *)pData->pData;
@@ -1254,13 +1252,15 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
 
                 pCaps->hwCaps.dcmColorModel = D3DCOLOR_RGB;
                 pCaps->hwCaps.dwDevCaps = D3DDEVCAPS_CANRENDERAFTERFLIP
-                        | D3DDEVCAPS_DRAWPRIMTLVERTEX
+//                        | D3DDEVCAPS_DRAWPRIMTLVERTEX
                         | D3DDEVCAPS_EXECUTESYSTEMMEMORY
-                        | D3DDEVCAPS_FLOATTLVERTEX
+                        | D3DDEVCAPS_EXECUTEVIDEOMEMORY
+//                        | D3DDEVCAPS_FLOATTLVERTEX
                         | D3DDEVCAPS_HWRASTERIZATION
-                        | D3DDEVCAPS_HWTRANSFORMANDLIGHT
-                        | D3DDEVCAPS_TLVERTEXSYSTEMMEMORY
-                        | D3DDEVCAPS_TEXTUREVIDEOMEMORY;
+//                        | D3DDEVCAPS_HWTRANSFORMANDLIGHT
+//                        | D3DDEVCAPS_TLVERTEXSYSTEMMEMORY
+//                        | D3DDEVCAPS_TEXTUREVIDEOMEMORY
+                        ;
                 pCaps->hwCaps.dtcTransformCaps.dwSize = sizeof (D3DTRANSFORMCAPS);
                 pCaps->hwCaps.dtcTransformCaps.dwCaps = 0;
                 pCaps->hwCaps.bClipping = FALSE;
@@ -1297,25 +1297,29 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
                 pCaps->hwCaps.dpcTriCaps.dwTextureAddressCaps = 0;
                 pCaps->hwCaps.dpcTriCaps.dwStippleWidth = 0;
                 pCaps->hwCaps.dpcTriCaps.dwStippleHeight = 0;
-                pCaps->hwCaps.dwDeviceRenderBitDepth = 0;
-                pCaps->hwCaps.dwDeviceZBufferBitDepth = DDBD_8 | DDBD_16 | DDBD_24 | DDBD_32;
+                pCaps->hwCaps.dwDeviceRenderBitDepth = DDBD_8 | DDBD_16 | DDBD_24 | DDBD_32;
+                pCaps->hwCaps.dwDeviceZBufferBitDepth = 0;
                 pCaps->hwCaps.dwMaxBufferSize = 0;
                 pCaps->hwCaps.dwMaxVertexCount = 0;
 
 
                 pCaps->dwNumVertices = 0;
                 pCaps->dwNumClipVertices = 0;
-                pCaps->dwNumTextureFormats = pAdapter->cSurfDescs;
-                pCaps->lpTextureFormats = pAdapter->paSurfDescs;
+                pCaps->dwNumTextureFormats = 0;//pAdapter->cSurfDescs;
+                pCaps->lpTextureFormats = NULL;//pAdapter->paSurfDescs;
             }
             else
                 hr = E_INVALIDARG;
             break;
         case D3DDDICAPS_GETD3D7CAPS:
             Assert(!VBOXDISPMODE_IS_3D(pAdapter));
-            Assert(pData->DataSize >= sizeof (D3DHAL_D3DEXTENDEDCAPS));
+            Assert(pData->DataSize == sizeof (D3DHAL_D3DEXTENDEDCAPS));
             if (pData->DataSize >= sizeof (D3DHAL_D3DEXTENDEDCAPS))
+            {
                 memset(pData->pData, 0, sizeof (D3DHAL_D3DEXTENDEDCAPS));
+                D3DHAL_D3DEXTENDEDCAPS *pCaps = (D3DHAL_D3DEXTENDEDCAPS*)pData->pData;
+                pCaps->dwSize = sizeof (D3DHAL_D3DEXTENDEDCAPS);
+            }
             else
                 hr = E_INVALIDARG;
             break;
@@ -1396,11 +1400,17 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
         case D3DDDICAPS_GETGAMMARAMPCAPS:
             *((uint32_t*)pData->pData) = 0;
             break;
+        case D3DDDICAPS_GETVIDEOPROCESSORCAPS:
+        case D3DDDICAPS_GETEXTENSIONGUIDCOUNT:
+        case D3DDDICAPS_GETDECODEGUIDCOUNT:
+        case D3DDDICAPS_GETVIDEOPROCESSORDEVICEGUIDCOUNT:
+            if (pData->pData && pData->DataSize)
+                memset(pData->pData, 0, pData->DataSize);
+            break;
         case D3DDDICAPS_GETMULTISAMPLEQUALITYLEVELS:
         case D3DDDICAPS_GETD3D5CAPS:
         case D3DDDICAPS_GETD3D6CAPS:
         case D3DDDICAPS_GETD3D8CAPS:
-        case D3DDDICAPS_GETDECODEGUIDCOUNT:
         case D3DDDICAPS_GETDECODEGUIDS:
         case D3DDDICAPS_GETDECODERTFORMATCOUNT:
         case D3DDDICAPS_GETDECODERTFORMATS:
@@ -1408,16 +1418,13 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
         case D3DDDICAPS_GETDECODECOMPRESSEDBUFFERINFO:
         case D3DDDICAPS_GETDECODECONFIGURATIONCOUNT:
         case D3DDDICAPS_GETDECODECONFIGURATIONS:
-        case D3DDDICAPS_GETVIDEOPROCESSORDEVICEGUIDCOUNT:
         case D3DDDICAPS_GETVIDEOPROCESSORDEVICEGUIDS:
         case D3DDDICAPS_GETVIDEOPROCESSORRTFORMATCOUNT:
         case D3DDDICAPS_GETVIDEOPROCESSORRTFORMATS:
         case D3DDDICAPS_GETVIDEOPROCESSORRTSUBSTREAMFORMATCOUNT:
         case D3DDDICAPS_GETVIDEOPROCESSORRTSUBSTREAMFORMATS:
-        case D3DDDICAPS_GETVIDEOPROCESSORCAPS:
         case D3DDDICAPS_GETPROCAMPRANGE:
         case D3DDDICAPS_FILTERPROPERTYRANGE:
-        case D3DDDICAPS_GETEXTENSIONGUIDCOUNT:
         case D3DDDICAPS_GETEXTENSIONGUIDS:
         case D3DDDICAPS_GETEXTENSIONCAPS:
             vboxVDbgPrint((__FUNCTION__": unimplemented caps type(%d)\n", pData->Type));
@@ -2370,7 +2377,7 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
         LockData.Flags.DonotWait = pData->Flags.DoNotWait;
 
 
-        hr = pDevice->RtCallbacks.pfnLockCb(hDevice, &LockData);
+        hr = pDevice->RtCallbacks.pfnLockCb(pDevice->hDevice, &LockData);
         Assert(hr == S_OK || (hr == D3DERR_WASSTILLDRAWING && pData->Flags.DoNotWait));
         if (hr == S_OK)
         {
@@ -2391,7 +2398,7 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
             }
             else
             {
-                AssertBreakpoint();
+                offset = 0;
             }
 
             if (pData->Flags.Discard)
@@ -2509,7 +2516,7 @@ static HRESULT APIENTRY vboxWddmDDevUnlock(HANDLE hDevice, CONST D3DDDIARG_UNLOC
         UnlockData.Unlock.phAllocations = &UnlockData.hAllocation;
         UnlockData.hAllocation = pRc->aAllocations[pData->SubResourceIndex].hAllocation;
 
-        hr = pDevice->RtCallbacks.pfnUnlockCb(hDevice, &UnlockData.Unlock);
+        hr = pDevice->RtCallbacks.pfnUnlockCb(pDevice->hDevice, &UnlockData.Unlock);
         Assert(hr == S_OK);
     }
 
@@ -3104,13 +3111,17 @@ static HRESULT APIENTRY vboxWddmDDevFlush(HANDLE hDevice)
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
     Assert(pDevice);
-    Assert(pDevice->pDevice9If);
-    HRESULT hr = pDevice->pDevice9If->Present(NULL, /* CONST RECT * pSourceRect */
-            NULL, /* CONST RECT * pDestRect */
-            NULL, /* HWND hDestWindowOverride */
-            NULL /*CONST RGNDATA * pDirtyRegion */
-            );
-    Assert(hr == S_OK);
+    HRESULT hr = S_OK;
+    if (VBOXDISPMODE_IS_3D(pDevice->pAdapter))
+    {
+        Assert(pDevice->pDevice9If);
+        hr = pDevice->pDevice9If->Present(NULL, /* CONST RECT * pSourceRect */
+                NULL, /* CONST RECT * pDestRect */
+                NULL, /* HWND hDestWindowOverride */
+                NULL /*CONST RGNDATA * pDirtyRegion */
+                );
+        Assert(hr == S_OK);
+    }
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
 }
