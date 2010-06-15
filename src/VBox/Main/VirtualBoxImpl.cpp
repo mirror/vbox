@@ -352,7 +352,7 @@ struct VirtualBox::Data
     EventQueue * const                  pAsyncEventQ;
 
 #ifdef RT_OS_WINDOWS
-    ComEventsHelper                     aComEvHelper;
+    ComEventsHelper                     mComEvHelper;
 #endif
 };
 
@@ -592,7 +592,7 @@ HRESULT VirtualBox::init()
 
 #ifdef RT_OS_WINDOWS
     if (SUCCEEDED(rc))
-        rc = m->aComEvHelper.init(IID_IVirtualBoxCallback);
+        rc = m->mComEvHelper.init(IID_IVirtualBoxCallback);
 #endif
 
     /* Confirm a successful initialization when it's the case */
@@ -4575,27 +4575,36 @@ void *VirtualBox::CallbackEvent::handler()
     }
 
     CallbackList callbacks;
+#ifdef RT_OS_WINDOWS
+    EventListenersList listeners;
+#endif
     {
         /* Make a copy to release the lock before iterating */
         AutoReadLock alock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
         callbacks = mVirtualBox->m->llCallbacks;
+#ifdef RT_OS_WINDOWS
+	IUnknown** pp;
+	for (pp = mVirtualBox->m_vec.begin(); pp < mVirtualBox->m_vec.end(); pp++)
+	{
+            listeners.Add(*pp);
+        }                   
+#endif  
     }
 
 
 #ifdef RT_OS_WINDOWS
-#if 1
     // WIP
     {
      ComEventDesc evDesc;
 
-     int nConnections = mVirtualBox->m_vec.GetSize();
-     /* Only prepare args if someone needs them */
+     int nConnections = listeners.GetSize();
+     /* Only prepare args if someone really needs them */
      if (nConnections)
         prepareEventDesc(evDesc);
 
      for (int i=0; i<nConnections; i++)
      {
-        ComPtr<IUnknown> sp = mVirtualBox->m_vec.GetAt(i);
+        ComPtr<IUnknown> sp = listeners.GetAt(i);
         ComPtr<IVirtualBoxCallback> cbI;
         ComPtr<IDispatch> cbD;
 
@@ -4603,18 +4612,17 @@ void *VirtualBox::CallbackEvent::handler()
         cbD = sp;
 
         /**
-         * Would be just handleCallback(cbI) in ideal world, unfortunately our consumers want to be invoked via IDispatch,
-         * thus going the hard way.
+         * Would be just handleCallback(cbI) in an ideal world, unfortunately our 
+	 * consumers want to be invoked via IDispatch, thus going the hard way.
          */
         if (cbI != NULL && cbD != NULL)
         {
              CComVariant varResult;
-             mVirtualBox->m->aComEvHelper.fire(cbD, evDesc, &varResult);
+             mVirtualBox->m->mComEvHelper.fire(cbD, evDesc, &varResult);
              // what we gonna do with the result?
         }
      }
     }
-#endif
 #endif
 
     for (CallbackList::const_iterator it = callbacks.begin();

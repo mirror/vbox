@@ -95,6 +95,8 @@ public:
     BEGIN_CONNECTION_POINT_MAP(VirtualBox)
          CONNECTION_POINT_ENTRY(IID_IVirtualBoxCallback)
     END_CONNECTION_POINT_MAP()
+   
+    typedef CComDynamicUnkArray EventListenersList;
 #endif
 
     // to postpone generation of the default ctor/dtor

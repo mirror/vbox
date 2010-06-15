@@ -14557,9 +14557,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <class name="Session" uuid="3C02F46D-C9D2-4F11-A384-53F0CF917214"
            namespace="virtualbox.org">
       <interface name="ISession" default="yes"/>
-      <eventsink name="IConsoleCallback" default="yes"/>
-
     </class>
+
+    <class name="Console" uuid="577230FF-164F-4CAC-8548-312D8275A4A7"
+           namespace="virtualbox.org">
+      <interface name="IConsole" default="yes"/>
+      <eventsink name="IConsoleCallback" default="yes"/>
+    </class>
+
     <class name="CallbackWrapper" uuid="49EE8561-5563-4715-B18C-A4B1A490DAFE"
            namespace="virtualbox.org">
       <interface name="ILocalOwner" default="yes"/>
