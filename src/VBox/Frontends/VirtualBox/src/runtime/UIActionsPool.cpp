@@ -109,8 +109,16 @@ public:
         : UIAction(pParent, UIActionType_Simple)
     {
         if (!strIcon.isNull())
-            setIcon(UIIconPool::iconSet(strIcon.toLatin1().data(),
-                                        strIconDis.toLatin1().data()));
+            setIcon(UIIconPool::iconSet(strIcon,
+                                        strIconDis));
+    }
+
+    UISimpleAction(QObject *pParent,
+                   const QIcon& icon)
+        : UIAction(pParent, UIActionType_Simple)
+    {
+        if (!icon.isNull())
+            setIcon(icon);
     }
 };
 
@@ -125,8 +133,8 @@ public:
         : UIAction(pParent, UIActionType_Toggle)
     {
         if (!strIcon.isNull())
-            setIcon(UIIconPool::iconSet(strIcon.toLatin1().data(),
-                                        strIconDis.toLatin1().data()));
+            setIcon(UIIconPool::iconSet(strIcon,
+                                        strIconDis));
         init();
     }
 
@@ -135,8 +143,17 @@ public:
                    const QString &strIconOnDis, const QString &strIconOffDis)
         : UIAction(pParent, UIActionType_Toggle)
     {
-        setIcon(UIIconPool::iconSetOnOff(strIconOn.toLatin1().data(), strIconOff.toLatin1().data(),
-                                         strIconOnDis.toLatin1().data(), strIconOffDis.toLatin1().data()));
+        setIcon(UIIconPool::iconSetOnOff(strIconOn, strIconOff,
+                                         strIconOnDis, strIconOffDis));
+        init();
+    }
+
+    UIToggleAction(QObject *pParent,
+                   const QIcon &icon)
+        : UIAction(pParent, UIActionType_Toggle)
+    {
+        if (!icon.isNull())
+            setIcon(icon);
         init();
     }
 
@@ -169,6 +186,15 @@ public:
         if (!strIcon.isNull())
             setIcon(UIIconPool::iconSet(strIcon,
                                         strIconDis));
+        setMenu(new QIMenu);
+    }
+
+    UIMenuAction(QObject *pParent,
+                 const QIcon &icon)
+        : UIAction(pParent, UIActionType_Menu)
+    {
+        if (!icon.isNull())
+            setIcon(icon);
         setMenu(new QIMenu);
     }
 };
