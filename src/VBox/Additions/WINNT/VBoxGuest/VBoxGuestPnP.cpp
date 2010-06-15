@@ -324,6 +324,9 @@ NTSTATUS VBoxGuestPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             // according to MSDN we have to unmap previously mapped memory
             hlpVBoxUnmapVMMDevMemory (pDevExt);
 
+            /* Free the memory balloon (if any) */
+            VBoxCleanupMemBalloon(pDevExt);
+
             if (pDevExt->nextLowerDriver != NULL)
             {
                 IoDetachDevice(pDevExt->nextLowerDriver);
