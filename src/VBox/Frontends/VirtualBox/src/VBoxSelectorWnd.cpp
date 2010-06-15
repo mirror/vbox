@@ -515,6 +515,7 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 #endif /* MAC_LEOPARD_STYLE */
 
     /* VM tab widget containing details and snapshots tabs */
+    mVmTabWidget = new QITabWidget();
     pSplitter->addWidget (mVmTabWidget);
 
     /* Set the initial distribution. The right site is bigger. */
