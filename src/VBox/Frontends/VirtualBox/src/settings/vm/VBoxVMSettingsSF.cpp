@@ -185,8 +185,8 @@ VBoxVMSettingsSF::VBoxVMSettingsSF (int aType, QWidget *aParent)
                                             ":/add_shared_folder_disabled_16px.png"));
     mEdtAction->setIcon(UIIconPool::iconSet(":/edit_shared_folder_16px.png",
                                             ":/edit_shared_folder_disabled_16px.png"));
-    mDelAction->setIcon(UIIconPool::iconSet(":/revome_shared_folder_16px.png",
-                                            ":/revome_shared_folder_disabled_16px.png"));
+    mDelAction->setIcon(UIIconPool::iconSet(":/remove_shared_folder_16px.png",
+                                            ":/remove_shared_folder_disabled_16px.png"));
 
     /* Prepare toolbar */
     mTbFolders->setUsesTextLabel (false);
