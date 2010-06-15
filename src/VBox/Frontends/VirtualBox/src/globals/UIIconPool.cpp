@@ -155,6 +155,14 @@ QIcon UIIconPool::defaultIcon(UIDefaultIcon def, const QWidget *pWidget /* = 0 *
             icon = pStyle->standardIcon(QStyle::SP_MessageBoxCritical, 0, pWidget);
             break;
         }
+        case DialogCancelIcon:
+        {
+            icon = pStyle->standardIcon(QStyle::SP_DialogCancelButton, 0, pWidget);
+            if (icon.isNull())
+                icon = iconSet(":/delete_16px.png",
+                               ":/delete_dis_16px.png");
+            break;
+        }
         case ArrowBackIcon:
         {
             icon = pStyle->standardIcon(QStyle::SP_ArrowBack, 0, pWidget);
