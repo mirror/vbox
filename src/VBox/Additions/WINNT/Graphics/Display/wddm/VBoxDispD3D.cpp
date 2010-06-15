@@ -3695,10 +3695,37 @@ static HRESULT APIENTRY vboxWddmDDevUpdateOverlay(HANDLE hDevice, CONST D3DDDIAR
 }
 static HRESULT APIENTRY vboxWddmDDevFlipOverlay(HANDLE hDevice, CONST D3DDDIARG_FLIPOVERLAY* pData)
 {
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hSource;
+    Assert(pRc);
+    Assert(pRc->cAllocations > pData->SourceIndex);
+    PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->SourceIndex];
+    HRESULT hr = S_OK;
+    PVBOXWDDMDISP_OVERLAY pOverlay = (PVBOXWDDMDISP_OVERLAY)pData->hOverlay;
+    VBOXWDDM_OVERLAYFLIP_INFO OurInfo;
+    vboxWddmDirtyRegionClear(&OurInfo.DirtyRegion);
+    Assert(!pAlloc->LockInfo.cLocks);
+    vboxWddmDirtyRegionUnite(&OurInfo.DirtyRegion, &pAlloc->DirtyRegion);
+    D3DDDICB_FLIPOVERLAY OverInfo;
+    OverInfo.hKernelOverlay = pOverlay->hOverlay;
+    OverInfo.hSource = pAlloc->hAllocation;
+    OverInfo.pPrivateDriverData = &OurInfo;
+    OverInfo.PrivateDriverDataSize = sizeof (OurInfo);
+    hr = pDevice->RtCallbacks.pfnFlipOverlayCb(pDevice->hDevice, &OverInfo);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        Assert(!pAlloc->LockInfo.cLocks);
+        if (!pAlloc->LockInfo.cLocks)
+        {
+            /* we have reported the dirty rect, may clear it if no locks are pending currently */
+            vboxWddmDirtyRegionClear(&pAlloc->DirtyRegion);
+        }
+    }
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return hr;
 }
 static HRESULT APIENTRY vboxWddmDDevGetOverlayColorControls(HANDLE hDevice, D3DDDIARG_GETOVERLAYCOLORCONTROLS* pData)
 {
@@ -3716,10 +3743,20 @@ static HRESULT APIENTRY vboxWddmDDevSetOverlayColorControls(HANDLE hDevice, CONS
 }
 static HRESULT APIENTRY vboxWddmDDevDestroyOverlay(HANDLE hDevice, CONST D3DDDIARG_DESTROYOVERLAY* pData)
 {
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    PVBOXWDDMDISP_OVERLAY pOverlay = (PVBOXWDDMDISP_OVERLAY)pData->hOverlay;
+    D3DDDICB_DESTROYOVERLAY OverInfo;
+    OverInfo.hKernelOverlay = pOverlay->hOverlay;
+    HRESULT hr = pDevice->RtCallbacks.pfnDestroyOverlayCb(pDevice->hDevice, &OverInfo);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        RTMemFree(pOverlay);
+    }
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return hr;
 }
 static HRESULT APIENTRY vboxWddmDDevQueryResourceResidency(HANDLE hDevice, CONST D3DDDIARG_QUERYRESOURCERESIDENCY* pData)
 {
