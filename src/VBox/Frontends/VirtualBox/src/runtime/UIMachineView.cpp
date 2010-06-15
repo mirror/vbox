@@ -2539,7 +2539,13 @@ void UIMachineView::captureKbd(bool fCapture, bool fEmitSignal /* = true */)
         case UIVisualStateType_Seamless:
         {
             if (fCapture)
-                XGrabKeyboard(QX11Info::display(), machineWindowWrapper()->machineWindow()->winId(), False, GrabModeAsync, GrabModeAsync, CurrentTime);
+            {
+                /* Keyboard grabbing can fail because of some keyboard shortcut is still grabbed by window manager.
+                 * We can't be sure this shortcut will be released at all, so we will retry to grab keyboard for 50 times,
+                 * and after we will just ignore that issue: */
+                int cTriesLeft = 50;
+                while (cTriesLeft && XGrabKeyboard(QX11Info::display(), machineWindowWrapper()->machineWindow()->winId(), False, GrabModeAsync, GrabModeAsync, CurrentTime)) { --cTriesLeft; }
+            }
             else
                 XUngrabKeyboard(QX11Info::display(), CurrentTime);
             break;
