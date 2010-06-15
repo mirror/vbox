@@ -33,6 +33,7 @@ public:
         MessageBoxQuestionIcon,
         MessageBoxWarningIcon,
         MessageBoxCriticalIcon,
+        DialogCancelIcon,
         ArrowBackIcon,
         ArrowForwardIcon
     };
