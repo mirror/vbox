@@ -34,6 +34,7 @@ public:
         MessageBoxWarningIcon,
         MessageBoxCriticalIcon,
         DialogCancelIcon,
+        DialogHelpIcon,
         ArrowBackIcon,
         ArrowForwardIcon
     };

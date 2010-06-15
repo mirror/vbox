@@ -928,7 +928,7 @@ public:
 
     ShowHelpAction(QObject *pParent)
         : UISimpleAction(pParent,
-                         ":/help_16px.png")
+                         UIIconPool::defaultIcon(UIIconPool::DialogHelpIcon))
     {
         retranslateUi();
     }

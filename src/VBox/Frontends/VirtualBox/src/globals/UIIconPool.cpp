@@ -163,6 +163,13 @@ QIcon UIIconPool::defaultIcon(UIDefaultIcon def, const QWidget *pWidget /* = 0 *
                                ":/delete_dis_16px.png");
             break;
         }
+        case DialogHelpIcon:
+        {
+            icon = pStyle->standardIcon(QStyle::SP_DialogHelpButton, 0, pWidget);
+            if (icon.isNull())
+                icon = iconSet(":/help_16px.png");
+            break;
+        }
         case ArrowBackIcon:
         {
             icon = pStyle->standardIcon(QStyle::SP_ArrowBack, 0, pWidget);
