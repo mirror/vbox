@@ -5041,6 +5041,12 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
         vrc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szTmp, sizeof(szTmp));
         if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
             RTLogRelLogger(loggerRelease, 0, ~0U, "OS Service Pack: %s\n", szTmp);
+        vrc = RTSystemQueryDmiString(RTSYSDMISTR_PRODUCT_NAME, szTmp, sizeof(szTmp));
+        if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+            RTLogRelLogger(loggerRelease, 0, ~0U, "DMI Product Name: %s\n", szTmp);
+        vrc = RTSystemQueryDmiString(RTSYSDMISTR_PRODUCT_VERSION, szTmp, sizeof(szTmp));
+        if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+            RTLogRelLogger(loggerRelease, 0, ~0U, "DMI Product Version: %s\n", szTmp);
 
         ComPtr<IHost> host;
         virtualBox->COMGETTER(Host)(host.asOutParam());
