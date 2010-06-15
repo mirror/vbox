@@ -20,19 +20,21 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+/* Local Includes */
+#include "UIIconPool.h"
+#include "UIMachineLogic.h"
+#include "UIMachineView.h"
+#include "UIMachineWindow.h"
+#include "UISession.h"
+#include "VBoxGlobal.h"
+#include "VBoxVMInformationDlg.h"
+
 /* Global Includes */
 #include <QTimer>
 #include <QScrollBar>
 
-/* Local Includes */
-#include <VBoxVMInformationDlg.h>
-#include <VBoxGlobal.h>
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
-#include "UIMachineLogic.h"
-#include "UIMachineWindow.h"
-#include "UIMachineView.h"
-#include "UISession.h"
 
 VBoxVMInformationDlg::InfoDlgMap VBoxVMInformationDlg::mSelfArray = InfoDlgMap();
 
@@ -71,11 +73,11 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (UIMachineWindow *pMachineWindow, Qt:
 
 #ifdef Q_WS_MAC
     /* No icon for this window on the mac, cause this would act as proxy icon which isn't necessary here. */
-    setWindowIcon (QIcon());
+    setWindowIcon(QIcon());
 #else
     /* Apply window icons */
-    setWindowIcon (vboxGlobal().iconSetFull (QSize (32, 32), QSize (16, 16),
-                                             ":/session_info_32px.png", ":/session_info_16px.png"));
+    setWindowIcon(UIIconPool::iconSetFull(QSize (32, 32), QSize (16, 16),
+                                          ":/session_info_32px.png", ":/session_info_16px.png"));
 #endif
 
     /* Enable size grip without using a status bar. */

@@ -41,6 +41,7 @@
 #include "VBoxToolBar.h"
 #include "QIFileDialog.h"
 #include "QILabel.h"
+#include "UIIconPool.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 class AddVDMUrlsEvent: public QEvent
@@ -201,8 +202,8 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */, Qt::Window
     Ui::VBoxMediaManagerDlg::setupUi (this);
 
     /* Apply window icons */
-    setWindowIcon (vboxGlobal().iconSetFull (QSize (32, 32), QSize (16, 16),
-                                             ":/diskimage_32px.png", ":/diskimage_16px.png"));
+    setWindowIcon(UIIconPool::iconSetFull(QSize (32, 32), QSize (16, 16),
+                                          ":/diskimage_32px.png", ":/diskimage_16px.png"));
 
     mVBox = vboxGlobal().virtualBox();
     Assert (!mVBox.isNull());
@@ -211,9 +212,9 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */, Qt::Window
         mDVDImagesInaccessible =
             mFloppyImagesInaccessible = false;
 
-    mHardDiskIcon    = VBoxGlobal::iconSet (":/hd_16px.png", ":/hd_disabled_16px.png");
-    mDVDImageIcon    = VBoxGlobal::iconSet (":/cd_16px.png", ":/cd_disabled_16px.png");
-    mFloppyImageIcon = VBoxGlobal::iconSet (":/fd_16px.png", ":/fd_disabled_16px.png");
+    mHardDiskIcon    = UIIconPool::iconSet(":/hd_16px.png", ":/hd_disabled_16px.png");
+    mDVDImageIcon    = UIIconPool::iconSet(":/cd_16px.png", ":/cd_disabled_16px.png");
+    mFloppyImageIcon = UIIconPool::iconSet(":/fd_16px.png", ":/fd_disabled_16px.png");
 
     /* Setup tab-widget icons */
     mTabWidget->setTabIcon (HDTab, mHardDiskIcon);
@@ -290,23 +291,23 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */, Qt::Window
     connect (mReleaseAction, SIGNAL (triggered()), this, SLOT (doReleaseMedium()));
     connect (mRefreshAction, SIGNAL (triggered()), this, SLOT (refreshAll()));
 
-    mNewAction->setIcon (VBoxGlobal::iconSetFull (
+    mNewAction->setIcon(UIIconPool::iconSetFull (
         QSize (22, 22), QSize (16, 16),
         ":/hd_new_22px.png", ":/hd_new_16px.png",
         ":/hd_new_disabled_22px.png", ":/hd_new_disabled_16px.png"));
-    mAddAction->setIcon (VBoxGlobal::iconSetFull (
+    mAddAction->setIcon(UIIconPool::iconSetFull (
         QSize (22, 22), QSize (16, 16),
         ":/hd_add_22px.png", ":/hd_add_16px.png",
         ":/hd_add_disabled_22px.png", ":/hd_add_disabled_16px.png"));
-    mRemoveAction->setIcon (VBoxGlobal::iconSetFull (
+    mRemoveAction->setIcon(UIIconPool::iconSetFull (
         QSize (22, 22), QSize (16, 16),
         ":/hd_remove_22px.png", ":/hd_remove_16px.png",
         ":/hd_remove_disabled_22px.png", ":/hd_remove_disabled_16px.png"));
-    mReleaseAction->setIcon (VBoxGlobal::iconSetFull (
+    mReleaseAction->setIcon(UIIconPool::iconSetFull (
         QSize (22, 22), QSize (16, 16),
         ":/hd_release_22px.png", ":/hd_release_16px.png",
         ":/hd_release_disabled_22px.png", ":/hd_release_disabled_16px.png"));
-    mRefreshAction->setIcon (VBoxGlobal::iconSetFull (
+    mRefreshAction->setIcon(UIIconPool::iconSetFull (
         QSize (22, 22), QSize (16, 16),
         ":/refresh_22px.png", ":/refresh_16px.png",
         ":/refresh_disabled_22px.png", ":/refresh_disabled_16px.png"));

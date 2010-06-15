@@ -17,14 +17,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
-#include <QHeaderView>
-
 /* Local includes */
-#include "VBoxVMSettingsSystem.h"
-#include "VBoxGlobal.h"
 #include "QIWidgetValidator.h"
+#include "UIIconPool.h"
+#include "VBoxGlobal.h"
+#include "VBoxVMSettingsSystem.h"
+
+/* Global includes */
 #include <iprt/cdefs.h>
+#include <QHeaderView>
 
 #define ITEM_TYPE_ROLE Qt::UserRole + 1
 
@@ -70,10 +71,10 @@ VBoxVMSettingsSystem::VBoxVMSettingsSystem()
              this, SLOT (textChangedCPU (const QString&)));
 
     /* Setup iconsets */
-    mTbBootItemUp->setIcon (VBoxGlobal::iconSet (":/list_moveup_16px.png",
-                                                 ":/list_moveup_disabled_16px.png"));
-    mTbBootItemDown->setIcon (VBoxGlobal::iconSet (":/list_movedown_16px.png",
-                                                   ":/list_movedown_disabled_16px.png"));
+    mTbBootItemUp->setIcon(UIIconPool::iconSet(":/list_moveup_16px.png",
+                                               ":/list_moveup_disabled_16px.png"));
+    mTbBootItemDown->setIcon(UIIconPool::iconSet(":/list_movedown_16px.png",
+                                                 ":/list_movedown_disabled_16px.png"));
 
 #ifdef Q_WS_MAC
     /* We need a little space for the focus rect. */

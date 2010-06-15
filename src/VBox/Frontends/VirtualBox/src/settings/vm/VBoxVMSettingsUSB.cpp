@@ -17,12 +17,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Local includes */
+#include "QIWidgetValidator.h"
+#include "UIIconPool.h"
+#include "VBoxGlobal.h"
+#include "VBoxToolBar.h"
 #include "VBoxVMSettingsUSB.h"
 #include "VBoxVMSettingsUSBFilterDetails.h"
-#include "QIWidgetValidator.h"
-#include "VBoxToolBar.h"
-#include "VBoxGlobal.h"
 
+/* Global includes */
 #include <QHeaderView>
 
 inline static QString emptyToNull (const QString &str)
@@ -53,18 +56,18 @@ VBoxVMSettingsUSB::VBoxVMSettingsUSB (FilterType aType)
     mMupAction->setShortcut (QKeySequence ("Ctrl+Up"));
     mMdnAction->setShortcut (QKeySequence ("Ctrl+Down"));
 
-    mNewAction->setIcon (VBoxGlobal::iconSet (":/usb_new_16px.png",
-                                              ":/usb_new_disabled_16px.png"));
-    mAddAction->setIcon (VBoxGlobal::iconSet (":/usb_add_16px.png",
-                                              ":/usb_add_disabled_16px.png"));
-    mEdtAction->setIcon (VBoxGlobal::iconSet (":/usb_filter_edit_16px.png",
-                                              ":/usb_filter_edit_disabled_16px.png"));
-    mDelAction->setIcon (VBoxGlobal::iconSet (":/usb_remove_16px.png",
-                                              ":/usb_remove_disabled_16px.png"));
-    mMupAction->setIcon (VBoxGlobal::iconSet (":/usb_moveup_16px.png",
-                                              ":/usb_moveup_disabled_16px.png"));
-    mMdnAction->setIcon (VBoxGlobal::iconSet (":/usb_movedown_16px.png",
-                                              ":/usb_movedown_disabled_16px.png"));
+    mNewAction->setIcon(UIIconPool::iconSet(":/usb_new_16px.png",
+                                            ":/usb_new_disabled_16px.png"));
+    mAddAction->setIcon(UIIconPool::iconSet(":/usb_add_16px.png",
+                                            ":/usb_add_disabled_16px.png"));
+    mEdtAction->setIcon(UIIconPool::iconSet(":/usb_filter_edit_16px.png",
+                                            ":/usb_filter_edit_disabled_16px.png"));
+    mDelAction->setIcon(UIIconPool::iconSet(":/usb_remove_16px.png",
+                                            ":/usb_remove_disabled_16px.png"));
+    mMupAction->setIcon(UIIconPool::iconSet(":/usb_moveup_16px.png",
+                                            ":/usb_moveup_disabled_16px.png"));
+    mMdnAction->setIcon(UIIconPool::iconSet(":/usb_movedown_16px.png",
+                                            ":/usb_movedown_disabled_16px.png"));
 
     /* Prepare menu and toolbar */
     mMenu = new QMenu (mTwFilters);

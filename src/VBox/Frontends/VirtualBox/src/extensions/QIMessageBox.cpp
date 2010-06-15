@@ -24,6 +24,7 @@
 #include "QIMessageBox.h"
 #include "QILabel.h"
 #include "QIDialogButtonBox.h"
+#include "UIIconPool.h"
 #ifdef Q_WS_MAC
 # include "VBoxSelectorWnd.h"
 #endif /* Q_WS_MAC */
@@ -321,19 +322,19 @@ QPixmap QIMessageBox::standardPixmap (QIMessageBox::Icon aIcon)
     switch (aIcon)
     {
         case QIMessageBox::Information:
-            icon = vboxGlobal().standardIcon (QStyle::SP_MessageBoxInformation, this);
+            icon = UIIconPool::defaultIcon(UIIconPool::MessageBoxInformationIcon, this);
             break;
         case QMessageBox::Warning:
-            icon = vboxGlobal().standardIcon (QStyle::SP_MessageBoxWarning, this);
+            icon = UIIconPool::defaultIcon(UIIconPool::MessageBoxWarningIcon, this);
             break;
         case QIMessageBox::Critical:
-            icon = vboxGlobal().standardIcon (QStyle::SP_MessageBoxCritical, this);
+            icon = UIIconPool::defaultIcon(UIIconPool::MessageBoxCriticalIcon, this);
             break;
         case QIMessageBox::Question:
-            icon = vboxGlobal().standardIcon (QStyle::SP_MessageBoxQuestion, this);
+            icon = UIIconPool::defaultIcon(UIIconPool::MessageBoxQuestionIcon, this);
             break;
         case QIMessageBox::GuruMeditation:
-            icon = QIcon (":/meditation_32px.png");
+            icon = QIcon(":/meditation_32px.png");
             break;
         default:
             break;

@@ -20,18 +20,20 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+/* Local includes */
+#include "UIIconPool.h"
+#include "VBoxProblemReporter.h"
+#include "VBoxSnapshotDetailsDlg.h"
+#include "VBoxSnapshotsWgt.h"
+#include "VBoxTakeSnapshotDlg.h"
+#include "VBoxToolBar.h"
+
 /* Global includes */
 #include <QDateTime>
 #include <QHeaderView>
 #include <QMenu>
 #include <QScrollBar>
 
-/* Local includes */
-#include <VBoxSnapshotsWgt.h>
-#include <VBoxProblemReporter.h>
-#include <VBoxSnapshotDetailsDlg.h>
-#include <VBoxTakeSnapshotDlg.h>
-#include <VBoxToolBar.h>
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /**
@@ -360,19 +362,19 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
     ((QVBoxLayout*)layout())->insertWidget (0, toolBar);
 
     /* Setup actions */
-    mRestoreSnapshotAction->setIcon (VBoxGlobal::iconSetFull (
+    mRestoreSnapshotAction->setIcon(UIIconPool::iconSetFull(
         QSize (22, 22), QSize (16, 16),
         ":/discard_cur_state_22px.png", ":/discard_cur_state_16px.png", // TODO: Update Icons!
         ":/discard_cur_state_dis_22px.png", ":/discard_cur_state_dis_16px.png")); // TODO: Update Icons!
-    mDeleteSnapshotAction->setIcon (VBoxGlobal::iconSetFull (
+    mDeleteSnapshotAction->setIcon(UIIconPool::iconSetFull(
         QSize (22, 22), QSize (16, 16),
         ":/delete_snapshot_22px.png", ":/delete_snapshot_16px.png",
         ":/delete_snapshot_dis_22px.png", ":/delete_snapshot_dis_16px.png"));
-    mShowSnapshotDetailsAction->setIcon (VBoxGlobal::iconSetFull (
+    mShowSnapshotDetailsAction->setIcon(UIIconPool::iconSetFull(
         QSize (22, 22), QSize (16, 16),
         ":/show_snapshot_details_22px.png", ":/show_snapshot_details_16px.png",
         ":/show_snapshot_details_dis_22px.png", ":/show_snapshot_details_dis_16px.png"));
-    mTakeSnapshotAction->setIcon (VBoxGlobal::iconSetFull (
+    mTakeSnapshotAction->setIcon(UIIconPool::iconSetFull(
         QSize (22, 22), QSize (16, 16),
         ":/take_snapshot_22px.png", ":/take_snapshot_16px.png",
         ":/take_snapshot_dis_22px.png", ":/take_snapshot_dis_16px.png"));

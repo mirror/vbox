@@ -26,6 +26,7 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxUpdateDlg.h"
+#include "UIIconPool.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* VBoxVersion stuff */
@@ -252,8 +253,8 @@ VBoxUpdateDlg::VBoxUpdateDlg (VBoxUpdateDlg **aSelf, bool aForceRun, QWidget *aP
     Ui::VBoxUpdateDlg::setupUi (this);
 
     /* Apply window icons */
-    setWindowIcon (vboxGlobal().iconSetFull (QSize (32, 32), QSize (16, 16),
-                                             ":/refresh_32px.png", ":/refresh_16px.png"));
+    setWindowIcon(UIIconPool::iconSetFull(QSize (32, 32), QSize (16, 16),
+                                          ":/refresh_32px.png", ":/refresh_16px.png"));
 
     /* Setup other connections */
     connect (mBtnCheck, SIGNAL (clicked()), this, SLOT (search()));
