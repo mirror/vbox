@@ -376,20 +376,21 @@ public:
  * member template add(), and every add() here could be, ofc, different function.
  */
 #define PREP_ARGS0()
-#define PREP_ARGS1(a1)                    evDesc.add(a1)
-#define PREP_ARGS2(a1,a2)                 evDesc.add(a1).add(a2)
-#define PREP_ARGS3(a1,a2,a3)              evDesc.add(a1).add(a2).add(a3)
-#define PREP_ARGS4(a1,a2,a3,a4)           evDesc.add(a1).add(a2).add(a3).add(a4)
-#define PREP_ARGS5(a1,a2,a3,a4,a5)        evDesc.add(a1).add(a2).add(a3).add(a4).add(a5)
-#define PREP_ARGS6(a1,a2,a3,a4,a5,a6)     evDesc.add(a1).add(a2).add(a3).add(a4).add(a5).add(a6)
-#define PREP_ARGS7(a1,a2,a3,a4,a5,a6,a7)  evDesc.add(a1).add(a2).add(a3).add(a4).add(a5).add(a6).add(a7)
+#define PREP_ARGS1(a1)                      if (nConnections) evDesc.add(a1)
+#define PREP_ARGS2(a1,a2)                   if (nConnections) evDesc.add(a1).add(a2)
+#define PREP_ARGS3(a1,a2,a3)                if (nConnections) evDesc.add(a1).add(a2).add(a3)
+#define PREP_ARGS4(a1,a2,a3,a4)             if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4)
+#define PREP_ARGS5(a1,a2,a3,a4,a5)          if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4).add(a5)
+#define PREP_ARGS6(a1,a2,a3,a4,a5,a6)       if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4).add(a5).add(a6)
+#define PREP_ARGS7(a1,a2,a3,a4,a5,a6,a7)    if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4).add(a5).add(a6).add(a7)
+#define PREP_ARGS8(a1,a2,a3,a4,a5,a6,a7,a8) if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4).add(a5).add(a6).add(a7).add(a8)
 
 #else
 
 /**
  * No events for XPCOM targets now. In the future it looks natural to implmenet generic events mechanism
  * for all platforms and get rid of callbacks.
- */ 
+ */
 #define CONSOLE_EVENTS_START(name,count)
 #define CONSOLE_EVENTS_END()
 #define PREP_ARGS0()
@@ -400,6 +401,7 @@ public:
 #define PREP_ARGS5(a1,a2,a3,a4,a5)
 #define PREP_ARGS6(a1,a2,a3,a4,a5,a6)
 #define PREP_ARGS7(a1,a2,a3,a4,a5,a6,a7)
+#define PREP_ARGS8(a1,a2,a3,a4,a5,a6,a7,a8)
 
 #endif
 
@@ -425,7 +427,7 @@ public:
     do \
     { \
         CONSOLE_EVENTS_START(CallbackMethod,Args);   \
-        if (nConnections) { PrepEvent; } \
+        PrepEvent; \
         CONSOLE_EVENTS_END();  \
         CallbackList::iterator it = this->mCallbacks.begin(); \
         while (it != this->mCallbacks.end()) \
@@ -444,19 +446,21 @@ public:
         } \
     } while (0)
 
-/* Actual invocation macro for different 	number of parameters */
+/* Actual invocation macro for different number of parameters */
 #define CONSOLE_DO_CALLBACKS0(CallbackMethod)                           \
-     CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb->##CallbackMethod##(), PREP_ARGS0(), 0)
+     CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb-> CallbackMethod (), PREP_ARGS0(), 0)
 #define CONSOLE_DO_CALLBACKS1(CallbackMethod,Arg1)                      \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb->##CallbackMethod##(Arg1), PREP_ARGS1(Arg1), 1)
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb-> CallbackMethod (Arg1), PREP_ARGS1(Arg1), 1)
 #define CONSOLE_DO_CALLBACKS2(CallbackMethod,Arg1,Arg2)                 \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb->##CallbackMethod##(Arg1,Arg2), PREP_ARGS2(Arg1,Arg2), 2)
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb-> CallbackMethod (Arg1,Arg2), PREP_ARGS2(Arg1,Arg2), 2)
 #define CONSOLE_DO_CALLBACKS3(CallbackMethod,Arg1,Arg2,Arg3)            \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb->##CallbackMethod##(Arg1,Arg2,Arg3), PREP_ARGS3(Arg1,Arg2,Arg3), 3)
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb-> CallbackMethod (Arg1,Arg2,Arg3), PREP_ARGS3(Arg1,Arg2,Arg3), 3)
 #define CONSOLE_DO_CALLBACKS4(CallbackMethod,Arg1,Arg2,Arg3,Arg4)       \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb->##CallbackMethod##(Arg1,Arg2,Args3,Arg4), PREP_ARGS4(Arg1,Arg2,Arg3,Arg4), 4)
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb-> CallbackMethod (Arg1,Arg2,Args3,Arg4), PREP_ARGS4(Arg1,Arg2,Arg3,Arg4), 4)
 #define CONSOLE_DO_CALLBACKS7(CallbackMethod,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7) \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb->##CallbackMethod##(Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7), PREP_ARGS7(Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7), 7)
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb-> CallbackMethod (Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7), PREP_ARGS7(Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7), 7)
+#define CONSOLE_DO_CALLBACKS8(CallbackMethod,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8) \
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb-> CallbackMethod (Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8), PREP_ARGS8(Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8), 8)
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -4769,7 +4773,16 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
         mCallbackData.mpsc.shape.resize(0);
     mCallbackData.mpsc.valid = true;
 
-    CONSOLE_DO_CALLBACKS7(OnMousePointerShapeChange, fVisible, fAlpha, xHot, yHot, width, height, ComSafeArrayInArg(pShape));
+    /**
+     * Although looks stupid, this is result of fact that safearrays params in XPCOM
+     * passed as separate pointer and length arguments.
+     * @todo: better solution
+     */
+#ifdef RT_OS_WINDOWS
+    CONSOLE_DO_CALLBACKS7(OnMousePointerShapeChange, fVisible, fAlpha, xHot, yHot, width, height, pShape);
+#else
+    CONSOLE_DO_CALLBACKS8(OnMousePointerShapeChange, fVisible, fAlpha, xHot, yHot, width, height, pShapeSize, pShape);
+#endif
 
 #if 0
     LogFlowThisFuncLeave();
