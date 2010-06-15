@@ -81,6 +81,11 @@ static ISession *gSession = NULL;
 static IConsole *gConsole = NULL;
 static EventQueue *gEventQ = NULL;
 
+#ifdef VBOX_WITH_VNC
+static VNCFB *g_pFramebufferVNC;
+#endif
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -321,6 +326,10 @@ public:
                 mouse->PutMouseEventAbsolute(-1, -1, 0, 0 /* Horizontal wheel */, 0);
             }
         }
+#ifdef VBOX_WITH_VNC
+        if (g_pFramebufferVNC)
+            g_pFramebufferVNC->enableAbsMouse(supportsAbsolute);
+#endif
         return S_OK;
     }
 
@@ -962,18 +971,20 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 #ifdef VBOX_WITH_VNC
         if (fVNCEnable)
         {
-            VNCFB *pFramebufferVNC = new VNCFB(console, uVNCPort, pszVNCPassword);
-            rc = pFramebufferVNC->init();
+            Bstr name;
+            machine->COMGETTER(Name)(name.asOutParam());
+            g_pFramebufferVNC = new VNCFB(console, uVNCPort, pszVNCPassword);
+            rc = g_pFramebufferVNC->init(name ? Utf8Str(name).raw() : "");
             if (rc != S_OK)
             {
                 LogError("Failed to load the vnc server extension, possibly due to a damaged file\n", rc);
-                delete pFramebufferVNC;
+                delete g_pFramebufferVNC;
                 break;
             }
 
             Log2(("VBoxHeadless: Registering VNC framebuffer\n"));
-            pFramebufferVNC->AddRef();
-            display->SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, pFramebufferVNC);
+            g_pFramebufferVNC->AddRef();
+            display->SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, g_pFramebufferVNC);
         }
         if (rc != S_OK)
             break;
@@ -985,13 +996,20 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         unsigned uScreenId;
         for (uScreenId = 0; uScreenId < cMonitors; uScreenId++)
         {
-#ifdef VBOX_FFMPEG
+# ifdef VBOX_FFMPEG
             if (fFFMPEG && uScreenId == 0)
             {
                 /* Already registered. */
                 continue;
             }
-#endif /* defined(VBOX_FFMPEG) */
+# endif
+# ifdef VBOX_WITH_VNC
+            if (fVNCEnable && uScreenId == 0)
+            {
+                /* Already registered. */
+                continue;
+            }
+# endif
             VRDPFramebuffer *pVRDPFramebuffer = new VRDPFramebuffer();
             if (!pVRDPFramebuffer)
             {
