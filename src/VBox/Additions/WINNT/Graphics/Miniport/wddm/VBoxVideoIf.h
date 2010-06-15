@@ -107,6 +107,46 @@ typedef struct VBOXVHWA_INFO
     D3DDDIFORMAT aFormats[VBOXVHWA_MAX_FORMATS];
 } VBOXVHWA_INFO;
 
+#define VBOXWDDM_OVERLAY_F_CKEY_DST      0x00000001
+#define VBOXWDDM_OVERLAY_F_CKEY_DSTRANGE 0x00000002
+#define VBOXWDDM_OVERLAY_F_CKEY_SRC      0x00000004
+#define VBOXWDDM_OVERLAY_F_CKEY_SRCRANGE 0x00000008
+#define VBOXWDDM_OVERLAY_F_BOB           0x00000010
+#define VBOXWDDM_OVERLAY_F_INTERLEAVED   0x00000020
+#define VBOXWDDM_OVERLAY_F_MIRROR_LR     0x00000040
+#define VBOXWDDM_OVERLAY_F_MIRROR_UD     0x00000080
+#define VBOXWDDM_OVERLAY_F_DEINTERLACED  0x00000100
+
+typedef struct VBOXWDDM_OVERLAY_DESC
+{
+    uint32_t fFlags;
+    UINT DstColorKeyLow;
+    UINT DstColorKeyHigh;
+    UINT SrcColorKeyLow;
+    UINT SrcColorKeyHigh;
+} VBOXWDDM_OVERLAY_DESC, *PVBOXWDDM_OVERLAY_DESC;
+
+/* the dirty rect info is valid */
+#define VBOXWDDM_DIRTYREGION_F_VALID      0x00000001
+#define VBOXWDDM_DIRTYREGION_F_RECT_VALID 0x00000002
+
+typedef struct VBOXWDDM_DIRTYREGION
+{
+    uint32_t fFlags; /* <-- see VBOXWDDM_DIRTYREGION_F_xxx flags above */
+    RECT Rect;
+} VBOXWDDM_DIRTYREGION, *PVBOXWDDM_DIRTYREGION;
+
+typedef struct VBOXWDDM_OVERLAY_INFO
+{
+    VBOXWDDM_OVERLAY_DESC OverlayDesc;
+    VBOXWDDM_DIRTYREGION DirtyRegion; /* <- the dirty region of the overlay surface */
+} VBOXWDDM_OVERLAY_INFO, *PVBOXWDDM_OVERLAY_INFO;
+
+typedef struct VBOXWDDM_OVERLAYFLIP_INFO
+{
+    VBOXWDDM_DIRTYREGION DirtyRegion; /* <- the dirty region of the overlay surface */
+} VBOXWDDM_OVERLAYFLIP_INFO, *PVBOXWDDM_OVERLAYFLIP_INFO;
+
 /* query info func */
 typedef struct VBOXWDDM_QI
 {
@@ -192,6 +232,50 @@ DECLINLINE(UINT) vboxWddmCalcPitch(UINT w, UINT bitsPerPixel)
     UINT Pitch = bitsPerPixel * w;
     /* pitch is now in bits, translate in bytes */
     return VBOXWDDM_ROUNDBOUND(Pitch, 8) >> 3;
+}
+
+DECLINLINE(void) vboxWddmRectUnite(RECT *pR, const RECT *pR2Unite)
+{
+    pR->left = RT_MIN(pR->left, pR2Unite->left);
+    pR->top = RT_MIN(pR->top, pR2Unite->top);
+    pR->right = RT_MAX(pR->right, pR2Unite->right);
+    pR->bottom = RT_MAX(pR->bottom, pR2Unite->bottom);
+}
+
+DECLINLINE(void) vboxWddmDirtyRegionAddRect(PVBOXWDDM_DIRTYREGION pInfo, const RECT *pRect)
+{
+    if (!(pInfo->fFlags & VBOXWDDM_DIRTYREGION_F_VALID))
+    {
+        pInfo->fFlags = VBOXWDDM_DIRTYREGION_F_VALID;
+        if (pRect)
+        {
+            pInfo->fFlags |= VBOXWDDM_DIRTYREGION_F_RECT_VALID;
+            pInfo->Rect = *pRect;
+        }
+    }
+    else if (!!(pInfo->fFlags & VBOXWDDM_DIRTYREGION_F_RECT_VALID))
+    {
+        if (pRect)
+            vboxWddmRectUnite(&pInfo->Rect, pRect);
+        else
+            pInfo->fFlags &= ~VBOXWDDM_DIRTYREGION_F_RECT_VALID;
+    }
+}
+
+DECLINLINE(void) vboxWddmDirtyRegionUnite(PVBOXWDDM_DIRTYREGION pInfo, const PVBOXWDDM_DIRTYREGION pInfo2)
+{
+    if (pInfo2->fFlags & VBOXWDDM_DIRTYREGION_F_VALID)
+    {
+        if (pInfo2->fFlags & VBOXWDDM_DIRTYREGION_F_RECT_VALID)
+            vboxWddmDirtyRegionAddRect(pInfo, &pInfo2->Rect);
+        else
+            vboxWddmDirtyRegionAddRect(pInfo, NULL);
+    }
+}
+
+DECLINLINE(void) vboxWddmDirtyRegionClear(PVBOXWDDM_DIRTYREGION pInfo)
+{
+    pInfo->fFlags = 0;
 }
 
 #endif /* #ifndef ___VBoxVideoIf_h___ */

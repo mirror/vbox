@@ -120,6 +120,7 @@ typedef struct VBOXWDDMDISP_ALLOCATION
     /* object type depends on resource type */
     IUnknown *pD3DIf;
     VBOXWDDMDISP_LOCKINFO LockInfo;
+    VBOXWDDM_DIRTYREGION DirtyRegion; /* <- dirty region to notify host about */
     VBOXWDDM_SURFACE_DESC SurfDesc;
 } VBOXWDDMDISP_ALLOCATION, *PVBOXWDDMDISP_ALLOCATION;
 
@@ -139,6 +140,13 @@ typedef struct VBOXWDDMDISP_TSS_LOOKUP
     BOOL  bSamplerState;
     DWORD dType;
 } VBOXWDDMDISP_TSS_LOOKUP;
+
+typedef struct VBOXWDDMDISP_OVERLAY
+{
+    D3DKMT_HANDLE hOverlay;
+    D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId;
+    PVBOXWDDMDISP_RESOURCE *pResource;
+} VBOXWDDMDISP_OVERLAY, *PVBOXWDDMDISP_OVERLAY;
 
 #define VBOXDISPMODE_IS_3D(_p) (!!((_p)->pD3D9If))
 
