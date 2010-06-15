@@ -28,7 +28,7 @@
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
 
 /* VBox includes */
-#include "VBoxCocoaSpecialControls.h"
+#include "UICocoaSpecialControls.h"
 
 /********************************************************************************
  *
@@ -51,7 +51,7 @@ protected:
     void resizeEvent(QResizeEvent *pEvent);
 
 private:
-    VBoxCocoaButton *mButton;
+    UICocoaButton *mButton;
 };
 
 /********************************************************************************
@@ -75,7 +75,7 @@ protected:
     void resizeEvent(QResizeEvent *pEvent);
 
 private:
-    VBoxCocoaButton *m_pButton;
+    UICocoaButton *m_pButton;
 };
 
 /********************************************************************************
@@ -98,7 +98,7 @@ protected:
     void paintEvent (QPaintEvent * /* aEvent */) {}
 
 private:
-    VBoxCocoaButton *mButton;
+    UICocoaButton *mButton;
 };
 
 /********************************************************************************
@@ -106,14 +106,12 @@ private:
  * A segmented button in the native Cocoa version.
  *
  ********************************************************************************/
-class VBoxSegmentedButton: public VBoxCocoaSegmentedButton
+class VBoxSegmentedButton: public UICocoaSegmentedButton
 {
     Q_OBJECT;
 
 public:
     VBoxSegmentedButton (int aCount, QWidget *aParent = 0);
-
-    void setIcon (int /* aSegment */, const QIcon & /* aIcon */) {}
 };
 
 /********************************************************************************
@@ -121,7 +119,7 @@ public:
  * A search field in the native Cocoa version.
  *
  ********************************************************************************/
-class VBoxSearchField: public VBoxCocoaSearchField
+class VBoxSearchField: public UICocoaSearchField
 {
     Q_OBJECT;
 

@@ -34,7 +34,7 @@ VBoxMiniCancelButton::VBoxMiniCancelButton (QWidget *aParent /* = 0 */)
   : QAbstractButton (aParent)
 {
     setShortcut (QKeySequence (Qt::Key_Escape));
-    mButton = new VBoxCocoaButton (VBoxCocoaButton::CancelButton, this);
+    mButton = new UICocoaButton (UICocoaButton::CancelButton, this);
     connect (mButton, SIGNAL (clicked()),
              this, SIGNAL (clicked()));
     setFixedSize (mButton->size());
@@ -53,7 +53,7 @@ void VBoxMiniCancelButton::resizeEvent(QResizeEvent * /* pEvent */)
 UIResetButton::UIResetButton(QWidget *pParent /* = 0 */)
   : QAbstractButton(pParent)
 {
-    m_pButton = new VBoxCocoaButton(VBoxCocoaButton::ResetButton, this);
+    m_pButton = new UICocoaButton(UICocoaButton::ResetButton, this);
     connect(m_pButton, SIGNAL(clicked()),
             this, SIGNAL(clicked()));
     setFixedSize(m_pButton->size());
@@ -73,7 +73,7 @@ VBoxHelpButton::VBoxHelpButton (QWidget *aParent /* = 0 */)
   : QPushButton (aParent)
 {
     setShortcut (QKeySequence (QKeySequence::HelpContents));
-    mButton = new VBoxCocoaButton (VBoxCocoaButton::HelpButton, this);
+    mButton = new UICocoaButton (UICocoaButton::HelpButton, this);
     connect (mButton, SIGNAL (clicked()),
              this, SIGNAL (clicked()));
     setFixedSize (mButton->size());
@@ -85,7 +85,7 @@ VBoxHelpButton::VBoxHelpButton (QWidget *aParent /* = 0 */)
  *
  ********************************************************************************/
 VBoxSegmentedButton::VBoxSegmentedButton (int aCount, QWidget *aParent /* = 0 */)
-  : VBoxCocoaSegmentedButton (aCount, aParent)
+  : UICocoaSegmentedButton (aCount, UICocoaSegmentedButton::TexturedRoundedSegment, aParent)
 {
 }
 /********************************************************************************
@@ -94,7 +94,7 @@ VBoxSegmentedButton::VBoxSegmentedButton (int aCount, QWidget *aParent /* = 0 */
  *
  ********************************************************************************/
 VBoxSearchField::VBoxSearchField (QWidget *aParent /* = 0 */)
-  : VBoxCocoaSearchField (aParent)
+  : UICocoaSearchField (aParent)
 {
 }
 

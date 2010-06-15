@@ -321,6 +321,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/VBoxProgressDialog.h \
 	src/widgets/VBoxSpecialControls.h \
 	src/widgets/VBoxWarningPane.h \
+	src/widgets/UISpacerWidgets.h \
 	src/runtime/UISession.h \
 	src/runtime/UIActionsPool.h \
 	src/runtime/UIIndicatorsPool.h \
@@ -525,9 +526,9 @@ ifdef VBOX_WITH_COCOA_QT
  	src/darwin/CocoaEventHelper.mm \
  	src/darwin/UICocoaApplication.mm \
  	src/darwin/VBoxUtils-darwin-cocoa.mm \
- 	src/darwin/VBoxCocoaSpecialControls.mm
+ 	src/darwin/UICocoaSpecialControls.mm
  VirtualBox_QT_MOCHDRS.darwin = \
- 	src/darwin/VBoxCocoaSpecialControls.h
+ 	src/darwin/UICocoaSpecialControls.h
 endif
 
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
