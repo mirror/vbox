@@ -123,9 +123,11 @@ static struct modlinkage vbi_modlinkage = {
 extern uintptr_t kernelbase;
 #define	IS_KERNEL(v)	((uintptr_t)(v) >= kernelbase)
 
+#if 0
 static int vbi_verbose = 0;
 
 #define VBI_VERBOSE(msg) {if (vbi_verbose) cmn_err(CE_WARN, msg);}
+#endif
 
 /* Introduced in v6 */
 static int vbi_is_nevada = 0;
@@ -211,14 +213,19 @@ vbi_init(void)
 		 * Our bit vector storage needs to be large enough for the
 		 * actual number of CPUs running in the sytem.
 		 */
-		if (ncpus > VBI_NCPU)
+		if (ncpus > VBI_NCPU) {
+		    cmn_err(CE_NOTE, "cpu count mismatch.\n");
 			return (EINVAL);
+		}
 	} else {
 		use_old = 1;
 		if (max_cpuid + 1 == sizeof(ulong_t) * 8)
 			use_old_with_ulong = 1;
 		else if (max_cpuid + 1 != VBI_NCPU)
+		{
+		    cmn_err(CE_NOTE, "cpuset_t size mismatch. probably too old a kernel.\n");
 			return (EINVAL);	/* cpuset_t size mismatch */
+		}
 	}
 
 	/*
@@ -228,7 +235,7 @@ vbi_init(void)
 		p_contig_free = (void (*)(void *, size_t))
 			kobj_getsymvalue("contig_free", 1);
 		if (p_contig_free == NULL) {
-			cmn_err(CE_NOTE, " contig_free() not found in kernel");
+			cmn_err(CE_NOTE, " contig_free() not found in kernel\n");
 			return (EINVAL);
 		}
 	}
@@ -236,17 +243,14 @@ vbi_init(void)
 	/*
 	 * Check if this is S10 or Nevada
 	 */
-	if (!strncmp(utsname.release, "5.11", sizeof("5.11") - 1))
-	{
+	if (!strncmp(utsname.release, "5.11", sizeof("5.11") - 1)) {
 		/* Nevada detected... */
 		vbi_is_nevada = 1;
 
 		off_cpu_runrun = off_s11_cpu_runrun;
 		off_cpu_kprunrun = off_s11_cpu_kprunrun;
 		off_t_preempt = off_s11_t_preempt;
-	}
-	else
-	{
+	} else {
 		/* Solaris 10 detected... */
 		vbi_is_nevada = 0;
 
@@ -262,19 +266,18 @@ vbi_init(void)
 	char crr = VBI_CPU_RUNRUN;
 	char krr = VBI_CPU_KPRUNRUN;
 	if (   (crr < 0 || crr > 1)
-		|| (krr < 0 || krr > 1))
-	{
+		|| (krr < 0 || krr > 1)) {
 		cmn_err(CE_NOTE, ":CPU structure sanity check failed! OS version mismatch.\n");
 		return EINVAL;
 	}
 
 	/* Thread */
 	char t_preempt = VBI_T_PREEMPT;
-	if (t_preempt < 0 || t_preempt > 32)
-	{
+	if (t_preempt < 0 || t_preempt > 32) {
 		cmn_err(CE_NOTE, ":Thread structure sanity check failed! OS version mismatch.\n");
 		return EINVAL;
 	}
+
 	return (0);
 }
 
@@ -334,7 +337,7 @@ vbi_internal_alloc(uint64_t *phys, size_t size, uint64_t alignment, int contig)
 	ptr = contig_alloc(size, &attr, PAGESIZE, 1);
 
 	if (ptr == NULL) {
-		VBI_VERBOSE("vbi_internal_alloc() failure");
+		cmn_err(CE_NOTE, "vbi_internal_alloc() failure for %lu bytes", size);
 		return (NULL);
 	}
 
@@ -365,7 +368,7 @@ vbi_kernel_map(uint64_t pa, size_t size, uint_t prot)
 	caddr_t va;
 
 	if ((pa & PAGEOFFSET) || (size & PAGEOFFSET)) {
-		VBI_VERBOSE("vbi_kernel_map() bad pa or size");
+		cmn_err(CE_NOTE, "vbi_kernel_map() bad pa (0x%lx) or size (%lu)", pa, size);
 		return (NULL);
 	}
 
@@ -681,7 +684,7 @@ vbi_lock_va(void *addr, size_t len, int access, void **handle)
 		err = as_fault(VBIPROC()->p_as->a_hat, VBIPROC()->p_as,
 			(caddr_t)addr, len, F_SOFTLOCK, access);
 		if (err != 0) {
-			VBI_VERBOSE("vbi_lock_va() failed to lock");
+			cmn_err(CE_NOTE, "vbi_lock_va() failed to lock");
 			return (-1);
 		}
 	}
@@ -732,7 +735,6 @@ segvbi_create(struct seg *seg, void *args)
 	struct segvbi_crargs *a = args;
 	struct segvbi_data *data;
 	struct as *as = seg->s_as;
-	int error = 0;
 	caddr_t va;
 	ulong_t pgcnt;
 	ulong_t p;
@@ -755,7 +757,7 @@ segvbi_create(struct seg *seg, void *args)
 			data->prot | HAT_UNORDERED_OK, HAT_LOAD | HAT_LOAD_LOCK);
 	}
 
-	return (error);
+	return (0);
 }
 
 /*
@@ -800,13 +802,15 @@ segvbi_free(struct seg *seg)
 }
 
 /*
- * We never demand-fault for seg_vbi.
+ * We would demand fault if the (u)read() path would SEGOP_FAULT()
+ * on buffers mapped in via vbi_user_map() i.e. prefaults before DMA.
+ * Don't fail in such case where we're called directly, see #5047.
  */
 static int
 segvbi_fault(struct hat *hat, struct seg *seg, caddr_t addr, size_t len,
 	enum fault_type type, enum seg_rw rw)
 {
-	return (FC_MAKE_ERR(EFAULT));
+	return (0);
 }
 
 static int
@@ -861,7 +865,16 @@ static int
 segvbi_getprot(struct seg *seg, caddr_t addr, size_t len, uint_t *protv)
 {
 	struct segvbi_data *data = seg->s_data;
-	return (data->prot);
+	size_t pgno = seg_page(seg, addr + len) - seg_page(seg, addr) + 1;
+	if (pgno != 0)
+	{
+	    do
+	    {
+	        pgno--;
+	        protv[pgno] = data->prot;
+	    } while (pgno != 0);
+	}
+	return (0);
 }
 
 static u_offset_t
@@ -976,7 +989,7 @@ vbi_user_map(caddr_t *va, uint_t prot, uint64_t *palist, size_t len)
 	else
 		error = ENOMEM;
 	if (error)
-		VBI_VERBOSE("vbi_user_map() failed");
+		cmn_err(CE_NOTE, "vbi_user_map() failed error=%d", error);
 	as_rangeunlock(as);
 	return (error);
 }
