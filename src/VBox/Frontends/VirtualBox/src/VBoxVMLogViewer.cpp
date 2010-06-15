@@ -362,10 +362,8 @@ VBoxLogSearchPanel::VBoxLogSearchPanel (QWidget *aParent,
     mButtonsNextPrev->setEnabled (1, false);
 #ifndef Q_WS_MAC
     /* No icons on the Mac */
-    mButtonsNextPrev->setIcon(0, UIIconPool::iconSet(":/list_movedown_16px.png",
-                                                     ":/list_movedown_disabled_16px.png"));
-    mButtonsNextPrev->setIcon(1, UIIconPool::iconSet(":/list_moveup_16px.png",
-                                                     ":/list_moveup_disabled_16px.png"));
+    mButtonsNextPrev->setIcon(0, UIIconPool::defaultIcon(UIIconPool::ArrowBackIcon, this));
+    mButtonsNextPrev->setIcon(1, UIIconPool::defaultIcon(UIIconPool::ArrowForwardIcon, this));
 #endif /* !Q_WS_MAC */
     connect (mButtonsNextPrev, SIGNAL (clicked (int)), this, SLOT (find (int)));
 
@@ -419,14 +417,13 @@ void VBoxLogSearchPanel::retranslateUi()
     mSearchName->setText (tr ("Find "));
     mSearchString->setToolTip (tr ("Enter a search string here"));
 
-    mButtonsNextPrev->setTitle (0, tr ("&Next"));
-    mButtonsNextPrev->setToolTip (0, tr ("Search for the next occurrence of "
-                                         "the string"));
-
-    mButtonsNextPrev->setTitle (1, tr ("&Previous"));
-    mButtonsNextPrev->setToolTip (1, tr ("Search for the previous occurrence "
+    mButtonsNextPrev->setTitle (0, tr ("&Previous"));
+    mButtonsNextPrev->setToolTip (0, tr ("Search for the previous occurrence "
                                          "of the string"));
 
+    mButtonsNextPrev->setTitle (1, tr ("&Next"));
+    mButtonsNextPrev->setToolTip (1, tr ("Search for the next occurrence of "
+                                         "the string"));
 
     mCaseSensitive->setText (tr ("C&ase Sensitive"));
     mCaseSensitive->setToolTip (tr ("Perform case sensitive search "
@@ -514,16 +511,16 @@ bool VBoxLogSearchPanel::eventFilter (QObject *aObject, QEvent *aEvent)
                  e->QInputEvent::modifiers() & Qt::KeypadModifier) &&
                 (e->key() == Qt::Key_Enter || e->key() == Qt::Key_Return))
             {
-                mButtonsNextPrev->animateClick (0);
+                mButtonsNextPrev->animateClick (1);
                 return true;
             }
             /* handle other search next/previous shortcuts */
             else if (e->key() == Qt::Key_F3)
             {
                 if (e->QInputEvent::modifiers() == 0)
-                    mButtonsNextPrev->animateClick (0);
-                else if (e->QInputEvent::modifiers() == Qt::ShiftModifier)
                     mButtonsNextPrev->animateClick (1);
+                else if (e->QInputEvent::modifiers() == Qt::ShiftModifier)
+                    mButtonsNextPrev->animateClick (0);
                 return true;
             }
             /* handle ctrl-f key combination as a shortcut to
@@ -591,8 +588,8 @@ void VBoxLogSearchPanel::toggleWarning (bool aHide)
 void VBoxLogSearchPanel::find (int aButton)
 {
     if (aButton == 0)
-        findNext();
-    else
         findBack();
+    else
+        findNext();
 }
 
