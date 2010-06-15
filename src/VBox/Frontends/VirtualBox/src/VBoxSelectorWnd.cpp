@@ -19,22 +19,24 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-#include "VBoxProblemReporter.h"
 #include "VBoxSelectorWnd.h"
-#include "UIVMListView.h"
-#include "VBoxToolBar.h"
-
-#include "VBoxSnapshotsWgt.h"
-#include "UINewVMWzd.h"
-#include "VBoxMediaManagerDlg.h"
-#include "UIImportApplianceWzd.h"
-#include "UIExportApplianceWzd.h"
-#include "VBoxSettingsDialogSpecific.h"
-#include "VBoxVMLogViewer.h"
-#include "VBoxGlobal.h"
-#include "VBoxUtils.h"
 #include "QISplitter.h"
 #include "QITabWidget.h"
+#include "UIExportApplianceWzd.h"
+#include "UIIconPool.h"
+#include "UIImportApplianceWzd.h"
+#include "UINewVMWzd.h"
+#include "UISpacerWidgets.h"
+#include "UIVMListView.h"
+#include "VBoxGlobal.h"
+#include "VBoxMediaManagerDlg.h"
+#include "VBoxProblemReporter.h"
+#include "VBoxSettingsDialogSpecific.h"
+#include "VBoxSnapshotsWgt.h"
+#include "VBoxSpecialControls.h"
+#include "VBoxToolBar.h"
+#include "VBoxUtils.h"
+#include "VBoxVMLogViewer.h"
 
 #include "UIDownloaderUserManual.h"
 
@@ -283,8 +285,8 @@ VBoxVMDescriptionPage::VBoxVMDescriptionPage (VBoxSelectorWnd *aParent)
     mBtnEdit = new QToolButton (this);
     mBtnEdit->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Fixed);
     mBtnEdit->setFocusPolicy (Qt::StrongFocus);
-    mBtnEdit->setIcon (VBoxGlobal::iconSet (":/edit_description_16px.png",
-                                            ":/edit_description_disabled_16px.png"));
+    mBtnEdit->setIcon(UIIconPool::iconSet(":/edit_description_16px.png",
+                                          ":/edit_description_disabled_16px.png"));
     mBtnEdit->setToolButtonStyle (Qt::ToolButtonTextBesideIcon);
     connect (mBtnEdit, SIGNAL (clicked()), this, SLOT (goToSettings()));
     hBtnLayout->addWidget (mBtnEdit);
@@ -412,58 +414,58 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     /* actions */
 
     mFileMediaMgrAction = new QAction (this);
-    mFileMediaMgrAction->setIcon (VBoxGlobal::iconSet (":/diskimage_16px.png"));
+    mFileMediaMgrAction->setIcon(UIIconPool::iconSet(":/diskimage_16px.png"));
 
     mFileApplianceImportAction = new QAction (this);
-    mFileApplianceImportAction->setIcon (VBoxGlobal::iconSet (":/import_16px.png"));
+    mFileApplianceImportAction->setIcon(UIIconPool::iconSet(":/import_16px.png"));
 
     mFileApplianceExportAction = new QAction (this);
-    mFileApplianceExportAction->setIcon (VBoxGlobal::iconSet (":/export_16px.png"));
+    mFileApplianceExportAction->setIcon(UIIconPool::iconSet(":/export_16px.png"));
 
     mFileSettingsAction = new QAction(this);
     mFileSettingsAction->setMenuRole (QAction::PreferencesRole);
-    mFileSettingsAction->setIcon (VBoxGlobal::iconSet (":/global_settings_16px.png"));
+    mFileSettingsAction->setIcon(UIIconPool::iconSet(":/global_settings_16px.png"));
     mFileExitAction = new QAction (this);
     mFileExitAction->setMenuRole (QAction::QuitRole);
-    mFileExitAction->setIcon (VBoxGlobal::iconSet (":/exit_16px.png"));
+    mFileExitAction->setIcon(UIIconPool::iconSet(":/exit_16px.png"));
 
     mVmNewAction = new QAction (this);
-    mVmNewAction->setIcon (VBoxGlobal::iconSetFull (
+    mVmNewAction->setIcon(UIIconPool::iconSetFull(
         QSize (32, 32), QSize (16, 16),
         ":/vm_new_32px.png", ":/new_16px.png"));
     mVmConfigAction = new QAction (this);
-    mVmConfigAction->setIcon (VBoxGlobal::iconSetFull (
+    mVmConfigAction->setIcon(UIIconPool::iconSetFull(
         QSize (32, 32), QSize (16, 16),
         ":/vm_settings_32px.png", ":/settings_16px.png",
         ":/vm_settings_disabled_32px.png", ":/settings_dis_16px.png"));
     mVmDeleteAction = new QAction (this);
-    mVmDeleteAction->setIcon (VBoxGlobal::iconSetFull (
+    mVmDeleteAction->setIcon(UIIconPool::iconSetFull(
         QSize (32, 32), QSize (16, 16),
         ":/vm_delete_32px.png", ":/delete_16px.png",
         ":/vm_delete_disabled_32px.png", ":/delete_dis_16px.png"));
     mVmStartAction = new QAction (this);
-    mVmStartAction->setIcon (VBoxGlobal::iconSetFull (
+    mVmStartAction->setIcon(UIIconPool::iconSetFull(
         QSize (32, 32), QSize (16, 16),
         ":/vm_start_32px.png", ":/start_16px.png",
         ":/vm_start_disabled_32px.png", ":/start_dis_16px.png"));
     mVmDiscardAction = new QAction (this);
-    mVmDiscardAction->setIcon (VBoxGlobal::iconSetFull (
+    mVmDiscardAction->setIcon(UIIconPool::iconSetFull(
         QSize (32, 32), QSize (16, 16),
         ":/vm_discard_32px.png", ":/discard_16px.png",
         ":/vm_discard_disabled_32px.png", ":/discard_dis_16px.png"));
     mVmPauseAction = new QAction (this);
     mVmPauseAction->setCheckable (true);
-    mVmPauseAction->setIcon (VBoxGlobal::iconSetFull (
+    mVmPauseAction->setIcon(UIIconPool::iconSetFull(
         QSize (32, 32), QSize (16, 16),
         ":/vm_pause_32px.png", ":/pause_16px.png",
         ":/vm_pause_disabled_32px.png", ":/pause_disabled_16px.png"));
     mVmRefreshAction = new QAction (this);
-    mVmRefreshAction->setIcon (VBoxGlobal::iconSetFull (
+    mVmRefreshAction->setIcon(UIIconPool::iconSetFull(
         QSize (32, 32), QSize (16, 16),
         ":/refresh_32px.png", ":/refresh_16px.png",
         ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png"));
     mVmShowLogsAction = new QAction (this);
-    mVmShowLogsAction->setIcon (VBoxGlobal::iconSetFull (
+    mVmShowLogsAction->setIcon(UIIconPool::iconSetFull(
         QSize (32, 32), QSize (16, 16),
         ":/vm_show_logs_32px.png", ":/show_logs_16px.png",
         ":/vm_show_logs_disabled_32px.png", ":/show_logs_disabled_16px.png"));
@@ -513,7 +515,6 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 #endif /* MAC_LEOPARD_STYLE */
 
     /* VM tab widget containing details and snapshots tabs */
-    mVmTabWidget = new QITabWidget();
     pSplitter->addWidget (mVmTabWidget);
 
     /* Set the initial distribution. The right site is bigger. */
@@ -523,24 +524,24 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     /* VM details view */
     mVmDetailsView = new VBoxVMDetailsView (NULL, mVmRefreshAction);
-    mVmTabWidget->addTab (mVmDetailsView,
-                          VBoxGlobal::iconSet (":/settings_16px.png"),
-                          QString::null);
+    mVmTabWidget->addTab(mVmDetailsView,
+                         UIIconPool::iconSet(":/settings_16px.png"),
+                         QString::null);
 
     /* VM snapshots list */
     mVmSnapshotsWgt = new VBoxSnapshotsWgt (NULL);
-    mVmTabWidget->addTab (mVmSnapshotsWgt,
-                          VBoxGlobal::iconSet (":/take_snapshot_16px.png",
-                                               ":/take_snapshot_dis_16px.png"),
-                          QString::null);
+    mVmTabWidget->addTab(mVmSnapshotsWgt,
+                         UIIconPool::iconSet(":/take_snapshot_16px.png",
+                                             ":/take_snapshot_dis_16px.png"),
+                         QString::null);
     mVmSnapshotsWgt->setContentsMargins (10, 10, 10, 10);
 
     /* VM comments page */
     mVmDescriptionPage = new VBoxVMDescriptionPage (this);
-    mVmTabWidget->addTab (mVmDescriptionPage,
-                          VBoxGlobal::iconSet (":/description_16px.png",
-                                               ":/description_disabled_16px.png"),
-                          QString::null);
+    mVmTabWidget->addTab(mVmDescriptionPage,
+                         UIIconPool::iconSet(":/description_16px.png",
+                                             ":/description_disabled_16px.png"),
+                         QString::null);
     mVmDescriptionPage->setContentsMargins (10, 10, 10, 10);
 
     /* add actions to the toolbar */
@@ -1838,13 +1839,11 @@ VBoxTrayIcon::VBoxTrayIcon (VBoxSelectorWnd* aParent, UIVMItemModel* aVMModel)
 
     mShowSelectorAction = new QAction (this);
     Assert (mShowSelectorAction);
-    mShowSelectorAction->setIcon (VBoxGlobal::iconSet (
-        ":/VirtualBox_16px.png"));
+    mShowSelectorAction->setIcon(UIIconPool::iconSet(":/VirtualBox_16px.png"));
 
     mHideSystrayMenuAction = new QAction (this);
     Assert (mHideSystrayMenuAction);
-    mHideSystrayMenuAction->setIcon (VBoxGlobal::iconSet (
-        ":/exit_16px.png"));
+    mHideSystrayMenuAction->setIcon(UIIconPool::iconSet(":/exit_16px.png"));
 
     /* reuse parent action data */
 

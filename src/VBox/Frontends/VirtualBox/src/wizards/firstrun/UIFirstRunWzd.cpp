@@ -19,9 +19,9 @@
 
 /* Local includes */
 #include "UIFirstRunWzd.h"
-#include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIIconPool.h"
 #include "VBoxMediaManagerDlg.h"
+#include "VBoxProblemReporter.h"
 #include "VBoxVMSettingsHD.h"
 
 UIFirstRunWzd::UIFirstRunWzd(QWidget *pParent, const CMachine &machine) : QIWizard(pParent)
@@ -162,7 +162,8 @@ UIFirstRunWzdPage2::UIFirstRunWzdPage2()
     registerField("id", this, "id");
 
     /* Setup contents */
-    m_pSelectMediaButton->setIcon(VBoxGlobal::iconSet(":/select_file_16px.png", ":/select_file_dis_16px.png"));
+    m_pSelectMediaButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png",
+                                                      ":/select_file_dis_16px.png"));
 
     /* Setup connections */
     connect(m_pMediaSelector, SIGNAL(currentIndexChanged(int)), this, SLOT(sltMediumChanged()));

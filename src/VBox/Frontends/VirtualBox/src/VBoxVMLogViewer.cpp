@@ -20,25 +20,26 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-#include "VBoxVMLogViewer.h"
+#include "QITabWidget.h"
+#include "UIIconPool.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxSpecialControls.h"
 #include "VBoxUtils.h"
-#include "QITabWidget.h"
+#include "VBoxVMLogViewer.h"
 
 /* Qt includes */
+#include <QCheckBox>
+#include <QDateTime>
+#include <QDir>
+#include <QFileDialog>
+#include <QKeyEvent>
+#include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QScrollBar>
 #include <QStyle>
 #include <QTextEdit>
-#include <QLineEdit>
-#include <QLabel>
-#include <QCheckBox>
-#include <QDir>
-#include <QScrollBar>
-#include <QFileDialog>
-#include <QDateTime>
-#include <QPushButton>
-#include <QKeyEvent>
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 VBoxVMLogViewer::LogViewersMap VBoxVMLogViewer::mSelfArray = LogViewersMap();
@@ -80,8 +81,8 @@ VBoxVMLogViewer::VBoxVMLogViewer (QWidget *aParent,
     Ui::VBoxVMLogViewer::setupUi (this);
 
     /* Apply window icons */
-    setWindowIcon (vboxGlobal().iconSetFull (QSize (32, 32), QSize (16, 16),
-                                             ":/vm_show_logs_32px.png", ":/show_logs_16px.png"));
+    setWindowIcon(UIIconPool::iconSetFull(QSize (32, 32), QSize (16, 16),
+                                          ":/vm_show_logs_32px.png", ":/show_logs_16px.png"));
 
     /* Enable size grip without using a status bar. */
     setSizeGripEnabled (true);
@@ -361,10 +362,10 @@ VBoxLogSearchPanel::VBoxLogSearchPanel (QWidget *aParent,
     mButtonsNextPrev->setEnabled (1, false);
 #ifndef Q_WS_MAC
     /* No icons on the Mac */
-    mButtonsNextPrev->setIcon (0, VBoxGlobal::iconSet (":/list_movedown_16px.png",
-                                                       ":/list_movedown_disabled_16px.png"));
-    mButtonsNextPrev->setIcon (1, VBoxGlobal::iconSet (":/list_moveup_16px.png",
-                                                       ":/list_moveup_disabled_16px.png"));
+    mButtonsNextPrev->setIcon(0, UIIconPool::iconSet(":/list_movedown_16px.png",
+                                                     ":/list_movedown_disabled_16px.png"));
+    mButtonsNextPrev->setIcon(1, UIIconPool::iconSet(":/list_moveup_16px.png",
+                                                     ":/list_moveup_disabled_16px.png"));
 #endif /* !Q_WS_MAC */
     connect (mButtonsNextPrev, SIGNAL (clicked (int)), this, SLOT (find (int)));
 
@@ -375,7 +376,7 @@ VBoxLogSearchPanel::VBoxLogSearchPanel (QWidget *aParent,
     mWarningIcon = new QLabel (this);
     mWarningIcon->hide();
 
-    QIcon icon = vboxGlobal().standardIcon (QStyle::SP_MessageBoxWarning);
+    QIcon icon = UIIconPool::defaultIcon(UIIconPool::MessageBoxWarningIcon, this);
     if (!icon.isNull())
         mWarningIcon->setPixmap (icon.pixmap (16, 16));
     mWarningString = new QLabel (this);

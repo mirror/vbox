@@ -17,6 +17,16 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Local Includes */
+#include "QIWidgetValidator.h"
+#include "UIIconPool.h"
+#include "UINewHDWzd.h"
+#include "VBoxGlobal.h"
+#include "VBoxMediaManagerDlg.h"
+#include "VBoxProblemReporter.h"
+#include "VBoxToolBar.h"
+#include "VBoxVMSettingsHD.h"
+
 /* Global Includes */
 #include <QHeaderView>
 #include <QItemEditorFactory>
@@ -25,15 +35,6 @@
 #include <QScrollBar>
 #include <QStylePainter>
 #include <QTimer>
-
-/* Local Includes */
-#include "VBoxVMSettingsHD.h"
-#include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
-#include "QIWidgetValidator.h"
-#include "VBoxToolBar.h"
-#include "VBoxMediaManagerDlg.h"
-#include "UINewHDWzd.h"
 
 /* String Tags */
 const char *firstAvailableId = "first available";
@@ -1641,53 +1642,53 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
 
     /* Controller Actions */
     mAddCtrAction = new QAction (this);
-    mAddCtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::ControllerAddEn),
-                                                 PixmapPool::pool()->pixmap (PixmapPool::ControllerAddDis)));
+    mAddCtrAction->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::ControllerAddEn),
+                                               PixmapPool::pool()->pixmap (PixmapPool::ControllerAddDis)));
 
     mAddIDECtrAction = new QAction (this);
-    mAddIDECtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::IDEControllerAddEn),
-                                                    PixmapPool::pool()->pixmap (PixmapPool::IDEControllerAddDis)));
+    mAddIDECtrAction->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::IDEControllerAddEn),
+                                                  PixmapPool::pool()->pixmap (PixmapPool::IDEControllerAddDis)));
 
     mAddSATACtrAction = new QAction (this);
-    mAddSATACtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::SATAControllerAddEn),
-                                                     PixmapPool::pool()->pixmap (PixmapPool::SATAControllerAddDis)));
+    mAddSATACtrAction->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::SATAControllerAddEn),
+                                                   PixmapPool::pool()->pixmap (PixmapPool::SATAControllerAddDis)));
 
     mAddSCSICtrAction = new QAction (this);
-    mAddSCSICtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::SCSIControllerAddEn),
-                                                     PixmapPool::pool()->pixmap (PixmapPool::SCSIControllerAddDis)));
+    mAddSCSICtrAction->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::SCSIControllerAddEn),
+                                                   PixmapPool::pool()->pixmap (PixmapPool::SCSIControllerAddDis)));
 
     mAddFloppyCtrAction = new QAction (this);
-    mAddFloppyCtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::FloppyControllerAddEn),
-                                                       PixmapPool::pool()->pixmap (PixmapPool::FloppyControllerAddDis)));
+    mAddFloppyCtrAction->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::FloppyControllerAddEn),
+                                                     PixmapPool::pool()->pixmap (PixmapPool::FloppyControllerAddDis)));
 
     mAddSASCtrAction = new QAction (this);
-    mAddSASCtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::SATAControllerAddEn),
-                                                    PixmapPool::pool()->pixmap (PixmapPool::SATAControllerAddDis)));
+    mAddSASCtrAction->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::SATAControllerAddEn),
+                                                  PixmapPool::pool()->pixmap (PixmapPool::SATAControllerAddDis)));
 
     mDelCtrAction = new QAction (this);
-    mDelCtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::ControllerDelEn),
-                                                 PixmapPool::pool()->pixmap (PixmapPool::ControllerDelDis)));
+    mDelCtrAction->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::ControllerDelEn),
+                                               PixmapPool::pool()->pixmap (PixmapPool::ControllerDelDis)));
 
     /* Attachment Actions */
     mAddAttAction = new QAction (this);
-    mAddAttAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::AttachmentAddEn),
-                                                 PixmapPool::pool()->pixmap (PixmapPool::AttachmentAddDis)));
+    mAddAttAction->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::AttachmentAddEn),
+                                               PixmapPool::pool()->pixmap (PixmapPool::AttachmentAddDis)));
 
     mAddHDAttAction = new QAction (this);
-    mAddHDAttAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::HDAttachmentAddEn),
-                                                   PixmapPool::pool()->pixmap (PixmapPool::HDAttachmentAddDis)));
+    mAddHDAttAction->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::HDAttachmentAddEn),
+                                                 PixmapPool::pool()->pixmap (PixmapPool::HDAttachmentAddDis)));
 
     mAddCDAttAction = new QAction (this);
-    mAddCDAttAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::CDAttachmentAddEn),
-                                                   PixmapPool::pool()->pixmap (PixmapPool::CDAttachmentAddDis)));
+    mAddCDAttAction->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::CDAttachmentAddEn),
+                                                 PixmapPool::pool()->pixmap (PixmapPool::CDAttachmentAddDis)));
 
     mAddFDAttAction = new QAction (this);
-    mAddFDAttAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::FDAttachmentAddEn),
-                                                   PixmapPool::pool()->pixmap (PixmapPool::FDAttachmentAddDis)));
+    mAddFDAttAction->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::FDAttachmentAddEn),
+                                                 PixmapPool::pool()->pixmap (PixmapPool::FDAttachmentAddDis)));
 
     mDelAttAction = new QAction (this);
-    mDelAttAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::AttachmentDelEn),
-                                                 PixmapPool::pool()->pixmap (PixmapPool::AttachmentDelDis)));
+    mDelAttAction->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::AttachmentDelEn),
+                                               PixmapPool::pool()->pixmap (PixmapPool::AttachmentDelDis)));
 
     /* Storage Model/View */
     mStorageModel = new StorageModel (mTwStorageTree);
@@ -1717,8 +1718,8 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
     mCbVdi->refresh();
 
     /* Vmm Button */
-    mTbVmm->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::VMMEn),
-                                          PixmapPool::pool()->pixmap (PixmapPool::VMMDis)));
+    mTbVmm->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::VMMEn),
+                                        PixmapPool::pool()->pixmap (PixmapPool::VMMDis)));
 
     /* Info Pane initialization */
     mLbHDVirtualSizeValue->setFullSizeSelection (true);

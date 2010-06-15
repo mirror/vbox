@@ -18,10 +18,11 @@
  */
 
 /* VBox includes */
+#include "UIIconPool.h"
 #include "VBoxSpecialControls.h"
 
-/* VBox includes */
-#include "VBoxGlobal.h"
+/* Global includes */
+#include <QHBoxLayout>
 
 #ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
 
@@ -119,8 +120,8 @@ VBoxMiniCancelButton::VBoxMiniCancelButton (QWidget *aParent /* = 0 */)
     setShortcut (QKeySequence (Qt::Key_Escape));
     QIcon cancelIcon = style()->standardIcon (QStyle::SP_DialogCancelButton);
     if (cancelIcon.isNull())
-        cancelIcon = VBoxGlobal::iconSet (":/delete_16px.png",
-                                          ":/delete_dis_16px.png");
+        cancelIcon = UIIconPool::iconSet(":/delete_16px.png",
+                                         ":/delete_dis_16px.png");
     setIcon (cancelIcon);
 }
 

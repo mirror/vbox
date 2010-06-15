@@ -17,10 +17,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Local includes */
 #include "QIWidgetValidator.h"
-#include "VBoxGlobal.h"
+#include "UIIconPool.h"
 #include "VBoxGLSettingsNetwork.h"
 #include "VBoxGLSettingsNetworkDetails.h"
+#include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 
 /* Qt includes */
@@ -277,12 +279,12 @@ VBoxGLSettingsNetwork::VBoxGLSettingsNetwork()
                                   << QKeySequence ("Space")
                                   << QKeySequence ("F2"));
 
-    mAddInterface->setIcon (VBoxGlobal::iconSet (":/add_host_iface_16px.png",
-                                                 ":/add_host_iface_disabled_16px.png"));
-    mRemInterface->setIcon (VBoxGlobal::iconSet (":/remove_host_iface_16px.png",
-                                                 ":/remove_host_iface_disabled_16px.png"));
-    mEditInterface->setIcon (VBoxGlobal::iconSet (":/guesttools_16px.png",
-                                                  ":/guesttools_disabled_16px.png"));
+    mAddInterface->setIcon(UIIconPool::iconSet(":/add_host_iface_16px.png",
+                                               ":/add_host_iface_disabled_16px.png"));
+    mRemInterface->setIcon(UIIconPool::iconSet(":/remove_host_iface_16px.png",
+                                               ":/remove_host_iface_disabled_16px.png"));
+    mEditInterface->setIcon(UIIconPool::iconSet(":/guesttools_16px.png",
+                                                ":/guesttools_disabled_16px.png"));
 
     mTbActions->setUsesTextLabel (false);
     mTbActions->setIconSize (QSize (16, 16));

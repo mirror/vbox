@@ -389,6 +389,7 @@ VirtualBox_SOURCES = \
 	src/globals/VBoxDefs.cpp \
 	src/globals/VBoxGlobal.cpp \
 	src/globals/VBoxProblemReporter.cpp \
+	src/globals/UIIconPool.cpp \
 	src/extensions/QIAdvancedSlider.cpp \
 	src/extensions/QIArrowButtonPress.cpp \
 	src/extensions/QIArrowButtonSwitch.cpp \

@@ -23,6 +23,7 @@
 #include "VBoxHelpActions.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
+#include "UIIconPool.h"
 
 /* Qt includes */
 #include <QMenu>
@@ -33,24 +34,24 @@ void VBoxHelpActions::setup (QObject *aParent)
     AssertReturnVoid (contentsAction == NULL);
 
     contentsAction = new QAction (aParent);
-    contentsAction->setIcon (VBoxGlobal::iconSet (":/help_16px.png"));
+    contentsAction->setIcon (UIIconPool::iconSet (":/help_16px.png"));
 
     webAction = new QAction (aParent);
-    webAction->setIcon (VBoxGlobal::iconSet (":/site_16px.png"));
+    webAction->setIcon (UIIconPool::iconSet (":/site_16px.png"));
 
     resetMessagesAction = new QAction (aParent);
-    resetMessagesAction->setIcon (VBoxGlobal::iconSet (":/reset_16px.png"));
+    resetMessagesAction->setIcon (UIIconPool::iconSet (":/reset_16px.png"));
 
     registerAction = new QAction (aParent);
-    registerAction->setIcon (VBoxGlobal::iconSet (":/register_16px.png",
+    registerAction->setIcon (UIIconPool::iconSet (":/register_16px.png",
                                                   ":/register_disabled_16px.png"));
     updateAction = new QAction (aParent);
     updateAction->setMenuRole(QAction::ApplicationSpecificRole);
-    updateAction->setIcon (VBoxGlobal::iconSet (":/refresh_16px.png",
+    updateAction->setIcon (UIIconPool::iconSet (":/refresh_16px.png",
                                                 ":/refresh_disabled_16px.png"));
     aboutAction = new QAction (aParent);
     aboutAction->setMenuRole (QAction::AboutRole);
-    aboutAction->setIcon (VBoxGlobal::iconSet (":/about_16px.png"));
+    aboutAction->setIcon (UIIconPool::iconSet (":/about_16px.png"));
 
     QObject::connect (contentsAction, SIGNAL (triggered()),
                       &vboxProblem(), SLOT (showHelpHelpDialog()));

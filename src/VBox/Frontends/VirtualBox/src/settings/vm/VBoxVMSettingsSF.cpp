@@ -17,16 +17,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
-#include <QHeaderView>
-#include <QTimer>
-
 /* Local includes */
-#include "VBoxVMSettingsSF.h"
-#include "VBoxVMSettingsSFDetails.h"
+#include "UIIconPool.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxUtils.h"
+#include "VBoxVMSettingsSF.h"
+#include "VBoxVMSettingsSFDetails.h"
+
+/* Global includes */
+#include <QHeaderView>
+#include <QTimer>
 
 class SFTreeViewItem : public QTreeWidgetItem
 {
@@ -180,12 +181,12 @@ VBoxVMSettingsSF::VBoxVMSettingsSF (int aType, QWidget *aParent)
     mEdtAction->setShortcut (QKeySequence ("Ctrl+Space"));
     mDelAction->setShortcut (QKeySequence ("Del"));
 
-    mNewAction->setIcon (VBoxGlobal::iconSet (":/add_shared_folder_16px.png",
-                                              ":/add_shared_folder_disabled_16px.png"));
-    mEdtAction->setIcon (VBoxGlobal::iconSet (":/edit_shared_folder_16px.png",
-                                              ":/edit_shared_folder_disabled_16px.png"));
-    mDelAction->setIcon (VBoxGlobal::iconSet (":/revome_shared_folder_16px.png",
-                                              ":/revome_shared_folder_disabled_16px.png"));
+    mNewAction->setIcon(UIIconPool::iconSet(":/add_shared_folder_16px.png",
+                                            ":/add_shared_folder_disabled_16px.png"));
+    mEdtAction->setIcon(UIIconPool::iconSet(":/edit_shared_folder_16px.png",
+                                            ":/edit_shared_folder_disabled_16px.png"));
+    mDelAction->setIcon(UIIconPool::iconSet(":/revome_shared_folder_16px.png",
+                                            ":/revome_shared_folder_disabled_16px.png"));
 
     /* Prepare toolbar */
     mTbFolders->setUsesTextLabel (false);

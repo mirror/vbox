@@ -17,22 +17,23 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Local includes */
+#include "UIIconPool.h"
+#include "VBoxGlobal.h"
+#include "VBoxMiniToolBar.h"
+
 /* Global includes */
 #include <QCursor>
 #include <QDesktopWidget>
 #include <QLabel>
 #include <QMenu>
-#include <QPainter>
 #include <QPaintEvent>
+#include <QPainter>
 #include <QPolygon>
 #include <QRect>
 #include <QRegion>
 #include <QTimer>
 #include <QToolButton>
-
-/* Local includes */
-#include "VBoxMiniToolBar.h"
-#include "VBoxGlobal.h"
 
 /* Mini-toolbar constructor */
 VBoxMiniToolBar::VBoxMiniToolBar(QWidget *pParent, Alignment alignment, bool fActive, bool fAutoHide)
@@ -69,7 +70,7 @@ VBoxMiniToolBar::VBoxMiniToolBar(QWidget *pParent, Alignment alignment, bool fAc
 
     /* Add pushpin: */
     m_pAutoHideAction = new QAction(this);
-    m_pAutoHideAction->setIcon(VBoxGlobal::iconSet(":/pin_16px.png"));
+    m_pAutoHideAction->setIcon(UIIconPool::iconSet(":/pin_16px.png"));
     m_pAutoHideAction->setToolTip(tr("Always show the toolbar"));
     m_pAutoHideAction->setCheckable(true);
     m_pAutoHideAction->setChecked(!m_fAutoHide);
@@ -96,14 +97,14 @@ VBoxMiniToolBar::VBoxMiniToolBar(QWidget *pParent, Alignment alignment, bool fAc
 
     /* Exit action: */
     m_pRestoreAction = new QAction(this);
-    m_pRestoreAction->setIcon(VBoxGlobal::iconSet(":/restore_16px.png"));
+    m_pRestoreAction->setIcon(UIIconPool::iconSet(":/restore_16px.png"));
     m_pRestoreAction->setToolTip(tr("Exit Full Screen or Seamless Mode"));
     connect(m_pRestoreAction, SIGNAL(triggered()), this, SIGNAL(exitAction()));
     addAction(m_pRestoreAction);
 
     /* Close action: */
     m_pCloseAction = new QAction(this);
-    m_pCloseAction->setIcon(VBoxGlobal::iconSet(":/close_16px.png"));
+    m_pCloseAction->setIcon(UIIconPool::iconSet(":/close_16px.png"));
     m_pCloseAction->setToolTip(tr("Close VM"));
     connect(m_pCloseAction, SIGNAL(triggered()), this, SIGNAL(closeAction()));
     addAction(m_pCloseAction);

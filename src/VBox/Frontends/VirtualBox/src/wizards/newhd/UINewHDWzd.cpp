@@ -17,15 +17,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
-#include <QFileDialog>
-#include <QRegExpValidator>
-
 /* Local includes */
+#include "UIIconPool.h"
 #include "UINewHDWzd.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
+
+/* Global includes */
 #include "iprt/path.h"
+#include <QFileDialog>
+#include <QRegExpValidator>
+
 
 UINewHDWzd::UINewHDWzd(QWidget *pParent) : QIWizard(pParent)
 {
@@ -233,7 +235,8 @@ UINewHDWzdPage3::UINewHDWzdPage3()
     m_pSizeMax->setText(vboxGlobal().formatSize(m_uMaxVDISize * _1M));
 
     /* Attach button icon */
-    m_pLocationSelector->setIcon(vboxGlobal().iconSet(":/select_file_16px.png", "select_file_dis_16px.png"));
+    m_pLocationSelector->setIcon(UIIconPool::iconSet(":/select_file_16px.png",
+                                                     "select_file_dis_16px.png"));
 
     /* Setup page connections */
     connect(m_pLocationEditor, SIGNAL(textChanged(const QString &)), this, SLOT(onLocationEditorTextChanged(const QString &)));

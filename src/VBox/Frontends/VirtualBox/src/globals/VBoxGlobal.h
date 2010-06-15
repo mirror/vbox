@@ -742,26 +742,6 @@ public:
     static void loadLanguage (const QString &aLangId = QString::null);
     QString helpFile() const;
 
-    static QIcon iconSet (const QPixmap &aNormal,
-                          const QPixmap &aDisabled = QPixmap(),
-                          const QPixmap &aActive = QPixmap());
-    static QIcon iconSet (const char *aNormal,
-                          const char *aDisabled = NULL,
-                          const char *aActive = NULL);
-    static QIcon iconSetOnOff (const char *aNormal, const char *aNormalOff,
-                               const char *aDisabled = NULL,
-                               const char *aDisabledOff = NULL,
-                               const char *aActive = NULL,
-                               const char *aActiveOff = NULL);
-    static QIcon iconSetFull (const QSize &aNormalSize, const QSize &aSmallSize,
-                              const char *aNormal, const char *aSmallNormal,
-                              const char *aDisabled = NULL,
-                              const char *aSmallDisabled = NULL,
-                              const char *aActive = NULL,
-                              const char *aSmallActive = NULL);
-
-    static QIcon standardIcon (QStyle::StandardPixmap aStandard, QWidget *aWidget = NULL);
-
     static void setTextLabel (QToolButton *aToolButton, const QString &aTextLabel);
 
     static QRect normalizeGeometry (const QRect &aRectangle, const QRegion &aBoundRegion,

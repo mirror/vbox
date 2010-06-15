@@ -27,6 +27,7 @@
 #include "QIHotKeyEdit.h"
 #include "QIMessageBox.h"
 #include "QIDialogButtonBox.h"
+#include "UIIconPool.h"
 
 #include "UIMachine.h"
 #include "UISession.h"
@@ -3156,10 +3157,10 @@ void VBoxGlobal::retranslateUi()
 
     mUserDefinedPortName = tr ("User-defined", "serial port");
 
-    mWarningIcon = standardIcon (QStyle::SP_MessageBoxWarning, 0).pixmap (16, 16);
+    mWarningIcon = UIIconPool::defaultIcon(UIIconPool::MessageBoxWarningIcon).pixmap (16, 16);
     Assert (!mWarningIcon.isNull());
 
-    mErrorIcon = standardIcon (QStyle::SP_MessageBoxCritical, 0).pixmap (16, 16);
+    mErrorIcon = UIIconPool::defaultIcon(UIIconPool::MessageBoxCriticalIcon).pixmap (16, 16);
     Assert (!mErrorIcon.isNull());
 
     /* refresh media properties since they contain some translations too  */
@@ -3420,115 +3421,6 @@ QString VBoxGlobal::helpFile() const
                                  .arg (name)
                                  .arg (suffix);
     return manual;
-}
-
-QIcon VBoxGlobal::iconSet (const QPixmap &aNormal,
-                           const QPixmap &aDisabled,
-                           const QPixmap &aActive)
-{
-    QIcon iconSet;
-
-    Assert (aNormal);
-        iconSet.addPixmap (aNormal, QIcon::Normal);
-
-    if (!aDisabled.isNull())
-        iconSet.addPixmap (aDisabled, QIcon::Disabled);
-
-    if (!aActive.isNull())
-        iconSet.addPixmap (aActive, QIcon::Active);
-
-    return iconSet;
-}
-
-/* static */
-QIcon VBoxGlobal::iconSet (const char *aNormal,
-                           const char *aDisabled /* = NULL */,
-                           const char *aActive /* = NULL */)
-{
-    QIcon iconSet;
-
-    Assert (aNormal != NULL);
-    iconSet.addFile (aNormal, QSize(),
-                     QIcon::Normal);
-    if (aDisabled != NULL)
-        iconSet.addFile (aDisabled, QSize(),
-                         QIcon::Disabled);
-    if (aActive != NULL)
-        iconSet.addFile (aActive, QSize(),
-                         QIcon::Active);
-    return iconSet;
-}
-
-/* static */
-QIcon VBoxGlobal::iconSetOnOff (const char *aNormal, const char *aNormalOff,
-                                const char *aDisabled /* = NULL */,
-                                const char *aDisabledOff /* = NULL */,
-                                const char *aActive /* = NULL */,
-                                const char *aActiveOff /* = NULL */)
-{
-    QIcon iconSet;
-
-    Assert (aNormal != NULL);
-    iconSet.addFile (aNormal, QSize(), QIcon::Normal, QIcon::On);
-    if (aNormalOff != NULL)
-        iconSet.addFile (aNormalOff, QSize(), QIcon::Normal, QIcon::Off);
-
-    if (aDisabled != NULL)
-        iconSet.addFile (aDisabled, QSize(), QIcon::Disabled, QIcon::On);
-    if (aDisabledOff != NULL)
-        iconSet.addFile (aDisabledOff, QSize(), QIcon::Disabled, QIcon::Off);
-
-    if (aActive != NULL)
-        iconSet.addFile (aActive, QSize(), QIcon::Active, QIcon::On);
-    if (aActiveOff != NULL)
-        iconSet.addFile (aActive, QSize(), QIcon::Active, QIcon::Off);
-
-    return iconSet;
-}
-
-/* static */
-QIcon VBoxGlobal::iconSetFull (const QSize &aNormalSize, const QSize &aSmallSize,
-                               const char *aNormal, const char *aSmallNormal,
-                               const char *aDisabled /* = NULL */,
-                               const char *aSmallDisabled /* = NULL */,
-                               const char *aActive /* = NULL */,
-                               const char *aSmallActive /* = NULL */)
-{
-    QIcon iconSet;
-
-    Assert (aNormal != NULL);
-    Assert (aSmallNormal != NULL);
-    iconSet.addFile (aNormal, aNormalSize, QIcon::Normal);
-    iconSet.addFile (aSmallNormal, aSmallSize, QIcon::Normal);
-
-    if (aSmallDisabled != NULL)
-    {
-        iconSet.addFile (aDisabled, aNormalSize, QIcon::Disabled);
-        iconSet.addFile (aSmallDisabled, aSmallSize, QIcon::Disabled);
-    }
-
-    if (aSmallActive != NULL)
-    {
-        iconSet.addFile (aActive, aNormalSize, QIcon::Active);
-        iconSet.addFile (aSmallActive, aSmallSize, QIcon::Active);
-    }
-
-    return iconSet;
-}
-
-QIcon VBoxGlobal::standardIcon (QStyle::StandardPixmap aStandard, QWidget *aWidget /* = NULL */)
-{
-    QStyle *style = aWidget ? aWidget->style(): QApplication::style();
-    if (!style)
-        return QIcon();
-#ifdef Q_WS_MAC
-    /* At least in Qt 4.3.4/4.4 RC1 SP_MessageBoxWarning is the application
-     * icon. So change this to the critical icon. (Maybe this would be
-     * fixed in a later Qt version) */
-    if (aStandard == QStyle::SP_MessageBoxWarning)
-        return style->standardIcon (QStyle::SP_MessageBoxCritical, 0, aWidget);
-#endif /* Q_WS_MAC */
-    return style->standardIcon (aStandard, 0, aWidget);
 }
 
 /**

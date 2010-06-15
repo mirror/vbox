@@ -17,14 +17,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
-#include <QtGlobal>
-#include <QHelpEvent>
-#include <QToolTip>
-
 /* Local includes */
 #include "UIActionsPool.h"
+#include "UIIconPool.h"
 #include "VBoxGlobal.h"
+
+/* Global includes */
+#include <QHelpEvent>
+#include <QToolTip>
+#include <QtGlobal>
 
 /* Extended QMenu class used in UIActions */
 class QIMenu : public QMenu
@@ -108,7 +109,8 @@ public:
         : UIAction(pParent, UIActionType_Simple)
     {
         if (!strIcon.isNull())
-            setIcon(VBoxGlobal::iconSet(strIcon.toLatin1().data(), strIconDis.toLatin1().data()));
+            setIcon(UIIconPool::iconSet(strIcon.toLatin1().data(),
+                                        strIconDis.toLatin1().data()));
     }
 };
 
@@ -123,7 +125,8 @@ public:
         : UIAction(pParent, UIActionType_Toggle)
     {
         if (!strIcon.isNull())
-            setIcon(VBoxGlobal::iconSet(strIcon.toLatin1().data(), strIconDis.toLatin1().data()));
+            setIcon(UIIconPool::iconSet(strIcon.toLatin1().data(),
+                                        strIconDis.toLatin1().data()));
         init();
     }
 
@@ -132,7 +135,7 @@ public:
                    const QString &strIconOnDis, const QString &strIconOffDis)
         : UIAction(pParent, UIActionType_Toggle)
     {
-        setIcon(VBoxGlobal::iconSetOnOff(strIconOn.toLatin1().data(), strIconOff.toLatin1().data(),
+        setIcon(UIIconPool::iconSetOnOff(strIconOn.toLatin1().data(), strIconOff.toLatin1().data(),
                                          strIconOnDis.toLatin1().data(), strIconOffDis.toLatin1().data()));
         init();
     }
@@ -164,7 +167,8 @@ public:
         : UIAction(pParent, UIActionType_Menu)
     {
         if (!strIcon.isNull())
-            setIcon(VBoxGlobal::iconSet(strIcon, strIconDis));
+            setIcon(UIIconPool::iconSet(strIcon,
+                                        strIconDis));
         setMenu(new QIMenu);
     }
 };

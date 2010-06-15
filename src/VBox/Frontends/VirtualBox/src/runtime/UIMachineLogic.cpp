@@ -17,37 +17,30 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
-#include <QDir>
-#include <QFileInfo>
-#include <QDesktopWidget>
-#include <QTimer>
-
 /* Local includes */
 #include "COMDefs.h"
-#include "VBoxProblemReporter.h"
-
+#include "QIFileDialog.h"
+#include "UIActionsPool.h"
+#include "UIDownloaderAdditions.h"
+#include "UIIconPool.h"
+#include "UIMachineLogic.h"
+#include "UIMachineLogicFullscreen.h"
+#include "UIMachineLogicNormal.h"
+#include "UIMachineLogicSeamless.h"
+#include "UIMachineView.h"
+#include "UIMachineWindow.h"
+#include "UISession.h"
 #include "VBoxMediaManagerDlg.h"
+#include "VBoxProblemReporter.h"
 #include "VBoxTakeSnapshotDlg.h"
 #include "VBoxVMInformationDlg.h"
 #include "VBoxVMSettingsNetwork.h"
 #include "VBoxVMSettingsSF.h"
-#include "UIDownloaderAdditions.h"
 #ifdef Q_WS_MAC
 # include "DockIconPreview.h"
 #endif /* Q_WS_MAC */
 
-#include "QIFileDialog.h"
-
-#include "UISession.h"
-#include "UIActionsPool.h"
-#include "UIMachineLogic.h"
-#include "UIMachineLogicNormal.h"
-#include "UIMachineLogicFullscreen.h"
-#include "UIMachineLogicSeamless.h"
-#include "UIMachineWindow.h"
-#include "UIMachineView.h"
-
+/* Global includes */
 #include <iprt/path.h>
 #include <VBox/VMMDev.h>
 
@@ -59,6 +52,11 @@
 # include <XKeyboard.h>
 # include <QX11Info>
 #endif /* Q_WS_X11 */
+
+#include <QDir>
+#include <QFileInfo>
+#include <QDesktopWidget>
+#include <QTimer>
 
 struct MediumTarget
 {
@@ -1195,13 +1193,13 @@ void UIMachineLogic::sltPrepareStorageMenu()
                 case VBoxDefs::MediumType_DVD:
                     callVMMAction->setText(QApplication::translate("UIMachineLogic", "More CD/DVD Images..."));
                     unmountMediumAction->setText(QApplication::translate("UIMachineLogic", "Unmount CD/DVD Device"));
-                    unmountMediumAction->setIcon(VBoxGlobal::iconSet(":/cd_unmount_16px.png",
+                    unmountMediumAction->setIcon(UIIconPool::iconSet(":/cd_unmount_16px.png",
                                                                      ":/cd_unmount_dis_16px.png"));
                     break;
                 case VBoxDefs::MediumType_Floppy:
                     callVMMAction->setText(QApplication::translate("UIMachineLogic", "More Floppy Images..."));
                     unmountMediumAction->setText(QApplication::translate("UIMachineLogic", "Unmount Floppy Device"));
-                    unmountMediumAction->setIcon(VBoxGlobal::iconSet(":/fd_unmount_16px.png",
+                    unmountMediumAction->setIcon(UIIconPool::iconSet(":/fd_unmount_16px.png",
                                                                      ":/fd_unmount_dis_16px.png"));
                     break;
                 default:
@@ -1229,7 +1227,7 @@ void UIMachineLogic::sltPrepareStorageMenu()
             default:
                 break;
         }
-        pEmptyMenuAction->setIcon(VBoxGlobal::iconSet(":/delete_16px.png", ":/delete_dis_16px.png"));
+        pEmptyMenuAction->setIcon(UIIconPool::iconSet(":/delete_16px.png", ":/delete_dis_16px.png"));
         pMenu->addAction(pEmptyMenuAction);
     }
 }
@@ -1331,7 +1329,7 @@ void UIMachineLogic::sltPrepareUSBMenu()
         QAction *pEmptyMenuAction = new QAction(pMenu);
         pEmptyMenuAction->setEnabled(false);
         pEmptyMenuAction->setText(QApplication::translate("UIMachineLogic", "No USB Devices Connected"));
-        pEmptyMenuAction->setIcon(VBoxGlobal::iconSet(":/delete_16px.png", ":/delete_dis_16px.png"));
+        pEmptyMenuAction->setIcon(UIIconPool::iconSet(":/delete_16px.png", ":/delete_dis_16px.png"));
         pEmptyMenuAction->setToolTip(QApplication::translate("UIMachineLogic", "No supported devices connected to the host PC"));
     }
     else
