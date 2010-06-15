@@ -85,7 +85,7 @@ VBoxHelpButton::VBoxHelpButton (QWidget *aParent /* = 0 */)
  *
  ********************************************************************************/
 VBoxSegmentedButton::VBoxSegmentedButton (int aCount, QWidget *aParent /* = 0 */)
-  : UICocoaSegmentedButton (aCount, UICocoaSegmentedButton::TexturedRoundedSegment, aParent)
+  : UICocoaSegmentedButton (aCount, UICocoaSegmentedButton::RoundRectSegment, aParent)
 {
 }
 /********************************************************************************
