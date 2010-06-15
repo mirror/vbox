@@ -358,11 +358,14 @@ VBoxLogSearchPanel::VBoxLogSearchPanel (QWidget *aParent,
 
     mButtonsNextPrev = new VBoxSegmentedButton (2, this);
     mButtonsNextPrev->setEnabled (0, false);
+    mButtonsNextPrev->setEnabled (1, false);
+#ifndef Q_WS_MAC
+    /* No icons on the Mac */
     mButtonsNextPrev->setIcon (0, VBoxGlobal::iconSet (":/list_movedown_16px.png",
                                                        ":/list_movedown_disabled_16px.png"));
-    mButtonsNextPrev->setEnabled (1, false);
     mButtonsNextPrev->setIcon (1, VBoxGlobal::iconSet (":/list_moveup_16px.png",
                                                        ":/list_moveup_disabled_16px.png"));
+#endif /* !Q_WS_MAC */
     connect (mButtonsNextPrev, SIGNAL (clicked (int)), this, SLOT (find (int)));
 
     mCaseSensitive = new QCheckBox (this);
