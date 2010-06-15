@@ -3726,8 +3726,14 @@ QChar VBoxGlobal::decimalSep()
 QString VBoxGlobal::sizeRegexp()
 {
     QString regexp =
-        tr ("^(?:(?:(\\d+)(?:\\s?(B|KB|MB|GB|TB|PB))?)|(?:(\\d*)%1(\\d{1,2})(?:\\s?(KB|MB|GB|TB|PB))))$", "regexp for matching ####[.##] B|KB|MB|GB|TB|PB, %1=decimal point")
-            .arg (decimalSep());
+        QString ("^(?:(?:(\\d+)(?:\\s?(%2|%3|%4|%5|%6|%7))?)|(?:(\\d*)%1(\\d{1,2})(?:\\s?(%3|%4|%5|%6|%7))))$")
+            .arg (decimalSep())
+            .arg (tr ("B", "size suffix Bytes"))
+            .arg (tr ("KB", "size suffix KBytes=1024 Bytes"))
+            .arg (tr ("MB", "size suffix MBytes=1024 KBytes"))
+            .arg (tr ("GB", "size suffix GBytes=1024 MBytes"))
+            .arg (tr ("TB", "size suffix TBytes=1024 GBytes"))
+            .arg (tr ("PB", "size suffix PBytes=1024 TBytes"));
     return regexp;
 }
 
