@@ -42,7 +42,8 @@ public:
     }
     STDMETHOD_(ULONG, Release)() {
         long cnt = ::InterlockedDecrement (&refcnt);
-        if (cnt == 0) delete this;
+        if (cnt == 0)
+            delete this;
         return cnt;
     }
 #endif
@@ -51,7 +52,8 @@ public:
     NS_DECL_ISUPPORTS
 
     // public methods only for internal purposes
-    HRESULT init ();
+    HRESULT init (const char *pszName);
+    void enableAbsMouse(bool fEnable);
 
     STDMETHOD(COMGETTER(Width))(ULONG *width);
     STDMETHOD(COMGETTER(Height))(ULONG *height);
@@ -102,6 +104,8 @@ private:
     void kbdPutCode(int code);
     void kbdPutCode(int code, int down);
     void kbdPutCodeShift(int shift, int code, int down);
+
+    bool fAbsMouseEnabled;
 
     ULONG mWidth, mHeight;
 

@@ -58,17 +58,20 @@ VNCFB::VNCFB(ComPtr <IConsole> console, int port, const char *password) :
              this, mWidth,  mHeight, mVncPort));
 }
 
-
-VNCFB::~VNCFB() {
+VNCFB::~VNCFB()
+{
     LogFlow(("Destroying VNCFB object %p\n", this));
     RTCritSectDelete(&mCritSect);
-    if (vncServer) {
-    if (vncServer->authPasswdData) {
-        char **papszPassword = (char **)vncServer->authPasswdData;
-        vncServer->authPasswdData = NULL;
-        RTMemFree(papszPassword[0]);
-        RTMemFree(papszPassword);
-    }
+    if (vncServer)
+    {
+        RTStrFree((char*)vncServer->desktopName);
+        if (vncServer->authPasswdData)
+        {
+            char **papszPassword = (char **)vncServer->authPasswdData;
+            vncServer->authPasswdData = NULL;
+            RTMemFree(papszPassword[0]);
+            RTMemFree(papszPassword);
+        }
         rfbScreenCleanup(vncServer);
     }
     RTMemFree(mRGBBuffer);
@@ -77,25 +80,32 @@ VNCFB::~VNCFB() {
     mScreenBuffer = NULL;
 }
 
-HRESULT VNCFB::init() {
+HRESULT VNCFB::init(const char *pszName)
+{
     LogFlow(("Initialising VNCFB object %p\n", this));
     int rc = RTCritSectInit(&mCritSect);
     AssertReturn(rc == VINF_SUCCESS, E_UNEXPECTED);
 
     vncServer = rfbGetScreen(0, NULL, mWidth, mHeight, 8, 3, 1);
     vncServer->screenData = (void*)this;
-    if (mVncPort) vncServer->port = mVncPort;
-    vncServer->desktopName = "VirtualBox";
-
-    if (mVncPassword) {
-    char **papszPasswords = (char **)RTMemAlloc(2 * sizeof(char **));
+    if (mVncPort)
+        vncServer->port = mVncPort;
+    char *pszDesktopName;
+    rc = RTStrAPrintf(&pszDesktopName, "%s - VirtualBox", pszName);
+    if (RT_SUCCESS(rc))
+        vncServer->desktopName = (const char*)pszDesktopName;
+    else
+        vncServer->desktopName = "VirtualBox";
+    if (mVncPassword)
+    {
+        char **papszPasswords = (char **)RTMemAlloc(2 * sizeof(char **));
         papszPasswords[0] = RTStrDup(mVncPassword);
         papszPasswords[1] = NULL;
-    vncServer->authPasswdData = papszPasswords;
+        vncServer->authPasswdData = papszPasswords;
         vncServer->passwordCheck = rfbCheckPasswordByList; //Password list based authentication function
-    } else {
-    vncServer->authPasswdData = NULL;
     }
+    else
+        vncServer->authPasswdData = NULL;
 
     rfbInitServer(vncServer);
     vncServer->kbdAddEvent = vncKeyboardEvent;
@@ -113,68 +123,100 @@ HRESULT VNCFB::init() {
     return S_OK;
 }
 
+void VNCFB::enableAbsMouse(bool fEnable)
+{
+    fAbsMouseEnabled = fEnable;
+}
+
 DECLCALLBACK(int) VNCFB::vncThreadFn(RTTHREAD hThreadSelf, void *pvUser)
 {
     rfbRunEventLoop((rfbScreenInfoPtr)pvUser, -1, FALSE);
     return VINF_SUCCESS;
 }
 
-void VNCFB::vncMouseEvent(int buttonMask, int x, int y, rfbClientPtr cl) {
+void VNCFB::vncMouseEvent(int buttonMask, int x, int y, rfbClientPtr cl)
+{
     ((VNCFB*)(cl->screen->screenData))->handleVncMouseEvent(buttonMask, x, y);
     rfbDefaultPtrAddEvent(buttonMask, x, y, cl);
 }
 
-void VNCFB::handleVncMouseEvent(int buttonMask, int x, int y) {
+void VNCFB::handleVncMouseEvent(int buttonMask, int x, int y)
+{
     //RTPrintf("VNC mouse: button=%d x=%d y=%d\n", buttonMask, x, y);
-    if (!mMouse) {
+    if (!mMouse)
+    {
         this->mConsole->COMGETTER(Mouse)(mMouse.asOutParam());
-        if (!mMouse) {
+        if (!mMouse)
+        {
             RTPrintf("Warning: could not get mouse object!\n");
             return;
         }
     }
     int dz = 0, buttons = 0;
-    if (buttonMask & 16) dz = 1; else if (buttonMask & 8) dz = -1;
-    if (buttonMask & 1) buttons |= 1;
-    if (buttonMask & 2) buttons |= 4;
-    if (buttonMask & 4) buttons |= 2;
-    mMouse->PutMouseEvent(x - mouseX, y - mouseY, dz, 0, buttons);
-    //mMouse->PutMouseEventAbsolute(x + 1, y + 1, dz, 0, buttonMask);
+    if (buttonMask & 16)
+        dz = 1;
+    else if (buttonMask & 8)
+        dz = -1;
+    if (buttonMask & 1)
+        buttons |= 1;
+    if (buttonMask & 2)
+        buttons |= 4;
+    if (buttonMask & 4)
+        buttons |= 2;
+    if (fAbsMouseEnabled)
+        mMouse->PutMouseEventAbsolute(x, y, dz, 0, buttons);
+    else
+        mMouse->PutMouseEvent(x - mouseX, y - mouseY, dz, 0, buttons);
     mouseX = x;
     mouseY = y;
 }
 
-void VNCFB::kbdPutCode(int code) {
+void VNCFB::kbdPutCode(int code)
+{
     mKeyboard->PutScancode(code);
 }
-void VNCFB::kbdSetShift(int state) {
-    if (state && !kbdShiftState) {
+
+void VNCFB::kbdSetShift(int state)
+{
+    if (state && !kbdShiftState)
+    {
         kbdPutCode(0x2a, 1);
         kbdShiftState = 1;
-    } else if (!state && kbdShiftState) {
+    }
+    else if (!state && kbdShiftState)
+    {
         kbdPutCode(0x2a, 0);
         kbdShiftState = 0;
     }
 }
-void VNCFB::kbdPutCode(int code, int down) {
-    if (code & 0xff00) kbdPutCode((code >> 8) & 0xff);
+void VNCFB::kbdPutCode(int code, int down)
+{
+    if (code & 0xff00)
+        kbdPutCode((code >> 8) & 0xff);
     kbdPutCode((code & 0xff) | (down ? 0 : 0x80));
 }
-void VNCFB::kbdPutCodeShift(int shift, int code, int down) {
-    if (shift != kbdShiftState) kbdPutCode(0x2a, shift);
+
+void VNCFB::kbdPutCodeShift(int shift, int code, int down)
+{
+    if (shift != kbdShiftState)
+        kbdPutCode(0x2a, shift);
     kbdPutCode(code, down);
-    if (shift != kbdShiftState) kbdPutCode(0x2a, kbdShiftState);
+    if (shift != kbdShiftState)
+        kbdPutCode(0x2a, kbdShiftState);
 }
 
 /* Handle VNC keyboard code (X11 compatible?) to AT scancode conversion.
  * Have tried the code from the SDL frontend, but that didn't work.
  * Now we're using one lookup table for the lower X11 key codes (ASCII characters)
  * and a switch() block to handle some special keys. */
-void VNCFB::handleVncKeyboardEvent(int down, int keycode) {
+void VNCFB::handleVncKeyboardEvent(int down, int keycode)
+{
     //RTPrintf("VNC keyboard: down=%d code=%d -> ", down, keycode);
-    if (mKeyboard == NULL) {
+    if (mKeyboard == NULL)
+    {
         this->mConsole->COMGETTER(Keyboard)(mKeyboard.asOutParam());
-        if (!mKeyboard) {
+        if (!mKeyboard)
+        {
             RTPrintf("Warning: could not get keyboard object!\n");
             return;
         }
@@ -187,7 +229,9 @@ void VNCFB::handleVncKeyboardEvent(int down, int keycode) {
      * values 0x02?? indicate that the shift key can be ignored, and scancode ?? is sent
      * This is necessary because the VNC protocol sends a shift key sequence, but also
      * sends the 'shifted' version of the characters. */
-    static int codes_low[] = { //Conversion table for VNC key code range 32-127
+    static int codes_low[] =
+    {
+        //Conversion table for VNC key code range 32-127
         0x0239, 0x0102, 0x0128, 0x0104, 0x0105, 0x0106, 0x0108, 0x0028, 0x010a, 0x010b, 0x0109, 0x010d, 0x0029, 0x000c, 0x0034, 0x0035, //space, !"#$%&'()*+`-./
         0x0b, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, //0123456789
         0x0127, 0x0027, 0x0133, 0x000d, 0x0134, 0x0135, 0x0103, //:;<=>?@
@@ -197,14 +241,26 @@ void VNCFB::handleVncKeyboardEvent(int down, int keycode) {
         0x011a, 0x012b, 0x011b, 0x0129 //{|}~
     };
     int shift = -1, code = -1;
-    if (keycode < 32) { //ASCII control codes.. unused..
-    } else if (keycode < 127) { //DEL is in high area
+    if (keycode < 32)
+    {
+        //ASCII control codes.. unused..
+    }
+    else if (keycode < 127)
+    {
+        //DEL is in high area
         code = codes_low[keycode - 32];
-        shift = (code >> 8) & 0x03; if (shift == 0x02 || code & 0xe000) shift = -1;
+        shift = (code >> 8) & 0x03;
+        if (shift == 0x02 || code & 0xe000)
+            shift = -1;
         code = code & 0xe0ff;
-    } else if ((keycode & 0xFF00) != 0xFF00) {
-    } else {
-        switch(keycode) {
+    }
+    else if ((keycode & 0xFF00) != 0xFF00)
+    {
+    }
+    else
+    {
+        switch(keycode)
+        {
 /*Numpad keys - these have to be implemented yet
 Todo: numpad arrows, home, pageup, pagedown, end, insert, delete
 65421 Numpad return
@@ -272,15 +328,21 @@ Todo: numpad arrows, home, pageup, pagedown, end, insert, delete
         }
     }
     //RTPrintf("down=%d shift=%d code=%d\n", down, shift, code);
-    if (shift != -1 && code != -1) {
+    if (shift != -1 && code != -1)
+    {
         kbdPutCodeShift(shift, code, down);
-    } else if (shift != -1) {
+    }
+    else if (shift != -1)
+    {
         kbdSetShift(shift);
-    } else if (code != -1) {
+    }
+    else if (code != -1)
+    {
         kbdPutCode(code, down);
     }
 }
-void VNCFB::handleVncKeyboardReleaseEvent() {
+void VNCFB::handleVncKeyboardReleaseEvent()
+{
     kbdSetShift(0);
     kbdPutCode(0x1d, 0); //Left ctrl
     kbdPutCode(0xe01d, 0); //Right ctrl
@@ -288,10 +350,14 @@ void VNCFB::handleVncKeyboardReleaseEvent() {
     kbdPutCode(0xe038, 0); //Right alt
 }
 
-void VNCFB::vncKeyboardEvent(rfbBool down, rfbKeySym keySym, rfbClientPtr cl) {
+void VNCFB::vncKeyboardEvent(rfbBool down, rfbKeySym keySym, rfbClientPtr cl)
+{
     ((VNCFB*)(cl->screen->screenData))->handleVncKeyboardEvent(down, keySym);
 }
-void VNCFB::vncReleaseKeysEvent(rfbClientPtr cl) { //Release modifier keys
+
+void VNCFB::vncReleaseKeysEvent(rfbClientPtr cl)
+{
+    //Release modifier keys
     ((VNCFB*)(cl->screen->screenData))->handleVncKeyboardReleaseEvent();
 }
 
@@ -326,25 +392,31 @@ void VNCFB::vncReleaseKeysEvent(rfbClientPtr cl) { //Release modifier keys
 STDMETHODIMP VNCFB::RequestResize(ULONG aScreenId, ULONG pixelFormat,
                                   BYTE *vram, ULONG bitsPerPixel,
                                   ULONG bytesPerLine,
-                                  ULONG w, ULONG h, BOOL *finished) {
+                                  ULONG w, ULONG h, BOOL *finished)
+{
     NOREF(aScreenId);
-    if (!finished) return E_POINTER;
+    if (!finished)
+        return E_POINTER;
 
     /* For now, we are doing things synchronously */
     *finished = true;
 
-    if (mRGBBuffer) RTMemFree(mRGBBuffer);
+    if (mRGBBuffer)
+        RTMemFree(mRGBBuffer);
 
     mWidth = w;
     mHeight = h;
 
-    if (pixelFormat == FramebufferPixelFormat_FOURCC_RGB && bitsPerPixel == 32) {
+    if (pixelFormat == FramebufferPixelFormat_FOURCC_RGB && bitsPerPixel == 32)
+    {
         mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
             mBufferAddress = reinterpret_cast<uint8_t *>(vram);
             mBytesPerLine = bytesPerLine;
             mBitsPerPixel = bitsPerPixel;
             mRGBBuffer = NULL;
-    } else {
+    }
+    else
+    {
             mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
             mBytesPerLine = w * 4;
             mBitsPerPixel = 32;
@@ -357,33 +429,37 @@ STDMETHODIMP VNCFB::RequestResize(ULONG aScreenId, ULONG pixelFormat,
     mScreenBuffer = reinterpret_cast<uint8_t *>(RTMemAlloc(mBytesPerLine * h));
         AssertReturn(mScreenBuffer != 0, E_OUTOFMEMORY);
 
-    for (ULONG i = 0; i < mBytesPerLine * h; i += 4) {
+    for (ULONG i = 0; i < mBytesPerLine * h; i += 4)
+    {
         mScreenBuffer[i]   = mBufferAddress[i+2];
         mScreenBuffer[i+1] = mBufferAddress[i+1];
         mScreenBuffer[i+2] = mBufferAddress[i];
     }
 
-    RTPrintf("Set framebuffer: buffer=%d w=%lu h=%lu bpp=%d\n", mBufferAddress, mWidth, mHeight, (int)mBitsPerPixel);
+    RTPrintf("Set framebuffer: buffer=%llx w=%lu h=%lu bpp=%d\n",
+            (uint64_t)mBufferAddress, mWidth, mHeight, (int)mBitsPerPixel);
     rfbNewFramebuffer(vncServer, (char*)mScreenBuffer, mWidth, mHeight, 8, 3, mBitsPerPixel / 8);
-    if (oldBuffer) RTMemFree(oldBuffer);
+    if (oldBuffer)
+        RTMemFree(oldBuffer);
     return S_OK;
 }
 
 //Guest framebuffer update notification
-STDMETHODIMP VNCFB::NotifyUpdate(ULONG x, ULONG y, ULONG w, ULONG h) {
-    if (!mBufferAddress || !mScreenBuffer) return S_OK;
+STDMETHODIMP VNCFB::NotifyUpdate(ULONG x, ULONG y, ULONG w, ULONG h)
+{
+    if (!mBufferAddress || !mScreenBuffer)
+        return S_OK;
     ULONG joff = y * mBytesPerLine + x * 4;
     for (ULONG j = joff; j < joff + h * mBytesPerLine; j += mBytesPerLine)
-    for (ULONG i = j; i < j + w * 4; i += 4) {
-        mScreenBuffer[i]   = mBufferAddress[i+2];
-        mScreenBuffer[i+1] = mBufferAddress[i+1];
-        mScreenBuffer[i+2] = mBufferAddress[i];
-    }
+        for (ULONG i = j; i < j + w * 4; i += 4)
+        {
+            mScreenBuffer[i]   = mBufferAddress[i+2];
+            mScreenBuffer[i+1] = mBufferAddress[i+1];
+            mScreenBuffer[i+2] = mBufferAddress[i];
+        }
     rfbMarkRectAsModified(vncServer, x, y, x+w, y+h);
     return S_OK;
 }
-
-
 
 
 /**
@@ -395,8 +471,10 @@ STDMETHODIMP VNCFB::NotifyUpdate(ULONG x, ULONG y, ULONG w, ULONG h) {
  * @returns         COM status code
  * @retval  address The address of the buffer
  */
-STDMETHODIMP VNCFB::COMGETTER(Address) (BYTE **address) {
-    if (!address) return E_POINTER;
+STDMETHODIMP VNCFB::COMGETTER(Address) (BYTE **address)
+{
+    if (!address)
+        return E_POINTER;
     LogFlow(("FFmpeg::COMGETTER(Address): returning address %p\n", mBufferAddress));
     *address = mBufferAddress;
     return S_OK;
@@ -408,8 +486,10 @@ STDMETHODIMP VNCFB::COMGETTER(Address) (BYTE **address) {
  * @returns       COM status code
  * @retval  width The width of the frame buffer
  */
-STDMETHODIMP VNCFB::COMGETTER(Width) (ULONG *width) {
-    if (!width) return E_POINTER;
+STDMETHODIMP VNCFB::COMGETTER(Width) (ULONG *width)
+{
+    if (!width)
+        return E_POINTER;
     LogFlow(("FFmpeg::COMGETTER(Width): returning width %lu\n", (unsigned long) mWidth));
     *width = mWidth;
     return S_OK;
@@ -421,8 +501,10 @@ STDMETHODIMP VNCFB::COMGETTER(Width) (ULONG *width) {
  * @returns        COM status code
  * @retval  height The height of the frame buffer
  */
-STDMETHODIMP VNCFB::COMGETTER(Height) (ULONG *height) {
-    if (!height) return E_POINTER;
+STDMETHODIMP VNCFB::COMGETTER(Height) (ULONG *height)
+{
+    if (!height)
+        return E_POINTER;
     LogFlow(("FFmpeg::COMGETTER(Height): returning height %lu\n", (unsigned long) mHeight));
     *height = mHeight;
     return S_OK;
@@ -438,8 +520,10 @@ STDMETHODIMP VNCFB::COMGETTER(Height) (ULONG *height) {
  * @returns            COM status code
  * @retval  bitsPerPixel The colour depth of the frame buffer
  */
-STDMETHODIMP VNCFB::COMGETTER(BitsPerPixel) (ULONG *bitsPerPixel) {
-    if (!bitsPerPixel) return E_POINTER;
+STDMETHODIMP VNCFB::COMGETTER(BitsPerPixel) (ULONG *bitsPerPixel)
+{
+    if (!bitsPerPixel)
+        return E_POINTER;
     *bitsPerPixel = mBitsPerPixel;
     LogFlow(("FFmpeg::COMGETTER(BitsPerPixel): returning depth %lu\n",
               (unsigned long) *bitsPerPixel));
@@ -452,8 +536,10 @@ STDMETHODIMP VNCFB::COMGETTER(BitsPerPixel) (ULONG *bitsPerPixel) {
  * @returns          COM status code
  * @retval  bytesPerLine The number of bytes per line
  */
-STDMETHODIMP VNCFB::COMGETTER(BytesPerLine) (ULONG *bytesPerLine) {
-    if (!bytesPerLine) return E_POINTER;
+STDMETHODIMP VNCFB::COMGETTER(BytesPerLine) (ULONG *bytesPerLine)
+{
+    if (!bytesPerLine)
+        return E_POINTER;
     LogFlow(("FFmpeg::COMGETTER(BytesPerLine): returning line size %lu\n", (unsigned long) mBytesPerLine));
     *bytesPerLine = mBytesPerLine;
     return S_OK;
@@ -465,8 +551,10 @@ STDMETHODIMP VNCFB::COMGETTER(BytesPerLine) (ULONG *bytesPerLine) {
  * @returns             COM status code
  * @retval  pixelFormat The pixel layout
  */
-STDMETHODIMP VNCFB::COMGETTER(PixelFormat) (ULONG *pixelFormat) {
-    if (!pixelFormat) return E_POINTER;
+STDMETHODIMP VNCFB::COMGETTER(PixelFormat) (ULONG *pixelFormat)
+{
+    if (!pixelFormat)
+        return E_POINTER;
     LogFlow(("FFmpeg::COMGETTER(PixelFormat): returning pixel format: %lu\n", (unsigned long) mPixelFormat));
     *pixelFormat = mPixelFormat;
     return S_OK;
@@ -478,8 +566,10 @@ STDMETHODIMP VNCFB::COMGETTER(PixelFormat) (ULONG *pixelFormat) {
  * @returns             COM status code
  * @retval  pixelFormat The pixel layout
  */
-STDMETHODIMP VNCFB::COMGETTER(UsesGuestVRAM) (BOOL *usesGuestVRAM) {
-    if (!usesGuestVRAM) return E_POINTER;
+STDMETHODIMP VNCFB::COMGETTER(UsesGuestVRAM) (BOOL *usesGuestVRAM)
+{
+    if (!usesGuestVRAM)
+        return E_POINTER;
     LogFlow(("FFmpeg::COMGETTER(UsesGuestVRAM): uses guest VRAM? %d\n", mRGBBuffer == NULL));
     *usesGuestVRAM = (mRGBBuffer == NULL);
     return S_OK;
@@ -492,8 +582,10 @@ STDMETHODIMP VNCFB::COMGETTER(UsesGuestVRAM) (BOOL *usesGuestVRAM) {
  * @returns                 COM status code
  * @retval  heightReduction The number of unused lines
  */
-STDMETHODIMP VNCFB::COMGETTER(HeightReduction) (ULONG *heightReduction) {
-    if (!heightReduction) return E_POINTER;
+STDMETHODIMP VNCFB::COMGETTER(HeightReduction) (ULONG *heightReduction)
+{
+    if (!heightReduction)
+        return E_POINTER;
     /* no reduction */
     *heightReduction = 0;
     LogFlow(("FFmpeg::COMGETTER(HeightReduction): returning 0\n"));
@@ -507,8 +599,10 @@ STDMETHODIMP VNCFB::COMGETTER(HeightReduction) (ULONG *heightReduction) {
  * @returns          COM status code
  * @retval  aOverlay The overlay framebuffer
  */
-STDMETHODIMP VNCFB::COMGETTER(Overlay) (IFramebufferOverlay **aOverlay) {
-    if (!aOverlay) return E_POINTER;
+STDMETHODIMP VNCFB::COMGETTER(Overlay) (IFramebufferOverlay **aOverlay)
+{
+    if (!aOverlay)
+        return E_POINTER;
     /* not yet implemented */
     *aOverlay = 0;
     LogFlow(("FFmpeg::COMGETTER(Overlay): returning 0\n"));
@@ -521,8 +615,10 @@ STDMETHODIMP VNCFB::COMGETTER(Overlay) (IFramebufferOverlay **aOverlay) {
  * @returns          COM status code
  * @retval  winId Associated window id
  */
-STDMETHODIMP VNCFB::COMGETTER(WinId) (ULONG64 *winId) {
-    if (!winId) return E_POINTER;
+STDMETHODIMP VNCFB::COMGETTER(WinId) (ULONG64 *winId)
+{
+    if (!winId)
+        return E_POINTER;
     *winId = 0;
     return S_OK;
 }
@@ -530,46 +626,55 @@ STDMETHODIMP VNCFB::COMGETTER(WinId) (ULONG64 *winId) {
 // IFramebuffer methods
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP VNCFB::Lock() {
+STDMETHODIMP VNCFB::Lock()
+{
     LogFlow(("VNCFB::Lock: called\n"));
     int rc = RTCritSectEnter(&mCritSect);
     AssertRC(rc);
-    if (rc == VINF_SUCCESS) return S_OK;
+    if (rc == VINF_SUCCESS)
+        return S_OK;
     return E_UNEXPECTED;
 }
 
-STDMETHODIMP VNCFB::Unlock() {
+STDMETHODIMP VNCFB::Unlock()
+{
     LogFlow(("VNCFB::Unlock: called\n"));
     RTCritSectLeave(&mCritSect);
     return S_OK;
 }
-
 
 /**
  * Returns whether we like the given video mode.
  *
  * @returns COM status code
  */
-STDMETHODIMP VNCFB::VideoModeSupported(ULONG width, ULONG height, ULONG bpp, BOOL *supported) {
-    if (!supported) return E_POINTER;
+STDMETHODIMP VNCFB::VideoModeSupported(ULONG width, ULONG height, ULONG bpp, BOOL *supported)
+{
+    if (!supported)
+        return E_POINTER;
     *supported = true;
     return S_OK;
 }
 
 /** Stubbed */
-STDMETHODIMP VNCFB::GetVisibleRegion(BYTE *rectangles, ULONG /* count */, ULONG * /* countCopied */) {
-    if (!rectangles) return E_POINTER;
+STDMETHODIMP VNCFB::GetVisibleRegion(BYTE *rectangles, ULONG /* count */, ULONG * /* countCopied */)
+{
+    if (!rectangles)
+        return E_POINTER;
     *rectangles = 0;
     return S_OK;
 }
 
 /** Stubbed */
-STDMETHODIMP VNCFB::SetVisibleRegion(BYTE *rectangles, ULONG /* count */) {
-    if (!rectangles) return E_POINTER;
+STDMETHODIMP VNCFB::SetVisibleRegion(BYTE *rectangles, ULONG /* count */)
+{
+    if (!rectangles)
+        return E_POINTER;
     return S_OK;
 }
 
-STDMETHODIMP VNCFB::ProcessVHWACommand(BYTE *pCommand) {
+STDMETHODIMP VNCFB::ProcessVHWACommand(BYTE *pCommand)
+{
     return E_NOTIMPL;
 }
 
