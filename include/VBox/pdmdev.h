@@ -398,6 +398,8 @@ typedef PDMDEVREG const *PCPDMDEVREG;
 #define PDM_DEVREG_CLASS_SERIAL                 RT_BIT(16)
 /** Parallel controller device */
 #define PDM_DEVREG_CLASS_PARALLEL               RT_BIT(17)
+/** Host PCI pass-through device */
+#define PDM_DEVREG_CLASS_HOST_DEV               RT_BIT(18)
 /** Misc devices (always last). */
 #define PDM_DEVREG_CLASS_MISC                   RT_BIT(31)
 /** @} */
