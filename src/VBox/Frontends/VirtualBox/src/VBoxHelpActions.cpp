@@ -34,7 +34,7 @@ void VBoxHelpActions::setup (QObject *aParent)
     AssertReturnVoid (contentsAction == NULL);
 
     contentsAction = new QAction (aParent);
-    contentsAction->setIcon (UIIconPool::iconSet (":/help_16px.png"));
+    contentsAction->setIcon(UIIconPool::defaultIcon(UIIconPool::DialogHelpIcon));
 
     webAction = new QAction (aParent);
     webAction->setIcon (UIIconPool::iconSet (":/site_16px.png"));
