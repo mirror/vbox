@@ -41,6 +41,10 @@
 #include "UIMachineWindowFullscreen.h"
 #include "UIMachineWindowSeamless.h"
 
+#ifdef Q_WS_X11
+# include <X11/Xlib.h>
+#endif
+
 UIMachineWindow* UIMachineWindow::create(UIMachineLogic *pMachineLogic, UIVisualStateType visualStateType, ulong uScreenId)
 {
     UIMachineWindow *window = 0;
@@ -143,6 +147,29 @@ void UIMachineWindow::retranslateUi()
 #endif
     updateAppearanceOf(UIVisualElement_WindowCaption);
 }
+
+#ifdef Q_WS_X11
+bool UIMachineWindow::x11Event(XEvent *pEvent)
+{
+    // TODO: Check if that is still required!
+    /* Qt bug: when the machine-view grabs the keyboard,
+     * FocusIn, FocusOut, WindowActivate and WindowDeactivate Qt events are
+     * not properly sent on top level window deactivation.
+     * The fix is to substiute the mode in FocusOut X11 event structure
+     * to NotifyNormal to cause Qt to process it as desired. */
+    if (pEvent->type == FocusOut)
+    {
+        if (pEvent->xfocus.mode == NotifyWhileGrabbed  &&
+            (pEvent->xfocus.detail == NotifyAncestor ||
+             pEvent->xfocus.detail == NotifyInferior ||
+             pEvent->xfocus.detail == NotifyNonlinear))
+        {
+             pEvent->xfocus.mode = NotifyNormal;
+        }
+    }
+    return false;
+}
+#endif
 
 void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
 {
