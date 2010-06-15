@@ -282,8 +282,8 @@ void UINewVMWzdPage3::retranslateUi()
     m_pPage3Text2->setText(tr("The recommended base memory size is <b>%1</b> MB.").arg(strRecommendedRAM));
 
     /* Translate minimum & maximum 'ram' field values */
-    m_pRamMin->setText(QString("%1 %2").arg(m_pRamSlider->minRAM()).arg(tr("MB", "size suffix MBytes=1024 KBytes")));
-    m_pRamMax->setText(QString("%1 %2").arg(m_pRamSlider->maxRAM()).arg(tr("MB", "size suffix MBytes=1024 KBytes")));
+    m_pRamMin->setText(QString("%1 %2").arg(m_pRamSlider->minRAM()).arg(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes")));
+    m_pRamMax->setText(QString("%1 %2").arg(m_pRamSlider->maxRAM()).arg(VBoxGlobal::tr("MB", "size suffix MBytes=1024 KBytes")));
 }
 
 void UINewVMWzdPage3::initializePage()
@@ -589,7 +589,7 @@ void UINewVMWzdPage5::retranslateUi()
     )
     .arg(tr("Name", "summary"), name)
     .arg(tr("OS Type", "summary"), type)
-    .arg(tr("Base Memory", "summary"), ram, tr("MB", "size suffix MBytes=1024KBytes"))
+    .arg(tr("Base Memory", "summary"), ram, VBoxGlobal::tr("MB", "size suffix MBytes=1024KBytes"))
     ;
     /* Feat summary to 3 lines */
     setSummaryFieldLinesNumber(m_pSummaryText, 3);
