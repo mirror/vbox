@@ -27,9 +27,6 @@
 #include "VBoxDefs.h"
 #include "QIWithRetranslateUI.h"
 #include "UIMachineWindow.h"
-#ifdef Q_WS_X11
-# include <X11/Xlib.h>
-#endif
 
 /* Local forwards */
 class CMediumAttachment;

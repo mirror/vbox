@@ -146,22 +146,7 @@ void UIMachineWindowFullscreen::retranslateUi()
 #ifdef Q_WS_X11
 bool UIMachineWindowFullscreen::x11Event(XEvent *pEvent)
 {
-    /* Qt bug: when the console view grabs the keyboard, FocusIn, FocusOut,
-     * WindowActivate and WindowDeactivate Qt events are not properly sent
-     * on top level window (i.e. this) deactivation. The fix is to substiute
-     * the mode in FocusOut X11 event structure to NotifyNormal to cause
-     * Qt to process it as desired. */
-    if (pEvent->type == FocusOut)
-    {
-        if (pEvent->xfocus.mode == NotifyWhileGrabbed  &&
-            (pEvent->xfocus.detail == NotifyAncestor ||
-             pEvent->xfocus.detail == NotifyInferior ||
-             pEvent->xfocus.detail == NotifyNonlinear))
-        {
-             pEvent->xfocus.mode = NotifyNormal;
-        }
-    }
-    return false;
+    return UIMachineWindow::x11Event(pEvent);
 }
 #endif
 
