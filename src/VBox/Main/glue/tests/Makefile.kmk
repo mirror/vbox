@@ -16,13 +16,13 @@ ifeq ($(KBUILD_HOST),darwin)
 endif
 
 ifeq ($(KBUILD_HOST),linux)
- VBOX_SDK=/home/nike/work/ws/out/linux.amd64/debug/bin/sdk
  VBOX_BIN=/home/nike/work/ws/out/linux.amd64/debug/bin
+ VBOX_SDK=$(VBOX_BIN)/sdk
 endif
 
 ifeq ($(KBUILD_HOST),win)
- VBOX_SDK=c:/out/bin/sdk
- VBOX_BIN=c:/out/bin
+ VBOX_BIN=e:/ws/out/win.amd64/debug/bin
+ VBOX_SDK=$(VBOX_BIN)/sdk
  JACOB_DIR=s:/jacob-1.15-M3/
  JACOB_JAR=$(JACOB_DIR)/jacob.jar
  CLASSPATH += $(JACOB_JAR)$(SEP)

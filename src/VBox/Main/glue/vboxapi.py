@@ -216,6 +216,7 @@ class PlatformMSCOM:
             DispatchBaseClass.__dict__['__setattr__'] = CustomSetAttr
             win32com.client.gencache.EnsureDispatch('VirtualBox.Session')
             win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBox')
+            win32com.client.gencache.EnsureDispatch('VirtualBox.Console')
             win32com.client.gencache.EnsureDispatch('VirtualBox.CallbackWrapper')
 
     def getSessionObject(self, vbox):

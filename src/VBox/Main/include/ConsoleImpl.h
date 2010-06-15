@@ -44,6 +44,10 @@ class Progress;
 # include <VBox/HostServices/GuestPropertySvc.h>  /* For the property notification callback */
 #endif
 
+#ifdef RT_OS_WINDOWS
+# include "win/VBoxComEvents.h"
+#endif
+
 struct VUSBIRHCONFIG;
 typedef struct VUSBIRHCONFIG *PVUSBIRHCONFIG;
 
@@ -78,6 +82,11 @@ class ATL_NO_VTABLE Console :
     public VirtualBoxSupportErrorInfoImpl<Console, IConsole>,
     public VirtualBoxSupportTranslation<Console>,
     VBOX_SCRIPTABLE_IMPL(IConsole)
+#ifdef RT_OS_WINDOWS
+    , public CComCoClass<Console, &CLSID_Console>
+    , public IConnectionPointContainerImpl<Console>
+    , public IConnectionPointImpl<Console, &IID_IConsoleCallback, CComDynamicUnkArray>
+#endif
 {
     Q_OBJECT
 
@@ -91,7 +100,15 @@ public:
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IConsole)
         COM_INTERFACE_ENTRY(IDispatch)
+        COM_INTERFACE_ENTRY(IConnectionPointContainer)
     END_COM_MAP()
+
+#ifdef RT_OS_WINDOWS
+    BEGIN_CONNECTION_POINT_MAP(Console)
+         CONNECTION_POINT_ENTRY(IID_IConsoleCallback)
+    END_CONNECTION_POINT_MAP()
+#endif
+
 
     Console();
     ~Console();
@@ -712,6 +729,10 @@ private:
     }
     mCallbackData;
 
+#ifdef RT_OS_WINDOWS
+    ComEventsHelper                     mComEvHelper;
+#endif
+    
     friend struct VMTask;
 };
 

@@ -648,7 +648,9 @@ VBoxC_SOURCES = \
 VBoxC_SOURCES.win = \
 	win/dllmain.cpp \
 	win/VBoxC.def \
-	win/VBoxC.rc
+	win/VBoxC.rc \
+	win/VBoxComEvents.cpp
+
 
 ifdef VBOX_WITH_XPCOM
 VBoxC_SOURCES += \
