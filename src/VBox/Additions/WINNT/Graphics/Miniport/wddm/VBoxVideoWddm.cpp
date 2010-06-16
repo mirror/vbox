@@ -1532,6 +1532,8 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_RESOURCE 
                                 AssertRC(rc);
                                 if (RT_SUCCESS(rc))
                                 {
+                                    pAllocationInfo->Flags.Overlay = 1;
+                                    pAllocationInfo->Flags.CpuVisible = 1;
                                     pAllocationInfo->Size = pAllocation->SurfDesc.cbSize;
                                 }
                                 else

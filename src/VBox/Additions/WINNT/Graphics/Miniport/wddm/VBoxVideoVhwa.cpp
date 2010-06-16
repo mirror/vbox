@@ -561,7 +561,7 @@ int vboxVhwaHlpCheckApplySurfInfo(PVBOXWDDM_ALLOCATION pSurf, VBOXVHWA_SURFACEDE
         pSurf->SurfDesc.pitch = pInfo->pitch;
         Assert(pSurf->SurfDesc.pitch);
         /* @todo: make this properly */
-        pSurf->SurfDesc.bpp = (pSurf->SurfDesc.cbSize * 8) / pSurf->SurfDesc.height / pSurf->SurfDesc.pitch;
+        pSurf->SurfDesc.bpp = pSurf->SurfDesc.pitch * 8 / pSurf->SurfDesc.width;
         Assert(pSurf->SurfDesc.bpp);
     }
     else
@@ -953,7 +953,7 @@ int vboxVhwaHlpOverlayCreate(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOU
             if (!RT_SUCCESS(rc))
             {
                 int tmpRc;
-                for (uint32_t j = i; j < pRc->cAllocations; ++j)
+                for (uint32_t j = 0; j < i; ++j)
                 {
                     PVBOXWDDM_ALLOCATION pDestroyAlloc = &pRc->aAllocations[j];
                     tmpRc = vboxVhwaHlpDestroySurface(pDevExt, pDestroyAlloc, VidPnSourceId);
