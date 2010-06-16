@@ -794,6 +794,34 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
 
             *pcbOut = sizeof(uint32_t);
         } break;
+
+        case VRDP_QP_VIDEO_CHANNEL_SUNFLSH:
+        {
+            ULONG ulSunFlsh = 0;
+
+            com::Bstr bstr;
+            HRESULT hrc = server->mConsole->machine ()->GetExtraData(Bstr("VRDP/SunFlsh"), bstr.asOutParam());
+            if (hrc == S_OK && !bstr.isEmpty())
+            {
+                com::Utf8Str sunFlsh = bstr;
+                if (!sunFlsh.isEmpty())
+                {
+                    ulSunFlsh = sunFlsh.toUInt32();
+                }
+            }
+
+            if (cbBuffer >= sizeof(uint32_t))
+            {
+                *(uint32_t *)pvBuffer = (uint32_t)ulSunFlsh;
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                rc = VINF_BUFFER_OVERFLOW;
+            }
+
+            *pcbOut = sizeof(uint32_t);
+        } break;
 #endif /* VBOX_WITH_VRDP_VIDEO_CHANNEL */
 
         case VRDP_SP_NETWORK_BIND_PORT:
