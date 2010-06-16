@@ -179,6 +179,22 @@ RT_C_DECLS_BEGIN
 /** @} */
 
 
+/** @name Filesystem type IDs. Used by RTFsQueryType. */
+#define RTFS_FS_TYPE_UNKNOWN            0
+#define RTFS_FS_TYPE_EXT                1
+#define RTFS_FS_TYPE_EXT2               2
+#define RTFS_FS_TYPE_EXT3               3
+#define RTFS_FS_TYPE_EXT4               4
+#define RTFS_FS_TYPE_TMPFS              5
+#define RTFS_FS_TYPE_JFS                6
+#define RTFS_FS_TYPE_NFS                7
+#define RTFS_FS_TYPE_HFS                8
+#define RTFS_FS_TYPE_CIFS               9
+#define RTFS_FS_TYPE_FAT               10
+#define RTFS_FS_TYPE_NTFS              11
+#define RTFS_FS_TYPE_ZFS               12
+
+
 /**
  * The available additional information in a RTFSOBJATTR object.
  */
@@ -383,6 +399,16 @@ RTR3DECL(int) RTFsQuerySerial(const char *pszFsPath, uint32_t *pu32Serial);
  * @param   cbFsDriver      Size of the buffer pointed to by pszFsDriver.
  */
 RTR3DECL(int) RTFsQueryDriver(const char *pszFsPath, char *pszFsDriver, size_t cbFsDriver);
+
+/**
+ * Query the name of the filesystem the file is located on.
+ *
+ * @returns iprt status code.
+ * @param   pszFsPath       Path within the mounted filesystem.
+ * @param   pu32Type        Where to store the filesystem type.
+ *                          See RTFS_FS_TYPE_xxx constants.
+ */
+RTR3DECL(int) RTFsQueryType(const char *pszFsPath, uint32_t *pu32Type);
 
 #endif /* IN_RING3 */
 
