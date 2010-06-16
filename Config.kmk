@@ -3690,8 +3690,11 @@ ifeq ($(KBUILD_HOST),win)
  else if1of ($(KBUILD_HOST_ARCH), x86)
   TEMPLATE_VBOXBLDPROG_TOOL            := VCC70
   TEMPLATE_VBOXBLDPROG_SDKS            := WIN32SDK
+ else if1of ($(KBUILD_HOST_ARCH), amd64)
+  TEMPLATE_VBOXBLDPROG_TOOL            := VCC80
+  TEMPLATE_VBOXBLDPROG_SDKS            := WIN64SDK
  else
-  $(error VBOX_USE_VCC70 does not work with KBUILD_HOST_ARCH=$(KBUILD_HOST_ARCH) because the compiler only does 32-bit x86)
+  $(error KBUILD_HOST_ARCH=$(KBUILD_HOST_ARCH))
  endif
  ifndef VBOX_USE_VCC70
   TEMPLATE_VBOXBLDPROG_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -MT$(VBOX_VCC_CRT_TYPE) -W3 -wd4996 -Zc:wchar_t-
