@@ -22,6 +22,7 @@
 #define LOG_GROUP LOG_GROUP_DRV_HOST_DVD
 #define __STDC_LIMIT_MACROS
 #define __STDC_CONSTANT_MACROS
+
 #ifdef RT_OS_DARWIN
 # include <mach/mach.h>
 # include <Carbon/Carbon.h>
@@ -73,9 +74,19 @@
 # define USE_MEDIA_POLLING
 
 #elif defined(RT_OS_WINDOWS)
+# pragma warning(disable : 4163)
+# define _interlockedbittestandset      they_messed_it_up_in_winnt_h_this_time_sigh__interlockedbittestandset
+# define _interlockedbittestandreset    they_messed_it_up_in_winnt_h_this_time_sigh__interlockedbittestandreset
+# define _interlockedbittestandset64    they_messed_it_up_in_winnt_h_this_time_sigh__interlockedbittestandset64
+# define _interlockedbittestandreset64  they_messed_it_up_in_winnt_h_this_time_sigh__interlockedbittestandreset64
 # include <Windows.h>
 # include <winioctl.h>
 # include <ntddscsi.h>
+# pragma warning(default : 4163)
+# undef _interlockedbittestandset
+# undef _interlockedbittestandreset
+# undef _interlockedbittestandset64
+# undef _interlockedbittestandreset64
 # undef USE_MEDIA_POLLING
 
 #elif defined(RT_OS_FREEBSD)
@@ -90,6 +101,7 @@
 # error "Unsupported Platform."
 #endif
 
+#include <iprt/asm.h>
 #include <VBox/pdmdrv.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
