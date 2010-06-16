@@ -711,7 +711,7 @@ static int vnetHandleRxPacket(PVNETSTATE pState, const void *pvBuf, size_t cb)
 
         while (nSeg < elem.nIn && uOffset < cb)
         {
-            unsigned int uSize = RT_MIN(elem.aSegsIn[nSeg].cb, cb - uOffset);
+            unsigned int uSize = (unsigned int)RT_MIN(elem.aSegsIn[nSeg].cb, cb - uOffset);
             elem.aSegsIn[nSeg++].pv = (uint8_t*)pvBuf + uOffset;
             uOffset += uSize;
             uElemSize += uSize;
