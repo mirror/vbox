@@ -22,9 +22,10 @@ include $(KBUILD_PATH)/subheader.kmk
 # Target and globals (small mess)
 #
 ifndef VBOX_ONLY_SDK
- if defined(VBOX_WITH_TESTCASES) || "$(USERNAME)" == "dmik"
+ if defined(VBOX_WITH_TESTCASES) || "$(USERNAME)" == "umoeller"
   PROGRAMS       += \
 	tstAPI \
+	tstOVF \
 	$(if $(VBOX_WITH_XPCOM),tstVBoxAPILinux,tstVBoxAPIWin) \
 	$(if $(VBOX_WITH_RESOURCE_USAGE_API),tstCollector,)
   PROGRAMS.linux += \
@@ -66,6 +67,30 @@ ifdef VBOX_WITH_RESOURCE_USAGE_API
 tstAPI_DEFS += VBOX_WITH_RESOURCE_USAGE_API
 endif
 
+#
+# tstOVF
+#
+tstOVF_TEMPLATE = VBOXMAINCLIENTEXE
+#tstOVF_INST = $(INST_SDK)bindings/gluecom/samples/
+tstOVF_SOURCES  = tstOVF.cpp
+ifeq ($(KBUILD_TARGET),win) ## @todo just add this to the template.
+tstOVF_DEPS = $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
+else
+tstOVF_DEPS = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
+endif
+ifdef VBOX_WITH_RESOURCE_USAGE_API
+tstOVF_DEFS += VBOX_WITH_RESOURCE_USAGE_API
+endif
+
+INSTALLS += ovfdummy ovfjoomla09
+
+ovfdummy_MODE = a+r,u+w
+ovfdummy_INST = bin/ovf-testcases
+ovfdummy_SOURCES = ovf-dummy.vmdk
+
+ovfjoomla09_MODE = a+r,u+w
+ovfjoomla09_INST = bin/ovf-testcases/ovf-joomla-0.9
+ovfjoomla09_SOURCES = ovf-joomla-0.9/joomla-1.1.4-ovf.ovf
 
 #
 # tstVBoxAPILinux
