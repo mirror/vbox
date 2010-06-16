@@ -457,6 +457,7 @@ int main()
     iDiff = RT_NOCRT(memcmp)(s_szTest3, s_szTest3, sizeof(s_szTest1)); CHECK_DIFF( == );
     iDiff = RT_NOCRT(memcmp)(s_szTest1, s_szTest3, sizeof(s_szTest1)); CHECK_DIFF( < );
     iDiff = RT_NOCRT(memcmp)(s_szTest3, s_szTest1, sizeof(s_szTest1)); CHECK_DIFF( > );
+    iDiff = RT_NOCRT(memcmp)("1234", "1a34", 4); CHECK_DIFF( < );
 
     RTPrintf("tstNoCrt-1: strcmp\n");
     iDiff = RT_NOCRT(strcmp)(s_szTest1, s_szTest1); CHECK_DIFF( == );
