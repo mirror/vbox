@@ -160,11 +160,10 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3SharedModuleRegRendezvous(PVM pVM, PVMCPU
  * Shared module check helper (called on the way out).
  *
  * @param   pVM         The VM handle.
+ * @param   VMCPUID     VCPU id
  */
-static DECLCALLBACK(void) pgmR3CheckSharedModulesHelper(PVM pVM)
+static DECLCALLBACK(void) pgmR3CheckSharedModulesHelper(PVM pVM, VMCPUID idCpu)
 {
-    VMCPUID idCpu = VMMGetCpuId(pVM);
-
     /* We must stall other VCPUs as we'd otherwise have to send IPI flush commands for every single change we make. */
     int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE, pgmR3SharedModuleRegRendezvous, &idCpu);
     AssertRC(rc);
@@ -181,7 +180,7 @@ VMMR3DECL(int) PGMR3SharedModuleCheckAll(PVM pVM)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
     /* Queue the actual registration as we are under the IOM lock right now. Perform this operation on the way out. */
-    return VMR3ReqCallNoWait(pVM, VMMGetCpuId(pVM), (PFNRT)pgmR3CheckSharedModulesHelper, 1, pVM);
+    return VMR3ReqCallNoWait(pVM, VMCPUID_ANY_QUEUE, (PFNRT)pgmR3CheckSharedModulesHelper, 2, pVM, VMMGetCpuId(pVM));
 #else
     return VERR_NOT_IMPLEMENTED;
 #endif
