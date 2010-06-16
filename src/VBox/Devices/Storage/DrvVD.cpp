@@ -681,7 +681,7 @@ static DECLCALLBACK(int) drvvdINIPRead(RTSOCKET Sock, void *pvBuffer, size_t cbB
                                         RT_MIN(cbToRead, 32768), 0);
         if (cbBytesRead < 0)
             return VERR_NET_CONNECTION_REFUSED; /** @todo real solution */
-        if (cbBytesRead == 0 && errno)
+        if (cbBytesRead == 0 && errno) /** @todo r=bird: lwip_recv will not touch errno on Windows.  This may apply to other hosts as well  */
             return VERR_NET_CONNECTION_REFUSED; /** @todo real solution */
         if (pcbRead)
         {
