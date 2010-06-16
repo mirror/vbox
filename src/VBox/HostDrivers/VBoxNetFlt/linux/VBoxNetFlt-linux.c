@@ -1104,25 +1104,23 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
 
         /*
          * We need to set checksum fields even if the packet goes to the host
-         * directly as it may be immediately forwared by IP layer.
+         * directly as it may be immediately forwared by IP layer @bugref{5020}.
          */
-        {
-            Assert(skb_headlen(pPkt) >= pSG->GsoCtx.cbHdrs);
-            pPkt->ip_summed  = CHECKSUM_PARTIAL;
+        Assert(skb_headlen(pPkt) >= pSG->GsoCtx.cbHdrs);
+        pPkt->ip_summed  = CHECKSUM_PARTIAL;
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
-            pPkt->csum_start = skb_headroom(pPkt) + pSG->GsoCtx.offHdr2;
-            if (fGsoType & (SKB_GSO_TCPV4 | SKB_GSO_TCPV6))
-                pPkt->csum_offset = RT_OFFSETOF(RTNETTCP, th_sum);
-            else
-                pPkt->csum_offset = RT_OFFSETOF(RTNETUDP, uh_sum);
+        pPkt->csum_start = skb_headroom(pPkt) + pSG->GsoCtx.offHdr2;
+        if (fGsoType & (SKB_GSO_TCPV4 | SKB_GSO_TCPV6))
+            pPkt->csum_offset = RT_OFFSETOF(RTNETTCP, th_sum);
+        else
+            pPkt->csum_offset = RT_OFFSETOF(RTNETUDP, uh_sum);
 # else
-            pPkt->h.raw = pPkt->data + pSG->GsoCtx.offHdr2;
-            if (fGsoType & (SKB_GSO_TCPV4 | SKB_GSO_TCPV6))
-                pPkt->csum = RT_OFFSETOF(RTNETTCP, th_sum);
-            else
-                pPkt->csum = RT_OFFSETOF(RTNETUDP, uh_sum);
+        pPkt->h.raw = pPkt->data + pSG->GsoCtx.offHdr2;
+        if (fGsoType & (SKB_GSO_TCPV4 | SKB_GSO_TCPV6))
+            pPkt->csum = RT_OFFSETOF(RTNETTCP, th_sum);
+        else
+            pPkt->csum = RT_OFFSETOF(RTNETUDP, uh_sum);
 # endif
-        }
         if (!fDstWire)
             PDMNetGsoPrepForDirectUse(&pSG->GsoCtx, pPkt->data, pSG->cbTotal, false /*fPayloadChecksum*/);
     }
