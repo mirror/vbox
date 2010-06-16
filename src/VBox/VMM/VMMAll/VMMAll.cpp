@@ -70,6 +70,7 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
         if (pVCpu->idHostCpu == idHostCpu)
             return pVCpu->idCpu;
     }
+    AssertFailed();
     return NIL_VMCPUID;
 
 #else /* RC: Always EMT(0) */
@@ -109,6 +110,7 @@ VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
         if (pVCpu->idHostCpu == idHostCpu)
             return pVCpu;
     }
+    AssertFailed();
     return NULL;
 
 #else /* RC: Always EMT(0) */
