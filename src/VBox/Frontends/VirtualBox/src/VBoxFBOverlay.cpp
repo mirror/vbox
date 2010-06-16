@@ -2721,6 +2721,14 @@ int VBoxVHWAImage::vhwaSurfaceOverlayUpdate(struct _VBOXVHWACMD_SURF_OVERLAY_UPD
         }
     }
 
+#ifdef VBOXWDDM
+    if(pCmd->u.in.xUpdatedSrcMemValid)
+    {
+        QRect r = VBOXVHWA_CONSTRUCT_QRECT_FROM_RECTL_WH(&pCmd->u.in.xUpdatedSrcMemRect);
+        pSrcSurf->updatedMem(&r);
+    }
+#endif
+
     const SurfList & surfaces = pList->surfaces();
 
     for (SurfList::const_iterator it = surfaces.begin();

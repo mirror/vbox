@@ -53,8 +53,11 @@ int vboxVHWADisable(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID sr
 void vboxVHWAInit(PDEVICE_EXTENSION pDevExt);
 void vboxVHWAFree(PDEVICE_EXTENSION pDevExt);
 
-int vboxVhwaHlpCreateOverlay(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSurf, uint32_t cBackBuffers, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId);
-int vboxVhwaHlpDestroyOverlay(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSurf, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId);
+int vboxVhwaHlpOverlayFlip(PVBOXWDDM_OVERLAY pOverlay, const DXGKARG_FLIPOVERLAY *pFlipInfo);
+int vboxVhwaHlpOverlayUpdate(PVBOXWDDM_OVERLAY pOverlay, const DXGK_OVERLAYINFO *pOverlayInfo);
+int vboxVhwaHlpOverlayDestroy(PVBOXWDDM_OVERLAY pOverlay);
+int vboxVhwaHlpOverlayCreate(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, DXGK_OVERLAYINFO *pOverlayInfo, /* OUT */ PVBOXWDDM_OVERLAY pOverlay);
+
 int vboxVhwaHlpGetSurfInfo(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSurf);
 
 #endif /* #ifndef ___VBoxVideoVhwa_h___ */

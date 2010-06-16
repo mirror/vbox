@@ -48,6 +48,7 @@ PVOID vboxWddmMemAllocZero(IN SIZE_T cbSize);
 VOID vboxWddmMemFree(PVOID pvMem);
 
 /* allocation */
+//#define VBOXWDDM_ALLOCATIONINDEX_VOID (~0U)
 typedef struct VBOXWDDM_ALLOCATION
 {
     VBOXWDDM_ALLOC_TYPE enmType;
@@ -72,6 +73,25 @@ typedef struct VBOXWDDM_RESOURCE
     VBOXWDDM_ALLOCATION aAllocations[1];
 } VBOXWDDM_RESOURCE, *PVBOXWDDM_RESOURCE;
 
+DECLINLINE(PVBOXWDDM_RESOURCE) vboxWddmResourceForAlloc(PVBOXWDDM_ALLOCATION pAlloc)
+{
+#if 0
+    if(pAlloc->iIndex == VBOXWDDM_ALLOCATIONINDEX_VOID)
+        return NULL;
+    PVBOXWDDM_RESOURCE pRc = (PVBOXWDDM_RESOURCE)(((uint8_t*)pAlloc) - RT_OFFSETOF(VBOXWDDM_RESOURCE, aAllocations[pAlloc->iIndex]));
+    return pRc;
+#else
+    return pAlloc->pResource;
+#endif
+}
+
+typedef struct VBOXWDDM_OVERLAY
+{
+    PDEVICE_EXTENSION pDevExt;
+    PVBOXWDDM_RESOURCE pResource;
+    PVBOXWDDM_ALLOCATION pCurentAlloc;
+    D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId;
+} VBOXWDDM_OVERLAY, *PVBOXWDDM_OVERLAY;
 
 typedef enum
 {
@@ -119,5 +139,16 @@ typedef struct VBOXWDDM_OPENALLOCATION
 {
     D3DKMT_HANDLE  hAllocation;
 } VBOXWDDM_OPENALLOCATION, *PVBOXWDDM_OPENALLOCATION;
+
+#ifdef VBOXWDDM_RENDER_FROM_SHADOW
+# define VBOXWDDM_FB_ALLOCATION(_pSrc) ((_pSrc)->pShadowAllocation)
+#else
+# define VBOXWDDM_FB_ALLOCATION(_pSrc) ((_pSrc)->pPrimaryAllocation)
+#endif
+
+//DECLINLINE(VBOXVIDEOOFFSET) vboxWddmOffsetFromPhAddress(PHYSICAL_ADDRESS phAddr)
+//{
+//    return (VBOXVIDEOOFFSET)(phAddr.QuadPart ? phAddr.QuadPart - VBE_DISPI_LFB_PHYSICAL_ADDRESS : VBOXVIDEOOFFSET_VOID);
+//}
 
 #endif /* #ifndef ___VBoxVideoWddm_h___ */

@@ -675,11 +675,7 @@ int vboxVhwaHlpGetSurfInfo(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSurf
 
 int vboxVhwaHlpDestroyPrimary(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
 {
-#ifdef VBOXWDDM_RENDER_FROM_SHADOW
-    PVBOXWDDM_ALLOCATION pFbSurf = pSource->pShadowAllocation;
-#else
-    PVBOXWDDM_ALLOCATION pFbSurf = pSource->pPrimaryAllocation;
-#endif
+    PVBOXWDDM_ALLOCATION pFbSurf = VBOXWDDM_FB_ALLOCATION(pSource);
 
     int rc = vboxVhwaHlpDestroySurface(pDevExt, pFbSurf, VidPnSourceId);
     AssertRC(rc);
@@ -688,11 +684,7 @@ int vboxVhwaHlpDestroyPrimary(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSourc
 
 int vboxVhwaHlpCreatePrimary(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
 {
-#ifdef VBOXWDDM_RENDER_FROM_SHADOW
-    PVBOXWDDM_ALLOCATION pFbSurf = pSource->pShadowAllocation;
-#else
-    PVBOXWDDM_ALLOCATION pFbSurf = pSource->pPrimaryAllocation;
-#endif
+    PVBOXWDDM_ALLOCATION pFbSurf = VBOXWDDM_FB_ALLOCATION(pSource);
     Assert(pSource->Vhwa.cOverlaysCreated == 1);
     Assert(pFbSurf->hHostHandle == VBOXVHWA_SURFHANDLE_INVALID);
     if (pFbSurf->hHostHandle != VBOXVHWA_SURFHANDLE_INVALID)
@@ -727,11 +719,7 @@ int vboxVhwaHlpCheckInit(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_
     }
     else
     {
-#ifdef VBOXWDDM_RENDER_FROM_SHADOW
-        PVBOXWDDM_ALLOCATION pFbSurf = pSource->pShadowAllocation;
-#else
-        PVBOXWDDM_ALLOCATION pFbSurf = pSource->pPrimaryAllocation;
-#endif
+        PVBOXWDDM_ALLOCATION pFbSurf = VBOXWDDM_FB_ALLOCATION(pSource);
         Assert(pFbSurf->hHostHandle);
         if (pFbSurf->hHostHandle)
             rc = VINF_ALREADY_INITIALIZED;
@@ -771,29 +759,229 @@ int vboxVhwaHlpCheckTerm(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_
     return rc;
 }
 
-int vboxVhwaHlpCreateOverlay(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSurf, uint32_t cBackBuffers, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+int vboxVhwaHlpOverlayFlip(PVBOXWDDM_OVERLAY pOverlay, const DXGKARG_FLIPOVERLAY *pFlipInfo)
 {
-    int rc = vboxVhwaHlpCheckInit(pDevExt, VidPnSourceId);
-    AssertRC(rc);
+    PVBOXWDDM_ALLOCATION pAlloc = (PVBOXWDDM_ALLOCATION)pFlipInfo->hSource;
+    Assert(pAlloc->hHostHandle);
+    Assert(pAlloc->pResource);
+    Assert(pAlloc->pResource == pOverlay->pResource);
+    Assert(pFlipInfo->PrivateDriverDataSize == sizeof (VBOXWDDM_OVERLAYFLIP_INFO));
+    Assert(pFlipInfo->pPrivateDriverData);
+    PVBOXWDDM_SOURCE pSource = &pOverlay->pDevExt->aSources[pOverlay->VidPnSourceId];
+    Assert(!!(pSource->Vhwa.Settings.fFlags & VBOXVHWA_F_ENABLED));
+    PVBOXWDDM_ALLOCATION pFbSurf = VBOXWDDM_FB_ALLOCATION(pSource);
+    Assert(pFbSurf);
+    Assert(pFbSurf->hHostHandle);
+    Assert(pFbSurf->offVram != VBOXVIDEOOFFSET_VOID);
+    Assert(pOverlay->pCurentAlloc);
+    Assert(pOverlay->pCurentAlloc->pResource == pOverlay->pResource);
+    Assert(pOverlay->pCurentAlloc != pAlloc);
+    int rc = VINF_SUCCESS;
+    if (pFlipInfo->PrivateDriverDataSize == sizeof (VBOXWDDM_OVERLAYFLIP_INFO))
+    {
+        PVBOXWDDM_OVERLAYFLIP_INFO pOurInfo = (PVBOXWDDM_OVERLAYFLIP_INFO)pFlipInfo->pPrivateDriverData;
+
+        VBOXVHWACMD* pCmd = vboxVhwaCommandCreate(pOverlay->pDevExt, pOverlay->VidPnSourceId,
+                VBOXVHWACMD_TYPE_SURF_FLIP, sizeof(VBOXVHWACMD_SURF_FLIP));
+        Assert(pCmd);
+        if(pCmd)
+        {
+            VBOXVHWACMD_SURF_FLIP * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_FLIP);
+
+            memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_FLIP));
+
+//            pBody->TargGuestSurfInfo;
+//            pBody->CurrGuestSurfInfo;
+            pBody->u.in.hTargSurf = pAlloc->hHostHandle;
+            pBody->u.in.offTargSurface = pFlipInfo->SrcPhysicalAddress.QuadPart;
+            pAlloc->offVram = pFlipInfo->SrcPhysicalAddress.QuadPart;
+            pBody->u.in.hCurrSurf = pOverlay->pCurentAlloc->hHostHandle;
+            pBody->u.in.offCurrSurface = pOverlay->pCurentAlloc->offVram;
+            if (pOurInfo->DirtyRegion.fFlags & VBOXWDDM_DIRTYREGION_F_VALID)
+            {
+                pBody->u.in.xUpdatedTargMemValid = 1;
+                if (pOurInfo->DirtyRegion.fFlags & VBOXWDDM_DIRTYREGION_F_RECT_VALID)
+                    pBody->u.in.xUpdatedTargMemRect = *(VBOXVHWA_RECTL*)((void*)&pOurInfo->DirtyRegion.Rect);
+                else
+                {
+                    pBody->u.in.xUpdatedTargMemRect.right = pAlloc->SurfDesc.width;
+                    pBody->u.in.xUpdatedTargMemRect.bottom = pAlloc->SurfDesc.height;
+                    /* top & left are zero-inited with the above memset */
+                }
+            }
+
+            /* we're not interested in completion, just send the command */
+            vboxVhwaCommandSubmitAsynchAndComplete(pOverlay->pDevExt, pCmd);
+
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = VERR_OUT_OF_RESOURCES;
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+
+    return rc;
+}
+
+AssertCompile(sizeof (RECT) == sizeof (VBOXVHWA_RECTL));
+AssertCompile(RT_SIZEOFMEMB(RECT, left) == RT_SIZEOFMEMB(VBOXVHWA_RECTL, left));
+AssertCompile(RT_SIZEOFMEMB(RECT, right) == RT_SIZEOFMEMB(VBOXVHWA_RECTL, right));
+AssertCompile(RT_SIZEOFMEMB(RECT, top) == RT_SIZEOFMEMB(VBOXVHWA_RECTL, top));
+AssertCompile(RT_SIZEOFMEMB(RECT, bottom) == RT_SIZEOFMEMB(VBOXVHWA_RECTL, bottom));
+AssertCompile(RT_OFFSETOF(RECT, left) == RT_OFFSETOF(VBOXVHWA_RECTL, left));
+AssertCompile(RT_OFFSETOF(RECT, right) == RT_OFFSETOF(VBOXVHWA_RECTL, right));
+AssertCompile(RT_OFFSETOF(RECT, top) == RT_OFFSETOF(VBOXVHWA_RECTL, top));
+AssertCompile(RT_OFFSETOF(RECT, bottom) == RT_OFFSETOF(VBOXVHWA_RECTL, bottom));
+
+int vboxVhwaHlpOverlayUpdate(PVBOXWDDM_OVERLAY pOverlay, const DXGK_OVERLAYINFO *pOverlayInfo)
+{
+    PVBOXWDDM_ALLOCATION pAlloc = (PVBOXWDDM_ALLOCATION)pOverlayInfo->hAllocation;
+    Assert(pAlloc->hHostHandle);
+    Assert(pAlloc->pResource);
+    Assert(pAlloc->pResource == pOverlay->pResource);
+    Assert(pOverlayInfo->PrivateDriverDataSize == sizeof (VBOXWDDM_OVERLAY_INFO));
+    Assert(pOverlayInfo->pPrivateDriverData);
+    PVBOXWDDM_SOURCE pSource = &pOverlay->pDevExt->aSources[pOverlay->VidPnSourceId];
+    Assert(!!(pSource->Vhwa.Settings.fFlags & VBOXVHWA_F_ENABLED));
+    PVBOXWDDM_ALLOCATION pFbSurf = VBOXWDDM_FB_ALLOCATION(pSource);
+    Assert(pFbSurf);
+    Assert(pFbSurf->hHostHandle);
+    Assert(pFbSurf->offVram != VBOXVIDEOOFFSET_VOID);
+    int rc = VINF_SUCCESS;
+    if (pOverlayInfo->PrivateDriverDataSize == sizeof (VBOXWDDM_OVERLAY_INFO))
+    {
+        PVBOXWDDM_OVERLAY_INFO pOurInfo = (PVBOXWDDM_OVERLAY_INFO)pOverlayInfo->pPrivateDriverData;
+
+        VBOXVHWACMD* pCmd = vboxVhwaCommandCreate(pOverlay->pDevExt, pOverlay->VidPnSourceId,
+                VBOXVHWACMD_TYPE_SURF_OVERLAY_UPDATE, sizeof(VBOXVHWACMD_SURF_OVERLAY_UPDATE));
+        Assert(pCmd);
+        if(pCmd)
+        {
+            VBOXVHWACMD_SURF_OVERLAY_UPDATE * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_OVERLAY_UPDATE);
+
+            memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_OVERLAY_UPDATE));
+
+            pBody->u.in.hDstSurf = pFbSurf->hHostHandle;
+            pBody->u.in.offDstSurface = pFbSurf->offVram;
+            pBody->u.in.dstRect = *(VBOXVHWA_RECTL*)((void*)&pOverlayInfo->DstRect);
+            pBody->u.in.hSrcSurf = pAlloc->hHostHandle;
+            pBody->u.in.offSrcSurface = pOverlayInfo->PhysicalAddress.QuadPart;
+            pAlloc->offVram = pOverlayInfo->PhysicalAddress.QuadPart;
+            pBody->u.in.srcRect = *(VBOXVHWA_RECTL*)((void*)&pOverlayInfo->SrcRect);
+            pBody->u.in.flags |= VBOXVHWA_OVER_SHOW;
+            if (pOurInfo->OverlayDesc.fFlags & VBOXWDDM_OVERLAY_F_CKEY_DST)
+            {
+                pBody->u.in.flags |= VBOXVHWA_OVER_KEYDESTOVERRIDE /* ?? VBOXVHWA_OVER_KEYDEST */;
+                pBody->u.in.desc.DstCK.high = pOurInfo->OverlayDesc.DstColorKeyHigh;
+                pBody->u.in.desc.DstCK.low = pOurInfo->OverlayDesc.DstColorKeyLow;
+            }
+
+            if (pOurInfo->OverlayDesc.fFlags & VBOXWDDM_OVERLAY_F_CKEY_SRC)
+            {
+                pBody->u.in.flags |= VBOXVHWA_OVER_KEYSRCOVERRIDE /* ?? VBOXVHWA_OVER_KEYSRC */;
+                pBody->u.in.desc.SrcCK.high = pOurInfo->OverlayDesc.SrcColorKeyHigh;
+                pBody->u.in.desc.SrcCK.low = pOurInfo->OverlayDesc.SrcColorKeyLow;
+            }
+
+            if (pOurInfo->DirtyRegion.fFlags & VBOXWDDM_DIRTYREGION_F_VALID)
+            {
+                pBody->u.in.xUpdatedSrcMemValid = 1;
+                if (pOurInfo->DirtyRegion.fFlags & VBOXWDDM_DIRTYREGION_F_RECT_VALID)
+                    pBody->u.in.xUpdatedSrcMemRect = *(VBOXVHWA_RECTL*)((void*)&pOurInfo->DirtyRegion.Rect);
+                else
+                {
+                    pBody->u.in.xUpdatedSrcMemRect.right = pAlloc->SurfDesc.width;
+                    pBody->u.in.xUpdatedSrcMemRect.bottom = pAlloc->SurfDesc.height;
+                    /* top & left are zero-inited with the above memset */
+                }
+            }
+
+            /* we're not interested in completion, just send the command */
+            vboxVhwaCommandSubmitAsynchAndComplete(pOverlay->pDevExt, pCmd);
+
+            pOverlay->pCurentAlloc = pAlloc;
+
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = VERR_OUT_OF_RESOURCES;
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+
+    return rc;
+}
+
+int vboxVhwaHlpOverlayDestroy(PVBOXWDDM_OVERLAY pOverlay)
+{
+    int rc = VINF_SUCCESS;
+    for (uint32_t i = 0; i < pOverlay->pResource->cAllocations; ++i)
+    {
+        PVBOXWDDM_ALLOCATION pCurAlloc = &pOverlay->pResource->aAllocations[i];
+        rc = vboxVhwaHlpDestroySurface(pOverlay->pDevExt, pCurAlloc, pOverlay->VidPnSourceId);
+        AssertRC(rc);
+    }
+
     if (RT_SUCCESS(rc))
     {
-        rc = vboxVhwaHlpCreateSurface(pDevExt, pSurf,
-                    0, cBackBuffers, VBOXVHWA_SCAPS_OVERLAY | VBOXVHWA_SCAPS_VIDEOMEMORY | VBOXVHWA_SCAPS_LOCALVIDMEM | VBOXVHWA_SCAPS_COMPLEX,
-                    VidPnSourceId);
-        AssertRC(rc);
+        int tmpRc = vboxVhwaHlpCheckTerm(pOverlay->pDevExt, pOverlay->VidPnSourceId);
+        AssertRC(tmpRc);
     }
 
     return rc;
 }
 
-int vboxVhwaHlpDestroyOverlay(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSurf, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+
+int vboxVhwaHlpOverlayCreate(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, DXGK_OVERLAYINFO *pOverlayInfo,
+        /* OUT */ PVBOXWDDM_OVERLAY pOverlay)
 {
-    int rc = vboxVhwaHlpDestroySurface(pDevExt, pSurf, VidPnSourceId);
+    int rc = vboxVhwaHlpCheckInit(pDevExt, VidPnSourceId);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
-        rc = vboxVhwaHlpCheckTerm(pDevExt, VidPnSourceId);
-        AssertRC(rc);
+        PVBOXWDDM_ALLOCATION pAlloc = (PVBOXWDDM_ALLOCATION)pOverlayInfo->hAllocation;
+        PVBOXWDDM_RESOURCE pRc = pAlloc->pResource;
+        Assert(pRc);
+        for (uint32_t i = 0; i < pRc->cAllocations; ++i)
+        {
+            PVBOXWDDM_ALLOCATION pCurAlloc = &pRc->aAllocations[i];
+            rc = vboxVhwaHlpCreateSurface(pDevExt, pAlloc,
+                        0, pRc->cAllocations - 1, VBOXVHWA_SCAPS_OVERLAY | VBOXVHWA_SCAPS_VIDEOMEMORY | VBOXVHWA_SCAPS_LOCALVIDMEM | VBOXVHWA_SCAPS_COMPLEX,
+                        VidPnSourceId);
+            AssertRC(rc);
+            if (!RT_SUCCESS(rc))
+            {
+                int tmpRc;
+                for (uint32_t j = i; j < pRc->cAllocations; ++j)
+                {
+                    PVBOXWDDM_ALLOCATION pDestroyAlloc = &pRc->aAllocations[j];
+                    tmpRc = vboxVhwaHlpDestroySurface(pDevExt, pDestroyAlloc, VidPnSourceId);
+                    AssertRC(tmpRc);
+                }
+                break;
+            }
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            pOverlay->pDevExt = pDevExt;
+            pOverlay->pResource = pRc;
+            pOverlay->VidPnSourceId = VidPnSourceId;
+            rc = vboxVhwaHlpOverlayUpdate(pOverlay, pOverlayInfo);
+            if (!RT_SUCCESS(rc))
+            {
+                int tmpRc = vboxVhwaHlpOverlayDestroy(pOverlay);
+                AssertRC(tmpRc);
+            }
+        }
+
+        if (RT_FAILURE(rc))
+        {
+            int tmpRc = vboxVhwaHlpCheckTerm(pDevExt, VidPnSourceId);
+            AssertRC(tmpRc);
+            AssertRC(rc);
+        }
     }
 
     return rc;
