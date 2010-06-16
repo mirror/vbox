@@ -109,7 +109,8 @@ RT_C_DECLS_END
 typedef PSPIN_LOCK VBOXVCMNSPIN_LOCK, *PVBOXVCMNSPIN_LOCK;
 typedef UCHAR VBOXVCMNIRQL, *PVBOXVCMNIRQL;
 
-typedef PEVENT VBOXVCMNEVENT, *PVBOXVCMNEVENT;
+typedef PEVENT VBOXVCMNEVENT;
+typedef VBOXVCMNEVENT *PVBOXVCMNEVENT;
 
 typedef struct _DEVICE_EXTENSION * VBOXCMNREG;
 #else
@@ -131,7 +132,8 @@ typedef struct _DEVICE_EXTENSION *PDEVICE_EXTENSION;
 typedef KSPIN_LOCK VBOXVCMNSPIN_LOCK, *PVBOXVCMNSPIN_LOCK;
 typedef KIRQL VBOXVCMNIRQL, *PVBOXVCMNIRQL;
 
-typedef KEVENT VBOXVCMNEVENT, *PVBOXVCMNEVENT;
+typedef KEVENT VBOXVCMNEVENT;
+typedef VBOXVCMNEVENT *PVBOXVCMNEVENT;
 
 typedef HANDLE VBOXCMNREG;
 
@@ -334,7 +336,8 @@ extern "C"
 #ifndef VBOXWDDM
 /* XPDM-WDDM common API */
 
-typedef PEVENT VBOXVCMNEVENT, *PVBOXVCMNEVENT;
+typedef PEVENT VBOXVCMNEVENT;
+typedef VBOXVCMNEVENT *PVBOXVCMNEVENT;
 
 DECLINLINE(VOID) VBoxVideoCmnPortWriteUchar(IN PUCHAR Port, IN UCHAR Value)
 {
@@ -403,7 +406,7 @@ DECLINLINE(VP_STATUS) VBoxVideoCmnSpinLockDelete(IN PDEVICE_EXTENSION pDeviceExt
 
 DECLINLINE(LONG) VBoxVideoCmnEventSet(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNEVENT pEvent)
 {
-    return pDeviceExtension->u.primary.VideoPortProcs.pfnSetEvent(pDeviceExtension, *pEvent);
+    return pDeviceExtension->u.primary.VideoPortProcs.pfnSetEvent(pDeviceExtension, (VBOXPEVENT)*pEvent); /** @todo slightly bogus cast */
 }
 
 DECLINLINE(VP_STATUS) VBoxVideoCmnEventCreateNotification(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNEVENT pEvent, IN BOOLEAN bSignaled)
@@ -412,12 +415,12 @@ DECLINLINE(VP_STATUS) VBoxVideoCmnEventCreateNotification(IN PDEVICE_EXTENSION p
     if(bSignaled)
         fFlags |= INITIAL_EVENT_SIGNALED;
 
-    return pDeviceExtension->u.primary.VideoPortProcs.pfnCreateEvent(pDeviceExtension, fFlags, NULL, pEvent);
+    return pDeviceExtension->u.primary.VideoPortProcs.pfnCreateEvent(pDeviceExtension, fFlags, NULL, (VBOXPEVENT *)pEvent); /** @todo slightly bogus cast */
 }
 
 DECLINLINE(VP_STATUS) VBoxVideoCmnEventDelete(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNEVENT pEvent)
 {
-    return pDeviceExtension->u.primary.VideoPortProcs.pfnDeleteEvent(pDeviceExtension, *pEvent);
+    return pDeviceExtension->u.primary.VideoPortProcs.pfnDeleteEvent(pDeviceExtension, (VBOXPEVENT)*pEvent); /** @todo slightly bogus cast */
 }
 
 DECLINLINE(PVOID) VBoxVideoCmnMemAllocNonPaged(IN PDEVICE_EXTENSION pDeviceExtension, IN SIZE_T NumberOfBytes, IN ULONG Tag)
