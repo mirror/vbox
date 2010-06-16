@@ -1319,41 +1319,6 @@ VMMR0DECL(PHWACCM_CPUINFO) HWACCMR0GetCurrentCpuEx(RTCPUID idCpu)
 }
 
 /**
- * Returns the VMCPU of the current EMT thread.
- *
- * @param   pVM         The VM to operate on.
- */
-VMMR0DECL(PVMCPU)  HWACCMR0GetVMCPU(PVM pVM)
-{
-    /* RTMpCpuId had better be cheap. */
-    RTCPUID idHostCpu = RTMpCpuId();
-
-    /** @todo optimize for large number of VCPUs when that becomes more common. */
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-    {
-        PVMCPU pVCpu = &pVM->aCpus[idCpu];
-
-        if (pVCpu->hwaccm.s.idEnteredCpu == idHostCpu)
-            return pVCpu;
-    }
-    return NULL;
-}
-
-/**
- * Returns the VMCPU id of the current EMT thread.
- *
- * @param   pVM         The VM to operate on.
- */
-VMMR0DECL(VMCPUID) HWACCMR0GetVMCPUId(PVM pVM)
-{
-    PVMCPU pVCpu = HWACCMR0GetVMCPU(pVM);
-    if (pVCpu)
-        return pVCpu->idCpu;
-
-    return 0;
-}
-
-/**
  * Save a pending IO read.
  *
  * @param   pVCpu           The VMCPU to operate on.

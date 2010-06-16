@@ -101,9 +101,6 @@ VMMR0DECL(int)          HWACCMR0EnableAllCpus(PVM pVM);
 VMMR0DECL(int)          HWACCMR0EnterSwitcher(PVM pVM, bool *pfVTxDisabled);
 VMMR0DECL(int)          HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled);
 
-VMMR0DECL(PVMCPU)       HWACCMR0GetVMCPU(PVM pVM);
-VMMR0DECL(VMCPUID)      HWACCMR0GetVMCPUId(PVM pVM);
-
 VMMR0DECL(void)         HWACCMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize);
 VMMR0DECL(void)         HWACCMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize);
 
