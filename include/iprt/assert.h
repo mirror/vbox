@@ -274,28 +274,42 @@ RT_C_DECLS_END
 
 /** @def RTASSERT_HAVE_STATIC_ASSERT
  * Indicates that the compiler implements static_assert(expr, msg).
- * @todo Does any GCC version support static_assert?
- * @     Yes, as of gcc-4.3 with 'g++ -std=c++0x' but only in g++, not gcc!
  */
 #ifdef _MSC_VER
 # if _MSC_VER >= 1600 && defined(__cplusplus)
 #  define RTASSERT_HAVE_STATIC_ASSERT
 # endif
 #endif
+#if defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__)
+# define RTASSERT_HAVE_STATIC_ASSERT
+#endif
 #ifdef DOXYGEN_RUNNING
 # define RTASSERT_HAVE_STATIC_ASSERT
 #endif
 
-/** @def AssertCompile
+/** @def AssertCompileNS
  * Asserts that a compile-time expression is true. If it's not break the build.
+ *
+ * This differs from AssertCompile in that it accepts some more expressions
+ * than what C++0x allows - NS = Non-standard.
+ *
+ * @param   expr    Expression which should be true.
+ */
+#ifdef __GNUC__
+# define AssertCompileNS(expr)  extern int RTASSERTVAR[1] __attribute__((unused)), RTASSERTVAR[(expr) ? 1 : 0] __attribute__((unused))
+#else
+# define AssertCompileNS(expr)  typedef int RTASSERTTYPE[(expr) ? 1 : 0]
+#endif
+
+/** @def AssertCompile
+ * Asserts that a C++0x compile-time expression is true. If it's not break the
+ * build.
  * @param   expr    Expression which should be true.
  */
 #ifdef RTASSERT_HAVE_STATIC_ASSERT
 # define AssertCompile(expr)    static_assert(!!(expr), #expr)
-#elif defined(__GNUC__)
-# define AssertCompile(expr)    extern int RTASSERTVAR[1] __attribute__((unused)), RTASSERTVAR[(expr) ? 1 : 0] __attribute__((unused))
 #else
-# define AssertCompile(expr)    typedef int RTASSERTTYPE[(expr) ? 1 : 0]
+# define AssertCompile(expr)    AssertCompileNS(expr)
 #endif
 
 /** @def AssertCompileSize
