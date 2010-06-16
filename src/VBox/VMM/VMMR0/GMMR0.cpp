@@ -3308,13 +3308,12 @@ static int gmmR0IsChunkMapped(PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR ppvR3)
  *
  * @returns VBox status code.
  * @param   pVM             The VM.
- * @param   idCpu           VCPU id
  * @param   idChunkMap      The chunk to map. NIL_GMM_CHUNKID if nothing to map.
  * @param   idChunkUnmap    The chunk to unmap. NIL_GMM_CHUNKID if nothing to unmap.
  * @param   ppvR3           Where to store the address of the mapped chunk. NULL is ok if nothing to map.
  * @thread  EMT
  */
-GMMR0DECL(int) GMMR0MapUnmapChunk(PVM pVM, VMCPUID idCpu, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3)
+GMMR0DECL(int) GMMR0MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3)
 {
     LogFlow(("GMMR0MapUnmapChunk: pVM=%p idChunkMap=%#x idChunkUnmap=%#x ppvR3=%p\n",
              pVM, idChunkMap, idChunkUnmap, ppvR3));
@@ -3325,7 +3324,7 @@ GMMR0DECL(int) GMMR0MapUnmapChunk(PVM pVM, VMCPUID idCpu, uint32_t idChunkMap, u
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
     PGVM pGVM;
-    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    int rc = GVMMR0ByVM(pVM, &pGVM);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -3400,10 +3399,9 @@ GMMR0DECL(int) GMMR0MapUnmapChunk(PVM pVM, VMCPUID idCpu, uint32_t idChunkMap, u
  *
  * @returns see GMMR0MapUnmapChunk.
  * @param   pVM             Pointer to the shared VM structure.
- * @param   idCpu           VCPU id
  * @param   pReq            The request packet.
  */
-GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PVM pVM, VMCPUID idCpu, PGMMMAPUNMAPCHUNKREQ pReq)
+GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PVM pVM, PGMMMAPUNMAPCHUNKREQ pReq)
 {
     /*
      * Validate input and pass it on.
@@ -3412,7 +3410,7 @@ GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PVM pVM, VMCPUID idCpu, PGMMMAPUNMAPCHUNKR
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
-    return GMMR0MapUnmapChunk(pVM, idCpu, pReq->idChunkMap, pReq->idChunkUnmap, &pReq->pvR3);
+    return GMMR0MapUnmapChunk(pVM, pReq->idChunkMap, pReq->idChunkUnmap, &pReq->pvR3);
 }
 
 
