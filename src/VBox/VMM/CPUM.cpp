@@ -62,7 +62,10 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The current saved state version. */
-#define CPUM_SAVED_STATE_VERSION                11
+#define CPUM_SAVED_STATE_VERSION                12
+/** The saved state version of 3.2, 3.1 and 3.3 trunk before the hidden
+ * selector register change (CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID). */
+#define CPUM_SAVED_STATE_VERSION_VER3_2         11
 /** The saved state version of 3.0 and 3.1 trunk before the teleportation
  * changes. */
 #define CPUM_SAVED_STATE_VERSION_VER3_0         10
@@ -2064,6 +2067,7 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
      * Validate version.
      */
     if (    uVersion != CPUM_SAVED_STATE_VERSION
+        &&  uVersion != CPUM_SAVED_STATE_VERSION_VER3_2
         &&  uVersion != CPUM_SAVED_STATE_VERSION_VER3_0
         &&  uVersion != CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR
         &&  uVersion != CPUM_SAVED_STATE_VERSION_VER2_0
@@ -2133,6 +2137,13 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                     SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.GuestMsr, sizeof(pVM->aCpus[i].cpum.s.GuestMsr));
             }
         }
+
+        /* Older states does not set CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID for
+           raw-mode guest, so we have to do it ourselves. */
+        if (   uVersion <= CPUM_SAVED_STATE_VERSION_VER3_2
+            && !HWACCMIsEnabled(pVM))
+            for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+                pVM->aCpus[iCpu].cpum.s.fChanged |= CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID;
     }
 
     pVM->cpum.s.fPendingRestore = false;
@@ -2271,7 +2282,6 @@ static DECLCALLBACK(int) cpumR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
         LogRel(("CPUM: Missing state!\n"));
         return VERR_INTERNAL_ERROR_2;
     }
-
     return VINF_SUCCESS;
 }
 
@@ -3573,7 +3583,7 @@ VMMR3DECL(int) CPUMR3DisasmInstrCPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPT
     if (    (pCtx->cr0 & X86_CR0_PE)
         &&   pCtx->eflags.Bits.u1VM == 0)
     {
-        if (CPUMAreHiddenSelRegsValid(pVM))
+        if (CPUMAreHiddenSelRegsValid(pVCpu))
         {
             State.f64Bits         = enmMode >= PGMMODE_AMD64 && pCtx->csHid.Attr.n.u1Long;
             State.GCPtrSegBase    = pCtx->csHid.u64Base;
@@ -3767,3 +3777,213 @@ VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdDefRCPtr(PVM pVM)
 {
     return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.GuestCpuIdDef);
 }
+
+
+/**
+ * Transforms the guest CPU state to raw-ring mode.
+ *
+ * This function will change the any of the cs and ss register with DPL=0 to DPL=1.
+ *
+ * @returns VBox status. (recompiler failure)
+ * @param   pVCpu       The VMCPU handle.
+ * @param   pCtxCore    The context core (for trap usage).
+ * @see     @ref pg_raw
+ */
+VMMR3DECL(int) CPUMR3RawEnter(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+
+    Assert(!pVCpu->cpum.s.fRawEntered);
+    Assert(!pVCpu->cpum.s.fRemEntered);
+    if (!pCtxCore)
+        pCtxCore = CPUMCTX2CORE(&pVCpu->cpum.s.Guest);
+
+    /*
+     * Are we in Ring-0?
+     */
+    if (    pCtxCore->ss && (pCtxCore->ss & X86_SEL_RPL) == 0
+        &&  !pCtxCore->eflags.Bits.u1VM)
+    {
+        /*
+         * Enter execution mode.
+         */
+        PATMRawEnter(pVM, pCtxCore);
+
+        /*
+         * Set CPL to Ring-1.
+         */
+        pCtxCore->ss |= 1;
+        if (pCtxCore->cs && (pCtxCore->cs & X86_SEL_RPL) == 0)
+            pCtxCore->cs |= 1;
+    }
+    else
+    {
+        AssertMsg((pCtxCore->ss & X86_SEL_RPL) >= 2 || pCtxCore->eflags.Bits.u1VM,
+                  ("ring-1 code not supported\n"));
+        /*
+         * PATM takes care of IOPL and IF flags for Ring-3 and Ring-2 code as well.
+         */
+        PATMRawEnter(pVM, pCtxCore);
+    }
+
+    /*
+     * Invalidate the hidden registers.
+     */
+    pVCpu->cpum.s.fChanged |= CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID;
+
+    /*
+     * Assert sanity.
+     */
+    AssertMsg((pCtxCore->eflags.u32 & X86_EFL_IF), ("X86_EFL_IF is clear\n"));
+    AssertReleaseMsg(   pCtxCore->eflags.Bits.u2IOPL < (unsigned)(pCtxCore->ss & X86_SEL_RPL)
+                     || pCtxCore->eflags.Bits.u1VM,
+                     ("X86_EFL_IOPL=%d CPL=%d\n", pCtxCore->eflags.Bits.u2IOPL, pCtxCore->ss & X86_SEL_RPL));
+    Assert((pVCpu->cpum.s.Guest.cr0 & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)) == (X86_CR0_PG | X86_CR0_PE | X86_CR0_WP));
+
+    pCtxCore->eflags.u32        |= X86_EFL_IF; /* paranoia */
+
+    pVCpu->cpum.s.fRawEntered = true;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Transforms the guest CPU state from raw-ring mode to correct values.
+ *
+ * This function will change any selector registers with DPL=1 to DPL=0.
+ *
+ * @returns Adjusted rc.
+ * @param   pVCpu       The VMCPU handle.
+ * @param   rc          Raw mode return code
+ * @param   pCtxCore    The context core (for trap usage).
+ * @see     @ref pg_raw
+ */
+VMMR3DECL(int) CPUMR3RawLeave(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, int rc)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+
+    /*
+     * Don't leave if we've already left (in GC).
+     */
+    Assert(pVCpu->cpum.s.fRawEntered);
+    Assert(!pVCpu->cpum.s.fRemEntered);
+    if (!pVCpu->cpum.s.fRawEntered)
+        return rc;
+    pVCpu->cpum.s.fRawEntered = false;
+
+    PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
+    if (!pCtxCore)
+        pCtxCore = CPUMCTX2CORE(pCtx);
+    Assert(pCtxCore->eflags.Bits.u1VM || (pCtxCore->ss & X86_SEL_RPL));
+    AssertMsg(pCtxCore->eflags.Bits.u1VM || pCtxCore->eflags.Bits.u2IOPL < (unsigned)(pCtxCore->ss & X86_SEL_RPL),
+              ("X86_EFL_IOPL=%d CPL=%d\n", pCtxCore->eflags.Bits.u2IOPL, pCtxCore->ss & X86_SEL_RPL));
+
+    /*
+     * Are we executing in raw ring-1?
+     */
+    if (    (pCtxCore->ss & X86_SEL_RPL) == 1
+        &&  !pCtxCore->eflags.Bits.u1VM)
+    {
+        /*
+         * Leave execution mode.
+         */
+        PATMRawLeave(pVM, pCtxCore, rc);
+        /* Not quite sure if this is really required, but shouldn't harm (too much anyways). */
+        /** @todo See what happens if we remove this. */
+        if ((pCtxCore->ds & X86_SEL_RPL) == 1)
+            pCtxCore->ds &= ~X86_SEL_RPL;
+        if ((pCtxCore->es & X86_SEL_RPL) == 1)
+            pCtxCore->es &= ~X86_SEL_RPL;
+        if ((pCtxCore->fs & X86_SEL_RPL) == 1)
+            pCtxCore->fs &= ~X86_SEL_RPL;
+        if ((pCtxCore->gs & X86_SEL_RPL) == 1)
+            pCtxCore->gs &= ~X86_SEL_RPL;
+
+        /*
+         * Ring-1 selector => Ring-0.
+         */
+        pCtxCore->ss &= ~X86_SEL_RPL;
+        if ((pCtxCore->cs & X86_SEL_RPL) == 1)
+            pCtxCore->cs &= ~X86_SEL_RPL;
+    }
+    else
+    {
+        /*
+         * PATM is taking care of the IOPL and IF flags for us.
+         */
+        PATMRawLeave(pVM, pCtxCore, rc);
+        if (!pCtxCore->eflags.Bits.u1VM)
+        {
+            /** @todo See what happens if we remove this. */
+            if ((pCtxCore->ds & X86_SEL_RPL) == 1)
+                pCtxCore->ds &= ~X86_SEL_RPL;
+            if ((pCtxCore->es & X86_SEL_RPL) == 1)
+                pCtxCore->es &= ~X86_SEL_RPL;
+            if ((pCtxCore->fs & X86_SEL_RPL) == 1)
+                pCtxCore->fs &= ~X86_SEL_RPL;
+            if ((pCtxCore->gs & X86_SEL_RPL) == 1)
+                pCtxCore->gs &= ~X86_SEL_RPL;
+        }
+    }
+
+    return rc;
+}
+
+
+/**
+ * Enters REM, gets and resets the changed flags (CPUM_CHANGED_*).
+ *
+ * Only REM should ever call this function!
+ *
+ * @returns The changed flags.
+ * @param   pVCpu       The VMCPU handle.
+ * @param   puCpl       Where to return the current privilege level (CPL).
+ */
+VMMR3DECL(uint32_t) CPUMR3RemEnter(PVMCPU pVCpu, uint32_t *puCpl)
+{
+    Assert(!pVCpu->cpum.s.fRawEntered);
+    Assert(!pVCpu->cpum.s.fRemEntered);
+
+    /*
+     * Get the CPL first.
+     */
+    *puCpl = CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.s.Guest));
+
+    /*
+     * Get and reset the flags, leaving CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID set.
+     */
+    uint32_t fFlags = pVCpu->cpum.s.fChanged;
+    pVCpu->cpum.s.fChanged &= CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID; /* leave it set */
+
+    /** @todo change the switcher to use the fChanged flags. */
+    if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_SINCE_REM)
+    {
+        fFlags |= CPUM_CHANGED_FPU_REM;
+        pVCpu->cpum.s.fUseFlags &= ~CPUM_USED_FPU_SINCE_REM;
+    }
+
+    pVCpu->cpum.s.fRemEntered = true;
+    return fFlags;
+}
+
+
+/**
+ * Leaves REM and works the CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID flag.
+ *
+ * @param   pVCpu               The virtual CPU handle.
+ * @param   fNoOutOfSyncSels    This is @c false if there are out of sync
+ *                              registers.
+ */
+VMMR3DECL(void) CPUMR3RemLeave(PVMCPU pVCpu, bool fNoOutOfSyncSels)
+{
+    Assert(!pVCpu->cpum.s.fRawEntered);
+    Assert(pVCpu->cpum.s.fRemEntered);
+
+    if (fNoOutOfSyncSels)
+        pVCpu->cpum.s.fChanged &= ~CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID;
+    else
+        pVCpu->cpum.s.fChanged |= ~CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID;
+
+    pVCpu->cpum.s.fRemEntered = false;
+}
+

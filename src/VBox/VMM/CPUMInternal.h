@@ -293,8 +293,6 @@ typedef struct CPUM
         uint32_t            OrMask;
     } CR4;
 
-    /** Have we entered rawmode? */
-    bool                    fRawEntered;
     /** Synthetic CPU type? */
     bool                    fSyntheticCpu;
     /** The (more) portable CPUID level.  */
@@ -302,9 +300,7 @@ typedef struct CPUM
     /** Indiciates that a state restore is pending.
      * This is used to verify load order dependencies (PGM). */
     bool                    fPendingRestore;
-#if HC_ARCH_BITS == 64
-    uint8_t                 abPadding[4];
-#endif
+    uint8_t                 abPadding[HC_ARCH_BITS == 64 ? 5 : 1];
 
     /** The standard set of CpuId leafs. */
     CPUMCPUID               aGuestCpuIdStd[6];
@@ -389,8 +385,13 @@ typedef struct CPUMCPU
      * 32-64 switcher. */
     uint32_t                u32RetCode;
 
+    /** Have we entered raw-mode? */
+    bool                    fRawEntered;
+    /** Have we entered the recompiler? */
+    bool                    fRemEntered;
+
     /** Align the structure on a 64-byte boundrary. */
-    uint8_t                 abPadding2[HC_ARCH_BITS == 32 ? 36 : 28];
+    uint8_t                 abPadding2[HC_ARCH_BITS == 32 ? 34 : 26];
 } CPUMCPU, *PCPUMCPU;
 /** Pointer to the CPUMCPU instance data residing in the shared VMCPU structure. */
 typedef CPUMCPU *PCPUMCPU;

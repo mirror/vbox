@@ -357,7 +357,8 @@ VMMDECL(void) TRPMRestoreTrap(PVMCPU pVCpu)
  * @param   iOrgTrap    The original trap.
  * @internal
  */
-VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGate, uint32_t opsize, TRPMERRORCODE enmError, TRPMEVENT enmType, int32_t iOrgTrap)
+VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGate, uint32_t opsize,
+                             TRPMERRORCODE enmError, TRPMEVENT enmType, int32_t iOrgTrap)
 {
 #ifdef TRPM_FORWARD_TRAPS_IN_GC
     PVM pVM = pVCpu->CTX_SUFF(pVM);

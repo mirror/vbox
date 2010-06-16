@@ -2741,7 +2741,8 @@ static int svmR0InterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, ui
     if (enmMode != CPUMODE_16BIT)
     {
         RTGCPTR pbCode;
-        int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->rip, &pbCode);
+        int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs,
+                                              &pRegFrame->csHid, (RTGCPTR)pRegFrame->rip, &pbCode);
         if (RT_SUCCESS(rc))
         {
             uint32_t     cbOp;

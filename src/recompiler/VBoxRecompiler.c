@@ -1797,6 +1797,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
     unsigned                i;
     TRPMEVENT               enmType;
     uint8_t                 u8TrapNo;
+    uint32_t                uCpl;
     int                     rc;
 
     STAM_PROFILE_START(&pVM->rem.s.StatsState, a);
@@ -1804,7 +1805,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
 
     pVM->rem.s.Env.pVCpu = pVCpu;
     pCtx = pVM->rem.s.pCtx = CPUMQueryGuestCtxPtr(pVCpu);
-    fHiddenSelRegsValid = CPUMAreHiddenSelRegsValid(pVM);
+    fHiddenSelRegsValid = CPUMAreHiddenSelRegsValid(pVCpu); /// @todo move this down and use fFlags.
 
     Assert(!pVM->rem.s.fInREM);
     pVM->rem.s.fInStateSync = true;
@@ -1926,8 +1927,8 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
     /*
      * Registers which are rarely changed and require special handling / order when changed.
      */
-    fFlags = CPUMGetAndClearChangedFlagsREM(pVCpu);
-    LogFlow(("CPUMGetAndClearChangedFlagsREM %x\n", fFlags));
+    fFlags = CPUMR3RemEnter(pVCpu, &uCpl);
+    LogFlow(("CPUMR3RemEnter %x %x\n", fFlags, uCpl));
     if (fFlags & (  CPUM_CHANGED_CR4  | CPUM_CHANGED_CR3  | CPUM_CHANGED_CR0
                   | CPUM_CHANGED_GDTR | CPUM_CHANGED_IDTR | CPUM_CHANGED_LDTR
                   | CPUM_CHANGED_FPU_REM | CPUM_CHANGED_SYSENTER_MSR | CPUM_CHANGED_CPUID))
@@ -2040,7 +2041,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
         /** @note QEmu saves the 2nd dword of the descriptor; we should convert the attribute word back! */
 
         /* Set current CPL */
-        cpu_x86_set_cpl(&pVM->rem.s.Env, CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx)));
+        cpu_x86_set_cpl(&pVM->rem.s.Env, uCpl);
 
         cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_CS, pCtx->cs, pCtx->csHid.u64Base, pCtx->csHid.u32Limit, (pCtx->csHid.Attr.u << 8) & 0xFFFFFF);
         cpu_x86_load_seg_cache(&pVM->rem.s.Env, R_SS, pCtx->ss, pCtx->ssHid.u64Base, pCtx->ssHid.u32Limit, (pCtx->ssHid.Attr.u << 8) & 0xFFFFFF);
@@ -2056,7 +2057,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
         {
             Log2(("REMR3State: SS changed from %04x to %04x!\n", pVM->rem.s.Env.segs[R_SS].selector, pCtx->ss));
 
-            cpu_x86_set_cpl(&pVM->rem.s.Env, CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx)));
+            cpu_x86_set_cpl(&pVM->rem.s.Env, uCpl);
             sync_seg(&pVM->rem.s.Env, R_SS, pCtx->ss);
 #ifdef VBOX_WITH_STATISTICS
             if (pVM->rem.s.Env.segs[R_SS].newselector)
@@ -2474,6 +2475,15 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
     /*
      * We're not longer in REM mode.
      */
+    CPUMR3RemLeave(pVCpu,
+                      HWACCMIsEnabled(pVM)
+                   || (  pVM->rem.s.Env.segs[R_SS].newselector
+                       | pVM->rem.s.Env.segs[R_GS].newselector
+                       | pVM->rem.s.Env.segs[R_FS].newselector
+                       | pVM->rem.s.Env.segs[R_ES].newselector
+                       | pVM->rem.s.Env.segs[R_DS].newselector
+                       | pVM->rem.s.Env.segs[R_CS].newselector) == 0
+                   );
     VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_EXEC_REM);
     pVM->rem.s.fInREM    = false;
     pVM->rem.s.pCtx      = NULL;
