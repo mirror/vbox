@@ -474,7 +474,7 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, RTMSINTERVAL
     {
         port_event_t aPortEvents[AIO_MAXIMUM_REQUESTS_PER_CONTEXT];
         uint_t cRequests    = cMinReqs;
-        int cRequestsToWait = cMinReqs < AIO_MAXIMUM_REQUESTS_PER_CONTEXT ? cReqs : AIO_MAXIMUM_REQUESTS_PER_CONTEXT;
+        int cRequestsToWait = RT_MIN(cReqs, AIO_MAXIMUM_REQUESTS_PER_CONTEXT);
         int rcSol;
         uint64_t StartTime;
 
