@@ -1142,17 +1142,27 @@ endif
 #
 ifndef VBOX_VCC_TOOL
  ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
-  VBOX_USE_VCC80 ?= 1 # Enforce VCC80 when targetting AMD64.
- endif
- ifdef VBOX_USE_VCC80
-  ifeq ($(KBUILD_TARGET_ARCH),x86)
-   VBOX_VCC_TOOL := VCC80X86
-  else
-   VBOX_VCC_TOOL := VCC80AMD64
+  ifndef VBOX_USE_VCC100
+   VBOX_USE_VCC80 ?= 1 # the default for win.amd64
   endif
+ endif
+ ifdef VBOX_USE_VCC100
+  VBOX_VCC_TOOL_STEM = VCC100
+ else ifdef VBOX_USE_VCC80
+  VBOX_VCC_TOOL_STEM = VCC80
  else
   VBOX_VCC_TOOL := VCC70
+  VBOX_VCC_TOOL_STEM := VCC70
  endif
+ ifndef VBOX_VCC_TOOL
+  VBOX_VCC_TOOL := $(VBOX_VCC_TOOL_STEM)$(toupper $(KBUILD_TARGET_ARCH))
+ endif
+else ifndef VBOX_VCC_TOOL_STEM
+$(error VBOX_VCC_TOOL_STEM is not defined)
+endif
+# VCC70 is hopefully the most special case here...
+if !defined(VBOX_USE_VCC100) && !defined(VBOX_USE_VCC90) && !defined(VBOX_USE_VCC80) && !defined(VBOX_USE_VCC70)
+ VBOX_USE_VCC70 := 1
 endif
 
 #
@@ -1166,11 +1176,11 @@ PATH_DEVTOOLS_TRG ?= $(PATH_DEVTOOLS)/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)
 
 ## @todo Remove the default tool crap here!
 TOOL = $(VBOX_GCC_TOOL)
-ifdef VBOX_USE_VCC80
- TOOL.win.x86 = VCC80X86
- TOOL.win.amd64 = VCC80AMD64
-else
+ifdef VBOX_USE_VCC70
  TOOL.win = VCC70
+else
+ TOOL.win.x86 = $(VBOX_VCC_TOOL_STEM)X86
+ TOOL.win.amd64 = $(VBOX_VCC_TOOL_STEM)AMD64
 endif
 ASTOOL = $(VBOX_ASTOOL)
 
@@ -1308,7 +1318,7 @@ else
  VBOX_GCC_FP     ?= -fno-omit-frame-pointer
  VBOX_GCC_OPT    ?= -O2 $(VBOX_GCC_mtune-generic)
  VBOX_VCC_FP     ?= -Oy-
- ifdef VBOX_USE_VCC80
+ ifndef VBOX_USE_VCC70
  VBOX_VCC_OPT    ?= -O2 -GS-
  else
  VBOX_VCC_OPT    ?= -Ogitb2
@@ -1316,7 +1326,7 @@ else
  VBOX_GCC_R0_FP  ?= -fno-omit-frame-pointer
  VBOX_GCC_R0_OPT ?= -O2 $(VBOX_GCC_mtune-generic)
  VBOX_VCC_R0_FP  ?= -Oy-
- ifdef VBOX_USE_VCC80
+ ifndef VBOX_USE_VCC70
  VBOX_VCC_R0_OPT ?= -O2 -GS-
  else
  VBOX_VCC_R0_OPT ?= -Ogitb2
@@ -1324,7 +1334,7 @@ else
  VBOX_GCC_GC_FP  ?= -fno-omit-frame-pointer
  VBOX_GCC_GC_OPT ?= -O2 $(VBOX_GCC_mtune-generic)
  VBOX_VCC_GC_FP  ?= -Oy-
- ifdef VBOX_USE_VCC80
+ ifndef VBOX_USE_VCC70
  VBOX_VCC_GC_OPT ?= -O2
  else
  VBOX_VCC_GC_OPT ?= -Ogitb2
@@ -1347,6 +1357,15 @@ ifdef VBOX_WITH_DEBUG_VCC_CRT
 else
  VBOX_VCC_CRT_TYPE   =
  VBOX_VCC_CRT_TYPE_N = d
+endif
+
+#
+# Decide which windows DDK to use by default.
+#
+ifdef VBOX_USE_WINDDK
+ VBOX_WINDDK ?= WINDDK
+else
+ VBOX_WINDDK ?= W2K3DDK
 endif
 
 #
@@ -1815,9 +1834,11 @@ else
   VBOX_WINDOWS_ICON_FILE           ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox-vista.ico
   VBOX_WINDOWS_ADDITIONS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBoxGA-vista.ico
   VBOX_NSIS_ICON_FILE              ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBoxGA-nsis.ico
-  TOOL_VCC80X86_RC   := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
-  TOOL_VCC80AMD64_RC := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
-  TOOL_VCC70_RC      := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
+  TOOL_VCC100X86_RC   := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
+  TOOL_VCC100AMD64_RC := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
+  TOOL_VCC80X86_RC    := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
+  TOOL_VCC80AMD64_RC  := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
+  TOOL_VCC70_RC       := $(PATH_DEVTOOLS)/win.x86/ddk/6000/bin/x86/rc.exe
  else
   VBOX_WINDOWS_ICON_FILE           ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBox-winxp.ico
   VBOX_WINDOWS_ADDITIONS_ICON_FILE ?= $(PATH_ROOT)/src/VBox/Artwork/VirtualBoxGA-winxp.ico
@@ -2167,10 +2188,10 @@ SDK_VBOX_BOOST_INCS  ?= $(PATH_ROOT)/src/libs/boost-1.37.0
 #
 # Special SDK for the problematic NTDLL.LIB.
 #
-SDK_VBOX_NTDLL = Requires W2K3DDK
-SDK_VBOX_NTDLL_LIBS ?= $(PATH_SDK_W2K3DDK_LIB)/ntdll.lib
+SDK_VBOX_NTDLL = Requires $(VBOX_WINDDK)
+SDK_VBOX_NTDLL_LIBS ?= $(PATH_SDK_$(VBOX_WINDDK)_LIB)/ntdll.lib
 ifeq ($(KBUILD_TARGET),win)
- include $(KBUILD_PATH)/sdks/W2K3DDK.kmk
+ include $(KBUILD_PATH)/sdks/$(VBOX_WINDDK).kmk
 endif
 
 #
@@ -2262,21 +2283,30 @@ ifdef VBOX_WITH_RAW_MODE
  TEMPLATE_VBoxRc_BLD_TRG_ARCH        = x86
 
  ifeq ($(VBOX_LDR_FMT32),pe)
-  ifdef VBOX_USE_VCC80
-   TEMPLATE_VBoxRc_TOOL              = VCC80X86
+  ifndef VBOX_USE_VCC70
+   TEMPLATE_VBoxRc_TOOL              = $(VBOX_VCC_TOOL_STEM)X86
    TEMPLATE_VBoxRc_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 -GS- -wd4996 -Zc:wchar_t- -Gs8192 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP) $(VBOX_VCC_WERR)
   else
    TEMPLATE_VBoxRc_TOOL              = VCC70
    TEMPLATE_VBoxRc_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP) $(VBOX_VCC_WERR)
   endif
   TEMPLATE_VBoxRc_CFLAGS             = $(TEMPLATE_VBoxRc_CXXFLAGS)
-  TEMPLATE_VBoxRc_LDFLAGS            = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Lines -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR) -Debug
-  ifndef VBOX_NOINC_MISC
-   include $(KBUILD_PATH)/sdks/W2K3DDKX86.kmk
-  endif
+  TEMPLATE_VBoxRc_LDFLAGS            = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR) -Debug
+  ifdef VBOX_USE_WINDDK
+   ifndef VBOX_NOINC_MISC
+    include $(KBUILD_PATH)/sdks/$(VBOX_WINDDK).kmk
+   endif
+   TEMPLATE_VBoxRc_LIBS               = \
+   	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/int64.lib
+  else
+   ifndef VBOX_NOINC_MISC
+    include $(KBUILD_PATH)/sdks/W2K3DDKX86.kmk
+   endif
   TEMPLATE_VBoxRc_LIBS               = \
-	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib \
-	$(PATH_LIB)/RuntimeRCStub$(VBOX_SUFF_LIB)
+	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib
+  endif
+  TEMPLATE_VBoxRc_LIBS              += \
+  	$(PATH_LIB)/RuntimeRCStub$(VBOX_SUFF_LIB)
   TEMPLATE_VBoxRc_POST_CMDS          = $(VBOX_SIGN_IMAGE_CMDS)
  endif # pe
 
@@ -2330,14 +2360,14 @@ ifdef VBOX_WITH_RAW_MODE
  ifeq ($(VBOX_LDR_FMT32),pe)
   TEMPLATE_VBoxRcExe_LDFLAGS = -Incremental:NO -MapInfo:Exports -NoD -Debug
   TEMPLATE_VBoxRcExe_SDKS    = WIN32SDK
-  ifdef VBOX_USE_VCC80
+  ifndef VBOX_USE_VCC70
    TEMPLATE_VBoxRcExe_LIBS   = \
-	$(PATH_TOOL_VCC80X86_LIB)/libcmt.lib \
-	$(PATH_TOOL_VCC80X86_LIB)/oldnames.lib
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/libcmt.lib \
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/oldnames.lib
   else
    TEMPLATE_VBoxRcExe_LIBS   = \
-	$(PATH_TOOL_VCC70_LIB)/libcmt.lib \
-	$(PATH_TOOL_VCC70_LIB)/oldnames.lib
+   	$(PATH_TOOL_VCC70_LIB)/libcmt.lib \
+   	$(PATH_TOOL_VCC70_LIB)/oldnames.lib
   endif
  endif
 
@@ -2387,7 +2417,7 @@ TEMPLATE_VBoxR0_SYSSUFF             = .r0
 
 ifeq ($(VBOX_LDR_FMT),pe)
 TEMPLATE_VBoxR0_TOOL                = $(VBOX_VCC_TOOL)
- ifdef VBOX_USE_VCC80
+ ifndef VBOX_USE_VCC70
 TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 -GS- -wd4996 -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) $(VBOX_VCC_WERR)
  else
 TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 $(VBOX_VCC_OPT) $(VBOX_VCC_FP)	$(VBOX_VCC_WERR)
@@ -2396,8 +2426,13 @@ TEMPLATE_VBoxR0_CFLAGS              = $(TEMPLATE_VBoxR0_CXXFLAGS)
 TEMPLATE_VBoxR0_LDFLAGS             = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR) -Debug
 TEMPLATE_VBoxR0_LIBS                = \
 	$(PATH_LIB)/RuntimeR0Stub$(VBOX_SUFF_LIB)
+ ifdef VBOX_USE_WINDDK
+TEMPLATE_VBoxR0_LIBS.x86            = \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/int64.lib
+ else
 TEMPLATE_VBoxR0_LIBS.x86            = \
 	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib
+ endif
 TEMPLATE_VBoxR0_POST_CMDS           = $(VBOX_SIGN_DRIVER_CMDS)
 endif # pe
 
@@ -2473,7 +2508,7 @@ ifeq ($(KBUILD_TARGET),win)
 	VBOX_SVN_REV_NR=$(VBOX_SVN_REV)
  TEMPLATE_VBOXR0DRV_DEFS.x86           = _X86_
  TEMPLATE_VBOXR0DRV_DEFS.amd64         = _AMD64_
- ifdef VBOX_USE_VCC80
+ ifndef VBOX_USE_VCC70
   TEMPLATE_VBOXR0DRV_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -Gz -W3 -GS- -wd4996 -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
  else
   TEMPLATE_VBOXR0DRV_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -Gz -W3 $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
@@ -2481,6 +2516,10 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXR0DRV_CFLAGS             = $(TEMPLATE_VBOXR0DRV_CXXFLAGS)
  TEMPLATE_VBOXR0DRV_LDFLAGS            = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Exports -NoD -Debug
  TEMPLATE_VBOXR0DRV_POST_CMDS          = $(VBOX_SIGN_DRIVER_CMDS)
+ ifdef VBOX_USE_VCC100 # HACK ALERT!
+  TEMPLATE_VBOXR0DRV_CINCS             = $(TOOL_$(VBOX_VCC_TOOL)_CINCS)
+  TEMPLATE_VBOXR0DRV_CXXINCS           = $(TOOL_$(VBOX_VCC_TOOL)_CXXINCS)
+ endif
 endif
 
 ifeq ($(KBUILD_TARGET),linux)
@@ -2697,7 +2736,7 @@ ifeq ($(KBUILD_TARGET),win)
 	VBOX_VERSION_BUILD_NR=$(VBOX_VERSION_BUILD) \
 	VBOX_SVN_REV_NR=$(VBOX_SVN_REV)
  TEMPLATE_VBOXR3EXE_SDKS               = WINPSDK
- ifdef VBOX_USE_VCC80
+ ifndef VBOX_USE_VCC70
   TEMPLATE_VBOXR3EXE_CXXFLAGS          = -Zi -Zl -GR- -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -W3 -wd4065 -wd4244 -wd4996 -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
   TEMPLATE_VBOXR3EXE_CXXFLAGS.debug    = -RTCsu
  else
@@ -2721,6 +2760,10 @@ ifeq ($(KBUILD_TARGET),win)
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib
  TEMPLATE_VBOXR3EXE_POST_CMDS          = $(VBOX_SIGN_IMAGE_CMDS)
+ ifdef VBOX_USE_VCC100 # HACK ALERT!
+  TEMPLATE_VBOXR3EXE_CINCS.win         = $(TOOL_$(VBOX_VCC_TOOL)_CINCS)
+  TEMPLATE_VBOXR3EXE_CXXINCS.win       = $(TOOL_$(VBOX_VCC_TOOL)_CXXINCS)
+ endif
 
 else # the gcc guys
 TEMPLATE_VBOXR3EXE_TOOL                = $(VBOX_GCC_TOOL)
@@ -3142,11 +3185,11 @@ TEMPLATE_VBOXMAINEXE_RCDEFS              = $(TEMPLATE_VBOXR3EXE_RCDEFS)
 TEMPLATE_VBOXMAINEXE_LIBS.kprofile       = $(LIB_KPROFILE)
 
 ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBOXMAINEXE_SDKS               = WINPSDK W2K3DDK
+ TEMPLATE_VBOXMAINEXE_SDKS               = WINPSDK $(VBOX_WINDDK)
  # Note: C4250 is the dominance warning, see r32789.
  #       C4065 is about default only switches.
  #       C4996 is about deprected function (CRT only?).
- ifdef VBOX_USE_VCC80
+ ifndef VBOX_USE_VCC70
   TEMPLATE_VBOXMAINEXE_TOOL              = $(VBOX_VCC_TOOL)
   TEMPLATE_VBOXMAINEXE_CXXFLAGS          = -Zi -Zl -GR -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -W3 -wd4065 -wd4996 -wd4250 -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
   TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug    = -RTCsu
@@ -3176,6 +3219,10 @@ ifeq ($(KBUILD_TARGET),win)
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls$(VBOX_VCC_CRT_TYPE).lib
  TEMPLATE_VBOXMAINEXE_POST_CMDS          = $(VBOX_SIGN_IMAGE_CMDS)
+ ifdef VBOX_USE_VCC100 # HACK ALERT!
+  TEMPLATE_VBOXMAINEXE_CINCS             = $(TOOL_$(VBOX_VCC_TOOL)_CINCS)
+  TEMPLATE_VBOXMAINEXE_CXXINCS           = $(TOOL_$(VBOX_VCC_TOOL)_CXXINCS)
+ endif
 
 else # the GCC guys:
 
@@ -3466,7 +3513,7 @@ ifdef VBOX_WITH_QTGUI
      QT_DLL _CRT_SECURE_NO_DEPRECATE \
      $(QMAKE_PRL_DEFINES)
   ## @todo VCC70 flags?
-  ifdef VBOX_USE_VCC80
+  ifndef VBOX_USE_VCC70
    TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS = \
 	-nologo -Zm200 -W3 -MD -Zi -EHsc -Zc:wchar_t-
    TEMPLATE_VBOXQT4GUIEXE_CXXFLAGS.debug = -RTCsu
@@ -3495,6 +3542,10 @@ ifdef VBOX_WITH_QTGUI
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib
   endif
   TEMPLATE_VBOXQT4GUIEXE_POST_CMDS = $(VBOX_SIGN_IMAGE_CMDS)
+ ifdef VBOX_USE_VCC100 # HACK ALERT!
+  TEMPLATE_VBOXQT4GUIEXE_CINCS   = $(TOOL_$(VBOX_VCC_TOOL)_CINCS)
+  TEMPLATE_VBOXQT4GUIEXE_CXXINCS = $(TOOL_$(VBOX_VCC_TOOL)_CXXINCS)
+ endif
 
  else # the gcc guys:
   TEMPLATE_VBOXQT4GUIEXE_TOOL = $(VBOX_GCC_TOOL)
@@ -3633,18 +3684,16 @@ endif # VBOX_WITH_QTGUI
 TEMPLATE_VBOXBLDPROG  = VBox Build Program
 TEMPLATE_VBOXBLDPROG_DEFS                = IN_RING3
 ifeq ($(KBUILD_HOST),win)
- ifeq ($(KBUILD_HOST_ARCH),x86)
-  ifdef VBOX_USE_VCC80
-   TEMPLATE_VBOXBLDPROG_TOOL             = VCC80X86
-  else
-   TEMPLATE_VBOXBLDPROG_TOOL             = VCC70
-  endif
-   TEMPLATE_VBOXBLDPROG_SDKS             = WIN32SDK
+ ifndef VBOX_USE_VCC70
+  TEMPLATE_VBOXBLDPROG_TOOL            := $(VBOX_VCC_TOOL_STEM)$(toupper $(KBUILD_HOST_ARCH))
+  TEMPLATE_VBOXBLDPROG_SDKS            := $(if-expr "$(KBUILD_HOST_ARCH)" == "x86",WIN32SDK,WIN64SDK)
+ else if1of ($(KBUILD_HOST_ARCH), x86)
+  TEMPLATE_VBOXBLDPROG_TOOL            := VCC70
+  TEMPLATE_VBOXBLDPROG_SDKS            := WIN32SDK
  else
-  TEMPLATE_VBOXBLDPROG_TOOL              = VCC80AMD64
-  TEMPLATE_VBOXBLDPROG_SDKS              = WIN64SDK
+  $(error VBOX_USE_VCC70 does not work with KBUILD_HOST_ARCH=$(KBUILD_HOST_ARCH) because the compiler only does 32-bit x86)
  endif
- ifneq ($(TEMPLATE_VBOXBLDPROG_TOOL),VCC70)
+ ifndef VBOX_USE_VCC70
   TEMPLATE_VBOXBLDPROG_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -MT$(VBOX_VCC_CRT_TYPE) -W3 -wd4996 -Zc:wchar_t-
   TEMPLATE_VBOXBLDPROG_CXXFLAGS.debug    = -RTCsu
   TEMPLATE_VBOXBLDPROG_CXXFLAGS.release  = -O2 -Oy- -GS-
@@ -3764,9 +3813,11 @@ endif # !win
 # (Some (old) Wine versions fails loading msvcrt.dll from the VCC bin directory.)
 #
 ifneq ($(KBUILD_HOST),win)
- TOOL_VCC80X86_RC   := $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/rc.exe
- TOOL_VCC80AMD64_RC := $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/rc.exe
- TOOL_VCC70_RC      := $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/rc.exe
+ TOOL_VCC100X86_RC   := $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/rc.exe
+ TOOL_VCC100AMD64_RC := $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/rc.exe
+ TOOL_VCC80X86_RC    := $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/rc.exe
+ TOOL_VCC80AMD64_RC  := $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/rc.exe
+ TOOL_VCC70_RC       := $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/rc.exe
  WIN32_MC = $(EXEC_X86_WIN32) $(PATH_DEVTOOLS)/win.x86/bin/mc.exe
 else
  WIN32_MC = $(EXEC_X86_WIN32) $(firstword $(wildcard \
@@ -3974,10 +4025,10 @@ endif
 TEMPLATE_VBOXGUESTR0             = VBox Guest Driver
 TEMPLATE_VBOXGUESTR0_EXTENDS     = VBOXR0DRV
 TEMPLATE_VBOXGUESTR0_INST        = $(INST_ADDITIONS)
-TEMPLATE_VBOXGUESTR0_SDKS.win.x86   = WIN32SDK W2K3DDK
-TEMPLATE_VBOXGUESTR0_SDKS.win.amd64 = W2K3DDK WINPSDKINCS
+TEMPLATE_VBOXGUESTR0_SDKS.win.x86   = WIN32SDK $(VBOX_WINDDK)
+TEMPLATE_VBOXGUESTR0_SDKS.win.amd64 = $(VBOX_WINDDK) WINPSDKINCS
 TEMPLATE_VBOXGUESTR0_LIBS.win.x86   = \
-	$(PATH_SDK_W2K3DDK_LIB)/int64.lib
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/int64.lib
 TEMPLATE_VBOXGUESTR0_DEFS        = $(TEMPLATE_VBOXR0DRV_DEFS) IN_GUEST IN_GUEST_R0
 ifeq ($(KBUILD_TARGET),solaris) # No VBI for the guest additions yet.
  TEMPLATE_VBOXGUESTR0_LDFLAGS    = -r -dy

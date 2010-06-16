@@ -181,7 +181,7 @@ endif
 #
 RuntimeR3_TEMPLATE      = VBoxR3Static
 RuntimeR3_SDKS          = VBOX_LIBXML2 VBOX_BOOST
-RuntimeR3_SDKS.win      = WINPSDK W2K3DDK
+RuntimeR3_SDKS.win      = WINPSDK $(VBOX_WINDDK)
 RuntimeR3_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX RT_NO_GIP
 #RuntimeR3_DEFS         += RTMEM_WRAP_TO_EF_APIS
 ifdef IPRT_WITH_KSTUFF
@@ -993,7 +993,7 @@ VBoxRT_SDKS                    = VBOX_OPENSSL VBOX_LIBXML2 VBOX_BOOST
 ifdef VBOX_WITH_LIBCURL
  VBoxRT_SDKS                  += VBOX_LIBCURL
 endif
-VBoxRT_SDKS.win                = WINPSDK W2K3DDK VBOX_NTDLL
+VBoxRT_SDKS.win                = WINPSDK $(VBOX_WINDDK) VBOX_NTDLL
 if1of ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING), darwin win)
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
 endif
@@ -1073,8 +1073,8 @@ ifn1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
  VBoxRT_LIBS.solaris += smbios
 endif
 VBoxRT_LIBS.win                = \
-	$(PATH_SDK_W2K3DDK_LIB)/vccomsup.lib \
-	$(PATH_SDK_W2K3DDK_LIB)/wbemuuid.lib
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/vccomsup.lib \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/wbemuuid.lib
 VBoxRT_LDFLAGS.darwin          = -framework IOKit -framework CoreFoundation -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxRT.dylib
 ifdef VBOX_USE_VCC80
 VBoxRT_LDFLAGS.win             = /MANIFEST
@@ -1319,7 +1319,7 @@ RuntimeR0Stub_SOURCES.win = \
 # RuntimeR0Drv - Ring-0 library for host drivers.
 #
 RuntimeR0Drv_TEMPLATE   = VBOXR0DRV
-RuntimeR0Drv_SDKS.win   = W2K3DDK WINPSDKINCS
+RuntimeR0Drv_SDKS.win   = $(VBOX_WINDDK) WINPSDKINCS
 RuntimeR0Drv_DEFS       = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS RT_NO_EXPORT_SYMBOL
 RuntimeR0Drv_DEFS.win   = IN_SUP_R0
 RuntimeR0Drv_DEFS.linux = MODULE KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) IN_SUP_R0
