@@ -1853,151 +1853,7 @@ VMMDECL(bool) CPUMIsGuestInPAEMode(PVMCPU pVCpu)
 }
 
 
-
-#ifndef IN_RING0  /** @todo I don't think we need this in R0, so move it to CPUMAll.cpp? */
-
-/**
- * Transforms the guest CPU state to raw-ring mode.
- *
- * This function will change the any of the cs and ss register with DPL=0 to DPL=1.
- *
- * @returns VBox status. (recompiler failure)
- * @param   pVCpu       The VMCPU handle.
- * @param   pCtxCore    The context core (for trap usage).
- * @see     @ref pg_raw
- */
-VMMDECL(int) CPUMRawEnter(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
-{
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-
-    Assert(!pVM->cpum.s.fRawEntered);
-    if (!pCtxCore)
-        pCtxCore = CPUMCTX2CORE(&pVCpu->cpum.s.Guest);
-
-    /*
-     * Are we in Ring-0?
-     */
-    if (    pCtxCore->ss && (pCtxCore->ss & X86_SEL_RPL) == 0
-        &&  !pCtxCore->eflags.Bits.u1VM)
-    {
-        /*
-         * Enter execution mode.
-         */
-        PATMRawEnter(pVM, pCtxCore);
-
-        /*
-         * Set CPL to Ring-1.
-         */
-        pCtxCore->ss |= 1;
-        if (pCtxCore->cs && (pCtxCore->cs & X86_SEL_RPL) == 0)
-            pCtxCore->cs |= 1;
-    }
-    else
-    {
-        AssertMsg((pCtxCore->ss & X86_SEL_RPL) >= 2 || pCtxCore->eflags.Bits.u1VM,
-                  ("ring-1 code not supported\n"));
-        /*
-         * PATM takes care of IOPL and IF flags for Ring-3 and Ring-2 code as well.
-         */
-        PATMRawEnter(pVM, pCtxCore);
-    }
-
-    /*
-     * Assert sanity.
-     */
-    AssertMsg((pCtxCore->eflags.u32 & X86_EFL_IF), ("X86_EFL_IF is clear\n"));
-    AssertReleaseMsg(   pCtxCore->eflags.Bits.u2IOPL < (unsigned)(pCtxCore->ss & X86_SEL_RPL)
-                     || pCtxCore->eflags.Bits.u1VM,
-                     ("X86_EFL_IOPL=%d CPL=%d\n", pCtxCore->eflags.Bits.u2IOPL, pCtxCore->ss & X86_SEL_RPL));
-    Assert((pVCpu->cpum.s.Guest.cr0 & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)) == (X86_CR0_PG | X86_CR0_PE | X86_CR0_WP));
-    pCtxCore->eflags.u32        |= X86_EFL_IF; /* paranoia */
-
-    pVM->cpum.s.fRawEntered = true;
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Transforms the guest CPU state from raw-ring mode to correct values.
- *
- * This function will change any selector registers with DPL=1 to DPL=0.
- *
- * @returns Adjusted rc.
- * @param   pVCpu       The VMCPU handle.
- * @param   rc          Raw mode return code
- * @param   pCtxCore    The context core (for trap usage).
- * @see     @ref pg_raw
- */
-VMMDECL(int) CPUMRawLeave(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, int rc)
-{
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-
-    /*
-     * Don't leave if we've already left (in GC).
-     */
-    Assert(pVM->cpum.s.fRawEntered);
-    if (!pVM->cpum.s.fRawEntered)
-        return rc;
-    pVM->cpum.s.fRawEntered = false;
-
-    PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
-    if (!pCtxCore)
-        pCtxCore = CPUMCTX2CORE(pCtx);
-    Assert(pCtxCore->eflags.Bits.u1VM || (pCtxCore->ss & X86_SEL_RPL));
-    AssertMsg(pCtxCore->eflags.Bits.u1VM || pCtxCore->eflags.Bits.u2IOPL < (unsigned)(pCtxCore->ss & X86_SEL_RPL),
-              ("X86_EFL_IOPL=%d CPL=%d\n", pCtxCore->eflags.Bits.u2IOPL, pCtxCore->ss & X86_SEL_RPL));
-
-    /*
-     * Are we executing in raw ring-1?
-     */
-    if (    (pCtxCore->ss & X86_SEL_RPL) == 1
-        &&  !pCtxCore->eflags.Bits.u1VM)
-    {
-        /*
-         * Leave execution mode.
-         */
-        PATMRawLeave(pVM, pCtxCore, rc);
-        /* Not quite sure if this is really required, but shouldn't harm (too much anyways). */
-        /** @todo See what happens if we remove this. */
-        if ((pCtxCore->ds & X86_SEL_RPL) == 1)
-            pCtxCore->ds &= ~X86_SEL_RPL;
-        if ((pCtxCore->es & X86_SEL_RPL) == 1)
-            pCtxCore->es &= ~X86_SEL_RPL;
-        if ((pCtxCore->fs & X86_SEL_RPL) == 1)
-            pCtxCore->fs &= ~X86_SEL_RPL;
-        if ((pCtxCore->gs & X86_SEL_RPL) == 1)
-            pCtxCore->gs &= ~X86_SEL_RPL;
-
-        /*
-         * Ring-1 selector => Ring-0.
-         */
-        pCtxCore->ss &= ~X86_SEL_RPL;
-        if ((pCtxCore->cs & X86_SEL_RPL) == 1)
-            pCtxCore->cs &= ~X86_SEL_RPL;
-    }
-    else
-    {
-        /*
-         * PATM is taking care of the IOPL and IF flags for us.
-         */
-        PATMRawLeave(pVM, pCtxCore, rc);
-        if (!pCtxCore->eflags.Bits.u1VM)
-        {
-            /** @todo See what happens if we remove this. */
-            if ((pCtxCore->ds & X86_SEL_RPL) == 1)
-                pCtxCore->ds &= ~X86_SEL_RPL;
-            if ((pCtxCore->es & X86_SEL_RPL) == 1)
-                pCtxCore->es &= ~X86_SEL_RPL;
-            if ((pCtxCore->fs & X86_SEL_RPL) == 1)
-                pCtxCore->fs &= ~X86_SEL_RPL;
-            if ((pCtxCore->gs & X86_SEL_RPL) == 1)
-                pCtxCore->gs &= ~X86_SEL_RPL;
-        }
-    }
-
-    return rc;
-}
-
+#ifndef IN_RING0
 /**
  * Updates the EFLAGS while we're in raw-mode.
  *
@@ -2009,15 +1865,15 @@ VMMDECL(void) CPUMRawSetEFlags(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, uint32_t efl
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
-    if (!pVM->cpum.s.fRawEntered)
+    if (!pVCpu->cpum.s.fRawEntered)
     {
         pCtxCore->eflags.u32 = eflags;
         return;
     }
     PATMRawSetEFlags(pVM, pCtxCore, eflags);
 }
-
 #endif /* !IN_RING0 */
+
 
 /**
  * Gets the EFLAGS while we're in raw-mode.
@@ -2033,31 +1889,10 @@ VMMDECL(uint32_t) CPUMRawGetEFlags(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
 #else
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
-    if (!pVM->cpum.s.fRawEntered)
+    if (!pVCpu->cpum.s.fRawEntered)
         return pCtxCore->eflags.u32;
     return PATMRawGetEFlags(pVM, pCtxCore);
 #endif
-}
-
-
-/**
- * Gets and resets the changed flags (CPUM_CHANGED_*).
- * Only REM should call this function.
- *
- * @returns The changed flags.
- * @param   pVCpu       The VMCPU handle.
- */
-VMMDECL(unsigned) CPUMGetAndClearChangedFlagsREM(PVMCPU pVCpu)
-{
-    unsigned fFlags = pVCpu->cpum.s.fChanged;
-    pVCpu->cpum.s.fChanged = 0;
-    /** @todo change the switcher to use the fChanged flags. */
-    if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU_SINCE_REM)
-    {
-        fFlags |= CPUM_CHANGED_FPU_REM;
-        pVCpu->cpum.s.fUseFlags &= ~CPUM_USED_FPU_SINCE_REM;
-    }
-    return fFlags;
 }
 
 
@@ -2168,7 +2003,7 @@ VMMDECL(bool) CPUMIsHyperDebugStateActive(PVMCPU pVCpu)
 
 
 /**
- * Mark the guest's debug state as inactive
+ * Mark the guest's debug state as inactive.
  *
  * @returns boolean
  * @param   pVM         VM handle.
@@ -2180,7 +2015,7 @@ VMMDECL(void) CPUMDeactivateGuestDebugState(PVMCPU pVCpu)
 
 
 /**
- * Mark the hypervisor's debug state as inactive
+ * Mark the hypervisor's debug state as inactive.
  *
  * @returns boolean
  * @param   pVM         VM handle.
@@ -2191,14 +2026,18 @@ VMMDECL(void) CPUMDeactivateHyperDebugState(PVMCPU pVCpu)
 }
 
 /**
- * Checks if the hidden selector registers are valid
+ * Checks if the hidden selector registers are valid for the specified CPU.
+ *
  * @returns true if they are.
  * @returns false if not.
- * @param   pVM     The VM handle.
+ * @param   pVCpu     The VM handle.
  */
-VMMDECL(bool) CPUMAreHiddenSelRegsValid(PVM pVM)
+VMMDECL(bool) CPUMAreHiddenSelRegsValid(PVMCPU pVCpu)
 {
-    return HWACCMIsEnabled(pVM);
+    bool const fRc = !(pVCpu->cpum.s.fChanged & CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID);
+    Assert(fRc || !HWACCMIsEnabled(pVCpu->CTX_SUFF(pVM)));
+    Assert(!pVCpu->cpum.s.fRemEntered);
+    return fRc;
 }
 
 
@@ -2214,7 +2053,7 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
 {
     uint32_t cpl;
 
-    if (CPUMAreHiddenSelRegsValid(pVCpu->CTX_SUFF(pVM)))
+    if (CPUMAreHiddenSelRegsValid(pVCpu))
     {
         /*
          * The hidden CS.DPL register is always equal to the CPL, it is

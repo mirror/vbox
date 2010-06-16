@@ -97,7 +97,7 @@ VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, R
         ||  CPUMIsGuestInRealMode(pVCpu))
     {
         RTGCUINTPTR uFlat = (RTGCUINTPTR)Addr & 0xffff;
-        if (CPUMAreHiddenSelRegsValid(pVM))
+        if (CPUMAreHiddenSelRegsValid(pVCpu))
             uFlat += pHiddenSel->u64Base;
         else
             uFlat += ((RTGCUINTPTR)Sel << 4);
@@ -105,10 +105,10 @@ VMMDECL(RTGCPTR) SELMToFlat(PVM pVM, DIS_SELREG SelReg, PCPUMCTXCORE pCtxCore, R
     }
 
 #ifdef IN_RING0
-    Assert(CPUMAreHiddenSelRegsValid(pVM));
+    Assert(CPUMAreHiddenSelRegsValid(pVCpu));
 #else
     /** @todo when we're in 16 bits mode, we should cut off the address as well.. */
-    if (!CPUMAreHiddenSelRegsValid(pVM))
+    if (!CPUMAreHiddenSelRegsValid(pVCpu))
         return SELMToFlatBySel(pVM, Sel, Addr);
 #endif
 
@@ -169,7 +169,7 @@ VMMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RT
         if (ppvGC)
         {
             if (    pHiddenSel
-                &&  CPUMAreHiddenSelRegsValid(pVM))
+                &&  CPUMAreHiddenSelRegsValid(pVCpu))
                 *ppvGC = (RTGCPTR)(pHiddenSel->u64Base + uFlat);
             else
                 *ppvGC = (RTGCPTR)(((RTGCUINTPTR)Sel << 4) + uFlat);
@@ -185,7 +185,7 @@ VMMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RT
     /** @todo when we're in 16 bits mode, we should cut off the address as well.. */
 #ifndef IN_RC
     if (    pHiddenSel
-        &&  CPUMAreHiddenSelRegsValid(pVM))
+        &&  CPUMAreHiddenSelRegsValid(pVCpu))
     {
         bool fCheckLimit = true;
 
@@ -459,7 +459,7 @@ VMMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RT
  *                      the selector. NULL is allowed.
  * @remarks Don't use when in long mode.
  */
-VMMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, CPUMSELREGHID *pHiddenSel, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb)
+VMMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Addr, PCCPUMSELREGHID pHiddenSel, unsigned fFlags, PRTGCPTR ppvGC, uint32_t *pcb)
 {
     PVMCPU pVCpu = VMMGetCpu(pVM);
 
@@ -475,7 +475,7 @@ VMMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Add
         if (ppvGC)
         {
             if (    pHiddenSel
-                &&  CPUMAreHiddenSelRegsValid(pVM))
+                &&  CPUMAreHiddenSelRegsValid(pVCpu))
                 *ppvGC = (RTGCPTR)(pHiddenSel->u64Base + uFlat);
             else
                 *ppvGC = (RTGCPTR)(((RTGCUINTPTR)Sel << 4) + uFlat);
@@ -492,7 +492,7 @@ VMMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Add
 
     /** @todo when we're in 16 bits mode, we should cut off the address as well.. */
     if (    pHiddenSel
-        &&  CPUMAreHiddenSelRegsValid(pVM))
+        &&  CPUMAreHiddenSelRegsValid(pVCpu))
     {
         u1Present     = pHiddenSel->Attr.n.u1Present;
         u1Granularity = pHiddenSel->Attr.n.u1Granularity;
@@ -664,16 +664,17 @@ VMMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Add
  * address when in real or v8086 mode.
  *
  * @returns VINF_SUCCESS.
- * @param   pVM     VM Handle.
+ * @param   pVCpu   The Virtual CPU handle.
  * @param   SelCS   Selector part.
  * @param   pHidCS  The hidden CS register part. Optional.
  * @param   Addr    Address part.
  * @param   ppvFlat Where to store the flat address.
  */
-DECLINLINE(int) selmValidateAndConvertCSAddrRealMode(PVM pVM, RTSEL SelCS, PCPUMSELREGHID pHidCS, RTGCPTR Addr, PRTGCPTR ppvFlat)
+DECLINLINE(int) selmValidateAndConvertCSAddrRealMode(PVMCPU pVCpu, RTSEL SelCS, PCCPUMSELREGHID pHidCS, RTGCPTR Addr,
+                                                     PRTGCPTR ppvFlat)
 {
     RTGCUINTPTR uFlat = (RTGCUINTPTR)Addr & 0xffff;
-    if (!pHidCS || !CPUMAreHiddenSelRegsValid(pVM))
+    if (!pHidCS || !CPUMAreHiddenSelRegsValid(pVCpu))
         uFlat += ((RTGCUINTPTR)SelCS << 4);
     else
         uFlat += pHidCS->u64Base;
@@ -689,6 +690,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrRealMode(PVM pVM, RTSEL SelCS, PCPUM
  *
  * @returns VBox status code.
  * @param   pVM     VM Handle.
+ * @param   pVCpu   The virtual CPU handle.
  * @param   SelCPL  Current privilege level. Get this from SS - CS might be conforming!
  *                  A full selector can be passed, we'll only use the RPL part.
  * @param   SelCS   Selector part.
@@ -696,10 +698,9 @@ DECLINLINE(int) selmValidateAndConvertCSAddrRealMode(PVM pVM, RTSEL SelCS, PCPUM
  * @param   ppvFlat Where to store the flat address.
  * @param   pcBits  Where to store the segment bitness (16/32/64). Optional.
  */
-DECLINLINE(int) selmValidateAndConvertCSAddrStd(PVM pVM, RTSEL SelCPL, RTSEL SelCS, RTGCPTR Addr, PRTGCPTR ppvFlat, uint32_t *pcBits)
+DECLINLINE(int) selmValidateAndConvertCSAddrStd(PVM pVM, PVMCPU pVCpu, RTSEL SelCPL, RTSEL SelCS, RTGCPTR Addr,
+                                                PRTGCPTR ppvFlat, uint32_t *pcBits)
 {
-    Assert(!CPUMAreHiddenSelRegsValid(pVM));
-
     /** @todo validate limit! */
     X86DESC    Desc;
     if (!(SelCS & X86_SEL_LDT))
@@ -770,7 +771,8 @@ DECLINLINE(int) selmValidateAndConvertCSAddrStd(PVM pVM, RTSEL SelCPL, RTSEL Sel
  * @param   Addr    Address part.
  * @param   ppvFlat Where to store the flat address.
  */
-DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVMCPU pVCpu, RTSEL SelCPL, RTSEL SelCS, PCPUMSELREGHID pHidCS, RTGCPTR Addr, PRTGCPTR ppvFlat)
+DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVMCPU pVCpu, RTSEL SelCPL, RTSEL SelCS, PCCPUMSELREGHID pHidCS,
+                                                   RTGCPTR Addr, PRTGCPTR ppvFlat)
 {
     /*
      * Check if present.
@@ -848,9 +850,10 @@ VMMDECL(int) SELMValidateAndConvertCSAddrGCTrap(PVM pVM, X86EFLAGS eflags, RTSEL
         ||  CPUMIsGuestInRealMode(pVCpu))
     {
         *pcBits = 16;
-        return selmValidateAndConvertCSAddrRealMode(pVM, SelCS, NULL, Addr, ppvFlat);
+        return selmValidateAndConvertCSAddrRealMode(pVCpu, SelCS, NULL, Addr, ppvFlat);
     }
-    return selmValidateAndConvertCSAddrStd(pVM, SelCPL, SelCS, Addr, ppvFlat, pcBits);
+    Assert(!CPUMAreHiddenSelRegsValid(pVCpu));
+    return selmValidateAndConvertCSAddrStd(pVM, pVCpu, SelCPL, SelCS, Addr, ppvFlat, pcBits);
 }
 #endif /* IN_RC */
 
@@ -868,20 +871,21 @@ VMMDECL(int) SELMValidateAndConvertCSAddrGCTrap(PVM pVM, X86EFLAGS eflags, RTSEL
  * @param   Addr         Address part.
  * @param   ppvFlat      Where to store the flat address.
  */
-VMMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, CPUMSELREGHID *pHiddenCSSel, RTGCPTR Addr, PRTGCPTR ppvFlat)
+VMMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, PCCPUMSELREGHID pHiddenCSSel,
+                                          RTGCPTR Addr, PRTGCPTR ppvFlat)
 {
     PVMCPU pVCpu = VMMGetCpu(pVM);
 
     if (    eflags.Bits.u1VM
         ||  CPUMIsGuestInRealMode(pVCpu))
-        return selmValidateAndConvertCSAddrRealMode(pVM, SelCS, pHiddenCSSel, Addr, ppvFlat);
+        return selmValidateAndConvertCSAddrRealMode(pVCpu, SelCS, pHiddenCSSel, Addr, ppvFlat);
 
 #ifdef IN_RING0
-    Assert(CPUMAreHiddenSelRegsValid(pVM));
+    Assert(CPUMAreHiddenSelRegsValid(pVCpu));
 #else
     /** @todo when we're in 16 bits mode, we should cut off the address as well? (like in selmValidateAndConvertCSAddrRealMode) */
-    if (!CPUMAreHiddenSelRegsValid(pVM))
-        return selmValidateAndConvertCSAddrStd(pVM, SelCPL, SelCS, Addr, ppvFlat, NULL);
+    if (!CPUMAreHiddenSelRegsValid(pVCpu) || !pHiddenCSSel)
+        return selmValidateAndConvertCSAddrStd(pVM, pVCpu, SelCPL, SelCS, Addr, ppvFlat, NULL);
 #endif
     return selmValidateAndConvertCSAddrHidden(pVCpu, SelCPL, SelCS, pHiddenCSSel, Addr, ppvFlat);
 }
@@ -893,11 +897,12 @@ VMMDECL(int) SELMValidateAndConvertCSAddr(PVM pVM, X86EFLAGS eflags, RTSEL SelCP
  *
  * @returns DISCPUMODE according to the selector type (16, 32 or 64 bits)
  * @param   pVM     VM Handle.
+ * @param   pVCpu   The virtual CPU handle.
  * @param   Sel     The selector.
  */
-static DISCPUMODE selmGetCpuModeFromSelector(PVM pVM, RTSEL Sel)
+static DISCPUMODE selmGetCpuModeFromSelector(PVM pVM, PVMCPU pVCpu, RTSEL Sel)
 {
-    Assert(!CPUMAreHiddenSelRegsValid(pVM));
+    Assert(!CPUMAreHiddenSelRegsValid(pVCpu));
 
     /** @todo validate limit! */
     X86DESC Desc;
@@ -923,13 +928,13 @@ static DISCPUMODE selmGetCpuModeFromSelector(PVM pVM, RTSEL Sel)
  * @param   Sel        The selector.
  * @param   pHiddenSel The hidden selector register.
  */
-VMMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVM pVM, X86EFLAGS eflags, RTSEL Sel, CPUMSELREGHID *pHiddenSel)
+VMMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVM pVM, X86EFLAGS eflags, RTSEL Sel, PCCPUMSELREGHID pHiddenSel)
 {
     PVMCPU pVCpu = VMMGetCpu(pVM);
 #ifdef IN_RING0
-    Assert(CPUMAreHiddenSelRegsValid(pVM));
+    Assert(CPUMAreHiddenSelRegsValid(pVCpu));
 #else  /* !IN_RING0 */
-    if (!CPUMAreHiddenSelRegsValid(pVM))
+    if (!CPUMAreHiddenSelRegsValid(pVCpu))
     {
         /*
          * Deal with real & v86 mode first.
@@ -938,7 +943,7 @@ VMMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVM pVM, X86EFLAGS eflags, RTSEL 
             ||  CPUMIsGuestInRealMode(pVCpu))
             return CPUMODE_16BIT;
 
-        return selmGetCpuModeFromSelector(pVM, Sel);
+        return selmGetCpuModeFromSelector(pVM, pVCpu, Sel);
     }
 #endif /* !IN_RING0 */
     if (    pHiddenSel->Attr.n.u1Long
@@ -946,7 +951,7 @@ VMMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVM pVM, X86EFLAGS eflags, RTSEL 
         return CPUMODE_64BIT;
 
     /* Else compatibility or 32 bits mode. */
-    return (pHiddenSel->Attr.n.u1DefBig) ? CPUMODE_32BIT : CPUMODE_16BIT;
+    return pHiddenSel->Attr.n.u1DefBig ? CPUMODE_32BIT : CPUMODE_16BIT;
 }
 
 

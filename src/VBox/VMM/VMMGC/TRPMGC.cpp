@@ -174,7 +174,8 @@ VMMRCDECL(int) trpmRCShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
      * to simply ignore the writes and pretend success.
      */
     RTGCPTR PC;
-    int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &PC);
+    int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid,
+                                          (RTGCPTR)pRegFrame->eip, &PC);
     if (rc == VINF_SUCCESS)
     {
         DISCPUSTATE Cpu;

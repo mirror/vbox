@@ -877,8 +877,8 @@ VMMDECL(PCCPUMCTXCORE)  CPUMGetHyperCtxCore(PVMCPU pVCpu);
 VMMDECL(PCPUMCTX)       CPUMQueryGuestCtxPtr(PVMCPU pVCpu);
 VMMDECL(PCCPUMCTXCORE)  CPUMGetGuestCtxCore(PVMCPU pVCpu);
 VMMDECL(void)           CPUMSetGuestCtxCore(PVMCPU pVCpu, PCCPUMCTXCORE pCtxCore);
-VMMDECL(int)            CPUMRawEnter(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore);
-VMMDECL(int)            CPUMRawLeave(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, int rc);
+VMMR3DECL(int)          CPUMR3RawEnter(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore);
+VMMR3DECL(int)          CPUMR3RawLeave(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, int rc);
 VMMDECL(uint32_t)       CPUMRawGetEFlags(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore);
 VMMDECL(void)           CPUMRawSetEFlags(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, uint32_t eflags);
 VMMDECL(int)            CPUMHandleLazyFPU(PVMCPU pVCpu);
@@ -889,23 +889,31 @@ VMMDECL(int)            CPUMHandleLazyFPU(PVMCPU pVCpu);
  * to clear them is REM!
  * @{
  */
-#define CPUM_CHANGED_FPU_REM            RT_BIT(0)
-#define CPUM_CHANGED_CR0                RT_BIT(1)
-#define CPUM_CHANGED_CR4                RT_BIT(2)
-#define CPUM_CHANGED_GLOBAL_TLB_FLUSH   RT_BIT(3)
-#define CPUM_CHANGED_CR3                RT_BIT(4)
-#define CPUM_CHANGED_GDTR               RT_BIT(5)
-#define CPUM_CHANGED_IDTR               RT_BIT(6)
-#define CPUM_CHANGED_LDTR               RT_BIT(7)
-#define CPUM_CHANGED_TR                 RT_BIT(8)
-#define CPUM_CHANGED_SYSENTER_MSR       RT_BIT(9)
-#define CPUM_CHANGED_HIDDEN_SEL_REGS    RT_BIT(10)
-#define CPUM_CHANGED_CPUID              RT_BIT(11)
-#define CPUM_CHANGED_ALL                (CPUM_CHANGED_FPU_REM|CPUM_CHANGED_CR0|CPUM_CHANGED_CR3|CPUM_CHANGED_CR4|CPUM_CHANGED_GDTR|CPUM_CHANGED_IDTR|CPUM_CHANGED_LDTR|CPUM_CHANGED_TR|CPUM_CHANGED_SYSENTER_MSR|CPUM_CHANGED_HIDDEN_SEL_REGS|CPUM_CHANGED_CPUID)
+#define CPUM_CHANGED_FPU_REM                    RT_BIT(0)
+#define CPUM_CHANGED_CR0                        RT_BIT(1)
+#define CPUM_CHANGED_CR4                        RT_BIT(2)
+#define CPUM_CHANGED_GLOBAL_TLB_FLUSH           RT_BIT(3)
+#define CPUM_CHANGED_CR3                        RT_BIT(4)
+#define CPUM_CHANGED_GDTR                       RT_BIT(5)
+#define CPUM_CHANGED_IDTR                       RT_BIT(6)
+#define CPUM_CHANGED_LDTR                       RT_BIT(7)
+#define CPUM_CHANGED_TR                         RT_BIT(8)
+#define CPUM_CHANGED_SYSENTER_MSR               RT_BIT(9)
+#define CPUM_CHANGED_HIDDEN_SEL_REGS            RT_BIT(10)
+#define CPUM_CHANGED_CPUID                      RT_BIT(11)
+#define CPUM_CHANGED_ALL                        \
+    ( CPUM_CHANGED_FPU_REM | CPUM_CHANGED_CR0 | CPUM_CHANGED_CR3 | CPUM_CHANGED_CR4 | CPUM_CHANGED_GDTR | CPUM_CHANGED_IDTR \
+     | CPUM_CHANGED_LDTR | CPUM_CHANGED_TR | CPUM_CHANGED_SYSENTER_MSR | CPUM_CHANGED_HIDDEN_SEL_REGS | CPUM_CHANGED_CPUID )
+/** This one is used by raw-mode to indicate that the hidden register
+ * information is not longer reliable and have to be re-determined.
+ *
+ * @remarks This must not be part of CPUM_CHANGED_ALL! */
+#define CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID    RT_BIT(12)
 /** @} */
 
-VMMDECL(unsigned)       CPUMGetAndClearChangedFlagsREM(PVMCPU pVCpu);
 VMMDECL(void)           CPUMSetChangedFlags(PVMCPU pVCpu, uint32_t fChangedFlags);
+VMMR3DECL(uint32_t)     CPUMR3RemEnter(PVMCPU pVCpu, uint32_t *puCpl);
+VMMR3DECL(void)         CPUMR3RemLeave(PVMCPU pVCpu, bool fNoOutOfSyncSels);
 VMMDECL(bool)           CPUMSupportsFXSR(PVM pVM);
 VMMDECL(bool)           CPUMIsHostUsingSysEnter(PVM pVM);
 VMMDECL(bool)           CPUMIsHostUsingSysCall(PVM pVM);
@@ -916,7 +924,7 @@ VMMDECL(void)           CPUMDeactivateGuestDebugState(PVMCPU pVCpu);
 VMMDECL(bool)           CPUMIsHyperDebugStateActive(PVMCPU pVCpu);
 VMMDECL(void)           CPUMDeactivateHyperDebugState(PVMCPU pVCpu);
 VMMDECL(uint32_t)       CPUMGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore);
-VMMDECL(bool)           CPUMAreHiddenSelRegsValid(PVM pVM);
+VMMDECL(bool)           CPUMAreHiddenSelRegsValid(PVMCPU pVCpu);
 VMMDECL(CPUMMODE)       CPUMGetGuestMode(PVMCPU pVCpu);
 
 
