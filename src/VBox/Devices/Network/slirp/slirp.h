@@ -77,6 +77,16 @@ typedef int socklen_t;
 # include <sys/timeb.h>
 # include <iphlpapi.h>
 
+/* We don't want the errno.h versions of these error defines. */
+# if defined(_MSC_VER) && _MSC_VER >= 1600
+#  include <errno.h>
+#  undef EWOULDBLOCK
+#  undef EINPROGRESS
+#  undef ENOTCONN
+#  undef EHOSTUNREACH
+#  undef ENETUNREACH
+#  undef ECONNREFUSED
+# endif
 # define EWOULDBLOCK WSAEWOULDBLOCK
 # define EINPROGRESS WSAEINPROGRESS
 # define ENOTCONN WSAENOTCONN
