@@ -139,7 +139,10 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3SharedModuleRegRendezvous(PVM pVM, PVMCPU
 
     /* Execute on the VCPU that issued the original request to make sure we're in the right cr3 context. */
     if (pVCpu->idCpu != idCpu)
+    {
+        Assert(pVM->cCpus > 1);
         return VINF_SUCCESS;
+    }
 
     /* Flush all pending handy page operations before changing any shared page assignments. */
     int rc = PGMR3PhysAllocateHandyPages(pVM);
