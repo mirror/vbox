@@ -1,0 +1,13 @@
+Index: OvmfPkg/PlatformPei/MemDetect.c
+===================================================================
+--- OvmfPkg/PlatformPei/MemDetect.c	(revision 9332)
++++ OvmfPkg/PlatformPei/MemDetect.c	(working copy)
+@@ -53,7 +53,7 @@
+   Cmos0x34 = (UINT8) CmosRead8 (0x34);
+   Cmos0x35 = (UINT8) CmosRead8 (0x35);
+ 
+-  return ((((Cmos0x35 << 8) + Cmos0x34) << 16) + SIZE_16MB);
++  return ((((UINTN)(Cmos0x35 << 8) + Cmos0x34) << 16) + SIZE_16MB);
+ }
+ 
+ 
