@@ -467,7 +467,7 @@ static void dbgfR3AsLazyPopulate(PVM pVM, RTDBGAS hAlias)
 VMMR3DECL(RTDBGAS) DBGFR3AsResolve(PVM pVM, RTDBGAS hAlias)
 {
     VM_ASSERT_VALID_EXT_RETURN(pVM, NULL);
-    AssertCompile(NIL_RTDBGAS == (RTDBGAS)0);
+    AssertCompileNS(NIL_RTDBGAS == (RTDBGAS)0);
 
     uintptr_t   iAlias = DBGF_AS_ALIAS_2_INDEX(hAlias);
     if (iAlias < DBGF_AS_COUNT)
@@ -488,7 +488,7 @@ VMMR3DECL(RTDBGAS) DBGFR3AsResolve(PVM pVM, RTDBGAS hAlias)
 VMMR3DECL(RTDBGAS) DBGFR3AsResolveAndRetain(PVM pVM, RTDBGAS hAlias)
 {
     VM_ASSERT_VALID_EXT_RETURN(pVM, NULL);
-    AssertCompile(NIL_RTDBGAS == (RTDBGAS)0);
+    AssertCompileNS(NIL_RTDBGAS == (RTDBGAS)0);
 
     uint32_t    cRefs;
     uintptr_t   iAlias = DBGF_AS_ALIAS_2_INDEX(hAlias);
