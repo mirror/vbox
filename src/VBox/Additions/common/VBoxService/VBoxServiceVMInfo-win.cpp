@@ -19,7 +19,11 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <windows.h>
+#if defined(_WIN32_WINNT) && _WIN32_WINNT < 0x0502
+# undef  _WIN32_WINNT
+# define _WIN32_WINNT 0x0502 /* CachedRemoteInteractive in recent SDKs. */
+#endif
+#include <Windows.h>
 #include <wtsapi32.h>       /* For WTS* calls. */
 #include <psapi.h>          /* EnumProcesses. */
 #include <Ntsecapi.h>       /* Needed for process security information. */
