@@ -423,7 +423,7 @@ RT_C_DECLS_END
     AssertCompile(RT_OFFSETOF(type1, member1) == RT_OFFSETOF(type2, member2))
 # endif
 #else
-# define AssertCompileMembersAtSameOffset(type, member1, member2) \
+# define AssertCompileMembersAtSameOffset(type1, member1, type2, member2) \
     AssertCompile(RT_OFFSETOF(type1, member1) == RT_OFFSETOF(type2, member2))
 #endif
 
@@ -454,7 +454,7 @@ RT_C_DECLS_END
     AssertCompile(RT_OFFSETOF(type1, member1) == RT_OFFSETOF(type2, member2) && RT_SIZEOFMEMB(type1, member1) == RT_SIZEOFMEMB(type2, member2))
 # endif
 #else
-# define AssertCompileMembersSameSizeAndOffset(type, member1, member2) \
+# define AssertCompileMembersSameSizeAndOffset(type1, member1, type2, member2) \
     AssertCompile(RT_OFFSETOF(type1, member1) == RT_OFFSETOF(type2, member2) && RT_SIZEOFMEMB(type1, member1) == RT_SIZEOFMEMB(type2, member2))
 #endif
 
