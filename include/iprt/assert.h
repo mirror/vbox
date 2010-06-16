@@ -272,11 +272,26 @@ extern int RTASSERTVAR[1];
 RT_C_DECLS_END
 #endif
 
+/** @def RTASSERT_HAVE_STATIC_ASSERT
+ * Indicates that the compiler implements static_assert(expr, msg).
+ * @todo Does any GCC version support static_assert?
+ */
+#ifdef _MSC_VER
+# if _MSC_VER >= 1600 && defined(__cplusplus)
+#  define RTASSERT_HAVE_STATIC_ASSERT
+# endif
+#endif
+#ifdef DOXYGEN_RUNNING
+# define RTASSERT_HAVE_STATIC_ASSERT
+#endif
+
 /** @def AssertCompile
  * Asserts that a compile-time expression is true. If it's not break the build.
  * @param   expr    Expression which should be true.
  */
-#ifdef __GNUC__
+#ifdef RTASSERT_HAVE_STATIC_ASSERT
+# define AssertCompile(expr)    static_assert(!!(expr), #expr)
+#elif defined(__GNUC__)
 # define AssertCompile(expr)    extern int RTASSERTVAR[1] __attribute__((unused)), RTASSERTVAR[(expr) ? 1 : 0] __attribute__((unused))
 #else
 # define AssertCompile(expr)    typedef int RTASSERTTYPE[(expr) ? 1 : 0]
@@ -390,6 +405,57 @@ RT_C_DECLS_END
 #else
 # define AssertCompileAdjacentMembers(type, member1, member2) \
     AssertCompile(RT_OFFSETOF(type, member1) + RT_SIZEOFMEMB(type, member1) == RT_OFFSETOF(type, member2))
+#endif
+
+/** @def AssertCompileMembersAtSameOffset
+ * Asserts that members of two different structures are at the same offset.
+ * @param   type1   The first type.
+ * @param   member1 The first member.
+ * @param   type2   The second type.
+ * @param   member2 The second member.
+ */
+#if defined(__GNUC__)
+# if __GNUC__ >= 4
+#  define AssertCompileMembersAtSameOffset(type1, member1, type2, member2) \
+    AssertCompile(__builtin_offsetof(type1, member1) == __builtin_offsetof(type2, member2))
+# else
+#  define AssertCompileMembersAtSameOffset(type1, member1, type2, member2) \
+    AssertCompile(RT_OFFSETOF(type1, member1) == RT_OFFSETOF(type2, member2))
+# endif
+#else
+# define AssertCompileMembersAtSameOffset(type, member1, member2) \
+    AssertCompile(RT_OFFSETOF(type1, member1) == RT_OFFSETOF(type2, member2))
+#endif
+
+/** @def AssertCompileMembersSameSize
+ * Asserts that members of two different structures have the same size.
+ * @param   type1   The first type.
+ * @param   member1 The first member.
+ * @param   type2   The second type.
+ * @param   member2 The second member.
+ */
+#define AssertCompileMembersSameSize(type1, member1, type2, member2) \
+    AssertCompile(RT_SIZEOFMEMB(type1, member1) == RT_SIZEOFMEMB(type2, member2))
+
+/** @def AssertCompileMembersSameSizeAndOffset
+ * Asserts that members of two different structures have the same size and are
+ * at the same offset.
+ * @param   type1   The first type.
+ * @param   member1 The first member.
+ * @param   type2   The second type.
+ * @param   member2 The second member.
+ */
+#if defined(__GNUC__)
+# if __GNUC__ >= 4
+#  define AssertCompileMembersSameSizeAndOffset(type1, member1, type2, member2) \
+    AssertCompile(__builtin_offsetof(type1, member1) == __builtin_offsetof(type2, member2) && RT_SIZEOFMEMB(type1, member1) == RT_SIZEOFMEMB(type2, member2))
+# else
+#  define AssertCompileMembersSameSizeAndOffset(type1, member1, type2, member2) \
+    AssertCompile(RT_OFFSETOF(type1, member1) == RT_OFFSETOF(type2, member2) && RT_SIZEOFMEMB(type1, member1) == RT_SIZEOFMEMB(type2, member2))
+# endif
+#else
+# define AssertCompileMembersSameSizeAndOffset(type, member1, member2) \
+    AssertCompile(RT_OFFSETOF(type1, member1) == RT_OFFSETOF(type2, member2) && RT_SIZEOFMEMB(type1, member1) == RT_SIZEOFMEMB(type2, member2))
 #endif
 
 /** @} */
