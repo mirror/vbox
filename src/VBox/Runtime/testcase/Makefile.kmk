@@ -44,6 +44,7 @@ IPRT_OUT_DIR ?= $(PATH_TARGET)/Runtime
 # Target lists
 #
 PROGRAMS += \
+	tstRTAssertCompile \
 	tstRTAvl \
 	tstRTBase64 \
 	tstRTBitOperations \
@@ -160,6 +161,10 @@ endif
 #
 # Target configs in almost alphabetical order.
 #
+
+tstRTAssertCompile_TEMPLATE = VBOXR3TSTEXE
+tstRTAssertCompile_NOINST = true
+tstRTAssertCompile_SOURCES = tstRTAssertCompile.cpp
 
 tstRTAvl_TEMPLATE = VBOXR3TSTEXE
 tstRTAvl_SOURCES = tstRTAvl.cpp
