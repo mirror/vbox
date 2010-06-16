@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -56,7 +56,7 @@ bool VBoxCredPoller::Initialize(VBoxCredProv *pProvider)
     AssertPtr(m_pProv);
     m_pProv->AddRef();
 
-    /* don't create more than one of them */
+    /* Don't create more than one of them. */
     if (m_hThreadPoller != NIL_RTTHREAD)
     {
         Log(("VBoxCredPoller::Initialize: Thread already running, returning!\n"));
@@ -67,7 +67,7 @@ bool VBoxCredPoller::Initialize(VBoxCredProv *pProvider)
     if (RT_FAILURE(rc))
         Log(("VBoxCredPoller: Could not init critical section! rc = %Rrc\n", rc));
 
-    /* create the poller thread */
+    /* Create the poller thread. */
     rc = RTThreadCreate(&m_hThreadPoller, VBoxCredPoller::threadPoller, this, 0, RTTHREADTYPE_INFREQUENT_POLLER,
                         RTTHREADFLAGS_WAITABLE, "creds");
     if (RT_FAILURE(rc))
@@ -89,18 +89,18 @@ bool VBoxCredPoller::Shutdown(void)
         return false;
     }
 
-    /* Post termination event semaphore */
+    /* Post termination event semaphore. */
     int rc = RTThreadUserSignal(m_hThreadPoller);
     if (RT_SUCCESS(rc))
     {
         Log(("VBoxCredPoller::Shutdown: Waiting for thread to terminate\n"));
-        /* wait until the thread has terminated */
+        /* Wait until the thread has terminated. */
         rc = RTThreadWait(m_hThreadPoller, RT_INDEFINITE_WAIT, NULL);
         Log(("VBoxCredPoller::Shutdown: Thread has (probably) terminated (rc = %Rrc)\n", rc));
     }
     else
     {
-        /* failed to signal the thread - very unlikely - so no point in waiting long. */
+        /* Failed to signal the thread - very unlikely - so no point in waiting long. */
         Log(("VBoxCredPoller::Shutdown: Failed to signal semaphore, rc = %Rrc\n", rc));
         rc = RTThreadWait(m_hThreadPoller, 100, NULL);
         Log(("VBoxCredPoller::Shutdown: Thread has terminated? wait rc = %Rrc\n", rc));
@@ -124,42 +124,25 @@ int VBoxCredPoller::credentialsRetrieve(void)
 {
     credentialsReset();
 
-    /* get credentials */
+    /* Get credentials. */
     RTCritSectEnter(&m_csCredUpate);
     int rc = VbglR3CredentialsRetrieve(&m_pszUser, &m_pszPw, &m_pszDomain);
     if (RT_SUCCESS(rc))
     {
-        Log(("VBoxCredPoller::credentialsRetrieve: Credentials retrieved (user=%s, pw=%s, domain=%s)\n",
-             m_pszUser ? m_pszUser : "<empty>",
-             m_pszPw ? m_pszPw : "<empty>",
-             m_pszDomain ? m_pszDomain : "<empty>"));
-
-        /* allocated but empty? delete and re-fill with default value in block below. */
-        if (strlen(m_pszDomain) == 0)
+        /* NULL/free domain if it's empty (""). */
+        if (m_pszDomain && strlen(m_pszDomain) == 0)
         {
             RTStrFree(m_pszDomain);
             m_pszDomain = NULL;
         }
 
-        /* if we don't have a domain specified, fill in a dot (".") specifying the
-         * local computer. */
-        if (m_pszDomain == NULL)
-        {
-            rc = RTStrAPrintf(&m_pszDomain, ".");
-            if (RT_FAILURE(rc))
-                Log(("VBoxCredPoller::credentialsRetrieve: Could not set default domain name, rc = %Rrc", rc));
-            else
-                Log(("VBoxCredPoller::credentialsRetrieve: No domain name given, set default value to: %s\n", m_pszDomain));
-        }
-    }
+        Log(("VBoxCredPoller::credentialsRetrieve: Credentials retrieved (User=%s, Password=%s, Domain=%s)\n",
+             m_pszUser ? m_pszUser : "<empty>",
+             m_pszPw ? m_pszPw : "<empty>",
+             m_pszDomain ? m_pszDomain : "NULL"));
 
-    /* if all went fine, notify parent */
-    if (RT_SUCCESS(rc))
-    {
         AssertPtr(m_pProv);
-        m_pProv->OnCredentialsProvided(m_pszUser,
-                                       m_pszPw,
-                                       m_pszDomain);
+        m_pProv->OnCredentialsProvided();
     }
     RTCritSectLeave(&m_csCredUpate);
     return rc;
@@ -215,9 +198,7 @@ DECLCALLBACK(int) VBoxCredPoller::threadPoller(RTTHREAD ThreadSelf, void *pvUser
         rc = VbglR3CredentialsQueryAvailability();
         if (RT_FAILURE(rc))
         {
-            if (rc == VERR_NOT_FOUND)
-                Log(("VBoxCredPoller::threadPoller: No credentials availabe.\n"));
-            else
+            if (rc != VERR_NOT_FOUND)
                 Log(("VBoxCredPoller::threadPoller: Could not retrieve credentials! rc = %Rc\n", rc));
         }
         else
@@ -227,11 +208,11 @@ DECLCALLBACK(int) VBoxCredPoller::threadPoller(RTTHREAD ThreadSelf, void *pvUser
             rc = pThis->credentialsRetrieve();
         }
 
-        /* wait a bit */
+        /* Wait a bit. */
         if (RTThreadUserWait(ThreadSelf, 500) == VINF_SUCCESS)
         {
             Log(("VBoxCredPoller::threadPoller: Terminating\n"));
-            /* we were asked to terminate, do that instantly! */
+            /* We were asked to terminate, do that instantly! */
             return 0;
         }
     }

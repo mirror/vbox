@@ -24,7 +24,7 @@ class VBoxCredProv : public ICredentialProvider
 {
     public:
 
-        // IUnknown
+        /** IUnknown methods. */
         STDMETHOD_(ULONG, AddRef)()
         {
             return m_cRef++;
@@ -60,15 +60,15 @@ class VBoxCredProv : public ICredentialProvider
 
     public:
 
-        // ICredentialProvider
-        IFACEMETHODIMP SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus, DWORD dwFlags);
-        IFACEMETHODIMP SetSerialization(const CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION *pcpcs);
+        /** ICredentialProvider interface. */
+        IFACEMETHODIMP SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpUsageScenario, DWORD dwFlags);
+        IFACEMETHODIMP SetSerialization(const CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION *pcpCredentialSerialization);
 
-        IFACEMETHODIMP Advise(__in ICredentialProviderEvents *pcpe, UINT_PTR upAdviseContext);
+        IFACEMETHODIMP Advise(__in ICredentialProviderEvents *pcpEvents, UINT_PTR upAdviseContext);
         IFACEMETHODIMP UnAdvise();
 
         IFACEMETHODIMP GetFieldDescriptorCount(__out DWORD* pdwCount);
-        IFACEMETHODIMP GetFieldDescriptorAt(DWORD dwIndex,  __deref_out CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR **ppcpfd);
+        IFACEMETHODIMP GetFieldDescriptorAt(DWORD dwIndex,  __deref_out CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR **ppcpFieldDescriptor);
 
         IFACEMETHODIMP GetCredentialCount(__out DWORD *pdwCount,
                                           __out DWORD *pdwDefault,
@@ -81,23 +81,28 @@ class VBoxCredProv : public ICredentialProvider
     protected:
 
         VBoxCredProv(void);
-        __override ~VBoxCredProv(void);
+        virtual ~VBoxCredProv(void);
 
     public:
 
-        // Events
-        void OnCredentialsProvided(const char *pszUser,
-                                   const char *pszPw,
-                                   const char *pszDomain);
+        /** Events. */
+        void OnCredentialsProvided();
     private:
 
-        LONG                                     m_cRef;                              /* Reference count */
-        VBoxCredential                          *m_pCred;                             /* Our one and only credential */
-        VBoxCredPoller                          *m_pPoller;                           /* Poller thread for credential lookup */
-        ICredentialProviderEvents               *m_pCredProvEvents;                   /* Used to tell our owner to re-enumerate credentials */
-        UINT_PTR                                 m_upAdviseContext;                   /* Used to tell our owner who we are when asking to re-enumerate credentials */
-        CREDENTIAL_PROVIDER_USAGE_SCENARIO       m_cpUS;                              /* Saved usage scenario */
-        bool                                     m_fGotCredentials;                   /* Flag indicating we got some credentials to work with */
+        /** Interface reference count. */
+        LONG                                     m_cRef;                              
+        /** Our one and only credential. */
+        VBoxCredential                          *m_pCred;  
+        /** Poller thread for credential lookup. */                           
+        VBoxCredPoller                          *m_pPoller;
+        /** Used to tell our owner to re-enumerate credentials. */
+        ICredentialProviderEvents               *m_pCredProvEvents;
+        /** Used to tell our owner who we are when asking to re-enumerate credentials. */           
+        UINT_PTR                                 m_upAdviseContext;
+        /** Saved usage scenario. */
+        CREDENTIAL_PROVIDER_USAGE_SCENARIO       m_cpUsageScenario;
+        /** Flag indicating we got some credentials to work with. */
+        bool                                     m_fGotCredentials;
 };
 
 #endif /* ___VBoxCredProv_h */

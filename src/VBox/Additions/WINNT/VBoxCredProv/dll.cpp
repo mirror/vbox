@@ -25,8 +25,8 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-static LONG g_cRef = 0;     /* Global dll reference count */
-HINSTANCE g_hinst = NULL;   /* Global dll hinstance */
+static LONG g_cRef = 0;        /* Global DLL reference count. */
+HINSTANCE g_hDllInst = NULL;   /* Global DLL hinstance. */
 
 
 HRESULT CClassFactory_CreateInstance(REFCLSID rclsid, REFIID riid, void** ppv)
@@ -34,11 +34,11 @@ HRESULT CClassFactory_CreateInstance(REFCLSID rclsid, REFIID riid, void** ppv)
     HRESULT hr;
     if (CLSID_VBoxCredProvider == rclsid)
     {
-        CClassFactory* pcf = new CClassFactory;
-        if (pcf)
+        CClassFactory* pClassFactory = new CClassFactory;
+        if (pClassFactory)
         {
-            hr = pcf->QueryInterface(riid, ppv);
-            pcf->Release();
+            hr = pClassFactory->QueryInterface(riid, ppv);
+            pClassFactory->Release();
         }
         else
         {
@@ -54,8 +54,8 @@ HRESULT CClassFactory_CreateInstance(REFCLSID rclsid, REFIID riid, void** ppv)
 
 
 BOOL WINAPI DllMain(HINSTANCE hinstDll,
-                    DWORD dwReason,
-                    LPVOID pReserved)
+                    DWORD     dwReason,
+                    LPVOID    pReserved)
 {
     UNREFERENCED_PARAMETER(pReserved);
 
@@ -74,7 +74,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDll,
             break;
     }
 
-    g_hinst = hinstDll;
+    g_hDllInst = hinstDll;
     return TRUE;
 }
 
@@ -91,7 +91,13 @@ LONG DllRelease()
 }
 
 
-/* DLL entry point */
+LONG DllGetRefCount()
+{
+    return g_cRef;
+}
+
+
+/* DLL entry point. */
 STDAPI DllCanUnloadNow()
 {
     HRESULT hr;
