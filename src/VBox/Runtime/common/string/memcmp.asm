@@ -104,8 +104,8 @@ RT_NOCRT_BEGINPROC memcmp
     mov     ecx, 8
     sub     rsi, 8
     sub     rdi, 8
-.not_equal_byte:
     repe cmpsb
+.not_equal_byte:
     mov     al, [xDI-1]
     movzx   ecx, byte [xSI-1]
     sub     eax, ecx
