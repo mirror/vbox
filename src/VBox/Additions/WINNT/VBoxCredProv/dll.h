@@ -18,10 +18,11 @@
 
 #include <VBox/Log.h>
 
-extern HINSTANCE g_hinst;
+extern HINSTANCE g_hDllInst;
 
 LONG DllAddRef();
 LONG DllRelease();
+LONG DllGetRefCount();
 
 extern HRESULT VBoxCredProv_CreateInstance(REFIID riid, void** ppv);
 
