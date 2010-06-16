@@ -3416,7 +3416,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
 #endif
             pVM->pgm.s.ChunkR3Map.c--;
 
-            /* Chunk removed, so clear the page map TBL as well (might still be referenced). */
+            /* Chunk removed, so clear the page map TLB as well (might still be referenced). */
             PGMPhysInvalidatePageMapTLB(pVM);
         }
     }
