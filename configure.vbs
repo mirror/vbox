@@ -54,6 +54,10 @@ g_blnInternalMode = False
 dim g_blnInternalFirst
 g_blnInternalFirst = True
 
+' Whether to try the new tools: Visual Studio 10.0, Windows 7 SDK and WDK.
+dim g_blnNewTools
+g_blnNewTools = False 'True
+
 
 
 ''
@@ -131,6 +135,71 @@ end function
 
 
 ''
+' Returns a reverse sorted array (strings).
+function ArraySortStrings(arrStrings)
+   for i = LBound(arrStrings) to UBound(arrStrings)
+      str1 = arrStrings(i)
+      for j = i + 1 to UBound(arrStrings)
+         str2 = arrStrings(j)
+         if StrComp(str2, str1) < 0 then
+            arrStrings(j) = str1
+            str1 = str2
+         end if
+      next
+      arrStrings(i) = str1
+   next
+   ArraySortStrings = arrStrings
+end function
+
+
+''
+' Prints a string array.
+sub ArrayPrintStrings(arrStrings, strPrefix)
+   for i = LBound(arrStrings) to UBound(arrStrings)
+      Print strPrefix & "arrStrings(" & i & ") = '" & arrStrings(i) & "'"
+   next
+end sub
+
+
+''
+' Returns a reverse sorted array (strings).
+function ArrayRSortStrings(arrStrings)
+   ' Sort it.
+   arrStrings = ArraySortStrings(arrStrings)
+
+   ' Reverse the array.
+   cnt = UBound(arrStrings) - LBound(arrStrings) + 1
+   if cnt > 0 then
+      j   = UBound(arrStrings)
+      iHalf = Fix(LBound(arrStrings) + cnt / 2)
+      for i = LBound(arrStrings) to iHalf - 1
+         strTmp = arrStrings(i)
+         arrStrings(i) = arrStrings(j)
+         arrStrings(j) = strTmp
+         j = j - 1
+      next
+   end if
+   ArrayRSortStrings = arrStrings
+end function
+
+
+''
+' Returns the input array with the string appended.
+' Note! There must be some better way of doing this...
+function ArrayAppend(arr, str)
+   dim i, cnt
+   cnt = UBound(arr) - LBound(arr) + 1
+   redim arrRet(cnt)
+   for i = LBound(arr) to UBound(arr)
+      arrRet(i) = arr(i)
+   next
+   arrRet(UBound(arr) + 1) = str
+   ArrayAppend = arrRet
+end function
+
+
+
+''
 ' Translates a register root name to a value
 function RegTransRoot(strRoot)
    const HKEY_LOCAL_MACHINE = &H80000002
@@ -141,7 +210,7 @@ function RegTransRoot(strRoot)
       case "HKCU"
          RegTransRoot = HKEY_CURRENT_USER
       case else
-         MsgFatal "RegEnumSubKeys: Unknown root: " & strRoot
+         MsgFatal "RegTransRoot: Unknown root: '" & strRoot & "'"
          RegTransRoot = 0
    end select
 end function
@@ -236,6 +305,32 @@ end function
 
 
 ''
+' Returns an array of full path subkey strings.
+function RegEnumSubKeysFull(strRoot, strKeyPath)
+   dim arrTmp
+   arrTmp = RegEnumSubKeys(strRoot, strKeyPath)
+   for i = LBound(arrTmp) to UBound(arrTmp)
+      arrTmp(i) = strKeyPath & "\" & arrTmp(i)
+   next
+   RegEnumSubKeysFull = arrTmp
+end function
+
+
+''
+' Returns an rsorted array of subkey strings.
+function RegEnumSubKeysRSort(strRoot, strKeyPath)
+   RegEnumSubKeysRSort = ArrayRSortStrings(RegEnumSubKeys(strRoot, strKeyPath))
+end function
+
+
+''
+' Returns an rsorted array of subkey strings.
+function RegEnumSubKeysFullRSort(strRoot, strKeyPath)
+   RegEnumSubKeysFullRSort = ArrayRSortStrings(RegEnumSubKeysFull(strRoot, strKeyPath))
+end function
+
+
+''
 ' Gets the commandline used to invoke the script.
 function GetCommandline()
    dim str, i
@@ -307,34 +402,77 @@ end function
 ''
 ' Get the abs path, use the short version if necessary.
 function PathAbs(str)
-   PathAbs = g_objFileSys.GetAbsolutePathName(DosSlashes(str))
-   if  (InStr(1, PathAbs, " ") > 0) _
-    Or (InStr(1, PathAbs, "&") > 0) _
-    Or (InStr(1, PathAbs, "$") > 0) _
-      then
-         if FileExists(PathAbs) then
-            dim objFile
-            set objFile = g_objFileSys.GetFile(PathAbs)
-            PathAbs = objFile.ShortPath
-         elseif DirExists(PathAbs) then
-            dim objFolder
-            set objFolder = g_objFileSys.GetFolder(PathAbs)
-            PathAbs = objFolder.ShortPath
-         else
-            ' ignore non-existing paths.
-         end if
+   strAbs    = g_objFileSys.GetAbsolutePathName(DosSlashes(str))
+   strParent = g_objFileSys.GetParentFolderName(strAbs)
+   if strParent = "" then
+      PathAbs = strAbs
+   else
+      strParent = PathAbs(strParent)  ' Recurse to resolve parent paths.
+      PathAbs   = g_objFileSys.BuildPath(strParent, g_objFileSys.GetFileName(strAbs))
+
+      dim obj
+      set obj = Nothing
+      if FileExists(PathAbs) then
+         set obj = g_objFileSys.GetFile(PathAbs)
+      elseif DirExists(PathAbs) then
+         set obj = g_objFileSys.GetFolder(PathAbs)
+      end if
+
+      if not (obj is nothing) then
+         for each objSub in obj.ParentFolder.SubFolders
+            if obj.Name = objSub.Name  or  obj.ShortName = objSub.ShortName then
+               if  InStr(1, objSub.Name, " ") > 0 _
+                Or InStr(1, objSub.Name, "&") > 0 _
+                Or InStr(1, objSub.Name, "$") > 0 _
+                  then
+                  PathAbs = g_objFileSys.BuildPath(strParent, objSub.ShortName)
+                  if  InStr(1, PathAbs, " ") > 0 _
+                   Or InStr(1, PathAbs, "&") > 0 _
+                   Or InStr(1, PathAbs, "$") > 0 _
+                     then
+                     MsgFatal "PathAbs(" & str & ") attempted to return filename with problematic " _
+                      & "characters in it (" & PathAbs & "). The tool/sdk referenced will probably " _
+                      & "need to be copied or reinstalled to a location without 'spaces', '$', ';' " _
+                      & "or '&' in the path name. (Unless it's a problem with this script of course...)"
+                  end if
+               else
+                  PathAbs = g_objFileSys.BuildPath(strParent, objSub.Name)
+               end if
+               exit for
+            end if
+         next
+      end if
    end if
+end function
 
 
-   if (FileExists(PathAbs) Or DirExists(PathAbs)) _
-    And (   (InStr(1, PathAbs, " ") > 0) _
-         Or (InStr(1, PathAbs, "&") > 0) _
-         Or (InStr(1, PathAbs, "$") > 0)) _
-      then
-      MsgFatal "PathAbs(" & str & ") attempted to return filename with problematic " _
-             & "characters in it (" & PathAbs & "). The tool/sdk referenced will probably " _
-             & "need to be copied or reinstalled to a location without 'spaces', '$', ';' " _
-             & "or '&' in the path name. (Unless it's a problem with this script of course...)"
+''
+' Get the abs path, use the long version.
+function PathAbsLong(str)
+   strAbs    = g_objFileSys.GetAbsolutePathName(DosSlashes(str))
+   strParent = g_objFileSys.GetParentFolderName(strAbs)
+   if strParent = "" then
+      PathAbsLong = strAbs
+   else
+      strParent = PathAbsLong(strParent)  ' Recurse to resolve parent paths.
+      PathAbsLong = g_objFileSys.BuildPath(strParent, g_objFileSys.GetFileName(strAbs))
+
+      dim obj
+      set obj = Nothing
+      if FileExists(PathAbsLong) then
+         set obj = g_objFileSys.GetFile(PathAbsLong)
+      elseif DirExists(PathAbsLong) then
+         set obj = g_objFileSys.GetFolder(PathAbsLong)
+      end if
+
+      if not (obj is nothing) then
+         for each objSub in obj.ParentFolder.SubFolders
+            if obj.Name = objSub.Name  or  obj.ShortName = objSub.ShortName then
+               PathAbsLong = g_objFileSys.BuildPath(strParent, objSub.Name)
+               exit for
+            end if
+         next
+      end if
    end if
 end function
 
@@ -415,9 +553,23 @@ end sub
 
 ''
 ' Prints a success message
-sub PrintResult(strTest, strResult)
+sub PrintResultMsg(strTest, strResult)
    LogPrint "** " & strTest & ": " & strResult
    Wscript.Echo " Found "& strTest & ": " & strResult
+end sub
+
+
+''
+' Prints a successfully detected path
+sub PrintResult(strTest, strPath)
+   strLongPath = PathAbsLong(strPath)
+   if PathAbs(strPath) <> strLongPath then
+      LogPrint         "** " & strTest & ": " & strPath & " (" & UnixSlashes(strLongPath) & ")"
+      Wscript.Echo " Found " & strTest & ": " & strPath & " (" & UnixSlashes(strLongPath) & ")"
+   else
+      LogPrint         "** " & strTest & ": " & strPath
+      Wscript.Echo " Found " & strTest & ": " & strPath
+   end if
 end sub
 
 
@@ -802,7 +954,7 @@ end sub
 
 
 ''
-' Checks for Visual C++ version 7 or 8.
+' Checks for Visual C++ version 7.1, 8 or 10.
 sub CheckForVisualCPP(strOptVC, strOptVCCommon, blnOptVCExpressEdition)
    dim strPathVC, strPathVCCommon, str, str2, blnNeedMsPDB
    PrintHdr "Visual C++"
@@ -820,11 +972,19 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon, blnOptVCExpressEdition)
    end if
 
    if (strPathVC = "") And (g_blnInternalFirst = True) Then
-      strPathVC = g_strPathDev & "/win.x86/vcc/v8"
-      if CheckForVisualCPPSub(strPathVC, "", blnOptVCExpressEdition) = False then
-         strPathVC = g_strPathDev & "/win.x86/vcc/v7"
+      if g_blnNewTools Then
+         strPathVC = g_strPathDev & "/win.x86/vcc/v10"
          if CheckForVisualCPPSub(strPathVC, "", blnOptVCExpressEdition) = False then
             strPathVC = ""
+         end if
+      end if
+      if strPathVC = "" then
+         strPathVC = g_strPathDev & "/win.x86/vcc/v8"
+         if CheckForVisualCPPSub(strPathVC, "", blnOptVCExpressEdition) = False then
+            strPathVC = g_strPathDev & "/win.x86/vcc/v7"
+            if CheckForVisualCPPSub(strPathVC, "", blnOptVCExpressEdition) = False then
+               strPathVC = ""
+            end if
          end if
       end if
    end if
@@ -838,6 +998,30 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon, blnOptVCExpressEdition)
       else
          strPathVC = PathParent(PathStripFilename(str))
          strPathVCCommon = PathParent(strPathVC) & "/Common7"
+      end if
+   end if
+
+   if (strPathVC = "") And g_blnNewTools then
+      str = RegGetString("HKLM\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\10.0\Setup\VS\ProductDir")
+      if str <> "" Then
+         str2 = str & "Common7"
+         str = str & "VC"
+         if CheckForVisualCPPSub(str, str2, blnOptVCExpressEdition) then
+            strPathVC = str
+            strPathVCCommon = str2
+         end if
+      end if
+   end if
+
+   if (strPathVC = "") And g_blnNewTools then
+      str = RegGetString("HKLM\SOFTWARE\Microsoft\VisualStudio\10.0\Setup\VS\ProductDir")
+      if str <> "" Then
+         str2 = str & "Common7"
+         str = str & "VC"
+         if CheckForVisualCPPSub(str, str2, blnOptVCExpressEdition) then
+            strPathVC = str
+            strPathVCCommon = str2
+         end if
       end if
    end if
 
@@ -963,15 +1147,43 @@ sub CheckForVisualCPP(strOptVC, strOptVCCommon, blnOptVCExpressEdition)
    end if
 
    if   (InStr(1, g_strShellOutput, "Version 13.10") <= 0) _
-    And (InStr(1, g_strShellOutput, "Version 14.") <= 0) then
-      MsgError "The Visual C++ compiler we found ('" & strPathVC & "') isn't 7.1 or 8.0. Check the build requirements."
+    And (InStr(1, g_strShellOutput, "Version 14.") <= 0) _
+    And (InStr(1, g_strShellOutput, "Version 16.") <= 0) then
+      MsgError "The Visual C++ compiler we found ('" & strPathVC & "') isn't 7.1, 8.0 or 10.0. Check the build requirements."
       exit sub
    end if
 
    '
    ' Ok, emit build config variables.
    '
-   if InStr(1, g_strShellOutput, "Version 14.") > 0 then
+   if InStr(1, g_strShellOutput, "Version 16.") > 0 then
+      CfgPrint "VBOX_USE_VCC100       := 1"
+      CfgPrint "PATH_TOOL_VCC100      := " & g_strPathVCC
+      CfgPrint "PATH_TOOL_VCC100X86    = $(PATH_TOOL_VCC100)"
+      CfgPrint "PATH_TOOL_VCC100AMD64  = $(PATH_TOOL_VCC100)"
+      if LogFileExists(strPathVC, "atlmfc/include/atlbase.h") then
+         PrintResult "Visual C++ v10 with ATL", g_strPathVCC
+      elseif   LogFileExists(g_strPathDDK, "inc/atl71/atlbase.h") _
+           And LogFileExists(g_strPathDDK, "lib/ATL/i386/atls.lib") then
+         CfgPrint "TOOL_VCC100X86_MT   = $(PATH_SDK_WINPSDK)/Bin/mt.exe"
+         CfgPrint "TOOL_VCC100AMD64_MT = $(TOOL_VCC100X86_MT)"
+         CfgPrint "VBOX_WITHOUT_COMPILER_REDIST=1"
+         CfgPrint "PATH_TOOL_VCC100_ATLMFC_INC       = " & g_strPathDDK & "/inc/atl71"
+         CfgPrint "PATH_TOOL_VCC100_ATLMFC_LIB.amd64 = " & g_strPathDDK & "/lib/ATL/amd64"
+         CfgPrint "PATH_TOOL_VCC100_ATLMFC_LIB.x86   = " & g_strPathDDK & "/lib/ATL/i386"
+         CfgPrint "PATH_TOOL_VCC100AMD64_ATLMFC_INC  = " & g_strPathDDK & "/inc/atl71"
+         CfgPrint "PATH_TOOL_VCC100AMD64_ATLMFC_LIB  = " & g_strPathDDK & "/lib/ATL/amd64"
+         CfgPrint "PATH_TOOL_VCC100X86_ATLMFC_INC    = " & g_strPathDDK & "/inc/atl71"
+         CfgPrint "PATH_TOOL_VCC100X86_ATLMFC_LIB    = " & g_strPathDDK & "/lib/ATL/i386"
+         PrintResult "Visual C++ v10 with DDK ATL", g_strPathVCC
+      else
+         CfgPrint "TOOL_VCC100X86_MT   = $(PATH_SDK_WINPSDK)/Bin/mt.exe"
+         CfgPrint "TOOL_VCC100AMD64_MT = $(TOOL_VCC100X86_MT)"
+         CfgPrint "VBOX_WITHOUT_COMPILER_REDIST=1"
+         DisableCOM "No ATL"
+         PrintResult "Visual C++ v10 (or later) without ATL", g_strPathVCC
+      end if
+   elseif InStr(1, g_strShellOutput, "Version 14.") > 0 then
       CfgPrint "VBOX_USE_VCC80        := 1"
       CfgPrint "PATH_TOOL_VCC80       := " & g_strPathVCC
       CfgPrint "PATH_TOOL_VCC80X86     = $(PATH_TOOL_VCC80)"
@@ -1021,6 +1233,8 @@ function CheckForVisualCPPSub(strPathVC, strPathVCCommon, blnOptVCExpressEdition
       if blnOptVCExpressEdition _
        Or (    LogFileExists(strPathVC, "atlmfc/include/atlbase.h") _
            And LogFileExists(strPathVC, "atlmfc/lib/atls.lib")) _
+       Or (    LogFileExists(g_strPathDDK, "inc/atl71/atlbase.h") _
+           And LogFileExists(g_strPathDDK, "lib/ATL/i386/atls.lib")) _
          Then
          '' @todo figure out a way we can verify the version/build!
          CheckForVisualCPPSub = True
@@ -1044,65 +1258,65 @@ sub CheckForPlatformSDK(strOptSDK)
    end if
 
    ' The tools location (first).
-   if (strPathPSDK = "") And (g_blnInternalFirst = True) then
+   if strPathPSDK = "" And g_blnInternalFirst then
       str = g_strPathDev & "/win.x86/sdk/200604"
       if CheckForPlatformSDKSub(str) then strPathPSDK = str
    end if
 
-   if (strPathPSDK = "") And (g_blnInternalFirst = True) then
+   if strPathPSDK = "" And g_blnInternalFirst then
       str = g_strPathDev & "/win.x86/sdk/200504"
       if CheckForPlatformSDKSub(str) then strPathPSDK = str
    end if
 
-   if (strPathPSDK = "") And (g_blnInternalFirst = True) then
+   if strPathPSDK = "" And g_blnInternalFirst then
       str = g_strPathDev & "/win.x86/sdk/200209"
       if CheckForPlatformSDKSub(str) then strPathPSDK = str
    end if
 
    ' Look for it in the environment
    str = EnvGet("MSSdk")
-   if (strPathPSDK = "") And (str <> "") then
+   if strPathPSDK = "" And str <> "" then
       if CheckForPlatformSDKSub(str) then strPathPSDK = str
    end if
 
    str = EnvGet("Mstools")
-   if (strPathPSDK = "") And (str <> "") then
+   if strPathPSDK = "" And str <> "" then
       if CheckForPlatformSDKSub(str) then strPathPSDK = str
    end if
 
    ' Check if there is one installed with the compiler.
-   if (strPathPSDK = "") And (str <> "") then
+   if strPathPSDK = "" And str <> "" then
       str = g_strPathVCC & "/PlatformSDK"
       if CheckForPlatformSDKSub(str) then strPathPSDK = str
    end if
 
-   ' Check the registry next. (first pair is vista, second is pre-vista)
-   arrSubKeys = RegEnumSubKeys("HKLM", "SOFTWARE\Microsoft\Microsoft SDKs\Windows")
-   for Each strSubKey In arrSubKeys
+   ' Check the registry next (ASSUMES sorting). (first pair is vista, second is pre-vista)
+   arrSubKeys = RegEnumSubKeysRSort("HKLM", "SOFTWARE\Microsoft\Microsoft SDKs\Windows")
+   for each strSubKey in arrSubKeys
       str = RegGetString("HKLM\SOFTWARE\Microsoft\Microsoft SDKs\Windows\" & strSubKey & "\InstallationFolder")
-      if (strPathPSDK = "") And (str <> "") then
+      if strPathPSDK = "" And str <> "" then
          if CheckForPlatformSDKSub(str) then strPathPSDK = str
       end if
    Next
-   arrSubKeys = RegEnumSubKeys("HKCU", "SOFTWARE\Microsoft\Microsoft SDKs\Windows")
-   for Each strSubKey In arrSubKeys
+   arrSubKeys = RegEnumSubKeysRSort("HKCU", "SOFTWARE\Microsoft\Microsoft SDKs\Windows")
+   for each strSubKey in arrSubKeys
       str = RegGetString("HKCU\SOFTWARE\Microsoft\Microsoft SDKs\Windows\" & strSubKey & "\InstallationFolder")
-      if (strPathPSDK = "") And (str <> "") then
+      if strPathPSDK = "" And str <> "" then
          if CheckForPlatformSDKSub(str) then strPathPSDK = str
       end if
    Next
 
-   arrSubKeys = RegEnumSubKeys("HKLM", "SOFTWARE\Microsoft\MicrosoftSDK\InstalledSDKs")
-   for Each strSubKey In arrSubKeys
+   arrSubKeys = RegEnumSubKeysRSort("HKLM", "SOFTWARE\Microsoft\MicrosoftSDK\InstalledSDKs")
+   for each strSubKey in arrSubKeys
       str = RegGetString("HKLM\SOFTWARE\Microsoft\MicrosoftSDK\InstalledSDKs\" & strSubKey & "\Install Dir")
-      if (strPathPSDK = "") And (str <> "") then
+      if strPathPSDK = "" And str <> "" then
          if CheckForPlatformSDKSub(str) then strPathPSDK = str
       end if
    Next
-   arrSubKeys = RegEnumSubKeys("HKCU", "SOFTWARE\Microsoft\MicrosoftSDK\InstalledSDKs")
-   for Each strSubKey In arrSubKeys
+   arrSubKeys = RegEnumSubKeysRSort("HKCU", "SOFTWARE\Microsoft\MicrosoftSDK\InstalledSDKs")
+   for each strSubKey in arrSubKeys
       str = RegGetString("HKCU\SOFTWARE\Microsoft\MicrosoftSDK\InstalledSDKs\" & strSubKey & "\Install Dir")
-      if (strPathPSDK = "") And (str <> "") then
+      if strPathPSDK = "" And str <> "" then
          if CheckForPlatformSDKSub(str) then strPathPSDK = str
       end if
    Next
@@ -1157,7 +1371,7 @@ end function
 
 
 ''
-' Checks for a Windows 2003 DDK that works with the compiler intrinsics.
+' Checks for a Windows 2003 DDK or Windows 7 Driver Kit.
 sub CheckForWin2k3DDK(strOptDDK)
    dim strPathDDK, str, strSubKeys
    PrintHdr "Windows 2003 DDK, build 3790 or later"
@@ -1167,63 +1381,73 @@ sub CheckForWin2k3DDK(strOptDDK)
    '
    strPathDDK = ""
    ' The specified path.
-   if (strPathDDK = "") And (strOptDDK <> "") then
+   if strPathDDK = "" And strOptDDK <> "" then
       if CheckForWin2k3DDKSub(strOptDDK, True) then strPathDDK = strOptDDK
    end if
 
    ' The tools location (first).
-   if (strPathDDK = "") And (g_blnInternalFirst = True) then
+   if strPathDDK = "" And g_blnInternalFirst then
       str = g_strPathDev & "/win.x86/ddkwin2k3/200503"
       if CheckForWin2k3DDKSub(str, False) then strPathDDK = str
    end if
 
-   if (strPathDDK = "") And (g_blnInternalFirst = True) then
+   if strPathDDK = "" And g_blnInternalFirst then
       str = g_strPathDev & "/win.x86/ddkwin2k3/2004"
       if CheckForWin2k3DDKSub(str, False) then strPathDDK = str
    end if
 
    ' Check the environment
    str = EnvGet("DDK_INC_PATH")
-   if (strPathDDK = "") And (str <> "") then
+   if strPathDDK = "" And str <> "" then
       str = PathParent(PathParent(str))
       if CheckForWin2k3DDKSub(str, True) then strPathDDK = str
    end if
 
    str = EnvGet("BASEDIR")
-   if (strPathDDK = "") And (str <> "") then
+   if strPathDDK = "" And str <> "" then
       if CheckForWin2k3DDKSub(str, True) then strPathDDK = str
    end if
 
-   ' Check the registry next. (the first pair is for vista (WDK), the second for pre-vista (DDK))
-   arrSubKeys = RegEnumSubKeys("HKLM", "SOFTWARE\Microsoft\WINDDK") '' @todo Need some sorting stuff here.
-   for Each strSubKey In arrSubKeys
-      str = RegGetString("HKLM\SOFTWARE\Microsoft\WINDDK\" & strSubKey & "\Setup\BUILD")
-      if (strPathDDK = "") And (str <> "") then
-         if CheckForWin2k3DDKSub(str, False) then strPathDDK = str
-      end if
-   Next
-   arrSubKeys = RegEnumSubKeys("HKCU", "SOFTWARE\Microsoft\WINDDK") '' @todo Need some sorting stuff here.
-   for Each strSubKey In arrSubKeys
-      str = RegGetString("HKCU\SOFTWARE\Microsoft\WINDDK\" & strSubKey & "\Setup\BUILD")
-      if (strPathDDK = "") And (str <> "") then
-         if CheckForWin2k3DDKSub(str, False) then strPathDDK = str
-      end if
-   Next
+   ' Some array constants to ease the work.
+   arrSoftwareKeys = array("SOFTWARE", "SOFTWARE\Wow6432Node")
+   arrRoots        = array("HKLM", "HKCU")
 
-   arrSubKeys = RegEnumSubKeys("HKLM", "SOFTWARE\Microsoft\WINDDK") '' @todo Need some sorting stuff here.
-   for Each strSubKey In arrSubKeys
-      str = RegGetString("HKLM\SOFTWARE\Microsoft\WINDDK\" & strSubKey & "\SFNDirectory")
-      if (strPathDDK = "") And (str <> "") then
-         if CheckForWin2k3DDKSub(str, False) then strPathDDK = str
+   ' Windows 7 WDK.
+   arrLocations = array()
+   for each strSoftwareKey in arrSoftwareKeys
+      for each strSubKey in RegEnumSubKeysFull("HKLM", strSoftwareKey & "\Microsoft\KitSetup\configured-kits")
+         for each strSubKey2 in RegEnumSubKeysFull("HKLM", strSubKey)
+            str = RegGetString("HKLM\" & strSubKey2 & "\setup-install-location")
+            if str <> "" then
+               arrLocations = ArrayAppend(arrLocations, PathAbsLong(str))
+            end if
+         next
+      next
+   next
+   arrLocations = ArrayRSortStrings(arrLocations)
+
+   ' Vista WDK.
+   for each strRoot in arrRoots
+      for each strSubKey in RegEnumSubKeysFullRSort(strRoot, "SOFTWARE\Microsoft\WINDDK")
+         str = RegGetString(strRoot & "\" & strSubKey & "\Setup\BUILD")
+         if str <> "" then arrLocations = ArrayAppend(arrLocations, PathAbsLong(str))
+      Next
+   next
+
+   ' Pre-Vista WDK?
+   for each strRoot in arrRoots
+      for each strSubKey in RegEnumSubKeysFullRSort(strRoot, "SOFTWARE\Microsoft\WINDDK")
+         str = RegGetString(strRoot & "\" & strSubKey & "\SFNDirectory")
+         if str <> "" then arrLocations = ArrayAppend(arrLocations, PathAbsLong(str))
+      Next
+   next
+
+   ' Check the locations we've gathered.
+   for each str in arrLocations
+      if strPathDDK = "" then
+         if CheckForWin2k3DDKSub(str, True) then strPathDDK = str
       end if
-   Next
-   arrSubKeys = RegEnumSubKeys("HKCU", "SOFTWARE\Microsoft\WINDDK") '' @todo Need some sorting stuff here.
-   for Each strSubKey In arrSubKeys
-      str = RegGetString("HKCU\SOFTWARE\Microsoft\WINDDK\" & strSubKey & "\SFNDirectory")
-      if (strPathDDK = "") And (str <> "") then
-         if CheckForWin2k3DDKSub(str, False) then strPathDDK = str
-      end if
-   Next
+   next
 
    ' The tools location (post).
    if (strPathDDK = "") And (g_blnInternalFirst = False) then
@@ -1246,9 +1470,14 @@ sub CheckForWin2k3DDK(strOptDDK)
    ' Emit the config.
    '
    strPathDDK = UnixSlashes(PathAbs(strPathDDK))
-   CfgPrint "PATH_SDK_W2K3DDK      := " & strPathDDK
-   CfgPrint "PATH_SDK_W2K3DDKX86    = $(PATH_SDK_W2K3DDK)"
-   CfgPrint "PATH_SDK_W2K3DDKAMD64  = $(PATH_SDK_W2K3DDK)"
+   if LogFileExists(strPathDDK, "inc/api/ntdef.h") then
+      CfgPrint "VBOX_USE_WINDDK       := 1"
+      CfgPrint "PATH_SDK_WINDDK       := " & strPathDDK
+   else
+      CfgPrint "PATH_SDK_W2K3DDK      := " & strPathDDK
+      CfgPrint "PATH_SDK_W2K3DDKX86    = $(PATH_SDK_W2K3DDK)"
+      CfgPrint "PATH_SDK_W2K3DDKAMD64  = $(PATH_SDK_W2K3DDK)"
+   end if
 
    PrintResult "Windows 2003 DDK", strPathDDK
    g_strPathDDK = strPathDDK
@@ -1258,8 +1487,14 @@ end sub
 function CheckForWin2k3DDKSub(strPathDDK, blnCheckBuild)
    CheckForWin2k3DDKSub = False
    LogPrint "trying: strPathDDK=" & strPathDDK & " blnCheckBuild=" & blnCheckBuild
-   '' @todo vista: if   (   LogFileExists(strPathDDK, "inc/ddk/wnet/ntdef.h") _
-   '      Or LogFileExists(strPathDDK, "inc/api/ntdef.h")) _
+   if   g_blnNewTools _
+    And LogFileExists(strPathDDK, "inc/api/ntdef.h") _
+    And LogFileExists(strPathDDK, "lib/wnet/i386/int64.lib") _
+      then
+      '' @todo figure out a way we can verify the version/build!
+      CheckForWin2k3DDKSub = True
+   end if
+
    if   LogFileExists(strPathDDK, "inc/ddk/wnet/ntdef.h") _
     And LogFileExists(strPathDDK, "lib/wnet/i386/int64.lib") _
       then
@@ -1277,7 +1512,7 @@ sub CheckForMidl()
 
    ' Skip if no COM/ATL.
    if g_blnDisableCOM then
-      PrintResult "Midl", "Skipped (" & g_strDisableCOM & ")"
+      PrintResultMsg "Midl", "Skipped (" & g_strDisableCOM & ")"
       exit sub
    end if
 
@@ -1613,7 +1848,7 @@ sub CheckForXml2(strOptXml2)
 
    ' Skip if no COM/ATL.
    if g_blnDisableCOM then
-      PrintResult "libxml2", "Skipped (" & g_strDisableCOM & ")"
+      PrintResultMsg "libxml2", "Skipped (" & g_strDisableCOM & ")"
       exit sub
    end if
 
@@ -1635,7 +1870,7 @@ sub CheckForXml2(strOptXml2)
 
    ' Ignore failure if we're in 'internal' mode.
    if (strPathXml2 = "") and g_blnInternalMode then
-      PrintResult "libxml2", "ignored (internal mode)"
+      PrintResultMsg "libxml2", "ignored (internal mode)"
       exit sub
    end if
 
@@ -1685,7 +1920,7 @@ sub CheckForXslt(strOptXslt)
 
    ' Skip if no COM/ATL.
    if g_blnDisableCOM then
-      PrintResult "libxslt", "Skipped (" & g_strDisableCOM & ")"
+      PrintResultMsg "libxslt", "Skipped (" & g_strDisableCOM & ")"
       exit sub
    end if
 
@@ -1715,7 +1950,7 @@ sub CheckForXslt(strOptXslt)
 
    ' Ignore failure if we're in 'internal' mode.
    if (strPathXslt = "") and g_blnInternalMode then
-      PrintResult "libxslt", "ignored (internal mode)"
+      PrintResultMsg "libxslt", "ignored (internal mode)"
       exit sub
    end if
 
@@ -1784,7 +2019,7 @@ sub CheckForSsl(strOptSsl)
 
    ' Ignore failure if we're in 'internal' mode.
    if (strPathSsl = "") and g_blnInternalMode then
-      PrintResult "openssl", "ignored (internal mode)"
+      PrintResultMsg "openssl", "ignored (internal mode)"
       exit sub
    end if
 
@@ -1847,7 +2082,7 @@ sub CheckForCurl(strOptCurl)
 
    ' Ignore failure if we're in 'internal' mode.
    if (strPathCurl = "") and g_blnInternalMode then
-      PrintResult "curl", "ignored (internal mode)"
+      PrintResultMsg "curl", "ignored (internal mode)"
       exit sub
    end if
 
@@ -1906,7 +2141,7 @@ sub CheckForQt4(strOptQt4)
 
    if strPathQt4 = "" then
       CfgPrint "VBOX_WITH_QT4GUI="
-      PrintResult "Qt4", "not found"
+      PrintResultMsg "Qt4", "not found"
    else
       CfgPrint "PATH_SDK_QT4          := " & strPathQt4
       CfgPrint "PATH_TOOL_QT4          = $(PATH_SDK_QT4)"
@@ -2117,9 +2352,9 @@ Sub Main
    end if
    CheckSourcePath
    CheckForkBuild strOptkBuild
+   CheckForWin2k3DDK strOptDDK
    CheckForVisualCPP strOptVC, strOptVCCommon, blnOptVCExpressEdition
    CheckForPlatformSDK strOptSDK
-   CheckForWin2k3DDK strOptDDK
    CheckForMidl
    CheckForDirectXSDK strOptDXSDK
    CheckForMingW strOptMingw, strOptW32API
