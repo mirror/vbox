@@ -135,6 +135,12 @@ VMMR3DECL(int) PGMR3SharedModuleUnregister(PVM pVM, char *pszModuleName, char *p
  */
 static DECLCALLBACK(VBOXSTRICTRC) pgmR3SharedModuleRegRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
+    VMCPUID idCpu = *(VMCPUID *)pvUser;
+
+    /* Execute on the VCPU that issued the original request to make sure we're in the right cr3 context. */
+    if (pVCpu->idCpu != idCpu)
+        return VINF_SUCCESS;
+
     /* Flush all pending handy page operations before changing any shared page assignments. */
     int rc = PGMR3PhysAllocateHandyPages(pVM);
     AssertRC(rc);
@@ -154,8 +160,10 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3SharedModuleRegRendezvous(PVM pVM, PVMCPU
  */
 static DECLCALLBACK(void) pgmR3CheckSharedModulesHelper(PVM pVM)
 {
+    VMCPUID idCpu = VMMGetCpuId(pVM);
+
     /* We must stall other VCPUs as we'd otherwise have to send IPI flush commands for every single change we make. */
-    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3SharedModuleRegRendezvous, NULL);
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE, pgmR3SharedModuleRegRendezvous, &idCpu);
     AssertRC(rc);
 }
 #endif
