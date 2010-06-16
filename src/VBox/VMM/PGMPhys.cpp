@@ -3386,7 +3386,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
         Req.idChunkUnmap = pgmR3PhysChunkFindUnmapCandidate(pVM);
 
     /* Must be callable from any thread, so can't use VMMR3CallR0. */
-    rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
+    rc = SUPR3CallVMMR0Ex(pVM->pVMR0, VMMGetCpuId(pVM), VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
     if (RT_SUCCESS(rc))
     {
         /*
