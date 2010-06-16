@@ -3250,13 +3250,25 @@ DxgkDdiCreateOverlay(
     CONST HANDLE  hAdapter,
     DXGKARG_CREATEOVERLAY  *pCreateOverlay)
 {
-    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%p)\n", hAdapter));
 
-    AssertBreakpoint();
+    NTSTATUS Status = STATUS_SUCCESS;
+    PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
+    PVBOXWDDM_OVERLAY pOverlay = (PVBOXWDDM_OVERLAY)vboxWddmMemAllocZero(sizeof (VBOXWDDM_OVERLAY));
+    Assert(pOverlay);
+    if (pOverlay)
+    {
+        int rc = vboxVhwaHlpOverlayCreate(pDevExt, pCreateOverlay->VidPnSourceId, &pCreateOverlay->OverlayInfo, pOverlay);
+        AssertRC(rc);
+        if (RT_FAILURE(rc))
+            Status = STATUS_UNSUCCESSFUL;
+    }
+    else
+        Status = STATUS_NO_MEMORY;
 
-    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%p)\n", hAdapter));
 
-    return STATUS_NOT_IMPLEMENTED;
+    return Status;
 }
 
 NTSTATUS
@@ -3409,11 +3421,6 @@ DxgkDdiRender(
 DECLINLINE(PVBOXWDDM_ALLOCATION) vboxWddmGetAllocationFromAllocList(PDEVICE_EXTENSION pDevExt, DXGK_ALLOCATIONLIST *pAllocList)
 {
     return vboxWddmGetAllocationFromOpenData(pDevExt, (PVBOXWDDM_OPENALLOCATION)pAllocList->hDeviceSpecificAllocation);
-}
-
-DECLINLINE(VBOXVIDEOOFFSET) vboxWddmOffsetFromPhAddress(PHYSICAL_ADDRESS phAddr)
-{
-    return (VBOXVIDEOOFFSET)(phAddr.QuadPart ? phAddr.QuadPart - VBE_DISPI_LFB_PHYSICAL_ADDRESS : VBOXVIDEOOFFSET_VOID);
 }
 
 DECLINLINE(VOID) vboxWddmRectlFromRect(const RECT *pRect, PVBOXVDMA_RECTL pRectl)
@@ -3781,10 +3788,19 @@ DxgkDdiUpdateOverlay(
     CONST HANDLE  hOverlay,
     CONST DXGKARG_UPDATEOVERLAY  *pUpdateOverlay)
 {
-    dfprintf(("==> "__FUNCTION__ ", hOverlay(0x%x)\n", hOverlay));
-    AssertBreakpoint();
-    dfprintf(("<== "__FUNCTION__ ", hOverlay(0x%x)\n", hOverlay));
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hOverlay(0x%p)\n", hOverlay));
+
+    NTSTATUS Status = STATUS_SUCCESS;
+    PVBOXWDDM_OVERLAY pOverlay = (PVBOXWDDM_OVERLAY)hOverlay;
+    Assert(pOverlay);
+    int rc = vboxVhwaHlpOverlayUpdate(pOverlay, &pUpdateOverlay->OverlayInfo);
+    AssertRC(rc);
+    if (RT_FAILURE(rc))
+        Status = STATUS_UNSUCCESSFUL;
+
+    dfprintf(("<== "__FUNCTION__ ", hOverlay(0x%p)\n", hOverlay));
+
+    return Status;
 }
 
 NTSTATUS
@@ -3793,10 +3809,19 @@ DxgkDdiFlipOverlay(
     CONST HANDLE  hOverlay,
     CONST DXGKARG_FLIPOVERLAY  *pFlipOverlay)
 {
-    dfprintf(("==> "__FUNCTION__ ", hOverlay(0x%x)\n", hOverlay));
-    AssertBreakpoint();
-    dfprintf(("<== "__FUNCTION__ ", hOverlay(0x%x)\n", hOverlay));
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hOverlay(0x%p)\n", hOverlay));
+
+    NTSTATUS Status = STATUS_SUCCESS;
+    PVBOXWDDM_OVERLAY pOverlay = (PVBOXWDDM_OVERLAY)hOverlay;
+    Assert(pOverlay);
+    int rc = vboxVhwaHlpOverlayFlip(pOverlay, pFlipOverlay);
+    AssertRC(rc);
+    if (RT_FAILURE(rc))
+        Status = STATUS_UNSUCCESSFUL;
+
+    dfprintf(("<== "__FUNCTION__ ", hOverlay(0x%p)\n", hOverlay));
+
+    return Status;
 }
 
 NTSTATUS
@@ -3804,10 +3829,21 @@ APIENTRY
 DxgkDdiDestroyOverlay(
     CONST HANDLE  hOverlay)
 {
-    dfprintf(("==> "__FUNCTION__ ", hOverlay(0x%x)\n", hOverlay));
-    AssertBreakpoint();
-    dfprintf(("<== "__FUNCTION__ ", hOverlay(0x%x)\n", hOverlay));
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hOverlay(0x%p)\n", hOverlay));
+
+    NTSTATUS Status = STATUS_SUCCESS;
+    PVBOXWDDM_OVERLAY pOverlay = (PVBOXWDDM_OVERLAY)hOverlay;
+    Assert(pOverlay);
+    int rc = vboxVhwaHlpOverlayDestroy(pOverlay);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+        vboxWddmMemFree(pOverlay);
+    else
+        Status = STATUS_UNSUCCESSFUL;
+
+    dfprintf(("<== "__FUNCTION__ ", hOverlay(0x%p)\n", hOverlay));
+
+    return Status;
 }
 
 /**
