@@ -173,7 +173,7 @@ VBOX_GUI_INC_DIRS = \
 	./src/widgets \
 	./src/X11 \
 	./src/darwin \
-    ./src/runtime \
+	./src/runtime \
 	./src/runtime/normal \
 	./src/runtime/fullscreen \
 	./src/runtime/seamless
