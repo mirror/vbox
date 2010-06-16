@@ -74,7 +74,7 @@ int main()
     { \
         CHECK_PADDING(VM, member, align); \
         CHECK_MEMBER_ALIGNMENT(VM, member, align); \
-        VM *p; \
+        VM *p = NULL; NOREF(p); \
         if (sizeof(p->member.padding) >= (ssize_t)sizeof(p->member.s) + 128 + sizeof(p->member.s) / 20) \
             printf("warning: VM::%-8s: padding=%-5d s=%-5d -> %-4d  suggest=%-5u\n", \
                    #member, (int)sizeof(p->member.padding), (int)sizeof(p->member.s), \
@@ -88,7 +88,7 @@ int main()
     { \
         CHECK_PADDING(VMCPU, member, align); \
         CHECK_MEMBER_ALIGNMENT(VMCPU, member, align); \
-        VMCPU *p; \
+        VMCPU *p = NULL; NOREF(p); \
         if (sizeof(p->member.padding) >= (ssize_t)sizeof(p->member.s) + 128 + sizeof(p->member.s) / 20) \
             printf("warning: VMCPU::%-8s: padding=%-5d s=%-5d -> %-4d  suggest=%-5u\n", \
                    #member, (int)sizeof(p->member.padding), (int)sizeof(p->member.s), \
@@ -110,7 +110,7 @@ int main()
     { \
         CHECK_PADDING(UVM, member, align); \
         CHECK_MEMBER_ALIGNMENT(UVM, member, align); \
-        UVM *p; \
+        UVM *p = NULL; NOREF(p); \
         if (sizeof(p->member.padding) >= (ssize_t)sizeof(p->member.s) + 128 + sizeof(p->member.s) / 20) \
             printf("warning: UVM::%-8s: padding=%-5d s=%-5d -> %-4d  suggest=%-5u\n", \
                    #member, (int)sizeof(p->member.padding), (int)sizeof(p->member.s), \
@@ -123,7 +123,7 @@ int main()
     { \
         CHECK_PADDING(UVMCPU, member, align); \
         CHECK_MEMBER_ALIGNMENT(UVMCPU, member, align); \
-        UVMCPU *p; \
+        UVMCPU *p = NULL; NOREF(p); \
         if (sizeof(p->member.padding) >= (ssize_t)sizeof(p->member.s) + 128 + sizeof(p->member.s) / 20) \
             printf("warning: UVMCPU::%-8s: padding=%-5d s=%-5d -> %-4d  suggest=%-5u\n", \
                    #member, (int)sizeof(p->member.padding), (int)sizeof(p->member.s), \
@@ -136,7 +136,7 @@ int main()
     { \
         CHECK_PADDING(GVM, member, align); \
         CHECK_MEMBER_ALIGNMENT(GVM, member, align); \
-        GVM *p; \
+        GVM *p = NULL; NOREF(p); \
         if (sizeof(p->member.padding) >= (ssize_t)sizeof(p->member.s) + 128 + sizeof(p->member.s) / 20) \
             printf("warning: GVM::%-8s: padding=%-5d s=%-5d -> %-4d  suggest=%-5u\n", \
                    #member, (int)sizeof(p->member.padding), (int)sizeof(p->member.s), \
@@ -149,7 +149,7 @@ int main()
     { \
         CHECK_PADDING(GVMCPU, member, align); \
         CHECK_MEMBER_ALIGNMENT(GVMCPU, member, align); \
-        GVMCPU *p; \
+        GVMCPU *p = NULL; NOREF(p); \
         if (sizeof(p->member.padding) >= (ssize_t)sizeof(p->member.s) + 128 + sizeof(p->member.s) / 20) \
             printf("warning: GVMCPU::%-8s: padding=%-5d s=%-5d -> %-4d  suggest=%-5u\n", \
                    #member, (int)sizeof(p->member.padding), (int)sizeof(p->member.s), \
@@ -234,7 +234,7 @@ int main()
 
     CHECK_MEMBER_ALIGNMENT(VM, selm.s.Tss, 16);
     PRINT_OFFSET(VM, selm.s.Tss);
-    PVM pVM;
+    PVM pVM = NULL; NOREF(pVM);
     if ((RT_OFFSETOF(VM, selm.s.Tss) & PAGE_OFFSET_MASK) > PAGE_SIZE - sizeof(pVM->selm.s.Tss))
     {
         printf("error! SELM:Tss is crossing a page!\n");

@@ -108,7 +108,8 @@ int pdmR3DrvInit(PVM pVM)
     LogFlow(("pdmR3DrvInit:\n"));
 
     AssertRelease(!(RT_OFFSETOF(PDMDRVINS, achInstanceData) & 15));
-    PPDMDRVINS pDrvInsAssert;
+    PPDMDRVINS pDrvInsAssert; NOREF(pDrvInsAssert);
+    AssertCompile(sizeof(pDrvInsAssert->Internal.s) <= sizeof(pDrvInsAssert->Internal.padding));
     AssertRelease(sizeof(pDrvInsAssert->Internal.s) <= sizeof(pDrvInsAssert->Internal.padding));
 
     /*
