@@ -649,6 +649,115 @@ def machById(ctx,id):
             break
     return mach
 
+class XPathNode:
+    def __init__(self, parent, obj, type):
+        self.parent = parent
+        self.obj = obj
+        self.type = type
+    def lookup(self, subpath):
+        children = self.enum()
+        matches = []
+        for e in children:
+            if e.matches(subpath):
+                matches.append(e)
+        return matches
+    def enum(self):
+        return []
+    def matches(self,subexp):
+#        m = re.search(r"@(?P<a>\w+)=(?P<v>\w+)", subexp)
+        matches = False
+#        try:
+#        if m is not None:
+#        else:
+#            print "no match in ",subexp
+#       except:
+
+        return matches
+    def apply(self, cmd):
+        exec(cmd, {'obj':self.obj,'node':self,'ctx':self.getCtx()}, {})
+    def getCtx(self):
+        if hasattr(self,'ctx'):
+            return self.ctx
+        return self.parent.getCtx()
+
+class XPathNodeHolder(XPathNode):
+    def __init__(self, parent, obj, attr, heldClass, xpathname):
+        XPathNode.__init__(self, parent, obj, 'hld '+xpathname)
+        self.attr = attr
+        self.heldClass = heldClass
+        self.xpathname = xpathname
+    def enum(self):
+        children = []
+        for n in self.getCtx()['global'].getArray(self.obj, self.attr):
+            node = self.heldClass(self, n)
+            children.append(node)
+        return children
+    def matches(self,subexp):
+        return subexp == self.xpathname
+
+class XPathNodeValue(XPathNode):
+    def __init__(self, parent, obj, xpathname):
+        XPathNode.__init__(self, parent, obj, 'val '+xpathname)
+        self.xpathname = xpathname
+    def matches(self,subexp):
+        return subexp == self.xpathname
+
+class XPathNodeHolderVM(XPathNodeHolder):
+    def __init__(self, parent, vbox):
+        XPathNodeHolder.__init__(self, parent, vbox, 'machines', XPathNodeVM, 'vms')
+
+class XPathNodeVM(XPathNode):
+    def __init__(self, parent, obj):
+        XPathNode.__init__(self, parent, obj, 'vm')
+    def matches(self,subexp):
+        return subexp=='vm'
+    def enum(self):
+        return [XPathNodeHolderNIC(self, self.obj),
+                XPathNodeValue(self, self.obj.BIOSSettings,  'bios'),
+                XPathNodeValue(self, self.obj.USBController, 'usb')]
+
+class XPathNodeHolderNIC(XPathNodeHolder):
+    def __init__(self, parent, mach):
+        XPathNodeHolder.__init__(self, parent, mach, 'nics', XPathNodeVM, 'nics')
+        self.maxNic = self.getCtx()['vb'].systemProperties.networkAdapterCount
+    def enum(self):
+        children = []
+        for i in range(0, self.maxNic):
+            node = XPathNodeNIC(self, self.obj.getNetworkAdapter(i))
+            children.append(node)
+        return children
+
+class XPathNodeNIC(XPathNode):
+    def __init__(self, parent, obj):
+        XPathNode.__init__(self, parent, obj, 'nic')
+    def matches(self,subexp):
+        return subexp=='nic'
+
+class XPathNodeRoot(XPathNode):
+    def __init__(self, ctx):
+        XPathNode.__init__(self, None, None, 'root')
+        self.ctx = ctx
+    def enum(self):
+        return [XPathNodeHolderVM(self, self.ctx['vb'])]
+    def matches(self,subexp):
+        return True
+
+def eval_xpath(ctx,scope):
+    pathnames = scope.split("/")[2:]
+    nodes = [XPathNodeRoot(ctx)]
+    for p in pathnames:
+        seen = []
+        while len(nodes) > 0:
+            n = nodes.pop()
+            seen.append(n)
+        for s in seen:
+            matches = s.lookup(p)
+            for m in matches:
+                nodes.append(m)
+        if len(nodes) == 0:
+            break
+    return nodes
+
 def argsToMach(ctx,args):
     if len(args) < 2:
         print "usage: %s [vmname|uuid]" %(args[0])
@@ -1188,12 +1297,18 @@ def aliasCmd(ctx, args):
 
 def verboseCmd(ctx, args):
     global g_verbose
-    g_verbose = not g_verbose
+    if (len(args) > 1):
+        g_verbose  = (args[1]=='on')
+    else:
+        g_verbose = not g_verbose
     return 0
 
 def colorsCmd(ctx, args):
     global g_hascolors
-    g_hascolors = not g_hascolors
+    if (len(args) > 1):
+        g_hascolors = (args[1]=='on')
+    else:
+        g_hascolors = not g_hascolors
     return 0
 
 def hostCmd(ctx, args):
@@ -2648,7 +2763,6 @@ def nicCmd(ctx, args):
         return 0
 
     if    len(args) < 3 \
-       or not args[2].isdigit() \
        or int(args[2]) not in range(0, ctx['vb'].systemProperties.networkAdapterCount):
             print 'please specify adapter num %d isn\'t in range [0-%d]'%(args[2], ctx['vb'].systemProperties.networkAdapterCount)
             return 0
@@ -2676,6 +2790,32 @@ def promptCmd(ctx, args):
     ctx['prompt'] = args[1]
     return 0
 
+def foreachCmd(ctx, args):
+    if len(args) < 3:
+        print "foreach scope command"
+        return 0
+
+    scope = args[1]
+    cmd = args[2]
+    elems = eval_xpath(ctx,scope)
+    try:
+        for e in elems:
+            e.apply(cmd)
+    except:
+        print "Error executing"
+        traceback.print_exc()
+    return 0
+
+def foreachvmCmd(ctx, args):
+    if len(args) < 2:
+        print "foreachvm command <args>"
+        return 0
+    cmdargs = args[1:]
+    cmdargs.insert(1, '')
+    for m in getMachines(ctx):
+        cmdargs[1] = m.id
+        runCommandArgs(ctx, cmdargs)
+    return 0
 
 aliases = {'s':'start',
            'i':'info',
@@ -2754,6 +2894,8 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'nat':['NAT (network address trasnlation engine) manipulation, nat help for more info', natCmd, 0],
             'nic' : ['Network adapter management', nicCmd, 0],
             'prompt' : ['Control prompt', promptCmd, 0],
+            'foreachvm' : ['Perform command for each VM', foreachvmCmd, 0],
+            'foreach' : ['Generic "for each" construction, using XPath-like notation: foreach //vms/vm "print obj.name"', foreachCmd, 0],
             }
 
 def runCommandArgs(ctx, args):
