@@ -3422,7 +3422,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
     }
     else
     {
-        AssertRC(rc);
+        AssertFatalRC(rc);
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
         MMR3HeapFree(pChunk);
 #else
