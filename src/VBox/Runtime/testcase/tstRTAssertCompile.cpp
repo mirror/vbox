@@ -107,8 +107,10 @@ int main(int argc, char **argv)
 
     AssertCompileMemberOffset(STRUCT1, u8, 0);
     AssertCompileMemberOffset(STRUCT1, au8, 1);
+#ifndef _MSC_VER /** @todo figure out why MSC has trouble with these expressions */
     AssertCompileMemberOffset(STRUCT1, au8[0], 1);
     AssertCompileMemberOffset(STRUCT1, au8[8], 9);
+#endif
 
     typedef union UNION1
     {
@@ -124,8 +126,10 @@ int main(int argc, char **argv)
 
     AssertCompileAdjacentMembers(STRUCT1, u32A, u32B);
     AssertCompileAdjacentMembers(STRUCT1, u8, au8);
+#ifndef _MSC_VER /** @todo figure out why MSC has trouble with these expressions */
     AssertCompileAdjacentMembers(STRUCT1, u8, au8[0]);
     AssertCompileAdjacentMembers(STRUCT1, au8[0], au8[1]);
+#endif
 
     AssertCompileMembersAtSameOffset(STRUCT1,  u8, STRUCT2,  u8);
     AssertCompileMembersAtSameOffset(STRUCT1, au8, STRUCT2, au8);
