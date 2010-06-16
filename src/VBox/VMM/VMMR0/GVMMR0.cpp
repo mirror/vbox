@@ -1223,21 +1223,17 @@ static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock)
 /**
  * Lookup a GVM structure by the shared VM structure.
  *
- * @returns The GVM pointer on success, NULL on failure.
+ * @returns VBox status code.
  * @param   pVM     The shared VM structure (the ring-0 mapping).
+ * @param   ppGVM       Where to store the GVM pointer.
  *
  * @remark  This will not take the 'used'-lock because it doesn't do
  *          nesting and this function will be used from under the lock.
  */
-GVMMR0DECL(PGVM) GVMMR0ByVM(PVM pVM)
+GVMMR0DECL(int) GVMMR0ByVM(PVM pVM, PGVM *ppGVM)
 {
-    PGVM pGVM;
     PGVMM pGVMM;
-    int rc = gvmmR0ByVM(pVM, &pGVM, &pGVMM, false /* fTakeUsedLock */);
-    if (RT_SUCCESS(rc))
-        return pGVM;
-    AssertRC(rc);
-    return NULL;
+    return gvmmR0ByVM(pVM, ppGVM, &pGVMM, false /* fTakeUsedLock */);
 }
 
 

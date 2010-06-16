@@ -924,7 +924,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
         case VMMR0_DO_GMM_MAP_UNMAP_CHUNK:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
-            return GMMR0MapUnmapChunkReq(pVM, idCpu, (PGMMMAPUNMAPCHUNKREQ)pReqHdr);
+            return GMMR0MapUnmapChunkReq(pVM, (PGMMMAPUNMAPCHUNKREQ)pReqHdr);
 
         case VMMR0_DO_GMM_SEED_CHUNK:
             if (pReqHdr)
