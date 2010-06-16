@@ -4828,7 +4828,7 @@ static void ahciCopyFromSGListIntoBuffer(PPDMDEVINS pDevIns, PAHCIPORTTASKSTATES
 static int ahciScatterGatherListCopyFromBuffer(PAHCIPORTTASKSTATE pAhciPortTaskState, void *pvBuf, size_t cbBuf)
 {
     unsigned cSGEntry = 0;
-    int cbCopied = 0;
+    size_t cbCopied = 0;
     PRTSGSEG pSGEntry = &pAhciPortTaskState->pSGListHead[cSGEntry];
     uint8_t *pu8Buf = (uint8_t *)pvBuf;
 

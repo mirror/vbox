@@ -588,7 +588,7 @@ static int usbHidCompleteOk(PUSBHID pThis, PVUSBURB pUrb, size_t cbData)
     Log(("usbHidCompleteOk/#%u: pUrb=%p:%s cbData=%#zx\n", pThis->pUsbIns->iInstance, pUrb, pUrb->pszDesc, cbData));
 
     pUrb->enmStatus = VUSBSTATUS_OK;
-    pUrb->cbData    = cbData;
+    pUrb->cbData    = (uint32_t)cbData;
 
     usbHidLinkDone(pThis, pUrb);
     return VINF_SUCCESS;
