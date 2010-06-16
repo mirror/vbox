@@ -102,7 +102,7 @@ RT_C_DECLS_END
 #define CHECK_PADDING(strct, member, align) \
     do \
     { \
-        strct *p; \
+        strct *p = NULL; NOREF(p); \
         if (sizeof(p->member.s) > sizeof(p->member.padding)) \
         { \
             printf("error! padding of %s::%s is too small, padding=%d struct=%d correct=%d\n", #strct, #member, \
@@ -123,7 +123,7 @@ RT_C_DECLS_END
 #define CHECK_PADDING2(strct) \
     do \
     { \
-        strct *p; \
+        strct *p = NULL; NOREF(p); \
         if (sizeof(p->s) > sizeof(p->padding)) \
         { \
             printf("error! padding of %s is too small, padding=%d struct=%d correct=%d\n", #strct, \
@@ -138,7 +138,7 @@ RT_C_DECLS_END
 #define CHECK_PADDING3(strct, member, pad_member) \
     do \
     { \
-        strct *p; \
+        strct *p = NULL; NOREF(p); \
         if (sizeof(p->member) > sizeof(p->pad_member)) \
         { \
             printf("error! padding of %s::%s is too small, padding=%d struct=%d\n", #strct, #member, \
