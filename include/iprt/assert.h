@@ -275,6 +275,7 @@ RT_C_DECLS_END
 /** @def RTASSERT_HAVE_STATIC_ASSERT
  * Indicates that the compiler implements static_assert(expr, msg).
  * @todo Does any GCC version support static_assert?
+ * @     Yes, as of gcc-4.3 with 'g++ -std=c++0x' but only in g++, not gcc!
  */
 #ifdef _MSC_VER
 # if _MSC_VER >= 1600 && defined(__cplusplus)
