@@ -76,6 +76,37 @@ int main(int argc, char **argv)
             cErrors++;
         }
 
+        uint32_t u32Type;
+        rc = RTFsQueryType(argv[i], &u32Type);
+        if (RT_FAILURE(rc))
+        {
+            RTPrintf("tstRTFsQueries: RTFsQueryType failed, rc=%Rrc\n", rc);
+            cErrors++;
+        }
+        else
+        {
+            static const char *s_apszType[] =
+            {
+                "unknown",
+                "ext",
+                "ext2",
+                "ext3",
+                "ext4",
+                "tmpfs",
+                "jfs",
+                "nfs",
+                "hfs",
+                "cifs",
+                "fat",
+                "ntfs"
+            };
+
+            if (u32Type < RT_ELEMENTS(s_apszType))
+                RTPrintf("tstRTFsQueries: file system type is '%s'\n", s_apszType[u32Type]);
+            else
+                RTPrintf("tstRTFsQueries: unknown file system type %d\n", u32Type);
+        }
+
         RTFSPROPERTIES Props;
         rc = RTFsQueryProperties(argv[i], &Props);
         if (RT_SUCCESS(rc))
