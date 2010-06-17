@@ -98,7 +98,11 @@ int main(int argc, char **argv)
                 "hfs",
                 "cifs",
                 "fat",
-                "ntfs"
+                "ntfs",
+                "zfs",
+                "xfs",
+                "autofs",
+                "devfs"
             };
 
             if (u32Type < RT_ELEMENTS(s_apszType))
