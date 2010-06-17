@@ -44,6 +44,7 @@
 # include <netdb.h>
 # include <unistd.h>
 # include <fcntl.h>
+# include <sys/uio.h>
 #endif /* !RT_OS_WINDOWS */
 #include <limits.h>
 
@@ -58,6 +59,8 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
+#include <iprt/mem.h>
+#include <iprt/sg.h>
 
 #include "internal/magics.h"
 #include "internal/socket.h"
@@ -567,6 +570,84 @@ RTDECL(int) RTSocketWrite(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuffe
             }
         }
     }
+
+    rtSocketUnlock(pThis);
+    return rc;
+}
+
+
+RTDECL(int) RTSocketSgWrite(RTSOCKET hSocket, PCRTSGBUF pSgBuf)
+{
+    /*
+     * Validate input.
+     */
+    RTSOCKETINT *pThis = hSocket;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pSgBuf, VERR_INVALID_PARAMETER);
+    AssertReturn(pSgBuf->cSeg > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
+
+    /*
+     * Construct message descriptor (translate pSgBuf) and send it.
+     */
+    int rc = VINF_SUCCESS;
+    do
+    {
+#ifdef RT_OS_WINDOWS
+        AssertCompileSize(WSABUF, sizeof(RTSGSEG));
+        AssertCompileMemberSize(WSABUF, buf, RT_SIZEOFMEMB(RTSGSEG, pvSeg));
+        AssertCompileMemberSize(WSABUF, len, RT_SIZEOFMEMB(RTSGSEG, cbSeg));
+
+        LPWSABUF *paMsg = (LPWSABUF)RTMemTmpAllocZ(pSgBuf->cSeg * sizeof(WSABUF));
+        AssertPtrBreakStmt(paMsg, rc = VERR_NO_MEMORY);
+        for (unsigned i = 0; i < pSgBuf->cSeg; i++)
+        {
+            paMsg[i].buf = pSgBuf->pcaSeg[i].pvSeg;
+            paMsg[i].len = pSgBuf->pcaSeg[i].cbSeg;
+        }
+
+        WSAMSG msgHdr;
+        DWORD dwSent;
+        memset(&msgHdr, '\0', sizeof(msgHdr));
+        msgHdr.lpBuffers = paMsg;
+        msgHdr.dwBufferCount = pSgBuf->cSeg;
+        int hrc = WSASendMsg(pThis->hNative, &msgHdr, MSG_NOSIGNAL, &dwSent,
+                             NULL, NULL);
+        ssize_t cbWritten;
+        if (!hrc)
+        {
+            /* avoid overflowing ssize_t, the exact value isn't important */
+            cbWritten = RT_MIN(dwSent, INT_MAX);
+        }
+        else
+            cbWritten = -1;
+#else
+        AssertCompileSize(struct iovec, sizeof(RTSGSEG));
+        AssertCompileMemberSize(struct iovec, iov_base, RT_SIZEOFMEMB(RTSGSEG, pvSeg));
+        AssertCompileMemberSize(struct iovec, iov_len, RT_SIZEOFMEMB(RTSGSEG, cbSeg));
+
+        struct iovec *paMsg = (struct iovec *)RTMemTmpAllocZ(pSgBuf->cSeg * sizeof(struct iovec));
+        AssertPtrBreakStmt(paMsg, rc = VERR_NO_MEMORY);
+        for (unsigned i = 0; i < pSgBuf->cSeg; i++)
+        {
+            paMsg[i].iov_base = pSgBuf->pcaSeg[i].pvSeg;
+            paMsg[i].iov_len = pSgBuf->pcaSeg[i].cbSeg;
+        }
+
+        struct msghdr msgHdr;
+        memset(&msgHdr, '\0', sizeof(msgHdr));
+        msgHdr.msg_iov = paMsg;
+        msgHdr.msg_iovlen = pSgBuf->cSeg;
+        ssize_t cbWritten = sendmsg(pThis->hNative, &msgHdr, MSG_NOSIGNAL);
+#endif
+
+        RTMemTmpFree(paMsg);
+        if (RT_LIKELY(cbWritten >= 0))
+            rc = VINF_SUCCESS;
+        else
+            rc = rtSocketError();
+    } while (0);
 
     rtSocketUnlock(pThis);
     return rc;

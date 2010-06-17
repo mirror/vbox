@@ -30,6 +30,7 @@
 #include <iprt/types.h>
 #include <iprt/thread.h>
 #include <iprt/net.h>
+#include <iprt/sg.h>
 
 #ifdef IN_RING0
 # error "There are no RTSocket APIs available Ring-0 Host Context!"
@@ -174,6 +175,17 @@ RTDECL(int) RTSocketGetLocalAddress(RTSOCKET hSocket, PRTNETADDR pAddr);
  * @param   pAddr           Where to store the peer address on success.
  */
 RTDECL(int) RTSocketGetPeerAddress(RTSOCKET hSocket, PRTNETADDR pAddr);
+
+/**
+ * Send data from a scatter/gather buffer to a socket.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INTERRUPTED if interrupted before anything was written.
+ *
+ * @param   hSocket         The socket handle.
+ * @param   pSgBuf          Scatter/gather buffer to write data to socket.
+ */
+RTDECL(int) RTSocketSgWrite(RTSOCKET hSocket, PCRTSGBUF pSgBuf);
 
 /** @} */
 RT_C_DECLS_END

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,6 +30,7 @@
 #include <iprt/types.h>
 #include <iprt/thread.h>
 #include <iprt/net.h>
+#include <iprt/sg.h>
 
 #ifdef IN_RING0
 # error "There are no RTFile APIs available Ring-0 Host Context!"
@@ -215,13 +216,14 @@ RTR3DECL(int)  RTTcpWrite(RTSOCKET Sock, const void *pvBuffer, size_t cbBuffer);
 RTR3DECL(int)  RTTcpFlush(RTSOCKET Sock);
 
 /**
- * Enables or disable delaying sends to coalesce packets.
+ * Enables or disables delaying sends to coalesce packets.
  *
  * The TCP/IP stack usually uses the Nagle algorithm (RFC 896) to implement the
  * coalescing.
  *
  * @returns iprt status code.
  * @param   Sock        Socket descriptor.
+ * @param   fEnable     When set to true enables coalescing.
  */
 RTR3DECL(int)  RTTcpSetSendCoalescing(RTSOCKET Sock, bool fEnable);
 
@@ -277,6 +279,17 @@ RTR3DECL(int) RTTcpGetLocalAddress(RTSOCKET Sock, PRTNETADDR pAddr);
  * @param   pAddr           Where to store the peer address on success.
  */
 RTR3DECL(int) RTTcpGetPeerAddress(RTSOCKET Sock, PRTNETADDR pAddr);
+
+/**
+ * Send data from a scatter/gather buffer to a socket.
+ *
+ * @returns iprt status code.
+ * @retval  VERR_INTERRUPTED if interrupted before anything was written.
+ *
+ * @param   Sock        Socket descriptor.
+ * @param   pSgBuf      Scatter/gather buffer to write data to socket.
+ */
+RTR3DECL(int)  RTTcpSgWrite(RTSOCKET Sock, PCRTSGBUF pSgBuf);
 
 /** @} */
 RT_C_DECLS_END
