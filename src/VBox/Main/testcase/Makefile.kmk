@@ -25,7 +25,7 @@ ifndef VBOX_ONLY_SDK
  if defined(VBOX_WITH_TESTCASES) || "$(USERNAME)" == "umoeller"
   PROGRAMS       += \
 	tstAPI \
-	tstOVF \
+	$(if $(VBOX_OSE),,tstOVF) \
 	$(if $(VBOX_WITH_XPCOM),tstVBoxAPILinux,tstVBoxAPIWin) \
 	$(if $(VBOX_WITH_RESOURCE_USAGE_API),tstCollector,)
   PROGRAMS.linux += \
