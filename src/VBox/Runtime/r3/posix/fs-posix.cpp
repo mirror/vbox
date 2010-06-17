@@ -250,6 +250,8 @@ RTR3DECL(int) RTFsQueryType(const char *pszFsPath, uint32_t *pu32Type)
                 else if (!strcmp("nfs", statfsBuf.f_fstypename))
                     *pu32Type = RTFS_FS_TYPE_NFS;
             }
+            else
+                rc = RTErrConvertFromErrno(errno);
 #endif
         }
         else
