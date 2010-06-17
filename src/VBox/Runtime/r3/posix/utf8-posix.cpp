@@ -44,9 +44,9 @@
 #include <langinfo.h>
 
 #include "internal/alignmentchecks.h"
+#include "internal/string.h"
 #ifdef RT_WITH_ICONV_CACHE
 # include "internal/thread.h"
-# include "internal/string.h"
 AssertCompile(sizeof(iconv_t) <= sizeof(void *));
 #endif
 
