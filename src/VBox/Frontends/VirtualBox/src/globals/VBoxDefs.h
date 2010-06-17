@@ -46,21 +46,6 @@
 #define SIZEOF_ARRAY(a) (sizeof(a) / sizeof(a[0]))
 #endif
 
-#if defined (VBOX_GUI_USE_QIMAGE) || \
-    defined (VBOX_GUI_USE_SDL) || \
-    defined (VBOX_GUI_USE_DDRAW)
-  #if !defined (VBOX_GUI_USE_EXT_FRAMEBUFFER)
-    #define VBOX_GUI_USE_EXT_FRAMEBUFFER
-  #endif
-#else
-  #if defined (VBOX_GUI_USE_EXT_FRAMEBUFFER)
-    #undef VBOX_GUI_USE_EXT_FRAMEBUFFER
-  #endif
-#endif
-
-/** Null UUID constant to be used as a default value for reference parameters */
-extern const QUuid QUuid_null;
-
 /** Common namespace for all enums */
 struct VBoxDefs
 {
@@ -196,5 +181,5 @@ struct VBoxDefs
 
 #define MAC_LEOPARD_STYLE defined(Q_WS_MAC) && (QT_VERSION >= 0x040300)
 
-#endif // __VBoxDefs_h__
+#endif /* __VBoxDefs_h__ */
 
