@@ -664,14 +664,20 @@ class XPathNode:
     def enum(self):
         return []
     def matches(self,subexp):
-#        m = re.search(r"@(?P<a>\w+)=(?P<v>\w+)", subexp)
+        if subexp == self.type:
+            return True
+        if not subexp.startswith(self.type):
+            return False
+        m = re.search(r"@(?P<a>\w+)=(?P<v>\w+)", subexp)
         matches = False
-#        try:
-#        if m is not None:
-#        else:
-#            print "no match in ",subexp
-#       except:
-
+        try:
+            if m is not None:
+                dict = m.groupdict()
+                attr = dict['a']
+                val  = dict['v']
+                matches = (str(getattr(self.obj, attr)) == val)
+        except:
+            pass
         return matches
     def apply(self, cmd):
         exec(cmd, {'obj':self.obj,'node':self,'ctx':self.getCtx()}, {})
@@ -709,8 +715,8 @@ class XPathNodeHolderVM(XPathNodeHolder):
 class XPathNodeVM(XPathNode):
     def __init__(self, parent, obj):
         XPathNode.__init__(self, parent, obj, 'vm')
-    def matches(self,subexp):
-        return subexp=='vm'
+    #def matches(self,subexp):
+    #    return subexp=='vm'
     def enum(self):
         return [XPathNodeHolderNIC(self, self.obj),
                 XPathNodeValue(self, self.obj.BIOSSettings,  'bios'),
@@ -2792,7 +2798,7 @@ def promptCmd(ctx, args):
 
 def foreachCmd(ctx, args):
     if len(args) < 3:
-        print "foreach scope command"
+        print "usage: foreach scope command, where scope is XPath-like expression //vms/vm[@CPUCount='2']"
         return 0
 
     scope = args[1]
@@ -2895,7 +2901,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'nic' : ['Network adapter management', nicCmd, 0],
             'prompt' : ['Control prompt', promptCmd, 0],
             'foreachvm' : ['Perform command for each VM', foreachvmCmd, 0],
-            'foreach' : ['Generic "for each" construction, using XPath-like notation: foreach //vms/vm "print obj.name"', foreachCmd, 0],
+            'foreach' : ['Generic "for each" construction, using XPath-like notation: foreach //vms/vm[@OSTypeId=\'MacOS\'] "print obj.name"', foreachCmd, 0],
             }
 
 def runCommandArgs(ctx, args):
