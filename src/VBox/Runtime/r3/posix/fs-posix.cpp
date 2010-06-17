@@ -216,6 +216,8 @@ RTR3DECL(int) RTFsQueryType(const char *pszFsPath, uint32_t *pu32Type)
                                 *pu32Type = RTFS_FS_TYPE_FAT;
                             else if (!strcmp("tmpfs", mntEnt.mnt_type))
                                 *pu32Type = RTFS_FS_TYPE_TMPFS;
+                            else if (!strcmp("hfsplus", mntEnt.mnt_type))
+                                *pu32Type = RTFS_FS_TYPE_HFS;
                             else
                             {
                                 /* sometimes there are more than one entry for the same partition */
