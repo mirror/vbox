@@ -2328,7 +2328,7 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
             delete pSourceMediumLockList;
             delete pTargetMediumLockList;
             throw setError(rc,
-                           tr("Failed to lock source media '%ls'"),
+                           tr("Failed to lock source media '%s'"),
                            getLocationFull().raw());
         }
         rc = pTargetMediumLockList->Lock();
@@ -2337,7 +2337,7 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
             delete pSourceMediumLockList;
             delete pTargetMediumLockList;
             throw setError(rc,
-                           tr("Failed to lock target media '%ls'"),
+                           tr("Failed to lock target media '%s'"),
                            pTarget->getLocationFull().raw());
         }
 
@@ -2416,7 +2416,7 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
         {
             delete pMediumLockList;
             throw setError(rc,
-                           tr("Failed to lock media when compacting '%ls'"),
+                           tr("Failed to lock media when compacting '%s'"),
                            getLocationFull().raw());
         }
 
@@ -2511,7 +2511,7 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
         {
             delete pMediumLockList;
             throw setError(rc,
-                           tr("Failed to lock media when resetting '%ls'"),
+                           tr("Failed to lock media when resetting '%s'"),
                            getLocationFull().raw());
         }
 
@@ -3933,7 +3933,7 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
         {
             delete pMediumLockList;
             throw setError(rc,
-                           tr("Failed to lock media when deleting '%ls'"),
+                           tr("Failed to lock media when deleting '%s'"),
                            getLocationFull().raw());
         }
 
@@ -4495,7 +4495,7 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
             {
                 AutoReadLock alock(pTarget COMMA_LOCKVAL_SRC_POS);
                 throw setError(rc,
-                               tr("Failed to lock media when merging to '%ls'"),
+                               tr("Failed to lock media when merging to '%s'"),
                                pTarget->getLocationFull().raw());
             }
         }
