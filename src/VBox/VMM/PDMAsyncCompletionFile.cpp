@@ -897,7 +897,15 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                 pEpFile->cTasksCached   = 0;
                 pEpFile->pBwMgr         = pEpClassFile->pBwMgr;
                 pEpFile->enmBackendType = enmEpBackend;
+                /*
+                 * Disable async flushes on Solaris for now.
+                 * They cause weird hangs which needs more investigations.
+                 */
+#ifndef RT_OS_SOLARIS
                 pEpFile->fAsyncFlushSupported = true;
+#else
+                pEpFile->fAsyncFlushSupported = false;
+#endif
                 pdmacFileBwRef(pEpFile->pBwMgr);
 
                 if (enmMgrType == PDMACEPFILEMGRTYPE_SIMPLE)
