@@ -82,7 +82,7 @@ ifdef VBOX_WITH_RESOURCE_USAGE_API
 tstOVF_DEFS += VBOX_WITH_RESOURCE_USAGE_API
 endif
 
-INSTALLS += ovfdummy ovfjoomla09
+INSTALLS += $(if $(VBOX_OSE),,ovfdummy ovfjoomla09)
 
 ovfdummy_MODE = a+r,u+w
 ovfdummy_INST = bin/ovf-testcases
