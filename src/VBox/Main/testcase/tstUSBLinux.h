@@ -1,4 +1,4 @@
-/* $Id $ */
+/* $Id$ */
 /** @file
  * VirtualBox USB Proxy Service class, test version for Linux hosts.
  */

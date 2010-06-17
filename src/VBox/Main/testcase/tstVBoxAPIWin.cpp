@@ -1,4 +1,4 @@
-/* $Id $ */
+/* $Id$ */
 /** @file
  *
  * tstVBoxAPIWin - sample program to illustrate the VirtualBox

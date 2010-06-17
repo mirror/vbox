@@ -1,4 +1,4 @@
-/* $Id $ */
+/* $Id$ */
 /** @file
  *
  * tstOVF - testcases for OVF import and export
