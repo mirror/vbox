@@ -874,7 +874,7 @@ RuntimeGuestR3Mini_TEMPLATE                 := VBOXGUESTR3DLL
 ## @todo change this to EXTEND the RuntimeGuestR3 target.
 RuntimeGuestR3Mini_INST                     := $(INST_ADDITIONS_LIB)
 RuntimeGuestR3Mini_SDKS.win                 := $(RuntimeR3_SDKS.win)
-RuntimeGuestR3Mini_DEFS                     := $(filter-out RTCRITSECT_STRICT RT_NO_GIP, $(RuntimeR3_DEFS)) RT_MINI
+RuntimeGuestR3Mini_DEFS                     := $(filter-out RTCRITSECT_STRICT RT_NO_GIP RT_WITH_ICONV_CACHE, $(RuntimeR3_DEFS)) RT_MINI
 RuntimeGuestR3Mini_DEFS.$(KBUILD_TARGET)    := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
 RuntimeGuestR3Mini_DEFS.$(KBUILD_HOST)      := $(RuntimeR3_DEFS.$(KBUILD_HOST))
 RuntimeGuestR3Mini_INCS                     := $(RuntimeR3_INCS)
