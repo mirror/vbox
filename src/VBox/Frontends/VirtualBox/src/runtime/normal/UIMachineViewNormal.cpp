@@ -330,6 +330,17 @@ bool UIMachineViewNormal::eventFilter(QObject *pWatched, QEvent *pEvent)
     return UIMachineView::eventFilter(pWatched, pEvent);
 }
 
+void UIMachineViewNormal::prepareCommon()
+{
+    /* Base class common settings: */
+    UIMachineView::prepareCommon();
+
+    /* Setup size-policy: */
+    setSizePolicy(QSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum));
+    /* Maximum size to sizehint: */
+    setMaximumSize(sizeHint());
+}
+
 void UIMachineViewNormal::prepareFilters()
 {
     /* Base class filters: */

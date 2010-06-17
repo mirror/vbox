@@ -55,6 +55,7 @@ private:
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
     /* Prepare helpers: */
+    void prepareCommon();
     void prepareFilters();
     void prepareConnections();
     void prepareConsoleConnections();
@@ -65,6 +66,7 @@ private:
     //void cleanupConsoleConnections() {}
     //void prepareConnections() {}
     //void cleanupFilters() {}
+    //void cleanupCommon() {}
 
     /* Hidden setters: */
     void setGuestAutoresizeEnabled(bool bEnabled);

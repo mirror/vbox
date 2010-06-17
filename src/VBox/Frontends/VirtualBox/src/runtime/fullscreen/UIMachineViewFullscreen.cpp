@@ -282,6 +282,10 @@ void UIMachineViewFullscreen::prepareCommon()
     /* Base class common settings: */
     UIMachineView::prepareCommon();
 
+    /* Setup size-policy: */
+    setSizePolicy(QSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum));
+    /* Maximum size to sizehint: */
+    setMaximumSize(sizeHint());
     /* Minimum size is ignored: */
     setMinimumSize(0, 0);
     /* No scrollbars: */

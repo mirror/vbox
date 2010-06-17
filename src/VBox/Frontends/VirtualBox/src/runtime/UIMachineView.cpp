@@ -641,10 +641,6 @@ void UIMachineView::prepareCommon()
     palette.setColor(viewport()->backgroundRole(), Qt::black);
     viewport()->setPalette(palette);
 
-    /* Setup size-policy: */
-    setSizePolicy(QSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum));
-    setMaximumSize(sizeHint());
-
     /* Setup focus policy: */
     setFocusPolicy(Qt::WheelFocus);
 
