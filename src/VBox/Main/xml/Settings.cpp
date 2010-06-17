@@ -3940,15 +3940,16 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     // settings version 1.9 is also required if there is not exactly one DVD
     // or more than one floppy drive present or the DVD is not at the secondary
     // master; this check is a bit more complicated
-    if (m->sv < SettingsVersion_v1_9)
+    //
+    // settings version 1.10 is required if the host cache should be disabled
+    if (m->sv < SettingsVersion_v1_10)
     {
         size_t cDVDs = 0;
         size_t cFloppies = 0;
 
         // need to run thru all the storage controllers to figure this out
         for (StorageControllersList::const_iterator it = storageMachine.llStorageControllers.begin();
-             it != storageMachine.llStorageControllers.end()
-                && m->sv < SettingsVersion_v1_9;
+             it != storageMachine.llStorageControllers.end();
              ++it)
         {
             const StorageController &sctl = *it;
@@ -3956,10 +3957,11 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                  it2 != sctl.llAttachedDevices.end();
                  ++it2)
             {
-                if (sctl.ulInstance != 0)       // we can only write the StorageController/@Instance attribute with v1.9
+                // we can only write the StorageController/@Instance attribute with v1.9
+                if (sctl.ulInstance != 0)      
                 {
-                    m->sv = SettingsVersion_v1_9;
-                    break;
+                    if (m->sv < SettingsVersion_v1_9)
+                        m->sv = SettingsVersion_v1_9;
                 }
 
                 const AttachedDevice &att = *it2;
@@ -3970,8 +3972,8 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                          || (att.lDevice != 0)
                        )
                     {
-                        m->sv = SettingsVersion_v1_9;
-                        break;
+                        if (m->sv < SettingsVersion_v1_9)
+                            m->sv = SettingsVersion_v1_9;
                     }
 
                     ++cDVDs;
@@ -3983,7 +3985,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                 if (!sctl.fUseHostIOCache)
                 {
                     m->sv = SettingsVersion_v1_10;
-                    break;
+                    break; /* abort the loop -- we will not raise the version further */
                 }
             }
         }
