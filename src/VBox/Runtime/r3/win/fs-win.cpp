@@ -39,7 +39,34 @@
 #include <iprt/log.h>
 #include <iprt/assert.h>
 #include "internal/fs.h"
+#include <iprt/stream.h>
 
+/* from ntdef.h */
+typedef LONG NTSTATUS;
+
+/* from ntddk.h */
+typedef struct _IO_STATUS_BLOCK {
+    union {
+        NTSTATUS Status;
+        PVOID Pointer;
+    };
+    ULONG_PTR Information;
+} IO_STATUS_BLOCK, *PIO_STATUS_BLOCK;
+
+typedef enum _FSINFOCLASS {
+    FileFsAttributeInformation = 5,
+} FS_INFORMATION_CLASS, *PFS_INFORMATION_CLASS;
+
+/* from ntifs.h */
+
+typedef struct _FILE_FS_ATTRIBUTE_INFORMATION {
+    ULONG FileSystemAttributes;
+    LONG MaximumComponentNameLength;
+    ULONG FIleSystemNameLength;
+    WCHAR FileSystemName[1];
+} FILE_FS_ATTRIBUTE_INFORMATION, *PFILE_FS_ATTRIBUTE_INFORMATION;
+
+extern "C" NTSTATUS NTAPI NtQueryVolumeInformationFile(HANDLE, PIO_STATUS_BLOCK, PVOID, ULONG, FS_INFORMATION_CLASS);
 
 /**
  * Checks quickly if this is an correct root specification.
@@ -307,3 +334,52 @@ RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProper
     return rc;
 }
 
+RTR3DECL(int) RTFsQueryType(const char *pszFsPath, uint32_t *pu32Type)
+{
+    int rc = VINF_SUCCESS;
+
+    *pu32Type = RTFS_FS_TYPE_UNKNOWN;
+
+    HANDLE hFile = CreateFile(pszFsPath,
+                              GENERIC_READ,
+                              FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                              NULL,
+                              OPEN_EXISTING,
+                              FILE_FLAG_BACKUP_SEMANTICS,
+                              NULL);
+    if (hFile != INVALID_HANDLE_VALUE)
+    {
+        char abBuf[8192];
+        IO_STATUS_BLOCK Ios;
+        NTSTATUS rcNt = NtQueryVolumeInformationFile(hFile, &Ios,
+                                                     abBuf, sizeof(abBuf),
+                                                     FileFsAttributeInformation);
+        if (rcNt >= 0)
+        {
+            PFILE_FS_ATTRIBUTE_INFORMATION pFsAttrInfo = (PFILE_FS_ATTRIBUTE_INFORMATION)abBuf;
+            if (   pFsAttrInfo->FileSystemName[0] == 'N'
+                && pFsAttrInfo->FileSystemName[1] == 'T'
+                && pFsAttrInfo->FileSystemName[2] == 'F'
+                && pFsAttrInfo->FileSystemName[3] == 'S'
+                && pFsAttrInfo->FileSystemName[4] == '\0')
+                *pu32Type = RTFS_FS_TYPE_NTFS;
+            else if (   pFsAttrInfo->FileSystemName[0] == 'F'
+                     && pFsAttrInfo->FileSystemName[1] == 'A'
+                     && pFsAttrInfo->FileSystemName[2] == 'T'
+                     && (   (   pFsAttrInfo->FileSystemName[3] == '3'
+                             && pFsAttrInfo->FileSystemName[4] == '2'
+                             && pFsAttrInfo->FileSystemName[5] == '\0')
+                         || pFsAttrInfo->FileSystemName[3] == '\0'))
+                /* This is either FAT32 or FAT12/16. IMO it doesn't make
+                 * sense to distinguish more detailed because we cannot
+                 * easily distinguish between these FAT types on Linux
+                 * and users who put some image file on an FAT16 partition
+                 * should know what they are doing. */
+                *pu32Type = RTFS_FS_TYPE_FAT;
+        }
+        /* else: Is RTFS_FS_UNKNOWN suffient or should we return an error? */
+        CloseHandle(hFile);
+    }
+
+    return rc;
+}
