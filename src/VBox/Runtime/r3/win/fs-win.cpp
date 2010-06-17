@@ -39,7 +39,6 @@
 #include <iprt/log.h>
 #include <iprt/assert.h>
 #include "internal/fs.h"
-#include <iprt/stream.h>
 
 /* from ntdef.h */
 typedef LONG NTSTATUS;
