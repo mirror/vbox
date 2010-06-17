@@ -475,6 +475,8 @@ setup()
                 install -o 0 -g 0 -m 0644 "$share_dir/50-vboxmouse.conf" /usr/share/X11/xorg.conf.d
             test -d /usr/lib/X11/xorg.conf.d &&
                 install -o 0 -g 0 -m 0644 "$share_dir/50-vboxmouse.conf" /usr/lib/X11/xorg.conf.d
+            test -d /etc/X11/xorg.conf.d &&
+                install -o 0 -g 0 -m 0644 "$share_dir/50-vboxmouse.conf" /etc/X11/xorg.conf.d
         fi
         succ_msg
         test -n "$generated" &&
@@ -523,6 +525,15 @@ EOF
     then
         rm -f /usr/lib/dri/vboxvideo_dri.so
         ln -s $LIB/VBoxOGL.so /usr/lib/dri/vboxvideo_dri.so
+    fi
+    if [ -d /usr/lib64/xorg/modules/dri ]
+    then
+        rm -f /usr/lib64/xorg/modules/dri/vboxvideo_dri.so
+        ln -s $LIB/VBoxOGL.so /usr/lib64/xorg/modules/dri/vboxvideo_dri.so
+    elif [ -d /usr/lib/xorg/modules/dri ]
+    then
+        rm -f /usr/lib/xorg/modules/dri/vboxvideo_dri.so
+        ln -s $LIB/VBoxOGL.so /usr/lib/xorg/modules/dri/vboxvideo_dri.so
     fi
 
     # And set up VBoxClient to start when the X session does
