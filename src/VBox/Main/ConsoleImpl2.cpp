@@ -2474,7 +2474,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                                        "only handle files up to %RU64%s in theory.\n"
                                        "We strongly recommend to put all your virtual disk "
                                        "images and the snapshot folder onto a proper "
-                                       "file system (e.g. ext3)"),
+                                       "file system (e.g. ext3) with a sufficient size"),
                                     strFile.raw(), u64PrintSiz, pszUnitSiz, u64PrintMax, pszUnitMax);
                         }
                     }
