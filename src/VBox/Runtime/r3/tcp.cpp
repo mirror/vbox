@@ -1013,3 +1013,9 @@ RTR3DECL(int) RTTcpGetPeerAddress(RTSOCKET Sock, PRTNETADDR pAddr)
     return RTSocketGetPeerAddress(Sock, pAddr);
 }
 
+
+RTR3DECL(int)  RTTcpSgWrite(RTSOCKET Sock, PCRTSGBUF pSgBuf)
+{
+    return RTSocketSgWrite(Sock, pSgBuf);
+}
+
