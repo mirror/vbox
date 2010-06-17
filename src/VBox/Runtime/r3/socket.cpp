@@ -630,7 +630,7 @@ RTDECL(int) RTSocketSgWrite(RTSOCKET hSocket, PCRTSGBUF pSgBuf)
         int cbBuf = 0;
         for (unsigned i = 0; i < pSgBuf->cSeg; i++)
         {
-            cbBuf += pSgBuf->pcaSeg[i].cbSeg
+            cbBuf += pSgBuf->pcaSeg[i].cbSeg;
             AssertBreakStmt(cbBuf, rc = VERR_BUFFER_OVERFLOW);
         }
 
