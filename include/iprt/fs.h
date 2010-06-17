@@ -405,6 +405,8 @@ RTR3DECL(int) RTFsQueryDriver(const char *pszFsPath, char *pszFsDriver, size_t c
  *
  * @returns iprt status code.
  * @param   pszFsPath       Path within the mounted filesystem.
+ *                          In case this is a symlink, the file it refers to
+ *                          is evaluated.
  * @param   pu32Type        Where to store the filesystem type.
  *                          See RTFS_FS_TYPE_xxx constants.
  */
