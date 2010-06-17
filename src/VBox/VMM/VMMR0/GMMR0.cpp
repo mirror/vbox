@@ -895,6 +895,10 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
                 pGMM->cLeftBehindSharedPages += pGVM->gmm.s.cSharedPages;
             }
 
+            /* Clean up balloon statistics in case the VM process crashed. */
+            Assert(pGMM->cBalloonedPages >= pGVM->gmm.s.cBalloonedPages);
+            pGMM->cBalloonedPages -= pGVM->gmm.s.cBalloonedPages;
+
             /*
              * Update the over-commitment management statistics.
              */
