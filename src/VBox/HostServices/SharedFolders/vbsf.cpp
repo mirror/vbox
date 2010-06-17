@@ -1730,7 +1730,7 @@ static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Ha
         Log(("AccessTime       %RX64\n", RTTimeSpecGetNano(&pSFDEntry->AccessTime)));
         Log(("ModificationTime %RX64\n", RTTimeSpecGetNano(&pSFDEntry->ModificationTime)));
         Log(("ChangeTime       %RX64\n", RTTimeSpecGetNano(&pSFDEntry->ChangeTime)));
-        Log(("BirthTime        %RX64\n", RTTimeSpecGetNano(&pSFDEntry->AccessTime)));
+        Log(("BirthTime        %RX64\n", RTTimeSpecGetNano(&pSFDEntry->BirthTime)));
         /* temporary hack */
         rc = VINF_SUCCESS;
     }
