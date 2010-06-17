@@ -193,6 +193,9 @@ RT_C_DECLS_BEGIN
 #define RTFS_FS_TYPE_FAT               10
 #define RTFS_FS_TYPE_NTFS              11
 #define RTFS_FS_TYPE_ZFS               12
+#define RTFS_FS_TYPE_XFS               13
+#define RTFS_FS_TYPE_AUTOFS            14
+#define RTFS_FS_TYPE_DEVFS             15
 
 
 /**
