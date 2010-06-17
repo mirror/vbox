@@ -1900,6 +1900,9 @@ STDMETHODIMP Medium::UnlockWrite(MediumState_T *aState)
 
 STDMETHODIMP Medium::Close()
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     // we're accessing parent/child and backrefs, so lock the tree first, then ourselves
     AutoMultiWriteLock2 multilock(&m->pVirtualBox->getMediaTreeLockHandle(),
                                   this->lockHandle()
@@ -1940,6 +1943,9 @@ STDMETHODIMP Medium::Close()
 
     // make a copy of VirtualBox pointer which gets nulled by uninit()
     ComObjPtr<VirtualBox> pVirtualBox(m->pVirtualBox);
+
+    // leave the AutoCaller, as otherwise uninit() will simply hang
+    autoCaller.release();
 
     /* Keep the locks held until after uninit, as otherwise the consistency
      * of the medium tree cannot be guaranteed. */
@@ -3130,6 +3136,9 @@ HRESULT Medium::createMediumLockList(bool fFailIfInaccessible,
                                      Medium *pToBeParent,
                                      MediumLockList &mediumLockList)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     HRESULT rc = S_OK;
 
     /* we access parent medium objects */
@@ -3845,6 +3854,9 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
                               bool *pfNeedsSaveSettings)
 {
     AssertReturn(aProgress != NULL || aWait == true, E_FAIL);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT rc = S_OK;
     ComObjPtr<Progress> pProgress;
@@ -4607,6 +4619,9 @@ HRESULT Medium::mergeTo(const ComObjPtr<Medium> &pTarget,
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoCaller targetCaller(pTarget);
+    AssertComRCReturnRC(targetCaller.rc());
 
     HRESULT rc = S_OK;
     ComObjPtr <Progress> pProgress;
