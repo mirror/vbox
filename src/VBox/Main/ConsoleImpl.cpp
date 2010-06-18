@@ -7841,7 +7841,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 ++i)
             {
                 ComPtr<IStorageController> controller;
-                BSTR controllerName;
+                Bstr controllerName;
                 ULONG lInstance;
                 StorageControllerType_T enmController;
                 StorageBus_T enmBus;
@@ -7852,7 +7852,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 * (g++ complains about not being able to pass non POD types through '...')
                 * so we have to query needed values here and pass them.
                 */
-                rc = atts[i]->COMGETTER(Controller)(&controllerName);
+                rc = atts[i]->COMGETTER(Controller)(controllerName.asOutParam());
                 if (FAILED(rc))
                     throw rc;
 
