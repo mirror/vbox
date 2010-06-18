@@ -4065,15 +4065,15 @@ STDMETHODIMP Machine::GetGuestProperty(IN_BSTR aName,
 STDMETHODIMP Machine::GetGuestPropertyValue(IN_BSTR aName, BSTR *aValue)
 {
     ULONG64 dummyTimestamp;
-    BSTR dummyFlags;
-    return GetGuestProperty(aName, aValue, &dummyTimestamp, &dummyFlags);
+    Bstr dummyFlags;
+    return GetGuestProperty(aName, aValue, &dummyTimestamp, dummyFlags.asOutParam());
 }
 
 STDMETHODIMP Machine::GetGuestPropertyTimestamp(IN_BSTR aName, ULONG64 *aTimestamp)
 {
-    BSTR dummyValue;
-    BSTR dummyFlags;
-    return GetGuestProperty(aName, &dummyValue, aTimestamp, &dummyFlags);
+    Bstr dummyValue;
+    Bstr dummyFlags;
+    return GetGuestProperty(aName, dummyValue.asOutParam(), aTimestamp, dummyFlags.asOutParam());
 }
 
 #ifdef VBOX_WITH_GUEST_PROPS
@@ -4191,7 +4191,7 @@ HRESULT Machine::setGuestPropertyToVM(IN_BSTR aName, IN_BSTR aValue,
         ComPtr<IInternalSessionControl> directControl =
             mData->mSession.mDirectControl;
 
-        BSTR dummy = NULL;
+        BSTR dummy = NULL; /* will not be changed (setter) */
         ULONG64 dummy64;
         if (!directControl)
             rc = E_ACCESSDENIED;
