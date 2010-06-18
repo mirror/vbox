@@ -595,26 +595,21 @@ RTDECL(int) RTSocketSgWrite(RTSOCKET hSocket, PCRTSGBUF pSgBuf)
     do
     {
 #ifdef RT_OS_WINDOWS
-# if 0 /* WSASendMsg is Vista+, so not an option */
         AssertCompileSize(WSABUF, sizeof(RTSGSEG));
         AssertCompileMemberSize(WSABUF, buf, RT_SIZEOFMEMB(RTSGSEG, pvSeg));
         AssertCompileMemberSize(WSABUF, len, RT_SIZEOFMEMB(RTSGSEG, cbSeg));
 
-        LPWSABUF *paMsg = (LPWSABUF)RTMemTmpAllocZ(pSgBuf->cSeg * sizeof(WSABUF));
+        LPWSABUF paMsg = (LPWSABUF)RTMemTmpAllocZ(pSgBuf->cSeg * sizeof(WSABUF));
         AssertPtrBreakStmt(paMsg, rc = VERR_NO_MEMORY);
         for (unsigned i = 0; i < pSgBuf->cSeg; i++)
         {
-            paMsg[i].buf = pSgBuf->pcaSeg[i].pvSeg;
+            paMsg[i].buf = (char *)pSgBuf->pcaSeg[i].pvSeg;
             paMsg[i].len = pSgBuf->pcaSeg[i].cbSeg;
         }
 
-        WSAMSG msgHdr;
         DWORD dwSent;
-        memset(&msgHdr, '\0', sizeof(msgHdr));
-        msgHdr.lpBuffers = paMsg;
-        msgHdr.dwBufferCount = pSgBuf->cSeg;
-        int hrc = WSASendMsg(pThis->hNative, &msgHdr, MSG_NOSIGNAL, &dwSent,
-                             NULL, NULL);
+        int hrc = WSASend(pThis->hNative, paMsg, pSgBuf->cSeg, &dwSent,
+                          MSG_NOSIGNAL, NULL, NULL);
         ssize_t cbWritten;
         if (!hrc)
         {
@@ -623,29 +618,6 @@ RTDECL(int) RTSocketSgWrite(RTSOCKET hSocket, PCRTSGBUF pSgBuf)
         }
         else
             cbWritten = -1;
-        RTMemTmpFree(paMsg);
-# else /* 1 */
-        /* Portable but inefficient: copy everything to a single buffer and
-         * use send(). Annoying that WSASendMsg() is so "new". */
-        int cbBuf = 0;
-        for (unsigned i = 0; i < pSgBuf->cSeg; i++)
-        {
-            cbBuf += (int)pSgBuf->pcaSeg[i].cbSeg;
-            AssertBreakStmt(cbBuf, rc = VERR_BUFFER_OVERFLOW);
-        }
-
-        void *pBuf = RTMemTmpAlloc(cbBuf);
-        AssertPtrBreakStmt(pBuf, rc = VERR_NO_MEMORY);
-        char *p = (char *)pBuf;
-        for (unsigned i = 0; i < pSgBuf->cSeg; i++)
-        {
-            memcpy(p, pSgBuf->pcaSeg[i].pvSeg, pSgBuf->pcaSeg[i].cbSeg);
-            p += (int)pSgBuf->pcaSeg[i].cbSeg;
-        }
-
-        ssize_t cbWritten = send(pThis->hNative, (const char *)pBuf, cbBuf, MSG_NOSIGNAL);
-        RTMemTmpFree(pBuf);
-# endif /* 1 */
 #else
         AssertCompileSize(struct iovec, sizeof(RTSGSEG));
         AssertCompileMemberSize(struct iovec, iov_base, RT_SIZEOFMEMB(RTSGSEG, pvSeg));
@@ -664,9 +636,9 @@ RTDECL(int) RTSocketSgWrite(RTSOCKET hSocket, PCRTSGBUF pSgBuf)
         msgHdr.msg_iov = paMsg;
         msgHdr.msg_iovlen = pSgBuf->cSeg;
         ssize_t cbWritten = sendmsg(pThis->hNative, &msgHdr, MSG_NOSIGNAL);
-        RTMemTmpFree(paMsg);
 #endif
 
+        RTMemTmpFree(paMsg);
         if (RT_LIKELY(cbWritten >= 0))
             rc = VINF_SUCCESS;
         else
