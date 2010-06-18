@@ -1510,19 +1510,19 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_RESOURCE 
                     pAllocationInfo->SupportedReadSegmentSet = 2;
                     pAllocationInfo->SupportedWriteSegmentSet = 2;
 #endif
-#ifndef VBOXWDDM_RENDER_FROM_SHADOW
+//#ifndef VBOXWDDM_RENDER_FROM_SHADOW
                     pAllocationInfo->Flags.CpuVisible = 1;
-#endif
+//#endif
                     break;
                 case VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC:
-                    Assert(pResource);
-                    if (pResource)
+//                    Assert(pResource);
+//                    if (pResource)
                     {
-                        Assert(pResource->cAllocations);
-                        if (pResource->cAllocations)
+//                        Assert(pResource->cAllocations);
+//                        if (pResource->cAllocations)
                         {
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                            if (pResource->RcDesc.fFlags.Overlay)
+                            if (pAllocInfo->fFlags.Overlay)
                             {
                                 /* actually we can not "properly" issue create overlay commands to the host here
                                  * because we do not know source VidPn id here, i.e.
@@ -1535,19 +1535,20 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_RESOURCE 
                                     pAllocationInfo->Flags.Overlay = 1;
                                     pAllocationInfo->Flags.CpuVisible = 1;
                                     pAllocationInfo->Size = pAllocation->SurfDesc.cbSize;
+
+                                    pAllocationInfo->AllocationPriority = D3DDDI_ALLOCATIONPRIORITY_HIGH;
                                 }
                                 else
                                     Status = STATUS_UNSUCCESSFUL;
                             }
 #endif
                         }
-                        else
-                            Status = STATUS_INVALID_PARAMETER;
+//                        else
+//                            Status = STATUS_INVALID_PARAMETER;
                     }
-                    /* do not break to set CPU visibility flag */
+                    break;
                 case VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE:
                 case VBOXWDDM_ALLOC_TYPE_STD_STAGINGSURFACE:
-                    pAllocationInfo->Flags.Value = 0;
                     pAllocationInfo->Flags.CpuVisible = 1;
                     break;
                 default:
@@ -1557,7 +1558,23 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_RESOURCE 
                     break;
             }
 
-            if (Status != STATUS_SUCCESS)
+            if (Status == STATUS_SUCCESS)
+            {
+                pAllocation->UsageHint.Version = 0;
+                pAllocation->UsageHint.v1.Flags.Value = 0;
+                pAllocation->UsageHint.v1.Format = pAllocInfo->SurfDesc.format;
+                pAllocation->UsageHint.v1.SwizzledFormat = 0;
+                pAllocation->UsageHint.v1.ByteOffset = 0;
+                pAllocation->UsageHint.v1.Width = pAllocation->SurfDesc.width;
+                pAllocation->UsageHint.v1.Height = pAllocation->SurfDesc.height;
+                pAllocation->UsageHint.v1.Pitch = pAllocation->SurfDesc.pitch;
+                pAllocation->UsageHint.v1.Depth = 0;
+                pAllocation->UsageHint.v1.SlicePitch = 0;
+
+                Assert(!pAllocationInfo->pAllocationUsageHint);
+                pAllocationInfo->pAllocationUsageHint = &pAllocation->UsageHint;
+            }
+            else
                 vboxWddmAllocationDeleteFromResource(pResource, pAllocation);
         }
         else
@@ -3262,8 +3279,15 @@ DxgkDdiCreateOverlay(
     {
         int rc = vboxVhwaHlpOverlayCreate(pDevExt, pCreateOverlay->VidPnSourceId, &pCreateOverlay->OverlayInfo, pOverlay);
         AssertRC(rc);
-        if (RT_FAILURE(rc))
+        if (RT_SUCCESS(rc))
+        {
+            pCreateOverlay->hOverlay = pOverlay;;
+        }
+        else
+        {
+            vboxWddmMemFree(pOverlay);
             Status = STATUS_UNSUCCESSFUL;
+        }
     }
     else
         Status = STATUS_NO_MEMORY;

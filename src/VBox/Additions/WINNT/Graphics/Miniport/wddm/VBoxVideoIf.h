@@ -25,7 +25,7 @@
 
 /* @todo: implement a check to ensure display & miniport versions match.
  * One would increase this whenever definitions in this file are changed */
-#define VBOXVIDEOIF_VERSION 2
+#define VBOXVIDEOIF_VERSION 3
 
 /* create allocation func */
 typedef enum
@@ -57,6 +57,7 @@ typedef struct VBOXWDDM_SURFACE_DESC
 typedef struct VBOXWDDM_ALLOCINFO
 {
     VBOXWDDM_ALLOC_TYPE enmType;
+    D3DDDI_RESOURCEFLAGS fFlags;
     VBOXWDDM_SURFACE_DESC SurfDesc;
 } VBOXWDDM_ALLOCINFO, *PVBOXWDDM_ALLOCINFO;
 
