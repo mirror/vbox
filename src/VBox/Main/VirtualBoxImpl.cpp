@@ -3495,7 +3495,9 @@ void VirtualBox::rememberMachineNameChangeForMedia(const Utf8Str &strOldConfigDi
 }
 
 /**
- *  Helper function to write out the configuration tree.
+ *  Helper function which actually writes out VirtualBox.xml, the main configuration file.
+ *  Gets called from the public VirtualBox::SaveSettings() as well as from various other
+ *  places internally when settings need saving.
  *
  *  @note Caller must have locked the VirtualBox object for writing!
  */
@@ -3568,8 +3570,8 @@ HRESULT VirtualBox::saveSettings()
         // hard disks
         settings::MediaList hardDisksTemp;
         for (MediaList::const_iterator it = m->ollHardDisks.begin();
-                it != m->ollHardDisks.end();
-                ++it)
+             it != m->ollHardDisks.end();
+             ++it)
         {
             settings::Medium med;
             rc = (*it)->saveSettings(med);     // this recurses into its children
@@ -3580,8 +3582,8 @@ HRESULT VirtualBox::saveSettings()
         /* CD/DVD images */
         settings::MediaList dvdsTemp;
         for (MediaList::const_iterator it = m->ollDVDImages.begin();
-                it != m->ollDVDImages.end();
-                ++it)
+             it != m->ollDVDImages.end();
+             ++it)
         {
             settings::Medium med;
             rc = (*it)->saveSettings(med);
@@ -3592,8 +3594,8 @@ HRESULT VirtualBox::saveSettings()
         /* floppy images */
         settings::MediaList floppiesTemp;
         for (MediaList::const_iterator it = m->ollFloppyImages.begin();
-                it != m->ollFloppyImages.end();
-                ++it)
+             it != m->ollFloppyImages.end();
+             ++it)
         {
             settings::Medium med;
             rc = (*it)->saveSettings(med);
@@ -4587,8 +4589,8 @@ void *VirtualBox::CallbackEvent::handler()
 	for (pp = mVirtualBox->m_vec.begin(); pp < mVirtualBox->m_vec.end(); pp++)
 	{
             listeners.Add(*pp);
-        }                   
-#endif  
+        }
+#endif
     }
 
 
@@ -4612,7 +4614,7 @@ void *VirtualBox::CallbackEvent::handler()
         cbD = sp;
 
         /**
-         * Would be just handleCallback(cbI) in an ideal world, unfortunately our 
+         * Would be just handleCallback(cbI) in an ideal world, unfortunately our
 	 * consumers want to be invoked via IDispatch, thus going the hard way.
          */
         if (cbI != NULL && cbD != NULL)
@@ -4768,7 +4770,10 @@ HRESULT VirtualBox::registerDHCPServer(DHCPServer *aDHCPServer,
 
     if (aSaveRegistry)
     {
+        AutoWriteLock vboxLock(this COMMA_LOCKVAL_SRC_POS);
         rc = saveSettings();
+        vboxLock.release();
+
         if (FAILED(rc))
             unregisterDHCPServer(aDHCPServer, false /* aSaveRegistry */);
     }
@@ -4810,7 +4815,10 @@ HRESULT VirtualBox::unregisterDHCPServer(DHCPServer *aDHCPServer,
 
     if (aSaveRegistry)
     {
+        AutoWriteLock vboxLock(this COMMA_LOCKVAL_SRC_POS);
         rc = saveSettings();
+        vboxLock.release();
+
         if (FAILED(rc))
             registerDHCPServer(aDHCPServer, false /* aSaveRegistry */);
     }
