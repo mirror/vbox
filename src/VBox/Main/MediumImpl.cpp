@@ -5432,6 +5432,10 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
             unconst(pTarget->m->id).clear();
     }
 
+    // deregister the task registered in createDiffStorage()
+    Assert(m->numCreateDiffTasks != 0);
+    --m->numCreateDiffTasks;
+
     if (task.isAsync())
     {
         if (fNeedsSaveSettings)
@@ -5445,10 +5449,6 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
         // synchronous mode: report save settings result to caller
         if (task.m_pfNeedsSaveSettings)
             *task.m_pfNeedsSaveSettings = fNeedsSaveSettings;
-
-    /* deregister the task registered in createDiffStorage() */
-    Assert(m->numCreateDiffTasks != 0);
-    --m->numCreateDiffTasks;
 
     /* Note that in sync mode, it's the caller's responsibility to
      * unlock the hard disk */
