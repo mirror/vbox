@@ -4885,7 +4885,7 @@ STDMETHODIMP Machine::HotPlugCPU(ULONG aCpu)
 
     /* Save settings if online */
     if (Global::IsOnline(mData->mMachineState))
-        saveSettings();
+        saveSettings(NULL);
 
     return S_OK;
 }
@@ -4926,7 +4926,7 @@ STDMETHODIMP Machine::HotUnplugCPU(ULONG aCpu)
 
     /* Save settings if online */
     if (Global::IsOnline(mData->mMachineState))
-        saveSettings();
+        saveSettings(NULL);
 
     return S_OK;
 }
