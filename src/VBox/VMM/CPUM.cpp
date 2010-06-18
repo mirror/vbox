@@ -1205,7 +1205,7 @@ static void cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM)
  */
 static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
 {
-    AssertMsgReturn(uVersion >= CPUM_SAVED_STATE_VERSION, ("%u\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+    AssertMsgReturn(uVersion <= CPUM_SAVED_STATE_VERSION, ("%u\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
 
     /*
      * Define a bunch of macros for simplifying the code.
