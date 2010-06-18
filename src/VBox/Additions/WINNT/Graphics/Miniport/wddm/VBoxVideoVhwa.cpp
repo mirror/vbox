@@ -813,6 +813,8 @@ int vboxVhwaHlpOverlayFlip(PVBOXWDDM_OVERLAY pOverlay, const DXGKARG_FLIPOVERLAY
             /* we're not interested in completion, just send the command */
             vboxVhwaCommandSubmitAsynchAndComplete(pOverlay->pDevExt, pCmd);
 
+            pOverlay->pCurentAlloc = pAlloc;
+
             rc = VINF_SUCCESS;
         }
         else
@@ -946,7 +948,7 @@ int vboxVhwaHlpOverlayCreate(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOU
         for (uint32_t i = 0; i < pRc->cAllocations; ++i)
         {
             PVBOXWDDM_ALLOCATION pCurAlloc = &pRc->aAllocations[i];
-            rc = vboxVhwaHlpCreateSurface(pDevExt, pAlloc,
+            rc = vboxVhwaHlpCreateSurface(pDevExt, pCurAlloc,
                         0, pRc->cAllocations - 1, VBOXVHWA_SCAPS_OVERLAY | VBOXVHWA_SCAPS_VIDEOMEMORY | VBOXVHWA_SCAPS_LOCALVIDMEM | VBOXVHWA_SCAPS_COMPLEX,
                         VidPnSourceId);
             AssertRC(rc);

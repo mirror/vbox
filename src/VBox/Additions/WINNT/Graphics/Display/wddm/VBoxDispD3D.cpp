@@ -1150,7 +1150,7 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
                 {
                     DDRAW_CAPS *pCaps = (DDRAW_CAPS*)pData->pData;
                     pCaps->Caps |= DDRAW_CAPS_COLORKEY;
-                    pCaps->Caps2 |= DDRAW_CAPS2_FLIPNOVSYNC;
+//                    pCaps->Caps2 |= DDRAW_CAPS2_FLIPNOVSYNC;
                 }
 #endif
             }
@@ -2562,6 +2562,42 @@ static HRESULT APIENTRY vboxWddmDDevRename(HANDLE hDevice, CONST D3DDDIARG_RENAM
     return E_FAIL;
 }
 
+static D3DDDICB_ALLOCATE* vboxWddmRequestAllocAlloc(D3DDDIARG_CREATERESOURCE* pResource)
+{
+    /* allocate buffer for D3DDDICB_ALLOCATE + D3DDDI_ALLOCATIONINFO * numAllocs + PVBOXWDDM_RCINFO with aAllocInfos[numAllocs] */
+    uint32_t cbBuf = sizeof (D3DDDICB_ALLOCATE);
+    uint32_t offDdiAllocInfos = (cbBuf + 7) & ~3;
+    uint32_t cbDdiAllocInfos = sizeof (D3DDDI_ALLOCATIONINFO) * pResource->SurfCount;
+    cbBuf = offDdiAllocInfos + cbDdiAllocInfos;
+    uint32_t offRcInfo = (cbBuf + 7) & ~3;
+    uint32_t cbRcInfo = sizeof (VBOXWDDM_RCINFO);
+    cbBuf = offRcInfo + cbRcInfo;
+    uint32_t offAllocInfos = (cbBuf + 7) & ~3;
+    uint32_t cbAllocInfos = sizeof (VBOXWDDM_ALLOCINFO) * pResource->SurfCount;
+    cbBuf = offAllocInfos + cbAllocInfos;
+    uint8_t *pvBuf = (uint8_t*)RTMemAllocZ(cbBuf);
+    Assert(pvBuf);
+    if (pvBuf)
+    {
+        D3DDDICB_ALLOCATE* pAlloc = (D3DDDICB_ALLOCATE*)pvBuf;
+        pAlloc->NumAllocations = pResource->SurfCount;
+        pAlloc->pAllocationInfo = (D3DDDI_ALLOCATIONINFO*)(pvBuf + offDdiAllocInfos);
+        PVBOXWDDM_RCINFO pRcInfo = (PVBOXWDDM_RCINFO)(pvBuf + offRcInfo);
+        pAlloc->PrivateDriverDataSize = cbRcInfo;
+        pAlloc->pPrivateDriverData = pRcInfo;
+        pAlloc->hResource = pResource->hResource;
+        PVBOXWDDM_ALLOCINFO pAllocInfos = (PVBOXWDDM_ALLOCINFO)(pvBuf + offAllocInfos);
+        for (UINT i = 0; i < pResource->SurfCount; ++i)
+        {
+            D3DDDI_ALLOCATIONINFO* pDdiAllocInfo = &pAlloc->pAllocationInfo[i];
+            PVBOXWDDM_ALLOCINFO pAllocInfo = &pAllocInfos[i];
+            pDdiAllocInfo->pPrivateDriverData = pAllocInfo;
+            pDdiAllocInfo->PrivateDriverDataSize = sizeof (VBOXWDDM_ALLOCINFO);
+        }
+        return pAlloc;
+    }
+    return NULL;
+}
 static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CREATERESOURCE* pResource)
 {
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
@@ -2923,120 +2959,104 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
     }
     else
     {
-        /* allocate buffer for D3DDDICB_ALLOCATE + D3DDDI_ALLOCATIONINFO * numAllocs + PVBOXWDDM_RCINFO with aAllocInfos[numAllocs] */
-        uint32_t cbBuf = sizeof (D3DDDICB_ALLOCATE);
-        uint32_t offDdiAllocInfos = (cbBuf + 7) & ~3;
-        uint32_t cbDdiAllocInfos = sizeof (D3DDDI_ALLOCATIONINFO) * pResource->SurfCount;
-        cbBuf = offDdiAllocInfos + cbDdiAllocInfos;
-        uint32_t offRcInfo = (cbBuf + 7) & ~3;
-        uint32_t cbRcInfo = sizeof (VBOXWDDM_RCINFO);
-        cbBuf = offRcInfo + cbRcInfo;
-        uint32_t offAllocInfos = (cbBuf + 7) & ~3;
-        uint32_t cbAllocInfos = sizeof (VBOXWDDM_ALLOCINFO) * pResource->SurfCount;
-        cbBuf = offAllocInfos + cbAllocInfos;
-        uint8_t *pvBuf = (uint8_t*)RTMemAllocZ(cbBuf);
-        if (pvBuf)
+        PVBOXWDDMDISP_RESOURCE pRc = vboxResourceAlloc(pResource->SurfCount);
+        Assert(pRc);
+        if (pRc)
         {
-            D3DDDICB_ALLOCATE *pAllocate = (D3DDDICB_ALLOCATE*)pvBuf;
-            D3DDDI_ALLOCATIONINFO* pDdiAllocInfos = (D3DDDI_ALLOCATIONINFO*)(pvBuf + offDdiAllocInfos);
-            PVBOXWDDM_RCINFO pRcInfo = (PVBOXWDDM_RCINFO)(pvBuf + offRcInfo);
-            PVBOXWDDM_ALLOCINFO pAllocInfos = (PVBOXWDDM_ALLOCINFO)(pvBuf + offAllocInfos);
-            pAllocate->pPrivateDriverData = pRcInfo;
-            pAllocate->PrivateDriverDataSize = cbRcInfo;
-            pAllocate->hResource = pResource->hResource;
-            pAllocate->hKMResource = NULL;
-            pAllocate->NumAllocations = pResource->SurfCount;
-            pAllocate->pAllocationInfo = pDdiAllocInfos;
+            pRc->hResource = pResource->hResource;
+            pRc->hKMResource = NULL;
+            pRc->pDevice = pDevice;
+            pRc->fFlags = VBOXWDDM_RESOURCE_F_TYPE_GENERIC;
+            pRc->RcDesc.fFlags = pResource->Flags;
+            pRc->RcDesc.enmFormat = pResource->Format;
+            pRc->RcDesc.enmPool = pResource->Pool;
+            pRc->RcDesc.enmMultisampleType = pResource->MultisampleType;
+            pRc->RcDesc.MultisampleQuality = pResource->MultisampleQuality;
+            pRc->RcDesc.MipLevels = pResource->MipLevels;
+            pRc->RcDesc.Fvf = pResource->Fvf;
+            pRc->RcDesc.VidPnSourceId = pResource->VidPnSourceId;
+            pRc->RcDesc.RefreshRate = pResource->RefreshRate;
+            pRc->RcDesc.enmRotation = pResource->Rotation;
+            pRc->cAllocations = pResource->SurfCount;
 
-            pRcInfo->fFlags = VBOXWDDM_RESOURCE_F_TYPE_GENERIC;
-            pRcInfo->RcDesc.fFlags = pResource->Flags;
-            pRcInfo->RcDesc.enmFormat = pResource->Format;
-            pRcInfo->RcDesc.enmPool = pResource->Pool;
-            pRcInfo->RcDesc.enmMultisampleType = pResource->MultisampleType;
-            pRcInfo->RcDesc.MultisampleQuality = pResource->MultisampleQuality;
-            pRcInfo->RcDesc.MipLevels = pResource->MipLevels;
-            pRcInfo->RcDesc.Fvf = pResource->Fvf;
-            pRcInfo->RcDesc.VidPnSourceId = pResource->VidPnSourceId;
-            pRcInfo->RcDesc.RefreshRate = pResource->RefreshRate;
-            pRcInfo->RcDesc.enmRotation = pResource->Rotation;
-            pRcInfo->cAllocInfos = pResource->SurfCount;
-
-            for (UINT i = 0; i < pResource->SurfCount; ++i)
+            D3DDDICB_ALLOCATE *pDdiAllocate = vboxWddmRequestAllocAlloc(pResource);
+            Assert(pDdiAllocate);
+            if (pDdiAllocate)
             {
-                PVBOXWDDM_ALLOCINFO pAllocInfo = &pAllocInfos[i];
-                D3DDDI_ALLOCATIONINFO* pDdiAllocInfo = &pDdiAllocInfos[i];
-                CONST D3DDDI_SURFACEINFO* pSurf = &pResource->pSurfList[i];
-                pDdiAllocInfo->hAllocation = NULL;
-                pDdiAllocInfo->pSystemMem = pSurf->pSysMem;
-                Assert((!!(pSurf->pSysMem)) == (pResource->Pool == D3DDDIPOOL_SYSTEMMEM));
-                pDdiAllocInfo->pPrivateDriverData = pAllocInfo;
-                pDdiAllocInfo->PrivateDriverDataSize = sizeof (VBOXWDDM_ALLOCINFO);
-                pDdiAllocInfo->VidPnSourceId = pResource->VidPnSourceId;
-                pDdiAllocInfo->Flags.Value = 0;
-                if (pResource->Flags.Primary)
-                    pDdiAllocInfo->Flags.Primary = 1;
+                Assert(pDdiAllocate->pPrivateDriverData);
+                Assert(pDdiAllocate->PrivateDriverDataSize == sizeof (VBOXWDDM_RCINFO));
+                PVBOXWDDM_RCINFO pRcInfo = (PVBOXWDDM_RCINFO)pDdiAllocate->pPrivateDriverData;
+                pRcInfo->fFlags = VBOXWDDM_RESOURCE_F_TYPE_GENERIC;
+                pRcInfo->RcDesc = pRc->RcDesc;
+                pRcInfo->cAllocInfos = pResource->SurfCount;
 
-                pAllocInfo->enmType = VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC;
-                pAllocInfo->SurfDesc.width = pSurf->Width;
-                pAllocInfo->SurfDesc.height = pSurf->Height;
-                pAllocInfo->SurfDesc.format = pResource->Format;
-                pAllocInfo->SurfDesc.bpp = vboxWddmCalcBitsPerPixel(pResource->Format);
-
-                if (pSurf->SysMemPitch)
+                for (UINT i = 0; i < pResource->SurfCount; ++i)
                 {
-                    pAllocInfo->SurfDesc.pitch = pSurf->SysMemPitch;
+                    D3DDDI_ALLOCATIONINFO *pDdiAllocI = &pDdiAllocate->pAllocationInfo[i];
+                    Assert(pDdiAllocI->pPrivateDriverData);
+                    Assert(pDdiAllocI->PrivateDriverDataSize == sizeof (VBOXWDDM_ALLOCINFO));
+                    PVBOXWDDM_ALLOCINFO pAllocInfo = (PVBOXWDDM_ALLOCINFO)pDdiAllocI->pPrivateDriverData;
+                    CONST D3DDDI_SURFACEINFO* pSurf = &pResource->pSurfList[i];
+                    pDdiAllocI->hAllocation = NULL;
+                    pDdiAllocI->pSystemMem = pSurf->pSysMem;
+                    Assert((!!(pSurf->pSysMem)) == (pResource->Pool == D3DDDIPOOL_SYSTEMMEM));
+                    pDdiAllocI->VidPnSourceId = pResource->VidPnSourceId;
+                    pDdiAllocI->Flags.Value = 0;
+                    if (pResource->Flags.Primary)
+                        pDdiAllocI->Flags.Primary = 1;
+
+                    pAllocInfo->enmType = VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC;
+                    pAllocInfo->fFlags = pResource->Flags;
+                    pAllocInfo->SurfDesc.width = pSurf->Width;
+                    pAllocInfo->SurfDesc.height = pSurf->Height;
+                    pAllocInfo->SurfDesc.format = pResource->Format;
+                    pAllocInfo->SurfDesc.bpp = vboxWddmCalcBitsPerPixel(pResource->Format);
+
+                    if (pSurf->SysMemPitch)
+                    {
+                        pAllocInfo->SurfDesc.pitch = pSurf->SysMemPitch;
 #ifdef DEBUG
-                    UINT tst = vboxWddmCalcPitch(pSurf->Width, pAllocInfo->SurfDesc.bpp);
-                    Assert(tst == pSurf->SysMemPitch);
+                        UINT tst = vboxWddmCalcPitch(pSurf->Width, pAllocInfo->SurfDesc.bpp);
+                        Assert(tst == pSurf->SysMemPitch);
 #endif
+                    }
+                    else
+                        pAllocInfo->SurfDesc.pitch = vboxWddmCalcPitch(pSurf->Width, pAllocInfo->SurfDesc.bpp);
+
+                    pAllocInfo->SurfDesc.cbSize = pAllocInfo->SurfDesc.pitch * pAllocInfo->SurfDesc.height;
+                    pAllocInfo->SurfDesc.depth = pSurf->Depth;
+                    pAllocInfo->SurfDesc.slicePitch = pSurf->SysMemSlicePitch;
+                    pAllocInfo->SurfDesc.VidPnSourceId = pResource->VidPnSourceId;
+                    pAllocInfo->SurfDesc.RefreshRate = pResource->RefreshRate;
                 }
-                else
-                    pAllocInfo->SurfDesc.pitch = vboxWddmCalcPitch(pSurf->Width, pAllocInfo->SurfDesc.bpp);
 
-                pAllocInfo->SurfDesc.cbSize = pAllocInfo->SurfDesc.pitch * pAllocInfo->SurfDesc.height;
-                pAllocInfo->SurfDesc.depth = pSurf->Depth;
-                pAllocInfo->SurfDesc.slicePitch = pSurf->SysMemSlicePitch;
-                pAllocInfo->SurfDesc.VidPnSourceId = pResource->VidPnSourceId;
-                pAllocInfo->SurfDesc.RefreshRate = pResource->RefreshRate;
-            }
-
-            hr = pDevice->RtCallbacks.pfnAllocateCb(pDevice->hDevice, pAllocate);
-            Assert(hr == S_OK);
-            if (hr == S_OK)
-            {
-                Assert(pAllocate->hKMResource);
-                PVBOXWDDMDISP_RESOURCE pRc = vboxResourceAlloc(pResource->SurfCount);
-                Assert(pRc);
-                if (pRc)
+                hr = pDevice->RtCallbacks.pfnAllocateCb(pDevice->hDevice, pDdiAllocate);
+                Assert(hr == S_OK);
+                Assert(pDdiAllocate->hKMResource);
+                if (hr == S_OK)
                 {
-                    pRc->hResource = pResource->hResource;
-                    pRc->hKMResource = pAllocate->hKMResource;
-                    pRc->pDevice = pDevice;
-                    pRc->fFlags = pRcInfo->fFlags;
-                    pRc->RcDesc = pRcInfo->RcDesc;
-                    pRc->cAllocations = pRcInfo->cAllocInfos;
-                    for (UINT i = 0; i < pRcInfo->cAllocInfos; ++i)
+                    for (UINT i = 0; i < pResource->SurfCount; ++i)
                     {
                         PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
-                        D3DDDI_ALLOCATIONINFO* pDdiAllocInfo = &pDdiAllocInfos[i];
-                        PVBOXWDDM_ALLOCINFO pAllocInfo = &pAllocInfos[i];
+                        D3DDDI_ALLOCATIONINFO *pDdiAllocI = &pDdiAllocate->pAllocationInfo[i];
+                        PVBOXWDDM_ALLOCINFO pAllocInfo = (PVBOXWDDM_ALLOCINFO)pDdiAllocI->pPrivateDriverData;
                         CONST D3DDDI_SURFACEINFO* pSurf = &pResource->pSurfList[i];
-                        pAllocation->hAllocation = pDdiAllocInfo->hAllocation;
+                        pAllocation->hAllocation = pDdiAllocI->hAllocation;
                         pAllocation->enmType = VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC;
                         pAllocation->pvMem = (void*)pSurf->pSysMem;
                         pAllocation->SurfDesc = pAllocInfo->SurfDesc;
                     }
-
-                    pResource->hResource = pRc;
-    //                vboxResourceFree(pRc);
-                }
-                else
-                {
-                    hr = E_OUTOFMEMORY;
                 }
             }
+            else
+            {
+                hr = E_OUTOFMEMORY;
+            }
 
-            RTMemFree(pvBuf);
+            if (hr == S_OK)
+                pResource->hResource = pRc;
+            else
+                vboxResourceFree(pRc);
         }
         else
         {
@@ -3090,6 +3110,15 @@ static HRESULT APIENTRY vboxWddmDDevDestroyResource(HANDLE hDevice, HANDLE hReso
             Dealloc.HandleList = NULL;
             hr = pDevice->RtCallbacks.pfnDeallocateCb(pDevice->hDevice, &Dealloc);
             Assert(hr == S_OK);
+//            for (UINT j = 0; j < pRc->cAllocations; ++j)
+//            {
+//                D3DDDICB_DEALLOCATE Dealloc;
+//                Dealloc.hResource = NULL;
+//                Dealloc.NumAllocations = 1;
+//                Dealloc.HandleList = &pRc->aAllocations[j].hAllocation;
+//                HRESULT tmpHr = pDevice->RtCallbacks.pfnDeallocateCb(pDevice->hDevice, &Dealloc);
+//                Assert(tmpHr = S_OK);
+//            }
         }
     }
 
@@ -3619,6 +3648,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateOverlay(HANDLE hDevice, D3DDDIARG_CREA
         D3DDDICB_CREATEOVERLAY OverInfo;
         OverInfo.VidPnSourceId = pData->VidPnSourceId;
         OverInfo.OverlayInfo.hAllocation = pAlloc->hAllocation;
+        Assert(pAlloc->hAllocation);
         OverInfo.OverlayInfo.DstRect = *(D3DDDIRECT*)((void*)&pData->OverlayInfo.DstRect);
         OverInfo.OverlayInfo.SrcRect = *(D3DDDIRECT*)((void*)&pData->OverlayInfo.SrcRect);
         OverInfo.OverlayInfo.pPrivateDriverData = &OurInfo;

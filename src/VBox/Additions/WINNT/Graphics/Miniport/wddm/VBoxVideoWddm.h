@@ -62,6 +62,8 @@ typedef struct VBOXWDDM_ALLOCATION
     BOOLEAN bAssigned;
     VBOXWDDM_SURFACE_DESC SurfDesc;
     struct VBOXWDDM_RESOURCE *pResource;
+    /* to return to the Runtime on DxgkDdiCreateAllocation */
+    DXGK_ALLOCATIONUSAGEHINT UsageHint;
     uint32_t iIndex;
 } VBOXWDDM_ALLOCATION, *PVBOXWDDM_ALLOCATION;
 
