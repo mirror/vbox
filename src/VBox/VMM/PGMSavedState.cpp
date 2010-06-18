@@ -1789,7 +1789,7 @@ static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
         rc = pgmR3SaveMmio2Pages(      pVM, pSSM, true /*fLiveSave*/, uPass);
     if (RT_SUCCESS(rc))
         rc = pgmR3SaveRamPages(        pVM, pSSM, true /*fLiveSave*/, uPass);
-    SSMR3PutU8(pSSM, PGM_STATE_REC_END);    /* (Ignore the rc, SSM takes of it.) */
+    SSMR3PutU8(pSSM, PGM_STATE_REC_END);    /* (Ignore the rc, SSM takes care of it.) */
 
     return rc;
 }
