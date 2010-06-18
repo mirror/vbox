@@ -585,6 +585,10 @@ const char *g_pcszIUnknown = "IUnknown";
           <xsl:call-template name="emitNewlineIndent8" />
           <xsl:value-of select="concat('    comcall_', $name, '[i] = ', $structprefix, $name, '[i];')" />
         </xsl:when>
+        <xsl:when test="//enum[@name=$type]">
+          <xsl:call-template name="emitNewlineIndent8" />
+          <xsl:value-of select="concat('    comcall_', $name, '[i] = ', $G_funcPrefixInputEnumConverter, $type, '(', $structprefix, $name, '[i]);')" />
+        </xsl:when>
         <xsl:otherwise>
           <xsl:call-template name="fatalError">
             <xsl:with-param name="msg" select="concat('emitInputArgConverter Type &quot;', $type, '&quot; in arg &quot;', $name, '&quot; of method &quot;', $method, '&quot; is not yet supported in safearrays.')" />

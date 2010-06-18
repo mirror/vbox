@@ -14545,6 +14545,279 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
   </interface>
 
+  <enum
+     name="VBoxEventType"
+     uuid="dc336827-bc9b-4acc-8880-691f6943bb8b">
+
+    <desc>
+      Type of an event.
+    </desc>
+
+    <const name="Invalid" value="0">
+      <desc>
+        Invalid event.
+      </desc>
+    </const>
+
+    <const name="Any" value="1">
+      <desc>
+        Wildcard for all events. Events of this type are never delivered, and only used in
+        registerListener() call to simplify registration.
+      </desc>
+    </const>
+
+    <const name="MachineEvent" value="2">
+      <desc>
+        Wildcard for all machine events. Events of this type are never delivered, and only used in
+        registerListener() call to simplify registration.
+      </desc>
+    </const>
+
+    <const name="OnMachineStateChange" value="32">
+      <desc>
+        <see>IVirtualBoxCallback::onMachineStateChange</see>
+      </desc>
+    </const>
+    <const name="OnMachineDataChange" value="33">
+      <desc>
+        <see>IVirtualBoxCallback::onMachineDataChange</see>
+      </desc>
+    </const>
+    <const name="OnExtraDataChange" value="34">
+      <desc>
+        <see>IVirtualBoxCallback::onExtraDataChange</see>
+      </desc>
+    </const>
+
+  </enum>
+
+  <interface
+     name="IEventSource" extends="$unknown"
+     uuid="3c670618-f727-4fe9-94d2-8243f489a033"
+     wsmap="managed"
+     >
+    <desc>
+      Event source. Generally, any object which could generate events can be an event source,
+      or aggregate one. To simplify using one-way protocols, such as webservices running on top of HTTP(S),
+      event source can work with listeners in either active or passive mode. In active mode it's up to
+      IEventSource implementation to call handleEvent(), in passive mode event source keeps track of
+      pending events for each listener and returns available events on demand.
+    </desc>
+
+    <method name="registerListener">
+      <desc>
+        Register an event listener.
+      </desc>
+      <param name="listener" type="IEventListener" dir="in">
+        <desc>Listener to register.</desc>
+      </param>
+      <param name="interesting" type="VBoxEventType" dir="in" safearray="yes">
+        <desc>
+          Event types listener is interested in. One can use wildcards like Any -
+          <see>VBoxEventType::Any</see> to specify wildcards.
+        </desc>
+      </param>
+      <param name="active" type="boolean" dir="in">
+        <desc>
+          Which mode this listener shall function in.
+          If in active mode, IEventListener's handleEvent() is called directly.
+          If in passive mode - for this IEventListener internal event queue is created.
+          When next event comes, it's added to queues for all interested registered passive
+          listeners. It's up to external code to call listener's handleEvent() then.
+          When done with event, it shall call source's eventComplete().
+        </desc>
+      </param>
+    </method>
+
+    <method name="unregisterListener">
+      <desc>
+        Unregister an event listener. If listener is passive, and some waitable events are still 
+        in queue they are marked as processed automatically.
+      </desc>
+      <param name="listener" type="IEventListener" dir="in">
+        <desc>Listener to unregister.</desc>
+      </param>
+    </method>
+
+    <method name="fireEvent">
+      <desc>
+        Fire an event for this source.
+      </desc>
+      <param name="event" type="IEvent" dir="in">
+        <desc>Event to deliver.</desc>
+      </param>
+      <param name="timeout" type="long" dir="in">
+        <desc>
+          Timeout to wait until event processed in ms (if event is waitable),
+          0 - no wait, -1 - forever until delivered.
+        </desc>
+      </param>
+      <param name="result" type="boolean" dir="return">
+        <desc>true if an event was delivered to all targets, or is non-waitable.</desc>
+      </param>
+    </method>
+
+    <method name="getEvent">
+      <desc>
+        Get events from this peer's event queue (for passive mode). Consumer's implementation
+        must call listener's handleEvent() once event is available.
+      </desc>
+      <param name="listener" type="IEventListener" dir="in">
+        <desc>Which listener get data for.</desc>
+      </param>
+      <param name="timeout" type="long" dir="in">
+        <desc>Timeout to wait until event available in ms, 0 - no wait, -1 - forever until available.</desc>
+      </param>
+      <param name="event" type="IEvent" dir="return">
+        <desc>Event retrieved, or null if none available.</desc>
+      </param>
+    </method>
+
+    <method name="eventProcessed">
+      <desc>
+        Must be called for waitable events when particular listener finished event processing. 
+        When all listeners who this event was aimed to call eventProcessed() event source 
+        can call event's setProcessed().
+      </desc>
+      <param name="listener" type="IEventListener" dir="in">
+        <desc>Which listener processed event.</desc>
+      </param>
+      <param name="event" type="IEvent" dir="in">
+        <desc>Which event.</desc>
+      </param>
+    </method>
+
+  </interface>
+
+  <interface
+     name="IEventListener" extends="$unknown"
+     uuid="67099191-32e7-4f6c-85ee-422304c71b90"
+     wsmap="managed"
+     >
+    <desc>
+      Event listener. Event listener can work in either active, or passive mode, depending on the way it's registered.
+    </desc>
+
+    <method name="handleEvent">
+      <desc>
+        Handle event callback (called directly by IEventSource in active mode, or by event processor thread
+        in passive mode).
+      </desc>
+      <param name="event" type="IEvent" dir="in">
+        <desc>Event available.</desc>
+      </param>
+    </method>
+
+  </interface>
+
+  <interface
+     name="IEvent" extends="$unknown"
+     uuid="0ca2adba-8f30-401b-a8cd-fe31dbe839c0"
+     wsmap="managed"
+     >
+    <desc>Generic event, aiming to replace callbacks mechanism.</desc>
+
+    <attribute name="type" readonly="yes" type="VBoxEventType">
+      <desc>
+        Event type.
+      </desc>
+    </attribute>
+
+    <attribute name="source" readonly="yes" type="IEventSource">
+      <desc>
+        Source of this event.
+      </desc>
+    </attribute>
+
+    <attribute name="waitable" readonly="yes" type="boolean">
+      <desc>
+        If we can wait for this event being processed. If false, waitProcessed() returns immediately,
+        and setProcessed() doesn't make sense. Non-waitable events are generally better performing,
+        as no additional overhead associated with waitability imposed.
+        Waitable events are needed when some need to be able to wait for particular event processed,
+        for example for vetoable changes, or if event refers to some resource which need to be kept immutable
+        until all consumers confirmed events.
+      </desc>
+    </attribute>
+
+    <method name="setProcessed">
+      <desc>
+         Called to mark the moment when this event is considered processed.
+      </desc>
+    </method>
+
+    <method name="waitProcessed">
+      <desc>
+        Wait until time outs, or this event is processed. Event must be waitable for this operation to have
+        described semantics, for non-waitable returns true immediately.
+      </desc>
+      <param name="timeout" type="long" dir="in">
+        <desc>Timeout to wait until event processed in ms, 0 - no wait, -1 - forever until processed.</desc>
+      </param>
+      <param name="result" type="boolean" dir="return">
+        <desc>If this event was processed before timeout.</desc>
+      </param>
+    </method>
+  </interface>
+
+  <interface
+      name="IMachineStateChangeEvent" extends="IEvent"
+      uuid="5748F794-48DF-438D-85EB-98FFD70D18C9"
+      wsmap="managed"
+      >
+    <desc>Machine state change event.</desc>
+
+    <attribute name="machineId" readonly="yes" type="uuid" mod="string">
+      <desc>ID of the machine this event relates to.</desc>
+    </attribute>
+
+     <attribute name="state" readonly="yes" type="MachineState">
+       <desc>New execution state.</desc>
+     </attribute>
+  </interface>
+
+  <interface
+      name="IMachineDataChangeEvent" extends="IEvent"
+      uuid="6AA70A6C-0DCA-4810-8C5C-457B278E3D49"
+      wsmap="managed"
+      >
+    <desc>
+      Any of the settings of the given machine has changed.
+    </desc>
+
+    <attribute name="machineId" readonly="yes" type="uuid" mod="string">
+      <desc>ID of the machine this event relates to.</desc>
+    </attribute>
+
+  </interface>
+
+  <interface
+      name="IExtraDataChangeEvent" extends="IEvent"
+      uuid="024F00CE-6E0B-492A-A8D0-968472A94DC7"
+      wsmap="managed"
+      >
+    <desc>
+      Notification when machine specific or global extra data
+      has changed.
+    </desc>
+    <attribute name="machineId" type="uuid" mod="string" readonly="yes">
+      <desc>
+        ID of the machine this event relates to.
+        Null for global extra data changes.
+      </desc>
+    </attribute>
+    <attribute name="key" type="wstring" readonly="yes">
+      <desc>
+        Extra data key that has changed.
+      </desc>
+    </attribute>
+    <attribute name="value" type="wstring" readonly="yes">
+      <desc>
+        Extra data value for the given key.
+      </desc>
+    </attribute>
+  </interface>
+
   <module name="VBoxSVC" context="LocalServer">
     <class name="VirtualBox" uuid="B1A7A4F2-47B9-4A1E-82B2-07CCD5323C3F"
            namespace="virtualbox.org">
