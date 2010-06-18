@@ -597,14 +597,13 @@ RTDECL(int) RTSocketSgWrite(RTSOCKET hSocket, PCRTSGBUF pSgBuf)
 #ifdef RT_OS_WINDOWS
         AssertCompileSize(WSABUF, sizeof(RTSGSEG));
         AssertCompileMemberSize(WSABUF, buf, RT_SIZEOFMEMB(RTSGSEG, pvSeg));
-        AssertCompileMemberSize(WSABUF, len, RT_SIZEOFMEMB(RTSGSEG, cbSeg));
 
         LPWSABUF paMsg = (LPWSABUF)RTMemTmpAllocZ(pSgBuf->cSeg * sizeof(WSABUF));
         AssertPtrBreakStmt(paMsg, rc = VERR_NO_MEMORY);
         for (unsigned i = 0; i < pSgBuf->cSeg; i++)
         {
             paMsg[i].buf = (char *)pSgBuf->pcaSeg[i].pvSeg;
-            paMsg[i].len = pSgBuf->pcaSeg[i].cbSeg;
+            paMsg[i].len = (u_long)pSgBuf->pcaSeg[i].cbSeg;
         }
 
         DWORD dwSent;
