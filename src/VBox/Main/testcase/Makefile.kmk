@@ -82,15 +82,17 @@ ifdef VBOX_WITH_RESOURCE_USAGE_API
 tstOVF_DEFS += VBOX_WITH_RESOURCE_USAGE_API
 endif
 
-INSTALLS += $(if $(VBOX_OSE),,ovfdummy ovfjoomla09)
-
-ovfdummy_MODE = a+r,u+w
-ovfdummy_INST = bin/ovf-testcases
-ovfdummy_SOURCES = ovf-dummy.vmdk
-
-ovfjoomla09_MODE = a+r,u+w
-ovfjoomla09_INST = bin/ovf-testcases/ovf-joomla-0.9
-ovfjoomla09_SOURCES = ovf-joomla-0.9/joomla-1.1.4-ovf.ovf
+ifndef VBOX_OSE
+#
+# OVF test data.
+#
+INSTALLS += ovf-testcases
+ovf-testcases_MODE = a+r,u+w
+ovf-testcases_INST = $(INST_BIN)ovf-testcases/
+ovf-testcases_SOURCES = \
+	ovf-dummy.vmdk \
+	ovf-joomla-0.9/joomla-1.1.4-ovf.ovf=>ovf-joomla-0.9/joomla-1.1.4-ovf.ovf
+endif
 
 #
 # tstVBoxAPILinux
