@@ -3115,9 +3115,12 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         treeLock.leave();
         alock.leave();
 
-        rc = medium->createDiffStorage(diff, MediumVariant_Standard,
-                                       pMediumLockList, NULL /* aProgress */,
-                                       true /* aWait */, &fNeedsSaveSettings);
+        rc = medium->createDiffStorage(diff,
+                                       MediumVariant_Standard,
+                                       pMediumLockList,
+                                       NULL /* aProgress */,
+                                       true /* aWait */,
+                                       &fNeedsSaveSettings);
 
         alock.enter();
         treeLock.enter();
@@ -4871,9 +4874,9 @@ STDMETHODIMP Machine::HotPlugCPU(ULONG aCpu)
     if (mHWData->mCPUAttached[aCpu])
         return setError(VBOX_E_OBJECT_IN_USE, tr("CPU %lu is already attached"), aCpu);
 
-    alock.leave();
+    alock.release();
     rc = onCPUChange(aCpu, false);
-    alock.enter();
+    alock.acquire();
     if (FAILED(rc)) return rc;
 
     setModified(IsModified_MachineData);
@@ -4882,7 +4885,7 @@ STDMETHODIMP Machine::HotPlugCPU(ULONG aCpu)
 
     /* Save settings if online */
     if (Global::IsOnline(mData->mMachineState))
-        SaveSettings();
+        saveSettings();
 
     return S_OK;
 }
@@ -4912,9 +4915,9 @@ STDMETHODIMP Machine::HotUnplugCPU(ULONG aCpu)
     if (aCpu == 0)
         return setError(E_INVALIDARG, tr("It is not possible to detach CPU 0"));
 
-    alock.leave();
+    alock.release();
     rc = onCPUChange(aCpu, true);
-    alock.enter();
+    alock.acquire();
     if (FAILED(rc)) return rc;
 
     setModified(IsModified_MachineData);
@@ -4923,7 +4926,7 @@ STDMETHODIMP Machine::HotUnplugCPU(ULONG aCpu)
 
     /* Save settings if online */
     if (Global::IsOnline(mData->mMachineState))
-        SaveSettings();
+        saveSettings();
 
     return S_OK;
 }
@@ -11127,7 +11130,7 @@ HRESULT SessionMachine::setMachineState(MachineState_T aMachineState)
         {
             mData->mCurrentStateModified = TRUE;
             stsFlags |= SaveSTS_CurStateModified;
-            SaveSettings();
+            SaveSettings();     // @todo r=dj why the public method? why first SaveSettings and then saveStateSettings?
         }
     }
 
