@@ -648,7 +648,7 @@ NTSTATUS DxgkDdiStartDevice(
                     *NumberOfChildren = pContext->u.primary.cDisplays;
                     dprintf(("VBoxVideoWddm: sources(%d), children(%d)\n", *NumberOfVideoPresentSources, *NumberOfChildren));
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                    vboxVHWAInit(pContext);
+                    vboxVhwaInit(pContext);
 #endif
                 }
                 else
@@ -698,7 +698,7 @@ NTSTATUS DxgkDdiStopDevice(
 
     /* do everything we did on DxgkDdiStartDevice in the reverse order */
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    vboxVHWAFree(pDevExt);
+    vboxVhwaFree(pDevExt);
 #endif
 
     int rc = VBoxFreeDisplaysHGSMI(pDevExt);
@@ -1510,9 +1510,9 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_RESOURCE 
                     pAllocationInfo->SupportedReadSegmentSet = 2;
                     pAllocationInfo->SupportedWriteSegmentSet = 2;
 #endif
-//#ifndef VBOXWDDM_RENDER_FROM_SHADOW
+#ifndef VBOXWDDM_RENDER_FROM_SHADOW
                     pAllocationInfo->Flags.CpuVisible = 1;
-//#endif
+#endif
                     break;
                 case VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC:
 //                    Assert(pResource);

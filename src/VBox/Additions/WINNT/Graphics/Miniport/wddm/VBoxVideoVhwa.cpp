@@ -200,19 +200,19 @@ void vboxVhwaCommandSubmitAsynchAndComplete(PDEVICE_EXTENSION pDevExt, VBOXVHWAC
 #endif
 }
 
-void vboxVHWAFreeHostInfo1(PDEVICE_EXTENSION pDevExt, VBOXVHWACMD_QUERYINFO1* pInfo)
+void vboxVhwaFreeHostInfo1(PDEVICE_EXTENSION pDevExt, VBOXVHWACMD_QUERYINFO1* pInfo)
 {
     VBOXVHWACMD* pCmd = VBOXVHWACMD_HEAD(pInfo);
     vboxVhwaCommandFree(pDevExt, pCmd);
 }
 
-void vboxVHWAFreeHostInfo2(PDEVICE_EXTENSION pDevExt, VBOXVHWACMD_QUERYINFO2* pInfo)
+void vboxVhwaFreeHostInfo2(PDEVICE_EXTENSION pDevExt, VBOXVHWACMD_QUERYINFO2* pInfo)
 {
     VBOXVHWACMD* pCmd = VBOXVHWACMD_HEAD(pInfo);
     vboxVhwaCommandFree(pDevExt, pCmd);
 }
 
-VBOXVHWACMD_QUERYINFO1* vboxVHWAQueryHostInfo1(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
+VBOXVHWACMD_QUERYINFO1* vboxVhwaQueryHostInfo1(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
 {
     VBOXVHWACMD* pCmd = vboxVhwaCommandCreate(pDevExt, srcId, VBOXVHWACMD_TYPE_QUERY_INFO1, sizeof(VBOXVHWACMD_QUERYINFO1));
     VBOXVHWACMD_QUERYINFO1 *pInfo1;
@@ -220,7 +220,7 @@ VBOXVHWACMD_QUERYINFO1* vboxVHWAQueryHostInfo1(PDEVICE_EXTENSION pDevExt, D3DDDI
     Assert(pCmd);
     if (!pCmd)
     {
-        drprintf((0, "VBoxDISP::vboxVHWAQueryHostInfo1: vboxVHWACommandCreate failed\n"));
+        drprintf((0, "VBoxDISP::vboxVhwaQueryHostInfo1: vboxVhwaCommandCreate failed\n"));
         return NULL;
     }
 
@@ -244,14 +244,14 @@ VBOXVHWACMD_QUERYINFO1* vboxVHWAQueryHostInfo1(PDEVICE_EXTENSION pDevExt, D3DDDI
     return NULL;
 }
 
-VBOXVHWACMD_QUERYINFO2* vboxVHWAQueryHostInfo2(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, uint32_t numFourCC)
+VBOXVHWACMD_QUERYINFO2* vboxVhwaQueryHostInfo2(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, uint32_t numFourCC)
 {
     VBOXVHWACMD* pCmd = vboxVhwaCommandCreate(pDevExt, srcId, VBOXVHWACMD_TYPE_QUERY_INFO2, VBOXVHWAINFO2_SIZE(numFourCC));
     VBOXVHWACMD_QUERYINFO2 *pInfo2;
     Assert(pCmd);
     if (!pCmd)
     {
-        drprintf((0, "VBoxDISP::vboxVHWAQueryHostInfo2: vboxVHWACommandCreate failed\n"));
+        drprintf((0, "VBoxDISP::vboxVhwaQueryHostInfo2: vboxVhwaCommandCreate failed\n"));
         return NULL;
     }
 
@@ -276,7 +276,7 @@ VBOXVHWACMD_QUERYINFO2* vboxVHWAQueryHostInfo2(PDEVICE_EXTENSION pDevExt, D3DDDI
     return NULL;
 }
 
-int vboxVHWAEnable(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
+int vboxVhwaEnable(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
 {
     int rc = VERR_GENERAL_FAILURE;
     VBOXVHWACMD* pCmd;
@@ -285,7 +285,7 @@ int vboxVHWAEnable(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID src
     Assert(pCmd);
     if (!pCmd)
     {
-        drprintf((0, "VBoxDISP::vboxVHWAEnable: vboxVHWACommandCreate failed\n"));
+        drprintf((0, "VBoxDISP::vboxVhwaEnable: vboxVhwaCommandCreate failed\n"));
         return rc;
     }
 
@@ -304,7 +304,7 @@ int vboxVHWAEnable(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID src
     return rc;
 }
 
-int vboxVHWADisable(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
+int vboxVhwaDisable(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
 {
     int rc = VERR_GENERAL_FAILURE;
     VBOXVHWACMD* pCmd;
@@ -313,7 +313,7 @@ int vboxVHWADisable(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID sr
     Assert(pCmd);
     if (!pCmd)
     {
-        drprintf((0, "VBoxDISP::vboxVHWADisable: vboxVHWACommandCreate failed\n"));
+        drprintf((0, "VBoxDISP::vboxVhwaDisable: vboxVhwaCommandCreate failed\n"));
         return rc;
     }
 
@@ -332,13 +332,13 @@ int vboxVHWADisable(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID sr
     return rc;
 }
 
-static void vboxVHWAInitSrc(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
+static void vboxVhwaInitSrc(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
 {
     Assert(srcId < (D3DDDI_VIDEO_PRESENT_SOURCE_ID)pDevExt->u.primary.cDisplays);
     VBOXVHWA_INFO *pSettings = &pDevExt->aSources[srcId].Vhwa.Settings;
     memset (pSettings, 0, sizeof (VBOXVHWA_INFO));
 
-    VBOXVHWACMD_QUERYINFO1* pInfo1 = vboxVHWAQueryHostInfo1(pDevExt, srcId);
+    VBOXVHWACMD_QUERYINFO1* pInfo1 = vboxVhwaQueryHostInfo1(pDevExt, srcId);
     if (pInfo1)
     {
         if ((pInfo1->u.out.cfgFlags & VBOXVHWA_CFG_ENABLED)
@@ -378,7 +378,7 @@ static void vboxVHWAInitSrc(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOUR
                 if (pInfo1->u.out.numFourCC
                         && (pInfo1->u.out.caps & VBOXVHWA_CAPS_OVERLAYFOURCC))
                 {
-                    VBOXVHWACMD_QUERYINFO2* pInfo2 = vboxVHWAQueryHostInfo2(pDevExt, srcId, pInfo1->u.out.numFourCC);
+                    VBOXVHWACMD_QUERYINFO2* pInfo2 = vboxVhwaQueryHostInfo2(pDevExt, srcId, pInfo1->u.out.numFourCC);
                     if (pInfo2)
                     {
                         for (uint32_t i = 0; i < pInfo2->numFourCC; ++i)
@@ -386,30 +386,30 @@ static void vboxVHWAInitSrc(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOUR
                             pSettings->aFormats[pSettings->cFormats] = (D3DDDIFORMAT)pInfo2->FourCC[i];
                             ++pSettings->cFormats;
                         }
-                        vboxVHWAFreeHostInfo2(pDevExt, pInfo2);
+                        vboxVhwaFreeHostInfo2(pDevExt, pInfo2);
                     }
                 }
             }
         }
-        vboxVHWAFreeHostInfo1(pDevExt, pInfo1);
+        vboxVhwaFreeHostInfo1(pDevExt, pInfo1);
     }
 }
 
-void vboxVHWAInit(PDEVICE_EXTENSION pDevExt)
+void vboxVhwaInit(PDEVICE_EXTENSION pDevExt)
 {
     for (int i = 0; i < pDevExt->u.primary.cDisplays; ++i)
     {
-        vboxVHWAInitSrc(pDevExt, (D3DDDI_VIDEO_PRESENT_SOURCE_ID)i);
+        vboxVhwaInitSrc(pDevExt, (D3DDDI_VIDEO_PRESENT_SOURCE_ID)i);
     }
 }
 
-void vboxVHWAFree(PDEVICE_EXTENSION pDevExt)
+void vboxVhwaFree(PDEVICE_EXTENSION pDevExt)
 {
     /* we do not allocate/map anything, just issue a Disable command
      * to ensure all pending commands are flushed */
     for (int i = 0; i < pDevExt->u.primary.cDisplays; ++i)
     {
-        vboxVHWADisable(pDevExt, i);
+        vboxVhwaDisable(pDevExt, i);
     }
 }
 
@@ -714,8 +714,18 @@ int vboxVhwaHlpCheckInit(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_
     uint32_t cNew = ASMAtomicIncU32(&pSource->Vhwa.cOverlaysCreated);
     if (cNew == 1)
     {
-        rc = vboxVhwaHlpCreatePrimary(pDevExt, pSource, VidPnSourceId);
+        rc = vboxVhwaEnable(pDevExt, VidPnSourceId);
         AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            rc = vboxVhwaHlpCreatePrimary(pDevExt, pSource, VidPnSourceId);
+            AssertRC(rc);
+            if (RT_FAILURE(rc))
+            {
+                int tmpRc = vboxVhwaDisable(pDevExt, VidPnSourceId);
+                AssertRC(tmpRc);
+            }
+        }
     }
     else
     {

@@ -36,6 +36,8 @@
 
 #define VBOXWDDMDISP_WITH_TMPWORKAROUND 1
 
+#define VBOXWDDMOVERLAY_TEST
+
 static FORMATOP gVBoxFormatOps3D[] = {
     {D3DDDIFMT_A8R8G8B8,
         FORMATOP_TEXTURE|FORMATOP_VOLUMETEXTURE|FORMATOP_CUBETEXTURE|FORMATOP_OFFSCREEN_RENDERTARGET|
@@ -3010,7 +3012,10 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                     pAllocInfo->SurfDesc.width = pSurf->Width;
                     pAllocInfo->SurfDesc.height = pSurf->Height;
                     pAllocInfo->SurfDesc.format = pResource->Format;
-                    pAllocInfo->SurfDesc.bpp = vboxWddmCalcBitsPerPixel(pResource->Format);
+                    if (!vboxWddmFormatToFourcc(pResource->Format))
+                        pAllocInfo->SurfDesc.bpp = vboxWddmCalcBitsPerPixel(pResource->Format);
+                    else
+                        pAllocInfo->SurfDesc.bpp = 0;
 
                     if (pSurf->SysMemPitch)
                     {
@@ -3138,17 +3143,45 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
     Assert(pDevice);
-    Assert(pDevice->pDevice9If);
-#if 0
-    HRESULT hr = pDevice->pDevice9If->Present(NULL, /* CONST RECT * pSourceRect */
-            NULL, /* CONST RECT * pDestRect */
-            NULL, /* HWND hDestWindowOverride */
-            NULL /*CONST RGNDATA * pDirtyRegion */
-            );
-    Assert(hr == S_OK);
-#else
     HRESULT hr = S_OK;
+    if (VBOXDISPMODE_IS_3D(pDevice->pAdapter))
+    {
+        Assert(pDevice->pDevice9If);
+#if 0
+        hr = pDevice->pDevice9If->Present(NULL, /* CONST RECT * pSourceRect */
+                NULL, /* CONST RECT * pDestRect */
+                NULL, /* HWND hDestWindowOverride */
+                NULL /*CONST RGNDATA * pDirtyRegion */
+                );
+        Assert(hr == S_OK);
 #endif
+    }
+    else
+    {
+        D3DDDICB_PRESENT DdiPresent = {0};
+        if (pData->hSrcResource)
+        {
+            PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hSrcResource;
+            Assert(pRc->cAllocations > pData->SrcSubResourceIndex);
+            PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->SrcSubResourceIndex];
+            Assert(pAlloc->hAllocation);
+            DdiPresent.hSrcAllocation = pAlloc->hAllocation;
+        }
+        if (pData->hDstResource)
+        {
+            PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hDstResource;
+            Assert(pRc->cAllocations > pData->DstSubResourceIndex);
+            PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->DstSubResourceIndex];
+            Assert(pAlloc->hAllocation);
+            DdiPresent.hDstAllocation = pAlloc->hAllocation;
+        }
+        DdiPresent.hContext = pDevice->DefaultContext.ContextInfo.hContext;
+//        DdiPresent.BroadcastContextCount;
+//        DdiPresent.BroadcastContext[D3DDDI_MAX_BROADCAST_CONTEXT];
+
+        hr = pDevice->RtCallbacks.pfnPresentCb(pDevice->hDevice, &DdiPresent);
+        Assert(hr == S_OK);
+    }
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
 }
@@ -3654,6 +3687,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateOverlay(HANDLE hDevice, D3DDDIARG_CREA
         OverInfo.OverlayInfo.pPrivateDriverData = &OurInfo;
         OverInfo.OverlayInfo.PrivateDriverDataSize = sizeof (OurInfo);
         OverInfo.hKernelOverlay = NULL; /* <-- out */
+#ifndef VBOXWDDMOVERLAY_TEST
         hr = pDevice->RtCallbacks.pfnCreateOverlayCb(pDevice->hDevice, &OverInfo);
         Assert(hr == S_OK);
         if (hr == S_OK)
@@ -3675,6 +3709,9 @@ static HRESULT APIENTRY vboxWddmDDevCreateOverlay(HANDLE hDevice, D3DDDIARG_CREA
         {
             RTMemFree(pOverlay);
         }
+#else
+        pData->hOverlay = pOverlay;
+#endif
     }
     else
         hr = E_OUTOFMEMORY;
@@ -3708,9 +3745,11 @@ static HRESULT APIENTRY vboxWddmDDevUpdateOverlay(HANDLE hDevice, CONST D3DDDIAR
     OverInfo.OverlayInfo.SrcRect = *(D3DDDIRECT*)((void*)&pData->OverlayInfo.SrcRect);
     OverInfo.OverlayInfo.pPrivateDriverData = &OurInfo;
     OverInfo.OverlayInfo.PrivateDriverDataSize = sizeof (OurInfo);
+#ifndef VBOXWDDMOVERLAY_TEST
     hr = pDevice->RtCallbacks.pfnUpdateOverlayCb(pDevice->hDevice, &OverInfo);
     Assert(hr == S_OK);
     if (hr == S_OK)
+#endif
     {
         Assert(!pAlloc->LockInfo.cLocks);
         if (!pAlloc->LockInfo.cLocks)
@@ -3742,9 +3781,11 @@ static HRESULT APIENTRY vboxWddmDDevFlipOverlay(HANDLE hDevice, CONST D3DDDIARG_
     OverInfo.hSource = pAlloc->hAllocation;
     OverInfo.pPrivateDriverData = &OurInfo;
     OverInfo.PrivateDriverDataSize = sizeof (OurInfo);
+#ifndef VBOXWDDMOVERLAY_TEST
     hr = pDevice->RtCallbacks.pfnFlipOverlayCb(pDevice->hDevice, &OverInfo);
     Assert(hr == S_OK);
     if (hr == S_OK)
+#endif
     {
         Assert(!pAlloc->LockInfo.cLocks);
         if (!pAlloc->LockInfo.cLocks)
@@ -3778,9 +3819,13 @@ static HRESULT APIENTRY vboxWddmDDevDestroyOverlay(HANDLE hDevice, CONST D3DDDIA
     PVBOXWDDMDISP_OVERLAY pOverlay = (PVBOXWDDMDISP_OVERLAY)pData->hOverlay;
     D3DDDICB_DESTROYOVERLAY OverInfo;
     OverInfo.hKernelOverlay = pOverlay->hOverlay;
+#ifndef VBOXWDDMOVERLAY_TEST
     HRESULT hr = pDevice->RtCallbacks.pfnDestroyOverlayCb(pDevice->hDevice, &OverInfo);
     Assert(hr == S_OK);
     if (hr == S_OK)
+#else
+    HRESULT hr = S_OK;
+#endif
     {
         RTMemFree(pOverlay);
     }
