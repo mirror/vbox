@@ -733,7 +733,11 @@ public:
     bool operator== (const CInterface &that) const { return mIface == that.mIface; }
     bool operator!= (const CInterface &that) const { return mIface != that.mIface; }
 
-protected:
+/**
+ * @todo: rethink if we'll ever need 'protected' back, removed to allow mIface access in rather
+ *        nontrivial inheritance situations, see 'friend wrappers' code in COMWrappers.xsl
+ */
+//protected:
 
     mutable I *mIface;
 };
