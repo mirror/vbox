@@ -585,6 +585,14 @@ static int drvvdCfgQuery(void *pvUser, const char *pszName, char *pszString, siz
 *   VD TCP network stack interface implementation - INIP case                  *
 *******************************************************************************/
 
+typedef union INIPSOCKADDRUNION
+{
+    struct sockaddr     Addr;
+    struct sockaddr_in  Ipv4;
+} INIPSOCKADDRUNION;
+
+static DECLCALLBACK(int) drvvdINIPFlush(RTSOCKET Sock);
+
 /** @copydoc VDINTERFACETCPNET::pfnClientConnect */
 static DECLCALLBACK(int) drvvdINIPClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCKET pSock)
 {
@@ -604,7 +612,7 @@ static DECLCALLBACK(int) drvvdINIPClientConnect(const char *pszAddress, uint32_t
         return VERR_NET_HOST_UNREACHABLE;
     }
     /* Create socket and connect. */
-    RTSOCKET Sock = lwip_socket(PF_INET, SOCK_STREAM, 0);
+    int Sock = lwip_socket(PF_INET, SOCK_STREAM, 0);
     if (Sock != -1)
     {
         struct sockaddr_in InAddr = {0};
@@ -613,7 +621,7 @@ static DECLCALLBACK(int) drvvdINIPClientConnect(const char *pszAddress, uint32_t
         InAddr.sin_addr = ip;
         if (!lwip_connect(Sock, (struct sockaddr *)&InAddr, sizeof(InAddr)))
         {
-            *pSock = Sock;
+            *pSock = (RTSOCKET)Sock;
             return VINF_SUCCESS;
         }
         rc = VERR_NET_CONNECTION_REFUSED; /* @todo real solution needed */
@@ -627,7 +635,7 @@ static DECLCALLBACK(int) drvvdINIPClientConnect(const char *pszAddress, uint32_t
 /** @copydoc VDINTERFACETCPNET::pfnClientClose */
 static DECLCALLBACK(int) drvvdINIPClientClose(RTSOCKET Sock)
 {
-    lwip_close(Sock);
+    lwip_close((uintptr_t)Sock);
     return VINF_SUCCESS; /** @todo real solution needed */
 }
 
@@ -636,18 +644,18 @@ static DECLCALLBACK(int) drvvdINIPSelectOne(RTSOCKET Sock, RTMSINTERVAL cMillies
 {
     fd_set fdsetR;
     FD_ZERO(&fdsetR);
-    FD_SET(Sock, &fdsetR);
+    FD_SET((uintptr_t)Sock, &fdsetR);
     fd_set fdsetE = fdsetR;
 
     int rc;
     if (cMillies == RT_INDEFINITE_WAIT)
-        rc = lwip_select(Sock + 1, &fdsetR, NULL, &fdsetE, NULL);
+        rc = lwip_select((uintptr_t)Sock + 1, &fdsetR, NULL, &fdsetE, NULL);
     else
     {
         struct timeval timeout;
         timeout.tv_sec = cMillies / 1000;
         timeout.tv_usec = (cMillies % 1000) * 1000;
-        rc = lwip_select(Sock + 1, &fdsetR, NULL, &fdsetE, &timeout);
+        rc = lwip_select((uintptr_t)Sock + 1, &fdsetR, NULL, &fdsetE, &timeout);
     }
     if (rc > 0)
         return VINF_SUCCESS;
@@ -677,7 +685,7 @@ static DECLCALLBACK(int) drvvdINIPRead(RTSOCKET Sock, void *pvBuffer, size_t cbB
         /** @todo this clipping here is just in case (the send function
          * needed it, so I added it here, too). Didn't investigate if this
          * really has issues. Better be safe than sorry. */
-        ssize_t cbBytesRead = lwip_recv(Sock, (char *)pvBuffer + cbRead,
+        ssize_t cbBytesRead = lwip_recv((uintptr_t)Sock, (char *)pvBuffer + cbRead,
                                         RT_MIN(cbToRead, 32768), 0);
         if (cbBytesRead < 0)
             return VERR_NET_CONNECTION_REFUSED; /** @todo real solution */
@@ -711,7 +719,7 @@ static DECLCALLBACK(int) drvvdINIPWrite(RTSOCKET Sock, const void *pvBuffer, siz
          * send (stupid limitation buried in the code), so make sure we
          * don't get any wraparounds. This should be moved to DevINIP
          * stack interface once that's implemented. */
-        ssize_t cbWritten = lwip_send(Sock, (void *)pvBuffer,
+        ssize_t cbWritten = lwip_send((uintptr_t)Sock, (void *)pvBuffer,
                                       RT_MIN(cbBuffer, 32768), 0);
         if (cbWritten < 0)
             return VERR_NET_CONNECTION_REFUSED; /** @todo real solution needed */
@@ -724,14 +732,43 @@ static DECLCALLBACK(int) drvvdINIPWrite(RTSOCKET Sock, const void *pvBuffer, siz
     return VINF_SUCCESS;
 }
 
+/** @copydoc VDINTERFACETCPNET::pfnSgWrite */
+static DECLCALLBACK(int) drvvdINIPSgWrite(RTSOCKET Sock, PCRTSGBUF pSgBuf)
+{
+    int rc = VINF_SUCCESS;
+
+    /* This is an extremely crude emulation, however it's good enough
+     * for our iSCSI code. INIP has no sendmsg(). */
+    for (unsigned i = 0; i < pSgBuf->cSeg; i++)
+    {
+        rc = drvvdINIPWrite(Sock, pSgBuf->pcaSeg[i].pvSeg,
+                            pSgBuf->pcaSeg[i].cbSeg);
+        if (RT_FAILURE(rc))
+            break;
+    }
+    if (RT_SUCCESS(rc))
+        drvvdINIPFlush(Sock);
+
+    return rc;
+}
+
 /** @copydoc VDINTERFACETCPNET::pfnFlush */
 static DECLCALLBACK(int) drvvdINIPFlush(RTSOCKET Sock)
 {
     int fFlag = 1;
-    lwip_setsockopt(Sock, IPPROTO_TCP, TCP_NODELAY,
+    lwip_setsockopt((uintptr_t)Sock, IPPROTO_TCP, TCP_NODELAY,
                     (const char *)&fFlag, sizeof(fFlag));
     fFlag = 0;
-    lwip_setsockopt(Sock, IPPROTO_TCP, TCP_NODELAY,
+    lwip_setsockopt((uintptr_t)Sock, IPPROTO_TCP, TCP_NODELAY,
+                    (const char *)&fFlag, sizeof(fFlag));
+    return VINF_SUCCESS;
+}
+
+/** @copydoc VDINTERFACETCPNET::pfnSetSendCoalescing */
+static DECLCALLBACK(int) drvvdINIPSetSendCoalescing(RTSOCKET Sock, bool fEnable)
+{
+    int fFlag = fEnable ? 0 : 1;
+    lwip_setsockopt((uintptr_t)Sock, IPPROTO_TCP, TCP_NODELAY,
                     (const char *)&fFlag, sizeof(fFlag));
     return VINF_SUCCESS;
 }
@@ -739,14 +776,10 @@ static DECLCALLBACK(int) drvvdINIPFlush(RTSOCKET Sock)
 /** @copydoc VDINTERFACETCPNET::pfnGetLocalAddress */
 static DECLCALLBACK(int) drvvdINIPGetLocalAddress(RTSOCKET Sock, PRTNETADDR pAddr)
 {
-   union
-    {
-        struct sockaddr     Addr;
-        struct sockaddr_in  Ipv4;
-    }               u;
-    socklen_t       cbAddr = sizeof(u);
+    INIPSOCKADDRUNION u;
+    socklen_t cbAddr = sizeof(u);
     RT_ZERO(u);
-    if (!lwip_getsockname(Sock, &u.Addr, &cbAddr))
+    if (!lwip_getsockname((uintptr_t)Sock, &u.Addr, &cbAddr))
     {
         /*
          * Convert the address.
@@ -769,14 +802,10 @@ static DECLCALLBACK(int) drvvdINIPGetLocalAddress(RTSOCKET Sock, PRTNETADDR pAdd
 /** @copydoc VDINTERFACETCPNET::pfnGetPeerAddress */
 static DECLCALLBACK(int) drvvdINIPGetPeerAddress(RTSOCKET Sock, PRTNETADDR pAddr)
 {
-   union
-    {
-        struct sockaddr     Addr;
-        struct sockaddr_in  Ipv4;
-    }               u;
-    socklen_t       cbAddr = sizeof(u);
+    INIPSOCKADDRUNION u;
+    socklen_t cbAddr = sizeof(u);
     RT_ZERO(u);
-    if (!lwip_getpeername(Sock, &u.Addr, &cbAddr))
+    if (!lwip_getpeername((uintptr_t)Sock, &u.Addr, &cbAddr))
     {
         /*
          * Convert the address.
@@ -1385,7 +1414,9 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             pThis->VDITcpNetCallbacks.pfnSelectOne = RTTcpSelectOne;
             pThis->VDITcpNetCallbacks.pfnRead = RTTcpRead;
             pThis->VDITcpNetCallbacks.pfnWrite = RTTcpWrite;
+            pThis->VDITcpNetCallbacks.pfnSgWrite = RTTcpSgWrite;
             pThis->VDITcpNetCallbacks.pfnFlush = RTTcpFlush;
+            pThis->VDITcpNetCallbacks.pfnSetSendCoalescing = RTTcpSetSendCoalescing;
             pThis->VDITcpNetCallbacks.pfnGetLocalAddress = RTTcpGetLocalAddress;
             pThis->VDITcpNetCallbacks.pfnGetPeerAddress = RTTcpGetPeerAddress;
         }
@@ -1402,7 +1433,9 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             pThis->VDITcpNetCallbacks.pfnSelectOne = drvvdINIPSelectOne;
             pThis->VDITcpNetCallbacks.pfnRead = drvvdINIPRead;
             pThis->VDITcpNetCallbacks.pfnWrite = drvvdINIPWrite;
+            pThis->VDITcpNetCallbacks.pfnSgWrite = drvvdINIPSgWrite;
             pThis->VDITcpNetCallbacks.pfnFlush = drvvdINIPFlush;
+            pThis->VDITcpNetCallbacks.pfnSetSendCoalescing = drvvdINIPSetSendCoalescing;
             pThis->VDITcpNetCallbacks.pfnGetLocalAddress = drvvdINIPGetLocalAddress;
             pThis->VDITcpNetCallbacks.pfnGetPeerAddress = drvvdINIPGetPeerAddress;
 #endif /* VBOX_WITH_INIP */

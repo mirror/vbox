@@ -149,11 +149,8 @@ endif
 ifdef VBOX_WITH_AHCI
  VBoxDD_DEFS           += VBOX_WITH_AHCI
 endif
-ifdef VBOX_WITH_ISCSI
- VBoxDD_DEFS           += VBOX_WITH_ISCSI
- ifdef VBOX_WITH_INIP
-  VBoxDD_DEFS          += VBOX_WITH_INIP
- endif
+ifdef VBOX_WITH_INIP
+ VBoxDD_DEFS           += VBOX_WITH_INIP
 endif
 ifdef VBOX_WITH_E1000
  VBoxDD_DEFS           += VBOX_WITH_E1000
@@ -817,6 +814,9 @@ Drivers_DEFS.win       += _WIN32_WINNT=0x0510
 Drivers_DEFS            = IN_IDE_R3
 ifdef VBOX_WITH_NETFLT
 Drivers_DEFS           += VBOX_WITH_NETFLT
+endif
+ifdef VBOX_WITH_INIP
+Drivers_DEFS           += VBOX_WITH_INIP
 endif
 ifdef VBOX_WITH_DRV_DISK_INTEGRITY
 Drivers_DEFS           += VBOX_WITH_DRV_DISK_INTEGRITY

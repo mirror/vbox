@@ -218,6 +218,9 @@ typedef enum ISCSIOPCODE
 /** ISCSI BHS word 0: response includes status. */
 #define ISCSI_STATUS_BIT 0x00010000
 
+/** Maximum number of scatter/gather segments needed to send a PDU. */
+#define ISCSI_SG_SEGMENTS_MAX 4
+
 
 /**
  * iSCSI login status class. */
@@ -548,6 +551,9 @@ static int iscsiTransportConnect(PISCSIIMAGE pImage)
         return rc;
     }
 
+    /* Disable Nagle algorithm, we want things to be sent immediately. */
+    pImage->pInterfaceNetCallbacks->pfnSetSendCoalescing(pImage->Socket, false);
+
     /* Make initiator name and ISID unique on this host. */
     RTNETADDR LocalAddr;
     rc = pImage->pInterfaceNetCallbacks->pfnGetLocalAddress(pImage->Socket,
@@ -713,27 +719,39 @@ static int iscsiTransportWrite(PISCSIIMAGE pImage, PISCSIREQ paRequest, unsigned
 
     if (RT_SUCCESS(rc))
     {
+        /* Construct scatter/gather buffer for entire request, worst case
+         * needs twice as many entries to allow for padding. */
+        unsigned cBuf = 0;
         for (i = 0; i < cnRequest; i++)
         {
-            /* Write one chunk of data. */
-            rc = pImage->pInterfaceNetCallbacks->pfnWrite(pImage->Socket,
-                                                          paRequest[i].pcvSeg,
-                                                          paRequest[i].cbSeg);
-            if (RT_FAILURE(rc))
-                break;
-            /* Insert proper padding before the next chunk us written. */
+            cBuf++;
+            if (paRequest[i].cbSeg & 3)
+                cBuf++;
+        }
+        Assert(cBuf < ISCSI_SG_SEGMENTS_MAX);
+        RTSGBUF buf;
+        RTSGSEG aSeg[ISCSI_SG_SEGMENTS_MAX];
+        static char aPad[4] = { 0, 0, 0, 0 };
+        RTSgBufInit(&buf, &aSeg[0], cBuf);
+        unsigned iBuf = 0;
+        for (i = 0; i < cnRequest; i++)
+        {
+            /* Actual data chunk. */
+            aSeg[iBuf].pvSeg = (void *)paRequest[i].pcvSeg;
+            aSeg[iBuf].cbSeg = paRequest[i].cbSeg;
+            iBuf++;
+            /* Insert proper padding before the next chunk. */
             if (paRequest[i].cbSeg & 3)
             {
-                rc = pImage->pInterfaceNetCallbacks->pfnWrite(pImage->Socket,
-                                                              &pad,
-                                                              4 - (paRequest[i].cbSeg & 3));
-                if (RT_FAILURE(rc))
-                    break;
+                aSeg[iBuf].pvSeg = &aPad[0];
+                aSeg[iBuf].cbSeg = 4 - (paRequest[i].cbSeg & 3);
+                iBuf++;
             }
         }
-        /* Send out the request as soon as possible, otherwise the target will
-         * answer after an unnecessary delay. */
-        pImage->pInterfaceNetCallbacks->pfnFlush(pImage->Socket);
+        /* Send out the request, the socket is set to send data immediately,
+         * avoiding unnecessary delays. */
+        rc = pImage->pInterfaceNetCallbacks->pfnSgWrite(pImage->Socket, &buf);
+
     }
 
     if (RT_UNLIKELY(    RT_FAILURE(rc)

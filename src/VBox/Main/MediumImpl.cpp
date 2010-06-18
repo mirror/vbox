@@ -672,7 +672,9 @@ HRESULT Medium::FinalConstruct()
     m->vdIfCallsTcpNet.pfnSelectOne = RTTcpSelectOne;
     m->vdIfCallsTcpNet.pfnRead = RTTcpRead;
     m->vdIfCallsTcpNet.pfnWrite = RTTcpWrite;
+    m->vdIfCallsTcpNet.pfnSgWrite = RTTcpSgWrite;
     m->vdIfCallsTcpNet.pfnFlush = RTTcpFlush;
+    m->vdIfCallsTcpNet.pfnSetSendCoalescing = RTTcpSetSendCoalescing;
     m->vdIfCallsTcpNet.pfnGetLocalAddress = RTTcpGetLocalAddress;
     m->vdIfCallsTcpNet.pfnGetPeerAddress = RTTcpGetPeerAddress;
 
