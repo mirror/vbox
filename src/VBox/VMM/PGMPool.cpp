@@ -595,10 +595,11 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
  * @returns VINF_SUCCESS (VBox strict status code).
  * @param   pVM     The VM handle.
  * @param   pVCpu   The VMCPU for the EMT we're being called on. Unused.
- * @param   pvUser  Unused parameter.
+ * @param   fpvFlushRemTlb  When not NULL, we'll flush the REM TLB as well.
+ *                          (This is the pvUser, so it has to be void *.)
  *
  */
-DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
+DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, void *fpvFlushRemTbl)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     STAM_PROFILE_START(&pPool->StatClearAll, c);
@@ -789,10 +790,15 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
 
     /* Flush job finished. */
     VM_FF_CLEAR(pVM, VM_FF_PGM_POOL_FLUSH_PENDING);
-
     pPool->cPresent = 0;
     pgmUnlock(pVM);
+
     PGM_INVL_ALL_VCPU_TLBS(pVM);
+
+    if (fpvFlushRemTbl)
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+            CPUMSetChangedFlags(&pVM->aCpus[idCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
+
     STAM_PROFILE_STOP(&pPool->StatClearAll, c);
     return VINF_SUCCESS;
 }
@@ -801,11 +807,13 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
 /**
  * Clears the shadow page pool.
  *
- * @param   pVM         The VM handle.
+ * @param   pVM             The VM handle.
+ * @param   fFlushRemTlb    When set, the REM TLB is scheduled for flushing as
+ *                          well.
  */
-void pgmR3PoolClearAll(PVM pVM)
+void pgmR3PoolClearAll(PVM pVM, bool fFlushRemTlb)
 {
-    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PoolClearAllRendezvous, NULL);
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PoolClearAllRendezvous, &fFlushRemTlb);
     AssertRC(rc);
 }
 

@@ -3401,8 +3401,8 @@ int             pgmR3PoolInit(PVM pVM);
 void            pgmR3PoolRelocate(PVM pVM);
 void            pgmR3PoolResetUnpluggedCpu(PVM pVM, PVMCPU pVCpu);
 void            pgmR3PoolReset(PVM pVM);
-void            pgmR3PoolClearAll(PVM pVM);
-DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser);
+void            pgmR3PoolClearAll(PVM pVM, bool fFlushRemTlb);
+DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, void *fpvFlushRemTbl);
 
 #endif /* IN_RING3 */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
