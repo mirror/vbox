@@ -238,7 +238,7 @@ int rtPathFromNative(const char **ppszPath, const char *pszNativePath, const cha
 void rtPathFreeIprt(const char *pszPath, const char *pszNativePath)
 {
     if (   pszPath != pszNativePath
-        && !pszPath)
+        && pszPath)
         RTStrFree((char *)pszPath);
 }
 
