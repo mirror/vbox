@@ -1162,9 +1162,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
              */
             Assert(pgmMapAreMappingsEnabled(&pVM->pgm.s));
             Assert(PGMGetGuestMode(pVCpu) <= PGMMODE_PAE);
-            pgmLock(pVM);
             rc = PGM_BTH_NAME(SyncPT)(pVCpu, iPDSrc, pPDSrc, GCPtrPage);
-            pgmUnlock(pVM);
         }
         else
 # endif /* !PGM_WITHOUT_MAPPING */
