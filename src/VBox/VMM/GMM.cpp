@@ -305,6 +305,7 @@ GMMR3DECL(int)  GMMR3QueryHypervisorMemoryStats(PVM pVM, uint64_t *pcTotalAllocP
     *puTotalBalloonSize  = 0;
 
     /* Must be callable from any thread, so can't use VMMR3CallR0. */
+    /** @todo Shouldn't we use NIL_VMCPUID here?  */
     int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0, VMMR0_DO_GMM_QUERY_HYPERVISOR_MEM_STATS, 0, &Req.Hdr);
     if (rc == VINF_SUCCESS)
     {
