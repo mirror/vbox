@@ -39,13 +39,11 @@
 #include "UIMachineViewSeamless.h"
 
 UIMachineViewSeamless::UIMachineViewSeamless(  UIMachineWindow *pMachineWindow
-                                             , VBoxDefs::RenderMode renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                              , bool bAccelerate2DVideo
 #endif
                                              , ulong uMonitor)
     : UIMachineView(  pMachineWindow
-                    , renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
                     , bAccelerate2DVideo
 #endif

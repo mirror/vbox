@@ -109,7 +109,6 @@ enum { KeyExtended = 0x01, KeyPressed = 0x02, KeyPause = 0x04, KeyPrint = 0x08 }
 enum { IsKeyPressed = 0x01, IsExtKeyPressed = 0x02, IsKbdCaptured = 0x80 };
 
 UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
-                                     , VBoxDefs::RenderMode renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                      , bool bAccelerate2DVideo
 #endif
@@ -121,7 +120,6 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
     {
         case UIVisualStateType_Normal:
             view = new UIMachineViewNormal(  pMachineWindow
-                                           , renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                            , bAccelerate2DVideo
 #endif
@@ -129,7 +127,6 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
             break;
         case UIVisualStateType_Fullscreen:
             view = new UIMachineViewFullscreen(  pMachineWindow
-                                               , renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                                , bAccelerate2DVideo
 #endif
@@ -137,7 +134,6 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
             break;
         case UIVisualStateType_Seamless:
             view = new UIMachineViewSeamless(  pMachineWindow
-                                             , renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                              , bAccelerate2DVideo
 #endif
@@ -195,7 +191,6 @@ void UIMachineView::setMouseIntegrationEnabled(bool fEnabled)
 }
 
 UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
-                             , VBoxDefs::RenderMode renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
                              , bool bAccelerate2DVideo
 #endif
@@ -204,7 +199,6 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
 //    : QAbstractScrollArea(((QMainWindow*)pMachineWindow->machineWindow())->centralWidget())
     : QAbstractScrollArea(pMachineWindow->machineWindow())
     , m_pMachineWindow(pMachineWindow)
-    , m_mode(renderMode)
     , m_uScreenId(uScreenId)
     , m_globalSettings(vboxGlobal().settings())
     , m_pFrameBuffer(0)
@@ -463,7 +457,7 @@ void UIMachineView::prepareFrameBuffer()
     /* Prepare viewport: */
 #ifdef VBOX_GUI_USE_QGLFB
     QWidget *pViewport;
-    switch (mode())
+    switch (vboxGlobal().vmRenderMode())
     {
         case VBoxDefs::QGLMode:
             pViewport = new VBoxGLWidget(session().GetConsole(), this, NULL);
@@ -480,7 +474,7 @@ void UIMachineView::prepareFrameBuffer()
     Assert(!display.isNull());
     m_pFrameBuffer = NULL;
 
-    switch (mode())
+    switch (vboxGlobal().vmRenderMode())
     {
 #ifdef VBOX_GUI_USE_QIMAGE
         case VBoxDefs::QImageMode:
@@ -589,8 +583,8 @@ void UIMachineView::prepareFrameBuffer()
             break;
 #endif /* VBOX_GUI_USE_QUARTZ2D */
         default:
-            AssertReleaseMsgFailed(("Render mode must be valid: %d\n", mode()));
-            LogRel(("Invalid render mode: %d\n", mode()));
+            AssertReleaseMsgFailed(("Render mode must be valid: %d\n", vboxGlobal().vmRenderMode()));
+            LogRel(("Invalid render mode: %d\n", vboxGlobal().vmRenderMode()));
             qApp->exit(1);
             break;
     }
@@ -1160,7 +1154,7 @@ void UIMachineView::sltMachineStateChanged()
         case KMachineState_Paused:
         case KMachineState_TeleportingPausedVM:
         {
-            if (mode() != VBoxDefs::TimerMode &&  m_pFrameBuffer &&
+            if (vboxGlobal().vmRenderMode() != VBoxDefs::TimerMode &&  m_pFrameBuffer &&
                 (state != KMachineState_TeleportingPausedVM || m_previousState != KMachineState_Teleporting))
             {
                 /* Take a screen snapshot. Note that TakeScreenShot() always needs a 32bpp image: */
@@ -1197,7 +1191,7 @@ void UIMachineView::sltMachineStateChanged()
                 || m_previousState == KMachineState_TeleportingPausedVM
                 || m_previousState == KMachineState_Restoring)
             {
-                if (mode() != VBoxDefs::TimerMode && m_pFrameBuffer)
+                if (vboxGlobal().vmRenderMode() != VBoxDefs::TimerMode && m_pFrameBuffer)
                 {
                     /* Reset the pixmap to free memory: */
                     m_pauseShot = QPixmap();
@@ -1709,7 +1703,7 @@ bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlo
     else /* !uisession()->isMouseCaptured() */
     {
 #if 0 // TODO: Move that to fullscreen event-hjadler:
-        if (mode() != VBoxDefs::SDLMode)
+        if (vboxGlobal().vmRenderMode() != VBoxDefs::SDLMode)
         {
             /* try to automatically scroll the guest canvas if the
              * mouse is on the screen border */
@@ -1736,7 +1730,7 @@ bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlo
             int cw = contentsWidth(), ch = contentsHeight();
             int vw = visibleWidth(), vh = visibleHeight();
 
-            if (mode() != VBoxDefs::SDLMode)
+            if (vboxGlobal().vmRenderMode() != VBoxDefs::SDLMode)
             {
                 /* Try to automatically scroll the guest canvas if the
                  * mouse goes outside its visible part: */
@@ -1832,7 +1826,7 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
     }
 
 #ifdef VBOX_GUI_USE_QUARTZ2D
-    if (mode() == VBoxDefs::Quartz2DMode && m_pFrameBuffer)
+    if (vboxGlobal().vmRenderMode() == VBoxDefs::Quartz2DMode && m_pFrameBuffer)
     {
         m_pFrameBuffer->paintEvent(pPaintEvent);
         updateDockIcon();
@@ -2677,7 +2671,7 @@ CGImageRef UIMachineView::vmContentImage()
     else
     {
 # ifdef VBOX_GUI_USE_QUARTZ2D
-        if (mode() == VBoxDefs::Quartz2DMode)
+        if (vboxGlobal().vmRenderMode() == VBoxDefs::Quartz2DMode)
         {
             /* If the render mode is Quartz2D we could use the CGImageRef
              * of the framebuffer for the dock icon creation. This saves

@@ -28,9 +28,8 @@ class UIMachineViewNormal : public UIMachineView
 
 protected:
 
-    /* Normal machine view constructor/destructor: */
+    /* Normal machine-view constructor/destructor: */
     UIMachineViewNormal(  UIMachineWindow *pMachineWindow
-                        , VBoxDefs::RenderMode renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
                         , bool bAccelerate2DVideo
 #endif
