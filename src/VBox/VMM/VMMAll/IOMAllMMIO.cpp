@@ -286,16 +286,10 @@ DECLINLINE(int) iomRamWrite(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDs
     /** @todo Need to update PGMVerifyAccess to take access handlers into account for Ring-0 and
      *        raw mode code. Some thought needs to be spent on theoretical concurrency issues as
      *        as well since we're not behind the pgm lock and handler may change between calls.
-     *        MMGCRamWriteNoTrapHandler may also trap if the page isn't shadowed, or was kicked
-     *        out from both the shadow pt (SMP or our changes) and TLB.
      *
-     *        Currently MMGCRamWriteNoTrapHandler may also fail when it hits a write access handler.
-     *        PGMPhysInterpretedWriteNoHandlers/PGMPhysWriteGCPtr OTOH may mess up the state
-     *        of some shadowed structure in R0. */
-#ifdef IN_RC
-    NOREF(pCtxCore);
-    return MMGCRamWriteNoTrapHandler((void *)(uintptr_t)GCPtrDst, pvSrc, cb);
-#elif IN_RING0
+     *        PGMPhysInterpretedWriteNoHandlers/PGMPhysWriteGCPtr may mess up
+     *        the state of some shadowed structures. */
+#if defined(IN_RING0) || defined(IN_RC)
     return PGMPhysInterpretedWriteNoHandlers(pVCpu, pCtxCore, GCPtrDst, pvSrc, cb, false /*fRaiseTrap*/);
 #else
     NOREF(pCtxCore);

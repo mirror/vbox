@@ -3450,6 +3450,9 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
      * 3. Do the write operation.
      * 4. Set access bits if required.
      */
+    /** @todo Since this method is frequently used by EMInterpret or IOM
+     *        upon a write fault to an write access monitored page, we can
+     *        reuse the guest page table walking from the \#PF code. */
     int rc;
     unsigned cb1 = PAGE_SIZE - (GCPtrDst & PAGE_OFFSET_MASK);
     if (cb <= cb1)

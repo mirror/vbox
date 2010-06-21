@@ -186,6 +186,8 @@ VMMDECL(uint32_t)   EMEmulateCmpXchg(void *pvParam1, uint64_t *pu32Param2, uint6
 VMMDECL(uint32_t)   EMEmulateLockCmpXchg(void *pvParam1, uint64_t *pu64Param2, uint64_t u64Param3, size_t cbSize);
 VMMDECL(uint32_t)   EMEmulateCmpXchg8b(void *pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX);
 VMMDECL(uint32_t)   EMEmulateLockCmpXchg8b(void *pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX);
+VMMDECL(uint32_t)   EMEmulateXAdd(void *pvParam1, void *pvParam2, size_t cbOp);
+VMMDECL(uint32_t)   EMEmulateLockXAdd(void *pvParam1, void *pvParam2, size_t cbOp);
 /** @} */
 
 /** @name REM locking routines
@@ -245,12 +247,6 @@ VMMR3DECL(int)      EMR3RawSetMode(PVM pVM, EMRAWMODE enmMode);
  * @{
  */
 VMMRCDECL(int)      EMGCTrap(PVM pVM, unsigned uTrap, PCPUMCTXCORE pRegFrame);
-VMMRCDECL(uint32_t) EMGCEmulateLockCmpXchg(RTRCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize, uint32_t *pEflags);
-VMMRCDECL(uint32_t) EMGCEmulateCmpXchg(RTRCPTR pu32Param1, uint32_t *pu32Param2, uint32_t u32Param3, size_t cbSize, uint32_t *pEflags);
-VMMRCDECL(uint32_t) EMGCEmulateLockCmpXchg8b(RTRCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX, uint32_t *pEflags);
-VMMRCDECL(uint32_t) EMGCEmulateCmpXchg8b(RTRCPTR pu32Param1, uint32_t *pEAX, uint32_t *pEDX, uint32_t uEBX, uint32_t uECX, uint32_t *pEflags);
-VMMRCDECL(uint32_t) EMGCEmulateLockXAdd(RTRCPTR pu32Param1, uint32_t *pu32Param2, size_t cbSize, uint32_t *pEflags);
-VMMRCDECL(uint32_t) EMGCEmulateXAdd(RTRCPTR pu32Param1, uint32_t *pu32Param2, size_t cbSize, uint32_t *pEflags);
 /** @} */
 #endif /* IN_RC */
 

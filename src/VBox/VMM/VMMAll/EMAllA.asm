@@ -23,7 +23,7 @@
 %include "VBox/x86.mac"
 
 ;; @def MY_PTR_REG
-; The register we use for value pointers (And,Or,Dec,Inc).
+; The register we use for value pointers (And,Or,Dec,Inc,XAdd).
 %ifdef RT_ARCH_AMD64
  %define MY_PTR_REG     rcx
 %else
@@ -292,15 +292,6 @@ BITS 64
     dd      .done, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-
-
-%ifdef IN_RC
-; #PF resume point.
-GLOBALNAME EMEmulateLockAnd_Error
-    mov     eax, VERR_ACCESS_DENIED
-    ret
-%endif
-
 ENDPROC     EMEmulateLockAnd
 
 ;;
@@ -470,15 +461,6 @@ BITS 64
     dd      .done, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-
-
-%ifdef IN_RC
-; #PF resume point.
-GLOBALNAME EMEmulateLockOr_Error
-    mov     eax, VERR_ACCESS_DENIED
-    ret
-%endif
-
 ENDPROC     EMEmulateLockOr
 
 
@@ -648,15 +630,6 @@ BITS 64
     dd      .done, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-
-
-%ifdef IN_RC
-; #PF resume point.
-GLOBALNAME EMEmulateLockXor_Error
-    mov     eax, VERR_ACCESS_DENIED
-    ret
-%endif
-
 ENDPROC     EMEmulateLockXor
 
 ;;
@@ -1096,14 +1069,6 @@ BEGINPROC   EMEmulateLockBtr
     mov     [xAX], edx
     mov     eax, VINF_SUCCESS
     retn
-
-%ifdef IN_RC
-; #PF resume point.
-GLOBALNAME EMEmulateLockBtr_Error
-    mov     eax, VERR_ACCESS_DENIED
-    ret
-%endif
-
 ENDPROC     EMEmulateLockBtr
 
 
@@ -1527,4 +1492,183 @@ BEGINPROC   EMEmulateCmpXchg8b
     pop     xBP
     retn
 ENDPROC     EMEmulateCmpXchg8b
+
+
+;;
+; Emulate LOCK XADD instruction.
+; VMMDECL(uint32_t)   EMEmulateLockXAdd(void *pvParam1, void *pvParam2, size_t cbOp);
+;
+; @returns (eax=)eflags
+; @param    [esp + 04h]  gcc:rdi  msc:rcx  Param 1 - First parameter - pointer to data item.
+; @param    [esp + 08h]  gcc:rsi  msc:rdx  Param 2 - Second parameter - pointer to second parameter (general register)
+; @param    [esp + 0ch]  gcc:rdx  msc:r8   Param 3 - Size of parameters - {1,2,4,8}.
+;
+align 16
+BEGINPROC   EMEmulateLockXAdd
+%ifdef RT_ARCH_AMD64
+ %ifdef RT_OS_WINDOWS
+    mov     rax, r8                     ; eax = size of parameters
+ %else  ; !RT_OS_WINDOWS
+    mov     rax, rdx                    ; rax = size of parameters
+    mov     rcx, rdi                    ; rcx = first parameter
+    mov     rdx, rsi                    ; rdx = second parameter
+ %endif ; !RT_OS_WINDOWS
+%else   ; !RT_ARCH_AMD64
+    mov     eax, [esp + 0ch]            ; eax = size of parameters
+    mov     ecx, [esp + 04h]            ; ecx = first parameter
+    mov     edx, [esp + 08h]            ; edx = second parameter
+%endif
+
+    ; switch on size
+%ifdef CAN_DO_8_BYTE_OP
+    cmp     al, 8
+    je short .do_qword                  ; 8 bytes variant
+%endif
+    cmp     al, 4
+    je short .do_dword                  ; 4 bytes variant
+    cmp     al, 2
+    je short .do_word                   ; 2 byte variant
+    cmp     al, 1
+    je short .do_byte                   ; 1 bytes variant
+    int3
+
+    ; workers
+%ifdef RT_ARCH_AMD64
+.do_qword:
+    mov     rax, qword [xDX]            ; load 2nd parameter's value
+    lock xadd qword [MY_PTR_REG], rax   ; do 8 bytes XADD
+    mov     qword [xDX], rax
+    jmp     short .done
+%endif
+
+.do_dword:
+    mov     eax, dword [xDX]            ; load 2nd parameter's value
+    lock xadd dword [MY_PTR_REG], eax   ; do 4 bytes XADD
+    mov     dword [xDX], eax
+    jmp     short .done
+
+.do_word:
+    mov     eax, dword [xDX]            ; load 2nd parameter's value
+    lock xadd word [MY_PTR_REG], ax     ; do 2 bytes XADD
+    mov     word [xDX], ax
+    jmp     short .done
+
+.do_byte:
+    mov     eax, dword [xDX]            ; load 2nd parameter's value
+    lock xadd byte [MY_PTR_REG], al     ; do 1 bytes XADD
+    mov     byte [xDX], al
+
+.done:
+    ; collect flags and return.
+    pushf
+    pop     MY_RET_REG
+
+    retn
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+.do_qword:
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.sixtyfourbit_mode:
+    and     esp, 0ffffffffh
+    and     edx, 0ffffffffh
+    and     MY_PTR_REG, 0ffffffffh
+    mov     rax, qword [rdx]            ; load 2nd parameter's value
+    and     [MY_PTR_REG64], rax         ; do 8 bytes XADD
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .done.
+    dd      .done, NAME(SUPR0AbsKernelCS)
+BITS 32
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+ENDPROC     EMEmulateLockXAdd
+
+
+;;
+; Emulate XADD instruction.
+; VMMDECL(uint32_t)   EMEmulateXAdd(void *pvParam1, void *pvParam2, size_t cbOp);
+;
+; @returns eax=eflags
+; @param    [esp + 04h]  gcc:rdi  msc:rcx  Param 1 - First parameter - pointer to data item.
+; @param    [esp + 08h]  gcc:rsi  msc:rdx  Param 2 - Second parameter - pointer to second parameter (general register)
+; @param    [esp + 0ch]  gcc:rdx  msc:r8   Param 3 - Size of parameters - {1,2,4,8}.
+align 16
+BEGINPROC   EMEmulateXAdd
+%ifdef RT_ARCH_AMD64
+%ifdef RT_OS_WINDOWS
+    mov     rax, r8                     ; eax = size of parameters
+%else   ; !RT_OS_WINDOWS
+    mov     rax, rdx                    ; rax = size of parameters
+    mov     rcx, rdi                    ; rcx = first parameter
+    mov     rdx, rsi                    ; rdx = second parameter
+%endif  ; !RT_OS_WINDOWS
+%else   ; !RT_ARCH_AMD64
+    mov     eax, [esp + 0ch]            ; eax = size of parameters
+    mov     ecx, [esp + 04h]            ; ecx = first parameter
+    mov     edx, [esp + 08h]            ; edx = second parameter
+%endif
+
+    ; switch on size
+%ifdef CAN_DO_8_BYTE_OP
+    cmp     al, 8
+    je short .do_qword                  ; 8 bytes variant
+%endif
+    cmp     al, 4
+    je short .do_dword                  ; 4 bytes variant
+    cmp     al, 2
+    je short .do_word                   ; 2 byte variant
+    cmp     al, 1
+    je short .do_byte                   ; 1 bytes variant
+    int3
+
+    ; workers
+%ifdef RT_ARCH_AMD64
+.do_qword:
+    mov     rax, qword [xDX]            ; load 2nd parameter's value
+    xadd    qword [MY_PTR_REG], rax   ; do 8 bytes XADD
+    mov     qword [xDX], rax
+    jmp     short .done
+%endif
+
+.do_dword:
+    mov     eax, dword [xDX]            ; load 2nd parameter's value
+    xadd    dword [MY_PTR_REG], eax     ; do 4 bytes XADD
+    mov     dword [xDX], eax
+    jmp     short .done
+
+.do_word:
+    mov     eax, dword [xDX]            ; load 2nd parameter's value
+    xadd    word [MY_PTR_REG], ax       ; do 2 bytes XADD
+    mov     word [xDX], ax
+    jmp     short .done
+
+.do_byte:
+    mov     eax, dword [xDX]            ; load 2nd parameter's value
+    xadd    byte [MY_PTR_REG], al       ; do 1 bytes XADD
+    mov     byte [xDX], al
+
+.done:
+    ; collect flags and return.
+    pushf
+    pop     MY_RET_REG
+
+    retn
+
+%ifdef VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+.do_qword:
+    db      0xea                        ; jmp far .sixtyfourbit_mode
+    dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
+BITS 64
+.sixtyfourbit_mode:
+    and     esp, 0ffffffffh
+    and     edx, 0ffffffffh
+    and     MY_PTR_REG, 0ffffffffh
+    mov     rax, qword [rdx]            ; load 2nd parameter's value
+    and     [MY_PTR_REG64], rax         ; do 8 bytes XADD
+    jmp far [.fpret wrt rip]
+.fpret:                                 ; 16:32 Pointer to .done.
+    dd      .done, NAME(SUPR0AbsKernelCS)
+BITS 32
+%endif ; VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+ENDPROC     EMEmulateXAdd
 
