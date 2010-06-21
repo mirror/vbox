@@ -30,6 +30,7 @@
 #endif
 
 /* Local includes */
+#include "VBoxGlobal.h"
 #include "UISession.h"
 #include "UIActionsPool.h"
 #include "UIMachineLogic.h"
@@ -39,13 +40,11 @@
 #include "UIMachineViewFullscreen.h"
 
 UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWindow
-                                                 , VBoxDefs::RenderMode renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                                  , bool bAccelerate2DVideo
 #endif
                                                  , ulong uMonitor)
     : UIMachineView(  pMachineWindow
-                    , renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
                     , bAccelerate2DVideo
 #endif
@@ -378,7 +377,7 @@ void UIMachineViewFullscreen::maybeRestrictMinimumSize()
      * Currently, the restriction is set only in SDL mode and only when the auto-resize feature is inactive.
      * We need to do that because we cannot correctly draw in a scrolled window in SDL mode.
      * In all other modes, or when auto-resize is in force, this function does nothing. */
-    if (mode() == VBoxDefs::SDLMode)
+    if (vboxGlobal().vmRenderMode() == VBoxDefs::SDLMode)
     {
         if (!uisession()->isGuestSupportsGraphics() || !m_bIsGuestAutoresizeEnabled)
             setMinimumSize(sizeHint());

@@ -472,7 +472,6 @@ void UIMachineWindowNormal::prepareMachineView()
     centralWidget()->setLayout(m_pMachineViewContainer);
 
     m_pMachineView = UIMachineView::create(  this
-                                           , vboxGlobal().vmRenderMode()
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                            , bAccelerate2DVideo
 #endif

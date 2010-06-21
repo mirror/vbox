@@ -49,7 +49,6 @@ public:
 
     /* Factory function to create required view sub-child: */
     static UIMachineView* create(  UIMachineWindow *pMachineWindow
-                                 , VBoxDefs::RenderMode renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                  , bool bAccelerate2DVideo
 #endif
@@ -82,7 +81,6 @@ protected:
 
     /* Machine view constructor/destructor: */
     UIMachineView(  UIMachineWindow *pMachineWindow
-                  , VBoxDefs::RenderMode renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
                   , bool bAccelerate2DVideo
 #endif
@@ -99,7 +97,6 @@ protected:
     int contentsHeight() const;
     int visibleWidth() const;
     int visibleHeight() const;
-    VBoxDefs::RenderMode mode() const { return m_mode; }
     ulong screenId() const { return m_uScreenId; }
     UIFrameBuffer* frameBuffer() const { return m_pFrameBuffer; }
     UIMachineWindow* machineWindowWrapper() const { return m_pMachineWindow; }
@@ -216,7 +213,6 @@ private:
 
     /* Private members: */
     UIMachineWindow *m_pMachineWindow;
-    VBoxDefs::RenderMode m_mode;
     ulong m_uScreenId;
     const VBoxGlobalSettings &m_globalSettings;
     UIFrameBuffer *m_pFrameBuffer;

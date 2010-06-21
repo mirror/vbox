@@ -28,9 +28,8 @@ class UIMachineViewFullscreen : public UIMachineView
 
 protected:
 
-    /* Normal machine view constructor/destructor: */
+    /* Fullscreen machine-view constructor/destructor: */
     UIMachineViewFullscreen(  UIMachineWindow *pMachineWindow
-                            , VBoxDefs::RenderMode renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
                             , bool bAccelerate2DVideo
 #endif
