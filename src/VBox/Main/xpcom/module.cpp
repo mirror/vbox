@@ -45,6 +45,7 @@
 #include "ConsoleImpl.h"
 #include "ConsoleVRDPServer.h"
 #include "VirtualBoxCallbackImpl.h"
+#include "EventImpl.h"
 
 #include "Logging.h"
 
@@ -72,6 +73,8 @@ NS_DECL_CLASSINFO(SharedFolder)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SharedFolder, ISharedFolder)
 NS_DECL_CLASSINFO(RemoteDisplayInfo)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(RemoteDisplayInfo, IRemoteDisplayInfo)
+NS_DECL_CLASSINFO(EventSource)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(EventSource, IEventSource)
 
 NS_DECL_CLASSINFO(Session)
 NS_IMPL_THREADSAFE_ISUPPORTS2_CI(Session, ISession, IInternalSessionControl)
@@ -79,6 +82,7 @@ NS_DECL_CLASSINFO(Console)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Console, IConsole)
 NS_DECL_CLASSINFO(CallbackWrapper)
 NS_IMPL_THREADSAFE_ISUPPORTS3_CI(CallbackWrapper, IVirtualBoxCallback, IConsoleCallback, ILocalOwner)
+
 /**
  *  Singleton class factory that holds a reference to the created instance
  *  (preventing it from being destroyed) until the module is explicitly

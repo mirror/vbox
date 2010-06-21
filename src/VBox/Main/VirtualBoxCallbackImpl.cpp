@@ -17,6 +17,7 @@
 
 #include "VirtualBoxCallbackImpl.h"
 #include "Logging.h"
+#include "AutoCaller.h"
 
 HRESULT CallbackWrapper::FinalConstruct()
 {
@@ -30,6 +31,10 @@ void CallbackWrapper::FinalRelease()
 // public initializers/uninitializers only for internal purposes
 HRESULT CallbackWrapper::init()
 {
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
     return S_OK;
 }
 
@@ -314,4 +319,10 @@ STDMETHODIMP CallbackWrapper::OnShowWindow(ULONG64 *winId)
         return S_OK;
 
     return mConsoleCallback->OnShowWindow(winId);
+}
+
+STDMETHODIMP CallbackWrapper::HandleEvent(IEvent * aEvent)
+{
+    ComAssertMsgRet(false, ("HandleEvent() of wrapper shall never be called"),
+                    E_FAIL);
 }

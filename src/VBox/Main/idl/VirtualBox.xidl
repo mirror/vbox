@@ -1604,7 +1604,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="3f36e024-7fed-4f20-a02c-9158a82b44e6"
+    uuid="f0c2e058-8c72-4d56-95e7-3107627aba6e"
     wsmap="managed"
   >
     <desc>
@@ -1737,6 +1737,13 @@
         dhcp server settings.
       </desc>
     </attribute>
+
+    <attribute name="eventSource" type="IEventSource" readonly="yes">
+      <desc>
+        Event source for VirtualBox events.
+      </desc>
+    </attribute>
+
 
     <method name="createMachine">
       <desc>
@@ -13978,7 +13985,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="refIVirtualBox" type="IVirtualBox" dir="in"/>
       <param name="return" type="ISession" dir="return"/>
     </method>
-
+    
     <method name="logoff">
       <desc>
         Logs off the client who has previously logged on with <link to="IWebsessionManager::logoff" />
@@ -14594,8 +14601,43 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <see>IVirtualBoxCallback::onExtraDataChange</see>
       </desc>
     </const>
+    <const name="OnMediumRegistered" value="35">
+      <desc>
+        <see>IVirtualBoxCallback::onMediumRegistered</see>
+      </desc>
+    </const>
+    <const name="OnMachineRegistered" value="36">
+      <desc>
+        <see>IVirtualBoxCallback::onMachineRegistered</see>
+      </desc>
+    </const>
+    <const name="OnSessionStateChange" value="37">
+      <desc>
+        <see>IVirtualBoxCallback::onSessionStateChange</see>
+      </desc>
+    </const>
+    <const name="OnSnapshotTaken" value="38">
+      <desc>
+        <see>IVirtualBoxCallback::onSnapshotTaken</see>
+      </desc>
+    </const>
+    <const name="OnSnapshotDeleted" value="39">
+      <desc>
+        <see>IVirtualBoxCallback::onSnapshotDeleted</see>
+      </desc>
+    </const>
+    <const name="OnSnapshotChange" value="40">
+      <desc>
+        <see>IVirtualBoxCallback::onSnapshotChange</see>
+      </desc>
+    </const>
+    <const name="OnGuestPropertyChange" value="42">
+      <desc>
+        <see>IVirtualBoxCallback::onGuestPropertyChange</see>
+      </desc>
+    </const>
 
-    <const name="Last" value="35">
+    <const name="Last" value="43">
       <desc>
         Must be last event, used for iterations.
       </desc>
@@ -14615,6 +14657,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       IEventSource implementation to call handleEvent(), in passive mode event source keeps track of
       pending events for each listener and returns available events on demand.
     </desc>
+
+    <method name="createListener">
+      <desc>
+        Creates new listener object, useful for passive mode.
+        <see>IEventListener</see>
+      </desc>
+      <param name="listener" type="IEventListener" dir="return"/>
+    </method>
 
     <method name="registerListener">
       <desc>
@@ -14643,7 +14693,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="unregisterListener">
       <desc>
-        Unregister an event listener. If listener is passive, and some waitable events are still 
+        Unregister an event listener. If listener is passive, and some waitable events are still
         in queue they are marked as processed automatically.
       </desc>
       <param name="listener" type="IEventListener" dir="in">
@@ -14687,8 +14737,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="eventProcessed">
       <desc>
-        Must be called for waitable events when particular listener finished event processing. 
-        When all listeners who this event was aimed to call eventProcessed() event source 
+        Must be called for waitable events when particular listener finished event processing.
+        When all listeners who this event was aimed to call eventProcessed() event source
         can call event's setProcessed().
       </desc>
       <param name="listener" type="IEventListener" dir="in">
@@ -14772,35 +14822,157 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
   </interface>
 
+
   <interface
-      name="IMachineStateChangeEvent" extends="IEvent"
-      uuid="5748F794-48DF-438D-85EB-98FFD70D18C9"
+      name="IMachineEvent" extends="IEvent"
+      uuid="92ed7b1a-0d96-40ed-ae46-a564d484325e"
       wsmap="managed"
       >
-    <desc>Machine state change event.</desc>
+    <desc>Base interface for all machine events.</desc>
 
     <attribute name="machineId" readonly="yes" type="uuid" mod="string">
       <desc>ID of the machine this event relates to.</desc>
     </attribute>
 
-     <attribute name="state" readonly="yes" type="MachineState">
-       <desc>New execution state.</desc>
-     </attribute>
   </interface>
 
   <interface
-      name="IMachineDataChangeEvent" extends="IEvent"
+      name="IMachineStateChangeEvent" extends="IMachineEvent"
+      uuid="5748F794-48DF-438D-85EB-98FFD70D18C9"
+      wsmap="managed"
+      >
+    <desc>Machine state change event.</desc>
+
+    <attribute name="state" readonly="yes" type="MachineState">
+      <desc>New execution state.</desc>
+    </attribute>
+  </interface>
+
+  <interface
+      name="IMachineDataChangeEvent" extends="IMachineEvent"
       uuid="6AA70A6C-0DCA-4810-8C5C-457B278E3D49"
       wsmap="managed"
       >
     <desc>
       Any of the settings of the given machine has changed.
     </desc>
+  </interface>
 
-    <attribute name="machineId" readonly="yes" type="uuid" mod="string">
-      <desc>ID of the machine this event relates to.</desc>
+  <interface
+      name="IMachineRegisteredEvent" extends="IMachineEvent"
+      uuid="c354a762-3ff2-4f2e-8f09-07382ee25088"
+      wsmap="managed"
+      >
+    <desc>
+      The given machine was registered or unregistered
+      within this VirtualBox installation.
+    </desc>
+
+    <attribute name="registered" type="boolean" readonly="yes">
+      <desc>
+        If @c true, the machine was registered, otherwise it was
+        unregistered.
+      </desc>
+    </attribute>
+  </interface>
+
+  <interface
+      name="IMachineSessionStateEvent" extends="IMachineEvent"
+      uuid="714a3eef-799a-4489-86cd-fe8e45b2ff8e"
+      wsmap="managed"
+      >
+    <desc>
+      The state of the session for the given machine was changed.
+      <see>IMachine::sessionState</see>
+    </desc>
+
+    <attribute name="state" type="SessionState" readonly="yes">
+      <desc>
+        New session state.
+      </desc>
+    </attribute>
+  </interface>
+
+  <interface
+      name="IGuestPropertyChangeEvent" extends="IMachineEvent"
+      uuid="3f63597a-26f1-4edb-8dd2-6bddd0912368"
+      wsmap="managed"
+      >
+    <desc>
+      Notification when a guest property has changed.
+    </desc>
+
+    <attribute name="name" readonly="yes" type="wstring">
+      <desc>
+        The name of the property that has changed.
+      </desc>
     </attribute>
 
+    <attribute name="value" readonly="yes" type="wstring">
+      <desc>
+        The new property value.
+      </desc>
+    </attribute>
+
+     <attribute name="flags" readonly="yes" type="wstring">
+      <desc>
+        The new property flags.
+      </desc>
+    </attribute>
+
+  </interface>
+
+  <interface
+      name="ISnapshotEvent" extends="IMachineEvent"
+      uuid="21637b0e-34b8-42d3-acfb-7e96daf77c22"
+      wsmap="managed"
+      >
+    <desc>Base interface for all snapshot events.</desc>
+
+    <attribute name="snapshotId" readonly="yes" type="uuid" mod="string">
+      <desc>ID of the snapshot this event relates to.</desc>
+    </attribute>
+
+  </interface>
+
+  <interface
+     name="ISnapshotTakenEvent" extends="ISnapshotEvent"
+     uuid="d27c0b3d-6038-422c-b45e-6d4a0503d9f1"
+     wsmap="managed"
+     >
+    <desc>
+      A new snapshot of the machine has been taken.
+      <see>ISnapshot</see>
+    </desc>
+  </interface>
+
+  <interface
+     name="ISnapshotDeletedEvent" extends="ISnapshotEvent"
+     uuid="c48f3401-4a9e-43f4-b7a7-54bd285e22f4"
+     wsmap="managed"
+     >
+    <desc>
+      Snapshot of the given machine has been deleted.
+
+      <note>
+        This notification is delivered <b>after</b> the snapshot
+        object has been uninitialized on the server (so that any
+        attempt to call its methods will return an error).
+      </note>
+
+      <see>ISnapshot</see>
+    </desc>
+  </interface>
+
+   <interface
+     name="ISnapshotChangedEvent" extends="ISnapshotEvent"
+     uuid="07541941-8079-447a-a33e-47a69c7980db"
+     wsmap="managed"
+     >
+    <desc>
+      Snapshot properties (name and/or description) have been changed.
+      <see>ISnapshot</see>
+    </desc>
   </interface>
 
   <interface
@@ -14850,11 +15022,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <eventsink name="IConsoleCallback" default="yes"/>
     </class>
 
-    <class name="CallbackWrapper" uuid="49EE8561-5563-4715-B18C-A4B1A490DAFE"
+    <class name="CallbackWrapper" uuid="bcacd681-7f53-4409-a2a5-8534911f9358"
            namespace="virtualbox.org">
       <interface name="ILocalOwner" default="yes"/>
       <interface name="IVirtualBoxCallback"/>
       <interface name="IConsoleCallback"/>
+      <interface name="IEventListener"/>
     </class>
   </module>
 
