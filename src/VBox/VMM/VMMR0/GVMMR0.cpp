@@ -638,8 +638,9 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                                     /* Initialize all the VM pointers. */
                                     for (uint32_t i = 0; i < cCpus; i++)
                                     {
-                                        pVM->aCpus[i].pVMR0 = pVM;
-                                        pVM->aCpus[i].pVMR3 = pVM->pVMR3;
+                                        pVM->aCpus[i].pVMR0     = pVM;
+                                        pVM->aCpus[i].pVMR3     = pVM->pVMR3;
+                                        pVM->aCpus[i].idHostCpu = NIL_RTCPUID;
                                     }
 
                                     rc = RTR0MemObjMapUser(&pGVM->gvmm.s.VMPagesMapObj, pGVM->gvmm.s.VMPagesMemObj, (RTR3PTR)-1, 0,
