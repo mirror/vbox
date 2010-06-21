@@ -558,6 +558,7 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_fIsIgnoreRuntimeMediumsChanging(false)
     , m_fIsGuestResizeIgnored(false)
     , m_fIsSeamlessModeRequested(false)
+    , m_fIsAutoCaptureDisabled(false)
     /* Guest additions flags: */
     , m_fIsGuestAdditionsActive(false)
     , m_fIsGuestSupportsGraphics(false)

@@ -228,7 +228,6 @@ private:
     uint8_t m_pressedKeys[128];
     uint8_t m_pressedKeysCopy[128];
 
-    bool m_bIsAutoCaptureDisabled : 1;
     bool m_bIsKeyboardCaptured : 1;
     bool m_bIsHostkeyPressed : 1;
     bool m_bIsHostkeyAlone : 1;
