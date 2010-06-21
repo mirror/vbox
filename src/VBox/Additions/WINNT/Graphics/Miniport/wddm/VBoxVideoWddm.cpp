@@ -1541,7 +1541,15 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_RESOURCE 
                                 else
                                     Status = STATUS_UNSUCCESSFUL;
                             }
+                            else
 #endif
+                            if (pAllocInfo->fFlags.RenderTarget)
+                            {
+                                pAllocationInfo->Flags.CpuVisible = 1;
+                                Assert(pAllocation->SurfDesc.bpp);
+                                Assert(pAllocation->SurfDesc.pitch);
+                                Assert(pAllocation->SurfDesc.cbSize);
+                            }
                         }
 //                        else
 //                            Status = STATUS_INVALID_PARAMETER;

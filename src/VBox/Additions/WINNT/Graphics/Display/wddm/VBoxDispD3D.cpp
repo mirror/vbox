@@ -1079,20 +1079,6 @@ DWORD vboxDDI2D3DLockFlags(D3DDDI_LOCKFLAGS fLockFlags)
     return fFlags;
 }
 
-static void vboxResourcePopulateRcDesc(VBOXWDDM_RC_DESC *pDesc, D3DDDIARG_CREATERESOURCE* pResource)
-{
-    pDesc->fFlags = pResource->Flags;
-    pDesc->enmFormat = pResource->Format;
-    pDesc->enmPool = pResource->Pool;
-    pDesc->enmMultisampleType = pResource->MultisampleType;
-    pDesc->MultisampleQuality = pResource->MultisampleQuality;
-    pDesc->MipLevels = pResource->MipLevels;
-    pDesc->Fvf = pResource->Fvf;
-    pDesc->VidPnSourceId = pResource->VidPnSourceId;
-    pDesc->RefreshRate = pResource->RefreshRate;
-    pDesc->enmRotation = pResource->Rotation;
-}
-
 static void vboxResourceFree(PVBOXWDDMDISP_RESOURCE pRc)
 {
     RTMemFree(pRc);
@@ -2564,6 +2550,11 @@ static HRESULT APIENTRY vboxWddmDDevRename(HANDLE hDevice, CONST D3DDDIARG_RENAM
     return E_FAIL;
 }
 
+static void vboxWddmRequestAllocFree(D3DDDICB_ALLOCATE* pAlloc)
+{
+    RTMemFree(pAlloc);
+}
+
 static D3DDDICB_ALLOCATE* vboxWddmRequestAllocAlloc(D3DDDIARG_CREATERESOURCE* pResource)
 {
     /* allocate buffer for D3DDDICB_ALLOCATE + D3DDDI_ALLOCATIONINFO * numAllocs + PVBOXWDDM_RCINFO with aAllocInfos[numAllocs] */
@@ -2609,38 +2600,51 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
     Assert(pResource);
     PVBOXWDDMDISP_ADAPTER pAdapter = pDevice->pAdapter;
 
-    if (VBOXDISPMODE_IS_3D(pAdapter))
+    PVBOXWDDMDISP_RESOURCE pRc = vboxResourceAlloc(pResource->SurfCount);
+    Assert(pRc);
+    if (pRc)
     {
-        PVBOXWDDMDISP_RESOURCE pRc = vboxResourceAlloc(pResource->SurfCount);
-        Assert(pRc);
-        if (pRc)
-        {
-            pRc->hResource = pResource->hResource;
-            pRc->pDevice = pDevice;
-            pRc->fFlags = VBOXWDDM_RESOURCE_F_TYPE_GENERIC;
-            vboxResourcePopulateRcDesc(&pRc->RcDesc, pResource);
-            pRc->cAllocations = pResource->SurfCount;
-            for (UINT i = 0; i < pResource->SurfCount; ++i)
-            {
-                PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
-                CONST D3DDDI_SURFACEINFO* pSurf = &pResource->pSurfList[i];
-                pAllocation->hAllocation = NULL;
-                pAllocation->enmType = VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC;
-                pAllocation->pvMem = (void*)pSurf->pSysMem;
-                pAllocation->SurfDesc.pitch = pSurf->SysMemPitch;
-                pAllocation->SurfDesc.slicePitch = pSurf->SysMemSlicePitch;
-                pAllocation->SurfDesc.depth = pSurf->Depth;
-                pAllocation->SurfDesc.width = pSurf->Width;
-                pAllocation->SurfDesc.height = pSurf->Height;
-                pAllocation->SurfDesc.format = pResource->Format;
-            }
+        bool bIssueCreateResource = false;
 
+        pRc->hResource = pResource->hResource;
+        pRc->hKMResource = NULL;
+        pRc->pDevice = pDevice;
+        pRc->fFlags = VBOXWDDM_RESOURCE_F_TYPE_GENERIC;
+        pRc->RcDesc.fFlags = pResource->Flags;
+        pRc->RcDesc.enmFormat = pResource->Format;
+        pRc->RcDesc.enmPool = pResource->Pool;
+        pRc->RcDesc.enmMultisampleType = pResource->MultisampleType;
+        pRc->RcDesc.MultisampleQuality = pResource->MultisampleQuality;
+        pRc->RcDesc.MipLevels = pResource->MipLevels;
+        pRc->RcDesc.Fvf = pResource->Fvf;
+        pRc->RcDesc.VidPnSourceId = pResource->VidPnSourceId;
+        pRc->RcDesc.RefreshRate = pResource->RefreshRate;
+        pRc->RcDesc.enmRotation = pResource->Rotation;
+        pRc->cAllocations = pResource->SurfCount;
+        for (UINT i = 0; i < pResource->SurfCount; ++i)
+        {
+            PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
+            CONST D3DDDI_SURFACEINFO* pSurf = &pResource->pSurfList[i];
+            pAllocation->hAllocation = NULL;
+            pAllocation->enmType = VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC;
+            pAllocation->pvMem = (void*)pSurf->pSysMem;
+            pAllocation->SurfDesc.pitch = pSurf->SysMemPitch;
+            pAllocation->SurfDesc.slicePitch = pSurf->SysMemSlicePitch;
+            pAllocation->SurfDesc.depth = pSurf->Depth;
+            pAllocation->SurfDesc.width = pSurf->Width;
+            pAllocation->SurfDesc.height = pSurf->Height;
+            pAllocation->SurfDesc.format = pResource->Format;
+        }
+
+        if (VBOXDISPMODE_IS_3D(pAdapter))
+        {
             if (pResource->Flags.RenderTarget)
             {
                 HWND hWnd = NULL;
                 Assert(pResource->SurfCount);
                 Assert(!pDevice->pDevice9If);
                 Assert(!pDevice->hWnd);
+                bIssueCreateResource = true;
                 hr = VBoxDispWndCreate(pAdapter, pResource->pSurfList[0].Width, pResource->pSurfList[0].Height, &hWnd);
                 Assert(hr == S_OK);
                 if (hr == S_OK)
@@ -2947,40 +2951,13 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                 Assert(pDevice->pDevice9If);
                 Assert(0);
             }
-
-            if (hr == S_OK)
-                pResource->hResource = pRc;
-            else
-                vboxResourceFree(pRc);
         }
         else
-        {
-            hr = E_OUTOFMEMORY;
-        }
+            bIssueCreateResource = true;
 
-    }
-    else
-    {
-        PVBOXWDDMDISP_RESOURCE pRc = vboxResourceAlloc(pResource->SurfCount);
-        Assert(pRc);
-        if (pRc)
-        {
-            pRc->hResource = pResource->hResource;
-            pRc->hKMResource = NULL;
-            pRc->pDevice = pDevice;
-            pRc->fFlags = VBOXWDDM_RESOURCE_F_TYPE_GENERIC;
-            pRc->RcDesc.fFlags = pResource->Flags;
-            pRc->RcDesc.enmFormat = pResource->Format;
-            pRc->RcDesc.enmPool = pResource->Pool;
-            pRc->RcDesc.enmMultisampleType = pResource->MultisampleType;
-            pRc->RcDesc.MultisampleQuality = pResource->MultisampleQuality;
-            pRc->RcDesc.MipLevels = pResource->MipLevels;
-            pRc->RcDesc.Fvf = pResource->Fvf;
-            pRc->RcDesc.VidPnSourceId = pResource->VidPnSourceId;
-            pRc->RcDesc.RefreshRate = pResource->RefreshRate;
-            pRc->RcDesc.enmRotation = pResource->Rotation;
-            pRc->cAllocations = pResource->SurfCount;
 
+        if (hr == S_OK && bIssueCreateResource)
+        {
             D3DDDICB_ALLOCATE *pDdiAllocate = vboxWddmRequestAllocAlloc(pResource);
             Assert(pDdiAllocate);
             if (pDdiAllocate)
@@ -3004,7 +2981,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                     Assert((!!(pSurf->pSysMem)) == (pResource->Pool == D3DDDIPOOL_SYSTEMMEM));
                     pDdiAllocI->VidPnSourceId = pResource->VidPnSourceId;
                     pDdiAllocI->Flags.Value = 0;
-                    if (pResource->Flags.Primary)
+                    if (pResource->Flags.Primary && pResource->Flags.RenderTarget)
                         pDdiAllocI->Flags.Primary = 1;
 
                     pAllocInfo->enmType = VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC;
@@ -3040,6 +3017,8 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                 Assert(pDdiAllocate->hKMResource);
                 if (hr == S_OK)
                 {
+                    pRc->hKMResource = pDdiAllocate->hKMResource;
+
                     for (UINT i = 0; i < pResource->SurfCount; ++i)
                     {
                         PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
@@ -3052,6 +3031,8 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                         pAllocation->SurfDesc = pAllocInfo->SurfDesc;
                     }
                 }
+
+                vboxWddmRequestAllocFree(pDdiAllocate);
             }
             else
             {
@@ -3063,11 +3044,17 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
             else
                 vboxResourceFree(pRc);
         }
+
+        if (hr == S_OK)
+            pResource->hResource = pRc;
         else
-        {
-            hr = E_OUTOFMEMORY;
-        }
+            vboxResourceFree(pRc);
     }
+    else
+    {
+        hr = E_OUTOFMEMORY;
+    }
+
 
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return hr;
@@ -3103,13 +3090,15 @@ static HRESULT APIENTRY vboxWddmDDevDestroyResource(HANDLE hDevice, HANDLE hReso
                 pAlloc->pD3DIf->Release();
         }
     }
-    else
+
+    Assert(pRc->hResource);
+    Assert(pRc->hKMResource || VBOXDISPMODE_IS_3D(pAdapter));
+    if (pRc->hKMResource)
     {
         if (!(pRc->fFlags & VBOXWDDM_RESOURCE_F_OPENNED))
         {
             D3DDDICB_DEALLOCATE Dealloc;
             Dealloc.hResource = pRc->hResource;
-            Assert(pRc->hResource);
             /* according to the docs the below two are ignored in case we set the hResource */
             Dealloc.NumAllocations = 0;
             Dealloc.HandleList = NULL;
@@ -3156,12 +3145,15 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
         Assert(hr == S_OK);
 #endif
     }
+#if 1
     else
+#endif
     {
         D3DDDICB_PRESENT DdiPresent = {0};
         if (pData->hSrcResource)
         {
             PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hSrcResource;
+            Assert(pRc->hKMResource);
             Assert(pRc->cAllocations > pData->SrcSubResourceIndex);
             PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->SrcSubResourceIndex];
             Assert(pAlloc->hAllocation);
@@ -3170,6 +3162,7 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
         if (pData->hDstResource)
         {
             PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hDstResource;
+            Assert(pRc->hKMResource);
             Assert(pRc->cAllocations > pData->DstSubResourceIndex);
             PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->DstSubResourceIndex];
             Assert(pAlloc->hAllocation);
