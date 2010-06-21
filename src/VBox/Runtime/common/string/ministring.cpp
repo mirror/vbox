@@ -54,6 +54,27 @@ MiniString &MiniString::append(const MiniString &that)
     return *this;
 }
 
+MiniString &MiniString::append(const char *pszThat)
+{
+    size_t cchThat = strlen(pszThat);
+    if (cchThat)
+    {
+        size_t cchThis = length();
+        size_t cbBoth = cchThis + cchThat + 1;
+
+        reserve(cbBoth);
+            // calls realloc(cbBoth) and sets m_cbAllocated; may throw bad_alloc.
+#ifndef RT_EXCEPTIONS_ENABLED
+        AssertRelease(capacity() >= cbBoth);
+#endif
+
+        memcpy(m_psz + cchThis, pszThat, cchThat);
+        m_psz[cbBoth - 1] = '\0';
+        m_cbLength = cbBoth - 1;
+    }
+    return *this;
+}
+
 MiniString& MiniString::append(char c)
 {
     if (c)

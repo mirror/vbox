@@ -947,73 +947,76 @@ void testMinistring(RTTEST hTest)
     } while (0)
 
     iprt::MiniString empty;
-    CHECK( (empty.length() == 0) );
-    CHECK( (empty.capacity() == 0) );
+    CHECK(empty.length() == 0);
+    CHECK(empty.capacity() == 0);
 
     iprt::MiniString sixbytes("12345");
-    CHECK( (sixbytes.length() == 5) );
-    CHECK( (sixbytes.capacity() == 6) );
+    CHECK(sixbytes.length() == 5);
+    CHECK(sixbytes.capacity() == 6);
 
-    sixbytes.append("678");
-    CHECK( (sixbytes.length() == 8) );
-    CHECK( (sixbytes.capacity() == 9) );
+    sixbytes.append(iprt::MiniString("678"));
+    CHECK(sixbytes.length() == 8);
+    CHECK(sixbytes.capacity() == 9);
+
+    sixbytes.append("9a");
+    CHECK(sixbytes.length() == 10);
+    CHECK(sixbytes.capacity() == 11);
 
     char *psz = sixbytes.mutableRaw();
-        // 12345678
+        // 123456789a
         //       ^
         // 0123456
     psz[6] = '\0';
     sixbytes.jolt();
-    CHECK( (sixbytes.length() == 6) );
-    CHECK( (sixbytes.capacity() == 7) );
+    CHECK(sixbytes.length() == 6);
+    CHECK(sixbytes.capacity() == 7);
 
     iprt::MiniString morebytes("tobereplaced");
     morebytes = "newstring ";
     morebytes.append(sixbytes);
 
-    CHECK_DUMP( (morebytes == "newstring 123456"), morebytes.c_str() );
+    CHECK_DUMP(morebytes == "newstring 123456", morebytes.c_str());
 
     iprt::MiniString third(morebytes);
     third.reserve(100 * 1024);      // 100 KB
-    CHECK_DUMP( (third == "newstring 123456"), morebytes.c_str() );
-    CHECK( (third.capacity() == 100 * 1024) );
-    CHECK( (third.length() == morebytes.length()) );        // must not have changed
+    CHECK_DUMP(third == "newstring 123456", morebytes.c_str() );
+    CHECK(third.capacity() == 100 * 1024);
+    CHECK(third.length() == morebytes.length());          // must not have changed
 
     iprt::MiniString copy1(morebytes);
     iprt::MiniString copy2 = morebytes;
-    CHECK( (copy1 == copy2) );
+    CHECK(copy1 == copy2);
 
     copy1 = NULL;
-    CHECK( (copy1.length() == 0) );
+    CHECK(copy1.length() == 0);
 
     copy1 = "";
-    CHECK( (copy1.length() == 0) );
+    CHECK(copy1.length() == 0);
 
-    CHECK( (iprt::MiniString("abc") < iprt::MiniString("def")) );
-    CHECK( (iprt::MiniString("abc") != iprt::MiniString("def")) );
-    CHECK_DUMP_I( (iprt::MiniString("def") > iprt::MiniString("abc")) );
+    CHECK(iprt::MiniString("abc") <  iprt::MiniString("def"));
+    CHECK(iprt::MiniString("abc") != iprt::MiniString("def"));
+    CHECK_DUMP_I(iprt::MiniString("def") > iprt::MiniString("abc"));
+    CHECK(iprt::MiniString("abc") == iprt::MiniString("abc"));
 
     copy2.setNull();
-    for (int i = 0;
-         i < 100;
-         ++i)
+    for (int i = 0; i < 100; ++i)
     {
         copy2.reserve(50);      // should be ignored after 50 loops
         copy2.append("1");
     }
-    CHECK( (copy2.length() == 100) );
+    CHECK(copy2.length() == 100);
 
     copy2.setNull();
-    for (int i = 0;
-         i < 100;
-         ++i)
+    for (int i = 0; i < 100; ++i)
     {
         copy2.reserve(50);      // should be ignored after 50 loops
         copy2.append('1');
     }
-    CHECK( (copy2.length() == 100) );
+    CHECK(copy2.length() == 100);
 
 #undef CHECK
+#undef CHECK_DUMP
+#undef CHECK_DUMP_I
 }
 
 
@@ -1098,15 +1101,15 @@ void testLatin1(RTTEST hTest)
 
     /* Test Latin1 -> Utf16 */
     const char *pszLat1 = "\x01\x20\x40\x80\x81";
-    RTTEST_CHECK(hTest, (RTLatin1CalcUtf16Len(pszLat1) == 5));
+    RTTEST_CHECK(hTest, RTLatin1CalcUtf16Len(pszLat1) == 5);
     rc = RTLatin1CalcUtf16LenEx(pszLat1, 3, &cchActual);
     RTTEST_CHECK_RC_OK(hTest, rc);
     if (RT_SUCCESS(rc))
-        RTTEST_CHECK(hTest, (cchActual == 3));
+        RTTEST_CHECK(hTest, cchActual == 3);
     rc = RTLatin1CalcUtf16LenEx(pszLat1, RTSTR_MAX, &cchActual);
     RTTEST_CHECK_RC_OK(hTest, rc);
     if (RT_SUCCESS(rc))
-        RTTEST_CHECK(hTest, (cchActual == 5));
+        RTTEST_CHECK(hTest, cchActual == 5);
     RTUTF16 *pwc = NULL;
     RTUTF16 wc[6];
     RTUTF16 *pwc2 = &wc[0];
