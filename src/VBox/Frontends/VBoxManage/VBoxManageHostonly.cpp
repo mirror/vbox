@@ -239,7 +239,7 @@ static int handleIpconfig(HandlerArg *a, int iStart, int *pcProcessed)
     CHECK_ERROR(host, FindHostNetworkInterfaceByName(name, hif.asOutParam()));
 
     if (FAILED(rc))
-        return errorArgument("could not find interface '%s'", a->argv[iStart]);
+        return errorArgument("Could not find interface '%s'", a->argv[iStart]);
 
     if (bDhcp)
     {
