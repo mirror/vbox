@@ -1793,7 +1793,7 @@ static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bo
         rc = PGMPrefetchPage(pVCpu, GCPtr);
         AssertRC(rc);
 
-        rc = PGMShwModifyPage(pVCpu, GCPtr, 1, 0, ~(uint64_t)X86_PTE_RW);
+        rc = PGMShwMakePageReadonly(pVCpu, GCPtr, 0 /*fFlags*/);
         Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
 
         pPage->page.fMonitorActive = true;
@@ -1905,7 +1905,7 @@ VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
         rc = PGMPrefetchPage(pVCpu, pPageAddrGC);
         AssertRC(rc);
 
-        rc = PGMShwModifyPage(pVCpu, pPageAddrGC, 1, 0, ~(uint64_t)X86_PTE_RW);
+        rc = PGMShwMakePageReadonly(pVCpu, pPageAddrGC, 0 /*fFlags*/);
         Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
 
         STAM_COUNTER_INC(&pVM->csam.s.StatPageMonitor);
@@ -1927,7 +1927,7 @@ VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
         AssertRC(rc);
 
         /* Make sure it's readonly. Page invalidation may have modified the attributes. */
-        rc = PGMShwModifyPage(pVCpu, pPageAddrGC, 1, 0, ~(uint64_t)X86_PTE_RW);
+        rc = PGMShwMakePageReadonly(pVCpu, pPageAddrGC, 0 /*fFlags*/);
         Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
     }
 
@@ -1949,7 +1949,7 @@ VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
         rc = PGMPrefetchPage(pVCpu, pPageAddrGC);
         AssertRC(rc);
         /* The page was changed behind our back. It won't be made read-only until the next SyncCR3, so force it here. */
-        rc = PGMShwModifyPage(pVCpu, pPageAddrGC, 1, 0, ~(uint64_t)X86_PTE_RW);
+        rc = PGMShwMakePageReadonly(pVCpu, pPageAddrGC, 0 /*fFlags*/);
         Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
     }
 #endif /* CSAM_MONITOR_CODE_PAGES */
@@ -2329,7 +2329,7 @@ static int csamR3FlushDirtyPages(PVM pVM)
         REMR3NotifyCodePageChanged(pVM, pVCpu, GCPtr);
 
         /* Enable write protection again. (use the fault address as it might be an alias) */
-        rc = PGMShwModifyPage(pVCpu, pVM->csam.s.pvDirtyFaultPage[i], 1, 0, ~(uint64_t)X86_PTE_RW);
+        rc = PGMShwMakePageReadonly(pVCpu, pVM->csam.s.pvDirtyFaultPage[i], 0 /*fFlags*/);
         Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
 
         Log(("CSAMR3FlushDirtyPages: flush %RRv (modifypage rc=%Rrc)\n", pVM->csam.s.pvDirtyBasePage[i], rc));
@@ -2373,7 +2373,7 @@ static int csamR3FlushCodePages(PVM pVM)
         GCPtr = GCPtr & PAGE_BASE_GC_MASK;
 
         Log(("csamR3FlushCodePages: %RRv\n", GCPtr));
-        PGMShwSetPage(pVCpu, GCPtr, 1, 0);
+        PGMShwMakePageNotPresent(pVCpu, GCPtr, 0 /*fFlags*/);
         /* Resync the page to make sure instruction fetch will fault */
         CSAMMarkPage(pVM, GCPtr, false);
     }

@@ -28,7 +28,7 @@ EXPORTS
     PDMQueueAlloc
     PDMQueueInsert
     PGMHandlerPhysicalPageTempOff
-    PGMShwModifyPage
+    PGMShwMakePageWritable
     PGMPhysSimpleWriteGCPhys
     PGMPhysSimpleReadGCPtr
     PGMPhysSimpleWriteGCPtr

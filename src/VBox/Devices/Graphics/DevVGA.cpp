@@ -3897,7 +3897,8 @@ static int vgaLFBAccess(PVM pVM, PVGASTATE pThis, RTGCPHYS GCPhys, RTGCPTR GCPtr
     if (RT_SUCCESS(rc))
     {
 #ifndef IN_RING3
-        rc = PGMShwModifyPage(PDMDevHlpGetVMCPU(pThis->CTX_SUFF(pDevIns)), GCPtr, 1, X86_PTE_RW, ~(uint64_t)X86_PTE_RW);
+        rc = PGMShwMakePageWritable(PDMDevHlpGetVMCPU(pThis->CTX_SUFF(pDevIns)), GCPtr,
+                                    PGM_MK_PG_IS_MMIO2 | PGM_MK_PG_IS_WRITE_FAULT);
         PDMCritSectLeave(&pThis->lock);
         AssertMsgReturn(    rc == VINF_SUCCESS
                         /* In the SMP case the page table might be removed while we wait for the PGM lock in the trap handler. */
@@ -3905,18 +3906,15 @@ static int vgaLFBAccess(PVM pVM, PVGASTATE pThis, RTGCPHYS GCPhys, RTGCPTR GCPtr
                         ||  rc == VERR_PAGE_NOT_PRESENT,
                         ("PGMShwModifyPage -> GCPtr=%RGv rc=%d\n", GCPtr, rc),
                         rc);
-        return VINF_SUCCESS;
 #else /* IN_RING3 : We don't have any virtual page address of the access here. */
         PDMCritSectLeave(&pThis->lock);
         Assert(GCPtr == 0);
-        return VINF_SUCCESS;
 #endif
+        return VINF_SUCCESS;
     }
-    else
-    {
-        PDMCritSectLeave(&pThis->lock);
-        AssertMsgFailed(("PGMHandlerPhysicalPageTempOff -> rc=%d\n", rc));
-    }
+
+    PDMCritSectLeave(&pThis->lock);
+    AssertMsgFailed(("PGMHandlerPhysicalPageTempOff -> rc=%d\n", rc));
     return rc;
 }
 

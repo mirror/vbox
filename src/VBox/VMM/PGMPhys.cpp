@@ -3863,7 +3863,7 @@ VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, 
             int rc2;
 
             /* Make sure what we return is writable. */
-            if (fWritable && rc != VINF_PGM_PHYS_TLB_CATCH_WRITE)
+            if (fWritable)
                 switch (PGM_PAGE_GET_STATE(pPage))
                 {
                     case PGM_PAGE_STATE_ALLOCATED:
@@ -3873,6 +3873,8 @@ VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, 
                         break;
                     case PGM_PAGE_STATE_ZERO:
                     case PGM_PAGE_STATE_SHARED:
+                        if (rc == VINF_PGM_PHYS_TLB_CATCH_WRITE)
+                            break;
                     case PGM_PAGE_STATE_WRITE_MONITORED:
                         rc2 = pgmPhysPageMakeWritable(pVM, pPage, GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK);
                         AssertLogRelRCReturn(rc2, rc2);

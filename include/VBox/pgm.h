@@ -311,8 +311,18 @@ VMMDECL(bool)       PGMMapHasConflicts(PVM pVM);
 VMMDECL(void)       PGMMapCheck(PVM pVM);
 #endif
 VMMDECL(int)        PGMShwGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
-VMMDECL(int)        PGMShwSetPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags);
-VMMDECL(int)        PGMShwModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
+VMMDECL(int)        PGMShwMakePageReadonly(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fFlags);
+VMMDECL(int)        PGMShwMakePageWritable(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fFlags);
+VMMDECL(int)        PGMShwMakePageNotPresent(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fFlags);
+/** @name Flags for PGMShwMakePageReadonly, PGMShwMakePageWritable and
+ *        PGMShwMakePageNotPresent
+ * @{ */
+/** The call is from an access handler for dealing with the a faulting write
+ * operation.  The virtual address is within the same page. */
+#define PGM_MK_PG_IS_WRITE_FAULT     RT_BIT(0)
+/** The page is an MMIO2. */
+#define PGM_MK_PG_IS_MMIO2           RT_BIT(1)
+/** @}*/
 VMMDECL(int)        PGMGstGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys);
 VMMDECL(bool)       PGMGstIsPagePresent(PVMCPU pVCpu, RTGCPTR GCPtr);
 VMMDECL(int)        PGMGstSetPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags);

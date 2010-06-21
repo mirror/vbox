@@ -100,7 +100,7 @@ VMMRCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTR
 
 #ifdef LOG_ENABLED
     if (pPatchPage)
-        Log(("PATMIsWriteToPatchPage: Found page %RRv for write to %RRv %d bytes (page low:high %RRv:%RRv\n", pPatchPage->Core.Key, GCPtr, cbWrite, pPatchPage->pLowestAddrGC, pPatchPage->pHighestAddrGC));
+        Log(("PATMGCHandleWriteToPatchPage: Found page %RRv for write to %RRv %d bytes (page low:high %RRv:%RRv\n", pPatchPage->Core.Key, GCPtr, cbWrite, pPatchPage->pLowestAddrGC, pPatchPage->pHighestAddrGC));
 #endif
 
     if (pPatchPage)

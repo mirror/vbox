@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -117,7 +117,7 @@
 *******************************************************************************/
 RT_C_DECLS_BEGIN
 PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
-PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask);
+PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cbPages, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags);
 RT_C_DECLS_END
 
 
@@ -271,9 +271,10 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
  * @param   fFlags      The OR  mask - page flags X86_PTE_*, excluding the page mask of course.
  * @param   fMask       The AND mask - page flags X86_PTE_*.
  *                      Be extremely CAREFUL with ~'ing values because they can be 32-bit!
+ * @param   fOpFlags    A combination of the PGM_MK_PK_XXX flags.
  * @remark  You must use PGMMapModifyPage() for pages in a mapping.
  */
-PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
+PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags)
 {
 # if PGM_SHW_TYPE == PGM_TYPE_NESTED
     return VERR_PAGE_TABLE_NOT_PRESENT;
@@ -352,11 +353,44 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
         {
             if (pPT->a[iPTE].n.u1Present)
             {
-                SHWPTE Pte;
+                SHWPTE const    OrgPte = pPT->a[iPTE];
+                SHWPTE          NewPte;
 
-                Pte.u = (pPT->a[iPTE].u & (fMask | SHW_PTE_PG_MASK)) | (fFlags & ~SHW_PTE_PG_MASK);
-                ASMAtomicWriteSize(&pPT->a[iPTE], Pte.u);
-                Assert(pPT->a[iPTE].n.u1Present);
+                NewPte.u = (OrgPte.u & (fMask | SHW_PTE_PG_MASK)) | (fFlags & ~SHW_PTE_PG_MASK);
+                Assert(NewPte.n.u1Present);
+                if (!NewPte.n.u1Present)
+                {
+                    /** @todo Some CSAM code path might end up here and upset
+                     *  the page pool. */
+                    AssertFailed();
+                }
+                else if (   NewPte.n.u1Write
+                         && !OrgPte.n.u1Write
+                         && !(fOpFlags & PGM_MK_PG_IS_MMIO2) )
+                {
+                    /** @todo Optimize \#PF handling by caching data.  We can
+                     *        then use this when PGM_MK_PG_IS_WRITE_FAULT is
+                     *        set instead of resolving the guest physical
+                     *        address yet again. */
+                    RTGCPHYS GCPhys;
+                    uint64_t fGstPte;
+                    rc = PGMGstGetPage(pVCpu, GCPtr, &fGstPte, &GCPhys);
+                    AssertRC(rc);
+                    if (RT_SUCCESS(rc))
+                    {
+                        Assert(fGstPte & X86_PTE_RW);
+                        PPGMPAGE pPage = pgmPhysGetPage(&pVCpu->CTX_SUFF(pVM)->pgm.s, GCPhys);
+                        Assert(pPage);
+                        if (pPage)
+                        {
+                            rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
+                            AssertRCReturn(rc, rc);
+                            Log(("%s: pgmPhysPageMakeWritable on %RGv / %RGp %R[pgmpage]\n", __PRETTY_FUNCTION__, GCPtr, GCPhys, pPage));
+                        }
+                    }
+                }
+
+                ASMAtomicWriteSize(&pPT->a[iPTE], NewPte.u);
 # if PGM_SHW_TYPE == PGM_TYPE_EPT
                 HWACCMInvalidatePhysPage(pVM, (RTGCPHYS)GCPtr);
 # else
