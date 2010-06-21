@@ -1236,15 +1236,17 @@ static void pgmR3StateCalcCrc32ForRamPage(PVM pVM, PPGMRAMRANGE pCur, PPGMLIVESA
  *                              structures.
  * @param   iPage               The page index.
  */
-static void pgmR3StateVerifyCrc32ForPage(void const *pvPage, PPGMRAMRANGE pCur, PPGMLIVESAVERAMPAGE paLSPages, uint32_t iPage)
+static void pgmR3StateVerifyCrc32ForPage(void const *pvPage, PPGMRAMRANGE pCur, PPGMLIVESAVERAMPAGE paLSPages, uint32_t iPage, const  char *pszWhere)
 {
     if (paLSPages[iPage].u32Crc != UINT32_MAX)
     {
         uint32_t u32Crc = RTCrc32(pvPage, PAGE_SIZE);
-        Assert((!PGM_PAGE_IS_ZERO(&pCur->aPages[iPage]) && !PGM_PAGE_IS_BALLOONED(&pCur->aPages[iPage])) || u32Crc == PGM_STATE_CRC32_ZERO_PAGE);
+        Assert(   (   !PGM_PAGE_IS_ZERO(&pCur->aPages[iPage])
+                   && !PGM_PAGE_IS_BALLOONED(&pCur->aPages[iPage]))
+               || u32Crc == PGM_STATE_CRC32_ZERO_PAGE);
         AssertMsg(paLSPages[iPage].u32Crc == u32Crc,
-                  ("%08x != %08x for %RGp %R[pgmpage]\n", paLSPages[iPage].u32Crc, u32Crc,
-                   pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), &pCur->aPages[iPage]));
+                  ("%08x != %08x for %RGp %R[pgmpage] %s\n", paLSPages[iPage].u32Crc, u32Crc,
+                   pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), &pCur->aPages[iPage], pszWhere));
     }
 }
 
@@ -1258,7 +1260,7 @@ static void pgmR3StateVerifyCrc32ForPage(void const *pvPage, PPGMRAMRANGE pCur, 
  *                              structures.
  * @param   iPage               The page index.
  */
-static void pgmR3StateVerifyCrc32ForRamPage(PVM pVM, PPGMRAMRANGE pCur, PPGMLIVESAVERAMPAGE paLSPages, uint32_t iPage)
+static void pgmR3StateVerifyCrc32ForRamPage(PVM pVM, PPGMRAMRANGE pCur, PPGMLIVESAVERAMPAGE paLSPages, uint32_t iPage, const char *pszWhere)
 {
     if (paLSPages[iPage].u32Crc != UINT32_MAX)
     {
@@ -1266,7 +1268,7 @@ static void pgmR3StateVerifyCrc32ForRamPage(PVM pVM, PPGMRAMRANGE pCur, PPGMLIVE
         void const *pvPage;
         int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, &pCur->aPages[iPage], GCPhys, &pvPage);
         if (RT_SUCCESS(rc))
-            pgmR3StateVerifyCrc32ForPage(pvPage, pCur, paLSPages, iPage);
+            pgmR3StateVerifyCrc32ForPage(pvPage, pCur, paLSPages, iPage, pszWhere);
     }
 }
 
@@ -1369,7 +1371,7 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                                     if (paLSPages[iPage].fWriteMonitoredJustNow)
                                         pgmR3StateCalcCrc32ForRamPage(pVM, pCur, paLSPages, iPage);
                                     else
-                                        pgmR3StateVerifyCrc32ForRamPage(pVM, pCur, paLSPages, iPage);
+                                        pgmR3StateVerifyCrc32ForRamPage(pVM, pCur, paLSPages, iPage, "scan");
 #endif
                                     paLSPages[iPage].fWriteMonitoredJustNow = 0;
                                 }
@@ -1567,7 +1569,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                         {
 #ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
                             if (PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) != PGMPAGETYPE_RAM)
-                                pgmR3StateVerifyCrc32ForRamPage(pVM, pCur, paLSPages, iPage);
+                                pgmR3StateVerifyCrc32ForRamPage(pVM, pCur, paLSPages, iPage, "save#1");
 #endif
                             continue;
                         }
@@ -1596,7 +1598,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                             memcpy(abPage, pvPage, PAGE_SIZE);
 #ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
                             if (paLSPages)
-                                pgmR3StateVerifyCrc32ForPage(abPage, pCur, paLSPages, iPage);
+                                pgmR3StateVerifyCrc32ForPage(abPage, pCur, paLSPages, iPage, "save#3");
 #endif
                         }
                         pgmUnlock(pVM);
@@ -1618,7 +1620,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                          */
 #ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
                         if (paLSPages)
-                            pgmR3StateVerifyCrc32ForRamPage(pVM, pCur, paLSPages, iPage);
+                            pgmR3StateVerifyCrc32ForRamPage(pVM, pCur, paLSPages, iPage, "save#2");
 #endif
                         pgmUnlock(pVM);
 

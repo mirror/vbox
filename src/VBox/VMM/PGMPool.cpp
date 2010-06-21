@@ -605,7 +605,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
     STAM_PROFILE_START(&pPool->StatClearAll, c);
 
     pgmLock(pVM);
-    Log(("pgmR3PoolClearAllRendezvous: cUsedPages=%d\n", pPool->cUsedPages));
+    Log(("pgmR3PoolClearAllRendezvous: cUsedPages=%d fpvFlushRemTbl=%RTbool\n", pPool->cUsedPages, !!fpvFlushRemTbl));
 
     /*
      * Iterate all the pages until we've encountered all that are in use.

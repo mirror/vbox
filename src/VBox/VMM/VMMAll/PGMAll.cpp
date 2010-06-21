@@ -824,22 +824,6 @@ VMMDECL(int) PGMShwGetPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHC
 
 
 /**
- * Sets (replaces) the page flags for a range of pages in the shadow context.
- *
- * @returns VBox status.
- * @param   pVCpu       VMCPU handle.
- * @param   GCPtr       The address of the first page.
- * @param   cb          The size of the range in bytes.
- * @param   fFlags      Page flags X86_PTE_*, excluding the page mask of course.
- * @remark  You must use PGMMapSetPage() for pages in a mapping.
- */
-VMMDECL(int) PGMShwSetPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags)
-{
-    return PGMShwModifyPage(pVCpu, GCPtr, cb, fFlags, 0);
-}
-
-
-/**
  * Modify page flags for a range of pages in the shadow context.
  *
  * The existing flags are ANDed with the fMask and ORed with the fFlags.
@@ -847,33 +831,76 @@ VMMDECL(int) PGMShwSetPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFla
  * @returns VBox status code.
  * @param   pVCpu       VMCPU handle.
  * @param   GCPtr       Virtual address of the first page in the range.
- * @param   cb          Size (in bytes) of the range to apply the modification to.
  * @param   fFlags      The OR  mask - page flags X86_PTE_*, excluding the page mask of course.
  * @param   fMask       The AND mask - page flags X86_PTE_*.
  *                      Be very CAREFUL when ~'ing constants which could be 32-bit!
+ * @param   fOpFlags    A combination of the PGM_MK_PK_XXX flags.
  * @remark  You must use PGMMapModifyPage() for pages in a mapping.
  */
-VMMDECL(int) PGMShwModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
+DECLINLINE(int) pdmShwModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t fFlags, uint64_t fMask, uint32_t fOpFlags)
 {
     AssertMsg(!(fFlags & X86_PTE_PAE_PG_MASK), ("fFlags=%#llx\n", fFlags));
-    Assert(cb);
+    Assert(!(fOpFlags & ~(PGM_MK_PG_IS_MMIO2 | PGM_MK_PG_IS_WRITE_FAULT)));
 
-    /*
-     * Align the input.
-     */
-    cb     += GCPtr & PAGE_OFFSET_MASK;
-    cb      = RT_ALIGN_Z(cb, PAGE_SIZE);
-    GCPtr   = (GCPtr & PAGE_BASE_GC_MASK); /** @todo this ain't necessary, right... */
+    GCPtr &= PAGE_BASE_GC_MASK; /** @todo this ain't necessary, right... */
 
-    /*
-     * Call worker.
-     */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     pgmLock(pVM);
-    int rc = PGM_SHW_PFN(ModifyPage, pVCpu)(pVCpu, GCPtr, cb, fFlags, fMask);
+    int rc = PGM_SHW_PFN(ModifyPage, pVCpu)(pVCpu, GCPtr, PAGE_SIZE, fFlags, fMask, fOpFlags);
     pgmUnlock(pVM);
     return rc;
 }
+
+
+/**
+ * Changing the page flags for a single page in the shadow page tables so as to
+ * make it read-only.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       VMCPU handle.
+ * @param   GCPtr       Virtual address of the first page in the range.
+ * @param   fOpFlags    A combination of the PGM_MK_PK_XXX flags.
+ */
+VMMDECL(int) PGMShwMakePageReadonly(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpFlags)
+{
+    return pdmShwModifyPage(pVCpu, GCPtr, 0, ~(uint64_t)X86_PTE_RW, fOpFlags);
+}
+
+
+/**
+ * Changing the page flags for a single page in the shadow page tables so as to
+ * make it writable.
+ *
+ * The call must know with 101% certainty that the guest page tables maps this
+ * as writable too.  This function will deal shared, zero and write monitored
+ * pages.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       VMCPU handle.
+ * @param   GCPtr       Virtual address of the first page in the range.
+ * @param   fMmio2      Set if it is an MMIO2 page.
+ * @param   fOpFlags    A combination of the PGM_MK_PK_XXX flags.
+ */
+VMMDECL(int) PGMShwMakePageWritable(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpFlags)
+{
+    return pdmShwModifyPage(pVCpu, GCPtr, X86_PTE_RW, ~(uint64_t)0, fOpFlags);
+}
+
+
+/**
+ * Changing the page flags for a single page in the shadow page tables so as to
+ * make it not present.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       VMCPU handle.
+ * @param   GCPtr       Virtual address of the first page in the range.
+ * @param   fOpFlags    A combination of the PGM_MK_PG_XXX flags.
+ */
+VMMDECL(int) PGMShwMakePageNotPresent(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpFlags)
+{
+    return pdmShwModifyPage(pVCpu, GCPtr, 0, 0, fOpFlags);
+}
+
 
 /**
  * Gets the shadow page directory for the specified address, PAE.
@@ -2155,6 +2182,41 @@ void pgmUnlock(PVM pVM)
 
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 
+/** Common worker for PGMDynMapGCPage and PGMDynMapGCPageOff. */
+DECLINLINE(int) pgmDynMapGCPageInternal(PVM pVM, RTGCPHYS GCPhys, void **ppv)
+{
+    pgmLock(pVM);
+
+    /*
+     * Convert it to a writable page and it on to PGMDynMapHCPage.
+     */
+    int rc;
+    PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
+    if (RT_LIKELY(pPage))
+    {
+        rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
+        if (RT_SUCCESS(rc))
+        {
+            //Log(("PGMDynMapGCPage: GCPhys=%RGp pPage=%R[pgmpage]\n", GCPhys, pPage));
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+            rc = pgmR0DynMapHCPageInlined(&pVM->pgm.s, PGM_PAGE_GET_HCPHYS(pPage), ppv);
+#else
+            rc = PGMDynMapHCPage(pVM, PGM_PAGE_GET_HCPHYS(pPage), ppv);
+#endif
+        }
+        else
+            AssertRC(rc);
+    }
+    else
+    {
+        AssertMsgFailed(("Invalid physical address %RGp!\n", GCPhys));
+        rc = VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
+    }
+
+    pgmUnlock(pVM);
+    return rc;
+}
+
 /**
  * Temporarily maps one guest page specified by GC physical address.
  * These pages must have a physical mapping in HC, i.e. they cannot be MMIO pages.
@@ -2170,30 +2232,7 @@ void pgmUnlock(PVM pVM)
 VMMDECL(int) PGMDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv)
 {
     AssertMsg(!(GCPhys & PAGE_OFFSET_MASK), ("GCPhys=%RGp\n", GCPhys));
-
-    /*
-     * Get the ram range.
-     */
-    PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
-    while (pRam && GCPhys - pRam->GCPhys >= pRam->cb)
-        pRam = pRam->CTX_SUFF(pNext);
-    if (!pRam)
-    {
-        AssertMsgFailed(("Invalid physical address %RGp!\n", GCPhys));
-        return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
-    }
-
-    /*
-     * Pass it on to PGMDynMapHCPage.
-     */
-    RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT]);
-    //Log(("PGMDynMapGCPage: GCPhys=%RGp HCPhys=%RHp\n", GCPhys, HCPhys));
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    pgmR0DynMapHCPageInlined(&pVM->pgm.s, HCPhys, ppv);
-#else
-    PGMDynMapHCPage(pVM, HCPhys, ppv);
-#endif
-    return VINF_SUCCESS;
+    return pgmDynMapGCPageInternal(pVM, GCPhys, ppv);
 }
 
 
@@ -2214,29 +2253,14 @@ VMMDECL(int) PGMDynMapGCPage(PVM pVM, RTGCPHYS GCPhys, void **ppv)
  */
 VMMDECL(int) PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv)
 {
-    /*
-     * Get the ram range.
-     */
-    PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRanges);
-    while (pRam && GCPhys - pRam->GCPhys >= pRam->cb)
-        pRam = pRam->CTX_SUFF(pNext);
-    if (!pRam)
+    void *pv;
+    int rc = pgmDynMapGCPageInternal(pVM, GCPhys, &pv);
+    if (RT_SUCCESS(rc))
     {
-        AssertMsgFailed(("Invalid physical address %RGp!\n", GCPhys));
-        return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
+        *ppv = (void *)((uintptr_t)pv | (uintptr_t)(GCPhys & PAGE_OFFSET_MASK));
+        return VINF_SUCCESS;
     }
-
-    /*
-     * Pass it on to PGMDynMapHCPage.
-     */
-    RTHCPHYS HCPhys = PGM_PAGE_GET_HCPHYS(&pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT]);
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-    pgmR0DynMapHCPageInlined(&pVM->pgm.s, HCPhys, ppv);
-#else
-    PGMDynMapHCPage(pVM, HCPhys, ppv);
-#endif
-    *ppv = (void *)((uintptr_t)*ppv | (uintptr_t)(GCPhys & PAGE_OFFSET_MASK));
-    return VINF_SUCCESS;
+    return rc;
 }
 
 # ifdef IN_RC
@@ -2380,7 +2404,7 @@ VMMDECL(void) PGMDynUnlockHCPage(PVM pVM, RCPTRTYPE(uint8_t *) GCPage)
  */
 VMMDECL(void) PGMDynCheckLocks(PVM pVM)
 {
-    for (unsigned i=0;i<RT_ELEMENTS(pVM->pgm.s.aLockedDynPageMapCache);i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.aLockedDynPageMapCache); i++)
         Assert(!pVM->pgm.s.aLockedDynPageMapCache[i]);
 }
 #  endif /* VBOX_STRICT */
@@ -2393,9 +2417,9 @@ VMMDECL(void) PGMDynCheckLocks(PVM pVM)
 /** Format handler for PGMPAGE.
  * @copydoc FNRTSTRFORMATTYPE */
 static DECLCALLBACK(size_t) pgmFormatTypeHandlerPage(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-                                                    const char *pszType, void const *pvValue,
-                                                    int cchWidth, int cchPrecision, unsigned fFlags,
-                                                    void *pvUser)
+                                                     const char *pszType, void const *pvValue,
+                                                     int cchWidth, int cchPrecision, unsigned fFlags,
+                                                     void *pvUser)
 {
     size_t    cch;
     PCPGMPAGE pPage = (PCPGMPAGE)pvValue;
@@ -2489,7 +2513,6 @@ static const struct
 };
 
 #endif /* !IN_R0 || LOG_ENABLED */
-
 
 /**
  * Registers the global string format types.
