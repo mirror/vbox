@@ -101,6 +101,7 @@ public:
     bool isIgnoreRuntimeMediumsChanging() const { return m_fIsIgnoreRuntimeMediumsChanging; }
     bool isGuestResizeIgnored() const { return m_fIsGuestResizeIgnored; }
     bool isSeamlessModeRequested() const { return m_fIsSeamlessModeRequested; }
+    bool isAutoCaptureDisabled() const { return m_fIsAutoCaptureDisabled; }
 
     /* Guest additions state getters: */
     bool isGuestAdditionsActive() const { return m_fIsGuestAdditionsActive; }
@@ -129,6 +130,7 @@ public:
     bool setPause(bool fOn);
     void setGuestResizeIgnored(bool fIsGuestResizeIgnored) { m_fIsGuestResizeIgnored = fIsGuestResizeIgnored; }
     void setSeamlessModeRequested(bool fIsSeamlessModeRequested) { m_fIsSeamlessModeRequested = fIsSeamlessModeRequested; }
+    void setAutoCaptureDisabled(bool fIsAutoCaptureDisabled) { m_fIsAutoCaptureDisabled = fIsAutoCaptureDisabled; }
 
     /* Keyboard setters: */
     void setNumLockAdaptionCnt(uint uNumLockAdaptionCnt) { m_uNumLockAdaptionCnt = uNumLockAdaptionCnt; }
@@ -233,6 +235,7 @@ private:
     bool m_fIsIgnoreRuntimeMediumsChanging : 1;
     bool m_fIsGuestResizeIgnored : 1;
     bool m_fIsSeamlessModeRequested : 1;
+    bool m_fIsAutoCaptureDisabled : 1;
 
     /* Guest additions flags: */
     bool m_fIsGuestAdditionsActive : 1;

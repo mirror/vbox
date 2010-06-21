@@ -205,7 +205,6 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     , m_previousState(KMachineState_Null)
     , m_desktopGeometryType(DesktopGeo_Invalid)
     , m_iLastMouseWheelDelta(0)
-    , m_bIsAutoCaptureDisabled(false)
     , m_bIsKeyboardCaptured(false)
     , m_bIsHostkeyPressed(false)
     , m_bIsHostkeyAlone (false)
@@ -1263,17 +1262,17 @@ void UIMachineView::focusEvent(bool fHasFocus, bool fReleaseHostKey /* = true */
     if (fHasFocus)
     {
 #ifdef Q_WS_WIN32
-        if (!m_bIsAutoCaptureDisabled && m_globalSettings.autoCapture() && GetAncestor(winId(), GA_ROOT) == GetForegroundWindow())
+        if (!uisession()->isAutoCaptureDisabled() && m_globalSettings.autoCapture() && GetAncestor(winId(), GA_ROOT) == GetForegroundWindow())
 #else
-        if (!m_bIsAutoCaptureDisabled && m_globalSettings.autoCapture())
+        if (!uisession()->isAutoCaptureDisabled() && m_globalSettings.autoCapture())
 #endif
         {
             captureKbd(true);
         }
 
         /* Reset the single-time disable capture flag: */
-        if (m_bIsAutoCaptureDisabled)
-            m_bIsAutoCaptureDisabled = false;
+        if (uisession()->isAutoCaptureDisabled())
+            uisession()->setAutoCaptureDisabled(false);
     }
     else
     {
@@ -1445,11 +1444,11 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
                              * place after this dialog is dismissed because
                              * the capture state is to be defined by the
                              * dialog result itself */
-                            m_bIsAutoCaptureDisabled = true;
+                            uisession()->setAutoCaptureDisabled(true);
                             bool autoConfirmed = false;
                             ok = vboxProblem().confirmInputCapture (&autoConfirmed);
                             if (autoConfirmed)
-                                m_bIsAutoCaptureDisabled = false;
+                                uisession()->setAutoCaptureDisabled(false);
                             /* otherwise, the disable flag will be reset in
                              * the next console view's foucs in event (since
                              * may happen asynchronously on some platforms,
@@ -1774,11 +1773,11 @@ bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlo
                 {
                     /* Temporarily disable auto capture that will take place after this dialog is dismissed because
                      * the capture state is to be defined by the dialog result itself: */
-                    m_bIsAutoCaptureDisabled = true;
+                    uisession()->setAutoCaptureDisabled(true);
                     bool autoConfirmed = false;
                     bool ok = vboxProblem().confirmInputCapture(&autoConfirmed);
                     if (autoConfirmed)
-                        m_bIsAutoCaptureDisabled = false;
+                        uisession()->setAutoCaptureDisabled(false);
                     /* Otherwise, the disable flag will be reset in the next console view's foucs in event (since
                      * may happen asynchronously on some platforms, after we return from this code): */
                     if (ok)
