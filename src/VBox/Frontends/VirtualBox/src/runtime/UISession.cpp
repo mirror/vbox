@@ -1530,7 +1530,15 @@ void UISession::preparePowerUp()
         vboxProblem().remindAboutAutoCapture();
 
     /* Shows first run wizard if necessary: */
-    if (isFirstTimeStarted())
+    const CMachine &machine = session().GetMachine();
+    /* Check if we are in teleportation waiting mode. In that case no first run
+     * wizard is necessary. */
+    KMachineState state = machine.GetState();
+    if (   isFirstTimeStarted()
+        && !((   state == KMachineState_PoweredOff
+              || state == KMachineState_Aborted
+              || state == KMachineState_Teleported)
+             && machine.GetTeleporterEnabled()))
     {
         UIFirstRunWzd wzd(mainMachineWindow(), session().GetMachine());
         wzd.exec();
