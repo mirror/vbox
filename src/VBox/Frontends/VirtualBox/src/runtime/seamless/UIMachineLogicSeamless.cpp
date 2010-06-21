@@ -44,7 +44,12 @@ UIMachineLogicSeamless::UIMachineLogicSeamless(QObject *pParent, UISession *pSes
 
 UIMachineLogicSeamless::~UIMachineLogicSeamless()
 {
-    /* Cleanup normal machine window: */
+#ifdef Q_WS_MAC
+    /* Cleanup the dock stuff before the machine window(s): */
+    cleanupDock();
+#endif /* Q_WS_MAC */
+
+    /* Cleanup machine window(s): */
     cleanupMachineWindows();
 
     /* Cleanup actions groups: */
@@ -196,10 +201,7 @@ void UIMachineLogicSeamless::cleanupMachineWindows()
     if (!isMachineWindowsCreated())
         return;
 
-    /* Base class cleanup: */
-    UIMachineLogic::cleanupMachineWindows();
-
-    /* Cleanup normal machine window: */
+    /* Cleanup machine window(s): */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         UIMachineWindow::destroy(pMachineWindow);
 }
