@@ -38,7 +38,7 @@
 #include <VBox/log.h>
 
 #include <iprt/file.h>
-#include <iprt/initterm.h>
+#include <iprt/getopt.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
@@ -83,9 +83,9 @@ using namespace com;
 /** Macro for checking whether a partition is of extended type or not. */
 #define PARTTYPE_IS_EXTENDED(x) ((x) == 0x05 || (x) == 0x0f || (x) == 0x85)
 
-/* Maximum number of partitions we can deal with. Ridiculously large number,
- * but the memory consumption is rather low so who cares about never using
- * most entries. */
+/** Maximum number of partitions we can deal with.
+ * Ridiculously large number, but the memory consumption is rather low so who
+ * cares about never using most entries. */
 #define HOSTPARTITION_MAX 100
 
 
@@ -135,96 +135,103 @@ void printUsageInternal(USAGECATEGORY u64Cmd)
              "\n"
              "Commands:\n"
              "\n"
-             "%s%s%s%s%s%s%s%s%s"
+             "%s%s%s%s%s%s%s%s%s%s%s%s"
              "WARNING: This is a development tool and shall only be used to analyse\n"
              "         problems. It is completely unsupported and will change in\n"
              "         incompatible ways without warning.\n",
-            (u64Cmd & USAGE_LOADSYMS) ?
-                "  loadsyms <vmname>|<uuid> <symfile> [delta] [module] [module address]\n"
-                "      This will instruct DBGF to load the given symbolfile\n"
-                "      during initialization.\n"
-                "\n"
-                : "",
-            (u64Cmd & USAGE_UNLOADSYMS) ?
-                "  unloadsyms <vmname>|<uuid> <symfile>\n"
-                "      Removes <symfile> from the list of symbol files that\n"
-                "      should be loaded during DBF initialization.\n"
-                "\n"
-                : "",
-            (u64Cmd & USAGE_SETHDUUID) ?
-                "  sethduuid <filepath>\n"
-                "       Assigns a new UUID to the given image file. This way, multiple copies\n"
-                "       of a container can be registered.\n"
-                "\n"
-                : "",
-            (u64Cmd & USAGE_DUMPHDINFO) ?
-                "  dumphdinfo <filepath>\n"
+
+             (u64Cmd & USAGE_LOADSYMS)
+             ? "  loadsyms <vmname>|<uuid> <symfile> [delta] [module] [module address]\n"
+               "      This will instruct DBGF to load the given symbolfile\n"
+               "      during initialization.\n"
+               "\n"
+             : "",
+             (u64Cmd & USAGE_UNLOADSYMS)
+             ? "  unloadsyms <vmname>|<uuid> <symfile>\n"
+               "      Removes <symfile> from the list of symbol files that\n"
+               "      should be loaded during DBF initialization.\n"
+               "\n"
+             : "",
+             (u64Cmd & USAGE_SETHDUUID)
+             ? "  sethduuid <filepath>\n"
+               "       Assigns a new UUID to the given image file. This way, multiple copies\n"
+               "       of a container can be registered.\n"
+               "\n"
+             : "",
+             (u64Cmd & USAGE_DUMPHDINFO)
+             ?  "  dumphdinfo <filepath>\n"
                 "       Prints information about the image at the given location.\n"
                 "\n"
-                : "",
-            (u64Cmd & USAGE_LISTPARTITIONS) ?
-                "  listpartitions -rawdisk <diskname>\n"
-                "       Lists all partitions on <diskname>.\n"
-                "\n"
-                : "",
-            (u64Cmd & USAGE_CREATERAWVMDK) ?
-                "  createrawvmdk -filename <filename> -rawdisk <diskname>\n"
-                "                [-partitions <list of partition numbers> [-mbr <filename>] ]\n"
-                "                [-register] [-relative]\n"
-                "       Creates a new VMDK image which gives access to an entite host disk (if\n"
-                "       the parameter -partitions is not specified) or some partitions of a\n"
-                "       host disk. If access to individual partitions is granted, then the\n"
-                "       parameter -mbr can be used to specify an alternative MBR to be used\n"
-                "       (the partitioning information in the MBR file is ignored).\n"
-                "       The diskname is on Linux e.g. /dev/sda, and on Windows e.g.\n"
-                "       \\\\.\\PhysicalDrive0).\n"
-                "       On Linux host the parameter -relative causes a VMDK file to be created\n"
-                "       which refers to individual partitions instead to the entire disk.\n"
-                "       Optionally the created image can be immediately registered.\n"
-                "       The necessary partition numbers can be queried with\n"
-                "         VBoxManage internalcommands listpartitions\n"
-                "\n"
-                : "",
-             (u64Cmd & USAGE_RENAMEVMDK) ?
-                 "  renamevmdk -from <filename> -to <filename>\n"
-                 "       Renames an existing VMDK image, including the base file and all its extents.\n"
-                 "\n"
-                 : "",
-             (u64Cmd & USAGE_CONVERTTORAW) ?
-                 "  converttoraw [-format <fileformat>] <filename> <outputfile>"
+             : "",
+             (u64Cmd & USAGE_LISTPARTITIONS)
+             ? "  listpartitions -rawdisk <diskname>\n"
+               "       Lists all partitions on <diskname>.\n"
+               "\n"
+             : "",
+             (u64Cmd & USAGE_CREATERAWVMDK)
+             ? "  createrawvmdk -filename <filename> -rawdisk <diskname>\n"
+               "                [-partitions <list of partition numbers> [-mbr <filename>] ]\n"
+               "                [-register] [-relative]\n"
+               "       Creates a new VMDK image which gives access to an entite host disk (if\n"
+               "       the parameter -partitions is not specified) or some partitions of a\n"
+               "       host disk. If access to individual partitions is granted, then the\n"
+               "       parameter -mbr can be used to specify an alternative MBR to be used\n"
+               "       (the partitioning information in the MBR file is ignored).\n"
+               "       The diskname is on Linux e.g. /dev/sda, and on Windows e.g.\n"
+               "       \\\\.\\PhysicalDrive0).\n"
+               "       On Linux host the parameter -relative causes a VMDK file to be created\n"
+               "       which refers to individual partitions instead to the entire disk.\n"
+               "       Optionally the created image can be immediately registered.\n"
+               "       The necessary partition numbers can be queried with\n"
+               "         VBoxManage internalcommands listpartitions\n"
+               "\n"
+             : "",
+             (u64Cmd & USAGE_RENAMEVMDK)
+             ? "  renamevmdk -from <filename> -to <filename>\n"
+               "       Renames an existing VMDK image, including the base file and all its extents.\n"
+               "\n"
+             : "",
+             (u64Cmd & USAGE_CONVERTTORAW)
+             ? "  converttoraw [-format <fileformat>] <filename> <outputfile>"
 #ifdef ENABLE_CONVERT_RAW_TO_STDOUT
-                 "|stdout"
+               "|stdout"
 #endif /* ENABLE_CONVERT_RAW_TO_STDOUT */
-                 "\n"
-                 "       Convert image to raw, writing to file"
+               "\n"
+               "       Convert image to raw, writing to file"
 #ifdef ENABLE_CONVERT_RAW_TO_STDOUT
-                 " or stdout"
+               " or stdout"
 #endif /* ENABLE_CONVERT_RAW_TO_STDOUT */
-                 ".\n"
-                 "\n"
-                 : "",
-             (u64Cmd & USAGE_CONVERTHD) ?
-                 "  converthd [-srcformat VDI|VMDK|VHD|RAW]\n"
-                 "            [-dstformat VDI|VMDK|VHD|RAW]\n"
-                 "            <inputfile> <outputfile>\n"
-                 "       converts hard disk images between formats\n"
-                 "\n"
-                 : "",
+               ".\n"
+               "\n"
+             : "",
+             (u64Cmd & USAGE_CONVERTHD)
+             ? "  converthd [-srcformat VDI|VMDK|VHD|RAW]\n"
+               "            [-dstformat VDI|VMDK|VHD|RAW]\n"
+               "            <inputfile> <outputfile>\n"
+               "       converts hard disk images between formats\n"
+               "\n"
+             : "",
 #ifdef RT_OS_WINDOWS
-            (u64Cmd & USAGE_MODINSTALL) ?
-                "  modinstall\n"
-                "       Installs the neccessary driver for the host OS\n"
-                "\n"
-                : "",
-            (u64Cmd & USAGE_MODUNINSTALL) ?
-                "  moduninstall\n"
-                "       Deinstalls the driver\n"
-                "\n"
-                : ""
+             (u64Cmd & USAGE_MODINSTALL)
+             ? "  modinstall\n"
+               "       Installs the neccessary driver for the host OS\n"
+               "\n"
+             : "",
+             (u64Cmd & USAGE_MODUNINSTALL)
+             ? "  moduninstall\n"
+               "       Deinstalls the driver\n"
+               "\n"
+             : "",
 #else
-                "",
-                ""
+             "",
+             "",
 #endif
+             (u64Cmd & USAGE_DEBUGLOG)
+             ? "  debuglog <vmname>|<uuid> [--enable|--disable] [--flags todo]\n"
+               "           [--groups todo] [--destinations todo]\n"
+               "       Controls debug logging.\n"
+               "\n"
+             : ""
              );
 }
 
@@ -1842,6 +1849,122 @@ int CmdModInstall(void)
     return E_FAIL;
 }
 
+int CmdDebugLog(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+{
+    /*
+     * The first parameter is the name or UUID of a VM with a direct session
+     * that we wish to open.
+     */
+    if (argc < 1)
+        return errorSyntax(USAGE_DEBUGLOG, "Missing VM name/UUID");
+
+    ComPtr<IMachine> ptrMachine;
+    HRESULT rc = aVirtualBox->GetMachine(Bstr(argv[0]), ptrMachine.asOutParam());
+    if (FAILED(rc) || ptrMachine.isNull())
+        CHECK_ERROR_RET(aVirtualBox, FindMachine(Bstr(argv[0]), ptrMachine.asOutParam()), 1);
+
+    Bstr bstrMachineUuid;
+    CHECK_ERROR_RET(ptrMachine, COMGETTER(Id)(bstrMachineUuid.asOutParam()), 1);
+    CHECK_ERROR_RET(aVirtualBox, OpenExistingSession(aSession, bstrMachineUuid), 1);
+
+    /*
+     * Get the debugger interface.
+     */
+    ComPtr<IConsole> ptrConsole;
+    CHECK_ERROR_RET(aSession, COMGETTER(Console)(ptrConsole.asOutParam()), 1);
+
+    ComPtr<IMachineDebugger> ptrDebugger;
+    CHECK_ERROR_RET(ptrConsole, COMGETTER(Debugger)(ptrDebugger.asOutParam()), 1);
+
+    /*
+     * Parse the command.
+     */
+    bool                fEnablePresent = false;
+    bool                fEnable        = false;
+    bool                fFlagsPresent  = false;
+    iprt::MiniString    strFlags;
+    bool                fGroupsPresent = false;
+    iprt::MiniString    strGroups;
+    bool                fDestsPresent  = false;
+    iprt::MiniString    strDests;
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--disable",      'E', RTGETOPT_REQ_NOTHING },
+        { "--enable",       'e', RTGETOPT_REQ_NOTHING },
+        { "--flags",        'f', RTGETOPT_REQ_STRING  },
+        { "--groups",       'g', RTGETOPT_REQ_STRING  },
+        { "--destinations", 'd', RTGETOPT_REQ_STRING  }
+    };
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            case 'e':
+                fEnablePresent = true;
+                fEnable = true;
+                break;
+
+            case 'E':
+                fEnablePresent = true;
+                fEnable = false;
+                break;
+
+            case 'f':
+                fFlagsPresent = true;
+                if (*ValueUnion.psz)
+                {
+                    if (strFlags.isNotEmpty())
+                        strFlags.append(' ');
+                    strFlags.append(ValueUnion.psz);
+                }
+                break;
+
+            case 'g':
+                fGroupsPresent = true;
+                if (*ValueUnion.psz)
+                {
+                    if (strGroups.isNotEmpty())
+                        strGroups.append(' ');
+                    strGroups.append(ValueUnion.psz);
+                }
+                break;
+
+            case 'd':
+                fDestsPresent = true;
+                if (*ValueUnion.psz)
+                {
+                    if (strDests.isNotEmpty())
+                        strDests.append(' ');
+                    strDests.append(ValueUnion.psz);
+                }
+                break;
+
+            default:
+                return errorGetOpt(USAGE_DEBUGLOG , ch, &ValueUnion);
+        }
+    }
+
+    /*
+     * Do the job.
+     */
+    if (fEnablePresent && !fEnable)
+        CHECK_ERROR_RET(ptrDebugger, COMSETTER(LogEnabled)(FALSE), 1);
+
+    /** @todo flags, groups destination. */
+    if (fFlagsPresent || fGroupsPresent || fDestsPresent)
+        RTPrintf("WARNING: One or more of the requested features are not implemented! Feel free to do this... :-)\n");
+
+    if (fEnablePresent && fEnable)
+        CHECK_ERROR_RET(ptrDebugger, COMSETTER(LogEnabled)(FALSE), 1);
+    return 0;
+}
+
 /**
  * Wrapper for handling internal commands
  */
@@ -1875,11 +1998,12 @@ int handleInternalCommands(HandlerArg *a)
         return CmdConvertToRaw(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
     if (!strcmp(pszCmd, "converthd"))
         return CmdConvertHardDisk(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
-
     if (!strcmp(pszCmd, "modinstall"))
         return CmdModInstall();
     if (!strcmp(pszCmd, "moduninstall"))
         return CmdModUninstall();
+    if (!strcmp(pszCmd, "debuglog"))
+        return CmdDebugLog(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
 
     /* default: */
     return errorSyntax(USAGE_ALL, "Invalid command '%s'", Utf8Str(a->argv[0]).raw());
