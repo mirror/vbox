@@ -3386,6 +3386,8 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
         Req.idChunkUnmap = pgmR3PhysChunkFindUnmapCandidate(pVM);
 
     /* Must be callable from any thread, so can't use VMMR3CallR0. */
+    /** @todo r=bird: Why must it be a valid one? NIL_VMCPUID should do the
+     *        trick as it does a bunch of other places, shouldn't it? */
     rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /* use CPU id 0; it must be a valid one */, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
     if (RT_SUCCESS(rc))
     {
