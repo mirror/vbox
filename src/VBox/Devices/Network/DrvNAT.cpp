@@ -152,7 +152,8 @@ typedef struct DRVNAT
     PRTREQQUEUE             pSlirpReqQueue;
     /** The guest IP for port-forwarding. */
     uint32_t                GuestIP;
-    uint32_t                alignment1;
+    /** Link state set when the VM is suspended. */
+    PDMNETWORKLINKSTATE     enmLinkStateWant;
 
 #ifdef VBOX_WITH_SLIRP_MT
     PPDMTHREAD              pGuestThread;
@@ -593,8 +594,7 @@ static DECLCALLBACK(void) drvNATNetworkUp_SetPromiscuousMode(PPDMINETWORKUP pInt
  */
 static void drvNATNotifyLinkChangedWorker(PDRVNAT pThis, PDMNETWORKLINKSTATE enmLinkState)
 {
-    pThis->enmLinkState = enmLinkState;
-
+    pThis->enmLinkState = pThis->enmLinkStateWant = enmLinkState;
     switch (enmLinkState)
     {
         case PDMNETWORKLINKSTATE_UP:
@@ -626,9 +626,13 @@ static DECLCALLBACK(void) drvNATNetworkUp_NotifyLinkChanged(PPDMINETWORKUP pInte
 
     LogFlow(("drvNATNetworkUp_NotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
 
-    /* don't queue new requests when the NAT thread is about to stop */
+    /* Don't queue new requests when the NAT thread is about to stop.
+     * But the VM could also be paused. So memorize the desired state. */
     if (pThis->pSlirpThread->enmState != PDMTHREADSTATE_RUNNING)
+    {
+        pThis->enmLinkStateWant = enmLinkState;
         return;
+    }
 
     PRTREQ pReq;
     int rc = RTReqCallEx(pThis->pSlirpReqQueue, &pReq, 0 /*cMillies*/, RTREQFLAGS_VOID,
@@ -669,6 +673,9 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
+
+    if (pThis->enmLinkStateWant != pThis->enmLinkState)
+        drvNATNotifyLinkChangedWorker(pThis, pThis->enmLinkStateWant);
 
     /*
      * Polling loop.
@@ -1281,7 +1288,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
             AssertRC(rc);
 #endif
 
-            pThis->enmLinkState = PDMNETWORKLINKSTATE_UP;
+            pThis->enmLinkState = pThis->enmLinkStateWant = PDMNETWORKLINKSTATE_UP;
 
             /* might return VINF_NAT_DNS */
             return rc;
