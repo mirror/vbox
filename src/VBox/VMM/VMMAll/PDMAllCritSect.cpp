@@ -90,6 +90,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHR
     Assert(!(pCritSect->s.Core.fFlags & PDMCRITSECT_FLAGS_PENDING_UNLOCK));
 
     ASMAtomicWriteS32(&pCritSect->s.Core.cNestings, 1);
+    Assert(pCritSect->s.Core.cNestings == 1);
     ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, hNativeSelf);
 
 # ifdef PDMCRITSECT_STRICT
@@ -170,6 +171,7 @@ static int pdmR3CritSectEnterContended(PPDMCRITSECT pCritSect, RTNATIVETHREAD hN
 DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRTLOCKVALSRCPOS pSrcPos)
 {
     Assert(pCritSect->s.Core.cNestings < 8);  /* useful to catch incorrect locking */
+    Assert(pCritSect->s.Core.cNestings >= 0);
 
     /*
      * If the critical section has already been destroyed, then inform the caller.
@@ -191,6 +193,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
     {
         ASMAtomicIncS32(&pCritSect->s.Core.cLockers);
         ASMAtomicIncS32(&pCritSect->s.Core.cNestings);
+        Assert(pCritSect->s.Core.cNestings > 1);
         ASMAtomicAndU32(&pCritSect->s.Core.fFlags, ~PDMCRITSECT_FLAGS_PENDING_UNLOCK);
         return VINF_SUCCESS;
     }
@@ -312,6 +315,7 @@ static int pdmCritSectTryEnter(PPDMCRITSECT pCritSect, PCRTLOCKVALSRCPOS pSrcPos
     {
         ASMAtomicIncS32(&pCritSect->s.Core.cLockers);
         ASMAtomicIncS32(&pCritSect->s.Core.cNestings);
+        Assert(pCritSect->s.Core.cNestings > 1);
         ASMAtomicAndU32(&pCritSect->s.Core.fFlags, ~PDMCRITSECT_FLAGS_PENDING_UNLOCK);
         return VINF_SUCCESS;
     }
@@ -422,6 +426,7 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
     if (pCritSect->s.Core.cNestings > 1)
     {
         ASMAtomicDecS32(&pCritSect->s.Core.cNestings);
+        Assert(pCritSect->s.Core.cNestings >= 1);
         ASMAtomicDecS32(&pCritSect->s.Core.cLockers);
         return;
     }
@@ -451,6 +456,7 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
         ASMAtomicAndU32(&pCritSect->s.Core.fFlags, ~PDMCRITSECT_FLAGS_PENDING_UNLOCK);
         ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, NIL_RTNATIVETHREAD);
         ASMAtomicDecS32(&pCritSect->s.Core.cNestings);
+        Assert(pCritSect->s.Core.cNestings == 0);
 
         /* stop and decrement lockers. */
         STAM_PROFILE_ADV_STOP(&pCritSect->s.StatLocked, l);
@@ -501,6 +507,7 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
             /* darn, someone raced in on us. */
             ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, hNativeThread);
             STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l);
+            Assert(pCritSect->s.Core.cNestings == 0);
             ASMAtomicWriteS32(&pCritSect->s.Core.cNestings, 1);
         }
         ASMAtomicOrU32(&pCritSect->s.Core.fFlags, PDMCRITSECT_FLAGS_PENDING_UNLOCK);
