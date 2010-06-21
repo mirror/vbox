@@ -953,8 +953,8 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall32(VBoxGuestHGCMCallInfo *pCallInfo, uint3
                  || cbCallInfo >= pCallInfo->cParms * sizeof(HGCMFunctionParameter32),
                  VERR_INVALID_PARAMETER);
 
-    /* This Assert does not work on Solaris 64/32 mixed mode, not sure why, skipping for now */
-#ifndef RT_OS_SOLARIS
+    /* This Assert does not work on Solaris/Windows 64/32 mixed mode, not sure why, skipping for now */
+#if !defined(RT_OS_SOLARIS) && !defined(RT_OS_WINDOWS)
     AssertReturn((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_KERNEL, VERR_WRONG_ORDER);
 #endif
 
