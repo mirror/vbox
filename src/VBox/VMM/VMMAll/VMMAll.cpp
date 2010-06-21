@@ -92,7 +92,7 @@ VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
     if (idCpu == NIL_VMCPUID)
         return NULL;
     Assert(idCpu < pVM->cCpus);
-    return &pVM->aCpus[VMR3GetVMCPUId(pVM)];
+    return &pVM->aCpus[idCpu];
 
 #elif defined(IN_RING0)
     if (pVM->cCpus == 1)
