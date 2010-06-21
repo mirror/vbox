@@ -227,6 +227,17 @@ public:
     MiniString &append(const MiniString &that);
 
     /**
+     * Appends the string "that" to "this".
+     *
+     * @param   pszThat         The C string to append.
+     *
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     *
+     * @returns Reference to the object.
+     */
+    MiniString &append(const char *pszThat);
+
+    /**
      * Appends the given character to "this".
      *
      * @param   c               The character to append.
