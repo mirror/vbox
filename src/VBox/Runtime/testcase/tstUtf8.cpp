@@ -847,6 +847,22 @@ void Benchmarks(RTTEST hTest)
 
 
 /**
+ * Tests RTStrEnd
+ */
+static void testStrEnd(RTTEST hTest)
+{
+    RTTestSub(hTest, "RTStrEnd");
+
+    static char const s_szEmpty[1] = "";
+    RTTESTI_CHECK(RTStrEnd(s_szEmpty, 0) == NULL);
+    RTTESTI_CHECK(RTStrEnd(s_szEmpty, 1) == &s_szEmpty[0]);
+    for (size_t i = 0; i < _1M; i++)
+        RTTESTI_CHECK(RTStrEnd(s_szEmpty, ~i) == &s_szEmpty[0]);
+
+}
+
+
+/**
  * Tests RTStrStr and RTStrIStr.
  */
 static void testStrStr(RTTEST hTest)
@@ -1221,6 +1237,7 @@ int main()
     test2(hTest);
     test3(hTest);
     TstRTStrXCmp(hTest);
+    testStrEnd(hTest);
     testStrStr(hTest);
     testMinistring(hTest);
     testLatin1(hTest);

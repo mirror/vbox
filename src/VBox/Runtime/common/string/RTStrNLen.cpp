@@ -34,7 +34,7 @@
 
 RTDECL(size_t) RTStrNLen(const char *pszString, size_t cchMax)
 {
-    const char *pchEnd = (const char *)memchr(pszString, '\0', cchMax);
+    const char *pchEnd = RTStrEnd(pszString, cchMax);
     return pchEnd ? pchEnd - pszString : cchMax;
 }
 RT_EXPORT_SYMBOL(RTStrNLen);

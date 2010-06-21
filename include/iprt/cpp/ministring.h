@@ -327,16 +327,33 @@ public:
     }
 
     /**
-     * Returns true if the member string has no length.
-     * This is true for instances created from both NULL and "" input strings.
+     * Returns @c true if the member string has no length.
+     *
+     * This is @c true for instances created from both NULL and "" input
+     * strings.
      *
      * This states nothing about how much memory might be allocated.
      *
-     * @returns true if empty, false if not.
+     * @returns @c true if empty, @c false if not.
      */
     bool isEmpty() const
     {
         return length() == 0;
+    }
+
+    /**
+     * Returns @c false if the member string has no length.
+     *
+     * This is @c false for instances created from both NULL and "" input
+     * strings.
+     *
+     * This states nothing about how much memory might be allocated.
+     *
+     * @returns @c false if empty, @c true if not.
+     */
+    bool isNotEmpty() const
+    {
+        return length() != 0;
     }
 
     /** Case sensitivity selector. */

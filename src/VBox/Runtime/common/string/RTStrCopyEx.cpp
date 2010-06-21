@@ -34,7 +34,7 @@
 
 RTDECL(int) RTStrCopyEx(char *pszDst, size_t cbDst, const char *pszSrc, size_t cchMaxSrc)
 {
-    const char *pszSrcEol = (const char *)memchr(pszSrc, '\0', cchMaxSrc);
+    const char *pszSrcEol = RTStrEnd(pszSrc, cchMaxSrc);
     size_t      cchSrc    = pszSrcEol ? (size_t)(pszSrcEol - pszSrc) : cchMaxSrc;
     if (RT_LIKELY(cchSrc < cbDst))
     {

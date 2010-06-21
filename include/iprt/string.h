@@ -1194,6 +1194,54 @@ RTDECL(size_t) RTStrNLen(const char *pszString, size_t cchMax);
  */
 RTDECL(int) RTStrNLenEx(const char *pszString, size_t cchMax, size_t *pcch);
 
+RT_C_DECLS_END
+
+/** The maximum size argument of a memchr call. */
+#define RTSTR_MEMCHR_MAX            (~(size_t)0x10000)
+
+/**
+ * Find the zero terminator in a string with a limited length.
+ *
+ * @returns Pointer to the zero terminator.
+ * @returns NULL if the zero terminator was not found.
+ *
+ * @param   pszString   The string.
+ * @param   cchMax      The max string length.  RTSTR_MAX is fine.
+ */
+#if defined(__cplusplus) && !defined(DOXYGEN_RUNNING)
+DECLINLINE(char const *) RTStrEnd(char const *pszString, size_t cchMax)
+{
+    /* Avoid potential issues with memchr seen in glibc. */
+    if (cchMax > RTSTR_MEMCHR_MAX)
+    {
+        char const *pszRet = (char const *)memchr(pszString, '\0', RTSTR_MEMCHR_MAX);
+        if (RT_LIKELY(pszRet))
+            return pszRet;
+        pszString += RTSTR_MEMCHR_MAX;
+        cchMax    -= RTSTR_MEMCHR_MAX;
+    }
+    return (char const *)memchr(pszString, '\0', cchMax);
+}
+
+DECLINLINE(char *) RTStrEnd(char *pszString, size_t cchMax)
+#else
+DECLINLINE(char *) RTStrEnd(const char *pszString, size_t cchMax)
+#endif
+{
+    /* Avoid potential issues with memchr seen in glibc. */
+    if (cchMax > RTSTR_MEMCHR_MAX)
+    {
+        char *pszRet = (char *)memchr(pszString, '\0', RTSTR_MEMCHR_MAX);
+        if (RT_LIKELY(pszRet))
+            return pszRet;
+        pszString += RTSTR_MEMCHR_MAX;
+        cchMax    -= RTSTR_MEMCHR_MAX;
+    }
+    return (char *)memchr(pszString, '\0', cchMax);
+}
+
+RT_C_DECLS_BEGIN
+
 /**
  * Matches a simple string pattern.
  *

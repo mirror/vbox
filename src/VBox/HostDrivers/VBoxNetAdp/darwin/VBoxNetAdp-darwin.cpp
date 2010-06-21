@@ -364,7 +364,7 @@ static int VBoxNetAdpDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFla
 
         case IOCBASECMD(VBOXNETADP_CTL_REMOVE):
         {
-            if (!memchr(pReq->szName, '\0', RT_MIN(cbReq, sizeof(pReq->szName))))
+            if (!RTStrEnd(pReq->szName, RT_MIN(cbReq, sizeof(pReq->szName))))
                 return EINVAL;
 
             PVBOXNETADP pAdp = vboxNetAdpFindByName(pReq->szName);

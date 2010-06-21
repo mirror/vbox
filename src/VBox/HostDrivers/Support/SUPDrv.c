@@ -1217,9 +1217,9 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits > 0);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits < pReq->u.In.cbImageWithTabs);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.szName[0]);
-            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, memchr(pReq->u.In.szName, '\0', sizeof(pReq->u.In.szName)));
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, RTStrEnd(pReq->u.In.szName, sizeof(pReq->u.In.szName)));
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, !supdrvCheckInvalidChar(pReq->u.In.szName, ";:()[]{}/\\|&*%#@!~`\"'"));
-            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, memchr(pReq->u.In.szFilename, '\0', sizeof(pReq->u.In.szFilename)));
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, RTStrEnd(pReq->u.In.szFilename, sizeof(pReq->u.In.szFilename)));
 
             /* execute */
             pReq->Hdr.rc = supdrvIOCtl_LdrOpen(pDevExt, pSession, pReq);
@@ -1255,7 +1255,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                                        ("SUP_IOCTL_LDR_LOAD: sym #%ld: symb off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offSymbol, (long)pReq->u.In.cbImageWithTabs));
                     REQ_CHECK_EXPR_FMT(paSyms[i].offName < pReq->u.In.cbStrTab,
                                        ("SUP_IOCTL_LDR_LOAD: sym #%ld: name off %#lx (max=%#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImageWithTabs));
-                    REQ_CHECK_EXPR_FMT(memchr(&pReq->u.In.abImage[pReq->u.In.offStrTab + paSyms[i].offName], '\0', pReq->u.In.cbStrTab - paSyms[i].offName),
+                    REQ_CHECK_EXPR_FMT(RTStrEnd(&pReq->u.In.abImage[pReq->u.In.offStrTab + paSyms[i].offName], pReq->u.In.cbStrTab - paSyms[i].offName),
                                        ("SUP_IOCTL_LDR_LOAD: sym #%ld: unterminated name! (%#lx / %#lx)\n", (long)i, (long)paSyms[i].offName, (long)pReq->u.In.cbImageWithTabs));
                 }
             }
@@ -1281,7 +1281,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             /* validate */
             PSUPLDRGETSYMBOL pReq = (PSUPLDRGETSYMBOL)pReqHdr;
             REQ_CHECK_SIZES(SUP_IOCTL_LDR_GET_SYMBOL);
-            REQ_CHECK_EXPR(SUP_IOCTL_LDR_GET_SYMBOL, memchr(pReq->u.In.szSymbol, '\0', sizeof(pReq->u.In.szSymbol)));
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_GET_SYMBOL, RTStrEnd(pReq->u.In.szSymbol, sizeof(pReq->u.In.szSymbol)));
 
             /* execute */
             pReq->Hdr.rc = supdrvIOCtl_LdrGetSymbol(pDevExt, pSession, pReq);
@@ -1492,7 +1492,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                 REQ_CHECK_EXPR(SUP_IOCTL_CALL_SERVICE, pSrvReq->u32Magic == SUPR0SERVICEREQHDR_MAGIC);
                 REQ_CHECK_SIZES_EX(SUP_IOCTL_CALL_SERVICE, SUP_IOCTL_CALL_SERVICE_SIZE_IN(pSrvReq->cbReq), SUP_IOCTL_CALL_SERVICE_SIZE_OUT(pSrvReq->cbReq));
             }
-            REQ_CHECK_EXPR(SUP_IOCTL_CALL_SERVICE, memchr(pReq->u.In.szName, '\0', sizeof(pReq->u.In.szName)));
+            REQ_CHECK_EXPR(SUP_IOCTL_CALL_SERVICE, RTStrEnd(pReq->u.In.szName, sizeof(pReq->u.In.szName)));
 
             /* execute */
             pReq->Hdr.rc = supdrvIOCtl_CallServiceModule(pDevExt, pSession, pReq);
@@ -3286,7 +3286,7 @@ SUPR0DECL(int) SUPR0ComponentRegisterFactory(PSUPDRVSESSION pSession, PCSUPDRVFA
     AssertReturn(pSession->R0Process == NIL_RTR0PROCESS, VERR_ACCESS_DENIED);
     AssertPtrReturn(pFactory, VERR_INVALID_POINTER);
     AssertPtrReturn(pFactory->pfnQueryFactoryInterface, VERR_INVALID_POINTER);
-    psz = (const char *)memchr(pFactory->szName, '\0', sizeof(pFactory->szName));
+    psz = RTStrEnd(pFactory->szName, sizeof(pFactory->szName));
     AssertReturn(psz, VERR_INVALID_PARAMETER);
 
     /*
@@ -3425,12 +3425,12 @@ SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *p
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
 
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
-    pszEnd = memchr(pszName, '\0', RT_SIZEOFMEMB(SUPDRVFACTORY, szName));
+    pszEnd = RTStrEnd(pszName, RT_SIZEOFMEMB(SUPDRVFACTORY, szName));
     AssertReturn(pszEnd, VERR_INVALID_PARAMETER);
     cchName = pszEnd - pszName;
 
     AssertPtrReturn(pszInterfaceUuid, VERR_INVALID_POINTER);
-    pszEnd = memchr(pszInterfaceUuid, '\0', RTUUID_STR_LENGTH);
+    pszEnd = RTStrEnd(pszInterfaceUuid, RTUUID_STR_LENGTH);
     AssertReturn(pszEnd, VERR_INVALID_PARAMETER);
 
     AssertPtrReturn(ppvFactoryIf, VERR_INVALID_POINTER);
@@ -4138,14 +4138,14 @@ static int supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession
      * Input validation.
      */
     AssertPtrReturn(pszSymbol, VERR_INVALID_POINTER);
-    pszEnd = (char *)memchr(pszSymbol, '\0', 512);
+    pszEnd = RTStrEnd(pszSymbol, 512);
     AssertReturn(pszEnd, VERR_INVALID_PARAMETER);
     cbSymbol = pszEnd - pszSymbol + 1;
 
     if (pszModule)
     {
         AssertPtrReturn(pszModule, VERR_INVALID_POINTER);
-        pszEnd = (char *)memchr(pszModule, '\0', 64);
+        pszEnd = RTStrEnd(pszModule, 64);
         AssertReturn(pszEnd, VERR_INVALID_PARAMETER);
     }
     Log3(("supdrvIDC_LdrGetSymbol: pszModule=%p:{%s} pszSymbol=%p:{%s}\n", pszModule, pszModule, pszSymbol, pszSymbol));

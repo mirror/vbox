@@ -169,7 +169,7 @@ VBoxNetAdpFreeBSDCtrlioctl(struct cdev *dev, u_long iCmd, caddr_t data, int flag
             break;
 
         case VBOXNETADP_CTL_REMOVE:
-            if (!memchr(pReq->szName, '\0', RT_MIN(sizeof(pReq->szName), IOCPARM_LEN(iCmd))))
+            if (!RTStrEnd(pReq->szName, RT_MIN(sizeof(pReq->szName), IOCPARM_LEN(iCmd))))
                 return EINVAL;
 
             pAdp = vboxNetAdpFindByName(pReq->szName);

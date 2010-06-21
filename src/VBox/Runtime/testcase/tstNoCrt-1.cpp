@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2008-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -426,8 +426,11 @@ int main()
     RTPrintf("tstNoCrt-1: memchr\n");
     pv = RT_NOCRT(memchr)(&s_szTest1[0x00], 'f', sizeof(s_szTest1)); CHECK_PV(&s_szTest1[0xf]);
     pv = RT_NOCRT(memchr)(&s_szTest1[0x0f], 'f', sizeof(s_szTest1)); CHECK_PV(&s_szTest1[0xf]);
-    pv = RT_NOCRT(memchr)(&s_szTest1[0x03], 0, sizeof(s_szTest1)); CHECK_PV(&s_szTest1[0x10]);
-    pv = RT_NOCRT(memchr)(&s_szTest1[0x10], 0, sizeof(s_szTest1)); CHECK_PV(&s_szTest1[0x10]);
+    pv = RT_NOCRT(memchr)(&s_szTest1[0x03],   0, sizeof(s_szTest1)); CHECK_PV(&s_szTest1[0x10]);
+    pv = RT_NOCRT(memchr)(&s_szTest1[0x10],   0, sizeof(s_szTest1)); CHECK_PV(&s_szTest1[0x10]);
+    pv = RT_NOCRT(memchr)(&s_szTest1,         0, ~(size_t)0);        CHECK_PV(&s_szTest1[0x10]);
+    pv = RT_NOCRT(memchr)(&s_szTest1,         0, ~(size_t)1);        CHECK_PV(&s_szTest1[0x10]);
+    pv = RT_NOCRT(memchr)(&s_szTest1,         0, ~(size_t)16);       CHECK_PV(&s_szTest1[0x10]);
     for (unsigned i = 0; i < sizeof(s_szTest1); i++)
         for (unsigned j = 0; j <= i; j++)
         {

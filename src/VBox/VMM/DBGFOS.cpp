@@ -142,7 +142,7 @@ VMMR3DECL(int) DBGFR3OSRegister(PVM pVM, PCDBGFOSREG pReg)
     AssertReturn(!pReg->fFlags, VERR_INVALID_PARAMETER);
     AssertReturn(pReg->cbData < _2G, VERR_INVALID_PARAMETER);
     AssertReturn(pReg->szName[0], VERR_INVALID_NAME);
-    AssertReturn(memchr(&pReg->szName[0], '\0', sizeof(pReg->szName)), VERR_INVALID_NAME);
+    AssertReturn(RTStrEnd(&pReg->szName[0], sizeof(pReg->szName)), VERR_INVALID_NAME);
     AssertPtrReturn(pReg->pfnConstruct, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pReg->pfnDestruct, VERR_INVALID_POINTER);
     AssertPtrReturn(pReg->pfnProbe, VERR_INVALID_POINTER);
@@ -228,7 +228,7 @@ VMMR3DECL(int)  DBGFR3OSDeregister(PVM pVM, PCDBGFOSREG pReg)
     AssertPtrReturn(pReg, VERR_INVALID_POINTER);
     AssertReturn(pReg->u32Magic == DBGFOSREG_MAGIC, VERR_INVALID_MAGIC);
     AssertReturn(pReg->u32EndMagic == DBGFOSREG_MAGIC, VERR_INVALID_MAGIC);
-    AssertReturn(memchr(&pReg->szName[0], '\0', sizeof(pReg->szName)), VERR_INVALID_NAME);
+    AssertReturn(RTStrEnd(&pReg->szName[0], sizeof(pReg->szName)), VERR_INVALID_NAME);
 
     DBGF_OS_READ_LOCK(pVM);
     PDBGFOS pOS;

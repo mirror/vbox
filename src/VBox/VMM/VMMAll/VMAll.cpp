@@ -241,9 +241,9 @@ VMMDECL(int) VMSetRuntimeErrorV(PVM pVM, uint32_t fFlags, const char *pszErrorId
     Assert(!(fFlags & VMSETRTERR_FLAGS_SUSPEND) || !(fFlags & VMSETRTERR_FLAGS_FATAL));
     AssertPtr(pszErrorId);
     Assert(*pszErrorId);
-    Assert(memchr(pszErrorId, '\0', 128) != NULL);
+    Assert(RTStrEnd(pszErrorId, 128) != NULL);
     AssertPtr(pszFormat);
-    Assert(memchr(pszFormat, '\0', 512) != NULL);
+    Assert(RTStrEnd(pszFormat, 512) != NULL);
 
 #ifdef IN_RING3
     /*
