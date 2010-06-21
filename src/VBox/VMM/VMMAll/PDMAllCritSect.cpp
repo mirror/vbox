@@ -77,7 +77,7 @@ DECL_FORCE_INLINE(RTNATIVETHREAD) pdmCritSectGetNativeSelf(PCPDMCRITSECT pCritSe
 
 
 /**
- * Tail code called when we've wont the battle for the lock.
+ * Tail code called when we've won the battle for the lock.
  *
  * @returns VINF_SUCCESS.
  *
