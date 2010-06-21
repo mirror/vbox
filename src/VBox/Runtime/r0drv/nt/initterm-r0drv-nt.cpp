@@ -224,6 +224,14 @@ int rtR0InitNative(void)
             g_cbrtNtPbQuantumEnd     = 1;
             g_offrtNtPbDpcQueueDepth = 0x3400 + 0x18;
         }
+        /* Windows 7 7600 x64 */
+        else if (    BuildNumber == 7600
+                 && !memcmp(&pbPrcb[0x4bb8], &u.szVendor[0], 4*3))
+        {
+            g_offrtNtPbQuantumEnd    = 0x21d9;
+            g_cbrtNtPbQuantumEnd     = 1;
+            g_offrtNtPbDpcQueueDepth = 0x2180 + 0x18;
+        }
 
 #else
 # error "port me"
