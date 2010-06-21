@@ -68,9 +68,9 @@ private:
 };
 
 class ATL_NO_VTABLE EventSource :
+    public VirtualBoxBase,
     public VirtualBoxSupportErrorInfoImpl<EventSource, IEventSource>,
     public VirtualBoxSupportTranslation<EventSource>,
-    public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(IEventSource)
 {
 public:
@@ -87,17 +87,17 @@ public:
         COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
 
-    EventSource() {}
-    virtual ~EventSource() {}
+    DECLARE_EMPTY_CTOR_DTOR (EventSource)
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init ();
+    HRESULT init (IUnknown * aParent);
     void uninit();
 
     // IEventSource methods
+    STDMETHOD(CreateListener)(IEventListener ** aListener);
     STDMETHOD(RegisterListener)(IEventListener * aListener, 
                                 ComSafeArrayIn(VBoxEventType_T, aInterested),
                                 BOOL             aActive);

@@ -60,6 +60,11 @@ HRESULT VBoxEvent::init(IEventSource *aSource, VBoxEventType_T aType, BOOL aWait
 {
     HRESULT rc = S_OK;
 
+    AssertReturn(aSource != NULL, E_INVALIDARG);
+     
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
     m->mSource = aSource;
     m->mType = aType;
     m->mWaitable = aWaitable;
@@ -73,12 +78,14 @@ HRESULT VBoxEvent::init(IEventSource *aSource, VBoxEventType_T aType, BOOL aWait
             if (RT_FAILURE(vrc))
             {
                 AssertFailed ();
-                rc = setError(E_FAIL,
-                              tr("Internal error (%Rrc)"), vrc);
-                break;
+                return setError(E_FAIL,
+                                tr("Internal error (%Rrc)"), vrc);
             }
         }
     } while (0);
+
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
 
     return rc;
 }
@@ -230,7 +237,9 @@ static BOOL implies(VBoxEventType_T who, VBoxEventType_T what)
         case VBoxEventType_Any:
             return TRUE;
         case VBoxEventType_MachineEvent:
-            return (what == VBoxEventType_OnMachineStateChange) || (what == VBoxEventType_OnMachineDataChange);
+            return     (what == VBoxEventType_OnMachineStateChange)
+                    || (what == VBoxEventType_OnMachineDataChange)
+                    || (what == VBoxEventType_OnMachineRegistered);
         case VBoxEventType_Invalid:
             return FALSE;
     }
@@ -261,8 +270,11 @@ ListenerRecord::ListenerRecord(IEventListener*                  aListener,
         }
     }
 
-    ::RTCritSectInitEx(&mcsQLock, 0, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_ANY, NULL);
-    ::RTSemEventCreate (&mQEvent);
+    if (!mActive)
+    {
+        ::RTCritSectInitEx(&mcsQLock, 0, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_ANY, NULL);
+        ::RTSemEventCreate (&mQEvent);
+    }
 }
 
 ListenerRecord::~ListenerRecord()
@@ -274,8 +286,11 @@ ListenerRecord::~ListenerRecord()
         (*aEvMap)[j - FirstEvent].remove(this);
     }
 
-    ::RTCritSectDelete(&mcsQLock);
-    ::RTSemEventDestroy(mQEvent);
+    if (!mActive)
+    {
+        ::RTCritSectDelete(&mcsQLock);
+        ::RTSemEventDestroy(mQEvent);
+    }
 }
 
 HRESULT ListenerRecord::process(IEvent* aEvent, BOOL aWaitable, PendingEventsMap::iterator& pit)
@@ -342,6 +357,13 @@ HRESULT ListenerRecord::eventProcessed (IEvent* aEvent, PendingEventsMap::iterat
     return S_OK;
 }
 
+
+EventSource::EventSource()
+{}
+
+EventSource::~EventSource()
+{}
+
 HRESULT EventSource::FinalConstruct()
 {
     m = new Data;
@@ -354,10 +376,15 @@ void EventSource::FinalRelease()
     delete m;
 }
 
-
-HRESULT EventSource::init()
+HRESULT EventSource::init(IUnknown * aParent)
 {
     HRESULT rc = S_OK;
+
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
     return rc;
 }
 
@@ -365,6 +392,23 @@ void EventSource::uninit()
 {
     m->mListeners.clear();
     // m->mEvMap shall be cleared at this point too by destructors
+}
+
+STDMETHODIMP EventSource::CreateListener(IEventListener ** aListener)
+{
+    CheckComArgOutPointerValid(aListener);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    ComPtr<IEventListener> listener;
+
+    HRESULT rc = listener.createLocalObject(CLSID_CallbackWrapper);
+    ComAssertMsgRet(SUCCEEDED(rc), ("Could not create wrapper object (%Rrc)", rc),
+                    E_FAIL);
+
+    listener.queryInterfaceTo(aListener);
+    return S_OK;
 }
 
 STDMETHODIMP EventSource::RegisterListener(IEventListener * aListener,
@@ -486,14 +530,10 @@ STDMETHODIMP EventSource::GetEvent(IEventListener * aListener,
     HRESULT rc;
 
     if (it != m->mListeners.end())
-    {
         rc = it->second.dequeue(aEvent, aTimeout);
-    }
     else
-    {
         rc = setError(VBOX_E_OBJECT_NOT_FOUND,
                       tr("Listener was never registered"));
-    }
 
     return rc;
 }

@@ -66,6 +66,7 @@
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 #include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
+#include "EventImpl.h"
 
 #include "AutoCaller.h"
 #include "Logging.h"
@@ -354,6 +355,7 @@ struct VirtualBox::Data
 #ifdef RT_OS_WINDOWS
     ComEventsHelper                     mComEvHelper;
 #endif
+    const ComObjPtr<EventSource>        pEventSource;
 };
 
 // constructor / destructor
@@ -531,6 +533,12 @@ HRESULT VirtualBox::init()
             rc = registerDHCPServer(pDhcpServer, false /* aSaveRegistry */);
             if (FAILED(rc)) throw rc;
         }
+
+        /* events */
+        if (SUCCEEDED(rc = unconst(m->pEventSource).createObject()))
+            rc = m->pEventSource->init(this);
+        if (FAILED(rc)) throw rc;
+
     }
     catch (HRESULT err)
     {
@@ -594,7 +602,6 @@ HRESULT VirtualBox::init()
     if (SUCCEEDED(rc))
         rc = m->mComEvHelper.init(IID_IVirtualBoxCallback);
 #endif
-
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
         autoInitSpan.setSucceeded();
@@ -735,6 +742,13 @@ void VirtualBox::uninit()
     {
         m->pHost->uninit();
         unconst(m->pHost).setNull();
+    }
+
+    LogFlowThisFunc(("Releasing event source...\n"));
+    if (m->pEventSource)
+    {
+        m->pEventSource->uninit();
+        unconst(m->pEventSource).setNull();
     }
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
@@ -1040,6 +1054,20 @@ VirtualBox::COMGETTER(DHCPServers)(ComSafeArrayOut(IDHCPServer *, aDHCPServers))
     AutoReadLock al(m->ollDHCPServers.getLockHandle() COMMA_LOCKVAL_SRC_POS);
     SafeIfaceArray<IDHCPServer> svrs(m->ollDHCPServers.getList());
     svrs.detachTo(ComSafeArrayOutArg(aDHCPServers));
+
+    return S_OK;
+}
+
+STDMETHODIMP
+VirtualBox::COMGETTER(EventSource)(IEventSource ** aEventSource)
+{
+    CheckComArgOutPointerValid(aEventSource);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* event source is const, no need to lock */
+    m->pEventSource.queryInterfaceTo(aEventSource);
 
     return S_OK;
 }

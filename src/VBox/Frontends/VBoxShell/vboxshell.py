@@ -426,6 +426,26 @@ def monitorVBox(ctx, dur):
         pass
     vbox.unregisterCallback(cb)
 
+def monitorVBox2(ctx, dur):
+    vbox = ctx['vb']
+    print vbox.eventSource
+    listener = vbox.eventSource.createListener()
+    if dur == -1:
+        # not infinity, but close enough
+        dur = 100000
+    try:
+        vbox.eventSource.registerListener(listener, [ctx['global'].constants.VBoxEventType_All], False)
+        end = time.time() + dur
+        while  time.time() < end:
+            ev = vbox.eventSource.getEvent(500)
+            if ev:
+                print "got event: %s %s" %(ev, str(ev.type))
+    # We need to catch all exceptions here, otherwise callback will never be unregistered
+    except:
+        traceback.print_exc()
+        pass
+    vbox.eventSource.unregisterListener(listener)
+
 
 def takeScreenshot(ctx,console,args):
     from PIL import Image
@@ -1386,6 +1406,16 @@ def monitorVBoxCmd(ctx, args):
     if len(args) > 1:
         dur = float(args[1])
     monitorVBox(ctx, dur)
+    return 0
+
+def monitorVBox2Cmd(ctx, args):
+    if (len(args) > 2):
+        print "usage: monitorVBox2 (duration)"
+        return 0
+    dur = 5
+    if len(args) > 1:
+        dur = float(args[1])
+    monitorVBox2(ctx, dur)
     return 0
 
 def getAdapterType(ctx, type):
@@ -2855,6 +2885,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'guest':['Execute command for guest: guest Win32 \'console.mouse.putMouseEvent(20, 20, 0, 0, 0)\'', guestCmd, 0],
             'monitorGuest':['Monitor what happens with the guest for some time: monitorGuest Win32 10', monitorGuestCmd, 0],
             'monitorVBox':['Monitor what happens with Virtual Box for some time: monitorVBox 10', monitorVBoxCmd, 0],
+            'monitorVBox2':['(temp)Monitor what happens with Virtual Box for some time: monitorVBox2 10', monitorVBox2Cmd, 0],
             'portForward':['Setup permanent port forwarding for a VM, takes adapter number host port and guest port: portForward Win32 0 8080 80', portForwardCmd, 0],
             'showLog':['Show log file of the VM, : showLog Win32', showLogCmd, 0],
             'findLog':['Show entries matching pattern in log file of the VM, : findLog Win32 PDM|CPUM', findLogCmd, 0],
