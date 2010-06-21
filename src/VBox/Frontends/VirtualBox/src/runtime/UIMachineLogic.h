@@ -118,7 +118,6 @@ protected:
 
     /* Cleanup helpers: */
     //virtual void cleanupRequiredFeatures() {}
-    virtual void cleanupMachineWindows();
 #ifdef Q_WS_MAC
     virtual void cleanupDock();
 #endif /* Q_WS_MAC */

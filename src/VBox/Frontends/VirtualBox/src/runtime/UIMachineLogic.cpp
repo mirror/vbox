@@ -629,14 +629,6 @@ void UIMachineLogic::prepareRequiredFeatures()
 #endif
 }
 
-void UIMachineLogic::cleanupMachineWindows()
-{
-#ifdef Q_WS_MAC
-    /* We need to clean up the dock stuff before the machine windows. */
-    cleanupDock();
-#endif /* Q_WS_MAC */
-}
-
 #ifdef Q_WS_MAC
 void UIMachineLogic::cleanupDock()
 {

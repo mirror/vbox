@@ -41,7 +41,12 @@ UIMachineLogicNormal::UIMachineLogicNormal(QObject *pParent, UISession *pSession
 
 UIMachineLogicNormal::~UIMachineLogicNormal()
 {
-    /* Cleanup normal machine window: */
+#ifdef Q_WS_MAC
+    /* Cleanup the dock stuff before the machine window(s): */
+    cleanupDock();
+#endif /* Q_WS_MAC */
+
+    /* Cleanup machine window(s): */
     cleanupMachineWindow();
 }
 
@@ -130,9 +135,6 @@ void UIMachineLogicNormal::prepareMachineWindows()
     if (isMachineWindowsCreated())
         return;
 
-    /* Base class cleanup: */
-    UIMachineLogic::cleanupMachineWindows();
-
 #ifdef Q_WS_MAC // TODO: Is that really need here?
     /* We have to make sure that we are getting the front most process.
      * This is necessary for Qt versions > 4.3.3: */
@@ -158,7 +160,7 @@ void UIMachineLogicNormal::cleanupMachineWindow()
     if (!isMachineWindowsCreated())
         return;
 
-    /* Cleanup normal machine window: */
+    /* Cleanup machine window(s): */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         UIMachineWindow::destroy(pMachineWindow);
 }
