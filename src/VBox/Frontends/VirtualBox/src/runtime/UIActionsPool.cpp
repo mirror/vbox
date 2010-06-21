@@ -91,6 +91,8 @@ UIAction::UIAction(QObject *pParent, UIActionType type)
     : QIWithRetranslateUI3<QAction>(pParent)
     , m_type(type)
 {
+    /* Default is no specific menu role. We will set them explicit later. */
+    setMenuRole(QAction::NoRole);
 }
 
 UIActionType UIAction::type() const
