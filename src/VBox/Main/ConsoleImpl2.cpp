@@ -2487,7 +2487,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                  */
                 if (   typeSnap == RTFS_FS_TYPE_FAT
                     && u64Size >= _4G
-                    && !mfSnapshotFolderWarningShown)
+                    && !mfSnapshotFolderSizeWarningShown)
                 {
                     const char *pszUnit;
                     uint64_t u64Print = formatDiskSize(u64Size, &pszUnit);
@@ -2510,32 +2510,54 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
 #endif
                             strSnap.raw(), strFile.raw(), u64Print, pszUnit);
                     /* Show this particular warning only once */
-                    mfSnapshotFolderWarningShown = true;
+                    mfSnapshotFolderSizeWarningShown = true;
                 }
 
 #ifdef RT_OS_LINUX
                 /*
                  * Ext4 bug: Check if the host I/O cache is disabled and the disk image is located
                  *           on an ext4 partition. Later we have to check the Linux kernel version!
+                 * This bug apparently applies to the XFS file system as well.
                  */
                 if (   (uCaps & MediumFormatCapabilities_Asynchronous)
                     && !fUseHostIOCache
                     && (   typeFile == RTFS_FS_TYPE_EXT4
-                        || typeSnap == RTFS_FS_TYPE_EXT4))
+                        || typeFile == RTFS_FS_TYPE_XFS))
                 {
                     setVMRuntimeErrorCallbackF(pVM, this, 0,
                             "Ext4PartitionDetected",
                             N_("The host I/O cache for at least one controller is disabled "
-                               "but the medium '%ls' or the snapshot folder for this VM "
-                               "is located on an ext4 partition. There is a known Linux "
+                               "and the medium '%ls' for this VM "
+                               "is located on an %s partition. There is a known Linux "
                                "kernel bug which can lead to the corruption of the virtual "
                                "disk image under these conditions.\n"
                                "Either enable the host I/O cache permanently in the VM "
                                "settings or put the disk image and the snapshot folder "
                                "onto a different file system.\n"
                                "The host I/O cache will now be enabled for this medium"),
-                            strFile.raw());
+                            strFile.raw(), typeFile == RTFS_FS_TYPE_EXT4 ? "ext4" : "xfs");
                     fUseHostIOCache = true;
+                }
+                else if (   (uCaps & MediumFormatCapabilities_Asynchronous)
+                         && !fUseHostIOCache
+                         && (   typeSnap == RTFS_FS_TYPE_EXT4
+                             || typeSnap == RTFS_FS_TYPE_XFS)
+                         && !mfSnapshotFolderExt4WarningShown)
+                {
+                    setVMRuntimeErrorCallbackF(pVM, this, 0,
+                            "Ext4PartitionDetected",
+                            N_("The host I/O cache for at least one controller is disabled "
+                               "and the snapshot folder for this VM "
+                               "is located on an %s partition. There is a known Linux "
+                               "kernel bug which can lead to the corruption of the virtual "
+                               "disk image under these conditions.\n"
+                               "Either enable the host I/O cache permanently in the VM "
+                               "settings or put the disk image and the snapshot folder "
+                               "onto a different file system.\n"
+                               "The host I/O cache will now be enabled for this medium"),
+                            typeSnap == RTFS_FS_TYPE_EXT4 ? "ext4" : "xfs");
+                    fUseHostIOCache = true;
+                    mfSnapshotFolderExt4WarningShown = true;
                 }
 #endif
             }
