@@ -262,17 +262,17 @@ static DECLCALLBACK(int) pdmR3DrvRegister(PCPDMDRVREGCB pCallbacks, PCPDMDRVREG 
                     ("%#x\n", pReg->u32Version),
                     VERR_PDM_UNKNOWN_DRVREG_VERSION);
     AssertReturn(pReg->szName[0], VERR_PDM_INVALID_DRIVER_REGISTRATION);
-    AssertMsgReturn(memchr(pReg->szName, '\0', sizeof(pReg->szName)),
+    AssertMsgReturn(RTStrEnd(pReg->szName, sizeof(pReg->szName)),
                     (".*s\n", sizeof(pReg->szName), pReg->szName),
                     VERR_PDM_INVALID_DRIVER_REGISTRATION);
     AssertMsgReturn(    !(pReg->fFlags & PDM_DRVREG_FLAGS_R0)
                     ||  (   pReg->szR0Mod[0]
-                         && memchr(pReg->szR0Mod, '\0', sizeof(pReg->szR0Mod))),
+                         && RTStrEnd(pReg->szR0Mod, sizeof(pReg->szR0Mod))),
                     ("%s: %.*s\n", pReg->szName, sizeof(pReg->szR0Mod), pReg->szR0Mod),
                     VERR_PDM_INVALID_DRIVER_REGISTRATION);
     AssertMsgReturn(    !(pReg->fFlags & PDM_DRVREG_FLAGS_RC)
                     ||  (   pReg->szRCMod[0]
-                         && memchr(pReg->szRCMod, '\0', sizeof(pReg->szRCMod))),
+                         && RTStrEnd(pReg->szRCMod, sizeof(pReg->szRCMod))),
                     ("%s: %.*s\n", pReg->szName, sizeof(pReg->szRCMod), pReg->szRCMod),
                     VERR_PDM_INVALID_DRIVER_REGISTRATION);
     AssertMsgReturn(VALID_PTR(pReg->pszDescription),

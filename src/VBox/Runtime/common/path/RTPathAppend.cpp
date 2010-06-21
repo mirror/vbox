@@ -106,7 +106,7 @@ static size_t rtPathRootSpecLen2(const char *pszPath)
 
 RTDECL(int) RTPathAppend(char *pszPath, size_t cbPathDst, const char *pszAppend)
 {
-    char *pszPathEnd = (char *)memchr(pszPath, '\0', cbPathDst);
+    char *pszPathEnd = RTStrEnd(pszPath, cbPathDst);
     AssertReturn(pszPathEnd, VERR_INVALID_PARAMETER);
 
     /*

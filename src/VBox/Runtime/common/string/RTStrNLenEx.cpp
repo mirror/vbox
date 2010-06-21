@@ -33,7 +33,7 @@
 
 RTDECL(int) RTStrNLenEx(const char *pszString, size_t cchMax, size_t *pcch)
 {
-    const char *pchEnd = (const char *)memchr(pszString, '\0', cchMax);
+    const char *pchEnd = RTStrEnd(pszString, cchMax);
     if (!pchEnd)
     {
         *pcch = cchMax;

@@ -723,7 +723,7 @@ void ScmStreamRewindForWriting(PSCMSTREAM pStream)
  */
 bool ScmStreamIsText(PSCMSTREAM pStream)
 {
-    if (memchr(pStream->pch, '\0', pStream->cb))
+    if (RTStrEnd(pStream->pch, pStream->cb))
         return false;
     if (!pStream->cb)
         return false;

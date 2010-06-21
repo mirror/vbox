@@ -63,7 +63,7 @@ RTDECL(const char *) RTStrCacheEnterN(RTSTRCACHE hStrCache, const char *pchStrin
 {
     AssertPtr(pchString);
     AssertReturn(cchString < _1G, NULL);
-    Assert(!memchr(pchString, '\0', cchString));
+    Assert(!RTStrEnd(pchString, cchString));
 
     return (const char *)RTMemPoolDupEx((RTMEMPOOL)hStrCache, pchString, cchString, 1);
 }

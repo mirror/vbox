@@ -328,7 +328,7 @@ VBGLR3DECL(int) VbglR3GuestPropRead(uint32_t u32ClientId, const char *pszName,
         &&  (ppszValue != NULL || ppszFlags != NULL))
     {
         /* Validate / skip 'Name'. */
-        char *pszFlags = (char *)memchr(pvBuf, '\0', cbBuf) + 1;
+        char *pszFlags = RTStrEnd((char *)pvBuf, cbBuf) + 1;
         AssertPtrReturn(pszFlags, VERR_TOO_MUCH_DATA);
         if (ppszValue)
             *ppszValue = (char *)pvBuf;
@@ -336,8 +336,8 @@ VBGLR3DECL(int) VbglR3GuestPropRead(uint32_t u32ClientId, const char *pszName,
         if (ppszFlags)
         {
             /* Validate 'Flags'. */
-            void *pvEos = memchr(pszFlags, '\0', cbBuf - (pszFlags - (char *)pvBuf));
-            AssertPtrReturn(pvEos, VERR_TOO_MUCH_DATA);
+            char *pszEos = RTStrEnd(pszFlags, cbBuf - (pszFlags - (char *)pvBuf));
+            AssertPtrReturn(pszEos, VERR_TOO_MUCH_DATA);
             *ppszFlags = pszFlags;
         }
     }
@@ -684,13 +684,13 @@ VBGLR3DECL(int) VbglR3GuestPropEnumNext(PVBGLR3GUESTPROPENUM pHandle,
     char *pchEnd  = pHandle->pchBufEnd;     /* End of buffer, for size calculations. */
 
     char *pszName      = pchNext;
-    char *pszValue     = pchNext = (char *)memchr(pchNext, '\0', pchEnd - pchNext) + 1;
+    char *pszValue     = pchNext = RTStrEnd(pchNext, pchEnd - pchNext) + 1;
     AssertPtrReturn(pchNext, VERR_PARSE_ERROR);  /* 0x1 is also an invalid pointer :) */
 
-    char *pszTimestamp = pchNext = (char *)memchr(pchNext, '\0', pchEnd - pchNext) + 1;
+    char *pszTimestamp = pchNext = RTStrEnd(pchNext, pchEnd - pchNext) + 1;
     AssertPtrReturn(pchNext, VERR_PARSE_ERROR);
 
-    char *pszFlags     = pchNext = (char *)memchr(pchNext, '\0', pchEnd - pchNext) + 1;
+    char *pszFlags     = pchNext = RTStrEnd(pchNext, pchEnd - pchNext) + 1;
     AssertPtrReturn(pchNext, VERR_PARSE_ERROR);
 
     /*
@@ -700,7 +700,7 @@ VBGLR3DECL(int) VbglR3GuestPropEnumNext(PVBGLR3GUESTPROPENUM pHandle,
     uint64_t u64Timestamp;
     if (*pszName != '\0')
     {
-        pchNext = (char *)memchr(pchNext, '\0', pchEnd - pchNext) + 1;
+        pchNext = RTStrEnd(pchNext, pchEnd - pchNext) + 1;
         AssertPtrReturn(pchNext, VERR_PARSE_ERROR);
 
         /* Convert the timestamp string into a number. */
@@ -879,14 +879,13 @@ VBGLR3DECL(int) VbglR3GuestPropWait(uint32_t u32ClientId,
         &&  (ppszName != NULL || ppszValue != NULL || ppszFlags != NULL))
     {
         /* Validate / skip 'Name'. */
-        char *pszValue = (char *)memchr(pvBuf, '\0', cbBuf) + 1;
+        char *pszValue = RTStrEnd((char *)pvBuf, cbBuf) + 1;
         AssertPtrReturn(pszValue, VERR_TOO_MUCH_DATA);
         if (ppszName)
             *ppszName = (char *)pvBuf;
 
         /* Validate / skip 'Value'. */
-        char *pszFlags = (char *)memchr(pszValue, '\0',
-                                        cbBuf - (pszValue - (char *)pvBuf)) + 1;
+        char *pszFlags = RTStrEnd(pszValue, cbBuf - (pszValue - (char *)pvBuf)) + 1;
         AssertPtrReturn(pszFlags, VERR_TOO_MUCH_DATA);
         if (ppszValue)
             *ppszValue = pszValue;
@@ -894,8 +893,8 @@ VBGLR3DECL(int) VbglR3GuestPropWait(uint32_t u32ClientId,
         if (ppszFlags)
         {
             /* Validate 'Flags'. */
-            void *pvEos = memchr(pszFlags, '\0', cbBuf - (pszFlags - (char *)pvBuf));
-            AssertPtrReturn(pvEos, VERR_TOO_MUCH_DATA);
+            char *pszEos = RTStrEnd(pszFlags, cbBuf - (pszFlags - (char *)pvBuf));
+            AssertPtrReturn(pszEos, VERR_TOO_MUCH_DATA);
             *ppszFlags = pszFlags;
         }
     }

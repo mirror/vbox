@@ -5288,7 +5288,7 @@ INTNETR0DECL(int) IntNetR0Open(PSUPDRVSESSION pSession, const char *pszNetwork,
     AssertReturn(pIntNet->u32Magic, VERR_INVALID_MAGIC);
 
     AssertPtrReturn(pszNetwork, VERR_INVALID_PARAMETER);
-    const char *pszNetworkEnd = (const char *)memchr(pszNetwork, '\0', INTNET_MAX_NETWORK_NAME);
+    const char *pszNetworkEnd = RTStrEnd(pszNetwork, INTNET_MAX_NETWORK_NAME);
     AssertReturn(pszNetworkEnd, VERR_INVALID_PARAMETER);
     size_t cchNetwork = pszNetworkEnd - pszNetwork;
     AssertReturn(cchNetwork, VERR_INVALID_PARAMETER);
@@ -5296,7 +5296,7 @@ INTNETR0DECL(int) IntNetR0Open(PSUPDRVSESSION pSession, const char *pszNetwork,
     if (pszTrunk)
     {
         AssertPtrReturn(pszTrunk, VERR_INVALID_PARAMETER);
-        const char *pszTrunkEnd = (const char *)memchr(pszTrunk, '\0', INTNET_MAX_TRUNK_NAME);
+        const char *pszTrunkEnd = RTStrEnd(pszTrunk, INTNET_MAX_TRUNK_NAME);
         AssertReturn(pszTrunkEnd, VERR_INVALID_PARAMETER);
     }
     else

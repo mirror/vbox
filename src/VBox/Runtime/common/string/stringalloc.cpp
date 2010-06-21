@@ -131,9 +131,9 @@ RT_EXPORT_SYMBOL(RTStrDupEx);
 RTDECL(char *) RTStrDupN(const char *pszString, size_t cchMax)
 {
     AssertPtr(pszString);
-    char  *pszEnd = (char *)memchr(pszString, '\0', cchMax);
-    size_t cch    = pszEnd ? (uintptr_t)pszEnd - (uintptr_t)pszString : cchMax;
-    char  *pszDst = (char *)RTMemAlloc(cch + 1);
+    char const *pszEnd = RTStrEnd(pszString, cchMax);
+    size_t      cch    = pszEnd ? (uintptr_t)pszEnd - (uintptr_t)pszString : cchMax;
+    char       *pszDst = (char *)RTMemAlloc(cch + 1);
     if (pszDst)
     {
         memcpy(pszDst, pszString, cch);
@@ -261,7 +261,8 @@ RTDECL(int) RTStrATruncate(char **ppsz, size_t cchNew)
     else
     {
         AssertPtrReturn(pszOld, VERR_OUT_OF_RANGE);
-        char *pszZero = (char *)memchr(pszOld, '\0', cchNew + 63);
+        AssertPtrReturn(cchNew < ~(size_t)64, VERR_OUT_OF_RANGE);
+        char *pszZero = RTStrEnd(pszOld, cchNew + 63);
         AssertReturn(!pszZero || (size_t)(pszZero - pszOld) >= cchNew, VERR_OUT_OF_RANGE);
         pszOld[cchNew] = '\0';
         if (!pszZero)
