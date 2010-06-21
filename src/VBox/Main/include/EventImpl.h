@@ -99,7 +99,7 @@ public:
 
     // IEventSource methods
     STDMETHOD(RegisterListener)(IEventListener * aListener, 
-                                ComSafeArrayIn(VBoxEventType, aInterested),
+                                ComSafeArrayIn(VBoxEventType_T, aInterested),
                                 BOOL             aActive);
     STDMETHOD(UnregisterListener)(IEventListener * aListener);
     STDMETHOD(FireEvent)(IEvent * aEvent,
@@ -118,6 +118,8 @@ private:
     struct Data;
 
     Data* m;
+
+    friend class ListenerRecord;
 };
 
 #endif // ____H_EVENTIMPL

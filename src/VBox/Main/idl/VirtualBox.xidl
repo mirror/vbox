@@ -14555,7 +14555,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <const name="Invalid" value="0">
       <desc>
-        Invalid event.
+        Invalid event, must be first.
       </desc>
     </const>
 
@@ -14573,6 +14573,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </const>
 
+    <const name="LastWildcard" value="31">
+      <desc>
+        Last wildcard.
+      </desc>
+    </const>
+
     <const name="OnMachineStateChange" value="32">
       <desc>
         <see>IVirtualBoxCallback::onMachineStateChange</see>
@@ -14586,6 +14592,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="OnExtraDataChange" value="34">
       <desc>
         <see>IVirtualBoxCallback::onExtraDataChange</see>
+      </desc>
+    </const>
+
+    <const name="Last" value="35">
+      <desc>
+        Must be last event, used for iterations.
       </desc>
     </const>
 
