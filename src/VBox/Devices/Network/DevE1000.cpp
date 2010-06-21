@@ -4984,7 +4984,9 @@ static DECLCALLBACK(int) e1kSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWO
     bool fOldUp = !!(STATUS & STATUS_LU);
     bool fNewUp = enmState == PDMNETWORKLINKSTATE_UP;
 
-    if (fNewUp != fOldUp)
+    if (   fNewUp != fOldUp
+        || (!fNewUp && pState->fCableConnected)) /* old state was connected but STATUS not
+                                                  * yet written by guest */
     {
         if (fNewUp)
         {
