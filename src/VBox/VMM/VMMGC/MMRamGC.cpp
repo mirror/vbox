@@ -41,22 +41,6 @@ static DECLCALLBACK(int) mmGCRamTrap0eHandler(PVM pVM, PCPUMCTXCORE pRegFrame);
 
 DECLASM(void) MMGCRamReadNoTrapHandler_EndProc(void);
 DECLASM(void) MMGCRamWriteNoTrapHandler_EndProc(void);
-DECLASM(void) EMGCEmulateLockCmpXchg_EndProc(void);
-DECLASM(void) EMGCEmulateLockCmpXchg_Error(void);
-DECLASM(void) EMGCEmulateCmpXchg_EndProc(void);
-DECLASM(void) EMGCEmulateCmpXchg_Error(void);
-DECLASM(void) EMGCEmulateLockCmpXchg8b_EndProc(void);
-DECLASM(void) EMGCEmulateLockCmpXchg8b_Error(void);
-DECLASM(void) EMGCEmulateCmpXchg8b_EndProc(void);
-DECLASM(void) EMGCEmulateCmpXchg8b_Error(void);
-DECLASM(void) EMGCEmulateLockXAdd_EndProc(void);
-DECLASM(void) EMGCEmulateLockXAdd_Error(void);
-DECLASM(void) EMGCEmulateXAdd_EndProc(void);
-DECLASM(void) EMGCEmulateXAdd_Error(void);
-DECLASM(void) EMEmulateLockOr_EndProc(void);
-DECLASM(void) EMEmulateLockOr_Error(void);
-DECLASM(void) EMEmulateLockBtr_EndProc(void);
-DECLASM(void) EMEmulateLockBtr_Error(void);
 DECLASM(void) MMGCRamRead_Error(void);
 DECLASM(void) MMGCRamWrite_Error(void);
 
@@ -121,6 +105,8 @@ VMMRCDECL(int) MMGCRamRead(PVM pVM, void *pDst, void *pSrc, size_t cb)
  * @param   pDst        Where to write the data.
  * @param   pSrc        Pointer to the data to write.
  * @param   cb          Size of data to write, only 1/2/4 is valid.
+ *
+ * @deprecated Don't use this as it doesn't check the page state.
  */
 VMMRCDECL(int) MMGCRamWrite(PVM pVM, void *pDst, void *pSrc, size_t cb)
 {
@@ -170,86 +156,6 @@ DECLCALLBACK(int) mmGCRamTrap0eHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
         /* Must be a write violation. */
         AssertReturn(TRPMGetErrorCode(VMMGetCpu0(pVM)) & X86_TRAP_PF_RW, VERR_INTERNAL_ERROR);
         pRegFrame->eip = (uintptr_t)&MMGCRamWrite_Error;
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * Page fault inside EMGCEmulateLockCmpXchg()? Resume at _Error.
-     */
-    if (    (uintptr_t)&EMGCEmulateLockCmpXchg < (uintptr_t)pRegFrame->eip
-        &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&EMGCEmulateLockCmpXchg_EndProc)
-    {
-        pRegFrame->eip = (uintptr_t)&EMGCEmulateLockCmpXchg_Error;
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * Page fault inside EMGCEmulateCmpXchg()? Resume at _Error.
-     */
-    if (    (uintptr_t)&EMGCEmulateCmpXchg < (uintptr_t)pRegFrame->eip
-        &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&EMGCEmulateCmpXchg_EndProc)
-    {
-        pRegFrame->eip = (uintptr_t)&EMGCEmulateCmpXchg_Error;
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * Page fault inside EMGCEmulateLockCmpXchg8b()? Resume at _Error.
-     */
-    if (    (uintptr_t)&EMGCEmulateLockCmpXchg8b < (uintptr_t)pRegFrame->eip
-        &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&EMGCEmulateLockCmpXchg8b_EndProc)
-    {
-        pRegFrame->eip = (uintptr_t)&EMGCEmulateLockCmpXchg8b_Error;
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * Page fault inside EMGCEmulateCmpXchg8b()? Resume at _Error.
-     */
-    if (    (uintptr_t)&EMGCEmulateCmpXchg8b < (uintptr_t)pRegFrame->eip
-        &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&EMGCEmulateCmpXchg8b_EndProc)
-    {
-        pRegFrame->eip = (uintptr_t)&EMGCEmulateCmpXchg8b_Error;
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * Page fault inside EMGCEmulateLockXAdd()? Resume at _Error.
-     */
-    if (    (uintptr_t)&EMGCEmulateLockXAdd < (uintptr_t)pRegFrame->eip
-        &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&EMGCEmulateLockXAdd_EndProc)
-    {
-        pRegFrame->eip = (uintptr_t)&EMGCEmulateLockXAdd_Error;
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * Page fault inside EMGCEmulateXAdd()? Resume at _Error.
-     */
-    if (    (uintptr_t)&EMGCEmulateXAdd < (uintptr_t)pRegFrame->eip
-        &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&EMGCEmulateXAdd_EndProc)
-    {
-        pRegFrame->eip = (uintptr_t)&EMGCEmulateXAdd_Error;
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * Page fault inside EMEmulateLockOr()? Resume at *_Error.
-     */
-    if (    (uintptr_t)&EMEmulateLockOr < (uintptr_t)pRegFrame->eip
-        &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&EMEmulateLockOr_EndProc)
-    {
-        pRegFrame->eip = (uintptr_t)&EMEmulateLockOr_Error;
-        return VINF_SUCCESS;
-    }
-
-    /*
-     * Page fault inside EMEmulateLockBtr()? Resume at *_Error.
-     */
-    if (    (uintptr_t)&EMEmulateLockBtr < (uintptr_t)pRegFrame->eip
-        &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&EMEmulateLockBtr_EndProc)
-    {
-        pRegFrame->eip = (uintptr_t)&EMEmulateLockBtr_Error;
         return VINF_SUCCESS;
     }
 

@@ -423,18 +423,8 @@ DECLINLINE(int) emRamRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *pv
 
 DECLINLINE(int) emRamWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDst, const void *pvSrc, uint32_t cb)
 {
-#ifdef IN_RC
-    int rc = MMGCRamWrite(pVM, (void *)(uintptr_t)GCPtrDst, (void *)pvSrc, cb);
-    if (RT_LIKELY(rc != VERR_ACCESS_DENIED))
-        return rc;
-    /*
-     * The page pool cache may end up here in some cases because it
-     * flushed one of the shadow mappings used by the trapping
-     * instruction and it either flushed the TLB or the CPU reused it.
-     * We want to play safe here, verifying that we've got write
-     * access doesn't cost us much (see PGMPhysGCPtr2GCPhys()).
-     */
-#endif
+    /* Don't use MMGCRamWrite here as it does not respect zero pages, shared
+       pages or write monitored pages. */
     return PGMPhysInterpretedWriteNoHandlers(pVCpu, pCtxCore, GCPtrDst, pvSrc, cb, /*fMayTrap*/ false);
 }
 
@@ -932,27 +922,16 @@ static int emInterpretLockOrXorAnd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCP
 
     RTGCPTR GCPtrPar1 = param1.val.val64;
     GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pDis, &pDis->param1, GCPtrPar1);
-#ifdef IN_RC
-    pvParam1  = (void *)(uintptr_t)GCPtrPar1;
-#else
     PGMPAGEMAPLOCK Lock;
     rc = PGMPhysGCPtr2CCPtr(pVCpu, GCPtrPar1, &pvParam1, &Lock);
     AssertRCReturn(rc, VERR_EM_INTERPRETER);
-#endif
 
     /* Try emulate it with a one-shot #PF handler in place. (RC) */
     Log2(("%s %RGv imm%d=%RX64\n", emGetMnemonic(pDis), GCPtrPar1, pDis->param2.size*8, ValPar2));
 
     RTGCUINTREG32 eflags = 0;
-#ifdef IN_RC
-    MMGCRamRegisterTrapHandler(pVM);
-#endif
     rc = pfnEmulate(pvParam1, ValPar2, pDis->param2.size, &eflags);
-#ifdef IN_RC
-    MMGCRamDeregisterTrapHandler(pVM);
-#else
     PGMPhysReleasePageMappingLock(pVM, &Lock);
-#endif
     if (RT_FAILURE(rc))
     {
         Log(("%s %RGv imm%d=%RX64-> emulation failed due to page fault!\n", emGetMnemonic(pDis), GCPtrPar1, pDis->param2.size*8, ValPar2));
@@ -1188,27 +1167,16 @@ static int emInterpretLockBitTest(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPU
     EM_ASSERT_FAULT_RETURN((RTGCPTR)((RTGCUINTPTR)GCPtrPar1 & ~(RTGCUINTPTR)3) == pvFault, VERR_EM_INTERPRETER);
 #endif
 
-#ifdef IN_RC
-    pvParam1  = (void *)(uintptr_t)GCPtrPar1;
-#else
     PGMPAGEMAPLOCK Lock;
     rc = PGMPhysGCPtr2CCPtr(pVCpu, GCPtrPar1, &pvParam1, &Lock);
     AssertRCReturn(rc, VERR_EM_INTERPRETER);
-#endif
 
     Log2(("emInterpretLockBitTest %s: pvFault=%RGv GCPtrPar1=%RGv imm=%RX64\n", emGetMnemonic(pDis), pvFault, GCPtrPar1, ValPar2));
 
     /* Try emulate it with a one-shot #PF handler in place. (RC) */
     RTGCUINTREG32 eflags = 0;
-#ifdef IN_RC
-    MMGCRamRegisterTrapHandler(pVM);
-#endif
     rc = pfnEmulate(pvParam1, ValPar2, &eflags);
-#ifdef IN_RC
-    MMGCRamDeregisterTrapHandler(pVM);
-#else
     PGMPhysReleasePageMappingLock(pVM, &Lock);
-#endif
     if (RT_FAILURE(rc))
     {
         Log(("emInterpretLockBitTest %s: %RGv imm%d=%RX64 -> emulation failed due to page fault!\n",
@@ -1513,7 +1481,6 @@ static int emInterpretStosWD(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
 }
 #endif /* !IN_RC */
 
-#ifndef IN_RC
 
 /**
  * [LOCK] CMPXCHG emulation.
@@ -1636,146 +1603,8 @@ static int emInterpretCmpXchg8b(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMC
     return VINF_SUCCESS;
 }
 
-#else /* IN_RC */
 
-/**
- * [LOCK] CMPXCHG emulation.
- */
-static int emInterpretCmpXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
-{
-    Assert(pDis->mode != CPUMODE_64BIT);    /** @todo check */
-    OP_PARAMVAL param1, param2;
-
-    /* Source to make DISQueryParamVal read the register value - ugly hack */
-    int rc = DISQueryParamVal(pRegFrame, pDis, &pDis->param1, &param1, PARAM_SOURCE);
-    if(RT_FAILURE(rc))
-        return VERR_EM_INTERPRETER;
-
-    rc = DISQueryParamVal(pRegFrame, pDis, &pDis->param2, &param2, PARAM_SOURCE);
-    if(RT_FAILURE(rc))
-        return VERR_EM_INTERPRETER;
-
-    if (TRPMHasTrap(pVCpu))
-    {
-        if (TRPMGetErrorCode(pVCpu) & X86_TRAP_PF_RW)
-        {
-            RTRCPTR pParam1;
-            uint32_t valpar, eflags;
-
-            AssertReturn(pDis->param1.size == pDis->param2.size, VERR_EM_INTERPRETER);
-            switch(param1.type)
-            {
-            case PARMTYPE_ADDRESS:
-                pParam1 = (RTRCPTR)(uintptr_t)emConvertToFlatAddr(pVM, pRegFrame, pDis, &pDis->param1, (RTRCUINTPTR)param1.val.val64);
-                EM_ASSERT_FAULT_RETURN(pParam1 == (RTRCPTR)pvFault, VERR_EM_INTERPRETER);
-                break;
-
-            default:
-                return VERR_EM_INTERPRETER;
-            }
-
-            switch(param2.type)
-            {
-            case PARMTYPE_IMMEDIATE: /* register actually */
-                valpar = param2.val.val32;
-                break;
-
-            default:
-                return VERR_EM_INTERPRETER;
-            }
-
-            LogFlow(("%s %RRv eax=%08x %08x\n", emGetMnemonic(pDis), pParam1, pRegFrame->eax, valpar));
-
-            MMGCRamRegisterTrapHandler(pVM);
-            if (pDis->prefix & PREFIX_LOCK)
-                rc = EMGCEmulateLockCmpXchg(pParam1, &pRegFrame->eax, valpar, pDis->param2.size, &eflags);
-            else
-                rc = EMGCEmulateCmpXchg(pParam1, &pRegFrame->eax, valpar, pDis->param2.size, &eflags);
-            MMGCRamDeregisterTrapHandler(pVM);
-
-            if (RT_FAILURE(rc))
-            {
-                Log(("%s %RGv eax=%08x %08x -> emulation failed due to page fault!\n", emGetMnemonic(pDis), pParam1, pRegFrame->eax, valpar));
-                return VERR_EM_INTERPRETER;
-            }
-
-            LogFlow(("%s %RRv eax=%08x %08x ZF=%d\n", emGetMnemonic(pDis), pParam1, pRegFrame->eax, valpar, !!(eflags & X86_EFL_ZF)));
-
-            /* Update guest's eflags and finish. */
-            pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
-                                  | (eflags                &  (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
-
-            *pcbSize = param2.size;
-            return VINF_SUCCESS;
-        }
-    }
-    return VERR_EM_INTERPRETER;
-}
-
-
-/**
- * [LOCK] CMPXCHG8B emulation.
- */
-static int emInterpretCmpXchg8b(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
-{
-    Assert(pDis->mode != CPUMODE_64BIT);    /** @todo check */
-    OP_PARAMVAL param1;
-
-    /* Source to make DISQueryParamVal read the register value - ugly hack */
-    int rc = DISQueryParamVal(pRegFrame, pDis, &pDis->param1, &param1, PARAM_SOURCE);
-    if(RT_FAILURE(rc))
-        return VERR_EM_INTERPRETER;
-
-    if (TRPMHasTrap(pVCpu))
-    {
-        if (TRPMGetErrorCode(pVCpu) & X86_TRAP_PF_RW)
-        {
-            RTRCPTR pParam1;
-            uint32_t eflags;
-
-            AssertReturn(pDis->param1.size == 8, VERR_EM_INTERPRETER);
-            switch(param1.type)
-            {
-            case PARMTYPE_ADDRESS:
-                pParam1 = (RTRCPTR)(uintptr_t)emConvertToFlatAddr(pVM, pRegFrame, pDis, &pDis->param1, (RTRCUINTPTR)param1.val.val64);
-                EM_ASSERT_FAULT_RETURN(pParam1 == (RTRCPTR)pvFault, VERR_EM_INTERPRETER);
-                break;
-
-            default:
-                return VERR_EM_INTERPRETER;
-            }
-
-            LogFlow(("%s %RRv=%08x eax=%08x\n", emGetMnemonic(pDis), pParam1, pRegFrame->eax));
-
-            MMGCRamRegisterTrapHandler(pVM);
-            if (pDis->prefix & PREFIX_LOCK)
-                rc = EMGCEmulateLockCmpXchg8b(pParam1, &pRegFrame->eax, &pRegFrame->edx, pRegFrame->ebx, pRegFrame->ecx, &eflags);
-            else
-                rc = EMGCEmulateCmpXchg8b(pParam1, &pRegFrame->eax, &pRegFrame->edx, pRegFrame->ebx, pRegFrame->ecx, &eflags);
-            MMGCRamDeregisterTrapHandler(pVM);
-
-            if (RT_FAILURE(rc))
-            {
-                Log(("%s %RGv=%08x eax=%08x -> emulation failed due to page fault!\n", emGetMnemonic(pDis), pParam1, pRegFrame->eax));
-                return VERR_EM_INTERPRETER;
-            }
-
-            LogFlow(("%s %RGv=%08x eax=%08x ZF=%d\n", emGetMnemonic(pDis), pParam1, pRegFrame->eax, !!(eflags & X86_EFL_ZF)));
-
-            /* Update guest's eflags and finish; note that *only* ZF is affected. */
-            pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_ZF))
-                                  | (eflags                &  (X86_EFL_ZF));
-
-            *pcbSize = 8;
-            return VINF_SUCCESS;
-        }
-    }
-    return VERR_EM_INTERPRETER;
-}
-
-#endif /* IN_RC */
-
-#ifdef IN_RC
+#ifdef IN_RC /** @todo test+enable for HWACCM as well. */
 /**
  * [LOCK] XADD emulation.
  */
@@ -1783,64 +1612,69 @@ static int emInterpretXAdd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
 {
     Assert(pDis->mode != CPUMODE_64BIT);    /** @todo check */
     OP_PARAMVAL param1;
-    uint32_t *pParamReg2;
-    size_t cbSizeParamReg2;
+    void *pvParamReg2;
+    size_t cbParamReg2;
 
     /* Source to make DISQueryParamVal read the register value - ugly hack */
     int rc = DISQueryParamVal(pRegFrame, pDis, &pDis->param1, &param1, PARAM_SOURCE);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-    rc = DISQueryParamRegPtr(pRegFrame, pDis, &pDis->param2, (void **)&pParamReg2, &cbSizeParamReg2);
-    Assert(cbSizeParamReg2 <= 4);
+    rc = DISQueryParamRegPtr(pRegFrame, pDis, &pDis->param2, &pvParamReg2, &cbParamReg2);
+    Assert(cbParamReg2 <= 4);
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
+#ifdef IN_RC
     if (TRPMHasTrap(pVCpu))
     {
         if (TRPMGetErrorCode(pVCpu) & X86_TRAP_PF_RW)
         {
-            RTRCPTR pParam1;
-            uint32_t eflags;
+#endif
+            RTGCPTR         GCPtrPar1;
+            void           *pvParam1;
+            uint32_t        eflags;
+            PGMPAGEMAPLOCK  Lock;
 
             AssertReturn(pDis->param1.size == pDis->param2.size, VERR_EM_INTERPRETER);
             switch(param1.type)
             {
             case PARMTYPE_ADDRESS:
-                pParam1 = (RTRCPTR)(uintptr_t)emConvertToFlatAddr(pVM, pRegFrame, pDis, &pDis->param1, (RTRCUINTPTR)param1.val.val64);
-                EM_ASSERT_FAULT_RETURN(pParam1 == (RTRCPTR)pvFault, VERR_EM_INTERPRETER);
+                GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pDis, &pDis->param1, (RTRCUINTPTR)param1.val.val64);
+#ifdef IN_RC
+                EM_ASSERT_FAULT_RETURN(GCPtrPar1 == pvFault, VERR_EM_INTERPRETER);
+#endif
+
+                rc = PGMPhysGCPtr2CCPtr(pVCpu, GCPtrPar1, &pvParam1, &Lock);
+                AssertRCReturn(rc, VERR_EM_INTERPRETER);
                 break;
 
             default:
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("XAdd %RRv=%08x reg=%08x\n", pParam1, *pParamReg2));
+            LogFlow(("XAdd %RGv=%p reg=%ll08x\n", GCPtrPar1, pvParam1, *(uint64_t *)pvParamReg2));
 
-            MMGCRamRegisterTrapHandler(pVM);
             if (pDis->prefix & PREFIX_LOCK)
-                rc = EMGCEmulateLockXAdd(pParam1, pParamReg2, cbSizeParamReg2, &eflags);
+                eflags = EMEmulateLockXAdd(pvParam1, pvParamReg2, cbParamReg2);
             else
-                rc = EMGCEmulateXAdd(pParam1, pParamReg2, cbSizeParamReg2, &eflags);
-            MMGCRamDeregisterTrapHandler(pVM);
+                eflags = EMEmulateXAdd(pvParam1, pvParamReg2, cbParamReg2);
 
-            if (RT_FAILURE(rc))
-            {
-                Log(("XAdd %RGv reg=%08x -> emulation failed due to page fault!\n", pParam1, *pParamReg2));
-                return VERR_EM_INTERPRETER;
-            }
-
-            LogFlow(("XAdd %RGv reg=%08x ZF=%d\n", pParam1, *pParamReg2, !!(eflags & X86_EFL_ZF)));
+            LogFlow(("XAdd %RGv=%p reg=%ll08x ZF=%d\n", GCPtrPar1, pvParam1, *(uint64_t *)pvParamReg2, !!(eflags & X86_EFL_ZF) ));
 
             /* Update guest's eflags and finish. */
             pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
                                   | (eflags                &  (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF));
 
-            *pcbSize = cbSizeParamReg2;
+            *pcbSize = cbParamReg2;
+            PGMPhysReleasePageMappingLock(pVM, &Lock);
             return VINF_SUCCESS;
+#ifdef IN_RC
         }
     }
+
     return VERR_EM_INTERPRETER;
+#endif
 }
 #endif /* IN_RC */
 
@@ -3192,7 +3026,8 @@ static int emInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
  * Internal worker.
  * @copydoc EMInterpretInstructionCPU
  */
-DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize, EMCODETYPE enmCodeType)
+DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+                                          uint32_t *pcbSize, EMCODETYPE enmCodeType)
 {
     Assert(enmCodeType == EMCODETYPE_SUPERVISOR || enmCodeType == EMCODETYPE_ALL);
     Assert(pcbSize);
