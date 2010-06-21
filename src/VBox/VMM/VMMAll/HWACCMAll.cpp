@@ -113,6 +113,8 @@ void hwaccmMpPokeCpu(PVMCPU pVCpu, RTCPUID idHostCpu)
 {
     uint32_t cWorldSwitchExit = pVCpu->hwaccm.s.cWorldSwitchExit;
 
+    Assert(idHostCpu == pVCpu->idHostCpu);
+
     STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatPoke, x);
     int rc = RTMpPokeCpu(idHostCpu);
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatPoke, x);
