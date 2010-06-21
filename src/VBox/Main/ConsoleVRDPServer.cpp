@@ -797,7 +797,7 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
 
         case VRDP_QP_VIDEO_CHANNEL_SUNFLSH:
         {
-            ULONG ulSunFlsh = 0;
+            ULONG ulSunFlsh = 1;
 
             com::Bstr bstr;
             HRESULT hrc = server->mConsole->machine ()->GetExtraData(Bstr("VRDP/SunFlsh"), bstr.asOutParam());
