@@ -319,6 +319,7 @@ VBoxSVC_SOURCES = \
 	BIOSSettingsImpl.cpp \
 	HostPower.cpp \
 	EventImpl.cpp \
+	VBoxEvents.cpp \
 	$(if $(VBOX_WITH_VRDP),VRDPServerImpl.cpp,) \
 	$(if $(VBOX_WITH_XPCOM),xpcom/server.cpp,) \
 	$(VBOX_XML_SCHEMADEFS_CPP)
@@ -646,6 +647,7 @@ VBoxC_SOURCES = \
 	AudioSnifferInterface.cpp \
 	VMMDevInterface.cpp \
 	EventImpl.cpp \
+	VBoxEvents.cpp \
 	$(VBOX_XML_SCHEMADEFS_CPP)
 VBoxC_SOURCES.win = \
 	win/dllmain.cpp \

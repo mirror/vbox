@@ -14579,6 +14579,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         registerListener() call to simplify registration.
       </desc>
     </const>
+   
+    <const name="SnapshotEvent" value="3">
+      <desc>
+        Wildcard for all snapshot events. Events of this type are never delivered, and only used in
+        registerListener() call to simplify registration.
+      </desc>
+    </const>
+
 
     <const name="LastWildcard" value="31">
       <desc>
@@ -14965,7 +14973,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
    <interface
-     name="ISnapshotChangedEvent" extends="ISnapshotEvent"
+     name="ISnapshotChangeEvent" extends="ISnapshotEvent"
      uuid="07541941-8079-447a-a33e-47a69c7980db"
      wsmap="managed"
      >
@@ -15022,12 +15030,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <eventsink name="IConsoleCallback" default="yes"/>
     </class>
 
-    <class name="CallbackWrapper" uuid="bcacd681-7f53-4409-a2a5-8534911f9358"
+    <class name="CallbackWrapper" uuid="0AD9C4CE-3C33-4C2D-AC7B-B008196787A0"
            namespace="virtualbox.org">
       <interface name="ILocalOwner" default="yes"/>
       <interface name="IVirtualBoxCallback"/>
       <interface name="IConsoleCallback"/>
-      <interface name="IEventListener"/>
     </class>
   </module>
 

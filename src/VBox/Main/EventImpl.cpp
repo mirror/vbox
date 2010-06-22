@@ -25,6 +25,8 @@
 
 #include <iprt/semaphore.h>
 #include <iprt/critsect.h>
+#include <iprt/asm.h>
+
 #include <VBox/com/array.h>
 
 struct VBoxEvent::Data
@@ -36,11 +38,11 @@ struct VBoxEvent::Data
         mWaitable(FALSE),
         mProcessed(FALSE)
     {}
-    ComPtr<IEventSource>    mSource;
     VBoxEventType_T         mType;
     RTSEMEVENT              mWaitEvent;
     BOOL                    mWaitable;
     BOOL                    mProcessed;
+    ComPtr<IEventSource>    mSource;
 };
 
 HRESULT VBoxEvent::FinalConstruct()
@@ -51,8 +53,12 @@ HRESULT VBoxEvent::FinalConstruct()
 
 void VBoxEvent::FinalRelease()
 {
-    uninit();
-    delete m;
+    if (m)
+    {
+        uninit();
+        delete m;
+        m = 0;
+    }
 }
 
 
@@ -61,7 +67,7 @@ HRESULT VBoxEvent::init(IEventSource *aSource, VBoxEventType_T aType, BOOL aWait
     HRESULT rc = S_OK;
 
     AssertReturn(aSource != NULL, E_INVALIDARG);
-     
+
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
@@ -92,13 +98,18 @@ HRESULT VBoxEvent::init(IEventSource *aSource, VBoxEventType_T aType, BOOL aWait
 
 void VBoxEvent::uninit()
 {
+    if (!m)
+        return;
+
     m->mProcessed = TRUE;
     m->mType = VBoxEventType_Invalid;
     m->mSource.setNull();
 
     if (m->mWaitEvent != NIL_RTSEMEVENT)
     {
+        Assert(m->mWaitable);
         ::RTSemEventDestroy(m->mWaitEvent);
+        m->mWaitEvent = NIL_RTSEMEVENT;
     }
 }
 
@@ -167,13 +178,21 @@ STDMETHODIMP VBoxEvent::WaitProcessed(LONG aTimeout, BOOL *aResult)
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
         if (m->mProcessed)
+        {
+            *aResult = TRUE;
             return S_OK;
+        }
+
+        if (aTimeout == 0)
+        {
+            *aResult = m->mProcessed;
+            return S_OK;
+        }
     }
 
     int vrc = ::RTSemEventWait(m->mWaitEvent, aTimeout);
     AssertMsg(RT_SUCCESS(vrc) || vrc == VERR_TIMEOUT || vrc == VERR_INTERRUPTED,
               ("RTSemEventWait returned %Rrc\n", vrc));
-
 
     if (RT_SUCCESS(vrc))
     {
@@ -193,13 +212,14 @@ static const int FirstEvent = (int)VBoxEventType_LastWildcard + 1;
 static const int LastEvent  = (int)VBoxEventType_Last;
 static const int NumEvents  = LastEvent - FirstEvent;
 
-struct ListenerRecord;
+class ListenerRecord;
 typedef std::list<ListenerRecord*> EventMap[NumEvents];
 typedef std::map<IEvent*, int32_t> PendingEventsMap;
 typedef std::deque<ComPtr<IEvent> > PassiveQueue;
 
-struct ListenerRecord
+class ListenerRecord
 {
+private:
     ComPtr<IEventListener>        mListener;
     BOOL                          mActive;
     EventSource*                  mOwner;
@@ -207,7 +227,9 @@ struct ListenerRecord
     RTSEMEVENT                    mQEvent;
     RTCRITSECT                    mcsQLock;
     PassiveQueue                  mQueue;
+    int32_t                       mRefCnt;
 
+public:
     ListenerRecord(IEventListener*                    aListener,
                    com::SafeArray<VBoxEventType_T>&   aInterested,
                    BOOL                               aActive,
@@ -218,9 +240,79 @@ struct ListenerRecord
     HRESULT enqueue(IEvent* aEvent);
     HRESULT dequeue(IEvent* *aEvent, LONG aTimeout);
     HRESULT eventProcessed(IEvent * aEvent, PendingEventsMap::iterator& pit);
+    void addRef()
+    {
+        ASMAtomicIncS32(&mRefCnt);
+    }
+    void release()
+    {
+        if (ASMAtomicDecS32(&mRefCnt) <= 0) delete this;
+    }
+    BOOL isActive()
+    {
+        return mActive;
+    }
 };
 
-typedef std::map<IEventListener*, ListenerRecord>  Listeners;
+/* Handy class with semantics close to ComPtr, but for ListenerRecord */
+class ListenerRecordHolder
+{
+public:
+    ListenerRecordHolder(ListenerRecord* lr)
+    :
+    held(lr)
+    {
+        addref();
+    }
+    ListenerRecordHolder(const ListenerRecordHolder& that)
+    :
+    held(that.held)
+    {
+        addref();
+    }
+    ListenerRecordHolder()
+    :
+    held(0)
+    {
+    }
+    ~ListenerRecordHolder()
+    {
+        release();
+    }
+
+    ListenerRecord* obj()
+    {
+        return held;
+    }
+
+    ListenerRecordHolder &operator=(const ListenerRecordHolder &that)
+    {
+        safe_assign(that.held);
+        return *this;
+    }
+private:
+    ListenerRecord* held;
+
+    void addref()
+    {
+        if (held)
+            held->addRef();
+    }
+    void release()
+    {
+        if (held)
+            held->release();
+    }
+    void safe_assign (ListenerRecord *that_p)
+    {
+        if (that_p)
+            that_p->addRef();
+        release();
+        held = that_p;
+    }
+};
+
+typedef std::map<IEventListener*, ListenerRecordHolder>  Listeners;
 
 struct EventSource::Data
 {
@@ -230,6 +322,9 @@ struct EventSource::Data
     PendingEventsMap              mPendingMap;
 };
 
+/**
+ * This function defines what wildcard expands to.
+ */
 static BOOL implies(VBoxEventType_T who, VBoxEventType_T what)
 {
     switch (who)
@@ -239,7 +334,14 @@ static BOOL implies(VBoxEventType_T who, VBoxEventType_T what)
         case VBoxEventType_MachineEvent:
             return     (what == VBoxEventType_OnMachineStateChange)
                     || (what == VBoxEventType_OnMachineDataChange)
-                    || (what == VBoxEventType_OnMachineRegistered);
+                    || (what == VBoxEventType_OnMachineRegistered)
+                    || (what == VBoxEventType_OnSessionStateChange)
+                    || (what == VBoxEventType_OnGuestPropertyChange);
+        case VBoxEventType_SnapshotEvent:
+            return     (what == VBoxEventType_OnSnapshotTaken)
+                    || (what == VBoxEventType_OnSnapshotDeleted)
+                    || (what == VBoxEventType_OnSnapshotChange)
+                    ;
         case VBoxEventType_Invalid:
             return FALSE;
     }
@@ -252,7 +354,8 @@ ListenerRecord::ListenerRecord(IEventListener*                  aListener,
                                EventSource*                     aOwner)
     :
     mActive(aActive),
-    mOwner(aOwner)
+    mOwner(aOwner),
+    mRefCnt(0)
 {
     mListener = aListener;
     EventMap* aEvMap = &aOwner->m->mEvMap;
@@ -272,7 +375,7 @@ ListenerRecord::ListenerRecord(IEventListener*                  aListener,
 
     if (!mActive)
     {
-        ::RTCritSectInitEx(&mcsQLock, 0, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_ANY, NULL);
+        ::RTCritSectInit(&mcsQLock);
         ::RTSemEventCreate (&mQEvent);
     }
 }
@@ -310,13 +413,13 @@ HRESULT ListenerRecord::process(IEvent* aEvent, BOOL aWaitable, PendingEventsMap
 HRESULT ListenerRecord::enqueue (IEvent* aEvent)
 {
     AssertMsg(!mActive, ("must be passive\n"));
+    // put an event the queue
     ::RTCritSectEnter(&mcsQLock);
-
     mQueue.push_back(aEvent);
-    // notify waiters
-    ::RTSemEventSignal(mQEvent);
-
     ::RTCritSectLeave(&mcsQLock);
+
+     // notify waiters
+    ::RTSemEventSignal(mQEvent);
 
     return S_OK;
 }
@@ -329,6 +432,12 @@ HRESULT ListenerRecord::dequeue (IEvent* *aEvent, LONG aTimeout)
     if (mQueue.empty())
     {
         ::RTCritSectLeave(&mcsQLock);
+        // Speed up common case
+        if (aTimeout == 0)
+        {
+            *aEvent = NULL;
+            return S_OK;
+        }
         ::RTSemEventWait(mQEvent, aTimeout);
         ::RTCritSectEnter(&mcsQLock);
     }
@@ -349,6 +458,7 @@ HRESULT ListenerRecord::eventProcessed (IEvent* aEvent, PendingEventsMap::iterat
 {
     if (--pit->second == 0)
     {
+        Assert(pit->first == aEvent);
         aEvent->SetProcessed();
         mOwner->m->mPendingMap.erase(pit);
     }
@@ -356,7 +466,6 @@ HRESULT ListenerRecord::eventProcessed (IEvent* aEvent, PendingEventsMap::iterat
     Assert(pit->second >= 0);
     return S_OK;
 }
-
 
 EventSource::EventSource()
 {}
@@ -376,7 +485,7 @@ void EventSource::FinalRelease()
     delete m;
 }
 
-HRESULT EventSource::init(IUnknown * aParent)
+HRESULT EventSource::init(IUnknown *)
 {
     HRESULT rc = S_OK;
 
@@ -392,23 +501,6 @@ void EventSource::uninit()
 {
     m->mListeners.clear();
     // m->mEvMap shall be cleared at this point too by destructors
-}
-
-STDMETHODIMP EventSource::CreateListener(IEventListener ** aListener)
-{
-    CheckComArgOutPointerValid(aListener);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    ComPtr<IEventListener> listener;
-
-    HRESULT rc = listener.createLocalObject(CLSID_CallbackWrapper);
-    ComAssertMsgRet(SUCCEEDED(rc), ("Could not create wrapper object (%Rrc)", rc),
-                    E_FAIL);
-
-    listener.queryInterfaceTo(aListener);
-    return S_OK;
 }
 
 STDMETHODIMP EventSource::RegisterListener(IEventListener * aListener,
@@ -429,10 +521,8 @@ STDMETHODIMP EventSource::RegisterListener(IEventListener * aListener,
                         tr("This listener already registered"));
 
     com::SafeArray<VBoxEventType_T> interested(ComSafeArrayInArg (aInterested));
-    m->mListeners.insert(
-        Listeners::value_type(aListener,
-                              ListenerRecord(aListener, interested, aActive, this))
-                         );
+    ListenerRecordHolder lrh(new ListenerRecord(aListener, interested, aActive, this));
+    m->mListeners.insert(Listeners::value_type(aListener, lrh));
 
     return S_OK;
 }
@@ -474,36 +564,44 @@ STDMETHODIMP EventSource::FireEvent(IEvent * aEvent,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    VBoxEventType_T evType;
-    HRESULT hrc = aEvent->COMGETTER(Type)(&evType);
-    AssertComRCReturn(hrc, VERR_ACCESS_DENIED);
-
+    HRESULT hrc;
     BOOL aWaitable = FALSE;
     aEvent->COMGETTER(Waitable)(&aWaitable);
 
-    std::list<ListenerRecord*>& listeners = m->mEvMap[(int)evType-FirstEvent];
-
-    uint32_t cListeners = listeners.size();
-    PendingEventsMap::iterator pit;
-
-    if (cListeners > 0 && aWaitable)
     {
-        m->mPendingMap.insert(PendingEventsMap::value_type(aEvent, cListeners));
-        // we keep it here to allow processing active listeners without pending events lookup
-        pit = m->mPendingMap.find(aEvent);
-    }
-    for(std::list<ListenerRecord*>::const_iterator it = listeners.begin();
-        it != listeners.end(); ++it)
-    {
-        ListenerRecord* record = *it;
-        HRESULT cbRc;
+        /* See comment in EventSource::GetEvent() */
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-        // @todo: callback under (read) lock, is it good?
-        cbRc = record->process(aEvent, aWaitable, pit);
-        // what to do with cbRc?
+        VBoxEventType_T evType;
+        hrc = aEvent->COMGETTER(Type)(&evType);
+        AssertComRCReturn(hrc, VERR_ACCESS_DENIED);
+
+        std::list<ListenerRecord*>& listeners = m->mEvMap[(int)evType-FirstEvent];
+
+        uint32_t cListeners = listeners.size();
+        PendingEventsMap::iterator pit;
+
+        if (cListeners > 0 && aWaitable)
+        {
+            m->mPendingMap.insert(PendingEventsMap::value_type(aEvent, cListeners));
+            // we keep iterator here to allow processing active listeners without
+            // pending events lookup
+            pit = m->mPendingMap.find(aEvent);
+        }
+        for(std::list<ListenerRecord*>::const_iterator it = listeners.begin();
+            it != listeners.end(); ++it)
+        {
+            ListenerRecord* record = *it;
+            HRESULT cbRc;
+
+            // @todo: callback under (read) lock, is it good?
+            // We could make copy of per-event listener's list, but real issue
+            // is that we don't want to allow removal of a listener while iterating
+            cbRc = record->process(aEvent, aWaitable, pit);
+            // what to do with cbRc?
+        }
     }
+    /* We leave the lock here */
 
     if (aWaitable)
         hrc = aEvent->WaitProcessed(aTimeout, aProcessed);
@@ -515,8 +613,8 @@ STDMETHODIMP EventSource::FireEvent(IEvent * aEvent,
 
 
 STDMETHODIMP EventSource::GetEvent(IEventListener * aListener,
-                                   LONG      aTimeout,
-                                   IEvent  * *aEvent)
+                                   LONG             aTimeout,
+                                   IEvent  **       aEvent)
 {
 
     CheckComArgNotNull(aListener);
@@ -524,13 +622,20 @@ STDMETHODIMP EventSource::GetEvent(IEventListener * aListener,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+    /**
+     * There's subtle dependency between this lock and one in FireEvent():
+     * we need to be able to access event queue in FireEvent() while waiting
+     * here, to make this wait preemptible, thus both take read lock (write
+     * lock in FireEvent() would do too, and probably is a bit stricter),
+     * but will interfere with .
+     */
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Listeners::iterator it = m->mListeners.find(aListener);
     HRESULT rc;
 
     if (it != m->mListeners.end())
-        rc = it->second.dequeue(aEvent, aTimeout);
+        rc = it->second.obj()->dequeue(aEvent, aTimeout);
     else
         rc = setError(VBOX_E_OBJECT_NOT_FOUND,
                       tr("Listener was never registered"));
@@ -557,9 +662,9 @@ STDMETHODIMP EventSource::EventProcessed(IEventListener * aListener,
 
     if (it != m->mListeners.end())
     {
-        ListenerRecord& aRecord = it->second;
+        ListenerRecord* aRecord = it->second.obj();
 
-        if (aRecord.mActive)
+        if (aRecord->isActive())
             return setError(E_INVALIDARG,
                         tr("Only applicable to passive listeners"));
 
@@ -574,7 +679,7 @@ STDMETHODIMP EventSource::EventProcessed(IEventListener * aListener,
                               tr("Unknown event"));
             }
             else
-                rc = aRecord.eventProcessed(aEvent, pit);
+                rc = aRecord->eventProcessed(aEvent, pit);
         }
         else
         {
@@ -589,4 +694,73 @@ STDMETHODIMP EventSource::EventProcessed(IEventListener * aListener,
     }
 
     return rc;
+}
+
+/**
+ * This class serves as feasible listener implementation
+ * which could be used by clients not able to create local
+ * COM objects, but still willing to recieve event
+ * notifications in passive mode, such as webservices.
+ */
+class ATL_NO_VTABLE PassiveEventListener :
+    public VirtualBoxBase,
+    public VirtualBoxSupportErrorInfoImpl<PassiveEventListener, IEventListener>,
+    public VirtualBoxSupportTranslation<PassiveEventListener>,
+    VBOX_SCRIPTABLE_IMPL(IEventListener)
+{
+public:
+
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(PassiveEventListener)
+
+    DECLARE_NOT_AGGREGATABLE(PassiveEventListener)
+
+    DECLARE_PROTECT_FINAL_CONSTRUCT()
+
+    BEGIN_COM_MAP(PassiveEventListener)
+        COM_INTERFACE_ENTRY(ISupportErrorInfo)
+        COM_INTERFACE_ENTRY(IEventListener)
+        COM_INTERFACE_ENTRY(IDispatch)
+    END_COM_MAP()
+
+    PassiveEventListener()
+    {}
+    ~PassiveEventListener()
+    {}
+
+    HRESULT FinalConstruct()
+    {
+        return S_OK;
+    }
+    void FinalRelease()
+    {}
+
+    // IEventListener methods
+    STDMETHOD(HandleEvent)(IEvent *)
+    {
+        ComAssertMsgRet(false, ("HandleEvent() of wrapper shall never be called"),
+                        E_FAIL);
+    }
+    // for VirtualBoxSupportErrorInfoImpl
+    static const wchar_t *getComponentName() { return L"PassiveEventListener"; }
+};
+
+#ifdef VBOX_WITH_XPCOM
+NS_DECL_CLASSINFO(PassiveEventListener)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(PassiveEventListener, IEventListener)
+#endif
+
+STDMETHODIMP EventSource::CreateListener(IEventListener ** aListener)
+{
+    CheckComArgOutPointerValid(aListener);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    ComObjPtr<PassiveEventListener> listener;
+
+    HRESULT rc = listener.createObject();
+    ComAssertMsgRet(SUCCEEDED(rc), ("Could not create wrapper object (%Rrc)", rc),
+                    E_FAIL);
+    listener.queryInterfaceTo(aListener);
+    return S_OK;
 }

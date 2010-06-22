@@ -321,8 +321,3 @@ STDMETHODIMP CallbackWrapper::OnShowWindow(ULONG64 *winId)
     return mConsoleCallback->OnShowWindow(winId);
 }
 
-STDMETHODIMP CallbackWrapper::HandleEvent(IEvent * aEvent)
-{
-    ComAssertMsgRet(false, ("HandleEvent() of wrapper shall never be called"),
-                    E_FAIL);
-}

@@ -428,23 +428,30 @@ def monitorVBox(ctx, dur):
 
 def monitorVBox2(ctx, dur):
     vbox = ctx['vb']
-    print vbox.eventSource
     listener = vbox.eventSource.createListener()
+    registered = False
     if dur == -1:
         # not infinity, but close enough
         dur = 100000
     try:
-        vbox.eventSource.registerListener(listener, [ctx['global'].constants.VBoxEventType_All], False)
+        vbox.eventSource.registerListener(listener, [ctx['global'].constants.VBoxEventType_Any], False)
+        registered = True
         end = time.time() + dur
         while  time.time() < end:
-            ev = vbox.eventSource.getEvent(500)
+            ev = vbox.eventSource.getEvent(listener, 500)
             if ev:
                 print "got event: %s %s" %(ev, str(ev.type))
+                if ev.type == ctx['global'].constants.VBoxEventType_OnMachineStateChange:
+                    scev = ctx['global'].queryInterface(ev, 'IMachineStateChangeEvent')
+                    if scev:
+                        print "state event: mach=%s state=%s" %(scev.machineId, scev.state)
     # We need to catch all exceptions here, otherwise callback will never be unregistered
-    except:
+    except Exception, e:
+        printErr(ctx,e)
         traceback.print_exc()
         pass
-    vbox.eventSource.unregisterListener(listener)
+    if listener and registered:
+        vbox.eventSource.unregisterListener(listener)
 
 
 def takeScreenshot(ctx,console,args):
