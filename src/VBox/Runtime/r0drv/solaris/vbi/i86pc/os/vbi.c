@@ -19,7 +19,7 @@
  * CDDL HEADER END
  */
 /*
- * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All rights reserved.
  * Use is subject to license terms.
  */
 
@@ -128,6 +128,9 @@ static int vbi_verbose = 0;
 
 #define VBI_VERBOSE(msg) {if (vbi_verbose) cmn_err(CE_WARN, msg);}
 #endif
+
+/* Introduced in v8 */
+static int vbi_is_initialized = 0;
 
 /* Introduced in v6 */
 static int vbi_is_nevada = 0;
@@ -277,6 +280,8 @@ vbi_init(void)
 		cmn_err(CE_NOTE, ":Thread structure sanity check failed! OS version mismatch.\n");
 		return EINVAL;
 	}
+
+    vbi_is_initialized = 1;
 
 	return (0);
 }
@@ -1204,8 +1209,13 @@ vbi_gtimer_end(vbi_gtimer_t *t)
 int
 vbi_is_preempt_enabled(void)
 {
-	char tpr = VBI_T_PREEMPT;
-	return (tpr == 0);
+	if (vbi_is_initialized) {
+		char tpr = VBI_T_PREEMPT;
+		return (tpr == 0);
+	} else {
+		cmn_err(CE_NOTE, "vbi_is_preempt_enabled: called without initializing vbi!\n");
+		return 1;
+	}
 }
 
 void
