@@ -755,15 +755,12 @@ findso:
          */
         case TCPS_LISTEN:
         {
-            if (tiflags & TH_RST) {
+            if (tiflags & TH_RST)
                 goto drop;
-            }
             if (tiflags & TH_ACK)
                 goto dropwithreset;
             if ((tiflags & TH_SYN) == 0)
-            {
                 goto drop;
-            }
 
             /*
              * This has way too many gotos...
@@ -1663,7 +1660,8 @@ dropwithreset:
         tcp_respond(pData, tp, ti, m, (tcp_seq)0, ti->ti_ack, TH_RST);
     else
     {
-        if (tiflags & TH_SYN) ti->ti_len++;
+        if (tiflags & TH_SYN)
+            ti->ti_len++;
         tcp_respond(pData, tp, ti, m, ti->ti_seq+ti->ti_len, (tcp_seq)0,
                     TH_RST|TH_ACK);
     }
