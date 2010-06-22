@@ -445,7 +445,7 @@ freeit:
                      * That behavior described in rfc 793, we shouldn't notify sender about
                      * fail of processing it's ICMP packets
                      */
-                    m_free(pData, m);
+                    m_freem(pData, m);
                     return;
                 }
 #else /* RT_OS_WINDOWS */
@@ -517,16 +517,14 @@ end_error:
  *                 MUST NOT reply to a multicast/broadcast IP address.
  *                 MUST NOT reply to a multicast/broadcast MAC address.
  *                 MUST reply to only the first fragment.
- */
-/*
+ *
  * Send ICMP_UNREACH back to the source regarding msrc.
- * mbuf *msrc is used as a template, but is NOT m_free()'d.
  * It is reported as the bad ip packet.  The header should
  * be fully correct and in host byte order.
  * ICMP fragmentation is illegal.  All machines must accept 576 bytes in one
  * packet.  The maximum payload is 576-20(ip hdr)-8(icmp hdr)=548
  *
- * @note This function will free msrc!
+ * @note This function will NOT free msrc!
  */
 
 #define ICMP_MAXDATALEN (IP_MSS-28)
