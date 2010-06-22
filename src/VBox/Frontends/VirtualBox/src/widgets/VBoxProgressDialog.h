@@ -25,7 +25,7 @@
 /* VBox forward declarations */
 class CProgress;
 class QILabel;
-class VBoxMiniCancelButton;
+class UIMiniCancelButton;
 
 /* Qt forward declarations */
 class QProgressBar;
@@ -73,7 +73,7 @@ private:
     QILabel *mETA;
     QString mCancelText;
     QProgressBar *mProgressBar;
-    VBoxMiniCancelButton *mCancelBtn;
+    UIMiniCancelButton *mCancelBtn;
     bool mCancelEnabled;
     const ulong mOpCount;
     ulong mCurOp;

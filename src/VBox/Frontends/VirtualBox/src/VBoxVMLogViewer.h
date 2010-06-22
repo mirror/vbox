@@ -19,20 +19,24 @@
 #ifndef __VBoxVMLogViewer_h__
 #define __VBoxVMLogViewer_h__
 
+/* Local includes */
 #include "VBoxVMLogViewer.gen.h"
 #include "QIMainDialog.h"
 #include "COMDefs.h"
 #include "QIWithRetranslateUI.h"
 
-class VBoxLogSearchPanel;
+/* Local forward declarations */
 class QITabWidget;
-class QTextEdit;
-class VBoxSearchField;
-class QLabel;
 class QIToolButton;
-class VBoxMiniCancelButton;
-class VBoxSegmentedButton;
+class UIMiniCancelButton;
+class UIRoundRectSegmentedButton;
+class UISearchField;
+class VBoxLogSearchPanel;
+
+/* Global forward declarations */
 class QCheckBox;
+class QLabel;
+class QTextEdit;
 
 class VBoxVMLogViewer : public QIWithRetranslateUI2<QIMainDialog>,
                         public Ui::VBoxVMLogViewer
@@ -117,15 +121,15 @@ private:
 
     void toggleWarning (bool aHide);
 
-    VBoxVMLogViewer      *mViewer;
-    VBoxMiniCancelButton *mButtonClose;
-    QLabel               *mSearchName;
-    VBoxSearchField      *mSearchString;
-    VBoxSegmentedButton  *mButtonsNextPrev;
-    QCheckBox            *mCaseSensitive;
-    QSpacerItem          *mWarningSpacer;
-    QLabel               *mWarningIcon;
-    QLabel               *mWarningString;
+    VBoxVMLogViewer            *mViewer;
+    UIMiniCancelButton         *mButtonClose;
+    QLabel                     *mSearchName;
+    UISearchField              *mSearchString;
+    UIRoundRectSegmentedButton *mButtonsNextPrev;
+    QCheckBox                  *mCaseSensitive;
+    QSpacerItem                *mWarningSpacer;
+    QLabel                     *mWarningIcon;
+    QLabel                     *mWarningString;
 };
 
 #endif // __VBoxVMLogViewer_h__

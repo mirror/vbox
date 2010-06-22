@@ -23,7 +23,7 @@
 #include "QILabel.h"
 #include "VBoxGlobal.h"
 #include "VBoxProgressDialog.h"
-#include "VBoxSpecialControls.h"
+#include "UISpecialControls.h"
 #ifdef Q_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -89,7 +89,7 @@ VBoxProgressDialog::VBoxProgressDialog (CProgress &aProgress,
     mCancelEnabled = aProgress.GetCancelable();
     if (mCancelEnabled)
     {
-        mCancelBtn = new VBoxMiniCancelButton (this);
+        mCancelBtn = new UIMiniCancelButton (this);
         mCancelBtn->setFocusPolicy (Qt::ClickFocus);
         pLayout2->addWidget (mCancelBtn, 0, Qt::AlignVCenter);
         connect (mCancelBtn, SIGNAL (clicked()), this, SLOT (cancelOperation()));

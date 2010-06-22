@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -35,23 +35,23 @@
  * A mini cancel button in the native Cocoa version.
  *
  ********************************************************************************/
-class VBoxMiniCancelButton: public QAbstractButton
+class UIMiniCancelButton: public QAbstractButton
 {
     Q_OBJECT;
 
 public:
-    VBoxMiniCancelButton (QWidget *aParent = 0);
+    UIMiniCancelButton(QWidget *pParent = 0);
 
-    void setText (const QString &aText) { mButton->setText (aText); }
-    void setToolTip (const QString &aTip) { mButton->setToolTip (aTip); }
+    void setText(const QString &strText) { m_pButton->setText(strText); }
+    void setToolTip(const QString &strTip) { m_pButton->setToolTip(strTip); }
     void removeBorder() {}
 
 protected:
-    void paintEvent (QPaintEvent * /* aEvent */) {}
+    void paintEvent(QPaintEvent * /* pEvent */) {}
     void resizeEvent(QResizeEvent *pEvent);
 
 private:
-    UICocoaButton *mButton;
+    UICocoaButton *m_pButton;
 };
 
 /********************************************************************************
@@ -83,22 +83,22 @@ private:
  * A help button in the native Cocoa version.
  *
  ********************************************************************************/
-class VBoxHelpButton: public QPushButton
+class UIHelpButton: public QPushButton
 {
     Q_OBJECT;
 
 public:
-    VBoxHelpButton (QWidget *aParent = 0);
+    UIHelpButton(QWidget *pParent = 0);
 
-    void setToolTip (const QString &aTip) { mButton->setToolTip (aTip); }
+    void setToolTip(const QString &strTip) { m_pButton->setToolTip(strTip); }
 
-    void initFrom (QPushButton * /* aOther */) {}
+    void initFrom(QPushButton * /* pOther */) {}
 
 protected:
-    void paintEvent (QPaintEvent * /* aEvent */) {}
+    void paintEvent(QPaintEvent * /* pEvent */) {}
 
 private:
-    UICocoaButton *mButton;
+    UICocoaButton *m_pButton;
 };
 
 /********************************************************************************
@@ -106,12 +106,20 @@ private:
  * A segmented button in the native Cocoa version.
  *
  ********************************************************************************/
-class VBoxSegmentedButton: public UICocoaSegmentedButton
+class UIRoundRectSegmentedButton: public UICocoaSegmentedButton
 {
     Q_OBJECT;
 
 public:
-    VBoxSegmentedButton (int aCount, QWidget *aParent = 0);
+    UIRoundRectSegmentedButton(int cCount, QWidget *pParent = 0);
+};
+
+class UITexturedSegmentedButton: public UICocoaSegmentedButton
+{
+    Q_OBJECT;
+
+public:
+    UITexturedSegmentedButton(int cCount, QWidget *pParent = 0);
 };
 
 /********************************************************************************
@@ -119,12 +127,12 @@ public:
  * A search field in the native Cocoa version.
  *
  ********************************************************************************/
-class VBoxSearchField: public UICocoaSearchField
+class UISearchField: public UICocoaSearchField
 {
     Q_OBJECT;
 
 public:
-    VBoxSearchField (QWidget *aParent = 0);
+    UISearchField(QWidget *pParent = 0);
 };
 
 #else /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
@@ -143,12 +151,12 @@ class QSignalMapper;
  * A mini cancel button for the other OS's.
  *
  ********************************************************************************/
-class VBoxMiniCancelButton: public QIWithRetranslateUI<QIToolButton>
+class UIMiniCancelButton: public QIWithRetranslateUI<QIToolButton>
 {
     Q_OBJECT;
 
 public:
-    VBoxMiniCancelButton (QWidget *aParent = 0);
+    UIMiniCancelButton(QWidget *pParent = 0);
     void removeBorder();
 
 protected:
@@ -160,13 +168,13 @@ protected:
  * A reset button for the other OS's (same as the cancel button for now)
  *
  ********************************************************************************/
-class UIResetButton: public VBoxMiniCancelButton
+class UIResetButton: public UIMiniCancelButton
 {
     Q_OBJECT;
 
 public:
     UIResetButton(QWidget *pParent = 0)
-      : VBoxMiniCancelButton(pParent) {}
+      : UIMiniCancelButton(pParent) {}
 };
 
 /********************************************************************************
@@ -174,40 +182,40 @@ public:
  * A help button for the other OS's.
  *
  ********************************************************************************/
-class VBoxHelpButton: public QIWithRetranslateUI<QPushButton>
+class UIHelpButton: public QIWithRetranslateUI<QPushButton>
 {
     Q_OBJECT;
 
 public:
-    VBoxHelpButton (QWidget *aParent = 0);
+    UIHelpButton(QWidget *pParent = 0);
 #ifdef Q_WS_MAC
-    ~VBoxHelpButton();
+    ~UIHelpButton();
     QSize sizeHint() const;
 #endif /* Q_WS_MAC */
 
-    void initFrom (QPushButton *aOther);
+    void initFrom(QPushButton *pOther);
 
 protected:
     void retranslateUi();
 
 #ifdef Q_WS_MAC
-    void paintEvent (QPaintEvent *aEvent);
+    void paintEvent(QPaintEvent *pEvent);
 
-    bool hitButton (const QPoint &pos) const;
+    bool hitButton(const QPoint &pos) const;
 
-    void mousePressEvent (QMouseEvent *aEvent);
-    void mouseReleaseEvent (QMouseEvent *aEvent);
-    void leaveEvent (QEvent *aEvent);
+    void mousePressEvent(QMouseEvent *pEvent);
+    void mouseReleaseEvent(QMouseEvent *pEvent);
+    void leaveEvent(QEvent *pEvent);
 
 private:
     /* Private member vars */
-    bool mButtonPressed;
+    bool m_pButtonPressed;
 
-    QSize mSize;
-    QPixmap *mNormalPixmap;
-    QPixmap *mPressedPixmap;
-    QImage *mMask;
-    QRect mBRect;
+    QSize m_size;
+    QPixmap *m_pNormalPixmap;
+    QPixmap *m_pPressedPixmap;
+    QImage *m_pMask;
+    QRect m_BRect;
 #endif /* Q_WS_MAC */
 };
 
@@ -216,28 +224,37 @@ private:
  * A segmented button for the other OS's.
  *
  ********************************************************************************/
-class VBoxSegmentedButton: public QWidget
+class UIRoundRectSegmentedButton: public QWidget
 {
     Q_OBJECT;
 
 public:
-    VBoxSegmentedButton (int aCount, QWidget *aParent = 0);
-    ~VBoxSegmentedButton();
+    UIRoundRectSegmentedButton(int aCount, QWidget *pParent = 0);
+    ~UIRoundRectSegmentedButton();
 
-    void setTitle (int aSegment, const QString &aTitle);
-    void setToolTip (int aSegment, const QString &aTip);
-    void setIcon (int aSegment, const QIcon &aIcon);
-    void setEnabled (int aSegment, bool fEnabled);
+    void setTitle(int iSegment, const QString &aTitle);
+    void setToolTip(int iSegment, const QString &strTip);
+    void setIcon(int iSegment, const QIcon &icon);
+    void setEnabled(int iSegment, bool fEnabled);
 
-    void animateClick (int aSegment);
+    void animateClick(int iSegment);
 
 signals:
-    void clicked (int aSegment);
+    void clicked(int iSegment);
 
 private:
     /* Private member vars */
-    QList<QIToolButton*> mButtons;
-    QSignalMapper *mSignalMapper;
+    QList<QIToolButton*> m_pButtons;
+    QSignalMapper *m_pSignalMapper;
+};
+
+class UITexturedSegmentedButton: public UIRoundRectSegmentedButton
+{
+    Q_OBJECT;
+
+public:
+    UITexturedSegmentedButton(int cCount, QWidget *pParent = 0)
+      : UIRoundRectSegmentedButton(cCount, pParent) {}
 };
 
 /********************************************************************************
@@ -245,19 +262,19 @@ private:
  * A search field  for the other OS's.
  *
  ********************************************************************************/
-class VBoxSearchField: public QLineEdit
+class UISearchField: public QLineEdit
 {
     Q_OBJECT;
 
 public:
-    VBoxSearchField (QWidget *aParent = 0);
+    UISearchField(QWidget *pParent = 0);
 
     void markError();
     void unmarkError();
 
 private:
     /* Private member vars */
-    QBrush mBaseBrush;
+    QBrush m_baseBrush;
 };
 
 #endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */

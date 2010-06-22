@@ -305,11 +305,13 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/firstrun/UIFirstRunWzd.h \
 	src/wizards/exportappliance/UIExportApplianceWzd.h \
 	src/wizards/importappliance/UIImportApplianceWzd.h \
-	src/widgets/VBoxApplianceEditorWgt.h \
-	src/widgets/VBoxBootTable.h \
 	src/widgets/UIDownloader.h \
 	src/widgets/UIDownloaderAdditions.h \
 	src/widgets/UIDownloaderUserManual.h \
+	src/widgets/UISpacerWidgets.h \
+	src/widgets/UISpecialControls.h \
+	src/widgets/VBoxApplianceEditorWgt.h \
+	src/widgets/VBoxBootTable.h \
 	src/widgets/VBoxExportApplianceWgt.h \
 	src/widgets/VBoxFilePathSelectorWidget.h \
 	src/widgets/VBoxImportApplianceWgt.h \
@@ -319,9 +321,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/VBoxOSTypeSelectorButton.h \
 	src/widgets/VBoxOSTypeSelectorWidget.h \
 	src/widgets/VBoxProgressDialog.h \
-	src/widgets/VBoxSpecialControls.h \
 	src/widgets/VBoxWarningPane.h \
-	src/widgets/UISpacerWidgets.h \
 	src/runtime/UISession.h \
 	src/runtime/UIActionsPool.h \
 	src/runtime/UIIndicatorsPool.h \
@@ -438,11 +438,12 @@ VirtualBox_SOURCES = \
 	src/wizards/firstrun/UIFirstRunWzd.cpp \
 	src/wizards/exportappliance/UIExportApplianceWzd.cpp \
 	src/wizards/importappliance/UIImportApplianceWzd.cpp \
-	src/widgets/VBoxApplianceEditorWgt.cpp \
-	src/widgets/VBoxBootTable.cpp \
 	src/widgets/UIDownloader.cpp \
 	src/widgets/UIDownloaderAdditions.cpp \
 	src/widgets/UIDownloaderUserManual.cpp \
+	src/widgets/UISpecialControls.cpp \
+	src/widgets/VBoxApplianceEditorWgt.cpp \
+	src/widgets/VBoxBootTable.cpp \
 	src/widgets/VBoxExportApplianceWgt.cpp \
 	src/widgets/VBoxFilePathSelectorWidget.cpp \
 	src/widgets/VBoxGuestRAMSlider.cpp \
@@ -453,7 +454,6 @@ VirtualBox_SOURCES = \
 	src/widgets/VBoxOSTypeSelectorButton.cpp \
 	src/widgets/VBoxOSTypeSelectorWidget.cpp \
 	src/widgets/VBoxProgressDialog.cpp \
-	src/widgets/VBoxSpecialControls.cpp \
 	src/widgets/VBoxWarningPane.cpp \
 	src/runtime/UISession.cpp \
 	src/runtime/UIActionsPool.cpp \
