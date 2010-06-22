@@ -217,7 +217,7 @@ vbi_init(void)
 		 * actual number of CPUs running in the sytem.
 		 */
 		if (ncpus > VBI_NCPU) {
-		    cmn_err(CE_NOTE, "cpu count mismatch.\n");
+			cmn_err(CE_NOTE, "cpu count mismatch.\n");
 			return (EINVAL);
 		}
 	} else {
@@ -226,7 +226,7 @@ vbi_init(void)
 			use_old_with_ulong = 1;
 		else if (max_cpuid + 1 != VBI_NCPU)
 		{
-		    cmn_err(CE_NOTE, "cpuset_t size mismatch. probably too old a kernel.\n");
+			cmn_err(CE_NOTE, "cpuset_t size mismatch. probably too old a kernel.\n");
 			return (EINVAL);	/* cpuset_t size mismatch */
 		}
 	}
@@ -281,7 +281,7 @@ vbi_init(void)
 		return EINVAL;
 	}
 
-    vbi_is_initialized = 1;
+	vbi_is_initialized = 1;
 
 	return (0);
 }
@@ -873,11 +873,11 @@ segvbi_getprot(struct seg *seg, caddr_t addr, size_t len, uint_t *protv)
 	size_t pgno = seg_page(seg, addr + len) - seg_page(seg, addr) + 1;
 	if (pgno != 0)
 	{
-	    do
-	    {
-	        pgno--;
-	        protv[pgno] = data->prot;
-	    } while (pgno != 0);
+		do
+		{
+			pgno--;
+			protv[pgno] = data->prot;
+		} while (pgno != 0);
 	}
 	return (0);
 }
