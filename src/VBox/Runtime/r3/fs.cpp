@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,11 +39,14 @@
 #endif
 
 #include <iprt/fs.h>
+#include "internal/iprt.h"
+
+#include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/time.h>
-#include <iprt/string.h>
-#include <iprt/path.h>
 #include <iprt/ctype.h>
+#include <iprt/path.h>
+#include <iprt/string.h>
+#include <iprt/time.h>
 #include "internal/fs.h"
 
 
@@ -291,5 +294,53 @@ void rtFsConvertStatToObjInfo(PRTFSOBJINFO pObjInfo, const struct stat *pStat, c
 #endif
     pObjInfo->Attr.u.Unix.Device          = pStat->st_rdev;
 }
-
 #endif /* !RT_OS_WINDOWS */
+
+
+RTDECL(const char *) RTFsTypeName(RTFSTYPE enmType)
+{
+    switch (enmType)
+    {
+        case RTFSTYPE_UNKNOWN:      return "unknown";
+        case RTFSTYPE_UDF:          return "udf";
+        case RTFSTYPE_ISO9660:      return "iso9660";
+        case RTFSTYPE_FUSE:         return "fuse";
+        case RTFSTYPE_VBOXSHF:      return "vboxshf";
+
+        case RTFSTYPE_EXT:          return "ext";
+        case RTFSTYPE_EXT2:         return "ext2";
+        case RTFSTYPE_EXT3:         return "ext3";
+        case RTFSTYPE_EXT4:         return "ext4";
+        case RTFSTYPE_XFS:          return "xfs";
+        case RTFSTYPE_CIFS:         return "cifs";
+        case RTFSTYPE_SMBFS:        return "smbfs";
+        case RTFSTYPE_TMPFS:        return "tmpfs";
+        case RTFSTYPE_SYSFS:        return "sysfs";
+        case RTFSTYPE_PROC:         return "proc";
+
+        case RTFSTYPE_NTFS:         return "ntfs";
+        case RTFSTYPE_FAT:          return "fat";
+
+        case RTFSTYPE_ZFS:          return "zfs";
+        case RTFSTYPE_UFS:          return "ufs";
+        case RTFSTYPE_NFS:          return "nfs";
+
+        case RTFSTYPE_HFS:          return "hfs";
+        case RTFSTYPE_AUTOFS:       return "autofs";
+        case RTFSTYPE_DEVFS:        return "devfs";
+
+        case RTFSTYPE_HPFS:         return "hpfs";
+        case RTFSTYPE_JFS:          return "jfs";
+
+        case RTFSTYPE_END:          return "end";
+        case RTFSTYPE_32BIT_HACK:   break;
+    }
+
+    /* Don't put this in as 'default:', we wish GCC to warn about missing cases. */
+    static char                 s_asz[4][64];
+    static uint32_t volatile    s_i = 0;
+    uint32_t i = ASMAtomicIncU32(&s_i) % RT_ELEMENTS(s_asz);
+    RTStrPrintf(s_asz[i], sizeof(s_asz[i]), "type=%d", enmType);
+    return s_asz[i];
+}
+
