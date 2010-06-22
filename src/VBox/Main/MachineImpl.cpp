@@ -5094,17 +5094,16 @@ int Machine::calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult)
 }
 
 /**
- * Tries to calculate the relative path of the given absolute path using the
- * directory of the machine settings file as the base directory.
+ * Copies strSource to strTarget, making it relative to the machine folder
+ * if it is a subdirectory thereof, or simply copying it otherwise.
  *
- * @param  aPath    Absolute path to calculate the relative path for.
- * @param  aResult  Where to put the result (used only when it's possible to
- *                  make a relative path from the given absolute path; otherwise
- *                  left untouched).
+ * @param strSource Path to evalue and copy.
+ * @param strTarget Buffer to receive target path.
  *
  * @note Locks this object for reading.
  */
-void Machine::calculateRelativePath(const Utf8Str &strPath, Utf8Str &aResult)
+void Machine::copyPathRelativeToMachine(const Utf8Str &strSource,
+                                        Utf8Str &strTarget)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), (void)0);
@@ -5112,19 +5111,15 @@ void Machine::calculateRelativePath(const Utf8Str &strPath, Utf8Str &aResult)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturnVoid(!mData->m_strConfigFileFull.isEmpty());
-
-    Utf8Str settingsDir = mData->m_strConfigFileFull;
-
-    settingsDir.stripFilename();
-    if (RTPathStartsWith(strPath.c_str(), settingsDir.c_str()))
-    {
-        /* when assigning, we create a separate Utf8Str instance because both
-         * aPath and aResult can point to the same memory location when this
-         * func is called (if we just do aResult = aPath, aResult will be freed
-         * first, and since its the same as aPath, an attempt to copy garbage
-         * will be made. */
-        aResult = Utf8Str(strPath.c_str() + settingsDir.length() + 1);
-    }
+    // use strTarget as a temporary buffer to hold the machine settings dir
+    strTarget = mData->m_strConfigFileFull;
+    strTarget.stripFilename();
+    if (RTPathStartsWith(strSource.c_str(), strTarget.c_str()))
+        // is relative: then append what's left
+        strTarget.append(strSource.c_str() + strTarget.length());     // include '/'
+    else
+        // is not relative: then overwrite
+        strTarget = strSource;
 }
 
 /**
@@ -7439,11 +7434,8 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
 
             /* update m_strConfigFileFull amd mConfigFile */
             mData->m_strConfigFileFull = newConfigFile;
-
             // compute the relative path too
-            Utf8Str path = newConfigFile;
-            mParent->calculateRelativePath(path, path);
-            mData->m_strConfigFile = path;
+            mParent->copyPathRelativeToConfig(newConfigFile, mData->m_strConfigFile);
 
             // store the old and new so that VirtualBox::saveSettings() can update
             // the media registry
@@ -7457,14 +7449,15 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
             }
 
             /* update the snapshot folder */
-            path = mUserData->mSnapshotFolderFull;
+            Utf8Str path = mUserData->mSnapshotFolderFull;
             if (RTPathStartsWith(path.c_str(), configDir.c_str()))
             {
                 path = Utf8StrFmt("%s%s", newConfigDir.raw(),
                                   path.raw() + configDir.length());
                 mUserData->mSnapshotFolderFull = path;
-                calculateRelativePath(path, path);
-                mUserData->mSnapshotFolder = path;
+                Utf8Str strTemp;
+                copyPathRelativeToMachine(path, strTemp);
+                mUserData->mSnapshotFolder = strTemp;
             }
 
             /* update the saved state file path */
@@ -7719,10 +7712,7 @@ void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
     {
         Assert(!mSSData->mStateFilePath.isEmpty());
         /* try to make the file name relative to the settings file dir */
-        calculateRelativePath(mSSData->mStateFilePath, config.strStateFile);
-        if (!config.strStateFile.length())
-            // path is not relative (e.g. because snapshot folder was changed to a non-default location):
-            config.strStateFile = mSSData->mStateFilePath;
+        copyPathRelativeToMachine(mSSData->mStateFilePath, config.strStateFile);
     }
     else
     {
@@ -8151,7 +8141,7 @@ HRESULT Machine::saveStateSettings(int aFlags)
         {
             if (!mSSData->mStateFilePath.isEmpty())
                 /* try to make the file name relative to the settings file dir */
-                calculateRelativePath(mSSData->mStateFilePath, mData->pMachineConfigFile->strStateFile);
+                copyPathRelativeToMachine(mSSData->mStateFilePath, mData->pMachineConfigFile->strStateFile);
             else
                 mData->pMachineConfigFile->strStateFile.setNull();
         }

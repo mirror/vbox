@@ -3394,34 +3394,28 @@ int VirtualBox::calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult)
 }
 
 /**
- * Tries to calculate the relative path of the given absolute path using the
- * directory of the VirtualBox settings file as the base directory.
+ * Copies strSource to strTarget, making it relative to the VirtualBox config folder
+ * if it is a subdirectory thereof, or simply copying it otherwise.
  *
- * @param  aPath    Absolute path to calculate the relative path for.
- * @param  aResult  Where to put the result (used only when it's possible to
- *                  make a relative path from the given absolute path; otherwise
- *                  left untouched).
- *
- * @note Doesn't lock any object.
+ * @param strSource Path to evalue and copy.
+ * @param strTarget Buffer to receive target path.
  */
-void VirtualBox::calculateRelativePath(const Utf8Str &strPath, Utf8Str &aResult)
+void VirtualBox::copyPathRelativeToConfig(const Utf8Str &strSource,
+                                          Utf8Str &strTarget)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    /* no need to lock since mHomeDir is const */
+    // no need to lock since mHomeDir is const
 
-    Utf8Str settingsDir = m->strHomeDir;
-
-    if (RTPathStartsWith(strPath.c_str(), settingsDir.c_str()))
-    {
-        /* when assigning, we create a separate Utf8Str instance because both
-         * aPath and aResult can point to the same memory location when this
-         * func is called (if we just do aResult = aPath, aResult will be freed
-         * first, and since its the same as aPath, an attempt to copy garbage
-         * will be made. */
-        aResult = Utf8Str(strPath.c_str() + settingsDir.length() + 1);
-    }
+    // use strTarget as a temporary buffer to hold the machine settings dir
+    strTarget = m->strHomeDir;
+    if (RTPathStartsWith(strSource.c_str(), strTarget.c_str()))
+        // is relative: then append what's left
+        strTarget.append(strSource.c_str() + strTarget.length());     // include '/'
+    else
+        // is not relative: then overwrite
+        strTarget = strSource;
 }
 
 // private methods

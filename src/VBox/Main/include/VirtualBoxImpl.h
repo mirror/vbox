@@ -281,7 +281,7 @@ public:
     const Utf8Str& homeDir() const;
 
     int calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult);
-    void calculateRelativePath(const Utf8Str &strPath, Utf8Str &aResult);
+    void copyPathRelativeToConfig(const Utf8Str &strSource, Utf8Str &strTarget);
 
     HRESULT registerHardDisk(Medium *aHardDisk, bool *pfNeedsSaveSettings);
     HRESULT unregisterHardDisk(Medium *aHardDisk, bool *pfNeedsSaveSettings);

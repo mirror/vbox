@@ -614,7 +614,7 @@ public:
     HRESULT saveRegistryEntry(settings::MachineRegistryEntry &data);
 
     int calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult);
-    void calculateRelativePath(const Utf8Str &strPath, Utf8Str &aResult);
+    void copyPathRelativeToMachine(const Utf8Str &strSource, Utf8Str &strTarget);
 
     void getLogFolder(Utf8Str &aLogFolder);
     Utf8Str queryLogFilename(ULONG idx);
