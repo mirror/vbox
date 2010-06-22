@@ -765,11 +765,12 @@ sorecvfrom(PNATState pData, struct socket *so)
         m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
         if (m == NULL)
             return;
+
         m->m_data += ETH_HLEN;
         m->m_pkthdr.header = mtod(m, void *);
         m->m_data += sizeof(struct udpiphdr);
         ret = recvfrom(so->s, mtod(m, char *), n, 0,
-                            (struct sockaddr *)&addr, &addrlen);
+                       (struct sockaddr *)&addr, &addrlen);
         /* @todo (vvl) check which flags and type should be passed */
         m->m_len = ret;
         if (ret < 0)

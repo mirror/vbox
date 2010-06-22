@@ -297,7 +297,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         m->m_data -= iphlen;
         *ip = save_ip;
         DEBUG_MISC((dfd,"NAT: UDP tx errno = %d-%s (on sent to %R[IP4])\n", errno,
-                strerror(errno), &ip->ip_dst));
+                   strerror(errno), &ip->ip_dst));
         icmp_error(pData, m, ICMP_UNREACH, ICMP_UNREACH_NET, 0, strerror(errno));
         /* in case we receive ICMP on this socket we'll aware that ICMP has been already sent to host*/
         so->so_m = NULL;
@@ -327,15 +327,16 @@ done_free_mbuf:
 }
 
 /**
- * Output a UDP packet. This function will finally free the mbuf so
- * do NOT free any passed mbuf.
+ * Output a UDP packet.
+ *
+ * @note This function will finally free m!
  */
 int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
                 struct sockaddr_in *saddr, struct sockaddr_in *daddr,
                 int iptos)
 {
     register struct udpiphdr *ui;
-    int error = 0;
+    int error;
 
     DEBUG_CALL("udp_output");
     DEBUG_ARG("so = %lx", (long)so);
@@ -384,6 +385,9 @@ int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
     return error;
 }
 
+/**
+ * @note This function will free m!
+ */
 int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
                struct sockaddr_in *addr)
 {

@@ -180,7 +180,7 @@ static int tftp_send_error(PNATState pData,
     struct tftp_t *tp;
     int nobytes;
 
-    if ((m = m_getcl(pData, M_DONTWAIT, MT_HEADER, M_PKTHDR)) == NULL)
+    m = m_getcl(pData, M_DONTWAIT, MT_HEADER, M_PKTHDR);
     if (!m)
         return -1;
 
@@ -228,7 +228,7 @@ static int tftp_send_data(PNATState pData,
     if (block_nr < 1)
         return -1;
 
-    if ((m = m_getcl(pData, M_DONTWAIT, MT_HEADER, M_PKTHDR)) == NULL)
+    m = m_getcl(pData, M_DONTWAIT, MT_HEADER, M_PKTHDR);
     if (!m)
         return -1;
 

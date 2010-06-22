@@ -509,7 +509,7 @@ end_error:
 }
 
 
-/*
+/**
  * Send an ICMP message in response to a situation
  *
  * RFC 1122: 3.2.2 MUST send at least the IP header and 8 bytes of header. MAY send more (we do).
@@ -525,6 +525,8 @@ end_error:
  * be fully correct and in host byte order.
  * ICMP fragmentation is illegal.  All machines must accept 576 bytes in one
  * packet.  The maximum payload is 576-20(ip hdr)-8(icmp hdr)=548
+ *
+ * @note This function will free msrc!
  */
 
 #define ICMP_MAXDATALEN (IP_MSS-28)
@@ -543,7 +545,9 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     if (msrc != NULL)
         M_ASSERTPKTHDR(msrc);
 
-    if (type!=ICMP_UNREACH && type!=ICMP_TIMXCEED && type != ICMP_SOURCEQUENCH)
+    if (   type != ICMP_UNREACH
+        && type != ICMP_TIMXCEED
+        && type != ICMP_SOURCEQUENCH)
         goto end_error;
 
     /* check msrc */
@@ -559,7 +563,8 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
         DEBUG_MISC((dfd, " %.16s to %.16s\n", bufa, bufb));
     }
 #endif
-    if (ip->ip_off & IP_OFFMASK && type != ICMP_SOURCEQUENCH)
+    if (   ip->ip_off & IP_OFFMASK
+        && type != ICMP_SOURCEQUENCH)
         goto end_error;    /* Only reply to fragment 0 */
 
     shlen = ip->ip_hl << 2;
@@ -597,9 +602,8 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
         AssertMsgFailed(("Unsupported size"));
     }
     m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
-
-    if (m == NULL)
-        goto end_error;                    /* get mbuf */
+    if (!m)
+        goto end_error;
 
     m->m_data += if_maxlinkhdr;
     m->m_pkthdr.header = mtod(m, void *);
@@ -673,8 +677,9 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
 
 end_error_free_m:
     m_freem(pData, m);
+
 end_error:
-    LogRel(("NAT: error occurred while sending ICMP error message \n"));
+    LogRel(("NAT: error occurred while sending ICMP error message\n"));
 }
 #undef ICMP_MAXDATALEN
 

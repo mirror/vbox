@@ -104,6 +104,7 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
     return ip_output0(pData, so, m0, 0);
 }
 
+/* This function will free m0! */
 int
 ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
 {
@@ -217,7 +218,7 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
             ip->ip_sum = cksum(m, hlen);
             if (m->m_next != NULL)
             {
-                /* we've receives packet in fragments */
+                /* we've received a packet in fragments */
                 tmplen = m_length(m, NULL);
                 tmpbuf = RTMemAlloc(tmplen);
                 Assert(tmpbuf);
@@ -268,7 +269,7 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
             {
                 error = -1;
                 ipstat.ips_odropped++;
-                goto sendorfree;
+                goto send_or_free;
             }
             m->m_data += if_maxlinkhdr;
             mhip = mtod(m, struct ip *);
@@ -319,7 +320,7 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
         ip->ip_sum = 0;
         ip->ip_sum = cksum(m, hlen);
 
-sendorfree:
+send_or_free:
         for (m = m0; m; m = m0)
         {
             m0 = m->m_nextpkt;
@@ -334,9 +335,7 @@ sendorfree:
                 if_encap(pData, ETH_P_IP, m, 0);
             }
             else
-            {
                 m_freem(pData, m);
-            }
         }
 
         if (error == 0)

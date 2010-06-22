@@ -199,7 +199,7 @@ static struct mbuf *dhcp_create_msg(PNATState pData, struct bootp_t *bp, struct 
     uint8_t *q;
 
     eh = mtod(m, struct ethhdr *);
-    memcpy(eh->h_source, bp->bp_hwaddr, ETH_ALEN); /* XXX: if_encap just swap source with dest*/
+    memcpy(eh->h_source, bp->bp_hwaddr, ETH_ALEN); /* XXX: if_encap just swap source with dest */
 
     m->m_data += if_maxlinkhdr; /*reserve ether header */
 
@@ -649,15 +649,15 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
 
     p = dhcp_find_option(bp->bp_vend, RFC2132_MSG_TYPE);
     Assert(p);
-    if (p == NULL)
+    if (!p)
         return;
     /*
      * We're going update dns list at least once per DHCP transaction (!not on every operation
      * within transaction), assuming that transaction can't be longer than 1 min.
      */
     if (   !pData->fUseHostResolver
-           && (   pData->dnsLastUpdate == 0
-               || curtime - pData->dnsLastUpdate > 60 * 1000)) /* one minute*/
+        && (   pData->dnsLastUpdate == 0
+            || curtime - pData->dnsLastUpdate > 60 * 1000)) /* one minute*/
     {
         uint8_t i = 2; /* i = 0 - tag, i == 1 - length */
         parameter_list = dhcp_find_option(&bp->bp_vend[0], RFC2132_PARAM_LIST);
@@ -673,7 +673,8 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
         }
     }
 
-    if ((m = m_getcl(pData, M_DONTWAIT, MT_HEADER, M_PKTHDR)) == NULL)
+    m = m_getcl(pData, M_DONTWAIT, MT_HEADER, M_PKTHDR);
+    if (!m)
     {
         LogRel(("NAT: can't alocate memory for response!\n"));
         return;
@@ -683,7 +684,7 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
     {
         case DHCPDISCOVER:
             fDhcpDiscover = 1;
-            /**/
+            /* fall through */
         case DHCPINFORM:
             rc = dhcp_decode_discover(pData, bp, buf, size, fDhcpDiscover, m);
             if (rc > 0)
@@ -721,14 +722,12 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
         default:
             AssertMsgFailed(("unsupported DHCP message type"));
     }
-    Assert(m);
-    /*silently ignore*/
+    /* silently ignore */
     m_freem(pData, m);
     return;
 
 reply:
     bootp_reply(pData, m, rc, bp->bp_flags);
-    return;
 }
 
 static void bootp_reply(PNATState pData, struct mbuf *m, int offReply, uint16_t flags)

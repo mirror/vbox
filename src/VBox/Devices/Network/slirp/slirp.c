@@ -1379,6 +1379,9 @@ struct arphdr
 };
 AssertCompileSize(struct arphdr, 28);
 
+/**
+ * @note This function will free m! 
+ */
 static void arp_input(PNATState pData, struct mbuf *m)
 {
     struct ethhdr *eh;
@@ -1525,7 +1528,11 @@ void slirp_input(PNATState pData, struct mbuf *m, size_t cbBuf)
         activate_port_forwarding(pData, au8Ether);
 }
 
-/* output the IP packet to the ethernet device */
+/**
+ * Output the IP packet to the ethernet device.
+ *
+ * @note This function will free m!
+ */
 void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
 {
     struct ethhdr *eh;
@@ -1552,7 +1559,7 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
     }
     mlen = m_length(m, NULL);
     buf = RTMemAlloc(mlen);
-    if (buf == NULL)
+    if (!buf)
     {
         LogRel(("NAT: Can't alloc memory for outgoing buffer\n"));
         m_freem(pData, m);
