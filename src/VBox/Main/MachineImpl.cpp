@@ -7720,6 +7720,9 @@ void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
         Assert(!mSSData->mStateFilePath.isEmpty());
         /* try to make the file name relative to the settings file dir */
         calculateRelativePath(mSSData->mStateFilePath, config.strStateFile);
+        if (!config.strStateFile.length())
+            // path is not relative (e.g. because snapshot folder was changed to a non-default location):
+            config.strStateFile = mSSData->mStateFilePath;
     }
     else
     {
