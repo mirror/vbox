@@ -535,9 +535,12 @@ HRESULT VirtualBox::init()
         }
 
         /* events */
+#if 0
+        // disabled for now
         if (SUCCEEDED(rc = unconst(m->pEventSource).createObject()))
             rc = m->pEventSource->init(this);
         if (FAILED(rc)) throw rc;
+#endif
 
     }
     catch (HRESULT err)
