@@ -147,7 +147,7 @@ RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
 
 RTDECL(bool) RTThreadPreemptIsPendingTrusty(void)
 {
-    /* RTThreadPreemptIsPending is only reliable of we've got both offsets and size. */
+    /* RTThreadPreemptIsPending is only reliable if we've got both offsets and size. */
     return g_offrtNtPbQuantumEnd    != 0
         && g_cbrtNtPbQuantumEnd     != 0
         && g_offrtNtPbDpcQueueDepth != 0;
