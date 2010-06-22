@@ -120,7 +120,7 @@ ip_input(PNATState pData, struct mbuf *m)
     {
         int rc;
         STAM_PROFILE_START(&pData->StatALIAS_input, b);
-        rc = LibAliasIn(select_alias(pData, m), mtod(m, char *), m->m_len);
+        rc = LibAliasIn(select_alias(pData, m), mtod(m, char *), m_length(m, NULL));
         STAM_PROFILE_STOP(&pData->StatALIAS_input, b);
         Log2(("NAT: LibAlias return %d\n", rc));
         if (m->m_len != RT_N2H_U16(ip->ip_len))
@@ -195,7 +195,8 @@ ip_input(PNATState pData, struct mbuf *m)
     if (ip->ip_ttl==0 || ip->ip_ttl == 1)
     {
         icmp_error(pData, m, ICMP_TIMXCEED, ICMP_TIMXCEED_INTRANS, 0, "ttl");
-        goto bad;
+        /* don't let this mbuf to be freed */
+        return;
     }
 
     ip->ip_ttl--;
