@@ -623,61 +623,61 @@
     </message>
     <message>
         <source>Enter &amp;Fullscreen Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Skift til &amp;fuldskærm</translation>
     </message>
     <message>
         <source>Exit &amp;Fullscreen Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Forlad &amp;fuldskærm</translation>
     </message>
     <message>
         <source>Switch to normal mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Skift til normal tilstand</translation>
     </message>
     <message>
         <source>Enter Seam&amp;less Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Skift ti&amp;l rammefri tilstand</translation>
     </message>
     <message>
         <source>Exit Seam&amp;less Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>For&amp;lad rammefri tilstand</translation>
     </message>
     <message>
         <source>Enable &amp;Guest Display Auto-resize</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilpas &amp;gæstens opløsning dynamisk</translation>
     </message>
     <message>
         <source>Disable &amp;Guest Display Auto-resize</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilpas ikke &amp;gæstens opløsning</translation>
     </message>
     <message>
         <source>Disable automatic resize of the guest display when the window is resized</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilpas ikke gæstens opløsning, når vinduets størrelse ændres</translation>
     </message>
     <message>
         <source>&amp;Enable Remote Display</source>
-        <translation type="unfinished"></translation>
+        <translation>Tillad fj&amp;ernskærm</translation>
     </message>
     <message>
         <source>Enable remote desktop (RDP) connections to this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Tillad fjernskærmsforbindelser (RDP) til denne maskine</translation>
     </message>
     <message>
         <source>&amp;Disable Remote Display</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Deaktiver fjernskærm</translation>
     </message>
     <message>
         <source>Disable remote desktop (RDP) connections to this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Tillad ikke fjernskærmsforbindelser (RDP) til denne maskine</translation>
     </message>
     <message>
         <source>Enable &amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>Aktivér &amp;logger...</translation>
     </message>
     <message>
         <source>Disable &amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>Deaktivér &amp;logger...</translation>
     </message>
 </context>
 <context>
@@ -1944,7 +1944,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Boot Hard &amp;Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Opstarts&amp;disk</translation>
     </message>
 </context>
 <context>
@@ -2054,15 +2054,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Hard Disk Controller (IDE)</source>
-        <translation>Harddiskenhed IDE</translation>
+        <translation>Harddiskenhed (IDE)</translation>
     </message>
     <message>
         <source>Hard Disk Controller (SATA)</source>
-        <translation>Harddiskenhed SATA</translation>
+        <translation>Harddiskenhed (SATA)</translation>
     </message>
     <message>
         <source>Hard Disk Controller (SCSI)</source>
-        <translation>Harddiskenhed SCSI</translation>
+        <translation>Harddiskenhed (SCSI)</translation>
     </message>
     <message>
         <source>DVD</source>
@@ -2120,7 +2120,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Hard Disk Controller (SAS)</source>
-        <translation type="unfinished"></translation>
+        <translation>Harddiskenhed (SAS)</translation>
     </message>
 </context>
 <context>
@@ -4407,12 +4407,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Unknown device</source>
         <comment>USB device details</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ukendt enhed</translation>
     </message>
     <message>
         <source>SAS Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>SAS port %1</translation>
     </message>
 </context>
 <context>
@@ -6030,12 +6030,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;File</source>
         <comment>Mac OS X version</comment>
-        <translation type="unfinished">&amp;Fil</translation>
+        <translation>&amp;Fil</translation>
     </message>
     <message>
         <source>&amp;File</source>
         <comment>Non Mac OS X version</comment>
-        <translation type="unfinished">&amp;Fil</translation>
+        <translation>&amp;Fil</translation>
     </message>
 </context>
 <context>
