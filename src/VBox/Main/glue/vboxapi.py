@@ -216,7 +216,6 @@ class PlatformMSCOM:
             DispatchBaseClass.__dict__['__setattr__'] = CustomSetAttr
             win32com.client.gencache.EnsureDispatch('VirtualBox.Session')
             win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBox')
-            win32com.client.gencache.EnsureDispatch('VirtualBox.Console')
             win32com.client.gencache.EnsureDispatch('VirtualBox.CallbackWrapper')
 
     def getSessionObject(self, vbox):
@@ -311,6 +310,9 @@ class PlatformMSCOM:
         pythoncom.CoUninitialize()
         pass
 
+    def queryInterface(self, obj, klazzName):
+        from win32com.client import CastTo 
+        return CastTo(obj, klazzName)
 
 class PlatformXPCOM:
     def __init__(self, params):
@@ -369,6 +371,10 @@ class PlatformXPCOM:
     def deinit(self):
         import xpcom
         xpcom._xpcom.DeinitCOM()
+
+    def queryInterface(self, obj, klazzName):
+        import xpcom.components
+        return obj.queryInterface(getattr(xpcom.components.interfaces, klazzName))
 
 class PlatformWEBSERVICE:
     def __init__(self, params):
@@ -450,6 +456,10 @@ class PlatformWEBSERVICE:
            disconnect()
         except:
            pass
+
+    def queryInterface(self, obj, klazzName):
+        # wrong, need to test if class indeed implements this interface
+        return globals()[klazzName](obj.mgr, obj.handle)
 
 class SessionManager:
     def __init__(self, mgr):
@@ -543,3 +553,6 @@ class VirtualBoxManager:
     def getSdkDir(self):
         global VboxSdkDir
         return VboxSdkDir
+
+    def queryInterface(self, obj, klazzName):
+        return self.platform.queryInterface(obj, klazzName)

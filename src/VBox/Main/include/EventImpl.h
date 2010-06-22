@@ -21,9 +21,9 @@
 #include "VirtualBoxBase.h"
 
 class ATL_NO_VTABLE VBoxEvent :
+    public VirtualBoxBase,
     public VirtualBoxSupportErrorInfoImpl<VBoxEvent, IEvent>,
     public VirtualBoxSupportTranslation<VBoxEvent>,
-    public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(IEvent)
 {
 public:
@@ -53,7 +53,7 @@ public:
     STDMETHOD(COMGETTER(Type)) (VBoxEventType_T *aType);
     STDMETHOD(COMGETTER(Source)) (IEventSource * *aSource);
     STDMETHOD(COMGETTER(Waitable)) (BOOL *aWaitable);
-    
+
     // IEvent methods
     STDMETHOD(SetProcessed)();
     STDMETHOD(WaitProcessed)(LONG aTimeout, BOOL *aResult);
@@ -98,7 +98,7 @@ public:
 
     // IEventSource methods
     STDMETHOD(CreateListener)(IEventListener ** aListener);
-    STDMETHOD(RegisterListener)(IEventListener * aListener, 
+    STDMETHOD(RegisterListener)(IEventListener * aListener,
                                 ComSafeArrayIn(VBoxEventType_T, aInterested),
                                 BOOL             aActive);
     STDMETHOD(UnregisterListener)(IEventListener * aListener);
@@ -120,6 +120,22 @@ private:
     Data* m;
 
     friend class ListenerRecord;
+};
+
+class VBoxEventDesc
+{
+public:
+ VBoxEventDesc()
+ : mEvent(0)
+ {}
+ ~VBoxEventDesc()
+ {}
+
+ HRESULT init(IEventSource* aSource, VBoxEventType_T aType, ...);
+ void getEvent(IEvent ** aEvent);
+
+private:
+ ComPtr<IEvent>  mEvent;
 };
 
 #endif // ____H_EVENTIMPL

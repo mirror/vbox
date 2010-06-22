@@ -204,8 +204,10 @@ public:
     void *handler();
 
     virtual HRESULT handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback) = 0;
+    virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc) = 0;
+
 #ifdef RT_OS_WINDOWS
-    virtual HRESULT prepareEventDesc(ComEventDesc& aEvDesc) = 0;
+    virtual HRESULT prepareComEventDesc(ComEventDesc& aEvDesc) = 0;
 #endif
 
 private:
@@ -535,13 +537,9 @@ HRESULT VirtualBox::init()
         }
 
         /* events */
-#if 0
-        // disabled for now
         if (SUCCEEDED(rc = unconst(m->pEventSource).createObject()))
-            rc = m->pEventSource->init(this);
+            rc = m->pEventSource->init(static_cast<IVirtualBox*>(this));
         if (FAILED(rc)) throw rc;
-#endif
-
     }
     catch (HRESULT err)
     {
@@ -747,13 +745,6 @@ void VirtualBox::uninit()
         unconst(m->pHost).setNull();
     }
 
-    LogFlowThisFunc(("Releasing event source...\n"));
-    if (m->pEventSource)
-    {
-        m->pEventSource->uninit();
-        unconst(m->pEventSource).setNull();
-    }
-
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     if (m->pPerformanceCollector)
     {
@@ -794,6 +785,13 @@ void VirtualBox::uninit()
 
         unconst(m->threadAsyncEvent) = NIL_RTTHREAD;
         unconst(m->pAsyncEventQ) = NULL;
+    }
+
+    LogFlowThisFunc(("Releasing event source...\n"));
+    if (m->pEventSource)
+    {
+        // we don't perform uninit() as it's possible that some pending event refers to this source
+        unconst(m->pEventSource).setNull();
     }
 
     LogFlowThisFunc(("Terminating the client watcher...\n"));
@@ -2592,16 +2590,16 @@ void VirtualBox::removeDeadCallback(const ComPtr<IVirtualBoxCallback> &aCallback
 struct MachineEvent : public VirtualBox::CallbackEvent
 {
     MachineEvent(VirtualBox *aVB, const Guid &aId)
-        : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnMachineDataChange), id(aId)
+        : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnMachineDataChange), id(aId.toUtf16())
         {}
 
     MachineEvent(VirtualBox *aVB, const Guid &aId, MachineState_T aState)
-        : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnMachineStateChange), id(aId)
+        : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnMachineStateChange), id(aId.toUtf16())
         , state(aState)
         {}
 
     MachineEvent(VirtualBox *aVB, const Guid &aId, BOOL aRegistered)
-        : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnMachineRegistered), id(aId)
+        : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnMachineRegistered), id(aId.toUtf16())
         , registered(aRegistered)
         {}
 
@@ -2610,41 +2608,41 @@ struct MachineEvent : public VirtualBox::CallbackEvent
         switch (mWhat)
         {
             case VirtualBoxCallbackRegistration::kOnMachineDataChange:
-                LogFlow(("OnMachineDataChange: id={%RTuuid}\n", id.ptr()));
-                return aCallback->OnMachineDataChange(id.toUtf16());
+                LogFlow(("OnMachineDataChange: id={%ls}\n", id.raw()));
+                return aCallback->OnMachineDataChange(id);
 
             case VirtualBoxCallbackRegistration::kOnMachineStateChange:
-                LogFlow(("OnMachineStateChange: id={%RTuuid}, state=%d\n",
-                          id.ptr(), state));
-                return aCallback->OnMachineStateChange(id.toUtf16(), state);
+                LogFlow(("OnMachineStateChange: id={%ls}, state=%d\n",
+                         id.raw(), state));
+                return aCallback->OnMachineStateChange(id, state);
 
             case VirtualBoxCallbackRegistration::kOnMachineRegistered:
-                LogFlow(("OnMachineRegistered: id={%RTuuid}, registered=%d\n",
-                          id.ptr(), registered));
-                return aCallback->OnMachineRegistered(id.toUtf16(), registered);
+                LogFlow(("OnMachineRegistered: id={%ls}, registered=%d\n",
+                         id.raw(), registered));
+                return aCallback->OnMachineRegistered(id, registered);
 
             default:
                 AssertFailedReturn(S_OK);
         }
     }
 #ifdef RT_OS_WINDOWS
-    HRESULT prepareEventDesc(ComEventDesc& aEvDesc)
+    HRESULT prepareComEventDesc(ComEventDesc& aEvDesc)
     {
         switch (mWhat)
         {
             case VirtualBoxCallbackRegistration::kOnMachineDataChange:
                 aEvDesc.init("OnMachineDataChange", 1);
-                aEvDesc.add(id.toUtf16());
+                aEvDesc.add(id);
                 break;
 
             case VirtualBoxCallbackRegistration::kOnMachineStateChange:
                 aEvDesc.init("OnMachineStateChange", 2);
-                aEvDesc.add(id.toUtf16()).add((int)state);
+                aEvDesc.add(id).add((int)state);
                 break;
 
             case VirtualBoxCallbackRegistration::kOnMachineRegistered:
                 aEvDesc.init("OnMachineRegistered", 2);
-                aEvDesc.add(id.toUtf16()).add((BOOL)registered);
+                aEvDesc.add(id).add(registered);
                 break;
 
             default:
@@ -2653,8 +2651,29 @@ struct MachineEvent : public VirtualBox::CallbackEvent
          return S_OK;
     }
 #endif
+    virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc)
+    {
+        switch (mWhat)
+        {
+            case VirtualBoxCallbackRegistration::kOnMachineDataChange:
+                aEvDesc.init(aSource, VBoxEventType_OnMachineDataChange, id.raw());
+                break;
 
-    Guid id;
+            case VirtualBoxCallbackRegistration::kOnMachineStateChange:
+                aEvDesc.init(aSource, VBoxEventType_OnMachineStateChange, id.raw(), state);
+                break;
+
+            case VirtualBoxCallbackRegistration::kOnMachineRegistered:
+                aEvDesc.init(aSource, VBoxEventType_OnMachineRegistered, id.raw(), registered);
+                break;
+
+            default:
+                AssertFailedReturn(S_OK);
+         }
+         return S_OK;
+    }
+
+    Bstr id;
     MachineState_T state;
     BOOL registered;
 };
@@ -2740,26 +2759,29 @@ struct ExtraDataEvent : public VirtualBox::CallbackEvent
     ExtraDataEvent(VirtualBox *aVB, const Guid &aMachineId,
                    IN_BSTR aKey, IN_BSTR aVal)
         : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnExtraDataChange)
-        , machineId(aMachineId), key(aKey), val(aVal)
+        , machineId(aMachineId.toUtf16()), key(aKey), val(aVal)
     {}
 
     HRESULT handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
     {
-        LogFlow(("OnExtraDataChange: machineId={%RTuuid}, key='%ls', val='%ls'\n",
-                 machineId.ptr(), key.raw(), val.raw()));
-        return aCallback->OnExtraDataChange(machineId.toUtf16(), key, val);
+        LogFlow(("OnExtraDataChange: machineId={%ls}, key='%ls', val='%ls'\n",
+                 machineId.raw(), key.raw(), val.raw()));
+        return aCallback->OnExtraDataChange(machineId, key, val);
     }
 #ifdef RT_OS_WINDOWS
-    HRESULT prepareEventDesc(ComEventDesc& aEvDesc)
+    HRESULT prepareComEventDesc(ComEventDesc& aEvDesc)
     {
        aEvDesc.init("OnExtraDataChange", 3);
-       aEvDesc.add(machineId.toUtf16()).add(key).add(val);
+       aEvDesc.add(machineId).add(key).add(val);
        return S_OK;
     }
 #endif
+    virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc)
+    {
+        return aEvDesc.init(aSource, VBoxEventType_OnExtraDataChange, machineId.raw(), key.raw(), val.raw());
+    }
 
-    Guid machineId;
-    Bstr key, val;
+    Bstr machineId, key, val;
 };
 
 /**
@@ -2783,26 +2805,29 @@ struct SessionEvent : public VirtualBox::CallbackEvent
 {
     SessionEvent(VirtualBox *aVB, const Guid &aMachineId, SessionState_T aState)
         : CallbackEvent(aVB, VirtualBoxCallbackRegistration::kOnSessionStateChange)
-        , machineId(aMachineId), sessionState(aState)
+        , machineId(aMachineId.toUtf16()), sessionState(aState)
     {}
 
     HRESULT handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback)
     {
-        LogFlow(("OnSessionStateChange: machineId={%RTuuid}, sessionState=%d\n",
-                 machineId.ptr(), sessionState));
-        return aCallback->OnSessionStateChange(machineId.toUtf16(), sessionState);
+        LogFlow(("OnSessionStateChange: machineId={%ls}, sessionState=%d\n",
+                 machineId.raw(), sessionState));
+        return aCallback->OnSessionStateChange(machineId, sessionState);
     }
 
 #ifdef RT_OS_WINDOWS
-    HRESULT prepareEventDesc(ComEventDesc& aEvDesc)
+    HRESULT prepareComEventDesc(ComEventDesc& aEvDesc)
     {
        aEvDesc.init("OnSessionStateChange", 2);
-       aEvDesc.add(machineId.toUtf16()).add((int)sessionState);
+       aEvDesc.add(machineId).add((int)sessionState);
        return S_OK;
     }
 #endif
-
-    Guid machineId;
+    virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc)
+    {
+        return aEvDesc.init(aSource, VBoxEventType_OnSessionStateChange, machineId.raw(), sessionState);
+    }
+    Bstr machineId;
     SessionState_T sessionState;
 };
 
@@ -2851,14 +2876,18 @@ struct SnapshotEvent : public VirtualBox::CallbackEvent
     }
 
 #ifdef RT_OS_WINDOWS
-    HRESULT prepareEventDesc(ComEventDesc& aEvDesc)
+    HRESULT prepareComEventDesc(ComEventDesc& aEvDesc)
     {
        aEvDesc.init("OnSnapshotTaken", 2);
        aEvDesc.add(machineId.toUtf16()).add(snapshotId.toUtf16());
        return S_OK;
     }
 #endif
-
+    virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc)
+    {
+        return aEvDesc.init(aSource, VBoxEventType_OnSnapshotTaken,
+                            machineId.toUtf16().raw(), snapshotId.toUtf16().raw());
+    }
 
     Guid machineId;
     Guid snapshotId;
@@ -2911,13 +2940,18 @@ struct GuestPropertyEvent : public VirtualBox::CallbackEvent
     }
 
 #ifdef RT_OS_WINDOWS
-    HRESULT prepareEventDesc(ComEventDesc& aEvDesc)
+    HRESULT prepareComEventDesc(ComEventDesc& aEvDesc)
     {
        aEvDesc.init("OnGuestPropertyChange", 4);
        aEvDesc.add(machineId.toUtf16()).add(name).add(value).add(flags);
        return S_OK;
     }
 #endif
+    virtual HRESULT prepareEventDesc(IEventSource* aSource, VBoxEventDesc& aEvDesc)
+    {
+        return aEvDesc.init(aSource, VBoxEventType_OnGuestPropertyChange,
+                            machineId.toUtf16().raw(), name.raw(), value.raw(), flags.raw());
+    }
 
     Guid machineId;
     Bstr name, value, flags;
@@ -4622,14 +4656,13 @@ void *VirtualBox::CallbackEvent::handler()
 
 
 #ifdef RT_OS_WINDOWS
-    // WIP
     {
      ComEventDesc evDesc;
 
      int nConnections = listeners.GetSize();
      /* Only prepare args if someone really needs them */
      if (nConnections)
-        prepareEventDesc(evDesc);
+        prepareComEventDesc(evDesc);
 
      for (int i=0; i<nConnections; i++)
      {
@@ -4651,6 +4684,20 @@ void *VirtualBox::CallbackEvent::handler()
              // what we gonna do with the result?
         }
      }
+    }
+#endif
+
+#if 0
+    // We disable generic events firing for now to not harm performance, but it is already functional
+    {
+        VBoxEventDesc evDesc;
+        prepareEventDesc(mVirtualBox->m->pEventSource, evDesc);
+        ComPtr<IEvent> aEvent;
+        BOOL fDelivered;
+
+        evDesc.getEvent(aEvent.asOutParam());
+        if (aEvent && mVirtualBox && mVirtualBox->m->pEventSource)
+            mVirtualBox->m->pEventSource->FireEvent(aEvent, /* don't wait for delivery */ 0, &fDelivered);
     }
 #endif
 
