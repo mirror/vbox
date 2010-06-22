@@ -2560,7 +2560,7 @@ static void pgmPoolMonitorModifiedClearAll(PVM pVM)
 int pgmPoolSyncCR3(PVMCPU pVCpu)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    LogFlow(("pgmPoolSyncCR3\n"));
+    LogFlow(("pgmPoolSyncCR3 fSyncFlags=%x\n", pVCpu->pgm.s.fSyncFlags));
 
     /*
      * When monitoring shadowed pages, we reset the modification counters on CR3 sync.
