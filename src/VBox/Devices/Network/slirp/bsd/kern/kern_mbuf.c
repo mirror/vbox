@@ -125,7 +125,15 @@ tunable_mbinit(void *dummy)
 	nmbclusters = 1024 + maxusers * 64;
 	nmbjumbop = nmbclusters / 2;
 	nmbjumbo9 = nmbjumbop / 2;
+#ifndef VBOX
 	nmbjumbo16 = nmbjumbo9 / 2;
+#else
+    /* drvNATNetowrkUp_AllocBuf always requests mbuf from this 
+     * zones, that require more buffers allocated on jumbo16 zone,
+     * in case of intensive communication like p2p and UDP benches. 
+     */
+    nmbjumbo16 = nmbclusters;
+#endif
 	TUNABLE_INT_FETCH("kern.ipc.nmbclusters", &nmbclusters);
 }
 SYSINIT(tunable_mbinit, SI_SUB_TUNABLES, SI_ORDER_MIDDLE, tunable_mbinit, NULL);
