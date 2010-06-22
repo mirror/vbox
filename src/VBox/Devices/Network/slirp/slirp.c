@@ -1400,28 +1400,24 @@ static void arp_input(PNATState pData, struct mbuf *m)
     {
         case ARPOP_REQUEST:
             mr = m_getcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR);
-            if (mr == NULL)
+            if (!mr)
                 break;
             reh = mtod(mr, struct ethhdr *);
             mr->m_data += ETH_HLEN;
             rah = mtod(mr, struct arphdr *);
             mr->m_len = sizeof(struct arphdr);
-            Assert(mr);
             memcpy(reh->h_source, eh->h_source, ETH_ALEN); /* XXX: if_encap will swap src and dst*/
+            if (   0
 #ifdef VBOX_WITH_NAT_SERVICE
-            if (tip == pData->special_addr.s_addr)
-                goto arp_ok;
+                || (tip == pData->special_addr.s_addr)
 #endif
-            if ((htip & pData->netmask) == RT_N2H_U32(pData->special_addr.s_addr))
+                || (   ((htip & pData->netmask) == RT_N2H_U32(pData->special_addr.s_addr))
+                    && (   CTL_CHECK(htip, CTL_DNS)
+                        || CTL_CHECK(htip, CTL_ALIAS)
+                        || CTL_CHECK(htip, CTL_TFTP))
+                    )
+                )
             {
-                if (   CTL_CHECK(htip, CTL_DNS)
-                    || CTL_CHECK(htip, CTL_ALIAS)
-                    || CTL_CHECK(htip, CTL_TFTP))
-                    goto arp_ok;
-                m_freem(pData, mr);
-                break;
-
-         arp_ok:
                 rah->ar_hrd = RT_H2N_U16_C(1);
                 rah->ar_pro = RT_H2N_U16_C(ETH_P_IP);
                 rah->ar_hln = ETH_ALEN;
@@ -1451,8 +1447,8 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 && memcmp(ah->ar_tha, broadcast_ethaddr, ETH_ALEN) == 0
                 && memcmp(eh->h_dest, broadcast_ethaddr, ETH_ALEN) == 0)
             {
-                /* we've received anounce about address asignment
-                 * Let's do ARP cache update
+                /* We've received an announce about address assignment,
+                 * let's do an ARP cache update
                  */
                 slirp_arp_cache_update_or_add(pData, *(uint32_t *)ah->ar_tip, &eh->h_dest[0]);
             }
