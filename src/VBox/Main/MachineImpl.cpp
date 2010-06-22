@@ -3162,6 +3162,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     if (fNeedsSaveSettings)
     {
+        // save the global settings; for that we should hold only the VirtualBox lock
         mediumLock.release();
         treeLock.leave();
         alock.release();
@@ -3256,6 +3257,7 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
 
         if (fNeedsGlobalSaveSettings)
         {
+            // save the global settings; for that we should hold only the VirtualBox lock
             alock.release();
             AutoWriteLock vboxlock(this COMMA_LOCKVAL_SRC_POS);
             mParent->saveSettings();
@@ -3655,6 +3657,7 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
 
         if (fNeedsGlobalSaveSettings)
         {
+            // save the global settings; for that we should hold only the VirtualBox lock
             alock.release();
             AutoWriteLock vboxlock(mParent COMMA_LOCKVAL_SRC_POS);
             mParent->saveSettings();
@@ -3690,6 +3693,7 @@ STDMETHODIMP Machine::SaveSettings()
 
     if (SUCCEEDED(rc) && fNeedsGlobalSaveSettings)
     {
+        // save the global settings; for that we should hold only the VirtualBox lock
         AutoWriteLock vlock(mParent COMMA_LOCKVAL_SRC_POS);
         rc = mParent->saveSettings();
     }
@@ -10798,8 +10802,7 @@ HRESULT SessionMachine::endSavingState(BOOL aSuccess)
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
-    /* saveSettings() needs mParent lock */
-    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 

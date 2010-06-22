@@ -1142,7 +1142,7 @@ STDMETHODIMP Host::InsertUSBDeviceFilter(ULONG aPosition,
         pFilter->getId() = m->pUSBProxyService->insertFilter(&pFilter->getData().mUSBFilter);
     }
 
-    /* save the global settings */
+    // save the global settings; for that we should hold only the VirtualBox lock
     alock.release();
     AutoWriteLock vboxLock(m->pParent COMMA_LOCKVAL_SRC_POS);
     return rc = m->pParent->saveSettings();
@@ -1198,7 +1198,7 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter(ULONG aPosition)
         filter->getId() = NULL;
     }
 
-    /* save the global settings */
+    // save the global settings; for that we should hold only the VirtualBox lock
     alock.release();
     AutoWriteLock vboxLock(m->pParent COMMA_LOCKVAL_SRC_POS);
     return rc = m->pParent->saveSettings();
@@ -1763,6 +1763,7 @@ HRESULT Host::onUSBDeviceFilterChange(HostUSBDeviceFilter *aFilter,
         }
 
         // save the global settings... yeah, on every single filter property change
+        // for that we should hold only the VirtualBox lock
         alock.release();
         AutoWriteLock vboxLock(m->pParent COMMA_LOCKVAL_SRC_POS);
         return m->pParent->saveSettings();

@@ -3530,7 +3530,9 @@ void VirtualBox::rememberMachineNameChangeForMedia(const Utf8Str &strOldConfigDi
  *  Gets called from the public VirtualBox::SaveSettings() as well as from various other
  *  places internally when settings need saving.
  *
- *  @note Caller must have locked the VirtualBox object for writing!
+ *  @note Caller must have locked the VirtualBox object for writing and must not hold any
+ *    other locks since this locks all kinds of member objects and trees temporarily,
+ *    which could cause conflicts.
  */
 HRESULT VirtualBox::saveSettings()
 {
@@ -4791,9 +4793,7 @@ HRESULT VirtualBox::registerDHCPServer(DHCPServer *aDHCPServer,
     ComPtr<IDHCPServer> existing;
     rc = FindDHCPServerByNetworkName(name, existing.asOutParam());
     if (SUCCEEDED(rc))
-    {
         return E_INVALIDARG;
-    }
 
     rc = S_OK;
 
@@ -4834,8 +4834,6 @@ HRESULT VirtualBox::unregisterDHCPServer(DHCPServer *aDHCPServer,
 
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AutoCaller dhcpServerCaller(aDHCPServer);
     AssertComRCReturn(dhcpServerCaller.rc(), dhcpServerCaller.rc());

@@ -149,11 +149,12 @@ STDMETHODIMP DHCPServer::COMSETTER(Enabled) (BOOL aEnabled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(mVirtualBox, this COMMA_LOCKVAL_SRC_POS);
-
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     m.enabled = aEnabled;
 
+    // save the global settings; for that we should hold only the VirtualBox lock
+    alock.release();
+    AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = mVirtualBox->saveSettings();
 
     return rc;
@@ -217,14 +218,15 @@ STDMETHODIMP DHCPServer::SetConfiguration (IN_BSTR aIPAddress, IN_BSTR aNetworkM
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(mVirtualBox, this COMMA_LOCKVAL_SRC_POS);
-
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     m.IPAddress = aIPAddress;
     m.networkMask = aNetworkMask;
     m.lowerIP = aLowerIP;
     m.upperIP = aUpperIP;
 
+    // save the global settings; for that we should hold only the VirtualBox lock
+    alock.release();
+    AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
     return mVirtualBox->saveSettings();
 }
 
