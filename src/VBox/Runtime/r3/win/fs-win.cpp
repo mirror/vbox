@@ -337,21 +337,24 @@ RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProper
 /**
  * Internal helper for comparing a WCHAR string with a char string.
  *
- * @returns 0 if equal, -1 if @a psz1 < @a psz2, 1 if @a psz1 < @a psz2.
- * @param   pwsz1               The first string.
- * @param   psz2                The second string.
+ * @returns @c true if equal, @c false if not.
+ * @param   pwsz1               The first string. 
+ * @param   cb1                 The length of the first string, in bytes.
+ * @param   psz2                The second string. 
+ * @param   cch2                The length of the second string. 
  */
-static int rtFsWinCmpUtf16(WCHAR const *pwsz1, const char *psz2)
+static bool rtFsWinAreEqual(WCHAR const *pwsz1, size_t cch1, const char *psz2, size_t cch2)
 {
-    for (;;)
+    if (cch1 != cch2 * 2)
+        return false;
+    while (cch2-- > 0)
     {
         unsigned ch1 = *pwsz1++;
         unsigned ch2 = (unsigned char)*psz2++;
         if (ch1 != ch2)
-            return ch1 < ch2 ? -1 : 1;
-        if (!ch1)
-            return 0;
+            return false;
     }
+    return true;
 }
 
 
@@ -389,15 +392,20 @@ RTR3DECL(int) RTFsQueryType(const char *pszFsPath, PRTFSTYPE penmType)
             if (rcNt >= 0)
             {
                 PFILE_FS_ATTRIBUTE_INFORMATION pFsAttrInfo = (PFILE_FS_ATTRIBUTE_INFORMATION)abBuf;
-
-                if (!rtFsWinCmpUtf16(pFsAttrInfo->FileSystemName, "NTFS"))
+                if (pFsAttrInfo->FIleSystemNameLength)
+                {
+                }
+#define IS_FS(szName) \
+    rtFsWinAreEqual(pFsAttrInfo->FileSystemName, pFsAttrInfo->FIleSystemNameLength, szName, sizeof(szName) - 1)
+                if (IS_FS("NTFS"))
                     *penmType = RTFSTYPE_NTFS;
-                else if (!rtFsWinCmpUtf16(pFsAttrInfo->FileSystemName, "FAT"))
+                else if (IS_FS("FAT"))
                     *penmType = RTFSTYPE_FAT;
-                else if (!rtFsWinCmpUtf16(pFsAttrInfo->FileSystemName, "FAT32"))
+                else if (IS_FS("FAT32"))
                     *penmType = RTFSTYPE_FAT;
-                else if (!rtFsWinCmpUtf16(pFsAttrInfo->FileSystemName, "VBoxSharedFolderFS"))
+                else if (IS_FS("VBoxSharedFolderFS"))
                     *penmType = RTFSTYPE_VBOXSHF;
+#undef IS_FS
             }
             else
                 rc = RTErrConvertFromNtStatus(rcNt);
