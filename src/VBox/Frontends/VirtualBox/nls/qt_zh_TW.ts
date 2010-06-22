@@ -5,11 +5,11 @@
     <name>AudioOutput</name>
     <message>
         <source>&lt;html&gt;The audio playback device &lt;b&gt;%1&lt;/b&gt; does not work.&lt;br/&gt;Falling back to &lt;b&gt;%2&lt;/b&gt;.&lt;/html&gt;</source>
-        <translation>&lt;html&gt;音訊播放裝置 &lt;b&gt;%1&lt;/b&gt; 無法動作。&lt;br/&gt;返回 &lt;b&gt;%2&lt;/b&gt; 失敗。&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;音效播放裝置 &lt;b&gt;%1&lt;/b&gt; 無法動作。&lt;br/&gt;返回 &lt;b&gt;%2&lt;/b&gt; 失敗。&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt;html&gt;Switching to the audio playback device &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;which just became available and has higher preference.&lt;/html&gt;</source>
-        <translation>&lt;html&gt;切換至音訊播放裝置 &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;，其剛成為可用並有較高的慣用。&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;切換至音效播放裝置 &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;，其剛成為可用並具有較高的偏好。&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Revert back to device &apos;%1&apos;</source>
@@ -4018,7 +4018,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Cannot show URL</source>
-        <translation>無法顯示網址</translation>
+        <translation>無法顯示 URL</translation>
     </message>
     <message>
         <source>Frame load interruped by policy change</source>
@@ -4112,12 +4112,12 @@ Please choose a different file name.</source>
     <message>
         <source>Go Back</source>
         <comment>Back context menu item</comment>
-        <translation>返回</translation>
+        <translation>上一頁</translation>
     </message>
     <message>
         <source>Go Forward</source>
         <comment>Forward context menu item</comment>
-        <translation>下一個</translation>
+        <translation>下一頁</translation>
     </message>
     <message>
         <source>Stop</source>
@@ -4302,7 +4302,7 @@ Please choose a different file name.</source>
     <name>QWizard</name>
     <message>
         <source>Go Back</source>
-        <translation>返回</translation>
+        <translation>上一步</translation>
     </message>
     <message>
         <source>Continue</source>
@@ -4342,7 +4342,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation>下一個(&amp;N)</translation>
+        <translation>下一步(&amp;N)</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
@@ -4646,11 +4646,11 @@ Please choose a different file name.</source>
     <name>QtXmlPatterns</name>
     <message>
         <source>An %1-attribute with value %2 has already been declared.</source>
-        <translation>為 %1 的已聲明屬性值為 %2-。</translation>
+        <translation>值 %2 的 %1-屬性已宣告。</translation>
     </message>
     <message>
         <source>An %1-attribute must have a valid %2 as value, which %3 isn&apos;t.</source>
-        <translation>為 %1-屬性必須有一個有效的 %2 的 %3 沒有的值。</translation>
+        <translation>%1-屬性必須有一個有效的 %2 值，其 %3 沒有。</translation>
     </message>
     <message>
         <source>Network timeout.</source>
@@ -4762,7 +4762,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>A value of type %1 must contain an even number of digits. The value %2 does not.</source>
-        <translation>類型 %1 的值必須包含偶位數字。 值 %2 不存在。</translation>
+        <translation>類型 %1 的值必須包含偶位數字。 值 %2 不是。</translation>
     </message>
     <message>
         <source>%1 is not valid as a value of type %2.</source>
@@ -4830,19 +4830,19 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>An attribute node cannot be a child of a document node. Therefore, the attribute %1 is out of place.</source>
-        <translation>一個屬性節點不能是文件節點的子級。 因此，%1 屬性是出的地方。</translation>
+        <translation>一個屬性節點不能是文件節點的子級。 因此，%1 屬性超出位置。</translation>
     </message>
     <message>
         <source>A library module cannot be evaluated directly. It must be imported from a main module.</source>
-        <translation>程式庫模組不能直接進行評估。 它必須從主模組導入。</translation>
+        <translation>程式庫模組不能直接計算。 它必須從主模組匯入。</translation>
     </message>
     <message>
         <source>A value of type %1 cannot be a predicate. A predicate must have either a numeric type or an Effective Boolean Value type.</source>
-        <translation>類型 %1 的值不能為謂詞。 為數數值型別或一個有效的布林值類型，必須有一個謂詞。</translation>
+        <translation>類型 %1 的值不能為述詞。 述詞必須有數字類型或 Effective Boolean 數值類型。</translation>
     </message>
     <message>
         <source>A positional predicate must evaluate to a single numeric value.</source>
-        <translation>一個位置的謂語的值，必須為單個數值。</translation>
+        <translation>一個位置述詞必須計算為單一數字。</translation>
     </message>
     <message>
         <source>The target name in a processing instruction cannot be %1 in any combination of upper and lower case. Therefore, is %2 invalid.</source>
@@ -5062,7 +5062,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>A variable by name %1 has already been declared in the prolog.</source>
-        <translation>已在序言中聲明一個變數的名稱為 %1。</translation>
+        <translation>已在序言中宣告一個名稱 %1 的變數。</translation>
     </message>
     <message>
         <source>No value is available for the external variable by name %1.</source>
@@ -5086,7 +5086,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>An argument by name %1 has already been declared. Every argument name must be unique.</source>
-        <translation>已聲明參數的名稱為 %1。 每個參數的名稱必須是唯一。</translation>
+        <translation>名稱 %1 的參數已宣告。 每個參數的名稱必須是唯一。</translation>
     </message>
     <message>
         <source>The name of a variable bound in a for-expression must be different from the positional variable. Hence, the two variables named %1 collide.</source>
@@ -5142,11 +5142,11 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>An attribute by name %1 has already appeared on this element.</source>
-        <translation>此元素對已出現屬性的名稱為 %1。</translation>
+        <translation>名稱 %1 的屬性已經出現在這個元素。</translation>
     </message>
     <message>
         <source>A direct element constructor is not well-formed. %1 is ended with %2.</source>
-        <translation>直接的元素的構造函數不是標準格式的。 %1 結束與 %2-。</translation>
+        <translation>直接元素結構不是標準格式。 %1 以 %2 結束。</translation>
     </message>
     <message>
         <source>The name %1 does not refer to any schema type.</source>
@@ -5210,7 +5210,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>An attribute by name %1 has already been created.</source>
-        <translation>已建立命名為 %1 的屬性。</translation>
+        <translation>名稱 %1 的屬性已建立。</translation>
     </message>
     <message>
         <source>Only the Unicode Codepoint Collation is supported(%1). %2 is unsupported.</source>

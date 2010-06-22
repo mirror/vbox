@@ -92,11 +92,11 @@
     <name>QIArrowSplitter</name>
     <message>
         <source>&amp;Back</source>
-        <translation>上一個(&amp;B)</translation>
+        <translation>上一步(&amp;B)</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation>下一個(&amp;N)</translation>
+        <translation>下一步(&amp;N)</translation>
     </message>
 </context>
 <context>
@@ -373,24 +373,12 @@
         <translation>機器(&amp;M)</translation>
     </message>
     <message>
-        <source>&amp;Fullscreen Mode</source>
-        <translation type="obsolete">全螢幕模式(&amp;F)</translation>
-    </message>
-    <message>
         <source>Switch to fullscreen mode</source>
         <translation>切換到全螢幕模式</translation>
     </message>
     <message>
-        <source>Seam&amp;less Mode</source>
-        <translation type="obsolete">無縫模式(&amp;L)</translation>
-    </message>
-    <message>
         <source>Switch to seamless desktop integration mode</source>
         <translation>切換到無縫桌面整合模式</translation>
-    </message>
-    <message>
-        <source>Auto-resize &amp;Guest Display</source>
-        <translation type="obsolete">自動調整客體顯示大小(&amp;G)</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -402,7 +390,7 @@
     </message>
     <message>
         <source>Adjust window size and position to best fit the guest display</source>
-        <translation>調整視窗大小與位置以最符合客體顯示</translation>
+        <translation>調整視窗大小與位置以最佳符合客體顯示</translation>
     </message>
     <message>
         <source>Disable &amp;Mouse Integration</source>
@@ -478,7 +466,7 @@
     </message>
     <message>
         <source>ACPI Sh&amp;utdown</source>
-        <translation>ACPI 關機 (&amp;U)</translation>
+        <translation>ACPI 關機(&amp;U)</translation>
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
@@ -533,14 +521,6 @@
         <translation>建立或修改共用資料夾</translation>
     </message>
     <message>
-        <source>&amp;Remote Display</source>
-        <translation type="obsolete">遠端顯示(&amp;R)</translation>
-    </message>
-    <message>
-        <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation type="obsolete">啟用或停用遠端桌面 (RDP) 連線到這個機器</translation>
-    </message>
-    <message>
         <source>&amp;Install Guest Additions...</source>
         <translation>安裝 Guest Additions (&amp;I)...</translation>
     </message>
@@ -563,11 +543,6 @@
         <translation>命令列(&amp;C)...</translation>
     </message>
     <message>
-        <source>&amp;Logging...</source>
-        <comment>debug action</comment>
-        <translation type="obsolete">紀錄(&amp;L)...</translation>
-    </message>
-    <message>
         <source>&amp;Help</source>
         <translation>說明(&amp;H)</translation>
     </message>
@@ -585,61 +560,61 @@
     </message>
     <message>
         <source>Enter &amp;Fullscreen Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>進入全螢幕模式(&amp;F)</translation>
     </message>
     <message>
         <source>Exit &amp;Fullscreen Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>結束全螢幕模式(&amp;F)</translation>
     </message>
     <message>
         <source>Switch to normal mode</source>
-        <translation type="unfinished"></translation>
+        <translation>切換到標準模式</translation>
     </message>
     <message>
         <source>Enter Seam&amp;less Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>進入無縫模式(&amp;L)</translation>
     </message>
     <message>
         <source>Exit Seam&amp;less Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>結束無縫模式(&amp;L)</translation>
     </message>
     <message>
         <source>Enable &amp;Guest Display Auto-resize</source>
-        <translation type="unfinished"></translation>
+        <translation>啟用客體顯示自動調整大小(&amp;G)</translation>
     </message>
     <message>
         <source>Disable &amp;Guest Display Auto-resize</source>
-        <translation type="unfinished"></translation>
+        <translation>停用客體顯示自動調整大小(&amp;G)</translation>
     </message>
     <message>
         <source>Disable automatic resize of the guest display when the window is resized</source>
-        <translation type="unfinished"></translation>
+        <translation>當視窗已調整大小時停用自動調整客體顯示的大小</translation>
     </message>
     <message>
         <source>&amp;Enable Remote Display</source>
-        <translation type="unfinished"></translation>
+        <translation>啟用遠端顯示(&amp;E)</translation>
     </message>
     <message>
         <source>Enable remote desktop (RDP) connections to this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>啟用遠端桌面 (RDP) 連線到這部機器</translation>
     </message>
     <message>
         <source>&amp;Disable Remote Display</source>
-        <translation type="unfinished"></translation>
+        <translation>停用遠端顯示(&amp;D)</translation>
     </message>
     <message>
         <source>Disable remote desktop (RDP) connections to this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>停用遠端桌面 (RDP) 連線到這部機器</translation>
     </message>
     <message>
         <source>Enable &amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>啟用記錄(&amp;L)...</translation>
     </message>
     <message>
         <source>Disable &amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>停用記錄(&amp;L)...</translation>
     </message>
 </context>
 <context>
@@ -809,11 +784,11 @@
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您首次啟動您最新建立的虛擬機器。 這個精靈將協助您執行需要的步驟，以安裝您所選擇要安裝到這部虛擬機器的作業系統。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;您首次啟動您最新建立的虛擬機器。 這個精靈將協助您執行需要的步驟，以安裝您所選擇的作業系統到這部虛擬機器。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您首次啟動您最新建立的虛擬機器。 這個精靈將協助您執行需要的步驟，以安裝您所選擇要安裝到這部虛擬機器的作業系統。&lt;/p&gt;&lt;p&gt;請注意，您現在無法安裝作業系統到這部虛擬機器，因為您沒有附加任何的硬碟。 如果這不是您想要的，您可以取消這個精靈的執行，從 VirtualBox 主視窗的&lt;b&gt;機器&lt;/b&gt;功能表選取&lt;b&gt;設定值&lt;/b&gt;並變更硬碟組態。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;您首次啟動您最新建立的虛擬機器。 這個精靈將協助您執行需要的步驟，以安裝您所選擇的作業系統到這部虛擬機器。&lt;/p&gt;&lt;p&gt;請注意，您現在無法安裝作業系統到這部虛擬機器，因為您沒有附加任何的硬碟。 如果這不是您想要的，您可以取消這個精靈的執行，從 VirtualBox 主視窗的&lt;b&gt;機器&lt;/b&gt;功能表選取&lt;b&gt;設定值&lt;/b&gt;存取這部機器的設定對話方塊並變更硬碟組態。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -953,22 +928,22 @@
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示虛擬硬碟之活動:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示虛擬硬碟的活動:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>CD/DVD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示附加的 CD/DVD 裝置之活動:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示 CD/DVD 裝置的活動:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>FD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示軟碟裝置之活動:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示軟碟裝置的活動:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示網路卡之活動:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示網路卡的活動:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
@@ -993,7 +968,7 @@
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示附加的 USB 裝置之活動:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示已附加 USB 裝置的活動:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -1008,7 +983,7 @@
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示電腦的共用資料夾之活動:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示電腦共用資料夾的活動:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -1335,10 +1310,6 @@
         <translation>&lt;p&gt;選取要作為虛擬機器開機硬碟的硬碟映像。 您可以使用 [&lt;b&gt;新建硬碟&lt;/b&gt;] 建立一個新的硬碟或 [&lt;b&gt;使用現有硬碟&lt;/b&gt;] 從下拉式清單選取現有的硬碟檔或按下右方按鈕 (調用虛擬媒體管理對話方塊)。&lt;/p&gt;&lt;p&gt;如果您需要更複雜的硬碟安裝，您也可以跳過這個步驟並稍後使用 VM 設定對話方塊附加硬碟。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
-        <translation type="obsolete">開機硬碟 (第一個主)(&amp;D)</translation>
-    </message>
-    <message>
         <source>&amp;Create new hard disk</source>
         <translation>新建硬碟(&amp;C)</translation>
     </message>
@@ -1356,7 +1327,7 @@
     </message>
     <message>
         <source>Boot Hard &amp;Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>開機硬碟(&amp;D)</translation>
     </message>
 </context>
 <context>
@@ -1430,7 +1401,7 @@
     </message>
     <message>
         <source>Product-URL</source>
-        <translation>產品網址</translation>
+        <translation>產品 URL</translation>
     </message>
     <message>
         <source>Vendor</source>
@@ -1522,13 +1493,8 @@
         <translation>MB</translation>
     </message>
     <message>
-        <source>MB</source>
-        <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
         <source>Hard Disk Controller (SAS)</source>
-        <translation type="unfinished"></translation>
+        <translation>硬碟控制器 (SAS)</translation>
     </message>
 </context>
 <context>
@@ -1555,7 +1521,7 @@
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;勾選時，機器將返回目前快照中儲存的狀態在它關閉之後。 這是有用的，如果您確認要放棄您最後的工作階段結果並再次啟動該快照。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;勾選時，機器將在關閉之後返回目前快照中儲存的狀態。 這是有用的，如果您確認要放棄您最後的工作階段結果並再次啟動該快照。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
@@ -1576,409 +1542,6 @@
     <message>
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
         <translation>還原目前快照「%1」(&amp;R)</translation>
-    </message>
-</context>
-<context>
-    <name>VBoxConsoleWnd</name>
-    <message>
-        <source>VirtualBox OSE</source>
-        <translation type="obsolete">VirtualBox 開放原始碼版本 (OSE)</translation>
-    </message>
-    <message>
-        <source>&amp;Fullscreen Mode</source>
-        <translation type="obsolete">全螢幕模式(&amp;F)</translation>
-    </message>
-    <message>
-        <source>Switch to fullscreen mode</source>
-        <translation type="obsolete">切換到全螢幕模式</translation>
-    </message>
-    <message>
-        <source>Mouse Integration</source>
-        <comment>enable/disable...</comment>
-        <translation type="obsolete">滑鼠整合</translation>
-    </message>
-    <message>
-        <source>Auto-resize Guest Display</source>
-        <comment>enable/disable...</comment>
-        <translation type="obsolete">自動調整客體顯示大小</translation>
-    </message>
-    <message>
-        <source>Auto-resize &amp;Guest Display</source>
-        <translation type="obsolete">自動調整客體顯示大小(&amp;G)</translation>
-    </message>
-    <message>
-        <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation type="obsolete">當變更視窗大小時自動調整客體顯示的大小 (需要 Guest Additions)</translation>
-    </message>
-    <message>
-        <source>&amp;Adjust Window Size</source>
-        <translation type="obsolete">調整視窗大小(&amp;A)</translation>
-    </message>
-    <message>
-        <source>Adjust window size and position to best fit the guest display</source>
-        <translation type="obsolete">調整視窗大小與位置以最符合客體顯示</translation>
-    </message>
-    <message>
-        <source>&amp;Insert Ctrl-Alt-Del</source>
-        <translation type="obsolete">插入 Ctrl-Alt-Del (&amp;I)</translation>
-    </message>
-    <message>
-        <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
-        <translation type="obsolete">傳送 Ctrl-Alt-Del 序列到虛擬機器</translation>
-    </message>
-    <message>
-        <source>&amp;Insert Ctrl-Alt-Backspace</source>
-        <translation type="obsolete">插入 Ctrl-Alt-Backspace (&amp;I)</translation>
-    </message>
-    <message>
-        <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
-        <translation type="obsolete">傳送 Ctrl-Alt-Backspace 序列到虛擬機器</translation>
-    </message>
-    <message>
-        <source>&amp;Reset</source>
-        <translation type="obsolete">重設(&amp;R)</translation>
-    </message>
-    <message>
-        <source>Reset the virtual machine</source>
-        <translation type="obsolete">重設虛擬機器</translation>
-    </message>
-    <message>
-        <source>ACPI S&amp;hutdown</source>
-        <translation type="obsolete">ACPI 關機(&amp;H)</translation>
-    </message>
-    <message>
-        <source>Send the ACPI Power Button press event to the virtual machine</source>
-        <translation type="obsolete">傳送按下 ACPI 電源開關按鈕的事件到虛擬機器</translation>
-    </message>
-    <message>
-        <source>&amp;Close...</source>
-        <translation type="obsolete">關閉(&amp;C)...</translation>
-    </message>
-    <message>
-        <source>Close the virtual machine</source>
-        <translation type="obsolete">關閉虛擬機器</translation>
-    </message>
-    <message>
-        <source>Take &amp;Snapshot...</source>
-        <translation type="obsolete">取得快照(&amp;S)...</translation>
-    </message>
-    <message>
-        <source>Take a snapshot of the virtual machine</source>
-        <translation type="obsolete">取得虛擬機器的快照</translation>
-    </message>
-    <message>
-        <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation type="obsolete">啟用或停用遠端桌面 (RDP) 連線到這個機器</translation>
-    </message>
-    <message>
-        <source>&amp;Shared Folders...</source>
-        <translation type="obsolete">共用資料夾(&amp;S)...</translation>
-    </message>
-    <message>
-        <source>Create or modify shared folders</source>
-        <translation type="obsolete">建立或修改共用資料夾</translation>
-    </message>
-    <message>
-        <source>&amp;Install Guest Additions...</source>
-        <translation type="obsolete">安裝 Guest Additions (&amp;I)...</translation>
-    </message>
-    <message>
-        <source>Mount the Guest Additions installation image</source>
-        <translation type="obsolete">掛載 Guest Additions 安裝映像</translation>
-    </message>
-    <message>
-        <source>&amp;USB Devices</source>
-        <translation type="obsolete">USB 裝置(&amp;U)</translation>
-    </message>
-    <message>
-        <source>&amp;Devices</source>
-        <translation type="obsolete">裝置(&amp;D)</translation>
-    </message>
-    <message>
-        <source>De&amp;bug</source>
-        <translation type="obsolete">除錯(&amp;B)</translation>
-    </message>
-    <message>
-        <source>&amp;Help</source>
-        <translation type="obsolete">說明(&amp;H)</translation>
-    </message>
-    <message>
-        <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
-        <translation type="obsolete">&lt;hr&gt;VRDP 伺服器正在偵聽連接埠 %1</translation>
-    </message>
-    <message>
-        <source>&amp;Pause</source>
-        <translation type="obsolete">暫停(&amp;P)</translation>
-    </message>
-    <message>
-        <source>Suspend the execution of the virtual machine</source>
-        <translation type="obsolete">暫停虛擬機器的執行</translation>
-    </message>
-    <message>
-        <source>R&amp;esume</source>
-        <translation type="obsolete">繼續執行(&amp;E)</translation>
-    </message>
-    <message>
-        <source>Resume the execution of the virtual machine</source>
-        <translation type="obsolete">繼續執行虛擬機器</translation>
-    </message>
-    <message>
-        <source>Disable &amp;Mouse Integration</source>
-        <translation type="obsolete">停用滑鼠整合(&amp;M)</translation>
-    </message>
-    <message>
-        <source>Temporarily disable host mouse pointer integration</source>
-        <translation type="obsolete">暫時停用主機滑鼠指標整合</translation>
-    </message>
-    <message>
-        <source>Enable &amp;Mouse Integration</source>
-        <translation type="obsolete">啟用滑鼠整合(&amp;M)</translation>
-    </message>
-    <message>
-        <source>Enable temporarily disabled host mouse pointer integration</source>
-        <translation type="obsolete">啟用暫時停用的主機滑鼠指標整合</translation>
-    </message>
-    <message>
-        <source>Snapshot %1</source>
-        <translation type="obsolete">快照 %1</translation>
-    </message>
-    <message>
-        <source>&amp;Machine</source>
-        <translation type="obsolete">機器(&amp;M)</translation>
-    </message>
-    <message>
-        <source>Seam&amp;less Mode</source>
-        <translation type="obsolete">無縫模式(&amp;L)</translation>
-    </message>
-    <message>
-        <source>Switch to seamless desktop integration mode</source>
-        <translation type="obsolete">切換到無縫桌面整合模式</translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
-        <comment>HDD tooltip</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;未附加硬碟&lt;/b&gt;&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>connected</source>
-        <comment>Network adapters tooltip</comment>
-        <translation type="obsolete">已連接</translation>
-    </message>
-    <message>
-        <source>disconnected</source>
-        <comment>Network adapters tooltip</comment>
-        <translation type="obsolete">已中斷連接</translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
-        <comment>Network adapters tooltip</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;所有網路卡已停用&lt;/b&gt;&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
-        <comment>USB device tooltip</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;未附加 USB 裝置&lt;/b&gt;&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
-        <comment>USB device tooltip</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB 控制器已停用&lt;/b&gt;&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
-        <comment>Shared folders tooltip</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;無共用資料夾&lt;/b&gt;&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Session I&amp;nformation Dialog</source>
-        <translation type="obsolete">工作階段資訊對話方塊(&amp;N)</translation>
-    </message>
-    <message>
-        <source>Show Session Information Dialog</source>
-        <translation type="obsolete">顯示工作階段資訊對話方塊</translation>
-    </message>
-    <message>
-        <source>&amp;Statistics...</source>
-        <comment>debug action</comment>
-        <translation type="obsolete">統計(&amp;S)...</translation>
-    </message>
-    <message>
-        <source>&amp;Command Line...</source>
-        <comment>debug action</comment>
-        <translation type="obsolete">命令列(&amp;C)...</translation>
-    </message>
-    <message>
-        <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">指示自動調整客體顯示的大小功能為開啟 (&lt;img src=:/auto_resize_on_16px.png/&gt;) 或關閉 (&lt;img src=:/auto_resize_off_16px.png/&gt;). 請注意: 這個功能需要在客體作業系統中安裝 Guest Additions 。</translation>
-    </message>
-    <message>
-        <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">指示客體作業系統是否擷取主機滑鼠指標:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;未擷取指標&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;擷取指標&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;滑鼠整合 (MI) 開啟&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp; MI 關閉，擷取指標&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp; MI 關閉，未擷取指標&lt;/nobr&gt;&lt;br&gt;請注意: 滑鼠整合功能需要在客體作業系統中安裝 Guest Additions 。</translation>
-    </message>
-    <message>
-        <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation type="obsolete">指示客體作業系統擷取 (&lt;img src=:/hostkey_captured_16px.png/&gt;) 或未擷取 (&lt;img src=:/hostkey_16px.png/&gt;) 鍵盤。</translation>
-    </message>
-    <message>
-        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="obsolete">指示啟用 (&lt;img src=:/vrdp_16px.png/&gt;) 或未啟用 (&lt;img src=:/vrdp_disabled_16px.png/&gt;) 遠端顯示 (VRDP 伺服器) 。</translation>
-    </message>
-    <message>
-        <source>&amp;Logging...</source>
-        <comment>debug action</comment>
-        <translation type="obsolete">紀錄(&amp;L)...</translation>
-    </message>
-    <message>
-        <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation type="obsolete">顯示目前指派的 Host 鍵。&lt;br&gt;當單獨按下這個按鍵，切換鍵盤和滑鼠的擷取狀態。 它也可以與其它按鍵結合來快速從主功能表執行動作。</translation>
-    </message>
-    <message>
-        <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
-        <comment>Virtualization Stuff LED</comment>
-        <translation type="obsolete">指示這個虛擬機器使用的硬體虛擬化功能之狀態:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
-        <comment>Virtualization Stuff LED</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source> EXPERIMENTAL build %1r%2 - %3</source>
-        <translation type="obsolete">EXPERIMENTAL 組建 %1r%2 - %3</translation>
-    </message>
-    <message>
-        <source>&amp;CD/DVD Devices</source>
-        <translation type="obsolete">CD/DVD 裝置(&amp;C)</translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Devices</source>
-        <translation type="obsolete">軟碟裝置(&amp;F)</translation>
-    </message>
-    <message>
-        <source>&amp;Network Adapters...</source>
-        <translation type="obsolete">網路卡(&amp;N)...</translation>
-    </message>
-    <message>
-        <source>Change the settings of network adapters</source>
-        <translation type="obsolete">變更網路卡的設定值</translation>
-    </message>
-    <message>
-        <source>&amp;Remote Display</source>
-        <translation type="obsolete">遠端顯示(&amp;R)</translation>
-    </message>
-    <message>
-        <source>Remote Desktop (RDP) Server</source>
-        <comment>enable/disable...</comment>
-        <translation type="obsolete">遠端桌面 (RDP) 伺服器</translation>
-    </message>
-    <message>
-        <source>More CD/DVD Images...</source>
-        <translation type="obsolete">更多 CD/DVD 映像...</translation>
-    </message>
-    <message>
-        <source>Unmount CD/DVD Device</source>
-        <translation type="obsolete">卸載 CD/DVD 裝置</translation>
-    </message>
-    <message>
-        <source>More Floppy Images...</source>
-        <translation type="obsolete">更多軟碟映像...</translation>
-    </message>
-    <message>
-        <source>Unmount Floppy Device</source>
-        <translation type="obsolete">卸載軟碟裝置</translation>
-    </message>
-    <message>
-        <source>No CD/DVD Devices Attached</source>
-        <translation type="obsolete">未附加 CD/DVD 裝置</translation>
-    </message>
-    <message>
-        <source>No Floppy Devices Attached</source>
-        <translation type="obsolete">未附加軟碟裝置</translation>
-    </message>
-    <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the virtual hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <comment>HDD tooltip</comment>
-        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示虛擬硬碟之活動:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <comment>CD/DVD tooltip</comment>
-        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示附加的 CD/DVD 裝置之活動:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No CD/DVD devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
-        <comment>CD/DVD tooltip</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;未附加 CD/DVD 裝置&lt;/b&gt;&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <comment>FD tooltip</comment>
-        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示軟碟裝置之活動:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No floppy devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
-        <comment>FD tooltip</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;未附加軟體裝置&lt;/b&gt;&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <comment>Network adapters tooltip</comment>
-        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示網路卡之活動:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <comment>USB device tooltip</comment>
-        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示附加的 USB 裝置之活動:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <comment>Shared folders tooltip</comment>
-        <translation type="obsolete">&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;指示電腦的共用資料夾之活動:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Dock Icon</source>
-        <translation type="obsolete">停駐圖示</translation>
-    </message>
-    <message>
-        <source>Show Application Icon</source>
-        <translation type="obsolete">顯示應用程式圖示</translation>
-    </message>
-    <message>
-        <source>Show Monitor Preview</source>
-        <translation type="obsolete">顯示監視器預覽</translation>
-    </message>
-    <message>
-        <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
-        <comment>Network adapters tooltip</comment>
-        <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;介面卡 %1 (%2)&lt;/b&gt;: %3 線路 %4&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>ACPI Sh&amp;utdown</source>
-        <translation type="obsolete">ACPI 關機 (&amp;U)</translation>
-    </message>
-    <message>
-        <source>&amp;View</source>
-        <translation type="obsolete">檢視(&amp;V)</translation>
-    </message>
-    <message>
-        <source>Preview Monitor %1</source>
-        <translation type="obsolete">預覽監視器 %1</translation>
-    </message>
-    <message>
-        <source>No CD/DVD devices attached to that VM</source>
-        <translation type="obsolete">該 VM 未附加 CD/DVD 裝置</translation>
-    </message>
-    <message>
-        <source>No floppy devices attached to that VM</source>
-        <translation type="obsolete">該 VM 未附加軟碟裝置</translation>
-    </message>
-    <message>
-        <source>No USB Devices Connected</source>
-        <translation type="obsolete">未連接 USB 裝置</translation>
-    </message>
-    <message>
-        <source>No supported devices connected to the host PC</source>
-        <translation type="obsolete">沒有已支援的裝置連接到主機 PC</translation>
     </message>
 </context>
 <context>
@@ -2491,7 +2054,7 @@
     <message>
         <source>Unknown device %1:%2</source>
         <comment>USB device details</comment>
-        <translation>未知的裝置 %1:%2</translation>
+        <translation>未知裝置 %1:%2</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Product ID: %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Revision: %3&lt;/nobr&gt;</source>
@@ -3543,12 +3106,12 @@
     <message>
         <source>Unknown device</source>
         <comment>USB device details</comment>
-        <translation type="unfinished"></translation>
+        <translation>未知裝置</translation>
     </message>
     <message>
         <source>SAS Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>SAS P連接埠 %1</translation>
     </message>
 </context>
 <context>
@@ -3875,7 +3438,7 @@
     </message>
     <message>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
-        <translation>開啟 &lt;tt&gt;%1&lt;/tt&gt; 時失敗。請確定您的桌面環境可以適當地處理此類型的 URL。</translation>
+        <translation>開啟 &lt;tt&gt;%1&lt;/tt&gt; 失敗。 請確定您的桌面環境可以適當地處理此類型的 URL。</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -4081,7 +3644,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;從虛擬機器 &lt;b&gt;%3&lt;/b&gt; 移除共用資料夾 &lt;b&gt;%1&lt;/b&gt; (指到 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) 時失敗。&lt;/p&gt;&lt;p&gt;請關閉客體作業系統中所有可能會用到這個共用資料夾的程式，並且再試一次。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;從虛擬機器 &lt;b&gt;%3&lt;/b&gt; 移除共用資料夾 &lt;b&gt;%1&lt;/b&gt; (指向 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) 時失敗。&lt;/p&gt;&lt;p&gt;請關閉客體作業系統中所有可能會用到這個共用資料夾的程式，並且再試一次。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
@@ -4215,7 +3778,7 @@
     <message>
         <source>Go Back</source>
         <comment>no hard disk attached</comment>
-        <translation>返回</translation>
+        <translation>上一步</translation>
     </message>
     <message>
         <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
@@ -4387,7 +3950,7 @@
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;執行虛擬機器時發生關鍵錯誤並已停止機器執行。&lt;/p&gt;&lt;p&gt;有關協助，請查閱 Community 單元於 &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; 或您的技術支援。 請提供日誌檔 &lt;tt&gt;VBox.log&lt;/tt&gt; 的內容和圖像檔 &lt;tt&gt;VBox.png&lt;/tt&gt;，您可以在 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 目錄找到，以及說明您正在做什麼時發生此錯誤。 請注意您也可以存取以上檔案從 VirtualBox 主視窗的 &lt;b&gt;機器&lt;/b&gt; 功能表選取 &lt;b&gt;顯示紀錄&lt;/b&gt; 。&lt;/p&gt;&lt;p&gt;按下 [&lt;b&gt;確定&lt;/b&gt;] 如果您要關閉機器或按下 [&lt;b&gt;忽略&lt;/b&gt;] 如果您要保留它作為除錯。 請注意除錯需要特殊的知識和工具，因此建議您立即按下 [&lt;b&gt;確定&lt;/b&gt;] 。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;執行虛擬機器時發生關鍵錯誤並已停止機器執行。&lt;/p&gt;&lt;p&gt;有關協助，請查閱 Community 單元於 &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; 或您的技術支援。 請提供日誌檔 &lt;tt&gt;VBox.log&lt;/tt&gt; 的內容和圖像檔 &lt;tt&gt;VBox.png&lt;/tt&gt;，您可以在 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 目錄找到，以及說明您正在做什麼時發生此錯誤。 請注意，您也可以從 VirtualBox 主視窗的&lt;b&gt;機器&lt;/b&gt;功能表選取&lt;b&gt;顯示紀錄&lt;/b&gt;存取以上檔案。&lt;/p&gt;&lt;p&gt;如果您要關閉機器按下 [&lt;b&gt;確定&lt;/b&gt;] 或如果您要保留它作為除錯按下 [&lt;b&gt;忽略&lt;/b&gt;] 。 請注意除錯需要特殊的知識和工具，因此建議您立即按下 [&lt;b&gt;確定&lt;/b&gt;] 。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
@@ -4444,7 +4007,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您現有的 VirtualBox 設定檔將自動從舊格式轉換為 VirtualBox 新版本所需的新格式。&lt;/p&gt;&lt;p&gt;按下 [&lt;b&gt;確定&lt;/b&gt;] 或按下 [&lt;b&gt;結束&lt;/b&gt;] 如果您要終止 VirtualBox 應用程式而不作任何進一步動作。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;您現有的 VirtualBox 設定檔將自動從舊格式轉換為 VirtualBox 新版本所需的新格式。&lt;/p&gt;&lt;p&gt;按下 [&lt;b&gt;確定&lt;/b&gt;] 立即啟動 VirtualBox 或按下 [&lt;b&gt;結束&lt;/b&gt;] 如果您要終止 VirtualBox 應用程式而不作任何進一步動作。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open appliance.</source>
@@ -4810,10 +4373,6 @@
         <translation>重新整理選取虛擬機器的可存取能力狀態</translation>
     </message>
     <message>
-        <source>&amp;File</source>
-        <translation type="obsolete">檔案(&amp;F)</translation>
-    </message>
-    <message>
         <source>&amp;Help</source>
         <translation>說明(&amp;H)</translation>
     </message>
@@ -4913,12 +4472,12 @@
     <message>
         <source>&amp;File</source>
         <comment>Mac OS X version</comment>
-        <translation type="unfinished">檔案(&amp;F)</translation>
+        <translation>檔案(&amp;F)</translation>
     </message>
     <message>
         <source>&amp;File</source>
         <comment>Non Mac OS X version</comment>
-        <translation type="unfinished">檔案(&amp;F)</translation>
+        <translation>檔案(&amp;F)</translation>
     </message>
 </context>
 <context>
@@ -5340,20 +4899,6 @@
         <translation>沒有網路卡</translation>
     </message>
     <message>
-        <source>Enabled</source>
-        <comment>nested paging</comment>
-        <translation type="obsolete">啟用</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>nested paging</comment>
-        <translation type="obsolete">停用</translation>
-    </message>
-    <message>
-        <source>Nested Paging</source>
-        <translation type="obsolete">巢狀分頁</translation>
-    </message>
-    <message>
         <source>VBoxVMInformationDlg</source>
         <translation>VBoxVMInformationDlg</translation>
     </message>
@@ -5374,11 +4919,6 @@
         <source>Network Statistics</source>
         <translation>網路狀態</translation>
     </message>
-    <message>
-        <source>Nested Paging</source>
-        <comment>details report</comment>
-        <translation type="obsolete">巢狀分頁</translation>
-    </message>
 </context>
 <context>
     <name>UIVMListView</name>
@@ -5394,7 +4934,7 @@
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;無法存取自從 %2&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;不可存取自從 %2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>S&amp;how</source>
@@ -5824,7 +5364,7 @@
     </message>
     <message>
         <source>Adds a new controller to the end of the Storage Tree.</source>
-        <translation>新增控制器至存放裝置樹的結尾。</translation>
+        <translation>新增控制器至存放裝置樹的尾端。</translation>
     </message>
     <message>
         <source>Removes the controller highlighted in the Storage Tree.</source>
@@ -5832,7 +5372,7 @@
     </message>
     <message>
         <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
-        <translation>使用目前選取的控制器新增附件至存放裝置樹為上層。</translation>
+        <translation>使用目前選取的控制器為上層新增附件至存放裝置樹。</translation>
     </message>
     <message>
         <source>Removes the attachment highlighted in the Storage Tree.</source>
@@ -5960,7 +5500,7 @@
     </message>
     <message>
         <source>Allows to use host I/O caching capabilities.</source>
-        <translation>允許使用主機 I/O 快取相容性。</translation>
+        <translation>允許使用主機 I/O 快取能力。</translation>
     </message>
     <message>
         <source>Use host I/O cache</source>
@@ -6133,7 +5673,7 @@
         <translation>加入新的共用資料夾定義。</translation>
     </message>
     <message>
-        <source>Edits the selected shared folder definition.</source>
+        <source>Edits th the selected shared folder definition.</source>
         <translation>編輯選取的共用資料夾定義。</translation>
     </message>
     <message>
@@ -6500,11 +6040,11 @@
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>加入一個新的 USB 篩選器與最初設定為空字串的所有欄位。 請注意，這些篩選器會符合任何附加的 USB 裝置。</translation>
+        <translation>加入一個所有欄位最初設定為空字串的新 USB 篩選器。 請注意，這些篩選器會符合任何附加的 USB 裝置。</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>加入一個新的 USB 篩選器，其所有欄位設定為選取 USB 裝置附加到主機 PC 的值。</translation>
+        <translation>加入一個所有欄位設定為已附加到主機 PC 的選取 USB 裝置之新 USB 篩選器。</translation>
     </message>
     <message>
         <source>Edits the selected USB filter.</source>
