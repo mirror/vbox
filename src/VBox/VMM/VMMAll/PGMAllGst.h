@@ -89,7 +89,7 @@ PGM_GST_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGC
     Pde.n.u1Accessed  &= pPml4e->n.u1Accessed & Pdpe.lm.u1Accessed;
     Pde.n.u1Write     &= pPml4e->n.u1Write & Pdpe.lm.u1Write;
     Pde.n.u1User      &= pPml4e->n.u1User & Pdpe.lm.u1User;
-    Pde.n.u1NoExecute &= pPml4e->n.u1NoExecute & Pdpe.lm.u1NoExecute;
+    Pde.n.u1NoExecute |= pPml4e->n.u1NoExecute | Pdpe.lm.u1NoExecute;
 # endif
 
     /*
@@ -127,7 +127,7 @@ PGM_GST_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGC
                      & ((Pde.u & (X86_PTE_RW | X86_PTE_US)) | ~(uint64_t)(X86_PTE_RW | X86_PTE_US));
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_GST_TYPE)
             /* The NX bit is determined by a bitwise OR between the PT and PD */
-            if ((Pte.u & Pde.u & X86_PTE_PAE_NX) && CPUMIsGuestNXEnabled(pVCpu)) /** @todo the code is ANDing not ORing NX like the comment says... */
+            if (((Pte.u | Pde.u) & X86_PTE_PAE_NX) && CPUMIsGuestNXEnabled(pVCpu))
                 *pfFlags |= X86_PTE_PAE_NX;
 # endif
         }

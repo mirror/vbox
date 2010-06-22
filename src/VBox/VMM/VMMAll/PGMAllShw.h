@@ -176,7 +176,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
     Pde.n.u1Accessed  &= Pml4e.n.u1Accessed & Pdpe.lm.u1Accessed;
     Pde.n.u1Write     &= Pml4e.n.u1Write & Pdpe.lm.u1Write;
     Pde.n.u1User      &= Pml4e.n.u1User & Pdpe.lm.u1User;
-    Pde.n.u1NoExecute &= Pml4e.n.u1NoExecute & Pdpe.lm.u1NoExecute;
+    Pde.n.u1NoExecute |= Pml4e.n.u1NoExecute | Pdpe.lm.u1NoExecute;
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
     X86PDEPAE       Pde = pgmShwGetPaePDE(&pVCpu->pgm.s, GCPtr);
@@ -201,8 +201,26 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
     if (!Pde.n.u1Present)
         return VERR_PAGE_TABLE_NOT_PRESENT;
 
-    /** todo deal with large pages. */
-    AssertFatal(!Pde.b.u1Size);
+    /** Deal with large pages. */
+    if (Pde.b.u1Size)
+    {
+        /*
+         * Store the results.
+         * RW and US flags depend on the entire page translation hierarchy - except for
+         * legacy PAE which has a simplified PDPE.
+         */
+        if (pfFlags)
+        {
+            *pfFlags = (Pde.u & ~SHW_PDE_PG_MASK);
+# if PGM_WITH_NX(PGM_SHW_TYPE, PGM_SHW_TYPE)
+            if ((Pde.u & X86_PTE_PAE_NX) && CPUMIsGuestNXEnabled(pVCpu))
+                *pfFlags |= X86_PTE_PAE_NX;
+# endif
+        }
+
+        if (pHCPhys)
+            *pHCPhys = (Pde.u & SHW_PDE_PG_MASK) + (GCPtr & (RT_BIT(SHW_PD_SHIFT) - 1) & X86_PAGE_4K_BASE_MASK);
+    }
 
     /*
      * Get PT entry.
@@ -247,7 +265,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
                  & ((Pde.u & (X86_PTE_RW | X86_PTE_US)) | ~(uint64_t)(X86_PTE_RW | X86_PTE_US));
 # if PGM_WITH_NX(PGM_SHW_TYPE, PGM_SHW_TYPE)
         /* The NX bit is determined by a bitwise OR between the PT and PD */
-        if ((Pte.u & Pde.u & X86_PTE_PAE_NX) && CPUMIsGuestNXEnabled(pVCpu)) /** @todo the code is ANDing not ORing NX like the comment says... */
+        if (((Pte.u | Pde.u) & X86_PTE_PAE_NX) && CPUMIsGuestNXEnabled(pVCpu))
             *pfFlags |= X86_PTE_PAE_NX;
 # endif
     }
