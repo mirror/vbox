@@ -170,12 +170,15 @@ RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProper
 }
 
 
-RTR3DECL(int) RTFsQueryType(const char *pszFsPath, uint32_t *pu32Type)
+RTR3DECL(int) RTFsQueryType(const char *pszFsPath, PRTFSTYPE penmType)
 {
+    *penmType = RTFSTYPE_UNKNOWN;
+
     /*
      * Validate input.
      */
-    AssertMsgReturn(VALID_PTR(pszFsPath) && *pszFsPath, ("%p", pszFsPath), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszFsPath, VERR_INVALID_POINTER);
+    AssertReturn(*pszFsPath, VERR_INVALID_PARAMETER);
 
     /*
      * Convert the path and query the stats.
@@ -185,8 +188,6 @@ RTR3DECL(int) RTFsQueryType(const char *pszFsPath, uint32_t *pu32Type)
     int rc = rtPathToNative(&pszNativeFsPath, pszFsPath, NULL);
     if (RT_SUCCESS(rc))
     {
-        *pu32Type = RTFS_FS_TYPE_UNKNOWN;
-
         struct stat Stat;
         if (!stat(pszNativeFsPath, &Stat))
         {
@@ -196,9 +197,9 @@ RTR3DECL(int) RTFsQueryType(const char *pszFsPath, uint32_t *pu32Type)
                 mounted = setmntent("/etc/mtab", "r");
             if (mounted)
             {
-                char szBuf[1024];
-                struct stat mntStat;
-                struct mntent mntEnt;
+                char            szBuf[1024];
+                struct stat     mntStat;
+                struct mntent   mntEnt;
                 while (getmntent_r(mounted, &mntEnt, szBuf, sizeof(szBuf)))
                 {
                     if (!stat(mntEnt.mnt_dir, &mntStat))
@@ -206,20 +207,47 @@ RTR3DECL(int) RTFsQueryType(const char *pszFsPath, uint32_t *pu32Type)
                         if (mntStat.st_dev == Stat.st_dev)
                         {
                             if (!strcmp("ext4", mntEnt.mnt_type))
-                                *pu32Type = RTFS_FS_TYPE_EXT4;
+                                *penmType = RTFSTYPE_EXT4;
                             else if (!strcmp("ext3", mntEnt.mnt_type))
-                                *pu32Type = RTFS_FS_TYPE_EXT3;
+                                *penmType = RTFSTYPE_EXT3;
                             else if (!strcmp("ext2", mntEnt.mnt_type))
-                                *pu32Type = RTFS_FS_TYPE_EXT2;
+                                *penmType = RTFSTYPE_EXT2;
+                            else if (!strcmp("jfs", mntEnt.mnt_type))
+                                *penmType = RTFSTYPE_JFS;
                             else if (!strcmp("xfs", mntEnt.mnt_type))
-                                *pu32Type = RTFS_FS_TYPE_XFS;
+                                *penmType = RTFSTYPE_XFS;
                             else if (   !strcmp("vfat", mntEnt.mnt_type)
                                      || !strcmp("msdos", mntEnt.mnt_type))
-                                *pu32Type = RTFS_FS_TYPE_FAT;
+                                *penmType = RTFSTYPE_FAT;
+                            else if (!strcmp("ntfs", mntEnt.mnt_type))
+                                *penmType = RTFSTYPE_NTFS;
+                            else if (!strcmp("hpfs", mntEnt.mnt_type))
+                                *penmType = RTFSTYPE_HPFS;
+                            else if (!strcmp("ufs", mntEnt.mnt_type))
+                                *penmType = RTFSTYPE_UFS;
                             else if (!strcmp("tmpfs", mntEnt.mnt_type))
-                                *pu32Type = RTFS_FS_TYPE_TMPFS;
+                                *penmType = RTFSTYPE_TMPFS;
                             else if (!strcmp("hfsplus", mntEnt.mnt_type))
-                                *pu32Type = RTFS_FS_TYPE_HFS;
+                                *penmType = RTFSTYPE_HFS;
+                            else if (!strcmp("udf", mntEnt.mnt_type))
+                                *penmType = RTFSTYPE_UDF;
+                            else if (!strcmp("iso9660", mntEnt.mnt_type))
+                                *penmType = RTFSTYPE_ISO9660;
+                            else if (!strcmp("smbfs", mntEnt.mnt_type))
+                                *penmType = RTFSTYPE_SMBFS;
+                            else if (!strcmp("cifs", mntEnt.mnt_type))
+                                *penmType = RTFSTYPE_CIFS;
+                            else if (!strcmp("nfs", mntEnt.mnt_type))
+                                *penmType = RTFSTYPE_NFS;
+                            else if (!strcmp("nfs4", mntEnt.mnt_type))
+                                *penmType = RTFSTYPE_NFS;
+                            else if (!strcmp("sysfs", mntEnt.mnt_type))
+                                *penmType = RTFSTYPE_SYSFS;
+                            else if (!strcmp("proc", mntEnt.mnt_type))
+                                *penmType = RTFSTYPE_PROC;
+                            else if (   !strcmp("fuse", mntEnt.mnt_type)
+                                     || !strncmp("fuse.", mntEnt.mnt_type, 5))
+                                *penmType = RTFSTYPE_FUSE;
                             else
                             {
                                 /* sometimes there are more than one entry for the same partition */
@@ -231,26 +259,32 @@ RTR3DECL(int) RTFsQueryType(const char *pszFsPath, uint32_t *pu32Type)
                 }
                 endmntent(mounted);
             }
+
 #elif defined(RT_OS_SOLARIS)
             if (!strcmp("zfs", Stat.st_fstype))
-                *pu32Type = RTFS_FS_TYPE_ZFS;
+                *penmType = RTFSTYPE_ZFS;
+            else if (!strcmp("ufs", Stat.st_fstype))
+                *penmType = RTFSTYPE_UFS;
+            else if (!strcmp("nfs", Stat.st_fstype))
+                *penmType = RTFSTYPE_NFS;
+
 #elif defined(RT_OS_DARWIN)
             struct statfs statfsBuf;
             if (!statfs(pszNativeFsPath, &statfsBuf))
             {
                 if (!strcmp("hfs", statfsBuf.f_fstypename))
-                    *pu32Type = RTFS_FS_TYPE_HFS;
+                    *penmType = RTFSTYPE_HFS;
                 else if (   !strcmp("fat", statfsBuf.f_fstypename)
                          || !strcmp("msdos", statfsBuf.f_fstypename))
-                    *pu32Type = RTFS_FS_TYPE_FAT;
+                    *penmType = RTFSTYPE_FAT;
                 else if (!strcmp("ntfs", statfsBuf.f_fstypename))
-                    *pu32Type = RTFS_FS_TYPE_NTFS;
+                    *penmType = RTFSTYPE_NTFS;
                 else if (!strcmp("autofs", statfsBuf.f_fstypename))
-                    *pu32Type = RTFS_FS_TYPE_AUTOFS;
+                    *penmType = RTFSTYPE_AUTOFS;
                 else if (!strcmp("devfs", statfsBuf.f_fstypename))
-                    *pu32Type = RTFS_FS_TYPE_DEVFS;
+                    *penmType = RTFSTYPE_DEVFS;
                 else if (!strcmp("nfs", statfsBuf.f_fstypename))
-                    *pu32Type = RTFS_FS_TYPE_NFS;
+                    *penmType = RTFSTYPE_NFS;
             }
             else
                 rc = RTErrConvertFromErrno(errno);

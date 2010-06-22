@@ -333,52 +333,79 @@ RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProper
     return rc;
 }
 
-RTR3DECL(int) RTFsQueryType(const char *pszFsPath, uint32_t *pu32Type)
+
+/**
+ * Internal helper for comparing a WCHAR string with a char string.
+ *
+ * @returns 0 if equal, -1 if @a psz1 < @a psz2, 1 if @a psz1 < @a psz2.
+ * @param   pwsz1               The first string.
+ * @param   psz2                The second string.
+ */
+static int rtFsWinCmpUtf16(WCHAR const *pwsz1, const char *psz2)
 {
-    int rc = VINF_SUCCESS;
-
-    *pu32Type = RTFS_FS_TYPE_UNKNOWN;
-
-    HANDLE hFile = CreateFile(pszFsPath,
-                              GENERIC_READ,
-                              FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                              NULL,
-                              OPEN_EXISTING,
-                              FILE_FLAG_BACKUP_SEMANTICS,
-                              NULL);
-    if (hFile != INVALID_HANDLE_VALUE)
+    for (;;)
     {
-        char abBuf[8192];
-        IO_STATUS_BLOCK Ios;
-        NTSTATUS rcNt = NtQueryVolumeInformationFile(hFile, &Ios,
-                                                     abBuf, sizeof(abBuf),
-                                                     FileFsAttributeInformation);
-        if (rcNt >= 0)
-        {
-            PFILE_FS_ATTRIBUTE_INFORMATION pFsAttrInfo = (PFILE_FS_ATTRIBUTE_INFORMATION)abBuf;
-            if (   pFsAttrInfo->FileSystemName[0] == 'N'
-                && pFsAttrInfo->FileSystemName[1] == 'T'
-                && pFsAttrInfo->FileSystemName[2] == 'F'
-                && pFsAttrInfo->FileSystemName[3] == 'S'
-                && pFsAttrInfo->FileSystemName[4] == '\0')
-                *pu32Type = RTFS_FS_TYPE_NTFS;
-            else if (   pFsAttrInfo->FileSystemName[0] == 'F'
-                     && pFsAttrInfo->FileSystemName[1] == 'A'
-                     && pFsAttrInfo->FileSystemName[2] == 'T'
-                     && (   (   pFsAttrInfo->FileSystemName[3] == '3'
-                             && pFsAttrInfo->FileSystemName[4] == '2'
-                             && pFsAttrInfo->FileSystemName[5] == '\0')
-                         || pFsAttrInfo->FileSystemName[3] == '\0'))
-                /* This is either FAT32 or FAT12/16. IMO it doesn't make
-                 * sense to distinguish more detailed because we cannot
-                 * easily distinguish between these FAT types on Linux
-                 * and users who put some image file on an FAT16 partition
-                 * should know what they are doing. */
-                *pu32Type = RTFS_FS_TYPE_FAT;
-        }
-        /* else: Is RTFS_FS_UNKNOWN suffient or should we return an error? */
-        CloseHandle(hFile);
+        unsigned ch1 = *pwsz1++;
+        unsigned ch2 = (unsigned char)*psz2++;
+        if (ch1 != ch2)
+            return ch1 < ch2 ? -1 : 1;
+        if (!ch1)
+            return 0;
     }
+}
 
+
+RTR3DECL(int) RTFsQueryType(const char *pszFsPath, PRTFSTYPE penmType)
+{
+    *penmType = RTFSTYPE_UNKNOWN;
+
+    AssertPtrReturn(pszFsPath, VERR_INVALID_POINTER);
+    AssertReturn(*pszFsPath, VERR_INVALID_PARAMETER);
+
+    /*
+     * Convert the path and try open it.
+     */
+    PRTUTF16 pwszFsPath;
+    int rc = RTStrToUtf16(pszFsPath, &pwszFsPath);
+    if (RT_SUCCESS(rc))
+    {
+        HANDLE hFile = CreateFileW(pwszFsPath,
+                                   GENERIC_READ,
+                                   FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                   NULL,
+                                   OPEN_EXISTING,
+                                   FILE_FLAG_BACKUP_SEMANTICS,
+                                   NULL);
+        if (hFile != INVALID_HANDLE_VALUE)
+        {
+            /*
+             * Use the NT api directly to get the file system name.
+             */
+            char            abBuf[8192];
+            IO_STATUS_BLOCK Ios;
+            NTSTATUS        rcNt = NtQueryVolumeInformationFile(hFile, &Ios,
+                                                                abBuf, sizeof(abBuf),
+                                                                FileFsAttributeInformation);
+            if (rcNt >= 0)
+            {
+                PFILE_FS_ATTRIBUTE_INFORMATION pFsAttrInfo = (PFILE_FS_ATTRIBUTE_INFORMATION)abBuf;
+
+                if (!rtFsWinCmpUtf16(pFsAttrInfo->FileSystemName, "NTFS"))
+                    *penmType = RTFSTYPE_NTFS;
+                else if (!rtFsWinCmpUtf16(pFsAttrInfo->FileSystemName, "FAT"))
+                    *penmType = RTFSTYPE_FAT;
+                else if (!rtFsWinCmpUtf16(pFsAttrInfo->FileSystemName, "FAT32"))
+                    *penmType = RTFSTYPE_FAT;
+                else if (!rtFsWinCmpUtf16(pFsAttrInfo->FileSystemName, "VBoxSharedFolderFS"))
+                    *penmType = RTFSTYPE_VBOXSHF;
+            }
+            else
+                rc = RTErrConvertFromNtStatus(rcNt);
+            CloseHandle(hFile);
+        }
+        else
+            rc = RTErrConvertFromWin32(GetLastError());
+        RTUtf16Free(pwszFsPath);
+    }
     return rc;
 }

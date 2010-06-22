@@ -179,23 +179,80 @@ RT_C_DECLS_BEGIN
 /** @} */
 
 
-/** @name Filesystem type IDs. Used by RTFsQueryType. */
-#define RTFS_FS_TYPE_UNKNOWN            0
-#define RTFS_FS_TYPE_EXT                1
-#define RTFS_FS_TYPE_EXT2               2
-#define RTFS_FS_TYPE_EXT3               3
-#define RTFS_FS_TYPE_EXT4               4
-#define RTFS_FS_TYPE_TMPFS              5
-#define RTFS_FS_TYPE_JFS                6
-#define RTFS_FS_TYPE_NFS                7
-#define RTFS_FS_TYPE_HFS                8
-#define RTFS_FS_TYPE_CIFS               9
-#define RTFS_FS_TYPE_FAT               10
-#define RTFS_FS_TYPE_NTFS              11
-#define RTFS_FS_TYPE_ZFS               12
-#define RTFS_FS_TYPE_XFS               13
-#define RTFS_FS_TYPE_AUTOFS            14
-#define RTFS_FS_TYPE_DEVFS             15
+/**
+ * Filesystem type IDs returned by RTFsQueryType.
+ *
+ * This enum is subject to changes and must not be used as part of any ABI or
+ * binary format (file, network, etc).
+ *
+ * @remarks When adding new entries, please update RTFsTypeName().  Also, try
+ *          add them to the most natural group.
+ */
+typedef enum RTFSTYPE
+{
+    /** Unknown file system. */
+    RTFSTYPE_UNKNOWN = 0,
+
+    /** Universal Disk Format. */
+    RTFSTYPE_UDF,
+    /** ISO 9660, aka Compact Disc File System (CDFS). */
+    RTFSTYPE_ISO9660,
+    /** Filesystem in Userspace. */
+    RTFSTYPE_FUSE,
+    /** VirtualBox shared folders.  */
+    RTFSTYPE_VBOXSHF,
+
+    /* Linux: */
+    RTFSTYPE_EXT,
+    RTFSTYPE_EXT2,
+    RTFSTYPE_EXT3,
+    RTFSTYPE_EXT4,
+    RTFSTYPE_XFS,
+    RTFSTYPE_CIFS,
+    RTFSTYPE_SMBFS,
+    RTFSTYPE_TMPFS,
+    RTFSTYPE_SYSFS,
+    RTFSTYPE_PROC,
+
+    /* Windows: */
+    /** New Technology File System. */
+    RTFSTYPE_NTFS,
+    /** FAT12, FAT16 and FAT32 lumped into one basket.
+     * The partition size limit of FAT12 and FAT16 will be the factor
+     * limiting the file size (except, perhaps for the 64KB cluster case on
+     * non-Windows hosts). */
+    RTFSTYPE_FAT,
+
+    /* Solaris: */
+    /** Zettabyte File System.  */
+    RTFSTYPE_ZFS,
+    /** Unix File System. */
+    RTFSTYPE_UFS,
+    /** Network File System. */
+    RTFSTYPE_NFS,
+
+    /* Mac OS X: */
+    /** Hierarchical File System. */
+    RTFSTYPE_HFS,
+    /** @todo RTFSTYPE_HFS_PLUS? */
+    RTFSTYPE_AUTOFS,
+    RTFSTYPE_DEVFS,
+
+    /* *BSD: */
+
+    /* OS/2: */
+    /** High Performance File System. */
+    RTFSTYPE_HPFS,
+    /** Journaled File System (v2).  */
+    RTFSTYPE_JFS,
+
+    /** The end of valid Filesystem types IDs. */
+    RTFSTYPE_END,
+    /** The usual 32-bit type blow up. */
+    RTFSTYPE_32BIT_HACK = 0x7fffffff
+} RTFSTYPE;
+/** Pointer to a Filesystem type ID. */
+typedef RTFSTYPE *PRTFSTYPE;
 
 
 /**
@@ -407,15 +464,26 @@ RTR3DECL(int) RTFsQueryDriver(const char *pszFsPath, char *pszFsDriver, size_t c
  * Query the name of the filesystem the file is located on.
  *
  * @returns iprt status code.
- * @param   pszFsPath       Path within the mounted filesystem.
- *                          In case this is a symlink, the file it refers to
- *                          is evaluated.
- * @param   pu32Type        Where to store the filesystem type.
- *                          See RTFS_FS_TYPE_xxx constants.
+ * @param   pszFsPath       Path within the mounted filesystem.  It must exist.
+ *                          In case this is a symlink, the file it refers to is
+ *                          evaluated.
+ * @param   penmType        Where to store the filesystem type, this is always
+ *                          set.  See RTFSTYPE for the values.
  */
-RTR3DECL(int) RTFsQueryType(const char *pszFsPath, uint32_t *pu32Type);
+RTR3DECL(int) RTFsQueryType(const char *pszFsPath, PRTFSTYPE penmType);
 
 #endif /* IN_RING3 */
+
+/**
+ * Gets the name of a filesystem type.
+ *
+ * @returns Pointer to a read-only string containing the name.
+ * @param   enmType         A valid filesystem ID.  If outside the valid range,
+ *                          the returned string will be pointing to a static
+ *                          memory buffer which will be changed on subsequent
+ *                          calls to this function by any thread.
+ */
+RTDECL(const char *) RTFsTypeName(RTFSTYPE enmType);
 
 /**
  * Filesystem properties.
