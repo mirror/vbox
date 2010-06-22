@@ -119,7 +119,7 @@ ULONG _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
         if (NT_SUCCESS(rc))
         {
             int vrc = RTR0Init(0);
-            if (RT_SUCCESS(rc))
+            if (RT_SUCCESS(vrc))
             {
                 Log(("VBoxDrv::DriverEntry\n"));
 
