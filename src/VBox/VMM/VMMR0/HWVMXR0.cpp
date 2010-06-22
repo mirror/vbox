@@ -2767,6 +2767,14 @@ ResumeExecution:
         if (!VMX_EXIT_INTERRUPTION_INFO_VALID(intInfo))
         {
             Assert(exitReason == VMX_EXIT_EXTERNAL_IRQ);
+#if 0 //def VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+            if (    RTThreadPreemptIsPendingTrusty()
+                &&  !RTThreadPreemptIsPending(NIL_RTTHREAD))
+            {
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
+                    goto ResumeExecution;
+            }
+#endif
             /* External interrupt; leave to allow it to be dispatched again. */
             rc = VINF_EM_RAW_INTERRUPT;
             break;
