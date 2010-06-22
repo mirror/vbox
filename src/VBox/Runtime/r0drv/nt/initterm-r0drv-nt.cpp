@@ -224,7 +224,7 @@ int rtR0InitNative(void)
             g_cbrtNtPbQuantumEnd     = 1;
             g_offrtNtPbDpcQueueDepth = 0x3400 + 0x18;
         }
-        /* Windows 7 7600 x64 */
+        /* Windows7.7600.16539.amd64fre.win7_gdr.100226-1909 */
         else if (    BuildNumber == 7600
                  && !memcmp(&pbPrcb[0x4bb8], &u.szVendor[0], 4*3))
         {
