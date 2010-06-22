@@ -112,6 +112,7 @@ class VBoxCredential : public ICredentialProviderCredential
                    const char *pszPw,
                    const char *pszDomain);
         BOOL TranslateAccountName(PWSTR pwszDisplayName, PWSTR *ppwszAccoutName);
+        BOOL ExtractAccoutData(PWSTR pwszAccountData, PWSTR *ppwszAccoutName, PWSTR *ppwszDomain);
     private:
 
         /** @todo Merge all arrays which depend on SFI_NUM_FIELDS below

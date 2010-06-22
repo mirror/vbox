@@ -104,6 +104,19 @@ int VBoxCredential::Update(const char *pszUser,
 
     PWSTR *ppwszStored;
 
+    /* 
+     * Update domain name (can be NULL) and will
+     * be later replaced by the local computer name in the
+     * Kerberos authentication package or by the first part
+     * of the principcal name.
+     */
+    if (pszDomain && strlen(pszDomain))
+    {
+        ppwszStored = &m_rgFieldStrings[SFI_DOMAINNAME];
+        CoTaskMemFree(*ppwszStored);
+        SHStrDupA(pszDomain, ppwszStored);
+    }
+
     /* Update user name. */
     if (pszUser && strlen(pszUser))
     {
@@ -122,6 +135,27 @@ int VBoxCredential::Update(const char *pszUser,
             CoTaskMemFree(*ppwszStored);
             m_rgFieldStrings[SFI_USERNAME] = pwszAcount;
         }
+        else
+        {
+            /* 
+             * Oky, no display name, but mabye it's a 
+             * principal name from which we have to extract the
+             * domain from? (jdoe@my-domain.sub.net.com -> jdoe in
+             * domain my-domain.sub.net.com.)
+             */
+            PWSTR pwszDomain;
+            if (ExtractAccoutData(*ppwszStored, &pwszAcount, &pwszDomain))
+            {
+                /* Update user name. */
+                CoTaskMemFree(*ppwszStored);
+                m_rgFieldStrings[SFI_USERNAME] = pwszAcount;
+
+                /* Update domain. */
+                ppwszStored = &m_rgFieldStrings[SFI_DOMAINNAME];
+                CoTaskMemFree(*ppwszStored);
+                m_rgFieldStrings[SFI_DOMAINNAME] = pwszDomain;
+            }
+        }
     }
 
     /* Update password. */
@@ -130,18 +164,6 @@ int VBoxCredential::Update(const char *pszUser,
         ppwszStored = &m_rgFieldStrings[SFI_PASSWORD];
         CoTaskMemFree(*ppwszStored);
         SHStrDupA(pszPw, ppwszStored);
-    }
-
-    /* 
-     * Update domain name (can be NULL) and will
-     * be later replaced by the local computer name in the
-     * Kerberos authentication package. 
-     */
-    if (pszDomain && strlen(pszDomain))
-    {
-        ppwszStored = &m_rgFieldStrings[SFI_DOMAINNAME];
-        CoTaskMemFree(*ppwszStored);
-        SHStrDupA(pszDomain, ppwszStored);
     }
 
     Log(("VBoxCredential::Update: Finished - User=%ls, Password=%ls, Domain=%ls\n",
@@ -360,15 +382,15 @@ BOOL VBoxCredential::TranslateAccountName(PWSTR pwszDisplayName, PWSTR *ppwszAcc
                          * Copy the real user name (e.g. "jdoe") to our 
                          * output buffer.
                          */
-                        LPWSTR ppwszTemp;
-                        HRESULT hr = SHStrDupW(pCurBuf->usri2_name, &ppwszTemp);
+                        LPWSTR pwszTemp;
+                        HRESULT hr = SHStrDupW(pCurBuf->usri2_name, &pwszTemp);
                         if (hr == S_OK)
                         {
-                            *ppwszAccoutName = ppwszTemp;
+                            *ppwszAccoutName = pwszTemp;
                             fFound = TRUE;
                         }
                         else
-                            Log(("VBoxCredential::TranslateAccountName: Error copying data, hr=%08x", hr));
+                            Log(("VBoxCredential::TranslateAccountName: Error copying data, hr=%08x\n", hr));
                         break;
                     }
                     pCurBuf++;
@@ -422,6 +444,66 @@ BOOL VBoxCredential::TranslateAccountName(PWSTR pwszDisplayName, PWSTR *ppwszAcc
         
     }
 #endif
+}
+
+
+/*
+ * Extracts the actual account name & domain from a (raw) account data string. This might
+ * be a prncipal or FQDN string.
+ */
+BOOL VBoxCredential::ExtractAccoutData(PWSTR pwszAccountData, PWSTR *ppwszAccoutName, PWSTR *ppwszDomain)
+{
+    Log(("VBoxCredential::ExtractAccoutData\n"));
+
+    AssertPtr(pwszAccountData);
+    Log(("VBoxCredential::ExtractAccoutData: Getting account name for '%ls' ...\n", pwszAccountData));
+    HRESULT hr = E_FAIL;
+
+    /* Try to figure out whether this is a principal name (user@domain). */
+    LPWSTR pPos = NULL;
+    if (    (pPos                       = StrChrW(pwszAccountData, L'@')) != NULL
+        &&   pPos                      != pwszAccountData)
+    {
+        DWORD cbSize = (pPos - pwszAccountData) * sizeof(WCHAR);
+        LPWSTR pwszName = (LPWSTR)CoTaskMemAlloc(cbSize + sizeof(WCHAR)); /* Space for terminating zero. */
+        LPWSTR pwszDomain = NULL;
+        AssertPtr(pwszName);
+        hr = StringCbCopyN(pwszName, cbSize + sizeof(WCHAR), pwszAccountData, cbSize);
+        if (SUCCEEDED(hr))
+        {
+            *ppwszAccoutName = pwszName;
+            *pPos++; /* Skip @, point to domain name (if any). */
+            if (    pPos != NULL
+                && *pPos != L'\0')
+            {
+                hr = SHStrDupW(pPos, &pwszDomain);
+                if (SUCCEEDED(hr))
+                {
+                    *ppwszDomain = pwszDomain;
+                }
+                else
+                    Log(("VBoxCredential::ExtractAccoutData/Principal: Error copying domain data, hr=%08x\n", hr));
+            }
+            else
+            {
+                hr = E_FAIL;
+                Log(("VBoxCredential::ExtractAccoutData/Principal: No domain name found!\n"));
+            }
+        }
+        else
+            Log(("VBoxCredential::ExtractAccoutData/Principal: Error copying account data, hr=%08x\n", hr));
+
+        if (hr != S_OK)
+        {
+            CoTaskMemFree(pwszName);
+            if (pwszDomain)
+                CoTaskMemFree(pwszDomain);
+        }
+    }
+    else
+        Log(("VBoxCredential::ExtractAccoutData/Principal: No valid prinicipal account name found!\n"));
+
+    return (hr == S_OK);
 }
 
 
