@@ -19,7 +19,6 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-#include "VBoxSelectorWnd.h"
 #include "QISplitter.h"
 #include "QITabWidget.h"
 #include "UIExportApplianceWzd.h"
@@ -27,13 +26,14 @@
 #include "UIImportApplianceWzd.h"
 #include "UINewVMWzd.h"
 #include "UISpacerWidgets.h"
+#include "UISpecialControls.h"
 #include "UIVMListView.h"
 #include "VBoxGlobal.h"
 #include "VBoxMediaManagerDlg.h"
 #include "VBoxProblemReporter.h"
+#include "VBoxSelectorWnd.h"
 #include "VBoxSettingsDialogSpecific.h"
 #include "VBoxSnapshotsWgt.h"
-#include "VBoxSpecialControls.h"
 #include "VBoxToolBar.h"
 #include "VBoxUtils.h"
 #include "VBoxVMLogViewer.h"
@@ -889,7 +889,7 @@ void VBoxSelectorWnd::vmNew()
  *  Opens the VM settings dialog.
  */
 void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aControl,
-                                  const QString &aUuid /*= QUuid_null*/)
+                                  const QString &aUuid /* = QString::null */)
 {
     if (!aCategory.isEmpty() && aCategory [0] != '#')
     {
@@ -940,7 +940,7 @@ void VBoxSelectorWnd::vmSettings (const QString &aCategory, const QString &aCont
     session.Close();
 }
 
-void VBoxSelectorWnd::vmDelete (const QString &aUuid /*= QUuid_null*/)
+void VBoxSelectorWnd::vmDelete (const QString &aUuid /* = QString::null */)
 {
     UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
                        mVMModel->itemById (aUuid);
@@ -1006,7 +1006,7 @@ void VBoxSelectorWnd::vmDelete (const QString &aUuid /*= QUuid_null*/)
     }
 }
 
-void VBoxSelectorWnd::vmStart (const QString &aUuid /*= QUuid_null*/)
+void VBoxSelectorWnd::vmStart (const QString &aUuid /* = QString::null */)
 {
     QUuid uuid (aUuid);
     UIVMItem *item = uuid.isNull() ? mVMListView->selectedItem() :
@@ -1083,7 +1083,7 @@ void VBoxSelectorWnd::vmStart (const QString &aUuid /*= QUuid_null*/)
     session.Close();
 }
 
-void VBoxSelectorWnd::vmDiscard (const QString &aUuid /*= QUuid_null*/)
+void VBoxSelectorWnd::vmDiscard (const QString &aUuid /* = QString::null */)
 {
     UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
                        mVMModel->itemById (aUuid);
@@ -1118,7 +1118,7 @@ void VBoxSelectorWnd::vmDiscard (const QString &aUuid /*= QUuid_null*/)
     session.Close();
 }
 
-void VBoxSelectorWnd::vmPause (bool aPause, const QString &aUuid /*= QUuid_null*/)
+void VBoxSelectorWnd::vmPause (bool aPause, const QString &aUuid /* = QString::null */)
 {
     UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
                        mVMModel->itemById (aUuid);
@@ -1150,7 +1150,7 @@ void VBoxSelectorWnd::vmPause (bool aPause, const QString &aUuid /*= QUuid_null*
     session.Close();
 }
 
-void VBoxSelectorWnd::vmRefresh (const QString &aUuid /*= QUuid_null*/)
+void VBoxSelectorWnd::vmRefresh (const QString &aUuid /* = QString::null */)
 {
     UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
                        mVMModel->itemById (aUuid);
@@ -1163,7 +1163,7 @@ void VBoxSelectorWnd::vmRefresh (const QString &aUuid /*= QUuid_null*/)
                    true /* aDescription */);
 }
 
-void VBoxSelectorWnd::vmShowLogs (const QString &aUuid /*= QUuid_null*/)
+void VBoxSelectorWnd::vmShowLogs (const QString &aUuid /* = QString::null */)
 {
     UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
                        mVMModel->itemById (aUuid);
