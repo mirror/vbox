@@ -195,8 +195,7 @@ ip_input(PNATState pData, struct mbuf *m)
     if (ip->ip_ttl==0 || ip->ip_ttl == 1)
     {
         icmp_error(pData, m, ICMP_TIMXCEED, ICMP_TIMXCEED_INTRANS, 0, "ttl");
-        /* don't let this mbuf to be freed */
-        return;
+        goto bad;
     }
 
     ip->ip_ttl--;
