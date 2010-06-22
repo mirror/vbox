@@ -22,9 +22,9 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include "QITabWidget.h"
 #include "UIIconPool.h"
+#include "UISpecialControls.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
-#include "VBoxSpecialControls.h"
 #include "VBoxUtils.h"
 #include "VBoxVMLogViewer.h"
 
@@ -347,17 +347,17 @@ VBoxLogSearchPanel::VBoxLogSearchPanel (QWidget *aParent,
     , mCaseSensitive (0)
     , mWarningSpacer (0), mWarningIcon (0), mWarningString (0)
 {
-    mButtonClose = new VBoxMiniCancelButton (this);
+    mButtonClose = new UIMiniCancelButton (this);
     connect (mButtonClose, SIGNAL (clicked()), this, SLOT (hide()));
 
     mSearchName = new QLabel (this);
-    mSearchString = new VBoxSearchField (this);
+    mSearchString = new UISearchField (this);
     mSearchString->setSizePolicy (QSizePolicy::Preferred,
                                   QSizePolicy::Fixed);
     connect (mSearchString, SIGNAL (textChanged (const QString &)),
              this, SLOT (findCurrent (const QString &)));
 
-    mButtonsNextPrev = new VBoxSegmentedButton (2, this);
+    mButtonsNextPrev = new UIRoundRectSegmentedButton(2, this);
     mButtonsNextPrev->setEnabled (0, false);
     mButtonsNextPrev->setEnabled (1, false);
 #ifndef Q_WS_MAC

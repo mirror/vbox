@@ -25,7 +25,7 @@
 
 /* Local forward declarations */
 class QIHttp;
-class VBoxMiniCancelButton;
+class UIMiniCancelButton;
 
 /* Global forward declarations */
 class QHttpResponseHeader;
@@ -63,7 +63,7 @@ private:
 
     /* Private member vars */
     QProgressBar *m_pProgressBar;
-    VBoxMiniCancelButton *m_pCancelButton;
+    UIMiniCancelButton *m_pCancelButton;
 
     QString m_strSource;
 };

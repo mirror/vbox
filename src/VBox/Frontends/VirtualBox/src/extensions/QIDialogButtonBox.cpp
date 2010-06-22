@@ -18,7 +18,7 @@
  */
 
 #include "QIDialogButtonBox.h"
-#include "VBoxSpecialControls.h"
+#include "UISpecialControls.h"
 
 #include <iprt/assert.h>
 
@@ -110,7 +110,7 @@ void QIDialogButtonBox::retranslateUi()
     {
         /* Use our very own help button if the user requested for one. */
         if (!mHelpButton)
-            mHelpButton = new VBoxHelpButton;
+            mHelpButton = new UIHelpButton;
         mHelpButton->initFrom (btn);
         removeButton (btn);
         QDialogButtonBox::addButton (mHelpButton, QDialogButtonBox::HelpRole);

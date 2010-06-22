@@ -22,7 +22,7 @@
 #include "QIHttp.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
-#include "VBoxSpecialControls.h"
+#include "UISpecialControls.h"
 
 /* Global includes */
 #include <QFile>
@@ -31,7 +31,7 @@
 UIMiniProcessWidget::UIMiniProcessWidget(QWidget *pParent /* = 0 */)
     : QWidget(pParent)
     , m_pProgressBar(new QProgressBar(this))
-    , m_pCancelButton(new VBoxMiniCancelButton(this))
+    , m_pCancelButton(new UIMiniCancelButton(this))
 {
     /* Progress Bar setup */
     m_pProgressBar->setFixedWidth(100);
