@@ -205,7 +205,7 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
     {
         int mhlen, firstlen = len;
         struct mbuf **mnext = &m->m_nextpkt;
-        char *buf; /* intermediate buffer we'll use for copy from orriginal packet */
+        char *buf; /* intermediate buffer we'll use for a copy of the original packet */
         {
             struct m_tag *t;
             char *tmpbuf = NULL;
@@ -217,7 +217,7 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
             ip->ip_sum = cksum(m, hlen);
             if (m->m_next != NULL)
             {
-                /*we've receives packet in fragments*/
+                /* we've receives packet in fragments */
                 tmplen = m_length(m, NULL);
                 tmpbuf = RTMemAlloc(tmplen);
                 Assert(tmpbuf);
@@ -227,7 +227,6 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
             {
                 tmpbuf = mtod(m, char *);
                 tmplen = m_length(m, NULL);
-
             }
 
             if ((t = m_tag_find(m, PACKET_TAG_ALIAS, NULL)) != 0)
