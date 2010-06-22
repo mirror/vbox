@@ -1443,7 +1443,6 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 memcpy(rah->ar_tha, ah->ar_sha, ETH_ALEN);
                 memcpy(rah->ar_tip, ah->ar_sip, 4);
                 if_encap(pData, ETH_P_ARP, mr, ETH_ENCAP_URG);
-                m_freem(pData, m);
             }
             /* Gratuitous ARP */
             if (  *(uint32_t *)ah->ar_sip == *(uint32_t *)ah->ar_tip
@@ -1455,7 +1454,6 @@ static void arp_input(PNATState pData, struct mbuf *m)
                  */
                 if (slirp_arp_cache_update(pData, *(uint32_t *)ah->ar_tip, &eh->h_dest[0]) == 0)
                 {
-                    m_freem(pData, mr);
                     m_freem(pData, m);
                     break;
                 }

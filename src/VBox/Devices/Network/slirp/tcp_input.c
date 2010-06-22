@@ -797,7 +797,6 @@ findso:
                     tp->t_socket->so_m = NULL;
                 }
                 tp = tcp_close(pData, tp);
-                m_freem(pData, m);
             }
             else
             {
