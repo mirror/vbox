@@ -761,8 +761,7 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
 
     /* stateFile (optional) */
     if (!stateFilePath().isEmpty())
-        /* try to make the file name relative to the settings file dir */
-        m->pMachine->calculateRelativePath(stateFilePath(), data.strStateFile);
+        m->pMachine->copyPathRelativeToMachine(stateFilePath(), data.strStateFile);
     else
         data.strStateFile.setNull();
 
