@@ -140,7 +140,7 @@ ip_input(PNATState pData, struct mbuf *m)
     if (ip->ip_v != IPVERSION)
     {
         ipstat.ips_badvers++;
-        goto bad;
+        goto bad_free_m;
     }
 
     hlen = ip->ip_hl << 2;
@@ -149,7 +149,7 @@ ip_input(PNATState pData, struct mbuf *m)
     {
         /* min header length */
         ipstat.ips_badhlen++;                     /* or packet too short */
-        goto bad;
+        goto bad_free_m;
     }
 
     /* keep ip header intact for ICMP reply
@@ -159,7 +159,7 @@ ip_input(PNATState pData, struct mbuf *m)
     if (cksum(m, hlen))
     {
         ipstat.ips_badsum++;
-        goto bad;
+        goto bad_free_m;
     }
 
     /*
@@ -169,7 +169,7 @@ ip_input(PNATState pData, struct mbuf *m)
     if (ip->ip_len < hlen)
     {
         ipstat.ips_badlen++;
-        goto bad;
+        goto bad_free_m;
     }
 
     NTOHS(ip->ip_id);
@@ -184,7 +184,7 @@ ip_input(PNATState pData, struct mbuf *m)
     if (mlen < ip->ip_len)
     {
         ipstat.ips_tooshort++;
-        goto bad;
+        goto bad_free_m;
     }
 
     /* Should drop packet if mbuf too long? hmmm... */
@@ -195,7 +195,7 @@ ip_input(PNATState pData, struct mbuf *m)
     if (ip->ip_ttl==0 || ip->ip_ttl == 1)
     {
         icmp_error(pData, m, ICMP_TIMXCEED, ICMP_TIMXCEED_INTRANS, 0, "ttl");
-        goto bad;
+        goto bad_free_m;
     }
 
     ip->ip_ttl--;
@@ -243,7 +243,7 @@ ip_input(PNATState pData, struct mbuf *m)
     STAM_PROFILE_STOP(&pData->StatIP_input, a);
     return;
 
-bad:
+bad_free_m:
     Log2(("NAT: IP datagram to %R[IP4] with size(%d) claimed as bad\n",
         &ip->ip_dst, ip->ip_len));
     m_freem(pData, m);
