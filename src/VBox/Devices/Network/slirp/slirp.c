@@ -1401,7 +1401,7 @@ static void arp_input(PNATState pData, struct mbuf *m)
         case ARPOP_REQUEST:
             mr = m_getcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR);
             if (mr == NULL)
-                return;
+                break;
             reh = mtod(mr, struct ethhdr *);
             mr->m_data += ETH_HLEN;
             rah = mtod(mr, struct arphdr *);
@@ -1418,9 +1418,8 @@ static void arp_input(PNATState pData, struct mbuf *m)
                     || CTL_CHECK(htip, CTL_ALIAS)
                     || CTL_CHECK(htip, CTL_TFTP))
                     goto arp_ok;
-                m_freem(pData, m);
                 m_freem(pData, mr);
-                return;
+                break;
 
          arp_ok:
                 rah->ar_hrd = RT_H2N_U16_C(1);
@@ -1444,6 +1443,9 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 memcpy(rah->ar_tip, ah->ar_sip, 4);
                 if_encap(pData, ETH_P_ARP, mr, ETH_ENCAP_URG);
             }
+            else
+                m_freem(pData, mr);
+
             /* Gratuitous ARP */
             if (  *(uint32_t *)ah->ar_sip == *(uint32_t *)ah->ar_tip
                 && memcmp(ah->ar_tha, broadcast_ethaddr, ETH_ALEN) == 0
@@ -1452,28 +1454,19 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 /* we've received anounce about address asignment
                  * Let's do ARP cache update
                  */
-                if (slirp_arp_cache_update(pData, *(uint32_t *)ah->ar_tip, &eh->h_dest[0]) == 0)
-                {
-                    m_freem(pData, m);
-                    break;
-                }
-                slirp_arp_cache_add(pData, *(uint32_t *)ah->ar_tip, &eh->h_dest[0]);
+                slirp_arp_cache_update_or_add(pData, *(uint32_t *)ah->ar_tip, &eh->h_dest[0]);
             }
             break;
 
         case ARPOP_REPLY:
-            if (slirp_arp_cache_update(pData, *(uint32_t *)ah->ar_sip, &ah->ar_sha[0]) == 0)
-            {
-                m_freem(pData, m);
-                break;
-            }
-            slirp_arp_cache_add(pData, *(uint32_t *)ah->ar_sip, ah->ar_sha);
-            m_freem(pData, m);
+            slirp_arp_cache_update_or_add(pData, *(uint32_t *)ah->ar_sip, &ah->ar_sha[0]);
             break;
 
         default:
             break;
     }
+
+    m_freem(pData, m);
 }
 
 /**
