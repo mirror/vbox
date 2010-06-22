@@ -3590,11 +3590,13 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
             Info.pszModuleName = pszModuleName;
             Info.enmGuestOS    = enmGuestOS;
 
+            Log(("Try to find identical module %s\n", pszModuleName));
             int ret = RTAvlGCPtrDoWithAll(&pGMM->pGlobalSharedModuleTree, true /* fFromLeft */, gmmR0CheckForIdenticalModule, &Info);
             if (ret == 1)
             {
                 Assert(Info.pNode);
                 pGlobalModule = (PGMMSHAREDMODULE)Info.pNode;
+                Log(("Found identical module at %RGv\n", pGlobalModule->Core.Key));
             }
         }
 
