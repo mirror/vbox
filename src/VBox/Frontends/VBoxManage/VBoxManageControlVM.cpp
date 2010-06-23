@@ -821,12 +821,13 @@ int handleControlVM(HandlerArg *a)
             Bstr        bstrPassword("");
             static const RTGETOPTDEF s_aTeleportOptions[] =
             {
-                { "--host",        'h', RTGETOPT_REQ_STRING }, /** @todo RTGETOPT_FLAG_MANDATORY */
-                { "--hostname",    'h', RTGETOPT_REQ_STRING }, /** @todo remove this */
-                { "--maxdowntime", 'd', RTGETOPT_REQ_UINT32 },
-                { "--port",        'p', RTGETOPT_REQ_UINT32 }, /** @todo RTGETOPT_FLAG_MANDATORY */
-                { "--password",    'P', RTGETOPT_REQ_STRING },
-                { "--timeout",     't', RTGETOPT_REQ_UINT32 }
+                { "--host",              'h', RTGETOPT_REQ_STRING }, /** @todo RTGETOPT_FLAG_MANDATORY */
+                { "--hostname",          'h', RTGETOPT_REQ_STRING }, /** @todo remove this */
+                { "--maxdowntime",       'd', RTGETOPT_REQ_UINT32 },
+                { "--port",              'p', RTGETOPT_REQ_UINT32 }, /** @todo RTGETOPT_FLAG_MANDATORY */
+                { "--password",          'P', RTGETOPT_REQ_STRING },
+                { "--timeout",           't', RTGETOPT_REQ_UINT32 },
+                { "--detailed-progress", 'D', RTGETOPT_REQ_NOTHING }
             };
             RTGETOPTSTATE GetOptState;
             RTGetOptInit(&GetOptState, a->argc, a->argv, s_aTeleportOptions, RT_ELEMENTS(s_aTeleportOptions), 2, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
@@ -839,6 +840,7 @@ int handleControlVM(HandlerArg *a)
                 {
                     case 'h': bstrHostname  = Value.psz; break;
                     case 'd': uMaxDowntime  = Value.u32; break;
+                    case 'D': g_fDetailedProgress = true; break;
                     case 'p': uPort         = Value.u32; break;
                     case 'P': bstrPassword  = Value.psz; break;
                     case 't': cMsTimeout    = Value.u32; break;

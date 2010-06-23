@@ -2084,9 +2084,9 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
          * really old SSM file versions.)
          */
         if (uVersion == CPUM_SAVED_STATE_VERSION_VER1_6)
-            SSMR3SetGCPtrSize(pSSM, sizeof(RTGCPTR32));
+            SSMR3HandleSetGCPtrSize(pSSM, sizeof(RTGCPTR32));
         else if (uVersion <= CPUM_SAVED_STATE_VERSION_VER3_0)
-            SSMR3SetGCPtrSize(pSSM, HC_ARCH_BITS == 32 ? sizeof(RTGCPTR32) : sizeof(RTGCPTR));
+            SSMR3HandleSetGCPtrSize(pSSM, HC_ARCH_BITS == 32 ? sizeof(RTGCPTR32) : sizeof(RTGCPTR));
 
         /*
          * Restore.
