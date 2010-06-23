@@ -329,6 +329,7 @@ void
 icmp_input(PNATState pData, struct mbuf *m, int hlen)
 {
     register struct icmp *icp;
+    int fIcpOnMbuf = 1; /* if icp pointer to m->m_data */
     register struct ip *ip = mtod(m, struct ip *);
     int icmplen = ip->ip_len;
     int status;
@@ -353,28 +354,34 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
     {
         /* min 8 bytes payload */
         icmpstat.icps_tooshort++;
-freeit:
-        m_freem(pData, m);
         goto end_error;
     }
 
     m->m_len -= hlen;
     m->m_data += hlen;
-    if (m->m_next != NULL)
-    {
-        char *buf = RTMemAlloc(icmplen);
-        m_copydata(m, 0, icmplen, buf);
-        icp = (struct icmp *)buf;
-    }
-    else
-    {
-        icp = mtod(m, struct icmp *);
-    }
+
     if (cksum(m, icmplen))
     {
         icmpstat.icps_checksum++;
-        goto freeit;
+        goto end_error;
     }
+
+    if (m->m_next != NULL)
+    {
+        char *buf = RTMemAlloc(icmplen);
+        if (!buf)
+        {
+            LogRel(("NAT: not enought memory to allocate the buffer\n"));
+            goto end_error;
+        }
+        m_copydata(m, 0, icmplen, buf);
+        icp = (struct icmp *)buf;
+        fIcpOnMbuf = 0;
+    }
+    else
+        icp = mtod(m, struct icmp *);
+
+
     m->m_len += hlen;
     m->m_data -= hlen;
 
@@ -393,6 +400,9 @@ freeit:
                 ip->ip_dst.s_addr = ip->ip_src.s_addr;
                 ip->ip_src.s_addr = dst;
                 icmp_reflect(pData, m);
+                if (!fIcpOnMbuf)
+                    RTMemFree(icp);
+                return;
             }
             else
             {
@@ -420,8 +430,6 @@ freeit:
                 if (pData->icmp_socket.s != -1)
                 {
                     ssize_t rc;
-                    m->m_so = &pData->icmp_socket;
-                    icmp_attach(pData, m);
                     ttl = ip->ip_ttl;
                     Log(("NAT/ICMP: try to set TTL(%d)\n", ttl));
                     status = setsockopt(pData->icmp_socket.s, IPPROTO_IP, IP_TTL,
@@ -431,81 +439,80 @@ freeit:
                                 strerror(errno)));
                     rc = sendto(pData->icmp_socket.s, icp, icmplen, 0,
                               (struct sockaddr *)&addr, sizeof(addr));
-                    if (rc < 0)
+                    if (rc >= 0)
                     {
-                        LogRel((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
-                                    errno, strerror(errno)));
-                        icmp_error(pData, m, ICMP_UNREACH, ICMP_UNREACH_NET, 0, strerror(errno));
+                        icmp_attach(pData, m);
+                        m->m_so = &pData->icmp_socket;
+                        /* don't let m_freem at the end free atached buffer */
+                        return;
                     }
-                }
-                else
-                {
-                    /*
-                     * We're freeing the ICMP message, which unable sent or process.
-                     * That behavior described in rfc 793, we shouldn't notify sender about
-                     * fail of processing it's ICMP packets
-                     */
-                    m_freem(pData, m);
-                    return;
+                    
+                    LogRel((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
+                                errno, strerror(errno)));
+                    icmp_error(pData, m, ICMP_UNREACH, ICMP_UNREACH_NET, 0, strerror(errno));
                 }
 #else /* RT_OS_WINDOWS */
-                icmp_attach(pData, m);
                 pData->icmp_socket.so_laddr.s_addr = ip->ip_src.s_addr; /* XXX: hack*/
                 pData->icmp_socket.so_icmp_id = icp->icmp_id;
                 pData->icmp_socket.so_icmp_seq = icp->icmp_seq;
-                m->m_so = &pData->icmp_socket;
                 memset(&ipopt, 0, sizeof(IP_OPTION_INFORMATION));
                 ipopt.Ttl = ip->ip_ttl;
                 status = ICMP_SEND_ECHO(pData->phEvents[VBOX_ICMP_EVENT_INDEX], notify_slirp, addr.sin_addr.s_addr,
                                 icp->icmp_data, icmplen - ICMP_MINLEN, &ipopt);
-                if (status == 0 && (error = GetLastError()) != ERROR_IO_PENDING)
+                error = GetLastError();
+                if (   status != 0 
+                    || error == ERROR_IO_PENDING)
                 {
-                    error = GetLastError();
-                    LogRel(("NAT: Error (%d) occurred while sending ICMP (", error));
-                    switch (error)
-                    {
-                        case ERROR_INVALID_PARAMETER:
-                            LogRel(("icmp_socket:%lx is invalid)\n", pData->icmp_socket.s));
-                            break;
-                        case ERROR_NOT_SUPPORTED:
-                            LogRel(("operation is unsupported)\n"));
-                            break;
-                        case ERROR_NOT_ENOUGH_MEMORY:
-                            LogRel(("OOM!!!)\n"));
-                            break;
-                        case IP_BUF_TOO_SMALL:
-                            LogRel(("Buffer too small)\n"));
-                            break;
-                        default:
-                            LogRel(("Other error!!!)\n"));
-                            break;
-                    }
+                    icmp_attach(pData, m);
+                    m->m_so = &pData->icmp_socket;
+                    /* don't let m_freem at the end free atached buffer */
+                    return;
+                }
+                LogRel(("NAT: Error (%d) occurred while sending ICMP (", error));
+                switch (error)
+                {
+                    case ERROR_INVALID_PARAMETER:
+                        LogRel(("icmp_socket:%lx is invalid)\n", pData->icmp_socket.s));
+                        break;
+                    case ERROR_NOT_SUPPORTED:
+                        LogRel(("operation is unsupported)\n"));
+                        break;
+                    case ERROR_NOT_ENOUGH_MEMORY:
+                        LogRel(("OOM!!!)\n"));
+                        break;
+                    case IP_BUF_TOO_SMALL:
+                        LogRel(("Buffer too small)\n"));
+                        break;
+                    default:
+                        LogRel(("Other error!!!)\n"));
+                        break;
                 }
 #endif /* RT_OS_WINDOWS */
             } /* if ip->ip_dst.s_addr == alias_addr.s_addr */
             break;
         case ICMP_UNREACH:
-            /* XXX? report error? close socket? */
         case ICMP_TIMXCEED:
+            /* @todo(vvl): both up cases comes from guest, 
+             *  indeed right solution would be find the socket 
+             *  corresponding to ICMP data and close it.  
+             */
         case ICMP_PARAMPROB:
         case ICMP_SOURCEQUENCH:
         case ICMP_TSTAMP:
         case ICMP_MASKREQ:
         case ICMP_REDIRECT:
             icmpstat.icps_notsupp++;
-            m_freem(pData, m);
             break;
 
         default:
             icmpstat.icps_badtype++;
-            m_freem(pData, m);
     } /* switch */
-    if (m->m_next != NULL && icp != NULL)
-        RTMemFree(icp);
-
+    
 end_error:
-    /* m is m_free()'d xor put in a socket xor or given to ip_send */
-    ;
+    m_freem(pData, m);
+    if (   !fIcpOnMbuf
+        && !icp)
+        RTMemFree(icp);
 }
 
 
@@ -683,6 +690,7 @@ end_error:
 
 /*
  * Reflect the ip packet back to the source
+ * Note: m isn't duplicated by this method and more delivered to ip_output then.
  */
 void
 icmp_reflect(PNATState pData, struct mbuf *m)
