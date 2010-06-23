@@ -85,3 +85,7 @@ __umoddi3
 __moddi3
 __udivdi3
 InitPtrFeedbackClassDeviceStruct
+flock
+sigdelset
+sigfillset
+pthread_sigmask

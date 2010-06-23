@@ -92,3 +92,7 @@ miPointerGetMotionBufferSize
 miPointerCurrentScreen
 screenInfo
 InitPointerDeviceStruct
+flock
+sigdelset
+sigfillset
+pthread_sigmask
