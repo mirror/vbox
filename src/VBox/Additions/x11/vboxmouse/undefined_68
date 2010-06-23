@@ -69,3 +69,7 @@ xf86SetSerialSpeed
 xf86WriteSerial
 xf86errno
 xf86SetStrOption
+flock
+sigdelset
+sigfillset
+pthread_sigmask

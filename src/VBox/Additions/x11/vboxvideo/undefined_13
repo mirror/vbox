@@ -179,3 +179,7 @@ xf86sprintf
 sprintf
 FatalError
 xf86CrtcConfigPrivateIndex
+flock
+sigdelset
+sigfillset
+pthread_sigmask

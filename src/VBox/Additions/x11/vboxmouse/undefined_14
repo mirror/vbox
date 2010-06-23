@@ -139,3 +139,7 @@ __moddi3
 __umoddi3
 __udivdi3
 __divdi3
+flock
+sigdelset
+sigfillset
+pthread_sigmask

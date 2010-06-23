@@ -182,3 +182,7 @@ vgaHWDPMSSet
 DRIUnlock
 DRILock
 screenInfo
+flock
+sigdelset
+sigfillset
+pthread_sigmask

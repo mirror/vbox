@@ -74,3 +74,7 @@ xf86errno
 xf86CreateCursorInfoRec
 resVgaShared
 xf86SetBackingStore
+flock
+sigdelset
+sigfillset
+pthread_sigmask
