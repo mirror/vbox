@@ -2423,7 +2423,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
             RTFSTYPE enmFsTypeFile = RTFSTYPE_UNKNOWN;
             RTFSTYPE enmFsTypeSnap = RTFSTYPE_UNKNOWN;
             int rc2 = RTFsQueryType(utfFile.c_str(), &enmFsTypeFile);
-            AssertMsgRCReturn(rc2, "Querying the file type of '%s' failed!\n", rc2);
+            AssertMsgRCReturn(rc2, ("Querying the file type of '%s' failed!\n", utfFile.c_str()), rc2);
             /* Ignore the error code. On error, the file system type is still 'unknown' so
              * none of the following pathes is taken. This can happen for new VMs which
              * still don't have a snapshot folder. */
