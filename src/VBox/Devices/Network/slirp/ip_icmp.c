@@ -400,9 +400,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
                 ip->ip_dst.s_addr = ip->ip_src.s_addr;
                 ip->ip_src.s_addr = dst;
                 icmp_reflect(pData, m);
-                if (!fIcpOnMbuf)
-                    RTMemFree(icp);
-                return;
+                goto done;
             }
             else
             {
@@ -444,7 +442,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
                         icmp_attach(pData, m);
                         m->m_so = &pData->icmp_socket;
                         /* don't let m_freem at the end free atached buffer */
-                        return;
+                        goto done;
                     }
                     
                     LogRel((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
@@ -466,7 +464,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
                     icmp_attach(pData, m);
                     m->m_so = &pData->icmp_socket;
                     /* don't let m_freem at the end free atached buffer */
-                    return;
+                    goto done;
                 }
                 LogRel(("NAT: Error (%d) occurred while sending ICMP (", error));
                 switch (error)
@@ -510,6 +508,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
     
 end_error:
     m_freem(pData, m);
+done:
     if (   !fIcpOnMbuf
         && !icp)
         RTMemFree(icp);
