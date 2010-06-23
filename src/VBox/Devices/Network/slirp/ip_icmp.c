@@ -329,7 +329,7 @@ void
 icmp_input(PNATState pData, struct mbuf *m, int hlen)
 {
     register struct icmp *icp;
-    int fIcpOnMbuf = 1; /* if icp pointer to m->m_data */
+    void *icp_buf = NULL;
     register struct ip *ip = mtod(m, struct ip *);
     int icmplen = ip->ip_len;
     int status;
@@ -366,21 +366,19 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
         goto end_error;
     }
 
-    if (m->m_next != NULL)
+    if (m->m_next)
     {
-        char *buf = RTMemAlloc(icmplen);
-        if (!buf)
+        icp_buf = RTMemAlloc(icmplen);
+        if (!icp_buf)
         {
             LogRel(("NAT: not enought memory to allocate the buffer\n"));
             goto end_error;
         }
-        m_copydata(m, 0, icmplen, buf);
-        icp = (struct icmp *)buf;
-        fIcpOnMbuf = 0;
+        m_copydata(m, 0, icmplen, icp_buf);
+        icp = (struct icmp *)icp_buf;
     }
     else
         icp = mtod(m, struct icmp *);
-
 
     m->m_len += hlen;
     m->m_data -= hlen;
@@ -508,10 +506,10 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
     
 end_error:
     m_freem(pData, m);
+
 done:
-    if (   !fIcpOnMbuf
-        && !icp)
-        RTMemFree(icp);
+    if (icp_buf)
+        RTMemFree(icp_buf);
 }
 
 
