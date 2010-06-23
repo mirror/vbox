@@ -182,7 +182,9 @@ int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS 
     /*
      * The contig_alloc() way of allocating NC pages is broken or does not match our semantics. Refer #4716 for details.
      */
-    /* caddr_t virtAddr  = vbi_phys_alloc(&physAddr, cb, PAGE_SIZE, 0 /* non-contiguous */); */
+#if 0
+    /* caddr_t virtAddr  = vbi_phys_alloc(&physAddr, cb, PAGE_SIZE, 0 /* non-contiguous */);
+#endif
     caddr_t virtAddr = ddi_umem_alloc(cb, DDI_UMEM_SLEEP, &pMemSolaris->Cookie);
     if (RT_UNLIKELY(virtAddr == NULL))
     {
