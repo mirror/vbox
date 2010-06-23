@@ -21,6 +21,8 @@
  *        as contains almost no semantic meat. We use aggregation
  *        of VBoxEvent to simplify multiple inheritance ambiguity.
  */
+
+// @todo: add more elements to COM map too
 #define EVENT_CLASS_TRIVIA(klazz, iface) \
   public:                                \
     DECLARE_NOT_AGGREGATABLE(klazz)      \
@@ -480,21 +482,21 @@ public:
 NS_DECL_CLASSINFO(VBoxEvent)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VBoxEvent, IEvent)
 NS_DECL_CLASSINFO(MachineStateChangeEvent)
-NS_IMPL_THREADSAFE_ISUPPORTS2_CI(MachineStateChangeEvent, IMachineStateChangeEvent, IEvent)
+NS_IMPL_THREADSAFE_ISUPPORTS3_CI(MachineStateChangeEvent, IMachineStateChangeEvent, IMachineEvent, IEvent)
 NS_DECL_CLASSINFO(MachineDataChangeEvent)
-NS_IMPL_THREADSAFE_ISUPPORTS2_CI(MachineDataChangeEvent, IMachineDataChangeEvent, IEvent)
+NS_IMPL_THREADSAFE_ISUPPORTS3_CI(MachineDataChangeEvent, IMachineDataChangeEvent, IMachineEvent, IEvent)
 NS_DECL_CLASSINFO(MachineRegisteredEvent)
-NS_IMPL_THREADSAFE_ISUPPORTS2_CI(MachineRegisteredEvent, IMachineRegisteredEvent, IEvent)
+NS_IMPL_THREADSAFE_ISUPPORTS3_CI(MachineRegisteredEvent, IMachineRegisteredEvent, IMachineEvent, IEvent)
 NS_DECL_CLASSINFO(MachineSessionStateEvent)
-NS_IMPL_THREADSAFE_ISUPPORTS2_CI(MachineSessionStateEvent, IMachineSessionStateEvent, IEvent)
+NS_IMPL_THREADSAFE_ISUPPORTS3_CI(MachineSessionStateEvent, IMachineSessionStateEvent, IMachineEvent, IEvent)
 NS_DECL_CLASSINFO(GuestPropertyChangeEvent)
-NS_IMPL_THREADSAFE_ISUPPORTS2_CI(GuestPropertyChangeEvent, IGuestPropertyChangeEvent, IEvent)
+NS_IMPL_THREADSAFE_ISUPPORTS3_CI(GuestPropertyChangeEvent, IGuestPropertyChangeEvent, IMachineEvent, IEvent)
 NS_DECL_CLASSINFO(SnapshotTakenEvent)
-NS_IMPL_THREADSAFE_ISUPPORTS2_CI(SnapshotTakenEvent, ISnapshotTakenEvent, IEvent)
+NS_IMPL_THREADSAFE_ISUPPORTS4_CI(SnapshotTakenEvent, ISnapshotTakenEvent, ISnapshotEvent, IMachineEvent, IEvent)
 NS_DECL_CLASSINFO(SnapshotDeletedEvent)
-NS_IMPL_THREADSAFE_ISUPPORTS2_CI(SnapshotDeletedEvent, ISnapshotDeletedEvent, IEvent)
+NS_IMPL_THREADSAFE_ISUPPORTS4_CI(SnapshotDeletedEvent, ISnapshotDeletedEvent, ISnapshotEvent, IMachineEvent, IEvent)
 NS_DECL_CLASSINFO(SnapshotChangeEvent)
-NS_IMPL_THREADSAFE_ISUPPORTS2_CI(SnapshotChangeEvent, ISnapshotChangeEvent, IEvent)
+NS_IMPL_THREADSAFE_ISUPPORTS4_CI(SnapshotChangeEvent, ISnapshotChangeEvent, ISnapshotEvent, IMachineEvent, IEvent)
 NS_DECL_CLASSINFO(ExtraDataChangeEvent)
 NS_IMPL_THREADSAFE_ISUPPORTS2_CI(ExtraDataChangeEvent, IExtraDataChangeEvent, IEvent)
 #endif
