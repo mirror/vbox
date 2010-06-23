@@ -2667,7 +2667,6 @@ ResumeExecution:
      * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      */
     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatInGC, z);
-    STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatExit1, v);
 
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
@@ -2676,6 +2675,7 @@ ResumeExecution:
         goto end;
     }
 
+    STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatExit1, v);
     /* Success. Query the guest state and figure out what has happened. */
 
     /* Investigate why there was a VM-exit. */
@@ -3548,7 +3548,6 @@ ResumeExecution:
             pCtx->rip += cbInstr;     /* wrmsr = [0F 30] */
 
             /* Only resume if successful. */
-            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
             goto ResumeExecution;
         }
         /* no break */
