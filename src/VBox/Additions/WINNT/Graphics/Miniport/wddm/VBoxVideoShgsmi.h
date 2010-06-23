@@ -69,7 +69,7 @@ DECLINLINE(void) vboxSHGSMIListCat(PVBOXSHGSMILIST pList1, PVBOXSHGSMILIST pList
     pList2->pFirst = pList2->pLast = NULL;
 }
 
-DECLINLINE(void) vboxSHGSMICmdListDetach(PVBOXSHGSMILIST pList, PVBOXSHGSMILIST_ENTRY *ppFirst, PVBOXSHGSMILIST_ENTRY *ppLast)
+DECLINLINE(void) vboxSHGSMIListDetach(PVBOXSHGSMILIST pList, PVBOXSHGSMILIST_ENTRY *ppFirst, PVBOXSHGSMILIST_ENTRY *ppLast)
 {
     *ppFirst = pList->pFirst;
     if (ppLast)
@@ -78,9 +78,26 @@ DECLINLINE(void) vboxSHGSMICmdListDetach(PVBOXSHGSMILIST pList, PVBOXSHGSMILIST_
     pList->pLast = NULL;
 }
 
-DECLINLINE(void) vboxSHGSMICmdListDetach2List(PVBOXSHGSMILIST pList, PVBOXSHGSMILIST pDstList)
+DECLINLINE(void) vboxSHGSMIListDetach2List(PVBOXSHGSMILIST pList, PVBOXSHGSMILIST pDstList)
 {
-    vboxSHGSMICmdListDetach(pList, &pDstList->pFirst, &pDstList->pLast);
+    vboxSHGSMIListDetach(pList, &pDstList->pFirst, &pDstList->pLast);
+}
+
+DECLINLINE(void) vboxSHGSMIListDetachEntries(PVBOXSHGSMILIST pList, PVBOXSHGSMILIST_ENTRY pBeforeDetach, PVBOXSHGSMILIST_ENTRY pLast2Detach)
+{
+    if (pBeforeDetach)
+    {
+        pBeforeDetach->pNext = pLast2Detach->pNext;
+        if (!pBeforeDetach->pNext)
+            pList->pLast = pBeforeDetach;
+    }
+    else
+    {
+        pList->pFirst = pLast2Detach->pNext;
+        if (!pList->pFirst)
+            pList->pLast = NULL;
+    }
+    pLast2Detach->pNext = NULL;
 }
 
 

@@ -19,6 +19,7 @@
 #include "../../Miniport/wddm/VBoxVideoIf.h"
 
 #include <iprt/cdefs.h>
+#include <iprt/list.h>
 
 #define VBOXWDDMDISP_MAX_VERTEX_STREAMS 16
 
@@ -59,6 +60,7 @@ typedef struct VBOXWDDMDISP_ADAPTER
 
 typedef struct VBOXWDDMDISP_CONTEXT
 {
+    RTLISTNODE ListNode;
     struct VBOXWDDMDISP_DEVICE *pDevice;
     D3DDDICB_CREATECONTEXT ContextInfo;
 } VBOXWDDMDISP_CONTEXT, *PVBOXWDDMDISP_CONTEXT;

@@ -12,13 +12,6 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#include <windows.h>
-#include <d3d9types.h>
-//#include <d3dtypes.h>
-#include <D3dumddi.h>
-#include <d3dhal.h>
-
-
 #include <iprt/initterm.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
@@ -27,8 +20,8 @@
 
 #include <VBox/VBoxGuestLib.h>
 
-#include "VBoxDispD3D.h"
 #include "VBoxDispD3DCmn.h"
+#include "VBoxDispD3D.h"
 
 #ifdef VBOXWDDMDISP_DEBUG
 # include <stdio.h>
