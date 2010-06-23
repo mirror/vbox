@@ -1580,12 +1580,15 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         val =   X86_CR0_PE  /* Must monitor this bit (assumptions are made for real mode emulation) */
               | X86_CR0_WP  /* Must monitor this bit (it must always be enabled). */
               | X86_CR0_PG  /* Must monitor this bit (assumptions are made for real mode & protected mode without paging emulation) */
-              | X86_CR0_TS
-              | X86_CR0_ET  /* Bit not restored during VM-exit! */
               | X86_CR0_CD  /* Bit not restored during VM-exit! */
-              | X86_CR0_NW  /* Bit not restored during VM-exit! */
-              | X86_CR0_NE
-              | X86_CR0_MP;
+              | X86_CR0_NW; /* Bit not restored during VM-exit! */
+
+        /* When the guest's FPU state is active, then we no longer care about
+         * the FPU related bits. 
+         */
+        if (CPUMIsGuestFPUStateActive(pVCpu) == false)
+            val |= X86_CR0_TS | X86_CR0_ET | X86_CR0_NE | X86_CR0_MP;
+
         pVCpu->hwaccm.s.vmx.cr0_mask = val;
 
         rc |= VMXWriteVMCS(VMX_VMCS_CTRL_CR0_MASK, val);
