@@ -4520,12 +4520,14 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
         case VBOXVHWACMD_TYPE_SURF_CANCREATE:
         {
             VBOXVHWACMD_SURF_CANCREATE * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_CANCREATE);
+            initGl();
             makeCurrent();
             pCmd->rc = mOverlayImage.vhwaSurfaceCanCreate(pBody);
         } break;
         case VBOXVHWACMD_TYPE_SURF_CREATE:
         {
             VBOXVHWACMD_SURF_CREATE * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_CREATE);
+            initGl();
             makeCurrent();
             vboxSetGlOn(true);
             pCmd->rc = mOverlayImage.vhwaSurfaceCreate(pBody);
@@ -4547,6 +4549,7 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
         case VBOXVHWACMD_TYPE_SURF_DESTROY:
         {
             VBOXVHWACMD_SURF_DESTROY * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_DESTROY);
+            initGl();
             makeCurrent();
             pCmd->rc = mOverlayImage.vhwaSurfaceDestroy(pBody);
             if(!mOverlayImage.hasSurfaces())
@@ -4567,12 +4570,14 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
         case VBOXVHWACMD_TYPE_SURF_LOCK:
         {
             VBOXVHWACMD_SURF_LOCK * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_LOCK);
+            initGl();
             makeCurrent();
             pCmd->rc = mOverlayImage.vhwaSurfaceLock(pBody);
         } break;
         case VBOXVHWACMD_TYPE_SURF_UNLOCK:
         {
             VBOXVHWACMD_SURF_UNLOCK * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_UNLOCK);
+            initGl();
             makeCurrent();
             pCmd->rc = vhwaSurfaceUnlock(pBody);
             /* mNeedOverlayRepaint is set inside the vhwaSurfaceUnlock */
@@ -4580,6 +4585,7 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
         case VBOXVHWACMD_TYPE_SURF_BLT:
         {
             VBOXVHWACMD_SURF_BLT * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_BLT);
+            initGl();
             makeCurrent();
             pCmd->rc = mOverlayImage.vhwaSurfaceBlt(pBody);
             mNeedOverlayRepaint = true;
@@ -4587,6 +4593,7 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
         case VBOXVHWACMD_TYPE_SURF_FLIP:
         {
             VBOXVHWACMD_SURF_FLIP * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_FLIP);
+            initGl();
             makeCurrent();
             pCmd->rc = mOverlayImage.vhwaSurfaceFlip(pBody);
             mNeedOverlayRepaint = true;
@@ -4594,6 +4601,7 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
         case VBOXVHWACMD_TYPE_SURF_OVERLAY_UPDATE:
         {
             VBOXVHWACMD_SURF_OVERLAY_UPDATE * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_OVERLAY_UPDATE);
+            initGl();
             makeCurrent();
             pCmd->rc = mOverlayImage.vhwaSurfaceOverlayUpdate(pBody);
             mOverlayVisible = mOverlayImage.hasVisibleOverlays();
@@ -4607,6 +4615,7 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
         case VBOXVHWACMD_TYPE_SURF_OVERLAY_SETPOSITION:
         {
             VBOXVHWACMD_SURF_OVERLAY_SETPOSITION * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_OVERLAY_SETPOSITION);
+            initGl();
             makeCurrent();
             pCmd->rc = mOverlayImage.vhwaSurfaceOverlaySetPosition(pBody);
             mOverlayVisible = mOverlayImage.hasVisibleOverlays();
@@ -4620,6 +4629,7 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
         case VBOXVHWACMD_TYPE_SURF_COLORKEY_SET:
         {
             VBOXVHWACMD_SURF_COLORKEY_SET * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_COLORKEY_SET);
+            initGl();
             makeCurrent();
             pCmd->rc = mOverlayImage.vhwaSurfaceColorkeySet(pBody);
             /* this is here to ensure we have color key changes picked up */
@@ -4636,6 +4646,7 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
         case VBOXVHWACMD_TYPE_QUERY_INFO2:
         {
             VBOXVHWACMD_QUERYINFO2 * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_QUERYINFO2);
+            initGl();
             makeCurrent();
             pCmd->rc = mOverlayImage.vhwaQueryInfo2(pBody);
         } break;
