@@ -1889,6 +1889,19 @@ static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass
             }
         }
     }
+
+    /*
+     * Come up with a completion percentage.  Currently this is a simple
+     * dirty page (long term) vs. total pages ratio + some pass trickery.
+     */
+    unsigned uPctDirty = cDirtyPagesLong
+                       / (long double)(pVM->pgm.s.cAllPages - pVM->pgm.s.LiveSave.cIgnoredPages - pVM->pgm.s.cZeroPages);
+    if (uPctDirty <= 100)
+        SSMR3HandleReportLivePercent(pSSM, RT_MIN(100 - uPctDirty, uPass * 2));
+    else
+        AssertMsgFailed(("uPctDirty=%u cDirtyPagesLong=%#x cAllPages=%#x cIgnoredPages=%#x cZeroPages=%#x\n",
+                         uPctDirty, cDirtyPagesLong, pVM->pgm.s.cAllPages, pVM->pgm.s.LiveSave.cIgnoredPages, pVM->pgm.s.cZeroPages));
+
     return VINF_SSM_VOTE_FOR_ANOTHER_PASS;
 }
 

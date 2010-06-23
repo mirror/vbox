@@ -976,7 +976,7 @@ STDMETHODIMP Progress::SetCurrentOperationProgress(ULONG aPercent)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    AssertReturn(aPercent <= 100, E_INVALIDARG);
+    AssertMsgReturn(aPercent <= 100, ("%u\n", aPercent), E_INVALIDARG);
 
     checkForAutomaticTimeout();
     if (mCancelable && mCanceled)
