@@ -1,5 +1,6 @@
 /** @file
  * VirtualBox File System for Solaris Guests, provider implementation.
+ * Portions contributed by: Ronald.
  */
 
 /*
@@ -420,7 +421,7 @@ sfprov_get_mode(sfp_mount_t *mnt, char *path, mode_t *mode)
 	else if (RTFS_IS_FILE(info.Attr.fMode))
 		m |= S_IFREG;
 	else if (RTFS_IS_FIFO(info.Attr.fMode))
-		m |= S_IFDIR;
+		m |= S_IFIFO;
 	else if (RTFS_IS_DEV_CHAR(info.Attr.fMode))
 		m |= S_IFCHR;
 	else if (RTFS_IS_DEV_BLOCK(info.Attr.fMode))
@@ -450,6 +451,10 @@ sfprov_get_mode(sfp_mount_t *mnt, char *path, mode_t *mode)
 		m |= S_IXOTH;
 	if (info.Attr.fMode & RTFS_UNIX_ISUID)
 		m |= S_ISUID;
+	if (info.Attr.fMode & RTFS_UNIX_ISGID)
+		m |= S_ISGID;
+	if (info.Attr.fMode & RTFS_UNIX_ISTXT)
+		m |= S_ISVTX;
 	*mode = m;
 	return (0);
 }

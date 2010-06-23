@@ -1,5 +1,6 @@
 /** @file
  * VirtualBox File System for Solaris Guests, vnode implementation.
+ * Portions contributed by: Ronald.
  */
 
 /*
@@ -242,7 +243,7 @@ top:
 	ASSERT(node->sf_path != NULL);
     LogFlowFunc(("sffs_destroy(%s)%s\n", node->sf_path, node->sf_is_stale ? " stale": ""));
 	if (node->sf_children != 0)
-		panic("sfnode_destroy(%s) has %d children", node->sf_children);
+		panic("sfnode_destroy(%s) has %d children", node->sf_path, node->sf_children);
 	if (node->sf_vnode != NULL)
 		panic("sfnode_destroy(%s) has active vnode", node->sf_path);
 
@@ -259,7 +260,7 @@ top:
 	kmem_free(node, sizeof (*node));
 	if (parent != NULL) {
 		if (parent->sf_children == 0)
-			panic("sfnode_destroy(%s) parent has no child");
+			panic("sfnode_destroy(%s) parent has no child", node->sf_path);
 		--parent->sf_children;
 		if (parent->sf_children == 0 &&
 		    parent->sf_is_stale &&
@@ -726,6 +727,20 @@ sffs_getattr(
 	if (error != 0)
 		goto done;
 	vap->va_mode = mode & MODEMASK;
+	if (S_ISDIR(mode))
+		vap->va_type = VDIR;
+	else if (S_ISREG(mode))
+		vap->va_type = VREG;
+	else if (S_ISFIFO(mode))
+		vap->va_type = VFIFO;
+	else if (S_ISCHR(mode))
+		vap->va_type = VCHR;
+	else if (S_ISBLK(mode))
+		vap->va_type = VBLK;
+	else if (S_ISLNK(mode))
+		vap->va_type = VLNK;
+	else if (S_ISSOCK(mode))
+		vap->va_type = VSOCK;
 
 	error = sfprov_get_size(node->sf_sffs->sf_handle, node->sf_path, &x);
 	if (error == ENOENT)
@@ -786,12 +801,12 @@ sffs_read(
 	if (vp->v_type != VREG)
 		return (EINVAL);
 	if (uio->uio_loffset >= MAXOFF_T)
-       		return (0);
-        if (uio->uio_loffset < 0)
-       		return (EINVAL);
-        total = uio->uio_resid;
-        if (total == 0)
-       		return (0);
+		return (0);
+	if (uio->uio_loffset < 0)
+		return (EINVAL);
+	total = uio->uio_resid;
+	if (total == 0)
+		return (0);
 
 	mutex_enter(&sffs_lock);
 	sfnode_open(node);
@@ -866,12 +881,12 @@ sffs_write(
 
 	if (vp->v_type != VREG || uiop->uio_loffset < 0) {
 		mutex_exit(&sffs_lock);
-       		return (EINVAL);
+		return (EINVAL);
 	}
 	if (limit == RLIM64_INFINITY || limit > MAXOFFSET_T)
-                limit = MAXOFFSET_T;
+		limit = MAXOFFSET_T;
 	if (limit > MAXOFF_T)
-                limit = MAXOFF_T;
+		limit = MAXOFF_T;
 
 	if (uiop->uio_loffset >= limit) {
 		proc_t *p = ttoproc(curthread);
@@ -888,22 +903,21 @@ sffs_write(
 		return (EFBIG);
 	}
 
-
-        total = uiop->uio_resid;
-        if (total == 0) {
+	total = uiop->uio_resid;
+	if (total == 0) {
 		mutex_exit(&sffs_lock);
-       		return (0);
+   		return (0);
 	}
 
 	do {
 		offset = uiop->uio_offset;
 		bytes = MIN(PAGESIZE, uiop->uio_resid);
 		if (offset + bytes >= limit) {
-                	if (offset >= limit) {
-                       		error = EFBIG;
-                       		break;
-                        }
-                        bytes = limit - offset;
+			if (offset >= limit) {
+				error = EFBIG;
+				break;
+			}
+			bytes = limit - offset;
 		}
 		error = uiomove(sffs_buffer, bytes, UIO_WRITE, uiop);
 		if (error != 0)
@@ -1407,7 +1421,7 @@ sffs_inactive(vnode_t *vp, cred_t *cr, caller_context_t *ct)
 	mutex_exit(&vp->v_lock);
 	vn_invalid(vp);
 	vn_free(vp);
-    LogFlowFunc(("  %s vnode cleared\n", node->sf_path));
+	LogFlowFunc(("  %s vnode cleared\n", node->sf_path));
 
 	/*
 	 * Close the sf_file for the node.
