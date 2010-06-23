@@ -21,7 +21,6 @@
 #include <D3dumddi.h>
 #include <d3dhal.h>
 
-
 #include <iprt/initterm.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>

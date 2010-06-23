@@ -117,8 +117,9 @@ typedef struct _DEVICE_EXTENSION * VBOXCMNREG;
 typedef struct _DEVICE_EXTENSION *PDEVICE_EXTENSION;
 #include <VBox/VBoxVideo.h>
 #include "wddm/VBoxVideoIf.h"
-#include "wddm/VBoxVideoWddm.h"
 #include "wddm/VBoxVideoShgsmi.h"
+#include "wddm/VBoxVideoCm.h"
+#include "wddm/VBoxVideoWddm.h"
 #include "wddm/VBoxVideoVdma.h"
 #include "wddm/VBoxVideoVidPn.h"
 #ifdef VBOXWDDM_WITH_VBVA
@@ -296,6 +297,10 @@ typedef struct _DEVICE_EXTENSION
 
 #ifdef VBOXWDDM
    PDEVICE_OBJECT pPDO;
+
+   VBOXVIDEOCM_MGR CmMgr;
+   LIST_ENTRY ContextList3D;
+   KSPIN_LOCK SynchLock;
 
    VBOXSHGSMILIST CtlList;
    VBOXSHGSMILIST DmaCmdList;

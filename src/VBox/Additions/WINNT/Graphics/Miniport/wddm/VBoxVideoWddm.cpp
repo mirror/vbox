@@ -37,6 +37,123 @@ VOID vboxWddmMemFree(PVOID pvMem)
     ExFreePool(pvMem);
 }
 
+DECLINLINE(void) vboxWddmDirtyRectsCalcIntersection(const RECT *pArea, const PVBOXWDDM_RECTS_INFO pRects, PVBOXWDDM_RECTS_INFO pResult)
+{
+    pResult->cRects = 0;
+    for (uint32_t i = 0; i < pRects->cRects; ++i)
+    {
+        if (vboxWddmRectIntersection(pArea, &pRects->aRects[i], &pResult->aRects[pResult->cRects]))
+        {
+            ++pResult->cRects;
+        }
+    }
+}
+/**
+ * @param pDevExt
+ */
+NTSTATUS vboxWddmDirtyRectsProcess(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_CONTEXT pContext, const RECT * pContextRect, const PVBOXWDDM_RECTS_INFO pRects)
+{
+    Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
+
+    NTSTATUS Status = STATUS_SUCCESS;
+    PVBOXVIDEOCM_CMD_RECTS pCmd = NULL;
+    uint32_t cbCmd = VBOXVIDEOCM_CMD_RECTS_SIZE4CRECTS(pRects->cRects);
+    KeAcquireSpinLockAtDpcLevel(&pDevExt->SynchLock);
+    for (PLIST_ENTRY pCur = pDevExt->ContextList3D.Flink; pCur != &pDevExt->ContextList3D; pCur = pCur->Flink)
+    {
+        if (pCur != &pContext->ListEntry)
+        {
+            PVBOXWDDM_CONTEXT pCurContext = VBOXWDDMENTRY_2_CONTEXT(pCur);
+            if (!pCmd)
+            {
+                pCmd = (PVBOXVIDEOCM_CMD_RECTS)vboxVideoCmCmdCreate(&pCurContext->CmContext, cbCmd);
+                Assert(pCmd);
+                if (!pCmd)
+                {
+                    Status = STATUS_NO_MEMORY;
+                    break;
+                }
+            }
+            else
+            {
+                pCmd = (PVBOXVIDEOCM_CMD_RECTS)vboxVideoCmCmdReinitForContext(pCmd, &pCurContext->CmContext);
+            }
+
+            vboxWddmDirtyRectsCalcIntersection(&pContext->ViewRect, pRects, &pCmd->RectsInfo);
+            if (pCmd->RectsInfo.cRects)
+            {
+                Assert(pCmd->fFlags.Value == 0);
+                pCmd->fFlags.bAddHiddenRectsValid = 1;
+                vboxVideoCmCmdSubmit(pCmd, VBOXVIDEOCM_CMD_RECTS_SIZE4CRECTS(pCmd->RectsInfo.cRects));
+                pCmd = NULL;
+            }
+        }
+        else
+        {
+            bool bRectShanged = (pContext->ViewRect.left != pContextRect->left
+                    || pContext->ViewRect.top != pContextRect->top
+                    || pContext->ViewRect.right != pContextRect->right
+                    || pContext->ViewRect.bottom != pContextRect->bottom);
+            PVBOXVIDEOCM_CMD_RECTS pDrCmd;
+
+            if (bRectShanged)
+            {
+                uint32_t cbDrCmd = VBOXVIDEOCM_CMD_RECTS_SIZE4CRECTS(pRects->cRects + 1);
+                pDrCmd = (PVBOXVIDEOCM_CMD_RECTS)vboxVideoCmCmdCreate(&pContext->CmContext, cbDrCmd);
+                Assert(pDrCmd);
+                if (!pDrCmd)
+                {
+                    Status = STATUS_NO_MEMORY;
+                    break;
+                }
+                pDrCmd->RectsInfo.cRects = pRects->cRects + 1;
+            }
+            else
+            {
+                if (pCmd)
+                {
+                    pDrCmd = (PVBOXVIDEOCM_CMD_RECTS)vboxVideoCmCmdReinitForContext(pCmd, &pContext->CmContext);
+                    pCmd = NULL;
+                }
+                else
+                {
+                    pDrCmd = (PVBOXVIDEOCM_CMD_RECTS)vboxVideoCmCmdCreate(&pContext->CmContext, cbCmd);
+                    Assert(pDrCmd);
+                    if (!pDrCmd)
+                    {
+                        Status = STATUS_NO_MEMORY;
+                        break;
+                    }
+                }
+                pDrCmd->RectsInfo.cRects = pRects->cRects;
+            }
+
+            Assert(pDrCmd->fFlags.Value == 0);
+            RECT *pDirtyRect;
+            if (bRectShanged)
+            {
+                pDrCmd->fFlags.bPositionRectValid = 1;
+                pDrCmd->RectsInfo.aRects[0] = *pContextRect;
+                pDirtyRect = &pDrCmd->RectsInfo.aRects[1];
+            }
+            else
+                pDirtyRect = &pDrCmd->RectsInfo.aRects[0];
+
+            pDrCmd->fFlags.bVisibleRectsValid = 1;
+            memcpy (pDirtyRect, pRects->aRects, sizeof (RECT) * pRects->cRects);
+
+            vboxVideoCmCmdSubmit(pDrCmd, VBOXVIDEOCM_SUBMITSIZE_DEFAULT);
+        }
+    }
+    InsertHeadList(&pDevExt->ContextList3D, &pContext->ListEntry);
+    KeReleaseSpinLockFromDpcLevel(&pDevExt->SynchLock);
+
+    if (pCmd)
+        vboxVideoCmCmdRelease(pCmd);
+
+    return Status;
+}
+
 DECLINLINE(PVBOXWDDM_ALLOCATION) vboxWddmGetAllocationFromOpenData(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_OPENALLOCATION pOa)
 {
     DXGKARGCB_GETHANDLEDATA GhData;
@@ -650,6 +767,9 @@ NTSTATUS DxgkDdiStartDevice(
 #ifdef VBOX_WITH_VIDEOHWACCEL
                     vboxVhwaInit(pContext);
 #endif
+                    vboxVideoCmInit(&pContext->CmMgr);
+                    InitializeListHead(&pContext->ContextList3D);
+                    KeInitializeSpinLock(&pContext->SynchLock);
                 }
                 else
                 {
@@ -695,6 +815,8 @@ NTSTATUS DxgkDdiStopDevice(
 
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)MiniportDeviceContext;
     NTSTATUS Status = STATUS_SUCCESS;
+
+    vboxVideoCmTerm(&pDevExt->CmMgr);
 
     /* do everything we did on DxgkDdiStartDevice in the reverse order */
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -967,10 +1089,10 @@ BOOLEAN vboxWddmGetDPCDataCallback(PVOID Context)
 {
     PVBOXWDDM_GETDPCDATA_CONTEXT pdc = (PVBOXWDDM_GETDPCDATA_CONTEXT)Context;
 
-    vboxSHGSMICmdListDetach2List(&pdc->pDevExt->CtlList, &pdc->data.CtlList);
-    vboxSHGSMICmdListDetach2List(&pdc->pDevExt->DmaCmdList, &pdc->data.DmaCmdList);
+    vboxSHGSMIListDetach2List(&pdc->pDevExt->CtlList, &pdc->data.CtlList);
+    vboxSHGSMIListDetach2List(&pdc->pDevExt->DmaCmdList, &pdc->data.DmaCmdList);
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    vboxSHGSMICmdListDetach2List(&pdc->pDevExt->VhwaCmdList, &pdc->data.VhwaCmdList);
+    vboxSHGSMIListDetach2List(&pdc->pDevExt->VhwaCmdList, &pdc->data.VhwaCmdList);
 #endif
     pdc->data.bNotifyDpc = pdc->pDevExt->bNotifyDxDpc;
     pdc->pDevExt->bNotifyDxDpc = FALSE;
@@ -2521,11 +2643,21 @@ DxgkDdiEscape(
 
     NTSTATUS Status = STATUS_NOT_SUPPORTED;
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
+    Assert(pEscape->PrivateDriverDataSize >= sizeof (VBOXDISPIFESCAPE));
     if (pEscape->PrivateDriverDataSize >= sizeof (VBOXDISPIFESCAPE))
     {
         PVBOXDISPIFESCAPE pEscapeHdr = (PVBOXDISPIFESCAPE)pEscape->pPrivateDriverData;
         switch (pEscapeHdr->escapeCode)
         {
+            case VBOXESC_GETVBOXVIDEOCMCMD:
+            {
+                PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
+                Assert(pContext);
+                PVBOXWDDM_GETVBOXVIDEOCMCMD_HDR pHdr = VBOXDISPIFESCAPE_DATA(pEscapeHdr, VBOXWDDM_GETVBOXVIDEOCMCMD_HDR);
+                Status = vboxVideoCmEscape(&pContext->CmContext, pHdr, VBOXDISPIFESCAPE_DATA_SIZE(pEscape->PrivateDriverDataSize));
+                Assert(Status == STATUS_SUCCESS);
+                break;
+            }
             case VBOXESC_SETVISIBLEREGION:
             {
                 LPRGNDATA lpRgnData = VBOXDISPIFESCAPE_DATA(pEscapeHdr, RGNDATA);
@@ -3558,14 +3690,18 @@ DxgkDdiPresent(
                     Assert (pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE);
                     Assert (pDstAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE);
 #else
-                    Assert ((pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE
-                            && pDstAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE)
-                            || (pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE
-                                    && pDstAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE));
+                    if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_SYSTEM)
+                    {
+                        Assert ((pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE
+                                && pDstAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE)
+                                || (pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE
+                                        && pDstAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE));
+                    }
 #endif
                     if (pDstAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE
                             && pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE)
                     {
+                        Assert(pContext->enmType == VBOXWDDM_CONTEXT_TYPE_SYSTEM);
                         Assert(pDstAlloc->bAssigned);
                         Assert(pDstAlloc->bVisible);
                         if (pDstAlloc->bAssigned
@@ -3898,30 +4034,66 @@ DxgkDdiCreateContext(
 
     NTSTATUS Status = STATUS_SUCCESS;
     PVBOXWDDM_DEVICE pDevice = (PVBOXWDDM_DEVICE)hDevice;
+    PDEVICE_EXTENSION pDevExt = pDevice->pAdapter;
     PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)vboxWddmMemAllocZero(sizeof (VBOXWDDM_CONTEXT));
+    Assert(pContext);
+    if (pContext)
+    {
+        InitializeListHead(&pContext->ListEntry);
+        pContext->pDevice = pDevice;
+        pContext->hContext = pCreateContext->hContext;
+        pContext->EngineAffinity = pCreateContext->EngineAffinity;
+        pContext->NodeOrdinal = pCreateContext->NodeOrdinal;
+        vboxVideoCmCtxInitEmpty(&pContext->CmContext);
+        if (pCreateContext->Flags.SystemContext)
+            pContext->enmType = VBOXWDDM_CONTEXT_TYPE_SYSTEM;
+        else if (pCreateContext->Flags.Value == 0)
+        {
+            Assert(pCreateContext->PrivateDriverDataSize == sizeof (VBOXWDDM_CREATECONTEXT_INFO));
+            Assert(pCreateContext->pPrivateDriverData);
+            if (pCreateContext->PrivateDriverDataSize == sizeof (VBOXWDDM_CREATECONTEXT_INFO))
+            {
+                pContext->enmType = VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D;
+                PVBOXWDDM_CREATECONTEXT_INFO pInfo = (PVBOXWDDM_CREATECONTEXT_INFO)pCreateContext->pPrivateDriverData;
+                Status = vboxVideoCmCtxAdd(&pDevice->pAdapter->CmMgr, &pContext->CmContext, (HANDLE)pInfo->hUmEvent, pInfo->u64UmInfo);
+                Assert(Status == STATUS_SUCCESS);
+                if (Status == STATUS_SUCCESS)
+                {
+                    KIRQL OldIrql;
+                    KeAcquireSpinLock(&pDevExt->SynchLock, &OldIrql);
+                    InsertHeadList(&pDevExt->ContextList3D, &pContext->ListEntry);
+                    KeReleaseSpinLock(&pDevExt->SynchLock, OldIrql);
+                }
+            }
+            else
+            {
+                pContext->enmType = VBOXWDDM_CONTEXT_TYPE_CUSTOM_2D;
+            }
+        }
+        else
+        {
+            AssertBreakpoint(); /* we do not support custom contexts for now */
+            drprintf((__FUNCTION__ ", we do not support custom contexts for now, hDevice (0x%x)\n", hDevice));
+        }
 
-    pContext->pDevice = pDevice;
-    pContext->hContext = pCreateContext->hContext;
-    pContext->EngineAffinity = pCreateContext->EngineAffinity;
-    pContext->NodeOrdinal = pCreateContext->NodeOrdinal;
-    if (pCreateContext->Flags.SystemContext)
-        pContext->enmType = VBOXWDDM_CONTEXT_TYPE_SYSTEM;
-//    else
-//    {
-//        AssertBreakpoint(); /* we do not support custom contexts for now */
-//        drprintf((__FUNCTION__ ", we do not support custom contexts for now, hDevice (0x%x)\n", hDevice));
-//    }
-
-    pCreateContext->hContext = pContext;
-    pCreateContext->ContextInfo.DmaBufferSize = VBOXWDDM_C_DMA_BUFFER_SIZE;
-    pCreateContext->ContextInfo.DmaBufferSegmentSet = 0;
-    pCreateContext->ContextInfo.DmaBufferPrivateDataSize = sizeof (VBOXWDDM_DMA_PRIVATE_DATA);
-    pCreateContext->ContextInfo.AllocationListSize = VBOXWDDM_C_ALLOC_LIST_SIZE;
-    pCreateContext->ContextInfo.PatchLocationListSize = VBOXWDDM_C_PATH_LOCATION_LIST_SIZE;
-//#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN7)
-//# error port to Win7 DDI
-//    //pCreateContext->ContextInfo.DmaBufferAllocationGroup = ???;
-//#endif // DXGKDDI_INTERFACE_VERSION
+        if (Status == STATUS_SUCCESS)
+        {
+            pCreateContext->hContext = pContext;
+            pCreateContext->ContextInfo.DmaBufferSize = VBOXWDDM_C_DMA_BUFFER_SIZE;
+            pCreateContext->ContextInfo.DmaBufferSegmentSet = 0;
+            pCreateContext->ContextInfo.DmaBufferPrivateDataSize = sizeof (VBOXWDDM_DMA_PRIVATE_DATA);
+            pCreateContext->ContextInfo.AllocationListSize = VBOXWDDM_C_ALLOC_LIST_SIZE;
+            pCreateContext->ContextInfo.PatchLocationListSize = VBOXWDDM_C_PATH_LOCATION_LIST_SIZE;
+        //#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN7)
+        //# error port to Win7 DDI
+        //    //pCreateContext->ContextInfo.DmaBufferAllocationGroup = ???;
+        //#endif // DXGKDDI_INTERFACE_VERSION
+        }
+        else
+            vboxWddmMemFree(pContext);
+    }
+    else
+        Status = STATUS_NO_MEMORY;
 
     dfprintf(("<== "__FUNCTION__ ", hDevice(0x%x)\n", hDevice));
 
@@ -3935,9 +4107,24 @@ DxgkDdiDestroyContext(
 {
     dfprintf(("==> "__FUNCTION__ ", hContext(0x%x)\n", hContext));
     vboxVDbgBreakFv();
-    vboxWddmMemFree(hContext);
+    PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)hContext;
+    PDEVICE_EXTENSION pDevExt = pContext->pDevice->pAdapter;
+    if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D)
+    {
+        KIRQL OldIrql;
+        KeAcquireSpinLock(&pDevExt->SynchLock, &OldIrql);
+        RemoveEntryList(&pContext->ListEntry);
+        KeReleaseSpinLock(&pDevExt->SynchLock, OldIrql);
+    }
+
+    NTSTATUS Status = vboxVideoCmCtxRemove(&pContext->pDevice->pAdapter->CmMgr, &pContext->CmContext);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+        vboxWddmMemFree(pContext);
+
     dfprintf(("<== "__FUNCTION__ ", hContext(0x%x)\n", hContext));
-    return STATUS_SUCCESS;
+
+    return Status;
 }
 
 NTSTATUS

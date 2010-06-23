@@ -61,12 +61,6 @@ typedef struct VBOXWDDM_ALLOCINFO
     VBOXWDDM_SURFACE_DESC SurfDesc;
 } VBOXWDDM_ALLOCINFO, *PVBOXWDDM_ALLOCINFO;
 
-//#define VBOXWDDM_ALLOCINFO_HEADSIZE() (sizeof (VBOXWDDM_ALLOCINFO))
-//#define VBOXWDDM_ALLOCINFO_SIZE_FROMBODYSIZE(_s) (VBOXWDDM_ALLOCINFO_HEADSIZE() + (_s))
-//#define VBOXWDDM_ALLOCINFO_SIZE(_tCmd) (VBOXWDDM_ALLOCINFO_SIZE_FROMBODYSIZE(sizeof(_tCmd)))
-//#define VBOXWDDM_ALLOCINFO_BODY(_p, _t) ( (_t*)(((uint8_t*)(_p)) + VBOXWDDM_ALLOCINFO_HEADSIZE()) )
-//#define VBOXWDDM_ALLOCINFO_HEAD(_pb) ((VBOXWDDM_ALLOCINFO*)((uint8_t *)(_pb) - VBOXWDDM_ALLOCATION_HEADSIZE()))
-
 /* this resource is OpenResource'd rather than CreateResource'd */
 #define VBOXWDDM_RESOURCE_F_OPENNED      0x00000001
 /* identifies this is a resource created with CreateResource, the VBOXWDDMDISP_RESOURCE::fRcFlags is valid */
@@ -148,6 +142,69 @@ typedef struct VBOXWDDM_OVERLAYFLIP_INFO
     VBOXWDDM_DIRTYREGION DirtyRegion; /* <- the dirty region of the overlay surface */
 } VBOXWDDM_OVERLAYFLIP_INFO, *PVBOXWDDM_OVERLAYFLIP_INFO;
 
+typedef struct VBOXWDDM_CREATECONTEXT_INFO
+{
+    /* we use uint64_t instead of HANDLE to ensure structure def is the same for both 32-bit and 64-bit
+     * since x64 kernel driver can be called by 32-bit UMD */
+    uint64_t hUmEvent;
+    /* info to be passed to UMD notification to identify the context */
+    uint64_t u64UmInfo;
+} VBOXWDDM_CREATECONTEXT_INFO, *PVBOXWDDM_CREATECONTEXT_INFO;
+
+
+typedef struct VBOXWDDM_RECTS_FLAFS
+{
+    union
+    {
+        struct
+        {
+            UINT bPositionRectValid : 1;
+            UINT bVisibleRectsValid : 1;
+            UINT bAddHiddenRectsValid : 1;
+            UINT Reserved : 29;
+        };
+        uint32_t Value;
+    };
+} VBOXWDDM_RECTS_FLAFS, *PVBOXWDDM_RECTS_FLAFS;
+
+typedef struct VBOXWDDM_RECTS_INFO
+{
+    uint32_t cRects;
+    RECT aRects[1];
+} VBOXWDDM_RECTS_INFO, *PVBOXWDDM_RECTS_INFO;
+
+#define VBOXWDDM_RECTS_INFO_SIZE4CRECTS(_cRects) (RT_OFFSETOF(VBOXWDDM_RECTS_INFO, aRects[(_cRects)]))
+#define VBOXWDDM_RECTS_INFO_SIZE(_pRects) (VBOXVIDEOCM_CMD_RECTS_SIZE4CRECTS((_pRects)->cRects))
+
+typedef struct VBOXVIDEOCM_CMD_HDR
+{
+    uint64_t u64UmData;
+    uint32_t cbCmd;
+    uint32_t u32CmdSpecific;
+}VBOXVIDEOCM_CMD_HDR, *PVBOXVIDEOCM_CMD_HDR;
+
+typedef struct VBOXVIDEOCM_CMD_RECTS
+{
+    VBOXWDDM_RECTS_FLAFS fFlags;
+    VBOXWDDM_RECTS_INFO RectsInfo;
+} VBOXVIDEOCM_CMD_RECTS, *PVBOXVIDEOCM_CMD_RECTS;
+
+#define VBOXVIDEOCM_CMD_RECTS_SIZE4CRECTS(_cRects) (RT_OFFSETOF(VBOXVIDEOCM_CMD_RECTS, RectsInfo.aRects[(_cRects)]))
+#define VBOXVIDEOCM_CMD_RECTS_SIZE(_pCmd) (VBOXVIDEOCM_CMD_RECTS_SIZE4CRECTS((_pCmd)->cRects))
+
+typedef struct VBOXWDDM_GETVBOXVIDEOCMCMD_HDR
+{
+    uint32_t cbCmdsReturned;
+    uint32_t cbRemainingCmds;
+    uint32_t cbRemainingFirstCmd;
+    uint32_t u32Reserved;
+} VBOXWDDM_GETVBOXVIDEOCMCMD_HDR, *PVBOXWDDM_GETVBOXVIDEOCMCMD_HDR;
+
+#define VBOXWDDM_GETVBOXVIDEOCMCMD_DATA_OFFSET() ((sizeof (VBOXWDDM_GETVBOXVIDEOCMCMD_HDR) + 7) & ~7)
+#define VBOXWDDM_GETVBOXVIDEOCMCMD_DATA(_pHead, _t) ( (_t*)(((uint8_t*)(_pHead)) + VBOXWDDM_GETVBOXVIDEOCMCMD_DATA_OFFSET()))
+#define VBOXWDDM_GETVBOXVIDEOCMCMD_DATA_SIZE(_s) ( (_s) < VBOXWDDM_GETVBOXVIDEOCMCMD_DATA_OFFSET() ? 0 : (_s) - VBOXWDDM_GETVBOXVIDEOCMCMD_DATA_OFFSET() )
+#define VBOXWDDM_GETVBOXVIDEOCMCMD_SIZE(_cbData) ((_cbData) ? VBOXWDDM_GETVBOXVIDEOCMCMD_DATA_OFFSET() + (_cbData) : sizeof (VBOXWDDM_GETVBOXVIDEOCMCMD_HDR))
+
 /* query info func */
 typedef struct VBOXWDDM_QI
 {
@@ -157,9 +214,6 @@ typedef struct VBOXWDDM_QI
 } VBOXWDDM_QI;
 
 /* submit cmd func */
-
-
-
 
 /* tooling */
 DECLINLINE(UINT) vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format)
@@ -241,6 +295,45 @@ DECLINLINE(void) vboxWddmRectUnite(RECT *pR, const RECT *pR2Unite)
     pR->top = RT_MIN(pR->top, pR2Unite->top);
     pR->right = RT_MAX(pR->right, pR2Unite->right);
     pR->bottom = RT_MAX(pR->bottom, pR2Unite->bottom);
+}
+
+DECLINLINE(bool) vboxWddmRectIntersection(const RECT *pRect1, const RECT *pRect2, RECT *pResult)
+{
+    if (pRect1->left < pRect2->left)
+    {
+        if (pRect1->right >= pRect2->left)
+            pResult->left = pRect2->left;
+        else
+            return false;
+    }
+    else
+    {
+        if (pRect2->right >= pRect1->left)
+            pResult->left = pRect1->left;
+        else
+            return false;
+    }
+
+    pResult->right = RT_MIN(pRect1->right, pRect2->right);
+
+    if (pRect1->top < pRect2->top)
+    {
+        if (pRect1->bottom >= pRect2->top)
+            pResult->top = pRect2->top;
+        else
+            return false;
+    }
+    else
+    {
+        if (pRect2->bottom >= pRect1->top)
+            pResult->top = pRect1->top;
+        else
+            return false;
+    }
+
+    pResult->bottom = RT_MIN(pRect1->bottom, pRect2->bottom);
+
+    return true;
 }
 
 DECLINLINE(void) vboxWddmDirtyRegionAddRect(PVBOXWDDM_DIRTYREGION pInfo, const RECT *pRect)
