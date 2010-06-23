@@ -311,7 +311,7 @@ class PlatformMSCOM:
         pass
 
     def queryInterface(self, obj, klazzName):
-        from win32com.client import CastTo 
+        from win32com.client import CastTo
         return CastTo(obj, klazzName)
 
 class PlatformXPCOM:
@@ -458,8 +458,14 @@ class PlatformWEBSERVICE:
            pass
 
     def queryInterface(self, obj, klazzName):
+        d = {}
+        d['obj'] = obj
+        str = ""
+        str += "from VirtualBox_wrappers import "+klazzName+"\n"
+        str += "result = "+klazzName+"(obj.mgr,obj.handle)\n"
         # wrong, need to test if class indeed implements this interface
-        return globals()[klazzName](obj.mgr, obj.handle)
+        exec (str,d,d)
+        return d['result']
 
 class SessionManager:
     def __init__(self, mgr):

@@ -123,6 +123,8 @@
 #define NS_IMPL_THREADSAFE_QUERY_INTERFACE1_CI  NS_IMPL_QUERY_INTERFACE1_CI
 #define NS_IMPL_THREADSAFE_QUERY_INTERFACE2_CI  NS_IMPL_QUERY_INTERFACE2_CI
 #define NS_IMPL_THREADSAFE_QUERY_INTERFACE3_CI  NS_IMPL_QUERY_INTERFACE3_CI
+#define NS_IMPL_THREADSAFE_QUERY_INTERFACE4_CI  NS_IMPL_QUERY_INTERFACE4_CI
+
 
 #ifndef NS_IMPL_THREADSAFE_ISUPPORTS1_CI
 # define NS_IMPL_THREADSAFE_ISUPPORTS1_CI(_class, _interface)                 \
@@ -146,6 +148,14 @@
    NS_IMPL_THREADSAFE_RELEASE(_class)                                         \
    NS_IMPL_THREADSAFE_QUERY_INTERFACE3_CI(_class, _i1, _i2, _i3)              \
    NS_IMPL_CI_INTERFACE_GETTER3(_class, _i1, _i2, _i3)
+#endif
+
+#ifndef NS_IMPL_THREADSAFE_ISUPPORTS4_CI
+# define NS_IMPL_THREADSAFE_ISUPPORTS4_CI(_class, _i1, _i2, _i3, _i4)         \
+   NS_IMPL_THREADSAFE_ADDREF(_class)                                          \
+   NS_IMPL_THREADSAFE_RELEASE(_class)                                         \
+   NS_IMPL_THREADSAFE_QUERY_INTERFACE4_CI(_class, _i1, _i2, _i3, _i4)         \
+   NS_IMPL_CI_INTERFACE_GETTER4(_class, _i1, _i2, _i3, _i4)
 #endif
 
 #ifndef NS_IMPL_QUERY_INTERFACE1_AMBIGUOUS_CI
