@@ -24,6 +24,7 @@
 #include <VBox/pdmifs.h>
 #include <VBox/pdmthread.h>
 #include <VBox/vscsi.h>
+#include <VBox/scsi.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/mem.h>
@@ -438,12 +439,41 @@ static int drvscsiAsyncIOLoopWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 
 /* -=-=-=-=- ISCSIConnector -=-=-=-=- */
 
+#ifdef DEBUG
+/**
+ * Dumps a SCSI request structure for debugging purposes.
+ *
+ * @returns nothing.
+ * @param   pRequest    Pointer to the request to dump.
+ */
+static void drvscsiDumpScsiRequest(PPDMSCSIREQUEST pRequest)
+{
+    Log(("Dump for pRequest=%#p Command: %s\n", pRequest, SCSICmdText(pRequest->pbCDB[0])));
+    Log(("cbCDB=%u\n", pRequest->cbCDB));
+    for (uint32_t i = 0; i < pRequest->cbCDB; i++)
+        Log(("pbCDB[%u]=%#x\n", i, pRequest->pbCDB[i]));
+    Log(("cbScatterGather=%u\n", pRequest->cbScatterGather));
+    Log(("cScatterGatherEntries=%u\n", pRequest->cScatterGatherEntries));
+    /* Print all scatter gather entries. */
+    for (uint32_t i = 0; i < pRequest->cScatterGatherEntries; i++)
+    {
+        Log(("ScatterGatherEntry[%u].cbSeg=%u\n", i, pRequest->paScatterGatherHead[i].cbSeg));
+        Log(("ScatterGatherEntry[%u].pvSeg=%#p\n", i, pRequest->paScatterGatherHead[i].pvSeg));
+    }
+    Log(("pvUser=%#p\n", pRequest->pvUser));
+}
+#endif
+
 /** @copydoc PDMISCSICONNECTOR::pfnSCSIRequestSend. */
 static DECLCALLBACK(int) drvscsiRequestSend(PPDMISCSICONNECTOR pInterface, PPDMSCSIREQUEST pSCSIRequest)
 {
     int rc;
     PDRVSCSI pThis = PDMISCSICONNECTOR_2_DRVSCSI(pInterface);
     VSCSIREQ hVScsiReq;
+
+#ifdef DEBUG
+    drvscsiDumpScsiRequest(pSCSIRequest);
+#endif
 
     rc = VSCSIDeviceReqCreate(pThis->hVScsiDevice, &hVScsiReq,
                               pSCSIRequest->uLogicalUnit,
@@ -745,7 +775,11 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
         rc = PDMDrvHlpThreadCreate(pDrvIns, &pThis->pAsyncIOThread, pThis, drvscsiAsyncIOLoop,
                                    drvscsiAsyncIOLoopWakeup, 0, RTTHREADTYPE_IO, "SCSI async IO");
         AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create async I/O thread rc=%Rrc\n"), rc);
+
+        LogRel(("SCSI#%d: using normal I/O\n", pDrvIns->iInstance));
     }
+    else
+        LogRel(("SCSI#%d: using async I/O\n", pDrvIns->iInstance));
 
     return VINF_SUCCESS;
 }
