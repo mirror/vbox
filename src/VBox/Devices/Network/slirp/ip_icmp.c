@@ -439,8 +439,8 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
                               (struct sockaddr *)&addr, sizeof(addr));
                     if (rc >= 0)
                     {
-                        icmp_attach(pData, m);
                         m->m_so = &pData->icmp_socket;
+                        icmp_attach(pData, m);
                         /* don't let m_freem at the end free atached buffer */
                         goto done;
                     }
@@ -461,8 +461,8 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
                 if (   status != 0 
                     || error == ERROR_IO_PENDING)
                 {
-                    icmp_attach(pData, m);
                     m->m_so = &pData->icmp_socket;
+                    icmp_attach(pData, m);
                     /* don't let m_freem at the end free atached buffer */
                     goto done;
                 }
