@@ -1895,7 +1895,7 @@ static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass
      * dirty page (long term) vs. total pages ratio + some pass trickery.
      */
     unsigned uPctDirty = (unsigned)(  (long double)cDirtyPagesLong
-                                    / (pVM->pgm.s.cAllPages - pVM->pgm.s.LiveSave.cIgnoredPages - pVM->pgm.s.cZeroPages);
+                                    / (pVM->pgm.s.cAllPages - pVM->pgm.s.LiveSave.cIgnoredPages - pVM->pgm.s.cZeroPages) );
     if (uPctDirty <= 100)
         SSMR3HandleReportLivePercent(pSSM, RT_MIN(100 - uPctDirty, uPass * 2));
     else
