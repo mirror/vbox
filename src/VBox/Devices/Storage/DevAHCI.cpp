@@ -4939,8 +4939,11 @@ static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPor
         AssertMsg(fXchg, ("Task is not active\n"));
 #endif
 
-        if (!cOutstandingTasks)
-            ahciSendSDBFis(pAhciPort, 0, true);
+        /* Always raise an interrupt after task completion; delaying
+         * this (interrupt coalescing) increases latency and has a significant
+         * impact on performance (see #5071)
+         */
+        ahciSendSDBFis(pAhciPort, 0, true);
     }
     else
     {
