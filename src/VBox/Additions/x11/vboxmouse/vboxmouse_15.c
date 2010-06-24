@@ -54,6 +54,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #include "product-generated.h"
 
@@ -62,6 +63,9 @@ VBoxReadInput(InputInfoPtr pInfo)
 {
     uint32_t cx, cy, fFeatures;
 
+    /* Read a byte from the device to acknowledge the event */
+    char c;
+    read(pInfo->fd, &c, 1);
     /* The first test here is a workaround for an apparent bug in Xorg Server 1.5 */
     if (
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 2
@@ -78,16 +82,8 @@ VBoxReadInput(InputInfoPtr pInfo)
         cx = (cx * screenInfo.screens[0]->width) / 65535;
         cy = (cy * screenInfo.screens[0]->height) / 65535;
 #endif
-        /* The X server is calling this function even if only a button was
-         * pressed. old_x/old_y seem to be not used by the server code. */
-        if (   (uint32_t)pInfo->old_x != cx
-            || (uint32_t)pInfo->old_y != cy)
-        {
-            /* send absolute movement */
-            xf86PostMotionEvent(pInfo->dev, 1, 0, 2, cx, cy);
-            pInfo->old_x = cx;
-            pInfo->old_y = cy;
-        }
+        /* send absolute movement */
+        xf86PostMotionEvent(pInfo->dev, 1, 0, 2, cx, cy);
     }
 }
 
