@@ -680,8 +680,7 @@ static void kbd_mouse_set_reported_buttons(KBDState *s, unsigned fButtons, unsig
 }
 
 /**
- * Send a single relative packet in 3-byte PS/2 format, optionally with our
- * packed button protocol extension, to the PS/2 controller.
+ * Send a single relative packet in 3-byte PS/2 format to the PS/2 controller.
  * @param  s               keyboard state object
  * @param  dx              relative X value, must be between -256 and +255
  * @param  dy              relative y value, must be between -256 and +255
@@ -726,34 +725,36 @@ static void kbd_mouse_send_imps2_byte4(KBDState *s, bool fToCmdQueue)
 static void kbd_mouse_send_imex_byte4(KBDState *s, bool fToCmdQueue)
 {
     int aux = fToCmdQueue ? 1 : 2;
+    int dz1 = 0, dw1 = 0;
+    unsigned fButtonsHigh = s->mouse_buttons & 0x18;
 
-    if (s->mouse_dw)
+    if (s->mouse_dw > 0)
+        dw1 = 1;
+    else if (s->mouse_dw < 0)
+        dw1 = -1;
+    else if (s->mouse_dz > 0)
+        dz1 = 1;
+    else if (s->mouse_dz < 0)
+        dz1 = -1;
+    if (s->mouse_dw && s->mouse_flags & MOUSE_REPORT_HORIZONTAL)
     {
-        int dw1 = s->mouse_dw < 0 ? RT_MAX(s->mouse_dw, -31)
-                                  : RT_MIN(s->mouse_dw, 32);
         LogRel3(("%s: dw1=%d\n", __PRETTY_FUNCTION__, dw1));
-        s->mouse_dw -= dw1;
         kbd_queue(s, 0x40 | (dw1 & 0x3f), aux);
-    }
-    else if (s->mouse_flags & MOUSE_REPORT_HORIZONTAL && s->mouse_dz)
-    {
-        int dz1 = s->mouse_dz < 0 ? RT_MAX(s->mouse_dz, -31)
-                                  : RT_MIN(s->mouse_dz, 32);
-        LogRel3(("%s: dz1=%d\n", __PRETTY_FUNCTION__, dz1));
-        s->mouse_dz -= dz1;
-        kbd_queue(s, 0x80 | (dz1 & 0x3f), aux);
     }
     else
     {
-        int dz1 = s->mouse_dz < 0 ? RT_MAX(s->mouse_dz, -7)
-                                  : RT_MIN(s->mouse_dz, 8);
-        unsigned fButtonsHigh = s->mouse_buttons & 0x18;
-        LogRel3(("%s: dz1=%d fButtonsHigh=0x%x\n",
-                 __PRETTY_FUNCTION__, dz1, fButtonsHigh));
-        s->mouse_dz -= dz1;
+        LogRel3(("%s: dz1=%d, dw1=%d, fButtonsHigh=0x%x\n",
+                 __PRETTY_FUNCTION__, dz1, dw1, fButtonsHigh));
+        unsigned u4Low =   dw1 > 0 ? 9 /* -7 & 0xf */
+                         : dw1 < 0 ? 7
+                         : dz1 > 0 ? 1
+                         : dz1 < 0 ? 0xf /* -1 & 0xf */
+                         : 0;
         kbd_mouse_set_reported_buttons(s, fButtonsHigh, 0x18);
-        kbd_queue(s, (dz1 & 0x0f) | (fButtonsHigh << 1), aux);
+        kbd_queue(s, (fButtonsHigh << 1) | u4Low, aux);
     }
+    s->mouse_dz -= dz1;
+    s->mouse_dw -= dw1;
 }
 
 /**
@@ -805,8 +806,7 @@ static void pc_kbd_mouse_event(void *opaque, int dx, int dy, int dz, int dw,
     if (   (s->mouse_type == MOUSE_PROT_IMPS2)
         || (s->mouse_type == MOUSE_PROT_IMEX))
         s->mouse_dz += dz;
-    if (   (   (s->mouse_type == MOUSE_PROT_IMEX)
-            && s->mouse_flags & MOUSE_REPORT_HORIZONTAL))
+    if (s->mouse_type == MOUSE_PROT_IMEX)
         s->mouse_dw += dw;
     s->mouse_buttons = buttons_state;
     if (!(s->mouse_status & MOUSE_STATUS_REMOTE))
