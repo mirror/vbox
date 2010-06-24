@@ -12,6 +12,7 @@
  */
 import org.virtualbox_3_3.*;
 import java.util.List;
+import java.util.Arrays;
 import java.math.BigInteger;
 
 class VBoxCallbacks extends VBoxObjectBase implements IVirtualBoxCallback
@@ -179,10 +180,54 @@ public class TestVBox
           mgr.unregisterMachineCallback(session, mcbs);
         } catch (Exception e) {
           e.printStackTrace();
-        } finally { 
+        } finally {
           mgr.closeMachineSession(session);
         }
         mgr.unregisterGlobalCallback(vbox, cbs);
+    }
+
+
+    static void processEvent(IEvent ev)
+    {
+        System.out.println("got event: " + ev);
+
+        VBoxEventType type = ev.getType();
+        System.out.println("type = "+type);
+
+        switch (type)
+        {
+            case OnMachineStateChange:
+                IMachineStateChangeEvent mcse = IMachineStateChangeEvent.queryInterface(ev);
+                if (mcse == null)
+                    System.out.println("Cannot query an interface");
+                else
+                    System.out.println("mid="+mcse.getMachineId());
+                break;
+        }
+    }
+
+    static void testEvents(VirtualBoxManager mgr, IEventSource es)
+    {
+        IEventListener listener = es.createListener();
+
+        es.registerListener(listener, Arrays.asList(VBoxEventType.Any), false);
+
+        try {
+            for (int i=0; i<100; i++)
+            {
+                IEvent ev = es.getEvent(listener, 1000);
+                System.out.print(".");
+                if (ev != null)
+                {
+                    processEvent(ev);
+                    es.eventProcessed(listener, ev);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        es.unregisterListener(listener);
     }
 
     static void testEnumeration(VirtualBoxManager mgr, IVirtualBox vbox)
@@ -216,7 +261,8 @@ public class TestVBox
             System.out.println("VirtualBox version: " + vbox.getVersion() + "\n");
             testEnumeration(mgr, vbox);
             testStart(mgr, vbox);
-            testCallbacks(mgr, vbox);
+            //testCallbacks(mgr, vbox);
+            testEvents(mgr, vbox.getEventSource());
 
             System.out.println("done, press Enter...");
             int ch = System.in.read();
