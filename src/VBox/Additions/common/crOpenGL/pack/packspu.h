@@ -34,6 +34,7 @@ struct thread_info_t {
     ContextInfo *currentContext;
     CRPackContext *packer;
     int writeback;
+    GLboolean bInjectThread;
 };
 
 struct context_info_t {

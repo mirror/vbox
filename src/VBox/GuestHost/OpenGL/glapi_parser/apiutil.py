@@ -352,7 +352,8 @@ def GetCategoryWrapper(func_name):
 		cat == "1.1" or
 		cat == "1.2" or
 		cat == "Chromium" or
-		cat == "GL_chromium"):
+		cat == "GL_chromium" or
+		cat == "VBox"):
 		return ''
 	elif (cat == '1.3' or
           cat == '1.4' or

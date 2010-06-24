@@ -456,8 +456,10 @@ VBOXGLXTAG(glXChooseVisual)( Display *dpy, int screen, int *attribList )
     if (!useRGBA)
         return NULL;
 
+    XLOCK(dpy);
     searchvis.visualid = XVisualIDFromVisual(DefaultVisual(dpy, screen));
     pret = XGetVisualInfo(dpy, VisualIDMask, &searchvis, &nvisuals);
+    XUNLOCK(dpy);
       
     if (nvisuals!=1) crWarning("glXChooseVisual: XGetVisualInfo returned %i visuals for %x", nvisuals, (unsigned int) searchvis.visualid);
     if (pret)
@@ -643,7 +645,9 @@ DECLEXPORT(Bool) VBOXGLXTAG(glXMakeCurrent)( Display *dpy, GLXDrawable drawable,
         window = stubGetWindowInfo(dpy, drawable);
 
         if (context && context->type == UNDECIDED) {
+            XLOCK(dpy);
             XSync(dpy, 0); /* sync to force window creation on the server */
+            XUNLOCK(dpy);
         }
     }
     else {
@@ -1451,6 +1455,7 @@ DECLEXPORT(void) VBOXGLXTAG(glXDestroyPixmap)(Display *dpy, GLXPixmap pixmap)
 
     if (pGlxPixmap)
     {
+        XLOCK(dpy);
         if (pGlxPixmap->gc)
         {
             XFreeGC(dpy, pGlxPixmap->gc);
@@ -1460,6 +1465,7 @@ DECLEXPORT(void) VBOXGLXTAG(glXDestroyPixmap)(Display *dpy, GLXPixmap pixmap)
         {
             XFreePixmap(dpy, pGlxPixmap->hShmPixmap);
         }
+        XUNLOCK(dpy);
 
         if (pGlxPixmap->hDamage>0)
         {
@@ -1636,7 +1642,9 @@ DECLEXPORT(GLXFBConfig *) VBOXGLXTAG(glXGetFBConfigs)(Display *dpy, int screen, 
 
     /*@todo doesn't really list all the common visuals, have to use some static list*/
     searchvis.screen = screen;
+    XLOCK(dpy);
     pVisuals = XGetVisualInfo(dpy, VisualScreenMask, &searchvis, nelements);
+    XUNLOCK(dpy);
 
     if (*nelements)
         pGLXFBConfigs = crAlloc(*nelements * sizeof(GLXFBConfig));
@@ -1663,7 +1671,9 @@ DECLEXPORT(GLXFBConfig *) VBOXGLXTAG(glXGetFBConfigs)(Display *dpy, int screen, 
     GLXFBConfig *pGLXFBConfigs = crAlloc(sizeof(GLXFBConfig));
 
     *nelements = 1;
+    XLOCK(dpy);
     *pGLXFBConfigs = (GLXFBConfig) XVisualIDFromVisual(DefaultVisual(dpy, screen));
+    XUNLOCK(dpy);
 
     crDebug("glXGetFBConfigs returned %i configs", *nelements);
     for (i=0; i<*nelements; ++i)
@@ -1711,7 +1721,9 @@ DECLEXPORT(XVisualInfo *) VBOXGLXTAG(glXGetVisualFromFBConfig)(Display *dpy, GLX
         int nret;
 
         temp.visualid = (VisualID)config;
+        XLOCK(dpy);
         pret = XGetVisualInfo(dpy, VisualIDMask, &temp, &nret);
+        XUNLOCK(dpy);
         
         if (nret!=1) crWarning("XGetVisualInfo returned %i visuals for %p", nret, config);
         //crDebug("glXGetVisualFromFBConfig(cfg/visid==0x%x): depth=%i", (int) config, pret->depth);
@@ -1780,24 +1792,28 @@ static void stubInitXSharedMemory(Display *dpy)
     stub.bShmInitFailed = GL_TRUE;
 
     /* Check for extension and pixmaps format */
-
+    XLOCK(dpy);
     if (!XShmQueryExtension(dpy))
     {
         crWarning("No XSHM extension");
+        XUNLOCK(dpy);
         return;
     }
 
     if (!XShmQueryVersion(dpy, &vma, &vmi, &pixmaps) || !pixmaps)
     {
         crWarning("XSHM extension doesn't support pixmaps");
+        XUNLOCK(dpy);
         return;
     }
 
     if (XShmPixmapFormat(dpy)!=ZPixmap)
     {
         crWarning("XSHM extension doesn't support ZPixmap format");
+        XUNLOCK(dpy);
         return;
     }
+    XUNLOCK(dpy);
 
     /* Alloc shared memory, so far using hardcoded value...could fail for bigger displays one day */
     stub.xshmSI.readOnly = false;
@@ -1816,14 +1832,16 @@ static void stubInitXSharedMemory(Display *dpy)
         return;
     }
 
-
+    XLOCK(dpy);
     if (!XShmAttach(dpy, &stub.xshmSI))
     {
         crWarning("XSHM Failed to attach shared segment to XServer");
         shmctl(stub.xshmSI.shmid, IPC_RMID, 0);
         shmdt(stub.xshmSI.shmaddr);
+        XUNLOCK(dpy);
         return;
     }
+    XUNLOCK(dpy);
 
     stub.bShmInitFailed = GL_FALSE;
     crInfo("Using XSHM for GLX_EXT_texture_from_pixmap");
@@ -1914,12 +1932,14 @@ static GLX_Pixmap_t* stubInitGlxPixmap(GLX_Pixmap_t* pCreateInfoPixmap, Display 
 
     CRASSERT(pContext && pCreateInfoPixmap);
 
+    XLOCK(dpy);
     if (!XGetGeometry(dpy, (Pixmap)draw, &root, &x, &y, &w, &h, &border, &depth))
     {
         XSync(dpy, False);
         if (!XGetGeometry(dpy, (Pixmap)draw, &root, &x, &y, &w, &h, &border, &depth))
         {
             crWarning("stubInitGlxPixmap failed in call to XGetGeometry for 0x%x", (int) draw);
+            XUNLOCK(dpy);
             return NULL;
         }
     }
@@ -1928,6 +1948,7 @@ static GLX_Pixmap_t* stubInitGlxPixmap(GLX_Pixmap_t* pCreateInfoPixmap, Display 
     if (!pGlxPixmap)
     {
         crWarning("stubInitGlxPixmap failed to allocate memory");
+        XUNLOCK(dpy);
         return NULL;
     }
 
@@ -1964,6 +1985,7 @@ static GLX_Pixmap_t* stubInitGlxPixmap(GLX_Pixmap_t* pCreateInfoPixmap, Display 
         pGlxPixmap->gc = NULL;
         pGlxPixmap->hShmPixmap = 0;
     }
+    XUNLOCK(dpy);
 
     stubInitXDamageExtension(pContext);
 
@@ -2035,10 +2057,12 @@ static void stubXshmUpdateWholeImage(Display *dpy, GLXDrawable draw, GLX_Pixmap_
     }
     else
     {
+        XLOCK(dpy);
         XCopyArea(dpy, (Pixmap)draw, pGlxPixmap->hShmPixmap, pGlxPixmap->gc, 
                   pGlxPixmap->x, pGlxPixmap->y, pGlxPixmap->w, pGlxPixmap->h, 0, 0);
         /* Have to make sure XCopyArea is processed */
         XSync(dpy, False);
+        XUNLOCK(dpy);
         stub.spu->dispatch_table.TexImage2D(pGlxPixmap->target, 0, pGlxPixmap->format, pGlxPixmap->w, pGlxPixmap->h, 0, 
                                             GL_BGRA, GL_UNSIGNED_BYTE, stub.xshmSI.shmaddr);
         /*crDebug("Sync texture for drawable 0x%x(dmg handle 0x%x) [%i,%i,%i,%i]", 
@@ -2077,10 +2101,12 @@ static void stubXshmUpdateImageRect(Display *dpy, GLXDrawable draw, GLX_Pixmap_t
     {
         GLint origUnpackRowLength;
 
+        XLOCK(dpy);
         XCopyArea(dpy, (Pixmap)draw, pGlxPixmap->hShmPixmap, pGlxPixmap->gc, 
                   pRect->x, pRect->y, pRect->width, pRect->height, 0, 0);
         /* Have to make sure XCopyArea is processed */
         XSync(dpy, False);
+        XUNLOCK(dpy);
 
         /* Save original value, doesn't cause sync as it's reported by state tracker*/
         if (pRect->width!=pGlxPixmap->w)
@@ -2158,7 +2184,9 @@ DECLEXPORT(void) VBOXGLXTAG(glXBindTexImageEXT)(Display *dpy, GLXDrawable draw, 
     {
         /* Sync connections, note that order of syncs is important here.
          * First make sure client commands are finished, then make sure we get all the damage events back*/
+        XLOCK(dpy);
         XSync(dpy, False);
+        XUNLOCK(dpy);
         XSync(stub.currentContext->damageDpy, False);
 
         while (XPending(stub.currentContext->damageDpy))
@@ -2178,7 +2206,9 @@ DECLEXPORT(void) VBOXGLXTAG(glXBindTexImageEXT)(Display *dpy, GLXDrawable draw, 
         /*@todo add damage support here too*/
         XImage *pxim;
 
+        XLOCK(dpy);
         pxim = XGetImage(dpy, (Pixmap)draw, pGlxPixmap->x, pGlxPixmap->y, pGlxPixmap->w, pGlxPixmap->h, AllPlanes, ZPixmap);
+        XUNLOCK(dpy);
         /*if (pxim)
         {
             if (!ptextable)

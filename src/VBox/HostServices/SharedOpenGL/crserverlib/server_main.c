@@ -380,7 +380,7 @@ int32_t crVBoxServerClientWrite(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t
     CRClient *pClient;
     int32_t i;
 
-    //crDebug("crServer: [%x] ClientWrite u32ClientID=%d", crThreadID(), u32ClientID);
+    /*crDebug("=>crServer: ClientWrite u32ClientID=%d", u32ClientID);*/
 
     for (i = 0; i < cr_server.numClients; i++)
     {
@@ -450,6 +450,8 @@ int32_t crVBoxServerClientWrite(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t
     crStateResetCurrentPointers(&cr_server.current);
 
     CRASSERT(!pClient->conn->allow_redir_ptr || crNetNumMessages(pClient->conn)==0);
+
+    /*crDebug("<=crServer: ClientWrite u32ClientID=%d", u32ClientID);*/
 
     return VINF_SUCCESS;
 }

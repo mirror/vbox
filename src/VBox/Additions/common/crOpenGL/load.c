@@ -18,9 +18,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <iprt/initterm.h>
+#include <iprt/thread.h>
+#include <iprt/err.h>
+#include <iprt/asm.h>
 #ifndef WINDOWS
-#include <sys/types.h>
-#include <unistd.h>
+# include <sys/types.h>
+# include <unistd.h>
 #endif
 #ifdef CHROMIUM_THREADSAFE
 #include "cr_threads.h"
@@ -79,9 +83,10 @@ static SwapBuffersFunc_t origSwapBuffers;
 static DrawBufferFunc_t origDrawBuffer;
 static ScissorFunc_t origScissor;
 
-static void stubCheckWindowState(WindowInfo *window)
+static void stubCheckWindowState(WindowInfo *window, GLboolean bFlushOnChange)
 {
     bool bForceUpdate = false;
+    bool bChanged = false;
 
 #ifdef WINDOWS
     /* @todo install hook and track for WM_DISPLAYCHANGE */
@@ -101,12 +106,12 @@ static void stubCheckWindowState(WindowInfo *window)
     }
 #endif
 
-    stubUpdateWindowGeometry(window, bForceUpdate);
+    bChanged = stubUpdateWindowGeometry(window, bForceUpdate) || bForceUpdate;
 
 #if defined(GLX) || defined (WINDOWS)
     if (stub.trackWindowVisibleRgn)
     {
-        stubUpdateWindowVisibileRegions(window);
+        bChanged = stubUpdateWindowVisibileRegions(window) || bChanged;
     }
 #endif
 
@@ -116,7 +121,13 @@ static void stubCheckWindowState(WindowInfo *window)
             crDebug("Dispatched: WindowShow(%i, %i)", window->spuWindow, mapped);
             stub.spu->dispatch_table.WindowShow(window->spuWindow, mapped);
             window->mapped = mapped;
+            bChanged = true;
         }
+    }
+
+    if (bFlushOnChange && bChanged)
+    {
+        stub.spu->dispatch_table.Flush();
     }
 }
 
@@ -132,10 +143,13 @@ static bool stubSystemWindowExist(WindowInfo *pWindow)
     int x, y;
     unsigned int border, depth, w, h;
 
+    XLOCK(pWindow->dpy);
     if (!XGetGeometry(pWindow->dpy, pWindow->drawable, &root, &x, &y, &w, &h, &border, &depth))
     {
+        XUNLOCK(pWindow->dpy);
         return false;
     }
+    XUNLOCK(pWindow->dpy);
 #endif
 
     return true;
@@ -163,7 +177,7 @@ static void stubCheckWindowsCB(unsigned long key, void *data1, void *data2)
         return;
     }
 
-    stubCheckWindowState(pWindow);
+    stubCheckWindowState(pWindow, GL_FALSE);
 }
 
 static void stubCheckWindowsState(void)
@@ -173,9 +187,16 @@ static void stubCheckWindowsState(void)
     if (!stub.currentContext)
         return;
 
-    stubCheckWindowState(stub.currentContext->currentDrawable);
+#if defined(CR_NEWWINTRACK) && !defined(WINDOWS)
+    crLockMutex(&stub.mutex);
+#endif
 
+    stubCheckWindowState(stub.currentContext->currentDrawable, GL_TRUE);
     crHashtableWalk(stub.windowTable, stubCheckWindowsCB, stub.currentContext);
+
+#if defined(CR_NEWWINTRACK) && !defined(WINDOWS)
+    crUnlockMutex(&stub.mutex);
+#endif
 }
 
 
@@ -252,8 +273,10 @@ static void stubInitSPUDispatch(SPU *spu)
         origSwapBuffers = stub.spuDispatch.SwapBuffers;
         origDrawBuffer = stub.spuDispatch.DrawBuffer;
         origScissor = stub.spuDispatch.Scissor;
+#ifndef CR_NEWWINTRACK
         stub.spuDispatch.Clear = trapClear;
         stub.spuDispatch.Viewport = trapViewport;
+#endif
         if (stub.viewportHack)
             stub.spuDispatch.Scissor = trapScissor;
         /*stub.spuDispatch.SwapBuffers = trapSwapBuffers;
@@ -281,7 +304,13 @@ static void stubSPUTearDown(void)
     stub_initialized = 0;
 
 #ifdef WINDOWS
+# ifndef CR_NEWWINTRACK
     stubUninstallWindowMessageHook();
+# endif
+#endif
+
+#ifdef CR_NEWWINTRACK
+    ASMAtomicWriteBool(&stub.bShutdownSyncThread, true);
 #endif
   
     //delete all created contexts
@@ -329,10 +358,31 @@ static void stubSPUSafeTearDown(void)
     crLockMutex(mutex);
 #endif
     crDebug("stubSPUSafeTearDown");
-    crNetTearDown();
+
 #ifdef WINDOWS
+# ifndef CR_NEWWINTRACK
     stubUninstallWindowMessageHook();
+# endif
 #endif
+
+#if defined(WINDOWS) && defined(CR_NEWWINTRACK)
+    crUnlockMutex(mutex);
+    if (RTThreadGetState(stub.hSyncThread)!=RTTHREADSTATE_TERMINATED)
+    {
+        ASMAtomicWriteBool(&stub.bShutdownSyncThread, true);
+        if (PostThreadMessage(RTThreadGetNative(stub.hSyncThread), WM_QUIT, 0, 0))
+        {
+            RTThreadWait(stub.hSyncThread, 1000, NULL);
+        }
+        else
+        {
+            crDebug("Sync thread killed before DLL_PROCESS_DETACH");
+        }
+    }
+    crLockMutex(mutex);
+#endif
+
+    crNetTearDown();
     crMemset(&stub, 0, sizeof(stub));
 #ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(mutex);
@@ -392,6 +442,11 @@ static void stubInitVars(void)
     stub.currentContext = NULL;
 
     stub.windowTable = crAllocHashtable();
+
+#ifdef CR_NEWWINTRACK
+    stub.bShutdownSyncThread = false;
+    stub.hSyncThread = NIL_RTTHREAD;
+#endif
 
     defaultWin = (WindowInfo *) crCalloc(sizeof(WindowInfo));
     defaultWin->type = CHROMIUM;
@@ -594,6 +649,86 @@ void stubSetDefaultConfigurationOptions(void)
 #endif
 }
 
+#ifdef CR_NEWWINTRACK
+static void stubSyncTrCheckWindowsCB(unsigned long key, void *data1, void *data2)
+{
+    WindowInfo *pWindow = (WindowInfo *) data1;
+    ContextInfo *pCtx = (ContextInfo *) data2;
+
+    if (pWindow->type!=CHROMIUM || pWindow->spuWindow==0)
+    {
+        return;
+    }
+
+    stub.spu->dispatch_table.VBoxPackSetInjectID(pWindow->u32ClientID);
+
+    if (!stubSystemWindowExist(pWindow))
+    {
+#ifdef WINDOWS
+        crWindowDestroy((GLint)pWindow->hWnd);
+#else
+        crWindowDestroy((GLint)pWindow->drawable);
+#endif
+        /*No need to flush here as crWindowDestroy does it*/
+        return;
+    }
+
+    stubCheckWindowState(pWindow, GL_TRUE);
+}
+
+static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
+{
+#ifdef WINDOWS
+    MSG msg;
+#endif
+
+    (void) pvUser;
+
+    crDebug("Sync thread started");
+#ifdef WINDOWS
+    PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
+#endif
+
+    crLockMutex(&stub.mutex);
+    stub.spu->dispatch_table.VBoxPackSetInjectThread();
+    crUnlockMutex(&stub.mutex);
+
+    RTThreadUserSignal(ThreadSelf);
+
+    while(!stub.bShutdownSyncThread)
+    {
+#ifdef WINDOWS
+        if (!PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
+        {
+            crHashtableWalk(stub.windowTable, stubSyncTrCheckWindowsCB, NULL);
+            RTThreadSleep(50);
+        }
+        else
+        {
+            if (WM_QUIT==msg.message)
+            {
+                crDebug("Sync thread got WM_QUIT");
+                break;
+            }
+            else
+            {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+        }
+#else
+        crLockMutex(&stub.mutex);
+        crHashtableWalk(stub.windowTable, stubSyncTrCheckWindowsCB, NULL);
+        crUnlockMutex(&stub.mutex);
+        RTThreadSleep(50);
+#endif
+    }
+
+    crDebug("Sync thread stopped");
+    return 0;
+}
+#endif
+
 /**
  * Do one-time initializations for the faker.
  * Returns TRUE on success, FALSE otherwise.
@@ -622,6 +757,9 @@ stubInit(void)
 
     stubInitVars();
 
+    crGetProcName(response, 1024);
+    crDebug("Stub launched for %s", response);
+
     /* @todo check if it'd be of any use on other than guests, no use for windows */
     app_id = crGetenv( "CR_APPLICATION_ID_NUMBER" );
 
@@ -643,6 +781,15 @@ stubInit(void)
         {
             crNetFreeConnection(ns.conn);
         }
+#ifdef CR_NEWWINTRACK
+        {
+            Status st = XInitThreads();
+            if (st==0)
+            {
+                crWarning("XInitThreads returned %i", (int)st);
+            }
+        }
+#endif
     }
 #endif
 
@@ -691,7 +838,29 @@ stubInit(void)
 raise(SIGINT);*/
 
 #ifdef WINDOWS
+# ifndef CR_NEWWINTRACK
     stubInstallWindowMessageHook();
+# endif
+#endif
+
+#ifdef CR_NEWWINTRACK
+    {
+        int rc;
+
+        RTR3Init();
+
+        crDebug("Starting sync thread");
+
+        rc = RTThreadCreate(&stub.hSyncThread, stubSyncThreadProc, NULL, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "Sync");
+        if (RT_FAILURE(rc))
+        {
+            crError("Failed to start sync thread! (%x)", rc);
+        }
+        RTThreadUserWait(stub.hSyncThread, 60 * 1000);
+        RTThreadUserReset(stub.hSyncThread);
+
+        crDebug("Going on");
+    }
 #endif
 
 #ifdef GLX
@@ -703,8 +872,6 @@ raise(SIGINT);*/
     stub_initialized = 1;
     return true;
 }
-
-
 
 /* Sigh -- we can't do initialization at load time, since Windows forbids 
  * the loading of other libraries from DLLMain. */

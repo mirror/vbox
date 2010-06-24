@@ -330,23 +330,50 @@ static void *crVBoxHGCMAlloc(CRConnection *conn)
 
 static void crVBoxHGCMWriteExact(CRConnection *conn, const void *buf, unsigned int len)
 {
-    CRVBOXHGCMWRITE parms;
     int rc;
+    int32_t callRes;
 
-    parms.hdr.result      = VERR_WRONG_ORDER;
-    parms.hdr.u32ClientID = conn->u32ClientID;
-    parms.hdr.u32Function = SHCRGL_GUEST_FN_WRITE;
-    parms.hdr.cParms      = SHCRGL_CPARMS_WRITE;
-
-    parms.pBuffer.type                   = VMMDevHGCMParmType_LinAddr_In;
-    parms.pBuffer.u.Pointer.size         = len;
-    parms.pBuffer.u.Pointer.u.linearAddr = (uintptr_t) buf;
-
-    rc = crVBoxHGCMCall(&parms, sizeof(parms));
-
-    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.result))
+#ifdef IN_GUEST
+    if (conn->u32InjectClientID)
     {
-        crWarning("SHCRGL_GUEST_FN_WRITE failed with %x %x\n", rc, parms.hdr.result);
+        CRVBOXHGCMINJECT parms;
+
+        parms.hdr.result      = VERR_WRONG_ORDER;
+        parms.hdr.u32ClientID = conn->u32ClientID;
+        parms.hdr.u32Function = SHCRGL_GUEST_FN_INJECT;
+        parms.hdr.cParms      = SHCRGL_CPARMS_INJECT;
+
+        parms.u32ClientID.type       = VMMDevHGCMParmType_32bit;
+        parms.u32ClientID.u.value32  = conn->u32InjectClientID;
+
+        parms.pBuffer.type                   = VMMDevHGCMParmType_LinAddr_In;
+        parms.pBuffer.u.Pointer.size         = len;
+        parms.pBuffer.u.Pointer.u.linearAddr = (uintptr_t) buf;
+
+        rc = crVBoxHGCMCall(&parms, sizeof(parms));
+        callRes = parms.hdr.result;
+    }
+    else
+#endif
+    {
+        CRVBOXHGCMWRITE parms;
+
+        parms.hdr.result      = VERR_WRONG_ORDER;
+        parms.hdr.u32ClientID = conn->u32ClientID;
+        parms.hdr.u32Function = SHCRGL_GUEST_FN_WRITE;
+        parms.hdr.cParms      = SHCRGL_CPARMS_WRITE;
+
+        parms.pBuffer.type                   = VMMDevHGCMParmType_LinAddr_In;
+        parms.pBuffer.u.Pointer.size         = len;
+        parms.pBuffer.u.Pointer.u.linearAddr = (uintptr_t) buf;
+
+        rc = crVBoxHGCMCall(&parms, sizeof(parms));
+        callRes = parms.hdr.result;
+    }
+
+    if (RT_FAILURE(rc) || RT_FAILURE(callRes))
+    {
+        crWarning("SHCRGL_GUEST_FN_WRITE failed with %x %x\n", rc, callRes);
     }
 }
 
@@ -475,6 +502,7 @@ static void crVBoxHGCMSend(CRConnection *conn, void **bufp,
             /* we're at the host side, so just store data until guest polls us */
             _crVBoxHGCMWriteBytes(conn, start, len);
 #else
+            CRASSERT(!conn->u32InjectClientID);
             crDebug("SHCRGL: sending userbuf with %d bytes\n", len);
             crVBoxHGCMWriteReadExact(conn, start, len, CR_VBOXHGCM_USERALLOCATED);
 #endif
@@ -492,6 +520,13 @@ static void crVBoxHGCMSend(CRConnection *conn, void **bufp,
     /* Length would be passed as part of HGCM pointer description
      * No need to prepend it to the buffer
      */
+#ifdef IN_GUEST
+    if (conn->u32InjectClientID)
+    {
+        crVBoxHGCMWriteExact(conn, start, len);
+    }
+    else
+#endif
     crVBoxHGCMWriteReadExact(conn, start, len, hgcm_buffer->kind);
 
     /* Reclaim this pointer for reuse */

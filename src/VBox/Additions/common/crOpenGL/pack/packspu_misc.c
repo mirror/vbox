@@ -107,14 +107,20 @@ void PACKSPU_APIENTRY packspu_Flush( void )
     GET_THREAD(thread);
     int writeback = 1;
 
-    crPackFlush();
-
-    if (packspuSyncOnFlushes())
+    if (!thread->bInjectThread)
     {
-        crPackWriteback(&writeback);
+        crPackFlush();
+        if (packspuSyncOnFlushes())
+        {
+            crPackWriteback(&writeback);
+            packspuFlush( (void *) thread );
+            while (writeback)
+                crNetRecv();
+        }
+    }
+    else
+    {
         packspuFlush( (void *) thread );
-        while (writeback)
-            crNetRecv();
     }
 }
 
@@ -335,3 +341,84 @@ void PACKSPU_APIENTRY packspu_GetPixelMapusv( GLenum map, GLushort * values )
             crNetRecv();
     }
 }
+
+#ifdef CHROMIUM_THREADSAFE
+void PACKSPU_APIENTRY packspu_VBoxPackSetInjectThread(void)
+{
+    crLockMutex(&_PackMutex);
+    {
+        GET_THREAD(thread);
+        CRASSERT(!thread);
+        CRASSERT((pack_spu.numThreads>0) && (pack_spu.numThreads<MAX_THREADS));
+
+        thread = &(pack_spu.thread[pack_spu.numThreads]);
+        thread->id = crThreadID();
+        thread->currentContext = NULL;
+        thread->bInjectThread = GL_TRUE;
+
+        thread->netServer.name = crStrdup(pack_spu.name);
+        thread->netServer.buffer_size = 64 * 1024;
+
+        crNetNewClient(pack_spu.thread[0].netServer.conn, &(thread->netServer));
+        CRASSERT(thread->netServer.conn);
+
+        CRASSERT(thread->packer == NULL);
+        thread->packer = crPackNewContext( pack_spu.swap );
+        CRASSERT(thread->packer);
+        crPackInitBuffer(&(thread->buffer), crNetAlloc(thread->netServer.conn),
+                         thread->netServer.conn->buffer_size, thread->netServer.conn->mtu);
+        thread->buffer.canBarf = thread->netServer.conn->Barf ? GL_TRUE : GL_FALSE;
+
+        crPackSetBuffer( thread->packer, &thread->buffer );
+        crPackFlushFunc( thread->packer, packspuFlush );
+        crPackFlushArg( thread->packer, (void *) thread );
+        crPackSendHugeFunc( thread->packer, packspuHuge );
+        crPackSetContext( thread->packer );
+
+        crSetTSD(&_PackTSD, thread);
+
+        pack_spu.numThreads++;
+    }
+    crUnlockMutex(&_PackMutex);
+}
+
+GLuint PACKSPU_APIENTRY packspu_VBoxPackGetInjectID(void)
+{
+    GLuint ret;
+
+    crLockMutex(&_PackMutex);
+    {
+        GET_THREAD(thread);
+        CRASSERT(thread && thread->netServer.conn && thread->netServer.conn->type==CR_VBOXHGCM);
+        ret = thread->netServer.conn->u32ClientID;
+    }
+    crUnlockMutex(&_PackMutex);
+
+    return ret;
+}
+
+void PACKSPU_APIENTRY packspu_VBoxPackSetInjectID(GLuint id)
+{
+    crLockMutex(&_PackMutex);
+    {
+        GET_THREAD(thread);
+        CRASSERT(thread && thread->netServer.conn && thread->netServer.conn->type==CR_VBOXHGCM);
+        thread->netServer.conn->u32InjectClientID = id;
+    }
+    crUnlockMutex(&_PackMutex);
+}
+#else  /*ifdef CHROMIUM_THREADSAFE*/
+void PACKSPU_APIENTRY packspu_VBoxPackSetInjectThread(void)
+{
+}
+
+GLuint PACKSPU_APIENTRY packspu_VBoxPackGetInjectID(void)
+{
+    return 0;
+}
+
+void PACKSPU_APIENTRY packspu_VBoxPackSetInjectID(GLuint id)
+{
+    (void) id;
+}
+#endif /*CHROMIUM_THREADSAFE*/

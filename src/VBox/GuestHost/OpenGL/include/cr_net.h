@@ -219,6 +219,9 @@ struct CRConnection {
     uint8_t  *pHostBuffer;
     uint32_t cbHostBufferAllocated;
     uint32_t cbHostBuffer;
+#ifdef IN_GUEST
+    uint32_t u32InjectClientID;
+#endif
     /* Used on host side to indicate that we are not allowed to store above pointers for later use
      * in crVBoxHGCMReceiveMessage. As those messages are going to be processed after the correspoding 
      * HGCM call is finished and memory is freed. So we have to store a copy.

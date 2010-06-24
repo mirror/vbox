@@ -129,14 +129,13 @@ if1of ($(KBUILD_TARGET), linux solaris freebsd)
   ifndef VBOX_OGL_GLX_USE_CSTUBS
    VBoxOGL_SOURCES.solaris += \
  	$(VBOX_PATH_CROGL_GENFILES)/solaris_glxapi_exports.asm \
- 	$(VBOX_PATH_CROGL_GENFILES)/solaris_exports_dri.asm \
+ 	$(VBOX_PATH_CROGL_GENFILES)/solaris_exports_dri.asm
    VBoxOGL_SOURCES.linux += \
  	$(VBOX_PATH_CROGL_GENFILES)/linux_glxapi_exports.asm \
  	$(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm
    VBoxOGL_SOURCES.freebsd += \
  	$(VBOX_PATH_CROGL_GENFILES)/freebsd_glxapi_exports.asm \
- 	$(VBOX_PATH_CROGL_GENFILES)/freebsd_exports_dri.asm \
-
+ 	$(VBOX_PATH_CROGL_GENFILES)/freebsd_exports_dri.asm
   else
    VBoxOGL_SOURCES.solaris += \
   	$(VBOX_PATH_CROGL_GENFILES)/solaris_exports.c

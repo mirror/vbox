@@ -42,6 +42,7 @@
 #define SHCRGL_GUEST_FN_READ        (3)
 #define SHCRGL_GUEST_FN_WRITE_READ  (4)
 #define SHCRGL_GUEST_FN_SET_VERSION (6)
+#define SHCRGL_GUEST_FN_INJECT      (9)
 
 /* Parameters count */
 #define SHCRGL_CPARMS_SET_CONSOLE (1)
@@ -52,6 +53,7 @@
 #define SHCRGL_CPARMS_WRITE_READ (3)
 #define SHCRGL_CPARMS_SET_VERSION (2)
 #define SHCRGL_CPARMS_SCREEN_CHANGED (1)
+#define SHCRGL_CPARMS_INJECT (2)
 
 /**
  * SHCRGL_GUEST_FN_WRITE
@@ -123,5 +125,20 @@ typedef struct
     HGCMFunctionParameter   vMinor;
 
 } CRVBOXHGCMSETVERSION;
+
+/** GUEST_FN_INJECT Parameters structure. */
+typedef struct
+{
+    VBoxGuestHGCMCallInfo   hdr;
+
+    /** 32bit, in
+     *  ClientID to inject commands buffer for
+     */
+    HGCMFunctionParameter   u32ClientID;
+    /** pointer, in
+     *  Data buffer
+     */
+    HGCMFunctionParameter   pBuffer;
+} CRVBOXHGCMINJECT;
 
 #endif

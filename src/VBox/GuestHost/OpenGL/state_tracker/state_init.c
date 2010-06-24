@@ -231,6 +231,11 @@ void crStateInit(void)
         /* Free the default/NULL context.
          * Ensures context bits are reset */
         crStateFreeContext(defaultContext);
+#ifdef CHROMIUM_THREADSAFE
+        crSetTSD(&__contextTSD, NULL);
+#else
+        __currentContext = NULL;
+#endif
     }
 
     /* Reset diff_api */

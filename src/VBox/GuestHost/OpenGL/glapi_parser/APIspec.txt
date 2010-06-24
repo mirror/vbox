@@ -8499,6 +8499,21 @@ category    GL_chromium
 props       get
 chromium    extpack
 
+name        VBoxPackSetInjectThread
+return      void
+category    VBox
+chromium    nopack
+
+name        VBoxPackGetInjectID
+return      GLuint
+category    VBox
+chromium    nopack
+
+name        VBoxPackSetInjectID
+return      void
+param       id          GLuint
+category    VBox
+chromium    nopack
 
 # OpenGL 1.5
 

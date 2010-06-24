@@ -35,6 +35,7 @@ ThreadInfo *packspuNewThread( unsigned long id )
 
     thread->id = id;
     thread->currentContext = NULL;
+    thread->bInjectThread = GL_FALSE;
 
     /* connect to the server */
     thread->netServer.name = crStrdup( pack_spu.name );
