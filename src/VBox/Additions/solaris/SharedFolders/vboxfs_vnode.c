@@ -59,6 +59,7 @@
 
 #include <VBox/log.h>
 
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mntent.h>
@@ -776,6 +777,73 @@ sffs_getattr(
 	vap->va_ctime = time;
 
 done:
+	mutex_exit(&sffs_lock);
+	return (error);
+}
+
+static int
+sffs_setattr(
+	vnode_t		*vp,
+	vattr_t		*vap,
+	int		flags,
+	cred_t		*cred,
+	caller_context_t *ct)
+{
+	sfnode_t	*node = VN2SFN(vp);
+	int		error;
+	mode_t		mode;
+
+	mode = vap->va_mode;
+	if (vp->v_type == VREG)
+		mode |= S_IFREG;
+	else if (vp->v_type == VDIR)
+		mode |= S_IFDIR;
+	else if (vp->v_type == VBLK)
+		mode |= S_IFBLK;
+	else if (vp->v_type == VCHR)
+		mode |= S_IFCHR;
+	else if (vp->v_type == VLNK)
+		mode |= S_IFLNK;
+	else if (vp->v_type == VFIFO)
+		mode |= S_IFIFO;
+	else if (vp->v_type == VSOCK)
+		mode |= S_IFSOCK;
+
+	mutex_enter(&sffs_lock);
+
+	error = sfprov_set_attr(node->sf_sffs->sf_handle, node->sf_path,
+	    vap->va_mask, mode, vap->va_atime, vap->va_mtime, vap->va_ctime);
+	if (error == ENOENT)
+		sfnode_make_stale(node);
+
+	mutex_exit(&sffs_lock);
+	return (error);
+}
+
+static int
+sffs_space(
+	vnode_t		*vp,
+	int		cmd,
+	struct flock64	*bfp,
+	int		flags,
+	offset_t	off,
+	cred_t		*cred,
+	caller_context_t *ct)
+{
+	sfnode_t	*node = VN2SFN(vp);
+	int		error;
+
+	/* we only support changing the length of the file */
+	if (bfp->l_whence != SEEK_SET || bfp->l_len != 0)
+		return ENOSYS;
+
+	mutex_enter(&sffs_lock);
+
+	error = sfprov_set_size(node->sf_sffs->sf_handle, node->sf_path,
+	    bfp->l_start);
+	if (error == ENOENT)
+		sfnode_make_stale(node);
+
 	mutex_exit(&sffs_lock);
 	return (error);
 }
@@ -1511,6 +1579,8 @@ const fs_operation_def_t sffs_ops_template[] = {
 	VOPNAME_RENAME,		sffs_rename,
 	VOPNAME_RMDIR,		sffs_rmdir,
 	VOPNAME_SEEK,		sffs_seek,
+	VOPNAME_SETATTR,	sffs_setattr,
+	VOPNAME_SPACE,		sffs_space,
 	VOPNAME_WRITE,		sffs_write,
 	NULL,			NULL
 #else
@@ -1531,6 +1601,8 @@ const fs_operation_def_t sffs_ops_template[] = {
 	VOPNAME_RENAME,		{ .vop_rename = sffs_rename },
 	VOPNAME_RMDIR,		{ .vop_rmdir = sffs_rmdir },
 	VOPNAME_SEEK,		{ .vop_seek = sffs_seek },
+	VOPNAME_SETATTR,	{ .vop_setattr = sffs_setattr },
+	VOPNAME_SPACE,		{ .vop_space = sffs_space },
 	VOPNAME_WRITE,		{ .vop_write = sffs_write },
 	NULL,			NULL
 #endif

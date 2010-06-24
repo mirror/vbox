@@ -520,6 +520,170 @@ sfprov_get_ctime(sfp_mount_t *mnt, char *path, timestruc_t *time)
 	return (0);
 }
 
+static void
+sfprov_timespec_from_ftime(RTTIMESPEC *ts, timestruc_t time)
+{
+	uint64_t nanosec = 1000000000 * time.tv_sec + time.tv_nsec;
+	RTTimeSpecSetNano(ts, nanosec);
+}
+
+int
+sfprov_set_attr(
+	sfp_mount_t *mnt,
+	char *path,
+	uint_t mask,
+	mode_t mode,
+	timestruc_t atime,
+	timestruc_t mtime,
+	timestruc_t ctime)
+{
+	int rc, err;
+	SHFLCREATEPARMS parms;
+	SHFLSTRING *str;
+	RTFSOBJINFO info;
+	uint32_t bytes;
+	int str_size;
+
+	str = sfprov_string(path, &str_size);
+	parms.Handle = 0;
+	parms.Info.cbObject = 0;
+	parms.CreateFlags = SHFL_CF_ACT_OPEN_IF_EXISTS
+			  | SHFL_CF_ACT_FAIL_IF_NEW
+			  | SHFL_CF_ACCESS_ATTR_WRITE;
+
+	rc = vboxCallCreate(&vbox_client, &mnt->map, str, &parms);
+
+	if (RT_FAILURE(rc)) {
+		cmn_err(CE_WARN, "sfprov_set_attr: vboxCallCreate(%s) failed rc=%d",
+		    path, rc);
+		err = EINVAL;
+		goto fail2;
+	}
+	if (parms.Result != SHFL_FILE_EXISTS) {
+		err = ENOENT;
+		goto fail1;
+	}
+
+	RT_ZERO(info);
+	if (mask & AT_MODE) {
+#define mode_set(r) ((mode & (S_##r)) ? RTFS_UNIX_##r : 0)
+
+		info.Attr.fMode  = mode_set (ISUID);
+		info.Attr.fMode |= mode_set (ISGID);
+		info.Attr.fMode |= (mode & S_ISVTX) ? RTFS_UNIX_ISTXT : 0;
+		info.Attr.fMode |= mode_set (IRUSR);
+		info.Attr.fMode |= mode_set (IWUSR);
+		info.Attr.fMode |= mode_set (IXUSR);
+		info.Attr.fMode |= mode_set (IRGRP);
+		info.Attr.fMode |= mode_set (IWGRP);
+		info.Attr.fMode |= mode_set (IXGRP);
+		info.Attr.fMode |= mode_set (IROTH);
+		info.Attr.fMode |= mode_set (IWOTH);
+		info.Attr.fMode |= mode_set (IXOTH);
+
+		if (S_ISDIR(mode))
+			info.Attr.fMode |= RTFS_TYPE_DIRECTORY;
+		else if (S_ISREG(mode))
+			info.Attr.fMode |= RTFS_TYPE_FILE;
+		else if (S_ISFIFO(mode))
+			info.Attr.fMode |= RTFS_TYPE_FIFO;
+		else if (S_ISCHR(mode))
+			info.Attr.fMode |= RTFS_TYPE_DEV_CHAR;
+		else if (S_ISBLK(mode))
+			info.Attr.fMode |= RTFS_TYPE_DEV_BLOCK;
+		else if (S_ISLNK(mode))
+			info.Attr.fMode |= RTFS_TYPE_SYMLINK;
+		else if (S_ISSOCK(mode))
+			info.Attr.fMode |= RTFS_TYPE_SOCKET;
+		else
+			info.Attr.fMode |= RTFS_TYPE_FILE;
+	}
+
+	if (mask & AT_ATIME)
+		sfprov_timespec_from_ftime(&info.AccessTime, atime);
+	if (mask & AT_MTIME)
+		sfprov_timespec_from_ftime(&info.ModificationTime, mtime);
+	if (mask & AT_CTIME)
+		sfprov_timespec_from_ftime(&info.ChangeTime, ctime);
+
+	bytes = sizeof(info);
+	rc = vboxCallFSInfo(&vbox_client, &mnt->map, parms.Handle,
+	    (SHFL_INFO_SET | SHFL_INFO_FILE), &bytes, (SHFLDIRINFO *)&info);
+	if (RT_FAILURE(rc)) {
+		cmn_err(CE_WARN, "sfprov_set_attr: vboxCallFSInfo(%s, FILE) failed rc=%d",
+		    path, rc);
+		err = RTErrConvertToErrno(rc);
+		goto fail1;
+	}
+
+	err = 0;
+
+fail1:
+	rc = vboxCallClose(&vbox_client, &mnt->map, parms.Handle);
+	if (RT_FAILURE(rc)) {
+		cmn_err(CE_WARN, "sfprov_set_attr: vboxCallClose(%s) failed rc=%d",
+		    path, rc);
+	}
+fail2:
+	kmem_free(str, str_size);
+	return err;
+}
+
+int
+sfprov_set_size(sfp_mount_t *mnt, char *path, uint64_t size)
+{
+	int rc, err;
+	SHFLCREATEPARMS parms;
+	SHFLSTRING *str;
+	RTFSOBJINFO info;
+	uint32_t bytes;
+	int str_size;
+
+	str = sfprov_string(path, &str_size);
+	parms.Handle = 0;
+	parms.Info.cbObject = 0;
+	parms.CreateFlags = SHFL_CF_ACT_OPEN_IF_EXISTS
+			  | SHFL_CF_ACT_FAIL_IF_NEW
+			  | SHFL_CF_ACCESS_WRITE;
+
+	rc = vboxCallCreate(&vbox_client, &mnt->map, str, &parms);
+
+	if (RT_FAILURE(rc)) {
+		cmn_err(CE_WARN, "sfprov_set_size: vboxCallCreate(%s) failed rc=%d",
+		    path, rc);
+		err = EINVAL;
+		goto fail2;
+	}
+	if (parms.Result != SHFL_FILE_EXISTS) {
+		err = ENOENT;
+		goto fail1;
+	}
+
+	RT_ZERO(info);
+	info.cbObject = size;
+	bytes = sizeof(info);
+	rc = vboxCallFSInfo(&vbox_client, &mnt->map, parms.Handle,
+	    (SHFL_INFO_SET | SHFL_INFO_SIZE), &bytes, (SHFLDIRINFO *)&info);
+	if (RT_FAILURE(rc)) {
+		cmn_err(CE_WARN, "sfprov_set_size: vboxCallFSInfo(%s, SIZE) failed rc=%d",
+		    path, rc);
+		err = RTErrConvertToErrno(rc);
+		goto fail1;
+	}
+
+	err = 0;
+
+fail1:
+	rc = vboxCallClose(&vbox_client, &mnt->map, parms.Handle);
+	if (RT_FAILURE(rc)) {
+		cmn_err(CE_WARN, "sfprov_set_size: vboxCallClose(%s) failed rc=%d",
+		    path, rc);
+	}
+fail2:
+	kmem_free(str, str_size);
+	return err;
+}
+
 /*
  * Directory operations
  */
