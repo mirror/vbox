@@ -470,7 +470,12 @@ Routine Description:
     // different functions, but we know that Context is an event that needs
     // to be set.
     //
-    KeSetEvent(event, 0, FALSE);
+    // If the lower driver didn't return STATUS_PENDING, we don't need to
+    // set the event because we won't be waiting on it.
+    // This optimization avoids grabbing the dispatcher lock and improves perf.
+    //
+    if (Irp->PendingReturned == TRUE)
+        KeSetEvent(event, 0, FALSE);
 
     return STATUS_MORE_PROCESSING_REQUIRED;
 }
@@ -840,13 +845,16 @@ Return Value:
                &event,
                Executive, // Waiting for reason of a driver
                KernelMode, // Waiting in kernel mode
-               FALSE, // No allert
+               FALSE, // No alert
                NULL); // No timeout
+
+            // Transfer the status from the IOSB
+            status = Irp->IoStatus.Status;
         }
 
         dprintf(("VBoxMouse_PnP: Status: %x, irp status: %x\n", Irp->IoStatus.Status));
 
-        if (NT_SUCCESS(status) && NT_SUCCESS(Irp->IoStatus.Status)) {
+        if (NT_SUCCESS(status)) {
             devExt->Started = TRUE;
             devExt->Removed = FALSE;
             devExt->SurpriseRemoved = FALSE;
@@ -857,7 +865,6 @@ Return Value:
         // completetion routine with MORE_PROCESSING_REQUIRED.
         //
         Irp->IoStatus.Status = status;
-        Irp->IoStatus.Information = 0;
         IoCompleteRequest(Irp, IO_NO_INCREMENT);
 
         break;
