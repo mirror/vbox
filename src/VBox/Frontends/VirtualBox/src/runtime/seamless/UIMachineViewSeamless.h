@@ -65,7 +65,7 @@ private:
     //void cleanupConsoleConnections() {}
     //void prepareConnections() {}
     //void cleanupFilters() {}
-    //void cleanupCommon();
+    //void cleanupCommon() {}
 
     /* Private helpers: */
     void normalizeGeometry(bool /* fAdjustPosition */) {}

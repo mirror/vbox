@@ -180,16 +180,17 @@ void UIMachineLogicSeamless::prepareMachineWindows()
     ::darwinSetFrontMostProcess();
 #endif /* Q_WS_MAC */
 
-    /* Update the multi screen layout */
+    /* Update the multi screen layout: */
     m_pScreenLayout->update();
 
     /* Create machine window(s): */
-    for (int screenId = 0; screenId < m_pScreenLayout->guestScreenCount(); ++screenId)
-        addMachineWindow(UIMachineWindow::create(this, visualStateType(), screenId));
+    for (int cScreenId = 0; cScreenId < m_pScreenLayout->guestScreenCount(); ++cScreenId)
+        addMachineWindow(UIMachineWindow::create(this, visualStateType(), cScreenId));
 
-    foreach (UIMachineWindow *pMachineWindow, machineWindows())
+    /* Connect screen-layout change handler: */
+    for (int i = 0; i < machineWindows().size(); ++i)
         connect(m_pScreenLayout, SIGNAL(screenLayoutChanged()),
-                static_cast<UIMachineWindowSeamless*>(pMachineWindow), SLOT(sltPlaceOnScreen()));
+                static_cast<UIMachineWindowSeamless*>(machineWindows()[i]), SLOT(sltPlaceOnScreen()));
 
     /* Remember what machine window(s) created: */
     setMachineWindowsCreated(true);
@@ -197,7 +198,7 @@ void UIMachineLogicSeamless::prepareMachineWindows()
 
 void UIMachineLogicSeamless::cleanupMachineWindows()
 {
-    /* Do not cleanup machine window if it is not present: */
+    /* Do not cleanup machine window(s) if not present: */
     if (!isMachineWindowsCreated())
         return;
 
