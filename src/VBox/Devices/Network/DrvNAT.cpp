@@ -283,8 +283,7 @@ static DECLCALLBACK(void) drvNATUrgRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, in
     rc = RTCritSectLeave(&pThis->DevAccessLock);
     AssertRC(rc);
 
-    slirp_ext_m_free(pThis->pNATState, m);
-    RTMemFree(pu8Buf);
+    slirp_ext_m_free(pThis->pNATState, m, pu8Buf);
     if (ASMAtomicDecU32(&pThis->cUrgPkts) == 0)
     {
         drvNATRecvWakeup(pThis->pDrvIns, pThis->pRecvThread);
@@ -328,8 +327,7 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int c
     AssertRC(rc);
 
 done_unlocked:
-    slirp_ext_m_free(pThis->pNATState, m);
-    RTMemFree(pu8Buf);
+    slirp_ext_m_free(pThis->pNATState, m, pu8Buf);
     ASMAtomicDecU32(&pThis->cPkts);
 
     drvNATNotifyNATThread(pThis, "drvNATRecvWorker");
@@ -351,7 +349,7 @@ static void drvNATFreeSgBuf(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
     if (pSgBuf->pvAllocator)
     {
         Assert(!pSgBuf->pvUser);
-        slirp_ext_m_free(pThis->pNATState, (struct mbuf *)pSgBuf->pvAllocator);
+        slirp_ext_m_free(pThis->pNATState, (struct mbuf *)pSgBuf->pvAllocator, NULL);
         pSgBuf->pvAllocator = NULL;
     }
     else if (pSgBuf->pvUser)

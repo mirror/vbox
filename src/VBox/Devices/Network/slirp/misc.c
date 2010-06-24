@@ -417,8 +417,12 @@ struct mbuf *slirp_ext_m_get(PNATState pData, size_t cbMin, void **ppvBuf, size_
     return m;
 }
 
-void slirp_ext_m_free(PNATState pData, struct mbuf *m)
+void slirp_ext_m_free(PNATState pData, struct mbuf *m, uint8_t *pu8Buf)
 {
+    
+    if (   !pu8Buf 
+        && pu8Buf != mtod(m, uint8_t *))
+        RTMemFree(pu8Buf); /* This buffer was allocated on heap */
     m_freem(pData, m);
 }
 
