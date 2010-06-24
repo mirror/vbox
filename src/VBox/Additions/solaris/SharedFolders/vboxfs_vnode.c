@@ -1178,6 +1178,15 @@ sffs_create(
 	 * Doesn't exist yet and we have the lock, so create it.
 	 */
 	node = sfnode_lookup(VN2SFN(dvp), name, VREG);
+	if (node && (vap->va_mask & AT_MODE)) {
+		timestruc_t dummy;
+		error = sfprov_set_attr(node->sf_sffs->sf_handle, node->sf_path,
+		    AT_MODE, vap->va_mode, dummy, dummy, dummy);
+		if (error)
+			cmn_err(CE_WARN, "sffs_create: set_mode(%s, %o) failed"
+			    " rc=%d", node->sf_path, vap->va_mode, error);
+	}
+
 	mutex_exit(&sffs_lock);
 	if (node == NULL)
 		return (EINVAL);
@@ -1231,6 +1240,15 @@ sffs_mkdir(
 	}
 
 	node = sfnode_lookup(VN2SFN(dvp), nm, VDIR);
+	if (node && (va->va_mask & AT_MODE)) {
+		timestruc_t dummy;
+		error = sfprov_set_attr(node->sf_sffs->sf_handle, node->sf_path,
+		    AT_MODE, va->va_mode, dummy, dummy, dummy);
+		if (error)
+			cmn_err(CE_WARN, "sffs_mkdir: set_mode(%s, %o) failed"
+			    " rc=%d", node->sf_path, va->va_mode, error);
+	}
+
 	mutex_exit(&sffs_lock);
 	if (node == NULL)
 		return (EACCES);
