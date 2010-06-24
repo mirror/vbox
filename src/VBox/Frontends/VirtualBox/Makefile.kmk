@@ -326,6 +326,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/runtime/UISession.h \
 	src/runtime/UIActionsPool.h \
 	src/runtime/UIIndicatorsPool.h \
+	src/runtime/UIMouseHandler.h \
 	src/runtime/UIMachineLogic.h \
 	src/runtime/UIMachineView.h \
 	src/runtime/UIMultiScreenLayout.h \
@@ -459,6 +460,7 @@ VirtualBox_SOURCES = \
 	src/runtime/UISession.cpp \
 	src/runtime/UIActionsPool.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
+	src/runtime/UIMouseHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIFrameBufferQGL.cpp \
 	src/runtime/UIFrameBufferQImage.cpp \

@@ -68,8 +68,6 @@ UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
     /* Initialization: */
     sltMachineStateChanged();
     sltAdditionsStateChanged();
-    sltMousePointerShapeChanged();
-    sltMouseCapabilityChanged();
 }
 
 UIMachineViewNormal::~UIMachineViewNormal()
@@ -175,9 +173,6 @@ bool UIMachineViewNormal::event(QEvent *pEvent)
 #ifdef Q_WS_MAC
             machineLogic()->updateDockIconSize(screenId(), pResizeEvent->width(), pResizeEvent->height());
 #endif /* Q_WS_MAC */
-
-            /* Update mouse cursor shape: */
-            updateMouseCursorShape();
 
             /* May be we have to restrict minimum size? */
             maybeRestrictMinimumSize();

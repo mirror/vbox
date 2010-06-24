@@ -26,6 +26,7 @@
 #include "VBoxProblemReporter.h"
 
 #include "UIActionsPool.h"
+#include "UIMouseHandler.h"
 #include "UIDownloaderAdditions.h"
 #include "UIMachineLogicNormal.h"
 #include "UIMachineView.h"
@@ -141,6 +142,10 @@ void UIMachineLogicNormal::prepareMachineWindows()
     ::darwinSetFrontMostProcess();
 #endif /* Q_WS_MAC */
 
+    /* Create mouse-handler: */
+    UIMouseHandler *pMouseHandler = UIMouseHandler::create(this, visualStateType());
+    setMouseHandler(pMouseHandler);
+
     /* Get monitors count: */
     ulong uMonitorCount = session().GetMachine().GetMonitorCount();
     /* Create machine window(s): */
@@ -163,5 +168,8 @@ void UIMachineLogicNormal::cleanupMachineWindow()
     /* Cleanup machine window(s): */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         UIMachineWindow::destroy(pMachineWindow);
+
+    /* Cleanup mouse-handler: */
+    UIMouseHandler::destroy(mouseHandler());
 }
 
