@@ -135,7 +135,7 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
     if (so->so_urgc)
     {
         sbappendsb(pData, &so->so_rcv, m);
-        m_free(pData, m);
+        m_freem(pData, m);
         sosendoob(so);
         return;
     }
@@ -185,7 +185,7 @@ no_sent:
     STAM_COUNTER_INC(&pData->StatIOSBAppend_wa);
     STAM_PROFILE_STOP(&pData->StatIOSBAppend_pf_wa, a);
 done:
-    m_free(pData, m);
+    m_freem(pData, m);
 }
 
 /*
@@ -350,6 +350,6 @@ no_sent:
     STAM_PROFILE_STOP(&pData->StatIOSBAppend_pf_wa, a);
 done:
     RTMemFree(buf);
-    m_free(pData, m);
+    m_freem(pData, m);
 }
 #endif
