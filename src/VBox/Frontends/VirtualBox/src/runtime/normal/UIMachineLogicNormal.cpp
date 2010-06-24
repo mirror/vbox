@@ -156,7 +156,7 @@ void UIMachineLogicNormal::prepareMachineWindows()
 
 void UIMachineLogicNormal::cleanupMachineWindow()
 {
-    /* Do not cleanup machine window if it is not present: */
+    /* Do not cleanup machine window(s) if not present: */
     if (!isMachineWindowsCreated())
         return;
 

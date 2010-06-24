@@ -230,7 +230,7 @@ UIMachineView::~UIMachineView()
 
 UISession* UIMachineView::uisession() const
 {
-    return machineWindowWrapper()->machineLogic()->uisession();
+    return machineLogic()->uisession();
 }
 
 CSession& UIMachineView::session()
@@ -1104,7 +1104,7 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                 }
                 break;
             }
-#if defined (Q_WS_WIN32)
+#ifdef Q_WS_WIN
             /* Install/uninstall low-level kbd hook on every activation/deactivation to:
              * a) avoid excess hook calls when we're not active and
              * b) be always in front of any other possible hooks */
@@ -1126,7 +1126,7 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                 }
                 break;
             }
-#endif /* defined (Q_WS_WIN32) */
+#endif /* Q_WS_WIN */
 #ifdef Q_WS_MAC
             /* Install/remove the keyboard event handler: */
             case QEvent::WindowActivate:
@@ -1172,9 +1172,9 @@ void UIMachineView::sltMachineStateChanged()
                 /* Fully repaint to pick up m_pauseShot: */
                 viewport()->repaint();
             }
-            /* reuse the focus event handler to uncapture everything */
+            /* Reuse the focus event handler to uncapture everything: */
             if (hasFocus())
-                focusEvent (false /* aHasFocus*/, false /* aReleaseHostKey */);
+                focusEvent(false /* aHasFocus*/, false /* aReleaseHostKey */);
             break;
         }
         case KMachineState_Stuck:
@@ -1200,7 +1200,7 @@ void UIMachineView::sltMachineStateChanged()
                     dsp.InvalidateAndUpdate();
                 }
             }
-            /* Reuse the focus event handler to capture input: */
+            /* Reuse the focus event handler to capture keyboard: */
             if (hasFocus())
                 focusEvent(true /* aHasFocus */);
             break;

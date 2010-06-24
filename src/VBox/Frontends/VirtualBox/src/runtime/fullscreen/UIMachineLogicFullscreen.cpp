@@ -194,13 +194,13 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
     m_pScreenLayout->update();
 
     /* Create machine window(s): */
-    for (int screenId = 0; screenId < m_pScreenLayout->guestScreenCount(); ++screenId)
-        addMachineWindow(UIMachineWindow::create(this, visualStateType(), screenId));
+    for (int cScreenId = 0; cScreenId < m_pScreenLayout->guestScreenCount(); ++cScreenId)
+        addMachineWindow(UIMachineWindow::create(this, visualStateType(), cScreenId));
 
     /* Connect screen-layout change handler: */
-    foreach (UIMachineWindow *pMachineWindow, machineWindows())
+    for (int i = 0; i < machineWindows().size(); ++i)
         connect(m_pScreenLayout, SIGNAL(screenLayoutChanged()),
-                static_cast<UIMachineWindowFullscreen*>(pMachineWindow), SLOT(sltPlaceOnScreen()));
+                static_cast<UIMachineWindowFullscreen*>(machineWindows()[i]), SLOT(sltPlaceOnScreen()));
 
 #ifdef Q_WS_MAC
     /* If the user change the screen, we have to decide again if the
@@ -217,7 +217,7 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
 
 void UIMachineLogicFullscreen::cleanupMachineWindows()
 {
-    /* Do not cleanup machine window if it is not present: */
+    /* Do not cleanup machine window(s) if not present: */
     if (!isMachineWindowsCreated())
         return;
 
