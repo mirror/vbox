@@ -523,7 +523,7 @@ sfprov_get_ctime(sfp_mount_t *mnt, char *path, timestruc_t *time)
 static void
 sfprov_timespec_from_ftime(RTTIMESPEC *ts, timestruc_t time)
 {
-	uint64_t nanosec = 1000000000 * time.tv_sec + time.tv_nsec;
+	uint64_t nanosec = UINT64_C(1000000000) * time.tv_sec + time.tv_nsec;
 	RTTimeSpecSetNano(ts, nanosec);
 }
 
