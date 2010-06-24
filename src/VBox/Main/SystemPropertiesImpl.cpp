@@ -35,6 +35,9 @@
 #include <VBox/param.h>
 #include <VBox/settings.h>
 #include <VBox/VBoxHDD.h>
+#ifdef RT_OS_WINDOWS
+#include <windows.h>
+#endif
 
 // defines
 /////////////////////////////////////////////////////////////////////////////
