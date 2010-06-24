@@ -1477,7 +1477,11 @@ sffs_fsync(vnode_t *vp, int flag, cred_t *cr, caller_context_t *ct)
  */
 /*ARGSUSED*/
 static void
+#if defined(VBOX_VFS_SOLARIS_10U6)
+sffs_inactive(vnode_t *vp, cred_t *cr)
+#else
 sffs_inactive(vnode_t *vp, cred_t *cr, caller_context_t *ct)
+#endif
 {
 	sfnode_t *node;
 
