@@ -1,6 +1,7 @@
 /* $Id$ */
 /** @file
  * VirtualBox File System for Solaris Guests, provider header.
+ * Portions contributed by: Ronald.
  */
 
 /*
@@ -85,13 +86,16 @@ extern int sfprov_write(sfp_file_t *, char * buffer, uint64_t offset,
 
 
 /*
- * get information about a file (or directory) using pathname
+ * get/set information about a file (or directory) using pathname
  */
 extern int sfprov_get_mode(sfp_mount_t *, char *, mode_t *);
 extern int sfprov_get_size(sfp_mount_t *, char *, uint64_t *);
 extern int sfprov_get_atime(sfp_mount_t *, char *, timestruc_t *);
 extern int sfprov_get_mtime(sfp_mount_t *, char *, timestruc_t *);
 extern int sfprov_get_ctime(sfp_mount_t *, char *, timestruc_t *);
+extern int sfprov_set_attr(sfp_mount_t *, char *, uint_t, mode_t,
+   timestruc_t, timestruc_t, timestruc_t);
+extern int sfprov_set_size(sfp_mount_t *, char *, uint64_t);
 
 
 /*
