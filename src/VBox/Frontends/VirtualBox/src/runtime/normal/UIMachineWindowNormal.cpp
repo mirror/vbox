@@ -29,6 +29,7 @@
 #include "VBoxUtils.h"
 
 #include "UIActionsPool.h"
+#include "UIMouseHandler.h"
 #include "UIDownloaderAdditions.h"
 #include "UIDownloaderUserManual.h"
 #include "UIIndicatorsPool.h"
@@ -488,11 +489,11 @@ void UIMachineWindowNormal::prepareMachineView()
         connect(machineView(), SIGNAL(keyboardStateChanged(int)), indicatorsPool()->indicator(UIIndicatorIndex_Hostkey), SLOT(setState(int)));
 
         /* Mouse state-change updater: */
-        connect(machineView(), SIGNAL(mouseStateChanged(int)), indicatorsPool()->indicator(UIIndicatorIndex_Mouse), SLOT(setState(int)));
+        connect(machineLogic()->mouseHandler(), SIGNAL(mouseStateChanged(int)), indicatorsPool()->indicator(UIIndicatorIndex_Mouse), SLOT(setState(int)));
 
         /* Early initialize required connections: */
         indicatorsPool()->indicator(UIIndicatorIndex_Hostkey)->setState(machineView()->keyboardState());
-        indicatorsPool()->indicator(UIIndicatorIndex_Mouse)->setState(machineView()->mouseState());
+        indicatorsPool()->indicator(UIIndicatorIndex_Mouse)->setState(machineLogic()->mouseHandler()->mouseState());
     }
 }
 

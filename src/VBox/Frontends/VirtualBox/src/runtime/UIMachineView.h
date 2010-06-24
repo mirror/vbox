@@ -58,21 +58,18 @@ public:
 
     /* Public getters: */
     int keyboardState() const;
-    int mouseState() const;
     virtual QRegion lastVisibleRegion() const { return QRegion(); }
 
     /* Public setters: */
     virtual void setGuestAutoresizeEnabled(bool /* fEnabled */) {}
-    virtual void setMouseIntegrationEnabled(bool fEnabled);
 
     /* Public members: */
     virtual void normalizeGeometry(bool /* bAdjustPosition = false */) = 0;
 
 signals:
 
-    /* Mouse/Keyboard state-change signals: */
+    /* Keyboard state-change signals: */
     void keyboardStateChanged(int iState);
-    void mouseStateChanged(int iState);
 
     /* Utility signals: */
     void resizeHintDone();
@@ -108,6 +105,11 @@ protected:
     DesktopGeo desktopGeometryType() const { return m_desktopGeometryType; }
     QSize desktopGeometry() const;
     QSize guestSizeHint();
+#ifdef Q_WS_MAC
+    /* These getters are temporary here while UIKeyboardHandler is not implemented: */
+    bool isHostKeyAlone() const { return m_bIsHostkeyAlone; }
+    bool isKeyboardGrabbed() const { return m_fKeyboardGrabbed; }
+#endif /* Q_WS_MAC */
 
     /* Protected setters: */
     void setDesktopGeometry(DesktopGeo geometry, int iWidth, int iHeight);
@@ -116,10 +118,6 @@ protected:
     void storeGuestSizeHint(const QSize &sizeHint);
 
     /* Protected helpers: */
-    void updateMouseCursorShape();
-#ifdef Q_WS_WIN32
-    void updateMouseCursorClipping();
-#endif
     virtual QRect workingArea() = 0;
     virtual void calculateDesktopGeometry() = 0;
     virtual void maybeRestrictMinimumSize() = 0;
@@ -127,7 +125,6 @@ protected:
 
 #ifdef Q_WS_MAC
     void updateDockIcon();
-    void setMouseCoalescingEnabled(bool fOn);
     CGImageRef vmContentImage();
     CGImageRef frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer);
 #endif /* Q_WS_MAC */
@@ -157,12 +154,7 @@ protected slots:
 
     /* Console callback handlers: */
     virtual void sltMachineStateChanged();
-    virtual void sltMousePointerShapeChanged();
-    virtual void sltMouseCapabilityChanged();
     virtual void sltPerformGuestResize(const QSize & /* toSize */) {};
-
-    /* Session callback handlers: */
-    virtual void sltMouseCapturedStatusChanged();
 
     /* Various helper slots: */
     virtual void sltNormalizeGeometry() { normalizeGeometry(true); }
@@ -172,9 +164,6 @@ private:
     /* Cross-platforms event processors: */
     void focusEvent(bool aHasFocus, bool aReleaseHostKey = true);
     bool keyEvent(int aKey, uint8_t aScan, int aFlags, wchar_t *aUniKey = NULL);
-    bool mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlobalPos,
-                    Qt::MouseButtons aButtons, Qt::KeyboardModifiers aModifiers,
-                    int aWheelDelta, Qt::Orientation aWheelDir);
     void resizeEvent(QResizeEvent *pEvent);
     void moveEvent(QMoveEvent *pEvent);
     void paintEvent(QPaintEvent *pEvent);
@@ -202,9 +191,7 @@ private:
     void scrollContentsBy(int dx, int dy);
 #endif
     void emitKeyboardStateChanged();
-    void emitMouseStateChanged();
     void captureKbd(bool fCapture, bool fEmitSignal = true);
-    void captureMouse(bool fCapture, bool fEmitSignal = true);
     void saveKeyStates();
     void releaseAllPressedKeys(bool aReleaseHostKey = true);
     void sendChangedKeyStates();
@@ -221,10 +208,6 @@ private:
     DesktopGeo m_desktopGeometryType;
     QSize m_storedConsoleSize;
 
-    QPoint m_lastMousePos;
-    QPoint m_capturedMousePos;
-    int m_iLastMouseWheelDelta;
-
     uint8_t m_pressedKeys[128];
     uint8_t m_pressedKeysCopy[128];
 
@@ -238,9 +221,6 @@ private:
     bool m_fAccelerate2DVideo;
 #endif
 
-#ifdef Q_WS_WIN
-    bool m_fItsMeWhoCapturedMouse;
-#endif /* Q_WS_WIN */
 #ifdef Q_WS_MAC
     /** The current modifier key mask. Used to figure out which modifier
      *  key was pressed when we get a kEventRawKeyModifiersChanged event. */
@@ -251,6 +231,7 @@ private:
     QPixmap m_pauseShot;
 
     /* Friend classes: */
+    friend class UIMouseHandler;
     friend class UIMachineLogic;
     friend class UIFrameBuffer;
     friend class UIFrameBufferQImage;

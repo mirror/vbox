@@ -26,6 +26,7 @@
 #include "VBoxProblemReporter.h"
 
 #include "UIActionsPool.h"
+#include "UIMouseHandler.h"
 #include "UIMachineLogicSeamless.h"
 #include "UIMachineWindow.h"
 #include "UIMachineWindowSeamless.h"
@@ -183,6 +184,10 @@ void UIMachineLogicSeamless::prepareMachineWindows()
     /* Update the multi screen layout: */
     m_pScreenLayout->update();
 
+    /* Create machine mouse-handler: */
+    UIMouseHandler *pMouseHandler = UIMouseHandler::create(this, visualStateType());
+    setMouseHandler(pMouseHandler);
+
     /* Create machine window(s): */
     for (int cScreenId = 0; cScreenId < m_pScreenLayout->guestScreenCount(); ++cScreenId)
         addMachineWindow(UIMachineWindow::create(this, visualStateType(), cScreenId));
@@ -205,6 +210,9 @@ void UIMachineLogicSeamless::cleanupMachineWindows()
     /* Cleanup machine window(s): */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         UIMachineWindow::destroy(pMachineWindow);
+
+    /* Cleanup mouse-handler: */
+    UIMouseHandler::destroy(mouseHandler());
 }
 
 void UIMachineLogicSeamless::cleanupActionGroups()

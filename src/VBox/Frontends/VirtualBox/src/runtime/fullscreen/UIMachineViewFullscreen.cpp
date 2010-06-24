@@ -73,8 +73,6 @@ UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWind
 
     /* Initialization: */
     sltMachineStateChanged();
-    sltMousePointerShapeChanged();
-    sltMouseCapabilityChanged();
 }
 
 UIMachineViewFullscreen::~UIMachineViewFullscreen()
@@ -186,9 +184,6 @@ bool UIMachineViewFullscreen::event(QEvent *pEvent)
 #ifdef Q_WS_MAC
             machineLogic()->updateDockIconSize(screenId(), pResizeEvent->width(), pResizeEvent->height());
 #endif /* Q_WS_MAC */
-
-            /* Update mouse cursor shape: */
-            updateMouseCursorShape();
 
             /* May be we have to restrict minimum size? */
             maybeRestrictMinimumSize();

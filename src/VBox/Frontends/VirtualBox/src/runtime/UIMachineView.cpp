@@ -35,6 +35,7 @@
 #include "VBoxFBOverlay.h"
 #include "UISession.h"
 #include "UIActionsPool.h"
+#include "UIMouseHandler.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 #include "UIMachineView.h"
@@ -156,40 +157,6 @@ int UIMachineView::keyboardState() const
            (m_bIsHostkeyPressed ? UIViewStateType_HostKeyPressed : 0);
 }
 
-int UIMachineView::mouseState() const
-{
-    return (uisession()->isMouseCaptured() ? UIMouseStateType_MouseCaptured : 0) |
-           (uisession()->isMouseSupportsAbsolute() ? UIMouseStateType_MouseAbsolute : 0) |
-           (uisession()->isMouseIntegrated() ? 0 : UIMouseStateType_MouseAbsoluteDisabled);
-}
-
-void UIMachineView::setMouseIntegrationEnabled(bool fEnabled)
-{
-    /* Do not change anything if its already so: */
-    if (uisession()->isMouseIntegrated() == fEnabled)
-        return;
-
-    /* Store new mouse 'integrated' state value: */
-    uisession()->setMouseIntegrated(fEnabled);
-
-    /* We should capture/release mouse depending on mouse 'integrated' state value: */
-    captureMouse(!uisession()->isMouseIntegrated(), false /* emit signal? */);
-
-    /* Update mouse cursor shape: */
-    updateMouseCursorShape();
-
-    /* If mouse is integrated and supports absolute pointing
-     * we should switch guest mouse to the absolute mode: */
-    if (uisession()->isMouseIntegrated() && uisession()->isMouseSupportsAbsolute())
-    {
-        CMouse mouse = session().GetConsole().GetMouse();
-        mouse.PutMouseEventAbsolute(-1, -1, 0, 0, 0);
-    }
-
-    /* Notify all listeners: */
-    emitMouseStateChanged();
-}
-
 UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
 #ifdef VBOX_WITH_VIDEOHWACCEL
                              , bool bAccelerate2DVideo
@@ -204,7 +171,6 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     , m_pFrameBuffer(0)
     , m_previousState(KMachineState_Null)
     , m_desktopGeometryType(DesktopGeo_Invalid)
-    , m_iLastMouseWheelDelta(0)
     , m_bIsKeyboardCaptured(false)
     , m_bIsHostkeyPressed(false)
     , m_bIsHostkeyAlone (false)
@@ -214,9 +180,6 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
 #ifdef VBOX_WITH_VIDEOHWACCEL
     , m_fAccelerate2DVideo(bAccelerate2DVideo)
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-#ifdef Q_WS_WIN
-    , m_fItsMeWhoCapturedMouse(false)
-#endif
 #ifdef Q_WS_MAC
     , m_darwinKeyModifiers(0)
     , m_fKeyboardGrabbed (false)
@@ -384,56 +347,6 @@ void UIMachineView::storeGuestSizeHint(const QSize &sizeHint)
     QString strValue = QString("%1,%2").arg(sizeHint.width()).arg(sizeHint.height());
     machine.SetExtraData(strKey, strValue);
 }
-
-void UIMachineView::updateMouseCursorShape()
-{
-    /* First of all, we should check if the host pointer should be visible.
-     * We should hide host pointer in case of:
-     * 1. mouse is 'captured' or
-     * 2. mouse is 'not captured', 'integrated', 'absolute', host pointer is hidden by the guest. */
-    if (uisession()->isMouseCaptured() ||
-        (uisession()->isMouseIntegrated() &&
-         uisession()->isMouseSupportsAbsolute() &&
-         uisession()->isHidingHostPointer()))
-    {
-        viewport()->setCursor(Qt::BlankCursor);
-    }
-
-    else
-
-    /* Otherwise we should show host pointer with guest shape assigned to it if:
-     * mouse is 'integrated', 'absolute', valid pointer shape is present. */
-    if (uisession()->isMouseIntegrated() &&
-        uisession()->isMouseSupportsAbsolute() &&
-        uisession()->isValidPointerShapePresent())
-    {
-        viewport()->setCursor(uisession()->cursor());
-    }
-
-    else
-
-    /* There could be other states covering such situations as:
-     * 1. mouse is 'not captured', 'integrated', 'not absolute' or
-     * 2. mouse is 'not captured', 'not integrated', 'absolute'.
-     * We have nothing to do with that except just unset the cursor. */
-    viewport()->unsetCursor();
-}
-
-#ifdef Q_WS_WIN
-/* This method is actually required only because under win-host
- * we do not really grab the mouse in case of capturing it.
- * I have to check if its really need, may be just grabMouse() will be enought: */
-void UIMachineView::updateMouseCursorClipping()
-{
-    if (m_fItsMeWhoCapturedMouse)
-    {
-        QRect r = viewport()->rect();
-        r.moveTopLeft(viewport()->mapToGlobal(QPoint(0, 0)));
-        RECT rect = { r.left(), r.top(), r.right() + 1, r.bottom() + 1 };
-        ::ClipCursor(&rect);
-    }
-}
-#endif
 
 void UIMachineView::updateSliders()
 {
@@ -642,6 +555,9 @@ void UIMachineView::prepareCommon()
     Assert(ok);
     NOREF(ok);
 #endif
+
+    /* Register mouse-handler: */
+    machineLogic()->mouseHandler()->addMachineView(screenId(), this);
 }
 
 void UIMachineView::prepareFilters()
@@ -661,15 +577,6 @@ void UIMachineView::prepareConsoleConnections()
 {
     /* Machine state-change updater: */
     connect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
-
-    /* Mouse pointer shape state-change updater: */
-    connect(uisession(), SIGNAL(sigMousePointerShapeChange()), this, SLOT(sltMousePointerShapeChanged()));
-
-    /* Mouse capability state-change updater: */
-    connect(uisession(), SIGNAL(sigMouseCapabilityChange()), this, SLOT(sltMouseCapabilityChanged()));
-
-    /* Mouse captivity status-change updater: */
-    connect(uisession(), SIGNAL(sigMouseCapturedStatusChanged()), this, SLOT(sltMouseCapturedStatusChanged()));
 }
 
 void UIMachineView::loadMachineViewSettings()
@@ -707,6 +614,9 @@ void UIMachineView::loadMachineViewSettings()
 
 void UIMachineView::cleanupCommon()
 {
+    /* Unregister mouse-handler: */
+    machineLogic()->mouseHandler()->delMachineView(screenId());
+
 #ifdef Q_WS_PM
     bool ok = VBoxHlpUninstallKbdHook(0, winId(), UM_PREACCEL_CHAR);
     Assert(ok);
@@ -952,139 +862,23 @@ bool UIMachineView::event(QEvent *pEvent)
 
 bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
+#ifdef VBOX_WITH_VIDEOHWACCEL
     if (pWatched == viewport())
     {
         switch (pEvent->type())
         {
-            case QEvent::MouseMove:
-            case QEvent::MouseButtonRelease:
-            {
-                /* Check if we should propagate this event to another window: */
-                QWidget *pWidgetAt = QApplication::widgetAt(QCursor::pos());
-                if (pWidgetAt && pWidgetAt->window() && pWidgetAt->window()->inherits("UIMachineWindow") &&
-                    pWidgetAt->window() != machineWindowWrapper()->machineWindow())
-                {
-                    /* Get current mouse-move event: */
-                    QMouseEvent *pOldMouseEvent = static_cast<QMouseEvent*>(pEvent);
-
-                    /* Get real destination window of that event: */
-                    UIMachineWindow *pMachineWindow =
-                        pWidgetAt->window()->inherits("UIMachineWindowNormal") ?
-                        static_cast<UIMachineWindow*>(qobject_cast<UIMachineWindowNormal*>(pWidgetAt->window())) :
-                        pWidgetAt->window()->inherits("UIMachineWindowFullscreen") ?
-                        static_cast<UIMachineWindow*>(qobject_cast<UIMachineWindowFullscreen*>(pWidgetAt->window())) :
-                        pWidgetAt->window()->inherits("UIMachineWindowSeamless") ?
-                        static_cast<UIMachineWindow*>(qobject_cast<UIMachineWindowSeamless*>(pWidgetAt->window())) : 0;
-                    if (pMachineWindow)
-                    {
-                        /* Get viewport: */
-                        QWidget *pOtherViewport = pMachineWindow->machineView()->viewport();
-
-                        /* Prepare redirected mouse-move event: */
-                        QMouseEvent *pNewMouseEvent = new QMouseEvent(pOldMouseEvent->type(),
-                                                                      pOtherViewport->mapFromGlobal(pOldMouseEvent->globalPos()),
-                                                                      pOldMouseEvent->globalPos(),
-                                                                      pOldMouseEvent->button(),
-                                                                      pOldMouseEvent->buttons(),
-                                                                      pOldMouseEvent->modifiers());
-
-                        /* Send that event to real destination: */
-                        QApplication::postEvent(pOtherViewport, pNewMouseEvent);
-
-                        /* Filter out that event: */
-                        return true;
-                    }
-                }
-
-                /* Check if we should activate window under cursor: */
-                if (QApplication::activeWindow() &&
-                    QApplication::activeWindow()->inherits("UIMachineWindow") &&
-                    QApplication::activeWindow() != machineWindowWrapper()->machineWindow())
-                {
-                    /* Activating hovered machine window: */
-                    machineWindowWrapper()->machineWindow()->activateWindow();
-#ifdef Q_WS_X11
-                    /* On X11 its not enough to just activate window if you
-                     * want to raise it also, so we will make it separately: */
-                    machineWindowWrapper()->machineWindow()->raise();
-#endif /* Q_WS_X11 */
-                }
-
-                /* This event should be also processed using next 'case': */
-            }
-            case QEvent::MouseButtonPress:
-            case QEvent::MouseButtonDblClick:
-            {
-                QMouseEvent *pMouseEvent = static_cast<QMouseEvent*>(pEvent);
-                m_iLastMouseWheelDelta = 0;
-                if (mouseEvent(pMouseEvent->type(), pMouseEvent->pos(), pMouseEvent->globalPos(),
-                               pMouseEvent->buttons(), pMouseEvent->modifiers(), 0, Qt::Horizontal))
-                    return true;
-                break;
-            }
-            case QEvent::Wheel:
-            {
-                QWheelEvent *pWheelEvent = static_cast<QWheelEvent*>(pEvent);
-                /* There are pointing devices which send smaller values for the delta than 120.
-                 * Here we sum them up until we are greater than 120. This allows to have finer control
-                 * over the speed acceleration & enables such devices to send a valid wheel event to our
-                 * guest mouse device at all: */
-                int iDelta = 0;
-                m_iLastMouseWheelDelta += pWheelEvent->delta();
-                if (qAbs(m_iLastMouseWheelDelta) >= 120)
-                {
-                    iDelta = m_iLastMouseWheelDelta;
-                    m_iLastMouseWheelDelta = m_iLastMouseWheelDelta % 120;
-                }
-                if (mouseEvent(pWheelEvent->type(), pWheelEvent->pos(), pWheelEvent->globalPos(),
-#ifdef QT_MAC_USE_COCOA
-                               /* Qt Cocoa is buggy. It always reports a left button pressed when the
-                                * mouse wheel event occurs. A workaround is to ask the application which
-                                * buttons are pressed currently: */
-                               QApplication::mouseButtons(),
-#else /* QT_MAC_USE_COCOA */
-                               pWheelEvent->buttons(),
-#endif /* !QT_MAC_USE_COCOA */
-                               pWheelEvent->modifiers(),
-                               iDelta, pWheelEvent->orientation()))
-                    return true;
-                break;
-            }
-#ifdef Q_WS_MAC
-            case QEvent::Leave:
-            {
-                /* Enable mouse event compression if we leave the VM view. This is necessary for
-                 * having smooth resizing of the VM/other windows: */
-                setMouseCoalescingEnabled(true);
-                break;
-            }
-            case QEvent::Enter:
-            {
-                /* Disable mouse event compression if we enter the VM view. So all mouse events are
-                 * registered in the VM. Only do this if the keyboard/mouse is grabbed (this is when
-                 * we have a valid event handler): */
-                setMouseCoalescingEnabled(false);
-                break;
-            }
-#endif /* Q_WS_MAC */
             case QEvent::Resize:
             {
-#ifdef Q_WS_WIN32
-                updateMouseCursorClipping();
-#endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
                 if (m_pFrameBuffer)
-                {
                     m_pFrameBuffer->viewportResized(static_cast<QResizeEvent*>(pEvent));
-                }
-#endif
                 break;
             }
             default:
                 break;
         }
     }
-    else if (pWatched == machineWindowWrapper()->machineWindow())
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+    if (pWatched == machineWindowWrapper()->machineWindow())
     {
         switch (pEvent->type())
         {
@@ -1172,14 +966,14 @@ void UIMachineView::sltMachineStateChanged()
                 /* Fully repaint to pick up m_pauseShot: */
                 viewport()->repaint();
             }
-            /* Reuse the focus event handler to uncapture everything: */
+            /* Reuse the focus event handler to uncapture keyboard: */
             if (hasFocus())
                 focusEvent(false /* aHasFocus*/, false /* aReleaseHostKey */);
             break;
         }
         case KMachineState_Stuck:
         {
-            /* Reuse the focus event handler to uncapture everything: */
+            /* Reuse the focus event handler to uncapture keyboard: */
             if (hasFocus())
                 focusEvent(false /* aHasFocus*/, false /* aReleaseHostKey */);
             break;
@@ -1212,51 +1006,6 @@ void UIMachineView::sltMachineStateChanged()
     m_previousState = state;
 }
 
-void UIMachineView::sltMousePointerShapeChanged()
-{
-    /* Update mouse cursor: */
-    updateMouseCursorShape();
-}
-
-void UIMachineView::sltMouseCapabilityChanged()
-{
-    /* We should release mouse if guest notified us about it supports 'absolute' mouse
-     * and mouse is in 'integrated' mode, which could be chosen from main machine menu: */
-    if (uisession()->isMouseIntegrated() && uisession()->isMouseSupportsAbsolute())
-    {
-        CMouse mouse = session().GetConsole().GetMouse();
-        mouse.PutMouseEventAbsolute(-1, -1, 0, 0, 0);
-        captureMouse(false, false);
-    }
-
-    /* Update mouse cursor shape: */
-    updateMouseCursorShape();
-
-    /* Notify user about mouse 'absolute' state if method was called by signal: */
-    if (sender()) vboxProblem().remindAboutMouseIntegration(uisession()->isMouseSupportsAbsolute());
-
-    /* Notify all listeners: */
-    emitMouseStateChanged();
-}
-
-void UIMachineView::sltMouseCapturedStatusChanged()
-{
-    /* If mouse 'captured' state value changed to 'false': */
-    if (!uisession()->isMouseCaptured())
-    {
-        /* Releasing grabbed mouse from that window: */
-#ifdef Q_WS_WIN
-        m_fItsMeWhoCapturedMouse = false;
-        ::ClipCursor(NULL);
-#else
-        viewport()->releaseMouse();
-#endif /* Q_WS_WIN */
-    }
-
-    /* Update mouse cursor shape: */
-    updateMouseCursorShape();
-}
-
 void UIMachineView::focusEvent(bool fHasFocus, bool fReleaseHostKey /* = true */)
 {
     if (fHasFocus)
@@ -1276,7 +1025,6 @@ void UIMachineView::focusEvent(bool fHasFocus, bool fReleaseHostKey /* = true */
     }
     else
     {
-        captureMouse(false);
         captureKbd(false, false);
         releaseAllPressedKeys(fReleaseHostKey);
     }
@@ -1351,7 +1099,7 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
                 {
                     captureKbd(false);
                     if (!(uisession()->isMouseSupportsAbsolute() && uisession()->isMouseIntegrated()))
-                        captureMouse(false);
+                        machineLogic()->mouseHandler()->captureMouse(screenId());
                 }
 
                 return true;
@@ -1466,7 +1214,10 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
                                  * mouse is immediately ungrabbed. */
                                 qApp->processEvents();
 #endif
-                                captureMouse(m_bIsKeyboardCaptured);
+                                if (m_bIsKeyboardCaptured)
+                                    machineLogic()->mouseHandler()->captureMouse(screenId());
+                                else
+                                    machineLogic()->mouseHandler()->releaseMouse();
                             }
                         }
                     }
@@ -1561,241 +1312,6 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
 
     /* Grab the key from Qt: */
     return true;
-}
-
-bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlobalPos,
-                               Qt::MouseButtons aButtons, Qt::KeyboardModifiers /* aModifiers */,
-                               int aWheelDelta, Qt::Orientation aWheelDir)
-{
-    int state = 0;
-    if (aButtons & Qt::LeftButton)
-        state |= KMouseButtonState_LeftButton;
-    if (aButtons & Qt::RightButton)
-        state |= KMouseButtonState_RightButton;
-    if (aButtons & Qt::MidButton)
-        state |= KMouseButtonState_MiddleButton;
-    if (aButtons & Qt::XButton1)
-        state |= KMouseButtonState_XButton1;
-    if (aButtons & Qt::XButton2)
-        state |= KMouseButtonState_XButton2;
-
-#ifdef Q_WS_MAC
-    /* Simulate the right click on Host+Left Mouse: */
-    if (m_bIsHostkeyPressed &&
-        m_bIsHostkeyAlone &&
-        state == KMouseButtonState_LeftButton)
-        state = KMouseButtonState_RightButton;
-#endif /* Q_WS_MAC */
-
-    int wheelVertical = 0;
-    int wheelHorizontal = 0;
-    if (aWheelDir == Qt::Vertical)
-    {
-        /* The absolute value of wheel delta is 120 units per every wheel move;
-         * positive deltas correspond to counterclockwize rotations (usually up),
-         * negative deltas correspond to clockwize (usually down). */
-        wheelVertical = - (aWheelDelta / 120);
-    }
-    else if (aWheelDir == Qt::Horizontal)
-        wheelHorizontal = aWheelDelta / 120;
-
-    if (uisession()->isMouseCaptured())
-    {
-#ifdef Q_WS_WIN32
-        /* Send pending WM_PAINT events: */
-        ::UpdateWindow(viewport()->winId());
-#endif
-
-        CMouse mouse = session().GetConsole().GetMouse();
-        mouse.PutMouseEvent(aGlobalPos.x() - m_lastMousePos.x(),
-                            aGlobalPos.y() - m_lastMousePos.y(),
-                            wheelVertical, wheelHorizontal, state);
-
-#if defined (Q_WS_MAC)
-        /*
-         * Keep the mouse from leaving the widget.
-         *
-         * This is a bit tricky to get right because if it escapes we won't necessarily
-         * get mouse events any longer and can warp it back. So, we keep safety zone
-         * of up to 300 pixels around the borders of the widget to prevent this from
-         * happening. Also, the mouse is warped back to the center of the widget.
-         *
-         * (Note, aPos seems to be unreliable, it caused endless recursion here at one points...)
-         * (Note, synergy and other remote clients might not like this cursor warping.)
-         */
-        QRect rect = viewport()->visibleRegion().boundingRect();
-        QPoint pw = viewport()->mapToGlobal(viewport()->pos());
-        rect.translate(pw.x(), pw.y());
-
-        QRect dpRect = QApplication::desktop()->screenGeometry(viewport());
-        if (rect.intersects (dpRect))
-            rect = rect.intersect(dpRect);
-
-        int wsafe = rect.width() / 6;
-        rect.setWidth(rect.width() - wsafe * 2);
-        rect.setLeft(rect.left() + wsafe);
-
-        int hsafe = rect.height() / 6;
-        rect.setWidth(rect.height() - hsafe * 2);
-        rect.setTop(rect.top() + hsafe);
-
-        if (rect.contains(aGlobalPos, true))
-            m_lastMousePos = aGlobalPos;
-        else
-        {
-            m_lastMousePos = rect.center();
-            QCursor::setPos(m_lastMousePos);
-        }
-#else /* !Q_WS_MAC */
-
-        /* "jerk" the mouse by bringing it to the opposite side
-         * to simulate the endless moving */
-
-# ifdef Q_WS_WIN32
-        int we = viewport()->width() - 1;
-        int he = viewport()->height() - 1;
-        QPoint p = aPos;
-        if (aPos.x() == 0)
-            p.setX(we - 1);
-        else if (aPos.x() == we)
-            p.setX(1);
-        if (aPos.y() == 0 )
-            p.setY(he - 1);
-        else if (aPos.y() == he)
-            p.setY(1);
-
-        if (p != aPos)
-        {
-            m_lastMousePos = viewport()->mapToGlobal (p);
-            QCursor::setPos(m_lastMousePos);
-        }
-        else
-        {
-            m_lastMousePos = aGlobalPos;
-        }
-# else
-        int we = QApplication::desktop()->width() - 1;
-        int he = QApplication::desktop()->height() - 1;
-        QPoint p = aGlobalPos;
-        if (aGlobalPos.x() == 0)
-            p.setX (we - 1);
-        else if (aGlobalPos.x() == we)
-            p.setX( 1 );
-        if (aGlobalPos.y() == 0)
-            p.setY (he - 1);
-        else if (aGlobalPos.y() == he)
-            p.setY (1);
-
-        if (p != aGlobalPos)
-        {
-            m_lastMousePos =  p;
-            QCursor::setPos(m_lastMousePos);
-        }
-        else
-        {
-            m_lastMousePos = aGlobalPos;
-        }
-# endif
-#endif /* !Q_WS_MAC */
-        return true; /* stop further event handling */
-    }
-    else /* !uisession()->isMouseCaptured() */
-    {
-#if 0 // TODO: Move that to fullscreen event-hjadler:
-        if (vboxGlobal().vmRenderMode() != VBoxDefs::SDLMode)
-        {
-            /* try to automatically scroll the guest canvas if the
-             * mouse is on the screen border */
-            /// @todo (r=dmik) better use a timer for autoscroll
-            QRect scrGeo = QApplication::desktop()->screenGeometry (this);
-            int dx = 0, dy = 0;
-            if (scrGeo.width() < contentsWidth())
-            {
-                if (scrGeo.left() == aGlobalPos.x()) dx = -1;
-                if (scrGeo.right() == aGlobalPos.x()) dx = +1;
-            }
-            if (scrGeo.height() < contentsHeight())
-            {
-                if (scrGeo.top() == aGlobalPos.y()) dy = -1;
-                if (scrGeo.bottom() == aGlobalPos.y()) dy = +1;
-            }
-            if (dx || dy)
-                scrollBy(dx, dy);
-        }
-#endif
-
-        if (uisession()->isMouseSupportsAbsolute() && uisession()->isMouseIntegrated())
-        {
-            int cw = contentsWidth(), ch = contentsHeight();
-            int vw = visibleWidth(), vh = visibleHeight();
-
-            if (vboxGlobal().vmRenderMode() != VBoxDefs::SDLMode)
-            {
-                /* Try to automatically scroll the guest canvas if the
-                 * mouse goes outside its visible part: */
-                int dx = 0;
-                if (aPos.x() > vw) dx = aPos.x() - vw;
-                else if (aPos.x() < 0) dx = aPos.x();
-                int dy = 0;
-                if (aPos.y() > vh) dy = aPos.y() - vh;
-                else if (aPos.y() < 0) dy = aPos.y();
-                if (dx != 0 || dy != 0) scrollBy (dx, dy);
-            }
-
-            QPoint cpnt = viewportToContents(aPos);
-            if (cpnt.x() < 0) cpnt.setX(0);
-            else if (cpnt.x() > cw - 1) cpnt.setX(cw - 1);
-            if (cpnt.y() < 0) cpnt.setY(0);
-            else if (cpnt.y() > ch - 1) cpnt.setY(ch - 1);
-
-            // TODO: Where to put that actually?
-            /* Get & Setup absolute-event shift: */
-            CFramebuffer framebuffer;
-            LONG xShift = 0, yShift = 0;
-            session().GetConsole().GetDisplay().GetFramebuffer(screenId(), framebuffer, xShift, yShift);
-            cpnt.setX(cpnt.x() + xShift);
-            cpnt.setY(cpnt.y() + yShift);
-
-            CMouse mouse = session().GetConsole().GetMouse();
-            // AssertMsgFailed(("x=%d, y=%d", cpnt.x(), cpnt.y())); // this shows what absolute coordinates are correct!
-            mouse.PutMouseEventAbsolute(cpnt.x() + 1, cpnt.y() + 1, wheelVertical, wheelHorizontal, state);
-            return true;
-        }
-        else
-        {
-            if (hasFocus() && (aType == QEvent::MouseButtonRelease && aButtons == Qt::NoButton))
-            {
-                if (uisession()->isPaused())
-                {
-                    vboxProblem().remindAboutPausedVMInput();
-                }
-                else if (uisession()->isRunning())
-                {
-                    /* Temporarily disable auto capture that will take place after this dialog is dismissed because
-                     * the capture state is to be defined by the dialog result itself: */
-                    uisession()->setAutoCaptureDisabled(true);
-                    bool autoConfirmed = false;
-                    bool ok = vboxProblem().confirmInputCapture(&autoConfirmed);
-                    if (autoConfirmed)
-                        uisession()->setAutoCaptureDisabled(false);
-                    /* Otherwise, the disable flag will be reset in the next console view's foucs in event (since
-                     * may happen asynchronously on some platforms, after we return from this code): */
-                    if (ok)
-                    {
-#ifdef Q_WS_X11
-                        /* Make sure that pending FocusOut events from the previous message box are handled,
-                         * otherwise the mouse is immediately ungrabbed again: */
-                        qApp->processEvents();
-#endif
-                        captureKbd(true);
-                        captureMouse(true);
-                    }
-                }
-            }
-        }
-    }
-
-    return false;
 }
 
 void UIMachineView::resizeEvent(QResizeEvent *pEvent)
@@ -2113,7 +1629,11 @@ bool UIMachineView::x11Event(XEvent *pEvent)
             if (uisession()->isRunning())
             {
                 if (VBoxGlobal::qtRTVersion() < ((4 << 16) | (5 << 8) | 0))
-                    focusEvent (pEvent->type == XFocusIn);
+                {
+                    focusEvent(pEvent->type == XFocusIn);
+                    if (pEvent->type == XFocusOut)
+                        machineLogic()->mouseHandler()->releaseMouse();
+                }
             }
             return false;
         case XKeyPress:
@@ -2422,11 +1942,6 @@ void UIMachineView::emitKeyboardStateChanged()
     emit keyboardStateChanged(keyboardState());
 }
 
-void UIMachineView::emitMouseStateChanged()
-{
-    emit mouseStateChanged(mouseState());
-}
-
 void UIMachineView::captureKbd(bool fCapture, bool fEmitSignal /* = true */)
 {
     if (m_bIsKeyboardCaptured == fCapture)
@@ -2495,54 +2010,6 @@ void UIMachineView::captureKbd(bool fCapture, bool fEmitSignal /* = true */)
 
     if (fEmitSignal)
         emitKeyboardStateChanged();
-}
-
-void UIMachineView::captureMouse(bool fCapture, bool fEmitSignal /* = true */)
-{
-    /* Do not change anything if its already so: */
-    if (uisession()->isMouseCaptured() == fCapture)
-        return;
-
-    /* Store new mouse 'captured' state value: */
-    uisession()->setMouseCaptured(fCapture);
-
-    if (fCapture)
-    {
-        /* Memorize the host position where the cursor was captured: */
-        m_capturedMousePos = QCursor::pos();
-#ifdef Q_WS_WIN32
-        /* Remember what this window captured mouse: */
-        m_fItsMeWhoCapturedMouse = true;
-        /* Move the mouse to the center of the visible area: */
-        m_lastMousePos = mapToGlobal(visibleRegion().boundingRect().center());
-        QCursor::setPos(m_lastMousePos);
-        /* Update mouse clipping: */
-        updateMouseCursorClipping();
-#elif defined (Q_WS_MAC)
-        /* Move the mouse to the center of the visible area: */
-        m_lastMousePos = mapToGlobal(visibleRegion().boundingRect().center());
-        QCursor::setPos(m_lastMousePos);
-        /* Grab all mouse events: */
-        viewport()->grabMouse();
-#else
-        /* Grab all mouse events: */
-        viewport()->grabMouse();
-        m_lastMousePos = QCursor::pos();
-#endif
-    }
-    else
-    {
-        /* Return the cursor to where it was when we captured it: */
-        QCursor::setPos(m_capturedMousePos);
-    }
-
-    /* Updating guest mouse: */
-    CMouse mouse = session().GetConsole().GetMouse();
-    mouse.PutMouseEvent(0, 0, 0, 0, 0);
-
-    /* Emit signal if required: */
-    if (fEmitSignal)
-        emitMouseStateChanged();
 }
 
 void UIMachineView::saveKeyStates()
@@ -2708,19 +2175,6 @@ CGImageRef UIMachineView::frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer)
 void UIMachineView::updateDockIcon()
 {
     machineLogic()->updateDockIcon();
-}
-
-void UIMachineView::setMouseCoalescingEnabled(bool fOn)
-{
-    /* Enable mouse event compression if we leave the VM view. This
-       is necessary for having smooth resizing of the VM/other
-       windows.
-       Disable mouse event compression if we enter the VM view. So
-       all mouse events are registered in the VM. Only do this if
-       the keyboard/mouse is grabbed (this is when we have a valid
-       event handler). */
-    if (fOn || m_fKeyboardGrabbed)
-        ::darwinSetMouseCoalescingEnabled(fOn);
 }
 #endif /* Q_WS_MAC */
 

@@ -137,7 +137,7 @@ public:
     void setCapsLockAdaptionCnt(uint uCapsLockAdaptionCnt) { m_uCapsLockAdaptionCnt = uCapsLockAdaptionCnt; }
 
     /* Mouse setters: */
-    void setMouseCaptured(bool fIsMouseCaptured) { m_fIsMouseCaptured = fIsMouseCaptured; emit sigMouseCapturedStatusChanged(); }
+    void setMouseCaptured(bool fIsMouseCaptured) { m_fIsMouseCaptured = fIsMouseCaptured; }
     void setMouseIntegrated(bool fIsMouseIntegrated) { m_fIsMouseIntegrated = fIsMouseIntegrated; }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -175,7 +175,6 @@ signals:
 
     /* Session signals: */
     void sigMachineStarted();
-    void sigMouseCapturedStatusChanged();
 
 public slots:
 

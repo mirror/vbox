@@ -23,6 +23,7 @@
 #include "UIActionsPool.h"
 #include "UIDownloaderAdditions.h"
 #include "UIIconPool.h"
+#include "UIMouseHandler.h"
 #include "UIMachineLogic.h"
 #include "UIMachineLogicFullscreen.h"
 #include "UIMachineLogicNormal.h"
@@ -336,6 +337,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent,
     , m_pSession(pSession)
     , m_pActionsPool(pActionsPool)
     , m_visualStateType(visualStateType)
+    , m_pMouseHandler(0)
     , m_pRunningActions(0)
     , m_pRunningOrPausedActions(0)
     , m_fIsWindowsCreated(false)
@@ -369,6 +371,11 @@ CSession& UIMachineLogic::session()
 void UIMachineLogic::addMachineWindow(UIMachineWindow *pMachineWindow)
 {
     m_machineWindowsList << pMachineWindow;
+}
+
+void UIMachineLogic::setMouseHandler(UIMouseHandler *pMouseHandler)
+{
+    m_pMouseHandler = pMouseHandler;
 }
 
 void UIMachineLogic::retranslateUi()
@@ -903,8 +910,7 @@ void UIMachineLogic::sltToggleMouseIntegration(bool fOff)
         return;
 
     /* Disable/Enable mouse-integration for all view(s): */
-    foreach(UIMachineWindow *pMachineWindow, machineWindows())
-        pMachineWindow->machineView()->setMouseIntegrationEnabled(!fOff);
+    m_pMouseHandler->setMouseIntegrationEnabled(!fOff);
 }
 
 void UIMachineLogic::sltTypeCAD()
