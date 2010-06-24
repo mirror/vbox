@@ -29,6 +29,7 @@ import shlex
 import time
 import re
 import platform
+from optparse import OptionParser
 
 # Simple implementation of IConsoleCallback, one can use it as skeleton
 # for custom implementations
@@ -133,6 +134,9 @@ class VBoxMonitor:
     def onGuestPropertyChange(self, id, name, newValue, flags):
        print "onGuestPropertyChange: %s: %s=%s" %(id, name, newValue)
 
+g_batchmode = False
+g_scripfile = None
+g_cmd = None
 g_hasreadline = True
 try:
     if g_hasreadline:
@@ -2591,6 +2595,7 @@ def natNetwork(ctx, mach, nicnum, nat, args):
             return (1, None)
         nat.network = args[1]
     return (0, None)
+
 def natCmd(ctx, args):
     """This command is entry point to NAT settins management
     usage: nat <vm> <nicnum> <cmd> <cmd-args>
@@ -3049,14 +3054,28 @@ def interpret(ctx):
         ctx['perf'].setup(['*'], [vbox.host], 10, 15)
       except:
         pass
+    cmds = []
+    
+    if g_cmd is not None:
+        cmds = g_cmd.split(';')
+    it = cmds.__iter__()
 
     while True:
         try:
-            cmd = raw_input(ctx['prompt'])
+            if g_batchmode:
+                cmd = 'runScript %s'%(g_scripfile)
+            elif g_cmd is not None:
+                cmd = it.next()
+            else:
+                cmd = raw_input(ctx['prompt'])
             done = runCommand(ctx, cmd)
             if done != 0: break
+            if g_batchmode:
+                break
         except KeyboardInterrupt:
             print '====== You can type quit or q to leave'
+        except StopIteration:
+            break
         except EOFError:
             break
         except Exception,e:
@@ -3087,16 +3106,40 @@ def runGuestCommandCb(ctx, id, guestLambda, args):
 
 def main(argv):
     style = None
+    params = None
     autopath = False
-    argv.pop(0)
-    while len(argv) > 0:
-        if argv[0] == "-w":
-            style = "WEBSERVICE"
-        if argv[0] == "-a":
-            autopath = True
-        argv.pop(0)
+    script_file = None
+    parse = OptionParser()
+    parse.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False, help = "switch on verbose")
+    parse.add_option("-a", "--autopath", dest="autopath", action="store_true", default=False, help = "switch on autopath")
+    parse.add_option("-w", "--webservice", dest="style", action="store_const", const="WEBSERVICE", help = "connect to webservice")
+    parse.add_option("-b", "--batch", dest="batch_file", help = "script file to execute")
+    parse.add_option("-c", dest="command_line", help = "command sequence to execute")
+    parse.add_option("-o", dest="opt_line", help = "option line")
+    global g_verbose, g_scripfile, g_batchmode, g_hascolors, g_hasreadline, g_cmd
+    (options, args) = parse.parse_args()
+    g_verbose = options.verbose
+    style = options.style
+    if options.batch_file is not None:
+        g_batchmode = True
+        g_hascolors = False
+        g_hasreadline = False
+        g_scripfile = options.batch_file
+    if options.command_line is not None:
+        g_hascolors = False
+        g_hasreadline = False
+        g_cmd = options.command_line
+    if options.opt_line is not None:
+        params = {}
+        strparams = options.opt_line
+        l = strparams.split(',')
+        for e in l:
+            (k,v) = e.split('=')
+            params[k] = v
+    else:
+        params = None
 
-    if autopath:
+    if options.autopath:
         cwd = os.getcwd()
         vpp = os.environ.get("VBOX_PROGRAM_PATH")
         if vpp is None and (os.path.isfile(os.path.join(cwd, "VirtualBox")) or os.path.isfile(os.path.join(cwd, "VirtualBox.exe"))) :
@@ -3106,7 +3149,7 @@ def main(argv):
             sys.path.append(os.path.join(vpp, "sdk", "installer"))
 
     from vboxapi import VirtualBoxManager
-    g_virtualBoxManager = VirtualBoxManager(style, None)
+    g_virtualBoxManager = VirtualBoxManager(style, params)
     ctx = {'global':g_virtualBoxManager,
            'mgr':g_virtualBoxManager.mgr,
            'vb':g_virtualBoxManager.vbox,
