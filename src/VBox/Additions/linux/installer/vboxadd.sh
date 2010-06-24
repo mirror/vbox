@@ -173,7 +173,7 @@ test_sane_kernel_dir()
     KERN_DIR="/lib/modules/$KERN_VER/build"
     if [ -d "$KERN_DIR" ]; then
         KERN_REL=`make -sC $KERN_DIR --no-print-directory kernelrelease || true`
-        if [ "x$KERN_REL" == "x$KERN_VER" ]; then
+        if [ "x$KERN_REL" = "x$KERN_VER" ]; then
             return 0
         fi
     fi
