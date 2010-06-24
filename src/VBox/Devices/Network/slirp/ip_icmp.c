@@ -60,12 +60,6 @@
 #include <Iphlpapi.h>
 #endif
 
-#ifdef RT_OS_WINDOWS
-# define ICMP_SEND_ECHO(event, routine, addr, data, datasize, ipopt)                                        \
-                IcmpSendEcho2(pData->icmp_socket.sh, (event), NULL, NULL, (addr), (data), (datasize),       \
-                               (ipopt), pData->pvIcmpBuffer, pData->szIcmpBuffer, 1)
-#endif /* RT_OS_WINDOWS */
-
 /* The message sent when emulating PING */
 /* Be nice and tell them it's just a psuedo-ping packet */
 static const char icmp_ping_msg[] = "This is a psuedo-PING packet used by Slirp to emulate ICMP ECHO-REQUEST packets.\n";
@@ -354,7 +348,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
     {
         /* min 8 bytes payload */
         icmpstat.icps_tooshort++;
-        goto end_error;
+        goto end_error_free_m;
     }
 
     m->m_len -= hlen;
@@ -363,7 +357,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
     if (cksum(m, icmplen))
     {
         icmpstat.icps_checksum++;
-        goto end_error;
+        goto end_error_free_m;
     }
 
     if (m->m_next)
@@ -372,7 +366,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
         if (!icp_buf)
         {
             LogRel(("NAT: not enought memory to allocate the buffer\n"));
-            goto end_error;
+            goto end_error_free_m;
         }
         m_copydata(m, 0, icmplen, icp_buf);
         icp = (struct icmp *)icp_buf;
@@ -442,7 +436,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
                         /* don't let m_freem at the end free atached buffer */
                         goto done;
                     }
-                    
+
                     LogRel((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
                                 errno, strerror(errno)));
                     icmp_error(pData, m, ICMP_UNREACH, ICMP_UNREACH_NET, 0, strerror(errno));
@@ -453,12 +447,22 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
                 pData->icmp_socket.so_icmp_seq = icp->icmp_seq;
                 memset(&ipopt, 0, sizeof(IP_OPTION_INFORMATION));
                 ipopt.Ttl = ip->ip_ttl;
-                status = ICMP_SEND_ECHO(pData->phEvents[VBOX_ICMP_EVENT_INDEX], notify_slirp, addr.sin_addr.s_addr,
-                                icp->icmp_data, icmplen - ICMP_MINLEN, &ipopt);
+                status = IcmpSendEcho2(pData->icmp_socket.sh /*=handle*/,
+                                       pData->phEvents[VBOX_ICMP_EVENT_INDEX] /*=Event*/,
+                                       NULL /*=ApcRoutine*/,
+                                       NULL /*=ApcContext*/,
+                                       addr.sin_addr.s_addr /*=DestinationAddress*/,
+                                       icp->icmp_data /*=RequestData*/,
+                                       icmplen - ICMP_MINLEN /*=RequestSize*/,
+                                       &ipopt /*=RequestOptions*/,
+                                       pData->pvIcmpBuffer /*=ReplyBuffer*/,
+                                       pData->szIcmpBuffer /*=ReplySize*/,
+                                       1 /*=Timeout in ms*/);
                 error = GetLastError();
-                if (   status != 0 
+                if (   status != 0
                     || error == ERROR_IO_PENDING)
                 {
+                    /* no error! */
                     m->m_so = &pData->icmp_socket;
                     icmp_attach(pData, m);
                     /* don't let m_freem at the end free atached buffer */
@@ -488,9 +492,9 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
             break;
         case ICMP_UNREACH:
         case ICMP_TIMXCEED:
-            /* @todo(vvl): both up cases comes from guest, 
-             *  indeed right solution would be find the socket 
-             *  corresponding to ICMP data and close it.  
+            /* @todo(vvl): both up cases comes from guest,
+             *  indeed right solution would be find the socket
+             *  corresponding to ICMP data and close it.
              */
         case ICMP_PARAMPROB:
         case ICMP_SOURCEQUENCH:
@@ -503,8 +507,8 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
         default:
             icmpstat.icps_badtype++;
     } /* switch */
-    
-end_error:
+
+end_error_free_m:
     m_freem(pData, m);
 
 done:
