@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2010 Oracle Corporation
+ * Copyright (C) 2007 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -43,10 +43,6 @@
 # include <sys/stat.h>
 # if defined(RT_OS_LINUX) /** @todo check this on solaris+freebsd as well. */
 #  include <sys/ioctl.h>
-# endif
-# if defined(RT_OS_SOLARIS) && !defined(VBOX_VBGLR3_XFREE86)
-#  define VBGL_DO_MASK_SIGNALS
-#  include <signal.h>
 # endif
 # include <errno.h>
 # include <unistd.h>
@@ -292,42 +288,6 @@ VBGLR3DECL(void) VbglR3Term(void)
 }
 
 
-/*
- * Helper macros for blocking and restoring signals.
- */
-#ifdef VBGL_DO_MASK_SIGNALS
-# define BLOCK_SIGNALS(Prf) \
-    int         Prf##_rcSig; \
-    sigset_t    Prf##_SigSetOld; \
-    do \
-    { \
-        sigset_t Prf##_SigSetNew; \
-        sigfillset(& Prf##_SigSetNew); \
-        sigdelset(& Prf##_SigSetNew, SIGTERM); \
-        sigdelset(& Prf##_SigSetNew, SIGINT); \
-        sigdelset(& Prf##_SigSetNew, SIGHUP); \
-        sigdelset(& Prf##_SigSetNew, SIGABRT); \
-        sigdelset(& Prf##_SigSetNew, SIGKILL); \
-        Prf##_rcSig = pthread_sigmask(SIG_BLOCK, & Prf##_SigSetNew, & Prf##_SigSetOld); \
-    } while (0)
-
-# define RESTORE_SIGNALS(Prf) \
-    do \
-    { \
-        if (Prf##_rcSig == 0) \
-        { \
-            int Prf##_err = errno; /* paranoia */ \
-            pthread_sigmask(SIG_SETMASK, & Prf##_SigSetOld, NULL); \
-            errno = Prf##_err; \
-        } \
-    } while (0)
-
-#else
-# define BLOCK_SIGNALS(Prf)     do { } while (0)
-# define RESTORE_SIGNALS(Prf)   do { } while (0)
-#endif
-
-
 /**
  * Internal wrapper around various OS specific ioctl implemenations.
  *
@@ -384,9 +344,7 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
  *        error instead of an errno.h one. Alternatively, extend/redefine the
  *        header with an error code return field (much better alternative
  *        actually). */
-    BLOCK_SIGNALS(SigPrefix);
     int rc = ioctl((int)g_File, iFunction, &Hdr);
-    RESTORE_SIGNALS(SigPrefix);
     if (rc == -1)
     {
         rc = errno;
@@ -395,13 +353,11 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
     return VINF_SUCCESS;
 
 #elif defined(RT_OS_LINUX)
-    BLOCK_SIGNALS(SigPrefix);
 # ifdef VBOX_VBGLR3_XFREE86
     int rc = xf86ioctl((int)g_File, iFunction, pvData);
 # else
     int rc = ioctl((int)g_File, iFunction, pvData);
 # endif
-    RESTORE_SIGNALS(SigPrefix);
     if (RT_LIKELY(rc == 0))
         return VINF_SUCCESS;
 
@@ -420,9 +376,7 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
 #elif defined(VBOX_VBGLR3_XFREE86)
     /* PORTME - This is preferred over the RTFileIOCtl variant below, just be careful with the (int). */
 /** @todo test status code passing! */
-    BLOCK_SIGNALS(SigPrefix);
     int rc = xf86ioctl(g_File, iFunction, pvData);
-    RESTORE_SIGNALS(SigPrefix);
     if (rc == -1)
         return VERR_FILE_IO_ERROR;  /* This is purely legacy stuff, it has to work and no more. */
     return VINF_SUCCESS;
@@ -430,10 +384,8 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
 #else
     /* Default implementation - PORTME: Do not use this without testings that passing errors works! */
 /** @todo test status code passing! */
-    BLOCK_SIGNALS(SigPrefix);
     int rc2 = VERR_INTERNAL_ERROR;
     int rc = RTFileIoCtl(g_File, (int)iFunction, pvData, cbData, &rc2);
-    RESTORE_SIGNALS(SigPrefix);
     if (RT_SUCCESS(rc))
         rc = rc2;
     return rc;
