@@ -71,14 +71,24 @@ VBoxReadInput(InputInfoPtr pInfo)
 #endif
         &&  RT_SUCCESS(VbglR3GetMouseStatus(&fFeatures, &cx, &cy))
         && (fFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE))
+    {
 #if ABI_XINPUT_VERSION == SET_ABI_VERSION(2, 0)
         /* Bug in the 1.4 X server series - conversion_proc was no longer
          * called, but the server didn't yet do the conversion itself. */
         cx = (cx * screenInfo.screens[0]->width) / 65535;
         cy = (cy * screenInfo.screens[0]->height) / 65535;
 #endif
-        /* send absolute movement */
-        xf86PostMotionEvent(pInfo->dev, 1, 0, 2, cx, cy);
+        /* The X server is calling this function even if only a button was
+         * pressed. old_x/old_y seem to be not used by the server code. */
+        if (   (uint32_t)pInfo->old_x != cx
+            || (uint32_t)pInfo->old_y != cy)
+        {
+            /* send absolute movement */
+            xf86PostMotionEvent(pInfo->dev, 1, 0, 2, cx, cy);
+            pInfo->old_x = cx;
+            pInfo->old_y = cy;
+        }
+    }
 }
 
 static void
