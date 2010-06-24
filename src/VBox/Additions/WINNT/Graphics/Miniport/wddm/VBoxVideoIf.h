@@ -158,9 +158,9 @@ typedef struct VBOXWDDM_RECTS_FLAFS
     {
         struct
         {
-            UINT bPositionRectValid : 1;
-            UINT bVisibleRectsValid : 1;
-            UINT bAddHiddenRectsValid : 1;
+            UINT bPositionRect : 1;
+            UINT bAddVisibleRects : 1;
+            UINT bAddHiddenRects : 1;
             UINT Reserved : 29;
         };
         uint32_t Value;
@@ -297,43 +297,16 @@ DECLINLINE(void) vboxWddmRectUnite(RECT *pR, const RECT *pR2Unite)
     pR->bottom = RT_MAX(pR->bottom, pR2Unite->bottom);
 }
 
-DECLINLINE(bool) vboxWddmRectIntersection(const RECT *pRect1, const RECT *pRect2, RECT *pResult)
+DECLINLINE(bool) vboxWddmRectIntersection(const RECT *a, const RECT *b, RECT *rect)
 {
-    if (pRect1->left < pRect2->left)
-    {
-        if (pRect1->right >= pRect2->left)
-            pResult->left = pRect2->left;
-        else
-            return false;
-    }
-    else
-    {
-        if (pRect2->right >= pRect1->left)
-            pResult->left = pRect1->left;
-        else
-            return false;
-    }
-
-    pResult->right = RT_MIN(pRect1->right, pRect2->right);
-
-    if (pRect1->top < pRect2->top)
-    {
-        if (pRect1->bottom >= pRect2->top)
-            pResult->top = pRect2->top;
-        else
-            return false;
-    }
-    else
-    {
-        if (pRect2->bottom >= pRect1->top)
-            pResult->top = pRect1->top;
-        else
-            return false;
-    }
-
-    pResult->bottom = RT_MIN(pRect1->bottom, pRect2->bottom);
-
-    return true;
+    Assert(a);
+    Assert(b);
+    Assert(rect);
+    rect->left = RT_MAX(a->left, b->left);
+    rect->right = RT_MIN(a->right, b->right);
+    rect->top = RT_MAX(a->top, b->top);
+    rect->bottom = RT_MIN(a->bottom, b->bottom);
+    return (rect->right>rect->left) && (rect->bottom>rect->top);
 }
 
 DECLINLINE(void) vboxWddmDirtyRegionAddRect(PVBOXWDDM_DIRTYREGION pInfo, const RECT *pRect)

@@ -47,7 +47,7 @@ typedef struct VBOXVIDEOCM_SESSION
     /* event used to notify UMD about penging commands */
     PKEVENT pUmEvent;
     /* synch lock */
-    KSPIN_LOCK SpinLock;
+    FAST_MUTEX Mutex;
     /* indicates whether event signaling is needed on cmd add */
     bool bEventNeeded;
 } VBOXVIDEOCM_SESSION, *PVBOXVIDEOCM_SESSION;
@@ -109,7 +109,6 @@ static void vboxVideoCmCmdCancel(PVBOXVIDEOCM_CMD_DR pHdr)
 
 static void vboxVideoCmCmdPostByHdr(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEOCM_CMD_DR pHdr, uint32_t cbSize)
 {
-    KIRQL OldIrql;
     bool bSignalEvent = false;
     if (cbSize != VBOXVIDEOCM_SUBMITSIZE_DEFAULT)
     {
@@ -117,14 +116,18 @@ static void vboxVideoCmCmdPostByHdr(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEOCM_
         Assert(cbSize <= pHdr->cbMaxCmdSize);
         pHdr->CmdHdr.cbCmd = cbSize;
     }
-    KeAcquireSpinLock(&pSession->SpinLock, &OldIrql);
+
+    Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
+    ExAcquireFastMutex(&pSession->Mutex);
+
     InsertHeadList(&pSession->CommandsList, &pHdr->QueueList);
     if (pSession->bEventNeeded)
     {
         pSession->bEventNeeded = false;
         bSignalEvent = true;
     }
-    KeReleaseSpinLock(&pSession->SpinLock, OldIrql);
+
+    ExReleaseFastMutex(&pSession->Mutex);
 
     if (bSignalEvent)
         KeSetEvent(pSession->pUmEvent, 0, FALSE);
@@ -167,10 +170,11 @@ static void vboxVideoCmSessionCtxAddLocked(PVBOXVIDEOCM_SESSION pSession, PVBOXV
 
 void vboxVideoCmSessionCtxAdd(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEOCM_CTX pContext)
 {
-    KIRQL OldIrql;
-    KeAcquireSpinLock(&pSession->SpinLock, &OldIrql);
+    Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
+    ExAcquireFastMutex(&pSession->Mutex);
     vboxVideoCmSessionCtxAddLocked(pSession, pContext);
-    KeReleaseSpinLock(&pSession->SpinLock, OldIrql);
+    ExReleaseFastMutex(&pSession->Mutex);
+
 }
 
 static void vboxVideoCmSessionDestroy(PVBOXVIDEOCM_SESSION pSession)
@@ -182,24 +186,18 @@ static void vboxVideoCmSessionDestroy(PVBOXVIDEOCM_SESSION pSession)
     vboxWddmMemFree(pSession);
 }
 
-DECLINLINE(void) vboxVideoLeDetach(LIST_ENTRY *pList, LIST_ENTRY *pDstList)
-{
-    pDstList = pList;
-    pDstList->Flink->Blink = pDstList;
-    pDstList->Blink->Flink = pDstList;
-}
 /**
  * @return true iff the given session is destroyed
  */
 bool vboxVideoCmSessionCtxRemove(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEOCM_CTX pContext)
 {
-    KIRQL OldIrql;
     bool bDestroy;
     LIST_ENTRY RemainedList;
     LIST_ENTRY *pCur;
     LIST_ENTRY *pPrev;
     InitializeListHead(&RemainedList);
-    KeAcquireSpinLock(&pSession->SpinLock, &OldIrql);
+    Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
+    ExAcquireFastMutex(&pSession->Mutex);
     pContext->pSession = NULL;
     RemoveEntryList(&pContext->SessionEntry);
     bDestroy = !!(IsListEmpty(&pSession->ContextList));
@@ -229,7 +227,7 @@ bool vboxVideoCmSessionCtxRemove(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEOCM_CTX
             pCur = pCur->Flink;
         }
     }
-    KeReleaseSpinLock(&pSession->SpinLock, OldIrql);
+    ExReleaseFastMutex(&pSession->Mutex);
 
     for (pCur = RemainedList.Flink; pCur != &RemainedList; pCur = RemainedList.Flink)
     {
@@ -256,7 +254,8 @@ NTSTATUS vboxVideoCmSessionCreate(PVBOXVIDEOCM_MGR pMgr, PVBOXVIDEOCM_SESSION *p
         InitializeListHead(&pSession->ContextList);
         InitializeListHead(&pSession->CommandsList);
         pSession->pUmEvent = pUmEvent;
-        KeInitializeSpinLock(&pSession->SpinLock);
+        Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
+        ExInitializeFastMutex(&pSession->Mutex);
         pSession->bEventNeeded = true;
         vboxVideoCmSessionCtxAddLocked(pSession, pContext);
         InsertHeadList(&pMgr->SessionList, &pSession->QueueEntry);
@@ -367,7 +366,6 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXWDDM_GETVBOXVIDEOCMCM
     PVBOXVIDEOCM_CMD_DR pHdr;
     LIST_ENTRY DetachedList;
     PLIST_ENTRY pCurEntry;
-    KIRQL OldIrql;
     uint32_t cbCmdsReturned = 0;
     uint32_t cbRemainingCmds = 0;
     uint32_t cbRemainingFirstCmd = 0;
@@ -377,7 +375,8 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXWDDM_GETVBOXVIDEOCMCM
     InitializeListHead(&DetachedList);
 //    PVBOXWDDM_GETVBOXVIDEOCMCMD_HDR *pvCmd
 
-    KeAcquireSpinLock(&pSession->SpinLock, &OldIrql);
+    Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
+    ExAcquireFastMutex(&pSession->Mutex);
 
     do
     {
@@ -425,7 +424,7 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXWDDM_GETVBOXVIDEOCMCM
         }
     } while (1);
 
-    KeReleaseSpinLock(&pSession->SpinLock, OldIrql);
+    ExReleaseFastMutex(&pSession->Mutex);
 
     pvCmd->cbCmdsReturned = 0;
     for (pCurEntry = DetachedList.Blink; DetachedList.Blink != &DetachedList; pCurEntry = pCurEntry->Blink)

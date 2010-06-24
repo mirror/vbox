@@ -300,7 +300,9 @@ typedef struct _DEVICE_EXTENSION
 
    VBOXVIDEOCM_MGR CmMgr;
    LIST_ENTRY ContextList3D;
-   KSPIN_LOCK SynchLock;
+   /* mutex for context list operations */
+   FAST_MUTEX ContextMutex;
+   volatile uint32_t cContexts3D;
 
    VBOXSHGSMILIST CtlList;
    VBOXSHGSMILIST DmaCmdList;
@@ -748,6 +750,25 @@ DECLINLINE(VOID) vboxWddmAssignPrimary(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOUR
     }
 
     pSource->pPrimaryAllocation = pAllocation;
+}
+
+DECLINLINE(void) vboxVideoLeDetach(LIST_ENTRY *pList, LIST_ENTRY *pDstList)
+{
+    if (IsListEmpty(pList))
+    {
+        InitializeListHead(pDstList);
+    }
+    else
+    {
+        *pDstList = *pList;
+        Assert(pDstList->Flink->Blink == pList);
+        Assert(pDstList->Blink->Flink == pList);
+        /* pDstList->Flink & pDstList->Blink point to the "real| entries, never to pList
+         * since we've checked IsListEmpty(pList) above */
+        pDstList->Flink->Blink = pDstList;
+        pDstList->Blink->Flink = pDstList;
+        InitializeListHead(pList);
+    }
 }
 
 #endif

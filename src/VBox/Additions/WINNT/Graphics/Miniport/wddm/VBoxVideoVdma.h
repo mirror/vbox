@@ -27,6 +27,61 @@ typedef struct VBOXVDMASUBMIT
 } VBOXVDMASUBMIT, *PVBOXVDMASUBMIT;
 #endif
 
+/* start */
+typedef enum
+{
+    VBOXVDMAPIPE_STATE_CLOSED    = 0,
+    VBOXVDMAPIPE_STATE_CREATED   = 1,
+    VBOXVDMAPIPE_STATE_OPENNED   = 2,
+    VBOXVDMAPIPE_STATE_CLOSING   = 3
+} VBOXVDMAPIPE_STATE;
+
+typedef struct VBOXVDMAPIPE
+{
+    KSPIN_LOCK SinchLock;
+    KEVENT Event;
+    LIST_ENTRY CmdListHead;
+    VBOXVDMAPIPE_STATE enmState;
+    /* true iff the other end needs Event notification */
+    bool bNeedNotify;
+} VBOXVDMAPIPE, *PVBOXVDMAPIPE;
+
+typedef struct VBOXVDMAPIPE_CMD_HDR
+{
+    LIST_ENTRY ListEntry;
+} VBOXVDMAPIPE_CMD_HDR, *PVBOXVDMAPIPE_CMD_HDR;
+
+#define VBOXVDMAPIPE_CMD_HDR_FROM_ENTRY(_pE)  ( (PVBOXVDMAPIPE_CMD_HDR)((uint8_t *)(_pE) - RT_OFFSETOF(VBOXVDMAPIPE_CMD_HDR, ListEntry)) )
+
+typedef enum
+{
+    VBOXVDMAPIPE_CMD_TYPE_UNDEFINED = 0,
+    VBOXVDMAPIPE_CMD_TYPE_RECTSINFO = 1,
+    VBOXVDMAPIPE_CMD_TYPE_DMACMD    = 2
+} VBOXVDMAPIPE_CMD_TYPE;
+
+typedef struct VBOXVDMAPIPE_CMD_DR
+{
+    VBOXVDMAPIPE_CMD_HDR PipeHdr;
+    VBOXVDMAPIPE_CMD_TYPE enmType;
+} VBOXVDMAPIPE_CMD_DR, *PVBOXVDMAPIPE_CMD_DR;
+
+#define VBOXVDMAPIPE_CMD_DR_FROM_ENTRY(_pE)  ( (PVBOXVDMAPIPE_CMD_DR)VBOXVDMAPIPE_CMD_HDR_FROM_ENTRY(_pE) )
+
+typedef struct VBOXVDMAPIPE_CMD_RECTSINFO
+{
+    VBOXVDMAPIPE_CMD_DR Hdr;
+    PVBOXWDDM_CONTEXT pContext;
+    RECT ContextRect;
+    VBOXWDDM_RECTS_INFO UpdateRects;
+} VBOXVDMAPIPE_CMD_RECTSINFO, *PVBOXVDMAPIPE_CMD_RECTSINFO;
+
+typedef struct VBOXVDMAGG
+{
+    VBOXVDMAPIPE CmdPipe;
+    PKTHREAD pThread;
+} VBOXVDMAGG, *PVBOXVDMAGG;
+
 /* DMA commands are currently submitted over HGSMI */
 typedef struct VBOXVDMAINFO
 {
@@ -36,6 +91,8 @@ typedef struct VBOXVDMAINFO
 #if 0
     VBOXVDMASUBMIT Submitter;
 #endif
+    /* dma-related commands list processed on the guest w/o host part involvement (guest-guest commands) */
+    VBOXVDMAGG DmaGg;
 } VBOXVDMAINFO, *PVBOXVDMAINFO;
 
 int vboxVdmaCreate (struct _DEVICE_EXTENSION* pDevExt, VBOXVDMAINFO *pInfo, ULONG offBuffer, ULONG cbBuffer

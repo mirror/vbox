@@ -18,6 +18,444 @@
 #include "VBoxVideoVdma.h"
 #include "../VBoxVideo.h"
 
+
+NTSTATUS vboxVdmaPipeConstruct(PVBOXVDMAPIPE pPipe)
+{
+    KeInitializeSpinLock(&pPipe->SinchLock);
+    KeInitializeEvent(&pPipe->Event, SynchronizationEvent, FALSE);
+    InitializeListHead(&pPipe->CmdListHead);
+    pPipe->enmState = VBOXVDMAPIPE_STATE_CREATED;
+    pPipe->bNeedNotify = true;
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS vboxVdmaPipeSvrOpen(PVBOXVDMAPIPE pPipe)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+    KIRQL OldIrql;
+    KeAcquireSpinLock(&pPipe->SinchLock, &OldIrql);
+    Assert(pPipe->enmState == VBOXVDMAPIPE_STATE_CREATED);
+    switch (pPipe->enmState)
+    {
+        case VBOXVDMAPIPE_STATE_CREATED:
+            pPipe->enmState = VBOXVDMAPIPE_STATE_OPENNED;
+            pPipe->bNeedNotify = false;
+            break;
+        case VBOXVDMAPIPE_STATE_OPENNED:
+            pPipe->bNeedNotify = false;
+            break;
+        default:
+            AssertBreakpoint();
+            Status = STATUS_INVALID_PIPE_STATE;
+            break;
+    }
+
+    KeReleaseSpinLock(&pPipe->SinchLock, OldIrql);
+    return Status;
+}
+
+NTSTATUS vboxVdmaPipeSvrClose(PVBOXVDMAPIPE pPipe)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+    KIRQL OldIrql;
+    KeAcquireSpinLock(&pPipe->SinchLock, &OldIrql);
+    Assert(pPipe->enmState == VBOXVDMAPIPE_STATE_CLOSED
+            || pPipe->enmState == VBOXVDMAPIPE_STATE_CLOSING);
+    switch (pPipe->enmState)
+    {
+        case VBOXVDMAPIPE_STATE_CLOSING:
+            pPipe->enmState = VBOXVDMAPIPE_STATE_CLOSED;
+            break;
+        case VBOXVDMAPIPE_STATE_CLOSED:
+            break;
+        default:
+            AssertBreakpoint();
+            Status = STATUS_INVALID_PIPE_STATE;
+            break;
+    }
+
+    KeReleaseSpinLock(&pPipe->SinchLock, OldIrql);
+    return Status;
+}
+
+NTSTATUS vboxVdmaPipeCltClose(PVBOXVDMAPIPE pPipe)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+    KIRQL OldIrql;
+    KeAcquireSpinLock(&pPipe->SinchLock, &OldIrql);
+    bool bNeedNotify = false;
+    Assert(pPipe->enmState == VBOXVDMAPIPE_STATE_OPENNED
+                || pPipe->enmState == VBOXVDMAPIPE_STATE_CREATED
+                ||  pPipe->enmState == VBOXVDMAPIPE_STATE_CLOSED);
+    switch (pPipe->enmState)
+    {
+        case VBOXVDMAPIPE_STATE_OPENNED:
+            pPipe->enmState = VBOXVDMAPIPE_STATE_CLOSING;
+            bNeedNotify = pPipe->bNeedNotify;
+            pPipe->bNeedNotify = false;
+            break;
+        case VBOXVDMAPIPE_STATE_CREATED:
+            pPipe->enmState = VBOXVDMAPIPE_STATE_CLOSED;
+            pPipe->bNeedNotify = false;
+            break;
+        case VBOXVDMAPIPE_STATE_CLOSED:
+            break;
+        default:
+            AssertBreakpoint();
+            Status = STATUS_INVALID_PIPE_STATE;
+            break;
+    }
+
+    KeReleaseSpinLock(&pPipe->SinchLock, OldIrql);
+
+    if (bNeedNotify)
+    {
+        KeSetEvent(&pPipe->Event, 0, FALSE);
+    }
+    return Status;
+}
+
+NTSTATUS vboxVdmaPipeDestruct(PVBOXVDMAPIPE pPipe)
+{
+    Assert(pPipe->enmState == VBOXVDMAPIPE_STATE_CLOSED
+            || pPipe->enmState == VBOXVDMAPIPE_STATE_CREATED);
+    /* ensure the pipe is closed */
+    NTSTATUS Status = vboxVdmaPipeCltClose(pPipe);
+    Assert(Status == STATUS_SUCCESS);
+
+    Assert(pPipe->enmState == VBOXVDMAPIPE_STATE_CLOSED);
+
+    return Status;
+}
+
+NTSTATUS vboxVdmaPipeSvrCmdGetList(PVBOXVDMAPIPE pPipe, PLIST_ENTRY pDetachHead)
+{
+    PLIST_ENTRY pEntry = NULL;
+    KIRQL OldIrql;
+    NTSTATUS Status = STATUS_SUCCESS;
+    VBOXVDMAPIPE_STATE enmState = VBOXVDMAPIPE_STATE_CLOSED;
+    do
+    {
+        KeAcquireSpinLock(&pPipe->SinchLock, &OldIrql);
+        Assert(pPipe->enmState == VBOXVDMAPIPE_STATE_OPENNED
+                || pPipe->enmState == VBOXVDMAPIPE_STATE_CLOSING);
+        Assert(pPipe->enmState >= VBOXVDMAPIPE_STATE_OPENNED);
+        enmState = pPipe->enmState;
+        if (enmState >= VBOXVDMAPIPE_STATE_OPENNED)
+        {
+            vboxVideoLeDetach(&pPipe->CmdListHead, pDetachHead);
+            pPipe->bNeedNotify = false;
+        }
+        else
+        {
+            Status = STATUS_INVALID_PIPE_STATE;
+            break;
+        }
+
+        KeReleaseSpinLock(&pPipe->SinchLock, OldIrql);
+
+        if (!IsListEmpty(pDetachHead))
+        {
+            Assert(Status == STATUS_SUCCESS);
+            break;
+        }
+
+        if (enmState == VBOXVDMAPIPE_STATE_OPENNED)
+        {
+            KeAcquireSpinLock(&pPipe->SinchLock, &OldIrql);
+            pPipe->bNeedNotify = true;
+            KeReleaseSpinLock(&pPipe->SinchLock, OldIrql);
+
+            Status = KeWaitForSingleObject(&pPipe->Event, Executive, KernelMode, FALSE, NULL /* PLARGE_INTEGER Timeout */);
+            Assert(Status == STATUS_SUCCESS);
+            if (Status != STATUS_SUCCESS)
+                break;
+        }
+        Assert(enmState > VBOXVDMAPIPE_STATE_OPENNED);
+        Status = STATUS_PIPE_CLOSING;
+    } while (1);
+
+    return Status;
+}
+
+NTSTATUS vboxVdmaPipeCltCmdPut(PVBOXVDMAPIPE pPipe, PVBOXVDMAPIPE_CMD_HDR pCmd)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+    KIRQL OldIrql;
+    bool bNeedNotify = false;
+
+    KeAcquireSpinLock(&pPipe->SinchLock, &OldIrql);
+
+    Assert(pPipe->enmState == VBOXVDMAPIPE_STATE_OPENNED);
+    if (pPipe->enmState == VBOXVDMAPIPE_STATE_OPENNED)
+    {
+        bNeedNotify = pPipe->bNeedNotify;
+        InsertHeadList(&pPipe->CmdListHead, &pCmd->ListEntry);
+        pPipe->bNeedNotify = false;
+    }
+    else
+        Status = STATUS_INVALID_PIPE_STATE;
+
+    KeReleaseSpinLock(&pPipe->SinchLock, OldIrql);
+
+    if (bNeedNotify)
+    {
+        KeSetEvent(&pPipe->Event, 0, FALSE);
+    }
+
+    return Status;
+}
+
+PVBOXVDMAPIPE_CMD_DR vboxVdmaGgCmdCreate(PVBOXVDMAGG pVdma, uint32_t cbCmd)
+{
+    return (PVBOXVDMAPIPE_CMD_DR)vboxWddmMemAllocZero(cbCmd);
+}
+
+void vboxVdmaGgCmdDestroy(PVBOXVDMAPIPE_CMD_DR pDr)
+{
+    vboxWddmMemFree(pDr);
+}
+
+
+/**
+ * helper function used for system thread creation
+ */
+static NTSTATUS vboxVdmaGgThreadCreate(PKTHREAD * ppThread, PKSTART_ROUTINE  pStartRoutine, PVOID  pStartContext)
+{
+    NTSTATUS fStatus;
+    HANDLE hThread;
+    OBJECT_ATTRIBUTES fObjectAttributes;
+
+    Assert(KeGetCurrentIrql() == PASSIVE_LEVEL);
+
+    InitializeObjectAttributes(&fObjectAttributes, NULL, OBJ_KERNEL_HANDLE,
+                        NULL, NULL);
+
+    fStatus = PsCreateSystemThread(&hThread, THREAD_ALL_ACCESS,
+                        &fObjectAttributes, NULL, NULL,
+                        (PKSTART_ROUTINE) pStartRoutine, pStartContext);
+    if (!NT_SUCCESS(fStatus))
+      return fStatus;
+
+    ObReferenceObjectByHandle(hThread, THREAD_ALL_ACCESS, NULL,
+                        KernelMode, (PVOID*) ppThread, NULL);
+    ZwClose(hThread);
+    return STATUS_SUCCESS;
+}
+
+DECLINLINE(void) vboxVdmaDirtyRectsCalcIntersection(const RECT *pArea, const PVBOXWDDM_RECTS_INFO pRects, PVBOXWDDM_RECTS_INFO pResult)
+{
+    pResult->cRects = 0;
+    for (uint32_t i = 0; i < pRects->cRects; ++i)
+    {
+        if (vboxWddmRectIntersection(pArea, &pRects->aRects[i], &pResult->aRects[pResult->cRects]))
+        {
+            ++pResult->cRects;
+        }
+    }
+}
+/**
+ * @param pDevExt
+ */
+NTSTATUS vboxVdmaGgDirtyRectsProcess(VBOXVDMAPIPE_CMD_RECTSINFO *pRectsInfo)
+{
+    PVBOXWDDM_CONTEXT pContext = pRectsInfo->pContext;
+    PDEVICE_EXTENSION pDevExt = pContext->pDevice->pAdapter;
+    RECT * pContextRect = &pRectsInfo->ContextRect;
+    PVBOXWDDM_RECTS_INFO pRects = &pRectsInfo->UpdateRects;
+    NTSTATUS Status = STATUS_SUCCESS;
+    PVBOXVIDEOCM_CMD_RECTS pCmd = NULL;
+    uint32_t cbCmd = VBOXVIDEOCM_CMD_RECTS_SIZE4CRECTS(pRects->cRects);
+    Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
+    ExAcquireFastMutex(&pDevExt->ContextMutex);
+    for (PLIST_ENTRY pCur = pDevExt->ContextList3D.Flink; pCur != &pDevExt->ContextList3D; pCur = pCur->Flink)
+    {
+        if (pCur != &pContext->ListEntry)
+        {
+            PVBOXWDDM_CONTEXT pCurContext = VBOXWDDMENTRY_2_CONTEXT(pCur);
+            if (!pCmd)
+            {
+                pCmd = (PVBOXVIDEOCM_CMD_RECTS)vboxVideoCmCmdCreate(&pCurContext->CmContext, cbCmd);
+                Assert(pCmd);
+                if (!pCmd)
+                {
+                    Status = STATUS_NO_MEMORY;
+                    break;
+                }
+            }
+            else
+            {
+                pCmd = (PVBOXVIDEOCM_CMD_RECTS)vboxVideoCmCmdReinitForContext(pCmd, &pCurContext->CmContext);
+            }
+
+            vboxVdmaDirtyRectsCalcIntersection(&pContext->ViewRect, pRects, &pCmd->RectsInfo);
+            if (pCmd->RectsInfo.cRects)
+            {
+                Assert(pCmd->fFlags.Value == 0);
+                pCmd->fFlags.bAddHiddenRects = 1;
+                vboxVideoCmCmdSubmit(pCmd, VBOXVIDEOCM_CMD_RECTS_SIZE4CRECTS(pCmd->RectsInfo.cRects));
+                pCmd = NULL;
+            }
+        }
+        else
+        {
+            bool bRectShanged = (pContext->ViewRect.left != pContextRect->left
+                    || pContext->ViewRect.top != pContextRect->top
+                    || pContext->ViewRect.right != pContextRect->right
+                    || pContext->ViewRect.bottom != pContextRect->bottom);
+            PVBOXVIDEOCM_CMD_RECTS pDrCmd;
+
+            if (bRectShanged)
+            {
+                uint32_t cbDrCmd = VBOXVIDEOCM_CMD_RECTS_SIZE4CRECTS(pRects->cRects + 1);
+                pDrCmd = (PVBOXVIDEOCM_CMD_RECTS)vboxVideoCmCmdCreate(&pContext->CmContext, cbDrCmd);
+                Assert(pDrCmd);
+                if (!pDrCmd)
+                {
+                    Status = STATUS_NO_MEMORY;
+                    break;
+                }
+                pDrCmd->RectsInfo.cRects = pRects->cRects + 1;
+            }
+            else
+            {
+                if (pCmd)
+                {
+                    pDrCmd = (PVBOXVIDEOCM_CMD_RECTS)vboxVideoCmCmdReinitForContext(pCmd, &pContext->CmContext);
+                    pCmd = NULL;
+                }
+                else
+                {
+                    pDrCmd = (PVBOXVIDEOCM_CMD_RECTS)vboxVideoCmCmdCreate(&pContext->CmContext, cbCmd);
+                    Assert(pDrCmd);
+                    if (!pDrCmd)
+                    {
+                        Status = STATUS_NO_MEMORY;
+                        break;
+                    }
+                }
+                pDrCmd->RectsInfo.cRects = pRects->cRects;
+            }
+
+            Assert(pDrCmd->fFlags.Value == 0);
+            RECT *pDirtyRect;
+            if (bRectShanged)
+            {
+                pDrCmd->fFlags.bPositionRect = 1;
+                pDrCmd->RectsInfo.aRects[0] = *pContextRect;
+                pDirtyRect = &pDrCmd->RectsInfo.aRects[1];
+            }
+            else
+                pDirtyRect = &pDrCmd->RectsInfo.aRects[0];
+
+            pDrCmd->fFlags.bAddVisibleRects = 1;
+            memcpy (pDirtyRect, pRects->aRects, sizeof (RECT) * pRects->cRects);
+
+            vboxVideoCmCmdSubmit(pDrCmd, VBOXVIDEOCM_SUBMITSIZE_DEFAULT);
+        }
+    }
+    InsertHeadList(&pDevExt->ContextList3D, &pContext->ListEntry);
+    ExReleaseFastMutex(&pDevExt->ContextMutex);
+
+
+    if (pCmd)
+        vboxVideoCmCmdRelease(pCmd);
+
+    return Status;
+}
+
+
+static VOID vboxVdmaGgWorkerThread(PVOID pvUser)
+{
+    PVBOXVDMAGG pVdma = (PVBOXVDMAGG)pvUser;
+
+    NTSTATUS Status = vboxVdmaPipeSvrOpen(&pVdma->CmdPipe);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        do
+        {
+            LIST_ENTRY CmdList;
+            Status = vboxVdmaPipeSvrCmdGetList(&pVdma->CmdPipe, &CmdList);
+            Assert(Status == STATUS_SUCCESS || Status == STATUS_PIPE_CLOSING);
+            if (Status == STATUS_SUCCESS)
+            {
+                for (PLIST_ENTRY pCur = CmdList.Blink; pCur != &CmdList; pCur = CmdList.Blink)
+                {
+                    PVBOXVDMAPIPE_CMD_DR pDr = VBOXVDMAPIPE_CMD_DR_FROM_ENTRY(pCur);
+                    switch (pDr->enmType)
+                    {
+                        case VBOXVDMAPIPE_CMD_TYPE_RECTSINFO:
+                        {
+                            PVBOXVDMAPIPE_CMD_RECTSINFO pRects = (PVBOXVDMAPIPE_CMD_RECTSINFO)pDr;
+                            Status = vboxVdmaGgDirtyRectsProcess(pRects);
+                            Assert(Status == STATUS_SUCCESS);
+                            break;
+                        }
+                        case VBOXVDMAPIPE_CMD_TYPE_DMACMD:
+                        default:
+                            AssertBreakpoint();
+                    }
+                    RemoveEntryList(pCur);
+                    vboxVdmaGgCmdDestroy(pDr);
+                }
+            }
+            else
+                break;
+        } while (1);
+    }
+
+    /* always try to close the pipe to make sure the client side is notified */
+    Status = vboxVdmaPipeSvrClose(&pVdma->CmdPipe);
+    Assert(Status == STATUS_SUCCESS);
+}
+
+NTSTATUS vboxVdmaGgConstruct(PVBOXVDMAGG pVdma)
+{
+    NTSTATUS Status = vboxVdmaPipeConstruct(&pVdma->CmdPipe);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        Status = vboxVdmaGgThreadCreate(&pVdma->pThread, vboxVdmaGgWorkerThread, pVdma);
+        Assert(Status == STATUS_SUCCESS);
+        if (Status == STATUS_SUCCESS)
+            return STATUS_SUCCESS;
+
+        NTSTATUS tmpStatus = vboxVdmaPipeDestruct(&pVdma->CmdPipe);
+        Assert(tmpStatus == STATUS_SUCCESS);
+    }
+
+    /* we're here ONLY in case of an error */
+    Assert(Status != STATUS_SUCCESS);
+    return Status;
+}
+
+NTSTATUS vboxVdmaGgDestruct(PVBOXVDMAGG pVdma)
+{
+    /* this informs the server thread that it should complete all current commands and exit */
+    NTSTATUS Status = vboxVdmaPipeCltClose(&pVdma->CmdPipe);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        Status = KeWaitForSingleObject(pVdma->pThread, Executive, KernelMode, FALSE, NULL /* PLARGE_INTEGER Timeout */);
+        Assert(Status == STATUS_SUCCESS);
+        if (Status == STATUS_SUCCESS)
+        {
+            Status = vboxVdmaPipeDestruct(&pVdma->CmdPipe);
+            Assert(Status == STATUS_SUCCESS);
+        }
+    }
+
+    return Status;
+}
+
+NTSTATUS vboxVdmaGgCmdPost(PVBOXVDMAGG pVdma, PVBOXVDMAPIPE_CMD_DR pCmd)
+{
+    return vboxVdmaPipeCltCmdPut(&pVdma->CmdPipe, &pCmd->PipeHdr);
+}
+
+/* end */
+
 /*
  * This is currently used by VDMA. It is invisible for Vdma API clients since
  * Vdma transport may change if we choose to use another (e.g. more light-weight)
@@ -138,7 +576,13 @@ int vboxVdmaCreate (PDEVICE_EXTENSION pDevExt, VBOXVDMAINFO *pInfo, ULONG offBuf
                              false /*fOffsetBased*/);
         Assert(RT_SUCCESS(rc));
         if(RT_SUCCESS(rc))
-            return rc;
+        {
+            NTSTATUS Status = vboxVdmaGgConstruct(&pInfo->DmaGg);
+            Assert(Status == STATUS_SUCCESS);
+            if (Status == STATUS_SUCCESS)
+                return VINF_SUCCESS;
+            rc = VERR_GENERAL_FAILURE;
+        }
         else
             drprintf((__FUNCTION__": HGSMIHeapSetup failed rc = 0x%x\n", rc));
 
@@ -199,10 +643,17 @@ int vboxVdmaFlush (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
 int vboxVdmaDestroy (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
 {
     int rc = VINF_SUCCESS;
-    Assert(!pInfo->fEnabled);
-    if (pInfo->fEnabled)
-        rc = vboxVdmaDisable (pDevExt, pInfo);
-    VBoxUnmapAdapterMemory (pDevExt, (void**)&pInfo->CmdHeap.area.pu8Base, pInfo->CmdHeap.area.cbArea);
+    NTSTATUS Status = vboxVdmaGgDestruct(&pInfo->DmaGg);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        Assert(!pInfo->fEnabled);
+        if (pInfo->fEnabled)
+            rc = vboxVdmaDisable (pDevExt, pInfo);
+        VBoxUnmapAdapterMemory (pDevExt, (void**)&pInfo->CmdHeap.area.pu8Base, pInfo->CmdHeap.area.cbArea);
+    }
+    else
+        rc = VERR_GENERAL_FAILURE;
     return rc;
 }
 
