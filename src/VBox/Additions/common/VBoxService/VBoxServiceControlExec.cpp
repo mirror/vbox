@@ -795,19 +795,17 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pTh
     PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pThread->pvData;
     AssertPtr(pData);
 
-    /*
-     * Tell the control thread that it can continue
-     * spawning services.
-     */
-    RTThreadUserSignal(RTThreadSelf());
     VBoxServiceVerbose(3, "ControlExec: Thread of process \"%s\" started\n", pData->pszCmd);
 
     int rc = VbglR3GuestCtrlConnect(&pThread->uClientID);
     if (RT_FAILURE(rc))
     {
         VBoxServiceError("ControlExec: Thread failed to connect to the guest control service, aborted! Error: %Rrc\n", rc);
+        RTThreadUserSignal(RTThreadSelf());
         return rc;
     }
+
+    bool fSignalled = false; /* Indicator whether we signalled the thread user event already. */
 
     /*
      * Create the environment.
@@ -867,6 +865,18 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pTh
                                                                          phStdIn, phStdOut, phStdErr,
                                                                          pData->pszUser, pData->pszPassword,
                                                                          &hProcess);
+
+                                /*
+                                 * Tell the control thread that it can continue
+                                 * spawning services. This needs to be done after the new
+                                 * process has been started because otherwise signal handling 
+                                 * on (Open) Solaris does not work correctly (see #5068).
+                                 */
+                                int rc2 = RTThreadUserSignal(RTThreadSelf());
+                                if (RT_FAILURE(rc2))
+                                    rc = rc2;
+                                fSignalled = true;
+
                                 if (RT_SUCCESS(rc))
                                 {
                                     /*
@@ -927,6 +937,13 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pTh
     VbglR3GuestCtrlDisconnect(pThread->uClientID);
     VBoxServiceVerbose(3, "ControlExec: Thread of process \"%s\" (PID: %u) ended with rc=%Rrc\n",
                        pData->pszCmd, pData->uPID, rc);
+
+    /* 
+     * If something went wrong signal the user event so that others don't wait
+     * forever on this thread. 
+     */
+    if (RT_FAILURE(rc) && !fSignalled)
+        RTThreadUserSignal(RTThreadSelf());
     return rc;
 }
 
@@ -966,6 +983,8 @@ int VBoxServiceControlExecProcess(uint32_t uContextID, const char *pszCmd, uint3
             }
             else
             {
+                VBoxServiceVerbose(4, "ControlExec: Waiting for thread to initialize ...\n");
+
                 /* Wait for the thread to initialize. */
                 RTThreadUserWait(pThread->Thread, 60 * 1000);
                 if (pThread->fShutdown)
