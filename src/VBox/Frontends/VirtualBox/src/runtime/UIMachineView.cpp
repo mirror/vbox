@@ -1779,7 +1779,7 @@ void UIMachineView::darwinGrabKeyboardEvents(bool fGrab)
     {
         /* Disable mouse and keyboard event compression/delaying to make sure we *really* get all of the events. */
         ::CGSetLocalEventsSuppressionInterval(0.0);
-        setMouseCoalescingEnabled(false);
+        machineLogic()->mouseHandler()->setMouseCoalescingEnabled(false);
 
         /* Register the event callback/hook and grab the keyboard. */
         UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */,
