@@ -201,7 +201,7 @@ int UIMouseHandler::mouseState() const
 }
 
 #ifdef Q_WS_MAC
-void UIMachineView::setMouseCoalescingEnabled(bool fOn)
+void UIMouseHandler::setMouseCoalescingEnabled(bool fOn)
 {
     /* Enable mouse event compression if we leave the VM view.
      * This is necessary for having smooth resizing of the VM/other windows.
