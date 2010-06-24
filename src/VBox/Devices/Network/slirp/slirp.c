@@ -1537,6 +1537,7 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
 {
     struct ethhdr *eh;
     uint8_t *buf = NULL;
+    uint8_t *mbuf = NULL;
     size_t mlen = 0;
     STAM_PROFILE_START(&pData->StatIF_encap, a);
 
@@ -1544,6 +1545,7 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
     m->m_data -= ETH_HLEN;
     m->m_len += ETH_HLEN;
     eh = mtod(m, struct ethhdr *);
+    mlen = m_length(m, NULL);
 
     if (memcmp(eh->h_source, special_ethaddr, ETH_ALEN) != 0)
     {
@@ -1557,20 +1559,25 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
             goto done;
         }
     }
-    mlen = m_length(m, NULL);
-    buf = RTMemAlloc(mlen);
-    if (!buf)
+    if (m->m_next)
     {
-        LogRel(("NAT: Can't alloc memory for outgoing buffer\n"));
-        m_freem(pData, m);
-        goto done;
+        buf = RTMemAlloc(mlen);
+        if (!buf)
+        {
+            LogRel(("NAT: Can't alloc memory for outgoing buffer\n"));
+            m_freem(pData, m);
+            goto done;
+        }
+        mbuf = buf;
+        m_copydata(m, 0, mlen, (char *)buf);
     }
-    eh->h_proto = RT_H2N_U16(eth_proto);
-    m_copydata(m, 0, mlen, (char *)buf);
-    if (flags & ETH_ENCAP_URG)
-        slirp_urg_output(pData->pvUser, m, buf, mlen);
     else
-        slirp_output(pData->pvUser, m, buf, mlen);
+        mbuf = mtod(m, uint8_t *);
+    eh->h_proto = RT_H2N_U16(eth_proto);
+    if (flags & ETH_ENCAP_URG)
+        slirp_urg_output(pData->pvUser, m, mbuf, mlen);
+    else
+        slirp_output(pData->pvUser, m, mbuf, mlen);
 done:
     STAM_PROFILE_STOP(&pData->StatIF_encap, a);
 }
