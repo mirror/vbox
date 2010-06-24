@@ -29,6 +29,10 @@
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
 
+#ifdef Q_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif /* Q_WS_MAC */
+
 /* Factory function to create mouse-handler: */
 UIMouseHandler* UIMouseHandler::create(UIMachineLogic *pMachineLogic,
                                        UIVisualStateType visualStateType)
@@ -195,6 +199,17 @@ int UIMouseHandler::mouseState() const
            (uisession()->isMouseSupportsAbsolute() ? UIMouseStateType_MouseAbsolute : 0) |
            (uisession()->isMouseIntegrated() ? 0 : UIMouseStateType_MouseAbsoluteDisabled);
 }
+
+#ifdef Q_WS_MAC
+void UIMachineView::setMouseCoalescingEnabled(bool fOn)
+{
+    /* Enable mouse event compression if we leave the VM view.
+     * This is necessary for having smooth resizing of the VM/other windows.
+     * Disable mouse event compression if we enter the VM view.
+     * So all mouse events are registered in the VM.
+    ::darwinSetMouseCoalescingEnabled(fOn);
+}
+#endif /* Q_WS_MAC */
 
 /* Machine state-change handler: */
 void UIMouseHandler::sltMachineStateChanged()
@@ -448,7 +463,7 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                 {
                     /* Enable mouse event compression if we leave the VM view.
                      * This is necessary for having smooth resizing of the VM/other windows: */
-                    ::darwinSetMouseCoalescingEnabled(true);
+                    setMouseCoalescingEnabled(true);
                     break;
                 }
                 case QEvent::Enter:
@@ -458,7 +473,7 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                      * Only do this if the keyboard/mouse is grabbed
                      * (this is when we have a valid event handler): */
                     if (m_views[uScreenId]->isKeyboardGrabbed())
-                        ::darwinSetMouseCoalescingEnabled(false);
+                        setMouseCoalescingEnabled(false);
                     break;
                 }
 #endif /* Q_WS_MAC */

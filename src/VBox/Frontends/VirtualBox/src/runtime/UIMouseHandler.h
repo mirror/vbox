@@ -61,6 +61,14 @@ public:
     /* Current mouse state: */
     int mouseState() const;
 
+#ifdef Q_WS_MAC
+    /* Enable mouse event compression if we leave the VM view.
+     * This is necessary for having smooth resizing of the VM/other windows.
+     * Disable mouse event compression if we enter the VM view.
+     * So all mouse events are registered in the VM.
+    void setMouseCoalescingEnabled(bool fOn);
+#endif /* Q_WS_MAC */
+
 signals:
 
     /* Notifies listeners about mouse state-change: */
