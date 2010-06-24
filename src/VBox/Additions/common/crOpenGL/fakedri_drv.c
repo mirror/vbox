@@ -333,12 +333,6 @@ bool vbox_load_sw_dri()
 
 void __attribute__ ((constructor)) vbox_install_into_mesa(void)
 {
-    if (!stubInit())
-    {
-        crDebug("vboxdriInitScreen: stubInit failed");
-        return;
-    }
-
     {
         void (*pxf86Msg)(MessageType type, const char *format, ...) _printf_attribute(2,3);
 
@@ -353,6 +347,12 @@ void __attribute__ ((constructor)) vbox_install_into_mesa(void)
             __driDriverExtensions[0] = NULL;
             return;
         }
+    }
+
+    if (!stubInit())
+    {
+        crDebug("vboxdriInitScreen: stubInit failed");
+        return;
     }
 
     /* Load swrast_dri.so to proxy dri related calls there. */

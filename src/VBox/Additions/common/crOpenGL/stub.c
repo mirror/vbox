@@ -16,11 +16,15 @@
 
 static void crForcedFlush()
 {
+#if 0
     GLint buffer;
     stub.spu->dispatch_table.GetIntegerv(GL_DRAW_BUFFER, &buffer);
     stub.spu->dispatch_table.DrawBuffer(GL_FRONT);
     stub.spu->dispatch_table.Flush();
     stub.spu->dispatch_table.DrawBuffer(buffer);
+#else
+    stub.spu->dispatch_table.Flush();
+#endif
 }
 
 /**
@@ -290,6 +294,7 @@ GLboolean stubUpdateWindowVisibileRegions(WindowInfo *pWindow)
     return GL_FALSE;
 }
 
+# ifndef CR_NEWWINTRACK
 static void stubCBCheckWindowsInfo(unsigned long key, void *data1, void *data2)
 {
     WindowInfo *winInfo = (WindowInfo *) data1;
@@ -392,11 +397,14 @@ void stubUninstallWindowMessageHook()
     if (stub.hMessageHook)
         UnhookWindowsHookEx(stub.hMessageHook);
 }
+# endif /*# ifndef CR_NEWWINTRACK*/
+
 #elif defined(GLX) //#ifdef WINDOWS
 static GLboolean stubCheckXExtensions(WindowInfo *pWindow)
 {
     int evb, erb, vmi=0, vma=0;
 
+    XLOCK(pWindow->dpy);
     if (XCompositeQueryExtension(pWindow->dpy, &evb, &erb) 
         && XCompositeQueryVersion(pWindow->dpy, &vma, &vmi) 
         && (vma>0 || vmi>=4))
@@ -409,6 +417,7 @@ static GLboolean stubCheckXExtensions(WindowInfo *pWindow)
             && vma>=2)
         {
             crDebug("XFixes %i.%i", vma, vmi);
+            XUNLOCK(pWindow->dpy);
             return GL_TRUE;
         }
         else
@@ -420,6 +429,7 @@ static GLboolean stubCheckXExtensions(WindowInfo *pWindow)
     {
         crWarning("XComposite not found or old version (%i.%i), no VisibilityTracking", vma, vmi);
     }
+    XUNLOCK(pWindow->dpy);
     return GL_FALSE;
 }
 
@@ -449,9 +459,11 @@ GLboolean stubUpdateWindowVisibileRegions(WindowInfo *pWindow)
     /*@todo see comment regarding size/position updates and XSync, same applies to those functions but
     * it seems there's no way to get even based updates for this. Or I've failed to find the appropriate extension.
     */
+    XLOCK(pWindow->dpy);
     xreg = XCompositeCreateRegionFromBorderClip(pWindow->dpy, pWindow->drawable);
     pXRects = XFixesFetchRegion(pWindow->dpy, xreg, &cRects);
     XFixesDestroyRegion(pWindow->dpy, xreg);
+    XUNLOCK(pWindow->dpy);
 
     /* @todo For some odd reason *first* run of compiz on freshly booted VM gives us 0 cRects all the time.
      * In (!pWindow->pVisibleRegions && cRects) "&& cRects" is a workaround for that case, especially as this

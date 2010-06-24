@@ -276,6 +276,41 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             break;
         }
 
+        case SHCRGL_GUEST_FN_INJECT:
+        {
+            Log(("svcCall: SHCRGL_GUEST_FN_INJECT\n"));
+
+            /* Verify parameter count and types. */
+            if (cParms != SHCRGL_CPARMS_INJECT)
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            if (    paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT /* u32ClientID */
+                 || paParms[1].type != VBOX_HGCM_SVC_PARM_PTR   /* pBuffer */
+               )
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                /* Fetch parameters. */
+                uint32_t u32InjectClientID = paParms[0].u.uint32;
+                uint8_t *pBuffer  = (uint8_t *)paParms[1].u.pointer.addr;
+                uint32_t cbBuffer = paParms[1].u.pointer.size;
+
+                /* Execute the function. */
+                rc = crVBoxServerClientWrite(u32InjectClientID, pBuffer, cbBuffer);
+                if (!RT_SUCCESS(rc))
+                {
+                    Assert(VERR_NOT_SUPPORTED==rc);
+                    svcClientVersionUnsupported(0, 0);
+                }
+
+            }
+            break;
+        }
+
         case SHCRGL_GUEST_FN_READ:
         {
             Log(("svcCall: SHCRGL_GUEST_FN_READ\n"));

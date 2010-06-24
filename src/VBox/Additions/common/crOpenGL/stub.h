@@ -45,6 +45,21 @@
 #include <X11/extensions/Xdamage.h>
 #endif
 
+#ifdef WINDOWS
+#define CR_NEWWINTRACK
+#endif
+
+#if !defined(CHROMIUM_THREADSAFE) && defined(CR_NEWWINTRACK)
+# error CHROMIUM_THREADSAFE have to be defined
+#endif
+
+#if defined(CR_NEWWINTRACK) && !defined(WINDOWS)
+#define XLOCK(dpy) XLockDisplay(dpy)
+#define XUNLOCK(dpy) XUnlockDisplay(dpy)
+#else
+#define XLOCK(dpy)
+#define XUNLOCK(dpy)
+#endif
 
 /* When we first create a rendering context we can't be sure whether
  * it'll be handled by Chromium or as a native GLX/WGL context.  So in
@@ -139,11 +154,11 @@ struct window_info_t
     ContextInfo *pOwner;     /* ctx which created this window */
     GLboolean mapped;
 #ifdef WINDOWS
-    HDC drawable;
-    HRGN hVisibleRegion;
-    DWORD dmPelsWidth;
-    DWORD dmPelsHeight;
-    HWND  hWnd;
+    HDC      drawable;
+    HRGN     hVisibleRegion;
+    DWORD    dmPelsWidth;
+    DWORD    dmPelsHeight;
+    HWND     hWnd;
 #elif defined(DARWIN)
     CGSConnectionID connection;
     CGSWindowID  drawable;
@@ -153,6 +168,9 @@ struct window_info_t
     GLXDrawable drawable;
     XRectangle *pVisibleRegions;
     GLint cVisibleRegions;
+#endif
+#ifdef CR_NEWWINTRACK
+    uint32_t u32ClientID;
 #endif
 };
 
@@ -213,8 +231,16 @@ typedef struct {
 #endif
 
 #ifdef WINDOWS
-    HHOOK       hMessageHook;
+# ifndef CR_NEWWINTRACK
+    HHOOK           hMessageHook;
+# endif
 #endif
+
+#ifdef CR_NEWWINTRACK
+    RTTHREAD        hSyncThread;
+    bool volatile   bShutdownSyncThread;
+#endif
+
 } Stub;
 
 

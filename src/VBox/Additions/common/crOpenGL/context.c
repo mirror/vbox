@@ -139,6 +139,9 @@ stubNewWindow( const char *dpyName, GLint visBits )
     winInfo->pVisibleRegions = NULL;
     winInfo->cVisibleRegions = 0;
 #endif
+#ifdef CR_NEWWINTRACK
+    winInfo->u32ClientID = stub.spu->dispatch_table.VBoxPackGetInjectID();
+#endif
     winInfo->spuWindow = spuWin;
 
     crHashtableAdd(stub.windowTable, (unsigned int) spuWin, winInfo);
@@ -157,7 +160,9 @@ stubIsWindowVisible( const WindowInfo *win )
 #elif defined(GLX)
     if (win->dpy) {
     XWindowAttributes attr;
+    XLOCK(win->dpy);
     XGetWindowAttributes(win->dpy, win->drawable, &attr);
+    XUNLOCK(win->dpy);
     return (attr.map_state != IsUnmapped);
     }
     else {
@@ -215,6 +220,9 @@ stubGetWindowInfo( Display *dpy, GLXDrawable drawable )
     winInfo->spuWindow = -1;
     winInfo->mapped = -1; /* don't know */
     winInfo->pOwner = NULL;
+#ifdef CR_NEWWINTRACK
+    winInfo->u32ClientID = -1;
+#endif
 #ifndef WINDOWS
     crHashtableAdd(stub.windowTable, (unsigned int) drawable, winInfo);
 #else
@@ -569,6 +577,11 @@ stubGetWindowGeometry( const WindowInfo *window, int *x, int *y,
     //@todo: Performing those checks is expensive operation, especially for simple apps with high FPS.
     //       Disabling those tripples glxgears fps, thus using xevens instead of per frame polling is much more preffered.
     //@todo: Check similiar on windows guests, though doubtfull as there're no XSync like calls on windows.
+    if (window && window->dpy)
+    {
+        XLOCK(window->dpy);
+    }
+
     if (!window
         || !window->dpy
         || !window->drawable
@@ -580,6 +593,11 @@ stubGetWindowGeometry( const WindowInfo *window, int *x, int *y,
         crWarning("Failed to get windows geometry for %p, try xwininfo", window);
         *x = *y = 0;
         *w = *h = 0;
+    }
+
+    if (window && window->dpy)
+    {
+        XUNLOCK(window->dpy);
     }
 }
 
@@ -637,6 +655,9 @@ GetCursorPosition( const WindowInfo *window, int pos[2] )
     Window root, child;
     unsigned int mask;
     int x, y;
+
+    XLOCK(window->dpy);
+
     Bool q = XQueryPointer(window->dpy, window->drawable, &root, &child,
                                                  &rootX, &rootY, &pos[0], &pos[1], &mask);
     if (q) {
@@ -648,6 +669,8 @@ GetCursorPosition( const WindowInfo *window, int pos[2] )
     else {
         pos[0] = pos[1] = 0;
     }
+
+    XUNLOCK(window->dpy);
 }
 
 #endif
@@ -853,6 +876,10 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
             {
                 /*crDebug("(1)stubMakeCurrent ctx=%p(%i) window=%p(%i)", context, context->spuContext, window, window->spuWindow);*/
                 window->spuWindow = stub.spu->dispatch_table.WindowCreate( window->dpyName, context->visBits );
+#ifdef CR_NEWWINTRACK
+                window->u32ClientID = stub.spu->dispatch_table.VBoxPackGetInjectID();
+#endif
+
             }
         }
         else {
@@ -921,10 +948,12 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
                         int x, y;
                         unsigned int border, depth, w, h;
 
+                        XLOCK(context->currentDrawable->dpy);
                         if (!XGetGeometry(context->currentDrawable->dpy, context->currentDrawable->drawable, &root, &x, &y, &w, &h, &border, &depth))
                         {
                             crWindowDestroy((GLint)context->currentDrawable->drawable);
                         }
+                        XUNLOCK(context->currentDrawable->dpy);
 #endif
                     
                 }
@@ -979,6 +1008,8 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
         window->height = winH;
         if (stub.trackWindowSize)
             stub.spuDispatch.WindowSize( window->spuWindow, winW, winH );
+        if (stub.trackWindowPos)
+            stub.spuDispatch.WindowPosition(window->spuWindow, x, y);
         if (winW > 0 && winH > 0)
             stub.spu->dispatch_table.Viewport( 0, 0, winW, winH );
     }
