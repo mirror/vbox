@@ -144,16 +144,24 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
      * We only write if there's nothing in the buffer,
      * ottherwise it'll arrive out of order, and hence corrupt
      */
-    buf = RTMemAlloc(mlen);
-    if (buf == NULL)
+    if (m->m_next)
     {
-        ret = 0;
-        goto no_sent;
+        buf = RTMemAlloc(mlen);
+        if (buf == NULL)
+        {
+            ret = 0;
+            goto no_sent;
+        }
+        m_copydata(m, 0, mlen, buf);
     }
-    m_copydata(m, 0, mlen, buf);
+    else
+        buf = mtod(m, char *);
+
     if(!so->so_rcv.sb_cc)
         ret = send(so->s, buf, mlen, 0);
-    RTMemFree(buf);
+
+    if (m->m_next)
+        RTMemFree(buf);
 no_sent:
 
     if (ret <= 0)
