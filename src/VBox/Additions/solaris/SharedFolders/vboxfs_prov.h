@@ -110,8 +110,20 @@ extern int sfprov_rename(sfp_mount_t *, char *from, char *to, uint_t is_dir);
 /*
  * Read directory entries.
  */
-extern int sfprov_readdir(sfp_mount_t *mnt, char *path, void **buffer,
-	size_t *buffersize, uint32_t *nents);
+/*
+ * a singly linked list of buffers, each containing an array of dirent's.
+ * sf_len is length of the sf_entries array, in bytes.
+ */
+typedef struct sffs_dirents {
+	struct sffs_dirents	*sf_next;
+	len_t			sf_len;
+	dirent64_t		sf_entries[1];
+} sffs_dirents_t;
+
+extern int sfprov_readdir(sfp_mount_t *mnt, char *path, sffs_dirents_t **dirents);
+
+#define SFFS_DIRENTS_SIZE	8192
+#define SFFS_DIRENTS_OFF	(offsetof(sffs_dirents_t, sf_entries[0]))
 
 #ifdef	__cplusplus
 }

@@ -143,6 +143,21 @@ sfnode_construct_path(sfnode_t *node, char *tail)
 }
 
 /*
+ * Clears the (cached) directory listing for the node.
+ */
+static void
+sfnode_clear_dir_list(sfnode_t *node)
+{
+	ASSERT(MUTEX_HELD(&sffs_lock));
+
+	while (node->sf_dir_list != NULL) {
+		sffs_dirents_t *next = node->sf_dir_list->sf_next;
+		kmem_free(node->sf_dir_list, SFFS_DIRENTS_SIZE);
+		node->sf_dir_list = next;
+	}
+}
+
+/*
  * Open the provider file associated with a vnode. Holding the file open is
  * the only way we have of trying to have a vnode continue to refer to the
  * same host file in the host in light of the possibility of host side renames.
@@ -219,6 +234,7 @@ sfnode_make(
 	node->sf_parent = parent;
 	if (parent)
 		++parent->sf_children;
+	node->sf_dir_list = NULL;
 
 	/*
 	 * add the new node to our cache
@@ -257,9 +273,11 @@ top:
 	avl_remove(tree, node);
 
 	VFS_RELE(node->sf_sffs->sf_vfsp);
+	sfnode_clear_dir_list(node);
 	kmem_free(node->sf_path, strlen(node->sf_path) + 1);
 	kmem_free(node, sizeof (*node));
 	if (parent != NULL) {
+		sfnode_clear_dir_list(parent);
 		if (parent->sf_children == 0)
 			panic("sfnode_destroy(%s) parent has no child", node->sf_path);
 		--parent->sf_children;
@@ -312,6 +330,7 @@ sfnode_make_stale(sfnode_t *node)
 				sfnode_destroy(n);
 			} else {
                 LogFlowFunc(("sffs_make_stale(%s) sub\n", n->sf_path));
+				sfnode_clear_dir_list(n);
 				if (avl_find(&sfnodes, n, &where) == NULL)
 					panic("sfnode_make_stale(%s)"
 					    " not in sfnodes", n->sf_path);
@@ -332,6 +351,9 @@ sfnode_make_stale(sfnode_t *node)
 		sfnode_destroy(node);
 	} else if (!node->sf_is_stale) {
         LogFlowFunc(("sffs_make_stale(%s)\n", node->sf_path));
+		sfnode_clear_dir_list(node);
+		if (node->sf_parent)
+			sfnode_clear_dir_list(node->sf_parent);
 		if (avl_find(&sfnodes, node, &where) == NULL)
 			panic("sfnode_make_stale(%s) not in sfnodes",
 			    node->sf_path);
@@ -432,6 +454,8 @@ sfnode_rename(sfnode_t *node, sfnode_t *newparent, char *path)
 		panic("sfnode_rename(%s) no parent", node->sf_path);
 	if (node->sf_parent->sf_children == 0)
 		panic("sfnode_rename(%s) parent has no child", node->sf_path);
+	sfnode_clear_dir_list(node->sf_parent);
+	sfnode_clear_dir_list(newparent);
 	--node->sf_parent->sf_children;
 	node->sf_parent = newparent;
 	++newparent->sf_children;
@@ -583,14 +607,10 @@ sffs_readdir(
 	sfnode_t *dir = VN2SFN(vp);
 	sfnode_t *node;
 	struct dirent64 *dirent;
+	sffs_dirents_t *cur_buf;
+	offset_t offset;
 	int dummy_eof;
 	int error = 0;
-	int namelen;
-	void *prov_buff = NULL;
-	size_t prov_buff_size;
-	char **names;
-	uint32_t nents;
-	uint32_t index;
 
 	if (uiop->uio_iovcnt != 1)
 		return (EINVAL);
@@ -607,63 +627,60 @@ sffs_readdir(
 		return (0);
 	}
 
-	dirent = kmem_zalloc(DIRENT64_RECLEN(MAXNAMELEN), KM_SLEEP);
-
 	/*
 	 * Get the directory entry names from the host. This gets all
-	 * entries, so add in starting offset. Max the caller can expect
-	 * would be the size of the UIO buffer / sizeof of a dirent for
-	 * file with name of length 1
+	 * entries. These are stored in a linked list of sffs_dirents_t
+	 * buffers, each of which contains a list of dirent64_t's.
 	 */
 	mutex_enter(&sffs_lock);
-	index = uiop->uio_loffset;
-	nents = index + (uiop->uio_resid / DIRENT64_RECLEN(1));
-	error = sfprov_readdir(dir->sf_sffs->sf_handle, dir->sf_path,
-	    &prov_buff, &prov_buff_size, &nents);
-	if (error != 0)
-		goto done;
-	if (nents <= index) {
-		*eofp = 1;
-		goto done;
+
+	if (dir->sf_dir_list == NULL) {
+		error = sfprov_readdir(dir->sf_sffs->sf_handle, dir->sf_path,
+		    &dir->sf_dir_list);
+		if (error != 0)
+			goto done;
 	}
-	names = (void *)prov_buff;
 
 	/*
-	 * Lookup each of the names, so that we have ino's.
+	 * Lookup each of the names, so that we have ino's, and copy to
+	 * result buffer.
 	 */
-	for (; index < nents; ++index) {
-		if (strcmp(names[index], ".") == 0) {
+	offset = 0;
+	cur_buf = dir->sf_dir_list;
+	while (cur_buf != NULL) {
+		if (offset + cur_buf->sf_len <= uiop->uio_loffset) {
+			offset += cur_buf->sf_len;
+			cur_buf = cur_buf->sf_next;
+			continue;
+		}
+
+		dirent = (dirent64_t *)
+		    (((char *) &cur_buf->sf_entries[0]) +
+		     (uiop->uio_loffset - offset));
+		if (dirent->d_reclen > uiop->uio_resid)
+			break;
+
+		if (strcmp(dirent->d_name, ".") == 0) {
 			node = dir;
-		} else if (strcmp(names[index], "..") == 0) {
+		} else if (strcmp(dirent->d_name, "..") == 0) {
 			node = dir->sf_parent;
 			if (node == NULL)
 				node = dir;
 		} else {
-			node = sfnode_lookup(dir, names[index], VNON);
+			node = sfnode_lookup(dir, dirent->d_name, VNON);
 			if (node == NULL)
 				panic("sffs_readdir() lookup failed");
 		}
-		namelen = strlen(names[index]);
-		strcpy(&dirent->d_name[0], names[index]);
-		dirent->d_reclen = DIRENT64_RECLEN(namelen);
-		dirent->d_off = index;
 		dirent->d_ino = node->sf_ino;
-		if (dirent->d_reclen > uiop->uio_resid) {
-			error = ENOSPC;
-			break;
-		}
+
 		error = uiomove(dirent, dirent->d_reclen, UIO_READ, uiop);
 		if (error != 0)
 			break;
-		bzero(&dirent->d_name[0], namelen);
 	}
-	if (error == 0 && index >= nents)
+	if (error == 0 && cur_buf == NULL)
 		*eofp = 1;
 done:
 	mutex_exit(&sffs_lock);
-	if (prov_buff != NULL)
-		kmem_free(prov_buff, prov_buff_size);
-	kmem_free(dirent, DIRENT64_RECLEN(MAXNAMELEN));
 	return (error);
 }
 
@@ -1187,6 +1204,9 @@ sffs_create(
 			    " rc=%d", node->sf_path, vap->va_mode, error);
 	}
 
+	if (node->sf_parent)
+		sfnode_clear_dir_list(node->sf_parent);
+
 	mutex_exit(&sffs_lock);
 	if (node == NULL)
 		return (EINVAL);
@@ -1248,6 +1268,9 @@ sffs_mkdir(
 			cmn_err(CE_WARN, "sffs_mkdir: set_mode(%s, %o) failed"
 			    " rc=%d", node->sf_path, va->va_mode, error);
 	}
+
+	if (node->sf_parent)
+		sfnode_clear_dir_list(node->sf_parent);
 
 	mutex_exit(&sffs_lock);
 	if (node == NULL)
@@ -1327,6 +1350,9 @@ sffs_rmdir(
 	error = sfprov_rmdir(node->sf_sffs->sf_handle, node->sf_path);
 	if (error == ENOENT || error == 0)
 		sfnode_make_stale(node);
+
+	if (node->sf_parent)
+		sfnode_clear_dir_list(node->sf_parent);
 done:
 	mutex_exit(&sffs_lock);
 	VN_RELE(vp);
@@ -1386,6 +1412,9 @@ sffs_remove(
 	error = sfprov_remove(node->sf_sffs->sf_handle, node->sf_path);
 	if (error == ENOENT || error == 0)
 		sfnode_make_stale(node);
+
+	if (node->sf_parent)
+		sfnode_clear_dir_list(node->sf_parent);
 done:
 	mutex_exit(&sffs_lock);
 	VN_RELE(vp);
@@ -1522,6 +1551,13 @@ sffs_inactive(vnode_t *vp, cred_t *cr, caller_context_t *ct)
 	}
 
 	/*
+	 * Free the directory entries for the node. This should normally
+	 * have been taken care of in sffs_close(), but better safe than
+	 * sorry.
+	 */
+	sfnode_clear_dir_list(node);
+
+	/*
 	 * If the node is stale, we can also destroy it.
 	 */
 	if (node->sf_is_stale && node->sf_children == 0)
@@ -1554,6 +1590,23 @@ sffs_close(
 	cred_t *cr,
 	caller_context_t *ct)
 {
+	sfnode_t *node;
+
+	mutex_enter(&sffs_lock);
+	node = VN2SFN(vp);
+
+	/*
+	 * Free the directory entries for the node. We do this on this call
+	 * here because the directory node may not become inactive for a long
+	 * time after the readdir is over. Case in point, if somebody cd's into
+	 * the directory then it won't become inactive until they cd away again.
+	 * In such a case we would end up with the directory listing not getting
+	 * updated (i.e. the result of 'ls' always being the same) until they
+	 * change the working directory.
+	 */
+	sfnode_clear_dir_list(node);
+
+	mutex_exit(&sffs_lock);
 	return (0);
 }
 
@@ -1715,7 +1768,6 @@ sffs_purge(struct sffs_data *sffs)
 			prev = node;
 		}
 	}
-done:
 	mutex_exit(&sffs_lock);
 	return (0);
 }

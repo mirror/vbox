@@ -47,6 +47,7 @@ typedef struct sfnode {
 	uint16_t	sf_children;	/* number of children sfnodes */
 	uint8_t		sf_type;	/* VDIR or VREG */
 	uint8_t		sf_is_stale;	/* this is stale and should be purged */
+	sffs_dirents_t	*sf_dir_list;	/* list of entries for this directory */
 } sfnode_t;
 
 #define VN2SFN(vp) ((sfnode_t *)(vp)->v_data)
