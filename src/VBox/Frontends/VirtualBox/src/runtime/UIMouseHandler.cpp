@@ -244,6 +244,7 @@ void UIMouseHandler::sltMouseCapabilityChanged()
         CMouse mouse = session().GetConsole().GetMouse();
         mouse.PutMouseEventAbsolute(-1, -1, 0, 0, 0);
     }
+#if 0 /* current team's decision is NOT to capture mouse on mouse-absolute mode loosing! */
     /* If mouse-integration deactivated or mouse doesn't supports absolute pointing: */
     else
     {
@@ -265,6 +266,15 @@ void UIMouseHandler::sltMouseCapabilityChanged()
         if (iFocusedView != -1)
             captureMouse(iFocusedView);
     }
+#else /* but just to switch the guest mouse into relative mode! */
+    /* If mouse-integration deactivated or mouse doesn't supports absolute pointing: */
+    else
+    {
+        /* Switch guest mouse to the relative mode: */
+        CMouse mouse = session().GetConsole().GetMouse();
+        mouse.PutMouseEvent(0, 0, 0, 0, 0);
+    }
+#endif
 
     /* Notify user about mouse supports or not absolute pointing if that method was called by signal: */
     if (sender())
