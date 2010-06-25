@@ -2428,6 +2428,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
              * none of the following pathes is taken. This can happen for new VMs which
              * still don't have a snapshot folder. */
             (void)RTFsQueryType(utfSnap.c_str(), &enmFsTypeSnap);
+            LogRel(("File system of '%s' is %s\n", utfFile.c_str(), RTFsTypeName(enmFsTypeFile)));
             ULONG64 u64Size;
             hrc = pMedium->COMGETTER(LogicalSize)(&u64Size);                            H();
             u64Size *= _1M;
