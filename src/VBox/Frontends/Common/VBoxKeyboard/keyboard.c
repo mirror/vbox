@@ -120,8 +120,9 @@ unsigned X11DRV_KeyEvent(Display *display, KeyCode code)
         else if (keysym == 0xFE03)          /* ISO level3 shift, aka AltGr */
             scan = 0x138;
     }
-    if (keysym != 0 && scan == 0)
-            scan = keyc2scan[code];
+    /* Disabled "keysym != 0" as we can now match keycodes with no keysym */
+    if (/* keysym != 0 && */ scan == 0)
+        scan = keyc2scan[code];
 
     return scan;
 }
@@ -528,9 +529,17 @@ X11DRV_InitKeyboardByType(Display *display)
     cMap = findHostKBInList(&hostKB, main_keyboard_type_list,
                                   sizeof(main_keyboard_type_list)
                                 / sizeof(main_keyboard_type_list[0]));
+#ifdef DEBUG
+    /* Assertion */
+    if (sizeof(keyc2scan) != sizeof(main_keyboard_type_scans[cMap]))
+    {
+        printf("ERROR: keyc2scan array size doesn't match main_keyboard_type_scans[]!\n");
+        return 0;
+    }
+#endif
     if (cMap >= 0)
     {
-        memcpy(keyc2scan, main_keyboard_type_scans[cMap], KEYC2SCAN_SIZE);
+        memcpy(keyc2scan, main_keyboard_type_scans[cMap], sizeof(keyc2scan));
         return 1;
     }
     return 0;
