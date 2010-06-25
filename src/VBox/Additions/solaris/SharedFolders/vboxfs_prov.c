@@ -29,6 +29,7 @@
 #include <sys/sysmacros.h>
 #include <sys/ddi.h>
 #include <sys/sunddi.h>
+#include <sys/dirent.h>
 #include "vboxfs_prov.h"
 #ifdef u
 #undef u
@@ -775,23 +776,15 @@ sfprov_rename(sfp_mount_t *mnt, char *from, char *to, uint_t is_dir)
  * - ENOENT - Couldn't open the directory for reading
  * - EINVAL - Internal error of some kind
  *
- * On successful return, buffer[0] is the start of an array of "char *"
- * pointers to the filenames. The array ends with a NULL pointer.
- * The remaining storage in buffer after that NULL pointer is where the
- * filename strings actually are.
- *
- * On input nents is the max number of filenames the requestor can handle.
- * On output nents is the number of entries at buff[0]
- *
- * The caller is responsible for freeing the returned buffer.
+ * On successful return, *dirents points to a list of sffs_dirents_t;
+ * for each dirent, all fields except the d_ino will be set appropriately.
+ * The caller is responsible for freeing the dirents buffer.
  */
 int
 sfprov_readdir(
 	sfp_mount_t *mnt,
 	char *path,
-	void **buffer,
-	size_t *buffersize,
-	uint32_t *nents)
+	sffs_dirents_t **dirents)
 {
 	int error;
 	char *cp;
@@ -799,22 +792,32 @@ sfprov_readdir(
 	SHFLSTRING *mask_str = NULL;	/* must be path with "/*" appended */
 	int mask_size;
 	sfp_file_t *fp;
-	void *buff_start = NULL;
-	size_t buff_size;
 	static char infobuff[2 * MAXNAMELEN];	/* not on stack!! */
 	SHFLDIRINFO *info = (SHFLDIRINFO *)&infobuff;
-	uint32_t numbytes = sizeof (infobuff);
+	uint32_t numbytes;
 	uint32_t justone;
 	uint32_t cnt;
-	char **name_ptrs;
+	sffs_dirents_t *cur_buf;
+	struct dirent64 *dirent;
+	unsigned short reclen;
 
-	*buffer = NULL;
-	*buffersize = 0;
-	if (*nents == 0)
-		return (EINVAL);
+	*dirents = NULL;
+
 	error = sfprov_open(mnt, path, &fp);
 	if (error != 0)
 		return (ENOENT);
+
+	/*
+	 * Allocate the first dirents buffer.
+	 */
+	*dirents = kmem_alloc(SFFS_DIRENTS_SIZE, KM_SLEEP);
+	if (*dirents == NULL) {
+		error = (ENOSPC);
+		goto done;
+	}
+	cur_buf = *dirents;
+	cur_buf->sf_next = NULL;
+	cur_buf->sf_len = 0;
 
 	/*
 	 * Create mask that VBox expects. This needs to be the directory path,
@@ -822,20 +825,14 @@ sfprov_readdir(
 	 */
 	len = strlen(path) + 3;
 	cp = kmem_alloc(len, KM_SLEEP);
+	if (cp == NULL) {
+		error = (ENOSPC);
+		goto done;
+	}
 	strcpy(cp, path);
 	strcat(cp, "/*");
 	mask_str = sfprov_string(cp, &mask_size);
 	kmem_free(cp, len);
-
-	/*
-	 * Allocate the buffer to use for return values. Each entry
-	 * in the buffer will have a pointer and the string itself.
-	 * The pointers go in the front of the buffer, the strings
-	 * at the end.
-	 */
-	buff_size = *nents * (sizeof(char *) + MAXNAMELEN);
-	name_ptrs = buff_start = kmem_alloc(buff_size, KM_SLEEP);
-	cp = (char *)buff_start + buff_size;
 
 	/*
 	 * Now loop using vboxCallDirInfo to get one file name at a time
@@ -859,24 +856,41 @@ sfprov_readdir(
 		}
 
 		/*
-		 * Put this name in the buffer, stop if we run out of room.
+		 * Put this name in the buffer, expand if we run out of room.
 		 */
-		cp -= strlen(info->name.String.utf8) + 1;
-		if (cp < (char *)(&name_ptrs[cnt + 2]))
-			break;
-		strcpy(cp, info->name.String.utf8);
-		name_ptrs[cnt] = cp;
+		reclen = DIRENT64_RECLEN(strlen(info->name.String.utf8));
+		if (SFFS_DIRENTS_OFF + cur_buf->sf_len + reclen > SFFS_DIRENTS_SIZE) {
+			cur_buf->sf_next = kmem_alloc(SFFS_DIRENTS_SIZE, KM_SLEEP);
+			if (cur_buf->sf_next == NULL) {
+				error = ENOSPC;
+				goto done;
+			}
+			cur_buf = cur_buf->sf_next;
+			cur_buf->sf_next = NULL;
+			cur_buf->sf_len = 0;
+		}
+
+		dirent = (dirent64_t *)
+		    (((char *) &cur_buf->sf_entries[0]) + cur_buf->sf_len);
+		strcpy(&dirent->d_name[0], info->name.String.utf8);
+		dirent->d_reclen = reclen;
+		dirent->d_off = cnt;
+
+		cur_buf->sf_len += reclen;
 		++cnt;
 	}
 	error = 0;
-	name_ptrs[cnt] = NULL;
-	*nents = cnt;
-	*buffer = buff_start;
-	*buffersize = buff_size;
+
 done:
-	if (error != 0)
-		kmem_free(buff_start, buff_size);
-	kmem_free(mask_str, mask_size);
+	if (error != 0) {
+		while (*dirents) {
+			cur_buf = (*dirents)->sf_next;
+			kmem_free(*dirents, SFFS_DIRENTS_SIZE);
+			*dirents = cur_buf;
+		}
+	}
+	if (mask_str != NULL)
+		kmem_free(mask_str, mask_size);
 	sfprov_close(fp);
 	return (error);
 }
