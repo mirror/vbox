@@ -2788,6 +2788,8 @@ static const char *getCacheAss(unsigned u, char *pszBuf)
         return "res0  ";
     if (u == 1)
         return "direct";
+    if (u == 255)
+        return "fully";
     if (u >= 256)
         return "???";
 
@@ -2809,7 +2811,8 @@ const char *getL2CacheAss(unsigned u)
         case 3:  return "res3  ";
         case 4:  return "4 way ";
         case 5:  return "res5  ";
-        case 6:  return "8 way ";                                    case 7:  return "res7  ";
+        case 6:  return "8 way ";
+        case 7:  return "res7  ";
         case 8:  return "16 way";
         case 9:  return "res9  ";
         case 10: return "res10 ";
@@ -2818,8 +2821,7 @@ const char *getL2CacheAss(unsigned u)
         case 13: return "res13 ";
         case 14: return "res14 ";
         case 15: return "fully ";
-        default:
-            return "????";
+        default: return "????";
     }
 }
 
@@ -3344,7 +3346,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 
         pHlp->pfnPrintf(pHlp,
                         "Physical Address Width:          %d bits\n"
-                        "Virtual Address Width:           %d bits\n",
+                        "Virtual Address Width:           %d bits\n"
                         "Guest Physical Address Width:    %d bits\n",
                         (uEAX >> 0) & 0xff,
                         (uEAX >> 8) & 0xff,
