@@ -856,12 +856,27 @@ VMMR3DECL(void)             DBGFR3StackWalkEnd(PCDBGFSTACKFRAME pFirstFrame);
 #define DBGF_DISAS_FLAGS_NO_BYTES           RT_BIT(4)
 /** No address in the output. */
 #define DBGF_DISAS_FLAGS_NO_ADDRESS         RT_BIT(5)
+/** Disassemble in the default mode of the specific context. */
+#define DBGF_DISAS_FLAGS_DEFAULT_MODE       UINT32_C(0x00000000)
+/** Disassemble in 16-bit mode. */
+#define DBGF_DISAS_FLAGS_16BIT_MODE         UINT32_C(0x10000000)
+/** Disassemble in 16-bit mode with real mode address translation. */
+#define DBGF_DISAS_FLAGS_16BIT_REAL_MODE    UINT32_C(0x20000000)
+/** Disassemble in 32-bit mode. */
+#define DBGF_DISAS_FLAGS_32BIT_MODE         UINT32_C(0x30000000)
+/** Disassemble in 64-bit mode. */
+#define DBGF_DISAS_FLAGS_64BIT_MODE         UINT32_C(0x40000000)
+/** The dissassembly mode mask. */
+#define DBGF_DISAS_FLAGS_MODE_MASK          UINT32_C(0x70000000)
+/** Mask containing the valid flags. */
+#define DBGF_DISAS_FLAGS_VALID_MASK         UINT32_C(0x7000003f)
 /** @} */
 
 /** Special flat selector. */
 #define DBGF_SEL_FLAT                       1
 
-VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, VMCPUID idCpu, RTSEL Sel, RTGCPTR GCPtr, unsigned fFlags, char *pszOutput, uint32_t cchOutput, uint32_t *pcbInstr);
+VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, VMCPUID idCpu, RTSEL Sel, RTGCPTR GCPtr, uint32_t fFlags,
+                                  char *pszOutput, uint32_t cbOutput, uint32_t *pcbInstr);
 VMMR3DECL(int) DBGFR3DisasInstrCurrent(PVMCPU pVCpu, char *pszOutput, uint32_t cbOutput);
 VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVMCPU pVCpu, const char *pszPrefix);
 

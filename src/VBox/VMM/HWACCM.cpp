@@ -1624,7 +1624,8 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pv
 #ifdef LOG_ENABLED
         char            szOutput[256];
 
-        rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, CPUMGetGuestCS(pVCpu), pInstrGC, 0, szOutput, sizeof(szOutput), 0);
+        rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, CPUMGetGuestCS(pVCpu), pInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                                szOutput, sizeof(szOutput), NULL);
         if (RT_SUCCESS(rc))
             Log(("Patched instr: %s\n", szOutput));
 #endif
@@ -1647,7 +1648,8 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pv
         AssertRC(rc);
 
 #ifdef LOG_ENABLED
-        rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, CPUMGetGuestCS(pVCpu), pInstrGC, 0, szOutput, sizeof(szOutput), 0);
+        rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, CPUMGetGuestCS(pVCpu), pInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                                szOutput, sizeof(szOutput), NULL);
         if (RT_SUCCESS(rc))
             Log(("Original instr: %s\n", szOutput));
 #endif
@@ -1870,7 +1872,8 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
 
 #ifdef LOG_ENABLED
     char      szOutput[256];
-    rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, 0, szOutput, sizeof(szOutput), 0);
+    rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                            szOutput, sizeof(szOutput), NULL);
     if (RT_SUCCESS(rc))
         Log(("Failed to patch instr: %s\n", szOutput));
 #endif
@@ -1935,7 +1938,8 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
         pPatch = &pVM->hwaccm.s.aPatches[idx];
 
 #ifdef LOG_ENABLED
-        rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, 0, szOutput, sizeof(szOutput), 0);
+        rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                                szOutput, sizeof(szOutput), NULL);
         if (RT_SUCCESS(rc))
             Log(("Original instr: %s\n", szOutput));
 #endif
@@ -2065,7 +2069,8 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
             {
                 uint32_t cb;
 
-                rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pInstr, 0, szOutput, sizeof(szOutput), &cb);
+                rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pInstr, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                                        szOutput, sizeof(szOutput), &cb);
                 if (RT_SUCCESS(rc))
                     Log(("Patch instr %s\n", szOutput));
 
@@ -2084,7 +2089,8 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
             AssertRC(rc);
 
 #ifdef LOG_ENABLED
-            rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, 0, szOutput, sizeof(szOutput), 0);
+            rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                                    szOutput, sizeof(szOutput), NULL);
             if (RT_SUCCESS(rc))
                 Log(("Jump: %s\n", szOutput));
 #endif
@@ -2108,7 +2114,8 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
     uint32_t  idx = pVM->hwaccm.s.cPatches;
 
 #ifdef LOG_ENABLED
-    rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, 0, szOutput, sizeof(szOutput), 0);
+    rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                            szOutput, sizeof(szOutput), NULL);
     if (RT_SUCCESS(rc))
         Log(("Failed to patch instr: %s\n", szOutput));
 #endif

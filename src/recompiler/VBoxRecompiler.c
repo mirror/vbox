@@ -3819,7 +3819,7 @@ void target_disas(FILE *phFile, target_ulong uCode, target_ulong cb, int fFlags)
                                         pVCpu->idCpu,
                                         cs,
                                         eip,
-                                        0,
+                                        DBGF_DISAS_FLAGS_DEFAULT_MODE,
                                         szBuf, sizeof(szBuf),
                                         &cbInstr);
             if (RT_SUCCESS(rc))
