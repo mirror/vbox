@@ -5850,8 +5850,8 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
 
 #ifdef DEBUG
         char szBuf[256];
-        szBuf[0] = '\0';
-        DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCurPatchInstrGC, 0, szBuf, sizeof(szBuf), NULL);
+        DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCurPatchInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                           szBuf, sizeof(szBuf), NULL);
         Log(("DIRTY: %s\n", szBuf));
 #endif
         /* Mark as clean; if we fail we'll let it always fault. */
@@ -5912,8 +5912,8 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
             {
 #ifdef DEBUG
                 char szBuf[256];
-                szBuf[0] = '\0';
-                DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCurInstrGC, 0, szBuf, sizeof(szBuf), NULL);
+                DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCurInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                                   szBuf, sizeof(szBuf), NULL);
                 Log(("NEW:   %s\n", szBuf));
 #endif
 
@@ -5928,8 +5928,8 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
             {
 #ifdef DEBUG
                 char szBuf[256];
-                szBuf[0] = '\0';
-                DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCurInstrGC, 0, szBuf, sizeof(szBuf), NULL);
+                DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCurInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                                   szBuf, sizeof(szBuf), NULL);
                 Log(("NEW:   %s (FAILED)\n", szBuf));
 #endif
                 /* Restore the old lookup record for the duplicated instruction. */
@@ -5965,8 +5965,8 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
                              *(uint32_t *)&pPatchFillHC[1] = cbFiller - SIZEOF_NEARJUMP32;
 #ifdef DEBUG
                             char szBuf[256];
-                            szBuf[0] = '\0';
-                            DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCurPatchInstrGC, 0, szBuf, sizeof(szBuf), NULL);
+                            DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCurPatchInstrGC, DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                                               szBuf, sizeof(szBuf), NULL);
                             Log(("FILL:  %s\n", szBuf));
 #endif
                         }
@@ -5977,8 +5977,8 @@ static int patmR3HandleDirtyInstr(PVM pVM, PCPUMCTX pCtx, PPATMPATCHREC pPatch, 
                                 pPatchFillHC[i] = 0x90; /* NOP */
 #ifdef DEBUG
                                 char szBuf[256];
-                                szBuf[0] = '\0';
-                                DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCurPatchInstrGC + i, 0, szBuf, sizeof(szBuf), NULL);
+                                DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCurPatchInstrGC + i,
+                                                   DBGF_DISAS_FLAGS_DEFAULT_MODE, szBuf, sizeof(szBuf), NULL);
                                 Log(("FILL:  %s\n", szBuf));
 #endif
                             }
@@ -6169,8 +6169,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
         }
 
         char szBuf[256];
-        szBuf[0] = '\0';
-        DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pEip, 0, szBuf, sizeof(szBuf), NULL);
+        DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pEip, DBGF_DISAS_FLAGS_DEFAULT_MODE, szBuf, sizeof(szBuf), NULL);
 
         /* Very bad. We crashed in emitted code. Probably stack? */
         if (pPatch)
