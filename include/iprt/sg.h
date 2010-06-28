@@ -80,7 +80,7 @@ typedef PRTSGBUF *PPRTSGBUF;
  * @param   paSegs    Pointer to the start of the segment array.
  * @param   cSegs     Number of segments in the array.
  */
-RTDECL(void) RTSgBufInit(PRTSGBUF pSgBuf, PCRTSGSEG paSegs, unsigned cSegs);
+RTDECL(void) RTSgBufInit(PRTSGBUF pSgBuf, PCRTSGSEG paSegs, size_t cSegs);
 
 /**
  * Resets the internal buffer position of the S/G buffer to the beginning.

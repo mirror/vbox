@@ -65,14 +65,15 @@ static void *sgBufGet(PRTSGBUF pSgBuf, size_t *pcbData)
 }
 
 
-RTDECL(void) RTSgBufInit(PRTSGBUF pSgBuf, PCRTSGSEG paSegs, unsigned cSegs)
+RTDECL(void) RTSgBufInit(PRTSGBUF pSgBuf, PCRTSGSEG paSegs, size_t cSegs)
 {
     AssertPtr(pSgBuf);
     AssertPtr(paSegs);
     Assert(cSegs > 0);
+    Assert(cSegs < (~(unsigned)0 >> 1));
 
     pSgBuf->paSegs    = paSegs;
-    pSgBuf->cSegs     = cSegs;
+    pSgBuf->cSegs     = (unsigned)cSegs;
     pSgBuf->idxSeg    = 0;
     pSgBuf->pvSegCur  = paSegs[0].pvSeg;
     pSgBuf->cbSegLeft = paSegs[0].cbSeg;
