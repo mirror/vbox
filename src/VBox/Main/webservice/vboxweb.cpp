@@ -464,8 +464,10 @@ void WebLog(const char *pszFormat, ...)
         RTStrmFlush(g_pstrLog);
     }
 
+#ifdef DEBUG
     // logger instance
     RTLogLoggerEx(LOG_INSTANCE, RTLOGGRPFLAGS_DJ, LOG_GROUP, "%s %s", pcszPrefix, psz);
+#endif
 
     RTStrFree(psz);
 }

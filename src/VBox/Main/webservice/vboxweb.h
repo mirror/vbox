@@ -23,8 +23,10 @@ void WebLog(const char *pszFormat, ...);
 
 #define WEBDEBUG(a) if (g_fVerbose) { WebLog a; }
 
+#ifdef DEBUG
 #define LOG_GROUP LOG_GROUP_WEBSERVICE
 #include <VBox/log.h>
+#endif
 
 #include <VBox/com/VirtualBox.h>
 #include <VBox/com/Guid.h>
