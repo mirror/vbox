@@ -120,7 +120,22 @@ void PACKSPU_APIENTRY packspu_Flush( void )
     }
     else
     {
-        packspuFlush( (void *) thread );
+        int i;
+
+        crLockMutex(&_PackMutex);
+        /*Make sure we process commands in order they should appear, so flush thread being injected first*/
+        for (i=0; i<pack_spu.numThreads; ++i)
+        {
+            if ((thread != &pack_spu.thread[i]) && pack_spu.thread[i].netServer.conn
+                && (pack_spu.thread[i].netServer.conn->u32ClientID == thread->netServer.conn->u32InjectClientID))
+            {
+                packspuFlush((void *) &pack_spu.thread[i]);
+                break;
+            }
+        }
+        crUnlockMutex(&_PackMutex);
+
+        packspuFlush((void *) thread);
     }
 }
 
