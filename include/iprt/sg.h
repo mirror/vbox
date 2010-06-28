@@ -55,13 +55,13 @@ typedef PRTSGSEG *PPRTSGSEG;
 typedef struct RTSGBUF
 {
     /** Pointer to the scatter/gather array. */
-    PCRTSGSEG pcaSeg;
+    PCRTSGSEG paSegs;
     /** Number of segments. */
-    unsigned  cSeg;
+    unsigned  cSegs;
     /** Current segment we are in. */
     unsigned  idxSeg;
     /** Pointer to the current segment start. */
-    void     *pvSegCurr;
+    void     *pvSegCur;
     /** Number of bytes left in the current buffer. */
     size_t    cbSegLeft;
 } RTSGBUF;
@@ -77,10 +77,10 @@ typedef PRTSGBUF *PPRTSGBUF;
  *
  * @returns nothing.
  * @param   pSgBuf    Pointer to the S/G buffer to initialize.
- * @param   pcaSeg    Pointer to the start of the segment array.
- * @param   cSeg      Number of segments in the array.
+ * @param   paSegs    Pointer to the start of the segment array.
+ * @param   cSegs     Number of segments in the array.
  */
-RTDECL(void) RTSgBufInit(PRTSGBUF pSgBuf, PCRTSGSEG pcaSeg, unsigned cSeg);
+RTDECL(void) RTSgBufInit(PRTSGBUF pSgBuf, PCRTSGSEG paSegs, unsigned cSegs);
 
 /**
  * Resets the internal buffer position of the S/G buffer to the beginning.

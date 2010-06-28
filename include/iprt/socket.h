@@ -187,6 +187,44 @@ RTDECL(int) RTSocketGetPeerAddress(RTSOCKET hSocket, PRTNETADDR pAddr);
  */
 RTDECL(int) RTSocketSgWrite(RTSOCKET hSocket, PCRTSGBUF pSgBuf);
 
+/**
+ * Send data from multiple buffers to a socket.
+ *
+ * This is convenience wrapper around the RTSocketSgWrite and RTSgBufInit calls
+ * for lazy coders.  The "L" in the function name is short for "list" just like
+ * in the execl libc API.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INTERRUPTED if interrupted before anything was written.
+ *
+ * @param   hSocket         The socket handle.
+ * @param   cSegs           The number of data segments in the following
+ *                          ellipsis.
+ * @param   ...             Pairs of buffer pointers (void const *) and buffer
+ *                          sizes (size_t).  Make 101% sure the pointer is
+ *                          really size_t.
+ */
+RTDECL(int) RTSocketSgWriteL(RTSOCKET hSocket, size_t cSegs, ...);
+
+/**
+ * Send data from multiple buffers to a socket.
+ *
+ * This is convenience wrapper around the RTSocketSgWrite and RTSgBufInit calls
+ * for lazy coders.  The "L" in the function name is short for "list" just like
+ * in the execl libc API.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INTERRUPTED if interrupted before anything was written.
+ *
+ * @param   hSocket         The socket handle.
+ * @param   cSegs           The number of data segments in the following
+ *                          argument list.
+ * @param   va              Pairs of buffer pointers (void const *) and buffer
+ *                          sizes (size_t).  Make 101% sure the pointer is
+ *                          really size_t.
+ */
+RTDECL(int) RTSocketSgWriteLV(RTSOCKET hSocket, size_t cSegs, va_list va);
+
 /** @} */
 RT_C_DECLS_END
 
