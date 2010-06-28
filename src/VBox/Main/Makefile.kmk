@@ -326,7 +326,7 @@ VBoxSVC_SOURCES = \
 	$(if $(VBOX_WITH_XPCOM),xpcom/server.cpp,) \
 	$(VBOX_XML_SCHEMADEFS_CPP)
 
-$(VBOX_AUTOGEN_EVENT_CPP): $(VBOX_PATH_MAIN_SRC)/idl/autogen.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
+$(VBOX_AUTOGEN_EVENT_CPP): $(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call MSG_TOOL,xsltproc,autogen events,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) --stringparam G_kind VBoxEvent -o $@ $< $(VBOX_XIDL_FILE)
 
