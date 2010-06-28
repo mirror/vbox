@@ -449,7 +449,9 @@ def monitorVBox2(ctx, dur):
                     scev = ctx['global'].queryInterface(ev, 'IMachineStateChangeEvent')
                     if scev:
                         print "state event: mach=%s state=%s" %(scev.machineId, scev.state)
-    # We need to catch all exceptions here, otherwise callback will never be unregistered
+                # otherwise waitable events will leak
+                vbox.eventSource.eventProcessed(listener, ev)
+    # We need to catch all exceptions here, otherwise listener will never be unregistered
     except Exception, e:
         printErr(ctx,e)
         traceback.print_exc()
