@@ -1208,7 +1208,7 @@ ManagedObjectRef* WebServiceSession::findRefFromPtr(const ComPtr<IUnknown> &pcu)
     {
         pRef = it->second;
         WSDLT_ID id = pRef->toWSDL();
-        WEBDEBUG(("   %s: found existing ref %s for COM obj 0x%lX\n", __FUNCTION__, id.c_str(), ulp));
+        WEBDEBUG(("   %s: found existing ref %s (%s) for COM obj 0x%lX\n", __FUNCTION__, id.c_str(), pRef->getInterfaceName(), ulp));
     }
     else
         pRef = NULL;

@@ -271,7 +271,7 @@ WSDLT_ID createOrFindRefFromComPtr(const WSDLT_ID &idParent,
     // NULL comptr should return NULL MOR
     if (pc.isNull())
     {
-        WEBDEBUG(("   createOrFindRefFromComPtr(): returning empty MOR for NULL COM pointer\n"));
+        WEBDEBUG(("   createOrFindRefFromComPtr(): returning empty MOR for NULL %s pointer\n", pcszInterface));
         return "";
     }
 
