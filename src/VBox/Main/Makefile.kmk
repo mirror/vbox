@@ -187,6 +187,8 @@ VBOX_XML_SCHEMADEFS_H   = $(PATH_TARGET)/Main/SchemaDefs.h
 VBOX_XML_SCHEMADEFS_CPP = $(PATH_TARGET)/Main/SchemaDefs.cpp
 VBOX_XML_SCHEMADEFS_XSL = $(VBOX_PATH_MAIN_SRC)/xml/SchemaDefs.xsl
 
+VBOX_AUTOGEN_EVENT_CPP  = $(PATH_TARGET)/Main/VBoxEvents.cpp
+
 testschemadefs: $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 
 
@@ -319,10 +321,14 @@ VBoxSVC_SOURCES = \
 	BIOSSettingsImpl.cpp \
 	HostPower.cpp \
 	EventImpl.cpp \
-	VBoxEvents.cpp \
+	$(VBOX_AUTOGEN_EVENT_CPP) \
 	$(if $(VBOX_WITH_VRDP),VRDPServerImpl.cpp,) \
 	$(if $(VBOX_WITH_XPCOM),xpcom/server.cpp,) \
 	$(VBOX_XML_SCHEMADEFS_CPP)
+
+$(VBOX_AUTOGEN_EVENT_CPP): $(VBOX_PATH_MAIN_SRC)/idl/autogen.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
+	$(call MSG_TOOL,xsltproc,autogen events,$<,$@)
+	$(QUIET)$(VBOX_XSLTPROC) --stringparam G_kind VBoxEvent -o $@ $< $(VBOX_XIDL_FILE)
 
 VBoxSVC_SOURCES.darwin = \
 	darwin/iokit.cpp \
@@ -647,7 +653,7 @@ VBoxC_SOURCES = \
 	AudioSnifferInterface.cpp \
 	VMMDevInterface.cpp \
 	EventImpl.cpp \
-	VBoxEvents.cpp \
+	$(VBOX_AUTOGEN_EVENT_CPP) \
 	$(VBOX_XML_SCHEMADEFS_CPP)
 VBoxC_SOURCES.win = \
 	win/dllmain.cpp \
