@@ -236,7 +236,7 @@ public:
                    EventSource*                       aOwner);
     ~ListenerRecord();
 
-    HRESULT process(IEvent* aEvent, BOOL aWaitable, PendingEventsMap::iterator& pit);
+    HRESULT process(IEvent* aEvent, BOOL aWaitable, PendingEventsMap::iterator& pit, AutoLockBase& alock);
     HRESULT enqueue(IEvent* aEvent);
     HRESULT dequeue(IEvent* *aEvent, LONG aTimeout);
     HRESULT eventProcessed(IEvent * aEvent, PendingEventsMap::iterator& pit);
@@ -396,11 +396,20 @@ ListenerRecord::~ListenerRecord()
     }
 }
 
-HRESULT ListenerRecord::process(IEvent* aEvent, BOOL aWaitable, PendingEventsMap::iterator& pit)
+HRESULT ListenerRecord::process(IEvent* aEvent, BOOL aWaitable, PendingEventsMap::iterator& pit, AutoLockBase& alock)
 {
     if (mActive)
     {
-        HRESULT rc =  mListener->HandleEvent(aEvent);
+        /*
+         * We release lock here to allow modifying ops on EventSource inside callback.
+         */
+        HRESULT rc =  S_OK;
+        if (mListener)
+        {
+            alock.release();
+            rc =  mListener->HandleEvent(aEvent);
+            alock.acquire();
+        }
         if (aWaitable)
             eventProcessed(aEvent, pit);
         return rc;
@@ -591,13 +600,13 @@ STDMETHODIMP EventSource::FireEvent(IEvent * aEvent,
         for(std::list<ListenerRecord*>::const_iterator it = listeners.begin();
             it != listeners.end(); ++it)
         {
-            ListenerRecord* record = *it;
             HRESULT cbRc;
-
-            // @todo: callback under (read) lock, is it good?
-            // We could make copy of per-event listener's list, but real issue
-            // is that we don't want to allow removal of a listener while iterating
-            cbRc = record->process(aEvent, aWaitable, pit);
+            ListenerRecordHolder record(*it);
+            /*
+             * We pass lock here to allow modifying ops on EventSource inside callback
+             * in active mode.
+             */
+            cbRc = record.obj()->process(aEvent, aWaitable, pit, alock);
             // what to do with cbRc?
         }
     }
