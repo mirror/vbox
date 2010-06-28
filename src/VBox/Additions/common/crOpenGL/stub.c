@@ -445,21 +445,22 @@ void stubUninstallWindowMessageHook()
 static GLboolean stubCheckXExtensions(WindowInfo *pWindow)
 {
     int evb, erb, vmi=0, vma=0;
+    Display *dpy = stubGetWindowDisplay(pWindow);
 
-    XLOCK(pWindow->dpy);
-    if (XCompositeQueryExtension(pWindow->dpy, &evb, &erb) 
-        && XCompositeQueryVersion(pWindow->dpy, &vma, &vmi) 
+    XLOCK(dpy);
+    if (XCompositeQueryExtension(dpy, &evb, &erb) 
+        && XCompositeQueryVersion(dpy, &vma, &vmi) 
         && (vma>0 || vmi>=4))
     {
         crDebug("XComposite %i.%i", vma, vmi);
         vma=0;
         vmi=0;
-        if (XFixesQueryExtension(pWindow->dpy, &evb, &erb) 
-            && XFixesQueryVersion(pWindow->dpy, &vma, &vmi)
+        if (XFixesQueryExtension(dpy, &evb, &erb) 
+            && XFixesQueryVersion(dpy, &vma, &vmi)
             && vma>=2)
         {
             crDebug("XFixes %i.%i", vma, vmi);
-            XUNLOCK(pWindow->dpy);
+            XUNLOCK(dpy);
             return GL_TRUE;
         }
         else
@@ -471,7 +472,7 @@ static GLboolean stubCheckXExtensions(WindowInfo *pWindow)
     {
         crWarning("XComposite not found or old version (%i.%i), no VisibilityTracking", vma, vmi);
     }
-    XUNLOCK(pWindow->dpy);
+    XUNLOCK(dpy);
     return GL_FALSE;
 }
 

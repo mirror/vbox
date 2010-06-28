@@ -276,10 +276,9 @@ static void stubInitSPUDispatch(SPU *spu)
         origSwapBuffers = stub.spuDispatch.SwapBuffers;
         origDrawBuffer = stub.spuDispatch.DrawBuffer;
         origScissor = stub.spuDispatch.Scissor;
-#ifndef CR_NEWWINTRACK
         stub.spuDispatch.Clear = trapClear;
         stub.spuDispatch.Viewport = trapViewport;
-#endif
+
         if (stub.viewportHack)
             stub.spuDispatch.Scissor = trapScissor;
         /*stub.spuDispatch.SwapBuffers = trapSwapBuffers;
