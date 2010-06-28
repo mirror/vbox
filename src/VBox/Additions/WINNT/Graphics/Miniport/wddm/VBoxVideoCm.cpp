@@ -356,10 +356,10 @@ NTSTATUS vboxVideoCmTerm(PVBOXVIDEOCM_MGR pMgr)
     return STATUS_SUCCESS;
 }
 
-NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXWDDM_GETVBOXVIDEOCMCMD_HDR pvCmd, uint32_t cbCmd)
+NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD pCmd, uint32_t cbCmd)
 {
-    Assert(cbCmd >= VBOXWDDM_GETVBOXVIDEOCMCMD_DATA_OFFSET());
-    if (cbCmd < VBOXWDDM_GETVBOXVIDEOCMCMD_DATA_OFFSET())
+    Assert(cbCmd >= sizeof (VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD));
+    if (cbCmd < sizeof (VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD))
         return STATUS_BUFFER_TOO_SMALL;
 
     PVBOXVIDEOCM_SESSION pSession = pContext->pSession;
@@ -369,8 +369,8 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXWDDM_GETVBOXVIDEOCMCM
     uint32_t cbCmdsReturned = 0;
     uint32_t cbRemainingCmds = 0;
     uint32_t cbRemainingFirstCmd = 0;
-    uint8_t * pvData = VBOXWDDM_GETVBOXVIDEOCMCMD_DATA(pvCmd, uint8_t);
-    uint32_t cbData = cbCmd - VBOXWDDM_GETVBOXVIDEOCMCMD_DATA_OFFSET();
+    uint32_t cbData = cbCmd - sizeof (VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD);
+    uint8_t * pvData = ((uint8_t *)pCmd) + sizeof (VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD);
     bool bDetachMode = true;
     InitializeListHead(&DetachedList);
 //    PVBOXWDDM_GETVBOXVIDEOCMCMD_HDR *pvCmd
@@ -426,18 +426,18 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXWDDM_GETVBOXVIDEOCMCM
 
     ExReleaseFastMutex(&pSession->Mutex);
 
-    pvCmd->cbCmdsReturned = 0;
+    pCmd->Hdr.cbCmdsReturned = 0;
     for (pCurEntry = DetachedList.Blink; DetachedList.Blink != &DetachedList; pCurEntry = pCurEntry->Blink)
     {
         memcpy(pvData, &pHdr->CmdHdr, pHdr->CmdHdr.cbCmd);
         pvData += pHdr->CmdHdr.cbCmd;
-        pvCmd->cbCmdsReturned += pHdr->CmdHdr.cbCmd;
+        pCmd->Hdr.cbCmdsReturned += pHdr->CmdHdr.cbCmd;
         vboxVideoCmCmdReleaseByHdr(pHdr);
     }
 
-    pvCmd->cbRemainingCmds = cbRemainingCmds;
-    pvCmd->cbRemainingFirstCmd = cbRemainingFirstCmd;
-    pvCmd->u32Reserved = 0;
+    pCmd->Hdr.cbRemainingCmds = cbRemainingCmds;
+    pCmd->Hdr.cbRemainingFirstCmd = cbRemainingFirstCmd;
+    pCmd->Hdr.u32Reserved = 0;
 
     return STATUS_SUCCESS;
 }

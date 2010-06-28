@@ -87,6 +87,8 @@ VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispD3D.cpp \
     wddm/VBoxDispD3DIf.cpp \
     wddm/VBoxDispCm.cpp \
+    wddm/VBoxDispMp.cpp \
+    wddm/VBoxDispMpTst.cpp \
 	wddm/VBoxDispD3D.def \
 	wddm/VBoxDispD3D.rc
 VBoxDispD3D_LIBS     = \

@@ -31,6 +31,7 @@
 
 #include "VBoxDispD3DIf.h"
 #include "../../Miniport/wddm/VBoxVideoIf.h"
+#include "VBoxDispCm.h"
 #include "VBoxDispD3D.h"
 
 #ifdef DEBUG

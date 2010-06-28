@@ -21,6 +21,8 @@
 # define VBOXESC_REINITVIDEOMODES           0xABCD9003
 # define VBOXESC_GETVBOXVIDEOCMCMD          0xABCD9004
 
+#include <iprt/assert.h>
+
 typedef struct
 {
     ULONG Id;
@@ -41,8 +43,12 @@ typedef struct
 
 typedef struct VBOXDISPIFESCAPE
 {
-    int escapeCode;
+    int32_t escapeCode;
+    uint32_t u32CmdSpecific;
 } VBOXDISPIFESCAPE, *PVBOXDISPIFESCAPE;
+
+/* ensure command body is always 8-byte-aligned*/
+AssertCompile((sizeof (VBOXDISPIFESCAPE) & 7) == 0);
 
 #define VBOXDISPIFESCAPE_DATA_OFFSET() ((sizeof (VBOXDISPIFESCAPE) + 7) & ~7)
 #define VBOXDISPIFESCAPE_DATA(_pHead, _t) ( (_t*)(((uint8_t*)(_pHead)) + VBOXDISPIFESCAPE_DATA_OFFSET()))

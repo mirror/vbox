@@ -1084,13 +1084,20 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
                     DWORD     dwReason,
                     LPVOID    lpReserved)
 {
+    BOOL bOk = TRUE;
+
     switch (dwReason)
     {
         case DLL_PROCESS_ATTACH:
         {
             RTR3Init();
 
-            vboxVDbgPrint(("VBoxDispD3D: DLL loaded.\n"));
+            HRESULT hr = vboxDispCmInit();
+            Assert(hr == S_OK);
+            if (hr == S_OK)
+                vboxVDbgPrint(("VBoxDispD3D: DLL loaded.\n"));
+            else
+                bOk = FALSE;
 
 //                VbglR3Init();
             break;
@@ -1098,7 +1105,12 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
 
         case DLL_PROCESS_DETACH:
         {
-            vboxVDbgPrint(("VBoxDispD3D: DLL unloaded.\n"));
+            HRESULT hr = vboxDispCmTerm();
+            Assert(hr == S_OK);
+            if (hr == S_OK)
+                vboxVDbgPrint(("VBoxDispD3D: DLL unloaded.\n"));
+            else
+                bOk = FALSE;
 //                VbglR3Term();
             /// @todo RTR3Term();
             break;
@@ -1107,7 +1119,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
         default:
             break;
     }
-    return TRUE;
+    return bOk;
 }
 
 static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GETCAPS* pData)
@@ -3620,16 +3632,12 @@ static HRESULT APIENTRY vboxWddmDDevDestroyDevice(IN HANDLE hDevice)
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
 
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
-    if (pDevice->DefaultContext.ContextInfo.hContext)
-    {
-        D3DDDICB_DESTROYCONTEXT DestroyContext;
-        DestroyContext.hContext = pDevice->DefaultContext.ContextInfo.hContext;
-        HRESULT tmpHr = pDevice->RtCallbacks.pfnDestroyContextCb(pDevice->hDevice, &DestroyContext);
-        Assert(tmpHr == S_OK);
-    }
-    RTMemFree(hDevice);
+    HRESULT hr = vboxDispCmCtxDestroy(pDevice, &pDevice->DefaultContext);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+        RTMemFree(pDevice);
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return S_OK;
+    return hr;
 }
 
 AssertCompile(sizeof (RECT) == sizeof (D3DDDIRECT));
@@ -4105,46 +4113,10 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
             if (!pCreateData->AllocationListSize
                     && !pCreateData->PatchLocationListSize)
             {
-                pDevice->DefaultContext.ContextInfo.NodeOrdinal = 0;
-                pDevice->DefaultContext.ContextInfo.EngineAffinity = 0;
-                pDevice->DefaultContext.ContextInfo.Flags.Value = 0;
-                pDevice->DefaultContext.ContextInfo.pPrivateDriverData = NULL;
-                pDevice->DefaultContext.ContextInfo.PrivateDriverDataSize = 0;
-                pDevice->DefaultContext.ContextInfo.hContext = 0;
-                pDevice->DefaultContext.ContextInfo.pCommandBuffer = NULL;
-                pDevice->DefaultContext.ContextInfo.CommandBufferSize = 0;
-                pDevice->DefaultContext.ContextInfo.pAllocationList = NULL;
-                pDevice->DefaultContext.ContextInfo.AllocationListSize = 0;
-                pDevice->DefaultContext.ContextInfo.pPatchLocationList = NULL;
-                pDevice->DefaultContext.ContextInfo.PatchLocationListSize = 0;
-
-                hr = pDevice->RtCallbacks.pfnCreateContextCb(pDevice->hDevice, &pDevice->DefaultContext.ContextInfo);
+                hr = vboxDispCmCtxCreate(pDevice, &pDevice->DefaultContext);
                 Assert(hr == S_OK);
                 if (hr == S_OK)
-                {
-                    if (VBOXDISPMODE_IS_3D(pAdapter))
-                    {
-                        /* we postpone IDirect3DDevice device creation to CreateResource,
-                         * where resource render target gets created,
-                         * which is actually done as part of d3dx.dll Direct3DDevice creation */
-                        vboxVDbgPrint((__FUNCTION__": D3D Device Created\n"));
-                        break;
-                    }
-                    else
-                    {
-                        /* DDraw */
-                        vboxVDbgPrint((__FUNCTION__": DirectDraw Device Created\n"));
-                        break;
-                    }
-
-                    D3DDDICB_DESTROYCONTEXT DestroyContext;
-                    DestroyContext.hContext = pDevice->DefaultContext.ContextInfo.hContext;
-
-                    HRESULT tmpHr = pDevice->RtCallbacks.pfnDestroyContextCb(pDevice->hDevice, &DestroyContext);
-                    Assert(tmpHr == S_OK);
-                }
-                else
-                    vboxVDbgPrintR((__FUNCTION__": pfnCreateContextCb failed, hr(%d)\n", hr));
+                    break;
             }
             else
             {

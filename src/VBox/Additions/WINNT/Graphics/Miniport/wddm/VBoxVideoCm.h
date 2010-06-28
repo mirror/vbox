@@ -40,6 +40,6 @@ void vboxVideoCmCmdRelease(void *pvCmd);
 #define VBOXVIDEOCM_SUBMITSIZE_DEFAULT (~0UL)
 void vboxVideoCmCmdSubmit(void *pvCmd, uint32_t cbSize);
 
-NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXWDDM_GETVBOXVIDEOCMCMD_HDR pvCmd, uint32_t cbCmd);
+NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD pCmd, uint32_t cbCmd);
 
 #endif /* #ifndef ___VBoxVideoCm_h___ */
