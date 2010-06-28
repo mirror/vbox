@@ -286,10 +286,7 @@ Console::teleporterSrcReadACK(TeleporterStateSrc *pState, const char *pszWhich,
 HRESULT
 Console::teleporterSrcSubmitCommand(TeleporterStateSrc *pState, const char *pszCommand, bool fWaitForAck /*= true*/)
 {
-    size_t cchCommand = strlen(pszCommand);
-    int vrc = RTTcpWrite(pState->mhSocket, pszCommand, cchCommand);
-    if (RT_SUCCESS(vrc))
-        vrc = RTTcpWrite(pState->mhSocket, "\n", sizeof("\n") - 1);
+    int vrc = RTTcpSgWriteL(pState->mhSocket, 2, pszCommand, strlen(pszCommand), "\n", sizeof("\n") - 1);
     if (RT_SUCCESS(vrc))
         vrc = RTTcpFlush(pState->mhSocket);
     if (RT_FAILURE(vrc))
@@ -313,22 +310,13 @@ static DECLCALLBACK(int) teleporterTcpOpWrite(void *pvUser, uint64_t offStream, 
 
     for (;;)
     {
-        /* Write block header. */
         TELEPORTERTCPHDR Hdr;
         Hdr.u32Magic = TELEPORTERTCPHDR_MAGIC;
         Hdr.cb       = RT_MIN((uint32_t)cbToWrite, TELEPORTERTCPHDR_MAX_SIZE);
-        int rc = RTTcpWrite(pState->mhSocket, &Hdr, sizeof(Hdr));
+        int rc = RTTcpSgWriteL(pState->mhSocket, 2, &Hdr, sizeof(Hdr), pvBuf, (size_t)Hdr.cb);
         if (RT_FAILURE(rc))
         {
-            LogRel(("Teleporter/TCP: Header write error: %Rrc\n", rc));
-            return rc;
-        }
-
-        /* Write the data. */
-        rc = RTTcpWrite(pState->mhSocket, pvBuf, Hdr.cb);
-        if (RT_FAILURE(rc))
-        {
-            LogRel(("Teleporter/TCP: Data write error: %Rrc (cb=%#x)\n", rc, Hdr.cb));
+            LogRel(("Teleporter/TCP: Write error: %Rrc (cb=%#x)\n", rc, Hdr.cb));
             return rc;
         }
         pState->moffStream += Hdr.cb;
