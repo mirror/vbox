@@ -36,6 +36,9 @@
 #include <iprt/stream.h>
 #include <iprt/test.h>
 #include <iprt/thread.h>
+#include <iprt/process.h>
+#include <iprt/env.h>
+#include <iprt/string.h>
 
 
 /*******************************************************************************
@@ -73,6 +76,12 @@ int main(int argc, char **argv)
     {
         RTPrintf("tstSupSem: fatal error: RTR3InitAndSUPLib failed with rc=%Rrc\n", rc);
         return 1;
+    }
+
+    if (argc == 2 && !strcmp(argv[1], "child"))
+    {
+        RTThreadSleep(300);
+        return 0;
     }
 
     RTTEST hTest;
@@ -187,6 +196,31 @@ int main(int argc, char **argv)
     RTTESTI_CHECK_RC(RTThreadWait(hThread, 60*1000, &rcThread), VINF_SUCCESS);
     RTTESTI_CHECK_RC(rcThread, VERR_INTERRUPTED);
     RTTESTI_CHECK_RC(SUPSemEventMultiClose(pSession, hEventMulti), VINF_OBJECT_DESTROYED);
+
+    /*
+     * Fork test.
+     * Spawn a thread waiting for an event, then spawn a new child process (of ourselves)
+     * and make sure that this does not alter the intended behaviour of our event semaphore implementation (see #5090).
+     */
+    RTTestSub(hTest, "Process spawn");
+    hThread = NIL_RTTHREAD;
+    g_cMillies = 120*1000;
+    RTTESTI_CHECK_RC(SUPSemEventCreate(pSession, &hEvent), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTThreadCreate(&hThread, tstSupSemInterruptibleSRE, (void *)hEvent, 0, RTTHREADTYPE_TIMER, RTTHREADFLAGS_WAITABLE, "IntSRE"), VINF_SUCCESS);
+
+    const char *apszArgs[3] = { argv[0], "child", NULL };
+    RTPROCESS Process;
+    RTThreadSleep(250);
+    RTTESTI_CHECK_RC(RTProcCreate(apszArgs[0], apszArgs, RTENV_DEFAULT, 0, &Process), VINF_SUCCESS);
+
+    RTThreadSleep(250);
+    RTTESTI_CHECK_RC(SUPSemEventSignal(pSession, hEvent), VINF_SUCCESS);
+
+    rcThread = VINF_SUCCESS;
+    RTTESTI_CHECK_RC(RTThreadWait(hThread, 120*1000, &rcThread), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(rcThread, VINF_SUCCESS);
+    RTTESTI_CHECK_RC(SUPSemEventClose(pSession, hEvent), VINF_OBJECT_DESTROYED);
+
 #endif /* !OS2 && !WINDOWS */
 
     /*
