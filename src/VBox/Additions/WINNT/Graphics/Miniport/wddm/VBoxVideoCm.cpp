@@ -70,6 +70,7 @@ void* vboxVideoCmCmdCreate(PVBOXVIDEOCM_CTX pContext, uint32_t cbSize)
     Assert(VBOXWDDM_ROUNDBOUND(cbSize, 8) == cbSize);
     cbSize = VBOXWDDM_ROUNDBOUND(cbSize, 8);
 
+    Assert(pContext->pSession);
     if (!pContext->pSession)
         return NULL;
 
@@ -85,7 +86,7 @@ void* vboxVideoCmCmdCreate(PVBOXVIDEOCM_CTX pContext, uint32_t cbSize)
         pCmd->CmdHdr.u64UmData = pContext->u64UmData;
         pCmd->CmdHdr.cbCmd = pCmd->cbMaxCmdSize;
     }
-    return pCmd;
+    return VBOXVIDEOCM_BODY(pCmd, void);
 }
 
 DECLINLINE(void) vboxVideoCmCmdRetainByHdr(PVBOXVIDEOCM_CMD_DR pHdr)
