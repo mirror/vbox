@@ -1473,7 +1473,7 @@ int __vbox__IManagedObjectRef_USCOREgetInterfaceName(
     _vbox__IManagedObjectRef_USCOREgetInterfaceNameResponse *resp)
 {
     HRESULT rc = SOAP_OK;
-    WEBDEBUG(("\n-- entering %s\n", __FUNCTION__));
+    WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
     do {
         util::AutoReadLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
@@ -1506,7 +1506,7 @@ int __vbox__IManagedObjectRef_USCORErelease(
     _vbox__IManagedObjectRef_USCOREreleaseResponse *resp)
 {
     HRESULT rc = SOAP_OK;
-    WEBDEBUG(("\n-- entering %s\n", __FUNCTION__));
+    WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
     do {
         // findRefFromId needs read lock, and the delete call below requires
@@ -1577,7 +1577,7 @@ int __vbox__IWebsessionManager_USCORElogon(
         _vbox__IWebsessionManager_USCORElogonResponse *resp)
 {
     HRESULT rc = SOAP_OK;
-    WEBDEBUG(("\n-- entering %s\n", __FUNCTION__));
+    WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
     do {
         // WebServiceSession constructor tinkers with global MOR map and requires a write lock
@@ -1617,7 +1617,7 @@ int __vbox__IWebsessionManager_USCOREgetSessionObject(
         _vbox__IWebsessionManager_USCOREgetSessionObjectResponse *resp)
 {
     HRESULT rc = SOAP_OK;
-    WEBDEBUG(("\n-- entering %s\n", __FUNCTION__));
+    WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
     do {
         // findSessionFromRef needs read lock
@@ -1650,7 +1650,7 @@ int __vbox__IWebsessionManager_USCORElogoff(
         _vbox__IWebsessionManager_USCORElogoffResponse *resp)
 {
     HRESULT rc = SOAP_OK;
-    WEBDEBUG(("\n-- entering %s\n", __FUNCTION__));
+    WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
     do {
         // findSessionFromRef needs read lock, and the session destructor requires

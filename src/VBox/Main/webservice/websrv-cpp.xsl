@@ -86,7 +86,7 @@ const char *g_pcszCallingComMethod = "   calling COM method %s\n";
 const char *g_pcszDoneCallingComMethod = "   done calling COM method\n";
 const char *g_pcszConvertComOutputBack = "   convert COM output \"%s\" back to caller format\n";
 const char *g_pcszDoneConvertingComOutputBack = "   done converting COM output \"%s\" back to caller format\n";
-const char *g_pcszEntering = "\n-- entering %s\n";
+const char *g_pcszEntering = "-- entering %s\n";
 const char *g_pcszLeaving = "-- leaving %s, rc: 0x%lX (%d)\n";
 
 // generated string constants for all interface names
