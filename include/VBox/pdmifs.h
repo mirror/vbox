@@ -1396,13 +1396,13 @@ typedef struct PDMIBLOCKASYNC
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   off             Offset to start reading from.c
-     * @param   pSeg            Pointer to the first element in the scatter list.
-     * @param   cSeg            Number of entries in the list.
+     * @param   paSegs          Pointer to the S/G segment array.
+     * @param   cSegs           Number of entries in the array.
      * @param   cbRead          Number of bytes to read. Must be aligned to a sector boundary.
      * @param   pvUser          User argument which is returned in completion callback.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStartRead,(PPDMIBLOCKASYNC pInterface, uint64_t off, PCRTSGSEG pSeg, unsigned cSeg, size_t cbRead, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnStartRead,(PPDMIBLOCKASYNC pInterface, uint64_t off, PCRTSGSEG paSegs, unsigned cSegs, size_t cbRead, void *pvUser));
 
     /**
      * Write bits.
@@ -1410,13 +1410,13 @@ typedef struct PDMIBLOCKASYNC
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   off             Offset to start writing at. The offset must be aligned to a sector boundary.
-     * @param   pSeg            Pointer to the first element in the gather list.
-     * @param   cSeg            Number of entries in the list.
+     * @param   paSegs          Pointer to the S/G segment array.
+     * @param   cSegs           Number of entries in the array.
      * @param   cbWrite         Number of bytes to write. Must be aligned to a sector boundary.
      * @param   pvUser          User argument which is returned in completion callback.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStartWrite,(PPDMIBLOCKASYNC pInterface, uint64_t off, PCRTSGSEG pSeg, unsigned cSeg, size_t cbWrite, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnStartWrite,(PPDMIBLOCKASYNC pInterface, uint64_t off, PCRTSGSEG paSegs, unsigned cSegs, size_t cbWrite, void *pvUser));
 
     /**
      * Flush everything to disk.
@@ -1470,13 +1470,13 @@ typedef struct PDMIMEDIAASYNC
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   off             Offset to start reading from. Must be aligned to a sector boundary.
-     * @param   pSeg            Pointer to the first element in the scatter list.
-     * @param   cSeg            Number of entries in the list.
+     * @param   paSegs          Pointer to the S/G segment array.
+     * @param   cSegs           Number of entries in the array.
      * @param   cbRead          Number of bytes to read. Must be aligned to a sector boundary.
      * @param   pvUser          User data.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStartRead,(PPDMIMEDIAASYNC pInterface, uint64_t off, PCRTSGSEG pSeg, unsigned cSeg, size_t cbRead, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnStartRead,(PPDMIMEDIAASYNC pInterface, uint64_t off, PCRTSGSEG paSegs, unsigned cSegs, size_t cbRead, void *pvUser));
 
     /**
      * Start writing task.
@@ -1484,13 +1484,13 @@ typedef struct PDMIMEDIAASYNC
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   off             Offset to start writing at. Must be aligned to a sector boundary.
-     * @param   pSeg            Pointer to the first element in the gather list.
-     * @param   cSeg            Number of entries in the list.
+     * @param   paSegs          Pointer to the S/G segment array.
+     * @param   cSegs           Number of entries in the array.
      * @param   cbWrite         Number of bytes to write. Must be aligned to a sector boundary.
      * @param   pvUser          User data.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStartWrite,(PPDMIMEDIAASYNC pInterface, uint64_t off, PCRTSGSEG pSeg, unsigned cSeg, size_t cbWrite, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnStartWrite,(PPDMIMEDIAASYNC pInterface, uint64_t off, PCRTSGSEG paSegs, unsigned cSegs, size_t cbWrite, void *pvUser));
 
     /**
      * Flush everything to disk.
