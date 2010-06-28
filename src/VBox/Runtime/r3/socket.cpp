@@ -51,6 +51,7 @@
 #include "internal/iprt.h"
 #include <iprt/socket.h>
 
+#include <iprt/alloca.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -585,67 +586,100 @@ RTDECL(int) RTSocketSgWrite(RTSOCKET hSocket, PCRTSGBUF pSgBuf)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
     AssertPtrReturn(pSgBuf, VERR_INVALID_PARAMETER);
-    AssertReturn(pSgBuf->cSeg > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(pSgBuf->cSegs > 0, VERR_INVALID_PARAMETER);
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
 
     /*
      * Construct message descriptor (translate pSgBuf) and send it.
      */
-    int rc = VINF_SUCCESS;
-    do
-    {
+    int rc = VERR_NO_TMP_MEMORY;
 #ifdef RT_OS_WINDOWS
-        AssertCompileSize(WSABUF, sizeof(RTSGSEG));
-        AssertCompileMemberSize(WSABUF, buf, RT_SIZEOFMEMB(RTSGSEG, pvSeg));
+    AssertCompileSize(WSABUF, sizeof(RTSGSEG));
+    AssertCompileMemberSize(WSABUF, buf, RT_SIZEOFMEMB(RTSGSEG, pvSeg));
 
-        LPWSABUF paMsg = (LPWSABUF)RTMemTmpAllocZ(pSgBuf->cSeg * sizeof(WSABUF));
-        AssertPtrBreakStmt(paMsg, rc = VERR_NO_MEMORY);
-        for (unsigned i = 0; i < pSgBuf->cSeg; i++)
+    LPWSABUF paMsg = (LPWSABUF)RTMemTmpAllocZ(pSgBuf->cSegs * sizeof(WSABUF));
+    if (paMsg)
+    {
+        for (unsigned i = 0; i < pSgBuf->cSegs; i++)
         {
-            paMsg[i].buf = (char *)pSgBuf->pcaSeg[i].pvSeg;
-            paMsg[i].len = (u_long)pSgBuf->pcaSeg[i].cbSeg;
+            paMsg[i].buf = (char *)pSgBuf->paSegs[i].pvSeg;
+            paMsg[i].len = (u_long)pSgBuf->paSegs[i].cbSeg;
         }
 
         DWORD dwSent;
-        int hrc = WSASend(pThis->hNative, paMsg, pSgBuf->cSeg, &dwSent,
+        int hrc = WSASend(pThis->hNative, paMsg, pSgBuf->cSegs, &dwSent,
                           MSG_NOSIGNAL, NULL, NULL);
-        ssize_t cbWritten;
         if (!hrc)
-        {
-            /* avoid overflowing ssize_t, the exact value isn't important */
-            cbWritten = RT_MIN(dwSent, INT_MAX);
-        }
+            rc = VINF_SUCCESS;
+/** @todo check for incomplete writes */
         else
-            cbWritten = -1;
-#else
-        AssertCompileSize(struct iovec, sizeof(RTSGSEG));
-        AssertCompileMemberSize(struct iovec, iov_base, RT_SIZEOFMEMB(RTSGSEG, pvSeg));
-        AssertCompileMemberSize(struct iovec, iov_len, RT_SIZEOFMEMB(RTSGSEG, cbSeg));
+            rc = rtSocketError();
 
-        struct iovec *paMsg = (struct iovec *)RTMemTmpAllocZ(pSgBuf->cSeg * sizeof(struct iovec));
-        AssertPtrBreakStmt(paMsg, rc = VERR_NO_MEMORY);
-        for (unsigned i = 0; i < pSgBuf->cSeg; i++)
+        RTMemTmpFree(paMsg);
+    }
+
+#else  /* !RT_OS_WINDOWS */
+    AssertCompileSize(struct iovec, sizeof(RTSGSEG));
+    AssertCompileMemberSize(struct iovec, iov_base, RT_SIZEOFMEMB(RTSGSEG, pvSeg));
+    AssertCompileMemberSize(struct iovec, iov_len,  RT_SIZEOFMEMB(RTSGSEG, cbSeg));
+
+    struct iovec *paMsg = (struct iovec *)RTMemTmpAllocZ(pSgBuf->cSegs * sizeof(struct iovec));
+    if (paMsg)
+    {
+        for (unsigned i = 0; i < pSgBuf->cSegs; i++)
         {
-            paMsg[i].iov_base = pSgBuf->pcaSeg[i].pvSeg;
-            paMsg[i].iov_len = pSgBuf->pcaSeg[i].cbSeg;
+            paMsg[i].iov_base = pSgBuf->paSegs[i].pvSeg;
+            paMsg[i].iov_len  = pSgBuf->paSegs[i].cbSeg;
         }
 
         struct msghdr msgHdr;
-        memset(&msgHdr, '\0', sizeof(msgHdr));
-        msgHdr.msg_iov = paMsg;
-        msgHdr.msg_iovlen = pSgBuf->cSeg;
+        RT_ZERO(msgHdr);
+        msgHdr.msg_iov    = paMsg;
+        msgHdr.msg_iovlen = pSgBuf->cSegs;
         ssize_t cbWritten = sendmsg(pThis->hNative, &msgHdr, MSG_NOSIGNAL);
-#endif
-
-        RTMemTmpFree(paMsg);
         if (RT_LIKELY(cbWritten >= 0))
             rc = VINF_SUCCESS;
+/** @todo check for incomplete writes */
         else
             rc = rtSocketError();
-    } while (0);
+
+        RTMemTmpFree(paMsg);
+    }
+#endif /* !RT_OS_WINDOWS */
 
     rtSocketUnlock(pThis);
     return rc;
+}
+
+
+RTDECL(int) RTSocketSgWriteL(RTSOCKET hSocket, size_t cSegs, ...)
+{
+    va_list va;
+    va_start(va, cSegs);
+    int rc = RTSocketSgWriteLV(hSocket, cSegs, va);
+    va_end(va);
+    return rc;
+}
+
+
+RTDECL(int) RTSocketSgWriteLV(RTSOCKET hSocket, size_t cSegs, va_list va)
+{
+    /*
+     * Set up a S/G segment array + buffer on the stack and pass it
+     * on to RTSocketSgWrite.
+     */
+    Assert(cSegs <= 16);
+    PRTSGSEG paSegs = (PRTSGSEG)alloca(cSegs * sizeof(RTSGSEG));
+    AssertReturn(paSegs, VERR_NO_TMP_MEMORY);
+    for (size_t i = 0; i < cSegs; i++)
+    {
+        paSegs[i].pvSeg = va_arg(va, void *);
+        paSegs[i].cbSeg = va_arg(va, size_t);
+    }
+
+    RTSGBUF SgBuf;
+    RTSgBufInit(&SgBuf, paSegs, cSegs);
+    return RTSocketSgWrite(hSocket, &SgBuf);
 }
 
 
