@@ -30,6 +30,8 @@ def GenerateEntrypoints():
 		func_name = keys[index]
 		if apiutil.Category(func_name) == "Chromium":
 			continue
+		if apiutil.Category(func_name) == "VBox":
+			continue
 
 		return_type = apiutil.ReturnType(func_name)
 		params = apiutil.Parameters(func_name)
