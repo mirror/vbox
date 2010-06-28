@@ -434,6 +434,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     hrc = pMachine->COMGETTER(MemoryBalloonSize)(&ulBalloonSize);                       H();
     rc = CFGMR3InsertInteger(pRoot, "MemBalloonSize",       ulBalloonSize);             RC_CHECK();
 
+    /*
+     * CPUM values.
+     */
+    PCFGMNODE pCPUM;
+    rc = CFGMR3InsertNode(pRoot, "CPUM", &pCPUM);                                       RC_CHECK();
+
     /* cpuid leaf overrides. */
     static uint32_t const s_auCpuIdRanges[] =
     {
@@ -448,7 +454,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             if (SUCCEEDED(hrc))
             {
                 PCFGMNODE pLeaf;
-                rc = CFGMR3InsertNodeF(pRoot, &pLeaf, "CPUM/HostCPUID/%RX32", uLeaf);   RC_CHECK();
+                rc = CFGMR3InsertNodeF(pCPUM, &pLeaf, "HostCPUID/%RX32", uLeaf);        RC_CHECK();
 
                 rc = CFGMR3InsertInteger(pLeaf, "eax", ulEax);                          RC_CHECK();
                 rc = CFGMR3InsertInteger(pLeaf, "ebx", ulEbx);                          RC_CHECK();
@@ -458,30 +464,24 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             else if (hrc != E_INVALIDARG)                                               H();
         }
 
+    /* We must limit CPUID count for Windows NT 4, as otherwise it stops
+       with error 0x3e (MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED). */
     if (osTypeId == "WindowsNT4")
     {
-        /*
-         * We must limit CPUID count for Windows NT 4, as otherwise it stops
-         * with error 0x3e (MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED).
-         */
         LogRel(("Limiting CPUID leaf count for NT4 guests\n"));
-        PCFGMNODE pCPUM;
-        rc = CFGMR3InsertNode(pRoot, "CPUM", &pCPUM);                                   RC_CHECK();
         rc = CFGMR3InsertInteger(pCPUM, "NT4LeafLimit", true);                          RC_CHECK();
     }
 
+    /* Expose extended MWAIT features to Mac OS X guests. */
     if (fOsXGuest)
     {
-        /*
-         * Expose extended MWAIT features to Mac OS X guests.
-         */
         LogRel(("Using MWAIT extensions\n"));
-        PCFGMNODE pCPUM;
-        rc = CFGMR3InsertNode(pRoot, "CPUM", &pCPUM);                                   RC_CHECK();
         rc = CFGMR3InsertInteger(pCPUM, "MWaitExtensions", true);                       RC_CHECK();
     }
 
-    /* hardware virtualization extensions */
+    /*
+     * Hardware virtualization extensions.
+     */
     BOOL fHWVirtExEnabled;
     BOOL fHwVirtExtForced;
 #ifdef VBOX_WITH_RAW_MODE
