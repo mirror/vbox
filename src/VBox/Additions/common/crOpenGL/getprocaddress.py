@@ -36,6 +36,8 @@ keys = apiutil.GetAllFunctions(sys.argv[1]+"/APIspec.txt")
 for func_name in keys:
 	if "Chromium" == apiutil.Category(func_name):
 		continue
+	if "VBox" == apiutil.Category(func_name):
+		continue
 	if func_name == "BoundsInfoCR":
 		continue
 	if "GL_chromium" == apiutil.Category(func_name):

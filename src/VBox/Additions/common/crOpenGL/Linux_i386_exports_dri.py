@@ -31,6 +31,8 @@ def GenerateEntrypoints():
         func_name = keys[index]
         if apiutil.Category(func_name) == "Chromium":
             continue
+        if apiutil.Category(func_name) == "VBox":
+            continue
 
         print "BEGINPROC_EXPORTED cr_gl%s" % func_name
         print "%ifdef RT_ARCH_AMD64"
