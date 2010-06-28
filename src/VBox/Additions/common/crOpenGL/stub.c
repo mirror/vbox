@@ -28,9 +28,10 @@ static void crForcedFlush()
 #endif
 }
 
+#ifdef GLX
 Display* stubGetWindowDisplay(WindowInfo *pWindow)
 {
-#ifdef CR_NEWWINTRACK
+#if defined(CR_NEWWINTRACK)
     if (RTThreadNativeSelf()==RTThreadGetNative(stub.hSyncThread))
     {
         if (pWindow && pWindow->dpy && !pWindow->syncDpy)
@@ -54,6 +55,7 @@ Display* stubGetWindowDisplay(WindowInfo *pWindow)
         return pWindow ? pWindow->dpy:NULL;
     }
 }
+#endif
 
 /**
  * Returns -1 on error
