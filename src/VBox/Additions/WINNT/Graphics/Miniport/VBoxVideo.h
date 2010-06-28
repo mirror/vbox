@@ -119,8 +119,8 @@ typedef struct _DEVICE_EXTENSION *PDEVICE_EXTENSION;
 #include "wddm/VBoxVideoIf.h"
 #include "wddm/VBoxVideoShgsmi.h"
 #include "wddm/VBoxVideoCm.h"
-#include "wddm/VBoxVideoWddm.h"
 #include "wddm/VBoxVideoVdma.h"
+#include "wddm/VBoxVideoWddm.h"
 #include "wddm/VBoxVideoVidPn.h"
 #ifdef VBOXWDDM_WITH_VBVA
 # include "wddm/VBoxVideoVbva.h"

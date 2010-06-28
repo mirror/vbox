@@ -148,6 +148,7 @@ NTSTATUS vboxVdmaPipeSvrCmdGetList(PVBOXVDMAPIPE pPipe, PLIST_ENTRY pDetachHead)
         }
         else
         {
+            KeReleaseSpinLock(&pPipe->SinchLock, OldIrql);
             Status = STATUS_INVALID_PIPE_STATE;
             break;
         }
@@ -171,8 +172,12 @@ NTSTATUS vboxVdmaPipeSvrCmdGetList(PVBOXVDMAPIPE pPipe, PLIST_ENTRY pDetachHead)
             if (Status != STATUS_SUCCESS)
                 break;
         }
-        Assert(enmState > VBOXVDMAPIPE_STATE_OPENNED);
-        Status = STATUS_PIPE_CLOSING;
+        else
+        {
+            Assert(enmState == VBOXVDMAPIPE_STATE_CLOSING);
+            Status = STATUS_PIPE_CLOSING;
+            break;
+        }
     } while (1);
 
     return Status;
@@ -206,9 +211,16 @@ NTSTATUS vboxVdmaPipeCltCmdPut(PVBOXVDMAPIPE pPipe, PVBOXVDMAPIPE_CMD_HDR pCmd)
     return Status;
 }
 
-PVBOXVDMAPIPE_CMD_DR vboxVdmaGgCmdCreate(PVBOXVDMAGG pVdma, uint32_t cbCmd)
+PVBOXVDMAPIPE_CMD_DR vboxVdmaGgCmdCreate(PVBOXVDMAGG pVdma, VBOXVDMAPIPE_CMD_TYPE enmType, uint32_t cbCmd)
 {
-    return (PVBOXVDMAPIPE_CMD_DR)vboxWddmMemAllocZero(cbCmd);
+    PVBOXVDMAPIPE_CMD_DR pHdr = (PVBOXVDMAPIPE_CMD_DR)vboxWddmMemAllocZero(cbCmd);
+    Assert(pHdr);
+    if (pHdr)
+    {
+        pHdr->enmType = enmType;
+        return pHdr;
+    }
+    return NULL;
 }
 
 void vboxVdmaGgCmdDestroy(PVBOXVDMAPIPE_CMD_DR pDr)
@@ -261,8 +273,8 @@ NTSTATUS vboxVdmaGgDirtyRectsProcess(VBOXVDMAPIPE_CMD_RECTSINFO *pRectsInfo)
 {
     PVBOXWDDM_CONTEXT pContext = pRectsInfo->pContext;
     PDEVICE_EXTENSION pDevExt = pContext->pDevice->pAdapter;
-    RECT * pContextRect = &pRectsInfo->ContextRect;
-    PVBOXWDDM_RECTS_INFO pRects = &pRectsInfo->UpdateRects;
+    RECT * pContextRect = &pRectsInfo->ContextsRects.ContextRect;
+    PVBOXWDDM_RECTS_INFO pRects = &pRectsInfo->ContextsRects.UpdateRects;
     NTSTATUS Status = STATUS_SUCCESS;
     PVBOXVIDEOCM_CMD_RECTS pCmd = NULL;
     uint32_t cbCmd = VBOXVIDEOCM_CMD_RECTS_SIZE4CRECTS(pRects->cRects);
@@ -354,7 +366,6 @@ NTSTATUS vboxVdmaGgDirtyRectsProcess(VBOXVDMAPIPE_CMD_RECTSINFO *pRectsInfo)
             vboxVideoCmCmdSubmit(pDrCmd, VBOXVIDEOCM_SUBMITSIZE_DEFAULT);
         }
     }
-    InsertHeadList(&pDevExt->ContextList3D, &pContext->ListEntry);
     ExReleaseFastMutex(&pDevExt->ContextMutex);
 
 
@@ -449,7 +460,7 @@ NTSTATUS vboxVdmaGgDestruct(PVBOXVDMAGG pVdma)
     return Status;
 }
 
-NTSTATUS vboxVdmaGgCmdPost(PVBOXVDMAGG pVdma, PVBOXVDMAPIPE_CMD_DR pCmd)
+NTSTATUS vboxVdmaGgCmdSubmit(PVBOXVDMAGG pVdma, PVBOXVDMAPIPE_CMD_DR pCmd)
 {
     return vboxVdmaPipeCltCmdPut(&pVdma->CmdPipe, &pCmd->PipeHdr);
 }

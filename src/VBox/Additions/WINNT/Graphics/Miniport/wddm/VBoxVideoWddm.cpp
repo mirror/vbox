@@ -2075,6 +2075,7 @@ DxgkDdiSubmitCommand(
                     &bRet);
             break;
         }
+#endif
         case VBOXVDMACMD_TYPE_DMA_PRESENT_BLT:
         {
             PVBOXWDDM_DMA_PRESENT_BLT pBlt = (PVBOXWDDM_DMA_PRESENT_BLT)pPrivateData;
@@ -2084,20 +2085,35 @@ DxgkDdiSubmitCommand(
                 if (pPrivateData->fFlags.bShadow2PrimaryUpdate)
                 {
                     RECT rect;
-                    Assert(pBlt->DstRects.cRects);
-                    if (pBlt->DstRects.cRects > 1)
+                    if (pBlt->DstRects.UpdateRects.cRects)
                     {
-                        rect = pBlt->DstRects.aRects[1];
-                        for (UINT i = 2; i < pBlt->DstRects.cRects; ++i)
+                        rect = pBlt->DstRects.UpdateRects.aRects[0];
+                        for (UINT i = 1; i < pBlt->DstRects.UpdateRects.cRects; ++i)
                         {
-                            vboxWddmRectUnited(&rect, &rect, &pBlt->DstRects.aRects[i]);
+                            vboxWddmRectUnited(&rect, &rect, &pBlt->DstRects.UpdateRects.aRects[i]);
                         }
                     }
                     else
-                        rect = pBlt->DstRects.aRects[0];
+                        rect = pBlt->DstRects.ContextRect;
 
                     VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pPrivateData->SrcAllocInfo.srcId];
                     VBOXVBVA_OP(ReportDirtyRect, pDevExt, &pSource->Vbva, &rect);
+                }
+
+                PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pSubmitCommand->hContext;
+                Assert(pContext);
+                Assert(pContext->pDevice);
+                Assert(pContext->pDevice->pAdapter == pDevExt);
+                PVBOXVDMAPIPE_CMD_RECTSINFO pRectsCmd = (PVBOXVDMAPIPE_CMD_RECTSINFO)vboxVdmaGgCmdCreate(&pDevExt->u.primary.Vdma.DmaGg, VBOXVDMAPIPE_CMD_TYPE_RECTSINFO, RT_OFFSETOF(VBOXVDMAPIPE_CMD_RECTSINFO, ContextsRects.UpdateRects.aRects[pBlt->DstRects.UpdateRects.cRects]));
+                Assert(pRectsCmd);
+                if (pRectsCmd)
+                {
+                    pRectsCmd->pContext = pContext;
+                    pRectsCmd->ContextsRects = pBlt->DstRects;
+                    NTSTATUS tmpStatus = vboxVdmaGgCmdSubmit(&pDevExt->u.primary.Vdma.DmaGg, &pRectsCmd->Hdr);
+                    Assert(tmpStatus == STATUS_SUCCESS);
+                    if (tmpStatus != STATUS_SUCCESS)
+                        vboxVdmaGgCmdDestroy(&pRectsCmd->Hdr);
                 }
             }
             else
@@ -2115,8 +2131,6 @@ DxgkDdiSubmitCommand(
                     &bRet);
             break;
         }
-
-#endif
         default:
         {
             PVBOXVDMACBUF_DR pDr = vboxVdmaCBufDrCreate (&pDevExt->u.primary.Vdma, 0);
@@ -3755,9 +3769,9 @@ DxgkDdiPresent(
 
                     PVBOXWDDM_DMA_PRESENT_BLT pBlt = (PVBOXWDDM_DMA_PRESENT_BLT)pPrivateData;
                     pBlt->SrcRect = pPresent->SrcRect;
-                    pBlt->DstRects.cRects = 1;
-                    pBlt->DstRects.aRects[0] = pPresent->DstRect;
-                    UINT cbHead = RT_OFFSETOF(VBOXWDDM_DMA_PRESENT_BLT, DstRects.aRects[1]);
+                    pBlt->DstRects.ContextRect = pPresent->DstRect;
+                    pBlt->DstRects.UpdateRects.cRects = 0;
+                    UINT cbHead = RT_OFFSETOF(VBOXWDDM_DMA_PRESENT_BLT, DstRects.UpdateRects.aRects[0]);
                     Assert(pPresent->SubRectCnt > pPresent->MultipassOffset);
                     UINT cbRects = (pPresent->SubRectCnt - pPresent->MultipassOffset) * sizeof (RECT);
                     pPresent->pDmaBuffer = ((uint8_t*)pPresent->pDmaBuffer) + cbHead + cbRects;
@@ -3767,17 +3781,17 @@ DxgkDdiPresent(
                     if (cbCmd >= cbRects)
                     {
                         cbCmd -= cbRects;
-                        memcpy(&pBlt->DstRects.aRects[pPresent->MultipassOffset + 1], pPresent->pDstSubRects, cbRects);
-                        pBlt->DstRects.cRects += cbRects/sizeof (RECT);
+                        memcpy(&pBlt->DstRects.UpdateRects.aRects[pPresent->MultipassOffset], pPresent->pDstSubRects, cbRects);
+                        pBlt->DstRects.UpdateRects.cRects += cbRects/sizeof (RECT);
                     }
                     else
                     {
                         UINT cbFitingRects = (cbCmd/sizeof (RECT)) * sizeof (RECT);
                         Assert(cbFitingRects);
-                        memcpy(&pBlt->DstRects.aRects[pPresent->MultipassOffset + 1], pPresent->pDstSubRects, cbFitingRects);
+                        memcpy(&pBlt->DstRects.UpdateRects.aRects[pPresent->MultipassOffset], pPresent->pDstSubRects, cbFitingRects);
                         cbCmd -= cbFitingRects;
                         pPresent->MultipassOffset += cbFitingRects/sizeof (RECT);
-                        pBlt->DstRects.cRects += cbFitingRects/sizeof (RECT);
+                        pBlt->DstRects.UpdateRects.cRects += cbFitingRects/sizeof (RECT);
                         Assert(pPresent->SubRectCnt > pPresent->MultipassOffset);
                         Status = STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
                     }
