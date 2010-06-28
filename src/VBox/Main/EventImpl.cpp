@@ -238,7 +238,7 @@ public:
 
     HRESULT process(IEvent* aEvent, BOOL aWaitable, PendingEventsMap::iterator& pit, AutoLockBase& alock);
     HRESULT enqueue(IEvent* aEvent);
-    HRESULT dequeue(IEvent* *aEvent, LONG aTimeout);
+    HRESULT dequeue(IEvent* *aEvent, LONG aTimeout, AutoLockBase& aAlock);
     HRESULT eventProcessed(IEvent * aEvent, PendingEventsMap::iterator& pit);
     void addRef()
     {
@@ -396,7 +396,10 @@ ListenerRecord::~ListenerRecord()
     }
 }
 
-HRESULT ListenerRecord::process(IEvent* aEvent, BOOL aWaitable, PendingEventsMap::iterator& pit, AutoLockBase& alock)
+HRESULT ListenerRecord::process(IEvent*                     aEvent, 
+                                BOOL                        aWaitable, 
+                                PendingEventsMap::iterator& pit, 
+                                AutoLockBase&               aAlock)
 {
     if (mActive)
     {
@@ -406,9 +409,9 @@ HRESULT ListenerRecord::process(IEvent* aEvent, BOOL aWaitable, PendingEventsMap
         HRESULT rc =  S_OK;
         if (mListener)
         {
-            alock.release();
+            aAlock.release();
             rc =  mListener->HandleEvent(aEvent);
-            alock.acquire();
+            aAlock.acquire();
         }
         if (aWaitable)
             eventProcessed(aEvent, pit);
@@ -433,21 +436,29 @@ HRESULT ListenerRecord::enqueue (IEvent* aEvent)
     return S_OK;
 }
 
-HRESULT ListenerRecord::dequeue (IEvent* *aEvent, LONG aTimeout)
+HRESULT ListenerRecord::dequeue (IEvent*       *aEvent, 
+                                 LONG          aTimeout, 
+                                 AutoLockBase& aAlock)
 {
     AssertMsg(!mActive, ("must be passive\n"));
 
     ::RTCritSectEnter(&mcsQLock);
     if (mQueue.empty())
     {
-        ::RTCritSectLeave(&mcsQLock);
+        // retain listener record
+        ListenerRecordHolder holder(this);
+        ::RTCritSectLeave(&mcsQLock);        
         // Speed up common case
         if (aTimeout == 0)
         {
             *aEvent = NULL;
             return S_OK;
         }
+        // release lock while waiting, listener will not go away due to above holder
+        aAlock.release();
         ::RTSemEventWait(mQEvent, aTimeout);
+        // reacquire lock
+        aAlock.acquire();
         ::RTCritSectEnter(&mcsQLock);
     }
     if (mQueue.empty())
@@ -509,7 +520,7 @@ HRESULT EventSource::init(IUnknown *)
 void EventSource::uninit()
 {
     m->mListeners.clear();
-    // m->mEvMap shall be cleared at this point too by destructors
+    // m->mEvMap shall be cleared at this point too by destructors, assert?
 }
 
 STDMETHODIMP EventSource::RegisterListener(IEventListener * aListener,
@@ -643,7 +654,7 @@ STDMETHODIMP EventSource::GetEvent(IEventListener * aListener,
      * we need to be able to access event queue in FireEvent() while waiting
      * here, to make this wait preemptible, thus both take read lock (write
      * lock in FireEvent() would do too, and probably is a bit stricter),
-     * but will interfere with .
+     * but will be unable to .
      */
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -651,7 +662,7 @@ STDMETHODIMP EventSource::GetEvent(IEventListener * aListener,
     HRESULT rc;
 
     if (it != m->mListeners.end())
-        rc = it->second.obj()->dequeue(aEvent, aTimeout);
+        rc = it->second.obj()->dequeue(aEvent, aTimeout, alock);
     else
         rc = setError(VBOX_E_OBJECT_NOT_FOUND,
                       tr("Listener was never registered"));

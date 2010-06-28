@@ -400,10 +400,6 @@
 
 <xsl:template name="genCommonEventCode">
   <xsl:text><![CDATA[
-void VBoxEventDesc::getEvent(IEvent ** aEvent)
-{
-    mEvent.queryInterfaceTo(aEvent);
-}
 HRESULT VBoxEventDesc::init(IEventSource* source, VBoxEventType_T aType, ...)
 {
     va_list args;
