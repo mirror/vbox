@@ -23,6 +23,11 @@
 #include "VBoxDispD3DCmn.h"
 #include "VBoxDispD3D.h"
 
+#ifdef VBOXDISPMP_TEST
+HRESULT vboxDispMpTstStart();
+HRESULT vboxDispMpTstStop();
+#endif
+
 #ifdef VBOXWDDMDISP_DEBUG
 # include <stdio.h>
 #endif
@@ -1094,6 +1099,13 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
 
             HRESULT hr = vboxDispCmInit();
             Assert(hr == S_OK);
+#ifdef VBOXDISPMP_TEST
+            if (hr == S_OK)
+            {
+                hr = vboxDispMpTstStart();
+                Assert(hr == S_OK);
+            }
+#endif
             if (hr == S_OK)
                 vboxVDbgPrint(("VBoxDispD3D: DLL loaded.\n"));
             else
@@ -1105,12 +1117,20 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
 
         case DLL_PROCESS_DETACH:
         {
-            HRESULT hr = vboxDispCmTerm();
+            HRESULT hr;
+#ifdef VBOXDISPMP_TEST
+            hr = vboxDispMpTstStop();
             Assert(hr == S_OK);
             if (hr == S_OK)
-                vboxVDbgPrint(("VBoxDispD3D: DLL unloaded.\n"));
-            else
-                bOk = FALSE;
+#endif
+            {
+                hr = vboxDispCmTerm();
+                Assert(hr == S_OK);
+                if (hr == S_OK)
+                    vboxVDbgPrint(("VBoxDispD3D: DLL unloaded.\n"));
+                else
+                    bOk = FALSE;
+            }
 //                VbglR3Term();
             /// @todo RTR3Term();
             break;

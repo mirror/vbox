@@ -55,7 +55,7 @@ DECLINLINE(bool) vboxVideoCmIterHasNext(PVBOXVIDEOCM_ITERATOR pIter)
 
 static VBOXDISPMP g_VBoxDispMp;
 
-HRESULT vboxDispMpEnable()
+DECLCALLBACK(HRESULT) vboxDispMpEnableEvents()
 {
     g_VBoxDispMp.pEscapeCmd = NULL;
     g_VBoxDispMp.cbEscapeCmd = 0;
@@ -64,7 +64,7 @@ HRESULT vboxDispMpEnable()
 }
 
 
-HRESULT vboxDispMpDisable()
+DECLCALLBACK(HRESULT) vboxDispMpDisableEvents()
 {
     if (g_VBoxDispMp.pEscapeCmd)
         RTMemFree(g_VBoxDispMp.pEscapeCmd);
@@ -75,7 +75,7 @@ HRESULT vboxDispMpDisable()
 #define VBOXDISPMP_BUF_INCREASE 4096
 #define VBOXDISPMP_BUF_MAXSIZE  ((4096*4096)-96)
 
-HRESULT vboxDispMpGetRegions(PVBOXDISPMP_REGIONS pRegions, DWORD dwMilliseconds)
+DECLCALLBACK(HRESULT) vboxDispMpGetRegions(PVBOXDISPMP_REGIONS pRegions, DWORD dwMilliseconds)
 {
     HRESULT hr = S_OK;
     PVBOXVIDEOCM_CMD_HDR pHdr = vboxVideoCmIterNext(&g_VBoxDispMp.Iterator);
@@ -105,16 +105,26 @@ HRESULT vboxDispMpGetRegions(PVBOXDISPMP_REGIONS pRegions, DWORD dwMilliseconds)
                     Assert(pHdr);
                     break;
                 }
-                else if (g_VBoxDispMp.pEscapeCmd->Hdr.cbRemainingCmds)
+                else
                 {
+                    Assert(g_VBoxDispMp.pEscapeCmd->Hdr.cbRemainingCmds);
+                    Assert(g_VBoxDispMp.pEscapeCmd->Hdr.cbRemainingFirstCmd);
                     RTMemFree(g_VBoxDispMp.pEscapeCmd);
                     uint32_t newSize = RT_MAX(g_VBoxDispMp.cbEscapeCmd + VBOXDISPMP_BUF_INCREASE, g_VBoxDispMp.pEscapeCmd->Hdr.cbRemainingFirstCmd);
                     if (newSize < VBOXDISPMP_BUF_MAXSIZE)
                         newSize = RT_MAX(newSize, RT_MIN(g_VBoxDispMp.pEscapeCmd->Hdr.cbRemainingCmds, VBOXDISPMP_BUF_MAXSIZE));
+                    Assert(g_VBoxDispMp.cbEscapeCmd < newSize);
                     g_VBoxDispMp.pEscapeCmd = (PVBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD)RTMemAlloc(newSize);
                     Assert(g_VBoxDispMp.pEscapeCmd);
                     if (g_VBoxDispMp.pEscapeCmd)
                         g_VBoxDispMp.cbEscapeCmd = newSize;
+                    else
+                    {
+                        g_VBoxDispMp.pEscapeCmd = NULL;
+                        g_VBoxDispMp.cbEscapeCmd = 0;
+                        hr = E_OUTOFMEMORY;
+                        break;
+                    }
                 }
             }
             else
@@ -131,4 +141,16 @@ HRESULT vboxDispMpGetRegions(PVBOXDISPMP_REGIONS pRegions, DWORD dwMilliseconds)
         pRegions->pRegions = (PVBOXVIDEOCM_CMD_RECTS)(((uint8_t*)pHdr) + sizeof (VBOXVIDEOCM_CMD_HDR));
     }
     return hr;
+}
+
+VBOXDISPMP_DECL(HRESULT) VBoxDispMpGetCallbacks(uint32_t u32Version, PVBOXDISPMP_CALLBACKS pCallbacks)
+{
+    Assert(u32Version == VBOXDISPMP_VERSION);
+    if (u32Version != VBOXDISPMP_VERSION)
+        return E_INVALIDARG;
+
+    pCallbacks->pfnEnableEvents = vboxDispMpEnableEvents;
+    pCallbacks->pfnDisableEvents = vboxDispMpDisableEvents;
+    pCallbacks->pfnGetRegions = vboxDispMpGetRegions;
+    return S_OK;
 }

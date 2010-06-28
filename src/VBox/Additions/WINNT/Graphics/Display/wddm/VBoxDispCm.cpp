@@ -165,54 +165,62 @@ HRESULT vboxDispCmSessionCmdGet(PVBOXDISPCM_SESSION pSession, PVBOXDISPIFESCAPE_
     if (cbCmd < sizeof (VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD))
         return E_INVALIDARG;
 
-    DWORD dwResult = WaitForSingleObject(pSession->hEvent, dwMilliseconds);
-    switch(dwResult)
+    do
     {
-        case WAIT_OBJECT_0:
+        DWORD dwResult = WaitForSingleObject(pSession->hEvent, dwMilliseconds);
+        switch(dwResult)
         {
-            HRESULT hr = S_OK;
-            D3DDDICB_ESCAPE DdiEscape;
-            DdiEscape.Flags.Value = 0;
-            DdiEscape.pPrivateDriverData = pCmd;
-            DdiEscape.PrivateDriverDataSize = cbCmd;
+            case WAIT_OBJECT_0:
+            {
+                HRESULT hr = S_OK;
+                D3DDDICB_ESCAPE DdiEscape;
+                DdiEscape.Flags.Value = 0;
+                DdiEscape.pPrivateDriverData = pCmd;
+                DdiEscape.PrivateDriverDataSize = cbCmd;
 
-            pCmd->EscapeHdr.escapeCode = VBOXESC_GETVBOXVIDEOCMCMD;
-            /* lock to ensure the context is not distructed */
-            EnterCriticalSection(&pSession->CritSect);
-            /* use any context for identifying the kernel CmSession. We're using the first one */
-            PVBOXWDDMDISP_CONTEXT pContext = RTListNodeGetFirst(&pSession->CtxList, VBOXWDDMDISP_CONTEXT, ListNode);
-            if (pContext)
-            {
-                PVBOXWDDMDISP_DEVICE pDevice = pContext->pDevice;
-                DdiEscape.hDevice = pDevice->hDevice;
-                DdiEscape.hContext = pContext->ContextInfo.hContext;
-                Assert (DdiEscape.hContext);
-                Assert (DdiEscape.hDevice);
-                hr = pDevice->RtCallbacks.pfnEscapeCb(pDevice->pAdapter->hAdapter, &DdiEscape);
-                Assert(hr == S_OK);
-                LeaveCriticalSection(&pSession->CritSect);
+                pCmd->EscapeHdr.escapeCode = VBOXESC_GETVBOXVIDEOCMCMD;
+                /* lock to ensure the context is not distructed */
+                EnterCriticalSection(&pSession->CritSect);
+                /* use any context for identifying the kernel CmSession. We're using the first one */
+                PVBOXWDDMDISP_CONTEXT pContext = RTListNodeGetFirst(&pSession->CtxList, VBOXWDDMDISP_CONTEXT, ListNode);
+                if (pContext)
+                {
+                    PVBOXWDDMDISP_DEVICE pDevice = pContext->pDevice;
+                    DdiEscape.hDevice = pDevice->hDevice;
+                    DdiEscape.hContext = pContext->ContextInfo.hContext;
+                    Assert (DdiEscape.hContext);
+                    Assert (DdiEscape.hDevice);
+                    hr = pDevice->RtCallbacks.pfnEscapeCb(pDevice->pAdapter->hAdapter, &DdiEscape);
+                    LeaveCriticalSection(&pSession->CritSect);
+                    Assert(hr == S_OK);
+                    if (hr == S_OK)
+                    {
+                        if (!pCmd->Hdr.cbCmdsReturned && !pCmd->Hdr.cbRemainingFirstCmd)
+                            break; /* <- break to enter a new wait cycle */
+                    }
+                }
+                else
+                {
+                    LeaveCriticalSection(&pSession->CritSect);
+                    pCmd->Hdr.cbCmdsReturned = 0;
+                    pCmd->Hdr.cbRemainingCmds = 0;
+                    pCmd->Hdr.cbRemainingFirstCmd = 0;
+                }
+
+                return hr;
             }
-            else
+            case WAIT_TIMEOUT:
             {
-                LeaveCriticalSection(&pSession->CritSect);
                 pCmd->Hdr.cbCmdsReturned = 0;
                 pCmd->Hdr.cbRemainingCmds = 0;
                 pCmd->Hdr.cbRemainingFirstCmd = 0;
+                return WAIT_TIMEOUT;
             }
-
-            return hr;
+            default:
+                AssertBreakpoint();
+                return E_FAIL;
         }
-        case WAIT_TIMEOUT:
-        {
-            pCmd->Hdr.cbCmdsReturned = 0;
-            pCmd->Hdr.cbRemainingCmds = 0;
-            pCmd->Hdr.cbRemainingFirstCmd = 0;
-            return S_OK;
-        }
-        default:
-            AssertBreakpoint();
-            return E_FAIL;
-    }
+    } while (1);
 }
 
 HRESULT vboxDispCmCmdGet(PVBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD pCmd, uint32_t cbCmd, DWORD dwMilliseconds)

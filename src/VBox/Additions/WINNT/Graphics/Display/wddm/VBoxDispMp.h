@@ -21,18 +21,56 @@
 #include <d3dhal.h>
 #include "../../Miniport/wddm/VBoxVideoIf.h"
 
-HRESULT vboxDispMpEnable();
-HRESULT vboxDispMpDisable();
-
 typedef struct VBOXDISPMP_REGIONS
 {
     HWND hWnd;
     PVBOXVIDEOCM_CMD_RECTS pRegions;
 } VBOXDISPMP_REGIONS, *PVBOXDISPMP_REGIONS;
 
-/*
- * the VBOXDISPMP_REGIONS::pRegions returned is valid until the next vboxDispMpGetRegions call or vboxDispMpDisable call
+typedef DECLCALLBACK(HRESULT) FNVBOXDISPMP_ENABLEEVENTS();
+typedef FNVBOXDISPMP_ENABLEEVENTS *PFNVBOXDISPMP_ENABLEEVENTS;
+
+typedef DECLCALLBACK(HRESULT) FNVBOXDISPMP_DISABLEEVENTS();
+typedef FNVBOXDISPMP_DISABLEEVENTS *PFNVBOXDISPMP_DISABLEEVENTS;
+
+typedef DECLCALLBACK(HRESULT) FNVBOXDISPMP_DISABLEEVENTS();
+typedef FNVBOXDISPMP_DISABLEEVENTS *PFNVBOXDISPMP_DISABLEEVENTS;
+
+typedef DECLCALLBACK(HRESULT) FNVBOXDISPMP_GETREGIONS(PVBOXDISPMP_REGIONS pRegions, DWORD dwMilliseconds);
+typedef FNVBOXDISPMP_GETREGIONS *PFNVBOXDISPMP_GETREGIONS;
+
+typedef struct VBOXDISPMP_CALLBACKS
+{
+    PFNVBOXDISPMP_ENABLEEVENTS pfnEnableEvents;
+    PFNVBOXDISPMP_DISABLEEVENTS pfnDisableEvents;
+    /**
+     * if events are enabled - blocks until dirty region is available or timeout occurs
+     * in the former case S_OK is returned on event, in the latter case WAIT_TIMEOUT is returned
+     * if events are disabled - returns S_FALSE
+     */
+    PFNVBOXDISPMP_GETREGIONS pfnGetRegions;
+} VBOXDISPMP_CALLBACKS, *PVBOXDISPMP_CALLBACKS;
+
+/** @def VBOXNETCFGWIN_DECL
+ * The usual declaration wrapper.
  */
-HRESULT vboxDispMpGetRegions(PVBOXDISPMP_REGIONS pRegions, DWORD dwMilliseconds);
+
+/* enable this in case we include this in a dll*/
+# ifdef VBOXWDDMDISP
+#  define VBOXDISPMP_DECL(_type) DECLEXPORT(_type)
+# else
+#  define VBOXDISPMP_DECL(_type) DECLIMPORT(_type)
+# endif
+
+#define VBOXDISPMP_IFVERSION 1
+#define VBOXDISPMP_VERSION (VBOXVIDEOIF_VERSION | (VBOXDISPMP_IFVERSION < 16))
+/**
+ *  VBoxDispMpGetCallbacks export
+ *
+ *  @param u32Version - must be set to VBOXDISPMP_VERSION
+ *  @param pCallbacks - callbacks structure
+ */
+typedef VBOXDISPMP_DECL(HRESULT) FNVBOXDISPMP_GETCALLBACKS(uint32_t u32Version, PVBOXDISPMP_CALLBACKS pCallbacks);
+typedef FNVBOXDISPMP_GETCALLBACKS *PFNVBOXDISPMP_GETCALLBACKS;
 
 #endif /* #ifndef ___VBoxDispMp_h___ */
