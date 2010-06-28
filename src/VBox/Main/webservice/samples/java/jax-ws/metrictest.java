@@ -141,8 +141,8 @@ public class metrictest implements Runnable
 
     public metrictest()
     {
-        vbox = VirtualBox.connect("http://localhost:18083/");
-        mgr = new IWebsessionManager(vbox.getRemoteWSPort());
+        mgr = new IWebsessionManager("http://localhost:18083/");
+        vbox = mgr.logon("test", "test");
         System.out.println("Initialized connection to VirtualBox version " + vbox.getVersion());
         perf = new PerformanceCollector(vbox);
     }
