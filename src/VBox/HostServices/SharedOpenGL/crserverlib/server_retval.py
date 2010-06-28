@@ -50,6 +50,8 @@ for func_name in keys:
     return_type = apiutil.ReturnType(func_name)
     if apiutil.FindSpecial( "server", func_name ):
         continue
+    if "VBox" == apiutil.Category(func_name):
+        continue
     if return_type != 'void':
         print '%s SERVER_DISPATCH_APIENTRY crServerDispatch%s( %s )' % ( return_type, func_name, apiutil.MakeDeclarationString(params))
         print '{'
