@@ -148,8 +148,7 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
              */
             PVM pVM = pUVM->pVM;
             enmBefore = pVM->enmVMState;
-            if (    VM_FF_ISSET(pVM, VM_FF_TERMINATE)
-                ||  pUVM->vm.s.fTerminateEMT)
+            if (pUVM->vm.s.fTerminateEMT)
             {
                 rc = VINF_EM_TERMINATE;
                 break;
@@ -210,9 +209,7 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
              * Check for termination requests, these have extremely high priority.
              */
             if (    rc == VINF_EM_TERMINATE
-                ||  pUVM->vm.s.fTerminateEMT
-                ||  (   pUVM->pVM /* pVM may have become invalid by now. */
-                     && VM_FF_ISSET(pUVM->pVM, VM_FF_TERMINATE)))
+                ||  pUVM->vm.s.fTerminateEMT)
                 break;
         }
 
@@ -241,26 +238,23 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
 
     /*
      * Cleanup and exit.
-     * If EMT(0) called VMR3Destroy, EMT(0) will do all the terminating here.
      */
     Log(("vmR3EmulationThread: Terminating emulation thread! Thread=%#x pUVM=%p rc=%Rrc enmBefore=%d enmVMState=%d\n",
          ThreadSelf, pUVM, rc, enmBefore, pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_TERMINATED));
-    if (    pUVM->vm.s.fEMTDoesTheCleanup
-        &&  idCpu == 0)
+    if (   idCpu == 0
+        && pUVM->pVM)
     {
-        Log(("vmR3EmulationThread: executing delayed Destroy\n"));
-        Assert(pUVM->pVM);
-        vmR3Destroy(pUVM->pVM);
-        vmR3DestroyFinalBitFromEMT(pUVM, idCpu);
-        /* The pUVM structure is now invliad. */
-        pUVCpu = NULL;
-        pUVM = NULL;
+        PVM pVM = pUVM->pVM;
+        vmR3SetTerminated(pVM);
+        pUVM->pVM = NULL;
+
+        /** @todo SMP: This isn't 100% safe. We should wait for the other
+         *        threads to finish before destroy the VM. */
+        int rc2 = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
+        AssertLogRelRC(rc2);
     }
-    else
-    {
-        vmR3DestroyFinalBitFromEMT(pUVM, idCpu);
-        pUVCpu->vm.s.NativeThreadEMT = NIL_RTNATIVETHREAD;
-    }
+
+    pUVCpu->vm.s.NativeThreadEMT = NIL_RTNATIVETHREAD;
     Log(("vmR3EmulationThread: EMT is terminated.\n"));
     return rc;
 }
@@ -284,6 +278,27 @@ static const char *vmR3GetHaltMethodName(VMHALTMETHOD enmMethod)
         case VMHALTMETHOD_GLOBAL_1:     return "global1";
         default:                        return "unknown";
     }
+}
+
+
+/**
+ * Signal a fatal wait error.
+ *
+ * @returns Fatal error code to be propagated up the call stack.
+ * @param   pUVCpu              The user mode per CPU structure of the calling
+ *                              EMT.
+ * @param   pszFmt              The error format with a single %Rrc in it.
+ * @param   rcFmt               The status code to format.
+ */
+static int vmR3FatalWaitError(PUVMCPU pUVCpu, const char *pszFmt, int rcFmt)
+{
+    /** @todo This is wrong ... raise a fatal error / guru meditation
+     *        instead. */
+    AssertLogRelMsgFailed((pszFmt, rcFmt));
+    ASMAtomicUoWriteBool(&pUVCpu->pUVM->vm.s.fTerminateEMT, true);
+    if (pUVCpu->pVM)
+        VM_FF_SET(pUVCpu->pVM, VM_FF_CHECK_VM_STATE);
+    return VERR_INTERNAL_ERROR;
 }
 
 
@@ -361,11 +376,7 @@ static DECLCALLBACK(int) vmR3HaltOldDoHalt(PUVMCPU pUVCpu, const uint32_t fMask,
             rc = VINF_SUCCESS;
         else if (RT_FAILURE(rc))
         {
-            AssertRC(rc != VERR_INTERRUPTED);
-            AssertMsgFailed(("RTSemEventWait->%Rrc\n", rc));
-            ASMAtomicUoWriteBool(&pUVCpu->vm.s.fTerminateEMT, true);
-            VM_FF_SET(pVM, VM_FF_TERMINATE);
-            rc = VERR_INTERNAL_ERROR;
+            rc = vmR3FatalWaitError(pUVCpu, "RTSemEventWait->%Rrc\n", rc);
             break;
         }
     }
@@ -550,11 +561,7 @@ static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVMCPU pUVCpu, const uint32_t fMas
                 rc = VINF_SUCCESS;
             else if (RT_FAILURE(rc))
             {
-                AssertRC(rc != VERR_INTERRUPTED);
-                AssertMsgFailed(("RTSemEventWait->%Rrc\n", rc));
-                ASMAtomicUoWriteBool(&pUVCpu->vm.s.fTerminateEMT, true);
-                VM_FF_SET(pVM, VM_FF_TERMINATE);
-                rc = VERR_INTERNAL_ERROR;
+                rc = vmR3FatalWaitError(pUVCpu, "RTSemEventWait->%Rrc\n", rc);
                 break;
             }
 
@@ -661,10 +668,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
                 rc = VINF_SUCCESS;
             else if (RT_FAILURE(rc))
             {
-                AssertMsgFailed(("VMMR0_DO_GVMM_SCHED_HALT->%Rrc\n", rc));
-                ASMAtomicUoWriteBool(&pUVCpu->vm.s.fTerminateEMT, true);
-                VM_FF_SET(pVM, VM_FF_TERMINATE);
-                rc = VERR_INTERNAL_ERROR;
+                rc = vmR3FatalWaitError(pUVCpu, "VMMR0_DO_GVMM_SCHED_HALT->%Rrc\n", rc);
                 break;
             }
         }
@@ -719,13 +723,9 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Wait(PUVMCPU pUVCpu)
             rc = VINF_SUCCESS;
         else if (RT_FAILURE(rc))
         {
-            AssertMsgFailed(("RTSemEventWait->%Rrc\n", rc));
-            ASMAtomicUoWriteBool(&pUVCpu->vm.s.fTerminateEMT, true);
-            VM_FF_SET(pVM, VM_FF_TERMINATE);
-            rc = VERR_INTERNAL_ERROR;
+            rc = vmR3FatalWaitError(pUVCpu, "VMMR0_DO_GVMM_SCHED_HALT->%Rrc\n", rc);
             break;
         }
-
     }
 
     ASMAtomicUoWriteBool(&pUVCpu->vm.s.fWait, false);
@@ -797,7 +797,7 @@ static DECLCALLBACK(int) vmR3BootstrapWait(PUVMCPU pUVCpu)
                 )
             )
             break;
-        if (pUVCpu->vm.s.fTerminateEMT)
+        if (pUVM->vm.s.fTerminateEMT)
             break;
 
         /*
@@ -809,14 +809,9 @@ static DECLCALLBACK(int) vmR3BootstrapWait(PUVMCPU pUVCpu)
             rc = VINF_SUCCESS;
         else if (RT_FAILURE(rc))
         {
-            AssertMsgFailed(("RTSemEventWait->%Rrc\n", rc));
-            ASMAtomicUoWriteBool(&pUVCpu->vm.s.fTerminateEMT, true);
-            if (pUVCpu->pVM)
-                VM_FF_SET(pUVCpu->pVM, VM_FF_TERMINATE);
-            rc = VERR_INTERNAL_ERROR;
+            rc = vmR3FatalWaitError(pUVCpu, "RTSemEventWait->%Rrc\n", rc);
             break;
         }
-
     }
 
     ASMAtomicUoWriteBool(&pUVCpu->vm.s.fWait, false);
@@ -872,13 +867,9 @@ static DECLCALLBACK(int) vmR3DefaultWait(PUVMCPU pUVCpu)
             rc = VINF_SUCCESS;
         else if (RT_FAILURE(rc))
         {
-            AssertMsgFailed(("RTSemEventWait->%Rrc\n", rc));
-            ASMAtomicUoWriteBool(&pUVCpu->vm.s.fTerminateEMT, true);
-            VM_FF_SET(pVM, VM_FF_TERMINATE);
-            rc = VERR_INTERNAL_ERROR;
+            rc = vmR3FatalWaitError(pUVCpu, "RTSemEventWait->%Rrc", rc);
             break;
         }
-
     }
 
     ASMAtomicUoWriteBool(&pUVCpu->vm.s.fWait, false);

@@ -942,7 +942,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
              * We might have missed the raising of VMREQ, TIMER and some other
              * imporant FFs while we were busy switching the state. So, check again.
              */
-            if (    VM_FF_ISPENDING(pVM, VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_DBGF | VM_FF_TERMINATE | VM_FF_RESET)
+            if (    VM_FF_ISPENDING(pVM, VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_DBGF | VM_FF_CHECK_VM_STATE | VM_FF_RESET)
                 ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TIMER | VMCPU_FF_REQUEST))
             {
                 LogFlow(("emR3RemExecute: Skipping run, because FF is set. %#x\n", pVM->fGlobalForcedActions));
@@ -1299,13 +1299,27 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         }
 
         /*
-         * Termination request.
+         * State change request (cleared by vmR3SetStateLocked).
          */
-        if (VM_FF_ISPENDING(pVM, VM_FF_TERMINATE))
+        if (VM_FF_ISPENDING(pVM, VM_FF_CHECK_VM_STATE))
         {
-            Log2(("emR3ForcedActions: returns VINF_EM_TERMINATE\n"));
-            STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
-            return VINF_EM_TERMINATE;
+            VMSTATE enmState = VMR3GetState(pVM);
+            switch (enmState)
+            {
+                case VMSTATE_FATAL_ERROR:
+                case VMSTATE_FATAL_ERROR_LS:
+                    Log2(("emR3ForcedActions: %s -> VINF_EM_SUSPEND\n", VMGetStateName(enmState) ));
+                    STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
+                    return VINF_EM_SUSPEND;
+
+                case VMSTATE_DESTROYING:
+                    Log2(("emR3ForcedActions: %s -> VINF_EM_TERMINATE\n", VMGetStateName(enmState) ));
+                    STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
+                    return VINF_EM_TERMINATE;
+
+                default:
+                    AssertMsgFailed(("%s\n", VMGetStateName(enmState)));
+            }
         }
 
         /*
@@ -1353,7 +1367,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         }
 
         /* check that we got them all  */
-        AssertCompile(VM_FF_NORMAL_PRIORITY_POST_MASK == (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_RESET | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS));
+        AssertCompile(VM_FF_NORMAL_PRIORITY_POST_MASK == (VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_RESET | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS));
         AssertCompile(VMCPU_FF_NORMAL_PRIORITY_POST_MASK == VMCPU_FF_CSAM_SCAN_PAGE);
     }
 
@@ -1566,7 +1580,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         {
             rc2 = VMMR3EmtRendezvousFF(pVM, pVCpu);
             UPDATE_RC();
-            /** @todo HACK ALERT! The following test is to make sure EM+TM things the VM is
+            /** @todo HACK ALERT! The following test is to make sure EM+TM thinks the VM is
              * stopped/reset before the next VM state change is made. We need a better
              * solution for this, or at least make it possible to do: (rc >= VINF_EM_FIRST
              * && rc >= VINF_EM_SUSPEND). */
@@ -1579,13 +1593,27 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         }
 
         /*
-         * Termination request.
+         * State change request (cleared by vmR3SetStateLocked).
          */
-        if (VM_FF_ISPENDING(pVM, VM_FF_TERMINATE))
+        if (VM_FF_ISPENDING(pVM, VM_FF_CHECK_VM_STATE))
         {
-            Log2(("emR3ForcedActions: returns VINF_EM_TERMINATE\n"));
-            STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
-            return VINF_EM_TERMINATE;
+            VMSTATE enmState = VMR3GetState(pVM);
+            switch (enmState)
+            {
+                case VMSTATE_FATAL_ERROR:
+                case VMSTATE_FATAL_ERROR_LS:
+                    Log2(("emR3ForcedActions: %s -> VINF_EM_SUSPEND\n", VMGetStateName(enmState) ));
+                    STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
+                    return VINF_EM_SUSPEND;
+
+                case VMSTATE_DESTROYING:
+                    Log2(("emR3ForcedActions: %s -> VINF_EM_TERMINATE\n", VMGetStateName(enmState) ));
+                    STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
+                    return VINF_EM_TERMINATE;
+
+                default:
+                    AssertMsgFailed(("%s\n", VMGetStateName(enmState)));
+            }
         }
 
         /*
@@ -1621,7 +1649,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 #endif
 
         /* check that we got them all  */
-        AssertCompile(VM_FF_HIGH_PRIORITY_PRE_MASK == (VM_FF_TM_VIRTUAL_SYNC | VM_FF_DBGF | VM_FF_TERMINATE | VM_FF_DEBUG_SUSPEND | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS));
+        AssertCompile(VM_FF_HIGH_PRIORITY_PRE_MASK == (VM_FF_TM_VIRTUAL_SYNC | VM_FF_DBGF | VM_FF_CHECK_VM_STATE | VM_FF_DEBUG_SUSPEND | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS));
         AssertCompile(VMCPU_FF_HIGH_PRIORITY_PRE_MASK == (VMCPU_FF_TIMER | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_INHIBIT_INTERRUPTS));
     }
 

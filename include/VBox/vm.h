@@ -269,14 +269,17 @@ typedef struct VMCPU
 /** This action forces the VM to service pending requests from other
  * thread or requests which must be executed in another context. */
 #define VM_FF_REQUEST                       RT_BIT_32(9)
-/** Terminate the VM immediately. */
-#define VM_FF_TERMINATE                     RT_BIT_32(10)
+/** Check for VM state changes and take appropriate action. */
+#define VM_FF_CHECK_VM_STATE                RT_BIT_32(VM_FF_CHECK_VM_STATE_BIT)
+/** The bit number for VM_FF_CHECK_VM_STATE. */
+#define VM_FF_CHECK_VM_STATE_BIT            10
 /** Reset the VM. (postponed) */
 #define VM_FF_RESET                         RT_BIT_32(VM_FF_RESET_BIT)
 /** The bit number for VM_FF_RESET. */
 #define VM_FF_RESET_BIT                     11
 /** EMT rendezvous in VMM. */
 #define VM_FF_EMT_RENDEZVOUS                RT_BIT_32(VM_FF_EMT_RENDEZVOUS_BIT)
+/** The bit number for VM_FF_EMT_RENDEZVOUS. */
 #define VM_FF_EMT_RENDEZVOUS_BIT            12
 
 /** PGM needs to allocate handy pages. */
@@ -345,18 +348,19 @@ typedef struct VMCPU
 #define VMCPU_FF_TO_R3                      RT_BIT_32(28)
 
 /** Externally VM forced actions. Used to quit the idle/wait loop. */
-#define VM_FF_EXTERNAL_SUSPENDED_MASK           (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_REQUEST | VM_FF_EMT_RENDEZVOUS)
+#define VM_FF_EXTERNAL_SUSPENDED_MASK           (VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_REQUEST | VM_FF_EMT_RENDEZVOUS)
 /** Externally VMCPU forced actions. Used to quit the idle/wait loop. */
 #define VMCPU_FF_EXTERNAL_SUSPENDED_MASK        (VMCPU_FF_REQUEST)
 
 /** Externally forced VM actions. Used to quit the idle/wait loop. */
-#define VM_FF_EXTERNAL_HALTED_MASK              (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_EMT_RENDEZVOUS)
+#define VM_FF_EXTERNAL_HALTED_MASK              (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_REQUEST \
+                                                 | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_EMT_RENDEZVOUS)
 /** Externally forced VMCPU actions. Used to quit the idle/wait loop. */
 #define VMCPU_FF_EXTERNAL_HALTED_MASK           (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_REQUEST | VMCPU_FF_TIMER)
 
 /** High priority VM pre-execution actions. */
-#define VM_FF_HIGH_PRIORITY_PRE_MASK            (  VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_TM_VIRTUAL_SYNC | VM_FF_DEBUG_SUSPEND \
-                                                 | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS)
+#define VM_FF_HIGH_PRIORITY_PRE_MASK            (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_TM_VIRTUAL_SYNC \
+                                                 | VM_FF_DEBUG_SUSPEND | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS)
 /** High priority VMCPU pre-execution actions. */
 #define VMCPU_FF_HIGH_PRIORITY_PRE_MASK         (  VMCPU_FF_TIMER | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_PGM_SYNC_CR3 \
                                                  | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT \
@@ -374,7 +378,8 @@ typedef struct VMCPU
 #define VMCPU_FF_HIGH_PRIORITY_POST_MASK        (VMCPU_FF_PDM_CRITSECT|VMCPU_FF_CSAM_PENDING_ACTION)
 
 /** Normal priority VM post-execution actions. */
-#define VM_FF_NORMAL_PRIORITY_POST_MASK         (VM_FF_TERMINATE | VM_FF_DBGF | VM_FF_RESET | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS)
+#define VM_FF_NORMAL_PRIORITY_POST_MASK         (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_RESET \
+                                                 | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS)
 /** Normal priority VMCPU post-execution actions. */
 #define VMCPU_FF_NORMAL_PRIORITY_POST_MASK      (VMCPU_FF_CSAM_SCAN_PAGE)
 
