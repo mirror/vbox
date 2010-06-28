@@ -577,7 +577,7 @@ STDMETHODIMP EventSource::FireEvent(IEvent * aEvent,
     BOOL aWaitable = FALSE;
     aEvent->COMGETTER(Waitable)(&aWaitable);
 
-    {
+    do {
         /* See comment in EventSource::GetEvent() */
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -587,10 +587,14 @@ STDMETHODIMP EventSource::FireEvent(IEvent * aEvent,
 
         std::list<ListenerRecord*>& listeners = m->mEvMap[(int)evType-FirstEvent];
 
+        /* Anyone interested in this event? */
         uint32_t cListeners = listeners.size();
+        if (cListeners == 0)
+            break; // just leave the lock and update event object state
+
         PendingEventsMap::iterator pit;
 
-        if (cListeners > 0 && aWaitable)
+        if (aWaitable)
         {
             m->mPendingMap.insert(PendingEventsMap::value_type(aEvent, cListeners));
             // we keep iterator here to allow processing active listeners without
@@ -601,15 +605,18 @@ STDMETHODIMP EventSource::FireEvent(IEvent * aEvent,
             it != listeners.end(); ++it)
         {
             HRESULT cbRc;
+            // keep listener record reference, in case someone will remove it while in callback
             ListenerRecordHolder record(*it);
-            /*
+
+            /**
              * We pass lock here to allow modifying ops on EventSource inside callback
-             * in active mode.
+             * in active mode. Note that we expect list iterator stability as 'alock'
+             * could be temporary released when calling event handler.
              */
             cbRc = record.obj()->process(aEvent, aWaitable, pit, alock);
             // what to do with cbRc?
         }
-    }
+    } while (0);
     /* We leave the lock here */
 
     if (aWaitable)
@@ -756,6 +763,8 @@ public:
 #ifdef VBOX_WITH_XPCOM
 NS_DECL_CLASSINFO(PassiveEventListener)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(PassiveEventListener, IEventListener)
+NS_DECL_CLASSINFO(VBoxEvent)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VBoxEvent, IEvent)
 #endif
 
 STDMETHODIMP EventSource::CreateListener(IEventListener ** aListener)

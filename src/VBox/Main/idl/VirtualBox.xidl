@@ -13995,7 +13995,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="refIVirtualBox" type="IVirtualBox" dir="in"/>
       <param name="return" type="ISession" dir="return"/>
     </method>
-    
+
     <method name="logoff">
       <desc>
         Logs off the client who has previously logged on with <link to="IWebsessionManager::logoff" />
@@ -14589,7 +14589,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         registerListener() call to simplify registration.
       </desc>
     </const>
-   
+
     <const name="SnapshotEvent" value="3">
       <desc>
         Wildcard for all snapshot events. Events of this type are never delivered, and only used in
@@ -14844,9 +14844,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
       name="IMachineEvent" extends="IEvent"
       uuid="92ed7b1a-0d96-40ed-ae46-a564d484325e"
-      wsmap="managed"
+      wsmap="managed" id="MachineEvent"
       >
-    <desc>Base interface for all machine events.</desc>
+    <desc>Base abstract interface for all machine events.</desc>
 
     <attribute name="machineId" readonly="yes" type="uuid" mod="string">
       <desc>ID of the machine this event relates to.</desc>
@@ -14857,7 +14857,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
       name="IMachineStateChangeEvent" extends="IMachineEvent"
       uuid="5748F794-48DF-438D-85EB-98FFD70D18C9"
-      wsmap="managed"
+      wsmap="managed" autogen="VBoxEvent" id="OnMachineStateChange"
       >
     <desc>Machine state change event.</desc>
 
@@ -14869,7 +14869,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
       name="IMachineDataChangeEvent" extends="IMachineEvent"
       uuid="6AA70A6C-0DCA-4810-8C5C-457B278E3D49"
-      wsmap="managed"
+      wsmap="managed" autogen="VBoxEvent" id="OnMachineDataChange"
       >
     <desc>
       Any of the settings of the given machine has changed.
@@ -14879,7 +14879,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
       name="IMachineRegisteredEvent" extends="IMachineEvent"
       uuid="c354a762-3ff2-4f2e-8f09-07382ee25088"
-      wsmap="managed"
+      wsmap="managed" autogen="VBoxEvent" id="OnMachineRegistered"
       >
     <desc>
       The given machine was registered or unregistered
@@ -14895,9 +14895,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="IMachineSessionStateEvent" extends="IMachineEvent"
+      name="ISessionStateEvent" extends="IMachineEvent"
       uuid="714a3eef-799a-4489-86cd-fe8e45b2ff8e"
-      wsmap="managed"
+      wsmap="managed" autogen="VBoxEvent" id="OnSessionStateChange"
       >
     <desc>
       The state of the session for the given machine was changed.
@@ -14914,7 +14914,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
       name="IGuestPropertyChangeEvent" extends="IMachineEvent"
       uuid="3f63597a-26f1-4edb-8dd2-6bddd0912368"
-      wsmap="managed"
+      wsmap="managed" autogen="VBoxEvent" id="OnGuestPropertyChange"
       >
     <desc>
       Notification when a guest property has changed.
@@ -14943,7 +14943,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
       name="ISnapshotEvent" extends="IMachineEvent"
       uuid="21637b0e-34b8-42d3-acfb-7e96daf77c22"
-      wsmap="managed"
+      wsmap="managed" id="SnapshotEvent"
       >
     <desc>Base interface for all snapshot events.</desc>
 
@@ -14956,7 +14956,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
      name="ISnapshotTakenEvent" extends="ISnapshotEvent"
      uuid="d27c0b3d-6038-422c-b45e-6d4a0503d9f1"
-     wsmap="managed"
+     wsmap="managed" autogen="VBoxEvent" id="OnSnapshotTaken"
      >
     <desc>
       A new snapshot of the machine has been taken.
@@ -14967,7 +14967,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
      name="ISnapshotDeletedEvent" extends="ISnapshotEvent"
      uuid="c48f3401-4a9e-43f4-b7a7-54bd285e22f4"
-     wsmap="managed"
+     wsmap="managed" autogen="VBoxEvent" id="OnSnapshotDeleted"
      >
     <desc>
       Snapshot of the given machine has been deleted.
@@ -14985,7 +14985,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
    <interface
      name="ISnapshotChangeEvent" extends="ISnapshotEvent"
      uuid="07541941-8079-447a-a33e-47a69c7980db"
-     wsmap="managed"
+     wsmap="managed" autogen="VBoxEvent" id="OnSnapshotChange"
      >
     <desc>
       Snapshot properties (name and/or description) have been changed.
@@ -14996,7 +14996,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
       name="IExtraDataChangeEvent" extends="IEvent"
       uuid="024F00CE-6E0B-492A-A8D0-968472A94DC7"
-      wsmap="managed"
+      wsmap="managed" autogen="VBoxEvent" id="OnExtraDataChange"
       >
     <desc>
       Notification when machine specific or global extra data
