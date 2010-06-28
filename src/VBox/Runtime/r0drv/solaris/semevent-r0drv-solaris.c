@@ -56,10 +56,8 @@ typedef struct RTSEMEVENTINTERNAL
     uint32_t volatile   u32Magic;
     /** The number of waiting threads. */
     uint32_t volatile   cWaiters;
-    /** Set if the next waiter is to be signaled. */
-    uint8_t volatile    fPendingSignal;
-    /** Set if the event object is signaled. */
-    uint8_t volatile    fSignaled;
+    /** The number of signalled threads. */
+    uint32_t volatile   cWakeUp;
     /** The number of threads referencing this object. */
     uint32_t volatile   cRefs;
     /** The Solaris mutex protecting this structure and pairing up the with the cv. */
@@ -89,9 +87,8 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
 
     pThis->u32Magic       = RTSEMEVENT_MAGIC;
     pThis->cWaiters       = 0;
+    pThis->cWakeUp        = 0;
     pThis->cRefs          = 1;
-    pThis->fSignaled      = 0;
-    pThis->fPendingSignal = 0;
     mutex_init(&pThis->Mtx, "IPRT Event Semaphore", MUTEX_DRIVER, (void *)ipltospl(DISP_LEVEL));
     cv_init(&pThis->Cnd, "IPRT CV", CV_DRIVER, NULL);
 
@@ -177,24 +174,52 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
         mutex_enter(&pThis->Mtx);
     }
 
-    if (pThis->cWaiters > 0)
+    ASMAtomicIncU32(&pThis->cWakeUp);
+    if (pThis->cWakeUp <= pThis->cWaiters)
     {
         /*
          * We decrement waiters here so that we don't keep signalling threads that
          * have already been signalled but not yet scheduled. So cWaiters might be
          * 0 even when there are threads actually waiting.
          */
-        ASMAtomicDecU32(&pThis->cWaiters);
-        ASMAtomicXchgU8(&pThis->fSignaled, true);
         cv_signal(&pThis->Cnd);
     }
-    else
-        ASMAtomicXchgU8(&pThis->fPendingSignal, true);
 
     mutex_exit(&pThis->Mtx);
 
     RT_ASSERT_PREEMPT_CPUID();
     return VINF_SUCCESS;
+}
+
+
+static int rtSemEventWaitWorker(PRTSEMEVENTINTERNAL pThis, RTMSINTERVAL cMillies, bool fInterruptible)
+{
+    /*
+     * Translate milliseconds into ticks and go to sleep.
+     */
+    int rc = 0;
+    if (cMillies != RT_INDEFINITE_WAIT)
+    {
+        clock_t cTicks = drv_usectohz((clock_t)(cMillies * 1000L));
+        clock_t cTimeout = ddi_get_lbolt();
+        cTimeout += cTicks;
+        if (fInterruptible)
+            rc = cv_timedwait_sig(&pThis->Cnd, &pThis->Mtx, cTimeout);
+        else
+            rc = cv_timedwait(&pThis->Cnd, &pThis->Mtx, cTimeout);
+    }
+    else
+    {
+        if (fInterruptible)
+            rc = cv_wait_sig(&pThis->Cnd, &pThis->Mtx);
+        else
+        {
+            cv_wait(&pThis->Cnd, &pThis->Mtx);
+            rc = 1;
+        }
+    }
+
+    return rc;
 }
 
 
@@ -211,89 +236,74 @@ static int rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fInt
 
     ASMAtomicIncU32(&pThis->cRefs);
 
-    if (pThis->fPendingSignal)
+    if (pThis->cWakeUp > 0)
     {
         /*
          * The last signal occurred without any waiters and now we're the first thread
          * waiting for the event signal. So no real need to wait for one.
          */
         Assert(!pThis->cWaiters);
-        ASMAtomicXchgU8(&pThis->fPendingSignal, false);
+        ASMAtomicWriteU32((uint32_t volatile *)&pThis->cWakeUp, 0);
         rc = VINF_SUCCESS;
     }
     else if (!cMillies)
         rc = VERR_TIMEOUT;
     else
     {
+        uint32_t cWakeUp = ASMAtomicUoReadU32((uint32_t volatile *)&pThis->cWakeUp);
         ASMAtomicIncU32(&pThis->cWaiters);
-
-        /*
-         * Translate milliseconds into ticks and go to sleep.
-         */
-        if (cMillies != RT_INDEFINITE_WAIT)
+        for (;;)
         {
-            clock_t cTicks = drv_usectohz((clock_t)(cMillies * 1000L));
-            clock_t cTimeout = ddi_get_lbolt();
-            cTimeout += cTicks;
-            if (fInterruptible)
-                rc = cv_timedwait_sig(&pThis->Cnd, &pThis->Mtx, cTimeout);
-            else
-                rc = cv_timedwait(&pThis->Cnd, &pThis->Mtx, cTimeout);
-        }
-        else
-        {
-            if (fInterruptible)
-                rc = cv_wait_sig(&pThis->Cnd, &pThis->Mtx);
-            else
+            rc = rtSemEventWaitWorker(pThis, cMillies, fInterruptible);
+            if (rc > 0)
             {
-                cv_wait(&pThis->Cnd, &pThis->Mtx);
-                rc = 1;
-            }
-        }
-
-        if (rc > 0)
-        {
-            if (pThis->u32Magic != RTSEMEVENT_MAGIC)
-            {
-                /*
-                 * We're being destroyed.
-                 */
-                rc = VERR_SEM_DESTROYED;
-                ASMAtomicDecU32(&pThis->cWaiters);
-            }
-            else
-            {
-                if (pThis->fSignaled)
+                if (pThis->u32Magic != RTSEMEVENT_MAGIC)
                 {
                     /*
-                     * We've been signaled by RTSemEventSignal().
+                     * We're being destroyed.
                      */
-                    ASMAtomicXchgU8(&pThis->fSignaled, false);
-                    rc = VINF_SUCCESS;
+                    ASMAtomicDecU32(&pThis->cWaiters);
+                    rc = VERR_SEM_DESTROYED;
+                    break;
                 }
                 else
                 {
-                    /*
-                     * Premature wakeup due to some signal.
-                     */
-                    rc = VERR_INTERRUPTED;
-                    ASMAtomicDecU32(&pThis->cWaiters);
+                    uint32_t cWakeUpNow = ASMAtomicUoReadU32((uint32_t volatile *)&pThis->cWakeUp);
+                    if (cWakeUpNow > cWakeUp)
+                    {
+                        /*
+                         * We've been signaled by RTSemEventSignal(), consume the wake up.
+                         */
+                        ASMAtomicDecU32(&pThis->cWaiters);
+                        ASMAtomicDecU32(&pThis->cWakeUp);
+                        rc = VINF_SUCCESS;
+                        break;
+                    }
+                    else
+                    {
+                        /*
+                         * Premature wakeup due to some signal, go back to waiting.
+                         */
+                        continue;
+                    }
                 }
             }
-        }
-        else if (rc == -1)
-        {
-            /*
-             * Timeout reached.
-             */
-            rc = VERR_TIMEOUT;
-            ASMAtomicDecU32(&pThis->cWaiters);
-        }
-        else
-        {
-            /* Returned due to pending signal */
-            rc = VERR_INTERRUPTED;
-            ASMAtomicDecU32(&pThis->cWaiters);
+            else if (rc == -1)
+            {
+                /*
+                 * Timeout reached.
+                 */
+                ASMAtomicDecU32(&pThis->cWaiters);
+                rc = VERR_TIMEOUT;
+                break;
+            }
+            else
+            {
+                /* Returned due to pending signal */
+                ASMAtomicDecU32(&pThis->cWaiters);
+                rc = VERR_INTERRUPTED;
+                break;
+            }
         }
     }
 
