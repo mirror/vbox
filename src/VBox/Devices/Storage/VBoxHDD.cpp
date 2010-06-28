@@ -571,8 +571,9 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOv
         /* No image in the chain contains the data for the block. */
         if (rc == VERR_VD_BLOCK_FREE)
         {
-            /* Fill the free space with 0 if we are told to do so. */
-            if (fHandleFreeBlocks)
+            /* Fill the free space with 0 if we are told to do so
+             * or a previous read returned valid data. */
+            if (fHandleFreeBlocks || !fAllFree)
                 memset(pvBuf, '\0', cbThisRead);
             else
                 cbBufClear += cbThisRead;
