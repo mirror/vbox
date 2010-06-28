@@ -209,9 +209,6 @@ typedef struct VMINTUSERPERVM
 
     /** Force EMT to terminate. */
     bool volatile                   fTerminateEMT;
-    /** If set the EMT(0) does the final VM cleanup when it exits.
-     * If clear the VMR3Destroy() caller does so. */
-    bool                            fEMTDoesTheCleanup;
 
     /** Critical section for pAtState and enmPrevVMState. */
     RTCRITSECT                      AtStateCritSect;
@@ -311,13 +308,8 @@ typedef struct VMINTUSERPERVMCPU
     RTSEMEVENT                      EventSemWait;
     /** Wait/Idle indicator. */
     bool volatile                   fWait;
-    /** Force EMT to terminate. */
-    bool volatile                   fTerminateEMT;
-    /** If set the EMT does the final VM cleanup when it exits.
-     * If clear the VMR3Destroy() caller does so. */
-    bool                            fEMTDoesTheCleanup;
     /** Align the next bit. */
-    bool                            afAlignment[5];
+    bool                            afAlignment[7];
 
     /** @name Generic Halt data
      * @{
@@ -428,8 +420,8 @@ void                vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char 
 DECLCALLBACK(int)   vmR3SetRuntimeError(PVM pVM, uint32_t fFlags, const char *pszErrorId, char *pszMessage);
 DECLCALLBACK(int)   vmR3SetRuntimeErrorV(PVM pVM, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list *pVa);
 void                vmSetRuntimeErrorCopy(PVM pVM, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va);
-void                vmR3DestroyFinalBitFromEMT(PUVM pUVM, VMCPUID idCpu);
 void                vmR3SetGuruMeditation(PVM pVM);
+void                vmR3SetTerminated(PVM pVM);
 
 RT_C_DECLS_END
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2129,7 +2129,7 @@ VMMR3DECL(int)   VMR3PowerOff(PVM pVM)
  *
  * @param   pVM     The handle of the VM which should be destroyed.
  *
- * @thread      EMT(0) or any none emulation thread.
+ * @thread      Any none emulation thread.
  * @vmstate     Off, Created
  * @vmstateto   N/A
  */
@@ -2143,7 +2143,7 @@ VMMR3DECL(int) VMR3Destroy(PVM pVM)
     if (!pVM)
         return VERR_INVALID_PARAMETER;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    Assert(VMMGetCpuId(pVM) == 0 || VMMGetCpuId(pVM) == NIL_VMCPUID);
+    AssertLogRelReturn(!VM_IS_EMT(pVM), VERR_VM_THREAD_IS_EMT);
 
     /*
      * Change VM state to destroying and unlink the VM.
@@ -2173,33 +2173,15 @@ VMMR3DECL(int) VMR3Destroy(PVM pVM)
     vmR3AtDtor(pVM);
 
     /*
-     * EMT(0) does the final cleanup, so if we're it calling VMR3Destroy then
-     * we'll have to postpone parts of it till later.  Otherwise, call
-     * vmR3Destroy on each of the EMTs in ending with EMT(0) doing the bulk
+     * Call vmR3Destroy on each of the EMTs ending with EMT(0) doing the bulk
      * of the cleanup.
      */
-    if (VMMGetCpuId(pVM) == 0)
-    {
-        pUVM->vm.s.fEMTDoesTheCleanup = true;
-        pUVM->vm.s.fTerminateEMT = true;
-        VM_FF_SET(pVM, VM_FF_TERMINATE);
+    /* vmR3Destroy on all EMTs, ending with EMT(0). */
+    rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ALL_REVERSE, (PFNRT)vmR3Destroy, 1, pVM);
+    AssertLogRelRC(rc);
 
-        /* Terminate the other EMTs. */
-        for (VMCPUID idCpu = 1; idCpu < pVM->cCpus; idCpu++)
-        {
-            rc = VMR3ReqCallWaitU(pUVM, idCpu, (PFNRT)vmR3Destroy, 1, pVM);
-            AssertLogRelRC(rc);
-        }
-    }
-    else
-    {
-        /* vmR3Destroy on all EMTs, ending with EMT(0). */
-        rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ALL_REVERSE, (PFNRT)vmR3Destroy, 1, pVM);
-        AssertLogRelRC(rc);
-
-        /* Wait for EMTs and destroy the UVM. */
-        vmR3DestroyUVM(pUVM, 30000);
-    }
+    /* Wait for EMTs and destroy the UVM. */
+    vmR3DestroyUVM(pUVM, 30000);
 
     LogFlow(("VMR3Destroy: returns VINF_SUCCESS\n"));
     return VINF_SUCCESS;
@@ -2228,11 +2210,10 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
     LogFlow(("vmR3Destroy: pVM=%p pUVM=%p pVCpu=%p idCpu=%u\n", pVM, pUVM, pVCpu, pVCpu->idCpu));
 
     /*
-     * Only VCPU 0 does the full cleanup.
+     * Only VCPU 0 does the full cleanup (last).
      */
     if (pVCpu->idCpu == 0)
     {
-
         /*
          * Dump statistics to the log.
          */
@@ -2290,10 +2271,10 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
         AssertRC(rc);
 
         /*
-         * We're done in this thread (EMT).
+         * We're done, tell the other EMTs to quit.
          */
         ASMAtomicUoWriteBool(&pUVM->vm.s.fTerminateEMT, true);
-        ASMAtomicWriteU32(&pVM->fGlobalForcedActions, VM_FF_TERMINATE);
+        ASMAtomicWriteU32(&pVM->fGlobalForcedActions, VM_FF_CHECK_VM_STATE); /* Can't hurt... */
         LogFlow(("vmR3Destroy: returning %Rrc\n", VINF_EM_TERMINATE));
     }
     return VINF_EM_TERMINATE;
@@ -2301,54 +2282,10 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
 
 
 /**
- * Called at the end of the EMT procedure to take care of the final cleanup.
- *
- * Currently only EMT(0) will do work here.  It will destroy the shared VM
- * structure if it is still around.  If EMT(0) was the caller of VMR3Destroy it
- * will destroy UVM and nothing will be left behind upon exit.  But if some
- * other thread is calling VMR3Destroy, they will clean up UVM after all EMTs
- * has exitted.
- *
- * @param   pUVM        The UVM handle.
- * @param   idCpu       The virtual CPU id.
- */
-void vmR3DestroyFinalBitFromEMT(PUVM pUVM, VMCPUID idCpu)
-{
-    /*
-     * Only EMT(0) has work to do here.
-     */
-    if (idCpu != 0)
-        return;
-    Assert(   !pUVM->pVM
-           || VMMGetCpuId(pUVM->pVM) == 0);
-
-    /*
-     * If we have a shared VM structure, change its state to Terminated and
-     * tell GVMM to destroy it.
-     */
-    if (pUVM->pVM)
-    {
-        vmR3SetState(pUVM->pVM, VMSTATE_TERMINATED, VMSTATE_DESTROYING);
-        int rc = SUPR3CallVMMR0Ex(pUVM->pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
-        AssertLogRelRC(rc);
-        pUVM->pVM = NULL;
-    }
-
-    /*
-     * If EMT(0) called VMR3Destroy, then it will destroy UVM as well.
-     */
-    if (pUVM->vm.s.fEMTDoesTheCleanup)
-        vmR3DestroyUVM(pUVM, 30000);
-}
-
-
-/**
  * Destroys the UVM portion.
  *
  * This is called as the final step in the VM destruction or as the cleanup
- * in case of a creation failure. If EMT(0) called VMR3Destroy, meaning
- * VMINTUSERPERVM::fEMTDoesTheCleanup is true, it will call this as
- * vmR3DestroyFinalBitFromEMT completes.
+ * in case of a creation failure.
  *
  * @param   pVM             VM Handle.
  * @param   cMilliesEMTWait The number of milliseconds to wait for the emulation
@@ -2362,11 +2299,10 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
      */
     /* Signal them. */
     ASMAtomicUoWriteBool(&pUVM->vm.s.fTerminateEMT, true);
+    if (pUVM->pVM)
+        VM_FF_SET(pUVM->pVM, VM_FF_CHECK_VM_STATE); /* Can't hurt... */
     for (VMCPUID i = 0; i < pUVM->cCpus; i++)
     {
-        ASMAtomicUoWriteBool(&pUVM->aCpus[i].vm.s.fTerminateEMT, true);
-        if (pUVM->pVM)
-            VM_FF_SET(pUVM->pVM, VM_FF_TERMINATE);
         VMR3NotifyGlobalFFU(pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
         RTSemEventSignal(pUVM->aCpus[i].vm.s.EventSemWait);
     }
@@ -3088,6 +3024,7 @@ static void vmR3SetStateLocked(PVM pVM, PUVM pUVM, VMSTATE enmStateNew, VMSTATE 
               ("%s != %s\n", VMR3GetStateName(pVM->enmVMState), VMR3GetStateName(enmStateOld)));
     pUVM->vm.s.enmPrevVMState = enmStateOld;
     pVM->enmVMState           = enmStateNew;
+    VM_FF_CLEAR(pVM, VM_FF_CHECK_VM_STATE);
 
     vmR3DoAtState(pVM, pUVM, enmStateNew, enmStateOld);
 }
@@ -3236,6 +3173,17 @@ void vmR3SetGuruMeditation(PVM pVM)
 
 
 /**
+ * Called by vmR3EmulationThreadWithId just before the VM structure is freed.
+ *
+ * @param   pVM             The VM handle.
+ */
+void vmR3SetTerminated(PVM pVM)
+{
+    vmR3SetState(pVM, VMSTATE_TERMINATED, VMSTATE_DESTROYING);
+}
+
+
+/**
  * Checks if the VM was teleported and hasn't been fully resumed yet.
  *
  * This applies to both sides of the teleportation since we may leave a working
@@ -3256,7 +3204,7 @@ VMMR3DECL(bool) VMR3TeleportedAndNotFullyResumedYet(PVM pVM)
  * Registers a VM state change callback.
  *
  * You are not allowed to call any function which changes the VM state from a
- * state callback, except VMR3Destroy().
+ * state callback.
  *
  * @returns VBox status code.
  * @param   pVM             VM handle.
@@ -3761,8 +3709,8 @@ VMMR3DECL(int)   VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAt
  * EMT rendezvous worker that vmR3SetRuntimeErrorCommon uses to safely change
  * the state to FatalError(LS).
  *
- * @returns VERR_VM_INVALID_VM_STATE or VINF_SUCCESS. (This is a strict return
- *          code, see FNVMMEMTRENDEZVOUS.)
+ * @returns VERR_VM_INVALID_VM_STATE or VINF_EM_SUSPENED.  (This is a strict
+ *          return code, see FNVMMEMTRENDEZVOUS.)
  *
  * @param   pVM             The VM handle.
  * @param   pVCpu           The VMCPU handle of the EMT.
@@ -3773,12 +3721,24 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3SetRuntimeErrorChangeState(PVM pVM, PVMCPU
     NOREF(pVCpu);
     Assert(!pvUser); NOREF(pvUser);
 
-    int rc = vmR3TrySetState(pVM, "VMSetRuntimeError", 2,
-                             VMSTATE_FATAL_ERROR,    VMSTATE_RUNNING,
-                             VMSTATE_FATAL_ERROR_LS, VMSTATE_RUNNING_LS);
-    if (rc == 2)
-        SSMR3Cancel(pVM);
-    return RT_SUCCESS(rc) ? VINF_SUCCESS : rc;
+    /*
+     * The first EMT thru here changes the state.
+     */
+    if (pVCpu->idCpu == pVM->cCpus - 1)
+    {
+        int rc = vmR3TrySetState(pVM, "VMSetRuntimeError", 2,
+                                 VMSTATE_FATAL_ERROR,    VMSTATE_RUNNING,
+                                 VMSTATE_FATAL_ERROR_LS, VMSTATE_RUNNING_LS);
+        if (RT_FAILURE(rc))
+            return rc;
+        if (rc == 2)
+            SSMR3Cancel(pVM);
+
+        VM_FF_SET(pVM, VM_FF_CHECK_VM_STATE);
+    }
+
+    /* This'll make sure we get out of whereever we are (e.g. REM). */
+    return VINF_EM_SUSPEND;
 }
 
 
@@ -3804,7 +3764,8 @@ static int vmR3SetRuntimeErrorCommon(PVM pVM, uint32_t fFlags, const char *pszEr
      */
     int rc;
     if (fFlags & VMSETRTERR_FLAGS_FATAL)
-        rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, vmR3SetRuntimeErrorChangeState, NULL);
+        rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING | VMMEMTRENDEZVOUS_FLAGS_STOP_ON_ERROR,
+                                vmR3SetRuntimeErrorChangeState, NULL);
     else if (fFlags & VMSETRTERR_FLAGS_SUSPEND)
         rc = VMR3Suspend(pVM);
     else

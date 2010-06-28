@@ -680,6 +680,8 @@
 #define VERR_VM_DRIVER_VERSION_MISMATCH         (-1912)
 /** Saving the VM state is temporarily not allowed. Try again later. */
 #define VERR_VM_SAVE_STATE_NOT_ALLOWED          (-1913)
+/** An EMT called an API which cannot be called on such a thread. */
+#define VERR_VM_THREAD_IS_EMT                   (-1914)
 /** @} */
 
 
