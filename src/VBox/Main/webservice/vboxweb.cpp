@@ -925,7 +925,7 @@ void RaiseSoapRuntimeFault(struct soap *soap,
     ex->interfaceID = ConvertComString(info.getInterfaceID());
 
     // compose descriptive message
-    com::Utf8StrFmt str("VirtualBox error: %s (0x%RU32)", ex->text.c_str(), ex->resultCode);
+    com::Utf8StrFmt str("VirtualBox error: %s (0x%lX)", ex->text.c_str(), ex->resultCode);
 
     RaiseSoapFault(soap,
                    str.c_str(),
