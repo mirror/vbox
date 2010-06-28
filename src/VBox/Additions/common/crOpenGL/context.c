@@ -151,23 +151,25 @@ stubNewWindow( const char *dpyName, GLint visBits )
 
 
 GLboolean
-stubIsWindowVisible( const WindowInfo *win )
+stubIsWindowVisible(WindowInfo *win)
 {
 #if defined(WINDOWS)
     return GL_TRUE;
 #elif defined(Darwin)
     return GL_TRUE;
 #elif defined(GLX)
-    if (win->dpy) {
-    XWindowAttributes attr;
-    XLOCK(win->dpy);
-    XGetWindowAttributes(win->dpy, win->drawable, &attr);
-    XUNLOCK(win->dpy);
-    return (attr.map_state != IsUnmapped);
+    Display *dpy = stubGetWindowDisplay(win);
+    if (dpy) 
+    {
+        XWindowAttributes attr;
+        XLOCK(dpy);
+        XGetWindowAttributes(dpy, win->drawable, &attr);
+        XUNLOCK(dpy);
+        return (attr.map_state != IsUnmapped);
     }
     else {
-    /* probably created by crWindowCreate() */
-    return win->mapped;
+        /* probably created by crWindowCreate() */
+        return win->mapped;
     }
 #endif
 }
@@ -460,7 +462,7 @@ GetWindowTitle( const WindowInfo *window, char *title )
 }
 
 static void
-GetCursorPosition( const WindowInfo *window, int pos[2] )
+GetCursorPosition(WindowInfo *window, int pos[2])
 {
     RECT rect;
     POINT point;
@@ -568,36 +570,36 @@ GetCursorPosition( const WindowInfo *window, int pos[2] )
 #elif defined(GLX)
 
 void
-stubGetWindowGeometry( const WindowInfo *window, int *x, int *y,
-                                             unsigned int *w, unsigned int *h )
+stubGetWindowGeometry(WindowInfo *window, int *x, int *y, unsigned int *w, unsigned int *h)
 {
     Window root, child;
     unsigned int border, depth;
+    Display *dpy;
+
+    dpy = stubGetWindowDisplay(window);
 
     //@todo: Performing those checks is expensive operation, especially for simple apps with high FPS.
     //       Disabling those tripples glxgears fps, thus using xevens instead of per frame polling is much more preffered.
     //@todo: Check similiar on windows guests, though doubtfull as there're no XSync like calls on windows.
-    if (window && window->dpy)
+    if (window && dpy)
     {
-        XLOCK(window->dpy);
+        XLOCK(dpy);
     }
 
     if (!window
-        || !window->dpy
+        || !dpy
         || !window->drawable
-        || !XGetGeometry(window->dpy, window->drawable, &root,
-                         x, y, w, h, &border, &depth)
-        || !XTranslateCoordinates(window->dpy, window->drawable, root,
-                                  0, 0, x, y, &child)) 
+        || !XGetGeometry(dpy, window->drawable, &root, x, y, w, h, &border, &depth)
+        || !XTranslateCoordinates(dpy, window->drawable, root, 0, 0, x, y, &child)) 
     {
         crWarning("Failed to get windows geometry for %p, try xwininfo", window);
         *x = *y = 0;
         *w = *h = 0;
     }
 
-    if (window && window->dpy)
+    if (window && dpy)
     {
-        XUNLOCK(window->dpy);
+        XUNLOCK(dpy);
     }
 }
 
@@ -649,7 +651,7 @@ GetWindowTitle( const WindowInfo *window, char *title )
  *Return current cursor position in local window coords.
  */
 static void
-GetCursorPosition( const WindowInfo *window, int pos[2] )
+GetCursorPosition(WindowInfo *window, int pos[2] )
 {
     int rootX, rootY;
     Window root, child;
@@ -1077,7 +1079,7 @@ stubDestroyContext( unsigned long contextId )
 
 
 void
-stubSwapBuffers( const WindowInfo *window, GLint flags )
+stubSwapBuffers(WindowInfo *window, GLint flags)
 {
     if (!window)
         return;

@@ -142,14 +142,17 @@ static bool stubSystemWindowExist(WindowInfo *pWindow)
     Window root;
     int x, y;
     unsigned int border, depth, w, h;
+    Display *dpy;
 
-    XLOCK(pWindow->dpy);
-    if (!XGetGeometry(pWindow->dpy, pWindow->drawable, &root, &x, &y, &w, &h, &border, &depth))
+    dpy = stubGetWindowDisplay(pWindow);
+
+    XLOCK(dpy);
+    if (!XGetGeometry(dpy, pWindow->drawable, &root, &x, &y, &w, &h, &border, &depth))
     {
-        XUNLOCK(pWindow->dpy);
+        XUNLOCK(dpy);
         return false;
     }
-    XUNLOCK(pWindow->dpy);
+    XUNLOCK(dpy);
 #endif
 
     return true;
@@ -781,7 +784,7 @@ stubInit(void)
         {
             crNetFreeConnection(ns.conn);
         }
-#ifdef CR_NEWWINTRACK
+#if 0 && defined(CR_NEWWINTRACK)
         {
             Status st = XInitThreads();
             if (st==0)

@@ -45,15 +45,15 @@
 #include <X11/extensions/Xdamage.h>
 #endif
 
-#ifdef WINDOWS
-#define CR_NEWWINTRACK
+#if defined(WINDOWS) || defined(Linux)
+# define CR_NEWWINTRACK
 #endif
 
 #if !defined(CHROMIUM_THREADSAFE) && defined(CR_NEWWINTRACK)
 # error CHROMIUM_THREADSAFE have to be defined
 #endif
 
-#if defined(CR_NEWWINTRACK) && !defined(WINDOWS)
+#if 0 && defined(CR_NEWWINTRACK) && !defined(WINDOWS)
 #define XLOCK(dpy) XLockDisplay(dpy)
 #define XUNLOCK(dpy) XUnlockDisplay(dpy)
 #else
@@ -165,6 +165,9 @@ struct window_info_t
     CGSSurfaceID surface;
 #elif defined(GLX)
     Display *dpy;
+# ifdef CR_NEWWINTRACK
+    Display *syncDpy;
+# endif
     GLXDrawable drawable;
     XRectangle *pVisibleRegions;
     GLint cVisibleRegions;
@@ -278,6 +281,7 @@ extern WindowInfo *stubGetWindowInfo( CGSWindowID drawable );
 /* GLX versions */
 extern WindowInfo *stubGetWindowInfo( Display *dpy, GLXDrawable drawable );
 extern void stubUseXFont( Display *dpy, Font font, int first, int count, int listbase );
+extern Display* stubGetWindowDisplay(WindowInfo *pWindow);
 
 #endif
 
@@ -286,10 +290,10 @@ extern ContextInfo *stubNewContext( const char *dpyName, GLint visBits, ContextT
 extern void stubDestroyContext( unsigned long contextId );
 extern GLboolean stubMakeCurrent( WindowInfo *window, ContextInfo *context );
 extern GLint stubNewWindow( const char *dpyName, GLint visBits );
-extern void stubSwapBuffers( const WindowInfo *window, GLint flags );
-extern void stubGetWindowGeometry( const WindowInfo *win, int *x, int *y, unsigned int *w, unsigned int *h );
+extern void stubSwapBuffers(WindowInfo *window, GLint flags);
+extern void stubGetWindowGeometry(WindowInfo *win, int *x, int *y, unsigned int *w, unsigned int *h);
 extern GLboolean stubUpdateWindowGeometry(WindowInfo *pWindow, GLboolean bForceUpdate);
-extern GLboolean stubIsWindowVisible( const WindowInfo *win );
+extern GLboolean stubIsWindowVisible(WindowInfo *win);
 extern bool stubInit(void);
 
 extern void APIENTRY stub_GetChromiumParametervCR( GLenum target, GLuint index, GLenum type, GLsizei count, GLvoid *values );

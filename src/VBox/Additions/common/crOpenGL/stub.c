@@ -8,6 +8,7 @@
 #include "cr_error.h" 
 #include "cr_mem.h" 
 #include "stub.h"
+#include <iprt/thread.h>
 
 #ifdef GLX
 #include <X11/extensions/Xcomposite.h>
@@ -25,6 +26,33 @@ static void crForcedFlush()
 #else
     stub.spu->dispatch_table.Flush();
 #endif
+}
+
+Display* stubGetWindowDisplay(WindowInfo *pWindow)
+{
+#ifdef CR_NEWWINTRACK
+    if (RTThreadNativeSelf()==RTThreadGetNative(stub.hSyncThread))
+    {
+        if (pWindow && pWindow->dpy && !pWindow->syncDpy)
+        {
+            crDebug("going to XOpenDisplay(%s)", pWindow->dpyName);
+            pWindow->syncDpy = XOpenDisplay(pWindow->dpyName);
+            if (!pWindow->syncDpy)
+            {
+                crWarning("Failed to open display %s", pWindow->dpyName);
+            }
+            return pWindow->syncDpy;
+        }
+        else
+        {
+            return pWindow ? pWindow->syncDpy:NULL;
+        }
+    }
+    else
+#endif
+    {
+        return pWindow ? pWindow->dpy:NULL;
+    }
 }
 
 /**
@@ -80,7 +108,7 @@ GLint APIENTRY crGetCurrentWindow( void )
 
 void APIENTRY crSwapBuffers( GLint window, GLint flags )
 {
-    const WindowInfo *winInfo = (const WindowInfo *)
+    WindowInfo *winInfo = (WindowInfo *)
         crHashtableSearch(stub.windowTable, (unsigned int) window);
     if (winInfo)
         stubSwapBuffers(winInfo, flags);
@@ -99,8 +127,12 @@ void APIENTRY crWindowDestroy( GLint window )
 {
     WindowInfo *winInfo = (WindowInfo *)
         crHashtableSearch(stub.windowTable, (unsigned int) window);
-    if (winInfo && winInfo->type == CHROMIUM && stub.spu) {
+    if (winInfo && winInfo->type == CHROMIUM && stub.spu)
+    {
         stub.spu->dispatch_table.WindowDestroy( winInfo->spuWindow );
+#ifdef CR_NEWWINTRACK
+        crLockMutex(&stub.mutex);
+#endif
 #ifdef WINDOWS
         if (winInfo->hVisibleRegion != INVALID_HANDLE_VALUE)
         {
@@ -111,9 +143,17 @@ void APIENTRY crWindowDestroy( GLint window )
         {
             XFree(winInfo->pVisibleRegions);
         }
+# ifdef CR_NEWWINTRACK
+        if (winInfo->syncDpy)
+        {
+            XCloseDisplay(winInfo->syncDpy);
+        }
+# endif
+#endif
+#ifdef CR_NEWWINTRACK
+        crUnlockMutex(&stub.mutex);
 #endif
         crForcedFlush();
-
         crHashtableDelete(stub.windowTable, window, crFree);
     }
 }
@@ -445,6 +485,7 @@ GLboolean stubUpdateWindowVisibileRegions(WindowInfo *pWindow)
     int cRects, i;
     XRectangle *pXRects;
     GLint* pGLRects;
+    Display *dpy;
 
     if (bExtensionsChecked || stubCheckXExtensions(pWindow))
     {
@@ -456,14 +497,16 @@ GLboolean stubUpdateWindowVisibileRegions(WindowInfo *pWindow)
         return GL_FALSE;
     }
 
+    dpy = stubGetWindowDisplay(pWindow);
+
     /*@todo see comment regarding size/position updates and XSync, same applies to those functions but
     * it seems there's no way to get even based updates for this. Or I've failed to find the appropriate extension.
     */
-    XLOCK(pWindow->dpy);
-    xreg = XCompositeCreateRegionFromBorderClip(pWindow->dpy, pWindow->drawable);
-    pXRects = XFixesFetchRegion(pWindow->dpy, xreg, &cRects);
-    XFixesDestroyRegion(pWindow->dpy, xreg);
-    XUNLOCK(pWindow->dpy);
+    XLOCK(dpy);
+    xreg = XCompositeCreateRegionFromBorderClip(dpy, pWindow->drawable);
+    pXRects = XFixesFetchRegion(dpy, xreg, &cRects);
+    XFixesDestroyRegion(dpy, xreg);
+    XUNLOCK(dpy);
 
     /* @todo For some odd reason *first* run of compiz on freshly booted VM gives us 0 cRects all the time.
      * In (!pWindow->pVisibleRegions && cRects) "&& cRects" is a workaround for that case, especially as this

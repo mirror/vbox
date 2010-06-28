@@ -1033,7 +1033,7 @@ DECLEXPORT(Bool) VBOXGLXTAG(glXQueryVersion)( Display *dpy, int *major, int *min
 
 DECLEXPORT(void) VBOXGLXTAG(glXSwapBuffers)( Display *dpy, GLXDrawable drawable )
 {
-    const WindowInfo *window = stubGetWindowInfo(dpy, drawable);
+    WindowInfo *window = stubGetWindowInfo(dpy, drawable);
     stubSwapBuffers( window, 0 );
 }
 
