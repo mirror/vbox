@@ -131,8 +131,17 @@ public:
  ~VBoxEventDesc()
  {}
 
+ /**
+  * This function to be used with some care, as arguments order must match attribute declaration order 
+  * event class and its superclasses up to IEvent. If unsure, consult implementation in 
+  * generated VBoxEvents.cpp.
+  */
  HRESULT init(IEventSource* aSource, VBoxEventType_T aType, ...);
- void getEvent(IEvent ** aEvent);
+
+ void getEvent(IEvent ** aEvent)
+ {
+     mEvent.queryInterfaceTo(aEvent);
+ }
 
 private:
  ComPtr<IEvent>  mEvent;
