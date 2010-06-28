@@ -22,10 +22,14 @@
 #define ___VBoxVideoIf_h___
 
 #include <VBox/VBoxVideo.h>
+#include "../../../include/VBoxDisplay.h"
+
+#include <iprt/assert.h>
+
 
 /* @todo: implement a check to ensure display & miniport versions match.
  * One would increase this whenever definitions in this file are changed */
-#define VBOXVIDEOIF_VERSION 3
+#define VBOXVIDEOIF_VERSION 4
 
 /* create allocation func */
 typedef enum
@@ -144,6 +148,10 @@ typedef struct VBOXWDDM_OVERLAYFLIP_INFO
 
 typedef struct VBOXWDDM_CREATECONTEXT_INFO
 {
+    /* interface version, i.e. 9 for d3d9, 8 for d3d8, etc. */
+    uint32_t u32IfVersion;
+    /* true if d3d false if ddraw */
+    uint32_t u32IsD3D;
     /* we use uint64_t instead of HANDLE to ensure structure def is the same for both 32-bit and 64-bit
      * since x64 kernel driver can be called by 32-bit UMD */
     uint64_t hUmEvent;
@@ -183,6 +191,8 @@ typedef struct VBOXVIDEOCM_CMD_HDR
     uint32_t u32CmdSpecific;
 }VBOXVIDEOCM_CMD_HDR, *PVBOXVIDEOCM_CMD_HDR;
 
+AssertCompile((sizeof (VBOXVIDEOCM_CMD_HDR) & 7) == 0);
+
 typedef struct VBOXVIDEOCM_CMD_RECTS
 {
     VBOXWDDM_RECTS_FLAFS fFlags;
@@ -200,10 +210,14 @@ typedef struct VBOXWDDM_GETVBOXVIDEOCMCMD_HDR
     uint32_t u32Reserved;
 } VBOXWDDM_GETVBOXVIDEOCMCMD_HDR, *PVBOXWDDM_GETVBOXVIDEOCMCMD_HDR;
 
-#define VBOXWDDM_GETVBOXVIDEOCMCMD_DATA_OFFSET() ((sizeof (VBOXWDDM_GETVBOXVIDEOCMCMD_HDR) + 7) & ~7)
-#define VBOXWDDM_GETVBOXVIDEOCMCMD_DATA(_pHead, _t) ( (_t*)(((uint8_t*)(_pHead)) + VBOXWDDM_GETVBOXVIDEOCMCMD_DATA_OFFSET()))
-#define VBOXWDDM_GETVBOXVIDEOCMCMD_DATA_SIZE(_s) ( (_s) < VBOXWDDM_GETVBOXVIDEOCMCMD_DATA_OFFSET() ? 0 : (_s) - VBOXWDDM_GETVBOXVIDEOCMCMD_DATA_OFFSET() )
-#define VBOXWDDM_GETVBOXVIDEOCMCMD_SIZE(_cbData) ((_cbData) ? VBOXWDDM_GETVBOXVIDEOCMCMD_DATA_OFFSET() + (_cbData) : sizeof (VBOXWDDM_GETVBOXVIDEOCMCMD_HDR))
+typedef struct VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD
+{
+    VBOXDISPIFESCAPE EscapeHdr;
+    VBOXWDDM_GETVBOXVIDEOCMCMD_HDR Hdr;
+} VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD, *PVBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD;
+
+AssertCompile((sizeof (VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD) & 7) == 0);
+AssertCompile(RT_OFFSETOF(VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD, EscapeHdr) == 0);
 
 /* query info func */
 typedef struct VBOXWDDM_QI
