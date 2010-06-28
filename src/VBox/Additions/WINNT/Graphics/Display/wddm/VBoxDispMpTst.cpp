@@ -19,24 +19,32 @@
 #include "VBoxDispD3DCmn.h"
 
 static RTTHREAD g_VBoxDispMpTstThread;
+static VBOXDISPMP_CALLBACKS g_VBoxDispMpTstCallbacks;
+static HMODULE g_hVBoxDispMpModule;
+static PFNVBOXDISPMP_GETCALLBACKS g_pfnVBoxDispMpGetCallbacks;
+
 
 static void vboxDispMpTstLogRect(const char * pPrefix, RECT *pRect, const char * pSuffix)
 {
-    vboxVDbgDoPrint("%s left(%d), top(%d), right(%d), bottom(%d) %s", pPrefix, pRect->left, pRect->top, pRect->right, pRect->bottom, pSuffix);
+    vboxVDbgPrint(("%s left(%d), top(%d), right(%d), bottom(%d) %s", pPrefix, pRect->left, pRect->top, pRect->right, pRect->bottom, pSuffix));
 }
 
 static DECLCALLBACK(int) vboxDispMpTstThreadProc(RTTHREAD ThreadSelf, void *pvUser)
 {
     VBOXDISPMP_REGIONS Regions;
 
-    HRESULT hr;
+    HRESULT hr = g_VBoxDispMpTstCallbacks.pfnEnableEvents();
+    Assert(hr == S_OK);
+    if (hr != S_OK)
+        return VERR_GENERAL_FAILURE;
+
     do
     {
-        hr = vboxDispMpGetRegions(&Regions, INFINITE);
+        hr = g_VBoxDispMpTstCallbacks.pfnGetRegions(&Regions, INFINITE);
         Assert(hr == S_OK);
         if (hr == S_OK)
         {
-            vboxVDbgDoPrint("\n>>>\n");
+            vboxVDbgPrint(("\n>>>\n"));
             HWND hWnd = Regions.hWnd;
             if (Regions.pRegions->fFlags.bAddVisibleRects)
             {
@@ -47,11 +55,11 @@ static DECLCALLBACK(int) vboxDispMpTstThreadProc(RTTHREAD ThreadSelf, void *pvUs
                     iVisibleRects = 1;
                     --cVidibleRects;
 
-                    vboxVDbgDoPrint("hWnd (0x%p), position and/or size changed: ", hWnd);
+                    vboxVDbgPrint(("hWnd (0x%p), position and/or size changed: ", hWnd));
                     vboxDispMpTstLogRect("", Regions.pRegions->RectsInfo.aRects, "\n");
                 }
 
-                vboxVDbgDoPrint("hWnd (0x%p), visibleRects: \n", hWnd);
+                vboxVDbgPrint(("hWnd (0x%p), visibleRects: \n", hWnd));
                 for (uint32_t i = iVisibleRects; i < cVidibleRects; ++i)
                 {
                     vboxDispMpTstLogRect("", &Regions.pRegions->RectsInfo.aRects[i], "");
@@ -59,47 +67,79 @@ static DECLCALLBACK(int) vboxDispMpTstThreadProc(RTTHREAD ThreadSelf, void *pvUs
             }
             else if (Regions.pRegions->fFlags.bAddHiddenRects)
             {
-                vboxVDbgDoPrint("hWnd (0x%p), hiddenRects: \n", hWnd);
+                vboxVDbgPrint(("hWnd (0x%p), hiddenRects: \n", hWnd));
                 for (uint32_t i = 0; i < Regions.pRegions->RectsInfo.cRects; ++i)
                 {
                     vboxDispMpTstLogRect("", &Regions.pRegions->RectsInfo.aRects[i], "");
                 }
             }
 
-            vboxVDbgDoPrint("\n<<<\n");
+            vboxVDbgPrint(("\n<<<\n"));
         }
     } while (1);
+
+    hr = g_VBoxDispMpTstCallbacks.pfnDisableEvents();
+    Assert(hr == S_OK);
+
     return VINF_SUCCESS;
 }
 
 HRESULT vboxDispMpTstStart()
 {
-    HRESULT hr = vboxDispMpEnable();
-    Assert(hr == S_OK);
-    if (hr == S_OK)
-    {
-        int rc = RTThreadCreate(&g_VBoxDispMpTstThread, vboxDispMpTstThreadProc, NULL, 0,
-                RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "VBoxDispMpTst");
-        AssertRC(rc);
-        if (RT_SUCCESS(rc))
-            return S_OK;
+    HRESULT hr = E_FAIL;
+    g_hVBoxDispMpModule = GetModuleHandleW(L"VBoxDispD3D.dll");
+    Assert(g_hVBoxDispMpModule);
 
-        hr = vboxDispMpDisable();
-        Assert(hr == S_OK);
-        hr = E_FAIL;
+    if (g_hVBoxDispMpModule)
+    {
+        g_pfnVBoxDispMpGetCallbacks = (PFNVBOXDISPMP_GETCALLBACKS)GetProcAddress(g_hVBoxDispMpModule, "VBoxDispMpGetCallbacks");
+        Assert(g_pfnVBoxDispMpGetCallbacks);
+        if (g_pfnVBoxDispMpGetCallbacks)
+        {
+            hr = g_pfnVBoxDispMpGetCallbacks(VBOXDISPMP_VERSION, &g_VBoxDispMpTstCallbacks);
+            Assert(hr == S_OK);
+            if (hr == S_OK)
+            {
+                int rc = RTThreadCreate(&g_VBoxDispMpTstThread, vboxDispMpTstThreadProc, NULL, 0,
+                                RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "VBoxDispMpTst");
+                AssertRC(rc);
+                if (RT_SUCCESS(rc))
+                    return S_OK;
+
+                hr = E_FAIL;
+            }
+        }
+        FreeLibrary(g_hVBoxDispMpModule);
     }
+
     return hr;
 }
 
 HRESULT vboxDispMpTstStop()
 {
-    HRESULT hr = vboxDispMpDisable();
+    HRESULT hr = g_VBoxDispMpTstCallbacks.pfnDisableEvents();
     Assert(hr == S_OK);
+#if 0
     if (hr == S_OK)
     {
         int rc = RTThreadWaitNoResume(g_VBoxDispMpTstThread, RT_INDEFINITE_WAIT, NULL);
         AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            BOOL bResult = FreeLibrary(g_hVBoxDispMpModule);
+            Assert(bResult);
+#ifdef DEBUG
+            if (!bResult)
+            {
+                DWORD winEr = GetLastError();
+                hr = HRESULT_FROM_WIN32(winEr);
+            }
+#endif
+        }
+        else
+            hr = E_FAIL;
     }
+#endif
     return hr;
 }
 
