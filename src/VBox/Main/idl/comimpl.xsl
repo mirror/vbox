@@ -6,9 +6,12 @@
 
 <!--
 
-    autogen.xsl:
-        XSLT stylesheet that generates C++ classes implementing simple
-        COM classes implementation from VirtualBox.xidl.
+    comimpl.xsl:
+        XSLT stylesheet that generates COM C++ classes implementing
+        interfaces described in VirtualBox.xidl.
+        For now we generate implementation for events, as they are
+        rather trivial container classes for their read-only attributes.
+        Further extension to other interfaces is possible and anticipated.
 
      Copyright (C) 2010 Oracle Corporation
 
@@ -118,7 +121,7 @@
   <xsl:param name="param"/>
   <xsl:param name="type"/>
   <xsl:param name="safearray"/>
-  
+
   <xsl:value-of select="concat('         ', $member, ' = ', $param, ';&#10;')"/>
 </xsl:template>
 
@@ -133,7 +136,7 @@
     </xsl:when>
     <xsl:otherwise>
       <xsl:value-of select="concat('         *', $param, ' = ', $member, ';&#10;')"/>
-    </xsl:otherwise>    
+    </xsl:otherwise>
   </xsl:choose>
 </xsl:template>
 
@@ -160,7 +163,7 @@
     </xsl:otherwise>
   </xsl:choose>
 
-  
+
   <xsl:for-each select="//interface[@name=$name]/attribute">
     <xsl:variable name="aType">
       <xsl:call-template name="typeIdl2Back">
@@ -170,7 +173,7 @@
         <xsl:with-param name="dir" select="'in'" />
       </xsl:call-template>
     </xsl:variable>
-    
+
     <xsl:value-of select="concat('              ',$aType, ' a_',@name,' = va_arg(args, ',$aType,');&#10;')"/>
     <xsl:value-of select="concat('              ',$obj, '->set_', @name, '(a_', @name, ');&#10;')"/>
   </xsl:for-each>
@@ -185,7 +188,7 @@
   <xsl:variable name="extends">
     <xsl:value-of select="//interface[@name=$name]/@extends" />
   </xsl:variable>
-  
+
   <xsl:choose>
     <xsl:when test="$extends='IEvent'">
       <xsl:value-of select="       '#ifdef VBOX_WITH_XPCOM&#10;'" />
@@ -207,7 +210,7 @@
       </xsl:call-template>
     </xsl:otherwise>
   </xsl:choose>
-</xsl:template>  
+</xsl:template>
 
 <xsl:template name="genAttrCode">
   <xsl:param name="name" />
@@ -361,13 +364,13 @@
   </xsl:call-template>
   <xsl:value-of select="'};&#10;'" />
 
-  
+
   <xsl:call-template name="genImplList">
     <xsl:with-param name="impl" select="$implName" />
     <xsl:with-param name="name" select="@name" />
     <xsl:with-param name="depth" select="'2'" />
     <xsl:with-param name="parents" select="''" />
-  </xsl:call-template> 
+  </xsl:call-template>
 
 </xsl:template>
 
@@ -383,12 +386,12 @@
         <xsl:value-of select="'FALSE'"/>
       </xsl:otherwise>
     </xsl:choose>
-  </xsl:variable> 
+  </xsl:variable>
   <xsl:value-of select="concat('         case VBoxEventType_', @id, ':&#10;')"/>
   <xsl:value-of select="       '         {&#10;'"/>
   <xsl:value-of select="concat('              ComObjPtr&lt;', $implName, '&gt; obj;&#10;')"/>
   <xsl:value-of select="       '              obj.createObject();&#10;'"/>
-  <xsl:value-of select="concat('              obj->init(source, aType, ', $waitable, ');&#10;')"/>  
+  <xsl:value-of select="concat('              obj->init(source, aType, ', $waitable, ');&#10;')"/>
   <xsl:call-template name="genAttrInitCode">
     <xsl:with-param name="name" select="@name" />
     <xsl:with-param name="obj" select="'obj'" />
@@ -459,7 +462,7 @@ HRESULT VBoxEventDesc::init(IEventSource* source, VBoxEventType_T aType, ...)
         <xsl:call-template name="genCommonEventCode">
         </xsl:call-template>
       </xsl:when>
-   </xsl:choose>   
+   </xsl:choose>
 </xsl:template>
 
 </xsl:stylesheet>
