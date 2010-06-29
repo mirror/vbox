@@ -53,7 +53,6 @@ static DECLCALLBACK(int) vboxDispMpTstThreadProc(RTTHREAD ThreadSelf, void *pvUs
                 if (Regions.pRegions->fFlags.bPositionRect)
                 {
                     iVisibleRects = 1;
-                    --cVidibleRects;
 
                     vboxVDbgPrint(("hWnd (0x%p), position and/or size changed: ", hWnd));
                     vboxDispMpTstLogRect("", Regions.pRegions->RectsInfo.aRects, "\n");
