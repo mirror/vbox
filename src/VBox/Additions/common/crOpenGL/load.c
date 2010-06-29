@@ -718,7 +718,7 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
         stub.spu->dispatch_table.WindowShow(pWindow->spuWindow, pWindow->mapped);
     }
 
-    if (pRegions->pRegions->fFlags.bAddVisibleRects && pRegions->pRegions->fFlags.bPositionRect)
+    if (pRegions->pRegions->fFlags.bSetVisibleRects && pRegions->pRegions->fFlags.bSetViewRect)
     {
         int winX, winY;
         unsigned int winW, winH;
@@ -780,7 +780,7 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
         }
         else
         {
-            if (pRegions->pRegions->fFlags.bAddVisibleRects)
+            if (pRegions->pRegions->fFlags.bSetVisibleRects)
             {
                 pWindow->hVisibleRegion = hNewRgn;
                 stubDispatchVisibleRegions(pWindow);
