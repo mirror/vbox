@@ -215,6 +215,36 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
 }
 
 
+static int rtSemEventMultiWaitWorker(PRTSEMEVENTMULTIINTERNAL pThis, RTMSINTERVAL cMillies, bool fInterruptible)
+{
+    /*
+     * Translate milliseconds into ticks and go to sleep.
+     */
+    int rc = 0;
+    if (cMillies != RT_INDEFINITE_WAIT)
+    {
+        clock_t cTicks = drv_usectohz((clock_t)(cMillies * 1000L));
+        clock_t cTimeout = ddi_get_lbolt();
+        cTimeout += cTicks;
+        if (fInterruptible)
+            rc = cv_timedwait_sig(&pThis->Cnd, &pThis->Mtx, cTimeout);
+        else
+            rc = cv_timedwait(&pThis->Cnd, &pThis->Mtx, cTimeout);
+    }
+    else
+    {
+        if (fInterruptible)
+            rc = cv_wait_sig(&pThis->Cnd, &pThis->Mtx);
+        else
+        {
+            cv_wait(&pThis->Cnd, &pThis->Mtx);
+            rc = 1;
+        }
+    }
+    return rc;
+}
+
+
 static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies, bool fInterruptible)
 {
     int rc;
@@ -234,65 +264,60 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMil
         rc = VERR_TIMEOUT;
     else
     {
-        ASMAtomicIncU32(&pThis->cWaiters);
-
-        /*
-         * Translate milliseconds into ticks and go to sleep.
-         */
-        if (cMillies != RT_INDEFINITE_WAIT)
+        for (;;)
         {
-            clock_t cTicks = drv_usectohz((clock_t)(cMillies * 1000L));
-            clock_t cTimeout = ddi_get_lbolt();
-            cTimeout += cTicks;
-            if (fInterruptible)
-                rc = cv_timedwait_sig(&pThis->Cnd, &pThis->Mtx, cTimeout);
-            else
-                rc = cv_timedwait(&pThis->Cnd, &pThis->Mtx, cTimeout);
-        }
-        else
-        {
-            if (fInterruptible)
-                rc = cv_wait_sig(&pThis->Cnd, &pThis->Mtx);
-            else
+            uint32_t cWakingBeforeWait = ASMAtomicUoReadU32((uint32_t volatile *)&pThis->cWaking);
+            ASMAtomicIncU32(&pThis->cWaiters);
+            rc = rtSemEventMultiWaitWorker(pThis, cMillies, fInterruptible);
+            if (rc > 0)
             {
-                cv_wait(&pThis->Cnd, &pThis->Mtx);
-                rc = 1;
-            }
-        }
-        if (rc > 0)
-        {
-            /* Retured due to call to cv_signal() or cv_broadcast() */
-            if (RT_LIKELY(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC))
-            {
-                rc = VINF_SUCCESS;
-                ASMAtomicDecU32(&pThis->cWaking);
-            }
-            else
-            {
-                rc = VERR_SEM_DESTROYED;
-                if (!ASMAtomicDecU32(&pThis->cWaking))
+                /* Retured due to call to cv_signal() or cv_broadcast() */
+                if (RT_LIKELY(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC))
                 {
-                    mutex_exit(&pThis->Mtx);
-                    cv_destroy(&pThis->Cnd);
-                    mutex_destroy(&pThis->Mtx);
-                    RTMemFree(pThis);
-                    return rc;
+                    uint32_t cWaking = ASMAtomicUoReadU32((uint32_t volatile *)&pThis->cWaking);
+                    if (cWaking > cWakingBeforeWait)
+                    {
+                        rc = VINF_SUCCESS;
+                        ASMAtomicDecU32(&pThis->cWaking);
+                        break;
+                    }
+                    else
+                    {
+                        /* Spurious wakeup, go back to waiting */
+                        cmn_err(CE_NOTE, "spurious\n");
+                        continue;
+                    }
+                }
+                else
+                {
+                    rc = VERR_SEM_DESTROYED;
+                    if (!ASMAtomicDecU32(&pThis->cWaking))
+                    {
+                        mutex_exit(&pThis->Mtx);
+                        cv_destroy(&pThis->Cnd);
+                        mutex_destroy(&pThis->Mtx);
+                        RTMemFree(pThis);
+                        return rc;
+                    }
+                    break;
                 }
             }
-        }
-        else if (rc == -1)
-        {
-            /* Returned due to timeout being reached */
-            if (pThis->cWaiters > 0)
-                ASMAtomicDecU32(&pThis->cWaiters);
-            rc = VERR_TIMEOUT;
-        }
-        else
-        {
-            /* Returned due to pending signal */
-            if (pThis->cWaiters > 0)
-                ASMAtomicDecU32(&pThis->cWaiters);
-            rc = VERR_INTERRUPTED;
+            else if (rc == -1)
+            {
+                /* Returned due to timeout being reached */
+                if (pThis->cWaiters > 0)
+                    ASMAtomicDecU32(&pThis->cWaiters);
+                rc = VERR_TIMEOUT;
+                break;
+            }
+            else
+            {
+                /* Returned due to pending signal */
+                if (pThis->cWaiters > 0)
+                    ASMAtomicDecU32(&pThis->cWaiters);
+                rc = VERR_INTERRUPTED;
+                break;
+            }
         }
     }
 
