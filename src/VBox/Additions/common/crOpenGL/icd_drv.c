@@ -305,7 +305,7 @@ BOOL APIENTRY DrvSwapLayerBuffers(HDC hdc, UINT fuPlanes)
 
 BOOL APIENTRY DrvSwapBuffers(HDC hdc)
 {
-    const WindowInfo *window;
+    WindowInfo *window;
     /*crDebug( "DrvSwapBuffers(0x%x) called", hdc );*/
     window = stubGetWindowInfo(hdc);    
     stubSwapBuffers( window, 0 );
