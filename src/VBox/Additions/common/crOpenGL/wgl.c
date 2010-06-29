@@ -270,7 +270,7 @@ HGLRC WINAPI wglCreateContext_prox( HDC hdc )
 BOOL WINAPI
 wglSwapBuffers_prox( HDC hdc )
 {
-    const WindowInfo *window = stubGetWindowInfo(hdc);
+    WindowInfo *window = stubGetWindowInfo(hdc);
     stubSwapBuffers( window, 0 );
     return 1;
 }
