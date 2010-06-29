@@ -46,11 +46,11 @@ static DECLCALLBACK(int) vboxDispMpTstThreadProc(RTTHREAD ThreadSelf, void *pvUs
         {
             vboxVDbgPrint(("\n>>>\n"));
             HWND hWnd = Regions.hWnd;
-            if (Regions.pRegions->fFlags.bAddVisibleRects)
+            if (Regions.pRegions->fFlags.bSetVisibleRects)
             {
                 uint32_t iVisibleRects = 0;
-                uint32_t cVidibleRects = Regions.pRegions->RectsInfo.cRects;
-                if (Regions.pRegions->fFlags.bPositionRect)
+                uint32_t cVisibleRects = Regions.pRegions->RectsInfo.cRects;
+                if (Regions.pRegions->fFlags.bSetViewRect)
                 {
                     iVisibleRects = 1;
 
@@ -59,7 +59,7 @@ static DECLCALLBACK(int) vboxDispMpTstThreadProc(RTTHREAD ThreadSelf, void *pvUs
                 }
 
                 vboxVDbgPrint(("hWnd (0x%p), visibleRects: \n", hWnd));
-                for (uint32_t i = iVisibleRects; i < cVidibleRects; ++i)
+                for (uint32_t i = iVisibleRects; i < cVisibleRects; ++i)
                 {
                     vboxDispMpTstLogRect("", &Regions.pRegions->RectsInfo.aRects[i], "");
                 }
