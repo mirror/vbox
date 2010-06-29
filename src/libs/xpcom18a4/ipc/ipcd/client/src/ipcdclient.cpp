@@ -1346,7 +1346,7 @@ IPC_OnMessageAvailable(ipcMessage *msg)
     LOG(("got message for target: %s\n", targetStr));
     nsMemory::Free(targetStr);
 
-    IPC_LogBinary((const PRUint8 *) msg->Data(), msg->DataLen());
+//     IPC_LogBinary((const PRUint8 *) msg->Data(), msg->DataLen());
   }
 #endif
 

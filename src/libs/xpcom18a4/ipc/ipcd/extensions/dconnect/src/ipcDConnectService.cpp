@@ -2260,6 +2260,14 @@ DConnectStub::Release()
     count = PR_AtomicDecrement((PRInt32 *)&mRefCnt);
     NS_LOG_RELEASE(this, count, "DConnectStub");
 
+
+    #ifdef IPC_LOGGING
+    const char *name;
+    mIInfo->GetNameShared(&name);
+    LOG(("{%p} DConnectStub::Release(): peer=%d instance=0x%Lx {%s}, new count=%d\n",
+        this, mPeerID, mInstance, name, count));
+    #endif
+
     // mRefCntLevels may already be empty here (due to the "stabilize" trick below)
     if (mRefCntLevels.GetSize() > 0)
     {
@@ -2497,9 +2505,16 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
 
   PRUint8 i, paramCount = aInfo->GetParamCount();
 
-  LOG(("  instance=0x%Lx\n", mInstance));
+#ifdef IPC_LOGGING
+  const char *name;
+  nsCOMPtr<nsIInterfaceInfo> iinfo;
+  GetInterfaceInfo(getter_AddRefs(iinfo));
+  iinfo->GetNameShared(&name);
+  LOG(("  instance=0x%Lx {%s}\n", mInstance, name));
   LOG(("  name=%s\n", aInfo->GetName()));
   LOG(("  param-count=%u\n", (PRUint32) paramCount));
+#endif
+
 
   ipcMessageWriter writer(16 * paramCount);
 
