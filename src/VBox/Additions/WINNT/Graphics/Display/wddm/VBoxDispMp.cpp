@@ -40,10 +40,11 @@ DECLINLINE(PVBOXVIDEOCM_CMD_HDR) vboxVideoCmIterNext(PVBOXVIDEOCM_ITERATOR pIter
 {
     if (pIter->cbRemain)
     {
+        PVBOXVIDEOCM_CMD_HDR pCur = pIter->pCur;
         Assert(pIter->cbRemain  >= pIter->pCur->cbCmd);
         pIter->cbRemain -= pIter->pCur->cbCmd;
         pIter->pCur = (PVBOXVIDEOCM_CMD_HDR)(((uint8_t*)pIter->pCur) + pIter->pCur->cbCmd);
-        return pIter->pCur;
+        return pCur;
     }
     return NULL;
 }
@@ -99,7 +100,7 @@ DECLCALLBACK(HRESULT) vboxDispMpGetRegions(PVBOXDISPMP_REGIONS pRegions, DWORD d
             {
                 if (g_VBoxDispMp.pEscapeCmd->Hdr.cbCmdsReturned)
                 {
-                    PVBOXVIDEOCM_CMD_HDR pHdr = (PVBOXVIDEOCM_CMD_HDR)(((uint8_t*)g_VBoxDispMp.pEscapeCmd) + sizeof (VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD));
+                    pHdr = (PVBOXVIDEOCM_CMD_HDR)(((uint8_t*)g_VBoxDispMp.pEscapeCmd) + sizeof (VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD));
                     vboxVideoCmIterInit(&g_VBoxDispMp.Iterator, pHdr, g_VBoxDispMp.pEscapeCmd->Hdr.cbCmdsReturned);
                     pHdr = vboxVideoCmIterNext(&g_VBoxDispMp.Iterator);
                     Assert(pHdr);
