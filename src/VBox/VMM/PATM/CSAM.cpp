@@ -2480,29 +2480,14 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
     /*
      * Get IDT entries.
      */
-    if (PAGE_ADDRESS(GCPtrIDT) == PAGE_ADDRESS(GCPtrIDT+cGates*sizeof(VBOXIDTE)))
+    rc = PGMPhysSimpleReadGCPtr(pVCpu, aIDT, GCPtrIDT,  cGates*sizeof(VBOXIDTE));
+    if (RT_FAILURE(rc))
     {
-        /* Just convert the IDT address to a R3 pointer. The whole IDT fits in one page. */
-        rc = PGMPhysGCPtr2R3Ptr(pVCpu, GCPtrIDT, (PRTR3PTR)&pGuestIdte);
-        if (RT_FAILURE(rc))
-        {
-            AssertMsgRC(rc, ("Failed to read IDTE! rc=%Rrc\n", rc));
-            STAM_PROFILE_STOP(&pVM->csam.s.StatCheckGates, a);
-            return rc;
-        }
+        AssertMsgRC(rc, ("Failed to read IDTE! rc=%Rrc\n", rc));
+        STAM_PROFILE_STOP(&pVM->csam.s.StatCheckGates, a);
+        return rc;
     }
-    else
-    {
-        /* Slow method when it crosses a page boundary. */
-        rc = PGMPhysSimpleReadGCPtr(pVCpu, aIDT, GCPtrIDT,  cGates*sizeof(VBOXIDTE));
-        if (RT_FAILURE(rc))
-        {
-            AssertMsgRC(rc, ("Failed to read IDTE! rc=%Rrc\n", rc));
-            STAM_PROFILE_STOP(&pVM->csam.s.StatCheckGates, a);
-            return rc;
-        }
-        pGuestIdte = &aIDT[0];
-    }
+    pGuestIdte = &aIDT[0];
 
     for (/*iGate*/; iGate<iGateEnd; iGate++, pGuestIdte++)
     {
