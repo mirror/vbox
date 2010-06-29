@@ -4160,6 +4160,12 @@ DxgkDdiDestroyContext(
         Assert(cContexts < UINT32_MAX/2);
     }
 
+    if (pContext->pLastReportedRects)
+    {
+        vboxVideoCmCmdRelease(pContext->pLastReportedRects);
+        pContext->pLastReportedRects = NULL;
+    }
+
     NTSTATUS Status = vboxVideoCmCtxRemove(&pContext->pDevice->pAdapter->CmMgr, &pContext->CmContext);
     Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)

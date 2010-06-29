@@ -166,8 +166,12 @@ typedef struct VBOXWDDM_RECTS_FLAFS
     {
         struct
         {
-            UINT bPositionRect : 1;
-            UINT bAddVisibleRects : 1;
+            /* used only in conjunction with bSetVisibleRects.
+             * if set - VBOXWDDM_RECTS_INFO::aRects[0] contains view rectangle */
+            UINT bSetViewRect : 1;
+            /* sets visible regions */
+            UINT bSetVisibleRects : 1;
+            /* adds hidden regions */
             UINT bAddHiddenRects : 1;
             UINT Reserved : 29;
         };
@@ -321,6 +325,21 @@ DECLINLINE(bool) vboxWddmRectIntersection(const RECT *a, const RECT *b, RECT *re
     rect->top = RT_MAX(a->top, b->top);
     rect->bottom = RT_MIN(a->bottom, b->bottom);
     return (rect->right>rect->left) && (rect->bottom>rect->top);
+}
+
+DECLINLINE(bool) vboxWddmRectIsCoveres(const RECT *pRect, const RECT *pCovered)
+{
+    Assert(pRect);
+    Assert(pCovered);
+    if (pRect->left > pCovered->left)
+        return false;
+    if (pRect->top > pCovered->top)
+        return false;
+    if (pRect->right < pCovered->right)
+        return false;
+    if (pRect->bottom < pCovered->bottom)
+        return false;
+    return true;
 }
 
 DECLINLINE(void) vboxWddmDirtyRegionAddRect(PVBOXWDDM_DIRTYREGION pInfo, const RECT *pRect)

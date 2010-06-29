@@ -127,6 +127,7 @@ typedef struct VBOXWDDM_CONTEXT
     UINT  EngineAffinity;
     UINT uLastCompletedCmdFenceId;
     RECT ViewRect;
+    PVBOXVIDEOCM_CMD_RECTS pLastReportedRects;
     VBOXVIDEOCM_CTX CmContext;
 } VBOXWDDM_CONTEXT, *PVBOXWDDM_CONTEXT;
 
