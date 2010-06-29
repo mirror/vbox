@@ -235,6 +235,7 @@ public:
                SoapQ &q,
                const struct soap *soap)
         : m_u(u),
+          m_strThread(com::Utf8StrFmt("SoapQWrk%02d", m_u)),
           m_pQ(&q)
     {
         // make a copy of the soap struct for the new thread
@@ -246,7 +247,7 @@ public:
                                        0,               // cbStack,
                                        RTTHREADTYPE_MAIN_HEAVY_WORKER,
                                        0,
-                                       "SoapQWorker")))
+                                       m_strThread.c_str())))
         {
             RTStrmPrintf(g_pStdErr, "[!] Cannot start worker thread %d\n", u);
             exit(1);
@@ -269,10 +270,11 @@ public:
         return 0;
     }
 
-    size_t      m_u;            // thread number
-    SoapQ       *m_pQ;          // the single SOAP queue that all the threads service
-    struct soap *m_soap;        // copy of the soap structure for this thread (from soap_copy())
-    RTTHREAD    m_pThread;      // IPRT thread struct for this thread
+    size_t          m_u;            // thread number
+    com::Utf8Str    m_strThread;    // thread name ("SoapQWrkXX")
+    SoapQ           *m_pQ;          // the single SOAP queue that all the threads service
+    struct soap     *m_soap;        // copy of the soap structure for this thread (from soap_copy())
+    RTTHREAD        m_pThread;      // IPRT thread struct for this thread
 };
 
 /**
