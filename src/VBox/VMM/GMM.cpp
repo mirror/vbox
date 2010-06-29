@@ -418,3 +418,24 @@ GMMR3DECL(int)  GMMR3CheckSharedModules(PVM pVM)
 {
     return VMMR3CallR0(pVM, VMMR0_DO_GMM_CHECK_SHARED_MODULES, 0, NULL);
 }
+
+#if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
+/**
+ * @see GMMR0FindDuplicatePage
+ */
+GMMR3DECL(bool) GMMR3IsDuplicatePage(PVM pVM, uint32_t idPage)
+{
+    GMMFINDDUPLICATEPAGEREQ Req;
+    Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    Req.Hdr.cbReq    = sizeof(Req);
+    Req.idPage       = idPage;
+    Req.fDuplicate   = false;
+
+    int rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_FIND_DUPLICATE_PAGE, 0, &Req.Hdr);
+    if (rc == VINF_SUCCESS)
+        return Req.fDuplicate;
+    else
+        return false;
+}
+#endif /* VBOX_STRICT && HC_ARCH_BITS == 64 */
+
