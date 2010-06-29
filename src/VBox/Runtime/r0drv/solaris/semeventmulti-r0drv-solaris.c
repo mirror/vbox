@@ -284,7 +284,6 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMil
                     else
                     {
                         /* Spurious wakeup, go back to waiting */
-                        cmn_err(CE_NOTE, "spurious\n");
                         continue;
                     }
                 }
