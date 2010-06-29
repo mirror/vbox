@@ -311,6 +311,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_GMM_RESET_SHARED_MODULES,
     /** Call GMMR0CheckSharedModules. */
     VMMR0_DO_GMM_CHECK_SHARED_MODULES,
+    /** Call GMMR0FindDuplicatePage. */
+    VMMR0_DO_GMM_FIND_DUPLICATE_PAGE,
 
     /** Set a GVMM or GMM configuration value. */
     VMMR0_DO_GCFGM_SET_VALUE,

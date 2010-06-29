@@ -461,6 +461,16 @@ DECLINLINE(void) PCIDevSetInterruptLine(PPCIDEVICE pPciDev, uint8_t u8Line)
     pPciDev->config[VBOX_PCI_INTERRUPT_LINE] = u8Line;
 }
 
+/**
+ * Gets the interrupt line config register.
+ *
+ * @returns The interrupt line.
+ * @param   pPciDev         The PCI device.
+ */
+DECLINLINE(uint8_t) PCIDevGetInterruptLine(PPCIDEVICE pPciDev)
+{
+    return pPciDev->config[VBOX_PCI_INTERRUPT_LINE];
+}
 
 /**
  * Sets the interrupt pin config register.
@@ -474,6 +484,19 @@ DECLINLINE(void) PCIDevSetInterruptPin(PPCIDEVICE pPciDev, uint8_t u8Pin)
 }
 
 
+/**
+ * Gets the interrupt pin config register.
+ *
+ * @returns The interrupt pin.
+ * @param   pPciDev         The PCI device.
+ */
+DECLINLINE(uint8_t) PCIDevGetInterruptPin(PPCIDEVICE pPciDev)
+{
+    return pPciDev->config[VBOX_PCI_INTERRUPT_PIN];
+}
+
+
 /** @} */
 
 #endif
+

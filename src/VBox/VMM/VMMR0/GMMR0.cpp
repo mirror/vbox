@@ -4188,3 +4188,135 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
+
+#if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
+typedef struct
+{
+    PGVM                    pGVM;
+    PGMM                    pGMM;
+    uint8_t                *pSourcePage;
+    bool                    fFoundDuplicate;
+} GMMFINDDUPPAGEINFO, *PGMMFINDDUPPAGEINFO;
+
+/**
+ * RTAvlU32DoWithAll callback.
+ *
+ * @returns 0
+ * @param   pNode   The node to search.
+ * @param   pvInfo  Pointer to the input parameters
+ */
+static DECLCALLBACK(int) gmmR0FindDupPageInChunk(PAVLU32NODECORE pNode, void *pvInfo)
+{
+    PGMMCHUNK           pChunk = (PGMMCHUNK)pNode;
+    PGMMFINDDUPPAGEINFO pInfo = (PGMMFINDDUPPAGEINFO)pvInfo;
+    PGVM                pGVM = pInfo->pGVM;
+    PGMM                pGMM = pInfo->pGMM;
+    uint8_t            *pbChunk;
+
+    /* Only take chunks not mapped into this VM process; not entirely correct. */
+    if (!gmmR0IsChunkMapped(pGVM, pChunk, (PRTR3PTR)&pbChunk))
+    {
+        int rc = gmmR0MapChunk(pGMM, pGVM, pChunk, (PRTR3PTR)&pbChunk);
+        if (rc != VINF_SUCCESS)
+            goto end;
+
+        /*
+         * Look for duplicate pages
+         */
+        unsigned iPage = (GMM_CHUNK_SIZE >> PAGE_SHIFT);
+        while (iPage-- > 0)
+        {
+            if (GMM_PAGE_IS_PRIVATE(&pChunk->aPages[iPage]))
+            {
+                uint8_t *pbDestPage = pbChunk + (iPage  << PAGE_SHIFT);
+
+                if (!memcmp(pInfo->pSourcePage, pbDestPage, PAGE_SIZE))
+                {
+                    pInfo->fFoundDuplicate = true;
+                    break;
+                }
+            }
+        }
+        gmmR0UnmapChunk(pGMM, pGVM, pChunk);
+    }
+end:
+    if (pInfo->fFoundDuplicate)
+        return 1;   /* stop search */
+    else
+        return 0;
+}
+
+/**
+ * Find a duplicate of the specified page in other active VMs
+ *
+ * @returns VBox status code.
+ * @param   pVM                 VM handle
+ * @param   pReq                Request packet
+ */
+GMMR0DECL(int) GMMR0FindDuplicatePageReq(PVM pVM, PGMMFINDDUPLICATEPAGEREQ pReq)
+{
+    /*
+     * Validate input and pass it on.
+     */
+    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
+
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+
+    /*
+     * Take the sempahore and do some more validations.
+     */
+    int rc = RTSemFastMutexRequest(pGMM->Mtx);
+    AssertRC(rc);
+    if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
+    {
+        PGVM pGVM;
+        rc = GVMMR0ByVM(pVM, &pGVM);
+        if (RT_FAILURE(rc))
+            goto end;
+
+        uint8_t  *pbChunk;
+        PGMMCHUNK pChunk = gmmR0GetChunk(pGMM, pReq->idPage >> GMM_CHUNKID_SHIFT);
+        if (!pChunk)
+        {
+            AssertFailed();
+            goto end;
+        }
+
+        if (!gmmR0IsChunkMapped(pGVM, pChunk, (PRTR3PTR)&pbChunk))
+        {
+            AssertFailed();
+            goto end;
+        }
+
+        uint8_t *pbSourcePage = pbChunk + ((pReq->idPage & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT);
+
+        PGMMPAGE pPage = gmmR0GetPage(pGMM, pReq->idPage);
+        if (!pPage)
+        {
+            AssertFailed();
+            rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
+            goto end;
+        }
+        GMMFINDDUPPAGEINFO Info;
+
+        Info.pGVM            = pGVM;
+        Info.pGMM            = pGMM;
+        Info.pSourcePage     = pbSourcePage;
+        Info.fFoundDuplicate = false;
+        RTAvlU32DoWithAll(&pGMM->pChunks, true /* fFromLeft */, gmmR0FindDupPageInChunk, pGVM);
+
+        pReq->fDuplicate = Info.fFoundDuplicate;
+    }
+    else
+        rc = VERR_INTERNAL_ERROR_5;
+
+end:
+    RTSemFastMutexRelease(pGMM->Mtx);
+    return rc;
+}
+
+#endif /* VBOX_STRICT && HC_ARCH_BITS == 64 */
+
