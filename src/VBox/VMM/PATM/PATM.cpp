@@ -599,13 +599,17 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
 #ifdef LOG_ENABLED
     if (pPatch->patch.flags & PATMFL_PATCHED_GUEST_CODE)
     {
+        PGMPAGEMAPLOCK PageLock;
+
         /** @note pPrivInstrHC is probably not valid anymore */
-        rc = PGMPhysGCPtr2R3Ptr(VMMGetCpu0(pVM), pPatch->patch.pPrivInstrGC, (PRTR3PTR)&pPatch->patch.pPrivInstrHC);
+        rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, pPatch->patch.pPrivInstrGC, (const void **)&pPatch->patch.pPrivInstrHC, &PageLock);
         if (rc == VINF_SUCCESS)
         {
             cpu.mode = (pPatch->patch.flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
             disret = PATMR3DISInstr(pVM, &pPatch->patch, &cpu, pPatch->patch.pPrivInstrGC, pPatch->patch.pPrivInstrHC, &opsize, szOutput, PATMREAD_RAWCODE);
             Log(("Org patch jump: %s", szOutput));
+
+            PGMPhysReleasePageMappingLock(pVM, &PageLock);
         }
     }
 #endif
@@ -785,13 +789,17 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
 #ifdef LOG_ENABLED
     if (pPatch->patch.flags & PATMFL_PATCHED_GUEST_CODE)
     {
+        PGMPAGEMAPLOCK PageLock;
+
         /** @note pPrivInstrHC is probably not valid anymore */
-        rc = PGMPhysGCPtr2R3Ptr(VMMGetCpu0(pVM), pPatch->patch.pPrivInstrGC, (PRTR3PTR)&pPatch->patch.pPrivInstrHC);
+        rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, pPatch->patch.pPrivInstrGC, (const void **)&pPatch->patch.pPrivInstrHC, &PageLock);
         if (rc == VINF_SUCCESS)
         {
             cpu.mode = (pPatch->patch.flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
             disret = PATMR3DISInstr(pVM, &pPatch->patch, &cpu, pPatch->patch.pPrivInstrGC, pPatch->patch.pPrivInstrHC, &opsize, szOutput, PATMREAD_RAWCODE);
             Log(("Rel patch jump: %s", szOutput));
+
+            PGMPhysReleasePageMappingLock(pVM, &PageLock);
         }
     }
 #endif
