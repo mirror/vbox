@@ -73,6 +73,8 @@ typedef struct
     uint32_t             depth;  //call/jump depth
 
     PCSAMCALLEXITREC     pCallExitRec;
+
+    PGMPAGEMAPLOCK       Lock;
 } CSAMP2GLOOKUPREC, *PCSAMP2GLOOKUPREC;
 
 typedef struct
