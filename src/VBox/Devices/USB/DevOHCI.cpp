@@ -1141,7 +1141,7 @@ DECLINLINE(void) ohciPutDWords(POHCI pOhci, uint32_t Addr, const uint32_t *pau32
 #else
     for (int i = 0; i < c32s; i++, pau32s++, Addr += sizeof(*pau32s))
     {
-        uint32_t u32Tmp = RT_H2LE_U32((*pau32s);
+        uint32_t u32Tmp = RT_H2LE_U32(*pau32s);
         ohciPhysWrite(pOhci, Addr, (uint8_t *)&u32Tmp, sizeof(u32Tmp));
     }
 #endif
