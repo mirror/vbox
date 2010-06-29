@@ -725,7 +725,6 @@ sffs_getattr(
 	sfnode_t	*node = VN2SFN(vp);
 	sffs_data_t	*sffs = node->sf_sffs;
 	mode_t		mode;
-	timestruc_t	time;
 	uint64_t	x;
 	int		error;
 
@@ -739,7 +738,8 @@ sffs_getattr(
 	vap->va_rdev =  sffs->sf_vfsp->vfs_dev;
 	vap->va_seq = 0;
 
-	error = sfprov_get_mode(node->sf_sffs->sf_handle, node->sf_path, &mode);
+	error = sfprov_get_attr(node->sf_sffs->sf_handle, node->sf_path, &mode,
+	    &x, &vap->va_atime, &vap->va_mtime, &vap->va_ctime);
 	if (error == ENOENT)
 		sfnode_make_stale(node);
 	if (error != 0)
@@ -760,38 +760,9 @@ sffs_getattr(
 	else if (S_ISSOCK(mode))
 		vap->va_type = VSOCK;
 
-	error = sfprov_get_size(node->sf_sffs->sf_handle, node->sf_path, &x);
-	if (error == ENOENT)
-		sfnode_make_stale(node);
-	if (error != 0)
-		goto done;
 	vap->va_size = x;
 	vap->va_blksize = 512;
 	vap->va_nblocks = (x + 511) / 512;
-
-	error =
-	    sfprov_get_atime(node->sf_sffs->sf_handle, node->sf_path, &time);
-	if (error == ENOENT)
-		sfnode_make_stale(node);
-	if (error != 0)
-		goto done;
-	vap->va_atime = time;
-
-	error =
-	    sfprov_get_mtime(node->sf_sffs->sf_handle, node->sf_path, &time);
-	if (error == ENOENT)
-		sfnode_make_stale(node);
-	if (error != 0)
-		goto done;
-	vap->va_mtime = time;
-
-	error =
-	    sfprov_get_ctime(node->sf_sffs->sf_handle, node->sf_path, &time);
-	if (error == ENOENT)
-		sfnode_make_stale(node);
-	if (error != 0)
-		goto done;
-	vap->va_ctime = time;
 
 done:
 	mutex_exit(&sffs_lock);

@@ -407,56 +407,66 @@ sfprov_getinfo(sfp_mount_t *mnt, char *path, RTFSOBJINFO *info)
 /*
  * get information about a file (or directory)
  */
+static void
+sfprov_mode_from_fmode(mode_t *mode, RTFMODE fMode)
+{
+	mode_t m = 0;
+
+	if (RTFS_IS_DIRECTORY(fMode))
+		m |= S_IFDIR;
+	else if (RTFS_IS_FILE(fMode))
+		m |= S_IFREG;
+	else if (RTFS_IS_FIFO(fMode))
+		m |= S_IFIFO;
+	else if (RTFS_IS_DEV_CHAR(fMode))
+		m |= S_IFCHR;
+	else if (RTFS_IS_DEV_BLOCK(fMode))
+		m |= S_IFBLK;
+	else if (RTFS_IS_SYMLINK(fMode))
+		m |= S_IFLNK;
+	else if (RTFS_IS_SOCKET(fMode))
+		m |= S_IFSOCK;
+
+	if (fMode & RTFS_UNIX_IRUSR)
+		m |= S_IRUSR;
+	if (fMode & RTFS_UNIX_IWUSR)
+		m |= S_IWUSR;
+	if (fMode & RTFS_UNIX_IXUSR)
+		m |= S_IXUSR;
+	if (fMode & RTFS_UNIX_IRGRP)
+		m |= S_IRGRP;
+	if (fMode & RTFS_UNIX_IWGRP)
+		m |= S_IWGRP;
+	if (fMode & RTFS_UNIX_IXGRP)
+		m |= S_IXGRP;
+	if (fMode & RTFS_UNIX_IROTH)
+		m |= S_IROTH;
+	if (fMode & RTFS_UNIX_IWOTH)
+		m |= S_IWOTH;
+	if (fMode & RTFS_UNIX_IXOTH)
+		m |= S_IXOTH;
+	if (fMode & RTFS_UNIX_ISUID)
+		m |= S_ISUID;
+	if (fMode & RTFS_UNIX_ISGID)
+		m |= S_ISGID;
+	if (fMode & RTFS_UNIX_ISTXT)
+		m |= S_ISVTX;
+	*mode = m;
+}
+
+/*
+ * get information about a file (or directory)
+ */
 int
 sfprov_get_mode(sfp_mount_t *mnt, char *path, mode_t *mode)
 {
 	int rc;
 	RTFSOBJINFO info;
-	mode_t m = 0;
 
 	rc = sfprov_getinfo(mnt, path, &info);
 	if (rc)
 		return (rc);
-	if (RTFS_IS_DIRECTORY(info.Attr.fMode))
-		m |= S_IFDIR;
-	else if (RTFS_IS_FILE(info.Attr.fMode))
-		m |= S_IFREG;
-	else if (RTFS_IS_FIFO(info.Attr.fMode))
-		m |= S_IFIFO;
-	else if (RTFS_IS_DEV_CHAR(info.Attr.fMode))
-		m |= S_IFCHR;
-	else if (RTFS_IS_DEV_BLOCK(info.Attr.fMode))
-		m |= S_IFBLK;
-	else if (RTFS_IS_SYMLINK(info.Attr.fMode))
-		m |= S_IFLNK;
-	else if (RTFS_IS_SOCKET(info.Attr.fMode))
-		m |= S_IFSOCK;
-
-	if (info.Attr.fMode & RTFS_UNIX_IRUSR)
-		m |= S_IRUSR;
-	if (info.Attr.fMode & RTFS_UNIX_IWUSR)
-		m |= S_IWUSR;
-	if (info.Attr.fMode & RTFS_UNIX_IXUSR)
-		m |= S_IXUSR;
-	if (info.Attr.fMode & RTFS_UNIX_IRGRP)
-		m |= S_IRGRP;
-	if (info.Attr.fMode & RTFS_UNIX_IWGRP)
-		m |= S_IWGRP;
-	if (info.Attr.fMode & RTFS_UNIX_IXGRP)
-		m |= S_IXGRP;
-	if (info.Attr.fMode & RTFS_UNIX_IROTH)
-		m |= S_IROTH;
-	if (info.Attr.fMode & RTFS_UNIX_IWOTH)
-		m |= S_IWOTH;
-	if (info.Attr.fMode & RTFS_UNIX_IXOTH)
-		m |= S_IXOTH;
-	if (info.Attr.fMode & RTFS_UNIX_ISUID)
-		m |= S_ISUID;
-	if (info.Attr.fMode & RTFS_UNIX_ISGID)
-		m |= S_ISGID;
-	if (info.Attr.fMode & RTFS_UNIX_ISTXT)
-		m |= S_ISVTX;
-	*mode = m;
+	sfprov_mode_from_fmode(mode, info.Attr.fMode);
 	return (0);
 }
 
@@ -473,19 +483,24 @@ sfprov_get_size(sfp_mount_t *mnt, char *path, uint64_t *size)
 	return (0);
 }
 
+static void
+sfprov_ftime_from_timespec(timestruc_t *time, RTTIMESPEC *ts)
+{
+	uint64_t nanosec = RTTimeSpecGetNano(ts);
+	time->tv_sec = nanosec / UINT64_C(1000000000);
+	time->tv_nsec = nanosec % UINT64_C(1000000000);
+}
+
 int
 sfprov_get_atime(sfp_mount_t *mnt, char *path, timestruc_t *time)
 {
 	int rc;
 	RTFSOBJINFO info;
-	uint64_t nanosec;
 
 	rc = sfprov_getinfo(mnt, path, &info);
 	if (rc)
 		return (rc);
-	nanosec = RTTimeSpecGetNano(&info.AccessTime);
-	time->tv_sec = nanosec / 1000000000;
-	time->tv_nsec = nanosec % 1000000000;
+	sfprov_ftime_from_timespec(time, &info.AccessTime);
 	return (0);
 }
 
@@ -494,14 +509,11 @@ sfprov_get_mtime(sfp_mount_t *mnt, char *path, timestruc_t *time)
 {
 	int rc;
 	RTFSOBJINFO info;
-	uint64_t nanosec;
 
 	rc = sfprov_getinfo(mnt, path, &info);
 	if (rc)
 		return (rc);
-	nanosec = RTTimeSpecGetNano(&info.ModificationTime);
-	time->tv_sec = nanosec / 1000000000;
-	time->tv_nsec = nanosec % 1000000000;
+	sfprov_ftime_from_timespec(time, &info.ModificationTime);
 	return (0);
 }
 
@@ -510,14 +522,42 @@ sfprov_get_ctime(sfp_mount_t *mnt, char *path, timestruc_t *time)
 {
 	int rc;
 	RTFSOBJINFO info;
-	uint64_t nanosec;
 
 	rc = sfprov_getinfo(mnt, path, &info);
 	if (rc)
 		return (rc);
-	nanosec = RTTimeSpecGetNano(&info.ChangeTime);
-	time->tv_sec = nanosec / 1000000000;
-	time->tv_nsec = nanosec % 1000000000;
+	sfprov_ftime_from_timespec(time, &info.ChangeTime);
+	return (0);
+}
+
+int
+sfprov_get_attr(
+	sfp_mount_t *mnt,
+	char *path,
+	mode_t *mode,
+	uint64_t *size,
+	timestruc_t *atime,
+	timestruc_t *mtime,
+	timestruc_t *ctime)
+{
+	int rc;
+	RTFSOBJINFO info;
+
+	rc = sfprov_getinfo(mnt, path, &info);
+	if (rc)
+		return (rc);
+
+	if (mode)
+		sfprov_mode_from_fmode(mode, info.Attr.fMode);
+	if (size != NULL)
+		*size = info.cbObject;
+	if (atime != NULL)
+		sfprov_ftime_from_timespec(atime, &info.AccessTime);
+	if (mtime != NULL)
+		sfprov_ftime_from_timespec(mtime, &info.ModificationTime);
+	if (ctime != NULL)
+		sfprov_ftime_from_timespec(ctime, &info.ChangeTime);
+
 	return (0);
 }
 
