@@ -683,6 +683,7 @@ static R3PTRTYPE(void *) CSAMGCVirtToHCVirt(PVM pVM, PCSAMP2GLOOKUPREC pCacheRec
     Assert(pVM->cCpus == 1);
     PVMCPU pVCpu = VMMGetCpu0(pVM);
 
+    pLock->pvMap = NULL;    /* invalidate it in case we don't call PGMPhysGCPtr2CCPtrReadOnly */
     STAM_PROFILE_START(&pVM->csam.s.StatTimeAddrConv, a);
 
     pHCPtr = PATMR3GCPtrToHCPtr(pVM, pGCPtr);
@@ -874,7 +875,8 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
 
                 cpu.mode = (fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT;
                 rc = CSAMR3DISInstr(pVM, &cpu, pCurInstrGC, pCurInstrHC, &opsize, NULL);
-                PGMPhysReleasePageMappingLock(pVM, &PageLock);
+                if (PageLock.pvMap)
+                    PGMPhysReleasePageMappingLock(pVM, &PageLock);
             }
             AssertRC(rc);
             if (RT_FAILURE(rc))
@@ -1276,7 +1278,8 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
             rc2 = CSAMR3DISInstr(pVM, &cpu, pCurInstrGC, pCurInstrHC, &opsize, NULL);
 #endif
             STAM_PROFILE_STOP(&pVM->csam.s.StatTimeDisasm, a);
-            PGMPhysReleasePageMappingLock(pVM, &PageLock);
+            if (PageLock.pvMap)
+                PGMPhysReleasePageMappingLock(pVM, &PageLock);
         }
         if (RT_FAILURE(rc2))
         {
