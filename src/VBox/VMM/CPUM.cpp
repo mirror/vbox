@@ -56,7 +56,7 @@
 #include <iprt/string.h>
 #include <iprt/mp.h>
 #include <iprt/cpuset.h>
-
+#include <include/internal/pgm.h>
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *

@@ -79,6 +79,7 @@
 #include <VBox/ssm.h>
 #include <VBox/pdmapi.h>
 #include <VBox/pgm.h>
+#include <include/internal/pgm.h>
 #include <VBox/dbgf.h>
 #include <VBox/mm.h>
 #include <VBox/stam.h>

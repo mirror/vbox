@@ -362,21 +362,10 @@ VMMDECL(bool)       PGMHandlerVirtualIsRegistered(PVM pVM, RTGCPTR GCPtr);
 VMMDECL(bool)       PGMPhysIsA20Enabled(PVMCPU pVCpu);
 VMMDECL(bool)       PGMPhysIsGCPhysValid(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(bool)       PGMPhysIsGCPhysNormal(PVM pVM, RTGCPHYS GCPhys);
-VMMDECL(int)        PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys);
 VMMDECL(int)        PGMPhysGCPtr2GCPhys(PVMCPU pVCpu, RTGCPTR GCPtr, PRTGCPHYS pGCPhys);
-VMMDECL(int)        PGMPhysGCPtr2HCPhys(PVMCPU pVCpu, RTGCPTR GCPtr, PRTHCPHYS pHCPhys);
 VMMDECL(void)       PGMPhysInvalidatePageMapTLB(PVM pVM);
 VMMDECL(void)       PGMPhysInvalidatePageMapTLBEntry(PVM pVM, RTGCPHYS GCPhys);
-VMMDECL(int)        PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock);
-VMMDECL(int)        PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **ppv, PPGMPAGEMAPLOCK pLock);
-VMMDECL(int)        PGMPhysGCPtr2CCPtr(PVMCPU pVCpu, RTGCPTR GCPtr, void **ppv, PPGMPAGEMAPLOCK pLock);
-VMMDECL(int)        PGMPhysGCPtr2CCPtrReadOnly(PVMCPU pVCpu, RTGCPTR GCPtr, void const **ppv, PPGMPAGEMAPLOCK pLock);
 VMMDECL(void)       PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock);
-VMMDECL(int)        PGMPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTR3PTR pR3Ptr);
-#ifdef VBOX_STRICT
-VMMDECL(RTR3PTR)    PGMPhysGCPhys2R3PtrAssert(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange);
-#endif
-VMMDECL(int)        PGMPhysGCPtr2R3Ptr(PVMCPU pVCpu, RTGCPTR GCPtr, PRTR3PTR pR3Ptr);
 VMMDECL(int)        PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead);
 VMMDECL(int)        PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite);
 VMMDECL(int)        PGMPhysSimpleReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t cb);

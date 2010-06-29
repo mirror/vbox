@@ -31,12 +31,12 @@
 #include <VBox/err.h>
 #include <VBox/x86.h>
 #include <VBox/em.h>
-
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/param.h>
+#include <include/internal/pgm.h>
 
 
 

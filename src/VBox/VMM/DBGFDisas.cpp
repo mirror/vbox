@@ -29,6 +29,7 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/vm.h>
+#include <include/internal/pgm.h>
 
 #include <VBox/log.h>
 #include <iprt/assert.h>
