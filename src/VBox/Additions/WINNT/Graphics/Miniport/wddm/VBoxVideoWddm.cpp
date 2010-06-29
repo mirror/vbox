@@ -2109,7 +2109,7 @@ DxgkDdiSubmitCommand(
                 if (pRectsCmd)
                 {
                     pRectsCmd->pContext = pContext;
-                    pRectsCmd->ContextsRects = pBlt->DstRects;
+                    memcpy(&pRectsCmd->ContextsRects, &pBlt->DstRects, RT_OFFSETOF(VBOXVDMAPIPE_RECTS, UpdateRects.aRects[pBlt->DstRects.UpdateRects.cRects]));
                     NTSTATUS tmpStatus = vboxVdmaGgCmdSubmit(&pDevExt->u.primary.Vdma.DmaGg, &pRectsCmd->Hdr);
                     Assert(tmpStatus == STATUS_SUCCESS);
                     if (tmpStatus != STATUS_SUCCESS)
@@ -3774,7 +3774,9 @@ DxgkDdiPresent(
                     UINT cbHead = RT_OFFSETOF(VBOXWDDM_DMA_PRESENT_BLT, DstRects.UpdateRects.aRects[0]);
                     Assert(pPresent->SubRectCnt > pPresent->MultipassOffset);
                     UINT cbRects = (pPresent->SubRectCnt - pPresent->MultipassOffset) * sizeof (RECT);
-                    pPresent->pDmaBuffer = ((uint8_t*)pPresent->pDmaBuffer) + cbHead + cbRects;
+                    pPresent->pDmaBufferPrivateData = (uint8_t*)pPresent->pDmaBufferPrivateData + cbHead + cbRects;
+                    pPresent->pDmaBuffer = ((uint8_t*)pPresent->pDmaBuffer) + VBOXWDDM_DUMMY_DMABUFFER_SIZE;
+                    Assert(pPresent->DmaSize >= VBOXWDDM_DUMMY_DMABUFFER_SIZE);
                     cbCmd -= cbHead;
                     Assert(cbCmd < UINT32_MAX/2);
                     Assert(cbCmd > sizeof (RECT));
@@ -3796,9 +3798,6 @@ DxgkDdiPresent(
                         Status = STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
                     }
 
-                    pPresent->pDmaBufferPrivateData = (uint8_t*)pPresent->pDmaBufferPrivateData + cbHead + cbRects;
-                    pPresent->pDmaBuffer = ((uint8_t*)pPresent->pDmaBuffer) + VBOXWDDM_DUMMY_DMABUFFER_SIZE;
-                    Assert(pPresent->DmaSize >= VBOXWDDM_DUMMY_DMABUFFER_SIZE);
                     memset(pPresent->pPatchLocationListOut, 0, 2*sizeof (D3DDDI_PATCHLOCATIONLIST));
                     pPresent->pPatchLocationListOut->PatchOffset = 0;
                     pPresent->pPatchLocationListOut->AllocationIndex = DXGK_PRESENT_SOURCE_INDEX;
