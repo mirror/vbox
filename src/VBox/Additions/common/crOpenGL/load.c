@@ -753,6 +753,7 @@ stubInit(void)
     char **spu_names;
     const char *app_id;
     int i;
+    int disable_sync = 0;
 
     if (stub_initialized)
         return true;
@@ -761,6 +762,14 @@ stubInit(void)
 
     crGetProcName(response, 1024);
     crDebug("Stub launched for %s", response);
+
+#if defined(CR_NEWWINTRACK) && !defined(WINDOWS)
+    /*@todo when vm boots with compiz turned on, new code causes hang in xcb_wait_for_reply in the sync thread*/
+    if (!crStrcmp(response, "compiz") || !crStrcmp(response, "compiz_real"))
+    {
+        disable_sync = 1;
+    }
+#endif
 
     /* @todo check if it'd be of any use on other than guests, no use for windows */
     app_id = crGetenv( "CR_APPLICATION_ID_NUMBER" );
@@ -851,17 +860,20 @@ raise(SIGINT);*/
 
         RTR3Init();
 
-        crDebug("Starting sync thread");
-
-        rc = RTThreadCreate(&stub.hSyncThread, stubSyncThreadProc, NULL, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "Sync");
-        if (RT_FAILURE(rc))
+        if (!disable_sync)
         {
-            crError("Failed to start sync thread! (%x)", rc);
-        }
-        RTThreadUserWait(stub.hSyncThread, 60 * 1000);
-        RTThreadUserReset(stub.hSyncThread);
+            crDebug("Starting sync thread");
 
-        crDebug("Going on");
+            rc = RTThreadCreate(&stub.hSyncThread, stubSyncThreadProc, NULL, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "Sync");
+            if (RT_FAILURE(rc))
+            {
+                crError("Failed to start sync thread! (%x)", rc);
+            }
+            RTThreadUserWait(stub.hSyncThread, 60 * 1000);
+            RTThreadUserReset(stub.hSyncThread);
+
+            crDebug("Going on");
+        }
     }
 #endif
 
