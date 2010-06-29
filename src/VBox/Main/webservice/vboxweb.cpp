@@ -131,6 +131,9 @@ ULONG64             g_cManagedObjects = 0;
 typedef std::map<RTTHREAD, com::Utf8Str> ThreadsMap;
 ThreadsMap          g_mapThreads;
 
+// this mutex is held while methodmaps.cpp converts parameters
+util::WriteLockHandle  *g_pParamsLockHandle;
+
 /****************************************************************************
  *
  *  Command line help

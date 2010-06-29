@@ -51,6 +51,7 @@ extern PRTSTREAM g_pstrLog;
 
 extern util::WriteLockHandle  *g_pAuthLibLockHandle;
 extern util::WriteLockHandle  *g_pSessionsLockHandle;
+extern util::WriteLockHandle  *g_pParamsLockHandle;
 
 /****************************************************************************
  *
