@@ -4687,7 +4687,7 @@ void *VirtualBox::CallbackEvent::handler()
     }
 #endif
 
-#if 0
+#if 1
     // We disable generic events firing for now to not harm performance, but it is already functional
     {
         VBoxEventDesc evDesc;

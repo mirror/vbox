@@ -6863,6 +6863,12 @@
       </desc>
     </attribute>
 
+    <attribute name="eventSource" type="IEventSource" readonly="yes">
+      <desc>
+        Event source for console events.
+      </desc>
+    </attribute>
+
     <method name="powerUp">
       <desc>
         Starts the virtual machine execution using the current machine
@@ -14564,7 +14570,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
      name="VBoxEventType"
-     uuid="dc336827-bc9b-4acc-8880-691f6943bb8b">
+     uuid="25bf47c8-9972-4274-86ea-e6c479796c4a">
 
     <desc>
       Type of an event.
@@ -14597,6 +14603,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </const>
 
+    <const name="InputEvent" value="4">
+      <desc>
+        Wildcard for all input device (keyboard, mouse) events.
+        Events of this type are never delivered, and only used in
+        registerListener() call to simplify registration.
+      </desc>
+    </const>
 
     <const name="LastWildcard" value="31">
       <desc>
@@ -14619,32 +14632,37 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <see>IVirtualBoxCallback::onExtraDataChange</see>
       </desc>
     </const>
-    <const name="OnMediumRegistered" value="35">
+     <const name="OnExtraDataCanChange" value="35">
+      <desc>
+        <see>IVirtualBoxCallback::onExtraDataChange</see>
+      </desc>
+    </const>
+    <const name="OnMediumRegistered" value="36">
       <desc>
         <see>IVirtualBoxCallback::onMediumRegistered</see>
       </desc>
     </const>
-    <const name="OnMachineRegistered" value="36">
+    <const name="OnMachineRegistered" value="37">
       <desc>
         <see>IVirtualBoxCallback::onMachineRegistered</see>
       </desc>
     </const>
-    <const name="OnSessionStateChange" value="37">
+    <const name="OnSessionStateChange" value="38">
       <desc>
         <see>IVirtualBoxCallback::onSessionStateChange</see>
       </desc>
     </const>
-    <const name="OnSnapshotTaken" value="38">
+    <const name="OnSnapshotTaken" value="39">
       <desc>
         <see>IVirtualBoxCallback::onSnapshotTaken</see>
       </desc>
     </const>
-    <const name="OnSnapshotDeleted" value="39">
+    <const name="OnSnapshotDeleted" value="40">
       <desc>
         <see>IVirtualBoxCallback::onSnapshotDeleted</see>
       </desc>
     </const>
-    <const name="OnSnapshotChange" value="40">
+    <const name="OnSnapshotChange" value="41">
       <desc>
         <see>IVirtualBoxCallback::onSnapshotChange</see>
       </desc>
@@ -14654,10 +14672,96 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <see>IVirtualBoxCallback::onGuestPropertyChange</see>
       </desc>
     </const>
-
-    <const name="Last" value="43">
+    <!-- Console events -->
+    <const name="OnMousePointerShapeChange" value="43">
       <desc>
-        Must be last event, used for iterations.
+        <see>IConsoleCallback::onMousePointerShapeChange</see>
+      </desc>
+    </const>
+    <const name="OnMouseCapabilityChange" value="44">
+      <desc>
+        <see>IConsoleCallback::onMouseCapabilityChange</see>
+      </desc>
+    </const>
+    <const name="OnKeyboardLedsChange" value="45">
+      <desc>
+        <see>IConsoleCallback::onKeyboardLedsChange</see>
+      </desc>
+    </const>
+    <const name="OnStateChange" value="46">
+      <desc>
+        <see>IConsoleCallback::onStateChange</see>
+      </desc>
+    </const>
+    <const name="OnAdditionsStateChange" value="47">
+      <desc>
+        <see>IConsoleCallback::onAdditionsStateChange</see>
+      </desc>
+    </const>
+    <const name="OnNetworkAdapterChange" value="48">
+      <desc>
+        <see>IConsoleCallback::onNetworkAdapterChange</see>
+      </desc>
+    </const>
+    <const name="OnSerialPortChange" value="49">
+      <desc>
+        <see>IConsoleCallback::onSerialPortChange</see>
+      </desc>
+    </const>
+    <const name="OnParallelPortChange" value="50">
+      <desc>
+        <see>IConsoleCallback::onParallelPortChange</see>
+      </desc>
+    </const>
+    <const name="OnStorageControllerChange" value="51">
+      <desc>
+        <see>IConsoleCallback::onStorageControllerChange</see>
+      </desc>
+    </const>
+    <const name="OnMediumChange" value="52">
+      <desc>
+        <see>IConsoleCallback::onMediumChange</see>
+      </desc>
+    </const>
+    <const name="OnVRDPServerChange" value="53">
+      <desc>
+        <see>IConsoleCallback::onVRDPServerChange</see>
+      </desc>
+    </const>
+    <const name="OnUSBControllerChange" value="54">
+      <desc>
+        <see>IConsoleCallback::onUSBControllerChange</see>
+      </desc>
+    </const>
+    <const name="OnUSBDeviceStateChange" value="55">
+      <desc>
+        <see>IConsoleCallback::onUSBDeviceStateChange</see>
+      </desc>
+    </const>
+    <const name="OnSharedFolderChange" value="56">
+      <desc>
+        <see>IConsoleCallback::onSharedFolderChange</see>
+      </desc>
+    </const>
+    <const name="OnRuntimeError" value="57">
+      <desc>
+        <see>IConsoleCallback::onRuntimeError</see>
+      </desc>
+    </const>
+    <const name="OnCanShowWindow" value="58">
+      <desc>
+        <see>IConsoleCallback::onCanShowWindow</see>
+      </desc>
+    </const>
+    <const name="OnShowWindow" value="59">
+      <desc>
+        <see>IConsoleCallback::onShowWindow</see>
+      </desc>
+    </const>
+    <!-- Last event marker -->
+    <const name="Last" value="60">
+      <desc>
+        Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
     </const>
 
@@ -14982,7 +15086,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </desc>
   </interface>
 
-   <interface
+  <interface
      name="ISnapshotChangeEvent" extends="ISnapshotEvent"
      uuid="07541941-8079-447a-a33e-47a69c7980db"
      wsmap="managed" autogen="VBoxEvent" id="OnSnapshotChange"
@@ -14991,6 +15095,105 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Snapshot properties (name and/or description) have been changed.
       <see>ISnapshot</see>
     </desc>
+  </interface>
+
+  <interface
+     name="IMousePointerShapeChangeEvent" extends="IEvent"
+     uuid="a6dcf6e8-416b-4181-8c4a-45ec95177aef"
+     wsmap="managed" id="OnMousePointerShapeChange"
+     >
+    <desc>
+      Notification when the guest mouse pointer shape has
+      changed. The new shape data is given.
+    </desc>
+
+    <attribute name="visible" type="boolean" readonly="yes">
+      <desc>
+        Flag whether the pointer is visible.
+      </desc>
+    </attribute>
+    <attribute name="alpha" type="boolean" readonly="yes">
+      <desc>
+        Flag whether the pointer has an alpha channel.
+      </desc>
+    </attribute>
+    <attribute name="xhot" type="unsigned long" readonly="yes">
+      <desc>
+        The pointer hot spot X coordinate.
+      </desc>
+    </attribute>
+    <attribute name="yhot" type="unsigned long" readonly="yes">
+      <desc>
+        The pointer hot spot Y coordinate.
+      </desc>
+    </attribute>
+    <attribute name="width" type="unsigned long" readonly="yes">
+      <desc>
+       Width of the pointer shape in pixels.
+      </desc>
+    </attribute>
+    <attribute name="height" type="unsigned long" readonly="yes">
+      <desc>
+       Height of the pointer shape in pixels.
+      </desc>
+    </attribute>
+    <attribute name="shape" type="octet" safearray="yes" readonly="yes">
+      <desc>
+        Shape buffer arrays.
+
+        The @a shape buffer contains a 1-bpp (bits per pixel) AND mask
+        followed by a 32-bpp XOR (color) mask.
+
+        For pointers without alpha channel the XOR mask pixels are 32
+        bit values: (lsb)BGR0(msb). For pointers with alpha channel
+        the XOR mask consists of (lsb)BGRA(msb) 32 bit values.
+
+        An AND mask is used for pointers with alpha channel, so if the
+        callback does not support alpha, the pointer could be
+        displayed as a normal color pointer.
+
+        The AND mask is a 1-bpp bitmap with byte aligned scanlines. The
+        size of the AND mask therefore is <tt>cbAnd = (width + 7) / 8 *
+          height</tt>. The padding bits at the end of each scanline are
+        undefined.
+
+        The XOR mask follows the AND mask on the next 4-byte aligned
+        offset: <tt>uint8_t *pXor = pAnd + (cbAnd + 3) &amp; ~3</tt>.
+        Bytes in the gap between the AND and the XOR mask are undefined.
+        The XOR mask scanlines have no gap between them and the size of
+        the XOR mask is: <tt>cXor = width * 4 * height</tt>.
+
+        <note>
+          If @a shape is 0, only the pointer visibility is changed.
+        </note>
+      </desc>
+    </attribute>
+  </interface>
+
+  <interface
+     name="IMouseCapabilityChangeEvent" extends="IEvent"
+     uuid="d633ad48-820c-4207-b46c-6bd3596640d5"
+     wsmap="managed" autogen="VBoxEvent" id="OnMouseCapabilityChange"
+     >
+    <desc>
+      Notification when the mouse capabilities reported by the
+      guest have changed. The new capabilities are passed.
+    </desc>
+    <attribute name="supportsAbsolute" type="boolean" readonly="yes">
+      <desc>
+        Supports absolute coordinates.
+      </desc>
+    </attribute>
+    <attribute name="supportsRelative" type="boolean" readonly="yes">
+      <desc>
+        Supports relative coordinates.
+      </desc>
+    </attribute>
+    <attribute name="needsHostCursor" type="boolean" readonly="yes">
+      <desc>
+        If host cursor is needed.
+      </desc>
+    </attribute>
   </interface>
 
   <interface
@@ -15018,6 +15221,96 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Extra data value for the given key.
       </desc>
     </attribute>
+  </interface>
+
+  <interface
+      name="IVetoEvent" extends="IEvent"
+      uuid="9a1a4130-69fe-472f-ac10-c6fa25d75007"
+      wsmap="managed"
+      >
+    <desc>Base abstract interface for veto events.</desc>
+
+    <method name="addVeto">
+      <desc>
+        Adds a veto on this event.
+      </desc>
+      <param name="reason" type="wstring" dir="in">
+        <desc>
+          Reason for veto.
+        </desc>
+      </param>
+    </method>
+
+    <method name="isVetoed">
+      <desc>
+        If this event was vetoed.
+      </desc>
+      <param name="result" type="boolean" dir="return">
+        <desc>
+          Reason for veto.
+        </desc>
+      </param>
+    </method>
+
+    <method name="getVetos">
+      <desc>
+        Current veto list, if size is 0 - no veto.
+      </desc>
+      <param name="result" type="wstring" dir="return" safearray="yes">
+        <desc>
+          Reason for veto.
+        </desc>
+      </param>
+    </method>
+
+  </interface>
+
+  <interface
+      name="ICanExtraDataChangeEvent" extends="IVetoEvent"
+      uuid="245d88bd-800a-40f8-87a6-170d02249a55"
+      wsmap="managed" id="OnExtraDataCanChange"
+      waitable="true"
+      >
+    <desc>
+      Notification when someone tries to change extra data for
+      either the given machine or (if @c null) global extra data.
+      This gives the chance to veto against changes.
+    </desc>
+    <attribute name="machineId" type="uuid" mod="string" readonly="yes">
+      <desc>
+        ID of the machine this event relates to.
+        Null for global extra data changes.
+      </desc>
+    </attribute>
+    <attribute name="key" type="wstring" readonly="yes">
+      <desc>
+        Extra data key that has changed.
+      </desc>
+    </attribute>
+    <attribute name="value" type="wstring" readonly="yes">
+      <desc>
+        Extra data value for the given key.
+      </desc>
+    </attribute>
+  </interface>
+
+  <interface
+      name="ICanShowWindowEvent" extends="IVetoEvent"
+      uuid="adf292b0-92c9-4a77-9d35-e058b39fe0b9"
+      wsmap="managed" id="OnCanShowWindow"
+      waitable="true"
+      >
+    <desc>
+      Notification when a call to
+      <link to="IMachine::canShowConsoleWindow"/> is made by a
+      front-end to check if a subsequent call to
+      <link to="IMachine::showConsoleWindow"/> can succeed.
+
+      The callee should give an answer appropriate to the current
+      machine state using event veto. This answer must
+      remain valid at least until the next
+      <link to="IConsole::state">machine state</link> change.
+    </desc>
   </interface>
 
   <module name="VBoxSVC" context="LocalServer">

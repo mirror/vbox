@@ -585,6 +585,10 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
     unconst(mAudioSniffer) = new AudioSniffer(this);
     AssertReturn(mAudioSniffer, E_FAIL);
 
+    unconst(mEventSource).createObject();
+    rc = mEventSource->init(static_cast<IConsole*>(this));
+    AssertComRCReturnRC(rc);
+
 #ifdef RT_OS_WINDOWS
     if (SUCCEEDED(rc))
         rc = mComEvHelper.init(IID_IConsoleCallback);
@@ -702,6 +706,9 @@ void Console::uninit()
 
     unconst(mControl).setNull();
     unconst(mMachine).setNull();
+
+    // we don't perform uninit() as it's possible that some pending event refers to this source
+    unconst(mEventSource).setNull();
 
     /* Release all callbacks. Do this after uninitializing the components,
      * as some of them are well-behaved and unregister their callbacks.
@@ -1714,6 +1721,20 @@ Console::COMGETTER(SharedFolders)(ComSafeArrayOut(ISharedFolder *, aSharedFolder
 
     SafeIfaceArray<ISharedFolder> sf(mSharedFolders);
     sf.detachTo(ComSafeArrayOutArg(aSharedFolders));
+
+    return S_OK;
+}
+
+
+STDMETHODIMP Console::COMGETTER(EventSource)(IEventSource ** aEventSource)
+{
+    CheckComArgOutPointerValid(aEventSource);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    // no need to lock - lifetime constant
+    mEventSource.queryInterfaceTo(aEventSource);
 
     return S_OK;
 }

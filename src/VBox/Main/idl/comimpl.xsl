@@ -103,6 +103,12 @@
     <xsl:when test="$type='boolean'">
       <xsl:value-of select="'BOOL'" />
     </xsl:when>
+    <xsl:when test="$type='unsigned long'">
+      <xsl:value-of select="'ULONG'" />
+    </xsl:when>
+    <xsl:when test="$type='long'">
+      <xsl:value-of select="'LONG'" />
+    </xsl:when>
     <xsl:otherwise>
       <xsl:call-template name="fatalError">
         <xsl:with-param name="msg" select="concat('Unhandled type: ', $type)" />
