@@ -118,10 +118,10 @@ class SoapQ;
 SoapQ               *g_pSoapQ = NULL;
 
 // this mutex protects the auth lib and authentication
-util::RWLockHandle  *g_pAuthLibLockHandle;
+util::WriteLockHandle  *g_pAuthLibLockHandle;
 
 // this mutex protects all of the below
-util::RWLockHandle  *g_pSessionsLockHandle;
+util::WriteLockHandle  *g_pSessionsLockHandle;
 
 SessionsMap         g_mapSessions;
 ULONG64             g_iMaxManagedObjectID = 0;
@@ -287,7 +287,7 @@ public:
      */
     SoapQ(const struct soap *pSoap)
         : m_soap(pSoap),
-          m_mutex(util::LOCKCLASS_OBJECTSTATE),
+          m_mutex(util::LOCKCLASS_OBJECTSTATE),     // lowest lock order, no other may be held while this is held
           m_cIdleThreads(0)
     {
         RTSemEventMultiCreate(&m_event);
@@ -694,8 +694,8 @@ int main(int argc, char* argv[])
     }
 
     // create the global mutexes
-    g_pAuthLibLockHandle = new util::RWLockHandle(util::LOCKCLASS_OBJECTSTATE);
-    g_pSessionsLockHandle = new util::RWLockHandle(util::LOCKCLASS_OBJECTSTATE);
+    g_pAuthLibLockHandle = new util::WriteLockHandle(util::LOCKCLASS_WEBSERVICE);
+    g_pSessionsLockHandle = new util::WriteLockHandle(util::LOCKCLASS_WEBSERVICE);
 
     // SOAP queue pumper thread
     RTTHREAD  tQPumper;
@@ -772,8 +772,7 @@ int fntWatchdog(RTTHREAD ThreadSelf, void *pvUser)
         time_t                      tNow;
         time(&tNow);
 
-        // lock the sessions while we're iterating; this blocks
-        // out the COM code from messing with it
+        // we're messing with sessions, so lock them
         util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
         WEBDEBUG(("Watchdog: checking %d sessions\n", g_mapSessions.size()));
 
@@ -1014,7 +1013,7 @@ class WebServiceSessionPrivate
 /**
  * Constructor for the session object.
  *
- * Preconditions: Caller must have locked g_pSessionsLockHandle in write mode.
+ * Preconditions: Caller must have locked g_pSessionsLockHandle.
  *
  * @param username
  * @param password
@@ -1035,7 +1034,7 @@ WebServiceSession::WebServiceSession()
 /**
  * Destructor. Cleans up and destroys all contained managed object references on the way.
  *
- * Preconditions: Caller must have locked g_pSessionsLockHandle in write mode.
+ * Preconditions: Caller must have locked g_pSessionsLockHandle.
  */
 WebServiceSession::~WebServiceSession()
 {
@@ -1190,14 +1189,14 @@ int WebServiceSession::authenticate(const char *pcszUsername,
  *  ComPtr<IVirtualBox>, for example. As we store the ComPtr<IUnknown> in
  *  our private hash table, we must search for one too.
  *
- * Preconditions: Caller must have locked g_pSessionsLockHandle in read mode.
+ * Preconditions: Caller must have locked g_pSessionsLockHandle.
  *
  * @param pcu pointer to a COM object.
  * @return The existing ManagedObjectRef that represents the COM object, or NULL if there's none yet.
  */
 ManagedObjectRef* WebServiceSession::findRefFromPtr(const ComPtr<IUnknown> &pcu)
 {
-    // Assert(g_pSessionsLockHandle->isReadLockOnCurrentThread());      // @todo
+    Assert(g_pSessionsLockHandle->isWriteLockOnCurrentThread());
 
     IUnknown *p = pcu;
     uintptr_t ulp = (uintptr_t)p;
@@ -1227,7 +1226,7 @@ ManagedObjectRef* WebServiceSession::findRefFromPtr(const ComPtr<IUnknown> &pcu)
  */
 WebServiceSession* WebServiceSession::findSessionFromRef(const WSDLT_ID &id)
 {
-    // Assert(g_pSessionsLockHandle->isReadLockOnCurrentThread()); // @todo
+    Assert(g_pSessionsLockHandle->isWriteLockOnCurrentThread());
 
     WebServiceSession *pSession = NULL;
     uint64_t sessid;
@@ -1312,7 +1311,7 @@ void WebServiceSession::DumpRefs()
  *  createRefFromObject() template function in vboxweb.h, which
  *  does perform that check.
  *
- * Preconditions: Caller must have locked g_pSessionsLockHandle in write mode.
+ * Preconditions: Caller must have locked g_pSessionsLockHandle.
  *
  * @param pObj
  */
@@ -1347,7 +1346,7 @@ ManagedObjectRef::ManagedObjectRef(WebServiceSession &session,
  * Destructor; removes the instance from the global hash of
  * managed objects.
  *
- * Preconditions: Caller must have locked g_pSessionsLockHandle in write mode.
+ * Preconditions: Caller must have locked g_pSessionsLockHandle.
  */
 ManagedObjectRef::~ManagedObjectRef()
 {
@@ -1476,7 +1475,8 @@ int __vbox__IManagedObjectRef_USCOREgetInterfaceName(
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
     do {
-        util::AutoReadLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
+        // findRefFromId require the lock
+        util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
 
         ManagedObjectRef *pRef;
         if (!ManagedObjectRef::findRefFromId(req->_USCOREthis, &pRef, false))
@@ -1509,8 +1509,7 @@ int __vbox__IManagedObjectRef_USCORErelease(
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
     do {
-        // findRefFromId needs read lock, and the delete call below requires
-        // the write lock, so get the write lock here
+        // findRefFromId and the delete call below require the lock
         util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
 
         ManagedObjectRef *pRef;
@@ -1620,14 +1619,13 @@ int __vbox__IWebsessionManager_USCOREgetSessionObject(
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
     do {
-        // findSessionFromRef needs read lock
-        util::AutoReadLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
+        // findSessionFromRef needs lock
+        util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
 
         WebServiceSession* pSession;
         if ((pSession = WebServiceSession::findSessionFromRef(req->refIVirtualBox)))
-        {
             resp->returnval = pSession->getSessionObject();
-        }
+
     } while (0);
 
     WEBDEBUG(("-- leaving %s, rc: 0x%lX\n", __FUNCTION__, rc));
@@ -1653,8 +1651,7 @@ int __vbox__IWebsessionManager_USCORElogoff(
     WEBDEBUG(("-- entering %s\n", __FUNCTION__));
 
     do {
-        // findSessionFromRef needs read lock, and the session destructor requires
-        // the write lock, so get the write lock here
+        // findSessionFromRef and the session destructor require the lock
         util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
 
         WebServiceSession* pSession;
