@@ -844,6 +844,7 @@ static int usbHidSendReport(PUSBHID pThis)
 
         int rc = usbHidFillReport(pReport, pThis->abUnreportedKeys,
                                   pThis->abDepressedKeys);
+        pThis->fHasPendingChanges = false;
         AssertRCReturn(rc, rc);
         return usbHidCompleteOk(pThis, pUrb, sizeof(*pReport));
     }
