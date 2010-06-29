@@ -430,7 +430,7 @@ def monitorVBox(ctx, dur):
         pass
     vbox.unregisterCallback(cb)
 
-def monitorVBox2(ctx, dur):
+def monitorSource(ctx, es, active, dur):
     def handleEventImpl(ev):
          print "got event: %s %s" %(ev, str(ev.type))
          if ev.type == ctx['global'].constants.VBoxEventType_OnMachineStateChange:
@@ -445,34 +445,32 @@ def monitorVBox2(ctx, dur):
      def handleEvent(self, ev):
          handleEventImpl(ev)
 
-    vbox = ctx['vb']
-    active = True
     if active:
         listener = ctx['global'].createListener(EventListener)
     else:
-        listener = vbox.eventSource.createListener()
+        listener = es.createListener()
     registered = False
     if dur == -1:
         # not infinity, but close enough
         dur = 100000
     try:
-        vbox.eventSource.registerListener(listener, [ctx['global'].constants.VBoxEventType_Any], active)
+        es.registerListener(listener, [ctx['global'].constants.VBoxEventType_Any], active)
         registered = True
         end = time.time() + dur
         while  time.time() < end:
             if active:
                 ctx['global'].waitForEvents(500)
             else:
-                ev = vbox.eventSource.getEvent(listener, 500)
+                ev = es.getEvent(listener, 500)
                 if ev:
                     handleEventImpl(ev)
                     # otherwise waitable events will leak (active listeners ACK automatically)
-                    vbox.eventSource.eventProcessed(listener, ev)
+                    es.eventProcessed(listener, ev)
     # We need to catch all exceptions here, otherwise listener will never be unregistered
     except:
         pass
     if listener and registered:
-        vbox.eventSource.unregisterListener(listener)
+        es.unregisterListener(listener)
 
 
 def takeScreenshot(ctx,console,args):
@@ -1426,6 +1424,20 @@ def monitorGuestCmd(ctx, args):
     cmdExistingVm(ctx, mach, 'monitorGuest', dur)
     return 0
 
+def monitorGuest2Cmd(ctx, args):
+    if (len(args) < 2):
+        print "usage: monitorGuest2 name (duration)"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    dur = 5
+    if len(args) > 2:
+        dur = float(args[2])
+    active = True
+    cmdExistingVm(ctx, mach, 'guestlambda', [lambda ctx,mach,console,args:  monitorSource(ctx, console.eventSource, active, dur)])
+    return 0
+
 def monitorVBoxCmd(ctx, args):
     if (len(args) > 2):
         print "usage: monitorVBox (duration)"
@@ -1443,7 +1455,9 @@ def monitorVBox2Cmd(ctx, args):
     dur = 5
     if len(args) > 1:
         dur = float(args[1])
-    monitorVBox2(ctx, dur)
+    vbox = ctx['vb']
+    active = True
+    monitorSource(ctx, vbox.eventSource, active, dur)
     return 0
 
 def getAdapterType(ctx, type):
@@ -2913,6 +2927,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'host':['Show host information', hostCmd, 0],
             'guest':['Execute command for guest: guest Win32 \'console.mouse.putMouseEvent(20, 20, 0, 0, 0)\'', guestCmd, 0],
             'monitorGuest':['Monitor what happens with the guest for some time: monitorGuest Win32 10', monitorGuestCmd, 0],
+            'monitorGuest2':['Monitor what happens with the guest for some time: monitorGuest2 Win32 10', monitorGuest2Cmd, 0],
             'monitorVBox':['Monitor what happens with Virtual Box for some time: monitorVBox 10', monitorVBoxCmd, 0],
             'monitorVBox2':['(temp)Monitor what happens with Virtual Box for some time: monitorVBox2 10', monitorVBox2Cmd, 0],
             'portForward':['Setup permanent port forwarding for a VM, takes adapter number host port and guest port: portForward Win32 0 8080 80', portForwardCmd, 0],
