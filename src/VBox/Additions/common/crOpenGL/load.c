@@ -30,6 +30,13 @@
 #include "cr_threads.h"
 #endif
 
+#ifdef VBOX_WITH_WDDM
+#include <d3d9types.h>
+#include <D3dumddi.h>
+#include "../../WINNT/Graphics/Miniport/wddm/VBoxVideoIf.h"
+#include "../../WINNT/Graphics/Display/wddm/vboxdispmp.h"
+#endif
+
 /**
  * If you change this, see the comments in tilesortspu_context.c
  */
@@ -652,10 +659,147 @@ void stubSetDefaultConfigurationOptions(void)
 }
 
 #ifdef CR_NEWWINTRACK
+# ifdef VBOX_WITH_WDDM
+static stubDispatchVisibleRegions(WindowInfo *pWindow)
+{
+    DWORD dwCount;
+    LPRGNDATA lpRgnData;
+
+    dwCount = GetRegionData(pWindow->hVisibleRegion, 0, NULL);
+    lpRgnData = crAlloc(dwCount);
+
+    if (lpRgnData)
+    {
+        GetRegionData(pWindow->hVisibleRegion, dwCount, lpRgnData);
+        crDebug("Dispatched WindowVisibleRegion (%i, cRects=%i)", pWindow->spuWindow, lpRgnData->rdh.nCount);
+        stub.spuDispatch.WindowVisibleRegion(pWindow->spuWindow, lpRgnData->rdh.nCount, (GLint*) lpRgnData->Buffer);
+        crFree(lpRgnData);
+    }
+    else crWarning("GetRegionData failed, VisibleRegions update failed");
+}
+
+static HRGN stubMakeRegionFromRects(PVBOXVIDEOCM_CMD_RECTS pRegions, uint32_t start)
+{
+    HRGN hRgn, hTmpRgn;
+    uint32_t i;
+
+    if (pRegions->RectsInfo.cRects<=start)
+    {
+        return INVALID_HANDLE_VALUE;
+    }
+
+    hRgn = CreateRectRgn(0, 0, 0, 0);
+    for (i=start; i<pRegions->RectsInfo.cRects; ++i)
+    {
+        hTmpRgn = CreateRectRgnIndirect(&pRegions->RectsInfo.aRects[i]);
+        CombineRgn(hRgn, hRgn, hTmpRgn, RGN_OR);
+        DeleteObject(hTmpRgn);
+    }
+    return hRgn;
+}
+
+static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2)
+{
+    WindowInfo *pWindow = (WindowInfo *) data1;
+    VBOXDISPMP_REGIONS *pRegions = (VBOXDISPMP_REGIONS*) data2;
+    bool bChanged = false;
+    HRGN hNewRgn = INVALID_HANDLE_VALUE;
+
+    if (pRegions->hWnd != pWindow->hWnd)
+    {
+        return;
+    }
+
+    if (!pWindow->mapped)
+    {
+        pWindow->mapped = GL_TRUE;
+        bChanged = true;
+        crDebug("Dispatched: WindowShow(%i, %i)", pWindow->spuWindow, pWindow->mapped);
+        stub.spu->dispatch_table.WindowShow(pWindow->spuWindow, pWindow->mapped);
+    }
+
+    if (pRegions->pRegions->fFlags.bAddVisibleRects && pRegions->pRegions->fFlags.bPositionRect)
+    {
+        int winX, winY;
+        unsigned int winW, winH;
+
+        winX = pRegions->pRegions->RectsInfo.aRects[0].left;
+        winY = pRegions->pRegions->RectsInfo.aRects[0].top;
+        winW = pRegions->pRegions->RectsInfo.aRects[0].right - winX;
+        winH = pRegions->pRegions->RectsInfo.aRects[0].bottom - winY;
+
+        if (stub.trackWindowPos && (winX!=pWindow->x || winY!=pWindow->y))
+        {
+            crDebug("Dispatched WindowPosition (%i)", pWindow->spuWindow);
+            stub.spuDispatch.WindowPosition(pWindow->spuWindow, winX, winY);
+            pWindow->x = winX;
+            pWindow->y = winY;
+            bChanged = true;
+        }
+
+        if (stub.trackWindowSize && (winW!=pWindow->width || winH!=pWindow->height))
+        {
+            crDebug("Dispatched WindowSize (%i)", pWindow->spuWindow);
+            stub.spuDispatch.WindowSize(pWindow->spuWindow, winW, winH);
+            pWindow->width = winW;
+            pWindow->height = winH;
+            bChanged = true;
+        }
+
+        hNewRgn = stubMakeRegionFromRects(pRegions->pRegions, 1);
+    }
+    else
+    {
+        hNewRgn = stubMakeRegionFromRects(pRegions->pRegions, 0);
+    }
+
+    if (hNewRgn!=INVALID_HANDLE_VALUE)
+    {
+        POINT pt;
+        pt.x = 0;
+        pt.y = 0;
+        ScreenToClient(pWindow->hWnd, &pt);
+        OffsetRgn(hNewRgn, pt.x, pt.y);
+
+        if (pWindow->hVisibleRegion!=INVALID_HANDLE_VALUE)
+        {
+            CombineRgn(hNewRgn, pWindow->hVisibleRegion, hNewRgn, 
+                       pRegions->pRegions->fFlags.bAddHiddenRects ? RGN_DIFF:RGN_OR);
+
+            if (!EqualRgn(pWindow->hVisibleRegion, hNewRgn))
+            {
+                DeleteObject(pWindow->hVisibleRegion);
+                pWindow->hVisibleRegion = hNewRgn;
+                stubDispatchVisibleRegions(pWindow);
+                bChanged = true;
+            }
+            else
+            {
+                DeleteObject(hNewRgn);
+            }
+        }
+        else
+        {
+            if (pRegions->pRegions->fFlags.bAddVisibleRects)
+            {
+                pWindow->hVisibleRegion = hNewRgn;
+                stubDispatchVisibleRegions(pWindow);
+                bChanged = true;
+            }
+        }
+    }
+
+    if (bChanged)
+    {
+        stub.spu->dispatch_table.Flush();
+    }
+}
+# endif
+
 static void stubSyncTrCheckWindowsCB(unsigned long key, void *data1, void *data2)
 {
     WindowInfo *pWindow = (WindowInfo *) data1;
-    ContextInfo *pCtx = (ContextInfo *) data2;
+    (void) data2;
 
     if (pWindow->type!=CHROMIUM || pWindow->spuWindow==0)
     {
@@ -682,6 +826,12 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
 {
 #ifdef WINDOWS
     MSG msg;
+# ifdef VBOX_WITH_WDDM
+    static VBOXDISPMP_CALLBACKS VBoxDispMpTstCallbacks = {NULL, NULL, NULL};
+    HMODULE hVBoxD3D = NULL;
+    VBOXDISPMP_REGIONS Regions;
+    HRESULT hr;
+# endif
 #endif
 
     (void) pvUser;
@@ -689,6 +839,37 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
     crDebug("Sync thread started");
 #ifdef WINDOWS
     PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
+# ifdef VBOX_WITH_WDDM
+    if (GetModuleHandleEx(0, "VBoxDispD3D", &hVBoxD3D))
+    {
+        PFNVBOXDISPMP_GETCALLBACKS pfnVBoxDispMpGetCallbacks;
+        pfnVBoxDispMpGetCallbacks = (PFNVBOXDISPMP_GETCALLBACKS)GetProcAddress(hVBoxD3D, TEXT("VBoxDispMpGetCallbacks"));
+        if (pfnVBoxDispMpGetCallbacks)
+        {
+            hr = pfnVBoxDispMpGetCallbacks(VBOXDISPMP_VERSION, &VBoxDispMpTstCallbacks);
+            if (S_OK==hr)
+            {
+                CRASSERT(VBoxDispMpTstCallbacks.pfnEnableEvents);
+                CRASSERT(VBoxDispMpTstCallbacks.pfnDisableEvents);
+                CRASSERT(VBoxDispMpTstCallbacks.pfnGetRegions);
+
+                hr = VBoxDispMpTstCallbacks.pfnEnableEvents();
+                if (hr != S_OK)
+                {
+                    crWarning("VBoxDispMpTstCallbacks.pfnEnableEvents failed");
+                }
+                else
+                {
+                    crDebug("running with VBoxDispD3D");
+                }
+            }
+            else
+            {
+                crWarning("VBoxDispMpGetCallbacks failed");
+            }
+        }
+    }
+# endif
 #endif
 
     crLockMutex(&stub.mutex);
@@ -702,8 +883,29 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
 #ifdef WINDOWS
         if (!PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
         {
-            crHashtableWalk(stub.windowTable, stubSyncTrCheckWindowsCB, NULL);
-            RTThreadSleep(50);
+# ifdef VBOX_WITH_WDDM
+            if (VBoxDispMpTstCallbacks.pfnGetRegions)
+            {
+                hr = VBoxDispMpTstCallbacks.pfnGetRegions(&Regions, 50);
+                if (S_OK==hr)
+                {
+                    /*hacky way to make sure window wouldn't be deleted in another thread as we hold hashtable lock here*/
+                    crHashtableWalk(stub.windowTable, stubSyncTrUpdateWindowCB, &Regions);
+                }
+                else
+                {
+                    if (WAIT_TIMEOUT!=hr)
+                    {
+                        crWarning("VBoxDispMpTstCallbacks.pfnGetRegions failed with 0x%x", hr);
+                    }
+                }
+            }
+            else
+# endif
+            {
+                crHashtableWalk(stub.windowTable, stubSyncTrCheckWindowsCB, NULL);
+                RTThreadSleep(50);
+            }
         }
         else
         {
@@ -726,6 +928,16 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
 #endif
     }
 
+#ifdef VBOX_WITH_WDDM
+    if (VBoxDispMpTstCallbacks.pfnDisableEvents)
+    {
+        VBoxDispMpTstCallbacks.pfnDisableEvents();
+    }
+    if (hVBoxD3D)
+    {
+        FreeLibrary(hVBoxD3D);
+    }
+#endif
     crDebug("Sync thread stopped");
     return 0;
 }

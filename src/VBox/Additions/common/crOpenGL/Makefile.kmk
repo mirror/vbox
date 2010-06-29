@@ -85,6 +85,11 @@ else ifdef VBoxOGL_FAKEDRI
  endif
 endif
 
+ifdef VBOXWDDM
+ VBoxOGL_DEFS.win += VBOX_WITH_WDDM
+ VBoxOGL_SDKS     += WINDDKWLH
+endif
+
 ifeq ($(KBUILD_TARGET),win)
 #fixme?, INTERMEDIATES.win ain't working
  VBoxOGL_INTERMEDIATES += $(VBOX_PATH_CROGL_GENFILES)/cr_gl.h
