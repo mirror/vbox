@@ -823,10 +823,10 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
         {
             Log(("svcCall: SHFL_FN_MAP_FOLDER\n"));
             if (BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
-                LogRel(("SharedFolders host service: request to map folder %S\n",
+                LogRel(("SharedFolders host service: request to map folder '%S'\n",
                         ((PSHFLSTRING)paParms[0].u.pointer.addr)->String.utf8));
             else
-                LogRel(("SharedFolders host service: request to map folder %lS\n",
+                LogRel(("SharedFolders host service: request to map folder '%lS'\n",
                         ((PSHFLSTRING)paParms[0].u.pointer.addr)->String.ucs2));
 
             /* Verify parameter count and types. */
@@ -1155,10 +1155,10 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
     {
         Log(("svcCall: SHFL_FN_ADD_MAPPING\n"));
         LogRel(("SharedFolders host service: adding host mapping.\n"));
-        LogRel(("    Host path %lS, map name %lS, writable %d\n",
+        LogRel(("    Host path '%lS', map name '%lS', %s\n",
                 ((SHFLSTRING *)paParms[0].u.pointer.addr)->String.ucs2,
                 ((SHFLSTRING *)paParms[1].u.pointer.addr)->String.ucs2,
-                paParms[2].u.uint32));
+                paParms[2].u.uint32 ? "writable" : "read-only"));
 
         /* Verify parameter count and types. */
         if (cParms != SHFL_CPARMS_ADD_MAPPING)
@@ -1205,7 +1205,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
     case SHFL_FN_REMOVE_MAPPING:
     {
         Log(("svcCall: SHFL_FN_REMOVE_MAPPING\n"));
-        LogRel(("SharedFolders host service: removing host mapping %lS\n",
+        LogRel(("SharedFolders host service: removing host mapping '%lS'\n",
                 ((SHFLSTRING *)paParms[0].u.pointer.addr)->String.ucs2));
 
         /* Verify parameter count and types. */
