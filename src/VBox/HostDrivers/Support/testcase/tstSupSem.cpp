@@ -202,24 +202,51 @@ int main(int argc, char **argv)
      * Spawn a thread waiting for an event, then spawn a new child process (of ourselves)
      * and make sure that this does not alter the intended behaviour of our event semaphore implementation (see #5090).
      */
-    RTTestSub(hTest, "Process spawn");
+    RTTestSub(hTest, "SRE Process Spawn");
     hThread = NIL_RTTHREAD;
     g_cMillies = 120*1000;
     RTTESTI_CHECK_RC(SUPSemEventCreate(pSession, &hEvent), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTThreadCreate(&hThread, tstSupSemInterruptibleSRE, (void *)hEvent, 0, RTTHREADTYPE_TIMER, RTTHREADFLAGS_WAITABLE, "IntSRE"), VINF_SUCCESS);
 
     const char *apszArgs[3] = { argv[0], "child", NULL };
-    RTPROCESS Process;
+    RTPROCESS Process = NIL_RTPROCESS;
     RTThreadSleep(250);
     RTTESTI_CHECK_RC(RTProcCreate(apszArgs[0], apszArgs, RTENV_DEFAULT, 0, &Process), VINF_SUCCESS);
 
     RTThreadSleep(250);
     RTTESTI_CHECK_RC(SUPSemEventSignal(pSession, hEvent), VINF_SUCCESS);
 
-    rcThread = VINF_SUCCESS;
+    rcThread = VERR_GENERAL_FAILURE;
     RTTESTI_CHECK_RC(RTThreadWait(hThread, 120*1000, &rcThread), VINF_SUCCESS);
     RTTESTI_CHECK_RC(rcThread, VINF_SUCCESS);
     RTTESTI_CHECK_RC(SUPSemEventClose(pSession, hEvent), VINF_OBJECT_DESTROYED);
+
+
+    RTTestSub(hTest, "MRE Process Spawn");
+    hThread = NIL_RTTHREAD;
+    g_cMillies = 120*1000;
+    RTTESTI_CHECK_RC(SUPSemEventMultiCreate(pSession, &hEvent), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTThreadCreate(&hThread, tstSupSemInterruptibleMRE, (void *)hEvent, 0, RTTHREADTYPE_TIMER, RTTHREADFLAGS_WAITABLE, "IntSRE"), VINF_SUCCESS);
+    
+    RTTHREAD hThread2 = NIL_RTTHREAD;
+    RTTESTI_CHECK_RC(RTThreadCreate(&hThread2, tstSupSemInterruptibleMRE, (void *)hEvent, 0, RTTHREADTYPE_TIMER, RTTHREADFLAGS_WAITABLE, "IntSRE"), VINF_SUCCESS);
+
+    Process = NIL_RTPROCESS;
+    RTThreadSleep(250);
+    RTTESTI_CHECK_RC(RTProcCreate(apszArgs[0], apszArgs, RTENV_DEFAULT, 0, &Process), VINF_SUCCESS);
+
+    RTThreadSleep(250);
+    RTTESTI_CHECK_RC(SUPSemEventMultiSignal(pSession, hEvent), VINF_SUCCESS);
+
+    rcThread = VERR_GENERAL_FAILURE;
+    RTTESTI_CHECK_RC(RTThreadWait(hThread, 120*1000, &rcThread), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(rcThread, VINF_SUCCESS);
+
+    int rcThread2 = VERR_GENERAL_FAILURE;
+    RTTESTI_CHECK_RC(RTThreadWait(hThread2, 120*1000, &rcThread2), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(rcThread2, VINF_SUCCESS);
+
+    RTTESTI_CHECK_RC(SUPSemEventMultiClose(pSession, hEvent), VINF_OBJECT_DESTROYED);
 
 #endif /* !OS2 && !WINDOWS */
 
