@@ -28,6 +28,7 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/log.h>
+#include <include/internal/pgm.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>

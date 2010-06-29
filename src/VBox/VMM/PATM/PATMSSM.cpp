@@ -32,7 +32,7 @@
 #include "PATMA.h"
 #include <VBox/vm.h>
 #include <VBox/csam.h>
-
+#include <include/internal/pgm.h>
 #include <VBox/dbg.h>
 #include <VBox/err.h>
 #include <VBox/log.h>

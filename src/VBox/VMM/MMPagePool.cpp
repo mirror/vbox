@@ -27,6 +27,7 @@
 #include <VBox/param.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
+#include <include/internal/pgm.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #define USE_INLINE_ASM_BIT_OPS
