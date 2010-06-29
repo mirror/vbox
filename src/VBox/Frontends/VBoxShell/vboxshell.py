@@ -431,30 +431,45 @@ def monitorVBox(ctx, dur):
     vbox.unregisterCallback(cb)
 
 def monitorVBox2(ctx, dur):
+    def handleEventImpl(ev):
+         print "got event: %s %s" %(ev, str(ev.type))
+         if ev.type == ctx['global'].constants.VBoxEventType_OnMachineStateChange:
+             scev = ctx['global'].queryInterface(ev, 'IMachineStateChangeEvent')
+             if scev:
+                 print "state event: mach=%s state=%s" %(scev.machineId, scev.state)
+
+    class EventListener:
+     def __init__(self, arg):
+         pass
+
+     def handleEvent(self, ev):
+         handleEventImpl(ev)
+
     vbox = ctx['vb']
-    listener = vbox.eventSource.createListener()
+    active = True
+    if active:
+        listener = ctx['global'].createListener(EventListener)
+    else:
+        listener = vbox.eventSource.createListener()
     registered = False
     if dur == -1:
         # not infinity, but close enough
         dur = 100000
     try:
-        vbox.eventSource.registerListener(listener, [ctx['global'].constants.VBoxEventType_Any], False)
+        vbox.eventSource.registerListener(listener, [ctx['global'].constants.VBoxEventType_Any], active)
         registered = True
         end = time.time() + dur
         while  time.time() < end:
-            ev = vbox.eventSource.getEvent(listener, 500)
-            if ev:
-                print "got event: %s %s" %(ev, str(ev.type))
-                if ev.type == ctx['global'].constants.VBoxEventType_OnMachineStateChange:
-                    scev = ctx['global'].queryInterface(ev, 'IMachineStateChangeEvent')
-                    if scev:
-                        print "state event: mach=%s state=%s" %(scev.machineId, scev.state)
-                # otherwise waitable events will leak
-                vbox.eventSource.eventProcessed(listener, ev)
+            if active:
+                ctx['global'].waitForEvents(500)
+            else:
+                ev = vbox.eventSource.getEvent(listener, 500)
+                if ev:
+                    handleEventImpl(ev)
+                    # otherwise waitable events will leak (active listeners ACK automatically)
+                    vbox.eventSource.eventProcessed(listener, ev)
     # We need to catch all exceptions here, otherwise listener will never be unregistered
-    except Exception, e:
-        printErr(ctx,e)
-        traceback.print_exc()
+    except:
         pass
     if listener and registered:
         vbox.eventSource.unregisterListener(listener)
@@ -1012,7 +1027,7 @@ def execInGuest(ctx,console,args,env,user,passwd,tmo):
     if pid != 0:
         try:
             while True:
-                data = guest.getProcessOutput(pid, 0, 1000, 4096)
+                data = guest.getProcessOutput(pid, 0, 10000, 4096)
                 if data and len(data) > 0:
                     sys.stdout.write(data)
                     continue
@@ -3057,7 +3072,7 @@ def interpret(ctx):
       except:
         pass
     cmds = []
-    
+
     if g_cmd is not None:
         cmds = g_cmd.split(';')
     it = cmds.__iter__()

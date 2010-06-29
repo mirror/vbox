@@ -274,6 +274,30 @@ class PlatformMSCOM:
         exec (str,d,d)
         return d['result']
 
+    def createListener(self, impl, arg):
+        d = {}
+        d['BaseClass'] = impl
+        d['arg'] = arg
+        d['tlb_guid'] = PlatformMSCOM.VBOX_TLB_GUID
+        str = ""
+        str += "import win32com.server.util\n"
+        str += "import pythoncom\n"
+
+        str += "class ListenerImpl(BaseClass):\n"
+        str += "   _com_interfaces_ = ['IEventListener']\n"
+        str += "   _typelib_guid_ = tlb_guid\n"
+        str += "   _typelib_version_ = 1, 0\n"
+        str += "   _reg_clsctx_ = pythoncom.CLSCTX_INPROC_SERVER\n"
+        # Maybe we'd better implement Dynamic invoke policy, to be more flexible here
+        str += "   _reg_policy_spec_ = 'win32com.server.policy.EventHandlerPolicy'\n"
+
+        # capitalized version of callback method
+        str += "   HandleEvent=BaseClass.handleEvent\n"
+        str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
+        str += "result = ListenerImpl()\n"
+        exec (str,d,d)
+        return d['result']
+
     def waitForEvents(self, timeout):
         from win32api import GetCurrentThreadId
         from win32event import MsgWaitForMultipleObjects, \
@@ -360,6 +384,19 @@ class PlatformXPCOM:
         exec (str,d,d)
         return d['result']
 
+    def createListener(self, impl, arg):
+        d = {}
+        d['BaseClass'] = impl
+        d['arg'] = arg
+        str = ""
+        str += "import xpcom.components\n"
+        str += "class ListenerImpl(BaseClass):\n"
+        str += "   _com_interfaces_ = xpcom.components.interfaces.IEventListener\n"
+        str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
+        str += "result = ListenerImpl()\n"
+        exec (str,d,d)
+        return d['result']
+
     def waitForEvents(self, timeout):
         import xpcom
         xpcom._xpcom.WaitForEvents(timeout)
@@ -442,6 +479,9 @@ class PlatformWEBSERVICE:
 
     def createCallback(self, iface, impl, arg):
         raise Exception("no callbacks for webservices")
+
+    def createListener(self, impl, arg):
+        raise Exception("no active listeners for webservices")
 
     def waitForEvents(self, timeout):
         # Webservices cannot do that yet
@@ -542,6 +582,9 @@ class VirtualBoxManager:
 
     def createCallback(self, iface, impl, arg):
         return self.platform.createCallback(iface, impl, arg)
+
+    def createListener(self, impl, arg = None):
+        return self.platform.createListener(impl, arg)
 
     def waitForEvents(self, timeout):
         return self.platform.waitForEvents(timeout)
