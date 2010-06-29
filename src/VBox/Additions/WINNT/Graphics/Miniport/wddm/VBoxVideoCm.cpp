@@ -366,7 +366,7 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXDISPIFESCAPE_GETVBOXV
     PVBOXVIDEOCM_SESSION pSession = pContext->pSession;
     PVBOXVIDEOCM_CMD_DR pHdr;
     LIST_ENTRY DetachedList;
-    PLIST_ENTRY pCurEntry;
+    PLIST_ENTRY pCurEntry = NULL;
     uint32_t cbCmdsReturned = 0;
     uint32_t cbRemainingCmds = 0;
     uint32_t cbRemainingFirstCmd = 0;
@@ -385,7 +385,7 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXDISPIFESCAPE_GETVBOXV
         {
             if (!IsListEmpty(&pSession->CommandsList))
             {
-                Assert(pCurEntry == &pSession->CommandsList);
+                Assert(!pCurEntry);
                 pHdr = VBOXCMENTRY_2_CMD(pSession->CommandsList.Blink);
                 Assert(pHdr->CmdHdr.cbCmd);
                 if (cbData >= pHdr->CmdHdr.cbCmd)
@@ -410,6 +410,7 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXDISPIFESCAPE_GETVBOXV
         }
         else
         {
+            Assert(pCurEntry);
             if (pCurEntry != &pSession->CommandsList)
             {
                 pHdr = VBOXCMENTRY_2_CMD(pCurEntry);
@@ -428,11 +429,13 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXDISPIFESCAPE_GETVBOXV
     ExReleaseFastMutex(&pSession->Mutex);
 
     pCmd->Hdr.cbCmdsReturned = 0;
-    for (pCurEntry = DetachedList.Blink; DetachedList.Blink != &DetachedList; pCurEntry = pCurEntry->Blink)
+    for (pCurEntry = DetachedList.Blink; pCurEntry != &DetachedList; pCurEntry = DetachedList.Blink)
     {
+        pHdr = VBOXCMENTRY_2_CMD(pCurEntry);
         memcpy(pvData, &pHdr->CmdHdr, pHdr->CmdHdr.cbCmd);
         pvData += pHdr->CmdHdr.cbCmd;
         pCmd->Hdr.cbCmdsReturned += pHdr->CmdHdr.cbCmd;
+        RemoveEntryList(pCurEntry);
         vboxVideoCmCmdReleaseByHdr(pHdr);
     }
 

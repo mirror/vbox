@@ -3170,7 +3170,7 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
         Assert(hr == S_OK);
 #endif
     }
-#if 1
+#if 0
     else
 #endif
     {

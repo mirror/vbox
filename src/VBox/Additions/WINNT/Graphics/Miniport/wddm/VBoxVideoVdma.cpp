@@ -300,7 +300,7 @@ NTSTATUS vboxVdmaGgDirtyRectsProcess(VBOXVDMAPIPE_CMD_RECTSINFO *pRectsInfo)
                 pCmd = (PVBOXVIDEOCM_CMD_RECTS)vboxVideoCmCmdReinitForContext(pCmd, &pCurContext->CmContext);
             }
 
-            vboxVdmaDirtyRectsCalcIntersection(&pContext->ViewRect, pRects, &pCmd->RectsInfo);
+            vboxVdmaDirtyRectsCalcIntersection(&pCurContext->ViewRect, pRects, &pCmd->RectsInfo);
             if (pCmd->RectsInfo.cRects)
             {
                 Assert(pCmd->fFlags.Value == 0);
@@ -356,10 +356,12 @@ NTSTATUS vboxVdmaGgDirtyRectsProcess(VBOXVDMAPIPE_CMD_RECTSINFO *pRectsInfo)
                 pDrCmd->fFlags.bPositionRect = 1;
                 pDrCmd->RectsInfo.aRects[0] = *pContextRect;
                 pDirtyRect = &pDrCmd->RectsInfo.aRects[1];
+                pContext->ViewRect = *pContextRect;
             }
             else
                 pDirtyRect = &pDrCmd->RectsInfo.aRects[0];
 
+            Assert(pRects->cRects);
             pDrCmd->fFlags.bAddVisibleRects = 1;
             memcpy (pDirtyRect, pRects->aRects, sizeof (RECT) * pRects->cRects);
 
