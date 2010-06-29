@@ -792,10 +792,11 @@ sfprov_readdir(
 	SHFLSTRING *mask_str = NULL;	/* must be path with "/*" appended */
 	int mask_size;
 	sfp_file_t *fp;
-	static char infobuff[2 * MAXNAMELEN];	/* not on stack!! */
-	SHFLDIRINFO *info = (SHFLDIRINFO *)&infobuff;
+	uint32_t infobuff_alloc = 16384;
+	SHFLDIRINFO *infobuff = NULL, *info;
 	uint32_t numbytes;
-	uint32_t justone;
+	uint32_t nents;
+	uint32_t size;
 	uint32_t cnt;
 	sffs_dirents_t *cur_buf;
 	struct dirent64 *dirent;
@@ -835,49 +836,70 @@ sfprov_readdir(
 	kmem_free(cp, len);
 
 	/*
-	 * Now loop using vboxCallDirInfo to get one file name at a time
+	 * Now loop using vboxCallDirInfo
 	 */
+	infobuff = kmem_alloc(infobuff_alloc, KM_SLEEP);
+	if (infobuff == NULL) {
+		error = (ENOSPC);
+		goto done;
+	}
+
 	cnt = 0;
 	for (;;) {
-		justone = 1;
-		numbytes = sizeof (infobuff);
+		numbytes = infobuff_alloc;
 		error = vboxCallDirInfo(&vbox_client, &fp->map, fp->handle,
-		    mask_str, SHFL_LIST_RETURN_ONE, 0, &numbytes, info,
-		    &justone);
-		if (error == VERR_NO_MORE_FILES) {
+		    mask_str, 0, 0, &numbytes, infobuff, &nents);
+		switch (error) {
+
+		case VINF_SUCCESS:
+			/* fallthrough */
+		case VERR_NO_MORE_FILES:
 			break;
-		}
-		else if (error == VERR_NO_TRANSLATION) {
-			continue;	/* ?? just skip this one */
-		}
-		else if (error != VINF_SUCCESS || justone != 1) {
-			error = EINVAL;
-	 		goto done;
+
+		case VERR_NO_TRANSLATION:
+			/* XXX ??? */
+			break;
+
+		default:
+			error = RTErrConvertToErrno(error);
+			goto done;
 		}
 
 		/*
-		 * Put this name in the buffer, expand if we run out of room.
+		 * Create the dirent_t's for each name
 		 */
-		reclen = DIRENT64_RECLEN(strlen(info->name.String.utf8));
-		if (SFFS_DIRENTS_OFF + cur_buf->sf_len + reclen > SFFS_DIRENTS_SIZE) {
-			cur_buf->sf_next = kmem_alloc(SFFS_DIRENTS_SIZE, KM_SLEEP);
-			if (cur_buf->sf_next == NULL) {
-				error = ENOSPC;
-				goto done;
+		for (info = infobuff; (char *) info < (char *) infobuff + numbytes; nents--) {
+			/* expand buffer if we need more space */
+			reclen = DIRENT64_RECLEN(strlen(info->name.String.utf8));
+			if (SFFS_DIRENTS_OFF + cur_buf->sf_len + reclen > SFFS_DIRENTS_SIZE) {
+				cur_buf->sf_next = kmem_alloc(SFFS_DIRENTS_SIZE, KM_SLEEP);
+				if (cur_buf->sf_next == NULL) {
+					error = ENOSPC;
+					goto done;
+				}
+				cur_buf = cur_buf->sf_next;
+				cur_buf->sf_next = NULL;
+				cur_buf->sf_len = 0;
 			}
-			cur_buf = cur_buf->sf_next;
-			cur_buf->sf_next = NULL;
-			cur_buf->sf_len = 0;
+
+			/* create the dirent with the name, offset, and len */
+			dirent = (dirent64_t *)
+			    (((char *) &cur_buf->sf_entries[0]) + cur_buf->sf_len);
+			strcpy(&dirent->d_name[0], info->name.String.utf8);
+			dirent->d_reclen = reclen;
+			dirent->d_off = cnt;
+
+			cur_buf->sf_len += reclen;
+			++cnt;
+
+			size = offsetof (SHFLDIRINFO, name.String) + info->name.u16Size;
+			info = (SHFLDIRINFO *) ((uintptr_t) info + size);
 		}
+		ASSERT(nents == 0);
+		ASSERT((char *) info == (char *) infobuff + numbytes);
 
-		dirent = (dirent64_t *)
-		    (((char *) &cur_buf->sf_entries[0]) + cur_buf->sf_len);
-		strcpy(&dirent->d_name[0], info->name.String.utf8);
-		dirent->d_reclen = reclen;
-		dirent->d_off = cnt;
-
-		cur_buf->sf_len += reclen;
-		++cnt;
+		if (error == VERR_NO_MORE_FILES)
+			break;
 	}
 	error = 0;
 
@@ -889,6 +911,8 @@ done:
 			*dirents = cur_buf;
 		}
 	}
+	if (infobuff != NULL)
+		kmem_free(infobuff, infobuff_alloc);
 	if (mask_str != NULL)
 		kmem_free(mask_str, mask_size);
 	sfprov_close(fp);
