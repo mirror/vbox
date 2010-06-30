@@ -304,7 +304,7 @@ DECLEXPORT(void) crDebug( char *format, ... )
         }
         else
         {
-#if defined(WINDOWS) && defined(IN_GUEST) && (defined(DEBUG_leo) || defined(DEBUG_ll158262))
+#if defined(WINDOWS) && defined(IN_GUEST) && (defined(DEBUG_leo) || defined(DEBUG_ll158262) || defined(DEBUG_misha))
             crRedirectIOToConsole();
 #endif
             output = stderr;
