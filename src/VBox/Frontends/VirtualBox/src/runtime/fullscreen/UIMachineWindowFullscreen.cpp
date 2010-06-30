@@ -28,12 +28,11 @@
 #include "VBoxGlobal.h"
 #include "VBoxMiniToolBar.h"
 
-#include "UIActionsPool.h"
-#include "UIMachineLogic.h"
-#include "UIMachineLogicFullscreen.h"
-#include "UIMachineView.h"
-#include "UIMachineWindowFullscreen.h"
 #include "UISession.h"
+#include "UIActionsPool.h"
+#include "UIMachineLogicFullscreen.h"
+#include "UIMachineWindowFullscreen.h"
+#include "UIMachineView.h"
 
 UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : QIWithRetranslateUI2<QMainWindow>(0, Qt::FramelessWindowHint)
