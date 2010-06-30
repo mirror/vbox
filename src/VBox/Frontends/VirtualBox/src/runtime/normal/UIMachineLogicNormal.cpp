@@ -49,6 +49,9 @@ UIMachineLogicNormal::~UIMachineLogicNormal()
 
     /* Cleanup machine window(s): */
     cleanupMachineWindow();
+
+    /* Cleanup handlers: */
+    cleanupHandlers();
 }
 
 void UIMachineLogicNormal::initialize()
@@ -66,6 +69,9 @@ void UIMachineLogicNormal::initialize()
 
     /* Prepare action connections: */
     prepareActionConnections();
+
+    /* Prepare handlers: */
+    prepareHandlers();
 
     /* Prepare normal machine window: */
     prepareMachineWindows();
@@ -142,10 +148,6 @@ void UIMachineLogicNormal::prepareMachineWindows()
     ::darwinSetFrontMostProcess();
 #endif /* Q_WS_MAC */
 
-    /* Create mouse-handler: */
-    UIMouseHandler *pMouseHandler = UIMouseHandler::create(this, visualStateType());
-    setMouseHandler(pMouseHandler);
-
     /* Get monitors count: */
     ulong uMonitorCount = session().GetMachine().GetMonitorCount();
     /* Create machine window(s): */
@@ -168,8 +170,5 @@ void UIMachineLogicNormal::cleanupMachineWindow()
     /* Cleanup machine window(s): */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         UIMachineWindow::destroy(pMachineWindow);
-
-    /* Cleanup mouse-handler: */
-    UIMouseHandler::destroy(mouseHandler());
 }
 

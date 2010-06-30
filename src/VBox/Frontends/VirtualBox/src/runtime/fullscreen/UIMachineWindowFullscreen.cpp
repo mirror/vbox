@@ -63,6 +63,9 @@ UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLog
     /* Prepare fullscreen machine view: */
     prepareMachineView();
 
+    /* Prepare handlers: */
+    prepareHandlers();
+
     /* Prepare mini tool-bar: */
     prepareMiniToolBar();
 
@@ -95,6 +98,9 @@ UIMachineWindowFullscreen::~UIMachineWindowFullscreen()
 {
     /* Save window settings: */
     saveWindowSettings();
+
+    /* Prepare handlers: */
+    cleanupHandlers();
 
     /* Cleanup machine view: */
     cleanupMachineView();

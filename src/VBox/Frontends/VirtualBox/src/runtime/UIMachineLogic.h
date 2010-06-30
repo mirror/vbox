@@ -114,6 +114,7 @@ protected:
     virtual void prepareSessionConnections();
     virtual void prepareActionConnections();
     virtual void prepareActionGroups();
+    virtual void prepareHandlers();
 #ifdef Q_WS_MAC
     virtual void prepareDock();
 #endif /* Q_WS_MAC */
@@ -124,6 +125,7 @@ protected:
 #ifdef Q_WS_MAC
     virtual void cleanupDock();
 #endif /* Q_WS_MAC */
+    virtual void cleanupHandlers();
     //virtual void cleanupActionGroups() {}
     //virtual void cleanupActionConnections() {}
     //virtual void cleanupSessionConnections() {}

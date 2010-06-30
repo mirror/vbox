@@ -74,6 +74,9 @@ UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, 
     /* Prepare seamless machine view: */
     prepareMachineView();
 
+    /* Prepare handlers: */
+    prepareHandlers();
+
     /* Prepare mini tool-bar: */
 #ifndef Q_WS_MAC
     prepareMiniToolBar();
@@ -98,6 +101,9 @@ UIMachineWindowSeamless::~UIMachineWindowSeamless()
 {
     /* Save window settings: */
     saveWindowSettings();
+
+    /* Prepare handlers: */
+    cleanupHandlers();
 
     /* Cleanup machine view: */
     cleanupMachineView();
