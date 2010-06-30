@@ -24,6 +24,8 @@ extern "C" {
 
 #define MAX_HOST_NAME   256
 #define MAX_NLS_NAME    32
+/** Default stat cache ttl (in ms) */
+#define DEF_STAT_TTL_MS 200
 
 /** The module name. */
 #define DEVICE_NAME              "vboxfs"
@@ -32,7 +34,6 @@ extern "C" {
 
 #include "../../common/VBoxGuestLib/VBoxCalls.h"
 #include <sys/vfs.h>
-#include <sys/vfs_opreg.h>
 
 /** VNode for VBoxVFS */
 typedef struct vboxvfs_vnode

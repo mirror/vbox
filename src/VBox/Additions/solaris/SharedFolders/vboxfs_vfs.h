@@ -30,6 +30,7 @@ typedef struct sffs_data {
 	vnode_t		*sf_rootnode;	/* of vnode of the root directory */
 	uid_t		sf_uid;		/* owner of all shared folders */
 	gid_t		sf_gid;		/* group of all shared folders */
+	int  		sf_stat_ttl;	/* ttl for stat caches (in ms) */
 	char		*sf_share_name;
 	char 		*sf_mntpath;	/* name of mount point */
 	sfp_mount_t	*sf_handle;
@@ -42,3 +43,4 @@ typedef struct sffs_data {
 #endif
 
 #endif	/* !___VBoxFS_vfs_Solaris_h */
+
