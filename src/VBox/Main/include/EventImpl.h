@@ -81,7 +81,7 @@ public:
     BEGIN_COM_MAP(VBoxEvent)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IEvent)
-        COM_INTERFACE_ENTRY(IVetoEvent)
+            //        COM_INTERFACE_ENTRY(IVetoEvent)
         COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
 
