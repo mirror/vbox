@@ -894,7 +894,7 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
                 hr = VBoxDispMpTstCallbacks.pfnGetRegions(&Regions, 50);
                 if (S_OK==hr)
                 {
-#ifdef DEBUG_misha
+#  if 0
                     uint32_t i;
                     crDebug(">>>Regions for HWND(0x%x)>>>", Regions.hWnd);
                     crDebug("Flags(0x%x)", Regions.pRegions->fFlags.Value);
@@ -904,7 +904,7 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
                         crDebug("Rect(%d): left(%d), top(%d), right(%d), bottom(%d)", i, pRect->left, pRect->top, pRect->right, pRect->bottom);
                     }
                     crDebug("<<<<<");
-#endif
+#  endif
                     /*hacky way to make sure window wouldn't be deleted in another thread as we hold hashtable lock here*/
                     crHashtableWalk(stub.windowTable, stubSyncTrUpdateWindowCB, &Regions);
                 }

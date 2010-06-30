@@ -1725,7 +1725,7 @@ DxgkDdiDescribeAllocation(
     CONST HANDLE  hAdapter,
     DXGKARG_DESCRIBEALLOCATION*  pDescribeAllocation)
 {
-    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+//    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
     vboxVDbgBreakFv();
 
@@ -1738,7 +1738,7 @@ DxgkDdiDescribeAllocation(
     pDescribeAllocation->RefreshRate.Denominator = 1000;
     pDescribeAllocation->PrivateDriverFormatAttribute = 0;
 
-    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+//    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
     return STATUS_SUCCESS;
 }
@@ -2636,7 +2636,7 @@ DxgkDdiEscape(
 {
     PAGED_CODE();
 
-    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+//    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
     NTSTATUS Status = STATUS_NOT_SUPPORTED;
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
@@ -2740,7 +2740,7 @@ DxgkDdiEscape(
         Status = STATUS_BUFFER_TOO_SMALL;
     }
 
-    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+//    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
     return Status;
 }
