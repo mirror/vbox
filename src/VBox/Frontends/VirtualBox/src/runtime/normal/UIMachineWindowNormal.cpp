@@ -479,11 +479,12 @@ void UIMachineWindowNormal::prepareMachineView()
     centralWidget()->setLayout(m_pMachineViewContainer);
 
     m_pMachineView = UIMachineView::create(  this
+                                           , m_uScreenId
+                                           , machineLogic()->visualStateType()
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                            , bAccelerate2DVideo
 #endif
-                                           , machineLogic()->visualStateType()
-                                           , m_uScreenId);
+                                           );
 
     /* Add machine view into layout: */
     m_pMachineViewContainer->addWidget(m_pMachineView, 1, 1);

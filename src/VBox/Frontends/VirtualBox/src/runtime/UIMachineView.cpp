@@ -110,35 +110,39 @@ enum { KeyExtended = 0x01, KeyPressed = 0x02, KeyPause = 0x04, KeyPrint = 0x08 }
 enum { IsKeyPressed = 0x01, IsExtKeyPressed = 0x02, IsKbdCaptured = 0x80 };
 
 UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
+                                     , ulong uScreenId
+                                     , UIVisualStateType visualStateType
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                      , bool bAccelerate2DVideo
 #endif
-                                     , UIVisualStateType visualStateType
-                                     , ulong uScreenId)
+                                     )
 {
     UIMachineView *view = 0;
     switch (visualStateType)
     {
         case UIVisualStateType_Normal:
             view = new UIMachineViewNormal(  pMachineWindow
+                                           , uScreenId
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                            , bAccelerate2DVideo
 #endif
-                                           , uScreenId);
+                                           );
             break;
         case UIVisualStateType_Fullscreen:
             view = new UIMachineViewFullscreen(  pMachineWindow
+                                               , uScreenId
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                                , bAccelerate2DVideo
 #endif
-                                               , uScreenId);
+                                               );
             break;
         case UIVisualStateType_Seamless:
             view = new UIMachineViewSeamless(  pMachineWindow
+                                             , uScreenId
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                              , bAccelerate2DVideo
 #endif
-                                             , uScreenId);
+                                             );
             break;
         default:
             break;
@@ -146,9 +150,9 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
     return view;
 }
 
-void UIMachineView::destroy(UIMachineView *pWhichView)
+void UIMachineView::destroy(UIMachineView *pMachineView)
 {
-    delete pWhichView;
+    delete pMachineView;
 }
 
 int UIMachineView::keyboardState() const
@@ -158,12 +162,11 @@ int UIMachineView::keyboardState() const
 }
 
 UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
+                             , ulong uScreenId
 #ifdef VBOX_WITH_VIDEOHWACCEL
                              , bool bAccelerate2DVideo
 #endif
-                             , ulong uScreenId)
-// TODO_NEW_CORE: really think of if this is right
-//    : QAbstractScrollArea(((QMainWindow*)pMachineWindow->machineWindow())->centralWidget())
+                             )
     : QAbstractScrollArea(pMachineWindow->machineWindow())
     , m_pMachineWindow(pMachineWindow)
     , m_uScreenId(uScreenId)

@@ -28,12 +28,14 @@ class UIMachineViewSeamless : public UIMachineView
 
 protected:
 
-    /* Seamless machine-view constructor/destructor: */
+    /* Seamless machine-view constructor: */
     UIMachineViewSeamless(  UIMachineWindow *pMachineWindow
+                          , ulong uScreenId
 #ifdef VBOX_WITH_VIDEOHWACCEL
                           , bool bAccelerate2DVideo
 #endif
-                          , ulong uMonitor);
+    );
+    /* Seamless machine-view destructor: */
     virtual ~UIMachineViewSeamless();
 
 private slots:

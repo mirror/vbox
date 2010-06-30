@@ -35,15 +35,17 @@
 #include "UIMachineViewNormal.h"
 
 UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
+                                         , ulong uScreenId
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                          , bool bAccelerate2DVideo
 #endif
-                                         , ulong uMonitor)
+                                         )
     : UIMachineView(  pMachineWindow
+                    , uScreenId
 #ifdef VBOX_WITH_VIDEOHWACCEL
                     , bAccelerate2DVideo
 #endif
-                    , uMonitor)
+                    )
     , m_bIsGuestAutoresizeEnabled(pMachineWindow->machineLogic()->actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->isChecked())
     , m_fShouldWeDoResize(false)
 {
