@@ -764,11 +764,7 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
 
     if (hNewRgn!=INVALID_HANDLE_VALUE)
     {
-        POINT pt;
-        pt.x = 0;
-        pt.y = 0;
-        ScreenToClient(pWindow->hWnd, &pt);
-        OffsetRgn(hNewRgn, pt.x, pt.y);
+        OffsetRgn(hNewRgn, -pWindow->x, -pWindow->y);
 
         if (pWindow->hVisibleRegion!=INVALID_HANDLE_VALUE)
         {
