@@ -380,6 +380,17 @@ sfprov_write(sfp_file_t *fp, char *buffer, uint64_t offset, uint32_t *numbytes)
 	return (0);
 }
 
+int
+sfprov_fsync(sfp_file_t *fp)
+{
+	int rc;
+
+	rc = vboxCallFlush(&vbox_client, &fp->map, fp->handle);
+	if (RT_FAILURE(rc))
+		return (EIO);
+	return (0);
+}
+
 
 static int
 sfprov_getinfo(sfp_mount_t *mnt, char *path, RTFSOBJINFO *info)

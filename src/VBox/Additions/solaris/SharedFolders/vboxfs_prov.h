@@ -83,6 +83,7 @@ extern int sfprov_read(sfp_file_t *, char * buffer, uint64_t offset,
     uint32_t *numbytes);
 extern int sfprov_write(sfp_file_t *, char * buffer, uint64_t offset,
     uint32_t *numbytes);
+extern int sfprov_fsync(sfp_file_t *fp);
 
 
 /*
