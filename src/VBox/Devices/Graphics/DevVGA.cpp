@@ -6619,16 +6619,25 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"LogoTime\" as integer failed"));
 
-    /* Delay the logo a little bit */
-    if (LogoHdr.fu8FadeIn && LogoHdr.fu8FadeOut && !LogoHdr.u16LogoMillies)
-        LogoHdr.u16LogoMillies = RT_MAX(LogoHdr.u16LogoMillies, LOGO_DELAY_TIME);
-
     rc = CFGMR3QueryU8(pCfg, "ShowBootMenu", &LogoHdr.fu8ShowBootMenu);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         LogoHdr.fu8ShowBootMenu = 0;
     else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"ShowBootMenu\" as integer failed"));
+
+#if defined(DEBUG) && !defined(DEBUG_sunlover)
+    /* Disable the logo abd menu if all default settings. */
+    if (   LogoHdr.fu8FadeIn
+        && LogoHdr.fu8FadeOut
+        && LogoHdr.u16LogoMillies == 0
+        && LogoHdr.fu8ShowBootMenu == 2)
+        LogoHdr.fu8FadeIn = LogoHdr.fu8FadeOut = LogoHdr.fu8ShowBootMenu = 0;
+#endif
+
+    /* Delay the logo a little bit */
+    if (LogoHdr.fu8FadeIn && LogoHdr.fu8FadeOut && !LogoHdr.u16LogoMillies)
+        LogoHdr.u16LogoMillies = RT_MAX(LogoHdr.u16LogoMillies, LOGO_DELAY_TIME);
 
     /*
      * Get the Logo file name.

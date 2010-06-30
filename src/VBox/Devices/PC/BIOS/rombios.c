@@ -1963,16 +1963,8 @@ print_bios_banner()
   write_word(0x0040,0x0072, 0);
   if (warm_boot == 0x1234)
     return;
-#if !defined(DEBUG) || defined(DEBUG_sunlover)
   /* show graphical logo */
   show_logo();
-#else
-  /* set text mode */
-  ASM_START
-  mov  ax, #0x0003
-  int  #0x10
-  ASM_END
-#endif /* !DEBUG */
 #else /* !VBOX */
   printf(BX_APPNAME" BIOS - build: %s\n%s\nOptions: ",
     BIOS_BUILD_DATE, bios_cvs_version_string);
