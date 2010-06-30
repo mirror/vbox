@@ -78,6 +78,7 @@
 #include <sys/pathname.h>
 #include <sys/dirent.h>
 #include <sys/fs_subr.h>
+#include <sys/time.h>
 #include "vboxfs_prov.h"
 #include "vboxfs_vnode.h"
 #include "vboxfs_vfs.h"
@@ -155,6 +156,12 @@ sfnode_clear_dir_list(sfnode_t *node)
 		kmem_free(node->sf_dir_list, SFFS_DIRENTS_SIZE);
 		node->sf_dir_list = next;
 	}
+
+	while (node->sf_dir_stats != NULL) {
+		sffs_stats_t *next = node->sf_dir_stats->sf_next;
+		kmem_free(node->sf_dir_stats, sizeof(*node->sf_dir_stats));
+		node->sf_dir_stats = next;
+	}
 }
 
 /*
@@ -210,7 +217,9 @@ sfnode_make(
 	char		*path,
 	vtype_t		type,
 	sfp_file_t	*fp,
-	sfnode_t	*parent)	/* can be NULL for root */
+	sfnode_t	*parent,	/* can be NULL for root */
+	sffs_stat_t	*stat,
+	uint64_t	stat_time)
 {
 	sfnode_t	*node;
 	avl_index_t	where;
@@ -235,6 +244,13 @@ sfnode_make(
 	if (parent)
 		++parent->sf_children;
 	node->sf_dir_list = NULL;
+	node->sf_dir_stats = NULL;
+	if (stat != NULL) {
+		node->sf_stat = *stat;
+		node->sf_stat_time = stat_time;
+	} else {
+		node->sf_stat_time = 0;
+	}
 
 	/*
 	 * add the new node to our cache
@@ -365,6 +381,48 @@ sfnode_make_stale(sfnode_t *node)
 	}
 }
 
+static uint64_t
+sfnode_cur_time_usec(void)
+{
+	timestruc_t now = hrestime;
+	return (now.tv_sec * 1000000L + now.tv_nsec / 1000L);
+}
+
+static int
+sfnode_stat_cached(sfnode_t *node)
+{
+	return (sfnode_cur_time_usec() - node->sf_stat_time) <
+	    node->sf_sffs->sf_stat_ttl * 1000L;
+}
+
+static int
+sfnode_get_stat(sfp_mount_t *mnt, char *path, sffs_stat_t *stat)
+{
+	return sfprov_get_attr(mnt, path, &stat->sf_mode, &stat->sf_size,
+	    &stat->sf_atime, &stat->sf_mtime, &stat->sf_ctime);
+}
+
+static void
+sfnode_invalidate_stat_cache(sfnode_t *node)
+{
+	node->sf_stat_time = 0;
+}
+
+static int
+sfnode_update_stat_cache(sfnode_t *node)
+{
+	int error;
+
+	error = sfnode_get_stat(node->sf_sffs->sf_handle, node->sf_path,
+	    &node->sf_stat);
+	if (error == ENOENT)
+		sfnode_make_stale(node);
+	if (error == 0)
+		node->sf_stat_time = sfnode_cur_time_usec();
+
+	return (error);
+}
+
 /*
  * Rename a file or a directory
  */
@@ -470,7 +528,12 @@ sfnode_rename(sfnode_t *node, sfnode_t *newparent, char *path)
  * bumped by 1.
  */
 static sfnode_t *
-sfnode_lookup(sfnode_t *dir, char *name, vtype_t create)
+sfnode_lookup(
+	sfnode_t *dir,
+	char *name,
+	vtype_t create,
+	sffs_stat_t *stat,
+	uint64_t stat_time)
 {
 	avl_index_t	where;
 	sfnode_t	template;
@@ -479,6 +542,7 @@ sfnode_lookup(sfnode_t *dir, char *name, vtype_t create)
 	int		type;
 	char		*fullpath;
 	sfp_file_t	*fp;
+	sffs_stat_t	tmp_stat;
 
 	ASSERT(MUTEX_HELD(&sffs_lock));
 
@@ -524,8 +588,15 @@ sfnode_lookup(sfnode_t *dir, char *name, vtype_t create)
 		mode_t m;
 		fp = NULL;
 		type = VNON;
-		error =
-		    sfprov_get_mode(dir->sf_sffs->sf_handle, fullpath, &m);
+		if (stat == NULL) {
+			stat = &tmp_stat;
+			error = sfnode_get_stat(dir->sf_sffs->sf_handle,
+			    fullpath, stat);
+			stat_time = sfnode_cur_time_usec();
+		} else {
+			error = 0;
+		}
+		m = stat->sf_mode;
 		if (error != 0)
 			error = ENOENT;
 		else if (S_ISDIR(m))
@@ -541,7 +612,8 @@ sfnode_lookup(sfnode_t *dir, char *name, vtype_t create)
 		kmem_free(fullpath, strlen(fullpath) + 1);
 		return (NULL);
 	}
-	node = sfnode_make(dir->sf_sffs, fullpath, type, fp, dir);
+	node = sfnode_make(dir->sf_sffs, fullpath, type, fp, dir, stat,
+	    stat_time);
 	return (node);
 }
 
@@ -561,14 +633,13 @@ sfnode_access(sfnode_t *node, mode_t mode, cred_t *cr)
 	ASSERT(MUTEX_HELD(&sffs_lock));
 
 	/*
-	 * get the mode from the provider
+	 * get the mode from the cache or provider
 	 */
-	error = sfprov_get_mode(node->sf_sffs->sf_handle, node->sf_path, &m);
-	if (error != 0) {
-		m = 0;
-		if (error == ENOENT)
-			sfnode_make_stale(node);
-	}
+	if (sfnode_stat_cached(node))
+		error = 0;
+	else
+		error = sfnode_update_stat_cache(node);
+	m = (error == 0) ? node->sf_stat.sf_mode : 0;
 
 	/*
 	 * mask off the permissions based on uid/gid
@@ -608,6 +679,8 @@ sffs_readdir(
 	sfnode_t *node;
 	struct dirent64 *dirent;
 	sffs_dirents_t *cur_buf;
+	sffs_stats_t *cur_stats;
+	int cur_snum;
 	offset_t offset;
 	int dummy_eof;
 	int error = 0;
@@ -636,7 +709,7 @@ sffs_readdir(
 
 	if (dir->sf_dir_list == NULL) {
 		error = sfprov_readdir(dir->sf_sffs->sf_handle, dir->sf_path,
-		    &dir->sf_dir_list);
+		    &dir->sf_dir_list, &dir->sf_dir_stats);
 		if (error != 0)
 			goto done;
 	}
@@ -647,11 +720,18 @@ sffs_readdir(
 	 */
 	offset = 0;
 	cur_buf = dir->sf_dir_list;
+	cur_stats = dir->sf_dir_stats;
+	cur_snum = 0;
 	while (cur_buf != NULL) {
 		if (offset + cur_buf->sf_len <= uiop->uio_loffset) {
 			offset += cur_buf->sf_len;
 			cur_buf = cur_buf->sf_next;
 			continue;
+		}
+
+		if (cur_snum >= SFFS_STATS_LEN) {
+			cur_stats = cur_stats->sf_next;
+			cur_snum = 0;
 		}
 
 		dirent = (dirent64_t *)
@@ -667,13 +747,16 @@ sffs_readdir(
 			if (node == NULL)
 				node = dir;
 		} else {
-			node = sfnode_lookup(dir, dirent->d_name, VNON);
+			node = sfnode_lookup(dir, dirent->d_name, VNON,
+			    &cur_stats->sf_stats[cur_snum],
+			    sfnode_cur_time_usec());
 			if (node == NULL)
 				panic("sffs_readdir() lookup failed");
 		}
 		dirent->d_ino = node->sf_ino;
 
 		error = uiomove(dirent, dirent->d_reclen, UIO_READ, uiop);
+		++cur_snum;
 		if (error != 0)
 			break;
 	}
@@ -725,8 +808,7 @@ sffs_getattr(
 	sfnode_t	*node = VN2SFN(vp);
 	sffs_data_t	*sffs = node->sf_sffs;
 	mode_t		mode;
-	uint64_t	x;
-	int		error;
+	int		error = 0;
 
 	mutex_enter(&sffs_lock);
 	vap->va_type = vp->v_type;
@@ -738,12 +820,17 @@ sffs_getattr(
 	vap->va_rdev =  sffs->sf_vfsp->vfs_dev;
 	vap->va_seq = 0;
 
-	error = sfprov_get_attr(node->sf_sffs->sf_handle, node->sf_path, &mode,
-	    &x, &vap->va_atime, &vap->va_mtime, &vap->va_ctime);
-	if (error == ENOENT)
-		sfnode_make_stale(node);
-	if (error != 0)
-		goto done;
+	if (!sfnode_stat_cached(node)) {
+		error = sfnode_update_stat_cache(node);
+		if (error != 0)
+			goto done;
+	}
+
+	vap->va_atime = node->sf_stat.sf_atime;
+	vap->va_mtime = node->sf_stat.sf_mtime;
+	vap->va_ctime = node->sf_stat.sf_ctime;
+
+	mode = node->sf_stat.sf_mode;
 	vap->va_mode = mode & MODEMASK;
 	if (S_ISDIR(mode))
 		vap->va_type = VDIR;
@@ -760,9 +847,9 @@ sffs_getattr(
 	else if (S_ISSOCK(mode))
 		vap->va_type = VSOCK;
 
-	vap->va_size = x;
+	vap->va_size = node->sf_stat.sf_size;
 	vap->va_blksize = 512;
-	vap->va_nblocks = (x + 511) / 512;
+	vap->va_nblocks = (vap->va_size + 511) / 512;
 
 done:
 	mutex_exit(&sffs_lock);
@@ -799,6 +886,7 @@ sffs_setattr(
 
 	mutex_enter(&sffs_lock);
 
+	sfnode_invalidate_stat_cache(node);
 	error = sfprov_set_attr(node->sf_sffs->sf_handle, node->sf_path,
 	    vap->va_mask, mode, vap->va_atime, vap->va_mtime, vap->va_ctime);
 	if (error == ENOENT)
@@ -826,6 +914,8 @@ sffs_space(
 		return ENOSYS;
 
 	mutex_enter(&sffs_lock);
+
+	sfnode_invalidate_stat_cache(node);
 
 	error = sfprov_set_size(node->sf_sffs->sf_handle, node->sf_path,
 	    bfp->l_start);
@@ -921,6 +1011,9 @@ sffs_write(
 		mutex_exit(&sffs_lock);
 		return (EINVAL);
 	}
+
+	sfnode_invalidate_stat_cache(node);
+
 	if (ioflag & FAPPEND) {
 		uint64_t endoffile;
 
@@ -1063,7 +1156,7 @@ sffs_lookup(
 	/*
 	 * Lookup the node.
 	 */
-	node = sfnode_lookup(VN2SFN(dvp), name, VNON);
+	node = sfnode_lookup(VN2SFN(dvp), name, VNON, NULL, 0);
 	if (node != NULL)
 		*vpp = sfnode_get_vnode(node);
 	mutex_exit(&sffs_lock);
@@ -1130,6 +1223,8 @@ sffs_create(
 			return (error);
 		}
 
+		sfnode_invalidate_stat_cache(VN2SFN(dvp));
+
 		/*
 		 * handle truncating an existing file
 		 */
@@ -1156,7 +1251,7 @@ sffs_create(
 	 * Create a new node. First check for a race creating it.
 	 */
 	mutex_enter(&sffs_lock);
-	node = sfnode_lookup(VN2SFN(dvp), name, VNON);
+	node = sfnode_lookup(VN2SFN(dvp), name, VNON, NULL, 0);
 	if (node != NULL) {
 		mutex_exit(&sffs_lock);
 		return (EEXIST);
@@ -1165,7 +1260,8 @@ sffs_create(
 	/*
 	 * Doesn't exist yet and we have the lock, so create it.
 	 */
-	node = sfnode_lookup(VN2SFN(dvp), name, VREG);
+	sfnode_invalidate_stat_cache(VN2SFN(dvp));
+	node = sfnode_lookup(VN2SFN(dvp), name, VREG, NULL, 0);
 	if (node && (vap->va_mask & AT_MODE)) {
 		timestruc_t dummy;
 		error = sfprov_set_attr(node->sf_sffs->sf_handle, node->sf_path,
@@ -1230,7 +1326,9 @@ sffs_mkdir(
 		return (error);
 	}
 
-	node = sfnode_lookup(VN2SFN(dvp), nm, VDIR);
+	sfnode_invalidate_stat_cache(VN2SFN(dvp));
+
+	node = sfnode_lookup(VN2SFN(dvp), nm, VDIR, NULL, 0);
 	if (node && (va->va_mask & AT_MODE)) {
 		timestruc_t dummy;
 		error = sfprov_set_attr(node->sf_sffs->sf_handle, node->sf_path,
@@ -1318,6 +1416,7 @@ sffs_rmdir(
 	/*
 	 * Remove the directory on the host and mark the node as stale.
 	 */
+	sfnode_invalidate_stat_cache(VN2SFN(dvp));
 	error = sfprov_rmdir(node->sf_sffs->sf_handle, node->sf_path);
 	if (error == ENOENT || error == 0)
 		sfnode_make_stale(node);
@@ -1380,6 +1479,8 @@ sffs_remove(
 	/*
 	 * Remove the file on the host and mark the node as stale.
 	 */
+	sfnode_invalidate_stat_cache(VN2SFN(dvp));
+
 	error = sfprov_remove(node->sf_sffs->sf_handle, node->sf_path);
 	if (error == ENOENT || error == 0)
 		sfnode_make_stale(node);
@@ -1425,16 +1526,19 @@ sffs_rename(
 	if (error)
 		goto done;
 
-	node = sfnode_lookup(VN2SFN(old_dir), old_nm, VNON);
+	node = sfnode_lookup(VN2SFN(old_dir), old_nm, VNON, NULL, 0);
 	if (node == NULL) {
 		error = ENOENT;
 		goto done;
 	}
 
-
 	/*
 	 * Rename the file on the host and in our caches.
 	 */
+	sfnode_invalidate_stat_cache(node);
+	sfnode_invalidate_stat_cache(VN2SFN(old_dir));
+	sfnode_invalidate_stat_cache(VN2SFN(new_dir));
+
 	newpath = sfnode_construct_path(VN2SFN(new_dir), new_nm);
 	error = sfprov_rename(node->sf_sffs->sf_handle, node->sf_path, newpath,
 	    node->sf_type == VDIR);
@@ -1576,6 +1680,8 @@ sffs_close(
 	 * change the working directory.
 	 */
 	sfnode_clear_dir_list(node);
+
+	sfnode_invalidate_stat_cache(node);
 
 	mutex_exit(&sffs_lock);
 	return (0);

@@ -35,6 +35,7 @@
 #include "vboxfs_prov.h"
 #include "vboxfs_vnode.h"
 #include "vboxfs_vfs.h"
+#include "vboxfs.h"
 
 #ifdef u
 #undef u
@@ -63,7 +64,8 @@ static int sffs_statvfs(vfs_t *vfsp, statvfs64_t *sbp);
 static mntopt_t sffs_options[] = {
 	/* Option	Cancels Opt	Arg	Flags		Data */
 	{"uid",		NULL,		NULL,	MO_HASVALUE,	NULL},
-	{"gid",		NULL,		NULL,	MO_HASVALUE,	NULL}
+	{"gid",		NULL,		NULL,	MO_HASVALUE,	NULL},
+	{"stat_ttl",	NULL,		NULL,	MO_HASVALUE,	NULL}
 };
 
 static mntopts_t sffs_options_table = {
@@ -226,6 +228,7 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 	dev_t dev;
 	uid_t uid = 0;
 	gid_t gid = 0;
+	int stat_ttl = DEF_STAT_TTL_MS;
 	char *optval;
 	long val;
 	char *path;
@@ -288,6 +291,14 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 		gid = val;
 
 	/*
+	 * ttl to use for stat caches
+	 */
+	if (vfs_optionisset(vfsp, "stat_ttl", &optval) &&
+	    ddi_strtol(optval, NULL, 10, &val) == 0 &&
+	    (int)val == val)
+		stat_ttl = val;
+
+	/*
 	 * Any unknown options are an error
 	 */
 	if ((uap->flags & MS_DATA) && uap->datalen > 0) {
@@ -338,6 +349,7 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 	sffs->sf_vfsp = vfsp;
 	sffs->sf_uid = uid;
 	sffs->sf_gid = gid;
+	sffs->sf_stat_ttl = stat_ttl;
 	sffs->sf_share_name = share_name;
 	sffs->sf_mntpath = mount_point;
 	sffs->sf_handle = handle;
@@ -361,7 +373,7 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 	path = kmem_alloc(2, KM_SLEEP);
 	strcpy(path, ".");
 	mutex_enter(&sffs_lock);
-	sfnode = sfnode_make(sffs, path, VDIR, NULL, NULL);
+	sfnode = sfnode_make(sffs, path, VDIR, NULL, NULL, NULL, 0);
 	sffs->sf_rootnode = sfnode_get_vnode(sfnode);
 	sffs->sf_rootnode->v_flag |= VROOT;
 	sffs->sf_rootnode->v_vfsp = vfsp;
