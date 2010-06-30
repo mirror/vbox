@@ -78,11 +78,11 @@ public:
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    BEGIN_COM_MAP(VBoxEvent)
+    BEGIN_COM_MAP(VBoxVetoEvent)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IEvent)
-            //        COM_INTERFACE_ENTRY(IVetoEvent)
-        COM_INTERFACE_ENTRY(IDispatch)
+        COM_INTERFACE_ENTRY2(IEvent, IVetoEvent)
+        COM_INTERFACE_ENTRY(IVetoEvent)
+        COM_INTERFACE_ENTRY2(IDispatch, IVetoEvent)
     END_COM_MAP()
 
     VBoxVetoEvent() {}
