@@ -24,6 +24,7 @@ typedef struct VBOXDISPCM_SESSION
     HANDLE hEvent;
     CRITICAL_SECTION CritSect;
     RTLISTNODE CtxList;
+    bool bQueryMp;
 } VBOXDISPCM_SESSION, *PVBOXDISPCM_SESSION;
 
 typedef struct VBOXDISPCM_MGR
@@ -62,6 +63,7 @@ HRESULT vboxDispCmSessionInit(PVBOXDISPCM_SESSION pSession)
         pSession->hEvent = hEvent;
         InitializeCriticalSection(&pSession->CritSect);
         RTListInit(&pSession->CtxList);
+        pSession->bQueryMp = false;
         return S_OK;
     }
     DWORD winEr = GetLastError();
@@ -206,20 +208,30 @@ HRESULT vboxDispCmSessionCmdGet(PVBOXDISPCM_SESSION pSession, PVBOXDISPIFESCAPE_
 
     do
     {
-        HRESULT hr = vboxDispCmSessionCmdQueryData(pSession, pCmd, cbCmd);
-        Assert(hr == S_OK || hr == S_FALSE);
-        if (hr == S_OK || hr != S_FALSE)
-            return hr;
+#ifdef DEBUG_misha
+        /* not tested yet */
+        if (pSession->bQueryMp)
+#endif
+        {
+            HRESULT hr = vboxDispCmSessionCmdQueryData(pSession, pCmd, cbCmd);
+            Assert(hr == S_OK || hr == S_FALSE);
+            if (hr == S_OK || hr != S_FALSE)
+                return hr;
+
+            pSession->bQueryMp = false;
+        }
 
         DWORD dwResult = WaitForSingleObject(pSession->hEvent, dwMilliseconds);
         switch(dwResult)
         {
             case WAIT_OBJECT_0:
             {
+                pSession->bQueryMp = true;
                 break; /* <- query commands */
             }
             case WAIT_TIMEOUT:
             {
+                Assert(!pSession->bQueryMp);
                 return WAIT_TIMEOUT;
             }
             default:
