@@ -47,14 +47,16 @@ public:
     /* Desktop geometry types: */
     enum DesktopGeo { DesktopGeo_Invalid = 0, DesktopGeo_Fixed, DesktopGeo_Automatic, DesktopGeo_Any };
 
-    /* Factory function to create required view sub-child: */
+    /* Factory function to create machine-view: */
     static UIMachineView* create(  UIMachineWindow *pMachineWindow
+                                 , ulong uScreenId
+                                 , UIVisualStateType visualStateType
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                  , bool bAccelerate2DVideo
 #endif
-                                 , UIVisualStateType visualStateType
-                                 , ulong uScreenId);
-    static void destroy(UIMachineView *pWhichView);
+    );
+    /* Factory function to destroy required machine-view: */
+    static void destroy(UIMachineView *pMachineView);
 
     /* Public getters: */
     int keyboardState() const;
@@ -76,12 +78,14 @@ signals:
 
 protected:
 
-    /* Machine view constructor/destructor: */
+    /* Machine-view constructor: */
     UIMachineView(  UIMachineWindow *pMachineWindow
+                  , ulong uScreenId
 #ifdef VBOX_WITH_VIDEOHWACCEL
                   , bool bAccelerate2DVideo
 #endif
-                  , ulong uScreenId);
+    );
+    /* Machine-view destructor: */
     virtual ~UIMachineView();
 
     /* Protected getters: */

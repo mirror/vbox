@@ -28,12 +28,14 @@ class UIMachineViewNormal : public UIMachineView
 
 protected:
 
-    /* Normal machine-view constructor/destructor: */
+    /* Normal machine-view constructor: */
     UIMachineViewNormal(  UIMachineWindow *pMachineWindow
+                        , ulong uScreenId
 #ifdef VBOX_WITH_VIDEOHWACCEL
                         , bool bAccelerate2DVideo
 #endif
-                        , ulong uMonitor);
+    );
+    /* Normal machine-view destructor: */
     virtual ~UIMachineViewNormal();
 
 private slots:

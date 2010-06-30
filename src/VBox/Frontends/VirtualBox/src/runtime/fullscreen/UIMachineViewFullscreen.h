@@ -28,12 +28,14 @@ class UIMachineViewFullscreen : public UIMachineView
 
 protected:
 
-    /* Fullscreen machine-view constructor/destructor: */
+    /* Fullscreen machine-view constructor: */
     UIMachineViewFullscreen(  UIMachineWindow *pMachineWindow
+                            , ulong uScreenId
 #ifdef VBOX_WITH_VIDEOHWACCEL
                             , bool bAccelerate2DVideo
 #endif
-                            , ulong uMonitor);
+    );
+    /* Fullscreen machine-view destructor: */
     virtual ~UIMachineViewFullscreen();
 
 private slots:
