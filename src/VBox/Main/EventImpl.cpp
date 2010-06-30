@@ -208,6 +208,110 @@ STDMETHODIMP VBoxEvent::WaitProcessed(LONG aTimeout, BOOL *aResult)
     return S_OK;
 }
 
+typedef std::list<Bstr> VetoList;
+struct VBoxVetoEvent::Data
+{
+    Data()
+        :
+        mVetoed(FALSE)
+    {}
+    BOOL                    mVetoed;
+    VetoList                mVetoList;
+};
+
+HRESULT VBoxVetoEvent::FinalConstruct()
+{
+    VBoxEvent::FinalConstruct();
+    m = new Data;
+    return S_OK;
+}
+
+void VBoxVetoEvent::FinalRelease()
+{
+    if (m)
+    {
+        uninit();
+        delete m;
+        m = 0;
+    }
+    VBoxEvent::FinalRelease();
+}
+
+
+HRESULT VBoxVetoEvent::init(IEventSource *aSource, VBoxEventType_T aType)
+{
+    HRESULT rc = S_OK;
+    // all veto events are waitable
+    rc = VBoxEvent::init(aSource, aType, TRUE);
+    if (FAILED(rc)) return rc;
+
+    m->mVetoed = FALSE;
+    m->mVetoList.clear();
+
+    return rc;
+}
+
+void VBoxVetoEvent::uninit()
+{
+    VBoxEvent::uninit();
+    if (!m)
+        return;
+    m->mVetoed = FALSE;
+}
+
+STDMETHODIMP VBoxVetoEvent::AddVeto(IN_BSTR aVeto)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (aVeto)
+        m->mVetoList.push_back(aVeto);
+
+    m->mVetoed = TRUE;
+
+    return S_OK;
+}
+
+STDMETHODIMP VBoxVetoEvent::IsVetoed(BOOL * aResult)
+{
+    CheckComArgOutPointerValid(aResult);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aResult = m->mVetoed;
+
+    return S_OK;
+}
+
+STDMETHODIMP  VBoxVetoEvent::GetVetos(ComSafeArrayOut(BSTR, aVetos))
+{
+    if (ComSafeArrayOutIsNull(aVetos))
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    com::SafeArray<BSTR> vetos(m->mVetoList.size());
+    int i = 0;
+    for (VetoList::const_iterator it = m->mVetoList.begin();
+         it != m->mVetoList.end();
+         ++it, ++i)
+    {
+        const Bstr &str = *it;
+        str.cloneTo(&vetos[i]);
+    }
+    vetos.detachTo(ComSafeArrayOutArg(aVetos));
+
+    return S_OK;
+
+}
+
 static const int FirstEvent = (int)VBoxEventType_LastWildcard + 1;
 static const int LastEvent  = (int)VBoxEventType_Last;
 static const int NumEvents  = LastEvent - FirstEvent;
@@ -396,9 +500,9 @@ ListenerRecord::~ListenerRecord()
     }
 }
 
-HRESULT ListenerRecord::process(IEvent*                     aEvent, 
-                                BOOL                        aWaitable, 
-                                PendingEventsMap::iterator& pit, 
+HRESULT ListenerRecord::process(IEvent*                     aEvent,
+                                BOOL                        aWaitable,
+                                PendingEventsMap::iterator& pit,
                                 AutoLockBase&               aAlock)
 {
     if (mActive)
@@ -436,8 +540,8 @@ HRESULT ListenerRecord::enqueue (IEvent* aEvent)
     return S_OK;
 }
 
-HRESULT ListenerRecord::dequeue (IEvent*       *aEvent, 
-                                 LONG          aTimeout, 
+HRESULT ListenerRecord::dequeue (IEvent*       *aEvent,
+                                 LONG          aTimeout,
                                  AutoLockBase& aAlock)
 {
     AssertMsg(!mActive, ("must be passive\n"));
@@ -447,7 +551,7 @@ HRESULT ListenerRecord::dequeue (IEvent*       *aEvent,
     {
         // retain listener record
         ListenerRecordHolder holder(this);
-        ::RTCritSectLeave(&mcsQLock);        
+        ::RTCritSectLeave(&mcsQLock);
         // Speed up common case
         if (aTimeout == 0)
         {

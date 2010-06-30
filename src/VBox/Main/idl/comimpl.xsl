@@ -100,6 +100,16 @@
     <xsl:when test="//enum[@name=$type]">
       <xsl:value-of select="concat($type,'_T')"/>
     </xsl:when>
+    <xsl:when test="//interface[@name=$type]">
+      <xsl:choose>
+        <xsl:when test="$param='no'">
+          <xsl:value-of select="concat('ComPtr&lt;',$type,'&gt;')"/>
+        </xsl:when> 
+        <xsl:when test="$param='yes'">
+          <xsl:value-of select="concat($type,'*')"/>
+        </xsl:when> 
+      </xsl:choose>
+    </xsl:when>
     <xsl:when test="$type='boolean'">
       <xsl:value-of select="'BOOL'" />
     </xsl:when>
@@ -108,6 +118,12 @@
     </xsl:when>
     <xsl:when test="$type='long'">
       <xsl:value-of select="'LONG'" />
+    </xsl:when>
+    <xsl:when test="$type='unsigned long long'">
+      <xsl:value-of select="'ULONG64'" />
+    </xsl:when>
+    <xsl:when test="$type='long long'">
+      <xsl:value-of select="'LONG64'" />
     </xsl:when>
     <xsl:otherwise>
       <xsl:call-template name="fatalError">
@@ -139,6 +155,9 @@
   <xsl:choose>
     <xsl:when test="($type='wstring') or ($type = 'uuid')">
       <xsl:value-of select="concat('         ', $member, '.cloneTo(', $param, ');&#10;')"/>
+    </xsl:when>
+    <xsl:when test="//interface[@name=$type]">
+       <xsl:value-of select="concat('         ', $member, '.queryInterfaceTo(', $param, ');&#10;')"/>
     </xsl:when>
     <xsl:otherwise>
       <xsl:value-of select="concat('         *', $param, ' = ', $member, ';&#10;')"/>
@@ -428,7 +447,7 @@ HRESULT VBoxEventDesc::init(IEventSource* source, VBoxEventType_T aType, ...)
 
   <xsl:text><![CDATA[
          default:
-            if (0) AssertFailed();
+            if (1) AssertFailed();
     }
     va_end(args);
 

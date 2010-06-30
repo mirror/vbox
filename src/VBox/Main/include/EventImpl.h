@@ -67,6 +67,48 @@ private:
     Data* m;
 };
 
+class ATL_NO_VTABLE VBoxVetoEvent :
+    public VBoxEvent,
+    VBOX_SCRIPTABLE_IMPL(IVetoEvent)
+{
+public:
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VBoxVetoEvent)
+
+    DECLARE_NOT_AGGREGATABLE(VBoxVetoEvent)
+
+    DECLARE_PROTECT_FINAL_CONSTRUCT()
+
+    BEGIN_COM_MAP(VBoxEvent)
+        COM_INTERFACE_ENTRY(ISupportErrorInfo)
+        COM_INTERFACE_ENTRY(IEvent)
+        COM_INTERFACE_ENTRY(IVetoEvent)
+        COM_INTERFACE_ENTRY(IDispatch)
+    END_COM_MAP()
+
+    VBoxVetoEvent() {}
+    virtual ~VBoxVetoEvent() {}
+
+    HRESULT FinalConstruct();
+    void FinalRelease();
+
+    // public initializer/uninitializer for internal purposes only
+    HRESULT init (IEventSource *aSource, VBoxEventType_T aType);
+    void uninit();
+
+     // IVetoEvent methods
+    STDMETHOD(AddVeto)(IN_BSTR aVeto);
+    STDMETHOD(IsVetoed)(BOOL *aResult);
+    STDMETHOD(GetVetos)(ComSafeArrayOut(BSTR, aVetos));
+
+    // for VirtualBoxSupportErrorInfoImpl
+    static const wchar_t *getComponentName() { return L"VetoEvent"; }
+
+private:
+    struct Data;
+
+    Data* m;
+};
+
 class ATL_NO_VTABLE EventSource :
     public VirtualBoxBase,
     public VirtualBoxSupportErrorInfoImpl<EventSource, IEventSource>,
@@ -132,8 +174,8 @@ public:
  {}
 
  /**
-  * This function to be used with some care, as arguments order must match attribute declaration order 
-  * event class and its superclasses up to IEvent. If unsure, consult implementation in 
+  * This function to be used with some care, as arguments order must match attribute declaration order
+  * event class and its superclasses up to IEvent. If unsure, consult implementation in
   * generated VBoxEvents.cpp.
   */
  HRESULT init(IEventSource* aSource, VBoxEventType_T aType, ...);
