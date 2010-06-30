@@ -327,6 +327,21 @@ DECLINLINE(bool) vboxWddmRectIntersection(const RECT *a, const RECT *b, RECT *re
     return (rect->right>rect->left) && (rect->bottom>rect->top);
 }
 
+DECLINLINE(bool) vboxWddmRectIsEqual(const RECT *pRect1, const RECT *pRect2)
+{
+    Assert(pRect1);
+    Assert(pRect2);
+    if (pRect1->left != pRect2->left)
+        return false;
+    if (pRect1->top != pRect2->top)
+        return false;
+    if (pRect1->right != pRect2->right)
+        return false;
+    if (pRect1->bottom != pRect2->bottom)
+        return false;
+    return true;
+}
+
 DECLINLINE(bool) vboxWddmRectIsCoveres(const RECT *pRect, const RECT *pCovered)
 {
     Assert(pRect);
