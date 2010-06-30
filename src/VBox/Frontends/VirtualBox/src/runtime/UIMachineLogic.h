@@ -225,10 +225,6 @@ private:
 
     /* Friend classes: */
     friend class UIMachineWindow;
-
-#if 0 // TODO: Where to move that?
-    void setViewInSeamlessMode(const QRect &aTargetRect);
-#endif
 };
 
 #endif // __UIMachineLogic_h__
