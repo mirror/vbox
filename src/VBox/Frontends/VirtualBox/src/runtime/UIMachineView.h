@@ -60,7 +60,6 @@ public:
 
     /* Public getters: */
     int keyboardState() const;
-    virtual QRegion lastVisibleRegion() const { return QRegion(); }
 
     /* Public setters: */
     virtual void setGuestAutoresizeEnabled(bool /* fEnabled */) {}
