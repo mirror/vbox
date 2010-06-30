@@ -372,8 +372,9 @@ static void stubSPUSafeTearDown(void)
 # endif
 #endif
 
-#if defined(WINDOWS) && defined(CR_NEWWINTRACK)
+#if defined(CR_NEWWINTRACK)
     crUnlockMutex(mutex);
+# if defined(WINDOWS)
     if (RTThreadGetState(stub.hSyncThread)!=RTTHREADSTATE_TERMINATED)
     {
         ASMAtomicWriteBool(&stub.bShutdownSyncThread, true);
@@ -386,6 +387,17 @@ static void stubSPUSafeTearDown(void)
             crDebug("Sync thread killed before DLL_PROCESS_DETACH");
         }
     }
+#else
+    ASMAtomicWriteBool(&stub.bShutdownSyncThread, true);
+    {
+        /*RTThreadWait might return too early, which cause our code being unloaded while RT thread wrapper is still running*/
+        int rc = pthread_join(RTThreadGetNative(stub.hSyncThread), NULL);
+        if (!rc)
+        {
+            crDebug("pthread_join failed %i", rc);
+        }
+    }
+#endif
     crLockMutex(mutex);
 #endif
 
