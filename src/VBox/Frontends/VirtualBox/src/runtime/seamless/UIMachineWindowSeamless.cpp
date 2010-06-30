@@ -33,7 +33,7 @@
 #include "UIActionsPool.h"
 #include "UIMachineLogic.h"
 #include "UIMachineLogicSeamless.h"
-#include "UIMachineView.h"
+#include "UIMachineViewSeamless.h"
 #include "UIMachineWindowSeamless.h"
 #include "UISession.h"
 
@@ -145,7 +145,7 @@ void UIMachineWindowSeamless::sltPopupMainMenu()
 void UIMachineWindowSeamless::sltUpdateMiniToolBarMask()
 {
     if (m_pMiniToolBar)
-        setMask(machineView()->lastVisibleRegion());
+        setMask(qobject_cast<UIMachineViewSeamless*>(machineView())->lastVisibleRegion());
 }
 #endif /* Q_WS_MAC */
 

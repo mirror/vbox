@@ -26,6 +26,11 @@ class UIMachineViewSeamless : public UIMachineView
 {
     Q_OBJECT;
 
+public:
+
+    /* Public getters: */
+    QRegion lastVisibleRegion() const { return m_lastVisibleRegion; }
+
 protected:
 
     /* Seamless machine-view constructor: */
@@ -74,7 +79,6 @@ private:
     QRect workingArea();
     void calculateDesktopGeometry();
     void maybeRestrictMinimumSize() {}
-    QRegion lastVisibleRegion() const { return m_lastVisibleRegion; }
 
     /* Private variables: */
     bool m_fShouldWeDoResize : 1;
