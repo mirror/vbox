@@ -15261,7 +15261,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="INetworkAdapterChangeEvent" extends="IEvent"
-     uuid="4376693C-CF37-453B-9289-3B0F521CAF27"
+     uuid="08889892-1EC6-4883-801D-77F56CFD0103"
      wsmap="managed" autogen="VBoxEvent" id="OnNetworkAdapterChange"
      >
     <desc>
@@ -15389,7 +15389,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IUSBControllerChangeEvent" extends="IEvent"
-     uuid="65B556C5-2A99-47D8-B311-FC177F0914CD"
+     uuid="93BADC0C-61D9-4940-A084-E6BB29AF3D83"
      wsmap="managed" autogen="VBoxEvent" id="OnUSBControllerChange"
      >
     <desc>
@@ -15402,7 +15402,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IUSBDevceStateChangeEvent" extends="IEvent"
-     uuid="65B556C5-2A99-47D8-B311-FC177F0914CD"
+     uuid="A7894AB1-3615-4F79-8E39-255DEDC03EAE"
      wsmap="managed" autogen="VBoxEvent" id="OnUSBDeviceStateChange"
      >
     <desc>
