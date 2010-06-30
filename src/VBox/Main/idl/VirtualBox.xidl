@@ -15109,7 +15109,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
      name="IMousePointerShapeChangeEvent" extends="IEvent"
      uuid="a6dcf6e8-416b-4181-8c4a-45ec95177aef"
-     wsmap="managed" id="OnMousePointerShapeChange"
+     wsmap="managed" autogen="VBoxEvent" id="OnMousePointerShapeChange"
      >
     <desc>
       Notification when the guest mouse pointer shape has
@@ -15687,7 +15687,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         window is now active and in foreground, to indicate that no
         further action is required on the caller's side.
     </desc>
-    <attribute name="winId" type="unsigned long long" readonly="yes">
+    <attribute name="winId" type="unsigned long long">
       <desc>
          Platform-dependent identifier of the top-level VM console
           window, or zero if this method has performed all actions

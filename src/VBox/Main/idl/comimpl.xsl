@@ -91,50 +91,80 @@
   <xsl:param name="dir" />
 
   <xsl:choose>
-    <xsl:when test="(($type='wstring') or ($type='uuid')) and ($param='yes')">
-      <xsl:value-of select="'BSTR'" />
-    </xsl:when>
-    <xsl:when test="(($type='wstring') or ($type='uuid')) and not($param='yes')">
-      <xsl:value-of select="'Bstr'" />
-    </xsl:when>
-    <xsl:when test="//enum[@name=$type]">
-      <xsl:value-of select="concat($type,'_T')"/>
-    </xsl:when>
-    <xsl:when test="//interface[@name=$type]">
+    <xsl:when test="$safearray='yes'">
+      <xsl:variable name="elemtype">
+        <xsl:call-template name="typeIdl2Back">
+          <xsl:with-param name="type" select="$type" />
+          <xsl:with-param name="safearray" select="''" />
+          <xsl:with-param name="dir" select="'in'" />
+        </xsl:call-template>
+      </xsl:variable>
       <xsl:choose>
-        <xsl:when test="$param='no'">
-          <xsl:value-of select="concat('ComPtr&lt;',$type,'&gt;')"/>
-        </xsl:when> 
-        <xsl:when test="$param='yes'">
-          <xsl:value-of select="concat($type,'*')"/>
-        </xsl:when> 
+        <xsl:when test="$param and ($dir='in')">
+          <xsl:value-of select="concat('ComSafeArrayIn(',$elemtype,',', $param,')')"/>
+        </xsl:when>
+        <xsl:when test="$param and ($dir='out')">
+          <xsl:value-of select="concat('ComSafeArrayOut(',$elemtype,',', $param,')')"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="concat('com::SafeArray&lt;',$elemtype,'&gt;')"/>
+        </xsl:otherwise>
       </xsl:choose>
     </xsl:when>
-    <xsl:when test="$type='boolean'">
-      <xsl:value-of select="'BOOL'" />
-    </xsl:when>
-    <xsl:when test="$type='unsigned long'">
-      <xsl:value-of select="'ULONG'" />
-    </xsl:when>
-    <xsl:when test="$type='long'">
-      <xsl:value-of select="'LONG'" />
-    </xsl:when>
-    <xsl:when test="$type='unsigned long long'">
-      <xsl:value-of select="'ULONG64'" />
-    </xsl:when>
-    <xsl:when test="$type='long long'">
-      <xsl:value-of select="'LONG64'" />
-    </xsl:when>
     <xsl:otherwise>
-      <xsl:call-template name="fatalError">
-        <xsl:with-param name="msg" select="concat('Unhandled type: ', $type)" />
-      </xsl:call-template>
+      <xsl:choose>
+        <xsl:when test="(($type='wstring') or ($type='uuid')) and $param">
+          <xsl:value-of select="'BSTR'" />
+        </xsl:when>
+        <xsl:when test="(($type='wstring') or ($type='uuid')) and not($param)">
+          <xsl:value-of select="'Bstr'" />
+        </xsl:when>
+        <xsl:when test="//enum[@name=$type]">
+          <xsl:value-of select="concat($type,'_T')"/>
+        </xsl:when>
+        <xsl:when test="//interface[@name=$type]">
+          <xsl:choose>
+            <xsl:when test="$param">
+              <xsl:value-of select="concat($type,'*')"/>
+            </xsl:when>
+            <xsl:otherwise>
+              <xsl:value-of select="concat('ComPtr&lt;',$type,'&gt;')"/>
+            </xsl:otherwise>
+          </xsl:choose>
+        </xsl:when>
+        <xsl:when test="$type='boolean'">
+          <xsl:value-of select="'BOOL'" />
+        </xsl:when>
+         <xsl:when test="$type='octet'">
+          <xsl:value-of select="'BYTE'" />
+        </xsl:when>
+        <xsl:when test="$type='unsigned long'">
+          <xsl:value-of select="'ULONG'" />
+        </xsl:when>
+        <xsl:when test="$type='long'">
+          <xsl:value-of select="'LONG'" />
+        </xsl:when>
+        <xsl:when test="$type='unsigned long long'">
+          <xsl:value-of select="'ULONG64'" />
+        </xsl:when>
+        <xsl:when test="$type='long long'">
+          <xsl:value-of select="'LONG64'" />
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:call-template name="fatalError">
+            <xsl:with-param name="msg" select="concat('Unhandled type: ', $type)" />
+          </xsl:call-template>
+        </xsl:otherwise>
+      </xsl:choose>
+      <xsl:if test="$dir='out'">
+        <xsl:value-of select="'*'"/>
+      </xsl:if>
+      <xsl:if test="$param and not($param='_')">
+        <xsl:value-of select="concat(' ', $param)"/>
+      </xsl:if>
     </xsl:otherwise>
   </xsl:choose>
 
-  <xsl:if test="$dir='out'">
-    <xsl:value-of select="'*'"/>
-  </xsl:if>
 </xsl:template>
 
 
@@ -144,7 +174,14 @@
   <xsl:param name="type"/>
   <xsl:param name="safearray"/>
 
-  <xsl:value-of select="concat('         ', $member, ' = ', $param, ';&#10;')"/>
+  <xsl:choose>
+    <xsl:when test="$safearray='yes'">
+      <!-- @todo: setter missing -->
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:value-of select="concat('         ', $member, ' = ', $param, ';&#10;')"/>
+    </xsl:otherwise>
+  </xsl:choose>
 </xsl:template>
 
 <xsl:template name="genRetParam">
@@ -153,14 +190,21 @@
   <xsl:param name="type"/>
   <xsl:param name="safearray"/>
   <xsl:choose>
-    <xsl:when test="($type='wstring') or ($type = 'uuid')">
-      <xsl:value-of select="concat('         ', $member, '.cloneTo(', $param, ');&#10;')"/>
-    </xsl:when>
-    <xsl:when test="//interface[@name=$type]">
-       <xsl:value-of select="concat('         ', $member, '.queryInterfaceTo(', $param, ');&#10;')"/>
+    <xsl:when test="$safearray='yes'">
+      <xsl:value-of select="concat('         ', $member, '.cloneTo(ComSafeArrayOutArg (', $param, '));&#10;')"/>
     </xsl:when>
     <xsl:otherwise>
-      <xsl:value-of select="concat('         *', $param, ' = ', $member, ';&#10;')"/>
+      <xsl:choose>
+        <xsl:when test="($type='wstring') or ($type = 'uuid')">
+          <xsl:value-of select="concat('         ', $member, '.cloneTo(', $param, ');&#10;')"/>
+        </xsl:when>
+        <xsl:when test="//interface[@name=$type]">
+          <xsl:value-of select="concat('         ', $member, '.queryInterfaceTo(', $param, ');&#10;')"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="concat('         *', $param, ' = ', $member, ';&#10;')"/>
+        </xsl:otherwise>
+      </xsl:choose>
     </xsl:otherwise>
   </xsl:choose>
 </xsl:template>
@@ -188,19 +232,30 @@
     </xsl:otherwise>
   </xsl:choose>
 
-
   <xsl:for-each select="//interface[@name=$name]/attribute">
+    <xsl:variable name="aName" select="concat('a_',@name)"/>
+    <xsl:variable name="aTypeName">
+      <xsl:call-template name="typeIdl2Back">
+        <xsl:with-param name="type" select="@type" />
+        <xsl:with-param name="safearray" select="@safearray" />
+        <xsl:with-param name="param" select="$aName" />
+        <xsl:with-param name="dir" select="'in'" />
+      </xsl:call-template>
+    </xsl:variable>
     <xsl:variable name="aType">
       <xsl:call-template name="typeIdl2Back">
         <xsl:with-param name="type" select="@type" />
         <xsl:with-param name="safearray" select="@safearray" />
-        <xsl:with-param name="param" select="'yes'" />
+        <xsl:with-param name="param" select="'_'" />
         <xsl:with-param name="dir" select="'in'" />
       </xsl:call-template>
     </xsl:variable>
 
-    <xsl:value-of select="concat('              ',$aType, ' a_',@name,' = va_arg(args, ',$aType,');&#10;')"/>
-    <xsl:value-of select="concat('              ',$obj, '->set_', @name, '(a_', @name, ');&#10;')"/>
+    <!-- no safearrays params yet -->
+    <xsl:if test="not(@safearray)">
+      <xsl:value-of select="concat('              ',$aTypeName, ' = va_arg(args, ',$aType,');&#10;')"/>
+      <xsl:value-of select="concat('              ',$obj, '->set_', @name, '(',$aName, ');&#10;')"/>
+    </xsl:if>
   </xsl:for-each>
 </xsl:template>
 
@@ -254,40 +309,42 @@
       <xsl:call-template name="typeIdl2Back">
         <xsl:with-param name="type" select="@type" />
         <xsl:with-param name="safearray" select="@safearray" />
-        <xsl:with-param name="param" select="'no'" />
         <xsl:with-param name="dir" select="'in'" />
       </xsl:call-template>
     </xsl:variable>
     <xsl:variable name="pName">
       <xsl:value-of select="concat('a_', @name)" />
     </xsl:variable>
-    <xsl:variable name="pTypeOut">
+    <xsl:variable name="pTypeNameOut">
       <xsl:call-template name="typeIdl2Back">
         <xsl:with-param name="type" select="@type" />
         <xsl:with-param name="safearray" select="@safearray" />
-        <xsl:with-param name="param" select="'yes'" />
+        <xsl:with-param name="param" select="$pName" />
         <xsl:with-param name="dir" select="'out'" />
       </xsl:call-template>
     </xsl:variable>
-    <xsl:variable name="pTypeIn">
+
+    <xsl:variable name="pTypeNameIn">
       <xsl:call-template name="typeIdl2Back">
         <xsl:with-param name="type" select="@type" />
         <xsl:with-param name="safearray" select="@safearray" />
-        <xsl:with-param name="param" select="'yes'" />
+        <xsl:with-param name="param" select="$pName" />
         <xsl:with-param name="dir" select="'in'" />
       </xsl:call-template>
     </xsl:variable>
+
     <xsl:variable name="capsName">
       <xsl:call-template name="capitalize">
         <xsl:with-param name="str" select="@name" />
       </xsl:call-template>
     </xsl:variable>
+
     <xsl:value-of select="       '&#10;'" />
     <xsl:value-of select="concat('    // attribute ', @name,'&#10;')" />
     <xsl:value-of select="       'private:&#10;'" />
     <xsl:value-of select="concat('    ', $mType, '    ', $mName,';&#10;')" />
     <xsl:value-of select="       'public:&#10;'" />
-    <xsl:value-of select="concat('    STDMETHOD(COMGETTER(', $capsName,'))(',$pTypeOut, ' ', $pName,') {&#10;')" />
+    <xsl:value-of select="concat('    STDMETHOD(COMGETTER(', $capsName,'))(',$pTypeNameOut,') {&#10;')" />
     <xsl:call-template name="genRetParam">
       <xsl:with-param name="type" select="@type" />
       <xsl:with-param name="member" select="$mName" />
@@ -297,8 +354,20 @@
     <xsl:value-of select="       '         return S_OK;&#10;'" />
     <xsl:value-of select="       '    }&#10;'" />
 
+    <xsl:if test="not(@readonly='yes')">
+      <xsl:value-of select="concat('    STDMETHOD(COMSETTER(', $capsName,'))(',$pTypeNameIn,') {&#10;')" />
+      <xsl:call-template name="genSetParam">
+        <xsl:with-param name="type" select="@type" />
+        <xsl:with-param name="member" select="$mName" />
+        <xsl:with-param name="param" select="$pName" />
+        <xsl:with-param name="safearray" select="@safearray" />
+      </xsl:call-template>
+      <xsl:value-of select="       '         return S_OK;&#10;'" />
+      <xsl:value-of select="       '    }&#10;'" />
+    </xsl:if>
+   
     <xsl:value-of select="       '    // purely internal setter&#10;'" />
-    <xsl:value-of select="concat('    int set_', @name,'(',$pTypeIn, ' ', $pName,') {&#10;')" />
+    <xsl:value-of select="concat('    int set_', @name,'(',$pTypeNameIn, ') {&#10;')" />
     <xsl:call-template name="genSetParam">
       <xsl:with-param name="type" select="@type" />
       <xsl:with-param name="member" select="$mName" />
@@ -463,7 +532,11 @@ HRESULT VBoxEventDesc::init(IEventSource* source, VBoxEventType_T aType, ...)
     <xsl:with-param name="name" select="'VBoxEvents.cpp'" />
   </xsl:call-template>
 
-  <xsl:value-of select="'#include &quot;EventImpl.h&quot;&#10;&#10;'" />
+<xsl:text><![CDATA[
+  #include <VBox/com/array.h>
+  #include "EventImpl.h"
+]]></xsl:text>
+
 
   <!-- Interfaces -->
   <xsl:for-each select="//interface[@autogen=$G_kind]">
