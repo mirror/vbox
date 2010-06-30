@@ -572,6 +572,7 @@ static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int i
     pUsbIns->pCfgGlobal                     = pGlobalConfig;
     pUsbIns->iInstance                      = iInstance;
     pUsbIns->pvInstanceDataR3               = &pUsbIns->achInstanceData[0];
+    pUsbIns->pszName                        = RTStrDup(pUsbDev->pReg->szName);
 
     /*
      * Link it into all the lists.
@@ -985,6 +986,11 @@ static void pdmR3UsbDestroyDevice(PVM pVM, PPDMUSBINS pUsbIns)
      */
     pUsbIns->u32Version = 0;
     pUsbIns->pReg = NULL;
+    if (pUsbIns->pszName)
+    {
+        RTStrFree(pUsbIns->pszName);
+        pUsbIns->pszName = NULL;
+    }
     CFGMR3RemoveNode(pUsbIns->Internal.s.pCfgDelete);
     MMR3HeapFree(pUsbIns);
 }
