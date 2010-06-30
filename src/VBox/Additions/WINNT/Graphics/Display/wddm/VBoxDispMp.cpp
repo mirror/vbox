@@ -95,7 +95,7 @@ DECLCALLBACK(HRESULT) vboxDispMpGetRegions(PVBOXDISPMP_REGIONS pRegions, DWORD d
         do
         {
             hr =  vboxDispCmCmdGet(g_VBoxDispMp.pEscapeCmd, g_VBoxDispMp.cbEscapeCmd, dwMilliseconds);
-            Assert(hr == S_OK);
+            Assert(hr == S_OK || (dwMilliseconds != INFINITE && hr == WAIT_TIMEOUT));
             if (hr == S_OK)
             {
                 if (g_VBoxDispMp.pEscapeCmd->Hdr.cbCmdsReturned)

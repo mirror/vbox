@@ -159,6 +159,45 @@ HRESULT vboxDispCmCtxDestroy(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_CONTEXT
     return vboxDispCmSessionCtxDestroy(&g_pVBoxCmMgr.Session, pDevice, pContext);
 }
 
+static HRESULT vboxDispCmSessionCmdQueryData(PVBOXDISPCM_SESSION pSession, PVBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD pCmd, uint32_t cbCmd)
+{
+
+    HRESULT hr = S_OK;
+    D3DDDICB_ESCAPE DdiEscape;
+    DdiEscape.Flags.Value = 0;
+    DdiEscape.pPrivateDriverData = pCmd;
+    DdiEscape.PrivateDriverDataSize = cbCmd;
+
+    pCmd->EscapeHdr.escapeCode = VBOXESC_GETVBOXVIDEOCMCMD;
+    /* lock to ensure the context is not distructed */
+    EnterCriticalSection(&pSession->CritSect);
+    /* use any context for identifying the kernel CmSession. We're using the first one */
+    PVBOXWDDMDISP_CONTEXT pContext = RTListNodeGetFirst(&pSession->CtxList, VBOXWDDMDISP_CONTEXT, ListNode);
+    if (pContext)
+    {
+        PVBOXWDDMDISP_DEVICE pDevice = pContext->pDevice;
+        DdiEscape.hDevice = pDevice->hDevice;
+        DdiEscape.hContext = pContext->ContextInfo.hContext;
+        Assert (DdiEscape.hContext);
+        Assert (DdiEscape.hDevice);
+        hr = pDevice->RtCallbacks.pfnEscapeCb(pDevice->pAdapter->hAdapter, &DdiEscape);
+        LeaveCriticalSection(&pSession->CritSect);
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+        {
+            if (!pCmd->Hdr.cbCmdsReturned && !pCmd->Hdr.cbRemainingFirstCmd)
+                hr = S_FALSE;
+        }
+    }
+    else
+    {
+        LeaveCriticalSection(&pSession->CritSect);
+        hr = S_FALSE;
+    }
+
+    return hr;
+}
+
 HRESULT vboxDispCmSessionCmdGet(PVBOXDISPCM_SESSION pSession, PVBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD pCmd, uint32_t cbCmd, DWORD dwMilliseconds)
 {
     Assert(cbCmd >= sizeof (VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD));
@@ -167,53 +206,20 @@ HRESULT vboxDispCmSessionCmdGet(PVBOXDISPCM_SESSION pSession, PVBOXDISPIFESCAPE_
 
     do
     {
+        HRESULT hr = vboxDispCmSessionCmdQueryData(pSession, pCmd, cbCmd);
+        Assert(hr == S_OK || hr == S_FALSE);
+        if (hr == S_OK || hr != S_FALSE)
+            return hr;
+
         DWORD dwResult = WaitForSingleObject(pSession->hEvent, dwMilliseconds);
         switch(dwResult)
         {
             case WAIT_OBJECT_0:
             {
-                HRESULT hr = S_OK;
-                D3DDDICB_ESCAPE DdiEscape;
-                DdiEscape.Flags.Value = 0;
-                DdiEscape.pPrivateDriverData = pCmd;
-                DdiEscape.PrivateDriverDataSize = cbCmd;
-
-                pCmd->EscapeHdr.escapeCode = VBOXESC_GETVBOXVIDEOCMCMD;
-                /* lock to ensure the context is not distructed */
-                EnterCriticalSection(&pSession->CritSect);
-                /* use any context for identifying the kernel CmSession. We're using the first one */
-                PVBOXWDDMDISP_CONTEXT pContext = RTListNodeGetFirst(&pSession->CtxList, VBOXWDDMDISP_CONTEXT, ListNode);
-                if (pContext)
-                {
-                    PVBOXWDDMDISP_DEVICE pDevice = pContext->pDevice;
-                    DdiEscape.hDevice = pDevice->hDevice;
-                    DdiEscape.hContext = pContext->ContextInfo.hContext;
-                    Assert (DdiEscape.hContext);
-                    Assert (DdiEscape.hDevice);
-                    hr = pDevice->RtCallbacks.pfnEscapeCb(pDevice->pAdapter->hAdapter, &DdiEscape);
-                    LeaveCriticalSection(&pSession->CritSect);
-                    Assert(hr == S_OK);
-                    if (hr == S_OK)
-                    {
-                        if (!pCmd->Hdr.cbCmdsReturned && !pCmd->Hdr.cbRemainingFirstCmd)
-                            break; /* <- break to enter a new wait cycle */
-                    }
-                }
-                else
-                {
-                    LeaveCriticalSection(&pSession->CritSect);
-                    pCmd->Hdr.cbCmdsReturned = 0;
-                    pCmd->Hdr.cbRemainingCmds = 0;
-                    pCmd->Hdr.cbRemainingFirstCmd = 0;
-                }
-
-                return hr;
+                break; /* <- query commands */
             }
             case WAIT_TIMEOUT:
             {
-                pCmd->Hdr.cbCmdsReturned = 0;
-                pCmd->Hdr.cbRemainingCmds = 0;
-                pCmd->Hdr.cbRemainingFirstCmd = 0;
                 return WAIT_TIMEOUT;
             }
             default:
@@ -221,6 +227,10 @@ HRESULT vboxDispCmSessionCmdGet(PVBOXDISPCM_SESSION pSession, PVBOXDISPIFESCAPE_
                 return E_FAIL;
         }
     } while (1);
+
+    /* should never be here */
+    AssertBreakpoint();
+    return E_FAIL;
 }
 
 HRESULT vboxDispCmCmdGet(PVBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD pCmd, uint32_t cbCmd, DWORD dwMilliseconds)
