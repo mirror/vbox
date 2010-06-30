@@ -340,6 +340,7 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
         /* Up a level; fatal */
         case VERR_VMX_IN_VMX_ROOT_MODE:
         case VERR_SVM_IN_USE:
+        case VERR_SVM_UNABLE_TO_START_VM:
             break;
 #endif
 
