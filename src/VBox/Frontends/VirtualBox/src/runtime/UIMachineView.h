@@ -157,7 +157,6 @@ protected slots:
 
     /* Console callback handlers: */
     virtual void sltMachineStateChanged();
-    virtual void sltPerformGuestResize(const QSize & /* toSize */) {};
 
 private:
 
