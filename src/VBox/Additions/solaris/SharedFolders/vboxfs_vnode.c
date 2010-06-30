@@ -1559,20 +1559,22 @@ done:
 static int
 sffs_fsync(vnode_t *vp, int flag, cred_t *cr, caller_context_t *ct)
 {
-#if 0
 	sfnode_t *node;
+	int		error;
 
 	/*
 	 * Ask the host to sync any data it may have cached for open files.
-	 * I don't think we care about errors.
 	 */
 	mutex_enter(&sffs_lock);
 	node = VN2SFN(vp);
-	if (node->sf_file != NULL)
-		(void) sfprov_fsync(node->sf_file);
+	if (node->sf_file == NULL)
+		error = EBADF;
+	else if (node->sf_sffs->sf_fsync)
+		error = sfprov_fsync(node->sf_file);
+	else
+		error = 0;
 	mutex_exit(&sffs_lock);
-#endif
-	return (0);
+	return (error);
 }
 
 /*

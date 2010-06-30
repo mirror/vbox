@@ -65,7 +65,8 @@ static mntopt_t sffs_options[] = {
 	/* Option	Cancels Opt	Arg	Flags		Data */
 	{"uid",		NULL,		NULL,	MO_HASVALUE,	NULL},
 	{"gid",		NULL,		NULL,	MO_HASVALUE,	NULL},
-	{"stat_ttl",	NULL,		NULL,	MO_HASVALUE,	NULL}
+	{"stat_ttl",	NULL,		NULL,	MO_HASVALUE,	NULL},
+	{"fsync",	NULL,		NULL,	0,	        NULL}
 };
 
 static mntopts_t sffs_options_table = {
@@ -229,6 +230,7 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 	uid_t uid = 0;
 	gid_t gid = 0;
 	int stat_ttl = DEF_STAT_TTL_MS;
+	int fsync = 0;
 	char *optval;
 	long val;
 	char *path;
@@ -299,6 +301,12 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 		stat_ttl = val;
 
 	/*
+	 * whether to honor fsync
+	 */
+	if (vfs_optionisset(vfsp, "fsync", &optval))
+		fsync = 1;
+
+	/*
 	 * Any unknown options are an error
 	 */
 	if ((uap->flags & MS_DATA) && uap->datalen > 0) {
@@ -350,6 +358,7 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 	sffs->sf_uid = uid;
 	sffs->sf_gid = gid;
 	sffs->sf_stat_ttl = stat_ttl;
+	sffs->sf_fsync = fsync;
 	sffs->sf_share_name = share_name;
 	sffs->sf_mntpath = mount_point;
 	sffs->sf_handle = handle;
