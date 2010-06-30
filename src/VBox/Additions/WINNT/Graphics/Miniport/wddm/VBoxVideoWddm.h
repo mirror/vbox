@@ -53,7 +53,7 @@ VOID vboxWddmMemFree(PVOID pvMem);
 typedef struct VBOXWDDM_ALLOCATION
 {
     VBOXWDDM_ALLOC_TYPE enmType;
-//    D3DDDI_RESOURCEFLAGS fRcFlags;
+    D3DDDI_RESOURCEFLAGS fRcFlags;
     UINT SegmentId;
     VBOXVIDEOOFFSET offVram;
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -148,10 +148,7 @@ typedef struct VBOXWDDM_DMA_PRIVATEDATA_FLAFS
         struct
         {
             UINT bCmdInDmaBuffer : 1;
-            UINT bShadow2PrimaryUpdate : 1;
-            UINT bSrcAllocValid : 1;
-            UINT bDstAllocValid : 1;
-            UINT bReserved : 28;
+            UINT bReserved : 31;
         };
         uint32_t Value;
     };
