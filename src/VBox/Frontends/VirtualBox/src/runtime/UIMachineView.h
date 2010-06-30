@@ -159,9 +159,6 @@ protected slots:
     virtual void sltMachineStateChanged();
     virtual void sltPerformGuestResize(const QSize & /* toSize */) {};
 
-    /* Various helper slots: */
-    virtual void sltNormalizeGeometry() { normalizeGeometry(true); }
-
 private:
 
     /* Cross-platforms event processors: */
