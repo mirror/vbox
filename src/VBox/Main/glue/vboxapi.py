@@ -294,7 +294,7 @@ class PlatformMSCOM:
         # capitalized version of callback method
         str += "   HandleEvent=BaseClass.handleEvent\n"
         str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
-        str += "result = ListenerImpl()\n"
+        str += "result = win32com.server.util.wrap(ListenerImpl())\n"
         exec (str,d,d)
         return d['result']
 

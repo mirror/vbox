@@ -431,8 +431,8 @@ def monitorVBox(ctx, dur):
     vbox.unregisterCallback(cb)
 
 def monitorSource(ctx, es, active, dur):
-    def handleEventImpl(ev):
-         print "got event: %s %s" %(ev, str(ev.type))
+    def handleEventImpl(ev):         
+         print "got event: %s" %(str(ev.type))
          if ev.type == ctx['global'].constants.VBoxEventType_OnMachineStateChange:
              scev = ctx['global'].queryInterface(ev, 'IMachineStateChangeEvent')
              if scev:
@@ -443,8 +443,13 @@ def monitorSource(ctx, es, active, dur):
          pass
 
      def handleEvent(self, ev):
-         handleEventImpl(ev)
-
+         try:
+            # a bit convoluted QI to make it work with MS COM
+            handleEventImpl(ctx['global'].queryInterface(ev, 'IEvent'))
+         except:
+            traceback.print_exc()
+	    pass
+ 
     if active:
         listener = ctx['global'].createListener(EventListener)
     else:
