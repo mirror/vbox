@@ -79,6 +79,9 @@ UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic, ulon
     /* Prepare normal machine view: */
     prepareMachineView();
 
+    /* Prepare handlers: */
+    prepareHandlers();
+
     /* Load normal window settings: */
     loadWindowSettings();
 
@@ -93,6 +96,9 @@ UIMachineWindowNormal::~UIMachineWindowNormal()
 {
     /* Save normal window settings: */
     saveWindowSettings();
+
+    /* Prepare handlers: */
+    cleanupHandlers();
 
     /* Cleanup normal machine view: */
     cleanupMachineView();

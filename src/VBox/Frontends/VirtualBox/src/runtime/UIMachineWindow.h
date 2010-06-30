@@ -79,8 +79,10 @@ protected:
     virtual void prepareConsoleConnections();
     virtual void prepareMachineViewContainer();
     //virtual void loadWindowSettings() {}
+    virtual void prepareHandlers();
 
     /* Cleanup helpers: */
+    virtual void cleanupHandlers();
     //virtual void saveWindowSettings() {}
     //virtual void cleanupMachineViewContainer() {}
     //virtual void cleanupConsoleConnections() {}
