@@ -349,8 +349,6 @@ static void stubSPUTearDown(void)
 
     crFreeHashtable(stub.windowTable, crFree);
     crFreeHashtable(stub.contextTable, NULL);
-
-    crMemset(&stub, 0, sizeof(stub) );
 }
 
 static void stubSPUSafeTearDown(void)
@@ -392,7 +390,6 @@ static void stubSPUSafeTearDown(void)
 #endif
 
     crNetTearDown();
-    crMemset(&stub, 0, sizeof(stub));
 #ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(mutex);
     crFreeMutex(mutex);
