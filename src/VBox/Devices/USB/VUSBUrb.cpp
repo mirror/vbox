@@ -72,7 +72,9 @@ DECLINLINE(const char *) vusbUrbStatusName(VUSBSTATUS enmStatus)
 
     return enmStatus < (int)RT_ELEMENTS(s_apszNames)
         ? s_apszNames[enmStatus]
-        : "??";
+        : enmStatus == VUSBSTATUS_INVALID
+            ? "INVALID"
+            : "??";
 }
 
 DECLINLINE(const char *) vusbUrbDirName(VUSBDIRECTION enmDir)
