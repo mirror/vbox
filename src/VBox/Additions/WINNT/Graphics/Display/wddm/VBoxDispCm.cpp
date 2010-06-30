@@ -208,10 +208,8 @@ HRESULT vboxDispCmSessionCmdGet(PVBOXDISPCM_SESSION pSession, PVBOXDISPIFESCAPE_
 
     do
     {
-#ifdef DEBUG_misha
-        /* not tested yet */
+
         if (pSession->bQueryMp)
-#endif
         {
             HRESULT hr = vboxDispCmSessionCmdQueryData(pSession, pCmd, cbCmd);
             Assert(hr == S_OK || hr == S_FALSE);
