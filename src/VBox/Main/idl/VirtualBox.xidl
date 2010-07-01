@@ -15312,7 +15312,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
   </interface>
-  
+
   <interface
      name="IStorageControllerChangeEvent" extends="IEvent"
      uuid="715212BF-DA59-426E-8230-3831FAA52C56"
@@ -15341,7 +15341,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
   </interface>
-  
+
    <interface
      name="ICPUChangeEvent" extends="IEvent"
      uuid="D0F0BECC-EE17-4D17-A8CC-383B0EB55E9D"
@@ -15536,7 +15536,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
   </interface>
-  
+
   <interface
       name="IExtraDataChangeEvent" extends="IEvent"
       uuid="024F00CE-6E0B-492A-A8D0-968472A94DC7"

@@ -431,12 +431,18 @@ def monitorVBox(ctx, dur):
     vbox.unregisterCallback(cb)
 
 def monitorSource(ctx, es, active, dur):
-    def handleEventImpl(ev):         
-         print "got event: %s" %(str(ev.type))
+    def handleEventImpl(ev):
+         type = ev.type
+         print "got event: %s %s" %(str(ev.type), asEnumElem(ctx, 'VBoxEventType', type))
          if ev.type == ctx['global'].constants.VBoxEventType_OnMachineStateChange:
              scev = ctx['global'].queryInterface(ev, 'IMachineStateChangeEvent')
              if scev:
                  print "state event: mach=%s state=%s" %(scev.machineId, scev.state)
+         elif  type == ctx['global'].constants.VBoxEventType_OnMousePointerShapeChange:
+             psev = ctx['global'].queryInterface(ev, 'IMousePointerShapeChangeEvent')
+             if psev:
+                 shape = ctx['global'].getArray(psev, 'shape')
+                 print "pointer shape event: w=%d h=%d shape len=%d" %(psev.width, psev.height, len(shape))
 
     class EventListener:
      def __init__(self, arg):
@@ -449,7 +455,7 @@ def monitorSource(ctx, es, active, dur):
          except:
             traceback.print_exc()
 	    pass
- 
+
     if active:
         listener = ctx['global'].createListener(EventListener)
     else:

@@ -176,7 +176,15 @@
 
   <xsl:choose>
     <xsl:when test="$safearray='yes'">
-      <!-- @todo: setter missing -->
+      <xsl:variable name="elemtype">
+        <xsl:call-template name="typeIdl2Back">
+          <xsl:with-param name="type" select="@type" />
+          <xsl:with-param name="safearray" select="''" />
+          <xsl:with-param name="dir" select="'in'" />
+        </xsl:call-template>
+      </xsl:variable>
+      <xsl:value-of select="concat('         SafeArray&lt;', $elemtype, '&gt; aArr(ComSafeArrayInArg(',$param,'));&#10;')"/>
+      <xsl:value-of select="concat('         ',$member, '.initFrom(aArr);&#10;')"/>
     </xsl:when>
     <xsl:otherwise>
       <xsl:value-of select="concat('         ', $member, ' = ', $param, ';&#10;')"/>
@@ -191,7 +199,7 @@
   <xsl:param name="safearray"/>
   <xsl:choose>
     <xsl:when test="$safearray='yes'">
-      <xsl:value-of select="concat('         ', $member, '.cloneTo(ComSafeArrayOutArg (', $param, '));&#10;')"/>
+      <xsl:value-of select="concat('         ', $member, '.detachTo(ComSafeArrayOutArg (', $param, '));&#10;')"/>
     </xsl:when>
     <xsl:otherwise>
       <xsl:choose>
@@ -251,11 +259,30 @@
       </xsl:call-template>
     </xsl:variable>
 
-    <!-- no safearrays params yet -->
-    <xsl:if test="not(@safearray)">
-      <xsl:value-of select="concat('              ',$aTypeName, ' = va_arg(args, ',$aType,');&#10;')"/>
-      <xsl:value-of select="concat('              ',$obj, '->set_', @name, '(',$aName, ');&#10;')"/>
-    </xsl:if>
+    <xsl:choose>
+      <xsl:when test="@safearray='yes'">
+         <xsl:variable name="elemtype">
+           <xsl:call-template name="typeIdl2Back">
+             <xsl:with-param name="type" select="@type" />
+             <xsl:with-param name="safearray" select="''" />
+             <xsl:with-param name="dir" select="'in'" />
+           </xsl:call-template>
+         </xsl:variable>
+         <xsl:value-of select="       '#ifdef RT_OS_WINDOWS&#10;'"/>
+         <xsl:value-of select="       '              SAFEARRAY **    aPtr = va_arg(args, SAFEARRAY **);&#10;'"/>
+         <xsl:value-of select="concat('              com::SafeArray&lt;', $elemtype,'&gt;   aArr(aPtr);&#10;')"/>
+         <xsl:value-of select="       '#else&#10;'"/>
+         <xsl:value-of select="       '              PRUint32 aArrSize = va_arg(args, PRUint32);&#10;'"/>
+         <xsl:value-of select="       '              void*    aPtr = va_arg(args, void*);&#10;'"/>
+         <xsl:value-of select="concat('              com::SafeArray&lt;', $elemtype,'&gt;   aArr(aArrSize, (', $elemtype,'*)aPtr);&#10;')"/>
+         <xsl:value-of select="       '#endif&#10;'"/>
+         <xsl:value-of select="concat('              ',$obj, '->set_', @name, '(ComSafeArrayAsInParam(aArr));&#10;')"/>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:value-of select="concat('              ',$aTypeName, ' = va_arg(args, ',$aType,');&#10;')"/>
+        <xsl:value-of select="concat('              ',$obj, '->set_', @name, '(',$aName, ');&#10;')"/>
+      </xsl:otherwise>
+    </xsl:choose>
   </xsl:for-each>
 </xsl:template>
 
