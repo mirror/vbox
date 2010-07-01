@@ -48,7 +48,7 @@
 
 #ifdef Q_WS_PM
 # include "QIHotKeyEdit.h"
-#endif /* defined (Q_WS_PM) */
+#endif /* Q_WS_PM */
 
 #ifdef Q_WS_WIN
 #undef LOWORD
@@ -58,7 +58,7 @@
 #include <windows.h>
 static UIMachineView *gView = 0;
 static HHOOK gKbdHook = 0;
-#endif /* defined (Q_WS_WIN) */
+#endif /* Q_WS_WIN */
 
 #ifdef Q_WS_X11
 # include <QX11Info>
@@ -77,7 +77,7 @@ const int XKeyRelease = KeyRelease;
 #  undef FocusIn
 # endif
 # include "XKeyboard.h"
-#endif /* defined (Q_WS_X11) */
+#endif /* Q_WS_X11 */
 
 #ifdef Q_WS_MAC
 # include "DockIconPreview.h"
@@ -114,7 +114,7 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
                                      , UIVisualStateType visualStateType
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                      , bool bAccelerate2DVideo
-#endif
+#endif /* VBOX_WITH_VIDEOHWACCEL */
                                      )
 {
     UIMachineView *view = 0;
@@ -125,7 +125,7 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
                                            , uScreenId
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                            , bAccelerate2DVideo
-#endif
+#endif /* VBOX_WITH_VIDEOHWACCEL */
                                            );
             break;
         case UIVisualStateType_Fullscreen:
@@ -133,7 +133,7 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
                                                , uScreenId
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                                , bAccelerate2DVideo
-#endif
+#endif /* VBOX_WITH_VIDEOHWACCEL */
                                                );
             break;
         case UIVisualStateType_Seamless:
@@ -141,7 +141,7 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
                                              , uScreenId
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                              , bAccelerate2DVideo
-#endif
+#endif /* VBOX_WITH_VIDEOHWACCEL */
                                              );
             break;
         default:
@@ -161,11 +161,79 @@ int UIMachineView::keyboardState() const
            (m_bIsHostkeyPressed ? UIViewStateType_HostKeyPressed : 0);
 }
 
+void UIMachineView::sltMachineStateChanged()
+{
+    /* Get machine state: */
+    KMachineState state = uisession()->machineState();
+    switch (state)
+    {
+        case KMachineState_Paused:
+        case KMachineState_TeleportingPausedVM:
+        {
+            if (vboxGlobal().vmRenderMode() != VBoxDefs::TimerMode &&  m_pFrameBuffer &&
+                (state != KMachineState_TeleportingPausedVM || m_previousState != KMachineState_Teleporting))
+            {
+                /* Take a screen snapshot. Note that TakeScreenShot() always needs a 32bpp image: */
+                QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
+                /* If TakeScreenShot fails or returns no image, just show a black image. */
+                shot.fill(0);
+                CDisplay dsp = session().GetConsole().GetDisplay();
+                dsp.TakeScreenShot(screenId(), shot.bits(), shot.width(), shot.height());
+                /* TakeScreenShot() may fail if, e.g. the Paused notification was delivered
+                 * after the machine execution was resumed. It's not fatal: */
+                if (dsp.isOk())
+                {
+                    dimImage(shot);
+                }
+                m_pauseShot = QPixmap::fromImage(shot);
+                /* Fully repaint to pick up m_pauseShot: */
+                viewport()->repaint();
+            }
+            /* Reuse the focus event handler to uncapture keyboard: */
+            if (hasFocus())
+                focusEvent(false /* aHasFocus*/, false /* aReleaseHostKey */);
+            break;
+        }
+        case KMachineState_Stuck:
+        {
+            /* Reuse the focus event handler to uncapture keyboard: */
+            if (hasFocus())
+                focusEvent(false /* aHasFocus*/, false /* aReleaseHostKey */);
+            break;
+        }
+        case KMachineState_Running:
+        {
+            if (   m_previousState == KMachineState_Paused
+                || m_previousState == KMachineState_TeleportingPausedVM
+                || m_previousState == KMachineState_Restoring)
+            {
+                if (vboxGlobal().vmRenderMode() != VBoxDefs::TimerMode && m_pFrameBuffer)
+                {
+                    /* Reset the pixmap to free memory: */
+                    m_pauseShot = QPixmap();
+                    /* Ask for full guest display update (it will also update
+                     * the viewport through IFramebuffer::NotifyUpdate): */
+                    CDisplay dsp = session().GetConsole().GetDisplay();
+                    dsp.InvalidateAndUpdate();
+                }
+            }
+            /* Reuse the focus event handler to capture keyboard: */
+            if (hasFocus())
+                focusEvent(true /* aHasFocus */);
+            break;
+        }
+        default:
+            break;
+    }
+
+    m_previousState = state;
+}
+
 UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
                              , ulong uScreenId
 #ifdef VBOX_WITH_VIDEOHWACCEL
                              , bool bAccelerate2DVideo
-#endif
+#endif /* VBOX_WITH_VIDEOHWACCEL */
                              )
     : QAbstractScrollArea(pMachineWindow->machineWindow())
     , m_pMachineWindow(pMachineWindow)
@@ -194,6 +262,309 @@ UIMachineView::~UIMachineView()
 {
 }
 
+void UIMachineView::prepareFrameBuffer()
+{
+    /* Prepare viewport: */
+#ifdef VBOX_GUI_USE_QGLFB
+    QWidget *pViewport;
+    switch (vboxGlobal().vmRenderMode())
+    {
+        case VBoxDefs::QGLMode:
+            pViewport = new VBoxGLWidget(session().GetConsole(), this, NULL);
+            break;
+        default:
+            pViewport = new VBoxViewport(this);
+    }
+#else /* VBOX_GUI_USE_QGLFB */
+    VBoxViewport *pViewport = new VBoxViewport(this);
+#endif /* !VBOX_GUI_USE_QGLFB */
+    setViewport(pViewport);
+
+    CDisplay display = session().GetConsole().GetDisplay();
+    Assert(!display.isNull());
+    m_pFrameBuffer = NULL;
+
+    switch (vboxGlobal().vmRenderMode())
+    {
+#ifdef VBOX_GUI_USE_QIMAGE
+        case VBoxDefs::QImageMode:
+# ifdef VBOX_WITH_VIDEOHWACCEL
+            if (m_fAccelerate2DVideo)
+            {
+                UIFrameBuffer* pFramebuffer = uisession()->frameBuffer(screenId());
+                if (pFramebuffer)
+                    pFramebuffer->setView(this);
+                else
+                {
+                    /* these two additional template args is a workaround to this [VBox|UI] duplication
+                     * @todo: they are to be removed once VBox stuff is gone */
+                    pFramebuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQImage, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session(), (uint32_t)screenId());
+                    uisession()->setFrameBuffer(screenId(), pFramebuffer);
+                }
+                m_pFrameBuffer = pFramebuffer;
+            }
+            else
+                m_pFrameBuffer = new UIFrameBufferQImage(this);
+# else /* VBOX_WITH_VIDEOHWACCEL */
+            m_pFrameBuffer = new UIFrameBufferQImage(this);
+# endif /* !VBOX_WITH_VIDEOHWACCEL */
+            break;
+#endif /* VBOX_GUI_USE_QIMAGE */
+#ifdef VBOX_GUI_USE_QGLFB
+        case VBoxDefs::QGLMode:
+            m_pFrameBuffer = new UIFrameBufferQGL(this);
+            break;
+//        case VBoxDefs::QGLOverlayMode:
+//            m_pFrameBuffer = new UIQGLOverlayFrameBuffer(this);
+//            break;
+#endif /* VBOX_GUI_USE_QGLFB */
+#ifdef VBOX_GUI_USE_SDL
+        case VBoxDefs::SDLMode:
+            /* Indicate that we are doing all drawing stuff ourself: */
+            // TODO_NEW_CORE
+            viewport()->setAttribute(Qt::WA_PaintOnScreen);
+# ifdef Q_WS_X11
+            /* This is somehow necessary to prevent strange X11 warnings on i386 and segfaults on x86_64: */
+            XFlush(QX11Info::display());
+# endif /* Q_WS_X11 */
+# if defined(VBOX_WITH_VIDEOHWACCEL) && defined(DEBUG_misha) /* not tested yet */
+            if (m_fAccelerate2DVideo)
+            {
+                class UIFrameBuffer* pFramebuffer = uisession()->frameBuffer(screenId());
+                if (pFramebuffer)
+                    pFramebuffer->setView(this);
+                else
+                {
+                    /* these two additional template args is a workaround to this [VBox|UI] duplication
+                     * @todo: they are to be removed once VBox stuff is gone */
+                    pFramebuffer = new VBoxOverlayFrameBuffer<UIFrameBufferSDL, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session(), (uint32_t)screenId());
+                    uisession()->setFrameBuffer(screenId(), pFramebuffer);
+                }
+                m_pFrameBuffer = pFramebuffer;
+            }
+            else
+                m_pFrameBuffer = new UIFrameBufferSDL(this);
+# else
+            m_pFrameBuffer = new UIFrameBufferSDL(this);
+# endif
+            /* Disable scrollbars because we cannot correctly draw in a scrolled window using SDL: */
+            horizontalScrollBar()->setEnabled(false);
+            verticalScrollBar()->setEnabled(false);
+            break;
+#endif /* VBOX_GUI_USE_SDL */
+#if 0 // TODO: Enable DDraw frame buffer!
+#ifdef VBOX_GUI_USE_DDRAW
+        case VBoxDefs::DDRAWMode:
+            m_pFrameBuffer = new UIDDRAWFrameBuffer(this);
+            if (!m_pFrameBuffer || m_pFrameBuffer->address() == NULL)
+            {
+                if (m_pFrameBuffer)
+                    delete m_pFrameBuffer;
+                m_mode = VBoxDefs::QImageMode;
+                m_pFrameBuffer = new UIFrameBufferQImage(this);
+            }
+            break;
+#endif /* VBOX_GUI_USE_DDRAW */
+#endif
+#ifdef VBOX_GUI_USE_QUARTZ2D
+        case VBoxDefs::Quartz2DMode:
+            /* Indicate that we are doing all drawing stuff ourself: */
+            viewport()->setAttribute(Qt::WA_PaintOnScreen);
+# ifdef VBOX_WITH_VIDEOHWACCEL
+            if (m_fAccelerate2DVideo)
+            {
+                UIFrameBuffer* pFramebuffer = uisession()->frameBuffer(screenId());
+                if (pFramebuffer)
+                    pFramebuffer->setView(this);
+                else
+                {
+                    /* these two additional template args is a workaround to this [VBox|UI] duplication
+                     * @todo: they are to be removed once VBox stuff is gone */
+                    pFramebuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQuartz2D, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session(), (uint32_t)screenId());
+                    uisession()->setFrameBuffer(screenId(), pFramebuffer);
+                }
+                m_pFrameBuffer = pFramebuffer;
+            }
+            else
+                m_pFrameBuffer = new UIFrameBufferQuartz2D(this);
+# else /* VBOX_WITH_VIDEOHWACCEL */
+            m_pFrameBuffer = new UIFrameBufferQuartz2D(this);
+# endif /* !VBOX_WITH_VIDEOHWACCEL */
+            break;
+#endif /* VBOX_GUI_USE_QUARTZ2D */
+        default:
+            AssertReleaseMsgFailed(("Render mode must be valid: %d\n", vboxGlobal().vmRenderMode()));
+            LogRel(("Invalid render mode: %d\n", vboxGlobal().vmRenderMode()));
+            qApp->exit(1);
+            break;
+    }
+    if (m_pFrameBuffer)
+    {
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        CFramebuffer fb(NULL);
+        if (m_fAccelerate2DVideo)
+        {
+            LONG XOrigin, YOrigin;
+            /* check if the framebuffer is already assigned
+             * in this case we do not need to re-assign it
+             * neither do we need to AddRef */
+            display.GetFramebuffer(m_uScreenId, fb, XOrigin, YOrigin);
+        }
+        if (fb.raw() != m_pFrameBuffer) /* <-this will evaluate to true iff m_fAccelerate2DVideo is disabled or iff no framebuffer is yet assigned */
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+        {
+            m_pFrameBuffer->AddRef();
+        }
+
+        /* always perform SetFramebuffer to ensure 3D gets notified */
+        display.SetFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
+    }
+
+#ifdef Q_WS_X11
+    /* Processing pseudo resize-event to synchronize frame-buffer
+     * with stored framebuffer size in case of machine state was 'saved': */
+    if (session().GetMachine().GetState() == KMachineState_Saved)
+    {
+        QSize size = guestSizeHint();
+        UIResizeEvent event(FramebufferPixelFormat_Opaque, NULL, 0, 0, size.width(), size.height());
+        frameBuffer()->resizeEvent(&event);
+    }
+#endif /* Q_WS_X11 */
+}
+
+void UIMachineView::prepareCommon()
+{
+    /* Prepare view frame: */
+    setFrameStyle(QFrame::NoFrame);
+
+    /* Pressed keys: */
+    ::memset(m_pressedKeys, 0, sizeof(m_pressedKeys));
+
+    /* Setup palette: */
+    QPalette palette(viewport()->palette());
+    palette.setColor(viewport()->backgroundRole(), Qt::black);
+    viewport()->setPalette(palette);
+
+    /* Setup focus policy: */
+    setFocusPolicy(Qt::WheelFocus);
+
+#if defined Q_WS_PM
+    bool ok = VBoxHlpInstallKbdHook(0, winId(), UM_PREACCEL_CHAR);
+    Assert(ok);
+    NOREF(ok);
+#endif /* Q_WS_PM */
+}
+
+void UIMachineView::prepareFilters()
+{
+    /* Enable MouseMove events: */
+    viewport()->setMouseTracking(true);
+
+    /* QScrollView does the below on its own, but let's
+     * do it anyway for the case it will not do it in the future: */
+    viewport()->installEventFilter(this);
+
+    /* We want to be notified on some parent's events: */
+    machineWindowWrapper()->machineWindow()->installEventFilter(this);
+}
+
+void UIMachineView::prepareConsoleConnections()
+{
+    /* Machine state-change updater: */
+    connect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
+}
+
+void UIMachineView::loadMachineViewSettings()
+{
+    /* Global settings: */
+    {
+#ifdef Q_WS_X11
+        /* Initialize the X keyboard subsystem: */
+        initMappedX11Keyboard(QX11Info::display(), vboxGlobal().settings().publicProperty("GUI/RemapScancodes"));
+#endif /* Q_WS_X11 */
+
+        /* Remember the desktop geometry and register for geometry
+         * change events for telling the guest about video modes we like: */
+        QString desktopGeometry = vboxGlobal().settings().publicProperty("GUI/MaxGuestResolution");
+        if ((desktopGeometry == QString::null) || (desktopGeometry == "auto"))
+            setDesktopGeometry(DesktopGeo_Automatic, 0, 0);
+        else if (desktopGeometry == "any")
+            setDesktopGeometry(DesktopGeo_Any, 0, 0);
+        else
+        {
+            int width = desktopGeometry.section(',', 0, 0).toInt();
+            int height = desktopGeometry.section(',', 1, 1).toInt();
+            setDesktopGeometry(DesktopGeo_Fixed, width, height);
+        }
+    }
+
+    /* Exatra data settings: */
+    {
+        /* CAD settings: */
+        QString passCAD = session().GetConsole().GetMachine().GetExtraData(VBoxDefs::GUI_PassCAD);
+        if (!passCAD.isEmpty() && ((passCAD != "false") || (passCAD != "no")))
+            m_fPassCAD = true;
+    }
+}
+
+void UIMachineView::cleanupCommon()
+{
+#ifdef Q_WS_PM
+    bool ok = VBoxHlpUninstallKbdHook(0, winId(), UM_PREACCEL_CHAR);
+    Assert(ok);
+    NOREF(ok);
+#endif /* Q_WS_PM */
+
+#ifdef Q_WS_WIN
+    if (gKbdHook)
+        UnhookWindowsHookEx(gKbdHook);
+    gView = 0;
+#endif /* Q_WS_WIN */
+
+#ifdef Q_WS_MAC
+    /* We have to make sure the callback for the keyboard events is released
+     * when closing this view. */
+    if (m_fKeyboardGrabbed)
+        darwinGrabKeyboardEvents (false);
+#endif /* Q_WS_MAC */
+}
+
+void UIMachineView::cleanupFrameBuffer()
+{
+    if (m_pFrameBuffer)
+    {
+        /* Process pending frame-buffer resize events: */
+        QApplication::sendPostedEvents(this, VBoxDefs::ResizeEventType);
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        if (m_fAccelerate2DVideo)
+        {
+            /* When 2D is enabled we do not re-create Framebuffers. This is done to
+             * 1. avoid 2D command loss during the time slot when no framebuffer is assigned to the display
+             * 2. make it easier to preserve the current 2D state */
+            Assert(m_pFrameBuffer == uisession()->frameBuffer(screenId()));
+            m_pFrameBuffer->setView(NULL);
+        }
+        else
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+        {
+            /* Warn framebuffer about its no more necessary: */
+            m_pFrameBuffer->setDeleted(true);
+            /* Detach framebuffer from Display: */
+            CDisplay display = session().GetConsole().GetDisplay();
+            display.SetFramebuffer(m_uScreenId, CFramebuffer(NULL));
+            /* Release the reference: */
+            m_pFrameBuffer->Release();
+//          delete m_pFrameBuffer; // TODO_NEW_CORE: possibly necessary to really cleanup
+            m_pFrameBuffer = NULL;
+        }
+    }
+}
+
+UIMachineLogic* UIMachineView::machineLogic() const
+{
+    return machineWindowWrapper()->machineLogic();
+}
+
 UISession* UIMachineView::uisession() const
 {
     return machineLogic()->uisession();
@@ -213,9 +584,9 @@ QSize UIMachineView::sizeHint() const
     if ((fb.width() < 16 || fb.height() < 16) && (vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled()))
         fb = QSize(640, 480);
     return QSize(fb.width() + frameWidth() * 2, fb.height() + frameWidth() * 2);
-#else
+#else /* VBOX_WITH_DEBUGGER */
     return QSize(m_pFrameBuffer->width() + frameWidth() * 2, m_pFrameBuffer->height() + frameWidth() * 2);
-#endif
+#endif /* !VBOX_WITH_DEBUGGER */
 }
 
 int UIMachineView::contentsX() const
@@ -246,11 +617,6 @@ int UIMachineView::visibleWidth() const
 int UIMachineView::visibleHeight() const
 {
     return verticalScrollBar()->pageStep();
-}
-
-UIMachineLogic* UIMachineView::machineLogic() const
-{
-    return machineWindowWrapper()->machineLogic();
 }
 
 QSize UIMachineView::desktopGeometry() const
@@ -367,303 +733,365 @@ void UIMachineView::updateSliders()
     verticalScrollBar()->setPageStep(p.height());
 }
 
-void UIMachineView::prepareFrameBuffer()
+void UIMachineView::fixModifierState(LONG *piCodes, uint *puCount)
 {
-    /* Prepare viewport: */
-#ifdef VBOX_GUI_USE_QGLFB
-    QWidget *pViewport;
-    switch (vboxGlobal().vmRenderMode())
+    /* Synchronize the views of the host and the guest to the modifier keys.
+     * This function will add up to 6 additional keycodes to codes. */
+
+#if defined(Q_WS_X11)
+
+    Window   wDummy1, wDummy2;
+    int      iDummy3, iDummy4, iDummy5, iDummy6;
+    unsigned uMask;
+    unsigned uKeyMaskNum = 0, uKeyMaskCaps = 0, uKeyMaskScroll = 0;
+
+    uKeyMaskCaps          = LockMask;
+    XModifierKeymap* map  = XGetModifierMapping(QX11Info::display());
+    KeyCode keyCodeNum    = XKeysymToKeycode(QX11Info::display(), XK_Num_Lock);
+    KeyCode keyCodeScroll = XKeysymToKeycode(QX11Info::display(), XK_Scroll_Lock);
+
+    for (int i = 0; i < 8; ++ i)
     {
-        case VBoxDefs::QGLMode:
-            pViewport = new VBoxGLWidget(session().GetConsole(), this, NULL);
+        if (keyCodeNum != NoSymbol && map->modifiermap[map->max_keypermod * i] == keyCodeNum)
+            uKeyMaskNum = 1 << i;
+        else if (keyCodeScroll != NoSymbol && map->modifiermap[map->max_keypermod * i] == keyCodeScroll)
+            uKeyMaskScroll = 1 << i;
+    }
+    XQueryPointer(QX11Info::display(), DefaultRootWindow(QX11Info::display()), &wDummy1, &wDummy2,
+                  &iDummy3, &iDummy4, &iDummy5, &iDummy6, &uMask);
+    XFreeModifiermap(map);
+
+    if (uisession()->numLockAdaptionCnt() && (uisession()->isNumLock() ^ !!(uMask & uKeyMaskNum)))
+    {
+        uisession()->setNumLockAdaptionCnt(uisession()->numLockAdaptionCnt() - 1);
+        piCodes[(*puCount)++] = 0x45;
+        piCodes[(*puCount)++] = 0x45 | 0x80;
+    }
+    if (uisession()->capsLockAdaptionCnt() && (uisession()->isCapsLock() ^ !!(uMask & uKeyMaskCaps)))
+    {
+        uisession()->setCapsLockAdaptionCnt(uisession()->capsLockAdaptionCnt() - 1);
+        piCodes[(*puCount)++] = 0x3a;
+        piCodes[(*puCount)++] = 0x3a | 0x80;
+        /* Some keyboard layouts require shift to be pressed to break
+         * capslock.  For simplicity, only do this if shift is not
+         * already held down. */
+        if (uisession()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
+        {
+            piCodes[(*puCount)++] = 0x2a;
+            piCodes[(*puCount)++] = 0x2a | 0x80;
+        }
+    }
+
+#elif defined(Q_WS_WIN)
+
+    if (uisession()->numLockAdaptionCnt() && (uisession()->isNumLock() ^ !!(GetKeyState(VK_NUMLOCK))))
+    {
+        uisession()->setNumLockAdaptionCnt(uisession()->numLockAdaptionCnt() - 1);
+        piCodes[(*puCount)++] = 0x45;
+        piCodes[(*puCount)++] = 0x45 | 0x80;
+    }
+    if (uisession()->capsLockAdaptionCnt() && (uisession()->isCapsLock() ^ !!(GetKeyState(VK_CAPITAL))))
+    {
+        uisession()->setCapsLockAdaptionCnt(uisession()->capsLockAdaptionCnt() - 1);
+        piCodes[(*puCount)++] = 0x3a;
+        piCodes[(*puCount)++] = 0x3a | 0x80;
+        /* Some keyboard layouts require shift to be pressed to break
+         * capslock.  For simplicity, only do this if shift is not
+         * already held down. */
+        if (uisession()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
+        {
+            piCodes[(*puCount)++] = 0x2a;
+            piCodes[(*puCount)++] = 0x2a | 0x80;
+        }
+    }
+
+#elif defined(Q_WS_MAC)
+
+    /* if (uisession()->numLockAdaptionCnt()) ... - NumLock isn't implemented by Mac OS X so ignore it. */
+    if (uisession()->capsLockAdaptionCnt() && (uisession()->isCapsLock() ^ !!(::GetCurrentEventKeyModifiers() & alphaLock)))
+    {
+        uisession()->setCapsLockAdaptionCnt(uisession()->capsLockAdaptionCnt() - 1);
+        piCodes[(*puCount)++] = 0x3a;
+        piCodes[(*puCount)++] = 0x3a | 0x80;
+        /* Some keyboard layouts require shift to be pressed to break
+         * capslock.  For simplicity, only do this if shift is not
+         * already held down. */
+        if (uisession()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
+        {
+            piCodes[(*puCount)++] = 0x2a;
+            piCodes[(*puCount)++] = 0x2a | 0x80;
+        }
+    }
+
+#else
+
+//#warning Adapt UIMachineView::fixModifierState
+
+#endif
+}
+
+QPoint UIMachineView::viewportToContents(const QPoint &vp) const
+{
+    return QPoint(vp.x() + contentsX(), vp.y() + contentsY());
+}
+
+void UIMachineView::scrollBy(int dx, int dy)
+{
+    horizontalScrollBar()->setValue(horizontalScrollBar()->value() + dx);
+    verticalScrollBar()->setValue(verticalScrollBar()->value() + dy);
+}
+
+void UIMachineView::emitKeyboardStateChanged()
+{
+    emit keyboardStateChanged(keyboardState());
+}
+
+void UIMachineView::captureKbd(bool fCapture, bool fEmitSignal /* = true */)
+{
+    if (m_bIsKeyboardCaptured == fCapture)
+        return;
+
+#if defined(Q_WS_WIN)
+    /* On Win32, keyboard grabbing is ineffective, a low-level keyboard hook is used instead. */
+#elif defined(Q_WS_X11)
+    /* On X11, we are using passive XGrabKey for normal (windowed) mode
+     * instead of XGrabKeyboard (called by QWidget::grabKeyboard())
+     * because XGrabKeyboard causes a problem under metacity - a window cannot be moved
+     * using the mouse if it is currently actively grabing the keyboard;
+     * For static modes we are using usual (active) keyboard grabbing. */
+    switch (machineLogic()->visualStateType())
+    {
+        /* If window is moveable we are making passive keyboard grab: */
+        case UIVisualStateType_Normal:
+        {
+            if (fCapture)
+                XGrabKey(QX11Info::display(), AnyKey, AnyModifier, machineWindowWrapper()->machineWindow()->winId(), False, GrabModeAsync, GrabModeAsync);
+            else
+                XUngrabKey(QX11Info::display(), AnyKey, AnyModifier, machineWindowWrapper()->machineWindow()->winId());
             break;
+        }
+        /* If window is NOT moveable we are making active keyboard grab: */
+        case UIVisualStateType_Fullscreen:
+        case UIVisualStateType_Seamless:
+        {
+            if (fCapture)
+            {
+                /* Keyboard grabbing can fail because of some keyboard shortcut is still grabbed by window manager.
+                 * We can't be sure this shortcut will be released at all, so we will retry to grab keyboard for 50 times,
+                 * and after we will just ignore that issue: */
+                int cTriesLeft = 50;
+                while (cTriesLeft && XGrabKeyboard(QX11Info::display(), machineWindowWrapper()->machineWindow()->winId(), False, GrabModeAsync, GrabModeAsync, CurrentTime)) { --cTriesLeft; }
+            }
+            else
+                XUngrabKeyboard(QX11Info::display(), CurrentTime);
+            break;
+        }
+        /* Should we try to grab keyboard in default case? I think - NO. */
         default:
-            pViewport = new VBoxViewport(this);
+            break;
+    }
+#elif defined(Q_WS_MAC)
+    /* On Mac OS X, we use the Qt methods + disabling global hot keys + watching modifiers
+     * (for right/left separation). */
+    if (fCapture)
+    {
+        ::DarwinDisableGlobalHotKeys(true);
+        grabKeyboard();
+    }
+    else
+    {
+        ::DarwinDisableGlobalHotKeys(false);
+        releaseKeyboard();
     }
 #else
-    VBoxViewport *pViewport = new VBoxViewport(this);
+    if (fCapture)
+        grabKeyboard();
+    else
+        releaseKeyboard();
 #endif
-    setViewport(pViewport);
 
-    CDisplay display = session().GetConsole().GetDisplay();
-    Assert(!display.isNull());
-    m_pFrameBuffer = NULL;
+    m_bIsKeyboardCaptured = fCapture;
 
-    switch (vboxGlobal().vmRenderMode())
+    if (fEmitSignal)
+        emitKeyboardStateChanged();
+}
+
+void UIMachineView::saveKeyStates()
+{
+    ::memcpy(m_pressedKeysCopy, m_pressedKeys, sizeof(m_pressedKeys));
+}
+
+void UIMachineView::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)
+{
+    CKeyboard keyboard = session().GetConsole().GetKeyboard();
+    bool fSentRESEND = false;
+
+    /* Send a dummy scan code (RESEND) to prevent the guest OS from recognizing
+     * a single key click (for ex., Alt) and performing an unwanted action
+     * (for ex., activating the menu) when we release all pressed keys below.
+     * Note, that it's just a guess that sending RESEND will give the desired
+     * effect :), but at least it works with NT and W2k guests. */
+    for (uint i = 0; i < SIZEOF_ARRAY (m_pressedKeys); i++)
     {
-#ifdef VBOX_GUI_USE_QIMAGE
-        case VBoxDefs::QImageMode:
-# ifdef VBOX_WITH_VIDEOHWACCEL
-            if (m_fAccelerate2DVideo)
-            {
-                UIFrameBuffer* pFramebuffer = uisession()->frameBuffer(screenId());
-                if (pFramebuffer)
-                    pFramebuffer->setView(this);
-                else
-                {
-                    /* these two additional template args is a workaround to this [VBox|UI] duplication
-                     * @todo: they are to be removed once VBox stuff is gone */
-                    pFramebuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQImage, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session(), (uint32_t)screenId());
-                    uisession()->setFrameBuffer(screenId(), pFramebuffer);
-                }
-                m_pFrameBuffer = pFramebuffer;
-            }
-            else
-                m_pFrameBuffer = new UIFrameBufferQImage(this);
-# else
-            m_pFrameBuffer = new UIFrameBufferQImage(this);
-# endif
-            break;
-#endif /* VBOX_GUI_USE_QIMAGE */
-#ifdef VBOX_GUI_USE_QGLFB
-        case VBoxDefs::QGLMode:
-            m_pFrameBuffer = new UIFrameBufferQGL(this);
-            break;
-//        case VBoxDefs::QGLOverlayMode:
-//            m_pFrameBuffer = new UIQGLOverlayFrameBuffer(this);
-//            break;
-#endif /* VBOX_GUI_USE_QGLFB */
-#ifdef VBOX_GUI_USE_SDL
-        case VBoxDefs::SDLMode:
-            /* Indicate that we are doing all drawing stuff ourself: */
-            // TODO_NEW_CORE
-            viewport()->setAttribute(Qt::WA_PaintOnScreen);
-# ifdef Q_WS_X11
-            /* This is somehow necessary to prevent strange X11 warnings on i386 and segfaults on x86_64: */
-            XFlush(QX11Info::display());
-# endif
-# if defined(VBOX_WITH_VIDEOHWACCEL) && defined(DEBUG_misha) /* not tested yet */
-            if (m_fAccelerate2DVideo)
-            {
-                class UIFrameBuffer* pFramebuffer = uisession()->frameBuffer(screenId());
-                if (pFramebuffer)
-                    pFramebuffer->setView(this);
-                else
-                {
-                    /* these two additional template args is a workaround to this [VBox|UI] duplication
-                     * @todo: they are to be removed once VBox stuff is gone */
-                    pFramebuffer = new VBoxOverlayFrameBuffer<UIFrameBufferSDL, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session(), (uint32_t)screenId());
-                    uisession()->setFrameBuffer(screenId(), pFramebuffer);
-                }
-                m_pFrameBuffer = pFramebuffer;
-            }
-            else
-                m_pFrameBuffer = new UIFrameBufferSDL(this);
-# else
-            m_pFrameBuffer = new UIFrameBufferSDL(this);
-# endif
-            /* Disable scrollbars because we cannot correctly draw in a scrolled window using SDL: */
-            horizontalScrollBar()->setEnabled(false);
-            verticalScrollBar()->setEnabled(false);
-            break;
-#endif /* VBOX_GUI_USE_SDL */
-#if 0 // TODO: Enable DDraw frame buffer!
-#ifdef VBOX_GUI_USE_DDRAW
-        case VBoxDefs::DDRAWMode:
-            m_pFrameBuffer = new UIDDRAWFrameBuffer(this);
-            if (!m_pFrameBuffer || m_pFrameBuffer->address() == NULL)
-            {
-                if (m_pFrameBuffer)
-                    delete m_pFrameBuffer;
-                m_mode = VBoxDefs::QImageMode;
-                m_pFrameBuffer = new UIFrameBufferQImage(this);
-            }
-            break;
-#endif /* VBOX_GUI_USE_DDRAW */
-#endif
-#ifdef VBOX_GUI_USE_QUARTZ2D
-        case VBoxDefs::Quartz2DMode:
-            /* Indicate that we are doing all drawing stuff ourself: */
-            viewport()->setAttribute(Qt::WA_PaintOnScreen);
-# ifdef VBOX_WITH_VIDEOHWACCEL
-            if (m_fAccelerate2DVideo)
-            {
-                UIFrameBuffer* pFramebuffer = uisession()->frameBuffer(screenId());
-                if (pFramebuffer)
-                    pFramebuffer->setView(this);
-                else
-                {
-                    /* these two additional template args is a workaround to this [VBox|UI] duplication
-                     * @todo: they are to be removed once VBox stuff is gone */
-                    pFramebuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQuartz2D, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session(), (uint32_t)screenId());
-                    uisession()->setFrameBuffer(screenId(), pFramebuffer);
-                }
-                m_pFrameBuffer = pFramebuffer;
-            }
-            else
-                m_pFrameBuffer = new UIFrameBufferQuartz2D(this);
-# else
-            m_pFrameBuffer = new UIFrameBufferQuartz2D(this);
-# endif
-            break;
-#endif /* VBOX_GUI_USE_QUARTZ2D */
-        default:
-            AssertReleaseMsgFailed(("Render mode must be valid: %d\n", vboxGlobal().vmRenderMode()));
-            LogRel(("Invalid render mode: %d\n", vboxGlobal().vmRenderMode()));
-            qApp->exit(1);
-            break;
-    }
-    if (m_pFrameBuffer)
-    {
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        CFramebuffer fb(NULL);
-        if (m_fAccelerate2DVideo)
+        if (m_pressedKeys[i] & IsKeyPressed)
         {
-            LONG XOrigin, YOrigin;
-            /* check if the framebuffer is already assigned
-             * in this case we do not need to re-assign it
-             * neither do we need to AddRef */
-            display.GetFramebuffer(m_uScreenId, fb, XOrigin, YOrigin);
+            if (!fSentRESEND)
+            {
+                keyboard.PutScancode (0xFE);
+                fSentRESEND = true;
+            }
+            keyboard.PutScancode(i | 0x80);
         }
-        if (fb.raw() != m_pFrameBuffer) /* <-this will evaluate to true iff m_fAccelerate2DVideo is disabled or iff no framebuffer is yet assigned */
-#endif
+        else if (m_pressedKeys[i] & IsExtKeyPressed)
         {
-            m_pFrameBuffer->AddRef();
+            if (!fSentRESEND)
+            {
+                keyboard.PutScancode(0xFE);
+                fSentRESEND = true;
+            }
+            QVector <LONG> codes(2);
+            codes[0] = 0xE0;
+            codes[1] = i | 0x80;
+            keyboard.PutScancodes(codes);
         }
-
-        /* always perform SetFramebuffer to ensure 3D gets notified */
-        display.SetFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
+        m_pressedKeys[i] = 0;
     }
 
-#ifdef Q_WS_X11
-    /* Processing pseudo resize-event to synchronize frame-buffer
-     * with stored framebuffer size in case of machine state was 'saved': */
-    if (session().GetMachine().GetState() == KMachineState_Saved)
-    {
-        QSize size = guestSizeHint();
-        UIResizeEvent event(FramebufferPixelFormat_Opaque, NULL, 0, 0, size.width(), size.height());
-        frameBuffer()->resizeEvent(&event);
-    }
-#endif /* Q_WS_X11 */
-}
-
-void UIMachineView::prepareCommon()
-{
-    /* Prepare view frame: */
-    setFrameStyle(QFrame::NoFrame);
-
-    /* Pressed keys: */
-    ::memset(m_pressedKeys, 0, sizeof(m_pressedKeys));
-
-    /* Setup palette: */
-    QPalette palette(viewport()->palette());
-    palette.setColor(viewport()->backgroundRole(), Qt::black);
-    viewport()->setPalette(palette);
-
-    /* Setup focus policy: */
-    setFocusPolicy(Qt::WheelFocus);
-
-#if defined Q_WS_PM
-    bool ok = VBoxHlpInstallKbdHook(0, winId(), UM_PREACCEL_CHAR);
-    Assert(ok);
-    NOREF(ok);
-#endif
-}
-
-void UIMachineView::prepareFilters()
-{
-    /* Enable MouseMove events: */
-    viewport()->setMouseTracking(true);
-
-    /* QScrollView does the below on its own, but let's
-     * do it anyway for the case it will not do it in the future: */
-    viewport()->installEventFilter(this);
-
-    /* We want to be notified on some parent's events: */
-    machineWindowWrapper()->machineWindow()->installEventFilter(this);
-}
-
-void UIMachineView::prepareConsoleConnections()
-{
-    /* Machine state-change updater: */
-    connect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
-}
-
-void UIMachineView::loadMachineViewSettings()
-{
-    /* Global settings: */
-    {
-#ifdef Q_WS_X11
-        /* Initialize the X keyboard subsystem: */
-        initMappedX11Keyboard(QX11Info::display(), vboxGlobal().settings().publicProperty("GUI/RemapScancodes"));
-#endif
-
-        /* Remember the desktop geometry and register for geometry
-         * change events for telling the guest about video modes we like: */
-        QString desktopGeometry = vboxGlobal().settings().publicProperty("GUI/MaxGuestResolution");
-        if ((desktopGeometry == QString::null) || (desktopGeometry == "auto"))
-            setDesktopGeometry(DesktopGeo_Automatic, 0, 0);
-        else if (desktopGeometry == "any")
-            setDesktopGeometry(DesktopGeo_Any, 0, 0);
-        else
-        {
-            int width = desktopGeometry.section(',', 0, 0).toInt();
-            int height = desktopGeometry.section(',', 1, 1).toInt();
-            setDesktopGeometry(DesktopGeo_Fixed, width, height);
-        }
-    }
-
-    /* Exatra data settings: */
-    {
-        /* CAD settings: */
-        QString passCAD = session().GetConsole().GetMachine().GetExtraData(VBoxDefs::GUI_PassCAD);
-        if (!passCAD.isEmpty() && ((passCAD != "false") || (passCAD != "no")))
-            m_fPassCAD = true;
-    }
-}
-
-void UIMachineView::cleanupCommon()
-{
-#ifdef Q_WS_PM
-    bool ok = VBoxHlpUninstallKbdHook(0, winId(), UM_PREACCEL_CHAR);
-    Assert(ok);
-    NOREF(ok);
-#endif /* Q_WS_PM */
-
-#ifdef Q_WS_WIN
-    if (gKbdHook)
-        UnhookWindowsHookEx(gKbdHook);
-    gView = 0;
-#endif /* Q_WS_WIN */
+    if (aReleaseHostKey)
+        m_bIsHostkeyPressed = false;
 
 #ifdef Q_WS_MAC
-    /* We have to make sure the callback for the keyboard events is released
-     * when closing this view. */
-    if (m_fKeyboardGrabbed)
-        darwinGrabKeyboardEvents (false);
+    /* Clear most of the modifiers: */
+    m_darwinKeyModifiers &=
+        alphaLock | kEventKeyModifierNumLockMask |
+        (aReleaseHostKey ? 0 : ::DarwinKeyCodeToDarwinModifierMask (m_globalSettings.hostKey()));
 #endif /* Q_WS_MAC */
+
+    emitKeyboardStateChanged();
 }
 
-void UIMachineView::cleanupFrameBuffer()
+void UIMachineView::sendChangedKeyStates()
 {
-    if (m_pFrameBuffer)
+    QVector <LONG> codes(2);
+    CKeyboard keyboard = session().GetConsole().GetKeyboard();
+    for (uint i = 0; i < SIZEOF_ARRAY(m_pressedKeys); ++ i)
     {
-        /* Process pending frame-buffer resize events: */
-        QApplication::sendPostedEvents(this, VBoxDefs::ResizeEventType);
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        if (m_fAccelerate2DVideo)
+        uint8_t os = m_pressedKeysCopy[i];
+        uint8_t ns = m_pressedKeys[i];
+        if ((os & IsKeyPressed) != (ns & IsKeyPressed))
         {
-            /* When 2D is enabled we do not re-create Framebuffers. This is done to
-             * 1. avoid 2D command loss during the time slot when no framebuffer is assigned to the display
-             * 2. make it easier to preserve the current 2D state */
-            Assert(m_pFrameBuffer == uisession()->frameBuffer(screenId()));
-            m_pFrameBuffer->setView(NULL);
+            codes[0] = i;
+            if (!(ns & IsKeyPressed))
+                codes[0] |= 0x80;
+            keyboard.PutScancode(codes[0]);
         }
-        else
-#endif
+        else if ((os & IsExtKeyPressed) != (ns & IsExtKeyPressed))
         {
-            /* Warn framebuffer about its no more necessary: */
-            m_pFrameBuffer->setDeleted(true);
-            /* Detach framebuffer from Display: */
-            CDisplay display = session().GetConsole().GetDisplay();
-            display.SetFramebuffer(m_uScreenId, CFramebuffer(NULL));
-            /* Release the reference: */
-            m_pFrameBuffer->Release();
-//          delete m_pFrameBuffer; // TODO_NEW_CORE: possibly necessary to really cleanup
-            m_pFrameBuffer = NULL;
+            codes[0] = 0xE0;
+            codes[1] = i;
+            if (!(ns & IsExtKeyPressed))
+                codes[1] |= 0x80;
+            keyboard.PutScancodes(codes);
         }
     }
 }
+
+void UIMachineView::dimImage(QImage &img)
+{
+    for (int y = 0; y < img.height(); ++ y)
+    {
+        if (y % 2)
+        {
+            if (img.depth() == 32)
+            {
+                for (int x = 0; x < img.width(); ++ x)
+                {
+                    int gray = qGray(img.pixel (x, y)) / 2;
+                    img.setPixel(x, y, qRgb (gray, gray, gray));
+                }
+            }
+            else
+            {
+                ::memset(img.scanLine (y), 0, img.bytesPerLine());
+            }
+        }
+        else
+        {
+            if (img.depth() == 32)
+            {
+                for (int x = 0; x < img.width(); ++ x)
+                {
+                    int gray = (2 * qGray (img.pixel (x, y))) / 3;
+                    img.setPixel(x, y, qRgb (gray, gray, gray));
+                }
+            }
+        }
+    }
+}
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+void UIMachineView::scrollContentsBy(int dx, int dy)
+{
+    if (m_pFrameBuffer)
+    {
+        m_pFrameBuffer->viewportScrolled(dx, dy);
+    }
+    QAbstractScrollArea::scrollContentsBy(dx, dy);
+}
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+
+#ifdef Q_WS_MAC
+void UIMachineView::updateDockIcon()
+{
+    machineLogic()->updateDockIcon();
+}
+
+CGImageRef UIMachineView::vmContentImage()
+{
+    if (!m_pauseShot.isNull())
+    {
+        CGImageRef pauseImg = ::darwinToCGImageRef(&m_pauseShot);
+        /* Use the pause image as background */
+        return pauseImg;
+    }
+    else
+    {
+# ifdef VBOX_GUI_USE_QUARTZ2D
+        if (vboxGlobal().vmRenderMode() == VBoxDefs::Quartz2DMode)
+        {
+            /* If the render mode is Quartz2D we could use the CGImageRef
+             * of the framebuffer for the dock icon creation. This saves
+             * some conversion time. */
+            CGImageRef image = static_cast<UIFrameBufferQuartz2D*>(m_pFrameBuffer)->imageRef();
+            CGImageRetain(image); /* Retain it, cause the consumer will release it. */
+            return image;
+        }
+        else
+# endif /* VBOX_GUI_USE_QUARTZ2D */
+            /* In image mode we have to create the image ref out of the
+             * framebuffer */
+            return frameBuffertoCGImageRef(m_pFrameBuffer);
+    }
+    return 0;
+}
+
+CGImageRef UIMachineView::frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer)
+{
+    CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
+    Assert(cs);
+    /* Create the image copy of the framebuffer */
+    CGDataProviderRef dp = CGDataProviderCreateWithData(pFrameBuffer, pFrameBuffer->address(), pFrameBuffer->bitsPerPixel() / 8 * pFrameBuffer->width() * pFrameBuffer->height(), NULL);
+    Assert(dp);
+    CGImageRef ir = CGImageCreate(pFrameBuffer->width(), pFrameBuffer->height(), 8, 32, pFrameBuffer->bytesPerLine(), cs,
+                                  kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Host, dp, 0, false,
+                                  kCGRenderingIntentDefault);
+    Assert(ir);
+    CGDataProviderRelease(dp);
+    CGColorSpaceRelease(cs);
+
+    return ir;
+}
+#endif /* Q_WS_MAC */
 
 bool UIMachineView::event(QEvent *pEvent)
 {
@@ -705,7 +1133,7 @@ bool UIMachineView::event(QEvent *pEvent)
             m_pFrameBuffer->doProcessVHWACommand(pEvent);
             return true;
         }
-#endif
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 
         case QEvent::KeyPress:
         case QEvent::KeyRelease:
@@ -848,7 +1276,7 @@ bool UIMachineView::event(QEvent *pEvent)
             window()->activateWindow();
             return true;
         }
-#endif
+#endif /* Q_WS_MAC */
 
         default:
             break;
@@ -935,83 +1363,15 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
     return QAbstractScrollArea::eventFilter (pWatched, pEvent);
 }
 
-void UIMachineView::sltMachineStateChanged()
-{
-    /* Get machine state: */
-    KMachineState state = uisession()->machineState();
-    switch (state)
-    {
-        case KMachineState_Paused:
-        case KMachineState_TeleportingPausedVM:
-        {
-            if (vboxGlobal().vmRenderMode() != VBoxDefs::TimerMode &&  m_pFrameBuffer &&
-                (state != KMachineState_TeleportingPausedVM || m_previousState != KMachineState_Teleporting))
-            {
-                /* Take a screen snapshot. Note that TakeScreenShot() always needs a 32bpp image: */
-                QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
-                /* If TakeScreenShot fails or returns no image, just show a black image. */
-                shot.fill(0);
-                CDisplay dsp = session().GetConsole().GetDisplay();
-                dsp.TakeScreenShot(screenId(), shot.bits(), shot.width(), shot.height());
-                /* TakeScreenShot() may fail if, e.g. the Paused notification was delivered
-                 * after the machine execution was resumed. It's not fatal: */
-                if (dsp.isOk())
-                {
-                    dimImage(shot);
-                }
-                m_pauseShot = QPixmap::fromImage(shot);
-                /* Fully repaint to pick up m_pauseShot: */
-                viewport()->repaint();
-            }
-            /* Reuse the focus event handler to uncapture keyboard: */
-            if (hasFocus())
-                focusEvent(false /* aHasFocus*/, false /* aReleaseHostKey */);
-            break;
-        }
-        case KMachineState_Stuck:
-        {
-            /* Reuse the focus event handler to uncapture keyboard: */
-            if (hasFocus())
-                focusEvent(false /* aHasFocus*/, false /* aReleaseHostKey */);
-            break;
-        }
-        case KMachineState_Running:
-        {
-            if (   m_previousState == KMachineState_Paused
-                || m_previousState == KMachineState_TeleportingPausedVM
-                || m_previousState == KMachineState_Restoring)
-            {
-                if (vboxGlobal().vmRenderMode() != VBoxDefs::TimerMode && m_pFrameBuffer)
-                {
-                    /* Reset the pixmap to free memory: */
-                    m_pauseShot = QPixmap();
-                    /* Ask for full guest display update (it will also update
-                     * the viewport through IFramebuffer::NotifyUpdate): */
-                    CDisplay dsp = session().GetConsole().GetDisplay();
-                    dsp.InvalidateAndUpdate();
-                }
-            }
-            /* Reuse the focus event handler to capture keyboard: */
-            if (hasFocus())
-                focusEvent(true /* aHasFocus */);
-            break;
-        }
-        default:
-            break;
-    }
-
-    m_previousState = state;
-}
-
 void UIMachineView::focusEvent(bool fHasFocus, bool fReleaseHostKey /* = true */)
 {
     if (fHasFocus)
     {
-#ifdef Q_WS_WIN32
+#ifdef Q_WS_WIN
         if (!uisession()->isAutoCaptureDisabled() && m_globalSettings.autoCapture() && GetAncestor(winId(), GA_ROOT) == GetForegroundWindow())
-#else
+#else /* Q_WS_WIN */
         if (!uisession()->isAutoCaptureDisabled() && m_globalSettings.autoCapture())
-#endif
+#endif /* !Q_WS_WIN */
         {
             captureKbd(true);
         }
@@ -1210,7 +1570,7 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
                                  * previous message box are handled, otherwise the
                                  * mouse is immediately ungrabbed. */
                                 qApp->processEvents();
-#endif
+#endif /* Q_WS_X11 */
                                 if (m_bIsKeyboardCaptured)
                                     machineLogic()->mouseHandler()->captureMouse(screenId());
                                 else
@@ -1243,7 +1603,7 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
     if (hotkey)
     {
         bool processed = false;
-#if defined (Q_WS_WIN32)
+#if defined (Q_WS_WIN)
         NOREF(pUniKey);
         int n = GetKeyboardLayoutList(0, NULL);
         Assert (n);
@@ -1299,10 +1659,10 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
     CKeyboard keyboard = session().GetConsole().GetKeyboard();
     Assert(!keyboard.isNull());
 
-#if defined (Q_WS_WIN32)
+#ifdef Q_WS_WIN
     /* send pending WM_PAINT events */
     ::UpdateWindow(viewport()->winId());
-#endif
+#endif /* Q_WS_WIN */
 
     std::vector <LONG> scancodes(codes, &codes[count]);
     keyboard.PutScancodes(QVector<LONG>::fromStdVector(scancodes));
@@ -1361,7 +1721,7 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
     }
 }
 
-#if defined(Q_WS_WIN32)
+#if defined(Q_WS_WIN)
 
 LRESULT CALLBACK UIMachineView::lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
@@ -1685,6 +2045,50 @@ bool UIMachineView::x11Event(XEvent *pEvent)
 
 #elif defined(Q_WS_MAC)
 
+void UIMachineView::darwinGrabKeyboardEvents(bool fGrab)
+{
+    m_fKeyboardGrabbed = fGrab;
+    if (fGrab)
+    {
+        /* Disable mouse and keyboard event compression/delaying to make sure we *really* get all of the events. */
+        ::CGSetLocalEventsSuppressionInterval(0.0);
+        machineLogic()->mouseHandler()->setMouseCoalescingEnabled(false);
+
+        /* Register the event callback/hook and grab the keyboard. */
+        UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */,
+                                                                UIMachineView::darwinEventHandlerProc, this);
+
+        ::DarwinGrabKeyboard (false);
+    }
+    else
+    {
+        ::DarwinReleaseKeyboard();
+        UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */,
+                                                                  UIMachineView::darwinEventHandlerProc, this);
+    }
+}
+
+bool UIMachineView::darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
+{
+    UIMachineView *view = (UIMachineView*)pvUser;
+    EventRef inEvent = (EventRef)pvCarbonEvent;
+    UInt32 eventClass = ::GetEventClass(inEvent);
+
+    /* Check if this is an application key combo. In that case we will not pass
+     * the event to the guest, but let the host process it. */
+    if (::darwinIsApplicationCommand(pvCocoaEvent))
+        return false;
+
+    /* All keyboard class events needs to be handled. */
+    if (eventClass == kEventClassKeyboard)
+    {
+        if (view->darwinKeyboardEvent (pvCocoaEvent, inEvent))
+            return true;
+    }
+    /* Pass the event along. */
+    return false;
+}
+
 bool UIMachineView::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent)
 {
     bool ret = false;
@@ -1769,409 +2173,5 @@ bool UIMachineView::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEve
     return ret;
 }
 
-void UIMachineView::darwinGrabKeyboardEvents(bool fGrab)
-{
-    m_fKeyboardGrabbed = fGrab;
-    if (fGrab)
-    {
-        /* Disable mouse and keyboard event compression/delaying to make sure we *really* get all of the events. */
-        ::CGSetLocalEventsSuppressionInterval(0.0);
-        machineLogic()->mouseHandler()->setMouseCoalescingEnabled(false);
-
-        /* Register the event callback/hook and grab the keyboard. */
-        UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */,
-                                                                UIMachineView::darwinEventHandlerProc, this);
-
-        ::DarwinGrabKeyboard (false);
-    }
-    else
-    {
-        ::DarwinReleaseKeyboard();
-        UICocoaApplication::instance()->unregisterForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */,
-                                                                  UIMachineView::darwinEventHandlerProc, this);
-    }
-}
-
-bool UIMachineView::darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
-{
-    UIMachineView *view = (UIMachineView*)pvUser;
-    EventRef inEvent = (EventRef)pvCarbonEvent;
-    UInt32 eventClass = ::GetEventClass(inEvent);
-
-    /* Check if this is an application key combo. In that case we will not pass
-     * the event to the guest, but let the host process it. */
-    if (::darwinIsApplicationCommand(pvCocoaEvent))
-        return false;
-
-    /* All keyboard class events needs to be handled. */
-    if (eventClass == kEventClassKeyboard)
-    {
-        if (view->darwinKeyboardEvent (pvCocoaEvent, inEvent))
-            return true;
-    }
-    /* Pass the event along. */
-    return false;
-}
-
 #endif
-
-void UIMachineView::fixModifierState(LONG *piCodes, uint *puCount)
-{
-    /* Synchronize the views of the host and the guest to the modifier keys.
-     * This function will add up to 6 additional keycodes to codes. */
-
-#if defined(Q_WS_X11)
-
-    Window   wDummy1, wDummy2;
-    int      iDummy3, iDummy4, iDummy5, iDummy6;
-    unsigned uMask;
-    unsigned uKeyMaskNum = 0, uKeyMaskCaps = 0, uKeyMaskScroll = 0;
-
-    uKeyMaskCaps          = LockMask;
-    XModifierKeymap* map  = XGetModifierMapping(QX11Info::display());
-    KeyCode keyCodeNum    = XKeysymToKeycode(QX11Info::display(), XK_Num_Lock);
-    KeyCode keyCodeScroll = XKeysymToKeycode(QX11Info::display(), XK_Scroll_Lock);
-
-    for (int i = 0; i < 8; ++ i)
-    {
-        if (keyCodeNum != NoSymbol && map->modifiermap[map->max_keypermod * i] == keyCodeNum)
-            uKeyMaskNum = 1 << i;
-        else if (keyCodeScroll != NoSymbol && map->modifiermap[map->max_keypermod * i] == keyCodeScroll)
-            uKeyMaskScroll = 1 << i;
-    }
-    XQueryPointer(QX11Info::display(), DefaultRootWindow(QX11Info::display()), &wDummy1, &wDummy2,
-                  &iDummy3, &iDummy4, &iDummy5, &iDummy6, &uMask);
-    XFreeModifiermap(map);
-
-    if (uisession()->numLockAdaptionCnt() && (uisession()->isNumLock() ^ !!(uMask & uKeyMaskNum)))
-    {
-        uisession()->setNumLockAdaptionCnt(uisession()->numLockAdaptionCnt() - 1);
-        piCodes[(*puCount)++] = 0x45;
-        piCodes[(*puCount)++] = 0x45 | 0x80;
-    }
-    if (uisession()->capsLockAdaptionCnt() && (uisession()->isCapsLock() ^ !!(uMask & uKeyMaskCaps)))
-    {
-        uisession()->setCapsLockAdaptionCnt(uisession()->capsLockAdaptionCnt() - 1);
-        piCodes[(*puCount)++] = 0x3a;
-        piCodes[(*puCount)++] = 0x3a | 0x80;
-        /* Some keyboard layouts require shift to be pressed to break
-         * capslock.  For simplicity, only do this if shift is not
-         * already held down. */
-        if (uisession()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
-        {
-            piCodes[(*puCount)++] = 0x2a;
-            piCodes[(*puCount)++] = 0x2a | 0x80;
-        }
-    }
-
-#elif defined(Q_WS_WIN32)
-
-    if (uisession()->numLockAdaptionCnt() && (uisession()->isNumLock() ^ !!(GetKeyState(VK_NUMLOCK))))
-    {
-        uisession()->setNumLockAdaptionCnt(uisession()->numLockAdaptionCnt() - 1);
-        piCodes[(*puCount)++] = 0x45;
-        piCodes[(*puCount)++] = 0x45 | 0x80;
-    }
-    if (uisession()->capsLockAdaptionCnt() && (uisession()->isCapsLock() ^ !!(GetKeyState(VK_CAPITAL))))
-    {
-        uisession()->setCapsLockAdaptionCnt(uisession()->capsLockAdaptionCnt() - 1);
-        piCodes[(*puCount)++] = 0x3a;
-        piCodes[(*puCount)++] = 0x3a | 0x80;
-        /* Some keyboard layouts require shift to be pressed to break
-         * capslock.  For simplicity, only do this if shift is not
-         * already held down. */
-        if (uisession()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
-        {
-            piCodes[(*puCount)++] = 0x2a;
-            piCodes[(*puCount)++] = 0x2a | 0x80;
-        }
-    }
-
-#elif defined(Q_WS_MAC)
-
-    /* if (uisession()->numLockAdaptionCnt()) ... - NumLock isn't implemented by Mac OS X so ignore it. */
-    if (uisession()->capsLockAdaptionCnt() && (uisession()->isCapsLock() ^ !!(::GetCurrentEventKeyModifiers() & alphaLock)))
-    {
-        uisession()->setCapsLockAdaptionCnt(uisession()->capsLockAdaptionCnt() - 1);
-        piCodes[(*puCount)++] = 0x3a;
-        piCodes[(*puCount)++] = 0x3a | 0x80;
-        /* Some keyboard layouts require shift to be pressed to break
-         * capslock.  For simplicity, only do this if shift is not
-         * already held down. */
-        if (uisession()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
-        {
-            piCodes[(*puCount)++] = 0x2a;
-            piCodes[(*puCount)++] = 0x2a | 0x80;
-        }
-    }
-
-#else
-
-//#warning Adapt UIMachineView::fixModifierState
-
-#endif
-}
-
-QPoint UIMachineView::viewportToContents(const QPoint &vp) const
-{
-    return QPoint(vp.x() + contentsX(), vp.y() + contentsY());
-}
-
-void UIMachineView::scrollBy(int dx, int dy)
-{
-    horizontalScrollBar()->setValue(horizontalScrollBar()->value() + dx);
-    verticalScrollBar()->setValue(verticalScrollBar()->value() + dy);
-}
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-void UIMachineView::scrollContentsBy(int dx, int dy)
-{
-    if (m_pFrameBuffer)
-    {
-        m_pFrameBuffer->viewportScrolled(dx, dy);
-    }
-    QAbstractScrollArea::scrollContentsBy(dx, dy);
-}
-#endif
-
-void UIMachineView::emitKeyboardStateChanged()
-{
-    emit keyboardStateChanged(keyboardState());
-}
-
-void UIMachineView::captureKbd(bool fCapture, bool fEmitSignal /* = true */)
-{
-    if (m_bIsKeyboardCaptured == fCapture)
-        return;
-
-#if defined(Q_WS_WIN32)
-    /* On Win32, keyboard grabbing is ineffective, a low-level keyboard hook is used instead. */
-#elif defined(Q_WS_X11)
-    /* On X11, we are using passive XGrabKey for normal (windowed) mode
-     * instead of XGrabKeyboard (called by QWidget::grabKeyboard())
-     * because XGrabKeyboard causes a problem under metacity - a window cannot be moved
-     * using the mouse if it is currently actively grabing the keyboard;
-     * For static modes we are using usual (active) keyboard grabbing. */
-    switch (machineLogic()->visualStateType())
-    {
-        /* If window is moveable we are making passive keyboard grab: */
-        case UIVisualStateType_Normal:
-        {
-            if (fCapture)
-                XGrabKey(QX11Info::display(), AnyKey, AnyModifier, machineWindowWrapper()->machineWindow()->winId(), False, GrabModeAsync, GrabModeAsync);
-            else
-                XUngrabKey(QX11Info::display(), AnyKey, AnyModifier, machineWindowWrapper()->machineWindow()->winId());
-            break;
-        }
-        /* If window is NOT moveable we are making active keyboard grab: */
-        case UIVisualStateType_Fullscreen:
-        case UIVisualStateType_Seamless:
-        {
-            if (fCapture)
-            {
-                /* Keyboard grabbing can fail because of some keyboard shortcut is still grabbed by window manager.
-                 * We can't be sure this shortcut will be released at all, so we will retry to grab keyboard for 50 times,
-                 * and after we will just ignore that issue: */
-                int cTriesLeft = 50;
-                while (cTriesLeft && XGrabKeyboard(QX11Info::display(), machineWindowWrapper()->machineWindow()->winId(), False, GrabModeAsync, GrabModeAsync, CurrentTime)) { --cTriesLeft; }
-            }
-            else
-                XUngrabKeyboard(QX11Info::display(), CurrentTime);
-            break;
-        }
-        /* Should we try to grab keyboard in default case? I think - NO. */
-        default:
-            break;
-    }
-#elif defined(Q_WS_MAC)
-    /* On Mac OS X, we use the Qt methods + disabling global hot keys + watching modifiers
-     * (for right/left separation). */
-    if (fCapture)
-    {
-        ::DarwinDisableGlobalHotKeys(true);
-        grabKeyboard();
-    }
-    else
-    {
-        ::DarwinDisableGlobalHotKeys(false);
-        releaseKeyboard();
-    }
-#else
-    if (fCapture)
-        grabKeyboard();
-    else
-        releaseKeyboard();
-#endif
-
-    m_bIsKeyboardCaptured = fCapture;
-
-    if (fEmitSignal)
-        emitKeyboardStateChanged();
-}
-
-void UIMachineView::saveKeyStates()
-{
-    ::memcpy(m_pressedKeysCopy, m_pressedKeys, sizeof(m_pressedKeys));
-}
-
-void UIMachineView::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)
-{
-    CKeyboard keyboard = session().GetConsole().GetKeyboard();
-    bool fSentRESEND = false;
-
-    /* Send a dummy scan code (RESEND) to prevent the guest OS from recognizing
-     * a single key click (for ex., Alt) and performing an unwanted action
-     * (for ex., activating the menu) when we release all pressed keys below.
-     * Note, that it's just a guess that sending RESEND will give the desired
-     * effect :), but at least it works with NT and W2k guests. */
-    for (uint i = 0; i < SIZEOF_ARRAY (m_pressedKeys); i++)
-    {
-        if (m_pressedKeys[i] & IsKeyPressed)
-        {
-            if (!fSentRESEND)
-            {
-                keyboard.PutScancode (0xFE);
-                fSentRESEND = true;
-            }
-            keyboard.PutScancode(i | 0x80);
-        }
-        else if (m_pressedKeys[i] & IsExtKeyPressed)
-        {
-            if (!fSentRESEND)
-            {
-                keyboard.PutScancode(0xFE);
-                fSentRESEND = true;
-            }
-            QVector <LONG> codes(2);
-            codes[0] = 0xE0;
-            codes[1] = i | 0x80;
-            keyboard.PutScancodes(codes);
-        }
-        m_pressedKeys[i] = 0;
-    }
-
-    if (aReleaseHostKey)
-        m_bIsHostkeyPressed = false;
-
-#ifdef Q_WS_MAC
-    /* Clear most of the modifiers: */
-    m_darwinKeyModifiers &=
-        alphaLock | kEventKeyModifierNumLockMask |
-        (aReleaseHostKey ? 0 : ::DarwinKeyCodeToDarwinModifierMask (m_globalSettings.hostKey()));
-#endif
-
-    emitKeyboardStateChanged();
-}
-
-void UIMachineView::sendChangedKeyStates()
-{
-    QVector <LONG> codes(2);
-    CKeyboard keyboard = session().GetConsole().GetKeyboard();
-    for (uint i = 0; i < SIZEOF_ARRAY(m_pressedKeys); ++ i)
-    {
-        uint8_t os = m_pressedKeysCopy[i];
-        uint8_t ns = m_pressedKeys[i];
-        if ((os & IsKeyPressed) != (ns & IsKeyPressed))
-        {
-            codes[0] = i;
-            if (!(ns & IsKeyPressed))
-                codes[0] |= 0x80;
-            keyboard.PutScancode(codes[0]);
-        }
-        else if ((os & IsExtKeyPressed) != (ns & IsExtKeyPressed))
-        {
-            codes[0] = 0xE0;
-            codes[1] = i;
-            if (!(ns & IsExtKeyPressed))
-                codes[1] |= 0x80;
-            keyboard.PutScancodes(codes);
-        }
-    }
-}
-
-void UIMachineView::dimImage(QImage &img)
-{
-    for (int y = 0; y < img.height(); ++ y)
-    {
-        if (y % 2)
-        {
-            if (img.depth() == 32)
-            {
-                for (int x = 0; x < img.width(); ++ x)
-                {
-                    int gray = qGray(img.pixel (x, y)) / 2;
-                    img.setPixel(x, y, qRgb (gray, gray, gray));
-                }
-            }
-            else
-            {
-                ::memset(img.scanLine (y), 0, img.bytesPerLine());
-            }
-        }
-        else
-        {
-            if (img.depth() == 32)
-            {
-                for (int x = 0; x < img.width(); ++ x)
-                {
-                    int gray = (2 * qGray (img.pixel (x, y))) / 3;
-                    img.setPixel(x, y, qRgb (gray, gray, gray));
-                }
-            }
-        }
-    }
-}
-
-#ifdef Q_WS_MAC
-CGImageRef UIMachineView::vmContentImage()
-{
-    if (!m_pauseShot.isNull())
-    {
-        CGImageRef pauseImg = ::darwinToCGImageRef(&m_pauseShot);
-        /* Use the pause image as background */
-        return pauseImg;
-    }
-    else
-    {
-# ifdef VBOX_GUI_USE_QUARTZ2D
-        if (vboxGlobal().vmRenderMode() == VBoxDefs::Quartz2DMode)
-        {
-            /* If the render mode is Quartz2D we could use the CGImageRef
-             * of the framebuffer for the dock icon creation. This saves
-             * some conversion time. */
-            CGImageRef image = static_cast<UIFrameBufferQuartz2D*>(m_pFrameBuffer)->imageRef();
-            CGImageRetain(image); /* Retain it, cause the consumer will release it. */
-            return image;
-        }
-        else
-# endif /* VBOX_GUI_USE_QUARTZ2D */
-            /* In image mode we have to create the image ref out of the
-             * framebuffer */
-            return frameBuffertoCGImageRef(m_pFrameBuffer);
-    }
-    return 0;
-}
-
-CGImageRef UIMachineView::frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer)
-{
-    CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
-    Assert(cs);
-    /* Create the image copy of the framebuffer */
-    CGDataProviderRef dp = CGDataProviderCreateWithData(pFrameBuffer, pFrameBuffer->address(), pFrameBuffer->bitsPerPixel() / 8 * pFrameBuffer->width() * pFrameBuffer->height(), NULL);
-    Assert(dp);
-    CGImageRef ir = CGImageCreate(pFrameBuffer->width(), pFrameBuffer->height(), 8, 32, pFrameBuffer->bytesPerLine(), cs,
-                                  kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Host, dp, 0, false,
-                                  kCGRenderingIntentDefault);
-    Assert(ir);
-    CGDataProviderRelease(dp);
-    CGColorSpaceRelease(cs);
-
-    return ir;
-}
-
-void UIMachineView::updateDockIcon()
-{
-    machineLogic()->updateDockIcon();
-}
-#endif /* Q_WS_MAC */
 

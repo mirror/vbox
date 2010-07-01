@@ -53,7 +53,7 @@ public:
                                  , UIVisualStateType visualStateType
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                  , bool bAccelerate2DVideo
-#endif
+#endif /* VBOX_WITH_VIDEOHWACCEL */
     );
     /* Factory function to destroy required machine-view: */
     static void destroy(UIMachineView *pMachineView);
@@ -66,6 +66,11 @@ public:
 
     /* Public members: */
     virtual void normalizeGeometry(bool /* bAdjustPosition = false */) = 0;
+
+protected slots:
+
+    /* Console callback handlers: */
+    virtual void sltMachineStateChanged();
 
 signals:
 
@@ -82,12 +87,28 @@ protected:
                   , ulong uScreenId
 #ifdef VBOX_WITH_VIDEOHWACCEL
                   , bool bAccelerate2DVideo
-#endif
+#endif /* VBOX_WITH_VIDEOHWACCEL */
     );
     /* Machine-view destructor: */
     virtual ~UIMachineView();
 
+    /* Prepare routines: */
+    virtual void prepareFrameBuffer();
+    virtual void prepareCommon();
+    virtual void prepareFilters();
+    virtual void prepareConsoleConnections();
+    virtual void loadMachineViewSettings();
+
+    /* Cleanup routines: */
+    //virtual void saveMachineViewSettings() {}
+    //virtual void cleanupConsoleConnections() {}
+    //virtual void cleanupFilters() {}
+    virtual void cleanupCommon();
+    virtual void cleanupFrameBuffer();
+
     /* Protected getters: */
+    UIMachineWindow* machineWindowWrapper() const { return m_pMachineWindow; }
+    UIMachineLogic* machineLogic() const;
     UISession* uisession() const;
     CSession& session();
     QSize sizeHint() const;
@@ -99,8 +120,6 @@ protected:
     int visibleHeight() const;
     ulong screenId() const { return m_uScreenId; }
     UIFrameBuffer* frameBuffer() const { return m_pFrameBuffer; }
-    UIMachineWindow* machineWindowWrapper() const { return m_pMachineWindow; }
-    UIMachineLogic* machineLogic() const;
     bool isHostKeyPressed() const { return m_bIsHostkeyPressed; }
     bool isMachineWindowResizeIgnored() const { return m_bIsMachineWindowResizeIgnored; }
     const QPixmap& pauseShot() const { return m_pauseShot; }
@@ -125,42 +144,27 @@ protected:
     virtual void calculateDesktopGeometry() = 0;
     virtual void maybeRestrictMinimumSize() = 0;
     virtual void updateSliders();
-
+    void fixModifierState(LONG *piCodes, uint *puCount);
+    QPoint viewportToContents(const QPoint &vp) const;
+    void scrollBy(int dx, int dy);
+    void emitKeyboardStateChanged();
+    void captureKbd(bool fCapture, bool fEmitSignal = true);
+    void saveKeyStates();
+    void releaseAllPressedKeys(bool aReleaseHostKey = true);
+    void sendChangedKeyStates();
+    static void dimImage(QImage &img);
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    void scrollContentsBy(int dx, int dy);
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 #ifdef Q_WS_MAC
     void updateDockIcon();
     CGImageRef vmContentImage();
     CGImageRef frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer);
 #endif /* Q_WS_MAC */
 
-    /* Prepare routines: */
-    virtual void prepareFrameBuffer();
-    virtual void prepareCommon();
-    virtual void prepareFilters();
-    virtual void prepareConsoleConnections();
-    virtual void loadMachineViewSettings();
-
-    /* Cleanup routines: */
-    //virtual void saveMachineViewSettings() {}
-    //virtual void cleanupConsoleConnections() {}
-    //virtual void cleanupFilters() {}
-    virtual void cleanupCommon();
-    virtual void cleanupFrameBuffer();
-
     /* Cross-platforms event processors: */
     bool event(QEvent *pEvent);
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
-
-    /* Protected variables: */
-    QSize m_desktopGeometry;
-
-protected slots:
-
-    /* Console callback handlers: */
-    virtual void sltMachineStateChanged();
-
-private:
-
-    /* Cross-platforms event processors: */
     void focusEvent(bool aHasFocus, bool aReleaseHostKey = true);
     bool keyEvent(int aKey, uint8_t aScan, int aFlags, wchar_t *aUniKey = NULL);
     void resizeEvent(QResizeEvent *pEvent);
@@ -168,7 +172,7 @@ private:
     void paintEvent(QPaintEvent *pEvent);
 
     /* Platform specific event processors: */
-#if defined(Q_WS_WIN32)
+#if defined(Q_WS_WIN)
     static LRESULT CALLBACK lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
     bool winLowKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event);
     bool winEvent(MSG *aMsg, long *aResult);
@@ -177,25 +181,10 @@ private:
 #elif defined(Q_WS_X11)
     bool x11Event(XEvent *event);
 #elif defined(Q_WS_MAC)
-    bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
     void darwinGrabKeyboardEvents(bool fGrab);
     static bool darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
+    bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
 #endif
-
-    /* Private helpers: */
-    void fixModifierState(LONG *piCodes, uint *puCount);
-    QPoint viewportToContents(const QPoint &vp) const;
-    void scrollBy(int dx, int dy);
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    void scrollContentsBy(int dx, int dy);
-#endif
-    void emitKeyboardStateChanged();
-    void captureKbd(bool fCapture, bool fEmitSignal = true);
-    void saveKeyStates();
-    void releaseAllPressedKeys(bool aReleaseHostKey = true);
-    void sendChangedKeyStates();
-
-    static void dimImage(QImage &img);
 
     /* Private members: */
     UIMachineWindow *m_pMachineWindow;
@@ -205,6 +194,7 @@ private:
     KMachineState m_previousState;
 
     DesktopGeo m_desktopGeometryType;
+    QSize m_desktopGeometry;
     QSize m_storedConsoleSize;
 
     uint8_t m_pressedKeys[128];
@@ -217,8 +207,8 @@ private:
     bool m_bIsMachineWindowResizeIgnored : 1;
     bool m_fPassCAD : 1;
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    bool m_fAccelerate2DVideo;
-#endif
+    bool m_fAccelerate2DVideo : 1;
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 #ifdef Q_WS_MAC
     /** The current modifier key mask. Used to figure out which modifier
