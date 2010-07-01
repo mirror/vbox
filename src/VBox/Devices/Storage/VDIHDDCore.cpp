@@ -205,21 +205,21 @@ static int vdiFileReadSync(PVDIIMAGEDESC pImage, uint64_t off, void *pvBuf, size
 }
 
 static int vdiFileWriteMetaAsync(PVDIIMAGEDESC pImage, uint64_t off, void *pcvBuf, size_t cbWrite,
-                                 PVDIOCTX pIoCtx, PFNVDMETACOMPLETED pfnMetaComplete, void *pvMetaUser)
+                                 PVDIOCTX pIoCtx)
 {
     return pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pImage->pInterfaceIO->pvUser,
                                                             pImage->pStorage,
                                                             off, pcvBuf, cbWrite, pIoCtx,
-                                                            pfnMetaComplete, pvMetaUser);
+                                                            NULL, NULL);
 }
 
 static int vdiFileReadMetaAsync(PVDIIMAGEDESC pImage, uint64_t off, void *pvBuf, size_t cbRead,
-                                PVDIOCTX pIoCtx, PFNVDMETACOMPLETED pfnMetaComplete, void *pvMetaUser)
+                                PVDIOCTX pIoCtx)
 {
     return pImage->pInterfaceIOCallbacks->pfnReadMetaAsync(pImage->pInterfaceIO->pvUser,
                                                            pImage->pStorage,
                                                            off, pvBuf, cbRead, pIoCtx,
-                                                           pfnMetaComplete, pvMetaUser);
+                                                           NULL);
 }
 
 static bool vdiFileOpened(PVDIIMAGEDESC pImage)
@@ -234,7 +234,8 @@ static bool vdiFileOpened(PVDIIMAGEDESC pImage)
 static int vdiFileFlushAsync(PVDIIMAGEDESC pImage, PVDIOCTX pIoCtx)
 {
     return pImage->pInterfaceIOCallbacks->pfnFlushAsync(pImage->pInterfaceIO->pvUser,
-                                                        pImage->pStorage, pIoCtx);
+                                                        pImage->pStorage, pIoCtx,
+                                                        NULL, NULL);
 }
 
 
@@ -872,23 +873,24 @@ static int vdiUpdateHeaderAsync(PVDIIMAGEDESC pImage, PVDIOCTX pIoCtx)
         case 0:
             rc = vdiFileWriteMetaAsync(pImage, sizeof(VDIPREHEADER),
                                        &pImage->Header.u.v0, sizeof(pImage->Header.u.v0),
-                                       pIoCtx, NULL, NULL);
+                                       pIoCtx);
             break;
         case 1:
             if (pImage->Header.u.v1plus.cbHeader < sizeof(pImage->Header.u.v1plus))
                 rc = vdiFileWriteMetaAsync(pImage, sizeof(VDIPREHEADER),
                                            &pImage->Header.u.v1, sizeof(pImage->Header.u.v1),
-                                           pIoCtx, NULL, NULL);
+                                           pIoCtx);
             else
                 rc = vdiFileWriteMetaAsync(pImage, sizeof(VDIPREHEADER),
                                            &pImage->Header.u.v1plus, sizeof(pImage->Header.u.v1plus),
-                                           pIoCtx, NULL, NULL);
+                                           pIoCtx);
             break;
         default:
             rc = VERR_VD_VDI_UNSUPPORTED_VERSION;
             break;
     }
-    AssertMsgRC(rc, ("vdiUpdateHeader failed, filename=\"%s\" rc=%Rrc\n", pImage->pszFilename, rc));
+    AssertMsg(RT_SUCCESS(rc) || rc == VERR_VD_ASYNC_IO_IN_PROGRESS,
+              ("vdiUpdateHeader failed, filename=\"%s\" rc=%Rrc\n", pImage->pszFilename, rc));
     return rc;
 }
 
@@ -921,17 +923,17 @@ static int vdiUpdateBlockInfoAsync(PVDIIMAGEDESC pImage, unsigned uBlock,
 {
     /* Update image header. */
     int rc = vdiUpdateHeaderAsync(pImage, pIoCtx);
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc) || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
     {
         /* write only one block pointer. */
         rc = vdiFileWriteMetaAsync(pImage,
                                    pImage->offStartBlocks + uBlock * sizeof(VDIIMAGEBLOCKPOINTER),
                                    &pImage->paBlocks[uBlock],
                                    sizeof(VDIIMAGEBLOCKPOINTER),
-                                   pIoCtx,
-                                   NULL, NULL);
-        AssertMsgRC(rc, ("vdiUpdateBlockInfo failed to update block=%u, filename=\"%s\", rc=%Rrc\n",
-                         uBlock, pImage->pszFilename, rc));
+                                   pIoCtx);
+        AssertMsg(RT_SUCCESS(rc) || rc == VERR_VD_ASYNC_IO_IN_PROGRESS,
+                  ("vdiUpdateBlockInfo failed to update block=%u, filename=\"%s\", rc=%Rrc\n",
+                  uBlock, pImage->pszFilename, rc));
     }
     return rc;
 }
@@ -954,17 +956,23 @@ static void vdiFlushImage(PVDIIMAGEDESC pImage)
 /**
  * Internal: Flush the image file to disk - async version.
  */
-static void vdiFlushImageAsync(PVDIIMAGEDESC pImage, PVDIOCTX pIoCtx)
+static int vdiFlushImageAsync(PVDIIMAGEDESC pImage, PVDIOCTX pIoCtx)
 {
+    int rc = VINF_SUCCESS;
+
     if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
     {
         /* Save header. */
-        int rc = vdiUpdateHeaderAsync(pImage, pIoCtx);
-        AssertMsgRC(rc, ("vdiUpdateHeaderAsync() failed, filename=\"%s\", rc=%Rrc\n",
-                         pImage->pszFilename, rc));
+        rc = vdiUpdateHeaderAsync(pImage, pIoCtx);
+        AssertMsg(RT_SUCCESS(rc) || rc == VERR_VD_ASYNC_IO_IN_PROGRESS,
+                  ("vdiUpdateHeaderAsync() failed, filename=\"%s\", rc=%Rrc\n",
+                  pImage->pszFilename, rc));
         rc = vdiFileFlushAsync(pImage, pIoCtx);
-        AssertMsgRC(rc, ("Flushing data to disk failed rc=%Rrc\n", rc));
+        AssertMsg(RT_SUCCESS(rc) || rc == VERR_VD_ASYNC_IO_IN_PROGRESS,
+                  ("Flushing data to disk failed rc=%Rrc\n", rc));
     }
+
+    return rc;
 }
 
 /**
@@ -2206,14 +2214,15 @@ static int vdiAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbToWrite
                 rc = pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
                                                                       pImage->pStorage,
                                                                       u64Offset,
-                                                                      pIoCtx, cbToWrite);
+                                                                      pIoCtx, cbToWrite,
+                                                                      NULL, NULL);
                 if (RT_UNLIKELY(RT_FAILURE_NP(rc) && (rc != VERR_VD_ASYNC_IO_IN_PROGRESS)))
                     goto out;
                 pImage->paBlocks[uBlock] = cBlocksAllocated;
                 setImageBlocksAllocated(&pImage->Header, cBlocksAllocated + 1);
 
                 rc = vdiUpdateBlockInfoAsync(pImage, uBlock, pIoCtx);
-                if (RT_FAILURE(rc))
+                if (RT_FAILURE(rc) && (rc != VERR_VD_ASYNC_IO_IN_PROGRESS))
                     goto out;
 
                 *pcbPreRead = 0;
@@ -2236,7 +2245,8 @@ static int vdiAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbToWrite
             rc = pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
                                                                   pImage->pStorage,
                                                                   u64Offset,
-                                                                  pIoCtx, cbToWrite);
+                                                                  pIoCtx, cbToWrite,
+                                                                  NULL, NULL);
         }
     } while (0);
 
@@ -2256,7 +2266,7 @@ static int vdiAsyncFlush(void *pvBackendData, PVDIOCTX pIoCtx)
 
     Assert(pImage);
 
-    vdiFlushImageAsync(pImage, pIoCtx);
+    rc = vdiFlushImageAsync(pImage, pIoCtx);
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }

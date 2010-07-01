@@ -1227,7 +1227,8 @@ static int rawAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
 
     rc = pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
                                                          pImage->pStorage,
-                                                         uOffset, pIoCtx, cbWrite);
+                                                         uOffset, pIoCtx, cbWrite,
+                                                         NULL, NULL);
 
     if (RT_SUCCESS(rc))
     {

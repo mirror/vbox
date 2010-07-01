@@ -1235,6 +1235,8 @@
 #define VERR_VD_RAW_INVALID_TYPE                    (-3271)
 /** The backend needs more metadata before it can continue. */
 #define VERR_VD_NOT_ENOUGH_METADATA                 (-3272)
+/** Halt the current I/O context until further notification from the backend. */
+#define VERR_VD_IOCTX_HALT                          (-3273)
 /** @} */
 
 

@@ -798,7 +798,8 @@ DECLINLINE(int) vmdkFileFlushAsync(PVMDKFILE pVmdkFile, PVDIOCTX pIoCtx)
     PVMDKIMAGE pImage = pVmdkFile->pImage;
 
     return pImage->pInterfaceIOCallbacks->pfnFlushAsync(pImage->pInterfaceIO->pvUser,
-                                                        pVmdkFile->pStorage, pIoCtx);
+                                                        pVmdkFile->pStorage, pIoCtx,
+                                                        NULL, NULL);
 }
 
 
@@ -3116,13 +3117,6 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
     /* Handle the file according to its magic number. */
     if (RT_LE2H_U32(u32Magic) == VMDK_SPARSE_MAGICNUMBER)
     {
-        /* Async I/IO is not supported with these files yet. So fail if opened in async I/O mode. */
-        if (uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO)
-        {
-            rc = VERR_NOT_SUPPORTED;
-            goto out;
-        }
-
         /* It's a hosted single-extent image. */
         rc = vmdkCreateExtents(pImage, 1);
         if (RT_FAILURE(rc))
@@ -4362,6 +4356,62 @@ static int vmdkGetSector(PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
                             aGTDataTmp, sizeof(aGTDataTmp), NULL);
         if (RT_FAILURE(rc))
             return vmdkError(pExtent->pImage, rc, RT_SRC_POS, N_("VMDK: cannot read grain table entry in '%s'"), pExtent->pszFullname);
+        pGTCacheEntry->uExtent = pExtent->uExtent;
+        pGTCacheEntry->uGTBlock = uGTBlock;
+        for (unsigned i = 0; i < VMDK_GT_CACHELINE_SIZE; i++)
+            pGTCacheEntry->aGTData[i] = RT_LE2H_U32(aGTDataTmp[i]);
+    }
+    uGTBlockIndex = (uSector / pExtent->cSectorsPerGrain) % VMDK_GT_CACHELINE_SIZE;
+    uint32_t uGrainSector = pGTCacheEntry->aGTData[uGTBlockIndex];
+    if (uGrainSector)
+        *puExtentSector = uGrainSector + uSector % pExtent->cSectorsPerGrain;
+    else
+        *puExtentSector = 0;
+    return VINF_SUCCESS;
+}
+
+/**
+ * Internal. Get sector number in the extent file from the relative sector
+ * number in the extent - version for async access.
+ */
+static int vmdkGetSectorAsync(PVMDKIMAGE pImage, PVDIOCTX pIoCtx,
+                              PVMDKGTCACHE pCache, PVMDKEXTENT pExtent,
+                              uint64_t uSector, uint64_t *puExtentSector)
+{
+    uint64_t uGDIndex, uGTSector, uGTBlock;
+    uint32_t uGTHash, uGTBlockIndex;
+    PVMDKGTCACHEENTRY pGTCacheEntry;
+    uint32_t aGTDataTmp[VMDK_GT_CACHELINE_SIZE];
+    int rc;
+
+    uGDIndex = uSector / pExtent->cSectorsPerGDE;
+    if (uGDIndex >= pExtent->cGDEntries)
+        return VERR_OUT_OF_RANGE;
+    uGTSector = pExtent->pGD[uGDIndex];
+    if (!uGTSector)
+    {
+        /* There is no grain table referenced by this grain directory
+         * entry. So there is absolutely no data in this area. */
+        *puExtentSector = 0;
+        return VINF_SUCCESS;
+    }
+
+    uGTBlock = uSector / (pExtent->cSectorsPerGrain * VMDK_GT_CACHELINE_SIZE);
+    uGTHash = vmdkGTCacheHash(pCache, uGTBlock, pExtent->uExtent);
+    pGTCacheEntry = &pCache->aGTCache[uGTHash];
+    if (    pGTCacheEntry->uExtent != pExtent->uExtent
+        ||  pGTCacheEntry->uGTBlock != uGTBlock)
+    {
+        /* Cache miss, fetch data from disk. */
+        PVDMETAXFER pMetaXfer;
+        rc = pImage->pInterfaceIOCallbacks->pfnReadMetaAsync(pImage->pInterfaceIO->pvUser,
+                                                             pExtent->pFile->pStorage,
+                                                             VMDK_SECTOR2BYTE(uGTSector) + (uGTBlock % (pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE)) * sizeof(aGTDataTmp),
+                                                             aGTDataTmp, sizeof(aGTDataTmp), pIoCtx, &pMetaXfer);
+        if (RT_FAILURE(rc))
+            return rc;
+        /* We can release the metadata transfer immediately. */
+        pImage->pInterfaceIOCallbacks->pfnMetaXferRelease(pImage->pInterfaceIO->pvUser, pMetaXfer);
         pGTCacheEntry->uExtent = pExtent->uExtent;
         pGTCacheEntry->uGTBlock = uGTBlock;
         for (unsigned i = 0; i < VMDK_GT_CACHELINE_SIZE; i++)
@@ -6015,6 +6065,8 @@ static int vmdkSetParentFilename(void *pvBackendData, const char *pszParentFilen
 static bool vmdkIsAsyncIOSupported(void *pvBackendData)
 {
     PVMDKIMAGE pImage = (PVMDKIMAGE)pvBackendData;
+
+#if 1
     bool fAsyncIOSupported = false;
 
     if (pImage)
@@ -6032,6 +6084,10 @@ static bool vmdkIsAsyncIOSupported(void *pvBackendData)
     }
 
     return fAsyncIOSupported;
+#else
+    /* We do not support async I/O for stream optimized VMDK images. */
+    return (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED) == 0;
+#endif
 }
 
 static int vmdkAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
@@ -6078,7 +6134,23 @@ static int vmdkAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
 #ifdef VBOX_WITH_VMDK_ESX
         case VMDKETYPE_ESX_SPARSE:
 #endif /* VBOX_WITH_VMDK_ESX */
-            AssertMsgFailed(("Not supported\n"));
+            rc = vmdkGetSectorAsync(pImage, pIoCtx, pImage->pGTCache, pExtent,
+                                    uSectorExtentRel, &uSectorExtentAbs);
+            if (RT_FAILURE(rc))
+                goto out;
+            /* Clip read range to at most the rest of the grain. */
+            cbRead = RT_MIN(cbRead, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain - uSectorExtentRel % pExtent->cSectorsPerGrain));
+            Assert(!(cbRead % 512));
+            if (uSectorExtentAbs == 0)
+                rc = VERR_VD_BLOCK_FREE;
+            else
+            {
+                AssertMsg(!(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED), ("Async I/O is not supported for stream optimized VMDK's\n"));
+                rc = pImage->pInterfaceIOCallbacks->pfnReadUserAsync(pImage->pInterfaceIO->pvUser,
+                                                                     pExtent->pFile->pStorage,
+                                                                     VMDK_SECTOR2BYTE(uSectorExtentAbs),
+                                                                     pIoCtx, cbRead);
+            }
             break;
         case VMDKETYPE_VMFS:
         case VMDKETYPE_FLAT:
@@ -6160,7 +6232,56 @@ static int vmdkAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
 #ifdef VBOX_WITH_VMDK_ESX
         case VMDKETYPE_ESX_SPARSE:
 #endif /* VBOX_WITH_VMDK_ESX */
-            AssertMsgFailed(("Not supported\n"));
+            rc = vmdkGetSectorAsync(pImage, pIoCtx, pImage->pGTCache, pExtent, uSectorExtentRel,
+                                    &uSectorExtentAbs);
+            if (RT_FAILURE(rc))
+                goto out;
+            /* Clip write range to at most the rest of the grain. */
+            cbWrite = RT_MIN(cbWrite, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain - uSectorExtentRel % pExtent->cSectorsPerGrain));
+            if (    pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED
+                &&  uSectorExtentRel < (uint64_t)pExtent->uLastGrainWritten * pExtent->cSectorsPerGrain)
+            {
+                rc = VERR_VD_VMDK_INVALID_WRITE;
+                goto out;
+            }
+            if (uSectorExtentAbs == 0)
+            {
+                if (cbWrite == VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain))
+                {
+                    /* Full block write to a previously unallocated block.
+                     * Check if the caller wants to avoid the automatic alloc. */
+                    if (!(fWrite & VD_WRITE_NO_ALLOC))
+                    {
+                        AssertMsgFailed(("Implement\n"));
+#if 0
+                        /* Allocate GT and find out where to store the grain. */
+                        rc = vmdkAllocGrain(pImage->pGTCache, pExtent,
+                                            uSectorExtentRel, pvBuf, cbWrite);
+#endif
+                    }
+                    else
+                        rc = VERR_VD_BLOCK_FREE;
+                    *pcbPreRead = 0;
+                    *pcbPostRead = 0;
+                }
+                else
+                {
+                    /* Clip write range to remain in this extent. */
+                    cbWrite = RT_MIN(cbWrite, VMDK_SECTOR2BYTE(pExtent->uSectorOffset + pExtent->cNominalSectors - uSectorExtentRel));
+                    *pcbPreRead = VMDK_SECTOR2BYTE(uSectorExtentRel % pExtent->cSectorsPerGrain);
+                    *pcbPostRead = VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain) - cbWrite - *pcbPreRead;
+                    rc = VERR_VD_BLOCK_FREE;
+                }
+            }
+            else
+            {
+                Assert(!(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED));
+                rc = pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
+                                                                      pExtent->pFile->pStorage,
+                                                                      VMDK_SECTOR2BYTE(uSectorExtentAbs),
+                                                                      pIoCtx, cbWrite,
+                                                                      NULL, NULL);
+            }
             break;
         case VMDKETYPE_VMFS:
         case VMDKETYPE_FLAT:
@@ -6169,7 +6290,7 @@ static int vmdkAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
             rc = pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
                                                                   pExtent->pFile->pStorage,
                                                                   VMDK_SECTOR2BYTE(uSectorExtentRel),
-                                                                  pIoCtx, cbWrite);
+                                                                  pIoCtx, cbWrite, NULL, NULL);
             break;
         case VMDKETYPE_ZERO:
             /* Clip write range to remain in this extent. */
@@ -6201,8 +6322,8 @@ static int vmdkAsyncFlush(void *pvBackendData, PVDIOCTX pIoCtx)
 #ifdef VBOX_WITH_VMDK_ESX
                 case VMDKETYPE_ESX_SPARSE:
 #endif /* VBOX_WITH_VMDK_ESX */
-                    /** Not supported atm. */
-                    AssertMsgFailed(("Async I/O not supported for sparse images\n"));
+                    /** @todo: Fake success for now */
+                    rc = VINF_SUCCESS;
                     break;
                 case VMDKETYPE_VMFS:
                 case VMDKETYPE_FLAT:

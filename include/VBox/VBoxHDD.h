@@ -1364,16 +1364,25 @@ typedef struct VDIOSTORAGE *PVDIOSTORAGE;
 typedef PVDIOSTORAGE *PPVDIOSTORAGE;
 
 /**
- * Completion callback for metadata reads or writes.
+ * Completion callback for meta/userdata reads or writes.
  *
- * @return  nothing.
+ * @return  VBox status code.
+ *          VINF_SUCCESS if everything was successful and the transfer can continue.
+ *          VERR_VD_ASYNC_IO_IN_PROGRESS if there is another data transfer pending.
  * @param   pvBackendData   The opaque backend data.
  * @param   pIoCtx          I/O context associated with this request.
- * @param   pvMetaUser      Opaque user data passed during a metadata read/write request.
+ * @param   pvUser          Opaque user data passed during a read/write request.
+ * @param   rcReq           Status code for the completed request.
  */
-typedef DECLCALLBACK(void) FNVDMETACOMPLETED(void *pvBackendData, PVDIOCTX pIoCtx, void *pvMetaUser);
-/** Pointer to FNVDCOMPLETED() */
-typedef FNVDMETACOMPLETED *PFNVDMETACOMPLETED;
+typedef DECLCALLBACK(int) FNVDXFERCOMPLETED(void *pvBackendData, PVDIOCTX pIoCtx, void *pvUser, int rcReq);
+/** Pointer to FNVDXFERCOMPLETED() */
+typedef FNVDXFERCOMPLETED *PFNVDXFERCOMPLETED;
+
+/** Metadata transfer handle. */
+typedef struct VDMETAXFER *PVDMETAXFER;
+/** Pointer to a metadata transfer handle. */
+typedef PVDMETAXFER *PPVDMETAXFER;
+
 
 /**
  * Support interface for I/O
@@ -1474,7 +1483,7 @@ typedef struct VDINTERFACEIO
     /**
      * Flush data to the storage backend.
      *
-     * @return  VBox statis code.
+     * @return  VBox status code.
      * @param   pvUser          The opaque data passed on container creation.
      * @param   pStorage        The storage handle to flush.
      *
@@ -1486,7 +1495,7 @@ typedef struct VDINTERFACEIO
      * Initiate a asynchronous read request for user data.
      *
      * @return  VBox status code.
-     * @param   pvUser         The opqaue user data passed on container creation.
+     * @param   pvUser         The opaque user data passed on container creation.
      * @param   pStorage       The storage handle.
      * @param   uOffset        The offset to start reading from.
      * @param   pIoCtx         I/O context passed in VDAsyncRead/Write.
@@ -1505,66 +1514,82 @@ typedef struct VDINTERFACEIO
      * @param   uOffset        The offset to start writing to.
      * @param   pIoCtx         I/O context passed in VDAsyncRead/Write
      * @param   cbWrite        How many bytes to write.
+     * @param   pfnCompleted   Completion callback.
+     * @param   pvCompleteUser Opaque user data passed in the completion callback.
      */
     DECLR3CALLBACKMEMBER(int, pfnWriteUserAsync, (void *pvUser, PVDIOSTORAGE pStorage,
                                                   uint64_t uOffset, PVDIOCTX pIoCtx,
-                                                  size_t cbWrite));
+                                                  size_t cbWrite,
+                                                  PFNVDXFERCOMPLETED pfnComplete,
+                                                  void *pvCompleteUser));
 
     /**
      * Reads metadata asynchronously from storage.
      * The current I/O context will be halted.
      *
      * @returns VBox status code.
-     * @param   pvUser              The opaque user data passed on container creation.
-     * @param   pStorage            The storage handle.
-     * @param   uOffset             Offsete to start reading from.
-     * @param   pvBuf               Where to store the data.
-     * @param   cbRead              How many bytes to read.
-     * @param   pIoCtx              The I/O context which triggered the read.
-     * @param   pfnMetaCompleted    Callback to call when the read completes.
-     * @param   pvMetaUser          Opaque user data which is passed in the callback.
+     * @param   pvUser        The opaque user data passed on container creation.
+     * @param   pStorage      The storage handle.
+     * @param   uOffset       Offset to start reading from.
+     * @param   pvBuf         Where to store the data.
+     * @param   cbRead        How many bytes to read.
+     * @param   pIoCtx        The I/O context which triggered the read.
+     * @param   ppMetaXfer    Where to store the metadata transfer handle on success.
      */
     DECLR3CALLBACKMEMBER(int, pfnReadMetaAsync, (void *pvUser, PVDIOSTORAGE pStorage,
                                                  uint64_t uOffset, void *pvBuf,
                                                  size_t cbRead, PVDIOCTX pIoCtx,
-                                                 PFNVDMETACOMPLETED pfnMetaCompleted,
-                                                 void *pvMetaUser));
+                                                 PPVDMETAXFER ppMetaXfer));
 
     /**
      * Writes metadata asynchronously to storage.
      *
      * @returns VBox status code.
-     * @param   pvUser              The opaque user data passed on container creation.
-     * @param   pStorage            The storage handle.
-     * @param   uOffset             Offsete to start writing to.
-     * @param   pvBuf               Written data.
-     * @param   cbWrite             How many bytes to write.
-     * @param   pIoCtx              The I/O context which triggered the write.
-     * @param   pfnMetaCompleted    Callback to call when the write completes.
-     * @param   pvMetaUser          Opaque user data which is passed in the callback.
+     * @param   pvUser         The opaque user data passed on container creation.
+     * @param   pStorage       The storage handle.
+     * @param   uOffset        Offset to start writing to.
+     * @param   pvBuf          Written data.
+     * @param   cbWrite        How many bytes to write.
+     * @param   pIoCtx         The I/O context which triggered the write.
+     * @param   pfnCompleted   Completion callback.
+     * @param   pvCompleteUser Opaque user data passed in the completion callback.
      */
     DECLR3CALLBACKMEMBER(int, pfnWriteMetaAsync, (void *pvUser, PVDIOSTORAGE pStorage,
                                                   uint64_t uOffset, void *pvBuf,
                                                   size_t cbWrite, PVDIOCTX pIoCtx,
-                                                  PFNVDMETACOMPLETED pfnMetaCompleted,
-                                                  void *pvMetaUser));
+                                                  PFNVDXFERCOMPLETED pfnComplete,
+                                                  void *pvCompleteUser));
+
+    /**
+     * Releases a metadata transfer handle.
+     * The free space can be used for another transfer.
+     *
+     * @returns nothing.
+     * @param   pvUser         The opaque user data passed on container creation.
+     * @param   pMetaXfer      The metadata transfer handle to release.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnMetaXferRelease, (void *pvUser, PVDMETAXFER pMetaXfer));
 
     /**
      * Initiates a async flush request.
      *
-     * @return  VBox statis code.
-     * @param   pvUser          The opaque data passed on container creation.
-     * @param   pStorage        The storage handle to flush.
-     * @param   pIoCtx          I/O context which triggered the flush.
+     * @return  VBox status code.
+     * @param   pvUser         The opaque data passed on container creation.
+     * @param   pStorage       The storage handle to flush.
+     * @param   pIoCtx         I/O context which triggered the flush.
+     * @param   pfnCompleted   Completion callback.
+     * @param   pvCompleteUser Opaque user data passed in the completion callback.
      */
     DECLR3CALLBACKMEMBER(int, pfnFlushAsync, (void *pvUser, PVDIOSTORAGE pStorage,
-                                              PVDIOCTX pIoCtx));
+                                              PVDIOCTX pIoCtx,
+                                              PFNVDXFERCOMPLETED pfnComplete,
+                                              void *pvCompleteUser));
 
     /**
      * Copies a buffer into the I/O context.
      *
      * @return Number of bytes copied.
-     * @param  pvUser          The opaque user data passed on conatiner creation.
+     * @param  pvUser          The opaque user data passed on container creation.
      * @param  pIoCtx          I/O context to copy the data to.
      * @param  pvBuf           Buffer to copy.
      * @param  cbBuf           Number of bytes to copy.
@@ -1576,7 +1601,7 @@ typedef struct VDINTERFACEIO
      * Copies data from the I/O context into a buffer.
      *
      * @return Number of bytes copied.
-     * @param  pvUser          The opaque user data passed on conatiner creation.
+     * @param  pvUser          The opaque user data passed on container creation.
      * @param  pIoCtx          I/O context to copy the data from.
      * @param  pvBuf           Destination buffer.
      * @param  cbBuf           Number of bytes to copy.
@@ -1588,7 +1613,7 @@ typedef struct VDINTERFACEIO
      * Sets the buffer of the given context to a specific byte.
      *
      * @return Number of bytes set.
-     * @param  pvUser          The opaque user data passed on conatiner creation.
+     * @param  pvUser          The opaque user data passed on container creation.
      * @param  pIoCtx          I/O context to copy the data from.
      * @param  ch              The byte to set.
      * @param  cbSet           Number of bytes to set.
@@ -1596,6 +1621,16 @@ typedef struct VDINTERFACEIO
     DECLR3CALLBACKMEMBER(size_t, pfnIoCtxSet, (void *pvUser, PVDIOCTX pIoCtx,
                                                int ch, size_t cbSet));
 
+    /**
+     * Marks the given number of bytes as completed and continues the I/O context.
+     *
+     * @returns nothing.
+     * @param   pvUser         The opaque user data passed on container creation.
+     * @param   pIoCtx         The I/O context.
+     * @param   cbCompleted    Number of bytes completed.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnIoCtxCompleted, (void *pvUser, PVDIOCTX pIoCtx,
+                                                   size_t cbCompleted));
 } VDINTERFACEIO, *PVDINTERFACEIO;
 
 /**
