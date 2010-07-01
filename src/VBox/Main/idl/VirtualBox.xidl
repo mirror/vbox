@@ -15607,9 +15607,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="ICanExtraDataChangeEvent" extends="IVetoEvent"
+      name="IExtraDataCanChangeEvent" extends="IVetoEvent"
       uuid="245d88bd-800a-40f8-87a6-170d02249a55"
-      wsmap="managed" id="OnExtraDataCanChange"
+      wsmap="managed" autogen="VBoxEvent" id="OnExtraDataCanChange"
       waitable="true"
       >
     <desc>
@@ -15638,7 +15638,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
       name="ICanShowWindowEvent" extends="IVetoEvent"
       uuid="adf292b0-92c9-4a77-9d35-e058b39fe0b9"
-      wsmap="managed" id="OnCanShowWindow"
+      wsmap="managed" autogen="VBoxEvent" id="OnCanShowWindow"
       waitable="true"
       >
     <desc>

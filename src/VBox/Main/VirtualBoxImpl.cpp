@@ -2749,6 +2749,31 @@ BOOL VirtualBox::onExtraDataCanChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aVa
         ++it;
     }
 
+    VBoxEventDesc evDesc;
+    evDesc.init(m->pEventSource, VBoxEventType_OnExtraDataCanChange, id.raw(), aKey, aValue);
+    BOOL fDelivered = evDesc.fire(10000); /* Wait up to 10 secs for delivery */
+    Assert(fDelivered);
+    if (fDelivered)
+    {
+        ComPtr<IEvent> aEvent;
+        evDesc.getEvent(aEvent.asOutParam());
+        ComPtr<IExtraDataCanChangeEvent> aCanChangeEvent = aEvent;
+        Assert(aCanChangeEvent);
+        BOOL fVetoed = FALSE;
+        aCanChangeEvent->IsVetoed(&fVetoed);
+        allowChange = !fVetoed;
+
+        if (!allowChange)
+        {
+            SafeArray<BSTR> aVetos;
+            aCanChangeEvent->GetVetos(ComSafeArrayAsOutParam(aVetos));
+            if (aVetos.size() > 0)
+                aError = aVetos[0];
+        }
+    }
+    else
+        allowChange = TRUE;
+
     LogFlowThisFunc(("allowChange=%RTbool\n", allowChange));
     return allowChange;
 }
@@ -4687,19 +4712,12 @@ void *VirtualBox::CallbackEvent::handler()
     }
 #endif
 
-#if 1
-    // We disable generic events firing for now to not harm performance, but it is already functional
     {
         VBoxEventDesc evDesc;
         prepareEventDesc(mVirtualBox->m->pEventSource, evDesc);
-        ComPtr<IEvent> aEvent;
-        BOOL fDelivered;
 
-        evDesc.getEvent(aEvent.asOutParam());
-        if (aEvent && mVirtualBox && mVirtualBox->m->pEventSource)
-            mVirtualBox->m->pEventSource->FireEvent(aEvent, /* don't wait for delivery */ 0, &fDelivered);
+        evDesc.fire(/* don't wait for delivery */0);
     }
-#endif
 
     for (CallbackList::const_iterator it = callbacks.begin();
          it != callbacks.end();

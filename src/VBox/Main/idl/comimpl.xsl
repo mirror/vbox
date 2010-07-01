@@ -365,7 +365,7 @@
       <xsl:value-of select="       '         return S_OK;&#10;'" />
       <xsl:value-of select="       '    }&#10;'" />
     </xsl:if>
-   
+
     <xsl:value-of select="       '    // purely internal setter&#10;'" />
     <xsl:value-of select="concat('    int set_', @name,'(',$pTypeNameIn, ') {&#10;')" />
     <xsl:call-template name="genSetParam">
@@ -399,6 +399,7 @@
 
 <xsl:template name="genEventImpl">
   <xsl:param name="implName" />
+  <xsl:param name="isVeto" />
 
   <xsl:value-of select="concat('class ATL_NO_VTABLE ',$implName,
                         ' : public VirtualBoxBase, VBOX_SCRIPTABLE_IMPL(',
@@ -423,36 +424,64 @@
     }
     STDMETHOD(COMGETTER(Type)) (VBoxEventType_T *aType)
     {
-        return mEvent->COMGETTER(Type) (aType);
+        return ((VBoxEvent*)mEvent)->COMGETTER(Type) (aType);
     }
     STDMETHOD(COMGETTER(Source)) (IEventSource * *aSource)
     {
-        return mEvent->COMGETTER(Source) (aSource);
+        return ((VBoxEvent*)mEvent)->COMGETTER(Source) (aSource);
     }
     STDMETHOD(COMGETTER(Waitable)) (BOOL *aWaitable)
     {
-        return mEvent->COMGETTER(Waitable) (aWaitable);
+        return ((VBoxEvent*)mEvent)->COMGETTER(Waitable) (aWaitable);
     }
     STDMETHOD(SetProcessed)()
     {
-       return mEvent->SetProcessed();
+       return ((VBoxEvent*)mEvent)->SetProcessed();
     }
     STDMETHOD(WaitProcessed)(LONG aTimeout, BOOL *aResult)
     {
-        return mEvent->WaitProcessed(aTimeout, aResult);
-    }
-    HRESULT init (IEventSource* aSource, VBoxEventType_T aType, BOOL aWaitable)
-    {
-        return mEvent->init(aSource, aType, aWaitable);
+        return ((VBoxEvent*)mEvent)->WaitProcessed(aTimeout, aResult);
     }
     void uninit()
     {
         mEvent->uninit();
     }
 ]]></xsl:text>
-  <xsl:value-of select="       'private:&#10;'" />
-  <xsl:value-of select="       '    ComObjPtr&lt;VBoxEvent&gt;      mEvent;&#10;'" />
-
+  <xsl:choose>
+    <xsl:when test="$isVeto">
+<xsl:text><![CDATA[
+    HRESULT init (IEventSource* aSource, VBoxEventType_T aType, BOOL aWaitable = TRUE)
+    {
+        NOREF(aWaitable);
+        return mEvent->init(aSource, aType);
+    }
+    STDMETHOD(AddVeto)(IN_BSTR aVeto)
+    {
+        return mEvent->AddVeto(aVeto);
+    }
+    STDMETHOD(IsVetoed)(BOOL *aResult)
+    {
+       return mEvent->IsVetoed(aResult);
+    }
+    STDMETHOD(GetVetos)(ComSafeArrayOut(BSTR, aVetos))
+    {
+       return mEvent->GetVetos(ComSafeArrayOutArg(aVetos));
+    }
+private:
+]]></xsl:text>
+      <xsl:value-of select="       '    ComObjPtr&lt;VBoxVetoEvent&gt;      mEvent;&#10;'" />
+    </xsl:when>
+    <xsl:otherwise>
+<xsl:text><![CDATA[
+    HRESULT init (IEventSource* aSource, VBoxEventType_T aType, BOOL aWaitable)
+    {
+        return mEvent->init(aSource, aType, aWaitable);
+    }
+private:
+]]></xsl:text>
+      <xsl:value-of select="       '    ComObjPtr&lt;VBoxEvent&gt;      mEvent;&#10;'" />
+    </xsl:otherwise>
+  </xsl:choose>
   <xsl:call-template name="genAttrCode">
     <xsl:with-param name="name" select="@name" />
   </xsl:call-template>
@@ -485,7 +514,7 @@
   <xsl:value-of select="       '         {&#10;'"/>
   <xsl:value-of select="concat('              ComObjPtr&lt;', $implName, '&gt; obj;&#10;')"/>
   <xsl:value-of select="       '              obj.createObject();&#10;'"/>
-  <xsl:value-of select="concat('              obj->init(source, aType, ', $waitable, ');&#10;')"/>
+  <xsl:value-of select="concat('              obj->init(aSource, aType, ', $waitable, ');&#10;')"/>
   <xsl:call-template name="genAttrInitCode">
     <xsl:with-param name="name" select="@name" />
     <xsl:with-param name="obj" select="'obj'" />
@@ -497,9 +526,11 @@
 
 <xsl:template name="genCommonEventCode">
   <xsl:text><![CDATA[
-HRESULT VBoxEventDesc::init(IEventSource* source, VBoxEventType_T aType, ...)
+HRESULT VBoxEventDesc::init(IEventSource* aSource, VBoxEventType_T aType, ...)
 {
     va_list args;
+
+    mEventSource = aSource;
     va_start(args, aType);
     switch (aType)
     {
@@ -547,8 +578,12 @@ HRESULT VBoxEventDesc::init(IEventSource* source, VBoxEventType_T aType, ...)
 
     <xsl:choose>
       <xsl:when test="$G_kind='VBoxEvent'">
+        <xsl:variable name="isVeto">
+          <xsl:value-of select="@extends='IVetoEvent'" />
+        </xsl:variable>
         <xsl:call-template name="genEventImpl">
           <xsl:with-param name="implName" select="$implName" />
+          <xsl:with-param name="isVeto" select="$isVeto" />
         </xsl:call-template>
       </xsl:when>
     </xsl:choose>

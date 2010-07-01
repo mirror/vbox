@@ -336,12 +336,23 @@ public:
     }
 };
 
+
+#define PREP_ARGS0()
+#define PREP_ARGS1(a1)                       a1
+#define PREP_ARGS2(a1,a2)                    a2, a2
+#define PREP_ARGS3(a1,a2,a3)                 a1, a2, a3
+#define PREP_ARGS4(a1,a2,a3,a4)              a1, a2, a3, a4
+#define PREP_ARGS5(a1,a2,a3,a4,a5)           a1, a2, a3, a4, a5
+#define PREP_ARGS6(a1,a2,a3,a4,a5,a6)        a1, a2, a3, a4, a5, a6
+#define PREP_ARGS7(a1,a2,a3,a4,a5,a6,a7)     a1, a2, a3, a4, a5, a6, a7
+#define PREP_ARGS8(a1,a2,a3,a4,a5,a6,a7,a8)  a1, a2, a3, a4, a5, a6, a7, a8
+
 #ifdef RT_OS_WINDOWS
 
 /**
  * Macro used to prepare for COM event firing, note CComObjectRootEx locking.
  */
-#define CONSOLE_EVENTS_START(name,count)        \
+#define CONSOLE_COM_EVENTS_START(name,count)    \
    {                                            \
       ComEventDesc evDesc;                      \
                                                 \
@@ -355,7 +366,7 @@ public:
  * Note some subtlety in the fact that connection point list access
  * must be synchronized with CComObjectRootEx Lock()/Unlock() methods.
  */
-#define CONSOLE_EVENTS_END()                                    \
+#define CONSOLE_COM_EVENTS_END()                                \
     for (int i=0; i<nConnections; i++)                          \
     {                                                           \
         ComPtr<IUnknown> sp = this->m_vec.GetAt(i);             \
@@ -375,33 +386,32 @@ public:
  * casting and assignment operator overloading in CComVariant when instantiating
  * member template add(), and every add() here could be, ofc, different function.
  */
-#define PREP_ARGS0()
-#define PREP_ARGS1(a1)                      if (nConnections) evDesc.add(a1)
-#define PREP_ARGS2(a1,a2)                   if (nConnections) evDesc.add(a1).add(a2)
-#define PREP_ARGS3(a1,a2,a3)                if (nConnections) evDesc.add(a1).add(a2).add(a3)
-#define PREP_ARGS4(a1,a2,a3,a4)             if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4)
-#define PREP_ARGS5(a1,a2,a3,a4,a5)          if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4).add(a5)
-#define PREP_ARGS6(a1,a2,a3,a4,a5,a6)       if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4).add(a5).add(a6)
-#define PREP_ARGS7(a1,a2,a3,a4,a5,a6,a7)    if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4).add(a5).add(a6).add(a7)
-#define PREP_ARGS8(a1,a2,a3,a4,a5,a6,a7,a8) if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4).add(a5).add(a6).add(a7).add(a8)
+#define PREP_COM_ARGS0()
+#define PREP_COM_ARGS1(a1)                      if (nConnections) evDesc.add(a1)
+#define PREP_COM_ARGS2(a1,a2)                   if (nConnections) evDesc.add(a1).add(a2)
+#define PREP_COM_ARGS3(a1,a2,a3)                if (nConnections) evDesc.add(a1).add(a2).add(a3)
+#define PREP_COM_ARGS4(a1,a2,a3,a4)             if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4)
+#define PREP_COM_ARGS5(a1,a2,a3,a4,a5)          if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4).add(a5)
+#define PREP_COM_ARGS6(a1,a2,a3,a4,a5,a6)       if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4).add(a5).add(a6)
+#define PREP_COM_ARGS7(a1,a2,a3,a4,a5,a6,a7)    if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4).add(a5).add(a6).add(a7)
+#define PREP_COM_ARGS8(a1,a2,a3,a4,a5,a6,a7,a8) if (nConnections) evDesc.add(a1).add(a2).add(a3).add(a4).add(a5).add(a6).add(a7).add(a8)
 
 #else
 
 /**
- * No events for XPCOM targets now. In the future it looks natural to implmenet generic events mechanism
- * for all platforms and get rid of callbacks.
+ * No COM events for XPCOM targets ofc.
  */
-#define CONSOLE_EVENTS_START(name,count)
-#define CONSOLE_EVENTS_END()
-#define PREP_ARGS0()
-#define PREP_ARGS1(a1)
-#define PREP_ARGS2(a1,a2)
-#define PREP_ARGS3(a1,a2,a3)
-#define PREP_ARGS4(a1,a2,a3,a4)
-#define PREP_ARGS5(a1,a2,a3,a4,a5)
-#define PREP_ARGS6(a1,a2,a3,a4,a5,a6)
-#define PREP_ARGS7(a1,a2,a3,a4,a5,a6,a7)
-#define PREP_ARGS8(a1,a2,a3,a4,a5,a6,a7,a8)
+#define CONSOLE_COM_EVENTS_START(name,count)
+#define CONSOLE_COM_EVENTS_END()
+#define PREP_COM_ARGS0()
+#define PREP_COM_ARGS1(a1)
+#define PREP_COM_ARGS2(a1,a2)
+#define PREP_COM_ARGS3(a1,a2,a3)
+#define PREP_COM_ARGS4(a1,a2,a3,a4)
+#define PREP_COM_ARGS5(a1,a2,a3,a4,a5)
+#define PREP_COM_ARGS6(a1,a2,a3,a4,a5,a6)
+#define PREP_COM_ARGS7(a1,a2,a3,a4,a5,a6,a7)
+#define PREP_COM_ARGS8(a1,a2,a3,a4,a5,a6,a7,a8)
 
 #endif
 
@@ -423,18 +433,21 @@ public:
  * @param   PreprEvent          Event preparation code
  * @param   Args                Number of callback arguments
  */
-#define CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, InvokeCb, PrepEvent, Args) \
+#define CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, Argc, Args, PrepComArgs, MaybeComma) \
     do \
     { \
-        CONSOLE_EVENTS_START(CallbackMethod,Args);   \
-        PrepEvent; \
-        CONSOLE_EVENTS_END();  \
+        CONSOLE_COM_EVENTS_START(CallbackMethod,Argc);   \
+        PrepComArgs; \
+        CONSOLE_COM_EVENTS_END();  \
+        VBoxEventDesc evDesc; \
+        evDesc.init(mEventSource, VBoxEventType_##CallbackMethod MaybeComma Args);     \
+        evDesc.fire(/* don't wait for delivery */ 0); \
         CallbackList::iterator it = this->mCallbacks.begin(); \
         while (it != this->mCallbacks.end()) \
         { \
             if (it->isWanted(ConsoleCallbackRegistration::k ## CallbackMethod)) \
             { \
-                HRESULT hrc = InvokeCb;                   \
+                HRESULT hrc = it->ptrICb-> CallbackMethod (Args);                   \
                 hrc = it->handleResult(ConsoleCallbackRegistration::k ## CallbackMethod, hrc); \
                 if (FAILED_DEAD_INTERFACE(hrc)) \
                 { \
@@ -446,21 +459,23 @@ public:
         } \
     } while (0)
 
-/* Actual invocation macro for different number of parameters */
+#define COMMA ,
+#define NO_COMMA
+/* Actual invocation macroses for different number of parameters */
 #define CONSOLE_DO_CALLBACKS0(CallbackMethod)                           \
-     CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb-> CallbackMethod (), PREP_ARGS0(), 0)
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod,  0, PREP_ARGS0(), PREP_COM_ARGS0(), NO_COMMA)
 #define CONSOLE_DO_CALLBACKS1(CallbackMethod,Arg1)                      \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb-> CallbackMethod (Arg1), PREP_ARGS1(Arg1), 1)
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, 1, PREP_ARGS1(Arg1), PREP_COM_ARGS1(Arg1), COMMA)
 #define CONSOLE_DO_CALLBACKS2(CallbackMethod,Arg1,Arg2)                 \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb-> CallbackMethod (Arg1,Arg2), PREP_ARGS2(Arg1,Arg2), 2)
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, 2, PREP_ARGS2(Arg1,Arg2),PREP_COM_ARGS2(Arg1,Arg2), COMMA)
 #define CONSOLE_DO_CALLBACKS3(CallbackMethod,Arg1,Arg2,Arg3)            \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb-> CallbackMethod (Arg1,Arg2,Arg3), PREP_ARGS3(Arg1,Arg2,Arg3), 3)
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, 3, PREP_ARGS3(Arg1,Arg2,Arg3), PREP_COM_ARGS3(Arg1,Arg2,Arg3), COMMA)
 #define CONSOLE_DO_CALLBACKS4(CallbackMethod,Arg1,Arg2,Arg3,Arg4)       \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb-> CallbackMethod (Arg1,Arg2,Args3,Arg4), PREP_ARGS4(Arg1,Arg2,Arg3,Arg4), 4)
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, 4, PREP_ARGS4(Arg1,Arg2,Arg3,Arg4), PREP_COM_ARGS4(Arg1,Arg2,Arg3,Arg4), COMMA)
 #define CONSOLE_DO_CALLBACKS7(CallbackMethod,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7) \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb-> CallbackMethod (Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7), PREP_ARGS7(Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7), 7)
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, 7, PREP_ARGS7(Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7), PREP_COM_ARGS7(Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7), COMMA)
 #define CONSOLE_DO_CALLBACKS8(CallbackMethod,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8) \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, it->ptrICb-> CallbackMethod (Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8), PREP_ARGS8(Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8), 8)
+    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, 8, PREP_ARGS8(Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8), PREP_COM_ARGS8(Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7, Arg8), COMMA)
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -4937,6 +4952,8 @@ HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     CallbackList::iterator it = mCallbacks.begin();
+    VBoxEventDesc evDesc;
+
     if (aCheck)
     {
         while (it != mCallbacks.end())
@@ -4957,7 +4974,32 @@ HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
             }
             ++it;
         }
-        *aCanShow = TRUE;
+        evDesc.init(mEventSource, VBoxEventType_OnCanShowWindow);
+        BOOL fDelivered = evDesc.fire(10000); /* Wait up to 10 secs for delivery */
+        Assert(fDelivered);
+        if (fDelivered)
+        {
+            ComPtr<IEvent> aEvent;
+            evDesc.getEvent(aEvent.asOutParam());
+            // bit clumsy
+            ComPtr<ICanShowWindowEvent> aCanShowEvent = aEvent;
+            if (aCanShowEvent)
+            {
+                BOOL fVetoed = FALSE;
+                aCanShowEvent->IsVetoed(&fVetoed);
+                *aCanShow = !fVetoed;
+            }
+            else
+            {
+                Assert(FALSE);
+                *aCanShow = TRUE;
+            }
+        }
+        else
+        {
+            Assert(FALSE);
+            *aCanShow = TRUE;
+        }
     }
     else
     {
@@ -4984,6 +5026,31 @@ HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
             }
             ++it;
         }
+#if 1
+        evDesc.init(mEventSource, VBoxEventType_OnShowWindow);
+        ComPtr<IEvent> aEvent;
+        evDesc.getEvent(aEvent.asOutParam());
+        ComPtr<IShowWindowEvent> aShowEvent = aEvent;
+        if (aShowEvent)
+            aShowEvent->COMSETTER(WinId)(0);
+        
+        BOOL fDelivered = evDesc.fire(10000); /* Wait up to 10 secs for delivery */
+        Assert(fDelivered);
+        if (fDelivered)
+        {
+            ULONG64 aEvWinId = 0;
+            if (aShowEvent)
+            {
+                aShowEvent->COMGETTER(WinId)(&aEvWinId);
+                if (aEvWinId != 0)
+                    *aWinId = aEvWinId;
+            }
+            else
+                Assert(FALSE);
+        }
+        else
+            Assert(FALSE);
+ #endif
     }
 
     return S_OK;
