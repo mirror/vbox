@@ -256,14 +256,14 @@ static const uint8_t g_UsbHidMReportDesc[] =
     /* Collection */                0xA1, 0x00,     /* Physical */
     /* Usage Page */                0x05, 0x09,     /* Button */
     /* Usage Minimum */             0x19, 0x01,     /* Button 1 */
-    /* Usage Maximum */             0x29, 0x03,     /* Button 3 */
+    /* Usage Maximum */             0x29, 0x05,     /* Button 5 */
     /* Logical Minimum */           0x15, 0x00,     /* 0 */
     /* Logical Maximum */           0x25, 0x01,     /* 1 */
-    /* Report Count */              0x95, 0x03,     /* 3 */
+    /* Report Count */              0x95, 0x05,     /* 5 */
     /* Report Size */               0x75, 0x01,     /* 1 */
     /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
     /* Report Count */              0x95, 0x01,     /* 1 */
-    /* Report Size */               0x75, 0x05,     /* 5 (padding bits) */
+    /* Report Size */               0x75, 0x03,     /* 3 (padding bits) */
     /* Input */                     0x81, 0x03,     /* Constant, Value, Absolute, Bit field */
     /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
     /* Usage */                     0x09, 0x30,     /* X */
@@ -294,14 +294,14 @@ static const uint8_t g_UsbHidTReportDesc[] =
     /* Collection */                0xA1, 0x00,     /* Physical */
     /* Usage Page */                0x05, 0x09,     /* Button */
     /* Usage Minimum */             0x19, 0x01,     /* Button 1 */
-    /* Usage Maximum */             0x29, 0x03,     /* Button 3 */
+    /* Usage Maximum */             0x29, 0x05,     /* Button 5 */
     /* Logical Minimum */           0x15, 0x00,     /* 0 */
     /* Logical Maximum */           0x25, 0x01,     /* 1 */
-    /* Report Count */              0x95, 0x03,     /* 3 */
+    /* Report Count */              0x95, 0x05,     /* 5 */
     /* Report Size */               0x75, 0x01,     /* 1 */
     /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
     /* Report Count */              0x95, 0x01,     /* 1 */
-    /* Report Size */               0x75, 0x05,     /* 5 (padding bits) */
+    /* Report Size */               0x75, 0x03,     /* 3 (padding bits) */
     /* Input */                     0x81, 0x03,     /* Constant, Value, Absolute, Bit field */
     /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
     /* Usage */                     0x09, 0x38,     /* Z (wheel) */
