@@ -1462,6 +1462,62 @@ static INTNETSWDECISION intnetR0NetworkSwitchLevel3(PINTNETNETWORK pNetwork, PCR
 
 
 /**
+ * Pre-switch a unicast MAC address.
+ *
+ * @returns INTNETSWDECISION_DROP, INTNETSWDECISION_TRUNK,
+ *          INTNETSWDECISION_INTNET or INTNETSWDECISION_BROADCAST (misnomer).
+ * @param   pNetwork            The network to switch on.
+ * @param   fSrc                The frame source.
+ * @param   pSrcAddr            The source address of the frame.
+ * @param   pDstAddr            The destination address of the frame.
+ */
+static INTNETSWDECISION intnetR0NetworkPreSwitchUnicast(PINTNETNETWORK pNetwork, uint32_t fSrc, PCRTMAC pSrcAddr,
+                                                        PCRTMAC pDstAddr)
+{
+    Assert(!intnetR0IsMacAddrMulticast(pDstAddr));
+
+    /*
+     * Grab the spinlock first and do the switching.
+     */
+    INTNETSWDECISION    enmSwDecision   = INTNETSWDECISION_BROADCAST;
+    PINTNETMACTAB       pTab            = &pNetwork->MacTab;
+    RTSPINLOCKTMP       Tmp             = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
+
+    /* Iterate the internal network interfaces and look for matching source and
+       destination addresses. */
+    uint32_t cExactHits = 0;
+    uint32_t iIfMac     = pTab->cEntries;
+    while (iIfMac-- > 0)
+    {
+        if (pTab->paEntries[iIfMac].fActive)
+        {
+            /* Unknown interface address? */
+            if (intnetR0IsMacAddrDummy(&pTab->paEntries[iIfMac].MacAddr))
+                break;
+
+            /* Paranoia - this shouldn't happen, right? */
+            if (    pSrcAddr
+                &&  intnetR0AreMacAddrsEqual(&pTab->paEntries[iIfMac].MacAddr, pSrcAddr))
+                break;
+
+            /* Exact match? */
+            if (intnetR0AreMacAddrsEqual(&pTab->paEntries[iIfMac].MacAddr, pDstAddr))
+            {
+                enmSwDecision = pTab->fHostPromiscuous && fSrc == INTNETTRUNKDIR_WIRE
+                              ? INTNETSWDECISION_BROADCAST
+                              : INTNETSWDECISION_INTNET;
+                break;
+            }
+        }
+    }
+
+    RTSpinlockReleaseNoInts(pNetwork->hAddrSpinlock, &Tmp);
+    return enmSwDecision;
+}
+
+
+/**
  * Switch a unicast MAC address and return a destination table.
  *
  * @returns INTNETSWDECISION_DROP, INTNETSWDECISION_TRUNK,
@@ -1482,8 +1538,8 @@ static INTNETSWDECISION intnetR0NetworkSwitchUnicast(PINTNETNETWORK pNetwork, ui
     /*
      * Grab the spinlock first and do the switching.
      */
-    PINTNETMACTAB   pTab    = &pNetwork->MacTab;
-    RTSPINLOCKTMP   Tmp     = RTSPINLOCKTMP_INITIALIZER;
+    PINTNETMACTAB   pTab = &pNetwork->MacTab;
+    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
     RTSpinlockAcquireNoInts(pNetwork->hAddrSpinlock, &Tmp);
 
     pDstTab->fTrunkDst  = 0;
@@ -4459,18 +4515,39 @@ static DECLCALLBACK(INTNETSWDECISION) intnetR0TrunkIfPortPreRecv(PINTNETTRUNKSWP
                                                                  void const *pvSrc, size_t cbSrc, uint32_t fSrc)
 {
     PINTNETTRUNKIF pThis = INTNET_SWITCHPORT_2_TRUNKIF(pSwitchPort);
-    PINTNETNETWORK pNetwork = pThis->pNetwork;
 
     /* assert some sanity */
-    AssertPtrReturn(pNetwork, INTNETSWDECISION_TRUNK);
-    AssertReturn(pNetwork->hEvtBusyIf != NIL_RTSEMEVENT, INTNETSWDECISION_TRUNK);
     AssertPtr(pvSrc);
-    Assert(cbSrc >= 6);
+    AssertReturn(cbSrc >= 6, INTNETSWDECISION_BROADCAST);
     Assert(fSrc);
 
-    /** @todo implement the switch table. */
+    /*
+     * Mark the trunk as busy, make sure we've got a network and that there are
+     * some active interfaces around.
+     */
+    INTNETSWDECISION enmSwDecision = INTNETSWDECISION_TRUNK;
+    intnetR0BusyIncTrunk(pThis);
+    PINTNETNETWORK pNetwork = pThis->pNetwork;
+    if (RT_LIKELY(   pNetwork
+                  && pNetwork->cActiveIFs > 0 ))
+    {
+        /*
+         * Lazy bird! No pre-switching of multicast and shared-MAC-on-wire.
+         */
+        PCRTNETETHERHDR pEthHdr = (PCRTNETETHERHDR)pvSrc;
+        if (intnetR0IsMacAddrMulticast(&pEthHdr->DstMac))
+            enmSwDecision = INTNETSWDECISION_BROADCAST;
+        else if (pNetwork->fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
+            enmSwDecision = INTNETSWDECISION_BROADCAST;
+        else
+            enmSwDecision = intnetR0NetworkPreSwitchUnicast(pNetwork,
+                                                            fSrc,
+                                                            cbSrc >= 12 ? &pEthHdr->SrcMac : NULL,
+                                                            &pEthHdr->DstMac);
+    }
 
-    return INTNETSWDECISION_BROADCAST;
+    intnetR0BusyDecTrunk(pThis);
+    return enmSwDecision;
 }
 
 
