@@ -1653,14 +1653,14 @@ static int emInterpretXAdd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
                 return VERR_EM_INTERPRETER;
             }
 
-            LogFlow(("XAdd %RGv=%p reg=%ll08x\n", GCPtrPar1, pvParam1, *(uint64_t *)pvParamReg2));
+            LogFlow(("XAdd %RGv=%p reg=%08llx\n", GCPtrPar1, pvParam1, *(uint64_t *)pvParamReg2));
 
             if (pDis->prefix & PREFIX_LOCK)
                 eflags = EMEmulateLockXAdd(pvParam1, pvParamReg2, cbParamReg2);
             else
                 eflags = EMEmulateXAdd(pvParam1, pvParamReg2, cbParamReg2);
 
-            LogFlow(("XAdd %RGv=%p reg=%ll08x ZF=%d\n", GCPtrPar1, pvParam1, *(uint64_t *)pvParamReg2, !!(eflags & X86_EFL_ZF) ));
+            LogFlow(("XAdd %RGv=%p reg=%08llx ZF=%d\n", GCPtrPar1, pvParam1, *(uint64_t *)pvParamReg2, !!(eflags & X86_EFL_ZF) ));
 
             /* Update guest's eflags and finish. */
             pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
