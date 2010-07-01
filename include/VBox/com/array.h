@@ -949,6 +949,7 @@ public:
         AssertFailedReturn (*this);
     }
 
+
     /**
      * Transfers the ownership of this array's data to the specified location
      * declared using the ComSafeArrayOut macro and makes this array a null
@@ -1002,6 +1003,8 @@ public:
 
         return *this;
     }
+
+    inline void initFrom(com::SafeArray<T> & aRef);
 
     // Public methods for internal purposes only.
 
@@ -1201,6 +1204,15 @@ protected:
 
     Data m;
 };
+
+/* Few fast specializations for primitive array types */ 
+template<>
+inline void com::SafeArray<BYTE>::initFrom(com::SafeArray<BYTE> & aRef)
+{
+    size_t sSize = aRef.size();
+    resize(sSize);
+    ::memcpy(raw(), aRef.raw(), sSize);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
