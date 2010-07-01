@@ -505,6 +505,15 @@ int main(int argc, char **argv)
     if (RT_FAILURE(rc))
         return VBoxServiceError("VbglR3Init failed with rc=%Rrc.\n", rc);
 
+#ifdef RT_OS_WINDOWS
+    /* Special forked VBoxService.exe process for handling page fusion. */
+    if (    argc == 2
+        &&  !strcmp(argv[1], "-pagefusionfork"))
+    {
+        return VBoxServicePageSharingInitFork();
+    }
+#endif
+
     /* Do pre-init of services. */
     g_pszProgName = RTPathFilename(argv[0]);
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
