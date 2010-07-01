@@ -86,7 +86,6 @@
 #include <StorageControllerImpl.h>
 #include <AudioAdapterImpl.h>
 #include <SystemPropertiesImpl.h>
-#include <EventImpl.h>
 
 /* implement nsISupports parts of our objects with support for nsIClassInfo */
 
@@ -197,9 +196,6 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(PerformanceMetric, IPerformanceMetric)
 
 NS_DECL_CLASSINFO(BIOSSettings)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(BIOSSettings, IBIOSSettings)
-
-NS_DECL_CLASSINFO(EventSource)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(EventSource, IEventSource)
 
 ////////////////////////////////////////////////////////////////////////////////
 
