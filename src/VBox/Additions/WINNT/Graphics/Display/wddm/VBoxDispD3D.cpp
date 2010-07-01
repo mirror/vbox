@@ -1862,10 +1862,21 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
 
 static HRESULT APIENTRY vboxWddmDDevDrawIndexedPrimitive(HANDLE hDevice, CONST D3DDDIARG_DRAWINDEXEDPRIMITIVE* pData)
 {
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    AssertBreakpoint();
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
-    return E_FAIL;
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    Assert(pDevice);
+    Assert(pDevice->pDevice9If);
+    HRESULT hr = pDevice->pDevice9If->DrawIndexedPrimitive(
+            pData->PrimitiveType,
+            pData->BaseVertexIndex,
+            pData->MinIndex,
+            pData->NumVertices,
+            pData->StartIndex,
+            pData->PrimitiveCount);
+    Assert(hr == S_OK);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
 }
 
 static HRESULT APIENTRY vboxWddmDDevDrawRectPatch(HANDLE hDevice, CONST D3DDDIARG_DRAWRECTPATCH* pData, CONST D3DDDIRECTPATCH_INFO* pInfo, CONST FLOAT* pPatch)
@@ -2644,8 +2655,23 @@ static HRESULT APIENTRY vboxWddmDDevUnlock(HANDLE hDevice, CONST D3DDDIARG_UNLOC
                 hr = pD3D9VBuf->Unlock();
                 Assert(hr == S_OK);
             }
-            else if (pRc->RcDesc.fFlags.IndexBuffer)
+            else
             {
+                Assert(pAlloc->LockInfo.cLocks < UINT32_MAX);
+            }
+        }
+        else if (pRc->RcDesc.fFlags.IndexBuffer)
+        {
+            Assert(pData->SubResourceIndex < pRc->cAllocations);
+            PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->SubResourceIndex];
+
+            --pAlloc->LockInfo.cLocks;
+            Assert(pAlloc->LockInfo.cLocks < UINT32_MAX);
+            if (!pAlloc->LockInfo.cLocks
+                && (!pAlloc->LockInfo.fFlags.MightDrawFromLocked
+                    || (!pAlloc->LockInfo.fFlags.Discard && !pAlloc->LockInfo.fFlags.NoOverwrite)))
+            {
+//                Assert(!pAlloc->LockInfo.cLocks);
                 IDirect3DIndexBuffer9 *pD3D9IBuf = (IDirect3DIndexBuffer9*)pAlloc->pD3DIf;
                 Assert(pD3D9IBuf);
                 /* this is a sysmem texture, update  */

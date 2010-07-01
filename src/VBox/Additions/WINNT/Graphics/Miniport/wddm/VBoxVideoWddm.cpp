@@ -1436,6 +1436,7 @@ NTSTATUS vboxWddmDestroyAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATI
     switch (pAllocation->enmType)
     {
         case VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE:
+        case VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC:
         {
             if (pAllocation->bAssigned)
             {
@@ -1929,6 +1930,7 @@ DxgkDdiPatch(
         {
             case VBOXVDMACMD_TYPE_DMA_PRESENT_SHADOW2PRIMARY:
             case VBOXVDMACMD_TYPE_DMA_PRESENT_BLT:
+            case VBOXVDMACMD_TYPE_DMA_PRESENT_FLIP:
             {
                 const D3DDDI_PATCHLOCATIONLIST* pPatchList = &pPatch->pPatchLocationList[0];
                 Assert(pPatchList->AllocationIndex == DXGK_PRESENT_SOURCE_INDEX);
@@ -2100,44 +2102,48 @@ DxgkDdiSubmitCommand(
             switch (pDstAlloc->enmType)
             {
                 case VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE:
+                case VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC:
                 {
-                    VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pPrivateData->DstAllocInfo.srcId];
-                    Assert(pSource->pPrimaryAllocation == pDstAlloc);
-                    switch (pSrcAlloc->enmType)
+                    if (pDstAlloc->bAssigned)
                     {
-                        case VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE:
+                        VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pPrivateData->DstAllocInfo.srcId];
+                        Assert(pSource->pPrimaryAllocation == pDstAlloc);
+                        switch (pSrcAlloc->enmType)
                         {
-                            RECT rect;
-                            Assert(pContext->enmType == VBOXWDDM_CONTEXT_TYPE_SYSTEM);
-                            vboxWddmCheckUpdateShadowAddress(pDevExt, pSource, pPrivateData->SrcAllocInfo.segmentIdAlloc, pPrivateData->SrcAllocInfo.offAlloc);
-                            if (pBlt->DstRects.UpdateRects.cRects)
+                            case VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE:
                             {
-                                rect = pBlt->DstRects.UpdateRects.aRects[0];
-                                for (UINT i = 1; i < pBlt->DstRects.UpdateRects.cRects; ++i)
+                                RECT rect;
+                                Assert(pContext->enmType == VBOXWDDM_CONTEXT_TYPE_SYSTEM);
+                                vboxWddmCheckUpdateShadowAddress(pDevExt, pSource, pPrivateData->SrcAllocInfo.segmentIdAlloc, pPrivateData->SrcAllocInfo.offAlloc);
+                                if (pBlt->DstRects.UpdateRects.cRects)
                                 {
-                                    vboxWddmRectUnited(&rect, &rect, &pBlt->DstRects.UpdateRects.aRects[i]);
+                                    rect = pBlt->DstRects.UpdateRects.aRects[0];
+                                    for (UINT i = 1; i < pBlt->DstRects.UpdateRects.cRects; ++i)
+                                    {
+                                        vboxWddmRectUnited(&rect, &rect, &pBlt->DstRects.UpdateRects.aRects[i]);
+                                    }
                                 }
-                            }
-                            else
-                                rect = pBlt->DstRects.ContextRect;
+                                else
+                                    rect = pBlt->DstRects.ContextRect;
 
-                            VBOXVBVA_OP(ReportDirtyRect, pDevExt, &pSource->Vbva, &rect);
-                            vboxWddmSubmitBltCmd(pDevExt, pContext, pBlt);
-                            break;
-                        }
-                        case VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC:
-                        {
-                            Assert(pContext->enmType == VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D);
-                            Assert(pSrcAlloc->fRcFlags.RenderTarget);
-                            if (pSrcAlloc->fRcFlags.RenderTarget)
-                            {
+                                VBOXVBVA_OP(ReportDirtyRect, pDevExt, &pSource->Vbva, &rect);
                                 vboxWddmSubmitBltCmd(pDevExt, pContext, pBlt);
+                                break;
                             }
-                            break;
+                            case VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC:
+                            {
+                                Assert(pContext->enmType == VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D);
+                                Assert(pSrcAlloc->fRcFlags.RenderTarget);
+                                if (pSrcAlloc->fRcFlags.RenderTarget)
+                                {
+                                    vboxWddmSubmitBltCmd(pDevExt, pContext, pBlt);
+                                }
+                                break;
+                            }
+                            default:
+                                AssertBreakpoint();
+                                break;
                         }
-                        default:
-                            AssertBreakpoint();
-                            break;
                     }
                     break;
                 }
@@ -2159,6 +2165,41 @@ DxgkDdiSubmitCommand(
                 default:
                     AssertBreakpoint();
                     break;
+            }
+
+            VBOXWDDM_SHADOW_UPDATE_COMPLETION context;
+            context.pDevExt = pDevExt;
+            context.pTransactionData = pPrivateData;
+            context.SubmissionFenceId = pSubmitCommand->SubmissionFenceId;
+            Status = pDevExt->u.primary.DxgkInterface.DxgkCbSynchronizeExecution(
+                    pDevExt->u.primary.DxgkInterface.DeviceHandle,
+                    vboxWddmNotifyShadowUpdateCompletion,
+                    &context,
+                    0, /* IN ULONG MessageNumber */
+                    &bRet);
+            break;
+        }
+        case VBOXVDMACMD_TYPE_DMA_PRESENT_FLIP:
+        {
+            PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pSubmitCommand->hContext;
+            PVBOXVDMAPIPE_CMD_RECTSINFO pRectsCmd = (PVBOXVDMAPIPE_CMD_RECTSINFO)vboxVdmaGgCmdCreate(&pDevExt->u.primary.Vdma.DmaGg, VBOXVDMAPIPE_CMD_TYPE_RECTSINFO, RT_OFFSETOF(VBOXVDMAPIPE_CMD_RECTSINFO, ContextsRects.UpdateRects.aRects[1]));
+            Assert(pRectsCmd);
+            if (pRectsCmd)
+            {
+                PVBOXWDDM_ALLOCATION pDstAlloc = pPrivateData->DstAllocInfo.pAlloc;
+                pRectsCmd->pContext = pContext;
+                RECT r;
+                r.top = 0;
+                r.left = 0;
+                r.right = pDstAlloc->SurfDesc.width;
+                r.bottom = pDstAlloc->SurfDesc.height;
+                pRectsCmd->ContextsRects.ContextRect = r;
+                pRectsCmd->ContextsRects.UpdateRects.cRects = 1;
+                pRectsCmd->ContextsRects.UpdateRects.aRects[0] = r;
+                NTSTATUS tmpStatus = vboxVdmaGgCmdSubmit(&pDevExt->u.primary.Vdma.DmaGg, &pRectsCmd->Hdr);
+                Assert(tmpStatus == STATUS_SUCCESS);
+                if (tmpStatus != STATUS_SUCCESS)
+                    vboxVdmaGgCmdDestroy(&pRectsCmd->Hdr);
             }
 
             VBOXWDDM_SHADOW_UPDATE_COMPLETION context;
@@ -3082,7 +3123,7 @@ DxgkDdiSetVidPnSourceAddress(
         Assert(pAllocation);
         if (pAllocation)
         {
-            Assert(pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE);
+//            Assert(pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE);
             pAllocation->offVram = (VBOXVIDEOOFFSET)pSetVidPnSourceAddress->PrimaryAddress.QuadPart;
             pAllocation->SegmentId = pSetVidPnSourceAddress->PrimarySegment;
             Assert (pAllocation->SegmentId);
@@ -3623,8 +3664,10 @@ DECLINLINE(BOOLEAN) vboxWddmPixFormatConversionSupported(D3DDDIFORMAT From, D3DD
     return From == To;
 }
 
+#if 0
 DECLINLINE(bool) vboxWddmCheckForVisiblePrimary(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pAllocation)
 {
+    !!!primary could be of pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC!!!
     if (pAllocation->enmType != VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE)
         return false;
 
@@ -3641,6 +3684,7 @@ DECLINLINE(bool) vboxWddmCheckForVisiblePrimary(PDEVICE_EXTENSION pDevExt, PVBOX
 
     return true;
 }
+#endif
 
 static void vboxWddmPopulateDmaAllocInfo(PVBOXWDDM_DMA_ALLOCINFO pInfo, PVBOXWDDM_ALLOCATION pAlloc, DXGK_ALLOCATIONLIST *pDmaAlloc)
 {
@@ -3999,6 +4043,52 @@ DxgkDdiPresent(
             Status = STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
         }
 #endif
+    }
+    else if (pPresent->Flags.Flip)
+    {
+        Assert(pPresent->Flags.Value == 1); /* only Blt is set, we do not support anything else for now */
+        DXGK_ALLOCATIONLIST *pSrc =  &pPresent->pAllocationList[DXGK_PRESENT_SOURCE_INDEX];
+        DXGK_ALLOCATIONLIST *pDst =  &pPresent->pAllocationList[DXGK_PRESENT_DESTINATION_INDEX];
+        PVBOXWDDM_ALLOCATION pSrcAlloc = vboxWddmGetAllocationFromAllocList(pDevExt, pSrc);
+        Assert(pSrcAlloc);
+        if (pSrcAlloc)
+        {
+            PVBOXWDDM_ALLOCATION pDstAlloc = vboxWddmGetAllocationFromAllocList(pDevExt, pDst);
+            Assert(pDstAlloc);
+            if (pDstAlloc)
+            {
+                Assert(cContexts3D);
+                pPrivateData->enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_FLIP;
+
+                vboxWddmPopulateDmaAllocInfo(&pPrivateData->SrcAllocInfo, pSrcAlloc, pSrc);
+                vboxWddmPopulateDmaAllocInfo(&pPrivateData->DstAllocInfo, pDstAlloc, pDst);
+
+                UINT cbCmd = sizeof (VBOXVDMACMD_DMA_PRESENT_FLIP);
+                pPresent->pDmaBufferPrivateData = (uint8_t*)pPresent->pDmaBufferPrivateData + cbCmd;
+                pPresent->pDmaBuffer = ((uint8_t*)pPresent->pDmaBuffer) + VBOXWDDM_DUMMY_DMABUFFER_SIZE;
+                Assert(pPresent->DmaSize >= VBOXWDDM_DUMMY_DMABUFFER_SIZE);
+
+                memset(pPresent->pPatchLocationListOut, 0, 2*sizeof (D3DDDI_PATCHLOCATIONLIST));
+                pPresent->pPatchLocationListOut->PatchOffset = 0;
+                pPresent->pPatchLocationListOut->AllocationIndex = DXGK_PRESENT_SOURCE_INDEX;
+                ++pPresent->pPatchLocationListOut;
+                pPresent->pPatchLocationListOut->PatchOffset = 4;
+                pPresent->pPatchLocationListOut->AllocationIndex = DXGK_PRESENT_DESTINATION_INDEX;
+                ++pPresent->pPatchLocationListOut;
+            }
+            else
+            {
+                /* this should not happen actually */
+                drprintf((__FUNCTION__": failed to get Dst Allocation info for hDeviceSpecificAllocation(0x%x)\n",pDst->hDeviceSpecificAllocation));
+                Status = STATUS_INVALID_HANDLE;
+            }
+        }
+        else
+        {
+            /* this should not happen actually */
+            drprintf((__FUNCTION__": failed to get Src Allocation info for hDeviceSpecificAllocation(0x%x)\n",pSrc->hDeviceSpecificAllocation));
+            Status = STATUS_INVALID_HANDLE;
+        }
     }
     else
     {

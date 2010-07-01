@@ -44,6 +44,14 @@ typedef enum
     , VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC
 } VBOXWDDM_ALLOC_TYPE;
 
+/* usage */
+typedef enum
+{
+    VBOXWDDM_ALLOCUSAGE_TYPE_UNEFINED = 0,
+    /* set for the allocation being primary */
+    VBOXWDDM_ALLOCUSAGE_TYPE_PRIMARY,
+} VBOXWDDM_ALLOCUSAGE_TYPE;
+
 typedef struct VBOXWDDM_SURFACE_DESC
 {
     UINT width;
