@@ -83,11 +83,11 @@ const int XKeyRelease = KeyRelease;
 # include <Carbon/Carbon.h>
 #endif /* Q_WS_MAC */
 
-class VBoxViewport: public QWidget
+class UIViewport: public QWidget
 {
 public:
 
-    VBoxViewport(QWidget *pParent) : QWidget(pParent)
+    UIViewport(QWidget *pParent) : QWidget(pParent)
     {
         /* No need for background drawing: */
         setAttribute(Qt::WA_OpaquePaintEvent);
@@ -113,37 +113,37 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
 #endif /* VBOX_WITH_VIDEOHWACCEL */
                                      )
 {
-    UIMachineView *view = 0;
+    UIMachineView *pMachineView = 0;
     switch (visualStateType)
     {
         case UIVisualStateType_Normal:
-            view = new UIMachineViewNormal(  pMachineWindow
-                                           , uScreenId
+            pMachineView = new UIMachineViewNormal(  pMachineWindow
+                                                   , uScreenId
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                                           , bAccelerate2DVideo
+                                                   , bAccelerate2DVideo
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-                                           );
+                                                   );
             break;
         case UIVisualStateType_Fullscreen:
-            view = new UIMachineViewFullscreen(  pMachineWindow
-                                               , uScreenId
+            pMachineView = new UIMachineViewFullscreen(  pMachineWindow
+                                                       , uScreenId
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                                               , bAccelerate2DVideo
+                                                       , bAccelerate2DVideo
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-                                               );
+                                                       );
             break;
         case UIVisualStateType_Seamless:
-            view = new UIMachineViewSeamless(  pMachineWindow
-                                             , uScreenId
+            pMachineView = new UIMachineViewSeamless(  pMachineWindow
+                                                     , uScreenId
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                                             , bAccelerate2DVideo
+                                                     , bAccelerate2DVideo
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-                                             );
+                                                     );
             break;
         default:
             break;
     }
-    return view;
+    return pMachineView;
 }
 
 void UIMachineView::destroy(UIMachineView *pMachineView)
@@ -221,7 +221,6 @@ void UIMachineView::sltMachineStateChanged()
         default:
             break;
     }
-
     m_previousState = state;
 }
 
@@ -262,17 +261,17 @@ void UIMachineView::prepareFrameBuffer()
 {
     /* Prepare viewport: */
 #ifdef VBOX_GUI_USE_QGLFB
-    QWidget *pViewport;
+    QWidget *pViewport = 0;
     switch (vboxGlobal().vmRenderMode())
     {
         case VBoxDefs::QGLMode:
             pViewport = new VBoxGLWidget(session().GetConsole(), this, NULL);
             break;
         default:
-            pViewport = new VBoxViewport(this);
+            pViewport = new UIViewport(this);
     }
 #else /* VBOX_GUI_USE_QGLFB */
-    VBoxViewport *pViewport = new VBoxViewport(this);
+    UIViewport *pViewport = new UIViewport(this);
 #endif /* !VBOX_GUI_USE_QGLFB */
     setViewport(pViewport);
 
@@ -1111,14 +1110,6 @@ bool UIMachineView::event(QEvent *pEvent)
             return true;
         }
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        case VBoxDefs::VHWACommandProcessType:
-        {
-            m_pFrameBuffer->doProcessVHWACommand(pEvent);
-            return true;
-        }
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-
         case QEvent::KeyPress:
         case QEvent::KeyRelease:
         {
@@ -1172,7 +1163,7 @@ bool UIMachineView::event(QEvent *pEvent)
         }
 
 #ifdef Q_WS_MAC
-        /* posted OnShowWindow */
+        /* Event posted OnShowWindow: */
         case VBoxDefs::ShowWindowEventType:
         {
             /* Dunno what Qt3 thinks a window that has minimized to the dock should be - it is not hidden,
@@ -1185,6 +1176,14 @@ bool UIMachineView::event(QEvent *pEvent)
             return true;
         }
 #endif /* Q_WS_MAC */
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        case VBoxDefs::VHWACommandProcessType:
+        {
+            m_pFrameBuffer->doProcessVHWACommand(pEvent);
+            return true;
+        }
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 
         default:
             break;
@@ -1268,7 +1267,7 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
         }
     }
 
-    return QAbstractScrollArea::eventFilter (pWatched, pEvent);
+    return QAbstractScrollArea::eventFilter(pWatched, pEvent);
 }
 
 void UIMachineView::focusEvent(bool fHasFocus, bool fReleaseHostKey /* = true */)
