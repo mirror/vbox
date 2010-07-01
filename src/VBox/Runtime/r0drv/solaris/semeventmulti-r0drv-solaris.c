@@ -58,8 +58,10 @@ typedef struct RTSEMEVENTMULTIINTERNAL
     uint32_t volatile   cWaiters;
     /** Set if the event object is signaled. */
     uint8_t volatile    fSignaled;
-    /** The number of threads in the process of waking up. */
+    /** The number of threads in the process of waking up, doubles up as a ref counter. */
     uint32_t volatile   cWaking;
+    /** Object version indicating a valid signal event occurred. */
+    uint32_t volatile   u32Version;
     /** The Solaris mutex protecting this structure and pairing up the with the cv. */
     kmutex_t            Mtx;
     /** The Solaris condition variable. */
@@ -89,6 +91,7 @@ RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t 
         pThis->cWaiters = 0;
         pThis->cWaking = 0;
         pThis->fSignaled = 0;
+        pThis->u32Version = 0;
         mutex_init(&pThis->Mtx, "IPRT Multiple Release Event Semaphore", MUTEX_DRIVER, (void *)ipltospl(DISP_LEVEL));
         cv_init(&pThis->Cnd, "IPRT CV", CV_DRIVER, NULL);
 
@@ -167,6 +170,7 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem)
     {
         ASMAtomicXchgU32(&pThis->cWaking, pThis->cWaking + pThis->cWaiters);
         ASMAtomicXchgU32(&pThis->cWaiters, 0);
+        ASMAtomicIncU32(&pThis->u32Version);
         cv_broadcast(&pThis->Cnd);
     }
 
@@ -264,18 +268,18 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMil
         rc = VERR_TIMEOUT;
     else
     {
+        ASMAtomicIncU32(&pThis->cWaiters);
         for (;;)
         {
-            uint32_t cWakingBeforeWait = ASMAtomicUoReadU32((uint32_t volatile *)&pThis->cWaking);
-            ASMAtomicIncU32(&pThis->cWaiters);
+            uint32_t u32VersionBeforeWait = ASMAtomicUoReadU32((uint32_t volatile *)&pThis->u32Version);
             rc = rtSemEventMultiWaitWorker(pThis, cMillies, fInterruptible);
+            uint32_t u32Version = ASMAtomicUoReadU32((uint32_t volatile *)&pThis->u32Version);
             if (rc > 0)
             {
-                /* Retured due to call to cv_signal() or cv_broadcast() */
                 if (RT_LIKELY(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC))
                 {
-                    uint32_t cWaking = ASMAtomicUoReadU32((uint32_t volatile *)&pThis->cWaking);
-                    if (cWaking > cWakingBeforeWait)
+                    /* Retured due to call to cv_signal() or cv_broadcast() */
+                    if (u32Version > u32VersionBeforeWait)
                     {
                         rc = VINF_SUCCESS;
                         ASMAtomicDecU32(&pThis->cWaking);
@@ -289,6 +293,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMil
                 }
                 else
                 {
+                    /* We're being destroyed */
                     rc = VERR_SEM_DESTROYED;
                     if (!ASMAtomicDecU32(&pThis->cWaking))
                     {
