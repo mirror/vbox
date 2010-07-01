@@ -176,8 +176,6 @@ protected:
     static LRESULT CALLBACK lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
     bool winLowKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event);
     bool winEvent(MSG *aMsg, long *aResult);
-#elif defined(Q_WS_PM)
-    bool pmEvent(QMSG *aMsg);
 #elif defined(Q_WS_X11)
     bool x11Event(XEvent *event);
 #elif defined(Q_WS_MAC)
