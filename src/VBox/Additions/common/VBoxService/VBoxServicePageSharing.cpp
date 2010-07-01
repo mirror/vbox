@@ -23,6 +23,8 @@
 #include <iprt/avl.h>
 #include <iprt/asm.h>
 #include <iprt/mem.h>
+#include <iprt/process.h>
+#include <iprt/env.h>
 #include <iprt/stream.h>
 #include <iprt/file.h>
 #include <iprt/string.h>
@@ -555,7 +557,6 @@ static DECLCALLBACK(int) VBoxServicePageSharingInit(void)
         ZwQuerySystemInformation = (PFNZWQUERYSYSTEMINFORMATION)GetProcAddress(hNtdll, "ZwQuerySystemInformation");
 #endif
 
-    /* @todo report system name and version */
     /* Never fail here. */
     return VINF_SUCCESS;
 }
@@ -568,23 +569,6 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
      * spawning services.
      */
     RTThreadUserSignal(RTThreadSelf());
-
-    /*
-     * Block here first for a minute as using DONT_RESOLVE_DLL_REFERENCES is kind of risky; other code that uses LoadLibrary on a dll loaded like this
-     * before will end up crashing the process as the dll's init routine was never called.
-     *
-     * We have to use this feature as we can't simply execute all init code in our service process.
-     *
-     */
-    int rc = RTSemEventMultiWait(g_PageSharingEvent, 60000);
-    if (*pfShutdown)
-        goto end;
-
-    if (rc != VERR_TIMEOUT && RT_FAILURE(rc))
-    {
-        VBoxServiceError("RTSemEventMultiWait failed; rc=%Rrc\n", rc);
-        goto end;
-    }
 
     /*
      * Now enter the loop retrieving runtime data continuously.
@@ -604,6 +588,83 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
          */
         if (*pfShutdown)
             break;
+        int rc = RTSemEventMultiWait(g_PageSharingEvent, 60000);
+        if (*pfShutdown)
+            break;
+        if (rc != VERR_TIMEOUT && RT_FAILURE(rc))
+        {
+            VBoxServiceError("RTSemEventMultiWait failed; rc=%Rrc\n", rc);
+            break;
+        }
+    }
+
+    RTSemEventMultiDestroy(g_PageSharingEvent);
+    g_PageSharingEvent = NIL_RTSEMEVENTMULTI;
+
+    VBoxServiceVerbose(3, "VBoxServicePageSharingWorker: finished thread\n");
+    return 0;
+}
+
+#ifdef RT_OS_WINDOWS
+void VBoxServicePageSharingInitFork()
+{
+    VBoxServiceVerbose(3, "VBoxServicePageSharingInitFork\n");
+
+    bool fShutdown = false;
+    VBoxServicePageSharingInit();
+    VBoxServicePageSharingWorker(&fShutdown);
+}
+
+/** @copydoc VBOXSERVICE::pfnWorker */
+DECLCALLBACK(int) VBoxServicePageSharingWorkerProcess(bool volatile *pfShutdown)
+{
+    RTPROCESS hProcess = NIL_RTPROCESS;
+    int rc;
+
+    /*
+     * Tell the control thread that it can continue
+     * spawning services.
+     */
+    RTThreadUserSignal(RTThreadSelf());
+
+    /*
+     * Now enter the loop retrieving runtime data continuously.
+     */
+    for (;;)
+    {
+        VBoxServiceVerbose(3, "VBoxServicePageSharingWorkerProcess: enabled=%d\n", VbglR3PageSharingIsEnabled());
+
+        if (    VbglR3PageSharingIsEnabled()
+            &&  hProcess == NIL_RTPROCESS)
+        {
+            char szExeName[256];
+            char *pszExeName;
+            char *pszArgs[3];
+
+            pszExeName = RTProcGetExecutableName(szExeName, sizeof(szExeName));
+
+            if (pszExeName)
+            {
+                pszArgs[0] = pszExeName;
+                pszArgs[1] = "-pagefusionfork";
+                pszArgs[2] = NULL;
+                /* Start a 2nd VBoxService process to deal with page fusion as we do not wish to dummy load 
+                 * dlls into this process. (first load with DONT_RESOLVE_DLL_REFERENCES, 2nd normal -> dll init routines not called!)
+                 */
+                rc = RTProcCreate(pszExeName, pszArgs, RTENV_DEFAULT, 0 /* normal child */, &hProcess);
+                if (rc != VINF_SUCCESS)
+                    VBoxServiceError("RTProcCreate %s failed; rc=%Rrc\n", pszExeName, rc);
+            }
+        }
+
+        /*
+         * Block for a minute.
+         *
+         * The event semaphore takes care of ignoring interruptions and it
+         * allows us to implement service wakeup later.
+         */
+        if (*pfShutdown)
+            break;
         rc = RTSemEventMultiWait(g_PageSharingEvent, 60000);
         if (*pfShutdown)
             break;
@@ -614,13 +675,17 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
         }
     }
 
-end:
+    if (hProcess)
+        RTProcTerminate(hProcess);
+
     RTSemEventMultiDestroy(g_PageSharingEvent);
     g_PageSharingEvent = NIL_RTSEMEVENTMULTI;
 
-    VBoxServiceVerbose(3, "VBoxServicePageSharingWorker: finished thread\n");
+    VBoxServiceVerbose(3, "VBoxServicePageSharingWorkerProcess: finished thread\n");
     return 0;
 }
+
+#endif
 
 /** @copydoc VBOXSERVICE::pfnTerm */
 static DECLCALLBACK(void) VBoxServicePageSharingTerm(void)
@@ -659,7 +724,11 @@ VBOXSERVICE g_PageSharing =
     VBoxServicePageSharingPreInit,
     VBoxServicePageSharingOption,
     VBoxServicePageSharingInit,
+#ifdef RT_OS_WINDOWS
+    VBoxServicePageSharingWorkerProcess,
+#else
     VBoxServicePageSharingWorker,
+#endif
     VBoxServicePageSharingStop,
     VBoxServicePageSharingTerm
 };
