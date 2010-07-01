@@ -45,7 +45,6 @@
 #include "ConsoleImpl.h"
 #include "ConsoleVRDPServer.h"
 #include "VirtualBoxCallbackImpl.h"
-#include "EventImpl.h"
 
 #include "Logging.h"
 
@@ -73,8 +72,6 @@ NS_DECL_CLASSINFO(SharedFolder)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SharedFolder, ISharedFolder)
 NS_DECL_CLASSINFO(RemoteDisplayInfo)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(RemoteDisplayInfo, IRemoteDisplayInfo)
-NS_DECL_CLASSINFO(EventSource)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(EventSource, IEventSource)
 
 NS_DECL_CLASSINFO(Session)
 NS_IMPL_THREADSAFE_ISUPPORTS2_CI(Session, ISession, IInternalSessionControl)
