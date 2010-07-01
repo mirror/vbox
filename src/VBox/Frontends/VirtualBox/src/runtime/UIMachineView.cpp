@@ -46,10 +46,6 @@
 #include "UIMachineViewFullscreen.h"
 #include "UIMachineViewSeamless.h"
 
-#ifdef Q_WS_PM
-# include "QIHotKeyEdit.h"
-#endif /* Q_WS_PM */
-
 #ifdef Q_WS_WIN
 #undef LOWORD
 #undef HIWORD
@@ -447,12 +443,6 @@ void UIMachineView::prepareCommon()
 
     /* Setup focus policy: */
     setFocusPolicy(Qt::WheelFocus);
-
-#if defined Q_WS_PM
-    bool ok = VBoxHlpInstallKbdHook(0, winId(), UM_PREACCEL_CHAR);
-    Assert(ok);
-    NOREF(ok);
-#endif /* Q_WS_PM */
 }
 
 void UIMachineView::prepareFilters()
@@ -509,12 +499,6 @@ void UIMachineView::loadMachineViewSettings()
 
 void UIMachineView::cleanupCommon()
 {
-#ifdef Q_WS_PM
-    bool ok = VBoxHlpUninstallKbdHook(0, winId(), UM_PREACCEL_CHAR);
-    Assert(ok);
-    NOREF(ok);
-#endif /* Q_WS_PM */
-
 #ifdef Q_WS_WIN
     if (gKbdHook)
         UnhookWindowsHookEx(gKbdHook);
@@ -1139,82 +1123,6 @@ bool UIMachineView::event(QEvent *pEvent)
         case QEvent::KeyRelease:
         {
             QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
-
-#ifdef Q_WS_PM
-            // TODO: that a temporary solution to send Alt+Tab and friends to the guest.
-            // The proper solution is to write a keyboard driver that will steal these combos from the host
-            // (it's impossible to do so using hooks on OS/2):
-
-            if (m_bIsHostkeyPressed)
-            {
-                bool pressed = pEvent->type() == QEvent::KeyPress;
-                CKeyboard keyboard = session().GetConsole().GetKeyboard();
-
-                /* Whether the host key is Shift so that it will modify the hot key values?
-                 * Note that we don't distinguish between left and right shift here (too much hassle): */
-                const bool kShift = (m_globalSettings.hostKey() == VK_SHIFT ||
-                                    m_globalSettings.hostKey() == VK_LSHIFT) &&
-                                    (pKeyEvent->state() & Qt::ShiftModifier);
-                /* define hot keys according to the Shift state */
-                const int kAltTab      = kShift ? Qt::Key_Exclam     : Qt::Key_1;
-                const int kAltShiftTab = kShift ? Qt::Key_At         : Qt::Key_2;
-                const int kCtrlEsc     = kShift ? Qt::Key_AsciiTilde : Qt::Key_QuoteLeft;
-
-                /* Simulate Alt+Tab on Host+1 and Alt+Shift+Tab on Host+2 */
-                if (pKeyEvent->key() == kAltTab || pKeyEvent->key() == kAltShiftTab)
-                {
-                    if (pressed)
-                    {
-                        /* Send the Alt press to the guest */
-                        if (!(m_pressedKeysCopy[0x38] & IsKeyPressed))
-                        {
-                            /* Store the press in *Copy to have it automatically
-                             * released when the Host key is released: */
-                            m_pressedKeysCopy[0x38] |= IsKeyPressed;
-                            keyboard.PutScancode(0x38);
-                        }
-
-                        /* Make sure Shift is pressed if it's Key_2 and released if it's Key_1: */
-                        if (pKeyEvent->key() == kAltTab &&
-                            (m_pressedKeysCopy[0x2A] & IsKeyPressed))
-                        {
-                            m_pressedKeysCopy[0x2A] &= ~IsKeyPressed;
-                            keyboard.PutScancode(0xAA);
-                        }
-                        else
-                        if (pKeyEvent->key() == kAltShiftTab &&
-                            !(m_pressedKeysCopy[0x2A] & IsKeyPressed))
-                        {
-                            m_pressedKeysCopy[0x2A] |= IsKeyPressed;
-                            keyboard.PutScancode(0x2A);
-                        }
-                    }
-
-                    keyboard.PutScancode(pressed ? 0x0F : 0x8F);
-
-                    pKeyEvent->accept();
-                    return true;
-                }
-
-                /* Simulate Ctrl+Esc on Host+Tilde */
-                if (pKeyEvent->key() == kCtrlEsc)
-                {
-                    /* Send the Ctrl press to the guest */
-                    if (pressed && !(m_pressedKeysCopy[0x1d] & IsKeyPressed))
-                    {
-                        /* store the press in *Copy to have it automatically
-                         * released when the Host key is released */
-                        m_pressedKeysCopy[0x1d] |= IsKeyPressed;
-                        keyboard.PutScancode(0x1d);
-                    }
-
-                    keyboard.PutScancode(pressed ? 0x01 : 0x81);
-
-                    pKeyEvent->accept();
-                    return true;
-                }
-            }
-#endif /* Q_WS_PM */
 
             if (m_bIsHostkeyPressed && pEvent->type() == QEvent::KeyPress)
             {
@@ -1865,97 +1773,6 @@ bool UIMachineView::winEvent(MSG *aMsg, long* /* aResult */)
     if (vkey == VK_NUMLOCK || vkey == VK_CAPITAL || vkey == VK_LSHIFT || vkey == VK_RSHIFT)
         return false;
 
-    return result;
-}
-
-#elif defined(Q_WS_PM)
-
-bool UIMachineView::pmEvent(QMSG *aMsg)
-{
-    if (aMsg->msg == UM_PREACCEL_CHAR)
-    {
-        /* We are inside the input hook
-         * let the message go through the normal system pipeline. */
-        if (!m_bIsKeyboardCaptured)
-            return false;
-    }
-
-    if (aMsg->msg != WM_CHAR && aMsg->msg != UM_PREACCEL_CHAR)
-        return false;
-
-    /* check for the special flag possibly set at the end of this function */
-    if (SHORT2FROMMP(aMsg->mp2) & 0x8000)
-    {
-        aMsg->mp2 = MPFROM2SHORT(SHORT1FROMMP(aMsg->mp2), SHORT2FROMMP(aMsg->mp2) & ~0x8000);
-        return false;
-    }
-
-    USHORT ch = SHORT1FROMMP(aMsg->mp2);
-    USHORT f = SHORT1FROMMP(aMsg->mp1);
-
-    int scan = (unsigned int)CHAR4FROMMP(aMsg->mp1);
-    if (!scan || scan > 0x7F)
-        return true;
-
-    int vkey = QIHotKeyEdit::virtualKey(aMsg);
-
-    int flags = 0;
-
-    if ((ch & 0xFF) == 0xE0)
-    {
-        flags |= KeyExtended;
-        scan = ch >> 8;
-    }
-    else if (scan == 0x5C && (ch & 0xFF) == '/')
-    {
-        /* this is the '/' key on the keypad */
-        scan = 0x35;
-        flags |= KeyExtended;
-    }
-    else
-    {
-        /* For some keys, the scan code passed in QMSG is a pseudo scan
-         * code. We replace it with a real hardware scan code, according to
-         * http://www.computer-engineering.org/ps2keyboard/scancodes1.html.
-         * Also detect Pause and PrtScn and set flags. */
-        switch (vkey)
-        {
-            case VK_ENTER:     scan = 0x1C; flags |= KeyExtended; break;
-            case VK_CTRL:      scan = 0x1D; flags |= KeyExtended; break;
-            case VK_ALTGRAF:   scan = 0x38; flags |= KeyExtended; break;
-            case VK_LWIN:      scan = 0x5B; flags |= KeyExtended; break;
-            case VK_RWIN:      scan = 0x5C; flags |= KeyExtended; break;
-            case VK_WINMENU:   scan = 0x5D; flags |= KeyExtended; break;
-            case VK_FORWARD:   scan = 0x69; flags |= KeyExtended; break;
-            case VK_BACKWARD:  scan = 0x6A; flags |= KeyExtended; break;
-#if 0
-            /// @todo this would send 0xE0 0x46 0xE0 0xC6. It's not fully
-            // clear what is more correct
-            case VK_BREAK:     scan = 0x46; flags |= KeyExtended; break;
-#else
-            case VK_BREAK:     scan = 0;    flags |= KeyPause; break;
-#endif
-            case VK_PAUSE:     scan = 0;    flags |= KeyPause;    break;
-            case VK_PRINTSCRN: scan = 0;    flags |= KeyPrint;    break;
-            default:;
-        }
-    }
-
-    if (!(f & KC_KEYUP))
-        flags |= KeyPressed;
-
-    bool result = keyEvent (vkey, scan, flags);
-    if (!result && m_bIsKeyboardCaptured)
-    {
-        /* keyEvent() returned that it didn't process the message, but since the
-         * keyboard is captured, we don't want to pass it to PM. We just want
-         * to let Qt process the message (to handle non-alphanumeric <HOST>+key
-         * shortcuts for example). So send it direcltly to the window with the
-         * special flag in the reserved area of lParam (to avoid recursion). */
-        ::WinSendMsg (aMsg->hwnd, WM_CHAR, aMsg->mp1,
-                      MPFROM2SHORT (SHORT1FROMMP (aMsg->mp2), SHORT2FROMMP (aMsg->mp2) | 0x8000));
-        return true;
-    }
     return result;
 }
 
