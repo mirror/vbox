@@ -62,7 +62,7 @@ VOID vboxVDbgDoPrint(LPCSTR szString, ...);
         vboxVDbgDoPrint _m ; \
     } while (0)
 #define vboxVDbgPrintR vboxVDbgPrint
-#define vboxVDbgPrintF(_m) do {} while (0)
+#define vboxVDbgPrintF vboxVDbgPrint
 #else
 #define vboxVDbgBreak() do {} while (0)
 #define vboxVDbgPrint(_m)  do {} while (0)
