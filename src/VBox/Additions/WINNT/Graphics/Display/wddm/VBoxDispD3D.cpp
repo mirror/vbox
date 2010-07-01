@@ -1648,6 +1648,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
         hr = pDevice->pDevice9If->DrawPrimitive(pData->PrimitiveType,
                                                 pData->VStart,
                                                 pData->PrimitiveCount);
+        Assert(hr == S_OK);
 #if 0
         IDirect3DVertexDeclaration9* pDecl;
         hr = pDevice->pDevice9If->GetVertexDeclaration(&pDecl);
@@ -3458,6 +3459,16 @@ static HRESULT APIENTRY vboxWddmDDevSetStreamSource(HANDLE hDevice, CONST D3DDDI
     Assert(pData->Stream<VBOXWDDMDISP_MAX_VERTEX_STREAMS);
     if (hr == S_OK)
     {
+        if (pDevice->aStreamSource[pData->Stream] && !pAlloc)
+        {
+            --pDevice->cStreamSources;
+            Assert(pDevice->cStreamSources < UINT32_MAX/2);
+        }
+        else if (!pDevice->aStreamSource[pData->Stream] && pAlloc)
+        {
+            ++pDevice->cStreamSources;
+            Assert(pDevice->cStreamSources <= RT_ELEMENTS(pDevice->aStreamSource));
+        }
         pDevice->aStreamSource[pData->Stream] = pAlloc;
         pDevice->StreamSourceInfo[pData->Stream].uiOffset = pData->Offset;
         pDevice->StreamSourceInfo[pData->Stream].uiStride = pData->Stride;
