@@ -98,10 +98,6 @@ HRESULT VBoxEvent::init(IEventSource *aSource, VBoxEventType_T aType, BOOL aWait
 
 void VBoxEvent::uninit()
 {
-    AutoUninitSpan autoUninitSpan(this);
-    if (autoUninitSpan.uninitDone())
-        return;
-
     if (!m)
         return;
 
@@ -257,10 +253,6 @@ HRESULT VBoxVetoEvent::init(IEventSource *aSource, VBoxEventType_T aType)
 
 void VBoxVetoEvent::uninit()
 {
-    AutoUninitSpan autoUninitSpan(this);
-    if (autoUninitSpan.uninitDone())
-        return;
-
     VBoxEvent::uninit();
     if (!m)
         return;
@@ -716,7 +708,10 @@ STDMETHODIMP EventSource::FireEvent(IEvent * aEvent,
         /* Anyone interested in this event? */
         uint32_t cListeners = listeners.size();
         if (cListeners == 0)
+        {
+            aEvent->SetProcessed();
             break; // just leave the lock and update event object state
+        }
 
         PendingEventsMap::iterator pit;
 
@@ -891,6 +886,8 @@ NS_DECL_CLASSINFO(PassiveEventListener)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(PassiveEventListener, IEventListener)
 NS_DECL_CLASSINFO(VBoxEvent)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VBoxEvent, IEvent)
+NS_DECL_CLASSINFO(VBoxVetoEvent)
+NS_IMPL_ISUPPORTS_INHERITED1(VBoxVetoEvent, VBoxEvent, IVetoEvent)
 #endif
 
 STDMETHODIMP EventSource::CreateListener(IEventListener ** aListener)

@@ -95,6 +95,30 @@ public:
     HRESULT init (IEventSource *aSource, VBoxEventType_T aType);
     void uninit();
 
+    // IEvent properties
+    STDMETHOD(COMGETTER(Type)) (VBoxEventType_T *aType)
+    {
+        return VBoxEvent::COMGETTER(Type)(aType);
+    }
+    STDMETHOD(COMGETTER(Source)) (IEventSource * *aSource)
+    {
+        return VBoxEvent::COMGETTER(Source)(aSource);
+    }
+    STDMETHOD(COMGETTER(Waitable)) (BOOL *aWaitable)
+    {
+        return VBoxEvent::COMGETTER(Waitable)(aWaitable);
+    }
+
+    // IEvent methods
+    STDMETHOD(SetProcessed)()
+    {
+        return VBoxEvent::SetProcessed();
+    }
+    STDMETHOD(WaitProcessed)(LONG aTimeout, BOOL *aResult)
+    {
+        return VBoxEvent::WaitProcessed(aTimeout, aResult);
+    }
+
      // IVetoEvent methods
     STDMETHOD(AddVeto)(IN_BSTR aVeto);
     STDMETHOD(IsVetoed)(BOOL *aResult);
@@ -185,8 +209,21 @@ public:
      mEvent.queryInterfaceTo(aEvent);
  }
 
+ BOOL fire(LONG aTimeout)
+ {
+     if (mEventSource && mEvent)
+     {
+         BOOL fDelivered = FALSE;
+         int rc = mEventSource->FireEvent(mEvent, aTimeout, &fDelivered);
+         AssertRCReturn(rc, FALSE);
+         return fDelivered;
+     }
+     return FALSE;
+ }
+
 private:
- ComPtr<IEvent>  mEvent;
+ ComPtr<IEvent>        mEvent;
+ ComPtr<IEventSource>  mEventSource;
 };
 
 #endif // ____H_EVENTIMPL
