@@ -3340,7 +3340,7 @@ DxgkDdiGetScanLine(
     CONST HANDLE  hAdapter,
     DXGKARG_GETSCANLINE*  pGetScanLine)
 {
-    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+//    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
 
@@ -3368,7 +3368,7 @@ DxgkDdiGetScanLine(
         pGetScanLine->ScanLine = 0;
     }
 
-    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+//    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
     return STATUS_SUCCESS;
 }
