@@ -221,39 +221,29 @@ typedef struct VBoxNetQDiscPriv *PVBOXNETQDISCPRIV;
 //#define VBOXNETFLT_QDISC_ENQUEUE
 static int vboxNetFltQdiscEnqueue(struct sk_buff *skb, struct Qdisc *sch)
 {
-    int rc;
-    PVBOXNETQDISCPRIV pPriv = qdisc_priv(sch);
+    PVBOXNETQDISCPRIV   pPriv = qdisc_priv(sch);
+    int                 rc;
+
 #ifdef VBOXNETFLT_QDISC_ENQUEUE
     if (VALID_PTR(pPriv->pVBoxNetFlt))
     {
         uint8_t              abHdrBuf[sizeof(RTNETETHERHDR) + sizeof(uint32_t) + RTNETIPV4_MIN_LEN];
         PCRTNETETHERHDR      pEtherHdr;
         PINTNETTRUNKSWPORT   pSwitchPort;
+        uint32_t             cbHdrs = skb_headlen(skb);
 
-        pEtherHdr = (PCRTNETETHERHDR)skb_header_pointer(skb, 0, sizeof(abHdrBuf), &abHdrBuf[0]);
+        cbHdrs = RT_MIN(cbHdrs, sizeof(abHdrBuf));
+        pEtherHdr = (PCRTNETETHERHDR)skb_header_pointer(skb, 0, cbHdrs, &abHdrBuf[0]);
         if (   pEtherHdr
             && (pSwitchPort = pPriv->pVBoxNetFlt->pSwitchPort) != NULL
             && VALID_PTR(pSwitchPort)
-            )
+            && cbHdrs >= 6)
         {
-            struct sk_buff      *pBuf;
-            INTNETSWDECISION    enmDecision;
-            uint32_t            cbHdrs = skb_headlen(skb);
-            cbHdrs = RT_MAX(cbHdrs, sizeof(abHdrBuf));
-
-#if 1
-            /* Test stub due to missing implementation of pfnPreRecv */
-            static uint8_t       tmpAddr[] = { 0x08, 0x00, 0x27, 0xBB, 0x1E, 0xA0 };
-            if (memcmp(pEtherHdr, tmpAddr, 6) != 0)
-                enmDecision = INTNETSWDECISION_BROADCAST;
-            else
-                enmDecision = INTNETSWDECISION_INTNET;
-#else
-            enmDecision = pSwitchPort->pfnPreRecv(pSwitchPort, pEtherHdr, cbHdrs, INTNETTRUNKDIR_HOST);
-#endif
+            /** @todo consider reference counting, etc. */
+            INTNETSWDECISION enmDecision = pSwitchPort->pfnPreRecv(pSwitchPort, pEtherHdr, cbHdrs, INTNETTRUNKDIR_HOST);
             if (enmDecision == INTNETSWDECISION_INTNET)
             {
-                pBuf = skb_copy(skb, GFP_ATOMIC);
+                struct sk_buff *pBuf = skb_copy(skb, GFP_ATOMIC);
                 pBuf->pkt_type = PACKET_OUTGOING;
                 vboxNetFltLinuxForwardToIntNet(pPriv->pVBoxNetFlt, pBuf);
                 qdisc_drop(skb, sch);
@@ -292,34 +282,26 @@ static struct sk_buff *vboxNetFltQdiscDequeue(struct Qdisc *sch)
 
     while ((pSkb = pPriv->pChild->dequeue(pPriv->pChild)) != NULL)
     {
-        struct sk_buff *pBuf;
+        struct sk_buff     *pBuf;
         INTNETSWDECISION    enmDecision;
-        uint32_t            cbHdrs = skb_headlen(pSkb);
+        uint32_t            cbHdrs;
 
         --sch->q.qlen;
 
         if (!VALID_PTR(pPriv->pVBoxNetFlt))
             break;
 
-        pEtherHdr = (PCRTNETETHERHDR)skb_header_pointer(pSkb, 0, sizeof(abHdrBuf), &abHdrBuf[0]);
+        cbHdrs = skb_headlen(pSkb);
+        cbHdrs = RT_MIN(cbHdrs, sizeof(abHdrBuf));
+        pEtherHdr = (PCRTNETETHERHDR)skb_header_pointer(pSkb, 0, cbHdrs, &abHdrBuf[0]);
         if (   !pEtherHdr
             || (pSwitchPort = pPriv->pVBoxNetFlt->pSwitchPort) == NULL
             || !VALID_PTR(pSwitchPort)
-            )
+            || cbHdrs < 6)
             break;
 
-        cbHdrs = RT_MAX(cbHdrs, sizeof(abHdrBuf));
-
-#if 1
-        /* Test stub due to missing implementation of pfnPreRecv */
-        static uint8_t       tmpAddr[] = { 0x08, 0x00, 0x27, 0xBB, 0x1E, 0xA0 };
-        if (memcmp(pEtherHdr, tmpAddr, 6) != 0)
-            enmDecision = INTNETSWDECISION_BROADCAST;
-        else
-            enmDecision = INTNETSWDECISION_INTNET;
-#else
+        /** @todo consider reference counting, etc. */
         enmDecision = pSwitchPort->pfnPreRecv(pSwitchPort, pEtherHdr, cbHdrs, INTNETTRUNKDIR_HOST);
-#endif
         if (enmDecision != INTNETSWDECISION_INTNET)
             break;
 
@@ -833,6 +815,7 @@ static int vboxNetFltLinuxStartXmitFilter(struct sk_buff *pSkb, struct net_devic
     uint8_t                     abHdrBuf[sizeof(RTNETETHERHDR) + sizeof(uint32_t) + RTNETIPV4_MIN_LEN];
     PCRTNETETHERHDR             pEtherHdr;
     PINTNETTRUNKSWPORT          pSwitchPort;
+    uint32_t                    cbHdrs;
 
 
     /*
@@ -859,16 +842,16 @@ static int vboxNetFltLinuxStartXmitFilter(struct sk_buff *pSkb, struct net_devic
      *       destination MAC is 100% to be on the internal network and then
      *       drop it.
      */
-    pEtherHdr = (PCRTNETETHERHDR)skb_header_pointer(pSkb, 0, sizeof(abHdrBuf), &abHdrBuf[0]);
+    cbHdrs = skb_headlen(pSkb);
+    cbHdrs = RT_MIN(cbHdrs, sizeof(abHdrBuf));
+    pEtherHdr = (PCRTNETETHERHDR)skb_header_pointer(pSkb, 0, cbHdrs, &abHdrBuf[0]);
     if (   pEtherHdr
         && VALID_PTR(pOverride->pVBoxNetFlt)
         && (pSwitchPort = pOverride->pVBoxNetFlt->pSwitchPort) != NULL
         && VALID_PTR(pSwitchPort)
-       )
+        && cbHdrs >= 6)
     {
-        INTNETSWDECISION    enmDecision;
-        uint32_t            cbHdrs = skb_headlen(pSkb);
-        cbHdrs = RT_MAX(cbHdrs, sizeof(abHdrBuf));
+        INTNETSWDECISION enmDecision;
 
         /** @todo consider reference counting, etc. */
         enmDecision = pSwitchPort->pfnPreRecv(pSwitchPort, pEtherHdr, cbHdrs, INTNETTRUNKDIR_HOST);
