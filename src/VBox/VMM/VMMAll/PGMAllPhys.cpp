@@ -1682,30 +1682,6 @@ VMMDECL(int) PGMPhysGCPtr2HCPhys(PVMCPU pVCpu, RTGCPTR GCPtr, PRTHCPHYS pHCPhys)
 }
 
 
-/**
- * Converts a guest pointer to a R3 pointer.
- *
- * This uses the current CR3/CR0/CR4 of the guest.
- *
- * @returns VBox status code.
- * @param   pVCpu       The VMCPU Handle
- * @param   GCPtr       The guest pointer to convert.
- * @param   pR3Ptr      Where to store the R3 virtual address.
- *
- * @deprecated Don't use this.
- */
-VMMDECL(int) PGMPhysGCPtr2R3Ptr(PVMCPU pVCpu, RTGCPTR GCPtr, PRTR3PTR pR3Ptr)
-{
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
-    RTGCPHYS GCPhys;
-    int rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, (RTGCUINTPTR)GCPtr, NULL, &GCPhys);
-    if (RT_SUCCESS(rc))
-        rc = PGMPhysGCPhys2R3Ptr(pVM, GCPhys | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), 1 /* we always stay within one page */, pR3Ptr);
-    return rc;
-}
-
-
 
 #undef LOG_GROUP
 #define LOG_GROUP LOG_GROUP_PGM_PHYS_ACCESS
