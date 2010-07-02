@@ -3505,13 +3505,21 @@ static HRESULT APIENTRY vboxWddmDDevSetDisplayMode(HANDLE hDevice, CONST D3DDDIA
     Assert(pRc->cAllocations > pData->SubResourceIndex);
     PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->SubResourceIndex];
     Assert(pRc->RcDesc.fFlags.RenderTarget);
-    Assert(pRc->aAllocations[pData->SubResourceIndex].enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE);
+    Assert(pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE);
     Assert(pAlloc->hAllocation);
     D3DDDICB_SETDISPLAYMODE DdiDm = {0};
     DdiDm.hPrimaryAllocation = pAlloc->hAllocation;
 //    DdiDm.PrivateDriverFormatAttribute = 0;
-    hr = pDevice->RtCallbacks.pfnSetDisplayModeCb(pDevice->hDevice, &DdiDm);
+#if 0
+    IDirect3DSurface9 *pD3DIfSurf = (IDirect3DSurface9*)pAlloc->pD3DIf;
+    hr = pDevice->pDevice9If->SetRenderTarget(0, pD3DIfSurf);
     Assert(hr == S_OK);
+    if (hr == S_OK)
+#endif
+    {
+        hr = pDevice->RtCallbacks.pfnSetDisplayModeCb(pDevice->hDevice, &DdiDm);
+        Assert(hr == S_OK);
+    }
 
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return hr;
