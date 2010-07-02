@@ -3249,15 +3249,100 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                             pDevice->pDevice9If = pDevice9If;
                             pDevice->hWnd = hWnd;
                             bDevCreated = true;
+#ifdef VBOXDISP_TMP_NEWCREATEDEVICE
+                            IDirect3DSwapChain9 *pSwapChain;
+                            hr = pDevice->pDevice9If->GetSwapChain(0, &pSwapChain);
+                            Assert(hr == S_OK);
+                            if (hr == S_OK)
+                            {
+                                PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[0];
+                                IDirect3DSurface9* pD3D9Surf;
+                                hr = pSwapChain->GetFrontBufferData(&pD3D9Surf);
+                                Assert(hr == S_OK);
+                                if (hr == S_OK)
+                                {
+                                    Assert(pD3D9Surf);
+                                    pAllocation->enmD3DIfType = VBOXDISP_D3DIFTYPE_SURFACE;
+                                    pAllocation->pD3DIf = pD3D9Surf;
+                                    if (pResource->Pool == D3DDDIPOOL_SYSTEMMEM)
+                                    {
+                                        Assert(pAllocation->pvMem);
+                                        D3DLOCKED_RECT lockInfo;
+                                        hr = pD3D9Surf->LockRect(&lockInfo, NULL, D3DLOCK_DISCARD);
+                                        Assert(hr == S_OK);
+                                        if (hr == S_OK)
+                                        {
+                                            vboxWddmLockUnlockMemSynch(pAllocation, &lockInfo, NULL, true /*bool bToLockInfo*/);
+                                            HRESULT tmpHr = pD3D9Surf->UnlockRect();
+                                            Assert(tmpHr == S_OK);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Assert(!pAllocation->pvMem);
+                                    }
+
+                                    pD3D9Surf->Release();
+
+                                    if (hr == S_OK)
+                                    {
+                                        UINT i = 1;
+                                        for (; i < pResource->SurfCount; ++i)
+                                        {
+                                            PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
+                                            hr = pSwapChain->GetBackBuffer(i - 1, D3DBACKBUFFER_TYPE_MONO, &pD3D9Surf);
+                                            Assert(hr == S_OK);
+                                            if (hr == S_OK)
+                                            {
+                                                Assert(pD3D9Surf);
+                                                pAllocation->enmD3DIfType = VBOXDISP_D3DIFTYPE_SURFACE;
+                                                pAllocation->pD3DIf = pD3D9Surf;
+                                                if (pResource->Pool == D3DDDIPOOL_SYSTEMMEM)
+                                                {
+                                                    Assert(pAllocation->pvMem);
+                                                    D3DLOCKED_RECT lockInfo;
+                                                    hr = pD3D9Surf->LockRect(&lockInfo, NULL, D3DLOCK_DISCARD);
+                                                    Assert(hr == S_OK);
+                                                    if (hr == S_OK)
+                                                    {
+                                                        vboxWddmLockUnlockMemSynch(pAllocation, &lockInfo, NULL, true /*bool bToLockInfo*/);
+                                                        HRESULT tmpHr = pD3D9Surf->UnlockRect();
+                                                        Assert(tmpHr == S_OK);
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    Assert(!pAllocation->pvMem);
+                                                }
+                                                pD3D9Surf->Release();
+                                            }
+                                            else
+                                            {
+                                                for (UINT j = 0; j < i; ++j)
+                                                {
+                                                    pRc->aAllocations[j].pD3DIf->Release();
+                                                }
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+#endif
                         }
                     }
+#ifdef VBOXDISP_TMP_NEWCREATEDEVICE
+                    break;
+#endif
                 }
                 else
                 {
                     Assert(pDevice->hWnd);
                 }
 
+#ifndef VBOXDISP_TMP_NEWCREATEDEVICE
                 if (hr == S_OK)
+#endif
                 {
                     Assert(pDevice->pDevice9If);
                     bIssueCreateResource = true;
@@ -3309,7 +3394,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                         }
                     }
                 }
-
+#ifndef VBOXDISP_TMP_NEWCREATEDEVICE
                 if (hr != S_OK)
                 {
                     if (bDevCreated)
@@ -3318,6 +3403,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                         pDevice->pDevice9If->Release();
                     }
                 }
+#endif
             }
             else
             {
