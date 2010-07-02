@@ -120,7 +120,7 @@ class WebServiceSession
         int authenticate(const char *pcszUsername,
                          const char *pcszPassword);
 
-        ManagedObjectRef* findRefFromPtr(const IUnknown *pObject);
+        ManagedObjectRef* findRefFromPtr(const ComPtr<IUnknown> &pcu);
 
         uint64_t getID() const
         {
@@ -156,9 +156,8 @@ class ManagedObjectRef
         // owning session:
         WebServiceSession           &_session;
 
-        void                        *_pvObj;                // COM object
-        com::Guid                   _guidInterface;         // and the interface for which it was created
-
+        // value:
+        ComPtr<IUnknown>            _pObj;
         const char                  *_pcszInterface;
 
         // keys:
@@ -171,8 +170,7 @@ class ManagedObjectRef
     public:
         ManagedObjectRef(WebServiceSession &session,
                          const char *pcszInterface,
-                         IUnknown *pObject,
-                         const com::Guid &guidInterface);
+                         const ComPtr<IUnknown> &obj);
         ~ManagedObjectRef();
 
         uint64_t getID()
@@ -180,16 +178,9 @@ class ManagedObjectRef
             return _id;
         }
 
-        /**
-         * Returns the contained COM pointer and the UUID of the COM interface
-         * which it supports.
-         * @param
-         * @return
-         */
-        const com::Guid& getPtr(void** pp)
+        ComPtr<IUnknown> getComPtr()
         {
-            *pp = _pvObj;
-            return _guidInterface;
+            return _pObj;
         }
 
         WSDLT_ID toWSDL() const;
@@ -210,7 +201,7 @@ class ManagedObjectRef
 
 /**
  * Template function that resolves a managed object reference to a COM pointer
- * of the template class T. Gets called only from tons of generated code in
+ * of the template class T. Gets called from tons of generated code in
  * methodmaps.cpp.
  *
  * This is a template function so that we can support ComPtr's for arbitrary
@@ -244,35 +235,14 @@ int findComPtrFromId(struct soap *soap,
     {
         if (fNullAllowed && pRef == NULL)
         {
-            WEBDEBUG(("   %s(): returning NULL object as permitted\n", __FUNCTION__));
             pComPtr.setNull();
             return 0;
         }
 
-        const com::Guid &guidCaller = COM_IIDOF(T);
-
-        // pRef->getPtr returns a void*
-        void *p;
-        const com::Guid &guidInterface = pRef->getPtr(&p);
-
-        if (guidInterface == guidCaller)
-        {
-            // same interface: then no QueryInterface needed
-            WEBDEBUG(("   %s(): returning pointer 0x%lX for original interface %s\n", __FUNCTION__, p, pRef->getInterfaceName()));
-            pComPtr = (T*)p;            // calls AddRef() once
+        // pRef->getComPtr returns a ComPtr<IUnknown>; by casting it to
+        // ComPtr<T>, we implicitly do a COM queryInterface() call
+        if (pComPtr = pRef->getComPtr())
             return 0;
-        }
-
-        // QueryInterface tests whether p actually supports the templated T interface
-        T *pT;
-        ((IUnknown*)p)->QueryInterface(guidCaller, (void**)&pT);      // this adds a reference count
-        if (pT)
-        {
-            // assign to caller's ComPtr<T>; use asOutParam() to avoid adding another reference
-            WEBDEBUG(("   %s(): returning pointer 0x%lX for queried interface %RTuuid\n", __FUNCTION__, p, guidCaller.raw()));
-            *(pComPtr.asOutParam()) = pT;
-            return 0;
-        }
 
         WEBDEBUG(("    Interface not supported for object reference %s, which is of class %s\n", id.c_str(), pRef->getInterfaceName()));
         rc = VERR_WEB_UNSUPPORTED_INTERFACE;
@@ -283,8 +253,9 @@ int findComPtrFromId(struct soap *soap,
 }
 
 /**
- * Creates a new managed object for the given COM pointer. If a reference already exists
- * for the given pointer, then that reference's ID is returned instead.
+ * Template function that creates a new managed object for the given COM
+ * pointer of the template class T. If a reference already exists for the
+ * given pointer, then that reference's ID is returned instead.
  *
  * @param idParent managed object reference of calling object; used to extract session ID
  * @param pc COM object for which to create a reference
@@ -293,12 +264,12 @@ int findComPtrFromId(struct soap *soap,
 template <class T>
 WSDLT_ID createOrFindRefFromComPtr(const WSDLT_ID &idParent,
                                    const char *pcszInterface,
-                                   ComPtr<T> &pc)
+                                   const ComPtr<T> &pc)
 {
     // NULL comptr should return NULL MOR
     if (pc.isNull())
     {
-        WEBDEBUG(("   createOrFindRefFromComPtr(): returning empty MOR for NULL COM pointer\n"));
+        WEBDEBUG(("   createOrFindRefFromComPtr(): returning empty MOR for NULL %s pointer\n", pcszInterface));
         return "";
     }
 
@@ -306,13 +277,10 @@ WSDLT_ID createOrFindRefFromComPtr(const WSDLT_ID &idParent,
     WebServiceSession *pSession;
     if ((pSession = WebServiceSession::findSessionFromRef(idParent)))
     {
+        // WEBDEBUG(("\n-- found session for %s\n", idParent.c_str()));
         ManagedObjectRef *pRef;
-        ComPtr<IUnknown> pUnknown = pc;       // this calls QueryInterface(IUnknown)
-        if (    ((pRef = pSession->findRefFromPtr(pUnknown)))
-             || ((pRef = new ManagedObjectRef(*pSession,
-                                              pcszInterface,
-                                              pUnknown,              // IUnknown *pObject
-                                              COM_IIDOF(T))))
+        if (    ((pRef = pSession->findRefFromPtr(pc)))
+             || ((pRef = new ManagedObjectRef(*pSession, pcszInterface, pc)))
            )
             return pRef->toWSDL();
     }
@@ -321,3 +289,4 @@ WSDLT_ID createOrFindRefFromComPtr(const WSDLT_ID &idParent,
     // new reference which couldn't be used anyway.
     return "";
 }
+
