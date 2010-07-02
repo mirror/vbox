@@ -166,6 +166,9 @@ static DECLCALLBACK(void)   tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uin
 static void                 tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue);
 static void                 tmR3TimerQueueRunVirtualSync(PVM pVM);
 static DECLCALLBACK(int)    tmR3SetWarpDrive(PVM pVM, uint32_t u32Percent);
+#ifndef VBOX_WITHOUT_NS_ACCOUNTING
+static DECLCALLBACK(void)   tmR3CpuLoadTimer(PVM pVM, PTMTIMER pTimer, void *pvUser);
+#endif
 static DECLCALLBACK(void)   tmR3TimerInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void)   tmR3TimerInfoActive(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void)   tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
@@ -628,15 +631,22 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
 
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.offTSCRawSrc,  STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS, "TSC offset relative the raw source",  "/TM/TSC/offCPU%u", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.offTSCRawSrc,          STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS, "TSC offset relative the raw source",           "/TM/TSC/offCPU%u", i);
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsTotal,      STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Total CPU run time.",                 "/TM/CPU/%02u", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsExecuting,  STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent executing guest code.",    "/TM/CPU/%02u/Executing", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsHalted,     STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent halted.",                  "/TM/CPU/%02u/Halted", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsOther,      STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent in the VMM or preempted.", "/TM/CPU/%02u/Other", i);
-        /** @todo Try add 1, 5 and 15 min load stats. */
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsTotal,              STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Total CPU run time.",                          "/TM/CPU/%02u", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsExecuting,          STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent executing guest code.",             "/TM/CPU/%02u/NsExecuting", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsHalted,             STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent halted.",                           "/TM/CPU/%02u/NsHalted", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsOther,              STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent in the VMM or preempted.",          "/TM/CPU/%02u/NsOther", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.CpuLoad.cPctExecuting, STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent executing guest code recently.",    "/TM/CPU/%02u/PctExecuting", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.CpuLoad.cPctHalted,    STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent halted recently.",                  "/TM/CPU/%02u/PctHalted", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.CpuLoad.cPctOther,     STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent in the VMM or preempted recently.", "/TM/CPU/%02u/PctOther", i);
 #endif
     }
+#ifndef VBOX_WITHOUT_NS_ACCOUNTING
+    STAMR3RegisterF(pVM, &pVM->tm.s.CpuLoad.cPctExecuting, STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent executing guest code recently.",    "/TM/CPU/PctExecuting");
+    STAMR3RegisterF(pVM, &pVM->tm.s.CpuLoad.cPctHalted,    STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent halted recently.",                  "/TM/CPU/PctHalted");
+    STAMR3RegisterF(pVM, &pVM->tm.s.CpuLoad.cPctOther,     STAMTYPE_U8,  STAMVISIBILITY_ALWAYS, STAMUNIT_PCT,   "Time spent in the VMM or preempted recently.", "/TM/CPU/PctOther");
+#endif
 
 #ifdef VBOX_WITH_STATISTICS
     STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncCatchup,              STAMTYPE_PROFILE_ADV, "/TM/VirtualSync/CatchUp",    STAMUNIT_TICKS_PER_OCCURENCE, "Counting and measuring the times spent catching up.");
@@ -849,6 +859,9 @@ VMM_INT_DECL(int) TMR3InitFinalize(PVM pVM)
 {
     int rc;
 
+    /*
+     * Resolve symbols.
+     */
     rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataRC.pfnBad);
     AssertRCReturn(rc, rc);
     rc = PDMR3LdrGetSymbolRCLazy(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataRC.pfnRediscover);
@@ -881,7 +894,17 @@ VMM_INT_DECL(int) TMR3InitFinalize(PVM pVM)
         AssertFatalFailed();
     AssertRCReturn(rc, rc);
 
-    return VINF_SUCCESS;
+#ifndef VBOX_WITHOUT_NS_ACCOUNTING
+    /*
+     * Create a timer for freshing the CPU load stats.
+     */
+    PTMTIMER pTimer;
+    rc = TMR3TimerCreateInternal(pVM, TMCLOCK_REAL, tmR3CpuLoadTimer, NULL, "CPU Load Timer", &pTimer);
+    if (RT_SUCCESS(rc))
+        rc = TMTimerSetMillies(pTimer, 1000);
+#endif
+
+    return rc;
 }
 
 
@@ -2676,6 +2699,118 @@ VMMR3DECL(int) TMR3GetCpuLoadTimes(PVM pVM, VMCPUID idCpu, uint64_t *pcNsTotal, 
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
+
+#ifndef VBOX_WITHOUT_NS_ACCOUNTING
+
+/**
+ * Helper for tmR3CpuLoadTimer.
+ * @returns
+ * @param   pState              The state to update.
+ * @param   cNsTotalDelta       Total time.
+ * @param   cNsExecutingDelta   Time executing.
+ * @param   cNsHaltedDelta      Time halted.
+ */
+DECLINLINE(void) tmR3CpuLoadTimerMakeUpdate(PTMCPULOADSTATE pState,
+                                            uint64_t cNsTotal,
+                                            uint64_t cNsExecuting,
+                                            uint64_t cNsHalted)
+{
+    /* Calc deltas */
+    uint64_t cNsTotalDelta      = cNsTotal     - pState->cNsPrevTotal;
+    pState->cNsPrevTotal        = cNsTotal;
+
+    uint64_t cNsExecutingDelta  = cNsExecuting - pState->cNsPrevExecuting;
+    pState->cNsPrevExecuting    = cNsExecuting;
+
+    uint64_t cNsHaltedDelta     = cNsHalted    - pState->cNsPrevHalted;
+    pState->cNsPrevHalted       = cNsHalted;
+
+    /* Calc pcts. */
+    if (!cNsTotalDelta)
+    {
+        pState->cPctExecuting   = 0;
+        pState->cPctHalted      = 100;
+        pState->cPctOther       = 0;
+    }
+    else if (cNsTotalDelta < UINT64_MAX / 4)
+    {
+        pState->cPctExecuting   = (uint8_t)(cNsExecutingDelta    * 100 / cNsTotalDelta);
+        pState->cPctHalted      = (uint8_t)(cNsHaltedDelta       * 100 / cNsTotalDelta);
+        pState->cPctOther       = (uint8_t)((cNsTotalDelta - cNsExecutingDelta - cNsHaltedDelta) * 100 / cNsTotalDelta);
+    }
+    else
+    {
+        pState->cPctExecuting   = 0;
+        pState->cPctHalted      = 100;
+        pState->cPctOther       = 0;
+    }
+}
+
+
+/**
+ * Timer callback that calculates the CPU load since the last time it was
+ * called.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   pTimer              The timer.
+ * @param   pvUser              NULL, unused.
+ */
+static DECLCALLBACK(void) tmR3CpuLoadTimer(PVM pVM, PTMTIMER pTimer, void *pvUser)
+{
+    /*
+     * Re-arm the timer first.
+     */
+    int rc = TMTimerSetMillies(pTimer, 1000);
+    AssertLogRelRC(rc);
+    NOREF(pvUser);
+
+    /*
+     * Update the values for each CPU.
+     */
+    uint64_t cNsTotalAll       = 0;
+    uint64_t cNsExecutingAll   = 0;
+    uint64_t cNsHaltedAll      = 0;
+    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+    {
+        PVMCPU      pVCpu = &pVM->aCpus[iCpu];
+
+        /* Try get a stable data set. */
+        uint32_t    cTries       = 3;
+        uint32_t    uTimesGen    = ASMAtomicReadU32(&pVCpu->tm.s.uTimesGen);
+        uint64_t    cNsTotal     = pVCpu->tm.s.cNsTotal;
+        uint64_t    cNsExecuting = pVCpu->tm.s.cNsExecuting;
+        uint64_t    cNsHalted    = pVCpu->tm.s.cNsHalted;
+        while (RT_UNLIKELY(   (uTimesGen & 1) /* update in progress */
+                           || uTimesGen != ASMAtomicReadU32(&pVCpu->tm.s.uTimesGen)))
+        {
+            if (!--cTries)
+                break;
+            ASMNopPause();
+            uTimesGen    = ASMAtomicReadU32(&pVCpu->tm.s.uTimesGen);
+            cNsTotal     = pVCpu->tm.s.cNsTotal;
+            cNsExecuting = pVCpu->tm.s.cNsExecuting;
+            cNsHalted    = pVCpu->tm.s.cNsHalted;
+        }
+
+        /* Totals */
+        cNsTotalAll     += cNsTotal;
+        cNsExecutingAll += cNsExecuting;
+        cNsHaltedAll    += cNsHalted;
+
+        /* Calc the PCTs and update the state. */
+        tmR3CpuLoadTimerMakeUpdate(&pVCpu->tm.s.CpuLoad, cNsTotal, cNsExecuting, cNsHalted);
+    }
+
+    /*
+     * Update the value for all the CPUs.
+     */
+    tmR3CpuLoadTimerMakeUpdate(&pVM->tm.s.CpuLoad, cNsTotalAll, cNsExecutingAll, cNsHaltedAll);
+
+    /** @todo Try add 1, 5 and 15 min load stats. */
+
+}
+
+#endif /* !VBOX_WITHOUT_NS_ACCOUNTING */
 
 
 /**
