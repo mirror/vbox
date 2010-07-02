@@ -1167,7 +1167,7 @@ int WebServiceSession::authenticate(const char *pcszUsername,
                 break;
             }
 
-            _pISession = new ManagedObjectRef(*this, g_pcszISession, session, com::Guid(COM_IIDOF(ISession)));
+            _pISession = new ManagedObjectRef(*this, g_pcszISession, session);
 
             if (g_fVerbose)
             {
@@ -1196,22 +1196,24 @@ int WebServiceSession::authenticate(const char *pcszUsername,
  * @param pcu pointer to a COM object.
  * @return The existing ManagedObjectRef that represents the COM object, or NULL if there's none yet.
  */
-ManagedObjectRef* WebServiceSession::findRefFromPtr(const IUnknown *pObject)
+ManagedObjectRef* WebServiceSession::findRefFromPtr(const ComPtr<IUnknown> &pcu)
 {
     Assert(g_pSessionsLockHandle->isWriteLockOnCurrentThread());
 
-    uintptr_t ulp = (uintptr_t)pObject;
+    IUnknown *p = pcu;
+    uintptr_t ulp = (uintptr_t)p;
+    ManagedObjectRef *pRef;
     // WEBDEBUG(("   %s: looking up 0x%lX\n", __FUNCTION__, ulp));
     ManagedObjectsMapByPtr::iterator it = _pp->_mapManagedObjectsByPtr.find(ulp);
     if (it != _pp->_mapManagedObjectsByPtr.end())
     {
-        ManagedObjectRef *pRef = it->second;
+        pRef = it->second;
         WSDLT_ID id = pRef->toWSDL();
         WEBDEBUG(("   %s: found existing ref %s (%s) for COM obj 0x%lX\n", __FUNCTION__, id.c_str(), pRef->getInterfaceName(), ulp));
-        return pRef;
     }
-
-    return NULL;
+    else
+        pRef = NULL;
+    return pRef;
 }
 
 /**
@@ -1263,6 +1265,25 @@ void WebServiceSession::touch()
     time(&_tLastObjectLookup);
 }
 
+/**
+ *
+ */
+void WebServiceSession::DumpRefs()
+{
+    WEBDEBUG(("   dumping object refs:\n"));
+    ManagedObjectsIteratorById
+        iter = _pp->_mapManagedObjectsById.begin(),
+        end = _pp->_mapManagedObjectsById.end();
+    for (;
+        iter != end;
+        ++iter)
+    {
+        ManagedObjectRef *pRef = iter->second;
+        uint64_t id = pRef->getID();
+        void *p = pRef->getComPtr();
+        WEBDEBUG(("     objid %llX: comptr 0x%lX\n", id, p));
+    }
+}
 
 /****************************************************************************
  *
@@ -1287,9 +1308,6 @@ void WebServiceSession::touch()
  *      createRefFromObject() to quickly figure out whether an
  *      instance already exists for a given COM pointer.
  *
- *  This constructor calls AddRef() on the given COM object, and
- *  the destructor will call Release().
- *
  *  This does _not_ check whether another instance already
  *  exists in the hash. This gets called only from the
  *  createRefFromObject() template function in vboxweb.h, which
@@ -1301,16 +1319,13 @@ void WebServiceSession::touch()
  */
 ManagedObjectRef::ManagedObjectRef(WebServiceSession &session,
                                    const char *pcszInterface,
-                                   IUnknown *pObject,
-                                   const com::Guid &guidInterface)
+                                   const ComPtr<IUnknown> &pc)
     : _session(session),
-      _pvObj(pObject),
-      _guidInterface(guidInterface),
+      _pObj(pc),
       _pcszInterface(pcszInterface)
 {
-    Assert(pObject);
-    pObject->AddRef();
-    _ulp = (uintptr_t)pObject;
+    ComPtr<IUnknown> pcUnknown(pc);
+    _ulp = (uintptr_t)(IUnknown*)pcUnknown;
 
     Assert(g_pSessionsLockHandle->isWriteLockOnCurrentThread());
     _id = ++g_iMaxManagedObjectID;
@@ -1331,7 +1346,7 @@ ManagedObjectRef::ManagedObjectRef(WebServiceSession &session,
 
 /**
  * Destructor; removes the instance from the global hash of
- * managed objects. Calls Release() on the contained COM object.
+ * managed objects.
  *
  * Preconditions: Caller must have locked g_pSessionsLockHandle.
  */
@@ -1340,10 +1355,7 @@ ManagedObjectRef::~ManagedObjectRef()
     Assert(g_pSessionsLockHandle->isWriteLockOnCurrentThread());
     ULONG64 cTotal = --g_cManagedObjects;
 
-    Assert(_pvObj);
-
-    uint32_t cRefs = ((IUnknown*)_pvObj)->Release();
-    WEBDEBUG(("   * %s: deleting MOR for ID %llX (%s; COM refcount now %RI32); now %lld objects total\n", __FUNCTION__, _id, _pcszInterface, cRefs, cTotal));
+    WEBDEBUG(("   * %s: deleting MOR for ID %llX (%s); now %lld objects total\n", __FUNCTION__, _id, _pcszInterface, cTotal));
 
     // if we're being destroyed from the session's destructor,
     // then that destructor is iterating over the maps, so
@@ -1411,6 +1423,7 @@ int ManagedObjectRef::findRefFromId(const WSDLT_ID &id,
             break;
         }
 
+        WEBDEBUG(("   %s(): sessid %llX, objid %llX\n", __FUNCTION__, sessid, objid));
         SessionsMapIterator it = g_mapSessions.find(sessid);
         if (it == g_mapSessions.end())
         {
@@ -1583,7 +1596,7 @@ int __vbox__IWebsessionManager_USCORElogon(
             // global VirtualBox object; this encodes the session ID in the MOR so
             // that it will be implicitly be included in all future requests of this
             // webservice client
-            ManagedObjectRef *pRef = new ManagedObjectRef(*pSession, g_pcszIVirtualBox, g_pVirtualBox, COM_IIDOF(IVirtualBox));
+            ManagedObjectRef *pRef = new ManagedObjectRef(*pSession, g_pcszIVirtualBox, g_pVirtualBox);
             resp->returnval = pRef->toWSDL();
             WEBDEBUG(("VirtualBox object ref is %s\n", resp->returnval.c_str()));
         }
@@ -1658,4 +1671,3 @@ int __vbox__IWebsessionManager_USCORElogoff(
         return SOAP_FAULT;
     return SOAP_OK;
 }
-
