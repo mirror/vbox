@@ -166,6 +166,9 @@ VMMDECL(void) TMNotifyStartOfExecution(PVMCPU pVCpu)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
+#ifndef VBOX_WITHOUT_NS_ACCOUNTING
+    pVCpu->tm.s.u64NsTsStartExecuting = RTTimeNanoTS();
+#endif
     if (pVM->tm.s.fTSCTiedToExecution)
         tmCpuTickResume(pVM, pVCpu);
 }
@@ -187,6 +190,15 @@ VMMDECL(void) TMNotifyEndOfExecution(PVMCPU pVCpu)
 
     if (pVM->tm.s.fTSCTiedToExecution)
         tmCpuTickPause(pVM, pVCpu);
+
+#ifndef VBOX_WITHOUT_NS_ACCOUNTING
+    uint32_t uGen    = ASMAtomicIncU32(&pVCpu->tm.s.uTimesGen); Assert(uGen & 1);
+    uint64_t u64NsTs = RTTimeNanoTS();
+    pVCpu->tm.s.cNsExecuting += u64NsTs - pVCpu->tm.s.u64NsTsStartExecuting;
+    pVCpu->tm.s.cNsTotal      = u64NsTs - pVCpu->tm.s.u64NsTsStartTotal;
+    pVCpu->tm.s.cNsOther      = pVCpu->tm.s.cNsTotal - pVCpu->tm.s.cNsExecuting - pVCpu->tm.s.cNsHalted;
+    ASMAtomicWriteU32(&pVCpu->tm.s.uTimesGen, (uGen | 1) + 1);
+#endif
 }
 
 
@@ -203,6 +215,10 @@ VMMDECL(void) TMNotifyEndOfExecution(PVMCPU pVCpu)
 VMM_INT_DECL(void) TMNotifyStartOfHalt(PVMCPU pVCpu)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
+
+#ifndef VBOX_WITHOUT_NS_ACCOUNTING
+    pVCpu->tm.s.u64NsTsStartHalting = RTTimeNanoTS();
+#endif
 
     if (    pVM->tm.s.fTSCTiedToExecution
         &&  !pVM->tm.s.fTSCNotTiedToHalt)
@@ -227,6 +243,15 @@ VMM_INT_DECL(void) TMNotifyEndOfHalt(PVMCPU pVCpu)
     if (    pVM->tm.s.fTSCTiedToExecution
         &&  !pVM->tm.s.fTSCNotTiedToHalt)
         tmCpuTickPause(pVM, pVCpu);
+
+#ifndef VBOX_WITHOUT_NS_ACCOUNTING
+    uint32_t uGen    = ASMAtomicIncU32(&pVCpu->tm.s.uTimesGen); Assert(uGen & 1);
+    uint64_t u64NsTs = RTTimeNanoTS();
+    pVCpu->tm.s.cNsHalted += u64NsTs - pVCpu->tm.s.u64NsTsStartHalting;
+    pVCpu->tm.s.cNsTotal   = u64NsTs - pVCpu->tm.s.u64NsTsStartTotal;
+    pVCpu->tm.s.cNsOther   = pVCpu->tm.s.cNsTotal - pVCpu->tm.s.cNsExecuting - pVCpu->tm.s.cNsHalted;
+    ASMAtomicWriteU32(&pVCpu->tm.s.uTimesGen, (uGen | 1) + 1);
+#endif
 }
 
 
