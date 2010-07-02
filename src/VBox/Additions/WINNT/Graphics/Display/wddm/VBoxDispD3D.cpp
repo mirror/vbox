@@ -952,6 +952,117 @@ static void vboxWddmLockUnlockMemSynch(PVBOXWDDMDISP_ALLOCATION pAlloc, D3DLOCKE
     }
 }
 
+#if 0
+static HRESULT vboxWddmRectBltPerform(uint8_t *pvDstSurf, const uint8_t *pvSrcSurf,
+        RECT *pDstRect, RECT *pSrcRect,
+        uint32_t DstPitch, uint32_t SrcPitch, uint32_t bpp,
+        RECT *pDstCopyRect, RECT *pSrcCopyRect)
+{
+    uint32_t DstCopyWidth = pDstCopyRect->left - pDstCopyRect->right;
+    uint32_t DstCopyHeight = pDstCopyRect->bottom - pDstCopyRect->top;
+    uint32_t SrcCopyWidth = pSrcCopyRect->left - pSrcCopyRect->right;
+    uint32_t SrcCopyHeight = pSrcCopyRect->bottom - pSrcCopyRect->top;
+    uint32_t srcBpp = bpp;
+    uint32_t dstBpp = bpp;
+    /* we do not support stretching */
+    Assert(DstCopyWidth == SrcCopyWidth);
+    Assert(DstCopyHeight == SrcCopyWidth);
+    if (DstCopyWidth != SrcCopyWidth)
+        return E_FAIL;
+    if (DstCopyHeight != SrcCopyWidth)
+        return E_FAIL;
+
+    uint32_t DstWidth = pDstRect->left - pDstRect->right;
+    uint32_t DstHeight = pDstRect->bottom - pDstRect->top;
+    uint32_t SrcWidth = pSrcRect->left - pSrcRect->right;
+    uint32_t SrcHeight = pSrcRect->bottom - pSrcRect->top;
+
+    if (DstWidth == DstCopyWidth
+            && SrcWidth == SrcCopyWidth
+            && SrcWidth == DstWidth)
+    {
+        Assert(!pDstCopyRect->left);
+        Assert(!pSrcCopyRect->left);
+        uint32_t cbOff = DstPitch * pDstCopyRect->top;
+        uint32_t cbSize = DstPitch * DstCopyHeight;
+        memcpy(pvDstSurf + cbOff, pvSrcSurf + cbOff, cbSize);
+    }
+    else
+    {
+        uint32_t offDstLineStart = pDstCopyRect->left * dstBpp >> 3;
+        uint32_t offDstLineEnd = ((pDstCopyRect->left * dstBpp + 7) >> 3) + ((dstBpp * DstCopyWidth + 7) >> 3);
+        uint32_t cbDstLine = offDstLineEnd - offDstLineStart;
+        uint32_t offDstStart = DstPitch * pDstCopyRect->top + offDstLineStart;
+        Assert(cbDstLine <= DstPitch);
+        uint32_t cbDstSkip = DstPitch;
+        uint8_t * pvDstStart = pvDstSurf + offDstStart;
+
+        uint32_t offSrcLineStart = pSrcCopyRect->left * srcBpp >> 3;
+        uint32_t offSrcLineEnd = ((pSrcCopyRect->left * srcBpp + 7) >> 3) + ((srcBpp * SrcCopyWidth + 7) >> 3);
+        uint32_t cbSrcLine = offSrcLineEnd - offSrcLineStart;
+        uint32_t offSrcStart = SrcPitch * pSrcCopyRect->top + offSrcLineStart;
+        Assert(cbSrcLine <= SrcPitch);
+        uint32_t cbSrcSkip = SrcPitch;
+        const uint8_t * pvSrcStart = pvSrcSurf + offSrcStart;
+
+        Assert(cbDstLine == cbSrcLine);
+
+        for (uint32_t i = 0; ; ++i)
+        {
+            memcpy (pvDstStart, pvSrcStart, cbDstLine);
+            if (i == DstCopyHeight)
+                break;
+            pvDstStart += cbDstSkip;
+            pvSrcStart += cbSrcSkip;
+        }
+    }
+    return S_OK;
+}
+#endif
+
+static HRESULT vboxWddmRectBltPerform(uint8_t *pvDstSurf, const uint8_t *pvSrcSurf,
+        const RECT *pDstRect, const RECT *pSrcRect,
+        uint32_t DstPitch, uint32_t SrcPitch, uint32_t bpp)
+{
+    uint32_t DstWidth = pDstRect->left - pDstRect->right;
+    uint32_t DstHeight = pDstRect->bottom - pDstRect->top;
+    uint32_t SrcWidth = pSrcRect->left - pSrcRect->right;
+    uint32_t SrcHeight = pSrcRect->bottom - pSrcRect->top;
+    uint32_t srcBpp = bpp;
+    uint32_t dstBpp = bpp;
+    /* we do not support stretching */
+    Assert(DstWidth == SrcWidth);
+    Assert(DstHeight == SrcWidth);
+    if (DstWidth != SrcWidth)
+        return E_FAIL;
+    if (DstHeight != SrcWidth)
+        return E_FAIL;
+
+    if (DstPitch == SrcPitch
+            && ((DstWidth * bpp)/8) == DstPitch)
+    {
+        Assert(!pDstRect->left);
+        Assert(!pSrcRect->left);
+        uint32_t cbOff = DstPitch * pDstRect->top;
+        uint32_t cbSize = DstPitch * DstHeight;
+        memcpy(pvDstSurf + cbOff, pvSrcSurf + cbOff, cbSize);
+    }
+    else
+    {
+
+        uint32_t cbDstLine = (((DstWidth * dstBpp) + 7) >> 3);
+        for (uint32_t i = 0; ; ++i)
+        {
+            memcpy (pvDstSurf, pvSrcSurf, cbDstLine);
+            if (i == DstHeight)
+                break;
+            pvDstSurf += DstPitch;
+            pvSrcSurf += SrcPitch;
+        }
+    }
+    return S_OK;
+}
+
 static D3DFORMAT vboxDDI2D3DFormat(D3DDDIFORMAT format)
 {
     /* @todo: check they are all equal */
@@ -3638,6 +3749,57 @@ static HRESULT APIENTRY vboxWddmDDevComposeRects(HANDLE hDevice, CONST D3DDDIARG
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
+static HRESULT vboxWddmLockRect(PVBOXWDDMDISP_ALLOCATION pAlloc, UINT iAlloc, D3DDDI_RESOURCEFLAGS fAllocType,
+        D3DLOCKED_RECT * pLockedRect,
+        CONST RECT *pRect,
+        DWORD fLockFlags)
+{
+    HRESULT hr = E_FAIL;
+    Assert(!pAlloc->LockInfo.cLocks);
+    if (fAllocType.Texture || fAllocType.Value == 0)
+    {
+        IDirect3DTexture9 *pD3DIfTex = (IDirect3DTexture9*)pAlloc->pD3DIf;
+        Assert(pD3DIfTex);
+        hr = pD3DIfTex->LockRect(iAlloc, pLockedRect, pRect, fLockFlags);
+        Assert(hr == S_OK);
+    }
+    else if (fAllocType.RenderTarget)
+    {
+        IDirect3DSurface9 *pD3DIfSurf = (IDirect3DSurface9*)pAlloc->pD3DIf;
+        Assert(pD3DIfSurf);
+        hr = pD3DIfSurf->LockRect(pLockedRect, pRect, fLockFlags);
+        Assert(hr == S_OK);
+    }
+    else
+    {
+        AssertBreakpoint();
+    }
+    return hr;
+}
+static HRESULT vboxWddmUnlockRect(PVBOXWDDMDISP_ALLOCATION pAlloc, UINT iAlloc, D3DDDI_RESOURCEFLAGS fAllocType)
+{
+    HRESULT hr = E_FAIL;
+    Assert(!pAlloc->LockInfo.cLocks);
+    if (fAllocType.Texture || fAllocType.Value == 0)
+    {
+        IDirect3DTexture9 *pD3DIfTex = (IDirect3DTexture9*)pAlloc->pD3DIf;
+        Assert(pD3DIfTex);
+        hr = pD3DIfTex->UnlockRect(iAlloc);
+        Assert(hr == S_OK);
+    }
+    else if (fAllocType.RenderTarget)
+    {
+        IDirect3DSurface9 *pD3DIfSurf = (IDirect3DSurface9*)pAlloc->pD3DIf;
+        Assert(pD3DIfSurf);
+        hr = pD3DIfSurf->UnlockRect();
+        Assert(hr == S_OK);
+    }
+    else
+    {
+        AssertBreakpoint();
+    }
+    return hr;
+}
 static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pData)
 {
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
@@ -3646,21 +3808,24 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
     Assert(pDevice->pDevice9If);
     PVBOXWDDMDISP_RESOURCE pDstRc = (PVBOXWDDMDISP_RESOURCE)pData->hDstResource;
     PVBOXWDDMDISP_RESOURCE pSrcRc = (PVBOXWDDMDISP_RESOURCE)pData->hSrcResource;
+    Assert(pDstRc->cAllocations > pData->DstSubResourceIndex);
+    Assert(pSrcRc->cAllocations > pData->SrcSubResourceIndex);
+    PVBOXWDDMDISP_ALLOCATION pSrcAlloc = &pSrcRc->aAllocations[pData->SrcSubResourceIndex];
+    PVBOXWDDMDISP_ALLOCATION pDstAlloc = &pDstRc->aAllocations[pData->DstSubResourceIndex];
     HRESULT hr = S_OK;
     if ((pDstRc->RcDesc.fFlags.Texture || pDstRc->RcDesc.fFlags.Value == 0)
             && (pSrcRc->RcDesc.fFlags.Texture || pSrcRc->RcDesc.fFlags.Value == 0))
     {
-        IDirect3DTexture9 *pD3DIfSrcTex = (IDirect3DTexture9*)pSrcRc->aAllocations[0].pD3DIf;
-        IDirect3DTexture9 *pD3DIfDstTex = (IDirect3DTexture9*)pDstRc->aAllocations[0].pD3DIf;
+        IDirect3DTexture9 *pD3DIfSrcTex = (IDirect3DTexture9*)pSrcAlloc->pD3DIf;
+        IDirect3DTexture9 *pD3DIfDstTex = (IDirect3DTexture9*)pDstAlloc->pD3DIf;
         Assert(pD3DIfSrcTex);
         Assert(pD3DIfDstTex);
 
-        if (pSrcRc->aAllocations[0].SurfDesc.width == pDstRc->aAllocations[0].SurfDesc.width
-                && pSrcRc->aAllocations[0].SurfDesc.height == pDstRc->aAllocations[0].SurfDesc.height
-                && pSrcRc->RcDesc.enmFormat == pDstRc->RcDesc.enmFormat)
+        if (pSrcRc->RcDesc.enmFormat == pDstRc->RcDesc.enmFormat)
         {
-            /* first check if we can do IDirect3DDevice9::UpdateTexture */
-            if (pData->DstRect.left == 0 && pData->DstRect.top == 0
+            if (pSrcRc->aAllocations[0].SurfDesc.width == pDstRc->aAllocations[0].SurfDesc.width
+                    && pSrcRc->aAllocations[0].SurfDesc.height == pDstRc->aAllocations[0].SurfDesc.height
+                    && pData->DstRect.left == 0 && pData->DstRect.top == 0
                     && pData->SrcRect.left == 0 && pData->SrcRect.top == 0
                     && pData->SrcRect.right - pData->SrcRect.left == pSrcRc->aAllocations[0].SurfDesc.width
                     && pData->SrcRect.bottom - pData->SrcRect.top == pSrcRc->aAllocations[0].SurfDesc.height
@@ -3671,8 +3836,36 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
                 hr = pDevice->pDevice9If->UpdateTexture(pD3DIfSrcTex, pD3DIfDstTex);
                 Assert(hr == S_OK);
             }
+            else if (pData->SrcRect.right - pData->SrcRect.left == pData->DstRect.right - pData->DstRect.left
+                    && pData->SrcRect.bottom - pData->SrcRect.top == pData->DstRect.bottom - pData->DstRect.top)
+            {
+                Assert(pDstAlloc->SurfDesc.bpp);
+                Assert(pSrcAlloc->SurfDesc.bpp);
+                Assert(pSrcAlloc->SurfDesc.bpp == pDstAlloc->SurfDesc.bpp);
+                D3DLOCKED_RECT DstRect, SrcRect;
+                Assert(!pSrcAlloc->LockInfo.cLocks);
+                Assert(!pDstAlloc->LockInfo.cLocks);
+                hr = pD3DIfDstTex->LockRect(pData->DstSubResourceIndex, &DstRect, &pData->DstRect, D3DLOCK_DISCARD);
+                Assert(hr == S_OK);
+                if (hr == S_OK)
+                {
+                    hr = pD3DIfSrcTex->LockRect(pData->SrcSubResourceIndex, &SrcRect, &pData->SrcRect, D3DLOCK_READONLY);
+                    Assert(hr == S_OK);
+                    if (hr == S_OK)
+                    {
+                        hr = vboxWddmRectBltPerform((uint8_t *)DstRect.pBits, (uint8_t *)SrcRect.pBits,
+                                &pData->DstRect,  &pData->SrcRect,
+                                DstRect.Pitch, SrcRect.Pitch, pDstAlloc->SurfDesc.bpp);
+                        Assert(hr == S_OK);
+
+                        pD3DIfSrcTex->UnlockRect(pData->SrcSubResourceIndex);
+                    }
+                    pD3DIfDstTex->UnlockRect(pData->DstSubResourceIndex);
+                }
+            }
             else
             {
+
                 AssertBreakpoint();
                 /* @todo: impl */
             }
@@ -3685,8 +3878,41 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
     }
     else
     {
-        AssertBreakpoint();
-        /* @todo: impl */
+        if (pData->SrcRect.right - pData->SrcRect.left == pData->DstRect.right - pData->DstRect.left
+                            && pData->SrcRect.bottom - pData->SrcRect.top == pData->DstRect.bottom - pData->DstRect.top)
+        {
+            Assert(pDstAlloc->SurfDesc.bpp);
+            Assert(pSrcAlloc->SurfDesc.bpp);
+            Assert(pSrcAlloc->SurfDesc.bpp == pDstAlloc->SurfDesc.bpp);
+
+            D3DLOCKED_RECT DstRect, SrcRect;
+            hr = vboxWddmLockRect(pDstAlloc, pData->DstSubResourceIndex, pDstRc->RcDesc.fFlags,
+                    &DstRect, &pData->DstRect, D3DLOCK_DISCARD);
+            Assert(hr == S_OK);
+            if (hr == S_OK)
+            {
+                hr = vboxWddmLockRect(pSrcAlloc, pData->SrcSubResourceIndex, pSrcRc->RcDesc.fFlags,
+                        &SrcRect, &pData->SrcRect, D3DLOCK_READONLY);
+                Assert(hr == S_OK);
+                if (hr == S_OK)
+                {
+                    hr = vboxWddmRectBltPerform((uint8_t *)DstRect.pBits, (uint8_t *)SrcRect.pBits,
+                            &pData->DstRect,  &pData->SrcRect,
+                            DstRect.Pitch, SrcRect.Pitch, pDstAlloc->SurfDesc.bpp);
+                    Assert(hr == S_OK);
+
+                    HRESULT tmpHr = vboxWddmUnlockRect(pSrcAlloc, pData->SrcSubResourceIndex, pSrcRc->RcDesc.fFlags);
+                    Assert(tmpHr == S_OK);
+                }
+                HRESULT tmpHr = vboxWddmUnlockRect(pDstAlloc, pData->DstSubResourceIndex, pDstRc->RcDesc.fFlags);
+                Assert(tmpHr == S_OK);
+            }
+        }
+        else
+        {
+            AssertBreakpoint();
+            /* @todo: impl */
+        }
     }
 
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
