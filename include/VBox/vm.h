@@ -936,7 +936,7 @@ typedef struct VM
 #ifdef ___TMInternal_h
         struct TM   s;
 #endif
-        uint8_t     padding[2112];      /* multiple of 64 */
+        uint8_t     padding[2176];      /* multiple of 64 */
     } tm;
 
     /** DBGF part. */
@@ -996,7 +996,7 @@ typedef struct VM
     } parav;
 
     /** Padding for aligning the cpu array on a page boundrary. */
-    uint8_t         abAlignment2[2056];
+    uint8_t         abAlignment2[1992];
 
     /* ---- end small stuff ---- */
 

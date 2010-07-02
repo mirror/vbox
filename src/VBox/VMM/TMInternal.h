@@ -275,6 +275,33 @@ typedef TMTIMERQUEUE *PTMTIMERQUEUE;
 
 
 /**
+ * CPU load data set.
+ * Mainly used by tmR3CpuLoadTimer.
+ */
+typedef struct TMCPULOADSTATE
+{
+    /** The percent of the period spent executing guest code. */
+    uint8_t                 cPctExecuting;
+    /** The percent of the period spent halted. */
+    uint8_t                 cPctHalted;
+    /** The percent of the period spent on other things. */
+    uint8_t                 cPctOther;
+    /** Explicit alignment padding */
+    uint8_t                 au8Alignment[5];
+
+    /** Previous cNsTotal value. */
+    uint64_t                cNsPrevTotal;
+    /** Previous cNsExecuting value. */
+    uint64_t                cNsPrevExecuting;
+    /** Previous cNsHalted value. */
+    uint64_t                cNsPrevHalted;
+} TMCPULOADSTATE;
+AssertCompileSizeAlignment(TMCPULOADSTATE, 8);
+AssertCompileMemberAlignment(TMCPULOADSTATE, cNsPrevTotal, 8);
+/** Pointer to a CPU load data set. */
+typedef TMCPULOADSTATE *PTMCPULOADSTATE;
+
+/**
  * Converts a TM pointer into a VM pointer.
  * @returns Pointer to the VM structure the TM is part of.
  * @param   pTM   Pointer to TM instance data.
@@ -325,7 +352,7 @@ typedef struct TM
     bool volatile               fVirtualSyncTicking;
     /** Virtual timer synchronous time catch-up active. */
     bool volatile               fVirtualSyncCatchUp;
-    bool                        afAlignment[5]; /**< alignment padding */
+    bool                        afAlignment1[5]; /**< alignment padding */
     /** WarpDrive percentage.
      * 100% is normal (fVirtualSyncNormal == true). When other than 100% we apply
      * this percentage to the raw time source for the period it's been valid in,
@@ -430,13 +457,16 @@ typedef struct TM
     bool volatile               fRunningQueues;
     /** Indicates that the virtual sync queue is being run. */
     bool volatile               fRunningVirtualSyncQueue;
-    /* Alignment */
-    bool                        u8Alignment[2];
+    /** Alignment */
+    bool                        afAlignment2[2];
 
     /** Lock serializing access to the timer lists. */
     PDMCRITSECT                 TimerCritSect;
     /** Lock serializing access to the VirtualSync clock. */
     PDMCRITSECT                 VirtualSyncLock;
+
+    /** CPU load state for all the virtual CPUs (tmR3CpuLoadTimer). */
+    TMCPULOADSTATE              CpuLoad;
 
     /** TMR3TimerQueuesDo
      * @{ */
@@ -577,22 +607,27 @@ typedef struct TMCPU
      * This is recalculated when the VM is started so that
      * cNsTotal = RTTimeNanoTS() - u64NsTsStartCpu. */
     uint64_t                    u64NsTsStartTotal;
+    /** The nanosecond timestamp of the last start-execute notification. */
+    uint64_t                    u64NsTsStartExecuting;
+    /** The nanosecond timestamp of the last start-halt notification. */
+    uint64_t                    u64NsTsStartHalting;
+    /** The cNsXXX generation. */
+    uint32_t volatile           uTimesGen;
+    /** Explicit alignment padding.  */
+    uint32_t                    u32Alignment;
     /** The number of nanoseconds total run time.
      * @remarks This is updated when cNsExecuting and cNsHalted are updated. */
     uint64_t                    cNsTotal;
-    /** The nanosecond timestamp of the CPU start or resume. */
-    uint64_t                    u64NsTsStartExecuting;
     /** The number of nanoseconds spent executing. */
     uint64_t                    cNsExecuting;
-    /** The nanosecond timestamp of the CPU start or resume. */
-    uint64_t                    u64NsTsStartHalting;
     /** The number of nanoseconds being halted. */
     uint64_t                    cNsHalted;
     /** The number of nanoseconds spent on other things.
      * @remarks This is updated when cNsExecuting and cNsHalted are updated. */
     uint64_t                    cNsOther;
-    /** The cNsXXX generation. */
-    uint32_t volatile           uTimesGen;
+
+    /** CPU load state for this virtual CPU (tmR3CpuLoadTimer). */
+    TMCPULOADSTATE              CpuLoad;
 #endif
 } TMCPU;
 /** Pointer to TM VMCPU instance data. */
