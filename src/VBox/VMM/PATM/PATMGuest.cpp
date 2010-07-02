@@ -150,7 +150,14 @@ int PATMPatchSysenterXP(PVM pVM, RTGCPTR32 pInstrGC, PPATMPATCHREC pPatchRec)
 
 #ifdef LOG_ENABLED
     Log(("Sysenter Patch code ----------------------------------------------------------\n"));
-    patmr3DisasmCodeStream(pVM, pInstrGC, pInstrGC, patmr3DisasmCallback, pPatch);
+    PATMP2GLOOKUPREC cacheRec;
+    RT_ZERO(cacheRec);
+    cacheRec.pPatch = pPatch;
+
+    patmr3DisasmCodeStream(pVM, pInstrGC, pInstrGC, patmr3DisasmCallback, &cacheRec);
+    /* Free leftover lock if any. */
+    if (cacheRec.Lock.pvMap)
+        PGMPhysReleasePageMappingLock(pVM, &cacheRec.Lock);
     Log(("Sysenter Patch code ends -----------------------------------------------------\n"));
 #endif
 
