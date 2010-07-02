@@ -206,8 +206,8 @@ public:
         Utf8Str utf8Key = key;
         if (utf8Key == "/VirtualBox/GuestInfo/OS/NoLoggedInUsers")
         {
-            /* Check if the "disconnect on logout feature" is enabled. */
-            BOOL fDisconnectOnGuestLogout = FALSE;
+            /* Check if this is our machine and the "disconnect on logout feature" is enabled. */
+            BOOL fProcessDisconnectOnGuestLogout = FALSE;
             ComPtr <IMachine> machine;
             HRESULT hrc = S_OK;
 
@@ -216,16 +216,21 @@ public:
                 hrc = gConsole->COMGETTER(Machine)(machine.asOutParam());
                 if (SUCCEEDED(hrc) && machine)
                 {
-                    Bstr value1;
-                    hrc = machine->GetExtraData(Bstr("VRDP/DisconnectOnGuestLogout"), value1.asOutParam());
-                    if (SUCCEEDED(hrc) && value1 == "1")
+                    Bstr id;
+                    hrc = machine->COMGETTER(Id)(id.asOutParam());
+                    if (id == machineId)
                     {
-                        fDisconnectOnGuestLogout = TRUE;
+                        Bstr value1;
+                        hrc = machine->GetExtraData(Bstr("VRDP/DisconnectOnGuestLogout"), value1.asOutParam());
+                        if (SUCCEEDED(hrc) && value1 == "1")
+                        {
+                            fProcessDisconnectOnGuestLogout = TRUE;
+                        }
                     }
                 }
             }
 
-            if (fDisconnectOnGuestLogout)
+            if (fProcessDisconnectOnGuestLogout)
             {
                 Utf8Str utf8Value = value;
                 if (utf8Value == "true")
