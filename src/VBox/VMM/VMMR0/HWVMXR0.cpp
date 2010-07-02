@@ -1584,7 +1584,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
               | X86_CR0_NW; /* Bit not restored during VM-exit! */
 
         /* When the guest's FPU state is active, then we no longer care about
-         * the FPU related bits. 
+         * the FPU related bits.
          */
         if (CPUMIsGuestFPUStateActive(pVCpu) == false)
             val |= X86_CR0_TS | X86_CR0_ET | X86_CR0_NE | X86_CR0_MP;
@@ -2238,6 +2238,10 @@ static void vmxR0SetupTLBVPID(PVM pVM, PVMCPU pVCpu)
  */
 VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
+    STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatEntry, x);
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hwaccm.s.StatExit1);
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hwaccm.s.StatExit2);
+
     int         rc = VINF_SUCCESS;
     RTGCUINTREG val;
     RTGCUINTREG exitReason = (RTGCUINTREG)VMX_EXIT_INVALID;
@@ -2257,10 +2261,6 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #ifdef VBOX_HIGH_RES_TIMERS_HACK_IN_RING0
     uint64_t    u64LastTime = RTTimeMilliTS();
 #endif
-#ifdef VBOX_WITH_STATISTICS
-    bool fStatEntryStarted = true;
-    bool fStatExit2Started = false;
-#endif
 
     Assert(!(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC) || (pVCpu->hwaccm.s.vmx.pVAPIC && pVM->hwaccm.s.vmx.pAPIC));
 
@@ -2274,8 +2274,6 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     }
 
     Log2(("\nE"));
-
-    STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatEntry, x);
 
 #ifdef VBOX_STRICT
     {
@@ -2345,10 +2343,8 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* We can jump to this point to resume execution after determining that a VM-exit is innocent.
      */
 ResumeExecution:
-    STAM_STATS({
-        if (fStatExit2Started)   { STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2, y); fStatExit2Started = false; }
-        if (!fStatEntryStarted) { STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatEntry, x); fStatEntryStarted = true; }
-    });
+    if (!STAM_REL_PROFILE_ADV_IS_RUNNING(&pVCpu->hwaccm.s.StatEntry))
+        STAM_REL_PROFILE_ADV_STOP_START(&pVCpu->hwaccm.s.StatExit2, &pVCpu->hwaccm.s.StatEntry, x);
     AssertMsg(pVCpu->hwaccm.s.idEnteredCpu == RTMpCpuId(),
               ("Expected %d, I'm %d; cResume=%d exitReason=%RGv exitQualification=%RGv\n",
                (int)pVCpu->hwaccm.s.idEnteredCpu, (int)RTMpCpuId(), cResume, exitReason, exitQualification));
@@ -2427,7 +2423,6 @@ ResumeExecution:
             {
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatSwitchToR3);
-                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
                 rc = RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_NO_MEMORY : VINF_EM_RAW_TO_R3;
                 goto end;
             }
@@ -2437,7 +2432,6 @@ ResumeExecution:
         if (    VM_FF_ISPENDING(pVM, VM_FF_REQUEST)
             ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
         {
-            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
             rc = VINF_EM_PENDING_REQUEST;
             goto end;
         }
@@ -2445,7 +2439,6 @@ ResumeExecution:
         /* Check if a pgm pool flush is in progress. */
         if (VM_FF_ISPENDING(pVM, VM_FF_PGM_POOL_FLUSH_PENDING))
         {
-            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
             rc = VINF_PGM_POOL_FLUSH_PENDING;
             goto end;
         }
@@ -2598,8 +2591,6 @@ ResumeExecution:
     /* Deal with tagged TLB setup and invalidation. */
     pVM->hwaccm.s.vmx.pfnSetupTaggedTLB(pVM, pVCpu);
 
-    STAM_STATS({ STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x); fStatEntryStarted = false; });
-
     /* Manual save and restore:
      * - General purpose registers except RIP, RSP
      *
@@ -2613,7 +2604,7 @@ ResumeExecution:
      */
 
     /* All done! Let's start VM execution. */
-    STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatInGC, z);
+    STAM_PROFILE_ADV_STOP_START(&pVCpu->hwaccm.s.StatEntry, &pVCpu->hwaccm.s.StatInGC, x);
     Assert(idCpuCheck == RTMpCpuId());
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
@@ -2653,6 +2644,7 @@ ResumeExecution:
         ASMWrMsr(MSR_K8_LSTAR, u64OldLSTAR);
     }
 
+    STAM_PROFILE_ADV_STOP_START(&pVCpu->hwaccm.s.StatInGC, &pVCpu->hwaccm.s.StatExit1, x);
     ASMSetFlags(uOldEFlags);
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     uOldEFlags = ~(RTCCUINTREG)0;
@@ -2669,7 +2661,6 @@ ResumeExecution:
      * IMPORTANT: WE CAN'T DO ANY LOGGING OR OPERATIONS THAT CAN DO A LONGJMP BACK TO RING 3 *BEFORE* WE'VE SYNCED BACK (MOST OF) THE GUEST STATE
      * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      */
-    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatInGC, z);
 
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
@@ -2678,7 +2669,6 @@ ResumeExecution:
         goto end;
     }
 
-    STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatExit1, v);
     /* Success. Query the guest state and figure out what has happened. */
 
     /* Investigate why there was a VM-exit. */
@@ -2756,8 +2746,7 @@ ResumeExecution:
         AssertRC(rc);
     }
 
-    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, v);
-    STAM_STATS({ STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatExit2, y); fStatExit2Started = true; });
+    STAM_PROFILE_ADV_STOP_START(&pVCpu->hwaccm.s.StatExit1, &pVCpu->hwaccm.s.StatExit2, x);
 
     /* Some cases don't need a complete resync of the guest CPU state; handle them here. */
     switch (exitReason)
@@ -2773,10 +2762,7 @@ ResumeExecution:
 #if 0 //def VBOX_WITH_VMMR0_DISABLE_PREEMPTION
             if (    RTThreadPreemptIsPendingTrusty()
                 &&  !RTThreadPreemptIsPending(NIL_RTTHREAD))
-            {
-                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
-                    goto ResumeExecution;
-            }
+                goto ResumeExecution;
 #endif
             /* External interrupt; leave to allow it to be dispatched again. */
             rc = VINF_EM_RAW_INTERRUPT;
@@ -3031,10 +3017,14 @@ ResumeExecution:
                     Log(("Guest #BP at %04x:%RGv\n", pCtx->cs, pCtx->rip));
                     rc = VMXR0InjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo), cbInstr, errCode);
                     AssertRC(rc);
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
                     goto ResumeExecution;
                 }
                 if (rc == VINF_SUCCESS)
+                {
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
                     goto ResumeExecution;
+                }
                 Log(("Debugger BP at %04x:%RGv (rc=%Rrc)\n", pCtx->cs, pCtx->rip, rc));
                 break;
             }
@@ -3890,7 +3880,6 @@ ResumeExecution:
     case VMX_EXIT_TPR:                  /* 43 TPR below threshold. Guest software executed MOV to CR8. */
         LogFlow(("VMX_EXIT_TPR\n"));
         /* RIP is already set to the next instruction and the TPR has been synced back. Just resume. */
-        STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub1, y1);
         goto ResumeExecution;
 
     case VMX_EXIT_APIC_ACCESS:          /* 44 APIC access. Guest software attempted to access memory at a physical address on the APIC-access page. */
@@ -3911,10 +3900,7 @@ ResumeExecution:
             LogFlow(("Apic access at %RGp\n", GCPhys));
             rc = VBOXSTRICTRC_TODO(IOMMMIOPhysHandler(pVM, (uAccessType == VMX_APIC_ACCESS_TYPE_LINEAR_READ) ? 0 : X86_TRAP_PF_RW, CPUMCTX2CORE(pCtx), GCPhys));
             if (rc == VINF_SUCCESS)
-            {
-                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub1, y1);
                 goto ResumeExecution;   /* rip already updated */
-            }
             break;
         }
 
@@ -3926,7 +3912,6 @@ ResumeExecution:
     }
 
     case VMX_EXIT_PREEMPTION_TIMER:     /* 52 VMX-preemption timer expired. The preemption timer counted down to zero. */
-        STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub1, y1);
         goto ResumeExecution;
 
     default:
@@ -4154,10 +4139,9 @@ end:
         ASMSetFlags(uOldEFlags);
 #endif
 
-    STAM_STATS({
-        if (fStatExit2Started)      STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2, y);
-        else if (fStatEntryStarted) STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
-    });
+    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2, x);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
     Log2(("X"));
     return rc;
 }
