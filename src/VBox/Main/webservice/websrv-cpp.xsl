@@ -455,8 +455,6 @@ const char *g_pcszIUnknown = "IUnknown";
 <xsl:template name="emitPrologue">
   <xsl:text>    WEBDEBUG((g_pcszEntering, __FUNCTION__));
 
-    util::AutoWriteLock paramsLock(*g_pParamsLockHandle  COMMA_LOCKVAL_SRC_POS);
-
     do {</xsl:text>
   <xsl:call-template name="emitNewline" />
 </xsl:template>
@@ -754,8 +752,6 @@ const char *g_pcszIUnknown = "IUnknown";
   </xsl:variable>
 
   <xsl:call-template name="emitNewlineIndent8" />
-  <xsl:text>paramsLock.release();</xsl:text>
-  <xsl:call-template name="emitNewlineIndent8" />
   <xsl:value-of select="concat('WEBDEBUG((g_pcszCallingComMethod, &quot;', $comMethodName, '&quot;));')" />
   <xsl:call-template name="emitNewlineIndent8" />
   <xsl:value-of select="concat('rc = ', $object, '-&gt;', $comMethodName, '(')" />
@@ -825,8 +821,6 @@ const char *g_pcszIUnknown = "IUnknown";
   <xsl:text>}</xsl:text>
   <xsl:call-template name="emitNewlineIndent8" />
   <xsl:text>WEBDEBUG((g_pcszDoneCallingComMethod));</xsl:text>
-  <xsl:call-template name="emitNewlineIndent8" />
-  <xsl:text>paramsLock.acquire();</xsl:text>
   <xsl:call-template name="emitNewline" />
 </xsl:template>
 
