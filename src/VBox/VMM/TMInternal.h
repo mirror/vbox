@@ -571,6 +571,29 @@ typedef struct TMCPU
 
     /** The last seen TSC by the guest. */
     uint64_t                    u64TSCLastSeen;
+
+#ifndef VBOX_WITHOUT_NS_ACCOUNTING
+    /** The nanosecond timestamp of the CPU start or resume.
+     * This is recalculated when the VM is started so that
+     * cNsTotal = RTTimeNanoTS() - u64NsTsStartCpu. */
+    uint64_t                    u64NsTsStartTotal;
+    /** The number of nanoseconds total run time.
+     * @remarks This is updated when cNsExecuting and cNsHalted are updated. */
+    uint64_t                    cNsTotal;
+    /** The nanosecond timestamp of the CPU start or resume. */
+    uint64_t                    u64NsTsStartExecuting;
+    /** The number of nanoseconds spent executing. */
+    uint64_t                    cNsExecuting;
+    /** The nanosecond timestamp of the CPU start or resume. */
+    uint64_t                    u64NsTsStartHalting;
+    /** The number of nanoseconds being halted. */
+    uint64_t                    cNsHalted;
+    /** The number of nanoseconds spent on other things.
+     * @remarks This is updated when cNsExecuting and cNsHalted are updated. */
+    uint64_t                    cNsOther;
+    /** The cNsXXX generation. */
+    uint32_t volatile           uTimesGen;
+#endif
 } TMCPU;
 /** Pointer to TM VMCPU instance data. */
 typedef TMCPU *PTMCPU;

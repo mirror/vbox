@@ -627,7 +627,16 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
 #endif /* VBOX_WITH_STATISTICS */
 
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.offTSCRawSrc, STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS, "TSC offset relative the raw source", "/TM/TSC/offCPU%u", i);
+    {
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.offTSCRawSrc,  STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS, "TSC offset relative the raw source",  "/TM/TSC/offCPU%u", i);
+#ifndef VBOX_WITHOUT_NS_ACCOUNTING
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsTotal,      STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Total CPU run time.",                 "/TM/CPU/%02u", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsExecuting,  STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent executing guest code.",    "/TM/CPU/%02u/Executing", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsHalted,     STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent halted.",                  "/TM/CPU/%02u/Halted", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.cNsOther,      STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,    "Time spent in the VMM or preempted.", "/TM/CPU/%02u/Other", i);
+        /** @todo Try add 1, 5 and 15 min load stats. */
+#endif
+    }
 
 #ifdef VBOX_WITH_STATISTICS
     STAM_REG(pVM, &pVM->tm.s.StatVirtualSyncCatchup,              STAMTYPE_PROFILE_ADV, "/TM/VirtualSync/CatchUp",    STAMUNIT_TICKS_PER_OCCURENCE, "Counting and measuring the times spent catching up.");
@@ -2477,7 +2486,21 @@ VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
      * Pause the TSC last since it is normally linked to the virtual
      * sync clock, so the above code may actually stop both clock.
      */
-    return tmCpuTickPause(pVM, pVCpu);
+    rc = tmCpuTickPause(pVM, pVCpu);
+    if (RT_FAILURE(rc))
+        return rc;
+
+#ifndef VBOX_WITHOUT_NS_ACCOUNTING
+    /*
+     * Update cNsTotal.
+     */
+    uint32_t uGen = ASMAtomicIncU32(&pVCpu->tm.s.uTimesGen); Assert(uGen & 1);
+    pVCpu->tm.s.cNsTotal = RTTimeNanoTS() - pVCpu->tm.s.u64NsTsStartTotal;
+    pVCpu->tm.s.cNsOther = pVCpu->tm.s.cNsTotal - pVCpu->tm.s.cNsExecuting - pVCpu->tm.s.cNsHalted;
+    ASMAtomicWriteU32(&pVCpu->tm.s.uTimesGen, (uGen | 1) + 1);
+#endif
+
+    return VINF_SUCCESS;
 }
 
 
@@ -2493,6 +2516,14 @@ VMMR3DECL(int) TMR3NotifyResume(PVM pVM, PVMCPU pVCpu)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     int rc;
+
+#ifndef VBOX_WITHOUT_NS_ACCOUNTING
+    /*
+     * Set u64NsTsStartTotal.  There is no need to back this out if either of
+     * the two calls below fail.
+     */
+    pVCpu->tm.s.u64NsTsStartTotal = RTTimeNanoTS() - pVCpu->tm.s.cNsTotal;
+#endif
 
     /*
      * Resume the TSC first since it is normally linked to the virtual sync
@@ -2572,6 +2603,78 @@ static DECLCALLBACK(int) tmR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
         TMR3NotifyResume(pVM, pVCpu);
     tmTimerUnlock(pVM);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Gets the performance information for one virtual CPU as seen by the VMM.
+ *
+ * The returned times covers the period where the VM is running and will be
+ * reset when restoring a previous VM state (at least for the time being).
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_NOT_IMPLEMENTED if not compiled in.
+ * @retval  VERR_INVALID_STATE if the VM handle is bad.
+ * @retval  VERR_INVALID_PARAMETER if idCpu is out of range.
+ *
+ * @param   pVM             The VM handle.
+ * @param   idCpu           The ID of the virtual CPU which times to get.
+ * @param   pcNsTotal       Where to store the total run time (nano seconds) of
+ *                          the CPU, i.e. the sum of the three other returns.
+ *                          Optional.
+ * @param   pcNsExecuting   Where to store the time (nano seconds) spent
+ *                          executing guest code.  Optional.
+ * @param   pcNsHalted      Where to store the time (nano seconds) spent
+ *                          halted.  Optional
+ * @param   pcNsOther       Where to store the time (nano seconds) spent
+ *                          preempted by the host scheduler, on virtualization
+ *                          overhead and on other tasks.
+ */
+VMMR3DECL(int) TMR3GetCpuLoadTimes(PVM pVM, VMCPUID idCpu, uint64_t *pcNsTotal, uint64_t *pcNsExecuting,
+                                   uint64_t *pcNsHalted, uint64_t *pcNsOther)
+{
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_STATE);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
+
+#ifndef VBOX_WITHOUT_NS_ACCOUNTING
+    /*
+     * Get a stable result set.
+     * This should be way quicker than an EMT request.
+     */
+    PVMCPU      pVCpu        = &pVM->aCpus[idCpu];
+    uint32_t    uTimesGen    = ASMAtomicReadU32(&pVCpu->tm.s.uTimesGen);
+    uint64_t    cNsTotal     = pVCpu->tm.s.cNsTotal;
+    uint64_t    cNsExecuting = pVCpu->tm.s.cNsExecuting;
+    uint64_t    cNsHalted    = pVCpu->tm.s.cNsHalted;
+    uint64_t    cNsOther     = pVCpu->tm.s.cNsOther;
+    while (   (uTimesGen & 1) /* update in progress */
+           || uTimesGen != ASMAtomicReadU32(&pVCpu->tm.s.uTimesGen))
+    {
+        RTThreadYield();
+        uTimesGen    = ASMAtomicReadU32(&pVCpu->tm.s.uTimesGen);
+        cNsTotal     = pVCpu->tm.s.cNsTotal;
+        cNsExecuting = pVCpu->tm.s.cNsExecuting;
+        cNsHalted    = pVCpu->tm.s.cNsHalted;
+        cNsOther     = pVCpu->tm.s.cNsOther;
+    }
+
+    /*
+     * Fill in the return values.
+     */
+    if (pcNsTotal)
+        *pcNsTotal = cNsTotal;
+    if (pcNsExecuting)
+        *pcNsExecuting = cNsExecuting;
+    if (pcNsHalted)
+        *pcNsHalted = cNsHalted;
+    if (pcNsOther)
+        *pcNsOther = cNsOther;
+
+    return VINF_SUCCESS;
+
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 
