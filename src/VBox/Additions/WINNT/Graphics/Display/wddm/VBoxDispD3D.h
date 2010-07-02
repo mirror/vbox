@@ -128,13 +128,23 @@ typedef struct VBOXWDDMDISP_LOCKINFO
     D3DLOCKED_RECT LockedRect;
 } VBOXWDDMDISP_LOCKINFO;
 
+typedef enum
+{
+    VBOXDISP_D3DIFTYPE_UNDEFINED = 0,
+    VBOXDISP_D3DIFTYPE_SURFACE,
+    VBOXDISP_D3DIFTYPE_TEXTURE,
+    VBOXDISP_D3DIFTYPE_VERTEXBUFFER,
+    VBOXDISP_D3DIFTYPE_INDEXBUFFER
+} VBOXDISP_D3DIFTYPE;
+
 typedef struct VBOXWDDMDISP_ALLOCATION
 {
     D3DKMT_HANDLE hAllocation;
     VBOXWDDM_ALLOC_TYPE enmType;
     void* pvMem;
-    /* object type depends on resource type */
+    /* object type is defined by enmD3DIfType enum */
     IUnknown *pD3DIf;
+    VBOXDISP_D3DIFTYPE enmD3DIfType;
     VBOXWDDMDISP_LOCKINFO LockInfo;
     VBOXWDDM_DIRTYREGION DirtyRegion; /* <- dirty region to notify host about */
     VBOXWDDM_SURFACE_DESC SurfDesc;

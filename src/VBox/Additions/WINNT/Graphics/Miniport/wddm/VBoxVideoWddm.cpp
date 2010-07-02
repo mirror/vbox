@@ -1930,9 +1930,9 @@ DxgkDdiPatch(
         {
             case VBOXVDMACMD_TYPE_DMA_PRESENT_SHADOW2PRIMARY:
             case VBOXVDMACMD_TYPE_DMA_PRESENT_BLT:
-            case VBOXVDMACMD_TYPE_DMA_PRESENT_FLIP:
             {
-                const D3DDDI_PATCHLOCATIONLIST* pPatchList = &pPatch->pPatchLocationList[0];
+                Assert(pPatch->PatchLocationListSubmissionLength == 2);
+                const D3DDDI_PATCHLOCATIONLIST* pPatchList = &pPatch->pPatchLocationList[pPatch->PatchLocationListSubmissionStart];
                 Assert(pPatchList->AllocationIndex == DXGK_PRESENT_SOURCE_INDEX);
                 Assert(pPatchList->PatchOffset == 0);
                 const DXGK_ALLOCATIONLIST *pSrcAllocationList = &pPatch->pAllocationList[pPatchList->AllocationIndex];
@@ -1940,7 +1940,7 @@ DxgkDdiPatch(
                 pPrivateData->SrcAllocInfo.segmentIdAlloc = pSrcAllocationList->SegmentId;
                 pPrivateData->SrcAllocInfo.offAlloc = (VBOXVIDEOOFFSET)pSrcAllocationList->PhysicalAddress.QuadPart;
 
-                pPatchList = &pPatch->pPatchLocationList[1];
+                pPatchList = &pPatch->pPatchLocationList[pPatch->PatchLocationListSubmissionStart + 1];
                 Assert(pPatchList->AllocationIndex == DXGK_PRESENT_DESTINATION_INDEX);
                 Assert(pPatchList->PatchOffset == 4);
                 const DXGK_ALLOCATIONLIST *pDstAllocationList = &pPatch->pAllocationList[pPatchList->AllocationIndex];
@@ -1948,6 +1948,17 @@ DxgkDdiPatch(
                 pPrivateData->DstAllocInfo.segmentIdAlloc = pDstAllocationList->SegmentId;
                 pPrivateData->DstAllocInfo.offAlloc = (VBOXVIDEOOFFSET)pDstAllocationList->PhysicalAddress.QuadPart;
                 break;
+            }
+            case VBOXVDMACMD_TYPE_DMA_PRESENT_FLIP:
+            {
+                Assert(pPatch->PatchLocationListSubmissionLength == 1);
+                const D3DDDI_PATCHLOCATIONLIST* pPatchList = &pPatch->pPatchLocationList[pPatch->PatchLocationListSubmissionStart];
+                Assert(pPatchList->AllocationIndex == DXGK_PRESENT_SOURCE_INDEX);
+                Assert(pPatchList->PatchOffset == 0);
+                const DXGK_ALLOCATIONLIST *pSrcAllocationList = &pPatch->pAllocationList[pPatchList->AllocationIndex];
+                Assert(pSrcAllocationList->SegmentId);
+                pPrivateData->SrcAllocInfo.segmentIdAlloc = pSrcAllocationList->SegmentId;
+                pPrivateData->SrcAllocInfo.offAlloc = (VBOXVIDEOOFFSET)pSrcAllocationList->PhysicalAddress.QuadPart;
             }
             default:
             {
@@ -2186,13 +2197,13 @@ DxgkDdiSubmitCommand(
             Assert(pRectsCmd);
             if (pRectsCmd)
             {
-                PVBOXWDDM_ALLOCATION pDstAlloc = pPrivateData->DstAllocInfo.pAlloc;
+                PVBOXWDDM_ALLOCATION pAlloc = pPrivateData->SrcAllocInfo.pAlloc;
                 pRectsCmd->pContext = pContext;
                 RECT r;
                 r.top = 0;
                 r.left = 0;
-                r.right = pDstAlloc->SurfDesc.width;
-                r.bottom = pDstAlloc->SurfDesc.height;
+                r.right = pAlloc->SurfDesc.width;
+                r.bottom = pAlloc->SurfDesc.height;
                 pRectsCmd->ContextsRects.ContextRect = r;
                 pRectsCmd->ContextsRects.UpdateRects.cRects = 1;
                 pRectsCmd->ContextsRects.UpdateRects.aRects[0] = r;
@@ -4046,47 +4057,31 @@ DxgkDdiPresent(
     }
     else if (pPresent->Flags.Flip)
     {
-        Assert(pPresent->Flags.Value == 1); /* only Blt is set, we do not support anything else for now */
+        Assert(pPresent->Flags.Value == 4); /* only Blt is set, we do not support anything else for now */
         DXGK_ALLOCATIONLIST *pSrc =  &pPresent->pAllocationList[DXGK_PRESENT_SOURCE_INDEX];
-        DXGK_ALLOCATIONLIST *pDst =  &pPresent->pAllocationList[DXGK_PRESENT_DESTINATION_INDEX];
         PVBOXWDDM_ALLOCATION pSrcAlloc = vboxWddmGetAllocationFromAllocList(pDevExt, pSrc);
         Assert(pSrcAlloc);
         if (pSrcAlloc)
         {
-            PVBOXWDDM_ALLOCATION pDstAlloc = vboxWddmGetAllocationFromAllocList(pDevExt, pDst);
-            Assert(pDstAlloc);
-            if (pDstAlloc)
-            {
-                Assert(cContexts3D);
-                pPrivateData->enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_FLIP;
+            Assert(cContexts3D);
+            pPrivateData->enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_FLIP;
 
-                vboxWddmPopulateDmaAllocInfo(&pPrivateData->SrcAllocInfo, pSrcAlloc, pSrc);
-                vboxWddmPopulateDmaAllocInfo(&pPrivateData->DstAllocInfo, pDstAlloc, pDst);
+            vboxWddmPopulateDmaAllocInfo(&pPrivateData->SrcAllocInfo, pSrcAlloc, pSrc);
 
-                UINT cbCmd = sizeof (VBOXVDMACMD_DMA_PRESENT_FLIP);
-                pPresent->pDmaBufferPrivateData = (uint8_t*)pPresent->pDmaBufferPrivateData + cbCmd;
-                pPresent->pDmaBuffer = ((uint8_t*)pPresent->pDmaBuffer) + VBOXWDDM_DUMMY_DMABUFFER_SIZE;
-                Assert(pPresent->DmaSize >= VBOXWDDM_DUMMY_DMABUFFER_SIZE);
+            UINT cbCmd = sizeof (VBOXVDMACMD_DMA_PRESENT_FLIP);
+            pPresent->pDmaBufferPrivateData = (uint8_t*)pPresent->pDmaBufferPrivateData + cbCmd;
+            pPresent->pDmaBuffer = ((uint8_t*)pPresent->pDmaBuffer) + VBOXWDDM_DUMMY_DMABUFFER_SIZE;
+            Assert(pPresent->DmaSize >= VBOXWDDM_DUMMY_DMABUFFER_SIZE);
 
-                memset(pPresent->pPatchLocationListOut, 0, 2*sizeof (D3DDDI_PATCHLOCATIONLIST));
-                pPresent->pPatchLocationListOut->PatchOffset = 0;
-                pPresent->pPatchLocationListOut->AllocationIndex = DXGK_PRESENT_SOURCE_INDEX;
-                ++pPresent->pPatchLocationListOut;
-                pPresent->pPatchLocationListOut->PatchOffset = 4;
-                pPresent->pPatchLocationListOut->AllocationIndex = DXGK_PRESENT_DESTINATION_INDEX;
-                ++pPresent->pPatchLocationListOut;
-            }
-            else
-            {
-                /* this should not happen actually */
-                drprintf((__FUNCTION__": failed to get Dst Allocation info for hDeviceSpecificAllocation(0x%x)\n",pDst->hDeviceSpecificAllocation));
-                Status = STATUS_INVALID_HANDLE;
-            }
+            memset(pPresent->pPatchLocationListOut, 0, sizeof (D3DDDI_PATCHLOCATIONLIST));
+            pPresent->pPatchLocationListOut->PatchOffset = 0;
+            pPresent->pPatchLocationListOut->AllocationIndex = DXGK_PRESENT_SOURCE_INDEX;
+            ++pPresent->pPatchLocationListOut;
         }
         else
         {
             /* this should not happen actually */
-            drprintf((__FUNCTION__": failed to get Src Allocation info for hDeviceSpecificAllocation(0x%x)\n",pSrc->hDeviceSpecificAllocation));
+            drprintf((__FUNCTION__": failed to get pSrc Allocation info for hDeviceSpecificAllocation(0x%x)\n",pSrc->hDeviceSpecificAllocation));
             Status = STATUS_INVALID_HANDLE;
         }
     }
