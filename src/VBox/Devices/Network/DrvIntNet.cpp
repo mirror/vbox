@@ -1156,6 +1156,10 @@ static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatYieldsNok);
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatLost);
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatBadFrames);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->StatSend1);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->StatSend2);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->StatRecv1);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->StatRecv2);
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReceivedGso);
         PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatSentGso);
 #ifdef VBOX_WITH_STATISTICS
@@ -1545,27 +1549,32 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /*
      * Register statistics.
      */
-    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->Recv.cbStatWritten, "Bytes/Received",       STAMUNIT_BYTES, "Number of received bytes.");
-    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->Send.cbStatWritten, "Bytes/Sent",           STAMUNIT_BYTES, "Number of sent bytes.");
-    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->Recv.cOverflows,    "Overflows/Recv",       STAMUNIT_COUNT, "Number overflows.");
-    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->Send.cOverflows,    "Overflows/Sent",       STAMUNIT_COUNT, "Number overflows.");
-    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->Recv.cStatFrames,   "Packets/Received",     STAMUNIT_COUNT, "Number of received packets.");
-    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->Send.cStatFrames,   "Packets/Sent",         STAMUNIT_COUNT, "Number of sent packets.");
-    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatReceivedGso,            "Packets/Received-Gso", STAMUNIT_COUNT, "The GSO portion of the received packets.");
-    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatSentGso,                "Packets/Sent-Gso",     STAMUNIT_COUNT, "The GSO portion of the sent packets.");
-    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatSentR0,                 "Packets/Sent-R0",      STAMUNIT_COUNT, "The ring-0 portion of the sent packets.");
+    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->pBufR3->Recv.cbStatWritten, "Bytes/Received", STAMUNIT_BYTES, "Number of received bytes.");
+    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->pBufR3->Send.cbStatWritten, "Bytes/Sent",     STAMUNIT_BYTES, "Number of sent bytes.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->Recv.cOverflows,    "Overflows/Recv",       "Number overflows.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->Send.cOverflows,    "Overflows/Sent",       "Number overflows.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->Recv.cStatFrames,   "Packets/Received",     "Number of received packets.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->Send.cStatFrames,   "Packets/Sent",         "Number of sent packets.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatReceivedGso,            "Packets/Received-Gso", "The GSO portion of the received packets.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatSentGso,                "Packets/Sent-Gso",     "The GSO portion of the sent packets.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatSentR0,                 "Packets/Sent-R0",      "The ring-0 portion of the sent packets.");
 
-    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->cStatLost,          "Packets/Lost",         STAMUNIT_COUNT, "Number of lost packets.");
-    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->cStatYieldsNok,     "YieldOk",              STAMUNIT_COUNT, "Number of times yielding helped fix an overflow.");
-    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->cStatYieldsOk,      "YieldNok",             STAMUNIT_COUNT, "Number of times yielding didn't help fix an overflow.");
-    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->cStatBadFrames,     "BadFrames",            STAMUNIT_COUNT, "Number of bad frames seed by the consumers.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->cStatLost,          "Packets/Lost",         "Number of lost packets.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->cStatYieldsNok,     "YieldOk",              "Number of times yielding helped fix an overflow.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->cStatYieldsOk,      "YieldNok",             "Number of times yielding didn't help fix an overflow.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->pBufR3->cStatBadFrames,     "BadFrames",            "Number of bad frames seed by the consumers.");
+    PDMDrvHlpSTAMRegProfile(pDrvIns, &pThis->pBufR3->StatSend1,          "Send1",                "Profiling IntNetR0IfSend.");
+    PDMDrvHlpSTAMRegProfile(pDrvIns, &pThis->pBufR3->StatSend2,          "Send2",                "Profiling sending to the trunk.");
+    PDMDrvHlpSTAMRegProfile(pDrvIns, &pThis->pBufR3->StatRecv1,          "Recv1",                "Reserved for future receive profiling.");
+    PDMDrvHlpSTAMRegProfile(pDrvIns, &pThis->pBufR3->StatRecv2,          "Recv2",                "Reserved for future receive profiling.");
+    PDMDrvHlpSTAMRegProfile(pDrvIns, &pThis->pBufR3->StatReserved,       "Reserved",             "Reserved for future use.");
 #ifdef VBOX_WITH_STATISTICS
-    PDMDrvHlpSTAMRegProfileAdv(pDrvIns, &pThis->StatReceive,             "Receive",     STAMUNIT_TICKS_PER_CALL, "Profiling packet receive runs.");
-    PDMDrvHlpSTAMRegProfile(pDrvIns, &pThis->StatTransmit,               "Transmit",    STAMUNIT_TICKS_PER_CALL, "Profiling packet transmit runs.");
+    PDMDrvHlpSTAMRegProfileAdv(pDrvIns, &pThis->StatReceive,             "Receive",              "Profiling packet receive runs.");
+    PDMDrvHlpSTAMRegProfile(pDrvIns, &pThis->StatTransmit,               "Transmit",             "Profiling packet transmit runs.");
 #endif
-    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatXmitWakeupR0,           "XmitWakeup-R0",        STAMUNIT_COUNT, "Xmit thread wakeups from ring-0.");
-    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatXmitWakeupR3,           "XmitWakeup-R3",        STAMUNIT_COUNT, "Xmit thread wakeups from ring-3.");
-    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatXmitProcessRing,        "XmitProcessRing",      STAMUNIT_COUNT, "Time xmit thread was told to process the ring.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatXmitWakeupR0,           "XmitWakeup-R0",        "Xmit thread wakeups from ring-0.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatXmitWakeupR3,           "XmitWakeup-R3",        "Xmit thread wakeups from ring-3.");
+    PDMDrvHlpSTAMRegCounter(pDrvIns, &pThis->StatXmitProcessRing,        "XmitProcessRing",      "Time xmit thread was told to process the ring.");
 
     /*
      * Create the async I/O threads.
