@@ -1253,8 +1253,8 @@ FinishArrayParam(nsIInterfaceInfo *iinfo, uint16 methodIndex,
 static PRUint32
 NewRequestIndex()
 {
-  static PRUint32 sRequestIndex;
-  return ++sRequestIndex;
+  static PRInt32 sRequestIndex;
+  return (PRUint32) PR_AtomicIncrement(&sRequestIndex);
 }
 
 //-----------------------------------------------------------------------------
