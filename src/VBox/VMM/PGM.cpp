@@ -3868,9 +3868,11 @@ VMMR3DECL(int) PGMR3DumpHierarchyGC(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPHY
     bool fLongMode = false;
     const unsigned cch = fLongMode ? 16 : 8; NOREF(cch);
     PX86PD pPD = 0;
+    PGMPAGEMAPLOCK LockCr3;
 
-    int rc = PGM_GCPHYS_2_PTR(pVM, cr3 & X86_CR3_PAGE_MASK, &pPD);
-    if (RT_FAILURE(rc) || !pPD)
+    int rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, cr3 & X86_CR3_PAGE_MASK, (const void **)&pPD, &LockCr3);
+    if (    RT_FAILURE(rc) 
+        ||  !pPD)
     {
         Log(("Page directory at %#x was not found in the page pool!\n", cr3 & X86_CR3_PAGE_MASK));
         return VERR_INVALID_PARAMETER;
@@ -3942,21 +3944,26 @@ VMMR3DECL(int) PGMR3DumpHierarchyGC(PVM pVM, uint64_t cr3, uint64_t cr4, RTGCPHY
                     /** @todo what about using the page pool for mapping PTs? */
                     RTGCPHYS GCPhys = Pde.u & X86_PDE_PG_MASK;
                     PX86PT pPT = NULL;
+                    PGMPAGEMAPLOCK LockPT;
 
-                    rc = PGM_GCPHYS_2_PTR(pVM, GCPhys, &pPT);
+                    rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys, (const void **)&pPT, &LockPT);
 
                     int rc2 = VERR_INVALID_PARAMETER;
                     if (pPT)
                         rc2 = pgmR3DumpHierarchyGC32BitPT(pVM, pPT, u32Address, PhysSearch);
                     else
                         Log(("%08x error! Page table at %#x was not found in the page pool!\n", u32Address, GCPhys));
+
+                    if (rc == VINF_SUCCESS)
+                        PGMPhysReleasePageMappingLock(pVM, &LockPT);
+
                     if (rc2 < rc && RT_SUCCESS(rc))
                         rc = rc2;
                 }
             }
         }
     }
-
+    PGMPhysReleasePageMappingLock(pVM, &LockCr3);
     return rc;
 }
 
