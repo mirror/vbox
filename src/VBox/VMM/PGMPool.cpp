@@ -848,43 +848,47 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         if (pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
         {
             PX86PTPAE pShwPT = (PX86PTPAE)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
-            PX86PTPAE pGstPT;
-            int rc = PGM_GCPHYS_2_PTR(pPool->CTX_SUFF(pVM), pPage->GCPhys, &pGstPT); AssertReleaseRC(rc);
-
-            /* Check if any PTEs are out of sync. */
-            for (unsigned j = 0; j < RT_ELEMENTS(pShwPT->a); j++)
             {
-                if (pShwPT->a[j].n.u1Present)
+                PX86PTPAE pGstPT;
+                PGMPAGEMAPLOCK LockPage;
+                int rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, pPage->GCPhys, (const void **)&pGstPT, &LockPage);     AssertReleaseRC(rc);
+
+                /* Check if any PTEs are out of sync. */
+                for (unsigned j = 0; j < RT_ELEMENTS(pShwPT->a); j++)
                 {
-                    RTHCPHYS HCPhys = NIL_RTHCPHYS;
-                    rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pGstPT->a[j].u & X86_PTE_PAE_PG_MASK, &HCPhys);
-                    if (    rc != VINF_SUCCESS
-                        ||  (pShwPT->a[j].u & X86_PTE_PAE_PG_MASK) != HCPhys)
+                    if (pShwPT->a[j].n.u1Present)
                     {
-                        if (fFirstMsg)
+                        RTHCPHYS HCPhys = NIL_RTHCPHYS;
+                        rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pGstPT->a[j].u & X86_PTE_PAE_PG_MASK, &HCPhys);
+                        if (    rc != VINF_SUCCESS
+                            ||  (pShwPT->a[j].u & X86_PTE_PAE_PG_MASK) != HCPhys)
                         {
-                            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Check pool page %RGp\n", pPage->GCPhys);
-                            fFirstMsg = false;
+                            if (fFirstMsg)
+                            {
+                                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Check pool page %RGp\n", pPage->GCPhys);
+                                fFirstMsg = false;
+                            }
+                            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Mismatch HCPhys: rc=%d idx=%d guest %RX64 shw=%RX64 vs %RHp\n", rc, j, pGstPT->a[j].u, pShwPT->a[j].u, HCPhys);
                         }
-                        pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Mismatch HCPhys: rc=%d idx=%d guest %RX64 shw=%RX64 vs %RHp\n", rc, j, pGstPT->a[j].u, pShwPT->a[j].u, HCPhys);
-                    }
-                    else
-                    if (    pShwPT->a[j].n.u1Write
-                        &&  !pGstPT->a[j].n.u1Write)
-                    {
-                        if (fFirstMsg)
+                        else
+                        if (    pShwPT->a[j].n.u1Write
+                            &&  !pGstPT->a[j].n.u1Write)
                         {
-                            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Check pool page %RGp\n", pPage->GCPhys);
-                            fFirstMsg = false;
+                            if (fFirstMsg)
+                            {
+                                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Check pool page %RGp\n", pPage->GCPhys);
+                                fFirstMsg = false;
+                            }
+                            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Mismatch r/w gst/shw: idx=%d guest %RX64 shw=%RX64 vs %RHp\n", j, pGstPT->a[j].u, pShwPT->a[j].u, HCPhys);
                         }
-                        pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Mismatch r/w gst/shw: idx=%d guest %RX64 shw=%RX64 vs %RHp\n", j, pGstPT->a[j].u, pShwPT->a[j].u, HCPhys);
                     }
                 }
+                PGMPhysReleasePageMappingLock(pVM, &LockPage);
             }
 
             /* Make sure this page table can't be written to from any shadow mapping. */
             RTHCPHYS HCPhysPT = NIL_RTHCPHYS;
-            rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pPage->GCPhys, &HCPhysPT);
+            int rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pPage->GCPhys, &HCPhysPT);
             AssertMsgRC(rc, ("PGMPhysGCPhys2HCPhys failed with rc=%d for %RGp\n", rc, pPage->GCPhys));
             if (rc == VINF_SUCCESS)
             {
