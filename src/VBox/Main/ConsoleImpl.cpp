@@ -4975,8 +4975,8 @@ HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
             ++it;
         }
         evDesc.init(mEventSource, VBoxEventType_OnCanShowWindow);
-        BOOL fDelivered = evDesc.fire(10000); /* Wait up to 10 secs for delivery */
-        Assert(fDelivered);
+        BOOL fDelivered = evDesc.fire(5000); /* Wait up to 5 secs for delivery */
+        //Assert(fDelivered);
         if (fDelivered)
         {
             ComPtr<IEvent> aEvent;
@@ -4996,10 +4996,7 @@ HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
             }
         }
         else
-        {
-            Assert(FALSE);
             *aCanShow = TRUE;
-        }
     }
     else
     {
@@ -5026,29 +5023,24 @@ HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
             }
             ++it;
         }
-#if 1
         evDesc.init(mEventSource, VBoxEventType_OnShowWindow, UINT64_C(0));
-        ComPtr<IEvent> aEvent;
-        evDesc.getEvent(aEvent.asOutParam());
-        ComPtr<IShowWindowEvent> aShowEvent = aEvent;
-
-        BOOL fDelivered = evDesc.fire(10000); /* Wait up to 10 secs for delivery */
-        Assert(fDelivered);
+        BOOL fDelivered = evDesc.fire(5000); /* Wait up to 5 secs for delivery */
+        //Assert(fDelivered);
         if (fDelivered)
         {
+            ComPtr<IEvent> aEvent;
+            evDesc.getEvent(aEvent.asOutParam());
+            ComPtr<IShowWindowEvent> aShowEvent = aEvent;
             ULONG64 aEvWinId = 0;
             if (aShowEvent)
             {
                 aShowEvent->COMGETTER(WinId)(&aEvWinId);
-                if (aEvWinId != 0)
+                if ((aEvWinId != 0) && (*aWinId == 0))
                     *aWinId = aEvWinId;
             }
             else
                 Assert(FALSE);
         }
-        else
-            Assert(FALSE);
- #endif
     }
 
     return S_OK;

@@ -2751,8 +2751,8 @@ BOOL VirtualBox::onExtraDataCanChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aVa
 
     VBoxEventDesc evDesc;
     evDesc.init(m->pEventSource, VBoxEventType_OnExtraDataCanChange, id.raw(), aKey, aValue);
-    BOOL fDelivered = evDesc.fire(10000); /* Wait up to 10 secs for delivery */
-    Assert(fDelivered);
+    BOOL fDelivered = evDesc.fire(3000); /* Wait up to 3 secs for delivery */
+    //Assert(fDelivered);
     if (fDelivered)
     {
         ComPtr<IEvent> aEvent;
